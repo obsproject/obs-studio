@@ -23,6 +23,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test-input", "test-input\te
 		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libobs-opengl", "libobs-opengl\libobs-opengl.vcxproj", "{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -71,6 +76,14 @@ Global
 		{760ECBBC-EA7C-464A-B60E-945A0BB1B100}.Release|Win32.Build.0 = Release|Win32
 		{760ECBBC-EA7C-464A-B60E-945A0BB1B100}.Release|x64.ActiveCfg = Release|x64
 		{760ECBBC-EA7C-464A-B60E-945A0BB1B100}.Release|x64.Build.0 = Release|x64
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Debug|Win32.Build.0 = Debug|Win32
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Debug|x64.ActiveCfg = Debug|x64
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Debug|x64.Build.0 = Debug|x64
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Release|Win32.ActiveCfg = Release|Win32
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Release|Win32.Build.0 = Release|Win32
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Release|x64.ActiveCfg = Release|x64
+		{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

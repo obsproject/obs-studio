@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "util/AlignedNew.hpp"
+
 #include <vector>
 #include <string>
 
