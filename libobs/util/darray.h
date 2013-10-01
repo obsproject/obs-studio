@@ -59,7 +59,7 @@ static inline void darray_init(struct darray *dst)
 
 static inline void darray_free(struct darray *dst)
 {
-	baligned_free(dst->array);
+	bfree(dst->array);
 	dst->array    = NULL;
 	dst->num      = 0;
 	dst->capacity = 0;
@@ -93,11 +93,11 @@ static inline void darray_reserve(const size_t element_size,
 	if (capacity == 0 || capacity <= dst->num)
 		return;
 
-	ptr = baligned_malloc(element_size*capacity, 16);
+	ptr = bmalloc(element_size*capacity);
 	if (dst->num)
 		memcpy(ptr, dst->array, element_size*dst->num);
 	if (dst->array)
-		baligned_free(dst->array);
+		bfree(dst->array);
 	dst->array = ptr;
 	dst->capacity = capacity;
 }
@@ -113,11 +113,11 @@ static inline void darray_ensure_capacity(const size_t element_size,
 	new_cap = (!dst->capacity) ? new_size : dst->capacity*2;
 	if (new_size > new_cap)
 		new_cap = new_size;
-	ptr = baligned_malloc(element_size*new_cap, 16);
+	ptr = bmalloc(element_size*new_cap);
 	if (dst->capacity)
 		memcpy(ptr, dst->array, element_size*dst->capacity);
 	if (dst->array)
-		baligned_free(dst->array);
+		bfree(dst->array);
 	dst->array = ptr;
 	dst->capacity = new_cap;
 }

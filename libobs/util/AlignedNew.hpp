@@ -27,20 +27,20 @@
 
 inline void* operator new(size_t size)
 {
-	return baligned_malloc(size, 16);
+	return bmalloc(size);
 }
 
 inline void operator delete(void* data)
 {
-	baligned_free(data);
+	bfree(data);
 }
 
 inline void* operator new[](size_t size)
 {
-	return baligned_malloc(size, 16);
+	return bmalloc(size);
 }
 
 inline void operator delete[](void* data)
 {
-	baligned_free(data);
+	bfree(data);
 }

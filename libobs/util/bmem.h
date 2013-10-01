@@ -37,9 +37,6 @@ struct base_allocator {
 	void *(*malloc)(size_t);
 	void *(*realloc)(void *, size_t);
 	void (*free)(void *);
-
-	void *(*aligned_malloc)(size_t, size_t);
-	void (*aligned_free)(void *);
 };
 
 EXPORT void base_set_allocator(struct base_allocator *defs);
@@ -47,9 +44,6 @@ EXPORT void base_set_allocator(struct base_allocator *defs);
 EXPORT void *bmalloc(size_t size);
 EXPORT void *brealloc(void *ptr, size_t size);
 EXPORT void bfree(void *ptr);
-
-EXPORT void *baligned_malloc(size_t size, size_t align);
-EXPORT void baligned_free(void *ptr);
 
 EXPORT size_t bnum_allocs(void);
 

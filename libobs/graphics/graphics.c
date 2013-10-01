@@ -55,14 +55,14 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	vbd = vbdata_create();
 	vbd->num     = IMMEDIATE_COUNT;
-	vbd->points  = baligned_malloc(sizeof(struct vec3)*IMMEDIATE_COUNT, 16);
-	vbd->normals = baligned_malloc(sizeof(struct vec3)*IMMEDIATE_COUNT, 16);
-	vbd->colors  = baligned_malloc(sizeof(uint32_t)   *IMMEDIATE_COUNT, 16);
+	vbd->points  = bmalloc(sizeof(struct vec3)*IMMEDIATE_COUNT);
+	vbd->normals = bmalloc(sizeof(struct vec3)*IMMEDIATE_COUNT);
+	vbd->colors  = bmalloc(sizeof(uint32_t)   *IMMEDIATE_COUNT);
 	vbd->num_tex = 1;
-	vbd->tvarray = baligned_malloc(sizeof(struct tvertarray), 16);
+	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
 	vbd->tvarray[0].width = 2;
 	vbd->tvarray[0].array =
-		baligned_malloc(sizeof(struct vec2) * IMMEDIATE_COUNT, 16);
+		bmalloc(sizeof(struct vec2) * IMMEDIATE_COUNT);
 
 	graphics->immediate_vertbuffer = graphics->exports.
 		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
@@ -71,11 +71,11 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	vbd = vbdata_create();
 	vbd->num     = 4;
-	vbd->points  = baligned_malloc(sizeof(struct vec3) * 4, 16);
+	vbd->points  = bmalloc(sizeof(struct vec3) * 4);
 	vbd->num_tex = 1;
-	vbd->tvarray = baligned_malloc(sizeof(struct tvertarray), 16);
+	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
 	vbd->tvarray[0].width = 2;
-	vbd->tvarray[0].array = baligned_malloc(sizeof(struct vec2) * 4, 16);
+	vbd->tvarray[0].array = bmalloc(sizeof(struct vec2) * 4);
 
 	memset(vbd->points,           0, sizeof(struct vec3) * 4);
 	memset(vbd->tvarray[0].array, 0, sizeof(struct vec2) * 4);

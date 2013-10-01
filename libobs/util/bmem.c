@@ -27,33 +27,59 @@
 #include "base.h"
 #include "bmem.h"
 
-static void *a_malloc(size_t size, size_t align)
+/*
+ * NOTE: totally jacked the mem alignment trick from ffmpeg, credit to them:
+ *   http://www.ffmpeg.org/
+ */
+
+#define ALIGNMENT 16
+#define ALIGNMENT_HACK 1
+
+static void *a_malloc(size_t size)
 {
-#if defined(_WIN32)
-	return _aligned_malloc(size, align);
-#elif defined (__posix__)
-	void *ptr;
-	if (posix_memalign(&ptr, align, size) != 0)
-		return NULL;
+#ifdef _WIN32
+	return _aligned_malloc(size, ALIGNMENT);
+#else 
+	void *ptr = NULL;
+	long diff;
+
+	ptr  = malloc(size + ALIGNMENT);
+	diff = ((~(long)ptr) & (ALIGNMENT - 1)) + 1;
+	ptr  = (char *)ptr + diff;
+	((char *)ptr)[-1] = (char)diff;
 
 	return ptr;
+#endif
+}
+
+static void *a_realloc(void *ptr, size_t size)
+{
+#ifdef _WIN32
+	return _aligned_realloc(ptr, size, ALIGNMENT);
 #else
-#error unknown OS
+	long diff;
+
+	if (!ptr)
+		return a_malloc(size);
+	diff = ((char *)ptr)[-1];
+	ptr = realloc((char*)ptr - diff, size + diff);
+	if (ptr)
+		ptr = (char *)ptr + diff;
+	return ptr;
 #endif
 }
 
 static void a_free(void *ptr)
 {
-#if defined(_WIN32)
+#ifdef _WIN32
 	_aligned_free(ptr);
-#elif defined (__posix__)
-	free(ptr);
 #else
-#error unknown OS
+	if (ptr)
+		free((char *)ptr - ((char*)ptr)[-1]);
 #endif
 }
 
-static struct base_allocator alloc = {malloc, realloc, free, a_malloc, a_free};
+static struct base_allocator alloc = {a_malloc, a_realloc, a_free};
 static size_t num_allocs = 0;
 
 void base_set_allocator(struct base_allocator *defs)
@@ -94,26 +120,6 @@ void bfree(void *ptr)
 	if (ptr)
 		num_allocs--;
 	alloc.free(ptr);
-}
-
-void *baligned_malloc(size_t size, size_t align)
-{
-	void *ptr = alloc.aligned_malloc(size, align);
-	if (!ptr && !size)
-		ptr = alloc.aligned_malloc(1, align);
-	if (!ptr)
-		bcrash("Out of memory while trying to allocate %lu bytes",
-				(unsigned long)size);
-
-	num_allocs++;
-	return ptr;
-}
-
-void baligned_free(void *ptr)
-{
-	if (ptr)
-		num_allocs--;
-	alloc.aligned_free(ptr);
 }
 
 size_t bnum_allocs(void)
