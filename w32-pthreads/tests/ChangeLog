@@ -1,0 +1,1000 @@
+2011-07-03  Ross Johnson <ross dot johnson at homemail dot com dot au>
+
+	* create3.c: Removed; testing a condition that is not in the library's
+	scope and was more trouble than it was worth.
+	* cancel2.c: Ensure this test only runs for Structured or C++ EH.
+	* exit2.c: Shorten Sleep() time.
+	* exit3.c: Likewise.
+	* cancel1.c: Likewise.
+	* cancel3.c: Likewise.
+	* exception3.c: Likewise; make terminate routine consistent for all
+	build environments.
+
+2011-07-02  Ross Johnson <ross dot johnson at homemail dot com dot au>
+
+	* spin3.c: Unlock the unlocked spinlock now returns success.
+	* rwlock3.c: Join the thread to ensure it's completed.
+	* rwlock4.c: Likewise.
+	* rwlock5.c: Likewise.
+	* Makefile: Adjust prerequisites.
+	* GNUmakefile: Likewise.
+	* Bmakefile: Likewise.
+	* Wmakefile: Likewise.
+
+2011-07-02 Daniel Richard G. <skunk at iskunk dot org>
+
+	* *.[ch]: Cleanups around timeb struct, mainly centralising
+	macro definitions in test.h.
+	* Makefile: Fix annoying nmake warning.
+
+2011-06-30  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* sequence1.c: Fix loop overrun.
+
+2011-05-11  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* GNUmakefile (GCE-debug): New target; expects pthreadGCE2d.dll.
+	
+2011-05-05  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* openmp1.c: Add missing test; used to comfirm that this
+	library works with libgomp; if this test produces a segfault
+	then try upgrading your version of libgomp/gcc; gcc version
+	4.5.2 passes this test.
+
+2011-03-26  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* sequence1.c: New test for new pthread_getsequence_np().
+
+2011-03-24  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* mutex*.c: Include tests for robust mutexes wherever
+	appropriate.
+	* benchtest*.c: Include comparisons for robust mutexes.
+	* robust1.c: New test for robust mutex handling.
+	* robust2.c: Likewise.
+	* robust3.c: Likewise.
+	* robust4.c: Likewise.
+	* robust5.c: Likewise.
+	* GNUmakefile: Include new tests.
+	* Makefile: Likewise.
+	* Bmakefile: Likewise (not tested).
+	* Wmakefile: Likewise (not tested).
+
+2011-03-06  Ross Johnson <ross.johnson at homemail.com.au>
+
+	* several (MINGW64): Cast and call fixups for 64 bit compatibility;
+	clean build via x86_64-w64-mingw32 cross toolchain on Linux
+	i686 targeting x86_64 win64.
+
+2011-03-04  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
+
+	* condvar3_2.c: abstime.tv_sec operation warning fixed.
+	* several: Use correct casting on pthread_join result arg
+	and associated declaration and usage; assumed that 64 bit
+	gcc gave some warnings for it.
+
+2011-02-28  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
+
+	* test.h: Define FTIME to be _ftime64_s or _ftime64 or _ftime
+	in that order of preference where supported.
+	* several: Replace calls to _ftime with the FTIME macro.
+
+2010-06-19  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
+
+	* Makefile (STATICRESULTS): Add all tests into suite for static
+	library.
+	* GNUmakefile (STATICTESTS): Likewise, except for openmp1.c which
+	has a DLL dependency.
+
+2010-02-04  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
+
+	* openmp1.c: New; for libgomp compatibility (OpenMP).
+	* barrier5.c: Rewrite after changes to barriers.
+	* barrier6.c: New.
+	* benchtest6.c: New; timing barriers.
+	* GNUMakefile: Update for new tests.
+	* Makefile: Ditto.
+	* BMakefile: Ditto.
+	* once3.c: Improve cancelation testing.
+	* stress1.c: Fix comment.
+
+2007-01-04  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
+
+        * context1.c: Include context.h from library sources and remove
+        x86 dependence in main().
+
+2005-06-12  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* stress1.c (millisecondsFromNow): Remove limit 0 <= millisecs < 1000;
+	now works for -INT_MAX <= millisecs <= INT_MAX; not needed for
+	stress1.c but should be general anyway.
+
+2005-05-18  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* reuse2.c (main): Must use a read with memory barrier semantics
+	when polling 'done' to force the cache into coherence on MP systems.
+
+2005-05-15  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* detach1.c: New test.
+	* join1.c: Reduce sleep times.
+	* join0.c: Remove MSVCRT conditional compile - join should always
+	return the thread exit code.
+	* join1.c: Likewise.
+	* join2.c: Likewise.
+	* join3.c: Likewise.
+
+2005-04-18  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* condvar3.c: Remove locks from around signalling calls - should not
+	be required for normal operation and only serve to mask deficiencies;
+	ensure that CV destruction is not premature after removing guards.
+	* condvar3_1.c: Likewise.
+	* condvar3_2.c: Likewise.
+	* condvar3_3.c: Likewise.
+	* condvar4.c: Likewise.
+	* condvar5.c: Likewise.
+	* condvar6.c: Likewise.
+	* condvar7.c: Likewise.
+	* condvar8.c: Likewise.
+	* condvar9.c: Likewise.
+
+2005-04-11  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+        * once4.c: New test; tries to test priority adjustments
+        in pthread_once(); set priority class to realtime so that
+        any failures can be seen.
+
+2005-04-06  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* cleanup0.c: Fix unguarded global variable accesses.
+	* cleanup1.c: Likewise.
+	* cleanup2.c: Likewise.
+	* cleanup3.c: Likewise.
+	* once2.c: Likewise.
+	* once3.c: Likewise.
+
+2005-04-01  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* GNUmakefile: Add target to test linking static link library.
+	* Makefile: Likewise.
+	* self1.c: Run process attach/detach routines when static linked.
+
+2005-03-16  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* mutex5.c: Prevent optimiser from removing asserts.
+
+2005-03-12  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* once3.c: New test.
+
+2005-03-08  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+        * once2.c: New test.
+
+2004-11-19  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* Bmakefile: New makefile for Borland.
+	* Makefile (DLL_VER): Added.
+	* GNUmakefile (DLL_VER): Added.
+	* Wmakefile (DLL_VER): Added.
+
+2004-10-29  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* semaphore4.c: New test.
+	* semaphore4t.c: New test.
+	* Debug.dsp (et al): Created MSVC Workspace project to aid debugging.
+	* All: Many tests have been modified to work with the new pthread
+	ID type; some other corrections were made after some library
+	functions were semantically strengthened. For example,
+	pthread_cond_destroy() no longer destroys a busy CV, which
+	required minor redesigns of some tests, including some where
+	the mutex associated with the CV was not locked during
+	signaling and broadcasting.
+
+2004-10-23  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* condvar3.c: Fixed mutex operations that were incorrectly
+	placed in relation to their condition variable operations.
+	The error became evident after sem_destroy() was rewritten
+	and conditions for destroing the semaphore were tightened.
+	As a result, pthread_cond_destroy() was not able to
+	destroy the cv queueing sempahore.
+	* condvar3_1.c: Likewise.
+	* condvar3_2.c: Likewise.
+	* condvar4.c: Likewise.
+	* condvar5.c: Likewise.
+	* condvar6.c: Likewise.
+	* condvar7.c: Likewise.
+	* condvar8.c: Likewise.
+	* condvar9.c: Likewise.
+
+2004-10-19  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* semaphore3.c: New test.
+
+2004-10-14  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* rwlock7.c (main): Tidy up statistics reporting; randomise
+	update accesses.
+	* rwlock8.c: New test.
+
+2004-09-08  Alexandre Girao  <alexgirao@gmail.com>
+
+	* cancel7.c (main): Win98 wants a valid (non-NULL) location
+	for the last arg of _beginthreadex().
+	* cancel8.c (main): Likewise.
+	* exit4.c (main): Likewise.
+	* exit5.c (main): Likewise.
+
+2004-08-26  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* create3.c: New test.
+
+2004-06-21  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* mutex2r.c: New test.
+	* mutex2e.c: New test.
+	* mutex3r.c: New test.
+	* mutex3e.c: New test.
+	* mutex6s.c: New test.
+	* mutex6rs.c: New test.
+	* mutex6es.c: New test.
+
+2004-05-21  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* join3.c: New test.
+
+2004-05-16  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* condvar2.c (WIN32_WINNT): Define to avoid redefinition warning
+	from inclusion of implement.h.
+	* convar2_1.c: Likewise.
+	* condvar3_1.c: Likewise.
+	* condvar3_2.c: Likewise.
+	* context1.c: Likewise.
+	* sizes.c: Likewise.
+	* Makefile: Don't define _WIN32_WINNT on compiler command line.
+	* GNUmakefile: Likewise.
+	* priority1.c (main): Add column to output for actual win32
+	priority.
+
+2004-05-16  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* cancel9.c: New test.
+	* cancel3.c: Remove inappropriate conditional compilation;
+	GNU C version of test suite no longer quietly skips this test.
+	* cancel5.c: Likewise.
+	* GNUmakefile: Can now build individual test app using default
+	C version of library using 'make clean testname.c'.
+	* Makefile: Likewise for VC using 'nmake clean test testname.c'.
+
+2003-10-14  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* Wmakefile: New makefile for Watcom testing.
+
+2003-09-18  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* benchtest.h: Move old mutex code into benchlib.c.
+	* benchlib.c: New statically linked module to ensure that
+	bench apps don't inline the code and therefore have an unfair
+	advantage over the pthreads lib routines. Made little or no
+	difference.
+	* benchtest1.c: Minor change to avoid compiler warnings.
+	* benchtest5.c: Likewise.
+	* benchtest2.c: Fix misinformation in output report.
+	* README.BENCH: Add comments on results.
+
+2003-09-14  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* priority1.c: Reworked to comply with modified priority
+	management and provide additional output.
+	* priority2.c: Likewise.
+	* inherit1.c: Likewise.
+
+2003-09-03  Ross Johnson  <rpj@callisto.canberra.edu.au>
+
+	* exit4.c: New test.
+	* exit5.c: New test.
+	* cancel7.c: New test.
+	* cancel8.c: New test.
+
+2003-08-13  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* reuse1.c: New test.
+	* reuse1.c: New test.
+	* valid1.c: New test.
+	* valid2.c: New test.
+	* kill1.c: New test.
+ 	* create2.c: Now included in test regime.
+
+2003-07-19  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* eyal1.c (waste_time): Make threads do more work to ensure that
+	all threads get to do some work.
+	* semaphore1.c: Make it clear that certain errors are expected.
+	* exception2.c (non_MSVC code sections): Change to include
+	C++ standard include file, i.e. change <new.h> to <exception>.
+	* exception3.c (non_MSVC code sections): Likewise; qualify std::
+	namespace entities where necessary.
+	* GNUmakefile: modified to work in the MsysDTK (newer MinGW)
+	environment; define CC as gcc or g++ as appropriate because
+	using gcc -x c++ doesn't link with required c++ libs by default,
+	but g++ does.
+
+2002-12-11  Ross Johnson  <ross@special.ise.canberra.edu.au>
+
+	* mutex7e.c: Assert EBUSY return instead of EDEADLK.
+
+2002-06-03  Ross Johnson  <rpj@digit.ise.canberra.edu.au>
+
+	* semaphore2.c: New test.
+
+2002-03-02  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* Makefile (CFLAGS): Changed /MT to /MD to link with
+	the correct library MSVCRT.LIB. Otherwise errno doesn't
+	work.
+
+2002-02-28  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* exception3.c: Correct recent change.
+
+	* semaphore1.c: New test.
+
+	* Makefile: Add rule to generate pre-processor output.
+
+2002-02-28  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* exception3.c (terminateFunction): For MSVC++, call
+	exit() rather than pthread_exit(). Add comments to explain
+	why.
+	   * Notes from the MSVC++ manual:
+	   *       1) A term_func() should call exit(), otherwise
+	   *          abort() will be called on return to the caller.
+	   *          abort() raises SIGABRT. The default signal handler
+	   *          for all signals terminates the calling program with
+	   *          exit code 3.
+	   *       2) A term_func() must not throw an exception. Therefore
+	   *          term_func() should not call pthread_exit() if an
+	   *          an exception-using version of pthreads-win32 library
+	   *          is being used (i.e. either pthreadVCE or pthreadVSE).
+
+
+2002-02-23  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* rwlock2_t.c: New test.
+	* rwlock3_t.c: New test.
+	* rwlock4_t.c: New test.
+	* rwlock5_t.c: New test.
+	* rwlock6_t.c: New test.
+	* rwlock6_t2.c: New test.
+	* rwlock6.c (main): Swap thread and result variables
+	to correspond to actual thread functions.
+	* rwlock1.c: Change test description comment to correspond
+	to the actual test.
+
+	* condvar1_2.c: Loop over the test many times in the hope
+	of detecting any intermittent deadlocks. This is to
+	test a fixed problem in pthread_cond_destroy.c.
+
+	* spin4.c: Remove unused variable.
+
+2002-02-17  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* condvar1_1.c: New test.
+	* condvar1_2.c: New test.
+
+2002-02-07  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* delay1.c: New test.
+	* delay2.c: New test.
+	* exit4.c: New test.
+
+2002-02-02  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* mutex8: New test.
+	* mutex8n: New test.
+	* mutex8e: New test.
+	* mutex8r: New test.
+	* cancel6a: New test.
+	* cancel6d: New test.
+	* cleanup0.c: Add pragmas for inline optimisation control.
+	* cleanup1.c: Add pragmas for inline optimisation control.
+	* cleanup2.c: Add pragmas for inline optimisation control.
+	* cleanup3.c: Add pragmas for inline optimisation control.
+	* condvar7.c: Add pragmas for inline optimisation control.
+	* condvar8.c: Add pragmas for inline optimisation control.
+	* condvar9.c: Add pragmas for inline optimisation control.
+
+2002-01-30  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cleanup1.c (): Must be declared __cdecl when compiled
+	as C++ AND testing the standard C library version.
+
+2002-01-16  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* spin4.c (main): Fix renamed function call.
+
+2002-01-14  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* exception3.c (main): Shorten wait time.
+
+2002-01-09  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* mutex7.c: New test.
+	* mutex7n.c: New test.
+	* mutex7e.c: New test.
+	* mutex7r.c: New test.
+	* mutex6.c: Modified to avoid leaving the locked mutex
+	around on exit.
+
+2001-10-25  Ross Johnson  <rpj@setup1.ise.canberra.edu.au>
+
+	* condvar2.c: Remove reference to cv->nWaitersUnblocked.
+	* condvar2_1.c: Likewise; lower NUMTHREADS from 60 to 30.
+	* condvar3_1.c: Likewise.
+	* condvar3_2.c: Likewise.
+	* count1.c: lower NUMTHREADS from 60 to 30.
+	* inherit1.c: Determine valid priority values and then
+	assert values returned by POSIX routines are the same.
+	* priority1.c: Likewise.
+	* priority2.c: Likewise.
+	
+2001-07-12  Ross Johnson  <rpj@setup1.ise.canberra.edu.au>
+
+	* barrier5.c: Assert that precisely one thread receives
+	PTHREAD_BARRIER_SERIAL_THREAD at each barrier.
+
+2001-07-09  Ross Johnson  <rpj@setup1.ise.canberra.edu.au>
+
+	* barrier3.c: Fixed.
+	* barrier4.c: Fixed.
+	* barrier5.c: New; proves that all threads in the group
+	reaching the barrier wait and then resume together. Repeats the test
+	using groups of 1 to 16 threads. Each group of threads must negotiate
+	a large number of barriers (10000).
+	* spin4.c: Fixed.
+	* test.h (error_string): Modified the success (0) value.
+
+2001-07-07  Ross Johnson  <rpj@setup1.ise.canberra.edu.au>
+
+	* spin3.c: Changed test and fixed.
+	* spin4.c: Fixed.
+	* barrier3.c: Fixed.
+	* barrier4.c: Fixed.
+
+2001-07-05  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* spin1.c: New; testing spinlocks.
+	* spin2.c: New; testing spinlocks.
+	* spin3.c: New; testing spinlocks.
+	* spin4.c: New; testing spinlocks.
+	* barrier1.c: New; testing barriers.
+	* barrier2.c: New; testing barriers.
+	* barrier3.c: New; testing barriers.
+	* barrier4.c: New; testing barriers.
+	* GNUmakefile: Add new tests.
+	* Makefile: Add new tests.
+
+2001-07-01  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* benchtest3.c: New; timing mutexes.
+	* benchtest4.c: New; time mutexes.
+	* condvar3_1.c: Fixed bug - Alexander Terekhov
+	* condvar3_3.c: New test.
+
+2001-06-25  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* priority1.c: New test.
+	* priority2.c: New test.
+	* inherit1.c: New test.
+	* benchtest1.c: New; timing mutexes.
+	* benchtest2.c: New; timing mutexes.
+	* mutex4.c: Modified to test all mutex types.
+
+2001-06-8  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* mutex5.c: Insert inert change to quell compiler warnings.
+	* condvar3_2.c: Remove unused variable.
+	
+2001-06-3  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* condvar2_1.c: New test.
+	* condvar3_1.c: New test.
+	* condvar3_2.c: New test.
+
+2001-05-30  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* mutex1n.c: New test.
+	* mutex1e.c: New test.
+	* mutex1r.c: New test.
+	* mutex4.c: Now locks and unlocks a mutex.
+	* mutex5.c: New test.
+	* mutex6.c: New test.
+	* mutex6n.c: New test.
+	* mutex6e.c: New test.
+	* mutex6r.c: New test.
+	* Makefile: Added new tests; reorganised.
+	* GNUmakefile: Likewise.
+	* rwlock6.c: Fix to properly prove read-while-write locking
+	and single writer locking.
+
+2001-05-29  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* Makefile: Reorganisation.
+	* GNUmakefile: Likewise.
+	- Thomas Pfaff <tpfaff@gmx.net>
+
+	* exception1.c: Add stdio.h include to define fprintf and stderr
+	in non-exception C version of main().
+	* exception2.c: Likewise.
+	* exception3.c: Likewise.
+
+	* Makefile (rwlock7): Add new test.
+	* GNUmakefile (rwlock7): Add new test.
+	* rwlock7.c: New test.
+	* rwlock6.c: Changed to test that writer has priority.
+
+	* eyal1.c (main): Unlock each mutex_start lock before destroying
+	it.
+
+2000-12-29  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* GNUmakefile: Add mutex4 test; ensure libpthreadw32.a is
+	removed for "clean" target.
+	* Makefile: Add mutex4 test.
+
+	* exception3.c: Remove SEH code; automatically pass the test
+	under SEH (which is an N/A environment).
+
+	* mutex4.c: New test.
+
+	* eyal1.c (do_work_unit): Add a dummy "if" to force the
+	optimiser to retain code; reduce thread work loads.
+
+	* condvar8.c (main): Add an additional "assert" for debugging;
+	increase pthread_cond_signal timeout.
+
+2000-12-28  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* eyal1.c: Increase thread work loads.
+	* exception2.c: New test.
+	* exception3.c: New test.
+	* Makefile: Add new tests exception2.c and exception3.c.
+	* GNUmakefile: Likewise.
+
+2000-12-11  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cleanup3.c: Remove unused variable.
+	* cleanup2.c: Likewise.
+	* exception1.c: Throw an exception rather than use
+	a deliberate zero divide so that catch(...) will
+	handle it under Mingw32. Mingw32 now builds the
+	library correctly to pass all tests - see Thomas
+	Pfaff's detailed instructions re needed changes
+	to Mingw32 in the Pthreads-Win32 FAQ.
+
+2000-09-08  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cancel5.c: New; tests calling pthread_cancel()
+	from the main thread without first creating a
+	POSIX thread struct for the non-POSIX main thread
+	- this forces pthread_cancel() to create one via
+	pthread_self().
+	* Makefile (cancel5): Add new test.
+	* GNUmakefile (cancel5): Likewise.
+
+2000-08-17  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* create2.c: New; Test that pthread_t contains
+	the W32 HANDLE before it calls the thread routine
+	proper.
+
+2000-08-13  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* condvar3.c: Minor change to eliminate compiler
+	warning.
+
+	* condvar4.c: ditto.
+
+	* condvar5.c: ditto.
+
+	* condvar6.c: ditto.
+
+	* condvar7.c: ditto.
+
+	* condvar8.c: ditto.
+
+	* condvar9.c: ditto.
+
+	* exit1.c: Function needed return statement.
+
+	* cleanup1.c: Remove unnecessary printf arg.
+
+	* cleanup2.c: Fix cast.
+
+	* rwlock6.c: Fix casts.
+
+	* exception1.c (PtW32CatchAll): Had the wrong name;
+	fix casts.
+
+	* cancel3.c: Remove unused waitLock variable.
+
+	* GNUmakefile: Change library/dll naming; add new tests;
+	general minor changes.
+
+	* Makefile: Change library/dll naming; add targets for
+	testing each of the two VC++ EH scheme versions;
+	default target now issues help message; compile warnings
+	now interpreted as errors to stop the make; add new
+	tests; restructure to remove prerequisites needed
+	otherwise.
+
+	* README: Updated.
+
+
+2000-08-10  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* eyal1.c (main): Change implicit cast to explicit
+	cast when passing "print_server" function pointer;
+	G++ no longer allows implicit func parameter casts.
+
+	* cleanup1.c: Remove unused "waitLock".
+	(main): Fix implicit parameter cast.
+
+	* cancel2.c (main): Fix implicit parameter cast.
+
+	* cancel4.c (main): Fix implicit parameter cast.
+
+	* cancel3.c (main): Fix implicit parameter cast.
+
+	* GNUmakefile: Renamed from Makefile; Add missing
+	cancel1 and cancel2 test targets.
+
+	* Makefile: Converted for use with MS nmake.
+
+2000-08-06  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* ccl.bat: Add /nologo to remove extraneous output.
+
+	* exception1.c (exceptionedThread): Init 'dummy';
+	put expression into if condition to prevent optimising away;
+	remove unused variable.
+
+	* cancel4.c (mythread): Cast return value to avoid warnings.
+
+	* cancel2.c (mythread): Missing #endif.
+
+	* condvar9.c (mythread): Cast return value to avoid warnings.
+
+	* condvar8.c (mythread): Cast return value to avoid warnings.
+
+	* condvar7.c (mythread): Cast return value to avoid warnings.
+
+	* cleanup3.c (mythread): Cast return value to avoid warnings.
+
+	* cleanup2.c (mythread): Cast return value to avoid warnings.
+
+	* cleanup1.c (mythread): Cast return value to avoid warnings.
+
+	* condvar5.c (mythread): Cast return value to avoid warnings.
+
+	* condvar3.c (mythread): Cast return value to avoid warnings.
+
+	* condvar6.c (mythread): Cast return value to avoid warnings.
+
+	* condvar4.c (mythread): Cast return value to avoid warnings.
+
+2000-08-05  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cancel2.c: Use PtW32CatchAll macro if defined.
+
+	* exception1.c: Use PtW32CatchAll macro if defined.
+
+2000-08-02  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* tsd1.c: Fix typecasts of &result [g++ is now very fussy].
+	
+	* test.h (assert): Return 0's explicitly to allay
+	g++ errors.
+	
+	* join2.c: Add explicit typecasts.
+	
+	* join1.c: Add explicit typecasts.
+	
+	* join0.c: Add explicit typecasts.
+	
+	* eyal1.c: Add explicit typecasts.
+	
+	* count1.c (main): Add type cast to remove g++ parse warning
+	[gcc-2.95.2 seems to have tightened up on this].
+
+	* Makefile (GLANG): Use c++ explicitly.
+	Remove MSVC sections (was commented out).
+	Add target to generate cpp output.
+
+2000-07-25  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* runtest.bat: modified to work under W98.
+	
+	* runall.bat: Add new tests; modified to work under W98.
+	It was ok under NT.
+
+	* Makefile: Add new tests.
+
+	* exception1.c: New; Test passing exceptions back to the
+	application and retaining library internal exceptions.
+
+	* join0.c: New; Test a single join.
+
+2000-01-06  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cleanup1.c: New; Test cleanup handler executes (when thread is
+	canceled).
+
+	* cleanup2.c: New; Test cleanup handler executes (when thread is
+	not canceled).
+
+	* cleanup3.c: New; Test cleanup handler does not execute
+	(when thread is not canceled).
+
+2000-01-04  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* cancel4.c: New; Test cancelation does not occur in deferred
+	cancelation threads with no cancelation points.
+
+	* cancel3.c: New; Test asynchronous cancelation.
+
+	* context1.c: New; Test context switching method for async
+	cancelation.
+
+1999-11-23  Ross Johnson  <rpj@special.ise.canberra.edu.au>
+
+	* test.h: Add header includes; include local header versions rather
+	than system versions; rearrange the assert macro defines.
+
+1999-11-07  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* loadfree.c: New. Test loading and freeing the library (DLL).
+
+1999-10-30  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* cancel1.c: New. Test pthread_setcancelstate and
+	pthread_setcanceltype functions.
+	* eyal1.c (waste_time): Change calculation to avoid FP exception
+	on Aplhas
+	- Rich Peters <rpeters@micro-magic.com>
+
+Oct 14 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* condvar7.c: New. Test broadcast after waiting thread is canceled.
+	* condvar8.c: New. Test multiple broadcasts.
+	* condvar9.c: New. Test multiple broadcasts with thread
+	cancelation.
+	
+Sep 16 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* rwlock6.c: New test.
+
+Sep 15 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* rwlock1.c: New test.
+	* rwlock2.c: New test.
+	* rwlock3.c: New test.
+	* rwlock4.c: New test.
+	* rwlock5.c: New test.
+
+Aug 22 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* runall.bat (join2): Add test.
+
+Aug 19 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* join2.c: New test.
+
+Wed Aug 12 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* Makefile (LIBS): Add -L.
+
+Mon May 31 10:25:01 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* Makefile (GLANG): Add GCC language option.
+
+Sat May 29 23:29:04 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* runall.bat (condvar5): Add new test.
+
+	* runall.bat (condvar6): Add new test.
+
+	* Makefile (condvar5) : Add new test.
+	
+	* Makefile (condvar6) : Add new test.
+	
+	* condvar5.c: New test for pthread_cond_broadcast().
+
+	* condvar6.c: New test for pthread_cond_broadcast().
+
+Sun Apr  4 12:04:28 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* tsd1.c (mythread): Change Sleep(0) to sched_yield().
+	(sched.h): Include.
+
+	* condvar3.c (mythread): Remove redundant Sleep().
+
+	* runtest.bat: Re-organised to make more informative.
+
+Fri Mar 19 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* *.bat: redirect unwanted output to nul:
+
+	* runall.bat: new.
+
+	* cancel1.c: new. Not part of suite yet.
+	
+Mon Mar 15 00:17:55 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* mutex1.c: only test mutex init and destroy; add assertions.
+
+	* count1.c: raise number of spawned threads to 60 (appears to
+	be the limit under Win98).
+
+Sun Mar 14 21:31:02 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* test.h (assert): add assertion trace option.
+	Use:
+	"#define ASSERT_TRACE 1" to turn it on,
+	"#define ASSERT_TRACE 0" to turn it off (default).
+
+	* condvar3.c (main): add more assertions.
+
+	* condvar4.c (main): add more assertions.
+
+	* condvar1.c (main): add more assertions.
+
+Fri Mar 12 08:34:15 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* condvar4.c (cvthing): switch the order of the INITIALIZERs.
+
+	* eyal1.c (main): Fix trylock loop; was not waiting for thread to lock
+	the "started" mutex.
+
+Wed Mar 10 10:41:52 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* tryentercs.c: Apply typo patch from bje.
+
+	* tryentercs2.c: Ditto.
+
+Sun Mar  7 10:41:52 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* Makefile (condvar3, condvar4): Add tests.
+
+	* condvar4.c (General): Reduce to simple test case; prerequisite
+	is condvar3.c; add description.
+
+	* condvar3.c (General): Reduce to simple test case; prerequisite
+	is condvar2.c; add description.
+
+	* condvar2.c (General): Reduce to simple test case; prerequisite
+	is condvar1.c; add description.
+
+	* condvar1.c (General): Reduce to simple test case; add
+	description.
+
+	* Template.c (Comments): Add generic test detail.
+
+1999-02-23  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+        * Template.c: Revamp.
+
+        * condvar1.c: Add.
+
+        * condvar2.c: Add.
+
+        * Makefile: Add condvar1 condvar2 tests.
+
+        * exit1.c, exit2.c, exit3.c: Cosmetic changes.
+
+1999-02-23  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* Makefile: Some refinement.
+
+	* *.c: More exhaustive checking through assertions; clean up;
+	add some more tests.
+
+	* Makefile: Now actually runs the tests.
+
+	* tests.h: Define our own assert macro. The Mingw32
+	version pops up a dialog but we want to run non-interactively.
+
+	* equal1.c: use assert a little more directly so that it
+	prints the actual call statement.
+
+	* exit1.c: Modify to return 0 on success, 1 on failure.
+
+1999-02-22  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* self2.c: Bring up to date.
+
+	* self3.c: Ditto.
+
+1999-02-21  Ben Elliston  <bje@cygnus.com>
+
+	* README: Update.
+
+	* Makefile: New file. Run all tests automatically. Primitive tests
+	are run first; more complex tests are run last.
+
+	* count1.c: New test. Validate the thread count.
+
+	* exit2.c: Perform a simpler test.
+	
+	* exit3.c: New test. Replaces exit2.c, since exit2.c needs to
+	perform simpler checking first.
+
+	* create1.c: Update to use the new testsuite exiting convention.
+	
+	* equal1.c: Likewise.
+
+	* mutex1.c: Likewise.
+
+	* mutex2.c: Likewise.
+
+	* once1.c: Likewise.
+
+	* self2.c: Likewise.
+
+	* self3.c: Likewise.
+
+	* tsd1.c: Likewise.
+
+1999-02-20  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* mutex2.c: Test static mutex initialisation.
+
+	* test.h: New. Declares a table mapping error numbers to
+	error names.
+
+1999-01-17  Ross Johnson  <rpj@ise.canberra.edu.au>
+
+	* runtest: New script to build and run a test in the tests directory.
+
+Wed Dec 30 11:22:44 1998  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* tsd1.c: Re-written. See comments at start of file.
+	* Template.c: New. Contains skeleton code and comment template
+	intended to fully document the test.
+
+Fri Oct 16 17:59:49 1998  Ross Johnson  <rpj@swan.canberra.edu.au>
+
+	* tsd1.c (destroy_key): Add function. Change diagnostics.
+
+Thu Oct 15 17:42:37 1998  Ross Johnson  <rpj@swan.canberra.edu.au>
+
+	* tsd1.c (mythread): Fix some casts and add some message
+	output. Fix inverted conditional.
+
+Mon Oct 12 02:12:29 1998  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
+
+	* tsd1.c: New. Test TSD using 1 key and 2 threads.
+
+1998-09-13  Ben Elliston  <bje@cygnus.com>
+
+	* eyal1.c: New file; contributed by Eyal Lebedinsky
+	<eyal@eyal.emu.id.au>.
+
+1998-09-12  Ben Elliston  <bje@cygnus.com>
+
+	* exit2.c (func): Return a value.
+	(main): Call the right thread entry function.
+
+1998-07-22  Ben Elliston  <bje@cygnus.com>
+
+	* exit2.c (main): Fix size of pthread_t array.
+
+1998-07-10  Ben Elliston  <bje@cygnus.com>
+
+	* exit2.c: New file; test pthread_exit() harder.
+
+	* exit1.c: New file; test pthread_exit().

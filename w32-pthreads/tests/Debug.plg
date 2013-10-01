@@ -1,0 +1,32 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Debug - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP9.tmp" with contents
+[
+/nologo /MDd /W3 /WX /Gm /ZI /Od /I ".." /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "CLEANUP_C" /FR"Debug/" /Fp"Debug/Debug.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"E:\PTHREADS\pthreads.2\tests\semaphore1.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP9.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPA.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib pthreadVC2d.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/Debug.pdb" /debug /machine:I386 /out:"Debug/Debug.exe" /pdbtype:sept /libpath:".." 
+.\Debug\semaphore1.obj
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPA.tmp"
+<h3>Output Window</h3>
+Compiling...
+semaphore1.c
+Linking...
+
+
+
+<h3>Results</h3>
+Debug.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

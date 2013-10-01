@@ -1,0 +1,37 @@
+uniform float4x4 ViewProj;
+uniform texture2d diffuse;
+
+uniform float4 color = {0.0, 1.0, 0.0, 1.0};
+
+sampler_state texSampler {
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	Filter    = Linear;
+};
+
+struct VertexInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertexInOut VShader(VertexInOut input)
+{
+	VertexInOut output;
+	output.pos = mul(float4(input.pos.xyz, 1.0), ViewProj);
+	output.uv = input.uv;
+	return output;
+}
+
+float4 PShader(VertexInOut input) : TARGET
+{
+	return diffuse.Sample(texSampler, input.uv) * color;
+}
+
+technique Default
+{
+	pass
+	{
+		vertex_shader = VShader(input);
+		pixel_shader  = PShader(input);
+	}
+}

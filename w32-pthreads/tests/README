@@ -1,0 +1,44 @@
+Running test cases in this directory
+------------------------------------
+
+These make scripts expect to be able to copy the dll, library
+and header files from this directory's parent directory,
+which should be the pthreads-win32 source directory.
+
+MS VC nmake
+-------------
+
+Run the target corresponding to the DLL version being tested:
+ 
+nmake clean VC
+ 
+or:
+ 
+nmake clean VS
+
+
+GNU GCC make
+------------
+
+Run "make clean" and then "make". See the "Known bugs" section
+in ..\README.
+
+
+Writing Test Cases
+------------------
+
+Tests written in this test suite should behave in the following manner:
+
+	* If a test fails, leave main() with a result of 1.
+
+	* If a test succeeds, leave main() with a result of 0.
+
+	* No diagnostic output should appear when the test is succeeding.
+	  Diagnostic output may be emitted if something in the test
+	  fails, to help determine the cause of the test failure.
+
+Notes:
+------
+
+Many test cases use knowledge of implementation internals which are supposed
+to be opaque to portable applications.

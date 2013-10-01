@@ -1,0 +1,74 @@
+2011-03-26  Ross Johnson  <ross at homemail dot com dot au>
+
+	* pthread_nutex_init.html (robust mutexes): Added
+	descriptions for newly implemented interface.
+	* pthread_mutexattr_init.html (robust mutexes): Likewise.
+	* pthread_getsequence_np.html: New.
+	* index.html: Updated.
+
+2008-06-30  Ross Johnson  <ross at callisto.canberra.edu.au>
+
+	* pthread_setschedparam.html: Fix "see also" links.
+
+2005-05-06  Ross Johnson  <ross at callisto.canberra.edu.au>
+
+	* PortabilityIssues.html: Was nonPortableIssues.html.
+	* index.html: Updated; add table of contents at top.
+	* *.html: Add Pthreads-win32 header info; add link back to the
+	index page 'index.html'.
+
+2005-05-06  Ross Johnson  <ross at callisto.canberra.edu.au>
+
+	* index.html: New.
+	* nonPortableIssues.html: New.
+	* pthread_attr_init.html: New.
+	* pthread_attr_setstackaddr.html: New.
+	* pthread_attr_setstacksize.html: New.
+	* pthread_barrierattr_init.html: New.
+	* pthread_barrierattr_setpshared.html: New.
+	* pthread_barrier_init.html: New.
+	* pthread_barrier_wait.html: New.
+	* pthreadCancelableWait.html: New.
+	* pthread_cancel.html: New.
+	* pthread_cleanup_push.html: New.
+	* pthread_condattr_init.html: New.
+	* pthread_condattr_setpshared.html: New.
+	* pthread_cond_init.html: New.
+	* pthread_create.html: New.
+	* pthread_delay_np.html: New.
+	* pthread_detach.html: New.
+	* pthread_equal.html: New.
+	* pthread_exit.html: New.
+	* pthread_getw32threadhandle_np.html: New.
+	* pthread_join.html: New.
+	* pthread_key_create.html: New.
+	* pthread_kill.html: New.
+	* pthread_mutexattr_init.html: New.
+	* pthread_mutexattr_setpshared.html: New.
+	* pthread_mutex_init.html: New.
+	* pthread_num_processors_np.html: New.
+	* pthread_once.html: New.
+	* pthread_rwlockattr_init.html: New.
+	* pthread_rwlockattr_setpshared.html: New.
+	* pthread_rwlock_init.html: New.
+	* pthread_rwlock_rdlock.html: New.
+	* pthread_rwlock_timedrdlock.html: New.
+	* pthread_rwlock_timedwrlock.html: New.
+	* pthread_rwlock_unlock.html: New.
+	* pthread_rwlock_wrlock.html: New.
+	* pthread_self.html: New.
+	* pthread_setcancelstate.html: New.
+	* pthread_setcanceltype.html: New.
+	* pthread_setconcurrency.html: New.
+	* pthread_setschedparam.html: New.
+	* pthread_spin_init.html: New.
+	* pthread_spin_lock.html: New.
+	* pthread_spin_unlock.html: New.
+	* pthread_timechange_handler_np.html: New.
+	* pthread_win32_attach_detach_np.html: New.
+	* pthread_win32_test_features_np.html: New.
+	* sched_get_priority_max.html: New.
+	* sched_getscheduler.html: New.
+	* sched_setscheduler.html: New.
+	* sched_yield.html: New.
+	* sem_init.html: New.

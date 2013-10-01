@@ -1,0 +1,718 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>PORTABILITYISSUES manual page</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.3  (Linux)">
+	<META NAME="CREATED" CONTENT="20050505;322600">
+	<META NAME="CHANGED" CONTENT="20050506;11580000">
+</HEAD>
+<BODY LANG="en-GB" BGCOLOR="#ffffff" DIR="LTR">
+<H4>POSIX Threads for Windows – REFERENCE - <A HREF="http://sources.redhat.com/pthreads-win32">Pthreads-w32</A></H4>
+<P><A HREF="index.html">Reference Index</A></P>
+<H4><A HREF="#toc">Table of Contents</A></H4>
+<H2><A HREF="#toc0" NAME="sect0">Name</A></H2>
+<P STYLE="font-weight: medium">Portability issues</P>
+<H2><A HREF="#toc1" NAME="sect1">Synopsis</A></H2>
+<P><B>Thread priority</B></P>
+<H2><A HREF="#toc2" NAME="sect2">Description</A></H2>
+<H3>Thread priority</H3>
+<P STYLE="margin-left: 2cm">POSIX defines a single contiguous range
+of numbers that determine a thread's priority. Win32 defines priority
+classes - and priority levels relative to these classes. Classes are
+simply priority base levels that the defined priority levels are
+relative to such that, changing a process's priority class will
+change the priority of all of it's threads, while the threads retain
+the same relativity to each other.</P>
+<P STYLE="margin-left: 2cm">A Win32 system defines a single
+contiguous monotonic range of values that define system priority
+levels, just like POSIX. However, Win32 restricts individual threads
+to a subset of this range on a per-process basis.</P>
+<P STYLE="margin-left: 2cm">The following table shows the base
+priority levels for combinations of priority class and priority value
+in Win32.</P>
+<DL>
+	<DL>
+		<DD>
+		<TABLE WIDTH=742 BORDER=0 CELLPADDING=0 CELLSPACING=0 STYLE="page-break-inside: avoid">
+			<COL WIDTH=50>
+			<COL WIDTH=356>
+			<COL WIDTH=336>
+			<THEAD>
+				<TR VALIGN=TOP>
+					<TD WIDTH=50>
+						<P ALIGN=CENTER><BR>
+						</P>
+					</TD>
+					<TD WIDTH=356>
+						<P ALIGN=LEFT><B>Process Priority Class</B></P>
+					</TD>
+					<TD WIDTH=336>
+						<P ALIGN=LEFT><B>Thread Priority Level</B></P>
+					</TD>
+				</TR>
+			</THEAD>
+			<TBODY>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="1" SDNUM="3081;">
+						<P ALIGN=CENTER>1</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="1" SDNUM="3081;">
+						<P ALIGN=CENTER>1</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="1" SDNUM="3081;">
+						<P ALIGN=CENTER>1</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="1" SDNUM="3081;">
+						<P ALIGN=CENTER>1</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="1" SDNUM="3081;">
+						<P ALIGN=CENTER>1</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="2" SDNUM="3081;">
+						<P ALIGN=CENTER>2</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="3" SDNUM="3081;">
+						<P ALIGN=CENTER>3</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="4" SDNUM="3081;">
+						<P ALIGN=CENTER>4</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="4" SDNUM="3081;">
+						<P ALIGN=CENTER>4</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="5" SDNUM="3081;">
+						<P ALIGN=CENTER>5</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="5" SDNUM="3081;">
+						<P ALIGN=CENTER>5</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="5" SDNUM="3081;">
+						<P ALIGN=CENTER>5</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Background NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="6" SDNUM="3081;">
+						<P ALIGN=CENTER>6</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="6" SDNUM="3081;">
+						<P ALIGN=CENTER>6</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="6" SDNUM="3081;">
+						<P ALIGN=CENTER>6</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Background NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="7" SDNUM="3081;">
+						<P ALIGN=CENTER>7</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="7" SDNUM="3081;">
+						<P ALIGN=CENTER>7</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Background NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="7" SDNUM="3081;">
+						<P ALIGN=CENTER>7</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Foreground NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="8" SDNUM="3081;">
+						<P ALIGN=CENTER>8</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="8" SDNUM="3081;">
+						<P ALIGN=CENTER>8</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="8" SDNUM="3081;">
+						<P ALIGN=CENTER>8</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Foreground NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="8" SDNUM="3081;">
+						<P ALIGN=CENTER>8</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="9" SDNUM="3081;">
+						<P ALIGN=CENTER>9</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="9" SDNUM="3081;">
+						<P ALIGN=CENTER>9</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Foreground NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="9" SDNUM="3081;">
+						<P ALIGN=CENTER>9</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="10" SDNUM="3081;">
+						<P ALIGN=CENTER>10</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Foreground NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="10" SDNUM="3081;">
+						<P ALIGN=CENTER>10</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="11" SDNUM="3081;">
+						<P ALIGN=CENTER>11</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>Foreground NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="11" SDNUM="3081;">
+						<P ALIGN=CENTER>11</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="11" SDNUM="3081;">
+						<P ALIGN=CENTER>11</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="12" SDNUM="3081;">
+						<P ALIGN=CENTER>12</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="12" SDNUM="3081;">
+						<P ALIGN=CENTER>12</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="13" SDNUM="3081;">
+						<P ALIGN=CENTER>13</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="14" SDNUM="3081;">
+						<P ALIGN=CENTER>14</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>HIGH_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>IDLE_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>BELOW_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="15" SDNUM="3081;">
+						<P ALIGN=CENTER>15</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>ABOVE_NORMAL_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="16" SDNUM="3081;">
+						<P ALIGN=CENTER>16</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_IDLE</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="17" SDNUM="3081;">
+						<P ALIGN=CENTER>17</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="-7" SDNUM="3081;">
+						<P ALIGN=LEFT>-7</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="18" SDNUM="3081;">
+						<P ALIGN=CENTER>18</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="-6" SDNUM="3081;">
+						<P ALIGN=LEFT>-6</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="19" SDNUM="3081;">
+						<P ALIGN=CENTER>19</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="-5" SDNUM="3081;">
+						<P ALIGN=LEFT>-5</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="20" SDNUM="3081;">
+						<P ALIGN=CENTER>20</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="-4" SDNUM="3081;">
+						<P ALIGN=LEFT>-4</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="21" SDNUM="3081;">
+						<P ALIGN=CENTER>21</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="-3" SDNUM="3081;">
+						<P ALIGN=LEFT>-3</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="22" SDNUM="3081;">
+						<P ALIGN=CENTER>22</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_LOWEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="23" SDNUM="3081;">
+						<P ALIGN=CENTER>23</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_BELOW_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="24" SDNUM="3081;">
+						<P ALIGN=CENTER>24</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="25" SDNUM="3081;">
+						<P ALIGN=CENTER>25</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_ABOVE_NORMAL</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="26" SDNUM="3081;">
+						<P ALIGN=CENTER>26</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_HIGHEST</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="27" SDNUM="3081;">
+						<P ALIGN=CENTER>27</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="3" SDNUM="3081;">
+						<P ALIGN=LEFT>3</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="28" SDNUM="3081;">
+						<P ALIGN=CENTER>28</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="4" SDNUM="3081;">
+						<P ALIGN=LEFT>4</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="29" SDNUM="3081;">
+						<P ALIGN=CENTER>29</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="5" SDNUM="3081;">
+						<P ALIGN=LEFT>5</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="30" SDNUM="3081;">
+						<P ALIGN=CENTER>30</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=BOTTOM SDVAL="6" SDNUM="3081;">
+						<P ALIGN=LEFT>6</P>
+					</TD>
+				</TR>
+				<TR>
+					<TD WIDTH=50 VALIGN=BOTTOM SDVAL="31" SDNUM="3081;">
+						<P ALIGN=CENTER>31</P>
+					</TD>
+					<TD WIDTH=356 VALIGN=TOP>
+						<P ALIGN=LEFT>REALTIME_PRIORITY_CLASS</P>
+					</TD>
+					<TD WIDTH=336 VALIGN=TOP>
+						<P ALIGN=LEFT>THREAD_PRIORITY_TIME_CRITICAL</P>
+					</TD>
+				</TR>
+			</TBODY>
+		</TABLE>
+	</DL>
+</DL>
+<P STYLE="margin-left: 2cm">Windows NT: Values -7, -6, -5, -4, -3, 3,
+4, 5, and 6 are not supported.</P>
+<P STYLE="margin-left: 2cm">As you can see, the real priority levels
+available to any individual Win32 thread are non-contiguous.</P>
+<P STYLE="margin-left: 2cm">An application using Pthreads-w32 should
+not make assumptions about the numbers used to represent thread
+priority levels, except that they are monotonic between the values
+returned by sched_get_priority_min() and sched_get_priority_max().
+E.g. Windows 95, 98, NT, 2000, XP make available a non-contiguous
+range of numbers between -15 and 15, while at least one version of
+WinCE (3.0) defines the minimum priority (THREAD_PRIORITY_LOWEST) as
+5, and the maximum priority (THREAD_PRIORITY_HIGHEST) as 1.</P>
+<P STYLE="margin-left: 2cm">Internally, pthreads-win32 maps any
+priority levels between THREAD_PRIORITY_IDLE and
+THREAD_PRIORITY_LOWEST to THREAD_PRIORITY_LOWEST, or between
+THREAD_PRIORITY_TIME_CRITICAL and THREAD_PRIORITY_HIGHEST to
+THREAD_PRIORITY_HIGHEST. Currently, this also applies to
+REALTIME_PRIORITY_CLASS even if levels -7, -6, -5, -4, -3, 3, 4, 5,
+and 6 are supported.</P>
+<P STYLE="margin-left: 2cm">If it wishes, a Win32 application using
+pthreads-w32 can use the Win32 defined priority macros
+THREAD_PRIORITY_IDLE through THREAD_PRIORITY_TIME_CRITICAL.</P>
+<H2><A HREF="#toc3" NAME="sect3">Author</A></H2>
+<P>Ross Johnson for use with <A HREF="http://sources.redhat.com/pthreads-win32">Pthreads-w32</A>.</P>
+<H2><A HREF="#toc4" NAME="sect4">See also</A></H2>
+<P><BR><BR>
+</P>
+<HR>
+<P><A NAME="toc"></A><B>Table of Contents</B></P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><A HREF="#sect0" NAME="toc0">Name</A>
+		</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A HREF="#sect1" NAME="toc1">Synopsis</A>
+		</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A HREF="#sect2" NAME="toc2">Description</A>
+		</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A HREF="#sect3" NAME="toc3">Author</A>
+		</P>
+	<LI><P><A HREF="#sect4" NAME="toc4">See also</A> 
+	</P>
+</UL>
+</BODY>
+</HTML>

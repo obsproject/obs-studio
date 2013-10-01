@@ -1,0 +1,21 @@
+Sizes of pthreads-win32 structs
+-------------------------------
+                     pthread_t    8
+                ptw32_thread_t  160
+               pthread_attr_t_   28
+                        sem_t_   12
+              pthread_mutex_t_   28
+          pthread_mutexattr_t_   12
+           pthread_spinlock_t_    8
+            pthread_barrier_t_   36
+        pthread_barrierattr_t_    4
+                pthread_key_t_   16
+               pthread_cond_t_   32
+           pthread_condattr_t_    4
+             pthread_rwlock_t_   28
+         pthread_rwlockattr_t_    4
+               pthread_once_t_   16
+               ptw32_cleanup_t   12
+             ptw32_mcs_node_t_   16
+                   sched_param    4
+-------------------------------

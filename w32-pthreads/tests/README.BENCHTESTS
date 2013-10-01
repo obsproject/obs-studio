@@ -1,0 +1,74 @@
+
+------------
+Benchmarking
+------------
+There is a set a benchmarking programs in the
+"tests" directory. These should be runnable using the
+following command-lines corresponding to each of the possible
+library builds:
+
+MSVC:
+nmake clean VC-bench
+nmake clean VCE-bench
+nmake clean VSE-bench
+
+Mingw32:
+make clean GC-bench
+make clean GCE-bench
+
+UWIN:
+The benchtests are run as part of the testsuite.
+
+
+Mutex benchtests
+----------------
+
+benchtest1 - Lock plus unlock on an unlocked mutex.
+benchtest2 - Lock plus unlock on a locked mutex.
+benchtest3 - Trylock on a locked mutex.
+benchtest4 - Trylock plus unlock on an unlocked mutex.
+
+
+Each test times up to three alternate synchronisation
+implementations as a reference, and then times each of
+the four mutex types provided by the library. Each is
+described below:
+
+Simple Critical Section
+- uses a simple Win32 critical section. There is no
+additional overhead for this case as there is in the
+remaining cases.
+
+POSIX mutex implemented using a Critical Section
+- The old implementation which uses runtime adaptation
+depending on the Windows variant being run on. When
+the pthreads DLL was run on WinNT or higher then
+POSIX mutexes would use Win32 Critical Sections.
+
+POSIX mutex implemented using a Win32 Mutex
+- The old implementation which uses runtime adaptation
+depending on the Windows variant being run on. When
+the pthreads DLL was run on Win9x then POSIX mutexes
+would use Win32 Mutexes (because TryEnterCriticalSection
+is not implemented on Win9x).
+
+PTHREAD_MUTEX_DEFAULT
+PTHREAD_MUTEX_NORMAL
+PTHREAD_MUTEX_ERRORCHECK
+PTHREAD_MUTEX_RECURSIVE
+- The current implementation supports these mutex types.
+The underlying basis of POSIX mutexes is now the same
+irrespective of the Windows variant, and should therefore
+have consistent performance.
+
+
+Semaphore benchtests
+--------------------
+
+benchtest5 - Timing for various uncontended cases.
+
+
+In all benchtests, the operation is repeated a large
+number of times and an average is calculated. Loop
+overhead is measured and subtracted from all test times.
+

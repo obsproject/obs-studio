@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Linux)">
+	<META NAME="CREATED" CONTENT="20050504;17350500">
+	<META NAME="CHANGEDBY" CONTENT="Ross Johnson">
+	<META NAME="CHANGED" CONTENT="20110326;18352700">
+	<META NAME="CHANGEDBY" CONTENT="Ross Johnson">
+	<STYLE TYPE="text/css">
+	<!--
+		H4.cjk { font-family: "AR PL UMing CN" }
+		H4.ctl { font-family: "Lohit Devanagari" }
+		H3.cjk { font-family: "AR PL UMing CN" }
+		H3.ctl { font-family: "Lohit Devanagari" }
+		H2.cjk { font-family: "AR PL UMing CN" }
+		H2.ctl { font-family: "Lohit Devanagari" }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-GB" DIR="LTR">
+<H4 CLASS="western">POSIX Threads for Windows – REFERENCE -
+<A HREF="http://sources.redhat.com/pthreads-win32">Pthreads-w32</A></H4>
+<H3 CLASS="western">Table of Contents</H3>
+<P STYLE="margin-left: 0.79in"><A HREF="#sect1" NAME="toc1">POSIX
+threads API reference</A><BR><A HREF="#sect2" NAME="toc2">Miscellaneous
+POSIX thread safe routines provided by Pthreads-w32</A><BR><A HREF="#sect3" NAME="toc3">Non-portable
+Pthreads-w32 routines</A><BR><A HREF="#sect4" NAME="toc4">Other</A></P>
+<H2 CLASS="western"><A HREF="#toc1" NAME="sect1">POSIX threads API
+reference</A></H2>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_getdetachstate</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_getinheritsched</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_getschedparam</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_getschedpolicy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_getscope</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_setstackaddr.html"><B>pthread_attr_getstackaddr</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_setstacksize.html"><B>pthread_attr_getstacksize</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_setdetachstate</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_setinheritsched</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_setschedparam</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_setschedpolicy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_init.html"><B>pthread_attr_setscope</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_setstackaddr.html"><B>pthread_attr_setstackaddr</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_attr_setstacksize.html"><B>pthread_attr_setstacksize</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrierattr_init.html"><B>pthread_barrierattr_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrierattr_setpshared.html"><B>pthread_barrierattr_getpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrierattr_init.html"><B>pthread_barrierattr_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrierattr_setpshared.html"><B>pthread_barrierattr_setpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrier_init.html"><B>pthread_barrier_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrier_init.html"><B>pthread_barrier_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_barrier_wait.html"><B>pthread_barrier_wait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cancel.html"><B>pthread_cancel</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cleanup_push.html"><B>pthread_cleanup_pop</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cleanup_push.html"><B>pthread_cleanup_push</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_condattr_init.html"><B>pthread_condattr_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_condattr_setpshared.html"><B>pthread_condattr_getpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_condattr_init.html"><B>pthread_condattr_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_condattr_setpshared.html"><B>pthread_condattr_setpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_broadcast</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_signal</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_timedwait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cond_init.html"><B>pthread_cond_wait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_create.html"><B>pthread_create</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_detach.html"><B>pthread_detach</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_equal.html"><B>pthread_equal</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_exit.html"><B>pthread_exit</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_setconcurrency.html"><B>pthread_getconcurrency</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_setschedparam.html"><B>pthread_getschedparam</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_getunique_np.html"><B>pthread_getunique_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_key_create.html"><B>pthread_getspecific</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_join.html"><B>pthread_join</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_key_create.html"><B>pthread_key_create</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_key_create.html"><B>pthread_key_delete</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_kill.html"><B>pthread_kill</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_getkind_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_setpshared.html"><B>pthread_mutexattr_getpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_getrobust</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_gettype</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_setkind_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_setpshared.html"><B>pthread_mutexattr_setpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_setrobust</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutexattr_init.html"><B>pthread_mutexattr_settype</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_consistent</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_lock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_timedlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_trylock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_mutex_init.html"><B>pthread_mutex_unlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_once.html"><B>pthread_once</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlockattr_init.html"><B>pthread_rwlockattr_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlockattr_setpshared.html"><B>pthread_rwlockattr_getpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlockattr_init.html"><B>pthread_rwlockattr_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlockattr_setpshared.html"><B>pthread_rwlockattr_setpshared</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_init.html"><B>pthread_rwlock_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_init.html"><B>pthread_rwlock_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_rdlock.html"><B>pthread_rwlock_rdlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_timedrdlock.html"><B>pthread_rwlock_timedrdlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_timedwrlock.html"><B>pthread_rwlock_timedwrlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_rdlock.html"><B>pthread_rwlock_tryrdlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_wrlock.html"><B>pthread_rwlock_trywrlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_unlock.html"><B>pthread_rwlock_unlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_rwlock_wrlock.html"><B>pthread_rwlock_wrlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_self.html"><B>pthread_self</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cancel.html"><B>pthread_setcancelstate</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cancel.html"><B>pthread_setcanceltype</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_setconcurrency.html"><B>pthread_setconcurrency</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_setschedparam.html"><B>pthread_setschedparam</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_key_create.html"><B>pthread_setspecific</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_kill.html"><B>pthread_sigmask</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_spin_init.html"><B>pthread_spin_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_spin_init.html"><B>pthread_spin_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_spin_lock.html"><B>pthread_spin_lock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_spin_lock.html"><B>pthread_spin_trylock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_spin_unlock.html"><B>pthread_spin_unlock</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_cancel.html"><B>pthread_testcancel</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sched_get_priority_max.html"><B>sched_get_priority_max</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sched_get_priority_max.html"><B>sched_get_priority_min</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sched_getscheduler.html"><B>sched_getscheduler</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sched_setscheduler.html"><B>sched_setscheduler</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sched_yield.html"><B>sched_yield</B></A></P>
+<P STYLE="margin-left: 0.79in"><B>sem_close</B></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_destroy</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_getvalue</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_init</B></A></P>
+<P STYLE="margin-left: 0.79in"><B>sem_open</B></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_post</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_post_multiple</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_timedwait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_trywait</B></A></P>
+<P STYLE="margin-left: 0.79in"><B>sem_unlink</B></P>
+<P STYLE="margin-left: 0.79in"><A HREF="sem_init.html"><B>sem_wait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_kill.html"><B>sigwait</B></A></P>
+<H2 CLASS="western"><A HREF="#toc3" NAME="sect3">Non-portable
+Pthreads-w32 routines</A></H2>
+<P STYLE="margin-left: 0.79in"><A HREF="pthreadCancelableWait.html"><B>pthreadCancelableTimedWait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthreadCancelableWait.html"><B>pthreadCancelableWait</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_delay_np.html"><B>pthread_delay_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_getw32threadhandle_np.html"><B>pthread_getw32threadhandle_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_num_processors_np.html"><B>pthread_num_processors_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_win32_test_features_np.html"><B>pthread_win32_test_features_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_timechange_handler_np.html"><B>pthread_timechange_handler_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_win32_attach_detach_np.html"><B>pthread_win32_process_attach_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_win32_attach_detach_np.html"><B>pthread_win32_process_detach_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_win32_attach_detach_np.html"><B>pthread_win32_thread_attach_np</B></A></P>
+<P STYLE="margin-left: 0.79in"><A HREF="pthread_win32_attach_detach_np.html"><B>pthread_win32_thread_detach_np</B></A></P>
+<H2 CLASS="western"><A HREF="#toc4" NAME="sect4">Other</A></H2>
+<P STYLE="margin-left: 0.79in"><A HREF="PortabilityIssues.html"><B>Portability
+issues</B></A></P>
+</BODY>
+</HTML>
