@@ -40,7 +40,7 @@ static __thread graphics_t thread_graphics = NULL;
 static graphics_t thread_graphics = NULL;
 #endif
 
-#define IMMEDIATE_VERTEX_COUNT 512
+#define IMMEDIATE_COUNT 512
 
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name);
@@ -54,15 +54,15 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	da_push_back(graphics->matrix_stack, &top_mat);
 
 	vbd = vbdata_create();
-	vbd->num     = IMMEDIATE_VERTEX_COUNT;
-	vbd->points  = bmalloc(sizeof(struct vec3) * IMMEDIATE_VERTEX_COUNT);
-	vbd->normals = bmalloc(sizeof(struct vec3) * IMMEDIATE_VERTEX_COUNT);
-	vbd->colors  = bmalloc(sizeof(uint32_t)    * IMMEDIATE_VERTEX_COUNT);
+	vbd->num     = IMMEDIATE_COUNT;
+	vbd->points  = baligned_malloc(sizeof(struct vec3)*IMMEDIATE_COUNT, 16);
+	vbd->normals = baligned_malloc(sizeof(struct vec3)*IMMEDIATE_COUNT, 16);
+	vbd->colors  = baligned_malloc(sizeof(uint32_t)   *IMMEDIATE_COUNT, 16);
 	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
+	vbd->tvarray = baligned_malloc(sizeof(struct tvertarray), 16);
 	vbd->tvarray[0].width = 2;
 	vbd->tvarray[0].array =
-		bmalloc(sizeof(struct vec2) * IMMEDIATE_VERTEX_COUNT);
+		bmalloc(sizeof(struct vec2) * IMMEDIATE_COUNT);
 
 	graphics->immediate_vertbuffer = graphics->exports.
 		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
@@ -71,11 +71,11 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	vbd = vbdata_create();
 	vbd->num     = 4;
-	vbd->points  = bmalloc(sizeof(struct vec3) * 4);
+	vbd->points  = baligned_malloc(sizeof(struct vec3) * 4, 16);
 	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
+	vbd->tvarray = baligned_malloc(sizeof(struct tvertarray), 16);
 	vbd->tvarray[0].width = 2;
-	vbd->tvarray[0].array = bmalloc(sizeof(struct vec2) * 4);
+	vbd->tvarray[0].array = baligned_malloc(sizeof(struct vec2) * 4, 16);
 
 	memset(vbd->points,           0, sizeof(struct vec3) * 4);
 	memset(vbd->tvarray[0].array, 0, sizeof(struct vec2) * 4);
@@ -285,17 +285,17 @@ void gs_renderstart(bool b_new)
 		graphics->vbd = vertexbuffer_getdata(
 				graphics->immediate_vertbuffer);
 		memset(graphics->vbd->colors, 0xFF,
-				sizeof(uint32_t) * IMMEDIATE_VERTEX_COUNT);
+				sizeof(uint32_t) * IMMEDIATE_COUNT);
 
 		graphics->verts.array       = graphics->vbd->points;
 		graphics->norms.array       = graphics->vbd->normals;
 		graphics->colors.array      = graphics->vbd->colors;
 		graphics->texverts[0].array = graphics->vbd->tvarray[0].array;
 
-		graphics->verts.capacity       = IMMEDIATE_VERTEX_COUNT;
-		graphics->norms.capacity       = IMMEDIATE_VERTEX_COUNT;
-		graphics->colors.capacity      = IMMEDIATE_VERTEX_COUNT;
-		graphics->texverts[0].capacity = IMMEDIATE_VERTEX_COUNT;
+		graphics->verts.capacity       = IMMEDIATE_COUNT;
+		graphics->norms.capacity       = IMMEDIATE_COUNT;
+		graphics->colors.capacity      = IMMEDIATE_COUNT;
+		graphics->texverts[0].capacity = IMMEDIATE_COUNT;
 	}
 }
 
@@ -426,10 +426,10 @@ static inline bool validvertsize(graphics_t graphics, size_t num,
 		const char *name)
 {
 	if (graphics->using_immediate &&
-	    graphics->colors.num == IMMEDIATE_VERTEX_COUNT) {
+	    graphics->colors.num == IMMEDIATE_COUNT) {
 		blog(LOG_WARNING, "%s: tried to use over %u "
 				  "for immediate rendering",
-				  name, IMMEDIATE_VERTEX_COUNT);
+				  name, IMMEDIATE_COUNT);
 		return false;
 	}
 

@@ -193,13 +193,13 @@ static inline void vbdata_destroy(struct vb_data *data)
 	if (!data)
 		return;
 
-	bfree(data->points);
-	bfree(data->normals);
-	bfree(data->tangents);
-	bfree(data->colors);
+	baligned_free(data->points);
+	baligned_free(data->normals);
+	baligned_free(data->tangents);
+	baligned_free(data->colors);
 	for (i = 0; i < data->num_tex; i++)
-		bfree(data->tvarray[i].array);
-	bfree(data->tvarray);
+		baligned_free(data->tvarray[i].array);
+	baligned_free(data->tvarray);
 	bfree(data);
 }
 
