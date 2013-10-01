@@ -89,12 +89,6 @@
  * ===========================================
  *   Optional Source Exports
  * ===========================================
- *   void [name]_update(void *data, const char *settings)
- *       Updates the source's settings
- *
- *       settings: New settings of the source
- *
- * ---------------------------------------------------------
  *   void [name]_config(void *data, void *parent);
  *       Called to configure the source.
  *
