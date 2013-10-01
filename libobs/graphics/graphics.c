@@ -62,7 +62,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	vbd->tvarray = baligned_malloc(sizeof(struct tvertarray), 16);
 	vbd->tvarray[0].width = 2;
 	vbd->tvarray[0].array =
-		baligned_malloc(sizeof(struct vec2) * IMMEDIATE_COUNT);
+		baligned_malloc(sizeof(struct vec2) * IMMEDIATE_COUNT, 16);
 
 	graphics->immediate_vertbuffer = graphics->exports.
 		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
