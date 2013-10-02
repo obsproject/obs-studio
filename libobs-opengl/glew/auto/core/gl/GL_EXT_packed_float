@@ -1,0 +1,6 @@
+GL_EXT_packed_float
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_packed_float.txt
+GL_EXT_packed_float
+	GL_R11F_G11F_B10F_EXT 0x8C3A
+	GL_UNSIGNED_INT_10F_11F_11F_REV_EXT 0x8C3B
+	GL_RGBA_SIGNED_COMPONENTS_EXT 0x8C3C

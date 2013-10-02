@@ -1,0 +1,283 @@
+<!-- begin header.html -->
+<!--
+The OpenGL Extension Wrangler Library
+Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
+Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
+Copyright (C) 2002, Lev Povalahev
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, 
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, 
+  this list of conditions and the following disclaimer in the documentation 
+  and/or other materials provided with the distribution.
+* The name of the author may be used to endorse or promote products 
+  derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html/4/loose.dtd">
+<!-- &nbsp;<img src="new.png" height="12" alt="NEW!"> -->
+<html>
+<head>
+<title>GLEW: The OpenGL Extension Wrangler Library</title>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"> 
+<link href="glew.css" type="text/css" rel="stylesheet">
+</head>
+<body bgcolor="#fff0d0">
+<table border="0" width="100%" cellpadding="12" cellspacing="8" style="height:100%">
+<tr>
+<td bgcolor="#ffffff" align="left" valign="top" width="200">
+<table border="0" width="100%" cellpadding="0" cellspacing="0" align="left">
+<tr>
+<td valign="top">
+
+<table border="0" width="100%" cellpadding="0" cellspacing="0" align="left">
+<tr><td align="center"><i>Latest Release: <a href="https://sourceforge.net/projects/glew/files/glew/1.10.0/">1.10.0</a></i></td></tr>
+<tr><td align="center"><br></td></tr>
+<tr><td align="center"><img src="./glew.png" alt="GLEW Logo" width="97" height="75"></td></tr>
+<tr><td align="center"><br></td></tr>
+<tr><td align="center">
+<table border="0" cellpadding="0" cellspacing="0" align="center">
+<tr><td align="center"><a href="index.html">Download</a></td></tr>
+<tr><td align="center">Usage</td></tr>
+<tr><td align="center"><a href="build.html">Building</a></td></tr>
+<tr><td align="center"><a href="install.html">Installation</a></td></tr>
+<tr><td align="center"><a href="advanced.html">Source Generation</a></td></tr>
+<tr><td align="center"><a href="credits.html">Credits & Copyright</a></td></tr>
+<tr><td align="center"><a href="log.html">Change Log</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/projects/glew">Project Page</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/p/glew/mailman">Mailing Lists</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/p/glew/_list/tickets">Bug Tracker</a></td></tr>
+</table>
+<tr><td align="center"><br></tr>
+</table>
+</td>
+</tr>
+<tr>
+
+<td valign="bottom">
+<table border="0" width="100%" cellpadding="5" cellspacing="0" align="left">
+<tr><td align="center"><i>Last Update: 07-22-13</i></td></tr>
+<tr><td align="center">
+<a href="http://www.opengl.org"> <img src="./ogl_sm.jpg" width="68"
+height="35" border="0" alt="OpenGL Logo"></a>
+<a href="http://sourceforge.net"> <img
+src="http://sourceforge.net/sflogo.php?group_id=67586&amp;type=1"
+width="88" height="31" border="0" alt="SourceForge Logo"></a>
+</td>
+</tr>
+<!--- <tr><td align="center"><a
+href="http://sourceforge.net/donate/index.php?group_id=67586"><img
+src="http://images.sourceforge.net/images/project-support.jpg"
+width="88" height="32" border="0" alt="Support This Project"></a></td></tr> -->
+</table>
+</td>
+</tr>
+</table>
+</td>
+
+<td bgcolor="#ffffff" align="left" valign="top">
+
+<h1>The OpenGL Extension Wrangler Library</h1>
+
+<!-- end header.html -->
+
+
+<h2>Initializing GLEW</h2>
+<p>
+First you need to create a valid OpenGL rendering context and call
+<tt>glewInit()</tt> to initialize the extension entry points.  If
+<tt>glewInit()</tt> returns <tt>GLEW_OK</tt>, the initialization
+succeeded and you can use the available extensions as well as core
+OpenGL functionality. For example:
+</p>
+
+<p class="pre">
+#include &lt;GL/glew.h&gt;<br>
+#include &lt;GL/glut.h&gt;<br>
+...<br>
+glutInit(&amp;argc, argv);<br>
+glutCreateWindow("GLEW Test");<br>
+GLenum err = glewInit();<br>
+if (GLEW_OK != err)<br>
+{<br>
+&nbsp;&nbsp;/* Problem: glewInit failed, something is seriously wrong. */<br>
+&nbsp;&nbsp;fprintf(stderr, "Error: %s\n", glewGetErrorString(err));<br>
+&nbsp;&nbsp;...<br>
+}<br>
+fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));<br>
+</p>
+
+<h2>Checking for Extensions</h2>
+
+<p>
+Starting from GLEW 1.1.0, you can find out if a particular extension
+is available on your platform by querying globally defined variables
+of the form <tt>GLEW_{extension_name}</tt>:
+</p>
+
+<p class="pre">
+if (GLEW_ARB_vertex_program)<br>
+{<br>
+&nbsp;&nbsp;/* It is safe to use the ARB_vertex_program extension here. */<br>
+&nbsp;&nbsp;glGenProgramsARB(...);<br>
+}<br>
+</p>
+
+<p>
+<b>In GLEW 1.0.x, a global structure was used for this task. To ensure
+binary compatibility between releases, the struct was replaced with a
+set of variables.</b>
+</p>
+
+<p>
+You can also check for core OpenGL functionality.  For example, to
+see if OpenGL 1.3 is supported, do the following:
+</p>
+
+<p class="pre">
+if (GLEW_VERSION_1_3)<br>
+{<br>
+&nbsp;&nbsp;/* Yay! OpenGL 1.3 is supported! */<br>
+}<br>
+</p>
+
+<p>
+In general, you can check if <tt>GLEW_{extension_name}</tt> or
+<tt>GLEW_VERSION_{version}</tt> is true or false.
+</p>
+
+<p>
+It is also possible to perform extension checks from string
+input. Starting from the 1.3.0 release, use <tt>glewIsSupported</tt>
+to check if the required core or extension functionality is
+available:
+</p>
+
+<p class="pre">
+if (glewIsSupported("GL_VERSION_1_4&nbsp;&nbsp;GL_ARB_point_sprite"))<br>
+{<br>
+&nbsp;&nbsp;/* Great, we have OpenGL 1.4 + point sprites. */<br>
+}<br>
+</p>
+
+<p>
+For extensions only, <tt>glewGetExtension</tt> provides a slower alternative
+(GLEW 1.0.x-1.2.x). <b>Note that in the 1.3.0 release </b>
+<tt>glewGetExtension</tt> <b>was replaced with </b>
+<tt>glewIsSupported</tt>.
+</p>
+
+<p class="pre">
+if (glewGetExtension("GL_ARB_fragment_program"))<br>
+{<br>
+&nbsp;&nbsp;/* Looks like ARB_fragment_program is supported. */<br>
+}<br>
+</p>
+
+<h2>Experimental Drivers</h2>
+
+<p>
+GLEW obtains information on the supported extensions from the graphics
+driver.  Experimental or pre-release drivers, however, might not
+report every available extension through the standard mechanism, in
+which case GLEW will report it unsupported.  To circumvent this
+situation, the <tt>glewExperimental</tt> global switch can be turned
+on by setting it to <tt>GL_TRUE</tt> before calling
+<tt>glewInit()</tt>, which ensures that all extensions with valid
+entry points will be exposed.
+</p>
+
+<h2>Platform Specific Extensions</h2>
+
+<p>
+Platform specific extensions are separated into two header files:
+<tt>wglew.h</tt> and <tt>glxew.h</tt>, which define the available
+<tt>WGL</tt> and <tt>GLX</tt> extensions.  To determine if a certain
+extension is supported, query <tt>WGLEW_{extension name}</tt> or
+<tt>GLXEW_{extension_name}</tt>.  For example:
+</p>
+
+<p class="pre">
+#include &lt;GL/wglew.h&gt;<br>
+<br>
+if (WGLEW_ARB_pbuffer)<br>
+{<br>
+&nbsp;&nbsp;/* OK, we can use pbuffers. */<br>
+}<br>
+else<br>
+{<br>
+&nbsp;&nbsp;/* Sorry, pbuffers will not work on this platform. */<br>
+}<br>
+</p>
+
+<p>
+Alternatively, use <tt>wglewIsSupported</tt> or
+<tt>glxewIsSupported</tt> to check for extensions from a string:
+</p>
+
+<p class="pre">
+if (wglewIsSupported("WGL_ARB_pbuffer"))<br>
+{<br>
+&nbsp;&nbsp;/* OK, we can use pbuffers. */<br>
+}<br>
+</p>
+
+<h2>Utilities</h2>
+
+<p>
+GLEW provides two command-line utilities: one for creating a list of
+available extensions and visuals; and another for verifying extension
+entry points.
+</p>
+
+<h3>visualinfo: extensions and visuals</h3>
+
+<p>
+<tt>visualinfo</tt> is an extended version of <tt>glxinfo</tt>. The
+Windows version creates a file called <tt>visualinfo.txt</tt>, which
+contains a list of available OpenGL, WGL, and GLU extensions as well
+as a table of visuals aka. pixel formats. Pbuffer and MRT capable
+visuals are also included. For additional usage information, type
+<tt>visualinfo -h</tt>.
+</p>
+
+<h3>glewinfo: extension verification utility</h3>
+
+<p>
+<tt>glewinfo</tt> allows you to verify the entry points for the
+extensions supported on your platform. The Windows version
+reports the results to a text file called <tt>glewinfo.txt</tt>. The
+Unix version prints the results to <tt>stdout</tt>.
+</p>
+
+<p>Windows usage:</p>
+ <blockquote><pre>glewinfo [-pf &lt;id&gt;]</pre></blockquote>
+
+<p>where <tt>&lt;id&gt;</tt> is the pixel format id for which the
+capabilities are displayed.</p>
+
+<p>Unix usage:</p>
+<blockquote><pre>glewinfo [-display &lt;dpy&gt;] [-visual &lt;id&gt;]</pre></blockquote>
+
+<p>where <tt>&lt;dpy&gt;</tt> is the X11 display and <tt>&lt;id&gt;</tt> is
+the visual id for which the capabilities are displayed.</p>
+
+<!-- begin footer.html -->
+</td></tr></table></body>
+<!-- end footer.html -->
+

@@ -1,0 +1,28 @@
+NAME = $(GLEW_NAME)
+CC = cc
+LD = cc
+CFLAGS.EXTRA = -arch ppc -dynamic -fno-common
+#CFLAGS.EXTRA += -no-cpp-precomp
+LDFLAGS.EXTRA = -arch ppc
+ifneq (undefined, $(origin GLEW_APPLE_GLX))
+CFLAGS.EXTRA += -I/usr/X11R6/include -D'GLEW_APPLE_GLX'
+LDFLAGS.GL = -L/usr/X11R6/lib -lXmu -lXi -lGL -lXext -lX11
+else
+LDFLAGS.GL = -framework AGL -framework OpenGL
+endif
+LDFLAGS.STATIC =
+LDFLAGS.DYNAMIC =
+WARN = -Wall -W
+POPT = -O2
+CFLAGS.EXTRA += -fPIC
+BIN.SUFFIX =
+LIB.SONAME    = lib$(NAME).$(SO_MAJOR).dylib
+LIB.DEVLNK    = lib$(NAME).dylib
+LIB.SHARED    = lib$(NAME).$(SO_VERSION).dylib
+LIB.STATIC    = lib$(NAME).a
+LDFLAGS.SO    = -dynamiclib -install_name $(GLEW_DEST)/lib/$(LIB.SHARED) -current_version $(SO_VERSION) -compatibility_version $(SO_MAJOR)
+LIB.SONAME.MX = lib$(NAME)mx.$(SO_MAJOR).dylib
+LIB.DEVLNK.MX = lib$(NAME)mx.dylib
+LIB.SHARED.MX = lib$(NAME)mx.$(SO_VERSION).dylib
+LIB.STATIC.MX = lib$(NAME)mx.a
+LDFLAGS.SO.MX = -dynamiclib -install_name $(GLEW_DEST)/lib/$(LIB.SHARED.MX) -current_version $(SO_VERSION) -compatibility_version $(SO_MAJOR)

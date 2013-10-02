@@ -1,0 +1,4 @@
+GLX_ATI_pixel_format_float
+
+GLX_ATI_pixel_format_float
+	GLX_RGBA_FLOAT_ATI_BIT 0x00000100

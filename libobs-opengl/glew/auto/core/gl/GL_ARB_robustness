@@ -1,0 +1,30 @@
+GL_ARB_robustness
+http://www.opengl.org/registry/specs/ARB/robustness.txt
+GL_ARB_robustness
+	GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT_ARB 0x00000004
+	GL_LOSE_CONTEXT_ON_RESET_ARB 0x8252
+	GL_GUILTY_CONTEXT_RESET_ARB 0x8253
+	GL_INNOCENT_CONTEXT_RESET_ARB 0x8254
+	GL_UNKNOWN_CONTEXT_RESET_ARB 0x8255
+	GL_RESET_NOTIFICATION_STRATEGY_ARB 0x8256
+	GL_NO_RESET_NOTIFICATION_ARB 0x8261
+	GLenum glGetGraphicsResetStatusARB (void)
+	void glGetnColorTableARB (GLenum target, GLenum format, GLenum type, GLsizei bufSize, void* table)
+	void glGetnCompressedTexImageARB (GLenum target, GLint lod, GLsizei bufSize, void* img)
+	void glGetnConvolutionFilterARB (GLenum target, GLenum format, GLenum type, GLsizei bufSize, void* image)
+	void glGetnHistogramARB (GLenum target, GLboolean reset, GLenum format, GLenum type, GLsizei bufSize, void* values)
+	void glGetnMapdvARB (GLenum target, GLenum query, GLsizei bufSize, GLdouble* v)
+	void glGetnMapfvARB (GLenum target, GLenum query, GLsizei bufSize, GLfloat* v)
+	void glGetnMapivARB (GLenum target, GLenum query, GLsizei bufSize, GLint* v)
+	void glGetnMinmaxARB (GLenum target, GLboolean reset, GLenum format, GLenum type, GLsizei bufSize, void* values)
+	void glGetnPixelMapfvARB (GLenum map, GLsizei bufSize, GLfloat* values)
+	void glGetnPixelMapuivARB (GLenum map, GLsizei bufSize, GLuint* values)
+	void glGetnPixelMapusvARB (GLenum map, GLsizei bufSize, GLushort* values)
+	void glGetnPolygonStippleARB (GLsizei bufSize, GLubyte* pattern)
+	void glGetnSeparableFilterARB (GLenum target, GLenum format, GLenum type, GLsizei rowBufSize, void* row, GLsizei columnBufSize, GLvoid*column, GLvoid*span)
+	void glGetnTexImageARB (GLenum target, GLint level, GLenum format, GLenum type, GLsizei bufSize, void* img)
+	void glGetnUniformdvARB (GLuint program, GLint location, GLsizei bufSize, GLdouble* params)
+	void glGetnUniformfvARB (GLuint program, GLint location, GLsizei bufSize, GLfloat* params)
+	void glGetnUniformivARB (GLuint program, GLint location, GLsizei bufSize, GLint* params)
+	void glGetnUniformuivARB (GLuint program, GLint location, GLsizei bufSize, GLuint* params)
+	void glReadnPixelsARB (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLsizei bufSize, void* data)

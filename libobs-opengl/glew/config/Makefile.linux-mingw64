@@ -1,0 +1,26 @@
+# For cross-compiling from Linux to Windows amd64 using mingw32
+# http://www.mingw.org/
+#
+# $ make SYSTEM=linux-mingw64
+#
+
+NAME  := glew32
+CC    := amd64-mingw32msvc-gcc
+LD    := amd64-mingw32msvc-ld
+LN    :=
+STRIP :=
+CFLAGS.SO = -DGLEW_BUILD
+LDFLAGS.GL = -lopengl32 -lgdi32 -luser32 -lkernel32
+WARN = -Wall -W
+POPT = -O2
+BIN.SUFFIX = .exe
+LIB.SONAME    = lib$(NAME).dll
+LIB.DEVLNK    = lib$(NAME).dll.a    # for mingw this is the dll import lib
+LIB.SHARED    = $(NAME).dll
+LIB.STATIC    = lib$(NAME).a        # the static lib will be broken (see CFLAGS.SO)
+LDFLAGS.SO    = -shared -soname $(LIB.SONAME) --out-implib lib/$(LIB.DEVLNK)
+LIB.SONAME.MX = lib$(NAME)mx.dll
+LIB.DEVLNK.MX = lib$(NAME)mx.dll.a  # for mingw this is the dll import lib
+LIB.SHARED.MX = $(NAME)mx.dll
+LIB.STATIC.MX = lib$(NAME)mx.a      # the static lib will be broken (see CFLAGS.SO)
+LDFLAGS.SO.MX = -shared -soname $(LIB.SONAME.MX) --out-implib lib/$(LIB.DEVLNK.MX)

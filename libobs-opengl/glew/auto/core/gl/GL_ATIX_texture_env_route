@@ -1,0 +1,6 @@
+GL_ATIX_texture_env_route
+http://www.ati.com/developer/sdk/RadeonSDK/Html/Info/ATIX_texture_env_route.txt
+GL_ATIX_texture_env_route
+	GL_SECONDARY_COLOR_ATIX 0x8747
+	GL_TEXTURE_OUTPUT_RGB_ATIX 0x8748
+	GL_TEXTURE_OUTPUT_ALPHA_ATIX 0x8749

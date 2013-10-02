@@ -1,0 +1,57 @@
+
+#include <windows.h>
+
+#ifdef GLEW_MX
+#  ifdef _DEBUG
+#    define FILENAME "glewinfo-mxd.exe"
+#  else
+#    define FILENAME "glewinfo-mx.exe"
+#  endif
+#else
+#  ifdef _DEBUG
+#    define FILENAME "glewinfod.exe"
+#  else
+#    define FILENAME "glewinfo.exe"
+#  endif
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+VS_VERSION_INFO VERSIONINFO 
+FILEVERSION GLEW_MAJOR, GLEW_MINOR, GLEW_MICRO, 0
+PRODUCTVERSION GLEW_MAJOR, GLEW_MINOR, GLEW_MICRO, 0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+FILEFLAGS VS_FF_DEBUG
+#else
+FILEFLAGS 0x0L
+#endif
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "The OpenGL Extension Wrangler Library\r\nCopyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>\r\nCopyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>\r\nCopyright (C) 2002, Lev Povalahev\r\nAll rights reserved.\r\n \r\nRedistribution and use in source and binary forms, with or without \r\nmodification, are permitted provided that the following conditions are met:\r\n\r\n* Redistributions of source code must retain the above copyright notice, \r\n  this list of conditions and the following disclaimer.\r\n* Redistributions in binary form must reproduce the above copyright notice, \r\n  this list of conditions and the following disclaimer in the documentation \r\n  and/or other materials provided with the distribution.\r\n* The name of the author may be used to endorse or promote products \r\n  derived from this software without specific prior written permission.\r\n\r\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' \r\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE \r\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\r\nARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE \r\nLIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR \r\nCONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF \r\nSUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\r\nINTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\r\nCONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\r\nARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF\r\nTHE POSSIBILITY OF SUCH DAMAGE.\r\n\r\nLicense Applicability. Except to the extent portions of this file are\r\nmade subject to an alternative license as permitted in the SGI Free\r\nSoftware License B, Version 1.1 (the 'License'), the contents of this\r\nfile are subject only to the provisions of the License. You may not use\r\nthis file except in compliance with the License. You may obtain a copy\r\nof the License at Silicon Graphics, Inc., attn: Legal Services, 1600\r\nAmphitheatre Parkway, Mountain View, CA 94043-1351, or at:\r\n\r\nhttp://oss.sgi.com/projects/FreeB\r\n\r\nNote that, as provided in the License, the Software is distributed on an\r\n'AS IS' basis, with ALL EXPRESS AND IMPLIED WARRANTIES AND CONDITIONS\r\nDISCLAIMED, INCLUDING, WITHOUT LIMITATION, ANY IMPLIED WARRANTIES AND\r\nCONDITIONS OF MERCHANTABILITY, SATISFACTORY QUALITY, FITNESS FOR A\r\nPARTICULAR PURPOSE, AND NON-INFRINGEMENT.\r\n\r\nOriginal Code. The Original Code is: OpenGL Sample Implementation,\r\nVersion 1.2.1, released January 26, 2000, developed by Silicon Graphics,\r\nInc. The Original Code is Copyright (c) 1991-2000 Silicon Graphics, Inc.\r\nCopyright in any portions created by third parties is as indicated\r\nelsewhere herein. All Rights Reserved.\r\n\r\nAdditional Notice Provisions: This software was created using the\r\nOpenGL(R) version 1.2.1 Sample Implementation published by SGI, but has\r\nnot been independently verified as being compliant with the OpenGL(R)\r\nversion 1.2.1 Specification.\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "Utility for verifying extension entry points\0"
+            VALUE "FileVersion", "GLEW_MAJOR,GLEW_MINOR,GLEW_MICRO,0\0"
+            VALUE "InternalName", "glewinfo\0"
+            VALUE "LegalCopyright", "© 2002-2008 Milan Ikits & Marcelo Magallon\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", FILENAME "\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "The OpenGL Extension Wrangler Library\0"
+            VALUE "ProductVersion", "GLEW_MAJOR,GLEW_MINOR,GLEW_MICRO,0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

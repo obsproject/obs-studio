@@ -1,0 +1,167 @@
+<!-- begin header.html -->
+<!--
+The OpenGL Extension Wrangler Library
+Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
+Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
+Copyright (C) 2002, Lev Povalahev
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, 
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, 
+  this list of conditions and the following disclaimer in the documentation 
+  and/or other materials provided with the distribution.
+* The name of the author may be used to endorse or promote products 
+  derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html/4/loose.dtd">
+<!-- &nbsp;<img src="new.png" height="12" alt="NEW!"> -->
+<html>
+<head>
+<title>GLEW: The OpenGL Extension Wrangler Library</title>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"> 
+<link href="glew.css" type="text/css" rel="stylesheet">
+</head>
+<body bgcolor="#fff0d0">
+<table border="0" width="100%" cellpadding="12" cellspacing="8" style="height:100%">
+<tr>
+<td bgcolor="#ffffff" align="left" valign="top" width="200">
+<table border="0" width="100%" cellpadding="0" cellspacing="0" align="left">
+<tr>
+<td valign="top">
+
+<table border="0" width="100%" cellpadding="0" cellspacing="0" align="left">
+<tr><td align="center"><i>Latest Release: <a href="https://sourceforge.net/projects/glew/files/glew/1.10.0/">1.10.0</a></i></td></tr>
+<tr><td align="center"><br></td></tr>
+<tr><td align="center"><img src="./glew.png" alt="GLEW Logo" width="97" height="75"></td></tr>
+<tr><td align="center"><br></td></tr>
+<tr><td align="center">
+<table border="0" cellpadding="0" cellspacing="0" align="center">
+<tr><td align="center"><a href="index.html">Download</a></td></tr>
+<tr><td align="center"><a href="basic.html">Usage</a></td></tr>
+<tr><td align="center"><a href="build.html">Building</a></td></tr>
+<tr><td align="center"><a href="install.html">Installation</a></td></tr>
+<tr><td align="center"><a href="advanced.html">Source Generation</a></td></tr>
+<tr><td align="center"><a href="credits.html">Credits & Copyright</a></td></tr>
+<tr><td align="center"><a href="log.html">Change Log</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/projects/glew">Project Page</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/p/glew/mailman">Mailing Lists</a></td></tr>
+<tr><td align="center"><a href="https://sourceforge.net/p/glew/_list/tickets">Bug Tracker</a></td></tr>
+</table>
+<tr><td align="center"><br></tr>
+</table>
+</td>
+</tr>
+<tr>
+
+<td valign="bottom">
+<table border="0" width="100%" cellpadding="5" cellspacing="0" align="left">
+<tr><td align="center"><i>Last Update: 07-22-13</i></td></tr>
+<tr><td align="center">
+<a href="http://www.opengl.org"> <img src="./ogl_sm.jpg" width="68"
+height="35" border="0" alt="OpenGL Logo"></a>
+<a href="http://sourceforge.net"> <img
+src="http://sourceforge.net/sflogo.php?group_id=67586&amp;type=1"
+width="88" height="31" border="0" alt="SourceForge Logo"></a>
+</td>
+</tr>
+<!--- <tr><td align="center"><a
+href="http://sourceforge.net/donate/index.php?group_id=67586"><img
+src="http://images.sourceforge.net/images/project-support.jpg"
+width="88" height="32" border="0" alt="Support This Project"></a></td></tr> -->
+</table>
+</td>
+</tr>
+</table>
+</td>
+
+<td bgcolor="#ffffff" align="left" valign="top">
+
+<h1>The OpenGL Extension Wrangler Library</h1>
+
+<!-- end header.html -->
+
+
+<h2>Supported WGL Extensions</h2>
+
+<table border="0" width="100%" cellpadding="1" cellspacing="0" align="center">
+<tr><td class="num">1</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/3DFX/3dfx_multisample.txt">3DFX_multisample</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">2</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/3DL/stereo_control.txt">3DL_stereo_control</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">3</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/AMD/wgl_gpu_association.txt">AMD_gpu_association</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">4</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_buffer_region.txt">ARB_buffer_region</a></td></tr>
+<tr><td class="num">5</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/ARB/wgl_create_context.txt">ARB_create_context</a></td></tr>
+<tr><td class="num">6</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_create_context.txt">ARB_create_context_profile</a></td></tr>
+<tr><td class="num">7</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_create_context_robustness.txt">ARB_create_context_robustness</a></td></tr>
+<tr><td class="num">8</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_extensions_string.txt">ARB_extensions_string</a></td></tr>
+<tr><td class="num">9</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/framebuffer_sRGB.txt">ARB_framebuffer_sRGB</a></td></tr>
+<tr><td class="num">10</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_make_current_read.txt">ARB_make_current_read</a></td></tr>
+<tr><td class="num">11</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/multisample.txt">ARB_multisample</a></td></tr>
+<tr><td class="num">12</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_pbuffer.txt">ARB_pbuffer</a></td></tr>
+<tr><td class="num">13</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_pixel_format.txt">ARB_pixel_format</a></td></tr>
+<tr><td class="num">14</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/color_buffer_float.txt">ARB_pixel_format_float</a></td></tr>
+<tr><td class="num">15</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_render_texture.txt">ARB_render_texture</a></td></tr>
+<tr><td class="num">16</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_robustness_isolation.txt">ARB_robustness_application_isolation</a></td></tr>
+<tr><td class="num">17</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ARB/wgl_robustness_isolation.txt">ARB_robustness_share_group_isolation</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">18</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/ATI/pixel_format_float.txt">ATI_pixel_format_float</a></td></tr>
+<tr><td class="num">19</td><td>&nbsp;</td><td>ATI_render_texture_rectangle</td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">20</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/EXT/wgl_create_context_es2_profile.txt">EXT_create_context_es2_profile</a></td></tr>
+<tr><td class="num">21</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/EXT/wgl_create_context_es_profile.txt">EXT_create_context_es_profile</a></td></tr>
+<tr><td class="num">22</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_depth_float.txt">EXT_depth_float</a></td></tr>
+<tr><td class="num">23</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_display_color_table.txt">EXT_display_color_table</a></td></tr>
+<tr><td class="num">24</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_extensions_string.txt">EXT_extensions_string</a></td></tr>
+<tr><td class="num">25</td><td>&nbsp;</td><td><a href="http://developer.download.nvidia.com/opengl/specs/GL_EXT_framebuffer_sRGB.txt">EXT_framebuffer_sRGB</a></td></tr>
+<tr><td class="num">26</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_make_current_read.txt">EXT_make_current_read</a></td></tr>
+<tr><td class="num">27</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_multisample.txt">EXT_multisample</a></td></tr>
+<tr><td class="num">28</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_pbuffer.txt">EXT_pbuffer</a></td></tr>
+<tr><td class="num">29</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_pixel_format.txt">EXT_pixel_format</a></td></tr>
+<tr><td class="num">30</td><td>&nbsp;</td><td><a href="http://developer.download.nvidia.com/opengl/specs/GL_EXT_packed_float.txt">EXT_pixel_format_packed_float</a></td></tr>
+<tr><td class="num">31</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_swap_control.txt">EXT_swap_control</a></td></tr>
+<tr><td class="num">32</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/EXT/wgl_swap_control_tear.txt">EXT_swap_control_tear</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">33</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_digital_video_control.txt">I3D_digital_video_control</a></td></tr>
+<tr><td class="num">34</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_gamma.txt">I3D_gamma</a></td></tr>
+<tr><td class="num">35</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_genlock.txt">I3D_genlock</a></td></tr>
+<tr><td class="num">36</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_image_buffer.txt">I3D_image_buffer</a></td></tr>
+<tr><td class="num">37</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_swap_frame_lock.txt">I3D_swap_frame_lock</a></td></tr>
+<tr><td class="num">38</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/I3D/wgl_swap_frame_usage.txt">I3D_swap_frame_usage</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">39</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/DX_interop.txt">NV_DX_interop</a></td></tr>
+<tr><td class="num">40</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/DX_interop2.txt">NV_DX_interop2</a></td></tr>
+<tr><td class="num">41</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/copy_image.txt">NV_copy_image</a></td></tr>
+<tr><td class="num">42</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/float_buffer.txt">NV_float_buffer</a></td></tr>
+<tr><td class="num">43</td><td>&nbsp;</td><td><a href="http://developer.download.nvidia.com/opengl/specs/WGL_nv_gpu_affinity.txt">NV_gpu_affinity</a></td></tr>
+<tr><td class="num">44</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/multisample_coverage.txt">NV_multisample_coverage</a></td></tr>
+<tr><td class="num">45</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/present_video.txt">NV_present_video</a></td></tr>
+<tr><td class="num">46</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/render_depth_texture.txt">NV_render_depth_texture</a></td></tr>
+<tr><td class="num">47</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/render_texture_rectangle.txt">NV_render_texture_rectangle</a></td></tr>
+<tr><td class="num">48</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/wgl_swap_group.txt">NV_swap_group</a></td></tr>
+<tr><td class="num">49</td><td>&nbsp;</td><td><a href="http://oss.sgi.com/projects/ogl-sample/registry/NV/vertex_array_range.txt">NV_vertex_array_range</a></td></tr>
+<tr><td class="num">50</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/video_capture.txt">NV_video_capture</a></td></tr>
+<tr><td class="num">51</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/NV/wgl_video_output.txt">NV_video_output</a></td></tr>
+<tr><td><br></td><td></td><td></td></tr>
+<tr><td class="num">52</td><td>&nbsp;</td><td><a href="http://www.opengl.org/registry/specs/gl/OML/wgl_sync_control.txt">OML_sync_control</a></td></tr>
+</table>
+<!-- begin footer.html -->
+</td></tr></table></body>
+<!-- end footer.html -->
+

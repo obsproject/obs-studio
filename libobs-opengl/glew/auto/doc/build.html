@@ -1,0 +1,47 @@
+<h2>Building GLEW</h2>
+
+<h3>Windows</h3>
+
+<p>A MS Visual Studio project is provided in the <tt>build/vc6</tt> directory.</p>
+<p>Pre-built shared and static libraries are also available for <a href="index.html">download</a>.</p>
+
+<h3>Makefile</h3>
+
+<p>For platforms other than MS Windows, the provided <tt>Makefile</tt> is used.</p> 
+
+<h4>Command-line variables</h4>
+
+<table border=0 cellpadding=0 cellspacing=10>
+<tr><td valign=top><tt>SYSTEM</tt></td><td valign=top>auto</td>
+<td align=left>Target system to build: darwin, linux, solaris, etc.<br/>For a full list of supported targets: <tt>ls config/Makefile.*</tt><br/>
+<a href="http://git.savannah.gnu.org/gitweb/?p=config.git;a=tree">config.guess</a> is used to auto detect, as necessary.</td></tr>
+<tr><td valign=top><tt>GLEW_DEST</tt></td><td valign=top><tt>/usr</tt></td>
+<td align=left>Base directory for installation.</td></tr>
+</table>
+
+<h4>Make targets</h4>
+
+<table border=0 cellpadding=0 cellspacing=10>
+<tr><td valign=top><tt>all</tt></td><td>Build everything.</td><tr>
+<tr><td valign=top><tt>glew.lib</tt></td><td>Build static and dynamic GLEW libraries.</td><tr>
+<tr><td valign=top><tt>glew.lib.mx</tt></td><td>Build static and dynamic GLEWmx libraries.</td><tr>
+<tr><td valign=top><tt>glew.bin</tt></td><td>Build <tt>glewinfo</tt> and <tt>visualinfo</tt> utilities.</td><tr>
+<tr><td valign=top><tt>clean</tt></td><td>Delete temporary and built files.</td><tr>
+<tr><td valign=top><tt>install.all</tt></td><td>Install everything.</td><tr>
+<tr><td valign=top><tt>install</tt></td><td>Install GLEW libraries.</td><tr>
+<tr><td valign=top><tt>install.mx</tt></td><td>Install GLEWmx libraries.</td><tr>
+<tr><td valign=top><tt>install.bin</tt></td><td>Install <tt>glewinfo</tt> and <tt>visualinfo</tt> utilities.</td><tr>
+<tr><td valign=top><tt>uninstall</tt></td><td>Delete installed files.</td><tr>
+</table>
+
+<h4>Requirements</h4>
+
+<ul>
+<li>GNU make</li>
+<li>perl</li>
+<li>wget</li>
+<li>GNU sed</li>
+<li>gcc compiler</li>
+</ul>
+
+Ubuntu: <pre>sudo apt-get install Xmu-dev Xi-Dev</pre>

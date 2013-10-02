@@ -1,0 +1,7 @@
+GL_EXT_texture_compression_rgtc
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_texture_compression_rgtc.txt
+GL_EXT_texture_compression_rgtc
+	GL_COMPRESSED_RED_RGTC1_EXT 0x8DBB
+	GL_COMPRESSED_SIGNED_RED_RGTC1_EXT 0x8DBC
+	GL_COMPRESSED_RED_GREEN_RGTC2_EXT 0x8DBD
+	GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT 0x8DBE

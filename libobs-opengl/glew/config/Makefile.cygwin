@@ -1,0 +1,24 @@
+NAME = GLEW
+GLEW_DEST ?= /usr
+# use gcc for linking, with ld it does not work
+CC := cc
+LD := cc
+LN :=
+LDFLAGS.EXTRA =
+LIBDIR = $(GLEW_DEST)/lib
+LDFLAGS.GL = -lXmu -lXi -lGL -lXext -lX11
+LDFLAGS.STATIC = -Wl,-Bstatic
+LDFLAGS.DYNAMIC = -Wl,-Bdynamic
+WARN = -Wall -W
+POPT = -O2
+BIN.SUFFIX = .exe
+LIB.SONAME    = cyg$(NAME)-$(GLEW_MAJOR)-$(GLEW_MINOR).dll
+LIB.DEVLNK    = lib$(NAME).dll.a
+LIB.SHARED    = cyg$(NAME)-$(GLEW_MAJOR)-$(GLEW_MINOR).dll
+LIB.STATIC    = lib$(NAME).a
+LDFLAGS.SO    = -shared -Wl,--out-implib,lib/$(LIB.DEVLNK)
+LIB.SONAME.MX = cyg$(NAME)mx-$(GLEW_MAJOR)-$(GLEW_MINOR).dll
+LIB.DEVLNK.MX = lib$(NAME)mx.dll.a
+LIB.SHARED.MX = cyg$(NAME)mx-$(GLEW_MAJOR)-$(GLEW_MINOR).dll
+LIB.STATIC.MX = lib$(NAME)mx.a
+LDFLAGS.SO.MX = -shared -Wl,--out-implib,lib/$(LIB.DEVLNK.MX)

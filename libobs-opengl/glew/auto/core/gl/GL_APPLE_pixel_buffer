@@ -1,0 +1,4 @@
+GL_APPLE_pixel_buffer
+
+GL_APPLE_pixel_buffer
+	GL_MIN_PBUFFER_VIEWPORT_DIMS_APPLE 0x8A10

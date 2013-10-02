@@ -1,0 +1,13 @@
+GL_ARB_vertex_attrib_64bit
+http://www.opengl.org/registry/specs/ARB/vertex_attrib_64bit.txt
+GL_ARB_vertex_attrib_64bit
+	void glGetVertexAttribLdv (GLuint index, GLenum pname, GLdouble* params)
+	void glVertexAttribL1d (GLuint index, GLdouble x)
+	void glVertexAttribL1dv (GLuint index, const GLdouble* v)
+	void glVertexAttribL2d (GLuint index, GLdouble x, GLdouble y)
+	void glVertexAttribL2dv (GLuint index, const GLdouble* v)
+	void glVertexAttribL3d (GLuint index, GLdouble x, GLdouble y, GLdouble z)
+	void glVertexAttribL3dv (GLuint index, const GLdouble* v)
+	void glVertexAttribL4d (GLuint index, GLdouble x, GLdouble y, GLdouble z, GLdouble w)
+	void glVertexAttribL4dv (GLuint index, const GLdouble* v)
+	void glVertexAttribLPointer (GLuint index, GLint size, GLenum type, GLsizei stride, const void* pointer)

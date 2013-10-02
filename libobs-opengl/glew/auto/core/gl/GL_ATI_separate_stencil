@@ -1,0 +1,9 @@
+GL_ATI_separate_stencil
+http://www.opengl.org/registry/specs/ATI/separate_stencil.txt
+GL_ATI_separate_stencil
+	GL_STENCIL_BACK_FUNC_ATI 0x8800
+	GL_STENCIL_BACK_FAIL_ATI 0x8801
+	GL_STENCIL_BACK_PASS_DEPTH_FAIL_ATI 0x8802
+	GL_STENCIL_BACK_PASS_DEPTH_PASS_ATI 0x8803
+	void glStencilOpSeparateATI (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+	void glStencilFuncSeparateATI (GLenum frontfunc, GLenum backfunc, GLint ref, GLuint mask)

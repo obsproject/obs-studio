@@ -1,0 +1,4 @@
+GLX_EXT_create_context_es2_profile
+http://www.opengl.org/registry/specs/EXT/glx_create_context_es2_profile.txt
+GLX_EXT_create_context_es2_profile
+	GLX_CONTEXT_ES2_PROFILE_BIT_EXT 0x00000004

@@ -1,0 +1,9 @@
+GL_EXT_texture_buffer_object
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_texture_buffer_object.txt
+GL_EXT_texture_buffer_object
+	GL_TEXTURE_BUFFER_EXT 0x8C2A
+	GL_MAX_TEXTURE_BUFFER_SIZE_EXT 0x8C2B
+	GL_TEXTURE_BINDING_BUFFER_EXT 0x8C2C
+	GL_TEXTURE_BUFFER_DATA_STORE_BINDING_EXT 0x8C2D
+	GL_TEXTURE_BUFFER_FORMAT_EXT 0x8C2E
+	void glTexBufferEXT (GLenum target, GLenum internalformat, GLuint buffer)

@@ -1,0 +1,163 @@
+GL_VERSION_3_0
+http://www.opengl.org/registry/doc/glspec30.20080811.pdf
+
+	GL_COMPARE_REF_TO_TEXTURE GL_COMPARE_R_TO_TEXTURE_ARB
+	GL_CLIP_DISTANCE0 GL_CLIP_PLANE0
+	GL_CLIP_DISTANCE1 GL_CLIP_PLANE1
+	GL_CLIP_DISTANCE2 GL_CLIP_PLANE2
+	GL_CLIP_DISTANCE3 GL_CLIP_PLANE3
+	GL_CLIP_DISTANCE4 GL_CLIP_PLANE4
+	GL_CLIP_DISTANCE5 GL_CLIP_PLANE5
+	GL_MAX_CLIP_DISTANCES GL_MAX_CLIP_PLANES
+	GL_MAJOR_VERSION 0x821B
+	GL_MINOR_VERSION 0x821C
+	GL_NUM_EXTENSIONS 0x821D
+	GL_CONTEXT_FLAGS 0x821E
+	GL_DEPTH_BUFFER 0x8223
+	GL_STENCIL_BUFFER 0x8224
+	GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT 0x0001
+	GL_RGBA32F 0x8814
+	GL_RGB32F 0x8815
+	GL_RGBA16F 0x881A
+	GL_RGB16F 0x881B
+	GL_VERTEX_ATTRIB_ARRAY_INTEGER 0x88FD
+	GL_MAX_ARRAY_TEXTURE_LAYERS 0x88FF
+	GL_MIN_PROGRAM_TEXEL_OFFSET 0x8904
+	GL_MAX_PROGRAM_TEXEL_OFFSET 0x8905
+	GL_CLAMP_VERTEX_COLOR 0x891A
+	GL_CLAMP_FRAGMENT_COLOR 0x891B
+	GL_CLAMP_READ_COLOR 0x891C
+	GL_FIXED_ONLY 0x891D
+	GL_MAX_VARYING_COMPONENTS GL_MAX_VARYING_FLOATS
+	GL_TEXTURE_RED_TYPE 0x8C10
+	GL_TEXTURE_GREEN_TYPE 0x8C11
+	GL_TEXTURE_BLUE_TYPE 0x8C12
+	GL_TEXTURE_ALPHA_TYPE 0x8C13
+	GL_TEXTURE_LUMINANCE_TYPE 0x8C14
+	GL_TEXTURE_INTENSITY_TYPE 0x8C15
+	GL_TEXTURE_DEPTH_TYPE 0x8C16
+	GL_TEXTURE_1D_ARRAY 0x8C18
+	GL_PROXY_TEXTURE_1D_ARRAY 0x8C19
+	GL_TEXTURE_2D_ARRAY 0x8C1A
+	GL_PROXY_TEXTURE_2D_ARRAY 0x8C1B
+	GL_TEXTURE_BINDING_1D_ARRAY 0x8C1C
+	GL_TEXTURE_BINDING_2D_ARRAY 0x8C1D
+	GL_R11F_G11F_B10F 0x8C3A
+	GL_UNSIGNED_INT_10F_11F_11F_REV 0x8C3B
+	GL_RGB9_E5 0x8C3D
+	GL_UNSIGNED_INT_5_9_9_9_REV 0x8C3E
+	GL_TEXTURE_SHARED_SIZE 0x8C3F
+	GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH 0x8C76
+	GL_TRANSFORM_FEEDBACK_BUFFER_MODE 0x8C7F
+	GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS 0x8C80
+	GL_TRANSFORM_FEEDBACK_VARYINGS 0x8C83
+	GL_TRANSFORM_FEEDBACK_BUFFER_START 0x8C84
+	GL_TRANSFORM_FEEDBACK_BUFFER_SIZE 0x8C85
+	GL_PRIMITIVES_GENERATED 0x8C87
+	GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 0x8C88
+	GL_RASTERIZER_DISCARD 0x8C89
+	GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS 0x8C8A
+	GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS 0x8C8B
+	GL_INTERLEAVED_ATTRIBS 0x8C8C
+	GL_SEPARATE_ATTRIBS 0x8C8D
+	GL_TRANSFORM_FEEDBACK_BUFFER 0x8C8E
+	GL_TRANSFORM_FEEDBACK_BUFFER_BINDING 0x8C8F
+	GL_RGBA32UI 0x8D70
+	GL_RGB32UI 0x8D71
+	GL_RGBA16UI 0x8D76
+	GL_RGB16UI 0x8D77
+	GL_RGBA8UI 0x8D7C
+	GL_RGB8UI 0x8D7D
+	GL_RGBA32I 0x8D82
+	GL_RGB32I 0x8D83
+	GL_RGBA16I 0x8D88
+	GL_RGB16I 0x8D89
+	GL_RGBA8I 0x8D8E
+	GL_RGB8I 0x8D8F
+	GL_RED_INTEGER 0x8D94
+	GL_GREEN_INTEGER 0x8D95
+	GL_BLUE_INTEGER 0x8D96
+	GL_ALPHA_INTEGER 0x8D97
+	GL_RGB_INTEGER 0x8D98
+	GL_RGBA_INTEGER 0x8D99
+	GL_BGR_INTEGER 0x8D9A
+	GL_BGRA_INTEGER 0x8D9B
+	GL_SAMPLER_1D_ARRAY 0x8DC0
+	GL_SAMPLER_2D_ARRAY 0x8DC1
+	GL_SAMPLER_1D_ARRAY_SHADOW 0x8DC3
+	GL_SAMPLER_2D_ARRAY_SHADOW 0x8DC4
+	GL_SAMPLER_CUBE_SHADOW 0x8DC5
+	GL_UNSIGNED_INT_VEC2 0x8DC6
+	GL_UNSIGNED_INT_VEC3 0x8DC7
+	GL_UNSIGNED_INT_VEC4 0x8DC8
+	GL_INT_SAMPLER_1D 0x8DC9
+	GL_INT_SAMPLER_2D 0x8DCA
+	GL_INT_SAMPLER_3D 0x8DCB
+	GL_INT_SAMPLER_CUBE 0x8DCC
+	GL_INT_SAMPLER_1D_ARRAY 0x8DCE
+	GL_INT_SAMPLER_2D_ARRAY 0x8DCF
+	GL_UNSIGNED_INT_SAMPLER_1D 0x8DD1
+	GL_UNSIGNED_INT_SAMPLER_2D 0x8DD2
+	GL_UNSIGNED_INT_SAMPLER_3D 0x8DD3
+	GL_UNSIGNED_INT_SAMPLER_CUBE 0x8DD4
+	GL_UNSIGNED_INT_SAMPLER_1D_ARRAY 0x8DD6
+	GL_UNSIGNED_INT_SAMPLER_2D_ARRAY 0x8DD7
+	GL_QUERY_WAIT 0x8E13
+	GL_QUERY_NO_WAIT 0x8E14
+	GL_QUERY_BY_REGION_WAIT 0x8E15
+	GL_QUERY_BY_REGION_NO_WAIT 0x8E16
+	void glColorMaski (GLuint, GLboolean, GLboolean, GLboolean, GLboolean)
+	void glGetBooleani_v (GLenum, GLuint, GLboolean*)
+	void glEnablei (GLenum, GLuint)
+	void glDisablei (GLenum, GLuint)
+	GLboolean glIsEnabledi (GLenum, GLuint)
+	void glBeginTransformFeedback (GLenum)
+	void glEndTransformFeedback (void)
+	void glTransformFeedbackVaryings (GLuint, GLsizei, const GLchar **, GLenum)
+	void glGetTransformFeedbackVarying (GLuint, GLuint, GLsizei, GLsizei *, GLsizei *, GLenum *, GLchar *)
+	void glClampColor (GLenum, GLenum)
+	void glBeginConditionalRender (GLuint, GLenum)
+	void glEndConditionalRender (void)
+	void glVertexAttribI1i (GLuint, GLint)
+	void glVertexAttribI2i (GLuint, GLint, GLint)
+	void glVertexAttribI3i (GLuint, GLint, GLint, GLint)
+	void glVertexAttribI4i (GLuint, GLint, GLint, GLint, GLint)
+	void glVertexAttribI1ui (GLuint, GLuint)
+	void glVertexAttribI2ui (GLuint, GLuint, GLuint)
+	void glVertexAttribI3ui (GLuint, GLuint, GLuint, GLuint)
+	void glVertexAttribI4ui (GLuint, GLuint, GLuint, GLuint, GLuint)
+	void glVertexAttribI1iv (GLuint, const GLint*)
+	void glVertexAttribI2iv (GLuint, const GLint*)
+	void glVertexAttribI3iv (GLuint, const GLint*)
+	void glVertexAttribI4iv (GLuint, const GLint*)
+	void glVertexAttribI1uiv (GLuint, const GLuint*)
+	void glVertexAttribI2uiv (GLuint, const GLuint*)
+	void glVertexAttribI3uiv (GLuint, const GLuint*)
+	void glVertexAttribI4uiv (GLuint, const GLuint*)
+	void glVertexAttribI4bv (GLuint, const GLbyte*)
+	void glVertexAttribI4sv (GLuint, const GLshort*)
+	void glVertexAttribI4ubv (GLuint, const GLubyte*)
+	void glVertexAttribI4usv (GLuint, const GLushort*)
+	void glVertexAttribIPointer (GLuint, GLint, GLenum, GLsizei, const GLvoid*)
+	void glGetVertexAttribIiv (GLuint, GLenum, GLint*)
+	void glGetVertexAttribIuiv (GLuint, GLenum, GLuint*)
+	void glGetUniformuiv (GLuint, GLint, GLuint*)
+	void glBindFragDataLocation (GLuint, GLuint, const GLchar*)
+	GLint glGetFragDataLocation (GLuint, const GLchar*)
+	void glUniform1ui (GLint, GLuint)
+	void glUniform2ui (GLint, GLuint, GLuint)
+	void glUniform3ui (GLint, GLuint, GLuint, GLuint)
+	void glUniform4ui (GLint, GLuint, GLuint, GLuint, GLuint)
+	void glUniform1uiv (GLint, GLsizei, const GLuint*)
+	void glUniform2uiv (GLint, GLsizei, const GLuint*)
+	void glUniform3uiv (GLint, GLsizei, const GLuint*)
+	void glUniform4uiv (GLint, GLsizei, const GLuint*)
+	void glTexParameterIiv (GLenum, GLenum, const GLint*)
+	void glTexParameterIuiv (GLenum, GLenum, const GLuint*)
+	void glGetTexParameterIiv (GLenum, GLenum, GLint*)
+	void glGetTexParameterIuiv (GLenum, GLenum, GLuint*)
+	void glClearBufferiv (GLenum, GLint, const GLint*)
+	void glClearBufferuiv (GLenum, GLint, const GLuint*)
+	void glClearBufferfv (GLenum, GLint, const GLfloat*)
+	void glClearBufferfi (GLenum, GLint, GLfloat, GLint)
+	const GLubyte* glGetStringi (GLenum, GLuint)

@@ -1,0 +1,5 @@
+GLX_NV_vertex_array_range
+http://oss.sgi.com/projects/ogl-sample/registry/NV/vertex_array_range.txt
+GLX_NV_vertex_array_range
+	void * glXAllocateMemoryNV (GLsizei size, GLfloat readFrequency, GLfloat writeFrequency, GLfloat priority)
+	void glXFreeMemoryNV (void *pointer)

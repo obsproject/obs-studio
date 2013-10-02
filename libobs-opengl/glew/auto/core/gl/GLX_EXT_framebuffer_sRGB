@@ -1,0 +1,4 @@
+GLX_EXT_framebuffer_sRGB
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_framebuffer_sRGB.txt
+GLX_EXT_framebuffer_sRGB
+	GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT 0x20B2

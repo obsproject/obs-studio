@@ -1,0 +1,5 @@
+GLX_MESA_swap_control
+http://cgit.freedesktop.org/mesa/mesa/plain/docs/MESA_swap_control.spec
+GLX_MESA_swap_control
+	int glXGetSwapIntervalMESA (void)
+	int glXSwapIntervalMESA (unsigned int interval)

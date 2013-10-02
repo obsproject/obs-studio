@@ -1,0 +1,6 @@
+GLX_VERSION_1_4
+http://www.opengl.org/documentation/specs/glx/glx1.4.pdf
+GLX_VERSION_1_4
+	GLX_SAMPLE_BUFFERS 100000
+	GLX_SAMPLES 100001
+	extern void ( * glXGetProcAddress (const GLubyte *procName)) (void);

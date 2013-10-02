@@ -1,0 +1,5 @@
+GL_EXT_gpu_program_parameters
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_gpu_program_parameters.txt
+GL_EXT_gpu_program_parameters
+	void glProgramEnvParameters4fvEXT (GLenum target, GLuint index, GLsizei count, const GLfloat* params)
+	void glProgramLocalParameters4fvEXT (GLenum target, GLuint index, GLsizei count, const GLfloat* params)

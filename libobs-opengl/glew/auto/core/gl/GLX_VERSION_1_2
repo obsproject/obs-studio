@@ -1,0 +1,4 @@
+GLX_VERSION_1_2
+http://www.opengl.org/documentation/specs/glx/glx1.2.ps
+GLX_VERSION_1_2
+	Display* glXGetCurrentDisplay (void)

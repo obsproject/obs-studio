@@ -1,0 +1,25 @@
+GLX_SGIX_hyperpipe
+http://oss.sgi.com/projects/ogl-sample/registry/SGIX/hyperpipe_group.txt
+GLX_SGIX_hyperpipe
+	GLX_HYPERPIPE_ID_SGIX 0x8030
+	GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX 80
+	GLX_HYPERPIPE_DISPLAY_PIPE_SGIX 0x00000001
+	GLX_HYPERPIPE_RENDER_PIPE_SGIX 0x00000002
+	GLX_PIPE_RECT_SGIX 0x00000001
+	GLX_PIPE_RECT_LIMITS_SGIX 0x00000002
+	GLX_HYPERPIPE_STEREO_SGIX 0x00000003
+	GLX_HYPERPIPE_PIXEL_AVERAGE_SGIX 0x00000004
+	GLX_BAD_HYPERPIPE_CONFIG_SGIX 91
+	GLX_BAD_HYPERPIPE_SGIX 92
+	typedef struct {  char pipeName[GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX];   int  networkId; } GLXHyperpipeNetworkSGIX;
+	typedef struct {  char pipeName[GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX];   int channel;   unsigned int participationType;   int timeSlice; } GLXHyperpipeConfigSGIX;
+	typedef struct {  char pipeName[GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX];   int srcXOrigin;   int srcYOrigin;   int srcWidth;   int srcHeight;   int destXOrigin;   int destYOrigin;   int destWidth;   int destHeight; } GLXPipeRect;
+	typedef struct {  char pipeName[GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX];   int XOrigin;   int YOrigin;   int maxHeight;   int maxWidth; } GLXPipeRectLimits;
+	GLXHyperpipeNetworkSGIX * glXQueryHyperpipeNetworkSGIX (Display *dpy, int *npipes)
+	int glXHyperpipeConfigSGIX (Display *dpy, int networkId, int npipes, GLXHyperpipeConfigSGIX *cfg, int *hpId)
+	GLXHyperpipeConfigSGIX * glXQueryHyperpipeConfigSGIX (Display *dpy, int hpId, int *npipes)
+	int glXDestroyHyperpipeConfigSGIX (Display *dpy, int hpId)
+	int glXBindHyperpipeSGIX (Display *dpy, int hpId)
+	int glXQueryHyperpipeBestAttribSGIX (Display *dpy, int timeSlice, int attrib, int size, void *attribList, void *returnAttribList)
+	int glXHyperpipeAttribSGIX (Display *dpy, int timeSlice, int attrib, int size, void *attribList)
+	int glXQueryHyperpipeAttribSGIX (Display *dpy, int timeSlice, int attrib, int size, void *returnAttribList)

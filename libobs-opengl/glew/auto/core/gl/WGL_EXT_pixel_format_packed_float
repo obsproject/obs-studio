@@ -1,0 +1,4 @@
+WGL_EXT_pixel_format_packed_float
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_packed_float.txt
+WGL_EXT_pixel_format_packed_float
+	WGL_TYPE_RGBA_UNSIGNED_FLOAT_EXT 0x20A8

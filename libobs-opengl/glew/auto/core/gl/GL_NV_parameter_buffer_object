@@ -1,0 +1,11 @@
+GL_NV_parameter_buffer_object
+http://developer.download.nvidia.com/opengl/specs/GL_NV_parameter_buffer_object.txt
+GL_NV_parameter_buffer_object
+	GL_VERTEX_PROGRAM_PARAMETER_BUFFER_NV 0x8DA2
+	GL_GEOMETRY_PROGRAM_PARAMETER_BUFFER_NV 0x8DA3
+	GL_FRAGMENT_PROGRAM_PARAMETER_BUFFER_NV 0x8DA4
+	GL_MAX_PROGRAM_PARAMETER_BUFFER_BINDINGS_NV 0x8DA0
+	GL_MAX_PROGRAM_PARAMETER_BUFFER_SIZE_NV 0x8DA1
+	void glProgramBufferParametersfvNV (GLenum target, GLuint buffer, GLuint index, GLsizei count, const GLfloat *params)
+	void glProgramBufferParametersIivNV (GLenum target, GLuint buffer, GLuint index, GLsizei count, const GLint *params)
+	void glProgramBufferParametersIuivNV (GLenum target, GLuint buffer, GLuint index, GLsizei count, const GLuint *params)

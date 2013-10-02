@@ -1,0 +1,20 @@
+GL_VERSION_4_0
+http://www.opengl.org/registry/doc/glspec32.core.20090803.pdf
+
+	GL_SAMPLE_SHADING 0x8C36
+	GL_MIN_SAMPLE_SHADING_VALUE 0x8C37
+	GL_MIN_PROGRAM_TEXTURE_GATHER_OFFSET 0x8E5E
+	GL_MAX_PROGRAM_TEXTURE_GATHER_OFFSET 0x8E5F
+	GL_MAX_PROGRAM_TEXTURE_GATHER_COMPONENTS 0x8F9F
+	GL_TEXTURE_CUBE_MAP_ARRAY 0x9009
+	GL_TEXTURE_BINDING_CUBE_MAP_ARRAY 0x900A
+	GL_PROXY_TEXTURE_CUBE_MAP_ARRAY 0x900B
+	GL_SAMPLER_CUBE_MAP_ARRAY 0x900C
+	GL_SAMPLER_CUBE_MAP_ARRAY_SHADOW 0x900D
+	GL_INT_SAMPLER_CUBE_MAP_ARRAY 0x900E
+	GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY 0x900F
+	void glMinSampleShading (GLclampf value)
+	void glBlendEquationSeparatei (GLuint buf, GLenum modeRGB, GLenum modeAlpha)
+	void glBlendEquationi (GLuint buf, GLenum mode)
+	void glBlendFuncSeparatei (GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+	void glBlendFunci (GLuint buf, GLenum src, GLenum dst)

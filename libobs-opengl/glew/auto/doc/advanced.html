@@ -1,0 +1,169 @@
+<h2>Automatic Code Generation</h2>
+
+<p>
+Starting from release 1.1.0, the source code and parts of the
+documentation are automatically generated from the extension
+specifications in a two-step process.  In the first step,
+specification files from the OpenGL registry are downloaded and
+parsed. Skeleton descriptors are created for each extension.  These
+descriptors contain all necessary information for creating the source
+code and documentation in a simple and compact format, including the
+name of the extension, url link to the specification, tokens, function
+declarations, typedefs and struct definitions.  In the second step,
+the header files as well as the library and glewinfo source are
+generated from the descriptor files.  The code generation scripts are
+located in the <tt>auto</tt> subdirectory.
+</p>
+
+<p>
+The code generation scripts require GNU make, wget, and perl. On
+Windows, the simplest way to get access to these tools is to install
+<a href="http://www.cygwin.com/">Cygwin</a>, but make sure that the
+root directory is mounted in binary mode. The makefile in the
+<tt>auto</tt> directory provides the following build targets:
+</p>
+
+<table border=0 cellpadding=0 cellspacing=5>
+<tr><td align="left" valign="top"><tt>make</tt></td>
+<td align=left>Create the source files from the descriptors.<br/> If the
+descriptors do not exist, create them from the spec files.<br/> If the spec
+files do not exist, download them from the OpenGL repository.</td></tr>
+<tr><td align="left" valign="top"><tt>make&nbsp;clean</tt></td>
+<td align=left>Delete the source files.</td></tr>
+<tr><td align="left" valign="top"><tt>make&nbsp;clobber</tt></td>
+<td align=left>Delete the source files and the descriptors.</td></tr>
+<tr><td align="left" valign="top"><tt>make&nbsp;destroy</tt></td>
+<td align=left>Delete the source files, the descriptors, and the spec files.</td></tr>
+<tr><td align="left" valign="top"><tt>make&nbsp;custom</tt></td>
+<td align=left>Create the source files for the extensions
+listed in <tt>auto/custom.txt</tt>.<br/> See "Custom Code
+Generation" below for more details.</td></tr>
+</table>
+
+<h3>Adding a New Extension</h3>
+
+<p>
+To add a new extension, create a descriptor file for the extension in
+<tt>auto/core</tt> and rerun the code generation scripts by typing
+<tt>make clean; make</tt> in the <tt>auto</tt> directory.
+</p>
+
+<p>
+The format of the descriptor file is given below. Items in
+brackets are optional.
+</p>
+
+<p class="pre">
+&lt;Extension Name&gt;<br>
+[&lt;URL of Specification File&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Token Name&gt; &lt;Token Value&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Token Name&gt; &lt;Token Value&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Typedef&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Typedef&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Function Signature&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Function Signature&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+<!-- &nbsp;&nbsp;&nbsp;&nbsp;[&lt;Function Definition&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;Function Definition&gt;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br> -->
+</p>
+
+<!--
+<p>
+Note that <tt>Function Definitions</tt> are copied to the header files
+without changes and have to be terminated with a semicolon. In
+contrast, <tt>Tokens</tt>, <tt>Function signatures</tt>, and
+<tt>Typedefs</tt> should not be terminated with a semicolon.
+</p>
+-->
+
+<p>
+Take a look at one of the files in <tt>auto/core</tt> for an
+example. Note that typedefs and function signatures should not be
+terminated with a semicolon.
+</p>
+
+<h3>Custom Code Generation</h3>
+<p>
+Starting from GLEW 1.3.0, it is possible to control which extensions
+to include in the libarary by specifying a list in
+<tt>auto/custom.txt</tt>. This is useful when you do not need all the
+extensions and would like to reduce the size of the source files.
+Type <tt>make clean; make custom</tt> in the <tt>auto</tt> directory
+to rerun the scripts with the custom list of extensions.
+</p>
+
+<p>
+For example, the following is the list of extensions needed to get GLEW and the
+utilities to compile.
+</p>
+
+<p class="pre">
+WGL_ARB_extensions_string<br>
+WGL_ARB_multisample<br>
+WGL_ARB_pixel_format<br>
+WGL_ARB_pbuffer<br>
+WGL_EXT_extensions_string<br>
+WGL_ATI_pixel_format_float<br>
+WGL_NV_float_buffer<br>
+</p>
+
+<h2>Multiple Rendering Contexts (GLEW MX)</h2>
+
+<p>Starting with release 1.2.0, thread-safe support for multiple
+rendering contexts, possibly with different capabilities, is
+available. Since this is not required by most users, it is not added
+to the binary releases to maintain compatibility between different
+versions. To include multi-context support, you have to do the
+following:</p>
+<ol>
+<li>Compile and use GLEW with the <tt>GLEW_MX</tt> preprocessor token
+defined.</li>
+<li>For each rendering context, create a <tt>GLEWContext</tt> object
+that will be available as long as the rendering context exists.</li>
+<li>Define a macro or function called <tt>glewGetContext()</tt> that
+returns a pointer to the <tt>GLEWContext</tt> object associated with
+the rendering context from which OpenGL/WGL/GLX calls are issued. This
+dispatch mechanism is primitive, but generic.
+<li>Make sure that you call <tt>glewInit()</tt> after creating the
+<tt>GLEWContext</tt> object in each rendering context.  Note, that the
+<tt>GLEWContext</tt> pointer returned by <tt>glewGetContext()</tt> has
+to reside in global or thread-local memory.
+</ol>
+
+<p>Note that according to the <a
+href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/opengl/ntopnglr_6yer.asp">MSDN
+WGL documentation</a>, you have to initialize the entry points for
+every rendering context that use pixel formats with different
+capabilities For example, the pixel formats provided by the generic
+software OpenGL implementation by Microsoft vs. the hardware
+accelerated pixel formats have different capabilities.  <b>GLEW by
+default ignores this requirement, and does not define per-context
+entry points (you can however do this using the steps described
+above).</b> Assuming a global namespace for the entry points works in
+most situations, because typically all hardware accelerated pixel
+formats provide the same entry points and capabilities. This means
+that unless you use the multi-context version of GLEW, you need to
+call <tt>glewInit()</tt> only once in your program, or more precisely,
+once per process.</p>
+
+<h2>Separate Namespace</h2>
+
+<p>
+To avoid name clashes when linking with libraries that include the
+same symbols, extension entry points are declared in a separate
+namespace (release 1.1.0 and up). This is achieved by aliasing OpenGL
+function names to their GLEW equivalents. For instance,
+<tt>glFancyFunction</tt> is simply an alias to
+<tt>glewFancyFunction</tt>.  The separate namespace does not effect
+token and function pointer definitions.
+</p>
+
+<h2>Known Issues</h2>
+
+<p>
+GLEW requires GLX 1.2 for compatibility with GLUT.
+</p>
+

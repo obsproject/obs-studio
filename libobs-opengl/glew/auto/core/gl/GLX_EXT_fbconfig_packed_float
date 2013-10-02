@@ -1,0 +1,5 @@
+GLX_EXT_fbconfig_packed_float
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_packed_float.txt
+GLX_EXT_fbconfig_packed_float
+	GLX_RGBA_UNSIGNED_FLOAT_TYPE_EXT 0x20B1
+	GLX_RGBA_UNSIGNED_FLOAT_BIT_EXT 0x00000008

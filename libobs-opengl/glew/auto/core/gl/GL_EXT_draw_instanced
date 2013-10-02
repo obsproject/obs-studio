@@ -1,0 +1,5 @@
+GL_EXT_draw_instanced
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_draw_instanced.txt
+GL_EXT_draw_instanced
+	void glDrawArraysInstancedEXT (GLenum mode, GLint start, GLsizei count, GLsizei primcount)
+	void glDrawElementsInstancedEXT (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount)

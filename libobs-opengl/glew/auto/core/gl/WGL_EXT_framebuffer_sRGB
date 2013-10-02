@@ -1,0 +1,4 @@
+WGL_EXT_framebuffer_sRGB
+http://developer.download.nvidia.com/opengl/specs/GL_EXT_framebuffer_sRGB.txt
+WGL_EXT_framebuffer_sRGB
+	WGL_FRAMEBUFFER_SRGB_CAPABLE_EXT 0x20A9

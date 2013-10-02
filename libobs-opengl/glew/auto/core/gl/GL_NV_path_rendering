@@ -1,0 +1,180 @@
+GL_NV_path_rendering
+http://www.opengl.org/registry/specs/NV/path_rendering.txt
+GL_NV_path_rendering
+	GL_CLOSE_PATH_NV 0x00
+	GL_BOLD_BIT_NV 0x01
+	GL_GLYPH_WIDTH_BIT_NV 0x01
+	GL_GLYPH_HEIGHT_BIT_NV 0x02
+	GL_ITALIC_BIT_NV 0x02
+	GL_MOVE_TO_NV 0x02
+	GL_RELATIVE_MOVE_TO_NV 0x03
+	GL_LINE_TO_NV 0x04
+	GL_GLYPH_HORIZONTAL_BEARING_X_BIT_NV 0x04
+	GL_RELATIVE_LINE_TO_NV 0x05
+	GL_HORIZONTAL_LINE_TO_NV 0x06
+	GL_RELATIVE_HORIZONTAL_LINE_TO_NV 0x07
+	GL_GLYPH_HORIZONTAL_BEARING_Y_BIT_NV 0x08
+	GL_VERTICAL_LINE_TO_NV 0x08
+	GL_RELATIVE_VERTICAL_LINE_TO_NV 0x09
+	GL_QUADRATIC_CURVE_TO_NV 0x0A
+	GL_RELATIVE_QUADRATIC_CURVE_TO_NV 0x0B
+	GL_CUBIC_CURVE_TO_NV 0x0C
+	GL_RELATIVE_CUBIC_CURVE_TO_NV 0x0D
+	GL_SMOOTH_QUADRATIC_CURVE_TO_NV 0x0E
+	GL_RELATIVE_SMOOTH_QUADRATIC_CURVE_TO_NV 0x0F
+	GL_GLYPH_HORIZONTAL_BEARING_ADVANCE_BIT_NV 0x10
+	GL_SMOOTH_CUBIC_CURVE_TO_NV 0x10
+	GL_RELATIVE_SMOOTH_CUBIC_CURVE_TO_NV 0x11
+	GL_SMALL_CCW_ARC_TO_NV 0x12
+	GL_RELATIVE_SMALL_CCW_ARC_TO_NV 0x13
+	GL_SMALL_CW_ARC_TO_NV 0x14
+	GL_RELATIVE_SMALL_CW_ARC_TO_NV 0x15
+	GL_LARGE_CCW_ARC_TO_NV 0x16
+	GL_RELATIVE_LARGE_CCW_ARC_TO_NV 0x17
+	GL_LARGE_CW_ARC_TO_NV 0x18
+	GL_RELATIVE_LARGE_CW_ARC_TO_NV 0x19
+	GL_GLYPH_VERTICAL_BEARING_X_BIT_NV 0x20
+	GL_GLYPH_VERTICAL_BEARING_Y_BIT_NV 0x40
+	GL_GLYPH_VERTICAL_BEARING_ADVANCE_BIT_NV 0x80
+	GL_RESTART_PATH_NV 0xF0
+	GL_DUP_FIRST_CUBIC_CURVE_TO_NV 0xF2
+	GL_DUP_LAST_CUBIC_CURVE_TO_NV 0xF4
+	GL_RECT_NV 0xF6
+	GL_CIRCULAR_CCW_ARC_TO_NV 0xF8
+	GL_CIRCULAR_CW_ARC_TO_NV 0xFA
+	GL_CIRCULAR_TANGENT_ARC_TO_NV 0xFC
+	GL_ARC_TO_NV 0xFE
+	GL_RELATIVE_ARC_TO_NV 0xFF
+	GL_GLYPH_HAS_KERNING_BIT_NV 0x100
+	GL_PRIMARY_COLOR 0x8577
+	GL_PATH_FORMAT_SVG_NV 0x9070
+	GL_PATH_FORMAT_PS_NV 0x9071
+	GL_STANDARD_FONT_NAME_NV 0x9072
+	GL_SYSTEM_FONT_NAME_NV 0x9073
+	GL_FILE_NAME_NV 0x9074
+	GL_PATH_STROKE_WIDTH_NV 0x9075
+	GL_PATH_END_CAPS_NV 0x9076
+	GL_PATH_INITIAL_END_CAP_NV 0x9077
+	GL_PATH_TERMINAL_END_CAP_NV 0x9078
+	GL_PATH_JOIN_STYLE_NV 0x9079
+	GL_PATH_MITER_LIMIT_NV 0x907A
+	GL_PATH_DASH_CAPS_NV 0x907B
+	GL_PATH_INITIAL_DASH_CAP_NV 0x907C
+	GL_PATH_TERMINAL_DASH_CAP_NV 0x907D
+	GL_PATH_DASH_OFFSET_NV 0x907E
+	GL_PATH_CLIENT_LENGTH_NV 0x907F
+	GL_PATH_FILL_MODE_NV 0x9080
+	GL_PATH_FILL_MASK_NV 0x9081
+	GL_PATH_FILL_COVER_MODE_NV 0x9082
+	GL_PATH_STROKE_COVER_MODE_NV 0x9083
+	GL_PATH_STROKE_MASK_NV 0x9084
+	GL_COUNT_UP_NV 0x9088
+	GL_COUNT_DOWN_NV 0x9089
+	GL_PATH_OBJECT_BOUNDING_BOX_NV 0x908A
+	GL_CONVEX_HULL_NV 0x908B
+	GL_BOUNDING_BOX_NV 0x908D
+	GL_TRANSLATE_X_NV 0x908E
+	GL_TRANSLATE_Y_NV 0x908F
+	GL_TRANSLATE_2D_NV 0x9090
+	GL_TRANSLATE_3D_NV 0x9091
+	GL_AFFINE_2D_NV 0x9092
+	GL_AFFINE_3D_NV 0x9094
+	GL_TRANSPOSE_AFFINE_2D_NV 0x9096
+	GL_TRANSPOSE_AFFINE_3D_NV 0x9098
+	GL_UTF8_NV 0x909A
+	GL_UTF16_NV 0x909B
+	GL_BOUNDING_BOX_OF_BOUNDING_BOXES_NV 0x909C
+	GL_PATH_COMMAND_COUNT_NV 0x909D
+	GL_PATH_COORD_COUNT_NV 0x909E
+	GL_PATH_DASH_ARRAY_COUNT_NV 0x909F
+	GL_PATH_COMPUTED_LENGTH_NV 0x90A0
+	GL_PATH_FILL_BOUNDING_BOX_NV 0x90A1
+	GL_PATH_STROKE_BOUNDING_BOX_NV 0x90A2
+	GL_SQUARE_NV 0x90A3
+	GL_ROUND_NV 0x90A4
+	GL_TRIANGULAR_NV 0x90A5
+	GL_BEVEL_NV 0x90A6
+	GL_MITER_REVERT_NV 0x90A7
+	GL_MITER_TRUNCATE_NV 0x90A8
+	GL_SKIP_MISSING_GLYPH_NV 0x90A9
+	GL_USE_MISSING_GLYPH_NV 0x90AA
+	GL_PATH_ERROR_POSITION_NV 0x90AB
+	GL_PATH_FOG_GEN_MODE_NV 0x90AC
+	GL_ACCUM_ADJACENT_PAIRS_NV 0x90AD
+	GL_ADJACENT_PAIRS_NV 0x90AE
+	GL_FIRST_TO_REST_NV 0x90AF
+	GL_PATH_GEN_MODE_NV 0x90B0
+	GL_PATH_GEN_COEFF_NV 0x90B1
+	GL_PATH_GEN_COLOR_FORMAT_NV 0x90B2
+	GL_PATH_GEN_COMPONENTS_NV 0x90B3
+	GL_PATH_DASH_OFFSET_RESET_NV 0x90B4
+	GL_MOVE_TO_RESETS_NV 0x90B5
+	GL_MOVE_TO_CONTINUES_NV 0x90B6
+	GL_PATH_STENCIL_FUNC_NV 0x90B7
+	GL_PATH_STENCIL_REF_NV 0x90B8
+	GL_PATH_STENCIL_VALUE_MASK_NV 0x90B9
+	GL_PATH_STENCIL_DEPTH_OFFSET_FACTOR_NV 0x90BD
+	GL_PATH_STENCIL_DEPTH_OFFSET_UNITS_NV 0x90BE
+	GL_PATH_COVER_DEPTH_FUNC_NV 0x90BF
+	GL_FONT_X_MIN_BOUNDS_BIT_NV 0x00010000
+	GL_FONT_Y_MIN_BOUNDS_BIT_NV 0x00020000
+	GL_FONT_X_MAX_BOUNDS_BIT_NV 0x00040000
+	GL_FONT_Y_MAX_BOUNDS_BIT_NV 0x00080000
+	GL_FONT_UNITS_PER_EM_BIT_NV 0x00100000
+	GL_FONT_ASCENDER_BIT_NV 0x00200000
+	GL_FONT_DESCENDER_BIT_NV 0x00400000
+	GL_FONT_HEIGHT_BIT_NV 0x00800000
+	GL_FONT_MAX_ADVANCE_WIDTH_BIT_NV 0x01000000
+	GL_FONT_MAX_ADVANCE_HEIGHT_BIT_NV 0x02000000
+	GL_FONT_UNDERLINE_POSITION_BIT_NV 0x04000000
+	GL_FONT_UNDERLINE_THICKNESS_BIT_NV 0x08000000
+	GL_FONT_HAS_KERNING_BIT_NV 0x10000000
+	void glCopyPathNV (GLuint resultPath, GLuint srcPath)
+	void glCoverFillPathInstancedNV (GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLenum coverMode, GLenum transformType, const GLfloat *transformValues)
+	void glCoverFillPathNV (GLuint path, GLenum coverMode)
+	void glCoverStrokePathInstancedNV (GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLenum coverMode, GLenum transformType, const GLfloat *transformValues)
+	void glCoverStrokePathNV (GLuint name, GLenum coverMode)
+	void glDeletePathsNV (GLuint path, GLsizei range)
+	GLuint glGenPathsNV (GLsizei range)
+	void glGetPathColorGenfvNV (GLenum color, GLenum pname, GLfloat* value)
+	void glGetPathColorGenivNV (GLenum color, GLenum pname, GLint* value)
+	void glGetPathCommandsNV (GLuint name, GLubyte* commands)
+	void glGetPathCoordsNV (GLuint name, GLfloat* coords)
+	void glGetPathDashArrayNV (GLuint name, GLfloat* dashArray)
+	GLfloat glGetPathLengthNV (GLuint path, GLsizei startSegment, GLsizei numSegments)
+	void glGetPathMetricRangeNV (GLbitfield metricQueryMask, GLuint fistPathName, GLsizei numPaths, GLsizei stride, GLfloat* metrics)
+	void glGetPathMetricsNV (GLbitfield metricQueryMask, GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLsizei stride, GLfloat *metrics)
+	void glGetPathParameterfvNV (GLuint name, GLenum param, GLfloat* value)
+	void glGetPathParameterivNV (GLuint name, GLenum param, GLint* value)
+	void glGetPathSpacingNV (GLenum pathListMode, GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLfloat advanceScale, GLfloat kerningScale, GLenum transformType, GLfloat *returnedSpacing)
+	void glGetPathTexGenfvNV (GLenum texCoordSet, GLenum pname, GLfloat* value)
+	void glGetPathTexGenivNV (GLenum texCoordSet, GLenum pname, GLint* value)
+	void glInterpolatePathsNV (GLuint resultPath, GLuint pathA, GLuint pathB, GLfloat weight)
+	GLboolean glIsPathNV (GLuint path)
+	GLboolean glIsPointInFillPathNV (GLuint path, GLuint mask, GLfloat x, GLfloat y)
+	GLboolean glIsPointInStrokePathNV (GLuint path, GLfloat x, GLfloat y)
+	void glPathColorGenNV (GLenum color, GLenum genMode, GLenum colorFormat, const GLfloat* coeffs)
+	void glPathCommandsNV (GLuint path, GLsizei numCommands, const GLubyte* commands, GLsizei numCoords, GLenum coordType, const GLvoid*coords)
+	void glPathCoordsNV (GLuint path, GLsizei numCoords, GLenum coordType, const void* coords)
+	void glPathCoverDepthFuncNV (GLenum zfunc)
+	void glPathDashArrayNV (GLuint path, GLsizei dashCount, const GLfloat* dashArray)
+	void glPathFogGenNV (GLenum genMode)
+	void glPathGlyphRangeNV (GLuint firstPathName, GLenum fontTarget, const void* fontName, GLbitfield fontStyle, GLuint firstGlyph, GLsizei numGlyphs, GLenum handleMissingGlyphs, GLuint pathParameterTemplate, GLfloat emScale)
+	void glPathGlyphsNV (GLuint firstPathName, GLenum fontTarget, const void* fontName, GLbitfield fontStyle, GLsizei numGlyphs, GLenum type, const GLvoid*charcodes, GLenum handleMissingGlyphs, GLuint pathParameterTemplate, GLfloat emScale)
+	void glPathParameterfNV (GLuint path, GLenum pname, GLfloat value)
+	void glPathParameterfvNV (GLuint path, GLenum pname, const GLfloat* value)
+	void glPathParameteriNV (GLuint path, GLenum pname, GLint value)
+	void glPathParameterivNV (GLuint path, GLenum pname, const GLint* value)
+	void glPathStencilDepthOffsetNV (GLfloat factor, GLfloat units)
+	void glPathStencilFuncNV (GLenum func, GLint ref, GLuint mask)
+	void glPathStringNV (GLuint path, GLenum format, GLsizei length, const void* pathString)
+	void glPathSubCommandsNV (GLuint path, GLsizei commandStart, GLsizei commandsToDelete, GLsizei numCommands, const GLubyte* commands, GLsizei numCoords, GLenum coordType, const GLvoid*coords)
+	void glPathSubCoordsNV (GLuint path, GLsizei coordStart, GLsizei numCoords, GLenum coordType, const void* coords)
+	void glPathTexGenNV (GLenum texCoordSet, GLenum genMode, GLint components, const GLfloat* coeffs)
+	GLboolean glPointAlongPathNV (GLuint path, GLsizei startSegment, GLsizei numSegments, GLfloat distance, GLfloat* x, GLfloat *y, GLfloat *tangentX, GLfloat *tangentY)
+	void glStencilFillPathInstancedNV (GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLenum fillMode, GLuint mask, GLenum transformType, const GLfloat *transformValues)
+	void glStencilFillPathNV (GLuint path, GLenum fillMode, GLuint mask)
+	void glStencilStrokePathInstancedNV (GLsizei numPaths, GLenum pathNameType, const void* paths, GLuint pathBase, GLint reference, GLuint mask, GLenum transformType, const GLfloat *transformValues)
+	void glStencilStrokePathNV (GLuint path, GLint reference, GLuint mask)
+	void glTransformPathNV (GLuint resultPath, GLuint srcPath, GLenum transformType, const GLfloat* transformValues)
+	void glWeightPathsNV (GLuint resultPath, GLsizei numPaths, const GLuint paths[], const GLfloat weights[])
