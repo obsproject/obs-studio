@@ -18,6 +18,13 @@
 #ifndef GL_SUBSYSTEM_H
 #define GL_SUBSYSTEM_H
 
-#include "glew.h"
+#include "graphics/graphics.h"
+#include "glew/include/GL/glew.h"
+
+struct gl_platform;
+
+struct gs_device {
+	struct gl_platform *plat;
+};
 
 #endif
