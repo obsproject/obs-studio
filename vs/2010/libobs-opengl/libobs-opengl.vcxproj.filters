@@ -18,9 +18,15 @@
     <ClInclude Include="..\..\..\libobs-opengl\gl-subsystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs-opengl\gl-exports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
