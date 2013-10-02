@@ -207,16 +207,13 @@ bool gl_platform_init(struct gs_device *device, struct gs_init_data *info)
 	memset(device->plat, 0, sizeof(struct gl_platform));
 
 	if (!gl_create_false_context(device->plat, info))
-		goto fail;
+		return false;
 
 	if (!gl_init_extensions())
-		goto fail;
+		return false;
 
 	if (!gl_init_pixel_format(device->plat, info))
-		goto fail;
+		return false;
 
 	return true;
-
-fail:
-	return false;
 }
