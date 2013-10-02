@@ -1,6 +1,4 @@
 *.pc
-/src/*.c
-/include/GL/*.h
 /build/vc6/*.rc
 /auto/extensions
 /auto/registry
