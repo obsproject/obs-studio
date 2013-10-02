@@ -28,6 +28,8 @@
 #include "platform.h"
 #include "bmem.h"
 
+#include "../../w32-pthreads/pthread.h"
+
 static bool have_clockfreq = false;
 static LARGE_INTEGER clock_freq;
 static uint32_t winver = 0;
@@ -135,5 +137,33 @@ uint64_t os_gettime_ms(void)
 
 	return time_val;
 }
+
+#ifdef PTW32_STATIC_LIB
+
+BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
+{
+	switch (reason) {
+
+	case DLL_PROCESS_ATTACH:
+		pthread_win32_process_attach_np();
+		break;
+
+	case DLL_PROCESS_DETACH:
+		pthread_win32_process_detach_np();
+		break;
+
+	case DLL_THREAD_ATTACH:
+		pthread_win32_thread_attach_np();
+		break;
+
+	case DLL_THREAD_DETACH:
+		pthread_win32_thread_detach_np();
+		break;
+	}
+
+	return true;
+}
+
+#endif
 
 #endif
