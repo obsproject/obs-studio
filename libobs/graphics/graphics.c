@@ -126,12 +126,15 @@ void gs_destroy(graphics_t graphics)
 	if (!graphics)
 		return;
 
-	if (graphics->module) {
+	if (graphics->sprite_buffer)
 		graphics->exports.vertexbuffer_destroy(graphics->sprite_buffer);
+
+	if (graphics->immediate_vertbuffer)
 		graphics->exports.vertexbuffer_destroy(
 				graphics->immediate_vertbuffer);
+
+	if (graphics->device)
 		graphics->exports.device_destroy(graphics->device);
-	}
 
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
