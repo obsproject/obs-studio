@@ -5,16 +5,21 @@
 #include "gl-subsystem.h"
 #include "glew/include/GL/wglew.h"
 
+/* Basically swapchain-specific information.  Fortunately for windows this is
+ * super basic stuff */
 struct gl_windowinfo {
 	HWND hwnd;
 	HDC  hdc;
 };
 
+/* Like the other subsystems, the GL subsystem has one swap chain created by
+ * default. */
 struct gl_platform {
 	HGLRC hrc;
-	struct gl_windowinfo *wi;
+	struct gs_swap_chain swap;
 };
 
+/* For now, only support basic 32bit formats for graphics output. */
 static inline int get_color_format_bits(enum gs_color_format format)
 {
 	switch (format) {
@@ -71,6 +76,7 @@ struct dummy_context {
 	HDC   hdc;
 };
 
+/* Need a dummy window for the dummy context */
 static bool gl_register_dummy_window_class(void)
 {
 	WNDCLASSA wc;
@@ -104,7 +110,7 @@ static inline HWND gl_create_dummy_window(void)
 	return hwnd;
 }
 
-static HGLRC gl_init_context(HDC hdc)
+static inline HGLRC gl_init_context(HDC hdc)
 {
 	HGLRC hglrc = wglCreateContext(hdc);
 	if (!hglrc) {
@@ -158,7 +164,7 @@ static bool gl_dummy_context_init(struct dummy_context *dummy)
 	return true;
 }
 
-static void gl_dummy_context_free(struct dummy_context *dummy)
+static inline void gl_dummy_context_free(struct dummy_context *dummy)
 {
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(dummy->hrc);
@@ -204,6 +210,7 @@ static inline void add_attrib(struct darray *list, int attrib, int val)
 	darray_push_back(sizeof(int), list, &val);
 }
 
+/* Creates the real pixel format for the target window */
 static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
 {
 	struct darray attribs;
@@ -272,7 +279,40 @@ static inline bool gl_set_pixel_format(HDC hdc, int format,
 	return true;
 }
 
-struct gl_platform *gl_platform_create(struct gs_init_data *info)
+static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
+{
+	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
+	memset(wi, 0, sizeof(struct gl_windowinfo));
+
+	wi->hwnd = info->hwnd;
+	wi->hdc  = GetDC(wi->hwnd);
+	if (!wi->hdc) {
+		blog(LOG_ERROR, "Unable to get device context from window");
+		bfree(wi);
+		return NULL;
+	}
+
+	return wi;
+}
+
+static bool init_default_swap(struct gl_platform *plat, device_t device,
+		int pixel_format, PIXELFORMATDESCRIPTOR *pfd,
+		struct gs_init_data *info)
+{
+	plat->swap.device = device;
+	plat->swap.info   = *info;
+	plat->swap.wi     = gl_windowinfo_bare(info);
+	if (!plat->swap.wi)
+		return false;
+
+	if (!gl_set_pixel_format(plat->swap.wi->hdc, pixel_format, pfd))
+		return false;
+
+	return true;
+}
+
+struct gl_platform *gl_platform_create(device_t device,
+		struct gs_init_data *info)
 {
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
 	struct dummy_context dummy;
@@ -295,23 +335,25 @@ struct gl_platform *gl_platform_create(struct gs_init_data *info)
 
 	gl_dummy_context_free(&dummy);
 
-	plat->wi = gl_windowinfo_create(info);
-	if (!plat->wi)
+	if (!init_default_swap(plat, device, pixel_format, &pfd, info))
 		goto fail;
 
-	if (!gl_set_pixel_format(plat->wi->hdc, pixel_format, &pfd))
-		goto fail;
-
-	plat->hrc = gl_init_context(plat->wi->hdc);
+	plat->hrc = gl_init_context(plat->swap.wi->hdc);
 	if (!plat->hrc)
 		goto fail;
 
 	return plat;
 
 fail:
+	blog(LOG_ERROR, "gl_platform_create failed");
 	gl_platform_destroy(plat);
 	gl_dummy_context_free(&dummy);
 	return NULL;
+}
+
+struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
+{
+	return &platform->swap;
 }
 
 void gl_platform_destroy(struct gl_platform *plat)
@@ -322,25 +364,32 @@ void gl_platform_destroy(struct gl_platform *plat)
 			wglDeleteContext(plat->hrc);
 		}
 
-		gl_windowinfo_destroy(plat->wi);
+		gl_windowinfo_destroy(plat->swap.wi);
 		bfree(plat);
 	}
 }
 
 struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 {
-	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
-	memset(wi, 0, sizeof(struct gl_windowinfo));
+	struct gl_windowinfo *wi = gl_windowinfo_bare(info);
+	PIXELFORMATDESCRIPTOR pfd;
+	int pixel_format;
 
-	wi->hwnd = info->hwnd;
-	wi->hdc  = GetDC(wi->hwnd);
-	if (!wi->hdc) {
-		blog(LOG_ERROR, "Unable to get device context from window");
-		bfree(wi);
+	if (!wi)
 		return NULL;
-	}
+
+	if (!gl_get_pixel_format(wi->hdc, info, &pixel_format, &pfd))
+		goto fail;
+
+	if (!gl_set_pixel_format(wi->hdc, pixel_format, &pfd))
+		goto fail;
 
 	return wi;
+
+fail:
+	blog(LOG_ERROR, "gl_windowinfo_create failed");
+	gl_windowinfo_destroy(wi);
+	return NULL;
 }
 
 void gl_windowinfo_destroy(struct gl_windowinfo *wi)

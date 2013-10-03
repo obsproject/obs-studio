@@ -6,8 +6,9 @@ device_t device_create(struct gs_init_data *info)
 	struct gs_device *device = bmalloc(sizeof(struct gs_device));
 	memset(device, 0, sizeof(struct gs_device));
 
-	device->plat = gl_platform_create(info);
+	device->plat = gl_platform_create(device, info);
 	if (!device->plat) {
+		blog(LOG_ERROR, "device_create (GL) failed");
 		bfree(device);
 		return NULL;
 	}
@@ -23,10 +24,21 @@ void device_destroy(device_t device)
 	}
 }
 
-swapchain_t device_create_swapchain(device_t device,
-		struct gs_init_data *data)
+swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 {
-	
+	struct gs_swap_chain *swap = bmalloc(sizeof(struct gs_swap_chain));
+	memset(swap, 0, sizeof(struct gs_swap_chain));
+
+	swap->device = device;
+	swap->info   = *info;
+	swap->wi     = gl_windowinfo_create(info);
+	if (!swap->wi) {
+		blog(LOG_ERROR, "device_create_swapchain (GL) failed");
+		swapchain_destroy(swap);
+		return NULL;
+	}
+
+	return swap;
 }
 
 void device_resize(device_t device, uint32_t x, uint32_t y)
@@ -319,11 +331,11 @@ void device_projection_pop(device_t device)
 {
 }
 
-void     swapchain_destroy(swapchain_t swapchain)
+void swapchain_destroy(swapchain_t swapchain)
 {
 }
 
-void     texture_destroy(texture_t tex)
+void texture_destroy(texture_t tex)
 {
 }
 
@@ -339,15 +351,15 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 {
 }
 
-bool     texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
+bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 {
 }
 
-void     texture_unmap(texture_t tex)
+void texture_unmap(texture_t tex)
 {
 }
 
-void     cubetexture_destroy(texture_t cubetex)
+void cubetexture_destroy(texture_t cubetex)
 {
 }
 
@@ -359,7 +371,7 @@ enum gs_color_format cubetexture_getcolorformat(texture_t cubetex)
 {
 }
 
-void     volumetexture_destroy(texture_t voltex)
+void volumetexture_destroy(texture_t voltex)
 {
 }
 
@@ -379,7 +391,7 @@ enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
 }
 
-void     stagesurface_destroy(stagesurf_t stagesurf)
+void stagesurface_destroy(stagesurf_t stagesurf)
 {
 }
 
@@ -395,12 +407,12 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 {
 }
 
-bool     stagesurface_map(stagesurf_t stagesurf, const void **data,
+bool stagesurface_map(stagesurf_t stagesurf, const void **data,
 		uint32_t *byte_width)
 {
 }
 
-void     stagesurface_unmap(stagesurf_t stagesurf)
+void stagesurface_unmap(stagesurf_t stagesurf)
 {
 }
 
@@ -424,15 +436,15 @@ struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)
 {
 }
 
-void   indexbuffer_destroy(indexbuffer_t indexbuffer)
+void indexbuffer_destroy(indexbuffer_t indexbuffer)
 {
 }
 
-void   indexbuffer_flush(indexbuffer_t indexbuffer)
+void indexbuffer_flush(indexbuffer_t indexbuffer)
 {
 }
 
-void  *indexbuffer_getdata(indexbuffer_t indexbuffer)
+void *indexbuffer_getdata(indexbuffer_t indexbuffer)
 {
 }
 

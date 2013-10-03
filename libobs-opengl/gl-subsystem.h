@@ -24,9 +24,10 @@
 struct gl_platform;
 struct gl_windowinfo;
 
-
 struct gs_swap_chain {
-	struct gl_windowinfo *window;
+	device_t device;
+	struct gl_windowinfo *wi;
+	struct gs_init_data  info;
 };
 
 struct gs_device {
@@ -35,8 +36,10 @@ struct gs_device {
 	struct gs_swap_chain *cur_swap;
 };
 
-extern struct gl_platform *gl_platform_create(struct gs_init_data *info);
-extern void                gl_platform_destroy(struct gl_platform *platform);
+extern struct gl_platform   *gl_platform_create(device_t device,
+                                                struct gs_init_data *info);
+extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
+extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
