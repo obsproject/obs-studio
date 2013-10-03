@@ -22,9 +22,23 @@
 #include "glew/include/GL/glew.h"
 
 struct gl_platform;
+struct gl_windowinfo;
+
+
+struct gs_swap_chain {
+	struct gl_windowinfo *window;
+};
 
 struct gs_device {
 	struct gl_platform *plat;
+
+	struct gs_swap_chain *cur_swap;
 };
+
+extern struct gl_platform *gl_platform_create(struct gs_init_data *info);
+extern void                gl_platform_destroy(struct gl_platform *platform);
+
+extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
+extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
 
 #endif
