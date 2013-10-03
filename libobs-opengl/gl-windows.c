@@ -50,7 +50,7 @@ static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
 /* would use designated initializers but microsoft sort of sucks */
 static inline void init_dummy_pixel_format(PIXELFORMATDESCRIPTOR *pfd)
 {
-	memset(&pfd, 0, sizeof(pfd));
+	memset(pfd, 0, sizeof(pfd));
 	pfd->nSize        = sizeof(pfd);
 	pfd->nVersion     = 1;
 	pfd->iPixelType   = PFD_TYPE_RGBA;
@@ -211,6 +211,7 @@ static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
 	int depth_bits   = get_depth_format_bits(info->zsformat);
 	int stencil_bits = get_stencil_format_bits(info->zsformat);
 	UINT num_formats;
+	BOOL success;
 	int format;
 
 	if (!color_bits) {
@@ -230,8 +231,9 @@ static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
 	add_attrib(&attribs, WGL_STENCIL_BITS_ARB,   stencil_bits);
 	add_attrib(&attribs, 0, 0);
 
-	if (!wglChoosePixelFormatARB(hdc, attribs.array, NULL, 1, &format,
-				&num_formats)) {
+	success = wglChoosePixelFormatARB(hdc, attribs.array, NULL, 1, &format,
+				&num_formats);
+	if (!success || !num_formats) {
 		blog(LOG_ERROR, "wglChoosePixelFormatARB failed, %u",
 				GetLastError());
 		format = 0;
