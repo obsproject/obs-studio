@@ -19,7 +19,7 @@ struct random_tex *random_create(const char *settings, source_t source)
 		}
 	}
 
-	rt->texture = gs_create_texture(20, 20, GS_RGBA, pixels, 0);
+	rt->texture = gs_create_texture(20, 20, GS_RGBA, 1, &pixels, 0);
 	bfree(pixels);
 
 	if (!rt->texture) {

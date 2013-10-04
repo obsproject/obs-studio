@@ -68,7 +68,7 @@ static bool texrender_resetbuffer(texrender_t texrender, int cx, int cy)
 	texrender->cy     = cy;
 
 	texrender->target = gs_create_texture(cx, cy, texrender->format,
-			NULL, GS_RENDERTARGET);
+			1, NULL, GS_RENDERTARGET);
 	if (!texrender->target)
 		return false;
 
