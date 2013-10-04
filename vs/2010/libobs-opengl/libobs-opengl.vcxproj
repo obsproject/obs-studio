@@ -156,10 +156,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\libobs-opengl\gl-exports.h" />
+    <ClInclude Include="..\..\..\libobs-opengl\gl-helpers.h" />
     <ClInclude Include="..\..\..\libobs-opengl\gl-subsystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

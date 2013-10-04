@@ -479,13 +479,14 @@ uint32_t device_getheight(device_t device)
 }
 
 texture_t device_create_texture(device_t device, uint32_t width,
-		uint32_t height, enum gs_color_format color_format, void *data,
-		uint32_t flags)
+		uint32_t height, enum gs_color_format color_format,
+		uint32_t levels, void **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, width, height, color_format,
-				data, flags, false, false, false);
+				levels, data, flags, GS_TEXTURE_2D, false,
+				false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_create_texture (D3D11): %s (%08lX)",
 				error.str, error.hr);
@@ -497,13 +498,14 @@ texture_t device_create_texture(device_t device, uint32_t width,
 }
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
-		enum gs_color_format color_format, void *data[6],
+		enum gs_color_format color_format, uint32_t levels, void **data,
 		uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, size, size, color_format,
-				data, flags, true, false, false);
+				levels, data, flags, GS_TEXTURE_CUBE, false,
+				false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_create_cubetexture (D3D11): %s "
 		                "(%08lX)",
@@ -518,7 +520,8 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
-		enum gs_color_format color_format, void *data, uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels,
+		void **data, uint32_t flags)
 {
 	/* TODO */
 	return NULL;

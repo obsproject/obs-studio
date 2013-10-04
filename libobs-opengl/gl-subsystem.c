@@ -41,37 +41,39 @@ swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 	return swap;
 }
 
-void device_resize(device_t device, uint32_t x, uint32_t y)
+void device_resize(device_t device, uint32_t cx, uint32_t cy)
 {
+	/* GL automatically resizes the device, so it doesn't do much */
+	device->cur_swap->info.cx = cx;
+	device->cur_swap->info.cy = cy;
 }
 
-void device_getsize(device_t device, uint32_t *x, uint32_t *y)
+void device_getsize(device_t device, uint32_t *cx, uint32_t *cy)
 {
+	*cx = device->cur_swap->info.cx;
+	*cy = device->cur_swap->info.cy;
 }
 
 uint32_t device_getwidth(device_t device)
 {
+	return device->cur_swap->info.cx;
 }
 
 uint32_t device_getheight(device_t device)
 {
-}
-
-texture_t device_create_texture(device_t device, uint32_t width,
-		uint32_t height, enum gs_color_format color_format, void *data,
-		uint32_t flags)
-{
+	return device->cur_swap->info.cy;
 }
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
-		enum gs_color_format color_format, void *data[6],
-		uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels,
+		void **data, uint32_t flags)
 {
 }
 
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
-		enum gs_color_format color_format, void *data, uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels, void **data,
+		uint32_t flags)
 {
 }
 
@@ -332,10 +334,6 @@ void device_projection_pop(device_t device)
 }
 
 void swapchain_destroy(swapchain_t swapchain)
-{
-}
-
-void texture_destroy(texture_t tex)
 {
 }
 

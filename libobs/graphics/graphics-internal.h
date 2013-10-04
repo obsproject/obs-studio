@@ -34,14 +34,14 @@ struct gs_exports {
 	uint32_t (*device_getheight)(device_t device);
 	texture_t (*device_create_texture)(device_t device, uint32_t width,
 			uint32_t height, enum gs_color_format color_format,
-			void *data, uint32_t flags);
+			uint32_t levels, void **data, uint32_t flags);
 	texture_t (*device_create_cubetexture)(device_t device, uint32_t size,
-			enum gs_color_format color_format, void *data[6],
-			uint32_t flags);
+			enum gs_color_format color_format, uint32_t levels,
+			void **data, uint32_t flags);
 	texture_t (*device_create_volumetexture)(device_t device,
 			uint32_t width, uint32_t height, uint32_t depth,
-			enum gs_color_format color_format, void *data,
-			uint32_t flags);
+			enum gs_color_format color_format, uint32_t levels,
+			void **data, uint32_t flags);
 	zstencil_t (*device_create_zstencil)(device_t device,
 			uint32_t width, uint32_t height,
 			enum gs_zstencil_format format);

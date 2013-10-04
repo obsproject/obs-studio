@@ -245,12 +245,16 @@ struct gs_index_buffer {
 
 struct gs_texture {
 	gs_texture_type type;
-	ComPtr<ID3D11ShaderResourceView> shaderRes;
-	gs_device *device;
+	gs_device       *device;
+	uint32_t        levels;
 
-	inline gs_texture(gs_device *device, gs_texture_type type)
+	ComPtr<ID3D11ShaderResourceView> shaderRes;
+
+	inline gs_texture(gs_device *device, gs_texture_type type,
+			uint32_t levels)
 		: device (device),
-		  type   (type)
+		  type   (type),
+		  levels (levels)
 	{
 	}
 
@@ -272,13 +276,13 @@ struct gs_texture_2d : gs_texture {
 	bool            genMipmaps;
 	HANDLE          sharedHandle;
 
-	void InitSRD(D3D11_SUBRESOURCE_DATA *srd, void *data);
-	void InitTexture(void *data);
+	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data);
+	void InitTexture(void **data);
 	void InitResourceView();
 	void InitRenderTargets();
 
 	inline gs_texture_2d()
-		: gs_texture      (NULL, GS_TEXTURE_2D),
+		: gs_texture      (NULL, GS_TEXTURE_2D, 0),
 		  width           (0),
 		  height          (0),
 		  format          (GS_UNKNOWN),
@@ -293,9 +297,9 @@ struct gs_texture_2d : gs_texture {
 	}
 
 	gs_texture_2d(device_t device, uint32_t width, uint32_t height,
-			gs_color_format colorFormat, void *data,
-			uint32_t flags, bool isCubeMap, bool gdiCompatible,
-			bool shared);
+			gs_color_format colorFormat, uint32_t levels,
+			void **data, uint32_t flags, gs_texture_type type,
+			bool gdiCompatible, bool shared);
 };
 
 struct gs_zstencil_buffer {

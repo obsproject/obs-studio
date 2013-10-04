@@ -23,36 +23,58 @@ static inline bool IsPow2(uint32_t num)
 	return num >= 2 && (num & (num-1)) == 0;
 }
 
-void gs_texture_2d::InitSRD(D3D11_SUBRESOURCE_DATA *srd, void *data)
+static inline uint32_t numActualLevels(uint32_t levels, uint32_t width,
+		uint32_t height)
 {
-	uint32_t rowSizeBytes = width * GetFormatBPP(format);
-	uint32_t texSizeBytes = rowSizeBytes * height;
+	if (levels > 0)
+		return levels;
 
-	if (type == GS_TEXTURE_2D) {
-		srd->pSysMem          = (uint8_t*)data;
-		srd->SysMemPitch      = rowSizeBytes; 
-		srd->SysMemSlicePitch = texSizeBytes;
+	uint32_t size = max(width, height);
+	uint32_t numLevels = 0;
 
-	} else { /* GS_TEXTURE_CUBE */
-		void **buffers = (void**)data;
-		for (size_t i = 0; i < 6; i++) {
-			srd[i].pSysMem          = buffers[i];
-			srd[i].SysMemPitch      = rowSizeBytes;
-			srd[i].SysMemSlicePitch = texSizeBytes;
+	while (size  > 1) {
+		size /= 2;
+		numLevels++;
+	}
+
+	return numLevels;
+}
+
+void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data)
+{
+	uint32_t rowSizeBytes  = width  * GetFormatBPP(format);
+	uint32_t texSizeBytes  = height * rowSizeBytes;
+	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
+	uint32_t actual_levels = numActualLevels(levels, width, height);
+
+	for (size_t i = 0; i < textures; i++) {
+		uint32_t newRowSize = rowSizeBytes;
+		uint32_t newTexSize = texSizeBytes;
+
+		for (size_t j = 0; j < actual_levels; j++) {
+			D3D11_SUBRESOURCE_DATA newSRD;
+			newSRD.pSysMem          = data;
+			newSRD.SysMemPitch      = newRowSize; 
+			newSRD.SysMemSlicePitch = newTexSize;
+			srd.push_back(newSRD);
+
+			newRowSize /= 2;
+			newTexSize /= 4;
+			data++;
 		}
 	}
 }
 
-void gs_texture_2d::InitTexture(void *data)
+void gs_texture_2d::InitTexture(void **data)
 {
+	vector<D3D11_SUBRESOURCE_DATA> srd;
 	D3D11_TEXTURE2D_DESC td;
-	D3D11_SUBRESOURCE_DATA srd[6];
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
 	td.Width            = width;
 	td.Height           = height;
-	td.MipLevels        = genMipmaps ? 0 : 1;
+	td.MipLevels        = genMipmaps ? 0 : levels;
 	td.ArraySize        = type == GS_TEXTURE_CUBE ? 6 : 1;
 	td.Format           = dxgiFormat;
 	td.BindFlags        = D3D10_BIND_SHADER_RESOURCE;
@@ -70,7 +92,7 @@ void gs_texture_2d::InitTexture(void *data)
 	if (data)
 		InitSRD(srd, data);
 
-	hr = device->device->CreateTexture2D(&td, data ? srd : NULL,
+	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL,
 			texture.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create 2D texture", hr);
@@ -126,9 +148,10 @@ void gs_texture_2d::InitRenderTargets()
 }
 
 gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
-		gs_color_format colorFormat, void *data, uint32_t flags,
-		bool isCubeMap, bool gdiCompatible, bool shared)
-	: gs_texture (device, isCubeMap ? GS_TEXTURE_CUBE : GS_TEXTURE_2D),
+		gs_color_format colorFormat, uint32_t levels, void **data,
+		uint32_t flags, gs_texture_type type, bool gdiCompatible,
+		bool shared)
+	: gs_texture      (device, type, levels),
 	  width           (width),
 	  height          (height),
 	  format          (colorFormat),
@@ -139,11 +162,13 @@ gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
 	  isRenderTarget  ((flags & GS_RENDERTARGET) != 0),
 	  genMipmaps      ((flags & GS_BUILDMIPMAPS) != 0)
 {
-	if (genMipmaps && (!IsPow2(width) || !IsPow2(height))) {
-		blog(LOG_WARNING, "Cannot generate mipmaps for a "
+	bool hasMips = genMipmaps || levels != 1;
+	if (hasMips && (!IsPow2(width) || !IsPow2(height))) {
+		blog(LOG_WARNING, "Cannot use mipmaps with a "
 		                  "non-power-of-two texture.  Disabling "
 		                  "mipmaps for this texture.");
-		genMipmaps = false;
+		genMipmaps   = false;
+		this->levels = 1;
 	}
 
 	InitTexture(data);
