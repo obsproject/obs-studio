@@ -725,11 +725,36 @@ uint32_t gs_getheight(void)
 	return graphics->exports.device_getheight(graphics->device);
 }
 
+static inline bool is_pow2(uint32_t size)
+{
+	return size >= 2 && (size & (size-1)) == 0;
+}
+
 texture_t gs_create_texture(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels, void **data,
 		uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
+	bool pow2tex = is_pow2(width) && is_pow2(height);
+	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
+
+	if (uses_mipmaps && !pow2tex) {
+		blog(LOG_WARNING, "Cannot use mipmaps with a "
+		                  "non-power-of-two texture.  Disabling "
+		                  "mipmaps for this texture.");
+
+		uses_mipmaps = false;
+		flags &= ~GS_BUILDMIPMAPS;
+		levels = 1;
+	}
+
+	if (uses_mipmaps && flags & GS_RENDERTARGET) {
+		blog(LOG_WARNING, "Cannot use mipmaps with render targets.  "
+		                  "Disabling mipmaps for this texture.");
+		flags &= ~GS_BUILDMIPMAPS;
+		levels = 1;
+	}
+
 	return graphics->exports.device_create_texture(graphics->device,
 			width, height, color_format, levels, data, flags);
 }
@@ -739,6 +764,27 @@ texture_t gs_create_cubetexture(uint32_t size,
 		void **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
+	bool pow2tex = is_pow2(size);
+	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
+
+	if (uses_mipmaps && !pow2tex) {
+		blog(LOG_WARNING, "Cannot use mipmaps with a "
+		                  "non-power-of-two texture.  Disabling "
+		                  "mipmaps for this texture.");
+
+		uses_mipmaps = false;
+		flags &= ~GS_BUILDMIPMAPS;
+		levels = 1;
+	}
+
+	if (uses_mipmaps && flags & GS_RENDERTARGET) {
+		blog(LOG_WARNING, "Cannot use mipmaps with render targets.  "
+		                  "Disabling mipmaps for this texture.");
+		flags &= ~GS_BUILDMIPMAPS;
+		levels = 1;
+		data   = NULL;
+	}
+
 	return graphics->exports.device_create_cubetexture(graphics->device,
 			size, color_format, levels, data, flags);
 }

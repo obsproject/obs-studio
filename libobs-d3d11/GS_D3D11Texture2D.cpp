@@ -18,11 +18,6 @@
 #include "util/base.h"
 #include "GS_D3D11SubSystem.hpp"
 
-static inline bool IsPow2(uint32_t num)
-{
-	return num >= 2 && (num & (num-1)) == 0;
-}
-
 static inline uint32_t numActualLevels(uint32_t levels, uint32_t width,
 		uint32_t height)
 {
@@ -162,15 +157,6 @@ gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
 	  isRenderTarget  ((flags & GS_RENDERTARGET) != 0),
 	  genMipmaps      ((flags & GS_BUILDMIPMAPS) != 0)
 {
-	bool hasMips = genMipmaps || levels != 1;
-	if (hasMips && (!IsPow2(width) || !IsPow2(height))) {
-		blog(LOG_WARNING, "Cannot use mipmaps with a "
-		                  "non-power-of-two texture.  Disabling "
-		                  "mipmaps for this texture.");
-		genMipmaps   = false;
-		this->levels = 1;
-	}
-
 	InitTexture(data);
 	InitResourceView();
 
