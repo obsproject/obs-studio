@@ -60,8 +60,7 @@ static inline uint32_t GetWinVer()
 
 static inline uint32_t GetFormatBPP(gs_color_format format)
 {
-	switch (format)
-	{
+	switch (format) {
 	case GS_A8:          return 1;
 	case GS_R8:          return 1;
 	case GS_RGBA:        return 4;
@@ -85,8 +84,7 @@ static inline uint32_t GetFormatBPP(gs_color_format format)
 
 static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 {
-	switch (format)
-	{
+	switch (format) {
 	case GS_A8:          return DXGI_FORMAT_A8_UNORM;
 	case GS_R8:          return DXGI_FORMAT_R8_UNORM;
 	case GS_RGBA:        return DXGI_FORMAT_R8G8B8A8_UNORM;
