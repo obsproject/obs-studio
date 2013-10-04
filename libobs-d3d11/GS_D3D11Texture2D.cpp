@@ -48,7 +48,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data)
 
 		for (size_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
-			newSRD.pSysMem          = data;
+			newSRD.pSysMem          = *data;
 			newSRD.SysMemPitch      = newRowSize; 
 			newSRD.SysMemSlicePitch = newTexSize;
 			srd.push_back(newSRD);
