@@ -98,21 +98,32 @@ fail:
 	return NULL;
 }
 
-void texture_destroy(texture_t tex)
-{
-	if (!tex)
-		return;
-
-	glDeleteTextures(1, &tex->texture);
-	bfree(tex);
-}
-
 static inline bool is_texture_2d(texture_t tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;
 	if (!is_tex2d)
 		blog(LOG_ERROR, "%s (GL) failed:  Not a 2D texture", func);
 	return is_tex2d;
+}
+
+void texture_destroy(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!tex)
+		return;
+
+	if (!is_texture_2d(tex, "texture_destroy"))
+		return;
+
+	if (tex->is_dynamic && tex2d->unpack_buffer) {
+		glDeleteBuffers(1, tex2d->unpack_buffer);
+		gl_success("glDeleteBuffers");
+	}
+
+	glDeleteTextures(1, &tex->texture);
+	gl_success("glDeleteTextures");
+
+	bfree(tex);
 }
 
 uint32_t texture_getwidth(texture_t tex)

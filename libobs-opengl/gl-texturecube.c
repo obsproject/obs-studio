@@ -82,7 +82,11 @@ void cubetexture_destroy(texture_t tex)
 	if (!tex)
 		return;
 
-	glDeleteTextures(1, &tex->texture);
+	if (tex->texture) {
+		glDeleteTextures(1, &tex->texture);
+		gl_success("glDeleteTextures");
+	}
+
 	bfree(tex);
 }
 
