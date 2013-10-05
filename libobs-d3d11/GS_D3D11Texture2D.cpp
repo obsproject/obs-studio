@@ -18,29 +18,15 @@
 #include "util/base.h"
 #include "GS_D3D11SubSystem.hpp"
 
-static inline uint32_t numActualLevels(uint32_t levels, uint32_t width,
-		uint32_t height)
-{
-	if (levels > 0)
-		return levels;
-
-	uint32_t size = max(width, height);
-	uint32_t numLevels = 0;
-
-	while (size  > 1) {
-		size /= 2;
-		numLevels++;
-	}
-
-	return numLevels;
-}
-
 void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data)
 {
-	uint32_t rowSizeBytes  = width  * get_format_bpp(format);
+	uint32_t rowSizeBytes  = width  * gs_get_format_bpp(format);
 	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
 	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
-	uint32_t actual_levels = numActualLevels(levels, width, height);
+	uint32_t actual_levels = levels;
+	
+	if (!actual_levels)
+		actual_levels = gs_num_total_levels(width, height);
 
 	rowSizeBytes /= 8;
 

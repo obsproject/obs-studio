@@ -43,6 +43,9 @@ bool upload_face(GLenum type, uint32_t num_levels,
 		size   /= 4;
 		width  /= 2;
 		height /= 2;
+
+		if (width  == 0) width  = 1;
+		if (height == 0) height = 1;
 	}
 
 	*p_data = data;

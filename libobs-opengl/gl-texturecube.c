@@ -17,33 +17,17 @@
 
 #include "gl-subsystem.h"
 
-static inline uint32_t num_actual_levels(struct gs_texture_cube *tex)
-{
-	uint32_t num_levels;
-	uint32_t size;
-
-	if (tex->base.levels > 0)
-		return tex->base.levels;
-
-	size = tex->size;
-	num_levels = 0;
-
-	while (size  > 1) {
-		size /= 2;
-		num_levels++;
-	}
-
-	return num_levels;
-}
-
 static inline bool upload_texture_cube(struct gs_texture_cube *tex, void **data)
 {
-	uint32_t row_size   = tex->size * get_format_bpp(tex->base.format);
+	uint32_t row_size   = tex->size * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->size * row_size / 8;
-	uint32_t num_levels = num_actual_levels(tex);
-	bool     compressed = is_compressed_format(tex->base.format);
+	uint32_t num_levels = tex->base.levels;
+	bool     compressed = gs_is_compressed_format(tex->base.format);
 	bool     success    = true;
 	uint32_t i;
+
+	if (!num_levels)
+		num_levels = gs_num_total_levels(tex->size, tex->size);
 
 	for (i = 0; i < 6; i++) {
 		GLenum type = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
@@ -89,7 +73,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 
 fail:
 	texture_destroy((texture_t)tex);
-	blog(LOG_ERROR, "device_create_texture (GL) failed");
+	blog(LOG_ERROR, "device_create_cubetexture (GL) failed");
 	return NULL;
 }
 

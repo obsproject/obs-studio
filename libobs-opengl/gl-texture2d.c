@@ -17,32 +17,16 @@
 
 #include "gl-subsystem.h"
 
-static uint32_t num_actual_levels(struct gs_texture_2d *tex)
-{
-	uint32_t num_levels;
-	uint32_t size;
-
-	if (tex->base.levels > 0)
-		return tex->base.levels;
-
-	size = tex->width > tex->height ? tex->width : tex->height;
-	num_levels = 0;
-
-	while (size  > 1) {
-		size /= 2;
-		num_levels++;
-	}
-
-	return num_levels;
-}
-
 static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 {
-	uint32_t row_size   = tex->width  * get_format_bpp(tex->base.format);
+	uint32_t row_size   = tex->width  * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->height * row_size / 8;
-	uint32_t num_levels = num_actual_levels(tex);
-	bool     compressed = is_compressed_format(tex->base.format);
+	uint32_t num_levels = tex->base.levels;
+	bool     compressed = gs_is_compressed_format(tex->base.format);
 	bool     success;
+
+	if (!num_levels)
+		num_levels = gs_num_total_levels(tex->width, tex->height);
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
@@ -68,7 +52,8 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex->unpack_buffer))
 		return false;
 
-	size = tex->width * tex->height * get_format_bpp(tex->base.format) / 8;
+	size = tex->width * tex->height * gs_get_format_bpp(tex->base.format);
+	size /= 8;
 
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 	if (!gl_success("glBufferData"))
@@ -176,7 +161,7 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-	*byte_width = tex2d->width * get_format_bpp(tex->format) / 8;
+	*byte_width = tex2d->width * gs_get_format_bpp(tex->format) / 8;
 	return true;
 
 fail:

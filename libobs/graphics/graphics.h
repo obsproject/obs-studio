@@ -226,7 +226,7 @@ struct gs_rect {
 	int cy;
 };
 
-static inline uint32_t get_format_bpp(enum gs_color_format format)
+static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_A8:          return 8;
@@ -250,9 +250,22 @@ static inline uint32_t get_format_bpp(enum gs_color_format format)
 	}
 }
 
-static inline bool is_compressed_format(enum gs_color_format format)
+static inline bool gs_is_compressed_format(enum gs_color_format format)
 {
 	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
+}
+
+static inline uint32_t gs_num_total_levels(uint32_t width, uint32_t height)
+{
+	uint32_t size = width > height ? width : height;
+	uint32_t num_levels = 0;
+
+	while (size > 1) {
+		size /= 2;
+		num_levels++;
+	}
+
+	return num_levels;
 }
 
 /* wrapped opaque data types */
