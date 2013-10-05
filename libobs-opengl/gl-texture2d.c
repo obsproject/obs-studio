@@ -116,12 +116,14 @@ void texture_destroy(texture_t tex)
 		return;
 
 	if (tex->is_dynamic && tex2d->unpack_buffer) {
-		glDeleteBuffers(1, tex2d->unpack_buffer);
+		glDeleteBuffers(1, &tex2d->unpack_buffer);
 		gl_success("glDeleteBuffers");
 	}
 
-	glDeleteTextures(1, &tex->texture);
-	gl_success("glDeleteTextures");
+	if (tex->texture) {
+		glDeleteTextures(1, &tex->texture);
+		gl_success("glDeleteTextures");
+	}
 
 	bfree(tex);
 }
