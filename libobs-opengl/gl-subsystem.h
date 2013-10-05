@@ -73,11 +73,6 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	}
 }
 
-static inline bool is_compressed_format(enum gs_color_format format)
-{
-	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
-}
-
 static inline GLint convert_zstencil_format(enum gs_zstencil_format format)
 {
 	switch (format) {
@@ -96,6 +91,7 @@ struct gs_texture {
 	GLenum               gl_format;
 	GLint                gl_internal_format;
 	GLuint               texture;
+	uint32_t             levels;
 };
 
 struct gs_texture_2d {

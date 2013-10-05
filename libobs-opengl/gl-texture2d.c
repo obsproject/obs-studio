@@ -17,17 +17,65 @@
 
 #include "gl-subsystem.h"
 
+static inline uint32_t num_actual_levels(struct gs_texture_2d *tex)
+{
+	uint32_t num_levels;
+	uint32_t size;
+
+	if (tex->base.levels > 0)
+		return tex->base.levels;
+
+	size = tex->width > tex->height ? tex->width : tex->height;
+	num_levels = 0;
+
+	while (size  > 1) {
+		size /= 2;
+		num_levels++;
+	}
+
+	return num_levels;
+}
+
 static inline bool upload_texture_data(struct gs_texture_2d *tex, void **data)
 {
+	uint32_t row_size   = tex->width  * get_format_bpp(tex->base.format);
+	uint32_t tex_size   = tex->height * row_size / 8;
+	uint32_t num_levels = num_actual_levels(tex);
+	bool     success = true;
+	bool     compressed = is_compressed_format(tex->base.format);
+	uint32_t i;
+
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
 
-	//if (is_compressed_format(tex->base.format))
+	for (i = 0; i < num_levels; i++) {
+		uint32_t size = tex_size;
+
+		if (compressed) {
+			glCompressedTexImage2D(GL_TEXTURE_2D, i,
+					tex->base.gl_internal_format,
+					tex->width, tex->height, 0,
+					size, *data);
+			if (!gl_success("glCompressedTexImage2D"))
+				success = false;
+
+		} else {
+			glTexImage2D(GL_TEXTURE_2D, i,
+					tex->base.gl_internal_format,
+					tex->width, tex->height, 0,
+					tex->base.gl_format, GL_UNSIGNED_BYTE,
+					*data);
+			if (!gl_success("glTexImage2D"))
+				success = false;
+		}
+
+		data++;
+	}
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, 0))
-		return false;
+		success = false;
 
-	return true;
+	return success;
 }
 
 texture_t device_create_texture(device_t device, uint32_t width,
@@ -60,4 +108,9 @@ fail:
 
 void texture_destroy(texture_t tex)
 {
+	if (!tex)
+		return;
+
+	glDeleteTextures(1, &tex->texture);
+	bfree(tex);
 }

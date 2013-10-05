@@ -37,16 +37,18 @@ static inline uint32_t numActualLevels(uint32_t levels, uint32_t width,
 
 void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data)
 {
-	uint32_t rowSizeBytes  = width  * GetFormatBPP(format);
-	uint32_t texSizeBytes  = height * rowSizeBytes;
+	uint32_t rowSizeBytes  = width  * get_format_bpp(format);
+	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
 	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = numActualLevels(levels, width, height);
+
+	rowSizeBytes /= 8;
 
 	for (size_t i = 0; i < textures; i++) {
 		uint32_t newRowSize = rowSizeBytes;
 		uint32_t newTexSize = texSizeBytes;
 
-		for (size_t j = 0; j < actual_levels; j++) {
+		for (uint32_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
 			newSRD.pSysMem          = *data;
 			newSRD.SysMemPitch      = newRowSize; 

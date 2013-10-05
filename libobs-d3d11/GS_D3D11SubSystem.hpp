@@ -58,30 +58,6 @@ static inline uint32_t GetWinVer()
 	return (ovi.dwMajorVersion << 8) | (ovi.dwMinorVersion);
 }
 
-static inline uint32_t GetFormatBPP(gs_color_format format)
-{
-	switch (format) {
-	case GS_A8:          return 1;
-	case GS_R8:          return 1;
-	case GS_RGBA:        return 4;
-	case GS_BGRX:        return 4;
-	case GS_BGRA:        return 4;
-	case GS_R10G10B10A2: return 4;
-	case GS_RGBA16:      return 8;
-	case GS_R16:         return 2;
-	case GS_RGBA16F:     return 8;
-	case GS_RGBA32F:     return 16;
-	case GS_RG16F:       return 4;
-	case GS_RG32F:       return 8;
-	case GS_R16F:        return 2;
-	case GS_R32F:        return 4;
-	case GS_DXT1:        return 0;
-	case GS_DXT3:        return 0;
-	case GS_DXT5:        return 0;
-	default:             return 0;
-	}
-}
-
 static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 {
 	switch (format) {

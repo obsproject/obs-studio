@@ -226,6 +226,35 @@ struct gs_rect {
 	int cy;
 };
 
+static inline uint32_t get_format_bpp(enum gs_color_format format)
+{
+	switch (format) {
+	case GS_A8:          return 8;
+	case GS_R8:          return 8;
+	case GS_RGBA:        return 32;
+	case GS_BGRX:        return 32;
+	case GS_BGRA:        return 32;
+	case GS_R10G10B10A2: return 32;
+	case GS_RGBA16:      return 64;
+	case GS_R16:         return 16;
+	case GS_RGBA16F:     return 64;
+	case GS_RGBA32F:     return 128;
+	case GS_RG16F:       return 32;
+	case GS_RG32F:       return 64;
+	case GS_R16F:        return 16;
+	case GS_R32F:        return 32;
+	case GS_DXT1:        return 4;
+	case GS_DXT3:        return 8;
+	case GS_DXT5:        return 8;
+	default:             return 0;
+	}
+}
+
+static inline bool is_compressed_format(enum gs_color_format format)
+{
+	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
+}
+
 /* wrapped opaque data types */
 
 struct gs_texture;
