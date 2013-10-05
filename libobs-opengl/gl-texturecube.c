@@ -72,7 +72,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 	return (texture_t)tex;
 
 fail:
-	texture_destroy((texture_t)tex);
+	cubetexture_destroy((texture_t)tex);
 	blog(LOG_ERROR, "device_create_cubetexture (GL) failed");
 	return NULL;
 }
