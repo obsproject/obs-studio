@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "gl-subsystem.h"
-#include "gl-exports.h"
 
 device_t device_create(struct gs_init_data *info)
 {
@@ -81,17 +80,13 @@ uint32_t device_getheight(device_t device)
 	return device->cur_swap->info.cy;
 }
 
-texture_t device_create_cubetexture(device_t device, uint32_t size,
-		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags)
-{
-}
-
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels, void **data,
 		uint32_t flags)
 {
+	/* TODO */
+	return NULL;
 }
 
 zstencil_t device_create_zstencil(device_t device, uint32_t width,
@@ -351,38 +346,6 @@ void device_projection_pop(device_t device)
 }
 
 void swapchain_destroy(swapchain_t swapchain)
-{
-}
-
-uint32_t texture_getwidth(texture_t tex)
-{
-}
-
-uint32_t texture_getheight(texture_t tex)
-{
-}
-
-enum gs_color_format texture_getcolorformat(texture_t tex)
-{
-}
-
-bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
-{
-}
-
-void texture_unmap(texture_t tex)
-{
-}
-
-void cubetexture_destroy(texture_t cubetex)
-{
-}
-
-uint32_t cubetexture_getsize(texture_t cubetex)
-{
-}
-
-enum gs_color_format cubetexture_getcolorformat(texture_t cubetex)
 {
 }
 

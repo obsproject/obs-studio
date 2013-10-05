@@ -160,8 +160,10 @@
     <ClInclude Include="..\..\..\libobs-opengl\gl-subsystem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-helpers.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

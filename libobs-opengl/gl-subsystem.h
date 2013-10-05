@@ -21,6 +21,7 @@
 #include "graphics/graphics.h"
 #include "glew/include/GL/glew.h"
 #include "gl-helpers.h"
+#include "gl-exports.h"
 
 struct gl_platform;
 struct gl_windowinfo;
@@ -92,6 +93,9 @@ struct gs_texture {
 	GLint                gl_internal_format;
 	GLuint               texture;
 	uint32_t             levels;
+	bool                 is_dynamic;
+	bool                 is_render_target;
+	bool                 gen_mipmaps;
 };
 
 struct gs_texture_2d {
@@ -100,6 +104,7 @@ struct gs_texture_2d {
 	uint32_t             width;
 	uint32_t             height;
 	bool                 gen_mipmaps;
+	GLuint               unpack_buffer;
 };
 
 struct gs_texture_cube {

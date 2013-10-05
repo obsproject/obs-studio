@@ -341,7 +341,6 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	if (!gl_dummy_context_init(&dummy))
 		goto fail;
-
 	if (!gl_init_extensions())
 		goto fail;
 
@@ -358,6 +357,11 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->hrc = gl_init_context(plat->swap.wi->hdc);
 	if (!plat->hrc)
 		goto fail;
+
+	if (GLEW_ARB_seamless_cube_map) {
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		gl_success("GL_TEXTURE_CUBE_MAP_SEAMLESS");
+	}
 
 	return plat;
 

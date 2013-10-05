@@ -17,7 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static inline uint32_t num_actual_levels(struct gs_texture_2d *tex)
+static uint32_t num_actual_levels(struct gs_texture_2d *tex)
 {
 	uint32_t num_levels;
 	uint32_t size;
@@ -36,43 +36,45 @@ static inline uint32_t num_actual_levels(struct gs_texture_2d *tex)
 	return num_levels;
 }
 
-static inline bool upload_texture_data(struct gs_texture_2d *tex, void **data)
+static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 {
 	uint32_t row_size   = tex->width  * get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->height * row_size / 8;
 	uint32_t num_levels = num_actual_levels(tex);
-	bool     success = true;
 	bool     compressed = is_compressed_format(tex->base.format);
-	uint32_t i;
+	bool     success;
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
 
-	for (i = 0; i < num_levels; i++) {
-		uint32_t size = tex_size;
-
-		if (compressed) {
-			glCompressedTexImage2D(GL_TEXTURE_2D, i,
-					tex->base.gl_internal_format,
-					tex->width, tex->height, 0,
-					size, *data);
-			if (!gl_success("glCompressedTexImage2D"))
-				success = false;
-
-		} else {
-			glTexImage2D(GL_TEXTURE_2D, i,
-					tex->base.gl_internal_format,
-					tex->width, tex->height, 0,
-					tex->base.gl_format, GL_UNSIGNED_BYTE,
-					*data);
-			if (!gl_success("glTexImage2D"))
-				success = false;
-		}
-
-		data++;
-	}
+	success = upload_face(GL_TEXTURE_2D, num_levels,
+			tex->base.gl_format, tex->base.gl_internal_format,
+			compressed, tex->width, tex->height, tex_size, &data);
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, 0))
+		success = false;
+
+	return success;
+}
+
+static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
+{
+	GLsizeiptr size;
+	bool success = true;
+
+	if (!gl_gen_buffers(1, &tex->unpack_buffer))
+		return false;
+
+	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex->unpack_buffer))
+		return false;
+
+	size = tex->width * tex->height * get_format_bpp(tex->base.format) / 8;
+
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+	if (!gl_success("glBufferData"))
+		success = false;
+
+	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0))
 		success = false;
 
 	return success;
@@ -90,12 +92,17 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.format             = color_format;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.is_dynamic         = flags & GS_DYNAMIC;
+	tex->base.is_render_target   = flags & GS_RENDERTARGET;
+	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
 	tex->width                   = width;
 	tex->height                  = height;
 
 	if (!gl_gen_textures(1, &tex->base.texture))
 		goto fail;
-	if (data && !upload_texture_data(tex, data))
+	if (tex->base.is_dynamic && !create_pixel_unpack_buffer(tex))
+		goto fail;
+	if (data && !upload_texture_2d(tex, data))
 		goto fail;
 
 	return (texture_t)tex;
@@ -113,4 +120,80 @@ void texture_destroy(texture_t tex)
 
 	glDeleteTextures(1, &tex->texture);
 	bfree(tex);
+}
+
+static inline bool is_texture_2d(texture_t tex, const char *func)
+{
+	bool is_tex2d = tex->type == GS_TEXTURE_2D;
+	if (!is_tex2d)
+		blog(LOG_ERROR, "%s (GL) failed:  Not a 2D texture", func);
+	return is_tex2d;
+}
+
+uint32_t texture_getwidth(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!is_texture_2d(tex, "texture_getwidth"))
+		return 0;
+
+	return tex2d->width;
+}
+
+uint32_t texture_getheight(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!is_texture_2d(tex, "texture_getheight"))
+		return 0;
+
+	return tex2d->height;
+}
+
+enum gs_color_format texture_getcolorformat(texture_t tex)
+{
+	return tex->format;
+}
+
+bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+
+	if (!is_texture_2d(tex, "texture_map"))
+		goto fail;
+
+	if (!tex2d->base.is_dynamic) {
+		blog(LOG_ERROR, "Texture is not dynamic");
+		goto fail;
+	}
+
+	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
+		goto fail;
+
+	*ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+	if (!*ptr) {
+		gl_success("glMapBuffer");
+		goto fail;
+	}
+
+	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+	*byte_width = tex2d->width * get_format_bpp(tex->format) / 8;
+	return true;
+
+fail:
+	blog(LOG_ERROR, "texture_map (GL) failed");
+	return false;
+}
+
+void texture_unmap(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!is_texture_2d(tex, "texture_unmap"))
+		return;
+
+	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
+		return;
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+	gl_success("glUnmapBuffer");
+
+	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }

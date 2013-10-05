@@ -48,4 +48,20 @@ static inline bool gl_bind_texture(GLenum target, GLuint texture)
 	return gl_success("glBindTexture");
 }
 
+static inline bool gl_gen_buffers(GLsizei num_buffers, GLuint *buffers)
+{
+	glGenBuffers(num_buffers, buffers);
+	return gl_success("glGenBuffers");
+}
+
+static inline bool gl_bind_buffer(GLenum target, GLuint buffer)
+{
+	glBindBuffer(target, buffer);
+	return gl_success("glBindBuffer");
+}
+
+extern bool upload_face(GLenum type, uint32_t num_levels,
+		GLenum format, GLint internal_format, bool compressed,
+		uint32_t width, uint32_t height, uint32_t size, void ***p_data);
+
 #endif

@@ -35,5 +35,11 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-helpers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
