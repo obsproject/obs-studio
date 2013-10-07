@@ -141,6 +141,7 @@ static inline void shader_struct_free(struct shader_struct *ss)
 struct shader_func {
 	char *name;
 	char *return_type;
+	char *return_mapping;
 	DARRAY(struct shader_var) params;
 
 	const struct cf_token *start, *end;
@@ -151,10 +152,11 @@ static inline void shader_func_init(struct shader_func *sf,
 {
 	da_init(sf->params);
 
-	sf->return_type = return_type;
-	sf->name        = name;
-	sf->start       = NULL;
-	sf->end         = NULL;
+	sf->return_type    = return_type;
+	sf->return_mapping = NULL;
+	sf->name           = name;
+	sf->start          = NULL;
+	sf->end            = NULL;
 }
 
 static inline void shader_func_free(struct shader_func *sf)
@@ -166,6 +168,7 @@ static inline void shader_func_free(struct shader_func *sf)
 
 	bfree(sf->name);
 	bfree(sf->return_type);
+	bfree(sf->return_mapping);
 	da_free(sf->params);
 }
 
@@ -213,14 +216,19 @@ static inline void shader_parser_free(struct shader_parser *sp)
 EXPORT bool shader_parse(struct shader_parser *sp, const char *shader,
 		const char *file);
 
-static inline struct shader_func *shader_parser_getfunc(
-		struct shader_parser *sp, const char *func_name)
+static inline char *shader_parser_geterrors(struct shader_parser *sp)
+{
+	return error_data_buildstring(&sp->cfp.error_list);
+}
+
+static inline struct shader_var *shader_parser_getparam(
+		struct shader_parser *sp, const char *param_name)
 {
 	size_t i;
-	for (i = 0; i < sp->funcs.num; i++) {
-		struct shader_func *func = sp->funcs.array+i;
-		if (strcmp(func->name, func_name) == 0)
-			return func;
+	for (i = 0; i < sp->params.num; i++) {
+		struct shader_var *param = sp->params.array+i;
+		if (strcmp(param->name, param_name) == 0)
+			return param;
 	}
 
 	return NULL;
@@ -234,6 +242,32 @@ static inline struct shader_struct *shader_parser_getstruct(
 		struct shader_struct *st = sp->structs.array+i;
 		if (strcmp(st->name, struct_name) == 0)
 			return st;
+	}
+
+	return NULL;
+}
+
+static inline struct shader_sampler *shader_parser_getsampler(
+		struct shader_parser *sp, const char *sampler_name)
+{
+	size_t i;
+	for (i = 0; i < sp->samplers.num; i++) {
+		struct shader_sampler *sampler = sp->samplers.array+i;
+		if (strcmp(sampler->name, sampler_name) == 0)
+			return sampler;
+	}
+
+	return NULL;
+}
+
+static inline struct shader_func *shader_parser_getfunc(
+		struct shader_parser *sp, const char *func_name)
+{
+	size_t i;
+	for (i = 0; i < sp->funcs.num; i++) {
+		struct shader_func *func = sp->funcs.array+i;
+		if (strcmp(func->name, func_name) == 0)
+			return func;
 	}
 
 	return NULL;

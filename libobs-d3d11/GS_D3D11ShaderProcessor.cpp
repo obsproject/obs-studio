@@ -224,13 +224,13 @@ void ShaderProcessor::BuildString(string &outputString)
 
 void ShaderProcessor::Process(const char *shader_string, const char *file)
 {
-	if (!shader_parse(&parser, shader_string, file)) {
-		char *str = error_data_buildstring(&parser.cfp.error_list);
-		if (str) {
-			blog(LOG_WARNING, "Shader parser errors/warnings:\n"
-			                  "%s\n", str);
-			bfree(str);
-		}
-		throw "Failed to parse shader";
+	bool success = shader_parse(&parser, shader_string, file);
+	char *str = shader_parser_geterrors(&parser);
+	if (str) {
+		blog(LOG_WARNING, "Shader parser errors/warnings:\n%s\n", str);
+		bfree(str);
 	}
+
+	if (!success)
+		throw "Failed to parse shader";
 }

@@ -62,6 +62,8 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 	tex->base.format             = color_format;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.is_render_target   = flags & GS_RENDERTARGET;
+	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
 	tex->size                    = size;
 
 	if (!gl_gen_textures(1, &tex->base.texture))

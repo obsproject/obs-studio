@@ -400,8 +400,7 @@ exit:
 	return true;
 }
 
-static void sp_parse_function(struct shader_parser *sp,
-		char *type, char *name)
+static void sp_parse_function(struct shader_parser *sp, char *type, char *name)
 {
 	struct shader_func func;
 
@@ -414,8 +413,13 @@ static void sp_parse_function(struct shader_parser *sp,
 
 	/* if function is mapped to something, for example COLOR */
 	if (token_is(&sp->cfp, ":")) {
-		if (!next_valid_token(&sp->cfp))
+		char *mapping = NULL;
+		int errorcode = next_name(&sp->cfp, &mapping, "mapping", "{");
+		if (errorcode != PARSE_SUCCESS)
 			goto error;
+
+		func.return_mapping = mapping;
+
 		if (!next_valid_token(&sp->cfp))
 			goto error;
 	}

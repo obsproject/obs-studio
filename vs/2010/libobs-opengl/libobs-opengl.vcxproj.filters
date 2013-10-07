@@ -24,6 +24,9 @@
     <ClInclude Include="..\..\..\libobs-opengl\gl-helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs-opengl\gl-shaderparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-shaderparser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
