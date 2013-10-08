@@ -141,10 +141,10 @@ static inline void shader_struct_free(struct shader_struct *ss)
 struct shader_func {
 	char *name;
 	char *return_type;
-	char *return_mapping;
+	char *mapping;
 	DARRAY(struct shader_var) params;
 
-	const struct cf_token *start, *end;
+	struct cf_token *start, *end;
 };
 
 static inline void shader_func_init(struct shader_func *sf,
@@ -153,7 +153,7 @@ static inline void shader_func_init(struct shader_func *sf,
 	da_init(sf->params);
 
 	sf->return_type    = return_type;
-	sf->return_mapping = NULL;
+	sf->mapping = NULL;
 	sf->name           = name;
 	sf->start          = NULL;
 	sf->end            = NULL;
@@ -168,7 +168,7 @@ static inline void shader_func_free(struct shader_func *sf)
 
 	bfree(sf->name);
 	bfree(sf->return_type);
-	bfree(sf->return_mapping);
+	bfree(sf->mapping);
 	da_free(sf->params);
 }
 

@@ -29,7 +29,6 @@
 
 struct gl_shader_parser {
 	struct dstr          gl_string;
-	struct dstr          gl_main_func;
 	struct shader_parser parser;
 };
 

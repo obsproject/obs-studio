@@ -304,8 +304,7 @@ error:
 static inline int sp_check_for_keyword(struct shader_parser *sp,
 		const char *keyword, bool *val)
 {
-	bool new_val;
-	new_val = token_is(&sp->cfp, keyword);
+	bool new_val = token_is(&sp->cfp, keyword);
 	if (new_val) {
 		if (!next_valid_token(&sp->cfp))
 			return PARSE_EOF;
@@ -325,7 +324,7 @@ static inline int sp_parse_func_param(struct shader_parser *sp,
 		struct shader_func *func, struct shader_var *var)
 {
 	int errcode;
-	bool is_uniform;
+	bool is_uniform = false;
 
 	if (!next_valid_token(&sp->cfp))
 		return PARSE_EOF;
@@ -418,7 +417,7 @@ static void sp_parse_function(struct shader_parser *sp, char *type, char *name)
 		if (errorcode != PARSE_SUCCESS)
 			goto error;
 
-		func.return_mapping = mapping;
+		func.mapping = mapping;
 
 		if (!next_valid_token(&sp->cfp))
 			goto error;

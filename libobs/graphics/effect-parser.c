@@ -971,8 +971,6 @@ static inline void ep_write_param(struct dstr *shader, struct ep_param *param,
 		struct dstr new;
 		dstr_init_copy(&new, param->name);
 		darray_push_back(sizeof(struct dstr), used_params, &new);
-
-		dstr_cat(shader, "uniform ");
 	}
 
 	dstr_cat(shader, param->type);
