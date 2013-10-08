@@ -208,6 +208,45 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *   All else can be left as-is
  */
 
+static bool gl_write_mul(struct gl_shader_parser *glsp,
+		struct cf_token **p_token)
+{
+	struct cf_parser *cfp = &glsp->parser.cfp;
+	bool written = false;
+	cfp->cur_token = *p_token;
+
+	if (!next_token(cfp))    return false;
+	if (!token_is(cfp, "(")) return false;
+
+	dstr_cat(&glsp->gl_string, "(");
+	gl_write_function_contents(glsp, &cfp->cur_token, ",");
+	dstr_cat(&glsp->gl_string, ") * (");
+	next_token(cfp);
+	gl_write_function_contents(glsp, &cfp->cur_token, ")");
+	dstr_cat(&glsp->gl_string, "))");
+
+	*p_token = cfp->cur_token;
+	return true;
+}
+
+static bool gl_write_saturate(struct gl_shader_parser *glsp,
+		struct cf_token **p_token)
+{
+	struct cf_parser *cfp = &glsp->parser.cfp;
+	bool written = false;
+	cfp->cur_token = *p_token;
+
+	if (!next_token(cfp))    return false;
+	if (!token_is(cfp, "(")) return false;
+
+	dstr_cat(&glsp->gl_string, "clamp");
+	gl_write_function_contents(glsp, &cfp->cur_token, ")");
+	dstr_cat(&glsp->gl_string, ", 0.0, 1.0)");
+
+	*p_token = cfp->cur_token;
+	return true;
+}
+
 static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 		struct shader_var *var, const char *call)
 {
@@ -286,6 +325,10 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, "mix");
 	} else if (strref_cmp(&token->str, "rsqrt") == 0) {
 		dstr_cat(&glsp->gl_string, "inversesqrt");
+	} else if (strref_cmp(&token->str, "saturate") == 0) {
+		written = gl_write_saturate(glsp, &token);
+	} else if (strref_cmp(&token->str, "mul") == 0) {
+		written = gl_write_mul(glsp, &token);
 	} else {
 		struct shader_var *var = sp_getparam(glsp, token);
 		if (var && astrcmp_n(var->type, "texture", 7) == 0)
@@ -304,7 +347,10 @@ static void gl_write_function_contents(struct gl_shader_parser *glsp,
 {
 	struct cf_token *token = *p_token;
 
-	dstr_cat_strref(&glsp->gl_string, &token->str);
+	if (token->type != CFTOKEN_NAME
+	    || (  !gl_write_type_token(glsp, token)
+	       && !gl_write_intrinsic(glsp, &token)))
+		dstr_cat_strref(&glsp->gl_string, &token->str);
 
 	while (token->type != CFTOKEN_NONE) {
 		token++;
