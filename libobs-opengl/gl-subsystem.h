@@ -18,6 +18,7 @@
 #ifndef GL_SUBSYSTEM_H
 #define GL_SUBSYSTEM_H
 
+#include "util/darray.h"
 #include "graphics/graphics.h"
 #include "glew/include/GL/glew.h"
 #include "gl-helpers.h"
@@ -84,6 +85,108 @@ static inline GLint convert_zstencil_format(enum gs_zstencil_format format)
 	default:             return 0;
 	}
 }
+
+static inline GLenum convert_shader_type(enum shader_type type)
+{
+	switch (type) {
+	default:
+	case SHADER_VERTEX: return GL_VERTEX_SHADER;
+	case SHADER_PIXEL:  return GL_FRAGMENT_SHADER;
+	}
+}
+
+static inline void convert_filter(enum gs_sample_filter filter,
+		GLint *min_filter, GLint *mag_filter)
+{
+	switch (filter) {
+	case GS_FILTER_ANISOTROPIC:
+		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
+		*mag_filter = GL_LINEAR;
+		break;
+	default:
+	case GS_FILTER_POINT:
+		*min_filter = GL_NEAREST_MIPMAP_NEAREST;
+		*mag_filter = GL_NEAREST;
+		break;
+	case GS_FILTER_LINEAR:
+		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
+		*mag_filter = GL_LINEAR;
+		break;
+	case GS_FILTER_MIN_MAG_POINT_MIP_LINEAR:
+		*min_filter = GL_NEAREST_MIPMAP_LINEAR;
+		*mag_filter = GL_NEAREST;
+		break;
+	case GS_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
+		*min_filter = GL_NEAREST_MIPMAP_NEAREST;
+		*mag_filter = GL_LINEAR;
+		break;
+	case GS_FILTER_MIN_POINT_MAG_MIP_LINEAR:
+		*min_filter = GL_NEAREST_MIPMAP_LINEAR;
+		*mag_filter = GL_LINEAR;
+		break;
+	case GS_FILTER_MIN_LINEAR_MAG_MIP_POINT:
+		*min_filter = GL_LINEAR_MIPMAP_NEAREST;
+		*mag_filter = GL_NEAREST;
+		break;
+	case GS_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
+		*mag_filter = GL_NEAREST;
+		break;
+	case GS_FILTER_MIN_MAG_LINEAR_MIP_POINT:
+		*min_filter = GL_LINEAR_MIPMAP_NEAREST;
+		*mag_filter = GL_LINEAR;
+		break;
+	}
+}
+
+static inline GLint convert_address_mode(enum gs_address_mode mode)
+{
+	switch (mode) {
+	default:
+	case GS_ADDRESS_WRAP:       return GL_REPEAT;
+	case GS_ADDRESS_CLAMP:      return GL_CLAMP;
+	case GS_ADDRESS_MIRROR:     return GL_MIRRORED_REPEAT;
+	case GS_ADDRESS_BORDER:     return GL_CLAMP_TO_BORDER;
+	case GS_ADDRESS_MIRRORONCE: return GL_MIRROR_CLAMP_EXT;
+	}
+}
+
+extern void convert_sampler_info(struct gs_sampler *sampler,
+		struct gs_sampler_info *info);
+
+struct gs_sampler {
+	GLint min_filter;
+	GLint mag_filter;
+	GLint address_u;
+	GLint address_v;
+	GLint address_w;
+	GLint max_anisotropy;
+};
+
+struct shader_param {
+	char                   *name;
+	enum shader_param_type type;
+	GLint                  param;
+	GLint                  texture_id;
+	size_t                 sampler_id;
+	int                    array_count;
+
+	DARRAY(uint8_t)        cur_value;
+	DARRAY(uint8_t)        def_value;
+	bool                   changed;
+};
+
+struct gs_shader {
+	device_t         device;
+	enum shader_type type;
+	GLuint           program;
+
+	struct shader_param *viewproj;
+	struct shader_param *world;
+
+	DARRAY(struct gs_sampler)   samplers;
+	DARRAY(struct shader_param) params;
+};
 
 struct gs_texture {
 	device_t             device;

@@ -49,6 +49,7 @@ struct shader_var {
 	char *mapping;
 	enum shader_var_type var_type;
 	int array_count;
+	size_t gl_sampler_id; /* optional: used/parsed by GL */
 
 	DARRAY(uint8_t) default_val;
 };

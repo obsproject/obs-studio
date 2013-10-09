@@ -17,6 +17,17 @@
 
 #include "gl-subsystem.h"
 
+void convert_sampler_info(struct gs_sampler *sampler,
+		struct gs_sampler_info *info)
+{
+	convert_filter(info->filter, &sampler->min_filter,
+			&sampler->mag_filter);
+	sampler->address_u      = convert_address_mode(info->address_u);
+	sampler->address_v      = convert_address_mode(info->address_v);
+	sampler->address_w      = convert_address_mode(info->address_w);
+	sampler->max_anisotropy = info->max_anisotropy;
+}
+
 device_t device_create(struct gs_init_data *info)
 {
 	struct gs_device *device = bmalloc(sizeof(struct gs_device));
@@ -101,18 +112,6 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 
 samplerstate_t device_create_samplerstate(device_t device,
 		struct gs_sampler_info *info)
-{
-}
-
-shader_t device_create_vertexshader(device_t device,
-		const char *shader, const char *file,
-		char **error_string)
-{
-}
-
-shader_t device_create_pixelshader(device_t device,
-		const char *shader, const char *file,
-		char **error_string)
 {
 }
 
@@ -431,84 +430,5 @@ size_t indexbuffer_numindices(indexbuffer_t indexbuffer)
 }
 
 enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
-{
-}
-
-void shader_destroy(shader_t shader)
-{
-}
-
-int shader_numparams(shader_t shader)
-{
-}
-
-sparam_t shader_getparambyidx(shader_t shader, int param)
-{
-}
-
-sparam_t shader_getparambyname(shader_t shader, const char *name)
-{
-}
-
-void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info)
-{
-}
-
-sparam_t shader_getviewprojmatrix(shader_t shader)
-{
-}
-
-sparam_t shader_getworldmatrix(shader_t shader)
-{
-}
-
-void shader_setbool(shader_t shader, sparam_t param, bool val)
-{
-}
-
-void shader_setfloat(shader_t shader, sparam_t param, float val)
-{
-}
-
-void shader_setint(shader_t shader, sparam_t param, int val)
-{
-}
-
-void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val)
-{
-}
-
-void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val)
-{
-}
-
-void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val)
-{
-}
-
-void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val)
-{
-}
-
-void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val)
-{
-}
-
-void shader_settexture(shader_t shader, sparam_t param, texture_t val)
-{
-}
-
-void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size)
-{
-}
-
-void shader_setdefault(shader_t shader, sparam_t param)
 {
 }

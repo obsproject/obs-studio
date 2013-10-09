@@ -21,6 +21,32 @@
 static void gl_write_function_contents(struct gl_shader_parser *glsp,
 		struct cf_token **p_token, const char *end);
 
+static inline struct shader_var *sp_getparam(struct gl_shader_parser *glsp,
+		struct cf_token *token)
+{
+	size_t i;
+	for (i = 0; i < glsp->parser.params.num; i++) {
+		struct shader_var *param = glsp->parser.params.array+i;
+		if (strref_cmp(&token->str, param->name) == 0)
+			return param;
+	}
+
+	return NULL;
+}
+
+static inline size_t sp_getsampler(struct gl_shader_parser *glsp,
+		struct cf_token *token)
+{
+	size_t i;
+	for (i = 0; i < glsp->parser.samplers.num; i++) {
+		struct shader_sampler *sampler = glsp->parser.samplers.array+i;
+		if (strref_cmp(&token->str, sampler->name) == 0)
+			return i;
+	}
+
+	return -1;
+}
+
 static bool gl_write_type_n(struct gl_shader_parser *glsp,
 		const char *type, size_t len)
 {
@@ -251,8 +277,16 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 		struct shader_var *var, const char *call)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
-	if (!go_to_token(cfp, ",", NULL))
-		return false;
+	size_t sampler_id = -1;
+
+	if (!next_token(cfp))    return false;
+	if (!token_is(cfp, "(")) return false;
+	if (!next_token(cfp))    return false;
+
+	sampler_id = sp_getsampler(glsp, cfp->cur_token);
+	if (sampler_id == -1) return false;
+
+	var->gl_sampler_id = sampler_id;
 
 	dstr_cat(&glsp->gl_string, call);
 	dstr_cat(&glsp->gl_string, "(");
@@ -292,19 +326,6 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 
 	*p_token = cfp->cur_token;
 	return true;
-}
-
-static inline struct shader_var *sp_getparam(struct gl_shader_parser *glsp,
-		struct cf_token *token)
-{
-	size_t i;
-	for (i = 0; i < glsp->parser.params.num; i++) {
-		struct shader_var *param = glsp->parser.params.array+i;
-		if (strref_cmp(&token->str, param->name) == 0)
-			return param;
-	}
-
-	return NULL;
 }
 
 static bool gl_write_intrinsic(struct gl_shader_parser *glsp,

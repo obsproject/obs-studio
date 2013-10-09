@@ -47,5 +47,8 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-shaderparser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-shader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

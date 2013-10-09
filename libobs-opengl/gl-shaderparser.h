@@ -30,6 +30,8 @@
 struct gl_shader_parser {
 	struct dstr          gl_string;
 	struct shader_parser parser;
+
+	DARRAY(uint32_t)     texture_samplers;
 };
 
 static inline void gl_shader_parser_init(struct gl_shader_parser *glsp)
