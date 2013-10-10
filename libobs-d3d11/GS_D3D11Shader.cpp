@@ -110,9 +110,6 @@ void gs_shader::BuildConstantBuffer()
 		case SHADER_PARAM_VEC2:  constantSize += sizeof(vec2); break;
 		case SHADER_PARAM_VEC3:  constantSize += sizeof(float)*3; break;
 		case SHADER_PARAM_VEC4:  constantSize += sizeof(vec4); break;
-		case SHADER_PARAM_MATRIX3X3:
-			constantSize += sizeof(float)*3*3;
-			break;
 		case SHADER_PARAM_MATRIX4X4:
 			constantSize += sizeof(float)*4*4;
 		}

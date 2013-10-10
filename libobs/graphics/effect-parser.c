@@ -1288,8 +1288,6 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 		param->type = SHADER_PARAM_VEC3;
 	else if (strcmp(param_in->type, "float4") == 0)
 		param->type = SHADER_PARAM_VEC4;
-	else if (strcmp(param_in->type, "float3x3") == 0)
-		param->type = SHADER_PARAM_MATRIX3X3;
 	else if (strcmp(param_in->type, "float4x4") == 0)
 		param->type = SHADER_PARAM_MATRIX4X4;
 	else if (param_in->is_texture)
@@ -1312,7 +1310,6 @@ static inline void ep_compile_pass_shaderparams(struct effect_parser *ep,
 	for (i = 0; i < pass_params->num; i++) {
 		struct dstr *param_name;
 		struct pass_shaderparam *param;
-		int test;
 
 		param_name = darray_item(sizeof(struct dstr), used_params, i);
 		param = darray_item(sizeof(struct pass_shaderparam),

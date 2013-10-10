@@ -354,7 +354,6 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 	case SHADER_PARAM_VEC2:      expected_size = sizeof(float)*2; break;
 	case SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
 	case SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
-	case SHADER_PARAM_MATRIX3X3: expected_size = sizeof(float)*3*3; break;
 	case SHADER_PARAM_MATRIX4X4: expected_size = sizeof(float)*4*4; break;
 	}
 

@@ -29,8 +29,6 @@ enum shader_param_type get_shader_param_type(const char *type)
 		return SHADER_PARAM_VEC4;
 	else if (astrcmp_n(type, "texture", 7) == 0)
 		return SHADER_PARAM_TEXTURE;
-	else if (strcmp(type, "float3x3") == 0)
-		return SHADER_PARAM_MATRIX3X3;
 	else if (strcmp(type, "float4x4") == 0)
 		return SHADER_PARAM_MATRIX4X4;
 	else if (strcmp(type, "bool") == 0)
