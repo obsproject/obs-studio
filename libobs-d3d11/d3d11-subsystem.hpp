@@ -37,7 +37,7 @@ struct shader_var;
 struct shader_sampler;
 struct gs_vertex_shader;
 
-#include "GS_D3D11Exports.h"
+#include "d3d11-exports.h"
 
 using namespace std;
 

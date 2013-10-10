@@ -18,6 +18,22 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\libobs-d3d11\d3d11-exports.h" />
+    <ClInclude Include="..\..\..\libobs-d3d11\d3d11-shaderprocessor.hpp" />
+    <ClInclude Include="..\..\..\libobs-d3d11\d3d11-subsystem.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-indexbuffer.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-samplerstate.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-shader.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-shaderprocessor.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-stagesurf.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-subsystem.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-texture2d.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-vertexbuffer.cpp" />
+    <ClCompile Include="..\..\..\libobs-d3d11\d3d11-zstencilbuffer.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68A84F9A-5B89-4E7D-8183-87FEA5DC65F6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -158,22 +174,6 @@
       <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11IndexBuffer.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11SamplerState.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11Shader.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11ShaderProcessor.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11StageSurf.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11SubSystem.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11Texture2D.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11VertexBuffer.cpp" />
-    <ClCompile Include="..\..\..\libobs-d3d11\GS_D3D11ZStencilBuffer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\libobs-d3d11\GS_D3D11Exports.h" />
-    <ClInclude Include="..\..\..\libobs-d3d11\GS_D3D11ShaderProcessor.hpp" />
-    <ClInclude Include="..\..\..\libobs-d3d11\GS_D3D11SubSystem.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

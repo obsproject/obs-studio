@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "GS_D3D11SubSystem.hpp"
+#include "d3d11-subsystem.hpp"
 #include "graphics/vec4.h"
 
 const D3D11_TEXTURE_ADDRESS_MODE convertAddressMode[] =

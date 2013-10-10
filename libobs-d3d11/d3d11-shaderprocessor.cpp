@@ -15,8 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "GS_D3D11SubSystem.hpp"
-#include "GS_D3D11ShaderProcessor.hpp"
+#include "d3d11-subsystem.hpp"
+#include "d3d11-shaderprocessor.hpp"
 
 #include <sstream>
 using namespace std;

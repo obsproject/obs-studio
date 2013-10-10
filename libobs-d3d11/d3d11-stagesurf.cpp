@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "GS_D3D11SubSystem.hpp"
+#include "d3d11-subsystem.hpp"
 
 gs_stage_surface::gs_stage_surface(device_t device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat)

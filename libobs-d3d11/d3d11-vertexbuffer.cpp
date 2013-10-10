@@ -17,7 +17,7 @@
 
 #include "util/base.h"
 #include "graphics/vec3.h"
-#include "GS_D3D11SubSystem.hpp"
+#include "d3d11-subsystem.hpp"
 
 static inline void PushBuffer(vector<ID3D11Buffer*> &buffers,
 		vector<uint32_t> &strides, ID3D11Buffer *buffer,

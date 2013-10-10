@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "util/base.h"
-#include "GS_D3D11SubSystem.hpp"
+#include "d3d11-subsystem.hpp"
 
 void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data)
 {

@@ -18,7 +18,7 @@
 #include "util/base.h"
 #include "util/platform.h"
 #include "graphics/matrix3.h"
-#include "GS_D3D11SubSystem.hpp"
+#include "d3d11-subsystem.hpp"
 
 static const IID dxgiFactory2 =
 {0x50c83a1c, 0xe072, 0x4c48, {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6, 0xd0}};
