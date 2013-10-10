@@ -819,7 +819,7 @@ static void ep_parse_param(struct effect_parser *ep,
 		bool is_property, bool is_const, bool is_uniform)
 {
 	struct ep_param param;
-	ep_param_init(&param, type, name, is_property, is_const);
+	ep_param_init(&param, type, name, is_property, is_const, is_uniform);
 
 	if (token_is(&ep->cfp, ";"))
 		goto complete;
@@ -967,10 +967,12 @@ static inline void ep_write_param(struct dstr *shader, struct ep_param *param,
 
 	if (param->is_const) {
 		dstr_cat(shader, "const ");
-	} else {
+	} else if (param->is_uniform) {
 		struct dstr new;
 		dstr_init_copy(&new, param->name);
 		darray_push_back(sizeof(struct dstr), used_params, &new);
+
+		dstr_cat(shader, "uniform ");
 	}
 
 	dstr_cat(shader, param->type);
@@ -1310,6 +1312,7 @@ static inline void ep_compile_pass_shaderparams(struct effect_parser *ep,
 	for (i = 0; i < pass_params->num; i++) {
 		struct dstr *param_name;
 		struct pass_shaderparam *param;
+		int test;
 
 		param_name = darray_item(sizeof(struct dstr), used_params, i);
 		param = darray_item(sizeof(struct pass_shaderparam),
