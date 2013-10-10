@@ -100,11 +100,6 @@ texture_t device_create_volumetexture(device_t device, uint32_t width,
 	return NULL;
 }
 
-zstencil_t device_create_zstencil(device_t device, uint32_t width,
-		uint32_t height, enum gs_zstencil_format format)
-{
-}
-
 stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format)
 {
@@ -390,10 +385,6 @@ bool stagesurface_map(stagesurf_t stagesurf, const void **data,
 }
 
 void stagesurface_unmap(stagesurf_t stagesurf)
-{
-}
-
-void zstencil_destroy(zstencil_t zstencil)
 {
 }
 

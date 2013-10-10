@@ -397,7 +397,7 @@ gs_device::gs_device(gs_init_data *data)
 
 	memset(&viewport, 0, sizeof(viewport));
 
-	for (size_t i = 0; i < MAX_TEXTURES; i++) {
+	for (size_t i = 0; i < GS_MAX_TEXTURES; i++) {
 		curTextures[i] = NULL;
 		curSamplers[i] = NULL;
 	}
@@ -789,17 +789,17 @@ void device_load_vertexshader(device_t device, shader_t vertshader)
 
 static inline void clear_textures(device_t device)
 {
-	ID3D11ShaderResourceView *views[MAX_TEXTURES];
+	ID3D11ShaderResourceView *views[GS_MAX_TEXTURES];
 	memset(views,               0, sizeof(views));
 	memset(device->curTextures, 0, sizeof(device->curTextures));
-	device->context->PSSetShaderResources(0, MAX_TEXTURES, views);
+	device->context->PSSetShaderResources(0, GS_MAX_TEXTURES, views);
 }
 
 void device_load_pixelshader(device_t device, shader_t pixelshader)
 {
 	ID3D11PixelShader  *shader    = NULL;
 	ID3D11Buffer       *constants = NULL;
-	ID3D11SamplerState *states[MAX_TEXTURES];
+	ID3D11SamplerState *states[GS_MAX_TEXTURES];
 
 	if (device->curPixelShader == pixelshader)
 		return;
@@ -825,7 +825,7 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	device->curPixelShader = ps;
 	device->context->PSSetShader(shader, NULL, 0);
 	device->context->PSSetConstantBuffers(0, 1, &constants);
-	device->context->PSSetSamplers(0, MAX_TEXTURES, states);
+	device->context->PSSetSamplers(0, GS_MAX_TEXTURES, states);
 }
 
 void device_load_defaultsamplerstate(device_t device, bool b_3d,

@@ -29,7 +29,6 @@ static inline void shader_param_init(struct shader_param *param)
 	memset(param, 0, sizeof(struct shader_param));
 }
 
-
 static inline void shader_param_free(struct shader_param *param)
 {
 	bfree(param->name);
@@ -50,6 +49,7 @@ static void gl_get_program_info(GLuint program, char **error_string)
 	errors = bmalloc(info_len+1);
 	memset(errors, 0, info_len+1);
 	glGetProgramInfoLog(program, info_len, &chars_written, errors);
+	gl_success("glGetProgramInfoLog");
 
 	*error_string = errors;
 }
@@ -154,7 +154,8 @@ static struct gs_shader *shader_create(device_t device, enum shader_type type,
 	bool success = true;
 
 	memset(shader, 0, sizeof(struct gs_shader));
-	shader->type = type;
+	shader->device = device;
+	shader->type   = type;
 
 	gl_shader_parser_init(&glsp);
 	if (!gl_shader_parse(&glsp, shader_str, file))
@@ -306,6 +307,7 @@ void shader_setvec4(shader_t shader, sparam_t param,
 
 void shader_settexture(shader_t shader, sparam_t param, texture_t val)
 {
+	param->texture = val;
 }
 
 static void shader_setval_data(shader_t shader, sparam_t param,

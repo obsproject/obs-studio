@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 
+#define GS_MAX_TEXTURES 8
+
 struct vec2;
 struct vec3;
 struct vec4;

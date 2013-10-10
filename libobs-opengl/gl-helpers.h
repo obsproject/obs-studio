@@ -60,6 +60,12 @@ static inline bool gl_bind_buffer(GLenum target, GLuint buffer)
 	return gl_success("glBindBuffer");
 }
 
+static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
+{
+	glBindRenderbuffer(target, buffer);
+	return gl_success("glBindRendebuffer");
+}
+
 extern bool upload_face(GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size, void ***p_data);

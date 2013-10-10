@@ -47,8 +47,6 @@ using namespace std;
  * "public" and "private" does not matter at all for this subproject.
  */
 
-#define MAX_TEXTURES 8
-
 static inline uint32_t GetWinVer()
 {
 	OSVERSIONINFO ovi;
@@ -420,7 +418,7 @@ struct gs_pixel_shader : gs_shader {
 		size_t i;
 		for (i = 0; i < samplers.size(); i++)
 			states[i] = samplers[i].sampler.state;
-		for (; i < MAX_TEXTURES; i++)
+		for (; i < GS_MAX_TEXTURES; i++)
 			states[i] = NULL;
 	}
 
@@ -574,8 +572,8 @@ struct gs_device {
 	gs_texture_2d               *curRenderTarget;
 	gs_zstencil_buffer          *curZStencilBuffer;
 	int                         curRenderSide;
-	gs_texture                  *curTextures[MAX_TEXTURES];
-	gs_sampler_state            *curSamplers[MAX_TEXTURES];
+	gs_texture                  *curTextures[GS_MAX_TEXTURES];
+	gs_sampler_state            *curSamplers[GS_MAX_TEXTURES];
 	gs_vertex_buffer            *curVertexBuffer;
 	gs_vertex_shader            *curVertexShader;
 	gs_index_buffer             *curIndexBuffer;

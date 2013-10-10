@@ -168,6 +168,7 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-zstencil.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -75,7 +75,7 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	}
 }
 
-static inline GLint convert_zstencil_format(enum gs_zstencil_format format)
+static inline GLenum convert_zstencil_format(enum gs_zstencil_format format)
 {
 	switch (format) {
 	case GS_Z16:         return GL_DEPTH_COMPONENT16;
@@ -171,6 +171,8 @@ struct shader_param {
 	size_t                 sampler_id;
 	int                    array_count;
 
+	struct gs_texture      *texture;
+
 	DARRAY(uint8_t)        cur_value;
 	DARRAY(uint8_t)        def_value;
 	bool                   changed;
@@ -216,18 +218,26 @@ struct gs_texture_cube {
 	uint32_t             size;
 };
 
+struct gs_zstencil_buffer {
+	device_t             device;
+	GLuint               buffer;
+	GLenum               format;
+};
+
 struct gs_swap_chain {
-	device_t device;
+	device_t             device;
 	struct gl_windowinfo *wi;
 	struct gs_init_data  info;
 };
 
 struct gs_device {
-	struct gl_platform *plat;
+	struct gl_platform   *plat;
 
-	struct gs_swap_chain *cur_swap;
-	int                  cur_render_side;
 	struct gs_texture    *cur_render_texture;
+	int                  cur_render_side;
+	struct gs_texture    *cur_textures[GS_MAX_TEXTURES];
+	struct gs_sampler    *cur_samplers[GS_MAX_TEXTURES];
+	struct gs_swap_chain *cur_swap;
 };
 
 extern struct gl_platform   *gl_platform_create(device_t device,
