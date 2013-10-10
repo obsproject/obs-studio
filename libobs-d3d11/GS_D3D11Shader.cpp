@@ -295,7 +295,9 @@ void shader_setint(shader_t shader, sparam_t param, int val)
 void shader_setmatrix3(shader_t shader, sparam_t param,
 		const struct matrix3 *val)
 {
-	shader_setval_inline(shader, param, val, sizeof(matrix3));
+	struct matrix4 mat;
+	matrix4_from_matrix3(&mat, val);
+	shader_setval_inline(shader, param, &mat, sizeof(matrix4));
 }
 
 void shader_setmatrix4(shader_t shader, sparam_t param,

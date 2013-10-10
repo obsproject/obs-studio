@@ -16,6 +16,11 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include "graphics/vec2.h"
+#include "graphics/vec3.h"
+#include "graphics/vec4.h"
+#include "graphics/matrix3.h"
+#include "graphics/matrix4.h"
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
 
@@ -243,50 +248,131 @@ sparam_t shader_getworldmatrix(shader_t shader)
 
 void shader_setbool(shader_t shader, sparam_t param, bool val)
 {
+	glProgramUniform1i(shader->program, param->param, (GLint)val);
+	gl_success("glProgramUniform1i");
 }
 
 void shader_setfloat(shader_t shader, sparam_t param, float val)
 {
+	glProgramUniform1f(shader->program, param->param, val);
+	gl_success("glProgramUniform1f");
 }
 
 void shader_setint(shader_t shader, sparam_t param, int val)
 {
+	glProgramUniform1i(shader->program, param->param, val);
+	gl_success("glProgramUniform1i");
 }
 
 void shader_setmatrix3(shader_t shader, sparam_t param,
 		const struct matrix3 *val)
 {
+	struct matrix4 mat;
+	matrix4_from_matrix3(&mat, val);
+
+	glProgramUniformMatrix4fv(shader->program, param->param, 1, true,
+			mat.x.ptr);
+	gl_success("glProgramUniformMatrix4fv");
 }
 
 void shader_setmatrix4(shader_t shader, sparam_t param,
 		const struct matrix4 *val)
 {
+	glProgramUniformMatrix4fv(shader->program, param->param, 1, true,
+			val->x.ptr);
+	gl_success("glProgramUniformMatrix4fv");
 }
 
 void shader_setvec2(shader_t shader, sparam_t param,
 		const struct vec2 *val)
 {
+	glProgramUniform2fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform2fv");
 }
 
 void shader_setvec3(shader_t shader, sparam_t param,
 		const struct vec3 *val)
 {
+	glProgramUniform3fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform3fv");
 }
 
 void shader_setvec4(shader_t shader, sparam_t param,
 		const struct vec4 *val)
 {
+	glProgramUniform4fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform4fv");
 }
 
 void shader_settexture(shader_t shader, sparam_t param, texture_t val)
 {
 }
 
+static void shader_setval_data(shader_t shader, sparam_t param,
+		const void *val, int count)
+{
+	if (param->type == SHADER_PARAM_BOOL ||
+	    param->type == SHADER_PARAM_INT) {
+		glProgramUniform1iv(shader->program, param->param, count, val);
+		gl_success("glProgramUniform1iv");
+
+	} else if (param->type == SHADER_PARAM_FLOAT) {
+		glProgramUniform1fv(shader->program, param->param, count, val);
+		gl_success("glProgramUniform1fv");
+
+	} else if (param->type == SHADER_PARAM_VEC2) {
+		glProgramUniform2fv(shader->program, param->param, count, val);
+		gl_success("glProgramUniform2fv");
+
+	} else if (param->type == SHADER_PARAM_VEC3) {
+		glProgramUniform3fv(shader->program, param->param, count, val);
+		gl_success("glProgramUniform3fv");
+
+	} else if (param->type == SHADER_PARAM_VEC4) {
+		glProgramUniform4fv(shader->program, param->param, count, val);
+		gl_success("glProgramUniform4fv");
+
+	} else if (param->type == SHADER_PARAM_MATRIX4X4) {
+		glProgramUniformMatrix4fv(shader->program, param->param,
+				count, false, val);
+		gl_success("glProgramUniformMatrix4fv");
+	}
+}
+
 void shader_setval(shader_t shader, sparam_t param, const void *val,
 		size_t size)
 {
+	int count = param->array_count;
+	size_t expected_size = 0;
+	if (!count)
+		count = 1;
+
+	switch (param->type) {
+	case SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
+	case SHADER_PARAM_BOOL:
+	case SHADER_PARAM_INT:       expected_size = sizeof(int); break;
+	case SHADER_PARAM_VEC2:      expected_size = sizeof(float)*2; break;
+	case SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
+	case SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
+	case SHADER_PARAM_MATRIX3X3: expected_size = sizeof(float)*3*3; break;
+	case SHADER_PARAM_MATRIX4X4: expected_size = sizeof(float)*4*4; break;
+	}
+
+	expected_size *= count;
+	if (!expected_size)
+		return;
+
+	if (expected_size != size) {
+		blog(LOG_ERROR, "shader_setval (GL): Size of shader param does "
+		                "not match the size of the input");
+		return;
+	}
+
+	shader_setval_data(shader, param, val, count);
 }
 
 void shader_setdefault(shader_t shader, sparam_t param)
 {
+	shader_setval(shader, param, param->def_value.array,
+			param->def_value.num);
 }
