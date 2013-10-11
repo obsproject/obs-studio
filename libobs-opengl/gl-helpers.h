@@ -66,8 +66,13 @@ static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
 	return gl_success("glBindRendebuffer");
 }
 
-extern bool upload_face(GLenum type, uint32_t num_levels,
+extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size, void ***p_data);
+
+extern bool gl_copy_texture(struct gs_device *device,
+                            GLuint src, GLenum src_target,
+                            GLuint dst, GLenum dst_target,
+                            uint32_t width, uint32_t height);
 
 #endif

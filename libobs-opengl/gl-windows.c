@@ -194,7 +194,7 @@ static inline void required_extension_error(const char *extension)
 	blog(LOG_ERROR, "OpenGL extension %s is required", extension);
 }
 
-static bool gl_init_extensions(void)
+static bool gl_init_extensions(device_t device)
 {
 	GLenum errorcode = glewInit();
 	if (errorcode != GLEW_OK) {
@@ -217,6 +217,13 @@ static bool gl_init_extensions(void)
 		required_extension_error("WGL_ARB_pixel_format");
 		return false;
 	}
+
+	if (GL_ARB_copy_image)
+		device->copy_type = COPY_TYPE_ARB;
+	else if (GLEW_NV_copy_image)
+		device->copy_type = COPY_TYPE_NV;
+	else
+		device->copy_type = COPY_TYPE_FBO_BLIT;
 
 	return true;
 }
@@ -341,7 +348,7 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	if (!gl_dummy_context_init(&dummy))
 		goto fail;
-	if (!gl_init_extensions())
+	if (!gl_init_extensions(device))
 		goto fail;
 
 	/* you have to have a dummy context open before you can actually
@@ -401,7 +408,6 @@ struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 
 	if (!gl_get_pixel_format(wi->hdc, info, &pixel_format, &pfd))
 		goto fail;
-
 	if (!gl_set_pixel_format(wi->hdc, pixel_format, &pfd))
 		goto fail;
 

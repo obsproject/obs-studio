@@ -23,6 +23,7 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex, void **data)
 	uint32_t tex_size   = tex->size * row_size / 8;
 	uint32_t num_levels = tex->base.levels;
 	bool     compressed = gs_is_compressed_format(tex->base.format);
+	GLenum   gl_type    = get_gl_format_type(tex->base.format);
 	bool     success    = true;
 	uint32_t i;
 
@@ -30,21 +31,23 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex, void **data)
 		num_levels = gs_num_total_levels(tex->size, tex->size);
 
 	for (i = 0; i < 6; i++) {
-		GLenum type = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+		GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
 
-		if (!gl_bind_texture(type, tex->base.texture))
+		if (!gl_bind_texture(target, tex->base.texture))
 			success = false;
 
-		if (!upload_face(type, num_levels, tex->base.gl_format,
+		if (!gl_init_face(target, gl_type, num_levels,
+					tex->base.gl_format,
 					tex->base.gl_internal_format,
 					compressed, tex->size, tex->size,
 					tex_size, &data))
 			success = false;
 
-		if (!gl_bind_texture(type, 0))
+		if (!gl_bind_texture(target, 0))
 			success = false;
 
-		data++;
+		if (data)
+			data++;
 	}
 
 	return success;
@@ -68,7 +71,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 
 	if (!gl_gen_textures(1, &tex->base.texture))
 		goto fail;
-	if (data && !upload_texture_cube(tex, data))
+	if (!upload_texture_cube(tex, data))
 		goto fail;
 
 	return (texture_t)tex;

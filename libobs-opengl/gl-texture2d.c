@@ -23,6 +23,7 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 	uint32_t tex_size   = tex->height * row_size / 8;
 	uint32_t num_levels = tex->base.levels;
 	bool     compressed = gs_is_compressed_format(tex->base.format);
+	GLenum   gl_type    = get_gl_format_type(tex->base.format);
 	bool     success;
 
 	if (!num_levels)
@@ -31,7 +32,7 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
 
-	success = upload_face(GL_TEXTURE_2D, num_levels,
+	success = gl_init_face(GL_TEXTURE_2D, gl_type, num_levels,
 			tex->base.gl_format, tex->base.gl_internal_format,
 			compressed, tex->width, tex->height, tex_size, &data);
 
@@ -87,7 +88,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 		goto fail;
 	if (tex->base.is_dynamic && !create_pixel_unpack_buffer(tex))
 		goto fail;
-	if (data && !upload_texture_2d(tex, data))
+	if (!upload_texture_2d(tex, data))
 		goto fail;
 
 	return (texture_t)tex;
@@ -167,10 +168,8 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 		goto fail;
 
 	*ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-	if (!*ptr) {
-		gl_success("glMapBuffer");
+	if (!gl_success("glMapBuffer"))
 		goto fail;
-	}
 
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
@@ -190,8 +189,8 @@ void texture_unmap(texture_t tex)
 
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
 		return;
+
 	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	gl_success("glUnmapBuffer");
-
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }

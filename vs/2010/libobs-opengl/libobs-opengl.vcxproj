@@ -164,6 +164,7 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-helpers.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-shader.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-shaderparser.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-stagesurf.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c" />

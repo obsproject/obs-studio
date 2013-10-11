@@ -45,6 +45,7 @@ zstencil_t device_create_zstencil(device_t device, uint32_t width,
 	zs->format = convert_zstencil_format(format);
 
 	if (!gl_init_zsbuffer(zs, width, height)) {
+		blog(LOG_ERROR, "device_create_zstencil (GL) failed");
 		zstencil_destroy(zs);
 		return NULL;
 	}

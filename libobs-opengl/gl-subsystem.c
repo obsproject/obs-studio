@@ -100,11 +100,6 @@ texture_t device_create_volumetexture(device_t device, uint32_t width,
 	return NULL;
 }
 
-stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
-		uint32_t height, enum gs_color_format color_format)
-{
-}
-
 samplerstate_t device_create_samplerstate(device_t device,
 		struct gs_sampler_info *info)
 {
@@ -193,11 +188,6 @@ void device_setcuberendertarget(device_t device, texture_t cubetex,
 }
 
 void device_copy_texture(device_t device, texture_t dst, texture_t src)
-{
-}
-
-void device_stage_texture(device_t device, stagesurf_t dst,
-		texture_t src)
 {
 }
 
@@ -360,31 +350,6 @@ uint32_t volumetexture_getdepth(texture_t voltex)
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
-{
-}
-
-void stagesurface_destroy(stagesurf_t stagesurf)
-{
-}
-
-uint32_t stagesurface_getwidth(stagesurf_t stagesurf)
-{
-}
-
-uint32_t stagesurface_getheight(stagesurf_t stagesurf)
-{
-}
-
-enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
-{
-}
-
-bool stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width)
-{
-}
-
-void stagesurface_unmap(stagesurf_t stagesurf)
 {
 }
 

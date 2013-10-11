@@ -53,5 +53,8 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-zstencil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-stagesurf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

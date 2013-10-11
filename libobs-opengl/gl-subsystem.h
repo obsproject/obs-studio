@@ -27,6 +27,12 @@
 struct gl_platform;
 struct gl_windowinfo;
 
+enum copy_type {
+	COPY_TYPE_ARB,
+	COPY_TYPE_NV,
+	COPY_TYPE_FBO_BLIT
+};
+
 static inline GLint convert_gs_format(enum gs_color_format format)
 {
 	switch (format) {
@@ -71,6 +77,30 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	case GS_DXT1:        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	case GS_DXT3:        return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 	case GS_DXT5:        return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+	default:             return 0;
+	}
+}
+
+static inline GLenum get_gl_format_type(enum color_format format)
+{
+	switch (format) {
+	case GS_A8:          return GL_UNSIGNED_BYTE;
+	case GS_R8:          return GL_UNSIGNED_BYTE;
+	case GS_RGBA:        return GL_UNSIGNED_BYTE;
+	case GS_BGRX:        return GL_UNSIGNED_BYTE;
+	case GS_BGRA:        return GL_UNSIGNED_BYTE;
+	case GS_R10G10B10A2: return GL_UNSIGNED_INT_10_10_10_2;
+	case GS_RGBA16:      return GL_UNSIGNED_SHORT;
+	case GS_R16:         return GL_UNSIGNED_SHORT;
+	case GS_RGBA16F:     return GL_UNSIGNED_SHORT;
+	case GS_RGBA32F:     return GL_FLOAT;
+	case GS_RG16F:       return GL_UNSIGNED_SHORT;
+	case GS_RG32F:       return GL_FLOAT;
+	case GS_R16F:        return GL_UNSIGNED_SHORT;
+	case GS_R32F:        return GL_FLOAT;
+	case GS_DXT1:        return GL_UNSIGNED_BYTE;
+	case GS_DXT3:        return GL_UNSIGNED_BYTE;
+	case GS_DXT5:        return GL_UNSIGNED_BYTE;
 	default:             return 0;
 	}
 }
@@ -218,6 +248,18 @@ struct gs_texture_cube {
 	uint32_t             size;
 };
 
+struct gs_stage_surface {
+	enum gs_color_format format;
+	uint32_t             width;
+	uint32_t             height;
+
+	uint32_t             bytes_per_pixel;
+	GLenum               gl_format;
+	GLint                gl_internal_format;
+	GLuint               texture;
+	GLuint               pack_buffer;
+};
+
 struct gs_zstencil_buffer {
 	device_t             device;
 	GLuint               buffer;
@@ -232,6 +274,7 @@ struct gs_swap_chain {
 
 struct gs_device {
 	struct gl_platform   *plat;
+	enum copy_type       copy_type;
 
 	struct gs_texture    *cur_render_texture;
 	int                  cur_render_side;

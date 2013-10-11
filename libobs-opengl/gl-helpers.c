@@ -17,7 +17,7 @@
 
 #include "gl-subsystem.h"
 
-bool upload_face(GLenum type, uint32_t num_levels,
+bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size, void ***p_data)
 {
@@ -27,19 +27,21 @@ bool upload_face(GLenum type, uint32_t num_levels,
 
 	for (i = 0; i < num_levels; i++) {
 		if (compressed) {
-			glCompressedTexImage2D(type, i, internal_format,
-					width, height, 0, size, *data);
+			glCompressedTexImage2D(target, i, internal_format,
+					width, height, 0, size,
+					data ? *data : NULL);
 			if (!gl_success("glCompressedTexImage2D"))
 				success = false;
 
 		} else {
-			glTexImage2D(type, i, internal_format, width, height, 0,
-					format, GL_UNSIGNED_BYTE, *data);
+			glTexImage2D(target, i, internal_format, width, height,
+					0, format, type, data ? *data : NULL);
 			if (!gl_success("glTexImage2D"))
 				success = false;
 		}
 
-		data++;
+		if (data)
+			data++;
 		size   /= 4;
 		width  /= 2;
 		height /= 2;
@@ -49,5 +51,31 @@ bool upload_face(GLenum type, uint32_t num_levels,
 	}
 
 	*p_data = data;
+	return success;
+}
+
+bool gl_copy_texture(struct gs_device *device,
+                     GLuint src, GLenum src_target,
+                     GLuint dst, GLenum dst_target,
+                     uint32_t width, uint32_t height)
+{
+	bool success = false;
+
+	if (device->copy_type == COPY_TYPE_ARB) {
+		glCopyImageSubData(src, src_target, 0, 0, 0, 0,
+		                   dst, dst_target, 0, 0, 0, 0,
+		                   width, height, 1);
+		success = gl_success("glCopyImageSubData");
+
+	} else if (device->copy_type == COPY_TYPE_NV) {
+		glCopyImageSubDataNV(src, src_target, 0, 0, 0, 0,
+		                     dst, dst_target, 0, 0, 0, 0,
+		                     width, height, 1);
+		success = gl_success("glCopyImageSubDataNV");
+
+	} else if (device->copy_type == COPY_TYPE_FBO_BLIT) {
+		/* TODO (implement FBOs) */
+	}
+
 	return success;
 }
