@@ -96,7 +96,7 @@ static inline bool gl_add_params(struct gs_shader *shader,
 static void gl_add_sampler(struct gs_shader *shader,
 		struct shader_sampler *sampler)
 {
-	struct gs_sampler new_sampler = {0};
+	struct gs_sampler_state new_sampler = {0};
 	struct gs_sampler_info info;
 
 	shader_sampler_convert(sampler, &info);

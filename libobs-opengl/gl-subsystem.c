@@ -17,7 +17,7 @@
 
 #include "gl-subsystem.h"
 
-void convert_sampler_info(struct gs_sampler *sampler,
+void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info)
 {
 	convert_filter(info->filter, &sampler->min_filter,
@@ -103,11 +103,13 @@ texture_t device_create_volumetexture(device_t device, uint32_t width,
 samplerstate_t device_create_samplerstate(device_t device,
 		struct gs_sampler_info *info)
 {
-}
+	struct gs_sampler_state *sampler;
 
-vertbuffer_t device_create_vertexbuffer(device_t device,
-		struct vb_data *data, uint32_t flags)
-{
+	sampler = bmalloc(sizeof(struct gs_sampler_state));
+	memset(sampler, 0, sizeof(struct gs_sampler_state));
+
+	convert_sampler_info(sampler, info);
+	return sampler;
 }
 
 indexbuffer_t device_create_indexbuffer(device_t device,
@@ -354,18 +356,6 @@ enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 }
 
 void samplerstate_destroy(samplerstate_t samplerstate)
-{
-}
-
-void vertexbuffer_destroy(vertbuffer_t vertbuffer)
-{
-}
-
-void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
-{
-}
-
-struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)
 {
 }
 

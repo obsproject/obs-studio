@@ -181,10 +181,10 @@ static inline GLint convert_address_mode(enum gs_address_mode mode)
 	}
 }
 
-extern void convert_sampler_info(struct gs_sampler *sampler,
+extern void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info);
 
-struct gs_sampler {
+struct gs_sampler_state {
 	GLint min_filter;
 	GLint mag_filter;
 	GLint address_u;
@@ -209,15 +209,29 @@ struct shader_param {
 };
 
 struct gs_shader {
-	device_t         device;
-	enum shader_type type;
-	GLuint           program;
+	device_t            device;
+	enum shader_type    type;
+	GLuint              program;
 
 	struct shader_param *viewproj;
 	struct shader_param *world;
 
-	DARRAY(struct gs_sampler)   samplers;
-	DARRAY(struct shader_param) params;
+	DARRAY(struct gs_sampler_state) samplers;
+	DARRAY(struct shader_param)     params;
+};
+
+struct gs_vertex_buffer {
+	GLuint               vertex_buffer;
+	GLuint               normal_buffer;
+	GLuint               tangent_buffer;
+	GLuint               color_buffer;
+	DARRAY(GLuint)       uv_buffers;
+
+	device_t             device;
+	bool                 dyanmic;
+	struct vb_data       *vbd;
+	size_t               num_verts;
+	DARRAY(size_t)       uv_sizes;
 };
 
 struct gs_texture {
