@@ -168,6 +168,7 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-vertexbuffer.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-zstencil.c" />
   </ItemGroup>

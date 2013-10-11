@@ -56,5 +56,8 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-stagesurf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\gl-vertexbuffer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

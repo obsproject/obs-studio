@@ -48,6 +48,12 @@ static inline bool gl_bind_texture(GLenum target, GLuint texture)
 	return gl_success("glBindTexture");
 }
 
+static inline void gl_delete_textures(GLsizei num_buffers, GLuint *buffers)
+{
+	glDeleteTextures(num_buffers, buffers);
+	gl_success("glDeleteTextures");
+}
+
 static inline bool gl_gen_buffers(GLsizei num_buffers, GLuint *buffers)
 {
 	glGenBuffers(num_buffers, buffers);
@@ -58,6 +64,12 @@ static inline bool gl_bind_buffer(GLenum target, GLuint buffer)
 {
 	glBindBuffer(target, buffer);
 	return gl_success("glBindBuffer");
+}
+
+static inline void gl_delete_buffers(GLsizei num_buffers, GLuint *buffers)
+{
+	glDeleteBuffers(num_buffers, buffers);
+	gl_success("glDeleteBuffers");
 }
 
 static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
@@ -74,5 +86,8 @@ extern bool gl_copy_texture(struct gs_device *device,
                             GLuint src, GLenum src_target,
                             GLuint dst, GLenum dst_target,
                             uint32_t width, uint32_t height);
+
+extern bool gl_create_buffer(GLuint *buffer, GLsizeiptr size,
+		const GLvoid *data, GLenum usage);
 
 #endif

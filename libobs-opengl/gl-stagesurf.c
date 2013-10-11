@@ -90,15 +90,11 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 void stagesurface_destroy(stagesurf_t stagesurf)
 {
 	if (stagesurf) {
-		if (stagesurf->pack_buffer) {
-			glDeleteBuffers(1, &stagesurf->pack_buffer);
-			gl_success("glDeleteBuffers");
-		}
+		if (stagesurf->pack_buffer)
+			gl_delete_buffers(1, &stagesurf->pack_buffer);
 
-		if (stagesurf->texture) {
-			glDeleteTextures(1, &stagesurf->texture);
-			gl_success("glDeleteTextures");
-		}
+		if (stagesurf->texture)
+			gl_delete_textures(1, &stagesurf->texture);
 
 		bfree(stagesurf);
 	}

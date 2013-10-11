@@ -79,3 +79,19 @@ bool gl_copy_texture(struct gs_device *device,
 
 	return success;
 }
+
+bool gl_create_buffer(GLuint *buffer, GLsizeiptr size, const GLvoid *data,
+		GLenum usage)
+{
+	bool success;
+	if (!gl_gen_buffers(1, buffer))
+		return false;
+	if (!gl_bind_buffer(GL_ARRAY_BUFFER, *buffer))
+		return false;
+
+	glBufferData(GL_ARRAY_BUFFER, size, data, usage);
+	success = gl_success("glBufferData");
+
+	gl_bind_buffer(GL_ARRAY_BUFFER, 0);
+	return success;
+}

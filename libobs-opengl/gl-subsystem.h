@@ -228,10 +228,8 @@ struct gs_vertex_buffer {
 	DARRAY(GLuint)       uv_buffers;
 
 	device_t             device;
-	bool                 dyanmic;
-	struct vb_data       *vbd;
-	size_t               num_verts;
-	DARRAY(size_t)       uv_sizes;
+	bool                 dynamic;
+	struct vb_data       *data;
 };
 
 struct gs_texture {
