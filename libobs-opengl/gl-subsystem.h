@@ -232,6 +232,18 @@ struct gs_vertex_buffer {
 	struct vb_data       *data;
 };
 
+struct gs_index_buffer {
+	GLuint                buffer;
+	enum gs_index_type    type;
+	GLuint                gl_type;
+
+	device_t              device;
+	void                  *data;
+	size_t                num;
+	size_t                size;
+	bool                  dynamic;
+};
+
 struct gs_texture {
 	device_t             device;
 	enum gs_texture_type type;

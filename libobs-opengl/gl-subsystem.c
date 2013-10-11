@@ -112,12 +112,6 @@ samplerstate_t device_create_samplerstate(device_t device,
 	return sampler;
 }
 
-indexbuffer_t device_create_indexbuffer(device_t device,
-		enum gs_index_type type, void *indices, size_t num,
-		uint32_t flags)
-{
-}
-
 enum gs_texture_type device_gettexturetype(device_t device,
 		texture_t texture)
 {
@@ -357,24 +351,5 @@ enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 
 void samplerstate_destroy(samplerstate_t samplerstate)
 {
-}
-
-void indexbuffer_destroy(indexbuffer_t indexbuffer)
-{
-}
-
-void indexbuffer_flush(indexbuffer_t indexbuffer)
-{
-}
-
-void *indexbuffer_getdata(indexbuffer_t indexbuffer)
-{
-}
-
-size_t indexbuffer_numindices(indexbuffer_t indexbuffer)
-{
-}
-
-enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
-{
+	bfree(samplerstate);
 }

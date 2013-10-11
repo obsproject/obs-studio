@@ -162,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs-opengl\gl-helpers.c" />
+    <ClCompile Include="..\..\..\libobs-opengl\gl-indexbuffer.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-shader.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-shaderparser.c" />
     <ClCompile Include="..\..\..\libobs-opengl\gl-stagesurf.c" />
