@@ -42,7 +42,6 @@ static bool create_pixel_pack_buffer(struct gs_stage_surface *surf)
 
 static bool gl_init_stage_surface(struct gs_stage_surface *surf)
 {
-	GLenum gl_type = get_gl_format_type(surf->format);
 	bool success = true;
 
 	if (!gl_gen_textures(1, &surf->texture))
@@ -50,7 +49,7 @@ static bool gl_init_stage_surface(struct gs_stage_surface *surf)
 	if (!gl_bind_texture(GL_TEXTURE_2D, surf->texture))
 		return false;
 
-	if (!gl_init_face(GL_TEXTURE_2D, gl_type, 1, surf->gl_format,
+	if (!gl_init_face(GL_TEXTURE_2D, surf->gl_type, 1, surf->gl_format,
 			surf->gl_internal_format, false,
 			surf->width, surf->height, 0, NULL))
 		success = false;
@@ -76,6 +75,7 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 	surf->height             = height;
 	surf->gl_format          = convert_gs_format(color_format);
 	surf->gl_internal_format = convert_gs_internal_format(color_format);
+	surf->gl_type            = get_gl_format_type(color_format);
 	surf->bytes_per_pixel    = gs_get_format_bpp(color_format)/8;
 
 	if (!gl_init_stage_surface(surf)) {
@@ -104,27 +104,53 @@ void stagesurface_destroy(stagesurf_t stagesurf)
 	}
 }
 
+static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
+{
+	if (src->base.type != GS_TEXTURE_2D) {
+		blog(LOG_ERROR, "Source texture must be a 2D texture");
+		return false;
+	}
+
+	if (src->width != dst->width || src->height != dst->height) {
+		blog(LOG_ERROR, "Source and destination sizes do not match");
+		return false;
+	}
+
+	if (src->base.format != dst->format) {
+		blog(LOG_ERROR, "Source and destination format do not match");
+		return false;
+	}
+
+	return true;
+}
+
 void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
-	if (src->type != GS_TEXTURE_2D) {
-		blog(LOG_ERROR, "Source texture must be a 2D texture");
+	if (!can_stage(dst, tex2d))
 		goto failed;
-	}
-
-	if (tex2d->width != dst->width || tex2d->height != dst->height) {
-		blog(LOG_ERROR, "Source and destination do not match in size");
-		goto failed;
-	}
 
 	if (!gl_copy_texture(device, tex2d->base.texture, GL_TEXTURE_2D,
 				dst->texture, GL_TEXTURE_2D,
 				dst->width, dst->height))
 		goto failed;
 
+	if (!gl_bind_buffer(GL_TEXTURE_2D, dst->texture))
+		goto failed;
+	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
+		goto failed;
+
+	glGetTexImage(GL_TEXTURE_2D, 0, dst->gl_format, dst->gl_type, 0);
+	if (!gl_success("glGetTexImage"))
+		goto failed;
+
+	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
 	return;
 
 failed:
+	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
 	blog(LOG_ERROR, "device_stage_texture (GL) failed");
 }
 
@@ -170,5 +196,6 @@ void stagesurface_unmap(stagesurf_t stagesurf)
 
 	glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 	gl_success("glUnmapBuffer");
+
 	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
 }

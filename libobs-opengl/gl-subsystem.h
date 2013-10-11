@@ -226,6 +226,7 @@ struct gs_texture {
 	enum gs_color_format format;
 	GLenum               gl_format;
 	GLint                gl_internal_format;
+	GLenum               gl_type;
 	GLuint               texture;
 	uint32_t             levels;
 	bool                 is_dynamic;
@@ -256,6 +257,7 @@ struct gs_stage_surface {
 	uint32_t             bytes_per_pixel;
 	GLenum               gl_format;
 	GLint                gl_internal_format;
+	GLenum               gl_type;
 	GLuint               texture;
 	GLuint               pack_buffer;
 };

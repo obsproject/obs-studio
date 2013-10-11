@@ -23,7 +23,6 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 	uint32_t tex_size   = tex->height * row_size / 8;
 	uint32_t num_levels = tex->base.levels;
 	bool     compressed = gs_is_compressed_format(tex->base.format);
-	GLenum   gl_type    = get_gl_format_type(tex->base.format);
 	bool     success;
 
 	if (!num_levels)
@@ -32,7 +31,7 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
 
-	success = gl_init_face(GL_TEXTURE_2D, gl_type, num_levels,
+	success = gl_init_face(GL_TEXTURE_2D, tex->base.gl_type, num_levels,
 			tex->base.gl_format, tex->base.gl_internal_format,
 			compressed, tex->width, tex->height, tex_size, &data);
 
@@ -78,6 +77,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.format             = color_format;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.gl_type            = get_gl_format_type(color_format);
 	tex->base.is_dynamic         = flags & GS_DYNAMIC;
 	tex->base.is_render_target   = flags & GS_RENDERTARGET;
 	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
@@ -174,6 +174,7 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
 	*byte_width = tex2d->width * gs_get_format_bpp(tex->format) / 8;
+	*byte_width = (*byte_width + 3) & 0xFFFFFFFC;
 	return true;
 
 fail:
@@ -185,12 +186,30 @@ void texture_unmap(texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "texture_unmap"))
-		return;
+		goto failed;
 
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
-		return;
+		goto failed;
 
 	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-	gl_success("glUnmapBuffer");
+	if (!gl_success("glUnmapBuffer"))
+		goto failed;
+
+	if (!gl_bind_texture(GL_TEXTURE_2D, tex2d->base.texture))
+		goto failed;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, tex->gl_internal_format,
+			tex2d->width, tex2d->height, 0,
+			tex->gl_format, tex->gl_type, 0);
+	if (!gl_success("glTexImage2D"))
+		goto failed;
+
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
+	return;
+
+failed:
+	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
+	blog(LOG_ERROR, "texture_unmap (GL) failed");
 }

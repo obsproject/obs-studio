@@ -218,7 +218,7 @@ static bool gl_init_extensions(device_t device)
 		return false;
 	}
 
-	if (GL_ARB_copy_image)
+	if (GLEW_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
 	else if (GLEW_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
