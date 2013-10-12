@@ -575,8 +575,8 @@ struct gs_device {
 	gs_texture                  *curTextures[GS_MAX_TEXTURES];
 	gs_sampler_state            *curSamplers[GS_MAX_TEXTURES];
 	gs_vertex_buffer            *curVertexBuffer;
-	gs_vertex_shader            *curVertexShader;
 	gs_index_buffer             *curIndexBuffer;
+	gs_vertex_shader            *curVertexShader;
 	gs_pixel_shader             *curPixelShader;
 	gs_swap_chain               *curSwapChain;
 

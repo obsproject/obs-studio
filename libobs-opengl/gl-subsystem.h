@@ -185,37 +185,54 @@ extern void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info);
 
 struct gs_sampler_state {
-	GLint min_filter;
-	GLint mag_filter;
-	GLint address_u;
-	GLint address_v;
-	GLint address_w;
-	GLint max_anisotropy;
+	GLint                min_filter;
+	GLint                mag_filter;
+	GLint                address_u;
+	GLint                address_v;
+	GLint                address_w;
+	GLint                max_anisotropy;
 };
 
 struct shader_param {
-	char                   *name;
 	enum shader_param_type type;
-	GLint                  param;
-	GLint                  texture_id;
-	size_t                 sampler_id;
-	int                    array_count;
 
-	struct gs_texture      *texture;
+	char                 *name;
+	GLint                param;
+	GLint                texture_id;
+	size_t               sampler_id;
+	int                  array_count;
 
-	DARRAY(uint8_t)        cur_value;
-	DARRAY(uint8_t)        def_value;
-	bool                   changed;
+	struct gs_texture    *texture;
+
+	DARRAY(uint8_t)      cur_value;
+	DARRAY(uint8_t)      def_value;
+	bool                 changed;
+};
+
+enum attrib_type {
+	ATTRIB_POSITION,
+	ATTRIB_NORMAL,
+	ATTRIB_TANGENT,
+	ATTRIB_COLOR,
+	ATTRIB_TEXCOORD,
+	ATTRIB_TARGET
+};
+
+struct shader_attrib {
+	GLint                attrib;
+	size_t               index;
+	enum attrib_type     type;
 };
 
 struct gs_shader {
-	device_t            device;
-	enum shader_type    type;
-	GLuint              program;
+	device_t             device;
+	enum shader_type     type;
+	GLuint               program;
 
-	struct shader_param *viewproj;
-	struct shader_param *world;
+	struct shader_param  *viewproj;
+	struct shader_param  *world;
 
+	DARRAY(struct shader_attrib)    attribs;
 	DARRAY(struct gs_sampler_state) samplers;
 	DARRAY(struct shader_param)     params;
 };
@@ -226,6 +243,7 @@ struct gs_vertex_buffer {
 	GLuint               tangent_buffer;
 	GLuint               color_buffer;
 	DARRAY(GLuint)       uv_buffers;
+	DARRAY(size_t)       uv_sizes;
 
 	device_t             device;
 	bool                 dynamic;
@@ -233,15 +251,15 @@ struct gs_vertex_buffer {
 };
 
 struct gs_index_buffer {
-	GLuint                buffer;
-	enum gs_index_type    type;
-	GLuint                gl_type;
+	GLuint               buffer;
+	enum gs_index_type   type;
+	GLuint               gl_type;
 
-	device_t              device;
-	void                  *data;
-	size_t                num;
-	size_t                size;
-	bool                  dynamic;
+	device_t             device;
+	void                 *data;
+	size_t               num;
+	size_t               size;
+	bool                 dynamic;
 };
 
 struct gs_texture {
@@ -302,11 +320,16 @@ struct gs_device {
 	struct gl_platform   *plat;
 	enum copy_type       copy_type;
 
-	struct gs_texture    *cur_render_texture;
+	texture_t            cur_render_target;
+	zstencil_t           cur_zstencil_buffer;
 	int                  cur_render_side;
-	struct gs_texture    *cur_textures[GS_MAX_TEXTURES];
-	struct gs_sampler    *cur_samplers[GS_MAX_TEXTURES];
-	struct gs_swap_chain *cur_swap;
+	texture_t            cur_textures[GS_MAX_TEXTURES];
+	samplerstate_t       cur_samplers[GS_MAX_TEXTURES];
+	vertbuffer_t         cur_vertex_buffer;
+	indexbuffer_t        cur_index_buffer;
+	shader_t             cur_vertex_shader;
+	shader_t             cur_pixel_shader;
+	swapchain_t          cur_swap;
 };
 
 extern struct gl_platform   *gl_platform_create(device_t device,

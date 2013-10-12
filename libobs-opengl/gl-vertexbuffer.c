@@ -50,6 +50,7 @@ static bool init_vb(struct gs_vertex_buffer *vb)
 	}
 
 	da_reserve(vb->uv_buffers, vb->data->num_tex);
+	da_reserve(vb->uv_sizes,   vb->data->num_tex);
 
 	for (i = 0; i < vb->data->num_tex; i++) {
 		GLuint tex_buffer;
@@ -61,6 +62,7 @@ static bool init_vb(struct gs_vertex_buffer *vb)
 			return false;
 
 		da_push_back(vb->uv_buffers, &tex_buffer);
+		da_push_back(vb->uv_sizes,   &tv->width);
 	}
 
 	if (!vb->dynamic) {
@@ -109,6 +111,7 @@ void vertexbuffer_destroy(vertbuffer_t vb)
 			gl_delete_buffers((GLsizei)vb->uv_buffers.num,
 					vb->uv_buffers.array);
 
+		da_free(vb->uv_sizes);
 		da_free(vb->uv_buffers);
 		vbdata_destroy(vb->data);
 
@@ -169,4 +172,84 @@ failed:
 struct vb_data *vertexbuffer_getdata(vertbuffer_t vb)
 {
 	return vb->data;
+}
+
+static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb,
+		enum attrib_type type, size_t index, GLint *width,
+		GLenum *gl_type)
+{
+	*gl_type = GL_FLOAT;
+	*width   = 4;
+
+	if (type == ATTRIB_POSITION) {
+		return vb->vertex_buffer;
+	} else if (type == ATTRIB_NORMAL) {
+		return vb->normal_buffer;
+	} else if (type == ATTRIB_TANGENT) {
+		return vb->tangent_buffer;
+	} else if (type == ATTRIB_COLOR) {
+		*gl_type = GL_UNSIGNED_BYTE;
+		return vb->color_buffer;
+	} else if (type == ATTRIB_TEXCOORD) {
+		if (vb->uv_buffers.num <= index)
+			return 0;
+
+		*width = (GLint)vb->uv_sizes.array[index];
+		return vb->uv_buffers.array[index];
+	}
+
+	return 0;
+}
+
+static bool load_vb_buffer(struct gs_shader *shader,
+		struct shader_attrib *attrib,
+		struct gs_vertex_buffer *vb)
+{
+	GLenum type;
+	GLint width;
+	GLuint buffer;
+	bool success = true;
+
+	buffer = get_vb_buffer(vb, attrib->type, attrib->index, &width, &type);
+	if (!buffer) {
+		blog(LOG_ERROR, "Vertex buffer does not have the required "
+		                "inputs for vertex shader");
+		return false;
+	}
+
+	if (!gl_bind_buffer(GL_ARRAY_BUFFER, buffer))
+		return false;
+
+	glVertexAttribPointer(attrib->attrib, width, type, GL_TRUE, 0, 0);
+	if (!gl_success("glVertexAttribPointer"))
+		success = false;
+
+	gl_bind_buffer(GL_ARRAY_BUFFER, 0);
+	return success;
+}
+
+static inline bool load_vb_buffers(struct gs_shader *shader,
+		struct gs_vertex_buffer *vb)
+{
+	size_t i;
+	for (i = 0; i < shader->attribs.num; i++) {
+		struct shader_attrib *attrib = shader->attribs.array+i;
+		if (!load_vb_buffer(shader, attrib, vb))
+			return false;
+	}
+
+	return true;
+}
+
+void device_load_vertexbuffer(device_t device, vertbuffer_t vb)
+{
+	if (device->cur_vertex_buffer == vb)
+		return;
+
+	device->cur_vertex_buffer = vb;
+	if (!device->cur_vertex_shader)
+		return;
+
+	if (!load_vb_buffers(device->cur_vertex_shader, vb))
+		blog(LOG_ERROR, "device_load_vertexbuffer (GL) failed");
 }

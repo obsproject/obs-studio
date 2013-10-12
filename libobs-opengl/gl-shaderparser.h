@@ -27,21 +27,40 @@
 #include "util/dstr.h"
 #include "graphics/shader-parser.h"
 
-struct gl_shader_parser {
-	struct dstr          gl_string;
-	struct shader_parser parser;
+struct gl_parser_attrib {
+	struct dstr name;
+	const char  *mapping;
+};
 
-	DARRAY(uint32_t)     texture_samplers;
+static inline gl_parser_attrib_free(struct gl_parser_attrib *attr)
+{
+	dstr_free(&attr->name);
+}
+
+struct gl_shader_parser {
+	struct shader_parser            parser;
+	struct dstr                     gl_string;
+                                       
+	DARRAY(uint32_t)                texture_samplers;
+	DARRAY(struct gl_parser_attrib) attribs;
 };
 
 static inline void gl_shader_parser_init(struct gl_shader_parser *glsp)
 {
 	shader_parser_init(&glsp->parser);
 	dstr_init(&glsp->gl_string);
+	da_init(glsp->texture_samplers);
+	da_init(glsp->attribs);
 }
 
 static inline void gl_shader_parser_free(struct gl_shader_parser *glsp)
 {
+	size_t i;
+	for (i = 0; i < glsp->attribs.num; i++)
+		gl_parser_attrib_free(glsp->attribs.array+i);
+
+	da_free(glsp->attribs);
+	da_free(glsp->texture_samplers);
 	dstr_free(&glsp->gl_string);
 	shader_parser_free(&glsp->parser);
 }

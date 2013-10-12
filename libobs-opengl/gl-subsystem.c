@@ -115,10 +115,7 @@ samplerstate_t device_create_samplerstate(device_t device,
 enum gs_texture_type device_gettexturetype(device_t device,
 		texture_t texture)
 {
-}
-
-void device_load_vertexbuffer(device_t device, vertbuffer_t vertbuffer)
-{
+	return texture->type;
 }
 
 void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer)
@@ -126,16 +123,6 @@ void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer)
 }
 
 void device_load_texture(device_t device, texture_t tex, int unit)
-{
-}
-
-void device_load_cubetexture(device_t device, texture_t cubetex,
-		int unit)
-{
-}
-
-void device_load_volumetexture(device_t device, texture_t voltex,
-		int unit)
 {
 }
 
@@ -331,22 +318,31 @@ void swapchain_destroy(swapchain_t swapchain)
 
 void volumetexture_destroy(texture_t voltex)
 {
+	/* TODO */
 }
 
 uint32_t volumetexture_getwidth(texture_t voltex)
 {
+	/* TODO */
+	return 0;
 }
 
 uint32_t volumetexture_getheight(texture_t voltex)
 {
+	/* TODO */
+	return 0;
 }
 
 uint32_t volumetexture_getdepth(texture_t voltex)
 {
+	/* TODO */
+	return 0;
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
+	/* TODO */
+	return GS_UNKNOWN;
 }
 
 void samplerstate_destroy(samplerstate_t samplerstate)

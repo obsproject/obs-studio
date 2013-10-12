@@ -108,11 +108,67 @@ static inline void gl_add_samplers(struct gs_shader *shader,
 		struct gl_shader_parser *glsp)
 {
 	size_t i;
-
 	for (i = 0; i < glsp->parser.samplers.num; i++) {
 		struct shader_sampler *sampler = glsp->parser.samplers.array+i;
 		gl_add_sampler(shader, sampler);
 	}
+}
+
+static void get_attrib_type(const char *mapping, enum attrib_type *type,
+		size_t *index)
+{
+	if (strcmp(mapping, "POSITION") == 0) {
+		*type  = ATTRIB_POSITION;
+
+	} else if (strcmp(mapping, "NORMAL") == 0) {
+		*type  = ATTRIB_NORMAL;
+
+	} else if (strcmp(mapping, "TANGENT") == 0) {
+		*type  = ATTRIB_TANGENT;
+
+	} else if (strcmp(mapping, "COLOR") == 0) {
+		*type  = ATTRIB_COLOR;
+
+	} else if (astrcmp_n(mapping, "TEXCOORD", 8) == 0) {
+		*type  = ATTRIB_TEXCOORD;
+		*index = (*(mapping+8)) - '0';
+		return;
+
+	} else if (strcmp(mapping, "TARGET") == 0) {
+		*type  = ATTRIB_TARGET;
+	}
+
+	*index = 0;
+}
+
+static inline bool gl_add_attrib(struct gs_shader *shader,
+		struct gl_parser_attrib *pa)
+{
+	struct shader_attrib attrib = {0};
+	get_attrib_type(pa->mapping, &attrib.type, &attrib.index);
+
+	attrib.attrib = glGetAttribLocation(shader->program, pa->name.array);
+	if (!gl_success("glGetAttribLocation"))
+		return false;
+
+	if (attrib.attrib == -1)
+		return false;
+
+	da_push_back(shader->attribs, &attrib);
+	return true;
+}
+
+static inline bool gl_add_attribs(struct gs_shader *shader,
+		struct gl_shader_parser *glsp)
+{
+	size_t i;
+	for (i = 0; i < glsp->attribs.num; i++) {
+		struct gl_parser_attrib *pa = glsp->attribs.array+i;
+		if (!gl_add_attrib(shader, pa))
+			return false;
+	}
+
+	return true;
 }
 
 static bool gl_shader_init(struct gs_shader *shader,
@@ -140,6 +196,8 @@ static bool gl_shader_init(struct gs_shader *shader,
 
 	if (success)
 		success = gl_add_params(shader, glsp);
+	if (success)
+		success = gl_add_attribs(shader, glsp);
 	if (success)
 		gl_add_samplers(shader, glsp);
 
@@ -176,14 +234,22 @@ shader_t device_create_vertexshader(device_t device,
 		const char *shader, const char *file,
 		char **error_string)
 {
-	return shader_create(device, SHADER_VERTEX, shader, file, error_string);
+	struct gs_shader *ptr;
+	ptr = shader_create(device, SHADER_VERTEX, shader, file, error_string);
+	if (!ptr)
+		blog(LOG_ERROR, "device_create_vertexshader (GL) failed");
+	return ptr;
 }
 
 shader_t device_create_pixelshader(device_t device,
 		const char *shader, const char *file,
 		char **error_string)
 {
-	return shader_create(device, SHADER_PIXEL, shader, file, error_string);
+	struct gs_shader *ptr;
+	ptr = shader_create(device, SHADER_PIXEL, shader, file, error_string);
+	if (!ptr)
+		blog(LOG_ERROR, "device_create_pixelshader (GL) failed");
+	return ptr;
 }
 
 void shader_destroy(shader_t shader)

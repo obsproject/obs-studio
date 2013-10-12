@@ -146,17 +146,24 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 	if (st) {
 		gl_unwrap_storage_struct(glsp, st, var->name, storage, prefix);
 	} else {
+		struct gl_parser_attrib attrib = {0};
+
 		if (storage) {
 			dstr_cat(&glsp->gl_string, storage);
 			dstr_cat(&glsp->gl_string, " ");
 		}
 
+		if (prefix)
+			dstr_cat(&attrib.name, prefix);
+		dstr_cat(&attrib.name, var->name);
+
 		gl_write_type(glsp, var->type);
 		dstr_cat(&glsp->gl_string, " ");
-		if (prefix)
-			dstr_cat(&glsp->gl_string, prefix);
-		dstr_cat(&glsp->gl_string, var->name);
+		dstr_cat_dstr(&glsp->gl_string, &attrib.name);
 		dstr_cat(&glsp->gl_string, ";\n");
+
+		attrib.mapping = var->mapping;
+		da_push_back(glsp->attribs, &attrib);
 	}
 }
 

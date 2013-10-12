@@ -60,10 +60,6 @@ EXPORT enum gs_texture_type device_gettexturetype(device_t device,
 EXPORT void device_load_vertexbuffer(device_t device, vertbuffer_t vertbuffer);
 EXPORT void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer);
 EXPORT void device_load_texture(device_t device, texture_t tex, int unit);
-EXPORT void device_load_cubetexture(device_t device, texture_t cubetex,
-		int unit);
-EXPORT void device_load_volumetexture(device_t device, texture_t voltex,
-		int unit);
 EXPORT void device_load_samplerstate(device_t device,
 		samplerstate_t samplerstate, int unit);
 EXPORT void device_load_vertexshader(device_t device, shader_t vertshader);
