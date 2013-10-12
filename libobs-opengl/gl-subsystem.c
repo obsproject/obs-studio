@@ -56,8 +56,14 @@ fail:
 void device_destroy(device_t device)
 {
 	if (device) {
+		size_t i;
+		for (i = 0; i < device->fbos.num; i++)
+			fbo_info_destroy(device->fbos.array[i]);
+
 		if (device->pipeline)
 			glDeleteProgramPipelines(1, &device->pipeline);
+
+		da_free(device->fbos);
 		gl_platform_destroy(device->plat);
 		bfree(device);
 	}
@@ -348,18 +354,229 @@ zstencil_t device_getzstenciltarget(device_t device)
 	return device->cur_zstencil_buffer;
 }
 
-void device_setrendertarget(device_t device, texture_t tex,
-		zstencil_t zstencil)
+static bool get_tex_dimensions(texture_t tex, uint32_t *width, uint32_t *height)
 {
+	if (tex->type == GS_TEXTURE_2D) {
+		struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+		*width  = tex2d->width;
+		*height = tex2d->height;
+		return true;
+
+	} else if (tex->type == GS_TEXTURE_CUBE) {
+		struct gs_texture_cube *cube = (struct gs_texture_cube*)tex;
+		*width  = cube->size;
+		*height = cube->size;
+		return true;
+	}
+
+	blog(LOG_ERROR, "Texture must be 2D or cubemap");
+	return false;
+}
+
+/*
+ * This automatically manages FBOs so that render targets are always given
+ * an FBO that matches their width/height/format to maximize optimization
+ */
+static struct fbo_info *get_fbo(struct gs_device *device, texture_t tex)
+{
+	size_t i;
+	uint32_t width, height;
+	GLuint fbo;
+	struct fbo_info *ptr;
+
+	if (!get_tex_dimensions(tex, &width, &height))
+		return NULL;
+
+	for (i = 0; i < device->fbos.num; i++) {
+		ptr = device->fbos.array[i];
+
+		if (ptr->width  == width && ptr->height == height &&
+		    ptr->format == tex->format)
+			return ptr;
+	}
+
+	glGenFramebuffers(1, &fbo);
+	if (!gl_success("glGenFramebuffers"))
+		return NULL;
+
+	ptr = bmalloc(sizeof(struct fbo_info));
+	ptr->fbo                 = fbo;
+	ptr->width               = width;
+	ptr->height              = height;
+	ptr->format              = tex->format;
+	ptr->cur_render_target   = NULL;
+	ptr->cur_render_side     = 0;
+	ptr->cur_zstencil_buffer = NULL;
+
+	da_push_back(device->fbos, &ptr);
+	return ptr;
+}
+
+static bool set_current_fbo(device_t device, struct fbo_info *fbo)
+{
+	if (device->cur_fbo != fbo) {
+		GLuint fbo_obj = fbo ? fbo->fbo : 0;
+		if (!gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, fbo_obj))
+			return false;
+	}
+
+	device->cur_fbo = fbo;
+	return true;
+}
+
+static bool attach_rendertarget(struct fbo_info *fbo, texture_t tex, int side)
+{
+	if (fbo->cur_render_target == tex)
+		return true;
+
+	fbo->cur_render_target = tex;
+
+	if (tex->type == GS_TEXTURE_2D) {
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
+				GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+				tex->texture, 0);
+
+	} else if (tex->type == GS_TEXTURE_CUBE) {
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
+				GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + side,
+				tex->texture, 0);
+
+	} else {
+		return false;
+	}
+
+	return gl_success("glFramebufferTexture2D");
+}
+
+static bool attach_zstencil(struct fbo_info *fbo, zstencil_t zs)
+{
+	GLuint zsbuffer = 0;
+	GLenum zs_attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+
+	if (fbo->cur_zstencil_buffer == zs)
+		return true;
+
+	fbo->cur_zstencil_buffer = zs;
+
+	if (zs) {
+		zsbuffer = zs->buffer;
+		zs_attachment = zs->attachment;
+	}
+
+	glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,
+			zs_attachment, GL_RENDERBUFFER, zsbuffer);
+	if (!gl_success("glFramebufferRenderbuffer"))
+		return false;
+
+	return true;
+}
+
+static bool set_target(device_t device, texture_t tex, int side, zstencil_t zs)
+{
+	struct fbo_info *fbo;
+
+	if (device->cur_render_target   == tex &&
+	    device->cur_zstencil_buffer == zs  &&
+	    device->cur_render_side     == side)
+		return true;
+
+	device->cur_render_target   = tex;
+	device->cur_render_side     = side;
+	device->cur_zstencil_buffer = zs;
+
+	if (!tex)
+		return set_current_fbo(device, NULL);
+
+	fbo = get_fbo(device, tex);
+	if (!fbo)
+		return false;
+
+	set_current_fbo(device, fbo);
+
+	if (!attach_rendertarget(fbo, tex, side))
+		return false;
+	if (!attach_zstencil(fbo, zs))
+		return false;
+
+	return true;
+}
+
+void device_setrendertarget(device_t device, texture_t tex, zstencil_t zstencil)
+{
+	if (tex->type != GS_TEXTURE_2D) {
+		blog(LOG_ERROR, "Texture is not a 2D texture");
+		goto fail;
+	}
+
+	if (!tex->is_render_target) {
+		blog(LOG_ERROR, "Texture is not a render target");
+		goto fail;
+	}
+
+	if (!set_target(device, tex, 0, zstencil))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_setrendertarget (GL) failed");
 }
 
 void device_setcuberendertarget(device_t device, texture_t cubetex,
 		int side, zstencil_t zstencil)
 {
+	if (cubetex->type != GS_TEXTURE_CUBE) {
+		blog(LOG_ERROR, "Texture is not a cube texture");
+		goto fail;
+	}
+
+	if (!cubetex->is_render_target) {
+		blog(LOG_ERROR, "Texture is not a render target");
+		goto fail;
+	}
+
+	if (!set_target(device, cubetex, side, zstencil))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_setcuberendertarget (GL) failed");
 }
 
 void device_copy_texture(device_t device, texture_t dst, texture_t src)
 {
+	struct gs_texture_2d *src2d = (struct gs_texture_2d*)src;
+	struct gs_texture_2d *dst2d = (struct gs_texture_2d*)dst;
+
+	if (dst->format != src->format) {
+		blog(LOG_ERROR, "Source and destination texture formats do "
+		                "not match");
+		goto fail;
+	}
+
+	if (dst->type != GS_TEXTURE_2D || src->type != GS_TEXTURE_2D) {
+		blog(LOG_ERROR, "Source and destination textures must be 2D "
+		                "textures");
+		goto fail;
+	}
+
+	if (dst2d->width != src2d->width || dst2d->height != src2d->height) {
+		blog(LOG_ERROR, "Source and destination textures must have "
+		                "the same dimensions");
+		goto fail;
+	}
+
+	if (!gl_copy_texture(device, dst->texture, dst->gl_target,
+				src->texture, src->gl_target,
+				src2d->width, src2d->height))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_copy_texture (GL) failed");
 }
 
 void device_beginscene(device_t device)

@@ -126,8 +126,8 @@ void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 	if (!can_stage(dst, tex2d))
 		goto failed;
 
-	if (!gl_copy_texture(device, tex2d->base.texture, GL_TEXTURE_2D,
-				dst->texture, GL_TEXTURE_2D,
+	if (!gl_copy_texture(device, dst->texture, GL_TEXTURE_2D,
+				tex2d->base.texture, GL_TEXTURE_2D,
 				dst->width, dst->height))
 		goto failed;
 

@@ -35,6 +35,17 @@ static bool gl_init_zsbuffer(struct gs_zstencil_buffer *zs, uint32_t width,
 	return true;
 }
 
+static inline GLenum get_attachment(enum gs_zstencil_format format)
+{
+	switch (format) {
+	case GS_Z16:         return GL_DEPTH_ATTACHMENT;
+	case GS_Z24_S8:      return GL_DEPTH_STENCIL_ATTACHMENT;
+	case GS_Z32F:        return GL_DEPTH_ATTACHMENT;
+	case GS_Z32F_S8X24:  return GL_DEPTH_STENCIL_ATTACHMENT;
+	default:             return 0;
+	}
+}
+
 zstencil_t device_create_zstencil(device_t device, uint32_t width,
 		uint32_t height, enum gs_zstencil_format format)
 {
@@ -42,7 +53,8 @@ zstencil_t device_create_zstencil(device_t device, uint32_t width,
 
 	zs = bmalloc(sizeof(struct gs_zstencil_buffer));
 	memset(zs, 0, sizeof(struct gs_zstencil_buffer));
-	zs->format = convert_zstencil_format(format);
+	zs->format     = convert_zstencil_format(format);
+	zs->attachment = get_attachment(format);
 
 	if (!gl_init_zsbuffer(zs, width, height)) {
 		blog(LOG_ERROR, "device_create_zstencil (GL) failed");

@@ -326,6 +326,7 @@ struct gs_stage_surface {
 struct gs_zstencil_buffer {
 	device_t             device;
 	GLuint               buffer;
+	GLuint               attachment;
 	GLenum               format;
 };
 
@@ -334,6 +335,23 @@ struct gs_swap_chain {
 	struct gl_windowinfo *wi;
 	struct gs_init_data  info;
 };
+
+struct fbo_info {
+	GLuint               fbo;
+	uint32_t             width;
+	uint32_t             height;
+	enum gs_color_format format;
+
+	texture_t            cur_render_target;
+	int                  cur_render_side;
+	zstencil_t           cur_zstencil_buffer;
+};
+
+static inline void fbo_info_destroy(struct fbo_info *fbo)
+{
+	glDeleteFramebuffers(1, &fbo->fbo);
+	gl_success("glDeleteFramebuffers");
+}
 
 struct gs_device {
 	struct gl_platform   *plat;
@@ -351,7 +369,8 @@ struct gs_device {
 	shader_t             cur_pixel_shader;
 	swapchain_t          cur_swap;
 
-	bool                 texture_changed[GS_MAX_TEXTURES];
+	DARRAY(struct fbo_info*) fbos;
+	struct fbo_info          *cur_fbo;
 };
 
 extern struct gl_platform   *gl_platform_create(device_t device,
