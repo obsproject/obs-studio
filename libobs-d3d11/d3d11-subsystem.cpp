@@ -766,7 +766,8 @@ void device_load_vertexshader(device_t device, shader_t vertshader)
 	if (vertshader) {
 		if (vertshader->type != SHADER_VERTEX) {
 			blog(LOG_ERROR, "device_load_vertexshader (D3D11): "
-			                "Shader is not a vertex shader");
+			                "Specified shader is not a vertex "
+			                "shader");
 			return;
 		}
 
@@ -809,7 +810,8 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	if (pixelshader) {
 		if (pixelshader->type != SHADER_PIXEL) {
 			blog(LOG_ERROR, "device_load_pixelshader (D3D11): "
-			                "Shader is not a pixel shader");
+			                "Specified shader is not a pixel "
+			                "shader");
 			return;
 		}
 
@@ -828,8 +830,7 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	device->context->PSSetSamplers(0, GS_MAX_TEXTURES, states);
 }
 
-void device_load_defaultsamplerstate(device_t device, bool b_3d,
-		int unit)
+void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
 {
 	/* TODO */
 }

@@ -78,6 +78,24 @@ static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
 	return gl_success("glBindRendebuffer");
 }
 
+static inline bool gl_tex_param_f(GLenum target, GLenum param, GLfloat val)
+{
+	glTexParameterf(target, param, val);
+	return gl_success("glTexParameterf");
+}
+
+static inline bool gl_tex_param_i(GLenum target, GLenum param, GLint val)
+{
+	glTexParameteri(target, param, val);
+	return gl_success("glTexParameteri");
+}
+
+static inline bool gl_active_texture(GLenum texture)
+{
+	glActiveTexture(texture);
+	return gl_success("glActiveTexture");
+}
+
 extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size, void ***p_data);

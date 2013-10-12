@@ -61,10 +61,11 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 	memset(tex, 0, sizeof(struct gs_texture_2d));
 
 	tex->base.device             = device;
-	tex->base.type               = GS_TEXTURE_2D;
+	tex->base.type               = GS_TEXTURE_CUBE;
 	tex->base.format             = color_format;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.gl_target          = GL_TEXTURE_CUBE_MAP;
 	tex->base.is_render_target   = flags & GS_RENDERTARGET;
 	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
 	tex->size                    = size;

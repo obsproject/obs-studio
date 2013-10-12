@@ -241,15 +241,23 @@ static inline bool load_vb_buffers(struct gs_shader *shader,
 	return true;
 }
 
-void device_load_vertexbuffer(device_t device, vertbuffer_t vb)
+bool vertexbuffer_load(device_t device, vertbuffer_t vb)
 {
 	if (device->cur_vertex_buffer == vb)
-		return;
+		return true;
 
 	device->cur_vertex_buffer = vb;
-	if (!device->cur_vertex_shader)
-		return;
+	if (!device->cur_vertex_shader || !vb)
+		return true;
 
 	if (!load_vb_buffers(device->cur_vertex_shader, vb))
+		return false;
+
+	return true;
+}
+
+void device_load_vertexbuffer(device_t device, vertbuffer_t vb)
+{
+	if (vertexbuffer_load(device, vb))
 		blog(LOG_ERROR, "device_load_vertexbuffer (GL) failed");
 }

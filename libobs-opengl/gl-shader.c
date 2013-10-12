@@ -93,14 +93,15 @@ static inline bool gl_add_params(struct gs_shader *shader,
 	return true;
 }
 
-static void gl_add_sampler(struct gs_shader *shader,
+static inline void gl_add_sampler(struct gs_shader *shader,
 		struct shader_sampler *sampler)
 {
-	struct gs_sampler_state new_sampler = {0};
+	samplerstate_t new_sampler;
 	struct gs_sampler_info info;
 
 	shader_sampler_convert(sampler, &info);
-	convert_sampler_info(&new_sampler, &info);
+	new_sampler = device_create_samplerstate(shader->device, &info);
+
 	da_push_back(shader->samplers, &new_sampler);
 }
 
@@ -258,6 +259,9 @@ void shader_destroy(shader_t shader)
 
 	if (!shader)
 		return;
+
+	for (i = 0; i < shader->samplers.num; i++)
+		samplerstate_destroy(shader->samplers.array[i]);
 
 	for (i = 0; i < shader->params.num; i++)
 		shader_param_free(shader->params.array+i);

@@ -100,3 +100,14 @@ enum gs_index_type indexbuffer_gettype(indexbuffer_t ib)
 {
 	return ib->type;
 }
+
+void device_load_indexbuffer(device_t device, indexbuffer_t ib)
+{
+	if (ib == device->cur_index_buffer)
+		return;
+
+	device->cur_index_buffer = ib;
+
+	if (!gl_bind_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer))
+		blog(LOG_ERROR, "device_load_indexbuffer (GL) failed");
+}

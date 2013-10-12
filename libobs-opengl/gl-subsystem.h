@@ -185,6 +185,9 @@ extern void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info);
 
 struct gs_sampler_state {
+	device_t             device;
+	volatile uint32_t    ref;
+
 	GLint                min_filter;
 	GLint                mag_filter;
 	GLint                address_u;
@@ -192,6 +195,17 @@ struct gs_sampler_state {
 	GLint                address_w;
 	GLint                max_anisotropy;
 };
+
+static inline void samplerstate_addref(samplerstate_t ss)
+{
+	ss->ref++;
+}
+
+static inline void samplerstate_release(samplerstate_t ss)
+{
+	if (--ss->ref == 0)
+		bfree(ss);
+}
 
 struct shader_param {
 	enum shader_param_type type;
@@ -232,9 +246,9 @@ struct gs_shader {
 	struct shader_param  *viewproj;
 	struct shader_param  *world;
 
-	DARRAY(struct shader_attrib)    attribs;
-	DARRAY(struct gs_sampler_state) samplers;
-	DARRAY(struct shader_param)     params;
+	DARRAY(struct shader_attrib) attribs;
+	DARRAY(struct shader_param)  params;
+	DARRAY(samplerstate_t)       samplers;
 };
 
 struct gs_vertex_buffer {
@@ -249,6 +263,8 @@ struct gs_vertex_buffer {
 	bool                 dynamic;
 	struct vb_data       *data;
 };
+
+extern bool vertexbuffer_load(device_t device, vertbuffer_t vb);
 
 struct gs_index_buffer {
 	GLuint               buffer;
@@ -267,6 +283,7 @@ struct gs_texture {
 	enum gs_texture_type type;
 	enum gs_color_format format;
 	GLenum               gl_format;
+	GLenum               gl_target;
 	GLint                gl_internal_format;
 	GLenum               gl_type;
 	GLuint               texture;
@@ -274,6 +291,8 @@ struct gs_texture {
 	bool                 is_dynamic;
 	bool                 is_render_target;
 	bool                 gen_mipmaps;
+
+	samplerstate_t       cur_sampler;
 };
 
 struct gs_texture_2d {
@@ -318,6 +337,7 @@ struct gs_swap_chain {
 
 struct gs_device {
 	struct gl_platform   *plat;
+	GLuint               pipeline;
 	enum copy_type       copy_type;
 
 	texture_t            cur_render_target;
@@ -330,6 +350,8 @@ struct gs_device {
 	shader_t             cur_vertex_shader;
 	shader_t             cur_pixel_shader;
 	swapchain_t          cur_swap;
+
+	bool                 texture_changed[GS_MAX_TEXTURES];
 };
 
 extern struct gl_platform   *gl_platform_create(device_t device,

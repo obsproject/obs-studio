@@ -34,18 +34,30 @@ device_t device_create(struct gs_init_data *info)
 	memset(device, 0, sizeof(struct gs_device));
 
 	device->plat = gl_platform_create(device, info);
-	if (!device->plat) {
-		blog(LOG_ERROR, "device_create (GL) failed");
-		bfree(device);
-		return NULL;
-	}
+	if (!device->plat)
+		goto fail;
+
+	glGenProgramPipelines(1, &device->pipeline);
+	if (!gl_success("glGenProgramPipelines"))
+		goto fail;
+
+	glBindProgramPipeline(device->pipeline);
+	if (!gl_success("glBindProgramPipeline"))
+		goto fail;
 
 	return device;
+
+fail:
+	blog(LOG_ERROR, "device_create (GL) failed");
+	bfree(device);
+	return NULL;
 }
 
 void device_destroy(device_t device)
 {
 	if (device) {
+		if (device->pipeline)
+			glDeleteProgramPipelines(1, &device->pipeline);
 		gl_platform_destroy(device->plat);
 		bfree(device);
 	}
@@ -107,6 +119,8 @@ samplerstate_t device_create_samplerstate(device_t device,
 
 	sampler = bmalloc(sizeof(struct gs_sampler_state));
 	memset(sampler, 0, sizeof(struct gs_sampler_state));
+	sampler->device = device;
+	sampler->ref    = 1;
 
 	convert_sampler_info(sampler, info);
 	return sampler;
@@ -118,46 +132,220 @@ enum gs_texture_type device_gettexturetype(device_t device,
 	return texture->type;
 }
 
-void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer)
+static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 {
+	bool success = true;
+	if (tex->cur_sampler == ss)
+		return true;
+
+	if (tex->cur_sampler)
+		samplerstate_release(tex->cur_sampler);
+	tex->cur_sampler = ss;
+	if (!ss)
+		return true;
+
+	samplerstate_addref(ss);
+
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MIN_FILTER,
+				ss->min_filter))
+		success = false;
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAG_FILTER,
+				ss->mag_filter))
+		success = false;
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_S, ss->address_u))
+		success = false;
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_T, ss->address_v))
+		success = false;
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_R, ss->address_w))
+		success = false;
+	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+			ss->max_anisotropy))
+		success = false;
+
+	return success;
+}
+
+static inline struct shader_param *get_texture_param(device_t device, int unit)
+{
+	struct gs_shader *shader = device->cur_pixel_shader;
+	size_t i;
+
+	for (i = 0; i < shader->params.num; i++) {
+		struct shader_param *param = shader->params.array+i;
+		if (param->type == SHADER_PARAM_TEXTURE) {
+			if (param->texture_id == unit)
+				return param;
+		}
+	}
+
+	return NULL;
 }
 
 void device_load_texture(device_t device, texture_t tex, int unit)
 {
+	struct shader_param *param;
+	struct gs_sampler_state *sampler;
+
+	/* need a pixel shader to properly bind textures */
+	if (!device->cur_pixel_shader)
+		tex = NULL;
+
+	if (device->cur_textures[unit] == tex)
+		return;
+
+	device->cur_textures[unit] = tex;
+	param = get_texture_param(device, unit);
+	if (!param)
+		return;
+
+	param->texture = tex;
+
+	if (!tex)
+		return;
+
+	sampler = device->cur_samplers[param->sampler_id];
+
+	if (!gl_active_texture(GL_TEXTURE0 + unit))
+		goto fail;
+	if (!gl_bind_texture(tex->gl_target, tex->texture))
+		goto fail;
+	if (sampler && !load_texture_sampler(tex, sampler))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_load_texture (GL) failed");
 }
 
-void device_load_samplerstate(device_t device,
-		samplerstate_t samplerstate, int unit)
+static bool load_sampler_on_textures(device_t device, samplerstate_t ss,
+		int sampler_unit)
 {
+	struct gs_shader *shader = device->cur_pixel_shader;
+	size_t i;
+
+	for (i = 0; i < shader->params.num; i++) {
+		struct shader_param *param = shader->params.array+i;
+
+		if (param->type == SHADER_PARAM_TEXTURE &&
+		    param->sampler_id == sampler_unit &&
+		    param->texture) {
+			if (!gl_active_texture(GL_TEXTURE0 + param->texture_id))
+				return false;
+			if (!load_texture_sampler(param->texture, ss))
+				return false;
+		}
+	}
+
+	return true;
+}
+
+void device_load_samplerstate(device_t device, samplerstate_t ss, int unit)
+{
+	/* need a pixel shader to properly bind samplers */
+	if (!device->cur_pixel_shader)
+		ss = NULL;
+
+	if (device->cur_samplers[unit] == ss)
+		return;
+
+	device->cur_samplers[unit] = ss;
+
+	if (!ss)
+		return;
+
+	if (!load_sampler_on_textures(device, ss, unit))
+		blog(LOG_ERROR, "device_load_samplerstate (GL) failed");
+
+	return;
 }
 
 void device_load_vertexshader(device_t device, shader_t vertshader)
 {
+	GLuint program = 0;
+	vertbuffer_t cur_vb = device->cur_vertex_buffer;
+
+	if (device->cur_vertex_shader == vertshader)
+		return;
+
+	if (vertshader->type != SHADER_VERTEX) {
+		blog(LOG_ERROR, "Specified shader is not a vertex shader");
+		goto fail;
+	}
+
+	/* unload and reload the vertex buffer to sync the buffers up with
+	 * the specific shader */
+	if (cur_vb && !vertexbuffer_load(device, NULL))
+		goto fail;
+
+	device->cur_vertex_shader = vertshader;
+
+	if (vertshader)
+		program = vertshader->program;
+
+	glUseProgramStages(device->pipeline, GL_VERTEX_SHADER, program);
+	if (!gl_success("glUseProgramStages"))
+		goto fail;
+
+	if (cur_vb && !vertexbuffer_load(device, cur_vb))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_load_vertexshader (GL) failed");
 }
 
 void device_load_pixelshader(device_t device, shader_t pixelshader)
 {
+	GLuint program = 0;
+	if (device->cur_pixel_shader == pixelshader)
+		return;
+
+	if (pixelshader->type != SHADER_PIXEL) {
+		blog(LOG_ERROR, "Specified shader is not a pixel shader");
+		goto fail;
+	}
+
+	device->cur_pixel_shader = pixelshader;
+
+	if (pixelshader)
+		program = pixelshader->program;
+
+	glUseProgramStages(device->pipeline, GL_FRAGMENT_SHADER,
+			pixelshader->program);
+	if (!gl_success("glUseProgramStages"))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_load_pixelshader (GL) failed");
 }
 
-void device_load_defaultsamplerstate(device_t device, bool b_3d,
-		int unit)
+void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
 {
+	/* TODO */
 }
 
 shader_t device_getvertexshader(device_t device)
 {
+	return device->cur_vertex_shader;
 }
 
 shader_t device_getpixelshader(device_t device)
 {
+	return device->cur_pixel_shader;
 }
 
 texture_t device_getrendertarget(device_t device)
 {
+	return device->cur_render_target;
 }
 
 zstencil_t device_getzstenciltarget(device_t device)
 {
+	return device->cur_zstencil_buffer;
 }
 
 void device_setrendertarget(device_t device, texture_t tex,
@@ -347,5 +535,5 @@ enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 
 void samplerstate_destroy(samplerstate_t samplerstate)
 {
-	bfree(samplerstate);
+	samplerstate_release(samplerstate);
 }
