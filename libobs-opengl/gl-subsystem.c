@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "graphics/matrix3.h"
 #include "gl-subsystem.h"
 
 static void clear_textures(struct gs_device *device)
@@ -58,7 +59,9 @@ device_t device_create(struct gs_init_data *info)
 		goto fail;
 
 #ifdef _DEBUG
-	gl_enable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT);
+	if (glGetError() == GL_INVALID_ENUM)
+		blog(LOG_DEBUG, "OpenGL debug information not available");
 #endif
 
 	return device;
@@ -607,13 +610,13 @@ void device_beginscene(device_t device)
 
 static inline bool can_render(device_t device)
 {
-	if (!device->cur_vertex_buffer) {
-		blog(LOG_ERROR, "No vertex buffer specified");
+	if (!device->cur_vertex_shader) {
+		blog(LOG_ERROR, "No vertex shader specified");
 		return false;
 	}
 
-	if (!device->cur_vertex_buffer) {
-		blog(LOG_ERROR, "No vertex buffer specified");
+	if (!device->cur_pixel_shader) {
+		blog(LOG_ERROR, "No pixel shader specified");
 		return false;
 	}
 
@@ -625,6 +628,21 @@ static inline bool can_render(device_t device)
 	return true;
 }
 
+static void update_viewproj_matrix(struct gs_device *device)
+{
+	struct gs_shader *vs = device->cur_vertex_shader;
+	struct matrix3 cur_matrix;
+	gs_matrix_get(&cur_matrix);
+
+	matrix4_from_matrix3(&device->cur_view, &cur_matrix);
+	matrix4_mul(&device->cur_viewproj, &device->cur_view,
+			&device->cur_proj);
+	matrix4_transpose(&device->cur_viewproj, &device->cur_viewproj);
+
+	if (vs->viewproj)
+		shader_setmatrix4(vs, vs->viewproj, &device->cur_viewproj);
+}
+
 void device_draw(device_t device, enum gs_draw_mode draw_mode,
 		uint32_t start_vert, uint32_t num_verts)
 {
@@ -633,6 +651,8 @@ void device_draw(device_t device, enum gs_draw_mode draw_mode,
 
 	if (!can_render(device))
 		goto fail;
+
+	update_viewproj_matrix(device);
 
 	if (ib) {
 		glDrawElements(topology, num_verts, ib->gl_type,
