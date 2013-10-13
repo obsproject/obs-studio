@@ -1130,8 +1130,8 @@ void device_enable_stencilwrite(device_t device, bool enable)
 	device->zstencilStateChanged = true;
 }
 
-void device_enable_color(device_t device, bool red, bool blue,
-		bool green, bool alpha)
+void device_enable_color(device_t device, bool red, bool green,
+		bool blue, bool alpha)
 {
 	if (device->blendState.redEnabled   == red   &&
 	    device->blendState.greenEnabled == green &&

@@ -77,6 +77,9 @@ static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 	if (!gl_success("glGetUniformLocation"))
 		return false;
 
+	if (param.type == SHADER_PARAM_TEXTURE)
+		glUniform1i(param.param, param.texture_id);
+
 	return true;
 }
 
@@ -154,6 +157,12 @@ static inline bool gl_add_attrib(struct gs_shader *shader,
 
 	if (attrib.attrib == -1)
 		return false;
+
+	if (attrib.type == ATTRIB_TARGET) {
+		glBindFragDataLocation(shader->program, 0, pa->name.array);
+		if (!gl_success("glBindFragDataLocation"))
+			return false;
+	}
 
 	da_push_back(shader->attribs, &attrib);
 	return true;

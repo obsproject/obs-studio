@@ -1035,11 +1035,11 @@ void gs_enable_stencilwrite(bool enable)
 	graphics->exports.device_enable_stencilwrite(graphics->device, enable);
 }
 
-void gs_enable_color(bool red, bool blue, bool green, bool alpha)
+void gs_enable_color(bool red, bool green, bool blue, bool alpha)
 {
 	graphics_t graphics = thread_graphics;
-	graphics->exports.device_enable_color(graphics->device, red, blue,
-			green, alpha);
+	graphics->exports.device_enable_color(graphics->device, red, green,
+			blue, alpha);
 }
 
 void gs_blendfunction(enum gs_blend_type src, enum gs_blend_type dest)

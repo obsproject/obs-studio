@@ -20,6 +20,7 @@
 
 #include "util/darray.h"
 #include "graphics/graphics.h"
+#include "graphics/matrix4.h"
 #include "glew/include/GL/glew.h"
 #include "gl-helpers.h"
 #include "gl-exports.h"
@@ -116,6 +117,62 @@ static inline GLenum convert_zstencil_format(enum gs_zstencil_format format)
 	}
 }
 
+static inline GLenum convert_gs_depth_test(enum gs_depth_test test)
+{
+	switch (test) {
+	default:
+	case GS_NEVER:    return GL_NEVER;
+	case GS_LESS:     return GL_LESS;
+	case GS_LEQUAL:   return GL_LEQUAL;
+	case GS_EQUAL:    return GL_EQUAL;
+	case GS_GEQUAL:   return GL_GEQUAL;
+	case GS_GREATER:  return GL_GREATER;
+	case GS_NOTEQUAL: return GL_NOTEQUAL;
+	case GS_ALWAYS:   return GL_ALWAYS;
+	}
+}
+
+static inline GLenum convert_gs_stencil_op(enum gs_stencil_op op)
+{
+	switch (op) {
+	default:
+	case GS_KEEP:    return GL_KEEP;
+	case GS_ZERO:    return GL_ZERO;
+	case GS_REPLACE: return GL_REPLACE;
+	case GS_INCR:    return GL_INCR;
+	case GS_DECR:    return GL_DECR;
+	case GS_INVERT:  return GL_INVERT;
+	}
+}
+
+static inline GLenum convert_gs_stencil_side(enum gs_stencil_side side)
+{
+	switch (side) {
+	default:
+	case GS_STENCIL_FRONT: return GL_FRONT;
+	case GS_STENCIL_BACK:  return GL_BACK;
+	case GS_STENCIL_BOTH:  return GL_FRONT_AND_BACK;
+	}
+}
+
+static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
+{
+	switch (type) {
+	default:
+	case GS_BLEND_ZERO:        return GL_ZERO;
+	case GS_BLEND_ONE:         return GL_ONE;
+	case GS_BLEND_SRCCOLOR:    return GL_SRC_COLOR;
+	case GS_BLEND_INVSRCCOLOR: return GL_ONE_MINUS_SRC_COLOR;
+	case GS_BLEND_SRCALPHA:    return GL_SRC_ALPHA;
+	case GS_BLEND_INVSRCALPHA: return GL_ONE_MINUS_SRC_ALPHA;
+	case GS_BLEND_DSTCOLOR:    return GL_DST_COLOR;
+	case GS_BLEND_INVDSTCOLOR: return GL_ONE_MINUS_DST_COLOR;
+	case GS_BLEND_DSTALPHA:    return GL_DST_ALPHA;
+	case GS_BLEND_INVDSTALPHA: return GL_ONE_MINUS_DST_ALPHA;
+	case GS_BLEND_SRCALPHASAT: return GL_SRC_ALPHA_SATURATE;
+	}
+}
+
 static inline GLenum convert_shader_type(enum shader_type type)
 {
 	switch (type) {
@@ -178,6 +235,18 @@ static inline GLint convert_address_mode(enum gs_address_mode mode)
 	case GS_ADDRESS_MIRROR:     return GL_MIRRORED_REPEAT;
 	case GS_ADDRESS_BORDER:     return GL_CLAMP_TO_BORDER;
 	case GS_ADDRESS_MIRRORONCE: return GL_MIRROR_CLAMP_EXT;
+	}
+}
+
+static inline GLenum convert_gs_topology(enum gs_draw_mode mode)
+{
+	switch (mode) {
+	default:
+	case GS_POINTS:    return GL_POINTS;
+	case GS_LINES:     return GL_LINES;
+	case GS_LINESTRIP: return GL_LINE_STRIP;
+	case GS_TRIS:      return GL_TRIANGLES;
+	case GS_TRISTRIP:  return GL_TRIANGLE_STRIP;
 	}
 }
 
@@ -274,6 +343,7 @@ struct gs_index_buffer {
 	device_t             device;
 	void                 *data;
 	size_t               num;
+	size_t               width;
 	size_t               size;
 	bool                 dynamic;
 };
@@ -369,6 +439,15 @@ struct gs_device {
 	shader_t             cur_pixel_shader;
 	swapchain_t          cur_swap;
 
+	enum gs_cull_mode    cur_cull_mode;
+	struct gs_rect       cur_viewport;
+
+	struct matrix4       cur_proj;
+	struct matrix4       cur_view;
+	struct matrix4       cur_viewproj;
+
+	DARRAY(struct matrix4)   proj_stack;
+
 	DARRAY(struct fbo_info*) fbos;
 	struct fbo_info          *cur_fbo;
 };
@@ -380,5 +459,7 @@ extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
+
+
 
 #endif

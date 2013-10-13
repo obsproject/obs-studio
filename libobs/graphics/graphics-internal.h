@@ -100,8 +100,8 @@ struct gs_exports {
 	void (*device_enable_depthtest)(device_t device, bool enable);
 	void (*device_enable_stenciltest)(device_t device, bool enable);
 	void (*device_enable_stencilwrite)(device_t device, bool enable);
-	void (*device_enable_color)(device_t device, bool red, bool blue,
-			bool green, bool alpha);
+	void (*device_enable_color)(device_t device, bool red, bool green,
+			bool blue, bool alpha);
 	void (*device_blendfunction)(device_t device, enum gs_blend_type src,
 			enum gs_blend_type dest);
 	void (*device_depthfunction)(device_t device, enum gs_depth_test test);

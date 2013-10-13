@@ -96,10 +96,22 @@ static inline bool gl_tex_param_i(GLenum target, GLenum param, GLint val)
 	return gl_success("glTexParameteri");
 }
 
-static inline bool gl_active_texture(GLenum texture)
+static inline bool gl_active_texture(GLenum texture_id)
 {
-	glActiveTexture(texture);
+	glActiveTexture(texture_id);
 	return gl_success("glActiveTexture");
+}
+
+static inline bool gl_enable(GLenum capability)
+{
+	glEnable(capability);
+	return gl_success("glEnable");
+}
+
+static inline bool gl_disable(GLenum capability)
+{
+	glDisable(capability);
+	return gl_success("glDisable");
 }
 
 extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,

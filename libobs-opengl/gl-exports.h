@@ -91,8 +91,8 @@ EXPORT void device_enable_blending(device_t device, bool enable);
 EXPORT void device_enable_depthtest(device_t device, bool enable);
 EXPORT void device_enable_stenciltest(device_t device, bool enable);
 EXPORT void device_enable_stencilwrite(device_t device, bool enable);
-EXPORT void device_enable_color(device_t device, bool red, bool blue,
-		bool green, bool alpha);
+EXPORT void device_enable_color(device_t device, bool red, bool green,
+		bool blue, bool alpha);
 EXPORT void device_blendfunction(device_t device, enum gs_blend_type src,
 		enum gs_blend_type dest);
 EXPORT void device_depthfunction(device_t device, enum gs_depth_test test);
@@ -119,7 +119,6 @@ EXPORT void device_frustum(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_perspective(device_t device, float fovy, float aspect,
 		float znear, float zfar);
-EXPORT void device_set_view_matrix(device_t device, struct matrix3 *mat);
 EXPORT void device_projection_push(device_t device);
 EXPORT void device_projection_pop(device_t device);
 

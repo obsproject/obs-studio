@@ -45,6 +45,7 @@ indexbuffer_t device_create_indexbuffer(device_t device,
 	ib->data    = indices;
 	ib->dynamic = flags & GS_DYNAMIC;
 	ib->num     = num;
+	ib->width   = width;
 	ib->size    = width * num;
 	ib->type    = type;
 	ib->gl_type = type == GS_UNSIGNED_LONG ? GL_UNSIGNED_INT :

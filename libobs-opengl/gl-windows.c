@@ -427,3 +427,34 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 		bfree(wi);
 	}
 }
+
+void device_load_swapchain(device_t device, swapchain_t swap)
+{
+	HDC hdc = device->plat->swap.wi->hdc;
+	if (device->cur_swap == swap)
+		return;
+
+	device->cur_swap = swap;
+
+	if (swap)
+		hdc = swap->wi->hdc;
+
+	if (!wglMakeCurrent(hdc, device->plat->hrc)) {
+		blog(LOG_ERROR, "wglMakeCurrent failed, GetLastError "
+				"returned %u", GetLastError());
+		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
+	}
+}
+
+void device_present(device_t device)
+{
+	HDC hdc = device->plat->swap.wi->hdc;
+	if (device->cur_swap)
+		hdc = device->cur_swap->wi->hdc;
+
+	if (!SwapBuffers(hdc)) {
+		blog(LOG_ERROR, "SwapBuffers failed, GetLastError "
+				"returned %u", GetLastError());
+		blog(LOG_ERROR, "device_present (GL) failed");
+	}
+}

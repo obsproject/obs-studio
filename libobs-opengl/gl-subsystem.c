@@ -17,6 +17,18 @@
 
 #include "gl-subsystem.h"
 
+static void clear_textures(struct gs_device *device)
+{
+	GLenum i;
+	for (i = 0; i < GS_MAX_TEXTURES; i++) {
+		if (device->cur_textures[i]) {
+			gl_active_texture(GL_TEXTURE0 + i);
+			gl_bind_texture(device->cur_textures[i]->gl_target, 0);
+			device->cur_textures[i] = NULL;
+		}
+	}
+}
+
 void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info)
 {
@@ -45,6 +57,10 @@ device_t device_create(struct gs_init_data *info)
 	if (!gl_success("glBindProgramPipeline"))
 		goto fail;
 
+#ifdef _DEBUG
+	gl_enable(GL_DEBUG_OUTPUT);
+#endif
+
 	return device;
 
 fail:
@@ -63,6 +79,7 @@ void device_destroy(device_t device)
 		if (device->pipeline)
 			glDeleteProgramPipelines(1, &device->pipeline);
 
+		da_free(device->proj_stack);
 		da_free(device->fbos);
 		gl_platform_destroy(device->plat);
 		bfree(device);
@@ -191,13 +208,16 @@ void device_load_texture(device_t device, texture_t tex, int unit)
 {
 	struct shader_param *param;
 	struct gs_sampler_state *sampler;
+	struct gs_texture *cur_tex = device->cur_textures[unit];
 
 	/* need a pixel shader to properly bind textures */
 	if (!device->cur_pixel_shader)
 		tex = NULL;
 
-	if (device->cur_textures[unit] == tex)
+	if (cur_tex == tex)
 		return;
+	if (cur_tex && cur_tex->gl_target != tex->gl_target)
+		gl_bind_texture(cur_tex->gl_target, 0);
 
 	device->cur_textures[unit] = tex;
 	param = get_texture_param(device, unit);
@@ -323,6 +343,7 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	if (!gl_success("glUseProgramStages"))
 		goto fail;
 
+	clear_textures(device);
 	return;
 
 fail:
@@ -581,144 +602,290 @@ fail:
 
 void device_beginscene(device_t device)
 {
+	clear_textures(device);
+}
+
+static inline bool can_render(device_t device)
+{
+	if (!device->cur_vertex_buffer) {
+		blog(LOG_ERROR, "No vertex buffer specified");
+		return false;
+	}
+
+	if (!device->cur_vertex_buffer) {
+		blog(LOG_ERROR, "No vertex buffer specified");
+		return false;
+	}
+
+	if (!device->cur_vertex_buffer) {
+		blog(LOG_ERROR, "No vertex buffer specified");
+		return false;
+	}
+
+	return true;
 }
 
 void device_draw(device_t device, enum gs_draw_mode draw_mode,
 		uint32_t start_vert, uint32_t num_verts)
 {
+	struct gs_index_buffer *ib = device->cur_index_buffer;
+	GLenum  topology = convert_gs_topology(draw_mode);
+
+	if (!can_render(device))
+		goto fail;
+
+	if (ib) {
+		glDrawElements(topology, num_verts, ib->gl_type,
+				(const GLvoid*)(start_vert * ib->width));
+		if (!gl_success("glDrawElements"))
+			goto fail;
+
+	} else {
+		glDrawArrays(topology, start_vert, num_verts);
+		if (!gl_success("glDrawArrays"))
+			goto fail;
+	}
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_draw (GL) failed");
 }
 
 void device_endscene(device_t device)
 {
-}
-
-void device_load_swapchain(device_t device, swapchain_t swapchain)
-{
+	/* does nothing */
 }
 
 void device_clear(device_t device, uint32_t clear_flags,
 		struct vec4 *color, float depth, uint8_t stencil)
 {
-}
+	GLbitfield gl_flags = 0;
 
-void device_present(device_t device)
-{
+	if (clear_flags & GS_CLEAR_COLOR) {
+		glClearColor(color->x, color->y, color->x, color->w);
+		gl_flags |= GL_COLOR_BUFFER_BIT;
+	}
+
+	if (clear_flags & GS_CLEAR_DEPTH) {
+		glClearDepth(depth);
+		gl_flags |= GL_DEPTH_BUFFER_BIT;
+	}
+
+	if (clear_flags & GS_CLEAR_STENCIL) {
+		glClearStencil(stencil);
+		gl_flags |= GL_STENCIL_BUFFER_BIT;
+	}
+
+	glClear(clear_flags);
+	if (!gl_success("glClear"))
+		blog(LOG_ERROR, "device_clear (GL) failed");
 }
 
 void device_setcullmode(device_t device, enum gs_cull_mode mode)
 {
+	if (device->cur_cull_mode == mode)
+		return;
+
+	if (device->cur_cull_mode == GS_NEITHER)
+		gl_enable(GL_CULL_FACE);
+
+	device->cur_cull_mode = mode;
+	if (mode == GS_BACK)
+		glCullFace(GL_BACK);
+	else if (mode == GS_FRONT)
+		glCullFace(GL_FRONT);
+	else
+		gl_disable(GL_CULL_FACE);
 }
 
 enum gs_cull_mode device_getcullmode(device_t device)
 {
+	return device->cur_cull_mode;
 }
 
 void device_enable_blending(device_t device, bool enable)
 {
+	if (enable)
+		gl_enable(GL_BLEND);
+	else
+		gl_disable(GL_BLEND);
 }
 
 void device_enable_depthtest(device_t device, bool enable)
 {
+	if (enable)
+		gl_enable(GL_DEPTH_TEST);
+	else
+		gl_disable(GL_DEPTH_TEST);
 }
 
 void device_enable_stenciltest(device_t device, bool enable)
 {
+	if (enable)
+		gl_enable(GL_STENCIL_TEST);
+	else
+		gl_disable(GL_STENCIL_TEST);
 }
 
 void device_enable_stencilwrite(device_t device, bool enable)
 {
+	if (enable)
+		glStencilMask(0xFFFFFFFF);
+	else
+		glStencilMask(0);
 }
 
-void device_enable_color(device_t device, bool red, bool blue,
-		bool green, bool alpha)
+void device_enable_color(device_t device, bool red, bool green,
+		bool blue, bool alpha)
 {
+	glColorMask(red, green, blue, alpha);
 }
 
 void device_blendfunction(device_t device, enum gs_blend_type src,
 		enum gs_blend_type dest)
 {
+	GLenum gl_src = convert_gs_blend_type(src);
+	GLenum gl_dst = convert_gs_blend_type(dest);
+
+	glBlendFunc(gl_src, gl_dst);
+	if (!gl_success("glBlendFunc"))
+		blog(LOG_ERROR, "device_blendfunction (GL) failed");
 }
 
 void device_depthfunction(device_t device, enum gs_depth_test test)
 {
+	GLenum gl_test = convert_gs_depth_test(test);
+
+	glDepthFunc(gl_test);
+	if (!gl_success("glDepthFunc"))
+		blog(LOG_ERROR, "device_depthfunction (GL) failed");
 }
 
 void device_stencilfunction(device_t device, enum gs_stencil_side side,
 		enum gs_depth_test test)
 {
+	GLenum gl_side = convert_gs_stencil_side(side);
+	GLenum gl_test = convert_gs_depth_test(test);
+
+	glStencilFuncSeparate(gl_side, gl_test, 0, 0xFFFFFFFF);
+	if (!gl_success("glStencilFuncSeparate"))
+		blog(LOG_ERROR, "device_stencilfunction (GL) failed");
 }
 
 void device_stencilop(device_t device, enum gs_stencil_side side,
 		enum gs_stencil_op fail, enum gs_stencil_op zfail,
 		enum gs_stencil_op zpass)
 {
+	GLenum gl_side  = convert_gs_stencil_side(side);
+	GLenum gl_fail  = convert_gs_stencil_op(fail);
+	GLenum gl_zfail = convert_gs_stencil_op(zfail);
+	GLenum gl_zpass = convert_gs_stencil_op(zpass);
+
+	glStencilOpSeparate(gl_side, gl_fail, gl_zfail, gl_zpass);
+	if (!gl_success("glStencilOpSeparate"))
+		blog(LOG_ERROR, "device_stencilop (GL) failed");
 }
 
 void device_enable_fullscreen(device_t device, bool enable)
 {
+	/* TODO */
 }
 
 int device_fullscreen_enabled(device_t device)
 {
+	/* TODO */
+	return false;
 }
 
 void device_setdisplaymode(device_t device,
 		const struct gs_display_mode *mode)
 {
+	/* TODO */
 }
 
 void device_getdisplaymode(device_t device,
 		struct gs_display_mode *mode)
 {
+	/* TODO */
 }
 
 void device_setcolorramp(device_t device, float gamma, float brightness,
 		float contrast)
 {
+	/* TODO */
 }
 
 void device_setviewport(device_t device, int x, int y, int width,
 		int height)
 {
+	glViewport(x, y, width, height);
+	if (!gl_success("glViewport"))
+		blog(LOG_ERROR, "device_setviewport (GL) failed");
+
+	device->cur_viewport.x  = x;
+	device->cur_viewport.y  = y;
+	device->cur_viewport.cx = width;
+	device->cur_viewport.cy = height;
 }
 
 void device_getviewport(device_t device, struct gs_rect *rect)
 {
+	*rect = device->cur_viewport;
 }
 
 void device_setscissorrect(device_t device, struct gs_rect *rect)
 {
+	glScissor(rect->x, rect->y, rect->cx, rect->cy);
+	if (!gl_success("glScissor"))
+		blog(LOG_ERROR, "device_setscissorrect (GL) failed");
 }
 
 void device_ortho(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar)
 {
+	matrix4_ortho(&device->cur_proj, left, right, top, bottom, znear, zfar);
 }
 
 void device_frustum(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar)
 {
+	matrix4_frustum(&device->cur_proj, left, right, top, bottom,
+			znear, zfar);
 }
 
 void device_perspective(device_t device, float fovy, float aspect,
 		float znear, float zfar)
 {
-}
-
-void device_set_view_matrix(device_t device, struct matrix3 *mat)
-{
+	matrix4_perspective(&device->cur_proj, fovy, aspect, znear, zfar);
 }
 
 void device_projection_push(device_t device)
 {
+	da_push_back(device->proj_stack, &device->cur_proj);
 }
 
 void device_projection_pop(device_t device)
 {
+	struct matrix4 *end;
+	if (!device->proj_stack.num)
+		return;
+
+	end = da_end(device->proj_stack);
+	device->cur_proj = *end;
+	da_pop_back(device->proj_stack);
 }
 
 void swapchain_destroy(swapchain_t swapchain)
 {
+	if (!swapchain)
+		return;
+
+	if (swapchain->device->cur_swap == swapchain)
+		device_load_swapchain(swapchain->device, NULL);
+
+	gl_windowinfo_destroy(swapchain->wi);
+	bfree(swapchain);
 }
 
 void volumetexture_destroy(texture_t voltex)
