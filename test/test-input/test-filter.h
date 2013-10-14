@@ -1,5 +1,4 @@
-#ifndef FILTER_TEST_H
-#define FILTER_TEST_H
+#pragma once
 
 #include "obs.h"
 
@@ -22,6 +21,4 @@ EXPORT void test_video_render(struct test_filter *rt);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

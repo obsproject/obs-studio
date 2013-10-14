@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef SOURCE_H
-#define SOURCE_H 
+#pragma once
 
 #include "util/c99defs.h"
 #include "util/darray.h"
@@ -204,5 +203,3 @@ extern void source_init(obs_t obs, struct obs_source *source);
 EXPORT void source_activate(source_t source);
 EXPORT void source_deactivate(source_t source);
 EXPORT void source_video_tick(source_t source, float seconds);
-
-#endif

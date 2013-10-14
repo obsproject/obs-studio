@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef DSTR_H
-#define DSTR_H
+#pragma once
 
 #include <string.h>
 #include <stdarg.h>
@@ -305,6 +304,4 @@ static inline int dstr_ncmpi(const struct dstr *str1, const char *str2,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

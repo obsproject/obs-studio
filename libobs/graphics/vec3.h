@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef VECT_H
-#define VECT_H
+#pragma once
 
 #include "math-defs.h"
 #include <xmmintrin.h>
@@ -231,6 +230,4 @@ EXPORT void vec3_rand(struct vec3 *dst, int positive_only);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

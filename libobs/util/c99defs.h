@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef C99DEFS_H
-#define C99DEFS_H
+#pragma once
 
 /*
  * Contains hacks for getting some C99 stuff working in VC, things like
@@ -71,5 +70,3 @@ typedef long ssize_t;
 #include <sys/types.h>
 
 #endif /* _MSC_VER */
-
-#endif

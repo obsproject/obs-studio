@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_MODULE_H
-#define OBS_MODULE_H
+#pragma once
 
 #include "util/darray.h"
 
@@ -28,5 +27,3 @@ struct obs_module {
 extern void *load_module_subfunc(void *module, const char *module_name,
 		const char *name, const char *func, bool required);
 extern void free_module(struct obs_module *mod);
-
-#endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef VECT4_H
-#define VECT4_H
+#pragma once
 
 #include "math-defs.h"
 #include <xmmintrin.h>
@@ -248,6 +247,4 @@ EXPORT void vec4_transform(struct vec4 *dst, const struct vec4 *v,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
