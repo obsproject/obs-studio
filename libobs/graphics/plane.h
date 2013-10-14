@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef PLANE_H
-#define PLANE_H
+#pragma once
 
 #include "math-defs.h"
 #include "vec3.h"
@@ -96,6 +95,4 @@ static inline bool plane_coplanar(const struct plane *p1,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

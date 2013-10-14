@@ -76,8 +76,7 @@
 ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 */
 
-#ifndef __glxew_h__
-#define __glxew_h__
+#pragma once
 #define __GLXEW_H__
 
 #ifdef __glxext_h_
@@ -1665,5 +1664,3 @@ GLEWAPI GLboolean GLEWAPIENTRY glxewGetExtension (const char *name);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __glxew_h__ */

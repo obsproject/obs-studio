@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_SERVICE_H
-#define OBS_SERVICE_H
+#pragma once
 
 struct service_data;
 
@@ -29,5 +28,3 @@ struct service_info {
 	/* get (viewers/etc) */
 	/* send (current game/title/activate commercial/etc) */
 };
-
-#endif

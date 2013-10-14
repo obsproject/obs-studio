@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef SERIALIZER_H
-#define SERIALIZER_H
+#pragma once
 
 /*
  *   General programmable serialization functions.  (A shared interface to
@@ -123,6 +122,4 @@ static inline void serializer_write_double(struct serializer *s, double d)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

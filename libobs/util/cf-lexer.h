@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef CF_LEXER_H
-#define CF_LEXER_H
+#pragma once
 
 #include "lexer.h"
 
@@ -211,6 +210,4 @@ static inline struct cf_token *cf_preprocessor_gettokens(
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

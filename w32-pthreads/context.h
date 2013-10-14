@@ -34,8 +34,7 @@
  *      59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#ifndef PTW32_CONTEXT_H
-#define PTW32_CONTEXT_H
+#pragma once
 
 #undef PTW32_PROGCTR
 
@@ -69,6 +68,4 @@
 
 #if !defined(PTW32_PROGCTR)
 #error Module contains CPU-specific code; modify and recompile.
-#endif
-
 #endif

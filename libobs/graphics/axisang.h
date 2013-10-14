@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef AXISANG_H
-#define AXISANG_H
+#pragma once
 
 #include "../util/c99defs.h"
 
@@ -62,6 +61,4 @@ EXPORT void axisang_from_quat(struct axisang *dst, const struct quat *q);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

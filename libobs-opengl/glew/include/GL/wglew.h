@@ -52,8 +52,7 @@
 ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 */
 
-#ifndef __wglew_h__
-#define __wglew_h__
+#pragma once
 #define __WGLEW_H__
 
 #ifdef __wglext_h_
@@ -1417,5 +1416,3 @@ GLEWAPI GLboolean GLEWAPIENTRY wglewGetExtension (const char *name);
 #endif
 
 #undef GLEWAPI
-
-#endif /* __wglew_h__ */

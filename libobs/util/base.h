@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef BASE_H
-#define BASE_H
+#pragma once
 
 #include <wctype.h>
 #include <stdarg.h>
@@ -53,6 +52,4 @@ EXPORT void bcrash(const char *format, ...);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

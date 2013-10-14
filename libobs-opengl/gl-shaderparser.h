@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GL_SHADER_PARSER_H
-#define GL_SHADER_PARSER_H
+#pragma once
 
 /*
  *   Parses shaders into GLSL.  Shaders are almost identical to HLSL
@@ -67,5 +66,3 @@ static inline void gl_shader_parser_free(struct gl_shader_parser *glsp)
 
 extern bool gl_shader_parse(struct gl_shader_parser *glsp,
 		const char *shader_str, const char *file);
-
-#endif

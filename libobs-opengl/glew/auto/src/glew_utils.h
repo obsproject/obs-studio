@@ -29,8 +29,7 @@
 ** THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __glew_utils_h__
-#define __glew_utils_h__
+#pragma once
 
 #include <GL/glew.h>
 #if defined(_WIN32)
@@ -97,5 +96,3 @@ extern GLboolean _glewStrSame (const GLubyte* a, const GLubyte* b, GLuint n);
 extern GLboolean _glewStrSame1 (GLubyte** a, GLuint* na, const GLubyte* b, GLuint nb);
 extern GLboolean _glewStrSame2 (GLubyte** a, GLuint* na, const GLubyte* b, GLuint nb);
 extern GLboolean _glewStrSame3 (GLubyte** a, GLuint* na, const GLubyte* b, GLuint nb)
-
-#endif /* __glew_utils_h__ */

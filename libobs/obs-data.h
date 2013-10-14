@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_DATA_H
-#define OBS_DATA_H
+#pragma once
 
 #include "util/darray.h"
 #include "util/threading.h"
@@ -79,5 +78,3 @@ struct obs_data {
 };
 
 extern void *obs_video_thread(void *param);
-
-#endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef QUAT_H
-#define QUAT_H
+#pragma once
 
 #include "../util/c99defs.h"
 #include "math-defs.h"
@@ -180,6 +179,4 @@ EXPORT void quat_interpolate_cubic(struct quat *dst, const struct quat *q1,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
