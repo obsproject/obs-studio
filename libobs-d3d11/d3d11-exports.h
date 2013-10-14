@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GS_D3D11EXPORTS_H
-#define GS_D3D11EXPORTS_H
+#pragma once
 
 #include "util/c99defs.h"
 
@@ -196,5 +195,3 @@ EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
 EXPORT void shader_setdefault(shader_t shader, sparam_t param);
 
 }
-
-#endif

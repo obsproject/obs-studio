@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef AUDIO_IO_H
-#define AUDIO_IO_H
+#pragma once
 
 #include "../util/c99defs.h"
 #include "media-io.h"
@@ -86,6 +85,4 @@ EXPORT void audio_output_close(audio_t audio);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef MEDIA_IO_H
-#define MEDIA_IO_H
+#pragma once
 
 /*
  * Media input/output components used for connecting media outputs/inputs
@@ -72,6 +71,4 @@ EXPORT void    media_close(media_t media);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

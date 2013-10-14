@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef CF_PARSER_H
-#define CF_PARSER_H
+#pragma once
 
 #include "cf-lexer.h"
 
@@ -279,6 +278,4 @@ static inline int next_name_ref(struct cf_parser *p, struct strref *dst,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

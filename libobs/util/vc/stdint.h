@@ -16,8 +16,8 @@
  *  Date: 2000-12-02
  */
 
-#ifndef _STDINT_H
-#define _STDINT_H
+#pragma once
+
 #define __need_wint_t
 #define __need_wchar_t
 #include <stddef.h>
@@ -200,5 +200,3 @@ typedef unsigned __int64   uintmax_t;
 #define UINTMAX_C(val) (UINTMAX_MAX-UINTMAX_MAX+(val))
 
 #endif  /* !defined ( __cplusplus) || defined __STDC_CONSTANT_MACROS */
-
-#endif

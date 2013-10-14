@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_SCENE_H
-#define OBS_SCENE_H
+#pragma once
 
 #include "obs.h"
 #include "obs-source.h"
@@ -38,5 +37,3 @@ struct obs_scene {
 	source_t source;
 	DARRAY(struct obs_scene_item*) items;
 };
-
-#endif

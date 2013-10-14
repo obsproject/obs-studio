@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef DARRAY_H
-#define DARRAY_H
+#pragma once
 
 #include "c99defs.h"
 #include <string.h>
@@ -540,6 +539,4 @@ static inline void darray_swap(const size_t element_size,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

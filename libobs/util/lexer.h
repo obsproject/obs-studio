@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef LEXER_H
-#define LEXER_H
+#pragma once
 
 #include "c99defs.h"
 #include "dstr.h"
@@ -289,6 +288,4 @@ EXPORT void lexer_getstroffset(const struct lexer *lex, const char *str,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef BASE_THREADING_H
-#define BASE_THREADING_H
+#pragma once
 
 /*
  *   Allows posix thread usage on windows as well as other operating systems.
@@ -128,6 +127,4 @@ static inline void event_reset(event_t *event)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

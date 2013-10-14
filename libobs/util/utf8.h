@@ -17,8 +17,7 @@
 /*
  * utf8: implementation of UTF-8 charset encoding (RFC3629).
  */
-#ifndef _UTF8_H_
-#define _UTF8_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,5 +34,3 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !_UTF8_H_ */

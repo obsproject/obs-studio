@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef MATRIX_H
-#define MATRIX_H
+#pragma once
 
 #include "vec3.h"
 
@@ -82,6 +81,4 @@ EXPORT void matrix3_mirrorv(struct matrix3 *dst, const struct matrix3 *m,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

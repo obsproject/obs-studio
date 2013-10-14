@@ -76,8 +76,7 @@
 ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 */
 
-#ifndef __glew_h__
-#define __glew_h__
+#pragma once
 #define __GLEW_H__
 
 #if defined(__gl_h_) || defined(__GL_H__) || defined(__X_GL_H)
@@ -17392,5 +17391,3 @@ GLEWAPI const GLubyte * GLEWAPIENTRY glewGetString (GLenum name);
 
 #undef GLAPI
 /* #undef GLEWAPI */
-
-#endif /* __glew_h__ */

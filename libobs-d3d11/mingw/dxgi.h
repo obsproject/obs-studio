@@ -12,8 +12,7 @@
 #include <ole2.h>
 #endif
 
-#ifndef __dxgi_h__
-#define __dxgi_h__
+#pragma once
 
 /* Forward declarations */
 
@@ -2709,5 +2708,3 @@ void __RPC_STUB IDXGIFactory1_IsCurrent_Stub(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __dxgi_h__ */

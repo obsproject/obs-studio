@@ -1,7 +1,6 @@
 /* config.h  */
 
-#ifndef PTW32_CONFIG_H
-#define PTW32_CONFIG_H
+#pragma once
 
 /*********************************************************************
  * Defaults: see target specific redefinitions below.
@@ -146,8 +145,4 @@
 #if defined(__DMC__)
 #define HAVE_SIGNAL_H
 #define HAVE_C_INLINE
-#endif
-
-
-
 #endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_OUTPUT_H
-#define OBS_OUTPUT_H
+#pragma once
 
 #include "util/c99defs.h"
 #include "util/dstr.h"
@@ -115,5 +114,3 @@ struct obs_output {
 
 extern bool get_output_info(void *module, const char *module_name,
 		const char *output_name, struct output_info *info);
-
-#endif
