@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef OBS_DEFS_H
-#define OBS_DEFS_H
+#pragma once
 
 #define MODULE_SUCCESS           0
 #define MODULE_ERROR            -1
@@ -26,5 +25,3 @@
 #define SOURCE_VIDEO (1<<0)
 #define SOURCE_AUDIO (1<<1)
 #define SOURCE_ASYNC (1<<2)
-
-#endif

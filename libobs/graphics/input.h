@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef INPUT_H
-#define INPUT_H
+#pragma once
 
 /* TODO: incomplete/may not be necessary */
 
@@ -150,6 +149,4 @@ EXPORT int input_getbuttonstate(input_t input, uint32_t button);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

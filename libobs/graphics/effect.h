@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef EFFECT_H
-#define EFFECT_H
+#pragma once
 
 #include "effect-parser.h"
 #include "graphics.h"
@@ -176,6 +175,4 @@ EXPORT void effect_upload_shader_params(effect_t effect, shader_t shader,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef BALLOC_H
-#define BALLOC_H
+#pragma once
 
 #include "c99defs.h"
 #include "base.h"
@@ -91,6 +90,4 @@ static inline wchar_t *bwstrdup(const wchar_t *str)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

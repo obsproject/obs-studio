@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef MATH_EXTRA_H
-#define MATH_EXTRA_H
+#pragma once
 
 #include "../util/c99defs.h"
 
@@ -61,6 +60,4 @@ EXPORT float rand_float(int positive_only);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

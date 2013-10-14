@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef MATH_DEFS
-#define MATH_DEFS
+#pragma once
 
 #include "../util/c99defs.h"
 #include <math.h>
@@ -43,6 +42,4 @@ static inline bool close_float(float f1, float f2, float precision)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

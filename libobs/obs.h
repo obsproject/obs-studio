@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBOBS_H
-#define LIBOBS_H
+#pragma once
 
 #include "util/c99defs.h"
 #include "graphics/graphics.h"
@@ -299,6 +298,4 @@ EXPORT void       output_save_settings(output_t output, const char *settings);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef BOUNDS_H
-#define BOUNDS_H
+#pragma once
 
 #include "math-defs.h"
 #include "vec3.h"
@@ -130,6 +129,4 @@ EXPORT float bounds_min_dist(const struct bounds *b, const struct plane *p);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

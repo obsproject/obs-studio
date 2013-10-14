@@ -1,5 +1,4 @@
-#ifndef OBS_CAPTURE_EXPORTS_H
-#define OBS_CAPTURE_EXPORTS_H
+#pragma once
 
 #include "util/c99defs.h"
 
@@ -12,6 +11,4 @@ EXPORT bool enum_filters(size_t idx, const char **name);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

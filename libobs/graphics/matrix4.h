@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef MATRIX4_H
-#define MATRIX4_H
+#pragma once
 
 #include "vec4.h"
 
@@ -71,6 +70,4 @@ EXPORT void matrix4_perspective(struct matrix4 *dst, float angle,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

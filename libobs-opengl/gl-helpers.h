@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GL_HELPERS_H
-#define GL_HELPERS_H
+#pragma once
 
 /*
  * Okay, so GL error handling is..  unclean to work with.  I don't want
@@ -128,5 +127,3 @@ extern bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
 
 extern bool update_buffer(GLenum target, GLuint buffer, void *data,
 		size_t size);
-
-#endif
