@@ -276,7 +276,7 @@ EXPORT void  obs_sceneitem_destroy(obs_sceneitem_t item);
 EXPORT void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos);
 EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot);
 EXPORT void obs_sceneitem_setorigin(obs_sceneitem_t item,
-	       const struct vec2 *origin);
+		const struct vec2 *origin);
 EXPORT void obs_sceneitem_setscale(obs_sceneitem_t item,
 		const struct vec2 *scale);
 EXPORT void obs_sceneitem_setorder(obs_sceneitem_t item,
