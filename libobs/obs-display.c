@@ -18,7 +18,7 @@
 #include "obs.h"
 #include "obs-data.h"
 
-display_t display_create(obs_t obs, struct gs_init_data *graphics_data)
+obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bmalloc(sizeof(struct obs_display));
 	memset(display, 0, sizeof(struct obs_display));
@@ -26,7 +26,7 @@ display_t display_create(obs_t obs, struct gs_init_data *graphics_data)
 	if (graphics_data) {
 		display->swap = gs_create_swapchain(graphics_data);
 		if (!display->swap) {
-			display_destroy(display);
+			obs_display_destroy(display);
 			return NULL;
 		}
 	}
@@ -34,7 +34,7 @@ display_t display_create(obs_t obs, struct gs_init_data *graphics_data)
 	return display;
 }
 
-void display_destroy(display_t display)
+void obs_display_destroy(obs_display_t display)
 {
 	if (display) {
 		swapchain_destroy(display->swap);
@@ -42,12 +42,12 @@ void display_destroy(display_t display)
 	}
 }
 
-source_t display_getsource(display_t display)
+obs_source_t obs_display_getsource(obs_display_t display)
 {
 	return display->source;
 }
 
-void display_setsource(display_t display, source_t source)
+void obs_display_setsource(obs_display_t display, obs_source_t source)
 {
 	display->source = source;
 }

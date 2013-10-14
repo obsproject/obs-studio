@@ -426,6 +426,16 @@ void device_destroy(device_t device)
 	delete device;
 }
 
+void device_entercontext(device_t device)
+{
+	/* does nothing */
+}
+
+void device_leavecontext(device_t device)
+{
+	/* does nothing */
+}
+
 swapchain_t device_create_swapchain(device_t device, struct gs_init_data *data)
 {
 	gs_swap_chain *swap = NULL;
@@ -591,7 +601,7 @@ shader_t device_create_vertexshader(device_t device,
 		if (error_string)
 			*error_string = bstrdup(buf);
 		blog(LOG_ERROR, "device_create_vertexshader (D3D11): "
-		                "Compile errors for %s:\n%s",
+		                "Compile warnings/errors for %s:\n%s",
 		                file, buf);
 
 	} catch (const char *error) {
@@ -620,7 +630,7 @@ shader_t device_create_pixelshader(device_t device,
 		if (error_string)
 			*error_string = bstrdup(buf);
 		blog(LOG_ERROR, "device_create_pixelshader (D3D11): "
-		                "Compiler errors for %s:\n%s",
+		                "Compiler warnings/errors for %s:\n%s",
 		                file, buf);
 
 	} catch (const char *error) {

@@ -76,7 +76,7 @@ complete:
 	dstr_free(&enum_name);
 }
 
-int obs_load_module(struct obs_data *obs, const char *path)
+int obs_load_module(const char *path)
 {
 	struct obs_module mod;
 	bool (*module_load)(void) = NULL;

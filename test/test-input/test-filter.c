@@ -1,9 +1,11 @@
 #include "test-filter.h"
 
-struct test_filter *test_create(const char *settings, source_t source)
+struct test_filter *test_create(const char *settings, obs_source_t source)
 {
 	struct test_filter *tf = bmalloc(sizeof(struct test_filter));
 	memset(tf, 0, sizeof(struct test_filter));
+
+	gs_entercontext(obs_graphics());
 
 	tf->source = source;
 	tf->whatever = gs_create_effect_from_file("test.effect", NULL);
@@ -14,15 +16,21 @@ struct test_filter *test_create(const char *settings, source_t source)
 
 	tf->texrender = texrender_create(GS_RGBA, GS_ZS_NONE);
 
+	gs_leavecontext();
+
 	return tf;
 }
 
 void test_destroy(struct test_filter *tf)
 {
 	if (tf) {
+		gs_entercontext(obs_graphics());
+
 		effect_destroy(tf->whatever);
 		texrender_destroy(tf->texrender);
 		bfree(tf);
+
+		gs_leavecontext();
 	}
 }
 
@@ -38,9 +46,9 @@ void test_video_tick(struct test_filter *tf, float seconds)
 
 void test_video_render(struct test_filter *tf)
 {
-	source_t filter_target = filter_gettarget(tf->source);
-	int cx = source_getwidth(filter_target);
-	int cy = source_getheight(filter_target);
+	obs_source_t filter_target = obs_filter_gettarget(tf->source);
+	int cx = obs_source_getwidth(filter_target);
+	int cy = obs_source_getheight(filter_target);
 	float fcx = (float)cx;
 	float fcy = (float)cy;
 	technique_t tech;
@@ -48,7 +56,7 @@ void test_video_render(struct test_filter *tf)
 
 	if (texrender_begin(tf->texrender, cx, cy)) {
 		gs_ortho(0.0f, fcx, 0.0f, fcy, -100.0f, 100.0f);
-		source_video_render(filter_target);
+		obs_source_video_render(filter_target);
 		texrender_end(tf->texrender);
 	}
 

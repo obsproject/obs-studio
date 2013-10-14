@@ -14,24 +14,24 @@ struct VertexInOut {
 	float2 uv  : TEXCOORD0;
 };
 
-VertexInOut VShader(VertexInOut input)
+VertexInOut VShader(VertexInOut vert_in)
 {
-	VertexInOut output;
-	output.pos = mul(float4(input.pos.xyz, 1.0), ViewProj);
-	output.uv = input.uv;
-	return output;
+	VertexInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = vert_in.uv;
+	return vert_out;
 }
 
-float4 PShader(VertexInOut input) : TARGET
+float4 PShader(VertexInOut fragment_in) : TARGET
 {
-	return diffuse.Sample(texSampler, input.uv) * color;
+	return diffuse.Sample(texSampler, fragment_in.uv) * color;
 }
 
 technique Default
 {
 	pass
 	{
-		vertex_shader = VShader(input);
-		pixel_shader  = PShader(input);
+		vertex_shader = VShader(vert_in);
+		pixel_shader  = PShader(fragment_in);
 	}
 }

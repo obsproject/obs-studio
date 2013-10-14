@@ -89,13 +89,10 @@ int audio_output_open(audio_t *audio, media_t media, struct audio_info *info)
 
 	if (pthread_mutex_init(&out->data_mutex, NULL) != 0)
 		goto fail;
-
 	if (event_init(&out->stop_event, true) != 0)
 		goto fail;
-
 	if (!ao_add_to_media(out))
 		goto fail;
-
 	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
 		goto fail;
 

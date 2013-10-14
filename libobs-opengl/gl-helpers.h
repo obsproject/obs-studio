@@ -27,7 +27,7 @@ static inline bool gl_success(const char *funcname)
 {
 	GLenum errorcode = glGetError();
 	if (errorcode != GL_NO_ERROR) {
-		blog(LOG_ERROR, "%s failed, glGetError returned %u",
+		blog(LOG_ERROR, "%s failed, glGetError returned 0x%X",
 				funcname, errorcode);
 		return false;
 	}

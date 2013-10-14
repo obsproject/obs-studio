@@ -18,7 +18,7 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
-static void *obs_scene_create(const char *settings, struct obs_source *source)
+static void *scene_create(const char *settings, struct obs_source *source)
 {
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
 	scene->source = source;
@@ -27,7 +27,7 @@ static void *obs_scene_create(const char *settings, struct obs_source *source)
 	return scene;
 }
 
-static void obs_scene_destroy(void *data)
+static void scene_destroy(void *data)
 {
 	struct obs_scene *scene = data;
 	size_t i;
@@ -39,12 +39,12 @@ static void obs_scene_destroy(void *data)
 	bfree(scene);
 }
 
-static uint32_t obs_scene_get_output_flags(void *data)
+static uint32_t scene_get_output_flags(void *data)
 {
 	return SOURCE_VIDEO | SOURCE_AUDIO;
 }
 
-static void obs_scene_video_render(void *data)
+static void scene_video_render(void *data)
 {
 	struct obs_scene *scene = data;
 	size_t i;
@@ -58,18 +58,18 @@ static void obs_scene_video_render(void *data)
 		gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD(-item->rot));
 		gs_matrix_translate3f(-item->pos.x, -item->pos.y, 0.0f);
 
-		source_video_render(item->source);
+		obs_source_video_render(item->source);
 
 		gs_matrix_pop();
 	}
 }
 
-static int obs_scene_getsize(void *data)
+static int scene_getsize(void *data)
 {
 	return -1;
 }
 
-static bool obs_scene_enum_children(void *data, size_t idx, source_t *child)
+static bool scene_enum_children(void *data, size_t idx, obs_source_t *child)
 {
 	struct obs_scene *scene = data;
 	if (idx >= scene->items.num)
@@ -84,32 +84,32 @@ static bool obs_scene_enum_children(void *data, size_t idx, source_t *child)
 static const struct source_info scene_info =
 {
 	"scene",
-	obs_scene_create,
-	obs_scene_destroy,
-	obs_scene_get_output_flags, NULL, NULL, NULL, NULL,
-	obs_scene_video_render,
-	obs_scene_getsize,
-	obs_scene_getsize, NULL, NULL,
-	obs_scene_enum_children, NULL, NULL
+	scene_create,
+	scene_destroy,
+	scene_get_output_flags, NULL, NULL, NULL, NULL,
+	scene_video_render,
+	scene_getsize,
+	scene_getsize, NULL, NULL,
+	scene_enum_children, NULL, NULL
 };
 #else
 static const struct source_info scene_info =
 {
 	.name             = "scene",
-	.create           = obs_scene_create,
-	.destroy          = obs_scene_destroy,
-	.get_output_flags = obs_scene_get_output_flags,
-	.video_render     = obs_scene_video_render,
-	.getwidth         = obs_scene_getsize,
-	.getheight        = obs_scene_getsize,
-	.enum_children    = obs_scene_enum_children
+	.create           = scene_create,
+	.destroy          = scene_destroy,
+	.get_output_flags = scene_get_output_flags,
+	.video_render     = scene_video_render,
+	.getwidth         = scene_getsize,
+	.getheight        = scene_getsize,
+	.enum_children    = scene_enum_children
 };
 #endif
 
-scene_t scene_create(obs_t obs)
+obs_scene_t obs_scene_create(void)
 {
 	struct obs_source *source = bmalloc(sizeof(struct obs_source));
-	struct obs_scene  *scene  = obs_scene_create(NULL, source);
+	struct obs_scene  *scene  = scene_create(NULL, source);
 
 	source->data = scene;
 	if (!source->data) {
@@ -118,23 +118,23 @@ scene_t scene_create(obs_t obs)
 	}
 
 	scene->source = source;
-	source_init(obs, source);
+	obs_source_init(source);
 	memcpy(&source->callbacks, &scene_info, sizeof(struct source_info));
 	return scene;
 }
 
-void scene_destroy(scene_t scene)
+void obs_scene_destroy(obs_scene_t scene)
 {
 	if (scene)
-		source_destroy(scene->source);
+		obs_source_destroy(scene->source);
 }
 
-source_t scene_source(scene_t scene)
+obs_source_t obs_scene_getsource(obs_scene_t scene)
 {
 	return scene->source;
 }
 
-sceneitem_t scene_add(scene_t scene, source_t source)
+obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 {
 	struct obs_scene_item *item = bmalloc(sizeof(struct obs_scene_item));
 	memset(item, 0, sizeof(struct obs_scene_item));
@@ -147,7 +147,7 @@ sceneitem_t scene_add(scene_t scene, source_t source)
 	return item;
 }
 
-void sceneitem_remove(sceneitem_t item)
+void obs_sceneitem_remove(obs_sceneitem_t item)
 {
 	if (item) {
 		da_erase_item(item->parent->items, item);
@@ -155,27 +155,27 @@ void sceneitem_remove(sceneitem_t item)
 	}
 }
 
-void sceneitem_setpos(sceneitem_t item, const struct vec2 *pos)
+void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos)
 {
 	vec2_copy(&item->pos, pos);
 }
 
-void sceneitem_setrot(sceneitem_t item, float rot)
+void obs_sceneitem_setrot(obs_sceneitem_t item, float rot)
 {
 	item->rot = rot;
 }
 
-void sceneitem_setorigin(sceneitem_t item, const struct vec2 *origin)
+void obs_sceneitem_setorigin(obs_sceneitem_t item, const struct vec2 *origin)
 {
 	vec2_copy(&item->origin, origin);
 }
 
-void sceneitem_setscale(sceneitem_t item, const struct vec2 *scale)
+void obs_sceneitem_setscale(obs_sceneitem_t item, const struct vec2 *scale)
 {
 	vec2_copy(&item->scale, scale);
 }
 
-void sceneitem_setorder(sceneitem_t item, enum order_movement movement)
+void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 {
 	struct obs_scene *scene = item->parent;
 
@@ -201,22 +201,22 @@ void sceneitem_setorder(sceneitem_t item, enum order_movement movement)
 	}
 }
 
-void sceneitem_getpos(sceneitem_t item, struct vec2 *pos)
+void obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos)
 {
 	vec2_copy(pos, &item->pos);
 }
 
-float sceneitem_getrot(sceneitem_t item)
+float obs_sceneitem_getrot(obs_sceneitem_t item)
 {
 	return item->rot;
 }
 
-void sceneitem_getorigin(sceneitem_t item, struct vec2 *origin)
+void obs_sceneitem_getorigin(obs_sceneitem_t item, struct vec2 *origin)
 {
 	vec2_copy(origin, &item->origin);
 }
 
-void sceneitem_getscale(sceneitem_t item, struct vec2 *scale)
+void obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale)
 {
 	vec2_copy(scale, &item->scale);
 }

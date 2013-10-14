@@ -5,40 +5,31 @@
 #include "util/base.h"
 #include "obs.h"
 
+#include <intrin.h>
+
 static const int cx = 800;
 static const int cy = 600;
 
 /* --------------------------------------------------- */
 
-class OBSContext {
-	obs_t obs;
-
-public:
-	inline OBSContext(obs_t obs) : obs(obs) {}
-	inline ~OBSContext() {obs_destroy(obs);}
-	inline operator obs_t() {return obs;}
-};
-
-/* --------------------------------------------------- */
-
 class SourceContext {
-	source_t source;
+	obs_source_t source;
 
 public:
-	inline SourceContext(source_t source) : source(source) {}
-	inline ~SourceContext() {source_destroy(source);}
-	inline operator source_t() {return source;}
+	inline SourceContext(obs_source_t source) : source(source) {}
+	inline ~SourceContext() {obs_source_destroy(source);}
+	inline operator obs_source_t() {return source;}
 };
 
 /* --------------------------------------------------- */
 
 class SceneContext {
-	scene_t scene;
+	obs_scene_t scene;
 
 public:
-	inline SceneContext(scene_t scene) : scene(scene) {}
-	inline ~SceneContext() {scene_destroy(scene);}
-	inline operator scene_t() {return scene;}
+	inline SceneContext(obs_scene_t scene) : scene(scene) {}
+	inline ~SceneContext() {obs_scene_destroy(scene);}
+	inline operator obs_scene_t() {return scene;}
 };
 
 /* --------------------------------------------------- */
@@ -66,9 +57,12 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
+
+	if (type >= LOG_WARNING)
+		__debugbreak();
 }
 
-static obs_t CreateOBS(HWND hwnd)
+static void CreateOBS(HWND hwnd)
 {
 	struct video_info vi;
 	memset(&vi, 0, sizeof(struct video_info));
@@ -87,31 +81,28 @@ static obs_t CreateOBS(HWND hwnd)
 	gsid.num_backbuffers = 2;
 	gsid.format          = GS_RGBA;
 
-	obs_t obs = obs_create("libobs-d3d11.dll", &gsid, &vi, NULL);
-	if (!obs)
+	if (!obs_startup("libobs-d3d11.dll", &gsid, &vi, NULL))
 		throw "Couldn't create OBS";
-
-	return obs;
 }
 
-static void AddTestItems(scene_t scene, source_t source)
+static void AddTestItems(obs_scene_t scene, obs_source_t source)
 {
-	sceneitem_t item = NULL;
+	obs_sceneitem_t item = NULL;
 	struct vec2 v2;
 
-	item = scene_add(scene, source);
+	item = obs_scene_add(scene, source);
 	vec2_set(&v2, 100.0f, 200.0f);
-	sceneitem_setpos(item, &v2);
-	sceneitem_setrot(item, 10.0f);
+	obs_sceneitem_setpos(item, &v2);
+	obs_sceneitem_setrot(item, 10.0f);
 	vec2_set(&v2, 20.0f, 2.0f);
-	sceneitem_setscale(item, &v2);
+	obs_sceneitem_setscale(item, &v2);
 
-	item = scene_add(scene, source);
+	item = obs_scene_add(scene, source);
 	vec2_set(&v2, 200.0f, 100.0f);
-	sceneitem_setpos(item, &v2);
-	sceneitem_setrot(item, -45.0f);
+	obs_sceneitem_setpos(item, &v2);
+	obs_sceneitem_setrot(item, -45.0f);
 	vec2_set(&v2, 5.0f, 7.0f);
-	sceneitem_setscale(item, &v2);
+	obs_sceneitem_setscale(item, &v2);
 }
 
 static HWND CreateTestWindow(HINSTANCE instance)
@@ -148,31 +139,31 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* create OBS */
-		OBSContext obs = CreateOBS(hwnd);
+		CreateOBS(hwnd);
 
 		/* ------------------------------------------------------ */
 		/* load module */
-		if (obs_load_module(obs, "test-input.dll") != 0)
+		if (obs_load_module("test-input.dll") != 0)
 			throw "Couldn't load module";
 
 		/* ------------------------------------------------------ */
 		/* create source */
-		SourceContext source = source_create(obs, SOURCE_INPUT,
+		SourceContext source = obs_source_create(SOURCE_INPUT,
 				"random", NULL);
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
-		SourceContext filter = source_create(obs, SOURCE_FILTER,
+		SourceContext filter = obs_source_create(SOURCE_FILTER,
 				"test", NULL);
 		if (!filter)
 			throw "Couldn't create test filter";
-		source_filter_add(source, filter);
+		obs_source_filter_add(source, filter);
 
 		/* ------------------------------------------------------ */
 		/* create scene and add source to scene (twice) */
-		SceneContext scene = scene_create(obs);
+		SceneContext scene = obs_scene_create();
 		if (!scene)
 			throw "Couldn't create scene";
 
@@ -180,7 +171,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_primary_source(obs, scene_source(scene));
+		obs_set_primary_source(obs_scene_getsource(scene));
 
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) {
@@ -188,11 +179,13 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 			DispatchMessage(&msg);
 		}
 
-		obs_set_primary_source(obs, NULL);
+		obs_set_primary_source(NULL);
 
 	} catch (char *error) {
 		MessageBoxA(NULL, error, NULL, 0);
 	}
+
+	obs_shutdown();
 
 	blog(LOG_INFO, "Number of memory leaks: %u", bnum_allocs());
 	DestroyWindow(hwnd);

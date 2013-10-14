@@ -62,8 +62,8 @@ bool get_source_info(void *module, const char *module_name,
 	return true;
 }
 
-static inline const struct source_info *find_source(obs_t obs,
-		struct darray *list, const char *name)
+static inline const struct source_info *find_source(struct darray *list,
+		const char *name)
 {
 	size_t i;
 	struct source_info *array = list->array;
@@ -77,9 +77,8 @@ static inline const struct source_info *find_source(obs_t obs,
 	return NULL;
 }
 
-void source_init(obs_t obs, struct obs_source *source)
+void obs_source_init(struct obs_source *source)
 {
-	source->obs              = obs;
 	source->filter_target    = NULL;
 	source->rendering_filter = false;
 
@@ -88,7 +87,7 @@ void source_init(obs_t obs, struct obs_source *source)
 	da_push_back(obs->sources, &source);
 }
 
-source_t source_create(obs_t obs, enum source_type type, const char *name,
+obs_source_t obs_source_create(enum source_type type, const char *name,
 		const char *settings)
 {
 	const struct source_info *info = NULL;
@@ -103,7 +102,7 @@ source_t source_create(obs_t obs, enum source_type type, const char *name,
 		return NULL;
 	}
 
-	info = find_source(obs, list, name);
+	info = find_source(list, name);
 	if (!info) {
 		blog(LOG_WARNING, "Source '%s' not found", type);
 		return NULL;
@@ -116,17 +115,17 @@ source_t source_create(obs_t obs, enum source_type type, const char *name,
 		return NULL;
 	}
 
-	source_init(obs, source);
+	obs_source_init(source);
 	dstr_copy(&source->settings, settings);
 	memcpy(&source->callbacks, info, sizeof(struct source_info));
 	return source;
 }
 
-void source_destroy(source_t source)
+void obs_source_destroy(obs_source_t source)
 {
 	if (source) {
 		da_free(source->filters);
-		da_erase_item(source->obs->sources, &source);
+		da_erase_item(obs->sources, &source);
 
 		source->callbacks.destroy(source->data);
 		dstr_free(&source->settings);
@@ -134,46 +133,46 @@ void source_destroy(source_t source)
 	}
 }
 
-uint32_t source_get_output_flags(source_t source)
+uint32_t obs_source_get_output_flags(obs_source_t source)
 {
 	return source->callbacks.get_output_flags(source->data);
 }
 
-bool source_hasconfig(source_t source)
+bool obs_source_hasconfig(obs_source_t source)
 {
 	return source->callbacks.config != NULL;
 }
 
-void source_config(source_t source, void *parent)
+void obs_source_config(obs_source_t source, void *parent)
 {
 	if (source->callbacks.config)
 		source->callbacks.config(source->data, parent);
 }
 
-void source_activate(source_t source)
+void obs_source_activate(obs_source_t source)
 {
 	if (source->callbacks.activate)
 		source->callbacks.activate(source->data);
 }
 
-void source_deactivate(source_t source)
+void obs_source_deactivate(obs_source_t source)
 {
 	if (source->callbacks.deactivate)
 		source->callbacks.deactivate(source->data);
 }
 
-void source_video_tick(source_t source, float seconds)
+void obs_source_video_tick(obs_source_t source, float seconds)
 {
 	if (source->callbacks.video_tick)
 		source->callbacks.video_tick(source->data, seconds);
 }
 
-void source_video_render(source_t source)
+void obs_source_video_render(obs_source_t source)
 {
 	if (source->callbacks.video_render) {
 		if (source->filters.num && !source->rendering_filter) {
 			source->rendering_filter = true;
-			source_video_render(source->filters.array[0]);
+			obs_source_video_render(source->filters.array[0]);
 			source->rendering_filter = false;
 		} else {
 			source->callbacks.video_render(source->data);
@@ -181,21 +180,21 @@ void source_video_render(source_t source)
 	}
 }
 
-int source_getwidth(source_t source)
+int obs_source_getwidth(obs_source_t source)
 {
 	if (source->callbacks.getwidth)
 		return source->callbacks.getwidth(source->data);
 	return 0;
 }
 
-int source_getheight(source_t source)
+int obs_source_getheight(obs_source_t source)
 {
 	if (source->callbacks.getheight)
 		return source->callbacks.getheight(source->data);
 	return 0;
 }
 
-size_t source_getparam(source_t source, const char *param, void *buf,
+size_t obs_source_getparam(obs_source_t source, const char *param, void *buf,
 		size_t buf_size)
 {
 	if (source->callbacks.getparam)
@@ -204,26 +203,27 @@ size_t source_getparam(source_t source, const char *param, void *buf,
 	return 0;
 }
 
-void source_setparam(source_t source, const char *param, const void *data,
-		size_t size)
+void obs_source_setparam(obs_source_t source, const char *param,
+		const void *data, size_t size)
 {
 	if (source->callbacks.setparam)
 		source->callbacks.setparam(source->data, param, data, size);
 }
 
-bool source_enum_children(source_t source, size_t idx, source_t *child)
+bool obs_source_enum_children(obs_source_t source, size_t idx,
+		obs_source_t *child)
 {
 	if (source->callbacks.enum_children)
 		return source->callbacks.enum_children(source, idx, child);
 	return false;
 }
 
-source_t filter_gettarget(source_t filter)
+obs_source_t obs_filter_gettarget(obs_source_t filter)
 {
 	return filter->filter_target;
 }
 
-void source_filter_add(source_t source, source_t filter)
+void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 {
 	if (da_find(source->filters, &filter, 0) != -1) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
@@ -232,7 +232,7 @@ void source_filter_add(source_t source, source_t filter)
 	}
 
 	if (source->filters.num) {
-		source_t *back = da_end(source->filters);
+		obs_source_t *back = da_end(source->filters);
 		(*back)->filter_target = filter;
 	}
 
@@ -240,14 +240,14 @@ void source_filter_add(source_t source, source_t filter)
 	filter->filter_target = source;
 }
 
-void source_filter_remove(source_t source, source_t filter)
+void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 {
 	size_t idx = da_find(source->filters, &filter, 0);
 	if (idx == -1)
 		return;
 
 	if (idx > 0) {
-		source_t prev = source->filters.array[idx-1];
+		obs_source_t prev = source->filters.array[idx-1];
 		prev->filter_target = filter->filter_target;
 	}
 
@@ -255,7 +255,7 @@ void source_filter_remove(source_t source, source_t filter)
 	filter->filter_target = NULL;
 }
 
-void source_filter_setorder(source_t source, source_t filter,
+void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 		enum order_movement movement)
 {
 	size_t idx = da_find(source->filters, &filter, 0);
@@ -286,28 +286,28 @@ void source_filter_setorder(source_t source, source_t filter,
 
 	/* reorder filter targets */
 	for (i = 0; i < source->filters.num; i++) {
-		source_t next_filter = (i == source->filters.num-1) ?
+		obs_source_t next_filter = (i == source->filters.num-1) ?
 			source : source->filters.array[idx+1];
 		source->filters.array[i]->filter_target = next_filter;
 	}
 }
 
-const char *source_get_settings(source_t source)
+const char *obs_source_get_settings(obs_source_t source)
 {
 	return source->settings.array;
 }
 
-void source_save_settings(source_t source, const char *settings)
+void obs_source_save_settings(obs_source_t source, const char *settings)
 {
 	dstr_copy(&source->settings, settings);
 }
 
-void source_output_video(source_t source, struct video_frame *frame)
+void obs_source_output_video(obs_source_t source, struct video_frame *frame)
 {
 	/* TODO */
 }
 
-void source_output_audio(source_t source, struct audio_data *audio)
+void obs_source_output_audio(obs_source_t source, struct audio_data *audio)
 {
 	/* TODO */
 }

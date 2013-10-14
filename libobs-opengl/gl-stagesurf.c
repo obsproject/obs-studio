@@ -28,7 +28,9 @@ static bool create_pixel_pack_buffer(struct gs_stage_surface *surf)
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, surf->pack_buffer))
 		return false;
 
-	size = surf->width * surf->height * surf->bytes_per_pixel;
+	size  = surf->width * surf->bytes_per_pixel;
+	size  = (size+3) & 0xFFFFFFFC; /* align width to 4-byte boundry */
+	size *= surf->height;
 
 	glBufferData(GL_PIXEL_PACK_BUFFER, size, 0, GL_DYNAMIC_READ);
 	if (!gl_success("glBufferData"))

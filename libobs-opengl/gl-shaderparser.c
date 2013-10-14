@@ -417,7 +417,7 @@ static void gl_write_function(struct gl_shader_parser *glsp,
 	dstr_cat(&glsp->gl_string, " ");
 
 	if (strcmp(func->name, "main") == 0)
-		dstr_cat(&glsp->gl_string, "__main__");
+		dstr_cat(&glsp->gl_string, "obs_main_x");
 	else
 		dstr_cat(&glsp->gl_string, func->name);
 
@@ -521,7 +521,7 @@ static void gl_write_main(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, main->params.array[i].type);
 		dstr_cat(&glsp->gl_string, " ");
 		dstr_cat(&glsp->gl_string, main->params.array[i].name);
-		dstr_cat(&glsp->gl_string, "\n");
+		dstr_cat(&glsp->gl_string, ";\n");
 	}
 
 	if (!main->mapping) {
@@ -534,7 +534,7 @@ static void gl_write_main(struct gl_shader_parser *glsp,
 	gl_write_main_storage_var(glsp, main->params.array, NULL,
 			"inputval_", true);
 
-	dstr_cat(&glsp->gl_string, "\n\toutputval = __main__(");
+	dstr_cat(&glsp->gl_string, "\n\toutputval = obs_main_x(");
 	for (i = 0; i < main->params.num; i++) {
 		if (i)
 			dstr_cat(&glsp->gl_string, ", ");

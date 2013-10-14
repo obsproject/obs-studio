@@ -36,7 +36,8 @@ static inline void shader_param_free(struct shader_param *param)
 	da_free(param->def_value);
 }
 
-static void gl_get_program_info(GLuint program, char **error_string)
+static void gl_get_program_info(GLuint program, const char *file,
+		char **error_string)
 {
 	char    *errors;
 	GLint   info_len = 0;
@@ -51,7 +52,12 @@ static void gl_get_program_info(GLuint program, char **error_string)
 	glGetProgramInfoLog(program, info_len, &chars_written, errors);
 	gl_success("glGetProgramInfoLog");
 
-	*error_string = errors;
+	blog(LOG_DEBUG, "Compiler warnings/errors for %s:\n%s", file, errors);
+
+	if (error_string)
+		*error_string = errors;
+	else
+		bfree(errors);
 }
 
 static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
@@ -195,6 +201,12 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (!shader->program)
 		return false;
 
+	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
+	blog(LOG_DEBUG, "  GL shader string for: %s", file);
+	blog(LOG_DEBUG, "-----------------------------------");
+	blog(LOG_DEBUG, "%s", glsp->gl_string.array);
+	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
+
 	glGetProgramiv(shader->program, GL_VALIDATE_STATUS, &compiled);
 	if (!gl_success("glGetProgramiv"))
 		return false;
@@ -202,7 +214,7 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (!compiled)
 		success = false;
 
-	gl_get_program_info(shader->program, error_string);
+	gl_get_program_info(shader->program, file, error_string);
 
 	if (success)
 		success = gl_add_params(shader, glsp);

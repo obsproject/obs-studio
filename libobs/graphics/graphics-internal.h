@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "../util/threading.h"
 #include "../util/darray.h"
 #include "graphics.h"
 #include "matrix3.h"
@@ -25,6 +26,8 @@
 struct gs_exports {
 	device_t (*device_create)(struct gs_init_data *data);
 	void (*device_destroy)(device_t device);
+	void (*device_entercontext)(device_t device);
+	void (*device_leavecontext)(device_t device);
 	swapchain_t (*device_create_swapchain)(device_t device,
 			struct gs_init_data *data);
 	void (*device_resize)(device_t device, uint32_t x, uint32_t y);
@@ -223,4 +226,7 @@ struct graphics_subsystem {
 	DARRAY(struct vec3)    norms;
 	DARRAY(uint32_t)       colors;
 	DARRAY(struct vec2)    texverts[16];
+
+	pthread_mutex_t        mutex;
+	volatile int           ref;
 };

@@ -21,6 +21,8 @@
 
 EXPORT device_t device_create(struct gs_init_data *data);
 EXPORT void device_destroy(device_t device);
+EXPORT void device_entercontext(device_t device);
+EXPORT void device_leavecontext(device_t device);
 EXPORT swapchain_t device_create_swapchain(device_t device,
 		struct gs_init_data *data);
 EXPORT void device_resize(device_t device, uint32_t x, uint32_t y);

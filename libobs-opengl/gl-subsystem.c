@@ -64,6 +64,7 @@ device_t device_create(struct gs_init_data *info)
 		blog(LOG_DEBUG, "OpenGL debug information not available");
 #endif
 
+	device_leavecontext(device);
 	return device;
 
 fail:

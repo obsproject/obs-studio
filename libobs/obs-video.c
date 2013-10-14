@@ -19,7 +19,7 @@
 #include "obs-data.h"
 #include "graphics/vec4.h"
 
-static void tick_sources(obs_t obs, uint64_t cur_time, uint64_t *last_time)
+static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 {
 	size_t i;
 	uint64_t delta_time;
@@ -31,12 +31,12 @@ static void tick_sources(obs_t obs, uint64_t cur_time, uint64_t *last_time)
 	seconds = (float)((double)delta_time / 1000000000.0);
 
 	for (i = 0; i < obs->sources.num; i++)
-		source_video_tick(obs->sources.array[i], seconds);
+		obs_source_video_tick(obs->sources.array[i], seconds);
 
 	*last_time = cur_time;
 }
 
-static inline void render_displays(obs_t obs)
+static inline void render_displays(void)
 {
 	size_t i;
 	struct vec4 clear_color;
@@ -49,7 +49,7 @@ static inline void render_displays(obs_t obs)
 	         -100.0f, 100.0f);
 
 	for (i = 0; i < obs->displays.num; i++) {
-		display_t display = obs->displays.array[i];
+		obs_display_t display = obs->displays.array[i];
 
 		gs_load_swapchain(display->swap);
 
@@ -57,7 +57,7 @@ static inline void render_displays(obs_t obs)
 		gs_setviewport(0, 0, gs_getwidth(), gs_getheight());
 
 		if (display->source)
-			source_video_render(display->source);
+			obs_source_video_render(display->source);
 
 		gs_endscene();
 		gs_present();
@@ -72,13 +72,13 @@ static inline void render_displays(obs_t obs)
 	gs_setviewport(0, 0, gs_getwidth(), gs_getheight());
 
 	if (obs->primary_source)
-		source_video_render(obs->primary_source);
+		obs_source_video_render(obs->primary_source);
 
 	gs_endscene();
 	gs_present();
 }
 
-static bool swap_frame(obs_t obs, uint64_t timestamp)
+static bool swap_frame(uint64_t timestamp)
 {
 	stagesurf_t last_surface = obs->copy_surfaces[obs->cur_texture];
 	stagesurf_t surface;
@@ -117,9 +117,13 @@ void *obs_video_thread(void *param)
 	while (video_output_wait(obs->video)) {
 		uint64_t cur_time = video_gettime(obs->video);
 
-		tick_sources(obs, cur_time, &last_time);
-		render_displays(obs);
-		swap_frame(obs, cur_time);
+		gs_entercontext(obs_graphics());
+
+		tick_sources(cur_time, &last_time);
+		render_displays();
+		swap_frame(cur_time);
+
+		gs_leavecontext();
 	}
 
 	return NULL;

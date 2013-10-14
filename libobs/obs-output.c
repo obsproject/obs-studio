@@ -42,7 +42,7 @@ bool get_output_info(void *module, const char *module_name,
 	return true;
 }
 
-static inline const struct output_info *find_output(obs_t obs, const char *type)
+static inline const struct output_info *find_output(const char *type)
 {
 	size_t i;
 	for (i = 0; i < obs->output_types.num; i++)
@@ -52,9 +52,9 @@ static inline const struct output_info *find_output(obs_t obs, const char *type)
 	return NULL;
 }
 
-output_t output_create(obs_t obs, const char *type, const char *settings)
+obs_output_t obs_output_create(const char *type, const char *settings)
 {
-	const struct output_info *info = find_output(obs, type);
+	const struct output_info *info = find_output(type);
 	struct obs_output *output;
 
 	if (!info) {
@@ -74,7 +74,7 @@ output_t output_create(obs_t obs, const char *type, const char *settings)
 	return output;
 }
 
-void output_destroy(output_t output)
+void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
 		output->callbacks.destroy(output->data);
@@ -83,39 +83,39 @@ void output_destroy(output_t output)
 	}
 }
 
-void output_start(output_t output)
+void obs_output_start(obs_output_t output)
 {
 	output->callbacks.start(output->data);
 }
 
-void output_stop(output_t output)
+void obs_output_stop(obs_output_t output)
 {
 	output->callbacks.stop(output->data);
 }
 
-bool output_canconfig(output_t output)
+bool obs_output_canconfig(obs_output_t output)
 {
 	return output->callbacks.config != NULL;
 }
 
-void output_config(output_t output, void *parent)
+void obs_output_config(obs_output_t output, void *parent)
 {
 	if (output->callbacks.config)
 		output->callbacks.config(output->data, parent);
 }
 
-bool output_canpause(output_t output)
+bool obs_output_canpause(obs_output_t output)
 {
 	return output->callbacks.pause != NULL;
 }
 
-void output_pause(output_t output)
+void obs_output_pause(obs_output_t output)
 {
 	if (output->callbacks.pause)
 		output->callbacks.pause(output->data);
 }
 
-void output_save_settings(output_t output, const char *settings)
+void obs_output_save_settings(obs_output_t output, const char *settings)
 {
 	dstr_copy(&output->settings, settings);
 }

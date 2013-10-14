@@ -116,16 +116,12 @@ int video_output_open(video_t *video, media_t media, struct video_info *info)
 
 	if (pthread_mutex_init(&out->data_mutex, NULL) != 0)
 		goto fail;
-
 	if (event_init(&out->stop_event, true) != 0)
 		goto fail;
-
 	if (event_init(&out->update_event, false) != 0)
 		goto fail;
-
 	if (!vo_add_to_media(out))
 		goto fail;
-
 	if (pthread_create(&out->thread, NULL, video_thread, out) != 0)
 		goto fail;
 

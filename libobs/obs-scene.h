@@ -23,17 +23,17 @@
 /* how obs scene! */
 
 struct obs_scene_item {
-	scene_t     parent;
-	source_t    source;
-	bool        visible;
+	obs_scene_t  parent;
+	obs_source_t source;
+	bool         visible;
 
-	struct vec2 origin;
-	struct vec2 pos;
-	struct vec2 scale;
-	float       rot;
+	struct vec2  origin;
+	struct vec2  pos;
+	struct vec2  scale;
+	float        rot;
 };
 
 struct obs_scene {
-	source_t source;
+	obs_source_t source;
 	DARRAY(struct obs_scene_item*) items;
 };

@@ -22,7 +22,7 @@ bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		uint32_t width, uint32_t height, uint32_t size, void ***p_data)
 {
 	bool success = true;
-	void **data = *p_data;
+	void **data = p_data ? *p_data : NULL;
 	uint32_t i;
 
 	for (i = 0; i < num_levels; i++) {
@@ -50,7 +50,8 @@ bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		if (height == 0) height = 1;
 	}
 
-	*p_data = data;
+	if (data)
+		*p_data = data;
 	return success;
 }
 

@@ -7,12 +7,12 @@ extern "C" {
 #endif
 
 struct test_filter {
-	source_t source;
+	obs_source_t source;
 	effect_t whatever;
 	texrender_t texrender;
 };
 
-EXPORT struct test_filter *test_create(const char *settings, source_t source);
+EXPORT struct test_filter *test_create(const char *settings, obs_source_t source);
 EXPORT void test_destroy(struct test_filter *rt);
 EXPORT uint32_t test_get_output_flags(struct test_filter *rt);
 

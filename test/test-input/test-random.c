@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "test-random.h"
 
-struct random_tex *random_create(const char *settings, source_t source)
+struct random_tex *random_create(const char *settings, obs_source_t source)
 {
 	struct random_tex *rt = bmalloc(sizeof(struct random_tex));
 	uint32_t *pixels = bmalloc(20*20*4);
@@ -19,6 +19,8 @@ struct random_tex *random_create(const char *settings, source_t source)
 		}
 	}
 
+	gs_entercontext(obs_graphics());
+
 	rt->texture = gs_create_texture(20, 20, GS_RGBA, 1, &pixels, 0);
 	bfree(pixels);
 
@@ -33,15 +35,21 @@ struct random_tex *random_create(const char *settings, source_t source)
 		return NULL;
 	}
 
+	gs_leavecontext();
+
 	return rt;
 }
 
 void random_destroy(struct random_tex *rt)
 {
 	if (rt) {
+		gs_entercontext(obs_graphics());
+
 		effect_destroy(rt->whatever);
 		texture_destroy(rt->texture);
 		bfree(rt);
+
+		gs_leavecontext();
 	}
 }
 
@@ -50,7 +58,7 @@ uint32_t random_get_output_flags(struct random_tex *rt)
 	return SOURCE_VIDEO;
 }
 
-void random_video_render(struct random_tex *rt, source_t filter_target)
+void random_video_render(struct random_tex *rt, obs_source_t filter_target)
 {
 	technique_t tech = effect_gettechnique(rt->whatever, "Default");
 	effect_settexture(rt->whatever, effect_getparambyidx(rt->whatever, 1), rt->texture);

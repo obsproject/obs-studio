@@ -35,8 +35,8 @@
 #define NUM_TEXTURES 2
 
 struct obs_display {
-	swapchain_t swap; /* can be NULL if just sound */
-	source_t    source;
+	swapchain_t  swap; /* can be NULL if just sound */
+	obs_source_t source;
 	/* TODO: sound output target */
 };
 
@@ -74,7 +74,9 @@ struct obs_data {
 	pthread_mutex_t source_mutex;
 	bool            thread_initialized;
 
-	source_t primary_source;
+	obs_source_t primary_source;
 };
+
+extern struct obs_data *obs;
 
 extern void *obs_video_thread(void *param);

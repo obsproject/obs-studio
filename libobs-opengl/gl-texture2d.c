@@ -52,8 +52,15 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex->unpack_buffer))
 		return false;
 
-	size = tex->width * tex->height * gs_get_format_bpp(tex->base.format);
-	size /= 8;
+	size = tex->width * gs_get_format_bpp(tex->base.format);
+	if (!gs_is_compressed_format(tex->base.format)) {
+		size /= 8;
+		size  = (size+3) & 0xFFFFFFFC;
+		size *= tex->height;
+	} else {
+		size *= tex->height;
+		size /= 8;
+	}
 
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 	if (!gl_success("glBufferData"))
@@ -75,6 +82,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.device             = device;
 	tex->base.type               = GS_TEXTURE_2D;
 	tex->base.format             = color_format;
+	tex->base.levels             = levels;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_type            = get_gl_format_type(color_format);

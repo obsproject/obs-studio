@@ -28,16 +28,10 @@
 #include "effect-parser.h"
 #include "effect.h"
 
-#if 0
-
 #ifdef _MSC_VER
 static __declspec(thread) graphics_t thread_graphics = NULL;
 #else /* assume GCC or that other compiler we dare not mention */
 static __thread graphics_t thread_graphics = NULL;
-#endif
-
-#else
-static graphics_t thread_graphics = NULL;
 #endif
 
 #define IMMEDIATE_COUNT 512
@@ -45,13 +39,9 @@ static graphics_t thread_graphics = NULL;
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name);
 
-static bool graphics_init(struct graphics_subsystem *graphics)
+static bool graphics_init_immediate_vb(struct graphics_subsystem *graphics)
 {
-	struct matrix3 top_mat;
 	struct vb_data *vbd;
-
-	matrix3_identity(&top_mat);
-	da_push_back(graphics->matrix_stack, &top_mat);
 
 	vbd = vbdata_create();
 	vbd->num     = IMMEDIATE_COUNT;
@@ -68,6 +58,13 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
 	if (!graphics->immediate_vertbuffer)
 		return false;
+
+	return true;
+}
+
+static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
+{
+	struct vb_data *vbd;
 
 	vbd = vbdata_create();
 	vbd->num     = 4;
@@ -88,13 +85,36 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	return true;
 }
 
+static bool graphics_init(struct graphics_subsystem *graphics)
+{
+	struct matrix3 top_mat;
+
+	matrix3_identity(&top_mat);
+	da_push_back(graphics->matrix_stack, &top_mat);
+
+	graphics->exports.device_entercontext(graphics->device);
+
+	if (!graphics_init_immediate_vb(graphics))
+		return false;
+	if (!graphics_init_sprite_vb(graphics))
+		return false;
+	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
+		return false;
+
+	graphics->exports.device_leavecontext(graphics->device);
+
+	return true;
+}
+
 int gs_create(graphics_t *pgraphics, const char *module,
 		struct gs_init_data *data)
 {
 	int errcode = GS_ERROR_FAIL;
+	pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
 
 	graphics_t graphics = bmalloc(sizeof(struct graphics_subsystem));
 	memset(graphics, 0, sizeof(struct graphics_subsystem));
+	graphics->mutex = mutex_init;
 
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {
@@ -126,6 +146,11 @@ void gs_destroy(graphics_t graphics)
 	if (!graphics)
 		return;
 
+	while (thread_graphics)
+		gs_leavecontext();
+
+	graphics->exports.device_entercontext(graphics->device);
+
 	if (graphics->sprite_buffer)
 		graphics->exports.vertexbuffer_destroy(graphics->sprite_buffer);
 
@@ -136,18 +161,41 @@ void gs_destroy(graphics_t graphics)
 	if (graphics->device)
 		graphics->exports.device_destroy(graphics->device);
 
+	pthread_mutex_destroy(&graphics->mutex);
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
 	os_dlclose(graphics->module);
 	bfree(graphics);
-
-	if (thread_graphics == graphics)
-		thread_graphics = NULL;
 }
 
-void gs_setcontext(graphics_t graphics)
+void gs_entercontext(graphics_t graphics)
 {
-	thread_graphics = graphics;
+	bool is_current = thread_graphics == graphics;
+	if (thread_graphics && !is_current) {
+		while (thread_graphics)
+			gs_leavecontext();
+	}
+
+	if (!is_current) {
+		pthread_mutex_lock(&graphics->mutex);
+		graphics->exports.device_entercontext(graphics->device);
+		thread_graphics = graphics;
+	}
+
+	graphics->ref++;
+}
+
+void gs_leavecontext(void)
+{
+	if (thread_graphics) {
+		if (!--thread_graphics->ref) {
+			graphics_t graphics = thread_graphics;
+
+			graphics->exports.device_leavecontext(graphics->device);
+			pthread_mutex_unlock(&graphics->mutex);
+			thread_graphics = NULL;
+		}
+	}
 }
 
 graphics_t gs_getcontext(void)

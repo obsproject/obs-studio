@@ -19,7 +19,9 @@
 #include "obs-data.h"
 #include "obs-module.h"
 
-static bool obs_init_graphics(struct obs_data *obs, const char *graphics_module,
+struct obs_data *obs = NULL;
+
+static bool obs_init_graphics(const char *graphics_module,
 		struct gs_init_data *graphics_data, struct video_info *vi)
 {
 	int errorcode;
@@ -33,7 +35,7 @@ static bool obs_init_graphics(struct obs_data *obs, const char *graphics_module,
 		return false;
 	}
 
-	gs_setcontext(obs->graphics);
+	gs_entercontext(obs->graphics);
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
 		obs->copy_surfaces[i] = gs_create_stagesurface(vi->width,
@@ -42,25 +44,25 @@ static bool obs_init_graphics(struct obs_data *obs, const char *graphics_module,
 			return false;
 	}
 
+	gs_leavecontext();
 	return true;
 }
 
-static bool obs_init_media(struct obs_data *obs,
-		struct video_info *vi, struct audio_info *ai)
+static bool obs_init_media(struct video_info *vi, struct audio_info *ai)
 {
 	obs->media = media_open();
 	if (!obs->media)
 		return false;
 
-	if (!obs_reset_video(obs, vi))
+	if (!obs_reset_video(vi))
 		return false;
-	if (!obs_reset_audio(obs, ai))
+	if (!obs_reset_audio(ai))
 		return false;
 
 	return true;
 }
 
-static bool obs_init_threading(struct obs_data *obs)
+static bool obs_init_threading(void)
 {
 	if (pthread_mutex_init(&obs->source_mutex, NULL) != 0)
 		return false;
@@ -72,36 +74,34 @@ static bool obs_init_threading(struct obs_data *obs)
 	return true;
 }
 
-static pthread_mutex_t pthread_init_val = PTHREAD_MUTEX_INITIALIZER;
-
-obs_t obs_create(const char *graphics_module,
+static bool obs_init(const char *graphics_module,
 		struct gs_init_data *graphics_data,
 		struct video_info *vi, struct audio_info *ai)
 {
-	struct obs_data *obs = bmalloc(sizeof(struct obs_data));
+	pthread_mutex_t pthread_init_val = PTHREAD_MUTEX_INITIALIZER;
+
+	obs = bmalloc(sizeof(struct obs_data));
 
 	memset(obs, 0, sizeof(struct obs_data));
 	obs->source_mutex = pthread_init_val;
 
-	if (!obs_init_graphics(obs, graphics_module, graphics_data, vi))
-		goto error;
-	if (!obs_init_media(obs, vi, ai))
-		goto error;
-	if (!obs_init_threading(obs))
-		goto error;
+	if (!obs_init_graphics(graphics_module, graphics_data, vi))
+		return false;
+	if (!obs_init_media(vi, ai))
+		return false;
+	if (!obs_init_threading())
+		return false;
 
-	return obs;
-
-error:
-	obs_destroy(obs);
-	return NULL;
+	return true;
 }
 
-static inline void obs_free_graphics(obs_t obs)
+static inline void obs_free_graphics(void)
 {
 	size_t i;
 	if (!obs->graphics)
 		return;
+
+	gs_entercontext(obs->graphics);
 
 	if (obs->copy_mapped)
 		stagesurface_unmap(obs->copy_surfaces[obs->cur_texture]);
@@ -109,18 +109,19 @@ static inline void obs_free_graphics(obs_t obs)
 	for (i = 0; i < NUM_TEXTURES; i++)
 		stagesurface_destroy(obs->copy_surfaces[i]);
 
-	gs_setcontext(NULL);
+	gs_leavecontext();
+
 	gs_destroy(obs->graphics);
 }
 
-static inline void obs_free_media(obs_t obs)
+static inline void obs_free_media(void)
 {
 	video_output_close(obs->video);
 	audio_output_close(obs->audio);
 	media_close(obs->media);
 }
 
-static inline void obs_free_threading(obs_t obs)
+static inline void obs_free_threading(void)
 {
 	void *thread_ret;
 	video_output_stop(obs->video);
@@ -129,7 +130,7 @@ static inline void obs_free_threading(obs_t obs)
 	pthread_mutex_destroy(&obs->source_mutex);
 }
 
-void obs_destroy(obs_t obs)
+static void obs_destroy(void)
 {
 	size_t i;
 
@@ -137,7 +138,7 @@ void obs_destroy(obs_t obs)
 		return;
 
 	for (i = 0; i < obs->displays.num; i++)
-		display_destroy(obs->displays.array[i]);
+		obs_display_destroy(obs->displays.array[i]);
 
 	da_free(obs->input_types);
 	da_free(obs->filter_types);
@@ -148,18 +149,36 @@ void obs_destroy(obs_t obs)
 	da_free(obs->displays);
 	da_free(obs->sources);
 
-	obs_free_threading(obs);
-	obs_free_media(obs);
-	obs_free_graphics(obs);
+	obs_free_threading();
+	obs_free_media();
+	obs_free_graphics();
 
 	for (i = 0; i < obs->modules.num; i++)
 		free_module(obs->modules.array+i);
 	da_free(obs->modules);
 
 	bfree(obs);
+	obs = NULL;
 }
 
-bool obs_reset_video(obs_t obs, struct video_info *vi)
+bool obs_startup(const char *graphics_module,
+		struct gs_init_data *graphics_data,
+		struct video_info *vi, struct audio_info *ai)
+{
+	if (!obs_init(graphics_module, graphics_data, vi, ai)) {
+		obs_destroy();
+		return false;
+	}
+
+	return true;
+}
+
+void obs_shutdown(void)
+{
+	obs_destroy();
+}
+
+bool obs_reset_video(struct video_info *vi)
 {
 	int errorcode;
 
@@ -182,13 +201,14 @@ bool obs_reset_video(obs_t obs, struct video_info *vi)
 	return false;
 }
 
-bool obs_reset_audio(obs_t obs, struct audio_info *ai)
+bool obs_reset_audio(struct audio_info *ai)
 {
+	/* TODO */
 	return true;
 }
 
 
-bool obs_enum_inputs(obs_t obs, size_t idx, const char **name)
+bool obs_enum_inputs(size_t idx, const char **name)
 {
 	if (idx >= obs->input_types.num)
 		return false;
@@ -196,7 +216,7 @@ bool obs_enum_inputs(obs_t obs, size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_filters(obs_t obs, size_t idx, const char **name)
+bool obs_enum_filters(size_t idx, const char **name)
 {
 	if (idx >= obs->filter_types.num)
 		return false;
@@ -204,7 +224,7 @@ bool obs_enum_filters(obs_t obs, size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_transitions(obs_t obs, size_t idx, const char **name)
+bool obs_enum_transitions(size_t idx, const char **name)
 {
 	if (idx >= obs->transition_types.num)
 		return false;
@@ -212,7 +232,7 @@ bool obs_enum_transitions(obs_t obs, size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_outputs(obs_t obs, size_t idx, const char **name)
+bool obs_enum_outputs(size_t idx, const char **name)
 {
 	if (idx >= obs->output_types.num)
 		return false;
@@ -221,22 +241,22 @@ bool obs_enum_outputs(obs_t obs, size_t idx, const char **name)
 }
 
 
-graphics_t obs_graphics(obs_t obs)
+graphics_t obs_graphics(void)
 {
 	return obs->graphics;
 }
 
-media_t obs_media(obs_t obs)
+media_t obs_media(void)
 {
 	return obs->media;
 }
 
-source_t obs_get_primary_source(obs_t obs)
+obs_source_t obs_get_primary_source(void)
 {
 	return obs->primary_source;
 }
 
-void obs_set_primary_source(obs_t obs, source_t source)
+void obs_set_primary_source(obs_source_t source)
 {
 	obs->primary_source = source;
 }

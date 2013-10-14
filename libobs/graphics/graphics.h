@@ -429,7 +429,8 @@ EXPORT int gs_create(graphics_t *graphics, const char *module,
 		struct gs_init_data *data);
 EXPORT void gs_destroy(graphics_t graphics);
 
-EXPORT void gs_setcontext(graphics_t graphics);
+EXPORT void gs_entercontext(graphics_t graphics);
+EXPORT void gs_leavecontext(void);
 EXPORT graphics_t gs_getcontext(void);
 
 EXPORT void gs_matrix_push(void);

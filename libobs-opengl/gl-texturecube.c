@@ -63,6 +63,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 	tex->base.device             = device;
 	tex->base.type               = GS_TEXTURE_CUBE;
 	tex->base.format             = color_format;
+	tex->base.levels             = levels;
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_target          = GL_TEXTURE_CUBE_MAP;

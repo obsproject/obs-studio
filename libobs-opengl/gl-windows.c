@@ -127,6 +127,16 @@ static inline HWND gl_create_dummy_window(void)
 	return hwnd;
 }
 
+static inline bool wgl_make_current(HDC hdc, HGLRC hglrc)
+{
+	bool success = wglMakeCurrent(hdc, hglrc);
+	if (!success)
+		blog(LOG_ERROR, "wglMakeCurrent failed, GetLastError "
+		                "returned %u", GetLastError());
+
+	return success;
+}
+
 static inline HGLRC gl_init_context(HDC hdc)
 {
 	HGLRC hglrc = wglCreateContext(hdc);
@@ -135,8 +145,7 @@ static inline HGLRC gl_init_context(HDC hdc)
 		return NULL;
 	}
 
-	if (!wglMakeCurrent(hdc, hglrc)) {
-		blog(LOG_ERROR, "wglMakeCurrent failed, %u", GetLastError());
+	if (!wgl_make_current(hdc, hglrc)) {
 		wglDeleteContext(hglrc);
 		return NULL;
 	}
@@ -428,6 +437,21 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	}
 }
 
+void device_entercontext(device_t device)
+{
+	HDC hdc = device->plat->swap.wi->hdc;
+	if (device->cur_swap)
+		hdc = device->cur_swap->wi->hdc;
+
+	if (!wgl_make_current(hdc, device->plat->hrc))
+		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
+}
+
+void device_leavecontext(device_t device)
+{
+	wglMakeCurrent(NULL, NULL);
+}
+
 void device_load_swapchain(device_t device, swapchain_t swap)
 {
 	HDC hdc = device->plat->swap.wi->hdc;
@@ -439,11 +463,8 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 	if (swap)
 		hdc = swap->wi->hdc;
 
-	if (!wglMakeCurrent(hdc, device->plat->hrc)) {
-		blog(LOG_ERROR, "wglMakeCurrent failed, GetLastError "
-				"returned %u", GetLastError());
+	if (!wgl_make_current(hdc, device->plat->hrc))
 		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
-	}
 }
 
 void device_present(device_t device)

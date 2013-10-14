@@ -57,7 +57,7 @@
  * ===========================================
  *   Source Exports
  * ===========================================
- *   void *[name]_create(const char *settings, source_t source);
+ *   void *[name]_create(const char *settings, obs_source_t source);
  *       Creates a source.
  *
  *       settings: Settings of the source.
@@ -127,7 +127,7 @@
  *       val: Value of parameter to set.
  *
  * ---------------------------------------------------------
- *   bool [name]_enum_children(void *data, size_t idx, source_t *child);
+ *   bool [name]_enum_children(void *data, size_t idx, obs_source_t *child);
  *       Enumerates child sources, if any.
  *
  *       idx: Child source index.
@@ -155,7 +155,7 @@ struct source_info {
 	/* ----------------------------------------------------------------- */
 	/* required implementations */
 
-	void *(*create)(const char *settings, struct obs_source *source);
+	void *(*create)(const char *settings, obs_source_t source);
 	void (*destroy)(void *data);
 
 	uint32_t (*get_output_flags)(void *data);
@@ -178,28 +178,27 @@ struct source_info {
 	void (*setparam)(void *data, const char *param, const void *data_in,
 			size_t size);
 
-	bool (*enum_children)(void *data, size_t idx, source_t *child);
+	bool (*enum_children)(void *data, size_t idx, obs_source_t *child);
 
 	void (*filter_video)(void *data, struct video_frame *frame);
 	void (*filter_audio)(void *data, struct audio_data *audio);
 };
 
 struct obs_source {
-	struct obs_data    *obs;
-	void               *data;
-	struct source_info callbacks;
-	struct dstr        settings;
-	bool               rendering_filter;
+	void                       *data;
+	struct source_info         callbacks;
+	struct dstr                settings;
+	bool                       rendering_filter;
 
-	struct obs_source *filter_target;
+	struct obs_source          *filter_target;
 	DARRAY(struct obs_source*) filters;
 };
 
 extern bool get_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info);
 
-extern void source_init(obs_t obs, struct obs_source *source);
+extern void obs_source_init(struct obs_source *source);
 
-EXPORT void source_activate(source_t source);
-EXPORT void source_deactivate(source_t source);
-EXPORT void source_video_tick(source_t source, float seconds);
+extern void obs_source_activate(obs_source_t source);
+extern void obs_source_deactivate(obs_source_t source);
+extern void obs_source_video_tick(obs_source_t source, float seconds);
