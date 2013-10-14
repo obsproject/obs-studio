@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef VIDEO_IO_H
-#define VIDEO_IO_H
+#pragma once
 
 #include "../util/c99defs.h"
 #include "media-io.h"
@@ -64,6 +63,4 @@ EXPORT void     video_output_close(video_t video);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

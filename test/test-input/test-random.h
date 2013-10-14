@@ -1,5 +1,4 @@
-#ifndef RANDOM_TEX_H
-#define RANDOM_TEX_H
+#pragma once
 
 #include "obs.h"
 
@@ -23,6 +22,4 @@ EXPORT int random_getheight(struct random_tex *rt);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

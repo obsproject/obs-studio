@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef TEXT_LOOKUP_H
-#define TEXT_LOOKUP_H
+#pragma once
 
 /*
  * Text Lookup interface
@@ -50,6 +49,4 @@ EXPORT bool text_lookup_getstr(lookup_t lookup, const char *lookup_val,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

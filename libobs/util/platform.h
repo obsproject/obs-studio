@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#pragma once
 
 #include <stdio.h>
 #include <wchar.h>
@@ -77,6 +76,4 @@ EXPORT off_t ftello(FILE *stream);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

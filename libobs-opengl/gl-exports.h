@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GS_GLEXPORTS
-#define GS_GLEXPORTS
+#pragma once
 
 #include "util/c99defs.h"
 
@@ -188,5 +187,3 @@ EXPORT void shader_settexture(shader_t shader, sparam_t param, texture_t val);
 EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
 		size_t size);
 EXPORT void shader_setdefault(shader_t shader, sparam_t param);
-
-#endif

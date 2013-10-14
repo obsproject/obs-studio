@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GL_SUBSYSTEM_H
-#define GL_SUBSYSTEM_H
+#pragma once
 
 #include "util/darray.h"
 #include "graphics/graphics.h"
@@ -459,7 +458,3 @@ extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
-
-
-
-#endif

@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef VECT2_H
-#define VECT2_H
+#pragma once
 
 #include "../util/c99defs.h"
 #include <math.h>
@@ -167,5 +166,4 @@ EXPORT void vec2_norm(struct vec2 *dst, const struct vec2 *v);
 
 #ifdef __cplusplus
 }
-#endif
 #endif

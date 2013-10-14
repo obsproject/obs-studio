@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef EFFECT_PARSER_H
-#define EFFECT_PARSER_H
+#pragma once
 
 #include "../util/darray.h"
 #include "../util/cf-parser.h"
@@ -281,6 +280,4 @@ extern bool ep_parse(struct effect_parser *ep, effect_t effect,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

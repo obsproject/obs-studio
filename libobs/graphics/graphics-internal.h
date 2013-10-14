@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GRAPHICS_INTERNAL_H
-#define GRAPHICS_INTERNAL_H
+#pragma once
 
 #include "../util/darray.h"
 #include "graphics.h"
@@ -225,5 +224,3 @@ struct graphics_subsystem {
 	DARRAY(uint32_t)       colors;
 	DARRAY(struct vec2)    texverts[16];
 };
-
-#endif

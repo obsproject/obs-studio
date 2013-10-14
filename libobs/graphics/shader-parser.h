@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef SHADER_PARSER_H
-#define SHADER_PARSER_H
+#pragma once
 
 #include "../util/cf-parser.h"
 #include "graphics.h"
@@ -276,6 +275,4 @@ static inline struct shader_func *shader_parser_getfunc(
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

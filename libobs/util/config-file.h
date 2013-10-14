@@ -21,8 +21,7 @@
      distribution.
 ******************************************************************************/
 
-#ifndef CONFIG_FILE_H
-#define CONFIG_FILE_H
+#pragma once
 
 #include "c99defs.h"
 
@@ -82,6 +81,4 @@ EXPORT double config_get_double(config_t config, const char *section,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

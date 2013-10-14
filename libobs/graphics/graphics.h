@@ -15,8 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef GRAPHICS_H
-#define GRAPHICS_H
+#pragma once
 
 #include "../util/bmem.h"
 #include "input.h"
@@ -705,6 +704,4 @@ static inline uint32_t gs_num_total_levels(uint32_t width, uint32_t height)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
