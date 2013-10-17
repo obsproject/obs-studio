@@ -17,7 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
+static bool upload_texture_2d(struct gs_texture_2d *tex, const void **data)
 {
 	uint32_t row_size   = tex->width  * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->height * row_size / 8;
@@ -35,6 +35,8 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, void **data)
 			tex->base.gl_format, tex->base.gl_internal_format,
 			compressed, tex->width, tex->height, tex_size, &data);
 
+	if (!gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_levels-1))
+		success = false;
 	if (!gl_bind_texture(GL_TEXTURE_2D, 0))
 		success = false;
 
@@ -74,7 +76,7 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 
 texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, void **data, uint32_t flags)
+		uint32_t levels, const void **data, uint32_t flags)
 {
 	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
 	memset(tex, 0, sizeof(struct gs_texture_2d));
@@ -87,9 +89,9 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_type            = get_gl_format_type(color_format);
 	tex->base.gl_target          = GL_TEXTURE_2D;
-	tex->base.is_dynamic         = flags & GS_DYNAMIC;
-	tex->base.is_render_target   = flags & GS_RENDERTARGET;
-	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
+	tex->base.is_dynamic         = (flags & GS_DYNAMIC) != 0;
+	tex->base.is_render_target   = (flags & GS_RENDERTARGET) != 0;
+	tex->base.gen_mipmaps        = (flags & GS_BUILDMIPMAPS) != 0;
 	tex->width                   = width;
 	tex->height                  = height;
 
@@ -124,6 +126,9 @@ void texture_destroy(texture_t tex)
 
 	if (!is_texture_2d(tex, "texture_destroy"))
 		return;
+
+	if (tex->cur_sampler)
+		samplerstate_destroy(tex->cur_sampler);
 
 	if (tex->is_dynamic && tex2d->unpack_buffer)
 		gl_delete_buffers(1, &tex2d->unpack_buffer);

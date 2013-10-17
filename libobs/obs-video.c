@@ -42,8 +42,6 @@ static inline void render_displays(void)
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
 
-	//gs_enable_depthtest(false);
-
 	gs_ortho(0.0f, (float)obs->output_width,
 	         0.0f, (float)obs->output_height,
 	         -100.0f, 100.0f);
@@ -66,8 +64,12 @@ static inline void render_displays(void)
 	gs_load_swapchain(NULL);
 
 	gs_beginscene();
-	gs_clear(GS_CLEAR_COLOR|GS_CLEAR_DEPTH|GS_CLEAR_STENCIL,
+	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
 			&clear_color, 1.0f, 0);
+
+	gs_enable_depthtest(false);
+	gs_enable_blending(false);
+	gs_setcullmode(GS_NEITHER);
 
 	gs_setviewport(0, 0, gs_getwidth(), gs_getheight());
 
@@ -90,7 +92,7 @@ static bool swap_frame(uint64_t timestamp)
 	}
 
 	obs->textures_copied[obs->cur_texture] = true;
-	gs_stage_texture(last_surface, NULL);
+	//gs_stage_texture(last_surface, NULL);
 
 	if (++obs->cur_texture == NUM_TEXTURES)
 		obs->cur_texture = 0;

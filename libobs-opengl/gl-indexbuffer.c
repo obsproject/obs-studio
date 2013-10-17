@@ -19,7 +19,7 @@
 
 static inline bool init_ib(struct gs_index_buffer *ib)
 {
-	GLenum usage = ib->dynamic ? GL_DYNAMIC_COPY : GL_STATIC_DRAW;
+	GLenum usage = ib->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	bool success;
 
 	success = gl_create_buffer(GL_ARRAY_BUFFER, &ib->buffer, ib->size,

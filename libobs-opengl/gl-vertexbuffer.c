@@ -18,9 +18,9 @@
 #include "graphics/vec3.h"
 #include "gl-subsystem.h"
 
-static bool init_vb(struct gs_vertex_buffer *vb)
+static bool create_buffers(struct gs_vertex_buffer *vb)
 {
-	GLenum usage = vb->dynamic ? GL_DYNAMIC_COPY : GL_STATIC_DRAW;
+	GLenum usage = vb->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	size_t i;
 
 	if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->vertex_buffer,
@@ -81,9 +81,10 @@ vertbuffer_t device_create_vertexbuffer(device_t device,
 
 	vb->device  = device;
 	vb->data    = data;
+	vb->num     = data->num;
 	vb->dynamic = flags & GS_DYNAMIC;
 
-	if (!init_vb(vb)) {
+	if (!create_buffers(vb)) {
 		blog(LOG_ERROR, "device_create_vertexbuffer (GL) failed");
 		vertexbuffer_destroy(vb);
 		return NULL;
@@ -97,16 +98,12 @@ void vertexbuffer_destroy(vertbuffer_t vb)
 	if (vb) {
 		if (vb->vertex_buffer)
 			gl_delete_buffers(1, &vb->vertex_buffer);
-
 		if (vb->normal_buffer)
 			gl_delete_buffers(1, &vb->normal_buffer);
-
 		if (vb->tangent_buffer)
 			gl_delete_buffers(1, &vb->tangent_buffer);
-
 		if (vb->color_buffer)
 			gl_delete_buffers(1, &vb->color_buffer);
-
 		if (vb->uv_buffers.num)
 			gl_delete_buffers((GLsizei)vb->uv_buffers.num,
 					vb->uv_buffers.array);
@@ -220,11 +217,14 @@ static bool load_vb_buffer(struct gs_shader *shader,
 	if (!gl_bind_buffer(GL_ARRAY_BUFFER, buffer))
 		return false;
 
-	glVertexAttribPointer(attrib->attrib, width, type, GL_TRUE, 0, 0);
+	glVertexAttribPointer(attrib->attrib, width, type, GL_FALSE, 0, 0);
 	if (!gl_success("glVertexAttribPointer"))
 		success = false;
 
-	gl_bind_buffer(GL_ARRAY_BUFFER, 0);
+	glEnableVertexAttribArray(attrib->attrib);
+	if (!gl_success("glEnableVertexAttribArray"))
+		success = false;
+
 	return success;
 }
 
@@ -247,8 +247,10 @@ bool vertexbuffer_load(device_t device, vertbuffer_t vb)
 		return true;
 
 	device->cur_vertex_buffer = vb;
-	if (!device->cur_vertex_shader || !vb)
+	if (!device->cur_vertex_shader || !vb) {
+		gl_bind_vertex_array(0);
 		return true;
+	}
 
 	if (!load_vb_buffers(device->cur_vertex_shader, vb))
 		return false;
@@ -258,6 +260,6 @@ bool vertexbuffer_load(device_t device, vertbuffer_t vb)
 
 void device_load_vertexbuffer(device_t device, vertbuffer_t vb)
 {
-	if (vertexbuffer_load(device, vb))
+	if (!vertexbuffer_load(device, vb))
 		blog(LOG_ERROR, "device_load_vertexbuffer (GL) failed");
 }

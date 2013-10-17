@@ -124,7 +124,7 @@ void matrix4_transpose(struct matrix4 *dst, const struct matrix4 *m)
 {
 	struct matrix4 temp;
 
-	/* TODO: Use SSE */
+	/* TODO: Add SSE */
 	temp.x.x = m->x.x;
 	temp.x.y = m->y.x;
 	temp.x.z = m->z.x;
@@ -143,67 +143,4 @@ void matrix4_transpose(struct matrix4 *dst, const struct matrix4 *m)
 	temp.t.w = m->t.w;
 
 	matrix4_copy(dst, &temp);
-}
-
-void matrix4_ortho(struct matrix4 *dst, float left, float right,
-		float top, float bottom, float near, float far)
-{
-	float rml = right-left;
-	float bmt = bottom-top;
-	float fmn = far-near;
-
-	vec4_zero(&dst->x);
-	vec4_zero(&dst->y);
-	vec4_zero(&dst->z);
-	vec4_zero(&dst->t);
-
-	dst->x.x =         2.0f /  rml;
-	dst->t.x = (left+right) / -rml;
-
-	dst->y.y =         2.0f / -bmt;
-	dst->t.y = (bottom+top) /  bmt;
-
-	dst->z.z =         1.0f /  fmn;
-	dst->t.z =         near / -fmn;
-
-	dst->t.w = 1.0f;
-}
-
-void matrix4_frustum(struct matrix4 *dst, float left, float right,
-		float top, float bottom, float near, float far)
-{
-	float rml    = right-left;
-	float bmt    = bottom-top;
-	float fmn    = far-near;
-	float nearx2 = 2.0f*near;
-
-	vec4_zero(&dst->x);
-	vec4_zero(&dst->y);
-	vec4_zero(&dst->z);
-	vec4_zero(&dst->t);
-
-	dst->x.x =       nearx2 /  rml;
-	dst->z.x = (left+right) / -rml;
-
-	dst->y.y =       nearx2 / -bmt;
-	dst->z.y = (bottom+top) /  bmt;
-
-	dst->z.z =          far /  fmn;
-	dst->t.z =   (near*far) / -fmn;
-
-	dst->z.w = 1.0f;
-}
-
-void matrix4_perspective(struct matrix4 *dst, float angle,
-		float aspect, float near, float far)
-{
-	float xmin, xmax, ymin, ymax;
-
-	ymax = near * tanf(RAD(angle)*0.5f);
-	ymin = -ymax;
-
-	xmin = ymin * aspect;
-	xmax = ymax * aspect;
-
-	matrix4_frustum(dst, xmin, xmax, ymin, ymax, near, far);
 }

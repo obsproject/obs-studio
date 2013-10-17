@@ -33,14 +33,14 @@ EXPORT uint32_t device_getwidth(device_t device);
 EXPORT uint32_t device_getheight(device_t device);
 EXPORT texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, void **data, uint32_t flags);
+		uint32_t levels, const void **data, uint32_t flags);
 EXPORT texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags);
+		const void **data, uint32_t flags);
 EXPORT texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
-		enum gs_color_format color_format, uint32_t levels, void **data,
-		uint32_t flags);
+		enum gs_color_format color_format, uint32_t levels,
+		const void **data, uint32_t flags);
 EXPORT zstencil_t device_create_zstencil(device_t device, uint32_t width,
 		uint32_t height, enum gs_zstencil_format format);
 EXPORT stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
@@ -124,8 +124,6 @@ EXPORT void device_ortho(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_frustum(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar);
-EXPORT void device_perspective(device_t device, float fovy, float aspect,
-		float znear, float zfar);
 EXPORT void device_projection_push(device_t device);
 EXPORT void device_projection_pop(device_t device);
 

@@ -104,18 +104,29 @@ void stagesurface_destroy(stagesurf_t stagesurf)
 
 static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 {
+	if (!src) {
+		blog(LOG_ERROR, "Source texture is NULL");
+		return false;
+	}
+
 	if (src->base.type != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "Source texture must be a 2D texture");
 		return false;
 	}
 
-	if (src->width != dst->width || src->height != dst->height) {
-		blog(LOG_ERROR, "Source and destination sizes do not match");
+	if (!dst) {
+		blog(LOG_ERROR, "Destination surface is NULL");
 		return false;
 	}
 
 	if (src->base.format != dst->format) {
-		blog(LOG_ERROR, "Source and destination format do not match");
+		blog(LOG_ERROR, "Source and destination formats do not match");
+		return false;
+	}
+
+	if (src->width != dst->width || src->height != dst->height) {
+		blog(LOG_ERROR, "Source and destination must have the same "
+		                "dimensions");
 		return false;
 	}
 

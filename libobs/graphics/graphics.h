@@ -503,6 +503,8 @@ EXPORT void texture_setimage(texture_t tex, const void *data,
 EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
 		const void *data, uint32_t byte_width);
 
+EXPORT void gs_perspective(float fovy, float aspect, float znear, float zfar);
+
 /* -------------------------- */
 /* library-specific functions */
 
@@ -514,14 +516,14 @@ EXPORT uint32_t gs_getwidth(void);
 EXPORT uint32_t gs_getheight(void);
 
 EXPORT texture_t gs_create_texture(uint32_t width, uint32_t height,
-		enum gs_color_format color_format, uint32_t levels, void **data,
-		uint32_t flags);
+		enum gs_color_format color_format, uint32_t levels,
+		const void **data, uint32_t flags);
 EXPORT texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags);
+		const void **data, uint32_t flags);
 EXPORT texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, void **data, uint32_t flags);
+		uint32_t levels, const void **data, uint32_t flags);
 
 EXPORT zstencil_t gs_create_zstencil(uint32_t width, uint32_t height,
 		enum gs_zstencil_format format);
@@ -612,8 +614,6 @@ EXPORT void gs_ortho(float left, float right, float top, float bottom,
 		float znear, float zfar);
 EXPORT void gs_frustum(float left, float right, float top, float bottom,
 		float znear, float zfar);
-EXPORT void gs_perspective(float fovy, float aspect, float znear,
-		float zfar);
 
 EXPORT void gs_projection_push(void);
 EXPORT void gs_projection_pop(void);

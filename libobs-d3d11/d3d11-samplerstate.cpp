@@ -18,27 +18,43 @@
 #include "d3d11-subsystem.hpp"
 #include "graphics/vec4.h"
 
-const D3D11_TEXTURE_ADDRESS_MODE convertAddressMode[] =
+static inline D3D11_TEXTURE_ADDRESS_MODE ConvertGSAddressMode(
+		gs_address_mode mode)
 {
-	D3D11_TEXTURE_ADDRESS_CLAMP,
-	D3D11_TEXTURE_ADDRESS_WRAP,
-	D3D11_TEXTURE_ADDRESS_MIRROR,
-	D3D11_TEXTURE_ADDRESS_BORDER,
-	D3D11_TEXTURE_ADDRESS_MIRROR_ONCE
-};
-	
-const D3D11_FILTER convertFilter[] =
+	switch (mode) {
+	default:
+	case GS_ADDRESS_WRAP:       return D3D11_TEXTURE_ADDRESS_WRAP;
+	case GS_ADDRESS_CLAMP:      return D3D11_TEXTURE_ADDRESS_CLAMP;
+	case GS_ADDRESS_MIRROR:     return D3D11_TEXTURE_ADDRESS_MIRROR;
+	case GS_ADDRESS_BORDER:     return D3D11_TEXTURE_ADDRESS_BORDER;
+	case GS_ADDRESS_MIRRORONCE: return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+	}
+}
+
+static inline D3D11_FILTER ConvertGSFilter( gs_sample_filter filter)
 {
-	D3D11_FILTER_MIN_MAG_MIP_LINEAR,
-	D3D11_FILTER_MIN_MAG_MIP_POINT,
-	D3D11_FILTER_ANISOTROPIC,
-	D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
-	D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT,
-	D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR,
-	D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT,
-	D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR,
-	D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT
-};
+	switch (filter) {
+	default:
+	case GS_FILTER_POINT:
+		return D3D11_FILTER_MIN_MAG_MIP_POINT;
+	case GS_FILTER_LINEAR:
+		return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	case GS_FILTER_MIN_MAG_POINT_MIP_LINEAR:
+		return D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+	case GS_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
+		return D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+	case GS_FILTER_MIN_POINT_MAG_MIP_LINEAR:
+		return D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+	case GS_FILTER_MIN_LINEAR_MAG_MIP_POINT:
+		return D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+	case GS_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+		return D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+	case GS_FILTER_MIN_MAG_LINEAR_MIP_POINT:
+		return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	case GS_FILTER_ANISOTROPIC:
+		return D3D11_FILTER_ANISOTROPIC;
+	}
+}
 
 gs_sampler_state::gs_sampler_state(device_t device, gs_sampler_info *info)
 	: device (device),
@@ -49,11 +65,11 @@ gs_sampler_state::gs_sampler_state(device_t device, gs_sampler_info *info)
 	vec4 v4;
 
 	memset(&sd, 0, sizeof(sd));
-	sd.AddressU       = convertAddressMode[(uint32_t)info->address_u];
-	sd.AddressV       = convertAddressMode[(uint32_t)info->address_v];
-	sd.AddressW       = convertAddressMode[(uint32_t)info->address_w];
+	sd.AddressU       = ConvertGSAddressMode(info->address_u);
+	sd.AddressV       = ConvertGSAddressMode(info->address_v);
+	sd.AddressW       = ConvertGSAddressMode(info->address_w);
 	sd.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	sd.Filter         = convertFilter[(uint32_t)info->filter];
+	sd.Filter         = ConvertGSFilter(info->filter);
 	sd.MaxAnisotropy  = info->max_anisotropy;
 	sd.MaxLOD         = FLT_MAX;
 

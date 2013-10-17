@@ -81,12 +81,21 @@ static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 
 	param.param = glGetUniformLocation(shader->program, param.name);
 	if (!gl_success("glGetUniformLocation"))
-		return false;
+		goto fail;
 
-	if (param.type == SHADER_PARAM_TEXTURE)
-		glUniform1i(param.param, param.texture_id);
+	if (param.type == SHADER_PARAM_TEXTURE) {
+		glProgramUniform1i(shader->program, param.param,
+				param.texture_id);
+		if (!gl_success("glProgramUniform1i"))
+			goto fail;
+	}
 
+	da_push_back(shader->params, &param);
 	return true;
+
+fail:
+	shader_param_free(&param);
+	return false;
 }
 
 static inline bool gl_add_params(struct gs_shader *shader,
@@ -98,6 +107,9 @@ static inline bool gl_add_params(struct gs_shader *shader,
 	for (i = 0; i < glsp->parser.params.num; i++)
 		if (!gl_add_param(shader, glsp->parser.params.array+i, &tex_id))
 			return false;
+
+	shader->viewproj = shader_getparambyname(shader, "ViewProj");
+	shader->world    = shader_getparambyname(shader, "World");
 
 	return true;
 }
@@ -151,7 +163,7 @@ static void get_attrib_type(const char *mapping, enum attrib_type *type,
 	*index = 0;
 }
 
-static inline bool gl_add_attrib(struct gs_shader *shader,
+static inline bool gl_process_attrib(struct gs_shader *shader,
 		struct gl_parser_attrib *pa)
 {
 	struct shader_attrib attrib = {0};
@@ -161,26 +173,21 @@ static inline bool gl_add_attrib(struct gs_shader *shader,
 	if (!gl_success("glGetAttribLocation"))
 		return false;
 
+	/* If the attribute is not found, it's usually just an output */
 	if (attrib.attrib == -1)
-		return false;
-
-	if (attrib.type == ATTRIB_TARGET) {
-		glBindFragDataLocation(shader->program, 0, pa->name.array);
-		if (!gl_success("glBindFragDataLocation"))
-			return false;
-	}
+		return true;
 
 	da_push_back(shader->attribs, &attrib);
 	return true;
 }
 
-static inline bool gl_add_attribs(struct gs_shader *shader,
+static inline bool gl_process_attribs(struct gs_shader *shader,
 		struct gl_shader_parser *glsp)
 {
 	size_t i;
 	for (i = 0; i < glsp->attribs.num; i++) {
 		struct gl_parser_attrib *pa = glsp->attribs.array+i;
-		if (!gl_add_attrib(shader, pa))
+		if (!gl_process_attrib(shader, pa))
 			return false;
 	}
 
@@ -196,9 +203,8 @@ static bool gl_shader_init(struct gs_shader *shader,
 	bool success = true;
 
 	shader->program = glCreateShaderProgramv(type, 1,
-			&glsp->gl_string.array);
-	gl_success("glCreateShaderProgramv");
-	if (!shader->program)
+			(const GLchar**)&glsp->gl_string.array);
+	if (!gl_success("glCreateShaderProgramv") || !shader->program)
 		return false;
 
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
@@ -218,8 +224,9 @@ static bool gl_shader_init(struct gs_shader *shader,
 
 	if (success)
 		success = gl_add_params(shader, glsp);
-	if (success)
-		success = gl_add_attribs(shader, glsp);
+	/* Only vertex shaders actually require input attributes */
+	if (success && shader->type == SHADER_VERTEX)
+		success = gl_process_attribs(shader, glsp);
 	if (success)
 		gl_add_samplers(shader, glsp);
 
@@ -237,7 +244,7 @@ static struct gs_shader *shader_create(device_t device, enum shader_type type,
 	shader->device = device;
 	shader->type   = type;
 
-	gl_shader_parser_init(&glsp);
+	gl_shader_parser_init(&glsp, type);
 	if (!gl_shader_parse(&glsp, shader_str, file))
 		success = false;
 	else
@@ -294,6 +301,7 @@ void shader_destroy(shader_t shader)
 
 	da_free(shader->samplers);
 	da_free(shader->params);
+	da_free(shader->attribs);
 	bfree(shader);
 }
 
@@ -362,7 +370,7 @@ void shader_setmatrix3(shader_t shader, sparam_t param,
 	struct matrix4 mat;
 	matrix4_from_matrix3(&mat, val);
 
-	glProgramUniformMatrix4fv(shader->program, param->param, 1, true,
+	glProgramUniformMatrix4fv(shader->program, param->param, 1, false,
 			mat.x.ptr);
 	gl_success("glProgramUniformMatrix4fv");
 }
@@ -370,7 +378,7 @@ void shader_setmatrix3(shader_t shader, sparam_t param,
 void shader_setmatrix4(shader_t shader, sparam_t param,
 		const struct matrix4 *val)
 {
-	glProgramUniformMatrix4fv(shader->program, param->param, 1, true,
+	glProgramUniformMatrix4fv(shader->program, param->param, 1, false,
 			val->x.ptr);
 	gl_success("glProgramUniformMatrix4fv");
 }
@@ -432,6 +440,18 @@ static void shader_setval_data(shader_t shader, sparam_t param,
 	}
 }
 
+void shader_update_textures(struct gs_shader *shader)
+{
+	size_t i;
+	for (i = 0; i < shader->params.num; i++) {
+		struct shader_param *param = shader->params.array+i;
+
+		if (param->type == SHADER_PARAM_TEXTURE)
+			device_load_texture(shader->device, param->texture,
+					param->texture_id);
+	}
+}
+
 void shader_setval(shader_t shader, sparam_t param, const void *val,
 		size_t size)
 {
@@ -448,6 +468,8 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 	case SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
 	case SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
 	case SHADER_PARAM_MATRIX4X4: expected_size = sizeof(float)*4*4; break;
+	case SHADER_PARAM_TEXTURE:   expected_size = sizeof(void*); break;
+	default:                     expected_size = 0;
 	}
 
 	expected_size *= count;
@@ -460,7 +482,10 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 		return;
 	}
 
-	shader_setval_data(shader, param, val, count);
+	if (param->type == SHADER_PARAM_TEXTURE)
+		shader_settexture(shader, param, *(texture_t*)val);
+	else
+		shader_setval_data(shader, param, val, count);
 }
 
 void shader_setdefault(shader_t shader, sparam_t param)

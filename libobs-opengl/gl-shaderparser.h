@@ -29,14 +29,18 @@
 struct gl_parser_attrib {
 	struct dstr name;
 	const char  *mapping;
+	bool        input;
 };
 
-static inline gl_parser_attrib_free(struct gl_parser_attrib *attr)
+static inline void gl_parser_attrib_free(struct gl_parser_attrib *attr)
 {
 	dstr_free(&attr->name);
 }
 
 struct gl_shader_parser {
+	enum shader_type                type;
+	const char                      *input_prefix;
+	const char                      *output_prefix;
 	struct shader_parser            parser;
 	struct dstr                     gl_string;
                                        
@@ -44,8 +48,19 @@ struct gl_shader_parser {
 	DARRAY(struct gl_parser_attrib) attribs;
 };
 
-static inline void gl_shader_parser_init(struct gl_shader_parser *glsp)
+static inline void gl_shader_parser_init(struct gl_shader_parser *glsp,
+		enum shader_type type)
 {
+	glsp->type = type;
+
+	if (type == SHADER_VERTEX) {
+		glsp->input_prefix  = "_geom_shader_attrib";
+		glsp->output_prefix = "_vertex_shader_attrib";
+	} else if (type == SHADER_PIXEL) {
+		glsp->input_prefix  = "_vertex_shader_attrib";
+		glsp->output_prefix = "_pixel_shader_attrib";
+	}
+
 	shader_parser_init(&glsp->parser);
 	dstr_init(&glsp->gl_string);
 	da_init(glsp->texture_samplers);

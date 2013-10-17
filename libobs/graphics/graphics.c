@@ -149,17 +149,13 @@ void gs_destroy(graphics_t graphics)
 	while (thread_graphics)
 		gs_leavecontext();
 
-	graphics->exports.device_entercontext(graphics->device);
-
-	if (graphics->sprite_buffer)
+	if (graphics->device) {
+		graphics->exports.device_entercontext(graphics->device);
 		graphics->exports.vertexbuffer_destroy(graphics->sprite_buffer);
-
-	if (graphics->immediate_vertbuffer)
 		graphics->exports.vertexbuffer_destroy(
 				graphics->immediate_vertbuffer);
-
-	if (graphics->device)
 		graphics->exports.device_destroy(graphics->device);
+	}
 
 	pthread_mutex_destroy(&graphics->mutex);
 	da_free(graphics->matrix_stack);
@@ -596,8 +592,7 @@ effect_t gs_create_effect(const char *effect_string, const char *filename,
 	return effect;
 }
 
-shader_t gs_create_vertexshader_from_file(const char *file,
-	char **error_string)
+shader_t gs_create_vertexshader_from_file(const char *file, char **error_string)
 {
 	char *file_string;
 	shader_t shader = NULL;
@@ -615,8 +610,7 @@ shader_t gs_create_vertexshader_from_file(const char *file,
 	return shader;
 }
 
-shader_t gs_create_pixelshader_from_file(const char *file,
-	char **error_string)
+shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 {
 	char *file_string;
 	shader_t shader = NULL;
@@ -640,13 +634,13 @@ texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
 	return NULL;
 }
 
-texture_t gs_create_cubetexture_from_file(const char *flie, uint32_t flags)
+texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
 	return NULL;
 }
 
-texture_t gs_create_volumetexture_from_file(const char *flie, uint32_t flags)
+texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
 	return NULL;
@@ -681,6 +675,7 @@ void gs_draw_sprite(texture_t tex)
 	vec2_set(tvarray+3, 1.0f, 1.0f);
 	vertexbuffer_flush(graphics->sprite_buffer, false);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
+	gs_load_indexbuffer(NULL);
 
 	gs_draw(GS_TRISTRIP, 0, 0);
 }
@@ -740,6 +735,21 @@ void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
 	/* TODO */
 }
 
+void gs_perspective(float angle, float aspect, float near, float far)
+{
+	graphics_t graphics = thread_graphics;
+	float xmin, xmax, ymin, ymax;
+
+	ymax = near * tanf(RAD(angle)*0.5f);
+	ymin = -ymax;
+
+	xmin = ymin * aspect;
+	xmax = ymax * aspect;
+
+	graphics->exports.device_frustum(graphics->device, xmin, xmax,
+			ymin, ymax, near, far);
+}
+
 /* ------------------------------------------------------------------------- */
 
 swapchain_t gs_create_swapchain(struct gs_init_data *data)
@@ -779,8 +789,8 @@ static inline bool is_pow2(uint32_t size)
 }
 
 texture_t gs_create_texture(uint32_t width, uint32_t height,
-		enum gs_color_format color_format, uint32_t levels, void **data,
-		uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels,
+		const void **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(width) && is_pow2(height);
@@ -809,7 +819,7 @@ texture_t gs_create_texture(uint32_t width, uint32_t height,
 
 texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags)
+		const void **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(size);
@@ -839,7 +849,7 @@ texture_t gs_create_cubetexture(uint32_t size,
 
 texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, void **data, uint32_t flags)
+		uint32_t levels, const void **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	return graphics->exports.device_create_volumetexture(graphics->device,
@@ -1180,13 +1190,6 @@ void gs_frustum(float left, float right, float top, float bottom, float znear,
 	graphics_t graphics = thread_graphics;
 	graphics->exports.device_frustum(graphics->device, left, right, top,
 			bottom, znear, zfar);
-}
-
-void gs_perspective(float fovy, float aspect, float znear, float zfar)
-{
-	graphics_t graphics = thread_graphics;
-	graphics->exports.device_perspective(graphics->device, fovy, aspect,
-			znear, zfar);
 }
 
 void gs_projection_push(void)

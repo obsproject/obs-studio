@@ -87,7 +87,7 @@ void obs_source_init(struct obs_source *source)
 	da_push_back(obs->sources, &source);
 }
 
-obs_source_t obs_source_create(enum source_type type, const char *name,
+obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 		const char *settings)
 {
 	const struct source_info *info = NULL;

@@ -61,13 +61,6 @@ EXPORT float matrix4_determinant(const struct matrix4 *m);
 EXPORT bool matrix4_inv(struct matrix4 *dst, const struct matrix4 *m);
 EXPORT void matrix4_transpose(struct matrix4 *dst, const struct matrix4 *m);
 
-EXPORT void matrix4_ortho(struct matrix4 *dst, float left, float right,
-		float top, float bottom, float near, float far);
-EXPORT void matrix4_frustum(struct matrix4 *dst, float left, float right,
-		float top, float bottom, float near, float far);
-EXPORT void matrix4_perspective(struct matrix4 *dst, float angle,
-		float aspect, float near, float far);
-
 #ifdef __cplusplus
 }
 #endif

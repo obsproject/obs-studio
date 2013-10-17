@@ -112,12 +112,11 @@ static inline void gl_write_params(struct gl_shader_parser *glsp)
 }
 
 static void gl_write_storage_var(struct gl_shader_parser *glsp,
-		struct shader_var *var, const char *storage,
-		const char *prefix);
+		struct shader_var *var, bool input, const char *prefix);
 
 /* unwraps a structure that's used for input/output */
 static void gl_unwrap_storage_struct(struct gl_shader_parser *glsp,
-		struct shader_struct *st, const char *name, const char *storage,
+		struct shader_struct *st, const char *name, bool input,
 		const char *prefix)
 {
 	struct dstr prefix_str;
@@ -131,27 +130,23 @@ static void gl_unwrap_storage_struct(struct gl_shader_parser *glsp,
 
 	for (i = 0; i < st->vars.num; i++) {
 		struct shader_var *st_var = st->vars.array+i;
-		gl_write_storage_var(glsp, st_var, storage, prefix_str.array);
+		gl_write_storage_var(glsp, st_var, input, prefix_str.array);
 	}
 
 	dstr_free(&prefix_str);
 }
 
 static void gl_write_storage_var(struct gl_shader_parser *glsp,
-		struct shader_var *var, const char *storage, const char *prefix)
+		struct shader_var *var, bool input, const char *prefix)
 {
 	struct shader_struct *st = shader_parser_getstruct(&glsp->parser,
 			var->type);
 
 	if (st) {
-		gl_unwrap_storage_struct(glsp, st, var->name, storage, prefix);
+		gl_unwrap_storage_struct(glsp, st, var->name, input, prefix);
 	} else {
-		struct gl_parser_attrib attrib = {0};
-
-		if (storage) {
-			dstr_cat(&glsp->gl_string, storage);
-			dstr_cat(&glsp->gl_string, " ");
-		}
+		struct gl_parser_attrib attrib = {{0}};
+		dstr_cat(&glsp->gl_string, input ? "in " : "out ");
 
 		if (prefix)
 			dstr_cat(&attrib.name, prefix);
@@ -162,6 +157,7 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 		dstr_cat_dstr(&glsp->gl_string, &attrib.name);
 		dstr_cat(&glsp->gl_string, ";\n");
 
+		attrib.input   = input;
 		attrib.mapping = var->mapping;
 		da_push_back(glsp->attribs, &attrib);
 	}
@@ -172,7 +168,7 @@ static inline void gl_write_inputs(struct gl_shader_parser *glsp,
 {
 	size_t i;
 	for (i = 0; i < main->params.num; i++)
-		gl_write_storage_var(glsp, main->params.array+i, "in",
+		gl_write_storage_var(glsp, main->params.array+i, true,
 				"inputval_");
 	dstr_cat(&glsp->gl_string, "\n");
 }
@@ -186,7 +182,7 @@ static void gl_write_outputs(struct gl_shader_parser *glsp,
 	if (main->mapping)
 		var.mapping = main->mapping;
 
-	gl_write_storage_var(glsp, &var, "out", NULL);
+	gl_write_storage_var(glsp, &var, false, NULL);
 	dstr_cat(&glsp->gl_string, "\n");
 }
 
@@ -207,6 +203,14 @@ static void gl_write_struct(struct gl_shader_parser *glsp,
 	}
 
 	dstr_cat(&glsp->gl_string, "};\n\n");
+}
+
+static void gl_write_interface_block(struct gl_shader_parser *glsp)
+{
+	if (glsp->type == SHADER_VERTEX) {
+		dstr_cat(&glsp->gl_string, "out gl_PerVertex {\n"
+		                           "\tvec4 gl_Position;\n};\n\n");
+	}
 }
 
 static inline void gl_write_structs(struct gl_shader_parser *glsp)
@@ -245,7 +249,6 @@ static bool gl_write_mul(struct gl_shader_parser *glsp,
 		struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
-	bool written = false;
 	cfp->cur_token = *p_token;
 
 	if (!next_token(cfp))    return false;
@@ -266,7 +269,6 @@ static bool gl_write_saturate(struct gl_shader_parser *glsp,
 		struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
-	bool written = false;
 	cfp->cur_token = *p_token;
 
 	if (!next_token(cfp))    return false;
@@ -292,6 +294,9 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 
 	sampler_id = sp_getsampler(glsp, cfp->cur_token);
 	if (sampler_id == -1) return false;
+
+	if (!next_token(cfp))    return false;
+	if (!token_is(cfp, ",")) return false;
 
 	var->gl_sampler_id = sampler_id;
 
@@ -417,7 +422,7 @@ static void gl_write_function(struct gl_shader_parser *glsp,
 	dstr_cat(&glsp->gl_string, " ");
 
 	if (strcmp(func->name, "main") == 0)
-		dstr_cat(&glsp->gl_string, "obs_main_x");
+		dstr_cat(&glsp->gl_string, "_main_wrap");
 	else
 		dstr_cat(&glsp->gl_string, func->name);
 
@@ -447,7 +452,21 @@ static inline void gl_write_functions(struct gl_shader_parser *glsp)
 	}
 }
 
-static void gl_write_main_storage_var(struct gl_shader_parser *glsp,
+static inline void gl_write_main_interface_assign(
+		struct gl_shader_parser *glsp, struct shader_var *var,
+		const char *src)
+{
+	/* vertex shaders: write gl_Position */
+	if (glsp->type == SHADER_VERTEX &&
+	    strcmp(var->mapping, "POSITION") == 0) {
+		dstr_cat(&glsp->gl_string, "\tgl_Position = ");
+		dstr_cat(&glsp->gl_string, src);
+		dstr_cat(&glsp->gl_string, var->name);
+		dstr_cat(&glsp->gl_string, ";\n");
+	}
+}
+
+static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 		struct shader_var *var, const char *dst, const char *src,
 		bool input)
 {
@@ -477,7 +496,7 @@ static void gl_write_main_storage_var(struct gl_shader_parser *glsp,
 
 		for (i = 0; i < st->vars.num; i++) {
 			struct shader_var *var = st->vars.array+i;
-			gl_write_main_storage_var(glsp, var, dst_copy.array,
+			gl_write_main_storage_assign(glsp, var, dst_copy.array,
 					src_copy.array, input);
 		}
 
@@ -490,81 +509,127 @@ static void gl_write_main_storage_var(struct gl_shader_parser *glsp,
 			dstr_cat(&glsp->gl_string, src);
 		dstr_cat(&glsp->gl_string, var->name);
 		dstr_cat(&glsp->gl_string, ";\n");
+
+		if (!input)
+			gl_write_main_interface_assign(glsp, var, src);
 	}
 
 	dstr_free(&dst_copy);
 }
 
-static void gl_write_main_storage_output(struct gl_shader_parser *glsp,
-		bool input, const char *type)
+static inline void gl_write_main_storage_inputs(struct gl_shader_parser *glsp,
+		struct shader_func *main)
 {
-	struct shader_var var = {0};
+	gl_write_main_storage_assign(glsp, main->params.array, NULL,
+			"inputval_", true);
+}
 
-	if (input) {
-		var.name = "inputval";
-		var.type = (char*)type;
-		gl_write_main_storage_var(glsp, &var, NULL, NULL, true);
-	} else {
+static inline void gl_write_main_storage_outputs(struct gl_shader_parser *glsp,
+		struct shader_func *main)
+{
+	/* we only do this *if* we're writing a struct, because otherwise
+	 * the call to 'main' already does the assignment for us */
+	if (!main->mapping) {
+		struct shader_var var = {0};
 		var.name = "outputval";
-		var.type = (char*)type;
-		gl_write_main_storage_var(glsp, &var, NULL, NULL, false);
+		var.type = (char*)main->return_type;
+		dstr_cat(&glsp->gl_string, "\n");
+		gl_write_main_storage_assign(glsp, &var, NULL, NULL, false);
 	}
+}
+
+static inline void gl_write_main_vars(struct gl_shader_parser *glsp,
+		struct shader_func *main_func)
+{
+	size_t i;
+	for (i = 0; i < main_func->params.num; i++) {
+		dstr_cat(&glsp->gl_string, "\t");
+		dstr_cat(&glsp->gl_string, main_func->params.array[i].type);
+		dstr_cat(&glsp->gl_string, " ");
+		dstr_cat(&glsp->gl_string, main_func->params.array[i].name);
+		dstr_cat(&glsp->gl_string, ";\n");
+	}
+
+	if (!main_func->mapping) {
+		dstr_cat(&glsp->gl_string, "\t");
+		dstr_cat(&glsp->gl_string, main_func->return_type);
+		dstr_cat(&glsp->gl_string, " outputval;\n\n");
+	}
+}
+
+static inline void gl_write_main_func_call(struct gl_shader_parser *glsp,
+		struct shader_func *main_func)
+{
+	size_t i;
+	dstr_cat(&glsp->gl_string, "\n\toutputval = _main_wrap(");
+
+	for (i = 0; i < main_func->params.num; i++) {
+		if (i)
+			dstr_cat(&glsp->gl_string, ", ");
+		dstr_cat(&glsp->gl_string, main_func->params.array[i].name);
+	}
+
+	dstr_cat(&glsp->gl_string, ");\n");
 }
 
 static void gl_write_main(struct gl_shader_parser *glsp,
 		struct shader_func *main)
 {
-	size_t i;
 	dstr_cat(&glsp->gl_string, "void main(void)\n{\n");
-	for (i = 0; i < main->params.num; i++) {
-		dstr_cat(&glsp->gl_string, "\t");
-		dstr_cat(&glsp->gl_string, main->params.array[i].type);
-		dstr_cat(&glsp->gl_string, " ");
-		dstr_cat(&glsp->gl_string, main->params.array[i].name);
-		dstr_cat(&glsp->gl_string, ";\n");
-	}
 
-	if (!main->mapping) {
-		dstr_cat(&glsp->gl_string, "\t");
-		dstr_cat(&glsp->gl_string, main->return_type);
-		dstr_cat(&glsp->gl_string, " outputval;\n\n");
-	}
-
-	/* gl_write_main_storage(glsp, true, main->params.array[0].type); */
-	gl_write_main_storage_var(glsp, main->params.array, NULL,
-			"inputval_", true);
-
-	dstr_cat(&glsp->gl_string, "\n\toutputval = obs_main_x(");
-	for (i = 0; i < main->params.num; i++) {
-		if (i)
-			dstr_cat(&glsp->gl_string, ", ");
-		dstr_cat(&glsp->gl_string, main->params.array[i].name);
-	}
-	dstr_cat(&glsp->gl_string, ");\n");
-
-	if (!main->mapping) {
-		dstr_cat(&glsp->gl_string, "\n");
-		gl_write_main_storage_output(glsp, false, main->return_type);
-	}
+	gl_write_main_vars(glsp, main);
+	gl_write_main_storage_inputs(glsp, main);
+	gl_write_main_func_call(glsp, main);
+	gl_write_main_storage_outputs(glsp, main);
 
 	dstr_cat(&glsp->gl_string, "}\n");
 }
 
+/* ugh, don't ask.  I'll probably get rid of the need for this function later */
+static void gl_rename_attributes(struct gl_shader_parser *glsp)
+{
+	size_t i = 0, input_idx = 0, output_idx = 0;
+
+	for (i = 0; i < glsp->attribs.num; i++) {
+		struct gl_parser_attrib *attrib = glsp->attribs.array+i;
+		struct dstr new_name = {0};
+		const char *prefix;
+		size_t val;
+
+		if (attrib->input) {
+			prefix = glsp->input_prefix;
+			val    = input_idx++;
+		} else {
+			prefix = glsp->output_prefix;
+			val    = output_idx++;
+		}
+
+		dstr_printf(&new_name, "%s%u", prefix, val);
+		dstr_replace(&glsp->gl_string, attrib->name.array,
+				new_name.array);
+		dstr_move(&attrib->name, &new_name);
+	}
+}
+
 static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 {
-	struct shader_func *main = shader_parser_getfunc(&glsp->parser, "main");
-	if (!main) {
+	struct shader_func *main_func;
+
+	main_func = shader_parser_getfunc(&glsp->parser, "main");
+	if (!main_func) {
 		blog(LOG_ERROR, "function 'main' not found");
 		return false;
 	}
 
-	dstr_copy(&glsp->gl_string, "#version 140\n\n");
+	dstr_copy(&glsp->gl_string, "#version 150\n\n");
 	gl_write_params(glsp);
-	gl_write_inputs(glsp, main);
-	gl_write_outputs(glsp, main);
+	gl_write_inputs(glsp, main_func);
+	gl_write_outputs(glsp, main_func);
+	gl_write_interface_block(glsp);
 	gl_write_structs(glsp);
 	gl_write_functions(glsp);
-	gl_write_main(glsp, main);
+	gl_write_main(glsp, main_func);
+	gl_rename_attributes(glsp);
 
 	return true;
 }

@@ -15,13 +15,15 @@ struct random_tex *random_create(const char *settings, obs_source_t source)
 			pixel |= (rand()%256);
 			pixel |= (rand()%256) << 8;
 			pixel |= (rand()%256) << 16;
+			//pixel |= 0xFFFFFFFF;
 			pixels[y*20 + x] = pixel;
 		}
 	}
 
 	gs_entercontext(obs_graphics());
 
-	rt->texture = gs_create_texture(20, 20, GS_RGBA, 1, &pixels, 0);
+	rt->texture = gs_create_texture(20, 20, GS_RGBA, 1,
+			(const void**)&pixels, 0);
 	bfree(pixels);
 
 	if (!rt->texture) {
@@ -61,7 +63,8 @@ uint32_t random_get_output_flags(struct random_tex *rt)
 void random_video_render(struct random_tex *rt, obs_source_t filter_target)
 {
 	technique_t tech = effect_gettechnique(rt->whatever, "Default");
-	effect_settexture(rt->whatever, effect_getparambyidx(rt->whatever, 1), rt->texture);
+	effect_settexture(rt->whatever, effect_getparambyidx(rt->whatever, 1),
+			rt->texture);
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 

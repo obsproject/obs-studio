@@ -71,6 +71,24 @@ static inline void gl_delete_buffers(GLsizei num_buffers, GLuint *buffers)
 	gl_success("glDeleteBuffers");
 }
 
+static inline bool gl_gen_vertex_arrays(GLsizei num_arrays, GLuint *arrays)
+{
+	glGenVertexArrays(num_arrays, arrays);
+	return gl_success("glGenVertexArrays");
+}
+
+static inline bool gl_bind_vertex_array(GLuint array)
+{
+	glBindVertexArray(array);
+	return gl_success("glBindVertexArray");
+}
+
+static inline void gl_delete_vertex_arrays(GLsizei num_arrays, GLuint *arrays)
+{
+	glDeleteVertexArrays(num_arrays, arrays);
+	gl_success("glDeleteVertexArrays");
+}
+
 static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
 {
 	glBindRenderbuffer(target, buffer);
@@ -113,9 +131,16 @@ static inline bool gl_disable(GLenum capability)
 	return gl_success("glDisable");
 }
 
+static inline bool gl_cull_face(GLenum faces)
+{
+	glCullFace(faces);
+	return gl_success("glCullFace");
+}
+
 extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
-		uint32_t width, uint32_t height, uint32_t size, void ***p_data);
+		uint32_t width, uint32_t height, uint32_t size,
+		const void ***p_data);
 
 extern bool gl_copy_texture(struct gs_device *device,
                             GLuint dst, GLenum dst_target,

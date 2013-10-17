@@ -232,10 +232,12 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 	ID3D11RasterizerState *state;
 
 	memset(&rd, 0, sizeof(rd));
-	rd.FillMode        = D3D11_FILL_SOLID;
-	rd.CullMode        = ConvertGSCullMode(rasterState.cullMode);
-	rd.DepthClipEnable = true;
-	rd.ScissorEnable   = rasterState.scissorEnabled;
+	/* use CCW to convert to for a right-handed coordinate system */
+	rd.FrontCounterClockwise = true;
+	rd.FillMode              = D3D11_FILL_SOLID;
+	rd.CullMode              = ConvertGSCullMode(rasterState.cullMode);
+	rd.DepthClipEnable       = true;
+	rd.ScissorEnable         = rasterState.scissorEnabled;
 
 	hr = device->CreateRasterizerState(&rd, savedState.state.Assign());
 	if (FAILED(hr))
@@ -364,6 +366,13 @@ void gs_device::UpdateViewProjMatrix()
 	gs_matrix_get(&cur_matrix);
 
 	matrix4_from_matrix3(&curViewMatrix, &cur_matrix);
+
+	/* negate Z col of the view matrix for right-handed coordinate system */
+	curViewMatrix.x.z = -curViewMatrix.x.z;
+	curViewMatrix.y.z = -curViewMatrix.y.z;
+	curViewMatrix.z.z = -curViewMatrix.z.z;
+	curViewMatrix.t.z = -curViewMatrix.t.z;
+
 	matrix4_mul(&curViewProjMatrix, &curViewMatrix, &curProjMatrix);
 	matrix4_transpose(&curViewProjMatrix, &curViewProjMatrix);
 
@@ -490,7 +499,7 @@ uint32_t device_getheight(device_t device)
 
 texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, void **data, uint32_t flags)
+		uint32_t levels, const void **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -508,8 +517,8 @@ texture_t device_create_texture(device_t device, uint32_t width,
 }
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
-		enum gs_color_format color_format, uint32_t levels, void **data,
-		uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels,
+		const void **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -531,7 +540,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags)
+		const void **data, uint32_t flags)
 {
 	/* TODO */
 	return NULL;
@@ -884,14 +893,14 @@ void device_setrendertarget(device_t device, texture_t tex, zstencil_t zstencil)
 
 	if (tex->type != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "device_setrendertarget (D3D11): "
-				"texture is not a 2D texture");
+		                "texture is not a 2D texture");
 		return;
 	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
 	if (!tex2d->renderTarget[0]) {
 		blog(LOG_ERROR, "device_setrendertarget (D3D11): "
-				"texture is not a render target");
+		                "texture is not a render target");
 		return;
 	}
 
@@ -942,8 +951,6 @@ void device_setcuberendertarget(device_t device, texture_t tex, int side,
 
 inline void gs_device::CopyTex(ID3D11Texture2D *dst, texture_t src)
 {
-	if (!src)
-		src = curRenderTarget;
 	if (src->type != GS_TEXTURE_2D)
 		throw "Source texture must be a 2D texture";
 
@@ -954,10 +961,22 @@ inline void gs_device::CopyTex(ID3D11Texture2D *dst, texture_t src)
 void device_copy_texture(device_t device, texture_t dst, texture_t src)
 {
 	try {
+		gs_texture_2d *src2d = static_cast<gs_texture_2d*>(src);
+		gs_texture_2d *dst2d = static_cast<gs_texture_2d*>(dst);
+
+		if (!src)
+			throw "Source texture is NULL";
 		if (!dst)
-			throw "Failed because destination texture is NULL";
-		if (dst->type != GS_TEXTURE_2D)
-			throw "Destination texture must be a 2D texture";
+			throw "Destination texture is NULL";
+		if (src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D)
+			throw "Source and destination textures must be a 2D "
+			      "textures";
+		if (dst->format != src->format)
+			throw "Source and destination formats do not match";
+		if (dst2d->width  != src2d->width ||
+		    dst2d->height != src2d->height)
+			throw "Source and destination must have the same "
+			      "dimensions";
 
 		gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(dst);
 		device->CopyTex(tex2d->texture, src);
@@ -970,8 +989,20 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 {
 	try {
+		gs_texture_2d *src2d = static_cast<gs_texture_2d*>(src);
+
+		if (!src)
+			throw "Source texture is NULL";
+		if (src->type != GS_TEXTURE_2D)
+			throw "Source texture must be a 2D texture";
 		if (!dst)
-			throw "Failed because destination texture is NULL";
+			throw "Destination surface is NULL";
+		if (dst->format != src->format)
+			throw "Source and destination formats do not match";
+		if (dst->width  != src2d->width ||
+		    dst->height != src2d->height)
+			throw "Source and destination must have the same "
+			      "dimensions";
 
 		device->CopyTex(dst->texture, src);
 
@@ -1025,13 +1056,15 @@ void device_draw(device_t device, enum gs_draw_mode draw_mode,
 		device->curToplogy = newTopology;
 	}
 
-	if (num_verts == 0)
-		num_verts = (uint32_t)device->curVertexBuffer->numVerts;
-
-	if (device->curIndexBuffer)
+	if (device->curIndexBuffer) {
+		if (num_verts == 0)
+			num_verts = (uint32_t)device->curIndexBuffer->num;
 		device->context->DrawIndexed(num_verts, start_vert, 0);
-	else
+	} else {
+		if (num_verts == 0)
+			num_verts = (uint32_t)device->curVertexBuffer->numVerts;
 		device->context->Draw(num_verts, start_vert);
+	}
 }
 
 void device_endscene(device_t device)
@@ -1292,23 +1325,56 @@ void device_setscissorrect(device_t device, struct gs_rect *rect)
 }
 
 void device_ortho(device_t device, float left, float right, float top,
-		float bottom, float znear, float zfar)
+		float bottom, float zNear, float zFar)
 {
-	matrix4_ortho(&device->curProjMatrix, left, right, top, bottom, znear,
-			zfar);
+	matrix4 *dst = &device->curProjMatrix;
+
+	float rml = right-left;
+	float bmt = bottom-top;
+	float fmn = zFar-zNear;
+
+	vec4_zero(&dst->x);
+	vec4_zero(&dst->y);
+	vec4_zero(&dst->z);
+	vec4_zero(&dst->t);
+
+	dst->x.x =         2.0f /  rml;
+	dst->t.x = (left+right) / -rml;
+
+	dst->y.y =         2.0f / -bmt;
+	dst->t.y = (bottom+top) /  bmt;
+
+	dst->z.z =         1.0f /  fmn;
+	dst->t.z =        zNear / -fmn;
+
+	dst->t.w = 1.0f;
 }
 
 void device_frustum(device_t device, float left, float right, float top,
-		float bottom, float znear, float zfar)
+		float bottom, float zNear, float zFar)
 {
-	matrix4_frustum(&device->curProjMatrix, left, right, top, bottom,
-			znear, zfar);
-}
+	matrix4 *dst = &device->curProjMatrix;
 
-void device_perspective(device_t device, float fovy, float aspect,
-		float znear, float zfar)
-{
-	matrix4_perspective(&device->curProjMatrix, fovy, aspect, znear, zfar);
+	float rml    = right-left;
+	float bmt    = bottom-top;
+	float fmn    = zFar-zNear;
+	float nearx2 = 2.0f*zNear;
+
+	vec4_zero(&dst->x);
+	vec4_zero(&dst->y);
+	vec4_zero(&dst->z);
+	vec4_zero(&dst->t);
+
+	dst->x.x =       nearx2 /  rml;
+	dst->z.x = (left+right) / -rml;
+
+	dst->y.y =       nearx2 / -bmt;
+	dst->z.y = (bottom+top) /  bmt;
+
+	dst->z.z =         zFar /  fmn;
+	dst->t.z = (zNear*zFar) / -fmn;
+
+	dst->z.w = 1.0f;
 }
 
 void device_projection_push(device_t device)

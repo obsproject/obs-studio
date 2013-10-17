@@ -58,30 +58,33 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (type >= LOG_WARNING)
-		__debugbreak();
+	/*if (type >= LOG_WARNING)
+		__debugbreak();*/
 }
 
 static void CreateOBS(HWND hwnd)
 {
+	RECT rc;
+	GetClientRect(hwnd, &rc);
+
 	struct video_info vi;
 	memset(&vi, 0, sizeof(struct video_info));
 	vi.format  = "RGBA";
 	vi.fps_num = 30000;
 	vi.fps_den = 1001;
-	vi.width   = cx;
-	vi.height  = cy;
+	vi.width   = rc.right;
+	vi.height  = rc.bottom;
 	vi.name    = "video";
 
 	struct gs_init_data gsid;
 	memset(&gsid, 0, sizeof(gsid));
 	gsid.hwnd            = hwnd;
-	gsid.cx              = cx;
-	gsid.cy              = cy;
+	gsid.cx              = rc.right;
+	gsid.cy              = rc.bottom;
 	gsid.num_backbuffers = 2;
 	gsid.format          = GS_RGBA;
 
-	if (!obs_startup("libobs-d3d11.dll", &gsid, &vi, NULL))
+	if (!obs_startup("libobs-opengl.dll", &gsid, &vi, NULL))
 		throw "Couldn't create OBS";
 }
 

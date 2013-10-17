@@ -97,7 +97,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_setscissorrect);
 	GRAPHICS_IMPORT(device_ortho);
 	GRAPHICS_IMPORT(device_frustum);
-	GRAPHICS_IMPORT(device_perspective);
 	GRAPHICS_IMPORT(device_projection_push);
 	GRAPHICS_IMPORT(device_projection_pop);
 

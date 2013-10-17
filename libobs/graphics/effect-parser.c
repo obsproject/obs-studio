@@ -1299,7 +1299,7 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 		ep->effect->world = param;
 }
 
-static inline void ep_compile_pass_shaderparams(struct effect_parser *ep,
+static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 		struct darray *pass_params, struct darray *used_params,
 		shader_t shader)
 {
@@ -1319,7 +1319,14 @@ static inline void ep_compile_pass_shaderparams(struct effect_parser *ep,
 				param_name->array);
 		param->sparam = shader_getparambyname(shader,
 				param_name->array);
+
+		if (!param->sparam) {
+			blog(LOG_ERROR, "Effect shader parameter not found");
+			return false;
+		}
 	}
+
+	return true;
 }
 
 static inline bool ep_compile_pass_shader(struct effect_parser *ep,
@@ -1332,6 +1339,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	struct darray used_params; /* struct dstr */
 	struct darray *pass_params; /* struct pass_shaderparam */
 	shader_t shader;
+	bool success = true;
 
 	dstr_init(&shader_str);
 	darray_init(&used_params);
@@ -1375,15 +1383,17 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
 
 	if (shader)
-		ep_compile_pass_shaderparams(ep, pass_params, &used_params,
-				shader);
+		success = ep_compile_pass_shaderparams(ep, pass_params,
+				&used_params, shader);
+	else
+		success = false;
 
 	dstr_free(&location);
 	dstr_array_free(used_params.array, used_params.num);
 	darray_free(&used_params);
 	dstr_free(&shader_str);
 
-	return shader != NULL;
+	return success;
 }
 
 static bool ep_compile_pass(struct effect_parser *ep,

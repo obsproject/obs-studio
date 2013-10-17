@@ -221,14 +221,16 @@ struct gs_texture {
 	gs_texture_type type;
 	gs_device       *device;
 	uint32_t        levels;
+	gs_color_format format;
 
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
 
 	inline gs_texture(gs_device *device, gs_texture_type type,
-			uint32_t levels)
+			uint32_t levels, gs_color_format format)
 		: device (device),
 		  type   (type),
-		  levels (levels)
+		  levels (levels),
+		  format (format)
 	{
 	}
 
@@ -241,7 +243,6 @@ struct gs_texture_2d : gs_texture {
 	ComPtr<IDXGISurface1>            gdiSurface;
 
 	uint32_t        width, height;
-	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 	bool            isRenderTarget;
 	bool            isGDICompatible;
@@ -250,16 +251,15 @@ struct gs_texture_2d : gs_texture {
 	bool            genMipmaps;
 	HANDLE          sharedHandle;
 
-	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, void **data);
-	void InitTexture(void **data);
+	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const void **data);
+	void InitTexture(const void **data);
 	void InitResourceView();
 	void InitRenderTargets();
 
 	inline gs_texture_2d()
-		: gs_texture      (NULL, GS_TEXTURE_2D, 0),
+		: gs_texture      (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN),
 		  width           (0),
 		  height          (0),
-		  format          (GS_UNKNOWN),
 		  dxgiFormat      (DXGI_FORMAT_UNKNOWN),
 		  isRenderTarget  (false),
 		  isGDICompatible (false),
@@ -272,7 +272,7 @@ struct gs_texture_2d : gs_texture {
 
 	gs_texture_2d(device_t device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
-			void **data, uint32_t flags, gs_texture_type type,
+			const void **data, uint32_t flags, gs_texture_type type,
 			bool gdiCompatible, bool shared);
 };
 

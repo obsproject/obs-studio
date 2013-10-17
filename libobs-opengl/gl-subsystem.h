@@ -81,7 +81,7 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	}
 }
 
-static inline GLenum get_gl_format_type(enum color_format format)
+static inline GLenum get_gl_format_type(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_A8:          return GL_UNSIGNED_BYTE;
@@ -185,10 +185,6 @@ static inline void convert_filter(enum gs_sample_filter filter,
 		GLint *min_filter, GLint *mag_filter)
 {
 	switch (filter) {
-	case GS_FILTER_ANISOTROPIC:
-		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
-		*mag_filter = GL_LINEAR;
-		break;
 	default:
 	case GS_FILTER_POINT:
 		*min_filter = GL_NEAREST_MIPMAP_NEAREST;
@@ -222,6 +218,10 @@ static inline void convert_filter(enum gs_sample_filter filter,
 		*min_filter = GL_LINEAR_MIPMAP_NEAREST;
 		*mag_filter = GL_LINEAR;
 		break;
+	case GS_FILTER_ANISOTROPIC:
+		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
+		*mag_filter = GL_LINEAR;
+		break;
 	}
 }
 
@@ -230,7 +230,7 @@ static inline GLint convert_address_mode(enum gs_address_mode mode)
 	switch (mode) {
 	default:
 	case GS_ADDRESS_WRAP:       return GL_REPEAT;
-	case GS_ADDRESS_CLAMP:      return GL_CLAMP;
+	case GS_ADDRESS_CLAMP:      return GL_CLAMP_TO_EDGE;
 	case GS_ADDRESS_MIRROR:     return GL_MIRRORED_REPEAT;
 	case GS_ADDRESS_BORDER:     return GL_CLAMP_TO_BORDER;
 	case GS_ADDRESS_MIRRORONCE: return GL_MIRROR_CLAMP_EXT;
@@ -319,6 +319,8 @@ struct gs_shader {
 	DARRAY(samplerstate_t)       samplers;
 };
 
+extern void shader_update_textures(struct gs_shader *shader);
+
 struct gs_vertex_buffer {
 	GLuint               vertex_buffer;
 	GLuint               normal_buffer;
@@ -328,6 +330,7 @@ struct gs_vertex_buffer {
 	DARRAY(size_t)       uv_sizes;
 
 	device_t             device;
+	size_t               num;
 	bool                 dynamic;
 	struct vb_data       *data;
 };
@@ -418,8 +421,12 @@ struct fbo_info {
 
 static inline void fbo_info_destroy(struct fbo_info *fbo)
 {
-	glDeleteFramebuffers(1, &fbo->fbo);
-	gl_success("glDeleteFramebuffers");
+	if (fbo) {
+		glDeleteFramebuffers(1, &fbo->fbo);
+		gl_success("glDeleteFramebuffers");
+
+		bfree(fbo);
+	}
 }
 
 struct gs_device {
@@ -458,3 +465,7 @@ extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
+
+extern void                  gl_getclientsize(struct gs_swap_chain *swap,
+                                              uint32_t *width,
+                                              uint32_t *height);

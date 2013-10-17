@@ -17,7 +17,8 @@
 
 #include "gl-subsystem.h"
 
-static inline bool upload_texture_cube(struct gs_texture_cube *tex, void **data)
+static inline bool upload_texture_cube(struct gs_texture_cube *tex,
+		const void **data)
 {
 	uint32_t row_size   = tex->size * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->size * row_size / 8;
@@ -50,12 +51,16 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex, void **data)
 			data++;
 	}
 
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, num_levels);
+	if (!gl_success("glTexParameteri"))
+		success = false;
+
 	return success;
 }
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		void **data, uint32_t flags)
+		const void **data, uint32_t flags)
 {
 	struct gs_texture_cube *tex = bmalloc(sizeof(struct gs_texture_cube));
 	memset(tex, 0, sizeof(struct gs_texture_2d));
@@ -67,8 +72,8 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 	tex->base.gl_format          = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_target          = GL_TEXTURE_CUBE_MAP;
-	tex->base.is_render_target   = flags & GS_RENDERTARGET;
-	tex->base.gen_mipmaps        = flags & GS_BUILDMIPMAPS;
+	tex->base.is_render_target   = (flags & GS_RENDERTARGET) != 0;
+	tex->base.gen_mipmaps        = (flags & GS_BUILDMIPMAPS) != 0;
 	tex->size                    = size;
 
 	if (!gl_gen_textures(1, &tex->base.texture))

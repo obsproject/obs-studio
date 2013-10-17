@@ -2,7 +2,7 @@ include config.mak
 
 all: default
 
-PROJECTS=libobs test
+PROJECTS=libobs test libobs-opengl
 
 .PHONY: all default clean
 

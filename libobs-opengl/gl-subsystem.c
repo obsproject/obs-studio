@@ -64,7 +64,11 @@ device_t device_create(struct gs_init_data *info)
 		blog(LOG_DEBUG, "OpenGL debug information not available");
 #endif
 
+	gl_enable(GL_CULL_FACE);
+
 	device_leavecontext(device);
+	device->cur_swap = gl_platform_getswap(device->plat);
+
 	return device;
 
 fail:
@@ -132,8 +136,8 @@ uint32_t device_getheight(device_t device)
 
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
-		enum gs_color_format color_format, uint32_t levels, void **data,
-		uint32_t flags)
+		enum gs_color_format color_format, uint32_t levels,
+		const void **data, uint32_t flags)
 {
 	/* TODO */
 	return NULL;
@@ -220,8 +224,13 @@ void device_load_texture(device_t device, texture_t tex, int unit)
 
 	if (cur_tex == tex)
 		return;
+
+	if (!gl_active_texture(GL_TEXTURE0 + unit))
+		goto fail;
+
 	if (cur_tex && cur_tex->gl_target != tex->gl_target)
 		gl_bind_texture(cur_tex->gl_target, 0);
+
 
 	device->cur_textures[unit] = tex;
 	param = get_texture_param(device, unit);
@@ -235,8 +244,6 @@ void device_load_texture(device_t device, texture_t tex, int unit)
 
 	sampler = device->cur_samplers[param->sampler_id];
 
-	if (!gl_active_texture(GL_TEXTURE0 + unit))
-		goto fail;
 	if (!gl_bind_texture(tex->gl_target, tex->texture))
 		goto fail;
 	if (sampler && !load_texture_sampler(tex, sampler))
@@ -298,7 +305,7 @@ void device_load_vertexshader(device_t device, shader_t vertshader)
 	if (device->cur_vertex_shader == vertshader)
 		return;
 
-	if (vertshader->type != SHADER_VERTEX) {
+	if (vertshader && vertshader->type != SHADER_VERTEX) {
 		blog(LOG_ERROR, "Specified shader is not a vertex shader");
 		goto fail;
 	}
@@ -313,7 +320,7 @@ void device_load_vertexshader(device_t device, shader_t vertshader)
 	if (vertshader)
 		program = vertshader->program;
 
-	glUseProgramStages(device->pipeline, GL_VERTEX_SHADER, program);
+	glUseProgramStages(device->pipeline, GL_VERTEX_SHADER_BIT, program);
 	if (!gl_success("glUseProgramStages"))
 		goto fail;
 
@@ -326,13 +333,29 @@ fail:
 	blog(LOG_ERROR, "device_load_vertexshader (GL) failed");
 }
 
+static void load_default_pixelshader_samplers(struct gs_device *device,
+		struct gs_shader *ps)
+{
+	size_t i;
+	if (!ps)
+		return;
+
+	for (i = 0; i < ps->samplers.num; i++) {
+		struct gs_sampler_state *ss = ps->samplers.array[i];
+		device->cur_samplers[i] = ss;
+	}
+
+	for (; i < GS_MAX_TEXTURES; i++)
+		device->cur_samplers[i] = NULL;
+}
+
 void device_load_pixelshader(device_t device, shader_t pixelshader)
 {
 	GLuint program = 0;
 	if (device->cur_pixel_shader == pixelshader)
 		return;
 
-	if (pixelshader->type != SHADER_PIXEL) {
+	if (pixelshader && pixelshader->type != SHADER_PIXEL) {
 		blog(LOG_ERROR, "Specified shader is not a pixel shader");
 		goto fail;
 	}
@@ -342,12 +365,14 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	if (pixelshader)
 		program = pixelshader->program;
 
-	glUseProgramStages(device->pipeline, GL_FRAGMENT_SHADER,
-			pixelshader->program);
+	glUseProgramStages(device->pipeline, GL_FRAGMENT_SHADER_BIT, program);
 	if (!gl_success("glUseProgramStages"))
 		goto fail;
 
 	clear_textures(device);
+
+	if (pixelshader)
+		load_default_pixelshader_samplers(device, pixelshader);
 	return;
 
 fail:
@@ -529,14 +554,16 @@ static bool set_target(device_t device, texture_t tex, int side, zstencil_t zs)
 
 void device_setrendertarget(device_t device, texture_t tex, zstencil_t zstencil)
 {
-	if (tex->type != GS_TEXTURE_2D) {
-		blog(LOG_ERROR, "Texture is not a 2D texture");
-		goto fail;
-	}
+	if (tex) {
+		if (tex->type != GS_TEXTURE_2D) {
+			blog(LOG_ERROR, "Texture is not a 2D texture");
+			goto fail;
+		}
 
-	if (!tex->is_render_target) {
-		blog(LOG_ERROR, "Texture is not a render target");
-		goto fail;
+		if (!tex->is_render_target) {
+			blog(LOG_ERROR, "Texture is not a render target");
+			goto fail;
+		}
 	}
 
 	if (!set_target(device, tex, 0, zstencil))
@@ -551,14 +578,16 @@ fail:
 void device_setcuberendertarget(device_t device, texture_t cubetex,
 		int side, zstencil_t zstencil)
 {
-	if (cubetex->type != GS_TEXTURE_CUBE) {
-		blog(LOG_ERROR, "Texture is not a cube texture");
-		goto fail;
-	}
+	if (cubetex) {
+		if (cubetex->type != GS_TEXTURE_CUBE) {
+			blog(LOG_ERROR, "Texture is not a cube texture");
+			goto fail;
+		}
 
-	if (!cubetex->is_render_target) {
-		blog(LOG_ERROR, "Texture is not a render target");
-		goto fail;
+		if (!cubetex->is_render_target) {
+			blog(LOG_ERROR, "Texture is not a render target");
+			goto fail;
+		}
 	}
 
 	if (!set_target(device, cubetex, side, zstencil))
@@ -575,9 +604,13 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 	struct gs_texture_2d *src2d = (struct gs_texture_2d*)src;
 	struct gs_texture_2d *dst2d = (struct gs_texture_2d*)dst;
 
-	if (dst->format != src->format) {
-		blog(LOG_ERROR, "Source and destination texture formats do "
-		                "not match");
+	if (!src) {
+		blog(LOG_ERROR, "Source texture is NULL");
+		goto fail;
+	}
+
+	if (!dst) {
+		blog(LOG_ERROR, "Destination texture is NULL");
 		goto fail;
 	}
 
@@ -587,8 +620,13 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 		goto fail;
 	}
 
+	if (dst->format != src->format) {
+		blog(LOG_ERROR, "Source and destination formats do not match");
+		goto fail;
+	}
+
 	if (dst2d->width != src2d->width || dst2d->height != src2d->height) {
-		blog(LOG_ERROR, "Source and destination textures must have "
+		blog(LOG_ERROR, "Source and destination must have "
 		                "the same dimensions");
 		goto fail;
 	}
@@ -644,24 +682,58 @@ static void update_viewproj_matrix(struct gs_device *device)
 		shader_setmatrix4(vs, vs->viewproj, &device->cur_viewproj);
 }
 
+static inline bool check_shader_pipeline_validity(device_t device)
+{
+	int valid = false;
+
+	glValidateProgramPipeline(device->pipeline);
+	if (!gl_success("glValidateProgramPipeline"))
+		return false;
+
+	glGetProgramPipelineiv(device->pipeline, GL_VALIDATE_STATUS, &valid);
+	if (!gl_success("glGetProgramPipelineiv"))
+		return false;
+
+	if (!valid)
+		blog(LOG_ERROR, "Shader pipeline appears to be invalid");
+
+	return valid != 0;
+}
+
 void device_draw(device_t device, enum gs_draw_mode draw_mode,
 		uint32_t start_vert, uint32_t num_verts)
 {
 	struct gs_index_buffer *ib = device->cur_index_buffer;
 	GLenum  topology = convert_gs_topology(draw_mode);
+	effect_t effect = gs_geteffect();
 
 	if (!can_render(device))
 		goto fail;
 
+	if (effect)
+		effect_updateparams(effect);
+
+	shader_update_textures(device->cur_pixel_shader);
+
 	update_viewproj_matrix(device);
 
+
+#ifdef _DEBUG
+	if (!check_shader_pipeline_validity(device))
+		goto fail;
+#endif
+
 	if (ib) {
+		if (num_verts == 0)
+			num_verts = (uint32_t)device->cur_index_buffer->num;
 		glDrawElements(topology, num_verts, ib->gl_type,
 				(const GLvoid*)(start_vert * ib->width));
 		if (!gl_success("glDrawElements"))
 			goto fail;
 
 	} else {
+		if (num_verts == 0)
+			num_verts = (uint32_t)device->cur_vertex_buffer->num;
 		glDrawArrays(topology, start_vert, num_verts);
 		if (!gl_success("glDrawArrays"))
 			goto fail;
@@ -684,7 +756,7 @@ void device_clear(device_t device, uint32_t clear_flags,
 	GLbitfield gl_flags = 0;
 
 	if (clear_flags & GS_CLEAR_COLOR) {
-		glClearColor(color->x, color->y, color->x, color->w);
+		glClearColor(color->x, color->y, color->z, color->w);
 		gl_flags |= GL_COLOR_BUFFER_BIT;
 	}
 
@@ -698,7 +770,7 @@ void device_clear(device_t device, uint32_t clear_flags,
 		gl_flags |= GL_STENCIL_BUFFER_BIT;
 	}
 
-	glClear(clear_flags);
+	glClear(gl_flags);
 	if (!gl_success("glClear"))
 		blog(LOG_ERROR, "device_clear (GL) failed");
 }
@@ -712,10 +784,11 @@ void device_setcullmode(device_t device, enum gs_cull_mode mode)
 		gl_enable(GL_CULL_FACE);
 
 	device->cur_cull_mode = mode;
+
 	if (mode == GS_BACK)
-		glCullFace(GL_BACK);
+		gl_cull_face(GL_BACK);
 	else if (mode == GS_FRONT)
-		glCullFace(GL_FRONT);
+		gl_cull_face(GL_FRONT);
 	else
 		gl_disable(GL_CULL_FACE);
 }
@@ -837,10 +910,31 @@ void device_setcolorramp(device_t device, float gamma, float brightness,
 	/* TODO */
 }
 
+static inline uint32_t get_target_height(struct gs_device *device)
+{
+	if (!device->cur_render_target)
+		return device_getheight(device);
+
+	if (device->cur_render_target->type == GS_TEXTURE_2D)
+		return texture_getheight(device->cur_render_target);
+	else /* cube map */
+		return cubetexture_getsize(device->cur_render_target);
+}
+
 void device_setviewport(device_t device, int x, int y, int width,
 		int height)
 {
-	glViewport(x, y, width, height);
+	uint32_t base_height;
+
+	/* GL uses bottom-up coordinates for viewports.  We want top-down */
+	if (device->cur_render_target) {
+		base_height = get_target_height(device);
+	} else {
+		uint32_t dw;
+		gl_getclientsize(device->cur_swap, &dw, &base_height);
+	}
+
+	glViewport(x, base_height - y - height, width, height);
 	if (!gl_success("glViewport"))
 		blog(LOG_ERROR, "device_setviewport (GL) failed");
 
@@ -863,22 +957,56 @@ void device_setscissorrect(device_t device, struct gs_rect *rect)
 }
 
 void device_ortho(device_t device, float left, float right,
-		float top, float bottom, float znear, float zfar)
+		float top, float bottom, float near, float far)
 {
-	matrix4_ortho(&device->cur_proj, left, right, top, bottom, znear, zfar);
+	struct matrix4 *dst = &device->cur_proj;
+
+	float rml = right-left;
+	float bmt = bottom-top;
+	float fmn = far-near;
+
+	vec4_zero(&dst->x);
+	vec4_zero(&dst->y);
+	vec4_zero(&dst->z);
+	vec4_zero(&dst->t);
+
+	dst->x.x =         2.0f /  rml;
+	dst->t.x = (left+right) / -rml;
+
+	dst->y.y =         2.0f / -bmt;
+	dst->t.y = (bottom+top) /  bmt;
+
+	dst->z.z =        -2.0f /  fmn;
+	dst->t.z =   (far+near) / -fmn;
+
+	dst->t.w = 1.0f;
 }
 
 void device_frustum(device_t device, float left, float right,
-		float top, float bottom, float znear, float zfar)
+		float top, float bottom, float near, float far)
 {
-	matrix4_frustum(&device->cur_proj, left, right, top, bottom,
-			znear, zfar);
-}
+	struct matrix4 *dst = &device->cur_proj;
 
-void device_perspective(device_t device, float fovy, float aspect,
-		float znear, float zfar)
-{
-	matrix4_perspective(&device->cur_proj, fovy, aspect, znear, zfar);
+	float rml    = right-left;
+	float tmb    = top-bottom;
+	float nmf    = near-far;
+	float nearx2 = 2.0f*near;
+
+	vec4_zero(&dst->x);
+	vec4_zero(&dst->y);
+	vec4_zero(&dst->z);
+	vec4_zero(&dst->t);
+
+	dst->x.x =            nearx2 / rml;
+	dst->z.x =      (left+right) / rml;
+                       
+	dst->y.y =            nearx2 / tmb;
+	dst->z.y =      (bottom+top) / tmb;
+
+	dst->z.z =        (far+near) / nmf;
+	dst->t.z = 2.0f * (near*far) / nmf;
+
+	dst->z.w = -1.0f;
 }
 
 void device_projection_push(device_t device)
