@@ -1338,7 +1338,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	struct dstr location;
 	struct darray used_params; /* struct dstr */
 	struct darray *pass_params; /* struct pass_shaderparam */
-	shader_t shader;
+	shader_t shader = NULL;
 	bool success = true;
 
 	dstr_init(&shader_str);
