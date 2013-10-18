@@ -1272,9 +1272,9 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 	param_in = ep->params.array+idx;
 	param_in->param = param;
 
-	param->name = bstrdup(param_in->name);
+	param->name    = bstrdup(param_in->name);
 	param->section = EFFECT_PARAM;
-	param->effect = ep->effect;
+	param->effect  = ep->effect;
 	da_move(param->default_val, param_in->default_val);
 
 	if (strcmp(param_in->type, "bool") == 0)

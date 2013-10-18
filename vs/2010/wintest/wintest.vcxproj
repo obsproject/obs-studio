@@ -110,7 +110,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;D:\OBS2\libobs-opengl\glew\lib\Debug\x64/glew32sd.lib;libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
