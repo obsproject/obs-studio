@@ -215,7 +215,7 @@ int shader_numparams(shader_t shader)
 	return (int)shader->params.size();
 }
 
-sparam_t shader_getparambyidx(shader_t shader, int param)
+sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
 {
 	return &shader->params[param];
 }

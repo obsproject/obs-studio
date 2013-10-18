@@ -145,7 +145,9 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 	if (st) {
 		gl_unwrap_storage_struct(glsp, st, var->name, input, prefix);
 	} else {
-		struct gl_parser_attrib attrib = {{0}};
+		struct gl_parser_attrib attrib;
+		gl_parser_attrib_init(&attrib);
+
 		dstr_cat(&glsp->gl_string, input ? "in " : "out ");
 
 		if (prefix)
@@ -286,14 +288,14 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 		struct shader_var *var, const char *call)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
-	size_t sampler_id = -1;
+	size_t sampler_id = (size_t)-1;
 
 	if (!next_token(cfp))    return false;
 	if (!token_is(cfp, "(")) return false;
 	if (!next_token(cfp))    return false;
 
 	sampler_id = sp_getsampler(glsp, cfp->cur_token);
-	if (sampler_id == -1) return false;
+	if (sampler_id == (size_t)-1) return false;
 
 	if (!next_token(cfp))    return false;
 	if (!token_is(cfp, ",")) return false;

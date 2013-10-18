@@ -131,7 +131,7 @@ static bool cf_is_token_break(struct base_token *start_token,
 			break;
 		}
 
-	default:
+	case BASETOKEN_NONE:
 		return true;
 	}
 
@@ -196,7 +196,8 @@ static bool cf_lexer_process_comment(struct cf_lexer *lex,
 		}
 	}
 
-	out_token->unmerged_str.len += offset - out_token->unmerged_str.array;
+	out_token->unmerged_str.len +=
+		(size_t)(offset - out_token->unmerged_str.array);
 	out_token->type = CFTOKEN_SPACETAB;
 	lex->base_lexer.offset = offset;
 
@@ -277,7 +278,8 @@ static void cf_lexer_getstrtoken(struct cf_lexer *lex,
 	}
 
 	*lex->write_offset = 0;
-	out_token->unmerged_str.len += offset - out_token->unmerged_str.array;
+	out_token->unmerged_str.len +=
+		(size_t)(offset - out_token->unmerged_str.array);
 	out_token->type = CFTOKEN_STRING;
 	lex->base_lexer.offset = offset;
 }
@@ -316,7 +318,8 @@ static inline enum cf_token_type cf_get_token_type(const struct cf_token *token,
 		else
 			return CFTOKEN_SPACETAB;
 
-	default:
+	case BASETOKEN_NONE:
+	case BASETOKEN_OTHER:
 		break;
 	}
 
@@ -370,8 +373,8 @@ static bool cf_lexer_nexttoken(struct cf_lexer *lex, struct cf_token *out_token)
 	}
 
 	if (wrote_data) {
-		out_token->unmerged_str.len = lex->base_lexer.offset -
-		                              out_token->unmerged_str.array;
+		out_token->unmerged_str.len = (size_t)(lex->base_lexer.offset -
+					out_token->unmerged_str.array);
 		out_token->type = cf_get_token_type(out_token, &start_token);
 	}
 
@@ -738,6 +741,8 @@ exit:
 	return success;
 }
 
+#define INVALID_INDEX ((size_t)-1)
+
 static inline size_t cf_preprocess_get_def_idx(struct cf_preprocessor *pp,
 		const struct strref *def_name)
 {
@@ -751,14 +756,14 @@ static inline size_t cf_preprocess_get_def_idx(struct cf_preprocessor *pp,
 			return i;
 	}
 
-	return -1;
+	return INVALID_INDEX;
 }
 
 static inline struct cf_def *cf_preprocess_get_def(struct cf_preprocessor *pp,
 		const struct strref *def_name)
 {
 	size_t idx = cf_preprocess_get_def_idx(pp, def_name);
-	if (idx == -1)
+	if (idx == INVALID_INDEX)
 		return NULL;
 
 	return pp->defines.array+idx;
@@ -844,7 +849,7 @@ static inline void cf_preprocess_remove_def_strref(struct cf_preprocessor *pp,
 		const struct strref *ref)
 {
 	size_t def_idx = cf_preprocess_get_def_idx(pp, ref);
-	if (def_idx != -1) {
+	if (def_idx != INVALID_INDEX) {
 		struct cf_def *array = pp->defines.array;
 		cf_def_free(array+def_idx);
 		da_erase(pp->defines, def_idx);

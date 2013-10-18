@@ -98,6 +98,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 	case SOURCE_INPUT:      list = &obs->input_types.da; break;
 	case SOURCE_FILTER:     list = &obs->filter_types.da; break;
 	case SOURCE_TRANSITION: list = &obs->transition_types.da; break;
+	case SOURCE_SCENE:
 	default:
 		return NULL;
 	}
@@ -180,14 +181,14 @@ void obs_source_video_render(obs_source_t source)
 	}
 }
 
-int obs_source_getwidth(obs_source_t source)
+uint32_t obs_source_getwidth(obs_source_t source)
 {
 	if (source->callbacks.getwidth)
 		return source->callbacks.getwidth(source->data);
 	return 0;
 }
 
-int obs_source_getheight(obs_source_t source)
+uint32_t obs_source_getheight(obs_source_t source)
 {
 	if (source->callbacks.getheight)
 		return source->callbacks.getheight(source->data);
@@ -225,7 +226,7 @@ obs_source_t obs_filter_gettarget(obs_source_t filter)
 
 void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 {
-	if (da_find(source->filters, &filter, 0) != -1) {
+	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
 		                  "present on the source");
 		return;
@@ -243,7 +244,7 @@ void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 {
 	size_t idx = da_find(source->filters, &filter, 0);
-	if (idx == -1)
+	if (idx == DARRAY_INVALID)
 		return;
 
 	if (idx > 0) {
@@ -260,7 +261,7 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 {
 	size_t idx = da_find(source->filters, &filter, 0);
 	size_t i;
-	if (idx == -1)
+	if (idx == DARRAY_INVALID)
 		return;
 
 	if (movement == ORDER_MOVE_UP) {

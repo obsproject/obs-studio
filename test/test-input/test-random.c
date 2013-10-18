@@ -74,12 +74,12 @@ void random_video_render(struct random_tex *rt, obs_source_t filter_target)
 	technique_end(tech);
 }
 
-int random_getwidth(struct random_tex *rt)
+uint32_t random_getwidth(struct random_tex *rt)
 {
 	return texture_getwidth(rt->texture);
 }
 
-int random_getheight(struct random_tex *rt)
+uint32_t random_getheight(struct random_tex *rt)
 {
 	return texture_getheight(rt->texture);
 }

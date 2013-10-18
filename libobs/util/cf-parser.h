@@ -163,7 +163,7 @@ static inline bool go_to_token_type(struct cf_parser *p,
 		enum cf_token_type type)
 {
 	while (p->cur_token->type != CFTOKEN_NONE &&
-	       p->cur_token->type != CFTOKEN_NEWLINE)
+	       p->cur_token->type != type)
 		p->cur_token++;
 
 	return p->cur_token->type != CFTOKEN_NONE;

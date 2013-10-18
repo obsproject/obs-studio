@@ -676,7 +676,7 @@ static bool ep_parse_param_array(struct effect_parser *ep,
 		    ep->cfp.cur_token->str.len))
 		return false;
 
-	param->array_count = strtol(ep->cfp.cur_token->str.array, NULL, 10);
+	param->array_count =(int)strtol(ep->cfp.cur_token->str.array, NULL, 10);
 
 	if (next_token_should_be(&ep->cfp, "]", ";", NULL) == PARSE_EOF)
 		return false;
@@ -1100,10 +1100,10 @@ static inline void ep_write_func_func_deps(struct effect_parser *ep,
 	size_t i;
 	for (i = 0; i < func->func_deps.num; i++) {
 		const char *name = func->func_deps.array[i];
-		struct ep_func *func = ep_getfunc(ep, name);
+		struct ep_func *func_dep = ep_getfunc(ep, name);
 
-		if (!func->written) {
-			ep_write_func(ep, shader, func, used_params);
+		if (!func_dep->written) {
+			ep_write_func(ep, shader, func_dep, used_params);
 			dstr_cat(shader, "\n\n");
 		}
 	}
@@ -1274,6 +1274,7 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 
 	param->name = bstrdup(param_in->name);
 	param->section = EFFECT_PARAM;
+	param->effect = ep->effect;
 	da_move(param->default_val, param_in->default_val);
 
 	if (strcmp(param_in->type, "bool") == 0)
@@ -1337,7 +1338,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	struct dstr shader_str;
 	struct dstr location;
 	struct darray used_params; /* struct dstr */
-	struct darray *pass_params; /* struct pass_shaderparam */
+	struct darray *pass_params = NULL; /* struct pass_shaderparam */
 	shader_t shader = NULL;
 	bool success = true;
 

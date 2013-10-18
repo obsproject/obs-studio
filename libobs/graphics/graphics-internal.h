@@ -176,7 +176,7 @@ struct gs_exports {
 
 	void (*shader_destroy)(shader_t shader);
 	int (*shader_numparams)(shader_t shader);
-	sparam_t (*shader_getparambyidx)(shader_t shader, int param);
+	sparam_t (*shader_getparambyidx)(shader_t shader, uint32_t param);
 	sparam_t (*shader_getparambyname)(shader_t shader, const char *name);
 	void (*shader_getparaminfo)(shader_t shader, sparam_t param,
 			struct shader_param_info *info);

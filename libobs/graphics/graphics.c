@@ -472,8 +472,7 @@ void gs_normal3f(float x, float y, float z)
 static inline bool validvertsize(graphics_t graphics, size_t num,
 		const char *name)
 {
-	if (graphics->using_immediate &&
-	    graphics->colors.num == IMMEDIATE_COUNT) {
+	if (graphics->using_immediate && num == IMMEDIATE_COUNT) {
 		blog(LOG_WARNING, "%s: tried to use over %u "
 				  "for immediate rendering",
 				  name, IMMEDIATE_COUNT);
@@ -690,7 +689,7 @@ void gs_resetviewport(void)
 {
 	uint32_t cx, cy;
 	gs_getsize(&cx, &cy);
-	gs_setviewport(0, 0, cx, cy);
+	gs_setviewport(0, 0, (int)cx, (int)cy);
 }
 
 void gs_set2dmode(void)
@@ -1222,7 +1221,7 @@ int shader_numparams(shader_t shader)
 	return graphics->exports.shader_numparams(shader);
 }
 
-sparam_t shader_getparambyidx(shader_t shader, int param)
+sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
 {
 	graphics_t graphics = thread_graphics;
 	return graphics->exports.shader_getparambyidx(shader, param);

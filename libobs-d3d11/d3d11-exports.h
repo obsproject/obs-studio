@@ -170,7 +170,7 @@ EXPORT enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer);
 
 EXPORT void shader_destroy(shader_t shader);
 EXPORT int shader_numparams(shader_t shader);
-EXPORT sparam_t shader_getparambyidx(shader_t shader, int param);
+EXPORT sparam_t shader_getparambyidx(shader_t shader, uint32_t param);
 EXPORT sparam_t shader_getparambyname(shader_t shader, const char *name);
 EXPORT void shader_getparaminfo(shader_t shader, sparam_t param,
 		struct shader_param_info *info);

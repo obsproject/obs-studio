@@ -111,10 +111,10 @@ static inline float vec4_dot(const struct vec4 *v1, const struct vec4 *v2)
 
 static inline void vec4_neg(struct vec4 *dst, const struct vec4 *v)
 {
-	dst->x = -dst->x;
-	dst->y = -dst->y;
-	dst->z = -dst->z;
-	dst->w = -dst->w;
+	dst->x = -v->x;
+	dst->y = -v->y;
+	dst->z = -v->z;
+	dst->w = -v->w;
 }
 
 static inline float vec4_len(const struct vec4 *v)

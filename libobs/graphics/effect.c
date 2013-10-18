@@ -43,12 +43,12 @@ technique_t effect_gettechnique(effect_t effect, const char *name)
 	return NULL;
 }
 
-int technique_begin(technique_t tech)
+size_t technique_begin(technique_t tech)
 {
 	tech->effect->cur_technique = tech;
 	tech->effect->graphics->cur_effect = tech->effect;
 
-	return (int)tech->passes.num;
+	return tech->passes.num;
 }
 
 void technique_end(technique_t tech)
@@ -156,7 +156,7 @@ bool technique_beginpassbyname(technique_t tech,
 	for (i = 0; i < tech->passes.num; i++) {
 		struct effect_pass *pass = tech->passes.array+i;
 		if (strcmp(pass->name, name) == 0) {
-			technique_beginpass(tech, (int)i);
+			technique_beginpass(tech, i);
 			return true;
 		}
 	}
@@ -190,9 +190,9 @@ void technique_endpass(technique_t tech)
 	tech->effect->cur_pass = NULL;
 }
 
-int effect_numparams(effect_t effect)
+size_t effect_numparams(effect_t effect)
 {
-	return (int)effect->params.num;
+	return effect->params.num;
 }
 
 eparam_t effect_getparambyidx(effect_t effect, size_t param)
@@ -220,9 +220,22 @@ eparam_t effect_getparambyname(effect_t effect, const char *name)
 	return NULL;
 }
 
+static inline bool matching_effect(effect_t effect, eparam_t param)
+{
+	if (effect != param->effect) {
+		blog(LOG_ERROR, "Effect and effect parameter do not match");
+		return false;
+	}
+
+	return true;
+}
+
 void effect_getparaminfo(effect_t effect, eparam_t param,
 		struct effect_param_info *info)
 {
+	if (!matching_effect(effect, param))
+		return;
+
 	info->name = param->name;
 	info->type = param->type;
 }
@@ -241,6 +254,10 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 		const void *data, size_t size)
 {
 	bool size_changed = param->cur_val.num != size;
+
+	if (!matching_effect(effect, param))
+		return;
+
 	if (size_changed)
 		da_resize(param->cur_val, size);
 

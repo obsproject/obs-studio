@@ -293,7 +293,7 @@ enum shader_type {
 EXPORT void shader_destroy(shader_t shader);
 
 EXPORT int shader_numparams(shader_t shader);
-EXPORT sparam_t shader_getparambyidx(shader_t shader, int param);
+EXPORT sparam_t shader_getparambyidx(shader_t shader, uint32_t param);
 EXPORT sparam_t shader_getparambyname(shader_t shader, const char *name);
 EXPORT void shader_getparaminfo(shader_t shader, sparam_t param,
 		struct shader_param_info *info);
@@ -345,14 +345,14 @@ EXPORT void effect_destroy(effect_t effect);
 
 EXPORT technique_t effect_gettechnique(effect_t effect, const char *name);
 
-EXPORT int technique_begin(technique_t technique);
+EXPORT size_t technique_begin(technique_t technique);
 EXPORT void technique_end(technique_t technique);
 EXPORT bool technique_beginpass(technique_t technique, size_t pass);
 EXPORT bool technique_beginpassbyname(technique_t technique,
 		const char *name);
 EXPORT void technique_endpass(technique_t technique);
 
-EXPORT int effect_numparams(effect_t effect);
+EXPORT size_t effect_numparams(effect_t effect);
 EXPORT eparam_t effect_getparambyidx(effect_t effect, size_t param);
 EXPORT eparam_t effect_getparambyname(effect_t effect, const char *name);
 EXPORT void effect_getparaminfo(effect_t effect, eparam_t param,
@@ -389,7 +389,7 @@ EXPORT void effect_setdefault(effect_t effect, eparam_t param);
 EXPORT texrender_t texrender_create(enum gs_color_format format,
 		enum gs_zstencil_format zsformat);
 EXPORT void texrender_destroy(texrender_t texrender);
-EXPORT bool texrender_begin(texrender_t texrender, int cx, int cy);
+EXPORT bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy);
 EXPORT void texrender_end(texrender_t texrender);
 EXPORT void texrender_reset(texrender_t texrender);
 EXPORT texture_t texrender_gettexture(texrender_t texrender);
@@ -681,7 +681,8 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_DXT1:        return 4;
 	case GS_DXT3:        return 8;
 	case GS_DXT5:        return 8;
-	default:             return 0;
+	default:
+	case GS_UNKNOWN:     return 0;
 	}
 }
 

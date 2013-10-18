@@ -46,8 +46,8 @@ int astrcmpi(const char *str1, const char *str2)
 		str2 = astrblank;
 
 	do {
-		char ch1 = toupper(*str1);
-		char ch2 = toupper(*str2);
+		char ch1 = (char)toupper(*str1);
+		char ch2 = (char)toupper(*str2);
 
 		if (ch1 < ch2)
 			return -1;
@@ -66,8 +66,8 @@ int wstrcmpi(const wchar_t *str1, const wchar_t *str2)
 		str2 = wstrblank;
 
 	do {
-		wchar_t ch1 = towupper(*str1);
-		wchar_t ch2 = towupper(*str2);
+		wchar_t ch1 = (wchar_t)towupper(*str1);
+		wchar_t ch2 = (wchar_t)towupper(*str2);
 
 		if (ch1 < ch2)
 			return -1;
@@ -132,8 +132,8 @@ int astrcmpi_n(const char *str1, const char *str2, size_t n)
 		str2 = astrblank;
 
 	do {
-		char ch1 = toupper(*str1);
-		char ch2 = toupper(*str2);
+		char ch1 = (char)toupper(*str1);
+		char ch2 = (char)toupper(*str2);
 
 		if (ch1 < ch2)
 			return -1;
@@ -154,8 +154,8 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 		str2 = wstrblank;
 
 	do {
-		wchar_t ch1 = towupper(*str1);
-		wchar_t ch2 = towupper(*str2);
+		wchar_t ch1 = (wchar_t)towupper(*str1);
+		wchar_t ch2 = (wchar_t)towupper(*str2);
 
 		if (ch1 < ch2)
 			return -1;
@@ -476,7 +476,7 @@ void dstr_replace(struct dstr *str, const char *find,
 	temp = str->array;
 
 	if (replace_len < find_len) {
-		int count = 0;
+		unsigned long count = 0;
 
 		while ((temp = strstr(temp, find)) != NULL) {
 			char *end = temp+find_len;
@@ -498,7 +498,7 @@ void dstr_replace(struct dstr *str, const char *find,
 			str->len += (replace_len-find_len) * count;
 
 	} else if (replace_len > find_len) {
-		int count = 0;
+		unsigned long count = 0;
 
 		while ((temp = strstr(temp, find)) != NULL) {
 			temp += find_len;
@@ -594,18 +594,4 @@ void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr)
 	} else {
 		dstr_free(dst);
 	}
-}
-
-wchar_t *dstr_to_utf8(const struct dstr *str)
-{
-	wchar_t *out = NULL;
-	size_t len = utf8_to_wchar(str->array, str->len, NULL, 0, 0);
-
-	if (len) {
-		out = bmalloc((len+1) * sizeof(wchar_t));
-		utf8_to_wchar(str->array, str->len, out, len+1, 0);
-		out[len] = 0;
-	}
-
-	return out;
 }

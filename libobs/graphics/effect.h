@@ -56,6 +56,8 @@ struct effect_param {
 	DARRAY(uint8_t) cur_val;
 	DARRAY(uint8_t) default_val;
 
+	effect_t effect;
+
 	/*char *full_name;
 	float scroller_min, scroller_max, scroller_inc, scroller_mul;*/
 };

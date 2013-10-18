@@ -55,10 +55,10 @@ void quat_from_axisang(struct quat *dst, const struct axisang *aa)
 }
 
 struct f4x4 {
-    float ptr[4][4];
+	float ptr[4][4];
 };
 
-void quat_from_matrix(struct quat *dst, const struct matrix3 *m)
+void quat_from_matrix3(struct quat *dst, const struct matrix3 *m)
 {
 	float tr = (m->x.x + m->y.y + m->z.z);
 	float inv_half;

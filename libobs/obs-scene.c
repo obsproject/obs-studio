@@ -64,9 +64,9 @@ static void scene_video_render(void *data)
 	}
 }
 
-static int scene_getsize(void *data)
+static uint32_t scene_getsize(void *data)
 {
-	return -1;
+	return 0;
 }
 
 static bool scene_enum_children(void *data, size_t idx, obs_source_t *child)
@@ -147,7 +147,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	return item;
 }
 
-void obs_sceneitem_remove(obs_sceneitem_t item)
+void obs_sceneitem_destroy(obs_sceneitem_t item)
 {
 	if (item) {
 		da_erase_item(item->parent->items, item);

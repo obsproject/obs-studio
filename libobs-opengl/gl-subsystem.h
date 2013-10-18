@@ -279,6 +279,7 @@ struct shader_param {
 	enum shader_param_type type;
 
 	char                 *name;
+	shader_t             shader;
 	GLint                param;
 	GLint                texture_id;
 	size_t               sampler_id;

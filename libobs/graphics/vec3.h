@@ -128,9 +128,9 @@ static inline void vec3_cross(struct vec3 *dst, const struct vec3 *v1,
 
 static inline void vec3_neg(struct vec3 *dst, const struct vec3 *v)
 {
-	dst->x = -dst->x;
-	dst->y = -dst->y;
-	dst->z = -dst->z;
+	dst->x = -v->x;
+	dst->y = -v->y;
+	dst->z = -v->z;
 }
 
 static inline float vec3_len(const struct vec3 *v)

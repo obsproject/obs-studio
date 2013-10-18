@@ -33,13 +33,18 @@
  */
 
 #define ALIGNMENT 16
+
+#if defined(_WIN32) && !defined(_WIN64)
+#define ALIGNED_MALLOC 1
+#elif !defined(__LP64__)
 #define ALIGNMENT_HACK 1
+#endif
 
 static void *a_malloc(size_t size)
 {
-#ifdef _WIN32
+#ifdef ALIGNED_MALLOC
 	return _aligned_malloc(size, ALIGNMENT);
-#else 
+#elif ALIGNMENT_HACK
 	void *ptr = NULL;
 	long diff;
 
@@ -49,14 +54,16 @@ static void *a_malloc(size_t size)
 	((char *)ptr)[-1] = (char)diff;
 
 	return ptr;
+#else
+	return malloc(size);
 #endif
 }
 
 static void *a_realloc(void *ptr, size_t size)
 {
-#ifdef _WIN32
+#ifdef ALIGNED_MALLOC
 	return _aligned_realloc(ptr, size, ALIGNMENT);
-#else
+#elif ALIGNMENT_HACK
 	long diff;
 
 	if (!ptr)
@@ -66,16 +73,20 @@ static void *a_realloc(void *ptr, size_t size)
 	if (ptr)
 		ptr = (char *)ptr + diff;
 	return ptr;
+#else
+	return realloc(ptr, size);
 #endif
 }
 
 static void a_free(void *ptr)
 {
-#ifdef _WIN32
+#ifdef ALIGNED_MALLOC
 	_aligned_free(ptr);
-#else
+#elif ALIGNMENT_HACK
 	if (ptr)
 		free((char *)ptr - ((char*)ptr)[-1]);
+#else
+	free(ptr);
 #endif
 }
 

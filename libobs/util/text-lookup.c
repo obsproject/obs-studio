@@ -117,7 +117,7 @@ static void lookup_createsubnode(const char *lookup_val,
 	new->leaf = leaf;
 	dstr_copy(&new->str, lookup_val);
 
-	darray_push_back(sizeof(struct text_node*), &new->subnodes, &new);
+	darray_push_back(sizeof(struct text_node*), &node->subnodes, &new);
 }
 
 static void lookup_splitnode(const char *lookup_val, size_t len,
@@ -197,7 +197,8 @@ static void lookup_getstringtoken(struct lexer *lex, struct strref *token)
 		++temp;
 	}
 
-	token->len += temp - lex->offset - 1; /* include starting " char */
+	/* include starting " char */
+	token->len += (size_t)(temp - lex->offset - 1);
 	lex->offset = temp;
 }
 

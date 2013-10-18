@@ -232,7 +232,7 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 	ID3D11RasterizerState *state;
 
 	memset(&rd, 0, sizeof(rd));
-	/* use CCW to convert to for a right-handed coordinate system */
+	/* use CCW to convert to a right-handed coordinate system */
 	rd.FrontCounterClockwise = true;
 	rd.FillMode              = D3D11_FILL_SOLID;
 	rd.CullMode              = ConvertGSCullMode(rasterState.cullMode);

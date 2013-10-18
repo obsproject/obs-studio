@@ -76,12 +76,12 @@
  *           + SOURCE_ASYNC: video is sent asynchronously via RAM
  *
  * ---------------------------------------------------------
- *   int [name]_getwidth(void *data);
+ *   uint32_t [name]_getwidth(void *data);
  *       Returns the width of a source, or -1 for maximum width.  If you render
  *       video, this is required.
  *
  * ---------------------------------------------------------
- *   int [name]_getheight(void *data);
+ *   uint32_t [name]_getheight(void *data);
  *       Returns the height of a source, or -1 for maximum height.  If you
  *       render video, this is required.
  *
@@ -170,8 +170,8 @@ struct source_info {
 
 	void (*video_tick)(void *data, float seconds);
 	void (*video_render)(void *data);
-	int (*getwidth)(void *data);
-	int (*getheight)(void *data);
+	uint32_t (*getwidth)(void *data);
+	uint32_t (*getheight)(void *data);
 
 	size_t (*getparam)(void *data, const char *param, void *data_out,
 			size_t buf_size);

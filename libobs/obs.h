@@ -182,7 +182,7 @@ EXPORT void obs_source_destroy(obs_source_t source);
  *   SOURCE_ASYNC if the video is asynchronous.
  *   SOURCE_AUDIO if it presents/modifies audio (always async)
  */
-EXPORT uint32_t obs_source_get_obs_output_flags(obs_source_t source);
+EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
 
 /** Specifies whether the source can be configured */
 EXPORT bool obs_source_hasconfig(obs_source_t source);
@@ -194,10 +194,10 @@ EXPORT void obs_source_config(obs_source_t source, void *parent);
 EXPORT void obs_source_video_render(obs_source_t source);
 
 /** Gets the width of a source (if it has video) */
-EXPORT int obs_source_getwidth(obs_source_t source);
+EXPORT uint32_t obs_source_getwidth(obs_source_t source);
 
 /** Gets the height of a source (if it has video) */
-EXPORT int obs_source_getheight(obs_source_t source);
+EXPORT uint32_t obs_source_getheight(obs_source_t source);
 
 /**
  * Gets a custom parameter from the source.

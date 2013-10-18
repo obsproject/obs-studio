@@ -32,6 +32,11 @@ struct gl_parser_attrib {
 	bool        input;
 };
 
+static inline void gl_parser_attrib_init(struct gl_parser_attrib *attr)
+{
+	memset(attr, 0, sizeof(struct gl_parser_attrib));
+}
+
 static inline void gl_parser_attrib_free(struct gl_parser_attrib *attr)
 {
 	dstr_free(&attr->name);

@@ -27,7 +27,7 @@ struct gs_texture_render {
 	texture_t  target, prev_target;
 	zstencil_t zs, prev_zs;
 
-	int cx, cy;
+	uint32_t cx, cy;
 
 	enum gs_color_format    format;
 	enum gs_zstencil_format zsformat;
@@ -57,7 +57,8 @@ void texrender_destroy(texrender_t texrender)
 	}
 }
 
-static bool texrender_resetbuffer(texrender_t texrender, int cx, int cy)
+static bool texrender_resetbuffer(texrender_t texrender, uint32_t cx,
+		uint32_t cy)
 {
 	texture_destroy(texrender->target);
 	zstencil_destroy(texrender->zs);
@@ -85,14 +86,14 @@ static bool texrender_resetbuffer(texrender_t texrender, int cx, int cy)
 	return true;
 }
 
-bool texrender_begin(texrender_t texrender, int cx, int cy)
+bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy)
 {
 	if (texrender->rendered)
 		return false;
 
-	if (cx == -1)
+	if (cx == 0)
 		cx = gs_getwidth();
-	if (cy == -1)
+	if (cy == 0)
 		cy = gs_getheight();
 
 	assert(cx && cy);

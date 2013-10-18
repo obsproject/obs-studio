@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "vec2.h"
 #include "vec3.h"
+#include "math-defs.h"
 #include "math-extra.h"
 
 void polar_to_cart(struct vec3 *dst, const struct vec3 *v)
@@ -70,7 +71,7 @@ float calc_torquef(float val1, float val2, float torque, float min_adjust,
 	float dist;
 	bool  over;
 
-	if (val1 == val2)
+	if (close_float(val1, val2, EPSILON))
 		return val1;
 
 	dist = (val2-val1)*torque;

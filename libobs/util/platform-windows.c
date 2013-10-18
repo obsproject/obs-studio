@@ -21,8 +21,6 @@
      distribution.
 ******************************************************************************/
 
-#ifdef _WIN32
-
 #include <windows.h>
 #include "base.h"
 #include "platform.h"
@@ -163,7 +161,5 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 
 	return true;
 }
-
-#endif
 
 #endif

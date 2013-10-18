@@ -84,11 +84,11 @@ off_t os_fgetsize(FILE *file)
 
 size_t os_fread_mbs(FILE *file, char **pstr)
 {
-	off_t size = 0;
+	size_t size = 0;
 	size_t len = 0;
 
 	fseeko(file, 0, SEEK_END);
-	size = ftello(file);
+	size = (size_t)ftello(file);
 
 	if (size > 0) {
 		char *mbstr = bmalloc(size+1);
@@ -107,11 +107,11 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 
 size_t os_fread_utf8(FILE *file, char **pstr)
 {
-	off_t size = 0;
+	size_t size = 0;
 	size_t len = 0;
 
 	fseeko(file, 0, SEEK_END);
-	size = ftello(file);
+	size = (size_t)ftello(file);
 
 	if (size > 0) {
 		char bom[3];
@@ -244,7 +244,7 @@ size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char **pstr)
 
 size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char **pstr)
 {
-	size_t in_len = wcslen(str);
+	size_t in_len = (len != 0) ? len : wcslen(str);
 	size_t out_len = wchar_to_utf8(str, in_len, NULL, 0, 0);
 	char *dst = NULL;
 

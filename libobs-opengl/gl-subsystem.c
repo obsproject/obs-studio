@@ -265,7 +265,7 @@ static bool load_sampler_on_textures(device_t device, samplerstate_t ss,
 		struct shader_param *param = shader->params.array+i;
 
 		if (param->type == SHADER_PARAM_TEXTURE &&
-		    param->sampler_id == sampler_unit &&
+		    param->sampler_id == (uint32_t)sampler_unit &&
 		    param->texture) {
 			if (!gl_active_texture(GL_TEXTURE0 + param->texture_id))
 				return false;

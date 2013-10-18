@@ -43,6 +43,8 @@ extern "C" {
  *       See DARRAY macro at the bottom of thhe file for slightly safer usage.
  */
 
+#define DARRAY_INVALID ((size_t)-1)
+
 struct darray {
 	void *array;
 	size_t num;
@@ -186,7 +188,7 @@ static inline size_t darray_find(const size_t element_size,
 			return i;
 	}
 
-	return -1;
+	return DARRAY_INVALID;
 }
 
 static inline size_t darray_push_back(const size_t element_size,
@@ -322,7 +324,7 @@ static inline void darray_erase_item(const size_t element_size,
 		struct darray *dst, const void *item)
 {
 	size_t idx = darray_find(element_size, dst, item, 0);
-	if (idx != (size_t)-1)
+	if (idx != DARRAY_INVALID)
 		darray_erase(element_size, dst, idx);
 }
 

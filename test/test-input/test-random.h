@@ -17,8 +17,8 @@ EXPORT uint32_t random_get_output_flags(struct random_tex *rt);
 
 EXPORT void random_video_render(struct random_tex *rt, obs_source_t filter_target);
 
-EXPORT int random_getwidth(struct random_tex *rt);
-EXPORT int random_getheight(struct random_tex *rt);
+EXPORT uint32_t random_getwidth(struct random_tex *rt);
+EXPORT uint32_t random_getheight(struct random_tex *rt);
 
 #ifdef __cplusplus
 }

@@ -55,6 +55,7 @@ zstencil_t device_create_zstencil(device_t device, uint32_t width,
 	memset(zs, 0, sizeof(struct gs_zstencil_buffer));
 	zs->format     = convert_zstencil_format(format);
 	zs->attachment = get_attachment(format);
+	zs->device     = device;
 
 	if (!gl_init_zsbuffer(zs, width, height)) {
 		blog(LOG_ERROR, "device_create_zstencil (GL) failed");

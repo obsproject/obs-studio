@@ -110,7 +110,7 @@ void shader_sampler_convert(struct shader_sampler *ss,
 		else if (astrcmpi(state, "AddressW") == 0)
 			info->address_w = get_address_mode(value);
 		else if (astrcmpi(state, "MaxAnisotropy") == 0)
-			info->max_anisotropy = strtol(value, NULL, 10);
+			info->max_anisotropy = (int)strtol(value, NULL, 10);
 		/*else if (astrcmpi(state, "BorderColor") == 0)
 			// TODO */
 	}
@@ -319,7 +319,7 @@ static inline int sp_check_for_keyword(struct shader_parser *sp,
 }
 
 static inline int sp_parse_func_param(struct shader_parser *sp,
-		struct shader_func *func, struct shader_var *var)
+		struct shader_var *var)
 {
 	int errcode;
 	bool is_uniform = false;
@@ -380,7 +380,7 @@ static bool sp_parse_func_params(struct shader_parser *sp,
 		if (!token_is(&sp->cfp, "(") && !token_is(&sp->cfp, ","))
 			cf_adderror_syntax_error(&sp->cfp);
 
-		errcode = sp_parse_func_param(sp, func, &var);
+		errcode = sp_parse_func_param(sp, &var);
 		if (errcode != PARSE_SUCCESS) {
 			shader_var_free(&var);
 
@@ -453,7 +453,7 @@ static bool sp_parse_param_array(struct shader_parser *sp,
 		    sp->cfp.cur_token->str.len))
 		return false;
 
-	param->array_count = strtol(sp->cfp.cur_token->str.array, NULL, 10);
+	param->array_count =(int)strtol(sp->cfp.cur_token->str.array, NULL, 10);
 
 	if (next_token_should_be(&sp->cfp, "]", ";", NULL) == PARSE_EOF)
 		return false;

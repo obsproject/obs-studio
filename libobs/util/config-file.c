@@ -172,7 +172,8 @@ static void config_parse_section(struct config_section *section,
 	}
 }
 
-static int config_parse(struct darray *sections, const char *file)
+static int config_parse(struct darray *sections, const char *file,
+		bool always_open)
 {
 	char *file_data;
 	struct lexer lex;
@@ -181,6 +182,8 @@ static int config_parse(struct darray *sections, const char *file)
 	FILE *f;
 
 	f = os_fopen(file, "rb");
+	if (always_open && !f)
+		f = os_fopen(file, "w+");
 	if (!f)
 		return CONFIG_FILENOTFOUND;
 
@@ -238,7 +241,7 @@ int config_open(config_t *config, const char *file, bool always_open)
 
 	*config = bmalloc(sizeof(struct config_data));
 	memset(*config, 0, sizeof(struct config_data));
-	errorcode = config_parse(&(*config)->sections, file);
+	errorcode = config_parse(&(*config)->sections, file, always_open);
 
 	if (errorcode != CONFIG_SUCCESS) {
 		config_close(*config);
@@ -253,7 +256,7 @@ int config_open_defaults(config_t config, const char *file)
 	if (!config)
 		return CONFIG_ERROR;
 
-	return config_parse(&config->defaults, file);
+	return config_parse(&config->defaults, file, false);
 }
 
 int config_save(config_t config)

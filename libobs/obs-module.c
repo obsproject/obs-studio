@@ -41,7 +41,7 @@ void *load_module_subfunc(void *module, const char *module_name,
 	return func_addr;
 }
 
-static void module_load_exports(struct obs_data *obs, struct obs_module *mod,
+static void module_load_exports(struct obs_module *mod,
 		struct darray *output_array, const char *type,
 		const size_t data_size, void *callback_ptr)
 {
@@ -94,13 +94,13 @@ int obs_load_module(const char *path)
 	}
 
 	mod.name = bstrdup(path);
-	module_load_exports(obs, &mod, &obs->input_types.da, "inputs",
+	module_load_exports(&mod, &obs->input_types.da, "inputs",
 			sizeof(struct source_info), get_source_info);
-	module_load_exports(obs, &mod, &obs->filter_types.da, "filters",
+	module_load_exports(&mod, &obs->filter_types.da, "filters",
 			sizeof(struct source_info), get_source_info);
-	module_load_exports(obs, &mod, &obs->transition_types.da, "transitions",
+	module_load_exports(&mod, &obs->transition_types.da, "transitions",
 			sizeof(struct source_info), get_source_info);
-	module_load_exports(obs, &mod, &obs->output_types.da, "outputs",
+	module_load_exports(&mod, &obs->output_types.da, "outputs",
 			sizeof(struct output_info), get_output_info);
 
 	da_push_back(obs->modules, &mod);

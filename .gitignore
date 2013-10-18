@@ -8,6 +8,7 @@ Debug/
 x64/
 ipch/
 
+.depend
 tags
 *.swp
 *.dat

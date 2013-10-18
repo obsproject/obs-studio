@@ -42,17 +42,21 @@ static inline void render_displays(void)
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
 
-	gs_ortho(0.0f, (float)obs->output_width,
-	         0.0f, (float)obs->output_height,
-	         -100.0f, 100.0f);
 
 	for (i = 0; i < obs->displays.num; i++) {
+		uint32_t cx, cy;
 		obs_display_t display = obs->displays.array[i];
 
 		gs_load_swapchain(display->swap);
 
+		cx = gs_getwidth();
+		cy = gs_getheight();
+
+
 		gs_beginscene();
-		gs_setviewport(0, 0, gs_getwidth(), gs_getheight());
+		gs_setviewport(0, 0, (int)cx, (int)cy);
+		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+		gs_setviewport(0, 0, obs->output_width, obs->output_height);
 
 		if (display->source)
 			obs_source_video_render(display->source);
@@ -71,7 +75,10 @@ static inline void render_displays(void)
 	gs_enable_blending(false);
 	gs_setcullmode(GS_NEITHER);
 
-	gs_setviewport(0, 0, gs_getwidth(), gs_getheight());
+	gs_ortho(0.0f, (float)obs->output_width,
+	         0.0f, (float)obs->output_height,
+	         -100.0f, 100.0f);
+	gs_setviewport(0, 0, obs->output_width, obs->output_height);
 
 	if (obs->primary_source)
 		obs_source_video_render(obs->primary_source);
@@ -113,7 +120,6 @@ static bool swap_frame(uint64_t timestamp)
 
 void *obs_video_thread(void *param)
 {
-	struct obs_data *obs = param;
 	uint64_t last_time = 0;
 
 	while (video_output_wait(obs->video)) {
