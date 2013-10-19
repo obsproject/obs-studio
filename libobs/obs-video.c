@@ -36,38 +36,17 @@ static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 	*last_time = cur_time;
 }
 
-static inline void render_displays(void)
+static inline void render_display(struct obs_display *display)
 {
-	size_t i;
 	struct vec4 clear_color;
-	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
+	uint32_t width, height;
 
+	gs_load_swapchain(display ? display->swap : NULL);
 
-	for (i = 0; i < obs->displays.num; i++) {
-		uint32_t cx, cy;
-		obs_display_t display = obs->displays.array[i];
-
-		gs_load_swapchain(display->swap);
-
-		cx = gs_getwidth();
-		cy = gs_getheight();
-
-
-		gs_beginscene();
-		gs_setviewport(0, 0, (int)cx, (int)cy);
-		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
-		gs_setviewport(0, 0, obs->output_width, obs->output_height);
-
-		if (display->source)
-			obs_source_video_render(display->source);
-
-		gs_endscene();
-		gs_present();
-	}
-
-	gs_load_swapchain(NULL);
+	gs_getsize(&width, &height);
 
 	gs_beginscene();
+	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
 	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
 			&clear_color, 1.0f, 0);
 
@@ -75,16 +54,31 @@ static inline void render_displays(void)
 	gs_enable_blending(false);
 	gs_setcullmode(GS_NEITHER);
 
-	gs_ortho(0.0f, (float)obs->output_width,
-	         0.0f, (float)obs->output_height,
-	         -100.0f, 100.0f);
-	gs_setviewport(0, 0, obs->output_width, obs->output_height);
+	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+	gs_setviewport(0, 0, width, height);
 
 	if (obs->primary_source)
 		obs_source_video_render(obs->primary_source);
 
 	gs_endscene();
 	gs_present();
+}
+
+static inline void render_displays(void)
+{
+	size_t i;
+
+	pthread_mutex_lock(&obs->display_list_mutex);
+
+	for (i = 0; i < obs->displays.num; i++) {
+		struct obs_display *display = obs->displays.array[i];
+
+		render_display(display);
+	}
+
+	pthread_mutex_unlock(&obs->display_list_mutex);
+
+	render_display(NULL);
 }
 
 static bool swap_frame(uint64_t timestamp)

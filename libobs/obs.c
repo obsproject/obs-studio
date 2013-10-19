@@ -64,7 +64,9 @@ static bool obs_init_media(struct video_info *vi, struct audio_info *ai)
 
 static bool obs_init_threading(void)
 {
-	if (pthread_mutex_init(&obs->source_mutex, NULL) != 0)
+	if (pthread_mutex_init(&obs->source_list_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&obs->display_list_mutex, NULL) != 0)
 		return false;
 	if (pthread_create(&obs->video_thread, NULL, obs_video_thread,
 				obs) != 0)
@@ -78,12 +80,11 @@ static bool obs_init(const char *graphics_module,
 		struct gs_init_data *graphics_data,
 		struct video_info *vi, struct audio_info *ai)
 {
-	pthread_mutex_t pthread_init_val = PTHREAD_MUTEX_INITIALIZER;
-
 	obs = bmalloc(sizeof(struct obs_data));
 
 	memset(obs, 0, sizeof(struct obs_data));
-	obs->source_mutex = pthread_init_val;
+	pthread_mutex_init_value(&obs->source_list_mutex);
+	pthread_mutex_init_value(&obs->display_list_mutex);
 
 	if (!obs_init_graphics(graphics_module, graphics_data, vi))
 		return false;
@@ -127,7 +128,8 @@ static inline void obs_free_threading(void)
 	video_output_stop(obs->video);
 	if (obs->thread_initialized)
 		pthread_join(obs->video_thread, &thread_ret);
-	pthread_mutex_destroy(&obs->source_mutex);
+	pthread_mutex_destroy(&obs->source_list_mutex);
+	pthread_mutex_destroy(&obs->display_list_mutex);
 }
 
 static void obs_destroy(void)

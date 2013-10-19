@@ -110,11 +110,10 @@ int gs_create(graphics_t *pgraphics, const char *module,
 		struct gs_init_data *data)
 {
 	int errcode = GS_ERROR_FAIL;
-	pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
 
 	graphics_t graphics = bmalloc(sizeof(struct graphics_subsystem));
 	memset(graphics, 0, sizeof(struct graphics_subsystem));
-	graphics->mutex = mutex_init;
+	pthread_mutex_init_value(&graphics->mutex);
 
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {

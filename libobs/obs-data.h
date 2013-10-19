@@ -62,17 +62,18 @@ struct obs_data {
 	/* TODO: sound output stuff */
 
 	/* media */
-	media_t    media;
-	video_t    video;
-	audio_t    audio;
+	media_t  media;
+	video_t  video;
+	audio_t  audio;
 
 	uint32_t output_width;
 	uint32_t output_height;
 
 	/* threading */
 	pthread_t       video_thread;
-	pthread_mutex_t source_mutex;
 	bool            thread_initialized;
+	pthread_mutex_t source_list_mutex;
+	pthread_mutex_t display_list_mutex;
 
 	obs_source_t primary_source;
 };

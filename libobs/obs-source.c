@@ -84,7 +84,10 @@ void obs_source_init(struct obs_source *source)
 
 	dstr_init(&source->settings);
 	da_init(source->filters);
+
+	pthread_mutex_lock(&obs->source_list_mutex);
 	da_push_back(obs->sources, &source);
+	pthread_mutex_unlock(&obs->source_list_mutex);
 }
 
 obs_source_t obs_source_create(enum obs_source_type type, const char *name,
@@ -125,9 +128,11 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 void obs_source_destroy(obs_source_t source)
 {
 	if (source) {
-		da_free(source->filters);
+		pthread_mutex_lock(&obs->source_list_mutex);
 		da_erase_item(obs->sources, &source);
+		pthread_mutex_unlock(&obs->source_list_mutex);
 
+		da_free(source->filters);
 		source->callbacks.destroy(source->data);
 		dstr_free(&source->settings);
 		bfree(source);
