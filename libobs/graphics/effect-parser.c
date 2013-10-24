@@ -1351,8 +1351,8 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		dstr_cat(&location, " (Vertex ");
 	else if (type == SHADER_PIXEL)
 		dstr_cat(&location, " (Pixel ");
-	else if (type == SHADER_GEOMETRY)
-		dstr_cat(&location, " (Geometry ");
+	/*else if (type == SHADER_GEOMETRY)
+		dstr_cat(&location, " (Geometry ");*/
 
 	dstr_catf(&location, "shader, technique %s, pass %u)", tech->name,
 			pass_idx);

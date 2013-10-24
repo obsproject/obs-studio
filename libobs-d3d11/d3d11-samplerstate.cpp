@@ -22,19 +22,19 @@ static inline D3D11_TEXTURE_ADDRESS_MODE ConvertGSAddressMode(
 		gs_address_mode mode)
 {
 	switch (mode) {
-	default:
 	case GS_ADDRESS_WRAP:       return D3D11_TEXTURE_ADDRESS_WRAP;
 	case GS_ADDRESS_CLAMP:      return D3D11_TEXTURE_ADDRESS_CLAMP;
 	case GS_ADDRESS_MIRROR:     return D3D11_TEXTURE_ADDRESS_MIRROR;
 	case GS_ADDRESS_BORDER:     return D3D11_TEXTURE_ADDRESS_BORDER;
 	case GS_ADDRESS_MIRRORONCE: return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
 	}
+
+	return D3D11_TEXTURE_ADDRESS_WRAP;
 }
 
 static inline D3D11_FILTER ConvertGSFilter( gs_sample_filter filter)
 {
 	switch (filter) {
-	default:
 	case GS_FILTER_POINT:
 		return D3D11_FILTER_MIN_MAG_MIP_POINT;
 	case GS_FILTER_LINEAR:
@@ -54,6 +54,8 @@ static inline D3D11_FILTER ConvertGSFilter( gs_sample_filter filter)
 	case GS_FILTER_ANISOTROPIC:
 		return D3D11_FILTER_ANISOTROPIC;
 	}
+
+	return D3D11_FILTER_MIN_MAG_MIP_POINT;
 }
 
 gs_sampler_state::gs_sampler_state(device_t device, gs_sampler_info *info)

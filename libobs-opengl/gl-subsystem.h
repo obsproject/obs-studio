@@ -53,8 +53,10 @@ static inline GLint convert_gs_format(enum gs_color_format format)
 	case GS_DXT1:        return GL_RGB;
 	case GS_DXT3:        return GL_RGBA;
 	case GS_DXT5:        return GL_RGBA;
-	default:             return 0;
+	case GS_UNKNOWN:     return 0;
 	}
+
+	return 0;
 }
 
 static inline GLint convert_gs_internal_format(enum gs_color_format format)
@@ -77,8 +79,10 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	case GS_DXT1:        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	case GS_DXT3:        return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 	case GS_DXT5:        return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-	default:             return 0;
+	case GS_UNKNOWN:     return 0;
 	}
+
+	return 0;
 }
 
 static inline GLenum get_gl_format_type(enum gs_color_format format)
@@ -101,8 +105,10 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_DXT1:        return GL_UNSIGNED_BYTE;
 	case GS_DXT3:        return GL_UNSIGNED_BYTE;
 	case GS_DXT5:        return GL_UNSIGNED_BYTE;
-	default:             return 0;
+	case GS_UNKNOWN:     return 0;
 	}
+
+	return GL_UNSIGNED_BYTE;
 }
 
 static inline GLenum convert_zstencil_format(enum gs_zstencil_format format)
@@ -112,14 +118,15 @@ static inline GLenum convert_zstencil_format(enum gs_zstencil_format format)
 	case GS_Z24_S8:      return GL_DEPTH24_STENCIL8;
 	case GS_Z32F:        return GL_DEPTH_COMPONENT32F;
 	case GS_Z32F_S8X24:  return GL_DEPTH32F_STENCIL8;
-	default:             return 0;
+	case GS_ZS_NONE:     return 0;
 	}
+
+	return 0;
 }
 
 static inline GLenum convert_gs_depth_test(enum gs_depth_test test)
 {
 	switch (test) {
-	default:
 	case GS_NEVER:    return GL_NEVER;
 	case GS_LESS:     return GL_LESS;
 	case GS_LEQUAL:   return GL_LEQUAL;
@@ -129,12 +136,13 @@ static inline GLenum convert_gs_depth_test(enum gs_depth_test test)
 	case GS_NOTEQUAL: return GL_NOTEQUAL;
 	case GS_ALWAYS:   return GL_ALWAYS;
 	}
+
+	return GL_NEVER;
 }
 
 static inline GLenum convert_gs_stencil_op(enum gs_stencil_op op)
 {
 	switch (op) {
-	default:
 	case GS_KEEP:    return GL_KEEP;
 	case GS_ZERO:    return GL_ZERO;
 	case GS_REPLACE: return GL_REPLACE;
@@ -142,22 +150,24 @@ static inline GLenum convert_gs_stencil_op(enum gs_stencil_op op)
 	case GS_DECR:    return GL_DECR;
 	case GS_INVERT:  return GL_INVERT;
 	}
+
+	return GL_KEEP;
 }
 
 static inline GLenum convert_gs_stencil_side(enum gs_stencil_side side)
 {
 	switch (side) {
-	default:
 	case GS_STENCIL_FRONT: return GL_FRONT;
 	case GS_STENCIL_BACK:  return GL_BACK;
 	case GS_STENCIL_BOTH:  return GL_FRONT_AND_BACK;
 	}
+
+	return GL_FRONT;
 }
 
 static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
 {
 	switch (type) {
-	default:
 	case GS_BLEND_ZERO:        return GL_ZERO;
 	case GS_BLEND_ONE:         return GL_ONE;
 	case GS_BLEND_SRCCOLOR:    return GL_SRC_COLOR;
@@ -170,83 +180,90 @@ static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
 	case GS_BLEND_INVDSTALPHA: return GL_ONE_MINUS_DST_ALPHA;
 	case GS_BLEND_SRCALPHASAT: return GL_SRC_ALPHA_SATURATE;
 	}
+
+	return GL_ONE;
 }
 
 static inline GLenum convert_shader_type(enum shader_type type)
 {
 	switch (type) {
-	default:
 	case SHADER_VERTEX: return GL_VERTEX_SHADER;
 	case SHADER_PIXEL:  return GL_FRAGMENT_SHADER;
 	}
+
+	return GL_VERTEX_SHADER;
 }
 
 static inline void convert_filter(enum gs_sample_filter filter,
 		GLint *min_filter, GLint *mag_filter)
 {
 	switch (filter) {
-	default:
 	case GS_FILTER_POINT:
 		*min_filter = GL_NEAREST_MIPMAP_NEAREST;
 		*mag_filter = GL_NEAREST;
-		break;
+		return;
 	case GS_FILTER_LINEAR:
 		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
 		*mag_filter = GL_LINEAR;
-		break;
+		return;
 	case GS_FILTER_MIN_MAG_POINT_MIP_LINEAR:
 		*min_filter = GL_NEAREST_MIPMAP_LINEAR;
 		*mag_filter = GL_NEAREST;
-		break;
+		return;
 	case GS_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
 		*min_filter = GL_NEAREST_MIPMAP_NEAREST;
 		*mag_filter = GL_LINEAR;
-		break;
+		return;
 	case GS_FILTER_MIN_POINT_MAG_MIP_LINEAR:
 		*min_filter = GL_NEAREST_MIPMAP_LINEAR;
 		*mag_filter = GL_LINEAR;
-		break;
+		return;
 	case GS_FILTER_MIN_LINEAR_MAG_MIP_POINT:
 		*min_filter = GL_LINEAR_MIPMAP_NEAREST;
 		*mag_filter = GL_NEAREST;
-		break;
+		return;
 	case GS_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
 		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
 		*mag_filter = GL_NEAREST;
-		break;
+		return;
 	case GS_FILTER_MIN_MAG_LINEAR_MIP_POINT:
 		*min_filter = GL_LINEAR_MIPMAP_NEAREST;
 		*mag_filter = GL_LINEAR;
-		break;
+		return;
 	case GS_FILTER_ANISOTROPIC:
 		*min_filter = GL_LINEAR_MIPMAP_LINEAR;
 		*mag_filter = GL_LINEAR;
-		break;
+		return;
 	}
+
+	*min_filter = GL_NEAREST_MIPMAP_NEAREST;
+	*mag_filter = GL_NEAREST;
 }
 
 static inline GLint convert_address_mode(enum gs_address_mode mode)
 {
 	switch (mode) {
-	default:
 	case GS_ADDRESS_WRAP:       return GL_REPEAT;
 	case GS_ADDRESS_CLAMP:      return GL_CLAMP_TO_EDGE;
 	case GS_ADDRESS_MIRROR:     return GL_MIRRORED_REPEAT;
 	case GS_ADDRESS_BORDER:     return GL_CLAMP_TO_BORDER;
 	case GS_ADDRESS_MIRRORONCE: return GL_MIRROR_CLAMP_EXT;
 	}
+
+	return GL_REPEAT;
 }
 
 static inline GLenum convert_gs_topology(enum gs_draw_mode mode)
 {
 	switch (mode) {
-	default:
 	case GS_POINTS:    return GL_POINTS;
 	case GS_LINES:     return GL_LINES;
 	case GS_LINESTRIP: return GL_LINE_STRIP;
 	case GS_TRIS:      return GL_TRIANGLES;
 	case GS_TRISTRIP:  return GL_TRIANGLE_STRIP;
 	}
+
+	return GL_POINTS;
 }
 
 extern void convert_sampler_info(struct gs_sampler_state *sampler,

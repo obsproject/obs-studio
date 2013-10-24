@@ -86,9 +86,10 @@ static inline uint32_t get_audio_channels(enum speaker_setup speakers)
 	case SPEAKERS_5POINT1_SURROUND: return 6;
 	case SPEAKERS_7POINT1:          return 8;
 	case SPEAKERS_7POINT1_SURROUND: return 8;
-	default:
 	case SPEAKERS_UNKNOWN:          return 0;
 	}
+
+	return 0;
 }
 
 static inline size_t get_audio_bytes_per_channel(enum audio_type type)
@@ -99,9 +100,10 @@ static inline size_t get_audio_bytes_per_channel(enum audio_type type)
 	case AUDIO_FORMAT_24BIT:   return 3;
 	case AUDIO_FORMAT_FLOAT:
 	case AUDIO_FORMAT_32BIT:   return 4;
-	default:
 	case AUDIO_FORMAT_UNKNOWN: return 0;
 	}
+
+	return 0;
 }
 
 static inline size_t get_audio_size(enum audio_type type,

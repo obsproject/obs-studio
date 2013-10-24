@@ -497,7 +497,7 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 	if (!matching_shader(shader, param))
 		return;
 
-	switch (param->type) {
+	switch ((uint32_t)param->type) {
 	case SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
 	case SHADER_PARAM_BOOL:
 	case SHADER_PARAM_INT:       expected_size = sizeof(int); break;

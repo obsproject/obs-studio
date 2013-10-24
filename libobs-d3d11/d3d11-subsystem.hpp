@@ -76,8 +76,9 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 	case GS_DXT1:        return DXGI_FORMAT_BC1_UNORM;
 	case GS_DXT3:        return DXGI_FORMAT_BC2_UNORM;
 	case GS_DXT5:        return DXGI_FORMAT_BC3_UNORM;
-	default:             return DXGI_FORMAT_UNKNOWN;
 	}
+
+	return DXGI_FORMAT_UNKNOWN;
 }
 
 static inline DXGI_FORMAT ConvertGSZStencilFormat(gs_zstencil_format format)
@@ -87,14 +88,14 @@ static inline DXGI_FORMAT ConvertGSZStencilFormat(gs_zstencil_format format)
 	case GS_Z24_S8:      return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	case GS_Z32F:        return DXGI_FORMAT_D32_FLOAT;
 	case GS_Z32F_S8X24:  return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-	default:             return DXGI_FORMAT_UNKNOWN;
 	}
+
+	return DXGI_FORMAT_UNKNOWN;
 }
 
 static inline D3D11_COMPARISON_FUNC ConvertGSDepthTest(gs_depth_test test)
 {
 	switch (test) {
-	default:
 	case GS_NEVER:    return D3D11_COMPARISON_NEVER;
 	case GS_LESS:     return D3D11_COMPARISON_LESS;
 	case GS_LEQUAL:   return D3D11_COMPARISON_LESS_EQUAL;
@@ -104,12 +105,13 @@ static inline D3D11_COMPARISON_FUNC ConvertGSDepthTest(gs_depth_test test)
 	case GS_NOTEQUAL: return D3D11_COMPARISON_NOT_EQUAL;
 	case GS_ALWAYS:   return D3D11_COMPARISON_ALWAYS;
 	}
+
+	return D3D11_COMPARISON_NEVER;
 }
 
 static inline D3D11_STENCIL_OP ConvertGSStencilOp(gs_stencil_op op)
 {
 	switch (op) {
-	default:
 	case GS_KEEP:    return D3D11_STENCIL_OP_KEEP;
 	case GS_ZERO:    return D3D11_STENCIL_OP_ZERO;
 	case GS_REPLACE: return D3D11_STENCIL_OP_REPLACE;
@@ -117,12 +119,13 @@ static inline D3D11_STENCIL_OP ConvertGSStencilOp(gs_stencil_op op)
 	case GS_DECR:    return D3D11_STENCIL_OP_DECR;
 	case GS_INVERT:  return D3D11_STENCIL_OP_INVERT;
 	}
+
+	return D3D11_STENCIL_OP_KEEP;
 }
 
 static inline D3D11_BLEND ConvertGSBlendType(gs_blend_type type)
 {
 	switch (type) {
-	default:
 	case GS_BLEND_ZERO:        return D3D11_BLEND_ZERO;
 	case GS_BLEND_ONE:         return D3D11_BLEND_ONE;
 	case GS_BLEND_SRCCOLOR:    return D3D11_BLEND_SRC_COLOR;
@@ -135,28 +138,32 @@ static inline D3D11_BLEND ConvertGSBlendType(gs_blend_type type)
 	case GS_BLEND_INVDSTALPHA: return D3D11_BLEND_INV_DEST_ALPHA;
 	case GS_BLEND_SRCALPHASAT: return D3D11_BLEND_SRC_ALPHA_SAT;
 	}
+
+	return D3D11_BLEND_ONE;
 }
 
 static inline D3D11_CULL_MODE ConvertGSCullMode(gs_cull_mode mode)
 {
 	switch (mode) {
-	default:
 	case GS_BACK:    return D3D11_CULL_BACK;
 	case GS_FRONT:   return D3D11_CULL_FRONT;
 	case GS_NEITHER: return D3D11_CULL_NONE;
 	}
+
+	return D3D11_CULL_BACK;
 }
 
 static inline D3D11_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 {
 	switch (mode) {
-	default:
 	case GS_POINTS:    return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 	case GS_LINES:     return D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	case GS_LINESTRIP: return D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 	case GS_TRIS:      return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	case GS_TRISTRIP:  return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 	}
+
+	return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 }
 
 /* exception-safe RAII wrapper for vertex buffer data (NOTE: not copy-safe) */

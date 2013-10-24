@@ -287,7 +287,6 @@ struct shader_param_info {
 enum shader_type {
 	SHADER_VERTEX,
 	SHADER_PIXEL,
-	SHADER_GEOMETRY
 };
 
 EXPORT void shader_destroy(shader_t shader);
@@ -681,9 +680,10 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_DXT1:        return 4;
 	case GS_DXT3:        return 8;
 	case GS_DXT5:        return 8;
-	default:
 	case GS_UNKNOWN:     return 0;
 	}
+
+	return 0;
 }
 
 static inline bool gs_is_compressed_format(enum gs_color_format format)

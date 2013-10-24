@@ -42,8 +42,10 @@ static inline GLenum get_attachment(enum gs_zstencil_format format)
 	case GS_Z24_S8:      return GL_DEPTH_STENCIL_ATTACHMENT;
 	case GS_Z32F:        return GL_DEPTH_ATTACHMENT;
 	case GS_Z32F_S8X24:  return GL_DEPTH_STENCIL_ATTACHMENT;
-	default:             return 0;
+	case GS_ZS_NONE:     return 0;
 	}
+
+	return 0;
 }
 
 zstencil_t device_create_zstencil(device_t device, uint32_t width,
