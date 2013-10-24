@@ -14,7 +14,7 @@ What's the goal of rewriting OBS?
    necessary for user interface.  It also means allowing the use of OpenGL as
    well as Direct3D.
 
- - Separate the application from the core, allowing custom appliction of
+ - Separate the application from the core, allowing custom application of
    the core if desired, and easier extending of the user interface.
 
  - Simplify complex systems to not only make it easier to use, but easier to

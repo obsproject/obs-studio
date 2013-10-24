@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/platform.h"
+
 #include "obs.h"
 #include "obs-data.h"
 
@@ -77,17 +79,39 @@ static inline const struct source_info *find_source(struct darray *list,
 	return NULL;
 }
 
-void obs_source_init(struct obs_source *source)
+bool obs_source_init(struct obs_source *source, const char *settings,
+		const struct source_info *info)
 {
-	source->filter_target    = NULL;
-	source->rendering_filter = false;
+	uint32_t flags = info->get_output_flags(source->data);
 
-	dstr_init(&source->settings);
-	da_init(source->filters);
+	pthread_mutex_init_value(&source->filter_mutex);
+	pthread_mutex_init_value(&source->video_mutex);
+	pthread_mutex_init_value(&source->audio_mutex);
+	dstr_copy(&source->settings, settings);
+	memcpy(&source->callbacks, info, sizeof(struct source_info));
 
+	if (pthread_mutex_init(&source->filter_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->video_mutex, NULL) != 0)
+		return false;
+
+	if (flags & SOURCE_AUDIO) {
+		source->audio_line = audio_output_createline(obs->audio);
+		if (!source->audio_line) {
+			blog(LOG_ERROR, "Failed to create audio line for "
+			                "source");
+			return false;
+		}
+	}
+
+	source->valid = true;
 	pthread_mutex_lock(&obs->source_list_mutex);
 	da_push_back(obs->sources, &source);
 	pthread_mutex_unlock(&obs->source_list_mutex);
+
+	return true;
 }
 
 obs_source_t obs_source_create(enum obs_source_type type, const char *name,
@@ -113,27 +137,57 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 	}
 
 	source = bmalloc(sizeof(struct obs_source));
-	source->data = info->create(settings, source);
-	if (!source->data) {
-		bfree(source);
-		return NULL;
-	}
+	memset(source, 0, sizeof(struct obs_source));
 
-	obs_source_init(source);
-	dstr_copy(&source->settings, settings);
-	memcpy(&source->callbacks, info, sizeof(struct source_info));
+	source->data = info->create(settings, source);
+	if (!source->data)
+		goto fail;
+
+	if (!obs_source_init(source, settings, info))
+		goto fail;
+
 	return source;
+
+fail:
+	blog(LOG_ERROR, "obs_source_create failed");
+	obs_source_destroy(source);
+	return NULL;
 }
 
 void obs_source_destroy(obs_source_t source)
 {
 	if (source) {
-		pthread_mutex_lock(&obs->source_list_mutex);
-		da_erase_item(obs->sources, &source);
-		pthread_mutex_unlock(&obs->source_list_mutex);
+		size_t i;
+		if (source->filter_parent)
+			obs_source_filter_remove(source->filter_parent, source);
+
+		for (i = 0; i < source->filters.num; i++)
+			obs_source_destroy(source->filters.array[i]);
+
+		if (source->valid) {
+			pthread_mutex_lock(&obs->source_list_mutex);
+			da_erase_item(obs->sources, &source);
+			pthread_mutex_unlock(&obs->source_list_mutex);
+		}
+
+		for (i = 0; i < source->audio_buffer.num; i++)
+			audiobuf_free(source->audio_buffer.array+i);
+		for (i = 0; i < source->video_frames.num; i++)
+			source_frame_destroy(source->video_frames.array[i]);
+
+		gs_entercontext(obs->graphics);
+		texture_destroy(source->output_texture);
+		gs_leavecontext();
 
 		da_free(source->filters);
-		source->callbacks.destroy(source->data);
+		if (source->data)
+			source->callbacks.destroy(source->data);
+
+		audio_line_destroy(source->audio_line);
+
+		pthread_mutex_destroy(&source->filter_mutex);
+		pthread_mutex_destroy(&source->audio_mutex);
+		pthread_mutex_destroy(&source->video_mutex);
 		dstr_free(&source->settings);
 		bfree(source);
 	}
@@ -173,6 +227,74 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 		source->callbacks.video_tick(source->data, seconds);
 }
 
+#define MAX_VARIANCE 2000000000ULL
+
+static void source_output_audio_line(obs_source_t source,
+		const struct audio_data *data)
+{
+	struct audio_data in = *data;
+
+	if (!in.timestamp) {
+		in.timestamp = os_gettime_ns();
+		if (!source->timing_set) {
+			source->timing_set    = true;
+			source->timing_adjust = 0;
+		}
+	}
+
+	if (!source->timing_set) {
+		source->timing_set    = true;
+		source->timing_adjust = in.timestamp - os_gettime_ns();
+
+		/* detects 'directly' set timestamps as long as they're within
+		 * a certain threashold */
+		if ((source->timing_adjust+MAX_VARIANCE) < MAX_VARIANCE*2)
+			source->timing_adjust = 0;
+	}
+
+	in.timestamp += source->timing_adjust;
+	audio_line_output(source->audio_line, &in);
+}
+
+static void obs_source_flush_audio_buffer(obs_source_t source)
+{
+	size_t i;
+
+	pthread_mutex_lock(&source->audio_mutex);
+	source->timing_set = true;
+
+	for (i = 0; i < source->audio_buffer.num; i++) {
+		struct audiobuf *buf = source->audio_buffer.array+i;
+		struct audio_data data;
+
+		data.data      = buf->data;
+		data.frames    = buf->frames;
+		data.timestamp = buf->timestamp + source->timing_adjust;
+		audio_line_output(source->audio_line, &data);
+		audiobuf_free(buf);
+	}
+
+	da_free(source->audio_buffer);
+	pthread_mutex_unlock(&source->audio_mutex);
+}
+
+static void obs_source_render_async_video(obs_source_t source)
+{
+	struct source_frame *frame = obs_source_getframe(source);
+	if (!frame)
+		return;
+
+	source->timing_adjust = frame->timestamp - os_gettime_ns();
+	if (!source->timing_set && source->audio_buffer.num)
+		obs_source_flush_audio_buffer(source);
+
+	if (!source->output_texture) {
+		/* TODO */
+	}
+
+	obs_source_releaseframe(source, frame);
+}
+
 void obs_source_video_render(obs_source_t source)
 {
 	if (source->callbacks.video_render) {
@@ -183,6 +305,12 @@ void obs_source_video_render(obs_source_t source)
 		} else {
 			source->callbacks.video_render(source->data);
 		}
+
+	} else if (source->filter_target) {
+		obs_source_video_render(source->filter_target);
+
+	} else {
+		obs_source_render_async_video(source);
 	}
 }
 
@@ -231,6 +359,8 @@ obs_source_t obs_filter_gettarget(obs_source_t filter)
 
 void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 {
+	pthread_mutex_lock(&source->filter_mutex);
+
 	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
 		                  "present on the source");
@@ -243,12 +373,20 @@ void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 	}
 
 	da_push_back(source->filters, &filter);
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	filter->filter_parent = source;
 	filter->filter_target = source;
 }
 
 void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 {
-	size_t idx = da_find(source->filters, &filter, 0);
+	size_t idx;
+
+	pthread_mutex_lock(&source->filter_mutex);
+
+	idx = da_find(source->filters, &filter, 0);
 	if (idx == DARRAY_INVALID)
 		return;
 
@@ -258,6 +396,10 @@ void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 	}
 
 	da_erase(source->filters, idx);
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	filter->filter_parent = NULL;
 	filter->filter_target = NULL;
 }
 
@@ -308,12 +450,112 @@ void obs_source_save_settings(obs_source_t source, const char *settings)
 	dstr_copy(&source->settings, settings);
 }
 
-void obs_source_output_video(obs_source_t source, struct video_frame *frame)
+static inline struct filter_frame *filter_async_video(obs_source_t source,
+		struct filter_frame *in)
 {
-	/* TODO */
+	size_t i;
+	for (i = source->filters.num; i > 0; i--) {
+		struct obs_source *filter = source->filters.array[i-1];
+		if (filter->callbacks.filter_video) {
+			in = filter->callbacks.filter_video(filter->data, in);
+			if (!in)
+				return NULL;
+		}
+	}
+
+	return in;
 }
 
-void obs_source_output_audio(obs_source_t source, struct audio_data *audio)
+static struct filter_frame *process_video(obs_source_t source,
+		const struct source_video *frame)
+{
+	/* TODO: convert to YUV444 or RGB */
+	return NULL;
+}
+
+void obs_source_output_video(obs_source_t source,
+		const struct source_video *frame)
+{
+	struct filter_frame *output;
+
+	output = process_video(source, frame);
+
+	pthread_mutex_lock(&source->filter_mutex);
+	output = filter_async_video(source, output);
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	pthread_mutex_lock(&source->video_mutex);
+	da_push_back(source->video_frames, &output);
+	pthread_mutex_unlock(&source->video_mutex);
+}
+
+static inline const struct audio_data *filter_async_audio(obs_source_t source,
+		const struct audio_data *in)
+{
+	size_t i;
+	for (i = source->filters.num; i > 0; i--) {
+		struct obs_source *filter = source->filters.array[i-1];
+		if (filter->callbacks.filter_audio) {
+			in = filter->callbacks.filter_audio(filter->data, in);
+			if (!in)
+				return NULL;
+		}
+	}
+
+	return in;
+}
+
+static struct audio_data *process_audio(obs_source_t source,
+		const struct source_audio *audio)
+{
+	/* TODO: upmix/downmix/resample */
+	return NULL;
+}
+
+void obs_source_output_audio(obs_source_t source,
+		const struct source_audio *audio)
+{
+	uint32_t flags = obs_source_get_output_flags(source);
+	struct audio_data *data;
+	const struct audio_data *output;
+
+	data = process_audio(source, audio);
+
+	pthread_mutex_lock(&source->filter_mutex);
+	output = filter_async_audio(source, data);
+
+	if (output) {
+		pthread_mutex_lock(&source->audio_mutex);
+
+		if (!source->timing_set && flags & SOURCE_ASYNC_VIDEO) {
+			struct audiobuf newbuf;
+			size_t audio_size = audio_output_blocksize(obs->audio) *
+				output->frames;
+
+			newbuf.data      = bmalloc(audio_size);
+			newbuf.frames    = output->frames;
+			newbuf.timestamp = output->timestamp;
+			memcpy(newbuf.data, output->data, audio_size);
+
+			da_push_back(source->audio_buffer, &newbuf);
+
+		} else {
+			source_output_audio_line(source, output);
+		}
+
+		pthread_mutex_unlock(&source->audio_mutex);
+	}
+
+	pthread_mutex_unlock(&source->filter_mutex);
+}
+
+struct source_frame *obs_source_getframe(obs_source_t source)
+{
+	/* TODO */
+	return NULL;
+}
+
+void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 {
 	/* TODO */
 }

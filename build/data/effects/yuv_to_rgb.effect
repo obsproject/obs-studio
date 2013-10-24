@@ -1,0 +1,37 @@
+uniform float4x4 ViewProj;
+uniform float4x4 yuv_matrix;
+texture2d tex;
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertInOut VSConvert(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(vert_in.pos, ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+float4 PSConvert(VertInOut vert_in)
+{
+	float4 yuv = tex.Sample(def_sampler, vert_in.uv);
+	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));
+}
+
+technique ConvertYUV
+{
+	pass
+	{
+		vertex_shader = VSConvert(vert_in);
+		pixel_shader  = PSConvert(vert_in);
+	}
+}

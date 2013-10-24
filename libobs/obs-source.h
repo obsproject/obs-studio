@@ -20,6 +20,7 @@
 #include "util/c99defs.h"
 #include "util/darray.h"
 #include "util/dstr.h"
+#include "util/threading.h"
 #include "media-io/media-io.h"
 
 /*
@@ -135,16 +136,20 @@
  *       Return value: true if sources remaining, otherwise false.
  *
  * ---------------------------------------------------------
- *   void [name]_filter_video(void *data, struct video_frame *frame);
+ *   struct filter_frame *[name]_filter_video(void *data,
+ *                                     struct filter_frame *frame);
  *       Filters audio data.  Used with audio filters.
  *
  *       frame: Video frame data.
+ *       returns: New video frame data (or NULL if pending)
  *
  * ---------------------------------------------------------
- *   void [name]_filter_audio(void *data, struct audio_data *audio);
+ *   const struct audio_data *[name]_filter_audio(void *data,
+ *                                     const struct audio_data *audio);
  *       Filters video data.  Used with async video data.
  *
  *       audio: Audio data.
+ *       reutrns New audio data (or NULL if pending)
  */
 
 struct obs_source;
@@ -180,24 +185,53 @@ struct source_info {
 
 	bool (*enum_children)(void *data, size_t idx, obs_source_t *child);
 
-	void (*filter_video)(void *data, struct video_frame *frame);
-	void (*filter_audio)(void *data, struct audio_data *audio);
+	struct filter_frame *(*filter_video)(void *data,
+			struct filter_frame *frame);
+	const struct audio_data *(*filter_audio)(void *data,
+			const struct audio_data *audio);
 };
 
-struct obs_source {
-	void                       *data;
-	struct source_info         callbacks;
-	struct dstr                settings;
-	bool                       rendering_filter;
+struct audiobuf {
+	void     *data;
+	uint32_t frames;
+	uint64_t timestamp;
+};
 
-	struct obs_source          *filter_target;
-	DARRAY(struct obs_source*) filters;
+static inline void audiobuf_free(struct audiobuf *buf)
+{
+	bfree(buf->data);
+}
+
+struct obs_source {
+	void                         *data; /* source-specific data */
+	struct source_info           callbacks;
+	struct dstr                  settings;
+	bool                         valid;
+
+	/* async video and audio */
+	bool                         timing_set;
+	uint64_t                     timing_adjust;
+	texture_t                    output_texture;
+
+	audio_line_t                 audio_line;
+	DARRAY(struct audiobuf)      audio_buffer;
+	DARRAY(struct source_frame*) video_frames;
+	pthread_mutex_t              audio_mutex;
+	pthread_mutex_t              video_mutex;
+
+	/* filters */
+	struct obs_source            *filter_parent;
+	struct obs_source            *filter_target;
+	DARRAY(struct obs_source*)   filters;
+	pthread_mutex_t              filter_mutex;
+	bool                         rendering_filter;
 };
 
 extern bool get_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info);
 
-extern void obs_source_init(struct obs_source *source);
+extern bool obs_source_init(struct obs_source *source, const char *settings,
+		const struct source_info *info);
 
 extern void obs_source_activate(obs_source_t source);
 extern void obs_source_deactivate(obs_source_t source);

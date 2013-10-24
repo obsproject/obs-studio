@@ -22,6 +22,6 @@
 #define MODULE_FILENOTFOUND     -2
 #define MODULE_FUNCTIONNOTFOUND -3
 
-#define SOURCE_VIDEO (1<<0)
-#define SOURCE_AUDIO (1<<1)
-#define SOURCE_ASYNC (1<<2)
+#define SOURCE_VIDEO          (1<<0)
+#define SOURCE_AUDIO          (1<<1)
+#define SOURCE_ASYNC_VIDEO    (1<<2)

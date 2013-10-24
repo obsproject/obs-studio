@@ -30,7 +30,9 @@ extern "C" {
  */
 
 struct audio_output;
+struct audio_line;
 typedef struct audio_output *audio_t;
+typedef struct audio_line   *audio_line_t;
 
 enum audio_type {
 	AUDIO_FORMAT_UNKNOWN,
@@ -56,11 +58,8 @@ enum speaker_setup {
 };
 
 struct audio_data {
-	void            *data;
+	const void      *data;
 	uint32_t        frames;
-	uint32_t        speakers;
-	uint32_t        samples_per_sec;
-	enum audio_type type;
 	uint64_t        timestamp;
 };
 
@@ -68,11 +67,50 @@ struct audio_info {
 	const char         *name;
 	const char         *format;
 
-	uint32_t           channels;
 	uint32_t           samples_per_sec;
 	enum audio_type    type;
 	enum speaker_setup speakers;
 };
+
+
+static inline uint32_t get_audio_channels(enum speaker_setup speakers)
+{
+	switch (speakers) {
+	case SPEAKERS_MONO:             return 1;
+	case SPEAKERS_STEREO:           return 2;
+	case SPEAKERS_2POINT1:          return 3;
+	case SPEAKERS_SURROUND:
+	case SPEAKERS_QUAD:             return 4;
+	case SPEAKERS_4POINT1:          return 5;
+	case SPEAKERS_5POINT1:
+	case SPEAKERS_5POINT1_SURROUND: return 6;
+	case SPEAKERS_7POINT1:          return 8;
+	case SPEAKERS_7POINT1_SURROUND: return 8;
+	default:
+	case SPEAKERS_UNKNOWN:          return 0;
+	}
+}
+
+static inline size_t get_audio_bytes_per_channel(enum audio_type type)
+{
+	switch (type) {
+	case AUDIO_FORMAT_8BIT:    return 1;
+	case AUDIO_FORMAT_16BIT:   return 2;
+	case AUDIO_FORMAT_24BIT:   return 3;
+	case AUDIO_FORMAT_FLOAT:
+	case AUDIO_FORMAT_32BIT:   return 4;
+	default:
+	case AUDIO_FORMAT_UNKNOWN: return 0;
+	}
+}
+
+static inline size_t get_audio_size(enum audio_type type,
+		enum speaker_setup speakers, uint32_t frames)
+{
+	return get_audio_channels(speakers) *
+	       get_audio_bytes_per_channel(type) *
+	       frames;
+}
 
 #define AUDIO_OUTPUT_SUCCESS       0
 #define AUDIO_OUTPUT_INVALIDPARAM -1
@@ -80,8 +118,13 @@ struct audio_info {
 
 EXPORT int audio_output_open(audio_t *audio, media_t media,
 		struct audio_info *info);
-EXPORT void audio_output_data(audio_t audio, struct audio_data *data);
+EXPORT audio_line_t audio_output_createline(audio_t audio);
+EXPORT size_t audio_output_blocksize(audio_t audio);
+EXPORT const struct audio_info *audio_output_getinfo(audio_t audio);
 EXPORT void audio_output_close(audio_t audio);
+
+EXPORT void audio_line_destroy(audio_line_t line);
+EXPORT void audio_line_output(audio_line_t line, const struct audio_data *data);
 
 #ifdef __cplusplus
 }

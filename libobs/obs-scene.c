@@ -41,7 +41,7 @@ static void scene_destroy(void *data)
 
 static uint32_t scene_get_output_flags(void *data)
 {
-	return SOURCE_VIDEO | SOURCE_AUDIO;
+	return SOURCE_VIDEO;
 }
 
 static void scene_video_render(void *data)
@@ -111,6 +111,8 @@ obs_scene_t obs_scene_create(void)
 	struct obs_source *source = bmalloc(sizeof(struct obs_source));
 	struct obs_scene  *scene  = scene_create(NULL, source);
 
+	memset(source, 0, sizeof(struct obs_source));
+
 	source->data = scene;
 	if (!source->data) {
 		bfree(source);
@@ -118,7 +120,7 @@ obs_scene_t obs_scene_create(void)
 	}
 
 	scene->source = source;
-	obs_source_init(source);
+	obs_source_init(source, NULL, &scene_info);
 	memcpy(&source->callbacks, &scene_info, sizeof(struct source_info));
 	return scene;
 }

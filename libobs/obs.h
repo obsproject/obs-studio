@@ -39,12 +39,57 @@ enum obs_source_type {
 	SOURCE_SCENE
 };
 
+/* used for changing the order of items (for example, filters in a source,
+ * or items in a scene */
 enum order_movement {
 	ORDER_MOVE_UP,
 	ORDER_MOVE_DOWN,
 	ORDER_MOVE_TOP,
 	ORDER_MOVE_BOTTOM
 };
+
+struct source_audio {
+	const void         *data;
+	uint32_t           frames;
+
+	/* audio will be automatically resampled/upmixed/downmixed */
+	enum speaker_setup speakers;
+	enum audio_type    type;
+	uint32_t           samples_per_sec;
+
+	/* can be 0 if 'immediate' */
+	uint64_t           timestamp;
+};
+
+struct source_video {
+	const void         *data;
+	uint32_t           width;
+	uint32_t           height;
+	uint32_t           row_bytes;
+	uint64_t           timestamp;
+
+	enum video_type    type;
+	float              yuv_matrix[16];
+};
+
+struct source_frame {
+	void               *data;
+	uint32_t           width;
+	uint32_t           height;
+	uint32_t           row_bytes;
+	uint64_t           timestamp;
+
+	bool               yuv;
+	float              yuv_matrix[16];
+};
+
+static inline void source_frame_destroy(struct source_frame *frame)
+{
+	if (frame) {
+		bfree(frame->data);
+		bfree(frame);
+	}
+}
 
 /* opaque types */
 struct obs_display;
@@ -63,7 +108,7 @@ typedef struct obs_output     *obs_output_t;
 /* OBS context */
 
 /**
- * Creates the OBS context.
+ * Starts up and shuts down OBS
  *
  *   Using the graphics module specified, creates an OBS context and sets the
  * primary video/audio output information.
@@ -214,9 +259,8 @@ EXPORT size_t obs_source_getparam(obs_source_t source, const char *param,
  */
 EXPORT void obs_source_setparam(obs_source_t source, const char *param,
 		const void *data, size_t size);
-/**
- * Enumerates child sources this source has
- */
+
+/** Enumerates child sources this source has */
 EXPORT bool obs_source_enum_children(obs_source_t source, size_t idx,
 		obs_source_t *child);
 
@@ -243,12 +287,19 @@ EXPORT const char *obs_source_get_settings(obs_source_t source);
 EXPORT void obs_source_save_settings(obs_source_t source, const char *settings);
 
 /** Outputs asynchronous video data */
-EXPORT void obs_source_obs_output_video(obs_source_t source,
-		struct video_frame *frame);
+EXPORT void obs_source_obs_async_video(obs_source_t source,
+		const struct video_frame *frame);
 
 /** Outputs audio data (always asynchronous) */
-EXPORT void obs_source_obs_output_audio(obs_source_t source,
-		struct audio_data *audio);
+EXPORT void obs_source_obs_async_audio(obs_source_t source,
+		const struct source_audio *audio);
+
+/** Gets the current async video frame */
+EXPORT struct source_frame *obs_source_getframe(obs_source_t source);
+
+/** Relases the current async frame */
+EXPORT void obs_source_releaseframe(obs_source_t source,
+		struct source_frame *frame);
 
 
 /* ------------------------------------------------------------------------- */
