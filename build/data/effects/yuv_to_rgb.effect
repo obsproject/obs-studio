@@ -21,7 +21,7 @@ VertInOut VSConvert(VertInOut vert_in)
 	return vert_out;
 }
 
-float4 PSConvert(VertInOut vert_in)
+float4 PSConvert(VertInOut vert_in) : TARGET
 {
 	float4 yuv = tex.Sample(def_sampler, vert_in.uv);
 	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));

@@ -40,7 +40,7 @@ enum obs_source_type {
 };
 
 /* used for changing the order of items (for example, filters in a source,
- * or items in a scene */
+ * or items in a scene) */
 enum order_movement {
 	ORDER_MOVE_UP,
 	ORDER_MOVE_DOWN,
@@ -297,7 +297,7 @@ EXPORT void obs_source_obs_async_audio(obs_source_t source,
 /** Gets the current async video frame */
 EXPORT struct source_frame *obs_source_getframe(obs_source_t source);
 
-/** Relases the current async frame */
+/** Releases the current async video frame */
 EXPORT void obs_source_releaseframe(obs_source_t source,
 		struct source_frame *frame);
 
