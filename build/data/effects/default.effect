@@ -13,7 +13,7 @@ struct VertInOut {
 	float2 uv  : TEXCOORD0;
 };
 
-VertInOut VSConvert(VertInOut vert_in)
+VertInOut VSDefault(VertInOut vert_in)
 {
 	VertInOut vert_out;
 	vert_out.pos = mul(vert_in.pos, ViewProj);
@@ -21,17 +21,31 @@ VertInOut VSConvert(VertInOut vert_in)
 	return vert_out;
 }
 
-float4 PSConvert(VertInOut vert_in) : TARGET
+float4 DrawRGB(VertInOut vert_in) : TARGET
+{
+	return tex.Sample(def_sampler, vert_in.uv);
+}
+
+float4 DrawYUVToRGB(VertInOut vert_in) : TARGET
 {
 	float4 yuv = tex.Sample(def_sampler, vert_in.uv);
 	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));
+}
+
+technique DrawRGB
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = DrawRGB(vert_in);
+	}
 }
 
 technique ConvertYUV
 {
 	pass
 	{
-		vertex_shader = VSConvert(vert_in);
-		pixel_shader  = PSConvert(vert_in);
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = DrawYUVToRGB(vert_in);
 	}
 }
