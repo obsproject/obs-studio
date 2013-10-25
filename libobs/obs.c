@@ -25,6 +25,7 @@ static bool obs_init_graphics(const char *graphics_module,
 		struct gs_init_data *graphics_data, struct video_info *vi)
 {
 	int errorcode;
+	bool success = true;
 	size_t i;
 
 	errorcode = gs_create(&obs->graphics, graphics_module, graphics_data);
@@ -41,11 +42,18 @@ static bool obs_init_graphics(const char *graphics_module,
 		obs->copy_surfaces[i] = gs_create_stagesurface(vi->width,
 				vi->height, graphics_data->format);
 		if (!obs->copy_surfaces[i])
-			return false;
+			success = false;
+	}
+
+	if (success) {
+		obs->default_effect = gs_create_effect_from_file(
+				"build/data/default.effect", NULL);
+		if (!obs->default_effect)
+			success = false;
 	}
 
 	gs_leavecontext();
-	return true;
+	return success;
 }
 
 static bool obs_init_media(struct video_info *vi, struct audio_info *ai)

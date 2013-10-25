@@ -366,8 +366,6 @@ EXPORT eparam_t effect_getworldmatrix(effect_t effect);
 EXPORT void effect_setbool(effect_t effect, eparam_t param, bool val);
 EXPORT void effect_setfloat(effect_t effect, eparam_t param, float val);
 EXPORT void effect_setint(effect_t effect, eparam_t param, int val);
-EXPORT void effect_setmatrix3(effect_t effect, eparam_t param,
-		const struct matrix3 *val);
 EXPORT void effect_setmatrix4(effect_t effect, eparam_t param,
 		const struct matrix4 *val);
 EXPORT void effect_setvec2(effect_t effect, eparam_t param,
@@ -377,7 +375,7 @@ EXPORT void effect_setvec3(effect_t effect, eparam_t param,
 EXPORT void effect_setvec4(effect_t effect, eparam_t param,
 		const struct vec4 *val);
 EXPORT void effect_settexture(effect_t effect, eparam_t param, texture_t val);
-EXPORT void effect_setval(effect_t shader, eparam_t param, const void *val,
+EXPORT void effect_setval(effect_t effect, eparam_t param, const void *val,
 		size_t size);
 EXPORT void effect_setdefault(effect_t effect, eparam_t param);
 
@@ -498,9 +496,9 @@ EXPORT void gs_viewport_push(void);
 EXPORT void gs_viewport_pop(void);
 
 EXPORT void texture_setimage(texture_t tex, const void *data,
-		uint32_t byte_width);
+		uint32_t row_bytes, bool invert);
 EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
-		const void *data, uint32_t byte_width);
+		const void *data, uint32_t row_bytes, bool invert);
 
 EXPORT void gs_perspective(float fovy, float aspect, float znear, float zfar);
 
@@ -623,7 +621,7 @@ EXPORT void     texture_destroy(texture_t tex);
 EXPORT uint32_t texture_getwidth(texture_t tex);
 EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *byte_width);
+EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
 EXPORT void     texture_unmap(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
@@ -641,7 +639,7 @@ EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
 EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
 EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width);
+		uint32_t *row_bytes);
 EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
 
 EXPORT void     zstencil_destroy(zstencil_t zstencil);

@@ -21,12 +21,12 @@ VertInOut VSDefault(VertInOut vert_in)
 	return vert_out;
 }
 
-float4 DrawRGB(VertInOut vert_in) : TARGET
+float4 PSDrawRGB(VertInOut vert_in) : TARGET
 {
 	return tex.Sample(def_sampler, vert_in.uv);
 }
 
-float4 DrawYUVToRGB(VertInOut vert_in) : TARGET
+float4 PSDrawYUVToRGB(VertInOut vert_in) : TARGET
 {
 	float4 yuv = tex.Sample(def_sampler, vert_in.uv);
 	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));
@@ -37,15 +37,15 @@ technique DrawRGB
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = DrawRGB(vert_in);
+		pixel_shader  = PSDrawRGB(vert_in);
 	}
 }
 
-technique ConvertYUV
+technique DrawYUVToRGB
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = DrawYUVToRGB(vert_in);
+		pixel_shader  = PSDrawYUVToRGB(vert_in);
 	}
 }

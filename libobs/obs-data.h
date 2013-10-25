@@ -55,6 +55,7 @@ struct obs_data {
 	/* graphics */
 	graphics_t  graphics;
 	stagesurf_t copy_surfaces[NUM_TEXTURES];
+	effect_t    default_effect;
 	bool        textures_copied[NUM_TEXTURES];
 	bool        copy_mapped;
 	int         cur_texture;

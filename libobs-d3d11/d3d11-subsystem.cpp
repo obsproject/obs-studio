@@ -1438,7 +1438,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return static_cast<gs_texture_2d*>(tex)->format;
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
+bool texture_map(texture_t tex, void **ptr, uint32_t *row_bytes)
 {
 	HRESULT hr;
 
@@ -1454,7 +1454,7 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 		return false;
 
 	*ptr = map.pData;
-	*byte_width = map.RowPitch;
+	*row_bytes = map.RowPitch;
 	return true;
 }
 
@@ -1543,7 +1543,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 }
 
 bool stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width)
+		uint32_t *row_bytes)
 {
 	D3D11_MAPPED_SUBRESOURCE map;
 	if (FAILED(stagesurf->device->context->Map(stagesurf->texture, 0,
@@ -1551,7 +1551,7 @@ bool stagesurface_map(stagesurf_t stagesurf, const void **data,
 		return false;
 
 	*data = map.pData;
-	*byte_width = map.RowPitch;
+	*row_bytes = map.RowPitch;
 	return true;
 }
 

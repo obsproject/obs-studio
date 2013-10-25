@@ -34,6 +34,7 @@ SRCFILES=util/bmem.c \
 	 media-io/video-io.c \
 	 media-io/audio-io.c \
 	 media-io/media-io.c \
+	 media-io/format-conversion.c \
 	 obs-module.c \
 	 obs-output.c \
 	 obs-source.c \

@@ -722,13 +722,39 @@ void gs_viewport_pop(void)
 	da_pop_back(thread_graphics->viewport_stack);
 }
 
-void texture_setimage(texture_t tex, const void *data, uint32_t byte_width)
+void texture_setimage(texture_t tex, const void *data, uint32_t row_bytes,
+		bool flip)
 {
-	/* TODO */
+	void *ptr;
+	uint32_t row_bytes_out;
+	uint32_t row_copy;
+	int32_t height = (int32_t)texture_getheight(tex);
+	int32_t y;
+
+	if (!texture_map(tex, &ptr, &row_bytes_out))
+		return;
+
+	row_copy = (row_bytes < row_bytes_out) ? row_bytes : row_bytes_out;
+
+	if (flip) {
+		for (y = height-1; y >= 0; y--)
+			memcpy((uint8_t*)ptr  + (uint32_t)y * row_bytes_out,
+			       (uint8_t*)data + (uint32_t)y * row_bytes,
+			       row_copy);
+
+	} else if (row_bytes == row_bytes_out) {
+		memcpy(ptr, data, row_copy * height);
+
+	} else {
+		for (y = 0; y < height; y++)
+			memcpy((uint8_t*)ptr  + (uint32_t)y * row_bytes_out,
+			       (uint8_t*)data + (uint32_t)y * row_bytes,
+			       row_copy);
+	}
 }
 
 void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
-		uint32_t byte_width)
+		uint32_t row_bytes, bool invert)
 {
 	/* TODO */
 }
@@ -1347,10 +1373,10 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return graphics->exports.texture_getcolorformat(tex);
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
+bool texture_map(texture_t tex, void **ptr, uint32_t *row_bytes)
 {
 	graphics_t graphics = thread_graphics;
-	return graphics->exports.texture_map(tex, ptr, byte_width);
+	return graphics->exports.texture_map(tex, ptr, row_bytes);
 }
 
 void texture_unmap(texture_t tex)
@@ -1432,10 +1458,10 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 }
 
 bool stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width)
+		uint32_t *row_bytes)
 {
 	graphics_t graphics = thread_graphics;
-	return graphics->exports.stagesurface_map(stagesurf, data, byte_width);
+	return graphics->exports.stagesurface_map(stagesurf, data, row_bytes);
 }
 
 void stagesurface_unmap(stagesurf_t stagesurf)

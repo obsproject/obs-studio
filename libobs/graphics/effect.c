@@ -282,12 +282,6 @@ void effect_setint(effect_t effect, eparam_t param, int val)
 	effect_setval_inline(effect, param, &val, sizeof(int));
 }
 
-void effect_setmatrix3(effect_t effect, eparam_t param,
-		const struct matrix3 *val)
-{
-	effect_setval_inline(effect, param, val, sizeof(struct matrix3));
-}
-
 void effect_setmatrix4(effect_t effect, eparam_t param,
 		const struct matrix4 *val)
 {

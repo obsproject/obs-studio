@@ -162,7 +162,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return tex->format;
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
+bool texture_map(texture_t tex, void **ptr, uint32_t *row_bytes)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 
@@ -183,8 +183,8 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *byte_width)
 
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-	*byte_width = tex2d->width * gs_get_format_bpp(tex->format) / 8;
-	*byte_width = (*byte_width + 3) & 0xFFFFFFFC;
+	*row_bytes = tex2d->width * gs_get_format_bpp(tex->format) / 8;
+	*row_bytes = (*row_bytes + 3) & 0xFFFFFFFC;
 	return true;
 
 fail:

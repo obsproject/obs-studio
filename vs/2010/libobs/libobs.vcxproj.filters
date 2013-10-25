@@ -25,10 +25,6 @@
       <UniqueIdentifier>{c90a618f-1096-41f5-9ce5-f2f78d978983}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="media-io\Soruce Files">
-      <UniqueIdentifier>{21a99cbb-e167-4baf-82ae-47d23dc12c7d}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="graphics\Header Files">
       <UniqueIdentifier>{b7228a18-6051-4cab-b53b-ff299eb969c0}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
@@ -48,6 +44,10 @@
     <Filter Include="libobs\Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="media-io\Source Files">
+      <UniqueIdentifier>{21a99cbb-e167-4baf-82ae-47d23dc12c7d}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +177,9 @@
     <ClInclude Include="..\..\..\libobs\graphics\effect-parser.h">
       <Filter>graphics\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\media-io\format-conversion.h">
+      <Filter>media-io\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -198,13 +201,13 @@
       <Filter>libobs\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c">
-      <Filter>media-io\Soruce Files</Filter>
+      <Filter>media-io\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\media-io\audio-io.c">
-      <Filter>media-io\Soruce Files</Filter>
+      <Filter>media-io\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\media-io\media-io.c">
-      <Filter>media-io\Soruce Files</Filter>
+      <Filter>media-io\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\util\config-file.c">
       <Filter>util\Source Files</Filter>
@@ -289,6 +292,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\graphics\texture-render.c">
       <Filter>graphics\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c">
+      <Filter>media-io\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

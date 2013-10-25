@@ -37,6 +37,7 @@
     <ClInclude Include="..\..\..\libobs\graphics\vec3.h" />
     <ClInclude Include="..\..\..\libobs\graphics\vec4.h" />
     <ClInclude Include="..\..\..\libobs\media-io\audio-io.h" />
+    <ClInclude Include="..\..\..\libobs\media-io\format-conversion.h" />
     <ClInclude Include="..\..\..\libobs\media-io\media-io.h" />
     <ClInclude Include="..\..\..\libobs\media-io\video-io.h" />
     <ClInclude Include="..\..\..\libobs\obs-data.h" />
@@ -80,6 +81,7 @@
     <ClCompile Include="..\..\..\libobs\graphics\vec3.c" />
     <ClCompile Include="..\..\..\libobs\graphics\vec4.c" />
     <ClCompile Include="..\..\..\libobs\media-io\audio-io.c" />
+    <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c" />
     <ClCompile Include="..\..\..\libobs\media-io\media-io.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c" />
     <ClCompile Include="..\..\..\libobs\obs-display.c" />

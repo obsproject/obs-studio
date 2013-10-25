@@ -179,7 +179,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 }
 
 bool stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width)
+		uint32_t *row_bytes)
 {
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))
 		goto fail;
@@ -190,7 +190,7 @@ bool stagesurface_map(stagesurf_t stagesurf, const void **data,
 
 	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
 
-	*byte_width = stagesurf->bytes_per_pixel * stagesurf->width;
+	*row_bytes = stagesurf->bytes_per_pixel * stagesurf->width;
 	return true;
 
 fail:

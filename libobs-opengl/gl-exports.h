@@ -127,7 +127,7 @@ EXPORT void     texture_destroy(texture_t tex);
 EXPORT uint32_t texture_getwidth(texture_t tex);
 EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *byte_width);
+EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
 EXPORT void     texture_unmap(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
@@ -145,7 +145,7 @@ EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
 EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
 EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *byte_width);
+		uint32_t *row_bytes);
 EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
 
 EXPORT void zstencil_destroy(zstencil_t zstencil);

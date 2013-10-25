@@ -70,8 +70,10 @@ struct source_video {
 
 	enum video_type    type;
 	float              yuv_matrix[16];
+	bool               flip;
 };
 
+/* differs from source_video in that it's YUV444 or RGB only */
 struct source_frame {
 	void               *data;
 	uint32_t           width;
@@ -81,6 +83,7 @@ struct source_frame {
 
 	bool               yuv;
 	float              yuv_matrix[16];
+	bool               flip;
 };
 
 static inline void source_frame_destroy(struct source_frame *frame)

@@ -179,12 +179,14 @@ void obs_source_destroy(obs_source_t source)
 		texture_destroy(source->output_texture);
 		gs_leavecontext();
 
-		da_free(source->filters);
 		if (source->data)
 			source->callbacks.destroy(source->data);
 
 		audio_line_destroy(source->audio_line);
 
+		da_free(source->video_frames);
+		da_free(source->audio_buffer);
+		da_free(source->filters);
 		pthread_mutex_destroy(&source->filter_mutex);
 		pthread_mutex_destroy(&source->audio_mutex);
 		pthread_mutex_destroy(&source->video_mutex);
@@ -278,6 +280,51 @@ static void obs_source_flush_audio_buffer(obs_source_t source)
 	pthread_mutex_unlock(&source->audio_mutex);
 }
 
+static bool set_texture_size(obs_source_t source, struct source_frame *frame)
+{
+	if (source->output_texture) {
+		uint32_t width  = texture_getwidth(source->output_texture);
+		uint32_t height = texture_getheight(source->output_texture);
+
+		if (width == frame->width && height == frame->height)
+			return true;
+	}
+
+	texture_destroy(source->output_texture);
+	source->output_texture = gs_create_texture(frame->width, frame->height,
+			GS_RGBA, 1, NULL, GS_DYNAMIC);
+
+	return source->output_texture != NULL;
+}
+
+static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
+{
+	effect_t    effect = obs->default_effect;
+	const char  *type = frame->yuv ? "DrawYUVToRGB" : "DrawRGB";
+	technique_t tech;
+	eparam_t param;
+
+	texture_setimage(tex, frame->data, frame->row_bytes, frame->flip);
+
+	tech = effect_gettechnique(effect, type);
+	technique_begin(tech);
+	technique_beginpass(tech, 0);
+
+	if (frame->yuv) {
+		param = effect_getparambyname(effect, "yuv_matrix");
+		effect_setval(effect, param, frame->yuv_matrix,
+				sizeof(float) * 16);
+	}
+
+	param = effect_getparambyname(effect, "diffuse");
+	effect_settexture(effect, param, tex);
+
+	gs_draw_sprite(tex);
+
+	technique_endpass(tech);
+	technique_end(tech);
+}
+
 static void obs_source_render_async_video(obs_source_t source)
 {
 	struct source_frame *frame = obs_source_getframe(source);
@@ -288,9 +335,8 @@ static void obs_source_render_async_video(obs_source_t source)
 	if (!source->timing_set && source->audio_buffer.num)
 		obs_source_flush_audio_buffer(source);
 
-	if (!source->output_texture) {
-		/* TODO */
-	}
+	if (set_texture_size(source, frame))
+		obs_source_draw_texture(source->output_texture, frame);
 
 	obs_source_releaseframe(source, frame);
 }
@@ -469,7 +515,7 @@ static inline struct filter_frame *filter_async_video(obs_source_t source,
 static struct filter_frame *process_video(obs_source_t source,
 		const struct source_video *frame)
 {
-	/* TODO: convert to YUV444 or RGB */
+	/* TODO: convert to UYV444 or RGB */
 	return NULL;
 }
 

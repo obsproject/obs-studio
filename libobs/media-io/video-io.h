@@ -34,18 +34,27 @@ typedef struct video_output *video_t;
 
 enum video_type {
 	VIDEO_FORMAT_UNKNOWN,
-	VIDEO_FORMAT_YUV444,
-	VIDEO_FORMAT_YUV422,
-	VIDEO_FORMAT_YUV420,
+
+	/* planar 420 format */
+	VIDEO_FORMAT_I420, /* planar 4:2:0 */
+	VIDEO_FORMAT_NV12, /* two-plane lum and packed chroma */
+
+	/* packed 422 formats */
+	VIDEO_FORMAT_YVYU,
+	VIDEO_FORMAT_YUY2, /* YUYV */
+	VIDEO_FORMAT_UYVY,
+
+	/* packed uncompressed formats */
+	VIDEO_FORMAT_UYVX, /* packed UYV */
 	VIDEO_FORMAT_RGBA,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,
 };
 
 struct video_frame {
-	const void *data;
-	uint32_t   row_size;
-	uint64_t   timestamp;
+	const void      *data;
+	uint32_t        row_size;  /* for RGB/BGR formats and UYVX */
+	uint64_t        timestamp;
 };
 
 struct video_info {

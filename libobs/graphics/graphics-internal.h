@@ -138,7 +138,7 @@ struct gs_exports {
 	uint32_t (*texture_getheight)(texture_t tex);
 	enum gs_color_format (*texture_getcolorformat)(texture_t tex);
 	bool     (*texture_map)(texture_t tex, void **ptr,
-			uint32_t *byte_width);
+			uint32_t *row_bytes);
 	void     (*texture_unmap)(texture_t tex);
 
 	void     (*cubetexture_destroy)(texture_t cubetex);
@@ -157,7 +157,7 @@ struct gs_exports {
 	enum gs_color_format (*stagesurface_getcolorformat)(
 			stagesurf_t stagesurf);
 	bool     (*stagesurface_map)(stagesurf_t stagesurf, const void **data,
-			uint32_t *byte_width);
+			uint32_t *row_bytes);
 	void     (*stagesurface_unmap)(stagesurf_t stagesurf);
 
 	void (*zstencil_destroy)(zstencil_t zstencil);
