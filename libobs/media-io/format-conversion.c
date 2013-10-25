@@ -175,7 +175,7 @@ void compress_uyvx_to_nv12_aligned(const void *input,
 			start_y, end_y, row_bytes_out, output);
 }
 
-void decompress_i420(const void *input_v, uint32_t width, uint32_t height,
+void decompress_420(const void *input_v, uint32_t width, uint32_t height,
 		uint32_t row_bytes, uint32_t start_y, uint32_t end_y,
 		void *output_v)
 {
@@ -214,7 +214,7 @@ void decompress_i420(const void *input_v, uint32_t width, uint32_t height,
 	}
 }
 
-void decompress_i422(const void *input_v, uint32_t width, uint32_t height,
+void decompress_422(const void *input_v, uint32_t width, uint32_t height,
 		uint32_t row_bytes, uint32_t start_y, uint32_t end_y,
 		void *output_v, bool leading_lum)
 {
