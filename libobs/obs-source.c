@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "media-io\format-conversion.h"
 #include "util/platform.h"
 
 #include "obs.h"
@@ -297,20 +298,111 @@ static bool set_texture_size(obs_source_t source, struct source_frame *frame)
 	return source->output_texture != NULL;
 }
 
+enum convert_type {
+	CONVERT_NONE,
+	CONVERT_NV12,
+	CONVERT_420,
+	CONVERT_422_U,
+	CONVERT_422_Y,
+};
+
+static inline enum convert_type get_convert_type(enum video_type type)
+{
+	switch (type) {
+	case VIDEO_FORMAT_I420:
+		return CONVERT_420;
+	case VIDEO_FORMAT_NV12:
+		return CONVERT_NV12;
+
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+		return CONVERT_422_Y;
+	case VIDEO_FORMAT_UYVY:
+		return CONVERT_422_U;
+
+	case VIDEO_FORMAT_UNKNOWN:
+	case VIDEO_FORMAT_YUVX:
+	case VIDEO_FORMAT_UYVX:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		return CONVERT_NONE;
+	}
+
+	return CONVERT_NONE;
+}
+
+static inline bool is_yuv(enum video_type type)
+{
+	switch (type) {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_YUVX:
+	case VIDEO_FORMAT_UYVX:
+		return true;
+	case VIDEO_FORMAT_UNKNOWN:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		return false;
+	}
+
+	return false;
+}
+
+static bool upload_frame(texture_t tex, const struct source_frame *frame)
+{
+	void *ptr;
+	uint32_t row_bytes;
+	enum convert_type type = get_convert_type(frame->type);
+
+	if (type == CONVERT_NONE) {
+		texture_setimage(tex, frame->data, frame->row_bytes, false);
+		return true;
+	}
+
+	if (!texture_map(tex, &ptr, &row_bytes))
+		return false;
+
+	if (type == CONVERT_420)
+		decompress_420(frame->data, frame->width, frame->height,
+				frame->row_bytes, 0, frame->height, ptr);
+
+	else if (type == CONVERT_NV12)
+		decompress_nv12(frame->data, frame->width, frame->height,
+				frame->row_bytes, 0, frame->height, ptr);
+
+	else if (type == CONVERT_422_Y)
+		decompress_422(frame->data, frame->width, frame->height,
+				frame->row_bytes, 0, frame->height, ptr, true);
+
+	else if (type == CONVERT_422_U)
+		decompress_422(frame->data, frame->width, frame->height,
+				frame->row_bytes, 0, frame->height, ptr, false);
+
+	texture_unmap(tex);
+	return true;
+}
+
 static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->default_effect;
-	const char  *type = frame->yuv ? "DrawYUVToRGB" : "DrawRGB";
+	bool        yuv   = is_yuv(frame->type);
+	const char  *type = yuv ? "DrawYUVToRGB" : "DrawRGB";
 	technique_t tech;
-	eparam_t param;
+	eparam_t    param;
 
-	texture_setimage(tex, frame->data, frame->row_bytes, frame->flip);
+	if (!upload_frame(tex, frame))
+		return;
 
 	tech = effect_gettechnique(effect, type);
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	if (frame->yuv) {
+	if (yuv) {
 		param = effect_getparambyname(effect, "yuv_matrix");
 		effect_setval(effect, param, frame->yuv_matrix,
 				sizeof(float) * 16);
@@ -335,8 +427,10 @@ static void obs_source_render_async_video(obs_source_t source)
 	if (!source->timing_set && source->audio_buffer.num)
 		obs_source_flush_audio_buffer(source);
 
-	if (set_texture_size(source, frame))
+	if (set_texture_size(source, frame)) {
+		source->flip = frame->flip;
 		obs_source_draw_texture(source->output_texture, frame);
+	}
 
 	obs_source_releaseframe(source, frame);
 }
@@ -496,8 +590,8 @@ void obs_source_save_settings(obs_source_t source, const char *settings)
 	dstr_copy(&source->settings, settings);
 }
 
-static inline struct filter_frame *filter_async_video(obs_source_t source,
-		struct filter_frame *in)
+static inline struct source_frame *filter_async_video(obs_source_t source,
+		struct source_frame *in)
 {
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
@@ -512,27 +606,31 @@ static inline struct filter_frame *filter_async_video(obs_source_t source,
 	return in;
 }
 
-static struct filter_frame *process_video(obs_source_t source,
-		const struct source_video *frame)
+static inline struct source_frame *cache_video(obs_source_t source,
+		const struct source_frame *frame)
 {
-	/* TODO: convert to UYV444 or RGB */
-	return NULL;
+	/* TODO: use an actual cache */
+	struct source_frame *new_frame = bmalloc(sizeof(struct source_frame));
+	memcpy(new_frame, frame, sizeof(struct source_frame));
+	new_frame->data = bmalloc(frame->row_bytes * frame->height);
+
+	return new_frame;
 }
 
 void obs_source_output_video(obs_source_t source,
-		const struct source_video *frame)
+		const struct source_frame *frame)
 {
-	struct filter_frame *output;
-
-	output = process_video(source, frame);
+	struct source_frame *output = cache_video(source, frame);
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_video(source, output);
 	pthread_mutex_unlock(&source->filter_mutex);
 
-	pthread_mutex_lock(&source->video_mutex);
-	da_push_back(source->video_frames, &output);
-	pthread_mutex_unlock(&source->video_mutex);
+	if (output) {
+		pthread_mutex_lock(&source->video_mutex);
+		da_push_back(source->video_frames, &output);
+		pthread_mutex_unlock(&source->video_mutex);
+	}
 }
 
 static inline const struct audio_data *filter_async_audio(obs_source_t source,
@@ -595,13 +693,63 @@ void obs_source_output_audio(obs_source_t source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
+/* 
+ * Ensures that cached frames are displayed on time.  If multiple frames
+ * were cached between renders, then releases the unnecessary frames and uses
+ * the frame with the closest timing.
+ */
 struct source_frame *obs_source_getframe(obs_source_t source)
 {
-	/* TODO */
-	return NULL;
+	uint64_t last_frame_time = source->last_frame_timestamp;
+	struct   source_frame *frame = NULL;
+	struct   source_frame *next_frame;
+	uint64_t sys_time, frame_time;
+
+	pthread_mutex_lock(&source->video_mutex);
+
+	if (!source->video_frames.num)
+		goto unlock;
+
+	next_frame = source->video_frames.array[0];
+	sys_time   = os_gettime_ns();
+	frame_time = next_frame->timestamp;
+
+	if (!source->last_frame_timestamp) {
+		frame = next_frame;
+		da_erase(source->video_frames, 0);
+
+		source->last_frame_timestamp = frame_time;
+	} else {
+		uint64_t sys_offset, frame_offset;
+		sys_offset   = sys_time   - source->last_sys_timestamp;
+		frame_offset = frame_time - last_frame_time;
+
+		source->last_frame_timestamp += sys_offset;
+
+		while (frame_offset <= sys_offset) {
+			if (frame)
+				source_frame_destroy(frame);
+
+			frame = next_frame;
+			da_erase(source->video_frames, 0);
+
+			if (!source->video_frames.num)
+				break;
+
+			next_frame   = source->video_frames.array[0];
+			frame_time   = next_frame->timestamp;
+			frame_offset = frame_time - last_frame_time;
+		}
+	}
+
+	source->last_sys_timestamp = sys_time;
+
+unlock:
+	pthread_mutex_unlock(&source->video_mutex);
+	return frame;
 }
 
 void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 {
-	/* TODO */
+	source_frame_destroy(frame);
 }

@@ -136,8 +136,8 @@
  *       Return value: true if sources remaining, otherwise false.
  *
  * ---------------------------------------------------------
- *   struct filter_frame *[name]_filter_video(void *data,
- *                                     struct filter_frame *frame);
+ *   struct source_frame *[name]_filter_video(void *data,
+ *                                     const struct source_frame *frame);
  *       Filters audio data.  Used with audio filters.
  *
  *       frame: Video frame data.
@@ -185,8 +185,8 @@ struct source_info {
 
 	bool (*enum_children)(void *data, size_t idx, obs_source_t *child);
 
-	struct filter_frame *(*filter_video)(void *data,
-			struct filter_frame *frame);
+	struct source_frame *(*filter_video)(void *data,
+			const struct source_frame *frame);
 	const struct audio_data *(*filter_audio)(void *data,
 			const struct audio_data *audio);
 };
@@ -211,7 +211,10 @@ struct obs_source {
 	/* async video and audio */
 	bool                         timing_set;
 	uint64_t                     timing_adjust;
+	uint64_t                     last_frame_timestamp;
+	uint64_t                     last_sys_timestamp;
 	texture_t                    output_texture;
+	bool                         flip;
 
 	audio_line_t                 audio_line;
 	DARRAY(struct audiobuf)      audio_buffer;

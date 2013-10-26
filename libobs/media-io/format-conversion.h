@@ -31,6 +31,10 @@ EXPORT void compress_uyvx_to_nv12(const void *input,
 		uint32_t width, uint32_t height, uint32_t row_bytes,
 		uint32_t start_y, uint32_t end_y, void **output);
 
+EXPORT void decompress_nv12(const void *input,
+		uint32_t width, uint32_t height, uint32_t row_bytes,
+		uint32_t start_y, uint32_t end_y, void *output);
+
 EXPORT void decompress_420(const void *input,
 		uint32_t width, uint32_t height, uint32_t row_bytes,
 		uint32_t start_y, uint32_t end_y, void *output);

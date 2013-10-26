@@ -214,6 +214,42 @@ void decompress_420(const void *input_v, uint32_t width, uint32_t height,
 	}
 }
 
+void decompress_nv12(const void *input_v, uint32_t width, uint32_t height,
+		uint32_t row_bytes, uint32_t start_y, uint32_t end_y,
+		void *output_v)
+{
+	uint8_t       *output = output_v;
+	const uint8_t *input  = input_v;
+	const uint8_t *input2 = input + width * height;
+
+	uint32_t start_y_d2 = start_y/2;
+	uint32_t width_d2   = width/2;
+	uint32_t height_d2  = end_y/2;
+	uint32_t y;
+
+	for (y = start_y_d2; y < height_d2; y++) {
+		const uint16_t *chroma = (uint16_t*)(input2 + y * width);
+		register const uint8_t *lum0, *lum1;
+		register uint32_t *output0, *output1;
+		uint32_t x;
+
+		lum0 = input + y * 2*width;
+		lum1 = lum0 + width;
+		output0 = (uint32_t*)(output + y * 2*row_bytes);
+		output1 = (uint32_t*)((uint8_t*)output0 + row_bytes);
+
+		for (x = 0; x < width_d2; x++) {
+			uint32_t out = *(chroma++) << 8;
+
+			*(output0++) = *(lum0++) | out;
+			*(output0++) = *(lum0++) | out;
+
+			*(output1++) = *(lum1++) | out;
+			*(output1++) = *(lum1++) | out;
+		}
+	}
+}
+
 void decompress_422(const void *input_v, uint32_t width, uint32_t height,
 		uint32_t row_bytes, uint32_t start_y, uint32_t end_y,
 		void *output_v, bool leading_lum)
@@ -221,8 +257,8 @@ void decompress_422(const void *input_v, uint32_t width, uint32_t height,
 	const uint8_t *input  = input_v;
 	uint8_t       *output = output_v;
 
-	uint32_t width_d2  = width>>1;
-	uint32_t line_size = width*2;
+	uint32_t width_d2  = width >> 1;
+	uint32_t line_size = width * 2;
 	uint32_t y;
 
 	register const uint32_t *input32;
@@ -230,7 +266,7 @@ void decompress_422(const void *input_v, uint32_t width, uint32_t height,
 	register uint32_t       *output32;
 
 	if (leading_lum) {
-		for (y = 0; y < height; y++) {
+		for (y = start_y; y < end_y; y++) {
 			input32     = (uint32_t*)(input + y*line_size);
 			input32_end = input32 + width_d2;
 			output32    = (uint32_t*)(output + y*row_bytes);
@@ -248,7 +284,7 @@ void decompress_422(const void *input_v, uint32_t width, uint32_t height,
 			}
 		}
 	} else {
-		for (y = 0; y < height; y++) {
+		for (y = start_y; y < end_y; y++) {
 			input32     = (uint32_t*)(input + y*line_size);
 			input32_end = input32 + width_d2;
 			output32    = (uint32_t*)(output + y*row_bytes);

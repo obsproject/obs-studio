@@ -36,8 +36,8 @@ enum video_type {
 	VIDEO_FORMAT_UNKNOWN,
 
 	/* planar 420 format */
-	VIDEO_FORMAT_I420, /* planar 4:2:0 */
-	VIDEO_FORMAT_NV12, /* two-plane lum and packed chroma */
+	VIDEO_FORMAT_I420, /* three-plane */
+	VIDEO_FORMAT_NV12, /* two-plane, lum and packed chroma */
 
 	/* packed 422 formats */
 	VIDEO_FORMAT_YVYU,
@@ -45,7 +45,8 @@ enum video_type {
 	VIDEO_FORMAT_UYVY,
 
 	/* packed uncompressed formats */
-	VIDEO_FORMAT_UYVX, /* packed UYV */
+	VIDEO_FORMAT_YUVX,
+	VIDEO_FORMAT_UYVX,
 	VIDEO_FORMAT_RGBA,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,

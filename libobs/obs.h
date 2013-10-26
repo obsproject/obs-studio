@@ -61,19 +61,6 @@ struct source_audio {
 	uint64_t           timestamp;
 };
 
-struct source_video {
-	const void         *data;
-	uint32_t           width;
-	uint32_t           height;
-	uint32_t           row_bytes;
-	uint64_t           timestamp;
-
-	enum video_type    type;
-	float              yuv_matrix[16];
-	bool               flip;
-};
-
-/* differs from source_video in that it's YUV444 or RGB only */
 struct source_frame {
 	void               *data;
 	uint32_t           width;
@@ -81,7 +68,7 @@ struct source_frame {
 	uint32_t           row_bytes;
 	uint64_t           timestamp;
 
-	bool               yuv;
+	enum video_type    type;
 	float              yuv_matrix[16];
 	bool               flip;
 };
@@ -291,7 +278,7 @@ EXPORT void obs_source_save_settings(obs_source_t source, const char *settings);
 
 /** Outputs asynchronous video data */
 EXPORT void obs_source_obs_async_video(obs_source_t source,
-		const struct video_frame *frame);
+		const struct source_frame *frame);
 
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_obs_async_audio(obs_source_t source,
