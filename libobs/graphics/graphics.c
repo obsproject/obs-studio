@@ -644,12 +644,42 @@ texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
 	return NULL;
 }
 
-void gs_draw_sprite(texture_t tex)
+static inline void assign_sprite_uv(float *start, float *end, bool flip)
+{
+	if (!flip) {
+		*start = 0.0f;
+		*end   = 1.0f;
+	} else {
+		*start = 1.0f;
+		*end   = 0.0f;
+	}
+}
+
+static inline void build_sprite(struct vb_data *data, float fcx, float fcy,
+		uint32_t flip)
+{
+	struct vec2 *tvarray = data->tvarray[0].array;
+	float start_u, end_u;
+	float start_v, end_v;
+
+	assign_sprite_uv(&start_u, &end_u, (flip & GS_FLIP_U) != 0);
+	assign_sprite_uv(&start_v, &end_v, (flip & GS_FLIP_V) != 0);
+
+	vec3_zero(data->points);
+	vec3_set(data->points+1,  fcx, 0.0f, 0.0f);
+	vec3_set(data->points+2, 0.0f,  fcy, 0.0f);
+	vec3_set(data->points+3,  fcx,  fcy, 0.0f);
+	vec2_set(tvarray,   start_u, start_v);
+	vec2_set(tvarray+1, end_u,   start_v);
+	vec2_set(tvarray+2, start_u, end_v);
+	vec2_set(tvarray+3, end_u,   end_v);
+}
+
+void gs_draw_sprite(texture_t tex, uint32_t flip)
 {
 	graphics_t graphics = thread_graphics;
 	float fcx, fcy;
 	struct vb_data *data;
-	struct vec2 *tvarray;
 
 	assert(tex);
 
@@ -662,15 +692,7 @@ void gs_draw_sprite(texture_t tex)
 	fcy = (float)texture_getheight(tex);
 
 	data = vertexbuffer_getdata(graphics->sprite_buffer);
-	tvarray = data->tvarray[0].array;
-	vec3_zero(data->points);
-	vec3_set(data->points+1,  fcx, 0.0f, 0.0f);
-	vec3_set(data->points+2, 0.0f,  fcy, 0.0f);
-	vec3_set(data->points+3,  fcx,  fcy, 0.0f);
-	vec2_zero(tvarray);
-	vec2_set(tvarray+1, 1.0f, 0.0f);
-	vec2_set(tvarray+2, 0.0f, 1.0f);
-	vec2_set(tvarray+3, 1.0f, 1.0f);
+	build_sprite(data, fcx, fcy, flip);
 	vertexbuffer_flush(graphics->sprite_buffer, false);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);

@@ -411,7 +411,7 @@ static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 	param = effect_getparambyname(effect, "diffuse");
 	effect_settexture(effect, param, tex);
 
-	gs_draw_sprite(tex);
+	gs_draw_sprite(tex, frame->flip ? GS_FLIP_V : 0);
 
 	technique_endpass(tech);
 	technique_end(tech);
@@ -427,10 +427,8 @@ static void obs_source_render_async_video(obs_source_t source)
 	if (!source->timing_set && source->audio_buffer.num)
 		obs_source_flush_audio_buffer(source);
 
-	if (set_texture_size(source, frame)) {
-		source->flip = frame->flip;
+	if (set_texture_size(source, frame))
 		obs_source_draw_texture(source->output_texture, frame);
-	}
 
 	obs_source_releaseframe(source, frame);
 }

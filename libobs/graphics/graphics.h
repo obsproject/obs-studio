@@ -479,7 +479,10 @@ EXPORT texture_t gs_create_cubetexture_from_file(const char *flie,
 EXPORT texture_t gs_create_volumetexture_from_file(const char *flie,
 		uint32_t flags);
 
-EXPORT void gs_draw_sprite(texture_t tex);
+#define GS_FLIP_U (1<<0)
+#define GS_FLIP_V (1<<1)
+
+EXPORT void gs_draw_sprite(texture_t tex, uint32_t flip);
 
 EXPORT void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear);

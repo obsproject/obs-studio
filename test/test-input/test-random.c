@@ -68,7 +68,7 @@ void random_video_render(struct random_tex *rt, obs_source_t filter_target)
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	gs_draw_sprite(rt->texture);
+	gs_draw_sprite(rt->texture, 0);
 
 	technique_endpass(tech);
 	technique_end(tech);

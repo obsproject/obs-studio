@@ -69,7 +69,7 @@ void test_video_render(struct test_filter *tf)
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	gs_draw_sprite(tex);
+	gs_draw_sprite(tex, 0);
 
 	technique_endpass(tech);
 	technique_end(tech);

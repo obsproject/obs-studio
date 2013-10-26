@@ -214,7 +214,6 @@ struct obs_source {
 	uint64_t                     last_frame_timestamp;
 	uint64_t                     last_sys_timestamp;
 	texture_t                    output_texture;
-	bool                         flip;
 
 	audio_line_t                 audio_line;
 	DARRAY(struct audiobuf)      audio_buffer;
