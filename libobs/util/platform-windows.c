@@ -26,7 +26,7 @@
 #include "platform.h"
 #include "bmem.h"
 
-#include "../../w32-pthreads/pthread.h"
+#include "../../deps/w32-pthreads/pthread.h"
 
 static bool have_clockfreq = false;
 static LARGE_INTEGER clock_freq;

@@ -132,13 +132,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\w32-pthreads\pthread.c" />
+    <ClCompile Include="..\..\..\deps\w32-pthreads\pthread.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\w32-pthreads\implement.h" />
-    <ClInclude Include="..\..\..\w32-pthreads\pthread.h" />
-    <ClInclude Include="..\..\..\w32-pthreads\sched.h" />
-    <ClInclude Include="..\..\..\w32-pthreads\semaphore.h" />
+    <ClInclude Include="..\..\..\deps\w32-pthreads\implement.h" />
+    <ClInclude Include="..\..\..\deps\w32-pthreads\pthread.h" />
+    <ClInclude Include="..\..\..\deps\w32-pthreads\sched.h" />
+    <ClInclude Include="..\..\..\deps\w32-pthreads\semaphore.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

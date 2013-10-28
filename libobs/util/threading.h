@@ -34,8 +34,8 @@
 #include "c99defs.h"
 
 #ifdef _MSC_VER
-#include "../../w32-pthreads/pthread.h"
-#include "../../w32-pthreads/semaphore.h"
+#include "../../deps/w32-pthreads/pthread.h"
+#include "../../deps/w32-pthreads/semaphore.h"
 #else
 #include <errno.h>
 #include <pthread.h>
