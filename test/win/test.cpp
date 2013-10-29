@@ -58,8 +58,8 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	/*if (type >= LOG_WARNING)
-		__debugbreak();*/
+	if (type >= LOG_WARNING)
+		__debugbreak();
 }
 
 static void CreateOBS(HWND hwnd)

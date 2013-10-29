@@ -47,7 +47,7 @@ static bool obs_init_graphics(const char *graphics_module,
 
 	if (success) {
 		obs->default_effect = gs_create_effect_from_file(
-				"build/data/default.effect", NULL);
+				"data/effects/default.effect", NULL);
 		if (!obs->default_effect)
 			success = false;
 	}

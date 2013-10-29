@@ -47,26 +47,33 @@ static inline size_t sp_getsampler(struct gl_shader_parser *glsp,
 	return -1;
 }
 
+static inline int cmp_type(const char *name, const size_t name_len,
+		const char *type, const size_t type_len)
+{
+	size_t min_len = (name_len < type_len) ? type_len : name_len;
+	return astrcmp_n(name, type, min_len);
+}
+
 static bool gl_write_type_n(struct gl_shader_parser *glsp,
 		const char *type, size_t len)
 {
-	if (astrcmp_n(type, "float2", len) == 0)
+	if (cmp_type(type, len, "float2", 6) == 0)
 		dstr_cat(&glsp->gl_string, "vec2");
-	else if (astrcmp_n(type, "float3", len) == 0)
+	else if (cmp_type(type, len, "float3", 6) == 0)
 		dstr_cat(&glsp->gl_string, "vec3");
-	else if (astrcmp_n(type, "float4", len) == 0)
+	else if (cmp_type(type, len, "float4", 6) == 0)
 		dstr_cat(&glsp->gl_string, "vec4");
-	else if (astrcmp_n(type, "float3x3", len) == 0)
+	else if (cmp_type(type, len, "float3x3", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat3x3");
-	else if (astrcmp_n(type, "float3x4", len) == 0)
+	else if (cmp_type(type, len, "float3x4", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat3x4");
-	else if (astrcmp_n(type, "float4x4", len) == 0)
+	else if (cmp_type(type, len, "float4x4", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat4x4");
-	else if (astrcmp_n(type, "texture2d", len) == 0)
+	else if (cmp_type(type, len, "texture2d", 9) == 0)
 		dstr_cat(&glsp->gl_string, "sampler2D");
-	else if (astrcmp_n(type, "texture3d", len) == 0)
+	else if (cmp_type(type, len, "texture3d", 9) == 0)
 		dstr_cat(&glsp->gl_string, "sampler3D");
-	else if (astrcmp_n(type, "texture_cube", len) == 0)
+	else if (cmp_type(type, len, "texture_cube", 12) == 0)
 		dstr_cat(&glsp->gl_string, "samplerCube");
 	else
 		return false;
