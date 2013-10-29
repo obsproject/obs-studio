@@ -1,6 +1,6 @@
 uniform float4x4 ViewProj;
 uniform float4x4 yuv_matrix;
-texture2d tex;
+uniform texture2d tex;
 
 sampler_state def_sampler {
 	Filter   = Linear;
