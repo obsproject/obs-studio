@@ -1,0 +1,25 @@
+INCLUDES = -iquote$(top_srcdir)/libobs -isystem./glew/include
+AM_CFLAGS = -DGLEW_NO_GLU -DGLEW_STATIC
+
+lib_LTLIBRARIES = libobs-opengl.la
+libobs_opengl_la_LDFLAGS = -no-undefined
+libobs_opengl_la_LIBADD = ../libobs/libobs.la
+if OS_WIN
+libobs_opengl_la_LDFLAGS += -mwindows -avoid-version
+libobs_opengl_la_LIBADD += -lopengl32
+endif
+libobs_opengl_la_SOURCES = gl-helpers.c \
+			   gl-indexbuffer.c \
+			   gl-shader.c \
+			   gl-shaderparser.c \
+			   gl-stagesurf.c \
+			   gl-subsystem.c \
+			   gl-texture2d.c \
+			   gl-texturecube.c \
+			   gl-vertexbuffer.c \
+			   gl-zstencil.c \
+			   glew/src/glew.c
+
+if OS_WIN
+libobs_opengl_la_SOURCES += gl-windows.c
+endif

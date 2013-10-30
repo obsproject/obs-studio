@@ -1,0 +1,4 @@
+SUBDIRS = test-input
+if OS_WIN
+SUBDIRS += win
+endif

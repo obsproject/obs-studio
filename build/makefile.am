@@ -1,0 +1,11 @@
+EXTRA_DIST = data
+
+# just be cheap and do a full recursive copy.
+install-data-local:
+	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject
+	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject/data
+	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject/data/effects
+	cp -R $(srcdir)/data/* $(DESTDIR)$(datadir)/obsproject/data
+
+uninstall-local:
+	rm -rf $(DESTDIR)$(datadir)/obsproject

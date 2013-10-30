@@ -1,0 +1,6 @@
+INCLUDES = -iquote$(top_srcdir)/libobs
+AM_CPPFLAGS = -DUNICODE -D_UNICODE
+bin_PROGRAMS = test
+test_LDADD = $(top_srcdir)/libobs/libobs.la
+test_LDFLAGS = -mwindows
+test_SOURCES = test.cpp
