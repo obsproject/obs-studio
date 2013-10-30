@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "media-io\format-conversion.h"
+#include "media-io/format-conversion.h"
 #include "util/platform.h"
 
 #include "obs.h"
