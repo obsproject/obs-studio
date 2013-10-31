@@ -47,8 +47,18 @@ EXPORT void base_set_log_handler(
 		void (*handler)(enum log_type, const char *, va_list));
 EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list));
 
+#ifndef _MSC_VER
+#define PRINTFATTR(f, a) __attribute__((__format__(__printf__, f, a)))
+#else
+#define PRINTFATTR(f, a)
+#endif
+
+PRINTFATTR(2, 3)
 EXPORT void blog(enum log_type type, const char *format, ...);
+PRINTFATTR(1, 2)
 EXPORT void bcrash(const char *format, ...);
+
+#undef PRINTFATTR
 
 #ifdef __cplusplus
 }
