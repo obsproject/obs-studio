@@ -247,10 +247,8 @@ bool vertexbuffer_load(device_t device, vertbuffer_t vb)
 		return true;
 
 	device->cur_vertex_buffer = vb;
-	if (!device->cur_vertex_shader || !vb) {
-		gl_bind_vertex_array(0);
+	if (!device->cur_vertex_shader || !vb)
 		return true;
-	}
 
 	if (!load_vb_buffers(device->cur_vertex_shader, vb))
 		return false;
