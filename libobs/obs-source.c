@@ -133,7 +133,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 
 	info = find_source(list, name);
 	if (!info) {
-		blog(LOG_WARNING, "Source '%s' not found", type);
+		blog(LOG_WARNING, "Source '%s' not found", name);
 		return NULL;
 	}
 
