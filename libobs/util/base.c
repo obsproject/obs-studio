@@ -58,7 +58,13 @@ static void def_log_handler(enum log_type type, const char *format,
 	}
 }
 
-static void def_crash_handler(const char *format, va_list args)
+#ifdef _MSC_VER
+#define NORETURN __declspec(noreturn)
+#else
+#define NORETURN __attribute__((noreturn))
+#endif
+
+NORETURN static void def_crash_handler(const char *format, va_list args)
 {
 	vfprintf(stderr, format, args);
 	exit(0);
