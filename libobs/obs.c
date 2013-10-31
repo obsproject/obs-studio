@@ -118,6 +118,8 @@ static inline void obs_free_graphics(void)
 	for (i = 0; i < NUM_TEXTURES; i++)
 		stagesurface_destroy(obs->copy_surfaces[i]);
 
+	effect_destroy(obs->default_effect);
+
 	gs_leavecontext();
 
 	gs_destroy(obs->graphics);

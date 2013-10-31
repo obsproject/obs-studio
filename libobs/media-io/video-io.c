@@ -80,13 +80,12 @@ static void *video_thread(void *param)
 static inline bool valid_video_params(struct video_info *info)
 {
 	return info->height != 0 && info->width != 0 && info->fps_den != 0 &&
-	       info->fps_num != 0 && info->format != NULL;
+	       info->fps_num != 0;
 }
 
 static inline bool vo_add_to_media(video_t video)
 {
 	struct media_output_info oi;
-	oi.format  = video->info.format;
 	oi.obj     = video;
 	oi.connect = NULL;
 

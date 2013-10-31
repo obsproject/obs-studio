@@ -32,7 +32,7 @@ extern "C" {
 struct video_output;
 typedef struct video_output *video_t;
 
-enum video_type {
+enum video_format {
 	VIDEO_FORMAT_UNKNOWN,
 
 	/* planar 420 format */
@@ -53,20 +53,19 @@ enum video_type {
 };
 
 struct video_frame {
-	const void      *data;
-	uint32_t        row_size;  /* for RGB/BGR formats and UYVX */
-	uint64_t        timestamp;
+	const void        *data;
+	uint32_t          row_size;  /* for RGB/BGR formats and UYVX */
+	uint64_t          timestamp;
 };
 
 struct video_info {
-	const char      *name;
-	const char      *format;
+	const char        *name;
 
-	enum video_type type;
-	uint32_t        fps_num; /* numerator */
-	uint32_t        fps_den; /* denominator */
-	uint32_t        width;
-	uint32_t        height;
+	enum video_format type;
+	uint32_t          fps_num; /* numerator */
+	uint32_t          fps_den; /* denominator */
+	uint32_t          width;
+	uint32_t          height;
 };
 
 #define VIDEO_OUTPUT_SUCCESS       0

@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include "util/base.h"
+#include "media-io/audio-resampler.h"
 #include "obs.h"
 
 #include <intrin.h>
@@ -69,7 +70,6 @@ static void CreateOBS(HWND hwnd)
 
 	struct video_info vi;
 	memset(&vi, 0, sizeof(struct video_info));
-	vi.format  = "RGBA";
 	vi.fps_num = 30000;
 	vi.fps_den = 1001;
 	vi.width   = rc.right;
@@ -111,7 +111,6 @@ static void AddTestItems(obs_scene_t scene, obs_source_t source)
 static HWND CreateTestWindow(HINSTANCE instance)
 {
 	WNDCLASS wc;
-	base_set_log_handler(do_log);
 
 	memset(&wc, 0, sizeof(wc));
 	wc.lpszClassName = L"bla";
@@ -134,6 +133,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		int numCmd)
 {
 	HWND hwnd = NULL;
+	base_set_log_handler(do_log);
 
 	try {
 		hwnd = CreateTestWindow(instance);

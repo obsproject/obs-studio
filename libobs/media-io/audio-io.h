@@ -64,10 +64,9 @@ struct audio_data {
 
 struct audio_info {
 	const char          *name;
-	const char          *format;
 
 	uint32_t            samples_per_sec;
-	enum audio_format   type;
+	enum audio_format   format;
 	enum speaker_layout speakers;
 };
 

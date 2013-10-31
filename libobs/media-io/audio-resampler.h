@@ -20,6 +20,10 @@
 #include "../util/c99defs.h"
 #include "audio-io.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct audio_resampler;
 typedef struct audio_resampler *audio_resampler_t;
 
@@ -35,4 +39,9 @@ EXPORT void audio_resampler_destroy(audio_resampler_t resampler);
 
 EXPORT bool audio_resampler_resample(audio_resampler_t resampler,
 		 void **output, uint32_t *out_frames,
-		 void *input, uint32_t in_frames);
+		 const void *input, uint32_t in_frames,
+		 uint64_t *timestamp_offset);
+
+#ifdef __cplusplus
+}
+#endif

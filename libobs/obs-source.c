@@ -171,8 +171,8 @@ void obs_source_destroy(obs_source_t source)
 			pthread_mutex_unlock(&obs->source_list_mutex);
 		}
 
-		for (i = 0; i < source->audio_buffer.num; i++)
-			audiobuf_free(source->audio_buffer.array+i);
+		for (i = 0; i < source->audio_wait_buffer.num; i++)
+			audiobuf_free(source->audio_wait_buffer.array+i);
 		for (i = 0; i < source->video_frames.num; i++)
 			source_frame_destroy(source->video_frames.array[i]);
 
@@ -183,10 +183,12 @@ void obs_source_destroy(obs_source_t source)
 		if (source->data)
 			source->callbacks.destroy(source->data);
 
+		bfree(source->audio_data.data);
 		audio_line_destroy(source->audio_line);
+		audio_resampler_destroy(source->resampler);
 
 		da_free(source->video_frames);
-		da_free(source->audio_buffer);
+		da_free(source->audio_wait_buffer);
 		da_free(source->filters);
 		pthread_mutex_destroy(&source->filter_mutex);
 		pthread_mutex_destroy(&source->audio_mutex);
@@ -259,15 +261,15 @@ static void source_output_audio_line(obs_source_t source,
 	audio_line_output(source->audio_line, &in);
 }
 
-static void obs_source_flush_audio_buffer(obs_source_t source)
+static void obs_source_flush_audio_wait_buffer(obs_source_t source)
 {
 	size_t i;
 
 	pthread_mutex_lock(&source->audio_mutex);
 	source->timing_set = true;
 
-	for (i = 0; i < source->audio_buffer.num; i++) {
-		struct audiobuf *buf = source->audio_buffer.array+i;
+	for (i = 0; i < source->audio_wait_buffer.num; i++) {
+		struct audiobuf *buf = source->audio_wait_buffer.array+i;
 		struct audio_data data;
 
 		data.data      = buf->data;
@@ -277,7 +279,7 @@ static void obs_source_flush_audio_buffer(obs_source_t source)
 		audiobuf_free(buf);
 	}
 
-	da_free(source->audio_buffer);
+	da_free(source->audio_wait_buffer);
 	pthread_mutex_unlock(&source->audio_mutex);
 }
 
@@ -306,9 +308,9 @@ enum convert_type {
 	CONVERT_422_Y,
 };
 
-static inline enum convert_type get_convert_type(enum video_type type)
+static inline enum convert_type get_convert_type(enum video_format format)
 {
-	switch (type) {
+	switch (format) {
 	case VIDEO_FORMAT_I420:
 		return CONVERT_420;
 	case VIDEO_FORMAT_NV12:
@@ -332,9 +334,9 @@ static inline enum convert_type get_convert_type(enum video_type type)
 	return CONVERT_NONE;
 }
 
-static inline bool is_yuv(enum video_type type)
+static inline bool is_yuv(enum video_format format)
 {
-	switch (type) {
+	switch (format) {
 	case VIDEO_FORMAT_I420:
 	case VIDEO_FORMAT_NV12:
 	case VIDEO_FORMAT_YVYU:
@@ -357,7 +359,7 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 {
 	void *ptr;
 	uint32_t row_bytes;
-	enum convert_type type = get_convert_type(frame->type);
+	enum convert_type type = get_convert_type(frame->format);
 
 	if (type == CONVERT_NONE) {
 		texture_setimage(tex, frame->data, frame->row_bytes, false);
@@ -390,7 +392,7 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->default_effect;
-	bool        yuv   = is_yuv(frame->type);
+	bool        yuv   = is_yuv(frame->format);
 	const char  *type = yuv ? "DrawYUVToRGB" : "DrawRGB";
 	technique_t tech;
 	eparam_t    param;
@@ -424,8 +426,8 @@ static void obs_source_render_async_video(obs_source_t source)
 		return;
 
 	source->timing_adjust = frame->timestamp - os_gettime_ns();
-	if (!source->timing_set && source->audio_buffer.num)
-		obs_source_flush_audio_buffer(source);
+	if (!source->timing_set && source->audio_wait_buffer.num)
+		obs_source_flush_audio_wait_buffer(source);
 
 	if (set_texture_size(source, frame))
 		obs_source_draw_texture(source->output_texture, frame);
@@ -631,8 +633,8 @@ void obs_source_output_video(obs_source_t source,
 	}
 }
 
-static inline const struct audio_data *filter_async_audio(obs_source_t source,
-		const struct audio_data *in)
+static inline struct filtered_audio *filter_async_audio(obs_source_t source,
+		struct filtered_audio *in)
 {
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
@@ -647,42 +649,113 @@ static inline const struct audio_data *filter_async_audio(obs_source_t source,
 	return in;
 }
 
-static struct audio_data *process_audio(obs_source_t source,
+static inline void reset_resampler(obs_source_t source,
 		const struct source_audio *audio)
 {
-	/* TODO: upmix/downmix/resample */
-	return NULL;
+	const struct audio_info *obs_info = audio_output_getinfo(obs->audio);
+	struct resample_info output_info;
+
+	output_info.format           = obs_info->format;
+	output_info.samples_per_sec  = obs_info->samples_per_sec;
+	output_info.speakers         = obs_info->speakers;
+
+	source->sample_info.format          = audio->format;
+	source->sample_info.samples_per_sec = audio->samples_per_sec;
+	source->sample_info.speakers        = audio->speakers;
+
+	if (source->sample_info.samples_per_sec == obs_info->samples_per_sec &&
+	    source->sample_info.format          == obs_info->format          &&
+	    source->sample_info.speakers        == obs_info->speakers) {
+		source->audio_failed = false;
+		return;
+	}
+
+	audio_resampler_destroy(source->resampler);
+	source->resampler = audio_resampler_create(&output_info,
+			&source->sample_info);
+
+	source->audio_failed = source->resampler == NULL;
+	if (source->resampler == NULL)
+		blog(LOG_ERROR, "creation of resampler failed");
+}
+
+static inline void copy_audio_data(obs_source_t source,
+		const void *data, uint32_t frames, uint64_t timestamp)
+{
+	size_t blocksize = audio_output_blocksize(obs->audio);
+	size_t size = (size_t)frames * blocksize;
+
+	/* ensure audio storage capacity */
+	if (source->audio_storage_size < size) {
+		bfree(source->audio_data.data);
+		source->audio_data.data = bmalloc(size);
+		source->audio_storage_size = size;
+	}
+
+	source->audio_data.frames = frames;
+	source->audio_data.timestamp = timestamp;
+	memcpy(source->audio_data.data, data, size);
+}
+
+/* resamples/remixes new audio to the designated main audio output format */
+static void process_audio(obs_source_t source, const struct source_audio *audio)
+{
+	if (source->sample_info.samples_per_sec != audio->samples_per_sec ||
+	    source->sample_info.format          != audio->format          ||
+	    source->sample_info.speakers        != audio->speakers)
+		reset_resampler(source, audio);
+
+	if (source->audio_failed)
+		return;
+
+	if (source->resampler) {
+		void *output;
+		uint32_t frames;
+		uint64_t offset;
+
+		audio_resampler_resample(source->resampler, &output, &frames,
+				audio->data, audio->frames, &offset);
+
+		copy_audio_data(source, output, frames,
+				audio->timestamp - offset);
+	} else {
+		copy_audio_data(source, audio->data, audio->frames,
+				audio->timestamp);
+	}
 }
 
 void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
 	uint32_t flags = obs_source_get_output_flags(source);
-	struct audio_data *data;
-	const struct audio_data *output;
+	size_t blocksize = audio_output_blocksize(obs->audio);
+	struct filtered_audio *output;
 
-	data = process_audio(source, audio);
+	process_audio(source, audio);
 
 	pthread_mutex_lock(&source->filter_mutex);
-	output = filter_async_audio(source, data);
+	output = filter_async_audio(source, &source->audio_data);
 
 	if (output) {
 		pthread_mutex_lock(&source->audio_mutex);
 
 		if (!source->timing_set && flags & SOURCE_ASYNC_VIDEO) {
 			struct audiobuf newbuf;
-			size_t audio_size = audio_output_blocksize(obs->audio) *
-				output->frames;
+			size_t audio_size = blocksize * output->frames;
 
 			newbuf.data      = bmalloc(audio_size);
 			newbuf.frames    = output->frames;
 			newbuf.timestamp = output->timestamp;
 			memcpy(newbuf.data, output->data, audio_size);
 
-			da_push_back(source->audio_buffer, &newbuf);
+			da_push_back(source->audio_wait_buffer, &newbuf);
 
 		} else {
-			source_output_audio_line(source, output);
+			struct audio_data data;
+			data.data      = output->data;
+			data.frames    = output->frames;
+			data.timestamp = output->timestamp;
+			source_output_audio_line(source, &data);
 		}
 
 		pthread_mutex_unlock(&source->audio_mutex);

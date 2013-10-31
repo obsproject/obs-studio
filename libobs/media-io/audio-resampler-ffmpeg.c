@@ -124,7 +124,8 @@ void audio_resampler_destroy(audio_resampler_t rs)
 
 bool audio_resampler_resample(audio_resampler_t rs,
 		 void **output, uint32_t *out_frames,
-		 void *input, uint32_t in_frames)
+		 const void *input, uint32_t in_frames,
+		 uint64_t *timestamp_offset)
 {
 	struct SwrContext *context = rs->context;
 	int ret;
@@ -133,6 +134,8 @@ bool audio_resampler_resample(audio_resampler_t rs,
 			delay + (int64_t)in_frames,
 			(int64_t)rs->output_freq, (int64_t)rs->input_freq,
 			AV_ROUND_UP);
+
+	*timestamp_offset = (uint64_t)swr_get_delay(context, 1000000000);
 
 	/* resize the buffer if bigger */
 	if (estimated > rs->output_size) {
@@ -146,7 +149,7 @@ bool audio_resampler_resample(audio_resampler_t rs,
 
 	ret = swr_convert(context,
 			&rs->output_buffer, rs->output_size,
-			input, in_frames);
+			(const uint8_t**)&input, in_frames);
 
 	if (ret < 0) {
 		blog(LOG_ERROR, "swr_convert failed: %d", ret);

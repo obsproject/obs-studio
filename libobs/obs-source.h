@@ -22,6 +22,7 @@
 #include "util/dstr.h"
 #include "util/threading.h"
 #include "media-io/media-io.h"
+#include "media-io/audio-resampler.h"
 
 /*
  * ===========================================
@@ -144,8 +145,8 @@
  *       returns: New video frame data (or NULL if pending)
  *
  * ---------------------------------------------------------
- *   const struct audio_data *[name]_filter_audio(void *data,
- *                                     const struct audio_data *audio);
+ *   struct filter_audio [name]_filter_audio(void *data,
+ *                                     struct filter_audio *audio);
  *       Filters video data.  Used with async video data.
  *
  *       audio: Audio data.
@@ -187,8 +188,8 @@ struct source_info {
 
 	struct source_frame *(*filter_video)(void *data,
 			const struct source_frame *frame);
-	const struct audio_data *(*filter_audio)(void *data,
-			const struct audio_data *audio);
+	struct filtered_audio *(*filter_audio)(void *data,
+			struct filtered_audio *audio);
 };
 
 struct audiobuf {
@@ -215,11 +216,16 @@ struct obs_source {
 	uint64_t                     last_sys_timestamp;
 	texture_t                    output_texture;
 
+	bool                         audio_failed;
+	struct resample_info         sample_info;
+	audio_resampler_t            resampler;
 	audio_line_t                 audio_line;
-	DARRAY(struct audiobuf)      audio_buffer;
+	DARRAY(struct audiobuf)      audio_wait_buffer;
 	DARRAY(struct source_frame*) video_frames;
 	pthread_mutex_t              audio_mutex;
 	pthread_mutex_t              video_mutex;
+	struct filtered_audio        audio_data;
+	size_t                       audio_storage_size;
 
 	/* filters */
 	struct obs_source            *filter_parent;

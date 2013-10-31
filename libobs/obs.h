@@ -48,13 +48,19 @@ enum order_movement {
 	ORDER_MOVE_BOTTOM
 };
 
+struct filtered_audio {
+	void                *data;
+	uint32_t            frames;
+	uint64_t            timestamp;
+};
+
 struct source_audio {
 	const void          *data;
 	uint32_t            frames;
 
 	/* audio will be automatically resampled/upmixed/downmixed */
 	enum speaker_layout speakers;
-	enum audio_format   type;
+	enum audio_format   format;
 	uint32_t            samples_per_sec;
 
 	/* can be 0 if 'immediate' */
@@ -68,7 +74,7 @@ struct source_frame {
 	uint32_t            row_bytes;
 	uint64_t            timestamp;
 
-	enum video_type     type;
+	enum video_format   format;
 	float               yuv_matrix[16];
 	bool                flip;
 };

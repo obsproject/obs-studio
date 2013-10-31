@@ -91,7 +91,6 @@ static inline bool valid_audio_params(struct audio_info *info)
 static inline bool ao_add_to_media(audio_t audio)
 {
 	struct media_output_info oi;
-	oi.format  = audio->info.format;
 	oi.obj     = audio;
 	oi.connect = NULL;
 
@@ -117,7 +116,7 @@ int audio_output_open(audio_t *audio, media_t media, struct audio_info *info)
 	pthread_mutex_init_value(&out->line_mutex);
 	out->media = media;
 	out->block_size = get_audio_channels(info->speakers) *
-	                  get_audio_bytes_per_channel(info->type);
+	                  get_audio_bytes_per_channel(info->format);
 
 	if (pthread_mutex_init(&out->line_mutex, NULL) != 0)
 		goto fail;
