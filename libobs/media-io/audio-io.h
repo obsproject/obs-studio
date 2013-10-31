@@ -34,16 +34,15 @@ struct audio_line;
 typedef struct audio_output *audio_t;
 typedef struct audio_line   *audio_line_t;
 
-enum audio_type {
+enum audio_format {
 	AUDIO_FORMAT_UNKNOWN,
-	AUDIO_FORMAT_8BIT,
+	AUDIO_FORMAT_U8BIT,
 	AUDIO_FORMAT_16BIT,
-	AUDIO_FORMAT_24BIT,
 	AUDIO_FORMAT_32BIT,
 	AUDIO_FORMAT_FLOAT,
 };
 
-enum speaker_setup {
+enum speaker_layout {
 	SPEAKERS_UNKNOWN,
 	SPEAKERS_MONO,
 	SPEAKERS_STEREO,
@@ -58,22 +57,21 @@ enum speaker_setup {
 };
 
 struct audio_data {
-	const void      *data;
-	uint32_t        frames;
-	uint64_t        timestamp;
+	const void          *data;
+	uint32_t            frames;
+	uint64_t            timestamp;
 };
 
 struct audio_info {
-	const char         *name;
-	const char         *format;
+	const char          *name;
+	const char          *format;
 
-	uint32_t           samples_per_sec;
-	enum audio_type    type;
-	enum speaker_setup speakers;
+	uint32_t            samples_per_sec;
+	enum audio_format   type;
+	enum speaker_layout speakers;
 };
 
-
-static inline uint32_t get_audio_channels(enum speaker_setup speakers)
+static inline uint32_t get_audio_channels(enum speaker_layout speakers)
 {
 	switch (speakers) {
 	case SPEAKERS_MONO:             return 1;
@@ -92,12 +90,11 @@ static inline uint32_t get_audio_channels(enum speaker_setup speakers)
 	return 0;
 }
 
-static inline size_t get_audio_bytes_per_channel(enum audio_type type)
+static inline size_t get_audio_bytes_per_channel(enum audio_format type)
 {
 	switch (type) {
-	case AUDIO_FORMAT_8BIT:    return 1;
+	case AUDIO_FORMAT_U8BIT:   return 1;
 	case AUDIO_FORMAT_16BIT:   return 2;
-	case AUDIO_FORMAT_24BIT:   return 3;
 	case AUDIO_FORMAT_FLOAT:
 	case AUDIO_FORMAT_32BIT:   return 4;
 	case AUDIO_FORMAT_UNKNOWN: return 0;
@@ -106,8 +103,8 @@ static inline size_t get_audio_bytes_per_channel(enum audio_type type)
 	return 0;
 }
 
-static inline size_t get_audio_size(enum audio_type type,
-		enum speaker_setup speakers, uint32_t frames)
+static inline size_t get_audio_size(enum audio_format type,
+		enum speaker_layout speakers, uint32_t frames)
 {
 	return get_audio_channels(speakers) *
 	       get_audio_bytes_per_channel(type) *

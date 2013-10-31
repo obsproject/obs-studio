@@ -40,6 +40,14 @@ case $host_os in
 		;;
 esac
 
+PKG_CHECK_MODULES([ffmpeg],
+		  [libavcodec
+		   libavformat
+		   libavutil
+		   libswscale
+		   libswresample
+		   libavfilter])
+
 # Checks for header files.
 AC_PATH_X
 AC_CHECK_HEADERS([inttypes.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/timeb.h wchar.h wctype.h])

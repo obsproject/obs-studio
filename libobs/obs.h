@@ -49,28 +49,28 @@ enum order_movement {
 };
 
 struct source_audio {
-	const void         *data;
-	uint32_t           frames;
+	const void          *data;
+	uint32_t            frames;
 
 	/* audio will be automatically resampled/upmixed/downmixed */
-	enum speaker_setup speakers;
-	enum audio_type    type;
-	uint32_t           samples_per_sec;
+	enum speaker_layout speakers;
+	enum audio_format   type;
+	uint32_t            samples_per_sec;
 
 	/* can be 0 if 'immediate' */
-	uint64_t           timestamp;
+	uint64_t            timestamp;
 };
 
 struct source_frame {
-	void               *data;
-	uint32_t           width;
-	uint32_t           height;
-	uint32_t           row_bytes;
-	uint64_t           timestamp;
+	void                *data;
+	uint32_t            width;
+	uint32_t            height;
+	uint32_t            row_bytes;
+	uint64_t            timestamp;
 
-	enum video_type    type;
-	float              yuv_matrix[16];
-	bool               flip;
+	enum video_type     type;
+	float               yuv_matrix[16];
+	bool                flip;
 };
 
 static inline void source_frame_destroy(struct source_frame *frame)

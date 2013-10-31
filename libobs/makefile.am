@@ -24,6 +24,7 @@ libobs_la_SOURCES = obs.c \
 		    util/utf8.c \
 		    media-io/audio-io.c \
 		    media-io/format-conversion.c \
+		    media-io/audio-resampler-ffmpeg.c \
 		    media-io/media-io.c \
 		    media-io/video-io.c \
 		    graphics/axisang.c \

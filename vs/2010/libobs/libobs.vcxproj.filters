@@ -180,6 +180,9 @@
     <ClInclude Include="..\..\..\libobs\media-io\format-conversion.h">
       <Filter>media-io\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\media-io\audio-resampler.h">
+      <Filter>media-io\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -294,6 +297,9 @@
       <Filter>graphics\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c">
+      <Filter>media-io\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\media-io\audio-resampler-ffmpeg.c">
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
