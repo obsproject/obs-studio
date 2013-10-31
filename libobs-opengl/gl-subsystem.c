@@ -39,6 +39,21 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	sampler->address_v      = convert_address_mode(info->address_v);
 	sampler->address_w      = convert_address_mode(info->address_w);
 	sampler->max_anisotropy = info->max_anisotropy;
+
+	GLint max_anisotropy_max = 1;
+	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy_max);
+	gl_success("glGetIntegerv(GL_MAX_TEXTURE_ANISOTROPY_MAX)");
+
+	if (1 <= sampler->max_anisotropy && sampler->max_anisotropy <= max_anisotropy_max)
+		return;
+
+	if (sampler->max_anisotropy < 1) sampler->max_anisotropy = 1;
+	else if (sampler->max_anisotropy > max_anisotropy_max)
+		sampler->max_anisotropy = max_anisotropy_max;
+
+	blog(LOG_INFO, "convert_sampler_info: 1 <= max_anisotropy <= %d violated, "
+		       "selected: %d, set: %d", max_anisotropy_max,
+		       info->max_anisotropy, sampler->max_anisotropy);
 }
 
 device_t device_create(struct gs_init_data *info)
