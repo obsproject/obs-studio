@@ -214,7 +214,7 @@ static bool gl_shader_init(struct gs_shader *shader,
 	blog(LOG_DEBUG, "%s", glsp->gl_string.array);
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
 
-	glGetProgramiv(shader->program, GL_VALIDATE_STATUS, &compiled);
+	glGetProgramiv(shader->program, GL_LINK_STATUS, &compiled);
 	if (!gl_success("glGetProgramiv"))
 		return false;
 
