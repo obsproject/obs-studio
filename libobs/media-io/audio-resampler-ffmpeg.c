@@ -99,17 +99,6 @@ audio_resampler_t audio_resampler_create(struct resample_info *dst,
 		return NULL;
 	}
 
-	av_opt_set_channel_layout(rs->context, "in_channel_layout",
-			rs->input_layout, 0);
-	av_opt_set_channel_layout(rs->context, "out_channel_layout",
-			rs->output_layout, 0);
-	av_opt_set_int(rs->context, "in_sample_rate",  src->samples_per_sec, 0);
-	av_opt_set_int(rs->context, "out_sample_rate", dst->samples_per_sec, 0);
-	av_opt_set_sample_fmt(rs->context, "in_sample_fmt",
-			rs->input_format, 0);
-	av_opt_set_sample_fmt(rs->context, "out_sample_fmt",
-			rs->output_format, 0);
-
 	errcode = swr_init(rs->context);
 	if (errcode != 0) {
 		blog(LOG_ERROR, "avresample_open failed: error code %d",
