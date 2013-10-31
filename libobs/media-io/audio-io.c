@@ -210,7 +210,7 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 		position = convert_to_sample_offset(line->audio, position);
 		position *= line->audio->block_size;
 
-		circlebuf_place(&line->buffer, position, data->data,
+		circlebuf_place(&line->buffer, (size_t)position, data->data,
 				data->frames * line->audio->block_size);
 	}
 }

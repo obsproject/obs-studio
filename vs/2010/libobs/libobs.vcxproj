@@ -152,22 +152,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FFmpegPath);$(IncludePath)</IncludePath>
-    <LibraryPath>$(FFmpegPath)\lib32;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(FFmpegPath)\lib32;$(FFmpegPath)\libavcodec;$(FFmpegPath)\libavutil;$(FFmpegPath)\libavformat;$(FFmpegPath)\libswresample;$(FFmpegPath)\libswscale;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FFmpegPath);$(IncludePath)</IncludePath>
-    <LibraryPath>$(FFmpegPath)\lib64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(FFmpegPath)\lib64;$(FFmpegPath)\libavcodec;$(FFmpegPath)\libavutil;$(FFmpegPath)\libavformat;$(FFmpegPath)\libswresample;$(FFmpegPath)\libswscale;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FFmpegPath);$(IncludePath)</IncludePath>
-    <LibraryPath>$(FFmpegPath)\lib32;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(FFmpegPath)\lib32;$(FFmpegPath)\libavcodec;$(FFmpegPath)\libavutil;$(FFmpegPath)\libavformat;$(FFmpegPath)\libswresample;$(FFmpegPath)\libswscale;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FFmpegPath);$(IncludePath)</IncludePath>
-    <LibraryPath>$(FFmpegPath)\lib64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(FFmpegPath)\lib64;$(FFmpegPath)\libavcodec;$(FFmpegPath)\libavutil;$(FFmpegPath)\libavformat;$(FFmpegPath)\libswresample;$(FFmpegPath)\libswscale;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
