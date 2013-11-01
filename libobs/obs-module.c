@@ -84,7 +84,7 @@ int obs_load_module(const char *path)
 	bool (*module_load)(void) = NULL;
 	char *plugin_path = find_plugin(path);
 
-	mod.module = os_dlopen(path);
+	mod.module = os_dlopen(plugin_path);
 	bfree(plugin_path);
 	if (!mod.module)
 		return MODULE_FILENOTFOUND;
