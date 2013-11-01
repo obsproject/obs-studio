@@ -20,7 +20,11 @@
 #include "util/darray.h"
 #include "graphics/graphics.h"
 #include "graphics/matrix4.h"
+#ifdef GLEW_STATIC
 #include "glew/include/GL/glew.h"
+#else
+#include <GL/glew.h>
+#endif
 #include "gl-helpers.h"
 #include "gl-exports.h"
 
