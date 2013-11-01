@@ -22,9 +22,12 @@
 ******************************************************************************/
 
 #include <windows.h>
+#include <shellapi.h>
+#include <shlobj.h>
+
 #include "base.h"
 #include "platform.h"
-#include "bmem.h"
+#include "dstr.h"
 
 #include "../../deps/w32-pthreads/pthread.h"
 
@@ -68,7 +71,16 @@ void *os_dlopen(const char *path)
 
 void *os_dlsym(void *module, const char *func)
 {
-	return (void*)GetProcAddress(module, func);
+	struct dstr dll_name;
+	void *handle;
+
+	dstr_init_copy(&dll_name, module);
+	dstr_cat(&dll_name, ".dll");
+
+	handle = (void*)GetProcAddress(module, func);
+
+	dstr_free(&dll_name);
+	return handle;
 }
 
 void os_dlclose(void *module)
@@ -134,6 +146,18 @@ uint64_t os_gettime_ms(void)
 	time_val /= get_clockfreq();
 
 	return time_val;
+}
+
+/* returns %appdata% on windows */
+char *os_get_home_path(void)
+{
+	char *out;
+	wchar_t path_utf16[MAX_PATH];
+	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+			path_utf16);
+
+	os_wcs_to_utf8(path_utf16, 0, &out);
+	return out;
 }
 
 #ifdef PTW32_STATIC_LIB

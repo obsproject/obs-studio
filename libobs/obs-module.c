@@ -76,12 +76,16 @@ complete:
 	dstr_free(&enum_name);
 }
 
+extern char *find_plugin(const char *plugin);
+
 int obs_load_module(const char *path)
 {
 	struct obs_module mod;
 	bool (*module_load)(void) = NULL;
+	char *plugin_path = find_plugin(path);
 
 	mod.module = os_dlopen(path);
+	bfree(plugin_path);
 	if (!mod.module)
 		return MODULE_FILENOTFOUND;
 

@@ -5,6 +5,7 @@ struct random_tex *random_create(const char *settings, obs_source_t source)
 {
 	struct random_tex *rt = bmalloc(sizeof(struct random_tex));
 	uint32_t *pixels = bmalloc(20*20*4);
+	char *effect_file;
 	size_t x, y;
 
 	memset(rt, 0, sizeof(struct random_tex));
@@ -31,7 +32,10 @@ struct random_tex *random_create(const char *settings, obs_source_t source)
 		return NULL;
 	}
 
-	rt->whatever = gs_create_effect_from_file("draw.effect", NULL);
+	effect_file = obs_find_plugin_file("test-input/draw.effect");
+	rt->whatever = gs_create_effect_from_file(effect_file, NULL);
+	bfree(effect_file);
+
 	if (!rt->whatever) {
 		random_destroy(rt);
 		return NULL;

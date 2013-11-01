@@ -70,6 +70,8 @@ EXPORT void os_sleep_ms(uint32_t duration);
 EXPORT uint64_t os_gettime_ns(void);
 EXPORT uint64_t os_gettime_ms(void);
 
+EXPORT char *os_get_home_path(void);
+
 #ifdef _MSC_VER
 EXPORT int fseeko(FILE *stream, off_t offset, int whence);
 EXPORT off_t ftello(FILE *stream);

@@ -184,6 +184,14 @@ EXPORT media_t obs_media(void);
 EXPORT void         obs_set_primary_source(obs_source_t source);
 EXPORT obs_source_t obs_get_primary_source(void);
 
+/**
+ * Returns the location of a plugin data file.
+ *
+ *   file: Name of file to locate.  For example, "myplugin/mydata.data"
+ *   returns: Output string, or NULL if not found.  Use bfree to free string.
+ */
+EXPORT char *obs_find_plugin_file(const char *file);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */

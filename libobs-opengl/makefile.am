@@ -1,7 +1,18 @@
 INCLUDES = -iquote$(top_srcdir)/libobs -isystem./glew/include
 AM_CFLAGS = -DGLEW_NO_GLU -DGLEW_STATIC
 
-lib_LTLIBRARIES = libobs-opengl.la
+if OS_WIN
+if ARCH_X86
+libobs_opengldir = ../build/bin/32bit
+else
+libobs_opengldir = ../build/bin/64bit
+endif
+else
+libobs_opengldir = $(libdir)
+endif
+
+libobs_opengl_LTLIBRARIES = libobs-opengl.la
+
 libobs_opengl_la_LDFLAGS = -no-undefined
 libobs_opengl_la_LIBADD = ../libobs/libobs.la
 if OS_WIN
@@ -19,7 +30,6 @@ libobs_opengl_la_SOURCES = gl-helpers.c \
 			   gl-vertexbuffer.c \
 			   gl-zstencil.c \
 			   glew/src/glew.c
-
 if OS_WIN
 libobs_opengl_la_SOURCES += gl-windows.c
 endif

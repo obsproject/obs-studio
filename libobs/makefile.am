@@ -1,4 +1,14 @@
-lib_LTLIBRARIES = libobs.la
+if OS_WIN
+if ARCH_X86
+libobsdir = ../build/bin/32bit
+else
+libobsdir = ../build/bin/64bit
+endif
+else
+libobsdir = $(libdir)
+endif
+
+libobs_LTLIBRARIES = libobs.la
 libobs_la_LDFLAGS = -no-undefined --version-info 0:0:0
 
 if OS_WIN
@@ -45,5 +55,9 @@ libobs_la_SOURCES = obs.c \
 		    graphics/vec4.c
 
 if OS_WIN
-libobs_la_SOURCES += util/platform-windows.c
+libobs_la_SOURCES += util/platform-windows.c obs-windows.c
+endif
+
+if OS_NIX
+libobs_la_SOURCES += util/platform-nix.c obs-nix.c
 endif

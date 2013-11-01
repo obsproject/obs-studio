@@ -21,6 +21,8 @@
 
 struct obs_data *obs = NULL;
 
+extern char *find_libobs_data_file(const char *file);
+
 static bool obs_init_graphics(const char *graphics_module,
 		struct gs_init_data *graphics_data, struct video_info *vi)
 {
@@ -46,8 +48,10 @@ static bool obs_init_graphics(const char *graphics_module,
 	}
 
 	if (success) {
-		obs->default_effect = gs_create_effect_from_file(
-				"data/effects/default.effect", NULL);
+		char *filename = find_libobs_data_file("default.effect");
+		obs->default_effect = gs_create_effect_from_file( filename,
+				NULL);
+		bfree(filename);
 		if (!obs->default_effect)
 			success = false;
 	}

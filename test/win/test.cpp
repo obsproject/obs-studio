@@ -84,7 +84,7 @@ static void CreateOBS(HWND hwnd)
 	gsid.num_backbuffers = 2;
 	gsid.format          = GS_RGBA;
 
-	if (!obs_startup("libobs-opengl.dll", &gsid, &vi, NULL))
+	if (!obs_startup("libobs-opengl", &gsid, &vi, NULL))
 		throw "Couldn't create OBS";
 }
 
@@ -146,7 +146,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* load module */
-		if (obs_load_module("test-input.dll") != 0)
+		if (obs_load_module("test-input") != 0)
 			throw "Couldn't load module";
 
 		/* ------------------------------------------------------ */

@@ -3,12 +3,16 @@
 struct test_filter *test_create(const char *settings, obs_source_t source)
 {
 	struct test_filter *tf = bmalloc(sizeof(struct test_filter));
+	char *effect_file;
 	memset(tf, 0, sizeof(struct test_filter));
 
 	gs_entercontext(obs_graphics());
 
+	effect_file = obs_find_plugin_file("test-input/test.effect");
+
 	tf->source = source;
-	tf->whatever = gs_create_effect_from_file("test.effect", NULL);
+	tf->whatever = gs_create_effect_from_file(effect_file, NULL);
+	bfree(effect_file);
 	if (!tf->whatever) {
 		test_destroy(tf);
 		return NULL;

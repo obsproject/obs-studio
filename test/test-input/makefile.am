@@ -1,12 +1,21 @@
 INCLUDES = -iquote$(top_srcdir)/libobs
-lib_LTLIBRARIES = libtest-input.la
+
+if OS_WIN
+if ARCH_X86
+libtestdir = ../../build/plugins/32bit
+else
+libtestdir = ../../build/plugins/64bit
+endif
+else
+libtestdir = $(libdir)/obs-plugins
+endif
+
+pkglib_LTLIBRARIES = libtest-input.la
 
 libtest_input_la_LDFLAGS = -no-undefined
-
 if OS_WIN
 libtest_input_la_LDFLAGS += -avoid-version
 endif
-
 libtest_input_la_LIBADD = $(top_srcdir)/libobs/libobs.la
 libtest_input_la_SOURCES = test-filter.c \
 			   test-input.c \

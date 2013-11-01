@@ -1,11 +1,13 @@
-EXTRA_DIST = data
+if !OS_WIN
+obs_plugin_datadir = $(datadir)/obs-plugins
+obs_plugin_data_testdir = $(obs_plugin_datadir)/test-input
+data_libobsdir = $(datadir)/libobs
 
-# just be cheap and do a full recursive copy.
-install-data-local:
-	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject
-	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject/data
-	$(INSTALL) -d $(DESTDIR)$(datadir)/obsproject/data/effects
-	cp -R $(srcdir)/data/* $(DESTDIR)$(datadir)/obsproject/data
+obs_plugin_data_test_DATA = data/test-input/draw.effect \
+			    data/test-input/test.effect
+data_libobs_DATA = libobs/default.effect
 
-uninstall-local:
-	rm -rf $(DESTDIR)$(datadir)/obsproject
+#uninstall-local:
+#	rm -r $(DESTDIR)$(obs_plugin_datadir)
+#	rm -r $(DESTDIR)$(data_libobsdir)
+endif

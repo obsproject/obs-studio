@@ -302,5 +302,8 @@
     <ClCompile Include="..\..\..\libobs\media-io\audio-resampler-ffmpeg.c">
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs\obs-windows.c">
+      <Filter>libobs\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

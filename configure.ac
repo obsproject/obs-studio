@@ -2,9 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([obs], [0.0.1], [obs.jim@gmail.com])
+AC_INIT([obs-studio], [0.0.1], [obs.jim@gmail.com])
 AC_CONFIG_SRCDIR([libobs/obs.c])
 AC_CONFIG_MACRO_DIR([m4])
+# AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 
 LT_INIT
@@ -20,6 +21,21 @@ AC_PROG_SED
 AX_CXX_COMPILE_STDCXX_11
 # AX_EXT
 AX_APPEND_FLAG(["-msse2"], [CPPFLAGS])
+
+# currently only x86 and x86_64 are supported architectures
+case $host in
+	i?86*)
+		AM_CONDITIONAL([ARCH_X86],    true)
+		AM_CONDITIONAL([ARCH_X86_64], false)
+		;;
+	amd64* | x86_64*)
+		AM_CONDITIONAL([ARCH_X86],    false)
+		AM_CONDITIONAL([ARCH_X86_64], true)
+		;;
+	*)
+		AC_MSG_ERROR([host architecture not currently supported])
+		;;
+esac
 
 case $host_os in
 	mingw*)
@@ -40,13 +56,17 @@ case $host_os in
 		;;
 esac
 
-PKG_CHECK_MODULES([ffmpeg],
-		  [libavcodec
-		   libavformat
-		   libavutil
-		   libswscale
-		   libswresample
-		   libavfilter])
+AC_CHECK_HEADER([libavcodec/avcodec.h])
+AC_CHECK_HEADER([libavformat/avformat.h])
+AC_CHECK_HEADER([libavutil/avutil.h])
+AC_CHECK_HEADER([libavutil/channel_layout.h])
+AC_CHECK_HEADER([libswscale/swscale.h])
+AC_CHECK_HEADER([libswresample/swresample.h])
+AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name])
+AC_CHECK_LIB([avformat], [av_guess_format])
+AC_CHECK_LIB([avutil], [av_samples_alloc])
+AC_CHECK_LIB([swscale], [sws_scale])
+AC_CHECK_LIB([swresample], [swr_convert])
 
 # Checks for header files.
 AC_PATH_X
