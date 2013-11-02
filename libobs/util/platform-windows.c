@@ -55,12 +55,17 @@ static inline uint32_t get_winver(void)
 
 void *os_dlopen(const char *path)
 {
+	struct dstr dll_name;
 	wchar_t *wpath;
 	HMODULE h_library = NULL;
 
-	os_utf8_to_wcs(path, 0, &wpath);
+	dstr_init_copy(&dll_name, path);
+	dstr_cat(&dll_name, ".dll");
+
+	os_utf8_to_wcs(dll_name.array, 0, &wpath);
 	h_library = LoadLibraryW(wpath);
 	bfree(wpath);
+	dstr_free(&dll_name);
 
 	if (!h_library)
 		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %u",
@@ -71,15 +76,10 @@ void *os_dlopen(const char *path)
 
 void *os_dlsym(void *module, const char *func)
 {
-	struct dstr dll_name;
 	void *handle;
-
-	dstr_init_copy(&dll_name, module);
-	dstr_cat(&dll_name, ".dll");
 
 	handle = (void*)GetProcAddress(module, func);
 
-	dstr_free(&dll_name);
 	return handle;
 }
 
