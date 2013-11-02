@@ -504,9 +504,9 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 		dstr_cat_ch(&src_copy, ch_right);
 
 		for (i = 0; i < st->vars.num; i++) {
-			struct shader_var *var = st->vars.array+i;
-			gl_write_main_storage_assign(glsp, var, dst_copy.array,
-					src_copy.array, input);
+			struct shader_var *st_var = st->vars.array+i;
+			gl_write_main_storage_assign(glsp, st_var,
+					dst_copy.array, src_copy.array, input);
 		}
 
 		dstr_free(&src_copy);
