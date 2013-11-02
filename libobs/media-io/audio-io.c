@@ -93,6 +93,7 @@ static inline bool ao_add_to_media(audio_t audio)
 	struct media_output_info oi;
 	oi.obj     = audio;
 	oi.connect = NULL;
+	oi.format  = NULL; /* TODO */
 
 	audio->output = media_output_create(&oi);
 	if (!audio->output)

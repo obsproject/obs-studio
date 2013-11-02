@@ -66,7 +66,8 @@ media_output_t media_output_create(struct media_output_info *info)
 {
 	struct media_output *output;
 
-	if (!info || !info->format)
+	/* TODO: handle format */
+	if (!info) // || !info->format)
 		return NULL;
 
 	output = bmalloc(sizeof(struct media_output));

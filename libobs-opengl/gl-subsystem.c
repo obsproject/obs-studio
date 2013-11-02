@@ -33,6 +33,7 @@ static void clear_textures(struct gs_device *device)
 void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info)
 {
+	GLint max_anisotropy_max;
 	convert_filter(info->filter, &sampler->min_filter,
 			&sampler->mag_filter);
 	sampler->address_u      = convert_address_mode(info->address_u);
@@ -40,7 +41,7 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	sampler->address_w      = convert_address_mode(info->address_w);
 	sampler->max_anisotropy = info->max_anisotropy;
 
-	GLint max_anisotropy_max = 1;
+	max_anisotropy_max = 1;
 	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy_max);
 	gl_success("glGetIntegerv(GL_MAX_TEXTURE_ANISOTROPY_MAX)");
 
