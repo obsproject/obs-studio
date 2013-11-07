@@ -56,17 +56,39 @@ case $host_os in
 		;;
 esac
 
-AC_CHECK_HEADER([libavcodec/avcodec.h])
-AC_CHECK_HEADER([libavformat/avformat.h])
-AC_CHECK_HEADER([libavutil/avutil.h])
-AC_CHECK_HEADER([libavutil/channel_layout.h])
-AC_CHECK_HEADER([libswscale/swscale.h])
-AC_CHECK_HEADER([libswresample/swresample.h])
-AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name])
-AC_CHECK_LIB([avformat], [av_guess_format])
-AC_CHECK_LIB([avutil], [av_samples_alloc])
-AC_CHECK_LIB([swscale], [sws_scale])
-AC_CHECK_LIB([swresample], [swr_convert])
+# checks for wx
+AM_OPTIONS_WXCONFIG
+reqwx=2.4.0
+AM_PATH_WXCONFIG($reqwx, wxWin=1)
+if test "$wxWin" != 1; then
+	AC_MSG_ERROR([
+		wxWidgets must be installed on your system.
+ 
+		Please check that wx-config is in path, the directory
+		where wxWidgets libraries are installed (returned by
+		'wx-config --libs' or 'wx-config --static --libs' command)
+		is in LD_LIBRARY_PATH or equivalent variable and
+		wxWidgets version is $reqwx or above.
+		])
+fi
+ 
+CPPFLAGS="$CPPFLAGS $WX_CPPFLAGS"
+CXXFLAGS="$CXXFLAGS $WX_CXXFLAGS_ONLY"
+CFLAGS="$CFLAGS $WX_CFLAGS_ONLY"
+LIBS="$LIBS $WX_LIBS"
+
+# checks for ffmpeg
+AC_CHECK_HEADER([libavcodec/avcodec.h], , AC_MSG_ERROR([libavcodec header not found]))
+AC_CHECK_HEADER([libavformat/avformat.h], , AC_MSG_ERROR([libavformat header not found]))
+AC_CHECK_HEADER([libavutil/avutil.h], , AC_MSG_ERROR([libavutil header not found]))
+AC_CHECK_HEADER([libavutil/channel_layout.h], , AC_MSG_ERROR([libavutil header not found]))
+AC_CHECK_HEADER([libswscale/swscale.h], , AC_MSG_ERROR([libswscale header not found]))
+AC_CHECK_HEADER([libswresample/swresample.h], , AC_MSG_ERROR([libswresample header not found]))
+AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name], , AC_MSG_ERROR([libavcodec not found]))
+AC_CHECK_LIB([avformat], [av_guess_format], , AC_MSG_ERROR([libavformat not found]))
+AC_CHECK_LIB([avutil], [av_samples_alloc], , AC_MSG_ERROR([libavutil not found]))
+AC_CHECK_LIB([swscale], [sws_scale], , AC_MSG_ERROR([libswscale not found]))
+AC_CHECK_LIB([swresample], [swr_convert], , AC_MSG_ERROR([libswresample not found]))
 
 # Checks for header files.
 AC_PATH_X
@@ -92,13 +114,12 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
 AC_FUNC_FSEEKO
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([memmove memset socket strstr strtol strtoul])
 
 AC_CONFIG_FILES([makefile
 		 build/makefile
+		 obs/makefile
 		 test/makefile
 		 test/test-input/makefile
 		 test/win/makefile

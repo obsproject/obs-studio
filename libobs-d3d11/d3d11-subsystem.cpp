@@ -158,7 +158,7 @@ void gs_device::InitDevice(gs_init_data *data, IDXGIAdapter *adapter)
 
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-	createFlags |= D3D11_CREATE_DEVICE_DEBUG;
+	//createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
 	adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description :

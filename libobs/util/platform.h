@@ -75,9 +75,8 @@ EXPORT char *os_get_home_path(void);
 #ifdef _MSC_VER
 EXPORT int fseeko(FILE *stream, off_t offset, int whence);
 EXPORT off_t ftello(FILE *stream);
-#endif
-
 #define strtoll _strtoi64
+#endif
 
 #ifdef __cplusplus
 }

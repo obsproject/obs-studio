@@ -1,0 +1,15 @@
+if OS_WIN
+if ARCH_X86_64
+obsdir = ../build/bin/64bit
+else
+obsdir = ../build/bin/32bit
+endif
+else
+obsdir = $(bindir)
+endif
+
+obs_PROGRAMS = obs
+# obs_LDADD = $(top_srcdir)/libobs/libobs.la
+obs_SOURCES = basic-window.cpp \
+	      obs.cpp \
+	      OBSWindows.cpp
