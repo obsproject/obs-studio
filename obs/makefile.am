@@ -10,6 +10,6 @@ endif
 
 obs_PROGRAMS = obs
 # obs_LDADD = $(top_srcdir)/libobs/libobs.la
-obs_SOURCES = basic-window.cpp \
+obs_SOURCES = window-obs-basic.cpp \
 	      obs.cpp \
 	      OBSWindows.cpp
