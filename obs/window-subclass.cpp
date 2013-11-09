@@ -43,12 +43,11 @@ wxFont wxCreateFontFromStockObject2(int index)
 #else
 			font.Create(info);
 #endif
-			} else {
-				wxFAIL_MSG(wxT("failed to get LOGFONT"));
-			}
 		} else {
-			wxFAIL_MSG(wxT("stock font not found"));
+			wxFAIL_MSG(wxT("failed to get LOGFONT"));
 		}
+	} else {
+		wxFAIL_MSG(wxT("stock font not found"));
 	}
 
 	return font;
@@ -63,16 +62,6 @@ WindowSubclass::WindowSubclass(wxWindow* parent, wxWindowID id,
 #ifdef _WIN32
 	this->SetFont(wxFont(wxCreateFontFromStockObject2(DEFAULT_GUI_FONT)));
 #endif
-}
-
-ListCtrlFixed::ListCtrlFixed(wxWindow *parent,
-		wxWindowID id,
-		const wxPoint& pos,
-		const wxSize& size,
-		long style,
-		const wxValidator& validator,
-		const wxString& name)
-{
 }
 
 wxSize ListCtrlFixed::DoGetBestClientSize() const
