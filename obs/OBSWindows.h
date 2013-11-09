@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct  8 2012)
+// C++ code generated with wxFormBuilder (version Nov  6 2013)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -11,6 +11,10 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
+class ListCtrlFixed;
+class WindowSubclass;
+
+#include "window-subclass.hpp"
 #include <wx/string.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -63,7 +67,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Class OBSBasicBase
 ///////////////////////////////////////////////////////////////////////////////
-class OBSBasicBase : public wxFrame 
+class OBSBasicBase : public WindowSubclass
 {
 	private:
 	
@@ -111,7 +115,7 @@ class OBSBasicBase : public wxFrame
 	
 	public:
 		
-		OBSBasicBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 854,614 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		OBSBasicBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 923,677 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~OBSBasicBase();
 	
@@ -120,7 +124,7 @@ class OBSBasicBase : public wxFrame
 ///////////////////////////////////////////////////////////////////////////////
 /// Class OBSStudioBase
 ///////////////////////////////////////////////////////////////////////////////
-class OBSStudioBase : public wxFrame 
+class OBSStudioBase : public WindowSubclass
 {
 	private:
 	
@@ -146,7 +150,7 @@ class OBSStudioBase : public wxFrame
 		wxToolBar* m_toolBar12;
 		wxStaticText* m_staticText4;
 		wxPanel* m_panel15;
-		wxListCtrl* m_listCtrl1;
+		ListCtrlFixed* m_listCtrl1;
 		wxToolBar* m_toolBar13;
 		wxMenuBar* m_menubar1;
 		wxMenu* m_menu1;

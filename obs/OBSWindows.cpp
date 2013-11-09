@@ -1,9 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct  8 2012)
+// C++ code generated with wxFormBuilder (version Nov  6 2013)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
+
+#include "window-subclass.hpp"
 
 #include "OBSWindows.h"
 
@@ -15,10 +17,9 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : WindowSubclass( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-	this->SetFont( wxFont( 8, 70, 90, 90, false, wxT("Tahoma") ) );
 	
 	mainMenu = new wxMenuBar( 0 );
 	fileMenu = new wxMenu();
@@ -110,8 +111,6 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	scenesToolbar->AddSeparator(); 
 	
-	scenesToolbar->AddSeparator(); 
-	
 	scenesToolbar->AddTool( ID_SCENE_MOVEUP, _("tool"), up_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	scenesToolbar->AddTool( ID_SCENE_MOVEDOWN, _("tool"), down_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
@@ -152,8 +151,6 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	sourcesToolbar->AddTool( ID_SOURCE_DELETE, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	sourcesToolbar->AddTool( ID_SOURCE_PROPERTIES, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	sourcesToolbar->AddSeparator(); 
 	
 	sourcesToolbar->AddSeparator(); 
 	
@@ -275,10 +272,9 @@ OBSBasicBase::~OBSBasicBase()
 	
 }
 
-OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : WindowSubclass( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxSize( 900,400 ), wxDefaultSize );
-	this->SetFont( wxFont( 8, 70, 90, 90, false, wxT("Tahoma") ) );
 	
 	wxBoxSizer* clientSIzer;
 	clientSIzer = new wxBoxSizer( wxVERTICAL );
@@ -373,7 +369,7 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	wxBoxSizer* bSizer20;
 	bSizer20 = new wxBoxSizer( wxHORIZONTAL );
 	
-	bSizer20->SetMinSize( wxSize( 900,170 ) ); 
+	bSizer20->SetMinSize( wxSize( 900,155 ) ); 
 	wxBoxSizer* bSizer16;
 	bSizer16 = new wxBoxSizer( wxVERTICAL );
 	
@@ -394,8 +390,6 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	m_toolBar1->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	m_toolBar1->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar1->AddSeparator(); 
 	
 	m_toolBar1->AddSeparator(); 
 	
@@ -439,10 +433,6 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	m_toolBar11->AddTool( wxID_ANY, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
-	m_toolBar11->AddSeparator(); 
-	
-	m_toolBar11->AddSeparator(); 
-	
 	m_toolBar11->Realize(); 
 	
 	bSizer37->Add( m_toolBar11, 0, wxEXPAND, 5 );
@@ -482,8 +472,6 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	m_toolBar12->AddSeparator(); 
 	
-	m_toolBar12->AddSeparator(); 
-	
 	m_toolBar12->AddTool( wxID_ANY, _("tool"), up_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	m_toolBar12->AddTool( wxID_ANY, _("tool"), down_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
@@ -508,14 +496,14 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	m_staticText4->Wrap( -1 );
 	bSizer19->Add( m_staticText4, 0, wxALL, 3 );
 	
-	m_panel15 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
+	m_panel15 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxSIMPLE_BORDER );
 	wxBoxSizer* bSizer40;
 	bSizer40 = new wxBoxSizer( wxVERTICAL );
 	
-	m_listCtrl1 = new wxListCtrl( m_panel15, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT|wxLC_SINGLE_SEL|wxNO_BORDER );
+	m_listCtrl1 = new ListCtrlFixed( m_panel15, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT|wxLC_SINGLE_SEL|wxNO_BORDER );
 	m_listCtrl1->SetMinSize( wxSize( 400,-1 ) );
 	
-	bSizer40->Add( m_listCtrl1, 1, wxEXPAND|wxTOP|wxBOTTOM|wxLEFT, 0 );
+	bSizer40->Add( m_listCtrl1, 1, 0, 0 );
 	
 	m_toolBar13 = new wxToolBar( m_panel15, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxNO_BORDER ); 
 	m_toolBar13->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
@@ -523,10 +511,6 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	m_toolBar13->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	m_toolBar13->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar13->AddSeparator(); 
-	
-	m_toolBar13->AddSeparator(); 
 	
 	m_toolBar13->Realize(); 
 	

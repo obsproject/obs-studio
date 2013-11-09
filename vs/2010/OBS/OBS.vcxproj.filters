@@ -24,6 +24,9 @@
     <ClCompile Include="..\..\..\obs\window-obs-basic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-subclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\obs.hpp">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\window-obs-basic.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\window-subclass.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

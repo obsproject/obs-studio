@@ -27,7 +27,7 @@ bool OBSApp::OnInit()
 
 	wxInitAllImageHandlers();
 
-	OBSBasic *mainWindow = new OBSBasic();
+	OBSStudioBase *mainWindow = new OBSStudioBase(NULL);
 	mainWindow->Show();
 	return true;
 }
