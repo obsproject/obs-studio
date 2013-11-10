@@ -61,7 +61,7 @@ void gs_texture_2d::InitTexture(const void **data)
 	td.MipLevels        = genMipmaps ? 0 : levels;
 	td.ArraySize        = type == GS_TEXTURE_CUBE ? 6 : 1;
 	td.Format           = dxgiFormat;
-	td.BindFlags        = D3D10_BIND_SHADER_RESOURCE;
+	td.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 	td.SampleDesc.Count = 1;
 	td.CPUAccessFlags   = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 	td.Usage            = isDynamic ? D3D11_USAGE_DYNAMIC :
@@ -71,7 +71,7 @@ void gs_texture_2d::InitTexture(const void **data)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
 	if (isRenderTarget || isGDICompatible)
-		td.BindFlags |= D3D10_BIND_RENDER_TARGET;
+		td.BindFlags |= D3D11_BIND_RENDER_TARGET;
 
 	if (data)
 		InitSRD(srd, data);
@@ -91,10 +91,10 @@ void gs_texture_2d::InitResourceView()
 	resourceDesc.Format = dxgiFormat;
 
 	if (type == GS_TEXTURE_CUBE) {
-		resourceDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURECUBE;
+		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 		resourceDesc.TextureCube.MipLevels = genMipmaps ? -1 : 1;
 	} else {
-		resourceDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		resourceDesc.Texture2D.MipLevels = genMipmaps ? -1 : 1;
 	}
 

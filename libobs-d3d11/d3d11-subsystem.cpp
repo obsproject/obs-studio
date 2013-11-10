@@ -1050,7 +1050,7 @@ void device_draw(device_t device, enum gs_draw_mode draw_mode,
 		return;
 	}
 
-	D3D10_PRIMITIVE_TOPOLOGY newTopology = ConvertGSTopology(draw_mode);
+	D3D11_PRIMITIVE_TOPOLOGY newTopology = ConvertGSTopology(draw_mode);
 	if (device->curToplogy != newTopology) {
 		device->context->IASetPrimitiveTopology(newTopology);
 		device->curToplogy = newTopology;
