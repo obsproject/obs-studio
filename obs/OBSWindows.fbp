@@ -778,7 +778,7 @@
                                                                                 <event name="OnSize"></event>
                                                                                 <event name="OnUpdateUI"></event>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\list_add.png</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\list_add.png</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SCENE_ADD</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -799,7 +799,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\delete.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\delete.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SCENE_DELETE</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -820,7 +820,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\htmledit_icon22_properties.gif</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\htmledit_icon22_properties.gif</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SCENE_PROPERTIES</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -844,7 +844,7 @@
                                                                                     <property name="permission">protected</property>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\up.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\up.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SCENE_MOVEUP</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -865,7 +865,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\down.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\down.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SCENE_MOVEDOWN</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -1240,7 +1240,7 @@
                                                                                 <event name="OnSize"></event>
                                                                                 <event name="OnUpdateUI"></event>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\list_add.png</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\list_add.png</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SOURCE_ADD</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -1261,7 +1261,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\delete.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\delete.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SOURCE_DELETE</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -1282,7 +1282,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\htmledit_icon22_properties.gif</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\htmledit_icon22_properties.gif</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SOURCE_PROPERTIES</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -1306,7 +1306,7 @@
                                                                                     <property name="permission">protected</property>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\up.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\up.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SOURCE_MOVEUP</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -1327,7 +1327,7 @@
                                                                                     <event name="OnUpdateUI"></event>
                                                                                 </object>
                                                                                 <object class="tool" expanded="0">
-                                                                                    <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\down.ico</property>
+                                                                                    <property name="bitmap">Load From Embedded File; images\down.ico</property>
                                                                                     <property name="context_menu">0</property>
                                                                                     <property name="id">ID_SOURCE_MOVEDOWN</property>
                                                                                     <property name="kind">wxITEM_NORMAL</property>
@@ -3176,7 +3176,7 @@
                                                                         <event name="OnSize"></event>
                                                                         <event name="OnUpdateUI"></event>
                                                                         <object class="tool" expanded="0">
-                                                                            <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\list_add.png</property>
+                                                                            <property name="bitmap">Load From Embedded File; images\list_add.png</property>
                                                                             <property name="context_menu">0</property>
                                                                             <property name="id">wxID_ANY</property>
                                                                             <property name="kind">wxITEM_NORMAL</property>
@@ -3221,7 +3221,7 @@
                                                                             <property name="permission">protected</property>
                                                                         </object>
                                                                         <object class="tool" expanded="0">
-                                                                            <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\up.ico</property>
+                                                                            <property name="bitmap">Load From Embedded File; images\up.ico</property>
                                                                             <property name="context_menu">0</property>
                                                                             <property name="id">wxID_ANY</property>
                                                                             <property name="kind">wxITEM_NORMAL</property>
@@ -4075,7 +4075,7 @@
                                                                             <event name="OnUpdateUI"></event>
                                                                         </object>
                                                                         <object class="tool" expanded="0">
-                                                                            <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\htmledit_icon22_properties.gif</property>
+                                                                            <property name="bitmap">Load From Embedded File; images\htmledit_icon22_properties.gif</property>
                                                                             <property name="context_menu">0</property>
                                                                             <property name="id">wxID_ANY</property>
                                                                             <property name="kind">wxITEM_NORMAL</property>
@@ -4099,7 +4099,7 @@
                                                                             <property name="permission">protected</property>
                                                                         </object>
                                                                         <object class="tool" expanded="0">
-                                                                            <property name="bitmap">Load From Embedded File; D:\OBS2\obs\images\up.ico</property>
+                                                                            <property name="bitmap">Load From Embedded File; images\up.ico</property>
                                                                             <property name="context_menu">0</property>
                                                                             <property name="id">wxID_ANY</property>
                                                                             <property name="kind">wxITEM_NORMAL</property>
