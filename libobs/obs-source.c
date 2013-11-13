@@ -24,6 +24,8 @@
 bool get_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info)
 {
+	info->getname = load_module_subfunc(module, module_name,
+			source_name, "getname", true);
 	info->create = load_module_subfunc(module, module_name,
 			source_name,"create", true);
 	info->destroy = load_module_subfunc(module, module_name,
@@ -31,7 +33,8 @@ bool get_source_info(void *module, const char *module_name,
 	info->get_output_flags = load_module_subfunc(module, module_name,
 			source_name, "get_output_flags", true);
 
-	if (!info->create || !info->destroy || !info->get_output_flags)
+	if (!info->getname || !info->create || !info->destroy ||
+	    !info->get_output_flags)
 		return false;
 
 	info->config = load_module_subfunc(module, module_name,

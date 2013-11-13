@@ -21,6 +21,7 @@
 #define MODULE_ERROR            -1
 #define MODULE_FILENOTFOUND     -2
 #define MODULE_FUNCTIONNOTFOUND -3
+#define MODULE_INCOMPATIBLE_VER -4
 
 #define SOURCE_VIDEO          (1<<0)
 #define SOURCE_AUDIO          (1<<1)

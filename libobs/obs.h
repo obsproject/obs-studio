@@ -32,6 +32,13 @@
 extern "C" {
 #endif
 
+/* LIBOBS_API_VER must be returned by module_version in each module */
+
+#define LIBOBS_API_MAJOR_VER  0 /* increment if major breaking changes */
+#define LIBOBS_API_MINOR_VER  1 /* increment if minor non-breaking additions */
+#define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 16) | \
+                               LIBOBS_API_MINOR_VER)
+
 enum obs_source_type {
 	SOURCE_INPUT,
 	SOURCE_FILTER,
@@ -215,13 +222,19 @@ EXPORT obs_source_t obs_display_getsource(obs_display_t display);
 /* Sources */
 
 /**
+ * Gets the translated display name of a source
+ */
+EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
+		const char *name, const char *locale);
+
+/**
  * Creates a source of the specified type with the specified settings.
  *
  *   The "source" context is used for anything related to presenting
  * or modifying video/audio.
  */
 EXPORT obs_source_t obs_source_create(enum obs_source_type type,
-                                const char *name, const char *settings);
+		const char *name, const char *settings);
 EXPORT void obs_source_destroy(obs_source_t source);
 
 /**

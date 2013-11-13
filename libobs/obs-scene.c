@@ -18,6 +18,12 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
+static const char *scene_getname(const char *locale)
+{
+	/* TODO: locale lookup of display name */
+	return "Scene";
+}
+
 static void *scene_create(const char *settings, struct obs_source *source)
 {
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
@@ -84,6 +90,7 @@ static bool scene_enum_children(void *data, size_t idx, obs_source_t *child)
 static const struct source_info scene_info =
 {
 	"scene",
+	scene_getname,
 	scene_create,
 	scene_destroy,
 	scene_get_output_flags, NULL, NULL, NULL, NULL,
@@ -96,6 +103,7 @@ static const struct source_info scene_info =
 static const struct source_info scene_info =
 {
 	.name             = "scene",
+	.getname          = scene_getname,
 	.create           = scene_create,
 	.destroy          = scene_destroy,
 	.get_output_flags = scene_get_output_flags,

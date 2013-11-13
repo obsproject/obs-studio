@@ -78,23 +78,71 @@ complete:
 
 extern char *find_plugin(const char *plugin);
 
+/* checks API version of module and calls module_load if it exists.
+ * if the API version used by the module is incompatible, fails. */
+static int call_module_load(void *module, const char *path)
+{
+	uint32_t (*module_version)(uint32_t obs_ver) = NULL;
+	bool (*module_load)(void) = NULL;
+	uint32_t version, major, minor;
+
+	module_load = os_dlsym(module, "module_load");
+
+	module_version = os_dlsym(module, "module_version");
+	if (!module_version) {
+		blog(LOG_WARNING, "Module '%s' failed to load: "
+		                  "module_version not found.", path);
+		return MODULE_FUNCTIONNOTFOUND;
+	}
+
+	version = module_version(LIBOBS_API_VER);
+	major = (version >> 16);
+	minor = (version & 0xFF);
+
+	if (major != LIBOBS_API_MAJOR_VER) {
+		blog(LOG_WARNING, "Module '%s' failed to load: "
+		                  "incompatible major version "
+		                  "(current API: %u.%u, module version: %u.%u)",
+		                  path,
+		                  LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER,
+		                  major, minor);
+		return MODULE_INCOMPATIBLE_VER;
+	}
+
+	if (minor > LIBOBS_API_MINOR_VER) {
+		blog(LOG_WARNING, "Module '%s' failed to load: "
+		                  "incompatible minor version "
+		                  "(current API: %u.%u, module version: %u.%u)",
+		                  path,
+		                  LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER,
+		                  major, minor);
+		return MODULE_INCOMPATIBLE_VER;
+	}
+
+	if (module_load && !module_load()) {
+		blog(LOG_WARNING, "Module '%s' failed to load: "
+		                  "module_load failed", path);
+		return MODULE_ERROR;
+	}
+
+	return MODULE_SUCCESS;
+}
+
 int obs_load_module(const char *path)
 {
 	struct obs_module mod;
-	bool (*module_load)(void) = NULL;
 	char *plugin_path = find_plugin(path);
+	int errorcode;
 
 	mod.module = os_dlopen(plugin_path);
 	bfree(plugin_path);
 	if (!mod.module)
 		return MODULE_FILENOTFOUND;
 
-	module_load = os_dlsym(mod.module, "module_load");
-	if (module_load) {
-		if (!module_load()) {
-			os_dlclose(mod.module);
-			return MODULE_ERROR;
-		}
+	errorcode = call_module_load(mod.module, path);
+	if (errorcode != MODULE_SUCCESS) {
+		os_dlclose(mod.module);
+		return errorcode;
 	}
 
 	mod.name = bstrdup(path);

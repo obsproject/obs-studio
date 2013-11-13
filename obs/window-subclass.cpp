@@ -64,6 +64,19 @@ WindowSubclass::WindowSubclass(wxWindow* parent, wxWindowID id,
 #endif
 }
 
+ListCtrlFixed::ListCtrlFixed(wxWindow *parent,
+		wxWindowID id,
+		const wxPoint& pos,
+		const wxSize& size,
+		long style,
+		const wxValidator& validator,
+		const wxString& name)
+	: wxListCtrl(parent, id, pos, size, style, validator, name)
+{
+	m_bestSizeCache.Set(wxDefaultCoord, wxDefaultCoord);
+	SetInitialSize(size);
+}
+
 wxSize ListCtrlFixed::DoGetBestClientSize() const
 {
 	if (!InReportView())

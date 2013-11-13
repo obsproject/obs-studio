@@ -11,6 +11,8 @@ struct random_tex {
 	effect_t  whatever;
 };
 
+EXPORT const char *random_getname(const char *locale);
+
 EXPORT struct random_tex *random_create(const char *settings, obs_source_t source);
 EXPORT void random_destroy(struct random_tex *rt);
 EXPORT uint32_t random_get_output_flags(struct random_tex *rt);

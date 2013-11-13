@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include "test-random.h"
 
+const char *random_getname(const char *locale)
+{
+	return "Random;";
+}
+
 struct random_tex *random_create(const char *settings, obs_source_t source)
 {
 	struct random_tex *rt = bmalloc(sizeof(struct random_tex));

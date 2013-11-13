@@ -1,5 +1,10 @@
 #include "test-filter.h"
 
+const char *test_getname(const char *locale)
+{
+	return "Test";
+}
+
 struct test_filter *test_create(const char *settings, obs_source_t source)
 {
 	struct test_filter *tf = bmalloc(sizeof(struct test_filter));

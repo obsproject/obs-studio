@@ -1,7 +1,13 @@
+#include "obs.h"
 #include "test-input-exports.h"
 
 const char *inputs[] = {"random"};
 const char *filters[] = {"test"};
+
+uint32_t module_version(uint32_t in_version)
+{
+	return LIBOBS_API_VER;
+}
 
 bool enum_inputs(size_t idx, const char **name)
 {

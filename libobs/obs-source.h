@@ -36,6 +36,7 @@
  *
  *   Each individual source is then exported by it's name.  For example, a
  * source named "mysource" would have the following exports:
+ *       + mysource_getname
  *       + mysource_create
  *       + mysource_destroy
  *       + mysource_getflags
@@ -59,6 +60,10 @@
  * ===========================================
  *   Source Exports
  * ===========================================
+ *   const char *[name]_getname(const char *locale);
+ *       Returns the full name of the source type (seen by the user).
+ *
+ * ---------------------------------------------------------
  *   void *[name]_create(const char *settings, obs_source_t source);
  *       Creates a source.
  *
@@ -160,6 +165,8 @@ struct source_info {
 
 	/* ----------------------------------------------------------------- */
 	/* required implementations */
+
+	const char *(*getname)(const char *locale);
 
 	void *(*create)(const char *settings, obs_source_t source);
 	void (*destroy)(void *data);

@@ -33,6 +33,7 @@
  *
  *   Each individual output is then exported by it's name.  For example, an
  * output named "myoutput" would have the following exports:
+ *       + myoutput_getname
  *       + myoutput_create
  *       + myoutput_destroy
  *       + myoutput_start
@@ -52,7 +53,11 @@
  * ===========================================
  *   Output Exports
  * ===========================================
- *   void *[name]_create(const char *settings, output_t output);
+ *   const char *[name]_getname(const char *locale);
+ *       Returns the full translated name of the output type (seen by the user).
+ *
+ * ---------------------------------------------------------
+ *   void *[name]_create(const char *settings, obs_output_t output);
  *       Creates an output.
  *
  *       settings: Settings of the output.
@@ -94,6 +99,8 @@ struct obs_output;
 
 struct output_info {
 	const char *name;
+
+	const char *(*getname)(const char *locale);
 
 	void *(*create)(const char *settings, struct obs_output *output);
 	void (*destroy)(void *data);

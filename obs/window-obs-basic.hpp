@@ -19,7 +19,7 @@
 
 #include "OBSWindows.h"
 
-
+/*
 class OBSBasic : public OBSBasicBase {
 protected:
 	virtual void file_newOnMenuSelection(wxCommandEvent& event);
@@ -42,3 +42,4 @@ protected:
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}
 };
+*/

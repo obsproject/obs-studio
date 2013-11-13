@@ -21,6 +21,8 @@
 bool get_output_info(void *module, const char *module_name,
 		const char *output_name, struct output_info *info)
 {
+	info->getname = load_module_subfunc(module, module_name,
+			output_name, "getname", true);
 	info->create = load_module_subfunc(module, module_name,
 			output_name, "create", true);
 	info->destroy = load_module_subfunc(module, module_name,
@@ -30,7 +32,8 @@ bool get_output_info(void *module, const char *module_name,
 	info->stop = load_module_subfunc(module, module_name,
 			output_name, "stop", true);
 
-	if (!info->create || !info->destroy || !info->start || !info->stop)
+	if (!info->getname || !info->create || !info->destroy ||
+	    !info->start || !info->stop)
 		return false;
 
 	info->config = load_module_subfunc(module, module_name,

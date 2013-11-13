@@ -117,6 +117,12 @@ AC_FUNC_FSEEKO
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([memmove memset socket strstr strtol strtoul])
 
+AC_ARG_ENABLE([build_jansson],
+	      [AS_HELP_STRING([--build-jansson], [build jansson])])
+if test "x$build_jansson" = xyes; then
+	AC_CONFIG_SUBDIRS([deps/jansson])
+fi
+
 AC_CONFIG_FILES([makefile
 		 build/makefile
 		 obs/makefile

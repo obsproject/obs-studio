@@ -36,17 +36,13 @@ public:
  */
 class ListCtrlFixed : public wxListCtrl {
 public:
-	inline ListCtrlFixed(wxWindow *parent,
+	ListCtrlFixed(wxWindow *parent,
 			wxWindowID id = wxID_ANY,
 			const wxPoint& pos = wxDefaultPosition,
 			const wxSize& size = wxDefaultSize,
 			long style = wxLC_ICON,
 			const wxValidator& validator = wxDefaultValidator,
-			const wxString& name = wxListCtrlNameStr)
-		: wxListCtrl(parent, id, pos, size, style, validator, name)
-	{
-	}
+			const wxString& name = wxListCtrlNameStr);
 
-protected:
 	virtual wxSize DoGetBestClientSize() const;
 };
