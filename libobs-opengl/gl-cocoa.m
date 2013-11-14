@@ -40,7 +40,8 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 {
 	unsigned attrib_count = 0;
 
-#define ADD_ATTR(x) { attributes[attrib_count++] = (NSOpenGLPixelFormatAttribute)x; }
+#define ADD_ATTR(x) \
+	{ attributes[attrib_count++] = (NSOpenGLPixelFormatAttribute)x; }
 #define ADD_ATTR2(x, y) { ADD_ATTR(x); ADD_ATTR(y); }
 
 	NSOpenGLPixelFormatAttribute attributes[40];
@@ -55,7 +56,8 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 			ADD_ATTR(NSOpenGLPFATripleBuffer);
 			break;
 		default:
-			blog(LOG_ERROR, "Requested backbuffers (%d) not supported", info->num_backbuffers);
+			blog(LOG_ERROR, "Requested backbuffers (%d) not "
+			                "supported", info->num_backbuffers);
 	}
 
 	ADD_ATTR(NSOpenGLPFAClosestPolicy);
@@ -76,13 +78,15 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 #undef ADD_ATTR2
 #undef ADD_ATTR
 
-	NSOpenGLPixelFormat *pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];;
+	NSOpenGLPixelFormat *pf;
+	pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 	if(!pf) {
 		blog(LOG_ERROR, "Failed to create pixel format");
 		return NULL;
 	}
 
-	NSOpenGLContext *context = [[NSOpenGLContext alloc] initWithFormat:pf shareContext:nil];
+	NSOpenGLContext *context;
+	context = [[NSOpenGLContext alloc] initWithFormat:pf shareContext:nil];
 	[pf release];
 	if(!context) {
 		blog(LOG_ERROR, "Failed to create context");
@@ -104,7 +108,8 @@ static bool gl_init_extensions(device_t device)
 	glewExperimental=true;
 	GLenum error = glewInit();
 	if(error != GLEW_OK) {
-	       blog(LOG_ERROR, "glewInit failed, %u\n%s\n", error, glewGetErrorString(error));
+	       blog(LOG_ERROR, "glewInit failed, %u\n%s\n", error,
+			       glewGetErrorString(error));
 	       return false;
 	}
 
@@ -124,7 +129,8 @@ static bool gl_init_extensions(device_t device)
 		return false;
 	}
 
-	glGetError(); //something inside glew produces error code 1280 (invalid enum)
+	//something inside glew produces error code 1280 (invalid enum)
+	glGetError();
 
 	device->copy_type = COPY_TYPE_FBO_BLIT;
 
@@ -246,7 +252,8 @@ void device_present(device_t device)
 	[device->plat->context flushBuffer];
 }
 
-void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width, uint32_t *height)
+void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
+		uint32_t *height)
 {
 	if(width) *width = swap->info.cx;
 	if(height) *height = swap->info.cy;
