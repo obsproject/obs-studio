@@ -1,6 +1,9 @@
 *.exe
 *.dll
 
+*.dylib
+*.so
+
 /other/
 Release_MD/
 Release/
@@ -61,3 +64,8 @@ tags
 *.lnk
 *.chm
 *~
+
+*.o.d
+*.ninja
+.ninja*
+.dirstamp
