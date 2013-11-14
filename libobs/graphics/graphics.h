@@ -19,6 +19,9 @@
 
 #include "../util/bmem.h"
 #include "input.h"
+#ifdef __APPLE__
+#include <objc/objc-runtime.h>
+#endif
 
 /*
  * This is an API-independent graphics subsystem wrapper.
@@ -410,7 +413,7 @@ struct gs_init_data {
 #if defined(_WIN32)
 	void                    *hwnd;
 #elif defined(__APPLE__)
-	/* TODO */
+	__unsafe_unretained id  view;
 #elif defined(__posix__)
 	/* TODO */
 #endif
