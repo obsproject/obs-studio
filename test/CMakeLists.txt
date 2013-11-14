@@ -1,0 +1,6 @@
+add_subdirectory(test-input)
+if(WIN32)
+	add_subdirectory(win)
+elseif(APPLE AND UNIX)
+	add_subdirectory(osx)
+endif()
