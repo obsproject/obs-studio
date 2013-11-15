@@ -27,7 +27,9 @@ static const char *plugin_patterns[] = {
 	"../plugins/%s.so",
 	"../plugins/lib%s.so"
 };
-static const int plugin_patterns_size = sizeof(plugin_patterns)/sizeof(plugin_patterns[0]);
+
+static const int plugin_patterns_size =
+	sizeof(plugin_patterns)/sizeof(plugin_patterns[0]);
 
 char *find_plugin(const char *plugin)
 {
@@ -42,7 +44,6 @@ char *find_plugin(const char *plugin)
 	return path.array;
 }
 
-/* on windows, points to [base directory]/libobs */
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
@@ -51,7 +52,6 @@ char *find_libobs_data_file(const char *file)
 	return path.array;
 }
 
-/* on windows, data files should always be in [base directory]/data */
 char *obs_find_plugin_file(const char *file)
 {
 	struct dstr path;

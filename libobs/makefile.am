@@ -58,6 +58,10 @@ if OS_WIN
 libobs_la_SOURCES += util/platform-windows.c obs-windows.c
 endif
 
+if OS_OSX
+libobs_la_SOURCES += util/platform-cocoa.c obs-cocoa.c
+endif
+
 if OS_NIX
 libobs_la_SOURCES += util/platform-nix.c obs-nix.c
 endif

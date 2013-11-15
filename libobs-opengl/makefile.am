@@ -30,6 +30,11 @@ libobs_opengl_la_SOURCES = gl-helpers.c \
 			   gl-vertexbuffer.c \
 			   gl-zstencil.c \
 			   glew/src/glew.c
+
+if OS_OSX
+libobs_opengl_la_SOURCES += gl-cocoa.m
+endif
+
 if OS_WIN
 libobs_opengl_la_SOURCES += gl-windows.c
 endif
