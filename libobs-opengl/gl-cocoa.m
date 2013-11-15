@@ -32,7 +32,6 @@ struct gl_windowinfo {
 
 struct gl_platform {
 	NSOpenGLContext *context;
-	GLuint vao;
 	struct gs_swap_chain swap;
 };
 
@@ -164,9 +163,6 @@ struct gl_platform *gl_platform_create(device_t device,
 	if(!gl_init_extensions(device))
 		goto fail;
 
-	gl_gen_vertex_arrays(1, &plat->vao);
-	gl_bind_vertex_array(plat->vao);
-
 	if (GLEW_ARB_seamless_cube_map) {
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		gl_success("GL_TEXTURE_CUBE_MAP_SEAMLESS");
@@ -192,7 +188,6 @@ void gl_platform_destroy(struct gl_platform *platform)
 	if(!platform)
 		return;
 
-	gl_delete_vertex_arrays(1, &platform->vao);
 	[platform->context release];
 	platform->context = nil;
 	gl_windowinfo_destroy(platform->swap.wi);
@@ -228,7 +223,6 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 void device_entercontext(device_t device)
 {
 	[device->plat->context makeCurrentContext];
-	//gl_bind_vertex_array(device->plat->vao);
 }
 
 void device_leavecontext(device_t device)
