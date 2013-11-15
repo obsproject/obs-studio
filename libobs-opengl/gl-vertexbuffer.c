@@ -70,6 +70,9 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 		vb->data = NULL;
 	}
 
+	if (!gl_gen_vertex_arrays(1, &vb->vao))
+		return false;
+
 	return true;
 }
 
@@ -107,6 +110,9 @@ void vertexbuffer_destroy(vertbuffer_t vb)
 		if (vb->uv_buffers.num)
 			gl_delete_buffers((GLsizei)vb->uv_buffers.num,
 					vb->uv_buffers.array);
+
+		if (vb->vao)
+			gl_delete_vertex_arrays(1, &vb->vao);
 
 		da_free(vb->uv_sizes);
 		da_free(vb->uv_buffers);
@@ -225,6 +231,9 @@ static bool load_vb_buffer(struct gs_shader *shader,
 	if (!gl_success("glEnableVertexAttribArray"))
 		success = false;
 
+	if (!gl_bind_buffer(GL_ARRAY_BUFFER, 0))
+		success = false;
+
 	return success;
 }
 
@@ -232,6 +241,10 @@ static inline bool load_vb_buffers(struct gs_shader *shader,
 		struct gs_vertex_buffer *vb)
 {
 	size_t i;
+
+	if (!gl_bind_vertex_array(vb->vao))
+		return false;
+
 	for (i = 0; i < shader->attribs.num; i++) {
 		struct shader_attrib *attrib = shader->attribs.array+i;
 		if (!load_vb_buffer(shader, attrib, vb))

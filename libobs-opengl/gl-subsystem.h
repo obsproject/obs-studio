@@ -344,6 +344,7 @@ struct gs_shader {
 extern void shader_update_textures(struct gs_shader *shader);
 
 struct gs_vertex_buffer {
+	GLuint               vao;
 	GLuint               vertex_buffer;
 	GLuint               normal_buffer;
 	GLuint               tangent_buffer;
