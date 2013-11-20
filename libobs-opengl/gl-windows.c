@@ -350,7 +350,7 @@ static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
 	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
 	memset(wi, 0, sizeof(struct gl_windowinfo));
 
-	wi->hwnd = info->hwnd;
+	wi->hwnd = info->window.hwnd;
 	wi->hdc  = GetDC(wi->hwnd);
 	if (!wi->hdc) {
 		blog(LOG_ERROR, "Unable to get device context from window");

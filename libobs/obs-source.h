@@ -211,10 +211,17 @@ static inline void audiobuf_free(struct audiobuf *buf)
 }
 
 struct obs_source {
-	void                         *data; /* source-specific data */
+	volatile int                 refs;
+
+	/* source-specific data */
+	void                         *data;
 	struct source_info           callbacks;
 	struct dstr                  settings;
-	bool                         valid;
+
+	/* used to indicate that the source has been removed and all
+	 * references to it should be released (not exactly how I would prefer
+	 * to handle things but it's the best option) */
+	bool                         removed;
 
 	/* async video and audio */
 	bool                         timing_set;

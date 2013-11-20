@@ -32,7 +32,7 @@ static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
 	desc.BufferDesc.Width  = data->cx;
 	desc.BufferDesc.Height = data->cy;
 	desc.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.OutputWindow      = (HWND)data->hwnd;
+	desc.OutputWindow      = (HWND)data->window.hwnd;
 	desc.SampleDesc.Count  = 1;
 	desc.Windowed          = true;
 }
@@ -109,7 +109,7 @@ void gs_swap_chain::Init(gs_init_data *data)
 gs_swap_chain::gs_swap_chain(gs_device *device, gs_init_data *data)
 	: device     (device),
 	  numBuffers (data->num_backbuffers),
-	  hwnd       ((HWND)data->hwnd)
+	  hwnd       ((HWND)data->window.hwnd)
 {
 	HRESULT hr;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
@@ -182,7 +182,7 @@ void gs_device::InitDevice(gs_init_data *data, IDXGIAdapter *adapter)
 			(uint32_t)levelUsed);
 
 	defaultSwap.device     = this;
-	defaultSwap.hwnd       = (HWND)data->hwnd;
+	defaultSwap.hwnd       = (HWND)data->window.hwnd;
 	defaultSwap.numBuffers = data->num_backbuffers;
 	defaultSwap.Init(data);
 }

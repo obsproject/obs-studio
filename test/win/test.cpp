@@ -18,7 +18,7 @@ class SourceContext {
 
 public:
 	inline SourceContext(obs_source_t source) : source(source) {}
-	inline ~SourceContext() {obs_source_destroy(source);}
+	inline ~SourceContext() {obs_source_release(source);}
 	inline operator obs_source_t() {return source;}
 };
 
@@ -68,24 +68,23 @@ static void CreateOBS(HWND hwnd)
 	RECT rc;
 	GetClientRect(hwnd, &rc);
 
-	struct video_info vi;
-	memset(&vi, 0, sizeof(struct video_info));
-	vi.fps_num = 30000;
-	vi.fps_den = 1001;
-	vi.width   = rc.right;
-	vi.height  = rc.bottom;
-	vi.name    = "video";
-
-	struct gs_init_data gsid;
-	memset(&gsid, 0, sizeof(gsid));
-	gsid.hwnd            = hwnd;
-	gsid.cx              = rc.right;
-	gsid.cy              = rc.bottom;
-	gsid.num_backbuffers = 2;
-	gsid.format          = GS_RGBA;
-
-	if (!obs_startup("libobs-opengl", &gsid, &vi, NULL))
+	if (!obs_startup())
 		throw "Couldn't create OBS";
+
+	struct obs_video_info ovi;
+	ovi.adapter         = 0;
+	ovi.base_width      = rc.right;
+	ovi.base_height     = rc.bottom;
+	ovi.fps_num         = 30000;
+	ovi.fps_den         = 1001;
+	ovi.graphics_module = "libobs-opengl";
+	ovi.output_format   = VIDEO_FORMAT_RGBA;
+	ovi.output_width    = rc.right;
+	ovi.output_height   = rc.bottom;
+	ovi.window.hwnd     = hwnd;
+
+	if (!obs_reset_video(&ovi))
+		throw "Couldn't initialize video";
 }
 
 static void AddTestItems(obs_scene_t scene, obs_source_t source)
@@ -174,15 +173,13 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_primary_source(obs_scene_getsource(scene));
+		obs_set_output_source(0, obs_scene_getsource(scene));
 
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-
-		obs_set_primary_source(NULL);
 
 	} catch (char *error) {
 		MessageBoxA(NULL, error, NULL, 0);

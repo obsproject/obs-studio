@@ -22,7 +22,7 @@ using SourceContext = std::unique_ptr<obs_source,
       std::function<void(obs_source_t)>>;
 static SourceContext autorelease(obs_source_t s)
 {
-	return SourceContext(s, obs_source_destroy);
+	return SourceContext(s, obs_source_release);
 }
 
 using SceneContext = std::unique_ptr<obs_scene,
@@ -36,24 +36,23 @@ static SceneContext autorelease(obs_scene_t s)
 
 static void CreateOBS(NSWindow *win)
 {
-	struct video_info vi;
-	memset(&vi, 0, sizeof(struct video_info));
-	vi.fps_num = 30000;
-	vi.fps_den = 1001;
-	vi.width   = cx;
-	vi.height  = cy;
-	vi.name    = "video";
-
-	struct gs_init_data gsid;
-	memset(&gsid, 0, sizeof(gsid));
-	gsid.view            = [win contentView];
-	gsid.cx              = cx;
-	gsid.cy              = cy;
-	gsid.num_backbuffers = 2;
-	gsid.format          = GS_RGBA;
-
-	if (!obs_startup("libobs-opengl", &gsid, &vi, NULL))
+	if (!obs_startup())
 		throw "Couldn't create OBS";
+
+	struct obs_video_info ovi;
+	ovi.adapter         = 0;
+	ovi.base_width      = cx;
+	ovi.base_height     = cy;
+	ovi.fps_num         = 30000;
+	ovi.fps_den         = 1001;
+	ovi.graphics_module = "libobs-opengl";
+	ovi.output_format   = VIDEO_FORMAT_RGBA;
+	ovi.output_width    = cx;
+	ovi.output_height   = cy;
+	ovi.window.view     = [win contentView];
+
+	if (!obs_reset_video(&ovi))
+		throw "Couldn't initialize video";
 }
 
 static void AddTestItems(obs_scene_t scene, obs_source_t source)
@@ -166,11 +165,11 @@ static void test()
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_primary_source(obs_scene_getsource(scene.get()));
+		obs_set_output_source(0, obs_scene_getsource(scene.get()));
 
 		[NSApp run];
 
-		obs_set_primary_source(NULL);
+		obs_set_output_source(0, NULL);
 
 	} catch (char const *error) {
 		printf("%s\n", error);

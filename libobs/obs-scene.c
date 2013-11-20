@@ -38,8 +38,12 @@ static void scene_destroy(void *data)
 	struct obs_scene *scene = data;
 	size_t i;
 
-	for (i = 0; i < scene->items.num; i++)
-		bfree(scene->items.array[i]);
+	for (i = 0; i < scene->items.num; i++) {
+		struct obs_scene_item *item = scene->items.array[i];
+		if (item->source)
+			obs_source_release(item->source);
+		bfree(item);
+	}
 
 	da_free(scene->items);
 	bfree(scene);
@@ -57,6 +61,12 @@ static void scene_video_render(void *data)
 
 	for (i = scene->items.num; i > 0; i--) {
 		struct obs_scene_item *item = scene->items.array[i-1];
+
+		if (obs_source_removed(item->source)) {
+			obs_source_release(item->source);
+			da_erase(scene->items, i--);
+			continue;
+		}
 
 		gs_matrix_push();
 		gs_matrix_translate3f(item->origin.x, item->origin.y, 0.0f);
@@ -136,7 +146,7 @@ obs_scene_t obs_scene_create(void)
 void obs_scene_destroy(obs_scene_t scene)
 {
 	if (scene)
-		obs_source_destroy(scene->source);
+		obs_source_release(scene->source);
 }
 
 obs_source_t obs_scene_getsource(obs_scene_t scene)
@@ -153,6 +163,9 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	item->parent  = scene;
 	vec2_set(&item->scale, 1.0f, 1.0f);
 
+	if (source)
+		obs_source_addref(source);
+
 	da_push_back(scene->items, &item);
 	return item;
 }
@@ -160,6 +173,9 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 void obs_sceneitem_destroy(obs_sceneitem_t item)
 {
 	if (item) {
+		if (item->source)
+			obs_source_release(item->source);
+
 		da_erase_item(item->parent->items, item);
 		bfree(item);
 	}

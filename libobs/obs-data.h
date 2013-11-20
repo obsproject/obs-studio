@@ -33,52 +33,64 @@
 /*#include "obs-service.h"*/
 
 #define NUM_TEXTURES 2
+#define MAX_CHANNELS 32
 
 struct obs_display {
-	swapchain_t  swap; /* can be NULL if just sound */
-	obs_source_t source;
+	swapchain_t                 swap; /* can be NULL if just sound */
+	obs_source_t                channels[MAX_CHANNELS];
+
 	/* TODO: sound output target */
 };
 
-struct obs_data {
-	DARRAY(struct obs_module)       modules;
+/* ------------------------------------------------------------------------- */
 
-	DARRAY(struct source_info)      input_types;
-	DARRAY(struct source_info)      filter_types;
-	DARRAY(struct source_info)      transition_types;
-	DARRAY(struct output_info)      output_types;
-	/*DARRAY(struct service_info)     service_types;*/
+struct obs_video {
+	graphics_t                  graphics;
+	stagesurf_t                 copy_surfaces[NUM_TEXTURES];
+	effect_t                    default_effect;
+	bool                        textures_copied[NUM_TEXTURES];
+	bool                        copy_mapped;
+	int                         cur_texture;
 
-	DARRAY(struct obs_display*)     displays;
-	DARRAY(struct obs_source*)      sources;
+	video_t                     video;
+	pthread_t                   video_thread;
+	bool                        thread_initialized;
 
-	/* graphics */
-	graphics_t  graphics;
-	stagesurf_t copy_surfaces[NUM_TEXTURES];
-	effect_t    default_effect;
-	bool        textures_copied[NUM_TEXTURES];
-	bool        copy_mapped;
-	int         cur_texture;
-
-	/* TODO: sound output stuff */
-
-	/* media */
-	media_t  media;
-	video_t  video;
-	audio_t  audio;
-
-	uint32_t output_width;
-	uint32_t output_height;
-
-	/* threading */
-	pthread_t       video_thread;
-	bool            thread_initialized;
-	pthread_mutex_t source_list_mutex;
-	pthread_mutex_t display_list_mutex;
-
-	obs_source_t primary_source;
+	uint32_t                    output_width;
+	uint32_t                    output_height;
 };
 
-extern struct obs_data *obs;
+struct obs_audio {
+	/* TODO: audio subsystem */
+	audio_t                     audio;
+};
+
+struct obs_data {
+	DARRAY(struct obs_display*) displays;
+	DARRAY(struct obs_source*)  sources;
+
+	obs_source_t                channels[MAX_CHANNELS];
+	pthread_mutex_t             sources_mutex;
+	pthread_mutex_t             displays_mutex;
+};
+
+struct obs_subsystem {
+	DARRAY(struct obs_module)   modules;
+	DARRAY(struct source_info)  input_types;
+	DARRAY(struct source_info)  filter_types;
+	DARRAY(struct source_info)  transition_types;
+	DARRAY(struct output_info)  output_types;
+	DARRAY(struct service_info) service_types;
+
+	media_t                     media;
+
+	/* segmented into multiple sub-structures to keep things a bit more
+	 * clean and organized */
+	struct obs_video            video;
+	struct obs_audio            audio;
+	struct obs_data             data;
+};
+
+extern struct obs_subsystem *obs;
 
 extern void *obs_video_thread(void *param);

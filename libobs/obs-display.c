@@ -37,17 +37,37 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 void obs_display_destroy(obs_display_t display)
 {
 	if (display) {
+		size_t i;
+
+		pthread_mutex_lock(&obs->data.displays_mutex);
+		da_erase_item(obs->data.displays, &display);
+		pthread_mutex_unlock(&obs->data.displays_mutex);
+
+		for (i = 0; i < MAX_CHANNELS; i++)
+			obs_source_release(display->channels[i]);
+
 		swapchain_destroy(display->swap);
 		bfree(display);
 	}
 }
 
-obs_source_t obs_display_getsource(obs_display_t display)
+obs_source_t obs_display_getsource(obs_display_t display, uint32_t channel)
 {
-	return display->source;
+	assert(channel < MAX_CHANNELS);
+	return display->channels[channel];
 }
 
-void obs_display_setsource(obs_display_t display, obs_source_t source)
+void obs_display_setsource(obs_display_t display, uint32_t channel,
+		obs_source_t source)
 {
-	display->source = source;
+	struct obs_source *prev_source;
+	assert(channel < MAX_CHANNELS);
+
+	prev_source = display->channels[channel];
+	display->channels[channel] = source;
+
+	if (source)
+		obs_source_addref(source);
+	if (prev_source)
+		obs_source_release(prev_source);
 }

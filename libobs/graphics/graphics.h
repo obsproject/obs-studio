@@ -405,18 +405,23 @@ EXPORT texture_t texrender_gettexture(texrender_t texrender);
 /* ---------------- */
 /* global functions */
 
-#define GS_SUCCESS              0
+#define GS_SUCCESS               0
 #define GS_ERROR_MODULENOTFOUND -1
 #define GS_ERROR_FAIL           -2
 
-struct gs_init_data {
+struct gs_window {
 #if defined(_WIN32)
 	void                    *hwnd;
 #elif defined(__APPLE__)
 	__unsafe_unretained id  view;
 #elif defined(__posix__)
+	int bla;
 	/* TODO */
 #endif
+};
+
+struct gs_init_data {
+	struct gs_window        window;
 	uint32_t                cx, cy;
 	uint32_t                num_backbuffers;
 	enum gs_color_format    format;

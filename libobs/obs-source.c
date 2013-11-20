@@ -21,6 +21,8 @@
 #include "obs.h"
 #include "obs-data.h"
 
+static void obs_source_destroy(obs_source_t source);
+
 bool get_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info)
 {
@@ -88,6 +90,7 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 {
 	uint32_t flags = info->get_output_flags(source->data);
 
+	source->refs = 1;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -102,18 +105,13 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 		return false;
 
 	if (flags & SOURCE_AUDIO) {
-		source->audio_line = audio_output_createline(obs->audio);
+		source->audio_line = audio_output_createline(obs->audio.audio);
 		if (!source->audio_line) {
 			blog(LOG_ERROR, "Failed to create audio line for "
 			                "source");
 			return false;
 		}
 	}
-
-	source->valid = true;
-	pthread_mutex_lock(&obs->source_list_mutex);
-	da_push_back(obs->sources, &source);
-	pthread_mutex_unlock(&obs->source_list_mutex);
 
 	return true;
 }
@@ -158,47 +156,64 @@ fail:
 	return NULL;
 }
 
-void obs_source_destroy(obs_source_t source)
+static void obs_source_destroy(obs_source_t source)
 {
-	if (source) {
-		size_t i;
-		if (source->filter_parent)
-			obs_source_filter_remove(source->filter_parent, source);
+	size_t i;
 
-		for (i = 0; i < source->filters.num; i++)
-			obs_source_destroy(source->filters.array[i]);
+	if (source->filter_parent)
+		obs_source_filter_remove(source->filter_parent, source);
 
-		if (source->valid) {
-			pthread_mutex_lock(&obs->source_list_mutex);
-			da_erase_item(obs->sources, &source);
-			pthread_mutex_unlock(&obs->source_list_mutex);
-		}
+	for (i = 0; i < source->filters.num; i++)
+		obs_source_release(source->filters.array[i]);
 
-		for (i = 0; i < source->audio_wait_buffer.num; i++)
-			audiobuf_free(source->audio_wait_buffer.array+i);
-		for (i = 0; i < source->video_frames.num; i++)
-			source_frame_destroy(source->video_frames.array[i]);
+	for (i = 0; i < source->audio_wait_buffer.num; i++)
+		audiobuf_free(source->audio_wait_buffer.array+i);
+	for (i = 0; i < source->video_frames.num; i++)
+		source_frame_destroy(source->video_frames.array[i]);
 
-		gs_entercontext(obs->graphics);
-		texture_destroy(source->output_texture);
-		gs_leavecontext();
+	gs_entercontext(obs->video.graphics);
+	texture_destroy(source->output_texture);
+	gs_leavecontext();
 
-		if (source->data)
-			source->callbacks.destroy(source->data);
+	if (source->data)
+		source->callbacks.destroy(source->data);
 
-		bfree(source->audio_data.data);
-		audio_line_destroy(source->audio_line);
-		audio_resampler_destroy(source->resampler);
+	bfree(source->audio_data.data);
+	audio_line_destroy(source->audio_line);
+	audio_resampler_destroy(source->resampler);
 
-		da_free(source->video_frames);
-		da_free(source->audio_wait_buffer);
-		da_free(source->filters);
-		pthread_mutex_destroy(&source->filter_mutex);
-		pthread_mutex_destroy(&source->audio_mutex);
-		pthread_mutex_destroy(&source->video_mutex);
-		dstr_free(&source->settings);
-		bfree(source);
-	}
+	da_free(source->video_frames);
+	da_free(source->audio_wait_buffer);
+	da_free(source->filters);
+	pthread_mutex_destroy(&source->filter_mutex);
+	pthread_mutex_destroy(&source->audio_mutex);
+	pthread_mutex_destroy(&source->video_mutex);
+	dstr_free(&source->settings);
+	bfree(source);
+}
+
+void obs_source_addref(obs_source_t source)
+{
+	assert(source != NULL);
+	if (!source)
+		return;
+
+	++source->refs;
+}
+
+void obs_source_release(obs_source_t source)
+{
+	assert(source != NULL);
+	if (!source)
+		return;
+
+	if (--source->refs == 0)
+		obs_source_destroy(source);
+}
+
+bool obs_source_removed(obs_source_t source)
+{
+	return source->removed;
 }
 
 uint32_t obs_source_get_output_flags(obs_source_t source)
@@ -394,7 +409,7 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 
 static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
-	effect_t    effect = obs->default_effect;
+	effect_t    effect = obs->video.default_effect;
 	bool        yuv   = is_yuv(frame->format);
 	const char  *type = yuv ? "DrawYUVToRGB" : "DrawRGB";
 	technique_t tech;
@@ -655,8 +670,10 @@ static inline struct filtered_audio *filter_async_audio(obs_source_t source,
 static inline void reset_resampler(obs_source_t source,
 		const struct source_audio *audio)
 {
-	const struct audio_info *obs_info = audio_output_getinfo(obs->audio);
+	const struct audio_info *obs_info;
 	struct resample_info output_info;
+
+	obs_info = audio_output_getinfo(obs->audio.audio);
 
 	output_info.format           = obs_info->format;
 	output_info.samples_per_sec  = obs_info->samples_per_sec;
@@ -685,7 +702,7 @@ static inline void reset_resampler(obs_source_t source,
 static inline void copy_audio_data(obs_source_t source,
 		const void *data, uint32_t frames, uint64_t timestamp)
 {
-	size_t blocksize = audio_output_blocksize(obs->audio);
+	size_t blocksize = audio_output_blocksize(obs->audio.audio);
 	size_t size = (size_t)frames * blocksize;
 
 	/* ensure audio storage capacity */
@@ -731,7 +748,7 @@ void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
 	uint32_t flags = obs_source_get_output_flags(source);
-	size_t blocksize = audio_output_blocksize(obs->audio);
+	size_t blocksize = audio_output_blocksize(obs->audio.audio);
 	struct filtered_audio *output;
 
 	process_audio(source, audio);

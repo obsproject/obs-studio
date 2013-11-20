@@ -19,40 +19,71 @@
 #include "obs-data.h"
 #include "obs-module.h"
 
-struct obs_data *obs = NULL;
+struct obs_subsystem *obs = NULL;
 
 extern char *find_libobs_data_file(const char *file);
 
-static bool obs_init_graphics(const char *graphics_module,
-		struct gs_init_data *graphics_data, struct video_info *vi)
+static inline void make_gs_init_data(struct gs_init_data *gid,
+		struct obs_video_info *ovi)
 {
-	int errorcode;
+	memcpy(&gid->window, &ovi->window, sizeof(struct gs_window));
+	gid->cx              = ovi->base_width;
+	gid->cy              = ovi->base_height;
+	gid->num_backbuffers = 2;
+	gid->format          = GS_RGBA;
+	gid->zsformat        = GS_ZS_NONE;
+	gid->adapter         = ovi->adapter;
+}
+
+static inline void make_video_info(struct video_info *vi,
+		struct obs_video_info *ovi)
+{
+	vi->name    = "video";
+	vi->type    = ovi->output_format;
+	vi->fps_num = ovi->fps_num;
+	vi->fps_den = ovi->fps_den;
+	vi->width   = ovi->output_width;
+	vi->height  = ovi->output_height;
+}
+
+static bool obs_init_graphics(struct obs_video_info *ovi)
+{
+	struct obs_video *video = &obs->video;
+	struct gs_init_data graphics_data;
 	bool success = true;
+	int errorcode;
 	size_t i;
 
-	errorcode = gs_create(&obs->graphics, graphics_module, graphics_data);
+	make_gs_init_data(&graphics_data, ovi);
+	video->output_width  = ovi->output_width;
+	video->output_height = ovi->output_height;
+
+	errorcode = gs_create(&video->graphics, ovi->graphics_module,
+			&graphics_data);
 	if (errorcode != GS_SUCCESS) {
 		if (errorcode == GS_ERROR_MODULENOTFOUND)
 			blog(LOG_ERROR, "Could not find graphics module '%s'",
-					graphics_module);
+					ovi->graphics_module);
 		return false;
 	}
 
-	gs_entercontext(obs->graphics);
+	gs_entercontext(video->graphics);
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
-		obs->copy_surfaces[i] = gs_create_stagesurface(vi->width,
-				vi->height, graphics_data->format);
-		if (!obs->copy_surfaces[i])
+		video->copy_surfaces[i] = gs_create_stagesurface(
+				ovi->output_width, ovi->output_height,
+				graphics_data.format);
+
+		if (!video->copy_surfaces[i])
 			success = false;
 	}
 
 	if (success) {
 		char *filename = find_libobs_data_file("default.effect");
-		obs->default_effect = gs_create_effect_from_file( filename,
+		video->default_effect = gs_create_effect_from_file(filename,
 				NULL);
 		bfree(filename);
-		if (!obs->default_effect)
+		if (!video->default_effect)
 			success = false;
 	}
 
@@ -60,114 +91,179 @@ static bool obs_init_graphics(const char *graphics_module,
 	return success;
 }
 
-static bool obs_init_media(struct video_info *vi, struct audio_info *ai)
+static bool obs_init_video(struct obs_video_info *ovi)
 {
+	struct obs_video *video = &obs->video;
+	struct video_info vi;
+	int errorcode;
+
+	memset(video, 0, sizeof(struct obs_video));
+
+	if (!obs_init_graphics(ovi))
+		return false;
+
+	make_video_info(&vi, ovi);
+	errorcode = video_output_open(&video->video, obs->media, &vi);
+
+	if (errorcode != VIDEO_OUTPUT_SUCCESS) {
+		if (errorcode == VIDEO_OUTPUT_INVALIDPARAM)
+			blog(LOG_ERROR, "Invalid video parameters specified");
+		else
+			blog(LOG_ERROR, "Could not open video output");
+
+		return false;
+	}
+
+	errorcode = pthread_create(&video->video_thread, NULL,
+			obs_video_thread, obs);
+	if (errorcode != 0)
+		return false;
+
+	video->thread_initialized = true;
+	return true;
+}
+
+static void obs_free_video(void)
+{
+	struct obs_video *video = &obs->video;
+	size_t i;
+
+	if (video->video) {
+		void *thread_retval;
+
+		video_output_stop(video->video);
+		if (video->thread_initialized)
+			pthread_join(video->video_thread, &thread_retval);
+
+		video_output_close(video->video);
+	}
+
+	if (video->graphics) {
+		int cur_texture = video->cur_texture;
+		gs_entercontext(video->graphics);
+
+		if (video->copy_mapped)
+			stagesurface_unmap(video->copy_surfaces[cur_texture]);
+
+		for (i = 0; i < NUM_TEXTURES; i++)
+			stagesurface_destroy(video->copy_surfaces[i]);
+
+		effect_destroy(video->default_effect);
+
+		gs_leavecontext();
+
+		gs_destroy(video->graphics);
+	}
+
+	memset(video, 0, sizeof(struct obs_video));
+}
+
+static bool obs_init_audio(struct audio_info *ai)
+{
+	struct obs_audio *audio = &obs->audio;
+	int errorcode;
+
+	/* TODO: sound subsystem */
+
+	errorcode = audio_output_open(&audio->audio, obs->media, ai);
+	if (errorcode == AUDIO_OUTPUT_SUCCESS)
+		return true;
+	else if (errorcode= AUDIO_OUTPUT_INVALIDPARAM)
+		blog(LOG_ERROR, "Invalid audio parameters specified");
+	else
+		blog(LOG_ERROR, "Could not open audio output");
+
+	return false;
+}
+
+static void obs_free_audio(void)
+{
+	struct obs_audio *audio = &obs->audio;
+	if (audio->audio)
+		audio_output_close(audio->audio);
+
+	memset(audio, 0, sizeof(struct obs_audio));
+}
+
+static bool obs_init_data(void)
+{
+	struct obs_data *data = &obs->data;
+
+	pthread_mutex_init_value(&obs->data.displays_mutex);
+
+	if (pthread_mutex_init(&data->sources_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&data->displays_mutex, NULL) != 0)
+		return false;
+
+	return true;
+}
+
+static void obs_free_data(void)
+{
+	struct obs_data *data = &obs->data;
+	size_t i;
+
+	for (i = 0; i < MAX_CHANNELS; i++)
+		obs_set_output_source(i, NULL);
+
+	while (data->displays.num)
+		obs_display_destroy(data->displays.array[0]);
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	for (i = 0; i < data->sources.num; i++)
+		obs_source_release(data->sources.array[i]);
+	da_free(data->sources);
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
+static bool obs_init(void)
+{
+	obs = bmalloc(sizeof(struct obs_subsystem));
+
+	memset(obs, 0, sizeof(struct obs_subsystem));
+	obs_init_data();
+
 	obs->media = media_open();
 	if (!obs->media)
 		return false;
 
-	if (!obs_reset_video(vi))
-		return false;
-	if (!obs_reset_audio(ai))
-		return false;
-
 	return true;
 }
 
-static bool obs_init_threading(void)
+bool obs_startup()
 {
-	if (pthread_mutex_init(&obs->source_list_mutex, NULL) != 0)
-		return false;
-	if (pthread_mutex_init(&obs->display_list_mutex, NULL) != 0)
-		return false;
-	if (pthread_create(&obs->video_thread, NULL, obs_video_thread,
-				obs) != 0)
-		return false;
+	bool success;
 
-	obs->thread_initialized = true;
-	return true;
+	if (obs) {
+		blog(LOG_ERROR, "Tried to call obs_startup more than once");
+		return false;
+	}
+
+	success = obs_init();
+	if (!success)
+		obs_shutdown();
+
+	return success;
 }
 
-static bool obs_init(const char *graphics_module,
-		struct gs_init_data *graphics_data,
-		struct video_info *vi, struct audio_info *ai)
-{
-	obs = bmalloc(sizeof(struct obs_data));
-
-	memset(obs, 0, sizeof(struct obs_data));
-	pthread_mutex_init_value(&obs->source_list_mutex);
-	pthread_mutex_init_value(&obs->display_list_mutex);
-
-	if (!obs_init_graphics(graphics_module, graphics_data, vi))
-		return false;
-	if (!obs_init_media(vi, ai))
-		return false;
-	if (!obs_init_threading())
-		return false;
-
-	return true;
-}
-
-static inline void obs_free_graphics(void)
-{
-	size_t i;
-	if (!obs->graphics)
-		return;
-
-	gs_entercontext(obs->graphics);
-
-	if (obs->copy_mapped)
-		stagesurface_unmap(obs->copy_surfaces[obs->cur_texture]);
-
-	for (i = 0; i < NUM_TEXTURES; i++)
-		stagesurface_destroy(obs->copy_surfaces[i]);
-
-	effect_destroy(obs->default_effect);
-
-	gs_leavecontext();
-
-	gs_destroy(obs->graphics);
-}
-
-static inline void obs_free_media(void)
-{
-	video_output_close(obs->video);
-	audio_output_close(obs->audio);
-	media_close(obs->media);
-}
-
-static inline void obs_free_threading(void)
-{
-	void *thread_ret;
-	video_output_stop(obs->video);
-	if (obs->thread_initialized)
-		pthread_join(obs->video_thread, &thread_ret);
-	pthread_mutex_destroy(&obs->source_list_mutex);
-	pthread_mutex_destroy(&obs->display_list_mutex);
-}
-
-static void obs_destroy(void)
+void obs_shutdown(void)
 {
 	size_t i;
 
 	if (!obs)
 		return;
 
-	for (i = 0; i < obs->displays.num; i++)
-		obs_display_destroy(obs->displays.array[i]);
-
 	da_free(obs->input_types);
 	da_free(obs->filter_types);
 	da_free(obs->transition_types);
 	da_free(obs->output_types);
-	/*da_free(obs->services);*/
+	da_free(obs->service_types);
 
-	da_free(obs->displays);
-	da_free(obs->sources);
-
-	obs_free_threading();
-	obs_free_media();
-	obs_free_graphics();
+	obs_free_data();
+	obs_free_video();
+	obs_free_audio();
+	media_close(obs->media);
 
 	for (i = 0; i < obs->modules.num; i++)
 		free_module(obs->modules.array+i);
@@ -177,52 +273,23 @@ static void obs_destroy(void)
 	obs = NULL;
 }
 
-bool obs_startup(const char *graphics_module,
-		struct gs_init_data *graphics_data,
-		struct video_info *vi, struct audio_info *ai)
+bool obs_reset_video(struct obs_video_info *ovi)
 {
-	if (!obs_init(graphics_module, graphics_data, vi, ai)) {
-		obs_destroy();
-		return false;
-	}
+	obs_free_video();
+	if (ovi)
+		return obs_init_video(ovi);
 
 	return true;
-}
-
-void obs_shutdown(void)
-{
-	obs_destroy();
-}
-
-bool obs_reset_video(struct video_info *vi)
-{
-	int errorcode;
-
-	if (obs->video) {
-		video_output_close(obs->video);
-		obs->video = NULL;
-	}
-
-	obs->output_width  = vi->width;
-	obs->output_height = vi->height;
-
-	errorcode = video_output_open(&obs->video, obs->media, vi);
-	if (errorcode == VIDEO_OUTPUT_SUCCESS)
-		return true;
-	else if (errorcode == VIDEO_OUTPUT_INVALIDPARAM)
-		blog(LOG_ERROR, "Invalid video parameters specified");
-	else
-		blog(LOG_ERROR, "Could not open video output");
-
-	return false;
 }
 
 bool obs_reset_audio(struct audio_info *ai)
 {
-	/* TODO */
+	obs_free_audio();
+	if(ai)
+		return obs_init_audio(ai);
+
 	return true;
 }
-
 
 bool obs_enum_inputs(size_t idx, const char **name)
 {
@@ -256,10 +323,9 @@ bool obs_enum_outputs(size_t idx, const char **name)
 	return true;
 }
 
-
 graphics_t obs_graphics(void)
 {
-	return obs->graphics;
+	return obs->video.graphics;
 }
 
 media_t obs_media(void)
@@ -267,12 +333,49 @@ media_t obs_media(void)
 	return obs->media;
 }
 
-obs_source_t obs_get_primary_source(void)
+bool obs_add_source(obs_source_t source)
 {
-	return obs->primary_source;
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	da_push_back(obs->data.sources, &source);
+	obs_source_addref(source);
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+
+	return true;
 }
 
-void obs_set_primary_source(obs_source_t source)
+void obs_delete_source(obs_source_t source)
 {
-	obs->primary_source = source;
+	struct obs_data *data = &obs->data;
+	size_t id;
+
+	pthread_mutex_lock(&data->sources_mutex);
+
+	id = da_find(data->sources, &source, 0);
+	if (id != DARRAY_INVALID) {
+		source->removed = true;
+		da_erase_item(data->sources, &source);
+		obs_source_release(source);
+	}
+
+	pthread_mutex_unlock(&data->sources_mutex);
+}
+
+obs_source_t obs_get_output_source(uint32_t channel)
+{
+	assert(channel < MAX_CHANNELS);
+	return obs->data.channels[channel];
+}
+
+void obs_set_output_source(uint32_t channel, obs_source_t source)
+{
+	struct obs_source *prev_source;
+	assert(channel < MAX_CHANNELS);
+
+	prev_source = obs->data.channels[channel];
+	obs->data.channels[channel] = source;
+
+	if (source)
+		obs_source_addref(source);
+	if (prev_source)
+		obs_source_release(prev_source);
 }

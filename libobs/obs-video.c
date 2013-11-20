@@ -26,12 +26,12 @@ static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 	float seconds;
 
 	if (!last_time)
-		*last_time = cur_time - video_getframetime(obs->video);
+		*last_time = cur_time - video_getframetime(obs->video.video);
 	delta_time = cur_time - *last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
 
-	for (i = 0; i < obs->sources.num; i++)
-		obs_source_video_tick(obs->sources.array[i], seconds);
+	for (i = 0; i < obs->data.sources.num; i++)
+		obs_source_video_tick(obs->data.sources.array[i], seconds);
 
 	*last_time = cur_time;
 }
@@ -40,6 +40,7 @@ static inline void render_display(struct obs_display *display)
 {
 	struct vec4 clear_color;
 	uint32_t width, height;
+	size_t i;
 
 	gs_load_swapchain(display ? display->swap : NULL);
 
@@ -51,14 +52,27 @@ static inline void render_display(struct obs_display *display)
 			&clear_color, 1.0f, 0);
 
 	gs_enable_depthtest(false);
-	gs_enable_blending(false);
+	/* gs_enable_blending(false); */
 	gs_setcullmode(GS_NEITHER);
 
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
 
-	if (obs->primary_source)
-		obs_source_video_render(obs->primary_source);
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		struct obs_source **p_source;
+
+		p_source = (display) ? display->channels+i :
+		                       obs->data.channels+i;
+
+		if (*p_source) {
+			if ((*p_source)->removed) {
+				obs_source_release(*p_source);
+				*p_source = NULL;
+			} else {
+				obs_source_video_render(*p_source);
+			}
+		}
+	}
 
 	gs_endscene();
 	gs_present();
@@ -68,56 +82,58 @@ static inline void render_displays(void)
 {
 	size_t i;
 
-	pthread_mutex_lock(&obs->display_list_mutex);
+	/* render extra displays/swaps */
+	pthread_mutex_lock(&obs->data.displays_mutex);
 
-	for (i = 0; i < obs->displays.num; i++) {
-		struct obs_display *display = obs->displays.array[i];
+	for (i = 0; i < obs->data.displays.num; i++)
+		render_display(obs->data.displays.array[i]);
 
-		render_display(display);
-	}
+	pthread_mutex_unlock(&obs->data.displays_mutex);
 
-	pthread_mutex_unlock(&obs->display_list_mutex);
-
+	/* render main display */
 	render_display(NULL);
 }
 
 static bool swap_frame(uint64_t timestamp)
 {
-	stagesurf_t last_surface = obs->copy_surfaces[obs->cur_texture];
+	struct obs_video *video = &obs->video;
+	stagesurf_t last_surface = video->copy_surfaces[video->cur_texture];
 	stagesurf_t surface;
 	struct video_frame frame;
 
-	if (obs->copy_mapped) {
+	/* the last frame stays mapped until rendering starts with the next */
+	if (video->copy_mapped) {
 		stagesurface_unmap(last_surface);
-		obs->copy_mapped = false;
+		video->copy_mapped = false;
 	}
 
-	obs->textures_copied[obs->cur_texture] = true;
-	//gs_stage_texture(last_surface, NULL);
+	video->textures_copied[video->cur_texture] = true;
+	/* TODO: texture staging */
+	//gs_stage_texture(last_surface, );
 
-	if (++obs->cur_texture == NUM_TEXTURES)
-		obs->cur_texture = 0;
+	if (++video->cur_texture == NUM_TEXTURES)
+		video->cur_texture = 0;
 
-	if (obs->textures_copied[obs->cur_texture]) {
-		surface = obs->copy_surfaces[obs->cur_texture];
-		obs->copy_mapped = stagesurface_map(surface, &frame.data,
+	if (video->textures_copied[video->cur_texture]) {
+		surface = video->copy_surfaces[video->cur_texture];
+		video->copy_mapped = stagesurface_map(surface, &frame.data,
 				&frame.row_size);
 
-		if (obs->copy_mapped) {
+		if (video->copy_mapped) {
 			frame.timestamp = timestamp;
-			video_output_frame(obs->video, &frame);
+			video_output_frame(video->video, &frame);
 		}
 	}
 
-	return obs->copy_mapped;
+	return video->copy_mapped;
 }
 
 void *obs_video_thread(void *param)
 {
 	uint64_t last_time = 0;
 
-	while (video_output_wait(obs->video)) {
-		uint64_t cur_time = video_gettime(obs->video);
+	while (video_output_wait(obs->video.video)) {
+		uint64_t cur_time = video_gettime(obs->video.video);
 
 		gs_entercontext(obs_graphics());
 

@@ -92,7 +92,7 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 		return NULL;
 	}
 
-	[context setView:info->view];
+	[context setView:info->window.view];
 
 	return context;
 }
@@ -200,13 +200,13 @@ struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 	if(!info)
 		return NULL;
 
-	if(!info->view)
+	if(!info->window.view)
 		return NULL;
 
 	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
 	memset(wi, 0, sizeof(struct gl_windowinfo));
 
-	wi->view = info->view;
+	wi->view = info->window.view;
 
 	return wi;
 }

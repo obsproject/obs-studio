@@ -20,10 +20,15 @@
 struct service_data;
 
 struct service_info {
+	const char *(*getname)(const char *locale);
+
 	void *(*create)(const char *settings, struct service_data *service);
 	void (*destroy)(void *data);
 	void (*config)(void *data, const char *settings);
-	
+
+	/* optional */
+	const char *(*getdata)(const char *attribute);
+
 	/* get stream url/key */
 	/* get (viewers/etc) */
 	/* send (current game/title/activate commercial/etc) */

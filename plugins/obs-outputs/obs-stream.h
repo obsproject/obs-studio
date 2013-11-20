@@ -4,7 +4,7 @@
 #include "obs.h"
 
 struct rtmp_stream {
-	
+	obs_output_t handler;
 };
 
 EXPORT void *rtmp_stream_getname(const char *locale);
