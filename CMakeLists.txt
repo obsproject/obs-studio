@@ -34,6 +34,7 @@ endif()
 
 set(LIBRARY_OUTPUT_PATH ${obs_BINARY_DIR}/bin)
 set(RUNTIME_OUTPUT_PATH ${obs_BINARY_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${obs_BINARY_DIR}/bin)
 add_subdirectory(libobs)
 add_subdirectory(libobs-opengl)
 if(WIN32)
