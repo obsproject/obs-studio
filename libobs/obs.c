@@ -168,7 +168,7 @@ static bool obs_init_audio(struct audio_info *ai)
 	errorcode = audio_output_open(&audio->audio, obs->media, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
 		return true;
-	else if (errorcode= AUDIO_OUTPUT_INVALIDPARAM)
+	else if (errorcode == AUDIO_OUTPUT_INVALIDPARAM)
 		blog(LOG_ERROR, "Invalid audio parameters specified");
 	else
 		blog(LOG_ERROR, "Could not open audio output");
