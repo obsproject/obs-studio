@@ -343,23 +343,6 @@ bool obs_add_source(obs_source_t source)
 	return true;
 }
 
-void obs_delete_source(obs_source_t source)
-{
-	struct obs_data *data = &obs->data;
-	size_t id;
-
-	pthread_mutex_lock(&data->sources_mutex);
-
-	id = da_find(data->sources, &source, 0);
-	if (id != DARRAY_INVALID) {
-		source->removed = true;
-		da_erase_item(data->sources, &source);
-		obs_source_release(source);
-	}
-
-	pthread_mutex_unlock(&data->sources_mutex);
-}
-
 obs_source_t obs_get_output_source(uint32_t channel)
 {
 	assert(channel < MAX_CHANNELS);

@@ -192,23 +192,46 @@ static void obs_source_destroy(obs_source_t source)
 	bfree(source);
 }
 
-void obs_source_addref(obs_source_t source)
+int obs_source_addref(obs_source_t source)
 {
 	assert(source != NULL);
 	if (!source)
-		return;
+		return 0;
 
-	++source->refs;
+	return ++source->refs;
 }
 
-void obs_source_release(obs_source_t source)
+int obs_source_release(obs_source_t source)
 {
+	int refs;
+
 	assert(source != NULL);
 	if (!source)
-		return;
+		return 0;
 
-	if (--source->refs == 0)
+	refs = --source->refs;
+	if (refs == 0)
 		obs_source_destroy(source);
+
+	return refs;
+}
+
+void obs_source_remove(obs_source_t source)
+{
+	struct obs_data *data = &obs->data;
+	size_t id;
+
+	source->removed = true;
+
+	pthread_mutex_lock(&data->sources_mutex);
+
+	id = da_find(data->sources, &source, 0);
+	if (id != DARRAY_INVALID) {
+		da_erase_item(data->sources, &source);
+		obs_source_release(source);
+	}
+
+	pthread_mutex_unlock(&data->sources_mutex);
 }
 
 bool obs_source_removed(obs_source_t source)

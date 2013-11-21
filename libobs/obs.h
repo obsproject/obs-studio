@@ -200,14 +200,13 @@ EXPORT graphics_t obs_graphics(void);
 EXPORT media_t obs_media(void);
 
 /**
- * Adds/removes a source to/from the user source list.
+ * Adds a source to the user source list.
  *
  *   The user source list is the list of sources that are accessible by a user.
  * Typically when a transition is active, it is not meant to be accessible by
  * users, so there's no reason for a user to see such a source.
  */
 EXPORT bool obs_add_source(obs_source_t source);
-EXPORT void obs_delete_source(obs_source_t source);
 
 /** Sets/gets the primary output source for a channel. */
 EXPORT void obs_set_output_source(uint32_t channel, obs_source_t source);
@@ -259,8 +258,16 @@ EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
  */
 EXPORT obs_source_t obs_source_create(enum obs_source_type type,
 		const char *name, const char *settings);
-EXPORT void obs_source_addref(obs_source_t source);
-EXPORT void obs_source_release(obs_source_t source);
+
+/**
+ * Adds/releases a reference to a source.  When the last reference is
+ * released, the source is destroyed.
+ */
+EXPORT int obs_source_addref(obs_source_t source);
+EXPORT int obs_source_release(obs_source_t source);
+
+/** Nofifies all references that the source should be released */
+EXPORT void obs_source_remove(obs_source_t source);
 
 /** Returns true if the source should be released */
 EXPORT bool obs_source_removed(obs_source_t source);

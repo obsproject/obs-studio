@@ -33,7 +33,6 @@
 /*#include "obs-service.h"*/
 
 #define NUM_TEXTURES 2
-#define MAX_CHANNELS 32
 
 struct obs_display {
 	swapchain_t                 swap; /* can be NULL if just sound */
@@ -65,6 +64,7 @@ struct obs_audio {
 	audio_t                     audio;
 };
 
+/* user sources, output channels, and displays */
 struct obs_data {
 	DARRAY(struct obs_display*) displays;
 	DARRAY(struct obs_source*)  sources;
