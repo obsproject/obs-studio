@@ -107,7 +107,7 @@ static const struct source_info scene_info =
 	scene_video_render,
 	scene_getsize,
 	scene_getsize, NULL, NULL,
-	scene_enum_children, NULL, NULL
+	NULL, NULL
 };
 #else
 static const struct source_info scene_info =
@@ -120,7 +120,6 @@ static const struct source_info scene_info =
 	.video_render     = scene_video_render,
 	.getwidth         = scene_getsize,
 	.getheight        = scene_getsize,
-	.enum_children    = scene_enum_children
 };
 #endif
 

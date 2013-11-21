@@ -134,14 +134,6 @@
  *       val: Value of parameter to set.
  *
  * ---------------------------------------------------------
- *   bool [name]_enum_children(void *data, size_t idx, obs_source_t *child);
- *       Enumerates child sources, if any.
- *
- *       idx: Child source index.
- *       child: Pointer to variable that receives child source. 
- *       Return value: true if sources remaining, otherwise false.
- *
- * ---------------------------------------------------------
  *   struct source_frame *[name]_filter_video(void *data,
  *                                     const struct source_frame *frame);
  *       Filters audio data.  Used with audio filters.
@@ -190,8 +182,6 @@ struct source_info {
 			size_t buf_size);
 	void (*setparam)(void *data, const char *param, const void *data_in,
 			size_t size);
-
-	bool (*enum_children)(void *data, size_t idx, obs_source_t *child);
 
 	struct source_frame *(*filter_video)(void *data,
 			const struct source_frame *frame);

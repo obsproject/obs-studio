@@ -58,8 +58,6 @@ bool get_source_info(void *module, const char *module_name,
 			source_name, "getparam", false);
 	info->setparam = load_module_subfunc(module, module_name,
 			source_name, "setparam", false);
-	info->enum_children = load_module_subfunc(module, module_name,
-			source_name, "enum_children", false);
 
 	info->filter_video = load_module_subfunc(module, module_name,
 			source_name, "filter_video", false);
@@ -523,14 +521,6 @@ void obs_source_setparam(obs_source_t source, const char *param,
 {
 	if (source->callbacks.setparam)
 		source->callbacks.setparam(source->data, param, data, size);
-}
-
-bool obs_source_enum_children(obs_source_t source, size_t idx,
-		obs_source_t *child)
-{
-	if (source->callbacks.enum_children)
-		return source->callbacks.enum_children(source, idx, child);
-	return false;
 }
 
 obs_source_t obs_filter_gettarget(obs_source_t filter)

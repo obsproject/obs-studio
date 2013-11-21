@@ -312,10 +312,6 @@ EXPORT size_t obs_source_getparam(obs_source_t source, const char *param,
 EXPORT void obs_source_setparam(obs_source_t source, const char *param,
 		const void *data, size_t size);
 
-/** Enumerates child sources this source has */
-EXPORT bool obs_source_enum_children(obs_source_t source, size_t idx,
-		obs_source_t *child);
-
 /** If the source is a filter, returns the target source of the filter */
 EXPORT obs_source_t obs_filter_gettarget(obs_source_t filter);
 
@@ -435,7 +431,7 @@ EXPORT obs_service_t obs_service_create(const char *service,
 		const char *settings);
 EXPORT void obs_service_destroy(obs_service_t service);
 
-EXPORT void obs_service_setdata(obs_service_t service, const char *attribute,
+EXPORT void obs_service_setdata(obs_service_t service,const char *attribute,
 		const char *data);
 EXPORT const char *obs_service_getdata(obs_service_t service,
 		const char *attribute);
