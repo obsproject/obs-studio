@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# This test checks that libjansson.so exports the correct symbols.
+#
+
+SOFILE="../src/.libs/libjansson.so"
+
+# The list of symbols, which the shared object should export, is read
+# from the def file, which is used in Windows builds
+grep 'json_' $top_srcdir/src/jansson.def \
+    | sed -e 's/ //g' \
+    | sort \
+    >$test_log/exports
+
+nm -D $SOFILE >/dev/null >$test_log/symbols 2>/dev/null \
+    || exit 77  # Skip if "nm -D" doesn't seem to work
+
+grep ' [DT] ' $test_log/symbols | cut -d' ' -f3 | grep -v '^_' | sort >$test_log/output
+
+if ! cmp -s $test_log/exports $test_log/output; then
+    diff -u $test_log/exports $test_log/output >&2
+    exit 1
+fi
