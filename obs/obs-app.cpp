@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "obs.hpp"
+#include "obs-app.hpp"
 #include "window-obs-basic.hpp"
 #include "obs-wrappers.hpp"
 
