@@ -291,7 +291,7 @@ bool obs_reset_audio(struct audio_info *ai)
 	return true;
 }
 
-bool obs_enum_inputs(size_t idx, const char **name)
+bool obs_enum_input_types(size_t idx, const char **name)
 {
 	if (idx >= obs->input_types.num)
 		return false;
@@ -299,7 +299,7 @@ bool obs_enum_inputs(size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_filters(size_t idx, const char **name)
+bool obs_enum_filter_types(size_t idx, const char **name)
 {
 	if (idx >= obs->filter_types.num)
 		return false;
@@ -307,7 +307,7 @@ bool obs_enum_filters(size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_transitions(size_t idx, const char **name)
+bool obs_enum_transition_types(size_t idx, const char **name)
 {
 	if (idx >= obs->transition_types.num)
 		return false;
@@ -315,7 +315,7 @@ bool obs_enum_transitions(size_t idx, const char **name)
 	return true;
 }
 
-bool obs_enum_outputs(size_t idx, const char **name)
+bool obs_enum_output_types(size_t idx, const char **name)
 {
 	if (idx >= obs->output_types.num)
 		return false;
@@ -345,8 +345,12 @@ bool obs_add_source(obs_source_t source)
 
 obs_source_t obs_get_output_source(uint32_t channel)
 {
+	struct obs_source *source;
 	assert(channel < MAX_CHANNELS);
-	return obs->data.channels[channel];
+	source = obs->data.channels[channel];
+
+	obs_source_addref(source);
+	return source;
 }
 
 void obs_set_output_source(uint32_t channel, obs_source_t source)
@@ -361,4 +365,17 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 		obs_source_addref(source);
 	if (prev_source)
 		obs_source_release(prev_source);
+}
+
+void obs_enum_sources(ENUM_SOURCES_PROC enum_proc, void *param)
+{
+	struct obs_data *data = &obs->data;
+	size_t i;
+
+	pthread_mutex_lock(&data->sources_mutex);
+
+	for (i = 0; i < data->sources.num; i++)
+		enum_proc(data->sources.array[i], param);
+
+	pthread_mutex_unlock(&data->sources_mutex);
 }

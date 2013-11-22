@@ -850,10 +850,17 @@ struct source_frame *obs_source_getframe(obs_source_t source)
 
 unlock:
 	pthread_mutex_unlock(&source->video_mutex);
+
+	if (frame != NULL)
+		obs_source_addref(source);
+
 	return frame;
 }
 
 void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 {
-	source_frame_destroy(frame);
+	if (frame) {
+		source_frame_destroy(frame);
+		obs_source_release(source);
+	}
 }

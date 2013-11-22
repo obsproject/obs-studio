@@ -127,6 +127,9 @@ typedef struct obs_scene_item *obs_sceneitem_t;
 typedef struct obs_output     *obs_output_t;
 typedef struct obs_service    *obs_service_t;
 
+/* typedefs */
+typedef void (*ENUM_SOURCES_PROC)(obs_source_t source, void *param);
+
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
@@ -162,36 +165,36 @@ EXPORT bool obs_reset_audio(struct audio_info *ai);
 EXPORT int obs_load_module(const char *path);
 
 /**
- * Enumerates all available inputs.
+ * Enumerates all available inputs source types.
  *
  *   Inputs are general source inputs (such as capture sources, device sources,
  * etc).
  */
-EXPORT bool obs_enum_inputs(size_t idx, const char **name);
+EXPORT bool obs_enum_input_types(size_t idx, const char **name);
 
 /**
- * Enumerates all available filters.
+ * Enumerates all available filter source types.
  *
  *   Filters are sources that are used to modify the video/audio output of
  * other sources.
  */
-EXPORT bool obs_enum_filters(size_t idx, const char **name);
+EXPORT bool obs_enum_filter_types(size_t idx, const char **name);
 
 /**
- * Enumerates all available transitions.
+ * Enumerates all available transition source types.
  *
  *   Transitions are sources used to transition between two or more other
  * sources.
  */
-EXPORT bool obs_enum_transitions(size_t idx, const char **name);
+EXPORT bool obs_enum_transition_types(size_t idx, const char **name);
 
 /**
- * Enumerates all available ouputs.
+ * Enumerates all available ouput types.
  *
  *   Outputs handle color space conversion, encoding, and output to file or
  * streams.
  */
-EXPORT bool obs_enum_outputs(size_t idx, const char **name);
+EXPORT bool obs_enum_output_types(size_t idx, const char **name);
 
 /** Gets the graphics context for this OBS context */
 EXPORT graphics_t obs_graphics(void);
@@ -200,7 +203,8 @@ EXPORT graphics_t obs_graphics(void);
 EXPORT media_t obs_media(void);
 
 /**
- * Adds a source to the user source list.
+ * Adds a source to the user source list and increments the reference counter
+ * for that source.
  *
  *   The user source list is the list of sources that are accessible by a user.
  * Typically when a transition is active, it is not meant to be accessible by
@@ -208,9 +212,17 @@ EXPORT media_t obs_media(void);
  */
 EXPORT bool obs_add_source(obs_source_t source);
 
-/** Sets/gets the primary output source for a channel. */
+/** Sets the primary output source for a channel. */
 EXPORT void obs_set_output_source(uint32_t channel, obs_source_t source);
+
+/**
+ * Gets the primary output source for a channel and increments the reference
+ * counter for that source.  Use obs_source_release to release.
+ */
 EXPORT obs_source_t obs_get_output_source(uint32_t channel);
+
+/** Enumerates user sources */
+EXPORT void obs_enum_sources(ENUM_SOURCES_PROC enum_proc, void *param);
 
 /**
  * Returns the location of a plugin data file.
