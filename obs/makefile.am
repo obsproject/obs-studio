@@ -12,5 +12,5 @@ obs_PROGRAMS = obs
 # obs_LDADD = $(top_srcdir)/libobs/libobs.la
 obs_SOURCES = window-obs-basic.cpp \
 	      window-subclass.cpp \
-	      obs.cpp \
+	      obs-app.cpp \
 	      OBSWindows.cpp

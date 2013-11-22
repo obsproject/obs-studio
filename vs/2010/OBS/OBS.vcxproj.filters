@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\obs\obs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\obs\OBSWindows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -27,11 +24,11 @@
     <ClCompile Include="..\..\..\obs\window-subclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\obs-app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\obs\obs.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\obs\OBSWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\window-subclass.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\obs-app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -167,13 +167,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\obs\obs.cpp" />
+    <ClCompile Include="..\..\..\obs\obs-app.cpp" />
     <ClCompile Include="..\..\..\obs\OBSWindows.cpp" />
     <ClCompile Include="..\..\..\obs\window-obs-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-subclass.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\obs\obs.hpp" />
+    <ClInclude Include="..\..\..\obs\obs-app.hpp" />
     <ClInclude Include="..\..\..\obs\OBSWindows.h" />
     <ClInclude Include="..\..\..\obs\window-obs-basic.hpp" />
     <ClInclude Include="..\..\..\obs\window-subclass.hpp" />
