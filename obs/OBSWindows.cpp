@@ -5,8 +5,6 @@
 // PLEASE DO "NOT" EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#include "window-subclass.hpp"
-
 #include "OBSWindows.h"
 
 #include "res/delete.ico.h"
@@ -276,12 +274,20 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 {
 	this->SetSizeHints( wxSize( 900,400 ), wxDefaultSize );
 	
-	wxBoxSizer* clientSIzer;
-	clientSIzer = new wxBoxSizer( wxVERTICAL );
+	wxBoxSizer* windowSizer;
+	windowSizer = new wxBoxSizer( wxVERTICAL );
 	
 	mainPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* mainSizer;
-	mainSizer = new wxBoxSizer( wxVERTICAL );
+	wxBoxSizer* clientSizer;
+	clientSizer = new wxBoxSizer( wxHORIZONTAL );
+	
+	leftSizer = new wxBoxSizer( wxVERTICAL );
+	
+	
+	clientSizer->Add( leftSizer, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* centerSizer;
+	centerSizer = new wxBoxSizer( wxVERTICAL );
 	
 	wxBoxSizer* topSizer;
 	topSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -319,13 +325,13 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	
 	topSizer->Add( bSizer5, 1, wxEXPAND, 5 );
 	
-	transitionContainer = new wxBoxSizer( wxVERTICAL );
+	transitionSizer = new wxBoxSizer( wxVERTICAL );
 	
 	m_button7 = new wxButton( mainPanel, wxID_ANY, _("MainWindow.Cut"), wxDefaultPosition, wxDefaultSize, 0 );
-	transitionContainer->Add( m_button7, 0, wxALL, 5 );
+	transitionSizer->Add( m_button7, 0, wxALL, 5 );
 	
 	
-	topSizer->Add( transitionContainer, 0, wxALIGN_CENTER, 5 );
+	topSizer->Add( transitionSizer, 0, wxALIGN_CENTER, 5 );
 	
 	wxBoxSizer* bSizer6;
 	bSizer6 = new wxBoxSizer( wxHORIZONTAL );
@@ -361,184 +367,29 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 	topSizer->Add( bSizer6, 1, wxEXPAND, 5 );
 	
 	
-	mainSizer->Add( topSizer, 1, wxEXPAND, 5 );
+	centerSizer->Add( topSizer, 1, wxEXPAND, 5 );
 	
-	wxBoxSizer* bottomSizer;
 	bottomSizer = new wxBoxSizer( wxVERTICAL );
 	
-	wxBoxSizer* bSizer20;
-	bSizer20 = new wxBoxSizer( wxHORIZONTAL );
 	
-	bSizer20->SetMinSize( wxSize( 900,155 ) ); 
-	wxBoxSizer* bSizer16;
-	bSizer16 = new wxBoxSizer( wxVERTICAL );
+	centerSizer->Add( bottomSizer, 0, wxEXPAND, 5 );
 	
-	m_staticText1 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Channels"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText1->Wrap( -1 );
-	bSizer16->Add( m_staticText1, 0, wxALL, 3 );
 	
-	m_panel13 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
-	wxBoxSizer* bSizer38;
-	bSizer38 = new wxBoxSizer( wxVERTICAL );
+	clientSizer->Add( centerSizer, 1, wxEXPAND, 5 );
 	
-	m_listBox1 = new wxListBox( m_panel13, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0|wxNO_BORDER ); 
-	bSizer38->Add( m_listBox1, 1, wxEXPAND, 0 );
+	rightSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_toolBar1 = new wxToolBar( m_panel13, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxNO_BORDER ); 
-	m_toolBar1->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
 	
-	m_toolBar1->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
+	clientSizer->Add( rightSizer, 0, wxEXPAND, 5 );
 	
-	m_toolBar1->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
-	m_toolBar1->AddSeparator(); 
-	
-	m_toolBar1->AddTool( wxID_ANY, _("tool"), up_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar1->AddTool( wxID_ANY, _("tool"), down_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar1->Realize(); 
-	
-	bSizer38->Add( m_toolBar1, 0, wxEXPAND, 0 );
-	
-	
-	m_panel13->SetSizer( bSizer38 );
-	m_panel13->Layout();
-	bSizer38->Fit( m_panel13 );
-	bSizer16->Add( m_panel13, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bSizer20->Add( bSizer16, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer17;
-	bSizer17 = new wxBoxSizer( wxVERTICAL );
-	
-	m_staticText2 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Scenes"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText2->Wrap( -1 );
-	bSizer17->Add( m_staticText2, 0, wxALL, 3 );
-	
-	m_panel12 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
-	wxBoxSizer* bSizer37;
-	bSizer37 = new wxBoxSizer( wxVERTICAL );
-	
-	m_listBox2 = new wxListBox( m_panel12, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0|wxNO_BORDER ); 
-	bSizer37->Add( m_listBox2, 1, wxALL|wxEXPAND, 0 );
-	
-	m_toolBar11 = new wxToolBar( m_panel12, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxNO_BORDER ); 
-	m_toolBar11->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
-	
-	m_toolBar11->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar11->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar11->AddTool( wxID_ANY, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar11->Realize(); 
-	
-	bSizer37->Add( m_toolBar11, 0, wxEXPAND, 5 );
-	
-	
-	m_panel12->SetSizer( bSizer37 );
-	m_panel12->Layout();
-	bSizer37->Fit( m_panel12 );
-	bSizer17->Add( m_panel12, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bSizer20->Add( bSizer17, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer18;
-	bSizer18 = new wxBoxSizer( wxVERTICAL );
-	
-	m_staticText3 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Sources"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText3->Wrap( -1 );
-	bSizer18->Add( m_staticText3, 0, wxALL, 3 );
-	
-	m_panel14 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
-	wxBoxSizer* bSizer39;
-	bSizer39 = new wxBoxSizer( wxVERTICAL );
-	
-	wxArrayString m_checkList1Choices;
-	m_checkList1 = new wxCheckListBox( m_panel14, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_checkList1Choices, 0|wxNO_BORDER );
-	bSizer39->Add( m_checkList1, 1, wxALL|wxEXPAND, 0 );
-	
-	m_toolBar12 = new wxToolBar( m_panel14, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxNO_BORDER ); 
-	m_toolBar12->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
-	
-	m_toolBar12->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar12->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar12->AddTool( wxID_ANY, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar12->AddSeparator(); 
-	
-	m_toolBar12->AddTool( wxID_ANY, _("tool"), up_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar12->AddTool( wxID_ANY, _("tool"), down_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar12->Realize(); 
-	
-	bSizer39->Add( m_toolBar12, 0, wxEXPAND, 5 );
-	
-	
-	m_panel14->SetSizer( bSizer39 );
-	m_panel14->Layout();
-	bSizer39->Fit( m_panel14 );
-	bSizer18->Add( m_panel14, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bSizer20->Add( bSizer18, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer19;
-	bSizer19 = new wxBoxSizer( wxVERTICAL );
-	
-	m_staticText4 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Streams"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText4->Wrap( -1 );
-	bSizer19->Add( m_staticText4, 0, wxALL, 3 );
-	
-	m_panel15 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxSIMPLE_BORDER );
-	wxBoxSizer* bSizer40;
-	bSizer40 = new wxBoxSizer( wxVERTICAL );
-	
-	m_listCtrl1 = new ListCtrlFixed( m_panel15, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT|wxLC_SINGLE_SEL|wxNO_BORDER );
-	m_listCtrl1->SetMinSize( wxSize( 400,-1 ) );
-	
-	bSizer40->Add( m_listCtrl1, 1, 0, 0 );
-	
-	m_toolBar13 = new wxToolBar( m_panel15, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL|wxNO_BORDER ); 
-	m_toolBar13->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
-	
-	m_toolBar13->AddTool( wxID_ANY, _("tool"), list_add_png_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar13->AddTool( wxID_ANY, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
-	
-	m_toolBar13->Realize(); 
-	
-	bSizer40->Add( m_toolBar13, 0, wxEXPAND, 5 );
-	
-	
-	m_panel15->SetSizer( bSizer40 );
-	m_panel15->Layout();
-	bSizer40->Fit( m_panel15 );
-	bSizer19->Add( m_panel15, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bSizer20->Add( bSizer19, 0, wxEXPAND, 5 );
-	
-	
-	bottomSizer->Add( bSizer20, 0, wxALIGN_CENTER, 5 );
-	
-	
-	mainSizer->Add( bottomSizer, 0, wxEXPAND, 5 );
-	
-	
-	mainPanel->SetSizer( mainSizer );
+	mainPanel->SetSizer( clientSizer );
 	mainPanel->Layout();
-	mainSizer->Fit( mainPanel );
-	clientSIzer->Add( mainPanel, 1, wxEXPAND, 0 );
+	clientSizer->Fit( mainPanel );
+	windowSizer->Add( mainPanel, 1, wxEXPAND, 0 );
 	
 	
-	this->SetSizer( clientSIzer );
+	this->SetSizer( windowSizer );
 	this->Layout();
 	m_menubar1 = new wxMenuBar( 0 );
 	m_menu1 = new wxMenu();

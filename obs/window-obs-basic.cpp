@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "window-obs-basic.hpp"
-/*
+
 void OBSBasic::file_newOnMenuSelection(wxCommandEvent& event)
 {
 }
@@ -80,4 +80,3 @@ void OBSBasic::sourceUpOnToolClicked(wxCommandEvent& event)
 void OBSBasic::sourceDownOnToolClicked(wxCommandEvent& event)
 {
 }
-*/

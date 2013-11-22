@@ -17,6 +17,7 @@
 
 #include "obs.hpp"
 #include "window-obs-basic.hpp"
+#include "obs-wrappers.hpp"
 
 IMPLEMENT_APP(OBSApp)
 
@@ -27,7 +28,7 @@ bool OBSApp::OnInit()
 
 	wxInitAllImageHandlers();
 
-	OBSBasicBase *mainWindow = new OBSBasicBase(NULL);
+	OBSBasic *mainWindow = new OBSBasic();
 	mainWindow->Show();
 	return true;
 }

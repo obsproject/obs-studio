@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <obs.h>
 #include <wx/app.h>
 
 class OBSApp : public wxApp {

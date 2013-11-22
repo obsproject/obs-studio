@@ -11,7 +11,6 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
-class ListCtrlFixed;
 class WindowSubclass;
 
 #include "window-subclass.hpp"
@@ -34,7 +33,6 @@ class WindowSubclass;
 #include <wx/checkbox.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
-#include <wx/listctrl.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -115,7 +113,7 @@ class OBSBasicBase : public WindowSubclass
 	
 	public:
 		
-		OBSBasicBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 923,677 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		OBSBasicBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1117,783 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~OBSBasicBase();
 	
@@ -130,28 +128,15 @@ class OBSStudioBase : public WindowSubclass
 	
 	protected:
 		wxPanel* mainPanel;
+		wxBoxSizer* leftSizer;
 		wxStaticText* m_staticText6;
 		wxPanel* m_panel2;
-		wxBoxSizer* transitionContainer;
+		wxBoxSizer* transitionSizer;
 		wxButton* m_button7;
 		wxStaticText* m_staticText7;
 		wxPanel* m_panel3;
-		wxStaticText* m_staticText1;
-		wxPanel* m_panel13;
-		wxListBox* m_listBox1;
-		wxToolBar* m_toolBar1;
-		wxStaticText* m_staticText2;
-		wxPanel* m_panel12;
-		wxListBox* m_listBox2;
-		wxToolBar* m_toolBar11;
-		wxStaticText* m_staticText3;
-		wxPanel* m_panel14;
-		wxCheckListBox* m_checkList1;
-		wxToolBar* m_toolBar12;
-		wxStaticText* m_staticText4;
-		wxPanel* m_panel15;
-		ListCtrlFixed* m_listCtrl1;
-		wxToolBar* m_toolBar13;
+		wxBoxSizer* bottomSizer;
+		wxBoxSizer* rightSizer;
 		wxMenuBar* m_menubar1;
 		wxMenu* m_menu1;
 		wxStatusBar* m_statusBar1;
