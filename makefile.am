@@ -1,3 +1,3 @@
-ACLOCAL_AMFLAGS=-I m4
-SUBDIRS=libobs libobs-opengl test build obs
-EXTRA_DIST=autogen.sh COPYING README
+ACLOCAL_AMFLAGS = -I m4
+EXTRA_DIST = autogen.sh COPYING README
+SUBDIRS = libobs libobs-opengl test build obs

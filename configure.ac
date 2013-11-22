@@ -14,6 +14,7 @@ AM_SILENT_RULES([yes])
 
 # Checks for programs.
 AC_PROG_CC_STDC
+AC_PROG_OBJC
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_SED
@@ -117,18 +118,12 @@ AC_FUNC_FSEEKO
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([memmove memset socket strstr strtol strtoul])
 
-AC_ARG_ENABLE([build_jansson],
-	      [AS_HELP_STRING([--build-jansson], [build jansson])])
-if test "x$build_jansson" = xyes; then
-	AC_CONFIG_SUBDIRS([deps/jansson])
-fi
-
 AC_CONFIG_FILES([makefile
 		 build/makefile
 		 obs/makefile
 		 test/makefile
 		 test/test-input/makefile
-		 test/win/makefile
 		 libobs/makefile
 		 libobs-opengl/makefile])
+
 AC_OUTPUT
