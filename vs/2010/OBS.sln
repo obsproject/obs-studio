@@ -33,6 +33,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glew_static", "..\..\libobs
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OBS", "OBS\OBS.vcxproj", "{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jansson", "..\..\deps\jansson\win32\vs2010\jansson.vcxproj", "{76226D20-1972-4789-A595-EDACC7A76DC3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -105,6 +107,14 @@ Global
 		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|Win32.Build.0 = Release|Win32
 		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|x64.ActiveCfg = Release|x64
 		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|x64.Build.0 = Release|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|Win32.Build.0 = Debug|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.ActiveCfg = Debug|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.Build.0 = Debug|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.ActiveCfg = Release|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.Build.0 = Release|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.ActiveCfg = Release|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

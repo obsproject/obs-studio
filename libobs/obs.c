@@ -202,7 +202,7 @@ static bool obs_init_data(void)
 static void obs_free_data(void)
 {
 	struct obs_data *data = &obs->data;
-	size_t i;
+	uint32_t i;
 
 	for (i = 0; i < MAX_CHANNELS; i++)
 		obs_set_output_source(i, NULL);

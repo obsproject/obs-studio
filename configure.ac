@@ -113,6 +113,9 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
+AC_CHECK_HEADER([jansson.h], , AC_MSG_ERROR([libjansson header not found]))
+AC_CHECK_LIB([jansson], [json_load_file], , AC_MSG_ERROR([libjansson not found]))
+
 # Checks for library functions.
 AC_FUNC_FSEEKO
 AC_FUNC_STRTOD
