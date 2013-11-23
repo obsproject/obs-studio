@@ -40,4 +40,6 @@ protected:
 
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}
+
+	inline const wxPanel *GetPreviewPanel() const {return previewPanel;}
 };

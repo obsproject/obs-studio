@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <util/bmem.h>
 #include "obs-app.hpp"
 #include "window-obs-basic.hpp"
 #include "obs-wrappers.hpp"
@@ -26,9 +27,45 @@ bool OBSApp::OnInit()
 	if (!wxApp::OnInit())
 		return false;
 
+	if (!obs_startup())
+		return false;
+
 	wxInitAllImageHandlers();
 
 	OBSBasic *mainWindow = new OBSBasic();
+
+	const wxPanel *preview = mainWindow->GetPreviewPanel();
+	wxRect rc = mainWindow->GetPreviewPanel()->GetClientRect();
+
+	struct obs_video_info ovi;
+	ovi.adapter         = 0;
+	ovi.base_width      = rc.width;
+	ovi.base_height     = rc.height;
+	ovi.fps_num         = 30000;
+	ovi.fps_den         = 1001;
+	ovi.graphics_module = "libobs-opengl";
+	ovi.output_format   = VIDEO_FORMAT_RGBA;
+	ovi.output_width    = rc.width;
+	ovi.output_height   = rc.height;
+
+#ifdef __WXCOCOA__
+	ovi.window.view     = preview->GetHandle();
+#elif _WIN32
+	ovi.window.hwnd     = preview->GetHandle();
+#endif
+
+	if (!obs_reset_video(&ovi))
+		return false;
+
 	mainWindow->Show();
 	return true;
+}
+
+int OBSApp::OnExit()
+{
+	obs_shutdown();
+	blog(LOG_INFO, "Number of memory leaks: %u", bnum_allocs());
+
+	wxApp::OnExit();
+	return 0;
 }
