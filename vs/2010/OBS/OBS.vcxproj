@@ -171,6 +171,7 @@
     <ClCompile Include="..\..\..\obs\OBSWindows.cpp" />
     <ClCompile Include="..\..\..\obs\window-obs-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-subclass.cpp" />
+    <ClCompile Include="..\..\..\obs\wx-wrappers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\obs-app.hpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="..\..\..\obs\OBSWindows.h" />
     <ClInclude Include="..\..\..\obs\window-obs-basic.hpp" />
     <ClInclude Include="..\..\..\obs\window-subclass.hpp" />
+    <ClInclude Include="..\..\..\obs\wx-wrappers.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

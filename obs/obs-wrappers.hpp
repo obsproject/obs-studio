@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <obs.h>
+
 class OBSSource {
 	obs_source_t source;
 

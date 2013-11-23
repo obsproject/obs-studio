@@ -27,6 +27,9 @@
     <ClCompile Include="..\..\..\obs\obs-app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\wx-wrappers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\OBSWindows.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\obs-wrappers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\wx-wrappers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

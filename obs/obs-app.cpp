@@ -19,6 +19,7 @@
 #include "obs-app.hpp"
 #include "window-obs-basic.hpp"
 #include "obs-wrappers.hpp"
+#include "wx-wrappers.hpp"
 
 IMPLEMENT_APP(OBSApp)
 
@@ -47,12 +48,7 @@ bool OBSApp::OnInit()
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
 	ovi.output_width    = rc.width;
 	ovi.output_height   = rc.height;
-
-#ifdef __WXCOCOA__
-	ovi.window.view     = preview->GetHandle();
-#elif _WIN32
-	ovi.window.hwnd     = preview->GetHandle();
-#endif
+	ovi.window          = WxToGSWindow(preview);
 
 	if (!obs_reset_video(&ovi))
 		return false;

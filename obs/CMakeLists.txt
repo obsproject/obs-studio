@@ -30,6 +30,7 @@ link_libraries(${wxWidgets_LIBRARIES})
 add_executable(obs
 	window-obs-basic.cpp
 	window-subclass.cpp
+	wx-wrappers.cpp
 	obs-app.cpp
 	OBSWindows.cpp)
 
