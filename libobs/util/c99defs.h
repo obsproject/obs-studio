@@ -57,12 +57,6 @@ typedef long off_t;
 typedef int64_t off64_t;
 #endif /* __off_t_defined */
 
-#ifdef _WIN64
-typedef long long ssize_t;
-#else
-typedef long ssize_t;
-#endif
-
 #else
 
 #include <stdint.h>
