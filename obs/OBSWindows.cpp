@@ -230,6 +230,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Centre( wxBOTH );
 	
 	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
 	this->Connect( file_new->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
 	this->Connect( file_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Connect( file_save->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
@@ -251,6 +252,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 OBSBasicBase::~OBSBasicBase()
 {
 	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
 	this->Disconnect( ID_FILE_NEW, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
 	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );

@@ -36,31 +36,32 @@ class WindowSubclass;
 
 ///////////////////////////////////////////////////////////////////////////
 
-#define ID_FILE_NEW 1000
-#define IF_FILE_OPEN 1001
-#define IF_FILE_SAVE 1002
-#define ID_FILE_EXIT 1003
-#define ID_PROGRAM 1004
-#define ID_SCENES 1005
-#define ID_SCENE_ADD 1006
-#define ID_SCENE_DELETE 1007
-#define ID_SCENE_PROPERTIES 1008
-#define ID_SCENE_MOVEUP 1009
-#define ID_SCENE_MOVEDOWN 1010
-#define ID_SOURCES 1011
-#define ID_SOURCE_ADD 1012
-#define ID_SOURCE_DELETE 1013
-#define ID_SOURCE_PROPERTIES 1014
-#define ID_SOURCE_MOVEUP 1015
-#define ID_SOURCE_MOVEDOWN 1016
-#define ID_SETPOSSIZE 1017
-#define ID_CROP 1018
-#define ID_LOCK 1019
-#define ID_PREVIEW 1020
-#define ID_STARTSTREAM 1021
-#define ID_RECORD 1022
-#define ID_SETTINGS 1023
-#define ID_EXIT 1024
+#define ID_OBS_BASIC 1000
+#define ID_FILE_NEW 1001
+#define IF_FILE_OPEN 1002
+#define IF_FILE_SAVE 1003
+#define ID_FILE_EXIT 1004
+#define ID_PROGRAM 1005
+#define ID_SCENES 1006
+#define ID_SCENE_ADD 1007
+#define ID_SCENE_DELETE 1008
+#define ID_SCENE_PROPERTIES 1009
+#define ID_SCENE_MOVEUP 1010
+#define ID_SCENE_MOVEDOWN 1011
+#define ID_SOURCES 1012
+#define ID_SOURCE_ADD 1013
+#define ID_SOURCE_DELETE 1014
+#define ID_SOURCE_PROPERTIES 1015
+#define ID_SOURCE_MOVEUP 1016
+#define ID_SOURCE_MOVEDOWN 1017
+#define ID_SETPOSSIZE 1018
+#define ID_CROP 1019
+#define ID_LOCK 1020
+#define ID_PREVIEW 1021
+#define ID_STARTSTREAM 1022
+#define ID_RECORD 1023
+#define ID_SETTINGS 1024
+#define ID_EXIT 1025
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class OBSBasicBase
@@ -93,6 +94,7 @@ class OBSBasicBase : public WindowSubclass
 		wxStatusBar* statusBar;
 		
 		// Virtual event handlers, overide them in your derived class
+		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void file_newOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void file_openOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void file_saveOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
@@ -113,7 +115,7 @@ class OBSBasicBase : public WindowSubclass
 	
 	public:
 		
-		OBSBasicBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1117,783 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		OBSBasicBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1117,783 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~OBSBasicBase();
 	
