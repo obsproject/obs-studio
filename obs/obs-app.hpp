@@ -17,11 +17,27 @@
 
 #pragma once
 
-#include <obs.h>
 #include <wx/app.h>
 
-class OBSApp : public wxApp {
+#include "obs-wrappers.hpp"
+
+class OBSAppBase : public wxApp {
+public:
+	virtual ~OBSAppBase();
+};
+
+class OBSApp : public OBSAppBase {
+	ConfigFile globalConfig;
+	wxFrame *dummyWindow;
+
+	bool InitGlobalConfig();
+	void InitGlobalConfigDefaults();
+	bool InitConfigDefaults();
+
 public:
 	virtual bool OnInit();
-	virtual int OnExit();
+	virtual int  OnExit();
+	virtual void CleanUp();
 };
+
+wxDECLARE_APP(OBSApp);

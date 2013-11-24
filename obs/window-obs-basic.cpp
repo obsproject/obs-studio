@@ -15,7 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <wx/app.h>
+#include "obs-app.hpp"
 #include "window-obs-basic.hpp"
+
+void OBSBasic::OnClose(wxCloseEvent& event)
+{
+	wxGetApp().ExitMainLoop();
+}
 
 void OBSBasic::file_newOnMenuSelection(wxCommandEvent& event)
 {

@@ -17,7 +17,67 @@
 
 #pragma once
 
+#include <string.h>
+#include <stdarg.h>
+
+#include <util/config-file.h>
 #include <obs.h>
+
+/* RAII wrappers */
+
+template<typename T> class BPtr {
+	T ptr;
+
+public:
+	inline BPtr() : ptr(NULL)   {}
+	inline BPtr(T p) : ptr(p)   {}
+	inline ~BPtr()              {bfree(ptr);}
+
+	inline T operator=(T p)     {bfree(ptr); ptr = p;}
+	inline operator T()         {return ptr;}
+	inline T *operator&()       {bfree(ptr); ptr = NULL; return &ptr;}
+
+	inline bool operator!()     {return ptr == NULL;}
+	inline bool operator==(T p) {return ptr == p;}
+	inline bool operator!=(T p) {return ptr != p;}
+};
+
+class ConfigFile {
+	config_t config;
+
+public:
+	inline ConfigFile() : config(NULL) {}
+	inline ~ConfigFile()
+	{
+		config_close(config);
+	}
+
+	inline bool Create(const char *file)
+	{
+		Close();
+		config = config_create(file);
+		return config != NULL;
+	}
+
+	int Open(const char *file, config_open_type openType)
+	{
+		Close();
+		return config_open(&config, file, openType);
+	}
+
+	int Save()
+	{
+		return config_save(config);
+	}
+
+	void Close()
+	{
+		config_close(config);
+		config = NULL;
+	}
+
+	inline operator config_t() {return config;}
+};
 
 class OBSSource {
 	obs_source_t source;
@@ -25,6 +85,8 @@ class OBSSource {
 public:
 	inline OBSSource(obs_source_t source) : source(source) {}
 	inline ~OBSSource() {obs_source_release(source);}
+
+	inline OBSSource& operator=(obs_source_t p) {source = p;}
 
 	inline operator obs_source_t() {return source;}
 

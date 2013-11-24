@@ -21,6 +21,7 @@
 
 class OBSBasic : public OBSBasicBase {
 protected:
+	virtual void OnClose(wxCloseEvent& event);
 	virtual void file_newOnMenuSelection(wxCommandEvent& event);
 	virtual void file_openOnMenuSelection(wxCommandEvent& event);
 	virtual void file_saveOnMenuSelection(wxCommandEvent& event);
