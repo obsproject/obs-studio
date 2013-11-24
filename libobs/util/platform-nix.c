@@ -21,6 +21,9 @@
      distribution.
 ******************************************************************************/
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 
 #include "dstr.h"
@@ -70,4 +73,13 @@ char *os_get_home_path(void)
 {
 	/* TODO */
 	return NULL;
+}
+
+int os_mkdir(const char *path)
+{
+	int errorcode = mkdir(path, S_IRWXU);
+	if (errorcode == 0)
+		return MKDIR_SUCCESS;
+
+	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
 }

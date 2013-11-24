@@ -153,11 +153,30 @@ char *os_get_home_path(void)
 {
 	char *out;
 	wchar_t path_utf16[MAX_PATH];
+
 	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
 	os_wcs_to_utf8(path_utf16, 0, &out);
 	return out;
+}
+
+int os_mkdir(const char *path)
+{
+	wchar_t *path_utf16;
+	BOOL success;
+
+	if (!os_utf8_to_wcs(path, 0, &path_utf16))
+		return MKDIR_ERROR;
+
+	success = CreateDirectory(path_utf16, NULL);
+	bfree(path_utf16);
+
+	if (!success)
+		return (GetLastError() == ERROR_ALREADY_EXISTS) ?
+			MKDIR_EXISTS : MKDIR_ERROR;
+
+	return MKDIR_SUCCESS;
 }
 
 #ifdef PTW32_STATIC_LIB
