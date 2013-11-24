@@ -40,8 +40,14 @@ typedef struct config_data *config_t;
 #define CONFIG_FILENOTFOUND -1
 #define CONFIG_ERROR        -2
 
+enum config_open_type {
+	CONFIG_OPEN_EXISTING,
+	CONFIG_OPEN_ALWAYS,
+};
+
 EXPORT config_t config_create(const char *file);
-EXPORT int config_open(config_t *config, const char *file, bool always_open);
+EXPORT int config_open(config_t *config, const char *file,
+		enum config_open_type open_type);
 EXPORT int config_open_defaults(config_t config, const char *file);
 EXPORT int config_save(config_t config);
 EXPORT void config_close(config_t config);

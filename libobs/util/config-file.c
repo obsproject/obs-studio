@@ -232,9 +232,11 @@ complete:
 	return CONFIG_SUCCESS;
 }
 
-int config_open(config_t *config, const char *file, bool always_open)
+int config_open(config_t *config, const char *file,
+		enum config_open_type open_type)
 {
 	int errorcode;
+	bool always_open = open_type == CONFIG_OPEN_ALWAYS;
 
 	if (!config)
 		return CONFIG_ERROR;
@@ -405,7 +407,7 @@ void config_set_int(config_t config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%dll", value);
+	dstr_printf(&str, "%lld", value);
 	config_set_item(&config->sections, section, name, str.array);
 }
 
@@ -414,7 +416,7 @@ void config_set_uint(config_t config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%ull", value);
+	dstr_printf(&str, "%llu", value);
 	config_set_item(&config->sections, section, name, str.array);
 }
 
@@ -447,7 +449,7 @@ void config_set_default_int(config_t config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%dll", value);
+	dstr_printf(&str, "%lld", value);
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
@@ -456,7 +458,7 @@ void config_set_default_uint(config_t config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%ull", value);
+	dstr_printf(&str, "%llu", value);
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
