@@ -18,8 +18,6 @@
 #include <sstream>
 using namespace std;
 
-#include <sys/stat.h>
-
 #include <util/bmem.h>
 #include <util/platform.h>
 
