@@ -74,7 +74,7 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 audio_resampler_t audio_resampler_create(struct resample_info *dst,
 		struct resample_info *src)
 {
-	struct audio_resampler *rs = bmalloc(sizeof(struct audio_resampler));
+	struct audio_resampler *rs = (audio_resampler*)bmalloc(sizeof(struct audio_resampler));
 	int errcode;
 
 	rs->opened        = false;
