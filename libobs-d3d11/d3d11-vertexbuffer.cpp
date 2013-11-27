@@ -15,8 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "util/base.h"
-#include "graphics/vec3.h"
+#include <util/base.h>
+#include <graphics/vec3.h>
 #include "d3d11-subsystem.hpp"
 
 static inline void PushBuffer(vector<ID3D11Buffer*> &buffers,

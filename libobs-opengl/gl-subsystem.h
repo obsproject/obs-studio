@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "util/darray.h"
-#include "graphics/graphics.h"
-#include "graphics/matrix4.h"
+#include <util/darray.h>
+#include <graphics/graphics.h>
+#include <graphics/matrix4.h>
 #ifdef GLEW_STATIC
 #include "glew/include/GL/glew.h"
 #else

@@ -15,9 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "util/base.h"
-#include "util/platform.h"
-#include "graphics/matrix3.h"
+#include <util/base.h>
+#include <util/platform.h>
+#include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
 static const IID dxgiFactory2 =

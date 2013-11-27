@@ -1,6 +1,6 @@
 #pragma once
 
-#include "obs.h"
+#include <obs.h>
 
 #ifdef __cplusplus
 extern "C" {

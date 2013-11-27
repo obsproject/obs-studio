@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "util/base.h"
+#include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
 void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,

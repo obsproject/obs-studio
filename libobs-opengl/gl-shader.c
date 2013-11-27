@@ -16,11 +16,12 @@
 ******************************************************************************/
 
 #include <assert.h>
-#include "graphics/vec2.h"
-#include "graphics/vec3.h"
-#include "graphics/vec4.h"
-#include "graphics/matrix3.h"
-#include "graphics/matrix4.h"
+
+#include <graphics/vec2.h>
+#include <graphics/vec3.h>
+#include <graphics/vec4.h>
+#include <graphics/matrix3.h>
+#include <graphics/matrix4.h>
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
 

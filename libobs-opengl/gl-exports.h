@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "util/c99defs.h"
+#include <util/c99defs.h>
 
 EXPORT device_t device_create(struct gs_init_data *data);
 EXPORT void device_destroy(device_t device);

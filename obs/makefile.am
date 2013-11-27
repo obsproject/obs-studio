@@ -1,3 +1,5 @@
+INCLUDES = -I$(top_srcdir)/libobs
+
 if OS_WIN
 if ARCH_X86_64
 obsdir = ../build/bin/64bit
@@ -9,7 +11,7 @@ obsdir = $(bindir)
 endif
 
 obs_PROGRAMS = obs
-# obs_LDADD = $(top_srcdir)/libobs/libobs.la
+obs_LDADD = $(top_srcdir)/libobs/libobs.la
 obs_SOURCES = window-obs-basic.cpp \
 	      window-subclass.cpp \
 	      obs-app.cpp \

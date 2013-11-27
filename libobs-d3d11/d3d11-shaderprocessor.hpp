@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "graphics/shader-parser.h"
+#include <graphics/shader-parser.h>
 
 struct ShaderParser : shader_parser {
 	inline ShaderParser()  {shader_parser_init(this);}

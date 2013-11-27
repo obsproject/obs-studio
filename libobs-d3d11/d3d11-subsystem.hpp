@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "util/AlignedNew.hpp"
+#include <util/AlignedNew.hpp>
 
 #include <vector>
 #include <string>
@@ -27,11 +27,11 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-#include "util/base.h"
-#include "graphics/matrix4.h"
-#include "graphics/graphics.h"
-#include "util/windows/ComPtr.hpp"
-#include "util/windows/HRError.hpp"
+#include <util/base.h>
+#include <graphics/matrix4.h>
+#include <graphics/graphics.h>
+#include <util/windows/ComPtr.hpp>
+#include <util/windows/HRError.hpp>
 
 struct shader_var;
 struct shader_sampler;

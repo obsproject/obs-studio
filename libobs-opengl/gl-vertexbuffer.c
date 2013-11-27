@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "graphics/vec3.h"
+#include <graphics/vec3.h>
 #include "gl-subsystem.h"
 
 static bool create_buffers(struct gs_vertex_buffer *vb)

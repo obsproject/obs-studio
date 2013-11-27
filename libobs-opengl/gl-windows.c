@@ -18,7 +18,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "util/darray.h"
+#include <util/darray.h>
 #include "gl-subsystem.h"
 #include "glew/include/GL/wglew.h"
 

@@ -2,9 +2,9 @@
 #include <time.h>
 #include <windows.h>
 
-#include "util/base.h"
-#include "media-io/audio-resampler.h"
-#include "obs.h"
+#include <util/base.h>
+#include <media-io/audio-resampler.h>
+#include <obs.h>
 
 #include <intrin.h>
 

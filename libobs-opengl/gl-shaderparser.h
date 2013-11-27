@@ -23,8 +23,8 @@
  * Takes the parsed shader data, and builds a GLSL string out of it.
  */
 
-#include "util/dstr.h"
-#include "graphics/shader-parser.h"
+#include <util/dstr.h>
+#include <graphics/shader-parser.h>
 
 struct gl_parser_attrib {
 	struct dstr name;

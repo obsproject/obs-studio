@@ -17,10 +17,10 @@
 
 #include "d3d11-subsystem.hpp"
 #include "d3d11-shaderprocessor.hpp"
-#include "graphics/vec2.h"
-#include "graphics/vec3.h"
-#include "graphics/matrix3.h"
-#include "graphics/matrix4.h"
+#include <graphics/vec2.h>
+#include <graphics/vec3.h>
+#include <graphics/matrix3.h>
+#include <graphics/matrix4.h>
 
 void gs_vertex_shader::GetBuffersExpected(
 		const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)

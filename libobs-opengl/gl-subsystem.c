@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "graphics/matrix3.h"
+#include <graphics/matrix3.h>
 #include "gl-subsystem.h"
 
 static void clear_textures(struct gs_device *device)

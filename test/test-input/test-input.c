@@ -1,4 +1,4 @@
-#include "obs.h"
+#include <obs.h>
 #include "test-input-exports.h"
 
 const char *inputs[] = {"random"};

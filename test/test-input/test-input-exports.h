@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/c99defs.h"
+#include <util/c99defs.h>
 
 #ifdef __cplusplus
 extern "C" {

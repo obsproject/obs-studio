@@ -1,4 +1,4 @@
-INCLUDES = -iquote$(top_srcdir)/libobs -isystem./glew/include
+INCLUDES = -isystem$(top_srcdir)/libobs -isystem./glew/include
 AM_CFLAGS = -DGLEW_NO_GLU -DGLEW_STATIC
 
 if OS_WIN
