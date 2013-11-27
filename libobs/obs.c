@@ -27,8 +27,8 @@ static inline void make_gs_init_data(struct gs_init_data *gid,
 		struct obs_video_info *ovi)
 {
 	memcpy(&gid->window, &ovi->window, sizeof(struct gs_window));
-	gid->cx              = ovi->base_width;
-	gid->cy              = ovi->base_height;
+	gid->cx              = ovi->window_width;
+	gid->cy              = ovi->window_height;
 	gid->num_backbuffers = 2;
 	gid->format          = GS_RGBA;
 	gid->zsformat        = GS_ZS_NONE;
@@ -46,13 +46,44 @@ static inline void make_video_info(struct video_info *vi,
 	vi->height  = ovi->output_height;
 }
 
+static bool obs_init_textures(struct obs_video_info *ovi)
+{
+	struct obs_video *video = &obs->video;
+	bool success = true;
+	size_t i;
+
+	for (i = 0; i < NUM_TEXTURES; i++) {
+		video->copy_surfaces[i] = gs_create_stagesurface(
+				ovi->output_width, ovi->output_height,
+				GS_RGBA);
+
+		if (!video->copy_surfaces[i])
+			return false;
+
+		video->render_textures[i] = gs_create_texture(
+				ovi->base_width, ovi->base_height,
+				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+
+		if (!video->render_textures[i])
+			return false;
+
+		video->output_textures[i] = gs_create_texture(
+				ovi->output_width, ovi->output_height,
+				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+
+		if (!video->output_textures[i])
+			return false;
+	}
+
+	return true;
+}
+
 static bool obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_video *video = &obs->video;
 	struct gs_init_data graphics_data;
 	bool success = true;
 	int errorcode;
-	size_t i;
 
 	make_gs_init_data(&graphics_data, ovi);
 	video->output_width  = ovi->output_width;
@@ -69,14 +100,8 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 
 	gs_entercontext(video->graphics);
 
-	for (i = 0; i < NUM_TEXTURES; i++) {
-		video->copy_surfaces[i] = gs_create_stagesurface(
-				ovi->output_width, ovi->output_height,
-				graphics_data.format);
-
-		if (!video->copy_surfaces[i])
-			success = false;
-	}
+	if (!obs_init_textures(ovi))
+		success = false;
 
 	if (success) {
 		char *filename = find_libobs_data_file("default.effect");
@@ -96,11 +121,6 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	struct obs_video *video = &obs->video;
 	struct video_info vi;
 	int errorcode;
-
-	memset(video, 0, sizeof(struct obs_video));
-
-	if (!obs_init_graphics(ovi))
-		return false;
 
 	make_video_info(&vi, ovi);
 	errorcode = video_output_open(&video->video, obs->media, &vi);
@@ -123,20 +143,28 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	return true;
 }
 
-static void obs_free_video(void)
+static void obs_free_video()
 {
 	struct obs_video *video = &obs->video;
-	size_t i;
 
 	if (video->video) {
 		void *thread_retval;
 
 		video_output_stop(video->video);
-		if (video->thread_initialized)
+		if (video->thread_initialized) {
 			pthread_join(video->video_thread, &thread_retval);
+			video->thread_initialized = false;
+		}
 
 		video_output_close(video->video);
+		video->video = NULL;
 	}
+}
+
+static void obs_free_graphics()
+{
+	struct obs_video *video = &obs->video;
+	size_t i;
 
 	if (video->graphics) {
 		int cur_texture = video->cur_texture;
@@ -145,17 +173,25 @@ static void obs_free_video(void)
 		if (video->copy_mapped)
 			stagesurface_unmap(video->copy_surfaces[cur_texture]);
 
-		for (i = 0; i < NUM_TEXTURES; i++)
+		for (i = 0; i < NUM_TEXTURES; i++) {
 			stagesurface_destroy(video->copy_surfaces[i]);
+			texture_destroy(video->render_textures[i]);
+			texture_destroy(video->output_textures[i]);
+
+			video->copy_surfaces[i]   = NULL;
+			video->render_textures[i] = NULL;
+			video->output_textures[i] = NULL;
+		}
 
 		effect_destroy(video->default_effect);
+		video->default_effect = NULL;
 
 		gs_leavecontext();
 
 		gs_destroy(video->graphics);
+		video->graphics = NULL;
+		video->cur_texture = 0;
 	}
-
-	memset(video, 0, sizeof(struct obs_video));
 }
 
 static bool obs_init_audio(struct audio_info *ai)
@@ -262,6 +298,7 @@ void obs_shutdown(void)
 
 	obs_free_data();
 	obs_free_video();
+	obs_free_graphics();
 	obs_free_audio();
 	media_close(obs->media);
 
@@ -275,19 +312,30 @@ void obs_shutdown(void)
 
 bool obs_reset_video(struct obs_video_info *ovi)
 {
-	obs_free_video();
-	if (ovi)
-		return obs_init_video(ovi);
+	struct obs_video *video = &obs->video;
 
-	return true;
+	obs_free_video();
+
+	if (!ovi) {
+		obs_free_graphics();
+		return true;
+	}
+
+	if (!video->graphics && !obs_init_graphics(ovi))
+		return false;
+
+	return obs_init_video(ovi);
 }
 
 bool obs_reset_audio(struct audio_info *ai)
 {
-	obs_free_audio();
-	if(ai)
-		return obs_init_audio(ai);
+	/*obs_free_audio();
+	if(!ai)
+		return true;
 
+	return obs_init_audio(ai);*/
+
+	/* TODO */
 	return true;
 }
 

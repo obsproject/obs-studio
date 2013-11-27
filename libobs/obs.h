@@ -61,15 +61,30 @@ enum order_movement {
 };
 
 struct obs_video_info {
+	/* graphics module to use (usually "libobs-opengl" or "libobs-d3d11") */
 	const char          *graphics_module;
+
+	/* output fps numerator and denominator */
 	uint32_t            fps_num;
 	uint32_t            fps_den;
+
+	/* window dimensions for what's drawn on screen */
+	uint32_t            window_width;
+	uint32_t            window_height;
+
+	/* base compositing dimensions */
 	uint32_t            base_width;
 	uint32_t            base_height;
+
+	/* output dimensions and format */
 	uint32_t            output_width;
 	uint32_t            output_height;
 	enum video_format   output_format;
+
+	/* video adapter ID to use (NOTE: do not use for optimus laptops) */
 	uint32_t            adapter;
+
+	/* window to render */
 	struct gs_window    window;
 };
 
