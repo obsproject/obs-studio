@@ -118,15 +118,17 @@ bool OBSApp::OnInit()
 	OBSBasic *mainWindow = new OBSBasic();
 
 	struct obs_video_info ovi;
-	ovi.adapter         = 0;
-	ovi.base_width      = 2;
-	ovi.base_height     = 2;
+	ovi.graphics_module = "libobs-opengl";
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
-	ovi.graphics_module = "libobs-opengl";
+	ovi.window_width    = 2;
+	ovi.window_height   = 2;
+	ovi.base_width      = 1920;
+	ovi.base_height     = 1080;
+	ovi.output_width    = 1280;
+	ovi.output_height   = 720;
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
-	ovi.output_width    = 2;
-	ovi.output_height   = 2;
+	ovi.adapter         = 0;
 	ovi.window          = WxToGSWindow(dummyWindow);
 
 	if (!obs_reset_video(&ovi))
@@ -148,5 +150,5 @@ int OBSApp::OnExit()
 
 void OBSApp::CleanUp()
 {
-	OBSAppBase::CleanUp();
+	wxApp::CleanUp();
 }

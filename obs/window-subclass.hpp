@@ -24,6 +24,11 @@
  * microsoft "recommends", the fonts they recommend look like utter garbage)
  */
 
+#ifdef _
+#undef _
+#define _(str) str
+#endif
+
 class WindowSubclass : public wxFrame {
 public:
 	WindowSubclass(wxWindow* parent, wxWindowID id, const wxString& title,
