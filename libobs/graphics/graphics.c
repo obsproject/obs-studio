@@ -675,7 +675,8 @@ static inline void build_sprite(struct vb_data *data, float fcx, float fcy,
 	vec2_set(tvarray+3, end_u,   end_v);
 }
 
-void gs_draw_sprite(texture_t tex, uint32_t flip)
+void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
+		uint32_t height)
 {
 	graphics_t graphics = thread_graphics;
 	float fcx, fcy;
@@ -688,8 +689,8 @@ void gs_draw_sprite(texture_t tex, uint32_t flip)
 		return;
 	}
 
-	fcx = (float)texture_getwidth(tex);
-	fcy = (float)texture_getheight(tex);
+	fcx = width  ? (float)width  : (float)texture_getwidth(tex);
+	fcy = height ? (float)height : (float)texture_getheight(tex);
 
 	data = vertexbuffer_getdata(graphics->sprite_buffer);
 	build_sprite(data, fcx, fcy, flip);

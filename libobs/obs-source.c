@@ -17,6 +17,8 @@
 
 #include "media-io/format-conversion.h"
 #include "util/platform.h"
+#include "graphics/matrix3.h"
+#include "graphics/vec3.h"
 
 #include "obs.h"
 #include "obs-data.h"
@@ -452,7 +454,7 @@ static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 	param = effect_getparambyname(effect, "diffuse");
 	effect_settexture(effect, param, tex);
 
-	gs_draw_sprite(tex, frame->flip ? GS_FLIP_V : 0);
+	gs_draw_sprite(tex, frame->flip ? GS_FLIP_V : 0, 0, 0);
 
 	technique_endpass(tech);
 	technique_end(tech);

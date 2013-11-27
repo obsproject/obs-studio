@@ -78,6 +78,8 @@ static void CreateOBS(HWND hwnd)
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
 	ovi.graphics_module = "libobs-opengl";
+	ovi.window_width    = rc.right;
+	ovi.window_height   = rc.bottom;
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
 	ovi.output_width    = rc.right;
 	ovi.output_height   = rc.bottom;

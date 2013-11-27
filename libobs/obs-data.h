@@ -30,7 +30,7 @@
 #include "obs-module.h"
 #include "obs-source.h"
 #include "obs-output.h"
-/*#include "obs-service.h"*/
+#include "obs-service.h"
 
 #define NUM_TEXTURES 2
 
@@ -46,6 +46,8 @@ struct obs_display {
 struct obs_video {
 	graphics_t                  graphics;
 	stagesurf_t                 copy_surfaces[NUM_TEXTURES];
+	texture_t                   render_textures[NUM_TEXTURES];
+	texture_t                   output_textures[NUM_TEXTURES];
 	effect_t                    default_effect;
 	bool                        textures_copied[NUM_TEXTURES];
 	bool                        copy_mapped;

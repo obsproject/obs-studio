@@ -429,7 +429,6 @@ struct gs_init_data {
 	uint32_t                adapter;
 };
 
-
 EXPORT int gs_create(graphics_t *graphics, const char *module,
 		struct gs_init_data *data);
 EXPORT void gs_destroy(graphics_t graphics);
@@ -490,7 +489,15 @@ EXPORT texture_t gs_create_volumetexture_from_file(const char *flie,
 #define GS_FLIP_U (1<<0)
 #define GS_FLIP_V (1<<1)
 
-EXPORT void gs_draw_sprite(texture_t tex, uint32_t flip);
+/**
+ * Draws a 2D sprite
+ *
+ *   If width or height is 0, the width or height of the texture will be used.
+ * The flip value specifies whether the texture shoudl be flipped on the U or V
+ * axis with GS_FLIP_U and GS_FLIP_V.
+ */
+EXPORT void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
+		uint32_t height);
 
 EXPORT void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear);

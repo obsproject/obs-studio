@@ -41,14 +41,16 @@ static void CreateOBS(NSWindow *win)
 
 	struct obs_video_info ovi;
 	ovi.adapter         = 0;
-	ovi.base_width      = cx;
-	ovi.base_height     = cy;
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
 	ovi.graphics_module = "libobs-opengl";
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
+	ovi.base_width      = cx;
+	ovi.base_height     = cy;
 	ovi.output_width    = cx;
 	ovi.output_height   = cy;
+	ovi.window_width    = cx;
+	ovi.window_height   = cy;
 	ovi.window.view     = [win contentView];
 
 	if (!obs_reset_video(&ovi))
@@ -142,15 +144,15 @@ static void test()
 
 		/* ------------------------------------------------------ */
 		/* create source */
-		SourceContext source = autorelease(obs_source_create(SOURCE_INPUT,
-				"random", NULL));
+		SourceContext source = autorelease(obs_source_create(
+				SOURCE_INPUT, "random", NULL));
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
-		SourceContext filter = autorelease(obs_source_create(SOURCE_FILTER,
-				"test", NULL));
+		SourceContext filter = autorelease(obs_source_create(
+				SOURCE_FILTER, "test", NULL));
 		if (!filter)
 			throw "Couldn't create test filter";
 		obs_source_filter_add(source.get(), filter.get());
