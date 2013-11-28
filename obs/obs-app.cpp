@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include <sstream>
-using namespace std;
 
 #include <util/bmem.h>
 #include <util/platform.h>
@@ -25,6 +24,7 @@ using namespace std;
 #include "window-obs-basic.hpp"
 #include "obs-wrappers.hpp"
 #include "wx-wrappers.hpp"
+using namespace std;
 
 IMPLEMENT_APP(OBSApp);
 
