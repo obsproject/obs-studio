@@ -29,9 +29,13 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <sys/stat.h>
+
 #include <CoreServices/CoreServices.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+
+#import <Cocoa/Cocoa.h>
 
 void *os_dlopen(const char *path)
 {
@@ -98,3 +102,39 @@ uint64_t os_gettime_ms(void)
 	return  os_gettime_ns()/1000000;
 }
 
+char *os_get_home_path(void)
+{
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(
+			NSApplicationSupportDirectory, NSUserDomainMask, YES);
+
+	if([paths count] == 0)
+		bcrash("Could not get home directory (platform-cocoa)");
+
+	NSString *application_support = paths[0];// objectAtIndex:0];
+
+	NSUInteger len = [application_support
+		lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+
+	char *path = bmalloc(len+1);
+
+	path[len] = 0;
+
+	memcpy(path, [application_support UTF8String], len);
+
+	[application_support release];
+
+	[paths release];
+
+	return path;
+}
+
+int os_mkdir(const char *path)
+{
+	if(!mkdir(path, 0777))
+		return MKDIR_SUCCESS;
+
+	if(errno == EEXIST)
+		return MKDIR_EXISTS;
+
+	return MKDIR_ERROR;
+}

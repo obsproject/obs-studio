@@ -5,7 +5,9 @@ if(WIN32)
 elseif(APPLE AND UNIX)
 	set(libobs_platform_src
 		obs-cocoa.c
-		util/platform-cocoa.c)
+		util/platform-cocoa.m)
+	set_source_files_properties(${libobs_platform_src}
+		PROPERTIES LANGUAGE C)
 	add_definitions("-DHAVE_STRTOLL")
 	find_library(COCOA Cocoa)
 	mark_as_advanced(COCOA)
