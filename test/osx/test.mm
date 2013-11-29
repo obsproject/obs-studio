@@ -8,8 +8,8 @@
 #import <AppKit/AppKit.h>
 #import <OpenGL/OpenGL.h>
 
-#include "util/base.h"
-#include "obs.h"
+#include <util/base.h>
+#include <obs.h>
 
 static const int cx = 800;
 static const int cy = 600;
@@ -19,7 +19,7 @@ static const int cy = 600;
 /* --------------------------------------------------- */
 
 using SourceContext = std::unique_ptr<obs_source,
-      std::function<void(obs_source_t)>>;
+      std::function<int(obs_source_t)>>;
 static SourceContext autorelease(obs_source_t s)
 {
 	return SourceContext(s, obs_source_release);

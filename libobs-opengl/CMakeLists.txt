@@ -14,7 +14,7 @@ endif()
 
 option(USE_STATIC_GLEW "Build using bundled GLEW" ${WIN32})
 
-include_directories(${obs_SOURCE_DIR}/libobs)
+include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
@@ -26,7 +26,7 @@ if(NOT USE_STATIC_GLEW)
 	include_directories(${GLEW_INCLUDE_DIRS})
 	set(GLEW_SRC)
 else()
-	include_directories(glew/include)
+	include_directories(SYSTEM glew/include)
 	add_definitions(-DGLEW_STATIC)
 	set(GLEW_SRC glew/src/glew.c)
 endif()

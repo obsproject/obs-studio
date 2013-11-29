@@ -10,6 +10,7 @@ function(wx_required_version)
 	endforeach()
 	set(CMAKE_REQUIRED_DEFINITIONS ${WX_CHECK_DEFINITIONS})
 	set(CMAKE_REQUIRED_INCLUDES ${wxWidgets_INCLUDE_DIRS})
+	set(CMAKE_REQUIRED_FLAGS ${wxWidgets_CXX_FLAGS})
 	check_cxx_source_compiles("
 		#include <wx/sysopt.h>
 		#if (wxMINOR_VERSION < 9 && wxMAJOR_VERSION <= 2) || wxMAJOR_VERSION < 3
@@ -24,8 +25,9 @@ function(wx_required_version)
 endfunction()
 wx_required_version()
 
+include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 
-link_libraries(${wxWidgets_LIBRARIES})
+link_libraries(${wxWidgets_LIBRARIES} libobs)
 
 add_executable(obs
 	window-obs-basic.cpp

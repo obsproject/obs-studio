@@ -1,4 +1,4 @@
-include_directories(${obs_SOURCE_DIR}/libobs)
+include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 
 add_library(test-input MODULE
 	test-filter.c
