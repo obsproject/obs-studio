@@ -30,8 +30,8 @@ include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 link_libraries(${wxWidgets_LIBRARIES} libobs)
 
 add_executable(obs
-	window-obs-basic.cpp
-	window-subclass.cpp
+	window-main-basic.cpp
+	wx-subclass.cpp
 	wx-wrappers.cpp
 	obs-app.cpp
 	forms/OBSWindows.cpp)
