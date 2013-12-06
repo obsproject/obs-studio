@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "OBSWindows.h"
+#include "forms/OBSWindows.h"
 
 class OBSBasic : public OBSBasicBase {
 protected:

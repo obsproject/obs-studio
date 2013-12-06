@@ -167,16 +167,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\obs\forms\OBSWindows.cpp" />
     <ClCompile Include="..\..\..\obs\obs-app.cpp" />
-    <ClCompile Include="..\..\..\obs\OBSWindows.cpp" />
     <ClCompile Include="..\..\..\obs\window-obs-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-subclass.cpp" />
     <ClCompile Include="..\..\..\obs\wx-wrappers.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\obs\forms\OBSWindows.h" />
     <ClInclude Include="..\..\..\obs\obs-app.hpp" />
     <ClInclude Include="..\..\..\obs\obs-wrappers.hpp" />
-    <ClInclude Include="..\..\..\obs\OBSWindows.h" />
     <ClInclude Include="..\..\..\obs\window-obs-basic.hpp" />
     <ClInclude Include="..\..\..\obs\window-subclass.hpp" />
     <ClInclude Include="..\..\..\obs\wx-wrappers.hpp" />

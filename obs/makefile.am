@@ -16,4 +16,4 @@ obs_SOURCES = window-obs-basic.cpp \
 	      window-subclass.cpp \
 	      obs-app.cpp \
 	      wx-wrappers.cpp \
-	      OBSWindows.cpp
+	      forms/OBSWindows.cpp

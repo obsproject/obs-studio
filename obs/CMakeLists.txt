@@ -34,7 +34,7 @@ add_executable(obs
 	window-subclass.cpp
 	wx-wrappers.cpp
 	obs-app.cpp
-	OBSWindows.cpp)
+	forms/OBSWindows.cpp)
 
 if(APPLE)
 	set_target_properties(obs PROPERTIES
