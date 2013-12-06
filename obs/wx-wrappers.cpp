@@ -22,8 +22,8 @@
 gs_window WxToGSWindow(const wxWindow *wxwin)
 {
 	gs_window window;
-#ifdef __WXCOCOA__
-	window.view     = wxwin->GetHandle();
+#ifdef __APPLE__
+	window.view     = (id)wxwin->GetHandle();
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
