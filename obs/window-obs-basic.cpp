@@ -21,6 +21,33 @@
 void OBSBasic::OnClose(wxCloseEvent& event)
 {
 	wxGetApp().ExitMainLoop();
+	event.Skip();
+}
+
+void OBSBasic::OnMinimize(wxIconizeEvent& event)
+{
+	event.Skip();
+}
+
+void OBSBasic::OnSize(wxSizeEvent& event)
+{
+	struct obs_video_info ovi;
+
+	event.Skip();
+
+	if (!obs_get_video_info(&ovi))
+		return;
+
+	wxSize targetSize   = GetPreviewContainer()->GetSize();
+	double targetAspect = double(targetSize.x) / double(targetSize.y);
+	double baseAspect   = double(ovi.base_width) / double(ovi.base_height);
+
+	if (targetAspect > baseAspect)
+		GetPreviewPanel()->SetMinSize(wxSize(targetSize.y * baseAspect,
+				targetSize.y));
+	else
+		GetPreviewPanel()->SetMinSize(wxSize(targetSize.x,
+				targetSize.x / baseAspect));
 }
 
 void OBSBasic::file_newOnMenuSelection(wxCommandEvent& event)

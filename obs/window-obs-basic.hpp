@@ -22,6 +22,8 @@
 class OBSBasic : public OBSBasicBase {
 protected:
 	virtual void OnClose(wxCloseEvent& event);
+	virtual void OnMinimize(wxIconizeEvent& event);
+	virtual void OnSize(wxSizeEvent& event);
 	virtual void file_newOnMenuSelection(wxCommandEvent& event);
 	virtual void file_openOnMenuSelection(wxCommandEvent& event);
 	virtual void file_saveOnMenuSelection(wxCommandEvent& event);
@@ -42,5 +44,6 @@ protected:
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}
 
-	inline const wxPanel *GetPreviewPanel() const {return previewPanel;}
+	inline wxPanel *GetPreviewPanel() {return previewPanel;}
+	inline wxSizer *GetPreviewContainer() {return previewContainer;}
 };
