@@ -46,7 +46,7 @@
             <property name="pos"></property>
             <property name="size">1117,783</property>
             <property name="style">wxDEFAULT_FRAME_STYLE</property>
-            <property name="subclass">WindowSubclass; window-subclass.hpp</property>
+            <property name="subclass">WindowSubclass; ../window-subclass.hpp</property>
             <property name="title">.mainwindow</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -2157,7 +2157,7 @@
             <property name="pos"></property>
             <property name="size">1240,825</property>
             <property name="style">wxDEFAULT_FRAME_STYLE</property>
-            <property name="subclass">WindowSubclass; window-subclass.hpp</property>
+            <property name="subclass">WindowSubclass; ../window-subclass.hpp</property>
             <property name="title">.openBroadcastStudio</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>

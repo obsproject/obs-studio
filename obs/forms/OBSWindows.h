@@ -13,7 +13,7 @@
 #include <wx/intl.h>
 class WindowSubclass;
 
-#include "window-subclass.hpp"
+#include "../window-subclass.hpp"
 #include <wx/string.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
