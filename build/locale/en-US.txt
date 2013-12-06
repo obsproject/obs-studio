@@ -1,0 +1,12 @@
+OK="OK"
+Cancel="Cancel"
+
+MainWindow.Exit="Exit"
+MainWindow.Lock="Lock Preview"
+MainWindow.Preview="Enable Preview"
+MainWindow.Scenes="Scenes"
+MainWindow.Sources="Sources"
+MainWindow.StartRecording="Start Recording"
+MainWindow.StartStream="Start Stream"
+MainWindow.StopRecording="Stop Recording"
+MainWindow.StopStream="Stop Stream"

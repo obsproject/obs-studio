@@ -36,7 +36,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	fileMenu->AppendSeparator();
 	
 	wxMenuItem* file_exit;
-	file_exit = new wxMenuItem( fileMenu, ID_FILE_EXIT, wxString( _("MainMenu.File.Exit") ) , wxEmptyString, wxITEM_NORMAL );
+	file_exit = new wxMenuItem( fileMenu, ID_FILE_EXIT, wxString( _("MainWindow.Exit") ) , wxEmptyString, wxITEM_NORMAL );
 	fileMenu->Append( file_exit );
 	
 	mainMenu->Append( fileMenu, _("MainMenu.File") ); 

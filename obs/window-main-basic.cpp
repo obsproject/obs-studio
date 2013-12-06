@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "obs-app.hpp"
-#include "window-obs-basic.hpp"
+#include "window-main-basic.hpp"
 
 void OBSBasic::OnClose(wxCloseEvent& event)
 {
@@ -38,6 +38,7 @@ void OBSBasic::OnSize(wxSizeEvent& event)
 	if (!obs_get_video_info(&ovi))
 		return;
 
+	/* resize preview panel to fix to the top section of the window */
 	wxSize targetSize   = GetPreviewContainer()->GetSize();
 	double targetAspect = double(targetSize.x) / double(targetSize.y);
 	double baseAspect   = double(ovi.base_width) / double(ovi.base_height);

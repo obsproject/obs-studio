@@ -26,7 +26,7 @@
         <property name="ui_table">UI</property>
         <property name="use_enum">0</property>
         <property name="use_microsoft_bom">0</property>
-        <object class="Frame" expanded="1">
+        <object class="Frame" expanded="0">
             <property name="aui_managed">0</property>
             <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
             <property name="bg"></property>
@@ -46,7 +46,7 @@
             <property name="pos"></property>
             <property name="size">1117,783</property>
             <property name="style">wxDEFAULT_FRAME_STYLE</property>
-            <property name="subclass">WindowSubclass; ../window-subclass.hpp</property>
+            <property name="subclass">WindowSubclass; ../wx-subclass.hpp</property>
             <property name="title">.mainwindow</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -193,7 +193,7 @@
                         <property name="help"></property>
                         <property name="id">ID_FILE_EXIT</property>
                         <property name="kind">wxITEM_NORMAL</property>
-                        <property name="label">MainMenu.File.Exit</property>
+                        <property name="label">MainWindow.Exit</property>
                         <property name="name">file_exit</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
@@ -203,16 +203,16 @@
                     </object>
                 </object>
             </object>
-            <object class="wxBoxSizer" expanded="1">
+            <object class="wxBoxSizer" expanded="0">
                 <property name="minimum_size"></property>
                 <property name="name">mainContainer</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">0</property>
                     <property name="flag">wxEXPAND | wxALL</property>
                     <property name="proportion">1</property>
-                    <object class="wxPanel" expanded="1">
+                    <object class="wxPanel" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -286,25 +286,25 @@
                         <event name="OnSetFocus"></event>
                         <event name="OnSize"></event>
                         <event name="OnUpdateUI"></event>
-                        <object class="wxBoxSizer" expanded="1">
+                        <object class="wxBoxSizer" expanded="0">
                             <property name="minimum_size"></property>
                             <property name="name">panelContainer</property>
                             <property name="orient">wxVERTICAL</property>
                             <property name="permission">none</property>
-                            <object class="sizeritem" expanded="1">
+                            <object class="sizeritem" expanded="0">
                                 <property name="border">5</property>
                                 <property name="flag">wxEXPAND</property>
                                 <property name="proportion">1</property>
-                                <object class="wxBoxSizer" expanded="1">
+                                <object class="wxBoxSizer" expanded="0">
                                     <property name="minimum_size"></property>
                                     <property name="name">previewContainer</property>
                                     <property name="orient">wxHORIZONTAL</property>
                                     <property name="permission">protected</property>
-                                    <object class="sizeritem" expanded="1">
+                                    <object class="sizeritem" expanded="0">
                                         <property name="border">5</property>
                                         <property name="flag">wxALIGN_CENTER</property>
                                         <property name="proportion">1</property>
-                                        <object class="wxBoxSizer" expanded="1">
+                                        <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">previewVertical</property>
                                             <property name="orient">wxHORIZONTAL</property>
@@ -404,29 +404,29 @@
                                     </object>
                                 </object>
                             </object>
-                            <object class="sizeritem" expanded="1">
+                            <object class="sizeritem" expanded="0">
                                 <property name="border">5</property>
                                 <property name="flag">wxEXPAND</property>
                                 <property name="proportion">0</property>
-                                <object class="wxBoxSizer" expanded="1">
+                                <object class="wxBoxSizer" expanded="0">
                                     <property name="minimum_size">-1,155</property>
                                     <property name="name">bottomContainer</property>
                                     <property name="orient">wxVERTICAL</property>
                                     <property name="permission">none</property>
-                                    <object class="sizeritem" expanded="1">
+                                    <object class="sizeritem" expanded="0">
                                         <property name="border">5</property>
                                         <property name="flag">wxALIGN_CENTER|wxEXPAND</property>
                                         <property name="proportion">1</property>
-                                        <object class="wxBoxSizer" expanded="1">
+                                        <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bSizer36</property>
                                             <property name="orient">wxVERTICAL</property>
                                             <property name="permission">none</property>
-                                            <object class="sizeritem" expanded="1">
+                                            <object class="sizeritem" expanded="0">
                                                 <property name="border">5</property>
                                                 <property name="flag">wxALIGN_CENTER</property>
                                                 <property name="proportion">1</property>
-                                                <object class="wxBoxSizer" expanded="1">
+                                                <object class="wxBoxSizer" expanded="0">
                                                     <property name="minimum_size">625,-1</property>
                                                     <property name="name">bottomCenterContainer</property>
                                                     <property name="orient">wxHORIZONTAL</property>
@@ -2157,7 +2157,7 @@
             <property name="pos"></property>
             <property name="size">1240,825</property>
             <property name="style">wxDEFAULT_FRAME_STYLE</property>
-            <property name="subclass">WindowSubclass; ../window-subclass.hpp</property>
+            <property name="subclass">WindowSubclass; ../wx-subclass.hpp</property>
             <property name="title">.openBroadcastStudio</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>

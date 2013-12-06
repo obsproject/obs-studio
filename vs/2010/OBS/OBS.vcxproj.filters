@@ -18,12 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\obs\window-obs-basic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\obs\window-subclass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\obs\obs-app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,14 +27,14 @@
     <ClCompile Include="..\..\..\obs\forms\OBSWindows.cpp">
       <Filter>wx forms</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-main-basic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\obs\wx-subclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\obs\window-obs-basic.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\obs\window-subclass.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\obs\obs-app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -52,6 +46,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\obs\forms\OBSWindows.h">
       <Filter>wx forms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\window-main-basic.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\wx-subclass.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

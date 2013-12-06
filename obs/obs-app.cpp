@@ -21,9 +21,10 @@
 #include <util/platform.h>
 
 #include "obs-app.hpp"
-#include "window-obs-basic.hpp"
+#include "window-main-basic.hpp"
 #include "obs-wrappers.hpp"
 #include "wx-wrappers.hpp"
+
 using namespace std;
 
 IMPLEMENT_APP(OBSApp);
