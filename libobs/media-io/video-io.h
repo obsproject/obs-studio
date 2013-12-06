@@ -74,6 +74,7 @@ struct video_info {
 
 EXPORT int      video_output_open(video_t *video, media_t media,
 		struct video_info *info);
+EXPORT const struct video_info *video_output_getinfo(video_t video);
 EXPORT void     video_output_frame(video_t video, struct video_frame *frame);
 EXPORT bool     video_output_wait(video_t video);
 EXPORT uint64_t video_getframetime(video_t video);

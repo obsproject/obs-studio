@@ -170,6 +170,12 @@ EXPORT bool obs_reset_video(struct obs_video_info *ovi);
  */
 EXPORT bool obs_reset_audio(struct audio_info *ai);
 
+/** Gets the current video settings, returns false if none */
+EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
+
+/** Gets the current audio settings, returns false if none */
+EXPORT bool obs_get_audio_info(struct audio_info *ai);
+
 /**
  * Loads a plugin module
  *

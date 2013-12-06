@@ -133,6 +133,11 @@ fail:
 	return VIDEO_OUTPUT_FAIL;
 }
 
+const struct video_info *video_output_getinfo(video_t video)
+{
+	return &video->info;
+}
+
 void video_output_frame(video_t video, struct video_frame *frame)
 {
 	pthread_mutex_lock(&video->data_mutex);

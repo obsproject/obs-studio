@@ -57,8 +57,8 @@ struct obs_video {
 	pthread_t                   video_thread;
 	bool                        thread_initialized;
 
-	uint32_t                    output_width;
-	uint32_t                    output_height;
+	uint32_t                    base_width;
+	uint32_t                    base_height;
 };
 
 struct obs_audio {

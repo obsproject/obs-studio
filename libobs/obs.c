@@ -86,8 +86,8 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 	int errorcode;
 
 	make_gs_init_data(&graphics_data, ovi);
-	video->output_width  = ovi->output_width;
-	video->output_height = ovi->output_height;
+	video->base_width  = ovi->base_width;
+	video->base_height = ovi->base_height;
 
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
 			&graphics_data);
@@ -336,6 +336,42 @@ bool obs_reset_audio(struct audio_info *ai)
 	return obs_init_audio(ai);*/
 
 	/* TODO */
+	return true;
+}
+
+bool obs_get_video_info(struct obs_video_info *ovi)
+{
+	struct obs_video *video = &obs->video;
+	const struct video_info *info;
+
+	if (!video->graphics)
+		return false;
+
+	info = video_output_getinfo(video->video);
+
+	memset(ovi, 0, sizeof(struct obs_video_info));
+	ovi->base_width    = video->base_width;
+	ovi->base_height   = video->base_height;
+	ovi->output_width  = info->width;
+	ovi->output_height = info->height;
+	ovi->output_format = info->type;
+	ovi->fps_num       = info->fps_num;
+	ovi->fps_den       = info->fps_den;
+
+	return true;
+}
+
+bool obs_get_audio_info(struct audio_info *ai)
+{
+	struct obs_audio *audio = &obs->audio;
+	const struct audio_info *info;
+
+	if (!audio->audio)
+		return false;
+
+	info = audio_output_getinfo(audio->audio);
+	memcpy(ai, info, sizeof(struct audio_info));
+
 	return true;
 }
 
