@@ -86,7 +86,7 @@ public:
 	inline OBSSource(obs_source_t source) : source(source) {}
 	inline ~OBSSource() {obs_source_release(source);}
 
-	inline OBSSource& operator=(obs_source_t p) {source = p;}
+	inline OBSSource& operator=(obs_source_t p) {source = p; return *this;}
 
 	inline operator obs_source_t() {return source;}
 
