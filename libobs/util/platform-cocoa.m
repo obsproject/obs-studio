@@ -110,7 +110,7 @@ char *os_get_home_path(void)
 	if([paths count] == 0)
 		bcrash("Could not get home directory (platform-cocoa)");
 
-	NSString *application_support = paths[0];// objectAtIndex:0];
+	NSString *application_support = paths[0];
 
 	NSUInteger len = [application_support
 		lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
@@ -120,10 +120,6 @@ char *os_get_home_path(void)
 	path[len] = 0;
 
 	memcpy(path, [application_support UTF8String], len);
-
-	[application_support release];
-
-	[paths release];
 
 	return path;
 }

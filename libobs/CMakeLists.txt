@@ -7,7 +7,9 @@ elseif(APPLE AND UNIX)
 		obs-cocoa.c
 		util/platform-cocoa.m)
 	set_source_files_properties(${libobs_platform_src}
-		PROPERTIES LANGUAGE C)
+		PROPERTIES
+			LANGUAGE C
+			COMPILE_FLAGS "-fobjc-arc")
 	add_definitions("-DHAVE_STRTOLL")
 	find_library(COCOA Cocoa)
 	mark_as_advanced(COCOA)
