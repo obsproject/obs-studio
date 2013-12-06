@@ -74,6 +74,7 @@ class OBSBasicBase : public WindowSubclass
 		wxMenuBar* mainMenu;
 		wxMenu* fileMenu;
 		wxPanel* mainPanel;
+		wxBoxSizer* previewContainer;
 		wxPanel* previewPanel;
 		wxStaticText* scenesLabel;
 		wxPanel* scenesPanel;
@@ -95,10 +96,13 @@ class OBSBasicBase : public WindowSubclass
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void OnMinimize( wxIconizeEvent& event ) { event.Skip(); }
+		virtual void OnSize( wxSizeEvent& event ) { event.Skip(); }
 		virtual void file_newOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void file_openOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void file_saveOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void file_exitOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
+		virtual void whatever( wxSizeEvent& event ) { event.Skip(); }
 		virtual void scenesOnRightDown( wxMouseEvent& event ) { event.Skip(); }
 		virtual void sceneAddOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void sceneRemoveOnToolClicked( wxCommandEvent& event ) { event.Skip(); }

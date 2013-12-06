@@ -50,28 +50,27 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* panelContainer;
 	panelContainer = new wxBoxSizer( wxVERTICAL );
 	
-	wxBoxSizer* topContainer;
-	topContainer = new wxBoxSizer( wxHORIZONTAL );
-	
-	wxBoxSizer* previewContainer;
 	previewContainer = new wxBoxSizer( wxHORIZONTAL );
+	
+	wxBoxSizer* previewVertical;
+	previewVertical = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxBoxSizer* bSizer35;
 	bSizer35 = new wxBoxSizer( wxVERTICAL );
 	
-	previewPanel = new wxPanel( mainPanel, ID_PROGRAM, wxDefaultPosition, wxSize( 480,270 ), wxTAB_TRAVERSAL );
+	previewPanel = new wxPanel( mainPanel, ID_PROGRAM, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
 	previewPanel->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_APPWORKSPACE ) );
 	
 	bSizer35->Add( previewPanel, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	
-	previewContainer->Add( bSizer35, 1, wxEXPAND, 5 );
+	previewVertical->Add( bSizer35, 1, wxEXPAND, 5 );
 	
 	
-	topContainer->Add( previewContainer, 1, wxALIGN_CENTER, 5 );
+	previewContainer->Add( previewVertical, 1, wxALIGN_CENTER, 5 );
 	
 	
-	panelContainer->Add( topContainer, 1, wxEXPAND, 5 );
+	panelContainer->Add( previewContainer, 1, wxEXPAND, 5 );
 	
 	wxBoxSizer* bottomContainer;
 	bottomContainer = new wxBoxSizer( wxVERTICAL );
@@ -231,10 +230,13 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
+	this->Connect( wxEVT_ICONIZE, wxIconizeEventHandler( OBSBasicBase::OnMinimize ) );
+	this->Connect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnSize ) );
 	this->Connect( file_new->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
 	this->Connect( file_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Connect( file_save->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
 	this->Connect( file_exit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
+	previewPanel->Connect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::whatever ), NULL, this );
 	scenes->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
 	this->Connect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
 	this->Connect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );
@@ -253,10 +255,13 @@ OBSBasicBase::~OBSBasicBase()
 {
 	// Disconnect Events
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
+	this->Disconnect( wxEVT_ICONIZE, wxIconizeEventHandler( OBSBasicBase::OnMinimize ) );
+	this->Disconnect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnSize ) );
 	this->Disconnect( ID_FILE_NEW, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
 	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
 	this->Disconnect( ID_FILE_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
+	previewPanel->Disconnect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::whatever ), NULL, this );
 	scenes->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
 	this->Disconnect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
 	this->Disconnect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );

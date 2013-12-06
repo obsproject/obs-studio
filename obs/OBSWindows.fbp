@@ -66,7 +66,7 @@
             <event name="OnEnterWindow"></event>
             <event name="OnEraseBackground"></event>
             <event name="OnHibernate"></event>
-            <event name="OnIconize"></event>
+            <event name="OnIconize">OnMinimize</event>
             <event name="OnIdle"></event>
             <event name="OnKeyDown"></event>
             <event name="OnKeyUp"></event>
@@ -86,7 +86,7 @@
             <event name="OnRightDown"></event>
             <event name="OnRightUp"></event>
             <event name="OnSetFocus"></event>
-            <event name="OnSize"></event>
+            <event name="OnSize">OnSize</event>
             <event name="OnUpdateUI"></event>
             <object class="wxMenuBar" expanded="0">
                 <property name="bg"></property>
@@ -291,22 +291,22 @@
                             <property name="name">panelContainer</property>
                             <property name="orient">wxVERTICAL</property>
                             <property name="permission">none</property>
-                            <object class="sizeritem" expanded="0">
+                            <object class="sizeritem" expanded="1">
                                 <property name="border">5</property>
                                 <property name="flag">wxEXPAND</property>
                                 <property name="proportion">1</property>
-                                <object class="wxBoxSizer" expanded="0">
+                                <object class="wxBoxSizer" expanded="1">
                                     <property name="minimum_size"></property>
-                                    <property name="name">topContainer</property>
+                                    <property name="name">previewContainer</property>
                                     <property name="orient">wxHORIZONTAL</property>
-                                    <property name="permission">none</property>
-                                    <object class="sizeritem" expanded="0">
+                                    <property name="permission">protected</property>
+                                    <object class="sizeritem" expanded="1">
                                         <property name="border">5</property>
                                         <property name="flag">wxALIGN_CENTER</property>
                                         <property name="proportion">1</property>
-                                        <object class="wxBoxSizer" expanded="0">
+                                        <object class="wxBoxSizer" expanded="1">
                                             <property name="minimum_size"></property>
-                                            <property name="name">previewContainer</property>
+                                            <property name="name">previewVertical</property>
                                             <property name="orient">wxHORIZONTAL</property>
                                             <property name="permission">none</property>
                                             <object class="sizeritem" expanded="0">
@@ -366,7 +366,7 @@
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
                                                             <property name="show">1</property>
-                                                            <property name="size">480,270</property>
+                                                            <property name="size">-1,-1</property>
                                                             <property name="subclass"></property>
                                                             <property name="toolbar_pane">0</property>
                                                             <property name="tooltip"></property>
@@ -394,7 +394,7 @@
                                                             <event name="OnRightDown"></event>
                                                             <event name="OnRightUp"></event>
                                                             <event name="OnSetFocus"></event>
-                                                            <event name="OnSize"></event>
+                                                            <event name="OnSize">whatever</event>
                                                             <event name="OnUpdateUI"></event>
                                                         </object>
                                                     </object>
