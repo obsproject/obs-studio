@@ -9,6 +9,6 @@ target_link_libraries(test-input
 	libobs)
 
 file(COPY
-	${obs_SOURCE_DIR}/build/data/test-input/draw.effect
-	${obs_SOURCE_DIR}/build/data/test-input/test.effect
-	DESTINATION ${obs_BINARY_DIR}/data/test-input/)
+	${obs_SOURCE_DIR}/build/data/obs-plugins/test-input/draw.effect
+	${obs_SOURCE_DIR}/build/data/obs-plugins/test-input/test.effect
+	DESTINATION ${obs_BINARY_DIR}/data/obs-plugins/test-input/)
