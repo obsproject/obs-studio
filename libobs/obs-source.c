@@ -799,7 +799,7 @@ void obs_source_output_audio(obs_source_t source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
-/* 
+/*
  * Ensures that cached frames are displayed on time.  If multiple frames
  * were cached between renders, then releases the unnecessary frames and uses
  * the frame with the closest timing.

@@ -22,7 +22,6 @@
 ******************************************************************************/
 
 #include "dstr.h"
-#include "darray.h"
 #include "text-lookup.h"
 #include "lexer.h"
 #include "platform.h"
@@ -44,37 +43,42 @@ static inline void text_leaf_destroy(struct text_leaf *leaf)
 
 struct text_node {
 	struct dstr str;
-	struct darray subnodes; /* struct text_node * */
+	struct text_node *first_subnode;
 	struct text_leaf *leaf;
+
+	struct text_node *next;
 };
 
 static void text_node_destroy(struct text_node *node)
 {
-	struct text_node **subnodes;
-	size_t i;
+	struct text_node *subnode;
 
 	if (!node)
 		return;
 
-	subnodes = node->subnodes.array;
+	subnode = node->first_subnode;
+	while (subnode) {
+		struct text_node *destroy_node = subnode;
+
+		subnode = subnode->next;
+		text_node_destroy(destroy_node);
+	}
+
 	dstr_free(&node->str);
-	for (i = 0; i < node->subnodes.num; i++)
-		text_node_destroy(subnodes[i]);
 	if (node->leaf)
 		text_leaf_destroy(node->leaf);
-	darray_free(&node->subnodes);
 	bfree(node);
 }
 
 static struct text_node *text_node_bychar(struct text_node *node, char ch)
 {
-	size_t i;
-	struct text_node **subnodes = node->subnodes.array;
+	struct text_node *subnode = node->first_subnode;
 
-	for (i = 0; i < node->subnodes.num; i++) {
-		struct text_node *child = subnodes[i];
-		if (!dstr_isempty(&child->str) && child->str.array[0] == ch)
-			return child;
+	while (subnode) {
+		if (!dstr_isempty(&subnode->str) && subnode->str.array[0] == ch)
+			return subnode;
+
+		subnode = subnode->next;
 	}
 
 	return NULL;
@@ -83,23 +87,16 @@ static struct text_node *text_node_bychar(struct text_node *node, char ch)
 static struct text_node *text_node_byname(struct text_node *node,
 		const char *name)
 {
-	size_t i;
-	struct text_node **subnodes = node->subnodes.array;
+	struct text_node *subnode = node->first_subnode;
 
-	for (i = 0; i < node->subnodes.num; i++) {
-		struct text_node *child = subnodes[i];
-		if (astrcmpi_n(child->str.array, name, child->str.len) == 0)
-			return child;
+	while (subnode) {
+		if (astrcmpi_n(subnode->str.array, name, subnode->str.len) == 0)
+			return subnode;
+
+		subnode = subnode->next;
 	}
 
 	return NULL;
-}
-
-static inline void text_node_removesubnode(struct text_node *node,
-		struct text_node *child, size_t idx)
-{
-	darray_erase(sizeof(struct text_node*), &node->subnodes, idx);
-	text_node_destroy(child);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -118,7 +115,8 @@ static void lookup_createsubnode(const char *lookup_val,
 	new->leaf = leaf;
 	dstr_copy(&new->str, lookup_val);
 
-	darray_push_back(sizeof(struct text_node*), &node->subnodes, &new);
+	new->next = node->first_subnode;
+	node->first_subnode = new;
 }
 
 static void lookup_splitnode(const char *lookup_val, size_t len,
@@ -129,10 +127,10 @@ static void lookup_splitnode(const char *lookup_val, size_t len,
 
 	dstr_copy(&split->str, node->str.array+len);
 	split->leaf = node->leaf;
-	darray_move(&split->subnodes, &node->subnodes);
+	split->first_subnode = node->first_subnode;
+	node->first_subnode = split;
 
 	dstr_resize(&node->str, len);
-	darray_push_back(sizeof(struct text_node), &node->subnodes, &split);
 
 	if (lookup_val[len] != 0) {
 		node->leaf = NULL;
