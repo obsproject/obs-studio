@@ -59,7 +59,8 @@ libobs_la_SOURCES += util/platform-windows.c obs-windows.c
 endif
 
 if OS_OSX
-libobs_la_SOURCES += util/platform-cocoa.c obs-cocoa.c
+libobs_la_SOURCES += util/platform-cocoa.m obs-cocoa.c
+libobs_la_OBJCFLAGS = -fobjc-arc
 endif
 
 if OS_NIX
