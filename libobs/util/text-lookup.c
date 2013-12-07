@@ -203,10 +203,10 @@ static void lookup_getstringtoken(struct lexer *lex, struct strref *token)
 	if (*token->array == '"') {
 		token->array++;
 		token->len--;
-	}
 
-	if (*(temp-1) == '"')
-		token->len--;
+		if (*(temp-1) == '"')
+			token->len--;
+	}
 
 	lex->offset = temp;
 }
