@@ -25,54 +25,86 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <dlfcn.h>
+#include <unistd.h>
+#include <time.h>
 
 #include "dstr.h"
 #include "platform.h"
 
 void *os_dlopen(const char *path)
 {
-	/* TODO */
-	return NULL;
+	struct dstr dylib_name;
+	dstr_init_copy(&dylib_name, path);
+	if(!dstr_find(&dylib_name, ".so"))
+		dstr_cat(&dylib_name, ".so");
+
+	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+	if(!res)
+		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n",
+				path, dylib_name.array, dlerror());
+
+	dstr_free(&dylib_name);
+	return res;
 }
 
 void *os_dlsym(void *module, const char *func)
 {
-	/* TODO */
-	return NULL;
+	return dlsym(module, func);
 }
 
 void os_dlclose(void *module)
 {
-	/* TODO */
+	dlclose(module);
 }
 
 void os_sleepto_ns(uint64_t time_target)
 {
-	/* TODO */
+	uint64_t current = os_gettime_ns();
+	if(time_target < current)
+		return;
+	time_target -= current;
+	struct timespec req,
+			remain;
+	memset(&req, 0, sizeof(req));
+	memset(&remain, 0, sizeof(remain));
+	req.tv_sec = time_target/1000000000;
+	req.tv_nsec = time_target%1000000000;
+	while(nanosleep(&req, &remain))
+	{
+		req = remain;
+		memset(&remain, 0, sizeof(remain));
+	}
 }
 
 void os_sleep_ms(uint32_t duration)
 {
-	/* TODO */
+	usleep(duration*1000);
 }
 
 uint64_t os_gettime_ns(void)
 {
-	/* TODO */
-	return 0;
+	struct timespec tp;
+	clock_gettime(CLOCK_REALTIME, &tp);
+	return tp.tv_nsec;
 }
 
 uint64_t os_gettime_ms(void)
 {
-	/* TODO */
-	return 0;
+	return  os_gettime_ns()/1000000;
 }
 
 /* should return $HOME/ */
 char *os_get_home_path(void)
 {
-	/* TODO */
-	return NULL;
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	char *path = bmalloc(strlen(path_ptr)+1);
+
+	strcpy(path, path_ptr);
+	return path;
 }
 
 int os_mkdir(const char *path)
