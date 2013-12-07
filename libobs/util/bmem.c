@@ -90,7 +90,7 @@ static void a_free(void *ptr)
 }
 
 static struct base_allocator alloc = {a_malloc, a_realloc, a_free};
-static size_t num_allocs = 0;
+static uint64_t num_allocs = 0;
 
 void base_set_allocator(struct base_allocator *defs)
 {
@@ -132,7 +132,7 @@ void bfree(void *ptr)
 	alloc.free(ptr);
 }
 
-size_t bnum_allocs(void)
+uint64_t bnum_allocs(void)
 {
 	return num_allocs;
 }

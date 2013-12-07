@@ -179,7 +179,7 @@ static void test()
 
 	obs_shutdown();
 
-	blog(LOG_INFO, "Number of memory leaks: %zu", bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
 }
 
 /* --------------------------------------------------- */
