@@ -2,7 +2,7 @@ if(WIN32)
 	set(libobs_platform_src
 		obs-windows.c
 		util/platform-windows.c)
-elseif(APPLE AND UNIX)
+elseif(APPLE)
 	set(libobs_platform_src
 		obs-cocoa.c
 		util/platform-cocoa.m)
@@ -15,6 +15,10 @@ elseif(APPLE AND UNIX)
 	mark_as_advanced(COCOA)
 	include_directories(${COCOA})
 	link_libraries(${COCOA})
+elseif(UNIX)
+	set(libobs_platform_src
+		obs-nix.c
+		util/platform-nix.c)
 else()
 endif()
 
