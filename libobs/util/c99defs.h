@@ -57,10 +57,14 @@ typedef long off_t;
 typedef int64_t off64_t;
 #endif /* __off_t_defined */
 
+#define SIZE_T_FORMAT "%u"
+
 #else
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>
+
+#define SIZE_T_FORMAT "%zu"
 
 #endif /* _MSC_VER */

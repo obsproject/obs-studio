@@ -31,7 +31,7 @@ IMPLEMENT_APP(OBSApp);
 
 OBSAppBase::~OBSAppBase()
 {
-	blog(LOG_INFO, "Number of memory leaks: %zu", bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
 }
 
 static void do_log(enum log_type type, const char *msg, va_list args)
