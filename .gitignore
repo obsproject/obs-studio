@@ -69,3 +69,12 @@ tags
 *.ninja
 .ninja*
 .dirstamp
+
+#cmake
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+
+#xcode
+*.xcodeproj/
