@@ -29,12 +29,24 @@ include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 
 link_libraries(${wxWidgets_LIBRARIES} libobs)
 
+if(WIN32)
+	set(obs_platform_src
+		platform-windows.cpp)
+elseif(APPLE)
+	set(obs_platform_src
+		platform-osx.cpp)
+elseif(UNIX)
+	set(obs_platform_src
+		platform-nix.cpp)
+endif()
+
 add_executable(obs
 	window-main-basic.cpp
 	wx-subclass.cpp
 	wx-wrappers.cpp
 	obs-app.cpp
-	forms/OBSWindows.cpp)
+	forms/OBSWindows.cpp
+	${obs_platform_src})
 
 if(APPLE)
 	set_target_properties(obs PROPERTIES

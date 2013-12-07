@@ -37,7 +37,7 @@ char *find_plugin(const char *plugin)
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, "../../libobs/");
+	dstr_init_copy(&path, "../../data/libobs/");
 	dstr_cat(&path, file);
 	return path.array;
 }
@@ -46,7 +46,7 @@ char *find_libobs_data_file(const char *file)
 char *obs_find_plugin_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, "../../data/");
+	dstr_init_copy(&path, "../../data/obs-plugins/");
 	dstr_cat(&path, file);
 	return path.array;
 }

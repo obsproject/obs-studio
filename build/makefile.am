@@ -2,9 +2,9 @@ obs_plugin_datadir = $(datadir)/obs-plugins
 obs_plugin_data_testdir = $(obs_plugin_datadir)/test-input
 data_libobsdir = $(datadir)/libobs
 
-obs_plugin_data_test_DATA = data/test-input/draw.effect \
-			    data/test-input/test.effect
-data_libobs_DATA = libobs/default.effect
+obs_plugin_data_test_DATA = data/obs-plugins/test-input/draw.effect \
+			    data/obs-plugins/test-input/test.effect
+data_libobs_DATA = data/libobs/default.effect
 
 #uninstall-local:
 #	rm -r $(DESTDIR)$(obs_plugin_datadir)

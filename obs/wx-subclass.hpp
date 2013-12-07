@@ -19,6 +19,8 @@
 #include <wx/frame.h>
 #include <wx/listctrl.h>
 
+#include "obs-app.hpp"
+
 /*
  * Fixes windows fonts to be default dialog fonts (I don't give a crap what
  * microsoft "recommends", the fonts they recommend look like utter garbage)
@@ -26,7 +28,7 @@
 
 #ifdef _
 #undef _
-#define _(str) str
+#define _(str) Str(str)
 #endif
 
 class WindowSubclass : public wxFrame {

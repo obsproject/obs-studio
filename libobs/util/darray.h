@@ -171,8 +171,9 @@ static inline void darray_move(struct darray *dst, struct darray *src)
 {
 	darray_free(dst);
 	memcpy(dst, src, sizeof(struct darray));
-	src->array = NULL;
-	src->num = 0;
+	src->array    = NULL;
+	src->capacity = 0;
+	src->num      = 0;
 }
 
 static inline size_t darray_find(const size_t element_size,

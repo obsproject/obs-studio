@@ -21,3 +21,4 @@ struct gs_window;
 class wxWindow;
 
 gs_window WxToGSWindow(const wxWindow *window);
+void OBSErrorBox(wxWindow *parent, const char *message, ...);

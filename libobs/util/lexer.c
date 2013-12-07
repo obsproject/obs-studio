@@ -271,7 +271,7 @@ bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
 			token_start = offset-1;
 			type = new_type;
 
-			if (type != BASETOKEN_DIGIT ||
+			if (type != BASETOKEN_DIGIT &&
 			    type != BASETOKEN_ALPHA) {
 				if (is_newline(ch) &&
 				    is_newline_pair(ch, *offset)) {
@@ -280,6 +280,7 @@ bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
 				break;
 			}
 		} else if (type != new_type) {
+			offset--;
 			break;
 		}
 	}

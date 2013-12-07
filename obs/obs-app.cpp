@@ -24,6 +24,7 @@
 #include "window-main-basic.hpp"
 #include "obs-wrappers.hpp"
 #include "wx-wrappers.hpp"
+#include "platform.hpp"
 
 using namespace std;
 
@@ -50,6 +51,7 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 
 void OBSApp::InitGlobalConfigDefaults()
 {
+	config_set_default_string(globalConfig, "General", "Language", "en-US");
 	config_set_default_int(globalConfig, "Window", "PosX",  -1);
 	config_set_default_int(globalConfig, "Window", "PosY",  -1);
 	config_set_default_int(globalConfig, "Window", "SizeX", -1);
@@ -59,7 +61,7 @@ void OBSApp::InitGlobalConfigDefaults()
 static bool do_mkdir(const char *path)
 {
 	if (os_mkdir(path) == MKDIR_ERROR) {
-		blog(LOG_ERROR, "Failed to create directory %s", path);
+		OBSErrorBox(NULL, "Failed to create directory %s", path);
 		return false;
 	}
 
@@ -84,7 +86,7 @@ bool OBSApp::InitGlobalConfig()
 	stringstream str;
 
 	if (!homePath) {
-		blog(LOG_ERROR, "Failed to get home path");
+		OBSErrorBox(NULL, "Failed to get home path");
 		return false;
 	}
 
@@ -93,11 +95,32 @@ bool OBSApp::InitGlobalConfig()
 
 	int errorcode = globalConfig.Open(path.c_str(), CONFIG_OPEN_ALWAYS);
 	if (errorcode != CONFIG_SUCCESS) {
-		blog(LOG_ERROR, "Failed to open global.ini: %d", errorcode);
+		OBSErrorBox(NULL, "Failed to open global.ini: %d", errorcode);
 		return false;
 	}
 
 	InitGlobalConfigDefaults();
+	return true;
+}
+
+bool OBSApp::InitLocale()
+{
+	const char *lang = config_get_string(globalConfig, "General",
+			"Language");
+
+	stringstream file;
+	file << "locale/" << lang << ".txt";
+
+	string path;
+	if (!GetDataFilePath(file.str().c_str(), path)) {
+		/* use en-US by default if language file is not found */
+		if (!GetDataFilePath("locale/en-US.txt", path)) {
+			OBSErrorBox(NULL, "Failed to open locale file");
+			return false;
+		}
+	}
+
+	textLookup = text_lookup_create(path.c_str());
 	return true;
 }
 
@@ -111,6 +134,8 @@ bool OBSApp::OnInit()
 		return false;
 	if (!InitGlobalConfig())
 		return false;
+	if (!InitLocale())
+		return false;
 	if (!obs_startup())
 		return false;
 
@@ -120,6 +145,7 @@ bool OBSApp::OnInit()
 
 	OBSBasic *mainWindow = new OBSBasic();
 
+	/* this is a test */
 	struct obs_video_info ovi;
 	ovi.graphics_module = "libobs-opengl";
 	ovi.fps_num         = 30000;

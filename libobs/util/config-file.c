@@ -340,11 +340,11 @@ static struct config_item *config_find_item(struct darray *sections,
 		struct config_section *sec = darray_item(
 				sizeof(struct config_section), sections, i);
 
-		if (astrcmpi(sec->name, section) != 0) {
+		if (astrcmpi(sec->name, section) == 0) {
 			for (j = 0; j < sec->items.num; j++) {
 				struct config_item *item = darray_item(
 						sizeof(struct config_item),
-						&sec->items, i);
+						&sec->items, j);
 
 				if (astrcmpi(item->name, name) == 0)
 					return item;
@@ -369,7 +369,7 @@ static void config_set_item(struct darray *sections, const char *section,
 
 		if (astrcmpi(cur_sec->name, section) == 0) {
 			for (j = 0; j < cur_sec->items.num; j++) {
-				item = items+i;
+				item = items+j;
 
 				if (astrcmpi(item->name, name) == 0) {
 					bfree(item->value);

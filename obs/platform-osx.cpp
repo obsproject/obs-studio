@@ -15,38 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include <sstream>
+#include "platform.hpp"
 
-#include <wx/app.h>
-
-#include "obs-wrappers.hpp"
-
-class OBSAppBase : public wxApp {
-public:
-	virtual ~OBSAppBase();
-};
-
-class OBSApp : public OBSAppBase {
-	ConfigFile globalConfig;
-	TextLookup textLookup;
-	wxFrame *dummyWindow;
-
-	bool InitGlobalConfig();
-	void InitGlobalConfigDefaults();
-	bool InitConfigDefaults();
-	bool InitLocale();
-
-public:
-	virtual bool OnInit();
-	virtual int  OnExit();
-	virtual void CleanUp();
-
-	inline const char *GetString(const char *lookupVal)
-	{
-		return textLookup.GetString(lookupVal);
-	}
-};
-
-wxDECLARE_APP(OBSApp);
-
-#define Str(lookupVal) wxGetApp().GetString(lookupVal)
+bool GetDataFilePath(const char *data, string &output)
+{
+	// TODO
+	return true;
+}

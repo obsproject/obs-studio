@@ -17,36 +17,8 @@
 
 #pragma once
 
-#include <wx/app.h>
+#include <string>
+using namespace std;
 
-#include "obs-wrappers.hpp"
-
-class OBSAppBase : public wxApp {
-public:
-	virtual ~OBSAppBase();
-};
-
-class OBSApp : public OBSAppBase {
-	ConfigFile globalConfig;
-	TextLookup textLookup;
-	wxFrame *dummyWindow;
-
-	bool InitGlobalConfig();
-	void InitGlobalConfigDefaults();
-	bool InitConfigDefaults();
-	bool InitLocale();
-
-public:
-	virtual bool OnInit();
-	virtual int  OnExit();
-	virtual void CleanUp();
-
-	inline const char *GetString(const char *lookupVal)
-	{
-		return textLookup.GetString(lookupVal);
-	}
-};
-
-wxDECLARE_APP(OBSApp);
-
-#define Str(lookupVal) wxGetApp().GetString(lookupVal)
+/* Gets the path of obs-studio specific data files (such as locale) */
+bool GetDataFilePath(const char *data, string &path);

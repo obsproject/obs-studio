@@ -21,6 +21,7 @@
 #include <stdarg.h>
 
 #include <util/config-file.h>
+#include <util/text-lookup.h>
 #include <obs.h>
 
 /* RAII wrappers */
@@ -77,6 +78,33 @@ public:
 	}
 
 	inline operator config_t() {return config;}
+};
+
+class TextLookup {
+	lookup_t lookup;
+
+public:
+	inline TextLookup() : lookup(NULL) {}
+	inline TextLookup(lookup_t lookup) : lookup(lookup) {}
+	inline ~TextLookup() {text_lookup_destroy(lookup);}
+
+	inline TextLookup& operator=(lookup_t val)
+	{
+		text_lookup_destroy(lookup);
+		lookup = val;
+		return *this;
+	}
+
+	inline operator lookup_t() {return lookup;}
+
+	inline const char *GetString(const char *lookupVal)
+	{
+		const char *out;
+		if (!text_lookup_getstr(lookup, lookupVal, &out))
+			return lookupVal;
+
+		return out;
+	}
 };
 
 class OBSSource {

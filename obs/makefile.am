@@ -17,3 +17,15 @@ obs_SOURCES = window-main-basic.cpp \
 	      wx-subclass.cpp \
 	      wx-wrappers.cpp \
 	      forms/OBSWindows.cpp
+
+if OS_WIN
+obs_SOURCES += platform-windows.cpp
+endif
+
+if OS_OSX
+obs_SOURCES += platform-osx.cpp
+endif
+
+if OS_NIX
+obs_SOURCES += platform-nix.cpp
+endif

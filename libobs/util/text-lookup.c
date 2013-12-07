@@ -33,10 +33,11 @@ struct text_leaf {
 	char *lookup, *value;
 };
 
-static inline void text_leaf_free(struct text_leaf *leaf)
+static inline void text_leaf_destroy(struct text_leaf *leaf)
 {
 	bfree(leaf->lookup);
 	bfree(leaf->value);
+	bfree(leaf);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -60,7 +61,7 @@ static void text_node_destroy(struct text_node *node)
 	for (i = 0; i < node->subnodes.num; i++)
 		text_node_destroy(subnodes[i]);
 	if (node->leaf)
-		text_leaf_free(node->leaf);
+		text_leaf_destroy(node->leaf);
 	darray_free(&node->subnodes);
 	bfree(node);
 }
@@ -171,7 +172,7 @@ static bool lookup_addstring(const char *lookup_val, struct text_leaf *leaf,
 		else
 			lookup_splitnode(lookup_val, len, leaf, child);
 	} else {
-		lookup_createsubnode(lookup_val, leaf, child);
+		lookup_createsubnode(lookup_val, leaf, node);
 	}
 
 	return true;
@@ -187,7 +188,7 @@ static void lookup_getstringtoken(struct lexer *lex, struct strref *token)
 			if (*temp == '\\') {
 				was_backslash = true;
 			} else if (*temp == '"') {
-				++temp;
+				temp++;
 				break;
 			}
 		} else {
@@ -197,8 +198,16 @@ static void lookup_getstringtoken(struct lexer *lex, struct strref *token)
 		++temp;
 	}
 
-	/* include starting " char */
-	token->len += (size_t)(temp - lex->offset - 1);
+	token->len += (size_t)(temp - lex->offset);
+
+	if (*token->array == '"') {
+		token->array++;
+		token->len--;
+	}
+
+	if (*(temp-1) == '"')
+		token->len--;
+
 	lex->offset = temp;
 }
 
@@ -217,19 +226,26 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 			if (ch == '#') {
 				while(ch != '\n' && ch != 0)
 					ch = *(++lex->offset);
+			} else if (temp.type == BASETOKEN_WHITESPACE) {
+				strref_copy(str, &temp.text);
+				break;
 			} else {
 				strref_copy(str, &temp.text);
+				if (ch == '"') {
+					lookup_getstringtoken(lex, str);
+					break;
+				} else if (ch == '=') {
+					break;
+				}
 			}
 		} else {
-			if (temp.type == BASETOKEN_WHITESPACE) {
+			if (temp.type == BASETOKEN_WHITESPACE ||
+			    *temp.text.array == '=') {
 				lex->offset -= temp.text.len;
 				break;
 			}
 
-			if (ch == '"') {
-				lookup_getstringtoken(lex, str);
-				break;
-			} else if (ch == '#') {
+			if (ch == '#') {
 				lex->offset--;
 				break;
 			}
@@ -260,12 +276,27 @@ static inline bool lookup_goto_nextline(struct lexer *p)
 	return success;
 }
 
+static char *convert_string(const char *str, size_t len)
+{
+	struct dstr out;
+	out.array    = bstrdup_n(str, len);
+	out.capacity = len+1;
+	out.len      = len;
+
+	dstr_replace(&out, "\\n", "\n");
+	dstr_replace(&out, "\\t", "\t");
+	dstr_replace(&out, "\\r", "\r");
+
+	return out.array;
+}
+
 static void lookup_addfiledata(struct text_lookup *lookup,
 		const char *file_data)
 {
 	struct lexer lex;
 	struct strref name, value;
 
+	lexer_init(&lex);
 	lexer_start(&lex, file_data);
 	strref_clear(&name);
 	strref_clear(&value);
@@ -288,13 +319,15 @@ getval:
 
 		leaf = bmalloc(sizeof(struct text_leaf));
 		leaf->lookup = bstrdup_n(name.array,  name.len);
-		leaf->value  = bstrdup_n(value.array, value.len);
+		leaf->value  = convert_string(value.array, value.len);
 
 		lookup_addstring(leaf->lookup, leaf, lookup->top);
 
 		if (!lookup_goto_nextline(&lex))
 			break;
 	}
+
+	lexer_free(&lex);
 }
 
 static inline bool lookup_getstring(const char *lookup_val,
