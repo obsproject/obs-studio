@@ -5,4 +5,6 @@ include_directories(${COCOA})
 
 link_libraries(libobs ${COCOA})
 
+add_definitions(-fobjc-arc)
+
 add_executable(test test.mm)
