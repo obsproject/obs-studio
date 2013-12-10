@@ -65,6 +65,7 @@ void OBSBasic::file_saveOnMenuSelection(wxCommandEvent& event)
 
 void OBSBasic::file_exitOnMenuSelection(wxCommandEvent& event)
 {
+	wxGetApp().ExitMainLoop();
 }
 
 void OBSBasic::scenesOnRightDown(wxMouseEvent& event)
@@ -113,4 +114,9 @@ void OBSBasic::sourceUpOnToolClicked(wxCommandEvent& event)
 
 void OBSBasic::sourceDownOnToolClicked(wxCommandEvent& event)
 {
+}
+
+void OBSBasic::exitButtonOnButtonClick(wxCommandEvent& event)
+{
+	wxGetApp().ExitMainLoop();
 }

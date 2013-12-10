@@ -40,6 +40,7 @@ protected:
 	virtual void sourcePropertiesOnToolClicked(wxCommandEvent& event);
 	virtual void sourceUpOnToolClicked(wxCommandEvent& event);
 	virtual void sourceDownOnToolClicked(wxCommandEvent& event);
+	virtual void exitButtonOnButtonClick(wxCommandEvent& event);
 
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}
