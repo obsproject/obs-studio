@@ -1,12 +1,50 @@
+Lanuage="English (United States)"
+
 OK="OK"
 Cancel="Cancel"
+
+MainMenu.File="File"
+
+MainMenu.File.New="New"
+MainMenu.File.Open="Open"
+MainMenu.FIle.Save="Save"
 
 MainWindow.Exit="Exit"
 MainWindow.Lock="Lock Preview"
 MainWindow.Preview="Enable Preview"
-MainWindow.Scenes="Scenes"
-MainWindow.Sources="Sources"
+MainWindow.Scenes="Scenes:"
+MainWindow.Settings="Settings"
+MainWindow.Sources="Sources:"
 MainWindow.StartRecording="Start Recording"
 MainWindow.StartStream="Start Stream"
 MainWindow.StopRecording="Stop Recording"
 MainWindow.StopStream="Stop Stream"
+MainWindow.Volume="Volume:"
+
+Settings="Settings"
+
+Settings.General="General"
+Settings.General.Language="Language:"
+
+Settings.Outputs="Outputs"
+
+Settings.Video="Video"
+Settings.Video.Adapter="Video Adapter:"
+Settings.Video.BaseRes="Base Resolution:"
+Settings.Video.DownscaleRes="Downscale Resolution:"
+Settings.Video.DownscaleFilter="Downscale Filter:"
+Settings.Video.DisableAeroWindows="Disable Aero (Windows only)"
+Settings.Video.FPS="FPS:"
+Settings.Video.FPS.Common="Common FPS Values"
+Settings.Video.FPS.Integer="Integer FPS Value"
+Settings.VIdeo.FPS.Fraction="Frame Interval (fraction)"
+Settings.Video.FPS.Nanoseconds="Frame Interval (nanoseconds)"
+Settings.Video.FPS.Numerator="Numerator:"
+Settings.Video.FPS.Denominator="Denominator:"
+
+Settings.Audio="Audio"
+Settings.Audio.DesktopAudioDevice="Desktop Audio Device:"
+Settings.Audio.AuxAudioDevice1="Auxilary Audio Device 1:"
+Settings.Audio.AuxAudioDevice2="Auxilary Audio Device 2:"
+Settings.Audio.AuxAudioDevice3="Auxilary Audio Device 3:"
+Settings.Audio.AuxAudioDevice4="Auxilary Audio Device 4:"
