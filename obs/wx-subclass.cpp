@@ -54,6 +54,16 @@ wxFont wxCreateFontFromStockObject2(int index)
 }
 #endif
 
+DialogSubclass::DialogSubclass(wxWindow *parent, wxWindowID id,
+		const wxString &title, const wxPoint &pos, const wxSize &size,
+		long style, const wxString &name)
+	: wxDialog(parent, id, title, pos, size, style, name)
+{
+#ifdef _WIN32
+	this->SetFont(wxFont(wxCreateFontFromStockObject2(DEFAULT_GUI_FONT)));
+#endif
+}
+
 WindowSubclass::WindowSubclass(wxWindow* parent, wxWindowID id,
 		const wxString& title, const wxPoint& pos, const wxSize& size,
 		long style)
@@ -100,7 +110,7 @@ wxSize ListCtrlFixed::DoGetBestClientSize() const
 	 * I don't know!  LET'S USE 10 * FONT HEIGHT!"  ..Unfortunately, this
 	 * person basically makes it impossible to use smaller sized list
 	 * views in report mode.  It will always become tremendously large in
-	 * size, despite what constrains you originally have set with sizers.
+	 * size, despite what constraints you originally have set with sizers.
 	 * brilliant job, whoever you are.  10 * character height..  just..
 	 * unbeleivably wow.  I am ASTOUNDED.
 	 */

@@ -16,20 +16,31 @@
 ******************************************************************************/
 
 #pragma once
+#include <wx/dialog.h>
 #include <wx/frame.h>
 #include <wx/listctrl.h>
 
 #include "obs-app.hpp"
 
 /*
- * Fixes windows fonts to be default dialog fonts (I don't give a crap what
- * microsoft "recommends", the fonts they recommend look like utter garbage)
+ * Fixes windows fonts to be default dialog fonts (the fonts they recommend
+ * look like garbage)
  */
 
 #ifdef _
 #undef _
 #define _(str) Str(str)
 #endif
+
+class DialogSubclass : public wxDialog {
+public:
+	DialogSubclass(wxWindow *parent, wxWindowID id,
+			const wxString &title,
+			const wxPoint &pos = wxDefaultPosition,
+			const wxSize &size = wxDefaultSize,
+			long style = wxDEFAULT_DIALOG_STYLE,
+			const wxString &name = wxDialogNameStr);
+};
 
 class WindowSubclass : public wxFrame {
 public:

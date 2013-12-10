@@ -82,7 +82,6 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	wxBoxSizer* bottomCenterContainer;
 	bottomCenterContainer = new wxBoxSizer( wxHORIZONTAL );
 	
-	bottomCenterContainer->SetMinSize( wxSize( 625,-1 ) ); 
 	wxBoxSizer* scenesContainer;
 	scenesContainer = new wxBoxSizer( wxVERTICAL );
 	
@@ -168,33 +167,17 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bottomCenterContainer->Add( sourcesContainer, 1, wxEXPAND, 5 );
 	
-	wxBoxSizer* leftButtonsContainer;
-	leftButtonsContainer = new wxBoxSizer( wxVERTICAL );
-	
-	positionSizeButton = new wxButton( mainPanel, ID_SETPOSSIZE, _("MainWindow.SetPosSize"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	leftButtonsContainer->Add( positionSizeButton, 0, wxALL|wxEXPAND, 2 );
-	
-	cropButton = new wxButton( mainPanel, ID_CROP, _("MainWindow.Crop"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	leftButtonsContainer->Add( cropButton, 0, wxALL|wxEXPAND, 2 );
-	
-	lockPreview = new wxCheckBox( mainPanel, ID_LOCK, _("MainWindow.Lock"), wxDefaultPosition, wxDefaultSize, 0 );
-	lockPreview->SetValue(true); 
-	leftButtonsContainer->Add( lockPreview, 0, wxALL|wxEXPAND, 5 );
-	
-	enablePreview = new wxCheckBox( mainPanel, ID_PREVIEW, _("MainWindow.Preview"), wxDefaultPosition, wxDefaultSize, 0 );
-	enablePreview->SetValue(true); 
-	leftButtonsContainer->Add( enablePreview, 0, wxALL, 5 );
-	
-	
-	bottomCenterContainer->Add( leftButtonsContainer, 1, wxEXPAND, 5 );
-	
 	wxBoxSizer* rightButtonsContainer;
 	rightButtonsContainer = new wxBoxSizer( wxVERTICAL );
+	
+	m_staticText6 = new wxStaticText( mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText6->Wrap( -1 );
+	rightButtonsContainer->Add( m_staticText6, 0, wxALL, 2 );
 	
 	toggleStream = new wxButton( mainPanel, ID_STARTSTREAM, _("MainWindow.StartStream"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	rightButtonsContainer->Add( toggleStream, 0, wxALL|wxEXPAND, 2 );
 	
-	TogglePreview = new wxButton( mainPanel, ID_RECORD, _("MainWindow.Record"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	TogglePreview = new wxButton( mainPanel, ID_RECORD, _("MainWindow.StartRecording"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	rightButtonsContainer->Add( TogglePreview, 0, wxALL|wxEXPAND, 2 );
 	
 	settingsButton = new wxButton( mainPanel, ID_SETTINGS, _("MainWindow.Settings"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
@@ -236,7 +219,6 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( file_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Connect( file_save->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
 	this->Connect( file_exit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
-	previewPanel->Connect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::whatever ), NULL, this );
 	scenes->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
 	this->Connect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
 	this->Connect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );
@@ -249,6 +231,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesOnToolClicked ) );
 	this->Connect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpOnToolClicked ) );
 	this->Connect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownOnToolClicked ) );
+	exitButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitButtonOnButtonClick ), NULL, this );
 }
 
 OBSBasicBase::~OBSBasicBase()
@@ -261,7 +244,6 @@ OBSBasicBase::~OBSBasicBase()
 	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
 	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
 	this->Disconnect( ID_FILE_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
-	previewPanel->Disconnect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::whatever ), NULL, this );
 	scenes->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
 	this->Disconnect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
 	this->Disconnect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );
@@ -274,6 +256,7 @@ OBSBasicBase::~OBSBasicBase()
 	this->Disconnect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesOnToolClicked ) );
 	this->Disconnect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpOnToolClicked ) );
 	this->Disconnect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownOnToolClicked ) );
+	exitButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitButtonOnButtonClick ), NULL, this );
 	
 }
 
@@ -414,5 +397,283 @@ OBSStudioBase::OBSStudioBase( wxWindow* parent, wxWindowID id, const wxString& t
 }
 
 OBSStudioBase::~OBSStudioBase()
+{
+}
+
+OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DialogSubclass( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	
+	wxBoxSizer* bSizer30;
+	bSizer30 = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* bSizer31;
+	bSizer31 = new wxBoxSizer( wxVERTICAL );
+	
+	m_listbook1 = new wxListbook( this, ID_SETTINGS_LIST, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
+	m_panel8 = new wxPanel( m_listbook1, ID_SETTINGS_GENERAL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer32;
+	bSizer32 = new wxBoxSizer( wxVERTICAL );
+	
+	
+	bSizer32->Add( 0, 20, 0, wxEXPAND, 5 );
+	
+	wxFlexGridSizer* fgSizer13;
+	fgSizer13 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer13->SetFlexibleDirection( wxBOTH );
+	fgSizer13->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText27 = new wxStaticText( m_panel8, wxID_ANY, _("Settings.General.Language"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText27->Wrap( -1 );
+	fgSizer13->Add( m_staticText27, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	languageList = new wxComboBox( m_panel8, ID_LANGUAGE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer13->Add( languageList, 0, wxALL, 2 );
+	
+	
+	bSizer32->Add( fgSizer13, 1, wxEXPAND, 5 );
+	
+	
+	m_panel8->SetSizer( bSizer32 );
+	m_panel8->Layout();
+	bSizer32->Fit( m_panel8 );
+	m_listbook1->AddPage( m_panel8, _("Settings.General"), false );
+	m_panel9 = new wxPanel( m_listbook1, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer33;
+	bSizer33 = new wxBoxSizer( wxVERTICAL );
+	
+	
+	m_panel9->SetSizer( bSizer33 );
+	m_panel9->Layout();
+	bSizer33->Fit( m_panel9 );
+	m_listbook1->AddPage( m_panel9, _("Settings.Outputs"), false );
+	m_panel10 = new wxPanel( m_listbook1, ID_SETTINGS_VIDEO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer34;
+	bSizer34 = new wxBoxSizer( wxVERTICAL );
+	
+	
+	bSizer34->Add( 0, 20, 0, wxEXPAND, 5 );
+	
+	wxFlexGridSizer* fgSizer1;
+	fgSizer1 = new wxFlexGridSizer( 0, 2, 2, 0 );
+	fgSizer1->SetFlexibleDirection( wxBOTH );
+	fgSizer1->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText6 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.Adapter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText6->Wrap( -1 );
+	m_staticText6->SetMinSize( wxSize( 270,-1 ) );
+	
+	fgSizer1->Add( m_staticText6, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	videoAdapterList = new wxComboBox( m_panel10, ID_ADAPTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer1->Add( videoAdapterList, 0, wxALL, 2 );
+	
+	m_staticText8 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.BaseRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText8->Wrap( -1 );
+	fgSizer1->Add( m_staticText8, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	baseResList = new wxComboBox( m_panel10, ID_BASE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	fgSizer1->Add( baseResList, 0, wxALL, 2 );
+	
+	m_staticText10 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.DownscaleRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText10->Wrap( -1 );
+	fgSizer1->Add( m_staticText10, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	downscaleResList = new wxComboBox( m_panel10, ID_DOWNSCALE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	fgSizer1->Add( downscaleResList, 0, wxALL, 2 );
+	
+	m_staticText11 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.DownscaleFilter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText11->Wrap( -1 );
+	fgSizer1->Add( m_staticText11, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	filterList = new wxComboBox( m_panel10, ID_DOWNSCALE_FILTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer1->Add( filterList, 0, wxALL, 2 );
+	
+	
+	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	disableAeroCheckbox = new wxCheckBox( m_panel10, ID_DISABLEAERO, _("Settings.DisableAeroWindows"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer1->Add( disableAeroCheckbox, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
+	
+	
+	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
+	
+	m_staticline1 = new wxStaticLine( m_panel10, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	fgSizer1->Add( m_staticline1, 0, wxEXPAND | wxALL, 5 );
+	
+	m_staticText22 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.FPS"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText22->Wrap( -1 );
+	fgSizer1->Add( m_staticText22, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	fpsTypeList = new wxChoicebook( m_panel10, ID_FPS_TYPE, wxDefaultPosition, wxDefaultSize, wxCHB_DEFAULT );
+	m_panel13 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer45;
+	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
+	
+	fpsCommonList = new wxComboBox( m_panel13, ID_FPS_COMMON, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY );
+	fpsCommonList->Append( _("10") );
+	fpsCommonList->Append( _("20") );
+	fpsCommonList->Append( _("29.97") );
+	fpsCommonList->Append( _("30") );
+	fpsCommonList->Append( _("48") );
+	fpsCommonList->Append( _("59.94") );
+	fpsCommonList->Append( _("60") );
+	fpsCommonList->SetSelection( 3 );
+	bSizer45->Add( fpsCommonList, 0, wxTOP|wxBOTTOM|wxRIGHT, 2 );
+	
+	
+	m_panel13->SetSizer( bSizer45 );
+	m_panel13->Layout();
+	bSizer45->Fit( m_panel13 );
+	fpsTypeList->AddPage( m_panel13, _("Settings.Video.FPS.Common"), true );
+	m_panel14 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer46;
+	bSizer46 = new wxBoxSizer( wxHORIZONTAL );
+	
+	fpsIntegerScroller = new wxSpinCtrl( m_panel14, ID_FPS_INTEGER, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 60, 30 );
+	bSizer46->Add( fpsIntegerScroller, 0, wxTOP|wxBOTTOM|wxRIGHT, 2 );
+	
+	
+	m_panel14->SetSizer( bSizer46 );
+	m_panel14->Layout();
+	bSizer46->Fit( m_panel14 );
+	fpsTypeList->AddPage( m_panel14, _("Settings.Video.FPS.Integer"), false );
+	m_panel15 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxFlexGridSizer* fgSizer10;
+	fgSizer10 = new wxFlexGridSizer( 0, 2, 0, 0 );
+	fgSizer10->SetFlexibleDirection( wxBOTH );
+	fgSizer10->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText20 = new wxStaticText( m_panel15, wxID_ANY, _("Settings.Video.FPS.Numerator"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText20->Wrap( -1 );
+	fgSizer10->Add( m_staticText20, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	fpsNumeratorScroller = new wxSpinCtrl( m_panel15, ID_FPS_NUMERATOR, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 1000000000, 30 );
+	fgSizer10->Add( fpsNumeratorScroller, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxBOTTOM|wxLEFT, 2 );
+	
+	m_staticText21 = new wxStaticText( m_panel15, wxID_ANY, _("Settings.Video.FPS.Denominator"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText21->Wrap( -1 );
+	fgSizer10->Add( m_staticText21, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	fpsDenominatorScroller = new wxSpinCtrl( m_panel15, ID_FPS_DENOMINATOR, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 1000000000, 1 );
+	fgSizer10->Add( fpsDenominatorScroller, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxBOTTOM|wxLEFT, 2 );
+	
+	
+	m_panel15->SetSizer( fgSizer10 );
+	m_panel15->Layout();
+	fgSizer10->Fit( m_panel15 );
+	fpsTypeList->AddPage( m_panel15, _("Settings.Video.FPS.Fraction"), false );
+	m_panel16 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer50;
+	bSizer50 = new wxBoxSizer( wxHORIZONTAL );
+	
+	fpsNanosecondsScroller = new wxSpinCtrl( m_panel16, ID_FPS_NANOSECONDS, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 8333333, 1000000000, 33333333 );
+	bSizer50->Add( fpsNanosecondsScroller, 0, wxTOP|wxBOTTOM|wxRIGHT, 2 );
+	
+	
+	m_panel16->SetSizer( bSizer50 );
+	m_panel16->Layout();
+	bSizer50->Fit( m_panel16 );
+	fpsTypeList->AddPage( m_panel16, _("Settings.Video.FPS.Nanoseconds"), false );
+	fgSizer1->Add( fpsTypeList, 0, wxALL, 2 );
+	
+	
+	bSizer34->Add( fgSizer1, 0, wxEXPAND, 5 );
+	
+	
+	m_panel10->SetSizer( bSizer34 );
+	m_panel10->Layout();
+	bSizer34->Fit( m_panel10 );
+	m_listbook1->AddPage( m_panel10, _("Settings.Video"), false );
+	m_panel11 = new wxPanel( m_listbook1, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer36;
+	bSizer36 = new wxBoxSizer( wxVERTICAL );
+	
+	
+	bSizer36->Add( 0, 20, 0, wxEXPAND, 5 );
+	
+	wxFlexGridSizer* fgSizer11;
+	fgSizer11 = new wxFlexGridSizer( 0, 2, 2, 0 );
+	fgSizer11->SetFlexibleDirection( wxBOTH );
+	fgSizer11->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	m_staticText23 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.DesktopAudioDevice"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText23->Wrap( -1 );
+	fgSizer11->Add( m_staticText23, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	desktopAudioDeviceList = new wxComboBox( m_panel11, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer11->Add( desktopAudioDeviceList, 0, wxALL, 2 );
+	
+	m_staticText24 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice1"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText24->Wrap( -1 );
+	fgSizer11->Add( m_staticText24, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	auxAudioDeviceList1 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer11->Add( auxAudioDeviceList1, 0, wxALL, 2 );
+	
+	m_staticText241 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice2"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText241->Wrap( -1 );
+	fgSizer11->Add( m_staticText241, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	auxAudioDeviceList2 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer11->Add( auxAudioDeviceList2, 0, wxALL, 2 );
+	
+	m_staticText242 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice3"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText242->Wrap( -1 );
+	fgSizer11->Add( m_staticText242, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	auxAudioDeviceList3 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE3, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer11->Add( auxAudioDeviceList3, 0, wxALL, 2 );
+	
+	m_staticText243 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice4"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText243->Wrap( -1 );
+	fgSizer11->Add( m_staticText243, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	auxAudioDeviceList4 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE4, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer11->Add( auxAudioDeviceList4, 0, wxALL, 2 );
+	
+	
+	bSizer36->Add( fgSizer11, 1, wxEXPAND, 5 );
+	
+	
+	m_panel11->SetSizer( bSizer36 );
+	m_panel11->Layout();
+	bSizer36->Fit( m_panel11 );
+	m_listbook1->AddPage( m_panel11, _("Settings.Audio"), true );
+	#ifndef __WXGTK__ // Small icon style not supported in GTK
+	wxListView* m_listbook1ListView = m_listbook1->GetListView();
+	long m_listbook1Flags = m_listbook1ListView->GetWindowStyleFlag();
+	m_listbook1Flags = ( m_listbook1Flags & ~wxLC_ICON ) | wxLC_SMALL_ICON;
+	m_listbook1ListView->SetWindowStyleFlag( m_listbook1Flags );
+	#endif
+	
+	bSizer31->Add( m_listbook1, 1, wxEXPAND | wxALL, 5 );
+	
+	
+	bSizer30->Add( bSizer31, 1, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer37;
+	bSizer37 = new wxBoxSizer( wxHORIZONTAL );
+	
+	okButton = new wxButton( this, ID_OK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer37->Add( okButton, 0, wxALL, 5 );
+	
+	cancelButton = new wxButton( this, ID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer37->Add( cancelButton, 0, wxALL, 5 );
+	
+	applyButton = new wxButton( this, ID_APPLY, _("Apply"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer37->Add( applyButton, 0, wxALL, 5 );
+	
+	
+	bSizer30->Add( bSizer37, 0, wxALIGN_RIGHT, 5 );
+	
+	
+	this->SetSizer( bSizer30 );
+	this->Layout();
+	
+	this->Centre( wxBOTH );
+}
+
+OBSBasicSettingsBase::~OBSBasicSettingsBase()
 {
 }
