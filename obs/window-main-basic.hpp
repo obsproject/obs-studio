@@ -21,26 +21,27 @@
 
 class OBSBasic : public OBSBasicBase {
 protected:
-	virtual void OnClose(wxCloseEvent& event);
-	virtual void OnMinimize(wxIconizeEvent& event);
-	virtual void OnSize(wxSizeEvent& event);
-	virtual void file_newOnMenuSelection(wxCommandEvent& event);
-	virtual void file_openOnMenuSelection(wxCommandEvent& event);
-	virtual void file_saveOnMenuSelection(wxCommandEvent& event);
-	virtual void file_exitOnMenuSelection(wxCommandEvent& event);
-	virtual void scenesOnRightDown(wxMouseEvent& event);
-	virtual void sceneAddOnToolClicked(wxCommandEvent& event);
-	virtual void sceneRemoveOnToolClicked(wxCommandEvent& event);
-	virtual void scenePropertiesOnToolClicked(wxCommandEvent& event);
-	virtual void sceneUpOnToolClicked(wxCommandEvent& event);
-	virtual void sceneDownOnToolClicked(wxCommandEvent& event);
-	virtual void sourcesOnRightDown(wxMouseEvent& event);
-	virtual void sourceAddOnToolClicked(wxCommandEvent& event);
-	virtual void sourceRemoveOnToolClicked(wxCommandEvent& event);
-	virtual void sourcePropertiesOnToolClicked(wxCommandEvent& event);
-	virtual void sourceUpOnToolClicked(wxCommandEvent& event);
-	virtual void sourceDownOnToolClicked(wxCommandEvent& event);
-	virtual void exitButtonOnButtonClick(wxCommandEvent& event);
+	virtual void OnClose(wxCloseEvent &event);
+	virtual void OnMinimize(wxIconizeEvent &event);
+	virtual void OnSize(wxSizeEvent &event);
+	virtual void fileNewClicked(wxCommandEvent &event);
+	virtual void fileOpenClicked(wxCommandEvent &event);
+	virtual void fileSaveClicked(wxCommandEvent &event);
+	virtual void fileExitClicked(wxCommandEvent &event);
+	virtual void scenesRDown(wxMouseEvent &event);
+	virtual void sceneAddClicked(wxCommandEvent &event);
+	virtual void sceneRemoveClicked(wxCommandEvent &event);
+	virtual void scenePropertiesClicked(wxCommandEvent &event);
+	virtual void sceneUpClicked(wxCommandEvent &event);
+	virtual void sceneDownClicked(wxCommandEvent &event);
+	virtual void sourcesRDown(wxMouseEvent &event);
+	virtual void sourceAddClicked(wxCommandEvent &event);
+	virtual void sourceRemoveClicked(wxCommandEvent &event);
+	virtual void sourcePropertiesClicked(wxCommandEvent &event);
+	virtual void sourceUpClicked(wxCommandEvent &event);
+	virtual void sourceDownClicked(wxCommandEvent &event);
+	virtual void settingsClicked(wxCommandEvent &event);
+	virtual void exitClicked(wxCommandEvent &event);
 
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}

@@ -16,20 +16,21 @@
 ******************************************************************************/
 
 #include "obs-app.hpp"
+#include "window-settings-basic.hpp"
 #include "window-main-basic.hpp"
 
-void OBSBasic::OnClose(wxCloseEvent& event)
+void OBSBasic::OnClose(wxCloseEvent &event)
 {
 	wxGetApp().ExitMainLoop();
 	event.Skip();
 }
 
-void OBSBasic::OnMinimize(wxIconizeEvent& event)
+void OBSBasic::OnMinimize(wxIconizeEvent &event)
 {
 	event.Skip();
 }
 
-void OBSBasic::OnSize(wxSizeEvent& event)
+void OBSBasic::OnSize(wxSizeEvent &event)
 {
 	struct obs_video_info ovi;
 
@@ -51,72 +52,78 @@ void OBSBasic::OnSize(wxSizeEvent& event)
 				targetSize.x / baseAspect));
 }
 
-void OBSBasic::file_newOnMenuSelection(wxCommandEvent& event)
+void OBSBasic::fileNewClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::file_openOnMenuSelection(wxCommandEvent& event)
+void OBSBasic::fileOpenClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::file_saveOnMenuSelection(wxCommandEvent& event)
+void OBSBasic::fileSaveClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::file_exitOnMenuSelection(wxCommandEvent& event)
+void OBSBasic::fileExitClicked(wxCommandEvent &event)
 {
 	wxGetApp().ExitMainLoop();
 }
 
-void OBSBasic::scenesOnRightDown(wxMouseEvent& event)
+void OBSBasic::scenesRDown(wxMouseEvent &event)
 {
 }
 
-void OBSBasic::sceneAddOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sceneAddClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sceneRemoveOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sceneRemoveClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::scenePropertiesOnToolClicked(wxCommandEvent& event)
+void OBSBasic::scenePropertiesClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sceneUpOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sceneUpClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sceneDownOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sceneDownClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sourcesOnRightDown(wxMouseEvent& event)
+void OBSBasic::sourcesRDown(wxMouseEvent &event)
 {
 }
 
-void OBSBasic::sourceAddOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sourceAddClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sourceRemoveOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sourceRemoveClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sourcePropertiesOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sourcePropertiesClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sourceUpOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sourceUpClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::sourceDownOnToolClicked(wxCommandEvent& event)
+void OBSBasic::sourceDownClicked(wxCommandEvent &event)
 {
 }
 
-void OBSBasic::exitButtonOnButtonClick(wxCommandEvent& event)
+void OBSBasic::settingsClicked(wxCommandEvent &event)
+{
+	OBSBasicSettings *test = new OBSBasicSettings(this);
+	test->ShowModal();
+}
+
+void OBSBasic::exitClicked(wxCommandEvent &event)
 {
 	wxGetApp().ExitMainLoop();
 }
