@@ -21,23 +21,23 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	mainMenu = new wxMenuBar( 0 );
 	fileMenu = new wxMenu();
-	wxMenuItem* file_new;
-	file_new = new wxMenuItem( fileMenu, ID_FILE_NEW, wxString( _("MainMenu.File.New") ) , wxEmptyString, wxITEM_NORMAL );
-	fileMenu->Append( file_new );
+	wxMenuItem* fileNewMenu;
+	fileNewMenu = new wxMenuItem( fileMenu, ID_FILE_NEW, wxString( _("MainMenu.File.New") ) , wxEmptyString, wxITEM_NORMAL );
+	fileMenu->Append( fileNewMenu );
 	
-	wxMenuItem* file_open;
-	file_open = new wxMenuItem( fileMenu, IF_FILE_OPEN, wxString( _("MainMenu.File.Open") ) , wxEmptyString, wxITEM_NORMAL );
-	fileMenu->Append( file_open );
+	wxMenuItem* fileOpenMenu;
+	fileOpenMenu = new wxMenuItem( fileMenu, IF_FILE_OPEN, wxString( _("MainMenu.File.Open") ) , wxEmptyString, wxITEM_NORMAL );
+	fileMenu->Append( fileOpenMenu );
 	
-	wxMenuItem* file_save;
-	file_save = new wxMenuItem( fileMenu, IF_FILE_SAVE, wxString( _("MainMenu.File.Save") ) , wxEmptyString, wxITEM_NORMAL );
-	fileMenu->Append( file_save );
+	wxMenuItem* fileSaveMenu;
+	fileSaveMenu = new wxMenuItem( fileMenu, IF_FILE_SAVE, wxString( _("MainMenu.File.Save") ) , wxEmptyString, wxITEM_NORMAL );
+	fileMenu->Append( fileSaveMenu );
 	
 	fileMenu->AppendSeparator();
 	
-	wxMenuItem* file_exit;
-	file_exit = new wxMenuItem( fileMenu, ID_FILE_EXIT, wxString( _("MainWindow.Exit") ) , wxEmptyString, wxITEM_NORMAL );
-	fileMenu->Append( file_exit );
+	wxMenuItem* fileExitMenu;
+	fileExitMenu = new wxMenuItem( fileMenu, ID_FILE_EXIT, wxString( _("MainWindow.Exit") ) , wxEmptyString, wxITEM_NORMAL );
+	fileMenu->Append( fileExitMenu );
 	
 	mainMenu->Append( fileMenu, _("MainMenu.File") ); 
 	
@@ -174,11 +174,11 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_staticText6->Wrap( -1 );
 	rightButtonsContainer->Add( m_staticText6, 0, wxALL, 2 );
 	
-	toggleStream = new wxButton( mainPanel, ID_STARTSTREAM, _("MainWindow.StartStream"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	rightButtonsContainer->Add( toggleStream, 0, wxALL|wxEXPAND, 2 );
+	toggleStreamButton = new wxButton( mainPanel, ID_STARTSTREAM, _("MainWindow.StartStream"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	rightButtonsContainer->Add( toggleStreamButton, 0, wxALL|wxEXPAND, 2 );
 	
-	TogglePreview = new wxButton( mainPanel, ID_RECORD, _("MainWindow.StartRecording"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	rightButtonsContainer->Add( TogglePreview, 0, wxALL|wxEXPAND, 2 );
+	ToggleRecordButton = new wxButton( mainPanel, ID_RECORD, _("MainWindow.StartRecording"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+	rightButtonsContainer->Add( ToggleRecordButton, 0, wxALL|wxEXPAND, 2 );
 	
 	settingsButton = new wxButton( mainPanel, ID_SETTINGS, _("MainWindow.Settings"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	rightButtonsContainer->Add( settingsButton, 0, wxALL|wxEXPAND, 2 );
@@ -215,23 +215,26 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
 	this->Connect( wxEVT_ICONIZE, wxIconizeEventHandler( OBSBasicBase::OnMinimize ) );
 	this->Connect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnSize ) );
-	this->Connect( file_new->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
-	this->Connect( file_open->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
-	this->Connect( file_save->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
-	this->Connect( file_exit->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
-	scenes->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
-	this->Connect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
-	this->Connect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );
-	this->Connect( ID_SCENE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::scenePropertiesOnToolClicked ) );
-	this->Connect( ID_SCENE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneUpOnToolClicked ) );
-	this->Connect( ID_SCENE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneDownOnToolClicked ) );
-	sources->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::sourcesOnRightDown ), NULL, this );
-	this->Connect( ID_SOURCE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceAddOnToolClicked ) );
-	this->Connect( ID_SOURCE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceRemoveOnToolClicked ) );
-	this->Connect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesOnToolClicked ) );
-	this->Connect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpOnToolClicked ) );
-	this->Connect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownOnToolClicked ) );
-	exitButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitButtonOnButtonClick ), NULL, this );
+	this->Connect( fileNewMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileNewClicked ) );
+	this->Connect( fileOpenMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileOpenClicked ) );
+	this->Connect( fileSaveMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileSaveClicked ) );
+	this->Connect( fileExitMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileExitClicked ) );
+	scenes->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesRDown ), NULL, this );
+	this->Connect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddClicked ) );
+	this->Connect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveClicked ) );
+	this->Connect( ID_SCENE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::scenePropertiesClicked ) );
+	this->Connect( ID_SCENE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneUpClicked ) );
+	this->Connect( ID_SCENE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneDownClicked ) );
+	sources->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::sourcesRDown ), NULL, this );
+	this->Connect( ID_SOURCE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceAddClicked ) );
+	this->Connect( ID_SOURCE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceRemoveClicked ) );
+	this->Connect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesClicked ) );
+	this->Connect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpClicked ) );
+	this->Connect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownClicked ) );
+	toggleStreamButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::toggleStreamClicked ), NULL, this );
+	ToggleRecordButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::toggleRecordClicked ), NULL, this );
+	settingsButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::settingsClicked ), NULL, this );
+	exitButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitClicked ), NULL, this );
 }
 
 OBSBasicBase::~OBSBasicBase()
@@ -240,23 +243,26 @@ OBSBasicBase::~OBSBasicBase()
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicBase::OnClose ) );
 	this->Disconnect( wxEVT_ICONIZE, wxIconizeEventHandler( OBSBasicBase::OnMinimize ) );
 	this->Disconnect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnSize ) );
-	this->Disconnect( ID_FILE_NEW, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_newOnMenuSelection ) );
-	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_openOnMenuSelection ) );
-	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_saveOnMenuSelection ) );
-	this->Disconnect( ID_FILE_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::file_exitOnMenuSelection ) );
-	scenes->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesOnRightDown ), NULL, this );
-	this->Disconnect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddOnToolClicked ) );
-	this->Disconnect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveOnToolClicked ) );
-	this->Disconnect( ID_SCENE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::scenePropertiesOnToolClicked ) );
-	this->Disconnect( ID_SCENE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneUpOnToolClicked ) );
-	this->Disconnect( ID_SCENE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneDownOnToolClicked ) );
-	sources->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::sourcesOnRightDown ), NULL, this );
-	this->Disconnect( ID_SOURCE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceAddOnToolClicked ) );
-	this->Disconnect( ID_SOURCE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceRemoveOnToolClicked ) );
-	this->Disconnect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesOnToolClicked ) );
-	this->Disconnect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpOnToolClicked ) );
-	this->Disconnect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownOnToolClicked ) );
-	exitButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitButtonOnButtonClick ), NULL, this );
+	this->Disconnect( ID_FILE_NEW, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileNewClicked ) );
+	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileOpenClicked ) );
+	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileSaveClicked ) );
+	this->Disconnect( ID_FILE_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileExitClicked ) );
+	scenes->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesRDown ), NULL, this );
+	this->Disconnect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddClicked ) );
+	this->Disconnect( ID_SCENE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneRemoveClicked ) );
+	this->Disconnect( ID_SCENE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::scenePropertiesClicked ) );
+	this->Disconnect( ID_SCENE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneUpClicked ) );
+	this->Disconnect( ID_SCENE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneDownClicked ) );
+	sources->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::sourcesRDown ), NULL, this );
+	this->Disconnect( ID_SOURCE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceAddClicked ) );
+	this->Disconnect( ID_SOURCE_DELETE, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceRemoveClicked ) );
+	this->Disconnect( ID_SOURCE_PROPERTIES, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourcePropertiesClicked ) );
+	this->Disconnect( ID_SOURCE_MOVEUP, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceUpClicked ) );
+	this->Disconnect( ID_SOURCE_MOVEDOWN, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sourceDownClicked ) );
+	toggleStreamButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::toggleStreamClicked ), NULL, this );
+	ToggleRecordButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::toggleRecordClicked ), NULL, this );
+	settingsButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::settingsClicked ), NULL, this );
+	exitButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicBase::exitClicked ), NULL, this );
 	
 }
 
@@ -411,7 +417,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	bSizer31 = new wxBoxSizer( wxVERTICAL );
 	
 	m_listbook1 = new wxListbook( this, ID_SETTINGS_LIST, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
-	m_panel8 = new wxPanel( m_listbook1, ID_SETTINGS_GENERAL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	generalPanel = new wxPanel( m_listbook1, ID_SETTINGS_GENERAL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer32;
 	bSizer32 = new wxBoxSizer( wxVERTICAL );
 	
@@ -423,31 +429,31 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer13->SetFlexibleDirection( wxBOTH );
 	fgSizer13->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText27 = new wxStaticText( m_panel8, wxID_ANY, _("Settings.General.Language"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText27 = new wxStaticText( generalPanel, wxID_ANY, _("Settings.General.Language"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
 	m_staticText27->Wrap( -1 );
 	fgSizer13->Add( m_staticText27, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	languageList = new wxComboBox( m_panel8, ID_LANGUAGE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	languageList = new wxComboBox( generalPanel, ID_LANGUAGE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer13->Add( languageList, 0, wxALL, 2 );
 	
 	
 	bSizer32->Add( fgSizer13, 1, wxEXPAND, 5 );
 	
 	
-	m_panel8->SetSizer( bSizer32 );
-	m_panel8->Layout();
-	bSizer32->Fit( m_panel8 );
-	m_listbook1->AddPage( m_panel8, _("Settings.General"), false );
-	m_panel9 = new wxPanel( m_listbook1, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	generalPanel->SetSizer( bSizer32 );
+	generalPanel->Layout();
+	bSizer32->Fit( generalPanel );
+	m_listbook1->AddPage( generalPanel, _("Settings.General"), true );
+	outputsPanel = new wxPanel( m_listbook1, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33;
 	bSizer33 = new wxBoxSizer( wxVERTICAL );
 	
 	
-	m_panel9->SetSizer( bSizer33 );
-	m_panel9->Layout();
-	bSizer33->Fit( m_panel9 );
-	m_listbook1->AddPage( m_panel9, _("Settings.Outputs"), false );
-	m_panel10 = new wxPanel( m_listbook1, ID_SETTINGS_VIDEO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	outputsPanel->SetSizer( bSizer33 );
+	outputsPanel->Layout();
+	bSizer33->Fit( outputsPanel );
+	m_listbook1->AddPage( outputsPanel, _("Settings.Outputs"), false );
+	videoPanel = new wxPanel( m_listbook1, ID_SETTINGS_VIDEO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer34;
 	bSizer34 = new wxBoxSizer( wxVERTICAL );
 	
@@ -459,53 +465,53 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer1->SetFlexibleDirection( wxBOTH );
 	fgSizer1->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText6 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.Adapter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText6 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.Adapter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText6->Wrap( -1 );
 	m_staticText6->SetMinSize( wxSize( 270,-1 ) );
 	
 	fgSizer1->Add( m_staticText6, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	videoAdapterList = new wxComboBox( m_panel10, ID_ADAPTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	videoAdapterList = new wxComboBox( videoPanel, ID_ADAPTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer1->Add( videoAdapterList, 0, wxALL, 2 );
 	
-	m_staticText8 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.BaseRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
+	m_staticText8 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.BaseRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
 	m_staticText8->Wrap( -1 );
 	fgSizer1->Add( m_staticText8, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	baseResList = new wxComboBox( m_panel10, ID_BASE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	baseResList = new wxComboBox( videoPanel, ID_BASE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
 	fgSizer1->Add( baseResList, 0, wxALL, 2 );
 	
-	m_staticText10 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.DownscaleRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText10 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.DownscaleRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText10->Wrap( -1 );
 	fgSizer1->Add( m_staticText10, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	downscaleResList = new wxComboBox( m_panel10, ID_DOWNSCALE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	downscaleResList = new wxComboBox( videoPanel, ID_DOWNSCALE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
 	fgSizer1->Add( downscaleResList, 0, wxALL, 2 );
 	
-	m_staticText11 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.DownscaleFilter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText11 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.DownscaleFilter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText11->Wrap( -1 );
 	fgSizer1->Add( m_staticText11, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	filterList = new wxComboBox( m_panel10, ID_DOWNSCALE_FILTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	filterList = new wxComboBox( videoPanel, ID_DOWNSCALE_FILTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer1->Add( filterList, 0, wxALL, 2 );
 	
 	
 	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
 	
-	disableAeroCheckbox = new wxCheckBox( m_panel10, ID_DISABLEAERO, _("Settings.DisableAeroWindows"), wxDefaultPosition, wxDefaultSize, 0 );
+	disableAeroCheckbox = new wxCheckBox( videoPanel, ID_DISABLEAERO, _("Settings.DisableAeroWindows"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer1->Add( disableAeroCheckbox, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	
 	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
 	
-	m_staticline1 = new wxStaticLine( m_panel10, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	m_staticline1 = new wxStaticLine( videoPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	fgSizer1->Add( m_staticline1, 0, wxEXPAND | wxALL, 5 );
 	
-	m_staticText22 = new wxStaticText( m_panel10, wxID_ANY, _("Settings.Video.FPS"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText22 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.FPS"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText22->Wrap( -1 );
 	fgSizer1->Add( m_staticText22, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	fpsTypeList = new wxChoicebook( m_panel10, ID_FPS_TYPE, wxDefaultPosition, wxDefaultSize, wxCHB_DEFAULT );
+	fpsTypeList = new wxChoicebook( videoPanel, ID_FPS_TYPE, wxDefaultPosition, wxDefaultSize, wxCHB_DEFAULT );
 	m_panel13 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer45;
 	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
@@ -581,11 +587,11 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	bSizer34->Add( fgSizer1, 0, wxEXPAND, 5 );
 	
 	
-	m_panel10->SetSizer( bSizer34 );
-	m_panel10->Layout();
-	bSizer34->Fit( m_panel10 );
-	m_listbook1->AddPage( m_panel10, _("Settings.Video"), false );
-	m_panel11 = new wxPanel( m_listbook1, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	videoPanel->SetSizer( bSizer34 );
+	videoPanel->Layout();
+	bSizer34->Fit( videoPanel );
+	m_listbook1->AddPage( videoPanel, _("Settings.Video"), false );
+	audioPanel = new wxPanel( m_listbook1, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer36;
 	bSizer36 = new wxBoxSizer( wxVERTICAL );
 	
@@ -597,55 +603,55 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->SetFlexibleDirection( wxBOTH );
 	fgSizer11->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText23 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.DesktopAudioDevice"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText23 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.DesktopAudioDevice"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
 	m_staticText23->Wrap( -1 );
 	fgSizer11->Add( m_staticText23, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	desktopAudioDeviceList = new wxComboBox( m_panel11, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	desktopAudioDeviceList = new wxComboBox( audioPanel, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer11->Add( desktopAudioDeviceList, 0, wxALL, 2 );
 	
-	m_staticText24 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice1"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText24 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice1"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText24->Wrap( -1 );
 	fgSizer11->Add( m_staticText24, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	auxAudioDeviceList1 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList1 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer11->Add( auxAudioDeviceList1, 0, wxALL, 2 );
 	
-	m_staticText241 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice2"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText241 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice2"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText241->Wrap( -1 );
 	fgSizer11->Add( m_staticText241, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	auxAudioDeviceList2 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList2 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer11->Add( auxAudioDeviceList2, 0, wxALL, 2 );
 	
-	m_staticText242 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice3"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText242 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice3"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText242->Wrap( -1 );
 	fgSizer11->Add( m_staticText242, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	auxAudioDeviceList3 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE3, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList3 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE3, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer11->Add( auxAudioDeviceList3, 0, wxALL, 2 );
 	
-	m_staticText243 = new wxStaticText( m_panel11, wxID_ANY, _("Settings.Audio.AuxAudioDevice4"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText243 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice4"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText243->Wrap( -1 );
 	fgSizer11->Add( m_staticText243, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	auxAudioDeviceList4 = new wxComboBox( m_panel11, ID_AUX_AUDIO_DEVICE4, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList4 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE4, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	fgSizer11->Add( auxAudioDeviceList4, 0, wxALL, 2 );
 	
 	
 	bSizer36->Add( fgSizer11, 1, wxEXPAND, 5 );
 	
 	
-	m_panel11->SetSizer( bSizer36 );
-	m_panel11->Layout();
-	bSizer36->Fit( m_panel11 );
-	m_listbook1->AddPage( m_panel11, _("Settings.Audio"), true );
-	#ifndef __WXGTK__ // Small icon style not supported in GTK
+	audioPanel->SetSizer( bSizer36 );
+	audioPanel->Layout();
+	bSizer36->Fit( audioPanel );
+	m_listbook1->AddPage( audioPanel, _("Settings.Audio"), false );
+	/*#ifndef __WXGTK__ // Small icon style not supported in GTK
 	wxListView* m_listbook1ListView = m_listbook1->GetListView();
 	long m_listbook1Flags = m_listbook1ListView->GetWindowStyleFlag();
 	m_listbook1Flags = ( m_listbook1Flags & ~wxLC_ICON ) | wxLC_SMALL_ICON;
 	m_listbook1ListView->SetWindowStyleFlag( m_listbook1Flags );
-	#endif
+	#endif*/
 	
 	bSizer31->Add( m_listbook1, 1, wxEXPAND | wxALL, 5 );
 	
@@ -672,8 +678,20 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	this->Layout();
 	
 	this->Centre( wxBOTH );
+	
+	// Connect Events
+	generalPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::generalPanelUpdateUI ), NULL, this );
+	outputsPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::outputsPanelUpdateUI ), NULL, this );
+	videoPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::videoPanelUpdateUI ), NULL, this );
+	audioPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::audioPanelUpdateUI ), NULL, this );
 }
 
 OBSBasicSettingsBase::~OBSBasicSettingsBase()
 {
+	// Disconnect Events
+	generalPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::generalPanelUpdateUI ), NULL, this );
+	outputsPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::outputsPanelUpdateUI ), NULL, this );
+	videoPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::videoPanelUpdateUI ), NULL, this );
+	audioPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::audioPanelUpdateUI ), NULL, this );
+	
 }

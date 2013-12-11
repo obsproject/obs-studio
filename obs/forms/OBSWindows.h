@@ -116,8 +116,8 @@ class OBSBasicBase : public WindowSubclass
 		wxCheckListBox* sources;
 		wxToolBar* sourcesToolbar;
 		wxStaticText* m_staticText6;
-		wxButton* toggleStream;
-		wxButton* TogglePreview;
+		wxButton* toggleStreamButton;
+		wxButton* ToggleRecordButton;
 		wxButton* settingsButton;
 		wxButton* exitButton;
 		wxStatusBar* statusBar;
@@ -126,23 +126,26 @@ class OBSBasicBase : public WindowSubclass
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnMinimize( wxIconizeEvent& event ) { event.Skip(); }
 		virtual void OnSize( wxSizeEvent& event ) { event.Skip(); }
-		virtual void file_newOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void file_openOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void file_saveOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void file_exitOnMenuSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void scenesOnRightDown( wxMouseEvent& event ) { event.Skip(); }
-		virtual void sceneAddOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sceneRemoveOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void scenePropertiesOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sceneUpOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sceneDownOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sourcesOnRightDown( wxMouseEvent& event ) { event.Skip(); }
-		virtual void sourceAddOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sourceRemoveOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sourcePropertiesOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sourceUpOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void sourceDownOnToolClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void exitButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void fileNewClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void fileOpenClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void fileSaveClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void fileExitClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void scenesRDown( wxMouseEvent& event ) { event.Skip(); }
+		virtual void sceneAddClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sceneRemoveClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void scenePropertiesClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sceneUpClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sceneDownClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sourcesRDown( wxMouseEvent& event ) { event.Skip(); }
+		virtual void sourceAddClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sourceRemoveClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sourcePropertiesClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sourceUpClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void sourceDownClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void toggleStreamClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void toggleRecordClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void settingsClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void exitClicked( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
@@ -192,11 +195,11 @@ class OBSBasicSettingsBase : public DialogSubclass
 	
 	protected:
 		wxListbook* m_listbook1;
-		wxPanel* m_panel8;
+		wxPanel* generalPanel;
 		wxStaticText* m_staticText27;
 		wxComboBox* languageList;
-		wxPanel* m_panel9;
-		wxPanel* m_panel10;
+		wxPanel* outputsPanel;
+		wxPanel* videoPanel;
 		wxStaticText* m_staticText6;
 		wxComboBox* videoAdapterList;
 		wxStaticText* m_staticText8;
@@ -220,7 +223,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxSpinCtrl* fpsDenominatorScroller;
 		wxPanel* m_panel16;
 		wxSpinCtrl* fpsNanosecondsScroller;
-		wxPanel* m_panel11;
+		wxPanel* audioPanel;
 		wxStaticText* m_staticText23;
 		wxComboBox* desktopAudioDeviceList;
 		wxStaticText* m_staticText24;
@@ -234,6 +237,13 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxButton* okButton;
 		wxButton* cancelButton;
 		wxButton* applyButton;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void generalPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void outputsPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void videoPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void audioPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		
 	
 	public:
 		

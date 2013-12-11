@@ -42,6 +42,7 @@ endif()
 
 add_executable(obs
 	window-main-basic.cpp
+	window-settings-basic.cpp
 	wx-subclass.cpp
 	wx-wrappers.cpp
 	obs-app.cpp

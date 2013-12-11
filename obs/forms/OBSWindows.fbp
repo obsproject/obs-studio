@@ -145,11 +145,11 @@
                         <property name="id">ID_FILE_NEW</property>
                         <property name="kind">wxITEM_NORMAL</property>
                         <property name="label">MainMenu.File.New</property>
-                        <property name="name">file_new</property>
+                        <property name="name">fileNewMenu</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
                         <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">file_newOnMenuSelection</event>
+                        <event name="OnMenuSelection">fileNewClicked</event>
                         <event name="OnUpdateUI"></event>
                     </object>
                     <object class="wxMenuItem" expanded="0">
@@ -160,11 +160,11 @@
                         <property name="id">IF_FILE_OPEN</property>
                         <property name="kind">wxITEM_NORMAL</property>
                         <property name="label">MainMenu.File.Open</property>
-                        <property name="name">file_open</property>
+                        <property name="name">fileOpenMenu</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
                         <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">file_openOnMenuSelection</event>
+                        <event name="OnMenuSelection">fileOpenClicked</event>
                         <event name="OnUpdateUI"></event>
                     </object>
                     <object class="wxMenuItem" expanded="0">
@@ -175,11 +175,11 @@
                         <property name="id">IF_FILE_SAVE</property>
                         <property name="kind">wxITEM_NORMAL</property>
                         <property name="label">MainMenu.File.Save</property>
-                        <property name="name">file_save</property>
+                        <property name="name">fileSaveMenu</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
                         <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">file_saveOnMenuSelection</event>
+                        <event name="OnMenuSelection">fileSaveClicked</event>
                         <event name="OnUpdateUI"></event>
                     </object>
                     <object class="separator" expanded="0">
@@ -194,11 +194,11 @@
                         <property name="id">ID_FILE_EXIT</property>
                         <property name="kind">wxITEM_NORMAL</property>
                         <property name="label">MainWindow.Exit</property>
-                        <property name="name">file_exit</property>
+                        <property name="name">fileExitMenu</property>
                         <property name="permission">none</property>
                         <property name="shortcut"></property>
                         <property name="unchecked_bitmap"></property>
-                        <event name="OnMenuSelection">file_exitOnMenuSelection</event>
+                        <event name="OnMenuSelection">fileExitClicked</event>
                         <event name="OnUpdateUI"></event>
                     </object>
                 </object>
@@ -687,7 +687,7 @@
                                                                                 <event name="OnMouseWheel"></event>
                                                                                 <event name="OnPaint"></event>
                                                                                 <event name="OnRightDClick"></event>
-                                                                                <event name="OnRightDown">scenesOnRightDown</event>
+                                                                                <event name="OnRightDown">scenesRDown</event>
                                                                                 <event name="OnRightUp"></event>
                                                                                 <event name="OnSetFocus"></event>
                                                                                 <event name="OnSize"></event>
@@ -793,7 +793,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sceneAddOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sceneAddClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -814,7 +814,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sceneRemoveOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sceneRemoveClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -835,7 +835,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">scenePropertiesOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">scenePropertiesClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -859,7 +859,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sceneUpOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sceneUpClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -880,7 +880,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sceneDownOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sceneDownClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1149,7 +1149,7 @@
                                                                                 <event name="OnMouseWheel"></event>
                                                                                 <event name="OnPaint"></event>
                                                                                 <event name="OnRightDClick"></event>
-                                                                                <event name="OnRightDown">sourcesOnRightDown</event>
+                                                                                <event name="OnRightDown">sourcesRDown</event>
                                                                                 <event name="OnRightUp"></event>
                                                                                 <event name="OnSetFocus"></event>
                                                                                 <event name="OnSize"></event>
@@ -1255,7 +1255,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sourceAddOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sourceAddClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1276,7 +1276,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sourceRemoveOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sourceRemoveClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1297,7 +1297,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sourcePropertiesOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sourcePropertiesClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1321,7 +1321,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sourceUpOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sourceUpClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1342,7 +1342,7 @@
                                                                                     <event name="OnAuiToolBarRightClick"></event>
                                                                                     <event name="OnAuiToolBarToolDropDown"></event>
                                                                                     <event name="OnMenuSelection"></event>
-                                                                                    <event name="OnToolClicked">sourceDownOnToolClicked</event>
+                                                                                    <event name="OnToolClicked">sourceDownClicked</event>
                                                                                     <event name="OnToolEnter"></event>
                                                                                     <event name="OnToolRClicked"></event>
                                                                                     <event name="OnUpdateUI"></event>
@@ -1487,7 +1487,7 @@
                                                                     <property name="minimize_button">0</property>
                                                                     <property name="minimum_size"></property>
                                                                     <property name="moveable">1</property>
-                                                                    <property name="name">toggleStream</property>
+                                                                    <property name="name">toggleStreamButton</property>
                                                                     <property name="pane_border">1</property>
                                                                     <property name="pane_position"></property>
                                                                     <property name="pane_size"></property>
@@ -1508,7 +1508,7 @@
                                                                     <property name="window_extra_style"></property>
                                                                     <property name="window_name"></property>
                                                                     <property name="window_style"></property>
-                                                                    <event name="OnButtonClick"></event>
+                                                                    <event name="OnButtonClick">toggleStreamClicked</event>
                                                                     <event name="OnChar"></event>
                                                                     <event name="OnEnterWindow"></event>
                                                                     <event name="OnEraseBackground"></event>
@@ -1575,7 +1575,7 @@
                                                                     <property name="minimize_button">0</property>
                                                                     <property name="minimum_size"></property>
                                                                     <property name="moveable">1</property>
-                                                                    <property name="name">TogglePreview</property>
+                                                                    <property name="name">ToggleRecordButton</property>
                                                                     <property name="pane_border">1</property>
                                                                     <property name="pane_position"></property>
                                                                     <property name="pane_size"></property>
@@ -1596,7 +1596,7 @@
                                                                     <property name="window_extra_style"></property>
                                                                     <property name="window_name"></property>
                                                                     <property name="window_style"></property>
-                                                                    <event name="OnButtonClick"></event>
+                                                                    <event name="OnButtonClick">toggleRecordClicked</event>
                                                                     <event name="OnChar"></event>
                                                                     <event name="OnEnterWindow"></event>
                                                                     <event name="OnEraseBackground"></event>
@@ -1684,7 +1684,7 @@
                                                                     <property name="window_extra_style"></property>
                                                                     <property name="window_name"></property>
                                                                     <property name="window_style"></property>
-                                                                    <event name="OnButtonClick"></event>
+                                                                    <event name="OnButtonClick">settingsClicked</event>
                                                                     <event name="OnChar"></event>
                                                                     <event name="OnEnterWindow"></event>
                                                                     <event name="OnEraseBackground"></event>
@@ -1772,7 +1772,7 @@
                                                                     <property name="window_extra_style"></property>
                                                                     <property name="window_name"></property>
                                                                     <property name="window_style"></property>
-                                                                    <event name="OnButtonClick">exitButtonOnButtonClick</event>
+                                                                    <event name="OnButtonClick">exitClicked</event>
                                                                     <event name="OnChar"></event>
                                                                     <event name="OnEnterWindow"></event>
                                                                     <event name="OnEraseBackground"></event>
@@ -2692,7 +2692,7 @@
                 <event name="OnUpdateUI"></event>
             </object>
         </object>
-        <object class="Dialog" expanded="0">
+        <object class="Dialog" expanded="1">
             <property name="aui_managed">0</property>
             <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
             <property name="bg"></property>
@@ -2754,25 +2754,25 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxBoxSizer" expanded="0">
+            <object class="wxBoxSizer" expanded="1">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer30</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
-                <object class="sizeritem" expanded="0">
+                <object class="sizeritem" expanded="1">
                     <property name="border">5</property>
                     <property name="flag">wxEXPAND</property>
                     <property name="proportion">1</property>
-                    <object class="wxBoxSizer" expanded="0">
+                    <object class="wxBoxSizer" expanded="1">
                         <property name="minimum_size"></property>
                         <property name="name">bSizer31</property>
                         <property name="orient">wxVERTICAL</property>
                         <property name="permission">none</property>
-                        <object class="sizeritem" expanded="0">
+                        <object class="sizeritem" expanded="1">
                             <property name="border">5</property>
                             <property name="flag">wxEXPAND | wxALL</property>
                             <property name="proportion">1</property>
-                            <object class="wxListbook" expanded="0">
+                            <object class="wxListbook" expanded="1">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
                                 <property name="RightDockable">1</property>
@@ -2853,7 +2853,7 @@
                                 <object class="listbookpage" expanded="0">
                                     <property name="bitmap"></property>
                                     <property name="label">Settings.General</property>
-                                    <property name="select">0</property>
+                                    <property name="select">1</property>
                                     <object class="wxPanel" expanded="0">
                                         <property name="BottomDockable">1</property>
                                         <property name="LeftDockable">1</property>
@@ -2889,7 +2889,7 @@
                                         <property name="minimize_button">0</property>
                                         <property name="minimum_size"></property>
                                         <property name="moveable">1</property>
-                                        <property name="name">m_panel8</property>
+                                        <property name="name">generalPanel</property>
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
@@ -2927,7 +2927,7 @@
                                         <event name="OnRightUp"></event>
                                         <event name="OnSetFocus"></event>
                                         <event name="OnSize"></event>
-                                        <event name="OnUpdateUI"></event>
+                                        <event name="OnUpdateUI">generalPanelUpdateUI</event>
                                         <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bSizer32</property>
@@ -3177,7 +3177,7 @@
                                         <property name="minimize_button">0</property>
                                         <property name="minimum_size"></property>
                                         <property name="moveable">1</property>
-                                        <property name="name">m_panel9</property>
+                                        <property name="name">outputsPanel</property>
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
@@ -3215,7 +3215,7 @@
                                         <event name="OnRightUp"></event>
                                         <event name="OnSetFocus"></event>
                                         <event name="OnSize"></event>
-                                        <event name="OnUpdateUI"></event>
+                                        <event name="OnUpdateUI">outputsPanelUpdateUI</event>
                                         <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bSizer33</property>
@@ -3263,7 +3263,7 @@
                                         <property name="minimize_button">0</property>
                                         <property name="minimum_size"></property>
                                         <property name="moveable">1</property>
-                                        <property name="name">m_panel10</property>
+                                        <property name="name">videoPanel</property>
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
@@ -3301,7 +3301,7 @@
                                         <event name="OnRightUp"></event>
                                         <event name="OnSetFocus"></event>
                                         <event name="OnSize"></event>
-                                        <event name="OnUpdateUI"></event>
+                                        <event name="OnUpdateUI">videoPanelUpdateUI</event>
                                         <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bSizer34</property>
@@ -5341,10 +5341,10 @@
                                         </object>
                                     </object>
                                 </object>
-                                <object class="listbookpage" expanded="0">
+                                <object class="listbookpage" expanded="1">
                                     <property name="bitmap"></property>
                                     <property name="label">Settings.Audio</property>
-                                    <property name="select">1</property>
+                                    <property name="select">0</property>
                                     <object class="wxPanel" expanded="0">
                                         <property name="BottomDockable">1</property>
                                         <property name="LeftDockable">1</property>
@@ -5380,7 +5380,7 @@
                                         <property name="minimize_button">0</property>
                                         <property name="minimum_size"></property>
                                         <property name="moveable">1</property>
-                                        <property name="name">m_panel11</property>
+                                        <property name="name">audioPanel</property>
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
@@ -5418,7 +5418,7 @@
                                         <event name="OnRightUp"></event>
                                         <event name="OnSetFocus"></event>
                                         <event name="OnSize"></event>
-                                        <event name="OnUpdateUI"></event>
+                                        <event name="OnUpdateUI">audioPanelUpdateUI</event>
                                         <object class="wxBoxSizer" expanded="0">
                                             <property name="minimum_size"></property>
                                             <property name="name">bSizer36</property>

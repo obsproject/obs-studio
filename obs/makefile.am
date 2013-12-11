@@ -13,6 +13,7 @@ endif
 obs_PROGRAMS = obs
 obs_LDADD = $(top_srcdir)/libobs/libobs.la
 obs_SOURCES = window-main-basic.cpp \
+	      windows-settings-basic.cpp \
 	      obs-app.cpp \
 	      wx-subclass.cpp \
 	      wx-wrappers.cpp \
