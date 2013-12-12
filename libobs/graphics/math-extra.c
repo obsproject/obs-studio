@@ -111,10 +111,10 @@ void calc_torque(struct vec3 *dst, const struct vec3 *v1,
 	vec3_mulf(&dir, &line, 1.0f/orig_dist);
 
 	torque_dist = orig_dist*torque; /* use distance to determine speed */
-	adjust_dist = torque_dist*t;
-
 	if (torque_dist < min_adjust)   /* prevent from going too slow */
 		torque_dist = min_adjust;
+
+	adjust_dist = torque_dist*t;
 
 	if (adjust_dist <= (orig_dist-LARGE_EPSILON)) {
 		vec3_mulf(dst, &dir, adjust_dist);
