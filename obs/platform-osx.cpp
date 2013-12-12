@@ -18,8 +18,12 @@
 #include <sstream>
 #include "platform.hpp"
 
+#include <unistd.h>
+
 bool GetDataFilePath(const char *data, string &output)
 {
-	// TODO
-	return false;
+	stringstream str;
+	str << "../data/obs-studio/" << data;
+	output = str.str();
+	return !access(output.c_str(), R_OK);
 }
