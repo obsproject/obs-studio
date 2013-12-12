@@ -17,14 +17,13 @@
 
 #pragma once
 
-#include "forms/OBSWindows.h"
+#include "settings.hpp"
+#include "window-settings-basic.hpp"
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
+class BasicSettingsData : public SettingsData {
 protected:
-
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
+	OBSBasicSettings *window;
 
 public:
-	OBSBasicSettings(wxWindow *parent);
+	inline BasicSettingsData(OBSBasicSettings *window) : window(window) {}
 };

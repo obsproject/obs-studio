@@ -416,8 +416,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	wxBoxSizer* bSizer31;
 	bSizer31 = new wxBoxSizer( wxVERTICAL );
 	
-	m_listbook1 = new wxListbook( this, ID_SETTINGS_LIST, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
-	generalPanel = new wxPanel( m_listbook1, ID_SETTINGS_GENERAL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	settingsList = new wxListbook( this, ID_SETTINGS_LIST, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
+	generalPanel = new wxPanel( settingsList, ID_SETTINGS_GENERAL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer32;
 	bSizer32 = new wxBoxSizer( wxVERTICAL );
 	
@@ -443,8 +443,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	generalPanel->SetSizer( bSizer32 );
 	generalPanel->Layout();
 	bSizer32->Fit( generalPanel );
-	m_listbook1->AddPage( generalPanel, _("Settings.General"), true );
-	outputsPanel = new wxPanel( m_listbook1, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	settingsList->AddPage( generalPanel, _("Settings.General"), false );
+	outputsPanel = new wxPanel( settingsList, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33;
 	bSizer33 = new wxBoxSizer( wxVERTICAL );
 	
@@ -452,8 +452,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	outputsPanel->SetSizer( bSizer33 );
 	outputsPanel->Layout();
 	bSizer33->Fit( outputsPanel );
-	m_listbook1->AddPage( outputsPanel, _("Settings.Outputs"), false );
-	videoPanel = new wxPanel( m_listbook1, ID_SETTINGS_VIDEO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	settingsList->AddPage( outputsPanel, _("Settings.Outputs"), false );
+	videoPanel = new wxPanel( settingsList, ID_SETTINGS_VIDEO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer34;
 	bSizer34 = new wxBoxSizer( wxVERTICAL );
 	
@@ -536,7 +536,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	wxBoxSizer* bSizer46;
 	bSizer46 = new wxBoxSizer( wxHORIZONTAL );
 	
-	fpsIntegerScroller = new wxSpinCtrl( m_panel14, ID_FPS_INTEGER, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 60, 30 );
+	fpsIntegerScroller = new wxSpinCtrl( m_panel14, ID_FPS_INTEGER, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 120, 30 );
 	bSizer46->Add( fpsIntegerScroller, 0, wxTOP|wxBOTTOM|wxRIGHT, 2 );
 	
 	
@@ -590,8 +590,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	videoPanel->SetSizer( bSizer34 );
 	videoPanel->Layout();
 	bSizer34->Fit( videoPanel );
-	m_listbook1->AddPage( videoPanel, _("Settings.Video"), false );
-	audioPanel = new wxPanel( m_listbook1, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	settingsList->AddPage( videoPanel, _("Settings.Video"), true );
+	audioPanel = new wxPanel( settingsList, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer36;
 	bSizer36 = new wxBoxSizer( wxVERTICAL );
 	
@@ -645,15 +645,15 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	audioPanel->SetSizer( bSizer36 );
 	audioPanel->Layout();
 	bSizer36->Fit( audioPanel );
-	m_listbook1->AddPage( audioPanel, _("Settings.Audio"), false );
+	settingsList->AddPage( audioPanel, _("Settings.Audio"), false );
 	/*#ifndef __WXGTK__ // Small icon style not supported in GTK
-	wxListView* m_listbook1ListView = m_listbook1->GetListView();
-	long m_listbook1Flags = m_listbook1ListView->GetWindowStyleFlag();
-	m_listbook1Flags = ( m_listbook1Flags & ~wxLC_ICON ) | wxLC_SMALL_ICON;
-	m_listbook1ListView->SetWindowStyleFlag( m_listbook1Flags );
+	wxListView* settingsListListView = settingsList->GetListView();
+	long settingsListFlags = settingsListListView->GetWindowStyleFlag();
+	settingsListFlags = ( settingsListFlags & ~wxLC_ICON ) | wxLC_SMALL_ICON;
+	settingsListListView->SetWindowStyleFlag( settingsListFlags );
 	#endif*/
 	
-	bSizer31->Add( m_listbook1, 1, wxEXPAND | wxALL, 5 );
+	bSizer31->Add( settingsList, 1, wxEXPAND | wxALL, 5 );
 	
 	
 	bSizer30->Add( bSizer31, 1, wxEXPAND, 5 );
@@ -680,18 +680,14 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	this->Centre( wxBOTH );
 	
 	// Connect Events
-	generalPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::generalPanelUpdateUI ), NULL, this );
-	outputsPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::outputsPanelUpdateUI ), NULL, this );
-	videoPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::videoPanelUpdateUI ), NULL, this );
-	audioPanel->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::audioPanelUpdateUI ), NULL, this );
+	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
+	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
 }
 
 OBSBasicSettingsBase::~OBSBasicSettingsBase()
 {
 	// Disconnect Events
-	generalPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::generalPanelUpdateUI ), NULL, this );
-	outputsPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::outputsPanelUpdateUI ), NULL, this );
-	videoPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::videoPanelUpdateUI ), NULL, this );
-	audioPanel->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( OBSBasicSettingsBase::audioPanelUpdateUI ), NULL, this );
+	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
+	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
 	
 }

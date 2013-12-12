@@ -15,16 +15,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "settings-basic.hpp"
+#include "obs-app.hpp"
 
-#include "forms/OBSWindows.h"
+#include <string>
+using namespace std;
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
-protected:
-
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
-
+class GeneralSettings : public BasicSettingsData {
 public:
-	OBSBasicSettings(wxWindow *parent);
+	GeneralSettings(OBSBasicSettings *window);
+
+	virtual void Apply();
 };
+
+GeneralSettings::GeneralSettings(OBSBasicSettings *window)
+	: BasicSettingsData(window)
+{
+}
+
+void GeneralSettings::Apply()
+{
+	
+}

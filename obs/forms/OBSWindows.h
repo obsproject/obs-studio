@@ -194,58 +194,56 @@ class OBSBasicSettingsBase : public DialogSubclass
 	private:
 	
 	protected:
-		wxListbook* m_listbook1;
-		wxPanel* generalPanel;
+		wxListbook* settingsList;
 		wxStaticText* m_staticText27;
-		wxComboBox* languageList;
-		wxPanel* outputsPanel;
 		wxPanel* videoPanel;
 		wxStaticText* m_staticText6;
-		wxComboBox* videoAdapterList;
 		wxStaticText* m_staticText8;
-		wxComboBox* baseResList;
 		wxStaticText* m_staticText10;
-		wxComboBox* downscaleResList;
 		wxStaticText* m_staticText11;
-		wxComboBox* filterList;
-		wxCheckBox* disableAeroCheckbox;
 		wxStaticLine* m_staticline1;
 		wxStaticText* m_staticText22;
-		wxChoicebook* fpsTypeList;
 		wxPanel* m_panel13;
-		wxComboBox* fpsCommonList;
 		wxPanel* m_panel14;
-		wxSpinCtrl* fpsIntegerScroller;
 		wxPanel* m_panel15;
 		wxStaticText* m_staticText20;
-		wxSpinCtrl* fpsNumeratorScroller;
 		wxStaticText* m_staticText21;
-		wxSpinCtrl* fpsDenominatorScroller;
 		wxPanel* m_panel16;
-		wxSpinCtrl* fpsNanosecondsScroller;
 		wxPanel* audioPanel;
 		wxStaticText* m_staticText23;
-		wxComboBox* desktopAudioDeviceList;
 		wxStaticText* m_staticText24;
-		wxComboBox* auxAudioDeviceList1;
 		wxStaticText* m_staticText241;
-		wxComboBox* auxAudioDeviceList2;
 		wxStaticText* m_staticText242;
-		wxComboBox* auxAudioDeviceList3;
 		wxStaticText* m_staticText243;
-		wxComboBox* auxAudioDeviceList4;
 		wxButton* okButton;
 		wxButton* cancelButton;
 		wxButton* applyButton;
 		
 		// Virtual event handlers, overide them in your derived class
-		virtual void generalPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void outputsPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void videoPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void audioPanelUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void PageChanged( wxListbookEvent& event ) { event.Skip(); }
+		virtual void PageChanging( wxListbookEvent& event ) { event.Skip(); }
 		
 	
 	public:
+		wxPanel* generalPanel;
+		wxComboBox* languageList;
+		wxPanel* outputsPanel;
+		wxComboBox* videoAdapterList;
+		wxComboBox* baseResList;
+		wxComboBox* downscaleResList;
+		wxComboBox* filterList;
+		wxCheckBox* disableAeroCheckbox;
+		wxChoicebook* fpsTypeList;
+		wxComboBox* fpsCommonList;
+		wxSpinCtrl* fpsIntegerScroller;
+		wxSpinCtrl* fpsNumeratorScroller;
+		wxSpinCtrl* fpsDenominatorScroller;
+		wxSpinCtrl* fpsNanosecondsScroller;
+		wxComboBox* desktopAudioDeviceList;
+		wxComboBox* auxAudioDeviceList1;
+		wxComboBox* auxAudioDeviceList2;
+		wxComboBox* auxAudioDeviceList3;
+		wxComboBox* auxAudioDeviceList4;
 		
 		OBSBasicSettingsBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC_SETTINGS, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 872,686 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~OBSBasicSettingsBase();

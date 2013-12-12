@@ -2808,7 +2808,7 @@
                                 <property name="minimize_button">0</property>
                                 <property name="minimum_size"></property>
                                 <property name="moveable">1</property>
-                                <property name="name">m_listbook1</property>
+                                <property name="name">settingsList</property>
                                 <property name="pane_border">1</property>
                                 <property name="pane_position"></property>
                                 <property name="pane_size"></property>
@@ -2835,8 +2835,8 @@
                                 <event name="OnLeftDClick"></event>
                                 <event name="OnLeftDown"></event>
                                 <event name="OnLeftUp"></event>
-                                <event name="OnListbookPageChanged"></event>
-                                <event name="OnListbookPageChanging"></event>
+                                <event name="OnListbookPageChanged">PageChanged</event>
+                                <event name="OnListbookPageChanging">PageChanging</event>
                                 <event name="OnMiddleDClick"></event>
                                 <event name="OnMiddleDown"></event>
                                 <event name="OnMiddleUp"></event>
@@ -2893,7 +2893,7 @@
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
-                                        <property name="permission">protected</property>
+                                        <property name="permission">public</property>
                                         <property name="pin_button">1</property>
                                         <property name="pos"></property>
                                         <property name="resize">Resizable</property>
@@ -3086,7 +3086,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -3181,7 +3181,7 @@
                                         <property name="pane_border">1</property>
                                         <property name="pane_position"></property>
                                         <property name="pane_size"></property>
-                                        <property name="permission">protected</property>
+                                        <property name="permission">public</property>
                                         <property name="pin_button">1</property>
                                         <property name="pos"></property>
                                         <property name="resize">Resizable</property>
@@ -3460,7 +3460,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -3634,7 +3634,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -3808,7 +3808,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -3982,7 +3982,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -4084,7 +4084,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -4344,7 +4344,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -4508,7 +4508,7 @@
                                                                                 <property name="pane_border">1</property>
                                                                                 <property name="pane_position"></property>
                                                                                 <property name="pane_size"></property>
-                                                                                <property name="permission">protected</property>
+                                                                                <property name="permission">public</property>
                                                                                 <property name="pin_button">1</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="resize">Resizable</property>
@@ -4673,7 +4673,7 @@
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">ID_FPS_INTEGER</property>
                                                                                 <property name="initial">30</property>
-                                                                                <property name="max">60</property>
+                                                                                <property name="max">120</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
                                                                                 <property name="maximum_size"></property>
@@ -4686,7 +4686,7 @@
                                                                                 <property name="pane_border">1</property>
                                                                                 <property name="pane_position"></property>
                                                                                 <property name="pane_size"></property>
-                                                                                <property name="permission">protected</property>
+                                                                                <property name="permission">public</property>
                                                                                 <property name="pin_button">1</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="resize">Resizable</property>
@@ -4948,7 +4948,7 @@
                                                                                 <property name="pane_border">1</property>
                                                                                 <property name="pane_position"></property>
                                                                                 <property name="pane_size"></property>
-                                                                                <property name="permission">protected</property>
+                                                                                <property name="permission">public</property>
                                                                                 <property name="pin_button">1</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="resize">Resizable</property>
@@ -5118,7 +5118,7 @@
                                                                                 <property name="pane_border">1</property>
                                                                                 <property name="pane_position"></property>
                                                                                 <property name="pane_size"></property>
-                                                                                <property name="permission">protected</property>
+                                                                                <property name="permission">public</property>
                                                                                 <property name="pin_button">1</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="resize">Resizable</property>
@@ -5290,7 +5290,7 @@
                                                                                 <property name="pane_border">1</property>
                                                                                 <property name="pane_position"></property>
                                                                                 <property name="pane_size"></property>
-                                                                                <property name="permission">protected</property>
+                                                                                <property name="permission">public</property>
                                                                                 <property name="pin_button">1</property>
                                                                                 <property name="pos"></property>
                                                                                 <property name="resize">Resizable</property>
@@ -5577,7 +5577,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -5751,7 +5751,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -5925,7 +5925,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -6099,7 +6099,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
@@ -6273,7 +6273,7 @@
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>
-                                                            <property name="permission">protected</property>
+                                                            <property name="permission">public</property>
                                                             <property name="pin_button">1</property>
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>

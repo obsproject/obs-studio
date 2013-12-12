@@ -170,6 +170,7 @@
     <ClCompile Include="..\..\..\obs\forms\OBSWindows.cpp" />
     <ClCompile Include="..\..\..\obs\obs-app.cpp" />
     <ClCompile Include="..\..\..\obs\platform-windows.cpp" />
+    <ClCompile Include="..\..\..\obs\settings-basic-general.cpp" />
     <ClCompile Include="..\..\..\obs\window-main-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-settings-basic.cpp" />
     <ClCompile Include="..\..\..\obs\wx-subclass.cpp" />
@@ -180,6 +181,8 @@
     <ClInclude Include="..\..\..\obs\obs-app.hpp" />
     <ClInclude Include="..\..\..\obs\obs-wrappers.hpp" />
     <ClInclude Include="..\..\..\obs\platform.hpp" />
+    <ClInclude Include="..\..\..\obs\settings-basic.hpp" />
+    <ClInclude Include="..\..\..\obs\settings.hpp" />
     <ClInclude Include="..\..\..\obs\window-main-basic.hpp" />
     <ClInclude Include="..\..\..\obs\window-settings-basic.hpp" />
     <ClInclude Include="..\..\..\obs\wx-subclass.hpp" />
