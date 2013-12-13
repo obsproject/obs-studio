@@ -20,10 +20,12 @@
 #include "obs-app.hpp"
 #include "settings-basic.hpp"
 #include "window-settings-basic.hpp"
+#include "wx-wrappers.hpp"
 #include "platform.hpp"
 
 class GeneralSettings : public BasicSettingsData {
 	ConfigFile localeIni;
+	WXConnector languageBoxConnector;
 
 	void LanguageChanged(wxCommandEvent &event);
 
@@ -32,7 +34,6 @@ class GeneralSettings : public BasicSettingsData {
 
 public:
 	GeneralSettings(OBSBasicSettings *window);
-	virtual ~GeneralSettings();
 
 	virtual void Apply();
 };
@@ -86,16 +87,8 @@ GeneralSettings::GeneralSettings(OBSBasicSettings *window)
 			"General", "Language");
 	FillLanguageList(currentLang);
 
-	window->languageList->Connect(
-			wxEVT_COMBOBOX,
-			wxCommandEventHandler(GeneralSettings::LanguageChanged),
-			NULL,
-			this);
-}
-
-GeneralSettings::~GeneralSettings()
-{
-	window->languageList->Disconnect(
+	languageBoxConnector.Connect(
+			window->languageList,
 			wxEVT_COMBOBOX,
 			wxCommandEventHandler(GeneralSettings::LanguageChanged),
 			NULL,
