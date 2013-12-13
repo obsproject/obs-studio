@@ -331,6 +331,24 @@ void config_close(config_t config)
 	bfree(config);
 }
 
+size_t config_num_sections(config_t config)
+{
+	return config->sections.num;
+}
+
+const char *config_get_section(config_t config, size_t idx)
+{
+	struct config_section *section;
+
+	if (idx >= config->sections.num)
+		return NULL;
+
+	section = darray_item(sizeof(struct config_section), &config->sections,
+			idx);
+
+	return section->name;
+}
+
 static struct config_item *config_find_item(struct darray *sections,
 		const char *section, const char *name)
 {

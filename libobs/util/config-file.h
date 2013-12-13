@@ -52,6 +52,9 @@ EXPORT int config_open_defaults(config_t config, const char *file);
 EXPORT int config_save(config_t config);
 EXPORT void config_close(config_t config);
 
+EXPORT size_t config_num_sections(config_t config);
+EXPORT const char *config_get_section(config_t config, size_t idx);
+
 EXPORT void config_set_string(config_t config, const char *section,
 		const char *name, const char *value);
 EXPORT void config_set_int(config_t config, const char *section,
