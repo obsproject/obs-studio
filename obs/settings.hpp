@@ -24,6 +24,7 @@ protected:
 	bool dataChanged;
 
 public:
+	inline SettingsData() : dataChanged(false) {}
 	virtual void Apply()=0;
 
 	inline bool DataChanged() const {return dataChanged;}
