@@ -97,11 +97,6 @@ uint64_t os_gettime_ns(void)
 	return *(uint64_t*) &nano;
 }
 
-uint64_t os_gettime_ms(void)
-{
-	return  os_gettime_ns()/1000000;
-}
-
 char *os_get_home_path(void)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
@@ -122,6 +117,11 @@ char *os_get_home_path(void)
 	memcpy(path, [application_support UTF8String], len);
 
 	return path;
+}
+
+bool os_file_exists(const char *path)
+{
+	return access(path, F_OK) == 0;
 }
 
 int os_mkdir(const char *path)

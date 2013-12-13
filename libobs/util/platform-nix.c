@@ -89,11 +89,6 @@ uint64_t os_gettime_ns(void)
 	return tp.tv_nsec;
 }
 
-uint64_t os_gettime_ms(void)
-{
-	return  os_gettime_ns()/1000000;
-}
-
 /* should return $HOME/ */
 char *os_get_home_path(void)
 {
@@ -105,6 +100,11 @@ char *os_get_home_path(void)
 
 	strcpy(path, path_ptr);
 	return path;
+}
+
+bool os_file_exists(const char *path)
+{
+	return access(path, F_OK) == 0;
 }
 
 int os_mkdir(const char *path)

@@ -68,9 +68,10 @@ EXPORT void os_sleepto_ns(uint64_t time_target);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);
-EXPORT uint64_t os_gettime_ms(void);
 
 EXPORT char *os_get_home_path(void);
+
+EXPORT bool os_file_exists(const char *path);
 
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0

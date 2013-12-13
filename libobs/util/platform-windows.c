@@ -135,19 +135,6 @@ uint64_t os_gettime_ns(void)
 	return (uint64_t)time_val;
 }
 
-uint64_t os_gettime_ms(void)
-{
-	LARGE_INTEGER current_time;
-	uint64_t time_val;
-
-	QueryPerformanceCounter(&current_time);
-	time_val = current_time.QuadPart;
-	time_val *= 1000;
-	time_val /= get_clockfreq();
-
-	return time_val;
-}
-
 /* returns %appdata% on windows */
 char *os_get_home_path(void)
 {
@@ -159,6 +146,23 @@ char *os_get_home_path(void)
 
 	os_wcs_to_utf8(path_utf16, 0, &out);
 	return out;
+}
+
+bool os_file_exists(const char *path)
+{
+	WIN32_FIND_DATA wfd;
+	HANDLE hFind;
+	wchar_t *path_utf16;
+
+	if (!os_utf8_to_wcs(path, 0, &path_utf16))
+		return false;
+
+	hFind = FindFirstFileW(path_utf16, &wfd);
+	if (hFind != INVALID_HANDLE_VALUE)
+		FindClose(hFind);
+
+	bfree(path_utf16);
+	return hFind != INVALID_HANDLE_VALUE;
 }
 
 int os_mkdir(const char *path)
