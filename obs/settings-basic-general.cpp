@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <wx/event.h>
+
 #include "obs-app.hpp"
 #include "settings-basic.hpp"
 #include "window-settings-basic.hpp"
@@ -23,11 +25,14 @@
 class GeneralSettings : public BasicSettingsData {
 	ConfigFile localeIni;
 
+	void LanguageChanged(wxCommandEvent &event);
+
 	int AddLanguage(const char *tag);
 	void FillLanguageList(const char *currentLang);
 
 public:
 	GeneralSettings(OBSBasicSettings *window);
+	virtual ~GeneralSettings();
 
 	virtual void Apply();
 };
@@ -80,6 +85,25 @@ GeneralSettings::GeneralSettings(OBSBasicSettings *window)
 	const char *currentLang = config_get_string(GetGlobalConfig(),
 			"General", "Language");
 	FillLanguageList(currentLang);
+
+	window->languageList->Connect(
+			wxEVT_COMBOBOX,
+			wxCommandEventHandler(GeneralSettings::LanguageChanged),
+			NULL,
+			this);
+}
+
+GeneralSettings::~GeneralSettings()
+{
+	window->languageList->Disconnect(
+			wxEVT_COMBOBOX,
+			wxCommandEventHandler(GeneralSettings::LanguageChanged),
+			NULL,
+			this);
+}
+
+void GeneralSettings::LanguageChanged(wxCommandEvent &event)
+{
 }
 
 void GeneralSettings::Apply()

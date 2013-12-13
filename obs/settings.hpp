@@ -17,12 +17,13 @@
 
 #pragma once
 
-class SettingsData {
+#include <wx/event.h>
+
+class SettingsData : public wxEvtHandler {
 protected:
 	bool dataChanged;
 
 public:
-	virtual ~SettingsData() {}
 	virtual void Apply()=0;
 
 	inline bool DataChanged() const {return dataChanged;}
