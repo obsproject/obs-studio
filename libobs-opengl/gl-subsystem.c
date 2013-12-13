@@ -247,6 +247,8 @@ void device_load_texture(device_t device, texture_t tex, int unit)
 	if (!gl_active_texture(GL_TEXTURE0 + unit))
 		goto fail;
 
+	/* the target for the previous text may not be the same as the
+	 * next texture, so unbind the previous texture first to be safe */
 	if (cur_tex && (!tex || cur_tex->gl_target != tex->gl_target))
 		gl_bind_texture(cur_tex->gl_target, 0);
 
