@@ -196,6 +196,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 	protected:
 		wxListbook* settingsList;
 		wxStaticText* m_staticText27;
+		wxStaticText* generalChangedText;
 		wxPanel* videoPanel;
 		wxStaticText* m_staticText6;
 		wxStaticText* m_staticText8;
@@ -209,6 +210,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxStaticText* m_staticText20;
 		wxStaticText* m_staticText21;
 		wxPanel* m_panel16;
+		wxStaticText* videoChangedText;
 		wxPanel* audioPanel;
 		wxStaticText* m_staticText23;
 		wxStaticText* m_staticText24;

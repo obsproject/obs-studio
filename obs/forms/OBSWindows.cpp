@@ -437,13 +437,22 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer13->Add( languageList, 0, wxALL, 2 );
 	
 	
-	bSizer32->Add( fgSizer13, 1, wxEXPAND, 5 );
+	bSizer32->Add( fgSizer13, 0, wxEXPAND, 5 );
+	
+	
+	bSizer32->Add( 0, 20, 0, wxEXPAND, 5 );
+	
+	generalChangedText = new wxStaticText( generalPanel, wxID_ANY, _("Settings.RestartProgram"), wxDefaultPosition, wxDefaultSize, 0 );
+	generalChangedText->Wrap( -1 );
+	generalChangedText->Hide();
+	
+	bSizer32->Add( generalChangedText, 1, wxALL|wxEXPAND, 5 );
 	
 	
 	generalPanel->SetSizer( bSizer32 );
 	generalPanel->Layout();
 	bSizer32->Fit( generalPanel );
-	settingsList->AddPage( generalPanel, _("Settings.General"), false );
+	settingsList->AddPage( generalPanel, _("Settings.General"), true );
 	outputsPanel = new wxPanel( settingsList, ID_SETTINGS_OUTPUTS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer33;
 	bSizer33 = new wxBoxSizer( wxVERTICAL );
@@ -587,10 +596,19 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	bSizer34->Add( fgSizer1, 0, wxEXPAND, 5 );
 	
 	
+	bSizer34->Add( 0, 20, 0, wxEXPAND, 5 );
+	
+	videoChangedText = new wxStaticText( videoPanel, wxID_ANY, _("Settings.RestartStream"), wxDefaultPosition, wxDefaultSize, 0 );
+	videoChangedText->Wrap( -1 );
+	videoChangedText->Hide();
+	
+	bSizer34->Add( videoChangedText, 1, wxALL|wxEXPAND, 5 );
+	
+	
 	videoPanel->SetSizer( bSizer34 );
 	videoPanel->Layout();
 	bSizer34->Fit( videoPanel );
-	settingsList->AddPage( videoPanel, _("Settings.Video"), true );
+	settingsList->AddPage( videoPanel, _("Settings.Video"), false );
 	audioPanel = new wxPanel( settingsList, ID_SETTINGS_AUDIO, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer36;
 	bSizer36 = new wxBoxSizer( wxVERTICAL );
@@ -639,7 +657,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( auxAudioDeviceList4, 0, wxALL, 2 );
 	
 	
-	bSizer36->Add( fgSizer11, 1, wxEXPAND, 5 );
+	bSizer36->Add( fgSizer11, 0, wxEXPAND, 5 );
 	
 	
 	audioPanel->SetSizer( bSizer36 );
