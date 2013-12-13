@@ -241,9 +241,9 @@ static inline enum base_token_type get_char_token_type(const char ch)
 {
 	if (is_whitespace(ch))
 		return BASETOKEN_WHITESPACE;
-	else if (isdigit(ch))
+	else if (ch >= '0' && ch <= '9')
 		return BASETOKEN_DIGIT;
-	else if (isalpha(ch))
+	else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
 		return BASETOKEN_ALPHA;
 
 	return BASETOKEN_OTHER;
