@@ -247,9 +247,8 @@ void device_load_texture(device_t device, texture_t tex, int unit)
 	if (!gl_active_texture(GL_TEXTURE0 + unit))
 		goto fail;
 
-	if (cur_tex && cur_tex->gl_target != tex->gl_target)
+	if (!tex || (cur_tex && cur_tex->gl_target != tex->gl_target))
 		gl_bind_texture(cur_tex->gl_target, 0);
-
 
 	device->cur_textures[unit] = tex;
 	param = get_texture_param(device, unit);
