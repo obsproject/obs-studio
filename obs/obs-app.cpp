@@ -51,7 +51,7 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 
 void OBSApp::InitGlobalConfigDefaults()
 {
-	config_set_default_string(globalConfig, "General", "Language", "en-US");
+	config_set_default_string(globalConfig, "General", "Language", "en");
 	config_set_default_int(globalConfig, "Window", "PosX",  -1);
 	config_set_default_int(globalConfig, "Window", "PosY",  -1);
 	config_set_default_int(globalConfig, "Window", "SizeX", -1);

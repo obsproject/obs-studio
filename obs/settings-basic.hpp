@@ -18,7 +18,8 @@
 #pragma once
 
 #include "settings.hpp"
-#include "window-settings-basic.hpp"
+
+class OBSBasicSettings;
 
 class BasicSettingsData : public SettingsData {
 protected:
@@ -27,3 +28,5 @@ protected:
 public:
 	inline BasicSettingsData(OBSBasicSettings *window) : window(window) {}
 };
+
+BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window);

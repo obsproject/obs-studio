@@ -41,6 +41,8 @@ public:
 	virtual int  OnExit();
 	virtual void CleanUp();
 
+	inline config_t GlobalConfig() {return globalConfig;}
+
 	inline const char *GetString(const char *lookupVal)
 	{
 		return textLookup.GetString(lookupVal);
@@ -48,5 +50,7 @@ public:
 };
 
 wxDECLARE_APP(OBSApp);
+
+inline config_t GetGlobalConfig() {return wxGetApp().GlobalConfig();}
 
 #define Str(lookupVal) wxGetApp().GetString(lookupVal)

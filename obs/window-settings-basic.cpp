@@ -20,6 +20,8 @@
 OBSBasicSettings::OBSBasicSettings(wxWindow *parent)
 	: OBSBasicSettingsBase(parent)
 {
+	unique_ptr<BasicSettingsData> data(CreateBasicGeneralSettings(this));
+	settings = move(data);
 }
 
 void OBSBasicSettings::PageChanged(wxListbookEvent &event)

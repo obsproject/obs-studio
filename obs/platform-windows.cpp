@@ -18,10 +18,15 @@
 #include <sstream>
 #include "platform.hpp"
 
+#include <util/platform.h>
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 bool GetDataFilePath(const char *data, string &output)
 {
 	stringstream str;
 	str << "../../data/obs-studio/" << data;
 	output = str.str();
-	return true;
+	return os_file_exists(output.c_str());
 }

@@ -29,7 +29,7 @@
 
 #ifdef _
 #undef _
-#define _(str) Str(str)
+#define _(str) wxString(Str(str), wxConvUTF8)
 #endif
 
 class DialogSubclass : public wxDialog {
