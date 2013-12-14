@@ -15,22 +15,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
-
-#include "forms/OBSWindows.h"
+#include "obs-app.hpp"
 #include "settings-basic.hpp"
+#include "window-settings-basic.hpp"
+#include "wx-wrappers.hpp"
 
-#include <memory>
+#include <vector>
 using namespace std;
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
-protected:
-	unique_ptr<BasicSettingsData> settings;
+class BasicVideoData : public BasicSettingsData {
+	ConnectorList connections;
 
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
-	virtual void OnClose(wxCloseEvent &event);
+	void BaseResListChanged(wxCommandEvent &event);
 
 public:
-	OBSBasicSettings(wxWindow *parent);
+	BasicVideoData(OBSBasicSettings *window);
 };
+
+BasicVideoData::BasicVideoData(OBSBasicSettings *window)
+	: BasicSettingsData(window)
+{
+	connections.Add(window->baseResList, wxEVT_COMBOBOX,
+			wxCommandEventHandler(
+				BasicVideoData::BaseResListChanged),
+			NULL, this);
+}
+
+void BasicVideoData::BaseResListChanged(wxCommandEvent &event)
+{
+}

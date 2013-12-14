@@ -15,15 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <wx/event.h>
-
 #include "obs-app.hpp"
 #include "settings-basic.hpp"
 #include "window-settings-basic.hpp"
 #include "wx-wrappers.hpp"
 #include "platform.hpp"
 
-class GeneralSettings : public BasicSettingsData {
+class BasicGenData : public BasicSettingsData {
 	ConfigFile localeIni;
 	WXConnector languageBoxConnector;
 
@@ -33,7 +31,7 @@ class GeneralSettings : public BasicSettingsData {
 	void FillLanguageList(const char *currentLang);
 
 public:
-	GeneralSettings(OBSBasicSettings *window);
+	BasicGenData(OBSBasicSettings *window);
 
 	virtual void Apply();
 };
@@ -55,14 +53,14 @@ public:
 	}
 };
 
-int GeneralSettings::AddLanguage(const char *tag)
+int BasicGenData::AddLanguage(const char *tag)
 {
 	LanguageInfo *info = new LanguageInfo(localeIni, tag);
 	return window->languageList->Append(wxString(info->name, wxConvUTF8),
 			info);
 }
 
-void GeneralSettings::FillLanguageList(const char *currentLang)
+void BasicGenData::FillLanguageList(const char *currentLang)
 {
 	size_t numSections = config_num_sections(localeIni);
 	for (size_t i = 0; i < numSections; i++) {
@@ -74,7 +72,7 @@ void GeneralSettings::FillLanguageList(const char *currentLang)
 	}
 }
 
-GeneralSettings::GeneralSettings(OBSBasicSettings *window)
+BasicGenData::BasicGenData(OBSBasicSettings *window)
 	: BasicSettingsData (window)
 {
 	string path;
@@ -90,18 +88,31 @@ GeneralSettings::GeneralSettings(OBSBasicSettings *window)
 	languageBoxConnector.Connect(
 			window->languageList,
 			wxEVT_COMBOBOX,
-			wxCommandEventHandler(GeneralSettings::LanguageChanged),
+			wxCommandEventHandler(BasicGenData::LanguageChanged),
 			NULL,
 			this);
+
+	window->generalText->Hide();
 }
 
-void GeneralSettings::LanguageChanged(wxCommandEvent &event)
+void BasicGenData::LanguageChanged(wxCommandEvent &event)
 {
+	dataChanged = true;
+	window->generalText->SetLabel(
+			WXStr("Settings.General.LanguageChanged"));
+	window->generalText->Show();
 }
 
-void GeneralSettings::Apply()
+void BasicGenData::Apply()
 {
-	
+	int sel = window->languageList->GetSelection();
+	if (sel == wxNOT_FOUND)
+		return;
+
+	LanguageInfo *info = static_cast<LanguageInfo*>(
+			window->languageList->GetClientData(sel));
+
+	config_set_string(GetGlobalConfig(), "General", "Language", info->tag);
 }
 
 BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window)
@@ -109,7 +120,7 @@ BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window)
 	BasicSettingsData *data = NULL;
 
 	try {
-		data = new GeneralSettings(window);
+		data = new BasicGenData(window);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "CreateBasicGeneralSettings failed: %s", error);
 	}

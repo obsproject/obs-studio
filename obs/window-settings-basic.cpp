@@ -31,3 +31,8 @@ void OBSBasicSettings::PageChanged(wxListbookEvent &event)
 void OBSBasicSettings::PageChanging(wxListbookEvent &event)
 {
 }
+
+void OBSBasicSettings::OnClose(wxCloseEvent &event)
+{
+	Destroy();
+}

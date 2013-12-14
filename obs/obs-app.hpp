@@ -54,3 +54,4 @@ wxDECLARE_APP(OBSApp);
 inline config_t GetGlobalConfig() {return wxGetApp().GlobalConfig();}
 
 #define Str(lookupVal) wxGetApp().GetString(lookupVal)
+#define WXStr(lookupVal) wxString(Str(lookupVal), wxConvUTF8)

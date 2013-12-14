@@ -171,6 +171,7 @@
     <ClCompile Include="..\..\..\obs\obs-app.cpp" />
     <ClCompile Include="..\..\..\obs\platform-windows.cpp" />
     <ClCompile Include="..\..\..\obs\settings-basic-general.cpp" />
+    <ClCompile Include="..\..\..\obs\settings-basic-video.cpp" />
     <ClCompile Include="..\..\..\obs\window-main-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-settings-basic.cpp" />
     <ClCompile Include="..\..\..\obs\wx-subclass.cpp" />

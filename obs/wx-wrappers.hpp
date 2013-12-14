@@ -20,6 +20,8 @@
 #include <wx/window.h>
 #include <wx/event.h>
 
+#include <vector>
+
 struct gs_window;
 
 gs_window WxToGSWindow(const wxWindow *window);
@@ -61,6 +63,16 @@ public:
 		obj->Connect(eventType, func, userData, eventSink);
 	}
 
+	inline WXConnector(WXConnector &&c)
+		: obj       (c.obj),
+		  eventType (c.eventType),
+		  func      (c.func),
+		  userData  (c.userData),
+		  eventSink (c.eventSink)
+	{
+		c.obj = NULL;
+	}
+
 	inline ~WXConnector()
 	{
 		Disconnect();
@@ -83,8 +95,22 @@ public:
 
 	inline void Disconnect()
 	{
-		if (obj)
+		if (obj) {
 			obj->Disconnect(eventType, func, userData, eventSink);
-		obj = NULL;
+			obj = NULL;
+		}
+	}
+};
+
+class ConnectorList {
+	std::vector<WXConnector> connectors;
+
+public:
+	inline void Add(wxEvtHandler *obj, wxEventType type,
+			wxObjectEventFunction func, wxObject *userData,
+			wxEvtHandler *eventSink)
+	{
+		WXConnector connector(obj, type, func, userData, eventSink);
+		connectors.push_back(std::move(connector));
 	}
 };

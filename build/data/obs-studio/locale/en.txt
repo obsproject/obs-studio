@@ -25,6 +25,7 @@ Settings="Settings"
 
 Settings.General="General"
 Settings.General.Language="Language:"
+Settings.General.LanguageChanged="The program must be restarted in order to change the language"
 
 Settings.Outputs="Outputs"
 

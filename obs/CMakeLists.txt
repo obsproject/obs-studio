@@ -44,6 +44,7 @@ add_executable(obs
 	window-main-basic.cpp
 	window-settings-basic.cpp
 	settings-basic-general.cpp
+	settings-basic-video.cpp
 	wx-subclass.cpp
 	wx-wrappers.cpp
 	obs-app.cpp

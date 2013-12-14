@@ -30,3 +30,4 @@ public:
 };
 
 BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window);
+BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window);

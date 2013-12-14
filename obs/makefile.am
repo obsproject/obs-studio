@@ -15,6 +15,7 @@ obs_LDADD = $(top_srcdir)/libobs/libobs.la
 obs_SOURCES = window-main-basic.cpp \
 	      window-settings-basic.cpp \
 	      settings-basic-general.cpp \
+	      settings-basic-video.cpp \
 	      obs-app.cpp \
 	      wx-subclass.cpp \
 	      wx-wrappers.cpp \

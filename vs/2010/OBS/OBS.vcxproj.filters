@@ -42,6 +42,9 @@
     <ClCompile Include="..\..\..\obs\settings-basic-general.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\settings-basic-video.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\obs-app.hpp">
