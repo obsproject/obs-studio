@@ -20,9 +20,6 @@
 #include "window-settings-basic.hpp"
 #include "wx-wrappers.hpp"
 
-#include <vector>
-using namespace std;
-
 class BasicVideoData : public BasicSettingsData {
 	ConnectorList connections;
 
