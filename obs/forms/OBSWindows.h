@@ -196,7 +196,6 @@ class OBSBasicSettingsBase : public DialogSubclass
 	protected:
 		wxListbook* settingsList;
 		wxStaticText* m_staticText27;
-		wxStaticText* generalChangedText;
 		wxPanel* videoPanel;
 		wxStaticText* m_staticText6;
 		wxStaticText* m_staticText8;
@@ -222,6 +221,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxButton* applyButton;
 		
 		// Virtual event handlers, overide them in your derived class
+		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void PageChanged( wxListbookEvent& event ) { event.Skip(); }
 		virtual void PageChanging( wxListbookEvent& event ) { event.Skip(); }
 		
@@ -229,6 +229,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 	public:
 		wxPanel* generalPanel;
 		wxComboBox* languageList;
+		wxStaticText* generalText;
 		wxPanel* outputsPanel;
 		wxComboBox* videoAdapterList;
 		wxComboBox* baseResList;

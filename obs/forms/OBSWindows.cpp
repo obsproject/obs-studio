@@ -442,11 +442,9 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	
 	bSizer32->Add( 0, 20, 0, wxEXPAND, 5 );
 	
-	generalChangedText = new wxStaticText( generalPanel, wxID_ANY, _("Settings.RestartProgram"), wxDefaultPosition, wxDefaultSize, 0 );
-	generalChangedText->Wrap( -1 );
-	generalChangedText->Hide();
-	
-	bSizer32->Add( generalChangedText, 1, wxALL|wxEXPAND, 5 );
+	generalText = new wxStaticText( generalPanel, wxID_ANY, _("Settings.RestartProgram"), wxDefaultPosition, wxDefaultSize, 0 );
+	generalText->Wrap( -1 );
+	bSizer32->Add( generalText, 1, wxALL|wxEXPAND, 5 );
 	
 	
 	generalPanel->SetSizer( bSizer32 );
@@ -698,6 +696,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	this->Centre( wxBOTH );
 	
 	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicSettingsBase::OnClose ) );
 	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
 	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
 }
@@ -705,6 +704,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 OBSBasicSettingsBase::~OBSBasicSettingsBase()
 {
 	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicSettingsBase::OnClose ) );
 	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
 	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
 	

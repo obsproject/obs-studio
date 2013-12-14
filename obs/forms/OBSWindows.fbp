@@ -2727,7 +2727,7 @@
             <event name="OnAuiPaneRestore"></event>
             <event name="OnAuiRender"></event>
             <event name="OnChar"></event>
-            <event name="OnClose"></event>
+            <event name="OnClose">OnClose</event>
             <event name="OnEnterWindow"></event>
             <event name="OnEraseBackground"></event>
             <event name="OnHibernate"></event>
@@ -3175,7 +3175,7 @@
                                                     <property name="floatable">1</property>
                                                     <property name="font"></property>
                                                     <property name="gripper">0</property>
-                                                    <property name="hidden">1</property>
+                                                    <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
                                                     <property name="label">Settings.RestartProgram</property>
                                                     <property name="max_size"></property>
@@ -3185,11 +3185,11 @@
                                                     <property name="minimize_button">0</property>
                                                     <property name="minimum_size"></property>
                                                     <property name="moveable">1</property>
-                                                    <property name="name">generalChangedText</property>
+                                                    <property name="name">generalText</property>
                                                     <property name="pane_border">1</property>
                                                     <property name="pane_position"></property>
                                                     <property name="pane_size"></property>
-                                                    <property name="permission">protected</property>
+                                                    <property name="permission">public</property>
                                                     <property name="pin_button">1</property>
                                                     <property name="pos"></property>
                                                     <property name="resize">Resizable</property>
