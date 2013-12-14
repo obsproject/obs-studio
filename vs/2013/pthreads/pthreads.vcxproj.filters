@@ -15,21 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\w32-pthreads\pthread.c">
+    <ClCompile Include="..\..\..\deps\w32-pthreads\pthread.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\w32-pthreads\implement.h">
+    <ClInclude Include="..\..\..\deps\w32-pthreads\implement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\w32-pthreads\pthread.h">
+    <ClInclude Include="..\..\..\deps\w32-pthreads\pthread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\w32-pthreads\sched.h">
+    <ClInclude Include="..\..\..\deps\w32-pthreads\sched.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\w32-pthreads\semaphore.h">
+    <ClInclude Include="..\..\..\deps\w32-pthreads\semaphore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

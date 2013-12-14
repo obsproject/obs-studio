@@ -95,21 +95,6 @@ static bool scene_enum_children(void *data, size_t idx, obs_source_t *child)
 	return true;
 }
 
-/* thanks for being completely worthless, microsoft. */
-#if 1
-static const struct source_info scene_info =
-{
-	"scene",
-	scene_getname,
-	scene_create,
-	scene_destroy,
-	scene_get_output_flags, NULL, NULL, NULL, NULL,
-	scene_video_render,
-	scene_getsize,
-	scene_getsize, NULL, NULL,
-	NULL, NULL
-};
-#else
 static const struct source_info scene_info =
 {
 	.name             = "scene",
@@ -121,7 +106,6 @@ static const struct source_info scene_info =
 	.getwidth         = scene_getsize,
 	.getheight        = scene_getsize,
 };
-#endif
 
 obs_scene_t obs_scene_create(void)
 {
