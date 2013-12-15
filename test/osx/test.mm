@@ -131,7 +131,7 @@ static NSWindow *CreateTestWindow()
 static void test()
 {
 	try {
-		NSWindow *win = CreateTestWindow();
+		static NSWindow *win = CreateTestWindow();
 		if (!win)
 			throw "Couldn't create main window";
 
