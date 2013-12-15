@@ -62,6 +62,8 @@ int BasicGenData::AddLanguage(const char *tag)
 
 void BasicGenData::FillLanguageList(const char *currentLang)
 {
+	window->languageList->Clear();
+
 	size_t numSections = config_num_sections(localeIni);
 	for (size_t i = 0; i < numSections; i++) {
 		const char *lang = config_get_section(localeIni, i);

@@ -26,6 +26,24 @@ OBSBasicSettings::OBSBasicSettings(wxWindow *parent)
 
 void OBSBasicSettings::PageChanged(wxListbookEvent &event)
 {
+	wxWindow *curPage = settingsList->GetCurrentPage();
+	if (!curPage)
+		return;
+
+	int id = curPage->GetId();
+
+	BasicSettingsData *ptr = NULL;
+
+	switch (id) {
+	case ID_SETTINGS_GENERAL:
+		ptr = CreateBasicGeneralSettings(this);
+		break;
+	case ID_SETTINGS_VIDEO:
+		ptr = CreateBasicVideoSettings(this);
+		break;
+	}
+
+	settings = move(unique_ptr<BasicSettingsData>(ptr));
 }
 
 void OBSBasicSettings::PageChanging(wxListbookEvent &event)

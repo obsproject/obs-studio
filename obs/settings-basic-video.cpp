@@ -27,17 +27,43 @@ class BasicVideoData : public BasicSettingsData {
 
 public:
 	BasicVideoData(OBSBasicSettings *window);
+
+	void Apply();
 };
 
 BasicVideoData::BasicVideoData(OBSBasicSettings *window)
 	: BasicSettingsData(window)
 {
-	connections.Add(window->baseResList, wxEVT_COMBOBOX,
+	connections.Add(window->baseResList, wxEVT_TEXT,
 			wxCommandEventHandler(
 				BasicVideoData::BaseResListChanged),
 			NULL, this);
+
+	window->baseResList->Clear();
+	window->baseResList->Append("640x480");
+	window->baseResList->Append("800x600");
+	window->baseResList->Append("1024x768");
+	window->baseResList->Append("1280x720");
+	window->baseResList->Append("1920x1080");
 }
 
 void BasicVideoData::BaseResListChanged(wxCommandEvent &event)
 {
+}
+
+void BasicVideoData::Apply()
+{
+}
+
+BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window)
+{
+	BasicSettingsData *data = NULL;
+
+	try {
+		data = new BasicVideoData(window);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "CreateBasicVideoSettings failed: %s", error);
+	}
+
+	return data;
 }

@@ -70,7 +70,7 @@ static bool do_mkdir(const char *path)
 
 static bool MakeUserDirs()
 {
-	BPtr<char*> homePath = os_get_home_path();
+	BPtr<char*> homePath(os_get_home_path());
 	stringstream str;
 
 	str << homePath << "/obs-studio";
