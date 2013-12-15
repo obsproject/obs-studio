@@ -194,7 +194,6 @@ class OBSBasicSettingsBase : public DialogSubclass
 	private:
 	
 	protected:
-		wxListbook* settingsList;
 		wxStaticText* m_staticText27;
 		wxPanel* videoPanel;
 		wxStaticText* m_staticText6;
@@ -227,6 +226,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		
 	
 	public:
+		wxListbook* settingsList;
 		wxPanel* generalPanel;
 		wxComboBox* languageList;
 		wxStaticText* generalText;

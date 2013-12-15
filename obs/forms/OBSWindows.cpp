@@ -479,6 +479,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer1->Add( m_staticText6, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	videoAdapterList = new wxComboBox( videoPanel, ID_ADAPTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	videoAdapterList->Enable( false );
+	
 	fgSizer1->Add( videoAdapterList, 0, wxALL, 2 );
 	
 	m_staticText8 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.BaseRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT );
@@ -500,12 +502,16 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer1->Add( m_staticText11, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	filterList = new wxComboBox( videoPanel, ID_DOWNSCALE_FILTER, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	filterList->Enable( false );
+	
 	fgSizer1->Add( filterList, 0, wxALL, 2 );
 	
 	
 	fgSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	disableAeroCheckbox = new wxCheckBox( videoPanel, ID_DISABLEAERO, _("Settings.DisableAeroWindows"), wxDefaultPosition, wxDefaultSize, 0 );
+	disableAeroCheckbox->Enable( false );
+	
 	fgSizer1->Add( disableAeroCheckbox, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	
@@ -624,6 +630,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( m_staticText23, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	desktopAudioDeviceList = new wxComboBox( audioPanel, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	desktopAudioDeviceList->Enable( false );
+	
 	fgSizer11->Add( desktopAudioDeviceList, 0, wxALL, 2 );
 	
 	m_staticText24 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice1"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -631,6 +639,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( m_staticText24, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	auxAudioDeviceList1 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList1->Enable( false );
+	
 	fgSizer11->Add( auxAudioDeviceList1, 0, wxALL, 2 );
 	
 	m_staticText241 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice2"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -638,6 +648,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( m_staticText241, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	auxAudioDeviceList2 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList2->Enable( false );
+	
 	fgSizer11->Add( auxAudioDeviceList2, 0, wxALL, 2 );
 	
 	m_staticText242 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice3"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -645,6 +657,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( m_staticText242, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	auxAudioDeviceList3 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE3, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList3->Enable( false );
+	
 	fgSizer11->Add( auxAudioDeviceList3, 0, wxALL, 2 );
 	
 	m_staticText243 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice4"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -652,6 +666,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->Add( m_staticText243, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	auxAudioDeviceList4 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE4, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	auxAudioDeviceList4->Enable( false );
+	
 	fgSizer11->Add( auxAudioDeviceList4, 0, wxALL, 2 );
 	
 	

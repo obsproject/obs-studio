@@ -2812,7 +2812,7 @@
                                 <property name="pane_border">1</property>
                                 <property name="pane_position"></property>
                                 <property name="pane_size"></property>
-                                <property name="permission">protected</property>
+                                <property name="permission">public</property>
                                 <property name="pin_button">1</property>
                                 <property name="pos"></property>
                                 <property name="resize">Resizable</property>
@@ -3535,7 +3535,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -4057,7 +4057,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -4158,7 +4158,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -5745,7 +5745,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -5919,7 +5919,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -6093,7 +6093,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -6267,7 +6267,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
@@ -6441,7 +6441,7 @@
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
                                                             <property name="docking">Left</property>
-                                                            <property name="enabled">1</property>
+                                                            <property name="enabled">0</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
