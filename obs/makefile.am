@@ -26,7 +26,7 @@ obs_SOURCES += platform-windows.cpp
 endif
 
 if OS_OSX
-obs_SOURCES += platform-osx.cpp
+obs_SOURCES += platform-osx.mm
 endif
 
 if OS_NIX

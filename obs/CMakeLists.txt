@@ -34,7 +34,7 @@ if(WIN32)
 		platform-windows.cpp)
 elseif(APPLE)
 	set(obs_platform_src
-		platform-osx.cpp)
+		platform-osx.mm)
 elseif(UNIX)
 	set(obs_platform_src
 		platform-nix.cpp)

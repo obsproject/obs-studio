@@ -26,6 +26,9 @@ using namespace std;
 struct MonitorInfo {
 	int32_t  x, y;
 	uint32_t cx, cy;
+	MonitorInfo(int32_t x, int32_t y, uint32_t cx, uint32_t cy)
+		: x(x), y(y), cx(cx), cy(cy)
+	{}
 };
 
 /* Gets the path of obs-studio specific data files (such as locale) */

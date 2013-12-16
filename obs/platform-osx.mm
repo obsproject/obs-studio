@@ -20,6 +20,8 @@
 
 #include <unistd.h>
 
+#import <AppKit/AppKit.h>
+
 bool GetDataFilePath(const char *data, string &output)
 {
 	stringstream str;
@@ -31,5 +33,10 @@ bool GetDataFilePath(const char *data, string &output)
 void GetMonitors(vector<MonitorInfo> &monitors)
 {
 	monitors.clear();
-	// TODO
+	for(NSScreen *screen : [NSScreen screens])
+	{
+		NSRect frame = [screen convertRectToBacking:[screen frame]];
+		monitors.emplace_back(frame.origin.x, frame.origin.y,
+				      frame.size.width, frame.size.height);
+	}
 }
