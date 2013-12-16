@@ -335,7 +335,7 @@ static bool cf_lexer_nexttoken(struct cf_lexer *lex, struct cf_token *out_token)
 	base_token_clear(&start_token);
 	cf_token_clear(out_token);
 
-	while (lexer_getbasetoken(&lex->base_lexer, &token, false)) {
+	while (lexer_getbasetoken(&lex->base_lexer, &token, PARSE_WHITESPACE)) {
 		/* reclassify underscore as alpha for alnum tokens */
 		if (*token.text.array == '_')
 			token.type = BASETOKEN_ALPHA;

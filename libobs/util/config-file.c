@@ -101,7 +101,7 @@ static bool config_parse_string(struct lexer *lex, struct strref *ref,
 	struct base_token token;
 	base_token_clear(&token);
 
-	while (lexer_getbasetoken(lex, &token, false)) {
+	while (lexer_getbasetoken(lex, &token, PARSE_WHITESPACE)) {
 		if (end) {
 			if (*token.text.array == end) {
 				success = true;
@@ -138,11 +138,11 @@ static void config_parse_section(struct config_section *section,
 {
 	struct base_token token;
 
-	while (lexer_getbasetoken(lex, &token, false)) {
+	while (lexer_getbasetoken(lex, &token, PARSE_WHITESPACE)) {
 		struct strref name, value;
 
 		while (token.type == BASETOKEN_WHITESPACE) {
-			if (!lexer_getbasetoken(lex, &token, false))
+			if (!lexer_getbasetoken(lex, &token, PARSE_WHITESPACE))
 				return;
 		}
 
@@ -150,7 +150,7 @@ static void config_parse_section(struct config_section *section,
 			if (*token.text.array == '#') {
 				do {
 					if (!lexer_getbasetoken(lex, &token,
-					                        false))
+							PARSE_WHITESPACE))
 						return;
 				} while (!is_newline(*token.text.array));
 
@@ -198,17 +198,18 @@ static int config_parse(struct darray *sections, const char *file,
 
 	base_token_clear(&token);
 
-	while (lexer_getbasetoken(&lex, &token, false)) {
+	while (lexer_getbasetoken(&lex, &token, PARSE_WHITESPACE)) {
 		struct config_section *section;
 
 		while (token.type == BASETOKEN_WHITESPACE) {
-			if (!lexer_getbasetoken(&lex, &token, false))
+			if (!lexer_getbasetoken(&lex, &token, PARSE_WHITESPACE))
 				goto complete;
 		}
 
 		if (*token.text.array != '[') {
 			while (!is_newline(*token.text.array)) {
-				if (!lexer_getbasetoken(&lex, &token, false))
+				if (!lexer_getbasetoken(&lex, &token,
+							PARSE_WHITESPACE))
 					goto complete;
 			}
 

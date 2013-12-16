@@ -216,7 +216,7 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 	base_token_clear(&temp);
 	strref_clear(str);
 
-	while (lexer_getbasetoken(lex, &temp, false)) {
+	while (lexer_getbasetoken(lex, &temp, PARSE_WHITESPACE)) {
 		char ch = *temp.text.array;
 
 		if (!str->array) {

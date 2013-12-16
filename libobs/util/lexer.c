@@ -250,11 +250,12 @@ static inline enum base_token_type get_char_token_type(const char ch)
 }
 
 bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
-		bool ignore_whitespace)
+		enum ignore_whitespace iws)
 {
 	const char *offset = lex->offset;
 	const char *token_start = NULL;
 	enum base_token_type type = BASETOKEN_NONE;
+	bool ignore_whitespace = (iws == IGNORE_WHITESPACE);
 
 	if (!offset)
 		return false;

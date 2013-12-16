@@ -280,8 +280,13 @@ static inline void lexer_reset(struct lexer *lex)
 	lex->offset = lex->text;
 }
 
+enum ignore_whitespace {
+	PARSE_WHITESPACE,
+	IGNORE_WHITESPACE
+};
+
 EXPORT bool lexer_getbasetoken(struct lexer *lex, struct base_token *t,
-		bool ignore_whitespace);
+		enum ignore_whitespace iws);
 
 EXPORT void lexer_getstroffset(const struct lexer *lex, const char *str,
 		uint32_t *row, uint32_t *col);
