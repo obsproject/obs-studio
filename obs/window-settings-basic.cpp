@@ -52,5 +52,8 @@ void OBSBasicSettings::PageChanging(wxListbookEvent &event)
 
 void OBSBasicSettings::OnClose(wxCloseEvent &event)
 {
-	Destroy();
+	if(IsModal())
+		EndModal(0);
+	else
+		Destroy();
 }

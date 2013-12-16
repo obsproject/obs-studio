@@ -119,8 +119,8 @@ void OBSBasic::sourceDownClicked(wxCommandEvent &event)
 
 void OBSBasic::settingsClicked(wxCommandEvent &event)
 {
-	OBSBasicSettings *test = new OBSBasicSettings(this);
-	test->ShowModal();
+	OBSBasicSettings test(this);
+	test.ShowModal();
 }
 
 void OBSBasic::exitClicked(wxCommandEvent &event)
