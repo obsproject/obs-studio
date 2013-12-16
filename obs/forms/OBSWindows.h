@@ -79,20 +79,24 @@ class WindowSubclass;
 #define ID_DOWNSCALE_FILTER 1032
 #define ID_DISABLEAERO 1033
 #define ID_FPS_TYPE 1034
-#define ID_FPS_COMMON 1035
-#define ID_FPS_INTEGER 1036
-#define ID_FPS_NUMERATOR 1037
-#define ID_FPS_DENOMINATOR 1038
-#define ID_FPS_NANOSECONDS 1039
-#define ID_SETTINGS_AUDIO 1040
-#define ID_DESKTOP_AUDIO_DEVICE 1041
-#define ID_AUX_AUDIO_DEVICE1 1042
-#define ID_AUX_AUDIO_DEVICE2 1043
-#define ID_AUX_AUDIO_DEVICE3 1044
-#define ID_AUX_AUDIO_DEVICE4 1045
-#define ID_OK 1046
-#define ID_CANCEL 1047
-#define ID_APPLY 1048
+#define ID_FPSPANEL_COMMON 1035
+#define ID_FPS_COMMON 1036
+#define ID_FPSPANEL_INTEGER 1037
+#define ID_FPS_INTEGER 1038
+#define ID_FPSPANEL_FRACTION 1039
+#define ID_FPS_NUMERATOR 1040
+#define ID_FPS_DENOMINATOR 1041
+#define ID_FPSPANEL_NANOSECONDS 1042
+#define ID_FPS_NANOSECONDS 1043
+#define ID_SETTINGS_AUDIO 1044
+#define ID_DESKTOP_AUDIO_DEVICE 1045
+#define ID_AUX_AUDIO_DEVICE1 1046
+#define ID_AUX_AUDIO_DEVICE2 1047
+#define ID_AUX_AUDIO_DEVICE3 1048
+#define ID_AUX_AUDIO_DEVICE4 1049
+#define ID_OK 1050
+#define ID_CANCEL 1051
+#define ID_APPLY 1052
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class OBSBasicBase
@@ -208,7 +212,6 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxStaticText* m_staticText20;
 		wxStaticText* m_staticText21;
 		wxPanel* m_panel16;
-		wxStaticText* videoChangedText;
 		wxPanel* audioPanel;
 		wxStaticText* m_staticText23;
 		wxStaticText* m_staticText24;
@@ -229,11 +232,11 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxListbook* settingsList;
 		wxPanel* generalPanel;
 		wxComboBox* languageList;
-		wxStaticText* generalText;
+		wxStaticText* generalChangedText;
 		wxPanel* outputsPanel;
 		wxComboBox* videoAdapterList;
 		wxComboBox* baseResList;
-		wxComboBox* downscaleResList;
+		wxComboBox* outputResList;
 		wxComboBox* filterList;
 		wxCheckBox* disableAeroCheckbox;
 		wxChoicebook* fpsTypeList;
@@ -242,6 +245,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxSpinCtrl* fpsNumeratorScroller;
 		wxSpinCtrl* fpsDenominatorScroller;
 		wxSpinCtrl* fpsNanosecondsScroller;
+		wxStaticText* videoChangedText;
 		wxComboBox* desktopAudioDeviceList;
 		wxComboBox* auxAudioDeviceList1;
 		wxComboBox* auxAudioDeviceList2;

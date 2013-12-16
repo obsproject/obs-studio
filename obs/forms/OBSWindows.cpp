@@ -442,9 +442,9 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	
 	bSizer32->Add( 0, 20, 0, wxEXPAND, 5 );
 	
-	generalText = new wxStaticText( generalPanel, wxID_ANY, _("Settings.RestartProgram"), wxDefaultPosition, wxDefaultSize, 0 );
-	generalText->Wrap( -1 );
-	bSizer32->Add( generalText, 1, wxALL|wxEXPAND, 5 );
+	generalChangedText = new wxStaticText( generalPanel, wxID_ANY, _("Settings.RestartProgram"), wxDefaultPosition, wxDefaultSize, 0 );
+	generalChangedText->Wrap( -1 );
+	bSizer32->Add( generalChangedText, 1, wxALL|wxEXPAND, 5 );
 	
 	
 	generalPanel->SetSizer( bSizer32 );
@@ -490,12 +490,12 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	baseResList = new wxComboBox( videoPanel, ID_BASE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
 	fgSizer1->Add( baseResList, 0, wxALL, 2 );
 	
-	m_staticText10 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.DownscaleRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText10 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.OutputRes"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText10->Wrap( -1 );
 	fgSizer1->Add( m_staticText10, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	downscaleResList = new wxComboBox( videoPanel, ID_DOWNSCALE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
-	fgSizer1->Add( downscaleResList, 0, wxALL, 2 );
+	outputResList = new wxComboBox( videoPanel, ID_DOWNSCALE_RES, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 ); 
+	fgSizer1->Add( outputResList, 0, wxALL, 2 );
 	
 	m_staticText11 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.DownscaleFilter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText11->Wrap( -1 );
@@ -525,7 +525,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer1->Add( m_staticText22, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
 	fpsTypeList = new wxChoicebook( videoPanel, ID_FPS_TYPE, wxDefaultPosition, wxDefaultSize, wxCHB_DEFAULT );
-	m_panel13 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_panel13 = new wxPanel( fpsTypeList, ID_FPSPANEL_COMMON, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer45;
 	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
 	
@@ -545,7 +545,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	m_panel13->Layout();
 	bSizer45->Fit( m_panel13 );
 	fpsTypeList->AddPage( m_panel13, _("Settings.Video.FPS.Common"), true );
-	m_panel14 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_panel14 = new wxPanel( fpsTypeList, ID_FPSPANEL_INTEGER, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer46;
 	bSizer46 = new wxBoxSizer( wxHORIZONTAL );
 	
@@ -557,7 +557,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	m_panel14->Layout();
 	bSizer46->Fit( m_panel14 );
 	fpsTypeList->AddPage( m_panel14, _("Settings.Video.FPS.Integer"), false );
-	m_panel15 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_panel15 = new wxPanel( fpsTypeList, ID_FPSPANEL_FRACTION, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizer10;
 	fgSizer10 = new wxFlexGridSizer( 0, 2, 0, 0 );
 	fgSizer10->SetFlexibleDirection( wxBOTH );
@@ -582,7 +582,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	m_panel15->Layout();
 	fgSizer10->Fit( m_panel15 );
 	fpsTypeList->AddPage( m_panel15, _("Settings.Video.FPS.Fraction"), false );
-	m_panel16 = new wxPanel( fpsTypeList, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
+	m_panel16 = new wxPanel( fpsTypeList, ID_FPSPANEL_NANOSECONDS, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer50;
 	bSizer50 = new wxBoxSizer( wxHORIZONTAL );
 	
@@ -602,10 +602,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	
 	bSizer34->Add( 0, 20, 0, wxEXPAND, 5 );
 	
-	videoChangedText = new wxStaticText( videoPanel, wxID_ANY, _("Settings.RestartStream"), wxDefaultPosition, wxDefaultSize, 0 );
+	videoChangedText = new wxStaticText( videoPanel, wxID_ANY, _("Settings.StreamRestart"), wxDefaultPosition, wxDefaultSize, 0 );
 	videoChangedText->Wrap( -1 );
-	videoChangedText->Hide();
-	
 	bSizer34->Add( videoChangedText, 1, wxALL|wxEXPAND, 5 );
 	
 	
