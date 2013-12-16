@@ -41,6 +41,10 @@ class WXConnector {
 	wxObject              *userData;
 	wxEvtHandler          *eventSink;
 
+	WXConnector(WXConnector const&) = delete;
+
+	WXConnector &operator=(WXConnector const&) = delete;
+
 public:
 	inline WXConnector()
 		: obj       (NULL),
@@ -110,7 +114,6 @@ public:
 			wxObjectEventFunction func, wxObject *userData,
 			wxEvtHandler *eventSink)
 	{
-		WXConnector connector(obj, type, func, userData, eventSink);
-		connectors.push_back(std::move(connector));
+		connectors.emplace_back(obj, type, func, userData, eventSink);
 	}
 };

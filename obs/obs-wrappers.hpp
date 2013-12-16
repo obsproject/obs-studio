@@ -29,12 +29,16 @@
 template<typename T> class BPtr {
 	T ptr;
 
-public:
-	inline BPtr() : ptr(NULL)   {}
-	inline BPtr(T p) : ptr(p)   {}
-	inline ~BPtr()              {bfree(ptr);}
+	BPtr(BPtr const&) = delete;
 
-	inline T operator=(T p)     {bfree(ptr); ptr = p;}
+	BPtr &operator=(BPtr const&) = delete;
+
+public:
+	inline BPtr(T p=nullptr) : ptr(p)          {}
+	inline BPtr(BPtr &&other) : ptr(other.ptr) {other.ptr = nullptr;}
+	inline ~BPtr()                             {bfree(ptr);}
+
+	inline T operator=(T p)     {bfree(ptr); ptr = p; return p;}
 	inline operator T()         {return ptr;}
 	inline T *operator&()       {bfree(ptr); ptr = NULL; return &ptr;}
 
@@ -46,8 +50,15 @@ public:
 class ConfigFile {
 	config_t config;
 
+	ConfigFile(ConfigFile const&) = delete;
+	ConfigFile &operator=(ConfigFile const&) = delete;
+
 public:
 	inline ConfigFile() : config(NULL) {}
+	inline ConfigFile(ConfigFile &&other) : config(other.config)
+	{
+		other.config = nullptr;
+	}
 	inline ~ConfigFile()
 	{
 		config_close(config);
@@ -83,9 +94,16 @@ public:
 class TextLookup {
 	lookup_t lookup;
 
+	TextLookup(TextLookup const&) = delete;
+
+	TextLookup &operator=(TextLookup const&) = delete;
+
 public:
-	inline TextLookup() : lookup(NULL) {}
-	inline TextLookup(lookup_t lookup) : lookup(lookup) {}
+	inline TextLookup(lookup_t lookup=nullptr) : lookup(lookup) {}
+	inline TextLookup(TextLookup &&other) : lookup(other.lookup)
+	{
+		other.lookup = nullptr;
+	}
 	inline ~TextLookup() {text_lookup_destroy(lookup);}
 
 	inline TextLookup& operator=(lookup_t val)
@@ -109,6 +127,11 @@ public:
 
 class OBSSource {
 	obs_source_t source;
+
+	OBSSource(OBSSource &&) = delete;
+	OBSSource(OBSSource const&) = delete;
+
+	OBSSource &operator=(OBSSource const&) = delete;
 
 public:
 	inline OBSSource(obs_source_t source) : source(source) {}
