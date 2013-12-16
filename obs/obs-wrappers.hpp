@@ -27,20 +27,20 @@
 /* RAII wrappers */
 
 template<typename T> class BPtr {
-	T ptr;
+	T *ptr;
 
 	BPtr(BPtr const&) = delete;
 
 	BPtr &operator=(BPtr const&) = delete;
 
 public:
-	inline BPtr(T p=nullptr) : ptr(p)          {}
+	inline BPtr(T *p=nullptr) : ptr(p)         {}
 	inline BPtr(BPtr &&other) : ptr(other.ptr) {other.ptr = nullptr;}
 	inline ~BPtr()                             {bfree(ptr);}
 
-	inline T operator=(T p)     {bfree(ptr); ptr = p; return p;}
-	inline operator T()         {return ptr;}
-	inline T *operator&()       {bfree(ptr); ptr = NULL; return &ptr;}
+	inline T *operator=(T *p)   {bfree(ptr); ptr = p; return p;}
+	inline operator T*()        {return ptr;}
+	inline T **operator&()      {bfree(ptr); ptr = nullptr; return &ptr;}
 
 	inline bool operator!()     {return ptr == NULL;}
 	inline bool operator==(T p) {return ptr == p;}
