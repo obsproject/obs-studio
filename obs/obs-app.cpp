@@ -49,13 +49,42 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 #endif
 }
 
-void OBSApp::InitGlobalConfigDefaults()
+bool OBSApp::InitGlobalConfigDefaults()
 {
 	config_set_default_string(globalConfig, "General", "Language", "en");
 	config_set_default_int(globalConfig, "Window", "PosX",  -1);
 	config_set_default_int(globalConfig, "Window", "PosY",  -1);
 	config_set_default_int(globalConfig, "Window", "SizeX", -1);
 	config_set_default_int(globalConfig, "Window", "SizeY", -1);
+
+	vector<MonitorInfo> monitors;
+	GetMonitors(monitors);
+
+	if (!monitors.size()) {
+		OBSErrorBox(NULL, "There appears to be no monitors.  Er, this "
+		                  "technically shouldn't be possible.");
+		return false;
+	}
+
+	uint32_t cx = monitors[0].cx;
+	uint32_t cy = monitors[0].cy;
+
+	config_set_default_uint(globalConfig, "Video", "BaseCX",   cx);
+	config_set_default_uint(globalConfig, "Video", "BaseCY",   cy);
+
+	cx = cx * 10 / 15;
+	cy = cy * 10 / 15;
+	config_set_default_uint(globalConfig, "Video", "OutputCX", cx);
+	config_set_default_uint(globalConfig, "Video", "OutputCY", cy);
+
+	config_set_default_string(globalConfig, "Video", "FPSType", "Common");
+	config_set_default_string(globalConfig, "Video", "FPSCommon", "30");
+	config_set_default_uint(globalConfig, "Video", "FPSInt", 30);
+	config_set_default_uint(globalConfig, "Video", "FPSNum", 30);
+	config_set_default_uint(globalConfig, "Video", "FPSDen", 1);
+	config_set_default_uint(globalConfig, "Video", "FPSNS", 33333333);
+
+	return true;
 }
 
 static bool do_mkdir(const char *path)
@@ -99,7 +128,9 @@ bool OBSApp::InitGlobalConfig()
 		return false;
 	}
 
-	InitGlobalConfigDefaults();
+	if (!InitGlobalConfigDefaults())
+		return false;
+
 	return true;
 }
 

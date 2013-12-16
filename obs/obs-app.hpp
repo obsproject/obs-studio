@@ -32,7 +32,7 @@ class OBSApp : public OBSAppBase {
 	wxFrame *dummyWindow;
 
 	bool InitGlobalConfig();
-	void InitGlobalConfigDefaults();
+	bool InitGlobalConfigDefaults();
 	bool InitConfigDefaults();
 	bool InitLocale();
 

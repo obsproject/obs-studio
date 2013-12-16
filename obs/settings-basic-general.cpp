@@ -94,15 +94,15 @@ BasicGenData::BasicGenData(OBSBasicSettings *window)
 			NULL,
 			this);
 
-	window->generalText->Hide();
+	window->generalChangedText->Hide();
 }
 
 void BasicGenData::LanguageChanged(wxCommandEvent &event)
 {
 	dataChanged = true;
-	window->generalText->SetLabel(
+	window->generalChangedText->SetLabel(
 			WXStr("Settings.General.LanguageChanged"));
-	window->generalText->Show();
+	window->generalChangedText->Show();
 }
 
 void BasicGenData::Apply()

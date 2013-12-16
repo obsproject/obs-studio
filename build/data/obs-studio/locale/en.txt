@@ -1,4 +1,4 @@
-Lanuage="English (United States)"
+Lanuage="English"
 
 OK="OK"
 Cancel="Cancel"
@@ -23,6 +23,8 @@ MainWindow.Volume="Volume:"
 
 Settings="Settings"
 
+Settings.StreamRestart="All streaming/recording must be stopped in order for these changes to take effect"
+
 Settings.General="General"
 Settings.General.Language="Language:"
 Settings.General.LanguageChanged="The program must be restarted in order to change the language"
@@ -32,7 +34,7 @@ Settings.Outputs="Outputs"
 Settings.Video="Video"
 Settings.Video.Adapter="Video Adapter:"
 Settings.Video.BaseRes="Base Resolution:"
-Settings.Video.DownscaleRes="Downscale Resolution:"
+Settings.Video.DownscaleRes="Output Resolution:"
 Settings.Video.DownscaleFilter="Downscale Filter:"
 Settings.Video.DisableAeroWindows="Disable Aero (Windows only)"
 Settings.Video.FPS="FPS:"
@@ -42,6 +44,7 @@ Settings.VIdeo.FPS.Fraction="Frame Interval (fraction)"
 Settings.Video.FPS.Nanoseconds="Frame Interval (nanoseconds)"
 Settings.Video.FPS.Numerator="Numerator:"
 Settings.Video.FPS.Denominator="Denominator:"
+Settings.Video.InvalidResolution="Invalid base resolution value.  Must be [width]x[height] (i.e. 1920x1080)"
 
 Settings.Audio="Audio"
 Settings.Audio.DesktopAudioDevice="Desktop Audio Device:"
