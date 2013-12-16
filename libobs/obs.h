@@ -299,7 +299,7 @@ EXPORT obs_source_t obs_source_create(enum obs_source_type type,
 EXPORT int obs_source_addref(obs_source_t source);
 EXPORT int obs_source_release(obs_source_t source);
 
-/** Nofifies all references that the source should be released */
+/** Notifies all references that the source should be released */
 EXPORT void obs_source_remove(obs_source_t source);
 
 /** Returns true if the source should be released */
