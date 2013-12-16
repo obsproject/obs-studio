@@ -18,19 +18,23 @@ static const int cy = 600;
 
 /* --------------------------------------------------- */
 
-using SourceContext = std::unique_ptr<obs_source,
-      std::function<int(obs_source_t)>>;
-static SourceContext autorelease(obs_source_t s)
+template <typename T, typename D_T, D_T D>
+struct OBSUniqueHandle : std::unique_ptr<T, std::function<D_T>>
 {
-	return SourceContext(s, obs_source_release);
-}
+	using base = std::unique_ptr<T, std::function<D_T>>;
+	explicit OBSUniqueHandle(T *obj) : base(obj, D) {}
+	operator T*() { return base::get(); }
+};
 
-using SceneContext = std::unique_ptr<obs_scene,
-      std::function<void(obs_scene_t)>>;
-static SceneContext autorelease(obs_scene_t s)
-{
-	return SceneContext(s, obs_scene_destroy);
-}
+#define DECLARE_DELETER(x) decltype(x), x
+
+using SourceContext = OBSUniqueHandle<obs_source,
+      DECLARE_DELETER(obs_source_release)>;
+
+using SceneContext = OBSUniqueHandle<obs_scene,
+      DECLARE_DELETER(obs_scene_destroy)>;
+
+#undef DECLARE_DELETER
 
 /* --------------------------------------------------- */
 
@@ -144,30 +148,30 @@ static void test()
 
 		/* ------------------------------------------------------ */
 		/* create source */
-		SourceContext source = autorelease(obs_source_create(
-				SOURCE_INPUT, "random", NULL));
+		SourceContext source{obs_source_create(SOURCE_INPUT,
+				"random", NULL)};
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
-		SourceContext filter = autorelease(obs_source_create(
-				SOURCE_FILTER, "test", NULL));
+		SourceContext filter{obs_source_create(SOURCE_FILTER,
+				"test", NULL)};
 		if (!filter)
 			throw "Couldn't create test filter";
-		obs_source_filter_add(source.get(), filter.get());
+		obs_source_filter_add(source, filter);
 
 		/* ------------------------------------------------------ */
 		/* create scene and add source to scene (twice) */
-		SceneContext scene = autorelease(obs_scene_create());
+		SceneContext scene{obs_scene_create()};
 		if (!scene)
 			throw "Couldn't create scene";
 
-		AddTestItems(scene.get(), source.get());
+		AddTestItems(scene, source);
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_output_source(0, obs_scene_getsource(scene.get()));
+		obs_set_output_source(0, obs_scene_getsource(scene));
 
 		[NSApp run];
 
