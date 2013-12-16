@@ -17,8 +17,17 @@
 
 #pragma once
 
+#include <util/c99defs.h>
+
 #include <string>
+#include <vector>
 using namespace std;
+
+struct MonitorInfo {
+	int32_t  x, y;
+	uint32_t cx, cy;
+};
 
 /* Gets the path of obs-studio specific data files (such as locale) */
 bool GetDataFilePath(const char *data, string &path);
+void GetMonitors(vector<MonitorInfo> &monitors);

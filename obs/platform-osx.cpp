@@ -27,3 +27,9 @@ bool GetDataFilePath(const char *data, string &output)
 	output = str.str();
 	return !access(output.c_str(), R_OK);
 }
+
+void GetMonitors(vector<MonitorInfo> &monitors)
+{
+	monitors.clear();
+	// TODO
+}

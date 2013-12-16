@@ -30,3 +30,23 @@ bool GetDataFilePath(const char *data, string &output)
 	output = str.str();
 	return os_file_exists(output.c_str());
 }
+
+static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
+		LPRECT rect, LPARAM param)
+{
+	vector<MonitorInfo> &monitors = *(vector<MonitorInfo> *)param;
+
+	MonitorInfo monitor;
+	monitor.x  = rect->left;
+	monitor.y  = rect->top;
+	monitor.cx = rect->right - rect->left;
+	monitor.cy = rect->bottom - rect->top;
+	monitors.push_back(monitor);
+	return true;
+}
+
+void GetMonitors(vector<MonitorInfo> &monitors)
+{
+	monitors.clear();
+	EnumDisplayMonitors(NULL, NULL, OBSMonitorEnumProc, (LPARAM)&monitors);
+}
