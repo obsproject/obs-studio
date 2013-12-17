@@ -128,12 +128,9 @@ void BasicVideoData::LoadOther()
 	window->rendererList->SetSelection(sel);
 }
 
-namespace
+static uint64_t append_uint32_t(uint64_t first, uint64_t second)
 {
-	uint64_t append_uint32_t(uint64_t first, uint64_t second)
-	{
-		return (first << 32) | second;
-	}
+	return (first << 32) | second;
 }
 
 void BasicVideoData::LoadResolutionData()
