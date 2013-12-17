@@ -344,7 +344,6 @@ void BasicVideoData::SaveFPSData()
 	}
 
 	config_set_string(GetGlobalConfig(), "Video", "FPSType", type);
-	SaveOther();
 	SaveFPSCommon();
 	SaveFPSInteger();
 	SaveFPSFraction();
@@ -396,6 +395,7 @@ void BasicVideoData::Apply()
 		config_set_uint(GetGlobalConfig(), "Video", "OutputCY", cy);
 	}
 
+	SaveOther();
 	SaveFPSData();
 }
 

@@ -31,6 +31,12 @@ protected:
 	virtual void PageChanging(wxListbookEvent &event);
 	virtual void OnClose(wxCloseEvent &event);
 
+	bool ConfirmChanges();
+
+	virtual void OKClicked(wxCommandEvent &event);
+	virtual void CancelClicked(wxCommandEvent &event);
+	virtual void ApplyClicked(wxCommandEvent &event);
+
 public:
 	OBSBasicSettings(wxWindow *parent);
 };

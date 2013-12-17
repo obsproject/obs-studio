@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <wx/msgdlg.h>
 #include "window-settings-basic.hpp"
 
 OBSBasicSettings::OBSBasicSettings(wxWindow *parent)
@@ -46,14 +47,54 @@ void OBSBasicSettings::PageChanged(wxListbookEvent &event)
 	settings = move(unique_ptr<BasicSettingsData>(ptr));
 }
 
+bool OBSBasicSettings::ConfirmChanges()
+{
+	if (settings && settings->DataChanged()) {
+		int confirm = wxMessageBox(WXStr("Settings.Confirm"),
+				WXStr("Settings.ConfirmTitle"),
+				wxYES_NO | wxCANCEL);
+
+		if (confirm == wxCANCEL) {
+			return false;
+		} else if (confirm == wxYES) {
+			settings->Apply();
+			return true;
+		}
+	}
+
+	return true;
+}
+
 void OBSBasicSettings::PageChanging(wxListbookEvent &event)
 {
+	if (!ConfirmChanges())
+		event.Veto();
 }
 
 void OBSBasicSettings::OnClose(wxCloseEvent &event)
 {
-	if(IsModal())
-		EndModal(0);
+	if (!ConfirmChanges())
+		event.Veto();
 	else
-		Destroy();
+		EndModal(0);
+}
+
+void OBSBasicSettings::OKClicked(wxCommandEvent &event)
+{
+	if (settings)
+		settings->Apply();
+
+	EndModal(0);
+}
+
+void OBSBasicSettings::CancelClicked(wxCommandEvent &event)
+{
+	if (ConfirmChanges())
+		EndModal(0);
+}
+
+void OBSBasicSettings::ApplyClicked(wxCommandEvent &event)
+{
+	if (settings)
+		settings->Apply();
 }
