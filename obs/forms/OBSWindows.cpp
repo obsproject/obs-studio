@@ -472,6 +472,13 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer1->SetFlexibleDirection( wxBOTH );
 	fgSizer1->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
+	m_staticText211 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.Renderer"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText211->Wrap( -1 );
+	fgSizer1->Add( m_staticText211, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	rendererList = new wxComboBox( videoPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	fgSizer1->Add( rendererList, 0, wxALL, 2 );
+	
 	m_staticText6 = new wxStaticText( videoPanel, wxID_ANY, _("Settings.Video.Adapter"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText6->Wrap( -1 );
 	m_staticText6->SetMinSize( wxSize( 270,-1 ) );
