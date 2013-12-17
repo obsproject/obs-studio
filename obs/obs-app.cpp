@@ -142,6 +142,8 @@ bool OBSApp::InitGlobalConfig()
 	return true;
 }
 
+#define DEFAULT_LANG "en"
+
 bool OBSApp::InitLocale()
 {
 	const char *lang = config_get_string(globalConfig, "General",
@@ -150,16 +152,32 @@ bool OBSApp::InitLocale()
 	stringstream file;
 	file << "locale/" << lang << ".txt";
 
-	string path;
-	if (!GetDataFilePath(file.str().c_str(), path)) {
-		/* use en-US by default if language file is not found */
-		if (!GetDataFilePath("locale/en-US.txt", path)) {
-			OBSErrorBox(NULL, "Failed to open locale file");
-			return false;
-		}
+	string englishPath;
+	if (!GetDataFilePath("locale/" DEFAULT_LANG ".txt", englishPath)) {
+		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".txt");
+		return false;
 	}
 
-	textLookup = text_lookup_create(path.c_str());
+	textLookup = text_lookup_create(englishPath.c_str());
+	if (!textLookup) {
+		OBSErrorBox(NULL, "Failed to create locale from file '%s'",
+				englishPath.c_str());
+		return false;
+	}
+
+	if (strcmpi(lang, DEFAULT_LANG) == 0)
+		return true;
+
+	string path;
+	if (GetDataFilePath(file.str().c_str(), path)) {
+		if (!text_lookup_add(textLookup, path.c_str()))
+			blog(LOG_WARNING, "Failed to add '%s' locale file",
+					path.c_str());
+	} else {
+		blog(LOG_WARNING, "Could not find '%s' locale file",
+				file.str().c_str());
+	}
+
 	return true;
 }
 
