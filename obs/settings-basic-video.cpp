@@ -24,6 +24,7 @@
 #include "platform.hpp"
 
 #include <sstream>
+#include <unordered_set>
 using namespace std;
 
 class BasicVideoData : public BasicSettingsData {
@@ -127,6 +128,14 @@ void BasicVideoData::LoadOther()
 	window->rendererList->SetSelection(sel);
 }
 
+namespace
+{
+	uint64_t append_uint32_t(uint64_t first, uint64_t second)
+	{
+		return (first << 32) | second;
+	}
+}
+
 void BasicVideoData::LoadResolutionData()
 {
 	window->baseResList->Clear();
@@ -136,8 +145,12 @@ void BasicVideoData::LoadResolutionData()
 
 	vector<MonitorInfo> monitors;
 	GetMonitors(monitors);
-	for (size_t i = 0; i < monitors.size(); i++)
-		AddRes(monitors[i].cx, monitors[i].cy);
+	unordered_set<uint64_t> resolutions;
+	for (size_t i = 0; i < monitors.size(); i++) {
+		uint64_t res = append_uint32_t(monitors[i].cx, monitors[i].cy);
+		if(resolutions.emplace(res).second)
+			AddRes(monitors[i].cx, monitors[i].cy);
+	}
 
 	stringstream res;
 	res << cx << "x" << cy;
