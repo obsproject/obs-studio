@@ -69,6 +69,14 @@ bool OBSApp::InitGlobalConfigDefaults()
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
 
+#if _WIN32
+	config_set_default_string(globalConfig, "Video", "Renderer",
+			"Direct3D 11");
+#else
+	config_set_default_string(globalConfig, "Video", "Renderer",
+			"OpenGL");
+#endif
+
 	config_set_default_uint(globalConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint(globalConfig, "Video", "BaseCY",   cy);
 

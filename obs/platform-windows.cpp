@@ -36,12 +36,11 @@ static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
 {
 	vector<MonitorInfo> &monitors = *(vector<MonitorInfo> *)param;
 
-	MonitorInfo monitor;
-	monitor.x  = rect->left;
-	monitor.y  = rect->top;
-	monitor.cx = rect->right - rect->left;
-	monitor.cy = rect->bottom - rect->top;
-	monitors.push_back(monitor);
+	monitors.emplace_back(
+			rect->left,
+			rect->top,
+			rect->right - rect->left,
+			rect->bottom - rect->top);
 	return true;
 }
 

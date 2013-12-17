@@ -30,6 +30,7 @@ class BasicVideoData : public BasicSettingsData {
 	ConnectorList connections;
 
 	int AddRes(uint32_t cx, uint32_t cy);
+	void LoadOther();
 	void LoadResolutionData();
 	void LoadFPSData();
 	void LoadFPSCommon();
@@ -41,6 +42,7 @@ class BasicVideoData : public BasicSettingsData {
 	void BaseResListChanged(wxCommandEvent &event);
 	void OutputResListChanged(wxCommandEvent &event);
 
+	void SaveOther();
 	void SaveFPSData();
 	void SaveFPSCommon();
 	void SaveFPSInteger();
@@ -105,6 +107,24 @@ int BasicVideoData::AddRes(uint32_t cx, uint32_t cy)
 	stringstream res;
 	res << cx << "x" << cy;
 	return window->baseResList->Append(res.str().c_str());
+}
+
+void BasicVideoData::LoadOther()
+{
+	const char *renderer = config_get_string(GetGlobalConfig(), "Video",
+			"Renderer");
+
+	window->rendererList->Clear();
+	window->rendererList->Append("OpenGL");
+#ifdef _WIN32
+	window->rendererList->Append("Direct3D 11");
+#endif
+
+	int sel = window->rendererList->FindString(renderer);
+	if (sel == wxNOT_FOUND)
+		sel = 0;
+
+	window->rendererList->SetSelection(sel);
 }
 
 void BasicVideoData::LoadResolutionData()
@@ -243,6 +263,7 @@ BasicVideoData::BasicVideoData(OBSBasicSettings *window)
 {
 	LoadResolutionData();
 	LoadFPSData();
+	LoadOther();
 
 	/* load connectors after loading data to prevent them from triggering */
 	connections.Add(window->baseResList, wxEVT_TEXT,
@@ -289,6 +310,17 @@ void BasicVideoData::OutputResListChanged(wxCommandEvent &event)
 	window->videoChangedText->Show();
 }
 
+void BasicVideoData::SaveOther()
+{
+	int sel = window->rendererList->GetSelection();
+	if (sel == wxNOT_FOUND)
+		return;
+
+	wxString renderer = window->rendererList->GetString(sel);
+	config_set_string(GetGlobalConfig(), "Video", "Renderer",
+			renderer.c_str());
+}
+
 void BasicVideoData::SaveFPSData()
 {
 	int id = window->fpsTypeList->GetCurrentPage()->GetId();
@@ -302,6 +334,7 @@ void BasicVideoData::SaveFPSData()
 	}
 
 	config_set_string(GetGlobalConfig(), "Video", "FPSType", type);
+	SaveOther();
 	SaveFPSCommon();
 	SaveFPSInteger();
 	SaveFPSFraction();
