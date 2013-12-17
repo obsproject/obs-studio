@@ -227,6 +227,9 @@ class OBSBasicSettingsBase : public DialogSubclass
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void PageChanged( wxListbookEvent& event ) { event.Skip(); }
 		virtual void PageChanging( wxListbookEvent& event ) { event.Skip(); }
+		virtual void OKClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void CancelClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void ApplyClicked( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:

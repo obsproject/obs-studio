@@ -720,6 +720,9 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicSettingsBase::OnClose ) );
 	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
 	settingsList->Connect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
+	okButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::OKClicked ), NULL, this );
+	cancelButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::CancelClicked ), NULL, this );
+	applyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::ApplyClicked ), NULL, this );
 }
 
 OBSBasicSettingsBase::~OBSBasicSettingsBase()
@@ -728,5 +731,8 @@ OBSBasicSettingsBase::~OBSBasicSettingsBase()
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( OBSBasicSettingsBase::OnClose ) );
 	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGED, wxListbookEventHandler( OBSBasicSettingsBase::PageChanged ), NULL, this );
 	settingsList->Disconnect( wxEVT_COMMAND_LISTBOOK_PAGE_CHANGING, wxListbookEventHandler( OBSBasicSettingsBase::PageChanging ), NULL, this );
+	okButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::OKClicked ), NULL, this );
+	cancelButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::CancelClicked ), NULL, this );
+	applyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::ApplyClicked ), NULL, this );
 	
 }
