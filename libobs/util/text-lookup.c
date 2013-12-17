@@ -357,24 +357,33 @@ static inline bool lookup_getstring(const char *lookup_val,
 
 lookup_t text_lookup_create(const char *path)
 {
-	struct text_lookup *lookup;
+	struct text_lookup *lookup = bmalloc(sizeof(struct text_lookup));
+	memset(lookup, 0, sizeof(struct text_lookup));
+
+	if (!text_lookup_add(lookup, path)) {
+		bfree(lookup);
+		lookup = NULL;
+	}
+
+	return lookup;
+}
+
+bool text_lookup_add(lookup_t lookup, const char *path)
+{
 	struct dstr file_str;
 	char *temp = NULL;
 	FILE *file;
 
 	file = os_fopen(path, "rb");
 	if (!file)
-		return NULL;
+		return false;
 
 	os_fread_utf8(file, &temp);
 	dstr_init_move_array(&file_str, temp);
 	fclose(file);
 
 	if (!file_str.array)
-		return NULL;
-
-	lookup = bmalloc(sizeof(struct text_lookup));
-	memset(lookup, 0, sizeof(struct text_lookup));
+		return false;
 
 	lookup->top = bmalloc(sizeof(struct text_node));
 	memset(lookup->top, 0, sizeof(struct text_node));
@@ -383,7 +392,7 @@ lookup_t text_lookup_create(const char *path)
 	lookup_addfiledata(lookup, file_str.array);
 	dstr_free(&file_str);
 
-	return lookup;
+	return true;
 }
 
 void text_lookup_destroy(lookup_t lookup)
