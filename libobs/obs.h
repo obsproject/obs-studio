@@ -368,11 +368,11 @@ EXPORT const char *obs_source_get_settings(obs_source_t source);
 EXPORT void obs_source_save_settings(obs_source_t source, const char *settings);
 
 /** Outputs asynchronous video data */
-EXPORT void obs_source_obs_async_video(obs_source_t source,
+EXPORT void obs_source_output_video(obs_source_t source,
 		const struct source_frame *frame);
 
 /** Outputs audio data (always asynchronous) */
-EXPORT void obs_source_obs_async_audio(obs_source_t source,
+EXPORT void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio);
 
 /** Gets the current async video frame */

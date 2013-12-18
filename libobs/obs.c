@@ -49,7 +49,6 @@ static inline void make_video_info(struct video_info *vi,
 static bool obs_init_textures(struct obs_video_info *ovi)
 {
 	struct obs_video *video = &obs->video;
-	bool success = true;
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
