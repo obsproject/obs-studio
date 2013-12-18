@@ -140,13 +140,23 @@ static void lookup_splitnode(const char *lookup_val, size_t len,
 	}
 }
 
-static bool lookup_addstring(const char *lookup_val, struct text_leaf *leaf,
+static inline void lookup_replaceleaf(struct text_node *node,
+		struct text_leaf *leaf)
+{
+	text_leaf_destroy(node->leaf);
+	node->leaf = leaf;
+}
+
+static void lookup_addstring(const char *lookup_val, struct text_leaf *leaf,
 		struct text_node *node)
 {
 	struct text_node *child;
 
-	if (!lookup_val || !*lookup_val)
-		return false;
+	/* value already exists, so replace */
+	if (!lookup_val || !*lookup_val) {
+		lookup_replaceleaf(node, leaf);
+		return;
+	}
 
 	child = text_node_bychar(node, *lookup_val);
 	if (child) {
@@ -165,15 +175,15 @@ static bool lookup_addstring(const char *lookup_val, struct text_leaf *leaf,
 				break;
 		}
 
-		if (len == child->str.len)
-			return lookup_addstring(lookup_val+len, leaf, child);
-		else
+		if (len == child->str.len) {
+			lookup_addstring(lookup_val+len, leaf, child);
+			return;
+		} else {
 			lookup_splitnode(lookup_val, len, leaf, child);
+		}
 	} else {
 		lookup_createsubnode(lookup_val, leaf, node);
 	}
-
-	return true;
 }
 
 static void lookup_getstringtoken(struct lexer *lex, struct strref *token)
@@ -385,8 +395,10 @@ bool text_lookup_add(lookup_t lookup, const char *path)
 	if (!file_str.array)
 		return false;
 
-	lookup->top = bmalloc(sizeof(struct text_node));
-	memset(lookup->top, 0, sizeof(struct text_node));
+	if (!lookup->top) {
+		lookup->top = bmalloc(sizeof(struct text_node));
+		memset(lookup->top, 0, sizeof(struct text_node));
+	}
 
 	dstr_replace(&file_str, "\r", " ");
 	lookup_addfiledata(lookup, file_str.array);
