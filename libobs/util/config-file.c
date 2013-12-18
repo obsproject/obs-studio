@@ -244,6 +244,8 @@ int config_open(config_t *config, const char *file,
 
 	*config = bmalloc(sizeof(struct config_data));
 	memset(*config, 0, sizeof(struct config_data));
+	(*config)->file = bstrdup(file);
+
 	errorcode = config_parse(&(*config)->sections, file, always_open);
 
 	if (errorcode != CONFIG_SUCCESS) {
@@ -284,7 +286,7 @@ int config_save(config_t config)
 
 		if (i) dstr_cat(&str, "\n");
 
-		dstr_cat(&str, "{");
+		dstr_cat(&str, "[");
 		dstr_cat(&str, section->name);
 		dstr_cat(&str, "]\n");
 
