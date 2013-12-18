@@ -293,7 +293,7 @@ int config_save(config_t config)
 		for (j = 0; j < section->items.num; j++) {
 			struct config_item *item = darray_item(
 					sizeof(struct config_item),
-					&section->items, i);
+					&section->items, j);
 
 			dstr_cat(&str, item->name);
 			dstr_cat(&str, "=");
