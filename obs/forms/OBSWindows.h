@@ -219,9 +219,6 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxStaticText* m_staticText241;
 		wxStaticText* m_staticText242;
 		wxStaticText* m_staticText243;
-		wxButton* okButton;
-		wxButton* cancelButton;
-		wxButton* applyButton;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
@@ -256,6 +253,9 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxComboBox* auxAudioDeviceList2;
 		wxComboBox* auxAudioDeviceList3;
 		wxComboBox* auxAudioDeviceList4;
+		wxButton* okButton;
+		wxButton* cancelButton;
+		wxButton* applyButton;
 		
 		OBSBasicSettingsBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC_SETTINGS, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 872,686 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~OBSBasicSettingsBase();

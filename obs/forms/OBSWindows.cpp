@@ -705,6 +705,8 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	bSizer37->Add( cancelButton, 0, wxALL, 5 );
 	
 	applyButton = new wxButton( this, ID_APPLY, _("Apply"), wxDefaultPosition, wxDefaultSize, 0 );
+	applyButton->Enable( false );
+	
 	bSizer37->Add( applyButton, 0, wxALL, 5 );
 	
 	
