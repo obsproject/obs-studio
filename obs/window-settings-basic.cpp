@@ -89,8 +89,7 @@ void OBSBasicSettings::OKClicked(wxCommandEvent &event)
 
 void OBSBasicSettings::CancelClicked(wxCommandEvent &event)
 {
-	if (ConfirmChanges())
-		EndModal(0);
+	EndModal(0);
 }
 
 void OBSBasicSettings::ApplyClicked(wxCommandEvent &event)

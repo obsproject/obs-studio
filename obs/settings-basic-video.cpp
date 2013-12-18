@@ -397,6 +397,8 @@ void BasicVideoData::Apply()
 
 	SaveOther();
 	SaveFPSData();
+
+	config_save(GetGlobalConfig());
 }
 
 BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window)

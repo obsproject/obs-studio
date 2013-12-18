@@ -115,6 +115,8 @@ void BasicGenData::Apply()
 			window->languageList->GetClientData(sel));
 
 	config_set_string(GetGlobalConfig(), "General", "Language", info->tag);
+
+	config_save(GetGlobalConfig());
 }
 
 BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window)
