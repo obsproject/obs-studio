@@ -15,22 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "settings-basic.hpp"
+#include "window-settings-basic.hpp"
 
-#include "settings.hpp"
+void BasicSettingsData::SetChanged()
+{
+	dataChanged = true;
+	window->applyButton->Enable();
+}
 
-class OBSBasicSettings;
-
-class BasicSettingsData : public SettingsData {
-protected:
-	OBSBasicSettings *window;
-
-public:
-	inline BasicSettingsData(OBSBasicSettings *window) : window(window) {}
-
-	virtual void SetChanged();
-	virtual void SetSaved();
-};
-
-BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window);
-BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window);
+void BasicSettingsData::SetSaved()
+{
+	dataChanged = false;
+	window->applyButton->Disable();
+}

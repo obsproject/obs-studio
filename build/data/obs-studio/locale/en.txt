@@ -24,6 +24,8 @@ MainWindow.Volume="Volume:"
 Settings="Settings"
 
 Settings.StreamRestart="All streaming/recording must be stopped in order for these changes to take effect"
+Settings.ConfirmTitle="Confirm Changes"
+Settings.Confirm="You have unsaved changes.  Save changes?"
 
 Settings.General="General"
 Settings.General.Language="Language:"
@@ -45,7 +47,7 @@ Settings.Video.FPS.Nanoseconds="Frame Interval (nanoseconds)"
 Settings.Video.FPS.Numerator="Numerator:"
 Settings.Video.FPS.Denominator="Denominator:"
 Settings.Video.Renderer="Renderer:"
-Settings.Video.InvalidResolution="Invalid base resolution value.  Must be [width]x[height] (i.e. 1920x1080)"
+Settings.Video.InvalidResolution="Invalid resolution value.  Must be [width]x[height] (i.e. 1920x1080)"
 
 Settings.Audio="Audio"
 Settings.Audio.DesktopAudioDevice="Desktop Audio Device:"

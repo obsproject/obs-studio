@@ -27,5 +27,8 @@ public:
 	inline SettingsData() : dataChanged(false) {}
 	virtual void Apply()=0;
 
+	virtual void SetChanged()=0;
+	virtual void SetSaved()=0;
+
 	inline bool DataChanged() const {return dataChanged;}
 };

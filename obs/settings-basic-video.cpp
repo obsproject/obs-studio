@@ -50,10 +50,16 @@ class BasicVideoData : public BasicSettingsData {
 	void SaveFPSFraction();
 	void SaveFPSNanoseconds();
 
+	virtual void SetChanged()
+	{
+		BasicSettingsData::SetChanged();
+		window->videoChangedText->Show();
+	}
+
 public:
 	BasicVideoData(OBSBasicSettings *window);
 
-	void Apply();
+	virtual void Apply();
 };
 
 struct BaseLexer {
@@ -107,7 +113,7 @@ int BasicVideoData::AddRes(uint32_t cx, uint32_t cy)
 {
 	stringstream res;
 	res << cx << "x" << cy;
-	return window->baseResList->Append(res.str().c_str());
+	return window->baseResList->Append(res.str());
 }
 
 void BasicVideoData::LoadOther()
@@ -264,7 +270,13 @@ void BasicVideoData::ResetScaleList(uint32_t cx, uint32_t cy)
 		res << uint32_t(double(cx) / vals[i]);
 		res << "x";
 		res << uint32_t(double(cy) / vals[i]);
-		window->outputResList->Append(res.str().c_str());
+		window->outputResList->Append(res.str());
+	}
+
+	if (numVals) {
+		stringstream str;
+		str << cx << "x" << cy;
+		window->outputResList->SetValue(str.str());
 	}
 }
 
@@ -298,7 +310,7 @@ void BasicVideoData::BaseResListChanged(wxCommandEvent &event)
 		return;
 	}
 
-	dataChanged = true;
+	SetChanged();
 	window->videoChangedText->SetLabel(WXStr("Settings.StreamRestart"));
 	window->videoChangedText->Show();
 
@@ -315,7 +327,7 @@ void BasicVideoData::OutputResListChanged(wxCommandEvent &event)
 		return;
 	}
 
-	dataChanged = true;
+	SetChanged();
 	window->videoChangedText->SetLabel(WXStr("Settings.StreamRestart"));
 	window->videoChangedText->Show();
 }
@@ -398,9 +410,9 @@ void BasicVideoData::Apply()
 	SaveOther();
 	SaveFPSData();
 
-	window->videoChangedText->Hide();
 	config_save(GetGlobalConfig());
-	dataChanged = false;
+
+	SetSaved();
 }
 
 BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window)
