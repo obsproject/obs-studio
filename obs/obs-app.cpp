@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include <util/bmem.h>
+#include <util/dstr.h>
 #include <util/platform.h>
 
 #include "obs-app.hpp"
@@ -165,7 +166,7 @@ bool OBSApp::InitLocale()
 		return false;
 	}
 
-	if (strcmpi(lang, DEFAULT_LANG) == 0)
+	if (astrcmpi(lang, DEFAULT_LANG) == 0)
 		return true;
 
 	string path;
