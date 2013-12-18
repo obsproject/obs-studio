@@ -1,4 +1,4 @@
-Lanuage="English"
+Language="English"
 
 OK="OK"
 Cancel="Cancel"
