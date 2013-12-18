@@ -85,16 +85,6 @@ static uint32_t scene_getsize(void *data)
 	return 0;
 }
 
-static bool scene_enum_children(void *data, size_t idx, obs_source_t *child)
-{
-	struct obs_scene *scene = data;
-	if (idx >= scene->items.num)
-		return false;
-
-	*child = scene->items.array[idx]->source;
-	return true;
-}
-
 static const struct source_info scene_info =
 {
 	.name             = "scene",
