@@ -81,7 +81,7 @@ void OBSBasicSettings::OnClose(wxCloseEvent &event)
 
 void OBSBasicSettings::OKClicked(wxCommandEvent &event)
 {
-	if (settings)
+	if (settings && settings->DataChanged())
 		settings->Apply();
 
 	EndModal(0);
@@ -94,6 +94,6 @@ void OBSBasicSettings::CancelClicked(wxCommandEvent &event)
 
 void OBSBasicSettings::ApplyClicked(wxCommandEvent &event)
 {
-	if (settings)
+	if (settings && settings->DataChanged())
 		settings->Apply();
 }

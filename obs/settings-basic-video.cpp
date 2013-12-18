@@ -398,7 +398,9 @@ void BasicVideoData::Apply()
 	SaveOther();
 	SaveFPSData();
 
+	window->videoChangedText->Hide();
 	config_save(GetGlobalConfig());
+	dataChanged = false;
 }
 
 BasicSettingsData *CreateBasicVideoSettings(OBSBasicSettings *window)

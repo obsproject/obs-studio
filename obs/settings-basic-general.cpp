@@ -112,11 +112,14 @@ void BasicGenData::Apply()
 		return;
 
 	LanguageInfo *info = static_cast<LanguageInfo*>(
-			window->languageList->GetClientData(sel));
+			window->languageList->GetClientObject(sel));
 
 	config_set_string(GetGlobalConfig(), "General", "Language", info->tag);
 
 	config_save(GetGlobalConfig());
+
+	window->generalChangedText->Hide();
+	dataChanged = false;
 }
 
 BasicSettingsData *CreateBasicGeneralSettings(OBSBasicSettings *window)

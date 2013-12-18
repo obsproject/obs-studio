@@ -171,10 +171,10 @@ bool OBSApp::InitLocale()
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
 		if (!text_lookup_add(textLookup, path.c_str()))
-			blog(LOG_WARNING, "Failed to add '%s' locale file",
+			blog(LOG_WARNING, "Failed to add locale file '%s'",
 					path.c_str());
 	} else {
-		blog(LOG_WARNING, "Could not find '%s' locale file",
+		blog(LOG_WARNING, "Could not find locale file '%s'",
 				file.str().c_str());
 	}
 
