@@ -153,8 +153,9 @@ static inline void dstr_init(struct dstr *dst)
 
 static inline void dstr_init_move_array(struct dstr *dst, char *str)
 {
-	dst->array = str;
-	dst->len = (!str) ? 0 : strlen(str);
+	dst->array    = str;
+	dst->len      = (!str) ? 0 : strlen(str);
+	dst->capacity = dst->len + 1;
 }
 
 static inline void dstr_init_move(struct dstr *dst, struct dstr *src)
@@ -193,8 +194,9 @@ static inline void dstr_array_free(struct dstr *array, const size_t count)
 static inline void dstr_move_array(struct dstr *dst, char *str)
 {
 	dstr_free(dst);
-	dst->array = str;
-	dst->len = (!str) ? 0 : strlen(str);
+	dst->array    = str;
+	dst->len      = (!str) ? 0 : strlen(str);
+	dst->capacity = dst->len + 1;
 }
 
 static inline void dstr_move(struct dstr *dst, struct dstr *src)
