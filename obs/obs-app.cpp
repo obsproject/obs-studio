@@ -203,6 +203,8 @@ bool OBSApp::OnInit()
 
 	wxSize size = mainWindow->GetPreviewPanel()->GetClientSize();
 
+	mainWindow->Show();
+
 	/* this is a test */
 	struct obs_video_info ovi;
 	ovi.graphics_module = "libobs-opengl";
@@ -220,8 +222,6 @@ bool OBSApp::OnInit()
 
 	if (!obs_reset_video(&ovi))
 		return false;
-
-	mainWindow->Show();
 	return true;
 }
 
