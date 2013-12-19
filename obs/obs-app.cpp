@@ -222,6 +222,10 @@ bool OBSApp::OnInit()
 
 	if (!obs_reset_video(&ovi))
 		return false;
+
+	//required to make opengl display stuff on osx(?)
+	mainWindow->SendSizeEvent();
+
 	return true;
 }
 
