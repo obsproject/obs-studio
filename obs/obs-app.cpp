@@ -199,24 +199,24 @@ bool OBSApp::OnInit()
 
 	wxInitAllImageHandlers();
 
-	dummyWindow = new wxFrame(NULL, wxID_ANY, "Dummy Window");
-
 	OBSBasic *mainWindow = new OBSBasic();
+
+	wxSize size = mainWindow->GetPreviewPanel()->GetClientSize();
 
 	/* this is a test */
 	struct obs_video_info ovi;
 	ovi.graphics_module = "libobs-opengl";
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
-	ovi.window_width    = 2;
-	ovi.window_height   = 2;
+	ovi.window_width    = size.x;
+	ovi.window_height   = size.y;
 	ovi.base_width      = 1920;
 	ovi.base_height     = 1080;
 	ovi.output_width    = 1280;
 	ovi.output_height   = 720;
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
 	ovi.adapter         = 0;
-	ovi.window          = WxToGSWindow(dummyWindow);
+	ovi.window          = WxToGSWindow(mainWindow->GetPreviewPanel());
 
 	if (!obs_reset_video(&ovi))
 		return false;
@@ -228,9 +228,6 @@ bool OBSApp::OnInit()
 int OBSApp::OnExit()
 {
 	obs_shutdown();
-
-	delete dummyWindow;
-	dummyWindow = NULL;
 
 	return wxApp::OnExit();
 }

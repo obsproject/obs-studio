@@ -29,7 +29,6 @@ public:
 class OBSApp : public OBSAppBase {
 	ConfigFile globalConfig;
 	TextLookup textLookup;
-	wxFrame *dummyWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();

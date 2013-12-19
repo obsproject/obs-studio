@@ -36,11 +36,10 @@ static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 	*last_time = cur_time;
 }
 
-static inline void render_display(struct obs_display *display)
+static inline void render_begin(struct obs_display *display)
 {
 	struct vec4 clear_color;
 	uint32_t width, height;
-	size_t i;
 
 	gs_load_swapchain(display ? display->swap : NULL);
 
@@ -58,6 +57,19 @@ static inline void render_display(struct obs_display *display)
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
 
+}
+
+static inline void render_end(struct obs_display *display)
+{
+	gs_endscene();
+	gs_present();
+}
+
+static void render_display(struct obs_display *display)
+{
+	size_t i;
+	render_begin(display);
+
 	for (i = 0; i < MAX_CHANNELS; i++) {
 		struct obs_source **p_source;
 
@@ -74,8 +86,7 @@ static inline void render_display(struct obs_display *display)
 		}
 	}
 
-	gs_endscene();
-	gs_present();
+	render_end(display);
 }
 
 static inline void render_displays(void)
@@ -85,8 +96,9 @@ static inline void render_displays(void)
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
 
-	for (i = 0; i < obs->data.displays.num; i++)
+	for (i = 0; i < obs->data.displays.num; i++) {
 		render_display(obs->data.displays.array[i]);
+	}
 
 	pthread_mutex_unlock(&obs->data.displays_mutex);
 
