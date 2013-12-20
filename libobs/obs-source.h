@@ -204,32 +204,36 @@ struct obs_source {
 	volatile int                 refs;
 
 	/* source-specific data */
+	char                         *name;
+	struct dstr                  settings;
 	void                         *data;
 	struct source_info           callbacks;
-	struct dstr                  settings;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer
 	 * to handle things but it's the best option) */
 	bool                         removed;
 
-	/* async video and audio */
+	/* timing (if video is present, is based upon video) */
 	bool                         timing_set;
 	uint64_t                     timing_adjust;
 	uint64_t                     last_frame_timestamp;
 	uint64_t                     last_sys_timestamp;
-	texture_t                    output_texture;
 
+	/* audio */
 	bool                         audio_failed;
 	struct resample_info         sample_info;
 	audio_resampler_t            resampler;
 	audio_line_t                 audio_line;
-	DARRAY(struct audiobuf)      audio_wait_buffer;
-	DARRAY(struct source_frame*) video_frames;
+	DARRAY(struct audiobuf)      audio_wait_buffer; /* pending data */
 	pthread_mutex_t              audio_mutex;
-	pthread_mutex_t              video_mutex;
 	struct filtered_audio        audio_data;
 	size_t                       audio_storage_size;
+
+	/* async video data */
+	texture_t                    output_texture;
+	DARRAY(struct source_frame*) video_frames;
+	pthread_mutex_t              video_mutex;
 
 	/* filters */
 	struct obs_source            *filter_parent;

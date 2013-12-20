@@ -97,6 +97,7 @@ class WindowSubclass;
 #define ID_OK 1050
 #define ID_CANCEL 1051
 #define ID_APPLY 1052
+#define ID_PROJECT_CHOOSER 1053
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class OBSBasicBase
@@ -259,6 +260,33 @@ class OBSBasicSettingsBase : public DialogSubclass
 		
 		OBSBasicSettingsBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC_SETTINGS, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 872,686 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~OBSBasicSettingsBase();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class ProjectChooserBase
+///////////////////////////////////////////////////////////////////////////////
+class ProjectChooserBase : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxStaticText* m_staticText22;
+		wxButton* basicButton;
+		wxButton* studioButton;
+		wxButton* exitButton;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void BasicClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void StudioClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void ExitClicked( wxCommandEvent& event ) { event.Skip(); }
+		
+	
+	public:
+		
+		ProjectChooserBase( wxWindow* parent, wxWindowID id = ID_PROJECT_CHOOSER, const wxString& title = _("ProjectChooser"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 445,159 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		~ProjectChooserBase();
 	
 };
 

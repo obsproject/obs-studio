@@ -20,6 +20,10 @@
 #include "forms/OBSWindows.h"
 
 class OBSBasic : public OBSBasicBase {
+	void NewProject();
+	void SaveProject();
+	void LoadProject();
+
 protected:
 	virtual void OnClose(wxCloseEvent &event);
 	virtual void OnMinimize(wxIconizeEvent &event);

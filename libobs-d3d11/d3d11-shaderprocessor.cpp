@@ -211,6 +211,8 @@ void ShaderProcessor::BuildString(string &outputString)
 			output << "Texture3D";
 		else if (strref_cmp(&token->str, "texture_cube") == 0)
 			output << "TextureCube";
+		else if (strref_cmp(&token->str, "texture_rect") == 0)
+			throw "texture_rect is not supported in D3D";
 		else if (strref_cmp(&token->str, "sampler_state") == 0)
 			output << "SamplerState";
 		else

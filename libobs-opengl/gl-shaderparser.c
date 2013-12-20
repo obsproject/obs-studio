@@ -75,6 +75,8 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, "sampler3D");
 	else if (cmp_type(type, len, "texture_cube", 12) == 0)
 		dstr_cat(&glsp->gl_string, "samplerCube");
+	else if (cmp_type(type, len, "texture_rect", 12) == 0)
+		dstr_cat(&glsp->gl_string, "sampler2DRect");
 	else
 		return false;
 

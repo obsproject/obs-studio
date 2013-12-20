@@ -85,6 +85,7 @@ static inline const struct source_info *find_source(struct darray *list,
 	return NULL;
 }
 
+/* internal initialization */
 bool obs_source_init(struct obs_source *source, const char *settings,
 		const struct source_info *info)
 {
@@ -129,12 +130,13 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 	case SOURCE_TRANSITION: list = &obs->transition_types.da; break;
 	case SOURCE_SCENE:
 	default:
+		blog(LOG_WARNING, "Tried to create invalid source type");
 		return NULL;
 	}
 
 	info = find_source(list, name);
 	if (!info) {
-		blog(LOG_WARNING, "Source '%s' not found", name);
+		blog(LOG_WARNING, "Source type '%s' not found", name);
 		return NULL;
 	}
 
@@ -189,6 +191,7 @@ static void obs_source_destroy(obs_source_t source)
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->video_mutex);
 	dstr_free(&source->settings);
+	bfree(source->name);
 	bfree(source);
 }
 
@@ -273,6 +276,7 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 		source->callbacks.video_tick(source->data, seconds);
 }
 
+/* maximum "direct" timestamp variance in nanoseconds */
 #define MAX_VARIANCE 2000000000ULL
 
 static void source_output_audio_line(obs_source_t source,
@@ -293,7 +297,7 @@ static void source_output_audio_line(obs_source_t source,
 		source->timing_adjust = in.timestamp - os_gettime_ns();
 
 		/* detects 'directly' set timestamps as long as they're within
-		 * a certain threashold */
+		 * a certain threshold */
 		if ((source->timing_adjust+MAX_VARIANCE) < MAX_VARIANCE*2)
 			source->timing_adjust = 0;
 	}
@@ -605,7 +609,7 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 		da_move_item(source->filters, idx, 0);
 	}
 
-	/* reorder filter targets */
+	/* reorder filter targets, not the nicest way of dealing with things */
 	for (i = 0; i < source->filters.num; i++) {
 		obs_source_t next_filter = (i == source->filters.num-1) ?
 			source : source->filters.array[idx+1];
@@ -774,6 +778,8 @@ void obs_source_output_audio(obs_source_t source,
 	if (output) {
 		pthread_mutex_lock(&source->audio_mutex);
 
+		/* wait for video to start before outputting any audio so we
+		 * have a base for sync */
 		if (!source->timing_set && flags & SOURCE_ASYNC_VIDEO) {
 			struct audiobuf newbuf;
 			size_t audio_size = blocksize * output->frames;
@@ -802,7 +808,7 @@ void obs_source_output_audio(obs_source_t source,
 /*
  * Ensures that cached frames are displayed on time.  If multiple frames
  * were cached between renders, then releases the unnecessary frames and uses
- * the frame with the closest timing.
+ * the frame with the closest timing to ensure sync.
  */
 struct source_frame *obs_source_getframe(obs_source_t source)
 {

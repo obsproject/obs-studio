@@ -738,3 +738,52 @@ OBSBasicSettingsBase::~OBSBasicSettingsBase()
 	applyButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( OBSBasicSettingsBase::ApplyClicked ), NULL, this );
 	
 }
+
+ProjectChooserBase::ProjectChooserBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	
+	wxBoxSizer* bSizer40;
+	bSizer40 = new wxBoxSizer( wxVERTICAL );
+	
+	m_staticText22 = new wxStaticText( this, wxID_ANY, _("ProjectChooser.SelectType"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText22->Wrap( -1 );
+	bSizer40->Add( m_staticText22, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer41;
+	bSizer41 = new wxBoxSizer( wxVERTICAL );
+	
+	basicButton = new wxButton( this, wxID_ANY, _("ProjectChooser.Basic"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer41->Add( basicButton, 0, wxALL|wxEXPAND, 5 );
+	
+	studioButton = new wxButton( this, wxID_ANY, _("ProjectChooser.Studio"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer41->Add( studioButton, 0, wxALL|wxEXPAND, 5 );
+	
+	exitButton = new wxButton( this, wxID_ANY, _("MainWindow.Exit"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer41->Add( exitButton, 0, wxALL|wxEXPAND, 5 );
+	
+	
+	bSizer40->Add( bSizer41, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	
+	this->SetSizer( bSizer40 );
+	this->Layout();
+	
+	this->Centre( wxBOTH );
+	
+	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( ProjectChooserBase::OnClose ) );
+	basicButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::BasicClicked ), NULL, this );
+	studioButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::StudioClicked ), NULL, this );
+	exitButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::ExitClicked ), NULL, this );
+}
+
+ProjectChooserBase::~ProjectChooserBase()
+{
+	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( ProjectChooserBase::OnClose ) );
+	basicButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::BasicClicked ), NULL, this );
+	studioButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::StudioClicked ), NULL, this );
+	exitButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::ExitClicked ), NULL, this );
+	
+}
