@@ -129,6 +129,7 @@ EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
 EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
 EXPORT void     texture_unmap(texture_t tex);
+EXPORT bool     texture_isrect(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
 EXPORT uint32_t cubetexture_getsize(texture_t cubetex);

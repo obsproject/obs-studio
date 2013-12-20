@@ -641,6 +641,10 @@ EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
 EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
 EXPORT void     texture_unmap(texture_t tex);
+/** special-case function (GL only) - specifies whether the texture is a
+ * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture
+ * coordinates */
+EXPORT bool     texture_isrect(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
 EXPORT uint32_t cubetexture_getsize(texture_t cubetex);

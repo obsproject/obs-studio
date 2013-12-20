@@ -223,3 +223,14 @@ failed:
 	gl_bind_texture(GL_TEXTURE_2D, 0);
 	blog(LOG_ERROR, "texture_unmap (GL) failed");
 }
+
+bool texture_isrect(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!is_texture_2d(tex, "texture_unmap")) {
+		blog(LOG_ERROR, "texture_isrect (GL) failed");
+		return false;
+	}
+
+	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
+}

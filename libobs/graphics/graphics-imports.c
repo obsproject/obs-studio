@@ -30,6 +30,11 @@
 		} \
 	} while (false)
 
+#define GRAPHICS_IMPORT_OPTIONAL(func) \
+	do { \
+		exports->func = os_dlsym(module, #func); \
+	} while (false)
+
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name)
 {
@@ -108,6 +113,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(texture_getcolorformat);
 	GRAPHICS_IMPORT(texture_map);
 	GRAPHICS_IMPORT(texture_unmap);
+	GRAPHICS_IMPORT_OPTIONAL(texture_isrect);
 
 	GRAPHICS_IMPORT(cubetexture_destroy);
 	GRAPHICS_IMPORT(cubetexture_getsize);

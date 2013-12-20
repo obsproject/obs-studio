@@ -644,6 +644,18 @@ texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
 	return NULL;
 }
 
+static inline void assign_sprite_rect(float *start, float *end, float size,
+		bool flip)
+{
+	if (!flip) {
+		*start = 0.0f;
+		*end   = size;
+	} else {
+		*start = size;
+		*end   = 0.0f;
+	}
+}
+
 static inline void assign_sprite_uv(float *start, float *end, bool flip)
 {
 	if (!flip) {
@@ -655,15 +667,11 @@ static inline void assign_sprite_uv(float *start, float *end, bool flip)
 	}
 }
 
-static inline void build_sprite(struct vb_data *data, float fcx, float fcy,
+static void build_sprite(struct vb_data *data, float fcx, float fcy,
+		float start_u, float end_u, float start_v, float end_v,
 		uint32_t flip)
 {
 	struct vec2 *tvarray = data->tvarray[0].array;
-	float start_u, end_u;
-	float start_v, end_v;
-
-	assign_sprite_uv(&start_u, &end_u, (flip & GS_FLIP_U) != 0);
-	assign_sprite_uv(&start_v, &end_v, (flip & GS_FLIP_V) != 0);
 
 	vec3_zero(data->points);
 	vec3_set(data->points+1,  fcx, 0.0f, 0.0f);
@@ -673,6 +681,30 @@ static inline void build_sprite(struct vb_data *data, float fcx, float fcy,
 	vec2_set(tvarray+1, end_u,   start_v);
 	vec2_set(tvarray+2, start_u, end_v);
 	vec2_set(tvarray+3, end_u,   end_v);
+}
+
+static inline void build_sprite_norm(struct vb_data *data, float fcx, float fcy,
+		uint32_t flip)
+{
+	float start_u, end_u;
+	float start_v, end_v;
+
+	assign_sprite_uv(&start_u, &end_u, (flip & GS_FLIP_U) != 0);
+	assign_sprite_uv(&start_v, &end_v, (flip & GS_FLIP_V) != 0);
+	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v, flip);
+}
+
+static inline void build_sprite_rect(struct vb_data *data, texture_t tex,
+		float fcx, float fcy, uint32_t flip)
+{
+	float start_u, end_u;
+	float start_v, end_v;
+	float width  = (float)texture_getwidth(tex);
+	float height = (float)texture_getheight(tex);
+
+	assign_sprite_rect(&start_u, &end_u, width,  (flip & GS_FLIP_U) != 0);
+	assign_sprite_rect(&start_v, &end_v, height, (flip & GS_FLIP_V) != 0);
+	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v, flip);
 }
 
 void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
@@ -693,7 +725,11 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 	fcy = height ? (float)height : (float)texture_getheight(tex);
 
 	data = vertexbuffer_getdata(graphics->sprite_buffer);
-	build_sprite(data, fcx, fcy, flip);
+	if (texture_isrect(tex))
+		build_sprite_rect(data, tex, fcx, fcy, flip);
+	else
+		build_sprite_norm(data, fcx, fcy, flip);
+
 	vertexbuffer_flush(graphics->sprite_buffer, false);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);
@@ -1406,6 +1442,15 @@ void texture_unmap(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	graphics->exports.texture_unmap(tex);
+}
+
+bool texture_isrect(texture_t tex)
+{
+	graphics_t graphics = thread_graphics;
+	if (graphics->exports.texture_isrect)
+		return graphics->exports.texture_isrect(tex);
+	else
+		return false;
 }
 
 void cubetexture_destroy(texture_t cubetex)

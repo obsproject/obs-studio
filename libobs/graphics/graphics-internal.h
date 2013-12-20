@@ -140,6 +140,7 @@ struct gs_exports {
 	bool     (*texture_map)(texture_t tex, void **ptr,
 			uint32_t *row_bytes);
 	void     (*texture_unmap)(texture_t tex);
+	bool     (*texture_isrect)(texture_t tex);
 
 	void     (*cubetexture_destroy)(texture_t cubetex);
 	uint32_t (*cubetexture_getsize)(texture_t cubetex);
