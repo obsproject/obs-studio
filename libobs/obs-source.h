@@ -153,7 +153,7 @@
 struct obs_source;
 
 struct source_info {
-	const char *name;
+	const char *id;
 
 	/* ----------------------------------------------------------------- */
 	/* required implementations */
@@ -204,7 +204,7 @@ struct obs_source {
 	volatile int                 refs;
 
 	/* source-specific data */
-	char                         *name;
+	char                         *name; /* user-defined name */
 	struct dstr                  settings;
 	void                         *data;
 	struct source_info           callbacks;

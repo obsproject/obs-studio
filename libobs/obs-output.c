@@ -19,49 +19,49 @@
 #include "obs-data.h"
 
 bool get_output_info(void *module, const char *module_name,
-		const char *output_name, struct output_info *info)
+		const char *output_id, struct output_info *info)
 {
 	info->getname = load_module_subfunc(module, module_name,
-			output_name, "getname", true);
+			output_id, "getname", true);
 	info->create = load_module_subfunc(module, module_name,
-			output_name, "create", true);
+			output_id, "create", true);
 	info->destroy = load_module_subfunc(module, module_name,
-			output_name, "destroy", true);
+			output_id, "destroy", true);
 	info->start = load_module_subfunc(module, module_name,
-			output_name, "start", true);
+			output_id, "start", true);
 	info->stop = load_module_subfunc(module, module_name,
-			output_name, "stop", true);
+			output_id, "stop", true);
 
 	if (!info->getname || !info->create || !info->destroy ||
 	    !info->start || !info->stop)
 		return false;
 
 	info->config = load_module_subfunc(module, module_name,
-			output_name, "config", false);
+			output_id, "config", false);
 	info->pause = load_module_subfunc(module, module_name,
-			output_name, "pause", false);
+			output_id, "pause", false);
 
-	info->name = output_name;
+	info->id = output_id;
 	return true;
 }
 
-static inline const struct output_info *find_output(const char *type)
+static inline const struct output_info *find_output(const char *id)
 {
 	size_t i;
 	for (i = 0; i < obs->output_types.num; i++)
-		if (strcmp(obs->output_types.array[i].name, type) == 0)
+		if (strcmp(obs->output_types.array[i].id, id) == 0)
 			return obs->output_types.array+i;
 
 	return NULL;
 }
 
-obs_output_t obs_output_create(const char *type, const char *settings)
+obs_output_t obs_output_create(const char *id, const char *settings)
 {
-	const struct output_info *info = find_output(type);
+	const struct output_info *info = find_output(id);
 	struct obs_output *output;
 
 	if (!info) {
-		blog(LOG_WARNING, "Output type '%s' not found", type);
+		blog(LOG_WARNING, "Output '%s' not found", id);
 		return NULL;
 	}
 

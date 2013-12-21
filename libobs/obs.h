@@ -191,7 +191,7 @@ EXPORT int obs_load_module(const char *path);
  *   Inputs are general source inputs (such as capture sources, device sources,
  * etc).
  */
-EXPORT bool obs_enum_input_types(size_t idx, const char **name);
+EXPORT bool obs_enum_input_types(size_t idx, const char **id);
 
 /**
  * Enumerates all available filter source types.
@@ -199,7 +199,7 @@ EXPORT bool obs_enum_input_types(size_t idx, const char **name);
  *   Filters are sources that are used to modify the video/audio output of
  * other sources.
  */
-EXPORT bool obs_enum_filter_types(size_t idx, const char **name);
+EXPORT bool obs_enum_filter_types(size_t idx, const char **id);
 
 /**
  * Enumerates all available transition source types.
@@ -207,7 +207,7 @@ EXPORT bool obs_enum_filter_types(size_t idx, const char **name);
  *   Transitions are sources used to transition between two or more other
  * sources.
  */
-EXPORT bool obs_enum_transition_types(size_t idx, const char **name);
+EXPORT bool obs_enum_transition_types(size_t idx, const char **id);
 
 /**
  * Enumerates all available ouput types.
@@ -215,7 +215,7 @@ EXPORT bool obs_enum_transition_types(size_t idx, const char **name);
  *   Outputs handle color space conversion, encoding, and output to file or
  * streams.
  */
-EXPORT bool obs_enum_output_types(size_t idx, const char **name);
+EXPORT bool obs_enum_output_types(size_t idx, const char **id);
 
 /** Gets the graphics context for this OBS context */
 EXPORT graphics_t obs_graphics(void);
@@ -281,7 +281,7 @@ EXPORT obs_source_t obs_display_getsource(obs_display_t display,
  * Gets the translated display name of a source
  */
 EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
-		const char *name, const char *locale);
+		const char *id, const char *locale);
 
 /**
  * Creates a source of the specified type with the specified settings.
@@ -290,7 +290,7 @@ EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
  * or modifying video/audio.
  */
 EXPORT obs_source_t obs_source_create(enum obs_source_type type,
-		const char *name, const char *settings);
+		const char *id, const char *name, const char *settings);
 
 /**
  * Adds/releases a reference to a source.  When the last reference is

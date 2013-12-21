@@ -374,35 +374,35 @@ bool obs_get_audio_info(struct audio_info *ai)
 	return true;
 }
 
-bool obs_enum_input_types(size_t idx, const char **name)
+bool obs_enum_input_types(size_t idx, const char **id)
 {
 	if (idx >= obs->input_types.num)
 		return false;
-	*name = obs->input_types.array[idx].name;
+	*id = obs->input_types.array[idx].id;
 	return true;
 }
 
-bool obs_enum_filter_types(size_t idx, const char **name)
+bool obs_enum_filter_types(size_t idx, const char **id)
 {
 	if (idx >= obs->filter_types.num)
 		return false;
-	*name = obs->filter_types.array[idx].name;
+	*id = obs->filter_types.array[idx].id;
 	return true;
 }
 
-bool obs_enum_transition_types(size_t idx, const char **name)
+bool obs_enum_transition_types(size_t idx, const char **id)
 {
 	if (idx >= obs->transition_types.num)
 		return false;
-	*name = obs->transition_types.array[idx].name;
+	*id = obs->transition_types.array[idx].id;
 	return true;
 }
 
-bool obs_enum_output_types(size_t idx, const char **name)
+bool obs_enum_output_types(size_t idx, const char **id)
 {
 	if (idx >= obs->output_types.num)
 		return false;
-	*name = obs->output_types.array[idx].name;
+	*id = obs->output_types.array[idx].id;
 	return true;
 }
 

@@ -26,59 +26,59 @@
 static void obs_source_destroy(obs_source_t source);
 
 bool get_source_info(void *module, const char *module_name,
-		const char *source_name, struct source_info *info)
+		const char *source_id, struct source_info *info)
 {
 	info->getname = load_module_subfunc(module, module_name,
-			source_name, "getname", true);
+			source_id, "getname", true);
 	info->create = load_module_subfunc(module, module_name,
-			source_name,"create", true);
+			source_id,"create", true);
 	info->destroy = load_module_subfunc(module, module_name,
-			source_name, "destroy", true);
+			source_id, "destroy", true);
 	info->get_output_flags = load_module_subfunc(module, module_name,
-			source_name, "get_output_flags", true);
+			source_id, "get_output_flags", true);
 
 	if (!info->getname || !info->create || !info->destroy ||
 	    !info->get_output_flags)
 		return false;
 
 	info->config = load_module_subfunc(module, module_name,
-			source_name, "config", false);
+			source_id, "config", false);
 	info->activate = load_module_subfunc(module, module_name,
-			source_name, "activate", false);
+			source_id, "activate", false);
 	info->deactivate = load_module_subfunc(module, module_name,
-			source_name, "deactivate", false);
+			source_id, "deactivate", false);
 	info->video_tick = load_module_subfunc(module, module_name,
-			source_name, "video_tick", false);
+			source_id, "video_tick", false);
 	info->video_render = load_module_subfunc(module, module_name,
-			source_name, "video_render", false);
+			source_id, "video_render", false);
 	info->getwidth = load_module_subfunc(module, module_name,
-			source_name, "getwidth", false);
+			source_id, "getwidth", false);
 	info->getheight = load_module_subfunc(module, module_name,
-			source_name, "getheight", false);
+			source_id, "getheight", false);
 
 	info->getparam = load_module_subfunc(module, module_name,
-			source_name, "getparam", false);
+			source_id, "getparam", false);
 	info->setparam = load_module_subfunc(module, module_name,
-			source_name, "setparam", false);
+			source_id, "setparam", false);
 
 	info->filter_video = load_module_subfunc(module, module_name,
-			source_name, "filter_video", false);
+			source_id, "filter_video", false);
 	info->filter_audio = load_module_subfunc(module, module_name,
-			source_name, "filter_audio", false);
+			source_id, "filter_audio", false);
 
-	info->name = source_name;
+	info->id = source_id;
 	return true;
 }
 
 static inline const struct source_info *find_source(struct darray *list,
-		const char *name)
+		const char *id)
 {
 	size_t i;
 	struct source_info *array = list->array;
 
 	for (i = 0; i < list->num; i++) {
 		struct source_info *info = array+i;
-		if (strcmp(info->name, name) == 0)
+		if (strcmp(info->id, id) == 0)
 			return info;
 	}
 
@@ -117,8 +117,8 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 	return true;
 }
 
-obs_source_t obs_source_create(enum obs_source_type type, const char *name,
-		const char *settings)
+obs_source_t obs_source_create(enum obs_source_type type, const char *id,
+		const char *name, const char *settings)
 {
 	const struct source_info *info = NULL;
 	struct darray *list = NULL;
@@ -134,15 +134,16 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *name,
 		return NULL;
 	}
 
-	info = find_source(list, name);
+	info = find_source(list, id);
 	if (!info) {
-		blog(LOG_WARNING, "Source type '%s' not found", name);
+		blog(LOG_WARNING, "Source '%s' not found", id);
 		return NULL;
 	}
 
 	source = bmalloc(sizeof(struct obs_source));
 	memset(source, 0, sizeof(struct obs_source));
 
+	source->name = bstrdup(name);
 	source->data = info->create(settings, source);
 	if (!source->data)
 		goto fail;

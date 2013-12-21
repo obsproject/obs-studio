@@ -20,6 +20,8 @@
 struct service_data;
 
 struct service_info {
+	char *id;
+
 	const char *(*getname)(const char *locale);
 
 	void *(*create)(const char *settings, struct service_data *service);

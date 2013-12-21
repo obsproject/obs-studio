@@ -87,7 +87,7 @@ static uint32_t scene_getsize(void *data)
 
 static const struct source_info scene_info =
 {
-	.name             = "scene",
+	.id               = "scene",
 	.getname          = scene_getname,
 	.create           = scene_create,
 	.destroy          = scene_destroy,

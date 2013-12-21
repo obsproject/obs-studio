@@ -98,7 +98,7 @@
 struct obs_output;
 
 struct output_info {
-	const char *name;
+	const char *id;
 
 	const char *(*getname)(const char *locale);
 
