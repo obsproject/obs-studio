@@ -142,9 +142,6 @@ typedef struct obs_scene_item *obs_sceneitem_t;
 typedef struct obs_output     *obs_output_t;
 typedef struct obs_service    *obs_service_t;
 
-/* typedefs */
-typedef void (*ENUM_SOURCES_PROC)(obs_source_t source, void *param);
-
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
@@ -242,8 +239,22 @@ EXPORT void obs_set_output_source(uint32_t channel, obs_source_t source);
  */
 EXPORT obs_source_t obs_get_output_source(uint32_t channel);
 
-/** Enumerates user sources */
-EXPORT void obs_enum_sources(ENUM_SOURCES_PROC enum_proc, void *param);
+/**
+ * Enumerates user sources
+ *
+ *   Callback function returns true to continue enumeration, or false to end
+ * enumeration.
+ */
+EXPORT void obs_enum_sources(bool (*enum_proc)(obs_source_t, void*),
+		void *param);
+
+/**
+ * Gets a source by its name.
+ *
+ *   Increments the source reference counter, use obs_source_release to
+ * release it when complete.
+ */
+EXPORT obs_source_t obs_get_source_by_name(const char *name);
 
 /**
  * Returns the location of a plugin data file.
@@ -287,7 +298,7 @@ EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
  * Creates a source of the specified type with the specified settings.
  *
  *   The "source" context is used for anything related to presenting
- * or modifying video/audio.
+ * or modifying video/audio.  Use obs_source_release to release it.
  */
 EXPORT obs_source_t obs_source_create(enum obs_source_type type,
 		const char *id, const char *name, const char *settings);
@@ -359,13 +370,23 @@ EXPORT void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 		enum order_movement movement);
 
 /** Gets the settings string for a source */
-EXPORT const char *obs_source_get_settings(obs_source_t source);
+EXPORT const char *obs_source_getsettings(obs_source_t source);
+
+/** Gets the name of a source */
+EXPORT const char *obs_source_getname(obs_source_t source);
+
+/** Sets the name of a source */
+EXPORT void obs_source_setname(obs_source_t source, const char *name);
+
+/** Gets the source type and identifier */
+EXPORT void obs_source_getid(obs_source_t source, enum obs_source_type *type,
+		const char **id);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
 /** Saves the settings string for a source */
-EXPORT void obs_source_save_settings(obs_source_t source, const char *settings);
+EXPORT void obs_source_savesettings(obs_source_t source, const char *settings);
 
 /** Outputs asynchronous video data */
 EXPORT void obs_source_output_video(obs_source_t source,

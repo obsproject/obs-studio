@@ -450,15 +450,37 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 		obs_source_release(prev_source);
 }
 
-void obs_enum_sources(ENUM_SOURCES_PROC enum_proc, void *param)
+void obs_enum_sources(bool (*enum_proc)(obs_source_t, void*), void *param)
 {
 	struct obs_data *data = &obs->data;
 	size_t i;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	for (i = 0; i < data->sources.num; i++)
-		enum_proc(data->sources.array[i], param);
+	for (i = 0; i < data->sources.num; i++) {
+		if (!enum_proc(data->sources.array[i], param))
+			break;
+	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
+}
+
+obs_source_t obs_get_source_by_name(const char *name)
+{
+	struct obs_data *data = &obs->data;
+	struct obs_source *source = NULL;
+	size_t i;
+
+	pthread_mutex_lock(&data->sources_mutex);
+
+	for (i = 0; i < data->sources.num; i++) {
+		struct obs_source *cur_source = data->sources.array[i];
+		if (strcmp(cur_source->name, name) == 0) {
+			source = cur_source;
+			break;
+		}
+	}
+
+	pthread_mutex_unlock(&data->sources_mutex);
+	return source;
 }

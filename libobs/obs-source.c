@@ -144,6 +144,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	memset(source, 0, sizeof(struct obs_source));
 
 	source->name = bstrdup(name);
+	source->type = type;
 	source->data = info->create(settings, source);
 	if (!source->data)
 		goto fail;
@@ -618,12 +619,12 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 	}
 }
 
-const char *obs_source_get_settings(obs_source_t source)
+const char *obs_source_getsettings(obs_source_t source)
 {
 	return source->settings.array;
 }
 
-void obs_source_save_settings(obs_source_t source, const char *settings)
+void obs_source_savesettings(obs_source_t source, const char *settings)
 {
 	dstr_copy(&source->settings, settings);
 }
@@ -872,4 +873,22 @@ void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 		source_frame_destroy(frame);
 		obs_source_release(source);
 	}
+}
+
+const char *obs_source_getname(obs_source_t source)
+{
+	return source->name;
+}
+
+void obs_source_setname(obs_source_t source, const char *name)
+{
+	bfree(source->name);
+	source->name = bstrdup(name);
+}
+
+void obs_source_getid(obs_source_t source, enum obs_source_type *type,
+		const char **id)
+{
+	*type = source->type;
+	*id   = source->callbacks.id;
 }

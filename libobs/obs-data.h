@@ -68,6 +68,8 @@ struct obs_audio {
 
 /* user sources, output channels, and displays */
 struct obs_data {
+	/* arrays of pointers jim?  you should really stop being lazy and use
+	 * linked lists. */
 	DARRAY(struct obs_display*) displays;
 	DARRAY(struct obs_source*)  sources;
 

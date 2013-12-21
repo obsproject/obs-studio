@@ -205,6 +205,7 @@ struct obs_source {
 
 	/* source-specific data */
 	char                         *name; /* user-defined name */
+	enum obs_source_type         type;
 	struct dstr                  settings;
 	void                         *data;
 	struct source_info           callbacks;
