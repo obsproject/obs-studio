@@ -203,6 +203,8 @@ static void strip_mipmap_filter(GLint *filter)
 static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 {
 	bool success = true;
+	GLint min_filter;
+
 	if (tex->cur_sampler == ss)
 		return true;
 
@@ -214,7 +216,7 @@ static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 
 	samplerstate_addref(ss);
 
-	GLint min_filter = ss->min_filter;
+	min_filter = ss->min_filter;
 	if (texture_isrect(tex))
 		strip_mipmap_filter(&min_filter);
 
