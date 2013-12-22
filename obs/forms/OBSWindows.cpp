@@ -167,6 +167,26 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	bottomCenterContainer->Add( sourcesContainer, 1, wxEXPAND, 5 );
 	
+	wxBoxSizer* bSizer42;
+	bSizer42 = new wxBoxSizer( wxVERTICAL );
+	
+	sourcesLabel1 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Volume"), wxDefaultPosition, wxDefaultSize, 0 );
+	sourcesLabel1->Wrap( -1 );
+	bSizer42->Add( sourcesLabel1, 0, wxALL, 2 );
+	
+	m_panel16 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
+	wxBoxSizer* bSizer43;
+	bSizer43 = new wxBoxSizer( wxVERTICAL );
+	
+	
+	m_panel16->SetSizer( bSizer43 );
+	m_panel16->Layout();
+	bSizer43->Fit( m_panel16 );
+	bSizer42->Add( m_panel16, 1, wxEXPAND | wxALL, 2 );
+	
+	
+	bottomCenterContainer->Add( bSizer42, 1, wxEXPAND, 5 );
+	
 	wxBoxSizer* rightButtonsContainer;
 	rightButtonsContainer = new wxBoxSizer( wxVERTICAL );
 	

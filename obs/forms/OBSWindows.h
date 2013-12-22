@@ -120,6 +120,8 @@ class OBSBasicBase : public WindowSubclass
 		wxPanel* sourcesPanel;
 		wxCheckListBox* sources;
 		wxToolBar* sourcesToolbar;
+		wxStaticText* sourcesLabel1;
+		wxPanel* m_panel16;
 		wxStaticText* m_staticText6;
 		wxButton* toggleStreamButton;
 		wxButton* ToggleRecordButton;
