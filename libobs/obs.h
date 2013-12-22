@@ -264,6 +264,9 @@ EXPORT obs_source_t obs_get_source_by_name(const char *name);
  */
 EXPORT char *obs_find_plugin_file(const char *file);
 
+/** Returns the default effect for generic RGB/YUV drawing */
+EXPORT effect_t obs_get_default_effect();
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
@@ -356,6 +359,9 @@ EXPORT size_t obs_source_getparam(obs_source_t source, const char *param,
 EXPORT void obs_source_setparam(obs_source_t source, const char *param,
 		const void *data, size_t size);
 
+/** If the source is a filter, returns the parent source of the filter */
+EXPORT obs_source_t obs_filter_getparent(obs_source_t filter);
+
 /** If the source is a filter, returns the target source of the filter */
 EXPORT obs_source_t obs_filter_gettarget(obs_source_t filter);
 
@@ -402,6 +408,11 @@ EXPORT struct source_frame *obs_source_getframe(obs_source_t source);
 /** Releases the current async video frame */
 EXPORT void obs_source_releaseframe(obs_source_t source,
 		struct source_frame *frame);
+
+/** Default RGB filter handler for generic effect filters */
+EXPORT void obs_source_process_filter(obs_source_t filter,
+		texrender_t texrender, effect_t effect,
+		uint32_t width, uint32_t height);
 
 
 /* ------------------------------------------------------------------------- */

@@ -484,3 +484,8 @@ obs_source_t obs_get_source_by_name(const char *name)
 	pthread_mutex_unlock(&data->sources_mutex);
 	return source;
 }
+
+effect_t obs_get_default_effect(void)
+{
+	return obs->video.default_effect;
+}

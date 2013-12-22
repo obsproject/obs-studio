@@ -1,6 +1,6 @@
 uniform float4x4 ViewProj;
 uniform float4x4 yuv_matrix;
-uniform texture2d tex;
+uniform texture2d diffuse;
 
 sampler_state def_sampler {
 	Filter   = Linear;
@@ -16,19 +16,19 @@ struct VertInOut {
 VertInOut VSDefault(VertInOut vert_in)
 {
 	VertInOut vert_out;
-	vert_out.pos = mul(vert_in.pos, ViewProj);
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
 	vert_out.uv  = vert_in.uv;
 	return vert_out;
 }
 
 float4 PSDrawRGB(VertInOut vert_in) : TARGET
 {
-	return tex.Sample(def_sampler, vert_in.uv);
+	return diffuse.Sample(def_sampler, vert_in.uv);
 }
 
 float4 PSDrawYUVToRGB(VertInOut vert_in) : TARGET
 {
-	float4 yuv = tex.Sample(def_sampler, vert_in.uv);
+	float4 yuv = diffuse.Sample(def_sampler, vert_in.uv);
 	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));
 }
 

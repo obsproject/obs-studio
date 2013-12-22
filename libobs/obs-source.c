@@ -439,8 +439,8 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->video.default_effect;
-	bool        yuv   = is_yuv(frame->format);
-	const char  *type = yuv ? "DrawYUVToRGB" : "DrawRGB";
+	bool        yuv    = is_yuv(frame->format);
+	const char  *type  = yuv ? "DrawYUVToRGB" : "DrawRGB";
 	technique_t tech;
 	eparam_t    param;
 
@@ -482,16 +482,49 @@ static void obs_source_render_async_video(obs_source_t source)
 	obs_source_releaseframe(source, frame);
 }
 
+static inline void obs_source_render_filters(obs_source_t source)
+{
+	source->rendering_filter = true;
+	obs_source_video_render(source->filters.array[0]);
+	source->rendering_filter = false;
+}
+
+static inline void obs_source_default_render(obs_source_t source, bool yuv)
+{
+	effect_t    effect     = obs->video.default_effect;
+	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	technique_t tech       = effect_gettechnique(effect, tech_name);
+	size_t      passes, i;
+
+	passes = technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		technique_beginpass(tech, i);
+		source->callbacks.video_render(source->data);
+		technique_endpass(tech);
+	}
+	technique_end(tech);
+}
+
+static inline void obs_source_main_render(obs_source_t source)
+{
+	uint32_t flags = source->callbacks.get_output_flags(source->data);
+	bool default_effect = !source->filter_parent &&
+	                      source->filters.num == 0 &&
+	                      (flags & SOURCE_DEFAULT_EFFECT) != 0;
+
+	if (default_effect)
+		obs_source_default_render(source, (flags & SOURCE_YUV) != 0);
+	else
+		source->callbacks.video_render(source->data);
+}
+
 void obs_source_video_render(obs_source_t source)
 {
 	if (source->callbacks.video_render) {
-		if (source->filters.num && !source->rendering_filter) {
-			source->rendering_filter = true;
-			obs_source_video_render(source->filters.array[0]);
-			source->rendering_filter = false;
-		} else {
-			source->callbacks.video_render(source->data);
-		}
+		if (source->filters.num && !source->rendering_filter)
+			obs_source_render_filters(source);
+		else
+			obs_source_main_render(source);
 
 	} else if (source->filter_target) {
 		obs_source_video_render(source->filter_target);
@@ -529,6 +562,11 @@ void obs_source_setparam(obs_source_t source, const char *param,
 {
 	if (source->callbacks.setparam)
 		source->callbacks.setparam(source->data, param, data, size);
+}
+
+obs_source_t obs_filter_getparent(obs_source_t filter)
+{
+	return filter->filter_parent;
 }
 
 obs_source_t obs_filter_gettarget(obs_source_t filter)
@@ -891,4 +929,72 @@ void obs_source_getid(obs_source_t source, enum obs_source_type *type,
 {
 	*type = source->type;
 	*id   = source->callbacks.id;
+}
+
+static inline void render_filter_bypass(obs_source_t target, effect_t effect,
+		uint32_t width, uint32_t height, bool yuv)
+{
+	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	technique_t tech       = effect_gettechnique(effect, tech_name);
+	eparam_t    diffuse    = effect_getparambyname(effect, "diffuse");
+	size_t      passes, i;
+
+	passes = technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		technique_beginpass(tech, i);
+		obs_source_video_render(target);
+		technique_endpass(tech);
+	}
+	technique_end(tech);
+}
+
+static inline void render_filter_tex(texture_t tex, effect_t effect,
+		uint32_t width, uint32_t height, bool yuv)
+{
+	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	technique_t tech       = effect_gettechnique(effect, tech_name);
+	eparam_t    diffuse    = effect_getparambyname(effect, "diffuse");
+	size_t      passes, i;
+
+	effect_settexture(effect, diffuse, tex);
+
+	passes = technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		technique_beginpass(tech, i);
+		gs_draw_sprite(tex, width, height, 0);
+		technique_endpass(tech);
+	}
+	technique_end(tech);
+}
+
+void obs_source_process_filter(obs_source_t filter, texrender_t texrender,
+		effect_t effect, uint32_t width, uint32_t height)
+{
+	obs_source_t target       = obs_filter_gettarget(filter);
+	obs_source_t parent       = obs_filter_getparent(filter);
+	uint32_t     target_flags = obs_source_get_output_flags(target);
+	uint32_t     parent_flags = obs_source_get_output_flags(parent);
+	int          cx           = obs_source_getwidth(target);
+	int          cy           = obs_source_getheight(target);
+	bool         yuv          = (target_flags & SOURCE_YUV) != 0;
+
+	/* if the parent does not use any custom effects, and this is the last
+	 * filter in the chain for the parent, then render the parent directly
+	 * using the filter effect instead of rendering to texture to reduce
+	 * the total number of passes */
+	if ((parent_flags & SOURCE_DEFAULT_EFFECT) != 0 && target == parent) {
+		render_filter_bypass(target, effect, width, height, yuv);
+		return;
+	}
+
+	if (texrender_begin(texrender, cx, cy)) {
+		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+		obs_source_video_render(target);
+		texrender_end(texrender);
+	}
+
+	/* --------------------------- */
+
+	render_filter_tex(texrender_gettexture(texrender), effect,
+			width, height, yuv);
 }

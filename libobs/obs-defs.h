@@ -29,3 +29,5 @@
 #define SOURCE_VIDEO          (1<<0) /* Source has video */
 #define SOURCE_AUDIO          (1<<1) /* Source has audio */
 #define SOURCE_ASYNC_VIDEO    (1<<2) /* Async video (use with SOURCE_VIDEO) */
+#define SOURCE_DEFAULT_EFFECT (1<<3) /* Source uses default/filter effect */
+#define SOURCE_YUV            (1<<4) /* Source is in YUV color space */

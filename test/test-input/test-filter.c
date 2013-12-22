@@ -55,31 +55,6 @@ void test_video_tick(struct test_filter *tf, float seconds)
 
 void test_video_render(struct test_filter *tf)
 {
-	obs_source_t filter_target = obs_filter_gettarget(tf->source);
-	int cx = obs_source_getwidth(filter_target);
-	int cy = obs_source_getheight(filter_target);
-	float fcx = (float)cx;
-	float fcy = (float)cy;
-	technique_t tech;
-	texture_t tex;
-
-	if (texrender_begin(tf->texrender, cx, cy)) {
-		gs_ortho(0.0f, fcx, 0.0f, fcy, -100.0f, 100.0f);
-		obs_source_video_render(filter_target);
-		texrender_end(tf->texrender);
-	}
-
-	/* --------------------------- */
-
-	tex = texrender_gettexture(tf->texrender);
-	tech = effect_gettechnique(tf->whatever, "Default");
-	effect_settexture(tf->whatever, effect_getparambyidx(tf->whatever, 1),
-			tex);
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
-
-	gs_draw_sprite(tex, 0, 0, 0);
-
-	technique_endpass(tech);
-	technique_end(tech);
+	obs_source_process_filter(tf->source, tf->texrender, tf->whatever,
+			0, 0);
 }

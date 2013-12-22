@@ -27,7 +27,7 @@ float4 PShader(VertexInOut fragment_in) : TARGET
 	return diffuse.Sample(texSampler, fragment_in.uv) * color;
 }
 
-technique Default
+technique DrawRGB
 {
 	pass
 	{
