@@ -56,5 +56,5 @@ void test_video_tick(struct test_filter *tf, float seconds)
 void test_video_render(struct test_filter *tf)
 {
 	obs_source_process_filter(tf->source, tf->texrender, tf->whatever,
-			0, 0);
+			0, 0, ALLOW_DIRECT_RENDERING);
 }

@@ -60,6 +60,11 @@ enum order_movement {
 	ORDER_MOVE_BOTTOM
 };
 
+enum allow_direct_render {
+	NO_DIRECT_RENDERING,
+	ALLOW_DIRECT_RENDERING,
+};
+
 struct obs_video_info {
 	/* graphics module to use (usually "libobs-opengl" or "libobs-d3d11") */
 	const char          *graphics_module;
@@ -412,7 +417,8 @@ EXPORT void obs_source_releaseframe(obs_source_t source,
 /** Default RGB filter handler for generic effect filters */
 EXPORT void obs_source_process_filter(obs_source_t filter,
 		texrender_t texrender, effect_t effect,
-		uint32_t width, uint32_t height);
+		uint32_t width, uint32_t height,
+		enum allow_direct_render allow_direct);
 
 
 /* ------------------------------------------------------------------------- */

@@ -968,7 +968,8 @@ static inline void render_filter_tex(texture_t tex, effect_t effect,
 }
 
 void obs_source_process_filter(obs_source_t filter, texrender_t texrender,
-		effect_t effect, uint32_t width, uint32_t height)
+		effect_t effect, uint32_t width, uint32_t height,
+		enum allow_direct_render allow_direct)
 {
 	obs_source_t target       = obs_filter_gettarget(filter);
 	obs_source_t parent       = obs_filter_getparent(filter);
@@ -977,19 +978,24 @@ void obs_source_process_filter(obs_source_t filter, texrender_t texrender,
 	int          cx           = obs_source_getwidth(target);
 	int          cy           = obs_source_getheight(target);
 	bool         yuv          = (target_flags & SOURCE_YUV) != 0;
+	bool         expects_def  = (parent_flags & SOURCE_DEFAULT_EFFECT) != 0;
+	bool         can_directly = allow_direct == ALLOW_DIRECT_RENDERING;
 
 	/* if the parent does not use any custom effects, and this is the last
 	 * filter in the chain for the parent, then render the parent directly
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
-	if ((parent_flags & SOURCE_DEFAULT_EFFECT) != 0 && target == parent) {
+	if (can_directly && expects_def && target == parent) {
 		render_filter_bypass(target, effect, width, height, yuv);
 		return;
 	}
 
 	if (texrender_begin(texrender, cx, cy)) {
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
-		obs_source_video_render(target);
+		if (expects_def && parent == target)
+			obs_source_default_render(parent, yuv);
+		else
+			obs_source_video_render(target);
 		texrender_end(texrender);
 	}
 
