@@ -41,7 +41,7 @@ technique DrawRGB
 	}
 }
 
-technique DrawYUVToRGB
+technique DrawYUV
 {
 	pass
 	{

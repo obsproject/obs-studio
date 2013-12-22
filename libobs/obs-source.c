@@ -440,7 +440,7 @@ static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->video.default_effect;
 	bool        yuv    = is_yuv(frame->format);
-	const char  *type  = yuv ? "DrawYUVToRGB" : "DrawRGB";
+	const char  *type  = yuv ? "DrawYUV" : "DrawRGB";
 	technique_t tech;
 	eparam_t    param;
 
