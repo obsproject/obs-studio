@@ -643,7 +643,7 @@ EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
 EXPORT void     texture_unmap(texture_t tex);
 /** special-case function (GL only) - specifies whether the texture is a
  * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture
- * coordinates */
+ * coordinates, doesn't support mipmapping, and requires address clamping */
 EXPORT bool     texture_isrect(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
