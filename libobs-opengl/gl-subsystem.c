@@ -182,9 +182,29 @@ enum gs_texture_type device_gettexturetype(device_t device,
 	return texture->type;
 }
 
+static void strip_mipmap_filter(GLint *filter)
+{
+	switch (*filter) {
+		case GL_NEAREST:
+		case GL_LINEAR:
+			return;
+		case GL_NEAREST_MIPMAP_NEAREST:
+		case GL_NEAREST_MIPMAP_LINEAR:
+			*filter = GL_NEAREST;
+			return;
+		case GL_LINEAR_MIPMAP_NEAREST:
+		case GL_LINEAR_MIPMAP_LINEAR:
+			*filter = GL_LINEAR;
+			return;
+	}
+	*filter = GL_NEAREST;
+}
+
 static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 {
 	bool success = true;
+	GLint min_filter;
+
 	if (tex->cur_sampler == ss)
 		return true;
 
@@ -196,8 +216,12 @@ static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 
 	samplerstate_addref(ss);
 
+	min_filter = ss->min_filter;
+	if (texture_isrect(tex))
+		strip_mipmap_filter(&min_filter);
+
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MIN_FILTER,
-				ss->min_filter))
+				min_filter))
 		success = false;
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAG_FILTER,
 				ss->mag_filter))
