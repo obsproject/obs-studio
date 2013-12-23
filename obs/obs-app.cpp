@@ -39,15 +39,17 @@ OBSAppBase::~OBSAppBase()
 
 static void do_log(enum log_type type, const char *msg, va_list args)
 {
+#ifdef _WIN32
 	char bla[4096];
 	vsnprintf(bla, 4095, msg, args);
 
-#ifdef _WIN32
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
 	if (type >= LOG_WARNING)
 		__debugbreak();
+#else
+	vprintf(msg, args);
 #endif
 }
 
