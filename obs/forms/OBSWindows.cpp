@@ -556,15 +556,16 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	wxBoxSizer* bSizer45;
 	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
 	
-	fpsCommonList = new wxComboBox( m_panel13, ID_FPS_COMMON, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY );
+	fpsCommonList = new wxComboBox( m_panel13, ID_FPS_COMMON, _("30"), wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY );
 	fpsCommonList->Append( _("10") );
 	fpsCommonList->Append( _("20") );
+	fpsCommonList->Append( _("25") );
 	fpsCommonList->Append( _("29.97") );
 	fpsCommonList->Append( _("30") );
 	fpsCommonList->Append( _("48") );
 	fpsCommonList->Append( _("59.94") );
 	fpsCommonList->Append( _("60") );
-	fpsCommonList->SetSelection( 3 );
+	fpsCommonList->SetSelection( 4 );
 	bSizer45->Add( fpsCommonList, 0, wxTOP|wxBOTTOM|wxRIGHT, 2 );
 	
 	

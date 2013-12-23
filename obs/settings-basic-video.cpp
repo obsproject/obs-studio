@@ -196,26 +196,13 @@ void BasicVideoData::LoadFPSData()
 
 void BasicVideoData::LoadFPSCommon()
 {
-	const char *str = config_get_string(GetGlobalConfig(), "Video",
+	const char *val = config_get_string(GetGlobalConfig(), "Video",
 			"FPSCommon");
 
-	int val = 3;
-	if (strcmp(str, "10") == 0)
-		val = 0;
-	else if (strcmp(str, "20") == 0)
-		val = 1;
-	else if (strcmp(str, "29.97") == 0)
-		val = 2;
-	else if (strcmp(str, "30") == 0)
-		val = 3;
-	else if (strcmp(str, "48") == 0)
-		val = 4;
-	else if (strcmp(str, "59.94") == 0)
-		val = 5;
-	else if (strcmp(str, "60") == 0)
-		val = 6;
-
-	window->fpsCommonList->SetSelection(val);
+	int sel = window->fpsCommonList->FindString(val);
+	if (sel == wxNOT_FOUND)
+		sel = window->fpsCommonList->FindString("30");
+	window->fpsCommonList->SetSelection(sel);
 }
 
 void BasicVideoData::LoadFPSInteger()

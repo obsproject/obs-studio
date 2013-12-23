@@ -227,6 +227,9 @@ void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
 	} else if (strcmp(val, "20") == 0) {
 		num = 20;
 		den = 1;
+	} else if (strcmp(val, "25") == 0) {
+		num = 25;
+		den = 1;
 	} else if (strcmp(val, "29.97") == 0) {
 		num = 30000;
 		den = 1001;
