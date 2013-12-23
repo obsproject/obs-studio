@@ -678,6 +678,11 @@ EXPORT void     *indexbuffer_getdata(indexbuffer_t indexbuffer);
 EXPORT size_t   indexbuffer_numindices(indexbuffer_t indexbuffer);
 EXPORT enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer);
 
+/** platform specific function for creating (GL_TEXTURE_RECTANGLE) textures
+ * from shared surface resources */
+EXPORT texture_t gs_create_texture_from_iosurface(void *iosurf);
+EXPORT bool     texture_rebind_iosurface(texture_t texture, void *iosurf);
+
 /* inline functions used by modules */
 
 static inline uint32_t gs_get_format_bpp(enum gs_color_format format)

@@ -33,6 +33,7 @@ libobs_opengl_la_SOURCES = gl-helpers.c \
 
 if OS_OSX
 libobs_opengl_la_SOURCES += gl-cocoa.m
+libobs_opengl_la_LDFLAGS += -framework Cocoa -framework IOSurface
 endif
 
 if OS_WIN

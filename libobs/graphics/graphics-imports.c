@@ -165,5 +165,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(shader_setval);
 	GRAPHICS_IMPORT(shader_setdefault);
 
+	/* OSX/Cocoa specific functions */
+	GRAPHICS_IMPORT_OPTIONAL(texture_create_from_iosurface);
+	GRAPHICS_IMPORT_OPTIONAL(texture_rebind_iosurface);
+
 	return success;
 }

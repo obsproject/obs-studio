@@ -6,9 +6,14 @@ elseif(APPLE AND UNIX)
 	set_source_files_properties(${libobs_opengl_platform_objc_src}
 		PROPERTIES LANGUAGE C)
 	set(libobs_opengl_platform_src ${libobs_opengl_platform_objc_src})
+	
 	find_library(COCOA Cocoa)
 	include_directories(${COCOA})
 	link_libraries(${COCOA})
+	
+	find_library(IOSURF IOSurface)
+	include_directories(${IOSURF})
+	link_libraries(${IOSURF})
 else()
 endif()
 

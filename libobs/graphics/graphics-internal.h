@@ -201,6 +201,10 @@ struct gs_exports {
 	void (*shader_setval)(shader_t shader, sparam_t param, const void *val,
 			size_t size);
 	void (*shader_setdefault)(shader_t shader, sparam_t param);
+
+	/* OSX/Cocoa specific functions */
+	texture_t (*texture_create_from_iosurface)(device_t dev, void *iosurf);
+	bool (*texture_rebind_iosurface)(texture_t texture, void *iosurf);
 };
 
 struct graphics_subsystem {
