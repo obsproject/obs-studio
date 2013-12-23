@@ -23,13 +23,12 @@ MainWindow.Volume="Volume:"
 
 Settings="Settings"
 
-Settings.StreamRestart="All streaming/recording must be stopped in order for these changes to take effect"
+Settings.ProgramRestart="The program must be restarted for these settings to take effect."
 Settings.ConfirmTitle="Confirm Changes"
 Settings.Confirm="You have unsaved changes.  Save changes?"
 
 Settings.General="General"
 Settings.General.Language="Language:"
-Settings.General.LanguageChanged="The program must be restarted in order to change the language"
 
 Settings.Outputs="Outputs"
 

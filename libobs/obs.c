@@ -343,7 +343,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	struct obs_video *video = &obs->video;
 	const struct video_info *info;
 
-	if (!video->graphics)
+	if (!obs || !video->graphics)
 		return false;
 
 	info = video_output_getinfo(video->video);
@@ -365,7 +365,7 @@ bool obs_get_audio_info(struct audio_info *ai)
 	struct obs_audio *audio = &obs->audio;
 	const struct audio_info *info;
 
-	if (!audio->audio)
+	if (!obs || !audio->audio)
 		return false;
 
 	info = audio_output_getinfo(audio->audio);

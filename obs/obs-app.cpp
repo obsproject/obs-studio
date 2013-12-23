@@ -183,61 +183,107 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
+bool OBSApp::InitOBSBasic()
+{
+	OBSBasic *obsBasic = new OBSBasic();
+	obsBasic->Show();
+
+	mainWindow = obsBasic;
+	return obsBasic->Init();
+}
+
 bool OBSApp::OnInit()
 {
 	base_set_log_handler(do_log);
 
 	if (!wxApp::OnInit())
 		return false;
+	wxInitAllImageHandlers();
+
 	if (!MakeUserDirs())
 		return false;
 	if (!InitGlobalConfig())
 		return false;
 	if (!InitLocale())
 		return false;
-	if (!obs_startup())
+	if (!InitOBSBasic())
 		return false;
-
-	wxInitAllImageHandlers();
-
-	OBSBasic *mainWindow = new OBSBasic();
-
-	wxSize size = mainWindow->GetPreviewPanel()->GetClientSize();
-
-	mainWindow->Show();
-
-	/* this is a test */
-	struct obs_video_info ovi;
-	ovi.graphics_module = "libobs-opengl";
-	ovi.fps_num         = 30000;
-	ovi.fps_den         = 1001;
-	ovi.window_width    = size.x;
-	ovi.window_height   = size.y;
-	ovi.base_width      = 1920;
-	ovi.base_height     = 1080;
-	ovi.output_width    = 1280;
-	ovi.output_height   = 720;
-	ovi.output_format   = VIDEO_FORMAT_RGBA;
-	ovi.adapter         = 0;
-	ovi.window          = WxToGSWindow(mainWindow->GetPreviewPanel());
-
-	if (!obs_reset_video(&ovi))
-		return false;
-
-	//required to make opengl display stuff on osx(?)
-	mainWindow->SendSizeEvent();
 
 	return true;
 }
 
 int OBSApp::OnExit()
 {
-	obs_shutdown();
-
 	return wxApp::OnExit();
 }
 
-void OBSApp::CleanUp()
+void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
 {
-	wxApp::CleanUp();
+	const char *val = config_get_string(globalConfig, "Video", "FPSCommon");
+
+	if (strcmp(val, "10") == 0) {
+		num = 30;
+		den = 1;
+	} else if (strcmp(val, "20") == 0) {
+		num = 20;
+		den = 1;
+	} else if (strcmp(val, "29.97") == 0) {
+		num = 30000;
+		den = 1001;
+	} else if (strcmp(val, "48") == 0) {
+		num = 48;
+		den = 1;
+	} else if (strcmp(val, "59.94") == 0) {
+		num = 60000;
+		den = 1001;
+	} else if (strcmp(val, "60") == 0) {
+		num = 60;
+		den = 1;
+	} else {
+		num = 30;
+		den = 1;
+	}
+}
+
+void OBSApp::GetFPSInteger(uint32_t &num, uint32_t &den) const
+{
+	num = (uint32_t)config_get_uint(globalConfig, "Video", "FPSInt");
+	den = 1;
+}
+
+void OBSApp::GetFPSFraction(uint32_t &num, uint32_t &den) const
+{
+	num = (uint32_t)config_get_uint(globalConfig, "Video", "FPSNum");
+	den = (uint32_t)config_get_uint(globalConfig, "Video", "FPSDen");
+}
+
+void OBSApp::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
+{
+	num = 1000000000;
+	den = (uint32_t)config_get_uint(globalConfig, "Video", "FPSNS");
+}
+
+void OBSApp::GetConfigFPS(uint32_t &num, uint32_t &den) const
+{
+	const char *type = config_get_string(globalConfig, "Video", "FPSType");
+
+	if (astrcmpi(type, "Integer") == 0)
+		GetFPSInteger(num, den);
+	else if (astrcmpi(type, "Fraction") == 0)
+		GetFPSFraction(num, den);
+	else if (astrcmpi(type, "Nanoseconds") == 0)
+		GetFPSNanoseconds(num, den);
+	else
+		GetFPSCommon(num, den);
+}
+
+const char *OBSApp::GetRenderModule() const
+{
+	const char *renderer = config_get_string(globalConfig, "Video",
+			"Renderer");
+
+	if (astrcmpi(renderer, "Direct3D 11") == 0)
+		return "libobs-d3d11";
+	else
+		return "libobs-opengl";
 }

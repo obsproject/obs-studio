@@ -18,6 +18,7 @@
 #pragma once
 
 #include <wx/app.h>
+#include <wx/window.h>
 
 #include <util/util.hpp>
 
@@ -29,23 +30,34 @@ public:
 class OBSApp : public OBSAppBase {
 	ConfigFile globalConfig;
 	TextLookup textLookup;
+	wxWindow   *mainWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitConfigDefaults();
 	bool InitLocale();
+	bool InitOBSBasic();
+
+	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
+	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
+	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
+	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
 
 public:
 	virtual bool OnInit();
 	virtual int  OnExit();
-	virtual void CleanUp();
 
-	inline config_t GlobalConfig() {return globalConfig;}
+	inline wxWindow *GetMainWindow() const {return mainWindow;}
 
-	inline const char *GetString(const char *lookupVal)
+	inline config_t GlobalConfig() const {return globalConfig;}
+
+	inline const char *GetString(const char *lookupVal) const
 	{
 		return textLookup.GetString(lookupVal);
 	}
+
+	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
+	const char *GetRenderModule() const;
 };
 
 wxDECLARE_APP(OBSApp);

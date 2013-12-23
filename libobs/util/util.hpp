@@ -89,7 +89,7 @@ public:
 		config = NULL;
 	}
 
-	inline operator config_t() {return config;}
+	inline operator config_t() const {return config;}
 };
 
 class TextLookup {
@@ -114,9 +114,9 @@ public:
 		return *this;
 	}
 
-	inline operator lookup_t() {return lookup;}
+	inline operator lookup_t() const {return lookup;}
 
-	inline const char *GetString(const char *lookupVal)
+	inline const char *GetString(const char *lookupVal) const
 	{
 		const char *out;
 		if (!text_lookup_getstr(lookup, lookupVal, &out))

@@ -18,8 +18,54 @@
 #include <obs.hpp>
 
 #include "obs-app.hpp"
+#include "wx-wrappers.hpp"
 #include "window-settings-basic.hpp"
 #include "window-main-basic.hpp"
+
+bool OBSBasic::Init()
+{
+	if (!obs_startup())
+		return false;
+	if (!InitGraphics())
+		return false;
+
+	return true;
+}
+
+OBSBasic::~OBSBasic()
+{
+	obs_shutdown();
+}
+
+bool OBSBasic::InitGraphics()
+{
+	wxSize size = previewPanel->GetClientSize();
+
+	struct obs_video_info ovi;
+	wxGetApp().GetConfigFPS(ovi.fps_num, ovi.fps_den);
+	ovi.graphics_module = wxGetApp().GetRenderModule();
+	ovi.window_width  = size.x;
+	ovi.window_height = size.y;
+	ovi.base_width    = (uint32_t)config_get_uint(GetGlobalConfig(),
+			"Video", "BaseCX");
+	ovi.base_height   = (uint32_t)config_get_uint(GetGlobalConfig(),
+			"Video", "BaseCY");
+	ovi.output_width  = (uint32_t)config_get_uint(GetGlobalConfig(),
+			"Video", "OutputCX");
+	ovi.output_height = (uint32_t)config_get_uint(GetGlobalConfig(),
+			"Video", "OutputCY");
+	ovi.output_format = VIDEO_FORMAT_RGBA;
+	ovi.adapter       = 0;
+	ovi.window        = WxToGSWindow(previewPanel);
+
+	if (!obs_reset_video(&ovi))
+		return false;
+
+	//required to make opengl display stuff on osx(?)
+	SendSizeEvent();
+
+	return true;
+}
 
 void OBSBasic::OnClose(wxCloseEvent &event)
 {

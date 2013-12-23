@@ -19,7 +19,16 @@
 
 #include "forms/OBSWindows.h"
 
+#include <obs.hpp>
+
+#include <vector>
+using namespace std;
+
 class OBSBasic : public OBSBasicBase {
+	vector<OBSSource> scenes;
+
+	bool InitGraphics();
+
 	void NewProject();
 	void SaveProject();
 	void LoadProject();
@@ -49,6 +58,9 @@ protected:
 
 public:
 	inline OBSBasic() : OBSBasicBase(NULL) {}
+	virtual ~OBSBasic();
+
+	bool Init();
 
 	inline wxPanel *GetPreviewPanel() {return previewPanel;}
 	inline wxSizer *GetPreviewContainer() {return previewContainer;}

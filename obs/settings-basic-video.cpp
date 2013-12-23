@@ -40,8 +40,10 @@ class BasicVideoData : public BasicSettingsData {
 	void LoadFPSNanoseconds();
 	void ResetScaleList(uint32_t cx, uint32_t cy);
 
-	void BaseResListChanged(wxCommandEvent &event);
-	void OutputResListChanged(wxCommandEvent &event);
+	void RendererChanged(wxCommandEvent &event);
+	void BaseResChanged(wxCommandEvent &event);
+	void OutputResChanged(wxCommandEvent &event);
+	void FPSChanged(wxCommandEvent &event);
 
 	void SaveOther();
 	void SaveFPSData();
@@ -280,6 +282,11 @@ void BasicVideoData::ResetScaleList(uint32_t cx, uint32_t cy)
 	}
 }
 
+#define ADD_CONNECT(control, event, func) \
+	connections.Add(window->control, event, \
+			wxCommandEventHandler(BasicVideoData::func), \
+			NULL, this)
+
 BasicVideoData::BasicVideoData(OBSBasicSettings *window)
 	: BasicSettingsData(window)
 {
@@ -288,19 +295,37 @@ BasicVideoData::BasicVideoData(OBSBasicSettings *window)
 	LoadOther();
 
 	/* load connectors after loading data to prevent them from triggering */
-	connections.Add(window->baseResList, wxEVT_TEXT,
-			wxCommandEventHandler(
-				BasicVideoData::BaseResListChanged),
-			NULL, this);
-	connections.Add(window->outputResList, wxEVT_TEXT,
-			wxCommandEventHandler(
-				BasicVideoData::OutputResListChanged),
-			NULL, this);
+	ADD_CONNECT(baseResList,            wxEVT_TEXT,     BaseResChanged);
+	ADD_CONNECT(outputResList,          wxEVT_TEXT,     OutputResChanged);
+	ADD_CONNECT(rendererList,           wxEVT_COMBOBOX, RendererChanged);
+	ADD_CONNECT(fpsCommonList,          wxEVT_COMBOBOX, FPSChanged);
+	ADD_CONNECT(fpsIntegerScroller,     wxEVT_SPINCTRL, FPSChanged);
+	ADD_CONNECT(fpsNumeratorScroller,   wxEVT_SPINCTRL, FPSChanged);
+	ADD_CONNECT(fpsDenominatorScroller, wxEVT_SPINCTRL, FPSChanged);
+	ADD_CONNECT(fpsNanosecondsScroller, wxEVT_SPINCTRL, FPSChanged);
+	ADD_CONNECT(fpsIntegerScroller,     wxEVT_TEXT,     FPSChanged);
+	ADD_CONNECT(fpsNumeratorScroller,   wxEVT_TEXT,     FPSChanged);
+	ADD_CONNECT(fpsDenominatorScroller, wxEVT_TEXT,     FPSChanged);
+	ADD_CONNECT(fpsNanosecondsScroller, wxEVT_TEXT,     FPSChanged);
+	ADD_CONNECT(fpsTypeList, wxEVT_CHOICEBOOK_PAGE_CHANGED,
+			FPSChanged);
 
 	window->videoChangedText->Hide();
 }
 
-void BasicVideoData::BaseResListChanged(wxCommandEvent &event)
+void BasicVideoData::RendererChanged(wxCommandEvent &event)
+{
+	SetChanged();
+	window->videoChangedText->SetLabel(WXStr("Settings.ProgramRestart"));
+	window->videoChangedText->Show();
+}
+
+void BasicVideoData::FPSChanged(wxCommandEvent &event)
+{
+	SetChanged();
+}
+
+void BasicVideoData::BaseResChanged(wxCommandEvent &event)
 {
 	uint32_t cx, cy;
 	if (!ConvertTextRes(window->baseResList, cx, cy)) {
@@ -311,13 +336,11 @@ void BasicVideoData::BaseResListChanged(wxCommandEvent &event)
 	}
 
 	SetChanged();
-	window->videoChangedText->SetLabel(WXStr("Settings.StreamRestart"));
-	window->videoChangedText->Show();
 
 	ResetScaleList(cx, cy);
 }
 
-void BasicVideoData::OutputResListChanged(wxCommandEvent &event)
+void BasicVideoData::OutputResChanged(wxCommandEvent &event)
 {
 	uint32_t cx, cy;
 	if (!ConvertTextRes(window->outputResList, cx, cy)) {
@@ -328,8 +351,6 @@ void BasicVideoData::OutputResListChanged(wxCommandEvent &event)
 	}
 
 	SetChanged();
-	window->videoChangedText->SetLabel(WXStr("Settings.StreamRestart"));
-	window->videoChangedText->Show();
 }
 
 void BasicVideoData::SaveOther()
@@ -411,6 +432,8 @@ void BasicVideoData::Apply()
 	SaveFPSData();
 
 	config_save(GetGlobalConfig());
+
+	/* TODO: If resolutiosn/fps were chaned, reset video */
 
 	SetSaved();
 }

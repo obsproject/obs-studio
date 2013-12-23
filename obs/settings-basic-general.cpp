@@ -103,7 +103,7 @@ void BasicGenData::LanguageChanged(wxCommandEvent &event)
 {
 	SetChanged();
 	window->generalChangedText->SetLabel(
-			WXStr("Settings.General.LanguageChanged"));
+			WXStr("Settings.General.ProgramRestart"));
 	window->generalChangedText->Show();
 }
 
