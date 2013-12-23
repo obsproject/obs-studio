@@ -185,7 +185,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\forms\OBSWindows.h" />
     <ClInclude Include="..\..\..\obs\obs-app.hpp" />
-    <ClInclude Include="..\..\..\obs\obs-wrappers.hpp" />
     <ClInclude Include="..\..\..\obs\platform.hpp" />
     <ClInclude Include="..\..\..\obs\settings-basic.hpp" />
     <ClInclude Include="..\..\..\obs\settings.hpp" />

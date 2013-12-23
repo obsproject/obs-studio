@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <util/bmem.h>
+
 #include "obs-app.hpp"
 #include "settings-basic.hpp"
 #include "window-settings-basic.hpp"

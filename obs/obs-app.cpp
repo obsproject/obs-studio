@@ -21,9 +21,10 @@
 #include <util/dstr.h>
 #include <util/platform.h>
 
+#include <obs.hpp>
+
 #include "obs-app.hpp"
 #include "window-main-basic.hpp"
-#include "obs-wrappers.hpp"
 #include "wx-wrappers.hpp"
 #include "platform.hpp"
 

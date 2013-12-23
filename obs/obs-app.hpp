@@ -19,7 +19,7 @@
 
 #include <wx/app.h>
 
-#include "obs-wrappers.hpp"
+#include <util/util.hpp>
 
 class OBSAppBase : public wxApp {
 public:

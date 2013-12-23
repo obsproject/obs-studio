@@ -53,9 +53,6 @@
     <ClInclude Include="..\..\..\obs\obs-app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\obs\obs-wrappers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\obs\wx-wrappers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
