@@ -259,6 +259,11 @@ texture_t texture_create_from_iosurface(device_t device, void *iosurf)
 	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
 	memset(tex, 0, sizeof(struct gs_texture_2d));
 
+	OSType pf = IOSurfaceGetPixelFormat(ref);
+	if (pf != 'BGRA')
+		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
+				pf >> 24, pf >> 16, pf >> 8, pf);
+
 	const enum gs_color_format color_format = GS_BGRA;
 
 	tex->base.device             = device;
@@ -324,6 +329,11 @@ bool texture_rebind_iosurface(texture_t texture, void *iosurf)
 
 	struct gs_texture_2d *tex = (struct gs_texture_2d*)texture;
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
+
+	OSType pf = IOSurfaceGetPixelFormat(ref);
+	if (pf != 'BGRA')
+		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
+				pf >> 24, pf >> 16, pf >> 8, pf);
 
 	if (tex->width != IOSurfaceGetWidth(ref) ||
 			tex->height != IOSurfaceGetHeight(ref))
