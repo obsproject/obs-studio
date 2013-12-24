@@ -9,8 +9,8 @@
 
 #include "res/delete.ico.h"
 #include "res/down.ico.h"
-#include "res/htmledit_icon22_properties.gif.h"
 #include "res/list_add.png.h"
+#include "res/properties.ico.h"
 #include "res/up.ico.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	scenesToolbar->AddTool( ID_SCENE_DELETE, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
-	scenesToolbar->AddTool( ID_SCENE_PROPERTIES, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
+	scenesToolbar->AddTool( ID_SCENE_PROPERTIES, _("tool"), properties_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	scenesToolbar->AddSeparator(); 
 	
@@ -146,7 +146,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	sourcesToolbar->AddTool( ID_SOURCE_DELETE, _("tool"), delete_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
-	sourcesToolbar->AddTool( ID_SOURCE_PROPERTIES, _("tool"), htmledit_icon22_properties_gif_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
+	sourcesToolbar->AddTool( ID_SOURCE_PROPERTIES, _("tool"), properties_ico_to_wx_bitmap(), wxNullBitmap, wxITEM_NORMAL, wxEmptyString, wxEmptyString, NULL ); 
 	
 	sourcesToolbar->AddSeparator(); 
 	
@@ -174,15 +174,16 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	sourcesLabel1->Wrap( -1 );
 	bSizer42->Add( sourcesLabel1, 0, wxALL, 2 );
 	
-	m_panel16 = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
-	wxBoxSizer* bSizer43;
-	bSizer43 = new wxBoxSizer( wxVERTICAL );
+	m_scrolledWindow1 = new wxScrolledWindow( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxSIMPLE_BORDER|wxVSCROLL );
+	m_scrolledWindow1->SetScrollRate( 5, 5 );
+	wxBoxSizer* bSizer44;
+	bSizer44 = new wxBoxSizer( wxVERTICAL );
 	
 	
-	m_panel16->SetSizer( bSizer43 );
-	m_panel16->Layout();
-	bSizer43->Fit( m_panel16 );
-	bSizer42->Add( m_panel16, 1, wxEXPAND | wxALL, 2 );
+	m_scrolledWindow1->SetSizer( bSizer44 );
+	m_scrolledWindow1->Layout();
+	bSizer44->Fit( m_scrolledWindow1 );
+	bSizer42->Add( m_scrolledWindow1, 1, wxEXPAND | wxALL, 2 );
 	
 	
 	bottomCenterContainer->Add( bSizer42, 1, wxEXPAND, 5 );

@@ -30,6 +30,7 @@ class WindowSubclass;
 #include <wx/listbox.h>
 #include <wx/toolbar.h>
 #include <wx/checklst.h>
+#include <wx/scrolwin.h>
 #include <wx/button.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
@@ -121,7 +122,7 @@ class OBSBasicBase : public WindowSubclass
 		wxCheckListBox* sources;
 		wxToolBar* sourcesToolbar;
 		wxStaticText* sourcesLabel1;
-		wxPanel* m_panel16;
+		wxScrolledWindow* m_scrolledWindow1;
 		wxStaticText* m_staticText6;
 		wxButton* toggleStreamButton;
 		wxButton* ToggleRecordButton;
