@@ -252,3 +252,106 @@ void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
 	if(width) *width = swap->info.cx;
 	if(height) *height = swap->info.cy;
 }
+
+texture_t texture_create_from_iosurface(device_t device, void *iosurf)
+{
+	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
+	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
+	memset(tex, 0, sizeof(struct gs_texture_2d));
+
+	const enum gs_color_format color_format = GS_BGRA;
+
+	tex->base.device             = device;
+	tex->base.type               = GS_TEXTURE_2D;
+	tex->base.format             = GS_BGRA;
+	tex->base.levels             = 1;
+	tex->base.gl_format          = convert_gs_format(color_format);
+	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.gl_type            = GL_UNSIGNED_INT_8_8_8_8_REV;
+	tex->base.gl_target          = GL_TEXTURE_RECTANGLE;
+	tex->base.is_dynamic         = false;
+	tex->base.is_render_target   = false;
+	tex->base.gen_mipmaps        = false;
+	tex->width                   = IOSurfaceGetWidth(ref);
+	tex->height                  = IOSurfaceGetHeight(ref);
+
+	if (!gl_gen_textures(1, &tex->base.texture))
+		goto fail;
+
+	if (!gl_bind_texture(tex->base.gl_target, tex->base.texture))
+		goto fail;
+
+	CGLError err = CGLTexImageIOSurface2D(
+			[[NSOpenGLContext currentContext] CGLContextObj],
+			tex->base.gl_target,
+			tex->base.gl_internal_format,
+			tex->width, tex->height,
+			tex->base.gl_format,
+			tex->base.gl_type,
+			ref, 0);
+	
+	if(err != kCGLNoError) {
+		blog(LOG_ERROR, "CGLTexImageIOSurface2D: %u, %s"
+			        " (texture_create_from_iosurface)",
+				err, CGLErrorString(err));
+
+		gl_success("CGLTexImageIOSurface2D");
+		goto fail;
+	}
+
+	if (!gl_tex_param_i(tex->base.gl_target,
+				GL_TEXTURE_MAX_LEVEL, 0))
+		goto fail;
+
+	if (!gl_bind_texture(tex->base.gl_target, 0))
+		goto fail;
+
+	return (texture_t)tex;
+
+fail:
+	texture_destroy((texture_t)tex);
+	blog(LOG_ERROR, "texture_create_from_iosurface (GL) failed");
+	return NULL;
+}
+
+bool texture_rebind_iosurface(texture_t texture, void *iosurf)
+{
+	if (!texture)
+		return false;
+
+	if (!iosurf)
+		return false;
+
+	struct gs_texture_2d *tex = (struct gs_texture_2d*)texture;
+	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
+
+	if (tex->width != IOSurfaceGetWidth(ref) ||
+			tex->height != IOSurfaceGetHeight(ref))
+		return false;
+
+	if (!gl_bind_texture(tex->base.gl_target, tex->base.texture))
+		return false;
+
+	CGLError err = CGLTexImageIOSurface2D(
+			[[NSOpenGLContext currentContext] CGLContextObj],
+			tex->base.gl_target,
+			tex->base.gl_internal_format,
+			tex->width, tex->height,
+			tex->base.gl_format,
+			tex->base.gl_type,
+			ref, 0);
+	
+	if(err != kCGLNoError) {
+		blog(LOG_ERROR, "CGLTexImageIOSurface2D: %u, %s"
+			        " (texture_rebind_iosurface)",
+				err, CGLErrorString(err));
+
+		gl_success("CGLTexImageIOSurface2D");
+		return false;
+	}
+
+	if (!gl_bind_texture(tex->base.gl_target, 0))
+		return false;
+
+	return true;
+}

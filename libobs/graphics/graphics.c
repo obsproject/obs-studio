@@ -1589,3 +1589,25 @@ enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
 {
 	return thread_graphics->exports.indexbuffer_gettype(indexbuffer);
 }
+
+/** Platform specific functions */
+texture_t gs_create_texture_from_iosurface(void *iosurf)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics->exports.texture_create_from_iosurface)
+		return NULL;
+
+	return graphics->exports.texture_create_from_iosurface(
+			graphics->device, iosurf);
+}
+
+bool texture_rebind_iosurface(texture_t texture, void *iosurf)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics->exports.texture_rebind_iosurface)
+		return false;
+
+	return graphics->exports.texture_rebind_iosurface(texture, iosurf);
+}
+
+

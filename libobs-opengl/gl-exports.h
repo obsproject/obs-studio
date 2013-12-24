@@ -188,3 +188,8 @@ EXPORT void shader_settexture(shader_t shader, sparam_t param, texture_t val);
 EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
 		size_t size);
 EXPORT void shader_setdefault(shader_t shader, sparam_t param);
+
+#ifdef __APPLE__
+EXPORT texture_t texture_create_from_iosurface(device_t device, void *iosurf);
+EXPORT bool texture_rebind_iosurface(texture_t texture, void *iosurf);
+#endif
