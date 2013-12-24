@@ -270,7 +270,7 @@ EXPORT obs_source_t obs_get_source_by_name(const char *name);
 EXPORT char *obs_find_plugin_file(const char *file);
 
 /** Returns the default effect for generic RGB/YUV drawing */
-EXPORT effect_t obs_get_default_effect();
+EXPORT effect_t obs_get_default_effect(void);
 
 
 /* ------------------------------------------------------------------------- */
