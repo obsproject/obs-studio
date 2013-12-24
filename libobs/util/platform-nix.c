@@ -89,17 +89,18 @@ uint64_t os_gettime_ns(void)
 	return tp.tv_nsec;
 }
 
-/* should return $HOME/ */
-char *os_get_home_path(void)
+/* should return $HOME/.[name] */
+char *os_get_config_path(const char *name)
 {
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
 
-	char *path = bmalloc(strlen(path_ptr)+1);
-
-	strcpy(path, path_ptr);
-	return path;
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, ".");
+	dstr_cat(&path, name);
+	return path.array;
 }
 
 bool os_file_exists(const char *path)

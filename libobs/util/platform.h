@@ -69,7 +69,7 @@ EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);
 
-EXPORT char *os_get_home_path(void);
+EXPORT char *os_get_config_path(const char *name);
 
 EXPORT bool os_file_exists(const char *path);
 

@@ -111,39 +111,21 @@ static bool do_mkdir(const char *path)
 
 static bool MakeUserDirs()
 {
-	BPtr<char> homePath(os_get_home_path());
-	stringstream str;
-
-	str << homePath << "/obs-studio";
-	if (!do_mkdir(str.str().c_str()))
-		return false;
-
-	return true;
+	BPtr<char> configPath(os_get_config_path("obs-studio"));
+	return do_mkdir(configPath);
 }
 
 bool OBSApp::InitGlobalConfig()
 {
-	BPtr<char> homePath(os_get_home_path());
-	stringstream str;
+	BPtr<char> path(os_get_config_path("obs-studio/global.ini"));
 
-	if (!homePath) {
-		OBSErrorBox(NULL, "Failed to get home path");
-		return false;
-	}
-
-	str << homePath << "/obs-studio/global.ini";
-	string path = move(str.str());
-
-	int errorcode = globalConfig.Open(path.c_str(), CONFIG_OPEN_ALWAYS);
+	int errorcode = globalConfig.Open(path, CONFIG_OPEN_ALWAYS);
 	if (errorcode != CONFIG_SUCCESS) {
 		OBSErrorBox(NULL, "Failed to open global.ini: %d", errorcode);
 		return false;
 	}
 
-	if (!InitGlobalConfigDefaults())
-		return false;
-
-	return true;
+	return InitGlobalConfigDefaults();
 }
 
 #define DEFAULT_LANG "en"

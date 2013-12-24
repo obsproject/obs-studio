@@ -135,17 +135,21 @@ uint64_t os_gettime_ns(void)
 	return (uint64_t)time_val;
 }
 
-/* returns %appdata% on windows */
-char *os_get_home_path(void)
+/* returns %appdata%/[name] on windows */
+char *os_get_config_path(const char *name)
 {
-	char *out;
+	char *ptr;
 	wchar_t path_utf16[MAX_PATH];
+	struct dstr path;
 
 	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
-	os_wcs_to_utf8(path_utf16, 0, &out);
-	return out;
+	os_wcs_to_utf8(path_utf16, 0, &ptr);
+	dstr_init_move_array(&path, ptr);
+	dstr_cat(&path, "\\");
+	dstr_cat(&path, name);
+	return path.array;
 }
 
 bool os_file_exists(const char *path)

@@ -97,7 +97,8 @@ uint64_t os_gettime_ns(void)
 	return *(uint64_t*) &nano;
 }
 
-char *os_get_home_path(void)
+/* gets the location ~/Library/Application Support/[name] */
+char *os_get_config_path(const char *name)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
 			NSApplicationSupportDirectory, NSUserDomainMask, YES);
@@ -110,13 +111,17 @@ char *os_get_home_path(void)
 	NSUInteger len = [application_support
 		lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
 
-	char *path = bmalloc(len+1);
+	char *path_ptr = bmalloc(len+1);
 
-	path[len] = 0;
+	path_ptr[len] = 0;
 
-	memcpy(path, [application_support UTF8String], len);
+	memcpy(path_ptr, [application_support UTF8String], len);
 
-	return path;
+	struct dstr path;
+	dstr_init_move_array(&path, path_ptr);
+	dstr_cat(&path, "/");
+	dstr_cat(&path, name);
+	return path.array;
 }
 
 bool os_file_exists(const char *path)
