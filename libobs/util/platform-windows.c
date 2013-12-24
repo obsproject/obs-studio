@@ -135,7 +135,7 @@ uint64_t os_gettime_ns(void)
 	return (uint64_t)time_val;
 }
 
-/* returns %appdata%/[name] on windows */
+/* returns %appdata%\[name] on windows */
 char *os_get_config_path(const char *name)
 {
 	char *ptr;

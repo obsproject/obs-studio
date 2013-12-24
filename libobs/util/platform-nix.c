@@ -98,7 +98,7 @@ char *os_get_config_path(const char *name)
 
 	struct dstr path;
 	dstr_init_copy(&path, path_ptr);
-	dstr_cat(&path, ".");
+	dstr_cat(&path, "/.");
 	dstr_cat(&path, name);
 	return path.array;
 }
