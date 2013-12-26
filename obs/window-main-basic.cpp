@@ -67,8 +67,9 @@ bool OBSBasic::InitGraphics()
 	return true;
 }
 
-void OBSBasic::AddScene(const char *name)
+bool OBSBasic::AddScene(const char *name)
 {
+	return false;
 }
 
 void OBSBasic::OnClose(wxCloseEvent &event)
