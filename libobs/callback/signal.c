@@ -105,6 +105,7 @@ signal_handler_t signal_handler_create(void)
 	handler->first = NULL;
 
 	if (pthread_mutex_init(&handler->mutex, NULL) != 0) {
+		blog(LOG_ERROR, "Couldn't create signal handler!");
 		bfree(handler);
 		return NULL;
 	}
