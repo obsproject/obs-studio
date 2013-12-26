@@ -182,7 +182,7 @@ void signal_handler_disconnect(signal_handler_t handler, const char *signal,
 	pthread_mutex_lock(&sig->mutex);
 
 	idx = signal_get_callback_idx(sig, callback, data);
-	if (idx == DARRAY_INVALID)
+	if (idx != DARRAY_INVALID)
 		da_erase(sig->callbacks, idx);
 	
 	pthread_mutex_unlock(&sig->mutex);
