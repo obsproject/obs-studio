@@ -30,11 +30,23 @@ extern "C" {
  * procedures, and callbacks.
  */
 
-struct calldata;
+struct calldata {
+	size_t  size;     /* size of the stack, in bytes */
+	size_t  capacity; /* capacity of the stack, in bytes */
+	uint8_t *stack;
+};
+
 typedef struct calldata *calldata_t;
 
-EXPORT calldata_t calldata_create(void);
-EXPORT void calldata_destroy(calldata_t data);
+static inline void calldata_init(struct calldata *data)
+{
+	memset(data, 0, sizeof(struct calldata));
+}
+
+static inline void calldata_free(struct calldata *data)
+{
+	bfree(data->stack);
+}
 
 /* NOTE: 'get' functions return true only if paramter exists, and is the
  *       same size.  They return false otherwise. */
@@ -44,7 +56,13 @@ EXPORT bool calldata_getdata(calldata_t data, const char *name, void *out,
 EXPORT void calldata_setdata(calldata_t data, const char *name, const void *in,
 		size_t new_size);
 
-EXPORT void calldata_clear(calldata_t data);
+static inline void calldata_clear(struct calldata *data)
+{
+	if (data->stack) {
+		data->size = sizeof(size_t);
+		*(size_t*)data->stack = 0;
+	}
+}
 
 inline bool calldata_getchar  (calldata_t data, const char *name, char *val)
 {

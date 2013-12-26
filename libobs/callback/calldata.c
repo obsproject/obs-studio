@@ -34,16 +34,11 @@
  *     [size_t    param2_data_size]
  *     [uint8_t[] param2_data]
  *     [...]
+ *     [size_t    0]
  *
  *   Strings and string sizes always include the null terminator to allow for
  * direct referencing.
  */
-
-struct calldata {
-	size_t  size;     /* size of the stack, in bytes */
-	size_t  capacity; /* capacity of the stack, in bytes */
-	uint8_t *stack;
-};
 
 static inline void cd_serialize(uint8_t **pos, void *ptr, size_t size)
 {
@@ -164,23 +159,6 @@ static inline void cd_ensure_capacity(calldata_t data, uint8_t **pos,
 
 /* ------------------------------------------------------------------------- */
 
-calldata_t calldata_create(void)
-{
-	struct calldata *data = bmalloc(sizeof(struct calldata));
-	memset(data, 0, sizeof(struct calldata));
-	return data;
-}
-
-void calldata_destroy(calldata_t data)
-{
-	if (data) {
-		bfree(data->stack);
-		bfree(data);
-	}
-}
-
-/* ------------------------------------------------------------------------- */
-
 bool calldata_getdata(calldata_t data, const char *name, void *out, size_t size)
 {
 	uint8_t *pos;
@@ -243,14 +221,6 @@ void calldata_setdata(calldata_t data, const char *name, const void *in,
 		cd_copy_string(&pos, name, 0);
 		cd_copy_data(&pos, in, size);
 		*(size_t*)pos = 0;
-	}
-}
-
-void calldata_clear(calldata_t data)
-{
-	if (data->size) {
-		data->size = sizeof(size_t);
-		*(size_t*)data->stack = 0;
 	}
 }
 
