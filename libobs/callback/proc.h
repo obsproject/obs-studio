@@ -34,7 +34,7 @@ typedef struct proc_handler *proc_handler_t;
 proc_handler_t proc_handler_create(void *data);
 void proc_handler_destroy(proc_handler_t handler);
 
-void proc_handler_add(proc_handler_t handler, const char *declaration,
+void proc_handler_add(proc_handler_t handler, const char *name,
 		void (*proc)(calldata_t, void*));
 
 bool proc_handler_call(proc_handler_t handler, const char *name,

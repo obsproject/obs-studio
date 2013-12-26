@@ -67,6 +67,10 @@ bool OBSBasic::InitGraphics()
 	return true;
 }
 
+void OBSBasic::AddScene(const char *name)
+{
+}
+
 void OBSBasic::OnClose(wxCloseEvent &event)
 {
 	wxGetApp().ExitMainLoop();

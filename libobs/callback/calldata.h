@@ -178,7 +178,7 @@ EXPORT bool calldata_getstring(calldata_t data, const char *name,
 
 /* ------------------------------------------------------------------------- */
 
-void calldata_setchar  (calldata_t data, const char *name, char val)
+static void calldata_setchar  (calldata_t data, const char *name, char val)
 {
 	calldata_setdata(data, name, &val, sizeof(val));
 }

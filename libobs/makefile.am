@@ -52,7 +52,10 @@ libobs_la_SOURCES = obs.c \
 		    graphics/texture-render.c \
 		    graphics/vec2.c \
 		    graphics/vec3.c \
-		    graphics/vec4.c
+		    graphics/vec4.c \
+		    callback/calldata.c \
+		    callback/proc.c \
+		    callback/signal.c
 
 if OS_WIN
 libobs_la_SOURCES += util/platform-windows.c obs-windows.c

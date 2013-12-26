@@ -195,6 +195,12 @@
     <ClInclude Include="..\..\..\libobs\callback\calldata.h">
       <Filter>callback\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\callback\proc.h">
+      <Filter>callback\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\libobs\callback\signal.h">
+      <Filter>callback\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -318,6 +324,12 @@
       <Filter>libobs\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\callback\calldata.c">
+      <Filter>callback\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\callback\signal.c">
+      <Filter>callback\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\callback\proc.c">
       <Filter>callback\Source Files</Filter>
     </ClCompile>
   </ItemGroup>

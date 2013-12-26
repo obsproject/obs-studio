@@ -34,9 +34,9 @@ signal_handler_t signal_handler_create(void);
 void signal_handler_destroy(signal_handler_t handler);
 
 void signal_handler_connect(signal_handler_t handler, const char *signal,
-		void (*callback)(calldata_t, void*), void *param);
+		void (*callback)(calldata_t, void*), void *data);
 void signal_handler_disconnect(signal_handler_t handler, const char *signal,
-		void (*callback)(calldata_t. void*), void *param);
+		void (*callback)(calldata_t, void*), void *data);
 
-void signal_handler_signal(signal_handler_t handler, const char *name,
+void signal_handler_signal(signal_handler_t handler, const char *signal,
 		calldata_t params);

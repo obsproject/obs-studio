@@ -67,6 +67,9 @@ add_library(libobs SHARED
 		graphics/vec2.c
 		graphics/vec3.c
 		graphics/vec4.c
+		callback/calldata.c
+		callback/proc.c
+		callback/signal.c
 		${libobs_platform_src})
 
 set_target_properties(libobs

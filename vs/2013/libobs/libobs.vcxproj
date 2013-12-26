@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\libobs\callback\calldata.h" />
+    <ClInclude Include="..\..\..\libobs\callback\proc.h" />
+    <ClInclude Include="..\..\..\libobs\callback\signal.h" />
     <ClInclude Include="..\..\..\libobs\graphics\axisang.h" />
     <ClInclude Include="..\..\..\libobs\graphics\bounds.h" />
     <ClInclude Include="..\..\..\libobs\graphics\effect-parser.h" />
@@ -67,6 +69,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\callback\calldata.c" />
+    <ClCompile Include="..\..\..\libobs\callback\proc.c" />
+    <ClCompile Include="..\..\..\libobs\callback\signal.c" />
     <ClCompile Include="..\..\..\libobs\graphics\axisang.c" />
     <ClCompile Include="..\..\..\libobs\graphics\bounds.c" />
     <ClCompile Include="..\..\..\libobs\graphics\effect-parser.c" />
