@@ -49,6 +49,15 @@
       <UniqueIdentifier>{21a99cbb-e167-4baf-82ae-47d23dc12c7d}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="callback">
+      <UniqueIdentifier>{d4a8b3db-e572-4106-bba6-1d30a89665b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="callback\Header Files">
+      <UniqueIdentifier>{7501c673-436f-45f2-89c1-34fb78eb4743}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="callback\Source Files">
+      <UniqueIdentifier>{938200c3-d99b-45f9-99d7-854accba352b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\libobs\obs-module.h">
@@ -183,6 +192,9 @@
     <ClInclude Include="..\..\..\libobs\media-io\audio-resampler.h">
       <Filter>media-io\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\callback\calldata.h">
+      <Filter>callback\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -304,6 +316,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\obs-windows.c">
       <Filter>libobs\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\callback\calldata.c">
+      <Filter>callback\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

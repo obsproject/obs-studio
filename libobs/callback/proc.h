@@ -16,24 +16,26 @@
 
 #pragma once
 
-#include "bmem.h"
+#include "../util/c99defs.h"
 
-inline void* operator new(size_t size)
-{
-	return bmalloc(size);
-}
+#include "calldata.h"
 
-inline void operator delete(void* data)
-{
-	bfree(data);
-}
+/*
+ * Dynamic procedure handler
+ *
+ *   This handler is used to allow dynamic access to one or more procedures
+ * that can be called without having to have direct access to declarations
+ * or procedure callback pointers.
+ */
 
-inline void* operator new[](size_t size)
-{
-	return bmalloc(size);
-}
+struct proc_handler;
+typedef struct proc_handler *proc_handler_t;
 
-inline void operator delete[](void* data)
-{
-	bfree(data);
-}
+proc_handler_t proc_handler_create(void *data);
+void proc_handler_destroy(proc_handler_t handler);
+
+void proc_handler_add(proc_handler_t handler, const char *declaration,
+		void (*proc)(calldata_t, void*));
+
+bool proc_handler_call(proc_handler_t handler, const char *name,
+		calldata_t params);

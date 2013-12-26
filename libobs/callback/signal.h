@@ -16,24 +16,27 @@
 
 #pragma once
 
-#include "bmem.h"
+#include "../util/c99defs.h"
 
-inline void* operator new(size_t size)
-{
-	return bmalloc(size);
-}
+#include "calldata.h"
 
-inline void operator delete(void* data)
-{
-	bfree(data);
-}
+/*
+ * Signal handler
+ *
+ *   This is used to create a signal handler which can broadcast events
+ * to one or more callbacks connected to a signal.
+ */
 
-inline void* operator new[](size_t size)
-{
-	return bmalloc(size);
-}
+struct signal_handler;
+typedef struct signal_handler *signal_handler_t;
 
-inline void operator delete[](void* data)
-{
-	bfree(data);
-}
+signal_handler_t signal_handler_create(void);
+void signal_handler_destroy(signal_handler_t handler);
+
+void signal_handler_connect(signal_handler_t handler, const char *signal,
+		void (*callback)(calldata_t, void*), void *param);
+void signal_handler_disconnect(signal_handler_t handler, const char *signal,
+		void (*callback)(calldata_t. void*), void *param);
+
+void signal_handler_signal(signal_handler_t handler, const char *name,
+		calldata_t params);

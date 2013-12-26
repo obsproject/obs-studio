@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\libobs\callback\calldata.h" />
     <ClInclude Include="..\..\..\libobs\graphics\axisang.h" />
     <ClInclude Include="..\..\..\libobs\graphics\bounds.h" />
     <ClInclude Include="..\..\..\libobs\graphics\effect-parser.h" />
@@ -65,6 +66,7 @@
     <ClInclude Include="..\..\..\libobs\util\utf8.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\libobs\callback\calldata.c" />
     <ClCompile Include="..\..\..\libobs\graphics\axisang.c" />
     <ClCompile Include="..\..\..\libobs\graphics\bounds.c" />
     <ClCompile Include="..\..\..\libobs\graphics\effect-parser.c" />
