@@ -75,9 +75,10 @@ AC_CHECK_LIB([swresample], [swr_convert], , AC_MSG_ERROR([libswresample not foun
 AC_CHECK_HEADER([jansson.h], , AC_MSG_ERROR([libjansson header not found]))
 AC_CHECK_LIB([jansson], [json_load_file], , AC_MSG_ERROR([libjansson not found]))
 
+wxVersion=2.9.0
 WX_CONFIG_OPTIONS
 WX_CONFIG_CHECK(
-	[2.9.0], [wxWin=1], [wxWin=0,
+	$wxVersion, [wxWin=1], [wxWin=0,
 	AC_MSG_ERROR([
 		wxWidgets must be installed on your system.
  
@@ -85,7 +86,7 @@ WX_CONFIG_CHECK(
 		where wxWidgets libraries are installed (returned by
 		'wx-config --libs' or 'wx-config --static --libs' command)
 		is in LD_LIBRARY_PATH or equivalent variable and
-		wxWidgets version is $reqwx or above.
+		wxWidgets version is $wxVersion or above.
 		]) ],
 	[core], )
 
