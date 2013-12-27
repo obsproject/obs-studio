@@ -31,5 +31,5 @@ obs_SOURCES += platform-osx.mm
 endif
 
 if OS_NIX
-obs_SOURCES += platform-nix.cpp
+obs_SOURCES += platform-x11.cpp
 endif

@@ -37,7 +37,7 @@ elseif(APPLE)
 		platform-osx.mm)
 elseif(UNIX)
 	set(obs_platform_src
-		platform-nix.cpp)
+		platform-x11.cpp)
 endif()
 
 add_executable(obs
