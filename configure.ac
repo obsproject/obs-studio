@@ -58,11 +58,26 @@ case $host_os in
 		;;
 esac
 
-# checks for wx
-AM_OPTIONS_WXCONFIG
-reqwx=2.9.0
-AM_PATH_WXCONFIG($reqwx, wxWin=1)
-if test "$wxWin" != 1; then
+# checks for ffmpeg
+AC_CHECK_HEADER([libavcodec/avcodec.h], , AC_MSG_ERROR([libavcodec header not found]))
+AC_CHECK_HEADER([libavformat/avformat.h], , AC_MSG_ERROR([libavformat header not found]))
+AC_CHECK_HEADER([libavutil/avutil.h], , AC_MSG_ERROR([libavutil header not found]))
+AC_CHECK_HEADER([libavutil/channel_layout.h], , AC_MSG_ERROR([libavutil header not found]))
+AC_CHECK_HEADER([libswscale/swscale.h], , AC_MSG_ERROR([libswscale header not found]))
+AC_CHECK_HEADER([libswresample/swresample.h], , AC_MSG_ERROR([libswresample header not found]))
+
+AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name], , AC_MSG_ERROR([libavcodec not found]), )
+AC_CHECK_LIB([avformat], [av_guess_format], , AC_MSG_ERROR([libavformat not found]))
+AC_CHECK_LIB([avutil], [av_samples_alloc], , AC_MSG_ERROR([libavutil not found]))
+AC_CHECK_LIB([swscale], [sws_scale], , AC_MSG_ERROR([libswscale not found]))
+AC_CHECK_LIB([swresample], [swr_convert], , AC_MSG_ERROR([libswresample not found]))
+
+AC_CHECK_HEADER([jansson.h], , AC_MSG_ERROR([libjansson header not found]))
+AC_CHECK_LIB([jansson], [json_load_file], , AC_MSG_ERROR([libjansson not found]))
+
+WX_CONFIG_OPTIONS
+WX_CONFIG_CHECK(
+	[2.9.0], [wxWin=1], [wxWin=0,
 	AC_MSG_ERROR([
 		wxWidgets must be installed on your system.
  
@@ -71,26 +86,13 @@ if test "$wxWin" != 1; then
 		'wx-config --libs' or 'wx-config --static --libs' command)
 		is in LD_LIBRARY_PATH or equivalent variable and
 		wxWidgets version is $reqwx or above.
-		])
-fi
- 
+		]) ],
+	[core], )
+
 CPPFLAGS="$CPPFLAGS $WX_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $WX_CXXFLAGS_ONLY"
 CFLAGS="$CFLAGS $WX_CFLAGS_ONLY"
 LIBS="$LIBS $WX_LIBS"
-
-# checks for ffmpeg
-AC_CHECK_HEADER([libavcodec/avcodec.h], , AC_MSG_ERROR([libavcodec header not found]))
-AC_CHECK_HEADER([libavformat/avformat.h], , AC_MSG_ERROR([libavformat header not found]))
-AC_CHECK_HEADER([libavutil/avutil.h], , AC_MSG_ERROR([libavutil header not found]))
-AC_CHECK_HEADER([libavutil/channel_layout.h], , AC_MSG_ERROR([libavutil header not found]))
-AC_CHECK_HEADER([libswscale/swscale.h], , AC_MSG_ERROR([libswscale header not found]))
-AC_CHECK_HEADER([libswresample/swresample.h], , AC_MSG_ERROR([libswresample header not found]))
-AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name], , AC_MSG_ERROR([libavcodec not found]))
-AC_CHECK_LIB([avformat], [av_guess_format], , AC_MSG_ERROR([libavformat not found]))
-AC_CHECK_LIB([avutil], [av_samples_alloc], , AC_MSG_ERROR([libavutil not found]))
-AC_CHECK_LIB([swscale], [sws_scale], , AC_MSG_ERROR([libswscale not found]))
-AC_CHECK_LIB([swresample], [swr_convert], , AC_MSG_ERROR([libswresample not found]))
 
 # Checks for header files.
 AC_PATH_X
@@ -113,9 +115,6 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
-
-AC_CHECK_HEADER([jansson.h], , AC_MSG_ERROR([libjansson header not found]))
-AC_CHECK_LIB([jansson], [json_load_file], , AC_MSG_ERROR([libjansson not found]))
 
 # Checks for library functions.
 AC_FUNC_FSEEKO

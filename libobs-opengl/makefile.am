@@ -1,5 +1,5 @@
-INCLUDES = -isystem$(top_srcdir)/libobs -isystem./glew/include
-AM_CFLAGS = -DGLEW_NO_GLU -DGLEW_STATIC
+AUTOMAKE_OPTIONS = subdir-objects
+AM_CFLAGS = -DGLEW_NO_GLU -DGLEW_STATIC -isystem$(top_srcdir)/libobs -isystem./glew/include
 
 if OS_WIN
 if ARCH_X86

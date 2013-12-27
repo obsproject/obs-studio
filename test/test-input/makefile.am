@@ -1,4 +1,4 @@
-INCLUDES = -isystem$(top_srcdir)/libobs
+AM_CFLAGS = -isystem$(top_srcdir)/libobs
 
 if OS_WIN
 if ARCH_X86
