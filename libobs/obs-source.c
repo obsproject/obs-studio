@@ -176,7 +176,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, settings, info))
 		goto fail;
 
-	obs_source_create_dosignal(source, "source-create");
+	obs_source_dosignal(source, "source-create");
 	return source;
 
 fail:
