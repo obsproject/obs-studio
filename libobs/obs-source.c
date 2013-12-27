@@ -85,6 +85,16 @@ static inline const struct source_info *find_source(struct darray *list,
 	return NULL;
 }
 
+static inline bool obs_source_init_handlers(struct obs_source *source)
+{
+	source->signals = signal_handler_create();
+	if (!source->signals)
+		return false;
+
+	source->procs = proc_handler_create();
+	return (source->procs != NULL);
+}
+
 /* internal initialization */
 bool obs_source_init(struct obs_source *source, const char *settings,
 		const struct source_info *info)
@@ -143,6 +153,9 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	source = bmalloc(sizeof(struct obs_source));
 	memset(source, 0, sizeof(struct obs_source));
 
+	if (!obs_source_init_handlers(source))
+		goto fail;
+
 	source->name = bstrdup(name);
 	source->type = type;
 	source->data = info->create(settings, source);
@@ -185,6 +198,9 @@ static void obs_source_destroy(obs_source_t source)
 	bfree(source->audio_data.data);
 	audio_line_destroy(source->audio_line);
 	audio_resampler_destroy(source->resampler);
+
+	proc_handler_destroy(source->procs);
+	signal_handler_destroy(source->signals);
 
 	da_free(source->video_frames);
 	da_free(source->audio_wait_buffer);
@@ -1003,4 +1019,14 @@ void obs_source_process_filter(obs_source_t filter, texrender_t texrender,
 
 	render_filter_tex(texrender_gettexture(texrender), effect,
 			width, height, yuv);
+}
+
+signal_handler_t obs_source_signalhandler(obs_source_t source)
+{
+	return source->signals;
+}
+
+proc_handler_t obs_source_prochandler(obs_source_t source)
+{
+	return source->procs;
 }

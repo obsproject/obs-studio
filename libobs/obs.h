@@ -21,6 +21,8 @@
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
 #include "media-io/media-io.h"
+#include "callback/signal.h"
+#include "callback/proc.h"
 
 #include "obs-defs.h"
 
@@ -272,6 +274,12 @@ EXPORT char *obs_find_plugin_file(const char *file);
 /** Returns the default effect for generic RGB/YUV drawing */
 EXPORT effect_t obs_get_default_effect(void);
 
+/** Returns the primary obs signal handler */
+EXPORT signal_handler_t obs_signalhandler(void);
+
+/** Returns the primary obs procedure handler */
+EXPORT proc_handler_t obs_prochandler(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
@@ -392,6 +400,12 @@ EXPORT void obs_source_setname(obs_source_t source, const char *name);
 /** Gets the source type and identifier */
 EXPORT void obs_source_getid(obs_source_t source, enum obs_source_type *type,
 		const char **id);
+
+/** Returns the signal handler for a source */
+EXPORT signal_handler_t obs_source_signalhandler(obs_source_t source);
+
+/** Returns the procedure handler for a source */
+EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */

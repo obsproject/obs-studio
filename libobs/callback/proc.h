@@ -24,18 +24,22 @@
  * Dynamic procedure handler
  *
  *   This handler is used to allow dynamic access to one or more procedures
- * that can be called without having to have direct access to declarations
- * or procedure callback pointers.
+ * that can be dynamically added and called without having to have direct
+ * access to declarations or procedure callback pointers.
  */
 
 struct proc_handler;
 typedef struct proc_handler *proc_handler_t;
 
-proc_handler_t proc_handler_create(void *data);
-void proc_handler_destroy(proc_handler_t handler);
+EXPORT proc_handler_t proc_handler_create(void);
+EXPORT void proc_handler_destroy(proc_handler_t handler);
 
-void proc_handler_add(proc_handler_t handler, const char *name,
-		void (*proc)(calldata_t, void*));
+EXPORT void proc_handler_add(proc_handler_t handler, const char *name,
+		void (*proc)(calldata_t, void*), void *data);
 
-bool proc_handler_call(proc_handler_t handler, const char *name,
+/**
+ * Calls a function in a procedure handler.  Returns false if the named
+ * procedure is not found.
+ */
+EXPORT bool proc_handler_call(proc_handler_t handler, const char *name,
 		calldata_t params);

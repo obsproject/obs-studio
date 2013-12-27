@@ -88,6 +88,9 @@ struct obs_subsystem {
 
 	media_t                     media;
 
+	signal_handler_t            signals;
+	proc_handler_t              procs;
+
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
 	struct obs_video            video;

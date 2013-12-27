@@ -20,6 +20,7 @@
 
 struct proc_info {
 	char *name;
+	void *data;
 	void (*proc)(calldata_t, void*);
 };
 
@@ -29,16 +30,13 @@ static inline void proc_info_free(struct proc_info *pi)
 }
 
 struct proc_handler {
-	void                     *data;
-
 	/* TODO: replace with hash table lookup? */
 	DARRAY(struct proc_info) procs;
 };
 
-proc_handler_t proc_handler_create(void *data)
+proc_handler_t proc_handler_create(void)
 {
 	struct proc_handler *handler = bmalloc(sizeof(struct proc_handler));
-	handler->data = data;
 	da_init(handler->procs);
 	return handler;
 }
@@ -54,9 +52,9 @@ void proc_handler_destroy(proc_handler_t handler)
 }
 
 void proc_handler_add(proc_handler_t handler, const char *name,
-		void (*proc)(calldata_t, void*))
+		void (*proc)(calldata_t, void*), void *data)
 {
-	struct proc_info pi = {bstrdup(name), proc};
+	struct proc_info pi = {bstrdup(name), data, proc};
 	da_push_back(handler->procs, &pi);
 }
 
@@ -67,7 +65,7 @@ bool proc_handler_call(proc_handler_t handler, const char *name,
 		struct proc_info *info = handler->procs.array+i;
 
 		if (strcmp(info->name, name) == 0) {
-			info->proc(params, handler->data);
+			info->proc(params, info->data);
 			return true;
 		}
 	}

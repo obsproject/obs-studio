@@ -23,6 +23,8 @@
 #include "util/threading.h"
 #include "media-io/media-io.h"
 #include "media-io/audio-resampler.h"
+#include "callback/signal.h"
+#include "callback/proc.h"
 
 /*
  * ===========================================
@@ -209,6 +211,9 @@ struct obs_source {
 	struct dstr                  settings;
 	void                         *data;
 	struct source_info           callbacks;
+
+	signal_handler_t             signals;
+	proc_handler_t               procs;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer

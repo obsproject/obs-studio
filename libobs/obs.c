@@ -252,12 +252,25 @@ static void obs_free_data(void)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
+static inline bool obs_init_handlers(void)
+{
+	obs->signals = signal_handler_create();
+	if (!obs->signals)
+		return false;
+
+	obs->procs   = proc_handler_create();
+	return (obs->procs != NULL);
+}
+
 static bool obs_init(void)
 {
 	obs = bmalloc(sizeof(struct obs_subsystem));
 
 	memset(obs, 0, sizeof(struct obs_subsystem));
 	obs_init_data();
+
+	if (!obs_init_handlers())
+		return false;
 
 	obs->media = media_open();
 	if (!obs->media)
@@ -300,6 +313,8 @@ void obs_shutdown(void)
 	obs_free_graphics();
 	obs_free_audio();
 	media_close(obs->media);
+	proc_handler_destroy(obs->procs);
+	signal_handler_destroy(obs->signals);
 
 	for (i = 0; i < obs->modules.num; i++)
 		free_module(obs->modules.array+i);
@@ -488,4 +503,14 @@ obs_source_t obs_get_source_by_name(const char *name)
 effect_t obs_get_default_effect(void)
 {
 	return obs->video.default_effect;
+}
+
+signal_handler_t obs_signalhandler(void)
+{
+	return obs->signals;
+}
+
+proc_handler_t obs_prochandler(void)
+{
+	return obs->procs;
 }
