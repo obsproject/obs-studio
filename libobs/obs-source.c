@@ -127,6 +127,17 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 	return true;
 }
 
+static inline void obs_source_dosignal(struct obs_source *source,
+		const char *signal)
+{
+	struct calldata data;
+
+	calldata_init(&data);
+	calldata_setptr(&data, "source", source);
+	signal_handler_signal(obs->signals, signal, &data);
+	calldata_free(&data);
+}
+
 obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		const char *name, const char *settings)
 {
@@ -165,6 +176,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, settings, info))
 		goto fail;
 
+	obs_source_create_dosignal(source, "source-create");
 	return source;
 
 fail:
@@ -176,6 +188,8 @@ fail:
 static void obs_source_destroy(obs_source_t source)
 {
 	size_t i;
+
+	obs_source_dosignal(source, "source-destroy");
 
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);

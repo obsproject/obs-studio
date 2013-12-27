@@ -39,7 +39,7 @@ static inline struct signal_info *signal_info_create(const char *name)
 	si->next = NULL;
 	da_init(si->callbacks);
 
-	if (!pthread_mutex_init(&si->mutex, NULL) != 0) {
+	if (pthread_mutex_init(&si->mutex, NULL) != 0) {
 		blog(LOG_ERROR, "Could not create signal!");
 		bfree(si->name);
 		bfree(si);
@@ -179,6 +179,9 @@ void signal_handler_disconnect(signal_handler_t handler, const char *signal,
 	struct signal_info *sig = getsignal_locked(handler, signal);
 	size_t idx;
 
+	if (!sig)
+		return;
+
 	pthread_mutex_lock(&sig->mutex);
 
 	idx = signal_get_callback_idx(sig, callback, data);
@@ -192,6 +195,9 @@ void signal_handler_signal(signal_handler_t handler, const char *signal,
 		calldata_t params)
 {
 	struct signal_info *sig = getsignal_locked(handler, signal);
+
+	if (!sig)
+		return;
 
 	pthread_mutex_lock(&sig->mutex);
 

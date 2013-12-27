@@ -20,6 +20,10 @@
 
 #include "calldata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Dynamic procedure handler
  *
@@ -43,3 +47,7 @@ EXPORT void proc_handler_add(proc_handler_t handler, const char *name,
  */
 EXPORT bool proc_handler_call(proc_handler_t handler, const char *name,
 		calldata_t params);
+
+#ifdef __cplusplus
+}
+#endif

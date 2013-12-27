@@ -20,6 +20,10 @@
 
 #include "calldata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Signal handler
  *
@@ -30,13 +34,18 @@
 struct signal_handler;
 typedef struct signal_handler *signal_handler_t;
 
-signal_handler_t signal_handler_create(void);
-void signal_handler_destroy(signal_handler_t handler);
+EXPORT signal_handler_t signal_handler_create(void);
+EXPORT void signal_handler_destroy(signal_handler_t handler);
 
-void signal_handler_connect(signal_handler_t handler, const char *signal,
+EXPORT void signal_handler_connect(signal_handler_t handler, const char *signal,
 		void (*callback)(calldata_t, void*), void *data);
-void signal_handler_disconnect(signal_handler_t handler, const char *signal,
-		void (*callback)(calldata_t, void*), void *data);
+EXPORT void signal_handler_disconnect(signal_handler_t handler,
+		const char *signal, void (*callback)(calldata_t, void*),
+		void *data);
 
-void signal_handler_signal(signal_handler_t handler, const char *signal,
+EXPORT void signal_handler_signal(signal_handler_t handler, const char *signal,
 		calldata_t params);
+
+#ifdef __cplusplus
+}
+#endif
