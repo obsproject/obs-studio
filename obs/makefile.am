@@ -1,4 +1,5 @@
-INCLUDES = -I$(top_srcdir)/libobs
+AUTOMAKE_OPTIONS = subdir-objects
+AM_CPPFLAGS = -I$(top_srcdir)/libobs
 
 if OS_WIN
 if ARCH_X86_64

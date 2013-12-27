@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS = subdir-objects
+
 if OS_WIN
 if ARCH_X86
 libobsdir = ../build/bin/32bit
