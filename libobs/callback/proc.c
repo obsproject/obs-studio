@@ -52,7 +52,7 @@ void proc_handler_destroy(proc_handler_t handler)
 }
 
 void proc_handler_add(proc_handler_t handler, const char *name,
-		void (*proc)(calldata_t, void*), void *data)
+		void (*proc)(void*, calldata_t), void *data)
 {
 	struct proc_info pi = {bstrdup(name), data, proc};
 	da_push_back(handler->procs, &pi);
@@ -65,7 +65,7 @@ bool proc_handler_call(proc_handler_t handler, const char *name,
 		struct proc_info *info = handler->procs.array+i;
 
 		if (strcmp(info->name, name) == 0) {
-			info->proc(params, info->data);
+			info->proc(info->data, params);
 			return true;
 		}
 	}

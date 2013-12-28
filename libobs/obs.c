@@ -433,10 +433,16 @@ media_t obs_media(void)
 
 bool obs_add_source(obs_source_t source)
 {
+	struct calldata params = {0};
+
 	pthread_mutex_lock(&obs->data.sources_mutex);
 	da_push_back(obs->data.sources, &source);
 	obs_source_addref(source);
 	pthread_mutex_unlock(&obs->data.sources_mutex);
+
+	calldata_setptr(&params, "source", source);
+	signal_handler_signal(obs->signals, "source-add", &params);
+	calldata_free(&params);
 
 	return true;
 }

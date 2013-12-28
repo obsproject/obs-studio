@@ -398,7 +398,7 @@ EXPORT const char *obs_source_getname(obs_source_t source);
 EXPORT void obs_source_setname(obs_source_t source, const char *name);
 
 /** Gets the source type and identifier */
-EXPORT void obs_source_getid(obs_source_t source, enum obs_source_type *type,
+EXPORT void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 		const char **id);
 
 /** Returns the signal handler for a source */
@@ -444,11 +444,14 @@ EXPORT void obs_source_process_filter(obs_source_t filter,
  *   A scene is a source which is a container of other sources with specific
  * display oriantations.  Scenes can also be used like any other source.
  */
-EXPORT obs_scene_t obs_scene_create(void);
+EXPORT obs_scene_t obs_scene_create(const char *name);
 EXPORT void        obs_scene_destroy(obs_scene_t scene);
 
 /** Gets the scene's source context */
 EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);
+
+/** Gets the scene from its source, or NULL if not a scene */
+EXPORT obs_scene_t obs_scene_fromsource(obs_source_t source);
 
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);

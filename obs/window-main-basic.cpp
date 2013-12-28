@@ -22,12 +22,53 @@
 #include "window-settings-basic.hpp"
 #include "window-main-basic.hpp"
 
+void OBSBasic::SceneAdded(obs_source_t source)
+{
+	const char *name  = obs_source_getname(source);
+	obs_scene_t scene = obs_scene_fromsource(source);
+	scenes->Append(wxString(name, wxConvUTF8), scene);
+}
+
+void OBSBasic::SourceAdded(void *data, calldata_t params)
+{
+	OBSBasic *window = (OBSBasic*)data;
+
+	obs_source_t source;
+	calldata_getptr(params, "source", (void**)&source);
+
+	obs_source_type type;
+	obs_source_gettype(source, &type, NULL);
+
+	if (type == SOURCE_SCENE)
+		window->SceneAdded(source);
+}
+
+void OBSBasic::SourceDestroyed(void *data, calldata_t params)
+{
+	OBSBasic *window = (OBSBasic*)data;
+	obs_source_t source;
+
+	calldata_getptr(params, "source", (void**)&source);
+
+	/* TODO */
+}
+
 bool OBSBasic::Init()
 {
 	if (!obs_startup())
 		return false;
 	if (!InitGraphics())
 		return false;
+
+	signal_handler_connect(obs_signalhandler(), "source-add",
+			OBSBasic::SourceAdded, this);
+	signal_handler_connect(obs_signalhandler(), "source-destroy",
+			OBSBasic::SourceDestroyed, this);
+
+	//obs_scene_t scene = obs_scene_create("test scene");
+	//obs_add_source(obs_scene_getsource(scene));
+
+	//obs_load_module("test-input");
 
 	return true;
 }
@@ -65,11 +106,6 @@ bool OBSBasic::InitGraphics()
 	SendSizeEvent();
 
 	return true;
-}
-
-bool OBSBasic::AddScene(const char *name)
-{
-	return false;
 }
 
 void OBSBasic::OnClose(wxCloseEvent &event)

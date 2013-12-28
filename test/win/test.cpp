@@ -167,7 +167,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* create scene and add source to scene (twice) */
-		SceneContext scene = obs_scene_create();
+		SceneContext scene = obs_scene_create("test scene");
 		if (!scene)
 			throw "Couldn't create scene";
 

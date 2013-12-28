@@ -39,7 +39,7 @@ EXPORT proc_handler_t proc_handler_create(void);
 EXPORT void proc_handler_destroy(proc_handler_t handler);
 
 EXPORT void proc_handler_add(proc_handler_t handler, const char *name,
-		void (*proc)(calldata_t, void*), void *data);
+		void (*proc)(void*, calldata_t), void *data);
 
 /**
  * Calls a function in a procedure handler.  Returns false if the named

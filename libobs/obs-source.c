@@ -954,11 +954,11 @@ void obs_source_setname(obs_source_t source, const char *name)
 	source->name = bstrdup(name);
 }
 
-void obs_source_getid(obs_source_t source, enum obs_source_type *type,
+void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 		const char **id)
 {
-	*type = source->type;
-	*id   = source->callbacks.id;
+	if (type) *type = source->type;
+	if (id)   *id   = source->callbacks.id;
 }
 
 static inline void render_filter_bypass(obs_source_t target, effect_t effect,

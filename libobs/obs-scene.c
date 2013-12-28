@@ -97,7 +97,7 @@ static const struct source_info scene_info =
 	.getheight        = scene_getsize,
 };
 
-obs_scene_t obs_scene_create(void)
+obs_scene_t obs_scene_create(const char *name)
 {
 	struct obs_source *source = bmalloc(sizeof(struct obs_source));
 	struct obs_scene  *scene  = scene_create(NULL, source);
@@ -109,6 +109,9 @@ obs_scene_t obs_scene_create(void)
 		bfree(source);
 		return NULL;
 	}
+
+	source->name  = bstrdup(name);
+	source->type  = SOURCE_SCENE;
 
 	scene->source = source;
 	obs_source_init(source, NULL, &scene_info);
@@ -125,6 +128,14 @@ void obs_scene_destroy(obs_scene_t scene)
 obs_source_t obs_scene_getsource(obs_scene_t scene)
 {
 	return scene->source;
+}
+
+obs_scene_t obs_scene_fromsource(obs_source_t source)
+{
+	if (source->type != SOURCE_SCENE)
+		return NULL;
+
+	return source->data;
 }
 
 obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)

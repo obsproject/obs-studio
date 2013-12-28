@@ -25,6 +25,11 @@
 using namespace std;
 
 class OBSBasic : public OBSBasicBase {
+	void SceneAdded(obs_source_t scene);
+
+	static void SourceAdded(void *data, calldata_t params);
+	static void SourceDestroyed(void *data, calldata_t params);
+
 	bool InitGraphics();
 
 	void NewProject();
@@ -59,8 +64,6 @@ public:
 	virtual ~OBSBasic();
 
 	bool Init();
-
-	bool AddScene(const char *name);
 
 	inline wxPanel *GetPreviewPanel() {return previewPanel;}
 	inline wxSizer *GetPreviewContainer() {return previewContainer;}
