@@ -23,6 +23,14 @@
 #include <memory>
 using namespace std;
 
+#ifdef __linux__
+#include <gdk/gdkx.h>
+#include <gtk/gtk.h>
+#endif
+
+#include <memory>
+using namespace std;
+
 gs_window WxToGSWindow(const wxWindow *wxwin)
 {
 	gs_window window;
@@ -31,7 +39,7 @@ gs_window WxToGSWindow(const wxWindow *wxwin)
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
-	/* TODO: linux stuff */
+	window.id 	= gdk_x11_drawable_get_xid(gtk_widget_get_window(wxwin->GetHandle()));
 #endif
 	return window;
 }

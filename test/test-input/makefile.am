@@ -10,7 +10,7 @@ else
 libtestdir = $(libdir)/obs-plugins
 endif
 
-pkglib_LTLIBRARIES = libtest-input.la
+libtest_LTLIBRARIES = libtest-input.la
 
 libtest_input_la_LDFLAGS = -no-undefined
 if OS_WIN

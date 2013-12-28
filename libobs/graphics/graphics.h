@@ -414,9 +414,8 @@ struct gs_window {
 	void                    *hwnd;
 #elif defined(__APPLE__)
 	__unsafe_unretained id  view;
-#elif defined(__posix__)
-	int bla;
-	/* TODO */
+#elif defined(__linux__)
+	uint32_t id;
 #endif
 };
 

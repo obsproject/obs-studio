@@ -33,5 +33,7 @@ obs_SOURCES += platform-osx.mm
 endif
 
 if OS_NIX
+obs_CPPFLAGS = $(AM_CPPFLAGS) $(GTK_CFLAGS) $(X11_CFLAGS) $(XINERAMA_CFLAGS)
 obs_SOURCES += platform-x11.cpp
+obs_LDADD += $(GTK_LIBS) $(X11_LIBS) $(XINERAMA_LIBS)
 endif

@@ -39,3 +39,7 @@ endif
 if OS_WIN
 libobs_opengl_la_SOURCES += gl-windows.c
 endif
+
+if OS_NIX
+libobs_opengl_la_SOURCES += gl-x11.c
+endif
