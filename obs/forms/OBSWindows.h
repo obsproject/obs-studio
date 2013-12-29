@@ -219,6 +219,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxPanel* m_panel16;
 		wxPanel* audioPanel;
 		wxStaticText* m_staticText23;
+		wxStaticText* m_staticText231;
 		wxStaticText* m_staticText24;
 		wxStaticText* m_staticText241;
 		wxStaticText* m_staticText242;
@@ -252,7 +253,8 @@ class OBSBasicSettingsBase : public DialogSubclass
 		wxSpinCtrl* fpsDenominatorScroller;
 		wxSpinCtrl* fpsNanosecondsScroller;
 		wxStaticText* videoChangedText;
-		wxComboBox* desktopAudioDeviceList;
+		wxComboBox* desktopAudioDeviceList1;
+		wxComboBox* desktopAudioDeviceList2;
 		wxComboBox* auxAudioDeviceList1;
 		wxComboBox* auxAudioDeviceList2;
 		wxComboBox* auxAudioDeviceList3;

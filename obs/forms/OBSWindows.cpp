@@ -652,14 +652,23 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	fgSizer11->SetFlexibleDirection( wxBOTH );
 	fgSizer11->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText23 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.DesktopAudioDevice"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText23 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.DesktopAudioDevice1"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
 	m_staticText23->Wrap( -1 );
 	fgSizer11->Add( m_staticText23, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
 	
-	desktopAudioDeviceList = new wxComboBox( audioPanel, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
-	desktopAudioDeviceList->Enable( false );
+	desktopAudioDeviceList1 = new wxComboBox( audioPanel, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	desktopAudioDeviceList1->Enable( false );
 	
-	fgSizer11->Add( desktopAudioDeviceList, 0, wxALL, 2 );
+	fgSizer11->Add( desktopAudioDeviceList1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
+	
+	m_staticText231 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.DesktopAudioDevice2"), wxDefaultPosition, wxSize( 270,-1 ), wxALIGN_RIGHT );
+	m_staticText231->Wrap( -1 );
+	fgSizer11->Add( m_staticText231, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 2 );
+	
+	desktopAudioDeviceList2 = new wxComboBox( audioPanel, ID_DESKTOP_AUDIO_DEVICE, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
+	desktopAudioDeviceList2->Enable( false );
+	
+	fgSizer11->Add( desktopAudioDeviceList2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	m_staticText24 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice1"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText24->Wrap( -1 );
@@ -668,7 +677,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	auxAudioDeviceList1 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE1, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	auxAudioDeviceList1->Enable( false );
 	
-	fgSizer11->Add( auxAudioDeviceList1, 0, wxALL, 2 );
+	fgSizer11->Add( auxAudioDeviceList1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	m_staticText241 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice2"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText241->Wrap( -1 );
@@ -677,7 +686,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	auxAudioDeviceList2 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE2, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	auxAudioDeviceList2->Enable( false );
 	
-	fgSizer11->Add( auxAudioDeviceList2, 0, wxALL, 2 );
+	fgSizer11->Add( auxAudioDeviceList2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	m_staticText242 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice3"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText242->Wrap( -1 );
@@ -686,7 +695,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	auxAudioDeviceList3 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE3, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	auxAudioDeviceList3->Enable( false );
 	
-	fgSizer11->Add( auxAudioDeviceList3, 0, wxALL, 2 );
+	fgSizer11->Add( auxAudioDeviceList3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	m_staticText243 = new wxStaticText( audioPanel, wxID_ANY, _("Settings.Audio.AuxAudioDevice4"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText243->Wrap( -1 );
@@ -695,7 +704,7 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	auxAudioDeviceList4 = new wxComboBox( audioPanel, ID_AUX_AUDIO_DEVICE4, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxCB_READONLY ); 
 	auxAudioDeviceList4->Enable( false );
 	
-	fgSizer11->Add( auxAudioDeviceList4, 0, wxALL, 2 );
+	fgSizer11->Add( auxAudioDeviceList4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 2 );
 	
 	
 	bSizer36->Add( fgSizer11, 0, wxEXPAND, 5 );
