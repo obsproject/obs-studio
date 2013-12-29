@@ -862,8 +862,18 @@ NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	this->Layout();
 	
 	this->Centre( wxBOTH );
+	
+	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( NameDialogBase::OnClose ) );
+	okButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( NameDialogBase::OKPressed ), NULL, this );
+	cancelButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( NameDialogBase::CancelPressed ), NULL, this );
 }
 
 NameDialogBase::~NameDialogBase()
 {
+	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( NameDialogBase::OnClose ) );
+	okButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( NameDialogBase::OKPressed ), NULL, this );
+	cancelButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( NameDialogBase::CancelPressed ), NULL, this );
+	
 }

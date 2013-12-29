@@ -308,6 +308,12 @@ class NameDialogBase : public wxDialog
 		wxTextCtrl* nameEdit;
 		wxButton* okButton;
 		wxButton* cancelButton;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void OKPressed( wxCommandEvent& event ) { event.Skip(); }
+		virtual void CancelPressed( wxCommandEvent& event ) { event.Skip(); }
+		
 	
 	public:
 		
