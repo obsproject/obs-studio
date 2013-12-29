@@ -21,6 +21,8 @@
 #include "wx-wrappers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-basic-main.hpp"
+#include "window-namedialog.hpp"
+using namespace std;
 
 void OBSBasic::SceneAdded(obs_source_t source)
 {
@@ -182,6 +184,17 @@ void OBSBasic::scenesRDown(wxMouseEvent &event)
 
 void OBSBasic::sceneAddClicked(wxCommandEvent &event)
 {
+	string name;
+	int ret = NameDialog::AskForName(this,
+			Str("MainWindow.AddSceneDlg.Title"),
+			Str("MainWindow.AddSceneDlg.Text"),
+			name);
+
+	if (ret == wxID_OK) {
+		obs_scene_t scene = obs_scene_create(name.c_str());
+		obs_add_source(obs_scene_getsource(scene));
+		obs_scene_release(scene);
+	}
 }
 
 void OBSBasic::sceneRemoveClicked(wxCommandEvent &event)

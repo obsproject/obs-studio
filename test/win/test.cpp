@@ -29,7 +29,7 @@ class SceneContext {
 
 public:
 	inline SceneContext(obs_scene_t scene) : scene(scene) {}
-	inline ~SceneContext() {obs_scene_destroy(scene);}
+	inline ~SceneContext() {obs_scene_release(scene);}
 	inline operator obs_scene_t() {return scene;}
 };
 

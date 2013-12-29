@@ -445,7 +445,7 @@ EXPORT void obs_source_process_filter(obs_source_t filter,
  * display oriantations.  Scenes can also be used like any other source.
  */
 EXPORT obs_scene_t obs_scene_create(const char *name);
-EXPORT void        obs_scene_destroy(obs_scene_t scene);
+EXPORT void        obs_scene_release(obs_scene_t scene);
 
 /** Gets the scene's source context */
 EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);

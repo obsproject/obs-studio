@@ -272,7 +272,7 @@ class OBSBasicSettingsBase : public DialogSubclass
 ///////////////////////////////////////////////////////////////////////////////
 /// Class ProjectChooserBase
 ///////////////////////////////////////////////////////////////////////////////
-class ProjectChooserBase : public wxDialog 
+class ProjectChooserBase : public DialogSubclass
 {
 	private:
 	
@@ -299,7 +299,7 @@ class ProjectChooserBase : public wxDialog
 ///////////////////////////////////////////////////////////////////////////////
 /// Class NameDialogBase
 ///////////////////////////////////////////////////////////////////////////////
-class NameDialogBase : public wxDialog 
+class NameDialogBase : public DialogSubclass
 {
 	private:
 	
@@ -317,7 +317,7 @@ class NameDialogBase : public wxDialog
 	
 	public:
 		
-		NameDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("MaximumText"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 498,117 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		NameDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("MaximumText"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 540,132 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~NameDialogBase();
 	
 };

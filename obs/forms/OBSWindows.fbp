@@ -7342,7 +7342,7 @@
             <property name="pos"></property>
             <property name="size">445,159</property>
             <property name="style">wxDEFAULT_DIALOG_STYLE</property>
-            <property name="subclass"></property>
+            <property name="subclass">DialogSubclass; ../wx-subclass.hpp</property>
             <property name="title">ProjectChooser</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -7767,9 +7767,9 @@
             <property name="minimum_size"></property>
             <property name="name">NameDialogBase</property>
             <property name="pos"></property>
-            <property name="size">498,117</property>
+            <property name="size">540,132</property>
             <property name="style">wxDEFAULT_DIALOG_STYLE</property>
-            <property name="subclass"></property>
+            <property name="subclass">DialogSubclass; ../wx-subclass.hpp</property>
             <property name="title">MaximumText</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -7817,8 +7817,8 @@
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
                 <object class="sizeritem" expanded="0">
-                    <property name="border">5</property>
-                    <property name="flag">wxALL</property>
+                    <property name="border">10</property>
+                    <property name="flag">wxTOP|wxRIGHT|wxLEFT</property>
                     <property name="proportion">0</property>
                     <object class="wxStaticText" expanded="0">
                         <property name="BottomDockable">1</property>

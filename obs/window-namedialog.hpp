@@ -19,7 +19,7 @@
 
 #include "forms/OBSWindows.h"
 
-#include <vector>
+#include <string>
 
 class NameDialog : public NameDialogBase {
 protected:

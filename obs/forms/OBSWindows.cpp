@@ -770,7 +770,7 @@ OBSBasicSettingsBase::~OBSBasicSettingsBase()
 	
 }
 
-ProjectChooserBase::ProjectChooserBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+ProjectChooserBase::ProjectChooserBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DialogSubclass( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 	
@@ -819,7 +819,7 @@ ProjectChooserBase::~ProjectChooserBase()
 	
 }
 
-NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DialogSubclass( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 	
@@ -828,7 +828,7 @@ NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	
 	questionText = new wxStaticText( this, wxID_ANY, _("Please enter a name (or is it text you want to enter?):"), wxDefaultPosition, wxDefaultSize, 0 );
 	questionText->Wrap( -1 );
-	bSizer44->Add( questionText, 0, wxALL, 5 );
+	bSizer44->Add( questionText, 0, wxTOP|wxRIGHT|wxLEFT, 10 );
 	
 	wxBoxSizer* bSizer46;
 	bSizer46 = new wxBoxSizer( wxHORIZONTAL );

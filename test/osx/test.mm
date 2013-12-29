@@ -32,7 +32,7 @@ using SourceContext = OBSUniqueHandle<obs_source,
       DECLARE_DELETER(obs_source_release)>;
 
 using SceneContext = OBSUniqueHandle<obs_scene,
-      DECLARE_DELETER(obs_scene_destroy)>;
+      DECLARE_DELETER(obs_scene_release)>;
 
 #undef DECLARE_DELETER
 

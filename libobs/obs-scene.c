@@ -119,7 +119,7 @@ obs_scene_t obs_scene_create(const char *name)
 	return scene;
 }
 
-void obs_scene_destroy(obs_scene_t scene)
+void obs_scene_release(obs_scene_t scene)
 {
 	if (scene)
 		obs_source_release(scene->source);
