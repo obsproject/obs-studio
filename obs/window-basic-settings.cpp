@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <wx/msgdlg.h>
-#include "window-settings-basic.hpp"
+#include "window-basic-settings.hpp"
 
 OBSBasicSettings::OBSBasicSettings(wxWindow *parent)
 	: OBSBasicSettingsBase(parent)

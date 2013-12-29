@@ -24,7 +24,7 @@
 #include <obs.hpp>
 
 #include "obs-app.hpp"
-#include "window-main-basic.hpp"
+#include "window-basic-main.hpp"
 #include "wx-wrappers.hpp"
 #include "platform.hpp"
 

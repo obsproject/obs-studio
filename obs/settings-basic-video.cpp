@@ -19,7 +19,7 @@
 
 #include "obs-app.hpp"
 #include "settings-basic.hpp"
-#include "window-settings-basic.hpp"
+#include "window-basic-settings.hpp"
 #include "wx-wrappers.hpp"
 #include "platform.hpp"
 

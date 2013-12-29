@@ -19,8 +19,8 @@
 
 #include "obs-app.hpp"
 #include "wx-wrappers.hpp"
-#include "window-settings-basic.hpp"
-#include "window-main-basic.hpp"
+#include "window-basic-settings.hpp"
+#include "window-basic-main.hpp"
 
 void OBSBasic::SceneAdded(obs_source_t source)
 {
