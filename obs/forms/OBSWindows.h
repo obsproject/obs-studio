@@ -42,6 +42,7 @@ class WindowSubclass;
 #include <wx/listbook.h>
 #include <wx/listctrl.h>
 #include <wx/dialog.h>
+#include <wx/textctrl.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -292,6 +293,26 @@ class ProjectChooserBase : public wxDialog
 		
 		ProjectChooserBase( wxWindow* parent, wxWindowID id = ID_PROJECT_CHOOSER, const wxString& title = _("ProjectChooser"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 445,159 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~ProjectChooserBase();
+	
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class NameDialogBase
+///////////////////////////////////////////////////////////////////////////////
+class NameDialogBase : public wxDialog 
+{
+	private:
+	
+	protected:
+		wxStaticText* questionText;
+		wxTextCtrl* nameEdit;
+		wxButton* okButton;
+		wxButton* cancelButton;
+	
+	public:
+		
+		NameDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("MaximumText"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 498,117 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		~NameDialogBase();
 	
 };
 

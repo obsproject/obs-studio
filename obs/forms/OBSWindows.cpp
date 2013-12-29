@@ -818,3 +818,52 @@ ProjectChooserBase::~ProjectChooserBase()
 	exitButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ProjectChooserBase::ExitClicked ), NULL, this );
 	
 }
+
+NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	
+	wxBoxSizer* bSizer44;
+	bSizer44 = new wxBoxSizer( wxVERTICAL );
+	
+	questionText = new wxStaticText( this, wxID_ANY, _("Please enter a name (or is it text you want to enter?):"), wxDefaultPosition, wxDefaultSize, 0 );
+	questionText->Wrap( -1 );
+	bSizer44->Add( questionText, 0, wxALL, 5 );
+	
+	wxBoxSizer* bSizer46;
+	bSizer46 = new wxBoxSizer( wxHORIZONTAL );
+	
+	
+	bSizer46->Add( 20, 0, 0, 0, 5 );
+	
+	nameEdit = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer46->Add( nameEdit, 1, wxALL|wxEXPAND, 5 );
+	
+	
+	bSizer46->Add( 20, 0, 0, 0, 5 );
+	
+	
+	bSizer44->Add( bSizer46, 0, wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer45;
+	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
+	
+	okButton = new wxButton( this, wxID_ANY, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer45->Add( okButton, 0, wxALL, 5 );
+	
+	cancelButton = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer45->Add( cancelButton, 0, wxALL, 5 );
+	
+	
+	bSizer44->Add( bSizer45, 0, wxALIGN_CENTER_HORIZONTAL, 5 );
+	
+	
+	this->SetSizer( bSizer44 );
+	this->Layout();
+	
+	this->Centre( wxBOTH );
+}
+
+NameDialogBase::~NameDialogBase()
+{
+}
