@@ -26,6 +26,7 @@ using namespace std;
 
 class OBSBasic : public OBSBasicBase {
 	void SceneAdded(obs_source_t scene);
+	void SceneRemoved(obs_source_t scene);
 
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceDestroyed(void *data, calldata_t params);

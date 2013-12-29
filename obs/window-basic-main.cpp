@@ -29,6 +29,20 @@ void OBSBasic::SceneAdded(obs_source_t source)
 	scenes->Append(wxString(name, wxConvUTF8), scene);
 }
 
+void OBSBasic::SceneRemoved(obs_source_t source)
+{
+	const char *name = obs_source_getname(source);
+
+	int item = scenes->FindString(name);
+	if (item == wxNOT_FOUND) {
+		blog(LOG_WARNING, "Tried to remove the scene '%s', but "
+		                  "apparently it wasn't found", name);
+		return;
+	}
+
+	scenes->Delete(item);
+}
+
 void OBSBasic::SourceAdded(void *data, calldata_t params)
 {
 	OBSBasic *window = (OBSBasic*)data;
@@ -50,7 +64,11 @@ void OBSBasic::SourceDestroyed(void *data, calldata_t params)
 
 	calldata_getptr(params, "source", (void**)&source);
 
-	/* TODO */
+	obs_source_type type;
+	obs_source_gettype(source, &type, NULL);
+
+	if (type == SOURCE_SCENE)
+		window->SceneRemoved(source);
 }
 
 bool OBSBasic::Init()
