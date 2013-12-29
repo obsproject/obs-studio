@@ -41,8 +41,8 @@ elseif(UNIX)
 endif()
 
 add_executable(obs
-	window-main-basic.cpp
-	window-settings-basic.cpp
+	window-basic-main.cpp
+	window-basic-settings.cpp
 	settings-basic.cpp
 	settings-basic-general.cpp
 	settings-basic-video.cpp

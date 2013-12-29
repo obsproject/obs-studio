@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "settings-basic.hpp"
-#include "window-basic-settingshpp"
+#include "window-basic-settings.hpp"
 
 void BasicSettingsData::SetChanged()
 {

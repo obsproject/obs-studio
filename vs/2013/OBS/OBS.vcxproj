@@ -177,8 +177,8 @@
     <ClCompile Include="..\..\..\obs\settings-basic-general.cpp" />
     <ClCompile Include="..\..\..\obs\settings-basic-video.cpp" />
     <ClCompile Include="..\..\..\obs\settings-basic.cpp" />
-    <ClCompile Include="..\..\..\obs\window-main-basic.cpp" />
-    <ClCompile Include="..\..\..\obs\window-settings-basic.cpp" />
+    <ClCompile Include="..\..\..\obs\window-basic-main.cpp" />
+    <ClCompile Include="..\..\..\obs\window-basic-settings.cpp" />
     <ClCompile Include="..\..\..\obs\wx-subclass.cpp" />
     <ClCompile Include="..\..\..\obs\wx-wrappers.cpp" />
   </ItemGroup>
@@ -188,8 +188,8 @@
     <ClInclude Include="..\..\..\obs\platform.hpp" />
     <ClInclude Include="..\..\..\obs\settings-basic.hpp" />
     <ClInclude Include="..\..\..\obs\settings.hpp" />
-    <ClInclude Include="..\..\..\obs\window-main-basic.hpp" />
-    <ClInclude Include="..\..\..\obs\window-settings-basic.hpp" />
+    <ClInclude Include="..\..\..\obs\window-basic-main.hpp" />
+    <ClInclude Include="..\..\..\obs\window-basic-settings.hpp" />
     <ClInclude Include="..\..\..\obs\wx-subclass.hpp" />
     <ClInclude Include="..\..\..\obs\wx-wrappers.hpp" />
   </ItemGroup>

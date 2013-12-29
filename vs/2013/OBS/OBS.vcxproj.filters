@@ -27,16 +27,10 @@
     <ClCompile Include="..\..\..\obs\forms\OBSWindows.cpp">
       <Filter>wx forms</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\obs\window-main-basic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\obs\wx-subclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\obs\platform-windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\obs\window-settings-basic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\obs\settings-basic-general.cpp">
@@ -46,6 +40,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\obs\settings-basic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-basic-main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-basic-settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,22 +59,22 @@
     <ClInclude Include="..\..\..\obs\forms\OBSWindows.h">
       <Filter>wx forms</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\obs\window-main-basic.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\obs\wx-subclass.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\platform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\obs\window-settings-basic.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\obs\settings-basic.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\settings.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\window-basic-main.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\window-basic-settings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
