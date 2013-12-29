@@ -8051,7 +8051,7 @@
                                 <property name="close_button">1</property>
                                 <property name="context_help"></property>
                                 <property name="context_menu">1</property>
-                                <property name="default">0</property>
+                                <property name="default">1</property>
                                 <property name="default_pane">0</property>
                                 <property name="dock">Dock</property>
                                 <property name="dock_fixed">0</property>

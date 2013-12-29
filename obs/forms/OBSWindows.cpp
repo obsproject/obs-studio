@@ -849,6 +849,7 @@ NameDialogBase::NameDialogBase( wxWindow* parent, wxWindowID id, const wxString&
 	bSizer45 = new wxBoxSizer( wxHORIZONTAL );
 	
 	okButton = new wxButton( this, wxID_ANY, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+	okButton->SetDefault(); 
 	bSizer45->Add( okButton, 0, wxALL, 5 );
 	
 	cancelButton = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
