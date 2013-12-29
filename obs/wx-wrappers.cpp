@@ -42,6 +42,6 @@ void OBSErrorBox(wxWindow *parent, const char *message, ...)
 	vsnprintf(output, 4095, message, args);
 	va_end(args);
 
-	wxMessageBox(message, "Error");
+	wxMessageBox(message, "Error", wxOK|wxCENTRE, parent);
 	blog(LOG_ERROR, "%s", output);
 }

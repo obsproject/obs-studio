@@ -498,6 +498,7 @@ obs_source_t obs_get_source_by_name(const char *name)
 		struct obs_source *cur_source = data->sources.array[i];
 		if (strcmp(cur_source->name, name) == 0) {
 			source = cur_source;
+			obs_source_addref(source);
 			break;
 		}
 	}

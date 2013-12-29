@@ -17,6 +17,8 @@
 
 #include <obs.hpp>
 
+#include <wx/msgdlg.h>
+
 #include "obs-app.hpp"
 #include "wx-wrappers.hpp"
 #include "window-basic-settings.hpp"
@@ -62,8 +64,8 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 void OBSBasic::SourceDestroyed(void *data, calldata_t params)
 {
 	OBSBasic *window = (OBSBasic*)data;
-	obs_source_t source;
 
+	obs_source_t source;
 	calldata_getptr(params, "source", (void**)&source);
 
 	obs_source_type type;
@@ -191,6 +193,17 @@ void OBSBasic::sceneAddClicked(wxCommandEvent &event)
 			name);
 
 	if (ret == wxID_OK) {
+		obs_source_t source = obs_get_source_by_name(name.c_str());
+		if (source) {
+			wxMessageBox(WXStr("MainWindow.NameExists.Text"),
+			             WXStr("MainWindow.NameExists.Title"),
+			             wxOK|wxCENTRE, this);
+
+			obs_source_release(source);
+			sceneAddClicked(event);
+			return;
+		}
+
 		obs_scene_t scene = obs_scene_create(name.c_str());
 		obs_add_source(obs_scene_getsource(scene));
 		obs_scene_release(scene);
