@@ -22,6 +22,7 @@
 #include "window-basic-settings.hpp"
 #include "wx-wrappers.hpp"
 #include "platform.hpp"
+using namespace std;
 
 class BasicGenData : public BasicSettingsData {
 	ConfigFile localeIni;

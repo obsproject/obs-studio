@@ -17,6 +17,7 @@
 
 #include <sstream>
 #include "platform.hpp"
+using namespace std;
 
 #include <unistd.h>
 

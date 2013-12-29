@@ -43,6 +43,7 @@ endif()
 add_executable(obs
 	window-basic-main.cpp
 	window-basic-settings.cpp
+	window-namedialog.cpp
 	settings-basic.cpp
 	settings-basic-general.cpp
 	settings-basic-video.cpp

@@ -18,24 +18,21 @@
 #pragma once
 
 #include "forms/OBSWindows.h"
-#include "settings-basic.hpp"
 
-#include <memory>
+#include <vector>
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
+class NameDialog : public NameDialogBase {
 protected:
-	std::unique_ptr<BasicSettingsData> settings;
-
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
-	virtual void OnClose(wxCloseEvent &event);
-
-	bool ConfirmChanges();
-
-	virtual void OKClicked(wxCommandEvent &event);
-	virtual void CancelClicked(wxCommandEvent &event);
-	virtual void ApplyClicked(wxCommandEvent &event);
+	virtual void OnClose(wxCommandEvent &event);
+	virtual void OKPressed(wxCommandEvent &event);
+	virtual void CancelPressed(wxCommandEvent &event);
 
 public:
-	OBSBasicSettings(wxWindow *parent);
+	inline NameDialog(wxWindow *parent)
+		: NameDialogBase(parent)
+	{
+	}
+
+	static int AskForName(wxWindow *parent, const char *title,
+			const char *text, std::string &str);
 };

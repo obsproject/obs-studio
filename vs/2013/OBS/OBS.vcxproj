@@ -179,6 +179,7 @@
     <ClCompile Include="..\..\..\obs\settings-basic.cpp" />
     <ClCompile Include="..\..\..\obs\window-basic-main.cpp" />
     <ClCompile Include="..\..\..\obs\window-basic-settings.cpp" />
+    <ClCompile Include="..\..\..\obs\window-namedialog.cpp" />
     <ClCompile Include="..\..\..\obs\wx-subclass.cpp" />
     <ClCompile Include="..\..\..\obs\wx-wrappers.cpp" />
   </ItemGroup>
@@ -190,6 +191,7 @@
     <ClInclude Include="..\..\..\obs\settings.hpp" />
     <ClInclude Include="..\..\..\obs\window-basic-main.hpp" />
     <ClInclude Include="..\..\..\obs\window-basic-settings.hpp" />
+    <ClInclude Include="..\..\..\obs\window-namedialog.hpp" />
     <ClInclude Include="..\..\..\obs\wx-subclass.hpp" />
     <ClInclude Include="..\..\..\obs\wx-wrappers.hpp" />
   </ItemGroup>

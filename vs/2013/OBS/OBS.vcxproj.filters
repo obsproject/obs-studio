@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\..\obs\window-basic-settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-namedialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\obs-app.hpp">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\obs\window-basic-settings.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\obs\window-namedialog.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

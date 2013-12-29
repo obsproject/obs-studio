@@ -21,7 +21,6 @@
 
 #include <string>
 #include <vector>
-using namespace std;
 
 struct MonitorInfo {
 	int32_t  x, y;
@@ -32,5 +31,5 @@ struct MonitorInfo {
 };
 
 /* Gets the path of obs-studio specific data files (such as locale) */
-bool GetDataFilePath(const char *data, string &path);
-void GetMonitors(vector<MonitorInfo> &monitors);
+bool GetDataFilePath(const char *data, std::string &path);
+void GetMonitors(std::vector<MonitorInfo> &monitors);

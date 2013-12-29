@@ -21,9 +21,6 @@
 
 #include <obs.hpp>
 
-#include <vector>
-using namespace std;
-
 class OBSBasic : public OBSBasicBase {
 	void SceneAdded(obs_source_t scene);
 	void SceneRemoved(obs_source_t scene);

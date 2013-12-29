@@ -17,6 +17,7 @@
 
 #include <sstream>
 #include "platform.hpp"
+using namespace std;
 
 bool GetDataFilePath(const char *data, string &output)
 {

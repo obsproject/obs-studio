@@ -17,25 +17,32 @@
 
 #pragma once
 
-#include "forms/OBSWindows.h"
-#include "settings-basic.hpp"
+#include "window-namedialog.hpp"
+using namespace std;
 
-#include <memory>
+void NameDialog::OnClose(wxCommandEvent &event)
+{
+	EndModal(wxID_CANCEL);
+}
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
-protected:
-	std::unique_ptr<BasicSettingsData> settings;
+void NameDialog::OKPressed(wxCommandEvent &event)
+{
+	EndModal(wxID_OK);
+}
 
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
-	virtual void OnClose(wxCloseEvent &event);
+void NameDialog::CancelPressed(wxCommandEvent &event)
+{
+	EndModal(wxID_CANCEL);
+}
 
-	bool ConfirmChanges();
+int NameDialog::AskForName(wxWindow *parent, const char *title,
+		const char *text, string &str)
+{
+	NameDialog *dialog = new NameDialog(parent);
+	dialog->SetTitle(wxString(title, wxConvUTF8));
+	dialog->questionText->SetLabel(wxString(text, wxConvUTF8));
 
-	virtual void OKClicked(wxCommandEvent &event);
-	virtual void CancelClicked(wxCommandEvent &event);
-	virtual void ApplyClicked(wxCommandEvent &event);
-
-public:
-	OBSBasicSettings(wxWindow *parent);
-};
+	int ret = dialog->ShowModal();
+	str = dialog->nameEdit->GetValue().ToUTF8().data();
+	return ret;
+}

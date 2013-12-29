@@ -92,21 +92,8 @@ static void CreateOBS(HWND hwnd)
 static void AddTestItems(obs_scene_t scene, obs_source_t source)
 {
 	obs_sceneitem_t item = NULL;
-	struct vec2 v2;
 
 	item = obs_scene_add(scene, source);
-	vec2_set(&v2, 100.0f, 200.0f);
-	obs_sceneitem_setpos(item, &v2);
-	obs_sceneitem_setrot(item, 10.0f);
-	vec2_set(&v2, 20.0f, 2.0f);
-	obs_sceneitem_setscale(item, &v2);
-
-	item = obs_scene_add(scene, source);
-	vec2_set(&v2, 200.0f, 100.0f);
-	obs_sceneitem_setpos(item, &v2);
-	obs_sceneitem_setrot(item, -45.0f);
-	vec2_set(&v2, 5.0f, 7.0f);
-	obs_sceneitem_setscale(item, &v2);
 }
 
 static HWND CreateTestWindow(HINSTANCE instance)
@@ -175,7 +162,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_output_source(0, obs_scene_getsource(scene));
+		obs_set_output_source(0, source);
 
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) {

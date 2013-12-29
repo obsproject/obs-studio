@@ -15,6 +15,7 @@ obs_PROGRAMS = obs
 obs_LDADD = $(top_srcdir)/libobs/libobs.la
 obs_SOURCES = window-basic-main.cpp \
 	      window-basic-settings.cpp \
+	      window-namedialog.cpp \
 	      settings-basic.cpp \
 	      settings-basic-general.cpp \
 	      settings-basic-video.cpp \
