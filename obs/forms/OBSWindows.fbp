@@ -677,7 +677,7 @@
                                                                                 <event name="OnLeftDClick"></event>
                                                                                 <event name="OnLeftDown"></event>
                                                                                 <event name="OnLeftUp"></event>
-                                                                                <event name="OnListBox"></event>
+                                                                                <event name="OnListBox">scenesClicked</event>
                                                                                 <event name="OnListBoxDClick"></event>
                                                                                 <event name="OnMiddleDClick"></event>
                                                                                 <event name="OnMiddleDown"></event>
@@ -1129,9 +1129,9 @@
                                                                                 <property name="window_name"></property>
                                                                                 <property name="window_style">wxNO_BORDER</property>
                                                                                 <event name="OnChar"></event>
-                                                                                <event name="OnCheckListBox"></event>
+                                                                                <event name="OnCheckListBox">sourcesClicked</event>
                                                                                 <event name="OnCheckListBoxDClick"></event>
-                                                                                <event name="OnCheckListBoxToggled"></event>
+                                                                                <event name="OnCheckListBoxToggled">sourcesToggled</event>
                                                                                 <event name="OnEnterWindow"></event>
                                                                                 <event name="OnEraseBackground"></event>
                                                                                 <event name="OnKeyDown"></event>
