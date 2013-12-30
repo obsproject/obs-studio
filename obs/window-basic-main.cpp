@@ -181,6 +181,19 @@ void OBSBasic::fileExitClicked(wxCommandEvent &event)
 	wxGetApp().ExitMainLoop();
 }
 
+void OBSBasic::scenesClicked(wxCommandEvent &event)
+{
+	int sel = scenes->GetSelection();
+
+	obs_source_t source = NULL;
+	if (sel != wxNOT_FOUND) {
+		obs_scene_t scene = (obs_scene_t)scenes->GetClientData(sel);
+		source = obs_scene_getsource(scene);
+	}
+
+	obs_set_output_source(0, source);
+}
+
 void OBSBasic::scenesRDown(wxMouseEvent &event)
 {
 }
@@ -234,12 +247,25 @@ void OBSBasic::sceneDownClicked(wxCommandEvent &event)
 {
 }
 
+void OBSBasic::sourcesClicked(wxCommandEvent &event)
+{
+}
+
+void OBSBasic::sourcesToggled(wxCommandEvent &event)
+{
+}
+
 void OBSBasic::sourcesRDown(wxMouseEvent &event)
 {
 }
 
 void OBSBasic::sourceAddClicked(wxCommandEvent &event)
 {
+	int sceneSel = scenes->GetSelection();
+	if (sceneSel == wxNOT_FOUND)
+		return;
+
+	
 }
 
 void OBSBasic::sourceRemoveClicked(wxCommandEvent &event)

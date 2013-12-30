@@ -42,12 +42,15 @@ protected:
 	virtual void fileOpenClicked(wxCommandEvent &event);
 	virtual void fileSaveClicked(wxCommandEvent &event);
 	virtual void fileExitClicked(wxCommandEvent &event);
+	virtual void scenesClicked(wxCommandEvent &event);
 	virtual void scenesRDown(wxMouseEvent &event);
 	virtual void sceneAddClicked(wxCommandEvent &event);
 	virtual void sceneRemoveClicked(wxCommandEvent &event);
 	virtual void scenePropertiesClicked(wxCommandEvent &event);
 	virtual void sceneUpClicked(wxCommandEvent &event);
 	virtual void sceneDownClicked(wxCommandEvent &event);
+	virtual void sourcesClicked(wxCommandEvent &event);
+	virtual void sourcesToggled(wxCommandEvent &event);
 	virtual void sourcesRDown(wxMouseEvent &event);
 	virtual void sourceAddClicked(wxCommandEvent &event);
 	virtual void sourceRemoveClicked(wxCommandEvent &event);
