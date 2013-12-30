@@ -162,7 +162,7 @@ class OBSBasicBase : public WindowSubclass
 	
 	public:
 		
-		OBSBasicBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1117,783 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		OBSBasicBase( wxWindow* parent, wxWindowID id = ID_OBS_BASIC, const wxString& title = _(".mainwindow"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 854,595 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~OBSBasicBase();
 	

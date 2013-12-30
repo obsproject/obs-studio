@@ -44,7 +44,7 @@
             <property name="minimum_size"></property>
             <property name="name">OBSBasicBase</property>
             <property name="pos"></property>
-            <property name="size">1117,783</property>
+            <property name="size">854,595</property>
             <property name="style">wxDEFAULT_FRAME_STYLE</property>
             <property name="subclass">WindowSubclass; ../wx-subclass.hpp</property>
             <property name="title">.mainwindow</property>
