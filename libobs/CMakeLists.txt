@@ -86,5 +86,7 @@ target_link_libraries(libobs
 	${LIBAVUTIL_LIBRARIES}
 	${LIBSWRESAMPLE_LIBRARIES})
 
-file(COPY ${obs_SOURCE_DIR}/build/data/libobs/default.effect DESTINATION
+file(COPY
+	${obs_SOURCE_DIR}/build/data/libobs/default.effect
+     DESTINATION
 	${obs_BINARY_DIR}/data/libobs/)

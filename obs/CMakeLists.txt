@@ -97,3 +97,10 @@ if(APPLE)
 	set_target_properties(obs PROPERTIES
 		MACOSX_BUNDLE ${BUILD_APP_BUNDLE})
 endif()
+
+file(COPY
+	${obs_SOURCE_DIR}/build/data/obs-studio/locale/en.txt
+	${obs_SOURCE_DIR}/build/data/obs-studio/locale/ja.txt
+	${obs_SOURCE_DIR}/build/data/obs-studio/locale/locale.ini
+     DESTINATION
+	${obs_BINARY_DIR}/data/obs-studio/locale/)
