@@ -318,7 +318,7 @@ void OBSBasic::AddSourcePopup()
 				type, wxGetApp().GetLocale());
 
 		types.push_back(type);
-		popup->Append((int)idx, wxString(name, wxConvUTF8));
+		popup->Append((int)idx+1, wxString(name, wxConvUTF8));
 
 		idx++;
 	}
@@ -326,7 +326,7 @@ void OBSBasic::AddSourcePopup()
 	if (idx) {
 		int id = WXDoPopupMenu(this, popup.get());
 		if (id != -1)
-			AddSource(scene, types[id]);
+			AddSource(scene, types[id-1]);
 	}
 
 	obs_scene_release(scene);
