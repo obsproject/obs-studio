@@ -94,6 +94,21 @@ bool OBSBasic::Init()
 	/* TODO: this is a test */
 	obs_load_module("test-input");
 
+	obs_source_t test = obs_source_create(SOURCE_INPUT, "random", "test",
+			NULL);
+	obs_add_source(test);
+	obs_set_output_source(0, test);
+	/*obs_scene_t scene = obs_scene_create("test2");
+	obs_set_output_source(0, obs_scene_getsource(scene));
+
+	obs_sceneitem_t bla = obs_scene_add(scene, test);
+
+	struct vec2 ddd = {100.0f, 100.0f};
+	obs_sceneitem_setscale(bla, &ddd);
+
+	obs_scene_release(scene);*/
+	obs_source_release(test);
+
 	return true;
 }
 
