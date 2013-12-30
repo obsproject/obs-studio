@@ -156,13 +156,17 @@ void OBSBasic::OnSize(wxSizeEvent &event)
 	wxSize targetSize   = GetPreviewContainer()->GetSize();
 	double targetAspect = double(targetSize.x) / double(targetSize.y);
 	double baseAspect   = double(ovi.base_width) / double(ovi.base_height);
+	wxSize newSize;
 
 	if (targetAspect > baseAspect)
-		GetPreviewPanel()->SetMinSize(wxSize(targetSize.y * baseAspect,
-				targetSize.y));
+		newSize = wxSize(targetSize.y * baseAspect, targetSize.y);
 	else
-		GetPreviewPanel()->SetMinSize(wxSize(targetSize.x,
-				targetSize.x / baseAspect));
+		newSize = wxSize(targetSize.x, targetSize.x / baseAspect);
+
+	GetPreviewPanel()->SetMinSize(newSize);
+	gs_entercontext(obs_graphics());
+	gs_resize(newSize.x, newSize.y);
+	gs_leavecontext();
 }
 
 void OBSBasic::fileNewClicked(wxCommandEvent &event)
