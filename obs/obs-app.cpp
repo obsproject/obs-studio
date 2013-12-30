@@ -50,6 +50,7 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 		__debugbreak();
 #else
 	vprintf(msg, args);
+	printf("\n");
 #endif
 }
 
