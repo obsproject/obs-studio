@@ -11,6 +11,10 @@ Debug/
 x64/
 ipch/
 
+*/bin/obs
+*/bin/test
+*/bin/obs.app
+
 #autotools
 m4/libtool.m4
 m4/lt~obsolete.m4
