@@ -71,3 +71,5 @@ target_link_libraries(libobs-opengl
 	libobs
 	${OPENGL_LIBRARIES}
 	${GLEW_LIBRARIES})
+
+obs_add_core_lib(libobs-opengl)

@@ -96,11 +96,13 @@ add_executable(obs
 if(APPLE)
 	set_target_properties(obs PROPERTIES
 		MACOSX_BUNDLE ${BUILD_APP_BUNDLE})
+	if(BUILD_APP_BUNDLE)
+		obs_add_core_lib_target(obs)
+		obs_add_data_dir(/bin/obs.app/Contents/)
+	endif()
 endif()
 
-file(COPY
+obs_add_data_source(/data/obs-studio/locale
 	${obs_SOURCE_DIR}/build/data/obs-studio/locale/en.txt
 	${obs_SOURCE_DIR}/build/data/obs-studio/locale/ja.txt
-	${obs_SOURCE_DIR}/build/data/obs-studio/locale/locale.ini
-     DESTINATION
-	${obs_BINARY_DIR}/data/obs-studio/locale/)
+	${obs_SOURCE_DIR}/build/data/obs-studio/locale/locale.ini)

@@ -25,12 +25,13 @@ if(UNIX)
 		set(CMAKE_INSTALL_RPATH
 			"${CMAKE_INSTALL_RPATH};@loader_path/;@executable_path/")
 		option(BUILD_APP_BUNDLE "Build app bundle" false)
-		#TODO: figure out distribution options
-		mark_as_advanced(BUILD_APP_BUNDLE)
 	endif()
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 endif()
 
+include(obs_helpers)
+
+obs_add_data_dir(/)
 
 set(LIBRARY_OUTPUT_PATH ${obs_BINARY_DIR}/bin)
 set(RUNTIME_OUTPUT_PATH ${obs_BINARY_DIR}/bin)
