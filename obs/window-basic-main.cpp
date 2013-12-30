@@ -38,13 +38,14 @@ void OBSBasic::SceneRemoved(obs_source_t source)
 	const char *name = obs_source_getname(source);
 
 	int item = scenes->FindString(name);
-	if (item == wxNOT_FOUND) {
-		blog(LOG_WARNING, "Tried to remove the scene '%s', but "
-		                  "apparently it wasn't found", name);
+	if (item != wxNOT_FOUND) {
+		scenes->Delete(item);
 		return;
 	}
 
-	scenes->Delete(item);
+	item = sources->FindString(name);
+	if (item != wxNOT_FOUND)
+		sources->Delete(item);
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
@@ -212,6 +213,13 @@ void OBSBasic::sceneAddClicked(wxCommandEvent &event)
 
 void OBSBasic::sceneRemoveClicked(wxCommandEvent &event)
 {
+	int sel = scenes->GetSelection();
+	if (sel == wxNOT_FOUND)
+		return;
+
+	obs_scene_t scene = (obs_scene_t)scenes->GetClientData(sel);
+	obs_source_t source = obs_scene_getsource(scene);
+	obs_source_remove(source);
 }
 
 void OBSBasic::scenePropertiesClicked(wxCommandEvent &event)
