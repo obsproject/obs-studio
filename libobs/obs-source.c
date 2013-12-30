@@ -85,7 +85,7 @@ static inline const struct source_info *find_source(struct darray *list,
 	return NULL;
 }
 
-static const struct source_info *get_source_info(enum source_type type,
+static const struct source_info *get_source_info(enum obs_source_type type,
 		const char *id)
 {
 	struct darray *list = NULL;
