@@ -19,6 +19,7 @@
 
 #include <wx/window.h>
 #include <wx/event.h>
+#include <wx/menu.h>
 
 #include <vector>
 
@@ -26,6 +27,10 @@ struct gs_window;
 
 gs_window WxToGSWindow(const wxWindow *window);
 void OBSErrorBox(wxWindow *parent, const char *message, ...);
+
+/* returns actual ID of menu item clicked rather than be forced to use
+ * all the BS handler crap */
+int WXDoPopupMenu(wxWindow *parent, wxMenu *menu);
 
 /*
  * RAII wx connection wrapper

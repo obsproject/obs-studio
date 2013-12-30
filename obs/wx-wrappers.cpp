@@ -20,6 +20,9 @@
 #include <obs.h>
 #include "wx-wrappers.hpp"
 
+#include <memory>
+using namespace std;
+
 gs_window WxToGSWindow(const wxWindow *wxwin)
 {
 	gs_window window;
@@ -44,4 +47,33 @@ void OBSErrorBox(wxWindow *parent, const char *message, ...)
 
 	wxMessageBox(message, "Error", wxOK|wxCENTRE, parent);
 	blog(LOG_ERROR, "%s", output);
+}
+
+class MenuWrapper : public wxEvtHandler {
+public:
+	int retId;
+
+	inline MenuWrapper() : retId(-1) {}
+
+	void GetItem(wxCommandEvent &event)
+	{
+		retId = event.GetId();
+	}
+};
+
+int WXDoPopupMenu(wxWindow *parent, wxMenu *menu)
+{
+	unique_ptr<MenuWrapper> wrapper(new MenuWrapper);
+
+	menu->Connect(wxEVT_MENU,
+			wxCommandEventHandler(MenuWrapper::GetItem),
+			NULL, wrapper.get());
+
+	bool success = parent->PopupMenu(menu);
+
+	menu->Disconnect(wxEVT_MENU,
+			wxCommandEventHandler(MenuWrapper::GetItem),
+			NULL, wrapper.get());
+
+	return (success) ? wrapper->retId : -1;
 }
