@@ -17,7 +17,10 @@ elseif(APPLE AND UNIX)
 else()
 endif()
 
-option(USE_STATIC_GLEW "Build using bundled GLEW" ${WIN32})
+option(USE_BUNDLED_GLEW "Build using bundled GLEW" ${WIN32})
+
+option(USE_STATIC_GLEW "Link GLEW statically (ignored with USE_BUNDLED_GLEW)"
+	false)
 
 include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 
@@ -26,14 +29,25 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 
 add_definitions(-DGLEW_NO_GLU)
 
-if(NOT USE_STATIC_GLEW)
-	find_package(GLEW REQUIRED)
-	include_directories(${GLEW_INCLUDE_DIRS})
-	set(GLEW_SRC)
-else()
+if(USE_BUNDLED_GLEW)
 	include_directories(SYSTEM glew/include)
 	add_definitions(-DGLEW_STATIC)
 	set(GLEW_SRC glew/src/glew.c)
+else()
+	if(USE_STATIC_GLEW)
+		set(lib_prefixes ${CMAKE_FIND_LIBRARY_PREFIXES})
+		set(CMAKE_FIND_LIBRARY_PREFIXES ${CMAKE_STATIC_LIBRARY_PREFIX}
+			${CMAKE_DYNAMIC_LIBRARY_PREFIX}
+			${CMAKE_SHARED_OBJECT_PREFIX})
+		set(glew_static "static")
+	endif()
+	find_package(GLEW REQUIRED ${glew_static})
+	include_directories(${GLEW_INCLUDE_DIRS})
+	if(USE_STATIC_GLEW)
+		unset(glew_static)
+		set(CMAKE_FIND_LIBRARY_PREFIXES ${lib_prefixes})
+		unset(lib_prefixes)
+	endif()
 endif()
 
 add_library(libobs-opengl MODULE
