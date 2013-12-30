@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include "../util/c99defs.h"
+#include "../util/bmem.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "util/c99defs.h"
+#include "util/bmem.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
 #include "media-io/media-io.h"
