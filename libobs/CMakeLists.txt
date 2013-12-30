@@ -22,11 +22,18 @@ elseif(UNIX)
 else()
 endif()
 
-find_package(Libavutil REQUIRED)
-include_directories(${LIBAVUTIL_INCLUDE_DIRS})
+option(USE_STATIC_FFMPEG "Link ffmpeg statically (if possible)" false)
+if(USE_STATIC_FFMPEG)
+	set(FFMPEG_STATIC "static")
+endif()
 
-find_package(Libswresample REQUIRED)
+find_package(Libavutil REQUIRED ${FFMPEG_STATIC})
+include_directories(${LIBAVUTIL_INCLUDE_DIRS})
+add_definitions(${LIBAVUTIL_DEFINITIONS})
+
+find_package(Libswresample REQUIRED ${FFMPEG_STATIC})
 include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
+add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
 
 add_library(libobs SHARED
 		obs.c
