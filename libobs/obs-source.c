@@ -17,6 +17,7 @@
 
 #include "media-io/format-conversion.h"
 #include "util/platform.h"
+#include "callback/calldata.h"
 #include "graphics/matrix3.h"
 #include "graphics/vec3.h"
 
