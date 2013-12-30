@@ -25,7 +25,7 @@
 
 static void obs_source_destroy(obs_source_t source);
 
-bool get_source_info(void *module, const char *module_name,
+bool load_source_info(void *module, const char *module_name,
 		const char *source_id, struct source_info *info)
 {
 	info->getname = load_module_subfunc(module, module_name,
@@ -85,6 +85,24 @@ static inline const struct source_info *find_source(struct darray *list,
 	return NULL;
 }
 
+static const struct source_info *get_source_info(enum source_type type,
+		const char *id)
+{
+	struct darray *list = NULL;
+
+	switch (type) {
+	case SOURCE_INPUT:      list = &obs->input_types.da; break;
+	case SOURCE_FILTER:     list = &obs->filter_types.da; break;
+	case SOURCE_TRANSITION: list = &obs->transition_types.da; break;
+	case SOURCE_SCENE:
+	default:
+		blog(LOG_WARNING, "get_source_info: invalid source type");
+		return NULL;
+	}
+
+	return find_source(list, id);
+}
+
 static inline bool obs_source_init_handlers(struct obs_source *source)
 {
 	source->signals = signal_handler_create();
@@ -93,6 +111,13 @@ static inline bool obs_source_init_handlers(struct obs_source *source)
 
 	source->procs = proc_handler_create();
 	return (source->procs != NULL);
+}
+
+const char *obs_source_getdisplayname(enum obs_source_type type,
+		const char *id, const char *locale)
+{
+	const struct source_info *info = get_source_info(type, id);
+	return (info != NULL) ? info->getname(locale) : NULL;
 }
 
 /* internal initialization */
@@ -141,21 +166,9 @@ static inline void obs_source_dosignal(struct obs_source *source,
 obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		const char *name, const char *settings)
 {
-	const struct source_info *info = NULL;
-	struct darray *list = NULL;
 	struct obs_source *source;
 
-	switch (type) {
-	case SOURCE_INPUT:      list = &obs->input_types.da; break;
-	case SOURCE_FILTER:     list = &obs->filter_types.da; break;
-	case SOURCE_TRANSITION: list = &obs->transition_types.da; break;
-	case SOURCE_SCENE:
-	default:
-		blog(LOG_WARNING, "Tried to create invalid source type");
-		return NULL;
-	}
-
-	info = find_source(list, id);
+	const struct source_info *info = get_source_info(type, id);
 	if (!info) {
 		blog(LOG_WARNING, "Source '%s' not found", id);
 		return NULL;

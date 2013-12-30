@@ -22,15 +22,18 @@
 
 #include <util/util.hpp>
 
+#include <string>
+
 class OBSAppBase : public wxApp {
 public:
 	virtual ~OBSAppBase();
 };
 
 class OBSApp : public OBSAppBase {
-	ConfigFile globalConfig;
-	TextLookup textLookup;
-	wxWindow   *mainWindow;
+	std::string locale;
+	ConfigFile  globalConfig;
+	TextLookup  textLookup;
+	wxWindow    *mainWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
@@ -50,6 +53,11 @@ public:
 	inline wxWindow *GetMainWindow() const {return mainWindow;}
 
 	inline config_t GlobalConfig() const {return globalConfig;}
+
+	inline const char *GetLocale() const
+	{
+		return locale.c_str();
+	}
 
 	inline const char *GetString(const char *lookupVal) const
 	{

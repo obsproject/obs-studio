@@ -136,6 +136,8 @@ bool OBSApp::InitLocale()
 	const char *lang = config_get_string(globalConfig, "General",
 			"Language");
 
+	locale = lang;
+
 	stringstream file;
 	file << "locale/" << lang << ".txt";
 

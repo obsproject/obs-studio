@@ -18,7 +18,7 @@
 #include "obs.h"
 #include "obs-data.h"
 
-bool get_output_info(void *module, const char *module_name,
+bool load_output_info(void *module, const char *module_name,
 		const char *output_id, struct output_info *info)
 {
 	info->getname = load_module_subfunc(module, module_name,

@@ -91,7 +91,8 @@ bool OBSBasic::Init()
 	//obs_scene_t scene = obs_scene_create("test scene");
 	//obs_add_source(obs_scene_getsource(scene));
 
-	//obs_load_module("test-input");
+	/* TODO: this is a test */
+	obs_load_module("test-input");
 
 	return true;
 }
@@ -259,13 +260,77 @@ void OBSBasic::sourcesRDown(wxMouseEvent &event)
 {
 }
 
-void OBSBasic::sourceAddClicked(wxCommandEvent &event)
+void OBSBasic::AddSource(obs_scene_t scene, const char *id)
+{
+	string name;
+
+	bool success = false;
+	while (!success) {
+		int ret = NameDialog::AskForName(this,
+				Str("MainWindow.AddSourceDlg.Title"),
+				Str("MainWindow.AddSourceDlg.Text"),
+				name);
+
+		if (ret == wxID_CANCEL)
+			break;
+
+		obs_source_t source = obs_get_source_by_name(
+				name.c_str());
+		if (!source) {
+			success = true;
+		} else {
+			wxMessageBox(WXStr("MainWindow.NameExists.Text"),
+				     WXStr("MainWindow.NameExists.Title"),
+				     wxOK|wxCENTRE, this);
+			obs_source_release(source);
+		}
+	}
+
+	if (success) {
+		obs_source_t source = obs_source_create(SOURCE_INPUT, id,
+				name.c_str(), NULL);
+		obs_add_source(source);
+		obs_sceneitem_t item = obs_scene_add(scene, source);
+		obs_source_release(source);
+	}
+}
+
+void OBSBasic::AddSourcePopup()
 {
 	int sceneSel = scenes->GetSelection();
+	size_t idx = 0;
+	const char *type;
+	vector<const char *> types;
+
 	if (sceneSel == wxNOT_FOUND)
 		return;
 
-	
+	obs_scene_t scene = (obs_scene_t)scenes->GetClientData(sceneSel);
+	obs_scene_addref(scene);
+
+	unique_ptr<wxMenu> popup(new wxMenu());
+	while (obs_enum_input_types(idx, &type)) {
+		const char *name = obs_source_getdisplayname(SOURCE_INPUT,
+				type, wxGetApp().GetLocale());
+
+		types.push_back(type);
+		popup->Append((int)idx, wxString(name, wxConvUTF8));
+
+		idx++;
+	}
+
+	if (idx) {
+		int id = WXDoPopupMenu(this, popup.get());
+		if (id != -1)
+			AddSource(scene, types[id]);
+	}
+
+	obs_scene_release(scene);
+}
+
+void OBSBasic::sourceAddClicked(wxCommandEvent &event)
+{
+	AddSourcePopup();
 }
 
 void OBSBasic::sourceRemoveClicked(wxCommandEvent &event)

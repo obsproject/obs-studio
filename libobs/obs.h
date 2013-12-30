@@ -445,7 +445,9 @@ EXPORT void obs_source_process_filter(obs_source_t filter,
  * display oriantations.  Scenes can also be used like any other source.
  */
 EXPORT obs_scene_t obs_scene_create(const char *name);
-EXPORT void        obs_scene_release(obs_scene_t scene);
+
+EXPORT int         obs_scene_addref(obs_scene_t scene);
+EXPORT int         obs_scene_release(obs_scene_t scene);
 
 /** Gets the scene's source context */
 EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);
@@ -456,8 +458,12 @@ EXPORT obs_scene_t obs_scene_fromsource(obs_source_t source);
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);
 
-/** Removes/destroys a scene item */
-EXPORT void  obs_sceneitem_destroy(obs_sceneitem_t item);
+/** Removes/destroys a scene item.  Returns the source reference counter
+ * (if any) */
+EXPORT int obs_sceneitem_destroy(obs_sceneitem_t item);
+
+/** Gets the source of a scene item */
+EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
 
 /* Functions for gettings/setting specific oriantation of a scene item */
 EXPORT void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos);

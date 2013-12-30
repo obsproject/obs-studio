@@ -119,5 +119,5 @@ struct obs_output {
 	struct dstr settings;
 };
 
-extern bool get_output_info(void *module, const char *module_name,
+extern bool load_output_info(void *module, const char *module_name,
 		const char *output_name, struct output_info *info);

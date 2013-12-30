@@ -12,6 +12,9 @@ MainMenu.FIle.Save="Save"
 MainWindow.AddSceneDlg.Title="Add Scene"
 MainWindow.AddSceneDlg.Text="Please enter the name of the scene"
 
+MainWindow.AddSourceDlg.Title="Add Source"
+MainWindow.AddSourceDlg.Text="Please enter the name of the source"
+
 MainWindow.NameExists.Title="Name already exists"
 MainWindow.NameExists.Text="The name is already in use by another source."
 

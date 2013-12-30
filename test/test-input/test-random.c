@@ -3,7 +3,7 @@
 
 const char *random_getname(const char *locale)
 {
-	return "Random;";
+	return "Random Source";
 }
 
 struct random_tex *random_create(const char *settings, obs_source_t source)

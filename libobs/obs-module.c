@@ -147,13 +147,13 @@ int obs_load_module(const char *path)
 
 	mod.name = bstrdup(path);
 	module_load_exports(&mod, &obs->input_types.da, "inputs",
-			sizeof(struct source_info), get_source_info);
+			sizeof(struct source_info), load_source_info);
 	module_load_exports(&mod, &obs->filter_types.da, "filters",
-			sizeof(struct source_info), get_source_info);
+			sizeof(struct source_info), load_source_info);
 	module_load_exports(&mod, &obs->transition_types.da, "transitions",
-			sizeof(struct source_info), get_source_info);
+			sizeof(struct source_info), load_source_info);
 	module_load_exports(&mod, &obs->output_types.da, "outputs",
-			sizeof(struct output_info), get_output_info);
+			sizeof(struct output_info), load_output_info);
 
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;

@@ -119,10 +119,16 @@ obs_scene_t obs_scene_create(const char *name)
 	return scene;
 }
 
-void obs_scene_release(obs_scene_t scene)
+int obs_scene_addref(obs_scene_t scene)
+{
+	return obs_source_addref(scene->source);
+}
+
+int obs_scene_release(obs_scene_t scene)
 {
 	if (scene)
-		obs_source_release(scene->source);
+		return obs_source_release(scene->source);
+	return 0;
 }
 
 obs_source_t obs_scene_getsource(obs_scene_t scene)
@@ -154,15 +160,23 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	return item;
 }
 
-void obs_sceneitem_destroy(obs_sceneitem_t item)
+int obs_sceneitem_destroy(obs_sceneitem_t item)
 {
+	int ref = 0;
 	if (item) {
 		if (item->source)
-			obs_source_release(item->source);
+			ref = obs_source_release(item->source);
 
 		da_erase_item(item->parent->items, item);
 		bfree(item);
 	}
+
+	return ref;
+}
+
+obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item)
+{
+	return item->source;
 }
 
 void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos)

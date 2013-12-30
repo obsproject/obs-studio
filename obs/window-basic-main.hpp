@@ -28,6 +28,9 @@ class OBSBasic : public OBSBasicBase {
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceDestroyed(void *data, calldata_t params);
 
+	void AddSource(obs_scene_t scene, const char *id);
+	void AddSourcePopup();
+
 	bool InitGraphics();
 
 	void NewProject();

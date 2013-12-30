@@ -249,7 +249,7 @@ struct obs_source {
 	bool                         rendering_filter;
 };
 
-extern bool get_source_info(void *module, const char *module_name,
+extern bool load_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info);
 
 extern bool obs_source_init(struct obs_source *source, const char *settings,
