@@ -220,6 +220,11 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	bfree(wi);
 }
 
+void gl_update(device_t device)
+{
+	[debug->play->context update]
+}
+
 void device_entercontext(device_t device)
 {
 	[device->plat->context makeCurrentContext];

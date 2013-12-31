@@ -390,6 +390,11 @@ static void APIENTRY gl_debug_message_amd(GLuint id,
 }
 #endif
 
+void gl_update(device_t device)
+{
+	/* does nothing on windows */
+}
+
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {

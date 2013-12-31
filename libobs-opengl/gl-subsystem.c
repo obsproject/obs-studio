@@ -135,6 +135,8 @@ void device_resize(device_t device, uint32_t cx, uint32_t cy)
 	/* GL automatically resizes the device, so it doesn't do much */
 	device->cur_swap->info.cx = cx;
 	device->cur_swap->info.cy = cy;
+
+	gl_update(device);
 }
 
 void device_getsize(device_t device, uint32_t *cx, uint32_t *cy)

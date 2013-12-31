@@ -481,6 +481,8 @@ struct gs_device {
 	struct fbo_info          *cur_fbo;
 };
 
+extern void                  gl_update(device_t device);
+
 extern struct gl_platform   *gl_platform_create(device_t device,
                                                 struct gs_init_data *info);
 extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
