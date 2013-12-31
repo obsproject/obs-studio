@@ -138,7 +138,7 @@ bool OBSBasic::InitGraphics()
 	ResizePreview(ovi.base_width, ovi.base_height);
 	SendSizeEvent();
 
-	wxSize size = previewPanel->GetMinSize();
+	wxSize size = previewPanel->GetClientSize();
 	ovi.window_width  = size.x;
 	ovi.window_height = size.y;
 
