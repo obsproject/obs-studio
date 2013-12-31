@@ -222,7 +222,7 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 
 void gl_update(device_t device)
 {
-	[device->plat->context update]
+	[device->plat->context update];
 }
 
 void device_entercontext(device_t device)
