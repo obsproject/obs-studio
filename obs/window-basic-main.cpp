@@ -191,7 +191,7 @@ void OBSBasic::OnResizePreview(wxSizeEvent &event)
 {
 	event.Skip();
 
-	wxSize newSize = previewPanel->GetMinSize();
+	wxSize newSize = previewPanel->GetClientSize();
 
 	graphics_t graphics = obs_graphics();
 	if (graphics) {
