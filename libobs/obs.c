@@ -425,7 +425,7 @@ bool obs_enum_output_types(size_t idx, const char **id)
 
 graphics_t obs_graphics(void)
 {
-	return obs->video.graphics;
+	return (obs != NULL) ? obs->video.graphics : NULL;
 }
 
 media_t obs_media(void)

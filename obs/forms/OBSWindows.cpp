@@ -240,6 +240,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	this->Connect( fileOpenMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileOpenClicked ) );
 	this->Connect( fileSaveMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileSaveClicked ) );
 	this->Connect( fileExitMenu->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileExitClicked ) );
+	previewPanel->Connect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnResizePreview ), NULL, this );
 	scenes->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( OBSBasicBase::scenesClicked ), NULL, this );
 	scenes->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesRDown ), NULL, this );
 	this->Connect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddClicked ) );
@@ -271,6 +272,7 @@ OBSBasicBase::~OBSBasicBase()
 	this->Disconnect( IF_FILE_OPEN, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileOpenClicked ) );
 	this->Disconnect( IF_FILE_SAVE, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileSaveClicked ) );
 	this->Disconnect( ID_FILE_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( OBSBasicBase::fileExitClicked ) );
+	previewPanel->Disconnect( wxEVT_SIZE, wxSizeEventHandler( OBSBasicBase::OnResizePreview ), NULL, this );
 	scenes->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( OBSBasicBase::scenesClicked ), NULL, this );
 	scenes->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( OBSBasicBase::scenesRDown ), NULL, this );
 	this->Disconnect( ID_SCENE_ADD, wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( OBSBasicBase::sceneAddClicked ) );

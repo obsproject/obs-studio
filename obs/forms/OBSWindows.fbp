@@ -394,7 +394,7 @@
                                                             <event name="OnRightDown"></event>
                                                             <event name="OnRightUp"></event>
                                                             <event name="OnSetFocus"></event>
-                                                            <event name="OnSize"></event>
+                                                            <event name="OnSize">OnResizePreview</event>
                                                             <event name="OnUpdateUI"></event>
                                                         </object>
                                                     </object>

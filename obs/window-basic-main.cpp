@@ -185,11 +185,20 @@ void OBSBasic::OnSize(wxSizeEvent &event)
 		return;
 
 	ResizePreview(ovi.base_width, ovi.base_height);
+}
+
+void OBSBasic::OnResizePreview(wxSizeEvent &event)
+{
+	event.Skip();
+
 	wxSize newSize = previewPanel->GetMinSize();
 
-	gs_entercontext(obs_graphics());
-	gs_resize(newSize.x, newSize.y);
-	gs_leavecontext();
+	graphics_t graphics = obs_graphics();
+	if (graphics) {
+		gs_entercontext(graphics);
+		gs_resize(newSize.x, newSize.y);
+		gs_leavecontext();
+	}
 }
 
 void OBSBasic::fileNewClicked(wxCommandEvent &event)

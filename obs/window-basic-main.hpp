@@ -43,6 +43,7 @@ protected:
 	virtual void OnClose(wxCloseEvent &event);
 	virtual void OnMinimize(wxIconizeEvent &event);
 	virtual void OnSize(wxSizeEvent &event);
+	virtual void OnResizePreview(wxSizeEvent &event);
 	virtual void fileNewClicked(wxCommandEvent &event);
 	virtual void fileOpenClicked(wxCommandEvent &event);
 	virtual void fileSaveClicked(wxCommandEvent &event);

@@ -139,6 +139,7 @@ class OBSBasicBase : public WindowSubclass
 		virtual void fileOpenClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void fileSaveClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void fileExitClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnResizePreview( wxSizeEvent& event ) { event.Skip(); }
 		virtual void scenesClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void scenesRDown( wxMouseEvent& event ) { event.Skip(); }
 		virtual void sceneAddClicked( wxCommandEvent& event ) { event.Skip(); }
