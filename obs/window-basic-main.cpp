@@ -119,13 +119,9 @@ OBSBasic::~OBSBasic()
 
 bool OBSBasic::InitGraphics()
 {
-	wxSize size = previewPanel->GetClientSize();
-
 	struct obs_video_info ovi;
 	wxGetApp().GetConfigFPS(ovi.fps_num, ovi.fps_den);
 	ovi.graphics_module = wxGetApp().GetRenderModule();
-	ovi.window_width  = size.x;
-	ovi.window_height = size.y;
 	ovi.base_width    = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "BaseCX");
 	ovi.base_height   = (uint32_t)config_get_uint(GetGlobalConfig(),
@@ -138,11 +134,16 @@ bool OBSBasic::InitGraphics()
 	ovi.adapter       = 0;
 	ovi.window        = WxToGSWindow(previewPanel);
 
+	//required to make opengl display stuff on osx(?)
+	ResizePreview(ovi.base_width, ovi.base_height);
+	SendSizeEvent();
+
+	wxSize size = previewPanel->GetMinSize();
+	ovi.window_width  = size.x;
+	ovi.window_height = size.y;
+
 	if (!obs_reset_video(&ovi))
 		return false;
-
-	//required to make opengl display stuff on osx(?)
-	SendSizeEvent();
 
 	return true;
 }
@@ -158,6 +159,22 @@ void OBSBasic::OnMinimize(wxIconizeEvent &event)
 	event.Skip();
 }
 
+void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
+{
+	/* resize preview panel to fix to the top section of the window */
+	wxSize targetSize   = GetPreviewContainer()->GetSize();
+	double targetAspect = double(targetSize.x) / double(targetSize.y);
+	double baseAspect   = double(cx) / double(cy);
+	wxSize newSize;
+
+	if (targetAspect > baseAspect)
+		newSize = wxSize(targetSize.y * baseAspect, targetSize.y);
+	else
+		newSize = wxSize(targetSize.x, targetSize.x / baseAspect);
+
+	GetPreviewPanel()->SetMinSize(newSize);
+}
+
 void OBSBasic::OnSize(wxSizeEvent &event)
 {
 	struct obs_video_info ovi;
@@ -167,18 +184,9 @@ void OBSBasic::OnSize(wxSizeEvent &event)
 	if (!obs_get_video_info(&ovi))
 		return;
 
-	/* resize preview panel to fix to the top section of the window */
-	wxSize targetSize   = GetPreviewContainer()->GetSize();
-	double targetAspect = double(targetSize.x) / double(targetSize.y);
-	double baseAspect   = double(ovi.base_width) / double(ovi.base_height);
-	wxSize newSize;
+	ResizePreview(ovi.base_width, ovi.base_height);
+	wxSize newSize = previewPanel->GetMinSize();
 
-	if (targetAspect > baseAspect)
-		newSize = wxSize(targetSize.y * baseAspect, targetSize.y);
-	else
-		newSize = wxSize(targetSize.x, targetSize.x / baseAspect);
-
-	GetPreviewPanel()->SetMinSize(newSize);
 	gs_entercontext(obs_graphics());
 	gs_resize(newSize.x, newSize.y);
 	gs_leavecontext();

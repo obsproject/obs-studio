@@ -28,6 +28,8 @@ class OBSBasic : public OBSBasicBase {
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceDestroyed(void *data, calldata_t params);
 
+	void ResizePreview(uint32_t cx, uint32_t cy);
+
 	void AddSource(obs_scene_t scene, const char *id);
 	void AddSourcePopup();
 
