@@ -227,12 +227,14 @@ void gl_update(device_t device)
 
 void device_entercontext(device_t device)
 {
+	CGLLockContext([device->plat->context CGLContextObj]);
 	[device->plat->context makeCurrentContext];
 }
 
 void device_leavecontext(device_t device)
 {
 	[NSOpenGLContext clearCurrentContext];
+	CGLUnlockContext([device->plat->context CGLContextObj]);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swap)
