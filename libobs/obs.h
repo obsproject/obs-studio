@@ -456,6 +456,15 @@ EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);
 /** Gets the scene from its source, or NULL if not a scene */
 EXPORT obs_scene_t obs_scene_fromsource(obs_source_t source);
 
+/** Determines whether a source is within a scene */
+EXPORT obs_sceneitem_t obs_scene_findsource(obs_scene_t scene,
+		const char *name);
+
+/** Enumerates sources within a scene */
+EXPORT void obs_scene_enum_items(obs_scene_t scene,
+		bool (*callback)(obs_scene_t, obs_sceneitem_t, void*),
+		void *param);
+
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);
 

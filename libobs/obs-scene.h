@@ -23,17 +23,23 @@
 /* how obs scene! */
 
 struct obs_scene_item {
-	obs_scene_t  parent;
-	obs_source_t source;
-	bool         visible;
+	struct obs_scene      *parent;
+	struct obs_source     *source;
+	bool                  visible;
 
-	struct vec2  origin;
-	struct vec2  pos;
-	struct vec2  scale;
-	float        rot;
+	struct vec2           origin;
+	struct vec2           pos;
+	struct vec2           scale;
+	float                 rot;
+
+	/* would do **prev_next, but not really great for resorting */
+	struct obs_scene_item *prev;
+	struct obs_scene_item *next;
 };
 
 struct obs_scene {
-	obs_source_t source;
-	DARRAY(struct obs_scene_item*) items;
+	struct obs_source     *source;
+
+	pthread_mutex_t       mutex;
+	struct obs_scene_item *first_item;
 };

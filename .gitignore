@@ -41,6 +41,7 @@ ltmain.sh
 
 .depend
 tags
+*.trace
 *.swp
 *.dat
 *.clbin

@@ -27,8 +27,14 @@ static const char *scene_getname(const char *locale)
 static void *scene_create(const char *settings, struct obs_source *source)
 {
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
-	scene->source = source;
-	da_init(scene->items);
+	scene->source     = source;
+	scene->first_item = NULL;
+
+	if (pthread_mutex_init(&scene->mutex, NULL) != 0) {
+		blog(LOG_ERROR, "scene_create: Couldn't initialize mutex");
+		bfree(scene);
+		return NULL;
+	}
 
 	return scene;
 }
@@ -36,16 +42,18 @@ static void *scene_create(const char *settings, struct obs_source *source)
 static void scene_destroy(void *data)
 {
 	struct obs_scene *scene = data;
-	size_t i;
+	struct obs_scene_item *item = scene->first_item;
 
-	for (i = 0; i < scene->items.num; i++) {
-		struct obs_scene_item *item = scene->items.array[i];
-		if (item->source)
-			obs_source_release(item->source);
-		bfree(item);
+	while (item) {
+		struct obs_scene_item *del_item = item;
+		item = item->next;
+
+		if (del_item->source)
+			obs_source_release(del_item->source);
+		bfree(del_item);
 	}
 
-	da_free(scene->items);
+	pthread_mutex_destroy(&scene->mutex);
 	bfree(scene);
 }
 
@@ -54,17 +62,46 @@ static uint32_t scene_get_output_flags(void *data)
 	return SOURCE_VIDEO;
 }
 
+static inline void detach_sceneitem(struct obs_scene_item *item)
+{
+	if (item->prev)
+		item->prev->next = item->next;
+	else
+		item->parent->first_item = item->next;
+
+	if (item->next)
+		item->next->prev = item->prev;
+}
+
+static inline void attach_sceneitem(struct obs_scene_item *item,
+		struct obs_scene_item *prev)
+{
+	item->prev = prev;
+
+	if (prev) {
+		item->next = prev->next;
+		if (prev->next)
+			prev->next->prev = item;
+		prev->next = item;
+	} else {
+		item->next = item->parent->first_item;
+		item->parent->first_item = item;
+	}
+}
+
 static void scene_video_render(void *data)
 {
 	struct obs_scene *scene = data;
-	size_t i;
+	struct obs_scene_item *item = scene->first_item;
 
-	for (i = scene->items.num; i > 0; i--) {
-		struct obs_scene_item *item = scene->items.array[i-1];
+	pthread_mutex_lock(&scene->mutex);
 
+	while (item) {
 		if (obs_source_removed(item->source)) {
-			obs_source_release(item->source);
-			da_erase(scene->items, i--);
+			struct obs_scene_item *del_item = item;
+			item = item->next;
+
+			obs_sceneitem_destroy(del_item);
 			continue;
 		}
 
@@ -77,7 +114,11 @@ static void scene_video_render(void *data)
 		obs_source_video_render(item->source);
 
 		gs_matrix_pop();
+
+		item = item->next;
 	}
+
+	pthread_mutex_unlock(&scene->mutex);
 }
 
 static uint32_t scene_getsize(void *data)
@@ -105,6 +146,8 @@ obs_scene_t obs_scene_create(const char *name)
 	memset(source, 0, sizeof(struct obs_source));
 
 	source->data = scene;
+
+	assert(source->data);
 	if (!source->data) {
 		bfree(source);
 		return NULL;
@@ -144,9 +187,50 @@ obs_scene_t obs_scene_fromsource(obs_source_t source)
 	return source->data;
 }
 
+obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
+{
+	struct obs_scene_item *item;
+
+	pthread_mutex_lock(&scene->mutex);
+
+	item = scene->first_item;
+	while (item) {
+		if (strcmp(item->source->name, name) == 0) {
+			break;
+		}
+
+		item = item->next;
+	}
+
+	pthread_mutex_unlock(&scene->mutex);
+
+	return item;
+}
+
+void obs_scene_enum_items(obs_scene_t scene,
+		bool (*callback)(obs_scene_t, obs_sceneitem_t, void*),
+		void *param)
+{
+	struct obs_scene_item *item;
+
+	pthread_mutex_lock(&scene->mutex);
+
+	item = scene->first_item;
+	while (item) {
+		if (!callback(scene, item, param))
+			break;
+
+		item = item->next;
+	}
+
+	pthread_mutex_unlock(&scene->mutex);
+}
+
 obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 {
+	struct obs_scene_item *last;
 	struct obs_scene_item *item = bmalloc(sizeof(struct obs_scene_item));
+
 	memset(item, 0, sizeof(struct obs_scene_item));
 	item->source  = source;
 	item->visible = true;
@@ -156,18 +240,32 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	if (source)
 		obs_source_addref(source);
 
-	da_push_back(scene->items, &item);
+	pthread_mutex_lock(&scene->mutex);
+
+	last = scene->first_item;
+	if (!last) {
+		scene->first_item = item;
+	} else {
+		while (last->next)
+			last = last->next;
+
+		last->next = item;
+		item->prev = last;
+	}
+	
+	pthread_mutex_unlock(&scene->mutex);
+
 	return item;
 }
 
 int obs_sceneitem_destroy(obs_sceneitem_t item)
 {
 	int ref = 0;
+
 	if (item) {
+		detach_sceneitem(item);
 		if (item->source)
 			ref = obs_source_release(item->source);
-
-		da_erase_item(item->parent->items, item);
 		bfree(item);
 	}
 
@@ -203,26 +301,32 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 {
 	struct obs_scene *scene = item->parent;
 
+	pthread_mutex_lock(&scene->mutex);
+
+	detach_sceneitem(item);
+
 	if (movement == ORDER_MOVE_UP) {
-		size_t idx = da_find(scene->items, &item, 0);
-		if (idx > 0)
-			da_move_item(scene->items, idx, idx-1);
+		attach_sceneitem(item, item->prev);
 
 	} else if (movement == ORDER_MOVE_DOWN) {
-		size_t idx = da_find(scene->items, &item, 0);
-		if (idx < (scene->items.num-1))
-			da_move_item(scene->items, idx, idx+1);
+		attach_sceneitem(item, item->next);
 
 	} else if (movement == ORDER_MOVE_TOP) {
-		size_t idx = da_find(scene->items, &item, 0);
-		if (idx > 0)
-			da_move_item(scene->items, idx, 0);
+		struct obs_scene_item *last = item->next;
+		if (!last) {
+			last = item->prev;
+		} else {
+			while (last->next)
+				last = last->next;
+		}
 
-	} else if (movement == ORDER_MOVE_TOP) {
-		size_t idx = da_find(scene->items, &item, 0);
-		if (idx < (scene->items.num-1))
-			da_move_item(scene->items, idx, scene->items.num-1);
+		attach_sceneitem(item, last);
+
+	} else if (movement == ORDER_MOVE_BOTTOM) {
+		attach_sceneitem(item, NULL);
 	}
+
+	pthread_mutex_unlock(&scene->mutex);
 }
 
 void obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos)
