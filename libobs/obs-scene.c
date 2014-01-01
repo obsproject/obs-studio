@@ -263,7 +263,10 @@ int obs_sceneitem_destroy(obs_sceneitem_t item)
 	int ref = 0;
 
 	if (item) {
+		pthread_mutex_lock(&item->parent->mutex);
 		detach_sceneitem(item);
+		pthread_mutex_unlock(&item->parent->mutex);
+
 		if (item->source)
 			ref = obs_source_release(item->source);
 		bfree(item);

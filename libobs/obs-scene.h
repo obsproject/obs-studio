@@ -32,7 +32,7 @@ struct obs_scene_item {
 	struct vec2           scale;
 	float                 rot;
 
-	/* would do **prev_next, but not really great for resorting */
+	/* would do **prev_next, but not really great for reordering */
 	struct obs_scene_item *prev;
 	struct obs_scene_item *next;
 };
