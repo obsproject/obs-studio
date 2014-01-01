@@ -33,15 +33,15 @@ extern "C" {
 
 struct signal_handler;
 typedef struct signal_handler *signal_handler_t;
+typedef void (*signal_callback_t)(void*, calldata_t);
 
 EXPORT signal_handler_t signal_handler_create(void);
 EXPORT void signal_handler_destroy(signal_handler_t handler);
 
 EXPORT void signal_handler_connect(signal_handler_t handler, const char *signal,
-		void (*callback)(void*, calldata_t), void *data);
+		signal_callback_t callback, void *data);
 EXPORT void signal_handler_disconnect(signal_handler_t handler,
-		const char *signal, void (*callback)(void*, calldata_t),
-		void *data);
+		const char *signal, signal_callback_t callback, void *data);
 
 EXPORT void signal_handler_signal(signal_handler_t handler, const char *signal,
 		calldata_t params);

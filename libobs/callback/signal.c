@@ -20,7 +20,7 @@
 #include "signal.h"
 
 struct signal_callback {
-	void (*callback)(calldata_t, void*);
+	signal_callback_t callback;
 	void *data;
 };
 
@@ -60,7 +60,7 @@ static inline void signal_info_destroy(struct signal_info *si)
 }
 
 static inline size_t signal_get_callback_idx(struct signal_info *si,
-		void (*callback)(void*, calldata_t), void *data)
+		signal_callback_t callback, void *data)
 {
 	for (size_t i = 0; i < si->callbacks.num; i++) {
 		struct signal_callback *sc = si->callbacks.array+i;
@@ -129,7 +129,7 @@ void signal_handler_destroy(signal_handler_t handler)
 }
 
 void signal_handler_connect(signal_handler_t handler, const char *signal,
-		void (*callback)(void*, calldata_t), void *data)
+		signal_callback_t callback, void *data)
 {
 	struct signal_info *sig, *last;
 	struct signal_callback cb_data = {callback, data};
@@ -174,7 +174,7 @@ static inline struct signal_info *getsignal_locked(signal_handler_t handler,
 }
 
 void signal_handler_disconnect(signal_handler_t handler, const char *signal,
-		void (*callback)(void*, calldata_t), void *data)
+		signal_callback_t callback, void *data)
 {
 	struct signal_info *sig = getsignal_locked(handler, signal);
 	size_t idx;
