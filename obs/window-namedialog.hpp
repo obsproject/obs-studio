@@ -23,9 +23,9 @@
 
 class NameDialog : public NameDialogBase {
 protected:
-	virtual void OnClose(wxCommandEvent &event);
-	virtual void OKPressed(wxCommandEvent &event);
-	virtual void CancelPressed(wxCommandEvent &event);
+	virtual void OnClose(wxCloseEvent &event) override;
+	virtual void OKPressed(wxCommandEvent &event) override;
+	virtual void CancelPressed(wxCommandEvent &event) override;
 
 public:
 	inline NameDialog(wxWindow *parent)

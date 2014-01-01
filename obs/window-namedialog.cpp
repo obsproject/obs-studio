@@ -15,12 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
-
 #include "window-namedialog.hpp"
 using namespace std;
 
-void NameDialog::OnClose(wxCommandEvent &event)
+void NameDialog::OnClose(wxCloseEvent &event)
 {
 	EndModal(wxID_CANCEL);
 }
