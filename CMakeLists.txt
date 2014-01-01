@@ -15,8 +15,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
 	if(USE_LIBC++)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 	endif()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-	add_definitions(-Wall -Wmissing-prototypes -Wshadow)
+	set(CMAKE_CXX_FLAGS
+		"${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wmissing-prototypes")
+	set(CMAKE_C_FLAGS
+		"${CMAKE_C_FLAGS} -std=c99 -Wall -Wmissing-prototypes -Wshadow")
 endif()
 
 if(UNIX)
