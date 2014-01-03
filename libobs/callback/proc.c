@@ -21,7 +21,7 @@
 struct proc_info {
 	char *name;
 	void *data;
-	void (*proc)(calldata_t, void*);
+	proc_handler_proc_t proc;
 };
 
 static inline void proc_info_free(struct proc_info *pi)
@@ -52,7 +52,7 @@ void proc_handler_destroy(proc_handler_t handler)
 }
 
 void proc_handler_add(proc_handler_t handler, const char *name,
-		void (*proc)(void*, calldata_t), void *data)
+		proc_handler_proc_t proc, void *data)
 {
 	struct proc_info pi = {bstrdup(name), data, proc};
 	da_push_back(handler->procs, &pi);
