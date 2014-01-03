@@ -20,9 +20,6 @@
 #include <obs.h>
 #include "wx-wrappers.hpp"
 
-#include <memory>
-using namespace std;
-
 #ifdef __linux__
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
@@ -39,7 +36,8 @@ gs_window WxToGSWindow(const wxWindow *wxwin)
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
-	window.id 	= gdk_x11_drawable_get_xid(gtk_widget_get_window(wxwin->GetHandle()));
+	window.id 	= gdk_x11_drawable_get_xid(gtk_widget_get_window(
+				wxwin->GetHandle()));
 #endif
 	return window;
 }
