@@ -159,7 +159,8 @@ void gs_destroy(graphics_t graphics)
 	pthread_mutex_destroy(&graphics->mutex);
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
-	os_dlclose(graphics->module);
+	if (graphics->module)
+		os_dlclose(graphics->module);
 	bfree(graphics);
 }
 
