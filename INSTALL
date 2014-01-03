@@ -50,8 +50,10 @@ Linux
     for OSX
 
   - If using debian-based distributions, you may have to get the latest FFmpeg
-    repo -- aptitude packages seem to be a bit lacking, so you might have to
-    get the latest FFmpeg repo, compile, and do a make install
+    repo -- default debian packages seem to be a bit lacking, so you might have
+    to either get precompiled packages from http://deb-multimedia.org/ (or
+    similar sources, use your own judgement) or get the latest FFmpeg repo,
+    compile, and do a make install
 
   - Instructions pending -- linux code still under construction, and not yet
     fully functioning.  Will add more information later
