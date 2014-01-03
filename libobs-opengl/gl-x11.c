@@ -74,7 +74,6 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 
 extern void gl_windowinfo_destroy(struct gl_windowinfo *wi) 
 {
-	blog(LOG_DEBUG, "%s called.", __FUNCTION__);
 	bfree(wi);
 }
 
@@ -91,7 +90,7 @@ extern void gl_getclientsize(struct gs_swap_chain *swap,
 
 static void print_info_stuff(struct gs_init_data *info)
 {
-	blog(	LOG_DEBUG,
+	blog(	LOG_INFO,
 		"X and Y: %i %i\n"
 		"Backbuffers: %i\n"
 		"Color Format: %i\n"
@@ -206,10 +205,13 @@ fail0:
 
 extern void gl_platform_destroy(struct gl_platform *platform) 
 {
-	blog(LOG_DEBUG, "%s called.", __FUNCTION__);
+	if (!platform)
+		return; 
+	
 	glXMakeCurrent(platform->swap.wi->display, None, NULL);
 	glXDestroyContext(platform->swap.wi->display, platform->context);
 	XCloseDisplay(platform->swap.wi->display);
+	gl_windowinfo_destroy(platform->swap.wi);
 	bfree(platform);
 }
 
