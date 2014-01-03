@@ -55,6 +55,8 @@ case $host_os in
 		AM_CONDITIONAL([OS_OSX], false)
 		AM_CONDITIONAL([OS_NIX], true)
 		PKG_CHECK_MODULES([X11], [x11])
+		PKG_CHECK_MODULES([XINERAMA], [xinerama])
+		PKG_CHECK_MODULES([GTK], [gtk+-x11-2.0])
 		;;
 esac
 
@@ -66,12 +68,13 @@ AC_CHECK_HEADER([libavutil/channel_layout.h], , AC_MSG_ERROR([libavutil header n
 AC_CHECK_HEADER([libswscale/swscale.h], , AC_MSG_ERROR([libswscale header not found]))
 AC_CHECK_HEADER([libswresample/swresample.h], , AC_MSG_ERROR([libswresample header not found]))
 
-AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name], , AC_MSG_ERROR([libavcodec not found]), )
+AC_CHECK_LIB([avcodec], [avcodec_find_encoder_by_name], , AC_MSG_ERROR([libavcodec not found]))
 AC_CHECK_LIB([avformat], [av_guess_format], , AC_MSG_ERROR([libavformat not found]))
 AC_CHECK_LIB([avutil], [av_samples_alloc], , AC_MSG_ERROR([libavutil not found]))
 AC_CHECK_LIB([swscale], [sws_scale], , AC_MSG_ERROR([libswscale not found]))
 AC_CHECK_LIB([swresample], [swr_convert], , AC_MSG_ERROR([libswresample not found]))
 
+# checks for jansson
 AC_CHECK_HEADER([jansson.h], , AC_MSG_ERROR([libjansson header not found]))
 AC_CHECK_LIB([jansson], [json_load_file], , AC_MSG_ERROR([libjansson not found]))
 
@@ -92,7 +95,7 @@ WX_CONFIG_CHECK(
 
 CPPFLAGS="$CPPFLAGS $WX_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $WX_CXXFLAGS_ONLY"
-CFLAGS="$CFLAGS $WX_CFLAGS_ONLY"
+CFLAGS="$CFLAGS $WX_CFLAGS_ONLY  "
 LIBS="$LIBS $WX_LIBS"
 
 # Checks for header files.
