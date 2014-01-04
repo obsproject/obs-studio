@@ -28,7 +28,7 @@ using namespace std;
 static inline bool check_path(const char* data, const char *path, string &output)
 {
 	ostringstream str;
-	str << "/usr/local/share/obs-studio/" << data;
+	str << path << data;
 	output = str.str();
 		
 	printf("Attempted path: %s\n", output.c_str());
