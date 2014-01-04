@@ -19,12 +19,11 @@ static const GLenum fb_attribs[] = {
 };
 
 static const GLenum ctx_attribs[] = {
-	GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-	GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB |
-	                       GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+#ifdef _DEBUG
+	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif
 	GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-	0, 0
+	None, 
 };
 
 static const char* __GLX_error_table[] = {
@@ -169,16 +168,18 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail2;
 	}
 
-	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
-
 	/* Initialize GLEW */
 	{
 		GLenum err = glewInit();
+		glewExperimental = true;
+		
 		if (GLEW_OK != err) {
 			blog(LOG_ERROR, glewGetErrorString(err));
 			goto fail2;
 		}
 	}
+	
+	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
 	
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_DEBUG_OUTPUT);

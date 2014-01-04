@@ -18,6 +18,74 @@
 #include <graphics/matrix3.h>
 #include "gl-subsystem.h"
 
+/* Tables for OpenGL debug */
+static const char* debug_source_table[] = {
+	"API",
+	"Window System",
+	"Shader Compiler",
+	"Third Party"
+	"Application",
+	"Other"
+};
+
+static const char* debug_type_table[] = {
+	"Error",
+	"Deprecated Behavior",
+	"Undefined Behavior",
+	"Portability",
+	"Performance",
+	"Other"
+};
+
+static const char* debug_severity_table[] = {
+	"High",
+	"Medium",
+	"Low"
+};
+
+/* ARB and core values are the same. They'll always be linear so no hardcoding. */
+/* The values subtracted are the lowest value in the list of valid values. */
+#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB)
+#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
+#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
+
+#ifdef _DEBUG
+static void gl_debug_proc(
+	GLenum source, GLenum type, GLuint id, GLenum severity, 
+	GLsizei length, const GLchar *message, GLvoid *data )
+{
+	blog(	LOG_DEBUG,
+		"[%s][%s]{%}: %.*s",
+		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
+		debug_type_table[GL_DEBUG_TYPE_OFFSET(type)],
+		debug_severity_table[GL_DEBUG_SEVERITY_OFFSET(severity)],
+		length, message
+	);
+}
+
+static void gl_enable_debug()
+{
+	 /* Perhaps we should create GLEW contexts? */
+
+	if (GLEW_VERSION_4_0)
+		glDebugMessageCallback(gl_debug_proc, NULL);
+	else if (GLEW_ARB_debug_output) {
+		glDebugMessageCallbackARB(gl_debug_proc, NULL);
+	} else {
+		blog(LOG_DEBUG, "Failed to set GL debug callback as it is not supported.");
+		return;
+	}
+
+	glEnable(GL_DEBUG_OUTPUT);
+	if (glGetError() == GL_INVALID_ENUM)
+		blog(LOG_DEBUG, "OpenGL debug information not available"); /* Debug callback simply won't be called. */
+	else
+		blog(LOG_DEBUG, "Successfully hooked into OpenGL debug message callback.");
+}
+#else
+static void gl_enable_debug() {}
+#endif
+
 static void clear_textures(struct gs_device *device)
 {
 	GLenum i;
@@ -69,6 +137,9 @@ device_t device_create(struct gs_init_data *info)
 	if (!device->plat)
 		goto fail;
 
+	/* We expect platform specific code to initialize GLEW as they might use it themselves anyways. */
+	/* Also, that code needs to set glewExperimental to true (since it fails to set core functionality like a dum dum) */
+	
 	glGenProgramPipelines(1, &device->pipeline);
 	if (!gl_success("glGenProgramPipelines"))
 		goto fail;
@@ -77,12 +148,7 @@ device_t device_create(struct gs_init_data *info)
 	if (!gl_success("glBindProgramPipeline"))
 		goto fail;
 
-#ifdef _DEBUG
-	glEnable(GL_DEBUG_OUTPUT);
-	if (glGetError() == GL_INVALID_ENUM)
-		blog(LOG_DEBUG, "OpenGL debug information not available");
-#endif
-
+	gl_enable_debug();
 	gl_enable(GL_CULL_FACE);
 
 	device_leavecontext(device);
