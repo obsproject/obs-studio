@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#define WX_UTF8(str) wxString(str, wxConvUTF8)
+
 struct gs_window;
 
 gs_window WxToGSWindow(const wxWindow *window);
