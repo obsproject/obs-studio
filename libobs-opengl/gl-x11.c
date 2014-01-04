@@ -181,10 +181,6 @@ struct gl_platform *gl_platform_create(device_t device,
 	
 	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
 	
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_CULL_FACE);
-	
 	plat->swap.device = device;
 	plat->swap.info	  = *info;
 	plat->swap.wi     = gl_windowinfo_create(info);
