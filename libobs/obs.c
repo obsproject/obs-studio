@@ -462,15 +462,26 @@ obs_source_t obs_get_output_source(uint32_t channel)
 void obs_set_output_source(uint32_t channel, obs_source_t source)
 {
 	struct obs_source *prev_source;
+	struct calldata params = {0};
 	assert(channel < MAX_CHANNELS);
 
 	prev_source = obs->data.channels[channel];
+
+	calldata_setuint32(&params, "channel", channel);
+	calldata_setptr(&params, "prev_source", prev_source);
+	calldata_setptr(&params, "source", source);
+	signal_handler_signal(obs->signals, "channel-change", &params);
+	calldata_getptr(&params, "source", &source);
+	calldata_free(&params);
+
 	obs->data.channels[channel] = source;
 
-	if (source)
-		obs_source_addref(source);
-	if (prev_source)
-		obs_source_release(prev_source);
+	if (source != prev_source) {
+		if (source)
+			obs_source_addref(source);
+		if (prev_source)
+			obs_source_release(prev_source);
+	}
 }
 
 void obs_enum_sources(bool (*enum_proc)(obs_source_t, void*), void *param)

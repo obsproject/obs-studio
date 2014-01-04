@@ -104,7 +104,7 @@ static const struct source_info *get_source_info(enum obs_source_type type,
 	return find_source(list, id);
 }
 
-static inline bool obs_source_init_handlers(struct obs_source *source)
+bool obs_source_init_handlers(struct obs_source *source)
 {
 	source->signals = signal_handler_create();
 	if (!source->signals)

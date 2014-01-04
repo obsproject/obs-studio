@@ -18,6 +18,16 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
+static inline void signal_item_destroy(struct obs_scene_item *item,
+		struct calldata *params)
+{
+	calldata_setptr(params, "scene", item->parent);
+	calldata_setptr(params, "item", item);
+	signal_handler_signal(item->parent->source->signals, "remove",
+			params);
+	calldata_clear(params);
+}
+
 static const char *scene_getname(const char *locale)
 {
 	/* TODO: locale lookup of display name */
@@ -43,16 +53,20 @@ static void scene_destroy(void *data)
 {
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item = scene->first_item;
+	struct calldata params = {0};
 
 	while (item) {
 		struct obs_scene_item *del_item = item;
 		item = item->next;
+
+		signal_item_destroy(del_item, &params);
 
 		if (del_item->source)
 			obs_source_release(del_item->source);
 		bfree(del_item);
 	}
 
+	calldata_free(&params);
 	pthread_mutex_destroy(&scene->mutex);
 	bfree(scene);
 }
@@ -141,14 +155,19 @@ static const struct source_info scene_info =
 obs_scene_t obs_scene_create(const char *name)
 {
 	struct obs_source *source = bmalloc(sizeof(struct obs_source));
-	struct obs_scene  *scene  = scene_create(NULL, source);
+	struct obs_scene  *scene;
 
 	memset(source, 0, sizeof(struct obs_source));
+	if (!obs_source_init_handlers(source)) {
+		bfree(source);
+		return NULL;
+	}
 
+	scene = scene_create(NULL, source);
 	source->data = scene;
 
-	assert(source->data);
-	if (!source->data) {
+	assert(scene);
+	if (!scene) {
 		bfree(source);
 		return NULL;
 	}
@@ -230,6 +249,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item = bmalloc(sizeof(struct obs_scene_item));
+	struct calldata params = {0};
 
 	memset(item, 0, sizeof(struct obs_scene_item));
 	item->source  = source;
@@ -252,8 +272,13 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 		last->next = item;
 		item->prev = last;
 	}
-	
+
 	pthread_mutex_unlock(&scene->mutex);
+
+	calldata_setptr(&params, "scene", scene);
+	calldata_setptr(&params, "item", item);
+	signal_handler_signal(scene->source->signals, "add", &params);
+	calldata_free(&params);
 
 	return item;
 }
@@ -263,6 +288,10 @@ int obs_sceneitem_destroy(obs_sceneitem_t item)
 	int ref = 0;
 
 	if (item) {
+		struct calldata params = {0};
+		signal_item_destroy(item, &params);
+		calldata_free(&params);
+
 		pthread_mutex_lock(&item->parent->mutex);
 		detach_sceneitem(item);
 		pthread_mutex_unlock(&item->parent->mutex);
@@ -273,6 +302,11 @@ int obs_sceneitem_destroy(obs_sceneitem_t item)
 	}
 
 	return ref;
+}
+
+obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item)
+{
+	return item->parent;
 }
 
 obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item)

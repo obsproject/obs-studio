@@ -56,7 +56,6 @@ static inline void render_begin(struct obs_display *display)
 
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
-
 }
 
 static inline void render_end(struct obs_display *display)

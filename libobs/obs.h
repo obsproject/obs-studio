@@ -472,6 +472,9 @@ EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);
  * (if any) */
 EXPORT int obs_sceneitem_destroy(obs_sceneitem_t item);
 
+/** Gets the scene parent associated with the scene item */
+EXPORT obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item);
+
 /** Gets the source of a scene item */
 EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
 

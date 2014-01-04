@@ -252,6 +252,7 @@ struct obs_source {
 extern bool load_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info);
 
+bool obs_source_init_handlers(struct obs_source *source);
 extern bool obs_source_init(struct obs_source *source, const char *settings,
 		const struct source_info *info);
 
