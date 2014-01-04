@@ -24,57 +24,148 @@
 #include "window-basic-settings.hpp"
 #include "window-basic-main.hpp"
 #include "window-namedialog.hpp"
+
 using namespace std;
 
-void OBSBasic::SceneAdded(obs_source_t source)
+obs_scene_t OBSBasic::GetCurrentScene()
+{
+	int sel = scenes->GetSelection();
+	if (sel == wxNOT_FOUND)
+		return NULL;
+
+	return (obs_scene_t)scenes->GetClientData(sel);
+}
+
+void OBSBasic::AddScene(obs_source_t source)
 {
 	const char *name  = obs_source_getname(source);
 	obs_scene_t scene = obs_scene_fromsource(source);
-	scenes->Append(wxString(name, wxConvUTF8), scene);
+	scenes->Append(WX_UTF8(name), scene);
+
+	signal_handler_t handler = obs_source_signalhandler(source);
+	signal_handler_connect(handler, "add", OBSBasic::SceneItemAdded,
+			this);
+	signal_handler_connect(handler, "remove", OBSBasic::SceneItemRemoved,
+			this);
 }
 
-void OBSBasic::SceneRemoved(obs_source_t source)
+void OBSBasic::RemoveScene(obs_source_t source)
 {
 	const char *name = obs_source_getname(source);
 
-	int item = scenes->FindString(name);
-	if (item != wxNOT_FOUND) {
-		scenes->Delete(item);
-		return;
-	}
+	int idx = scenes->FindString(name);
+	if (idx != wxNOT_FOUND)
+		scenes->Delete(idx);
+}
 
-	item = sources->FindString(name);
-	if (item != wxNOT_FOUND)
-		sources->Delete(item);
+void OBSBasic::AddSceneItem(obs_sceneitem_t item)
+{
+	obs_source_t source = obs_sceneitem_getsource(item);
+	const char *name = obs_source_getname(source);
+	sources->Insert(WX_UTF8(name), 0, item);
+}
+
+void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
+{
+	obs_source_t source = obs_sceneitem_getsource(item);
+	const char *name = obs_source_getname(source);
+
+	int idx = sources->FindString(WX_UTF8(name));
+	if (idx != wxNOT_FOUND)
+		sources->Delete(idx);
+}
+
+void OBSBasic::UpdateSources(obs_scene_t scene)
+{
+	sources->Clear();
+
+	obs_scene_enum_items(scene,
+			[] (obs_scene_t scene, obs_sceneitem_t item, void *p)
+			{
+				OBSBasic *window = static_cast<OBSBasic*>(p);
+				window->AddSceneItem(item);
+				return true;
+			}, this);
+}
+
+void OBSBasic::UpdateSceneSelection(obs_source_t source)
+{
+	if (source) {
+		obs_source_type type;
+		obs_source_gettype(source, &type, NULL);
+
+		if (type == SOURCE_SCENE) {
+			obs_scene_t scene = obs_scene_fromsource(source);
+			const char *name = obs_source_getname(source);
+			int idx = scenes->FindString(WX_UTF8(name));
+			int sel = scenes->GetSelection();
+
+			if (idx != sel) {
+				scenes->SetSelection(idx);
+				UpdateSources(scene);
+			}
+		}
+	} else {
+		scenes->SetSelection(wxNOT_FOUND);
+	}
+}
+
+/* OBS Callbacks */
+
+void OBSBasic::SceneItemAdded(void *data, calldata_t params)
+{
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+
+	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
+	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
+
+	if (window->GetCurrentScene() == scene)
+		window->AddSceneItem(item);
+}
+
+void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
+{
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+
+	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
+	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
+
+	if (window->GetCurrentScene() == scene)
+		window->AddSceneItem(item);
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
 {
-	OBSBasic *window = (OBSBasic*)data;
-
-	obs_source_t source;
-	calldata_getptr(params, "source", (void**)&source);
+	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
 	obs_source_type type;
 	obs_source_gettype(source, &type, NULL);
 
 	if (type == SOURCE_SCENE)
-		window->SceneAdded(source);
+		static_cast<OBSBasic*>(data)->AddScene(source);
 }
 
 void OBSBasic::SourceDestroyed(void *data, calldata_t params)
 {
-	OBSBasic *window = (OBSBasic*)data;
-
-	obs_source_t source;
-	calldata_getptr(params, "source", (void**)&source);
+	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
 	obs_source_type type;
 	obs_source_gettype(source, &type, NULL);
 
 	if (type == SOURCE_SCENE)
-		window->SceneRemoved(source);
+		static_cast<OBSBasic*>(data)->RemoveScene(source);
 }
+
+void OBSBasic::ChannelChanged(void *data, calldata_t params)
+{
+	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
+	uint32_t channel = calldata_uint32(params, "channel");
+
+	if (channel == 0)
+		static_cast<OBSBasic*>(data)->UpdateSceneSelection(source);
+}
+
+/* Main class functions */
 
 bool OBSBasic::Init()
 {
@@ -87,27 +178,11 @@ bool OBSBasic::Init()
 			OBSBasic::SourceAdded, this);
 	signal_handler_connect(obs_signalhandler(), "source-destroy",
 			OBSBasic::SourceDestroyed, this);
-
-	//obs_scene_t scene = obs_scene_create("test scene");
-	//obs_add_source(obs_scene_getsource(scene));
+	signal_handler_connect(obs_signalhandler(), "channel-change",
+			OBSBasic::ChannelChanged, this);
 
 	/* TODO: this is a test */
 	obs_load_module("test-input");
-
-	obs_source_t test = obs_source_create(SOURCE_INPUT, "random", "test",
-			NULL);
-	obs_add_source(test);
-	obs_set_output_source(0, test);
-	/*obs_scene_t scene = obs_scene_create("test2");
-	obs_set_output_source(0, obs_scene_getsource(scene));
-
-	obs_sceneitem_t bla = obs_scene_add(scene, test);
-
-	struct vec2 ddd = {100.0f, 100.0f};
-	obs_sceneitem_setscale(bla, &ddd);
-
-	obs_scene_release(scene);*/
-	obs_source_release(test);
 
 	return true;
 }
@@ -226,8 +301,10 @@ void OBSBasic::scenesClicked(wxCommandEvent &event)
 	if (sel != wxNOT_FOUND) {
 		obs_scene_t scene = (obs_scene_t)scenes->GetClientData(sel);
 		source = obs_scene_getsource(scene);
+		UpdateSources(scene);
 	}
 
+	/* TODO: allow transitions */
 	obs_set_output_source(0, source);
 }
 
@@ -316,8 +393,8 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 			success = true;
 		} else {
 			wxMessageBox(WXStr("MainWindow.NameExists.Text"),
-				     WXStr("MainWindow.NameExists.Title"),
-				     wxOK|wxCENTRE, this);
+			             WXStr("MainWindow.NameExists.Title"),
+			             wxOK|wxCENTRE, this);
 			obs_source_release(source);
 		}
 	}

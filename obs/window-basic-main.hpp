@@ -22,11 +22,20 @@
 #include <obs.hpp>
 
 class OBSBasic : public OBSBasicBase {
-	void SceneAdded(obs_source_t scene);
-	void SceneRemoved(obs_source_t scene);
+	obs_scene_t GetCurrentScene();
+	void AddSceneItem(obs_sceneitem_t item);
+	void RemoveSceneItem(obs_sceneitem_t item);
+	void AddScene(obs_source_t scene);
+	void RemoveScene(obs_source_t scene);
+	void UpdateSources(obs_scene_t scene);
+	void UpdateSceneSelection(obs_source_t source);
 
+	/* OBS Callbacks */
+	static void SceneItemAdded(void *data, calldata_t params);
+	static void SceneItemRemoved(void *data, calldata_t params);
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceDestroyed(void *data, calldata_t params);
+	static void ChannelChanged(void *data, calldata_t params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
@@ -40,6 +49,7 @@ class OBSBasic : public OBSBasicBase {
 	void LoadProject();
 
 protected:
+	/* wxWidgets callbacks */
 	virtual void OnClose(wxCloseEvent &event);
 	virtual void OnMinimize(wxIconizeEvent &event);
 	virtual void OnSize(wxSizeEvent &event);
