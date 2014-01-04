@@ -233,6 +233,12 @@ void device_leavecontext(device_t device)
 		blog(LOG_ERROR, "Failed to reset current context.");
 	}
 }
+
+void gl_update(device_t device)
+{
+	/* I don't know of anything we can do here. */
+}
+
 void device_load_swapchain(device_t device, swapchain_t swap) 
 {
 	if(!swap)
