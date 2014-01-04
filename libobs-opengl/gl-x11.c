@@ -138,6 +138,17 @@ struct gl_platform *gl_platform_create(device_t device,
 	
 	XSetErrorHandler(GLXErrorHandler);
 	
+	/* We require glX version 1.4 */
+	{
+		int major = 0, minor = 0;
+		
+		glXQueryVersion(display, &major, &minor);
+		if (major < 1 || minor < 4) {
+			blog(LOG_ERROR, "GLX version isn't high enough.");
+			goto fail0;
+		}
+	}
+	
 	glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress("glXCreateContextAttribsARB");
 	if (!glXCreateContextAttribsARB) {
 		blog(LOG_ERROR, "ARB_GLX_create_context not supported!");
@@ -169,9 +180,9 @@ struct gl_platform *gl_platform_create(device_t device,
 	}
 
 	/* Initialize GLEW */
-	{
-		GLenum err = glewInit();
+	{ 	
 		glewExperimental = true;
+		GLenum err = glewInit();
 		
 		if (GLEW_OK != err) {
 			blog(LOG_ERROR, glewGetErrorString(err));
@@ -192,6 +203,7 @@ struct gl_platform *gl_platform_create(device_t device,
 	return plat;
 	
 fail2:
+	glXMakeCurrent(display, None, NULL);
 	glXDestroyContext(display, plat->context);
 fail1: 
 	XFree(configs);
