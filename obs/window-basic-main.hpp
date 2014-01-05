@@ -40,7 +40,7 @@ class OBSBasic : public OBSBasicBase {
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(obs_scene_t scene, const char *id);
-	void AddSourcePopup();
+	void AddSourcePopupMenu();
 
 	bool InitGraphics();
 

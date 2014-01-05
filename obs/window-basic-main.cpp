@@ -131,7 +131,7 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
 	if (window->GetCurrentScene() == scene)
-		window->AddSceneItem(item);
+		window->RemoveSceneItem(item);
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
@@ -408,7 +408,7 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 	}
 }
 
-void OBSBasic::AddSourcePopup()
+void OBSBasic::AddSourcePopupMenu()
 {
 	int sceneSel = scenes->GetSelection();
 	size_t idx = 0;
@@ -443,11 +443,21 @@ void OBSBasic::AddSourcePopup()
 
 void OBSBasic::sourceAddClicked(wxCommandEvent &event)
 {
-	AddSourcePopup();
+	AddSourcePopupMenu();
 }
 
 void OBSBasic::sourceRemoveClicked(wxCommandEvent &event)
 {
+	int sel = sources->GetSelection();
+	if (sel == wxNOT_FOUND)
+		return;
+
+	obs_sceneitem_t item = (obs_sceneitem_t)sources->GetClientData(sel);
+	obs_source_t source = obs_sceneitem_getsource(item);
+	int ref = obs_sceneitem_destroy(item);
+
+	if (ref == 1)
+		obs_source_remove(source);
 }
 
 void OBSBasic::sourcePropertiesClicked(wxCommandEvent &event)
