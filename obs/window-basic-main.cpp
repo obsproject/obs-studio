@@ -336,8 +336,11 @@ void OBSBasic::sceneAddClicked(wxCommandEvent &event)
 		}
 
 		obs_scene_t scene = obs_scene_create(name.c_str());
-		obs_add_source(obs_scene_getsource(scene));
+		source = obs_scene_getsource(scene);
+		obs_add_source(source);
 		obs_scene_release(scene);
+
+		obs_set_output_source(0, source);
 	}
 }
 
