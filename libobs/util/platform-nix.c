@@ -21,9 +21,6 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <time.h>
-#if defined(__linux) || defined(__linux__) || defined(linux)
-#include <linux/time.h>
-#endif
 
 #include "dstr.h"
 #include "platform.h"
