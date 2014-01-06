@@ -83,7 +83,8 @@ static inline int event_wait(event_t *event)
 {
 	int code = 0;
 	pthread_mutex_lock(&event->mutex);
-	if ((code = pthread_cond_wait(&event->cond, &event->mutex)) == 0) {
+	if (event->signalled ||
+		(code = pthread_cond_wait(&event->cond, &event->mutex)) == 0) {
 		if (!event->manual)
 			event->signalled = false;
 		pthread_mutex_unlock(&event->mutex);
