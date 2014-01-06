@@ -97,11 +97,6 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 	return context;
 }
 
-static inline void required_extension_error(const char *extension)
-{
-	blog(LOG_ERROR, "OpenGL extension %s is required", extension);
-}
-
 static bool gl_init_extensions(device_t device)
 {
 	glewExperimental=true;
@@ -111,27 +106,6 @@ static bool gl_init_extensions(device_t device)
 			       glewGetErrorString(error));
 	       return false;
 	}
-
-	if(!GLEW_VERSION_2_1) {
-	       blog(LOG_ERROR, "OpenGL 2.1 minimum required by the graphics "
-	                       "adapter");
-	       return false;
-	}
-
-	if(!GLEW_ARB_framebuffer_object) {
-		required_extension_error("GL_ARB_framebuffer_object");
-		return false;
-	}
-
-	if(!GLEW_ARB_separate_shader_objects) {
-		required_extension_error("GL_ARB_separate_shader_objects");
-		return false;
-	}
-
-	//something inside glew produces error code 1280 (invalid enum)
-	glGetError();
-
-	device->copy_type = COPY_TYPE_FBO_BLIT;
 
 	return true;
 }

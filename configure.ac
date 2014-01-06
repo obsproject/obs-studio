@@ -91,7 +91,7 @@ WX_CONFIG_CHECK(
 		is in LD_LIBRARY_PATH or equivalent variable and
 		wxWidgets version is $wxVersion or above.
 		]) ],
-	[core], )
+	[core], [--version=2.9])
 
 CPPFLAGS="$CPPFLAGS $WX_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $WX_CXXFLAGS_ONLY"

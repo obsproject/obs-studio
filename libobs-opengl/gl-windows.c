@@ -155,10 +155,9 @@ static inline HGLRC gl_init_basic_context(HDC hdc)
 
 static const int attribs[] = 
 {
-	WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-	WGL_CONTEXT_MINOR_VERSION_ARB, 2,
-	WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB |
-	                       WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+#ifdef _DEBUG
+    WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+#endif
 	WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 	0, 0
 };
@@ -244,28 +243,10 @@ static bool gl_init_extensions(device_t device)
 		return false;
 	}
 
-	if (!GLEW_VERSION_2_1) {
-		blog(LOG_ERROR, "OpenGL 2.1 minimum required by the graphics "
-		                "adapter");
-		return false;
-	}
-
-	if (!GLEW_ARB_framebuffer_object) {
-		required_extension_error("GL_ARB_framebuffer_object");
-		return false;
-	}
-
 	if (!WGLEW_ARB_pixel_format) {
 		required_extension_error("WGL_ARB_pixel_format");
 		return false;
 	}
-
-	if (GLEW_ARB_copy_image)
-		device->copy_type = COPY_TYPE_ARB;
-	else if (GLEW_NV_copy_image)
-		device->copy_type = COPY_TYPE_NV;
-	else
-		device->copy_type = COPY_TYPE_FBO_BLIT;
 
 	return true;
 }
@@ -377,19 +358,6 @@ static bool init_default_swap(struct gl_platform *plat, device_t device,
 	return true;
 }
 
-#ifdef _DEBUG
-static void APIENTRY gl_debug_message_amd(GLuint id,
-                                          GLenum category,
-                                          GLenum severity,
-                                          GLsizei length,
-                                          const GLchar *msg,
-                                          void *param)
-{
-	OutputDebugStringA(msg);
-	OutputDebugStringA("\n");
-}
-#endif
-
 void gl_update(device_t device)
 {
 	/* does nothing on windows */
@@ -424,19 +392,6 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->hrc = gl_init_context(plat->swap.wi->hdc);
 	if (!plat->hrc)
 		goto fail;
-
-	if (GLEW_ARB_seamless_cube_map) {
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		gl_success("GL_TEXTURE_CUBE_MAP_SEAMLESS");
-	}
-
-#ifdef _DEBUG
-	if (GLEW_AMD_debug_output) {
-		glDebugMessageEnableAMD(0, 0, 0, NULL, true);
-		glDebugMessageCallbackAMD(gl_debug_message_amd, device);
-		gl_success("glDebugMessageCallback");
-	}
-#endif
 
 	return plat;
 

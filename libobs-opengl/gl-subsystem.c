@@ -50,12 +50,12 @@ static const char* debug_severity_table[] = {
 #define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
 #define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
 
-static void gl_debug_proc(
+static APIENTRY void gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
 	GLsizei length, const GLchar *message, GLvoid *data )
 {
 	blog(	LOG_DEBUG,
-		"[%s][%s]{%}: %.*s",
+		"[%s][%s]{%s}: %.*s",
 		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
 		debug_type_table[GL_DEBUG_TYPE_OFFSET(type)],
 		debug_severity_table[GL_DEBUG_SEVERITY_OFFSET(severity)],
@@ -76,15 +76,48 @@ static void gl_enable_debug()
 		return;
 	}
 
-	glEnable(GL_DEBUG_OUTPUT);
-	if (glGetError() == GL_INVALID_ENUM)
-		blog(LOG_DEBUG, "OpenGL debug information not available"); /* Debug callback simply won't be called. */
-	else
-		blog(LOG_DEBUG, "Successfully hooked into OpenGL debug message callback.");
+	gl_enable(GL_DEBUG_OUTPUT);
 }
 #else
 static void gl_enable_debug() {}
 #endif
+
+static inline void required_extension_error(const char *extension)
+{
+}
+
+static bool gl_init_extensions(struct gs_device* device) 
+{
+	if (!GLEW_VERSION_2_1) {
+		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or higher.");
+		return false;
+	}
+
+	gl_enable_debug();
+
+	if (!GLEW_VERSION_3_0 && !GLEW_ARB_framebuffer_object) {
+		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object is required.");
+		return false;
+	}
+
+	if (GLEW_VERSION_3_1 || GLEW_ARB_seamless_cube_map) {
+		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	}
+
+	if (!GLEW_VERSION_4_1 && !GLEW_ARB_separate_shader_objects) {
+		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects is required.");
+		return false;
+	}
+
+	if (GLEW_ARB_copy_image || GLEW_VERSION_4_2)
+		device->copy_type = COPY_TYPE_ARB;
+	else if (GLEW_NV_copy_image)
+		device->copy_type = COPY_TYPE_NV;
+	else
+		device->copy_type = COPY_TYPE_FBO_BLIT; /* ?? */
+
+	return true;
+}
 
 static void clear_textures(struct gs_device *device)
 {
@@ -137,8 +170,10 @@ device_t device_create(struct gs_init_data *info)
 	if (!device->plat)
 		goto fail;
 
-	/* We expect platform specific code to initialize GLEW as they might use it themselves anyways. */
-	/* Also, that code needs to set glewExperimental to true (since it fails to set core functionality like a dum dum) */
+	if (!gl_init_extensions(device))
+		goto fail;
+	
+	gl_enable(GL_CULL_FACE);
 	
 	glGenProgramPipelines(1, &device->pipeline);
 	if (!gl_success("glGenProgramPipelines"))
@@ -147,9 +182,6 @@ device_t device_create(struct gs_init_data *info)
 	glBindProgramPipeline(device->pipeline);
 	if (!gl_success("glBindProgramPipeline"))
 		goto fail;
-
-	gl_enable_debug();
-	gl_enable(GL_CULL_FACE);
 
 	device_leavecontext(device);
 	device->cur_swap = gl_platform_getswap(device->plat);
@@ -1111,7 +1143,7 @@ void device_frustum(device_t device, float left, float right,
 
 	dst->x.x =            nearx2 / rml;
 	dst->z.x =      (left+right) / rml;
-                       
+					   
 	dst->y.y =            nearx2 / tmb;
 	dst->z.y =      (bottom+top) / tmb;
 

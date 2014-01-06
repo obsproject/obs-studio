@@ -105,23 +105,13 @@ static void print_info_stuff(struct gs_init_data *info)
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {	
-	/* X11 */
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;
 	Display *display = XOpenDisplay(NULL); /* Open default screen */
-	
-	/* OBS */
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
-	
-	/* GLX */
 	GLXFBConfig* configs;
 	
 	print_info_stuff(info);
-	
-	if (!plat) { 
-		blog(LOG_ERROR, "Out of memory");
-		return NULL;
-	}
 	
 	memset(plat, 0, sizeof(struct gl_platform));
 	
@@ -144,7 +134,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		
 		glXQueryVersion(display, &major, &minor);
 		if (major < 1 || minor < 4) {
-			blog(LOG_ERROR, "GLX version isn't high enough.");
+			blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: 1.4", major, minor);
 			goto fail0;
 		}
 	}
