@@ -18,6 +18,7 @@
 #include <graphics/matrix3.h>
 #include "gl-subsystem.h"
 
+#ifdef _DEBUG
 /* Tables for OpenGL debug */
 static const char* debug_source_table[] = {
 	"API",
@@ -49,7 +50,6 @@ static const char* debug_severity_table[] = {
 #define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
 #define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
 
-#ifdef _DEBUG
 static void gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
 	GLsizei length, const GLchar *message, GLvoid *data )
