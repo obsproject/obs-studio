@@ -18,6 +18,107 @@
 #include <graphics/matrix3.h>
 #include "gl-subsystem.h"
 
+#ifdef _DEBUG
+/* Tables for OpenGL debug */
+static const char* debug_source_table[] = {
+	"API",
+	"Window System",
+	"Shader Compiler",
+	"Third Party"
+	"Application",
+	"Other"
+};
+
+static const char* debug_type_table[] = {
+	"Error",
+	"Deprecated Behavior",
+	"Undefined Behavior",
+	"Portability",
+	"Performance",
+	"Other"
+};
+
+static const char* debug_severity_table[] = {
+	"High",
+	"Medium",
+	"Low"
+};
+
+/* ARB and core values are the same. They'll always be linear so no hardcoding. */
+/* The values subtracted are the lowest value in the list of valid values. */
+#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB)
+#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
+#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
+
+static APIENTRY void gl_debug_proc(
+	GLenum source, GLenum type, GLuint id, GLenum severity, 
+	GLsizei length, const GLchar *message, GLvoid *data )
+{
+	blog(	LOG_DEBUG,
+		"[%s][%s]{%s}: %.*s",
+		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
+		debug_type_table[GL_DEBUG_TYPE_OFFSET(type)],
+		debug_severity_table[GL_DEBUG_SEVERITY_OFFSET(severity)],
+		length, message
+	);
+}
+
+static void gl_enable_debug()
+{
+	 /* Perhaps we should create GLEW contexts? */
+
+	if (GLEW_VERSION_4_0)
+		glDebugMessageCallback(gl_debug_proc, NULL);
+	else if (GLEW_ARB_debug_output) 
+		glDebugMessageCallbackARB(gl_debug_proc, NULL);
+	else {
+		blog(LOG_DEBUG, "Failed to set GL debug callback as it is not supported.");
+		return;
+	}
+
+	gl_enable(GL_DEBUG_OUTPUT);
+}
+#else
+static void gl_enable_debug() {}
+#endif
+
+static inline void required_extension_error(const char *extension)
+{
+}
+
+static bool gl_init_extensions(struct gs_device* device) 
+{
+	if (!GLEW_VERSION_2_1) {
+		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or higher.");
+		return false;
+	}
+
+	gl_enable_debug();
+
+	if (!GLEW_VERSION_3_0 && !GLEW_ARB_framebuffer_object) {
+		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object is required.");
+		return false;
+	}
+
+	if (GLEW_VERSION_3_1 || GLEW_ARB_seamless_cube_map) {
+		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	}
+
+	if (!GLEW_VERSION_4_1 && !GLEW_ARB_separate_shader_objects) {
+		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects is required.");
+		return false;
+	}
+
+	if (GLEW_ARB_copy_image || GLEW_VERSION_4_2)
+		device->copy_type = COPY_TYPE_ARB;
+	else if (GLEW_NV_copy_image)
+		device->copy_type = COPY_TYPE_NV;
+	else
+		device->copy_type = COPY_TYPE_FBO_BLIT; /* ?? */
+
+	return true;
+}
+
 static void clear_textures(struct gs_device *device)
 {
 	GLenum i;
@@ -69,6 +170,11 @@ device_t device_create(struct gs_init_data *info)
 	if (!device->plat)
 		goto fail;
 
+	if (!gl_init_extensions(device))
+		goto fail;
+	
+	gl_enable(GL_CULL_FACE);
+	
 	glGenProgramPipelines(1, &device->pipeline);
 	if (!gl_success("glGenProgramPipelines"))
 		goto fail;
@@ -76,14 +182,6 @@ device_t device_create(struct gs_init_data *info)
 	glBindProgramPipeline(device->pipeline);
 	if (!gl_success("glBindProgramPipeline"))
 		goto fail;
-
-#ifdef _DEBUG
-	glEnable(GL_DEBUG_OUTPUT);
-	if (glGetError() == GL_INVALID_ENUM)
-		blog(LOG_DEBUG, "OpenGL debug information not available");
-#endif
-
-	gl_enable(GL_CULL_FACE);
 
 	device_leavecontext(device);
 	device->cur_swap = gl_platform_getswap(device->plat);
@@ -1045,7 +1143,7 @@ void device_frustum(device_t device, float left, float right,
 
 	dst->x.x =            nearx2 / rml;
 	dst->z.x =      (left+right) / rml;
-                       
+					   
 	dst->y.y =            nearx2 / tmb;
 	dst->z.y =      (bottom+top) / tmb;
 

@@ -19,12 +19,11 @@ static const GLenum fb_attribs[] = {
 };
 
 static const GLenum ctx_attribs[] = {
-	GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-	GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB |
-	                       GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+#ifdef _DEBUG
+	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif
 	GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-	0, 0
+	None, 
 };
 
 static const char* __GLX_error_table[] = {
@@ -106,23 +105,13 @@ static void print_info_stuff(struct gs_init_data *info)
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {	
-	/* X11 */
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;
 	Display *display = XOpenDisplay(NULL); /* Open default screen */
-	
-	/* OBS */
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
-	
-	/* GLX */
 	GLXFBConfig* configs;
 	
 	print_info_stuff(info);
-	
-	if (!plat) { 
-		blog(LOG_ERROR, "Out of memory");
-		return NULL;
-	}
 	
 	memset(plat, 0, sizeof(struct gl_platform));
 	
@@ -138,6 +127,17 @@ struct gl_platform *gl_platform_create(device_t device,
 	}
 	
 	XSetErrorHandler(GLXErrorHandler);
+	
+	/* We require glX version 1.4 */
+	{
+		int major = 0, minor = 0;
+		
+		glXQueryVersion(display, &major, &minor);
+		if (major < 1 || minor < 4) {
+			blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: 1.4", major, minor);
+			goto fail0;
+		}
+	}
 	
 	glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress("glXCreateContextAttribsARB");
 	if (!glXCreateContextAttribsARB) {
@@ -169,20 +169,18 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail2;
 	}
 
-	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
-
 	/* Initialize GLEW */
-	{
+	{ 	
+		glewExperimental = true;
 		GLenum err = glewInit();
+		
 		if (GLEW_OK != err) {
 			blog(LOG_ERROR, glewGetErrorString(err));
 			goto fail2;
 		}
 	}
 	
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_CULL_FACE);
+	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
 	
 	plat->swap.device = device;
 	plat->swap.info	  = *info;
@@ -195,6 +193,7 @@ struct gl_platform *gl_platform_create(device_t device,
 	return plat;
 	
 fail2:
+	glXMakeCurrent(display, None, NULL);
 	glXDestroyContext(display, plat->context);
 fail1: 
 	XFree(configs);
@@ -236,6 +235,12 @@ void device_leavecontext(device_t device)
 		blog(LOG_ERROR, "Failed to reset current context.");
 	}
 }
+
+void gl_update(device_t device)
+{
+	/* I don't know of anything we can do here. */
+}
+
 void device_load_swapchain(device_t device, swapchain_t swap) 
 {
 	if(!swap)
