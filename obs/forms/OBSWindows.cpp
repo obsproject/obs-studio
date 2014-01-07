@@ -53,18 +53,12 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	previewContainer = new wxBoxSizer( wxHORIZONTAL );
 	
 	wxBoxSizer* previewVertical;
-	previewVertical = new wxBoxSizer( wxHORIZONTAL );
-	
-	wxBoxSizer* bSizer35;
-	bSizer35 = new wxBoxSizer( wxVERTICAL );
+	previewVertical = new wxBoxSizer( wxVERTICAL );
 	
 	previewPanel = new wxPanel( mainPanel, ID_PROGRAM, wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
 	previewPanel->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_APPWORKSPACE ) );
 	
-	bSizer35->Add( previewPanel, 0, wxALIGN_CENTER|wxALL, 5 );
-	
-	
-	previewVertical->Add( bSizer35, 1, wxEXPAND, 5 );
+	previewVertical->Add( previewPanel, 0, wxALIGN_CENTER|wxALL, 5 );
 	
 	
 	previewContainer->Add( previewVertical, 1, wxALIGN_CENTER, 5 );
@@ -76,25 +70,33 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	bottomContainer = new wxBoxSizer( wxVERTICAL );
 	
 	bottomContainer->SetMinSize( wxSize( -1,155 ) ); 
-	wxBoxSizer* bSizer36;
-	bSizer36 = new wxBoxSizer( wxVERTICAL );
-	
-	wxBoxSizer* bottomCenterContainer;
-	bottomCenterContainer = new wxBoxSizer( wxHORIZONTAL );
-	
-	wxBoxSizer* scenesContainer;
-	scenesContainer = new wxBoxSizer( wxVERTICAL );
+	wxFlexGridSizer* fgSizer5;
+	fgSizer5 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgSizer5->AddGrowableRow( 1 );
+	fgSizer5->SetFlexibleDirection( wxVERTICAL );
+	fgSizer5->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
 	scenesLabel = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Scenes"), wxDefaultPosition, wxDefaultSize, 0 );
 	scenesLabel->Wrap( -1 );
-	scenesContainer->Add( scenesLabel, 0, wxALL|wxEXPAND, 2 );
+	fgSizer5->Add( scenesLabel, 0, wxALL|wxEXPAND, 2 );
+	
+	sourcesLabel = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Sources"), wxDefaultPosition, wxDefaultSize, 0 );
+	sourcesLabel->Wrap( -1 );
+	fgSizer5->Add( sourcesLabel, 0, wxALL|wxEXPAND, 2 );
+	
+	sourcesLabel1 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Volume"), wxDefaultPosition, wxDefaultSize, 0 );
+	sourcesLabel1->Wrap( -1 );
+	fgSizer5->Add( sourcesLabel1, 0, wxALL|wxEXPAND, 2 );
+	
+	
+	fgSizer5->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	scenesPanel = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
 	wxBoxSizer* bSizer16;
 	bSizer16 = new wxBoxSizer( wxVERTICAL );
 	
 	scenes = new wxListBox( scenesPanel, ID_SCENES, wxDefaultPosition, wxDefaultSize, 0, NULL, 0|wxNO_BORDER ); 
-	bSizer16->Add( scenes, 1, wxALL|wxEXPAND, 0 );
+	bSizer16->Add( scenes, 1, wxEXPAND, 0 );
 	
 	scenesToolbar = new wxToolBar( scenesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
 	scenesToolbar->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
@@ -119,17 +121,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	scenesPanel->SetSizer( bSizer16 );
 	scenesPanel->Layout();
 	bSizer16->Fit( scenesPanel );
-	scenesContainer->Add( scenesPanel, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bottomCenterContainer->Add( scenesContainer, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* sourcesContainer;
-	sourcesContainer = new wxBoxSizer( wxVERTICAL );
-	
-	sourcesLabel = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Sources"), wxDefaultPosition, wxDefaultSize, 0 );
-	sourcesLabel->Wrap( -1 );
-	sourcesContainer->Add( sourcesLabel, 0, wxALL|wxEXPAND, 2 );
+	fgSizer5->Add( scenesPanel, 1, wxEXPAND | wxALL, 2 );
 	
 	sourcesPanel = new wxPanel( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSIMPLE_BORDER );
 	wxBoxSizer* bSizer17;
@@ -137,7 +129,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	
 	wxArrayString sourcesChoices;
 	sources = new wxCheckListBox( sourcesPanel, ID_SOURCES, wxDefaultPosition, wxDefaultSize, sourcesChoices, 0|wxNO_BORDER );
-	bSizer17->Add( sources, 1, wxALL, 0 );
+	bSizer17->Add( sources, 1, wxEXPAND, 0 );
 	
 	sourcesToolbar = new wxToolBar( sourcesPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_HORIZONTAL ); 
 	sourcesToolbar->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
@@ -162,17 +154,7 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	sourcesPanel->SetSizer( bSizer17 );
 	sourcesPanel->Layout();
 	bSizer17->Fit( sourcesPanel );
-	sourcesContainer->Add( sourcesPanel, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bottomCenterContainer->Add( sourcesContainer, 1, wxEXPAND, 5 );
-	
-	wxBoxSizer* bSizer42;
-	bSizer42 = new wxBoxSizer( wxVERTICAL );
-	
-	sourcesLabel1 = new wxStaticText( mainPanel, wxID_ANY, _("MainWindow.Volume"), wxDefaultPosition, wxDefaultSize, 0 );
-	sourcesLabel1->Wrap( -1 );
-	bSizer42->Add( sourcesLabel1, 0, wxALL, 2 );
+	fgSizer5->Add( sourcesPanel, 1, wxEXPAND | wxALL, 2 );
 	
 	m_scrolledWindow1 = new wxScrolledWindow( mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxSIMPLE_BORDER|wxVSCROLL );
 	m_scrolledWindow1->SetScrollRate( 5, 5 );
@@ -183,17 +165,10 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	m_scrolledWindow1->SetSizer( bSizer44 );
 	m_scrolledWindow1->Layout();
 	bSizer44->Fit( m_scrolledWindow1 );
-	bSizer42->Add( m_scrolledWindow1, 1, wxEXPAND | wxALL, 2 );
-	
-	
-	bottomCenterContainer->Add( bSizer42, 1, wxEXPAND, 5 );
+	fgSizer5->Add( m_scrolledWindow1, 1, wxEXPAND|wxALL, 2 );
 	
 	wxBoxSizer* rightButtonsContainer;
 	rightButtonsContainer = new wxBoxSizer( wxVERTICAL );
-	
-	m_staticText6 = new wxStaticText( mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText6->Wrap( -1 );
-	rightButtonsContainer->Add( m_staticText6, 0, wxALL, 2 );
 	
 	toggleStreamButton = new wxButton( mainPanel, ID_STARTSTREAM, _("MainWindow.StartStream"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	rightButtonsContainer->Add( toggleStreamButton, 0, wxALL|wxEXPAND, 2 );
@@ -208,13 +183,10 @@ OBSBasicBase::OBSBasicBase( wxWindow* parent, wxWindowID id, const wxString& tit
 	rightButtonsContainer->Add( exitButton, 0, wxALL|wxEXPAND, 2 );
 	
 	
-	bottomCenterContainer->Add( rightButtonsContainer, 1, wxEXPAND, 5 );
+	fgSizer5->Add( rightButtonsContainer, 1, wxEXPAND, 5 );
 	
 	
-	bSizer36->Add( bottomCenterContainer, 1, wxALIGN_CENTER, 5 );
-	
-	
-	bottomContainer->Add( bSizer36, 1, wxALIGN_CENTER|wxEXPAND, 5 );
+	bottomContainer->Add( fgSizer5, 1, wxALIGN_CENTER_HORIZONTAL, 5 );
 	
 	
 	panelContainer->Add( bottomContainer, 0, wxEXPAND, 5 );
@@ -722,12 +694,6 @@ OBSBasicSettingsBase::OBSBasicSettingsBase( wxWindow* parent, wxWindowID id, con
 	audioPanel->Layout();
 	bSizer36->Fit( audioPanel );
 	settingsList->AddPage( audioPanel, _("Settings.Audio"), false );
-	/*#ifndef __WXGTK__ // Small icon style not supported in GTK
-	wxListView* settingsListListView = settingsList->GetListView();
-	long settingsListFlags = settingsListListView->GetWindowStyleFlag();
-	settingsListFlags = ( settingsListFlags & ~wxLC_ICON ) | wxLC_SMALL_ICON;
-	settingsListListView->SetWindowStyleFlag( settingsListFlags );
-	#endif*/
 	
 	bSizer31->Add( settingsList, 1, wxEXPAND | wxALL, 5 );
 	

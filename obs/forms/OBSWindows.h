@@ -115,16 +115,15 @@ class OBSBasicBase : public WindowSubclass
 		wxBoxSizer* previewContainer;
 		wxPanel* previewPanel;
 		wxStaticText* scenesLabel;
+		wxStaticText* sourcesLabel;
+		wxStaticText* sourcesLabel1;
 		wxPanel* scenesPanel;
 		wxListBox* scenes;
 		wxToolBar* scenesToolbar;
-		wxStaticText* sourcesLabel;
 		wxPanel* sourcesPanel;
 		wxCheckListBox* sources;
 		wxToolBar* sourcesToolbar;
-		wxStaticText* sourcesLabel1;
 		wxScrolledWindow* m_scrolledWindow1;
-		wxStaticText* m_staticText6;
 		wxButton* toggleStreamButton;
 		wxButton* ToggleRecordButton;
 		wxButton* settingsButton;
