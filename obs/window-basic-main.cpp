@@ -54,27 +54,52 @@ void OBSBasic::RemoveScene(obs_source_t source)
 	const char *name = obs_source_getname(source);
 
 	int idx = scenes->FindString(name);
-	if (idx != wxNOT_FOUND)
+	int sel = scenes->GetSelection();
+
+	if (idx != wxNOT_FOUND) {
+		if (sel == idx)
+			sources->Clear();
+
 		scenes->Delete(idx);
+	}
 }
 
 void OBSBasic::AddSceneItem(obs_sceneitem_t item)
 {
+	obs_scene_t scene = obs_sceneitem_getscene(item);
 	obs_source_t source = obs_sceneitem_getsource(item);
 	const char *name = obs_source_getname(source);
-	sources->Insert(WX_UTF8(name), 0, item);
+
+	if (GetCurrentScene() == scene)
+		sources->Insert(WX_UTF8(name), 0, item);
+
+	sourceSceneRefs[source] = sourceSceneRefs[source] + 1;
 }
 
 void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
 {
-	for (unsigned int idx = 0; idx < sources->GetCount(); idx++) {
-		obs_sceneitem_t curItem;
-		curItem = (obs_sceneitem_t)sources->GetClientData(idx);
+	obs_scene_t scene = obs_sceneitem_getscene(item);
 
-		if (item == curItem) {
-			sources->Delete(idx);
-			break;
+	if (GetCurrentScene() == scene) {
+		for (unsigned int idx = 0; idx < sources->GetCount(); idx++) {
+			obs_sceneitem_t curItem;
+			curItem = (obs_sceneitem_t)sources->GetClientData(idx);
+
+			if (item == curItem) {
+				sources->Delete(idx);
+				break;
+			}
 		}
+	}
+
+	obs_source_t source = obs_sceneitem_getsource(item);
+	obs_source_addref(source);
+	obs_source_release(source);
+
+	int scenes = sourceSceneRefs[source] - 1;
+	if (scenes == 0) {
+		obs_source_remove(source);
+		sourceSceneRefs.erase(source);
 	}
 }
 
@@ -122,8 +147,7 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t params)
 	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
-	if (window->GetCurrentScene() == scene)
-		window->AddSceneItem(item);
+	window->AddSceneItem(item);
 }
 
 void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
@@ -133,8 +157,7 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
 	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
-	if (window->GetCurrentScene() == scene)
-		window->RemoveSceneItem(item);
+	window->RemoveSceneItem(item);
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
@@ -408,6 +431,9 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 	if (success) {
 		obs_source_t source = obs_source_create(SOURCE_INPUT, id,
 				name.c_str(), NULL);
+
+		sourceSceneRefs[source] = 0;
+
 		obs_add_source(source);
 		obs_sceneitem_t item = obs_scene_add(scene, source);
 		obs_source_release(source);
@@ -460,13 +486,7 @@ void OBSBasic::sourceRemoveClicked(wxCommandEvent &event)
 
 	obs_sceneitem_t item = (obs_sceneitem_t)sources->GetClientData(sel);
 	obs_source_t source = obs_sceneitem_getsource(item);
-	int ref = obs_sceneitem_destroy(item);
-
-	/* If this is the last reference in the scene, mark the source for
-	 * removal.  Reference count being at 1 means that it's no longer in
-	 * any more scenes. */
-	if (ref == 1)
-		obs_source_remove(source);
+	obs_sceneitem_destroy(item);
 }
 
 void OBSBasic::sourcePropertiesClicked(wxCommandEvent &event)

@@ -21,7 +21,11 @@
 
 #include <obs.hpp>
 
+#include <unordered_map>
+
 class OBSBasic : public OBSBasicBase {
+	std::unordered_map<obs_source_t, int> sourceSceneRefs;
+
 	obs_scene_t GetCurrentScene();
 	void AddSceneItem(obs_sceneitem_t item);
 	void RemoveSceneItem(obs_sceneitem_t item);
