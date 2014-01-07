@@ -156,7 +156,7 @@ static inline HGLRC gl_init_basic_context(HDC hdc)
 static const int attribs[] = 
 {
 #ifdef _DEBUG
-    WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+	WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
 #endif
 	WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 	0, 0

@@ -73,10 +73,8 @@ static void gl_enable_debug()
 {
 	 /* Perhaps we should create GLEW contexts? */
 
-	if (GLEW_VERSION_4_0)
+	if (GLEW_ARB_debug_output)
 		glDebugMessageCallback(gl_debug_proc, NULL);
-	else if (GLEW_ARB_debug_output) 
-		glDebugMessageCallbackARB(gl_debug_proc, NULL);
 	else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
 		                "not supported.");
