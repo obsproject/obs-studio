@@ -408,6 +408,12 @@ EXPORT signal_handler_t obs_source_signalhandler(obs_source_t source);
 /** Returns the procedure handler for a source */
 EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
 
+/** Sets the volume for a source that has audio output */
+EXPORT void obs_source_setvolume(obs_source_t source, float volume);
+
+/** Gets the volume for a source that has audio output */
+EXPORT float obs_source_getvolume(obs_source_t source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 

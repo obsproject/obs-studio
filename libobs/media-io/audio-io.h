@@ -60,6 +60,7 @@ struct audio_data {
 	const void          *data;
 	uint32_t            frames;
 	uint64_t            timestamp;
+	float               volume;
 };
 
 struct audio_info {

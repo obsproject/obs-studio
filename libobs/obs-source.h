@@ -235,6 +235,7 @@ struct obs_source {
 	pthread_mutex_t              audio_mutex;
 	struct filtered_audio        audio_data;
 	size_t                       audio_storage_size;
+	float                        volume;
 
 	/* async video data */
 	texture_t                    output_texture;

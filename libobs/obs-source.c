@@ -128,6 +128,7 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 	uint32_t flags = info->get_output_flags(source->data);
 
 	source->refs = 1;
+	source->volume = 1.0f;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -349,6 +350,7 @@ static void source_output_audio_line(obs_source_t source,
 	}
 
 	in.timestamp += source->timing_adjust;
+	in.volume = source->volume;
 	audio_line_output(source->audio_line, &in);
 }
 
@@ -366,6 +368,7 @@ static void obs_source_flush_audio_wait_buffer(obs_source_t source)
 		data.data      = buf->data;
 		data.frames    = buf->frames;
 		data.timestamp = buf->timestamp + source->timing_adjust;
+		data.volume    = source->volume;
 		audio_line_output(source->audio_line, &data);
 		audiobuf_free(buf);
 	}
@@ -864,7 +867,7 @@ void obs_source_output_audio(obs_source_t source,
 
 		/* wait for video to start before outputting any audio so we
 		 * have a base for sync */
-		if (!source->timing_set && flags & SOURCE_ASYNC_VIDEO) {
+		if (!source->timing_set && (flags & SOURCE_ASYNC_VIDEO) != 0) {
 			struct audiobuf newbuf;
 			size_t audio_size = blocksize * output->frames;
 
@@ -1057,4 +1060,14 @@ signal_handler_t obs_source_signalhandler(obs_source_t source)
 proc_handler_t obs_source_prochandler(obs_source_t source)
 {
 	return source->procs;
+}
+
+void obs_source_setvolume(obs_source_t source, float volume)
+{
+	source->volume = volume;
+}
+
+float obs_source_getvolume(obs_source_t source)
+{
+	return source->volume;
 }
