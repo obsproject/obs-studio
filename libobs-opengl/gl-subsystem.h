@@ -27,10 +27,6 @@
 #include <GL/glew.h>
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "gl-helpers.h"
 #include "gl-exports.h"
 
