@@ -26,19 +26,7 @@ static const GLenum ctx_attribs[] = {
 	None, 
 };
 
-static const char* __GLX_error_table[] = {
-	"Success",
-	"Bad Screen",
-	"Bad Attribute",
-	"No Extension",
-	"Bad Visual",
-	"Bad Content",
-	"Bad Value",
-	"Bad Enumeration"
-};
-
-#define GET_GLX_ERROR(x) \
-	__GLX_error_table[x]
+#define ERROR_TEXT_LEN 1024
 
 struct gl_windowinfo {
 	uint32_t id;
@@ -52,7 +40,11 @@ struct gl_platform {
 
 static int GLXErrorHandler(Display *disp, XErrorEvent *error)
 {
-	blog(LOG_ERROR, "GLX error: %s\n", GET_GLX_ERROR(error->error_code));
+	char error_buf[ERROR_TEXT_LEN];
+	
+	XGetErrorText(disp, error->error_code, error_buf, ERROR_TEXT_LEN);
+	blog(LOG_ERROR, "GLX error: %s\n", error_buf);
+	
 	return 0;
 }
 
