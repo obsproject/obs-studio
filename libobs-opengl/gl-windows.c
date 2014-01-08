@@ -237,6 +237,7 @@ static inline void required_extension_error(const char *extension)
 
 static bool gl_init_extensions(device_t device)
 {
+	glewExperimental = true;
 	GLenum errorcode = glewInit();
 	if (errorcode != GLEW_OK) {
 		blog(LOG_ERROR, "glewInit failed, %u", errorcode);
