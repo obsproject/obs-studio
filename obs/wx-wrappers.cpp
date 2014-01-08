@@ -19,6 +19,7 @@
 #include <wx/msgdlg.h>
 #include <obs.h>
 #include "wx-wrappers.hpp"
+#include <wx/utils.h>
 
 #ifdef __linux__
 #include <gdk/gdkx.h>
@@ -28,16 +29,25 @@
 #include <memory>
 using namespace std;
 
-gs_window WxToGSWindow(const wxWindow *wxwin)
+gs_window WxToGSWindow(wxWindow *wxwin)
 {
 	gs_window window;
+
 #ifdef __APPLE__
 	window.view     = (id)wxwin->GetHandle();
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
-	window.id 	= gdk_x11_drawable_get_xid(gtk_widget_get_window(
-				wxwin->GetHandle()));
+	GtkWidget* hndl = wxwin->GetHandle();
+	gtk_widget_realize(hndl);
+	GdkWindow* gdkwin = gtk_widget_get_window(hndl);
+
+	if (gdkwin)
+		window.id = GDK_DRAWABLE_XID(gdkwin);
+	else {
+		window.id = 0;
+		blog(LOG_ERROR, "Window is not realized...?");
+	}
 #endif
 	return window;
 }

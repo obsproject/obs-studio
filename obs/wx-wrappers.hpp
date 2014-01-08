@@ -27,7 +27,7 @@
 
 struct gs_window;
 
-gs_window WxToGSWindow(const wxWindow *window);
+gs_window WxToGSWindow(wxWindow *window);
 void OBSErrorBox(wxWindow *parent, const char *message, ...);
 
 /* returns actual ID of menu item clicked rather than be forced to use
