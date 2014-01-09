@@ -89,3 +89,9 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	
 	XCloseDisplay(display);
 }
+
+bool InitApplicationBundle()
+{
+	return true;
+}
+

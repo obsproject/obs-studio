@@ -183,6 +183,9 @@ bool OBSApp::OnInit()
 {
 	base_set_log_handler(do_log);
 
+	if (!InitApplicationBundle())
+		return false;
+
 	if (!wxApp::OnInit())
 		return false;
 	wxInitAllImageHandlers();

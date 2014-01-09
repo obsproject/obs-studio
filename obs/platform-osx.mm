@@ -16,12 +16,14 @@
 ******************************************************************************/
 
 #include <sstream>
+#include <util/base.h>
 #include "platform.hpp"
-using namespace std;
 
 #include <unistd.h>
 
 #import <AppKit/AppKit.h>
+
+using namespace std;
 
 bool GetDataFilePath(const char *data, string &output)
 {
@@ -41,3 +43,37 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 				      frame.size.width, frame.size.height);
 	}
 }
+
+bool InitApplicationBundle()
+{
+#ifdef OBS_OSX_BUNDLE
+	static bool initialized = false;
+	if (initialized)
+		return true;
+
+	try {
+		NSBundle *bundle = [NSBundle mainBundle];
+		if (!bundle)
+			throw "Could not find main bundle";
+
+		NSString *exe_path = [bundle executablePath];
+		if (!exe_path)
+			throw "Could not find executable path";
+
+		NSString *path = [exe_path stringByDeletingLastPathComponent];
+
+		if (chdir([path fileSystemRepresentation]))
+			throw "Could not change working directory to "
+			      "bundle path";
+
+	} catch (const char* error) {
+		blog(LOG_ERROR, "InitBundle: %s", error);
+		return false;
+	}
+
+	return initialized = true;
+#else
+	return true;
+#endif
+}
+

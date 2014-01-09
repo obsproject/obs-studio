@@ -33,3 +33,7 @@ struct MonitorInfo {
 /* Gets the path of obs-studio specific data files (such as locale) */
 bool GetDataFilePath(const char *data, std::string &path);
 void GetMonitors(std::vector<MonitorInfo> &monitors);
+
+/* Updates the working directory for OSX application bundles */
+bool InitApplicationBundle();
+
