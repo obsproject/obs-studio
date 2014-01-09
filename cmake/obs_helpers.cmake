@@ -41,6 +41,51 @@ function(obs_add_core_lib_target target)
 	endforeach()
 endfunction()
 
+set(OBS_PLUGINS "" CACHE INTERNAL "obs plugins")
+set(OBS_PLUGIN_TARGETS "" CACHE INTERNAL "obs plugin targets")
+
+function(obs_add_plugin plugin)
+	get_property(location TARGET ${plugin} PROPERTY LOCATION)
+	list(APPEND OBS_PLUGINS ${location})
+	set(OBS_PLUGINS ${OBS_PLUGINS} CACHE INTERNAL "")
+
+	get_filename_component(filename ${location} NAME)
+
+	foreach(target ${OBS_PLUGIN_TARGETS})
+		get_property(tar_location TARGET ${target} PROPERTY LOCATION)
+		get_filename_component(dir ${tar_location} DIRECTORY)
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy ${location}
+							 "${dir}/../plugins/")
+
+		set_property(DIRECTORY ${dir} APPEND PROPERTY
+			ADDITIONAL_MAKE_CLEAN_FILES
+			"${dir}/../plugins/${filename}")
+	endforeach()
+endfunction()
+
+function(obs_add_plugin_target target)
+	list(APPEND OBS_CORE_LIB_DIRS ${target})
+	set(OBS_PLUGIN_TARGETS ${OBS_PLUGIN_TARGETS} CACHE INTERNAL "")
+
+	get_property(tar_location TARGET ${target} PROPERTY LOCATION)
+	get_filename_component(dir ${tar_location} DIRECTORY)
+
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${dir}/../plugins/")
+
+	foreach(plugin ${OBS_PLUGINS})
+		get_filename_component(filename ${plugin} NAME)
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy ${plugin}
+							 "${dir}/../plugins/")
+
+		set_property(DIRECTORY APPEND PROPERTY
+			ADDITIONAL_MAKE_CLEAN_FILES
+			"${dir}/../plugins/${filename}")
+	endforeach()
+endfunction()
+
 set(OBS_DATA_DIRS "" CACHE INTERNAL "data_dirs")
 set(OBS_DATA_SOURCES "" CACHE INTERNAL "source_dirs")
 
