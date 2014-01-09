@@ -75,6 +75,10 @@ if(WIN32)
 elseif(APPLE)
 	set(obs_platform_src
 		platform-osx.mm)
+	add_definitions(-fobjc-arc)
+	if(BUILD_APP_BUNDLE)
+		add_definitions(-DOBS_OSX_BUNDLE=1)
+	endif()
 elseif(UNIX)
 	set(obs_platform_src
 		platform-x11.cpp)

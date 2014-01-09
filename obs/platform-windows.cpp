@@ -50,3 +50,9 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	monitors.clear();
 	EnumDisplayMonitors(NULL, NULL, OBSMonitorEnumProc, (LPARAM)&monitors);
 }
+
+bool InitApplicationBundle()
+{
+	return true;
+}
+
