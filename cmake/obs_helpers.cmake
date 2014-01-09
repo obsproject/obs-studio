@@ -18,13 +18,13 @@ function(obs_add_core_lib lib)
 			COMMAND ${CMAKE_COMMAND} -E copy ${location}
 							 "${dir}/")
 
-		set_property(DIRECTORY ${dir} APPEND PROPERTY
-			ADDITIONAL_MAKE_CLEAN_FILES ${filename})
+		#set_property(DIRECTORY ${dir} APPEND PROPERTY
+		#	ADDITIONAL_MAKE_CLEAN_FILES ${filename})
 	endforeach()
 endfunction()
 
 function(obs_add_core_lib_target target)
-	list(APPEND OBS_CORE_LIB_DIRS ${target})
+	list(APPEND OBS_CORE_LIB_TARGETS ${target})
 	set(OBS_CORE_LIB_TARGETS ${OBS_CORE_LIB_TARGETS} CACHE INTERNAL "")
 
 	get_property(tar_location TARGET ${target} PROPERTY LOCATION)
@@ -58,14 +58,14 @@ function(obs_add_plugin plugin)
 			COMMAND ${CMAKE_COMMAND} -E copy ${location}
 							 "${dir}/../plugins/")
 
-		set_property(DIRECTORY ${dir} APPEND PROPERTY
-			ADDITIONAL_MAKE_CLEAN_FILES
-			"${dir}/../plugins/${filename}")
+		#set_property(DIRECTORY ${dir} APPEND PROPERTY
+		#	ADDITIONAL_MAKE_CLEAN_FILES
+		#	"${dir}/../plugins/${filename}")
 	endforeach()
 endfunction()
 
 function(obs_add_plugin_target target)
-	list(APPEND OBS_CORE_LIB_DIRS ${target})
+	list(APPEND OBS_PLUGIN_TARGETS ${target})
 	set(OBS_PLUGIN_TARGETS ${OBS_PLUGIN_TARGETS} CACHE INTERNAL "")
 
 	get_property(tar_location TARGET ${target} PROPERTY LOCATION)
