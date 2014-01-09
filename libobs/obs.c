@@ -225,15 +225,25 @@ static void obs_free_audio(void)
 static bool obs_init_data(void)
 {
 	struct obs_data *data = &obs->data;
+	pthread_mutexattr_t attr;
+	bool success = false;
 
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 
-	if (pthread_mutex_init(&data->sources_mutex, NULL) != 0)
+	if (pthread_mutexattr_init(&attr) != 0)
 		return false;
-	if (pthread_mutex_init(&data->displays_mutex, NULL) != 0)
-		return false;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		goto fail;
+	if (pthread_mutex_init(&data->sources_mutex, &attr) != 0)
+		goto fail;
+	if (pthread_mutex_init(&data->displays_mutex, &attr) != 0)
+		goto fail;
 
-	return true;
+	success = true;
+
+fail:
+	pthread_mutexattr_destroy(&attr);
+	return success;
 }
 
 static void obs_free_data(void)
