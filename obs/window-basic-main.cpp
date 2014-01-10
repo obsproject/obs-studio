@@ -199,6 +199,8 @@ bool OBSBasic::Init()
 		return false;
 	if (!InitGraphics())
 		return false;
+	if (!InitAudio())
+		return false;
 
 	signal_handler_connect(obs_signalhandler(), "source-add",
 			OBSBasic::SourceAdded, this);
@@ -243,10 +245,20 @@ bool OBSBasic::InitGraphics()
 	ovi.window_width  = size.x;
 	ovi.window_height = size.y;
 
-	if (!obs_reset_video(&ovi))
-		return false;
+	return obs_reset_video(&ovi);
+}
 
-	return true;
+bool OBSBasic::InitAudio()
+{
+	/* TODO: load audio settings from config */
+	struct audio_info ai;
+	ai.name = "test";
+	ai.samples_per_sec = 44100;
+	ai.format = AUDIO_FORMAT_16BIT;
+	ai.speakers = SPEAKERS_STEREO;
+	ai.buffer_ms = 700;
+
+	return obs_reset_audio(&ai);
 }
 
 void OBSBasic::OnClose(wxCloseEvent &event)

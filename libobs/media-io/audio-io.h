@@ -69,6 +69,8 @@ struct audio_info {
 	uint32_t            samples_per_sec;
 	enum audio_format   format;
 	enum speaker_layout speakers;
+
+	uint64_t            buffer_ms;
 };
 
 static inline uint32_t get_audio_channels(enum speaker_layout speakers)
@@ -117,7 +119,7 @@ static inline size_t get_audio_size(enum audio_format type,
 
 EXPORT int audio_output_open(audio_t *audio, media_t media,
 		struct audio_info *info);
-EXPORT audio_line_t audio_output_createline(audio_t audio);
+EXPORT audio_line_t audio_output_createline(audio_t audio, const char *name);
 EXPORT size_t audio_output_blocksize(audio_t audio);
 EXPORT const struct audio_info *audio_output_getinfo(audio_t audio);
 EXPORT void audio_output_close(audio_t audio);

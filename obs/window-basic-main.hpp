@@ -47,6 +47,7 @@ class OBSBasic : public OBSBasicBase {
 	void AddSourcePopupMenu();
 
 	bool InitGraphics();
+	bool InitAudio();
 
 	void NewProject();
 	void SaveProject();

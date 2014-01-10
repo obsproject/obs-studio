@@ -143,10 +143,11 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 		return false;
 
 	if (flags & SOURCE_AUDIO) {
-		source->audio_line = audio_output_createline(obs->audio.audio);
+		source->audio_line = audio_output_createline(obs->audio.audio,
+				source->name);
 		if (!source->audio_line) {
 			blog(LOG_ERROR, "Failed to create audio line for "
-			                "source");
+			                "source '%s'", source->name);
 			return false;
 		}
 	}

@@ -355,14 +355,11 @@ bool obs_reset_video(struct obs_video_info *ovi)
 
 bool obs_reset_audio(struct audio_info *ai)
 {
-	/*obs_free_audio();
+	obs_free_audio();
 	if(!ai)
 		return true;
 
-	return obs_init_audio(ai);*/
-
-	/* TODO */
-	return true;
+	return obs_init_audio(ai);
 }
 
 bool obs_get_video_info(struct obs_video_info *ovi)

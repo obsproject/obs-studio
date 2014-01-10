@@ -176,12 +176,15 @@ static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 
 	start_size = cb->capacity - cb->start_pos;
 
-	if (start_size < size) {
-		memcpy(data, (uint8_t*)cb->data + cb->start_pos, start_size);
-		memcpy((uint8_t*)data + start_size, cb->data,
-				size - start_size);
-	} else {
-		memcpy(data, (uint8_t*)cb->data + cb->start_pos, size);
+	if (data) {
+		if (start_size < size) {
+			memcpy(data, (uint8_t*)cb->data + cb->start_pos,
+					start_size);
+			memcpy((uint8_t*)data + start_size, cb->data,
+					size - start_size);
+		} else {
+			memcpy(data, (uint8_t*)cb->data + cb->start_pos, size);
+		}
 	}
 
 	cb->size -= size;

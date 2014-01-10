@@ -25,8 +25,11 @@
 /* TODO: Incomplete */
 
 struct audio_line {
+	char                       *name;
+
 	struct audio_output        *audio;
 	struct circlebuf           buffer;
+	pthread_mutex_t            mutex;
 	DARRAY(uint8_t)            volume_buffer;
 	uint64_t                   base_timestamp;
 	uint64_t                   last_timestamp;
@@ -34,12 +37,17 @@ struct audio_line {
 	/* states whether this line is still being used.  if not, then when the
 	 * buffer is depleted, it's destroyed */
 	bool                       alive;
+
+	struct audio_line **prev_next;
+	struct audio_line *next;
 };
 
 static inline void audio_line_destroy_data(struct audio_line *line)
 {
 	circlebuf_free(&line->buffer);
 	da_free(line->volume_buffer);
+	pthread_mutex_destroy(&line->mutex);
+	bfree(line->name);
 	bfree(line);
 }
 
@@ -55,29 +63,113 @@ struct audio_output {
 
 	DARRAY(uint8_t)            pending_bytes;
 
+	DARRAY(uint8_t)            mix_buffer;
+
 	bool                       initialized;
 
 	pthread_mutex_t            line_mutex;
-	DARRAY(struct audio_line*) lines;
+	struct audio_line          *first_line;
 };
 
 static inline void audio_output_removeline(struct audio_output *audio,
 		struct audio_line *line)
 {
 	pthread_mutex_lock(&audio->line_mutex);
-	da_erase_item(audio->lines, &line);
+	*line->prev_next = line->next;
 	pthread_mutex_unlock(&audio->line_mutex);
+
 	audio_line_destroy_data(line);
+}
+
+static inline size_t convert_to_sample_offset(audio_t audio, uint64_t offset)
+{
+	double audio_offset_d = (double)offset;
+	audio_offset_d /= 1000000000.0;
+	audio_offset_d *= (double)audio->info.samples_per_sec;
+
+	return (size_t)audio_offset_d * audio->block_size;
 }
 
 /* ------------------------------------------------------------------------- */
 
+static inline void clear_excess_audio_data(struct audio_line *line,
+		uint64_t size)
+{
+	if (size > line->buffer.size)
+		size = line->buffer.size;
+
+	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
+	                  "audio data went back in time by %llu bytes",
+	                  line->name, size);
+
+	circlebuf_pop_front(&line->buffer, NULL, (size_t)size);
+}
+
+static inline uint64_t min_uint64(uint64_t a, uint64_t b)
+{
+	return a < b ? a : b;
+}
+
+static inline void mix_audio_line(struct audio_output *audio,
+		struct audio_line *line, size_t size)
+{
+	/* TODO: this just overwrites, handle actual mixing */
+	circlebuf_pop_front(&line->buffer, audio->mix_buffer.array, size);
+}
+
+static void mix_audio_lines(struct audio_output *audio, uint64_t audio_time,
+		uint64_t prev_time)
+{
+	struct audio_line *line = audio->first_line;
+	uint64_t time_offset = audio_time - prev_time;
+	uint64_t byte_offset = convert_to_sample_offset(audio, time_offset);
+
+	da_resize(audio->mix_buffer, byte_offset);
+	memset(audio->mix_buffer.array, 0, byte_offset);
+
+	while (line) {
+		struct audio_line *next = line->next;
+
+		if (line->base_timestamp < prev_time) {
+			clear_excess_audio_data(line,
+					line->base_timestamp - prev_time);
+			line->base_timestamp = prev_time;
+		}
+
+		size_t pop_size = min_uint64(byte_offset, line->buffer.size);
+		if (pop_size)
+			mix_audio_line(audio, line, pop_size);
+		else if (!line->alive)
+			audio_output_removeline(audio, line);
+
+		line = next;
+	}
+
+	/* TODO - not good enough */
+	/*if (audio->output)
+		media_output_data(audio->output, audio->mix_buffer.array);*/
+}
+
+/* sample audio 40 times a second */
+#define AUDIO_WAIT_TIME (1000/40)
+
 static void *audio_thread(void *param)
 {
 	struct audio_output *audio = param;
+	uint64_t buffer_time = audio->info.buffer_ms * 1000000;
+	uint64_t prev_time = os_gettime_ns() - buffer_time;
+	uint64_t audio_time;
 
 	while (event_try(&audio->stop_event) == EAGAIN) {
-		/* TODO */
+		os_sleep_ms(AUDIO_WAIT_TIME);
+
+		pthread_mutex_lock(&audio->line_mutex);
+
+		audio_time = os_gettime_ns() - buffer_time;
+		mix_audio_lines(audio, audio_time, prev_time);
+		prev_time = audio_time;
+
+		pthread_mutex_unlock(&audio->line_mutex);
 	}
 
 	return NULL;
@@ -91,7 +183,7 @@ static inline bool valid_audio_params(struct audio_info *info)
 	       info->speakers > 0;
 }
 
-static inline bool ao_add_to_media(audio_t audio)
+static bool ao_add_to_media(audio_t audio)
 {
 	struct media_output_info oi;
 	oi.obj     = audio;
@@ -109,6 +201,7 @@ static inline bool ao_add_to_media(audio_t audio)
 int audio_output_open(audio_t *audio, media_t media, struct audio_info *info)
 {
 	struct audio_output *out;
+	pthread_mutexattr_t attr;
 
 	if (!valid_audio_params(info))
 		return AUDIO_OUTPUT_INVALIDPARAM;
@@ -123,7 +216,11 @@ int audio_output_open(audio_t *audio, media_t media, struct audio_info *info)
 	out->block_size = out->channels *
 	                  get_audio_bytes_per_channel(info->format);
 
-	if (pthread_mutex_init(&out->line_mutex, NULL) != 0)
+	if (pthread_mutexattr_init(&attr) != 0)
+		goto fail;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		goto fail;
+	if (pthread_mutex_init(&out->line_mutex, &attr) != 0)
 		goto fail;
 	if (event_init(&out->stop_event, true) != 0)
 		goto fail;
@@ -141,15 +238,32 @@ fail:
 	return AUDIO_OUTPUT_FAIL;
 }
 
-audio_line_t audio_output_createline(audio_t audio)
+audio_line_t audio_output_createline(audio_t audio, const char *name)
 {
 	struct audio_line *line = bmalloc(sizeof(struct audio_line));
 	memset(line, 0, sizeof(struct audio_line));
 	line->alive = true;
 
+	if (pthread_mutex_init(&line->mutex, NULL) != 0) {
+		blog(LOG_ERROR, "audio_output_createline: Failed to create "
+		                "mutex");
+		bfree(line);
+		return NULL;
+	}
+
 	pthread_mutex_lock(&audio->line_mutex);
-	da_push_back(audio->lines, &line);
+
+	if (audio->first_line) {
+		audio->first_line->prev_next = &line->next;
+		line->next = audio->first_line;
+	}
+
+	line->prev_next = &audio->first_line;
+	audio->first_line = line;
+
 	pthread_mutex_unlock(&audio->line_mutex);
+
+	line->name = bstrdup(name ? name : "(unnamed audio line)");
 	return line;
 }
 
@@ -161,7 +275,7 @@ const struct audio_info *audio_output_getinfo(audio_t audio)
 void audio_output_close(audio_t audio)
 {
 	void *thread_ret;
-	size_t i;
+	struct audio_line *line;
 
 	if (!audio)
 		return;
@@ -171,11 +285,17 @@ void audio_output_close(audio_t audio)
 		pthread_join(audio->thread, &thread_ret);
 	}
 
-	for (i = 0; i < audio->lines.num; i++)
-		audio_line_destroy_data(audio->lines.array[i]);
+	line = audio->first_line;
+	while (line) {
+		struct audio_line *next = line->next;
+		audio_line_destroy_data(line);
+		line = next;
+	}
 
-	da_free(audio->lines);
+	da_free(audio->mix_buffer);
+	da_free(audio->pending_bytes);
 	media_remove_output(audio->media, audio->output);
+	media_output_destroy(audio->output);
 	event_destroy(&audio->stop_event);
 	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);
@@ -194,12 +314,6 @@ void audio_line_destroy(struct audio_line *line)
 size_t audio_output_blocksize(audio_t audio)
 {
 	return audio->block_size;
-}
-
-static inline uint64_t convert_to_sample_offset(audio_t audio, uint64_t offset)
-{
-	return (uint64_t)((double)offset *
-	                  (1000000000.0 / (double)audio->info.samples_per_sec));
 }
 
 static inline void mul_vol_u8bit(struct audio_line *line, float volume,
@@ -307,15 +421,21 @@ static void audio_line_place_data(struct audio_line *line,
 
 void audio_line_output(audio_line_t line, const struct audio_data *data)
 {
+	/* TODO: prevent insertation of data too far away from expected
+	 * audio timing */
+
+	pthread_mutex_lock(&line->mutex);
+
 	if (!line->buffer.size) {
 		line->base_timestamp = data->timestamp;
 
 		audio_line_place_data(line, data, 0);
 	} else {
-		uint64_t position = data->timestamp - line->base_timestamp;
-		position = convert_to_sample_offset(line->audio, position);
-		position *= line->audio->block_size;
+		uint64_t time_offset = data->timestamp - line->base_timestamp;
+		size_t pos = convert_to_sample_offset(line->audio, time_offset);
 
-		audio_line_place_data(line, data, (size_t)position);
+		audio_line_place_data(line, data, pos);
 	}
+
+	pthread_mutex_unlock(&line->mutex);
 }
