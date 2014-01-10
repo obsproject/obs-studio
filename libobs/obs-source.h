@@ -223,6 +223,7 @@ struct obs_source {
 	/* timing (if video is present, is based upon video) */
 	bool                         timing_set;
 	uint64_t                     timing_adjust;
+	uint64_t                     next_audio_timestamp_min;
 	uint64_t                     last_frame_timestamp;
 	uint64_t                     last_sys_timestamp;
 

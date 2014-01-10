@@ -324,8 +324,23 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 		source->callbacks.video_tick(source->data, seconds);
 }
 
+static inline uint64_t conv_frames_to_time(obs_source_t source, size_t frames)
+{
+	const struct audio_info *info = audio_output_getinfo(obs->audio.audio);
+	double sps_to_ns = 1000000000.0 / (double)info->samples_per_sec;
+	return (uint64_t)((double)frames * sps_to_ns);
+}
+
 /* maximum "direct" timestamp variance in nanoseconds */
-#define MAX_VARIANCE 2000000000ULL
+#define MAX_TS_VAR         2000000000ULL
+/* maximum time that timestamp can jump in nanoseconds */
+#define MAX_TIMESTAMP_JUMP 500000000ULL
+
+static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
+{
+	source->timing_set    = true;
+	source->timing_adjust = os_gettime_ns() - timetamp;
+}
 
 static void source_output_audio_line(obs_source_t source,
 		const struct audio_data *data)
@@ -333,14 +348,28 @@ static void source_output_audio_line(obs_source_t source,
 	struct audio_data in = *data;
 
 	if (!source->timing_set) {
-		source->timing_set    = true;
-		source->timing_adjust = os_gettime_ns() - in.timestamp;
+		reset_audio_timing(source, in.timestamp);
 
 		/* detects 'directly' set timestamps as long as they're within
 		 * a certain threshold */
-		if ((source->timing_adjust+MAX_VARIANCE) < MAX_VARIANCE*2)
+		if ((source->timing_adjust + MAX_TS_VAR) < MAX_TS_VAR * 2)
 			source->timing_adjust = 0;
+	} else {
+		uint64_t time_diff =
+			data->timestamp - source->next_audio_timestamp_min;
+
+		/* don't need signed because negative will trigger it
+		 * regardless, which is what we want */
+		if (time_diff > MAX_TIMESTAMP_JUMP) {
+			blog(LOG_DEBUG, "Audio timestamp for source '%s' "
+			                "jumped by '%lld', resetting audio "
+			                "timing", source->name, time_diff);
+			reset_audio_timing(source, in.timestamp);
+		}
 	}
+
+	source->next_audio_timestamp_min = in.timestamp +
+		conv_frames_to_time(source, in.frames);
 
 	in.timestamp += source->timing_adjust;
 	in.volume = source->volume;
