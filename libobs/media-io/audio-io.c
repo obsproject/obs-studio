@@ -38,8 +38,8 @@ struct audio_line {
 	 * buffer is depleted, it's destroyed */
 	bool                       alive;
 
-	struct audio_line **prev_next;
-	struct audio_line *next;
+	struct audio_line          **prev_next;
+	struct audio_line          *next;
 };
 
 static inline void audio_line_destroy_data(struct audio_line *line)
@@ -130,7 +130,7 @@ static void mix_audio_lines(struct audio_output *audio, uint64_t audio_time,
 	while (line) {
 		struct audio_line *next = line->next;
 
-		if (line->base_timestamp < prev_time) {
+		if (line->buffer.size && line->base_timestamp < prev_time) {
 			clear_excess_audio_data(line,
 					line->base_timestamp - prev_time);
 			line->base_timestamp = prev_time;
@@ -222,7 +222,7 @@ int audio_output_open(audio_t *audio, media_t media, struct audio_info *info)
 		goto fail;
 	if (pthread_mutex_init(&out->line_mutex, &attr) != 0)
 		goto fail;
-	if (event_init(&out->stop_event, true) != 0)
+	if (event_init(&out->stop_event, EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (!ao_add_to_media(out))
 		goto fail;
@@ -243,6 +243,7 @@ audio_line_t audio_output_createline(audio_t audio, const char *name)
 	struct audio_line *line = bmalloc(sizeof(struct audio_line));
 	memset(line, 0, sizeof(struct audio_line));
 	line->alive = true;
+	line->audio = audio;
 
 	if (pthread_mutex_init(&line->mutex, NULL) != 0) {
 		blog(LOG_ERROR, "audio_output_createline: Failed to create "
@@ -393,8 +394,8 @@ static inline void mul_vol_float(struct audio_line *line, float volume,
 static void audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
-	size_t total_size = data->frames * line->audio->block_size;
 	size_t total_num  = data->frames * line->audio->channels;
+	size_t total_size = data->frames * line->audio->block_size;
 
 	da_copy_array(line->volume_buffer, data->data, total_size);
 

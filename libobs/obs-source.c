@@ -332,14 +332,6 @@ static void source_output_audio_line(obs_source_t source,
 {
 	struct audio_data in = *data;
 
-	if (!in.timestamp) {
-		in.timestamp = os_gettime_ns();
-		if (!source->timing_set) {
-			source->timing_set    = true;
-			source->timing_adjust = 0;
-		}
-	}
-
 	if (!source->timing_set) {
 		source->timing_set    = true;
 		source->timing_adjust = in.timestamp - os_gettime_ns();

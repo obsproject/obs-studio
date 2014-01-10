@@ -3,6 +3,7 @@ include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
 add_library(test-input MODULE
 	test-filter.c
 	test-input.c
+	test-sinewave.c
 	test-random.c)
 
 target_link_libraries(test-input

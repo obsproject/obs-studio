@@ -3,7 +3,7 @@
 
 const char *random_getname(const char *locale)
 {
-	return "Random Source";
+	return "20x20 Random Pixel Texture Source (Test)";
 }
 
 struct random_tex *random_create(const char *settings, obs_source_t source)

@@ -19,4 +19,5 @@ endif
 libtest_input_la_LIBADD = $(top_srcdir)/libobs/libobs.la
 libtest_input_la_SOURCES = test-filter.c \
 			   test-input.c \
-			   test-random.c
+			   test-random.c \
+			   test-sinewave.c
