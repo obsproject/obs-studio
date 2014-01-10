@@ -39,16 +39,15 @@ gs_window WxToGSWindow(wxWindow *wxwin)
 	window.hwnd     = wxwin->GetHandle();
 #else
 	GtkWidget* hndl = wxwin->GetHandle();
-	gtk_widget_realize(hndl);
-	GdkWindow* gdkwin = gtk_widget_get_window(hndl);
 
-	if (gdkwin)
-		window.id = GDK_DRAWABLE_XID(gdkwin);
-	else {
-		window.id = 0;
-		blog(LOG_ERROR, "Window is not realized...?");
-	}
+	/* I don't really understand why wxWidgets doesn't do this during Show() */
+	gtk_widget_realize(hndl); 
+
+	GdkWindow* gdkwin = gtk_widget_get_window(hndl);
+	window.id = GDK_DRAWABLE_XID(gdkwin);
+	window.display = GDK_DRAWABLE_XDISPLAY(gdkwin);
 #endif
+	
 	return window;
 }
 
