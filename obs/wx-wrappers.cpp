@@ -21,7 +21,7 @@
 #include "wx-wrappers.hpp"
 #include <wx/utils.h>
 
-#ifdef __linux__
+#ifdef __WXGTK__
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #endif
@@ -29,7 +29,7 @@
 #include <memory>
 using namespace std;
 
-gs_window WxToGSWindow(wxWindow *wxwin)
+gs_window WxToGSWindow(const wxWindow *wxwin)
 {
 	gs_window window;
 
@@ -38,12 +38,7 @@ gs_window WxToGSWindow(wxWindow *wxwin)
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
-	GtkWidget* hndl = wxwin->GetHandle();
-
-	/* I don't really understand why wxWidgets doesn't do this during Show() */
-	gtk_widget_realize(hndl); 
-
-	GdkWindow* gdkwin = gtk_widget_get_window(hndl);
+	GdkWindow* gdkwin = gtk_widget_get_window(wxwin->GetHandle());
 	window.id = GDK_DRAWABLE_XID(gdkwin);
 	window.display = GDK_DRAWABLE_XDISPLAY(gdkwin);
 #endif
