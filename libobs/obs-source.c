@@ -334,7 +334,7 @@ static void source_output_audio_line(obs_source_t source,
 
 	if (!source->timing_set) {
 		source->timing_set    = true;
-		source->timing_adjust = in.timestamp - os_gettime_ns();
+		source->timing_adjust = os_gettime_ns() - in.timestamp;
 
 		/* detects 'directly' set timestamps as long as they're within
 		 * a certain threshold */

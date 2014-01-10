@@ -111,10 +111,26 @@ static inline uint64_t min_uint64(uint64_t a, uint64_t b)
 }
 
 static inline void mix_audio_line(struct audio_output *audio,
-		struct audio_line *line, size_t size)
+		struct audio_line *line, size_t size, uint64_t timestamp)
 {
 	/* TODO: this just overwrites, handle actual mixing */
-	circlebuf_pop_front(&line->buffer, audio->mix_buffer.array, size);
+	if (!line->buffer.size) {
+		if (!line->alive)
+			audio_output_removeline(audio, line);
+		return;
+	}
+
+	size_t time_offset = convert_to_sample_offset(audio,
+			line->base_timestamp - timestamp);
+	if (time_offset > size)
+		return;
+
+	size -= time_offset;
+
+	size_t pop_size = min_uint64(size, line->buffer.size);
+	circlebuf_pop_front(&line->buffer,
+			audio->mix_buffer.array + time_offset,
+			pop_size);
 }
 
 static void mix_audio_lines(struct audio_output *audio, uint64_t audio_time,
@@ -122,7 +138,7 @@ static void mix_audio_lines(struct audio_output *audio, uint64_t audio_time,
 {
 	struct audio_line *line = audio->first_line;
 	uint64_t time_offset = audio_time - prev_time;
-	uint64_t byte_offset = convert_to_sample_offset(audio, time_offset);
+	size_t byte_offset = convert_to_sample_offset(audio, time_offset);
 
 	da_resize(audio->mix_buffer, byte_offset);
 	memset(audio->mix_buffer.array, 0, byte_offset);
@@ -132,16 +148,12 @@ static void mix_audio_lines(struct audio_output *audio, uint64_t audio_time,
 
 		if (line->buffer.size && line->base_timestamp < prev_time) {
 			clear_excess_audio_data(line,
-					line->base_timestamp - prev_time);
+					prev_time - line->base_timestamp);
 			line->base_timestamp = prev_time;
 		}
 
-		size_t pop_size = min_uint64(byte_offset, line->buffer.size);
-		if (pop_size)
-			mix_audio_line(audio, line, pop_size);
-		else if (!line->alive)
-			audio_output_removeline(audio, line);
-
+		mix_audio_line(audio, line, byte_offset, prev_time);
+		line->base_timestamp = audio_time;
 		line = next;
 	}
 
