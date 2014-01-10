@@ -48,6 +48,20 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 	
 	wi->id = info->window.id;
 	/* wi->display = info->window.display; */
+
+	/*
+		In order to do the above, we have to call
+		XInitThreads in the soonest possible time. 
+		The wxFrame initializer is good but it sucks
+		big time that I'm having to make X11 specific
+		code all over platform-independent code. 
+
+		The solution we have now avoids this although I'd
+		like to be able to do the above as it's probably
+		safer (I don't know the side-effects of using a Display
+		connection that wasn't used to create the window)
+		and more efficient. 
+	 */
 	
 	return wi;
 }
