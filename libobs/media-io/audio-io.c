@@ -403,7 +403,7 @@ static inline void mul_vol_float(struct audio_line *line, float volume,
 		vals[i] *= volume;
 }
 
-static void audio_line_place_data(struct audio_line *line,
+static void audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
 	size_t total_num  = data->frames * line->audio->channels;
@@ -432,6 +432,15 @@ static void audio_line_place_data(struct audio_line *line,
 			total_size);
 }
 
+static inline void audio_line_place_data(struct audio_line *line,
+		const struct audio_data *data)
+{
+	uint64_t time_offset = data->timestamp - line->base_timestamp;
+	size_t pos = convert_to_sample_offset(line->audio, time_offset);
+
+	audio_line_place_data_pos(line, data, pos);
+}
+
 void audio_line_output(audio_line_t line, const struct audio_data *data)
 {
 	/* TODO: prevent insertation of data too far away from expected
@@ -442,12 +451,19 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 	if (!line->buffer.size) {
 		line->base_timestamp = data->timestamp;
 
-		audio_line_place_data(line, data, 0);
+		audio_line_place_data_pos(line, data, 0);
 	} else {
-		uint64_t time_offset = data->timestamp - line->base_timestamp;
-		size_t pos = convert_to_sample_offset(line->audio, time_offset);
 
-		audio_line_place_data(line, data, pos);
+		if (line->base_timestamp <= data->timestamp)
+			audio_line_place_data(line, data);
+		else
+			blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
+			                "data->timestamp: %llu, "
+			                "line->base_timestamp: %llu.  "
+			                "This can sometimes happen when "
+			                "there's a pause in the threads.",
+			                line->name, data->timestamp,
+			                line->base_timestamp);
 	}
 
 	pthread_mutex_unlock(&line->mutex);
