@@ -77,9 +77,9 @@ void os_sleep_ms(uint32_t duration)
 
 uint64_t os_gettime_ns(void)
 {
-	struct timespec tp;
-	clock_gettime(CLOCK_REALTIME, &tp);
-	return tp.tv_nsec;
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
 }
 
 /* should return $HOME/.[name] */
