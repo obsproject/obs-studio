@@ -450,20 +450,18 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 
 	if (!line->buffer.size) {
 		line->base_timestamp = data->timestamp;
-
 		audio_line_place_data_pos(line, data, 0);
-	} else {
 
-		if (line->base_timestamp <= data->timestamp)
-			audio_line_place_data(line, data);
-		else
-			blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
-			                "data->timestamp: %llu, "
-			                "line->base_timestamp: %llu.  "
-			                "This can sometimes happen when "
-			                "there's a pause in the threads.",
-			                line->name, data->timestamp,
-			                line->base_timestamp);
+	} else if (line->base_timestamp <= data->timestamp) {
+		audio_line_place_data(line, data);
+
+	} else {
+		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
+		                "data->timestamp: %llu, "
+		                "line->base_timestamp: %llu.  This can "
+		                "sometimes happen when there's a pause in "
+		                "the threads.", line->name, data->timestamp,
+		                line->base_timestamp);
 	}
 
 	pthread_mutex_unlock(&line->mutex);
