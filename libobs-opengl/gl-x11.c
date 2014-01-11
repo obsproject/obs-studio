@@ -26,8 +26,6 @@ static const GLenum ctx_attribs[] = {
 	None, 
 };
 
-#define ERROR_TEXT_LEN 1024
-
 struct gl_windowinfo {
 	uint32_t id;
 	Display *display;
@@ -37,16 +35,6 @@ struct gl_platform {
 	GLXContext context;
 	struct gs_swap_chain swap;
 };
-
-static int GLXErrorHandler(Display *disp, XErrorEvent *error)
-{
-	char error_buf[ERROR_TEXT_LEN];
-	
-	XGetErrorText(disp, error->error_code, error_buf, ERROR_TEXT_LEN);
-	blog(LOG_ERROR, "GLX error: %s\n", error_buf);
-	
-	return 0;
-}
 
 extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform) 
 {
@@ -59,6 +47,21 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 	memset(wi, 0, sizeof(struct gl_windowinfo));
 	
 	wi->id = info->window.id;
+	/* wi->display = info->window.display; */
+
+	/*
+		In order to do the above, we have to call
+		XInitThreads in the soonest possible time. 
+		The wxFrame initializer is good but it sucks
+		big time that I'm having to make X11 specific
+		code all over platform-independent code. 
+
+		The solution we have now avoids this although I'd
+		like to be able to do the above as it's probably
+		safer (I don't know the side-effects of using a Display
+		connection that wasn't used to create the window)
+		and more efficient. 
+	 */
 	
 	return wi;
 }
@@ -117,8 +120,6 @@ struct gl_platform *gl_platform_create(device_t device,
 		blog(LOG_ERROR, "GLX not supported.");
 		goto fail0;
 	}
-	
-	XSetErrorHandler(GLXErrorHandler);
 	
 	/* We require glX version 1.4 */
 	{

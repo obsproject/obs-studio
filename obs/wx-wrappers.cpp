@@ -19,8 +19,9 @@
 #include <wx/msgdlg.h>
 #include <obs.h>
 #include "wx-wrappers.hpp"
+#include <wx/utils.h>
 
-#ifdef __linux__
+#ifdef __WXGTK__
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #endif
@@ -31,14 +32,17 @@ using namespace std;
 gs_window WxToGSWindow(const wxWindow *wxwin)
 {
 	gs_window window;
+
 #ifdef __APPLE__
 	window.view     = (id)wxwin->GetHandle();
 #elif _WIN32
 	window.hwnd     = wxwin->GetHandle();
 #else
-	window.id 	= gdk_x11_drawable_get_xid(gtk_widget_get_window(
-				wxwin->GetHandle()));
+	GdkWindow* gdkwin = gtk_widget_get_window(wxwin->GetHandle());
+	window.id = GDK_DRAWABLE_XID(gdkwin);
+	window.display = GDK_DRAWABLE_XDISPLAY(gdkwin);
 #endif
+	
 	return window;
 }
 

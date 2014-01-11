@@ -25,6 +25,10 @@
 #include "window-basic-main.hpp"
 #include "window-namedialog.hpp"
 
+#ifdef __WXGTK__
+    #include <gtk/gtk.h>
+#endif
+
 using namespace std;
 
 obs_scene_t OBSBasic::GetCurrentScene()
@@ -235,6 +239,12 @@ bool OBSBasic::InitGraphics()
 			"Video", "OutputCY");
 	ovi.output_format = VIDEO_FORMAT_RGBA;
 	ovi.adapter       = 0;
+
+#ifdef __WXGTK__
+	/* Ugly hack for GTK, I'm hoping this can be avoided eventually... */
+	gtk_widget_realize(previewPanel->GetHandle());
+#endif
+
 	ovi.window        = WxToGSWindow(previewPanel);
 
 	//required to make opengl display stuff on osx(?)
