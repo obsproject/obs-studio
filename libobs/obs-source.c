@@ -894,19 +894,18 @@ static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
 }
 
 static inline struct source_frame *get_closest_frame(obs_source_t source,
-		uint64_t sys_time)
+		uint64_t sys_time, int *audio_time_refs)
 {
 	struct source_frame *next_frame = source->video_frames.array[0];
 	struct source_frame *frame      = NULL;
 	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
-	int      audio_time_refs = 0;
 
 	/* account for timestamp invalidation */
 	if (frame_out_of_bounds(source, frame_time)) {
 		source->last_frame_ts = next_frame->timestamp;
-		audio_time_refs++;
+		(*audio_time_refs)++;
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
 		source->last_frame_ts += sys_offset;
@@ -927,18 +926,11 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
 		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
 			source->last_frame_ts =
 				next_frame->timestamp - frame_offset;
-			audio_time_refs++;
+			(*audio_time_refs)++;
 		}
 
 		frame_time   = next_frame->timestamp;
 		frame_offset = frame_time - source->last_frame_ts;
-	}
-
-	/* reset timing to current system time */
-	if (frame) {
-		source->timing_adjust = sys_time - frame->timestamp;
-		source->audio_reset_ref += audio_time_refs;
-		source->timing_set = true;
 	}
 
 	return frame;
@@ -952,8 +944,9 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
  */
 struct source_frame *obs_source_getframe(obs_source_t source)
 {
-	uint64_t last_frame_time = source->last_frame_ts;
 	struct source_frame *frame = NULL;
+	uint64_t last_frame_time = source->last_frame_ts;
+	int      audio_time_refs = 0;
 	uint64_t sys_time;
 
 	pthread_mutex_lock(&source->video_mutex);
@@ -969,7 +962,14 @@ struct source_frame *obs_source_getframe(obs_source_t source)
 
 		source->last_frame_ts = frame->timestamp;
 	} else {
-		frame = get_closest_frame(source, sys_time);
+		frame = get_closest_frame(source, sys_time, &audio_time_refs);
+	}
+
+	/* reset timing to current system time */
+	if (frame) {
+		source->audio_reset_ref += audio_time_refs;
+		source->timing_adjust = sys_time - frame->timestamp;
+		source->timing_set = true;
 	}
 
 	source->last_sys_timestamp = sys_time;
