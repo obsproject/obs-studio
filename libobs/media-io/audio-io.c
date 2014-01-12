@@ -127,7 +127,7 @@ static inline void mix_audio_line(struct audio_output *audio,
 
 	size -= time_offset;
 
-	size_t pop_size = min_uint64(size, line->buffer.size);
+	size_t pop_size = (size_t)min_uint64(size, line->buffer.size);
 	circlebuf_pop_front(&line->buffer,
 			audio->mix_buffer.array + time_offset,
 			pop_size);

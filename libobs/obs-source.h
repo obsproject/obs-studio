@@ -191,17 +191,6 @@ struct source_info {
 			struct filtered_audio *audio);
 };
 
-struct audiobuf {
-	void     *data;
-	uint32_t frames;
-	uint64_t timestamp;
-};
-
-static inline void audiobuf_free(struct audiobuf *buf)
-{
-	bfree(buf->data);
-}
-
 struct obs_source {
 	volatile int                 refs;
 
@@ -221,10 +210,11 @@ struct obs_source {
 	bool                         removed;
 
 	/* timing (if video is present, is based upon video) */
-	bool                         timing_set;
-	uint64_t                     timing_adjust;
-	uint64_t                     next_audio_timestamp_min;
-	uint64_t                     last_frame_timestamp;
+	volatile bool                timing_set;
+	volatile uint64_t            timing_adjust;
+	volatile int                 audio_reset_ref;
+	uint64_t                     next_audio_ts_min;
+	uint64_t                     last_frame_ts;
 	uint64_t                     last_sys_timestamp;
 
 	/* audio */
@@ -232,7 +222,6 @@ struct obs_source {
 	struct resample_info         sample_info;
 	audio_resampler_t            resampler;
 	audio_line_t                 audio_line;
-	DARRAY(struct audiobuf)      audio_wait_buffer; /* pending data */
 	pthread_mutex_t              audio_mutex;
 	struct filtered_audio        audio_data;
 	size_t                       audio_storage_size;

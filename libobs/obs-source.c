@@ -213,8 +213,6 @@ static void obs_source_destroy(obs_source_t source)
 	for (i = 0; i < source->filters.num; i++)
 		obs_source_release(source->filters.array[i]);
 
-	for (i = 0; i < source->audio_wait_buffer.num; i++)
-		audiobuf_free(source->audio_wait_buffer.array+i);
 	for (i = 0; i < source->video_frames.num; i++)
 		source_frame_destroy(source->video_frames.array[i]);
 
@@ -233,7 +231,6 @@ static void obs_source_destroy(obs_source_t source)
 	signal_handler_destroy(source->signals);
 
 	da_free(source->video_frames);
-	da_free(source->audio_wait_buffer);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
@@ -332,9 +329,9 @@ static inline uint64_t conv_frames_to_time(obs_source_t source, size_t frames)
 }
 
 /* maximum "direct" timestamp variance in nanoseconds */
-#define MAX_TS_VAR         2000000000ULL
+#define MAX_TS_VAR         5000000000ULL
 /* maximum time that timestamp can jump in nanoseconds */
-#define MAX_TIMESTAMP_JUMP 500000000ULL
+#define MAX_TIMESTAMP_JUMP 2000000000ULL
 
 static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 {
@@ -342,10 +339,26 @@ static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 	source->timing_adjust = os_gettime_ns() - timetamp;
 }
 
+static inline void handle_ts_jump(obs_source_t source, uint64_t ts,
+		uint64_t diff)
+{
+	uint32_t flags = source->callbacks.get_output_flags(source->data);
+
+	blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '%lld', "
+	                "resetting audio timing", source->name, diff);
+
+	/* if has video, ignore audio data until reset */
+	if (flags & SOURCE_ASYNC_VIDEO)
+		source->audio_reset_ref--;
+	else 
+		reset_audio_timing(source, ts);
+}
+
 static void source_output_audio_line(obs_source_t source,
 		const struct audio_data *data)
 {
 	struct audio_data in = *data;
+	uint64_t diff;
 
 	if (!source->timing_set) {
 		reset_audio_timing(source, in.timestamp);
@@ -354,49 +367,25 @@ static void source_output_audio_line(obs_source_t source,
 		 * a certain threshold */
 		if ((source->timing_adjust + MAX_TS_VAR) < MAX_TS_VAR * 2)
 			source->timing_adjust = 0;
+
 	} else {
-		uint64_t time_diff =
-			data->timestamp - source->next_audio_timestamp_min;
+		diff = in.timestamp - source->next_audio_ts_min;
 
 		/* don't need signed because negative will trigger it
 		 * regardless, which is what we want */
-		if (time_diff > MAX_TIMESTAMP_JUMP) {
-			blog(LOG_DEBUG, "Audio timestamp for source '%s' "
-			                "jumped by '%lld', resetting audio "
-			                "timing", source->name, time_diff);
-			reset_audio_timing(source, in.timestamp);
-		}
+		if (diff > MAX_TIMESTAMP_JUMP)
+			handle_ts_jump(source, in.timestamp, diff);
 	}
 
-	source->next_audio_timestamp_min = in.timestamp +
+	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(source, in.frames);
+
+	if (source->audio_reset_ref != 0)
+		return;
 
 	in.timestamp += source->timing_adjust;
 	in.volume = source->volume;
 	audio_line_output(source->audio_line, &in);
-}
-
-static void obs_source_flush_audio_wait_buffer(obs_source_t source)
-{
-	size_t i;
-
-	pthread_mutex_lock(&source->audio_mutex);
-	source->timing_set = true;
-
-	for (i = 0; i < source->audio_wait_buffer.num; i++) {
-		struct audiobuf *buf = source->audio_wait_buffer.array+i;
-		struct audio_data data;
-
-		data.data      = buf->data;
-		data.frames    = buf->frames;
-		data.timestamp = buf->timestamp + source->timing_adjust;
-		data.volume    = source->volume;
-		audio_line_output(source->audio_line, &data);
-		audiobuf_free(buf);
-	}
-
-	da_free(source->audio_wait_buffer);
-	pthread_mutex_unlock(&source->audio_mutex);
 }
 
 static bool set_texture_size(obs_source_t source, struct source_frame *frame)
@@ -540,10 +529,6 @@ static void obs_source_render_async_video(obs_source_t source)
 	struct source_frame *frame = obs_source_getframe(source);
 	if (!frame)
 		return;
-
-	source->timing_adjust = frame->timestamp - os_gettime_ns();
-	if (!source->timing_set && source->audio_wait_buffer.num)
-		obs_source_flush_audio_wait_buffer(source);
 
 	if (set_texture_size(source, frame))
 		obs_source_draw_texture(source->output_texture, frame);
@@ -889,18 +874,7 @@ void obs_source_output_audio(obs_source_t source,
 
 		/* wait for video to start before outputting any audio so we
 		 * have a base for sync */
-		if (!source->timing_set && (flags & SOURCE_ASYNC_VIDEO) != 0) {
-			struct audiobuf newbuf;
-			size_t audio_size = blocksize * output->frames;
-
-			newbuf.data      = bmalloc(audio_size);
-			newbuf.frames    = output->frames;
-			newbuf.timestamp = output->timestamp;
-			memcpy(newbuf.data, output->data, audio_size);
-
-			da_push_back(source->audio_wait_buffer, &newbuf);
-
-		} else {
+		if (source->timing_set || (flags & SOURCE_ASYNC_VIDEO) == 0) {
 			struct audio_data data;
 			data.data      = output->data;
 			data.frames    = output->frames;
@@ -914,53 +888,88 @@ void obs_source_output_audio(obs_source_t source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
+static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
+{
+	return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
+}
+
+static inline struct source_frame *get_closest_frame(obs_source_t source,
+		uint64_t sys_time)
+{
+	struct source_frame *next_frame = source->video_frames.array[0];
+	struct source_frame *frame      = NULL;
+	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
+	uint64_t frame_time = next_frame->timestamp;
+	uint64_t frame_offset = 0;
+	int      audio_time_refs = 0;
+
+	/* account for timestamp invalidation */
+	if (frame_out_of_bounds(source, frame_time)) {
+		source->last_frame_ts = next_frame->timestamp;
+		audio_time_refs++;
+	} else {
+		frame_offset = frame_time - source->last_frame_ts;
+		source->last_frame_ts += sys_offset;
+	}
+
+	while (frame_offset <= sys_offset) {
+		source_frame_destroy(frame);
+
+		frame = next_frame;
+		da_erase(source->video_frames, 0);
+
+		if (!source->video_frames.num)
+			break;
+
+		next_frame = source->video_frames.array[0];
+
+		/* more timestamp checking and compensating */
+		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
+			source->last_frame_ts =
+				next_frame->timestamp - frame_offset;
+			audio_time_refs++;
+		}
+
+		frame_time   = next_frame->timestamp;
+		frame_offset = frame_time - source->last_frame_ts;
+	}
+
+	/* reset timing to current system time */
+	if (frame) {
+		source->timing_adjust = sys_time - frame->timestamp;
+		source->audio_reset_ref += audio_time_refs;
+		source->timing_set = true;
+	}
+
+	return frame;
+}
+
 /*
  * Ensures that cached frames are displayed on time.  If multiple frames
  * were cached between renders, then releases the unnecessary frames and uses
- * the frame with the closest timing to ensure sync.
+ * the frame with the closest timing to ensure sync.  Also ensures that timing
+ * with audio is synchronized.
  */
 struct source_frame *obs_source_getframe(obs_source_t source)
 {
-	uint64_t last_frame_time = source->last_frame_timestamp;
-	struct   source_frame *frame = NULL;
-	struct   source_frame *next_frame;
-	uint64_t sys_time, frame_time;
+	uint64_t last_frame_time = source->last_frame_ts;
+	struct source_frame *frame = NULL;
+	uint64_t sys_time;
 
 	pthread_mutex_lock(&source->video_mutex);
 
 	if (!source->video_frames.num)
 		goto unlock;
 
-	next_frame = source->video_frames.array[0];
-	sys_time   = os_gettime_ns();
-	frame_time = next_frame->timestamp;
+	sys_time = os_gettime_ns();
 
-	if (!source->last_frame_timestamp) {
-		frame = next_frame;
+	if (!source->last_frame_ts) {
+		frame = source->video_frames.array[0];
 		da_erase(source->video_frames, 0);
 
-		source->last_frame_timestamp = frame_time;
+		source->last_frame_ts = frame->timestamp;
 	} else {
-		uint64_t sys_offset, frame_offset;
-		sys_offset   = sys_time   - source->last_sys_timestamp;
-		frame_offset = frame_time - last_frame_time;
-
-		source->last_frame_timestamp += sys_offset;
-
-		while (frame_offset <= sys_offset) {
-			if (frame)
-				source_frame_destroy(frame);
-
-			frame = next_frame;
-			da_erase(source->video_frames, 0);
-
-			if (!source->video_frames.num)
-				break;
-
-			next_frame   = source->video_frames.array[0];
-			frame_time   = next_frame->timestamp;
-			frame_offset = frame_time - last_frame_time;
-		}
+		frame = get_closest_frame(source, sys_time);
 	}
 
 	source->last_sys_timestamp = sys_time;
@@ -968,7 +977,7 @@ struct source_frame *obs_source_getframe(obs_source_t source)
 unlock:
 	pthread_mutex_unlock(&source->video_mutex);
 
-	if (frame != NULL)
+	if (frame)
 		obs_source_addref(source);
 
 	return frame;
