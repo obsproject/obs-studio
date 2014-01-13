@@ -46,7 +46,7 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (type >= LOG_WARNING)
+	if (type >= LOG_WARNING && IsDebuggerPresent())
 		__debugbreak();
 #else
 	vprintf(msg, args);
