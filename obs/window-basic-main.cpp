@@ -262,7 +262,7 @@ bool OBSBasic::InitGraphics()
 bool OBSBasic::InitAudio()
 {
 	/* TODO: load audio settings from config */
-	struct audio_info ai;
+	struct audio_output_info ai;
 	ai.name = "test";
 	ai.samples_per_sec = 44100;
 	ai.format = AUDIO_FORMAT_16BIT;

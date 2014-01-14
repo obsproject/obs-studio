@@ -21,7 +21,6 @@
 #include "util/darray.h"
 #include "util/dstr.h"
 #include "util/threading.h"
-#include "media-io/media-io.h"
 #include "media-io/audio-resampler.h"
 #include "callback/signal.h"
 #include "callback/proc.h"

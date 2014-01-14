@@ -323,8 +323,11 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 
 static inline uint64_t conv_frames_to_time(obs_source_t source, size_t frames)
 {
-	const struct audio_info *info = audio_output_getinfo(obs->audio.audio);
-	double sps_to_ns = 1000000000.0 / (double)info->samples_per_sec;
+	const struct audio_output_info *info;
+	double sps_to_ns;
+
+	info = audio_output_getinfo(obs->audio.audio);
+	sps_to_ns = 1000000000.0 / (double)info->samples_per_sec;
 	return (uint64_t)((double)frames * sps_to_ns);
 }
 
@@ -783,7 +786,7 @@ static inline struct filtered_audio *filter_async_audio(obs_source_t source,
 static inline void reset_resampler(obs_source_t source,
 		const struct source_audio *audio)
 {
-	const struct audio_info *obs_info;
+	const struct audio_output_info *obs_info;
 	struct resample_info output_info;
 
 	obs_info = audio_output_getinfo(obs->audio.audio);

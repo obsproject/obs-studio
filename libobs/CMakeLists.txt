@@ -56,7 +56,6 @@ add_library(libobs SHARED
 		media-io/audio-io.c
 		media-io/format-conversion.c
 		media-io/audio-resampler-ffmpeg.c
-		media-io/media-io.c
 		media-io/video-io.c
 		graphics/axisang.c
 		graphics/bounds.c

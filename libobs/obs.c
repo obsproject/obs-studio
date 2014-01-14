@@ -37,7 +37,7 @@ static inline void make_gs_init_data(struct gs_init_data *gid,
 	gid->adapter         = ovi->adapter;
 }
 
-static inline void make_video_info(struct video_info *vi,
+static inline void make_video_info(struct video_output_info *vi,
 		struct obs_video_info *ovi)
 {
 	vi->name    = "video";
@@ -120,11 +120,11 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 static bool obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_video *video = &obs->video;
-	struct video_info vi;
+	struct video_output_info vi;
 	int errorcode;
 
 	make_video_info(&vi, ovi);
-	errorcode = video_output_open(&video->video, obs->media, &vi);
+	errorcode = video_output_open(&video->video, &vi);
 
 	if (errorcode != VIDEO_OUTPUT_SUCCESS) {
 		if (errorcode == VIDEO_OUTPUT_INVALIDPARAM)
@@ -195,14 +195,14 @@ static void obs_free_graphics()
 	}
 }
 
-static bool obs_init_audio(struct audio_info *ai)
+static bool obs_init_audio(struct audio_output_info *ai)
 {
 	struct obs_audio *audio = &obs->audio;
 	int errorcode;
 
 	/* TODO: sound subsystem */
 
-	errorcode = audio_output_open(&audio->audio, obs->media, ai);
+	errorcode = audio_output_open(&audio->audio, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
 		return true;
 	else if (errorcode == AUDIO_OUTPUT_INVALIDPARAM)
@@ -277,18 +277,10 @@ static inline bool obs_init_handlers(void)
 static bool obs_init(void)
 {
 	obs = bmalloc(sizeof(struct obs_subsystem));
-
 	memset(obs, 0, sizeof(struct obs_subsystem));
+
 	obs_init_data();
-
-	if (!obs_init_handlers())
-		return false;
-
-	obs->media = media_open();
-	if (!obs->media)
-		return false;
-
-	return true;
+	return obs_init_handlers();
 }
 
 bool obs_startup()
@@ -324,7 +316,6 @@ void obs_shutdown(void)
 	obs_free_video();
 	obs_free_graphics();
 	obs_free_audio();
-	media_close(obs->media);
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
 
@@ -353,7 +344,7 @@ bool obs_reset_video(struct obs_video_info *ovi)
 	return obs_init_video(ovi);
 }
 
-bool obs_reset_audio(struct audio_info *ai)
+bool obs_reset_audio(struct audio_output_info *ai)
 {
 	obs_free_audio();
 	if(!ai)
@@ -365,7 +356,7 @@ bool obs_reset_audio(struct audio_info *ai)
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
 	struct obs_video *video = &obs->video;
-	const struct video_info *info;
+	const struct video_output_info *info;
 
 	if (!obs || !video->graphics)
 		return false;
@@ -384,16 +375,16 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	return true;
 }
 
-bool obs_get_audio_info(struct audio_info *ai)
+bool obs_get_audio_info(struct audio_output_info *aoi)
 {
 	struct obs_audio *audio = &obs->audio;
-	const struct audio_info *info;
+	const struct audio_output_info *info;
 
 	if (!obs || !audio->audio)
 		return false;
 
 	info = audio_output_getinfo(audio->audio);
-	memcpy(ai, info, sizeof(struct audio_info));
+	memcpy(aoi, info, sizeof(struct audio_output_info));
 
 	return true;
 }
@@ -435,9 +426,14 @@ graphics_t obs_graphics(void)
 	return (obs != NULL) ? obs->video.graphics : NULL;
 }
 
-media_t obs_media(void)
+audio_t obs_audio(void)
 {
-	return obs->media;
+	return (obs != NULL) ? obs->audio.audio : NULL;
+}
+
+video_t obs_video(void)
+{
+	return (obs != NULL) ? obs->video.video : NULL;
 }
 
 bool obs_add_source(obs_source_t source)

@@ -21,7 +21,8 @@
 #include "util/bmem.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
-#include "media-io/media-io.h"
+#include "media-io/audio-io.h"
+#include "media-io/video-io.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -173,13 +174,13 @@ EXPORT bool obs_reset_video(struct obs_video_info *ovi);
  *
  *   NOTE: Cannot reset base audio if currently streaming/recording.
  */
-EXPORT bool obs_reset_audio(struct audio_info *ai);
+EXPORT bool obs_reset_audio(struct audio_output_info *ai);
 
 /** Gets the current video settings, returns false if none */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 
 /** Gets the current audio settings, returns false if none */
-EXPORT bool obs_get_audio_info(struct audio_info *ai);
+EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
 
 /**
  * Loads a plugin module
@@ -225,8 +226,8 @@ EXPORT bool obs_enum_output_types(size_t idx, const char **id);
 /** Gets the graphics context for this OBS context */
 EXPORT graphics_t obs_graphics(void);
 
-/** Get the media context for this OBS context (used for outputs) */
-EXPORT media_t obs_media(void);
+EXPORT audio_t obs_audio(void);
+EXPORT video_t obs_video(void);
 
 /**
  * Adds a source to the user source list and increments the reference counter

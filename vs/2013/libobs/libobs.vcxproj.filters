@@ -87,9 +87,6 @@
     <ClInclude Include="..\..\..\libobs\media-io\audio-io.h">
       <Filter>media-io\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\libobs\media-io\media-io.h">
-      <Filter>media-io\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\libobs\media-io\video-io.h">
       <Filter>media-io\Header Files</Filter>
     </ClInclude>
@@ -225,9 +222,6 @@
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\media-io\audio-io.c">
-      <Filter>media-io\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\libobs\media-io\media-io.c">
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\util\config-file.c">

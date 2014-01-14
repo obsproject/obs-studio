@@ -19,25 +19,33 @@
 #include "../util/bmem.h"
 #include "../util/platform.h"
 #include "../util/threading.h"
+#include "../util/darray.h"
 
 #include "video-io.h"
 
+struct video_input {
+	struct video_info format;
+	void (*callback)(void *param, struct video_frame *frame);
+	void *param;
+};
+
 struct video_output {
-	struct video_info  info;
-	media_t            media;
-	media_output_t     output;
+	struct video_output_info   info;
 
-	pthread_t          thread;
-	pthread_mutex_t    data_mutex;
-	event_t            stop_event;
+	pthread_t                  thread;
+	pthread_mutex_t            data_mutex;
+	event_t                    stop_event;
 
-	struct video_frame *cur_frame;
-	struct video_frame *next_frame;
-	event_t            update_event;
-	uint64_t           frame_time;
-	volatile uint64_t  cur_video_time;
+	struct video_frame         *cur_frame;
+	struct video_frame         *next_frame;
+	event_t                    update_event;
+	uint64_t                   frame_time;
+	volatile uint64_t          cur_video_time;
 
-	bool               initialized;
+	bool                       initialized;
+
+	pthread_mutex_t            input_mutex;
+	DARRAY(struct video_input) inputs;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -54,6 +62,22 @@ static inline void video_swapframes(struct video_output *video)
 	pthread_mutex_unlock(&video->data_mutex);
 }
 
+static inline void video_output_cur_frame(struct video_output *video)
+{
+	if (!video->cur_frame)
+		return;
+
+	pthread_mutex_lock(&video->input_mutex);
+
+	/* TODO: conversion */
+	for (size_t i = 0; i < video->inputs.num; i++) {
+		struct video_input *input = video->inputs.array+i;
+		input->callback(input->param, video->cur_frame);
+	}
+
+	pthread_mutex_unlock(&video->input_mutex);
+}
+
 static void *video_thread(void *param)
 {
 	struct video_output *video = param;
@@ -68,8 +92,7 @@ static void *video_thread(void *param)
 		/* wait another half a frame, swap and output frames */
 		os_sleepto_ns(cur_time += (video->frame_time/2));
 		video_swapframes(video);
-		if (video->cur_frame)
-			media_output_data(video->output, video->cur_frame);
+		video_output_cur_frame(video);
 	}
 
 	return NULL;
@@ -77,27 +100,13 @@ static void *video_thread(void *param)
 
 /* ------------------------------------------------------------------------- */
 
-static inline bool valid_video_params(struct video_info *info)
+static inline bool valid_video_params(struct video_output_info *info)
 {
 	return info->height != 0 && info->width != 0 && info->fps_den != 0 &&
 	       info->fps_num != 0;
 }
 
-static inline bool vo_add_to_media(video_t video)
-{
-	struct media_output_info oi;
-	oi.obj     = video;
-	oi.connect = NULL;
-
-	video->output = media_output_create(&oi);
-	if (!video->output)
-		return false;
-
-	media_add_output(video->media, video->output);
-	return true;
-}
-
-int video_output_open(video_t *video, media_t media, struct video_info *info)
+int video_output_open(video_t *video, struct video_output_info *info)
 {
 	struct video_output *out;
 
@@ -110,16 +119,15 @@ int video_output_open(video_t *video, media_t media, struct video_info *info)
 	memcpy(&out->info, info, sizeof(struct video_info));
 	out->frame_time = (uint64_t)(1000000000.0 * (double)info->fps_den /
 		(double)info->fps_num);
-	out->media = media;
 	out->initialized = false;
 
 	if (pthread_mutex_init(&out->data_mutex, NULL) != 0)
 		goto fail;
+	if (pthread_mutex_init(&out->input_mutex, NULL) != 0)
+		goto fail;
 	if (event_init(&out->stop_event, EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (event_init(&out->update_event, EVENT_TYPE_AUTO) != 0)
-		goto fail;
-	if (!vo_add_to_media(out))
 		goto fail;
 	if (pthread_create(&out->thread, NULL, video_thread, out) != 0)
 		goto fail;
@@ -133,7 +141,74 @@ fail:
 	return VIDEO_OUTPUT_FAIL;
 }
 
-const struct video_info *video_output_getinfo(video_t video)
+void video_output_close(video_t video)
+{
+	if (!video)
+		return;
+
+	video_output_stop(video);
+
+	da_free(video->inputs);
+	event_destroy(&video->update_event);
+	event_destroy(&video->stop_event);
+	pthread_mutex_destroy(&video->data_mutex);
+	pthread_mutex_destroy(&video->input_mutex);
+	bfree(video);
+}
+
+static size_t video_get_input_idx(video_t video,
+		void (*callback)(void *param, struct video_frame *frame),
+		void *param)
+{
+	for (size_t i = 0; i < video->inputs.num; i++) {
+		struct video_input *input = video->inputs.array+i;
+		if (input->callback == callback && input->param == param)
+			return i;
+	}
+
+	return DARRAY_INVALID;
+}
+
+void video_output_connect(video_t video, struct video_info *format,
+		void (*callback)(void *param, struct video_frame *frame),
+		void *param)
+{
+	pthread_mutex_lock(&video->input_mutex);
+
+	if (video_get_input_idx(video, callback, param) != DARRAY_INVALID) {
+		struct video_input input;
+		input.callback = callback;
+		input.param    = param;
+
+		/* TODO: conversion */
+		if (format) {
+			input.format = *format;
+		} else {
+			input.format.type   = video->info.type;
+			input.format.height = video->info.height;
+			input.format.width  = video->info.width;
+		}
+
+		da_push_back(video->inputs, &input);
+	}
+
+	pthread_mutex_unlock(&video->input_mutex);
+}
+
+void video_output_disconnect(video_t video,
+		void (*callback)(void *param, struct video_frame *frame),
+		void *param)
+{
+	pthread_mutex_lock(&video->input_mutex);
+
+	size_t idx = video_get_input_idx(video, callback, param);
+	if (idx != DARRAY_INVALID)
+		da_erase(video->inputs, idx);
+
+	pthread_mutex_unlock(&video->input_mutex);
+}
+
+const struct video_output_info *video_output_getinfo(video_t video)
 {
 	return &video->info;
 }
@@ -173,22 +248,4 @@ void video_output_stop(video_t video)
 		pthread_join(video->thread, &thread_ret);
 		event_signal(&video->update_event);
 	}
-}
-
-void video_output_close(video_t video)
-{
-	if (!video)
-		return;
-
-	video_output_stop(video);
-
-	if (video->output) {
-		media_remove_output(video->media, video->output);
-		media_output_destroy(video->output);
-	}
-
-	event_destroy(&video->update_event);
-	event_destroy(&video->stop_event);
-	pthread_mutex_destroy(&video->data_mutex);
-	bfree(video);
 }

@@ -22,7 +22,6 @@
 
 #include "graphics/graphics.h"
 
-#include "media-io/media-io.h"
 #include "media-io/video-io.h"
 #include "media-io/audio-io.h"
 
@@ -85,8 +84,6 @@ struct obs_subsystem {
 	DARRAY(struct source_info)  transition_types;
 	DARRAY(struct output_info)  output_types;
 	DARRAY(struct service_info) service_types;
-
-	media_t                     media;
 
 	signal_handler_t            signals;
 	proc_handler_t              procs;

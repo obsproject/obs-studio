@@ -18,7 +18,6 @@
 #pragma once
 
 #include "../util/c99defs.h"
-#include "media-io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,14 +62,19 @@ struct audio_data {
 	float               volume;
 };
 
-struct audio_info {
+struct audio_output_info {
 	const char          *name;
 
 	uint32_t            samples_per_sec;
 	enum audio_format   format;
 	enum speaker_layout speakers;
-
 	uint64_t            buffer_ms;
+};
+
+struct audio_info {
+	uint32_t            samples_per_sec;
+	enum audio_format   format;
+	enum speaker_layout speakers;
 };
 
 static inline uint32_t get_audio_channels(enum speaker_layout speakers)
@@ -117,13 +121,20 @@ static inline size_t get_audio_size(enum audio_format type,
 #define AUDIO_OUTPUT_INVALIDPARAM -1
 #define AUDIO_OUTPUT_FAIL         -2
 
-EXPORT int audio_output_open(audio_t *audio, media_t media,
-		struct audio_info *info);
-EXPORT audio_line_t audio_output_createline(audio_t audio, const char *name);
-EXPORT size_t audio_output_blocksize(audio_t audio);
-EXPORT const struct audio_info *audio_output_getinfo(audio_t audio);
+EXPORT int audio_output_open(audio_t *audio, struct audio_output_info *info);
 EXPORT void audio_output_close(audio_t audio);
 
+EXPORT void audio_output_connect(audio_t video, struct audio_info *format,
+		void (*callback)(void *param, const struct audio_data *data),
+		void *param);
+EXPORT void audio_output_disconnect(audio_t video,
+		void (*callback)(void *param, const struct audio_data *data),
+		void *param);
+
+EXPORT size_t audio_output_blocksize(audio_t audio);
+EXPORT const struct audio_output_info *audio_output_getinfo(audio_t audio);
+
+EXPORT audio_line_t audio_output_createline(audio_t audio, const char *name);
 EXPORT void audio_line_destroy(audio_line_t line);
 EXPORT void audio_line_output(audio_line_t line, const struct audio_data *data);
 
