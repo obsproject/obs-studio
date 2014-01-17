@@ -47,6 +47,6 @@ endif()
 
 set(LIBRARY_OUTPUT_PATH ${obs_BINARY_DIR}/plugins)
 set(RUNTIME_OUTPUT_PATH ${obs_BINARY_DIR}/plugins)
-add_subdirectory(obs)
-
 add_subdirectory(test)
+
+add_subdirectory(obs)
