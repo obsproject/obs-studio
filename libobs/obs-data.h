@@ -32,6 +32,14 @@
 #include "obs-service.h"
 #include "obs-encoder.h"
 
+#define LOAD_MODULE_SUBFUNC(name, required) \
+	do { \
+		info->name = load_module_subfunc(module, module_name, \
+				id, #name, required); \
+		if (required && !info->name) \
+			return false; \
+	} while (false)
+
 #define NUM_TEXTURES 2
 
 struct obs_display {

@@ -377,8 +377,8 @@ EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
 /** Specifies whether the source can be configured */
 EXPORT bool obs_source_hasconfig(obs_source_t source);
 
-/** Opens a configuration panel and attaches it to the parent window */
-EXPORT void obs_source_config(obs_source_t source, void *parent);
+/** Updates settings for this source */
+EXPORT void obs_source_update(obs_source_t source, const char *settings);
 
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t source);

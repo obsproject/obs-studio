@@ -27,47 +27,26 @@
 static void obs_source_destroy(obs_source_t source);
 
 bool load_source_info(void *module, const char *module_name,
-		const char *source_id, struct source_info *info)
+		const char *id, struct source_info *info)
 {
-	info->getname = load_module_subfunc(module, module_name,
-			source_id, "getname", true);
-	info->create = load_module_subfunc(module, module_name,
-			source_id,"create", true);
-	info->destroy = load_module_subfunc(module, module_name,
-			source_id, "destroy", true);
-	info->get_output_flags = load_module_subfunc(module, module_name,
-			source_id, "get_output_flags", true);
+	LOAD_MODULE_SUBFUNC(getname, true);
+	LOAD_MODULE_SUBFUNC(create, true);
+	LOAD_MODULE_SUBFUNC(destroy, true);
+	LOAD_MODULE_SUBFUNC(get_output_flags, true);
 
-	if (!info->getname || !info->create || !info->destroy ||
-	    !info->get_output_flags)
-		return false;
+	LOAD_MODULE_SUBFUNC(update, false);
+	LOAD_MODULE_SUBFUNC(activate, false);
+	LOAD_MODULE_SUBFUNC(deactivate, false);
+	LOAD_MODULE_SUBFUNC(video_tick, false);
+	LOAD_MODULE_SUBFUNC(video_render, false);
+	LOAD_MODULE_SUBFUNC(getwidth, false);
+	LOAD_MODULE_SUBFUNC(getheight, false);
+	LOAD_MODULE_SUBFUNC(getparam, false);
+	LOAD_MODULE_SUBFUNC(setparam, false);
+	LOAD_MODULE_SUBFUNC(filter_video, false);
+	LOAD_MODULE_SUBFUNC(filter_audio, false);
 
-	info->config = load_module_subfunc(module, module_name,
-			source_id, "config", false);
-	info->activate = load_module_subfunc(module, module_name,
-			source_id, "activate", false);
-	info->deactivate = load_module_subfunc(module, module_name,
-			source_id, "deactivate", false);
-	info->video_tick = load_module_subfunc(module, module_name,
-			source_id, "video_tick", false);
-	info->video_render = load_module_subfunc(module, module_name,
-			source_id, "video_render", false);
-	info->getwidth = load_module_subfunc(module, module_name,
-			source_id, "getwidth", false);
-	info->getheight = load_module_subfunc(module, module_name,
-			source_id, "getheight", false);
-
-	info->getparam = load_module_subfunc(module, module_name,
-			source_id, "getparam", false);
-	info->setparam = load_module_subfunc(module, module_name,
-			source_id, "setparam", false);
-
-	info->filter_video = load_module_subfunc(module, module_name,
-			source_id, "filter_video", false);
-	info->filter_audio = load_module_subfunc(module, module_name,
-			source_id, "filter_audio", false);
-
-	info->id = source_id;
+	info->id = id;
 	return true;
 }
 
@@ -292,15 +271,10 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 	return source->callbacks.get_output_flags(source->data);
 }
 
-bool obs_source_hasconfig(obs_source_t source)
+void obs_source_update(obs_source_t source, const char *settings)
 {
-	return source->callbacks.config != NULL;
-}
-
-void obs_source_config(obs_source_t source, void *parent)
-{
-	if (source->callbacks.config)
-		source->callbacks.config(source->data, parent);
+	if (source->callbacks.update)
+		source->callbacks.update(source->data, settings);
 }
 
 void obs_source_activate(obs_source_t source)

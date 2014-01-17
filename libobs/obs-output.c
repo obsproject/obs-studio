@@ -19,31 +19,19 @@
 #include "obs-data.h"
 
 bool load_output_info(void *module, const char *module_name,
-		const char *output_id, struct output_info *info)
+		const char *id, struct output_info *info)
 {
-	info->getname = load_module_subfunc(module, module_name,
-			output_id, "getname", true);
-	info->create = load_module_subfunc(module, module_name,
-			output_id, "create", true);
-	info->destroy = load_module_subfunc(module, module_name,
-			output_id, "destroy", true);
-	info->update = load_module_subfunc(module, module_name,
-			output_id, "update", true);
-	info->start = load_module_subfunc(module, module_name,
-			output_id, "start", true);
-	info->stop = load_module_subfunc(module, module_name,
-			output_id, "stop", true);
-	info->active = load_module_subfunc(module, module_name,
-			output_id, "active", true);
+	LOAD_MODULE_SUBFUNC(getname, true);
+	LOAD_MODULE_SUBFUNC(create, true);
+	LOAD_MODULE_SUBFUNC(destroy, true);
+	LOAD_MODULE_SUBFUNC(update, true);
+	LOAD_MODULE_SUBFUNC(start, true);
+	LOAD_MODULE_SUBFUNC(stop, true);
+	LOAD_MODULE_SUBFUNC(active, true);
 
-	if (!info->getname || !info->create || !info->destroy ||
-	    !info->start || !info->stop || !info->active)
-		return false;
+	LOAD_MODULE_SUBFUNC(pause, false);
 
-	info->pause = load_module_subfunc(module, module_name,
-			output_id, "pause", false);
-
-	info->id = output_id;
+	info->id = id;
 	return true;
 }
 

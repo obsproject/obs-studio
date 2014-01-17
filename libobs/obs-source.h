@@ -40,15 +40,20 @@
  *       + mysource_getname
  *       + mysource_create
  *       + mysource_destroy
- *       + mysource_getflags
+ *       + mysource_get_output_flags
  *
  *       [and optionally]
  *       + mysource_update
- *       + mysource_config
+ *       + mysource_activate
+ *       + mysource_deactivate
  *       + mysource_video_tick
  *       + mysource_video_render
+ *       + mysource_getwidth
+ *       + mysource_getheight
  *       + mysource_getparam
  *       + mysource_setparam
+ *       + mysource_filtervideo
+ *       + mysource_filteraudio
  *
  * ===========================================
  *   Primary Exports
@@ -77,7 +82,7 @@
  *       Destroys the source.
  *
  * ---------------------------------------------------------
- *   uint32_t [name]_getflags(void *data);
+ *   uint32_t [name]_get_output_flags(void *data);
  *       Returns a combination of one of the following values:
  *           + SOURCE_VIDEO: source has video
  *           + SOURCE_AUDIO: source has audio
@@ -85,23 +90,11 @@
  *           + SOURCE_DEFAULT_EFFECT: source uses default effect
  *           + SOURCE_YUV: source is in YUV color space
  *
- * ---------------------------------------------------------
- *   uint32_t [name]_getwidth(void *data);
- *       Returns the width of a source, or -1 for maximum width.  If you render
- *       video, this is required.
- *
- * ---------------------------------------------------------
- *   uint32_t [name]_getheight(void *data);
- *       Returns the height of a source, or -1 for maximum height.  If you
- *       render video, this is required.
- *
  * ===========================================
  *   Optional Source Exports
  * ===========================================
- *   void [name]_config(void *data, void *parent);
- *       Called to configure the source.
- *
- *       parent: Parent window pointer
+ *   void [name]_update(void *data, const char *settings);
+ *       Called to update the settings of the source.
  *
  * ---------------------------------------------------------
  *   void [name]_video_activate(void *data);
@@ -119,6 +112,16 @@
  * ---------------------------------------------------------
  *   void [name]_video_render(void *data);
  *       Called to render the source.
+ *
+ * ---------------------------------------------------------
+ *   uint32_t [name]_getwidth(void *data);
+ *       Returns the width of a source, or -1 for maximum width.  If you render
+ *       video, this is required.
+ *
+ * ---------------------------------------------------------
+ *   uint32_t [name]_getheight(void *data);
+ *       Returns the height of a source, or -1 for maximum height.  If you
+ *       render video, this is required.
  *
  * ---------------------------------------------------------
  *   void [name]_getparam(void *data, const char *param, void *buf,
@@ -171,7 +174,7 @@ struct source_info {
 	/* ----------------------------------------------------------------- */
 	/* optional implementations */
 
-	bool (*config)(void *data, void *parent);
+	void (*update)(void *data, const char *settings);
 
 	void (*activate)(void *data);
 	void (*deactivate)(void *data);

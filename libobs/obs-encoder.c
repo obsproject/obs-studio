@@ -19,33 +19,20 @@
 #include "obs-data.h"
 
 bool load_encoder_info(void *module, const char *module_name,
-		const char *encoder_id, struct encoder_info *info)
+		const char *id, struct encoder_info *info)
 {
-	info->getname = load_module_subfunc(module, module_name,
-			encoder_id, "getname", true);
-	info->create = load_module_subfunc(module, module_name,
-			encoder_id, "create", true);
-	info->destroy = load_module_subfunc(module, module_name,
-			encoder_id, "destroy", true);
-	info->update = load_module_subfunc(module, module_name,
-			encoder_id, "update", true);
-	info->reset = load_module_subfunc(module, module_name,
-			encoder_id, "reset", true);
-	info->encode = load_module_subfunc(module, module_name,
-			encoder_id, "encode", true);
-	info->getheader = load_module_subfunc(module, module_name,
-			encoder_id, "getheader", true);
+	LOAD_MODULE_SUBFUNC(getname, true);
+	LOAD_MODULE_SUBFUNC(create, true);
+	LOAD_MODULE_SUBFUNC(destroy, true);
+	LOAD_MODULE_SUBFUNC(update, true);
+	LOAD_MODULE_SUBFUNC(reset, true);
+	LOAD_MODULE_SUBFUNC(encode, true);
+	LOAD_MODULE_SUBFUNC(getheader, true);
 
-	if (!info->getname || !info->create || !info->destroy ||
-	    !info->reset || !info->encode || !info->getheader)
-		return false;
+	LOAD_MODULE_SUBFUNC(setbitrate, false);
+	LOAD_MODULE_SUBFUNC(request_keyframe, false);
 
-	info->setbitrate = load_module_subfunc(module, module_name,
-			encoder_id, "setbitrate", false);
-	info->request_keyframe = load_module_subfunc(module, module_name,
-			encoder_id, "request_keyframe", false);
-
-	info->id = encoder_id;
+	info->id = id;
 	return true;
 }
 
