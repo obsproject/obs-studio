@@ -1,3 +1,4 @@
+#include <string.h>
 #include "obs-outputs.h"
 
 static const char *outputs[] = {"rtmp_stream"};

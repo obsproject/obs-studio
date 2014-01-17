@@ -23,6 +23,7 @@ libobs_la_SOURCES = obs.c \
 		    obs-output.c \
 		    obs-scene.c \
 		    obs-source.c \
+		    obs-encoder.c \
 		    obs-video.c \
 		    util/base.c \
 		    util/bmem.c \

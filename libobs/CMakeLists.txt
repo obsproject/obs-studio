@@ -40,6 +40,7 @@ add_library(libobs SHARED
 		obs-display.c
 		obs-module.c
 		obs-output.c
+		obs-encoder.c
 		obs-scene.c
 		obs-source.c
 		obs-video.c

@@ -154,6 +154,8 @@ int obs_load_module(const char *path)
 			sizeof(struct source_info), load_source_info);
 	module_load_exports(&mod, &obs->output_types.da, "outputs",
 			sizeof(struct output_info), load_output_info);
+	module_load_exports(&mod, &obs->encoder_types.da, "encoders",
+			sizeof(struct encoder_info), load_encoder_info);
 
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;

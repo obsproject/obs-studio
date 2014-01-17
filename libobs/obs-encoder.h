@@ -41,6 +41,8 @@
  *       + myoutput_encoders
  *
  *       [and optionally]
+ *       + myoutput_setencoder
+ *       + myoutput_getencoder
  *       + myoutput_config
  *       + myoutput_pause
  *
@@ -76,82 +78,70 @@
  *       settings: New settings of the output
  *
  * ---------------------------------------------------------
- *   bool [name]_start(void *data)
+ *   bool [name]_reset(void *data)
  *       Starts output
  *
  *       Return value: true if successful
  *
  * ---------------------------------------------------------
- *   void [name]_stop(void *data)
- *       Stops output
+ *   int [name]_encode(void *data, void *frames, size_t size,
+ *                      struct encoder_packet **packets)
+ *
+ *       frames: frame data
+ *       size: size of data pointed to by the frame parameter
+ *       packets: returned packets, or NULL if none
+ *       Return value: number of output frames
  *
  * ---------------------------------------------------------
- *   bool [name]_active(void *data)
- *       Returns whether currently active or not
+ *   bool [name]_reset(void *data)
+ *       Resets encoder data
  *
- * ---------------------------------------------------------
- *   uint32_t [name]_encoders(void *data)
- *       Returns 0 or a combination of the following values:
- *           + OUTPUT_VIDEO_ENCODER: requires a video encoder
- *           + OUTPUT_AUDIO_ENCODER: requires an audio encoder
+ *       Return value: true if successful
  *
  * ===========================================
  *   Optional Output Exports
  * ===========================================
- *   bool [name]_setencoder(void *data, obs_encoder_t encoder,
- *                          enum obs_encoder_type type)
- *       Sets the encoder for this output.
- *
- *       encoder: Encoder context
- *       type: Type of encoder (ENCODER_VIDEO or ENCODER_AUDIO)
- *
- *       Returns true if successful and compatible
- *
- * ---------------------------------------------------------
- *   obs_encoder_t [name]_getencoder(void *data, enum obs_encoder_type type)
- *       Gets the encoder for this output
- *
- *       type: Type of encoder
- *
- *       Returns the encoder, or NULL if none.
- *
- * ---------------------------------------------------------
- *   void [name]_config(void *data, void *parent);
- *       Called to configure the output.
- *
- *       parent: Parent window pointer
- *
- * ---------------------------------------------------------
- *   void [name]_pause(void *data)
- *       Pauses output.  Typically only usable for local recordings.
+ *   void [name]_setbitrate(void *data, uint32_t bitrate, uint32_t buffersize);
+ *       Sets the bitrate of the encoder
  */
 
-struct obs_output;
+struct obs_encoder;
 
-struct output_info {
+struct encoder_info {
 	const char *id;
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(const char *settings, struct obs_output *output);
+	void *(*create)(const char *settings, struct obs_encoder *encoder);
 	void (*destroy)(void *data);
 
-	bool (*start)(void *data);
-	void (*stop)(void *data);
+	void (*update)(void *data, const char *settings);
 
-	bool (*active)(void *data);
+	bool (*reset)(void *data);
+
+	int (*encode)(void *data, void *frames, size_t size,
+			struct encoder_packet **packets);
+	int (*getheader)(void *data, struct encoder_packet **packets);
 
 	/* optional */
-	void (*update)(void *data, const char *settings);
-	void (*pause)(void *data);
+	void (*setbitrate)(void *data, uint32_t bitrate, uint32_t buffersize);
+	void (*request_keyframe)(void *data);
 };
 
-struct obs_output {
-	char               *name;
-	void               *data;
-	struct output_info callbacks;
-	struct dstr        settings;
+struct obs_encoder_callback {
+	void (*new_packet)(void *param, struct encoder_packet *packet);
+	void *param;
 };
 
-extern bool load_output_info(void *module, const char *module_name,
-		const char *output_name, struct output_info *info);
+struct obs_encoder {
+	char                                *name;
+	void                                *data;
+	struct encoder_info                 callbacks;
+	struct dstr                         settings;
+
+	pthread_mutex_t                     data_callbacks_mutex;
+	DARRAY(struct obs_encoder_callback) data_callbacks;
+};
+
+extern bool load_encoder_info(void *module, const char *module_name,
+		const char *encoder_name, struct encoder_info *info);

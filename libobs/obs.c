@@ -238,6 +238,10 @@ static bool obs_init_data(void)
 		goto fail;
 	if (pthread_mutex_init(&data->displays_mutex, &attr) != 0)
 		goto fail;
+	if (pthread_mutex_init(&data->outputs_mutex, &attr) != 0)
+		goto fail;
+	if (pthread_mutex_init(&data->encoders_mutex, &attr) != 0)
+		goto fail;
 
 	success = true;
 
@@ -254,6 +258,10 @@ static void obs_free_data(void)
 	for (i = 0; i < MAX_CHANNELS; i++)
 		obs_set_output_source(i, NULL);
 
+	while (data->outputs.num)
+		obs_output_destroy(data->outputs.array[0]);
+	while (data->encoders.num)
+		obs_encoder_destroy(data->encoders.array[0]);
 	while (data->displays.num)
 		obs_display_destroy(data->displays.array[0]);
 
@@ -262,6 +270,11 @@ static void obs_free_data(void)
 		obs_source_release(data->sources.array[i]);
 	da_free(data->sources);
 	pthread_mutex_unlock(&obs->data.sources_mutex);
+
+	pthread_mutex_destroy(&data->sources_mutex);
+	pthread_mutex_destroy(&data->displays_mutex);
+	pthread_mutex_destroy(&data->outputs_mutex);
+	pthread_mutex_destroy(&data->encoders_mutex);
 }
 
 static inline bool obs_init_handlers(void)
@@ -487,17 +500,41 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 	}
 }
 
-void obs_enum_sources(bool (*enum_proc)(obs_source_t, void*), void *param)
+void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 {
 	struct obs_data *data = &obs->data;
-	size_t i;
+
+	pthread_mutex_lock(&data->outputs_mutex);
+
+	for (size_t i = 0; i < data->outputs.num; i++)
+		if (!enum_proc(param, data->outputs.array[i]))
+			break;
+
+	pthread_mutex_unlock(&data->outputs_mutex);
+}
+
+void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
+{
+	struct obs_data *data = &obs->data;
+
+	pthread_mutex_lock(&data->encoders_mutex);
+
+	for (size_t i = 0; i < data->encoders.num; i++)
+		if (!enum_proc(param, data->encoders.array[i]))
+			break;
+
+	pthread_mutex_unlock(&data->encoders_mutex);
+}
+
+void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
+{
+	struct obs_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	for (i = 0; i < data->sources.num; i++) {
-		if (!enum_proc(data->sources.array[i], param))
+	for (size_t i = 0; i < data->sources.num; i++)
+		if (!enum_proc(param, data->sources.array[i]))
 			break;
-	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
 }

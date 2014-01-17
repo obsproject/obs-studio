@@ -81,7 +81,9 @@
  *       Returns a combination of one of the following values:
  *           + SOURCE_VIDEO: source has video
  *           + SOURCE_AUDIO: source has audio
- *           + SOURCE_ASYNC: video is sent asynchronously via RAM
+ *           + SOURCE_ASYNC_VIDEO: video is sent asynchronously via RAM
+ *           + SOURCE_DEFAULT_EFFECT: source uses default effect
+ *           + SOURCE_YUV: source is in YUV color space
  *
  * ---------------------------------------------------------
  *   uint32_t [name]_getwidth(void *data);

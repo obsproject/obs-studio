@@ -50,6 +50,11 @@ enum obs_source_type {
 	SOURCE_SCENE
 };
 
+enum obs_encoder_type {
+	ENCODER_VIDEO,
+	ENCODER_AUDIO
+};
+
 enum obs_video_type {
 	OBS_VIDEO_YUV,
 	OBS_VIDEO_RGB
@@ -136,12 +141,29 @@ static inline void source_frame_destroy(struct source_frame *frame)
 	}
 }
 
+enum packet_priority {
+	PACKET_PRIORITY_DISPOSABLE,
+	PACKET_PRIORITY_LOW,
+	PACKET_PRIORITY_PFRAME,
+	PACKET_PRIORITY_IFRAME,
+	PACKET_PRIORITY_OTHER /* audio usually */
+};
+
+struct encoder_packet {
+	int64_t              dts;
+	int64_t              pts;
+	void                 *data;
+	size_t               size;
+	enum packet_priority priority;
+};
+
 /* opaque types */
 struct obs_display;
 struct obs_source;
 struct obs_scene;
 struct obs_scene_item;
 struct obs_output;
+struct obs_encoder;
 struct obs_service;
 
 typedef struct obs_display    *obs_display_t;
@@ -149,6 +171,7 @@ typedef struct obs_source     *obs_source_t;
 typedef struct obs_scene      *obs_scene_t;
 typedef struct obs_scene_item *obs_sceneitem_t;
 typedef struct obs_output     *obs_output_t;
+typedef struct obs_encoder    *obs_encoder_t;
 typedef struct obs_service    *obs_service_t;
 
 /* ------------------------------------------------------------------------- */
@@ -254,7 +277,15 @@ EXPORT obs_source_t obs_get_output_source(uint32_t channel);
  *   Callback function returns true to continue enumeration, or false to end
  * enumeration.
  */
-EXPORT void obs_enum_sources(bool (*enum_proc)(obs_source_t, void*),
+EXPORT void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t),
+		void *param);
+
+/** Enumerates outputs */
+EXPORT void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t),
+		void *param);
+
+/** Enumerates encoders */
+EXPORT void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t),
 		void *param);
 
 /**
@@ -504,26 +535,30 @@ EXPORT void  obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale);
 /* ------------------------------------------------------------------------- */
 /* Outputs */
 
+EXPORT const char *obs_output_getdisplayname(const char *id,
+		const char *locale);
+
 /**
  * Creates an output.
  *
  *   Outputs allow outputting to file, outputting to network, outputting to
  * directshow, or other custom outputs.
  */
-EXPORT obs_output_t obs_output_create(const char *name, const char *settings);
+EXPORT obs_output_t obs_output_create(const char *id, const char *name,
+		const char *settings);
 EXPORT void obs_output_destroy(obs_output_t output);
 
 /** Starts the output. */
-EXPORT void obs_output_start(obs_output_t output);
+EXPORT bool obs_output_start(obs_output_t output);
 
 /** Stops the output. */
 EXPORT void obs_output_stop(obs_output_t output);
 
-/** Specifies whether the output can be configured */
-EXPORT bool obs_output_canconfig(obs_output_t output);
+/** Returns whether the output is active */
+EXPORT bool obs_output_active(obs_output_t output);
 
-/** Opens a configuration panel with the specified parent window */
-EXPORT void obs_output_config(obs_output_t output, void *parent);
+/** Updates the settings for this output context */
+EXPORT void obs_output_update(obs_output_t output, const char *settings);
 
 /** Specifies whether the output can be paused */
 EXPORT bool obs_output_canpause(obs_output_t output);
@@ -540,12 +575,51 @@ EXPORT void obs_output_save_settings(obs_output_t output,
 
 
 /* ------------------------------------------------------------------------- */
+/* Stream Encoders */
+EXPORT const char *obs_encoder_getdisplayname(const char *id,
+		const char *locale);
+
+EXPORT obs_encoder_t obs_encoder_create(const char *id, const char *name,
+		const char *settings);
+EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
+
+EXPORT void obs_encoder_update(obs_encoder_t encoder, const char *settings);
+
+EXPORT bool obs_encoder_reset(obs_encoder_t encoder);
+
+EXPORT bool obs_encoder_encode(obs_encoder_t encoder, void *frames,
+		size_t size);
+EXPORT int obs_encoder_getheader(obs_encoder_t encoder,
+		struct encoder_packet **packets);
+
+EXPORT bool obs_encoder_start(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param);
+EXPORT bool obs_encoder_stop(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param);
+
+EXPORT void obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
+		uint32_t buffersize);
+
+EXPORT void obs_encoder_request_keyframe(obs_encoder_t encoder);
+
+EXPORT const char *obs_encoder_get_settings(obs_encoder_t encoder);
+
+EXPORT void obs_encoder_save_settings(obs_encoder_t encoder,
+		const char *settings);
+
+
+/* ------------------------------------------------------------------------- */
 /* Stream Services */
+EXPORT const char *obs_service_getdisplayname(const char *id,
+		const char *locale);
+
 EXPORT obs_service_t obs_service_create(const char *service,
 		const char *settings);
 EXPORT void obs_service_destroy(obs_service_t service);
 
-EXPORT void obs_service_setdata(obs_service_t service,const char *attribute,
+EXPORT void obs_service_setdata(obs_service_t service, const char *attribute,
 		const char *data);
 EXPORT const char *obs_service_getdata(obs_service_t service,
 		const char *attribute);

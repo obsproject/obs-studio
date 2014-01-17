@@ -30,6 +30,7 @@
 #include "obs-source.h"
 #include "obs-output.h"
 #include "obs-service.h"
+#include "obs-encoder.h"
 
 #define NUM_TEXTURES 2
 
@@ -71,10 +72,14 @@ struct obs_data {
 	 * linked lists. */
 	DARRAY(struct obs_display*) displays;
 	DARRAY(struct obs_source*)  sources;
+	DARRAY(struct obs_output*)  outputs;
+	DARRAY(struct obs_encoder*) encoders;
 
 	obs_source_t                channels[MAX_CHANNELS];
 	pthread_mutex_t             sources_mutex;
 	pthread_mutex_t             displays_mutex;
+	pthread_mutex_t             outputs_mutex;
+	pthread_mutex_t             encoders_mutex;
 };
 
 struct obs_subsystem {
@@ -83,6 +88,7 @@ struct obs_subsystem {
 	DARRAY(struct source_info)  filter_types;
 	DARRAY(struct source_info)  transition_types;
 	DARRAY(struct output_info)  output_types;
+	DARRAY(struct encoder_info) encoder_types;
 	DARRAY(struct service_info) service_types;
 
 	signal_handler_t            signals;

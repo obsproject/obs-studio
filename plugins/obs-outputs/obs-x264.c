@@ -15,25 +15,44 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "obs-x264.h"
 
-#include <util/c99defs.h>
-#include <obs.h>
+const char *obs_x264_getname(const char *locale)
+{
+	/* TODO locale lookup */
+	return "x264 (Software)";
+}
 
-struct rtmp_stream {
-	obs_output_t  output;
-	obs_encoder_t video_encoder;
-	obs_encoder_t audio_encoder;
-	obs_service_t service;
+struct obs_x264 *obs_x264_create(const char *settings, obs_encoder_t encoder)
+{
+	struct obs_x264 *data = bmalloc(sizeof(struct obs_x264));
+}
 
-	bool active;
-};
+void obs_x264_destroy(struct obs_x264 *data)
+{
+}
 
-EXPORT const char *rtmp_stream_getname(const char *locale);
-EXPORT void *rtmp_stream_create(const char *settings, obs_output_t output);
-EXPORT void rtmp_stream_destroy(struct rtmp_stream *stream);
-EXPORT void rtmp_stream_update(struct rtmp_stream *stream,
-		const char *settings);
-EXPORT bool rtmp_stream_start(struct rtmp_stream *stream);
-EXPORT void rtmp_stream_stop(struct rtmp_stream *stream);
-EXPORT bool rtmp_stream_active(struct rtmp_stream *stream);
+void obs_x264_update(struct obs_x264 *data, const char *settings)
+{
+}
+
+void obs_x264_reset(struct obs_x264 *data)
+{
+}
+
+int obs_x264_encode(struct obs_x264 *data, struct encoder_packet **packets)
+{
+}
+
+int obs_x264_getheader(struct obs_x264 *data, struct encoder_packet **packets)
+{
+}
+
+void obs_x264_setbitrate(struct obs_x264 *data, uint32_t bitrate,
+		uint32_t buffersize)
+{
+}
+
+void obs_x264_request_keyframe(struct obs_x264 *data)
+{
+}

@@ -19,21 +19,31 @@
 
 #include <util/c99defs.h>
 #include <obs.h>
+#include <x264.h>
 
-struct rtmp_stream {
-	obs_output_t  output;
-	obs_encoder_t video_encoder;
-	obs_encoder_t audio_encoder;
-	obs_service_t service;
+struct obs_x264 {
+	obs_encoder_t  encoder;
 
-	bool active;
+	x264_param_t   params;
+	x264_t         *context;
+	x264_picture_t pic_out;
 };
 
-EXPORT const char *rtmp_stream_getname(const char *locale);
-EXPORT void *rtmp_stream_create(const char *settings, obs_output_t output);
-EXPORT void rtmp_stream_destroy(struct rtmp_stream *stream);
-EXPORT void rtmp_stream_update(struct rtmp_stream *stream,
-		const char *settings);
-EXPORT bool rtmp_stream_start(struct rtmp_stream *stream);
-EXPORT void rtmp_stream_stop(struct rtmp_stream *stream);
-EXPORT bool rtmp_stream_active(struct rtmp_stream *stream);
+EXPORT const char *obs_x264_getname(const char *locale);
+
+EXPORT struct obs_x264 *obs_x264_create(const char *settings,
+		obs_encoder_t encoder);
+EXPORT void obs_x264_destroy(struct obs_x264 *data);
+
+EXPORT void obs_x264_update(struct obs_x264 *data, const char *settings);
+
+EXPORT void obs_x264_reset(struct obs_x264 *data);
+
+EXPORT int obs_x264_encode(struct obs_x264 *data,
+		struct encoder_packet **packets);
+EXPORT int obs_x264_getheader(struct obs_x264 *data,
+		struct encoder_packet **packets);
+
+EXPORT void obs_x264_setbitrate(struct obs_x264 *data, uint32_t bitrate,
+		uint32_t buffersize);
+EXPORT void obs_x264_request_keyframe(struct obs_x264 *data);

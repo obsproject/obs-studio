@@ -45,6 +45,7 @@
     <ClInclude Include="..\..\..\libobs\media-io\video-io.h" />
     <ClInclude Include="..\..\..\libobs\obs-data.h" />
     <ClInclude Include="..\..\..\libobs\obs-defs.h" />
+    <ClInclude Include="..\..\..\libobs\obs-encoder.h" />
     <ClInclude Include="..\..\..\libobs\obs-module.h" />
     <ClInclude Include="..\..\..\libobs\obs-output.h" />
     <ClInclude Include="..\..\..\libobs\obs-scene.h" />
@@ -91,6 +92,7 @@
     <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c" />
     <ClCompile Include="..\..\..\libobs\obs-display.c" />
+    <ClCompile Include="..\..\..\libobs\obs-encoder.c" />
     <ClCompile Include="..\..\..\libobs\obs-module.c" />
     <ClCompile Include="..\..\..\libobs\obs-output.c" />
     <ClCompile Include="..\..\..\libobs\obs-scene.c" />
