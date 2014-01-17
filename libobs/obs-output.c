@@ -27,6 +27,8 @@ bool load_output_info(void *module, const char *module_name,
 			output_id, "create", true);
 	info->destroy = load_module_subfunc(module, module_name,
 			output_id, "destroy", true);
+	info->update = load_module_subfunc(module, module_name,
+			output_id, "update", true);
 	info->start = load_module_subfunc(module, module_name,
 			output_id, "start", true);
 	info->stop = load_module_subfunc(module, module_name,
@@ -38,8 +40,6 @@ bool load_output_info(void *module, const char *module_name,
 	    !info->start || !info->stop || !info->active)
 		return false;
 
-	info->update = load_module_subfunc(module, module_name,
-			output_id, "update", false);
 	info->pause = load_module_subfunc(module, module_name,
 			output_id, "pause", false);
 

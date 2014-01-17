@@ -22,87 +22,101 @@
 
 /*
  * ===========================================
- *  Outputs 
+ *  Encoders 
  * ===========================================
  *
- *   An output takes raw audio and/or video and processes and/or outputs it
- * to a destination, whether that destination be a file, network, or other.
+ *   An encoder context allows data to be encoded from raw output, and allow
+ * it to be used to output contexts (such as outputting to stream).
  *
- *   A module with outputs needs to export these functions:
- *       + enum_outputs
+ *   A module with encoders needs to export these functions:
+ *       + enum_encoders
  *
- *   Each individual output is then exported by it's name.  For example, an
- * output named "myoutput" would have the following exports:
- *       + myoutput_getname
- *       + myoutput_create
- *       + myoutput_destroy
- *       + myoutput_start
- *       + myoutput_stop
- *       + myoutput_encoders
+ *   Each individual encoder is then exported by it's name.  For example, an
+ * encoder named "myencoder" would have the following exports:
+ *       + myencoder_getname
+ *       + myencoder_create
+ *       + myencoder_destroy
+ *       + myencoder_update
+ *       + myencoder_reset
+ *       + myencoder_encode
+ *       + myencoder_getheader
  *
  *       [and optionally]
- *       + myoutput_setencoder
- *       + myoutput_getencoder
- *       + myoutput_config
- *       + myoutput_pause
+ *       + myencoder_setbitrate
+ *       + myencoder_request_keyframe
  *
  * ===========================================
  *   Primary Exports
  * ===========================================
- *   const char *enum_outputs(size_t idx);
- *       idx: index of the output.
- *       Return value: Output identifier name.  NULL when no more available.
+ *   const char *enum_encoders(size_t idx);
+ *       idx: index of the encoder.
+ *       Return value: Encoder identifier name.  NULL when no more available.
  *
  * ===========================================
- *   Output Exports
+ *   Encoder Exports
  * ===========================================
  *   const char *[name]_getname(const char *locale);
- *       Returns the full translated name of the output type (seen by the user).
+ *       Returns the full translated name of the encoder type
+ *       (seen by the user).
  *
  * ---------------------------------------------------------
- *   void *[name]_create(const char *settings, obs_output_t output);
- *       Creates an output.
+ *   void *[name]_create(const char *settings, const char *name,
+ *                       obs_encoder_t encoder);
+ *       Creates an encoder.
  *
- *       settings: Settings of the output.
- *       output: pointer to main output
- *       Return value: Internal output pointer, or NULL if failed.
+ *       settings: Settings of the encoder.
+ *       name: Name of the encoder.
+ *       encoder: Pointer to encoder context.
+ *       Return value: Internal encoder pointer, or NULL if failed.
  *
  * ---------------------------------------------------------
  *   void [name]_destroy(void *data);
- *       Destroys the output.
+ *       Destroys the encoder.
  *
  * ---------------------------------------------------------
  *   void [name]_update(void *data, const char *settings)
- *       Updates the output's settings
+ *       Updates the encoder's settings
  *
- *       settings: New settings of the output
+ *       settings: New settings of the encoder
  *
  * ---------------------------------------------------------
  *   bool [name]_reset(void *data)
- *       Starts output
+ *       Restarts encoder
  *
  *       Return value: true if successful
  *
  * ---------------------------------------------------------
  *   int [name]_encode(void *data, void *frames, size_t size,
  *                      struct encoder_packet **packets)
+ *       Encodes data.
  *
  *       frames: frame data
  *       size: size of data pointed to by the frame parameter
  *       packets: returned packets, or NULL if none
- *       Return value: number of output frames
+ *       Return value: number of encoder frames
  *
  * ---------------------------------------------------------
- *   bool [name]_reset(void *data)
- *       Resets encoder data
+ *   int [name]_getheader(void *data, struct encoder_packet **packets)
+ *       Returns the header packets for this encoder.
  *
- *       Return value: true if successful
+ *       packets: returned packets, or NULL if none
+ *       Return value: number of encoder frames
  *
  * ===========================================
- *   Optional Output Exports
+ *   Optional Encoder Exports
  * ===========================================
- *   void [name]_setbitrate(void *data, uint32_t bitrate, uint32_t buffersize);
+ *   bool [name]_setbitrate(void *data, uint32_t bitrate, uint32_t buffersize);
  *       Sets the bitrate of the encoder
+ *
+ *       bitrate: Bitrate
+ *       buffersize: Buffer size
+ *       Returns true if successful/compatible
+ *
+ * ---------------------------------------------------------
+ *   bool [name]_request_keyframe(void *data)
+ *       Requests a keyframe from the encoder
+ *
+ *       Returns true if successful/compatible.
  */
 
 struct obs_encoder;
@@ -124,8 +138,8 @@ struct encoder_info {
 	int (*getheader)(void *data, struct encoder_packet **packets);
 
 	/* optional */
-	void (*setbitrate)(void *data, uint32_t bitrate, uint32_t buffersize);
-	void (*request_keyframe)(void *data);
+	bool (*setbitrate)(void *data, uint32_t bitrate, uint32_t buffersize);
+	bool (*request_keyframe)(void *data);
 };
 
 struct obs_encoder_callback {

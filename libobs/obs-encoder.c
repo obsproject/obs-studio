@@ -139,18 +139,20 @@ int obs_encoder_getheader(obs_encoder_t encoder,
 	return encoder->callbacks.getheader(encoder, packets);
 }
 
-void obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
+bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
 		uint32_t buffersize)
 {
 	if (encoder->callbacks.setbitrate)
-		encoder->callbacks.setbitrate(encoder->data, bitrate,
+		return encoder->callbacks.setbitrate(encoder->data, bitrate,
 				buffersize);
+	return false;
 }
 
-void obs_encoder_request_keyframe(obs_encoder_t encoder)
+bool obs_encoder_request_keyframe(obs_encoder_t encoder)
 {
 	if (encoder->callbacks.request_keyframe)
-		encoder->callbacks.request_keyframe(encoder->data);
+		return encoder->callbacks.request_keyframe(encoder->data);
+	return false;
 }
 
 const char *obs_encoder_get_settings(obs_encoder_t encoder)

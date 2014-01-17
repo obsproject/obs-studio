@@ -36,12 +36,11 @@
  *       + myoutput_getname
  *       + myoutput_create
  *       + myoutput_destroy
+ *       + myoutput_update
  *       + myoutput_start
  *       + myoutput_stop
- *       + myoutput_encoders
  *
  *       [and optionally]
- *       + myoutput_config
  *       + myoutput_pause
  *
  * ===========================================
@@ -89,39 +88,9 @@
  *   bool [name]_active(void *data)
  *       Returns whether currently active or not
  *
- * ---------------------------------------------------------
- *   uint32_t [name]_encoders(void *data)
- *       Returns 0 or a combination of the following values:
- *           + OUTPUT_VIDEO_ENCODER: requires a video encoder
- *           + OUTPUT_AUDIO_ENCODER: requires an audio encoder
- *
  * ===========================================
  *   Optional Output Exports
  * ===========================================
- *   bool [name]_setencoder(void *data, obs_encoder_t encoder,
- *                          enum obs_encoder_type type)
- *       Sets the encoder for this output.
- *
- *       encoder: Encoder context
- *       type: Type of encoder (ENCODER_VIDEO or ENCODER_AUDIO)
- *
- *       Returns true if successful and compatible
- *
- * ---------------------------------------------------------
- *   obs_encoder_t [name]_getencoder(void *data, enum obs_encoder_type type)
- *       Gets the encoder for this output
- *
- *       type: Type of encoder
- *
- *       Returns the encoder, or NULL if none.
- *
- * ---------------------------------------------------------
- *   void [name]_config(void *data, void *parent);
- *       Called to configure the output.
- *
- *       parent: Parent window pointer
- *
- * ---------------------------------------------------------
  *   void [name]_pause(void *data)
  *       Pauses output.  Typically only usable for local recordings.
  */
@@ -136,13 +105,14 @@ struct output_info {
 	void *(*create)(const char *settings, struct obs_output *output);
 	void (*destroy)(void *data);
 
+	void (*update)(void *data, const char *settings);
+
 	bool (*start)(void *data);
 	void (*stop)(void *data);
 
 	bool (*active)(void *data);
 
 	/* optional */
-	void (*update)(void *data, const char *settings);
 	void (*pause)(void *data);
 };
 

@@ -599,10 +599,10 @@ EXPORT bool obs_encoder_stop(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
 
-EXPORT void obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
+EXPORT bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
 		uint32_t buffersize);
 
-EXPORT void obs_encoder_request_keyframe(obs_encoder_t encoder);
+EXPORT bool obs_encoder_request_keyframe(obs_encoder_t encoder);
 
 EXPORT const char *obs_encoder_get_settings(obs_encoder_t encoder);
 
