@@ -23,7 +23,7 @@
 #include "audio-io.h"
 
 struct audio_input {
-	struct audio_info format;
+	struct audio_convert_info conversion;
 	void (*callback)(void *param, const struct audio_data *data);
 	void *param;
 };
@@ -88,13 +88,13 @@ static inline void audio_output_removeline(struct audio_output *audio,
 	audio_line_destroy_data(line);
 }
 
-static inline size_t time_to_frames(audio_t audio, uint64_t offset)
+static inline uint32_t time_to_frames(audio_t audio, uint64_t offset)
 {
 	double audio_offset_d = (double)offset;
 	audio_offset_d /= 1000000000.0;
 	audio_offset_d *= (double)audio->info.samples_per_sec;
 
-	return (size_t)audio_offset_d;
+	return (uint32_t)audio_offset_d;
 }
 
 static inline size_t time_to_bytes(audio_t audio, uint64_t offset)
@@ -146,7 +146,7 @@ static inline void mix_audio_line(struct audio_output *audio,
 }
 
 static inline void do_audio_output(struct audio_output *audio,
-		uint64_t timestamp, size_t frames)
+		uint64_t timestamp, uint32_t frames)
 {
 	struct audio_data data;
 	data.data = audio->mix_buffer.array;
@@ -168,7 +168,7 @@ static void mix_and_output(struct audio_output *audio, uint64_t audio_time,
 {
 	struct audio_line *line = audio->first_line;
 	uint64_t time_offset = audio_time - prev_time;
-	size_t frames = time_to_frames(audio, time_offset);
+	uint32_t frames = time_to_frames(audio, time_offset);
 	size_t bytes = frames * audio->block_size;
 
 	da_resize(audio->mix_buffer, bytes);
@@ -231,7 +231,8 @@ static size_t audio_get_input_idx(audio_t video,
 	return DARRAY_INVALID;
 }
 
-void audio_output_connect(audio_t audio, struct audio_info *format,
+void audio_output_connect(audio_t audio,
+		struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param)
 {
@@ -243,12 +244,12 @@ void audio_output_connect(audio_t audio, struct audio_info *format,
 		input.param    = param;
 
 		/* TODO: conversion */
-		if (format) {
-			input.format = *format;
+		if (conversion) {
+			input.conversion = *conversion;
 		} else {
-			input.format.format = audio->info.format;
-			input.format.speakers = audio->info.speakers;
-			input.format.samples_per_sec =
+			input.conversion.format = audio->info.format;
+			input.conversion.speakers = audio->info.speakers;
+			input.conversion.samples_per_sec =
 				audio->info.samples_per_sec;
 		}
 

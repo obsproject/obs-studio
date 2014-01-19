@@ -404,7 +404,7 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	case VIDEO_FORMAT_UYVY:
 		return CONVERT_422_U;
 
-	case VIDEO_FORMAT_UNKNOWN:
+	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_YUVX:
 	case VIDEO_FORMAT_UYVX:
 	case VIDEO_FORMAT_RGBA:
@@ -427,7 +427,7 @@ static inline bool is_yuv(enum video_format format)
 	case VIDEO_FORMAT_YUVX:
 	case VIDEO_FORMAT_UYVX:
 		return true;
-	case VIDEO_FORMAT_UNKNOWN:
+	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:

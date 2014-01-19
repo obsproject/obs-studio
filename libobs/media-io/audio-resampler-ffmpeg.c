@@ -17,9 +17,9 @@
 
 #include "../util/bmem.h"
 #include "audio-resampler.h"
-#include <libswresample/swresample.h>
-#include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
+#include <libavutil/channel_layout.h>
+#include <libswresample/swresample.h>
 
 struct audio_resampler {
 	struct SwrContext   *context;

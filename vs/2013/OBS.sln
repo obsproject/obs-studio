@@ -40,6 +40,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OBS", "OBS\OBS.vcxproj", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jansson", "..\..\deps\jansson\win32\vs2010\jansson.vcxproj", "{76226D20-1972-4789-A595-EDACC7A76DC3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\obs-ffmpeg.vcxproj", "{36970254-B1E5-4BE6-A561-301B6E7CDCE3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -120,6 +125,14 @@ Global
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.Build.0 = Release|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.ActiveCfg = Release|x64
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.Build.0 = Release|x64
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.Build.0 = Debug|Win32
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|x64.ActiveCfg = Debug|x64
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|x64.Build.0 = Debug|x64
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|Win32.ActiveCfg = Release|Win32
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|Win32.Build.0 = Release|Win32
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|x64.ActiveCfg = Release|x64
+		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

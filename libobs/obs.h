@@ -374,9 +374,6 @@ EXPORT bool obs_source_removed(obs_source_t source);
  */
 EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
 
-/** Specifies whether the source can be configured */
-EXPORT bool obs_source_hasconfig(obs_source_t source);
-
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t source, const char *settings);
 

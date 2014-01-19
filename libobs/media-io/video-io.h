@@ -29,7 +29,7 @@ struct video_output;
 typedef struct video_output *video_t;
 
 enum video_format {
-	VIDEO_FORMAT_UNKNOWN,
+	VIDEO_FORMAT_NONE,
 
 	/* planar 420 format */
 	VIDEO_FORMAT_I420, /* three-plane */
@@ -57,18 +57,18 @@ struct video_frame {
 struct video_output_info {
 	const char        *name;
 
-	enum video_format type;
+	enum video_format format;
 	uint32_t          fps_num;
 	uint32_t          fps_den;
 	uint32_t          width;
 	uint32_t          height;
 };
 
-struct video_info {
-	enum video_format type;
+struct video_convert_info {
+	enum video_format format;
 	uint32_t          width;
 	uint32_t          height;
-	uint32_t          row_size; /* if any */
+	uint32_t          row_align;
 };
 
 #define VIDEO_OUTPUT_SUCCESS       0
@@ -78,11 +78,12 @@ struct video_info {
 EXPORT int video_output_open(video_t *video, struct video_output_info *info);
 EXPORT void video_output_close(video_t video);
 
-EXPORT void video_output_connect(video_t video, struct video_info *format,
-		void (*callback)(void *param, struct video_frame *frame),
+EXPORT void video_output_connect(video_t video,
+		struct video_convert_info *conversion,
+		void (*callback)(void *param, const struct video_frame *frame),
 		void *param);
 EXPORT void video_output_disconnect(video_t video,
-		void (*callback)(void *param, struct video_frame *frame),
+		void (*callback)(void *param, const struct video_frame *frame),
 		void *param);
 
 EXPORT const struct video_output_info *video_output_getinfo(video_t video);

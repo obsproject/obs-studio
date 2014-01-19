@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "obs-stream.h"
+#include "rtmp-stream.h"
 
 const char *rtmp_stream_getname(const char *locale)
 {

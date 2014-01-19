@@ -24,8 +24,8 @@
 #include "video-io.h"
 
 struct video_input {
-	struct video_info format;
-	void (*callback)(void *param, struct video_frame *frame);
+	struct video_convert_info conversion;
+	void (*callback)(void *param, const struct video_frame *frame);
 	void *param;
 };
 
@@ -116,7 +116,7 @@ int video_output_open(video_t *video, struct video_output_info *info)
 	out = bmalloc(sizeof(struct video_output));
 	memset(out, 0, sizeof(struct video_output));
 
-	memcpy(&out->info, info, sizeof(struct video_info));
+	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time = (uint64_t)(1000000000.0 * (double)info->fps_den /
 		(double)info->fps_num);
 	out->initialized = false;
@@ -157,7 +157,7 @@ void video_output_close(video_t video)
 }
 
 static size_t video_get_input_idx(video_t video,
-		void (*callback)(void *param, struct video_frame *frame),
+		void (*callback)(void *param, const struct video_frame *frame),
 		void *param)
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
@@ -169,8 +169,9 @@ static size_t video_get_input_idx(video_t video,
 	return DARRAY_INVALID;
 }
 
-void video_output_connect(video_t video, struct video_info *format,
-		void (*callback)(void *param, struct video_frame *frame),
+void video_output_connect(video_t video,
+		struct video_convert_info *conversion,
+		void (*callback)(void *param, const struct video_frame *frame),
 		void *param)
 {
 	pthread_mutex_lock(&video->input_mutex);
@@ -181,12 +182,18 @@ void video_output_connect(video_t video, struct video_info *format,
 		input.param    = param;
 
 		/* TODO: conversion */
-		if (format) {
-			input.format = *format;
+		if (conversion) {
+			input.conversion = *conversion;
+
+			if (input.conversion.width == 0)
+				input.conversion.width = video->info.width;
+			if (input.conversion.height == 0)
+				input.conversion.height = video->info.height;
 		} else {
-			input.format.type   = video->info.type;
-			input.format.height = video->info.height;
-			input.format.width  = video->info.width;
+			input.conversion.format    = video->info.format;
+			input.conversion.width     = video->info.width;
+			input.conversion.height    = video->info.height;
+			input.conversion.row_align = 1;
 		}
 
 		da_push_back(video->inputs, &input);
@@ -196,7 +203,7 @@ void video_output_connect(video_t video, struct video_info *format,
 }
 
 void video_output_disconnect(video_t video,
-		void (*callback)(void *param, struct video_frame *frame),
+		void (*callback)(void *param, const struct video_frame *frame),
 		void *param)
 {
 	pthread_mutex_lock(&video->input_mutex);

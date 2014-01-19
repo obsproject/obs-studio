@@ -39,6 +39,7 @@
  *       + myoutput_update
  *       + myoutput_start
  *       + myoutput_stop
+ *       + myoutput_active
  *
  *       [and optionally]
  *       + myoutput_pause

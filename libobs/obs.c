@@ -41,7 +41,7 @@ static inline void make_video_info(struct video_output_info *vi,
 		struct obs_video_info *ovi)
 {
 	vi->name    = "video";
-	vi->type    = ovi->output_format;
+	vi->format  = ovi->output_format;
 	vi->fps_num = ovi->fps_num;
 	vi->fps_den = ovi->fps_den;
 	vi->width   = ovi->output_width;
@@ -381,7 +381,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	ovi->base_height   = video->base_height;
 	ovi->output_width  = info->width;
 	ovi->output_height = info->height;
-	ovi->output_format = info->type;
+	ovi->output_format = info->format;
 	ovi->fps_num       = info->fps_num;
 	ovi->fps_den       = info->fps_den;
 
