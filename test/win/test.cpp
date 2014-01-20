@@ -101,7 +101,7 @@ static HWND CreateTestWindow(HINSTANCE instance)
 	WNDCLASS wc;
 
 	memset(&wc, 0, sizeof(wc));
-	wc.lpszClassName = L"bla";
+	wc.lpszClassName = TEXT("bla");
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.hInstance     = instance;
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
@@ -110,7 +110,7 @@ static HWND CreateTestWindow(HINSTANCE instance)
 	if (!RegisterClass(&wc))
 		return 0;
 
-	return CreateWindow(L"bla", L"bla", WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+	return CreateWindow(TEXT("bla"), TEXT("bla"), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
 			1920/2 - cx/2, 1080/2 - cy/2, cx, cy,
 			NULL, NULL, instance, NULL);
 }

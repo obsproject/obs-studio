@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIcon</key>
+	<string>OBS Studio.icns</string>
+	<key>CFBundleName</key>
+	<string>OBS Studio</string>	
+	<key>CFBundleGetInfoString</key>
+	<string>OBS Studio - Open Source Streaming Software</string>
+	<key>CFBundleExecutable</key>
+	<string>OBS Studio</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.obsproject.obs-studio</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>LSUIElement</key>
+	<string>1</string></dict>
+</plist>

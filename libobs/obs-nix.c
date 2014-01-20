@@ -56,10 +56,10 @@ char *find_plugin(const char *plugin)
 	struct dstr output;
 	dstr_init(&output);
 
-	if (check_lib_path(plugin, "/usr/local/lib/obs-plugins/", &output))
+	if (check_lib_path(plugin, "obs-plugins/", &output))
 		return output.array;
 
-	if (check_lib_path(plugin, "/usr/lib/obs-plugins/", &output))
+	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins", &output))
 		return output.array;
 
 	dstr_free(&output);
@@ -75,10 +75,10 @@ char *find_libobs_data_file(const char *file)
 	struct dstr output;
 		dstr_init(&output);
 
-	if (check_path(file, "/usr/local/share/libobs/", &output))
+	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
-	if (check_path(file, "/usr/share/libobs/", &output))
+	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
 	dstr_free(&output);
@@ -94,10 +94,10 @@ char *obs_find_plugin_file(const char *file)
     struct dstr output;
     dstr_init(&output);
 
-    if (check_path(file, "/usr/local/share/obs-plugins/", &output))
+    if (check_path(file, OBS_DATA_PATH "/obs-plugins/", &output))
         return output.array;
 
-    if (check_path(file, "/usr/share/obs-plugins", &output))
+    if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/", &output))
         return output.array;
 
     dstr_free(&output);

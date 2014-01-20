@@ -45,10 +45,10 @@ bool GetDataFilePath(const char *data, string &output)
 			return true;
 	}
 	
-	if (check_path(data, "/usr/local/share/obs-studio/", output))
+	if (check_path(data, OBS_DATA_PATH "/obs-studio/", output))
 		return true;
 	
-	if (check_path(data, "/usr/share/obs-studio/", output))
+	if (check_path(data, OBS_INSTALL_PREFIX "/" OBS_DATA_PATH "/obs-studio/", output))
 		return true;
 	
 	return false;
