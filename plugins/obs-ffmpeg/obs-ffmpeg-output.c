@@ -18,7 +18,9 @@
 #include <obs.h>
 #include "obs-ffmpeg-output.h"
 
+/* TODO: remove these later */
 #define FILENAME_TODO "D:\\test.mp4"
+#define SPS_TODO      44100
 
 static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 		enum video_format format)
@@ -217,6 +219,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	if (ret < 0) {
 		blog(LOG_ERROR, "Error opening file '%s': %s",
 				FILENAME_TODO, av_err2str(ret));
+		return false;
 	}
 
 	return true;
@@ -336,7 +339,7 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 		return false;
 
 	struct audio_convert_info aci;
-	aci.samples_per_sec = 44100;
+	aci.samples_per_sec = SPS_TODO;
 	aci.format          = AUDIO_FORMAT_16BIT;
 	aci.speakers        = SPEAKERS_STEREO;
 
