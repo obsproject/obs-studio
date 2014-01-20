@@ -150,6 +150,11 @@ functions:
    Returns true for types ``JSON_TRUE`` and ``JSON_FALSE``, and false
    for values of other types and for *NULL*.
 
+.. function:: json_boolean_value(const json_t *json)
+
+   Alias of :func:`json_is_true()`, i.e. returns 1 for ``JSON_TRUE``
+   and 0 otherwise.
+
 
 .. _apiref-reference-count:
 

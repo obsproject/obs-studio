@@ -1,4 +1,4 @@
-EXTRA_DIST = CHANGES LICENSE README.rst win32
+EXTRA_DIST = CHANGES LICENSE README.rst win32 CMakeLists.txt cmake
 SUBDIRS = doc src test
 
 # "make distcheck" builds the dvi target, so use it to check that the

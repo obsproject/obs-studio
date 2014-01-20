@@ -171,7 +171,7 @@ static int stream_get(stream_t *stream, json_error_t *error)
             /* multi-byte UTF-8 sequence */
             int i, count;
 
-            count = (int)utf8_check_first(c);
+            count = utf8_check_first(c);
             if(!count)
                 goto out;
 
@@ -900,7 +900,7 @@ static json_t *parse_json(lex_t *lex, size_t flags, json_error_t *error)
 
     if(error) {
         /* Save the position even though there was no error */
-        error->position = (int)lex->stream.position;
+        error->position = lex->stream.position;
     }
 
     return result;

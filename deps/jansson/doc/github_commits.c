@@ -53,6 +53,7 @@ static char *request(const char *url)
 {
     CURL *curl = NULL;
     CURLcode status;
+    struct curl_slist *headers = NULL;
     char *data = NULL;
     long code;
 
@@ -71,6 +72,11 @@ static char *request(const char *url)
     };
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
+
+    /* GitHub commits API v3 requires a User-Agent header */
+    headers = curl_slist_append(headers, "User-Agent: Jansson-Tutorial");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
 
@@ -90,6 +96,7 @@ static char *request(const char *url)
     }
 
     curl_easy_cleanup(curl);
+    curl_slist_free_all(headers);
     curl_global_cleanup();
 
     /* zero-terminate the result */
@@ -102,6 +109,8 @@ error:
         free(data);
     if(curl)
         curl_easy_cleanup(curl);
+    if(headers)
+        curl_slist_free_all(headers);
     curl_global_cleanup();
     return NULL;
 }

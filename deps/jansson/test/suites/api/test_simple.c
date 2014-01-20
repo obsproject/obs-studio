@@ -27,6 +27,8 @@ static void run_tests()
     value = json_boolean(0);
     if(!json_is_false(value))
         fail("json_boolean(0) failed");
+    if(json_boolean_value(value) != 0)
+        fail("json_boolean_value failed");
     json_decref(value);
 
 

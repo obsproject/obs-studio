@@ -76,7 +76,7 @@ json_t *json_object_get(const json_t *json, const char *key)
 {
     json_object_t *object;
 
-    if(!json_is_object(json))
+    if(!key || !json_is_object(json))
         return NULL;
 
     object = json_to_object(json);
@@ -121,7 +121,7 @@ int json_object_del(json_t *json, const char *key)
 {
     json_object_t *object;
 
-    if(!json_is_object(json))
+    if(!key || !json_is_object(json))
         return -1;
 
     object = json_to_object(json);

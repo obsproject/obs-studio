@@ -102,7 +102,7 @@ if (MSVC)
    
 endif()
 
-if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+if (NOT WIN32 AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX))
    set(CMAKE_C_FLAGS "-fPIC")
 endif()
 
@@ -415,7 +415,7 @@ if (NOT WITHOUT_TESTS)
    # Test suites.
    #
    if (CMAKE_COMPILER_IS_GNUCC)
-      add_definitions(-Wall -Wextra -Wdeclaration-after-statement -Werror)
+      add_definitions(-Wall -Wextra -Wdeclaration-after-statement)
    endif ()
 
    set(api_tests
