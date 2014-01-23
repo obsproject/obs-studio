@@ -33,17 +33,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libobs-opengl", "libobs-ope
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glew_static", "..\..\libobs-opengl\glew\build\vc10\glew_static.vcxproj", "{664E6F0D-6784-4760-9565-D54F8EB1EDF4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OBS", "OBS\OBS.vcxproj", "{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jansson", "..\..\deps\jansson\win32\vs2010\jansson.vcxproj", "{76226D20-1972-4789-A595-EDACC7A76DC3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\obs-ffmpeg.vcxproj", "{36970254-B1E5-4BE6-A561-301B6E7CDCE3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\obs-studio.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -109,22 +106,13 @@ Global
 		{664E6F0D-6784-4760-9565-D54F8EB1EDF4}.Release|Win32.Build.0 = Release|Win32
 		{664E6F0D-6784-4760-9565-D54F8EB1EDF4}.Release|x64.ActiveCfg = Release|x64
 		{664E6F0D-6784-4760-9565-D54F8EB1EDF4}.Release|x64.Build.0 = Release|x64
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Debug|Win32.Build.0 = Debug|Win32
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Debug|x64.ActiveCfg = Debug|x64
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Debug|x64.Build.0 = Debug|x64
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|Win32.ActiveCfg = Release|Win32
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|Win32.Build.0 = Release|Win32
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|x64.ActiveCfg = Release|x64
-		{C6CD0240-5A92-43F6-B0EE-FF3ACE10742F}.Release|x64.Build.0 = Release|x64
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|Win32.Build.0 = Debug|Win32
-		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.ActiveCfg = Debug|x64
-		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.Build.0 = Debug|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.ActiveCfg = Debug|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Debug|x64.Build.0 = Debug|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.ActiveCfg = Release|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.Build.0 = Release|Win32
-		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.ActiveCfg = Release|x64
-		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.Build.0 = Release|x64
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.ActiveCfg = Release|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.Build.0 = Debug|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|x64.ActiveCfg = Debug|x64
@@ -133,6 +121,14 @@ Global
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|Win32.Build.0 = Release|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|x64.ActiveCfg = Release|x64
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Release|x64.Build.0 = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Build.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.Build.0 = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -16,26 +16,19 @@
 ******************************************************************************/
 
 #include <sstream>
-
 #include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/platform.h>
-
 #include <obs.hpp>
 
+#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
-#include "wx-wrappers.hpp"
 #include "platform.hpp"
 
+#include <windows.h>
+
 using namespace std;
-
-IMPLEMENT_APP(OBSApp);
-
-OBSAppBase::~OBSAppBase()
-{
-	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
-}
 
 static void do_log(enum log_type type, const char *msg, va_list args)
 {
@@ -172,39 +165,31 @@ bool OBSApp::InitLocale()
 
 bool OBSApp::InitOBSBasic()
 {
-	OBSBasic *obsBasic = new OBSBasic();
-	obsBasic->Show();
+	try {
+		mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
+		mainWindow->show();
+		return true;
 
-	mainWindow = obsBasic;
-	return obsBasic->Init();
+	} catch (const char *error) {
+		blog(LOG_ERROR, "%s", error);
+	}
+
+	return false;
 }
 
-bool OBSApp::OnInit()
+OBSApp::OBSApp(int &argc, char **argv)
+	: QApplication(argc, argv)
 {
-	base_set_log_handler(do_log);
-
 	if (!InitApplicationBundle())
-		return false;
-
-	if (!wxApp::OnInit())
-		return false;
-	wxInitAllImageHandlers();
-
+		throw "Failed to initialize application bundle";
 	if (!MakeUserDirs())
-		return false;
+		throw "Failed to created required user directories";
 	if (!InitGlobalConfig())
-		return false;
+		throw "Failed to initialize global config";
 	if (!InitLocale())
-		return false;
+		throw "Failed to load locale";
 	if (!InitOBSBasic())
-		return false;
-
-	return true;
-}
-
-int OBSApp::OnExit()
-{
-	return wxApp::OnExit();
+		throw "Failed to create main window";
 }
 
 void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
@@ -279,4 +264,22 @@ const char *OBSApp::GetRenderModule() const
 		return "libobs-d3d11";
 	else
 		return "libobs-opengl";
+}
+
+int main(int argc, char *argv[])
+{
+	int ret = -1;
+	QCoreApplication::addLibraryPath(".");
+	base_set_log_handler(do_log);
+
+	try {
+		OBSApp program(argc, argv);
+		ret = program.exec();
+
+	} catch (const char *error) {
+		blog(LOG_ERROR, "%s", error);
+	}
+
+	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
+	return ret;
 }

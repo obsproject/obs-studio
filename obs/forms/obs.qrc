@@ -1,0 +1,23 @@
+<RCC>
+  <qresource prefix="res">
+    <file>images/add.ico</file>
+    <file>images/delete.ico</file>
+    <file>images/document-properties-2.png</file>
+    <file>images/down.ico</file>
+    <file>images/editscene.ico</file>
+    <file>images/list_add.png</file>
+    <file>images/list_remove.png</file>
+    <file>images/live.ico</file>
+    <file>images/properties.ico</file>
+    <file>images/sound.ico</file>
+    <file>images/sound_muted.ico</file>
+    <file>images/up.ico</file>
+  </qresource>
+  <qresource prefix="settings">
+    <file>images/settings/video-display-3.png</file>
+    <file>images/settings/decibel_audio_player.png</file>
+    <file>images/settings/applications-system-2.png</file>
+    <file>images/settings/system-settings-3.png</file>
+    <file>images/settings/network-bluetooth.png</file>
+  </qresource>
+</RCC>
