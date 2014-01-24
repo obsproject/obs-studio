@@ -26,7 +26,7 @@ struct PtrVariantDummy {
 
 Q_DECLARE_METATYPE(PtrVariantDummy*);
 
-template<typename T> static inline T VariantPtr(QVariant &v)
+template<typename T> static inline T VariantPtr(QVariant v)
 {
 	return (T)v.value<PtrVariantDummy*>();
 }

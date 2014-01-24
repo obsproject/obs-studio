@@ -21,9 +21,7 @@
 #include <string>
 #include <memory>
 
-namespace Ui {
-	class NameDialog;
-};
+#include "ui_NameDialog.h"
 
 class NameDialog : public QDialog {
 	Q_OBJECT
