@@ -22,7 +22,8 @@
 #include "util/dstr.h"
 #include "obs.h"
 
-static inline bool check_path(const char* data, const char *path, struct dstr * output)
+static inline bool check_path(const char* data, const char *path,
+		struct dstr * output)
 {
 	dstr_copy(output, path);
 	dstr_cat(output, data);
@@ -32,7 +33,8 @@ static inline bool check_path(const char* data, const char *path, struct dstr * 
 	return access(output->array, R_OK) == 0;
 }
 
-static inline bool check_lib_path(const char* data, const char *path, struct dstr *output)
+static inline bool check_lib_path(const char* data, const char *path,
+		struct dstr *output)
 {
 	bool result = false;
 	struct dstr tmp;
@@ -59,7 +61,8 @@ char *find_plugin(const char *plugin)
 	if (check_lib_path(plugin, "obs-plugins/", &output))
 		return output.array;
 
-	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins", &output))
+	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins",
+				&output))
 		return output.array;
 
 	dstr_free(&output);
@@ -78,7 +81,8 @@ char *find_libobs_data_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
-	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/", &output))
+	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/",
+				&output))
 		return output.array;
 
 	dstr_free(&output);
@@ -97,7 +101,8 @@ char *obs_find_plugin_file(const char *file)
     if (check_path(file, OBS_DATA_PATH "/obs-plugins/", &output))
         return output.array;
 
-    if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/", &output))
+    if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/",
+			    &output))
         return output.array;
 
     dstr_free(&output);

@@ -15,9 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+
 /* Here we use xinerama to fetch data about monitor geometry
  * Even if there are not multiple monitors, this should still work. 
  */
+
 #include <X11/Xlib.h>
 #include <X11/extensions/Xinerama.h>
 #include <unistd.h>
@@ -26,16 +28,19 @@
 #include "platform.hpp"
 using namespace std;
 
-static inline bool check_path(const char* data, const char *path, string &output)
+static inline bool check_path(const char* data, const char *path,
+		string &output)
 {
 	ostringstream str;
 	str << path << data;
 	output = str.str();
-		
+
 	printf("Attempted path: %s\n", output.c_str());
-		
+
 	return (access(output.c_str(), R_OK) == 0);
 }
+
+#define INSTALL_DATA_PATH OBS_INSTALL_PREFIX "/" OBS_DATA_PATH "/obs-studio/"
 
 bool GetDataFilePath(const char *data, string &output)
 {
@@ -44,13 +49,12 @@ bool GetDataFilePath(const char *data, string &output)
 		if (check_path(data, data_path, output))
 			return true;
 	}
-	
+
 	if (check_path(data, OBS_DATA_PATH "/obs-studio/", output))
 		return true;
-	
-	if (check_path(data, OBS_INSTALL_PREFIX "/" OBS_DATA_PATH "/obs-studio/", output))
+	if (check_path(data, INSTALL_DATA_PATH, output))
 		return true;
-	
+
 	return false;
 }
 
@@ -60,26 +64,27 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	XineramaScreenInfo *screens;
 	int event_code = 0, error_code = 0;
 	Display* display = XOpenDisplay(NULL);
-	
+
 	if (!XineramaQueryExtension(display, &event_code, &error_code)) {
-		printf("Xinerama extension unavailable. We don't handle this yet.\n");
+		printf("Xinerama extension unavailable. We don't handle this "
+		       "yet.\n");
 		return;
 	}
-	
+
 	/* Do I need to make a call to XineramaQueryVersion...? */
-	
+
 	screens = XineramaQueryScreens(display, &num_screens);
-	
+
 	if (num_screens == 0 || !screens) { 
 		printf("Xinerama isn't active on this screen.\n");
 		return;
 	}
-	
+
 	monitors.clear();
-	
+
 	do {
 		--num_screens;
-		
+
 		monitors.emplace_back(
 			screens[num_screens].x_org, 
 			screens[num_screens].y_org,
@@ -87,7 +92,7 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 			screens[num_screens].height
                 );
 	} while (num_screens > 0);
-	
+
 	XCloseDisplay(display);
 }
 
@@ -95,4 +100,3 @@ bool InitApplicationBundle()
 {
 	return true;
 }
-

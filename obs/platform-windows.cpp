@@ -27,7 +27,7 @@ using namespace std;
 bool GetDataFilePath(const char *data, string &output)
 {
 	stringstream str;
-    str << OBS_DATA_PATH "/obs-studio/" << data;
+	str << OBS_DATA_PATH "/obs-studio/" << data;
 	output = str.str();
 	return os_file_exists(output.c_str());
 }
@@ -55,4 +55,3 @@ bool InitApplicationBundle()
 {
 	return true;
 }
-
