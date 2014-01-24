@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleIcon</key>
+	<key>CFBundleIconFile</key>
 	<string>OBS Studio.icns</string>
 	<key>CFBundleName</key>
 	<string>OBS Studio</string>	
@@ -17,5 +17,8 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>LSUIElement</key>
-	<string>1</string></dict>
+	<string>1</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
 </plist>
