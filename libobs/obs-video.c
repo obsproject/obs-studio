@@ -92,6 +92,9 @@ static inline void render_displays(void)
 {
 	size_t i;
 
+	if (!obs->data.valid)
+		return;
+
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
 

@@ -88,6 +88,8 @@ struct obs_data {
 	pthread_mutex_t             displays_mutex;
 	pthread_mutex_t             outputs_mutex;
 	pthread_mutex_t             encoders_mutex;
+
+	volatile bool               valid;
 };
 
 struct obs_subsystem {

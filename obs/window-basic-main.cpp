@@ -281,28 +281,33 @@ bool OBSBasic::InitAudio()
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
 	double targetAspect, baseAspect;
-	QSize  targetSize, newSize;
+	QSize  targetSize;
+	int x, y;
 
 	/* resize preview panel to fix to the top section of the window */
 	targetSize   = ui->previewContainer->size();
 	targetAspect = double(targetSize.width()) / double(targetSize.height());
 	baseAspect   = double(cx) / double(cy);
 
-	if (targetAspect > baseAspect)
-		newSize = QSize(targetSize.height() * baseAspect,
-				targetSize.height());
-	else
-		newSize = QSize(targetSize.width(),
-				targetSize.width() / baseAspect);
+	if (targetAspect > baseAspect) {
+		cx = targetSize.height() * baseAspect;
+		cy = targetSize.height();
+	} else {
+		cx = targetSize.width();
+		cy = targetSize.width() / baseAspect;
+	}
 
-	//ui->preview->resize(newSize);
+	x = targetSize.width() /2 - cx/2;
+	y = targetSize.height()/2 - cy/2;
+
+	ui->preview->setGeometry(x, y, cx, cy);
 
 	graphics_t graphics = obs_graphics();
-	/*if (graphics) {
+	if (graphics && isVisible()) {
 		gs_entercontext(graphics);
-		gs_resize(newSize.width(), newSize.height());
+		gs_resize(cx, cy);
 		gs_leavecontext();
-	}*/
+	}
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)

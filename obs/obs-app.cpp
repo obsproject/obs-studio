@@ -26,7 +26,9 @@
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 using namespace std;
 
