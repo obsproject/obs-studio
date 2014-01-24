@@ -25,6 +25,10 @@ if(WIN32)
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
+
+	find_package(AppKit REQUIRED)
+	set(obs_PLATFORM_LIBRARIES ${AppKit_LIBRARIES})
+
 	add_definitions(-fobjc-arc)
 elseif(UNIX)
 	set(obs_PLATFORM_SOURCES
