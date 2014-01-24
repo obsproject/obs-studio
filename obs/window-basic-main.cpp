@@ -88,7 +88,7 @@ void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
 	obs_scene_t scene = obs_sceneitem_getscene(item);
 
 	if (GetCurrentScene() == scene) {
-		for (unsigned int i = 0; i < ui->sources->count(); i++) {
+		for (int i = 0; i < ui->sources->count(); i++) {
 			QListWidgetItem *listItem = ui->sources->item(i);
 			QVariant userData = listItem->data(Qt::UserRole);
 

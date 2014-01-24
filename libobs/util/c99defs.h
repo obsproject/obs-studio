@@ -36,9 +36,9 @@
 #define inline __inline
 #endif
 
-#define EXPORT extern __declspec(dllexport)
+#define EXPORT __declspec(dllexport)
 #else
-#define EXPORT extern
+#define EXPORT
 #endif
 
 #if _MSC_VER && _MSC_VER < 0x0708
@@ -67,3 +67,11 @@ typedef int64_t off64_t;
 #define SIZE_T_FORMAT "%zu"
 
 #endif /* _MSC_VER */
+
+#ifndef OBS_DATA_PATH
+#define OBS_DATA_PATH "data"
+#endif
+
+#ifndef OBS_INSTALL_PREFIX
+#define OBS_INSTALL_PREFIX ""
+#endif

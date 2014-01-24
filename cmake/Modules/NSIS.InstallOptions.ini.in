@@ -1,0 +1,11 @@
+[Settings]
+NumFields=1
+
+[Field 1]
+Type=CheckBox
+Text=Create @CPACK_PACKAGE_NAME@ Desktop Icon
+Left=0
+Right=-1
+Top=10
+Bottom=-1
+State=1

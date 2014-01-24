@@ -1,10 +1,17 @@
-include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
+project(osx-text)
+
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 find_library(COCOA Cocoa)
 include_directories(${COCOA})
 
-link_libraries(libobs ${COCOA})
-
 add_definitions(-fobjc-arc)
 
-add_executable(test test.mm)
+set(osx-text_SOURCES
+	test.mm)
+
+add_executable(test
+	${osx-text_SOURCES})
+target_link_libraries(test
+	libobs
+	${COCOA})

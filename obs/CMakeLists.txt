@@ -1,113 +1,90 @@
-option(USE_STATIC_WX "Link wxWidgets statically" false)
-if(USE_STATIC_WX)
-	set(wxWidgets_USE_STATIC true)
-endif()
-find_package(wxWidgets COMPONENTS core base REQUIRED)
+project(obs)
 
-include("${wxWidgets_USE_FILE}")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
-function(wx_required_version)
-	include(CheckCXXSourceCompiles)
-	set(WX_CHECK_DEFINITIONS "")
-	foreach(wxw_def ${wxWidgets_DEFINITIONS})
-		set(WX_CHECK_DEFINITIONS "${WX_CHECK_DEFINITIONS} -D${wxw_def}")
-	endforeach()
-	set(CMAKE_REQUIRED_DEFINITIONS ${WX_CHECK_DEFINITIONS})
-	set(CMAKE_REQUIRED_INCLUDES ${wxWidgets_INCLUDE_DIRS})
-	set(CMAKE_REQUIRED_FLAGS ${wxWidgets_CXX_FLAGS})
-	check_cxx_source_compiles("
-		#include <wx/sysopt.h>
-		#if (wxMINOR_VERSION < 9 && wxMAJOR_VERSION <= 2) || wxMAJOR_VERSION < 3
-		#error
-		#endif
-		int main() {}"
-		WX_REQUIRED_VERSION)
-
-	if(NOT WX_REQUIRED_VERSION)
-		message(SEND_ERROR "wxWidgets version 2.9 or later is required")
-	endif()
-endfunction()
-wx_required_version()
-
-if(USE_STATIC_WX)
-	#unpack -llib to static library names
-	set(WX_LIBRARIES "")
-	set(lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX}
-		${CMAKE_DYNAMIC_LIBRARY_SUFFIX} ${CMAKE_SHARED_OBJECT_SUFFIX})
-	foreach(lib ${wxWidgets_LIBRARIES})
-		string(SUBSTRING ${lib} 0 2 _l)
-		if(_l STREQUAL "-l")
-			string(SUBSTRING ${lib} 2 -1 libname)
-			find_library(lib_file NAMES ${libname}
-				HINTS ${wxWidgets_LIBRARY_DIRS})
-			if(lib_file)
-				list(APPEND WX_LIBRARIES ${lib_file})
-			else()
-				list(APPEND WX_LIBRARIES ${lib})
-			endif()
-			unset(lib_file CACHE)
-		else()
-			list(APPEND WX_LIBRARIES ${lib})
-		endif()
-	endforeach()
-	if(APPLE)
-		find_library(lzma NAMES lzma)
-		if(lzma)
-			link_libraries(${lzma})
-		endif()
-	endif()
-	set(CMAKE_FIND_LIBRARY_SUFFIXES ${lib_suffixes})
-	unset(lib_suffixes)
-	link_libraries(${WX_LIBRARIES})
-	unset(WX_LIBRARIES)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(_lib_suffix 64)
 else()
-	link_libraries(${wxWidgets_LIBRARIES})
+	set(_lib_suffix 32)
 endif()
 
-include_directories(SYSTEM ${obs_SOURCE_DIR}/libobs)
+if(DEFINED ENV{QTDIR${_lib_suffix}})
+	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR${_lib_suffix}}")
+elseif(DEFINED ENV{QTDIR})
+	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
+endif()
 
-link_libraries(libobs)
+set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+set(CMAKE_AUTOMOC TRUE)
+
+find_package(Qt5Widgets REQUIRED)
 
 if(WIN32)
-	set(obs_platform_src
+	set(obs_PLATFORM_SOURCES
 		platform-windows.cpp)
 elseif(APPLE)
-	set(obs_platform_src
+	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
 	add_definitions(-fobjc-arc)
-	if(BUILD_APP_BUNDLE)
-		add_definitions(-DOBS_OSX_BUNDLE=1)
-	endif()
 elseif(UNIX)
-	set(obs_platform_src
+	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
-endif()
 
-add_executable(obs
-	window-basic-main.cpp
-	window-basic-settings.cpp
-	window-namedialog.cpp
-	settings-basic.cpp
-	settings-basic-general.cpp
-	settings-basic-video.cpp
-	wx-subclass.cpp
-	wx-wrappers.cpp
-	obs-app.cpp
-	forms/OBSWindows.cpp
-	${obs_platform_src})
+	find_package(X11)
+	include_directories(${X11_INCLUDE_DIRS} ${X11_Xinerama_INCLUDE_PATH})
 
-if(APPLE)
-	set_target_properties(obs PROPERTIES
-		MACOSX_BUNDLE ${BUILD_APP_BUNDLE})
-	if(BUILD_APP_BUNDLE)
-		obs_add_core_lib_target(obs)
-		obs_add_plugin_target(obs)
-		obs_add_data_dir(/bin/obs.app/Contents/)
+	if(NOT X11_Xinerama_FOUND)
+		message(FATAL_ERROR "Xinerama not found!")
 	endif()
+
+	set(obs_PLATFORM_LIBRARIES
+		${X11_LIBRARIES}
+		${X11_Xinerama_LIB})
 endif()
 
-obs_add_data_source(/data/obs-studio/locale
-	${obs_SOURCE_DIR}/build/data/obs-studio/locale/en.txt
-	${obs_SOURCE_DIR}/build/data/obs-studio/locale/ja.txt
-	${obs_SOURCE_DIR}/build/data/obs-studio/locale/locale.ini)
+set(obs_SOURCES
+	${obs_PLATFORM_SOURCES}
+	obs-app.cpp
+#	settings-basic.cpp
+#	settings-basic-general.cpp
+#	settings-basic-video.cpp
+	window-basic-main.cpp
+#	window-basic-settings.cpp
+	window-namedialog.cpp
+	qt-wrappers.cpp)
+
+set(obs_HEADERS
+	obs-app.hpp
+	platform.hpp
+#	settings.hpp
+#	settings-basic.hpp
+	window-basic-main.hpp
+#	window-basic-settings.hpp
+	window-namedialog.hpp
+	qt-display.hpp
+	qt-ptr-variant.hpp
+	qt-wrappers.hpp)
+
+set(obs_UI
+	forms/NameDialog.ui
+	forms/OBSBasic.ui
+	forms/OBSBasicSettings.ui)
+
+set(obs_QRC
+	forms/obs.qrc)
+
+qt5_wrap_ui(obs_UI_HEADERS ${obs_UI})
+qt5_add_resources(obs_QRC_SOURCES ${obs_QRC})
+
+add_executable(obs WIN32
+	${obs_SOURCES}
+	${obs_HEADERS}
+	${obs_UI_HEADERS}
+	${obs_QRC_SOURCES})
+target_link_libraries(obs
+	libobs
+	Qt5::Widgets
+	${obs_PLATFORM_LIBRARIES})
+
+install_obs_core(obs)
+install_obs_data(obs ../build/data/obs-studio obs-studio)

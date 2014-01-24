@@ -77,6 +77,9 @@ tags
 *.lnk
 *.chm
 *~
+.DS_Store
+*/.DS_Store
+*/**/.DS_Store
 
 *.o.d
 *.ninja
@@ -84,10 +87,7 @@ tags
 .dirstamp
 
 #cmake
-cmake_install.cmake
-CMakeCache.txt
-CMakeFiles/
-CMakeScripts/
+cmbuild/
 
 #xcode
 *.xcodeproj/

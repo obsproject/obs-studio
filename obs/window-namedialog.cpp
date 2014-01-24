@@ -36,7 +36,7 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 
 	bool accepted = (dialog.exec() == DialogCode::Accepted);
 	if (accepted)
-		str = dialog.ui->userText->text().toUtf8();
+		str = dialog.ui->userText->text().toStdString();
 
 	return accepted;
 }

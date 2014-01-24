@@ -24,9 +24,7 @@
 
 class QListWidgetItem;
 
-namespace Ui {
-	class OBSBasic;
-};
+#include "ui_OBSBasic.h"
 
 class OBSBasic : public QMainWindow {
 	Q_OBJECT

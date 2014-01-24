@@ -147,7 +147,7 @@ char *os_get_config_path(const char *name)
 
 bool os_file_exists(const char *path)
 {
-	WIN32_FIND_DATA wfd;
+	WIN32_FIND_DATAW wfd;
 	HANDLE hFind;
 	wchar_t *path_utf16;
 
