@@ -4,7 +4,7 @@
 #  AppKit_LIBRARIES
 #
 
-if(AppKit_INCLUDE_DIR AND Libavutil_LIBRARIES)
+if(AppKit_LIBRARIES)
 	set(AppKit_FOUND TRUE)
 else()
 	find_library(APPKIT_FRAMEWORK AppKit)
