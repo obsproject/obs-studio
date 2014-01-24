@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 2.8.11)
+if(APPLE)
+	cmake_minimum_required(VERSION 2.8.12)
+else()
+	cmake_minimum_required(VERSION 2.8.11)
+endif()
 
 project(obs-studio)
 
