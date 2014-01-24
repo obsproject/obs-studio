@@ -16,31 +16,27 @@
 ******************************************************************************/
 
 #include "window-namedialog.hpp"
+#include "ui_NameDialog.h"
+
 using namespace std;
 
-void NameDialog::OnClose(wxCloseEvent &event)
+NameDialog::NameDialog(QWidget *parent)
+	: QDialog (parent),
+	  ui      (new Ui::NameDialog)
 {
-	EndModal(wxID_CANCEL);
+	ui->setupUi(this);
 }
 
-void NameDialog::OKPressed(wxCommandEvent &event)
+bool NameDialog::AskForName(QWidget *parent, const QString &title,
+		const QString &text, string &str)
 {
-	EndModal(wxID_OK);
-}
+	NameDialog dialog(parent);
+	dialog.setWindowTitle(title);
+	dialog.ui->label->setText(text);
 
-void NameDialog::CancelPressed(wxCommandEvent &event)
-{
-	EndModal(wxID_CANCEL);
-}
+	bool accepted = (dialog.exec() == DialogCode::Accepted);
+	if (accepted)
+		str = dialog.ui->userText->text().toUtf8();
 
-int NameDialog::AskForName(wxWindow *parent, const char *title,
-		const char *text, string &str)
-{
-	NameDialog *dialog = new NameDialog(parent);
-	dialog->SetTitle(wxString(title, wxConvUTF8));
-	dialog->questionText->SetLabel(wxString(text, wxConvUTF8));
-
-	int ret = dialog->ShowModal();
-	str = dialog->nameEdit->GetValue().ToUTF8().data();
-	return ret;
+	return accepted;
 }

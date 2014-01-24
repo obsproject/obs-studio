@@ -10,6 +10,8 @@ Release/
 Debug/
 x64/
 ipch/
+GeneratedFiles/
+.moc/
 
 */bin/obs
 */bin/test
@@ -39,6 +41,11 @@ compile
 libtool
 ltmain.sh
 
+*.dmg
+*.json
+*.app
+.DS_Store
+
 .depend
 tags
 *.trace
@@ -58,6 +65,7 @@ tags
 *.ncb
 *.user
 *.lo
+*.ilk
 *.la
 *.o
 *.obj

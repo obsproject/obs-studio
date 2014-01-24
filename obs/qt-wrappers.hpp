@@ -17,23 +17,11 @@
 
 #pragma once
 
-#include <QDialog>
-#include <string>
-#include <memory>
+#define QT_UTF8(str) QString::fromUtf8(str)
 
-namespace Ui {
-	class NameDialog;
-};
+class QWidget;
+struct gs_window;
 
-class NameDialog : public QDialog {
-	Q_OBJECT
+void OBSErrorBox(QWidget *parent, const char *msg, ...);
 
-private:
-	std::unique_ptr<Ui::NameDialog> ui;
-
-public:
-	NameDialog(QWidget *parent);
-
-	static bool AskForName(QWidget *parent, const QString &title,
-			const QString &text, std::string &str);
-};
+void QTToGSWindow(QWidget *widget, gs_window &gswindow);

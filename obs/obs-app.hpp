@@ -17,23 +17,20 @@
 
 #pragma once
 
-#include <wx/app.h>
-#include <wx/window.h>
-
+#include <QApplication>
+#include <QMainWindow>
 #include <util/util.hpp>
-
 #include <string>
+#include <memory>
 
-class OBSAppBase : public wxApp {
-public:
-	virtual ~OBSAppBase();
-};
+class OBSApp : public QApplication {
+	Q_OBJECT
 
-class OBSApp : public OBSAppBase {
-	std::string locale;
-	ConfigFile  globalConfig;
-	TextLookup  textLookup;
-	wxWindow    *mainWindow;
+private:
+	std::string                  locale;
+	ConfigFile                   globalConfig;
+	TextLookup                   textLookup;
+	std::unique_ptr<QMainWindow> mainWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
@@ -47,10 +44,9 @@ class OBSApp : public OBSAppBase {
 	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
 
 public:
-	virtual bool OnInit();
-	virtual int  OnExit();
+	OBSApp(int &argc, char **argv);
 
-	inline wxWindow *GetMainWindow() const {return mainWindow;}
+	inline QMainWindow *GetMainWindow() const {return mainWindow.get();}
 
 	inline config_t GlobalConfig() const {return globalConfig;}
 
@@ -68,9 +64,9 @@ public:
 	const char *GetRenderModule() const;
 };
 
-wxDECLARE_APP(OBSApp);
+inline OBSApp *App() {return static_cast<OBSApp*>(qApp);}
 
-inline config_t GetGlobalConfig() {return wxGetApp().GlobalConfig();}
+inline config_t GetGlobalConfig() {return App()->GlobalConfig();}
 
-#define Str(lookupVal) wxGetApp().GetString(lookupVal)
-#define WXStr(lookupVal) wxString(Str(lookupVal), wxConvUTF8)
+inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
+#define QTStr(lookupVal) QString::fromUtf8(Str(lookupVal))

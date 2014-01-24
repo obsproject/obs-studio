@@ -15,25 +15,37 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "qt-wrappers.hpp"
+#include <graphics/graphics.h>
+#include <QWidget>
+#include <QMessageBox>
 
-#include <QDialog>
-#include <string>
-#include <memory>
+static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
+{
+	char full_message[4096];
+	vsnprintf(full_message, 4095, msg, args);
 
-namespace Ui {
-	class NameDialog;
-};
+	QMessageBox::information(parent, "Error", full_message);
+}
 
-class NameDialog : public QDialog {
-	Q_OBJECT
+void OBSErrorBox(QWidget *parent, const char *msg, ...)
+{
+	va_list args;
+	va_start(args, msg);
+	OBSErrorBoxva(parent, msg, args);
+	va_end(args);
+}
 
-private:
-	std::unique_ptr<Ui::NameDialog> ui;
+void QTToGSWindow(QWidget *widget, gs_window &gswindow)
+{
+	if (!widget)
+		return;
 
-public:
-	NameDialog(QWidget *parent);
-
-	static bool AskForName(QWidget *parent, const QString &title,
-			const QString &text, std::string &str);
-};
+#ifdef _WIN32
+	gswindow.hwnd = (HWND)widget->winId();
+#elif __APPLE__
+	/* TODO: mac */
+#else
+	/* TODO: unix */
+#endif
+}

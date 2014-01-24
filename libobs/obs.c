@@ -243,17 +243,19 @@ static bool obs_init_data(void)
 	if (pthread_mutex_init(&data->encoders_mutex, &attr) != 0)
 		goto fail;
 
-	success = true;
+	data->valid = true;
 
 fail:
 	pthread_mutexattr_destroy(&attr);
-	return success;
+	return data->valid;
 }
 
 static void obs_free_data(void)
 {
 	struct obs_data *data = &obs->data;
 	uint32_t i;
+
+	data->valid = false;
 
 	for (i = 0; i < MAX_CHANNELS; i++)
 		obs_set_output_source(i, NULL);

@@ -15,25 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include <QVariant>
 
-#include <QDialog>
-#include <string>
-#include <memory>
+/* in case you're wondering, I made this code because qt static asserts would
+ * fail on forward pointers.  so I was forced to make a hack */
 
-namespace Ui {
-	class NameDialog;
+struct PtrVariantDummy {
+	void *unused;
 };
 
-class NameDialog : public QDialog {
-	Q_OBJECT
+Q_DECLARE_METATYPE(PtrVariantDummy*);
 
-private:
-	std::unique_ptr<Ui::NameDialog> ui;
+template<typename T> static inline T VariantPtr(QVariant &v)
+{
+	return (T)v.value<PtrVariantDummy*>();
+}
 
-public:
-	NameDialog(QWidget *parent);
-
-	static bool AskForName(QWidget *parent, const QString &title,
-			const QString &text, std::string &str);
-};
+static inline QVariant PtrVariant(void* ptr)
+{
+	return QVariant::fromValue<PtrVariantDummy*>((PtrVariantDummy*)ptr);
+}
