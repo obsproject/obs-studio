@@ -18,6 +18,7 @@
 
 #include <obs.hpp>
 #include <QMessageBox>
+#include <QShowEvent>
 
 #include "obs-app.hpp"
 #include "window-basic-settings.hpp"
@@ -202,10 +203,17 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 /* Main class functions */
 
 OBSBasic::OBSBasic(QWidget *parent)
-	: QMainWindow (parent),
-	  ui          (new Ui::OBSBasic)
+	: OBSMainWindow (parent),
+	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
+}
+
+void OBSBasic::OBSInit()
+{
+	/* make sure it's fully displayed before doing any initialization */
+	show();
+	App()->processEvents();
 
 	if (!obs_startup())
 		throw "Failed to initialize libobs";
@@ -223,6 +231,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	/* TODO: this is a test */
 	obs_load_module("test-input");
+
+#ifdef _WIN32
+	/* HACK: fixes a windows qt bug with native widgets with native
+	 * repaint */
+	ui->previewContainer->repaint();
+#endif
 }
 
 OBSBasic::~OBSBasic()

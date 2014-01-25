@@ -165,20 +165,6 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
-bool OBSApp::InitOBSBasic()
-{
-	try {
-		mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
-		mainWindow->show();
-		return true;
-
-	} catch (const char *error) {
-		blog(LOG_ERROR, "%s", error);
-	}
-
-	return false;
-}
-
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {
@@ -190,8 +176,8 @@ OBSApp::OBSApp(int &argc, char **argv)
 		throw "Failed to initialize global config";
 	if (!InitLocale())
 		throw "Failed to load locale";
-	if (!InitOBSBasic())
-		throw "Failed to create main window";
+
+	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
 }
 
 void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
@@ -268,6 +254,11 @@ const char *OBSApp::GetRenderModule() const
 		return "libobs-opengl";
 }
 
+void OBSApp::OBSInit()
+{
+	mainWindow->OBSInit();
+}
+
 int main(int argc, char *argv[])
 {
 	int ret = -1;
@@ -276,6 +267,7 @@ int main(int argc, char *argv[])
 
 	try {
 		OBSApp program(argc, argv);
+		program.OBSInit();
 		ret = program.exec();
 
 	} catch (const char *error) {

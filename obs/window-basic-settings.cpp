@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "obs-app.hpp"
 #include "window-basic-settings.hpp"
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
@@ -22,6 +23,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	  ui      (new Ui::OBSBasicSettings)
 {
 	ui->setupUi(this);
+
+	/*ui->language = config_get_string(GetGlobalConfig(), "General",
+			"Language");*/
 }
 
 void OBSBasicSettings::closeEvent(QCloseEvent *event)

@@ -18,25 +18,25 @@
 #pragma once
 
 #include <QApplication>
-#include <QMainWindow>
 #include <util/util.hpp>
 #include <string>
 #include <memory>
+
+#include "window-main.hpp"
 
 class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
-	std::string                  locale;
-	ConfigFile                   globalConfig;
-	TextLookup                   textLookup;
-	std::unique_ptr<QMainWindow> mainWindow;
+	std::string                    locale;
+	ConfigFile                     globalConfig;
+	TextLookup                     textLookup;
+	std::unique_ptr<OBSMainWindow> mainWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitConfigDefaults();
 	bool InitLocale();
-	bool InitOBSBasic();
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -45,6 +45,8 @@ private:
 
 public:
 	OBSApp(int &argc, char **argv);
+
+	void OBSInit();
 
 	inline QMainWindow *GetMainWindow() const {return mainWindow.get();}
 

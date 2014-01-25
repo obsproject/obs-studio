@@ -20,13 +20,13 @@
 #include <obs.hpp>
 #include <unordered_map>
 #include <memory>
-#include <QMainWindow>
+#include "window-main.hpp"
 
 class QListWidgetItem;
 
 #include "ui_OBSBasic.h"
 
-class OBSBasic : public QMainWindow {
+class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
 private:
@@ -60,9 +60,9 @@ private:
 	void LoadProject();
 
 protected:
-	virtual void closeEvent(QCloseEvent *event);
-	virtual void changeEvent(QEvent *event);
-	virtual void resizeEvent(QResizeEvent *event);
+	virtual void closeEvent(QCloseEvent *event) override;
+	virtual void changeEvent(QEvent *event) override;
+	virtual void resizeEvent(QResizeEvent *event) override;
 
 private slots:
 	void on_action_New_triggered();
@@ -87,6 +87,8 @@ private slots:
 public:
 	explicit OBSBasic(QWidget *parent = 0);
 	~OBSBasic();
+
+	virtual void OBSInit() override;
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
