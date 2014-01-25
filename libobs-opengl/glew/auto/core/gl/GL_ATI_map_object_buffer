@@ -1,5 +1,0 @@
-GL_ATI_map_object_buffer
-http://www.opengl.org/registry/specs/ATI/map_object_buffer.txt
-GL_ATI_map_object_buffer
-	GLvoid * glMapObjectBufferATI (GLuint buffer)
-	void glUnmapObjectBufferATI (GLuint buffer)

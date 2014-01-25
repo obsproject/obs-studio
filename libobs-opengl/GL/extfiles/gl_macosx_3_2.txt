@@ -1,0 +1,18 @@
+-- All of the extensions supported by core 3.2 in MacOSX.
+
+ARB_instanced_arrays
+ARB_occlusion_query2
+ARB_shader_bit_encoding
+ARB_timer_query
+EXT_depth_bounds_test
+EXT_framebuffer_multisample_blit_scaled
+EXT_texture_compression_s3tc
+EXT_texture_filter_anisotropic
+EXT_texture_mirror_clamp
+EXT_texture_sRGB_decode
+APPLE_client_storage
+--APPLE_container_object_shareable
+APPLE_object_purgeable
+APPLE_rgb_422
+APPLE_row_bytes
+APPLE_texture_range

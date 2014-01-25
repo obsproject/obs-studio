@@ -20,7 +20,7 @@
 
 #include <util/darray.h>
 #include "gl-subsystem.h"
-#include "glew/include/GL/wglew.h"
+#include "GL/wgl_obs.h"
 
 /* Basically swapchain-specific information.  Fortunately for windows this is
  * super basic stuff */
@@ -165,7 +165,7 @@ static const int attribs[] =
 static inline HGLRC gl_init_context(HDC hdc)
 {
 #ifdef _DEBUG
-	if (WGLEW_ARB_create_context) {
+	if (wgl_ext_ARB_create_context) {
 		HGLRC hglrc = wglCreateContextAttribsARB(hdc, 0, attribs);
 		if (!hglrc) {
 			blog(LOG_ERROR, "wglCreateContextAttribsARB failed, %u",
@@ -235,17 +235,25 @@ static inline void required_extension_error(const char *extension)
 	blog(LOG_ERROR, "OpenGL extension %s is required", extension);
 }
 
-static bool gl_init_extensions(device_t device)
+static bool gl_init_extensions(HDC hdc)
 {
-	glewExperimental = true;
-	GLenum errorcode = glewInit();
-	if (errorcode != GLEW_OK) {
-		blog(LOG_ERROR, "glewInit failed, %u", errorcode);
+	if (wgl_LoadFunctions(hdc)) {
+		blog(LOG_ERROR, "Failed to load WGL entry functions.");
 		return false;
 	}
 
-	if (!WGLEW_ARB_pixel_format) {
-		required_extension_error("WGL_ARB_pixel_format");
+	if (!wgl_ext_ARB_pixel_format) {
+		required_extension_error("ARB_pixel_format");
+		return false;
+	}
+
+	if (!wgl_ext_ARB_create_context) {
+		required_extension_error("ARB_create_context");
+		return false;
+	}
+
+	if (!wgl_ext_ARB_create_context_profile) {
+		required_extension_error("ARB_create_context_profile");
 		return false;
 	}
 
@@ -377,7 +385,7 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	if (!gl_dummy_context_init(&dummy))
 		goto fail;
-	if (!gl_init_extensions(device))
+	if (!gl_init_extensions(dummy.hdc))
 		goto fail;
 
 	/* you have to have a dummy context open before you can actually
@@ -393,6 +401,11 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->hrc = gl_init_context(plat->swap.wi->hdc);
 	if (!plat->hrc)
 		goto fail;
+
+	if (!ogl_LoadFunctions()) {
+		blog(LOG_ERROR, "Failed to initialize OpenGL entry functions.");
+		goto fail;
+	}
 
 	return plat;
 

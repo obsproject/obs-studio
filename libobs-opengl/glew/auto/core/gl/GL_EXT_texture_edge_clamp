@@ -1,4 +1,0 @@
-GL_EXT_texture_edge_clamp
-http://www.opengl.org/developers/documentation/Version1.2/1.2specs/texture_edge_clamp.txt
-GL_EXT_texture_edge_clamp
-	GL_CLAMP_TO_EDGE_EXT	0x812F

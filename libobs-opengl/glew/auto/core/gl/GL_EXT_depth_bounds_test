@@ -1,6 +1,0 @@
-GL_EXT_depth_bounds_test
-http://www.nvidia.com/dev_content/nvopenglspecs/GL_EXT_depth_bounds_test.txt
-GL_EXT_depth_bounds_test
-	GL_DEPTH_BOUNDS_TEST_EXT 0x8890
-	GL_DEPTH_BOUNDS_EXT 0x8891
-	void glDepthBoundsEXT (GLclampd zmin, GLclampd zmax)

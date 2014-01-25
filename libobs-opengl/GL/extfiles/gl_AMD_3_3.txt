@@ -1,0 +1,7 @@
+--ARB extensions implemented on 3.3 hardware by AMD.
+
+ARB_transform_feedback2
+ARB_transform_feedback3
+ARB_texture_buffer_object_rgb32
+ARB_shader_precision
+ARB_draw_buffers_blend

@@ -51,13 +51,7 @@ static const char* debug_severity_table[] = {
 #define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
 #define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
 
-#ifdef _WIN32
-#define GLEW_TEMP_API __stdcall
-#else
-#define GLEW_TEMP_API
-#endif
-
-static void GLEW_TEMP_API gl_debug_proc(
+static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
 	GLsizei length, const GLchar *message, GLvoid *data )
 {
@@ -73,9 +67,9 @@ static void GLEW_TEMP_API gl_debug_proc(
 static void gl_enable_debug()
 {
 	 /* Perhaps we should create GLEW contexts? */
-	if (GLEW_VERSION_4_3)
+	if (!ogl_IsVersionGEQ(4, 3))
 		glDebugMessageCallback(gl_debug_proc, NULL);
-	if (GLEW_ARB_debug_output)
+	if (ogl_ext_ARB_debug_output)
 		glDebugMessageCallbackARB(gl_debug_proc, NULL);
 	else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
@@ -95,7 +89,10 @@ static inline void required_extension_error(const char *extension)
 
 static bool gl_init_extensions(struct gs_device* device) 
 {
-	if (!GLEW_VERSION_2_1) {
+	/* It's odd but ogl_IsVersionGEQ returns /false/ if the 
+	   specified version is less than the context. */
+
+	if (ogl_IsVersionGEQ(2, 1)) {
 		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
 		                "higher.");
 		return false;
@@ -103,25 +100,25 @@ static bool gl_init_extensions(struct gs_device* device)
 
 	gl_enable_debug();
 
-	if (!GLEW_VERSION_3_0 && !GLEW_ARB_framebuffer_object) {
+	if (ogl_IsVersionGEQ(2, 1) && !ogl_ext_ARB_framebuffer_object) {
 		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
 		                "is required.");
 		return false;
 	}
 
-	if (GLEW_VERSION_3_1 || GLEW_ARB_seamless_cube_map) {
+	if (!ogl_IsVersionGEQ(3, 1) || ogl_ext_ARB_seamless_cube_map) {
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-	if (!GLEW_VERSION_4_1 && !GLEW_ARB_separate_shader_objects) {
+	if (ogl_IsVersionGEQ(4, 1) && !ogl_ext_ARB_separate_shader_objects) {
 		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects "
 		                "is required.");
 		return false;
 	}
 
-	if (GLEW_ARB_copy_image || GLEW_VERSION_4_2)
+	if (!ogl_IsVersionGEQ(4, 2) || ogl_ext_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
-	else if (GLEW_NV_copy_image)
+	else if (ogl_ext_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
 	else
 		device->copy_type = COPY_TYPE_FBO_BLIT; /* ?? */

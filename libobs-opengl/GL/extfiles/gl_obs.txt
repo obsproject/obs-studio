@@ -1,0 +1,7 @@
+ARB_framebuffer_object 
+ARB_seamless_cube_map 
+ARB_separate_shader_objects 
+ARB_debug_output
+ARB_copy_image
+NV_copy_image
+EXT_texture_mirror_clamp

@@ -1,0 +1,37 @@
+--Core extensions frequently provided for 3.3-class hardware, yet aren't part of core 3.3.
+--The extensions were added after 3.3 and there was no 3.4 to drop them into.
+
+ARB_compressed_texture_pixel_storage
+ARB_conservative_depth
+ARB_ES2_compatibility
+ARB_get_program_binary
+ARB_explicit_uniform_location
+ARB_internalformat_query
+ARB_internalformat_query2
+ARB_map_buffer_alignment
+ARB_program_interface_query
+ARB_separate_shader_objects
+ARB_shading_language_420pack
+ARB_shading_language_packing
+ARB_texture_buffer_range
+ARB_texture_storage
+ARB_texture_view
+ARB_vertex_attrib_binding
+ARB_viewport_array
+ARB_arrays_of_arrays
+ARB_clear_buffer_object
+ARB_copy_image
+ARB_ES3_compatibility
+ARB_explicit_uniform_location
+ARB_fragment_layer_viewport
+ARB_framebuffer_no_attachments
+ARB_invalidate_subdata
+ARB_program_interface_query
+ARB_robust_buffer_access_behavior
+ARB_stencil_texturing
+ARB_texture_buffer_range
+ARB_texture_query_levels
+ARB_texture_storage_multisample
+ARB_texture_view
+ARB_vertex_attrib_binding
+KHR_debug

@@ -1,0 +1,8 @@
+NV_present_video
+NV_video_output
+NV_gpu_affinity
+NV_video_capture
+NV_copy_image
+NV_multisample_coverage
+NV_DX_interop
+NV_DX_interop2

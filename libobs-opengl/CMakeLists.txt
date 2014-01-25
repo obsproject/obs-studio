@@ -11,7 +11,8 @@ add_definitions(-DLIBOBS_EXPORTS)
 
 if(WIN32)
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-windows.c)
+		gl-windows.c
+		wgl_obs.c)
 elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
@@ -33,7 +34,8 @@ elseif(APPLE)
 		${IOSURF})
 else()
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11.c)
+		gl-x11.c
+		GL/glx_obs.c)
 endif()
 
 set(libobs-opengl_SOURCES
@@ -48,7 +50,7 @@ set(libobs-opengl_SOURCES
 	gl-texturecube.c
 	gl-vertexbuffer.c
 	gl-zstencil.c
-	glew/src/glew.c)
+	GL/gl_obs.c)
 
 set(libobs-opengl_HEADERS
 	gl-exports.h

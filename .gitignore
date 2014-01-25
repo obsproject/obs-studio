@@ -46,6 +46,7 @@ ltmain.sh
 *.app
 .DS_Store
 
+.hg
 .depend
 tags
 *.trace

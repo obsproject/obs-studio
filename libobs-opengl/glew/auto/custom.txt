@@ -1,7 +1,0 @@
-WGL_ARB_extensions_string
-WGL_EXT_extensions_string
-WGL_ARB_pixel_format
-WGL_ARB_pbuffer
-WGL_NV_float_buffer
-WGL_ATI_pixel_format_float
-WGL_ARB_multisample

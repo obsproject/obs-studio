@@ -1,7 +1,0 @@
-GLX_SUN_video_resize
-http://wwws.sun.com/software/graphics/opengl/extensions/glx_sun_video_resize.txt
-GLX_SUN_video_resize
-	GL_VIDEO_RESIZE_COMPENSATION_SUN 0x85CD
-	GLX_VIDEO_RESIZE_SUN 0x8171
-	int glXVideoResizeSUN (Display* display, GLXDrawable window, float factor)
-	int glXGetVideoResizeSUN (Display* display, GLXDrawable window, float* factor)

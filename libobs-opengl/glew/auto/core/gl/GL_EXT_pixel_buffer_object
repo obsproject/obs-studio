@@ -1,7 +1,0 @@
-GL_EXT_pixel_buffer_object
-http://www.nvidia.com/dev_content/nvopenglspecs/GL_EXT_pixel_buffer_object.txt
-GL_EXT_pixel_buffer_object
-	GL_PIXEL_PACK_BUFFER_EXT 0x88EB
-	GL_PIXEL_UNPACK_BUFFER_EXT 0x88EC
-	GL_PIXEL_PACK_BUFFER_BINDING_EXT 0x88ED
-	GL_PIXEL_UNPACK_BUFFER_BINDING_EXT 0x88EF

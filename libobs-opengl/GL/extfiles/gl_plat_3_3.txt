@@ -1,0 +1,5 @@
+-- Platform-specific non-core extensions that provide access to hardware features.
+-- These extensions are fairly widely implemented.
+
+NV_texture_barrier 
+NV_copy_image

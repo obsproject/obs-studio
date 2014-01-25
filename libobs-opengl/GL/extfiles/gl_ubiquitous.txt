@@ -1,0 +1,6 @@
+--Extensions that are *widely* available and vital for basic functionality.
+--IE: things that should be core, but aren't.
+
+EXT_texture_compression_s3tc
+EXT_texture_sRGB
+EXT_texture_filter_anisotropic
