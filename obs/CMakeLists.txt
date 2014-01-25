@@ -62,6 +62,7 @@ set(obs_HEADERS
 	platform.hpp
 #	settings.hpp
 #	settings-basic.hpp
+	window-main.hpp
 	window-basic-main.hpp
 	window-basic-settings.hpp
 	window-namedialog.hpp
