@@ -17,5 +17,5 @@ public:
 		setAttribute(Qt::WA_NativeWindow);
 	}
 
-	virtual QPaintEngine *paintEngine() const {return nullptr;}
+	virtual QPaintEngine *paintEngine() const override {return nullptr;}
 };
