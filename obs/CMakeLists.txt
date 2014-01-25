@@ -53,7 +53,7 @@ set(obs_SOURCES
 #	settings-basic-general.cpp
 #	settings-basic-video.cpp
 	window-basic-main.cpp
-#	window-basic-settings.cpp
+	window-basic-settings.cpp
 	window-namedialog.cpp
 	qt-wrappers.cpp)
 
@@ -63,7 +63,7 @@ set(obs_HEADERS
 #	settings.hpp
 #	settings-basic.hpp
 	window-basic-main.hpp
-#	window-basic-settings.hpp
+	window-basic-settings.hpp
 	window-namedialog.hpp
 	qt-display.hpp
 	qt-ptr-variant.hpp
