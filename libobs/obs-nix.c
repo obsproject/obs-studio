@@ -63,6 +63,11 @@ char *find_plugin(const char *plugin)
 		if (check_lib_path(plugin, "../../obs-plugins/32bit/", &output))
 			return output.array;
 	}
+	else
+	{
+		if (check_lib_path(plugin, "../../obs-plugins/64bit/", &output))
+			return output.array;
+	}
 
 	if (OBS_INSTALL_PREFIX [0] != 0)
 	{

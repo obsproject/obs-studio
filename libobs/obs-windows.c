@@ -20,33 +20,84 @@
 #include "obs.h"
 #include "obs-data.h"
 
+static inline bool check_path(const char* data, const char *path,
+		struct dstr * output)
+{
+	dstr_copy(output, path);
+	dstr_cat(output, data);
+
+	blog(LOG_INFO, "Attempting path: %s\n", output->array);
+
+	return os_file_exists(output->array);
+}
+
+static inline bool check_lib_path(const char* data, const char *path,
+		struct dstr *output)
+{
+	bool result = false;
+	struct dstr tmp;
+
+	dstr_init_copy(&tmp, data);
+	dstr_cat(&tmp, ".dll");
+	result = check_path(tmp.array, path, output);
+
+	dstr_free(&tmp);
+
+	return result;
+}
+
 /* on windows, plugin files are located in [base directory]/plugins/[bit] */
 char *find_plugin(const char *plugin)
 {
 	struct dstr path;
+	dstr_init(&path);
+
 #ifdef _WIN64
-	dstr_init_copy(&path, "../../obs-plugins/64bit/");
+	if (check_lib_path(plugin, "obs-plugins/64bit/", &path))
 #else
-	dstr_init_copy(&path, "../../obs-plugins/32bit/");
+	if (check_lib_path(plugin, "obs-plugins/32bit/", &path))
 #endif
-	dstr_cat(&path, plugin);
-	return path.array;
+		return path.array;
+
+#ifdef _WIN64
+	if (check_lib_path(plugin, "../../obs-plugins/64bit/", &path))
+#else
+	if (check_lib_path(plugin, "../../obs-plugins/32bit/", &path))
+#endif
+		return path.array;
+
+	dstr_free(&path);
+	return NULL;
 }
 
 /* on windows, points to [base directory]/libobs */
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, "../../data/libobs/");
-	dstr_cat(&path, file);
-	return path.array;
+	dstr_init(&path);
+
+	if (check_path(file, "data/libobs/", &path))
+		return path.array;
+
+	if (check_path(file, "../../data/libobs/", &path))
+		return path.array;
+
+	dstr_free(&path);
+	return NULL;
 }
 
 /* on windows, data files should always be in [base directory]/data */
 char *obs_find_plugin_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, "../../data/obs-plugins/");
-	dstr_cat(&path, file);
-	return path.array;
+	dstr_init(&path);
+
+	if (check_path(file, "data/obs-plugins/", &path))
+		return path.array;
+
+	if (check_path(file, "../../data/obs-plugins/", &path))
+		return path.array;
+
+	dstr_free(&path);
+	return NULL;
 }
