@@ -403,11 +403,11 @@ void OBSBasic::on_actionSceneProperties_triggered()
 {
 }
 
-void OBSBasic::on_actionSceneUp_triggered()
+void OBSBasic::on_actionSceneMoveUp_triggered()
 {
 }
 
-void OBSBasic::on_actionSceneDown_triggered()
+void OBSBasic::on_actionSceneMoveDown_triggered()
 {
 }
 
@@ -511,11 +511,11 @@ void OBSBasic::on_actionSourceProperties_triggered()
 {
 }
 
-void OBSBasic::on_actionSourceUp_triggered()
+void OBSBasic::on_actionSourceMoveUp_triggered()
 {
 }
 
-void OBSBasic::on_actionSourceDown_triggered()
+void OBSBasic::on_actionSourceMoveDown_triggered()
 {
 }
 
