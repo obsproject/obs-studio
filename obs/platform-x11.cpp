@@ -40,7 +40,7 @@ static inline bool check_path(const char* data, const char *path,
 	return (access(output.c_str(), R_OK) == 0);
 }
 
-#define INSTALL_DATA_PATH OBS_INSTALL_PREFIX "/" OBS_DATA_PATH "/obs-studio/"
+#define INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-studio/"
 
 bool GetDataFilePath(const char *data, string &output)
 {
