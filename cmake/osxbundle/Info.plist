@@ -16,8 +16,6 @@
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>LSUIElement</key>
-	<string>1</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
