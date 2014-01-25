@@ -170,7 +170,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Aux Audio Device 1:</string>
+            <string>Mic/Aux Audio Device 1:</string>
            </property>
           </widget>
          </item>
@@ -184,7 +184,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Aux Audio Device 2:</string>
+            <string>Mic/Aux Audio Device 2:</string>
            </property>
           </widget>
          </item>
@@ -198,7 +198,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>Aux Audio Device 3:</string>
+            <string>Mic/Aux Audio Device 3:</string>
            </property>
           </widget>
          </item>
@@ -224,7 +224,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="comboBox_2">
+          <widget class="QComboBox" name="renderer">
            <property name="currentText">
             <string notr="true"/>
            </property>
@@ -247,7 +247,10 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="comboBox">
+          <widget class="QComboBox" name="adapter">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="currentText">
             <string notr="true"/>
            </property>
@@ -261,7 +264,7 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QComboBox" name="comboBox_3">
+          <widget class="QComboBox" name="baseResolution">
            <property name="editable">
             <bool>true</bool>
            </property>
@@ -284,7 +287,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QComboBox" name="comboBox_4">
+          <widget class="QComboBox" name="outputResolution">
            <property name="editable">
             <bool>true</bool>
            </property>
@@ -294,7 +297,11 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QComboBox" name="comboBox_5"/>
+          <widget class="QComboBox" name="downscaleFilter">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_11">
@@ -304,7 +311,7 @@
           </widget>
          </item>
          <item row="5" column="0">
-          <widget class="QComboBox" name="comboBox_6">
+          <widget class="QComboBox" name="fpsType">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -312,25 +319,33 @@
             </sizepolicy>
            </property>
            <property name="currentText">
-            <string>Common FPS</string>
+            <string>FPS (Common)</string>
            </property>
            <property name="sizeAdjustPolicy">
             <enum>QComboBox::AdjustToContents</enum>
            </property>
            <item>
             <property name="text">
-             <string>Common FPS</string>
+             <string>FPS (Common)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>Fractional FPS (Advanced)</string>
+             <string>FPS (Integer)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>FPS (Fractional)</string>
             </property>
            </item>
           </widget>
          </item>
          <item row="5" column="1">
           <widget class="QStackedWidget" name="stackedWidget">
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <property name="leftMargin">
@@ -346,7 +361,75 @@
               <number>0</number>
              </property>
              <item alignment="Qt::AlignTop">
-              <widget class="QComboBox" name="comboBox_7"/>
+              <widget class="QComboBox" name="fpsCommon">
+               <property name="currentText">
+                <string notr="true">30</string>
+               </property>
+               <item>
+                <property name="text">
+                 <string notr="true">10</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">20</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">29.97</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">30</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">48</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">59.94</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">60</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="page_3">
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item alignment="Qt::AlignTop">
+              <widget class="QSpinBox" name="fpsInteger">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>120</number>
+               </property>
+               <property name="value">
+                <number>30</number>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -368,10 +451,27 @@
               <number>0</number>
              </property>
              <item row="0" column="1">
-              <widget class="QSpinBox" name="spinBox_2"/>
+              <widget class="QSpinBox" name="fpsNumerator">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="value">
+                <number>30</number>
+               </property>
+              </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QSpinBox" name="spinBox"/>
+              <widget class="QSpinBox" name="fpsDenominator">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+              </widget>
              </item>
              <item row="0" column="0">
               <widget class="QLabel" name="label_12">
@@ -432,7 +532,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>comboBox_6</sender>
+   <sender>fpsType</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>stackedWidget</receiver>
    <slot>setCurrentIndex(int)</slot>

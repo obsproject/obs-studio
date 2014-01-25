@@ -166,8 +166,8 @@
               <addaction name="actionRemoveScene"/>
               <addaction name="actionSceneProperties"/>
               <addaction name="separator"/>
-              <addaction name="actionSceneMoveUp"/>
-              <addaction name="actionSceneMoveDown"/>
+              <addaction name="actionSceneUp"/>
+              <addaction name="actionSceneDown"/>
              </widget>
             </item>
            </layout>
@@ -236,8 +236,8 @@
               <addaction name="actionRemoveSource"/>
               <addaction name="actionSourceProperties"/>
               <addaction name="separator"/>
-              <addaction name="actionSourceMoveUp"/>
-              <addaction name="actionSourceMoveDown"/>
+              <addaction name="actionSourceUp"/>
+              <addaction name="actionSourceDown"/>
              </widget>
             </item>
            </layout>
@@ -438,7 +438,7 @@
     <string>SourceProperties</string>
    </property>
   </action>
-  <action name="actionSceneMoveUp">
+  <action name="actionSceneUp">
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.ico</normaloff>:/res/images/up.ico</iconset>
@@ -447,7 +447,7 @@
     <string>SceneMoveUp</string>
    </property>
   </action>
-  <action name="actionSourceMoveUp">
+  <action name="actionSourceUp">
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.ico</normaloff>:/res/images/up.ico</iconset>
@@ -456,7 +456,7 @@
     <string>SourceMoveUp</string>
    </property>
   </action>
-  <action name="actionSceneMoveDown">
+  <action name="actionSceneDown">
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.ico</normaloff>:/res/images/down.ico</iconset>
@@ -465,7 +465,7 @@
     <string>SceneMoveDown</string>
    </property>
   </action>
-  <action name="actionSourceMoveDown">
+  <action name="actionSourceDown">
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.ico</normaloff>:/res/images/down.ico</iconset>

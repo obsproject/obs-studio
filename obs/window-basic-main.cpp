@@ -20,7 +20,7 @@
 #include <QMessageBox>
 
 #include "obs-app.hpp"
-//#include "window-basic-settings.hpp"
+#include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
@@ -521,4 +521,6 @@ void OBSBasic::on_actionSourceDown_triggered()
 
 void OBSBasic::on_settingsButton_clicked()
 {
+	OBSBasicSettings settings(this);
+	settings.exec();
 }

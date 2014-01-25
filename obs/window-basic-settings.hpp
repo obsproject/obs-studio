@@ -17,25 +17,26 @@
 
 #pragma once
 
-#include "forms/OBSWindows.h"
-#include "settings-basic.hpp"
-
+#include <QDialog>
 #include <memory>
 
-class OBSBasicSettings : public OBSBasicSettingsBase {
+class QAbstractButton;
+
+#include "ui_OBSBasicSettings.h"
+
+class OBSBasicSettings : public QDialog {
+	Q_OBJECT
+
+private:
+	std::unique_ptr<Ui::OBSBasicSettings> ui;
+
+private slots:
+	void on_listWidget_currentRowChanged(int row);
+	void on_buttonBox_clicked(QAbstractButton *button);
+
 protected:
-	std::unique_ptr<BasicSettingsData> settings;
-
-	virtual void PageChanged(wxListbookEvent &event);
-	virtual void PageChanging(wxListbookEvent &event);
-	virtual void OnClose(wxCloseEvent &event);
-
-	bool ConfirmChanges();
-
-	virtual void OKClicked(wxCommandEvent &event);
-	virtual void CancelClicked(wxCommandEvent &event);
-	virtual void ApplyClicked(wxCommandEvent &event);
+	virtual void closeEvent(QCloseEvent *event);
 
 public:
-	OBSBasicSettings(wxWindow *parent);
+	OBSBasicSettings(QWidget *parent);
 };

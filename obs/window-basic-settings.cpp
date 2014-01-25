@@ -15,86 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <wx/msgdlg.h>
 #include "window-basic-settings.hpp"
-using namespace std;
 
-OBSBasicSettings::OBSBasicSettings(wxWindow *parent)
-	: OBSBasicSettingsBase(parent)
+OBSBasicSettings::OBSBasicSettings(QWidget *parent)
+	: QDialog (parent),
+	  ui      (new Ui::OBSBasicSettings)
 {
-	unique_ptr<BasicSettingsData> data(CreateBasicGeneralSettings(this));
-	settings = move(data);
+	ui->setupUi(this);
 }
 
-void OBSBasicSettings::PageChanged(wxListbookEvent &event)
+void OBSBasicSettings::closeEvent(QCloseEvent *event)
 {
-	wxWindow *curPage = settingsList->GetCurrentPage();
-	if (!curPage)
-		return;
-
-	int id = curPage->GetId();
-
-	BasicSettingsData *ptr = NULL;
-
-	switch (id) {
-	case ID_SETTINGS_GENERAL:
-		ptr = CreateBasicGeneralSettings(this);
-		break;
-	case ID_SETTINGS_VIDEO:
-		ptr = CreateBasicVideoSettings(this);
-		break;
-	}
-
-	settings = move(unique_ptr<BasicSettingsData>(ptr));
 }
 
-bool OBSBasicSettings::ConfirmChanges()
+void OBSBasicSettings::on_listWidget_currentRowChanged(int row)
 {
-	if (settings && settings->DataChanged()) {
-		int confirm = wxMessageBox(WXStr("Settings.Confirm"),
-				WXStr("Settings.ConfirmTitle"),
-				wxYES_NO | wxCANCEL);
-
-		if (confirm == wxCANCEL) {
-			return false;
-		} else if (confirm == wxYES) {
-			settings->Apply();
-			return true;
-		}
-	}
-
-	return true;
 }
 
-void OBSBasicSettings::PageChanging(wxListbookEvent &event)
+void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 {
-	if (!ConfirmChanges())
-		event.Veto();
-}
-
-void OBSBasicSettings::OnClose(wxCloseEvent &event)
-{
-	if (!ConfirmChanges())
-		event.Veto();
-	else
-		EndModal(0);
-}
-
-void OBSBasicSettings::OKClicked(wxCommandEvent &event)
-{
-	if (settings && settings->DataChanged())
-		settings->Apply();
-
-	EndModal(0);
-}
-
-void OBSBasicSettings::CancelClicked(wxCommandEvent &event)
-{
-	EndModal(0);
-}
-
-void OBSBasicSettings::ApplyClicked(wxCommandEvent &event)
-{
-	if (settings && settings->DataChanged())
-		settings->Apply();
 }
