@@ -20,17 +20,30 @@ if(INSTALLER_RUN AND NOT DEFINED ENV{obsInstallerTempDir})
 endif()
 
 if(NOT UNIX_STRUCTURE)
-	set(OBS_EXECUTABLE_DESTINATION "bin/${_lib_suffix}bit")
-	set(OBS_EXECUTABLE32_DESTINATION "bin/32bit")
-	set(OBS_EXECUTABLE64_DESTINATION "bin/64bit")
-	set(OBS_LIBRARY_DESTINATION "bin/${_lib_suffix}bit")
-	set(OBS_LIBRARY32_DESTINATION "bin/32bit")
-	set(OBS_LIBRARY64_DESTINATION "bin/64bit")
-	set(OBS_PLUGIN_DESTINATION "obs-plugins/${_lib_suffix}bit")
-	set(OBS_PLUGIN32_DESTINATION "obs-plugins/32bit")
-	set(OBS_PLUGIN64_DESTINATION "obs-plugins/64bit")
 	set(OBS_DATA_DESTINATION "data")
-	add_definitions(-DOBS_DATA_PATH="../../${OBS_DATA_DESTINATION}")
+	if(APPLE)
+		set(OBS_EXECUTABLE_DESTINATION "bin")
+		set(OBS_EXECUTABLE32_DESTINATION "bin")
+		set(OBS_EXECUTABLE64_DESTINATION "bin")
+		set(OBS_LIBRARY_DESTINATION "bin")
+		set(OBS_LIBRARY32_DESTINATION "bin")
+		set(OBS_LIBRARY64_DESTINATION "bin")
+		set(OBS_PLUGIN_DESTINATION "obs-plugins")
+		set(OBS_PLUGIN32_DESTINATION "obs-plugins")
+		set(OBS_PLUGIN64_DESTINATION "obs-plugins")
+		add_definitions(-DOBS_DATA_PATH="../${OBS_DATA_DESTINATION}")
+	else()
+		set(OBS_EXECUTABLE_DESTINATION "bin/${_lib_suffix}bit")
+		set(OBS_EXECUTABLE32_DESTINATION "bin/32bit")
+		set(OBS_EXECUTABLE64_DESTINATION "bin/64bit")
+		set(OBS_LIBRARY_DESTINATION "bin/${_lib_suffix}bit")
+		set(OBS_LIBRARY32_DESTINATION "bin/32bit")
+		set(OBS_LIBRARY64_DESTINATION "bin/64bit")
+		set(OBS_PLUGIN_DESTINATION "obs-plugins/${_lib_suffix}bit")
+		set(OBS_PLUGIN32_DESTINATION "obs-plugins/32bit")
+		set(OBS_PLUGIN64_DESTINATION "obs-plugins/64bit")
+		add_definitions(-DOBS_DATA_PATH="../../${OBS_DATA_DESTINATION}")
+	endif()
 else()
 	set(OBS_EXECUTABLE_DESTINATION "bin")
 	set(OBS_EXECUTABLE32_DESTINATION "bin32")
@@ -104,9 +117,13 @@ endfunction()
 
 macro(install_obs_core target)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(_lib_suffix 64)
+		set(_bit_suffix "64bit/")
 	else()
-		set(_lib_suffix 32)
+		set(_bit_suffix "32bit/")
+	endif()
+
+	if(APPLE)
+		set(_bit_suffix "")
 	endif()
 
 	install(TARGETS ${target}
@@ -114,7 +131,8 @@ macro(install_obs_core target)
 		RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
 	add_custom_command(TARGET ${target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_lib_suffix}bit/$<TARGET_FILE_NAME:${target}>"
+			"$<TARGET_FILE:${target}>"
+			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
 
 	if(DEFINED ENV{obsInstallerTempDir})
@@ -135,9 +153,13 @@ endmacro()
 
 macro(install_obs_plugin target)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(_lib_suffix 64)
+		set(_bit_suffix "64bit/")
 	else()
-		set(_lib_suffix 32)
+		set(_bit_suffix "32bit/")
+	endif()
+
+	if(APPLE)
+		set(_bit_suffix "")
 	endif()
 
 	install(TARGETS ${target}
@@ -145,7 +167,8 @@ macro(install_obs_plugin target)
 		RUNTIME DESTINATION "${OBS_PLUGIN_DESTINATION}")
 	add_custom_command(TARGET ${target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_lib_suffix}bit/$<TARGET_FILE_NAME:${target}>"
+			"$<TARGET_FILE:${target}>"
+			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
 
 	if(DEFINED ENV{obsInstallerTempDir})
