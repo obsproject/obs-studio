@@ -21,6 +21,8 @@
 #include <util/platform.h>
 #include <obs.hpp>
 
+#include <QProxyStyle>
+
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
@@ -259,6 +261,19 @@ void OBSApp::OBSInit()
 	mainWindow->OBSInit();
 }
 
+struct NoFocusFrameStyle : QProxyStyle
+{
+	void drawControl(ControlElement element, const QStyleOption *option,
+			QPainter *painter, const QWidget *widget=nullptr)
+		const override
+	{
+		if (element == CE_FocusFrame)
+			return;
+
+		QProxyStyle::drawControl(element, option, painter, widget);
+	}
+};
+
 int main(int argc, char *argv[])
 {
 	int ret = -1;
@@ -267,6 +282,7 @@ int main(int argc, char *argv[])
 
 	try {
 		OBSApp program(argc, argv);
+		program.setStyle(new NoFocusFrameStyle);
 		program.OBSInit();
 		ret = program.exec();
 
