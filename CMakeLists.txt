@@ -8,6 +8,8 @@ project(obs-studio)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+include(ObsHelpers)
+
 if(NOT _one_time_action_done)
 	if(MSVC)
 		file(GENERATE
@@ -17,8 +19,6 @@ if(NOT _one_time_action_done)
 	endif()
 	set(_one_time_action_done TRUE CACHE INTERNAL "")
 endif()
-
-include(ObsHelpers)
 
 if(NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE RelWithDebInfo)
@@ -52,18 +52,22 @@ if(APPLE)
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 endif()
 
-add_subdirectory(deps)
-add_subdirectory(libobs)
+if(NOT INSTALLER_RUN)
+	add_subdirectory(deps)
+	add_subdirectory(libobs)
 
-if(WIN32)
-	add_subdirectory(libobs-d3d11)
-	add_subdirectory(libobs-d3d9)
+	if(WIN32)
+		add_subdirectory(libobs-d3d11)
+		add_subdirectory(libobs-d3d9)
+	endif()
+
+	add_subdirectory(libobs-opengl)
+	add_subdirectory(obs)
+	add_subdirectory(plugins)
+	add_subdirectory(test)
+else()
+	obs_generate_multiarch_installer()
 endif()
-
-add_subdirectory(libobs-opengl)
-add_subdirectory(obs)
-add_subdirectory(plugins)
-add_subdirectory(test)
 
 obs_install_additional()
 
@@ -81,8 +85,17 @@ set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OBS Studio - Multi-platform broadcasting software")
 
-set(CPACK_PACKAGE_EXECUTABLES "obs;OBS Studio")
-set(CPACK_CREATE_DESKTOP_LINKS "obs")
+if(INSTALLER_RUN)
+	set(CPACK_PACKAGE_EXECUTABLES
+		"${OBS_EXECUTABLE32_DESTINATION}/obs" "OBS Studio (32bit)"
+		"${OBS_EXECUTABLE64_DESTINATION}/obs" "OBS Studio (64bit)")
+	set(CPACK_CREATE_DESKTOP_LINKS
+		"${OBS_EXECUTABLE32_DESTINATION}/obs"
+		"${OBS_EXECUTABLE64_DESTINATION}/obs")
+else()
+	set(CPACK_PACKAGE_EXECUTABLES "${OBS_EXECUTABLE_DESTINATION}/obs;OBS Studio")
+	set(CPACK_CREATE_DESKTOP_LINKS "${OBS_EXECUTABLE_DESTINATION}/obs")
+endif()
 
 set(CPACK_BUNDLE_NAME "OBS Studio")
 set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/cmake/osxbundle/Info.plist")
@@ -93,7 +106,13 @@ set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
 set(CPACK_NSIS_MODIFY_PATH ON)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(INSTALLER_RUN)
+	SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio")
+	SET(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	if(WIN32)
+		set(CPACK_PACKAGE_NAME "OBS Studio (64bit)")
+	endif()
 	SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio64")
 	SET(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 else()

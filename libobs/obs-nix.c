@@ -28,7 +28,7 @@ static inline bool check_path(const char* data, const char *path,
 	dstr_copy(output, path);
 	dstr_cat(output, data);
 	
-    blog(LOG_INFO, "Attempting path: %s\n", output->array);
+	blog(LOG_INFO, "Attempting path: %s\n", output->array);
 	
 	return access(output->array, R_OK) == 0;
 }
@@ -39,8 +39,8 @@ static inline bool check_lib_path(const char* data, const char *path,
 	bool result = false;
 	struct dstr tmp;
 	
-    dstr_init_copy(&tmp, "lib");
-    dstr_cat(&tmp, data);
+	dstr_init_copy(&tmp, "lib");
+	dstr_cat(&tmp, data);
 	dstr_cat(&tmp, ".so");
 	result = check_path(tmp.array, path, output); 
 	
@@ -58,12 +58,18 @@ char *find_plugin(const char *plugin)
 	struct dstr output;
 	dstr_init(&output);
 
-	if (check_lib_path(plugin, "obs-plugins/", &output))
-		return output.array;
+	if(sizeof(void*) == 4)
+	{
+		if (check_lib_path(plugin, "../../obs-plugins/32bit/", &output))
+			return output.array;
+	}
 
-	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins/",
-				&output))
-		return output.array;
+	if (OBS_INSTALL_PREFIX [0] != 0)
+	{
+		if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins/",
+					&output))
+			return output.array;
+	}
 
 	dstr_free(&output);
 	return NULL;
@@ -81,9 +87,12 @@ char *find_libobs_data_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
-	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/",
-				&output))
-		return output.array;
+	if (OBS_INSTALL_PREFIX [0] != 0)
+	{
+		if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/",
+					&output))
+			return output.array;
+	}
 
 	dstr_free(&output);
 	return NULL;
@@ -95,16 +104,19 @@ char *find_libobs_data_file(const char *file)
  */
 char *obs_find_plugin_file(const char *file)
 { 	
-    struct dstr output;
-    dstr_init(&output);
+	struct dstr output;
+	dstr_init(&output);
 
-    if (check_path(file, OBS_DATA_PATH "/obs-plugins/", &output))
-        return output.array;
+	if (check_path(file, OBS_DATA_PATH "/obs-plugins/", &output))
+		return output.array;
 
-    if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/",
-			    &output))
-        return output.array;
+	if (OBS_INSTALL_PREFIX [0] != 0)
+	{
+	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/",
+				&output))
+		return output.array;
+	}
 
-    dstr_free(&output);
-    return NULL;
+	dstr_free(&output);
+	return NULL;
 }

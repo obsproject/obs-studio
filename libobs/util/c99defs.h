@@ -69,7 +69,7 @@ typedef int64_t off64_t;
 #endif /* _MSC_VER */
 
 #ifndef OBS_DATA_PATH
-#define OBS_DATA_PATH "data"
+#define OBS_DATA_PATH "../../data"
 #endif
 
 #ifndef OBS_INSTALL_PREFIX

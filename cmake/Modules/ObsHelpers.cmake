@@ -1,28 +1,56 @@
 set(OBS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/rundir")
 
-set(OBS_EXECUTABLE_DESTINATION "bin")
-set(OBS_LIBRARY_DESTINATION "lib")
-set(OBS_PLUGIN_DESTINATION "lib/obs-plugins")
-set(OBS_DATA_DESTINATION "share/obs")
-
-if(WIN32 OR APPLE)
-    set(_struct_def FALSE)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(_lib_suffix 64)
 else()
-    set(_struct_def TRUE)
+	set(_lib_suffix 32)
 endif()
 
+if(WIN32 OR APPLE)
+	set(_struct_def FALSE)
+else()
+	set(_struct_def TRUE)
+endif()
+
+option(INSTALLER_RUN "Build a multiarch installer, needs to run indenepdently after both archs have compiled" FALSE)
 option(UNIX_STRUCTURE "Build with standard unix filesystem structure" ${_struct_def})
 
+if(INSTALLER_RUN AND NOT DEFINED ENV{obsInstallerTempDir})
+	message(FATAL_ERROR "Environment variable obsInstallerTempDir is needed for multiarch installer generation")
+endif()
+
 if(NOT UNIX_STRUCTURE)
-	set(OBS_EXECUTABLE_DESTINATION ".")
-	set(OBS_LIBRARY_DESTINATION ".")
-	set(OBS_PLUGIN_DESTINATION "obs-plugins")
+	set(OBS_EXECUTABLE_DESTINATION "bin/${_lib_suffix}bit")
+	set(OBS_EXECUTABLE32_DESTINATION "bin/32bit")
+	set(OBS_EXECUTABLE64_DESTINATION "bin/64bit")
+	set(OBS_LIBRARY_DESTINATION "bin/${_lib_suffix}bit")
+	set(OBS_LIBRARY32_DESTINATION "lib32")
+	set(OBS_LIBRARY64_DESTINATION "lib64")
+	set(OBS_PLUGIN_DESTINATION "obs-plugins/${_lib_suffix}bit")
+	set(OBS_PLUGIN32_DESTINATION "obs-plugins/32bit")
+	set(OBS_PLUGIN64_DESTINATION "obs-plugins/64bit")
 	set(OBS_DATA_DESTINATION "data")
+	add_definitions(-DOBS_DATA_PATH="../../${OBS_DATA_DESTINATION}")
 else()
+	set(OBS_EXECUTABLE_DESTINATION "bin")
+	set(OBS_EXECUTABLE32_DESTINATION "bin32")
+	set(OBS_EXECUTABLE64_DESTINATION "bin64")
+	set(OBS_LIBRARY_DESTINATION "lib")
+	set(OBS_LIBRARY32_DESTINATION "lib32")
+	set(OBS_LIBRARY64_DESTINATION "lib64")
+	set(OBS_PLUGIN_DESTINATION "lib/obs-plugins")
+	set(OBS_PLUGIN32_DESTINATION "lib32/obs-plugins")
+	set(OBS_PLUGIN64_DESTINATION "lib64/obs-plugins")
+	set(OBS_DATA_DESTINATION "share/obs")
+	add_definitions(-DOBS_DATA_PATH="${OBS_DATA_DESTINATION}")
 	add_definitions(-DOBS_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}/")
 endif()
 
-add_definitions(-DOBS_DATA_PATH="${OBS_DATA_DESTINATION}")
+function(obs_generate_multiarch_installer)
+	install(DIRECTORY "$ENV{obsInstallerTempDir}/"
+		DESTINATION "."
+		USE_SOURCE_PERMISSIONS)
+endfunction()
 
 function(obs_install_additional)
 	set(addfdir "${CMAKE_SOURCE_DIR}/additional_install_files")
@@ -38,36 +66,94 @@ function(obs_install_additional)
 
 	install(DIRECTORY "${addfdir}/misc/"
 		DESTINATION "."
-		USE_SOURCE_PERMISSIONS)
+		USE_SOURCE_PERMISSIONS
+		PATTERN ".gitignore" EXCLUDE)
 	install(DIRECTORY "${addfdir}/data/"
 		DESTINATION "${OBS_DATA_DESTINATION}"
-		USE_SOURCE_PERMISSIONS)
-	install(DIRECTORY "${addfdir}/libs${_lib_suffix}/"
-		DESTINATION "${OBS_LIBRARY_DESTINATION}"
-		USE_SOURCE_PERMISSIONS)
-	install(DIRECTORY "${addfdir}/exec${_lib_suffix}/"
-		DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-		USE_SOURCE_PERMISSIONS)
+		USE_SOURCE_PERMISSIONS
+		PATTERN ".gitignore" EXCLUDE)
+	
+	if(INSTALLER_RUN)
+		install(DIRECTORY "${addfdir}/libs32/"
+			DESTINATION "${OBS_LIBRARY32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec32/"
+			DESTINATION "${OBS_EXECUTABLE32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/libs64/"
+			DESTINATION "${OBS_LIBRARY64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec64/"
+			DESTINATION "${OBS_EXECUTABLE64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+	else()
+		install(DIRECTORY "${addfdir}/libs${_lib_suffix}/"
+			DESTINATION "${OBS_LIBRARY_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec${_lib_suffix}/"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			PATTERN ".gitignore" EXCLUDE)
+	endif()
 endfunction()
 
 macro(install_obs_core target)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_lib_suffix 64)
+	else()
+		set(_lib_suffix 32)
+	endif()
+
 	install(TARGETS ${target}
 		LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
 		RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
 	add_custom_command(TARGET ${target} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:${target}>"
+		COMMAND "${CMAKE_COMMAND}" -E copy
+			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_lib_suffix}bit/$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
+
+	if(DEFINED ENV{obsInstallerTempDir})
+		get_property(target_type TARGET ${target} PROPERTY TYPE)
+
+		if("${target_type}" STREQUAL "EXECUTABLE")
+			set(tmp_target_dir "${OBS_EXECUTABLE_DESTINATION}")
+		else()
+			set(tmp_target_dir "${OBS_LIBRARY_DESTINATION}")
+		endif()
+
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy
+				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${tmp_target_dir}/$<TARGET_FILE_NAME:${target}>"
+			VERBATIM)
+	endif()
 endmacro()
 
 macro(install_obs_plugin target)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_lib_suffix 64)
+	else()
+		set(_lib_suffix 32)
+	endif()
+
 	install(TARGETS ${target}
 		LIBRARY DESTINATION "${OBS_PLUGIN_DESTINATION}"
 		RUNTIME DESTINATION "${OBS_PLUGIN_DESTINATION}")
 	add_custom_command(TARGET ${target} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/$<TARGET_FILE_NAME:${target}>"
+		COMMAND "${CMAKE_COMMAND}" -E copy
+			"$<TARGET_FILE:${target}>" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_lib_suffix}bit/$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
+
+	if(DEFINED ENV{obsInstallerTempDir})
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy
+				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/$<TARGET_FILE_NAME:${target}>"
+			VERBATIM)
+	endif()
 endmacro()
 
 macro(install_obs_data target datadir datadest)
@@ -75,9 +161,16 @@ macro(install_obs_data target datadir datadest)
 		DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
 		USE_SOURCE_PERMISSIONS)
 	add_custom_command(TARGET ${target} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory
 			"${CMAKE_CURRENT_SOURCE_DIR}/${datadir}" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}"
 		VERBATIM)
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND DEFINED ENV{obsInstallerTempDir})
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy_directory
+				"${CMAKE_CURRENT_SOURCE_DIR}/${datadir}" "$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}"
+			VERBATIM)
+	endif()
 endmacro()
 
 macro(install_obs_plugin_data target datadir)
