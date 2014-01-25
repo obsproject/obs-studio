@@ -75,3 +75,5 @@ typedef int64_t off64_t;
 #ifndef OBS_INSTALL_PREFIX
 #define OBS_INSTALL_PREFIX ""
 #endif
+
+#define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH

@@ -66,7 +66,8 @@ char *find_plugin(const char *plugin)
 
 	if (OBS_INSTALL_PREFIX [0] != 0)
 	{
-		if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins/",
+		if (check_lib_path(plugin,
+					OBS_INSTALL_PREFIX "lib/obs-plugins/",
 					&output))
 			return output.array;
 	}
@@ -89,7 +90,7 @@ char *find_libobs_data_file(const char *file)
 
 	if (OBS_INSTALL_PREFIX [0] != 0)
 	{
-		if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/",
+		if (check_path(file, OBS_INSTALL_DATA_PATH "/libobs/",
 					&output))
 			return output.array;
 	}
@@ -112,8 +113,8 @@ char *obs_find_plugin_file(const char *file)
 
 	if (OBS_INSTALL_PREFIX [0] != 0)
 	{
-	if (check_path(file, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/",
-				&output))
+		if (check_path(file, OBS_INSTALL_DATA_PATH "/obs-plugins/",
+					&output))
 		return output.array;
 	}
 

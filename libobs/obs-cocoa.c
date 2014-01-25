@@ -49,7 +49,7 @@ char *find_plugin(const char *plugin)
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, OBS_INSTALL_PREFIX OBS_DATA_PATH "/libobs/");
+	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
 	dstr_cat(&path, file);
 	return path.array;
 }
@@ -57,7 +57,7 @@ char *find_libobs_data_file(const char *file)
 char *obs_find_plugin_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-plugins/");
+	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/obs-plugins/");
 	dstr_cat(&path, file);
 	return path.array;
 }
