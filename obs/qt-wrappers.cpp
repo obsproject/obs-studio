@@ -44,7 +44,7 @@ void QTToGSWindow(QWidget *widget, gs_window &gswindow)
 #ifdef _WIN32
 	gswindow.hwnd = (HWND)widget->winId();
 #elif __APPLE__
-	/* TODO: mac */
+	gswindow.view = (id)widget->winId();
 #else
 	gswindow.id = widget->winId();
 #endif
