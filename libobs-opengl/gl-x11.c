@@ -211,7 +211,7 @@ fail0:
 	return NULL;
 }
 
-extern void gl_platform_destroy(struct gl_platform *platform) 
+void gl_platform_destroy(struct gl_platform *platform) 
 {
 	if (!platform)
 		return; 

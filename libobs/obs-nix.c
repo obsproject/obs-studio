@@ -61,7 +61,7 @@ char *find_plugin(const char *plugin)
 	if (check_lib_path(plugin, "obs-plugins/", &output))
 		return output.array;
 
-	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins",
+	if (check_lib_path(plugin, OBS_INSTALL_PREFIX "lib/obs-plugins/",
 				&output))
 		return output.array;
 
