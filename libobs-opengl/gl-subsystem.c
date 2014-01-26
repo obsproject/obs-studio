@@ -19,6 +19,10 @@
 #include <graphics/matrix3.h>
 #include "gl-subsystem.h"
 
+/* Goofy Windows.h macros need to be removed */
+#undef far
+#undef near
+
 #ifdef _DEBUG
 /* Tables for OpenGL debug */
 static const char* debug_source_table[] = {
