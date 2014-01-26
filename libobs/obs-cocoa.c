@@ -26,8 +26,8 @@
 static const char *plugin_patterns[] = {
 	OBS_INSTALL_PREFIX "obs-plugins/%s.so",
 	OBS_INSTALL_PREFIX "obs-plugins/lib%s.so",
-	"../obs-plugins/64bit/%s.so",
-	"../obs-plugins/64bit/lib%s.so"
+	"../obs-plugins/%s.so",
+	"../obs-plugins/lib%s.so"
 };
 
 static const int plugin_patterns_size =
