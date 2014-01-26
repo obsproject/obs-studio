@@ -53,7 +53,8 @@ void *os_dlopen(const char *path)
 	HMODULE h_library = NULL;
 
 	dstr_init_copy(&dll_name, path);
-	dstr_cat(&dll_name, ".dll");
+	if (!dstr_find(&dll_name, ".dll"))
+		dstr_cat(&dll_name, ".dll");
 
 	os_utf8_to_wcs(dll_name.array, 0, &wpath);
 	h_library = LoadLibraryW(wpath);

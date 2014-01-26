@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <util/util.hpp>
 #include <QDialog>
 #include <memory>
 
@@ -29,10 +30,61 @@ class OBSBasicSettings : public QDialog {
 
 private:
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
+	ConfigFile localeIni;
+	bool generalChanged;
+	bool outputsChanged;
+	bool audioChanged;
+	bool videoChanged;
+	int  pageIndex;
+	bool loading;
+
+	inline bool Changed() const
+	{
+		return generalChanged || outputsChanged || audioChanged ||
+			videoChanged;
+	}
+
+	inline void ClearChanged()
+	{
+		generalChanged = false;
+		outputsChanged = false;
+		audioChanged   = false;
+		videoChanged   = false;
+	}
+
+	bool QueryChanges();
+
+	void LoadGeneralSettings();
+	//void LoadOutputSettings();
+	//void LoadAudioSettings();
+	void LoadVideoSettings();
+
+	/* general */
+	void LoadLanguageList();
+
+	/* video */
+	void LoadRendererList();
+	void ResetDownscales(uint32_t cx, uint32_t cy);
+	void LoadResolutionLists();
+	void LoadFPSData();
+	void LoadSettings(bool changedOnly);
+
+	void SaveGeneralSettings();
+	//void SaveOutputSettings();
+	//void SaveAudioSettings();
+	void SaveVideoSettings();
+	void SaveSettings();
 
 private slots:
-	void on_listWidget_currentRowChanged(int row);
+	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
+
+	void on_language_currentIndexChanged(int index);
+
+	void on_renderer_currentIndexChanged(int index);
+	void on_fpsType_currentIndexChanged(int index);
+	void on_baseResolution_editTextChanged(const QString &text);
+	void on_outputResolution_editTextChanged(const QString &text);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
