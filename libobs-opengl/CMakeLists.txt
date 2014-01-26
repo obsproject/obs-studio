@@ -12,7 +12,7 @@ add_definitions(-DLIBOBS_EXPORTS)
 if(WIN32)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-windows.c
-		wgl_obs.c)
+		GL/wgl_obs.c)
 elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
