@@ -57,7 +57,7 @@ static const char* debug_severity_table[] = {
 
 static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
-	GLsizei length, const GLchar *message, GLvoid *data )
+	GLsizei length, const GLchar *message, const GLvoid *data )
 {
 	blog(	LOG_DEBUG,
 		"[%s][%s]{%s}: %.*s",
