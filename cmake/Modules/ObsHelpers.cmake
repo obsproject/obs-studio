@@ -19,6 +19,14 @@ if(INSTALLER_RUN AND NOT DEFINED ENV{obsInstallerTempDir})
 	message(FATAL_ERROR "Environment variable obsInstallerTempDir is needed for multiarch installer generation")
 endif()
 
+if(DEFINED ENV{obsInstallerTempDir})
+	file(TO_CMAKE_PATH "$ENV{obsInstallerTempDir}" ENV{obsInstallerTempDir})
+endif()
+
+if(DEFINED ENV{obsAdditionalInstallFiles})
+	file(TO_CMAKE_PATH "$ENV{obsAdditionalInstallFiles}" ENV{obsAdditionalInstallFiles})
+endif()
+
 if(NOT UNIX_STRUCTURE)
 	set(OBS_DATA_DESTINATION "data")
 	if(APPLE)

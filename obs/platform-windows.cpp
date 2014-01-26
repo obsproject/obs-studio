@@ -24,12 +24,24 @@ using namespace std;
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+static inline bool check_path(const char* data, const char *path,
+		string &output)
+{
+	ostringstream str;
+	str << path << data;
+	output = str.str();
+
+	printf("Attempted path: %s\n", output.c_str());
+
+	return os_file_exists(output.c_str());
+}
+
 bool GetDataFilePath(const char *data, string &output)
 {
-	stringstream str;
-	str << OBS_DATA_PATH "/obs-studio/" << data;
-	output = str.str();
-	return os_file_exists(output.c_str());
+	if (check_path(data, "data/obs-studio/", output))
+		return true;
+
+	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
 
 static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
