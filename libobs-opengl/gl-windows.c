@@ -237,7 +237,7 @@ static inline void required_extension_error(const char *extension)
 
 static bool gl_init_extensions(HDC hdc)
 {
-	if (wgl_LoadFunctions(hdc)) {
+	if (!wgl_LoadFunctions(hdc)) {
 		blog(LOG_ERROR, "Failed to load WGL entry functions.");
 		return false;
 	}
