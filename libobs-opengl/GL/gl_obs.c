@@ -44,6 +44,7 @@ static void* SunGetProcAddress (const GLubyte* name)
 #ifdef _MSC_VER
 #pragma warning(disable: 4055)
 #pragma warning(disable: 4054)
+#pragma warning(disable: 4996)
 #endif
 
 static int TestPointer(const PROC pTest)
@@ -84,6 +85,9 @@ static PROC WinGetProcAddress(const char *name)
 	#endif
 #endif
 
+int ogl_ext_EXT_texture_compression_s3tc = ogl_LOAD_FAILED;
+int ogl_ext_EXT_texture_sRGB = ogl_LOAD_FAILED;
+int ogl_ext_EXT_texture_filter_anisotropic = ogl_LOAD_FAILED;
 int ogl_ext_ARB_framebuffer_object = ogl_LOAD_FAILED;
 int ogl_ext_ARB_seamless_cube_map = ogl_LOAD_FAILED;
 int ogl_ext_ARB_separate_shader_objects = ogl_LOAD_FAILED;
@@ -91,9 +95,6 @@ int ogl_ext_ARB_debug_output = ogl_LOAD_FAILED;
 int ogl_ext_ARB_copy_image = ogl_LOAD_FAILED;
 int ogl_ext_NV_copy_image = ogl_LOAD_FAILED;
 int ogl_ext_EXT_texture_mirror_clamp = ogl_LOAD_FAILED;
-int ogl_ext_EXT_texture_compression_s3tc = ogl_LOAD_FAILED;
-int ogl_ext_EXT_texture_sRGB = ogl_LOAD_FAILED;
-int ogl_ext_EXT_texture_filter_anisotropic = ogl_LOAD_FAILED;
 
 void (CODEGEN_FUNCPTR *_ptrc_glBindFramebuffer)(GLenum, GLuint) = NULL;
 void (CODEGEN_FUNCPTR *_ptrc_glBindRenderbuffer)(GLenum, GLuint) = NULL;
@@ -2055,6 +2056,9 @@ typedef struct ogl_StrToExtMap_s
 } ogl_StrToExtMap;
 
 static ogl_StrToExtMap ExtensionMap[10] = {
+	{"GL_EXT_texture_compression_s3tc", &ogl_ext_EXT_texture_compression_s3tc, NULL},
+	{"GL_EXT_texture_sRGB", &ogl_ext_EXT_texture_sRGB, NULL},
+	{"GL_EXT_texture_filter_anisotropic", &ogl_ext_EXT_texture_filter_anisotropic, NULL},
 	{"GL_ARB_framebuffer_object", &ogl_ext_ARB_framebuffer_object, Load_ARB_framebuffer_object},
 	{"GL_ARB_seamless_cube_map", &ogl_ext_ARB_seamless_cube_map, NULL},
 	{"GL_ARB_separate_shader_objects", &ogl_ext_ARB_separate_shader_objects, Load_ARB_separate_shader_objects},
@@ -2062,9 +2066,6 @@ static ogl_StrToExtMap ExtensionMap[10] = {
 	{"GL_ARB_copy_image", &ogl_ext_ARB_copy_image, Load_ARB_copy_image},
 	{"GL_NV_copy_image", &ogl_ext_NV_copy_image, Load_NV_copy_image},
 	{"GL_EXT_texture_mirror_clamp", &ogl_ext_EXT_texture_mirror_clamp, NULL},
-	{"GL_EXT_texture_compression_s3tc", &ogl_ext_EXT_texture_compression_s3tc, NULL},
-	{"GL_EXT_texture_sRGB", &ogl_ext_EXT_texture_sRGB, NULL},
-	{"GL_EXT_texture_filter_anisotropic", &ogl_ext_EXT_texture_filter_anisotropic, NULL},
 };
 
 static int g_extensionMapSize = 10;
@@ -2084,6 +2085,9 @@ static ogl_StrToExtMap *FindExtEntry(const char *extensionName)
 
 static void ClearExtensionVars()
 {
+	ogl_ext_EXT_texture_compression_s3tc = ogl_LOAD_FAILED;
+	ogl_ext_EXT_texture_sRGB = ogl_LOAD_FAILED;
+	ogl_ext_EXT_texture_filter_anisotropic = ogl_LOAD_FAILED;
 	ogl_ext_ARB_framebuffer_object = ogl_LOAD_FAILED;
 	ogl_ext_ARB_seamless_cube_map = ogl_LOAD_FAILED;
 	ogl_ext_ARB_separate_shader_objects = ogl_LOAD_FAILED;
@@ -2091,9 +2095,6 @@ static void ClearExtensionVars()
 	ogl_ext_ARB_copy_image = ogl_LOAD_FAILED;
 	ogl_ext_NV_copy_image = ogl_LOAD_FAILED;
 	ogl_ext_EXT_texture_mirror_clamp = ogl_LOAD_FAILED;
-	ogl_ext_EXT_texture_compression_s3tc = ogl_LOAD_FAILED;
-	ogl_ext_EXT_texture_sRGB = ogl_LOAD_FAILED;
-	ogl_ext_EXT_texture_filter_anisotropic = ogl_LOAD_FAILED;
 }
 
 
