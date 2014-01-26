@@ -22,7 +22,7 @@
 
 #include "GL/glx_obs.h"
 	
-static const GLenum fb_attribs[] = {
+static const int fb_attribs[] = {
 	/* Hardcoded for now... */
 	GLX_STENCIL_SIZE, 8,
 	GLX_DEPTH_SIZE, 24, 
@@ -31,7 +31,7 @@ static const GLenum fb_attribs[] = {
 	None
 };
 
-static const GLenum ctx_attribs[] = {
+static const int ctx_attribs[] = {
 #ifdef _DEBUG
 	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
