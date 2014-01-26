@@ -62,5 +62,11 @@
     <ClCompile Include="..\..\..\libobs-opengl\gl-indexbuffer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\GL\gl_obs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs-opengl\GL\wgl_obs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

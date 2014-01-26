@@ -15,7 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <GL/glew.h>
 #include "gl-subsystem.h"
 #include <OpenGL/OpenGL.h>
 
@@ -97,19 +96,6 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 	return context;
 }
 
-static bool gl_init_extensions(device_t device)
-{
-	glewExperimental=true;
-	GLenum error = glewInit();
-	if(error != GLEW_OK) {
-	       blog(LOG_ERROR, "glewInit failed, %u\n%s\n", error,
-			       glewGetErrorString(error));
-	       return false;
-	}
-
-	return true;
-}
-
 static bool gl_init_default_swap(struct gl_platform *plat, device_t dev,
 		struct gs_init_data *info)
 {
@@ -134,13 +120,8 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	[plat->context makeCurrentContext];
 
-	if(!gl_init_extensions(device))
+	if (!ogl_LoadFunctions())
 		goto fail;
-
-	if (GLEW_ARB_seamless_cube_map) {
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		gl_success("GL_TEXTURE_CUBE_MAP_SEAMLESS");
-	}
 
 	return plat;
 

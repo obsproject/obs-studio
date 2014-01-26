@@ -1,6 +1,0 @@
-GL_EXT_draw_range_elements
-http://oss.sgi.com/projects/ogl-sample/registry/EXT/draw_range_elements.txt
-GL_EXT_draw_range_elements
-	GL_MAX_ELEMENTS_VERTICES_EXT 0x80E8
-	GL_MAX_ELEMENTS_INDICES_EXT 0x80E9
-	void glDrawRangeElementsEXT (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices)

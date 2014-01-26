@@ -1,5 +1,0 @@
-GLX_SGI_video_sync
-http://www.opengl.org/registry/specs/SGI/video_sync.txt
-GLX_SGI_video_sync
-	int glXGetVideoSyncSGI (unsigned int* count)
-	int glXWaitVideoSyncSGI (int divisor, int remainder, unsigned int* count)

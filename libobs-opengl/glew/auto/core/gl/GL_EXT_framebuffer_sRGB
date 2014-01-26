@@ -1,5 +1,0 @@
-GL_EXT_framebuffer_sRGB
-http://developer.download.nvidia.com/opengl/specs/GL_EXT_framebuffer_sRGB.txt
-GL_EXT_framebuffer_sRGB
-	GL_FRAMEBUFFER_SRGB_EXT 0x8DB9
-	GL_FRAMEBUFFER_SRGB_CAPABLE_EXT 0x8DBA

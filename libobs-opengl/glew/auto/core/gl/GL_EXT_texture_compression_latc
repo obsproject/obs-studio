@@ -1,7 +1,0 @@
-GL_EXT_texture_compression_latc
-http://developer.download.nvidia.com/opengl/specs/GL_EXT_texture_compression_latc.txt
-GL_EXT_texture_compression_latc
-	GL_COMPRESSED_LUMINANCE_LATC1_EXT 0x8C70
-	GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT 0x8C71
-	GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT 0x8C72
-	GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT 0x8C73

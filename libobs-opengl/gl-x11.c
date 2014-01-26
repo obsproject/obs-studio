@@ -20,12 +20,9 @@
 
 #include "gl-subsystem.h"
 
-#include <GL/glx.h>
-#include <GL/glxext.h>
+#include "GL/glx_obs.h"
 	
-static PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
-	
-static const GLenum fb_attribs[] = {
+static const int fb_attribs[] = {
 	/* Hardcoded for now... */
 	GLX_STENCIL_SIZE, 8,
 	GLX_DEPTH_SIZE, 24, 
@@ -34,7 +31,7 @@ static const GLenum fb_attribs[] = {
 	None
 };
 
-static const GLenum ctx_attribs[] = {
+static const int ctx_attribs[] = {
 #ifdef _DEBUG
 	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
@@ -66,17 +63,8 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 	/* wi->display = info->window.display; */
 
 	/*
-		In order to do the above, we have to call
-		XInitThreads in the soonest possible time. 
-		The wxFrame initializer is good but it sucks
-		big time that I'm having to make X11 specific
-		code all over platform-independent code. 
-
-		The solution we have now avoids this although I'd
-		like to be able to do the above as it's probably
-		safer (I don't know the side-effects of using a Display
-		connection that wasn't used to create the window)
-		and more efficient. 
+		The above no longer works with Qt. 
+		Let's hope it continues to work.	
 	 */
 	
 	return wi;
@@ -131,7 +119,11 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 	
-	
+	if (!glx_LoadFunctions(display, DefaultScreen(display))) {
+		blog(LOG_ERROR, "Unable to load GLX entry functions.");
+		goto fail0;
+	}
+
 	if (!glXQueryExtension(display, &error_base, &event_base)) {
 		blog(LOG_ERROR, "GLX not supported.");
 		goto fail0;
@@ -147,9 +139,8 @@ struct gl_platform *gl_platform_create(device_t device,
 			goto fail0;
 		}
 	}
-	
-	glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress("glXCreateContextAttribsARB");
-	if (!glXCreateContextAttribsARB) {
+
+	if (!glx_ext_ARB_create_context) {
 		blog(LOG_ERROR, "ARB_GLX_create_context not supported!");
 		goto fail0;
 	}
@@ -178,15 +169,9 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail2;
 	}
 
-	/* Initialize GLEW */
-	{ 	
-		glewExperimental = true;
-		GLenum err = glewInit();
-		
-		if (GLEW_OK != err) {
-			blog(LOG_ERROR, glewGetErrorString(err));
-			goto fail2;
-		}
+	if (!ogl_LoadFunctions()) {
+		blog(LOG_ERROR, "Failed to load OpenGL entry functions.");
+		goto fail2;
 	}
 	
 	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));

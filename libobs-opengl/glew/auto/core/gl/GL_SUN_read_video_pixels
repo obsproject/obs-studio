@@ -1,4 +1,0 @@
-GL_SUN_read_video_pixels
-http://wwws.sun.com/software/graphics/opengl/extensions/gl_sun_read_video_pixels.txt
-GL_SUN_read_video_pixels
-	void glReadVideoPixelsSUN (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)

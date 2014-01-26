@@ -1,4 +1,0 @@
-GL_WIN_swap_hint
-http://msdn.microsoft.com/library/default.asp?url=/library/en-us/opengl/glfunc01_16zy.asp
-GL_WIN_swap_hint
-	void glAddSwapHintRectWIN (GLint x, GLint y, GLsizei width, GLsizei height)

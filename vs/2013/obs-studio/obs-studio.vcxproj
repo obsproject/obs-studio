@@ -419,7 +419,7 @@
       <AdditionalDependencies>libobs.lib;qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/64bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/32bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -458,7 +458,7 @@
       <AdditionalDependencies>libobs.lib;qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/64bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/32bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -1,7 +1,0 @@
-GL_NV_geometry_program4
-http://developer.download.nvidia.com/opengl/specs/GL_NV_geometry_program4.txt
-GL_NV_gpu_program4
-	GL_GEOMETRY_PROGRAM_NV 0x8C26
-	GL_MAX_PROGRAM_OUTPUT_VERTICES_NV 0x8C27
-	GL_MAX_PROGRAM_TOTAL_OUTPUT_COMPONENTS_NV 0x8C28
-	void glProgramVertexLimitNV (GLenum target, GLint limit)
