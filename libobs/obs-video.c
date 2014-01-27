@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 #include "graphics/vec4.h"
 
 static void tick_sources(uint64_t cur_time, uint64_t *last_time)

@@ -22,7 +22,7 @@
 #include "graphics/vec3.h"
 
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 
 static void obs_source_destroy(obs_source_t source);
 

@@ -146,7 +146,7 @@ set(libobs_libobs_HEADERS
 	obs-defs.h
 	obs-encoder.h
 	obs-service.h
-	obs-data.h
+	obs-internal.h
 	obs.h
 	obs-module.h
 	obs-scene.h

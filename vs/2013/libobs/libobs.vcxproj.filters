@@ -66,9 +66,6 @@
     <ClInclude Include="..\..\..\libobs\obs-defs.h">
       <Filter>libobs\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\libobs\obs-data.h">
-      <Filter>libobs\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\libobs\obs.h">
       <Filter>libobs\Header Files</Filter>
     </ClInclude>
@@ -199,6 +196,9 @@
       <Filter>callback\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\libobs\obs-encoder.h">
+      <Filter>libobs\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\libobs\obs-internal.h">
       <Filter>libobs\Header Files</Filter>
     </ClInclude>
   </ItemGroup>

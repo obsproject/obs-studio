@@ -43,9 +43,9 @@
     <ClInclude Include="..\..\..\libobs\media-io\audio-resampler.h" />
     <ClInclude Include="..\..\..\libobs\media-io\format-conversion.h" />
     <ClInclude Include="..\..\..\libobs\media-io\video-io.h" />
-    <ClInclude Include="..\..\..\libobs\obs-data.h" />
     <ClInclude Include="..\..\..\libobs\obs-defs.h" />
     <ClInclude Include="..\..\..\libobs\obs-encoder.h" />
+    <ClInclude Include="..\..\..\libobs\obs-internal.h" />
     <ClInclude Include="..\..\..\libobs\obs-module.h" />
     <ClInclude Include="..\..\..\libobs\obs-output.h" />
     <ClInclude Include="..\..\..\libobs\obs-scene.h" />

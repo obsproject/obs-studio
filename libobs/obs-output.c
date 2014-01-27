@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 
 bool load_output_info(void *module, const char *module_name,
 		const char *id, struct output_info *info)

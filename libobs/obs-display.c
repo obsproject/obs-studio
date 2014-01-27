@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 
 obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {

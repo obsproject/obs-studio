@@ -18,7 +18,7 @@
 #include "util/platform.h"
 #include "util/dstr.h"
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 
 static inline bool check_path(const char* data, const char *path,
 		struct dstr * output)

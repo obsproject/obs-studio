@@ -18,7 +18,7 @@
 #include "callback/calldata.h"
 
 #include "obs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 #include "obs-module.h"
 
 struct obs_subsystem *obs = NULL;

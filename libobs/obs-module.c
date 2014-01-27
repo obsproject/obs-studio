@@ -19,7 +19,7 @@
 #include "util/dstr.h"
 
 #include "obs-defs.h"
-#include "obs-data.h"
+#include "obs-internal.h"
 #include "obs-module.h"
 
 void *load_module_subfunc(void *module, const char *module_name,
