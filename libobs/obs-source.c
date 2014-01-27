@@ -245,7 +245,7 @@ int obs_source_release(obs_source_t source)
 
 void obs_source_remove(obs_source_t source)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 	size_t id;
 
 	source->removed = true;

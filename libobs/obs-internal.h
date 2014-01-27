@@ -75,7 +75,7 @@ struct obs_audio {
 };
 
 /* user sources, output channels, and displays */
-struct obs_data {
+struct obs_program_data {
 	/* arrays of pointers jim?  you should really stop being lazy and use
 	 * linked lists. */
 	DARRAY(struct obs_display*) displays;
@@ -108,7 +108,7 @@ struct obs_subsystem {
 	 * clean and organized */
 	struct obs_video            video;
 	struct obs_audio            audio;
-	struct obs_data             data;
+	struct obs_program_data     data;
 };
 
 extern struct obs_subsystem *obs;

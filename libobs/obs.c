@@ -224,7 +224,7 @@ static void obs_free_audio(void)
 
 static bool obs_init_data(void)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 	pthread_mutexattr_t attr;
 	bool success = false;
 
@@ -252,7 +252,7 @@ fail:
 
 static void obs_free_data(void)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 	uint32_t i;
 
 	data->valid = false;
@@ -504,7 +504,7 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->outputs_mutex);
 
@@ -517,7 +517,7 @@ void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 
 void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->encoders_mutex);
 
@@ -530,7 +530,7 @@ void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 
 void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
@@ -543,7 +543,7 @@ void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
 
 obs_source_t obs_get_source_by_name(const char *name)
 {
-	struct obs_data *data = &obs->data;
+	struct obs_program_data *data = &obs->data;
 	struct obs_source *source = NULL;
 	size_t i;
 
