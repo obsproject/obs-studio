@@ -1,0 +1,35 @@
+uniform float4x4 ViewProj;
+uniform texture_rect diffuse;
+
+sampler_state texSampler {
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	Filter    = Linear;
+};
+
+struct VertexInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertexInOut VShader(VertexInOut vert_in)
+{
+	VertexInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = vert_in.uv;
+	return vert_out;
+}
+
+float4 PShader(VertexInOut fragment_in) : TARGET
+{
+	return diffuse.Sample(texSampler, fragment_in.uv);
+}
+
+technique Default
+{
+	pass
+	{
+		vertex_shader = VShader(vert_in);
+		pixel_shader  = PShader(fragment_in);
+	}
+}
