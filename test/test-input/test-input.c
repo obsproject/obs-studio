@@ -3,7 +3,7 @@
 
 const char *inputs[] = {
 #ifdef __APPLE__
-	"osx-desktop-test",
+	"osx_desktop_test",
 #endif
 	"random",
 	"sinewave"

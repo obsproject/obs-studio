@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 
-const char *desktop_getname(const char *locale)
+const char *osx_desktop_test_getname(const char *locale)
 {
 	return "OSX Monitor Capture";
 }
@@ -20,7 +20,7 @@ static IOSurfaceRef current = NULL,
 static texture_t tex = NULL;
 static pthread_mutex_t c_mutex;
 
-struct desktop_tex *desktop_create(const char *settings, obs_source_t source)
+struct desktop_tex *osx_desktop_test_create(const char *settings, obs_source_t source)
 {
 	struct desktop_tex *rt = bmalloc(sizeof(struct desktop_tex));
 	char *effect_file;
@@ -43,12 +43,12 @@ struct desktop_tex *desktop_create(const char *settings, obs_source_t source)
 	bfree(effect_file);
 
 	if (!rt->whatever) {
-		desktop_destroy(rt);
+		osx_desktop_test_destroy(rt);
 		return NULL;
 	}
 
 	if ([[NSScreen screens] count] < 1) {
-		desktop_destroy(rt);
+		osx_desktop_test_destroy(rt);
 		return NULL;
 	}
 
@@ -98,14 +98,14 @@ struct desktop_tex *desktop_create(const char *settings, obs_source_t source)
 	gs_leavecontext();
 
 	if (CGDisplayStreamStart(rt->disp)) {
-		desktop_destroy(rt);
+		osx_desktop_test_destroy(rt);
 		return NULL;
 	}
 
 	return rt;
 }
 
-void desktop_destroy(struct desktop_tex *rt)
+void osx_desktop_test_destroy(struct desktop_tex *rt)
 {
 	if (rt) {
 		pthread_mutex_lock(&c_mutex);
@@ -128,12 +128,13 @@ void desktop_destroy(struct desktop_tex *rt)
 	}
 }
 
-uint32_t desktop_get_output_flags(struct desktop_tex *rt)
+uint32_t osx_desktop_test_get_output_flags(struct desktop_tex *rt)
 {
 	return SOURCE_VIDEO;
 }
 
-void desktop_video_render(struct desktop_tex *rt, obs_source_t filter_target)
+void osx_desktop_test_video_render(struct desktop_tex *rt,
+		obs_source_t filter_target)
 {
 	pthread_mutex_lock(&c_mutex);
 
@@ -163,12 +164,12 @@ fail:
 	pthread_mutex_unlock(&c_mutex);
 }
 
-uint32_t desktop_getwidth(struct desktop_tex *rt)
+uint32_t osx_desktop_test_getwidth(struct desktop_tex *rt)
 {
 	return rt->width;
 }
 
-uint32_t desktop_getheight(struct desktop_tex *rt)
+uint32_t osx_desktop_test_getheight(struct desktop_tex *rt)
 {
 	return rt->height;
 }
