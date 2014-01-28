@@ -14,8 +14,13 @@ if(APPLE)
 	include_directories(${IOSURF})
 	mark_as_advanced(${IOSURF})
 
+	find_library(COCOA Cocoa)
+	include_directories(${COCOA})
+	mark_as_advanced(${COCOA})
+
 	set(test-input_PLATFORM_DEPS
-		${IOSURF})
+		${IOSURF}
+		${COCOA})
 endif()
 
 set(test-input_SOURCES
