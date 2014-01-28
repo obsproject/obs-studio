@@ -14,6 +14,9 @@ endif()
 
 option(INSTALLER_RUN "Build a multiarch installer, needs to run indenepdently after both archs have compiled" FALSE)
 option(UNIX_STRUCTURE "Build with standard unix filesystem structure" ${_struct_def})
+if(APPLE)
+	option(BUILD_REDISTRIBUTABLE "Fix rpath of external libraries" FALSE)
+endif()
 
 if(INSTALLER_RUN AND NOT DEFINED ENV{obsInstallerTempDir})
 	message(FATAL_ERROR "Environment variable obsInstallerTempDir is needed for multiarch installer generation")
@@ -66,6 +69,31 @@ else()
 	add_definitions(-DOBS_DATA_PATH="${OBS_DATA_DESTINATION}")
 	add_definitions(-DOBS_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}/")
 endif()
+
+function(obs_fixup_install_target target type)
+	if(NOT APPLE OR NOT BUILD_REDISTRIBUTABLE)
+		return()
+	endif()
+
+	foreach(data ${ARGN})
+		if(type STREQUAL "TARGET")
+			get_property(fullpath TARGET "${data}" PROPERTY LOCATION)
+		else()
+			set(fullpath "${data}")
+		endif()
+
+		execute_process(COMMAND otool -D "${fullpath}" OUTPUT_VARIABLE otool_out)
+		string(REGEX REPLACE "(\r?\n)+$" "" otool_out "${otool_out}")
+		string(REGEX REPLACE ".*\n" "" otool_out "${otool_out}")
+
+		string(REGEX REPLACE ".*/" "@rpath/" newpath "${otool_out}")
+
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND
+				install_name_tool -change "${otool_out}" "${newpath}" "$<TARGET_FILE:${target}>"
+			VERBATIM)
+	endforeach()
+endfunction()
 
 function(obs_generate_multiarch_installer)
 	install(DIRECTORY "$ENV{obsInstallerTempDir}/"
@@ -143,9 +171,9 @@ macro(install_obs_core target)
 			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
 
+
 	if(DEFINED ENV{obsInstallerTempDir})
 		get_property(target_type TARGET ${target} PROPERTY TYPE)
-
 		if("${target_type}" STREQUAL "EXECUTABLE")
 			set(tmp_target_dir "${OBS_EXECUTABLE_DESTINATION}")
 		else()
