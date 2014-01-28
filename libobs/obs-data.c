@@ -309,8 +309,10 @@ void obs_data_erase(obs_data_t data, const char *name)
 {
 	struct obs_data_item *item = get_item(data, name);
 
-	obs_data_item_detach(item);
-	obs_data_item_release(&item);
+	if (item) {
+		obs_data_item_detach(item);
+		obs_data_item_release(&item);
+	}
 }
 
 void obs_data_setstring(obs_data_t data, const char *name, const char *val)
@@ -405,7 +407,7 @@ int obs_data_array_addref(obs_data_array_t array)
 	return ++array->ref;
 }
 
-static void obs_data_array_destroy(obs_data_array_t array)
+static inline void obs_data_array_destroy(obs_data_array_t array)
 {
 	for (size_t i = 0; i < array->objects.num; i++)
 		obs_data_release(array->objects.array[i]);
@@ -514,6 +516,7 @@ enum obs_data_type obs_data_item_gettype(obs_data_item_t item)
 
 void obs_data_item_setstring(obs_data_item_t *item, const char *val)
 {
+	if (!val) val = "";
 	obs_data_item_setdata(item, val, strlen(val)+1, OBS_DATA_STRING);
 }
 
