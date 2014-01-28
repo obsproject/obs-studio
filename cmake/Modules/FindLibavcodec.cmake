@@ -29,7 +29,7 @@ else()
 
 	find_library(AVCODEC_LIB
 		NAMES avcodec
-		HINTS ${_AVCODEC_LIBRARY_DIRS} ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVCODEC_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(Libavcodec_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavcodec include dir")
 	set(Libavcodec_LIBRARIES ${AVCODEC_LIB} CACHE STRING "Libavcodec libraries")
