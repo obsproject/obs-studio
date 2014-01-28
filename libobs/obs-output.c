@@ -46,7 +46,7 @@ static inline const struct output_info *find_output(const char *id)
 }
 
 obs_output_t obs_output_create(const char *id, const char *name,
-		const char *settings)
+		obs_data_t settings)
 {
 	const struct output_info *info = find_output(id);
 	struct obs_output *output;
@@ -65,7 +65,9 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	}
 
 	output->name = bstrdup(name);
-	dstr_init_copy(&output->settings, settings);
+
+	obs_data_addref(settings);
+	output->settings = settings;
 
 	pthread_mutex_lock(&obs->data.outputs_mutex);
 	da_push_back(obs->data.outputs, &output);
@@ -81,7 +83,7 @@ void obs_output_destroy(obs_output_t output)
 		pthread_mutex_unlock(&obs->data.outputs_mutex);
 
 		output->callbacks.destroy(output->data);
-		dstr_free(&output->settings);
+		obs_data_release(output->settings);
 		bfree(output->name);
 		bfree(output);
 	}
@@ -102,7 +104,7 @@ bool obs_output_active(obs_output_t output)
 	return output->callbacks.active(output);
 }
 
-void obs_output_update(obs_output_t output, const char *settings)
+void obs_output_update(obs_output_t output, obs_data_t settings)
 {
 	if (output->callbacks.update)
 		output->callbacks.update(output->data, settings);
@@ -117,9 +119,4 @@ void obs_output_pause(obs_output_t output)
 {
 	if (output->callbacks.pause)
 		output->callbacks.pause(output->data);
-}
-
-void obs_output_save_settings(obs_output_t output, const char *settings)
-{
-	dstr_copy(&output->settings, settings);
 }

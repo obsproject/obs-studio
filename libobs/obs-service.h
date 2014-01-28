@@ -24,9 +24,9 @@ struct service_info {
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(const char *settings, struct service_data *service);
+	void *(*create)(obs_data_t settings, struct service_data *service);
 	void (*destroy)(void *data);
-	void (*config)(void *data, const char *settings);
+	void (*config)(void *data, obs_data_t settings);
 
 	/* optional */
 	const char *(*getdata)(const char *attribute);

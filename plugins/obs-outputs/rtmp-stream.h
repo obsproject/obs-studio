@@ -30,10 +30,9 @@ struct rtmp_stream {
 };
 
 EXPORT const char *rtmp_stream_getname(const char *locale);
-EXPORT void *rtmp_stream_create(const char *settings, obs_output_t output);
+EXPORT void *rtmp_stream_create(obs_data_t settings, obs_output_t output);
 EXPORT void rtmp_stream_destroy(struct rtmp_stream *stream);
-EXPORT void rtmp_stream_update(struct rtmp_stream *stream,
-		const char *settings);
+EXPORT void rtmp_stream_update(struct rtmp_stream *stream, obs_data_t settings);
 EXPORT bool rtmp_stream_start(struct rtmp_stream *stream);
 EXPORT void rtmp_stream_stop(struct rtmp_stream *stream);
 EXPORT bool rtmp_stream_active(struct rtmp_stream *stream);

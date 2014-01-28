@@ -58,7 +58,7 @@
  *       Returns the full translated name of the output type (seen by the user).
  *
  * ---------------------------------------------------------
- *   void *[name]_create(const char *settings, obs_output_t output);
+ *   void *[name]_create(obs_data_t settings, obs_output_t output);
  *       Creates an output.
  *
  *       settings: Settings of the output.
@@ -70,7 +70,7 @@
  *       Destroys the output.
  *
  * ---------------------------------------------------------
- *   void [name]_update(void *data, const char *settings)
+ *   void [name]_update(void *data, obs_data_t settings)
  *       Updates the output's settings
  *
  *       settings: New settings of the output
@@ -103,10 +103,10 @@ struct output_info {
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(const char *settings, struct obs_output *output);
+	void *(*create)(obs_data_t settings, struct obs_output *output);
 	void (*destroy)(void *data);
 
-	void (*update)(void *data, const char *settings);
+	void (*update)(void *data, obs_data_t settings);
 
 	bool (*start)(void *data);
 	void (*stop)(void *data);
@@ -121,7 +121,7 @@ struct obs_output {
 	char               *name;
 	void               *data;
 	struct output_info callbacks;
-	struct dstr        settings;
+	obs_data_t         settings;
 };
 
 extern bool load_output_info(void *module, const char *module_name,

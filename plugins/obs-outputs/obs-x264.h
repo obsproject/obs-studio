@@ -31,11 +31,11 @@ struct obs_x264 {
 
 EXPORT const char *obs_x264_getname(const char *locale);
 
-EXPORT struct obs_x264 *obs_x264_create(const char *settings,
+EXPORT struct obs_x264 *obs_x264_create(obs_data_t settings,
 		obs_encoder_t encoder);
 EXPORT void obs_x264_destroy(struct obs_x264 *data);
 
-EXPORT void obs_x264_update(struct obs_x264 *data, const char *settings);
+EXPORT void obs_x264_update(struct obs_x264 *data, obs_data_t settings);
 
 EXPORT void obs_x264_reset(struct obs_x264 *data);
 

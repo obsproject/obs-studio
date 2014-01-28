@@ -23,7 +23,7 @@ const char *obs_x264_getname(const char *locale)
 	return "x264 (Software)";
 }
 
-struct obs_x264 *obs_x264_create(const char *settings, obs_encoder_t encoder)
+struct obs_x264 *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	struct obs_x264 *data = bmalloc(sizeof(struct obs_x264));
 }
@@ -32,7 +32,7 @@ void obs_x264_destroy(struct obs_x264 *data)
 {
 }
 
-void obs_x264_update(struct obs_x264 *data, const char *settings)
+void obs_x264_update(struct obs_x264 *data, obs_data_t settings)
 {
 }
 

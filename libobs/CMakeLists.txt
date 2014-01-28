@@ -138,6 +138,7 @@ set(libobs_libobs_SOURCES
 	obs-source.c
 	obs-output.c
 	obs.c
+	obs-data.c
 	obs-module.c
 	obs-display.c
 	obs-scene.c
@@ -148,6 +149,7 @@ set(libobs_libobs_HEADERS
 	obs-service.h
 	obs-internal.h
 	obs.h
+	obs-data.h
 	obs-module.h
 	obs-scene.h
 	obs-source.h

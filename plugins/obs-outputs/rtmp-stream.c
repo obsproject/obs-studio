@@ -23,7 +23,7 @@ const char *rtmp_stream_getname(const char *locale)
 	return "RTMP Stream";
 }
 
-void *rtmp_stream_create(const char *settings, obs_output_t output)
+void *rtmp_stream_create(obs_data_t settings, obs_output_t output)
 {
 	struct rtmp_stream *stream = bmalloc(sizeof(struct rtmp_stream));
 	memset(stream, 0, sizeof(struct rtmp_stream));
@@ -33,7 +33,7 @@ void rtmp_stream_destroy(struct rtmp_stream *stream)
 {
 }
 
-void rtmp_stream_update(struct rtmp_stream *stream, const char *settings)
+void rtmp_stream_update(struct rtmp_stream *stream, obs_data_t settings)
 {
 }
 

@@ -27,6 +27,7 @@
 #include "callback/proc.h"
 
 #include "obs-defs.h"
+#include "obs-data.h"
 
 /*
  * Main libobs header used by applications.
@@ -350,7 +351,7 @@ EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
  * or modifying video/audio.  Use obs_source_release to release it.
  */
 EXPORT obs_source_t obs_source_create(enum obs_source_type type,
-		const char *id, const char *name, const char *settings);
+		const char *id, const char *name, obs_data_t settings);
 
 /**
  * Adds/releases a reference to a source.  When the last reference is
@@ -375,7 +376,7 @@ EXPORT bool obs_source_removed(obs_source_t source);
 EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
 
 /** Updates settings for this source */
-EXPORT void obs_source_update(obs_source_t source, const char *settings);
+EXPORT void obs_source_update(obs_source_t source, obs_data_t settings);
 
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t source);
@@ -419,7 +420,7 @@ EXPORT void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 		enum order_movement movement);
 
 /** Gets the settings string for a source */
-EXPORT const char *obs_source_getsettings(obs_source_t source);
+EXPORT obs_data_t obs_source_getsettings(obs_source_t source);
 
 /** Gets the name of a source */
 EXPORT const char *obs_source_getname(obs_source_t source);
@@ -445,9 +446,6 @@ EXPORT float obs_source_getvolume(obs_source_t source);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
-
-/** Saves the settings string for a source */
-EXPORT void obs_source_savesettings(obs_source_t source, const char *settings);
 
 /** Outputs asynchronous video data */
 EXPORT void obs_source_output_video(obs_source_t source,
@@ -542,7 +540,7 @@ EXPORT const char *obs_output_getdisplayname(const char *id,
  * directshow, or other custom outputs.
  */
 EXPORT obs_output_t obs_output_create(const char *id, const char *name,
-		const char *settings);
+		obs_data_t settings);
 EXPORT void obs_output_destroy(obs_output_t output);
 
 /** Starts the output. */
@@ -555,7 +553,7 @@ EXPORT void obs_output_stop(obs_output_t output);
 EXPORT bool obs_output_active(obs_output_t output);
 
 /** Updates the settings for this output context */
-EXPORT void obs_output_update(obs_output_t output, const char *settings);
+EXPORT void obs_output_update(obs_output_t output, obs_data_t settings);
 
 /** Specifies whether the output can be paused */
 EXPORT bool obs_output_canpause(obs_output_t output);
@@ -564,11 +562,7 @@ EXPORT bool obs_output_canpause(obs_output_t output);
 EXPORT void obs_output_pause(obs_output_t output);
 
 /* Gets the current output settings string */
-EXPORT const char *obs_output_get_settings(obs_output_t output);
-
-/* Saves the output settings string, typically used only by outputs */
-EXPORT void obs_output_save_settings(obs_output_t output,
-		const char *settings);
+EXPORT obs_data_t obs_output_get_settings(obs_output_t output);
 
 
 /* ------------------------------------------------------------------------- */
@@ -577,10 +571,10 @@ EXPORT const char *obs_encoder_getdisplayname(const char *id,
 		const char *locale);
 
 EXPORT obs_encoder_t obs_encoder_create(const char *id, const char *name,
-		const char *settings);
+		obs_data_t settings);
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
 
-EXPORT void obs_encoder_update(obs_encoder_t encoder, const char *settings);
+EXPORT void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings);
 
 EXPORT bool obs_encoder_reset(obs_encoder_t encoder);
 
@@ -601,10 +595,7 @@ EXPORT bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
 
 EXPORT bool obs_encoder_request_keyframe(obs_encoder_t encoder);
 
-EXPORT const char *obs_encoder_get_settings(obs_encoder_t encoder);
-
-EXPORT void obs_encoder_save_settings(obs_encoder_t encoder,
-		const char *settings);
+EXPORT obs_data_t obs_encoder_get_settings(obs_encoder_t encoder);
 
 
 /* ------------------------------------------------------------------------- */
@@ -613,7 +604,7 @@ EXPORT const char *obs_service_getdisplayname(const char *id,
 		const char *locale);
 
 EXPORT obs_service_t obs_service_create(const char *service,
-		const char *settings);
+		obs_data_t settings);
 EXPORT void obs_service_destroy(obs_service_t service);
 
 EXPORT void obs_service_setdata(obs_service_t service, const char *attribute,

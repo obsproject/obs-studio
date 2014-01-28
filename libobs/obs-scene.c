@@ -34,7 +34,7 @@ static const char *scene_getname(const char *locale)
 	return "Scene";
 }
 
-static void *scene_create(const char *settings, struct obs_source *source)
+static void *scene_create(obs_data_t settings, struct obs_source *source)
 {
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
 	scene->source     = source;

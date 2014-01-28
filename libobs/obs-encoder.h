@@ -60,7 +60,7 @@
  *       (seen by the user).
  *
  * ---------------------------------------------------------
- *   void *[name]_create(const char *settings, const char *name,
+ *   void *[name]_create(obs_data_t settings, const char *name,
  *                       obs_encoder_t encoder);
  *       Creates an encoder.
  *
@@ -74,7 +74,7 @@
  *       Destroys the encoder.
  *
  * ---------------------------------------------------------
- *   void [name]_update(void *data, const char *settings)
+ *   void [name]_update(void *data, obs_data_t settings)
  *       Updates the encoder's settings
  *
  *       settings: New settings of the encoder
@@ -126,10 +126,10 @@ struct encoder_info {
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(const char *settings, struct obs_encoder *encoder);
+	void *(*create)(obs_data_t settings, struct obs_encoder *encoder);
 	void (*destroy)(void *data);
 
-	void (*update)(void *data, const char *settings);
+	void (*update)(void *data, obs_data_t settings);
 
 	bool (*reset)(void *data);
 
@@ -151,7 +151,7 @@ struct obs_encoder {
 	char                                *name;
 	void                                *data;
 	struct encoder_info                 callbacks;
-	struct dstr                         settings;
+	obs_data_t                          settings;
 
 	pthread_mutex_t                     data_callbacks_mutex;
 	DARRAY(struct obs_encoder_callback) data_callbacks;

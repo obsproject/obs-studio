@@ -70,7 +70,7 @@
  *       Returns the full name of the source type (seen by the user).
  *
  * ---------------------------------------------------------
- *   void *[name]_create(const char *settings, obs_source_t source);
+ *   void *[name]_create(obs_data_t settings, obs_source_t source);
  *       Creates a source.
  *
  *       settings: Settings of the source.
@@ -93,7 +93,7 @@
  * ===========================================
  *   Optional Source Exports
  * ===========================================
- *   void [name]_update(void *data, const char *settings);
+ *   void [name]_update(void *data, obs_data_t settings);
  *       Called to update the settings of the source.
  *
  * ---------------------------------------------------------
@@ -166,7 +166,7 @@ struct source_info {
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(const char *settings, obs_source_t source);
+	void *(*create)(obs_data_t settings, obs_source_t source);
 	void (*destroy)(void *data);
 
 	uint32_t (*get_output_flags)(void *data);
@@ -174,7 +174,7 @@ struct source_info {
 	/* ----------------------------------------------------------------- */
 	/* optional implementations */
 
-	void (*update)(void *data, const char *settings);
+	void (*update)(void *data, obs_data_t settings);
 
 	void (*activate)(void *data);
 	void (*deactivate)(void *data);
@@ -201,7 +201,7 @@ struct obs_source {
 	/* source-specific data */
 	char                         *name; /* user-defined name */
 	enum obs_source_type         type;
-	struct dstr                  settings;
+	obs_data_t                   settings;
 	void                         *data;
 	struct source_info           callbacks;
 
@@ -248,7 +248,7 @@ extern bool load_source_info(void *module, const char *module_name,
 		const char *source_name, struct source_info *info);
 
 bool obs_source_init_handlers(struct obs_source *source);
-extern bool obs_source_init(struct obs_source *source, const char *settings,
+extern bool obs_source_init(struct obs_source *source, obs_data_t settings,
 		const struct source_info *info);
 
 extern void obs_source_activate(obs_source_t source);

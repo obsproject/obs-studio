@@ -293,7 +293,7 @@ const char *ffmpeg_output_getname(const char *locale)
 	return "FFmpeg file output";
 }
 
-struct ffmpeg_output *ffmpeg_output_create(const char *settings,
+struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 		obs_output_t output)
 {
 	struct ffmpeg_output *data = bmalloc(sizeof(struct ffmpeg_output));
@@ -312,7 +312,7 @@ void ffmpeg_output_destroy(struct ffmpeg_output *data)
 	}
 }
 
-void ffmpeg_output_update(struct ffmpeg_output *data, const char *settings)
+void ffmpeg_output_update(struct ffmpeg_output *data, obs_data_t settings)
 {
 }
 

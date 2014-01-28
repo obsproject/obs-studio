@@ -43,6 +43,7 @@
     <ClInclude Include="..\..\..\libobs\media-io\audio-resampler.h" />
     <ClInclude Include="..\..\..\libobs\media-io\format-conversion.h" />
     <ClInclude Include="..\..\..\libobs\media-io\video-io.h" />
+    <ClInclude Include="..\..\..\libobs\obs-data.h" />
     <ClInclude Include="..\..\..\libobs\obs-defs.h" />
     <ClInclude Include="..\..\..\libobs\obs-encoder.h" />
     <ClInclude Include="..\..\..\libobs\obs-internal.h" />
@@ -91,6 +92,7 @@
     <ClCompile Include="..\..\..\libobs\media-io\audio-resampler-ffmpeg.c" />
     <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c" />
+    <ClCompile Include="..\..\..\libobs\obs-data.c" />
     <ClCompile Include="..\..\..\libobs\obs-display.c" />
     <ClCompile Include="..\..\..\libobs\obs-encoder.c" />
     <ClCompile Include="..\..\..\libobs\obs-module.c" />

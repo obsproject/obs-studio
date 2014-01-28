@@ -58,7 +58,7 @@ const char *obs_encoder_getdisplayname(const char *id, const char *locale)
 }
 
 obs_encoder_t obs_encoder_create(const char *id, const char *name,
-		const char *settings)
+		obs_data_t settings)
 {
 	struct obs_encoder *encoder;
 	struct encoder_info *ei = get_encoder_info(id);
@@ -82,7 +82,8 @@ obs_encoder_t obs_encoder_create(const char *id, const char *name,
 		return NULL;
 	}
 
-	dstr_copy(&encoder->settings, settings);
+	encoder->settings = settings;
+	obs_data_addref(settings);
 
 	pthread_mutex_lock(&obs->data.encoders_mutex);
 	da_push_back(obs->data.encoders, &encoder);
@@ -98,12 +99,12 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 		pthread_mutex_unlock(&obs->data.encoders_mutex);
 
 		encoder->callbacks.destroy(encoder->data);
-		dstr_free(&encoder->settings);
+		obs_data_release(encoder->settings);
 		bfree(encoder);
 	}
 }
 
-void obs_encoder_update(obs_encoder_t encoder, const char *settings)
+void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
 	encoder->callbacks.update(encoder->data, settings);
 }
@@ -142,12 +143,8 @@ bool obs_encoder_request_keyframe(obs_encoder_t encoder)
 	return false;
 }
 
-const char *obs_encoder_get_settings(obs_encoder_t encoder)
+obs_data_t obs_encoder_get_settings(obs_encoder_t encoder)
 {
-	return encoder->settings.array;
-}
-
-void obs_encoder_save_settings(obs_encoder_t encoder, const char *settings)
-{
-	dstr_copy(&encoder->settings, settings);
+	obs_data_addref(encoder->settings);
+	return encoder->settings;
 }

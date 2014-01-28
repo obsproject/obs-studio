@@ -101,7 +101,7 @@ const char *obs_source_getdisplayname(enum obs_source_type type,
 }
 
 /* internal initialization */
-bool obs_source_init(struct obs_source *source, const char *settings,
+bool obs_source_init(struct obs_source *source, obs_data_t settings,
 		const struct source_info *info)
 {
 	uint32_t flags = info->get_output_flags(source->data);
@@ -111,7 +111,9 @@ bool obs_source_init(struct obs_source *source, const char *settings,
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
-	dstr_copy(&source->settings, settings);
+	source->settings = settings;
+	obs_data_addref(settings);
+
 	memcpy(&source->callbacks, info, sizeof(struct source_info));
 
 	if (pthread_mutex_init(&source->filter_mutex, NULL) != 0)
@@ -146,7 +148,7 @@ static inline void obs_source_dosignal(struct obs_source *source,
 }
 
 obs_source_t obs_source_create(enum obs_source_type type, const char *id,
-		const char *name, const char *settings)
+		const char *name, obs_data_t settings)
 {
 	struct obs_source *source;
 
@@ -214,7 +216,7 @@ static void obs_source_destroy(obs_source_t source)
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->video_mutex);
-	dstr_free(&source->settings);
+	obs_data_release(source->settings);
 	bfree(source->name);
 	bfree(source);
 }
@@ -271,7 +273,7 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 	return source->callbacks.get_output_flags(source->data);
 }
 
-void obs_source_update(obs_source_t source, const char *settings)
+void obs_source_update(obs_source_t source, obs_data_t settings)
 {
 	if (source->callbacks.update)
 		source->callbacks.update(source->data, settings);
@@ -688,14 +690,10 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 	}
 }
 
-const char *obs_source_getsettings(obs_source_t source)
+obs_data_t obs_source_getsettings(obs_source_t source)
 {
-	return source->settings.array;
-}
-
-void obs_source_savesettings(obs_source_t source, const char *settings)
-{
-	dstr_copy(&source->settings, settings);
+	obs_data_addref(source->settings);
+	return source->settings;
 }
 
 static inline struct source_frame *filter_async_video(obs_source_t source,
