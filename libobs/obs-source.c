@@ -111,8 +111,8 @@ bool obs_source_init(struct obs_source *source, obs_data_t settings,
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
-	source->settings = settings;
-	obs_data_addref(settings);
+
+	source->settings = obs_data_newref(settings);
 
 	memcpy(&source->callbacks, info, sizeof(struct source_info));
 
@@ -275,6 +275,8 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 
 void obs_source_update(obs_source_t source, obs_data_t settings)
 {
+	obs_data_replace(&source->settings, settings);
+
 	if (source->callbacks.update)
 		source->callbacks.update(source->data, settings);
 }

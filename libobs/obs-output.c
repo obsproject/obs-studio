@@ -106,6 +106,8 @@ bool obs_output_active(obs_output_t output)
 
 void obs_output_update(obs_output_t output, obs_data_t settings)
 {
+	obs_data_replace(&output->settings, settings);
+
 	if (output->callbacks.update)
 		output->callbacks.update(output->data, settings);
 }

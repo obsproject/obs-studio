@@ -68,11 +68,17 @@ static inline size_t obs_data_item_total_size(struct obs_data_item *item)
 
 static inline obs_data_t get_item_obj(struct obs_data_item *item)
 {
+	if (!item)
+		return NULL;
+
 	return *(obs_data_t*)get_item_data(item);
 }
 
 static inline obs_data_array_t get_item_array(struct obs_data_item *item)
 {
+	if (!item)
+		return NULL;
+
 	return *(obs_data_array_t*)get_item_data(item);
 }
 
@@ -233,7 +239,7 @@ obs_data_t obs_data_create_from_json(const char *json_string)
 
 int obs_data_addref(obs_data_t data)
 {
-	return ++data->ref;
+	return data ? ++data->ref : 0;
 }
 
 static inline obs_data_destroy(struct obs_data *data)
@@ -270,6 +276,9 @@ const char *obs_data_getjson(obs_data_t data)
 
 static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 {
+	if (!data)
+		return NULL;
+
 	struct obs_data_item *item = data->first_item;
 
 	while (item) {
@@ -286,12 +295,15 @@ static inline struct obs_data_item *get_item_of(struct obs_data *data,
 		const char *name, enum obs_data_type type)
 {
 	struct obs_data_item *item = get_item(data, name);
-	return (item->type == type) ? item : NULL;
+	return (item && item->type == type) ? item : NULL;
 }
 
 static void set_item(struct obs_data *data, const char *name, const void *ptr,
 		size_t size, enum obs_data_type type)
 {
+	if (!data)
+		return;
+
 	struct obs_data_item *item = get_item(data, name);
 	if (!item) {
 		item = obs_data_item_create(name, ptr, size, type);
@@ -404,7 +416,7 @@ obs_data_array_t obs_data_array_create()
 
 int obs_data_array_addref(obs_data_array_t array)
 {
-	return ++array->ref;
+	return array ? ++array->ref : 0;
 }
 
 static inline void obs_data_array_destroy(obs_data_array_t array)

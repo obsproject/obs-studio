@@ -123,6 +123,31 @@ EXPORT bool obs_data_item_getbool(obs_data_item_t item, bool def);
 EXPORT obs_data_t obs_data_item_getobj(obs_data_item_t item);
 EXPORT obs_data_array_t obs_data_item_getarray(obs_data_item_t item);
 
+/* ------------------------------------------------------------------------- */
+/* OBS-specific functions */
+
+static inline obs_data_t obs_data_newref(obs_data_t data)
+{
+	if (data)
+		obs_data_addref(data);
+	else
+		data = obs_data_create();
+
+	return data;
+}
+
+static inline void obs_data_replace(obs_data_t *current, obs_data_t replacement)
+{
+	if (!current)
+		return;
+
+	if (*current != replacement) {
+		replacement = obs_data_newref(replacement);
+		obs_data_release(*current);
+		*current = replacement;
+	}
+}
+
 #ifdef __cplusplus
 }
 #endif
