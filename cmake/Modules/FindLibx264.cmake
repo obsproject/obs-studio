@@ -28,7 +28,7 @@ else()
 
 	find_library(X264_LIB
 		NAMES x264 libx264
-		HINTS ${_X264_LIBRARY_DIRS} ${X264_INCLUDE_DIR}/../lib ${X264_INCLUDE_DIR}/lib${_lib_suffix} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS ${X264_INCLUDE_DIR}/../lib ${X264_INCLUDE_DIR}/lib${_lib_suffix} ${_X264_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(Libx264_INCLUDE_DIR ${X264_INCLUDE_DIR} CACHE PATH "x264 include dir")
 	set(Libx264_LIBRARIES ${X264_LIB} CACHE STRING "x264 libraries")

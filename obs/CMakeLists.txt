@@ -93,3 +93,7 @@ target_link_libraries(obs
 
 install_obs_core(obs)
 install_obs_data(obs ../build/data/obs-studio obs-studio)
+
+obs_fixup_install_target(obs TARGET Qt5::Widgets)
+obs_fixup_install_target(obs TARGET Qt5::Gui)
+obs_fixup_install_target(obs TARGET Qt5::Core)

@@ -29,7 +29,7 @@ else()
 
 	find_library(SWRESAMPLE_LIB
 		NAMES swresample
-		HINTS ${_SWRESAMPLE_LIBRARY_DIRS} ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_SWRESAMPLE_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(Libswresample_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswresample include dir")
 	set(Libswresample_LIBRARIES ${SWRESAMPLE_LIB} CACHE STRING "Libswresample libraries")

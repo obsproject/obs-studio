@@ -29,7 +29,7 @@ else()
 
 	find_library(AVFORMAT_LIB
 		NAMES avformat
-		HINTS ${_AVFORMAT_LIBRARY_DIRS} ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVFORMAT_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(Libavformat_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavformat include dir")
 	set(Libavformat_LIBRARIES ${AVFORMAT_LIB} CACHE STRING "Libavformat libraries")

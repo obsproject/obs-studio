@@ -192,3 +192,5 @@ target_link_libraries(libobs
 
 install_obs_core(libobs)
 install_obs_data(libobs ../build/data/libobs libobs)
+
+obs_fixup_install_target(libobs PATH ${Libswresample_LIBRARIES} ${Libavutil_LIBRARIES})

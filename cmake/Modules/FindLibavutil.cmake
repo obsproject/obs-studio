@@ -29,7 +29,7 @@ else()
 
 	find_library(AVUTIL_LIB
 		NAMES avutil
-		HINTS ${_AVUTIL_LIBRARY_DIRS} ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVUTIL_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(Libavutil_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavutil include dir")
 	set(Libavutil_LIBRARIES ${AVUTIL_LIB} CACHE STRING "Libavutil libraries")
