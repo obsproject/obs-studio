@@ -2,8 +2,20 @@ project(test-input)
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
+if(APPLE)
+	set(test-input_PLATFORM_SOURCES
+		test-desktop.m)
+
+	set(test-input_PLATFORM_DEPS
+		${IOSURF})
+
+	set_source_files_properties(test-desktop.m
+		PROPERTIES LANGUAGE C
+			COMPILE_FLAGS "-fobjc-arc")
+endif()
+
 set(test-input_SOURCES
-	test-desktop.m
+	${test-input_PLATFORM_SOURCES}
 	test-filter.c
 	test-input.c
 	test-sinewave.c
@@ -15,16 +27,12 @@ set(test-input_HEADERS
 	test-random.h
 	test-sinewave.h)
 
-set_source_files_properties(test-desktop.m
-	PROPERTIES LANGUAGE C
-		COMPILE_FLAGS "-fobjc-arc")
-
 add_library(test-input MODULE
 	${test-input_SOURCES}
 	${test-input_HEADERS})
 
 target_link_libraries(test-input
-	libobs
-	${IOSURF})
+	${test-input_PLATFORM_DEPS}
+	libobs)
 
 install_obs_plugin_data(test-input ../../build/data/obs-plugins/test-input)
