@@ -6,12 +6,16 @@ if(APPLE)
 	set(test-input_PLATFORM_SOURCES
 		test-desktop.m)
 
-	set(test-input_PLATFORM_DEPS
-		${IOSURF})
-
 	set_source_files_properties(test-desktop.m
 		PROPERTIES LANGUAGE C
 			COMPILE_FLAGS "-fobjc-arc")
+
+	find_library(IOSURF IOSurface)
+	include_directories(${IOSURF})
+	mark_as_advanced(${IOSURF})
+
+	set(test-input_PLATFORM_DEPS
+		${IOSURF})
 endif()
 
 set(test-input_SOURCES
