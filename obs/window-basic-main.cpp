@@ -519,6 +519,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	if (!scene)
 		return;
 
+	gs_entercontext(obs_graphics());
 	obs_scene_addref(scene);
 
 	QVariant userData = sel->data(Qt::UserRole);
@@ -526,6 +527,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	obs_sceneitem_destroy(scene, item);
 
 	obs_scene_release(scene);
+	gs_leavecontext();
 }
 
 void OBSBasic::on_actionSourceProperties_triggered()
