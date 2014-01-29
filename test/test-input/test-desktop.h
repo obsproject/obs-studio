@@ -13,8 +13,13 @@ extern "C" {
 struct desktop_tex {
 	samplerstate_t sampler;
 	effect_t whatever;
+
 	CGDisplayStreamRef disp;
 	uint32_t width, height;
+
+	texture_t tex;
+	pthread_mutex_t mutex;
+	IOSurfaceRef current, prev;
 };
 
 EXPORT const char *osx_desktop_test_getname(const char *locale);
