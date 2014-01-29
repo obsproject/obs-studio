@@ -36,17 +36,26 @@ static const char *scene_getname(const char *locale)
 
 static void *scene_create(obs_data_t settings, struct obs_source *source)
 {
+	pthread_mutexattr_t attr;
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
 	scene->source     = source;
 	scene->first_item = NULL;
 
-	if (pthread_mutex_init(&scene->mutex, NULL) != 0) {
+	if (pthread_mutexattr_init(&attr) != 0)
+		goto fail;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		goto fail;
+	if (pthread_mutex_init(&scene->mutex, &attr) != 0) {
 		blog(LOG_ERROR, "scene_create: Couldn't initialize mutex");
-		bfree(scene);
-		return NULL;
+		goto fail;
 	}
 
 	return scene;
+
+fail:
+	pthread_mutexattr_destroy(&attr);
+	bfree(scene);
+	return NULL;
 }
 
 static void scene_destroy(void *data)
@@ -115,7 +124,7 @@ static void scene_video_render(void *data)
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			obs_sceneitem_destroy(del_item);
+			obs_sceneitem_destroy(scene, del_item);
 			continue;
 		}
 
@@ -285,9 +294,13 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	return item;
 }
 
-int obs_sceneitem_destroy(obs_sceneitem_t item)
+int obs_sceneitem_destroy(obs_scene_t scene, obs_sceneitem_t item)
 {
 	int ref = 0;
+	if (!scene || !item)
+		return ref;
+
+	pthread_mutex_lock(&scene->mutex);
 
 	if (item) {
 		struct calldata params = {0};
@@ -302,6 +315,8 @@ int obs_sceneitem_destroy(obs_sceneitem_t item)
 			ref = obs_source_release(item->source);
 		bfree(item);
 	}
+
+	pthread_mutex_unlock(&scene->mutex);
 
 	return ref;
 }

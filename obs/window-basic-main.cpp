@@ -515,10 +515,17 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	if (!sel)
 		return;
 
+	obs_scene_t scene = GetCurrentScene();
+	if (!scene)
+		return;
+
+	obs_scene_addref(scene);
+
 	QVariant userData = sel->data(Qt::UserRole);
 	obs_sceneitem_t item = VariantPtr<obs_sceneitem_t>(userData);
-	obs_source_t source = obs_sceneitem_getsource(item);
-	obs_sceneitem_destroy(item);
+	obs_sceneitem_destroy(scene, item);
+
+	obs_scene_release(scene);
 }
 
 void OBSBasic::on_actionSourceProperties_triggered()
