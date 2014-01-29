@@ -87,7 +87,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "Video", "OutputCX", cx);
 	config_set_default_uint(globalConfig, "Video", "OutputCY", cy);
 
-	config_set_default_string(globalConfig, "Video", "FPSType", "Common");
+	config_set_default_int(globalConfig, "Video", "FPSType", 0);
 	config_set_default_string(globalConfig, "Video", "FPSCommon", "30");
 	config_set_default_uint(globalConfig, "Video", "FPSInt", 30);
 	config_set_default_uint(globalConfig, "Video", "FPSNum", 30);

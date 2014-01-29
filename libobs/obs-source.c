@@ -101,8 +101,7 @@ const char *obs_source_getdisplayname(enum obs_source_type type,
 }
 
 /* internal initialization */
-bool obs_source_init(struct obs_source *source, obs_data_t settings,
-		const struct source_info *info)
+bool obs_source_init(struct obs_source *source, const struct source_info *info)
 {
 	uint32_t flags = info->get_output_flags(source->data);
 
@@ -111,8 +110,6 @@ bool obs_source_init(struct obs_source *source, obs_data_t settings,
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
-
-	source->settings = obs_data_newref(settings);
 
 	memcpy(&source->callbacks, info, sizeof(struct source_info));
 
@@ -164,13 +161,15 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init_handlers(source))
 		goto fail;
 
-	source->name = bstrdup(name);
-	source->type = type;
-	source->data = info->create(settings, source);
+	source->name     = bstrdup(name);
+	source->type     = type;
+	source->settings = obs_data_newref(settings);
+	source->data     = info->create(source->settings, source);
+
 	if (!source->data)
 		goto fail;
 
-	if (!obs_source_init(source, settings, info))
+	if (!obs_source_init(source, info))
 		goto fail;
 
 	obs_source_dosignal(source, "source-create");
@@ -278,7 +277,7 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 	obs_data_replace(&source->settings, settings);
 
 	if (source->callbacks.update)
-		source->callbacks.update(source->data, settings);
+		source->callbacks.update(source->data, source->settings);
 }
 
 void obs_source_activate(obs_source_t source)

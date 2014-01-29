@@ -300,21 +300,21 @@ void OBSBasicSettings::SaveVideoSettings()
 			QT_TO_UTF8(renderer));
 
 	if (ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
-		config_set_int(GetGlobalConfig(), "Video", "BaseCX", cx);
-		config_set_int(GetGlobalConfig(), "Video", "BaseCY", cy);
+		config_set_uint(GetGlobalConfig(), "Video", "BaseCX", cx);
+		config_set_uint(GetGlobalConfig(), "Video", "BaseCY", cy);
 	}
 
 	if (ConvertResText(QT_TO_UTF8(outputResolution), cx, cy)) {
-		config_set_int(GetGlobalConfig(), "Video", "OutputCX", cx);
-		config_set_int(GetGlobalConfig(), "Video", "OutputCY", cy);
+		config_set_uint(GetGlobalConfig(), "Video", "OutputCX", cx);
+		config_set_uint(GetGlobalConfig(), "Video", "OutputCY", cy);
 	}
 
-	config_set_int(GetGlobalConfig(), "Video", "FPSType", fpsType);
+	config_set_uint(GetGlobalConfig(), "Video", "FPSType", fpsType);
 	config_set_string(GetGlobalConfig(), "Video", "FPSCommon",
 			QT_TO_UTF8(fpsCommon));
-	config_set_int(GetGlobalConfig(), "Video", "FPSInt", fpsInteger);
-	config_set_int(GetGlobalConfig(), "Video", "FPSNum", fpsNumerator);
-	config_set_int(GetGlobalConfig(), "Video", "FPSDen", fpsDenominator);
+	config_set_uint(GetGlobalConfig(), "Video", "FPSInt", fpsInteger);
+	config_set_uint(GetGlobalConfig(), "Video", "FPSNum", fpsNumerator);
+	config_set_uint(GetGlobalConfig(), "Video", "FPSDen", fpsDenominator);
 }
 
 void OBSBasicSettings::SaveSettings()

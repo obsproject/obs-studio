@@ -75,14 +75,15 @@ obs_encoder_t obs_encoder_create(const char *id, const char *name,
 		return NULL;
 	}
 
-	encoder->data = ei->create(settings, encoder);
+	encoder->settings = obs_data_newref(settings);
+	encoder->data     = ei->create(encoder->settings, encoder);
+
 	if (!encoder->data) {
 		pthread_mutex_destroy(&encoder->data_callbacks_mutex);
+		obs_data_release(encoder->settings);
 		bfree(encoder);
 		return NULL;
 	}
-
-	encoder->settings = obs_data_newref(settings);
 
 	pthread_mutex_lock(&obs->data.encoders_mutex);
 	da_push_back(obs->data.encoders, &encoder);
@@ -106,7 +107,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
 	obs_data_replace(&encoder->settings, settings);
-	encoder->callbacks.update(encoder->data, settings);
+	encoder->callbacks.update(encoder->data, encoder->settings);
 }
 
 bool obs_encoder_reset(obs_encoder_t encoder)

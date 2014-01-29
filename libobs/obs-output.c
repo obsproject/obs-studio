@@ -58,16 +58,16 @@ obs_output_t obs_output_create(const char *id, const char *name,
 
 	output = bmalloc(sizeof(struct obs_output));
 	output->callbacks = *info;
-	output->data = info->create(settings, output);
+	output->settings  = obs_data_newref(settings);
+	output->data      = info->create(output->settings, output);
+
 	if (!output->data) {
+		obs_data_release(output->settings);
 		bfree(output);
 		return NULL;
 	}
 
 	output->name = bstrdup(name);
-
-	obs_data_addref(settings);
-	output->settings = settings;
 
 	pthread_mutex_lock(&obs->data.outputs_mutex);
 	da_push_back(obs->data.outputs, &output);
@@ -109,7 +109,7 @@ void obs_output_update(obs_output_t output, obs_data_t settings)
 	obs_data_replace(&output->settings, settings);
 
 	if (output->callbacks.update)
-		output->callbacks.update(output->data, settings);
+		output->callbacks.update(output->data, output->settings);
 }
 
 bool obs_output_canpause(obs_output_t output)

@@ -163,11 +163,13 @@ obs_scene_t obs_scene_create(const char *name)
 		return NULL;
 	}
 
-	scene = scene_create(NULL, source);
+	source->settings = obs_data_create();
+	scene = scene_create(source->settings, source);
 	source->data = scene;
 
 	assert(scene);
 	if (!scene) {
+		obs_data_release(source->settings);
 		bfree(source);
 		return NULL;
 	}
@@ -176,7 +178,7 @@ obs_scene_t obs_scene_create(const char *name)
 	source->type  = SOURCE_SCENE;
 
 	scene->source = source;
-	obs_source_init(source, NULL, &scene_info);
+	obs_source_init(source, &scene_info);
 	memcpy(&source->callbacks, &scene_info, sizeof(struct source_info));
 	return scene;
 }

@@ -70,15 +70,30 @@ EXPORT void obs_data_setarray(obs_data_t data, const char *name,
 		obs_data_array_t array);
 
 /*
+ * Default value functions.
+ *
+ * These functions check to ensure the value exists, and is of a specific type.
+ * If not, it sets the default value instead.
+ */
+EXPORT void obs_data_set_default_string(obs_data_t data, const char *name,
+		const char *val);
+EXPORT void obs_data_set_default_int(obs_data_t data, const char *name,
+		long long val);
+EXPORT void obs_data_set_default_double(obs_data_t data, const char *name,
+		double val);
+EXPORT void obs_data_set_default_bool(obs_data_t data, const char *name,
+		bool val);
+EXPORT void obs_data_set_default_obj(obs_data_t data, const char *name,
+		obs_data_t obj);
+
+/*
  * Get functions
  * NOTE: use a macro if you use 'defaults' in more than one place
  */
-EXPORT const char *obs_data_getstring(obs_data_t data, const char *name,
-		const char *def);
-EXPORT long long obs_data_getint(obs_data_t data, const char *name,
-		long long def);
-EXPORT double obs_data_getdouble(obs_data_t data, const char *name, double def);
-EXPORT bool obs_data_getbool(obs_data_t data, const char *name, bool def);
+EXPORT const char *obs_data_getstring(obs_data_t data, const char *name);
+EXPORT long long obs_data_getint(obs_data_t data, const char *name);
+EXPORT double obs_data_getdouble(obs_data_t data, const char *name);
+EXPORT bool obs_data_getbool(obs_data_t data, const char *name);
 EXPORT obs_data_t obs_data_getobj(obs_data_t data, const char *name);
 EXPORT obs_data_array_t obs_data_getarray(obs_data_t data, const char *name);
 
@@ -115,11 +130,10 @@ EXPORT void obs_data_item_setobj(obs_data_item_t *item, obs_data_t val);
 EXPORT void obs_data_item_setarray(obs_data_item_t *item, obs_data_array_t val);
 
 /* Item get functions */
-EXPORT const char *obs_data_item_getstring(obs_data_item_t item,
-		const char *def);
-EXPORT long long obs_data_item_getint(obs_data_item_t item, long long def);
-EXPORT double obs_data_item_getdouble(obs_data_item_t item, double def);
-EXPORT bool obs_data_item_getbool(obs_data_item_t item, bool def);
+EXPORT const char *obs_data_item_getstring(obs_data_item_t item);
+EXPORT long long obs_data_item_getint(obs_data_item_t item);
+EXPORT double obs_data_item_getdouble(obs_data_item_t item);
+EXPORT bool obs_data_item_getbool(obs_data_item_t item);
 EXPORT obs_data_t obs_data_item_getobj(obs_data_item_t item);
 EXPORT obs_data_array_t obs_data_item_getarray(obs_data_item_t item);
 
