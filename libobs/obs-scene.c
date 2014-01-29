@@ -309,6 +309,7 @@ int obs_sceneitem_destroy(obs_scene_t scene, obs_sceneitem_t item)
 			found = true;
 			break;
 		}
+		i = i->next;
 	}
 
 	if (found) {
