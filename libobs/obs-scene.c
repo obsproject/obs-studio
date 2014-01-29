@@ -302,7 +302,16 @@ int obs_sceneitem_destroy(obs_scene_t scene, obs_sceneitem_t item)
 
 	pthread_mutex_lock(&scene->mutex);
 
-	if (item) {
+	bool found = false;
+	obs_sceneitem_t i = scene->first_item;
+	while (i) {
+		if (i == item) {
+			found = true;
+			break;
+		}
+	}
+
+	if (found) {
 		struct calldata params = {0};
 		signal_item_destroy(item, &params);
 		calldata_free(&params);
