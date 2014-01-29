@@ -16,16 +16,16 @@
 # DirectX_ROOT_DIR
 
 if (DirectX_D3D10_INCLUDE_DIR AND DirectX_D3D10_LIBRARY)
-	set(DirectX_D3D10_FOUND TRUE)
+    set(DirectX_D3D10_FOUND TRUE)
 endif()
 
 if (DirectX_D3D11_INCLUDE_DIR AND DirectX_D3D11_LIBRARY)
-	set(DirectX_D3D11_FOUND TRUE)
+    set(DirectX_D3D11_FOUND TRUE)
 endif()
 
 if(DirectX_INCLUDE_DIR AND DirectX_LIBRARY)
-	set(DirectX_FOUND TRUE)
-	return()
+    set(DirectX_FOUND TRUE)
+    return()
 endif()
 
 macro(findpkg_begin PREFIX)
@@ -47,7 +47,7 @@ macro(create_search_paths PREFIX)
     set(${PREFIX}_INC_SEARCH_PATH ${${PREFIX}_INC_SEARCH_PATH}
       ${dir}/include ${dir}/include/${PREFIX} ${dir}/Headers ${dir}/Include/um)
     set(${PREFIX}_LIB_SEARCH_PATH ${${PREFIX}_LIB_SEARCH_PATH}
-      ${dir}/lib ${dir}/lib/${PREFIX} ${dir}/Libs ${dir}/Lib/winv6.3/um ${dir}/Lib/win8/um ${dir}/Lib/winv6.3/um)
+      ${dir}/lib ${dir}/lib/${PREFIX} ${dir}/Libs ${dir}/Lib/winv6.3/um ${dir}/Lib/win8/um)
   endforeach(dir)
   set(${PREFIX}_FRAMEWORK_SEARCH_PATH ${${PREFIX}_PREFIX_PATH})
 endmacro(create_search_paths)
@@ -101,6 +101,10 @@ if(WIN32) # The only platform it makes sense to check for DirectX SDK
   set(DirectX_PREFIX_PATH 
     "${WindowsSDK81Path}" "${ENV_WindowsSDK81Path}"
     "${WindowsSDK80Path}" "${ENV_WindowsSDK80Path}"
+    "C:/Program Files/Windows Kits/8.1"
+    "C:/Program Files (x86)/Windows Kits/8.1"
+    "C:/Program Files/Windows Kits/8.0"
+    "C:/Program Files (x86)/Windows Kits/8.0"
     "${DXSDK_DIR}" "${ENV_DXSDK_DIR}"
     "${DIRECTX_HOME}" "${ENV_DIRECTX_HOME}"
     "${DIRECTX_ROOT}" "${ENV_DIRECTX_ROOT}"
@@ -109,14 +113,14 @@ if(WIN32) # The only platform it makes sense to check for DirectX SDK
     "C:/Program Files (x86)/Microsoft DirectX SDK*"
     "C:/apps/Microsoft DirectX SDK*"
     "C:/Program Files/Microsoft DirectX SDK*"
-	"$ENV{ProgramFiles}/Microsoft DirectX SDK*"
+    "$ENV{ProgramFiles}/Microsoft DirectX SDK*"
   )
   create_search_paths(DirectX)
   # redo search if prefix path changed
   clear_if_changed(DirectX_PREFIX_PATH
     DirectX_LIBRARY
-	DirectX_INCLUDE_DIR
-	DirectX_ROOT_DIR
+    DirectX_INCLUDE_DIR
+    DirectX_ROOT_DIR
   )
   
   find_path(DirectX_INCLUDE_DIR NAMES d3d9.h HINTS ${DirectX_INC_SEARCH_PATH})
@@ -144,7 +148,7 @@ if(WIN32) # The only platform it makes sense to check for DirectX SDK
   findpkg_finish(DirectX)
   
   set(DirectX_LIBRARIES 
-	${DirectX_LIBRARIES} 
+    ${DirectX_LIBRARIES} 
     ${DirectX_D3DX9_LIBRARY}
     ${DirectX_DXERR9_LIBRARY}
     ${DirectX_DXGUID_LIBRARY}
@@ -157,33 +161,33 @@ if(WIN32) # The only platform it makes sense to check for DirectX SDK
 
   if (DirectX_FOUND)
     find_path(DirectX_D3D10_INCLUDE_DIR NAMES d3d10_1shader.h HINTS ${DirectX_INC_SEARCH_PATH} NO_DEFAULT_PATH)
-	get_filename_component(DirectX_LIBRARY_DIR "${DirectX_LIBRARY}" PATH)
-	message(STATUS "DX lib dir: ${DirectX_LIBRARY_DIR}")
+    get_filename_component(DirectX_LIBRARY_DIR "${DirectX_LIBRARY}" PATH)
+    message(STATUS "DX lib dir: ${DirectX_LIBRARY_DIR}")
 
-	find_library(DirectX_D3D10_LIBRARY NAMES d3d10 HINTS ${DirectX_LIBRARY_DIR} NO_DEFAULT_PATH)
-	find_library(DirectX_D3DX10_LIBRARY NAMES d3dx10 HINTS ${DirectX_LIBRARY_DIR} NO_DEFAULT_PATH)
-	
-	
-	if (DirectX_D3D10_INCLUDE_DIR AND DirectX_D3D10_LIBRARY)
-	  set(DirectX_D3D10_FOUND TRUE)
-	  set(DirectX_D3D10_INCLUDE_DIRS ${DirectX_D3D10_INCLUDE_DIR} CACHE PATH "D3D10 Include Dirs")
-	  set(DirectX_D3D10_LIBRARIES ${DirectX_D3D10_LIBRARY} CACHE STRING "D3D10 Libraries")
-	endif ()
+    find_library(DirectX_D3D10_LIBRARY NAMES d3d10 HINTS ${DirectX_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX_LIBPATH_SUFFIX})
+    find_library(DirectX_D3DX10_LIBRARY NAMES d3dx10 HINTS ${DirectX_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX_LIBPATH_SUFFIX})
+    
+    
+    if (DirectX_D3D10_INCLUDE_DIR AND DirectX_D3D10_LIBRARY)
+      set(DirectX_D3D10_FOUND TRUE)
+      set(DirectX_D3D10_INCLUDE_DIRS ${DirectX_D3D10_INCLUDE_DIR} CACHE PATH "D3D10 Include Dirs")
+      set(DirectX_D3D10_LIBRARIES ${DirectX_D3D10_LIBRARY} CACHE STRING "D3D10 Libraries")
+    endif ()
   endif ()
 
   # look for D3D11 components
   if (DirectX_FOUND)
     find_path(DirectX_D3D11_INCLUDE_DIR NAMES D3D11Shader.h HINTS ${DirectX_INC_SEARCH_PATH} NO_DEFAULT_PATH)
-	get_filename_component(DirectX_LIBRARY_DIR "${DirectX_LIBRARY}" PATH)
-	message(STATUS "DX lib dir: ${DirectX_LIBRARY_DIR}")
-	find_library(DirectX_D3D11_LIBRARY NAMES d3d11 d3d11_beta HINTS ${DirectX_LIBRARY_DIR} NO_DEFAULT_PATH)
-	find_library(DirectX_D3DX11_LIBRARY NAMES d3dx11 HINTS ${DirectX_LIBRARY_DIR} NO_DEFAULT_PATH)
+    get_filename_component(DirectX_LIBRARY_DIR "${DirectX_LIBRARY}" PATH)
+    message(STATUS "DX lib dir: ${DirectX_LIBRARY_DIR}")
+    find_library(DirectX_D3D11_LIBRARY NAMES d3d11 d3d11_beta HINTS ${DirectX_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX_LIBPATH_SUFFIX})
+    find_library(DirectX_D3DX11_LIBRARY NAMES d3dx11 HINTS ${DirectX_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX_LIBPATH_SUFFIX})
 
-	if (DirectX_D3D11_INCLUDE_DIR AND DirectX_D3D11_LIBRARY)
-	  set(DirectX_D3D11_FOUND TRUE)
-	  set(DirectX_D3D11_INCLUDE_DIRS ${DirectX_D3D11_INCLUDE_DIR} CACHE PATH "D3D11 Include Dirs")
-	  set(DirectX_D3D11_LIBRARIES ${DirectX_D3D11_LIBRARY} CACHE STRING "D3D11 Libraries")
-	endif ()
+    if (DirectX_D3D11_INCLUDE_DIR AND DirectX_D3D11_LIBRARY)
+      set(DirectX_D3D11_FOUND TRUE)
+      set(DirectX_D3D11_INCLUDE_DIRS ${DirectX_D3D11_INCLUDE_DIR} CACHE PATH "D3D11 Include Dirs")
+      set(DirectX_D3D11_LIBRARIES ${DirectX_D3D11_LIBRARY} CACHE STRING "D3D11 Libraries")
+    endif ()
   endif ()
   
 endif(WIN32)
