@@ -87,7 +87,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "Video", "OutputCX", cx);
 	config_set_default_uint(globalConfig, "Video", "OutputCY", cy);
 
-	config_set_default_int(globalConfig, "Video", "FPSType", 0);
+	config_set_default_uint(globalConfig, "Video", "FPSType", 0);
 	config_set_default_string(globalConfig, "Video", "FPSCommon", "30");
 	config_set_default_uint(globalConfig, "Video", "FPSInt", 30);
 	config_set_default_uint(globalConfig, "Video", "FPSNum", 30);
@@ -233,13 +233,13 @@ void OBSApp::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
 
 void OBSApp::GetConfigFPS(uint32_t &num, uint32_t &den) const
 {
-	const char *type = config_get_string(globalConfig, "Video", "FPSType");
+	uint32_t type = config_get_uint(globalConfig, "Video", "FPSType");
 
-	if (astrcmpi(type, "Integer") == 0)
+	if (type == 1) //"Integer"
 		GetFPSInteger(num, den);
-	else if (astrcmpi(type, "Fraction") == 0)
+	else if (type == 2) //"Fraction"
 		GetFPSFraction(num, den);
-	else if (astrcmpi(type, "Nanoseconds") == 0)
+	else if (false) //"Nanoseconds", currently not implemented
 		GetFPSNanoseconds(num, den);
 	else
 		GetFPSCommon(num, den);

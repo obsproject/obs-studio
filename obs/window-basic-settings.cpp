@@ -223,14 +223,14 @@ static inline void LoadFPSCommon(Ui::OBSBasicSettings *ui)
 
 static inline void LoadFPSInteger(Ui::OBSBasicSettings *ui)
 {
-	int val = config_get_int(GetGlobalConfig(), "Video", "FPSInt");
+	uint32_t val = config_get_uint(GetGlobalConfig(), "Video", "FPSInt");
 	ui->fpsInteger->setValue(val);
 }
 
 static inline void LoadFPSFraction(Ui::OBSBasicSettings *ui)
 {
-	int num = config_get_int(GetGlobalConfig(), "Video", "FPSNum");
-	int den = config_get_int(GetGlobalConfig(), "Video", "FPSDen");
+	uint32_t num = config_get_uint(GetGlobalConfig(), "Video", "FPSNum");
+	uint32_t den = config_get_uint(GetGlobalConfig(), "Video", "FPSDen");
 
 	ui->fpsNumerator->setValue(num);
 	ui->fpsDenominator->setValue(den);
@@ -242,8 +242,9 @@ void OBSBasicSettings::LoadFPSData()
 	LoadFPSInteger(ui.get());
 	LoadFPSFraction(ui.get());
 
-	int fpsType = config_get_int(GetGlobalConfig(), "Video", "FPSType");
-	if (fpsType < 0 || fpsType > 2) fpsType = 0;
+	uint32_t fpsType = config_get_uint(GetGlobalConfig(), "Video",
+			"FPSType");
+	if (fpsType > 2) fpsType = 0;
 
 	ui->fpsType->setCurrentIndex(fpsType);
 	ui->fpsTypes->setCurrentIndex(fpsType);
