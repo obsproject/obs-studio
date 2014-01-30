@@ -62,9 +62,11 @@ fail:
 static void scene_destroy(void *data)
 {
 	struct obs_scene *scene = data;
-	struct obs_scene_item *item = scene->first_item;
+	struct obs_scene_item *item;
 
 	pthread_mutex_lock(&scene->mutex);
+
+	item = scene->first_item;
 
 	while (item) {
 		struct obs_scene_item *del_item = item;
