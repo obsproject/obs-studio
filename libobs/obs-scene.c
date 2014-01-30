@@ -18,14 +18,15 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
-static inline void signal_item_destroy(struct obs_scene_item *item,
-		struct calldata *params)
+static inline void signal_item_remove(struct obs_scene_item *item)
 {
-	calldata_setptr(params, "scene", item->parent);
-	calldata_setptr(params, "item", item);
+	struct calldata params = {0};
+	calldata_setptr(&params, "scene", item->parent);
+	calldata_setptr(&params, "item", item);
+
 	signal_handler_signal(item->parent->source->signals, "remove",
-			params);
-	calldata_clear(params);
+			&params);
+	calldata_free(&params);
 }
 
 static const char *scene_getname(const char *locale)
@@ -62,20 +63,18 @@ static void scene_destroy(void *data)
 {
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item = scene->first_item;
-	struct calldata params = {0};
+
+	pthread_mutex_lock(&scene->mutex);
 
 	while (item) {
 		struct obs_scene_item *del_item = item;
 		item = item->next;
 
-		signal_item_destroy(del_item, &params);
-
-		if (del_item->source)
-			obs_source_release(del_item->source);
-		bfree(del_item);
+		obs_sceneitem_remove(del_item);
 	}
 
-	calldata_free(&params);
+	pthread_mutex_unlock(&scene->mutex);
+
 	pthread_mutex_destroy(&scene->mutex);
 	bfree(scene);
 }
@@ -94,6 +93,8 @@ static inline void detach_sceneitem(struct obs_scene_item *item)
 
 	if (item->next)
 		item->next->prev = item->prev;
+
+	item->parent = NULL;
 }
 
 static inline void attach_sceneitem(struct obs_scene_item *item,
@@ -124,7 +125,7 @@ static void scene_video_render(void *data)
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			obs_sceneitem_destroy(del_item);
+			obs_sceneitem_remove(del_item);
 			continue;
 		}
 
@@ -225,9 +226,8 @@ obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
 
 	item = scene->first_item;
 	while (item) {
-		if (strcmp(item->source->name, name) == 0) {
+		if (strcmp(item->source->name, name) == 0)
 			break;
-		}
 
 		item = item->next;
 	}
@@ -247,10 +247,16 @@ void obs_scene_enum_items(obs_scene_t scene,
 
 	item = scene->first_item;
 	while (item) {
+		struct obs_scene_item *next = item->next;
+
+		obs_sceneitem_addref(item);
+
 		if (!callback(scene, item, param))
 			break;
 
-		item = item->next;
+		obs_sceneitem_release(item);
+
+		item = next;
 	}
 
 	pthread_mutex_unlock(&scene->mutex);
@@ -266,6 +272,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	item->source  = source;
 	item->visible = true;
 	item->parent  = scene;
+	item->ref     = 1;
 	vec2_set(&item->scale, 1.0f, 1.0f);
 
 	if (source)
@@ -294,28 +301,51 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	return item;
 }
 
-int obs_sceneitem_destroy(obs_sceneitem_t item)
+static void obs_sceneitem_destroy(obs_sceneitem_t item)
+{
+	if (item) {
+		if (item->source)
+			obs_source_release(item->source);
+		bfree(item);
+	}
+}
+
+int obs_sceneitem_addref(obs_sceneitem_t item)
+{
+	return ++item->ref;
+}
+
+int obs_sceneitem_release(obs_sceneitem_t item)
 {
 	int ref = 0;
 
-	if (item) {
-		obs_scene_t scene = item->parent;
-		struct calldata params = {0};
-
-		pthread_mutex_lock(&scene->mutex);
-
-		signal_item_destroy(item, &params);
-		detach_sceneitem(item);
-
-		if (item->source)
-			ref = obs_source_release(item->source);
-		bfree(item);
-
-		pthread_mutex_unlock(&scene->mutex);
-		calldata_free(&params);
+	if (item ) {
+		ref = --item->ref;
+		if (!ref)
+			obs_sceneitem_destroy(item);
 	}
 
 	return ref;
+}
+
+void obs_sceneitem_remove(obs_sceneitem_t item)
+{
+	obs_scene_t scene;
+
+	if (item->removed)
+		return;
+
+	item->removed = true;
+
+	signal_item_remove(item);
+
+	scene = item->parent;
+
+	pthread_mutex_lock(&scene->mutex);
+	detach_sceneitem(item);
+	pthread_mutex_unlock(&scene->mutex);
+
+	obs_sceneitem_release(item);
 }
 
 obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item)
@@ -353,6 +383,7 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 	struct obs_scene *scene = item->parent;
 
 	pthread_mutex_lock(&scene->mutex);
+	obs_scene_addref(scene);
 
 	detach_sceneitem(item);
 
@@ -377,6 +408,7 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 		attach_sceneitem(item, NULL);
 	}
 
+	obs_scene_release(scene);
 	pthread_mutex_unlock(&scene->mutex);
 }
 

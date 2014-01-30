@@ -53,8 +53,14 @@ void obs_display_destroy(obs_display_t display)
 
 obs_source_t obs_display_getsource(obs_display_t display, uint32_t channel)
 {
+	obs_source_t source;
 	assert(channel < MAX_CHANNELS);
-	return display->channels[channel];
+
+	source = display->channels[channel];
+	if (source)
+		obs_source_addref(source);
+
+	return source;
 }
 
 void obs_display_setsource(obs_display_t display, uint32_t channel,

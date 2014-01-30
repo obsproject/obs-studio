@@ -23,6 +23,9 @@
 /* how obs scene! */
 
 struct obs_scene_item {
+	volatile int          ref;
+	volatile bool         removed;
+
 	struct obs_scene      *parent;
 	struct obs_source     *source;
 	bool                  visible;

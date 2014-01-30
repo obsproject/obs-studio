@@ -38,6 +38,13 @@ obs_scene_t OBSBasic::GetCurrentScene()
 		nullptr;
 }
 
+obs_sceneitem_t OBSBasic::GetCurrentSceneItem()
+{
+	QListWidgetItem *item = ui->sources->currentItem();
+	return item ? VariantPtr<obs_sceneitem_t>(item->data(Qt::UserRole)) :
+		nullptr;
+}
+
 void OBSBasic::AddScene(obs_source_t source)
 {
 	const char *name  = obs_source_getname(source);
@@ -101,8 +108,6 @@ void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
 	}
 
 	obs_source_t source = obs_sceneitem_getsource(item);
-	obs_source_addref(source);
-	obs_source_release(source);
 
 	int scenes = sourceSceneRefs[source] - 1;
 	if (scenes == 0) {
@@ -472,16 +477,13 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 
 void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
-	QListWidgetItem *sel = ui->scenes->currentItem();
+	obs_scene_t scene = GetCurrentScene();
 	const char *type;
 	bool foundValues = false;
 	size_t idx = 0;
 
-	if (!sel)
+	if (!scene)
 		return;
-
-	obs_scene_t scene = VariantPtr<obs_scene_t>(sel->data(Qt::UserRole));
-	obs_scene_addref(scene);
 
 	QMenu popup;
 	while (obs_enum_input_types(idx++, &type)) {
@@ -500,8 +502,6 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 		if (ret)
 			AddSource(scene, ret->data().toString().toUtf8());
 	}
-
-	obs_scene_release(scene);
 }
 
 void OBSBasic::on_actionAddSource_triggered()
@@ -511,23 +511,9 @@ void OBSBasic::on_actionAddSource_triggered()
 
 void OBSBasic::on_actionRemoveSource_triggered()
 {
-	QListWidgetItem *sel = ui->sources->currentItem();
-	if (!sel)
-		return;
-
-	obs_scene_t scene = GetCurrentScene();
-	if (!scene)
-		return;
-
-	gs_entercontext(obs_graphics());
-	obs_scene_addref(scene);
-
-	QVariant userData = sel->data(Qt::UserRole);
-	obs_sceneitem_t item = VariantPtr<obs_sceneitem_t>(userData);
-	obs_sceneitem_destroy(item);
-
-	obs_scene_release(scene);
-	gs_leavecontext();
+	obs_sceneitem_t item = GetCurrentSceneItem();
+	if (item)
+		obs_sceneitem_remove(item);
 }
 
 void OBSBasic::on_actionSourceProperties_triggered()

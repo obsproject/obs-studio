@@ -501,14 +501,16 @@ EXPORT void obs_scene_enum_items(obs_scene_t scene,
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);
 
-/** Removes/destroys a scene item.  Returns the source reference counter
- * (if any) */
-EXPORT int obs_sceneitem_destroy(obs_sceneitem_t item);
+EXPORT int obs_sceneitem_addref(obs_sceneitem_t item);
+EXPORT int obs_sceneitem_release(obs_sceneitem_t item);
 
-/** Gets the scene parent associated with the scene item */
+/** Removes a scene item. */
+EXPORT void obs_sceneitem_remove(obs_sceneitem_t item);
+
+/** Gets the scene parent associated with the scene item. */
 EXPORT obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item);
 
-/** Gets the source of a scene item */
+/** Gets the source of a scene item. */
 EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
 
 /* Functions for gettings/setting specific oriantation of a scene item */
