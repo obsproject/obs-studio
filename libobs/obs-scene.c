@@ -331,7 +331,6 @@ int obs_sceneitem_release(obs_sceneitem_t item)
 void obs_sceneitem_remove(obs_sceneitem_t item)
 {
 	obs_scene_t scene;
-	bool was_removed;
 
 	if (!item)
 		return;
@@ -341,14 +340,13 @@ void obs_sceneitem_remove(obs_sceneitem_t item)
 	if (scene)
 		pthread_mutex_lock(&scene->mutex);
 
-	was_removed = item->removed;
-	item->removed = true;
-
-	if (was_removed) {
+	if (item->removed) {
 		if (scene)
 			pthread_mutex_unlock(&scene->mutex);
 		return;
 	}
+
+	item->removed = true;
 
 	signal_item_remove(item);
 	detach_sceneitem(item);
