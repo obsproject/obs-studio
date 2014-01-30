@@ -124,7 +124,7 @@ static void scene_video_render(void *data)
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			obs_sceneitem_destroy(scene, del_item);
+			obs_sceneitem_destroy(del_item);
 			continue;
 		}
 
@@ -294,38 +294,26 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 	return item;
 }
 
-int obs_sceneitem_destroy(obs_scene_t scene, obs_sceneitem_t item)
+int obs_sceneitem_destroy(obs_sceneitem_t item)
 {
 	int ref = 0;
-	if (!scene || !item)
-		return ref;
 
-	pthread_mutex_lock(&scene->mutex);
-
-	bool found = false;
-	obs_sceneitem_t i = scene->first_item;
-	while (i) {
-		if (i == item) {
-			found = true;
-			break;
-		}
-	}
-
-	if (found) {
+	if (item) {
+		obs_scene_t scene = item->parent;
 		struct calldata params = {0};
-		signal_item_destroy(item, &params);
-		calldata_free(&params);
 
-		pthread_mutex_lock(&item->parent->mutex);
+		pthread_mutex_lock(&scene->mutex);
+
+		signal_item_destroy(item, &params);
 		detach_sceneitem(item);
-		pthread_mutex_unlock(&item->parent->mutex);
 
 		if (item->source)
 			ref = obs_source_release(item->source);
 		bfree(item);
-	}
 
-	pthread_mutex_unlock(&scene->mutex);
+		pthread_mutex_unlock(&scene->mutex);
+		calldata_free(&params);
+	}
 
 	return ref;
 }

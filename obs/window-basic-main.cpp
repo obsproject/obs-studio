@@ -524,7 +524,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 	QVariant userData = sel->data(Qt::UserRole);
 	obs_sceneitem_t item = VariantPtr<obs_sceneitem_t>(userData);
-	obs_sceneitem_destroy(scene, item);
+	obs_sceneitem_destroy(item);
 
 	obs_scene_release(scene);
 	gs_leavecontext();
