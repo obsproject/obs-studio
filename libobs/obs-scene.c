@@ -115,10 +115,10 @@ static inline void attach_sceneitem(struct obs_scene_item *item,
 
 static void scene_video_render(void *data)
 {
+	pthread_mutex_lock(&scene->mutex);
+
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item = scene->first_item;
-
-	pthread_mutex_lock(&scene->mutex);
 
 	while (item) {
 		if (obs_source_removed(item->source)) {
