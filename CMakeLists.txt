@@ -13,14 +13,10 @@ include(ObsCpack)
 
 add_definitions(-DOBS_VERSION="${OBS_VERSION}")
 
-if(NOT _one_time_action_done)
-	if(MSVC)
-		file(GENERATE
-			OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
-			INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in"
-			CONDITION ${MSVC})
-	endif()
-	set(_one_time_action_done TRUE CACHE INTERNAL "")
+if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
+	file(GENERATE
+		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
+		INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
