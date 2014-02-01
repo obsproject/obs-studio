@@ -67,7 +67,7 @@ struct obs_ui_info {
  * ===========================================
  *   Primary Exports
  * ===========================================
- *   bool enum_ui(size_t idx, const struct obs_ui_info **ui_info);
+ *   bool enum_ui(size_t idx, struct obs_ui_info *ui_info);
  *
  *                idx: index of the enumeration
  *            ui_info: pointer to the ui data for this enumeration
