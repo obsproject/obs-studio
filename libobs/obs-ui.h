@@ -67,9 +67,10 @@ struct obs_ui_info {
  * ===========================================
  *   Primary Exports
  * ===========================================
- *   bool enum_ui(size_t idx, struct obs_ui_info *ui_info);
- *       idx: index of the enumeration
- *       export: full name of the actual UI export.
+ *   bool enum_ui(size_t idx, const struct obs_ui_info **ui_info);
+ *
+ *                idx: index of the enumeration
+ *            ui_info: pointer to the ui data for this enumeration
  *       Return value: false when no more available.
  *
  * ===========================================
@@ -121,7 +122,7 @@ struct obs_ui_info {
  *           task: Task of the user interface (i.e. "config", "config_panel")
  *         target: Desired target (i.e. "qt", "wx", "gtk3", "win32", etc)
  *           data: Pointer to the obs input/output/etc
- *         parent: Parent pointer for UI toolkit (if any)
+ *        ui_data: UI-specific data, usually a parent pointer/handle (if any)
  *
  *   Return value: OBS_UI_SUCCESS if the UI was successful
  *                 OBS_UI_CANCEL if the UI was cancelled by the user
