@@ -76,18 +76,24 @@ complete:
 	dstr_free(&enum_name);
 }
 
-static void module_load_ui_exports(struct obs_module *mod)
+struct generic_ui_callback {
+	struct obs_ui_info ui_info;
+	void *callback;
+};
+
+static void module_load_ui_exports(struct obs_module *mod,
+		const char *main_export, struct darray *array)
 {
 	bool (*enum_func)(size_t idx, struct obs_ui_info *info);
 	struct obs_ui_info ui_info;
 	size_t i = 0;
 
-	enum_func = os_dlsym(mod->module, "enum_ui");
+	enum_func = os_dlsym(mod->module, main_export);
 	if (!enum_func)
 		return;
 
 	while (enum_func(i++, &ui_info)) {
-		struct ui_callback callback;
+		struct generic_ui_callback callback;
 		struct dstr name;
 
 		dstr_init_copy(&name, ui_info.name);
@@ -104,7 +110,8 @@ static void module_load_ui_exports(struct obs_module *mod)
 			                  "'%s', but the function was not "
 			                  "found", mod->name, name.array);
 		} else {
-			da_push_back(obs->ui_callbacks, &callback);
+			darray_push_back(sizeof(struct generic_ui_callback),
+					array, &callback);
 		}
 
 		dstr_free(&name);
@@ -192,7 +199,9 @@ int obs_load_module(const char *path)
 	module_load_exports(&mod, &obs->encoder_types.da, "encoders",
 			sizeof(struct encoder_info), load_encoder_info);
 
-	module_load_ui_exports(&mod);
+	module_load_ui_exports(&mod, "enum_ui", &obs->ui_callbacks.da);
+	module_load_ui_exports(&mod, "enum_modeless_ui",
+			&obs->ui_modeless_callbacks.da);
 
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;

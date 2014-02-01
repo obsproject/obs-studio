@@ -327,6 +327,7 @@ void obs_shutdown(void)
 	da_free(obs->output_types);
 	da_free(obs->service_types);
 	da_free(obs->ui_callbacks);
+	da_free(obs->ui_modeless_callbacks);
 
 	obs_free_data();
 	obs_free_video();
@@ -468,6 +469,22 @@ static inline struct ui_callback *get_ui_callback(const char *name,
 	return NULL;
 }
 
+static inline struct ui_modeless *get_modeless_ui_callback(const char *name,
+		const char *task, const char *target)
+{
+	for (size_t i = 0; i < obs->ui_modeless_callbacks.num; i++) {
+		struct ui_modeless *callback;
+		callback = obs->ui_modeless_callbacks.array+i;
+
+		if (strcmp(callback->ui_info.name,   name)   == 0 &&
+		    strcmp(callback->ui_info.task,   task)   == 0 &&
+		    strcmp(callback->ui_info.target, target) == 0)
+			return callback;
+	}
+
+	return NULL;
+}
+
 int obs_call_ui(const char *name, const char *task, const char *target,
 		void *data, void *ui_data)
 {
@@ -481,6 +498,16 @@ int obs_call_ui(const char *name, const char *task, const char *target,
 	}
 
 	return errorcode;
+}
+
+void *obs_create_ui(const char *name, const char *task, const char *target,
+		void *data, void *ui_data)
+{
+	struct ui_modeless *callback;
+	int errorcode = OBS_UI_NOTFOUND;
+
+	callback = get_modeless_ui_callback(name, task, target);
+	return callback ? callback->callback(data, ui_data) : NULL;
 }
 
 bool obs_add_source(obs_source_t source)

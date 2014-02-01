@@ -55,6 +55,11 @@ struct ui_callback {
 	bool (*callback)(void *data, void *ui_data);
 };
 
+struct ui_modeless {
+	struct obs_ui_info ui_info;
+	void *(*callback)(void *data, void *ui_data);
+};
+
 /* ------------------------------------------------------------------------- */
 
 struct obs_video {
@@ -107,6 +112,7 @@ struct obs_subsystem {
 	DARRAY(struct encoder_info) encoder_types;
 	DARRAY(struct service_info) service_types;
 	DARRAY(struct ui_callback)  ui_callbacks;
+	DARRAY(struct ui_modeless)  ui_modeless_callbacks;
 
 	signal_handler_t            signals;
 	proc_handler_t              procs;
