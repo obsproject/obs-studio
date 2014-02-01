@@ -76,6 +76,41 @@ complete:
 	dstr_free(&enum_name);
 }
 
+static void module_load_ui_exports(struct obs_module *mod)
+{
+	bool (*enum_func)(size_t idx, struct obs_ui_info *info);
+	struct obs_ui_info ui_info;
+	size_t i = 0;
+
+	enum_func = os_dlsym(mod->module, "enum_ui");
+	if (!enum_func)
+		return;
+
+	while (enum_func(i++, &ui_info)) {
+		struct ui_callback callback;
+		struct dstr name;
+
+		dstr_init_copy(&name, ui_info.name);
+		dstr_cat(&name, "_");
+		dstr_cat(&name, ui_info.task);
+		dstr_cat(&name, "_");
+		dstr_cat(&name, ui_info.target);
+
+		callback.ui_info = ui_info;
+		callback.callback = os_dlsym(mod->module, name.array);
+
+		if (!callback.callback) {
+			blog(LOG_WARNING, "Module '%s' enumerated UI callback "
+			                  "'%s', but the function was not "
+			                  "found", mod->name, name.array);
+		} else {
+			da_push_back(obs->ui_callbacks, &callback);
+		}
+
+		dstr_free(&name);
+	}
+}
+
 extern char *find_plugin(const char *plugin);
 
 /* checks API version of module and calls module_load if it exists.
@@ -156,6 +191,8 @@ int obs_load_module(const char *path)
 			sizeof(struct output_info), load_output_info);
 	module_load_exports(&mod, &obs->encoder_types.da, "encoders",
 			sizeof(struct encoder_info), load_encoder_info);
+
+	module_load_ui_exports(&mod);
 
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;

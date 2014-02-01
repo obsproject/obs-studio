@@ -149,6 +149,7 @@ set(libobs_libobs_HEADERS
 	obs-service.h
 	obs-internal.h
 	obs.h
+	obs-ui.h
 	obs-data.h
 	obs-module.h
 	obs-scene.h

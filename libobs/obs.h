@@ -29,6 +29,8 @@
 #include "obs-defs.h"
 #include "obs-data.h"
 
+#include "obs-ui.h"
+
 /*
  * Main libobs header used by applications.
  */
@@ -49,16 +51,6 @@ enum obs_source_type {
 	SOURCE_FILTER,
 	SOURCE_TRANSITION,
 	SOURCE_SCENE
-};
-
-enum obs_encoder_type {
-	ENCODER_VIDEO,
-	ENCODER_AUDIO
-};
-
-enum obs_video_type {
-	OBS_VIDEO_YUV,
-	OBS_VIDEO_RGB
 };
 
 /* used for changing the order of items (for example, filters in a source,

@@ -326,6 +326,7 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 	da_free(obs->output_types);
 	da_free(obs->service_types);
+	da_free(obs->ui_callbacks);
 
 	obs_free_data();
 	obs_free_video();
@@ -449,6 +450,37 @@ audio_t obs_audio(void)
 video_t obs_video(void)
 {
 	return (obs != NULL) ? obs->video.video : NULL;
+}
+
+/* TODO: optimize this later so it's not just O(N) string lookups */
+static inline struct ui_callback *get_ui_callback(const char *name,
+		const char *task, const char *target)
+{
+	for (size_t i = 0; i < obs->ui_callbacks.num; i++) {
+		struct ui_callback *callback = obs->ui_callbacks.array+i;
+
+		if (strcmp(callback->ui_info.name,   name)   == 0 &&
+		    strcmp(callback->ui_info.task,   task)   == 0 &&
+		    strcmp(callback->ui_info.target, target) == 0)
+			return callback;
+	}
+
+	return NULL;
+}
+
+int obs_call_ui(const char *name, const char *task, const char *target,
+		void *data, void *ui_data)
+{
+	struct ui_callback *callback;
+	int errorcode = OBS_UI_NOTFOUND;
+
+	callback = get_ui_callback(name, task, target);
+	if (callback) {
+		bool success = callback->callback(data, ui_data);
+		errorcode = success ? OBS_UI_SUCCESS : OBS_UI_CANCEL;
+	}
+
+	return errorcode;
 }
 
 bool obs_add_source(obs_source_t source)

@@ -82,6 +82,9 @@
     <ClInclude Include="GeneratedFiles\ui_NameDialog.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\obs-ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\obs\obs-app.cpp">

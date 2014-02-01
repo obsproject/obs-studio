@@ -249,14 +249,19 @@ void obs_source_remove(obs_source_t source)
 	struct obs_program_data *data = &obs->data;
 	size_t id;
 
-	source->removed = true;
-
 	pthread_mutex_lock(&data->sources_mutex);
 
-	id = da_find(data->sources, &source, 0);
-	if (id != DARRAY_INVALID) {
-		da_erase_item(data->sources, &source);
-		obs_source_release(source);
+	if (!source)
+		return;
+
+	if (!source->removed) {
+		source->removed = true;
+
+		id = da_find(data->sources, &source, 0);
+		if (id != DARRAY_INVALID) {
+			da_erase_item(data->sources, &source);
+			obs_source_release(source);
+		}
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);

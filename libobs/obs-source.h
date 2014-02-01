@@ -35,6 +35,17 @@
  *   A module with sources needs to export these functions:
  *       + enum_[type]
  *
+ *   [type] can be one of the following:
+ *       + input
+ *       + filter
+ *       + transition
+ *
+ *        input: A source used for directly playing video and/or sound.
+ *       filter: A source that is used for filtering other sources, modifying
+ *               the audio/video data before it is actually played.
+ *   transition: A source used for transitioning between two different sources
+ *               on screen.
+ *
  *   Each individual source is then exported by it's name.  For example, a
  * source named "mysource" would have the following exports:
  *       + mysource_getname
@@ -58,9 +69,9 @@
  * ===========================================
  *   Primary Exports
  * ===========================================
- *   const bool enum_[type](size_t idx, const char **name);
- *       idx: index of the source.
- *       type: pointer to variable that receives the type of the source
+ *   bool enum_[type](size_t idx, const char **name);
+ *       idx: index of the enumeration.
+ *       name: pointer to variable that receives the type of the source
  *       Return value: false when no more available.
  *
  * ===========================================

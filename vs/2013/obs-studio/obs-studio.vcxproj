@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\libobs\obs-ui.h" />
     <ClInclude Include="..\..\..\obs\platform.hpp" />
     <CustomBuild Include="..\..\..\obs\qt-display.hpp">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>

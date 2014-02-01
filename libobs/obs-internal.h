@@ -49,6 +49,12 @@ struct obs_display {
 	/* TODO: sound output target */
 };
 
+/* TODO: optimize this later so it's not just O(N) string lookups */
+struct ui_callback {
+	struct obs_ui_info ui_info;
+	bool (*callback)(void *data, void *ui_data);
+};
+
 /* ------------------------------------------------------------------------- */
 
 struct obs_video {
@@ -70,7 +76,7 @@ struct obs_video {
 };
 
 struct obs_audio {
-	/* TODO: audio subsystem */
+	/* TODO: sound output subsystem */
 	audio_t                     audio;
 };
 
@@ -100,6 +106,7 @@ struct obs_subsystem {
 	DARRAY(struct output_info)  output_types;
 	DARRAY(struct encoder_info) encoder_types;
 	DARRAY(struct service_info) service_types;
+	DARRAY(struct ui_callback)  ui_callbacks;
 
 	signal_handler_t            signals;
 	proc_handler_t              procs;
