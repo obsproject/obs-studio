@@ -27,6 +27,14 @@ template<class RefClass> class OBSRef {
 	typedef typename RefClass::type T;
 	T val;
 
+	inline OBSRef &Replace(T valIn)
+	{
+		RefClass::AddRef(valIn);
+		RefClass::Release(val);
+		val = valIn;
+		return *this;
+	}
+
 public:
 	inline OBSRef() : val(nullptr)                  {}
 	inline OBSRef(T val_) : val(val_)               {RefClass::AddRef(val);}
@@ -35,27 +43,14 @@ public:
 
 	inline ~OBSRef() {RefClass::Release(val);}
 
-	inline OBSRef &operator=(T valIn)
-	{
-		RefClass::AddRef(valIn);
-		RefClass::Release(val);
-		val = valIn;
-		return *this;
-	}
-
-	inline OBSRef &operator=(const OBSRef &ref)
-	{
-		RefClass::AddRef(ref.val);
-		RefClass::Release(val);
-		val = ref.val;
-		return *this;
-	}
+	inline OBSRef &operator=(T valIn)           {return Replace(valIn);}
+	inline OBSRef &operator=(const OBSRef &ref) {return Replace(ref.val);}
 
 	inline OBSRef &operator=(OBSRef &&ref)
 	{
 		if (this != &ref) {
 			val = ref.val;
-			ref.val = NULL;
+			ref.val = nullptr;
 		}
 
 		return *this;
