@@ -49,6 +49,7 @@
     <ClInclude Include="..\..\..\libobs\obs-internal.h" />
     <ClInclude Include="..\..\..\libobs\obs-module.h" />
     <ClInclude Include="..\..\..\libobs\obs-output.h" />
+    <ClInclude Include="..\..\..\libobs\obs-properties.h" />
     <ClInclude Include="..\..\..\libobs\obs-scene.h" />
     <ClInclude Include="..\..\..\libobs\obs-service.h" />
     <ClInclude Include="..\..\..\libobs\obs-source.h" />
@@ -97,6 +98,7 @@
     <ClCompile Include="..\..\..\libobs\obs-encoder.c" />
     <ClCompile Include="..\..\..\libobs\obs-module.c" />
     <ClCompile Include="..\..\..\libobs\obs-output.c" />
+    <ClCompile Include="..\..\..\libobs\obs-properties.c" />
     <ClCompile Include="..\..\..\libobs\obs-scene.c" />
     <ClCompile Include="..\..\..\libobs\obs-source.c" />
     <ClCompile Include="..\..\..\libobs\obs-video.c" />

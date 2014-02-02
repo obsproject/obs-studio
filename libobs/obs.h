@@ -28,8 +28,8 @@
 
 #include "obs-defs.h"
 #include "obs-data.h"
-
 #include "obs-ui.h"
+#include "obs-properties.h"
 
 /*
  * Main libobs header used by applications.
