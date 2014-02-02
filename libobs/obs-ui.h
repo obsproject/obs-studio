@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "obs.h"
+#include "util/c99defs.h"
 
 #ifdef __cplusplus
 extern "C" {

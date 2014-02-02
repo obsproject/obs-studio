@@ -34,6 +34,7 @@ bool load_source_info(void *module, const char *module_name,
 	LOAD_MODULE_SUBFUNC(destroy, true);
 	LOAD_MODULE_SUBFUNC(get_output_flags, true);
 
+	LOAD_MODULE_SUBFUNC(properties, false);
 	LOAD_MODULE_SUBFUNC(update, false);
 	LOAD_MODULE_SUBFUNC(activate, false);
 	LOAD_MODULE_SUBFUNC(deactivate, false);
@@ -41,8 +42,6 @@ bool load_source_info(void *module, const char *module_name,
 	LOAD_MODULE_SUBFUNC(video_render, false);
 	LOAD_MODULE_SUBFUNC(getwidth, false);
 	LOAD_MODULE_SUBFUNC(getheight, false);
-	LOAD_MODULE_SUBFUNC(getparam, false);
-	LOAD_MODULE_SUBFUNC(setparam, false);
 	LOAD_MODULE_SUBFUNC(filter_video, false);
 	LOAD_MODULE_SUBFUNC(filter_audio, false);
 
@@ -270,6 +269,15 @@ void obs_source_remove(obs_source_t source)
 bool obs_source_removed(obs_source_t source)
 {
 	return source->removed;
+}
+
+obs_properties_t obs_source_properties(enum obs_source_type type,
+		const char *id, const char *locale)
+{
+	const struct source_info *info = get_source_info(type, id);
+	if (info && info->properties)
+	       return info->properties(locale);
+	return NULL;
 }
 
 uint32_t obs_source_get_output_flags(obs_source_t source)
@@ -585,22 +593,6 @@ uint32_t obs_source_getheight(obs_source_t source)
 	if (source->callbacks.getheight)
 		return source->callbacks.getheight(source->data);
 	return 0;
-}
-
-size_t obs_source_getparam(obs_source_t source, const char *param, void *buf,
-		size_t buf_size)
-{
-	if (source->callbacks.getparam)
-		return source->callbacks.getparam(source->data, param, buf,
-				buf_size);
-	return 0;
-}
-
-void obs_source_setparam(obs_source_t source, const char *param,
-		const void *data, size_t size)
-{
-	if (source->callbacks.setparam)
-		source->callbacks.setparam(source->data, param, data, size);
 }
 
 obs_source_t obs_filter_getparent(obs_source_t filter)

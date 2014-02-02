@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "obs.h"
+#include "util/c99defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,22 +40,22 @@ enum obs_dropdown_type {
 	OBS_DROPDOWN_LIST,
 };
 
-struct obs_property_list;
+struct obs_properties;
 struct obs_category;
 struct obs_property;
-typedef struct obs_property_list *obs_property_list_t;
-typedef struct obs_category      *obs_category_t;
-typedef struct obs_property      *obs_property_t;
+typedef struct obs_properties *obs_properties_t;
+typedef struct obs_category   *obs_category_t;
+typedef struct obs_property   *obs_property_t;
 
 /* ------------------------------------------------------------------------- */
 
-EXPORT obs_property_list_t obs_property_list_create();
-EXPORT void obs_property_list_destroy(obs_property_list_t props);
+EXPORT obs_properties_t obs_properties_create();
+EXPORT void obs_properties_destroy(obs_properties_t props);
 
-EXPORT obs_category_t obs_property_list_add_category(obs_property_list_t props,
+EXPORT obs_category_t obs_properties_add_category(obs_properties_t props,
 		const char *name);
 
-EXPORT obs_category_t obs_property_list_categories(obs_property_list_t props);
+EXPORT obs_category_t obs_properties_first_category(obs_properties_t props);
 
 /* ------------------------------------------------------------------------- */
 
@@ -77,7 +77,7 @@ EXPORT void obs_category_add_color(obs_category_t cat, const char *name,
 		const char *description);
 
 EXPORT bool           obs_category_next(obs_category_t *cat);
-EXPORT obs_property_t obs_category_properties(obs_category_t cat);
+EXPORT obs_property_t obs_category_first_property(obs_category_t cat);
 
 /* ------------------------------------------------------------------------- */
 

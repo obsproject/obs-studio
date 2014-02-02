@@ -54,6 +54,7 @@
  *       + mysource_get_output_flags
  *
  *       [and optionally]
+ *       + mysource_properties
  *       + mysource_update
  *       + mysource_activate
  *       + mysource_deactivate
@@ -104,6 +105,10 @@
  * ===========================================
  *   Optional Source Exports
  * ===========================================
+ *   obs_properties_t [name]_properties(const char *locale);
+ *       Returns the properties of this particular source type, if any.
+ *
+ * ---------------------------------------------------------
  *   void [name]_update(void *data, obs_data_t settings);
  *       Called to update the settings of the source.
  *
@@ -185,6 +190,8 @@ struct source_info {
 	/* ----------------------------------------------------------------- */
 	/* optional implementations */
 
+	obs_properties_t (*properties)(const char *locale);
+
 	void (*update)(void *data, obs_data_t settings);
 
 	void (*activate)(void *data);
@@ -194,11 +201,6 @@ struct source_info {
 	void (*video_render)(void *data);
 	uint32_t (*getwidth)(void *data);
 	uint32_t (*getheight)(void *data);
-
-	size_t (*getparam)(void *data, const char *param, void *data_out,
-			size_t buf_size);
-	void (*setparam)(void *data, const char *param, const void *data_in,
-			size_t size);
 
 	struct source_frame *(*filter_video)(void *data,
 			const struct source_frame *frame);

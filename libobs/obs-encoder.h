@@ -42,6 +42,7 @@
  *       + myencoder_getheader
  *
  *       [and optionally]
+ *       + myencoder_properties
  *       + myencoder_setbitrate
  *       + myencoder_request_keyframe
  *
@@ -105,6 +106,10 @@
  * ===========================================
  *   Optional Encoder Exports
  * ===========================================
+ *   obs_properties_t [name]_properties(const char *locale);
+ *       Returns the properties of this particular encoder type, if any.
+ *
+ * ---------------------------------------------------------
  *   bool [name]_setbitrate(void *data, uint32_t bitrate, uint32_t buffersize);
  *       Sets the bitrate of the encoder
  *
@@ -138,6 +143,8 @@ struct encoder_info {
 	int (*getheader)(void *data, struct encoder_packet **packets);
 
 	/* optional */
+	obs_properties_t (*properties)(const char *locale);
+
 	bool (*setbitrate)(void *data, uint32_t bitrate, uint32_t buffersize);
 	bool (*request_keyframe)(void *data);
 };

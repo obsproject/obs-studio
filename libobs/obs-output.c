@@ -29,6 +29,7 @@ bool load_output_info(void *module, const char *module_name,
 	LOAD_MODULE_SUBFUNC(stop, true);
 	LOAD_MODULE_SUBFUNC(active, true);
 
+	LOAD_MODULE_SUBFUNC(properties, false);
 	LOAD_MODULE_SUBFUNC(pause, false);
 
 	info->id = id;
@@ -102,6 +103,14 @@ void obs_output_stop(obs_output_t output)
 bool obs_output_active(obs_output_t output)
 {
 	return output->callbacks.active(output);
+}
+
+obs_properties_t obs_output_properties(const char *id, const char *locale)
+{
+	const struct output_info *info = find_output(id);
+	if (info && info->properties)
+		return info->properties(locale);
+	return NULL;
 }
 
 void obs_output_update(obs_output_t output, obs_data_t settings)

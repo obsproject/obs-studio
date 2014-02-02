@@ -29,6 +29,7 @@ bool load_encoder_info(void *module, const char *module_name,
 	LOAD_MODULE_SUBFUNC(encode, true);
 	LOAD_MODULE_SUBFUNC(getheader, true);
 
+	LOAD_MODULE_SUBFUNC(properties, false);
 	LOAD_MODULE_SUBFUNC(setbitrate, false);
 	LOAD_MODULE_SUBFUNC(request_keyframe, false);
 
@@ -102,6 +103,14 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 		obs_data_release(encoder->settings);
 		bfree(encoder);
 	}
+}
+
+obs_properties_t obs_encoder_properties(const char *id, const char *locale)
+{
+	const struct encoder_info *ei = get_encoder_info(id);
+	if (ei && ei->properties)
+		return ei->properties(locale);
+	return NULL;
 }
 
 void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)

@@ -26,10 +26,7 @@ struct service_info {
 
 	void *(*create)(obs_data_t settings, struct service_data *service);
 	void (*destroy)(void *data);
-	void (*config)(void *data, obs_data_t settings);
-
-	/* optional */
-	const char *(*getdata)(const char *attribute);
+	void (*update)(void *data, obs_data_t settings);
 
 	/* get stream url/key */
 	/* get (viewers/etc) */

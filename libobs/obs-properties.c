@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/bmem.h"
 #include "obs-properties.h"
 
 struct float_data {
@@ -45,15 +46,15 @@ struct obs_category {
 	struct obs_category    *next;
 };
 
-struct obs_property_list {
+struct obs_properties {
 	struct obs_category    *first_category;
 };
 
-obs_property_list_t obs_property_list_create()
+obs_properties_t obs_properties_create()
 {
-	struct obs_property_list *list;
-	list = bmalloc(sizeof(struct obs_property_list));
-	memset(list, 0, sizeof(struct obs_property_list));
+	struct obs_properties *list;
+	list = bmalloc(sizeof(struct obs_properties));
+	memset(list, 0, sizeof(struct obs_properties));
 	return list;
 }
 
@@ -74,7 +75,7 @@ static void obs_category_destroy(struct obs_category *category)
 	bfree(category);
 }
 
-void obs_property_list_destroy(obs_property_list_t props)
+void obs_properties_destroy(obs_properties_t props)
 {
 	struct obs_category *c = props->first_category;
 	while (c) {
@@ -86,7 +87,7 @@ void obs_property_list_destroy(obs_property_list_t props)
 	bfree(props);
 }
 
-obs_category_t obs_property_list_add_category(obs_property_list_t props,
+obs_category_t obs_properties_add_category(obs_properties_t props,
 		const char *name)
 {
 	struct obs_category *c = bmalloc(sizeof(struct obs_category));
@@ -99,7 +100,7 @@ obs_category_t obs_property_list_add_category(obs_property_list_t props,
 	return c;
 }
 
-obs_category_t obs_property_list_categories(obs_property_list_t props)
+obs_category_t obs_properties_first_category(obs_properties_t props)
 {
 	return props->first_category;
 }
@@ -228,7 +229,7 @@ bool obs_category_next(obs_category_t *cat)
 	return *cat != NULL;
 }
 
-obs_property_t obs_category_properties(obs_category_t cat)
+obs_property_t obs_category_first_property(obs_category_t cat)
 {
 	if (!cat)
 		return NULL;

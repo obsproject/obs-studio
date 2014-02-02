@@ -42,6 +42,7 @@
  *       + myoutput_active
  *
  *       [and optionally]
+ *       + myoutput_properties
  *       + myoutput_pause
  *
  * ===========================================
@@ -92,6 +93,10 @@
  * ===========================================
  *   Optional Output Exports
  * ===========================================
+ *   obs_properties_t [name]_properties(const char *locale);
+ *       Returns the properties of this particular source type, if any.
+ *
+ * ---------------------------------------------------------
  *   void [name]_pause(void *data)
  *       Pauses output.  Typically only usable for local recordings.
  */
@@ -114,6 +119,8 @@ struct output_info {
 	bool (*active)(void *data);
 
 	/* optional */
+	obs_properties_t (*properties)(const char *locale);
+
 	void (*pause)(void *data);
 };
 
