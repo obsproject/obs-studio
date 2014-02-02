@@ -250,20 +250,23 @@ void obs_source_remove(obs_source_t source)
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	if (!source)
+	if (!source || source->removed)
 		return;
 
-	if (!source->removed) {
-		source->removed = true;
+	source->removed = true;
 
-		id = da_find(data->sources, &source, 0);
-		if (id != DARRAY_INVALID) {
-			da_erase_item(data->sources, &source);
-			obs_source_release(source);
-		}
+	obs_source_addref(source);
+
+	id = da_find(data->sources, &source, 0);
+	if (id != DARRAY_INVALID) {
+		da_erase_item(data->sources, &source);
+		obs_source_release(source);
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
+
+	obs_source_dosignal(source, "source-remove");
+	obs_source_release(source);
 }
 
 bool obs_source_removed(obs_source_t source)

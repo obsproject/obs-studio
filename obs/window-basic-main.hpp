@@ -32,8 +32,8 @@ class OBSBasic : public OBSMainWindow {
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 
-	obs_scene_t GetCurrentScene();
-	obs_sceneitem_t GetCurrentSceneItem();
+	OBSScene GetCurrentScene();
+	OBSSceneItem GetCurrentSceneItem();
 	void AddSceneItem(obs_sceneitem_t item);
 	void RemoveSceneItem(obs_sceneitem_t item);
 	void AddScene(obs_source_t scene);
@@ -45,7 +45,7 @@ private:
 	static void SceneItemAdded(void *data, calldata_t params);
 	static void SceneItemRemoved(void *data, calldata_t params);
 	static void SourceAdded(void *data, calldata_t params);
-	static void SourceDestroyed(void *data, calldata_t params);
+	static void SourceRemoved(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
@@ -87,7 +87,7 @@ private slots:
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);
-	~OBSBasic();
+	virtual ~OBSBasic();
 
 	virtual void OBSInit() override;
 

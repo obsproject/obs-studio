@@ -26,75 +26,71 @@
 
 /* RAII wrappers */
 
-class OBSSource {
-	obs_source_t source;
-
-	OBSSource(OBSSource &&) = delete;
-	OBSSource(OBSSource const&) = delete;
-
-	OBSSource &operator=(OBSSource const&) = delete;
+template<class RefClass> class OBSRef {
+	typedef typename RefClass::type T;
+	T val;
 
 public:
-	inline OBSSource(obs_source_t source) : source(source) {}
-	inline ~OBSSource() {obs_source_release(source);}
+	inline OBSRef() : val(nullptr)                  {}
+	inline OBSRef(T val_) : val(val_)               {RefClass::AddRef(val);}
+	inline OBSRef(const OBSRef &ref) : val(ref.val) {RefClass::AddRef(val);}
+	inline OBSRef(OBSRef &&ref) : val(ref.val)      {ref.val = nullptr;}
 
-	inline OBSSource& operator=(obs_source_t p) {source = p; return *this;}
+	inline ~OBSRef() {RefClass::Release(val);}
 
-	inline operator obs_source_t() {return source;}
-
-	inline bool operator==(obs_source_t p) const {return source == p;}
-	inline bool operator!=(obs_source_t p) const {return source != p;}
-};
-
-class OBSSourceRef {
-	obs_source_t source;
-
-public:
-	inline OBSSourceRef(obs_source_t source) : source(source)
+	inline OBSRef &operator=(T valIn)
 	{
-		obs_source_addref(source);
-	}
-
-	inline OBSSourceRef(const OBSSourceRef &ref) : source(ref.source)
-	{
-		obs_source_addref(source);
-	}
-
-	inline OBSSourceRef(OBSSourceRef &&ref) : source(ref.source)
-	{
-		ref.source = NULL;
-	}
-
-	inline ~OBSSourceRef() {obs_source_release(source);}
-
-	inline OBSSourceRef &operator=(obs_source_t sourceIn)
-	{
-		obs_source_addref(sourceIn);
-		obs_source_release(source);
-		source = sourceIn;
+		RefClass::AddRef(valIn);
+		RefClass::Release(val);
+		val = valIn;
 		return *this;
 	}
 
-	inline OBSSourceRef &operator=(const OBSSourceRef &ref)
+	inline OBSRef &operator=(const OBSRef &ref)
 	{
-		obs_source_addref(ref.source);
-		obs_source_release(source);
-		source = ref.source;
+		RefClass::AddRef(ref.val);
+		RefClass::Release(val);
+		val = ref.val;
 		return *this;
 	}
 
-	inline OBSSourceRef &operator=(OBSSourceRef &&ref)
+	inline OBSRef &operator=(OBSRef &&ref)
 	{
 		if (this != &ref) {
-			source = ref.source;
-			ref.source = NULL;
+			val = ref.val;
+			ref.val = NULL;
 		}
 
 		return *this;
 	}
 
-	inline operator obs_source_t() const {return source;}
+	inline operator T() const {return val;}
 
-	inline bool operator==(obs_source_t p) const {return source == p;}
-	inline bool operator!=(obs_source_t p) const {return source != p;}
+	inline bool operator==(T p) const {return val == p;}
+	inline bool operator!=(T p) const {return val != p;}
 };
+
+class OBSSourceRefClass {
+public:
+	typedef obs_source_t type;
+	static inline void AddRef(type val)  {obs_source_addref(val);}
+	static inline void Release(type val) {obs_source_release(val);}
+};
+
+class OBSSceneRefClass {
+public:
+	typedef obs_scene_t type;
+	static inline void AddRef(type val)  {obs_scene_addref(val);}
+	static inline void Release(type val) {obs_scene_release(val);}
+};
+
+class OBSSceneItemRefClass {
+public:
+	typedef obs_sceneitem_t type;
+	static inline void AddRef(type val)  {obs_sceneitem_addref(val);}
+	static inline void Release(type val) {obs_sceneitem_release(val);}
+};
+
+typedef OBSRef<OBSSourceRefClass>    OBSSource;
+typedef OBSRef<OBSSceneRefClass>     OBSScene;
+typedef OBSRef<OBSSceneItemRefClass> OBSSceneItem;

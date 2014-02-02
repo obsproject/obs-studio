@@ -199,19 +199,17 @@ obs_scene_t obs_scene_create(const char *name)
 
 int obs_scene_addref(obs_scene_t scene)
 {
-	return obs_source_addref(scene->source);
+	return scene ? obs_source_addref(scene->source) : 0;
 }
 
 int obs_scene_release(obs_scene_t scene)
 {
-	if (scene)
-		return obs_source_release(scene->source);
-	return 0;
+	return scene ? obs_source_release(scene->source) : 0;
 }
 
 obs_source_t obs_scene_getsource(obs_scene_t scene)
 {
-	return scene->source;
+	return scene ? scene->source : NULL;
 }
 
 obs_scene_t obs_scene_fromsource(obs_source_t source)

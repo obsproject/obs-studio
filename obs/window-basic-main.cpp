@@ -25,24 +25,24 @@
 #include "window-namedialog.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
-#include "qt-ptr-variant.hpp"
 
 #include "ui_OBSBasic.h"
 
 using namespace std;
 
-obs_scene_t OBSBasic::GetCurrentScene()
+Q_DECLARE_METATYPE(OBSScene);
+Q_DECLARE_METATYPE(OBSSceneItem);
+
+OBSScene OBSBasic::GetCurrentScene()
 {
 	QListWidgetItem *item = ui->scenes->currentItem();
-	return item ? VariantPtr<obs_scene_t>(item->data(Qt::UserRole)) :
-		nullptr;
+	return item ? item->data(Qt::UserRole).value<OBSScene>() : nullptr;
 }
 
-obs_sceneitem_t OBSBasic::GetCurrentSceneItem()
+OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
 	QListWidgetItem *item = ui->sources->currentItem();
-	return item ? VariantPtr<obs_sceneitem_t>(item->data(Qt::UserRole)) :
-		nullptr;
+	return item ? item->data(Qt::UserRole).value<OBSSceneItem>() : nullptr;
 }
 
 void OBSBasic::AddScene(obs_source_t source)
@@ -51,7 +51,7 @@ void OBSBasic::AddScene(obs_source_t source)
 	obs_scene_t scene = obs_scene_fromsource(source);
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
-	item->setData(Qt::UserRole, PtrVariant(scene));
+	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
 	ui->scenes->addItem(item);
 
 	signal_handler_t handler = obs_source_signalhandler(source);
@@ -77,13 +77,14 @@ void OBSBasic::RemoveScene(obs_source_t source)
 
 void OBSBasic::AddSceneItem(obs_sceneitem_t item)
 {
-	obs_scene_t scene = obs_sceneitem_getscene(item);
+	obs_scene_t  scene  = obs_sceneitem_getscene(item);
 	obs_source_t source = obs_sceneitem_getsource(item);
-	const char *name = obs_source_getname(source);
+	const char   *name  = obs_source_getname(source);
 
 	if (GetCurrentScene() == scene) {
 		QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
-		listItem->setData(Qt::UserRole, PtrVariant(item));
+		listItem->setData(Qt::UserRole,
+				QVariant::fromValue(OBSSceneItem(item)));
 
 		ui->sources->insertItem(0, listItem);
 	}
@@ -100,7 +101,7 @@ void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
 			QListWidgetItem *listItem = ui->sources->item(i);
 			QVariant userData = listItem->data(Qt::UserRole);
 
-			if (item == VariantPtr<obs_sceneitem_t>(userData)) {
+			if (userData.value<OBSSceneItem>() == item) {
 				delete listItem;
 				break;
 			}
@@ -185,7 +186,7 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 		static_cast<OBSBasic*>(data)->AddScene(source);
 }
 
-void OBSBasic::SourceDestroyed(void *data, calldata_t params)
+void OBSBasic::SourceRemoved(void *data, calldata_t params)
 {
 	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
@@ -229,8 +230,8 @@ void OBSBasic::OBSInit()
 
 	signal_handler_connect(obs_signalhandler(), "source-add",
 			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_signalhandler(), "source-destroy",
-			OBSBasic::SourceDestroyed, this);
+	signal_handler_connect(obs_signalhandler(), "source-remove",
+			OBSBasic::SourceRemoved, this);
 	signal_handler_connect(obs_signalhandler(), "channel-change",
 			OBSBasic::ChannelChanged, this);
 
@@ -246,6 +247,8 @@ void OBSBasic::OBSInit()
 
 OBSBasic::~OBSBasic()
 {
+	ui->sources->clear();
+	ui->scenes->clear();
 	obs_shutdown();
 }
 
@@ -364,7 +367,7 @@ void OBSBasic::on_scenes_itemChanged(QListWidgetItem *item)
 	if (item) {
 		obs_scene_t scene;
 
-		scene = VariantPtr<obs_scene_t>(item->data(Qt::UserRole));
+		scene = item->data(Qt::UserRole).value<OBSScene>();
 		source = obs_scene_getsource(scene);
 		UpdateSources(scene);
 	}
@@ -413,7 +416,7 @@ void OBSBasic::on_actionRemoveScene_triggered()
 		return;
 
 	QVariant userData = item->data(Qt::UserRole);
-	obs_scene_t scene = VariantPtr<obs_scene_t>(userData);
+	obs_scene_t scene = userData.value<OBSScene>();
 	obs_source_t source = obs_scene_getsource(scene);
 	obs_source_remove(source);
 }
