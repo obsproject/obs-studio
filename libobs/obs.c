@@ -326,7 +326,7 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 	da_free(obs->output_types);
 	da_free(obs->service_types);
-	da_free(obs->ui_callbacks);
+	da_free(obs->ui_modal_callbacks);
 	da_free(obs->ui_modeless_callbacks);
 
 	obs_free_data();
@@ -454,44 +454,44 @@ video_t obs_video(void)
 }
 
 /* TODO: optimize this later so it's not just O(N) string lookups */
-static inline struct ui_callback *get_ui_callback(const char *name,
+static inline struct obs_modal_ui *get_modal_ui_callback(const char *name,
 		const char *task, const char *target)
 {
-	for (size_t i = 0; i < obs->ui_callbacks.num; i++) {
-		struct ui_callback *callback = obs->ui_callbacks.array+i;
+	for (size_t i = 0; i < obs->ui_modal_callbacks.num; i++) {
+		struct obs_modal_ui *callback = obs->ui_modal_callbacks.array+i;
 
-		if (strcmp(callback->ui_info.name,   name)   == 0 &&
-		    strcmp(callback->ui_info.task,   task)   == 0 &&
-		    strcmp(callback->ui_info.target, target) == 0)
+		if (strcmp(callback->name,   name)   == 0 &&
+		    strcmp(callback->task,   task)   == 0 &&
+		    strcmp(callback->target, target) == 0)
 			return callback;
 	}
 
 	return NULL;
 }
 
-static inline struct ui_modeless *get_modeless_ui_callback(const char *name,
+static inline struct obs_modeless_ui *get_modeless_ui_callback(const char *name,
 		const char *task, const char *target)
 {
 	for (size_t i = 0; i < obs->ui_modeless_callbacks.num; i++) {
-		struct ui_modeless *callback;
+		struct obs_modeless_ui *callback;
 		callback = obs->ui_modeless_callbacks.array+i;
 
-		if (strcmp(callback->ui_info.name,   name)   == 0 &&
-		    strcmp(callback->ui_info.task,   task)   == 0 &&
-		    strcmp(callback->ui_info.target, target) == 0)
+		if (strcmp(callback->name,   name)   == 0 &&
+		    strcmp(callback->task,   task)   == 0 &&
+		    strcmp(callback->target, target) == 0)
 			return callback;
 	}
 
 	return NULL;
 }
 
-int obs_call_ui(const char *name, const char *task, const char *target,
+int obs_exec_ui(const char *name, const char *task, const char *target,
 		void *data, void *ui_data)
 {
-	struct ui_callback *callback;
+	struct obs_modal_ui *callback;
 	int errorcode = OBS_UI_NOTFOUND;
 
-	callback = get_ui_callback(name, task, target);
+	callback = get_modal_ui_callback(name, task, target);
 	if (callback) {
 		bool success = callback->callback(data, ui_data);
 		errorcode = success ? OBS_UI_SUCCESS : OBS_UI_CANCEL;
@@ -503,8 +503,7 @@ int obs_call_ui(const char *name, const char *task, const char *target,
 void *obs_create_ui(const char *name, const char *task, const char *target,
 		void *data, void *ui_data)
 {
-	struct ui_modeless *callback;
-	int errorcode = OBS_UI_NOTFOUND;
+	struct obs_modeless_ui *callback;
 
 	callback = get_modeless_ui_callback(name, task, target);
 	return callback ? callback->callback(data, ui_data) : NULL;

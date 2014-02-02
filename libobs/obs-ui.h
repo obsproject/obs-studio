@@ -23,10 +23,18 @@
 extern "C" {
 #endif
 
-struct obs_ui_info {
+struct obs_modal_ui {
 	const char *name;
 	const char *task;
 	const char *target;
+	bool (*callback)(void *object, void *ui_data);
+};
+
+struct obs_modeless_ui {
+	const char *name;
+	const char *task;
+	const char *target;
+	void *(*callback)(void *object, void *ui_data);
 };
 
 /*
@@ -44,100 +52,73 @@ struct obs_ui_info {
  * languages)
  *
  *   A module with UI calls needs to export one or both of these functions:
- *       + enum_ui
+ *       + enum_modal_ui
  *       + enum_modeless_ui
  *
  *   The enum_ui function provides an obs_ui_info structure for each
  * input/output/etc.  Modeless UI should be exported enum_modeless_ui.  For
- * example, to export Qt-specific configuration functions, the exports might
- * be something like:
- *       + mysource_config_qt
- *       + myoutput_config_qt
- *       + myencoder_config_qt
+ * example, to export Qt-specific configuration functions, the values given to
+ * enum_modal_ui might look something like this:
  *
- *    ..And the values given to enum_ui would be something this:
- *
- *    struct obs_ui_info ui_list[] = {
- *            {"mysource",  "config", "qt"},
- *            {"myoutput",  "config", "qt"},
- *            {"myencoder", "config", "qt"}
+ *    struct obs_modal_ui ui_list[] = {
+ *            {"mysource",  "config", "qt", mysource_config},
+ *            {"myoutput",  "config", "qt", myoutput_config},
+ *            {"myencoder", "config", "qt", myenoder_config}
  *    };
  *
  *   'qt' could be replaced with 'wx' or something similar if using wxWidgets,
- * or 'win32' if using bare windows API.
+ * or 'win32' if using bare windows API.  It could also specify a custom name
+ * if desired (use with discretion).
  *
  * ===========================================
  *   Primary Exports
  * ===========================================
- *   bool enum_ui(size_t idx, struct obs_ui_info *ui_info);
+ *   bool enum_modal_ui(size_t idx, struct obs_modal_ui *ui_info);
  *
  *                idx: index of the enumeration
  *            ui_info: pointer to the ui data for this enumeration
  *       Return value: false when no more available.
  *
  * ---------------------------------------------------------
- *   bool enum_modeless_ui(size_t idx, struct obs_ui_info *ui_info);
+ *   bool enum_modeless_ui(size_t idx, struct obs_modeless_ui *ui_info);
  *
  *                idx: index of the enumeration
  *            ui_info: pointer to the ui data for this enumeration
  *       Return value: false when no more available.
  *
  * ===========================================
- *   Export Format
+ *   Modal UI Callback
  * ===========================================
- *   Although the 'export' variable specifies the full export name, each
- * export should be formatted as so:
+ *       bool modal_callback(void *object, void *ui_data);
  *
- *       bool [name]_[task]_[target](void *data, void *ui_data);
- *
- *     [name]: specifies the name of the input/output/encoder/etc.
- *     [task]: specifies the task of the user interface, most often 'config'
- *   [target]: specifies the target or toolkit of the user interface, such as
- *             but not limited to 'qt', 'wx', 'win32', 'cocoa', etc.  If
- *             a custom solution is desired, it can use a program-specific
- *             name, such as 'myprogram'.
- *
- *   The 'data' variable points to the input/output/encoder/etc.  The 'ui_data'
- * varaible points to the UI parent or UI-specific data to be used with the
- * custom user interface.
+ *   The 'object' variable points to the input/output/encoder/etc.  The
+ * 'ui_data' varaible points to the UI parent or UI-specific data to be used
+ * with the custom user interface.
  *
  *   What 'ui_data' points to differs depending on the target, and you should
  * use discretion and consistency when using this variable to relay
  * information to the UI function.  For example, it would be ideal to have
  * 'ui_data' point to a parent, QWidget for Qt, or a wxWindow for wxWidgets,
- * etc.
- *
- *   For example, if I had a source called 'mysource', and I wanted to export
- * a function that handles the task 'config' with the Qt library, the export
- * would be:
- *
- *   bool mysource_config_qt(void *data, void *ui_data);
- *
- *   In this example, the ui_data variable should ideally be a pointer to the
- * QWidget parent, if any.
+ * etc., though it's up to the discretion of the developer to define that
+ * value.  Because of the nature of void pointers, discretion and consistency
+ * is advised.
  *
  * ===========================================
- *   Modeless UI
+ *   Modeless UI Callback
  * ===========================================
- *   Modeless user interface calls are supported, but they must be exported
- * through enum_modeless_ui, and the format is slightly different:
- *
- *       void *[name]_[task]_[target](void *data, void *ui_data);
+ *       void *modeless_callback(void *data, void *ui_data);
  *
  *   Modeless UI calls return immediately, and typically are supposed to return
  * a pointer or handle to the specific UI object that was created.  For
- * example, a win32 modeless would return an HWND, a Qt object would return
- * a pointer to a QWidget.
+ * example, a Qt object would ideally return a pointer to a QWidget.  Again,
+ * discretion and consistency is advised for the return value.
  */
 
 /**
  * ===========================================
- *   obs_call_ui
+ *   obs_exec_ui
  * ===========================================
- * Requests modal UI to be displayed
- *
- *   This is typically used for things like creating modal dialogs/etc for
- * specific toolkits.
+ * Requests modal UI to be displayed.  Returns when user is complete.
  *
  *           name: Name of the input/output/etc type that UI was requested for
  *           task: Task of the user interface (usually "config")
@@ -153,14 +134,14 @@ struct obs_ui_info {
 #define OBS_UI_CANCEL   -1
 #define OBS_UI_NOTFOUND -2
 
-EXPORT int obs_call_ui(const char *name, const char *task, const char *target,
+EXPORT int obs_exec_ui(const char *name, const char *task, const char *target,
 		void *data, void *ui_data);
 
 /**
  * ===========================================
  *   obs_create_ui
  * ===========================================
- * Requests modeless UI to be created
+ * Requests modeless UI to be created.  Returns immediately.
  *
  *           name: Name of the input/output/etc type that UI was requested for
  *           task: Task of the user interface
