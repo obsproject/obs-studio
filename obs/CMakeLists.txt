@@ -49,9 +49,6 @@ endif()
 set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	obs-app.cpp
-#	settings-basic.cpp
-#	settings-basic-general.cpp
-#	settings-basic-video.cpp
 	window-basic-main.cpp
 	window-basic-settings.cpp
 	window-namedialog.cpp
@@ -60,14 +57,11 @@ set(obs_SOURCES
 set(obs_HEADERS
 	obs-app.hpp
 	platform.hpp
-#	settings.hpp
-#	settings-basic.hpp
 	window-main.hpp
 	window-basic-main.hpp
 	window-basic-settings.hpp
 	window-namedialog.hpp
 	qt-display.hpp
-	qt-ptr-variant.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI
