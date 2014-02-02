@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <string.h>
-#include <stdarg.h>
-
 #include "obs.h"
 
 /* RAII wrappers */

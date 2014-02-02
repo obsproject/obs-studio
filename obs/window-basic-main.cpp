@@ -33,6 +33,52 @@ using namespace std;
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
 
+OBSBasic::OBSBasic(QWidget *parent)
+	: OBSMainWindow (parent),
+	  ui            (new Ui::OBSBasic)
+{
+	ui->setupUi(this);
+}
+
+void OBSBasic::OBSInit()
+{
+	/* make sure it's fully displayed before doing any initialization */
+	show();
+	App()->processEvents();
+
+	if (!obs_startup())
+		throw "Failed to initialize libobs";
+	if (!InitGraphics())
+		throw "Failed to initialize graphics";
+	if (!InitAudio())
+		throw "Failed to initialize audio";
+
+	signal_handler_connect(obs_signalhandler(), "source-add",
+			OBSBasic::SourceAdded, this);
+	signal_handler_connect(obs_signalhandler(), "source-remove",
+			OBSBasic::SourceRemoved, this);
+	signal_handler_connect(obs_signalhandler(), "channel-change",
+			OBSBasic::ChannelChanged, this);
+
+	/* TODO: this is a test */
+	obs_load_module("test-input");
+
+#ifdef _WIN32
+	/* HACK: fixes a windows qt bug with native widgets with native
+	 * repaint */
+	ui->previewContainer->repaint();
+#endif
+}
+
+OBSBasic::~OBSBasic()
+{
+	/* free the lists before shutting down to remove the scene/item
+	 * references */
+	ui->sources->clear();
+	ui->scenes->clear();
+	obs_shutdown();
+}
+
 OBSScene OBSBasic::GetCurrentScene()
 {
 	QListWidgetItem *item = ui->scenes->currentItem();
@@ -207,50 +253,6 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 }
 
 /* Main class functions */
-
-OBSBasic::OBSBasic(QWidget *parent)
-	: OBSMainWindow (parent),
-	  ui            (new Ui::OBSBasic)
-{
-	ui->setupUi(this);
-}
-
-void OBSBasic::OBSInit()
-{
-	/* make sure it's fully displayed before doing any initialization */
-	show();
-	App()->processEvents();
-
-	if (!obs_startup())
-		throw "Failed to initialize libobs";
-	if (!InitGraphics())
-		throw "Failed to initialize graphics";
-	if (!InitAudio())
-		throw "Failed to initialize audio";
-
-	signal_handler_connect(obs_signalhandler(), "source-add",
-			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_signalhandler(), "source-remove",
-			OBSBasic::SourceRemoved, this);
-	signal_handler_connect(obs_signalhandler(), "channel-change",
-			OBSBasic::ChannelChanged, this);
-
-	/* TODO: this is a test */
-	obs_load_module("test-input");
-
-#ifdef _WIN32
-	/* HACK: fixes a windows qt bug with native widgets with native
-	 * repaint */
-	ui->previewContainer->repaint();
-#endif
-}
-
-OBSBasic::~OBSBasic()
-{
-	ui->sources->clear();
-	ui->scenes->clear();
-	obs_shutdown();
-}
 
 bool OBSBasic::InitGraphics()
 {
@@ -480,7 +482,7 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 
 void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
-	obs_scene_t scene = GetCurrentScene();
+	OBSScene scene = GetCurrentScene();
 	const char *type;
 	bool foundValues = false;
 	size_t idx = 0;
@@ -514,7 +516,7 @@ void OBSBasic::on_actionAddSource_triggered()
 
 void OBSBasic::on_actionRemoveSource_triggered()
 {
-	obs_sceneitem_t item = GetCurrentSceneItem();
+	OBSSceneItem item = GetCurrentSceneItem();
 	if (item)
 		obs_sceneitem_remove(item);
 }
