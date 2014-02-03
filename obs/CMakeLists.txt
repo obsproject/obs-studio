@@ -80,6 +80,19 @@ add_executable(obs WIN32
 	${obs_HEADERS}
 	${obs_UI_HEADERS}
 	${obs_QRC_SOURCES})
+
+if(WIN32)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_output_suffix "64")
+	else()
+		set(_output_suffix "32")
+	endif()
+
+	set_target_properties(obs
+		PROPERTIES
+			OUTPUT_NAME "obs${_output_suffix}")
+endif()
+
 target_link_libraries(obs
 	libobs
 	Qt5::Widgets

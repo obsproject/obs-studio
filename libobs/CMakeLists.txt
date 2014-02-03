@@ -42,7 +42,7 @@ endif()
 if(MSVC)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /EHc-")
-	set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /EHc-")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc-")
 endif()
 
 set(libobs_callback_SOURCES
