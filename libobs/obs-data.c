@@ -237,9 +237,10 @@ obs_data_t obs_data_create_from_json(const char *json_string)
 	return NULL;
 }
 
-int obs_data_addref(obs_data_t data)
+void obs_data_addref(obs_data_t data)
 {
-	return data ? ++data->ref : 0;
+	if (data)
+		++data->ref;
 }
 
 static inline void obs_data_destroy(struct obs_data *data)
@@ -256,16 +257,13 @@ static inline void obs_data_destroy(struct obs_data *data)
 	bfree(data);
 }
 
-int obs_data_release(obs_data_t data)
+void obs_data_release(obs_data_t data)
 {
 	if (!data)
-		return 0;
+		return;
 
-	int ref = --data->ref;
-	if (!ref)
+	if (--data->ref == 0)
 		obs_data_destroy(data);
-
-	return ref;
 }
 
 const char *obs_data_getjson(obs_data_t data)
@@ -461,9 +459,10 @@ obs_data_array_t obs_data_array_create()
 	return array;
 }
 
-int obs_data_array_addref(obs_data_array_t array)
+void obs_data_array_addref(obs_data_array_t array)
 {
-	return array ? ++array->ref : 0;
+	if (array)
+		++array->ref;
 }
 
 static inline void obs_data_array_destroy(obs_data_array_t array)
@@ -474,13 +473,13 @@ static inline void obs_data_array_destroy(obs_data_array_t array)
 	bfree(array);
 }
 
-int obs_data_array_release(obs_data_array_t array)
+void obs_data_array_release(obs_data_array_t array)
 {
-	int ref = --array->ref;
-	if (!ref)
-		obs_data_array_destroy(array);
+	if (!array)
+		return;
 
-	return ref;
+	if (--array->ref == 0)
+		obs_data_array_destroy(array);
 }
 
 size_t obs_data_array_count(obs_data_array_t array)
