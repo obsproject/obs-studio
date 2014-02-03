@@ -242,7 +242,7 @@ int obs_data_addref(obs_data_t data)
 	return data ? ++data->ref : 0;
 }
 
-static inline obs_data_destroy(struct obs_data *data)
+static inline void obs_data_destroy(struct obs_data *data)
 {
 	struct obs_data_item *item = data->first_item;
 
