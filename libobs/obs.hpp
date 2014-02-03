@@ -23,25 +23,25 @@
 
 /* RAII wrappers */
 
-template<class RefClass> class OBSRef {
-	typedef typename RefClass::type T;
+template<typename T, void addref(T), void release(T)>
+class OBSRef {
 	T val;
 
 	inline OBSRef &Replace(T valIn)
 	{
-		RefClass::AddRef(valIn);
-		RefClass::Release(val);
+		addref(valIn);
+		release(val);
 		val = valIn;
 		return *this;
 	}
 
 public:
 	inline OBSRef() : val(nullptr)                  {}
-	inline OBSRef(T val_) : val(val_)               {RefClass::AddRef(val);}
-	inline OBSRef(const OBSRef &ref) : val(ref.val) {RefClass::AddRef(val);}
+	inline OBSRef(T val_) : val(val_)               {addref(val);}
+	inline OBSRef(const OBSRef &ref) : val(ref.val) {addref(val);}
 	inline OBSRef(OBSRef &&ref) : val(ref.val)      {ref.val = nullptr;}
 
-	inline ~OBSRef() {RefClass::Release(val);}
+	inline ~OBSRef() {release(val);}
 
 	inline OBSRef &operator=(T valIn)           {return Replace(valIn);}
 	inline OBSRef &operator=(const OBSRef &ref) {return Replace(ref.val);}
@@ -62,27 +62,11 @@ public:
 	inline bool operator!=(T p) const {return val != p;}
 };
 
-class OBSSourceRefClass {
-public:
-	typedef obs_source_t type;
-	static inline void AddRef(type val)  {obs_source_addref(val);}
-	static inline void Release(type val) {obs_source_release(val);}
-};
+using OBSSource = OBSRef<obs_source_t, obs_source_addref, obs_source_release>;
+using OBSScene = OBSRef<obs_scene_t, obs_scene_addref, obs_scene_release>;
+using OBSSceneItem = OBSRef<obs_sceneitem_t, obs_sceneitem_addref,
+						obs_sceneitem_release>;
 
-class OBSSceneRefClass {
-public:
-	typedef obs_scene_t type;
-	static inline void AddRef(type val)  {obs_scene_addref(val);}
-	static inline void Release(type val) {obs_scene_release(val);}
-};
-
-class OBSSceneItemRefClass {
-public:
-	typedef obs_sceneitem_t type;
-	static inline void AddRef(type val)  {obs_sceneitem_addref(val);}
-	static inline void Release(type val) {obs_sceneitem_release(val);}
-};
-
-typedef OBSRef<OBSSourceRefClass>    OBSSource;
-typedef OBSRef<OBSSceneRefClass>     OBSScene;
-typedef OBSRef<OBSSceneItemRefClass> OBSSceneItem;
+using OBSData = OBSRef<obs_data_t, obs_data_addref, obs_data_release>;
+using OBSDataArray = OBSRef<obs_data_array_t, obs_data_array_addref,
+						obs_data_array_release>;
