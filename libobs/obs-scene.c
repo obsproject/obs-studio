@@ -197,14 +197,16 @@ obs_scene_t obs_scene_create(const char *name)
 	return scene;
 }
 
-int obs_scene_addref(obs_scene_t scene)
+void obs_scene_addref(obs_scene_t scene)
 {
-	return scene ? obs_source_addref(scene->source) : 0;
+	if (scene)
+		obs_source_addref(scene->source);
 }
 
-int obs_scene_release(obs_scene_t scene)
+void obs_scene_release(obs_scene_t scene)
 {
-	return scene ? obs_source_release(scene->source) : 0;
+	if (scene)
+		obs_source_release(scene->source);
 }
 
 obs_source_t obs_scene_getsource(obs_scene_t scene)
@@ -312,22 +314,19 @@ static void obs_sceneitem_destroy(obs_sceneitem_t item)
 	}
 }
 
-int obs_sceneitem_addref(obs_sceneitem_t item)
+void obs_sceneitem_addref(obs_sceneitem_t item)
 {
-	return item ? ++item->ref : 0;
+	if (item)
+		++item->ref;
 }
 
-int obs_sceneitem_release(obs_sceneitem_t item)
+void obs_sceneitem_release(obs_sceneitem_t item)
 {
-	int ref = 0;
+	if (!item)
+		return;
 
-	if (item) {
-		ref = --item->ref;
-		if (!ref)
-			obs_sceneitem_destroy(item);
-	}
-
-	return ref;
+	if (--item->ref == 0)
+		obs_sceneitem_destroy(item);
 }
 
 void obs_sceneitem_remove(obs_sceneitem_t item)

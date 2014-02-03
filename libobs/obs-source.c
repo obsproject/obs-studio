@@ -219,22 +219,19 @@ static void obs_source_destroy(obs_source_t source)
 	bfree(source);
 }
 
-int obs_source_addref(obs_source_t source)
+void obs_source_addref(obs_source_t source)
 {
-	return source ? ++source->refs : 0;
+	if (source)
+		++source->refs;
 }
 
-int obs_source_release(obs_source_t source)
+void obs_source_release(obs_source_t source)
 {
-	int refs = 0;
+	if (!source)
+		return;
 
-	if (source) {
-		refs = --source->refs;
-		if (refs == 0)
-			obs_source_destroy(source);
-	}
-
-	return refs;
+	if (--source->refs == 0)
+		obs_source_destroy(source);
 }
 
 void obs_source_remove(obs_source_t source)

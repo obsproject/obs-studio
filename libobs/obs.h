@@ -347,8 +347,8 @@ EXPORT obs_source_t obs_source_create(enum obs_source_type type,
  * Adds/releases a reference to a source.  When the last reference is
  * released, the source is destroyed.
  */
-EXPORT int obs_source_addref(obs_source_t source);
-EXPORT int obs_source_release(obs_source_t source);
+EXPORT void obs_source_addref(obs_source_t source);
+EXPORT void obs_source_release(obs_source_t source);
 
 /** Notifies all references that the source should be released */
 EXPORT void obs_source_remove(obs_source_t source);
@@ -458,8 +458,8 @@ EXPORT void obs_source_process_filter(obs_source_t filter,
  */
 EXPORT obs_scene_t obs_scene_create(const char *name);
 
-EXPORT int         obs_scene_addref(obs_scene_t scene);
-EXPORT int         obs_scene_release(obs_scene_t scene);
+EXPORT void        obs_scene_addref(obs_scene_t scene);
+EXPORT void        obs_scene_release(obs_scene_t scene);
 
 /** Gets the scene's source context */
 EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);
@@ -479,8 +479,8 @@ EXPORT void obs_scene_enum_items(obs_scene_t scene,
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source);
 
-EXPORT int obs_sceneitem_addref(obs_sceneitem_t item);
-EXPORT int obs_sceneitem_release(obs_sceneitem_t item);
+EXPORT void obs_sceneitem_addref(obs_sceneitem_t item);
+EXPORT void obs_sceneitem_release(obs_sceneitem_t item);
 
 /** Removes a scene item. */
 EXPORT void obs_sceneitem_remove(obs_sceneitem_t item);
