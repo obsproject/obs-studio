@@ -30,6 +30,7 @@
 #include "../../deps/w32-pthreads/pthread.h"
 #include "../../deps/w32-pthreads/semaphore.h"
 #else
+#include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
