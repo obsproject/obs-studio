@@ -32,15 +32,19 @@ class OBSBasic : public OBSMainWindow {
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 
-	OBSScene GetCurrentScene();
+	OBSScene     GetCurrentScene();
 	OBSSceneItem GetCurrentSceneItem();
-	void AddSceneItem(obs_sceneitem_t item);
-	void RemoveSceneItem(obs_sceneitem_t item);
-	void AddScene(obs_source_t scene);
-	void RemoveScene(obs_source_t scene);
-	void UpdateSources(obs_scene_t scene);
-	void UpdateSceneSelection(obs_source_t source);
 
+	void UpdateSources(OBSScene scene);
+
+private slots:
+	void AddSceneItem(OBSSceneItem item);
+	void RemoveSceneItem(OBSSceneItem item);
+	void AddScene(OBSSource source);
+	void RemoveScene(OBSSource source);
+	void UpdateSceneSelection(OBSSource source);
+
+private:
 	/* OBS Callbacks */
 	static void SceneItemAdded(void *data, calldata_t params);
 	static void SceneItemRemoved(void *data, calldata_t params);

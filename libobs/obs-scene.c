@@ -314,14 +314,14 @@ static void obs_sceneitem_destroy(obs_sceneitem_t item)
 
 int obs_sceneitem_addref(obs_sceneitem_t item)
 {
-	return ++item->ref;
+	return item ? ++item->ref : 0;
 }
 
 int obs_sceneitem_release(obs_sceneitem_t item)
 {
 	int ref = 0;
 
-	if (item ) {
+	if (item) {
 		ref = --item->ref;
 		if (!ref)
 			obs_sceneitem_destroy(item);

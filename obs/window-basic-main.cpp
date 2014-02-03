@@ -63,11 +63,8 @@ void OBSBasic::OBSInit()
 	/* TODO: this is a test */
 	obs_load_module("test-input");
 
-#ifdef _WIN32
-	/* HACK: fixes a windows qt bug with native widgets with native
-	 * repaint */
+	/* HACK: fixes a qt bug with native widgets with native repaint */
 	ui->previewContainer->repaint();
-#endif
 }
 
 OBSBasic::~OBSBasic()
@@ -91,7 +88,22 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 	return item ? item->data(Qt::UserRole).value<OBSSceneItem>() : nullptr;
 }
 
-void OBSBasic::AddScene(obs_source_t source)
+void OBSBasic::UpdateSources(OBSScene scene)
+{
+	ui->sources->clear();
+
+	obs_scene_enum_items(scene,
+			[] (obs_scene_t scene, obs_sceneitem_t item, void *p)
+			{
+				OBSBasic *window = static_cast<OBSBasic*>(p);
+				window->AddSceneItem(item);
+				return true;
+			}, this);
+}
+
+/* Qt callbacks for invokeMethod */
+
+void OBSBasic::AddScene(OBSSource source)
 {
 	const char *name  = obs_source_getname(source);
 	obs_scene_t scene = obs_scene_fromsource(source);
@@ -106,7 +118,7 @@ void OBSBasic::AddScene(obs_source_t source)
 			this);
 }
 
-void OBSBasic::RemoveScene(obs_source_t source)
+void OBSBasic::RemoveScene(OBSSource source)
 {
 	const char *name = obs_source_getname(source);
 
@@ -121,7 +133,7 @@ void OBSBasic::RemoveScene(obs_source_t source)
 	}
 }
 
-void OBSBasic::AddSceneItem(obs_sceneitem_t item)
+void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t  scene  = obs_sceneitem_getscene(item);
 	obs_source_t source = obs_sceneitem_getsource(item);
@@ -138,7 +150,7 @@ void OBSBasic::AddSceneItem(obs_sceneitem_t item)
 	sourceSceneRefs[source] = sourceSceneRefs[source] + 1;
 }
 
-void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
+void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 {
 	obs_scene_t scene = obs_sceneitem_getscene(item);
 
@@ -163,20 +175,7 @@ void OBSBasic::RemoveSceneItem(obs_sceneitem_t item)
 	}
 }
 
-void OBSBasic::UpdateSources(obs_scene_t scene)
-{
-	ui->sources->clear();
-
-	obs_scene_enum_items(scene,
-			[] (obs_scene_t scene, obs_sceneitem_t item, void *p)
-			{
-				OBSBasic *window = static_cast<OBSBasic*>(p);
-				window->AddSceneItem(item);
-				return true;
-			}, this);
-}
-
-void OBSBasic::UpdateSceneSelection(obs_source_t source)
+void OBSBasic::UpdateSceneSelection(OBSSource source)
 {
 	if (source) {
 		obs_source_type type;
@@ -208,7 +207,8 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t params)
 	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
-	window->AddSceneItem(item);
+	QMetaObject::invokeMethod(window, "AddSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
 void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
@@ -218,7 +218,8 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
 	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
-	window->RemoveSceneItem(item);
+	QMetaObject::invokeMethod(window, "RemoveSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
@@ -229,7 +230,9 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 	obs_source_gettype(source, &type, NULL);
 
 	if (type == SOURCE_SCENE)
-		static_cast<OBSBasic*>(data)->AddScene(source);
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"AddScene",
+				Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t params)
@@ -240,7 +243,9 @@ void OBSBasic::SourceRemoved(void *data, calldata_t params)
 	obs_source_gettype(source, &type, NULL);
 
 	if (type == SOURCE_SCENE)
-		static_cast<OBSBasic*>(data)->RemoveScene(source);
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"RemoveScene",
+				Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::ChannelChanged(void *data, calldata_t params)
@@ -249,7 +254,9 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 	uint32_t channel = calldata_uint32(params, "channel");
 
 	if (channel == 0)
-		static_cast<OBSBasic*>(data)->UpdateSceneSelection(source);
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"UpdateSceneSelection",
+				Q_ARG(OBSSource, OBSSource(source)));
 }
 
 /* Main class functions */

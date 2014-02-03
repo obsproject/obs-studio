@@ -221,24 +221,18 @@ static void obs_source_destroy(obs_source_t source)
 
 int obs_source_addref(obs_source_t source)
 {
-	assert(source != NULL);
-	if (!source)
-		return 0;
-
-	return ++source->refs;
+	return source ? ++source->refs : 0;
 }
 
 int obs_source_release(obs_source_t source)
 {
-	int refs;
+	int refs = 0;
 
-	assert(source != NULL);
-	if (!source)
-		return 0;
-
-	refs = --source->refs;
-	if (refs == 0)
-		obs_source_destroy(source);
+	if (source) {
+		refs = --source->refs;
+		if (refs == 0)
+			obs_source_destroy(source);
+	}
 
 	return refs;
 }
