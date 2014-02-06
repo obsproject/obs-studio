@@ -71,17 +71,15 @@ static void APIENTRY gl_debug_proc(
 static void gl_enable_debug()
 {
 	 /* Perhaps we should create GLEW contexts? */
-	if (ogl_IsVersionGEQ(4, 3))
+	if (ogl_IsVersionGEQ(4, 3)) {
 		glDebugMessageCallback(gl_debug_proc, NULL);
-	else if (ogl_ext_ARB_debug_output)
+		gl_enable(GL_DEBUG_OUTPUT);
+	} else if (ogl_ext_ARB_debug_output) {
 		glDebugMessageCallbackARB(gl_debug_proc, NULL);
-	else {
+	} else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
 		                "not supported.");
-		return;
 	}
-
-	gl_enable(GL_DEBUG_OUTPUT);
 }
 #else
 static void gl_enable_debug() {}
