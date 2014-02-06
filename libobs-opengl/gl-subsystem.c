@@ -93,10 +93,7 @@ static inline void required_extension_error(const char *extension)
 
 static bool gl_init_extensions(struct gs_device* device) 
 {
-	/* It's odd but ogl_IsVersionGEQ returns /false/ if the 
-	   specified version is less than the context. */
-
-	if (ogl_IsVersionGEQ(2, 1)) {
+	if (!ogl_IsVersionGEQ(2, 1)) {
 		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
 		                "higher.");
 		return false;
@@ -104,23 +101,23 @@ static bool gl_init_extensions(struct gs_device* device)
 
 	gl_enable_debug();
 
-	if (ogl_IsVersionGEQ(2, 1) && !ogl_ext_ARB_framebuffer_object) {
+	if (!ogl_IsVersionGEQ(2, 1) && !ogl_ext_ARB_framebuffer_object) {
 		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
 		                "is required.");
 		return false;
 	}
 
-	if (!ogl_IsVersionGEQ(3, 1) || ogl_ext_ARB_seamless_cube_map) {
+	if (ogl_IsVersionGEQ(3, 1) || ogl_ext_ARB_seamless_cube_map) {
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-	if (ogl_IsVersionGEQ(4, 1) && !ogl_ext_ARB_separate_shader_objects) {
+	if (!ogl_IsVersionGEQ(4, 1) && !ogl_ext_ARB_separate_shader_objects) {
 		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects "
 		                "is required.");
 		return false;
 	}
 
-	if (!ogl_IsVersionGEQ(4, 2) || ogl_ext_ARB_copy_image)
+	if (ogl_IsVersionGEQ(4, 2) || ogl_ext_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
 	else if (ogl_ext_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
