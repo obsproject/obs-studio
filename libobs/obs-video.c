@@ -113,7 +113,7 @@ static inline void set_render_size(uint32_t width, uint32_t height)
 
 static inline void render_channels(void)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 
 	for (size_t i = 0; i < MAX_CHANNELS; i++) {
 		struct obs_source *source = data->channels[i];
@@ -122,7 +122,7 @@ static inline void render_channels(void)
 	}
 }
 
-static inline void unmap_last_surface(struct obs_video *video)
+static inline void unmap_last_surface(struct obs_core_video *video)
 {
 	if (video->mapped_surface) {
 		stagesurface_unmap(video->mapped_surface);
@@ -130,8 +130,8 @@ static inline void unmap_last_surface(struct obs_video *video)
 	}
 }
 
-static inline void render_main_texture(struct obs_video *video, int cur_texture,
-		int prev_texture)
+static inline void render_main_texture(struct obs_core_video *video,
+		int cur_texture, int prev_texture)
 {
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
@@ -145,7 +145,7 @@ static inline void render_main_texture(struct obs_video *video, int cur_texture,
 	video->textures_rendered[cur_texture] = true;
 }
 
-static inline void render_output_texture(struct obs_video *video,
+static inline void render_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
 	texture_t   texture = video->render_textures[prev_texture];
@@ -189,7 +189,7 @@ static inline void render_output_texture(struct obs_video *video,
 	video->textures_output[cur_texture] = true;
 }
 
-static inline void stage_output_texture(struct obs_video *video,
+static inline void stage_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
 	texture_t   texture = video->output_textures[prev_texture];
@@ -205,7 +205,7 @@ static inline void stage_output_texture(struct obs_video *video,
 	video->textures_copied[cur_texture] = true;
 }
 
-static inline void render_video(struct obs_video *video, int cur_texture,
+static inline void render_video(struct obs_core_video *video, int cur_texture,
 		int prev_texture)
 {
 	gs_beginscene();
@@ -222,7 +222,7 @@ static inline void render_video(struct obs_video *video, int cur_texture,
 	gs_endscene();
 }
 
-static inline void output_video(struct obs_video *video, int cur_texture,
+static inline void output_video(struct obs_core_video *video, int cur_texture,
 		int prev_texture, uint64_t timestamp)
 {
 	stagesurf_t surface = video->copy_surfaces[prev_texture];
@@ -241,7 +241,7 @@ static inline void output_video(struct obs_video *video, int cur_texture,
 
 static inline void output_frame(uint64_t timestamp)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
 

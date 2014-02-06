@@ -51,7 +51,7 @@ struct obs_display {
 
 /* ------------------------------------------------------------------------- */
 
-struct obs_video {
+struct obs_core_video {
 	graphics_t                  graphics;
 	stagesurf_t                 copy_surfaces[NUM_TEXTURES];
 	texture_t                   render_textures[NUM_TEXTURES];
@@ -71,13 +71,13 @@ struct obs_video {
 	uint32_t                    base_height;
 };
 
-struct obs_audio {
+struct obs_core_audio {
 	/* TODO: sound output subsystem */
 	audio_t                     audio;
 };
 
 /* user sources, output channels, and displays */
-struct obs_program_data {
+struct obs_core_data {
 	/* arrays of pointers jim?  you should really stop being lazy and use
 	 * linked lists. */
 	DARRAY(struct obs_display*) displays;
@@ -94,7 +94,7 @@ struct obs_program_data {
 	volatile bool               valid;
 };
 
-struct obs_subsystem {
+struct obs_core {
 	DARRAY(struct obs_module)   modules;
 	DARRAY(struct source_info)  input_types;
 	DARRAY(struct source_info)  filter_types;
@@ -110,11 +110,11 @@ struct obs_subsystem {
 
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
-	struct obs_video            video;
-	struct obs_audio            audio;
-	struct obs_program_data     data;
+	struct obs_core_video       video;
+	struct obs_core_audio       audio;
+	struct obs_core_data        data;
 };
 
-extern struct obs_subsystem *obs;
+extern struct obs_core *obs;
 
 extern void *obs_video_thread(void *param);

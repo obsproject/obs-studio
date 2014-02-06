@@ -21,7 +21,7 @@
 #include "obs-internal.h"
 #include "obs-module.h"
 
-struct obs_subsystem *obs = NULL;
+struct obs_core *obs = NULL;
 
 extern char *find_libobs_data_file(const char *file);
 
@@ -50,7 +50,7 @@ static inline void make_video_info(struct video_output_info *vi,
 
 static bool obs_init_textures(struct obs_video_info *ovi)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
@@ -81,7 +81,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 
 static bool obs_init_graphics(struct obs_video_info *ovi)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	struct gs_init_data graphics_data;
 	bool success = true;
 	int errorcode;
@@ -119,7 +119,7 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 
 static bool obs_init_video(struct obs_video_info *ovi)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	struct video_output_info vi;
 	int errorcode;
 
@@ -146,7 +146,7 @@ static bool obs_init_video(struct obs_video_info *ovi)
 
 static void obs_free_video()
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 
 	if (video->video) {
 		void *thread_retval;
@@ -164,7 +164,7 @@ static void obs_free_video()
 
 static void obs_free_graphics()
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	size_t i;
 
 	if (video->graphics) {
@@ -197,7 +197,7 @@ static void obs_free_graphics()
 
 static bool obs_init_audio(struct audio_output_info *ai)
 {
-	struct obs_audio *audio = &obs->audio;
+	struct obs_core_audio *audio = &obs->audio;
 	int errorcode;
 
 	/* TODO: sound subsystem */
@@ -215,16 +215,16 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 static void obs_free_audio(void)
 {
-	struct obs_audio *audio = &obs->audio;
+	struct obs_core_audio *audio = &obs->audio;
 	if (audio->audio)
 		audio_output_close(audio->audio);
 
-	memset(audio, 0, sizeof(struct obs_audio));
+	memset(audio, 0, sizeof(struct obs_core_audio));
 }
 
 static bool obs_init_data(void)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 	pthread_mutexattr_t attr;
 	bool success = false;
 
@@ -252,7 +252,7 @@ fail:
 
 static void obs_free_data(void)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 	uint32_t i;
 
 	data->valid = false;
@@ -291,8 +291,8 @@ static inline bool obs_init_handlers(void)
 
 static bool obs_init(void)
 {
-	obs = bmalloc(sizeof(struct obs_subsystem));
-	memset(obs, 0, sizeof(struct obs_subsystem));
+	obs = bmalloc(sizeof(struct obs_core));
+	memset(obs, 0, sizeof(struct obs_core));
 
 	obs_init_data();
 	return obs_init_handlers();
@@ -346,7 +346,7 @@ void obs_shutdown(void)
 
 bool obs_reset_video(struct obs_video_info *ovi)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 
 	obs_free_video();
 
@@ -372,7 +372,7 @@ bool obs_reset_audio(struct audio_output_info *ai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	struct obs_video *video = &obs->video;
+	struct obs_core_video *video = &obs->video;
 	const struct video_output_info *info;
 
 	if (!obs || !video->graphics)
@@ -394,7 +394,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 
 bool obs_get_audio_info(struct audio_output_info *aoi)
 {
-	struct obs_audio *audio = &obs->audio;
+	struct obs_core_audio *audio = &obs->audio;
 	const struct audio_output_info *info;
 
 	if (!obs || !audio->audio)
@@ -562,7 +562,7 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->outputs_mutex);
 
@@ -575,7 +575,7 @@ void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 
 void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->encoders_mutex);
 
@@ -588,7 +588,7 @@ void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 
 void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
@@ -601,7 +601,7 @@ void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
 
 obs_source_t obs_get_source_by_name(const char *name)
 {
-	struct obs_program_data *data = &obs->data;
+	struct obs_core_data *data = &obs->data;
 	struct obs_source *source = NULL;
 	size_t i;
 
