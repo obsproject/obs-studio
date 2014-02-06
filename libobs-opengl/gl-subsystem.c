@@ -99,13 +99,13 @@ static bool gl_init_extensions(struct gs_device* device)
 
 	gl_enable_debug();
 
-	if (!ogl_IsVersionGEQ(2, 1) && !ogl_ext_ARB_framebuffer_object) {
+	if (!ogl_IsVersionGEQ(3, 0) && !ogl_ext_ARB_framebuffer_object) {
 		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
 		                "is required.");
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(3, 1) || ogl_ext_ARB_seamless_cube_map) {
+	if (ogl_IsVersionGEQ(3, 2) || ogl_ext_ARB_seamless_cube_map) {
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
@@ -115,7 +115,7 @@ static bool gl_init_extensions(struct gs_device* device)
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(4, 2) || ogl_ext_ARB_copy_image)
+	if (ogl_IsVersionGEQ(4, 3) || ogl_ext_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
 	else if (ogl_ext_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
