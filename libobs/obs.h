@@ -122,7 +122,7 @@ struct source_frame {
 	uint64_t            timestamp;
 
 	enum video_format   format;
-	float               yuv_matrix[16];
+	float               color_matrix[16];
 	bool                flip;
 };
 

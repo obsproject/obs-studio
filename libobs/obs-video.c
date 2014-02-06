@@ -36,7 +36,7 @@ static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 	*last_time = cur_time;
 }
 
-static inline void render_begin(struct obs_display *display)
+static inline void render_display_begin(struct obs_display *display)
 {
 	struct vec4 clear_color;
 	uint32_t width, height;
@@ -54,11 +54,12 @@ static inline void render_begin(struct obs_display *display)
 	/* gs_enable_blending(false); */
 	gs_setcullmode(GS_NEITHER);
 
-	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+	gs_ortho(0.0f, (float)obs->video.base_width,
+			0.0f, (float)obs->video.base_height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
 }
 
-static inline void render_end(struct obs_display *display)
+static inline void render_display_end(struct obs_display *display)
 {
 	gs_endscene();
 	gs_present();
@@ -66,10 +67,9 @@ static inline void render_end(struct obs_display *display)
 
 static void render_display(struct obs_display *display)
 {
-	size_t i;
-	render_begin(display);
+	render_display_begin(display);
 
-	for (i = 0; i < MAX_CHANNELS; i++) {
+	for (size_t i = 0; i < MAX_CHANNELS; i++) {
 		struct obs_source **p_source;
 
 		p_source = (display) ? display->channels+i :
@@ -85,22 +85,19 @@ static void render_display(struct obs_display *display)
 		}
 	}
 
-	render_end(display);
+	render_display_end(display);
 }
 
 static inline void render_displays(void)
 {
-	size_t i;
-
 	if (!obs->data.valid)
 		return;
 
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
 
-	for (i = 0; i < obs->data.displays.num; i++) {
+	for (size_t i = 0; i < obs->data.displays.num; i++)
 		render_display(obs->data.displays.array[i]);
-	}
 
 	pthread_mutex_unlock(&obs->data.displays_mutex);
 
@@ -108,38 +105,151 @@ static inline void render_displays(void)
 	render_display(NULL);
 }
 
-static bool swap_frame(uint64_t timestamp)
+static inline void set_render_size(uint32_t width, uint32_t height)
 {
-	struct obs_video *video = &obs->video;
-	stagesurf_t last_surface = video->copy_surfaces[video->cur_texture];
-	stagesurf_t surface;
+	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+	gs_setviewport(0, 0, width, height);
+}
+
+static inline void render_channels(void)
+{
+	struct obs_program_data *data = &obs->data;
+
+	for (size_t i = 0; i < MAX_CHANNELS; i++) {
+		struct obs_source *source = data->channels[i];
+		if (source)
+			obs_source_video_render(source);
+	}
+}
+
+static inline void unmap_last_surface(struct obs_video *video)
+{
+	if (video->mapped_surface) {
+		stagesurface_unmap(video->mapped_surface);
+		video->mapped_surface = NULL;
+	}
+}
+
+static inline void render_main_texture(struct obs_video *video, int cur_texture,
+		int prev_texture)
+{
+	struct vec4 clear_color;
+	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
+
+	gs_setrendertarget(video->render_textures[cur_texture], NULL);
+	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
+
+	set_render_size(video->base_width, video->base_height);
+	render_channels();
+
+	video->textures_rendered[cur_texture] = true;
+}
+
+static inline void render_output_texture(struct obs_video *video,
+		int cur_texture, int prev_texture)
+{
+	texture_t   texture = video->render_textures[prev_texture];
+	texture_t   target  = video->output_textures[cur_texture];
+	uint32_t    width   = texture_getwidth(target);
+	uint32_t    height  = texture_getheight(target);
+
+	/* TODO: replace with actual downscalers or unpackers */
+	effect_t    effect  = video->default_effect;
+	technique_t tech    = effect_gettechnique(effect, "DrawMatrix");
+	eparam_t    diffuse = effect_getparambyname(effect, "diffuse");
+	eparam_t    matrix  = effect_getparambyname(effect, "color_matrix");
+	size_t      passes, i;
+
+	if (!video->textures_rendered[prev_texture])
+		return;
+
+	gs_setrendertarget(target, NULL);
+	set_render_size(width, height);
+
+	/* TODO: replace with programmable code */
+	const float mat_val[16] =
+	{
+		 0.256788f,  0.504129f,  0.097906f,  0.062745f,
+		-0.148223f, -0.290993f,  0.439216f,  0.501961f,
+		 0.439216f, -0.367788f, -0.071427f,  0.501961f,
+		 0.000000f,  0.000000f,  0.000000f,  1.000000f
+	};
+
+	effect_setval(effect, matrix, mat_val, sizeof(mat_val));
+	effect_settexture(effect, diffuse, texture);
+
+	passes = technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		technique_beginpass(tech, i);
+		gs_draw_sprite(texture, 0, width, height);
+		technique_endpass(tech);
+	}
+	technique_end(tech);
+
+	video->textures_output[cur_texture] = true;
+}
+
+static inline void stage_output_texture(struct obs_video *video,
+		int cur_texture, int prev_texture)
+{
+	texture_t   texture = video->output_textures[prev_texture];
+	stagesurf_t copy    = video->copy_surfaces[cur_texture];
+
+	unmap_last_surface(video);
+
+	if (!video->textures_output[prev_texture])
+		return;
+
+	gs_stage_texture(copy, texture);
+
+	video->textures_copied[cur_texture] = true;
+}
+
+static inline void render_video(struct obs_video *video, int cur_texture,
+		int prev_texture)
+{
+	gs_beginscene();
+
+	gs_enable_depthtest(false);
+	gs_setcullmode(GS_NEITHER);
+
+	render_main_texture(video, cur_texture, prev_texture);
+	render_output_texture(video, cur_texture, prev_texture);
+	stage_output_texture(video, cur_texture, prev_texture);
+
+	gs_setrendertarget(NULL, NULL);
+
+	gs_endscene();
+}
+
+static inline void output_video(struct obs_video *video, int cur_texture,
+		int prev_texture, uint64_t timestamp)
+{
+	stagesurf_t surface = video->copy_surfaces[prev_texture];
 	struct video_frame frame;
 
-	/* the last frame stays mapped until rendering starts with the next */
-	if (video->copy_mapped) {
-		stagesurface_unmap(last_surface);
-		video->copy_mapped = false;
-	}
+	if (!video->textures_copied[prev_texture])
+		return;
 
-	video->textures_copied[video->cur_texture] = true;
-	/* TODO: texture staging */
-	//gs_stage_texture(last_surface, );
+	frame.timestamp = timestamp;
+
+	if (stagesurface_map(surface, &frame.data, &frame.row_size)) {
+		video->mapped_surface = surface;
+		video_output_frame(video->video, &frame);
+	}
+}
+
+static inline void output_frame(uint64_t timestamp)
+{
+	struct obs_video *video = &obs->video;
+	int cur_texture  = video->cur_texture;
+	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
+
+	render_video(video, cur_texture, prev_texture);
+	output_video(video, cur_texture, prev_texture, timestamp);
 
 	if (++video->cur_texture == NUM_TEXTURES)
 		video->cur_texture = 0;
-
-	if (video->textures_copied[video->cur_texture]) {
-		surface = video->copy_surfaces[video->cur_texture];
-		video->copy_mapped = stagesurface_map(surface, &frame.data,
-				&frame.row_size);
-
-		if (video->copy_mapped) {
-			frame.timestamp = timestamp;
-			video_output_frame(video->video, &frame);
-		}
-	}
-
-	return video->copy_mapped;
 }
 
 void *obs_video_thread(void *param)
@@ -153,7 +263,7 @@ void *obs_video_thread(void *param)
 
 		tick_sources(cur_time, &last_time);
 		render_displays();
-		swap_frame(cur_time);
+		output_frame(cur_time);
 
 		gs_leavecontext();
 	}

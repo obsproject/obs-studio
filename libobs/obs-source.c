@@ -485,7 +485,7 @@ static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->video.default_effect;
 	bool        yuv    = is_yuv(frame->format);
-	const char  *type  = yuv ? "DrawYUV" : "DrawRGB";
+	const char  *type  = yuv ? "DrawMatrix" : "Draw";
 	technique_t tech;
 	eparam_t    param;
 
@@ -497,8 +497,8 @@ static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 	technique_beginpass(tech, 0);
 
 	if (yuv) {
-		param = effect_getparambyname(effect, "yuv_matrix");
-		effect_setval(effect, param, frame->yuv_matrix,
+		param = effect_getparambyname(effect, "color_matrix");
+		effect_setval(effect, param, frame->color_matrix,
 				sizeof(float) * 16);
 	}
 
@@ -533,7 +533,7 @@ static inline void obs_source_render_filters(obs_source_t source)
 static inline void obs_source_default_render(obs_source_t source, bool yuv)
 {
 	effect_t    effect     = obs->video.default_effect;
-	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	const char  *tech_name = yuv ? "DrawMatrix" : "Draw";
 	technique_t tech       = effect_gettechnique(effect, tech_name);
 	size_t      passes, i;
 
@@ -979,7 +979,7 @@ void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 static inline void render_filter_bypass(obs_source_t target, effect_t effect,
 		uint32_t width, uint32_t height, bool yuv)
 {
-	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	const char  *tech_name = yuv ? "DrawMatrix" : "Draw";
 	technique_t tech       = effect_gettechnique(effect, tech_name);
 	eparam_t    diffuse    = effect_getparambyname(effect, "diffuse");
 	size_t      passes, i;
@@ -996,7 +996,7 @@ static inline void render_filter_bypass(obs_source_t target, effect_t effect,
 static inline void render_filter_tex(texture_t tex, effect_t effect,
 		uint32_t width, uint32_t height, bool yuv)
 {
-	const char  *tech_name = yuv ? "DrawYUV" : "DrawRGB";
+	const char  *tech_name = yuv ? "DrawMatrix" : "Draw";
 	technique_t tech       = effect_gettechnique(effect, tech_name);
 	eparam_t    diffuse    = effect_getparambyname(effect, "diffuse");
 	size_t      passes, i;

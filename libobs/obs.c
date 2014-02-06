@@ -171,8 +171,8 @@ static void obs_free_graphics()
 		int cur_texture = video->cur_texture;
 		gs_entercontext(video->graphics);
 
-		if (video->copy_mapped)
-			stagesurface_unmap(video->copy_surfaces[cur_texture]);
+		if (video->mapped_surface)
+			stagesurface_unmap(video->mapped_surface);
 
 		for (i = 0; i < NUM_TEXTURES; i++) {
 			stagesurface_destroy(video->copy_surfaces[i]);

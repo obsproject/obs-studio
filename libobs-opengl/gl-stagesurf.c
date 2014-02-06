@@ -144,7 +144,7 @@ void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 				dst->width, dst->height))
 		goto failed;
 
-	if (!gl_bind_buffer(GL_TEXTURE_2D, dst->texture))
+	if (!gl_bind_texture(GL_TEXTURE_2D, dst->texture))
 		goto failed;
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
 		goto failed;

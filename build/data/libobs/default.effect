@@ -1,5 +1,5 @@
 uniform float4x4 ViewProj;
-uniform float4x4 yuv_matrix;
+uniform float4x4 color_matrix;
 uniform texture2d diffuse;
 
 sampler_state def_sampler {
@@ -21,31 +21,31 @@ VertInOut VSDefault(VertInOut vert_in)
 	return vert_out;
 }
 
-float4 PSDrawRGB(VertInOut vert_in) : TARGET
+float4 PSDrawBare(VertInOut vert_in) : TARGET
 {
 	return diffuse.Sample(def_sampler, vert_in.uv);
 }
 
-float4 PSDrawYUVToRGB(VertInOut vert_in) : TARGET
+float4 PSDrawMatrix(VertInOut vert_in) : TARGET
 {
 	float4 yuv = diffuse.Sample(def_sampler, vert_in.uv);
-	return saturate(mul(float4(yuv.xyz, 1.0), yuv_matrix));
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
 }
 
-technique DrawRGB
+technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawRGB(vert_in);
+		pixel_shader  = PSDrawBare(vert_in);
 	}
 }
 
-technique DrawYUV
+technique DrawMatrix
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawYUVToRGB(vert_in);
+		pixel_shader  = PSDrawMatrix(vert_in);
 	}
 }

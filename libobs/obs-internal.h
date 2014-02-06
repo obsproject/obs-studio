@@ -56,9 +56,11 @@ struct obs_video {
 	stagesurf_t                 copy_surfaces[NUM_TEXTURES];
 	texture_t                   render_textures[NUM_TEXTURES];
 	texture_t                   output_textures[NUM_TEXTURES];
-	effect_t                    default_effect;
+	bool                        textures_rendered[NUM_TEXTURES];
+	bool                        textures_output[NUM_TEXTURES];
 	bool                        textures_copied[NUM_TEXTURES];
-	bool                        copy_mapped;
+	effect_t                    default_effect;
+	stagesurf_t                 mapped_surface;
 	int                         cur_texture;
 
 	video_t                     video;
