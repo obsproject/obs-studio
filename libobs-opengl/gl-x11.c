@@ -22,7 +22,7 @@
 #include "gl-subsystem.h"
 
 #include "GL/glx_obs.h"
-	
+
 static const int fb_attribs[] = {
 	/* Hardcoded for now... */
 	GLX_STENCIL_SIZE, 8,
@@ -104,7 +104,7 @@ static void print_info_stuff(struct gs_init_data *info)
 
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
-{	
+{
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;
 	Display *display = XOpenDisplay(NULL); /* Open default screen */
