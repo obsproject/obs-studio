@@ -26,7 +26,20 @@ static void* AppleGLGetProcAddress (const const char *name)
 #pragma warning(disable: 4996)
 #endif
 	
-#define IntGetProcAddress(name) wglGetProcAddress((LPCSTR)name)
+static PROC WinGetProcAddress(const char *name)
+{
+	static HMODULE glMod = NULL;
+	PROC pFunc = wglGetProcAddress((LPCSTR)name);
+
+	if (pFunc) return pFunc;
+
+	if (NULL == glMod)
+		glMod = GetModuleHandleA("OpenGL32.dll");
+
+	return (PROC)GetProcAddress(glMod, (LPCSTR)name);
+}
+
+#define IntGetProcAddress(name) WinGetProcAddress(name)
 #endif
 
 /* Linux, FreeBSD, other */
