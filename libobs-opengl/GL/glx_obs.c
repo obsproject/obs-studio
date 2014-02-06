@@ -6,38 +6,17 @@
 #if defined(__APPLE__)
 #include <dlfcn.h>
 
-static void* AppleGLGetProcAddress (const char *name)
+static void* AppleGLGetProcAddress (const const char *name)
 {
 	static void* image = NULL;
-
-	if (image == NULL)
+	
+	if (NULL == image)
 		image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
 
 	return (image ? dlsym(image, name) : NULL);
 }
+#define IntGetProcAddress(name) AppleGLGetProcAddress(name)
 #endif /* __APPLE__ */
-
-#if defined(__sgi) || defined (__sun)
-#include <dlfcn.h>
-#include <stdio.h>
-
-static void* SunGetProcAddress (const GLubyte* name)
-{
-  static void* h = NULL;
-  static void* gpa;
-
-  if (h == NULL)
-  {
-    if ((h = dlopen(NULL, RTLD_LAZY | RTLD_LOCAL)) == NULL) return NULL;
-    gpa = dlsym(h, "glXGetProcAddress");
-  }
-
-  if (gpa != NULL)
-    return ((void*(*)(const GLubyte*))gpa)(name);
-  else
-    return dlsym(h, (const char*)name);
-}
-#endif /* __sgi || __sun */
 
 #if defined(_WIN32)
 
@@ -46,43 +25,21 @@ static void* SunGetProcAddress (const GLubyte* name)
 #pragma warning(disable: 4054)
 #pragma warning(disable: 4996)
 #endif
-
-static int TestPointer(const PROC pTest)
-{
-	ptrdiff_t iTest;
-	if(!pTest) return 0;
-	iTest = (ptrdiff_t)pTest;
 	
-	if(iTest == 1 || iTest == 2 || iTest == 3 || iTest == -1) return 0;
-	
-	return 1;
-}
+#define IntGetProcAddress(name) wglGetProcAddress((LPCSTR)name)
+#endif
 
-static PROC WinGetProcAddress(const char *name)
-{
-	HMODULE glMod = NULL;
-	PROC pFunc = wglGetProcAddress((LPCSTR)name);
-	if(TestPointer(pFunc))
-	{
-		return pFunc;
-	}
-	glMod = GetModuleHandleA("OpenGL32.dll");
-	return (PROC)GetProcAddress(glMod, (LPCSTR)name);
-}
-	
-#define IntGetProcAddress(name) WinGetProcAddress(name)
-#else
-	#if defined(__APPLE__)
-		#define IntGetProcAddress(name) AppleGLGetProcAddress(name)
-	#else
-		#if defined(__sgi) || defined(__sun)
-			#define IntGetProcAddress(name) SunGetProcAddress(name)
-		#else /* GLX */
-		    #include <GL/glx.h>
+/* Linux, FreeBSD, other */
+#ifndef IntGetProcAddress
+	#ifndef GLX_ARB_get_proc_address
+	#define GLX_ARB_get_proc_address 1
 
-			#define IntGetProcAddress(name) (*glXGetProcAddressARB)((const GLubyte*)name)
-		#endif
-	#endif
+	typedef void (*__GLXextFuncPtr)(void);
+	extern __GLXextFuncPtr glXGetProcAddressARB (const GLubyte *);
+
+	#endif /* GLX_ARB_get_proc_address */
+
+	#define IntGetProcAddress(name) (*glXGetProcAddressARB)((const GLubyte*)name)
 #endif
 
 int glx_ext_ARB_create_context = glx_LOAD_FAILED;
