@@ -15,7 +15,6 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -91,6 +90,11 @@ void bcrash(const char *format, ...)
 	va_start(args, format);
 	crash_handler(format, args);
 	va_end(args);
+}
+
+void blogva(enum log_type type, const char *format, va_list args)
+{
+	log_handler(type, format, args);
 }
 
 void blog(enum log_type type, const char *format, ...)

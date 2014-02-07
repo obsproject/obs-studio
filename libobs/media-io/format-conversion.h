@@ -23,32 +23,40 @@
 extern "C" {
 #endif
 
-EXPORT void compress_uyvx_to_i420(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
-		uint32_t start_y, uint32_t end_y, void **output);
+/*
+ * Functions for converting to and from packed 444 YUV
+ */
 
-EXPORT void compress_uyvx_to_nv12(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
-		uint32_t start_y, uint32_t end_y, void **output);
-
-EXPORT void decompress_nv12(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
-		uint32_t start_y, uint32_t end_y, void *output);
-
-EXPORT void decompress_420(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
-		uint32_t start_y, uint32_t end_y, void *output);
-
-EXPORT void decompress_422(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
-		uint32_t start_y, uint32_t end_y, void *output,
-		bool leading_lum);
-
-/* special case for quicksync */
-EXPORT void compress_uyvx_to_nv12_aligned(const void *input,
-		uint32_t width, uint32_t height, uint32_t row_bytes,
+EXPORT void compress_uyvx_to_i420(
+		const uint8_t *input, uint32_t in_row_bytes,
+		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint32_t row_bytes_out, void **output);
+		uint8_t *output[], const uint32_t out_row_bytes[]);
+
+EXPORT void compress_uyvx_to_nv12(
+		const uint8_t *input, uint32_t in_row_bytes,
+		uint32_t width, uint32_t height,
+		uint32_t start_y, uint32_t end_y,
+		uint8_t *output[], const uint32_t out_row_bytes[]);
+
+EXPORT void decompress_nv12(
+		const uint8_t *const input[], const uint32_t in_row_bytes[],
+		uint32_t width, uint32_t height,
+		uint32_t start_y, uint32_t end_y,
+		uint8_t *output, uint32_t out_row_bytes);
+
+EXPORT void decompress_420(
+		const uint8_t *const input[], const uint32_t in_row_bytes[],
+		uint32_t width, uint32_t height,
+		uint32_t start_y, uint32_t end_y,
+		uint8_t *output, uint32_t out_row_bytes);
+
+EXPORT void decompress_422(
+		const uint8_t *input, uint32_t in_row_bytes,
+		uint32_t width, uint32_t height,
+		uint32_t start_y, uint32_t end_y,
+		uint8_t *output, uint32_t out_row_bytes,
+		bool leading_lum);
 
 #ifdef __cplusplus
 }

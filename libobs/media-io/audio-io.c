@@ -32,9 +32,9 @@ struct audio_line {
 	char                       *name;
 
 	struct audio_output        *audio;
-	struct circlebuf           buffer;
+	struct circlebuf           buffers[MAX_AUDIO_PLANES];
 	pthread_mutex_t            mutex;
-	DARRAY(uint8_t)            volume_buffer;
+	DARRAY(uint8_t)            volume_buffers[MAX_AUDIO_PLANES];
 	uint64_t                   base_timestamp;
 	uint64_t                   last_timestamp;
 
@@ -48,8 +48,11 @@ struct audio_line {
 
 static inline void audio_line_destroy_data(struct audio_line *line)
 {
-	circlebuf_free(&line->buffer);
-	da_free(line->volume_buffer);
+	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++) {
+		circlebuf_free(&line->buffers[i]);
+		da_free(line->volume_buffers[i]);
+	}
+
 	pthread_mutex_destroy(&line->mutex);
 	bfree(line->name);
 	bfree(line);
@@ -59,13 +62,12 @@ struct audio_output {
 	struct audio_output_info   info;
 	size_t                     block_size;
 	size_t                     channels;
+	size_t                     planes;
 
 	pthread_t                  thread;
 	event_t                    stop_event;
 
-	DARRAY(uint8_t)            pending_bytes;
-
-	DARRAY(uint8_t)            mix_buffer;
+	DARRAY(uint8_t)            mix_buffers[MAX_AUDIO_PLANES];
 
 	bool                       initialized;
 
@@ -107,14 +109,16 @@ static inline size_t time_to_bytes(audio_t audio, uint64_t offset)
 static inline void clear_excess_audio_data(struct audio_line *line,
 		uint64_t size)
 {
-	if (size > line->buffer.size)
-		size = line->buffer.size;
+	for (size_t i = 0; i < line->audio->planes; i++) {
+		size_t clear_size = (size > line->buffers[i].size) ?
+			(size_t)size : line->buffers[i].size;
+
+		circlebuf_pop_front(&line->buffers[i], NULL, clear_size);
+	}
 
 	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
 	                  "audio data went back in time by %llu bytes",
 	                  line->name, size);
-
-	circlebuf_pop_front(&line->buffer, NULL, (size_t)size);
 }
 
 static inline uint64_t min_uint64(uint64_t a, uint64_t b)
@@ -125,8 +129,8 @@ static inline uint64_t min_uint64(uint64_t a, uint64_t b)
 static inline void mix_audio_line(struct audio_output *audio,
 		struct audio_line *line, size_t size, uint64_t timestamp)
 {
-	/* TODO: this just overwrites, handle actual mixing */
-	if (!line->buffer.size) {
+	/* TODO: this just overwrites.  handle actual mixing */
+	if (!line->buffers[0].size) {
 		if (!line->alive)
 			audio_output_removeline(audio, line);
 		return;
@@ -139,17 +143,22 @@ static inline void mix_audio_line(struct audio_output *audio,
 
 	size -= time_offset;
 
-	size_t pop_size = (size_t)min_uint64(size, line->buffer.size);
-	circlebuf_pop_front(&line->buffer,
-			audio->mix_buffer.array + time_offset,
-			pop_size);
+	for (size_t i = 0; i < audio->planes; i++) {
+		size_t pop_size;
+		pop_size = (size_t)min_uint64(size, line->buffers[i].size);
+
+		circlebuf_pop_front(&line->buffers[i],
+				audio->mix_buffers[i].array + time_offset,
+				pop_size);
+	}
 }
 
 static inline void do_audio_output(struct audio_output *audio,
 		uint64_t timestamp, uint32_t frames)
 {
 	struct audio_data data;
-	data.data = audio->mix_buffer.array;
+	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+		data.data[i] = audio->mix_buffers[i].array;
 	data.frames = frames;
 	data.timestamp = timestamp;
 	data.volume = 1.0f;
@@ -171,13 +180,15 @@ static void mix_and_output(struct audio_output *audio, uint64_t audio_time,
 	uint32_t frames = time_to_frames(audio, time_offset);
 	size_t bytes = frames * audio->block_size;
 
-	da_resize(audio->mix_buffer, bytes);
-	memset(audio->mix_buffer.array, 0, bytes);
+	for (size_t i = 0; i < audio->planes; i++) {
+		da_resize(audio->mix_buffers[i], bytes);
+		memset(audio->mix_buffers[i].array, 0, bytes);
+	}
 
 	while (line) {
 		struct audio_line *next = line->next;
 
-		if (line->buffer.size && line->base_timestamp < prev_time) {
+		if (line->buffers[0].size && line->base_timestamp < prev_time) {
 			clear_excess_audio_data(line,
 					prev_time - line->base_timestamp);
 			line->base_timestamp = prev_time;
@@ -238,7 +249,7 @@ void audio_output_connect(audio_t audio,
 {
 	pthread_mutex_lock(&audio->input_mutex);
 
-	if (audio_get_input_idx(audio, callback, param) != DARRAY_INVALID) {
+	if (audio_get_input_idx(audio, callback, param) == DARRAY_INVALID) {
 		struct audio_input input;
 		input.callback = callback;
 		input.param    = param;
@@ -282,6 +293,7 @@ int audio_output_open(audio_t *audio, struct audio_output_info *info)
 {
 	struct audio_output *out;
 	pthread_mutexattr_t attr;
+	bool planar = is_audio_planar(info->format);
 
 	if (!valid_audio_params(info))
 		return AUDIO_OUTPUT_INVALIDPARAM;
@@ -291,8 +303,9 @@ int audio_output_open(audio_t *audio, struct audio_output_info *info)
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	pthread_mutex_init_value(&out->line_mutex);
-	out->channels = get_audio_channels(info->speakers);
-	out->block_size = out->channels *
+	out->channels   = get_audio_channels(info->speakers);
+	out->planes     = planar ? out->channels : 1;
+	out->block_size = (planar ? 1 : out->channels) *
 	                  get_audio_bytes_per_channel(info->format);
 
 	if (pthread_mutexattr_init(&attr) != 0)
@@ -337,8 +350,9 @@ void audio_output_close(audio_t audio)
 		line = next;
 	}
 
-	da_free(audio->mix_buffer);
-	da_free(audio->pending_bytes);
+	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+		da_free(audio->mix_buffers[i]);
+
 	event_destroy(&audio->stop_event);
 	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);
@@ -382,7 +396,7 @@ const struct audio_output_info *audio_output_getinfo(audio_t audio)
 void audio_line_destroy(struct audio_line *line)
 {
 	if (line) {
-		if (!line->buffer.size)
+		if (!line->buffers[0].size)
 			audio_output_removeline(line->audio, line);
 		else
 			line->alive = false;
@@ -394,10 +408,21 @@ size_t audio_output_blocksize(audio_t audio)
 	return audio->block_size;
 }
 
-static inline void mul_vol_u8bit(struct audio_line *line, float volume,
-		size_t total_num)
+size_t audio_output_planes(audio_t audio)
 {
-	uint8_t *vals = line->volume_buffer.array;
+	return audio->planes;
+}
+
+size_t audio_output_channels(audio_t audio)
+{
+	return audio->channels;
+}
+
+/* TODO: Optimization of volume multiplication functions */
+
+static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
+{
+	uint8_t *vals = array;
 	int16_t vol = (int16_t)(volume * 127.0f);
 
 	for (size_t i = 0; i < total_num; i++) {
@@ -406,10 +431,9 @@ static inline void mul_vol_u8bit(struct audio_line *line, float volume,
 	}
 }
 
-static inline void mul_vol_16bit(struct audio_line *line, float volume,
-		size_t total_num)
+static inline void mul_vol_16bit(void *array, float volume, size_t total_num)
 {
-	uint16_t *vals = (uint16_t*)line->volume_buffer.array;
+	uint16_t *vals = array;
 	int32_t vol = (int32_t)(volume * 32767.0f);
 
 	for (size_t i = 0; i < total_num; i++)
@@ -436,10 +460,9 @@ static inline void conv_float_to_24bit(float fval, uint8_t *vals)
 	vals[2] = (val >> 16) & 0xFF;
 }
 
-static inline void mul_vol_24bit(struct audio_line *line, float volume,
-		size_t total_num)
+static inline void mul_vol_24bit(void *array, float volume, size_t total_num)
 {
-	uint8_t *vals = line->volume_buffer.array;
+	uint8_t *vals = array;
 
 	for (size_t i = 0; i < total_num; i++) {
 		float val = conv_24bit_to_float(vals) * volume;
@@ -448,10 +471,9 @@ static inline void mul_vol_24bit(struct audio_line *line, float volume,
 	}
 }
 
-static inline void mul_vol_32bit(struct audio_line *line, float volume,
-		size_t total_num)
+static inline void mul_vol_32bit(void *array, float volume, size_t total_num)
 {
-	int32_t *vals = (int32_t*)line->volume_buffer.array;
+	int32_t *vals = array;
 
 	for (size_t i = 0; i < total_num; i++) {
 		float val = (float)vals[i] / 2147483647.0f;
@@ -459,10 +481,9 @@ static inline void mul_vol_32bit(struct audio_line *line, float volume,
 	}
 }
 
-static inline void mul_vol_float(struct audio_line *line, float volume,
-		size_t total_num)
+static inline void mul_vol_float(void *array, float volume, size_t total_num)
 {
-	float *vals = (float*)line->volume_buffer.array;
+	float *vals = array;
 
 	for (size_t i = 0; i < total_num; i++)
 		vals[i] *= volume;
@@ -471,30 +492,42 @@ static inline void mul_vol_float(struct audio_line *line, float volume,
 static void audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
-	size_t total_num  = data->frames * line->audio->channels;
+	bool   planar     = line->audio->planes > 1;
+	size_t total_num  = data->frames * planar ? 1 : line->audio->channels;
 	size_t total_size = data->frames * line->audio->block_size;
 
-	da_copy_array(line->volume_buffer, data->data, total_size);
+	for (size_t i = 0; i < line->audio->planes; i++) {
+		da_copy_array(line->volume_buffers[i], data->data[i],
+				total_size);
 
-	switch (line->audio->info.format) {
-	case AUDIO_FORMAT_U8BIT:
-		mul_vol_u8bit(line, data->volume, total_num);
-		break;
-	case AUDIO_FORMAT_16BIT:
-		mul_vol_16bit(line, data->volume, total_num);
-		break;
-	case AUDIO_FORMAT_32BIT:
-		mul_vol_32bit(line, data->volume, total_num);
-		break;
-	case AUDIO_FORMAT_FLOAT:
-		mul_vol_float(line, data->volume, total_num);
-		break;
-	case AUDIO_FORMAT_UNKNOWN:
-		break;
+		uint8_t *array = line->volume_buffers[i].array;
+
+		switch (line->audio->info.format) {
+		case AUDIO_FORMAT_U8BIT:
+		case AUDIO_FORMAT_U8BIT_PLANAR:
+			mul_vol_u8bit(array, data->volume, total_num);
+			break;
+		case AUDIO_FORMAT_16BIT:
+		case AUDIO_FORMAT_16BIT_PLANAR:
+			mul_vol_16bit(array, data->volume, total_num);
+			break;
+		case AUDIO_FORMAT_32BIT:
+		case AUDIO_FORMAT_32BIT_PLANAR:
+			mul_vol_32bit(array, data->volume, total_num);
+			break;
+		case AUDIO_FORMAT_FLOAT:
+		case AUDIO_FORMAT_FLOAT_PLANAR:
+			mul_vol_float(array, data->volume, total_num);
+			break;
+		case AUDIO_FORMAT_UNKNOWN:
+			blog(LOG_ERROR, "audio_line_place_data_pos: "
+					"Unknown format");
+			break;
+		}
+
+		circlebuf_place(&line->buffers[i], position,
+				line->volume_buffers[i].array, total_size);
 	}
-
-	circlebuf_place(&line->buffer, position, line->volume_buffer.array,
-			total_size);
 }
 
 static inline void audio_line_place_data(struct audio_line *line,
@@ -513,7 +546,7 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 
 	pthread_mutex_lock(&line->mutex);
 
-	if (!line->buffer.size) {
+	if (!line->buffers[0].size) {
 		line->base_timestamp = data->timestamp;
 		audio_line_place_data_pos(line, data, 0);
 

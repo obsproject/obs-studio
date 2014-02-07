@@ -79,6 +79,11 @@ obs_output_t obs_output_create(const char *id, const char *name,
 void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
+		if (output->callbacks.active) {
+			if (output->callbacks.active(output->data))
+				output->callbacks.stop(output->data);
+		}
+
 		pthread_mutex_lock(&obs->data.outputs_mutex);
 		da_erase_item(obs->data.outputs, &output);
 		pthread_mutex_unlock(&obs->data.outputs_mutex);

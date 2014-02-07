@@ -22,6 +22,9 @@
 #define FILENAME_TODO "D:\\test.mp4"
 #define SPS_TODO      44100
 
+/* NOTE: much of this stuff is test stuff that was more or less copied from
+ * the muxing.c ffmpeg example */
+
 static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 		enum video_format format)
 {
@@ -94,17 +97,22 @@ static bool open_video_codec(struct ffmpeg_data *data,
 		return false;
 	}
 
-	if (context->pix_fmt != AV_PIX_FMT_YUV420P) {
-		ret = avpicture_alloc(&data->src_picture, AV_PIX_FMT_YUV420P,
-				context->width, context->height);
-		if (ret < 0) {
-			blog(LOG_ERROR, "Failed to allocate src_picture: %s",
-					av_err2str(ret));
-			return false;
-		}
+	*((AVPicture*)data->vframe) = data->dst_picture;
+	return true;
+}
+
+static bool init_swscale(struct ffmpeg_data *data, AVCodecContext *context)
+{
+	data->swscale = sws_getContext(
+			context->width, context->height, AV_PIX_FMT_YUV420P,
+			context->width, context->height, context->pix_fmt,
+			SWS_BICUBIC, NULL, NULL, NULL);
+
+	if (!data->swscale) {
+		blog(LOG_ERROR, "Could not initialize swscale");
+		return false;
 	}
 
-	*((AVPicture*)data->vframe) = data->dst_picture;
 	return true;
 }
 
@@ -117,6 +125,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 		blog(LOG_ERROR, "No active video");
 		return false;
 	}
+
 	if (!new_stream(data, &data->video, &data->vcodec,
 				data->output->oformat->video_codec))
 		return false;
@@ -134,7 +143,14 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
-	return open_video_codec(data, &ovi);
+	if (!open_video_codec(data, &ovi))
+		return false;
+
+	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
+		if (!init_swscale(data, context))
+			return false;
+
+	return true;
 }
 
 static bool open_audio_codec(struct ffmpeg_data *data,
@@ -148,6 +164,8 @@ static bool open_audio_codec(struct ffmpeg_data *data,
 		blog(LOG_ERROR, "Failed to allocate audio frame");
 		return false;
 	}
+
+	context->strict_std_compliance = -2;
 
 	ret = avcodec_open2(context, data->acodec, NULL);
 	if (ret < 0) {
@@ -168,14 +186,17 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 		blog(LOG_ERROR, "No active audio");
 		return false;
 	}
+
 	if (!new_stream(data, &data->audio, &data->acodec,
 				data->output->oformat->audio_codec))
 		return false;
 
-	context = data->audio->codec;
+	context              = data->audio->codec;
 	context->bit_rate    = 128000;
 	context->channels    = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
+	context->sample_fmt  = data->acodec->sample_fmts ?
+		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -187,15 +208,13 @@ static inline bool init_streams(struct ffmpeg_data *data)
 {
 	AVOutputFormat *format = data->output->oformat;
 
-	if (format->video_codec != AV_CODEC_ID_NONE) {
+	if (format->video_codec != AV_CODEC_ID_NONE)
 		if (!create_video_stream(data))
 			return false;
-	}
 
-	if (format->audio_codec != AV_CODEC_ID_NONE) {
+	if (format->audio_codec != AV_CODEC_ID_NONE)
 		if (!create_audio_stream(data))
 			return false;
-	}
 
 	return true;
 }
@@ -228,17 +247,14 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 static void close_video(struct ffmpeg_data *data)
 {
 	avcodec_close(data->video->codec);
-	av_free(data->src_picture.data[0]);
-	av_free(data->dst_picture.data[0]);
+	avpicture_free(&data->dst_picture);
 	av_frame_free(&data->vframe);
 }
 
 static void close_audio(struct ffmpeg_data *data)
 {
+	av_freep(&data->samples[0]);
 	avcodec_close(data->audio->codec);
-
-	av_free(data->samples[0]);
-	av_free(data->samples);
 	av_frame_free(&data->aframe);
 }
 
@@ -255,6 +271,8 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 		avio_close(data->output->pb);
 
 	avformat_free_context(data->output);
+
+	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
 static bool ffmpeg_data_init(struct ffmpeg_data *data)
@@ -265,7 +283,7 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data)
 
 	/* TODO: settings */
 	avformat_alloc_output_context2(&data->output, NULL, NULL,
-			"D:\\test.mp4");
+			FILENAME_TODO);
 	if (!data->output) {
 		blog(LOG_ERROR, "Couldn't create avformat context");
 		goto fail;
@@ -293,7 +311,12 @@ const char *ffmpeg_output_getname(const char *locale)
 	return "FFmpeg file output";
 }
 
-struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
+void test_callback(void *param, int bla, const char *format, va_list args)
+{
+	blogva(LOG_INFO, format, args);
+}
+
+struct ffmpeg_output *ffmpeg_output_create(const char *settings,
 		obs_output_t output)
 {
 	struct ffmpeg_output *data = bmalloc(sizeof(struct ffmpeg_output));
@@ -301,27 +324,159 @@ struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 
 	data->output = output;
 
+	av_log_set_callback(test_callback);
+
 	return data;
 }
 
 void ffmpeg_output_destroy(struct ffmpeg_output *data)
 {
 	if (data) {
-		ffmpeg_data_free(&data->ff_data);
+		if (data->active)
+			ffmpeg_data_free(&data->ff_data);
 		bfree(data);
 	}
 }
 
-void ffmpeg_output_update(struct ffmpeg_output *data, obs_data_t settings)
+void ffmpeg_output_update(struct ffmpeg_output *data, const char *settings)
 {
+}
+
+static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
+		AVStream *stream)
+{
+	return av_rescale_q_rnd(val, context->time_base,
+			stream->time_base,
+			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+}
+
+#define YUV420_PLANES 3
+
+static inline void copy_data(AVPicture *pic, const struct video_frame *frame,
+		int height)
+{
+	for (int plane = 0; plane < YUV420_PLANES; plane++) {
+		int frame_rowsize = (int)frame->row_size[plane];
+		int pic_rowsize   = pic->linesize[plane];
+		int bytes = frame_rowsize < pic_rowsize ?
+			frame_rowsize : pic_rowsize;
+		int plane_height = plane == 0 ? height : height/2;
+
+		for (int y = 0; y < plane_height; y++) {
+			int pos_frame = y * frame_rowsize;
+			int pos_pic   = y * pic_rowsize;
+
+			memcpy(pic->data[plane] + pos_pic,
+			       frame->data[plane] + pos_frame,
+			       bytes);
+		}
+	}
 }
 
 static void receive_video(void *param, const struct video_frame *frame)
 {
+	struct ffmpeg_output *output = param;
+	struct ffmpeg_data   *data   = &output->ff_data;
+	AVCodecContext *context = data->video->codec;
+	AVPacket packet = {0};
+	int ret, got_packet;
+
+	av_init_packet(&packet);
+
+	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
+		sws_scale(data->swscale, frame->data, frame->row_size,
+				0, context->height, data->dst_picture.data,
+				data->dst_picture.linesize);
+	else
+		copy_data(&data->dst_picture, frame, context->height);
+
+	if (data->output->flags & AVFMT_RAWPICTURE) {
+		packet.flags        |= AV_PKT_FLAG_KEY;
+		packet.stream_index  = data->video->index;
+		packet.data          = data->dst_picture.data[0];
+		packet.size          = sizeof(AVPicture);
+
+		ret = av_interleaved_write_frame(data->output, &packet);
+
+	} else {
+		data->vframe->pts = data->total_frames;
+		ret = avcodec_encode_video2(context, &packet, data->vframe,
+				&got_packet);
+		if (ret < 0) {
+			blog(LOG_ERROR, "receive_video: Error encoding "
+			                "video: %s", av_err2str(ret));
+			return;
+		}
+
+		if (!ret && got_packet && packet.size) {
+			packet.pts = rescale_ts(packet.pts, context,
+					data->video);
+			packet.dts = rescale_ts(packet.dts, context,
+					data->video);
+			packet.duration = (int)av_rescale_q(packet.duration,
+					context->time_base,
+					data->video->time_base);
+
+			ret = av_interleaved_write_frame(data->output, &packet);
+		} else {
+			ret = 0;
+		}
+	}
+
+	if (ret != 0) {
+		blog(LOG_ERROR, "receive_video: Error writing video: %s",
+				av_err2str(ret));
+	}
+
+	data->total_frames++;
 }
 
 static void receive_audio(void *param, const struct audio_data *frame)
 {
+	struct ffmpeg_output *output = param;
+	struct ffmpeg_data   *data   = &output->ff_data;
+	AVCodecContext *context = data->audio->codec;
+	AVPacket packet = {0};
+	int channels = (int)audio_output_channels(obs_audio());
+	size_t planes = audio_output_planes(obs_audio());
+	int ret, got_packet;
+
+	data->aframe->nb_samples = frame->frames;
+	data->aframe->pts = av_rescale_q(data->total_samples,
+			(AVRational){1, context->sample_rate},
+			context->time_base);
+
+	if (!data->samples[0])
+		av_samples_alloc(data->samples, NULL, channels,
+				frame->frames, context->sample_fmt, 0);
+
+	for (size_t i = 0; i < planes; i++) {
+		/* TODO */
+	}
+
+	data->total_samples += frame->frames;
+
+	ret = avcodec_encode_audio2(context, &packet, data->aframe,
+			&got_packet);
+	if (ret < 0) {
+		blog(LOG_ERROR, "receive_audio: Error encoding audio: %s",
+				av_err2str(ret));
+		return;
+	}
+
+	if (!got_packet)
+		return;
+
+	packet.pts = rescale_ts(packet.pts, context, data->audio);
+	packet.dts = rescale_ts(packet.dts, context, data->audio);
+	packet.duration = (int)av_rescale_q(packet.duration, context->time_base,
+			data->audio->time_base);
+	packet.stream_index = data->audio->index;
+
+	ret = av_interleaved_write_frame(data->output, &packet);
+	if (ret != 0)
+		blog(LOG_ERROR, "receive_audio: Error writing audio: %s",
+				av_err2str(ret));
 }
 
 bool ffmpeg_output_start(struct ffmpeg_output *data)
@@ -340,7 +495,7 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 
 	struct audio_convert_info aci;
 	aci.samples_per_sec = SPS_TODO;
-	aci.format          = AUDIO_FORMAT_16BIT;
+	aci.format          = AUDIO_FORMAT_FLOAT;
 	aci.speakers        = SPEAKERS_STEREO;
 
 	struct video_convert_info vci;
@@ -349,8 +504,8 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 	vci.height          = 0;
 	vci.row_align       = 1;
 
-	video_output_connect(video, &vci, receive_video, data);
-	audio_output_connect(audio, &aci, receive_audio, data);
+	//video_output_connect(video, &vci, receive_video, data);
+	//audio_output_connect(audio, &aci, receive_audio, data);
 	data->active = true;
 
 	return true;

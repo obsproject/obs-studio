@@ -28,6 +28,8 @@ extern "C" {
  * for the media.
  */
 
+#define MAX_AUDIO_PLANES 8
+
 struct audio_output;
 struct audio_line;
 typedef struct audio_output *audio_t;
@@ -35,10 +37,16 @@ typedef struct audio_line   *audio_line_t;
 
 enum audio_format {
 	AUDIO_FORMAT_UNKNOWN,
+
 	AUDIO_FORMAT_U8BIT,
 	AUDIO_FORMAT_16BIT,
 	AUDIO_FORMAT_32BIT,
 	AUDIO_FORMAT_FLOAT,
+
+	AUDIO_FORMAT_U8BIT_PLANAR,
+	AUDIO_FORMAT_16BIT_PLANAR,
+	AUDIO_FORMAT_32BIT_PLANAR,
+	AUDIO_FORMAT_FLOAT_PLANAR,
 };
 
 enum speaker_layout {
@@ -56,7 +64,7 @@ enum speaker_layout {
 };
 
 struct audio_data {
-	const void          *data;
+	const uint8_t       *data[MAX_AUDIO_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 	float               volume;
@@ -99,14 +107,47 @@ static inline uint32_t get_audio_channels(enum speaker_layout speakers)
 static inline size_t get_audio_bytes_per_channel(enum audio_format type)
 {
 	switch (type) {
-	case AUDIO_FORMAT_U8BIT:   return 1;
-	case AUDIO_FORMAT_16BIT:   return 2;
+	case AUDIO_FORMAT_U8BIT:
+	case AUDIO_FORMAT_U8BIT_PLANAR:
+		return 1;
+
+	case AUDIO_FORMAT_16BIT:
+	case AUDIO_FORMAT_16BIT_PLANAR:
+		return 2;
+
 	case AUDIO_FORMAT_FLOAT:
-	case AUDIO_FORMAT_32BIT:   return 4;
-	case AUDIO_FORMAT_UNKNOWN: return 0;
+	case AUDIO_FORMAT_FLOAT_PLANAR:
+	case AUDIO_FORMAT_32BIT:
+	case AUDIO_FORMAT_32BIT_PLANAR:
+		return 4;
+
+	case AUDIO_FORMAT_UNKNOWN:
+		return 0;
 	}
 
 	return 0;
+}
+
+static inline size_t is_audio_planar(enum audio_format type)
+{
+	switch (type) {
+	case AUDIO_FORMAT_U8BIT:
+	case AUDIO_FORMAT_16BIT:
+	case AUDIO_FORMAT_32BIT:
+	case AUDIO_FORMAT_FLOAT:
+		return false;
+
+	case AUDIO_FORMAT_U8BIT_PLANAR:
+	case AUDIO_FORMAT_FLOAT_PLANAR:
+	case AUDIO_FORMAT_16BIT_PLANAR:
+	case AUDIO_FORMAT_32BIT_PLANAR:
+		return true;
+
+	case AUDIO_FORMAT_UNKNOWN:
+		return false;
+	}
+
+	return false;
 }
 
 static inline size_t get_audio_size(enum audio_format type,
@@ -133,6 +174,8 @@ EXPORT void audio_output_disconnect(audio_t video,
 		void *param);
 
 EXPORT size_t audio_output_blocksize(audio_t audio);
+EXPORT size_t audio_output_planes(audio_t audio);
+EXPORT size_t audio_output_channels(audio_t audio);
 EXPORT const struct audio_output_info *audio_output_getinfo(audio_t audio);
 
 EXPORT audio_line_t audio_output_createline(audio_t audio, const char *name);

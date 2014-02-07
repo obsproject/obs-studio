@@ -231,9 +231,10 @@ static inline void output_video(struct obs_core_video *video, int cur_texture,
 	if (!video->textures_copied[prev_texture])
 		return;
 
+	memset(&frame, 0, sizeof(struct video_frame));
 	frame.timestamp = timestamp;
 
-	if (stagesurface_map(surface, &frame.data, &frame.row_size)) {
+	if (stagesurface_map(surface, &frame.data[0], &frame.row_size[0])) {
 		video->mapped_surface = surface;
 		video_output_frame(video->video, &frame);
 	}

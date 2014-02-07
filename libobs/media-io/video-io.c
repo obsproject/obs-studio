@@ -21,6 +21,7 @@
 #include "../util/threading.h"
 #include "../util/darray.h"
 
+#include "format-conversion.h"
 #include "video-io.h"
 
 struct video_input {
@@ -36,8 +37,10 @@ struct video_output {
 	pthread_mutex_t            data_mutex;
 	event_t                    stop_event;
 
-	struct video_frame         *cur_frame;
-	struct video_frame         *next_frame;
+	struct video_frame         cur_frame;
+	struct video_frame         next_frame;
+	bool                       new_frame;
+
 	event_t                    update_event;
 	uint64_t                   frame_time;
 	volatile uint64_t          cur_video_time;
@@ -54,9 +57,9 @@ static inline void video_swapframes(struct video_output *video)
 {
 	pthread_mutex_lock(&video->data_mutex);
 
-	if (video->next_frame) {
+	if (video->new_frame) {
 		video->cur_frame = video->next_frame;
-		video->next_frame = NULL;
+		video->new_frame = false;
 	}
 
 	pthread_mutex_unlock(&video->data_mutex);
@@ -64,15 +67,36 @@ static inline void video_swapframes(struct video_output *video)
 
 static inline void video_output_cur_frame(struct video_output *video)
 {
-	if (!video->cur_frame)
+	size_t width  = video->info.width;
+	size_t height = video->info.height;
+
+	if (!video->cur_frame.data[0])
 		return;
 
 	pthread_mutex_lock(&video->input_mutex);
 
+	/* TEST CODE */
+	/*static struct video_frame frame = {0};
+
+	if (!frame.data[0]) {
+		frame.data[0] = bmalloc(width * height);
+		frame.data[1] = bmalloc((width/2) * (height/2));
+		frame.data[2] = bmalloc((width/2) * (height/2));
+
+		frame.row_size[0] = width;
+		frame.row_size[1] = width/2;
+		frame.row_size[2] = width/2;
+	}
+
+	compress_uyvx_to_i420(
+			video->cur_frame.data[0], video->cur_frame.row_size[0],
+			width, height, 0, height,
+			(uint8_t**)frame.data, (uint32_t*)frame.row_size);*/
+
 	/* TODO: conversion */
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array+i;
-		input->callback(input->param, video->cur_frame);
+		input->callback(input->param, &video->cur_frame);//&frame);
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
@@ -176,7 +200,7 @@ void video_output_connect(video_t video,
 {
 	pthread_mutex_lock(&video->input_mutex);
 
-	if (video_get_input_idx(video, callback, param) != DARRAY_INVALID) {
+	if (video_get_input_idx(video, callback, param) == DARRAY_INVALID) {
 		struct video_input input;
 		input.callback = callback;
 		input.param    = param;
@@ -223,7 +247,8 @@ const struct video_output_info *video_output_getinfo(video_t video)
 void video_output_frame(video_t video, struct video_frame *frame)
 {
 	pthread_mutex_lock(&video->data_mutex);
-	video->next_frame = frame;
+	video->next_frame = *frame;
+	video->new_frame = true;
 	pthread_mutex_unlock(&video->data_mutex);
 }
 

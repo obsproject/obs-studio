@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <wctype.h>
 #include <stdarg.h>
 
 #include "c99defs.h"
@@ -39,6 +38,8 @@ enum log_type {
 EXPORT void base_set_log_handler(
 		void (*handler)(enum log_type, const char *, va_list));
 EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list));
+
+EXPORT void blogva(enum log_type type, const char *format, va_list args);
 
 #ifndef _MSC_VER
 #define PRINTFATTR(f, a) __attribute__((__format__(__printf__, f, a)))
