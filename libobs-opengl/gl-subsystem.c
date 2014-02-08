@@ -89,7 +89,7 @@ static inline void required_extension_error(const char *extension)
 {
 }
 
-static bool gl_init_extensions(struct gs_device* device) 
+static bool gl_init_extensions(struct gs_device* device)
 {
 	if (!ogl_IsVersionGEQ(2, 1)) {
 		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "

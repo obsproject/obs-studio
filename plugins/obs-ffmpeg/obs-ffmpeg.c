@@ -1,14 +1,21 @@
 #include <string.h>
-#include <util/c99defs.h>
+#include <obs.h>
 
-EXPORT const char *enum_outputs(size_t idx);
+EXPORT bool enum_outputs(size_t idx, const char **name);
+EXPORT uint32_t module_version(uint32_t in_version);
 
-static const char *outputs[] = {"obs_ffmpeg"};
+static const char *outputs[] = {"ffmpeg_output"};
 
-const char *enum_outputs(size_t idx)
+uint32_t module_version(uint32_t in_version)
+{
+	return LIBOBS_API_VER;
+}
+
+bool enum_outputs(size_t idx, const char **name)
 {
 	if (idx >= sizeof(outputs)/sizeof(const char*))
-		return NULL;
+		return false;
 
-	return outputs[idx];
+	*name = outputs[idx];
+	return true;
 }

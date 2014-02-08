@@ -26,7 +26,7 @@ static void *sinewave_thread(void *pdata)
 		}
 
 		struct source_audio data;
-		data.data = bytes;
+		data.data[0] = bytes;
 		data.frames = 480;
 		data.speakers = SPEAKERS_MONO;
 		data.samples_per_sec = 48000;

@@ -62,6 +62,11 @@ void OBSBasic::OBSInit()
 
 	/* TODO: this is a test */
 	obs_load_module("test-input");
+	/*obs_load_module("obs-ffmpeg");
+
+	obs_output_t output = obs_output_create("ffmpeg_output", "test",
+			NULL);
+	obs_output_start(output);*/
 
 	/* HACK: fixes a qt bug with native widgets with native repaint */
 	ui->previewContainer->repaint();
@@ -302,7 +307,7 @@ bool OBSBasic::InitAudio()
 	struct audio_output_info ai;
 	ai.name = "test";
 	ai.samples_per_sec = 44100;
-	ai.format = AUDIO_FORMAT_16BIT;
+	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
 	ai.speakers = SPEAKERS_STEREO;
 	ai.buffer_ms = 700;
 

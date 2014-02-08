@@ -25,6 +25,8 @@ extern "C" {
 
 /* Base video output component.  Use this to create an video output track. */
 
+#define MAX_VIDEO_PLANES 8
+
 struct video_output;
 typedef struct video_output *video_t;
 
@@ -49,8 +51,8 @@ enum video_format {
 };
 
 struct video_frame {
-	const void        *data;
-	uint32_t          row_size; /* for RGB/BGR formats and UYVX */
+	const uint8_t     *data[MAX_VIDEO_PLANES];
+	uint32_t          row_size[MAX_VIDEO_PLANES];
 	uint64_t          timestamp;
 };
 

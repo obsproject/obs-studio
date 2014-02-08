@@ -18,6 +18,7 @@
 #pragma once
 
 #include <util/c99defs.h>
+#include <media-io/audio-io.h>
 #include <media-io/video-io.h>
 
 #include <libavformat/avformat.h>
@@ -31,12 +32,13 @@ struct ffmpeg_data {
 	AVFormatContext    *output;
 	struct SwsContext  *swscale;
 
-	AVFrame            *vframe;
-	AVPicture          src_picture;
 	AVPicture          dst_picture;
+	AVFrame            *vframe;
+	int                total_frames;
 
+	uint8_t            *samples[MAX_AUDIO_PLANES];
 	AVFrame            *aframe;
-	uint8_t            **samples;
+	int                total_samples;
 
 	bool               initialized;
 };
@@ -49,12 +51,12 @@ struct ffmpeg_output {
 
 EXPORT const char *ffmpeg_output_getname(const char *locale);
 
-EXPORT struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
+EXPORT struct ffmpeg_output *ffmpeg_output_create(const char *settings,
 		obs_output_t output);
 EXPORT void ffmpeg_output_destroy(struct ffmpeg_output *data);
 
 EXPORT void ffmpeg_output_update(struct ffmpeg_output *data,
-		obs_data_t settings);
+		const char *settings);
 
 EXPORT bool ffmpeg_output_start(struct ffmpeg_output *data);
 EXPORT void ffmpeg_output_stop(struct ffmpeg_output *data);

@@ -38,9 +38,8 @@ EXPORT audio_resampler_t audio_resampler_create(struct resample_info *dst,
 EXPORT void audio_resampler_destroy(audio_resampler_t resampler);
 
 EXPORT bool audio_resampler_resample(audio_resampler_t resampler,
-		 void **output, uint32_t *out_frames,
-		 const void *input, uint32_t in_frames,
-		 uint64_t *timestamp_offset);
+		 uint8_t *output[], uint32_t *out_frames, uint64_t *ts_offset,
+		 const uint8_t *const input[], uint32_t in_frames);
 
 #ifdef __cplusplus
 }

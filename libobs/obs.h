@@ -96,13 +96,13 @@ struct obs_video_info {
 };
 
 struct filtered_audio {
-	void                *data;
+	uint8_t             *data[MAX_AUDIO_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 };
 
 struct source_audio {
-	const void          *data;
+	const uint8_t       *data[MAX_AUDIO_PLANES];
 	uint32_t            frames;
 
 	/* audio will be automatically resampled/upmixed/downmixed */
@@ -115,10 +115,10 @@ struct source_audio {
 };
 
 struct source_frame {
-	void                *data;
+	uint8_t             *data[MAX_VIDEO_PLANES];
+	uint32_t            row_bytes[MAX_VIDEO_PLANES];
 	uint32_t            width;
 	uint32_t            height;
-	uint32_t            row_bytes;
 	uint64_t            timestamp;
 
 	enum video_format   format;
@@ -126,12 +126,13 @@ struct source_frame {
 	bool                flip;
 };
 
+EXPORT struct source_frame *source_frame_alloc(enum video_format format,
+		uint32_t width, uint32_t height);
+
 static inline void source_frame_destroy(struct source_frame *frame)
 {
-	if (frame) {
-		bfree(frame->data);
-		bfree(frame);
-	}
+	bfree(frame->data[0]);
+	bfree(frame);
 }
 
 enum packet_priority {

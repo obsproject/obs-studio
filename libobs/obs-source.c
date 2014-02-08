@@ -180,6 +180,84 @@ fail:
 	return NULL;
 }
 
+#define ALIGN_SIZE(size, align) \
+	size = (((size)+(align-1)) & (~(align-1)))
+
+static void alloc_frame_data(struct source_frame *frame,
+		enum video_format format, uint32_t width, uint32_t height)
+{
+	size_t size;
+	size_t offsets[MAX_VIDEO_PLANES];
+	memset(offsets, 0, sizeof(offsets));
+
+	switch (format) {
+	case VIDEO_FORMAT_NONE:
+		return;
+
+	case VIDEO_FORMAT_I420:
+		size = width * height;
+		ALIGN_SIZE(size, 32);
+		offsets[0] = size;
+		size += (width/2) * (height/2);
+		ALIGN_SIZE(size, 32);
+		offsets[1] = size;
+		size += (width/2) * (height/2);
+		ALIGN_SIZE(size, 32);
+		frame->data[0] = bmalloc(size);
+		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
+		frame->data[2] = (uint8_t*)frame->data[0] + offsets[1];
+		frame->row_bytes[0] = width;
+		frame->row_bytes[1] = width/2;
+		frame->row_bytes[2] = width/2;
+		break;
+
+	case VIDEO_FORMAT_NV12:
+		size = width * height;
+		ALIGN_SIZE(size, 32);
+		offsets[0] = size;
+		size += (width/2) * (height/2) * 2;
+		ALIGN_SIZE(size, 32);
+		frame->data[0] = bmalloc(size);
+		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
+		frame->row_bytes[0] = width;
+		frame->row_bytes[1] = width;
+		break;
+
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+		size = width * height * 2;
+		ALIGN_SIZE(size, 32);
+		frame->data[0] = bmalloc(size);
+		frame->row_bytes[0] = width*2;
+		break;
+
+	case VIDEO_FORMAT_YUVX:
+	case VIDEO_FORMAT_UYVX:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		size = width * height * 4;
+		ALIGN_SIZE(size, 32);
+		frame->data[0] = bmalloc(size);
+		frame->row_bytes[0] = width*4;
+		break;
+	}
+}
+
+struct source_frame *source_frame_alloc(enum video_format format,
+		uint32_t width, uint32_t height)
+{
+	struct source_frame *frame = bmalloc(sizeof(struct source_frame));
+	memset(frame, 0, sizeof(struct source_frame));
+
+	alloc_frame_data(frame, format, width, height);
+	frame->format = format;
+	frame->width  = width;
+	frame->height = height;
+	return frame;
+}
+
 static void obs_source_destroy(obs_source_t source)
 {
 	size_t i;
@@ -202,7 +280,9 @@ static void obs_source_destroy(obs_source_t source)
 	if (source->data)
 		source->callbacks.destroy(source->data);
 
-	bfree(source->audio_data.data);
+	for (i = 0; i < MAX_AUDIO_PLANES; i++)
+		bfree(source->audio_data.data[i]);
+
 	audio_line_destroy(source->audio_line);
 	audio_resampler_destroy(source->resampler);
 
@@ -454,7 +534,8 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 	enum convert_type type = get_convert_type(frame->format);
 
 	if (type == CONVERT_NONE) {
-		texture_setimage(tex, frame->data, frame->row_bytes, false);
+		texture_setimage(tex, frame->data[0], frame->row_bytes[0],
+				false);
 		return true;
 	}
 
@@ -462,20 +543,24 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 		return false;
 
 	if (type == CONVERT_420)
-		decompress_420(frame->data, frame->width, frame->height,
-				frame->row_bytes, 0, frame->height, ptr);
+		decompress_420(frame->data, frame->row_bytes,
+				frame->width, frame->height, 0, frame->height,
+				ptr, row_bytes);
 
 	else if (type == CONVERT_NV12)
-		decompress_nv12(frame->data, frame->width, frame->height,
-				frame->row_bytes, 0, frame->height, ptr);
+		decompress_nv12(frame->data, frame->row_bytes,
+				frame->width, frame->height, 0, frame->height,
+				ptr, row_bytes);
 
 	else if (type == CONVERT_422_Y)
-		decompress_422(frame->data, frame->width, frame->height,
-				frame->row_bytes, 0, frame->height, ptr, true);
+		decompress_422(frame->data[0], frame->row_bytes[0],
+				frame->width, frame->height, 0, frame->height,
+				ptr, row_bytes, true);
 
 	else if (type == CONVERT_422_U)
-		decompress_422(frame->data, frame->width, frame->height,
-				frame->row_bytes, 0, frame->height, ptr, false);
+		decompress_422(frame->data[0], frame->row_bytes[0],
+				frame->width, frame->height, 0, frame->height,
+				ptr, row_bytes, false);
 
 	texture_unmap(tex);
 	return true;
@@ -704,14 +789,68 @@ static inline struct source_frame *filter_async_video(obs_source_t source,
 	return in;
 }
 
+static inline void copy_frame_data_line(struct source_frame *dst,
+		const struct source_frame *src, uint32_t plane, uint32_t y)
+{
+	uint32_t pos_src = y * src->row_bytes[plane];
+	uint32_t pos_dst = y * dst->row_bytes[plane];
+	uint32_t bytes = dst->row_bytes[plane] < src->row_bytes[plane] ?
+		dst->row_bytes[plane] : src->row_bytes[plane];
+
+	memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
+}
+
+static inline void copy_frame_data_plane(struct source_frame *dst,
+		const struct source_frame *src, uint32_t plane, uint32_t lines)
+{
+	if (dst->row_bytes != src->row_bytes)
+		for (uint32_t y = 0; y < lines; y++)
+			copy_frame_data_line(dst, src, plane, y);
+	else
+		memcpy(dst->data[plane], src->data[plane],
+				dst->row_bytes[plane] * lines);
+}
+
+static void copy_frame_data(struct source_frame *dst,
+		const struct source_frame *src)
+{
+	dst->flip         = src->flip;
+	dst->timestamp    = src->timestamp;
+	memcpy(dst->color_matrix, src->color_matrix, sizeof(float) * 16);
+
+	switch (dst->format) {
+	case VIDEO_FORMAT_I420:
+		copy_frame_data_plane(dst, src, 0, dst->height);
+		copy_frame_data_plane(dst, src, 1, dst->height/2);
+		copy_frame_data_plane(dst, src, 2, dst->height/2);
+		break;
+
+	case VIDEO_FORMAT_NV12:
+		copy_frame_data_plane(dst, src, 0, dst->height);
+		copy_frame_data_plane(dst, src, 1, dst->height/2);
+		break;
+
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_NONE:
+	case VIDEO_FORMAT_YUVX:
+	case VIDEO_FORMAT_UYVX:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		copy_frame_data_plane(dst, src, 0, dst->height);
+	}
+}
+
 static inline struct source_frame *cache_video(obs_source_t source,
 		const struct source_frame *frame)
 {
 	/* TODO: use an actual cache */
-	struct source_frame *new_frame = bmalloc(sizeof(struct source_frame));
-	memcpy(new_frame, frame, sizeof(struct source_frame));
-	new_frame->data = bmalloc(frame->row_bytes * frame->height);
+	struct source_frame *new_frame = source_frame_alloc(frame->format,
+			frame->width, frame->height);
 
+	copy_frame_data(new_frame, frame);
 	return new_frame;
 }
 
@@ -780,21 +919,28 @@ static inline void reset_resampler(obs_source_t source,
 }
 
 static inline void copy_audio_data(obs_source_t source,
-		const void *data, uint32_t frames, uint64_t timestamp)
+		const void *const data[], uint32_t frames, uint64_t timestamp)
 {
+	size_t planes    = audio_output_planes(obs->audio.audio);
 	size_t blocksize = audio_output_blocksize(obs->audio.audio);
-	size_t size = (size_t)frames * blocksize;
-
-	/* ensure audio storage capacity */
-	if (source->audio_storage_size < size) {
-		bfree(source->audio_data.data);
-		source->audio_data.data = bmalloc(size);
-		source->audio_storage_size = size;
-	}
+	size_t size      = (size_t)frames * blocksize;
+	bool   resize    = source->audio_storage_size < size;
 
 	source->audio_data.frames = frames;
 	source->audio_data.timestamp = timestamp;
-	memcpy(source->audio_data.data, data, size);
+
+	for (size_t i = 0; i < planes; i++) {
+		/* ensure audio storage capacity */
+		if (resize) {
+			bfree(source->audio_data.data[i]);
+			source->audio_data.data[i] = bmalloc(size);
+		}
+
+		memcpy(source->audio_data.data[i], data[i], size);
+	}
+
+	if (resize)
+		source->audio_storage_size = size;
 }
 
 /* resamples/remixes new audio to the designated main audio output format */
@@ -809,12 +955,15 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 		return;
 
 	if (source->resampler) {
-		void *output;
+		uint8_t  *output[MAX_AUDIO_PLANES];
 		uint32_t frames;
 		uint64_t offset;
 
-		audio_resampler_resample(source->resampler, &output, &frames,
-				audio->data, audio->frames, &offset);
+		memset(output, 0, sizeof(output));
+
+		audio_resampler_resample(source->resampler,
+				output, &frames, &offset,
+				audio->data, audio->frames);
 
 		copy_audio_data(source, output, frames,
 				audio->timestamp - offset);
@@ -843,7 +992,10 @@ void obs_source_output_audio(obs_source_t source,
 		 * have a base for sync */
 		if (source->timing_set || (flags & SOURCE_ASYNC_VIDEO) == 0) {
 			struct audio_data data;
-			data.data      = output->data;
+
+			for (int i = 0; i < MAX_AUDIO_PLANES; i++)
+				data.data[i] = output->data[i];
+
 			data.frames    = output->frames;
 			data.timestamp = output->timestamp;
 			source_output_audio_line(source, &data);
