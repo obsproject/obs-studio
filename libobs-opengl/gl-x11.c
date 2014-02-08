@@ -131,14 +131,14 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	/* We require glX version 1.4 */
+	/* We require glX version 1.3 */
 	{
 		int major = 0, minor = 0;
 		
 		glXQueryVersion(display, &major, &minor);
-		if (major < 1 || minor < 4) {
+		if (major < 1 || (major == 1 && minor < 3)) {
 			blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: "
-			                "1.4", major, minor);
+			                "1.3", major, minor);
 			goto fail0;
 		}
 	}
