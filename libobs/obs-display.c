@@ -20,8 +20,7 @@
 
 obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {
-	struct obs_display *display = bmalloc(sizeof(struct obs_display));
-	memset(display, 0, sizeof(struct obs_display));
+	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
 	if (graphics_data) {
 		display->swap = gs_create_swapchain(graphics_data);

@@ -168,10 +168,9 @@ static const struct source_info scene_info =
 
 obs_scene_t obs_scene_create(const char *name)
 {
-	struct obs_source *source = bmalloc(sizeof(struct obs_source));
+	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 	struct obs_scene  *scene;
 
-	memset(source, 0, sizeof(struct obs_source));
 	if (!obs_source_init_handlers(source)) {
 		bfree(source);
 		return NULL;
@@ -269,10 +268,9 @@ void obs_scene_enum_items(obs_scene_t scene,
 obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 {
 	struct obs_scene_item *last;
-	struct obs_scene_item *item = bmalloc(sizeof(struct obs_scene_item));
+	struct obs_scene_item *item = bzalloc(sizeof(struct obs_scene_item));
 	struct calldata params = {0};
 
-	memset(item, 0, sizeof(struct obs_scene_item));
 	item->source  = source;
 	item->visible = true;
 	item->parent  = scene;

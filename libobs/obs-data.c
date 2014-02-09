@@ -118,8 +118,7 @@ static struct obs_data_item *obs_data_item_create(const char *name,
 	name_size = get_name_align_size(name);
 	total_size = name_size + sizeof(struct obs_data_item) + size;
 
-	item = bmalloc(total_size);
-	memset(item, 0, total_size);
+	item = bzalloc(total_size);
 
 	item->capacity = total_size;
 	item->type     = type;
@@ -224,8 +223,7 @@ static inline void obs_data_item_setdata(
 
 obs_data_t obs_data_create()
 {
-	struct obs_data *data = bmalloc(sizeof(struct obs_data));
-	memset(data, 0, sizeof(struct obs_data));
+	struct obs_data *data = bzalloc(sizeof(struct obs_data));
 	data->ref = 1;
 
 	return data;
@@ -452,8 +450,7 @@ obs_data_array_t obs_data_getarray(obs_data_t data, const char *name)
 
 obs_data_array_t obs_data_array_create()
 {
-	struct obs_data_array *array = bmalloc(sizeof(struct obs_data_array));
-	memset(array, 0, sizeof(struct obs_data_array));
+	struct obs_data_array *array = bzalloc(sizeof(struct obs_data_array));
 	array->ref = 1;
 
 	return array;

@@ -7,9 +7,8 @@ const char *test_getname(const char *locale)
 
 struct test_filter *test_create(const char *settings, obs_source_t source)
 {
-	struct test_filter *tf = bmalloc(sizeof(struct test_filter));
+	struct test_filter *tf = bzalloc(sizeof(struct test_filter));
 	char *effect_file;
-	memset(tf, 0, sizeof(struct test_filter));
 
 	gs_entercontext(obs_graphics());
 

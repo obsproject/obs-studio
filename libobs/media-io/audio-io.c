@@ -364,8 +364,7 @@ int audio_output_open(audio_t *audio, struct audio_output_info *info)
 	if (!valid_audio_params(info))
 		return AUDIO_OUTPUT_INVALIDPARAM;
 
-	out = bmalloc(sizeof(struct audio_output));
-	memset(out, 0, sizeof(struct audio_output));
+	out = bzalloc(sizeof(struct audio_output));
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	pthread_mutex_init_value(&out->line_mutex);
@@ -426,8 +425,7 @@ void audio_output_close(audio_t audio)
 
 audio_line_t audio_output_createline(audio_t audio, const char *name)
 {
-	struct audio_line *line = bmalloc(sizeof(struct audio_line));
-	memset(line, 0, sizeof(struct audio_line));
+	struct audio_line *line = bzalloc(sizeof(struct audio_line));
 	line->alive = true;
 	line->audio = audio;
 

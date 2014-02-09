@@ -330,9 +330,7 @@ void test_callback(void *param, int bla, const char *format, va_list args)
 struct ffmpeg_output *ffmpeg_output_create(const char *settings,
 		obs_output_t output)
 {
-	struct ffmpeg_output *data = bmalloc(sizeof(struct ffmpeg_output));
-	memset(data, 0, sizeof(struct ffmpeg_output));
-
+	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
 	data->output = output;
 
 	av_log_set_callback(test_callback);

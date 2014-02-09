@@ -337,11 +337,10 @@ static inline bool gl_setpixelformat(HDC hdc, int format,
 
 static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
 {
-	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
-	memset(wi, 0, sizeof(struct gl_windowinfo));
-
+	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 	wi->hwnd = info->window.hwnd;
 	wi->hdc  = GetDC(wi->hwnd);
+
 	if (!wi->hdc) {
 		blog(LOG_ERROR, "Unable to get device context from window");
 		bfree(wi);
@@ -375,12 +374,11 @@ void gl_update(device_t device)
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {
-	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
+	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	struct dummy_context dummy;
 	int pixel_format;
 	PIXELFORMATDESCRIPTOR pfd;
 
-	memset(plat, 0, sizeof(struct gl_platform));
 	memset(&dummy, 0, sizeof(struct dummy_context));
 
 	if (!gl_dummy_context_init(&dummy))

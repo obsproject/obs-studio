@@ -52,8 +52,7 @@ const char *sinewave_getname(const char *locale)
 
 struct sinewave_data *sinewave_create(const char *settings, obs_source_t source)
 {
-	struct sinewave_data *swd = bmalloc(sizeof(struct sinewave_data));
-	memset(swd, 0, sizeof(struct sinewave_data));
+	struct sinewave_data *swd = bzalloc(sizeof(struct sinewave_data));
 	swd->source = source;
 
 	if (event_init(&swd->event, EVENT_TYPE_MANUAL) != 0)

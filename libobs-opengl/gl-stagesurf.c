@@ -69,9 +69,7 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format)
 {
 	struct gs_stage_surface *surf;
-	surf = bmalloc(sizeof(struct gs_stage_surface));
-	memset(surf, 0, sizeof(struct gs_stage_surface));
-
+	surf = bzalloc(sizeof(struct gs_stage_surface));
 	surf->format             = color_format;
 	surf->width              = width;
 	surf->height             = height;

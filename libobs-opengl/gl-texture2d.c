@@ -78,9 +78,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
 		uint32_t levels, const void **data, uint32_t flags)
 {
-	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
-	memset(tex, 0, sizeof(struct gs_texture_2d));
-
+	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 	tex->base.device             = device;
 	tex->base.type               = GS_TEXTURE_2D;
 	tex->base.format             = color_format;

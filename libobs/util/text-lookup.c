@@ -102,21 +102,18 @@ struct text_lookup {
 static void lookup_createsubnode(const char *lookup_val,
 		struct text_leaf *leaf, struct text_node *node)
 {
-	struct text_node *new = bmalloc(sizeof(struct text_node));
-	memset(new, 0, sizeof(struct text_node));
-
+	struct text_node *new = bzalloc(sizeof(struct text_node));
 	new->leaf = leaf;
+	new->next = node->first_subnode;
 	dstr_copy(&new->str, lookup_val);
 
-	new->next = node->first_subnode;
 	node->first_subnode = new;
 }
 
 static void lookup_splitnode(const char *lookup_val, size_t len,
 		struct text_leaf *leaf, struct text_node *node)
 {
-	struct text_node *split = bmalloc(sizeof(struct text_node));
-	memset(split, 0, sizeof(struct text_node));
+	struct text_node *split = bzalloc(sizeof(struct text_node));
 
 	dstr_copy(&split->str, node->str.array+len);
 	split->leaf = node->leaf;
@@ -360,8 +357,7 @@ static inline bool lookup_getstring(const char *lookup_val,
 
 lookup_t text_lookup_create(const char *path)
 {
-	struct text_lookup *lookup = bmalloc(sizeof(struct text_lookup));
-	memset(lookup, 0, sizeof(struct text_lookup));
+	struct text_lookup *lookup = bzalloc(sizeof(struct text_lookup));
 
 	if (!text_lookup_add(lookup, path)) {
 		bfree(lookup);
@@ -388,10 +384,8 @@ bool text_lookup_add(lookup_t lookup, const char *path)
 	if (!file_str.array)
 		return false;
 
-	if (!lookup->top) {
-		lookup->top = bmalloc(sizeof(struct text_node));
-		memset(lookup->top, 0, sizeof(struct text_node));
-	}
+	if (!lookup->top)
+		lookup->top = bzalloc(sizeof(struct text_node));
 
 	dstr_replace(&file_str, "\r", " ");
 	lookup_addfiledata(lookup, file_str.array);

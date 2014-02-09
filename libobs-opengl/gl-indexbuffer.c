@@ -37,9 +37,8 @@ indexbuffer_t device_create_indexbuffer(device_t device,
 		enum gs_index_type type, void *indices, size_t num,
 		uint32_t flags)
 {
-	struct gs_index_buffer *ib = bmalloc(sizeof(struct gs_index_buffer));
+	struct gs_index_buffer *ib = bzalloc(sizeof(struct gs_index_buffer));
 	size_t width = type == GS_UNSIGNED_LONG ? sizeof(long) : sizeof(short);
-	memset(ib, 0, sizeof(struct gs_index_buffer));
 
 	ib->device  = device;
 	ib->data    = indices;

@@ -39,9 +39,7 @@ texrender_t texrender_create(enum gs_color_format format,
 		enum gs_zstencil_format zsformat)
 {
 	struct gs_texture_render *texrender;
-	texrender = bmalloc(sizeof(struct gs_texture_render));
-	memset(texrender, 0, sizeof(struct gs_texture_render));
-
+	texrender = bzalloc(sizeof(struct gs_texture_render));
 	texrender->format   = format;
 	texrender->zsformat = zsformat;
 

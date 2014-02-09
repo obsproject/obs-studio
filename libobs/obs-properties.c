@@ -53,8 +53,7 @@ struct obs_properties {
 obs_properties_t obs_properties_create()
 {
 	struct obs_properties *list;
-	list = bmalloc(sizeof(struct obs_properties));
-	memset(list, 0, sizeof(struct obs_properties));
+	list = bzalloc(sizeof(struct obs_properties));
 	return list;
 }
 
@@ -90,9 +89,7 @@ void obs_properties_destroy(obs_properties_t props)
 obs_category_t obs_properties_add_category(obs_properties_t props,
 		const char *name)
 {
-	struct obs_category *c = bmalloc(sizeof(struct obs_category));
-	memset(c, 0, sizeof(struct obs_category));
-
+	struct obs_category *c = bzalloc(sizeof(struct obs_category));
 	c->name = name;
 	c->next = props->first_category;
 	props->first_category = c;
@@ -137,9 +134,7 @@ static inline struct obs_property *new_prop(struct obs_category *cat,
 	size_t data_size = get_property_size(type);
 	struct obs_property *p;
 
-	p = bmalloc(sizeof(struct obs_property) + data_size);
-	memset(p, 0, sizeof(struct obs_property) + data_size);
-
+	p = bzalloc(sizeof(struct obs_property) + data_size);
 	p->type = type;
 	p->name = name;
 	p->desc = desc;

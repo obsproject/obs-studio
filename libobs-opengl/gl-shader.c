@@ -48,8 +48,7 @@ static void gl_get_program_info(GLuint program, const char *file,
 	if (!gl_success("glGetProgramiv") || !info_len)
 		return;
 
-	errors = bmalloc(info_len+1);
-	memset(errors, 0, info_len+1);
+	errors = bzalloc(info_len+1);
 	glGetProgramInfoLog(program, info_len, &chars_written, errors);
 	gl_success("glGetProgramInfoLog");
 
@@ -238,11 +237,10 @@ static bool gl_shader_init(struct gs_shader *shader,
 static struct gs_shader *shader_create(device_t device, enum shader_type type,
 		const char *shader_str, const char *file, char **error_string)
 {
-	struct gs_shader *shader = bmalloc(sizeof(struct gs_shader));
+	struct gs_shader *shader = bzalloc(sizeof(struct gs_shader));
 	struct gl_shader_parser glsp;
 	bool success = true;
 
-	memset(shader, 0, sizeof(struct gs_shader));
 	shader->device = device;
 	shader->type   = type;
 

@@ -23,10 +23,8 @@ static pthread_mutex_t c_mutex;
 struct desktop_tex *osx_desktop_test_create(const char *settings,
 		obs_source_t source)
 {
-	struct desktop_tex *rt = bmalloc(sizeof(struct desktop_tex));
+	struct desktop_tex *rt = bzalloc(sizeof(struct desktop_tex));
 	char *effect_file;
-
-	memset(rt, 0, sizeof(struct desktop_tex));
 
 	gs_entercontext(obs_graphics());
 

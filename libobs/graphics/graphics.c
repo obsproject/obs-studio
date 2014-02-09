@@ -111,8 +111,7 @@ int gs_create(graphics_t *pgraphics, const char *module,
 {
 	int errcode = GS_ERROR_FAIL;
 
-	graphics_t graphics = bmalloc(sizeof(struct graphics_subsystem));
-	memset(graphics, 0, sizeof(struct graphics_subsystem));
+	graphics_t graphics = bzalloc(sizeof(struct graphics_subsystem));
 	pthread_mutex_init_value(&graphics->mutex);
 
 	graphics->module = os_dlopen(module);
@@ -571,11 +570,10 @@ effect_t gs_create_effect_from_file(const char *file, char **error_string)
 effect_t gs_create_effect(const char *effect_string, const char *filename,
 		char **error_string)
 {
-	struct gs_effect *effect = bmalloc(sizeof(struct gs_effect));
+	struct gs_effect *effect = bzalloc(sizeof(struct gs_effect));
 	struct effect_parser parser;
 	bool success;
 
-	memset(effect, 0, sizeof(struct gs_effect));
 	effect->graphics = thread_graphics;
 
 	ep_init(&parser);

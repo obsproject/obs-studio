@@ -606,8 +606,7 @@ static inline struct source_frame *source_frame_create(
 {
 	struct source_frame *frame;
 
-	frame = (struct source_frame*)bmalloc(sizeof(struct source_frame));
-	memset(frame, 0, sizeof(struct source_frame));
+	frame = (struct source_frame*)bzalloc(sizeof(struct source_frame));
 	source_frame_init(frame, format, width, height);
 	return frame;
 }

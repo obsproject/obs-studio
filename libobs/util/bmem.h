@@ -43,6 +43,14 @@ EXPORT uint64_t bnum_allocs(void);
 
 EXPORT void *bmemdup(const void *ptr, size_t size);
 
+static inline void *bzalloc(size_t size)
+{
+	void *mem = bmalloc(size);
+	if (mem)
+		memset(mem, 0, size);
+	return mem;
+}
+
 static inline char *bstrdup_n(const char *str, size_t n)
 {
 	char *dup;

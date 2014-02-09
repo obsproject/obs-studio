@@ -298,8 +298,7 @@ static inline bool obs_init_handlers(void)
 
 static bool obs_init(void)
 {
-	obs = bmalloc(sizeof(struct obs_core));
-	memset(obs, 0, sizeof(struct obs_core));
+	obs = bzalloc(sizeof(struct obs_core));
 
 	obs_init_data();
 	return obs_init_handlers();

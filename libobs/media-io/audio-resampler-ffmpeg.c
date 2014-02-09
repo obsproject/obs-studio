@@ -80,10 +80,9 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 audio_resampler_t audio_resampler_create(const struct resample_info *dst,
 		const struct resample_info *src)
 {
-	struct audio_resampler *rs = bmalloc(sizeof(struct audio_resampler));
+	struct audio_resampler *rs = bzalloc(sizeof(struct audio_resampler));
 	int errcode;
 
-	memset(rs, 0, sizeof(struct audio_resampler));
 	rs->opened        = false;
 	rs->input_freq    = src->samples_per_sec;
 	rs->input_layout  = convert_speaker_layout(src->speakers);

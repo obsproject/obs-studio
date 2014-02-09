@@ -8,11 +8,9 @@ const char *random_getname(const char *locale)
 
 struct random_tex *random_create(const char *settings, obs_source_t source)
 {
-	struct random_tex *rt = bmalloc(sizeof(struct random_tex));
+	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
 	uint32_t *pixels = bmalloc(20*20*4);
 	size_t x, y;
-
-	memset(rt, 0, sizeof(struct random_tex));
 
 	for (y = 0; y < 20; y++) {
 		for (x = 0; x < 20; x++) {

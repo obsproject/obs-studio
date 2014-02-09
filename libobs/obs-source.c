@@ -154,8 +154,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		return NULL;
 	}
 
-	source = bmalloc(sizeof(struct obs_source));
-	memset(source, 0, sizeof(struct obs_source));
+	source = bzalloc(sizeof(struct obs_source));
 
 	if (!obs_source_init_handlers(source))
 		goto fail;

@@ -68,9 +68,7 @@ config_t config_create(const char *file)
 		return NULL;
 	fclose(f);
 
-	config = bmalloc(sizeof(struct config_data));
-	memset(config, 0, sizeof(struct config_data));
-
+	config = bzalloc(sizeof(struct config_data));
 	return config;
 }
 
@@ -235,8 +233,7 @@ int config_open(config_t *config, const char *file,
 	if (!config)
 		return CONFIG_ERROR;
 
-	*config = bmalloc(sizeof(struct config_data));
-	memset(*config, 0, sizeof(struct config_data));
+	*config = bzalloc(sizeof(struct config_data));
 	(*config)->file = bstrdup(file);
 
 	errorcode = config_parse(&(*config)->sections, file, always_open);

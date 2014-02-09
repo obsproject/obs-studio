@@ -186,9 +186,7 @@ struct vb_data {
 
 static inline struct vb_data *vbdata_create(void)
 {
-	struct vb_data *vbd = (struct vb_data*)bmalloc(sizeof(struct vb_data));
-	memset(vbd, 0, sizeof(struct vb_data));
-	return vbd;
+	return (struct vb_data*)bzalloc(sizeof(struct vb_data));
 }
 
 static inline void vbdata_destroy(struct vb_data *data)

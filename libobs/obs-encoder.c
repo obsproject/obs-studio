@@ -67,8 +67,7 @@ obs_encoder_t obs_encoder_create(const char *id, const char *name,
 	if (!ei)
 		return NULL;
 
-	encoder = bmalloc(sizeof(struct obs_encoder));
-	memset(encoder, 0, sizeof(struct obs_encoder));
+	encoder = bzalloc(sizeof(struct obs_encoder));
 	encoder->callbacks = *ei;
 
 	if (pthread_mutex_init(&encoder->data_callbacks_mutex, NULL) != 0) {

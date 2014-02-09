@@ -53,8 +53,7 @@ zstencil_t device_create_zstencil(device_t device, uint32_t width,
 {
 	struct gs_zstencil_buffer *zs;
 
-	zs = bmalloc(sizeof(struct gs_zstencil_buffer));
-	memset(zs, 0, sizeof(struct gs_zstencil_buffer));
+	zs = bzalloc(sizeof(struct gs_zstencil_buffer));
 	zs->format     = convert_zstencil_format(format);
 	zs->attachment = get_attachment(format);
 	zs->device     = device;

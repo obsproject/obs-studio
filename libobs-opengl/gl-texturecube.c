@@ -62,9 +62,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
 		const void **data, uint32_t flags)
 {
-	struct gs_texture_cube *tex = bmalloc(sizeof(struct gs_texture_cube));
-	memset(tex, 0, sizeof(struct gs_texture_2d));
-
+	struct gs_texture_cube *tex = bzalloc(sizeof(struct gs_texture_cube));
 	tex->base.device             = device;
 	tex->base.type               = GS_TEXTURE_CUBE;
 	tex->base.format             = color_format;

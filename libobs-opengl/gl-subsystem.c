@@ -169,8 +169,7 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 
 device_t device_create(struct gs_init_data *info)
 {
-	struct gs_device *device = bmalloc(sizeof(struct gs_device));
-	memset(device, 0, sizeof(struct gs_device));
+	struct gs_device *device = bzalloc(sizeof(struct gs_device));
 
 	device->plat = gl_platform_create(device, info);
 	if (!device->plat)
@@ -219,8 +218,7 @@ void device_destroy(device_t device)
 
 swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 {
-	struct gs_swap_chain *swap = bmalloc(sizeof(struct gs_swap_chain));
-	memset(swap, 0, sizeof(struct gs_swap_chain));
+	struct gs_swap_chain *swap = bzalloc(sizeof(struct gs_swap_chain));
 
 	swap->device = device;
 	swap->info   = *info;
@@ -273,8 +271,7 @@ samplerstate_t device_create_samplerstate(device_t device,
 {
 	struct gs_sampler_state *sampler;
 
-	sampler = bmalloc(sizeof(struct gs_sampler_state));
-	memset(sampler, 0, sizeof(struct gs_sampler_state));
+	sampler = bzalloc(sizeof(struct gs_sampler_state));
 	sampler->device = device;
 	sampler->ref    = 1;
 

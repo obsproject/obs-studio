@@ -57,9 +57,7 @@ extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 {
-	struct gl_windowinfo *wi = bmalloc(sizeof(struct gl_windowinfo));
-	memset(wi, 0, sizeof(struct gl_windowinfo));
-
+	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 	wi->id = info->window.id;
 	/* wi->display = info->window.display; */
 
@@ -108,12 +106,10 @@ struct gl_platform *gl_platform_create(device_t device,
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;
 	Display *display = XOpenDisplay(NULL); /* Open default screen */
-	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
+	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	GLXFBConfig* configs;
 
 	print_info_stuff(info);
-
-	memset(plat, 0, sizeof(struct gl_platform));
 
 	if (!display) {
 		blog(LOG_ERROR, "Unable to find display. DISPLAY variable "

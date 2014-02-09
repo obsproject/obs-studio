@@ -79,9 +79,7 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 vertbuffer_t device_create_vertexbuffer(device_t device,
 		struct vb_data *data, uint32_t flags)
 {
-	struct gs_vertex_buffer *vb = bmalloc(sizeof(struct gs_vertex_buffer));
-	memset(vb, 0, sizeof(struct gs_vertex_buffer));
-
+	struct gs_vertex_buffer *vb = bzalloc(sizeof(struct gs_vertex_buffer));
 	vb->device  = device;
 	vb->data    = data;
 	vb->num     = data->num;
