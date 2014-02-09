@@ -108,7 +108,7 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 
 	if (size > 0) {
 		char bom[3];
-		char *utf8str = bmalloc(size+1);
+		char *utf8str;
 		off_t offset;
 
 		/* remove the ghastly BOM if present */
@@ -116,6 +116,8 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 		fread(bom, 1, 3, file);
 		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
 
+		size -= offset;
+		utf8str = bmalloc(size+1);
 		fseeko(file, offset, SEEK_SET);
 		fread(utf8str, 1, size, file);
 		utf8str[size] = 0;
