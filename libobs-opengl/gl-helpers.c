@@ -56,10 +56,55 @@ bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 	return success;
 }
 
+static bool gl_copy_fbo(struct gs_device *device,
+		GLuint dst, GLenum dst_target,
+		GLuint src, GLenum src_target,
+		uint32_t width, uint32_t height,
+		enum gs_color_format format)
+{
+	struct fbo_info *fbo = get_fbo(device, width, height, format);
+	GLint last_fbo;
+	bool success = false;
+
+	if (!fbo)
+		return false;
+
+	if (!gl_get_integer_v(GL_READ_FRAMEBUFFER_BINDING, &last_fbo))
+		return false;
+	if (!gl_bind_framebuffer(GL_READ_FRAMEBUFFER, fbo->fbo))
+		return false;
+	if (!gl_bind_texture(dst_target, dst))
+		goto fail;
+
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + 0,
+			src_target, src, 0);
+	if (!gl_success("glFrameBufferTexture2D"))
+		goto fail;
+
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + 0);
+	if (!gl_success("glReadBuffer"))
+		goto fail;
+
+	glCopyTexSubImage2D(dst_target, 0, 0, 0, 0, 0, width, height);
+	if (!gl_success("glCopyTexSubImage2D"))
+		goto fail;
+
+	success = true;
+
+fail:
+	if (!gl_bind_texture(dst_target, 0))
+		success = false;
+	if (!gl_bind_framebuffer(GL_READ_FRAMEBUFFER, last_fbo))
+		success = false;
+
+	return success;
+}
+
 bool gl_copy_texture(struct gs_device *device,
                      GLuint dst, GLenum dst_target,
                      GLuint src, GLenum src_target,
-                     uint32_t width, uint32_t height)
+                     uint32_t width, uint32_t height,
+                     enum gs_color_format format)
 {
 	bool success = false;
 
@@ -76,7 +121,11 @@ bool gl_copy_texture(struct gs_device *device,
 		success = gl_success("glCopyImageSubDataNV");
 
 	} else if (device->copy_type == COPY_TYPE_FBO_BLIT) {
-		/* TODO (implement FBOs) */
+		if (gl_copy_fbo(device, dst, dst_target, src,  src_target,
+					width, height, format))
+			success = true;
+		else
+			blog(LOG_ERROR, "gl_copy_texture failed");
 	}
 
 	return success;

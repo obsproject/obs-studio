@@ -137,6 +137,12 @@ static inline bool gl_cull_face(GLenum faces)
 	return gl_success("glCullFace");
 }
 
+static inline bool gl_get_integer_v(GLenum pname, GLint *params)
+{
+	glGetIntegerv(pname, params);
+	return gl_success("glGetIntegerv");
+}
+
 extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size,
@@ -145,7 +151,8 @@ extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 extern bool gl_copy_texture(struct gs_device *device,
                             GLuint dst, GLenum dst_target,
                             GLuint src, GLenum src_target,
-                            uint32_t width, uint32_t height);
+                            uint32_t width, uint32_t height,
+			    enum gs_color_format format);
 
 extern bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
 		const GLvoid *data, GLenum usage);

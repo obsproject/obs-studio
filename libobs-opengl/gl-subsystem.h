@@ -479,6 +479,9 @@ struct gs_device {
 	struct fbo_info          *cur_fbo;
 };
 
+extern struct fbo_info *get_fbo(struct gs_device *device,
+		uint32_t width, uint32_t height, enum gs_color_format format);
+
 extern void                  gl_update(device_t device);
 
 extern struct gl_platform   *gl_platform_create(device_t device,

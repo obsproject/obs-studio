@@ -141,7 +141,7 @@ void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 
 	if (!gl_copy_texture(device, dst->texture, GL_TEXTURE_2D,
 				tex2d->base.texture, GL_TEXTURE_2D,
-				dst->width, dst->height))
+				dst->width, dst->height, dst->format))
 		goto failed;
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, dst->texture))

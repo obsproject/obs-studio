@@ -120,7 +120,7 @@ static bool gl_init_extensions(struct gs_device* device)
 	else if (ogl_ext_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
 	else
-		device->copy_type = COPY_TYPE_FBO_BLIT; /* ?? */
+		device->copy_type = COPY_TYPE_FBO_BLIT;
 
 	return true;
 }
@@ -577,21 +577,18 @@ static bool get_tex_dimensions(texture_t tex, uint32_t *width, uint32_t *height)
  * This automatically manages FBOs so that render targets are always given
  * an FBO that matches their width/height/format to maximize optimization
  */
-static struct fbo_info *get_fbo(struct gs_device *device, texture_t tex)
+struct fbo_info *get_fbo(struct gs_device *device,
+		uint32_t width, uint32_t height, enum gs_color_format format)
 {
 	size_t i;
-	uint32_t width, height;
 	GLuint fbo;
 	struct fbo_info *ptr;
-
-	if (!get_tex_dimensions(tex, &width, &height))
-		return NULL;
 
 	for (i = 0; i < device->fbos.num; i++) {
 		ptr = device->fbos.array[i];
 
 		if (ptr->width  == width && ptr->height == height &&
-		    ptr->format == tex->format)
+		    ptr->format == format)
 			return ptr;
 	}
 
@@ -603,13 +600,23 @@ static struct fbo_info *get_fbo(struct gs_device *device, texture_t tex)
 	ptr->fbo                 = fbo;
 	ptr->width               = width;
 	ptr->height              = height;
-	ptr->format              = tex->format;
+	ptr->format              = format;
 	ptr->cur_render_target   = NULL;
 	ptr->cur_render_side     = 0;
 	ptr->cur_zstencil_buffer = NULL;
 
 	da_push_back(device->fbos, &ptr);
 	return ptr;
+}
+
+static inline struct fbo_info *get_fbo_by_tex(struct gs_device *device,
+		texture_t tex)
+{
+	uint32_t width, height;
+	if (!get_tex_dimensions(tex, &width, &height))
+		return NULL;
+
+	return get_fbo(device, width, height, tex->format);
 }
 
 static bool set_current_fbo(device_t device, struct fbo_info *fbo)
@@ -688,7 +695,7 @@ static bool set_target(device_t device, texture_t tex, int side, zstencil_t zs)
 	if (!tex)
 		return set_current_fbo(device, NULL);
 
-	fbo = get_fbo(device, tex);
+	fbo = get_fbo_by_tex(device, tex);
 	if (!fbo)
 		return false;
 
@@ -783,7 +790,7 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 
 	if (!gl_copy_texture(device, dst->texture, dst->gl_target,
 				src->texture, src->gl_target,
-				src2d->width, src2d->height))
+				src2d->width, src2d->height, src->format))
 		goto fail;
 
 	return;
