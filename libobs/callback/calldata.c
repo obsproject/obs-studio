@@ -56,7 +56,7 @@ static inline size_t cd_serialize_size(uint8_t **pos)
 static inline const char *cd_serialize_string(uint8_t **pos)
 {
 	size_t size = cd_serialize_size(pos);
-	const char *str = *pos;
+	const char *str = (const char *)*pos;
 
 	*pos += size;
 
@@ -75,7 +75,7 @@ static bool cd_getparam(calldata_t data, const char *name,
 
 	name_size = cd_serialize_size(pos);
 	while (name_size != 0) {
-		const char *param_name = *pos;
+		const char *param_name = (const char *)*pos;
 		size_t param_size;
 
 		*pos += name_size;

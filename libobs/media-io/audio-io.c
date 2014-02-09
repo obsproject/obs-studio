@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <math.h>
+#include <inttypes.h>
 
 #include "../util/threading.h"
 #include "../util/darray.h"
@@ -142,8 +143,8 @@ static inline void clear_excess_audio_data(struct audio_line *line,
 			line->base_timestamp);
 
 	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
-	                  "audio data went back in time by %lu bytes.  "
-	                  "prev_time: %llu, line->base_timestamp: %llu",
+	                  "audio data went back in time by %"PRIu32" bytes.  "
+	                  "prev_time: %"PRIu64", line->base_timestamp: %"PRIu64,
 	                  line->name, (uint32_t)size,
 	                  prev_time, line->base_timestamp);
 
@@ -558,7 +559,7 @@ static void audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
 	bool   planar     = line->audio->planes > 1;
-	size_t total_num  = data->frames * planar ? 1 : line->audio->channels;
+	size_t total_num  = data->frames * (planar ? 1 : line->audio->channels);
 	size_t total_size = data->frames * line->audio->block_size;
 
 	for (size_t i = 0; i < line->audio->planes; i++) {
