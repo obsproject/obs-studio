@@ -4,6 +4,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+#include "xcursor.h"
 #include "xshm-input.h"
 
 struct xshm_data {
@@ -17,6 +18,7 @@ struct xshm_data {
     XShmSegmentInfo shm_info;
     XImage *image;
     texture_t texture;
+    xcursor_t *cursor;
 };
 
 const char* xshm_input_getname(const char* locale)
@@ -53,45 +55,36 @@ struct xshm_data *xshm_input_create(const char *settings, obs_source_t source)
     if (!data->image)
         goto fail;
     
-    printf("Image size: %dx%d\n", data->image->width, data->image->height);
-    
     // create shared memory
     data->shm_info.shmid = shmget(IPC_PRIVATE, data->image->bytes_per_line *
                                   data->image->height, IPC_CREAT | 0700);
-    if (data->shm_info.shmid < 0) {
-        printf("Failed to create shared memory !\n");
+    if (data->shm_info.shmid < 0)
         goto fail;
-    }
     
     // attach shared memory
     data->shm_info.shmaddr = data->image->data 
                            = (char *) shmat(data->shm_info.shmid, 0, 0);
-    if (data->shm_info.shmaddr == (char *) -1) {
-        printf("Failed to attach shared memory !\n");
+    if (data->shm_info.shmaddr == (char *) -1)
         goto fail;
-    }
     // set shared memory as read only
     data->shm_info.readOnly = False;
     
     // attach shm
-    if (!XShmAttach(data->dpy, &data->shm_info)) {
-        printf("Failed to attach to XShm !\n");
+    if (!XShmAttach(data->dpy, &data->shm_info))
         goto fail;
-    }
     data->shm_attached = 1;
 
     // get image
     if (!XShmGetImage(data->dpy, data->root_window, data->image,
-                      0, 0, AllPlanes)) {
-        printf("Failed to get image data !\n");
+                      0, 0, AllPlanes))
         goto fail;
-    }
 
     // create obs texture    
     gs_entercontext(obs_graphics());
     data->texture = gs_create_texture(data->width, data->height, GS_BGRA, 1,
                                       (const void**) &data->image->data,
                                       GS_DYNAMIC);
+    data->cursor = xcursor_init(data->dpy);
     gs_leavecontext();
     
     if (!data->texture)
@@ -111,6 +104,7 @@ void xshm_input_destroy(struct xshm_data *data)
         gs_entercontext(obs_graphics());
 
         texture_destroy(data->texture);
+        xcursor_destroy(data->cursor);
 
         gs_leavecontext();
         
@@ -148,18 +142,18 @@ uint32_t xshm_input_get_output_flags(struct xshm_data *data)
 void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
 {
     // update texture
-    if (!XShmGetImage(data->dpy, data->root_window, data->image,
-                      0, 0, AllPlanes)) {
-        printf("Failed to get image !\n");
-    }
+    XShmGetImage(data->dpy, data->root_window, data->image, 0, 0, AllPlanes);
     texture_setimage(data->texture, (void *) data->image->data,
                      data->width * 4, False);
     
-    //effect_t effect  = gs_geteffect();
-    //eparam_t diffuse = effect_getparambyname(effect, "diffuse");
+    effect_t effect  = gs_geteffect();
+    eparam_t diffuse = effect_getparambyname(effect, "diffuse");
 
-    //effect_settexture(effect, diffuse, data->texture);
+    effect_settexture(effect, diffuse, data->texture);
     gs_draw_sprite(data->texture, 0, 0, 0);
+    
+    // render the cursor
+    xcursor_render(data->cursor);
 }
 
 uint32_t xshm_input_getwidth(struct xshm_data *data)
