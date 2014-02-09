@@ -55,39 +55,29 @@ struct xshm_data *xshm_input_create(const char *settings, obs_source_t source)
     if (!data->image)
         goto fail;
     
-    printf("Image size: %dx%d\n", data->image->width, data->image->height);
-    
     // create shared memory
     data->shm_info.shmid = shmget(IPC_PRIVATE, data->image->bytes_per_line *
                                   data->image->height, IPC_CREAT | 0700);
-    if (data->shm_info.shmid < 0) {
-        printf("Failed to create shared memory !\n");
+    if (data->shm_info.shmid < 0)
         goto fail;
-    }
     
     // attach shared memory
     data->shm_info.shmaddr = data->image->data 
                            = (char *) shmat(data->shm_info.shmid, 0, 0);
-    if (data->shm_info.shmaddr == (char *) -1) {
-        printf("Failed to attach shared memory !\n");
+    if (data->shm_info.shmaddr == (char *) -1)
         goto fail;
-    }
     // set shared memory as read only
     data->shm_info.readOnly = False;
     
     // attach shm
-    if (!XShmAttach(data->dpy, &data->shm_info)) {
-        printf("Failed to attach to XShm !\n");
+    if (!XShmAttach(data->dpy, &data->shm_info))
         goto fail;
-    }
     data->shm_attached = 1;
 
     // get image
     if (!XShmGetImage(data->dpy, data->root_window, data->image,
-                      0, 0, AllPlanes)) {
-        printf("Failed to get image data !\n");
+                      0, 0, AllPlanes))
         goto fail;
-    }
 
     // create obs texture    
     gs_entercontext(obs_graphics());
@@ -152,10 +142,7 @@ uint32_t xshm_input_get_output_flags(struct xshm_data *data)
 void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
 {
     // update texture
-    if (!XShmGetImage(data->dpy, data->root_window, data->image,
-                      0, 0, AllPlanes)) {
-        printf("Failed to get image !\n");
-    }
+    XShmGetImage(data->dpy, data->root_window, data->image, 0, 0, AllPlanes);
     texture_setimage(data->texture, (void *) data->image->data,
                      data->width * 4, False);
     
