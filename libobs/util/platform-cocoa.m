@@ -34,11 +34,11 @@ void *os_dlopen(const char *path)
 {
 	struct dstr dylib_name;
 	dstr_init_copy(&dylib_name, path);
-	if(!dstr_find(&dylib_name, ".so"))
+	if (!dstr_find(&dylib_name, ".so"))
 		dstr_cat(&dylib_name, ".so");
 
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
-	if(!res)
+	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n",
 				path, dylib_name.array, dlerror());
 
@@ -56,23 +56,26 @@ void os_dlclose(void *module)
 	dlclose(module);
 }
 
-void os_sleepto_ns(uint64_t time_target)
+bool os_sleepto_ns(uint64_t time_target)
 {
 	uint64_t current = os_gettime_ns();
-	if(time_target < current)
-		return;
+	if (time_target < current)
+		return false;
+
 	time_target -= current;
-	struct timespec req,
-			remain;
+
+	struct timespec req, remain;
 	memset(&req, 0, sizeof(req));
 	memset(&remain, 0, sizeof(remain));
 	req.tv_sec = time_target/1000000000;
 	req.tv_nsec = time_target%1000000000;
-	while(nanosleep(&req, &remain))
-	{
+
+	while (nanosleep(&req, &remain)) {
 		req = remain;
 		memset(&remain, 0, sizeof(remain));
 	}
+
+	return true;
 }
 
 void os_sleep_ms(uint32_t duration)

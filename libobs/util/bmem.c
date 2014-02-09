@@ -24,11 +24,12 @@
  *   http://www.ffmpeg.org/
  */
 
-#define ALIGNMENT 16
+#define ALIGNMENT 32
 
-#if defined(_WIN32) && !defined(_WIN64)
+/* TODO: use memalign for non-windows systems */
+#if defined(_WIN32)
 #define ALIGNED_MALLOC 1
-#elif !defined(__LP64__)
+#else
 #define ALIGNMENT_HACK 1
 #endif
 
@@ -128,6 +129,11 @@ void bfree(void *ptr)
 uint64_t bnum_allocs(void)
 {
 	return num_allocs;
+}
+
+int base_get_alignment(void)
+{
+	return ALIGNMENT;
 }
 
 void *bmemdup(const void *ptr, size_t size)

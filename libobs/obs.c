@@ -51,6 +51,7 @@ static inline void make_video_info(struct video_output_info *vi,
 static bool obs_init_textures(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
+	bool yuv = format_is_yuv(ovi->output_format);
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
@@ -74,6 +75,11 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 
 		if (!video->output_textures[i])
 			return false;
+
+		if (yuv)
+			source_frame_init(&video->convert_frames[i],
+					ovi->output_format,
+					ovi->output_width, ovi->output_height);
 	}
 
 	return true;
@@ -178,6 +184,7 @@ static void obs_free_graphics()
 			stagesurface_destroy(video->copy_surfaces[i]);
 			texture_destroy(video->render_textures[i]);
 			texture_destroy(video->output_textures[i]);
+			source_frame_free(&video->convert_frames[i]);
 
 			video->copy_surfaces[i]   = NULL;
 			video->render_textures[i] = NULL;

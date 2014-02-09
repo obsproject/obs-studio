@@ -57,7 +57,12 @@ EXPORT void *os_dlopen(const char *path);
 EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);
 
-EXPORT void os_sleepto_ns(uint64_t time_target);
+/**
+ * Sleeps to a specific time (in nanoseconds).  Doesn't have to be super
+ * accurate in terms of actual slept time because the target time is ensured.
+ * Returns false if already at or past target time.
+ */
+EXPORT bool os_sleepto_ns(uint64_t time_target);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);

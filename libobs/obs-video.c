@@ -18,6 +18,7 @@
 #include "obs.h"
 #include "obs-internal.h"
 #include "graphics/vec4.h"
+#include "media-io/format-conversion.h"
 
 static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 {
@@ -93,6 +94,8 @@ static inline void render_displays(void)
 	if (!obs->data.valid)
 		return;
 
+	gs_entercontext(obs_graphics());
+
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
 
@@ -103,10 +106,15 @@ static inline void render_displays(void)
 
 	/* render main display */
 	render_display(NULL);
+
+	gs_leavecontext();
 }
 
 static inline void set_render_size(uint32_t width, uint32_t height)
 {
+	gs_enable_depthtest(false);
+	gs_setcullmode(GS_NEITHER);
+
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
 }
@@ -169,9 +177,9 @@ static inline void render_output_texture(struct obs_core_video *video,
 	/* TODO: replace with programmable code */
 	const float mat_val[16] =
 	{
-		 0.256788f,  0.504129f,  0.097906f,  0.062745f,
-		-0.148223f, -0.290993f,  0.439216f,  0.501961f,
-		 0.439216f, -0.367788f, -0.071427f,  0.501961f,
+		-0.100644f, -0.338572f,  0.439216f,  0.501961f,
+		 0.182586f,  0.614231f,  0.062007f,  0.062745f,
+		 0.439216f, -0.398942f, -0.040274f,  0.501961f,
 		 0.000000f,  0.000000f,  0.000000f,  1.000000f
 	};
 
@@ -222,22 +230,66 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 	gs_endscene();
 }
 
-static inline void output_video(struct obs_core_video *video, int cur_texture,
-		int prev_texture, uint64_t timestamp)
+/* TODO: replace with more optimal conversion */
+static inline bool download_frame(struct obs_core_video *video, int cur_texture,
+		int prev_texture, struct video_frame *frame)
 {
 	stagesurf_t surface = video->copy_surfaces[prev_texture];
-	struct video_frame frame;
 
 	if (!video->textures_copied[prev_texture])
-		return;
+		return false;
 
-	memset(&frame, 0, sizeof(struct video_frame));
-	frame.timestamp = timestamp;
+	if (!stagesurface_map(surface, &frame->data[0], &frame->linesize[0]))
+		return false;
 
-	if (stagesurface_map(surface, &frame.data[0], &frame.row_size[0])) {
-		video->mapped_surface = surface;
-		video_output_frame(video->video, &frame);
+	video->mapped_surface = surface;
+	return true;
+}
+
+static bool convert_frame(struct obs_core_video *video,
+		struct video_frame *frame,
+		const struct video_output_info *info, int cur_texture)
+{
+	struct source_frame *new_frame = &video->convert_frames[cur_texture];
+
+	if (info->format == VIDEO_FORMAT_I420) {
+		compress_uyvx_to_i420(
+				frame->data[0], frame->linesize[0],
+				info->width, info->height,
+				0, info->height,
+				new_frame->data, new_frame->linesize);
+
+	} else if (info->format == VIDEO_FORMAT_NV12) {
+		compress_uyvx_to_nv12(
+				frame->data[0], frame->linesize[0],
+				info->width, info->height,
+				0, info->height,
+				new_frame->data, new_frame->linesize);
+
+	} else {
+		blog(LOG_WARNING, "convert_frame: unsupported texture format");
+		return false;
 	}
+
+	for (size_t i = 0; i < MAX_VIDEO_PLANES; i++) {
+		frame->data[i]     = new_frame->data[i];
+		frame->linesize[i] = new_frame->linesize[i];
+	}
+
+	return true;
+}
+
+static inline void output_video_data(struct obs_core_video *video,
+		struct video_frame *frame, int cur_texture)
+{
+	const struct video_output_info *info;
+	info = video_output_getinfo(video->video);
+
+	if (format_is_yuv(info->format))
+		if (!convert_frame(video, frame, info, cur_texture))
+			return;
+
+	video_output_frame(video->video, frame);
 }
 
 static inline void output_frame(uint64_t timestamp)
@@ -245,9 +297,21 @@ static inline void output_frame(uint64_t timestamp)
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
+	struct video_frame frame;
+	bool frame_ready;
+
+	memset(&frame, 0, sizeof(struct video_frame));
+	frame.timestamp = timestamp;
+
+	gs_entercontext(obs_graphics());
 
 	render_video(video, cur_texture, prev_texture);
-	output_video(video, cur_texture, prev_texture, timestamp);
+	frame_ready = download_frame(video, cur_texture, prev_texture, &frame);
+
+	gs_leavecontext();
+
+	if (frame_ready)
+		output_video_data(video, &frame, cur_texture);
 
 	if (++video->cur_texture == NUM_TEXTURES)
 		video->cur_texture = 0;
@@ -260,13 +324,12 @@ void *obs_video_thread(void *param)
 	while (video_output_wait(obs->video.video)) {
 		uint64_t cur_time = video_gettime(obs->video.video);
 
-		gs_entercontext(obs_graphics());
-
 		tick_sources(cur_time, &last_time);
+
 		render_displays();
+
 		output_frame(cur_time);
 
-		gs_leavecontext();
 	}
 
 	return NULL;

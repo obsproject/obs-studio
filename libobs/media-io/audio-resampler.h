@@ -33,8 +33,8 @@ struct resample_info {
 	enum speaker_layout speakers;
 };
 
-EXPORT audio_resampler_t audio_resampler_create(struct resample_info *dst,
-		struct resample_info *src);
+EXPORT audio_resampler_t audio_resampler_create(const struct resample_info *dst,
+		const struct resample_info *src);
 EXPORT void audio_resampler_destroy(audio_resampler_t resampler);
 
 EXPORT bool audio_resampler_resample(audio_resampler_t resampler,

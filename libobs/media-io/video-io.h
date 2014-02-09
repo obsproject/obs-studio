@@ -43,8 +43,6 @@ enum video_format {
 	VIDEO_FORMAT_UYVY,
 
 	/* packed uncompressed formats */
-	VIDEO_FORMAT_YUVX,
-	VIDEO_FORMAT_UYVX,
 	VIDEO_FORMAT_RGBA,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,
@@ -52,7 +50,7 @@ enum video_format {
 
 struct video_frame {
 	const uint8_t     *data[MAX_VIDEO_PLANES];
-	uint32_t          row_size[MAX_VIDEO_PLANES];
+	uint32_t          linesize[MAX_VIDEO_PLANES];
 	uint64_t          timestamp;
 };
 
@@ -70,8 +68,26 @@ struct video_convert_info {
 	enum video_format format;
 	uint32_t          width;
 	uint32_t          height;
-	uint32_t          row_align;
 };
+
+static inline bool format_is_yuv(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+		return true;
+	case VIDEO_FORMAT_NONE:
+	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		return false;
+	}
+
+	return false;
+}
 
 #define VIDEO_OUTPUT_SUCCESS       0
 #define VIDEO_OUTPUT_INVALIDPARAM -1

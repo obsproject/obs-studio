@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #include "obs-ffmpeg-output.h"
 
 /* TODO: remove these later */
-#define FILENAME_TODO "D:\\test.mp4"
+#define FILENAME_TODO "D:\\test.avi"
 #define SPS_TODO      44100
 
 /* NOTE: much of this stuff is test stuff that was more or less copied from
@@ -35,8 +35,6 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 	case VIDEO_FORMAT_YVYU: return AV_PIX_FMT_NONE;
 	case VIDEO_FORMAT_YUY2: return AV_PIX_FMT_YUYV422;
 	case VIDEO_FORMAT_UYVY: return AV_PIX_FMT_UYVY422;
-	case VIDEO_FORMAT_YUVX: return AV_PIX_FMT_NONE;
-	case VIDEO_FORMAT_UYVX: return AV_PIX_FMT_NONE;
 	case VIDEO_FORMAT_RGBA: return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA: return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_BGRX: return AV_PIX_FMT_BGRA;
@@ -174,6 +172,16 @@ static bool open_audio_codec(struct ffmpeg_data *data,
 		return false;
 	}
 
+	data->frame_size = context->frame_size ? context->frame_size : 1024;
+
+	ret = av_samples_alloc(data->samples, NULL, context->channels,
+			data->frame_size, context->sample_fmt, 0);
+	if (ret < 0) {
+		blog(LOG_ERROR, "Failed to create audio buffer: %s",
+		                av_err2str(ret));
+		return false;
+	}
+
 	return true;
 }
 
@@ -253,6 +261,9 @@ static void close_video(struct ffmpeg_data *data)
 
 static void close_audio(struct ffmpeg_data *data)
 {
+	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+		circlebuf_free(&data->excess_frames[i]);
+
 	av_freep(&data->samples[0]);
 	avcodec_close(data->audio->codec);
 	av_frame_free(&data->aframe);
@@ -356,7 +367,7 @@ static inline void copy_data(AVPicture *pic, const struct video_frame *frame,
 		int height)
 {
 	for (int plane = 0; plane < YUV420_PLANES; plane++) {
-		int frame_rowsize = (int)frame->row_size[plane];
+		int frame_rowsize = (int)frame->linesize[plane];
 		int pic_rowsize   = pic->linesize[plane];
 		int bytes = frame_rowsize < pic_rowsize ?
 			frame_rowsize : pic_rowsize;
@@ -384,7 +395,7 @@ static void receive_video(void *param, const struct video_frame *frame)
 	av_init_packet(&packet);
 
 	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
-		sws_scale(data->swscale, frame->data, frame->row_size,
+		sws_scale(data->swscale, frame->data, frame->linesize,
 				0, context->height, data->dst_picture.data,
 				data->dst_picture.linesize);
 	else
@@ -431,30 +442,28 @@ static void receive_video(void *param, const struct video_frame *frame)
 	data->total_frames++;
 }
 
-static void receive_audio(void *param, const struct audio_data *frame)
+static inline void encode_audio(struct ffmpeg_data *data,
+		struct AVCodecContext *context, size_t block_size)
 {
-	struct ffmpeg_output *output = param;
-	struct ffmpeg_data   *data   = &output->ff_data;
-	AVCodecContext *context = data->audio->codec;
 	AVPacket packet = {0};
-	int channels = (int)audio_output_channels(obs_audio());
-	size_t planes = audio_output_planes(obs_audio());
 	int ret, got_packet;
+	size_t total_size = data->frame_size * block_size * context->channels;
 
-	data->aframe->nb_samples = frame->frames;
+	data->aframe->nb_samples = data->frame_size;
 	data->aframe->pts = av_rescale_q(data->total_samples,
 			(AVRational){1, context->sample_rate},
 			context->time_base);
 
-	if (!data->samples[0])
-		av_samples_alloc(data->samples, NULL, channels,
-				frame->frames, context->sample_fmt, 0);
-
-	for (size_t i = 0; i < planes; i++) {
-		/* TODO */
+	ret = avcodec_fill_audio_frame(data->aframe, context->channels,
+			context->sample_fmt, data->samples[0],
+			total_size, 1);
+	if (ret < 0) {
+		blog(LOG_ERROR, "receive_audio: avcodec_fill_audio_frame "
+		                "failed: %s", av_err2str(ret));
+		return;
 	}
 
-	data->total_samples += frame->frames;
+	data->total_samples += data->frame_size;
 
 	ret = avcodec_encode_audio2(context, &packet, data->aframe,
 			&got_packet);
@@ -477,6 +486,30 @@ static void receive_audio(void *param, const struct audio_data *frame)
 	if (ret != 0)
 		blog(LOG_ERROR, "receive_audio: Error writing audio: %s",
 				av_err2str(ret));
+}
+
+static void receive_audio(void *param, const struct audio_data *frame)
+{
+	struct ffmpeg_output *output = param;
+	struct ffmpeg_data   *data   = &output->ff_data;
+
+	AVCodecContext *context = data->audio->codec;
+	size_t planes = audio_output_planes(obs_audio());
+	size_t block_size = audio_output_blocksize(obs_audio());
+
+	size_t frame_size_bytes = (size_t)data->frame_size * block_size;
+
+	for (size_t i = 0; i < planes; i++)
+		circlebuf_push_back(&data->excess_frames[i], frame->data[0],
+				frame->frames * block_size);
+
+	while (data->excess_frames[0].size >= frame_size_bytes) {
+		for (size_t i = 0; i < planes; i++)
+			circlebuf_pop_front(&data->excess_frames[i],
+					data->samples[i], frame_size_bytes);
+
+		encode_audio(data, context, block_size);
+	}
 }
 
 bool ffmpeg_output_start(struct ffmpeg_output *data)
@@ -502,10 +535,9 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 	vci.format          = VIDEO_FORMAT_I420;
 	vci.width           = 0;
 	vci.height          = 0;
-	vci.row_align       = 1;
 
-	//video_output_connect(video, &vci, receive_video, data);
-	//audio_output_connect(audio, &aci, receive_audio, data);
+	video_output_connect(video, &vci, receive_video, data);
+	audio_output_connect(audio, &aci, receive_audio, data);
 	data->active = true;
 
 	return true;

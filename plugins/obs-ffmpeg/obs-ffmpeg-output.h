@@ -18,6 +18,7 @@
 #pragma once
 
 #include <util/c99defs.h>
+#include <util/circlebuf.h>
 #include <media-io/audio-io.h>
 #include <media-io/video-io.h>
 
@@ -34,8 +35,10 @@ struct ffmpeg_data {
 
 	AVPicture          dst_picture;
 	AVFrame            *vframe;
+	int                frame_size;
 	int                total_frames;
 
+	struct circlebuf   excess_frames[MAX_AUDIO_PLANES];
 	uint8_t            *samples[MAX_AUDIO_PLANES];
 	AVFrame            *aframe;
 	int                total_samples;

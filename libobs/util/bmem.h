@@ -37,6 +37,8 @@ EXPORT void *bmalloc(size_t size);
 EXPORT void *brealloc(void *ptr, size_t size);
 EXPORT void bfree(void *ptr);
 
+EXPORT int base_get_alignment(void);
+
 EXPORT uint64_t bnum_allocs(void);
 
 EXPORT void *bmemdup(const void *ptr, size_t size);

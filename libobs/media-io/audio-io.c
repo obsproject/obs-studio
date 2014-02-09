@@ -15,12 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <math.h>
+
 #include "../util/threading.h"
 #include "../util/darray.h"
 #include "../util/circlebuf.h"
 #include "../util/platform.h"
 
 #include "audio-io.h"
+
+/* #define DEBUG_AUDIO */
+
+#define nop() do {int invalid = 0;} while(0)
 
 struct audio_input {
 	struct audio_convert_info conversion;
@@ -90,35 +96,63 @@ static inline void audio_output_removeline(struct audio_output *audio,
 	audio_line_destroy_data(line);
 }
 
-static inline uint32_t time_to_frames(audio_t audio, uint64_t offset)
+/* ------------------------------------------------------------------------- */
+/* the following functions are used to calculate frame offsets based upon
+ * timestamps.  this will actually work accurately as long as you handle the
+ * values correctly */
+
+static inline double ts_to_frames(audio_t audio, uint64_t ts)
 {
-	double audio_offset_d = (double)offset;
+	double audio_offset_d = (double)ts;
 	audio_offset_d /= 1000000000.0;
 	audio_offset_d *= (double)audio->info.samples_per_sec;
 
-	return (uint32_t)audio_offset_d;
+	return audio_offset_d;
 }
 
-static inline size_t time_to_bytes(audio_t audio, uint64_t offset)
+static inline double positive_round(double val)
 {
-	return time_to_frames(audio, offset) * audio->block_size;
+	return floor(val+0.5);
+}
+
+static size_t ts_diff_frames(audio_t audio, uint64_t ts1, uint64_t ts2)
+{
+	double diff = ts_to_frames(audio, ts1) - ts_to_frames(audio, ts2);
+	return (size_t)positive_round(diff);
+}
+
+static size_t ts_diff_bytes(audio_t audio, uint64_t ts1, uint64_t ts2)
+{
+	return ts_diff_frames(audio, ts1, ts2) * audio->block_size;
+}
+
+/* unless the value is 3+ hours worth of frames, this won't overflow */
+static inline uint64_t conv_frames_to_time(audio_t audio, uint32_t frames)
+{
+	return (uint64_t)frames * 1000000000ULL /
+		(uint64_t)audio->info.samples_per_sec;
 }
 
 /* ------------------------------------------------------------------------- */
 
 static inline void clear_excess_audio_data(struct audio_line *line,
-		uint64_t size)
+		uint64_t prev_time)
 {
+	size_t size = ts_diff_bytes(line->audio, prev_time,
+			line->base_timestamp);
+
+	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
+	                  "audio data went back in time by %lu bytes.  "
+	                  "prev_time: %llu, line->base_timestamp: %llu",
+	                  line->name, (uint32_t)size,
+	                  prev_time, line->base_timestamp);
+
 	for (size_t i = 0; i < line->audio->planes; i++) {
 		size_t clear_size = (size > line->buffers[i].size) ?
 			(size_t)size : line->buffers[i].size;
 
 		circlebuf_pop_front(&line->buffers[i], NULL, clear_size);
 	}
-
-	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
-	                  "audio data went back in time by %llu bytes",
-	                  line->name, size);
 }
 
 static inline uint64_t min_uint64(uint64_t a, uint64_t b)
@@ -126,31 +160,35 @@ static inline uint64_t min_uint64(uint64_t a, uint64_t b)
 	return a < b ? a : b;
 }
 
-static inline void mix_audio_line(struct audio_output *audio,
+static inline size_t min_size(size_t a, size_t b)
+{
+	return a < b ? a : b;
+}
+
+/* TODO: this just overwrites.  handle actual mixing */
+static inline bool mix_audio_line(struct audio_output *audio,
 		struct audio_line *line, size_t size, uint64_t timestamp)
 {
-	/* TODO: this just overwrites.  handle actual mixing */
-	if (!line->buffers[0].size) {
-		if (!line->alive)
-			audio_output_removeline(audio, line);
-		return;
-	}
-
-	size_t time_offset = time_to_bytes(audio,
-			line->base_timestamp - timestamp);
+	size_t time_offset = ts_diff_bytes(audio,
+			line->base_timestamp, timestamp);
 	if (time_offset > size)
-		return;
+		return false;
 
 	size -= time_offset;
 
+#ifdef DEBUG_AUDIO
+	blog(LOG_DEBUG, "shaved off %lu bytes", size);
+#endif
+
 	for (size_t i = 0; i < audio->planes; i++) {
-		size_t pop_size;
-		pop_size = (size_t)min_uint64(size, line->buffers[i].size);
+		size_t pop_size = min_size(size, line->buffers[i].size);
 
 		circlebuf_pop_front(&line->buffers[i],
 				audio->mix_buffers[i].array + time_offset,
 				pop_size);
 	}
+
+	return true;
 }
 
 static inline void do_audio_output(struct audio_output *audio,
@@ -172,34 +210,61 @@ static inline void do_audio_output(struct audio_output *audio,
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
-static void mix_and_output(struct audio_output *audio, uint64_t audio_time,
+static uint64_t mix_and_output(struct audio_output *audio, uint64_t audio_time,
 		uint64_t prev_time)
 {
 	struct audio_line *line = audio->first_line;
-	uint64_t time_offset = audio_time - prev_time;
-	uint32_t frames = time_to_frames(audio, time_offset);
+	uint32_t frames = (uint32_t)ts_diff_frames(audio, audio_time,
+	                                           prev_time);
 	size_t bytes = frames * audio->block_size;
 
+#ifdef DEBUG_AUDIO
+	blog(LOG_DEBUG, "audio_time: %llu, prev_time: %llu, bytes: %lu",
+			audio_time, prev_time, bytes);
+#endif
+
+	/* return an adjusted audio_time according to the amount
+	 * of data that was sampled to ensure seamless transmission */
+	audio_time = prev_time + conv_frames_to_time(audio, frames);
+
+	/* resize and clear mix buffers */
 	for (size_t i = 0; i < audio->planes; i++) {
 		da_resize(audio->mix_buffers[i], bytes);
 		memset(audio->mix_buffers[i].array, 0, bytes);
 	}
 
+	/* mix audio lines */
 	while (line) {
 		struct audio_line *next = line->next;
 
+		/* if line marked for removal, destroy and move to the next */
+		if (!line->buffers[0].size) {
+			if (!line->alive) {
+				audio_output_removeline(audio, line);
+				line = next;
+				continue;
+			}
+		}
+
+		pthread_mutex_lock(&line->mutex);
+
 		if (line->buffers[0].size && line->base_timestamp < prev_time) {
-			clear_excess_audio_data(line,
-					prev_time - line->base_timestamp);
+			clear_excess_audio_data(line, prev_time);
 			line->base_timestamp = prev_time;
 		}
 
-		mix_audio_line(audio, line, bytes, prev_time);
-		line->base_timestamp = audio_time;
+		if (mix_audio_line(audio, line, bytes, prev_time))
+			line->base_timestamp = audio_time;
+
+		pthread_mutex_unlock(&line->mutex);
+
 		line = next;
 	}
 
+	/* output */
 	do_audio_output(audio, prev_time, frames);
+
+	return audio_time;
 }
 
 /* sample audio 40 times a second */
@@ -218,8 +283,8 @@ static void *audio_thread(void *param)
 		pthread_mutex_lock(&audio->line_mutex);
 
 		audio_time = os_gettime_ns() - buffer_time;
-		mix_and_output(audio, audio_time, prev_time);
-		prev_time = audio_time;
+		audio_time = mix_and_output(audio, audio_time, prev_time);
+		prev_time  = audio_time;
 
 		pthread_mutex_unlock(&audio->line_mutex);
 	}
@@ -530,11 +595,19 @@ static void audio_line_place_data_pos(struct audio_line *line,
 	}
 }
 
-static inline void audio_line_place_data(struct audio_line *line,
+void audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
-	uint64_t time_offset = data->timestamp - line->base_timestamp;
-	size_t pos = time_to_bytes(line->audio, time_offset);
+	size_t pos = ts_diff_bytes(line->audio, data->timestamp,
+			line->base_timestamp);
+
+#ifdef DEBUG_AUDIO
+	blog(LOG_DEBUG, "data->timestamp: %llu, line->base_timestamp: %llu, "
+			"pos: %lu, bytes: %lu, buf size: %lu",
+			data->timestamp, line->base_timestamp, pos,
+			data->frames * line->audio->block_size,
+			line->buffers[0].size);
+#endif
 
 	audio_line_place_data_pos(line, data, pos);
 }
@@ -547,8 +620,11 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 	pthread_mutex_lock(&line->mutex);
 
 	if (!line->buffers[0].size) {
-		line->base_timestamp = data->timestamp;
-		audio_line_place_data_pos(line, data, 0);
+		/* XXX: not entirely sure if this is the wisest course of
+		 * action in all circumstances */
+		line->base_timestamp = data->timestamp -
+		                       line->audio->info.buffer_ms * 1000000;
+		audio_line_place_data(line, data);
 
 	} else if (line->base_timestamp <= data->timestamp) {
 		audio_line_place_data(line, data);

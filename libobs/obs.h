@@ -116,7 +116,7 @@ struct source_audio {
 
 struct source_frame {
 	uint8_t             *data[MAX_VIDEO_PLANES];
-	uint32_t            row_bytes[MAX_VIDEO_PLANES];
+	uint32_t            linesize[MAX_VIDEO_PLANES];
 	uint32_t            width;
 	uint32_t            height;
 	uint64_t            timestamp;
@@ -125,15 +125,6 @@ struct source_frame {
 	float               color_matrix[16];
 	bool                flip;
 };
-
-EXPORT struct source_frame *source_frame_alloc(enum video_format format,
-		uint32_t width, uint32_t height);
-
-static inline void source_frame_destroy(struct source_frame *frame)
-{
-	bfree(frame->data[0]);
-	bfree(frame);
-}
 
 enum packet_priority {
 	PACKET_PRIORITY_DISPOSABLE,
@@ -595,6 +586,39 @@ EXPORT const char *obs_service_getdisplayname(const char *id,
 EXPORT obs_service_t obs_service_create(const char *service,
 		obs_data_t settings);
 EXPORT void obs_service_destroy(obs_service_t service);
+
+
+/* ------------------------------------------------------------------------- */
+/* Source frame allocation functions */
+EXPORT void source_frame_init(struct source_frame *frame,
+		enum video_format format, uint32_t width, uint32_t height);
+
+static inline void source_frame_free(struct source_frame *frame)
+{
+	if (frame) {
+		bfree(frame->data[0]);
+		memset(frame, 0, sizeof(struct source_frame));
+	}
+}
+
+static inline struct source_frame *source_frame_create(
+		enum video_format format, uint32_t width, uint32_t height)
+{
+	struct source_frame *frame;
+
+	frame = (struct source_frame*)bmalloc(sizeof(struct source_frame));
+	memset(frame, 0, sizeof(struct source_frame));
+	source_frame_init(frame, format, width, height);
+	return frame;
+}
+
+static inline void source_frame_destroy(struct source_frame *frame)
+{
+	if (frame) {
+		bfree(frame->data[0]);
+		bfree(frame);
+	}
+}
 
 
 #ifdef __cplusplus

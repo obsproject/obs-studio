@@ -62,9 +62,9 @@ void OBSBasic::OBSInit()
 
 	/* TODO: this is a test */
 	obs_load_module("test-input");
-	/*obs_load_module("obs-ffmpeg");
+	obs_load_module("obs-ffmpeg");
 
-	obs_output_t output = obs_output_create("ffmpeg_output", "test",
+	/*obs_output_t output = obs_output_create("ffmpeg_output", "test",
 			NULL);
 	obs_output_start(output);*/
 
@@ -281,13 +281,8 @@ bool OBSBasic::InitGraphics()
 			"Video", "OutputCX");
 	ovi.output_height = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "OutputCY");
-	ovi.output_format = VIDEO_FORMAT_RGBA;
+	ovi.output_format = VIDEO_FORMAT_I420;
 	ovi.adapter       = 0;
-
-//#ifdef __WXGTK__
-	/* Ugly hack for GTK, I'm hoping this can be avoided eventually... */
-//	gtk_widget_realize(previewPanel->GetHandle());
-//#endif
 
 	QTToGSWindow(ui->preview, ovi.window);
 

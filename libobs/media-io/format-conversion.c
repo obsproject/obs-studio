@@ -86,10 +86,10 @@ static inline void pack_chroma_2plane(uint8_t *u_plane, uint8_t *v_plane,
 }
 
 void compress_uyvx_to_i420(
-		const uint8_t *input, uint32_t in_row_bytes,
+		const uint8_t *input, uint32_t in_linesize,
 		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint8_t *output[], const uint32_t out_row_bytes[])
+		uint8_t *output[], const uint32_t out_linesize[])
 {
 	uint8_t  *lum_plane   = output[0];
 	uint8_t  *u_plane     = output[1];
@@ -100,19 +100,19 @@ void compress_uyvx_to_i420(
 	__m128i uv_mask  = _mm_set1_epi16(0x00FF);
 
 	for (y = start_y; y < end_y; y += 2) {
-		uint32_t y_pos        = y      * in_row_bytes;
-		uint32_t chroma_y_pos = (y>>1) * out_row_bytes[1];
-		uint32_t lum_y_pos    = y      * out_row_bytes[0];
+		uint32_t y_pos        = y      * in_linesize;
+		uint32_t chroma_y_pos = (y>>1) * out_linesize[1];
+		uint32_t lum_y_pos    = y      * out_linesize[0];
 		uint32_t x;
 
 		for (x = 0; x < width; x += 4) {
 			const uint8_t *img = input + y_pos + x*4;
 			uint32_t lum_pos0  = lum_y_pos + x;
-			uint32_t lum_pos1  = lum_pos0 + out_row_bytes[0];
+			uint32_t lum_pos1  = lum_pos0 + out_linesize[0];
 
 			__m128i line1 = _mm_load_si128((const __m128i*)img);
 			__m128i line2 = _mm_load_si128(
-					(const __m128i*)(img + in_row_bytes));
+					(const __m128i*)(img + in_linesize));
 
 			pack_lum(lum_plane, lum_pos0, lum_pos1,
 					line1, line2, lum_mask);
@@ -124,10 +124,10 @@ void compress_uyvx_to_i420(
 }
 
 void compress_uyvx_to_nv12(
-		const uint8_t *input, uint32_t in_row_bytes,
+		const uint8_t *input, uint32_t in_linesize,
 		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint8_t *output[], const uint32_t out_row_bytes[])
+		uint8_t *output[], const uint32_t out_linesize[])
 {
 	uint8_t *lum_plane    = output[0];
 	uint8_t *chroma_plane = output[1];
@@ -137,19 +137,19 @@ void compress_uyvx_to_nv12(
 	__m128i uv_mask  = _mm_set1_epi16(0x00FF);
 
 	for (y = start_y; y < end_y; y += 2) {
-		uint32_t y_pos        = y      * in_row_bytes;
-		uint32_t chroma_y_pos = (y>>1) * out_row_bytes[1];
-		uint32_t lum_y_pos    = y      * out_row_bytes[0];
+		uint32_t y_pos        = y      * in_linesize;
+		uint32_t chroma_y_pos = (y>>1) * out_linesize[1];
+		uint32_t lum_y_pos    = y      * out_linesize[0];
 		uint32_t x;
 
 		for (x = 0; x < width; x += 4) {
 			const uint8_t *img = input + y_pos + x*4;
 			uint32_t lum_pos0  = lum_y_pos + x;
-			uint32_t lum_pos1  = lum_pos0 + out_row_bytes[0];
+			uint32_t lum_pos1  = lum_pos0 + out_linesize[0];
 
 			__m128i line1 = _mm_load_si128((const __m128i*)img);
 			__m128i line2 = _mm_load_si128(
-					(const __m128i*)(img + in_row_bytes));
+					(const __m128i*)(img + in_linesize));
 
 			pack_lum(lum_plane, lum_pos0, lum_pos1,
 					line1, line2, lum_mask);
@@ -160,10 +160,10 @@ void compress_uyvx_to_nv12(
 }
 
 void decompress_420(
-		const uint8_t *const input[], const uint32_t in_row_bytes[],
+		const uint8_t *const input[], const uint32_t in_linesize[],
 		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint8_t *output, uint32_t out_row_bytes)
+		uint8_t *output, uint32_t out_linesize)
 {
 	uint32_t start_y_d2 = start_y/2;
 	uint32_t width_d2   = width/2;
@@ -171,16 +171,16 @@ void decompress_420(
 	uint32_t y;
 
 	for (y = start_y_d2; y < height_d2; y++) {
-		const uint8_t *chroma0 = input[1] + y * in_row_bytes[1];
-		const uint8_t *chroma1 = input[2] + y * in_row_bytes[2];
+		const uint8_t *chroma0 = input[1] + y * in_linesize[1];
+		const uint8_t *chroma1 = input[2] + y * in_linesize[2];
 		register const uint8_t *lum0, *lum1;
 		register uint32_t *output0, *output1;
 		uint32_t x;
 
 		lum0 = input[0] + y * 2*width;
 		lum1 = lum0 + width;
-		output0 = (uint32_t*)(output + y * 2 * in_row_bytes[0]);
-		output1 = (uint32_t*)((uint8_t*)output0 + in_row_bytes[0]);
+		output0 = (uint32_t*)(output + y * 2 * in_linesize[0]);
+		output1 = (uint32_t*)((uint8_t*)output0 + in_linesize[0]);
 
 		for (x = 0; x < width_d2; x++) {
 			uint32_t out;
@@ -196,10 +196,10 @@ void decompress_420(
 }
 
 void decompress_nv12(
-		const uint8_t *const input[], const uint32_t in_row_bytes[],
+		const uint8_t *const input[], const uint32_t in_linesize[],
 		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint8_t *output, uint32_t out_row_bytes)
+		uint8_t *output, uint32_t out_linesize)
 {
 	uint32_t start_y_d2 = start_y/2;
 	uint32_t width_d2   = width/2;
@@ -212,11 +212,11 @@ void decompress_nv12(
 		register uint32_t *output0, *output1;
 		uint32_t x;
 
-		chroma = (const uint16_t*)(input[1] + y * in_row_bytes[1]);
-		lum0 = input[0] + y*2 * in_row_bytes[0];
-		lum1 = lum0 + in_row_bytes[0];
-		output0 = (uint32_t*)(output + y*2 * out_row_bytes);
-		output1 = (uint32_t*)((uint8_t*)output0 + out_row_bytes);
+		chroma = (const uint16_t*)(input[1] + y * in_linesize[1]);
+		lum0 = input[0] + y*2 * in_linesize[0];
+		lum1 = lum0 + in_linesize[0];
+		output0 = (uint32_t*)(output + y*2 * out_linesize);
+		output1 = (uint32_t*)((uint8_t*)output0 + out_linesize);
 
 		for (x = 0; x < width_d2; x++) {
 			uint32_t out = *(chroma++) << 8;
@@ -231,10 +231,10 @@ void decompress_nv12(
 }
 
 void decompress_422(
-		const uint8_t *input, uint32_t in_row_bytes,
+		const uint8_t *input, uint32_t in_linesize,
 		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
-		uint8_t *output, uint32_t out_row_bytes,
+		uint8_t *output, uint32_t out_linesize,
 		bool leading_lum)
 {
 	uint32_t width_d2 = width >> 1;
@@ -246,9 +246,9 @@ void decompress_422(
 
 	if (leading_lum) {
 		for (y = start_y; y < end_y; y++) {
-			input32     = (const uint32_t*)(input + y*in_row_bytes);
+			input32     = (const uint32_t*)(input + y*in_linesize);
 			input32_end = input32 + width_d2;
-			output32    = (uint32_t*)(output + y*out_row_bytes);
+			output32    = (uint32_t*)(output + y*out_linesize);
 
 			while(input32 < input32_end) {
 				register uint32_t dw = *input32;
@@ -264,9 +264,9 @@ void decompress_422(
 		}
 	} else {
 		for (y = start_y; y < end_y; y++) {
-			input32     = (const uint32_t*)(input + y*in_row_bytes);
+			input32     = (const uint32_t*)(input + y*in_linesize);
 			input32_end = input32 + width_d2;
-			output32    = (uint32_t*)(output + y*out_row_bytes);
+			output32    = (uint32_t*)(output + y*out_linesize);
 
 			while (input32 < input32_end) {
 				register uint32_t dw = *input32;

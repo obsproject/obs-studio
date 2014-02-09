@@ -515,9 +515,9 @@ EXPORT void gs_viewport_push(void);
 EXPORT void gs_viewport_pop(void);
 
 EXPORT void texture_setimage(texture_t tex, const void *data,
-		uint32_t row_bytes, bool invert);
+		uint32_t linesize, bool invert);
 EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
-		const void *data, uint32_t row_bytes, bool invert);
+		const void *data, uint32_t linesize, bool invert);
 
 EXPORT void gs_perspective(float fovy, float aspect, float znear, float zfar);
 
@@ -640,7 +640,7 @@ EXPORT void     texture_destroy(texture_t tex);
 EXPORT uint32_t texture_getwidth(texture_t tex);
 EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *row_bytes);
+EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *linesize);
 EXPORT void     texture_unmap(texture_t tex);
 /** special-case function (GL only) - specifies whether the texture is a
  * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture
@@ -662,7 +662,7 @@ EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
 EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
 EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const void **data,
-		uint32_t *row_bytes);
+		uint32_t *linesize);
 EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
 
 EXPORT void     zstencil_destroy(zstencil_t zstencil);

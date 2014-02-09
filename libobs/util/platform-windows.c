@@ -82,13 +82,13 @@ void os_dlclose(void *module)
 	FreeLibrary(module);
 }
 
-void os_sleepto_ns(uint64_t time_target)
+bool os_sleepto_ns(uint64_t time_target)
 {
 	uint64_t t = os_gettime_ns();
 	uint32_t milliseconds;
 
 	if (t >= time_target)
-		return;
+		return false;
 
 	milliseconds = (uint32_t)((time_target - t)/1000000);
 	if (milliseconds > 1)
@@ -97,7 +97,7 @@ void os_sleepto_ns(uint64_t time_target)
 	for (;;) {
 		t = os_gettime_ns();
 		if (t >= time_target)
-			return;
+			return true;
 
 #if 1
 		Sleep(1);

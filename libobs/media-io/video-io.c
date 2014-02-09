@@ -55,14 +55,10 @@ struct video_output {
 
 static inline void video_swapframes(struct video_output *video)
 {
-	pthread_mutex_lock(&video->data_mutex);
-
 	if (video->new_frame) {
 		video->cur_frame = video->next_frame;
 		video->new_frame = false;
 	}
-
-	pthread_mutex_unlock(&video->data_mutex);
 }
 
 static inline void video_output_cur_frame(struct video_output *video)
@@ -75,28 +71,10 @@ static inline void video_output_cur_frame(struct video_output *video)
 
 	pthread_mutex_lock(&video->input_mutex);
 
-	/* TEST CODE */
-	/*static struct video_frame frame = {0};
-
-	if (!frame.data[0]) {
-		frame.data[0] = bmalloc(width * height);
-		frame.data[1] = bmalloc((width/2) * (height/2));
-		frame.data[2] = bmalloc((width/2) * (height/2));
-
-		frame.row_size[0] = width;
-		frame.row_size[1] = width/2;
-		frame.row_size[2] = width/2;
-	}
-
-	compress_uyvx_to_i420(
-			video->cur_frame.data[0], video->cur_frame.row_size[0],
-			width, height, 0, height,
-			(uint8_t**)frame.data, (uint32_t*)frame.row_size);*/
-
 	/* TODO: conversion */
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array+i;
-		input->callback(input->param, &video->cur_frame);//&frame);
+		input->callback(input->param, &video->cur_frame);
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
@@ -115,8 +93,13 @@ static void *video_thread(void *param)
 
 		/* wait another half a frame, swap and output frames */
 		os_sleepto_ns(cur_time += (video->frame_time/2));
+
+		pthread_mutex_lock(&video->data_mutex);
+
 		video_swapframes(video);
 		video_output_cur_frame(video);
+
+		pthread_mutex_unlock(&video->data_mutex);
 	}
 
 	return NULL;
@@ -217,7 +200,6 @@ void video_output_connect(video_t video,
 			input.conversion.format    = video->info.format;
 			input.conversion.width     = video->info.width;
 			input.conversion.height    = video->info.height;
-			input.conversion.row_align = 1;
 		}
 
 		da_push_back(video->inputs, &input);

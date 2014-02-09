@@ -183,12 +183,18 @@ fail:
 #define ALIGN_SIZE(size, align) \
 	size = (((size)+(align-1)) & (~(align-1)))
 
-static void alloc_frame_data(struct source_frame *frame,
+/* messy code alarm */
+void source_frame_init(struct source_frame *frame,
 		enum video_format format, uint32_t width, uint32_t height)
 {
 	size_t size;
 	size_t offsets[MAX_VIDEO_PLANES];
+	int    alignment = base_get_alignment();
+
 	memset(offsets, 0, sizeof(offsets));
+	frame->format = format;
+	frame->width  = width;
+	frame->height = height;
 
 	switch (format) {
 	case VIDEO_FORMAT_NONE:
@@ -196,66 +202,51 @@ static void alloc_frame_data(struct source_frame *frame,
 
 	case VIDEO_FORMAT_I420:
 		size = width * height;
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
 		size += (width/2) * (height/2);
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		offsets[1] = size;
 		size += (width/2) * (height/2);
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
 		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
 		frame->data[2] = (uint8_t*)frame->data[0] + offsets[1];
-		frame->row_bytes[0] = width;
-		frame->row_bytes[1] = width/2;
-		frame->row_bytes[2] = width/2;
+		frame->linesize[0] = width;
+		frame->linesize[1] = width/2;
+		frame->linesize[2] = width/2;
 		break;
 
 	case VIDEO_FORMAT_NV12:
 		size = width * height;
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
 		size += (width/2) * (height/2) * 2;
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
 		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
-		frame->row_bytes[0] = width;
-		frame->row_bytes[1] = width;
+		frame->linesize[0] = width;
+		frame->linesize[1] = width;
 		break;
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 		size = width * height * 2;
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
-		frame->row_bytes[0] = width*2;
+		frame->linesize[0] = width*2;
 		break;
 
-	case VIDEO_FORMAT_YUVX:
-	case VIDEO_FORMAT_UYVX:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		size = width * height * 4;
-		ALIGN_SIZE(size, 32);
+		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
-		frame->row_bytes[0] = width*4;
+		frame->linesize[0] = width*4;
 		break;
 	}
-}
-
-struct source_frame *source_frame_alloc(enum video_format format,
-		uint32_t width, uint32_t height)
-{
-	struct source_frame *frame = bmalloc(sizeof(struct source_frame));
-	memset(frame, 0, sizeof(struct source_frame));
-
-	alloc_frame_data(frame, format, width, height);
-	frame->format = format;
-	frame->width  = width;
-	frame->height = height;
-	return frame;
 }
 
 static void obs_source_destroy(obs_source_t source)
@@ -385,14 +376,14 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 		source->callbacks.video_tick(source->data, seconds);
 }
 
+/* unless the value is 3+ hours worth of frames, this won't overflow */
 static inline uint64_t conv_frames_to_time(obs_source_t source, size_t frames)
 {
 	const struct audio_output_info *info;
-	double sps_to_ns;
-
 	info = audio_output_getinfo(obs->audio.audio);
-	sps_to_ns = 1000000000.0 / (double)info->samples_per_sec;
-	return (uint64_t)((double)frames * sps_to_ns);
+
+	return (uint64_t)frames * 1000000000ULL /
+		(uint64_t)info->samples_per_sec;
 }
 
 /* maximum "direct" timestamp variance in nanoseconds */
@@ -452,6 +443,7 @@ static void source_output_audio_line(obs_source_t source,
 
 	in.timestamp += source->timing_adjust;
 	in.volume = source->volume;
+
 	audio_line_output(source->audio_line, &in);
 }
 
@@ -495,8 +487,6 @@ static inline enum convert_type get_convert_type(enum video_format format)
 		return CONVERT_422_U;
 
 	case VIDEO_FORMAT_NONE:
-	case VIDEO_FORMAT_YUVX:
-	case VIDEO_FORMAT_UYVX:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
@@ -506,61 +496,40 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	return CONVERT_NONE;
 }
 
-static inline bool is_yuv(enum video_format format)
-{
-	switch (format) {
-	case VIDEO_FORMAT_I420:
-	case VIDEO_FORMAT_NV12:
-	case VIDEO_FORMAT_YVYU:
-	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY:
-	case VIDEO_FORMAT_YUVX:
-	case VIDEO_FORMAT_UYVX:
-		return true;
-	case VIDEO_FORMAT_NONE:
-	case VIDEO_FORMAT_RGBA:
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_BGRX:
-		return false;
-	}
-
-	return false;
-}
-
 static bool upload_frame(texture_t tex, const struct source_frame *frame)
 {
 	void *ptr;
-	uint32_t row_bytes;
+	uint32_t linesize;
 	enum convert_type type = get_convert_type(frame->format);
 
 	if (type == CONVERT_NONE) {
-		texture_setimage(tex, frame->data[0], frame->row_bytes[0],
+		texture_setimage(tex, frame->data[0], frame->linesize[0],
 				false);
 		return true;
 	}
 
-	if (!texture_map(tex, &ptr, &row_bytes))
+	if (!texture_map(tex, &ptr, &linesize))
 		return false;
 
 	if (type == CONVERT_420)
-		decompress_420(frame->data, frame->row_bytes,
+		decompress_420(frame->data, frame->linesize,
 				frame->width, frame->height, 0, frame->height,
-				ptr, row_bytes);
+				ptr, linesize);
 
 	else if (type == CONVERT_NV12)
-		decompress_nv12(frame->data, frame->row_bytes,
+		decompress_nv12(frame->data, frame->linesize,
 				frame->width, frame->height, 0, frame->height,
-				ptr, row_bytes);
+				ptr, linesize);
 
 	else if (type == CONVERT_422_Y)
-		decompress_422(frame->data[0], frame->row_bytes[0],
+		decompress_422(frame->data[0], frame->linesize[0],
 				frame->width, frame->height, 0, frame->height,
-				ptr, row_bytes, true);
+				ptr, linesize, true);
 
 	else if (type == CONVERT_422_U)
-		decompress_422(frame->data[0], frame->row_bytes[0],
+		decompress_422(frame->data[0], frame->linesize[0],
 				frame->width, frame->height, 0, frame->height,
-				ptr, row_bytes, false);
+				ptr, linesize, false);
 
 	texture_unmap(tex);
 	return true;
@@ -569,7 +538,7 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
 {
 	effect_t    effect = obs->video.default_effect;
-	bool        yuv    = is_yuv(frame->format);
+	bool        yuv    = format_is_yuv(frame->format);
 	const char  *type  = yuv ? "DrawMatrix" : "Draw";
 	technique_t tech;
 	eparam_t    param;
@@ -792,10 +761,10 @@ static inline struct source_frame *filter_async_video(obs_source_t source,
 static inline void copy_frame_data_line(struct source_frame *dst,
 		const struct source_frame *src, uint32_t plane, uint32_t y)
 {
-	uint32_t pos_src = y * src->row_bytes[plane];
-	uint32_t pos_dst = y * dst->row_bytes[plane];
-	uint32_t bytes = dst->row_bytes[plane] < src->row_bytes[plane] ?
-		dst->row_bytes[plane] : src->row_bytes[plane];
+	uint32_t pos_src = y * src->linesize[plane];
+	uint32_t pos_dst = y * dst->linesize[plane];
+	uint32_t bytes = dst->linesize[plane] < src->linesize[plane] ?
+		dst->linesize[plane] : src->linesize[plane];
 
 	memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
 }
@@ -803,12 +772,12 @@ static inline void copy_frame_data_line(struct source_frame *dst,
 static inline void copy_frame_data_plane(struct source_frame *dst,
 		const struct source_frame *src, uint32_t plane, uint32_t lines)
 {
-	if (dst->row_bytes != src->row_bytes)
+	if (dst->linesize[plane] != src->linesize[plane])
 		for (uint32_t y = 0; y < lines; y++)
 			copy_frame_data_line(dst, src, plane, y);
 	else
 		memcpy(dst->data[plane], src->data[plane],
-				dst->row_bytes[plane] * lines);
+				dst->linesize[plane] * lines);
 }
 
 static void copy_frame_data(struct source_frame *dst,
@@ -834,8 +803,6 @@ static void copy_frame_data(struct source_frame *dst,
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 	case VIDEO_FORMAT_NONE:
-	case VIDEO_FORMAT_YUVX:
-	case VIDEO_FORMAT_UYVX:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
@@ -847,7 +814,7 @@ static inline struct source_frame *cache_video(obs_source_t source,
 		const struct source_frame *frame)
 {
 	/* TODO: use an actual cache */
-	struct source_frame *new_frame = source_frame_alloc(frame->format,
+	struct source_frame *new_frame = source_frame_create(frame->format,
 			frame->width, frame->height);
 
 	copy_frame_data(new_frame, frame);

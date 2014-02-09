@@ -1,28 +1,31 @@
 #include <math.h>
 #include "test-sinewave.h"
 
+/* middle C */
 const double rate = 261.63/48000.0;
 
 #define M_PI 3.1415926535897932384626433832795
+#define M_PI_X2 M_PI*2
 
 static void *sinewave_thread(void *pdata)
 {
 	struct sinewave_data *swd = pdata;
 	uint64_t last_time = os_gettime_ns();
 	uint64_t ts = 0;
-	double sin_val = 0.0;
+	double cos_val = 0.0;
 	uint8_t bytes[480];
 
 	while (event_try(&swd->event) == EAGAIN) {
-		os_sleepto_ns(last_time += 10000000);
+		if (!os_sleepto_ns(last_time += 10000000))
+			last_time = os_gettime_ns();
 
 		for (size_t i = 0; i < 480; i++) {
-			sin_val += rate * M_PI;
-			if (sin_val > M_PI)
-				sin_val -= M_PI;
+			cos_val += rate * M_PI_X2;
+			if (cos_val > M_PI_X2)
+				cos_val -= M_PI_X2;
 
-			double wave = sin(sin_val);
-			bytes[i] = (uint8_t)(wave * 255.0);
+			double wave = cos(cos_val);
+			bytes[i] = (uint8_t)((wave+1.0)*0.5 * 255.0);
 		}
 
 		struct source_audio data;
