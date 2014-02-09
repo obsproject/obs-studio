@@ -811,6 +811,8 @@ void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 			       (uint8_t*)data + (uint32_t)y * linesize,
 			       row_copy);
 	}
+
+	texture_unmap(tex);
 }
 
 void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
