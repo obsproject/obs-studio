@@ -18,21 +18,27 @@ uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
 }
 
 void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
-    blog(LOG_DEBUG, "Creating new cursor");
-    
-    // free old cursor data
-    if (data->tex)
-        texture_destroy(data->tex);
-    
-    // create cursor
+    // get cursor data
     data->last_serial = xc->cursor_serial;
     uint32_t *pixels = xcursor_pixels(xc);
-    data->tex = gs_create_texture(
-        xc->width, xc->height,
-        GS_RGBA, 1,
-        (const void **) &pixels,
-        0
-    );
+    
+    // if the pointer has the same size as the last one we can update
+    if (data->tex
+     && texture_getwidth(data->tex) == xc->width
+     && texture_getheight(data->tex) == xc->height) {
+        texture_setimage(data->tex, (void **) pixels, xc->width * 4, False);
+    }
+    else {
+        if (data->tex)
+            texture_destroy(data->tex);
+        
+        data->tex = gs_create_texture(
+            xc->width, xc->height,
+            GS_RGBA, 1,
+            (const void **) &pixels,
+            GS_DYNAMIC
+        );
+    }
     bfree(pixels);
 }
 
@@ -65,6 +71,11 @@ void xcursor_render(xcursor_t *data) {
     effect_settexture(effect, diffuse, data->tex);
     
     // TODO: position
+    gs_matrix_translate3f(
+        -1.0 * (xc->x - xc->xhot),
+        -1.0 * (xc->y - xc->yhot),
+        0
+    );
     gs_draw_sprite(data->tex, 0, 0, 0);
     
     XFree(xc);
