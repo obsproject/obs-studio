@@ -3,14 +3,15 @@ project(linux)
 find_package(X11 REQUIRED)
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-#include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs-opengl")
 
 set(linux_SOURCES
     linux.c
+    xcursor.c
     xshm-input.c
 )
 set(linux_HEADERS
     linux.h
+    xcursor.h
     xshm-input.h
 )
     
@@ -22,8 +23,7 @@ target_link_libraries(linux
     libobs
     ${X11_LIBRARIES}
     ${X11_XShm_LIB}
+    ${X11_Xfixes_LIB}
 )
 
 install_obs_plugin(linux)
-
-#obs_fixup_install_target(xshm-input PATH ${Libx264_LIBRARIES})

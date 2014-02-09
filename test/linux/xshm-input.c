@@ -4,6 +4,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+#include "xcursor.h"
 #include "xshm-input.h"
 
 struct xshm_data {
@@ -17,6 +18,7 @@ struct xshm_data {
     XShmSegmentInfo shm_info;
     XImage *image;
     texture_t texture;
+    xcursor_t *cursor;
 };
 
 const char* xshm_input_getname(const char* locale)
@@ -92,6 +94,7 @@ struct xshm_data *xshm_input_create(const char *settings, obs_source_t source)
     data->texture = gs_create_texture(data->width, data->height, GS_BGRA, 1,
                                       (const void**) &data->image->data,
                                       GS_DYNAMIC);
+    data->cursor = xcursor_init(data->dpy);
     gs_leavecontext();
     
     if (!data->texture)
@@ -111,6 +114,7 @@ void xshm_input_destroy(struct xshm_data *data)
         gs_entercontext(obs_graphics());
 
         texture_destroy(data->texture);
+        xcursor_destroy(data->cursor);
 
         gs_leavecontext();
         
@@ -155,11 +159,14 @@ void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
     texture_setimage(data->texture, (void *) data->image->data,
                      data->width * 4, False);
     
-    //effect_t effect  = gs_geteffect();
-    //eparam_t diffuse = effect_getparambyname(effect, "diffuse");
+    effect_t effect  = gs_geteffect();
+    eparam_t diffuse = effect_getparambyname(effect, "diffuse");
 
-    //effect_settexture(effect, diffuse, data->texture);
+    effect_settexture(effect, diffuse, data->texture);
     gs_draw_sprite(data->texture, 0, 0, 0);
+    
+    // render the cursor
+    xcursor_render(data->cursor);
 }
 
 uint32_t xshm_input_getwidth(struct xshm_data *data)
