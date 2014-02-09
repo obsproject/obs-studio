@@ -5,14 +5,11 @@
 
 uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
     int size = xc->width * xc->height;
-    
     uint32_t *pixels = bmalloc(size * 4);
     
     // pixel data from XFixes is defined as unsigned long ...
-    // TODO: alpha
-    for (int i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i)
         pixels[i] = (uint32_t) xc->pixels[i];
-    }
     
     return pixels;
 }
@@ -70,13 +67,17 @@ void xcursor_render(xcursor_t *data) {
 
     effect_settexture(effect, diffuse, data->tex);
     
-    // TODO: position
+    gs_matrix_push();
     gs_matrix_translate3f(
         -1.0 * (xc->x - xc->xhot),
         -1.0 * (xc->y - xc->yhot),
         0
     );
+    gs_enable_blending(True);
+    gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
     gs_draw_sprite(data->tex, 0, 0, 0);
+    gs_enable_blending(False);
+    gs_matrix_pop();
     
     XFree(xc);
 }
