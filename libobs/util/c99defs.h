@@ -22,6 +22,12 @@
  */
 
 #ifdef _MSC_VER
+#define FORCE_INLINE __forceinline
+#else
+#define FORCE_INLINE __attribute__(always_inline)
+#endif
+
+#ifdef _MSC_VER
 
 #pragma warning (disable : 4996)
 
@@ -34,12 +40,6 @@
  * apply to the next 10 generations all of their descendents. */
 #ifndef __cplusplus
 #define inline __inline
-#endif
-
-#ifdef _MSC_VER
-#define FORCE_INLINE __forceinline
-#else
-#define FORCE_INLINE __attribute__(always_inline)
 #endif
 
 #define EXPORT __declspec(dllexport)
