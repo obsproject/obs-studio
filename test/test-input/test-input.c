@@ -5,6 +5,9 @@ const char *inputs[] = {
 #ifdef __APPLE__
 	"osx_desktop_test",
 #endif
+#ifdef _WINDOWS
+	"msw_desktop_test",
+#endif
 	"random",
 	"sinewave"
 };
