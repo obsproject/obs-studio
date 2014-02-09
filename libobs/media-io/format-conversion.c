@@ -19,17 +19,17 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
-static inline uint32_t get_m128_32_0(const __m128i val)
+static FORCE_INLINE uint32_t get_m128_32_0(const __m128i val)
 {
 	return *(uint32_t* const)&val;
 }
 
-static inline uint32_t get_m128_32_1(const __m128i val)
+static FORCE_INLINE uint32_t get_m128_32_1(const __m128i val)
 {
 	return *(((uint32_t* const)&val)+1);
 }
 
-static inline void pack_lum(uint8_t *lum_plane,
+static FORCE_INLINE void pack_lum(uint8_t *lum_plane,
 		uint32_t lum_pos0, uint32_t lum_pos1,
 		const __m128i line1, const __m128i line2,
 		const __m128i lum_mask)
@@ -43,7 +43,7 @@ static inline void pack_lum(uint8_t *lum_plane,
 	*(uint32_t*)(lum_plane+lum_pos1) = get_m128_32_1(pack_val);
 }
 
-static inline void pack_chroma_1plane(uint8_t *uv_plane,
+static FORCE_INLINE void pack_chroma_1plane(uint8_t *uv_plane,
 		uint32_t chroma_pos,
 		const __m128i line1, const __m128i line2,
 		const __m128i uv_mask)
@@ -61,7 +61,7 @@ static inline void pack_chroma_1plane(uint8_t *uv_plane,
 	*(uint32_t*)(uv_plane+chroma_pos) = get_m128_32_0(avg_val);
 }
 
-static inline void pack_chroma_2plane(uint8_t *u_plane, uint8_t *v_plane,
+static FORCE_INLINE void pack_chroma_2plane(uint8_t *u_plane, uint8_t *v_plane,
 		uint32_t chroma_pos,
 		const __m128i line1, const __m128i line2,
 		const __m128i uv_mask)
