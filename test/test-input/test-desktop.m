@@ -17,7 +17,6 @@ const char *osx_desktop_test_getname(const char *locale)
 
 static IOSurfaceRef current = NULL,
 		    prev = NULL;
-static texture_t tex = NULL;
 static pthread_mutex_t c_mutex;
 
 struct desktop_tex *osx_desktop_test_create(const char *settings,
@@ -114,7 +113,7 @@ void osx_desktop_test_destroy(struct desktop_tex *rt)
 		}
 		if (rt->sampler)
 			samplerstate_destroy(rt->sampler);
-		if (tex)
+		if (rt->tex)
 			texture_destroy(rt->tex);
 		CGDisplayStreamStop(rt->disp);
 		effect_destroy(rt->whatever);
@@ -136,7 +135,7 @@ void osx_desktop_test_video_render(struct desktop_tex *rt,
 	pthread_mutex_lock(&rt->mutex);
 
 	if (rt->prev != rt->current) {
-		if (tex)
+		if (rt->tex)
 			texture_rebind_iosurface(rt->tex, rt->current);
 		else
 			rt->tex = gs_create_texture_from_iosurface(
