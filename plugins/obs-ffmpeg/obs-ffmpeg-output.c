@@ -44,7 +44,7 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 }
 
 static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
-		AVCodec **codec, enum AVCoecID id)
+		AVCodec **codec, enum AVCodecID id)
 {
 	*codec = avcodec_find_encoder(id);
 	if (!*codec) {
