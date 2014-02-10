@@ -1,25 +1,11 @@
-#include <obs.h>
-#include "linux.h"
+#include <obs-module.h>
 
-const char *inputs[] = {
-    "xshm_input"
-};
+OBS_DECLARE_MODULE()
 
-uint32_t module_version(uint32_t in_version)
+extern struct obs_source_info xshm_input;
+
+bool obs_module_load(uint32_t obs_version)
 {
-    return LIBOBS_API_VER;
-}
-
-bool enum_inputs(size_t idx, const char **name)
-{
-    if (idx >= (sizeof(inputs)/sizeof(const char*)))
-        return false;
-
-    *name = inputs[idx];
+    obs_register_source(&xshm_input);
     return true;
-}
-
-bool enum_filters(size_t idx, const char **name)
-{
-    return false;
 }
