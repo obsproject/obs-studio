@@ -16,6 +16,9 @@ EXPORT struct xshm_data *xshm_input_create(const char *settings,
 EXPORT void xshm_input_destroy(struct xshm_data *data);
 EXPORT uint32_t xshm_input_get_output_flags(struct xshm_data *data);
 
+EXPORT void xshm_input_video_tick(struct xshm_data *data,
+        float seconds);
+
 EXPORT void xshm_input_video_render(struct xshm_data *data,
         obs_source_t filter_target);
 

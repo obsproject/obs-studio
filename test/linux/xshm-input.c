@@ -139,13 +139,18 @@ uint32_t xshm_input_get_output_flags(struct xshm_data *data)
     return SOURCE_VIDEO | SOURCE_DEFAULT_EFFECT;
 }
 
-void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
+void xshm_input_video_tick(struct xshm_data *data, float seconds)
 {
     // update texture
+    gs_entercontext(obs_graphics());
     XShmGetImage(data->dpy, data->root_window, data->image, 0, 0, AllPlanes);
     texture_setimage(data->texture, (void *) data->image->data,
                      data->width * 4, False);
-    
+    gs_leavecontext();
+}
+
+void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
+{
     effect_t effect  = gs_geteffect();
     eparam_t diffuse = effect_getparambyname(effect, "diffuse");
 
