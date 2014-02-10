@@ -547,7 +547,7 @@ void OBSBasic::on_recordButton_clicked()
 	} else {
 		QString path = QFileDialog::getSaveFileName(this,
 				"Please enter a file name", QString(),
-				"Video Files (*.mp4)");
+				"Video Files (*.avi)");
 
 		if (path.isNull() || path.isEmpty())
 			return;
