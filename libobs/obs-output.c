@@ -126,6 +126,15 @@ void obs_output_update(obs_output_t output, obs_data_t settings)
 		output->callbacks.update(output->data, output->settings);
 }
 
+obs_data_t obs_output_get_settings(obs_output_t output)
+{
+	if (!output)
+		return NULL;
+
+	obs_data_addref(output->settings);
+	return output->settings;
+}
+
 bool obs_output_canpause(obs_output_t output)
 {
 	return output->callbacks.pause != NULL;

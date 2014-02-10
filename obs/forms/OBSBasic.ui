@@ -45,8 +45,8 @@
       <widget class="OBSQTDisplay" name="preview" native="true">
        <property name="geometry">
         <rect>
-         <x>50</x>
-         <y>30</y>
+         <x>0</x>
+         <y>0</y>
          <width>32</width>
          <height>32</height>
         </rect>
@@ -340,6 +340,9 @@
           </property>
           <item>
            <widget class="QPushButton" name="streamButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Start Streaming</string>
             </property>
@@ -436,6 +439,9 @@
    </property>
   </action>
   <action name="actionSceneProperties">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/properties.ico</normaloff>:/res/images/properties.ico</iconset>
@@ -445,6 +451,9 @@
    </property>
   </action>
   <action name="actionSourceProperties">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/properties.ico</normaloff>:/res/images/properties.ico</iconset>

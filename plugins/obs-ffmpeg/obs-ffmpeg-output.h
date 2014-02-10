@@ -43,6 +43,8 @@ struct ffmpeg_data {
 	AVFrame            *aframe;
 	int                total_samples;
 
+	const char         *filename_test;
+
 	bool               initialized;
 };
 
@@ -54,12 +56,12 @@ struct ffmpeg_output {
 
 EXPORT const char *ffmpeg_output_getname(const char *locale);
 
-EXPORT struct ffmpeg_output *ffmpeg_output_create(const char *settings,
+EXPORT struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 		obs_output_t output);
 EXPORT void ffmpeg_output_destroy(struct ffmpeg_output *data);
 
 EXPORT void ffmpeg_output_update(struct ffmpeg_output *data,
-		const char *settings);
+		obs_data_t settings);
 
 EXPORT bool ffmpeg_output_start(struct ffmpeg_output *data);
 EXPORT void ffmpeg_output_stop(struct ffmpeg_output *data);

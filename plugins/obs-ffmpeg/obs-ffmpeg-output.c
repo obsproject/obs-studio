@@ -19,7 +19,6 @@
 #include "obs-ffmpeg-output.h"
 
 /* TODO: remove these later */
-#define FILENAME_TODO "D:\\test.avi"
 #define SPS_TODO      44100
 
 /* NOTE: much of this stuff is test stuff that was more or less copied from
@@ -233,11 +232,11 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
-		ret = avio_open(&data->output->pb, FILENAME_TODO,
+		ret = avio_open(&data->output->pb, data->filename_test,
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			blog(LOG_ERROR, "Couldn't open file '%s', %s",
-					FILENAME_TODO, av_err2str(ret));
+					data->filename_test, av_err2str(ret));
 			return false;
 		}
 	}
@@ -245,7 +244,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	ret = avformat_write_header(data->output, NULL);
 	if (ret < 0) {
 		blog(LOG_ERROR, "Error opening file '%s': %s",
-				FILENAME_TODO, av_err2str(ret));
+				data->filename_test, av_err2str(ret));
 		return false;
 	}
 
@@ -286,15 +285,19 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
-static bool ffmpeg_data_init(struct ffmpeg_data *data)
+static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 {
 	memset(data, 0, sizeof(struct ffmpeg_data));
+	data->filename_test = filename;
+
+	if (!filename || !*filename)
+		return false;
 
 	av_register_all();
 
 	/* TODO: settings */
 	avformat_alloc_output_context2(&data->output, NULL, NULL,
-			FILENAME_TODO);
+			data->filename_test);
 	if (!data->output) {
 		blog(LOG_ERROR, "Couldn't create avformat context");
 		goto fail;
@@ -327,7 +330,7 @@ void test_callback(void *param, int bla, const char *format, va_list args)
 	blogva(LOG_INFO, format, args);
 }
 
-struct ffmpeg_output *ffmpeg_output_create(const char *settings,
+struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 		obs_output_t output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
@@ -347,7 +350,7 @@ void ffmpeg_output_destroy(struct ffmpeg_output *data)
 	}
 }
 
-void ffmpeg_output_update(struct ffmpeg_output *data, const char *settings)
+void ffmpeg_output_update(struct ffmpeg_output *data, obs_data_t settings)
 {
 }
 
@@ -521,7 +524,15 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 		return false;
 	}
 
-	if (!ffmpeg_data_init(&data->ff_data))
+	const char *filename_test;
+	obs_data_t settings = obs_output_get_settings(data->output);
+	filename_test = obs_data_getstring(settings, "filename");
+	obs_data_release(settings);
+
+	if (!filename_test || !*filename_test)
+		return false;
+
+	if (!ffmpeg_data_init(&data->ff_data, filename_test))
 		return false;
 
 	struct audio_convert_info aci;

@@ -19,6 +19,7 @@
 #include <obs.hpp>
 #include <QMessageBox>
 #include <QShowEvent>
+#include <QFileDialog>
 
 #include "obs-app.hpp"
 #include "window-basic-settings.hpp"
@@ -35,7 +36,8 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
-	  ui            (new Ui::OBSBasic)
+	  ui            (new Ui::OBSBasic),
+	  outputTest    (NULL)
 {
 	ui->setupUi(this);
 }
@@ -63,10 +65,6 @@ void OBSBasic::OBSInit()
 	/* TODO: this is a test */
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
-
-	/*obs_output_t output = obs_output_create("ffmpeg_output", "test",
-			NULL);
-	obs_output_start(output);*/
 
 	/* HACK: fixes a qt bug with native widgets with native repaint */
 	ui->previewContainer->repaint();
@@ -538,6 +536,36 @@ void OBSBasic::on_actionSourceUp_triggered()
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
+}
+
+void OBSBasic::on_recordButton_clicked()
+{
+	if (outputTest) {
+		obs_output_destroy(outputTest);
+		outputTest = NULL;
+		ui->recordButton->setText("Start Recording");
+	} else {
+		QString path = QFileDialog::getSaveFileName(this,
+				"Please enter a file name", QString(),
+				"Video Files (*.mp4)");
+
+		if (path.isNull() || path.isEmpty())
+			return;
+
+		obs_data_t data = obs_data_create();
+		obs_data_setstring(data, "filename", QT_TO_UTF8(path));
+
+		outputTest = obs_output_create("ffmpeg_output", "test", data);
+		obs_data_release(data);
+
+		if (!obs_output_start(outputTest)) {
+			obs_output_destroy(outputTest);
+			outputTest = NULL;
+			return;
+		}
+
+		ui->recordButton->setText("Stop Recording");
+	}
 }
 
 void OBSBasic::on_settingsButton_clicked()

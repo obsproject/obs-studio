@@ -31,6 +31,7 @@ class OBSBasic : public OBSMainWindow {
 
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
+	obs_output_t outputTest;
 
 	OBSScene     GetCurrentScene();
 	OBSSceneItem GetCurrentSceneItem();
@@ -87,6 +88,7 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
+	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
 public:
