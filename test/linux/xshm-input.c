@@ -9,10 +9,7 @@
 
 struct xshm_data {
     Display *dpy;
-    Screen *screen;
     Window root_window;
-    Visual *visual;
-    int depth;
     uint32_t width, height;
     int shm_attached;
     XShmSegmentInfo shm_info;
@@ -37,19 +34,19 @@ struct xshm_data *xshm_input_create(const char *settings, obs_source_t source)
     if (!data->dpy)
         goto fail;
     
-    data->screen = XDefaultScreenOfDisplay(data->dpy);
-    data->width = WidthOfScreen(data->screen);
-    data->height = HeightOfScreen(data->screen);
-    data->root_window = XRootWindowOfScreen(data->screen);
-    data->visual = DefaultVisualOfScreen(data->screen);
-    data->depth = DefaultDepthOfScreen(data->screen);
+    Screen *screen = XDefaultScreenOfDisplay(data->dpy);
+    data->width = WidthOfScreen(screen);
+    data->height = HeightOfScreen(screen);
+    data->root_window = XRootWindowOfScreen(screen);
+    Visual *visual = DefaultVisualOfScreen(screen);
+    int depth = DefaultDepthOfScreen(screen);
     
     // query for shm extension
     if (!XShmQueryExtension(data->dpy))
         goto fail;
     
     // create xshm image
-    data->image = XShmCreateImage(data->dpy, data->visual, data->depth,
+    data->image = XShmCreateImage(data->dpy, visual, depth,
                                   ZPixmap, NULL, &data->shm_info,
                                   data->width, data->height);
     if (!data->image)
