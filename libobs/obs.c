@@ -129,6 +129,9 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	struct video_output_info vi;
 	int errorcode;
 
+	ovi.output_width  &= 0xFFFFFFFC;
+	ovi.output_height &= 0xFFFFFFFE;
+
 	make_video_info(&vi, ovi);
 	errorcode = video_output_open(&video->video, &vi);
 
