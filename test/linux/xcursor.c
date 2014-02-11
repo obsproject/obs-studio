@@ -50,6 +50,9 @@ xcursor_t *xcursor_init(Display *dpy) {
     
     data->dpy = dpy;
     
+    // initialize texture so we don't crash
+    xcursor_tick(data);
+    
     return data;
 }
 
@@ -59,7 +62,7 @@ void xcursor_destroy(xcursor_t *data) {
     bfree(data);
 }
 
-void xcursor_render(xcursor_t *data) {
+void xcursor_tick(xcursor_t *data) {
     // get cursor data
     XFixesCursorImage *xc = XFixesGetCursorImage(data->dpy);
     
@@ -67,6 +70,14 @@ void xcursor_render(xcursor_t *data) {
     if (!data->tex || data->last_serial != xc->cursor_serial)
         xcursor_create(data, xc);
     
+    // update cursor position
+    data->pos_x = -1.0 * (xc->x - xc->xhot);
+    data->pos_y = -1.0 * (xc->y - xc->yhot);
+    
+    XFree(xc);
+}
+
+void xcursor_render(xcursor_t *data) {
     // TODO: why do i need effects ?
     effect_t effect  = gs_geteffect();
     eparam_t diffuse = effect_getparambyname(effect, "diffuse");
@@ -77,8 +88,8 @@ void xcursor_render(xcursor_t *data) {
     
     // move cursor to the right position
     gs_matrix_translate3f(
-        -1.0 * (xc->x - xc->xhot),
-        -1.0 * (xc->y - xc->yhot),
+        data->pos_x,
+        data->pos_y,
         0
     );
     
@@ -89,6 +100,4 @@ void xcursor_render(xcursor_t *data) {
     gs_enable_blending(False);
     
     gs_matrix_pop();
-    
-    XFree(xc);
 }
