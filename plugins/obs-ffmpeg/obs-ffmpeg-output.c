@@ -16,7 +16,41 @@
 ******************************************************************************/
 
 #include <obs.h>
-#include "obs-ffmpeg-output.h"
+#include <util/circlebuf.h>
+
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+
+struct ffmpeg_data {
+	AVStream           *video;
+	AVStream           *audio;
+	AVCodec            *acodec;
+	AVCodec            *vcodec;
+	AVFormatContext    *output;
+	struct SwsContext  *swscale;
+
+	AVPicture          dst_picture;
+	AVFrame            *vframe;
+	int                frame_size;
+	int                total_frames;
+
+	struct circlebuf   excess_frames[MAX_AUDIO_PLANES];
+	uint8_t            *samples[MAX_AUDIO_PLANES];
+	AVFrame            *aframe;
+	int                total_samples;
+
+	const char         *filename_test;
+
+	bool               initialized;
+};
+
+struct ffmpeg_output {
+	obs_output_t       output;
+	volatile bool      active;
+	struct ffmpeg_data ff_data;
+};
+
+/* ------------------------------------------------------------------------- */
 
 /* TODO: remove these later */
 #define SPS_TODO      44100
@@ -319,29 +353,29 @@ fail:
 
 /* ------------------------------------------------------------------------- */
 
-const char *ffmpeg_output_getname(const char *locale)
+static const char *ffmpeg_output_getname(const char *locale)
 {
-	/* TODO: translation */
 	return "FFmpeg file output";
 }
 
-void test_callback(void *param, int bla, const char *format, va_list args)
+static void ffmpeg_log_callback(void *param, int bla, const char *format,
+		va_list args)
 {
 	blogva(LOG_INFO, format, args);
 }
 
-struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
+static struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 		obs_output_t output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
 	data->output = output;
 
-	av_log_set_callback(test_callback);
+	av_log_set_callback(ffmpeg_log_callback);
 
 	return data;
 }
 
-void ffmpeg_output_destroy(struct ffmpeg_output *data)
+static void ffmpeg_output_destroy(struct ffmpeg_output *data)
 {
 	if (data) {
 		if (data->active)
@@ -350,7 +384,8 @@ void ffmpeg_output_destroy(struct ffmpeg_output *data)
 	}
 }
 
-void ffmpeg_output_update(struct ffmpeg_output *data, obs_data_t settings)
+static void ffmpeg_output_update(struct ffmpeg_output *data,
+		obs_data_t settings)
 {
 }
 
@@ -457,7 +492,7 @@ static inline void encode_audio(struct ffmpeg_data *data,
 
 	ret = avcodec_fill_audio_frame(data->aframe, context->channels,
 			context->sample_fmt, data->samples[0],
-			total_size, 1);
+			(int)total_size, 1);
 	if (ret < 0) {
 		blog(LOG_ERROR, "receive_audio: avcodec_fill_audio_frame "
 		                "failed: %s", av_err2str(ret));
@@ -513,7 +548,7 @@ static void receive_audio(void *param, const struct audio_data *frame)
 	}
 }
 
-bool ffmpeg_output_start(struct ffmpeg_output *data)
+static bool ffmpeg_output_start(struct ffmpeg_output *data)
 {
 	video_t video = obs_video();
 	audio_t audio = obs_audio();
@@ -552,7 +587,7 @@ bool ffmpeg_output_start(struct ffmpeg_output *data)
 	return true;
 }
 
-void ffmpeg_output_stop(struct ffmpeg_output *data)
+static void ffmpeg_output_stop(struct ffmpeg_output *data)
 {
 	if (data->active) {
 		data->active = false;
@@ -562,7 +597,18 @@ void ffmpeg_output_stop(struct ffmpeg_output *data)
 	}
 }
 
-bool ffmpeg_output_active(struct ffmpeg_output *data)
+static bool ffmpeg_output_active(struct ffmpeg_output *data)
 {
 	return data->active;
 }
+
+struct obs_output_info ffmpeg_output = {
+	.id      = "ffmpeg_output",
+	.getname = ffmpeg_output_getname,
+	.create  = ffmpeg_output_create,
+	.destroy = ffmpeg_output_destroy,
+	.update  = ffmpeg_output_update,
+	.start   = ffmpeg_output_start,
+	.stop    = ffmpeg_output_stop,
+	.active  = ffmpeg_output_active
+};

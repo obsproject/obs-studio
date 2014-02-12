@@ -18,7 +18,7 @@
 #pragma once
 
 #include "obs.h"
-#include "obs-source.h"
+#include "obs-internal.h"
 
 /* how obs scene! */
 

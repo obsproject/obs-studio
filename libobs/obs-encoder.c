@@ -18,29 +18,10 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-bool load_encoder_info(void *module, const char *module_name,
-		const char *id, struct encoder_info *info)
-{
-	LOAD_MODULE_SUBFUNC(getname, true);
-	LOAD_MODULE_SUBFUNC(create, true);
-	LOAD_MODULE_SUBFUNC(destroy, true);
-	LOAD_MODULE_SUBFUNC(update, true);
-	LOAD_MODULE_SUBFUNC(reset, true);
-	LOAD_MODULE_SUBFUNC(encode, true);
-	LOAD_MODULE_SUBFUNC(getheader, true);
-
-	LOAD_MODULE_SUBFUNC(properties, false);
-	LOAD_MODULE_SUBFUNC(setbitrate, false);
-	LOAD_MODULE_SUBFUNC(request_keyframe, false);
-
-	info->id = id;
-	return true;
-}
-
-static inline struct encoder_info *get_encoder_info(const char *id)
+static inline struct obs_encoder_info *get_encoder_info(const char *id)
 {
 	for (size_t i = 0; i < obs->encoder_types.num; i++) {
-		struct encoder_info *info = obs->encoder_types.array+i;
+		struct obs_encoder_info *info = obs->encoder_types.array+i;
 
 		if (strcmp(info->id, id) == 0)
 			return info;
@@ -51,7 +32,7 @@ static inline struct encoder_info *get_encoder_info(const char *id)
 
 const char *obs_encoder_getdisplayname(const char *id, const char *locale)
 {
-	struct encoder_info *ei = get_encoder_info(id);
+	struct obs_encoder_info *ei = get_encoder_info(id);
 	if (!ei)
 		return NULL;
 
@@ -62,13 +43,13 @@ obs_encoder_t obs_encoder_create(const char *id, const char *name,
 		obs_data_t settings)
 {
 	struct obs_encoder *encoder;
-	struct encoder_info *ei = get_encoder_info(id);
+	struct obs_encoder_info *ei = get_encoder_info(id);
 
 	if (!ei)
 		return NULL;
 
 	encoder = bzalloc(sizeof(struct obs_encoder));
-	encoder->callbacks = *ei;
+	encoder->info = *ei;
 
 	if (pthread_mutex_init(&encoder->data_callbacks_mutex, NULL) != 0) {
 		bfree(encoder);
@@ -98,7 +79,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 		da_erase_item(obs->data.encoders, &encoder);
 		pthread_mutex_unlock(&obs->data.encoders_mutex);
 
-		encoder->callbacks.destroy(encoder->data);
+		encoder->info.destroy(encoder->data);
 		obs_data_release(encoder->settings);
 		bfree(encoder);
 	}
@@ -106,7 +87,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 
 obs_properties_t obs_encoder_properties(const char *id, const char *locale)
 {
-	const struct encoder_info *ei = get_encoder_info(id);
+	const struct obs_encoder_info *ei = get_encoder_info(id);
 	if (ei && ei->properties)
 		return ei->properties(locale);
 	return NULL;
@@ -115,40 +96,40 @@ obs_properties_t obs_encoder_properties(const char *id, const char *locale)
 void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
 	obs_data_replace(&encoder->settings, settings);
-	encoder->callbacks.update(encoder->data, encoder->settings);
+	encoder->info.update(encoder->data, encoder->settings);
 }
 
 bool obs_encoder_reset(obs_encoder_t encoder)
 {
-	return encoder->callbacks.reset(encoder->data);
+	return encoder->info.reset(encoder->data);
 }
 
 bool obs_encoder_encode(obs_encoder_t encoder, void *frames, size_t size)
 {
 	/* TODO */
-	//encoder->callbacks.encode(encoder->data, frames, size, packets);
+	//encoder->info.encode(encoder->data, frames, size, packets);
 	return false;
 }
 
 int obs_encoder_getheader(obs_encoder_t encoder,
 		struct encoder_packet **packets)
 {
-	return encoder->callbacks.getheader(encoder, packets);
+	return encoder->info.getheader(encoder, packets);
 }
 
 bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
 		uint32_t buffersize)
 {
-	if (encoder->callbacks.setbitrate)
-		return encoder->callbacks.setbitrate(encoder->data, bitrate,
+	if (encoder->info.setbitrate)
+		return encoder->info.setbitrate(encoder->data, bitrate,
 				buffersize);
 	return false;
 }
 
 bool obs_encoder_request_keyframe(obs_encoder_t encoder)
 {
-	if (encoder->callbacks.request_keyframe)
-		return encoder->callbacks.request_keyframe(encoder->data);
+	if (encoder->info.request_keyframe)
+		return encoder->info.request_keyframe(encoder->data);
 	return false;
 }
 

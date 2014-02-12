@@ -184,7 +184,7 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 		obs_source_type type;
 		obs_source_gettype(source, &type, NULL);
 
-		if (type != SOURCE_SCENE)
+		if (type != OBS_SOURCE_TYPE_SCENE)
 			return;
 
 		obs_scene_t scene = obs_scene_fromsource(source);
@@ -232,7 +232,7 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 	obs_source_type type;
 	obs_source_gettype(source, &type, NULL);
 
-	if (type == SOURCE_SCENE)
+	if (type == OBS_SOURCE_TYPE_SCENE)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
@@ -245,7 +245,7 @@ void OBSBasic::SourceRemoved(void *data, calldata_t params)
 	obs_source_type type;
 	obs_source_gettype(source, &type, NULL);
 
-	if (type == SOURCE_SCENE)
+	if (type == OBS_SOURCE_TYPE_SCENE)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"RemoveScene",
 				Q_ARG(OBSSource, OBSSource(source)));
@@ -474,8 +474,8 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 	}
 
 	if (success) {
-		obs_source_t source = obs_source_create(SOURCE_INPUT, id,
-				name.c_str(), NULL);
+		obs_source_t source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
+				id, name.c_str(), NULL);
 
 		sourceSceneRefs[source] = 0;
 
@@ -497,7 +497,8 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 
 	QMenu popup;
 	while (obs_enum_input_types(idx++, &type)) {
-		const char *name = obs_source_getdisplayname(SOURCE_INPUT,
+		const char *name = obs_source_getdisplayname(
+				OBS_SOURCE_TYPE_INPUT,
 				type, App()->GetLocale());
 
 		QAction *popupItem = new QAction(QT_UTF8(name), this);

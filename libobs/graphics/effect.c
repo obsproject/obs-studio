@@ -253,8 +253,24 @@ eparam_t effect_getworldmatrix(effect_t effect)
 static inline void effect_setval_inline(effect_t effect, eparam_t param,
 		const void *data, size_t size)
 {
-	bool size_changed = param->cur_val.num != size;
+	bool size_changed;
 
+	if (!effect) {
+		blog(LOG_WARNING, "effect_setval_inline: invalid effect");
+		return;
+	}
+
+	if (!param) {
+		blog(LOG_WARNING, "effect_setval_inline: invalid param");
+		return;
+	}
+
+	if (!data) {
+		blog(LOG_WARNING, "effect_setval_inline: invalid data");
+		return;
+	}
+
+	size_changed = param->cur_val.num != size;
 	if (!matching_effect(effect, param))
 		return;
 

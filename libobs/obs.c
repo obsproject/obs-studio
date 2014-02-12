@@ -19,7 +19,6 @@
 
 #include "obs.h"
 #include "obs-internal.h"
-#include "obs-module.h"
 
 struct obs_core *obs = NULL;
 
@@ -332,8 +331,8 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 	da_free(obs->output_types);
 	da_free(obs->service_types);
-	da_free(obs->ui_modal_callbacks);
-	da_free(obs->ui_modeless_callbacks);
+	da_free(obs->modal_ui_callbacks);
+	da_free(obs->modeless_ui_callbacks);
 
 	obs_free_data();
 	obs_free_video();
@@ -463,13 +462,13 @@ video_t obs_video(void)
 }
 
 /* TODO: optimize this later so it's not just O(N) string lookups */
-static inline struct obs_modal_ui *get_modal_ui_callback(const char *name,
+static inline struct obs_modal_ui *get_modal_ui_callback(const char *id,
 		const char *task, const char *target)
 {
-	for (size_t i = 0; i < obs->ui_modal_callbacks.num; i++) {
-		struct obs_modal_ui *callback = obs->ui_modal_callbacks.array+i;
+	for (size_t i = 0; i < obs->modal_ui_callbacks.num; i++) {
+		struct obs_modal_ui *callback = obs->modal_ui_callbacks.array+i;
 
-		if (strcmp(callback->name,   name)   == 0 &&
+		if (strcmp(callback->id,     id)     == 0 &&
 		    strcmp(callback->task,   task)   == 0 &&
 		    strcmp(callback->target, target) == 0)
 			return callback;
@@ -478,14 +477,14 @@ static inline struct obs_modal_ui *get_modal_ui_callback(const char *name,
 	return NULL;
 }
 
-static inline struct obs_modeless_ui *get_modeless_ui_callback(const char *name,
+static inline struct obs_modeless_ui *get_modeless_ui_callback(const char *id,
 		const char *task, const char *target)
 {
-	for (size_t i = 0; i < obs->ui_modeless_callbacks.num; i++) {
+	for (size_t i = 0; i < obs->modeless_ui_callbacks.num; i++) {
 		struct obs_modeless_ui *callback;
-		callback = obs->ui_modeless_callbacks.array+i;
+		callback = obs->modeless_ui_callbacks.array+i;
 
-		if (strcmp(callback->name,   name)   == 0 &&
+		if (strcmp(callback->id,     id)     == 0 &&
 		    strcmp(callback->task,   task)   == 0 &&
 		    strcmp(callback->target, target) == 0)
 			return callback;
@@ -502,7 +501,7 @@ int obs_exec_ui(const char *name, const char *task, const char *target,
 
 	callback = get_modal_ui_callback(name, task, target);
 	if (callback) {
-		bool success = callback->callback(data, ui_data);
+		bool success = callback->exec(data, ui_data);
 		errorcode = success ? OBS_UI_SUCCESS : OBS_UI_CANCEL;
 	}
 
@@ -515,7 +514,7 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 	struct obs_modeless_ui *callback;
 
 	callback = get_modeless_ui_callback(name, task, target);
-	return callback ? callback->callback(data, ui_data) : NULL;
+	return callback ? callback->create(data, ui_data) : NULL;
 }
 
 bool obs_add_source(obs_source_t source)

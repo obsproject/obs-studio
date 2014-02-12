@@ -1,35 +1,24 @@
-#include <obs.h>
-#include "test-input-exports.h"
+#include <obs-module.h>
 
-const char *inputs[] = {
+OBS_DECLARE_MODULE()
+
+extern struct obs_source_info test_random;
+extern struct obs_source_info test_sinewave;
+extern struct obs_source_info test_filter;
+
 #ifdef __APPLE__
-	"osx_desktop_test",
+extern struct obs_source_info osx_desktop;
 #endif
-	"random",
-	"sinewave"
-};
 
-const char *filters[] = {"test"};
-
-uint32_t module_version(uint32_t in_version)
+bool obs_module_load(uint32_t libobs_version)
 {
-	return LIBOBS_API_VER;
-}
+	obs_register_source(&test_random);
+	obs_register_source(&test_sinewave);
+	obs_register_source(&test_filter);
 
-bool enum_inputs(size_t idx, const char **name)
-{
-	if (idx >= (sizeof(inputs)/sizeof(const char*)))
-		return false;
+#ifdef __APPLE__
+	obs_register_source(&osx_desktop);
+#endif
 
-	*name = inputs[idx];
-	return true;
-}
-
-bool enum_filters(size_t idx, const char **name)
-{
-	if (idx >= (sizeof(filters)/sizeof(const char*)))
-		return false;
-
-	*name = filters[idx];
 	return true;
 }

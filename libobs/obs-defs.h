@@ -17,17 +17,11 @@
 
 #pragma once
 
-/* Maximum number of source channels for output and per display */
+/** Maximum number of source channels for output and per display */
 #define MAX_CHANNELS 32
 
-#define MODULE_SUCCESS           0
-#define MODULE_ERROR            -1
-#define MODULE_FILENOTFOUND     -2
-#define MODULE_FUNCTIONNOTFOUND -3
-#define MODULE_INCOMPATIBLE_VER -4
-
-#define SOURCE_VIDEO          (1<<0) /* Source has video */
-#define SOURCE_AUDIO          (1<<1) /* Source has audio */
-#define SOURCE_ASYNC_VIDEO    (1<<2) /* Async video (use with SOURCE_VIDEO) */
-#define SOURCE_DEFAULT_EFFECT (1<<3) /* Source uses default/filter effect */
-#define SOURCE_YUV            (1<<4) /* Source is in YUV color space */
+#define MODULE_SUCCESS             0
+#define MODULE_ERROR              -1
+#define MODULE_FILE_NOT_FOUND     -2
+#define MODULE_FUNCTION_NOT_FOUND -3
+#define MODULE_INCOMPATIBLE_VER   -4

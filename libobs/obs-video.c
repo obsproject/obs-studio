@@ -164,7 +164,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 	/* TODO: replace with actual downscalers or unpackers */
 	effect_t    effect  = video->default_effect;
 	technique_t tech    = effect_gettechnique(effect, "DrawMatrix");
-	eparam_t    diffuse = effect_getparambyname(effect, "diffuse");
+	eparam_t    image   = effect_getparambyname(effect, "image");
 	eparam_t    matrix  = effect_getparambyname(effect, "color_matrix");
 	size_t      passes, i;
 
@@ -184,7 +184,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 	};
 
 	effect_setval(effect, matrix, mat_val, sizeof(mat_val));
-	effect_settexture(effect, diffuse, texture);
+	effect_settexture(effect, image, texture);
 
 	passes = technique_begin(tech);
 	for (i = 0; i < passes; i++) {

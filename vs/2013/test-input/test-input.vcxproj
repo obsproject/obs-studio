@@ -19,12 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\test\test-input\test-filter.h" />
-    <ClInclude Include="..\..\..\test\test-input\test-input-exports.h" />
-    <ClInclude Include="..\..\..\test\test-input\test-random.h" />
-    <ClInclude Include="..\..\..\test\test-input\test-sinewave.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\..\test\test-input\test-filter.c" />
     <ClCompile Include="..\..\..\test\test-input\test-input.c" />
     <ClCompile Include="..\..\..\test\test-input\test-random.c" />

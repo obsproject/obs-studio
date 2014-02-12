@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,101 +17,14 @@
 
 #pragma once
 
-#include "util/c99defs.h"
-#include "util/dstr.h"
-
-/*
- * ===========================================
- *  Outputs 
- * ===========================================
- *
- *   An output takes raw audio and/or video and processes and/or outputs it
- * to a destination, whether that destination be a file, network, or other.
- *
- *   A module with outputs needs to export these functions:
- *       + enum_outputs
- *
- *   Each individual output is then exported by it's name.  For example, an
- * output named "myoutput" would have the following exports:
- *       + myoutput_getname
- *       + myoutput_create
- *       + myoutput_destroy
- *       + myoutput_update
- *       + myoutput_start
- *       + myoutput_stop
- *       + myoutput_active
- *
- *       [and optionally]
- *       + myoutput_properties
- *       + myoutput_pause
- *
- * ===========================================
- *   Primary Exports
- * ===========================================
- *   const char *enum_outputs(size_t idx);
- *       idx: index of the output.
- *       Return value: Output identifier name.  NULL when no more available.
- *
- * ===========================================
- *   Output Exports
- * ===========================================
- *   const char *[name]_getname(const char *locale);
- *       Returns the full translated name of the output type (seen by the user).
- *
- * ---------------------------------------------------------
- *   void *[name]_create(obs_data_t settings, obs_output_t output);
- *       Creates an output.
- *
- *       settings: Settings of the output.
- *       output: pointer to main output
- *       Return value: Internal output pointer, or NULL if failed.
- *
- * ---------------------------------------------------------
- *   void [name]_destroy(void *data);
- *       Destroys the output.
- *
- * ---------------------------------------------------------
- *   void [name]_update(void *data, obs_data_t settings)
- *       Updates the output's settings
- *
- *       settings: New settings of the output
- *
- * ---------------------------------------------------------
- *   bool [name]_start(void *data)
- *       Starts output
- *
- *       Return value: true if successful
- *
- * ---------------------------------------------------------
- *   void [name]_stop(void *data)
- *       Stops output
- *
- * ---------------------------------------------------------
- *   bool [name]_active(void *data)
- *       Returns whether currently active or not
- *
- * ===========================================
- *   Optional Output Exports
- * ===========================================
- *   obs_properties_t [name]_properties(const char *locale);
- *       Returns the properties of this particular source type, if any.
- *
- * ---------------------------------------------------------
- *   void [name]_pause(void *data)
- *       Pauses output.  Typically only usable for local recordings.
- */
-
-struct obs_output;
-
-struct output_info {
+struct obs_output_info {
+	/* required */
 	const char *id;
 
 	const char *(*getname)(const char *locale);
 
-	void *(*create)(obs_data_t settings, struct obs_output *output);
+	void *(*create)(obs_data_t settings, obs_output_t output);
 	void (*destroy)(void *data);
-
-	void (*update)(void *data, obs_data_t settings);
 
 	bool (*start)(void *data);
 	void (*stop)(void *data);
@@ -119,17 +32,11 @@ struct output_info {
 	bool (*active)(void *data);
 
 	/* optional */
+	void (*update)(void *data, obs_data_t settings);
+
 	obs_properties_t (*properties)(const char *locale);
 
 	void (*pause)(void *data);
 };
 
-struct obs_output {
-	char               *name;
-	void               *data;
-	struct output_info callbacks;
-	obs_data_t         settings;
-};
-
-extern bool load_output_info(void *module, const char *module_name,
-		const char *output_name, struct output_info *info);
+EXPORT void obs_register_output(const struct obs_output_info *info);

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,253 +17,218 @@
 
 #pragma once
 
-#include "util/c99defs.h"
-#include "util/darray.h"
-#include "util/dstr.h"
-#include "util/threading.h"
-#include "media-io/audio-resampler.h"
-#include "callback/signal.h"
-#include "callback/proc.h"
+#include "obs.h"
 
-/*
- * ===========================================
- *   Sources
- * ===========================================
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @name Source output flags
  *
- *   A source is literally a "source" of audio and/or video.
- *
- *   A module with sources needs to export these functions:
- *       + enum_[type]
- *
- *   [type] can be one of the following:
- *       + input
- *       + filter
- *       + transition
- *
- *        input: A source used for directly playing video and/or sound.
- *       filter: A source that is used for filtering other sources, modifying
- *               the audio/video data before it is actually played.
- *   transition: A source used for transitioning between two different sources
- *               on screen.
- *
- *   Each individual source is then exported by it's name.  For example, a
- * source named "mysource" would have the following exports:
- *       + mysource_getname
- *       + mysource_create
- *       + mysource_destroy
- *       + mysource_get_output_flags
- *
- *       [and optionally]
- *       + mysource_properties
- *       + mysource_update
- *       + mysource_activate
- *       + mysource_deactivate
- *       + mysource_video_tick
- *       + mysource_video_render
- *       + mysource_getwidth
- *       + mysource_getheight
- *       + mysource_getparam
- *       + mysource_setparam
- *       + mysource_filtervideo
- *       + mysource_filteraudio
- *
- * ===========================================
- *   Primary Exports
- * ===========================================
- *   bool enum_[type](size_t idx, const char **name);
- *       idx: index of the enumeration.
- *       name: pointer to variable that receives the type of the source
- *       Return value: false when no more available.
- *
- * ===========================================
- *   Source Exports
- * ===========================================
- *   const char *[name]_getname(const char *locale);
- *       Returns the full name of the source type (seen by the user).
- *
- * ---------------------------------------------------------
- *   void *[name]_create(obs_data_t settings, obs_source_t source);
- *       Creates a source.
- *
- *       settings: Settings of the source.
- *       source: pointer to main source
- *       Return value: Internal source pointer, or NULL if failed.
- *
- * ---------------------------------------------------------
- *   void [name]_destroy(void *data);
- *       Destroys the source.
- *
- * ---------------------------------------------------------
- *   uint32_t [name]_get_output_flags(void *data);
- *       Returns a combination of one of the following values:
- *           + SOURCE_VIDEO: source has video
- *           + SOURCE_AUDIO: source has audio
- *           + SOURCE_ASYNC_VIDEO: video is sent asynchronously via RAM
- *           + SOURCE_DEFAULT_EFFECT: source uses default effect
- *           + SOURCE_YUV: source is in YUV color space
- *
- * ===========================================
- *   Optional Source Exports
- * ===========================================
- *   obs_properties_t [name]_properties(const char *locale);
- *       Returns the properties of this particular source type, if any.
- *
- * ---------------------------------------------------------
- *   void [name]_update(void *data, obs_data_t settings);
- *       Called to update the settings of the source.
- *
- * ---------------------------------------------------------
- *   void [name]_video_activate(void *data);
- *       Called when the source is being displayed.
- *
- * ---------------------------------------------------------
- *   void [name]_video_deactivate(void *data);
- *       Called when the source is no longer being displayed.
- *
- * ---------------------------------------------------------
- *   void [name]_video_tick(void *data, float seconds);
- *       Called each video frame with the time taken between the last and
- *       current frame, in seconds.
- *
- * ---------------------------------------------------------
- *   void [name]_video_render(void *data);
- *       Called to render the source.
- *
- * ---------------------------------------------------------
- *   uint32_t [name]_getwidth(void *data);
- *       Returns the width of a source, or -1 for maximum width.  If you render
- *       video, this is required.
- *
- * ---------------------------------------------------------
- *   uint32_t [name]_getheight(void *data);
- *       Returns the height of a source, or -1 for maximum height.  If you
- *       render video, this is required.
- *
- * ---------------------------------------------------------
- *   void [name]_getparam(void *data, const char *param, void *buf,
- *                        size_t buf_size);
- *       Gets a source parameter value.  
- *
- *       param: Name of parameter.
- *       Return value: Value of parameter.
- *
- * ---------------------------------------------------------
- *   void [name]_setparam(void *data, const char *param, const void *buf,
- *                        size_t size);
- *       Sets a source parameter value.
- *
- *       param: Name of parameter.
- *       val: Value of parameter to set.
- *
- * ---------------------------------------------------------
- *   struct source_frame *[name]_filter_video(void *data,
- *                                     const struct source_frame *frame);
- *       Filters audio data.  Used with audio filters.
- *
- *       frame: Video frame data.
- *       returns: New video frame data (or NULL if pending)
- *
- * ---------------------------------------------------------
- *   struct filter_audio [name]_filter_audio(void *data,
- *                                     struct filter_audio *audio);
- *       Filters video data.  Used with async video data.
- *
- *       audio: Audio data.
- *       reutrns New audio data (or NULL if pending)
+ * These flags determine what type of data the source outputs and expects.
+ * @{
  */
 
-struct obs_source;
+/**
+ * Source has video.
+ *
+ * Unless SOURCE_ASYNC_VIDEO is specified, the source must include the
+ * video_render callback in the source definition structure.
+ */
+#define OBS_SOURCE_VIDEO         (1<<0)
 
-struct source_info {
+/**
+ * Source has audio.
+ *
+ * Use the obs_source_output_audio function to pass raw audio data, which will
+ * be automatically converted and uploaded.  If used with SOURCE_ASYNC_VIDEO,
+ * audio will automatically be synced up to the video output.
+ */
+#define OBS_SOURCE_AUDIO         (1<<1)
+
+/**
+ * Source passes raw video data via RAM.
+ *
+ * Use the obs_source_output_video function to pass raw video data, which will
+ * be automatically uploaded at the specified timestamp.
+ *
+ * If this flag is specified, it is not necessary to include the video_render
+ * callback.  However, if you wish to use that function as well, you must call
+ * obs_source_getframe to get the current frame data, and
+ * obs_source_releaseframe to release the data when complete.
+ */
+#define OBS_SOURCE_ASYNC_VIDEO   ((1<<2) | OBS_SOURCE_VIDEO)
+
+/**
+ * Source uses custom drawing, rather than a default effect.
+ *
+ * If this flag is specified, the video_render callback will pass a NULL
+ * effect, and effect-based filters will not use direct rendering.
+ */
+#define OBS_SOURCE_CUSTOM_DRAW (1<<3)
+
+/**
+ * Source uses a color matrix (usually YUV sources).
+ *
+ * When this is used, the video_render callback will automatically assign a
+ * 4x4 YUV->RGB matrix to the "color_matrix" parameter of the effect, or it can
+ * be overwritten with a custom value.
+ */
+#define OBS_SOURCE_COLOR_MATRIX  (1<<4)
+
+/** @} */
+
+/**
+ * Source definition structure
+ */
+struct obs_source_info {
+	/* ----------------------------------------------------------------- */
+	/* Required implementation*/
+
+	/** Unique string identifier for the source */
 	const char *id;
 
-	/* ----------------------------------------------------------------- */
-	/* required implementations */
+	/**
+	 * Type of source.
+	 *
+	 * OBS_SOURCE_INPUT for input sources,
+	 * OBS_SOURCE_FILTER for filter sources, and
+	 * OBS_SOURCE_TRANSITION for transition sources.
+	 */
+	enum obs_source_type type;
 
+	/** Source output flags */
+	uint32_t output_flags;
+
+	/**
+	 * Get the translated name of the source type
+	 *
+	 * @param  locale  The locale to translate with
+	 * @return         The translated name of the source type
+	 */
 	const char *(*getname)(const char *locale);
 
+	/**
+	 * Creates the source data for the source
+	 *
+	 * @param  settings  Settings to initialize the source with
+	 * @param  source    Source that this data is assoicated with
+	 * @return           The data associated with this source
+	 */
 	void *(*create)(obs_data_t settings, obs_source_t source);
+
+	/** Destroys the private data for the source */
 	void (*destroy)(void *data);
 
-	uint32_t (*get_output_flags)(void *data);
-
 	/* ----------------------------------------------------------------- */
-	/* optional implementations */
+	/* Optional implementation */
 
-	obs_properties_t (*properties)(const char *locale);
+	/** 
+	 * Gets the property information of this source
+	 *
+	 * @param  locale  The locale to translate with
+	 * @return         The properties data.  Caller is responsible for
+	 *                 freeing the data with obs_properties_destroy
+	 */
+	obs_properties_t (*get_properties)(const char *locale);
 
+	/**
+	 * Updates the settings for this source
+	 *
+	 * @param data      Source data
+	 * @param settings  New settings for this source
+	 */
 	void (*update)(void *data, obs_data_t settings);
 
+	/** Called when the source has been activated */
 	void (*activate)(void *data);
+
+	/**
+	 * Called when the source has been deactivated (no longer being
+	 * played/displayed)
+	 */
 	void (*deactivate)(void *data);
 
+	/**
+	 * Called each video frame with the time elapsed
+	 *
+	 * @param  data     Source data
+	 * @param  seconds  Seconds elapsed since the last frame
+	 */
 	void (*video_tick)(void *data, float seconds);
-	void (*video_render)(void *data);
+
+	/**
+	 * Called when rendering the source with the graphics subsystem.
+	 *
+	 * If this is an input/transition source, this is called to draw the
+	 * source texture with the graphics subsystem using the specified
+	 * effect.
+	 *
+	 * If this is a filter source, it wraps source draw calls (for
+	 * example applying a custom effect with custom parameters to a
+	 * source).  In this case, it's highly recommended to use the
+	 * obs_source_process_filter function to automatically handle
+	 * effect-based filter processing.  However, you can implement custom
+	 * draw handling as desired as well.
+	 *
+	 * If the source output flags do not include SOURCE_CUSTOM_DRAW, all
+	 * a source needs to do is set the "output" parameter of the effect to
+	 * the desired texture, and then draw.  If the output flags include
+	 * SOURCE_COLOR_MATRIX, you may optionally set the the "color_matrix"
+	 * parameter of the effect to a custom 4x4 conversion matrix (by
+	 * default it will be set to an YUV->RGB conversion matrix)
+	 *
+	 * @param data    Source data
+	 * @param effect  Effect to be used with this source.  If the source
+	 *                output flags include SOURCE_CUSTOM_DRAW, this will
+	 *                be NULL, and the source is expected to process with
+	 *                an effect manually.
+	 */
+	void (*video_render)(void *data, effect_t effect);
+
+	/** @return The width of the source */
 	uint32_t (*getwidth)(void *data);
+
+	/** @return The height of the source */
 	uint32_t (*getheight)(void *data);
 
+	/**
+	 * Called to filter raw async video data.
+	 *
+	 * @note          This function is only used with filter sources.
+	 *
+	 * @param  data   Source data
+	 * @param  frame  Video frame to filter
+	 * @return        New video frame data.  This can defer video data to
+	 *                be drawn later if time is needed for processing
+	 */
 	struct source_frame *(*filter_video)(void *data,
 			const struct source_frame *frame);
+
+	/**
+	 * Called to filter raw audio data.
+	 *
+	 * @note          This function is only used with filter sources.
+	 *
+	 * @param  data   Source data
+	 * @param  audio  Audio data to filter.
+	 * @return        Modified or new audio data.  You can directly modify
+	 *                the data passed and return it, or you can defer audio
+	 *                data for later if time is needed for processing.
+	 */
 	struct filtered_audio *(*filter_audio)(void *data,
 			struct filtered_audio *audio);
 };
 
-struct obs_source {
-	volatile int                 refs;
+/**
+ * Regsiters a source definition to the current obs context.  This should be
+ * used in obs_module_load.
+ *
+ * @param  info  Pointer to the source definition structure
+ */
+EXPORT void obs_register_source(const struct obs_source_info *info);
 
-	/* source-specific data */
-	char                         *name; /* user-defined name */
-	enum obs_source_type         type;
-	obs_data_t                   settings;
-	void                         *data;
-	struct source_info           callbacks;
-
-	signal_handler_t             signals;
-	proc_handler_t               procs;
-
-	/* used to indicate that the source has been removed and all
-	 * references to it should be released (not exactly how I would prefer
-	 * to handle things but it's the best option) */
-	bool                         removed;
-
-	/* timing (if video is present, is based upon video) */
-	volatile bool                timing_set;
-	volatile uint64_t            timing_adjust;
-	volatile int                 audio_reset_ref;
-	uint64_t                     next_audio_ts_min;
-	uint64_t                     last_frame_ts;
-	uint64_t                     last_sys_timestamp;
-
-	/* audio */
-	bool                         audio_failed;
-	struct resample_info         sample_info;
-	audio_resampler_t            resampler;
-	audio_line_t                 audio_line;
-	pthread_mutex_t              audio_mutex;
-	struct filtered_audio        audio_data;
-	size_t                       audio_storage_size;
-	float                        volume;
-
-	/* async video data */
-	texture_t                    output_texture;
-	DARRAY(struct source_frame*) video_frames;
-	pthread_mutex_t              video_mutex;
-
-	/* filters */
-	struct obs_source            *filter_parent;
-	struct obs_source            *filter_target;
-	DARRAY(struct obs_source*)   filters;
-	pthread_mutex_t              filter_mutex;
-	bool                         rendering_filter;
-};
-
-extern bool load_source_info(void *module, const char *module_name,
-		const char *source_name, struct source_info *info);
-
-bool obs_source_init_handlers(struct obs_source *source);
-extern bool obs_source_init(struct obs_source *source,
-		const struct source_info *info);
-
-extern void obs_source_activate(obs_source_t source);
-extern void obs_source_deactivate(obs_source_t source);
-extern void obs_source_video_tick(obs_source_t source, float seconds);
+#ifdef __cplusplus
+}
+#endif

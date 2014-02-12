@@ -26,10 +26,31 @@
 #include "callback/signal.h"
 #include "callback/proc.h"
 
+/* opaque types */
+struct obs_display;
+struct obs_source;
+struct obs_scene;
+struct obs_scene_item;
+struct obs_output;
+struct obs_encoder;
+struct obs_service;
+
+typedef struct obs_display    *obs_display_t;
+typedef struct obs_source     *obs_source_t;
+typedef struct obs_scene      *obs_scene_t;
+typedef struct obs_scene_item *obs_sceneitem_t;
+typedef struct obs_output     *obs_output_t;
+typedef struct obs_encoder    *obs_encoder_t;
+typedef struct obs_service    *obs_service_t;
+
 #include "obs-defs.h"
 #include "obs-data.h"
 #include "obs-ui.h"
 #include "obs-properties.h"
+#include "obs-source.h"
+#include "obs-encoder.h"
+#include "obs-output.h"
+#include "obs-service.h"
 
 /*
  * Main libobs header used by applications.
@@ -47,10 +68,11 @@ extern "C" {
                                LIBOBS_API_MINOR_VER)
 
 enum obs_source_type {
-	SOURCE_INPUT,
-	SOURCE_FILTER,
-	SOURCE_TRANSITION,
-	SOURCE_SCENE
+	OBS_SOURCE_TYPE_INPUT,
+	OBS_SOURCE_TYPE_FILTER,
+	OBS_SOURCE_TYPE_TRANSITION,
+
+	OBS_SOURCE_TYPE_SCENE
 };
 
 /* used for changing the order of items (for example, filters in a source,
@@ -141,23 +163,6 @@ struct encoder_packet {
 	size_t               size;
 	enum packet_priority priority;
 };
-
-/* opaque types */
-struct obs_display;
-struct obs_source;
-struct obs_scene;
-struct obs_scene_item;
-struct obs_output;
-struct obs_encoder;
-struct obs_service;
-
-typedef struct obs_display    *obs_display_t;
-typedef struct obs_source     *obs_source_t;
-typedef struct obs_scene      *obs_scene_t;
-typedef struct obs_scene_item *obs_sceneitem_t;
-typedef struct obs_output     *obs_output_t;
-typedef struct obs_encoder    *obs_encoder_t;
-typedef struct obs_service    *obs_service_t;
 
 /* ------------------------------------------------------------------------- */
 /* OBS context */
@@ -433,9 +438,8 @@ EXPORT void obs_source_releaseframe(obs_source_t source,
 		struct source_frame *frame);
 
 /** Default RGB filter handler for generic effect filters */
-EXPORT void obs_source_process_filter(obs_source_t filter,
-		texrender_t texrender, effect_t effect,
-		uint32_t width, uint32_t height,
+EXPORT void obs_source_process_filter(obs_source_t filter, effect_t effect,
+		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum allow_direct_render allow_direct);
 
 

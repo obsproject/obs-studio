@@ -19,15 +19,8 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
-static FORCE_INLINE uint32_t get_m128_32_0(const __m128i val)
-{
-	return *(uint32_t* const)&val;
-}
-
-static FORCE_INLINE uint32_t get_m128_32_1(const __m128i val)
-{
-	return *(((uint32_t* const)&val)+1);
-}
+#define get_m128_32_0(val) (*((uint32_t*)&val))
+#define get_m128_32_1(val) (*(((uint32_t*)&val)+1))
 
 static FORCE_INLINE void pack_lum(uint8_t *lum_plane,
 		uint32_t lum_pos0, uint32_t lum_pos1,

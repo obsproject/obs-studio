@@ -22,132 +22,70 @@
 #include "obs-internal.h"
 #include "obs-module.h"
 
-void *load_module_subfunc(void *module, const char *module_name,
-		const char *name, const char *func, bool required)
-{
-	struct dstr func_name;
-	void *func_addr = NULL;
-
-	dstr_init_copy(&func_name, name);
-	dstr_cat(&func_name, "_");
-	dstr_cat(&func_name, func);
-
-	func_addr = os_dlsym(module, func_name.array);
-	if (required && !func_addr)
-		blog(LOG_ERROR, "Could not load function '%s' from module '%s'",
-				func_name.array, module_name);
-
-	dstr_free(&func_name);
-	return func_addr;
-}
-
-static void module_load_exports(struct obs_module *mod,
-		struct darray *output_array, const char *type,
-		const size_t data_size, void *callback_ptr)
-{
-	bool (*enum_func)(size_t idx, const char **name);
-	bool (*callback)(void*, const char*, const char*, void*);
-	struct dstr enum_name;
-	const char *name;
-	size_t i = 0;
-
-	callback = callback_ptr;
-
-	dstr_init_copy(&enum_name, "enum_");
-	dstr_cat(&enum_name, type);
-
-	enum_func = os_dlsym(mod->module, enum_name.array);
-	if (!enum_func)
-		goto complete;
-
-	while (enum_func(i++, &name)) {
-		void *info = bmalloc(data_size);
-		if (!callback(mod->module, mod->name, name, info))
-			blog(LOG_ERROR, "Couldn't load '%s' because it "
-			                "was missing required functions",
-			                name);
-		else
-			darray_push_back(data_size, output_array, info);
-
-		bfree(info);
-	}
-
-complete:
-	dstr_free(&enum_name);
-}
-
-static void module_load_modal_ui_exports(struct obs_module *mod)
-{
-	bool (*enum_func)(size_t idx, struct obs_modal_ui *info);
-	struct obs_modal_ui ui_info;
-	size_t i = 0;
-
-	enum_func = os_dlsym(mod->module, "enum_modal_ui");
-	if (enum_func)
-		while (enum_func(i++, &ui_info))
-			da_push_back(obs->ui_modal_callbacks, &ui_info);
-}
-
-static void module_load_modeless_ui_exports(struct obs_module *mod)
-{
-	bool (*enum_func)(size_t idx, struct obs_modeless_ui *info);
-	struct obs_modeless_ui ui_info;
-	size_t i = 0;
-
-	enum_func = os_dlsym(mod->module, "enum_modeless_ui");
-	if (enum_func)
-		while (enum_func(i++, &ui_info))
-			da_push_back(obs->ui_modeless_callbacks, &ui_info);
-}
-
 extern char *find_plugin(const char *plugin);
 
-/* checks API version of module and calls module_load if it exists.
- * if the API version used by the module is incompatible, fails. */
+/* These variables get the current size of the info structures.  Used to
+ * automatically prevent API breakage in case functions have to be added */
+static size_t cur_source_info_size  = 0;
+static size_t cur_output_info_size  = 0;
+static size_t cur_encoder_info_size = 0;
+static size_t cur_service_info_size = 0;
+static size_t cur_modal_ui_size     = 0;
+static size_t cur_modeless_ui_size  = 0;
+
+static inline int req_func_not_found(const char *name, const char *path)
+{
+	blog(LOG_WARNING, "Required module function '%s' in module '%s' not "
+	                  "found, loading of module failed",
+	                  name, path);
+	return MODULE_FUNCTION_NOT_FOUND;
+}
+
+#define LOAD_REQ_SIZE_FUNC(func, module, path)         \
+	func = os_dlsym(module, #func);                \
+	if (!func)                                     \
+		return req_func_not_found(#func, path)
+
 static int call_module_load(void *module, const char *path)
 {
-	uint32_t (*module_version)(uint32_t obs_ver) = NULL;
-	bool (*module_load)(void) = NULL;
-	uint32_t version, major, minor;
+	bool   (*obs_module_load)(uint32_t obs_ver)  = NULL;
+	size_t (*obs_module_source_info_size)(void)  = NULL;
+	size_t (*obs_module_output_info_size)(void)  = NULL;
+	size_t (*obs_module_encoder_info_size)(void) = NULL;
+	size_t (*obs_module_service_info_size)(void) = NULL;
+	size_t (*obs_module_modal_ui_size)(void)     = NULL;
+	size_t (*obs_module_modeless_ui_size)(void)  = NULL;
 
-	module_load = os_dlsym(module, "module_load");
+	obs_module_load = os_dlsym(module, "obs_module_load");
+	if (!obs_module_load)
+		return req_func_not_found("obs_module_load", path);
 
-	module_version = os_dlsym(module, "module_version");
-	if (!module_version) {
+	LOAD_REQ_SIZE_FUNC(obs_module_source_info_size,  module, path);
+	LOAD_REQ_SIZE_FUNC(obs_module_output_info_size,  module, path);
+	LOAD_REQ_SIZE_FUNC(obs_module_encoder_info_size, module, path);
+	LOAD_REQ_SIZE_FUNC(obs_module_service_info_size, module, path);
+	LOAD_REQ_SIZE_FUNC(obs_module_modal_ui_size,     module, path);
+	LOAD_REQ_SIZE_FUNC(obs_module_modeless_ui_size,  module, path);
+
+	cur_source_info_size  = obs_module_source_info_size();
+	cur_output_info_size  = obs_module_output_info_size();
+	cur_encoder_info_size = obs_module_encoder_info_size();
+	cur_service_info_size = obs_module_service_info_size();
+	cur_modal_ui_size     = obs_module_modal_ui_size();
+	cur_modeless_ui_size  = obs_module_modeless_ui_size();
+
+	if (!obs_module_load(LIBOBS_API_VER)) {
 		blog(LOG_WARNING, "Module '%s' failed to load: "
-		                  "module_version not found.", path);
-		return MODULE_FUNCTIONNOTFOUND;
-	}
-
-	version = module_version(LIBOBS_API_VER);
-	major = (version >> 16);
-	minor = (version & 0xFF);
-
-	if (major != LIBOBS_API_MAJOR_VER) {
-		blog(LOG_WARNING, "Module '%s' failed to load: "
-		                  "incompatible major version "
-		                  "(current API: %u.%u, module version: %u.%u)",
-		                  path,
-		                  LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER,
-		                  major, minor);
-		return MODULE_INCOMPATIBLE_VER;
-	}
-
-	if (minor > LIBOBS_API_MINOR_VER) {
-		blog(LOG_WARNING, "Module '%s' failed to load: "
-		                  "incompatible minor version "
-		                  "(current API: %u.%u, module version: %u.%u)",
-		                  path,
-		                  LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER,
-		                  major, minor);
-		return MODULE_INCOMPATIBLE_VER;
-	}
-
-	if (module_load && !module_load()) {
-		blog(LOG_WARNING, "Module '%s' failed to load: "
-		                  "module_load failed", path);
+		                  "obs_module_load failed", path);
 		return MODULE_ERROR;
 	}
+
+	cur_source_info_size  = 0;
+	cur_output_info_size  = 0;
+	cur_encoder_info_size = 0;
+	cur_service_info_size = 0;
+	cur_modal_ui_size     = 0;
+	cur_modeless_ui_size  = 0;
 
 	return MODULE_SUCCESS;
 }
@@ -161,7 +99,7 @@ int obs_load_module(const char *path)
 	mod.module = os_dlopen(plugin_path);
 	bfree(plugin_path);
 	if (!mod.module)
-		return MODULE_FILENOTFOUND;
+		return MODULE_FILE_NOT_FOUND;
 
 	errorcode = call_module_load(mod.module, path);
 	if (errorcode != MODULE_SUCCESS) {
@@ -170,20 +108,6 @@ int obs_load_module(const char *path)
 	}
 
 	mod.name = bstrdup(path);
-	module_load_exports(&mod, &obs->input_types.da, "inputs",
-			sizeof(struct source_info), load_source_info);
-	module_load_exports(&mod, &obs->filter_types.da, "filters",
-			sizeof(struct source_info), load_source_info);
-	module_load_exports(&mod, &obs->transition_types.da, "transitions",
-			sizeof(struct source_info), load_source_info);
-	module_load_exports(&mod, &obs->output_types.da, "outputs",
-			sizeof(struct output_info), load_output_info);
-	module_load_exports(&mod, &obs->encoder_types.da, "encoders",
-			sizeof(struct encoder_info), load_encoder_info);
-
-	module_load_modal_ui_exports(&mod);
-	module_load_modeless_ui_exports(&mod);
-
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;
 }
@@ -196,8 +120,7 @@ void free_module(struct obs_module *mod)
 	if (mod->module) {
 		void (*module_unload)(void);
 
-		module_unload = os_dlsym(mod->module,
-				"module_unload");
+		module_unload = os_dlsym(mod->module, "module_unload");
 		if (module_unload)
 			module_unload();
 
@@ -205,4 +128,112 @@ void free_module(struct obs_module *mod)
 	}
 
 	bfree(mod->name);
+}
+
+void obs_register_source(const struct obs_source_info *info)
+{
+	struct obs_source_info data = {0};
+	struct darray *array;
+
+	if (!cur_source_info_size) {
+		blog(LOG_WARNING, "Tried to register obs_source_info"
+		                  " outside of obs_module_load");
+		return;
+	}
+
+	memcpy(&data, info, cur_source_info_size);
+
+	if (info->type == OBS_SOURCE_TYPE_INPUT) {
+		array = &obs->input_types.da;
+	} else if (info->type == OBS_SOURCE_TYPE_FILTER) {
+		array = &obs->filter_types.da;
+	} else if (info->type == OBS_SOURCE_TYPE_TRANSITION) {
+		array = &obs->transition_types.da;
+	} else {
+		blog(LOG_WARNING, "Tried to register unknown source type: %u",
+				info->type);
+		return;
+	}
+
+	darray_push_back(sizeof(struct obs_source_info), array, &data);
+}
+
+#define REGISTER_OBS_DEF(size_var, structure, dest, info)                 \
+	do {                                                              \
+		struct structure data = {0};                              \
+		if (!size_var) {                                          \
+			blog(LOG_WARNING, "Tried to register " #structure \
+			                  " outside of obs_module_load"); \
+			return;                                           \
+		}                                                         \
+                                                                          \
+		memcpy(&data, info, size_var);                            \
+		da_push_back(dest, &data);                                \
+	} while (false)
+
+#define CHECK_REQUIRED_VAL(info, val, func) \
+	do { \
+		if (!info->val) {\
+			blog(LOG_WARNING, "Required value '" #val " for" \
+					  "'%s' not found.  " #func \
+			                  " failed.", \
+					  info->id);\
+			return; \
+		} \
+	} while (false)
+
+void obs_register_output(const struct obs_output_info *info)
+{
+	CHECK_REQUIRED_VAL(info, getname, obs_register_output);
+	CHECK_REQUIRED_VAL(info, create,  obs_register_output);
+	CHECK_REQUIRED_VAL(info, destroy, obs_register_output);
+	CHECK_REQUIRED_VAL(info, start,   obs_register_output);
+	CHECK_REQUIRED_VAL(info, stop,    obs_register_output);
+	CHECK_REQUIRED_VAL(info, active,  obs_register_output);
+
+	REGISTER_OBS_DEF(cur_output_info_size, obs_output_info,
+			obs->output_types, info);
+}
+
+void obs_register_encoder(const struct obs_encoder_info *info)
+{
+	CHECK_REQUIRED_VAL(info, getname,   obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, create,    obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, destroy,   obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, reset,     obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, encode,    obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, getheader, obs_register_encoder);
+
+	REGISTER_OBS_DEF(cur_encoder_info_size, obs_encoder_info,
+			obs->encoder_types, info);
+}
+
+void obs_register_service(const struct obs_service_info *info)
+{
+	CHECK_REQUIRED_VAL(info, getname, obs_register_service);
+	CHECK_REQUIRED_VAL(info, create,  obs_register_service);
+	CHECK_REQUIRED_VAL(info, destroy, obs_register_service);
+
+	REGISTER_OBS_DEF(cur_service_info_size, obs_service_info,
+			obs->service_types, info);
+}
+
+void obs_regsiter_modal_ui(const struct obs_modal_ui *info)
+{
+	CHECK_REQUIRED_VAL(info, task,   obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL(info, target, obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL(info, exec,   obs_regsiter_modal_ui);
+
+	REGISTER_OBS_DEF(cur_modal_ui_size, obs_modal_ui,
+			obs->modal_ui_callbacks, info);
+}
+
+void obs_regsiter_modeless_ui(const struct obs_modeless_ui *info)
+{
+	CHECK_REQUIRED_VAL(info, task,   obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL(info, target, obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL(info, create, obs_regsiter_modeless_ui);
+
+	REGISTER_OBS_DEF(cur_modeless_ui_size, obs_modeless_ui,
+			obs->modeless_ui_callbacks, info);
 }

@@ -110,7 +110,8 @@ static HWND CreateTestWindow(HINSTANCE instance)
 	if (!RegisterClass(&wc))
 		return 0;
 
-	return CreateWindow(TEXT("bla"), TEXT("bla"), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+	return CreateWindow(TEXT("bla"), TEXT("bla"),
+			WS_OVERLAPPEDWINDOW|WS_VISIBLE,
 			1920/2 - cx/2, 1080/2 - cy/2, cx, cy,
 			NULL, NULL, instance, NULL);
 }
@@ -139,14 +140,14 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* create source */
-		SourceContext source = obs_source_create(SOURCE_INPUT,
+		SourceContext source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
 				"random", "some randon source", NULL);
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
-		SourceContext filter = obs_source_create(SOURCE_FILTER,
+		SourceContext filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
 				"test", "a nice little green filter", NULL);
 		if (!filter)
 			throw "Couldn't create test filter";

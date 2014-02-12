@@ -174,9 +174,6 @@
     <ClCompile Include="..\..\..\plugins\obs-ffmpeg\obs-ffmpeg-output.c" />
     <ClCompile Include="..\..\..\plugins\obs-ffmpeg\obs-ffmpeg.c" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\plugins\obs-ffmpeg\obs-ffmpeg-output.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

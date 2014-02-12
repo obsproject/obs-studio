@@ -81,11 +81,6 @@ static void scene_destroy(void *data)
 	bfree(scene);
 }
 
-static uint32_t scene_get_output_flags(void *data)
-{
-	return SOURCE_VIDEO;
-}
-
 static inline void detach_sceneitem(struct obs_scene_item *item)
 {
 	if (item->prev)
@@ -115,7 +110,7 @@ static inline void attach_sceneitem(struct obs_scene_item *item,
 	}
 }
 
-static void scene_video_render(void *data)
+static void scene_video_render(void *data, effect_t effect)
 {
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
@@ -154,16 +149,17 @@ static uint32_t scene_getsize(void *data)
 	return 0;
 }
 
-static const struct source_info scene_info =
+static const struct obs_source_info scene_info =
 {
-	.id               = "scene",
-	.getname          = scene_getname,
-	.create           = scene_create,
-	.destroy          = scene_destroy,
-	.get_output_flags = scene_get_output_flags,
-	.video_render     = scene_video_render,
-	.getwidth         = scene_getsize,
-	.getheight        = scene_getsize,
+	.id           = "scene",
+	.type         = OBS_SOURCE_TYPE_SCENE,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.getname      = scene_getname,
+	.create       = scene_create,
+	.destroy      = scene_destroy,
+	.video_render = scene_video_render,
+	.getwidth     = scene_getsize,
+	.getheight    = scene_getsize,
 };
 
 obs_scene_t obs_scene_create(const char *name)
@@ -188,11 +184,11 @@ obs_scene_t obs_scene_create(const char *name)
 	}
 
 	source->name  = bstrdup(name);
-	source->type  = SOURCE_SCENE;
+	source->type  = OBS_SOURCE_TYPE_SCENE;
 
 	scene->source = source;
 	obs_source_init(source, &scene_info);
-	memcpy(&source->callbacks, &scene_info, sizeof(struct source_info));
+	memcpy(&source->info, &scene_info, sizeof(struct obs_source_info));
 	return scene;
 }
 
@@ -215,7 +211,7 @@ obs_source_t obs_scene_getsource(obs_scene_t scene)
 
 obs_scene_t obs_scene_fromsource(obs_source_t source)
 {
-	if (source->type != SOURCE_SCENE)
+	if (source->type != OBS_SOURCE_TYPE_SCENE)
 		return NULL;
 
 	return source->data;

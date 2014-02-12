@@ -1,12 +1,29 @@
 #include <stdlib.h>
-#include "test-random.h"
+#include <obs.h>
 
-const char *random_getname(const char *locale)
+struct random_tex {
+	texture_t texture;
+};
+
+static const char *random_getname(const char *locale)
 {
 	return "20x20 Random Pixel Texture Source (Test)";
 }
 
-struct random_tex *random_create(const char *settings, obs_source_t source)
+static void random_destroy(struct random_tex *rt)
+{
+	if (rt) {
+		gs_entercontext(obs_graphics());
+
+		texture_destroy(rt->texture);
+		bfree(rt);
+
+		gs_leavecontext();
+	}
+}
+
+static struct random_tex *random_create(obs_data_t settings,
+		obs_source_t source)
 {
 	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
 	uint32_t *pixels = bmalloc(20*20*4);
@@ -39,38 +56,31 @@ struct random_tex *random_create(const char *settings, obs_source_t source)
 	return rt;
 }
 
-void random_destroy(struct random_tex *rt)
+static void random_video_render(struct random_tex *rt, effect_t effect)
 {
-	if (rt) {
-		gs_entercontext(obs_graphics());
-
-		texture_destroy(rt->texture);
-		bfree(rt);
-
-		gs_leavecontext();
-	}
-}
-
-uint32_t random_get_output_flags(struct random_tex *rt)
-{
-	return SOURCE_VIDEO | SOURCE_DEFAULT_EFFECT;
-}
-
-void random_video_render(struct random_tex *rt, obs_source_t filter_target)
-{
-	effect_t effect  = gs_geteffect();
-	eparam_t diffuse = effect_getparambyname(effect, "diffuse");
-
-	effect_settexture(effect, diffuse, rt->texture);
+	eparam_t image = effect_getparambyname(effect, "image");
+	effect_settexture(effect, image, rt->texture);
 	gs_draw_sprite(rt->texture, 0, 0, 0);
 }
 
-uint32_t random_getwidth(struct random_tex *rt)
+static uint32_t random_getwidth(struct random_tex *rt)
 {
 	return texture_getwidth(rt->texture);
 }
 
-uint32_t random_getheight(struct random_tex *rt)
+static uint32_t random_getheight(struct random_tex *rt)
 {
 	return texture_getheight(rt->texture);
 }
+
+struct obs_source_info test_random = {
+	.id           = "random",
+	.type         = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.getname      = random_getname,
+	.create       = random_create,
+	.destroy      = random_destroy,
+	.video_render = random_video_render,
+	.getwidth     = random_getwidth,
+	.getheight    = random_getheight
+};

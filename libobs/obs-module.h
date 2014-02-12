@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,13 +17,61 @@
 
 #pragma once
 
-#include "util/darray.h"
+#include "obs.h"
 
-struct obs_module {
-	char *name;
-	void *module;
-};
+#ifdef __cplusplus
+#define MODULE_EXPORT extern "C" EXPORT
+#else
+#define MODULE_EXPORT EXPORT
+#endif
 
-extern void *load_module_subfunc(void *module, const char *module_name,
-		const char *name, const char *func, bool required);
-extern void free_module(struct obs_module *mod);
+#define OBS_SIZE_FUNC(structure, func)                       \
+	MODULE_EXPORT size_t func(void);                     \
+	size_t func(void) {return sizeof(struct structure);}
+
+/**
+ * @file
+ *
+ * This file is used by modules for module declaration and module exports.
+ */
+
+/** Required: Declares a libobs module. */
+#define OBS_DECLARE_MODULE()                                          \
+	MODULE_EXPORT uint32_t obs_module_ver(void);                  \
+	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;}        \
+	OBS_SIZE_FUNC(obs_source_info,  obs_module_source_info_size)  \
+	OBS_SIZE_FUNC(obs_output_info,  obs_module_output_info_size)  \
+	OBS_SIZE_FUNC(obs_encoder_info, obs_module_encoder_info_size) \
+	OBS_SIZE_FUNC(obs_encoder_info, obs_module_service_info_size) \
+	OBS_SIZE_FUNC(obs_modal_ui,     obs_module_modal_ui_size)     \
+	OBS_SIZE_FUNC(obs_modeless_ui,  obs_module_modeless_ui_size)
+
+/**
+ * Required: Called when the module is loaded.  Use this function to load all
+ * the sources/encoders/outputs/services for your module, or anything else that
+ * may need loading.
+ *
+ * @param libobs_ver The version of libobs.
+ * @return           Return true to continue loading the module, otherwise
+ *                   false to indcate failure and unload the module
+ */
+MODULE_EXPORT bool obs_module_load(uint32_t libobs_version);
+
+/** Optional: Called when the module is unloaded.  */
+MODULE_EXPORT void obs_module_unload(void);
+
+/**
+ * Optional: Declares the author(s) of the module
+ *
+ * @param name Author name(s)
+ */
+#define OBS_MODULE_AUTHOR(name) \
+	MODULE_EXPORT const char *obs_module_author(void); \
+	const char *obs_module_author(void) {return name;}
+
+/**
+ * Optional: Declares the author of the module
+ *
+ * @param locale Locale to look up the description for.
+ */
+MODULE_EXPORT const char *obs_module_description(const char *locale);

@@ -1,21 +1,11 @@
-#include <string.h>
-#include <obs.h>
+#include <obs-module.h>
 
-EXPORT bool enum_outputs(size_t idx, const char **name);
-EXPORT uint32_t module_version(uint32_t in_version);
+OBS_DECLARE_MODULE()
 
-static const char *outputs[] = {"ffmpeg_output"};
+extern struct obs_output_info ffmpeg_output;
 
-uint32_t module_version(uint32_t in_version)
+bool obs_module_load(uint32_t obs_version)
 {
-	return LIBOBS_API_VER;
-}
-
-bool enum_outputs(size_t idx, const char **name)
-{
-	if (idx >= sizeof(outputs)/sizeof(const char*))
-		return false;
-
-	*name = outputs[idx];
+	obs_register_output(&ffmpeg_output);
 	return true;
 }

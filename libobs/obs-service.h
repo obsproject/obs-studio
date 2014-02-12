@@ -17,15 +17,16 @@
 
 #pragma once
 
-struct service_data;
-
-struct service_info {
+struct obs_service_info {
+	/* required */
 	char *id;
 
 	const char *(*getname)(const char *locale);
 
 	void *(*create)(obs_data_t settings, struct service_data *service);
 	void (*destroy)(void *data);
+
+	/* optional */
 	void (*update)(void *data, obs_data_t settings);
 
 	/* get stream url/key */

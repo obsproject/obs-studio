@@ -1,11 +1,29 @@
-#include "test-filter.h"
+#include <obs.h>
 
-const char *test_getname(const char *locale)
+struct test_filter {
+	obs_source_t source;
+	effect_t whatever;
+};
+
+static const char *filter_getname(const char *locale)
 {
 	return "Test";
 }
 
-struct test_filter *test_create(const char *settings, obs_source_t source)
+static void filter_destroy(struct test_filter *tf)
+{
+	if (tf) {
+		gs_entercontext(obs_graphics());
+
+		effect_destroy(tf->whatever);
+		bfree(tf);
+
+		gs_leavecontext();
+	}
+}
+
+static struct test_filter *filter_create(obs_data_t settings,
+		obs_source_t source)
 {
 	struct test_filter *tf = bzalloc(sizeof(struct test_filter));
 	char *effect_file;
@@ -18,42 +36,27 @@ struct test_filter *test_create(const char *settings, obs_source_t source)
 	tf->whatever = gs_create_effect_from_file(effect_file, NULL);
 	bfree(effect_file);
 	if (!tf->whatever) {
-		test_destroy(tf);
+		filter_destroy(tf);
 		return NULL;
 	}
-
-	tf->texrender = texrender_create(GS_RGBA, GS_ZS_NONE);
 
 	gs_leavecontext();
 
 	return tf;
 }
 
-void test_destroy(struct test_filter *tf)
+static void filter_render(struct test_filter *tf, effect_t effect)
 {
-	if (tf) {
-		gs_entercontext(obs_graphics());
-
-		effect_destroy(tf->whatever);
-		texrender_destroy(tf->texrender);
-		bfree(tf);
-
-		gs_leavecontext();
-	}
+	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,
+			ALLOW_DIRECT_RENDERING);
 }
 
-uint32_t test_get_output_flags(struct test_filter *tf)
-{
-	return SOURCE_VIDEO;
-}
-
-void test_video_tick(struct test_filter *tf, float seconds)
-{
-	texrender_reset(tf->texrender);
-}
-
-void test_video_render(struct test_filter *tf)
-{
-	obs_source_process_filter(tf->source, tf->texrender, tf->whatever,
-			0, 0, ALLOW_DIRECT_RENDERING);
-}
+struct obs_source_info test_filter = {
+	.id           = "test_filter",
+	.type         = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.getname      = filter_getname,
+	.create       = filter_create,
+	.destroy      = filter_destroy,
+	.video_render = filter_render
+};

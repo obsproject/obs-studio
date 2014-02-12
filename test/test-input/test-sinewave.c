@@ -1,8 +1,18 @@
 #include <math.h>
-#include "test-sinewave.h"
+#include <util/bmem.h>
+#include <util/threading.h>
+#include <util/platform.h>
+#include <obs.h>
+
+struct sinewave_data {
+	bool         initialized_thread;
+	pthread_t    thread;
+	event_t      event;
+	obs_source_t source;
+};
 
 /* middle C */
-const double rate = 261.63/48000.0;
+static const double rate = 261.63/48000.0;
 
 #define M_PI 3.1415926535897932384626433832795
 #define M_PI_X2 M_PI*2
@@ -45,12 +55,27 @@ static void *sinewave_thread(void *pdata)
 
 /* ------------------------------------------------------------------------- */
 
-const char *sinewave_getname(const char *locale)
+static const char *sinewave_getname(const char *locale)
 {
 	return "Sinewave Sound Source (Test)";
 }
 
-struct sinewave_data *sinewave_create(const char *settings, obs_source_t source)
+static void sinewave_destroy(struct sinewave_data *swd)
+{
+	if (swd) {
+		if (swd->initialized_thread) {
+			void *ret;
+			event_signal(&swd->event);
+			pthread_join(swd->thread, &ret);
+		}
+
+		event_destroy(&swd->event);
+		bfree(swd);
+	}
+}
+
+static struct sinewave_data *sinewave_create(obs_data_t settings,
+		obs_source_t source)
 {
 	struct sinewave_data *swd = bzalloc(sizeof(struct sinewave_data));
 	swd->source = source;
@@ -68,21 +93,11 @@ fail:
 	return NULL;
 }
 
-void sinewave_destroy(struct sinewave_data *swd)
-{
-	if (swd) {
-		if (swd->initialized_thread) {
-			void *ret;
-			event_signal(&swd->event);
-			pthread_join(swd->thread, &ret);
-		}
-
-		event_destroy(&swd->event);
-		bfree(swd);
-	}
-}
-
-uint32_t sinewave_get_output_flags(struct sinewave_data *swd)
-{
-	return SOURCE_AUDIO;
-}
+struct obs_source_info test_sinewave = {
+	.id           = "test_sinewave",
+	.type         = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_AUDIO,
+	.getname      = sinewave_getname,
+	.create       = sinewave_create,
+	.destroy      = sinewave_destroy,
+};
