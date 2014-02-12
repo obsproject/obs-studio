@@ -10,9 +10,7 @@ set(linux_SOURCES
     xshm-input.c
 )
 set(linux_HEADERS
-    linux.h
     xcursor.h
-    xshm-input.h
 )
     
 add_library(linux MODULE

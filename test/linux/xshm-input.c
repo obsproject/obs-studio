@@ -4,8 +4,10 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+#include <obs.h>
 #include "xcursor.h"
-#include "xshm-input.h"
+
+#define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
 
 struct xshm_data {
     Display *dpy;
@@ -18,12 +20,50 @@ struct xshm_data {
     xcursor_t *cursor;
 };
 
-const char* xshm_input_getname(const char* locale)
+static const char* xshm_input_getname(const char* locale)
 {
     return "X11 Shared Memory Screen Input";
 }
 
-struct xshm_data *xshm_input_create(const char *settings, obs_source_t source)
+static void xshm_input_destroy(void *vptr)
+{
+    XSHM_DATA(vptr);
+    
+    if (data) {
+        gs_entercontext(obs_graphics());
+
+        texture_destroy(data->texture);
+        xcursor_destroy(data->cursor);
+
+        gs_leavecontext();
+        
+        // detach xshm
+        if (data->shm_attached)
+            XShmDetach(data->dpy, &data->shm_info);
+        
+        // detach shared memory
+        if (data->shm_info.shmaddr != (char *) -1) {
+            shmdt(data->shm_info.shmaddr);
+            data->shm_info.shmaddr = (char *) -1;
+        }
+        
+        // remove shared memory
+        if (data->shm_info.shmid != -1)
+            shmctl(data->shm_info.shmid, IPC_RMID, NULL);
+        
+        // destroy image
+        if (data->image)
+            XDestroyImage(data->image);
+        
+        // close display
+        if (data->dpy)
+            XCloseDisplay(data->dpy);
+            
+        bfree(data);
+    }
+}
+
+static void *xshm_input_create(obs_data_t settings, obs_source_t source)
 {
     // create data structure
     struct xshm_data *data = bmalloc(sizeof(struct xshm_data));
@@ -95,49 +135,10 @@ fail:
     return NULL;
 }
 
-void xshm_input_destroy(struct xshm_data *data)
+static void xshm_input_video_tick(void *vptr, float seconds)
 {
-    if (data) {
-        gs_entercontext(obs_graphics());
-
-        texture_destroy(data->texture);
-        xcursor_destroy(data->cursor);
-
-        gs_leavecontext();
-        
-        // detach xshm
-        if (data->shm_attached)
-            XShmDetach(data->dpy, &data->shm_info);
-        
-        // detach shared memory
-        if (data->shm_info.shmaddr != (char *) -1) {
-            shmdt(data->shm_info.shmaddr);
-            data->shm_info.shmaddr = (char *) -1;
-        }
-        
-        // remove shared memory
-        if (data->shm_info.shmid != -1)
-            shmctl(data->shm_info.shmid, IPC_RMID, NULL);
-        
-        // destroy image
-        if (data->image)
-            XDestroyImage(data->image);
-        
-        // close display
-        if (data->dpy)
-            XCloseDisplay(data->dpy);
-            
-        bfree(data);
-    }
-}
-
-uint32_t xshm_input_get_output_flags(struct xshm_data *data)
-{
-    return SOURCE_VIDEO | SOURCE_DEFAULT_EFFECT;
-}
-
-void xshm_input_video_tick(struct xshm_data *data, float seconds)
-{
+    XSHM_DATA(vptr);
+    
     gs_entercontext(obs_graphics());
     
     // update screen texture
@@ -151,24 +152,42 @@ void xshm_input_video_tick(struct xshm_data *data, float seconds)
     gs_leavecontext();
 }
 
-void xshm_input_video_render(struct xshm_data *data, obs_source_t filter_target)
+static void xshm_input_video_render(void *vptr, effect_t effect)
 {
-    effect_t effect  = gs_geteffect();
+    XSHM_DATA(vptr);
+    
     eparam_t diffuse = effect_getparambyname(effect, "diffuse");
-
     effect_settexture(effect, diffuse, data->texture);
+    
     gs_draw_sprite(data->texture, 0, 0, 0);
     
     // render the cursor
     xcursor_render(data->cursor);
 }
 
-uint32_t xshm_input_getwidth(struct xshm_data *data)
+static uint32_t xshm_input_getwidth(void *vptr)
 {
+    XSHM_DATA(vptr);
+    
     return texture_getwidth(data->texture);
 }
 
-uint32_t xshm_input_getheight(struct xshm_data *data)
+static uint32_t xshm_input_getheight(void *vptr)
 {
+    XSHM_DATA(vptr);
+    
     return texture_getheight(data->texture);
 }
+
+struct obs_source_info xshm_input = {
+    .id           = "xshm_input",
+    .type         = OBS_SOURCE_TYPE_INPUT,
+    .output_flags = OBS_SOURCE_VIDEO,
+    .getname      = xshm_input_getname,
+    .create       = xshm_input_create,
+    .destroy      = xshm_input_destroy,
+    .video_tick   = xshm_input_video_tick,
+    .video_render = xshm_input_video_render,
+    .getwidth     = xshm_input_getwidth,
+    .getheight    = xshm_input_getheight
+};
