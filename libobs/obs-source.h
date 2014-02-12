@@ -36,7 +36,7 @@ extern "C" {
  * Unless SOURCE_ASYNC_VIDEO is specified, the source must include the
  * video_render callback in the source definition structure.
  */
-#define OBS_SOURCE_VIDEO         (1<<0)
+#define OBS_SOURCE_VIDEO        (1<<0)
 
 /**
  * Source has audio.
@@ -45,7 +45,7 @@ extern "C" {
  * be automatically converted and uploaded.  If used with SOURCE_ASYNC_VIDEO,
  * audio will automatically be synced up to the video output.
  */
-#define OBS_SOURCE_AUDIO         (1<<1)
+#define OBS_SOURCE_AUDIO        (1<<1)
 
 /**
  * Source passes raw video data via RAM.
@@ -58,7 +58,7 @@ extern "C" {
  * obs_source_getframe to get the current frame data, and
  * obs_source_releaseframe to release the data when complete.
  */
-#define OBS_SOURCE_ASYNC_VIDEO   ((1<<2) | OBS_SOURCE_VIDEO)
+#define OBS_SOURCE_ASYNC_VIDEO  ((1<<2) | OBS_SOURCE_VIDEO)
 
 /**
  * Source uses custom drawing, rather than a default effect.
@@ -66,16 +66,16 @@ extern "C" {
  * If this flag is specified, the video_render callback will pass a NULL
  * effect, and effect-based filters will not use direct rendering.
  */
-#define OBS_SOURCE_CUSTOM_DRAW (1<<3)
+#define OBS_SOURCE_CUSTOM_DRAW  (1<<3)
 
 /**
  * Source uses a color matrix (usually YUV sources).
  *
  * When this is used, the video_render callback will automatically assign a
  * 4x4 YUV->RGB matrix to the "color_matrix" parameter of the effect, or it can
- * be overwritten with a custom value.
+ * be changed to a custom value.
  */
-#define OBS_SOURCE_COLOR_MATRIX  (1<<4)
+#define OBS_SOURCE_COLOR_MATRIX (1<<4)
 
 /** @} */
 
@@ -92,9 +92,9 @@ struct obs_source_info {
 	/**
 	 * Type of source.
 	 *
-	 * OBS_SOURCE_INPUT for input sources,
-	 * OBS_SOURCE_FILTER for filter sources, and
-	 * OBS_SOURCE_TRANSITION for transition sources.
+	 * OBS_SOURCE_TYPE_INPUT for input sources,
+	 * OBS_SOURCE_TYPE_FILTER for filter sources, and
+	 * OBS_SOURCE_TYPE_TRANSITION for transition sources.
 	 */
 	enum obs_source_type type;
 
@@ -173,7 +173,7 @@ struct obs_source_info {
 	 * draw handling as desired as well.
 	 *
 	 * If the source output flags do not include SOURCE_CUSTOM_DRAW, all
-	 * a source needs to do is set the "output" parameter of the effect to
+	 * a source needs to do is set the "image" parameter of the effect to
 	 * the desired texture, and then draw.  If the output flags include
 	 * SOURCE_COLOR_MATRIX, you may optionally set the the "color_matrix"
 	 * parameter of the effect to a custom 4x4 conversion matrix (by
