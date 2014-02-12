@@ -148,14 +148,14 @@ static void test()
 
 		/* ------------------------------------------------------ */
 		/* create source */
-		SourceContext source{obs_source_create(OBS_SOURCE_INPUT,
+		SourceContext source{obs_source_create(OBS_SOURCE_TYPE_INPUT,
 				"random", "a test source", NULL)};
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
-		SourceContext filter{obs_source_create(OBS_SOURCE_FILTER,
+		SourceContext filter{obs_source_create(OBS_SOURCE_TYPE_FILTER,
 				"test", "a test filter", NULL)};
 		if (!filter)
 			throw "Couldn't create test filter";
