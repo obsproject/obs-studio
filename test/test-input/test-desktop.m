@@ -185,7 +185,7 @@ struct obs_source_info osx_desktop = {
 	.getname      = osx_desktop_test_getname,
 	.create       = osx_desktop_test_create,
 	.destroy      = osx_desktop_test_destroy,
-	.video_render = osx_desktop_video_render,
+	.video_render = osx_desktop_test_video_render,
 	.getwidth     = osx_desktop_test_getwidth,
 	.getheight    = osx_desktop_test_getheight,
 };
