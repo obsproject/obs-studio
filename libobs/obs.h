@@ -26,6 +26,11 @@
 #include "callback/signal.h"
 #include "callback/proc.h"
 
+#include "obs-defs.h"
+#include "obs-data.h"
+#include "obs-ui.h"
+#include "obs-properties.h"
+
 /* opaque types */
 struct obs_display;
 struct obs_source;
@@ -43,10 +48,6 @@ typedef struct obs_output     *obs_output_t;
 typedef struct obs_encoder    *obs_encoder_t;
 typedef struct obs_service    *obs_service_t;
 
-#include "obs-defs.h"
-#include "obs-data.h"
-#include "obs-ui.h"
-#include "obs-properties.h"
 #include "obs-source.h"
 #include "obs-encoder.h"
 #include "obs-output.h"
@@ -66,14 +67,6 @@ extern "C" {
 #define LIBOBS_API_MINOR_VER  1 /* increment if minor non-breaking additions */
 #define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 16) | \
                                LIBOBS_API_MINOR_VER)
-
-enum obs_source_type {
-	OBS_SOURCE_TYPE_INPUT,
-	OBS_SOURCE_TYPE_FILTER,
-	OBS_SOURCE_TYPE_TRANSITION,
-
-	OBS_SOURCE_TYPE_SCENE
-};
 
 /* used for changing the order of items (for example, filters in a source,
  * or items in a scene) */
