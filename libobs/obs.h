@@ -54,6 +54,8 @@ typedef struct obs_service    *obs_service_t;
 #include "obs-service.h"
 
 /*
+ * @file
+ *
  * Main libobs header used by applications.
  */
 
@@ -68,7 +70,7 @@ extern "C" {
 #define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 16) | \
                                LIBOBS_API_MINOR_VER)
 
-/* used for changing the order of items (for example, filters in a source,
+/** Used for changing the order of items (for example, filters in a source,
  * or items in a scene) */
 enum order_movement {
 	ORDER_MOVE_UP,
@@ -77,58 +79,79 @@ enum order_movement {
 	ORDER_MOVE_BOTTOM
 };
 
+/**
+ * Used with obs_source_process_filter to specify whether the filter should
+ * render the source directly with the specified effect, or whether it should
+ * render it to a texture
+ */
 enum allow_direct_render {
 	NO_DIRECT_RENDERING,
 	ALLOW_DIRECT_RENDERING,
 };
 
+/**
+ * Video initialization structure
+ */
 struct obs_video_info {
-	/* graphics module to use (usually "libobs-opengl" or "libobs-d3d11") */
+	/**
+	 * Graphics module to use (usually "libobs-opengl" or
+	 * "libobs-d3d11")
+	 */
 	const char          *graphics_module;
 
-	/* output fps numerator and denominator */
-	uint32_t            fps_num;
-	uint32_t            fps_den;
+	uint32_t            fps_num;       /**< Output FPS numerator */
+	uint32_t            fps_den;       /**< Output FPS denominator */
 
-	/* window dimensions for what's drawn on screen */
-	uint32_t            window_width;
-	uint32_t            window_height;
+	uint32_t            window_width;  /**< Window width */
+	uint32_t            window_height; /**< Window height */
 
-	/* base compositing dimensions */
-	uint32_t            base_width;
-	uint32_t            base_height;
+	uint32_t            base_width;    /**< Base compositing width */
+	uint32_t            base_height;   /**< Base compositing height */
 
-	/* output dimensions and format */
-	uint32_t            output_width;
-	uint32_t            output_height;
-	enum video_format   output_format;
+	uint32_t            output_width;  /**< Output width */
+	uint32_t            output_height; /**< Output height */
+	enum video_format   output_format; /**< Output format */
 
-	/* video adapter ID to use (NOTE: do not use for optimus laptops) */
+	/** Video adapter index to use (NOTE: avoid for optimus laptops) */
 	uint32_t            adapter;
 
-	/* window to render */
-	struct gs_window    window;
+	struct gs_window    window;        /**< Window to render to */
 };
 
+/**
+ * Sent to source filters via the filter_audio callback to allow filtering of
+ * audio data
+ */
 struct filtered_audio {
 	uint8_t             *data[MAX_AUDIO_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 };
 
+/**
+ * Source audio output structure.  Used with obs_source_output_audio to output
+ * source audio.  Audio is automatically resampled and remixed as necessary.
+ */
 struct source_audio {
 	const uint8_t       *data[MAX_AUDIO_PLANES];
 	uint32_t            frames;
 
-	/* audio will be automatically resampled/upmixed/downmixed */
 	enum speaker_layout speakers;
 	enum audio_format   format;
 	uint32_t            samples_per_sec;
 
-	/* can be 0 if 'immediate' */
 	uint64_t            timestamp;
 };
 
+/**
+ * Source asynchronous video output structure.  Used with
+ * obs_source_output_video to output asynchronous video.  Video is buffered as
+ * necessary to play according to timestamps.  When used with audio output,
+ * audio is synced to video as it is played.
+ *
+ * If a YUV format is specified, it will be automatically upsampled and
+ * converted to RGB via shader on the graphics processor.
+ */
 struct source_frame {
 	uint8_t             *data[MAX_VIDEO_PLANES];
 	uint32_t            linesize[MAX_VIDEO_PLANES];
@@ -160,32 +183,30 @@ struct encoder_packet {
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
-/**
- * Starts up and shuts down OBS
- *
- *   Creates the OBS context.
- */
+/** Initializes OBS */
 EXPORT bool obs_startup(void);
+
+/** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);
 
 /**
  * Sets base video ouput base resolution/fps/format
  *
- *   NOTE: Cannot set base video if currently streaming/recording.
+ * @note Cannot set base video if an output is currently active.
  */
 EXPORT bool obs_reset_video(struct obs_video_info *ovi);
 
 /**
  * Sets base audio output format/channels/samples/etc
  *
- *   NOTE: Cannot reset base audio if currently streaming/recording.
+ * @note Cannot reset base audio if an output is currently active.
  */
 EXPORT bool obs_reset_audio(struct audio_output_info *ai);
 
-/** Gets the current video settings, returns false if none */
+/** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 
-/** Gets the current audio settings, returns false if none */
+/** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
 
 /**

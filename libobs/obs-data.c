@@ -43,12 +43,17 @@ struct obs_data_array {
 /* ------------------------------------------------------------------------- */
 /* Item structure, designed to be one allocation only */
 
-/* ensures data after the name has 16 byte alignment (in case of SSE) */
+/* ensures data after the name has alignment (in case of SSE) */
 static inline size_t get_name_align_size(const char *name)
 {
 	size_t name_size = strlen(name) + 1;
-	size_t total_size = sizeof(struct obs_data_item) + (name_size + 15);
-	return (total_size & 0xFFFFFFF0) - sizeof(struct obs_data_item);
+	size_t alignment = base_get_alignment();
+	size_t total_size;
+
+	total_size = sizeof(struct obs_data_item) + (name_size + alignment-1);
+	total_size &= ~(alignment-1);
+
+	return total_size - sizeof(struct obs_data_item);
 }
 
 static inline char *get_item_name(struct obs_data_item *item)
