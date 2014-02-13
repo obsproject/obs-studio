@@ -4,6 +4,9 @@
 *.dylib
 *.so
 
+/release/
+/debug/
+/builds/
 /other/
 Release_MD/
 Release/
