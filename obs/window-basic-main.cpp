@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -54,6 +54,8 @@ void OBSBasic::OBSInit()
 		throw "Failed to initialize graphics";
 	if (!InitAudio())
 		throw "Failed to initialize audio";
+
+	obs_add_draw_callback(OBSBasic::RenderMain, this);
 
 	signal_handler_connect(obs_signalhandler(), "source-add",
 			OBSBasic::SourceAdded, this);
@@ -262,6 +264,11 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 				Q_ARG(OBSSource, OBSSource(source)));
 }
 
+void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
+{
+	obs_render_main_viewport();
+}
+
 /* Main class functions */
 
 bool OBSBasic::InitGraphics()
@@ -331,12 +338,8 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 	ui->preview->setGeometry(x, y, cx, cy);
 
-	graphics_t graphics = obs_graphics();
-	if (graphics && isVisible()) {
-		gs_entercontext(graphics);
-		gs_resize(cx, cy);
-		gs_leavecontext();
-	}
+	if (isVisible())
+		obs_resize(cx, cy);
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)

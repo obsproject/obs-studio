@@ -142,6 +142,7 @@ set(libobs_libobs_SOURCES
 	obs-data.c
 	obs-module.c
 	obs-display.c
+	obs-viewport.c
 	obs-scene.c
 	obs-video.c)
 set(libobs_libobs_HEADERS

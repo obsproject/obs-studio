@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,57 +37,8 @@ static void tick_sources(uint64_t cur_time, uint64_t *last_time)
 	*last_time = cur_time;
 }
 
-static inline void render_display_begin(struct obs_display *display)
-{
-	struct vec4 clear_color;
-	uint32_t width, height;
-
-	gs_load_swapchain(display ? display->swap : NULL);
-
-	gs_getsize(&width, &height);
-
-	gs_beginscene();
-	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
-	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
-			&clear_color, 1.0f, 0);
-
-	gs_enable_depthtest(false);
-	/* gs_enable_blending(false); */
-	gs_setcullmode(GS_NEITHER);
-
-	gs_ortho(0.0f, (float)obs->video.base_width,
-			0.0f, (float)obs->video.base_height, -100.0f, 100.0f);
-	gs_setviewport(0, 0, width, height);
-}
-
-static inline void render_display_end(struct obs_display *display)
-{
-	gs_endscene();
-	gs_present();
-}
-
-static void render_display(struct obs_display *display)
-{
-	render_display_begin(display);
-
-	for (size_t i = 0; i < MAX_CHANNELS; i++) {
-		struct obs_source **p_source;
-
-		p_source = (display) ? display->channels+i :
-		                       obs->data.channels+i;
-
-		if (*p_source) {
-			if ((*p_source)->removed) {
-				obs_source_release(*p_source);
-				*p_source = NULL;
-			} else {
-				obs_source_video_render(*p_source);
-			}
-		}
-	}
-
-	render_display_end(display);
-}
+/* in obs-display.c */
+extern void render_display(struct obs_display *display);
 
 static inline void render_displays(void)
 {
@@ -105,7 +56,7 @@ static inline void render_displays(void)
 	pthread_mutex_unlock(&obs->data.displays_mutex);
 
 	/* render main display */
-	render_display(NULL);
+	render_display(&obs->video.main_display);
 
 	gs_leavecontext();
 }
@@ -117,17 +68,6 @@ static inline void set_render_size(uint32_t width, uint32_t height)
 
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
 	gs_setviewport(0, 0, width, height);
-}
-
-static inline void render_channels(void)
-{
-	struct obs_core_data *data = &obs->data;
-
-	for (size_t i = 0; i < MAX_CHANNELS; i++) {
-		struct obs_source *source = data->channels[i];
-		if (source)
-			obs_source_video_render(source);
-	}
 }
 
 static inline void unmap_last_surface(struct obs_core_video *video)
@@ -148,7 +88,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);
-	render_channels();
+	obs_viewport_render(&obs->data.main_viewport);
 
 	video->textures_rendered[cur_texture] = true;
 }

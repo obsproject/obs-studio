@@ -33,6 +33,7 @@
 
 /* opaque types */
 struct obs_display;
+struct obs_viewport;
 struct obs_source;
 struct obs_scene;
 struct obs_scene_item;
@@ -41,6 +42,7 @@ struct obs_encoder;
 struct obs_service;
 
 typedef struct obs_display    *obs_display_t;
+typedef struct obs_viewport   *obs_viewport_t;
 typedef struct obs_source     *obs_source_t;
 typedef struct obs_scene      *obs_scene_t;
 typedef struct obs_scene_item *obs_sceneitem_t;
@@ -189,6 +191,9 @@ EXPORT bool obs_startup(void);
 /** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);
 
+/** @return true if the main OBS context has been initialized */
+EXPORT bool obs_initialized(void);
+
 /**
  * Sets base video ouput base resolution/fps/format
  *
@@ -250,10 +255,13 @@ EXPORT bool obs_enum_transition_types(size_t idx, const char **id);
  */
 EXPORT bool obs_enum_output_types(size_t idx, const char **id);
 
-/** Gets the graphics context for this OBS context */
+/** Gets the main graphics context for this OBS context */
 EXPORT graphics_t obs_graphics(void);
 
+/** Gets the main audio output handler for this OBS context */
 EXPORT audio_t obs_audio(void);
+
+/** Gets the main video output handler for this OBS context */
 EXPORT video_t obs_video(void);
 
 /**
@@ -317,25 +325,83 @@ EXPORT signal_handler_t obs_signalhandler(void);
 /** Returns the primary obs procedure handler */
 EXPORT proc_handler_t obs_prochandler(void);
 
+/** Adds a draw callback to the main render context */
+EXPORT void obs_add_draw_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
+
+/** Removes a draw callback to the main render context */
+EXPORT void obs_remove_draw_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
+
+/** Changes the size of the main viewport */
+EXPORT void obs_resize(uint32_t cx, uint32_t cy);
+
+/** Renders the main viewport */
+EXPORT void obs_render_main_viewport(void);
+
+
+/* ------------------------------------------------------------------------- */
+/* Viewport context */
+
+/**
+ * Creates a viewport context.
+ *
+ *   A viewport can be used for things like separate previews, or drawing
+ * sources separately.
+ */
+EXPORT obs_viewport_t obs_viewport_create(void);
+
+/** Destroys this viewport context */
+EXPORT void obs_viewport_destroy(obs_viewport_t viewport);
+
+/** Sets the source to be used for this viewport context. */
+EXPORT void obs_viewport_setsource(obs_viewport_t viewport, uint32_t channel,
+		obs_source_t source);
+
+/** Gets the source currently in use for this viewport context */
+EXPORT obs_source_t obs_viewport_getsource(obs_viewport_t viewport,
+		uint32_t channel);
+
+/** Renders the sources of this viewport context */
+EXPORT void obs_viewport_render(obs_viewport_t viewport);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
 
 /**
- * Creates an extra display context.
+ * Adds a new window display linked to the main render pipeline.  This creates
+ * a new swap chain which updates every frame.
  *
- *   An extra display can be used for things like separate previews,
- * viewing sources independently, and other things.  Creates a new swap chain
- * linked to a specific window to display a source.
+ * @param  graphics_data  The swap chain initialization data.
+ * @return                The new display context, or NULL if failed.
  */
 EXPORT obs_display_t obs_display_create(struct gs_init_data *graphics_data);
+
+/** Destroys a display context */
 EXPORT void obs_display_destroy(obs_display_t display);
 
-/** Sets the source to be used for a display context. */
-EXPORT void obs_display_setsource(obs_display_t display, uint32_t channel,
-		obs_source_t source);
-EXPORT obs_source_t obs_display_getsource(obs_display_t display,
-		uint32_t channel);
+/** Changes the size of this display */
+EXPORT void obs_display_resize(obs_display_t display, uint32_t cx, uint32_t cy);
+
+/**
+ * Adds a draw callback for this display context
+ *
+ * @param  display  The display context.
+ * @param  draw     The draw callback which is called each time a frame
+ *                  updates.
+ * @param  param    The user data to be associated with this draw callback.
+ */
+EXPORT void obs_display_add_draw_callback(obs_display_t display,
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
+
+/** Removes a draw callback for this display context */
+EXPORT void obs_display_remove_draw_callback(obs_display_t display,
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
 
 
 /* ------------------------------------------------------------------------- */

@@ -35,8 +35,13 @@
 #define NUM_TEXTURES 2
 
 
+struct draw_callback {
+	void (*draw)(void *param, uint32_t cx, uint32_t cy);
+	void *param;
+};
+
 /* ------------------------------------------------------------------------- */
-/* core */
+/* modules */
 
 struct obs_module {
 	char *name;
@@ -47,50 +52,81 @@ extern void free_module(struct obs_module *mod);
 
 
 /* ------------------------------------------------------------------------- */
+/* viewports */
+
+struct obs_viewport {
+	pthread_mutex_t                 channels_mutex;
+	obs_source_t                    channels[MAX_CHANNELS];
+};
+
+extern bool obs_viewport_init(struct obs_viewport *viewport);
+extern void obs_viewport_free(struct obs_viewport *viewport);
+
+
+/* ------------------------------------------------------------------------- */
+/* displays */
+
+struct obs_display {
+	bool                            size_changed;
+	uint32_t                        cx, cy;
+	swapchain_t                     swap;
+	pthread_mutex_t                 draw_callbacks_mutex;
+	DARRAY(struct draw_callback)    draw_callbacks;
+};
+
+extern bool obs_display_init(struct obs_display *display,
+		struct gs_init_data *graphics_data);
+extern void obs_display_free(struct obs_display *display);
+
+
+/* ------------------------------------------------------------------------- */
 /* core */
 
 struct obs_core_video {
-	graphics_t                  graphics;
-	stagesurf_t                 copy_surfaces[NUM_TEXTURES];
-	texture_t                   render_textures[NUM_TEXTURES];
-	texture_t                   output_textures[NUM_TEXTURES];
-	bool                        textures_rendered[NUM_TEXTURES];
-	bool                        textures_output[NUM_TEXTURES];
-	bool                        textures_copied[NUM_TEXTURES];
-	struct source_frame         convert_frames[NUM_TEXTURES];
-	effect_t                    default_effect;
-	stagesurf_t                 mapped_surface;
-	int                         cur_texture;
+	graphics_t                      graphics;
+	stagesurf_t                     copy_surfaces[NUM_TEXTURES];
+	texture_t                       render_textures[NUM_TEXTURES];
+	texture_t                       output_textures[NUM_TEXTURES];
+	bool                            textures_rendered[NUM_TEXTURES];
+	bool                            textures_output[NUM_TEXTURES];
+	bool                            textures_copied[NUM_TEXTURES];
+	struct source_frame             convert_frames[NUM_TEXTURES];
+	effect_t                        default_effect;
+	stagesurf_t                     mapped_surface;
+	int                             cur_texture;
 
-	video_t                     video;
-	pthread_t                   video_thread;
-	bool                        thread_initialized;
+	video_t                         video;
+	pthread_t                       video_thread;
+	bool                            thread_initialized;
 
-	uint32_t                    base_width;
-	uint32_t                    base_height;
+	uint32_t                        base_width;
+	uint32_t                        base_height;
+
+	struct obs_display              main_display;
 };
 
 struct obs_core_audio {
 	/* TODO: sound output subsystem */
-	audio_t                     audio;
+	audio_t                         audio;
 };
 
 /* user sources, output channels, and displays */
 struct obs_core_data {
 	/* arrays of pointers jim?  you should really stop being lazy and use
 	 * linked lists. */
-	DARRAY(struct obs_display*) displays;
-	DARRAY(struct obs_source*)  sources;
-	DARRAY(struct obs_output*)  outputs;
-	DARRAY(struct obs_encoder*) encoders;
+	DARRAY(struct obs_display*)     displays;
+	DARRAY(struct obs_source*)      sources;
+	DARRAY(struct obs_output*)      outputs;
+	DARRAY(struct obs_encoder*)     encoders;
 
-	obs_source_t                channels[MAX_CHANNELS];
-	pthread_mutex_t             sources_mutex;
-	pthread_mutex_t             displays_mutex;
-	pthread_mutex_t             outputs_mutex;
-	pthread_mutex_t             encoders_mutex;
+	pthread_mutex_t                 sources_mutex;
+	pthread_mutex_t                 displays_mutex;
+	pthread_mutex_t                 outputs_mutex;
+	pthread_mutex_t                 encoders_mutex;
 
-	volatile bool               valid;
+	struct obs_viewport             main_viewport;
+
+	volatile bool                   valid;
 };
 
 struct obs_core {
@@ -120,67 +156,56 @@ extern void *obs_video_thread(void *param);
 
 
 /* ------------------------------------------------------------------------- */
-/* displays  */
-
-struct obs_display {
-	swapchain_t                 swap; /* can be NULL if just sound */
-	obs_source_t                channels[MAX_CHANNELS];
-
-	/* TODO: sound output target */
-};
-
-
-/* ------------------------------------------------------------------------- */
 /* sources  */
 
 struct obs_source {
-	volatile int                 refs;
-	struct obs_source_info       info;
+	volatile int                    refs;
+	struct obs_source_info          info;
 
 	/* source-specific data */
-	char                         *name; /* user-defined name */
-	enum obs_source_type         type;
-	obs_data_t                   settings;
-	void                         *data;
+	char                            *name; /* user-defined name */
+	enum obs_source_type            type;
+	obs_data_t                      settings;
+	void                            *data;
 
-	signal_handler_t             signals;
-	proc_handler_t               procs;
+	signal_handler_t                signals;
+	proc_handler_t                  procs;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer
 	 * to handle things but it's the best option) */
-	bool                         removed;
+	bool                            removed;
 
 	/* timing (if video is present, is based upon video) */
-	volatile bool                timing_set;
-	volatile uint64_t            timing_adjust;
-	volatile int                 audio_reset_ref;
-	uint64_t                     next_audio_ts_min;
-	uint64_t                     last_frame_ts;
-	uint64_t                     last_sys_timestamp;
+	volatile bool                   timing_set;
+	volatile uint64_t               timing_adjust;
+	volatile int                    audio_reset_ref;
+	uint64_t                        next_audio_ts_min;
+	uint64_t                        last_frame_ts;
+	uint64_t                        last_sys_timestamp;
 
 	/* audio */
-	bool                         audio_failed;
-	struct resample_info         sample_info;
-	audio_resampler_t            resampler;
-	audio_line_t                 audio_line;
-	pthread_mutex_t              audio_mutex;
-	struct filtered_audio        audio_data;
-	size_t                       audio_storage_size;
-	float                        volume;
+	bool                            audio_failed;
+	struct resample_info            sample_info;
+	audio_resampler_t               resampler;
+	audio_line_t                    audio_line;
+	pthread_mutex_t                 audio_mutex;
+	struct filtered_audio           audio_data;
+	size_t                          audio_storage_size;
+	float                           volume;
 
 	/* async video data */
-	texture_t                    output_texture;
-	DARRAY(struct source_frame*) video_frames;
-	pthread_mutex_t              video_mutex;
+	texture_t                       output_texture;
+	DARRAY(struct source_frame*)    video_frames;
+	pthread_mutex_t                 video_mutex;
 
 	/* filters */
-	struct obs_source            *filter_parent;
-	struct obs_source            *filter_target;
-	DARRAY(struct obs_source*)   filters;
-	pthread_mutex_t              filter_mutex;
-	texrender_t                  filter_texrender;
-	bool                         rendering_filter;
+	struct obs_source               *filter_parent;
+	struct obs_source               *filter_target;
+	DARRAY(struct obs_source*)      filters;
+	pthread_mutex_t                 filter_mutex;
+	texrender_t                     filter_texrender;
+	bool                            rendering_filter;
 };
 
 bool obs_source_init_handlers(struct obs_source *source);
@@ -196,27 +221,27 @@ extern void obs_source_video_tick(obs_source_t source, float seconds);
 /* outputs  */
 
 struct obs_output {
-	char                   *name;
-	void                   *data;
-	struct obs_output_info info;
-	obs_data_t             settings;
+	char                            *name;
+	void                            *data;
+	struct obs_output_info          info;
+	obs_data_t                      settings;
 };
 
 
 /* ------------------------------------------------------------------------- */
 /* encoders  */
 
-struct obs_encoder_callback {
+struct encoder_callback {
 	void (*new_packet)(void *param, struct encoder_packet *packet);
 	void *param;
 };
 
 struct obs_encoder {
-	char                                *name;
-	void                                *data;
-	struct obs_encoder_info             info;
-	obs_data_t                          settings;
+	char                            *name;
+	void                            *data;
+	struct obs_encoder_info         info;
+	obs_data_t                      settings;
 
-	pthread_mutex_t                     data_callbacks_mutex;
-	DARRAY(struct obs_encoder_callback) data_callbacks;
+	pthread_mutex_t                 data_callbacks_mutex;
+	DARRAY(struct encoder_callback) data_callbacks;
 };

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ private:
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceRemoved(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
+	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 

@@ -344,5 +344,8 @@
     <ClCompile Include="..\..\..\libobs\obs-properties.c">
       <Filter>libobs\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs\obs-viewport.c">
+      <Filter>libobs\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

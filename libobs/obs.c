@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -140,6 +140,12 @@ static bool obs_init_video(struct obs_video_info *ovi)
 		return false;
 	}
 
+	if (!obs_display_init(&video->main_display, NULL))
+		return false;
+
+	video->main_display.cx = ovi->window_width;
+	video->main_display.cy = ovi->window_height;
+
 	errorcode = pthread_create(&video->video_thread, NULL,
 			obs_video_thread, obs);
 	if (errorcode != 0)
@@ -149,25 +155,33 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	return true;
 }
 
-static void obs_free_video()
+static void stop_video(void)
 {
 	struct obs_core_video *video = &obs->video;
+	void *thread_retval;
 
 	if (video->video) {
-		void *thread_retval;
-
 		video_output_stop(video->video);
 		if (video->thread_initialized) {
 			pthread_join(video->video_thread, &thread_retval);
 			video->thread_initialized = false;
 		}
+	}
 
+}
+
+static void obs_free_video(void)
+{
+	struct obs_core_video *video = &obs->video;
+
+	if (video->video) {
+		obs_display_free(&video->main_display);
 		video_output_close(video->video);
 		video->video = NULL;
 	}
 }
 
-static void obs_free_graphics()
+static void obs_free_graphics(void)
 {
 	struct obs_core_video *video = &obs->video;
 	size_t i;
@@ -248,6 +262,8 @@ static bool obs_init_data(void)
 		goto fail;
 	if (pthread_mutex_init(&data->encoders_mutex, &attr) != 0)
 		goto fail;
+	if (!obs_viewport_init(&data->main_viewport))
+		goto fail;
 
 	data->valid = true;
 
@@ -263,8 +279,7 @@ static void obs_free_data(void)
 
 	data->valid = false;
 
-	for (i = 0; i < MAX_CHANNELS; i++)
-		obs_set_output_source(i, NULL);
+	obs_viewport_free(&data->main_viewport);
 
 	while (data->outputs.num)
 		obs_output_destroy(data->outputs.array[0]);
@@ -303,7 +318,7 @@ static bool obs_init(void)
 	return obs_init_handlers();
 }
 
-bool obs_startup()
+bool obs_startup(void)
 {
 	bool success;
 
@@ -334,6 +349,8 @@ void obs_shutdown(void)
 	da_free(obs->modal_ui_callbacks);
 	da_free(obs->modeless_ui_callbacks);
 
+	stop_video();
+
 	obs_free_data();
 	obs_free_video();
 	obs_free_graphics();
@@ -347,6 +364,11 @@ void obs_shutdown(void)
 
 	bfree(obs);
 	obs = NULL;
+}
+
+bool obs_initialized(void)
+{
+	return obs != NULL;
 }
 
 bool obs_reset_video(struct obs_video_info *ovi)
@@ -535,21 +557,23 @@ bool obs_add_source(obs_source_t source)
 
 obs_source_t obs_get_output_source(uint32_t channel)
 {
-	struct obs_source *source;
-	assert(channel < MAX_CHANNELS);
-	source = obs->data.channels[channel];
-
-	obs_source_addref(source);
-	return source;
+	return obs_viewport_getsource(&obs->data.main_viewport, channel);
 }
 
 void obs_set_output_source(uint32_t channel, obs_source_t source)
 {
-	struct obs_source *prev_source;
-	struct calldata params = {0};
 	assert(channel < MAX_CHANNELS);
 
-	prev_source = obs->data.channels[channel];
+	if (!obs) return;
+	if (channel >= MAX_CHANNELS) return;
+
+	struct obs_source *prev_source;
+	struct obs_viewport *viewport = &obs->data.main_viewport;
+	struct calldata params = {0};
+
+	pthread_mutex_lock(&viewport->channels_mutex);
+
+	prev_source = viewport->channels[channel];
 
 	calldata_setuint32(&params, "channel", channel);
 	calldata_setptr(&params, "prev_source", prev_source);
@@ -558,14 +582,14 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 	calldata_getptr(&params, "source", &source);
 	calldata_free(&params);
 
-	obs->data.channels[channel] = source;
+	viewport->channels[channel] = source;
 
-	if (source != prev_source) {
-		if (source)
-			obs_source_addref(source);
-		if (prev_source)
-			obs_source_release(prev_source);
-	}
+	if (source)
+		obs_source_addref(source);
+	if (prev_source)
+		obs_source_release(prev_source);
+
+	pthread_mutex_unlock(&viewport->channels_mutex);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
@@ -630,15 +654,48 @@ obs_source_t obs_get_source_by_name(const char *name)
 
 effect_t obs_get_default_effect(void)
 {
+	if (!obs) return NULL;
 	return obs->video.default_effect;
 }
 
 signal_handler_t obs_signalhandler(void)
 {
+	if (!obs) return NULL;
 	return obs->signals;
 }
 
 proc_handler_t obs_prochandler(void)
 {
+	if (!obs) return NULL;
 	return obs->procs;
+}
+
+void obs_add_draw_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param)
+{
+	if (!obs) return;
+
+	obs_display_add_draw_callback(&obs->video.main_display, draw, param);
+}
+
+void obs_remove_draw_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param)
+{
+	if (!obs) return;
+
+	obs_display_remove_draw_callback(&obs->video.main_display, draw, param);
+}
+
+void obs_resize(uint32_t cx, uint32_t cy)
+{
+	if (!obs || !obs->video.video || !obs->video.graphics) return;
+	obs_display_resize(&obs->video.main_display, cx, cy);
+}
+
+void obs_render_main_viewport(void)
+{
+	if (!obs) return;
+	obs_viewport_render(&obs->data.main_viewport);
 }

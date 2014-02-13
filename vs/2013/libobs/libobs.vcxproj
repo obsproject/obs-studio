@@ -102,6 +102,7 @@
     <ClCompile Include="..\..\..\libobs\obs-scene.c" />
     <ClCompile Include="..\..\..\libobs\obs-source.c" />
     <ClCompile Include="..\..\..\libobs\obs-video.c" />
+    <ClCompile Include="..\..\..\libobs\obs-viewport.c" />
     <ClCompile Include="..\..\..\libobs\obs-windows.c" />
     <ClCompile Include="..\..\..\libobs\obs.c" />
     <ClCompile Include="..\..\..\libobs\util\base.c" />
