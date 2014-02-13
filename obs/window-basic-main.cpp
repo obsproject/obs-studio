@@ -266,7 +266,7 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
-	obs_render_main_viewport();
+	obs_render_main_view();
 }
 
 /* Main class functions */

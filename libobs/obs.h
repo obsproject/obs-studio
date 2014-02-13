@@ -33,7 +33,7 @@
 
 /* opaque types */
 struct obs_display;
-struct obs_viewport;
+struct obs_view;
 struct obs_source;
 struct obs_scene;
 struct obs_scene_item;
@@ -42,7 +42,7 @@ struct obs_encoder;
 struct obs_service;
 
 typedef struct obs_display    *obs_display_t;
-typedef struct obs_viewport   *obs_viewport_t;
+typedef struct obs_view   *obs_view_t;
 typedef struct obs_source     *obs_source_t;
 typedef struct obs_scene      *obs_scene_t;
 typedef struct obs_scene_item *obs_sceneitem_t;
@@ -335,37 +335,37 @@ EXPORT void obs_remove_draw_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param);
 
-/** Changes the size of the main viewport */
+/** Changes the size of the main view */
 EXPORT void obs_resize(uint32_t cx, uint32_t cy);
 
-/** Renders the main viewport */
-EXPORT void obs_render_main_viewport(void);
+/** Renders the main view */
+EXPORT void obs_render_main_view(void);
 
 
 /* ------------------------------------------------------------------------- */
-/* Viewport context */
+/* View context */
 
 /**
- * Creates a viewport context.
+ * Creates a view context.
  *
- *   A viewport can be used for things like separate previews, or drawing
+ *   A view can be used for things like separate previews, or drawing
  * sources separately.
  */
-EXPORT obs_viewport_t obs_viewport_create(void);
+EXPORT obs_view_t obs_view_create(void);
 
-/** Destroys this viewport context */
-EXPORT void obs_viewport_destroy(obs_viewport_t viewport);
+/** Destroys this view context */
+EXPORT void obs_view_destroy(obs_view_t view);
 
-/** Sets the source to be used for this viewport context. */
-EXPORT void obs_viewport_setsource(obs_viewport_t viewport, uint32_t channel,
+/** Sets the source to be used for this view context. */
+EXPORT void obs_view_setsource(obs_view_t view, uint32_t channel,
 		obs_source_t source);
 
-/** Gets the source currently in use for this viewport context */
-EXPORT obs_source_t obs_viewport_getsource(obs_viewport_t viewport,
+/** Gets the source currently in use for this view context */
+EXPORT obs_source_t obs_view_getsource(obs_view_t view,
 		uint32_t channel);
 
-/** Renders the sources of this viewport context */
-EXPORT void obs_viewport_render(obs_viewport_t viewport);
+/** Renders the sources of this view context */
+EXPORT void obs_view_render(obs_view_t view);
 
 
 /* ------------------------------------------------------------------------- */

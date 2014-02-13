@@ -262,7 +262,7 @@ static bool obs_init_data(void)
 		goto fail;
 	if (pthread_mutex_init(&data->encoders_mutex, &attr) != 0)
 		goto fail;
-	if (!obs_viewport_init(&data->main_viewport))
+	if (!obs_view_init(&data->main_view))
 		goto fail;
 
 	data->valid = true;
@@ -279,7 +279,7 @@ static void obs_free_data(void)
 
 	data->valid = false;
 
-	obs_viewport_free(&data->main_viewport);
+	obs_view_free(&data->main_view);
 
 	while (data->outputs.num)
 		obs_output_destroy(data->outputs.array[0]);
@@ -557,7 +557,7 @@ bool obs_add_source(obs_source_t source)
 
 obs_source_t obs_get_output_source(uint32_t channel)
 {
-	return obs_viewport_getsource(&obs->data.main_viewport, channel);
+	return obs_view_getsource(&obs->data.main_view, channel);
 }
 
 void obs_set_output_source(uint32_t channel, obs_source_t source)
@@ -568,12 +568,12 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 	if (channel >= MAX_CHANNELS) return;
 
 	struct obs_source *prev_source;
-	struct obs_viewport *viewport = &obs->data.main_viewport;
+	struct obs_view *view = &obs->data.main_view;
 	struct calldata params = {0};
 
-	pthread_mutex_lock(&viewport->channels_mutex);
+	pthread_mutex_lock(&view->channels_mutex);
 
-	prev_source = viewport->channels[channel];
+	prev_source = view->channels[channel];
 
 	calldata_setuint32(&params, "channel", channel);
 	calldata_setptr(&params, "prev_source", prev_source);
@@ -582,14 +582,14 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 	calldata_getptr(&params, "source", &source);
 	calldata_free(&params);
 
-	viewport->channels[channel] = source;
+	view->channels[channel] = source;
 
 	if (source)
 		obs_source_addref(source);
 	if (prev_source)
 		obs_source_release(prev_source);
 
-	pthread_mutex_unlock(&viewport->channels_mutex);
+	pthread_mutex_unlock(&view->channels_mutex);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
@@ -694,8 +694,8 @@ void obs_resize(uint32_t cx, uint32_t cy)
 	obs_display_resize(&obs->video.main_display, cx, cy);
 }
 
-void obs_render_main_viewport(void)
+void obs_render_main_view(void)
 {
 	if (!obs) return;
-	obs_viewport_render(&obs->data.main_viewport);
+	obs_view_render(&obs->data.main_view);
 }

@@ -52,15 +52,15 @@ extern void free_module(struct obs_module *mod);
 
 
 /* ------------------------------------------------------------------------- */
-/* viewports */
+/* views */
 
-struct obs_viewport {
+struct obs_view {
 	pthread_mutex_t                 channels_mutex;
 	obs_source_t                    channels[MAX_CHANNELS];
 };
 
-extern bool obs_viewport_init(struct obs_viewport *viewport);
-extern void obs_viewport_free(struct obs_viewport *viewport);
+extern bool obs_view_init(struct obs_view *view);
+extern void obs_view_free(struct obs_view *view);
 
 
 /* ------------------------------------------------------------------------- */
@@ -124,7 +124,7 @@ struct obs_core_data {
 	pthread_mutex_t                 outputs_mutex;
 	pthread_mutex_t                 encoders_mutex;
 
-	struct obs_viewport             main_viewport;
+	struct obs_view                 main_view;
 
 	volatile bool                   valid;
 };

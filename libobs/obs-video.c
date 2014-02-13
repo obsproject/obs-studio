@@ -88,7 +88,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);
-	obs_viewport_render(&obs->data.main_viewport);
+	obs_view_render(&obs->data.main_view);
 
 	video->textures_rendered[cur_texture] = true;
 }

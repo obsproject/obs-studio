@@ -18,109 +18,109 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-bool obs_viewport_init(struct obs_viewport *viewport)
+bool obs_view_init(struct obs_view *view)
 {
-	pthread_mutex_init_value(&viewport->channels_mutex);
+	pthread_mutex_init_value(&view->channels_mutex);
 
-	if (pthread_mutex_init(&viewport->channels_mutex, NULL) != 0) {
-		blog(LOG_ERROR, "obs_viewport_init: Failed to create mutex");
+	if (pthread_mutex_init(&view->channels_mutex, NULL) != 0) {
+		blog(LOG_ERROR, "obs_view_init: Failed to create mutex");
 		return false;
 	}
 
 	return true;
 }
 
-obs_viewport_t obs_viewport_create(void)
+obs_view_t obs_view_create(void)
 {
-	struct obs_viewport *viewport = bzalloc(sizeof(struct obs_viewport));
+	struct obs_view *view = bzalloc(sizeof(struct obs_view));
 
-	if (!obs_viewport_init(viewport)) {
-		bfree(viewport);
-		viewport = NULL;
+	if (!obs_view_init(view)) {
+		bfree(view);
+		view = NULL;
 	}
 
-	return viewport;
+	return view;
 }
 
-void obs_viewport_free(struct obs_viewport *viewport)
+void obs_view_free(struct obs_view *view)
 {
 	for (size_t i = 0; i < MAX_CHANNELS; i++)
-		obs_source_release(viewport->channels[i]);
+		obs_source_release(view->channels[i]);
 
-	memset(viewport->channels, 0, sizeof(viewport->channels));
-	pthread_mutex_destroy(&viewport->channels_mutex);
+	memset(view->channels, 0, sizeof(view->channels));
+	pthread_mutex_destroy(&view->channels_mutex);
 }
 
-void obs_viewport_destroy(obs_viewport_t viewport)
+void obs_view_destroy(obs_view_t view)
 {
-	if (viewport) {
-		obs_viewport_free(viewport);
-		bfree(viewport);
+	if (view) {
+		obs_view_free(view);
+		bfree(view);
 	}
 }
 
-obs_source_t obs_viewport_getsource(obs_viewport_t viewport, uint32_t channel)
+obs_source_t obs_view_getsource(obs_view_t view, uint32_t channel)
 {
 	obs_source_t source;
 	assert(channel < MAX_CHANNELS);
 
-	if (!viewport) return NULL;
+	if (!view) return NULL;
 	if (channel >= MAX_CHANNELS) return NULL;
 
-	pthread_mutex_lock(&viewport->channels_mutex);
+	pthread_mutex_lock(&view->channels_mutex);
 
-	source = viewport->channels[channel];
+	source = view->channels[channel];
 	if (source)
 		obs_source_addref(source);
 
-	pthread_mutex_unlock(&viewport->channels_mutex);
+	pthread_mutex_unlock(&view->channels_mutex);
 
 	return source;
 }
 
-void obs_viewport_setsource(obs_viewport_t viewport, uint32_t channel,
+void obs_view_setsource(obs_view_t view, uint32_t channel,
 		obs_source_t source)
 {
 	struct obs_source *prev_source;
 
 	assert(channel < MAX_CHANNELS);
 
-	if (!viewport) return;
+	if (!view) return;
 	if (channel >= MAX_CHANNELS) return;
 
-	pthread_mutex_lock(&viewport->channels_mutex);
+	pthread_mutex_lock(&view->channels_mutex);
 
-	prev_source = viewport->channels[channel];
-	viewport->channels[channel] = source;
+	prev_source = view->channels[channel];
+	view->channels[channel] = source;
 
 	if (source)
 		obs_source_addref(source);
 	if (prev_source)
 		obs_source_release(prev_source);
 
-	pthread_mutex_unlock(&viewport->channels_mutex);
+	pthread_mutex_unlock(&view->channels_mutex);
 }
 
-void obs_viewport_render(obs_viewport_t viewport)
+void obs_view_render(obs_view_t view)
 {
-	if (!viewport) return;
+	if (!view) return;
 
-	pthread_mutex_lock(&viewport->channels_mutex);
+	pthread_mutex_lock(&view->channels_mutex);
 
 	for (size_t i = 0; i < MAX_CHANNELS; i++) {
 		struct obs_source *source;
 
-		source = viewport->channels[i];
+		source = view->channels[i];
 
 		if (source) {
 			if (source->removed) {
 				obs_source_release(source);
-				viewport->channels[i] = NULL;
+				view->channels[i] = NULL;
 			} else {
 				obs_source_video_render(source);
 			}
 		}
 	}
 
-	pthread_mutex_unlock(&viewport->channels_mutex);
+	pthread_mutex_unlock(&view->channels_mutex);
 }
