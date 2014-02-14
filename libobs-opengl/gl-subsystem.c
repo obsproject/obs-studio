@@ -85,10 +85,6 @@ static void gl_enable_debug()
 static void gl_enable_debug() {}
 #endif
 
-static inline void required_extension_error(const char *extension)
-{
-}
-
 static bool gl_init_extensions(struct gs_device* device)
 {
 	if (!ogl_IsVersionGEQ(2, 1)) {
@@ -263,6 +259,14 @@ texture_t device_create_volumetexture(device_t device, uint32_t width,
 		const void **data, uint32_t flags)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(width);
+	UNUSED_PARAMETER(height);
+	UNUSED_PARAMETER(depth);
+	UNUSED_PARAMETER(color_format);
+	UNUSED_PARAMETER(levels);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
@@ -279,8 +283,7 @@ samplerstate_t device_create_samplerstate(device_t device,
 	return sampler;
 }
 
-enum gs_texture_type device_gettexturetype(device_t device,
-		texture_t texture)
+enum gs_texture_type device_gettexturetype(texture_t texture)
 {
 	return texture->type;
 }
@@ -529,6 +532,9 @@ fail:
 void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(b_3d);
+	UNUSED_PARAMETER(unit);
 }
 
 shader_t device_getvertexshader(device_t device)
@@ -902,6 +908,7 @@ fail:
 void device_endscene(device_t device)
 {
 	/* does nothing */
+	UNUSED_PARAMETER(device);
 }
 
 void device_clear(device_t device, uint32_t clear_flags,
@@ -927,6 +934,8 @@ void device_clear(device_t device, uint32_t clear_flags,
 	glClear(gl_flags);
 	if (!gl_success("glClear"))
 		blog(LOG_ERROR, "device_clear (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_setcullmode(device_t device, enum gs_cull_mode mode)
@@ -958,6 +967,8 @@ void device_enable_blending(device_t device, bool enable)
 		gl_enable(GL_BLEND);
 	else
 		gl_disable(GL_BLEND);
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_enable_depthtest(device_t device, bool enable)
@@ -966,6 +977,8 @@ void device_enable_depthtest(device_t device, bool enable)
 		gl_enable(GL_DEPTH_TEST);
 	else
 		gl_disable(GL_DEPTH_TEST);
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_enable_stenciltest(device_t device, bool enable)
@@ -974,6 +987,8 @@ void device_enable_stenciltest(device_t device, bool enable)
 		gl_enable(GL_STENCIL_TEST);
 	else
 		gl_disable(GL_STENCIL_TEST);
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_enable_stencilwrite(device_t device, bool enable)
@@ -982,12 +997,16 @@ void device_enable_stencilwrite(device_t device, bool enable)
 		glStencilMask(0xFFFFFFFF);
 	else
 		glStencilMask(0);
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_enable_color(device_t device, bool red, bool green,
 		bool blue, bool alpha)
 {
 	glColorMask(red, green, blue, alpha);
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_blendfunction(device_t device, enum gs_blend_type src,
@@ -999,6 +1018,8 @@ void device_blendfunction(device_t device, enum gs_blend_type src,
 	glBlendFunc(gl_src, gl_dst);
 	if (!gl_success("glBlendFunc"))
 		blog(LOG_ERROR, "device_blendfunction (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_depthfunction(device_t device, enum gs_depth_test test)
@@ -1008,6 +1029,8 @@ void device_depthfunction(device_t device, enum gs_depth_test test)
 	glDepthFunc(gl_test);
 	if (!gl_success("glDepthFunc"))
 		blog(LOG_ERROR, "device_depthfunction (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_stencilfunction(device_t device, enum gs_stencil_side side,
@@ -1019,6 +1042,8 @@ void device_stencilfunction(device_t device, enum gs_stencil_side side,
 	glStencilFuncSeparate(gl_side, gl_test, 0, 0xFFFFFFFF);
 	if (!gl_success("glStencilFuncSeparate"))
 		blog(LOG_ERROR, "device_stencilfunction (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_stencilop(device_t device, enum gs_stencil_side side,
@@ -1033,16 +1058,21 @@ void device_stencilop(device_t device, enum gs_stencil_side side,
 	glStencilOpSeparate(gl_side, gl_fail, gl_zfail, gl_zpass);
 	if (!gl_success("glStencilOpSeparate"))
 		blog(LOG_ERROR, "device_stencilop (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_enable_fullscreen(device_t device, bool enable)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(enable);
 }
 
 int device_fullscreen_enabled(device_t device)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
 	return false;
 }
 
@@ -1050,18 +1080,26 @@ void device_setdisplaymode(device_t device,
 		const struct gs_display_mode *mode)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(mode);
 }
 
 void device_getdisplaymode(device_t device,
 		struct gs_display_mode *mode)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(mode);
 }
 
 void device_setcolorramp(device_t device, float gamma, float brightness,
 		float contrast)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(gamma);
+	UNUSED_PARAMETER(brightness);
+	UNUSED_PARAMETER(contrast);
 }
 
 static inline uint32_t get_target_height(struct gs_device *device)
@@ -1105,6 +1143,7 @@ void device_getviewport(device_t device, struct gs_rect *rect)
 
 void device_setscissorrect(device_t device, struct gs_rect *rect)
 {
+	UNUSED_PARAMETER(device);
 	glScissor(rect->x, rect->y, rect->cx, rect->cy);
 	if (!gl_success("glScissor"))
 		blog(LOG_ERROR, "device_setscissorrect (GL) failed");
@@ -1194,29 +1233,34 @@ void swapchain_destroy(swapchain_t swapchain)
 void volumetexture_destroy(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 }
 
 uint32_t volumetexture_getwidth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getheight(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getdepth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return GS_UNKNOWN;
 }
 

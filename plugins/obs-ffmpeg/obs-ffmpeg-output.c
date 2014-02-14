@@ -34,8 +34,8 @@ struct ffmpeg_data {
 	int                frame_size;
 	int                total_frames;
 
-	struct circlebuf   excess_frames[MAX_AUDIO_PLANES];
-	uint8_t            *samples[MAX_AUDIO_PLANES];
+	struct circlebuf   excess_frames[MAX_AV_PLANES];
+	uint8_t            *samples[MAX_AV_PLANES];
 	AVFrame            *aframe;
 	int                total_samples;
 
@@ -97,8 +97,7 @@ static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 	return true;
 }
 
-static bool open_video_codec(struct ffmpeg_data *data,
-		struct obs_video_info *ovi)
+static bool open_video_codec(struct ffmpeg_data *data)
 {
 	AVCodecContext *context = data->video->codec;
 	int ret;
@@ -174,7 +173,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
-	if (!open_video_codec(data, &ovi))
+	if (!open_video_codec(data))
 		return false;
 
 	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
@@ -184,8 +183,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	return true;
 }
 
-static bool open_audio_codec(struct ffmpeg_data *data,
-		struct audio_output_info *aoi)
+static bool open_audio_codec(struct ffmpeg_data *data)
 {
 	AVCodecContext *context = data->audio->codec;
 	int ret;
@@ -242,7 +240,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
-	return open_audio_codec(data, &aoi);
+	return open_audio_codec(data);
 }
 
 static inline bool init_streams(struct ffmpeg_data *data)
@@ -294,7 +292,7 @@ static void close_video(struct ffmpeg_data *data)
 
 static void close_audio(struct ffmpeg_data *data)
 {
-	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		circlebuf_free(&data->excess_frames[i]);
 
 	av_freep(&data->samples[0]);
@@ -355,16 +353,20 @@ fail:
 
 static const char *ffmpeg_output_getname(const char *locale)
 {
+	UNUSED_PARAMETER(locale);
 	return "FFmpeg file output";
 }
 
 static void ffmpeg_log_callback(void *param, int bla, const char *format,
 		va_list args)
 {
-	blogva(LOG_INFO, format, args);
+	blogva(LOG_DEBUG, format, args);
+
+	UNUSED_PARAMETER(param);
+	UNUSED_PARAMETER(bla);
 }
 
-static struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
+static void *ffmpeg_output_create(obs_data_t settings,
 		obs_output_t output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
@@ -372,21 +374,19 @@ static struct ffmpeg_output *ffmpeg_output_create(obs_data_t settings,
 
 	av_log_set_callback(ffmpeg_log_callback);
 
+	UNUSED_PARAMETER(settings);
 	return data;
 }
 
-static void ffmpeg_output_destroy(struct ffmpeg_output *data)
+static void ffmpeg_output_destroy(void *data)
 {
-	if (data) {
-		if (data->active)
-			ffmpeg_data_free(&data->ff_data);
+	struct ffmpeg_output *output = data;
+
+	if (output) {
+		if (output->active)
+			ffmpeg_data_free(&output->ff_data);
 		bfree(data);
 	}
-}
-
-static void ffmpeg_output_update(struct ffmpeg_output *data,
-		obs_data_t settings)
-{
 }
 
 static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
@@ -431,7 +431,8 @@ static void receive_video(void *param, const struct video_frame *frame)
 	av_init_packet(&packet);
 
 	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
-		sws_scale(data->swscale, frame->data, frame->linesize,
+		sws_scale(data->swscale, frame->data,
+				(const int*)frame->linesize,
 				0, context->height, data->dst_picture.data,
 				data->dst_picture.linesize);
 	else
@@ -464,7 +465,8 @@ static void receive_video(void *param, const struct video_frame *frame)
 					context->time_base,
 					data->video->time_base);
 
-			ret = av_interleaved_write_frame(data->output, &packet);
+			ret = av_interleaved_write_frame(data->output,
+					&packet);
 		} else {
 			ret = 0;
 		}
@@ -478,20 +480,20 @@ static void receive_video(void *param, const struct video_frame *frame)
 	data->total_frames++;
 }
 
-static inline void encode_audio(struct ffmpeg_data *data,
+static inline void encode_audio(struct ffmpeg_data *output,
 		struct AVCodecContext *context, size_t block_size)
 {
 	AVPacket packet = {0};
 	int ret, got_packet;
-	size_t total_size = data->frame_size * block_size * context->channels;
+	size_t total_size = output->frame_size * block_size * context->channels;
 
-	data->aframe->nb_samples = data->frame_size;
-	data->aframe->pts = av_rescale_q(data->total_samples,
+	output->aframe->nb_samples = output->frame_size;
+	output->aframe->pts = av_rescale_q(output->total_samples,
 			(AVRational){1, context->sample_rate},
 			context->time_base);
 
-	ret = avcodec_fill_audio_frame(data->aframe, context->channels,
-			context->sample_fmt, data->samples[0],
+	ret = avcodec_fill_audio_frame(output->aframe, context->channels,
+			context->sample_fmt, output->samples[0],
 			(int)total_size, 1);
 	if (ret < 0) {
 		blog(LOG_ERROR, "receive_audio: avcodec_fill_audio_frame "
@@ -499,9 +501,9 @@ static inline void encode_audio(struct ffmpeg_data *data,
 		return;
 	}
 
-	data->total_samples += data->frame_size;
+	output->total_samples += output->frame_size;
 
-	ret = avcodec_encode_audio2(context, &packet, data->aframe,
+	ret = avcodec_encode_audio2(context, &packet, output->aframe,
 			&got_packet);
 	if (ret < 0) {
 		blog(LOG_ERROR, "receive_audio: Error encoding audio: %s",
@@ -512,13 +514,13 @@ static inline void encode_audio(struct ffmpeg_data *data,
 	if (!got_packet)
 		return;
 
-	packet.pts = rescale_ts(packet.pts, context, data->audio);
-	packet.dts = rescale_ts(packet.dts, context, data->audio);
+	packet.pts = rescale_ts(packet.pts, context, output->audio);
+	packet.dts = rescale_ts(packet.dts, context, output->audio);
 	packet.duration = (int)av_rescale_q(packet.duration, context->time_base,
-			data->audio->time_base);
-	packet.stream_index = data->audio->index;
+			output->audio->time_base);
+	packet.stream_index = output->audio->index;
 
-	ret = av_interleaved_write_frame(data->output, &packet);
+	ret = av_interleaved_write_frame(output->output, &packet);
 	if (ret != 0)
 		blog(LOG_ERROR, "receive_audio: Error writing audio: %s",
 				av_err2str(ret));
@@ -548,8 +550,10 @@ static void receive_audio(void *param, const struct audio_data *frame)
 	}
 }
 
-static bool ffmpeg_output_start(struct ffmpeg_output *data)
+static bool ffmpeg_output_start(void *data)
 {
+	struct ffmpeg_output *output = data;
+
 	video_t video = obs_video();
 	audio_t audio = obs_audio();
 
@@ -560,14 +564,14 @@ static bool ffmpeg_output_start(struct ffmpeg_output *data)
 	}
 
 	const char *filename_test;
-	obs_data_t settings = obs_output_get_settings(data->output);
+	obs_data_t settings = obs_output_get_settings(output->output);
 	filename_test = obs_data_getstring(settings, "filename");
 	obs_data_release(settings);
 
 	if (!filename_test || !*filename_test)
 		return false;
 
-	if (!ffmpeg_data_init(&data->ff_data, filename_test))
+	if (!ffmpeg_data_init(&output->ff_data, filename_test))
 		return false;
 
 	struct audio_convert_info aci;
@@ -580,26 +584,29 @@ static bool ffmpeg_output_start(struct ffmpeg_output *data)
 	vci.width           = 0;
 	vci.height          = 0;
 
-	video_output_connect(video, &vci, receive_video, data);
-	audio_output_connect(audio, &aci, receive_audio, data);
-	data->active = true;
+	video_output_connect(video, &vci, receive_video, output);
+	audio_output_connect(audio, &aci, receive_audio, output);
+	output->active = true;
 
 	return true;
 }
 
-static void ffmpeg_output_stop(struct ffmpeg_output *data)
+static void ffmpeg_output_stop(void *data)
 {
-	if (data->active) {
-		data->active = false;
+	struct ffmpeg_output *output = data;
+
+	if (output->active) {
+		output->active = false;
 		video_output_disconnect(obs_video(), receive_video, data);
 		audio_output_disconnect(obs_audio(), receive_audio, data);
-		ffmpeg_data_free(&data->ff_data);
+		ffmpeg_data_free(&output->ff_data);
 	}
 }
 
-static bool ffmpeg_output_active(struct ffmpeg_output *data)
+static bool ffmpeg_output_active(void *data)
 {
-	return data->active;
+	struct ffmpeg_output *output = data;
+	return output->active;
 }
 
 struct obs_output_info ffmpeg_output = {
@@ -607,7 +614,6 @@ struct obs_output_info ffmpeg_output = {
 	.getname = ffmpeg_output_getname,
 	.create  = ffmpeg_output_create,
 	.destroy = ffmpeg_output_destroy,
-	.update  = ffmpeg_output_update,
 	.start   = ffmpeg_output_start,
 	.stop    = ffmpeg_output_stop,
 	.active  = ffmpeg_output_active

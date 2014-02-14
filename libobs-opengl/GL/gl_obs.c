@@ -6,7 +6,7 @@
 #if defined(__APPLE__)
 #include <dlfcn.h>
 
-static void* AppleGLGetProcAddress (const const char *name)
+static void* AppleGLGetProcAddress (const char *name)
 {
 	static void* image = NULL;
 	

@@ -69,6 +69,8 @@ obs_encoder_t obs_encoder_create(const char *id, const char *name,
 	pthread_mutex_lock(&obs->data.encoders_mutex);
 	da_push_back(obs->data.encoders, &encoder);
 	pthread_mutex_unlock(&obs->data.encoders_mutex);
+
+	encoder->name = bstrdup(name);
 	return encoder;
 }
 
@@ -81,6 +83,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 
 		encoder->info.destroy(encoder->data);
 		obs_data_release(encoder->settings);
+		bfree(encoder->name);
 		bfree(encoder);
 	}
 }
@@ -88,53 +91,73 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 obs_properties_t obs_encoder_properties(const char *id, const char *locale)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
-	if (ei && ei->properties)
-		return ei->properties(locale);
+	if (ei && ei->get_properties)
+		return ei->get_properties(locale);
 	return NULL;
 }
 
 void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
+	if (!encoder) return;
+
 	obs_data_replace(&encoder->settings, settings);
 	encoder->info.update(encoder->data, encoder->settings);
 }
 
-bool obs_encoder_reset(obs_encoder_t encoder)
+bool obs_encoder_reset(obs_encoder_t encoder, obs_data_t settings)
 {
-	return encoder->info.reset(encoder->data);
+	if (!encoder) return false;
+
+	return encoder->info.reset(encoder->data, settings);
 }
 
-bool obs_encoder_encode(obs_encoder_t encoder, void *frames, size_t size)
+bool obs_encoder_encode(obs_encoder_t encoder,
+		const struct encoder_frame *frame,
+		struct encoder_packet *packet, bool *received_packet)
 {
-	/* TODO */
-	//encoder->info.encode(encoder->data, frames, size, packets);
-	return false;
+	if (!encoder) return false;
+
+	return encoder->info.encode(encoder->data, frame, packet,
+			received_packet);
 }
 
-int obs_encoder_getheader(obs_encoder_t encoder,
-		struct encoder_packet **packets)
+bool obs_encoder_get_extra_data(obs_encoder_t encoder, uint8_t **extra_data,
+		size_t *size)
 {
-	return encoder->info.getheader(encoder, packets);
-}
+	if (!encoder) return false;
 
-bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
-		uint32_t buffersize)
-{
-	if (encoder->info.setbitrate)
-		return encoder->info.setbitrate(encoder->data, bitrate,
-				buffersize);
-	return false;
-}
+	if (encoder->info.get_extra_data)
+		return encoder->info.get_extra_data(encoder, extra_data, size);
 
-bool obs_encoder_request_keyframe(obs_encoder_t encoder)
-{
-	if (encoder->info.request_keyframe)
-		return encoder->info.request_keyframe(encoder->data);
 	return false;
 }
 
 obs_data_t obs_encoder_get_settings(obs_encoder_t encoder)
 {
+	if (!encoder) return NULL;
+
 	obs_data_addref(encoder->settings);
 	return encoder->settings;
+}
+
+bool obs_encoder_start(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param)
+{
+#pragma message ("TODO: implement obs_encoder_start")
+	UNUSED_PARAMETER(encoder);
+	UNUSED_PARAMETER(new_packet);
+	UNUSED_PARAMETER(param);
+	return false;
+}
+
+void obs_encoder_stop(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param)
+{
+#pragma message ("TODO: implement obs_encoder_stop")
+	UNUSED_PARAMETER(encoder);
+	UNUSED_PARAMETER(new_packet);
+	UNUSED_PARAMETER(param);
+	return;
 }

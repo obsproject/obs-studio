@@ -22,22 +22,21 @@ struct desktop_tex {
 	IOSurfaceRef current, prev;
 };
 
-static IOSurfaceRef current = NULL,
-		    prev = NULL;
-static pthread_mutex_t c_mutex;
-
 static const char *osx_desktop_test_getname(const char *locale)
 {
+	UNUSED_PARAMETER(locale);
 	return "OSX Monitor Capture";
 }
 
-static void osx_desktop_test_destroy(struct desktop_tex *rt)
+static void osx_desktop_test_destroy(void *data)
 {
+	struct desktop_tex *rt = data;
+
 	if (rt) {
 		pthread_mutex_lock(&rt->mutex);
 		gs_entercontext(obs_graphics());
 
-		if (current) {
+		if (rt->current) {
 			IOSurfaceDecrementUseCount(rt->current);
 			CFRelease(rt->current);
 		}
@@ -54,8 +53,7 @@ static void osx_desktop_test_destroy(struct desktop_tex *rt)
 	}
 }
 
-static struct desktop_tex *osx_desktop_test_create(const char *settings,
-		obs_source_t source)
+static void *osx_desktop_test_create(obs_data_t settings, obs_source_t source)
 {
 	struct desktop_tex *rt = bzalloc(sizeof(struct desktop_tex));
 	char *effect_file;
@@ -123,6 +121,10 @@ static struct desktop_tex *osx_desktop_test_create(const char *settings,
 				CFRetain(rt->current);
 				IOSurfaceIncrementUseCount(rt->current);
 				pthread_mutex_unlock(&rt->mutex);
+
+				UNUSED_PARAMETER(status);
+				UNUSED_PARAMETER(displayTime);
+				UNUSED_PARAMETER(updateRef);
 			}
 	);
 
@@ -133,12 +135,15 @@ static struct desktop_tex *osx_desktop_test_create(const char *settings,
 		return NULL;
 	}
 
+	UNUSED_PARAMETER(source);
+	UNUSED_PARAMETER(settings);
 	return rt;
 }
 
-static void osx_desktop_test_video_render(struct desktop_tex *rt,
-		obs_source_t filter_target)
+static void osx_desktop_test_video_render(void *data, effect_t effect)
 {
+	struct desktop_tex *rt = data;
+
 	pthread_mutex_lock(&rt->mutex);
 
 	if (rt->prev != rt->current) {
@@ -166,15 +171,19 @@ static void osx_desktop_test_video_render(struct desktop_tex *rt,
 
 fail:
 	pthread_mutex_unlock(&rt->mutex);
+
+	UNUSED_PARAMETER(effect);
 }
 
-static uint32_t osx_desktop_test_getwidth(struct desktop_tex *rt)
+static uint32_t osx_desktop_test_getwidth(void *data)
 {
+	struct desktop_tex *rt = data;
 	return rt->width;
 }
 
-static uint32_t osx_desktop_test_getheight(struct desktop_tex *rt)
+static uint32_t osx_desktop_test_getheight(void *data)
 {
+	struct desktop_tex *rt = data;
 	return rt->height;
 }
 

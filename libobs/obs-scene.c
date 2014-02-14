@@ -31,8 +31,8 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 
 static const char *scene_getname(const char *locale)
 {
-	/* TODO: locale lookup of display name */
-	return "Scene";
+	UNUSED_PARAMETER(locale);
+	return "Scene internal source type";
 }
 
 static void *scene_create(obs_data_t settings, struct obs_source *source)
@@ -51,6 +51,7 @@ static void *scene_create(obs_data_t settings, struct obs_source *source)
 		goto fail;
 	}
 
+	UNUSED_PARAMETER(settings);
 	return scene;
 
 fail:
@@ -142,11 +143,20 @@ static void scene_video_render(void *data, effect_t effect)
 	}
 
 	pthread_mutex_unlock(&scene->mutex);
+
+	UNUSED_PARAMETER(effect);
 }
 
-static uint32_t scene_getsize(void *data)
+static uint32_t scene_getwidth(void *data)
 {
-	return 0;
+	UNUSED_PARAMETER(data);
+	return obs->video.base_width;
+}
+
+static uint32_t scene_getheight(void *data)
+{
+	UNUSED_PARAMETER(data);
+	return obs->video.base_height;
 }
 
 static const struct obs_source_info scene_info =
@@ -158,8 +168,8 @@ static const struct obs_source_info scene_info =
 	.create       = scene_create,
 	.destroy      = scene_destroy,
 	.video_render = scene_video_render,
-	.getwidth     = scene_getsize,
-	.getheight    = scene_getsize,
+	.getwidth     = scene_getwidth,
+	.getheight    = scene_getheight,
 };
 
 obs_scene_t obs_scene_create(const char *name)

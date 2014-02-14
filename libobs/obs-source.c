@@ -172,7 +172,7 @@ void source_frame_init(struct source_frame *frame,
 		enum video_format format, uint32_t width, uint32_t height)
 {
 	size_t size;
-	size_t offsets[MAX_VIDEO_PLANES];
+	size_t offsets[MAX_AV_PLANES];
 	int    alignment = base_get_alignment();
 
 	memset(offsets, 0, sizeof(offsets));
@@ -255,7 +255,7 @@ static void obs_source_destroy(obs_source_t source)
 	if (source->data)
 		source->info.destroy(source->data);
 
-	for (i = 0; i < MAX_AUDIO_PLANES; i++)
+	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);
 
 	audio_line_destroy(source->audio_line);
@@ -366,7 +366,7 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
-static inline uint64_t conv_frames_to_time(obs_source_t source, size_t frames)
+static inline uint64_t conv_frames_to_time(size_t frames)
 {
 	const struct audio_output_info *info;
 	info = audio_output_getinfo(obs->audio.audio);
@@ -423,7 +423,7 @@ static void source_output_audio_line(obs_source_t source,
 	}
 
 	source->next_audio_ts_min = in.timestamp +
-		conv_frames_to_time(source, in.frames);
+		conv_frames_to_time(in.frames);
 
 	if (source->audio_reset_ref != 0)
 		return;
@@ -499,24 +499,22 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 		return false;
 
 	if (type == CONVERT_420)
-		decompress_420(frame->data, frame->linesize,
-				frame->width, frame->height, 0, frame->height,
-				ptr, linesize);
+		decompress_420((const uint8_t* const*)frame->data,
+				frame->linesize,
+				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_NV12)
-		decompress_nv12(frame->data, frame->linesize,
-				frame->width, frame->height, 0, frame->height,
-				ptr, linesize);
+		decompress_nv12((const uint8_t* const*)frame->data,
+				frame->linesize,
+				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_422_Y)
 		decompress_422(frame->data[0], frame->linesize[0],
-				frame->width, frame->height, 0, frame->height,
-				ptr, linesize, true);
+				0, frame->height, ptr, linesize, true);
 
 	else if (type == CONVERT_422_U)
 		decompress_422(frame->data[0], frame->linesize[0],
-				frame->width, frame->height, 0, frame->height,
-				ptr, linesize, false);
+				0, frame->height, ptr, linesize, false);
 
 	texture_unmap(tex);
 	return true;
@@ -799,8 +797,7 @@ static void copy_frame_data(struct source_frame *dst,
 	}
 }
 
-static inline struct source_frame *cache_video(obs_source_t source,
-		const struct source_frame *frame)
+static inline struct source_frame *cache_video(const struct source_frame *frame)
 {
 	/* TODO: use an actual cache */
 	struct source_frame *new_frame = source_frame_create(frame->format,
@@ -813,7 +810,7 @@ static inline struct source_frame *cache_video(obs_source_t source,
 void obs_source_output_video(obs_source_t source,
 		const struct source_frame *frame)
 {
-	struct source_frame *output = cache_video(source, frame);
+	struct source_frame *output = cache_video(frame);
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_video(source, output);
@@ -875,15 +872,15 @@ static inline void reset_resampler(obs_source_t source,
 }
 
 static inline void copy_audio_data(obs_source_t source,
-		const void *const data[], uint32_t frames, uint64_t timestamp)
+		const uint8_t *const data[], uint32_t frames, uint64_t ts)
 {
 	size_t planes    = audio_output_planes(obs->audio.audio);
 	size_t blocksize = audio_output_blocksize(obs->audio.audio);
 	size_t size      = (size_t)frames * blocksize;
 	bool   resize    = source->audio_storage_size < size;
 
-	source->audio_data.frames = frames;
-	source->audio_data.timestamp = timestamp;
+	source->audio_data.frames    = frames;
+	source->audio_data.timestamp = ts;
 
 	for (size_t i = 0; i < planes; i++) {
 		/* ensure audio storage capacity */
@@ -911,7 +908,7 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 		return;
 
 	if (source->resampler) {
-		uint8_t  *output[MAX_AUDIO_PLANES];
+		uint8_t  *output[MAX_AV_PLANES];
 		uint32_t frames;
 		uint64_t offset;
 
@@ -921,7 +918,7 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 				output, &frames, &offset,
 				audio->data, audio->frames);
 
-		copy_audio_data(source, output, frames,
+		copy_audio_data(source, (const uint8_t *const *)output, frames,
 				audio->timestamp - offset);
 	} else {
 		copy_audio_data(source, audio->data, audio->frames,
@@ -933,7 +930,6 @@ void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
 	uint32_t flags = obs_source_get_output_flags(source);
-	size_t blocksize = audio_output_blocksize(obs->audio.audio);
 	struct filtered_audio *output;
 
 	process_audio(source, audio);
@@ -951,7 +947,7 @@ void obs_source_output_audio(obs_source_t source,
 		if (source->timing_set || async) {
 			struct audio_data data;
 
-			for (int i = 0; i < MAX_AUDIO_PLANES; i++)
+			for (int i = 0; i < MAX_AV_PLANES; i++)
 				data.data[i] = output->data[i];
 
 			data.frames    = output->frames;
@@ -1022,7 +1018,6 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
 struct source_frame *obs_source_getframe(obs_source_t source)
 {
 	struct source_frame *frame = NULL;
-	uint64_t last_frame_time = source->last_frame_ts;
 	int      audio_time_refs = 0;
 	uint64_t sys_time;
 
@@ -1087,11 +1082,10 @@ void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 }
 
 static inline void render_filter_bypass(obs_source_t target, effect_t effect,
-		uint32_t width, uint32_t height, bool use_matrix)
+		bool use_matrix)
 {
 	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
 	technique_t tech       = effect_gettechnique(effect, tech_name);
-	eparam_t    image      = effect_getparambyname(effect, "image");
 	size_t      passes, i;
 
 	passes = technique_begin(tech);
@@ -1141,7 +1135,7 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
 	if (can_directly && expects_def && target == parent) {
-		render_filter_bypass(target, effect, width, height, use_matrix);
+		render_filter_bypass(target, effect, use_matrix);
 		return;
 	}
 

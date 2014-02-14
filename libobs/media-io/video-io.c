@@ -63,9 +63,6 @@ static inline void video_swapframes(struct video_output *video)
 
 static inline void video_output_cur_frame(struct video_output *video)
 {
-	size_t width  = video->info.width;
-	size_t height = video->info.height;
-
 	if (!video->cur_frame.data[0])
 		return;
 

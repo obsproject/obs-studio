@@ -7,11 +7,14 @@ struct test_filter {
 
 static const char *filter_getname(const char *locale)
 {
+	UNUSED_PARAMETER(locale);
 	return "Test";
 }
 
-static void filter_destroy(struct test_filter *tf)
+static void filter_destroy(void *data)
 {
+	struct test_filter *tf = data;
+
 	if (tf) {
 		gs_entercontext(obs_graphics());
 
@@ -22,8 +25,7 @@ static void filter_destroy(struct test_filter *tf)
 	}
 }
 
-static struct test_filter *filter_create(obs_data_t settings,
-		obs_source_t source)
+static void *filter_create(obs_data_t settings, obs_source_t source)
 {
 	struct test_filter *tf = bzalloc(sizeof(struct test_filter));
 	char *effect_file;
@@ -42,13 +44,17 @@ static struct test_filter *filter_create(obs_data_t settings,
 
 	gs_leavecontext();
 
+	UNUSED_PARAMETER(settings);
 	return tf;
 }
 
-static void filter_render(struct test_filter *tf, effect_t effect)
+static void filter_render(void *data, effect_t effect)
 {
+	struct test_filter *tf = data;
 	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,
 			ALLOW_DIRECT_RENDERING);
+
+	UNUSED_PARAMETER(effect);
 }
 
 struct obs_source_info test_filter = {

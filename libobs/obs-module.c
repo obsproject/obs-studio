@@ -202,7 +202,6 @@ void obs_register_encoder(const struct obs_encoder_info *info)
 	CHECK_REQUIRED_VAL(info, destroy,   obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, reset,     obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, encode,    obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, getheader, obs_register_encoder);
 
 	REGISTER_OBS_DEF(cur_encoder_info_size, obs_encoder_info,
 			obs->encoder_types, info);
@@ -210,12 +209,9 @@ void obs_register_encoder(const struct obs_encoder_info *info)
 
 void obs_register_service(const struct obs_service_info *info)
 {
-	CHECK_REQUIRED_VAL(info, getname, obs_register_service);
-	CHECK_REQUIRED_VAL(info, create,  obs_register_service);
-	CHECK_REQUIRED_VAL(info, destroy, obs_register_service);
-
-	REGISTER_OBS_DEF(cur_service_info_size, obs_service_info,
-			obs->service_types, info);
+	/* TODO */
+#pragma message ("TODO: implement obs_register_service")
+	UNUSED_PARAMETER(info);
 }
 
 void obs_regsiter_modal_ui(const struct obs_modal_ui *info)

@@ -39,9 +39,9 @@ struct audio_line {
 	char                       *name;
 
 	struct audio_output        *audio;
-	struct circlebuf           buffers[MAX_AUDIO_PLANES];
+	struct circlebuf           buffers[MAX_AV_PLANES];
 	pthread_mutex_t            mutex;
-	DARRAY(uint8_t)            volume_buffers[MAX_AUDIO_PLANES];
+	DARRAY(uint8_t)            volume_buffers[MAX_AV_PLANES];
 	uint64_t                   base_timestamp;
 	uint64_t                   last_timestamp;
 
@@ -55,7 +55,7 @@ struct audio_line {
 
 static inline void audio_line_destroy_data(struct audio_line *line)
 {
-	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++) {
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		circlebuf_free(&line->buffers[i]);
 		da_free(line->volume_buffers[i]);
 	}
@@ -74,7 +74,7 @@ struct audio_output {
 	pthread_t                  thread;
 	event_t                    stop_event;
 
-	DARRAY(uint8_t)            mix_buffers[MAX_AUDIO_PLANES];
+	DARRAY(uint8_t)            mix_buffers[MAX_AV_PLANES];
 
 	bool                       initialized;
 
@@ -196,7 +196,7 @@ static inline void do_audio_output(struct audio_output *audio,
 		uint64_t timestamp, uint32_t frames)
 {
 	struct audio_data data;
-	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		data.data[i] = audio->mix_buffers[i].array;
 	data.frames = frames;
 	data.timestamp = timestamp;
@@ -415,7 +415,7 @@ void audio_output_close(audio_t audio)
 		line = next;
 	}
 
-	for (size_t i = 0; i < MAX_AUDIO_PLANES; i++)
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		da_free(audio->mix_buffers[i]);
 
 	event_destroy(&audio->stop_event);

@@ -164,6 +164,7 @@ void vertexbuffer_flush(vertbuffer_t vb, bool rebuild)
 			goto failed;
 	}
 
+	UNUSED_PARAMETER(rebuild);
 	return;
 
 failed:
@@ -202,8 +203,7 @@ static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb,
 	return 0;
 }
 
-static bool load_vb_buffer(struct gs_shader *shader,
-		struct shader_attrib *attrib,
+static bool load_vb_buffer(struct shader_attrib *attrib,
 		struct gs_vertex_buffer *vb)
 {
 	GLenum type;
@@ -245,7 +245,7 @@ static inline bool load_vb_buffers(struct gs_shader *shader,
 
 	for (i = 0; i < shader->attribs.num; i++) {
 		struct shader_attrib *attrib = shader->attribs.array+i;
-		if (!load_vb_buffer(shader, attrib, vb))
+		if (!load_vb_buffer(attrib, vb))
 			return false;
 	}
 

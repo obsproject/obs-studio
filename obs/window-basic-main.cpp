@@ -36,8 +36,8 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
-	  ui            (new Ui::OBSBasic),
-	  outputTest    (NULL)
+	  outputTest    (NULL),
+	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
 }
@@ -102,6 +102,8 @@ void OBSBasic::UpdateSources(OBSScene scene)
 			{
 				OBSBasic *window = static_cast<OBSBasic*>(p);
 				window->AddSceneItem(item);
+
+				UNUSED_PARAMETER(scene);
 				return true;
 			}, this);
 }
@@ -209,7 +211,6 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t params)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
 
-	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
 	QMetaObject::invokeMethod(window, "AddSceneItem",
@@ -220,7 +221,6 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
 
-	obs_scene_t scene = (obs_scene_t)calldata_ptr(params, "scene");
 	obs_sceneitem_t item = (obs_sceneitem_t)calldata_ptr(params, "item");
 
 	QMetaObject::invokeMethod(window, "RemoveSceneItem",
@@ -267,6 +267,10 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
 	obs_render_main_view();
+
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
 }
 
 /* Main class functions */
@@ -344,10 +348,14 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	/* TODO */
+	UNUSED_PARAMETER(event);
 }
 
 void OBSBasic::changeEvent(QEvent *event)
 {
+	/* TODO */
+	UNUSED_PARAMETER(event);
 }
 
 void OBSBasic::resizeEvent(QResizeEvent *event)
@@ -356,18 +364,23 @@ void OBSBasic::resizeEvent(QResizeEvent *event)
 
 	if (obs_get_video_info(&ovi))
 		ResizePreview(ovi.base_width, ovi.base_height);
+
+	UNUSED_PARAMETER(event);
 }
 
 void OBSBasic::on_action_New_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_action_Open_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_action_Save_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_scenes_itemChanged(QListWidgetItem *item)
@@ -388,6 +401,8 @@ void OBSBasic::on_scenes_itemChanged(QListWidgetItem *item)
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
+	/* TODO */
+	UNUSED_PARAMETER(pos);
 }
 
 void OBSBasic::on_actionAddScene_triggered()
@@ -433,22 +448,29 @@ void OBSBasic::on_actionRemoveScene_triggered()
 
 void OBSBasic::on_actionSceneProperties_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_actionSceneUp_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_actionSceneDown_triggered()
 {
+	/* TODO */
 }
 
 void OBSBasic::on_sources_itemChanged(QListWidgetItem *item)
 {
+	/* TODO */
+	UNUSED_PARAMETER(item);
 }
 
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
+	/* TODO */
+	UNUSED_PARAMETER(pos);
 }
 
 void OBSBasic::AddSource(obs_scene_t scene, const char *id)
@@ -483,7 +505,7 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 		sourceSceneRefs[source] = 0;
 
 		obs_add_source(source);
-		obs_sceneitem_t item = obs_scene_add(scene, source);
+		obs_scene_add(scene, source);
 		obs_source_release(source);
 	}
 }

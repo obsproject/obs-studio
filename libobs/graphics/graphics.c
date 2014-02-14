@@ -527,6 +527,8 @@ void gs_normal3v(const struct vec3 *v)
 void gs_color4v(const struct vec4 *v)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_color4v")
+	UNUSED_PARAMETER(v);
 }
 
 void gs_texcoord2v(const struct vec2 *v, int unit)
@@ -542,6 +544,7 @@ void gs_texcoord2v(const struct vec2 *v, int unit)
 input_t gs_getinput(void)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_getinput (hmm, not sure about input yet)")
 	return NULL;
 }
 
@@ -628,18 +631,27 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_create_texture_from_file")
+	UNUSED_PARAMETER(file);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
 texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_create_cubetexture_from_file")
+	UNUSED_PARAMETER(file);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
 texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_create_volumetexture_from_file")
+	UNUSED_PARAMETER(file);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
@@ -667,8 +679,7 @@ static inline void assign_sprite_uv(float *start, float *end, bool flip)
 }
 
 static void build_sprite(struct vb_data *data, float fcx, float fcy,
-		float start_u, float end_u, float start_v, float end_v,
-		uint32_t flip)
+		float start_u, float end_u, float start_v, float end_v)
 {
 	struct vec2 *tvarray = data->tvarray[0].array;
 
@@ -690,7 +701,7 @@ static inline void build_sprite_norm(struct vb_data *data, float fcx, float fcy,
 
 	assign_sprite_uv(&start_u, &end_u, (flip & GS_FLIP_U) != 0);
 	assign_sprite_uv(&start_v, &end_v, (flip & GS_FLIP_V) != 0);
-	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v, flip);
+	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
 static inline void build_sprite_rect(struct vb_data *data, texture_t tex,
@@ -703,7 +714,7 @@ static inline void build_sprite_rect(struct vb_data *data, texture_t tex,
 
 	assign_sprite_rect(&start_u, &end_u, width,  (flip & GS_FLIP_U) != 0);
 	assign_sprite_rect(&start_v, &end_v, height, (flip & GS_FLIP_V) != 0);
-	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v, flip);
+	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
 void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
@@ -740,6 +751,14 @@ void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_draw_cube_backdrop")
+	UNUSED_PARAMETER(cubetex);
+	UNUSED_PARAMETER(rot);
+	UNUSED_PARAMETER(left);
+	UNUSED_PARAMETER(right);
+	UNUSED_PARAMETER(top);
+	UNUSED_PARAMETER(bottom);
+	UNUSED_PARAMETER(znear);
 }
 
 void gs_resetviewport(void)
@@ -760,6 +779,10 @@ void gs_set2dmode(void)
 void gs_set3dmode(double fovy, double znear, double zvar)
 {
 	/* TODO */
+#pragma message ("TODO: implement gs_set3dmode")
+	UNUSED_PARAMETER(fovy);
+	UNUSED_PARAMETER(znear);
+	UNUSED_PARAMETER(zvar);
 }
 
 void gs_viewport_push(void)
@@ -817,6 +840,12 @@ void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
 		uint32_t linesize, bool invert)
 {
 	/* TODO */
+#pragma message ("TODO: implement cubetexture_setimage")
+	UNUSED_PARAMETER(cubetex);
+	UNUSED_PARAMETER(side);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(linesize);
+	UNUSED_PARAMETER(invert);
 }
 
 void gs_perspective(float angle, float aspect, float near, float far)
@@ -999,8 +1028,7 @@ indexbuffer_t gs_create_indexbuffer(enum gs_index_type type,
 enum gs_texture_type gs_gettexturetype(texture_t texture)
 {
 	graphics_t graphics = thread_graphics;
-	return graphics->exports.device_gettexturetype(graphics->device,
-			texture);
+	return graphics->exports.device_gettexturetype(texture);
 }
 
 void gs_load_vertexbuffer(vertbuffer_t vertbuffer)
@@ -1526,7 +1554,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return graphics->exports.stagesurface_getcolorformat(stagesurf);
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const void **data,
+bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
 		uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
@@ -1610,5 +1638,3 @@ bool texture_rebind_iosurface(texture_t texture, void *iosurf)
 
 	return graphics->exports.texture_rebind_iosurface(texture, iosurf);
 }
-
-

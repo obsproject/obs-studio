@@ -58,8 +58,7 @@ EXPORT vertbuffer_t device_create_vertexbuffer(device_t device,
 EXPORT indexbuffer_t device_create_indexbuffer(device_t device,
 		enum gs_index_type type, void *indices, size_t num,
 		uint32_t flags);
-EXPORT enum gs_texture_type device_gettexturetype(device_t device,
-		texture_t texture);
+EXPORT enum gs_texture_type device_gettexturetype(texture_t texture);
 EXPORT void device_load_vertexbuffer(device_t device, vertbuffer_t vertbuffer);
 EXPORT void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer);
 EXPORT void device_load_texture(device_t device, texture_t tex, int unit);
@@ -150,7 +149,7 @@ EXPORT void     stagesurface_destroy(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
 EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
-EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const void **data,
+EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
 		uint32_t *linesize);
 EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
 

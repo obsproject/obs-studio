@@ -49,6 +49,8 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	vprintf(msg, args);
 	printf("\n");
 #endif
+
+	UNUSED_PARAMETER(type);
 }
 
 bool OBSApp::InitGlobalConfigDefaults()

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "media-io-defs.h"
 #include "../util/c99defs.h"
 
 #ifdef __cplusplus
@@ -27,8 +28,6 @@ extern "C" {
  * Base audio output component.  Use this to create an audio output track
  * for the media.
  */
-
-#define MAX_AUDIO_PLANES 8
 
 struct audio_output;
 struct audio_line;
@@ -64,7 +63,7 @@ enum speaker_layout {
 };
 
 struct audio_data {
-	const uint8_t       *data[MAX_AUDIO_PLANES];
+	const uint8_t       *data[MAX_AV_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 	float               volume;

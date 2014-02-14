@@ -14,7 +14,10 @@ struct sinewave_data {
 /* middle C */
 static const double rate = 261.63/48000.0;
 
+#ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
+#endif
+
 #define M_PI_X2 M_PI*2
 
 static void *sinewave_thread(void *pdata)
@@ -57,11 +60,14 @@ static void *sinewave_thread(void *pdata)
 
 static const char *sinewave_getname(const char *locale)
 {
+	UNUSED_PARAMETER(locale);
 	return "Sinewave Sound Source (Test)";
 }
 
-static void sinewave_destroy(struct sinewave_data *swd)
+static void sinewave_destroy(void *data)
 {
+	struct sinewave_data *swd = data;
+
 	if (swd) {
 		if (swd->initialized_thread) {
 			void *ret;
@@ -74,7 +80,7 @@ static void sinewave_destroy(struct sinewave_data *swd)
 	}
 }
 
-static struct sinewave_data *sinewave_create(obs_data_t settings,
+static void *sinewave_create(obs_data_t settings,
 		obs_source_t source)
 {
 	struct sinewave_data *swd = bzalloc(sizeof(struct sinewave_data));
@@ -86,6 +92,8 @@ static struct sinewave_data *sinewave_create(obs_data_t settings,
 		goto fail;
 
 	swd->initialized_thread = true;
+
+	UNUSED_PARAMETER(settings);
 	return swd;
 
 fail:

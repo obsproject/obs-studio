@@ -19,74 +19,74 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
+/* ...surprisingly, if I don't use a macro to force inlining, it causes the
+ * CPU usage to boost by a tremendous amount in debug builds. */
+
 #define get_m128_32_0(val) (*((uint32_t*)&val))
 #define get_m128_32_1(val) (*(((uint32_t*)&val)+1))
 
-static FORCE_INLINE void pack_lum(uint8_t *lum_plane,
-		uint32_t lum_pos0, uint32_t lum_pos1,
-		const __m128i line1, const __m128i line2,
-		const __m128i lum_mask)
+#define pack_lum(lum_plane, lum_pos0, lum_pos1, line1, line2, lum_mask)       \
+do {                                                                          \
+	__m128i pack_val = _mm_packs_epi32(                                   \
+			_mm_srli_si128(_mm_and_si128(line1, lum_mask), 1),    \
+			_mm_srli_si128(_mm_and_si128(line2, lum_mask), 1));   \
+	pack_val = _mm_packus_epi16(pack_val, pack_val);                      \
+                                                                              \
+	*(uint32_t*)(lum_plane+lum_pos0) = get_m128_32_0(pack_val);           \
+	*(uint32_t*)(lum_plane+lum_pos1) = get_m128_32_1(pack_val);           \
+} while (false)
+
+#define pack_ch_1plane(uv_plane, chroma_pos, line1, line2, uv_mask)           \
+do {                                                                          \
+	__m128i add_val = _mm_add_epi64(                                      \
+			_mm_and_si128(line1, uv_mask),                        \
+			_mm_and_si128(line2, uv_mask));                       \
+	__m128i avg_val = _mm_add_epi64(                                      \
+			add_val,                                              \
+			_mm_shuffle_epi32(add_val, _MM_SHUFFLE(2, 3, 0, 1))); \
+	avg_val = _mm_srai_epi16(avg_val, 2);                                 \
+	avg_val = _mm_shuffle_epi32(avg_val, _MM_SHUFFLE(3, 1, 2, 0));        \
+	avg_val = _mm_packus_epi16(avg_val, avg_val);                         \
+                                                                              \
+	*(uint32_t*)(uv_plane+chroma_pos) = get_m128_32_0(avg_val);           \
+} while (false)
+
+#define pack_ch_2plane(u_plane, v_plane, chroma_pos, line1, line2, uv_mask)   \
+do {                                                                          \
+	uint32_t packed_vals;                                                 \
+                                                                              \
+	__m128i add_val = _mm_add_epi64(                                      \
+			_mm_and_si128(line1, uv_mask),                        \
+			_mm_and_si128(line2, uv_mask));                       \
+	__m128i avg_val = _mm_add_epi64(                                      \
+			add_val,                                              \
+			_mm_shuffle_epi32(add_val, _MM_SHUFFLE(2, 3, 0, 1))); \
+	avg_val = _mm_srai_epi16(avg_val, 2);                                 \
+	avg_val = _mm_shuffle_epi32(avg_val, _MM_SHUFFLE(3, 1, 2, 0));        \
+	avg_val = _mm_shufflelo_epi16(avg_val, _MM_SHUFFLE(3, 1, 2, 0));      \
+	avg_val = _mm_packus_epi16(avg_val, avg_val);                         \
+                                                                              \
+	packed_vals = get_m128_32_0(avg_val);                                 \
+                                                                              \
+	*(uint16_t*)(u_plane+chroma_pos) = (uint16_t)(packed_vals);           \
+	*(uint16_t*)(v_plane+chroma_pos) = (uint16_t)(packed_vals>>16);       \
+} while (false)
+
+
+static FORCE_INLINE uint32_t min_uint32(uint32_t a, uint32_t b)
 {
-	__m128i pack_val = _mm_packs_epi32(
-			_mm_srli_si128(_mm_and_si128(line1, lum_mask), 1),
-			_mm_srli_si128(_mm_and_si128(line2, lum_mask), 1));
-	pack_val = _mm_packus_epi16(pack_val, pack_val);
-
-	*(uint32_t*)(lum_plane+lum_pos0) = get_m128_32_0(pack_val);
-	*(uint32_t*)(lum_plane+lum_pos1) = get_m128_32_1(pack_val);
-}
-
-static FORCE_INLINE void pack_chroma_1plane(uint8_t *uv_plane,
-		uint32_t chroma_pos,
-		const __m128i line1, const __m128i line2,
-		const __m128i uv_mask)
-{
-	__m128i add_val = _mm_add_epi64(
-			_mm_and_si128(line1, uv_mask),
-			_mm_and_si128(line2, uv_mask));
-	__m128i avg_val = _mm_add_epi64(
-			add_val,
-			_mm_shuffle_epi32(add_val, _MM_SHUFFLE(2, 3, 0, 1)));
-	avg_val = _mm_srai_epi16(avg_val, 2);
-	avg_val = _mm_shuffle_epi32(avg_val, _MM_SHUFFLE(3, 1, 2, 0));
-	avg_val = _mm_packus_epi16(avg_val, avg_val);
-
-	*(uint32_t*)(uv_plane+chroma_pos) = get_m128_32_0(avg_val);
-}
-
-static FORCE_INLINE void pack_chroma_2plane(uint8_t *u_plane, uint8_t *v_plane,
-		uint32_t chroma_pos,
-		const __m128i line1, const __m128i line2,
-		const __m128i uv_mask)
-{
-	uint32_t packed_vals;
-
-	__m128i add_val = _mm_add_epi64(
-			_mm_and_si128(line1, uv_mask),
-			_mm_and_si128(line2, uv_mask));
-	__m128i avg_val = _mm_add_epi64(
-			add_val,
-			_mm_shuffle_epi32(add_val, _MM_SHUFFLE(2, 3, 0, 1)));
-	avg_val = _mm_srai_epi16(avg_val, 2);
-	avg_val = _mm_shuffle_epi32(avg_val, _MM_SHUFFLE(3, 1, 2, 0));
-	avg_val = _mm_shufflelo_epi16(avg_val, _MM_SHUFFLE(3, 1, 2, 0));
-	avg_val = _mm_packus_epi16(avg_val, avg_val);
-
-	packed_vals = get_m128_32_0(avg_val);
-
-	*(uint16_t*)(u_plane+chroma_pos) = (uint16_t)(packed_vals);
-	*(uint16_t*)(v_plane+chroma_pos) = (uint16_t)(packed_vals>>16);
+	return a < b ? a : b;
 }
 
 void compress_uyvx_to_i420(
 		const uint8_t *input, uint32_t in_linesize,
-		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output[], const uint32_t out_linesize[])
 {
 	uint8_t  *lum_plane   = output[0];
 	uint8_t  *u_plane     = output[1];
 	uint8_t  *v_plane     = output[2];
+	uint32_t width        = min_uint32(in_linesize, out_linesize[0]);
 	uint32_t y;
 
 	__m128i lum_mask = _mm_set1_epi32(0x0000FF00);
@@ -109,7 +109,7 @@ void compress_uyvx_to_i420(
 
 			pack_lum(lum_plane, lum_pos0, lum_pos1,
 					line1, line2, lum_mask);
-			pack_chroma_2plane(u_plane, v_plane,
+			pack_ch_2plane(u_plane, v_plane,
 					chroma_y_pos + (x>>1),
 					line1, line2, uv_mask);
 		}
@@ -118,12 +118,12 @@ void compress_uyvx_to_i420(
 
 void compress_uyvx_to_nv12(
 		const uint8_t *input, uint32_t in_linesize,
-		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output[], const uint32_t out_linesize[])
 {
 	uint8_t *lum_plane    = output[0];
 	uint8_t *chroma_plane = output[1];
+	uint32_t width        = min_uint32(in_linesize, out_linesize[0]);
 	uint32_t y;
 
 	__m128i lum_mask = _mm_set1_epi32(0x0000FF00);
@@ -146,7 +146,7 @@ void compress_uyvx_to_nv12(
 
 			pack_lum(lum_plane, lum_pos0, lum_pos1,
 					line1, line2, lum_mask);
-			pack_chroma_1plane(chroma_plane, chroma_y_pos + x,
+			pack_ch_1plane(chroma_plane, chroma_y_pos + x,
 					line1, line2, uv_mask);
 		}
 	}
@@ -154,12 +154,11 @@ void compress_uyvx_to_nv12(
 
 void decompress_420(
 		const uint8_t *const input[], const uint32_t in_linesize[],
-		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output, uint32_t out_linesize)
 {
 	uint32_t start_y_d2 = start_y/2;
-	uint32_t width_d2   = width/2;
+	uint32_t width_d2   = min_uint32(in_linesize[0], out_linesize)/2;
 	uint32_t height_d2  = end_y/2;
 	uint32_t y;
 
@@ -170,8 +169,8 @@ void decompress_420(
 		register uint32_t *output0, *output1;
 		uint32_t x;
 
-		lum0 = input[0] + y * 2*width;
-		lum1 = lum0 + width;
+		lum0 = input[0] + y * 2 * in_linesize[0];
+		lum1 = lum0 + in_linesize[0];
 		output0 = (uint32_t*)(output + y * 2 * in_linesize[0]);
 		output1 = (uint32_t*)((uint8_t*)output0 + in_linesize[0]);
 
@@ -190,12 +189,11 @@ void decompress_420(
 
 void decompress_nv12(
 		const uint8_t *const input[], const uint32_t in_linesize[],
-		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output, uint32_t out_linesize)
 {
 	uint32_t start_y_d2 = start_y/2;
-	uint32_t width_d2   = width/2;
+	uint32_t width_d2   = min_uint32(in_linesize[0], out_linesize)/2;
 	uint32_t height_d2  = end_y/2;
 	uint32_t y;
 
@@ -206,9 +204,9 @@ void decompress_nv12(
 		uint32_t x;
 
 		chroma = (const uint16_t*)(input[1] + y * in_linesize[1]);
-		lum0 = input[0] + y*2 * in_linesize[0];
+		lum0 = input[0] + y * 2 * in_linesize[0];
 		lum1 = lum0 + in_linesize[0];
-		output0 = (uint32_t*)(output + y*2 * out_linesize);
+		output0 = (uint32_t*)(output + y * 2 * out_linesize);
 		output1 = (uint32_t*)((uint8_t*)output0 + out_linesize);
 
 		for (x = 0; x < width_d2; x++) {
@@ -225,12 +223,11 @@ void decompress_nv12(
 
 void decompress_422(
 		const uint8_t *input, uint32_t in_linesize,
-		uint32_t width, uint32_t height,
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output, uint32_t out_linesize,
 		bool leading_lum)
 {
-	uint32_t width_d2 = width >> 1;
+	uint32_t width_d2 = min_uint32(in_linesize, out_linesize)/2;
 	uint32_t y;
 
 	register const uint32_t *input32;

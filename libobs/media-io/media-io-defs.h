@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,20 +17,4 @@
 
 #pragma once
 
-struct obs_service_info {
-	/* required */
-	char *id;
-
-	const char *(*getname)(const char *locale);
-#if 0
-	void *(*create)(obs_data_t settings, struct service_data *service);
-	void (*destroy)(void *data);
-
-	/* optional */
-	void (*update)(void *data, obs_data_t settings);
-
-	/* get stream url/key */
-	/* get (viewers/etc) */
-	/* send (current game/title/activate commercial/etc) */
-#endif
-};
+#define MAX_AV_PLANES 8

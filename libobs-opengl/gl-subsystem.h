@@ -404,6 +404,8 @@ struct gs_texture_cube {
 };
 
 struct gs_stage_surface {
+	device_t             device;
+
 	enum gs_color_format format;
 	uint32_t             width;
 	uint32_t             height;

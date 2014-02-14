@@ -7,11 +7,14 @@ struct random_tex {
 
 static const char *random_getname(const char *locale)
 {
+	UNUSED_PARAMETER(locale);
 	return "20x20 Random Pixel Texture Source (Test)";
 }
 
-static void random_destroy(struct random_tex *rt)
+static void random_destroy(void *data)
 {
+	struct random_tex *rt = data;
+
 	if (rt) {
 		gs_entercontext(obs_graphics());
 
@@ -22,8 +25,7 @@ static void random_destroy(struct random_tex *rt)
 	}
 }
 
-static struct random_tex *random_create(obs_data_t settings,
-		obs_source_t source)
+static void *random_create(obs_data_t settings, obs_source_t source)
 {
 	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
 	uint32_t *pixels = bmalloc(20*20*4);
@@ -53,23 +55,28 @@ static struct random_tex *random_create(obs_data_t settings,
 
 	gs_leavecontext();
 
+	UNUSED_PARAMETER(settings);
+	UNUSED_PARAMETER(source);
 	return rt;
 }
 
-static void random_video_render(struct random_tex *rt, effect_t effect)
+static void random_video_render(void *data, effect_t effect)
 {
+	struct random_tex *rt = data;
 	eparam_t image = effect_getparambyname(effect, "image");
 	effect_settexture(effect, image, rt->texture);
 	gs_draw_sprite(rt->texture, 0, 0, 0);
 }
 
-static uint32_t random_getwidth(struct random_tex *rt)
+static uint32_t random_getwidth(void *data)
 {
+	struct random_tex *rt = data;
 	return texture_getwidth(rt->texture);
 }
 
-static uint32_t random_getheight(struct random_tex *rt)
+static uint32_t random_getheight(void *data)
 {
+	struct random_tex *rt = data;
 	return texture_getheight(rt->texture);
 }
 

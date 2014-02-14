@@ -21,6 +21,8 @@
  * bool, inline, stdint
  */
 
+#define UNUSED_PARAMETER(param) (void)param
+
 #ifdef _MSC_VER
 #define FORCE_INLINE __forceinline
 #else

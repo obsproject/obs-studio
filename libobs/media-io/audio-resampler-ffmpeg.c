@@ -30,7 +30,7 @@ struct audio_resampler {
 	uint64_t            input_layout;
 	enum AVSampleFormat input_format;
 
-	uint8_t             *output_buffer[MAX_AUDIO_PLANES];
+	uint8_t             *output_buffer[MAX_AV_PLANES];
 	uint64_t            output_layout;
 	enum AVSampleFormat output_format;
 	int                 output_size;

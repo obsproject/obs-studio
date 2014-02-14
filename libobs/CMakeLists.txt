@@ -96,6 +96,7 @@ set(libobs_mediaio_SOURCES
 	media-io/format-conversion.c
 	media-io/audio-io.c)
 set(libobs_mediaio_HEADERS
+	media-io/media-io-defs.h
 	media-io/format-conversion.h
 	media-io/video-io.h
 	media-io/audio-resampler.h

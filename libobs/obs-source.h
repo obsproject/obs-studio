@@ -136,8 +136,7 @@ struct obs_source_info {
 	 * Gets the property information of this source
 	 *
 	 * @param  locale  The locale to translate with
-	 * @return         The properties data.  Caller is responsible for
-	 *                 freeing the data with obs_properties_destroy
+	 * @return         The properties data
 	 */
 	obs_properties_t (*get_properties)(const char *locale);
 

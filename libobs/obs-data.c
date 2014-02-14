@@ -237,6 +237,8 @@ obs_data_t obs_data_create()
 obs_data_t obs_data_create_from_json(const char *json_string)
 {
 	/* TODO */
+#pragma message ("TODO: implement obs_data_create_from_json")
+	UNUSED_PARAMETER(json_string);
 	return NULL;
 }
 

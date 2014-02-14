@@ -70,6 +70,7 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 {
 	struct gs_stage_surface *surf;
 	surf = bzalloc(sizeof(struct gs_stage_surface));
+	surf->device             = device;
 	surf->format             = color_format;
 	surf->width              = width;
 	surf->height             = height;
@@ -176,7 +177,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return stagesurf->format;
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const void **data,
+bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
 		uint32_t *linesize)
 {
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))

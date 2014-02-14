@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "media-io-defs.h"
 #include "../util/c99defs.h"
 
 #ifdef __cplusplus
@@ -24,8 +25,6 @@ extern "C" {
 #endif
 
 /* Base video output component.  Use this to create an video output track. */
-
-#define MAX_VIDEO_PLANES 8
 
 struct video_output;
 typedef struct video_output *video_t;
@@ -49,8 +48,8 @@ enum video_format {
 };
 
 struct video_frame {
-	const uint8_t     *data[MAX_VIDEO_PLANES];
-	uint32_t          linesize[MAX_VIDEO_PLANES];
+	const uint8_t     *data[MAX_AV_PLANES];
+	uint32_t          linesize[MAX_AV_PLANES];
 	uint64_t          timestamp;
 };
 

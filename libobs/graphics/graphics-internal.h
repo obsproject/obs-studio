@@ -63,8 +63,7 @@ struct gs_exports {
 	indexbuffer_t (*device_create_indexbuffer)(device_t device,
 			enum gs_index_type type, void *indices, size_t num,
 			uint32_t flags);
-	enum gs_texture_type (*device_gettexturetype)(device_t device,
-			texture_t texture);
+	enum gs_texture_type (*device_gettexturetype)(texture_t texture);
 	void (*device_load_vertexbuffer)(device_t device,
 			vertbuffer_t vertbuffer);
 	void (*device_load_indexbuffer)(device_t device,
@@ -157,8 +156,8 @@ struct gs_exports {
 	uint32_t (*stagesurface_getheight)(stagesurf_t stagesurf);
 	enum gs_color_format (*stagesurface_getcolorformat)(
 			stagesurf_t stagesurf);
-	bool     (*stagesurface_map)(stagesurf_t stagesurf, const void **data,
-			uint32_t *linesize);
+	bool     (*stagesurface_map)(stagesurf_t stagesurf,
+			const uint8_t **data, uint32_t *linesize);
 	void     (*stagesurface_unmap)(stagesurf_t stagesurf);
 
 	void (*zstencil_destroy)(zstencil_t zstencil);

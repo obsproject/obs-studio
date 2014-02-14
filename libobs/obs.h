@@ -125,7 +125,7 @@ struct obs_video_info {
  * audio data
  */
 struct filtered_audio {
-	uint8_t             *data[MAX_AUDIO_PLANES];
+	uint8_t             *data[MAX_AV_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 };
@@ -135,7 +135,7 @@ struct filtered_audio {
  * source audio.  Audio is automatically resampled and remixed as necessary.
  */
 struct source_audio {
-	const uint8_t       *data[MAX_AUDIO_PLANES];
+	const uint8_t       *data[MAX_AV_PLANES];
 	uint32_t            frames;
 
 	enum speaker_layout speakers;
@@ -155,8 +155,8 @@ struct source_audio {
  * converted to RGB via shader on the graphics processor.
  */
 struct source_frame {
-	uint8_t             *data[MAX_VIDEO_PLANES];
-	uint32_t            linesize[MAX_VIDEO_PLANES];
+	uint8_t             *data[MAX_AV_PLANES];
+	uint32_t            linesize[MAX_AV_PLANES];
 	uint32_t            width;
 	uint32_t            height;
 	uint64_t            timestamp;
@@ -164,22 +164,6 @@ struct source_frame {
 	enum video_format   format;
 	float               color_matrix[16];
 	bool                flip;
-};
-
-enum packet_priority {
-	PACKET_PRIORITY_DISPOSABLE,
-	PACKET_PRIORITY_LOW,
-	PACKET_PRIORITY_PFRAME,
-	PACKET_PRIORITY_IFRAME,
-	PACKET_PRIORITY_OTHER /* audio usually */
-};
-
-struct encoder_packet {
-	int64_t              dts;
-	int64_t              pts;
-	void                 *data;
-	size_t               size;
-	enum packet_priority priority;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -634,30 +618,28 @@ EXPORT obs_encoder_t obs_encoder_create(const char *id, const char *name,
 		obs_data_t settings);
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
 
+EXPORT bool obs_encoder_reset(obs_encoder_t encoder, obs_data_t settings);
+
+EXPORT bool obs_encoder_encode(obs_encoder_t encoder,
+		const struct encoder_frame *frame,
+		struct encoder_packet *packet,
+		bool *received_packet);
+
+EXPORT bool obs_encoder_start(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param);
+EXPORT void obs_encoder_stop(obs_encoder_t encoder,
+		void (*new_packet)(void *param, struct encoder_packet *packet),
+		void *param);
+
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t obs_output_properties(const char *id,
 		const char *locale);
 
 EXPORT void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings);
 
-EXPORT bool obs_encoder_reset(obs_encoder_t encoder);
-
-EXPORT bool obs_encoder_encode(obs_encoder_t encoder, void *frames,
-		size_t size);
-EXPORT int obs_encoder_getheader(obs_encoder_t encoder,
-		struct encoder_packet **packets);
-
-EXPORT bool obs_encoder_start(obs_encoder_t encoder,
-		void (*new_packet)(void *param, struct encoder_packet *packet),
-		void *param);
-EXPORT bool obs_encoder_stop(obs_encoder_t encoder,
-		void (*new_packet)(void *param, struct encoder_packet *packet),
-		void *param);
-
-EXPORT bool obs_encoder_setbitrate(obs_encoder_t encoder, uint32_t bitrate,
-		uint32_t buffersize);
-
-EXPORT bool obs_encoder_request_keyframe(obs_encoder_t encoder);
+EXPORT bool obs_encoder_get_extra_data(obs_encoder_t encoder,
+		uint8_t **extra_data, size_t *size);
 
 EXPORT obs_data_t obs_encoder_get_settings(obs_encoder_t encoder);
 

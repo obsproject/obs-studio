@@ -79,7 +79,7 @@ static inline void unmap_last_surface(struct obs_core_video *video)
 }
 
 static inline void render_main_texture(struct obs_core_video *video,
-		int cur_texture, int prev_texture)
+		int cur_texture)
 {
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
@@ -161,7 +161,7 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 	gs_enable_depthtest(false);
 	gs_setcullmode(GS_NEITHER);
 
-	render_main_texture(video, cur_texture, prev_texture);
+	render_main_texture(video, cur_texture);
 	render_output_texture(video, cur_texture, prev_texture);
 	stage_output_texture(video, cur_texture, prev_texture);
 
@@ -171,7 +171,7 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 }
 
 /* TODO: replace with more optimal conversion */
-static inline bool download_frame(struct obs_core_video *video, int cur_texture,
+static inline bool download_frame(struct obs_core_video *video,
 		int prev_texture, struct video_frame *frame)
 {
 	stagesurf_t surface = video->copy_surfaces[prev_texture];
@@ -195,14 +195,12 @@ static bool convert_frame(struct obs_core_video *video,
 	if (info->format == VIDEO_FORMAT_I420) {
 		compress_uyvx_to_i420(
 				frame->data[0], frame->linesize[0],
-				info->width, info->height,
 				0, info->height,
 				new_frame->data, new_frame->linesize);
 
 	} else if (info->format == VIDEO_FORMAT_NV12) {
 		compress_uyvx_to_nv12(
 				frame->data[0], frame->linesize[0],
-				info->width, info->height,
 				0, info->height,
 				new_frame->data, new_frame->linesize);
 
@@ -211,7 +209,7 @@ static bool convert_frame(struct obs_core_video *video,
 		return false;
 	}
 
-	for (size_t i = 0; i < MAX_VIDEO_PLANES; i++) {
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		frame->data[i]     = new_frame->data[i];
 		frame->linesize[i] = new_frame->linesize[i];
 	}
@@ -246,7 +244,7 @@ static inline void output_frame(uint64_t timestamp)
 	gs_entercontext(obs_graphics());
 
 	render_video(video, cur_texture, prev_texture);
-	frame_ready = download_frame(video, cur_texture, prev_texture, &frame);
+	frame_ready = download_frame(video, prev_texture, &frame);
 
 	gs_leavecontext();
 
@@ -272,5 +270,6 @@ void *obs_video_thread(void *param)
 
 	}
 
+	UNUSED_PARAMETER(param);
 	return NULL;
 }

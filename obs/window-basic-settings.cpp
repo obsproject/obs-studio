@@ -413,6 +413,8 @@ void OBSBasicSettings::on_language_currentIndexChanged(int index)
 {
 	if (!loading)
 		generalChanged = true;
+
+	UNUSED_PARAMETER(index);
 }
 
 void OBSBasicSettings::on_renderer_currentIndexChanged(int index)
@@ -422,22 +424,30 @@ void OBSBasicSettings::on_renderer_currentIndexChanged(int index)
 		ui->errorText->setText(
 				QTStr("Settings.ProgramRestart"));
 	}
+
+	UNUSED_PARAMETER(index);
 }
 
 void OBSBasicSettings::on_fpsType_currentIndexChanged(int index)
 {
 	if (!loading)
 		videoChanged = true;
+
+	UNUSED_PARAMETER(index);
 }
 
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get()))
 		videoChanged = true;
+
+	UNUSED_PARAMETER(text);
 }
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get()))
 		videoChanged = true;
+
+	UNUSED_PARAMETER(text);
 }

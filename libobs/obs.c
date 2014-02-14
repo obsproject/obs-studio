@@ -187,7 +187,6 @@ static void obs_free_graphics(void)
 	size_t i;
 
 	if (video->graphics) {
-		int cur_texture = video->cur_texture;
 		gs_entercontext(video->graphics);
 
 		if (video->mapped_surface)
@@ -246,7 +245,6 @@ static bool obs_init_data(void)
 {
 	struct obs_core_data *data = &obs->data;
 	pthread_mutexattr_t attr;
-	bool success = false;
 
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 

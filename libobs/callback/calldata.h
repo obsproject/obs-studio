@@ -186,9 +186,9 @@ static inline bool calldata_getsize  (calldata_t data, const char *name,
 }
 
 static inline bool calldata_getptr   (calldata_t data, const char *name,
-		void **ptr)
+		void *p_ptr)
 {
-	return calldata_getdata(data, name, ptr, sizeof(*ptr));
+	return calldata_getdata(data, name, p_ptr, sizeof(p_ptr));
 }
 
 EXPORT bool calldata_getstring(calldata_t data, const char *name,

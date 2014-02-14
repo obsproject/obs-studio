@@ -688,7 +688,7 @@ indexbuffer_t device_create_indexbuffer(device_t device,
 	return buffer;
 }
 
-enum gs_texture_type device_gettexturetype(device_t device, texture_t texture)
+enum gs_texture_type device_gettexturetype(texture_t texture)
 {
 	return texture->type;
 }
@@ -1547,7 +1547,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return stagesurf->format;
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const void **data,
+bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
 		uint32_t *linesize)
 {
 	D3D11_MAPPED_SUBRESOURCE map;
@@ -1555,7 +1555,7 @@ bool stagesurface_map(stagesurf_t stagesurf, const void **data,
 			D3D11_MAP_READ, 0, &map)))
 		return false;
 
-	*data = map.pData;
+	*data = (uint8_t*)map.pData;
 	*linesize = map.RowPitch;
 	return true;
 }

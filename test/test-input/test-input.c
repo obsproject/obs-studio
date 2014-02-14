@@ -20,5 +20,6 @@ bool obs_module_load(uint32_t libobs_version)
 	obs_register_source(&osx_desktop);
 #endif
 
+	UNUSED_PARAMETER(libobs_version);
 	return true;
 }
