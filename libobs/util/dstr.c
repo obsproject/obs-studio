@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <wchar.h>
+#include <wctype.h>
 #include "c99defs.h"
 #include "dstr.h"
 #include "bmem.h"

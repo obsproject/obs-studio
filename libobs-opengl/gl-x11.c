@@ -236,6 +236,7 @@ void device_leavecontext(device_t device)
 void gl_update(device_t device)
 {
 	/* I don't know of anything we can do here. */
+	UNUSED_PARAMETER(device);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swap)

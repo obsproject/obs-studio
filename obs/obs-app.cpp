@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <inttypes.h>
 #include <sstream>
 #include <util/bmem.h>
 #include <util/dstr.h>
@@ -292,6 +293,6 @@ int main(int argc, char *argv[])
 		blog(LOG_ERROR, "%s", error);
 	}
 
-	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: "PRIu64, bnum_allocs());
 	return ret;
 }

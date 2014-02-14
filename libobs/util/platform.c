@@ -82,17 +82,21 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 
 	fseeko(file, 0, SEEK_END);
 	size = (size_t)ftello(file);
+	*pstr = NULL;
 
 	if (size > 0) {
 		char *mbstr = bmalloc(size+1);
 
 		fseeko(file, 0, SEEK_SET);
-		fread(mbstr, 1, size, file);
+		size = fread(mbstr, 1, size, file);
+		if (size == 0) {
+			bfree(mbstr);
+			return 0;
+		}
+
 		mbstr[size] = 0;
 		len = os_mbs_to_utf8(mbstr, size, pstr);
 		bfree(mbstr);
-	} else {
-		*pstr = NULL;
 	}
 
 	return len;
@@ -101,6 +105,7 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 size_t os_fread_utf8(FILE *file, char **pstr)
 {
 	size_t size = 0;
+	size_t size_read;
 	size_t len = 0;
 
 	fseeko(file, 0, SEEK_END);
@@ -113,13 +118,22 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 
 		/* remove the ghastly BOM if present */
 		fseeko(file, 0, SEEK_SET);
-		fread(bom, 1, 3, file);
+		size_read = fread(bom, 1, 3, file);
+		if (size_read != 3)
+			return 0;
+
 		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
 
 		size -= offset;
 		utf8str = bmalloc(size+1);
 		fseeko(file, offset, SEEK_SET);
-		fread(utf8str, 1, size, file);
+
+		size = fread(utf8str, 1, size, file);
+		if (size == 0) {
+			bfree(utf8str);
+			return 0;
+		}
+
 		utf8str[size] = 0;
 
 		*pstr = utf8str;

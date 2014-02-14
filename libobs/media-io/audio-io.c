@@ -630,8 +630,8 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 
 	} else {
 		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
-		                "data->timestamp: %llu, "
-		                "line->base_timestamp: %llu.  This can "
+		                "data->timestamp: "PRIu64", "
+		                "line->base_timestamp: "PRIu64".  This can "
 		                "sometimes happen when there's a pause in "
 		                "the threads.", line->name, data->timestamp,
 		                line->base_timestamp);
