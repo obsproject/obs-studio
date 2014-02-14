@@ -96,9 +96,9 @@ void xcursor_tick(xcursor_t *data) {
 void xcursor_render(xcursor_t *data) {
     // TODO: why do i need effects ?
     effect_t effect  = gs_geteffect();
-    eparam_t diffuse = effect_getparambyname(effect, "diffuse");
+    eparam_t image = effect_getparambyname(effect, "image");
 
-    effect_settexture(effect, diffuse, data->tex);
+    effect_settexture(effect, image, data->tex);
     
     gs_matrix_push();
     
