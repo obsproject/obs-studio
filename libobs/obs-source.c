@@ -391,7 +391,7 @@ static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 static inline void handle_ts_jump(obs_source_t source, uint64_t ts,
 		uint64_t diff)
 {
-	blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '"PRIu64"', "
+	blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '%"PRIu64"', "
 	                "resetting audio timing", source->name, diff);
 
 	/* if has video, ignore audio data until reset */

@@ -293,6 +293,6 @@ int main(int argc, char *argv[])
 		blog(LOG_ERROR, "%s", error);
 	}
 
-	blog(LOG_INFO, "Number of memory leaks: "PRIu64, bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %" PRIu64, bnum_allocs());
 	return ret;
 }
