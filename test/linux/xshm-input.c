@@ -174,8 +174,8 @@ static void xshm_input_video_render(void *vptr, effect_t effect)
 {
     XSHM_DATA(vptr);
     
-    eparam_t diffuse = effect_getparambyname(effect, "diffuse");
-    effect_settexture(effect, diffuse, data->texture);
+    eparam_t image = effect_getparambyname(effect, "image");
+    effect_settexture(effect, image, data->texture);
     
     gs_draw_sprite(data->texture, 0, 0, 0);
     
