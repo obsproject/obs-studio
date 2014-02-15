@@ -179,16 +179,15 @@ static void *pulse_thread(void *vptr)
         return NULL;
     
     uint64_t skip = 1;
-    uint8_t *out_buffer = bmalloc(data->frames * data->channels);
 
     while (event_try(&data->event) == EAGAIN) {
         uint64_t cur_time = os_gettime_ns();
         
         pulse_iterate(data);
         
-        const void *in_buffer;
+        const void *frames;
         size_t bytes;
-        pa_stream_peek(data->stream, &in_buffer, &bytes);
+        pa_stream_peek(data->stream, &frames, &bytes);
         
         // check if we got data
         if (!bytes) {
@@ -213,17 +212,9 @@ static void *pulse_thread(void *vptr)
         pa_stream_get_latency(data->stream, &l_abs, &l_sign);
         int64_t latency = (l_sign) ? -(int64_t) l_abs : (int64_t) l_abs;
         
-        // copy data to local buffer
-        memcpy(out_buffer, in_buffer, bytes);
-        
-        pa_stream_drop(data->stream);
-        
-        // TODO: deinterleave data ?
-        
         // push structure
         struct source_audio out;
-        out.data[0] = out_buffer;
-        out.data[1] = out_buffer + (bytes / data->channels);
+        out.data[0] = (uint8_t *) frames;
         out.frames = bytes / data->channels;
         out.speakers = data->speakers;
         out.samples_per_sec = data->samples_per_sec;
@@ -232,9 +223,10 @@ static void *pulse_thread(void *vptr)
         
         // send data to obs
         obs_source_output_audio(data->source, &out);
+        
+        // clear pulse audio buffer
+        pa_stream_drop(data->stream);
     }
-    
-    bfree(out_buffer);
 
     pulse_diconnect_stream(data);
     pulse_disconnect(data);
