@@ -414,7 +414,6 @@ struct gs_stage_surface {
 	GLenum               gl_format;
 	GLint                gl_internal_format;
 	GLenum               gl_type;
-	GLuint               texture;
 	GLuint               pack_buffer;
 };
 

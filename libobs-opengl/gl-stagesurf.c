@@ -42,29 +42,6 @@ static bool create_pixel_pack_buffer(struct gs_stage_surface *surf)
 	return success;
 }
 
-static bool gl_init_stage_surface(struct gs_stage_surface *surf)
-{
-	bool success = true;
-
-	if (!gl_gen_textures(1, &surf->texture))
-		return false;
-	if (!gl_bind_texture(GL_TEXTURE_2D, surf->texture))
-		return false;
-
-	if (!gl_init_face(GL_TEXTURE_2D, surf->gl_type, 1, surf->gl_format,
-			surf->gl_internal_format, false,
-			surf->width, surf->height, 0, NULL))
-		success = false;
-
-	if (!gl_bind_texture(GL_TEXTURE_2D, 0))
-		success = false;
-
-	if (success)
-		success = create_pixel_pack_buffer(surf);
-
-	return success;
-}
-
 stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format)
 {
@@ -79,7 +56,7 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 	surf->gl_type            = get_gl_format_type(color_format);
 	surf->bytes_per_pixel    = gs_get_format_bpp(color_format)/8;
 
-	if (!gl_init_stage_surface(surf)) {
+	if (!create_pixel_pack_buffer(surf)) {
 		blog(LOG_ERROR, "device_create_stagesurface (GL) failed");
 		stagesurface_destroy(surf);
 		return NULL;
@@ -93,9 +70,6 @@ void stagesurface_destroy(stagesurf_t stagesurf)
 	if (stagesurf) {
 		if (stagesurf->pack_buffer)
 			gl_delete_buffers(1, &stagesurf->pack_buffer);
-
-		if (stagesurf->texture)
-			gl_delete_textures(1, &stagesurf->texture);
 
 		bfree(stagesurf);
 	}
@@ -132,28 +106,71 @@ static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 	return true;
 }
 
+#ifdef __APPLE__
+
+/* Apparently for mac, PBOs won't do an asynchronous transfer unless you use
+ * FBOs aong with glReadPixels, which is really dumb. */
 void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
 	if (!can_stage(dst, tex2d))
 		goto failed;
 
-	if (!gl_copy_texture(device, dst->texture, GL_TEXTURE_2D,
-				tex2d->base.texture, GL_TEXTURE_2D,
-				dst->width, dst->height, dst->format))
+	struct fbo_info *fbo = get_fbo(device, dst->width, dst->height,
+			dst->format);
+	GLint last_fbo;
+	bool success = false;
+
+	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
 		goto failed;
 
-	if (!gl_bind_texture(GL_TEXTURE_2D, dst->texture))
+	if (!gl_get_integer_v(GL_READ_FRAMEBUFFER_BINDING, &last_fbo))
+		goto failed_unbind_buffer;
+	if (!gl_bind_framebuffer(GL_READ_FRAMEBUFFER, fbo->fbo))
+		goto failed_unbind_buffer;
+
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + 0,
+			src->gl_target, src->texture, 0);
+	if (!gl_success("glFrameBufferTexture2D"))
+		goto failed_unbind_all;
+
+	glReadPixels(0, 0, dst->width, dst->height, dst->gl_format,
+			dst->gl_type, 0);
+	if (!gl_success("glReadPixels"))
+		goto failed_unbind_all;
+
+	success = true;
+
+failed_unbind_all:
+	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, last_fbo);
+
+failed_unbind_buffer:
+	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
+
+failed:
+	if (!success)
+		blog(LOG_ERROR, "device_stage_texture (GL) failed");
+}
+
+#else
+
+void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
+	if (!can_stage(dst, tex2d))
 		goto failed;
+
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
+		goto failed;
+	if (!gl_bind_texture(GL_TEXTURE_2D, tex2d->base.texture))
 		goto failed;
 
 	glGetTexImage(GL_TEXTURE_2D, 0, dst->gl_format, dst->gl_type, 0);
 	if (!gl_success("glGetTexImage"))
 		goto failed;
 
-	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
 	gl_bind_texture(GL_TEXTURE_2D, 0);
+	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
 	return;
 
 failed:
@@ -161,6 +178,8 @@ failed:
 	gl_bind_texture(GL_TEXTURE_2D, 0);
 	blog(LOG_ERROR, "device_stage_texture (GL) failed");
 }
+
+#endif
 
 uint32_t stagesurface_getwidth(stagesurf_t stagesurf)
 {
