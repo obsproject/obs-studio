@@ -113,16 +113,17 @@ static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
-	if (!can_stage(dst, tex2d))
-		goto failed;
-
-	struct fbo_info *fbo = get_fbo(device, dst->width, dst->height,
-			dst->format);
+	struct fbo_info *fbo;
 	GLint last_fbo;
 	bool success = false;
 
+	if (!can_stage(dst, tex2d))
+		goto failed;
+
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
 		goto failed;
+
+	fbo = get_fbo(device, dst->width, dst->height, dst->format);
 
 	if (!gl_get_integer_v(GL_READ_FRAMEBUFFER_BINDING, &last_fbo))
 		goto failed_unbind_buffer;
