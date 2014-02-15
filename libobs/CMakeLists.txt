@@ -8,6 +8,10 @@ find_package(Libavutil REQUIRED)
 include_directories(${Libavutil_INCLUDE_DIR})
 add_definitions(${Libavutil_DEFINITIONS})
 
+find_package(Libavformat REQUIRED)
+include_directories(${Libavformat_INCLUDE_DIR})
+add_definitions(${Libavformat_DEFINITIONS})
+
 add_definitions(-DLIBOBS_EXPORTS)
 add_definitions(-DPTW32_STATIC_LIB)
 
