@@ -236,6 +236,7 @@ static void *pulse_thread(void *vptr)
 
 static const char *pulse_getname(const char *locale)
 {
+    UNUSED_PARAMETER(locale);
     return "Pulse Audio Input";
 }
 
@@ -259,6 +260,8 @@ static void pulse_destroy(void *vptr)
 
 static void *pulse_create(obs_data_t settings, obs_source_t source)
 {
+    UNUSED_PARAMETER(settings);
+    
     struct pulse_data *data = bmalloc(sizeof(struct pulse_data));
     memset(data, 0, sizeof(struct pulse_data));
 

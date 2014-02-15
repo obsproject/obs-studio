@@ -40,6 +40,7 @@ struct xshm_data {
 
 static const char* xshm_input_getname(const char* locale)
 {
+    UNUSED_PARAMETER(locale);
     return "X11 Shared Memory Screen Input";
 }
 
@@ -83,6 +84,9 @@ static void xshm_input_destroy(void *vptr)
 
 static void *xshm_input_create(obs_data_t settings, obs_source_t source)
 {
+    UNUSED_PARAMETER(settings);
+    UNUSED_PARAMETER(source);
+    
     // create data structure
     struct xshm_data *data = bmalloc(sizeof(struct xshm_data));
     memset(data, 0, sizeof(struct xshm_data));
@@ -155,6 +159,7 @@ fail:
 
 static void xshm_input_video_tick(void *vptr, float seconds)
 {
+    UNUSED_PARAMETER(seconds);
     XSHM_DATA(vptr);
     
     gs_entercontext(obs_graphics());

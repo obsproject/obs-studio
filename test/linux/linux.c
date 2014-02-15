@@ -23,6 +23,7 @@ extern struct obs_source_info pulse_input;
 
 bool obs_module_load(uint32_t obs_version)
 {
+    UNUSED_PARAMETER(obs_version);
     obs_register_source(&xshm_input);
     obs_register_source(&pulse_input);
     return true;
