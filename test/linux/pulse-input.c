@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <util/bmem.h>
 #include <util/threading.h>
-#include <util/platform.h>
 
 #include <pulse/mainloop.h>
 #include <pulse/context.h>
@@ -30,13 +29,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PULSE_DATA(voidptr) struct pulse_data *data = voidptr;
 
 /*
- * delay in nanos before starting to record, this eliminates problems with
+ * delay in usecs before starting to record, this eliminates problems with
  * pulse audio sending weird data/timestamps when the stream is connected
  * 
  * for more information see:
  * github.com/MaartenBaert/ssr/blob/master/src/AV/Input/PulseAudioInput.cpp
  */
-const uint64_t pulse_start_delay = 100000000;
+const uint64_t pulse_start_delay = 100000;
 
 struct pulse_data {
 	pthread_t thread;
@@ -52,20 +51,6 @@ struct pulse_data {
 	pa_context *context;
 	pa_stream *stream;
 };
-
-static void pulse_iterate(struct pulse_data *data)
-{
-	if (pa_mainloop_prepare(data->mainloop, 1000) < 0) {
-		blog(LOG_ERROR, "Unable to prepare main loop");
-		return;
-	}
-	if (pa_mainloop_poll(data->mainloop) < 0) {
-		blog(LOG_ERROR, "Unable to poll main loop");
-		return;
-	}
-	if (pa_mainloop_dispatch(data->mainloop) < 0)
-		blog(LOG_ERROR, "Unable to dispatch main loop");
-}
 
 /*
  * Create a new pulse audio main loop and connect to the server
@@ -96,7 +81,7 @@ static int pulse_connect(struct pulse_data *data)
 	
 	// wait until connected
 	for (;;) {
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		pa_context_state_t state = pa_context_get_state(data->context);
 		if (state == PA_CONTEXT_READY) {
 			blog(LOG_DEBUG, "Context ready");
@@ -160,7 +145,7 @@ static int pulse_connect_stream(struct pulse_data *data)
 	}
 	
 	for (;;) {
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		pa_stream_state_t state = pa_stream_get_state(data->stream);
 		if (state == PA_STREAM_READY) {
 			blog(LOG_DEBUG, "Stream ready");
@@ -203,9 +188,7 @@ static void *pulse_thread(void *vptr)
 	uint64_t skip = 1;
 	
 	while (event_try(&data->event) == EAGAIN) {
-		uint64_t cur_time = os_gettime_ns();
-		
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		
 		const void *frames;
 		size_t bytes;
@@ -217,12 +200,16 @@ static void *pulse_thread(void *vptr)
 			continue;
 		}
 		
+		uint64_t pa_time;
+		if (pa_stream_get_time(data->stream, &pa_time) < 0)
+			continue;
+		
 		// skip the first frames received
 		if (skip) {
 			// start delay when we receive the first bytes
 			if (skip == 1 && bytes)
-				skip = os_gettime_ns();
-			if (skip + pulse_start_delay < os_gettime_ns())
+				skip = pa_time;
+			if (skip + pulse_start_delay < pa_time)
 				skip = 0;
 			pa_stream_drop(data->stream);
 			continue;
@@ -240,7 +227,7 @@ static void *pulse_thread(void *vptr)
 		out.frames = bytes / data->channels;
 		out.speakers = data->speakers;
 		out.samples_per_sec = data->samples_per_sec;
-		out.timestamp = cur_time - (latency * 1000);
+		out.timestamp = (pa_time - latency) * 1000;
 		out.format = AUDIO_FORMAT_U8BIT;
 		
 		// send data to obs
