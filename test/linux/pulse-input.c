@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <util/bmem.h>
 #include <util/threading.h>
-#include <util/platform.h>
 
 #include <pulse/mainloop.h>
 #include <pulse/context.h>
@@ -30,13 +29,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PULSE_DATA(voidptr) struct pulse_data *data = voidptr;
 
 /*
- * delay in nanos before starting to record, this eliminates problems with
+ * delay in usecs before starting to record, this eliminates problems with
  * pulse audio sending weird data/timestamps when the stream is connected
  * 
  * for more information see:
  * github.com/MaartenBaert/ssr/blob/master/src/AV/Input/PulseAudioInput.cpp
  */
-const uint64_t pulse_start_delay = 100000000;
+const uint64_t pulse_start_delay = 100000;
 
 struct pulse_data {
 	pthread_t thread;
@@ -189,8 +188,6 @@ static void *pulse_thread(void *vptr)
 	uint64_t skip = 1;
 	
 	while (event_try(&data->event) == EAGAIN) {
-		uint64_t cur_time = os_gettime_ns();
-		
 		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		
 		const void *frames;
@@ -203,12 +200,16 @@ static void *pulse_thread(void *vptr)
 			continue;
 		}
 		
+		uint64_t pa_time;
+		if (pa_stream_get_time(data->stream, &pa_time) < 0)
+			continue;
+		
 		// skip the first frames received
 		if (skip) {
 			// start delay when we receive the first bytes
 			if (skip == 1 && bytes)
-				skip = os_gettime_ns();
-			if (skip + pulse_start_delay < os_gettime_ns())
+				skip = pa_time;
+			if (skip + pulse_start_delay < pa_time)
 				skip = 0;
 			pa_stream_drop(data->stream);
 			continue;
@@ -226,7 +227,7 @@ static void *pulse_thread(void *vptr)
 		out.frames = bytes / data->channels;
 		out.speakers = data->speakers;
 		out.samples_per_sec = data->samples_per_sec;
-		out.timestamp = cur_time - (latency * 1000);
+		out.timestamp = (pa_time - latency) * 1000;
 		out.format = AUDIO_FORMAT_U8BIT;
 		
 		// send data to obs
