@@ -53,20 +53,6 @@ struct pulse_data {
 	pa_stream *stream;
 };
 
-static void pulse_iterate(struct pulse_data *data)
-{
-	if (pa_mainloop_prepare(data->mainloop, 1000) < 0) {
-		blog(LOG_ERROR, "Unable to prepare main loop");
-		return;
-	}
-	if (pa_mainloop_poll(data->mainloop) < 0) {
-		blog(LOG_ERROR, "Unable to poll main loop");
-		return;
-	}
-	if (pa_mainloop_dispatch(data->mainloop) < 0)
-		blog(LOG_ERROR, "Unable to dispatch main loop");
-}
-
 /*
  * Create a new pulse audio main loop and connect to the server
  * 
@@ -96,7 +82,7 @@ static int pulse_connect(struct pulse_data *data)
 	
 	// wait until connected
 	for (;;) {
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		pa_context_state_t state = pa_context_get_state(data->context);
 		if (state == PA_CONTEXT_READY) {
 			blog(LOG_DEBUG, "Context ready");
@@ -160,7 +146,7 @@ static int pulse_connect_stream(struct pulse_data *data)
 	}
 	
 	for (;;) {
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		pa_stream_state_t state = pa_stream_get_state(data->stream);
 		if (state == PA_STREAM_READY) {
 			blog(LOG_DEBUG, "Stream ready");
@@ -205,7 +191,7 @@ static void *pulse_thread(void *vptr)
 	while (event_try(&data->event) == EAGAIN) {
 		uint64_t cur_time = os_gettime_ns();
 		
-		pulse_iterate(data);
+		pa_mainloop_iterate(data->mainloop, 0, NULL);
 		
 		const void *frames;
 		size_t bytes;
