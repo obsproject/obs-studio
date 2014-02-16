@@ -19,26 +19,8 @@
 #include <util/circlebuf.h>
 
 #include <libavformat/avformat.h>
-#include <libswresample/swresample.h>
 #include <libswscale/swscale.h>
-#include <libavutil/avutil.h>
-
-// support older versions of ffmpeg
-#ifndef AV_ROUND_PASS_MINMAX
-	#define AV_ROUND_PASS_MINMAX 0
-#endif
-#if LIBAVUTIL_VERSION_MAJOR < 52
-
-#define AVPixelFormat PixelFormat
-#define AV_PIX_FMT_NONE PIX_FMT_NONE
-#define AV_PIX_FMT_YUV420P PIX_FMT_YUV420P
-#define AV_PIX_FMT_NV12 PIX_FMT_NV12
-#define AV_PIX_FMT_YUYV422 PIX_FMT_YUYV422
-#define AV_PIX_FMT_UYVY422 PIX_FMT_UYVY422
-#define AV_PIX_FMT_RGBA PIX_FMT_RGBA
-#define AV_PIX_FMT_BGRA PIX_FMT_BGRA
-
-#endif
+#include <libavutil/frame.h>
 
 struct ffmpeg_data {
 	AVStream           *video;
