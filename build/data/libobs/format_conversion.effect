@@ -53,6 +53,9 @@ VertInOut VSDefault(VertInOut vert_in)
 	return vert_out;
 }
 
+/* used to prevent internal GPU precision issues width fmod in particular */
+#define PRECISION_OFFSET 0.1
+
 float4 PSPlanar420(VertInOut vert_in) : TARGET
 {
 #ifdef _OPENGL
@@ -62,16 +65,17 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 #endif
 
 	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
+	byte_offset += PRECISION_OFFSET;
 
 	float2 sample_pos[4];
 
 	if (byte_offset < u_plane_offset) {
 #ifdef DEBUGGING
-		return float4(1.0f, 1.0f, 1.0f, 1.0f);
+		return float4(1.0, 1.0, 1.0, 1.0);
 #endif
 
-		float lum_u = fmod(byte_offset, width)     * width_i;
-		float lum_v = floor(byte_offset * width_i) * height_i;
+		float lum_u = floor(fmod(byte_offset, width)) * width_i;
+		float lum_v = floor(byte_offset * width_i)    * height_i;
 
 		/* move to texel centers to sample the 4 pixels properly */
 		lum_u += width_i  * 0.5;
@@ -85,16 +89,16 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 	} else {
 #ifdef DEBUGGING
 		return ((byte_offset < v_plane_offset) ?
-				float4(0.5f, 0.5f, 0.5f, 0.5f) :
-				float4(0.2f, 0.2f, 0.2f, 0.2f));
+				float4(0.5, 0.5, 0.5, 0.5) :
+				float4(0.2, 0.2, 0.2, 0.2));
 #endif
 
 		float new_offset = byte_offset -
 				((byte_offset < v_plane_offset) ?
 				u_plane_offset : v_plane_offset);
 
-		float ch_u = fmod(new_offset, width_d2)     * width_d2_i;
-		float ch_v = floor(new_offset * width_d2_i) * height_d2_i;
+		float ch_u = floor(fmod(new_offset, width_d2)) * width_d2_i;
+		float ch_v = floor(new_offset * width_d2_i)    * height_d2_i;
 		float width_i2 = width_i*2.0;
 
 		/* move to the borders of each set of 4 pixels to force it
