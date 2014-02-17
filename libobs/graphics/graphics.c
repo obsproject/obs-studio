@@ -582,8 +582,9 @@ effect_t gs_create_effect(const char *effect_string, const char *filename,
 	ep_init(&parser);
 	success = ep_parse(&parser, effect, effect_string, filename);
 	if (!success) {
-		*error_string = error_data_buildstring(
-				&parser.cfp.error_list);
+		if (error_string)
+			*error_string = error_data_buildstring(
+					&parser.cfp.error_list);
 		effect_destroy(effect);
 		effect = NULL;
 	}

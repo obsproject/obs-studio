@@ -108,12 +108,12 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 		sample_pos[3] = float2(ch_u +  width_i2, ch_v);
 	}
 
-	float4x4 out_val = {
+	float4x4 out_val = float4x4(
 		image.Sample(def_sampler, sample_pos[0]),
 		image.Sample(def_sampler, sample_pos[1]),
 		image.Sample(def_sampler, sample_pos[2]),
 		image.Sample(def_sampler, sample_pos[3])
-	};
+	);
 
 	out_val = transpose(out_val);
 
