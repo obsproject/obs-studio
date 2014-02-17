@@ -4,6 +4,10 @@ find_package(Libavcodec REQUIRED)
 include_directories(${Libavcodec_INCLUDE_DIR})
 add_definitions(${Libavcodec_DEFINITIONS})
 
+find_package(Libavutil REQUIRED)
+include_directories(${Libavutil_INCLUDE_DIR})
+add_definitions(${Libavutil_DEFINITIONS})
+
 find_package(Libswscale REQUIRED)
 include_directories(${Libswscale_INCLUDE_DIR})
 add_definitions(${Libswscale_DEFINITIONS})
@@ -25,6 +29,7 @@ add_library(obs-ffmpeg MODULE
 target_link_libraries(obs-ffmpeg
 	libobs
 	${Libavcodec_LIBRARIES}
+	${Libavutil_LIBRARIES}
 	${Libswscale_LIBRARIES}
 	${Libavformat_LIBRARIES}
 	${Libswresample_LIBRARIES})
@@ -32,6 +37,7 @@ target_link_libraries(obs-ffmpeg
 install_obs_plugin(obs-ffmpeg)
 
 obs_fixup_install_target(obs-ffmpeg PATH ${Libavcodec_LIBRARIES})
+obs_fixup_install_target(obs-ffmpeg PATH ${Libavutil_LIBRARIES})
 obs_fixup_install_target(obs-ffmpeg PATH ${Libswscale_LIBRARIES})
 obs_fixup_install_target(obs-ffmpeg PATH ${Libavformat_LIBRARIES})
 obs_fixup_install_target(obs-ffmpeg PATH ${Libswresample_LIBRARIES})
