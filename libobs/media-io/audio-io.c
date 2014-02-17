@@ -166,7 +166,128 @@ static inline size_t min_size(size_t a, size_t b)
 	return a < b ? a : b;
 }
 
-/* TODO: this just overwrites.  handle actual mixing */
+#ifndef CLAMP
+#define CLAMP(val, minval, maxval) \
+	((val > maxval) ? maxval : ((val < minval) ? minval : val))
+#endif
+
+#define MIN_S8  -128
+#define MAX_S8   127
+#define MIN_S16 -32767
+#define MAX_S16  32767
+#define MIN_S32 -2147483647
+#define MAX_S32  2147483647
+
+#define MIX_BUFFER_SIZE 256
+
+/* TODO: optimize mixing */
+static void mix_u8(uint8_t *mix, struct circlebuf *buf, size_t size)
+{
+	uint8_t  vals[MIX_BUFFER_SIZE];
+	register int16_t mix_val;
+
+	while (size) {
+		size_t pop_count = min_size(size, sizeof(vals));
+		size -= pop_count;
+
+		circlebuf_pop_front(buf, vals, pop_count);
+
+		for (size_t i = 0; i < pop_count; i++) {
+			mix_val =  (int16_t)*mix - 128;
+			mix_val += (int16_t)vals[i] - 128;
+			mix_val = CLAMP(mix_val, MIN_S8, MAX_S8) + 128;
+			*(mix++) = (uint8_t)mix_val;
+		}
+	}
+}
+
+static void mix_s16(uint8_t *mix_in, struct circlebuf *buf, size_t size)
+{
+	int16_t *mix = (int16_t*)mix_in;
+	int16_t vals[MIX_BUFFER_SIZE];
+	register int32_t mix_val;
+
+	while (size) {
+		size_t pop_count = min_size(size, sizeof(vals));
+		size -= pop_count;
+
+		circlebuf_pop_front(buf, vals, pop_count);
+		pop_count /= sizeof(int16_t);
+
+		for (size_t i = 0; i < pop_count; i++) {
+			mix_val =  (int32_t)*mix;
+			mix_val += (int32_t)vals[i];
+			*(mix++) = (int16_t)CLAMP(mix_val, MIN_S16, MAX_S16);
+		}
+	}
+}
+
+static void mix_s32(uint8_t *mix_in, struct circlebuf *buf, size_t size)
+{
+	int32_t *mix = (int32_t*)mix_in;
+	int32_t vals[MIX_BUFFER_SIZE];
+	register int64_t mix_val;
+
+	while (size) {
+		size_t pop_count = min_size(size, sizeof(vals));
+		size -= pop_count;
+
+		circlebuf_pop_front(buf, vals, pop_count);
+		pop_count /= sizeof(int32_t);
+
+		for (size_t i = 0; i < pop_count; i++) {
+			mix_val =  (int64_t)*mix;
+			mix_val += (int64_t)vals[i];
+			*(mix++) = (int32_t)CLAMP(mix_val, MIN_S32, MAX_S32);
+		}
+	}
+}
+
+static void mix_float(uint8_t *mix_in, struct circlebuf *buf, size_t size)
+{
+	float *mix = (float*)mix_in;
+	float vals[MIX_BUFFER_SIZE];
+	register float mix_val;
+
+	while (size) {
+		size_t pop_count = min_size(size, sizeof(vals));
+		size -= pop_count;
+
+		circlebuf_pop_front(buf, vals, pop_count);
+		pop_count /= sizeof(float);
+
+		for (size_t i = 0; i < pop_count; i++) {
+			mix_val =  *mix + vals[i];
+			*(mix++) = CLAMP(mix_val, -1.0f, 1.0f);
+		}
+	}
+}
+
+static inline void mix_audio(enum audio_format format,
+		uint8_t *mix, struct circlebuf *buf, size_t size)
+{
+	switch (format) {
+	case AUDIO_FORMAT_UNKNOWN:
+		break;
+
+	case AUDIO_FORMAT_U8BIT:
+	case AUDIO_FORMAT_U8BIT_PLANAR:
+		mix_u8(mix, buf, size); break;
+
+	case AUDIO_FORMAT_16BIT:
+	case AUDIO_FORMAT_16BIT_PLANAR:
+		mix_s16(mix, buf, size); break;
+
+	case AUDIO_FORMAT_32BIT:
+	case AUDIO_FORMAT_32BIT_PLANAR:
+		mix_s32(mix, buf, size); break;
+
+	case AUDIO_FORMAT_FLOAT:
+	case AUDIO_FORMAT_FLOAT_PLANAR:
+		mix_float(mix, buf, size); break;
+	}
+}
+
 static inline bool mix_audio_line(struct audio_output *audio,
 		struct audio_line *line, size_t size, uint64_t timestamp)
 {
@@ -184,9 +305,9 @@ static inline bool mix_audio_line(struct audio_output *audio,
 	for (size_t i = 0; i < audio->planes; i++) {
 		size_t pop_size = min_size(size, line->buffers[i].size);
 
-		circlebuf_pop_front(&line->buffers[i],
+		mix_audio(audio->info.format,
 				audio->mix_buffers[i].array + time_offset,
-				pop_size);
+				&line->buffers[i], pop_size);
 	}
 
 	return true;
