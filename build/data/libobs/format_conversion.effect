@@ -30,7 +30,6 @@ uniform float     width_d2;
 uniform float     height_d2;
 uniform float     width_d2_i;
 uniform float     height_d2_i;
-uniform float     input_width;
 uniform float     input_height;
 
 uniform texture2d image;
@@ -62,7 +61,7 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 	float v_mul = floor(vert_in.uv.y * input_height);
 #endif
 
-	float byte_offset = floor((v_mul + vert_in.uv.x) * input_width) * 4.0;
+	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
 
 	float2 sample_pos[4];
 

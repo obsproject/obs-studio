@@ -171,7 +171,6 @@ static void render_convert_texture(struct obs_core_video *video,
 	set_eparam(effect, "height_d2", fheight * 0.5f);
 	set_eparam(effect, "width_d2_i",  1.0f / (fwidth  * 0.5f));
 	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
-	set_eparam(effect, "input_width", fwidth);
 	set_eparam(effect, "input_height", (float)video->conversion_height);
 
 	effect_settexture(effect, image, texture);
