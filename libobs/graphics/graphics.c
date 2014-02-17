@@ -865,6 +865,12 @@ void gs_perspective(float angle, float aspect, float near, float far)
 
 /* ------------------------------------------------------------------------- */
 
+const char *gs_preprocessor_name(void)
+{
+	graphics_t graphics = thread_graphics;
+	return graphics->exports.device_preprocessor_name();
+}
+
 swapchain_t gs_create_swapchain(struct gs_init_data *data)
 {
 	graphics_t graphics = thread_graphics;

@@ -20,7 +20,6 @@
 
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#include <libavutil/frame.h>
 
 struct ffmpeg_data {
 	AVStream           *video;

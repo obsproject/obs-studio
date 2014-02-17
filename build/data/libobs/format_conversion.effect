@@ -1,0 +1,136 @@
+/******************************************************************************
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+//#define DEBUGGING
+
+uniform float4x4  ViewProj;
+
+uniform float     u_plane_offset;
+uniform float     v_plane_offset;
+
+uniform float     width;
+uniform float     height;
+uniform float     width_i;
+uniform float     height_i;
+uniform float     width_d2;
+uniform float     height_d2;
+uniform float     width_d2_i;
+uniform float     height_d2_i;
+uniform float     input_width;
+uniform float     input_height;
+
+uniform texture2d image;
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertInOut VSDefault(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+float4 PSPlanar420(VertInOut vert_in) : TARGET
+{
+#ifdef _OPENGL
+	float v_mul = floor((1.0 - vert_in.uv.y) * input_height);
+#else
+	float v_mul = floor(vert_in.uv.y * input_height);
+#endif
+
+	float byte_offset = floor((v_mul + vert_in.uv.x) * input_width) * 4.0;
+
+	float2 sample_pos[4];
+
+	if (byte_offset < u_plane_offset) {
+#ifdef DEBUGGING
+		return float4(1.0f, 1.0f, 1.0f, 1.0f);
+#endif
+
+		float lum_u = fmod(byte_offset, width)     * width_i;
+		float lum_v = floor(byte_offset * width_i) * height_i;
+
+		/* move to texel centers to sample the 4 pixels properly */
+		lum_u += width_i  * 0.5;
+		lum_v += height_i * 0.5;
+
+		sample_pos[0] = float2(lum_u,            lum_v);
+		sample_pos[1] = float2(lum_u += width_i, lum_v);
+		sample_pos[2] = float2(lum_u += width_i, lum_v);
+		sample_pos[3] = float2(lum_u +  width_i, lum_v);
+
+	} else {
+#ifdef DEBUGGING
+		return ((byte_offset < v_plane_offset) ?
+				float4(0.5f, 0.5f, 0.5f, 0.5f) :
+				float4(0.2f, 0.2f, 0.2f, 0.2f));
+#endif
+
+		float new_offset = byte_offset -
+				((byte_offset < v_plane_offset) ?
+				u_plane_offset : v_plane_offset);
+
+		float ch_u = fmod(new_offset, width_d2)     * width_d2_i;
+		float ch_v = floor(new_offset * width_d2_i) * height_d2_i;
+		float width_i2 = width_i*2.0;
+
+		/* move to the borders of each set of 4 pixels to force it
+		 * to do bilinear averaging */
+		ch_u += width_i;
+		ch_v += height_i;
+
+		sample_pos[0] = float2(ch_u,             ch_v);
+		sample_pos[1] = float2(ch_u += width_i2, ch_v);
+		sample_pos[2] = float2(ch_u += width_i2, ch_v);
+		sample_pos[3] = float2(ch_u +  width_i2, ch_v);
+	}
+
+	float4x4 out_val = {
+		image.Sample(def_sampler, sample_pos[0]),
+		image.Sample(def_sampler, sample_pos[1]),
+		image.Sample(def_sampler, sample_pos[2]),
+		image.Sample(def_sampler, sample_pos[3])
+	};
+
+	out_val = transpose(out_val);
+
+	if (byte_offset < u_plane_offset)
+		return out_val[1];
+	else if (byte_offset < v_plane_offset)
+		return out_val[0];
+	else
+		return out_val[2];
+}
+
+technique Planar420
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPlanar420(vert_in);
+	}
+}

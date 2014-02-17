@@ -282,16 +282,17 @@ bool OBSBasic::InitGraphics()
 	App()->GetConfigFPS(ovi.fps_num, ovi.fps_den);
 
 	ovi.graphics_module = App()->GetRenderModule();
-	ovi.base_width    = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.base_width     = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "BaseCX");
-	ovi.base_height   = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.base_height    = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "BaseCY");
-	ovi.output_width  = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.output_width   = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "OutputCX");
-	ovi.output_height = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.output_height  = (uint32_t)config_get_uint(GetGlobalConfig(),
 			"Video", "OutputCY");
-	ovi.output_format = VIDEO_FORMAT_I420;
-	ovi.adapter       = 0;
+	ovi.output_format  = VIDEO_FORMAT_I420;
+	ovi.adapter        = 0;
+	ovi.gpu_conversion = true;
 
 	QTToGSWindow(ui->preview, ovi.window);
 

@@ -39,6 +39,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\ob
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\obs-studio.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AE25DF7-A903-48AD-8DA4-9902010AEB11}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -102,6 +104,7 @@ Global
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.ActiveCfg = Release|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|Win32.Build.0 = Release|Win32
 		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.ActiveCfg = Release|Win32
+		{76226D20-1972-4789-A595-EDACC7A76DC3}.Release|x64.Build.0 = Release|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|Win32.Build.0 = Debug|Win32
 		{36970254-B1E5-4BE6-A561-301B6E7CDCE3}.Debug|x64.ActiveCfg = Debug|x64

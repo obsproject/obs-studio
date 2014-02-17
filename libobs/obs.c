@@ -47,16 +47,92 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->height  = ovi->output_height;
 }
 
+#define PIXEL_SIZE 4
+
+#define GET_ALIGN(val, align) \
+	(((val) + (align-1)) & ~(align-1))
+
+static inline void set_420p_sizes(const struct obs_video_info *ovi)
+{
+	struct obs_core_video *video = &obs->video;
+	uint32_t chroma_pixels;
+	uint32_t total_bytes;
+
+	chroma_pixels = (ovi->output_width * ovi->output_height / 4);
+	chroma_pixels = GET_ALIGN(chroma_pixels, PIXEL_SIZE);
+
+	video->plane_offsets[0] = 0;
+	video->plane_offsets[1] = ovi->output_width * ovi->output_height;
+	video->plane_offsets[2] = video->plane_offsets[1] + chroma_pixels;
+
+	video->plane_linewidth[0] = ovi->output_width;
+	video->plane_linewidth[1] = ovi->output_width/2;
+	video->plane_linewidth[2] = ovi->output_width/2;
+
+	video->plane_sizes[0] = video->plane_offsets[1];
+	video->plane_sizes[1] = video->plane_sizes[0]/4;
+	video->plane_sizes[2] = video->plane_sizes[1];
+
+	total_bytes = video->plane_offsets[2] + chroma_pixels;
+
+	video->conversion_height =
+		(total_bytes/PIXEL_SIZE + ovi->output_width-1) /
+		ovi->output_width;
+
+	video->conversion_height = GET_ALIGN(video->conversion_height, 2);
+	video->conversion_tech = "Planar420";
+}
+
+static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
+{
+	obs->video.conversion_height = 0;
+	memset(obs->video.plane_offsets, 0, sizeof(obs->video.plane_offsets));
+	memset(obs->video.plane_sizes, 0, sizeof(obs->video.plane_sizes));
+	memset(obs->video.plane_linewidth, 0,
+		sizeof(obs->video.plane_linewidth));
+
+	switch ((uint32_t)ovi->output_format) {
+	case VIDEO_FORMAT_I420:
+		set_420p_sizes(ovi);
+	}
+}
+
+static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
+{
+	struct obs_core_video *video = &obs->video;
+
+	calc_gpu_conversion_sizes(ovi);
+
+	if (!video->conversion_height) {
+		blog(LOG_INFO, "GPU conversion not available for format: %u",
+				(unsigned int)ovi->output_format);
+		video->gpu_conversion = false;
+		return true;
+	}
+
+	for (size_t i = 0; i < NUM_TEXTURES; i++) {
+		video->convert_textures[i] = gs_create_texture(
+				ovi->output_width, video->conversion_height,
+				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+
+		if (!video->convert_textures[i])
+			return false;
+	}
+
+	return true;
+}
+
 static bool obs_init_textures(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 	bool yuv = format_is_yuv(ovi->output_format);
+	uint32_t output_height = video->gpu_conversion ?
+		video->conversion_height : ovi->output_height;
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
 		video->copy_surfaces[i] = gs_create_stagesurface(
-				ovi->output_width, ovi->output_height,
-				GS_RGBA);
+				ovi->output_width, output_height, GS_RGBA);
 
 		if (!video->copy_surfaces[i])
 			return false;
@@ -92,8 +168,12 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 	int errorcode;
 
 	make_gs_init_data(&graphics_data, ovi);
-	video->base_width  = ovi->base_width;
-	video->base_height = ovi->base_height;
+	video->base_width    = ovi->base_width;
+	video->base_height   = ovi->base_height;
+	video->output_width  = ovi->output_width;
+	video->output_height = ovi->output_height;
+
+	video->gpu_conversion = ovi->gpu_conversion;
 
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
 			&graphics_data);
@@ -106,7 +186,9 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 
 	gs_entercontext(video->graphics);
 
-	if (!obs_init_textures(ovi))
+	if (ovi->gpu_conversion && !obs_init_gpu_conversion(ovi))
+		success = false;
+	if (success && !obs_init_textures(ovi))
 		success = false;
 
 	if (success) {
@@ -114,7 +196,15 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 		video->default_effect = gs_create_effect_from_file(filename,
 				NULL);
 		bfree(filename);
+
+		filename = find_libobs_data_file("format_conversion.effect");
+		video->conversion_effect = gs_create_effect_from_file(filename,
+				NULL);
+		bfree(filename);
+
 		if (!video->default_effect)
+			success = false;
+		if (!video->conversion_effect)
 			success = false;
 	}
 
@@ -195,15 +285,18 @@ static void obs_free_graphics(void)
 		for (i = 0; i < NUM_TEXTURES; i++) {
 			stagesurface_destroy(video->copy_surfaces[i]);
 			texture_destroy(video->render_textures[i]);
+			texture_destroy(video->convert_textures[i]);
 			texture_destroy(video->output_textures[i]);
 			source_frame_free(&video->convert_frames[i]);
 
-			video->copy_surfaces[i]   = NULL;
-			video->render_textures[i] = NULL;
-			video->output_textures[i] = NULL;
+			video->copy_surfaces[i]    = NULL;
+			video->render_textures[i]  = NULL;
+			video->convert_textures[i] = NULL;
+			video->output_textures[i]  = NULL;
 		}
 
 		effect_destroy(video->default_effect);
+		effect_destroy(video->conversion_effect);
 		video->default_effect = NULL;
 
 		gs_leavecontext();

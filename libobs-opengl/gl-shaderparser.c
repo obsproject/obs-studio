@@ -239,7 +239,7 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *   clip     -> (unsupported)
  *   ddx      -> dFdx
  *   ddy      -> dFdy
- *   fmod     -> (unsupported)
+ *   fmod     -> mod (XXX: these are different if sign is negative)
  *   frac     -> fract
  *   lerp     -> mix
  *   lit      -> (unsupported)
@@ -367,6 +367,8 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, "fract");
 	} else if (strref_cmp(&token->str, "lerp") == 0) {
 		dstr_cat(&glsp->gl_string, "mix");
+	} else if (strref_cmp(&token->str, "fmod") == 0) {
+		dstr_cat(&glsp->gl_string, "mod");
 	} else if (strref_cmp(&token->str, "rsqrt") == 0) {
 		dstr_cat(&glsp->gl_string, "inversesqrt");
 	} else if (strref_cmp(&token->str, "saturate") == 0) {

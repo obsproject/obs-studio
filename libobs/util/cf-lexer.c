@@ -1295,7 +1295,7 @@ void cf_preprocessor_add_def(struct cf_preprocessor *pp, struct cf_def *def)
 		cf_def_free(existing);
 		memcpy(existing, def, sizeof(struct cf_def));
 	} else {
-		da_push_back(pp->defines, &def);
+		da_push_back(pp->defines, def);
 	}
 }
 

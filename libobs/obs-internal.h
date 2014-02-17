@@ -87,11 +87,14 @@ struct obs_core_video {
 	stagesurf_t                     copy_surfaces[NUM_TEXTURES];
 	texture_t                       render_textures[NUM_TEXTURES];
 	texture_t                       output_textures[NUM_TEXTURES];
+	texture_t                       convert_textures[NUM_TEXTURES];
 	bool                            textures_rendered[NUM_TEXTURES];
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
+	bool                            textures_converted[NUM_TEXTURES];
 	struct source_frame             convert_frames[NUM_TEXTURES];
 	effect_t                        default_effect;
+	effect_t                        conversion_effect;
 	stagesurf_t                     mapped_surface;
 	int                             cur_texture;
 
@@ -99,6 +102,15 @@ struct obs_core_video {
 	pthread_t                       video_thread;
 	bool                            thread_initialized;
 
+	bool                            gpu_conversion;
+	const char                      *conversion_tech;
+	uint32_t                        conversion_height;
+	uint32_t                        plane_offsets[3];
+	uint32_t                        plane_sizes[3];
+	uint32_t                        plane_linewidth[3];
+
+	uint32_t                        output_width;
+	uint32_t                        output_height;
 	uint32_t                        base_width;
 	uint32_t                        base_height;
 

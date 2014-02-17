@@ -118,6 +118,9 @@ struct obs_video_info {
 	uint32_t            adapter;
 
 	struct gs_window    window;        /**< Window to render to */
+
+	/** Use shaders to convert to different color formats */
+	bool                gpu_conversion;
 };
 
 /**

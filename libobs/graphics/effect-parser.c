@@ -914,10 +914,25 @@ error:
 
 static bool ep_compile(struct effect_parser *ep);
 
+extern const char *gs_preprocessor_name(void);
+
 bool ep_parse(struct effect_parser *ep, effect_t effect,
               const char *effect_string, const char *file)
 {
 	bool success;
+
+	const char *graphics_preprocessor = gs_preprocessor_name();
+
+	if (graphics_preprocessor) {
+		struct cf_def def;
+
+		cf_def_init(&def);
+		def.name.str.array = graphics_preprocessor;
+		def.name.str.len   = strlen(graphics_preprocessor);
+
+		strref_copy(&def.name.unmerged_str, &def.name.str);
+		cf_preprocessor_add_def(&ep->cfp.pp, &def);
+	}
 
 	ep->effect = effect;
 	if (!cf_parser_parse(&ep->cfp, effect_string, file))

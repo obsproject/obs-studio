@@ -20,7 +20,7 @@
 
 static bool create_buffers(struct gs_vertex_buffer *vb)
 {
-	GLenum usage = vb->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+	GLenum usage = vb->dynamic ? GL_STREAM_DRAW : GL_STATIC_DRAW;
 	size_t i;
 
 	if (!gl_create_buffer(GL_ARRAY_BUFFER, &vb->vertex_buffer,

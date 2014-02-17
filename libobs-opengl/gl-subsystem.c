@@ -163,6 +163,11 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	               info->max_anisotropy, sampler->max_anisotropy);
 }
 
+const char *device_preprocessor_name(void)
+{
+	return "_OPENGL";
+}
+
 device_t device_create(struct gs_init_data *info)
 {
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));

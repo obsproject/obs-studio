@@ -421,6 +421,11 @@ gs_device::gs_device(gs_init_data *data)
 	device_setrendertarget(this, NULL, NULL);
 }
 
+const char *device_preprocessor_name(void)
+{
+	return "_D3D11";
+}
+
 gs_device *device_create(gs_init_data *data)
 {
 	gs_device *device = NULL;

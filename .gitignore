@@ -53,6 +53,8 @@ ltmain.sh
 .depend
 tags
 *.trace
+*.vsp
+*.psess
 *.swp
 *.dat
 *.clbin

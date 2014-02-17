@@ -155,8 +155,12 @@ bool update_buffer(GLenum target, GLuint buffer, void *data, size_t size)
 	if (!gl_bind_buffer(target, buffer))
 		return false;
 
-	ptr = glMapBuffer(target, GL_WRITE_ONLY);
-	success = gl_success("glMapBuffer");
+	/* glMapBufferRange with these flags will actually give far better
+	 * performance than a plain glMapBuffer call */
+	ptr = glMapBufferRange(target, 0, size,
+			GL_MAP_WRITE_BIT |
+			GL_MAP_INVALIDATE_BUFFER_BIT);
+	success = gl_success("glMapBufferRange");
 	if (success && ptr) {
 		memcpy(ptr, data, size);
 		glUnmapBuffer(target);
