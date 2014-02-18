@@ -238,7 +238,7 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 
 /* TODO: replace with more optimal conversion */
 static inline bool download_frame(struct obs_core_video *video,
-		int prev_texture, struct video_frame *frame)
+		int prev_texture, struct video_data *frame)
 {
 	stagesurf_t surface = video->copy_surfaces[prev_texture];
 
@@ -290,7 +290,7 @@ static inline uint32_t make_aligned_linesize_offset(uint32_t offset,
 }
 
 static void fix_gpu_converted_alignment(struct obs_core_video *video,
-		struct video_frame *frame, int cur_texture)
+		struct video_data *frame, int cur_texture)
 {
 	struct source_frame *new_frame = &video->convert_frames[cur_texture];
 	uint32_t src_linesize = frame->linesize[0];
@@ -317,7 +317,7 @@ static void fix_gpu_converted_alignment(struct obs_core_video *video,
 }
 
 static bool set_gpu_converted_data(struct obs_core_video *video,
-		struct video_frame *frame, int cur_texture)
+		struct video_data *frame, int cur_texture)
 {
 	if (frame->linesize[0] == video->output_width*4) {
 		for (size_t i = 0; i < 3; i++) {
@@ -337,7 +337,7 @@ static bool set_gpu_converted_data(struct obs_core_video *video,
 }
 
 static bool convert_frame(struct obs_core_video *video,
-		struct video_frame *frame,
+		struct video_data *frame,
 		const struct video_output_info *info, int cur_texture)
 {
 	struct source_frame *new_frame = &video->convert_frames[cur_texture];
@@ -368,7 +368,7 @@ static bool convert_frame(struct obs_core_video *video,
 }
 
 static inline void output_video_data(struct obs_core_video *video,
-		struct video_frame *frame, int cur_texture)
+		struct video_data *frame, int cur_texture)
 {
 	const struct video_output_info *info;
 	info = video_output_getinfo(video->video);
@@ -382,7 +382,7 @@ static inline void output_video_data(struct obs_core_video *video,
 			return;
 	}
 
-	video_output_frame(video->video, frame);
+	video_output_swap_frame(video->video, frame);
 }
 
 static inline void output_frame(uint64_t timestamp)
@@ -390,10 +390,10 @@ static inline void output_frame(uint64_t timestamp)
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
-	struct video_frame frame;
+	struct video_data frame;
 	bool frame_ready;
 
-	memset(&frame, 0, sizeof(struct video_frame));
+	memset(&frame, 0, sizeof(struct video_data));
 	frame.timestamp = timestamp;
 
 	gs_entercontext(obs_graphics());

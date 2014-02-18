@@ -23,12 +23,27 @@
 
 #include "format-conversion.h"
 #include "video-io.h"
+#include "video-frame.h"
+#include "video-scaler.h"
+
+#define MAX_CONVERT_BUFFERS 3
 
 struct video_input {
-	struct video_convert_info conversion;
-	void (*callback)(void *param, const struct video_frame *frame);
+	struct video_scale_info   conversion;
+	video_scaler_t            scaler;
+	struct video_frame        frame[MAX_CONVERT_BUFFERS];
+	int                       cur_frame;
+
+	void (*callback)(void *param, const struct video_data *frame);
 	void *param;
 };
+
+static inline void video_input_free(struct video_input *input)
+{
+	for (size_t i = 0; i < MAX_CONVERT_BUFFERS; i++)
+		video_frame_free(&input->frame[i]);
+	video_scaler_destroy(input->scaler);
+}
 
 struct video_output {
 	struct video_output_info   info;
@@ -37,8 +52,8 @@ struct video_output {
 	pthread_mutex_t            data_mutex;
 	event_t                    stop_event;
 
-	struct video_frame         cur_frame;
-	struct video_frame         next_frame;
+	struct video_data          cur_frame;
+	struct video_data          next_frame;
 	bool                       new_frame;
 
 	event_t                    update_event;
@@ -61,6 +76,34 @@ static inline void video_swapframes(struct video_output *video)
 	}
 }
 
+static inline bool scale_video_output(struct video_input *input,
+		struct video_data *data)
+{
+	bool success = true;
+
+	if (input->scaler) {
+		struct video_frame *frame;
+
+		if (++input->cur_frame == MAX_CONVERT_BUFFERS)
+			input->cur_frame = 0;
+
+		frame = &input->frame[input->cur_frame];
+
+		success = video_scaler_scale(input->scaler,
+				frame->data, frame->linesize,
+				data->data, data->linesize);
+
+		if (success) {
+			for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+				data->data[i]     = frame->data[i];
+				data->linesize[i] = frame->linesize[i];
+			}
+		}
+	}
+
+	return success;
+}
+
 static inline void video_output_cur_frame(struct video_output *video)
 {
 	if (!video->cur_frame.data[0])
@@ -68,10 +111,10 @@ static inline void video_output_cur_frame(struct video_output *video)
 
 	pthread_mutex_lock(&video->input_mutex);
 
-	/* TODO: conversion */
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array+i;
-		input->callback(input->param, &video->cur_frame);
+		if (scale_video_output(input, &video->cur_frame))
+			input->callback(input->param, &video->cur_frame);
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
@@ -151,7 +194,10 @@ void video_output_close(video_t video)
 
 	video_output_stop(video);
 
+	for (size_t i = 0; i < video->inputs.num; i++)
+		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
+
 	event_destroy(&video->update_event);
 	event_destroy(&video->stop_event);
 	pthread_mutex_destroy(&video->data_mutex);
@@ -160,7 +206,7 @@ void video_output_close(video_t video)
 }
 
 static size_t video_get_input_idx(video_t video,
-		void (*callback)(void *param, const struct video_frame *frame),
+		void (*callback)(void *param, const struct video_data *frame),
 		void *param)
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
@@ -172,47 +218,92 @@ static size_t video_get_input_idx(video_t video,
 	return DARRAY_INVALID;
 }
 
-void video_output_connect(video_t video,
-		struct video_convert_info *conversion,
-		void (*callback)(void *param, const struct video_frame *frame),
+static inline bool video_input_init(struct video_input *input,
+		struct video_output *video)
+{
+	if (input->conversion.width  != video->info.width ||
+	    input->conversion.height != video->info.height ||
+	    input->conversion.format != video->info.format) {
+		struct video_scale_info from = {
+			.format = video->info.format,
+			.width  = video->info.width,
+			.height = video->info.height,
+		};
+
+		int ret = video_scaler_create(&input->scaler,
+				&input->conversion, &from,
+				VIDEO_SCALE_FAST_BILINEAR);
+		if (ret != VIDEO_SCALER_SUCCESS) {
+			if (ret == VIDEO_SCALER_BAD_CONVERSION)
+				blog(LOG_WARNING, "video_input_init: Bad "
+				                  "scale conversion type");
+			else
+				blog(LOG_WARNING, "video_input_init: Failed to "
+						  "create scaler");
+
+			return false;
+		}
+
+		for (size_t i = 0; i < MAX_CONVERT_BUFFERS; i++)
+			video_frame_init(&input->frame[i],
+					input->conversion.format,
+					input->conversion.width,
+					input->conversion.height);
+	}
+
+	return true;
+}
+
+bool video_output_connect(video_t video,
+		struct video_scale_info *conversion,
+		void (*callback)(void *param, const struct video_data *frame),
 		void *param)
 {
+	bool success = false;
+
 	pthread_mutex_lock(&video->input_mutex);
 
 	if (video_get_input_idx(video, callback, param) == DARRAY_INVALID) {
 		struct video_input input;
+		memset(&input, 0, sizeof(input));
+
 		input.callback = callback;
 		input.param    = param;
 
-		/* TODO: conversion */
 		if (conversion) {
 			input.conversion = *conversion;
-
-			if (input.conversion.width == 0)
-				input.conversion.width = video->info.width;
-			if (input.conversion.height == 0)
-				input.conversion.height = video->info.height;
 		} else {
 			input.conversion.format    = video->info.format;
 			input.conversion.width     = video->info.width;
 			input.conversion.height    = video->info.height;
 		}
 
-		da_push_back(video->inputs, &input);
+		if (input.conversion.width == 0)
+			input.conversion.width = video->info.width;
+		if (input.conversion.height == 0)
+			input.conversion.height = video->info.height;
+
+		success = video_input_init(&input, video);
+		if (success)
+			da_push_back(video->inputs, &input);
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
+
+	return success;
 }
 
 void video_output_disconnect(video_t video,
-		void (*callback)(void *param, const struct video_frame *frame),
+		void (*callback)(void *param, const struct video_data *frame),
 		void *param)
 {
 	pthread_mutex_lock(&video->input_mutex);
 
 	size_t idx = video_get_input_idx(video, callback, param);
-	if (idx != DARRAY_INVALID)
+	if (idx != DARRAY_INVALID) {
+		video_input_free(video->inputs.array+idx);
 		da_erase(video->inputs, idx);
+	}
 
 	pthread_mutex_unlock(&video->input_mutex);
 }
@@ -222,7 +313,7 @@ const struct video_output_info *video_output_getinfo(video_t video)
 	return &video->info;
 }
 
-void video_output_frame(video_t video, struct video_frame *frame)
+void video_output_swap_frame(video_t video, struct video_data *frame)
 {
 	pthread_mutex_lock(&video->data_mutex);
 	video->next_frame = *frame;

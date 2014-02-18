@@ -1,5 +1,9 @@
 project(libobs)
 
+find_package(Libswscale REQUIRED)
+include_directories(${Libswscale_INCLUDE_DIR})
+add_definitions(${Libswscale_DEFINITIONS})
+
 find_package(Libswresample REQUIRED)
 include_directories(${Libswresample_INCLUDE_DIR})
 add_definitions(${Libswresample_DEFINITIONS})
@@ -96,15 +100,19 @@ set(libobs_graphics_HEADERS
 
 set(libobs_mediaio_SOURCES
 	media-io/video-io.c
-	media-io/audio-resampler-ffmpeg.c
+	media-io/audio-io.c
+	media-io/video-frame.c
 	media-io/format-conversion.c
-	media-io/audio-io.c)
+	media-io/audio-resampler-ffmpeg.c
+	media-io/video-scaler-ffmpeg.c)
 set(libobs_mediaio_HEADERS
 	media-io/media-io-defs.h
-	media-io/format-conversion.h
 	media-io/video-io.h
+	media-io/audio-io.h
+	media-io/video-frame.h
+	media-io/format-conversion.h
 	media-io/audio-resampler.h
-	media-io/audio-io.h)
+	media-io/video-scaler.h)
 
 set(libobs_util_SOURCES
 	util/base.c
@@ -196,10 +204,11 @@ set_target_properties(libobs PROPERTIES
 	SOVERSION "0")
 target_link_libraries(libobs
 	${libobs_PLATFORM_DEPS}
+	${Libswscale_LIBRARIES}
 	${Libswresample_LIBRARIES}
 	${Libavutil_LIBRARIES})
 
 install_obs_core(libobs)
 install_obs_data(libobs ../build/data/libobs libobs)
 
-obs_fixup_install_target(libobs PATH ${Libswresample_LIBRARIES} ${Libavutil_LIBRARIES})
+obs_fixup_install_target(libobs PATH ${Libswscale_LIBRARIES} ${Libswresample_LIBRARIES} ${Libavutil_LIBRARIES})

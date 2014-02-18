@@ -18,13 +18,13 @@
 #pragma once
 
 #include "media-io-defs.h"
-#include "../util/c99defs.h"
+#include "video-scaler.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Base video output component.  Use this to create an video output track. */
+/* Base video output component.  Use this to create a video output track. */
 
 struct video_output;
 typedef struct video_output *video_t;
@@ -47,7 +47,7 @@ enum video_format {
 	VIDEO_FORMAT_BGRX,
 };
 
-struct video_frame {
+struct video_data {
 	const uint8_t     *data[MAX_AV_PLANES];
 	uint32_t          linesize[MAX_AV_PLANES];
 	uint64_t          timestamp;
@@ -59,12 +59,6 @@ struct video_output_info {
 	enum video_format format;
 	uint32_t          fps_num;
 	uint32_t          fps_den;
-	uint32_t          width;
-	uint32_t          height;
-};
-
-struct video_convert_info {
-	enum video_format format;
 	uint32_t          width;
 	uint32_t          height;
 };
@@ -95,20 +89,20 @@ static inline bool format_is_yuv(enum video_format format)
 EXPORT int video_output_open(video_t *video, struct video_output_info *info);
 EXPORT void video_output_close(video_t video);
 
-EXPORT void video_output_connect(video_t video,
-		struct video_convert_info *conversion,
-		void (*callback)(void *param, const struct video_frame *frame),
+EXPORT bool video_output_connect(video_t video,
+		struct video_scale_info *conversion,
+		void (*callback)(void *param, const struct video_data *frame),
 		void *param);
 EXPORT void video_output_disconnect(video_t video,
-		void (*callback)(void *param, const struct video_frame *frame),
+		void (*callback)(void *param, const struct video_data *frame),
 		void *param);
 
 EXPORT const struct video_output_info *video_output_getinfo(video_t video);
-EXPORT void     video_output_frame(video_t video, struct video_frame *frame);
-EXPORT bool     video_output_wait(video_t video);
+EXPORT void video_output_swap_frame(video_t video, struct video_data *frame);
+EXPORT bool video_output_wait(video_t video);
 EXPORT uint64_t video_getframetime(video_t video);
 EXPORT uint64_t video_gettime(video_t video);
-EXPORT void     video_output_stop(video_t video);
+EXPORT void video_output_stop(video_t video);
 
 #ifdef __cplusplus
 }

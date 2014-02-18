@@ -399,7 +399,7 @@ static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
 
 #define YUV420_PLANES 3
 
-static inline void copy_data(AVPicture *pic, const struct video_frame *frame,
+static inline void copy_data(AVPicture *pic, const struct video_data *frame,
 		int height)
 {
 	for (int plane = 0; plane < YUV420_PLANES; plane++) {
@@ -420,7 +420,7 @@ static inline void copy_data(AVPicture *pic, const struct video_frame *frame,
 	}
 }
 
-static void receive_video(void *param, const struct video_frame *frame)
+static void receive_video(void *param, const struct video_data *frame)
 {
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data   *data   = &output->ff_data;
@@ -574,17 +574,17 @@ static bool ffmpeg_output_start(void *data)
 	if (!ffmpeg_data_init(&output->ff_data, filename_test))
 		return false;
 
-	struct audio_convert_info aci;
-	aci.samples_per_sec = SPS_TODO;
-	aci.format          = AUDIO_FORMAT_FLOAT_PLANAR;
-	aci.speakers        = SPEAKERS_STEREO;
+	struct audio_convert_info aci = {
+		.samples_per_sec = SPS_TODO,
+		.format          = AUDIO_FORMAT_FLOAT_PLANAR,
+		.speakers        = SPEAKERS_STEREO
+	};
 
-	struct video_convert_info vci;
-	vci.format          = VIDEO_FORMAT_I420;
-	vci.width           = 0;
-	vci.height          = 0;
+	struct video_scale_info vsi = {
+		.format = VIDEO_FORMAT_I420
+	};
 
-	video_output_connect(video, &vci, receive_video, output);
+	video_output_connect(video, &vsi, receive_video, output);
 	audio_output_connect(audio, &aci, receive_audio, output);
 	output->active = true;
 

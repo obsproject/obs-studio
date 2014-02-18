@@ -18,6 +18,7 @@
 #include <inttypes.h>
 
 #include "media-io/format-conversion.h"
+#include "media-io/video-frame.h"
 #include "util/platform.h"
 #include "callback/calldata.h"
 #include "graphics/matrix3.h"
@@ -166,72 +167,18 @@ fail:
 	return NULL;
 }
 
-#define ALIGN_SIZE(size, align) \
-	size = (((size)+(align-1)) & (~(align-1)))
-
-/* messy code alarm */
-void source_frame_init(struct source_frame *frame,
-		enum video_format format, uint32_t width, uint32_t height)
+void source_frame_init(struct source_frame *frame, enum video_format format,
+		uint32_t width, uint32_t height)
 {
-	size_t size;
-	size_t offsets[MAX_AV_PLANES];
-	int    alignment = base_get_alignment();
-
-	memset(offsets, 0, sizeof(offsets));
+	struct video_frame vid_frame;
+	video_frame_init(&vid_frame, format, width, height);
 	frame->format = format;
 	frame->width  = width;
 	frame->height = height;
 
-	switch (format) {
-	case VIDEO_FORMAT_NONE:
-		return;
-
-	case VIDEO_FORMAT_I420:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += (width/2) * (height/2);
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += (width/2) * (height/2);
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t*)frame->data[0] + offsets[1];
-		frame->linesize[0] = width;
-		frame->linesize[1] = width/2;
-		frame->linesize[2] = width/2;
-		break;
-
-	case VIDEO_FORMAT_NV12:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += (width/2) * (height/2) * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t*)frame->data[0] + offsets[0];
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		break;
-
-	case VIDEO_FORMAT_YVYU:
-	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY:
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width*2;
-		break;
-
-	case VIDEO_FORMAT_RGBA:
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_BGRX:
-		size = width * height * 4;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width*4;
-		break;
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		frame->data[i]     = vid_frame.data[i];
+		frame->linesize[i] = vid_frame.linesize[i];
 	}
 }
 

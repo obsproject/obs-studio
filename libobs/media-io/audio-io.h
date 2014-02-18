@@ -164,7 +164,7 @@ static inline size_t get_audio_size(enum audio_format type,
 EXPORT int audio_output_open(audio_t *audio, struct audio_output_info *info);
 EXPORT void audio_output_close(audio_t audio);
 
-EXPORT void audio_output_connect(audio_t video,
+EXPORT bool audio_output_connect(audio_t video,
 		struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param);

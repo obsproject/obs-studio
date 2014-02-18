@@ -465,7 +465,7 @@ static size_t audio_get_input_idx(audio_t video,
 	return DARRAY_INVALID;
 }
 
-static inline void audio_input_init(struct audio_input *input,
+static inline bool audio_input_init(struct audio_input *input,
 		struct audio_output *audio)
 {
 	if (input->conversion.format          != audio->info.format          ||
@@ -484,16 +484,25 @@ static inline void audio_input_init(struct audio_input *input,
 		};
 
 		input->resampler = audio_resampler_create(&to, &from);
+		if (!input->resampler) {
+			blog(LOG_WARNING, "audio_input_init: Failed to "
+			                  "create resampler");
+			return false;
+		}
 	} else {
 		input->resampler = NULL;
 	}
+
+	return true;
 }
 
-void audio_output_connect(audio_t audio,
+bool audio_output_connect(audio_t audio,
 		struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param)
 {
+	bool success = false;
+
 	pthread_mutex_lock(&audio->input_mutex);
 
 	if (audio_get_input_idx(audio, callback, param) == DARRAY_INVALID) {
@@ -510,11 +519,14 @@ void audio_output_connect(audio_t audio,
 				audio->info.samples_per_sec;
 		}
 
-		audio_input_init(&input, audio);
-		da_push_back(audio->inputs, &input);
+		success = audio_input_init(&input, audio);
+		if (success)
+			da_push_back(audio->inputs, &input);
 	}
 
 	pthread_mutex_unlock(&audio->input_mutex);
+
+	return success;
 }
 
 void audio_output_disconnect(audio_t audio,

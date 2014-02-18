@@ -207,6 +207,12 @@
     <ClInclude Include="..\..\..\libobs\obs-properties.h">
       <Filter>libobs\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\media-io\video-scaler.h">
+      <Filter>media-io\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\libobs\media-io\video-frame.h">
+      <Filter>media-io\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -346,6 +352,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\obs-view.c">
       <Filter>libobs\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\media-io\video-scaler-ffmpeg.c">
+      <Filter>media-io\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\media-io\video-frame.c">
+      <Filter>media-io\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
