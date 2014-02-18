@@ -325,9 +325,12 @@ static inline uint64_t conv_frames_to_time(size_t frames)
 }
 
 /* maximum "direct" timestamp variance in nanoseconds */
-#define MAX_TS_VAR         5000000000ULL
+#define MAX_TS_VAR          5000000000ULL
 /* maximum time that timestamp can jump in nanoseconds */
-#define MAX_TIMESTAMP_JUMP 2000000000ULL
+#define MAX_TIMESTAMP_JUMP  2000000000ULL
+/* time threshold in nanoseconds to ensure audio timing is as seamless as
+ * possible */
+#define TS_SMOOTHING_THRESHOLD 70000000ULL
 
 static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 {
@@ -335,11 +338,12 @@ static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 	source->timing_adjust = os_gettime_ns() - timetamp;
 }
 
-static inline void handle_ts_jump(obs_source_t source, uint64_t ts,
-		uint64_t diff)
+static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
+		uint64_t ts, uint64_t diff)
 {
 	blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '%"PRIu64"', "
-	                "resetting audio timing", source->name, diff);
+	                "expected value %"PRIu64", input value %"PRIu64,
+	                source->name, diff, expected, ts);
 
 	/* if has video, ignore audio data until reset */
 	if (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO)
@@ -363,12 +367,18 @@ static void source_output_audio_line(obs_source_t source,
 			source->timing_adjust = 0;
 
 	} else {
-		diff = in.timestamp - source->next_audio_ts_min;
+		bool ts_under = (in.timestamp < source->next_audio_ts_min);
 
-		/* don't need signed because negative will trigger it
-		 * regardless, which is what we want */
+		diff = ts_under ?
+			(source->next_audio_ts_min - in.timestamp) :
+			(in.timestamp - source->next_audio_ts_min);
+
+		/* smooth audio if lower or within threshold */
 		if (diff > MAX_TIMESTAMP_JUMP)
-			handle_ts_jump(source, in.timestamp, diff);
+			handle_ts_jump(source, source->next_audio_ts_min,
+					in.timestamp, diff);
+		else if (ts_under || diff < TS_SMOOTHING_THRESHOLD)
+			in.timestamp = source->next_audio_ts_min;
 	}
 
 	source->next_audio_ts_min = in.timestamp +
