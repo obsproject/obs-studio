@@ -182,6 +182,8 @@ static void xshm_input_video_render(void *vptr, effect_t effect)
     eparam_t image = effect_getparambyname(effect, "image");
     effect_settexture(effect, image, data->texture);
     
+    gs_enable_blending(False);
+    
     gs_draw_sprite(data->texture, 0, 0, 0);
     
     // render the cursor
