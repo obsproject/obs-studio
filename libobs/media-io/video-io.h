@@ -18,11 +18,12 @@
 #pragma once
 
 #include "media-io-defs.h"
-#include "video-scaler.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct video_scale_info;
 
 /* Base video output component.  Use this to create a video output track. */
 
