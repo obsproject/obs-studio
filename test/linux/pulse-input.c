@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <util/bmem.h>
 #include <util/threading.h>
+#include <util/platform.h>
 
 #include <pulse/mainloop.h>
 #include <pulse/context.h>
@@ -42,15 +43,99 @@ struct pulse_data {
 	event_t event;
 	obs_source_t source;
 	
-	uint32_t frames;
 	uint32_t samples_per_sec;
-	uint32_t channels;
 	enum speaker_layout speakers;
+	pa_sample_format_t format;
 	
 	pa_mainloop *mainloop;
 	pa_context *context;
 	pa_stream *stream;
+	pa_proplist *props;
 };
+
+/*
+ * get obs from pulse audio format
+ */
+static enum audio_format pulse_to_obs_audio_format(
+	pa_sample_format_t format)
+{
+	switch (format) {
+		case PA_SAMPLE_U8:
+			return AUDIO_FORMAT_U8BIT;
+		case PA_SAMPLE_S16LE:
+			return AUDIO_FORMAT_16BIT;
+		case PA_SAMPLE_S24_32LE:
+			return AUDIO_FORMAT_32BIT;
+		case PA_SAMPLE_FLOAT32LE:
+			return AUDIO_FORMAT_FLOAT;
+		default:
+			return AUDIO_FORMAT_UNKNOWN;
+	}
+	
+	return AUDIO_FORMAT_UNKNOWN;
+}
+
+/*
+ * get the number of frames from bytes and current format
+ */
+static uint32_t get_frames_from_bytes(struct pulse_data *data, size_t bytes)
+{
+	uint32_t ret = bytes;
+	ret /= get_audio_bytes_per_channel(
+		pulse_to_obs_audio_format(data->format));
+	ret /= get_audio_channels(data->speakers);
+	
+	return ret;
+}
+
+/*
+ * get the buffer size needed for length msec with current settings
+ */
+static uint32_t get_buffer_size(struct pulse_data *data, uint32_t length)
+{
+	uint32_t ret = length;
+	ret *= data->samples_per_sec;
+	ret *= get_audio_bytes_per_channel(
+		pulse_to_obs_audio_format(data->format));
+	ret *= get_audio_channels(data->speakers);
+	ret /= 1000;
+	
+	return ret;
+}
+
+/*
+ * Get latency for a pulse audio stream
+ */
+static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
+{
+	int ret;
+	int sign;
+	pa_usec_t abs;
+	
+	ret = pa_stream_get_latency(stream, &abs, &sign);
+	*latency = (sign) ? -(int64_t) abs : (int64_t) abs;
+	return ret;
+}
+
+/*
+ * Iterate the mainloop
+ * 
+ * The custom implementation gives better performance than the function
+ * provided by pulse audio, maybe due to the timeout set in prepare ?
+ */
+static void pulse_iterate(struct pulse_data *data)
+{
+	if (pa_mainloop_prepare(data->mainloop, 1000) < 0) {
+		blog(LOG_ERROR, "Unable to prepare main loop");
+		return;
+	}
+	if (pa_mainloop_poll(data->mainloop) < 0) {
+		blog(LOG_ERROR, "Unable to poll main loop");
+		return;
+	}
+	if (pa_mainloop_dispatch(data->mainloop) < 0)
+		blog(LOG_ERROR, "Unable to dispatch main loop");
+}
 
 /*
  * Create a new pulse audio main loop and connect to the server
@@ -61,34 +146,35 @@ static int pulse_connect(struct pulse_data *data)
 {
 	data->mainloop = pa_mainloop_new();
 	if (!data->mainloop) {
-		blog(LOG_ERROR, "Unable to create main loop");
+		blog(LOG_ERROR, "pulse-input: Unable to create main loop");
 		return -1;
 	}
 	
-	data->context = pa_context_new(
-		pa_mainloop_get_api(data->mainloop), "OBS Studio");
+	data->context = pa_context_new_with_proplist(
+		pa_mainloop_get_api(data->mainloop), "OBS Studio", data->props);
 	if (!data->context) {
-		blog(LOG_ERROR, "Unable to create context");
+		blog(LOG_ERROR, "pulse-input: Unable to create context");
 		return -1;
 	}
 	
 	int status = pa_context_connect(
 		data->context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
 	if (status < 0) {
-		blog(LOG_ERROR, "Unable to connect! Status: %d", status);
+		blog(LOG_ERROR, "pulse-input: Unable to connect! Status: %d",
+		     status);
 		return -1;
 	}
 	
 	// wait until connected
 	for (;;) {
-		pa_mainloop_iterate(data->mainloop, 0, NULL);
+		pulse_iterate(data);
 		pa_context_state_t state = pa_context_get_state(data->context);
 		if (state == PA_CONTEXT_READY) {
-			blog(LOG_DEBUG, "Context ready");
+			blog(LOG_DEBUG, "pulse-input: Context ready");
 			break;
 		}
 		if (!PA_CONTEXT_IS_GOOD(state)) {
-			blog(LOG_ERROR, "Connection attempt failed");
+			blog(LOG_ERROR, "pulse-input: Context connect failed");
 			return -1;
 		}
 	}
@@ -118,21 +204,26 @@ static void pulse_disconnect(struct pulse_data *data)
 static int pulse_connect_stream(struct pulse_data *data)
 {
 	pa_sample_spec spec;
-	spec.format = PA_SAMPLE_U8;
+	spec.format = data->format;
 	spec.rate = data->samples_per_sec;
-	spec.channels = data->channels;
+	spec.channels = get_audio_channels(data->speakers);
+	
+	if (!pa_sample_spec_valid(&spec)) {
+		blog(LOG_ERROR, "pulse-input: Sample spec is not valid");
+		return -1;
+	}
 	
 	pa_buffer_attr attr;
-	attr.fragsize = data->frames * spec.channels;
+	attr.fragsize = get_buffer_size(data, 250);
 	attr.maxlength = (uint32_t) -1;
 	attr.minreq = (uint32_t) -1;
 	attr.prebuf = (uint32_t) -1;
 	attr.tlength = (uint32_t) -1;
 	
-	data->stream = pa_stream_new(
-		data->context, "OBS Audio Input", &spec, NULL);
+	data->stream = pa_stream_new_with_proplist(data->context,
+		obs_source_getname(data->source), &spec, NULL, data->props);
 	if (!data->stream) {
-		blog(LOG_ERROR, "Unable to create stream");
+		blog(LOG_ERROR, "pulse-input: Unable to create stream");
 		return -1;
 	}
 	pa_stream_flags_t flags =
@@ -140,19 +231,19 @@ static int pulse_connect_stream(struct pulse_data *data)
 		| PA_STREAM_AUTO_TIMING_UPDATE
 		| PA_STREAM_ADJUST_LATENCY;
 	if (pa_stream_connect_record(data->stream, NULL, &attr, flags) < 0) {
-		blog(LOG_ERROR, "Unable to connect to stream");
+		blog(LOG_ERROR, "pulse-input: Unable to connect to stream");
 		return -1;
 	}
 	
 	for (;;) {
-		pa_mainloop_iterate(data->mainloop, 0, NULL);
+		pulse_iterate(data);
 		pa_stream_state_t state = pa_stream_get_state(data->stream);
 		if (state == PA_STREAM_READY) {
-			blog(LOG_DEBUG, "Stream ready");
+			blog(LOG_DEBUG, "pulse-input: Stream ready");
 			break;
 		}
 		if (!PA_STREAM_IS_GOOD(state)) {
-			blog(LOG_ERROR, "Stream connection failed");
+			blog(LOG_ERROR, "pulse-input: Stream connect failed");
 			return -1;
 		}
 	}
@@ -172,6 +263,38 @@ static void pulse_diconnect_stream(struct pulse_data *data)
 }
 
 /*
+ * Loop to skip the first few samples of a stream
+ */
+static int pulse_skip(struct pulse_data *data)
+{
+	uint64_t skip = 1;
+	const void *frames;
+	size_t bytes;
+	uint64_t pa_time;
+	
+	while (event_try(&data->event) == EAGAIN) {
+		pulse_iterate(data);
+		pa_stream_peek(data->stream, &frames, &bytes);
+		
+		if (!bytes)
+			continue;
+		if (!frames || pa_stream_get_time(data->stream, &pa_time) < 0) {
+			pa_stream_drop(data->stream);
+			continue;
+		}
+		
+		if (skip == 1 && pa_time)
+			skip = pa_time;
+		if (skip + pulse_start_delay < pa_time)
+			return 0;
+		
+		pa_stream_drop(data->stream);
+	}
+	
+	return -1;
+}
+
+/*
  * Worker thread to get audio data
  * 
  * Will run until signaled
@@ -185,55 +308,51 @@ static void *pulse_thread(void *vptr)
 	if (pulse_connect_stream(data) < 0)
 		return NULL;
 	
-	uint64_t skip = 1;
+	if (pulse_skip(data) < 0)
+		return NULL;
+	
+	blog(LOG_DEBUG, "pulse-input: Start recording");
+	
+	const void *frames;
+	size_t bytes;
+	uint64_t pa_time;
+	int64_t pa_latency;
+	
+	struct source_audio out;
+	out.speakers = data->speakers;
+	out.samples_per_sec = data->samples_per_sec;
+	out.format = pulse_to_obs_audio_format(data->format);
 	
 	while (event_try(&data->event) == EAGAIN) {
-		pa_mainloop_iterate(data->mainloop, 0, NULL);
+		pulse_iterate(data);
 		
-		const void *frames;
-		size_t bytes;
 		pa_stream_peek(data->stream, &frames, &bytes);
 		
 		// check if we got data
-		if (!bytes) {
+		if (!bytes)
+			continue;
+		if (!frames) {
+			blog(LOG_DEBUG,
+				"pulse-input: Got audio hole of %u bytes",
+				(unsigned int) bytes);
 			pa_stream_drop(data->stream);
 			continue;
 		}
 		
-		uint64_t pa_time;
-		if (pa_stream_get_time(data->stream, &pa_time) < 0)
-			continue;
-		
-		// skip the first frames received
-		if (skip) {
-			// start delay when we receive the first bytes
-			if (skip == 1 && bytes)
-				skip = pa_time;
-			if (skip + pulse_start_delay < pa_time)
-				skip = 0;
+		if (pa_stream_get_time(data->stream, &pa_time) < 0) {
+			blog(LOG_ERROR,
+				"pulse-input: Failed to get timing info !");
 			pa_stream_drop(data->stream);
 			continue;
 		}
 		
-		// get stream latency
-		pa_usec_t l_abs;
-		int l_sign;
-		pa_stream_get_latency(data->stream, &l_abs, &l_sign);
-		int64_t latency = (l_sign) ? -(int64_t) l_abs : (int64_t) l_abs;
+		pulse_get_stream_latency(data->stream, &pa_latency);
 		
-		// push structure
-		struct source_audio out;
 		out.data[0] = (uint8_t *) frames;
-		out.frames = bytes / data->channels;
-		out.speakers = data->speakers;
-		out.samples_per_sec = data->samples_per_sec;
-		out.timestamp = (pa_time - latency) * 1000;
-		out.format = AUDIO_FORMAT_U8BIT;
-		
-		// send data to obs
+		out.frames = get_frames_from_bytes(data, bytes);
+		out.timestamp = (pa_time - pa_latency) * 1000;
 		obs_source_output_audio(data->source, &out);
 		
-		// clear pulse audio buffer
 		pa_stream_drop(data->stream);
 	}
 	
@@ -270,6 +389,8 @@ static void pulse_destroy(void *vptr)
 	
 	event_destroy(&data->event);
 	
+	pa_proplist_free(data->props);
+	
 	bfree(data);
 }
 
@@ -284,10 +405,19 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 	memset(data, 0, sizeof(struct pulse_data));
 	
 	data->source = source;
-	data->frames = 480;
-	data->samples_per_sec = 48000;
+	data->samples_per_sec = 44100;
 	data->speakers = SPEAKERS_STEREO;
-	data->channels = (data->speakers == SPEAKERS_STEREO) ? 2 : 1;
+	data->format = PA_SAMPLE_S16LE;
+	
+	/* TODO: use obs-studio icon */
+	data->props = pa_proplist_new();
+	pa_proplist_sets(data->props, PA_PROP_APPLICATION_NAME,
+		"OBS Studio");
+	pa_proplist_sets(data->props, PA_PROP_APPLICATION_ICON_NAME,
+		"application-exit");
+	pa_proplist_sets(data->props, PA_PROP_MEDIA_ROLE,
+		"production");
+	
 	
 	if (event_init(&data->event, EVENT_TYPE_MANUAL) != 0)
 		goto fail;
