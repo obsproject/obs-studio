@@ -27,28 +27,6 @@ extern "C" {
 struct video_scaler;
 typedef struct video_scaler *video_scaler_t;
 
-enum video_scale_type {
-	VIDEO_SCALE_POINT         = 0,
-	VIDEO_SCALE_FAST_BILINEAR = 1,
-	VIDEO_SCALE_DEFAULT       = VIDEO_SCALE_FAST_BILINEAR,
-	VIDEO_SCALE_BILINEAR      = 2,
-	VIDEO_SCALE_BICUBIC       = 3,
-};
-
-enum video_colorspace {
-	VIDEO_CS_601              = 0,
-	VIDEO_CS_DEFAULT          = VIDEO_CS_601,
-	VIDEO_CS_709              = 1,
-};
-
-struct video_scale_info {
-	enum video_format     format;
-	uint32_t              width;
-	uint32_t              height;
-	bool                  full_range;
-	enum video_colorspace colorspace;
-};
-
 #define VIDEO_SCALER_SUCCESS         0
 #define VIDEO_SCALER_BAD_CONVERSION -1
 #define VIDEO_SCALER_FAILED         -2
