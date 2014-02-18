@@ -24,6 +24,7 @@
 #include "../util/platform.h"
 
 #include "audio-io.h"
+#include "audio-resampler.h"
 
 /* #define DEBUG_AUDIO */
 
@@ -31,9 +32,16 @@
 
 struct audio_input {
 	struct audio_convert_info conversion;
+	audio_resampler_t         resampler;
+
 	void (*callback)(void *param, const struct audio_data *data);
 	void *param;
 };
+
+static inline audio_input_free(struct audio_input *input)
+{
+	audio_resampler_destroy(input->resampler);
+}
 
 struct audio_line {
 	char                       *name;
@@ -313,6 +321,31 @@ static inline bool mix_audio_line(struct audio_output *audio,
 	return true;
 }
 
+static bool resample_audio_output(struct audio_input *input,
+		struct audio_data *data)
+{
+	bool success = true;
+
+	if (input->resampler) {
+		uint8_t  *output[MAX_AV_PLANES];
+		uint32_t frames;
+		uint64_t offset;
+
+		memset(output, 0, sizeof(output));
+
+		success = audio_resampler_resample(input->resampler,
+				output, &frames, &offset,
+				data->data, data->frames);
+
+		for (size_t i = 0; i < MAX_AV_PLANES; i++)
+			data->data[i] = output[i];
+		data->frames     = frames;
+		data->timestamp -= offset;
+	}
+
+	return success;
+}
+
 static inline void do_audio_output(struct audio_output *audio,
 		uint64_t timestamp, uint32_t frames)
 {
@@ -323,12 +356,15 @@ static inline void do_audio_output(struct audio_output *audio,
 	data.timestamp = timestamp;
 	data.volume = 1.0f;
 
-	/* TODO: conversion */
 	pthread_mutex_lock(&audio->input_mutex);
+
 	for (size_t i = 0; i < audio->inputs.num; i++) {
 		struct audio_input *input = audio->inputs.array+i;
-		input->callback(input->param, &data);
+
+		if (resample_audio_output(input, &data))
+			input->callback(input->param, &data);
 	}
+
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
@@ -429,6 +465,30 @@ static size_t audio_get_input_idx(audio_t video,
 	return DARRAY_INVALID;
 }
 
+static inline void audio_input_init(struct audio_input *input,
+		struct audio_output *audio)
+{
+	if (input->conversion.format          != audio->info.format          ||
+	    input->conversion.samples_per_sec != audio->info.samples_per_sec ||
+	    input->conversion.speakers        != audio->info.speakers) {
+		struct resample_info from = {
+			.format          = audio->info.format,
+			.samples_per_sec = audio->info.samples_per_sec,
+			.speakers        = audio->info.speakers
+		};
+
+		struct resample_info to = {
+			.format          = input->conversion.format,
+			.samples_per_sec = input->conversion.samples_per_sec,
+			.speakers        = input->conversion.speakers
+		};
+
+		input->resampler = audio_resampler_create(&to, &from);
+	} else {
+		input->resampler = NULL;
+	}
+}
+
 void audio_output_connect(audio_t audio,
 		struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
@@ -441,7 +501,6 @@ void audio_output_connect(audio_t audio,
 		input.callback = callback;
 		input.param    = param;
 
-		/* TODO: conversion */
 		if (conversion) {
 			input.conversion = *conversion;
 		} else {
@@ -451,6 +510,7 @@ void audio_output_connect(audio_t audio,
 				audio->info.samples_per_sec;
 		}
 
+		audio_input_init(&input, audio);
 		da_push_back(audio->inputs, &input);
 	}
 
@@ -464,8 +524,10 @@ void audio_output_disconnect(audio_t audio,
 	pthread_mutex_lock(&audio->input_mutex);
 
 	size_t idx = audio_get_input_idx(audio, callback, param);
-	if (idx != DARRAY_INVALID)
+	if (idx != DARRAY_INVALID) {
+		audio_input_free(audio->inputs.array+idx);
 		da_erase(audio->inputs, idx);
+	}
 
 	pthread_mutex_unlock(&audio->input_mutex);
 }
@@ -536,9 +598,13 @@ void audio_output_close(audio_t audio)
 		line = next;
 	}
 
+	for (size_t i = 0; i < audio->inputs.num; i++)
+		audio_input_free(audio->inputs.array+i);
+
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		da_free(audio->mix_buffers[i]);
 
+	da_free(audio->inputs);
 	event_destroy(&audio->stop_event);
 	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);

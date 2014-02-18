@@ -576,7 +576,7 @@ static bool ffmpeg_output_start(void *data)
 
 	struct audio_convert_info aci;
 	aci.samples_per_sec = SPS_TODO;
-	aci.format          = AUDIO_FORMAT_FLOAT;
+	aci.format          = AUDIO_FORMAT_FLOAT_PLANAR;
 	aci.speakers        = SPEAKERS_STEREO;
 
 	struct video_convert_info vci;
