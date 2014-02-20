@@ -209,6 +209,7 @@ struct obs_source {
 	size_t                          audio_storage_size;
 	float                           user_volume;
 	float                           present_volume;
+	int64_t                         sync_offset;
 
 	/* async video data */
 	texture_t                       output_texture;

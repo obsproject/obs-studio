@@ -504,6 +504,12 @@ EXPORT float obs_source_getvolume(obs_source_t source);
 /** Gets the presentation volume for a source */
 EXPORT float obs_source_get_present_volume(obs_source_t source);
 
+/** Sets the audio sync offset (in nanoseconds) for a source */
+EXPORT void obs_source_set_sync_offset(obs_source_t source, int64_t offset);
+
+/** Gets the audio sync offset (in nanoseconds) for a source */
+EXPORT int64_t obs_source_get_sync_offset(obs_source_t source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
