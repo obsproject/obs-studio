@@ -14,106 +14,99 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdlib.h>
-#include <stdio.h>
+
+#include <stdint.h>
 #include <X11/extensions/Xfixes.h>
+
+#include <util/bmem.h>
 #include "xcursor.h"
 
-uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
-    int size = xc->width * xc->height;
-    uint32_t *pixels = bmalloc(size * 4);
-    
-    // pixel data from XFixes is defined as unsigned long ...
-    // TODO: check why everybody is making a fuss about this
-    for (int i = 0; i < size; ++i)
-        pixels[i] = (uint32_t) xc->pixels[i];
-    
-    return pixels;
+/*
+ * Get pixel data for the cursor
+ * 
+ * XFixes has the data defined as unsigned long, so we can not use memcpy.
+ * Theres a lot of talk about this in other implementation and they tend to
+ * be really complicated, but this naive approach seems to work fine ...
+ */
+static uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
+	uint_fast32_t size = xc->width * xc->height;
+	uint32_t *pixels = bmalloc(size * sizeof(uint32_t));
+	
+	for (uint_fast32_t i = 0; i < size; ++i)
+		pixels[i] = (uint32_t) xc->pixels[i];
+	
+	return pixels;
 }
 
-void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
-    // get cursor pixel data
-    uint32_t *pixels = xcursor_pixels(xc);
-    
-    // if the cursor has the same size as the last one we can simply update
-    if (data->tex
-     && data->last_height == xc->width
-     && data->last_width == xc->height) {
-        texture_setimage(data->tex, (void **) pixels, xc->width * 4, False);
-    }
-    else {
-        if (data->tex)
-            texture_destroy(data->tex);
-        
-        data->tex = gs_create_texture(
-            xc->width, xc->height,
-            GS_RGBA, 1,
-            (const void **) &pixels,
-            GS_DYNAMIC
-        );
-    }
-    bfree(pixels);
-    
-    // set some data
-    data->last_serial = xc->cursor_serial;
-    data->last_width = xc->width;
-    data->last_height = xc->height;
+/*
+ * Create the cursor texture, either by updating if the new cursor has the same
+ * size or by creating a new texture if the size is different
+ */ 
+static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
+	uint32_t *pixels = xcursor_pixels(xc);
+
+	if (data->tex
+	&& data->last_height == xc->width
+	&& data->last_width == xc->height) {
+		texture_setimage(data->tex, (void **) pixels,
+			xc->width * sizeof(uint32_t), False);
+	} else {
+		if (data->tex)
+			texture_destroy(data->tex);
+			
+		data->tex = gs_create_texture(xc->width, xc->height,
+			GS_RGBA, 1, (const void **) &pixels, GS_DYNAMIC);
+	}
+	
+	bfree(pixels);
+	
+	data->last_serial = xc->cursor_serial;
+	data->last_width = xc->width;
+	data->last_height = xc->height;
 }
 
 xcursor_t *xcursor_init(Display *dpy) {
-    xcursor_t *data = bmalloc(sizeof(xcursor_t));
-    memset(data, 0, sizeof(xcursor_t));
-    
-    data->dpy = dpy;
-    
-    // initialize texture so we don't crash
-    xcursor_tick(data);
-    
-    return data;
+	xcursor_t *data = bmalloc(sizeof(xcursor_t));
+	memset(data, 0, sizeof(xcursor_t));
+	
+	data->dpy = dpy;
+	xcursor_tick(data);
+	
+	return data;
 }
 
 void xcursor_destroy(xcursor_t *data) {
-    if (data->tex)
-        texture_destroy(data->tex);
-    bfree(data);
+	if (data->tex)
+		texture_destroy(data->tex);
+	bfree(data);
 }
 
 void xcursor_tick(xcursor_t *data) {
-    // get cursor data
-    XFixesCursorImage *xc = XFixesGetCursorImage(data->dpy);
-    
-    // update cursor if necessary
-    if (!data->tex || data->last_serial != xc->cursor_serial)
-        xcursor_create(data, xc);
-    
-    // update cursor position
-    data->pos_x = -1.0 * (xc->x - xc->xhot);
-    data->pos_y = -1.0 * (xc->y - xc->yhot);
-    
-    XFree(xc);
+	XFixesCursorImage *xc = XFixesGetCursorImage(data->dpy);
+	
+	if (!data->tex || data->last_serial != xc->cursor_serial)
+		xcursor_create(data, xc);
+	data->pos_x = -1.0 * (xc->x - xc->xhot);
+	data->pos_y = -1.0 * (xc->y - xc->yhot);
+	
+	XFree(xc);
 }
 
 void xcursor_render(xcursor_t *data) {
-    // TODO: why do i need effects ?
-    effect_t effect  = gs_geteffect();
-    eparam_t image = effect_getparambyname(effect, "image");
-
-    effect_settexture(effect, image, data->tex);
-    
-    gs_matrix_push();
-    
-    // move cursor to the right position
-    gs_matrix_translate3f(
-        data->pos_x,
-        data->pos_y,
-        0
-    );
-    
-    // blend cursor
-    gs_enable_blending(True);
-    gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-    gs_draw_sprite(data->tex, 0, 0, 0);
-    gs_enable_blending(False);
-    
-    gs_matrix_pop();
+	/* TODO: why do i need effects ? */
+	effect_t effect  = gs_geteffect();
+	eparam_t image = effect_getparambyname(effect, "image");
+	
+	effect_settexture(effect, image, data->tex);
+	
+	gs_matrix_push();
+	
+	gs_matrix_translate3f(data->pos_x, data->pos_y, 0);
+	
+	gs_enable_blending(True);
+	gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	gs_draw_sprite(data->tex, 0, 0, 0);
+	gs_enable_blending(False);
+	
+	gs_matrix_pop();
 }
