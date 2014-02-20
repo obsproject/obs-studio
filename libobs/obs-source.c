@@ -93,7 +93,8 @@ bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info)
 {
 	source->refs = 1;
-	source->volume = 1.0f;
+	source->user_volume = 1.0f;
+	source->present_volume = 1.0f;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -388,7 +389,8 @@ static void source_output_audio_line(obs_source_t source,
 		return;
 
 	in.timestamp += source->timing_adjust;
-	in.volume = source->volume;
+	in.volume = source->user_volume * source->present_volume *
+		obs->audio.user_volume * obs->audio.present_volume;
 
 	audio_line_output(source->audio_line, &in);
 }
@@ -1129,10 +1131,20 @@ proc_handler_t obs_source_prochandler(obs_source_t source)
 
 void obs_source_setvolume(obs_source_t source, float volume)
 {
-	source->volume = volume;
+	source->user_volume = volume;
+}
+
+void obs_source_set_present_volume(obs_source_t source, float volume)
+{
+	source->present_volume = volume;
 }
 
 float obs_source_getvolume(obs_source_t source)
 {
-	return source->volume;
+	return source->user_volume;
+}
+
+float obs_source_get_present_volume(obs_source_t source)
+{
+	return source->present_volume;
 }

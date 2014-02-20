@@ -120,6 +120,9 @@ struct obs_core_video {
 struct obs_core_audio {
 	/* TODO: sound output subsystem */
 	audio_t                         audio;
+
+	float                           user_volume;
+	float                           present_volume;
 };
 
 /* user sources, output channels, and displays */
@@ -204,7 +207,8 @@ struct obs_source {
 	pthread_mutex_t                 audio_mutex;
 	struct filtered_audio           audio_data;
 	size_t                          audio_storage_size;
-	float                           volume;
+	float                           user_volume;
+	float                           present_volume;
 
 	/* async video data */
 	texture_t                       output_texture;

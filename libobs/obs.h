@@ -328,6 +328,18 @@ EXPORT void obs_resize(uint32_t cx, uint32_t cy);
 /** Renders the main view */
 EXPORT void obs_render_main_view(void);
 
+/** Sets the master user volume */
+EXPORT void obs_set_master_volume(float volume);
+
+/** Sets the master presentation volume */
+EXPORT void obs_set_present_volume(float volume);
+
+/** Gets the master user volume */
+EXPORT float obs_get_master_volume(void);
+
+/** Gets the master presentation volume */
+EXPORT float obs_get_present_volume(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */
@@ -480,11 +492,17 @@ EXPORT signal_handler_t obs_source_signalhandler(obs_source_t source);
 /** Returns the procedure handler for a source */
 EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
 
-/** Sets the volume for a source that has audio output */
+/** Sets the user volume for a source that has audio output */
 EXPORT void obs_source_setvolume(obs_source_t source, float volume);
 
-/** Gets the volume for a source that has audio output */
+/** Sets the presentation volume for a source */
+EXPORT void obs_source_set_present_volume(obs_source_t source, float volume);
+
+/** Gets the user volume for a source that has audio output */
 EXPORT float obs_source_getvolume(obs_source_t source);
+
+/** Gets the presentation volume for a source */
+EXPORT float obs_source_get_present_volume(obs_source_t source);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
