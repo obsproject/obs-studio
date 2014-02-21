@@ -298,17 +298,26 @@ void obs_scene_enum_items(obs_scene_t scene,
 obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 {
 	struct obs_scene_item *last;
-	struct obs_scene_item *item = bzalloc(sizeof(struct obs_scene_item));
+	struct obs_scene_item *item;
 	struct calldata params = {0};
 
+	if (!scene)
+		return NULL;
+
+	if (!source) {
+		blog(LOG_WARNING, "Tried to add a NULL source to a scene");
+		return NULL;
+	}
+
+	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source  = source;
 	item->visible = true;
 	item->parent  = scene;
 	item->ref     = 1;
 	vec2_set(&item->scale, 1.0f, 1.0f);
 
-	if (source)
-		obs_source_addref(source);
+	obs_source_addref(source);
+	obs_source_add_child(scene->source, source);
 
 	pthread_mutex_lock(&scene->mutex);
 
@@ -377,11 +386,12 @@ void obs_sceneitem_remove(obs_sceneitem_t item)
 
 	item->removed = true;
 
+	obs_source_remove_child(scene->source, item->source);
+
 	signal_item_remove(item);
 	detach_sceneitem(item);
 
-	if (scene)
-		pthread_mutex_unlock(&scene->mutex);
+	pthread_mutex_unlock(&scene->mutex);
 
 	obs_sceneitem_release(item);
 }
@@ -420,8 +430,8 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 {
 	struct obs_scene *scene = item->parent;
 
-	pthread_mutex_lock(&scene->mutex);
 	obs_scene_addref(scene);
+	pthread_mutex_lock(&scene->mutex);
 
 	detach_sceneitem(item);
 
@@ -446,8 +456,8 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 		attach_sceneitem(item, NULL);
 	}
 
-	obs_scene_release(scene);
 	pthread_mutex_unlock(&scene->mutex);
+	obs_scene_release(scene);
 }
 
 void obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos)

@@ -520,6 +520,9 @@ EXPORT void obs_source_enum_tree(obs_source_t source,
 		obs_source_enum_proc_t enum_callback,
 		void *param);
 
+/** Returns true if active, false if not */
+EXPORT bool obs_source_active(obs_source_t source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
@@ -542,6 +545,20 @@ EXPORT void obs_source_releaseframe(obs_source_t source,
 EXPORT void obs_source_process_filter(obs_source_t filter, effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum allow_direct_render allow_direct);
+
+/**
+ * Adds a child source.  Must be called by parent sources on child sources
+ * when the child is added.  This ensures that the source is properly activated
+ * if the parent is active.
+ */
+EXPORT void obs_source_add_child(obs_source_t parent, obs_source_t child);
+
+/**
+ * Removes a child source.  Must be called by parent sources on child sources
+ * when the child is removed.  This ensures that the source is properly
+ * deactivated if the parent is active.
+ */
+EXPORT void obs_source_remove_child(obs_source_t parent, obs_source_t child);
 
 
 /* ------------------------------------------------------------------------- */

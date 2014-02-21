@@ -32,6 +32,7 @@ class OBSBasic : public OBSMainWindow {
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 	obs_output_t outputTest;
+	bool         sceneChanging;
 
 	OBSScene     GetCurrentScene();
 	OBSSceneItem GetCurrentSceneItem();
@@ -75,14 +76,16 @@ private slots:
 	void on_action_New_triggered();
 	void on_action_Open_triggered();
 	void on_action_Save_triggered();
-	void on_scenes_itemChanged(QListWidgetItem *item);
+	void on_scenes_currentItemChanged(QListWidgetItem *current,
+			QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
 	void on_actionAddScene_triggered();
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneProperties_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
-	void on_sources_itemChanged(QListWidgetItem *item);
+	void on_sources_currentItemChanged(QListWidgetItem *current,
+			QListWidgetItem *prev);
 	void on_sources_customContextMenuRequested(const QPoint &pos);
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();

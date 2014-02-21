@@ -186,6 +186,9 @@ struct obs_source {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	/* ensures activate/deactivate are only called once */
+	int                             activate_refs;
+
 	/* prevents infinite recursion when enumerating sources */
 	int                             enum_refs;
 

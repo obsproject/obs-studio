@@ -294,16 +294,63 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 		source->info.update(source->data, source->settings);
 }
 
-void obs_source_activate(obs_source_t source)
+static void activate_source(obs_source_t source)
 {
+	struct calldata data = {0};
+
 	if (source->info.activate)
 		source->info.activate(source->data);
+
+	calldata_setptr(&data, "source", source);
+	signal_handler_signal(obs->signals, "source-activate", &data);
+	signal_handler_signal(source->signals, "activate", &data);
+	calldata_free(&data);
+}
+
+static void deactivate_source(obs_source_t source)
+{
+	struct calldata data = {0};
+
+	if (source->info.deactivate)
+		source->info.deactivate(source->data);
+
+	calldata_setptr(&data, "source", source);
+	signal_handler_signal(obs->signals, "source-deactivate", &data);
+	signal_handler_signal(source->signals, "deactivate", &data);
+	calldata_free(&data);
+}
+
+static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
+{
+	if (++child->activate_refs == 1)
+		activate_source(child);
+}
+
+static void deactivate_tree(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	if (--child->activate_refs == 0)
+		deactivate_source(child);
+}
+
+void obs_source_activate(obs_source_t source)
+{
+	if (!source) return;
+
+	if (++source->activate_refs == 1) {
+		activate_source(source);
+		obs_source_enum_tree(source, activate_tree, NULL);
+	}
 }
 
 void obs_source_deactivate(obs_source_t source)
 {
-	if (source->info.deactivate)
-		source->info.deactivate(source->data);
+	if (!source) return;
+
+	if (--source->activate_refs == 0) {
+		deactivate_source(source);
+		obs_source_enum_tree(source, deactivate_tree, NULL);
+	}
 }
 
 void obs_source_video_tick(obs_source_t source, float seconds)
@@ -1218,4 +1265,20 @@ void obs_source_enum_tree(obs_source_t source,
 	source->enum_refs--;
 
 	obs_source_release(source);
+}
+
+void obs_source_add_child(obs_source_t parent, obs_source_t child)
+{
+	if (!parent || !child) return;
+
+	if (parent->activate_refs > 0)
+		obs_source_activate(child);
+}
+
+void obs_source_remove_child(obs_source_t parent, obs_source_t child)
+{
+	if (!parent || !child) return;
+
+	if (parent->activate_refs > 0)
+		obs_source_deactivate(child);
 }

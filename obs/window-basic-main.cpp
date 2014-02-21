@@ -37,6 +37,7 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
 	  outputTest    (NULL),
+	  sceneChanging (false),
 	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -194,12 +195,14 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 		obs_scene_t scene = obs_scene_fromsource(source);
 		const char *name = obs_source_getname(source);
 
-		QListWidgetItem *sel = ui->scenes->currentItem();
 		QList<QListWidgetItem*> items =
 			ui->scenes->findItems(QT_UTF8(name), Qt::MatchExactly);
 
-		if (items.contains(sel)) {
-			ui->scenes->setCurrentItem(sel);
+		if (items.count()) {
+			sceneChanging = true;
+			ui->scenes->setCurrentItem(items.first());
+			sceneChanging = false;
+
 			UpdateSources(scene);
 		}
 	}
@@ -384,20 +387,26 @@ void OBSBasic::on_action_Save_triggered()
 	/* TODO */
 }
 
-void OBSBasic::on_scenes_itemChanged(QListWidgetItem *item)
+void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
+		QListWidgetItem *prev)
 {
 	obs_source_t source = NULL;
 
-	if (item) {
+	if (sceneChanging)
+		return;
+
+	if (current) {
 		obs_scene_t scene;
 
-		scene = item->data(Qt::UserRole).value<OBSScene>();
+		scene = current->data(Qt::UserRole).value<OBSScene>();
 		source = obs_scene_getsource(scene);
 		UpdateSources(scene);
 	}
 
 	/* TODO: allow transitions */
 	obs_set_output_source(0, source);
+
+	UNUSED_PARAMETER(prev);
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
@@ -462,10 +471,12 @@ void OBSBasic::on_actionSceneDown_triggered()
 	/* TODO */
 }
 
-void OBSBasic::on_sources_itemChanged(QListWidgetItem *item)
+void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
+		QListWidgetItem *prev)
 {
 	/* TODO */
-	UNUSED_PARAMETER(item);
+	UNUSED_PARAMETER(current);
+	UNUSED_PARAMETER(prev);
 }
 
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)

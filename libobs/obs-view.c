@@ -93,10 +93,15 @@ void obs_view_setsource(obs_view_t view, uint32_t channel,
 	prev_source = view->channels[channel];
 	view->channels[channel] = source;
 
-	if (source)
+	if (source) {
 		obs_source_addref(source);
-	if (prev_source)
+		obs_source_activate(source);
+	}
+
+	if (prev_source) {
+		obs_source_deactivate(prev_source);
 		obs_source_release(prev_source);
+	}
 
 	pthread_mutex_unlock(&view->channels_mutex);
 }
