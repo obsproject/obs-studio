@@ -186,6 +186,9 @@ struct obs_source {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	/* prevents infinite recursion when enumerating sources */
+	int                             enum_refs;
+
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer
 	 * to handle things but it's the best option) */

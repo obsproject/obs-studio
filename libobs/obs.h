@@ -510,6 +510,16 @@ EXPORT void obs_source_set_sync_offset(obs_source_t source, int64_t offset);
 /** Gets the audio sync offset (in nanoseconds) for a source */
 EXPORT int64_t obs_source_get_sync_offset(obs_source_t source);
 
+/** Enumerates child sources used by this source */
+EXPORT void obs_source_enum_sources(obs_source_t source,
+		obs_source_enum_proc_t enum_callback,
+		void *param);
+
+/** Enumerates the entire child source tree used by this source */
+EXPORT void obs_source_enum_tree(obs_source_t source,
+		obs_source_enum_proc_t enum_callback,
+		void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 

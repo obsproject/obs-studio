@@ -82,6 +82,29 @@ static void scene_destroy(void *data)
 	bfree(scene);
 }
 
+static void scene_enum_sources(void *data,
+		obs_source_enum_proc_t enum_callback,
+		void *param)
+{
+	struct obs_scene *scene = data;
+	struct obs_scene_item *item;
+
+	pthread_mutex_lock(&scene->mutex);
+
+	item = scene->first_item;
+	while (item) {
+		struct obs_scene_item *next = item->next;
+
+		obs_sceneitem_addref(item);
+		enum_callback(scene->source, item->source, param);
+		obs_sceneitem_release(item);
+
+		item = next;
+	}
+
+	pthread_mutex_unlock(&scene->mutex);
+}
+
 static inline void detach_sceneitem(struct obs_scene_item *item)
 {
 	if (item->prev)
@@ -170,6 +193,7 @@ static const struct obs_source_info scene_info =
 	.video_render = scene_video_render,
 	.getwidth     = scene_getwidth,
 	.getheight    = scene_getheight,
+	.enum_sources = scene_enum_sources
 };
 
 obs_scene_t obs_scene_create(const char *name)

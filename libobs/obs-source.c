@@ -1162,3 +1162,60 @@ int64_t obs_source_get_sync_offset(obs_source_t source)
 {
 	return source ? source->sync_offset : 0;
 }
+
+struct source_enum_data {
+	obs_source_enum_proc_t enum_callback;
+	void *param;
+};
+
+static void enum_source_tree_callback(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	struct source_enum_data *data = param;
+
+	if (child->info.enum_sources && !child->enum_refs) {
+		child->enum_refs++;
+
+		child->info.enum_sources(child->data,
+				enum_source_tree_callback, data);
+
+		child->enum_refs--;
+	}
+
+	data->enum_callback(parent, child, data->param);
+}
+
+void obs_source_enum_sources(obs_source_t source,
+		obs_source_enum_proc_t enum_callback,
+		void *param)
+{
+	if (!source || !source->info.enum_sources || source->enum_refs)
+		return;
+
+	obs_source_addref(source);
+
+	source->enum_refs++;
+	source->info.enum_sources(source->data, enum_callback, param);
+	source->enum_refs--;
+
+	obs_source_release(source);
+}
+
+void obs_source_enum_tree(obs_source_t source,
+		obs_source_enum_proc_t enum_callback,
+		void *param)
+{
+	struct source_enum_data data = {enum_callback, param};
+
+	if (!source || !source->info.enum_sources || source->enum_refs)
+		return;
+
+	obs_source_addref(source);
+
+	source->enum_refs++;
+	source->info.enum_sources(source->data, enum_source_tree_callback,
+			&data);
+	source->enum_refs--;
+
+	obs_source_release(source);
+}

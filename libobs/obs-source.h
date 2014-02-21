@@ -87,6 +87,9 @@ enum obs_source_type {
 
 /** @} */
 
+typedef void (*obs_source_enum_proc_t)(obs_source_t parent, obs_source_t child,
+		void *param);
+
 /**
  * Source definition structure
  */
@@ -226,6 +229,18 @@ struct obs_source_info {
 	 */
 	struct filtered_audio *(*filter_audio)(void *data,
 			struct filtered_audio *audio);
+
+	/**
+	 * Called to enumerate all sources being used within this source.
+	 * If the source has children it must implement this callback.
+	 *
+	 * @param  data           Source data
+	 * @param  enum_callback  Enumeration callback
+	 * @param  param          User data to pass to callback
+	 */
+	void (*enum_sources)(void *data,
+			obs_source_enum_proc_t enum_callback,
+			void *param);
 };
 
 /**
