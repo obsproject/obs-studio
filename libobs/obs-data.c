@@ -274,6 +274,7 @@ void obs_data_release(obs_data_t data)
 const char *obs_data_getjson(obs_data_t data)
 {
 	/* TODO */
+#pragma message ("TODO: implement obs_data_getjson")
 	return data->json;
 }
 
@@ -338,6 +339,29 @@ static inline void set_item_def(struct obs_data *data, const char *name,
 		return;
 
 	set_item_data(data, item, name, ptr, size, type);
+}
+
+static inline void copy_item(struct obs_data *data, struct obs_data_item *item)
+{
+	const char *name = get_item_name(item);
+	void *ptr = get_item_data(item);
+
+	set_item(data, name, ptr, item->data_len, item->type);
+}
+
+void obs_data_apply(obs_data_t target, obs_data_t apply_data)
+{
+	struct obs_data_item *item;
+
+	if (!target || !apply_data || target == apply_data)
+		return;
+
+	item = apply_data->first_item;
+
+	while (item) {
+		copy_item(target, item);
+		item = item->next;
+	}
 }
 
 void obs_data_erase(obs_data_t data, const char *name)

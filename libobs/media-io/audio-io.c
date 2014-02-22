@@ -689,7 +689,7 @@ static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
 	int32_t vol = (int32_t)(volume * 127.0f);
 
 	for (size_t i = 0; i < total_num; i++) {
-		int32_t val = (int32_t)(vals[i] ^ 0x80) << 8;
+		int32_t val = (int32_t)vals[i] - 128;
 		int32_t output = val * vol / 127;
 		vals[i] = (uint8_t)(CLAMP(output, MIN_S8, MAX_S8) + 128);
 	}

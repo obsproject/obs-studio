@@ -100,7 +100,7 @@ void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
 	if (!encoder) return;
 
-	obs_data_replace(&encoder->settings, settings);
+	obs_data_apply(encoder->settings, settings);
 	encoder->info.update(encoder->data, encoder->settings);
 }
 

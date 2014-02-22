@@ -292,7 +292,7 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 
 void obs_source_update(obs_source_t source, obs_data_t settings)
 {
-	obs_data_replace(&source->settings, settings);
+	obs_data_apply(source->settings, settings);
 
 	if (source->info.update)
 		source->info.update(source->data, source->settings);

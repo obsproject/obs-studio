@@ -102,7 +102,7 @@ obs_properties_t obs_output_properties(const char *id, const char *locale)
 
 void obs_output_update(obs_output_t output, obs_data_t settings)
 {
-	obs_data_replace(&output->settings, settings);
+	obs_data_apply(output->settings, settings);
 
 	if (output->info.update)
 		output->info.update(output->data, output->settings);

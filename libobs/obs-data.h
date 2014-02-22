@@ -56,6 +56,8 @@ EXPORT void obs_data_release(obs_data_t data);
 
 EXPORT const char *obs_data_getjson(obs_data_t data);
 
+EXPORT void obs_data_apply(obs_data_t target, obs_data_t apply_data);
+
 EXPORT void obs_data_erase(obs_data_t data, const char *name);
 
 /* Set functions */
@@ -148,18 +150,6 @@ static inline obs_data_t obs_data_newref(obs_data_t data)
 		data = obs_data_create();
 
 	return data;
-}
-
-static inline void obs_data_replace(obs_data_t *current, obs_data_t replacement)
-{
-	if (!current)
-		return;
-
-	if (*current != replacement) {
-		replacement = obs_data_newref(replacement);
-		obs_data_release(*current);
-		*current = replacement;
-	}
 }
 
 #ifdef __cplusplus
