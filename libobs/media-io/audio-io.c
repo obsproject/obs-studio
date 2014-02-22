@@ -686,21 +686,24 @@ size_t audio_output_channels(audio_t audio)
 static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
 {
 	uint8_t *vals = array;
-	int16_t vol = (int16_t)(volume * 127.0f);
+	int32_t vol = (int32_t)(volume * 127.0f);
 
 	for (size_t i = 0; i < total_num; i++) {
-		int16_t val = (int16_t)(vals[i] ^ 0x80) << 8;
-		vals[i] = (uint8_t)((val * vol / 127) + 128);
+		int32_t val = (int32_t)(vals[i] ^ 0x80) << 8;
+		int32_t output = val * vol / 127;
+		vals[i] = (uint8_t)(CLAMP(output, MIN_S8, MAX_S8) + 128);
 	}
 }
 
 static inline void mul_vol_16bit(void *array, float volume, size_t total_num)
 {
 	uint16_t *vals = array;
-	int32_t vol = (int32_t)(volume * 32767.0f);
+	int64_t vol = (int64_t)(volume * 32767.0f);
 
-	for (size_t i = 0; i < total_num; i++)
-		vals[i] = (int32_t)((int32_t)vals[i] * vol / 32767);
+	for (size_t i = 0; i < total_num; i++) {
+		int64_t output = (int64_t)vals[i] * vol / 32767;
+		vals[i] = (int32_t)CLAMP(output, MIN_S16, MAX_S16);
+	}
 }
 
 static inline float conv_24bit_to_float(uint8_t *vals)
@@ -729,7 +732,7 @@ static inline void mul_vol_24bit(void *array, float volume, size_t total_num)
 
 	for (size_t i = 0; i < total_num; i++) {
 		float val = conv_24bit_to_float(vals) * volume;
-		conv_float_to_24bit(val, vals);
+		conv_float_to_24bit(CLAMP(val, -1.0f, 1.0f), vals);
 		vals += 3;
 	}
 }
@@ -737,10 +740,12 @@ static inline void mul_vol_24bit(void *array, float volume, size_t total_num)
 static inline void mul_vol_32bit(void *array, float volume, size_t total_num)
 {
 	int32_t *vals = array;
+	double dvol = (double)volume;
 
 	for (size_t i = 0; i < total_num; i++) {
-		float val = (float)vals[i] / 2147483647.0f;
-		vals[i] = (int32_t)(val * volume / 2147483647.0f);
+		double val = (double)vals[i] / 2147483647.0;
+		double output = val * volume;
+		vals[i] = (int32_t)(CLAMP(output, -1.0, 1.0) * 2147483647.0);
 	}
 }
 
