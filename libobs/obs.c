@@ -801,7 +801,14 @@ void obs_render_main_view(void)
 
 void obs_set_master_volume(float volume)
 {
+	struct calldata data = {0};
 	if (!obs) return;
+
+	calldata_setfloat(&data, "volume", volume);
+	signal_handler_signal(obs->signals, "master-volume", &data);
+	volume = calldata_float(&data, "volume");
+	calldata_free(&data);
+
 	obs->audio.user_volume = volume;
 }
 

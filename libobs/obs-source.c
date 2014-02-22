@@ -244,6 +244,7 @@ void obs_source_release(obs_source_t source)
 void obs_source_remove(obs_source_t source)
 {
 	struct obs_core_data *data = &obs->data;
+	struct calldata cd = {0};
 	size_t id;
 
 	pthread_mutex_lock(&data->sources_mutex);
@@ -263,7 +264,11 @@ void obs_source_remove(obs_source_t source)
 
 	pthread_mutex_unlock(&data->sources_mutex);
 
-	obs_source_dosignal(source, "source-remove");
+	calldata_setptr(&cd, "source", source);
+	signal_handler_signal(obs->signals, "source-remove", &cd);
+	signal_handler_signal(source->signals, "remove", &cd);
+	calldata_free(&cd);
+
 	obs_source_release(source);
 }
 
@@ -1179,8 +1184,19 @@ proc_handler_t obs_source_prochandler(obs_source_t source)
 
 void obs_source_setvolume(obs_source_t source, float volume)
 {
-	if (source)
+	if (source) {
+		struct calldata data = {0};
+		calldata_setptr(&data, "source", source);
+		calldata_setfloat(&data, "volume", volume);
+
+		signal_handler_signal(source->signals, "volume", &data);
+		signal_handler_signal(obs->signals, "source-volume", &data);
+
+		volume = calldata_float(&data, "volume");
+		calldata_free(&data);
+
 		source->user_volume = volume;
+	}
 }
 
 void obs_source_set_present_volume(obs_source_t source, float volume)
