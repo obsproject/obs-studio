@@ -218,7 +218,6 @@ obs_scene_t obs_scene_create(const char *name)
 	}
 
 	source->name  = bstrdup(name);
-	source->type  = OBS_SOURCE_TYPE_SCENE;
 
 	scene->source = source;
 	obs_source_init(source, &scene_info);
@@ -245,7 +244,7 @@ obs_source_t obs_scene_getsource(obs_scene_t scene)
 
 obs_scene_t obs_scene_fromsource(obs_source_t source)
 {
-	if (source->type != OBS_SOURCE_TYPE_SCENE)
+	if (source->info.type != OBS_SOURCE_TYPE_SCENE)
 		return NULL;
 
 	return source->data;

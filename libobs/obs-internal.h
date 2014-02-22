@@ -179,7 +179,6 @@ struct obs_source {
 
 	/* source-specific data */
 	char                            *name; /* user-defined name */
-	enum obs_source_type            type;
 	obs_data_t                      settings;
 	void                            *data;
 
@@ -216,6 +215,13 @@ struct obs_source {
 	float                           user_volume;
 	float                           present_volume;
 	int64_t                         sync_offset;
+
+	/* transition volume is meant to store the sum of transitioning volumes
+	 * of a source, i.e. if a source is within both the "to" and "from"
+	 * targets of a transition, it would add both volumes to this variable,
+	 * and then when the transition frame is complete, is applies the value
+	 * to the presentation volume. */
+	float                           transition_volume;
 
 	/* async video data */
 	texture_t                       output_texture;

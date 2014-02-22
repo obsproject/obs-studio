@@ -150,7 +150,6 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		goto fail;
 
 	source->name     = bstrdup(name);
-	source->type     = type;
 	source->settings = obs_data_newref(settings);
 	source->data     = info->create(source->settings, source);
 
@@ -329,6 +328,9 @@ static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
 {
 	if (++child->activate_refs == 1)
 		activate_source(child);
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
 }
 
 static void deactivate_tree(obs_source_t parent, obs_source_t child,
@@ -336,6 +338,9 @@ static void deactivate_tree(obs_source_t parent, obs_source_t child,
 {
 	if (--child->activate_refs == 0)
 		deactivate_source(child);
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
 }
 
 void obs_source_activate(obs_source_t source)
@@ -345,6 +350,7 @@ void obs_source_activate(obs_source_t source)
 	if (++source->activate_refs == 1) {
 		activate_source(source);
 		obs_source_enum_tree(source, activate_tree, NULL);
+		obs_source_set_present_volume(source, 1.0f);
 	}
 }
 
@@ -355,6 +361,7 @@ void obs_source_deactivate(obs_source_t source)
 	if (--source->activate_refs == 0) {
 		deactivate_source(source);
 		obs_source_enum_tree(source, deactivate_tree, NULL);
+		obs_source_set_present_volume(source, 0.0f);
 	}
 }
 
@@ -1091,7 +1098,7 @@ void obs_source_setname(obs_source_t source, const char *name)
 void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 		const char **id)
 {
-	if (type) *type = source->type;
+	if (type) *type = source->info.type;
 	if (id)   *id   = source->info.id;
 }
 
@@ -1199,10 +1206,27 @@ void obs_source_setvolume(obs_source_t source, float volume)
 	}
 }
 
+static void set_tree_preset_vol(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	float *vol = param;
+	child->present_volume = *vol;
+
+	UNUSED_PARAMETER(parent);
+}
+
 void obs_source_set_present_volume(obs_source_t source, float volume)
 {
-	if (source)
+	if (source) {
 		source->present_volume = volume;
+
+		/* don't set the presentation volume of the tree if a
+		 * transition source, let the transition handle presentation
+		 * volume for the child sources itself. */
+		if (source->info.type != OBS_SOURCE_TYPE_TRANSITION)
+			obs_source_enum_tree(source, set_tree_preset_vol,
+					&volume);
+	}
 }
 
 float obs_source_getvolume(obs_source_t source)
@@ -1297,4 +1321,51 @@ void obs_source_remove_child(obs_source_t parent, obs_source_t child)
 
 	if (parent->activate_refs > 0)
 		obs_source_deactivate(child);
+}
+
+static void reset_transition_vol(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	child->transition_volume = 0.0f;
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
+}
+
+static void add_transition_vol(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	float *vol = param;
+	child->transition_volume += *vol;
+
+	UNUSED_PARAMETER(parent);
+}
+
+static void apply_transition_vol(obs_source_t parent, obs_source_t child,
+		void *param)
+{
+	child->present_volume = child->transition_volume;
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
+}
+
+void obs_transition_begin_frame(obs_source_t transition)
+{
+	if (!transition) return;
+	obs_source_enum_tree(transition, reset_transition_vol, NULL);
+}
+
+void obs_source_set_transition_vol(obs_source_t source, float vol)
+{
+	if (!source) return;
+
+	add_transition_vol(NULL, source, &vol);
+	obs_source_enum_tree(source, add_transition_vol, &vol);
+}
+
+void obs_transition_end_frame(obs_source_t transition)
+{
+	if (!transition) return;
+	obs_source_enum_tree(transition, apply_transition_vol, NULL);
 }
