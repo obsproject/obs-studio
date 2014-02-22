@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/threading.h>
 #include <util/platform.h>
 
+#include <pulse/thread-mainloop.h>
 #include <pulse/mainloop.h>
 #include <pulse/context.h>
 #include <pulse/introspect.h>
@@ -43,14 +44,28 @@ struct pulse_data {
 	event_t event;
 	obs_source_t source;
 	
-	uint32_t samples_per_sec;
 	enum speaker_layout speakers;
 	pa_sample_format_t format;
+	uint_fast32_t samples_per_sec;
+	uint_fast8_t channels;
+	
+	uint_fast32_t bytes_per_frame;
 	
 	pa_mainloop *mainloop;
 	pa_context *context;
 	pa_stream *stream;
 	pa_proplist *props;
+};
+
+struct pulse_context_change {
+	pa_threaded_mainloop *mainloop;
+	pa_context_state_t state;
+};
+
+struct pulse_enumerate {
+	pa_threaded_mainloop *mainloop;
+	obs_property_t devices;
+	bool input;
 };
 
 /*
@@ -78,29 +93,18 @@ static enum audio_format pulse_to_obs_audio_format(
 /*
  * get the number of frames from bytes and current format
  */
-static uint32_t get_frames_from_bytes(struct pulse_data *data, size_t bytes)
+static uint_fast32_t frames_to_bytes(struct pulse_data *data, size_t bytes)
 {
-	uint32_t ret = bytes;
-	ret /= get_audio_bytes_per_channel(
-		pulse_to_obs_audio_format(data->format));
-	ret /= get_audio_channels(data->speakers);
-	
-	return ret;
+	return (bytes / data->bytes_per_frame);
 }
 
 /*
  * get the buffer size needed for length msec with current settings
  */
-static uint32_t get_buffer_size(struct pulse_data *data, uint32_t length)
+static uint_fast32_t get_buffer_size(struct pulse_data *data,
+	uint_fast32_t length)
 {
-	uint32_t ret = length;
-	ret *= data->samples_per_sec;
-	ret *= get_audio_bytes_per_channel(
-		pulse_to_obs_audio_format(data->format));
-	ret *= get_audio_channels(data->speakers);
-	ret /= 1000;
-	
-	return ret;
+	return (length * data->samples_per_sec * data->bytes_per_frame) / 1000;
 }
 
 /*
@@ -135,6 +139,47 @@ static void pulse_iterate(struct pulse_data *data)
 	}
 	if (pa_mainloop_dispatch(data->mainloop) < 0)
 		blog(LOG_ERROR, "Unable to dispatch main loop");
+}
+
+/*
+ * Server info callback, this is called from pa_mainloop_dispatch
+ * TODO: how to free the server info struct ?
+ */
+static void pulse_get_server_info_cb(pa_context *c, const pa_server_info *i,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	PULSE_DATA(userdata);
+	
+	const pa_sample_spec *spec = &i->sample_spec;
+	data->format = spec->format;
+	data->samples_per_sec = spec->rate;
+	
+	blog(LOG_DEBUG, "pulse-input: Default format: %s, %u Hz, %u channels",
+		pa_sample_format_to_string(spec->format),
+		spec->rate,
+		spec->channels);
+}
+
+/*
+ * Request pulse audio server info
+ * TODO: handle failures ?
+ */
+static int pulse_get_server_info(struct pulse_data *data)
+{
+	pa_server_info_cb_t cb = pulse_get_server_info_cb;
+	pa_operation *op = pa_context_get_server_info(data->context, cb, data);
+	
+	for(;;) {
+		pulse_iterate(data);
+		pa_operation_state_t state = pa_operation_get_state(op);
+		if (state == PA_OPERATION_DONE) {
+			pa_operation_unref(op);
+			break;
+		}
+	}
+	
+	return 0;
 }
 
 /*
@@ -213,6 +258,10 @@ static int pulse_connect_stream(struct pulse_data *data)
 		return -1;
 	}
 	
+	data->bytes_per_frame = pa_frame_size(&spec);
+	blog(LOG_DEBUG, "pulse-input: %u bytes per frame",
+	     (unsigned int) data->bytes_per_frame);
+	
 	pa_buffer_attr attr;
 	attr.fragsize = get_buffer_size(data, 250);
 	attr.maxlength = (uint32_t) -1;
@@ -272,7 +321,7 @@ static int pulse_skip(struct pulse_data *data)
 	size_t bytes;
 	uint64_t pa_time;
 	
-	while (event_try(&data->event) == EAGAIN) {
+	while (event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
 		pa_stream_peek(data->stream, &frames, &bytes);
 		
@@ -305,6 +354,8 @@ static void *pulse_thread(void *vptr)
 	
 	if (pulse_connect(data) < 0)
 		return NULL;
+	if (pulse_get_server_info(data) < 0)
+		return NULL;
 	if (pulse_connect_stream(data) < 0)
 		return NULL;
 	
@@ -323,7 +374,7 @@ static void *pulse_thread(void *vptr)
 	out.samples_per_sec = data->samples_per_sec;
 	out.format = pulse_to_obs_audio_format(data->format);
 	
-	while (event_try(&data->event) == EAGAIN) {
+	while (event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
 		
 		pa_stream_peek(data->stream, &frames, &bytes);
@@ -349,7 +400,7 @@ static void *pulse_thread(void *vptr)
 		pulse_get_stream_latency(data->stream, &pa_latency);
 		
 		out.data[0] = (uint8_t *) frames;
-		out.frames = get_frames_from_bytes(data, bytes);
+		out.frames = frames_to_bytes(data, bytes);
 		out.timestamp = (pa_time - pa_latency) * 1000;
 		obs_source_output_audio(data->source, &out);
 		
@@ -363,12 +414,187 @@ static void *pulse_thread(void *vptr)
 }
 
 /*
- * Returns the name of the plugin
+ * Create a new pulseaudio context
  */
-static const char *pulse_getname(const char *locale)
+static pa_context *pulse_context_create(pa_threaded_mainloop *m)
+{
+	pa_context *c;
+	pa_proplist *p;
+	
+	p = pa_proplist_new();
+	pa_proplist_sets(p, PA_PROP_APPLICATION_NAME, "OBS Studio");
+	pa_proplist_sets(p, PA_PROP_APPLICATION_ICON_NAME, "application-exit");
+	pa_proplist_sets(p, PA_PROP_MEDIA_ROLE, "production");
+	
+	pa_threaded_mainloop_lock(m);
+	c = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(m),
+		"OBS Studio", p);
+	pa_threaded_mainloop_unlock(m);
+	
+	pa_proplist_free(p);
+	
+	return c;
+}
+
+/**
+ * Context state callback
+ */
+static void pulse_context_state_changed(pa_context *c, void *userdata)
+{
+	struct pulse_context_change *ctx =
+		(struct pulse_context_change *) userdata;
+	ctx->state = pa_context_get_state(c);
+	
+	pa_threaded_mainloop_signal(ctx->mainloop, 0);
+}
+
+/*
+ * Connect context
+ */
+static int pulse_context_connect(pa_threaded_mainloop *m, pa_context *c)
+{
+	int status = 0;
+	struct pulse_context_change ctx;
+	ctx.mainloop = m;
+	ctx.state = PA_CONTEXT_UNCONNECTED;
+	
+	pa_threaded_mainloop_lock(m);
+	pa_context_set_state_callback(c, pulse_context_state_changed,
+		(void *) &ctx);
+	
+	status = pa_context_connect(c, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
+	if (status < 0) {
+		blog(LOG_ERROR, "pulse-input: Unable to connect! Status: %d",
+		     status);
+	}
+	else {
+		for (;;) {
+			if (ctx.state == PA_CONTEXT_READY) {
+				blog(LOG_DEBUG, "pulse-input: Context Ready");
+				break;
+			}
+			if (!PA_CONTEXT_IS_GOOD(ctx.state)) {
+				blog(LOG_ERROR,
+				     "pulse-input: Context connect failed !");
+				status = -1;
+				break;
+			}
+			pa_threaded_mainloop_wait(m);
+		}
+	}
+	
+	pa_threaded_mainloop_unlock(m);
+	return status;
+}
+
+/*
+ * Source properties callback
+ */
+static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	
+	if (eol != 0)
+		return;
+	
+	struct pulse_enumerate *e = (struct pulse_enumerate *) userdata;
+	
+	if ((e->input) ^ (i->monitor_of_sink == PA_INVALID_INDEX))
+		return;
+	
+	blog(LOG_DEBUG, "pulse-input: Got source #%u '%s'",
+	     i->index, i->description);
+	
+	obs_property_list_add_item(e->devices, i->description, i->name);
+	
+	pa_threaded_mainloop_signal(e->mainloop, 0);
+}
+
+/*
+ * enumerate input/output devices
+ */
+static void pulse_enumerate_devices(obs_properties_t props, bool input)
+{
+	pa_context *c;
+	pa_operation *op;
+	pa_threaded_mainloop *m = pa_threaded_mainloop_new();
+	struct pulse_enumerate e;
+	
+	e.mainloop = m;
+	e.devices = obs_properties_add_list(props, "device_id", "Device",
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	e.input = input;
+	
+	pa_threaded_mainloop_start(m);
+	c = pulse_context_create(m);
+	
+	if (pulse_context_connect(m, c) < 0)
+		goto fail;
+	
+	pa_threaded_mainloop_lock(m);
+	
+	op = pa_context_get_source_info_list(c, pulse_source_info, (void *) &e);
+	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+		pa_threaded_mainloop_wait(m);
+	pa_operation_unref(op);
+	
+	pa_threaded_mainloop_unlock(m);
+	
+	pa_context_disconnect(c);
+fail:
+	pa_context_unref(c);
+	pa_threaded_mainloop_stop(m);
+	pa_threaded_mainloop_free(m);
+}
+
+/*
+ * get plugin properties
+ */
+static obs_properties_t pulse_properties(const char *locale, bool input)
 {
 	UNUSED_PARAMETER(locale);
-	return "Pulse Audio Input";
+	
+	blog(LOG_DEBUG, "pulse-input: properties requested !");
+	
+	obs_properties_t props = obs_properties_create();
+	
+	pulse_enumerate_devices(props, input);
+	
+	return props;
+}
+
+static obs_properties_t pulse_input_properties(const char *locale)
+{
+	return pulse_properties(locale, true);
+}
+
+static obs_properties_t pulse_output_properties(const char *locale)
+{
+	return pulse_properties(locale, false);
+}
+
+/*
+ * get plugin defaults
+ */
+static void pulse_defaults(obs_data_t settings)
+{
+	obs_data_set_default_string(settings, "device_id", "default");
+}
+
+/*
+ * Returns the name of the plugin
+ */
+static const char *pulse_input_getname(const char *locale)
+{
+	UNUSED_PARAMETER(locale);
+	return "Pulse Audio Input Capture";
+}
+
+static const char *pulse_output_getname(const char *locale)
+{
+	UNUSED_PARAMETER(locale);
+	return "Pulse Audio Output Capture";
 }
 
 /*
@@ -383,13 +609,15 @@ static void pulse_destroy(void *vptr)
 	
 	if (data->thread) {
 		void *ret;
-		event_signal(&data->event);
+		event_signal(data->event);
 		pthread_join(data->thread, &ret);
 	}
 	
-	event_destroy(&data->event);
+	event_destroy(data->event);
 	
 	pa_proplist_free(data->props);
+	
+	blog(LOG_DEBUG, "pulse-input: Input destroyed");
 	
 	bfree(data);
 }
@@ -405,9 +633,10 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 	memset(data, 0, sizeof(struct pulse_data));
 	
 	data->source = source;
-	data->samples_per_sec = 44100;
 	data->speakers = SPEAKERS_STEREO;
-	data->format = PA_SAMPLE_S16LE;
+	
+	blog(LOG_DEBUG, "pulse-input: obs wants '%s'",
+		obs_data_getstring(settings, "device_id"));
 	
 	/* TODO: use obs-studio icon */
 	data->props = pa_proplist_new();
@@ -417,7 +646,6 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 		"application-exit");
 	pa_proplist_sets(data->props, PA_PROP_MEDIA_ROLE,
 		"production");
-	
 	
 	if (event_init(&data->event, EVENT_TYPE_MANUAL) != 0)
 		goto fail;
@@ -431,11 +659,24 @@ fail:
 	return NULL;
 }
 
-struct obs_source_info pulse_input = {
-	.id           = "pulse_input",
+struct obs_source_info pulse_input_capture = {
+	.id           = "pulse_input_capture",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_AUDIO,
-	.getname      = pulse_getname,
+	.getname      = pulse_input_getname,
 	.create       = pulse_create,
-	.destroy      = pulse_destroy
+	.destroy      = pulse_destroy,
+	.defaults     = pulse_defaults,
+	.properties   = pulse_input_properties
+};
+
+struct obs_source_info pulse_output_capture = {
+	.id           = "pulse_output_capture",
+	.type         = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_AUDIO,
+	.getname      = pulse_output_getname,
+	.create       = pulse_create,
+	.destroy      = pulse_destroy,
+	.defaults     = pulse_defaults,
+	.properties   = pulse_output_properties
 };
