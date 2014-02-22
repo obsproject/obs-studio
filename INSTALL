@@ -31,17 +31,24 @@ Windows:
 
 
 Mac OSX
-  - Use macports or homebrew and get FFmpeg, glew and cmake.
+  - Use macports or homebrew and get FFmpeg, cmake and Qt5.
 
-  - In a terminal, go to the obs-studio directory create a cmbuild subdir
-    and change to it, then to build, type: cmake .. && make
+  - In a terminal, you need to point the CMAKE_PREFIX_PATH by doing:
+    export CMAKE_PREFIX_PATH="/path to qt5 folder/5.2.0/lib/cmake/"
 
-  - It builds in a modular structure similar to windows, where everything
-    necessary to run the program is compiled to cmbuild/rundir
-
-  - You can also use ccmake to create an app bundle, which makes it so you
-    don't have to use the terminal to execute it from the correct directory
-
+  - Then to build project, type: cmake /path to obs-studio folder/ && make && cpack
+  
+  - This one command creates a tmp folder on your desktop and places all files to it
+    (you need to use your own paths):
+    
+    export CMAKE_PREFIX_PATH="/usr/local/Cellar/qt5/5.2.0/lib/cmake/"
+    &&  mkdir Desktop/tmp && cd Desktop/tmp && cmake /path to obs-studio folder/
+    && make && cpack
+  
+  - "make" builds in a modular structure similar to windows, where everything    necessary to run the program is compiled to tmp/rundir
+  
+  - cpack create an obs-studio-x64-*******.dmg image, which contains "OBS studio"app bundle, it makes it so you
+      don't have to use the terminal to execute it from the correct directory
 
 Linux
   - If using debian-based distributions, you may have to get the latest FFmpeg
