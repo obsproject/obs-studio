@@ -96,6 +96,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "Video", "FPSDen", 1);
 	config_set_default_uint(globalConfig, "Video", "FPSNS", 33333333);
 
+	config_set_default_uint(globalConfig, "Audio", "SampleRate", 44100);
+	config_set_default_string(globalConfig, "Audio", "ChannelSetup",
+			"Stereo");
+	config_set_default_uint(globalConfig, "Audio", "BufferingTime", 700);
+
 	return true;
 }
 

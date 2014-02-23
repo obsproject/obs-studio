@@ -178,6 +178,8 @@ static const size_t numVals = sizeof(vals)/sizeof(double);
 
 void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 {
+	ui->outputResolution->clear();
+
 	for (size_t idx = 0; idx < numVals; idx++) {
 		uint32_t downscaleCX = uint32_t(double(cx) / vals[idx]);
 		uint32_t downscaleCY = uint32_t(double(cy) / vals[idx]);
@@ -196,7 +198,6 @@ void OBSBasicSettings::LoadResolutionLists()
 	vector<MonitorInfo> monitors;
 
 	ui->baseResolution->clear();
-	ui->outputResolution->clear();
 
 	GetMonitors(monitors);
 
@@ -270,14 +271,47 @@ void OBSBasicSettings::LoadVideoSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::LoadAudioSettings()
+{
+	uint32_t sampleRate = config_get_uint(GetGlobalConfig(), "Audio",
+			"SampleRate");
+	const char *speakers = config_get_string(GetGlobalConfig(), "Audio",
+			"ChannelSetup");
+	uint32_t bufferingTime = config_get_uint(GetGlobalConfig(), "Audio",
+			"BufferingTime");
+
+	loading = true;
+
+	const char *str;
+	if (sampleRate == 22050)
+		str = "22.05khz";
+	else if (sampleRate == 48000)
+		str = "48khz";
+	else
+		str = "44.1khz";
+
+	int sampleRateIdx = ui->sampleRate->findText(str);
+	if (sampleRateIdx != -1)
+		ui->sampleRate->setCurrentIndex(sampleRateIdx);
+
+	if (strcmp(speakers, "Mono") == 0)
+		ui->channelSetup->setCurrentIndex(0);
+	else
+		ui->channelSetup->setCurrentIndex(1);
+
+	ui->audioBufferingTime->setValue(bufferingTime);
+
+	loading = false;
+}
+
 void OBSBasicSettings::LoadSettings(bool changedOnly)
 {
 	if (!changedOnly || generalChanged)
 		LoadGeneralSettings();
 	//if (!changedOnly || outputChanged)
 	//	LoadOutputSettings();
-	//if (!changedOnly || audioChanged)
-	//	LoadOutputSettings();
+	if (!changedOnly || audioChanged)
+		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
 }
@@ -331,14 +365,39 @@ void OBSBasicSettings::SaveVideoSettings()
 		window->ResetVideo();
 }
 
+void OBSBasicSettings::SaveAudioSettings()
+{
+	QString sampleRateStr = ui->sampleRate->currentText();
+	int channelSetupIdx = ui->channelSetup->currentIndex();
+	int bufferingTime = ui->audioBufferingTime->value();
+
+	const char *channelSetup;
+	if (channelSetupIdx == 0)
+		channelSetup = "Mono";
+	else
+		channelSetup = "Stereo";
+
+	int sampleRate = 44100;
+	if (sampleRateStr == "22.05khz")
+		sampleRate = 22050;
+	else if (sampleRateStr == "48khz")
+		sampleRate = 48000;
+
+	config_set_uint(GetGlobalConfig(), "Audio", "SampleRate", sampleRate);
+	config_set_string(GetGlobalConfig(), "Audio", "ChannelSetup",
+			channelSetup);
+	config_set_uint(GetGlobalConfig(), "Audio", "BufferingTime",
+			bufferingTime);
+}
+
 void OBSBasicSettings::SaveSettings()
 {
 	if (generalChanged)
 		SaveGeneralSettings();
 	//if (outputChanged)
 	//	SaveOutputSettings();
-	//if (audioChanged)
-	//	SaveAudioSettings();
+	if (audioChanged)
+		SaveAudioSettings();
 	if (videoChanged)
 		SaveVideoSettings();
 
@@ -430,6 +489,30 @@ void OBSBasicSettings::on_language_currentIndexChanged(int index)
 	UNUSED_PARAMETER(index);
 }
 
+void OBSBasicSettings::on_sampleRate_currentIndexChanged(int index)
+{
+	if (!loading)
+		audioChanged = true;
+
+	UNUSED_PARAMETER(index);
+}
+
+void OBSBasicSettings::on_channelSetup_currentIndexChanged(int index)
+{
+	if (!loading)
+		audioChanged = true;
+
+	UNUSED_PARAMETER(index);
+}
+
+void OBSBasicSettings::on_audioBufferingTime_valueChanged(int value)
+{
+	if (!loading)
+		audioChanged = true;
+
+	UNUSED_PARAMETER(value);
+}
+
 void OBSBasicSettings::on_renderer_currentIndexChanged(int index)
 {
 	if (!loading) {
@@ -450,8 +533,14 @@ void OBSBasicSettings::on_fpsType_currentIndexChanged(int index)
 
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
-	if (!loading && ValidResolutions(ui.get()))
+	if (!loading && ValidResolutions(ui.get())) {
+		QString baseResolution = ui->baseResolution->currentText();
+		uint32_t cx, cy;
+
+		ConvertResText(QT_TO_UTF8(baseResolution), cx, cy);
+		ResetDownscales(cx, cy);
 		videoChanged = true;
+	}
 
 	UNUSED_PARAMETER(text);
 }
@@ -462,4 +551,36 @@ void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 		videoChanged = true;
 
 	UNUSED_PARAMETER(text);
+}
+
+void OBSBasicSettings::on_fpsCommon_currentIndexChanged(int index)
+{
+	if (!loading)
+		videoChanged = true;
+
+	UNUSED_PARAMETER(index);
+}
+
+void OBSBasicSettings::on_fpsInteger_valueChanged(int value)
+{
+	if (!loading)
+		videoChanged = true;
+
+	UNUSED_PARAMETER(value);
+}
+
+void OBSBasicSettings::on_fpsNumerator_valueChanged(int value)
+{
+	if (!loading)
+		videoChanged = true;
+
+	UNUSED_PARAMETER(value);
+}
+
+void OBSBasicSettings::on_fpsDenominator_valueChanged(int value)
+{
+	if (!loading)
+		videoChanged = true;
+
+	UNUSED_PARAMETER(value);
 }

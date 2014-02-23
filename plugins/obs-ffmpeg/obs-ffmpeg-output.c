@@ -21,6 +21,9 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+/* NOTE: much of this stuff is test stuff that was more or less copied from
+ * the muxing.c ffmpeg example */
+
 struct ffmpeg_data {
 	AVStream           *video;
 	AVStream           *audio;
@@ -34,6 +37,9 @@ struct ffmpeg_data {
 	int                frame_size;
 	int                total_frames;
 
+	enum audio_format  audio_format;
+	size_t             audio_planes;
+	size_t             audio_size;
 	struct circlebuf   excess_frames[MAX_AV_PLANES];
 	uint8_t            *samples[MAX_AV_PLANES];
 	AVFrame            *aframe;
@@ -52,12 +58,6 @@ struct ffmpeg_output {
 
 /* ------------------------------------------------------------------------- */
 
-/* TODO: remove these later */
-#define SPS_TODO      44100
-
-/* NOTE: much of this stuff is test stuff that was more or less copied from
- * the muxing.c ffmpeg example */
-
 static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 		enum video_format format)
 {
@@ -74,6 +74,24 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 	}
 
 	return AV_PIX_FMT_NONE;
+}
+
+static inline enum audio_format convert_ffmpeg_sample_format(
+		enum AVSampleFormat format)
+{
+	switch ((uint32_t)format) {
+	case AV_SAMPLE_FMT_U8:   return AUDIO_FORMAT_U8BIT;
+	case AV_SAMPLE_FMT_S16:  return AUDIO_FORMAT_16BIT;
+	case AV_SAMPLE_FMT_S32:  return AUDIO_FORMAT_32BIT;
+	case AV_SAMPLE_FMT_FLT:  return AUDIO_FORMAT_FLOAT;
+	case AV_SAMPLE_FMT_U8P:  return AUDIO_FORMAT_U8BIT_PLANAR;
+	case AV_SAMPLE_FMT_S16P: return AUDIO_FORMAT_16BIT_PLANAR;
+	case AV_SAMPLE_FMT_S32P: return AUDIO_FORMAT_32BIT_PLANAR;
+	case AV_SAMPLE_FMT_FLTP: return AUDIO_FORMAT_FLOAT_PLANAR;
+	}
+
+	/* shouldn't get here */
+	return AUDIO_FORMAT_16BIT;
 }
 
 static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
@@ -236,6 +254,10 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	context->sample_rate = aoi.samples_per_sec;
 	context->sample_fmt  = data->acodec->sample_fmts ?
 		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+
+	data->audio_format = convert_ffmpeg_sample_format(context->sample_fmt);
+	data->audio_planes = get_audio_planes(data->audio_format, aoi.speakers);
+	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -532,21 +554,19 @@ static void receive_audio(void *param, const struct audio_data *frame)
 	struct ffmpeg_data   *data   = &output->ff_data;
 
 	AVCodecContext *context = data->audio->codec;
-	size_t planes = audio_output_planes(obs_audio());
-	size_t block_size = audio_output_blocksize(obs_audio());
 
-	size_t frame_size_bytes = (size_t)data->frame_size * block_size;
+	size_t frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
-	for (size_t i = 0; i < planes; i++)
+	for (size_t i = 0; i < data->audio_planes; i++)
 		circlebuf_push_back(&data->excess_frames[i], frame->data[0],
-				frame->frames * block_size);
+				frame->frames * data->audio_size);
 
 	while (data->excess_frames[0].size >= frame_size_bytes) {
-		for (size_t i = 0; i < planes; i++)
+		for (size_t i = 0; i < data->audio_planes; i++)
 			circlebuf_pop_front(&data->excess_frames[i],
 					data->samples[i], frame_size_bytes);
 
-		encode_audio(data, context, block_size);
+		encode_audio(data, context, data->audio_size);
 	}
 }
 
@@ -575,9 +595,7 @@ static bool ffmpeg_output_start(void *data)
 		return false;
 
 	struct audio_convert_info aci = {
-		.samples_per_sec = SPS_TODO,
-		.format          = AUDIO_FORMAT_FLOAT_PLANAR,
-		.speakers        = SPEAKERS_STEREO
+		.format = output->ff_data.audio_format
 	};
 
 	struct video_scale_info vsi = {

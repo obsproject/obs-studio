@@ -37,7 +37,7 @@ static void *sinewave_thread(void *pdata)
 			if (cos_val > M_PI_X2)
 				cos_val -= M_PI_X2;
 
-			double wave = cos(cos_val);
+			double wave = cos(cos_val) * 0.5;
 			bytes[i] = (uint8_t)((wave+1.0)*0.5 * 255.0);
 		}
 

@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>NameDialog</class>
  <widget class="QDialog" name="NameDialog">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -9,12 +12,6 @@
     <width>555</width>
     <height>102</height>
    </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string notr="true">Dialog</string>
@@ -30,6 +27,9 @@
      </property>
      <property name="text">
       <string notr="true">TextLabel</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

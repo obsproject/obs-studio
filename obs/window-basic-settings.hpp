@@ -56,8 +56,9 @@ private:
 
 	void LoadGeneralSettings();
 	//void LoadOutputSettings();
-	//void LoadAudioSettings();
+	void LoadAudioSettings();
 	void LoadVideoSettings();
+	void LoadSettings(bool changedOnly);
 
 	/* general */
 	void LoadLanguageList();
@@ -67,11 +68,10 @@ private:
 	void ResetDownscales(uint32_t cx, uint32_t cy);
 	void LoadResolutionLists();
 	void LoadFPSData();
-	void LoadSettings(bool changedOnly);
 
 	void SaveGeneralSettings();
 	//void SaveOutputSettings();
-	//void SaveAudioSettings();
+	void SaveAudioSettings();
 	void SaveVideoSettings();
 	void SaveSettings();
 
@@ -81,10 +81,18 @@ private slots:
 
 	void on_language_currentIndexChanged(int index);
 
+	void on_sampleRate_currentIndexChanged(int index);
+	void on_channelSetup_currentIndexChanged(int index);
+	void on_audioBufferingTime_valueChanged(int index);
+
 	void on_renderer_currentIndexChanged(int index);
 	void on_fpsType_currentIndexChanged(int index);
 	void on_baseResolution_editTextChanged(const QString &text);
 	void on_outputResolution_editTextChanged(const QString &text);
+	void on_fpsCommon_currentIndexChanged(int index);
+	void on_fpsInteger_valueChanged(int value);
+	void on_fpsNumerator_valueChanged(int value);
+	void on_fpsDenominator_valueChanged(int value);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);

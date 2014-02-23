@@ -127,7 +127,7 @@ static inline size_t get_audio_bytes_per_channel(enum audio_format type)
 	return 0;
 }
 
-static inline size_t is_audio_planar(enum audio_format type)
+static inline bool is_audio_planar(enum audio_format type)
 {
 	switch (type) {
 	case AUDIO_FORMAT_U8BIT:
@@ -149,10 +149,18 @@ static inline size_t is_audio_planar(enum audio_format type)
 	return false;
 }
 
+static inline size_t get_audio_planes(enum audio_format type,
+		enum speaker_layout speakers)
+{
+	return (is_audio_planar(type) ? get_audio_channels(speakers) : 1);
+}
+
 static inline size_t get_audio_size(enum audio_format type,
 		enum speaker_layout speakers, uint32_t frames)
 {
-	return get_audio_channels(speakers) *
+	bool planar = is_audio_planar(type);
+
+	return (planar ? 1 : get_audio_channels(speakers)) *
 	       get_audio_bytes_per_channel(type) *
 	       frames;
 }

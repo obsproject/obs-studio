@@ -313,13 +313,23 @@ bool OBSBasic::ResetVideo()
 
 bool OBSBasic::ResetAudio()
 {
-	/* TODO: load audio settings from config */
 	struct audio_output_info ai;
-	ai.name = "test";
-	ai.samples_per_sec = 44100;
-	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
-	ai.speakers = SPEAKERS_STEREO;
-	ai.buffer_ms = 700;
+	ai.name = "Main Audio Track";
+	ai.format = AUDIO_FORMAT_FLOAT;
+
+	ai.samples_per_sec = config_get_uint(GetGlobalConfig(), "Audio",
+			"SampleRate");
+
+	const char *channelSetupStr = config_get_string(GetGlobalConfig(),
+			"Audio", "ChannelSetup");
+
+	if (strcmp(channelSetupStr, "Mono") == 0)
+		ai.speakers = SPEAKERS_MONO;
+	else
+		ai.speakers = SPEAKERS_STEREO;
+
+	ai.buffer_ms = config_get_uint(GetGlobalConfig(), "Audio",
+			"BufferingTime");
 
 	return obs_reset_audio(&ai);
 }

@@ -519,6 +519,14 @@ bool audio_output_connect(audio_t audio,
 				audio->info.samples_per_sec;
 		}
 
+		if (input.conversion.format == AUDIO_FORMAT_UNKNOWN)
+			input.conversion.format = audio->info.format;
+		if (input.conversion.speakers == SPEAKERS_UNKNOWN)
+			input.conversion.speakers = audio->info.speakers;
+		if (input.conversion.samples_per_sec == 0)
+			input.conversion.samples_per_sec =
+				audio->info.samples_per_sec;
+
 		success = audio_input_init(&input, audio);
 		if (success)
 			da_push_back(audio->inputs, &input);
