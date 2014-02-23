@@ -60,8 +60,9 @@ private:
 	void AddSource(obs_scene_t scene, const char *id);
 	void AddSourcePopupMenu(const QPoint &pos);
 
-	bool InitGraphics();
-	bool InitAudio();
+public:
+	bool ResetVideo();
+	bool ResetAudio();
 
 	void NewProject();
 	void SaveProject();

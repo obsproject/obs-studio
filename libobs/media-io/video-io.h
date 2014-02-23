@@ -118,6 +118,8 @@ EXPORT void video_output_disconnect(video_t video,
 		void (*callback)(void *param, const struct video_data *frame),
 		void *param);
 
+EXPORT bool video_output_active(video_t video);
+
 EXPORT const struct video_output_info *video_output_getinfo(video_t video);
 EXPORT void video_output_swap_frame(video_t video, struct video_data *frame);
 EXPORT bool video_output_wait(video_t video);

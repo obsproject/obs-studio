@@ -51,12 +51,10 @@ void OBSBasic::OBSInit()
 
 	if (!obs_startup())
 		throw "Failed to initialize libobs";
-	if (!InitGraphics())
-		throw "Failed to initialize graphics";
-	if (!InitAudio())
+	if (!ResetVideo())
+		throw "Failed to initialize video";
+	if (!ResetAudio())
 		throw "Failed to initialize audio";
-
-	obs_add_draw_callback(OBSBasic::RenderMain, this);
 
 	signal_handler_connect(obs_signalhandler(), "source-add",
 			OBSBasic::SourceAdded, this);
@@ -278,7 +276,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 /* Main class functions */
 
-bool OBSBasic::InitGraphics()
+bool OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
 
@@ -306,10 +304,14 @@ bool OBSBasic::InitGraphics()
 	ovi.window_width  = size.width();
 	ovi.window_height = size.height();
 
-	return obs_reset_video(&ovi);
+	if (!obs_reset_video(&ovi))
+		return false;
+
+	obs_add_draw_callback(OBSBasic::RenderMain, this);
+	return true;
 }
 
-bool OBSBasic::InitAudio()
+bool OBSBasic::ResetAudio()
 {
 	/* TODO: load audio settings from config */
 	struct audio_output_info ai;

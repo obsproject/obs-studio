@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <obs.hpp>
 #include <util/util.hpp>
 #include <util/lexer.h>
 #include <sstream>
@@ -25,6 +26,7 @@
 #include "obs-app.hpp"
 #include "platform.hpp"
 #include "qt-wrappers.hpp"
+#include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 
 #include <util/platform.h>
@@ -205,6 +207,8 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ResetDownscales(cx, cy);
 
+	ui->baseResolution->lineEdit()->setText(ResString(cx, cy).c_str());
+
 	cx = config_get_uint(GetGlobalConfig(), "Video", "OutputCX");
 	cy = config_get_uint(GetGlobalConfig(), "Video", "OutputCY");
 
@@ -253,6 +257,11 @@ void OBSBasicSettings::LoadFPSData()
 void OBSBasicSettings::LoadVideoSettings()
 {
 	loading = true;
+
+	if (video_output_active(obs_video())) {
+		ui->videoPage->setEnabled(false);
+		ui->videoMsg->setText(QTStr("Settings.Video.CurrentlyActive"));
+	}
 
 	LoadRendererList();
 	LoadResolutionLists();
@@ -316,6 +325,10 @@ void OBSBasicSettings::SaveVideoSettings()
 	config_set_uint(GetGlobalConfig(), "Video", "FPSInt", fpsInteger);
 	config_set_uint(GetGlobalConfig(), "Video", "FPSNum", fpsNumerator);
 	config_set_uint(GetGlobalConfig(), "Video", "FPSDen", fpsDenominator);
+
+	OBSBasic *window = qobject_cast<OBSBasic*>(parent());
+	if (window)
+		window->ResetVideo();
 }
 
 void OBSBasicSettings::SaveSettings()
@@ -400,12 +413,12 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	if (!ConvertResText(QT_TO_UTF8(baseRes), cx, cy) ||
 	    !ConvertResText(QT_TO_UTF8(outputRes), cx, cy)) {
 
-		ui->errorText->setText(
+		ui->videoMsg->setText(
 				QTStr("Settings.Video.InvalidResolution"));
 		return false;
 	}
 
-	ui->errorText->setText("");
+	ui->videoMsg->setText("");
 	return true;
 }
 
@@ -421,8 +434,7 @@ void OBSBasicSettings::on_renderer_currentIndexChanged(int index)
 {
 	if (!loading) {
 		videoChanged = true;
-		ui->errorText->setText(
-				QTStr("Settings.ProgramRestart"));
+		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
 	}
 
 	UNUSED_PARAMETER(index);

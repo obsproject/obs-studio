@@ -666,6 +666,12 @@ void audio_line_destroy(struct audio_line *line)
 	}
 }
 
+bool audio_output_active(audio_t audio)
+{
+	if (!audio) return false;
+	return audio->inputs.num != 0;
+}
+
 size_t audio_output_blocksize(audio_t audio)
 {
 	return audio->block_size;

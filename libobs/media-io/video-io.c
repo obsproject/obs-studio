@@ -308,6 +308,12 @@ void video_output_disconnect(video_t video,
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
+bool video_output_active(video_t video)
+{
+	if (!video) return false;
+	return video->inputs.num != 0;
+}
+
 const struct video_output_info *video_output_getinfo(video_t video)
 {
 	return &video->info;

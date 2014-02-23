@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ void source_frame_init(struct source_frame *frame, enum video_format format,
 	}
 }
 
-static void obs_source_destroy(obs_source_t source)
+static void obs_source_destroy(struct obs_source *source)
 {
 	size_t i;
 
@@ -950,7 +950,7 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
-	uint32_t flags = obs_source_get_output_flags(source);
+	uint32_t flags = source->info.output_flags;
 	struct filtered_audio *output;
 
 	process_audio(source, audio);
@@ -959,13 +959,13 @@ void obs_source_output_audio(obs_source_t source,
 	output = filter_async_audio(source, &source->audio_data);
 
 	if (output) {
-		bool async = (flags & OBS_SOURCE_ASYNC_VIDEO) == 0;
+		bool async = (flags & OBS_SOURCE_ASYNC_VIDEO) != 0;
 
 		pthread_mutex_lock(&source->audio_mutex);
 
 		/* wait for video to start before outputting any audio so we
 		 * have a base for sync */
-		if (source->timing_set || async) {
+		if (source->timing_set || !async) {
 			struct audio_data data;
 
 			for (int i = 0; i < MAX_AV_PLANES; i++)
@@ -1143,8 +1143,8 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 {
 	obs_source_t target       = obs_filter_gettarget(filter);
 	obs_source_t parent       = obs_filter_getparent(filter);
-	uint32_t     target_flags = obs_source_get_output_flags(target);
-	uint32_t     parent_flags = obs_source_get_output_flags(parent);
+	uint32_t     target_flags = target->info.output_flags;
+	uint32_t     parent_flags = parent->info.output_flags;
 	int          cx           = obs_source_getwidth(target);
 	int          cy           = obs_source_getheight(target);
 	bool         use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);

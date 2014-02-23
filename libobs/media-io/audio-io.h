@@ -172,6 +172,8 @@ EXPORT void audio_output_disconnect(audio_t video,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param);
 
+EXPORT bool audio_output_active(audio_t audio);
+
 EXPORT size_t audio_output_blocksize(audio_t audio);
 EXPORT size_t audio_output_planes(audio_t audio);
 EXPORT size_t audio_output_channels(audio_t audio);
