@@ -597,7 +597,7 @@ static void receive_audio(void *param, const struct audio_data *frame)
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[i], in.data[0],
+		circlebuf_push_back(&data->excess_frames[i], in.data[i],
 				in.frames * data->audio_size);
 
 	while (data->excess_frames[0].size >= frame_size_bytes) {
