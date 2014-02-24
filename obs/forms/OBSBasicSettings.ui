@@ -288,6 +288,19 @@
            </property>
           </widget>
          </item>
+         <item row="8" column="1">
+          <widget class="QLabel" name="audioMsg">
+           <property name="styleSheet">
+            <string notr="true">color: rgb(255, 0, 4);</string>
+           </property>
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="videoPage">

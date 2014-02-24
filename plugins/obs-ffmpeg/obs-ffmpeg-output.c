@@ -37,6 +37,9 @@ struct ffmpeg_data {
 	int                frame_size;
 	int                total_frames;
 
+	uint64_t           start_timestamp;
+
+	uint32_t           audio_samplerate;
 	enum audio_format  audio_format;
 	size_t             audio_planes;
 	size_t             audio_size;
@@ -255,6 +258,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	context->sample_fmt  = data->acodec->sample_fmts ?
 		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
+	data->audio_samplerate = aoi.samples_per_sec;
 	data->audio_format = convert_ffmpeg_sample_format(context->sample_fmt);
 	data->audio_planes = get_audio_planes(data->audio_format, aoi.speakers);
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
@@ -388,8 +392,7 @@ static void ffmpeg_log_callback(void *param, int bla, const char *format,
 	UNUSED_PARAMETER(bla);
 }
 
-static void *ffmpeg_output_create(obs_data_t settings,
-		obs_output_t output)
+static void *ffmpeg_output_create(obs_data_t settings, obs_output_t output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
 	data->output = output;
@@ -451,6 +454,9 @@ static void receive_video(void *param, const struct video_data *frame)
 	int ret, got_packet;
 
 	av_init_packet(&packet);
+
+	if (!data->start_timestamp)
+		data->start_timestamp = frame->timestamp;
 
 	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
 		sws_scale(data->swscale, frame->data,
@@ -548,18 +554,51 @@ static inline void encode_audio(struct ffmpeg_data *output,
 				av_err2str(ret));
 }
 
+static bool prepare_audio(struct ffmpeg_data *data,
+		const struct audio_data *frame, struct audio_data *output)
+{
+	*output = *frame;
+
+	if (frame->timestamp < data->start_timestamp) {
+		uint64_t duration = (uint64_t)frame->frames * 1000000000 /
+			(uint64_t)data->audio_samplerate;
+		uint64_t end_ts = (frame->timestamp + duration);
+		uint64_t cutoff;
+
+		if (end_ts <= data->start_timestamp)
+			return false;
+
+		cutoff = data->start_timestamp - frame->timestamp;
+		cutoff = cutoff * (uint64_t)data->audio_samplerate /
+			1000000000;
+
+		for (size_t i = 0; i < data->audio_planes; i++)
+			output->data[i] += data->audio_size * (uint32_t)cutoff;
+		output->frames -= (uint32_t)cutoff;
+	}
+
+	return true;
+}
+
 static void receive_audio(void *param, const struct audio_data *frame)
 {
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data   *data   = &output->ff_data;
+	size_t frame_size_bytes;
+	struct audio_data in;
 
 	AVCodecContext *context = data->audio->codec;
 
-	size_t frame_size_bytes = (size_t)data->frame_size * data->audio_size;
+	if (!data->start_timestamp)
+		return;
+	if (!prepare_audio(data, frame, &in))
+		return;
+
+	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[i], frame->data[0],
-				frame->frames * data->audio_size);
+		circlebuf_push_back(&data->excess_frames[i], in.data[0],
+				in.frames * data->audio_size);
 
 	while (data->excess_frames[0].size >= frame_size_bytes) {
 		for (size_t i = 0; i < data->audio_planes; i++)
