@@ -491,24 +491,30 @@ void OBSBasicSettings::on_language_currentIndexChanged(int index)
 
 void OBSBasicSettings::on_sampleRate_currentIndexChanged(int index)
 {
-	if (!loading)
+	if (!loading) {
 		audioChanged = true;
+		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
+	}
 
 	UNUSED_PARAMETER(index);
 }
 
 void OBSBasicSettings::on_channelSetup_currentIndexChanged(int index)
 {
-	if (!loading)
+	if (!loading) {
 		audioChanged = true;
+		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
+	}
 
 	UNUSED_PARAMETER(index);
 }
 
 void OBSBasicSettings::on_audioBufferingTime_valueChanged(int value)
 {
-	if (!loading)
+	if (!loading) {
 		audioChanged = true;
+		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
+	}
 
 	UNUSED_PARAMETER(value);
 }
