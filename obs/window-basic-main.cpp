@@ -119,9 +119,10 @@ void OBSBasic::AddScene(OBSSource source)
 	ui->scenes->addItem(item);
 
 	signal_handler_t handler = obs_source_signalhandler(source);
-	signal_handler_connect(handler, "add", OBSBasic::SceneItemAdded, this);
-	signal_handler_connect(handler, "remove", OBSBasic::SceneItemRemoved,
-			this);
+	signal_handler_connect(handler, "item-add",
+			OBSBasic::SceneItemAdded, this);
+	signal_handler_connect(handler, "item-remove",
+			OBSBasic::SceneItemRemoved, this);
 }
 
 void OBSBasic::RemoveScene(OBSSource source)

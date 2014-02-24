@@ -24,7 +24,7 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 	calldata_setptr(&params, "scene", item->parent);
 	calldata_setptr(&params, "item", item);
 
-	signal_handler_signal(item->parent->source->signals, "remove",
+	signal_handler_signal(item->parent->source->signals, "item-remove",
 			&params);
 	calldata_free(&params);
 }
@@ -335,7 +335,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 
 	calldata_setptr(&params, "scene", scene);
 	calldata_setptr(&params, "item", item);
-	signal_handler_signal(scene->source->signals, "add", &params);
+	signal_handler_signal(scene->source->signals, "item-add", &params);
 	calldata_free(&params);
 
 	return item;
