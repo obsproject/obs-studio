@@ -132,6 +132,8 @@ bool audio_resampler_resample(audio_resampler_t rs,
 		 uint8_t *output[], uint32_t *out_frames, uint64_t *ts_offset,
 		 const uint8_t *const input[], uint32_t in_frames)
 {
+	if (!rs) return false;
+
 	struct SwrContext *context = rs->context;
 	int ret;
 

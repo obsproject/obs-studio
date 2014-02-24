@@ -264,8 +264,7 @@ static inline void obs_data_destroy(struct obs_data *data)
 
 void obs_data_release(obs_data_t data)
 {
-	if (!data)
-		return;
+	if (!data) return;
 
 	if (--data->ref == 0)
 		obs_data_destroy(data);
@@ -273,6 +272,8 @@ void obs_data_release(obs_data_t data)
 
 const char *obs_data_getjson(obs_data_t data)
 {
+	if (!data) return NULL;
+
 	/* TODO */
 #pragma message ("TODO: implement obs_data_getjson")
 	return data->json;
@@ -280,8 +281,7 @@ const char *obs_data_getjson(obs_data_t data)
 
 static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 {
-	if (!data)
-		return NULL;
+	if (!data) return NULL;
 
 	struct obs_data_item *item = data->first_item;
 
@@ -298,6 +298,9 @@ static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 static inline struct obs_data_item *get_item_of(struct obs_data *data,
 		const char *name, enum obs_data_type type)
 {
+	if (!data)
+		return NULL;
+
 	struct obs_data_item *item = get_item(data, name);
 	return (item && item->type == type) ? item : NULL;
 }
@@ -495,10 +498,12 @@ void obs_data_array_addref(obs_data_array_t array)
 
 static inline void obs_data_array_destroy(obs_data_array_t array)
 {
-	for (size_t i = 0; i < array->objects.num; i++)
-		obs_data_release(array->objects.array[i]);
-	da_free(array->objects);
-	bfree(array);
+	if (array) {
+		for (size_t i = 0; i < array->objects.num; i++)
+			obs_data_release(array->objects.array[i]);
+		da_free(array->objects);
+		bfree(array);
+	}
 }
 
 void obs_data_array_release(obs_data_array_t array)
@@ -512,12 +517,16 @@ void obs_data_array_release(obs_data_array_t array)
 
 size_t obs_data_array_count(obs_data_array_t array)
 {
-	return array->objects.num;
+	return array ? array->objects.num : 0;
 }
 
 obs_data_t obs_data_array_item(obs_data_array_t array, size_t idx)
 {
 	obs_data_t data;
+
+	if (!array)
+		return NULL;
+
 	data = (idx < array->objects.num) ? array->objects.array[idx] : NULL;
 
 	if (data)
@@ -527,20 +536,28 @@ obs_data_t obs_data_array_item(obs_data_array_t array, size_t idx)
 
 size_t obs_data_array_push_back(obs_data_array_t array, obs_data_t obj)
 {
+	if (!array || !obj)
+		return 0;
+
 	obj->ref++;
 	return da_push_back(array->objects, &obj);
 }
 
 void obs_data_array_insert(obs_data_array_t array, size_t idx, obs_data_t obj)
 {
+	if (!array || !obj)
+		return;
+
 	obj->ref++;
 	da_insert(array->objects, idx, &obj);
 }
 
 void obs_data_array_erase(obs_data_array_t array, size_t idx)
 {
-	obs_data_release(array->objects.array[idx]);
-	da_erase(array->objects, idx);
+	if (array) {
+		obs_data_release(array->objects.array[idx]);
+		da_erase(array->objects, idx);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -548,6 +565,9 @@ void obs_data_array_erase(obs_data_array_t array, size_t idx)
 
 obs_data_item_t obs_data_first(obs_data_t data)
 {
+	if (!data)
+		return NULL;
+
 	if (data->first_item)
 		data->first_item->ref++;
 	return data->first_item;
@@ -555,6 +575,9 @@ obs_data_item_t obs_data_first(obs_data_t data)
 
 obs_data_item_t obs_data_item_byname(obs_data_t data, const char *name)
 {
+	if (!data)
+		return NULL;
+
 	struct obs_data_item *item = get_item(data, name);
 	if (item)
 		item->ref++;
@@ -597,7 +620,7 @@ void obs_data_item_remove(obs_data_item_t *item)
 
 enum obs_data_type obs_data_item_gettype(obs_data_item_t item)
 {
-	return item->type;
+	return item ? item->type : OBS_DATA_NULL;
 }
 
 void obs_data_item_setstring(obs_data_item_t *item, const char *val)

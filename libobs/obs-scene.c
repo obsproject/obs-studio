@@ -244,7 +244,7 @@ obs_source_t obs_scene_getsource(obs_scene_t scene)
 
 obs_scene_t obs_scene_fromsource(obs_source_t source)
 {
-	if (source->info.type != OBS_SOURCE_TYPE_SCENE)
+	if (!source || source->info.type != OBS_SOURCE_TYPE_SCENE)
 		return NULL;
 
 	return source->data;
@@ -253,6 +253,9 @@ obs_scene_t obs_scene_fromsource(obs_source_t source)
 obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
 {
 	struct obs_scene_item *item;
+
+	if (!scene)
+		return NULL;
 
 	pthread_mutex_lock(&scene->mutex);
 
@@ -274,6 +277,9 @@ void obs_scene_enum_items(obs_scene_t scene,
 		void *param)
 {
 	struct obs_scene_item *item;
+
+	if (!scene || !callback)
+		return;
 
 	pthread_mutex_lock(&scene->mutex);
 
@@ -397,36 +403,42 @@ void obs_sceneitem_remove(obs_sceneitem_t item)
 
 obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item)
 {
-	return item->parent;
+	return item ? item->parent : NULL;
 }
 
 obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item)
 {
-	return item->source;
+	return item ? item->source : NULL;
 }
 
 void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos)
 {
-	vec2_copy(&item->pos, pos);
+	if (item)
+		vec2_copy(&item->pos, pos);
 }
 
 void obs_sceneitem_setrot(obs_sceneitem_t item, float rot)
 {
-	item->rot = rot;
+	if (item)
+		item->rot = rot;
 }
 
 void obs_sceneitem_setorigin(obs_sceneitem_t item, const struct vec2 *origin)
 {
-	vec2_copy(&item->origin, origin);
+	if (item)
+		vec2_copy(&item->origin, origin);
 }
 
 void obs_sceneitem_setscale(obs_sceneitem_t item, const struct vec2 *scale)
 {
-	vec2_copy(&item->scale, scale);
+	if (item)
+		vec2_copy(&item->scale, scale);
 }
 
 void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 {
+	if (!item) return;
+
 	struct obs_scene *scene = item->parent;
 
 	obs_scene_addref(scene);
@@ -461,20 +473,23 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 
 void obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos)
 {
-	vec2_copy(pos, &item->pos);
+	if (item)
+		vec2_copy(pos, &item->pos);
 }
 
 float obs_sceneitem_getrot(obs_sceneitem_t item)
 {
-	return item->rot;
+	return item ? item->rot : 0.0f;
 }
 
 void obs_sceneitem_getorigin(obs_sceneitem_t item, struct vec2 *origin)
 {
-	vec2_copy(origin, &item->origin);
+	if (item)
+		vec2_copy(origin, &item->origin);
 }
 
 void obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale)
 {
-	vec2_copy(scale, &item->scale);
+	if (item)
+		vec2_copy(scale, &item->scale);
 }

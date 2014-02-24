@@ -135,6 +135,9 @@ void signal_handler_connect(signal_handler_t handler, const char *signal,
 	struct signal_callback cb_data = {callback, data};
 	size_t idx;
 
+	if (!handler)
+		return;
+
 	pthread_mutex_lock(&handler->mutex);
 	sig = getsignal(handler, signal, &last);
 	if (!sig) {
@@ -165,6 +168,9 @@ static inline struct signal_info *getsignal_locked(signal_handler_t handler,
 		const char *name)
 {
 	struct signal_info *sig;
+
+	if (!handler)
+		return NULL;
 
 	pthread_mutex_lock(&handler->mutex);
 	sig = getsignal(handler, name, NULL);

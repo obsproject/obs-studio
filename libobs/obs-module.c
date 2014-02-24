@@ -135,6 +135,11 @@ void obs_register_source(const struct obs_source_info *info)
 	struct obs_source_info data = {0};
 	struct darray *array;
 
+	if (!info) {
+		blog(LOG_WARNING, "obs_register_source: NULL info");
+		return;
+	}
+
 	if (!cur_source_info_size) {
 		blog(LOG_WARNING, "Tried to register obs_source_info"
 		                  " outside of obs_module_load");

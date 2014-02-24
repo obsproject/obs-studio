@@ -58,19 +58,15 @@ char *find_plugin(const char *plugin)
 	struct dstr output;
 	dstr_init(&output);
 
-	if(sizeof(void*) == 4)
-	{
+	if(sizeof(void*) == 4) {
 		if (check_lib_path(plugin, "../../obs-plugins/32bit/", &output))
 			return output.array;
-	}
-	else
-	{
+	} else {
 		if (check_lib_path(plugin, "../../obs-plugins/64bit/", &output))
 			return output.array;
 	}
 
-	if (OBS_INSTALL_PREFIX [0] != 0)
-	{
+	if (OBS_INSTALL_PREFIX [0] != 0) {
 		if (check_lib_path(plugin,
 					OBS_INSTALL_PREFIX "lib/obs-plugins/",
 					&output))
@@ -93,8 +89,7 @@ char *find_libobs_data_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
-	if (OBS_INSTALL_PREFIX [0] != 0)
-	{
+	if (OBS_INSTALL_PREFIX [0] != 0) {
 		if (check_path(file, OBS_INSTALL_DATA_PATH "/libobs/",
 					&output))
 			return output.array;
@@ -116,8 +111,7 @@ char *obs_find_plugin_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/obs-plugins/", &output))
 		return output.array;
 
-	if (OBS_INSTALL_PREFIX [0] != 0)
-	{
+	if (OBS_INSTALL_PREFIX [0] != 0) {
 		if (check_path(file, OBS_INSTALL_DATA_PATH "/obs-plugins/",
 					&output))
 		return output.array;

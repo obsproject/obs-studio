@@ -261,6 +261,9 @@ bool video_output_connect(video_t video,
 {
 	bool success = false;
 
+	if (!video || !callback)
+		return false;
+
 	pthread_mutex_lock(&video->input_mutex);
 
 	if (video_get_input_idx(video, callback, param) == DARRAY_INVALID) {
@@ -297,6 +300,9 @@ void video_output_disconnect(video_t video,
 		void (*callback)(void *param, const struct video_data *frame),
 		void *param)
 {
+	if (!video || !callback)
+		return;
+
 	pthread_mutex_lock(&video->input_mutex);
 
 	size_t idx = video_get_input_idx(video, callback, param);
@@ -316,11 +322,13 @@ bool video_output_active(video_t video)
 
 const struct video_output_info *video_output_getinfo(video_t video)
 {
-	return &video->info;
+	return video ? &video->info : NULL;
 }
 
 void video_output_swap_frame(video_t video, struct video_data *frame)
 {
+	if (!video) return;
+
 	pthread_mutex_lock(&video->data_mutex);
 	video->next_frame = *frame;
 	video->new_frame = true;
@@ -329,18 +337,20 @@ void video_output_swap_frame(video_t video, struct video_data *frame)
 
 bool video_output_wait(video_t video)
 {
+	if (!video) return false;
+
 	event_wait(&video->update_event);
 	return event_try(&video->stop_event) == EAGAIN;
 }
 
 uint64_t video_getframetime(video_t video)
 {
-	return video->frame_time;
+	return video ? video->frame_time : 0;
 }
 
 uint64_t video_gettime(video_t video)
 {
-	return video->cur_video_time;
+	return video ? video->cur_video_time : 0;
 }
 
 void video_output_stop(video_t video)

@@ -503,6 +503,8 @@ bool audio_output_connect(audio_t audio,
 {
 	bool success = false;
 
+	if (!audio) return false;
+
 	pthread_mutex_lock(&audio->input_mutex);
 
 	if (audio_get_input_idx(audio, callback, param) == DARRAY_INVALID) {
@@ -541,6 +543,8 @@ void audio_output_disconnect(audio_t audio,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param)
 {
+	if (!audio) return;
+
 	pthread_mutex_lock(&audio->input_mutex);
 
 	size_t idx = audio_get_input_idx(audio, callback, param);
@@ -632,6 +636,8 @@ void audio_output_close(audio_t audio)
 
 audio_line_t audio_output_createline(audio_t audio, const char *name)
 {
+	if (!audio) return NULL;
+
 	struct audio_line *line = bzalloc(sizeof(struct audio_line));
 	line->alive = true;
 	line->audio = audio;
@@ -661,7 +667,7 @@ audio_line_t audio_output_createline(audio_t audio, const char *name)
 
 const struct audio_output_info *audio_output_getinfo(audio_t audio)
 {
-	return &audio->info;
+	return audio ? &audio->info : NULL;
 }
 
 void audio_line_destroy(struct audio_line *line)
@@ -682,17 +688,17 @@ bool audio_output_active(audio_t audio)
 
 size_t audio_output_blocksize(audio_t audio)
 {
-	return audio->block_size;
+	return audio ? audio->block_size : 0;
 }
 
 size_t audio_output_planes(audio_t audio)
 {
-	return audio->planes;
+	return audio ? audio->planes : 0;
 }
 
 size_t audio_output_channels(audio_t audio)
 {
-	return audio->channels;
+	return audio ? audio->channels : 0;
 }
 
 /* TODO: Optimization of volume multiplication functions */
@@ -812,7 +818,7 @@ static void audio_line_place_data_pos(struct audio_line *line,
 	}
 }
 
-void audio_line_place_data(struct audio_line *line,
+static void audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
 	size_t pos = ts_diff_bytes(line->audio, data->timestamp,
@@ -833,6 +839,8 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 {
 	/* TODO: prevent insertation of data too far away from expected
 	 * audio timing */
+
+	if (!line || !data) return;
 
 	pthread_mutex_lock(&line->mutex);
 

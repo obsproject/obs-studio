@@ -165,6 +165,8 @@ void gs_destroy(graphics_t graphics)
 
 void gs_entercontext(graphics_t graphics)
 {
+	if (!graphics) return;
+
 	bool is_current = thread_graphics == graphics;
 	if (thread_graphics && !is_current) {
 		while (thread_graphics)
@@ -200,12 +202,16 @@ graphics_t gs_getcontext(void)
 
 static inline struct matrix3 *top_matrix(graphics_t graphics)
 {
-	return graphics->matrix_stack.array + graphics->cur_matrix;
+	return graphics ? 
+		(graphics->matrix_stack.array + graphics->cur_matrix) : NULL;
 }
 
 void gs_matrix_push(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
+
 	struct matrix3 mat, *top_mat = top_matrix(graphics);
 
 	memcpy(&mat, top_mat, sizeof(struct matrix3));
@@ -216,6 +222,8 @@ void gs_matrix_push(void)
 void gs_matrix_pop(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 
 	if (graphics->cur_matrix == 0) {
 		blog(LOG_ERROR, "Tried to pop last matrix on stack");
@@ -229,64 +237,75 @@ void gs_matrix_pop(void)
 void gs_matrix_identity(void)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_identity(top_mat);
+	if (top_mat)
+		matrix3_identity(top_mat);
 }
 
 void gs_matrix_transpose(void)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_transpose(top_mat, top_mat);
+	if (top_mat)
+		matrix3_transpose(top_mat, top_mat);
 }
 
 void gs_matrix_set(const struct matrix3 *matrix)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_copy(top_mat, matrix);
+	if (top_mat)
+		matrix3_copy(top_mat, matrix);
 }
 
 void gs_matrix_get(struct matrix3 *dst)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_copy(dst, top_mat);
+	if (top_mat)
+		matrix3_copy(dst, top_mat);
 }
 
 void gs_matrix_mul(const struct matrix3 *matrix)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_mul(top_mat, top_mat, matrix);
+	if (top_mat)
+		matrix3_mul(top_mat, top_mat, matrix);
 }
 
 void gs_matrix_rotquat(const struct quat *rot)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_rotate(top_mat, top_mat, rot);
+	if (top_mat)
+		matrix3_rotate(top_mat, top_mat, rot);
 }
 
 void gs_matrix_rotaa(const struct axisang *rot)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_rotate_aa(top_mat, top_mat, rot);
+	if (top_mat)
+		matrix3_rotate_aa(top_mat, top_mat, rot);
 }
 
 void gs_matrix_translate(const struct vec3 *pos)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_translate(top_mat, top_mat, pos);
+	if (top_mat)
+		matrix3_translate(top_mat, top_mat, pos);
 }
 
 void gs_matrix_scale(const struct vec3 *scale)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
-	matrix3_scale(top_mat, top_mat, scale);
+	if (top_mat)
+		matrix3_scale(top_mat, top_mat, scale);
 }
 
 void gs_matrix_rotaa4f(float x, float y, float z, float angle)
 {
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
 	struct axisang aa;
-	
-	axisang_set(&aa, x, y, z, angle);
-	matrix3_rotate_aa(top_mat, top_mat, &aa);
+
+	if (!top_mat) {
+		axisang_set(&aa, x, y, z, angle);
+		matrix3_rotate_aa(top_mat, top_mat, &aa);
+	}
 }
 
 void gs_matrix_translate3f(float x, float y, float z)
@@ -294,8 +313,10 @@ void gs_matrix_translate3f(float x, float y, float z)
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
-	vec3_set(&p, x, y, z);
-	matrix3_translate(top_mat, top_mat, &p);
+	if (top_mat) {
+		vec3_set(&p, x, y, z);
+		matrix3_translate(top_mat, top_mat, &p);
+	}
 }
 
 void gs_matrix_scale3f(float x, float y, float z)
@@ -303,24 +324,26 @@ void gs_matrix_scale3f(float x, float y, float z)
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
-	vec3_set(&p, x, y, z);
-	matrix3_scale(top_mat, top_mat, &p);
+	if (top_mat) {
+		vec3_set(&p, x, y, z);
+		matrix3_scale(top_mat, top_mat, &p);
+	}
 }
 
 static inline void reset_immediate_arrays(graphics_t graphics)
 {
-	size_t i;
-
 	da_init(graphics->verts);
 	da_init(graphics->norms);
 	da_init(graphics->colors);
-	for (i = 0; i < 16; i++)
+	for (size_t i = 0; i < 16; i++)
 		da_init(graphics->texverts[i]);
 }
 
 void gs_renderstart(bool b_new)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 
 	graphics->using_immediate = !b_new;
 	reset_immediate_arrays(graphics);
@@ -353,8 +376,12 @@ static inline size_t min_size(const size_t a, const size_t b)
 void gs_renderstop(enum gs_draw_mode mode)
 {
 	graphics_t graphics = thread_graphics;
-	size_t i, num = graphics->verts.num;
+	size_t i, num;
 
+	if (!graphics)
+		return;
+
+	num = graphics->verts.num;
 	if (!num) {
 		if (!graphics->using_immediate) {
 			da_free(graphics->verts);
@@ -415,6 +442,9 @@ vertbuffer_t gs_rendersave(void)
 	graphics_t graphics = thread_graphics;
 	size_t num_tex, i;
 
+	if (!graphics)
+		return NULL;
+
 	if (graphics->using_immediate)
 		return NULL;
 
@@ -471,6 +501,9 @@ void gs_normal3f(float x, float y, float z)
 static inline bool validvertsize(graphics_t graphics, size_t num,
 		const char *name)
 {
+	if (!graphics)
+		return false;
+
 	if (graphics->using_immediate && num == IMMEDIATE_COUNT) {
 		blog(LOG_WARNING, "%s: tried to use over %u "
 				  "for immediate rendering",
@@ -550,13 +583,16 @@ input_t gs_getinput(void)
 
 effect_t gs_geteffect(void)
 {
-	return thread_graphics->cur_effect;
+	return thread_graphics ? thread_graphics->cur_effect : NULL;
 }
 
 effect_t gs_create_effect_from_file(const char *file, char **error_string)
 {
 	char *file_string;
 	effect_t effect = NULL;
+
+	if (!thread_graphics || !file)
+		return NULL;
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
@@ -573,6 +609,9 @@ effect_t gs_create_effect_from_file(const char *file, char **error_string)
 effect_t gs_create_effect(const char *effect_string, const char *filename,
 		char **error_string)
 {
+	if (!thread_graphics || !effect_string)
+		return NULL;
+
 	struct gs_effect *effect = bzalloc(sizeof(struct gs_effect));
 	struct effect_parser parser;
 	bool success;
@@ -595,6 +634,9 @@ effect_t gs_create_effect(const char *effect_string, const char *filename,
 
 shader_t gs_create_vertexshader_from_file(const char *file, char **error_string)
 {
+	if (!thread_graphics || !file)
+		return NULL;
+
 	char *file_string;
 	shader_t shader = NULL;
 
@@ -615,6 +657,9 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 {
 	char *file_string;
 	shader_t shader = NULL;
+
+	if (!thread_graphics || !file)
+		return NULL;
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
@@ -726,6 +771,8 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 	struct vb_data *data;
 
 	assert(tex);
+	if (!tex || !thread_graphics)
+		return;
 
 	if (gs_gettexturetype(tex) != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "A sprite must be a 2D texture");
@@ -788,6 +835,8 @@ void gs_set3dmode(double fovy, double znear, double zvar)
 
 void gs_viewport_push(void)
 {
+	if (!thread_graphics) return;
+
 	struct gs_rect *rect = da_push_back_new(
 			thread_graphics->viewport_stack);
 	gs_getviewport(rect);
@@ -796,7 +845,7 @@ void gs_viewport_push(void)
 void gs_viewport_pop(void)
 {
 	struct gs_rect *rect;
-	if (!thread_graphics->viewport_stack.num)
+	if (!thread_graphics || !thread_graphics->viewport_stack.num)
 		return;
 
 	rect = da_end(thread_graphics->viewport_stack);
@@ -807,6 +856,9 @@ void gs_viewport_pop(void)
 void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 		bool flip)
 {
+	if (!thread_graphics || !tex)
+		return;
+
 	void *ptr;
 	uint32_t linesize_out;
 	uint32_t row_copy;
@@ -854,6 +906,8 @@ void gs_perspective(float angle, float aspect, float near, float far)
 	graphics_t graphics = thread_graphics;
 	float xmin, xmax, ymin, ymax;
 
+	if (!graphics) return;
+
 	ymax = near * tanf(RAD(angle)*0.5f);
 	ymin = -ymax;
 
@@ -869,12 +923,16 @@ void gs_perspective(float angle, float aspect, float near, float far)
 const char *gs_preprocessor_name(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_preprocessor_name();
 }
 
 swapchain_t gs_create_swapchain(struct gs_init_data *data)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_swapchain(graphics->device,
 			data);
 }
@@ -882,24 +940,32 @@ swapchain_t gs_create_swapchain(struct gs_init_data *data)
 void gs_resize(uint32_t x, uint32_t y)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_resize(graphics->device, x, y);
 }
 
 void gs_getsize(uint32_t *x, uint32_t *y)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_getsize(graphics->device, x, y);
 }
 
 uint32_t gs_getwidth(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return 0;
+
 	return graphics->exports.device_getwidth(graphics->device);
 }
 
 uint32_t gs_getheight(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return 0;
+
 	return graphics->exports.device_getheight(graphics->device);
 }
 
@@ -915,6 +981,9 @@ texture_t gs_create_texture(uint32_t width, uint32_t height,
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(width) && is_pow2(height);
 	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
+
+	if (!graphics)
+		return NULL;
 
 	if (uses_mipmaps && !pow2tex) {
 		blog(LOG_WARNING, "Cannot use mipmaps with a "
@@ -945,6 +1014,9 @@ texture_t gs_create_cubetexture(uint32_t size,
 	bool pow2tex = is_pow2(size);
 	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
 
+	if (!graphics)
+		return NULL;
+
 	if (uses_mipmaps && !pow2tex) {
 		blog(LOG_WARNING, "Cannot use mipmaps with a "
 		                  "non-power-of-two texture.  Disabling "
@@ -972,6 +1044,8 @@ texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t levels, const void **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_volumetexture(graphics->device,
 			width, height, depth, color_format, levels, data,
 			flags);
@@ -981,6 +1055,8 @@ zstencil_t gs_create_zstencil(uint32_t width, uint32_t height,
 		enum gs_zstencil_format format)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_zstencil(graphics->device,
 			width, height, format);
 }
@@ -989,6 +1065,8 @@ stagesurf_t gs_create_stagesurface(uint32_t width, uint32_t height,
 		enum gs_color_format color_format)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_stagesurface(graphics->device,
 			width, height, color_format);
 }
@@ -996,6 +1074,8 @@ stagesurf_t gs_create_stagesurface(uint32_t width, uint32_t height,
 samplerstate_t gs_create_samplerstate(struct gs_sampler_info *info)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_samplerstate(graphics->device,
 			info);
 }
@@ -1004,6 +1084,8 @@ shader_t gs_create_vertexshader(const char *shader, const char *file,
 		char **error_string)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_vertexshader(graphics->device,
 			shader, file, error_string);
 }
@@ -1012,6 +1094,8 @@ shader_t gs_create_pixelshader(const char *shader,
 		const char *file, char **error_string)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_pixelshader(graphics->device,
 			shader, file, error_string);
 }
@@ -1020,6 +1104,8 @@ vertbuffer_t gs_create_vertexbuffer(struct vb_data *data,
 		uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_vertexbuffer(graphics->device,
 			data, flags);
 }
@@ -1028,6 +1114,8 @@ indexbuffer_t gs_create_indexbuffer(enum gs_index_type type,
 		void *indices, size_t num, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_create_indexbuffer(graphics->device,
 			type, indices, num, flags);
 }
@@ -1035,12 +1123,16 @@ indexbuffer_t gs_create_indexbuffer(enum gs_index_type type,
 enum gs_texture_type gs_gettexturetype(texture_t texture)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return GS_TEXTURE_2D;
+
 	return graphics->exports.device_gettexturetype(texture);
 }
 
 void gs_load_vertexbuffer(vertbuffer_t vertbuffer)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_vertexbuffer(graphics->device,
 			vertbuffer);
 }
@@ -1048,6 +1140,8 @@ void gs_load_vertexbuffer(vertbuffer_t vertbuffer)
 void gs_load_indexbuffer(indexbuffer_t indexbuffer)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_indexbuffer(graphics->device,
 			indexbuffer);
 }
@@ -1055,12 +1149,16 @@ void gs_load_indexbuffer(indexbuffer_t indexbuffer)
 void gs_load_texture(texture_t tex, int unit)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_texture(graphics->device, tex, unit);
 }
 
 void gs_load_samplerstate(samplerstate_t samplerstate, int unit)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_samplerstate(graphics->device,
 			samplerstate, unit);
 }
@@ -1068,6 +1166,8 @@ void gs_load_samplerstate(samplerstate_t samplerstate, int unit)
 void gs_load_vertexshader(shader_t vertshader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_vertexshader(graphics->device,
 			vertshader);
 }
@@ -1075,6 +1175,8 @@ void gs_load_vertexshader(shader_t vertshader)
 void gs_load_pixelshader(shader_t pixelshader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_pixelshader(graphics->device,
 			pixelshader);
 }
@@ -1082,6 +1184,8 @@ void gs_load_pixelshader(shader_t pixelshader)
 void gs_load_defaultsamplerstate(bool b_3d, int unit)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_defaultsamplerstate(graphics->device,
 			b_3d, unit);
 }
@@ -1089,30 +1193,40 @@ void gs_load_defaultsamplerstate(bool b_3d, int unit)
 shader_t gs_getvertexshader(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_getvertexshader(graphics->device);
 }
 
 shader_t gs_getpixelshader(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_getpixelshader(graphics->device);
 }
 
 texture_t gs_getrendertarget(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_getrendertarget(graphics->device);
 }
 
 zstencil_t gs_getzstenciltarget(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
 	return graphics->exports.device_getzstenciltarget(graphics->device);
 }
 
 void gs_setrendertarget(texture_t tex, zstencil_t zstencil)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setrendertarget(graphics->device, tex,
 			zstencil);
 }
@@ -1120,6 +1234,8 @@ void gs_setrendertarget(texture_t tex, zstencil_t zstencil)
 void gs_setcuberendertarget(texture_t cubetex, int side, zstencil_t zstencil)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setcuberendertarget(graphics->device, cubetex,
 			side, zstencil);
 }
@@ -1127,18 +1243,24 @@ void gs_setcuberendertarget(texture_t cubetex, int side, zstencil_t zstencil)
 void gs_copy_texture(texture_t dst, texture_t src)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_copy_texture(graphics->device, dst, src);
 }
 
 void gs_stage_texture(stagesurf_t dst, texture_t src)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_stage_texture(graphics->device, dst, src);
 }
 
 void gs_beginscene(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_beginscene(graphics->device);
 }
 
@@ -1146,6 +1268,8 @@ void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert,
 		uint32_t num_verts)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_draw(graphics->device, draw_mode,
 			start_vert, num_verts);
 }
@@ -1153,12 +1277,16 @@ void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert,
 void gs_endscene(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_endscene(graphics->device);
 }
 
 void gs_load_swapchain(swapchain_t swapchain)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_load_swapchain(graphics->device, swapchain);
 }
 
@@ -1173,48 +1301,64 @@ void gs_clear(uint32_t clear_flags, struct vec4 *color, float depth,
 void gs_present(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_present(graphics->device);
 }
 
 void gs_setcullmode(enum gs_cull_mode mode)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setcullmode(graphics->device, mode);
 }
 
 enum gs_cull_mode gs_getcullmode(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return GS_NEITHER;
+
 	return graphics->exports.device_getcullmode(graphics->device);
 }
 
 void gs_enable_blending(bool enable)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_blending(graphics->device, enable);
 }
 
 void gs_enable_depthtest(bool enable)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_depthtest(graphics->device, enable);
 }
 
 void gs_enable_stenciltest(bool enable)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_stenciltest(graphics->device, enable);
 }
 
 void gs_enable_stencilwrite(bool enable)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_stencilwrite(graphics->device, enable);
 }
 
 void gs_enable_color(bool red, bool green, bool blue, bool alpha)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_color(graphics->device, red, green,
 			blue, alpha);
 }
@@ -1222,18 +1366,24 @@ void gs_enable_color(bool red, bool green, bool blue, bool alpha)
 void gs_blendfunction(enum gs_blend_type src, enum gs_blend_type dest)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_blendfunction(graphics->device, src, dest);
 }
 
 void gs_depthfunction(enum gs_depth_test test)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_depthfunction(graphics->device, test);
 }
 
 void gs_stencilfunction(enum gs_stencil_side side, enum gs_depth_test test)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_stencilfunction(graphics->device, side, test);
 }
 
@@ -1241,6 +1391,8 @@ void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 		enum gs_stencil_op zfail, enum gs_stencil_op zpass)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_stencilop(graphics->device, side, fail, zfail,
 			zpass);
 }
@@ -1248,30 +1400,40 @@ void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 void gs_enable_fullscreen(bool enable)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_enable_fullscreen(graphics->device, enable);
 }
 
 int gs_fullscreen_enabled(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return 0;
+
 	return graphics->exports.device_fullscreen_enabled(graphics->device);
 }
 
 void gs_setdisplaymode(const struct gs_display_mode *mode)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setdisplaymode(graphics->device, mode);
 }
 
 void gs_getdisplaymode(struct gs_display_mode *mode)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_getdisplaymode(graphics->device, mode);
 }
 
 void gs_setcolorramp(float gamma, float brightness, float contrast)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setcolorramp(graphics->device, gamma,
 			brightness, contrast);
 }
@@ -1279,6 +1441,8 @@ void gs_setcolorramp(float gamma, float brightness, float contrast)
 void gs_setviewport(int x, int y, int width, int height)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setviewport(graphics->device, x, y, width,
 			height);
 }
@@ -1286,12 +1450,16 @@ void gs_setviewport(int x, int y, int width, int height)
 void gs_getviewport(struct gs_rect *rect)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_getviewport(graphics->device, rect);
 }
 
 void gs_setscissorrect(struct gs_rect *rect)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_setscissorrect(graphics->device, rect);
 }
 
@@ -1299,6 +1467,8 @@ void gs_ortho(float left, float right, float top, float bottom, float znear,
 		float zfar)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_ortho(graphics->device, left, right, top,
 			bottom, znear, zfar);
 }
@@ -1307,6 +1477,8 @@ void gs_frustum(float left, float right, float top, float bottom, float znear,
 		float zfar)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_frustum(graphics->device, left, right, top,
 			bottom, znear, zfar);
 }
@@ -1314,42 +1486,56 @@ void gs_frustum(float left, float right, float top, float bottom, float znear,
 void gs_projection_push(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_projection_push(graphics->device);
 }
 
 void gs_projection_pop(void)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
 	graphics->exports.device_projection_pop(graphics->device);
 }
 
 void swapchain_destroy(swapchain_t swapchain)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !swapchain) return;
+
 	graphics->exports.swapchain_destroy(swapchain);
 }
 
 void shader_destroy(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return;
+
 	graphics->exports.shader_destroy(shader);
 }
 
 int shader_numparams(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return 0;
+
 	return graphics->exports.shader_numparams(shader);
 }
 
 sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return NULL;
+
 	return graphics->exports.shader_getparambyidx(shader, param);
 }
 
 sparam_t shader_getparambyname(shader_t shader, const char *name)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return NULL;
+
 	return graphics->exports.shader_getparambyname(shader, name);
 }
 
@@ -1357,36 +1543,48 @@ void shader_getparaminfo(shader_t shader, sparam_t param,
 		struct shader_param_info *info)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_getparaminfo(shader, param, info);
 }
 
 sparam_t shader_getviewprojmatrix(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return NULL;
+
 	return graphics->exports.shader_getviewprojmatrix(shader);
 }
 
 sparam_t shader_getworldmatrix(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader) return NULL;
+
 	return graphics->exports.shader_getworldmatrix(shader);
 }
 
 void shader_setbool(shader_t shader, sparam_t param, bool val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setbool(shader, param, val);
 }
 
 void shader_setfloat(shader_t shader, sparam_t param, float val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setfloat(shader, param, val);
 }
 
 void shader_setint(shader_t shader, sparam_t param, int val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setint(shader, param, val);
 }
 
@@ -1394,6 +1592,8 @@ void shader_setmatrix3(shader_t shader, sparam_t param,
 		const struct matrix3 *val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setmatrix3(shader, param, val);
 }
 
@@ -1401,6 +1601,8 @@ void shader_setmatrix4(shader_t shader, sparam_t param,
 		const struct matrix4 *val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setmatrix4(shader, param, val);
 }
 
@@ -1408,6 +1610,8 @@ void shader_setvec2(shader_t shader, sparam_t param,
 		const struct vec2 *val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setvec2(shader, param, val);
 }
 
@@ -1415,6 +1619,8 @@ void shader_setvec3(shader_t shader, sparam_t param,
 		const struct vec3 *val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setvec3(shader, param, val);
 }
 
@@ -1422,12 +1628,16 @@ void shader_setvec4(shader_t shader, sparam_t param,
 		const struct vec4 *val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setvec4(shader, param, val);
 }
 
 void shader_settexture(shader_t shader, sparam_t param, texture_t val)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_settexture(shader, param, val);
 }
 
@@ -1435,54 +1645,72 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 		size_t size)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setval(shader, param, val, size);
 }
 
 void shader_setdefault(shader_t shader, sparam_t param)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !shader || !param) return;
+
 	graphics->exports.shader_setdefault(shader, param);
 }
 
 void texture_destroy(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return;
+
 	graphics->exports.texture_destroy(tex);
 }
 
 uint32_t texture_getwidth(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return 0;
+
 	return graphics->exports.texture_getwidth(tex);
 }
 
 uint32_t texture_getheight(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return 0;
+
 	return graphics->exports.texture_getheight(tex);
 }
 
 enum gs_color_format texture_getcolorformat(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return GS_UNKNOWN;
+
 	return graphics->exports.texture_getcolorformat(tex);
 }
 
 bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return false;
+
 	return graphics->exports.texture_map(tex, ptr, linesize);
 }
 
 void texture_unmap(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return;
+
 	graphics->exports.texture_unmap(tex);
 }
 
 bool texture_isrect(texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return false;
+
 	if (graphics->exports.texture_isrect)
 		return graphics->exports.texture_isrect(tex);
 	else
@@ -1492,72 +1720,96 @@ bool texture_isrect(texture_t tex)
 void cubetexture_destroy(texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !cubetex) return;
+
 	graphics->exports.cubetexture_destroy(cubetex);
 }
 
 uint32_t cubetexture_getsize(texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !cubetex) return 0;
+
 	return graphics->exports.cubetexture_getsize(cubetex);
 }
 
 enum gs_color_format cubetexture_getcolorformat(texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !cubetex) return GS_UNKNOWN;
+
 	return graphics->exports.cubetexture_getcolorformat(cubetex);
 }
 
 void volumetexture_destroy(texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !voltex) return;
+
 	graphics->exports.volumetexture_destroy(voltex);
 }
 
 uint32_t volumetexture_getwidth(texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !voltex) return 0;
+
 	return graphics->exports.volumetexture_getwidth(voltex);
 }
 
 uint32_t volumetexture_getheight(texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !voltex) return 0;
+
 	return graphics->exports.volumetexture_getheight(voltex);
 }
 
 uint32_t volumetexture_getdepth(texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !voltex) return 0;
+
 	return graphics->exports.volumetexture_getdepth(voltex);
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !voltex) return GS_UNKNOWN;
+
 	return graphics->exports.volumetexture_getcolorformat(voltex);
 }
 
 void stagesurface_destroy(stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return;
+
 	graphics->exports.stagesurface_destroy(stagesurf);
 }
 
 uint32_t stagesurface_getwidth(stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return 0;
+
 	return graphics->exports.stagesurface_getwidth(stagesurf);
 }
 
 uint32_t stagesurface_getheight(stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return 0;
+
 	return graphics->exports.stagesurface_getheight(stagesurf);
 }
 
 enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return GS_UNKNOWN;
+
 	return graphics->exports.stagesurface_getcolorformat(stagesurf);
 }
 
@@ -1565,64 +1817,88 @@ bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
 		uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return false;
+
 	return graphics->exports.stagesurface_map(stagesurf, data, linesize);
 }
 
 void stagesurface_unmap(stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !stagesurf) return;
+
 	graphics->exports.stagesurface_unmap(stagesurf);
 }
 
 void zstencil_destroy(zstencil_t zstencil)
 {
+	if (!thread_graphics || !zstencil) return;
+
 	thread_graphics->exports.zstencil_destroy(zstencil);
 }
 
 void samplerstate_destroy(samplerstate_t samplerstate)
 {
+	if (!thread_graphics || !samplerstate) return;
+
 	thread_graphics->exports.samplerstate_destroy(samplerstate);
 }
 
 void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !vertbuffer) return;
+
 	graphics->exports.vertexbuffer_destroy(vertbuffer);
 }
 
 void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
 {
+	if (!thread_graphics || !vertbuffer) return;
+
 	thread_graphics->exports.vertexbuffer_flush(vertbuffer, rebuild);
 }
 
 struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)
 {
+	if (!thread_graphics || !vertbuffer) return NULL;
+
 	return thread_graphics->exports.vertexbuffer_getdata(vertbuffer);
 }
 
 void indexbuffer_destroy(indexbuffer_t indexbuffer)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics || !indexbuffer) return;
+
 	graphics->exports.indexbuffer_destroy(indexbuffer);
 }
 
 void   indexbuffer_flush(indexbuffer_t indexbuffer)
 {
+	if (!thread_graphics || !indexbuffer) return;
+
 	thread_graphics->exports.indexbuffer_flush(indexbuffer);
 }
 
 void  *indexbuffer_getdata(indexbuffer_t indexbuffer)
 {
+	if (!thread_graphics || !indexbuffer) return NULL;
+
 	return thread_graphics->exports.indexbuffer_getdata(indexbuffer);
 }
 
 size_t indexbuffer_numindices(indexbuffer_t indexbuffer)
 {
+	if (!thread_graphics || !indexbuffer) return 0;
+
 	return thread_graphics->exports.indexbuffer_numindices(indexbuffer);
 }
 
 enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
 {
+	if (!thread_graphics || !indexbuffer) return (enum gs_index_type)0;
+
 	return thread_graphics->exports.indexbuffer_gettype(indexbuffer);
 }
 
@@ -1630,7 +1906,8 @@ enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
 texture_t gs_create_texture_from_iosurface(void *iosurf)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics->exports.texture_create_from_iosurface)
+	if (!graphics || !iosurf ||
+			!graphics->exports.texture_create_from_iosurface)
 		return NULL;
 
 	return graphics->exports.texture_create_from_iosurface(
@@ -1640,7 +1917,7 @@ texture_t gs_create_texture_from_iosurface(void *iosurf)
 bool texture_rebind_iosurface(texture_t texture, void *iosurf)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics->exports.texture_rebind_iosurface)
+	if (!graphics || !iosurf || !graphics->exports.texture_rebind_iosurface)
 		return false;
 
 	return graphics->exports.texture_rebind_iosurface(texture, iosurf);

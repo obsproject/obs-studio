@@ -28,6 +28,8 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 	size_t offsets[MAX_AV_PLANES];
 	int    alignment = base_get_alignment();
 
+	if (!frame) return;
+
 	memset(frame, 0, sizeof(struct video_frame));
 	memset(offsets, 0, sizeof(offsets));
 

@@ -430,7 +430,7 @@ bool obs_startup(void)
 	bool success;
 
 	if (obs) {
-		blog(LOG_ERROR, "Tried to call obs_startup more than once");
+		blog(LOG_WARNING, "Tried to call obs_startup more than once");
 		return false;
 	}
 
@@ -443,8 +443,6 @@ bool obs_startup(void)
 
 void obs_shutdown(void)
 {
-	size_t i;
-
 	if (!obs)
 		return;
 
@@ -465,7 +463,7 @@ void obs_shutdown(void)
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
 
-	for (i = 0; i < obs->modules.num; i++)
+	for (size_t i = 0; i < obs->modules.num; i++)
 		free_module(obs->modules.array+i);
 	da_free(obs->modules);
 
@@ -559,6 +557,8 @@ bool obs_get_audio_info(struct audio_output_info *aoi)
 
 bool obs_enum_input_types(size_t idx, const char **id)
 {
+	if (!obs) return false;
+
 	if (idx >= obs->input_types.num)
 		return false;
 	*id = obs->input_types.array[idx].id;
@@ -567,6 +567,8 @@ bool obs_enum_input_types(size_t idx, const char **id)
 
 bool obs_enum_filter_types(size_t idx, const char **id)
 {
+	if (!obs) return false;
+
 	if (idx >= obs->filter_types.num)
 		return false;
 	*id = obs->filter_types.array[idx].id;
@@ -575,6 +577,8 @@ bool obs_enum_filter_types(size_t idx, const char **id)
 
 bool obs_enum_transition_types(size_t idx, const char **id)
 {
+	if (!obs) return false;
+
 	if (idx >= obs->transition_types.num)
 		return false;
 	*id = obs->transition_types.array[idx].id;
@@ -583,6 +587,8 @@ bool obs_enum_transition_types(size_t idx, const char **id)
 
 bool obs_enum_output_types(size_t idx, const char **id)
 {
+	if (!obs) return false;
+
 	if (idx >= obs->output_types.num)
 		return false;
 	*id = obs->output_types.array[idx].id;
@@ -642,6 +648,8 @@ int obs_exec_ui(const char *name, const char *task, const char *target,
 	struct obs_modal_ui *callback;
 	int errorcode = OBS_UI_NOTFOUND;
 
+	if (!obs) return errorcode;
+
 	callback = get_modal_ui_callback(name, task, target);
 	if (callback) {
 		bool success = callback->exec(data, ui_data);
@@ -656,6 +664,8 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 {
 	struct obs_modeless_ui *callback;
 
+	if (!obs) return NULL;
+
 	callback = get_modeless_ui_callback(name, task, target);
 	return callback ? callback->create(data, ui_data) : NULL;
 }
@@ -663,6 +673,8 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 bool obs_add_source(obs_source_t source)
 {
 	struct calldata params = {0};
+
+	if (!obs) return false;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
 	da_push_back(obs->data.sources, &source);
@@ -678,6 +690,7 @@ bool obs_add_source(obs_source_t source)
 
 obs_source_t obs_get_output_source(uint32_t channel)
 {
+	if (!obs) return NULL;
 	return obs_view_getsource(&obs->data.main_view, channel);
 }
 
@@ -722,6 +735,8 @@ void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
 {
 	struct obs_core_data *data = &obs->data;
 
+	if (!obs) return;
+
 	pthread_mutex_lock(&data->outputs_mutex);
 
 	for (size_t i = 0; i < data->outputs.num; i++)
@@ -735,6 +750,8 @@ void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 {
 	struct obs_core_data *data = &obs->data;
 
+	if (!obs) return;
+
 	pthread_mutex_lock(&data->encoders_mutex);
 
 	for (size_t i = 0; i < data->encoders.num; i++)
@@ -747,6 +764,8 @@ void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
 void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
 {
 	struct obs_core_data *data = &obs->data;
+
+	if (!obs) return;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
@@ -762,6 +781,8 @@ obs_source_t obs_get_source_by_name(const char *name)
 	struct obs_core_data *data = &obs->data;
 	struct obs_source *source = NULL;
 	size_t i;
+
+	if (!obs) return NULL;
 
 	pthread_mutex_lock(&data->sources_mutex);
 
@@ -829,6 +850,7 @@ void obs_render_main_view(void)
 void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};
+
 	if (!obs) return;
 
 	calldata_setfloat(&data, "volume", volume);

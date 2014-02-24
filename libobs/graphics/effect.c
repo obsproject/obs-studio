@@ -31,11 +31,10 @@ void effect_destroy(effect_t effect)
 
 technique_t effect_gettechnique(effect_t effect, const char *name)
 {
-	size_t i;
-	struct effect_technique *array = effect->techniques.array;
+	if (!effect) return NULL;
 
-	for (i = 0; i < effect->techniques.num; i++) {
-		struct effect_technique *tech = array+i;
+	for (size_t i = 0; i < effect->techniques.num; i++) {
+		struct effect_technique *tech = effect->techniques.array+i;
 		if (strcmp(tech->name, name) == 0)
 			return tech;
 	}
@@ -45,6 +44,8 @@ technique_t effect_gettechnique(effect_t effect, const char *name)
 
 size_t technique_begin(technique_t tech)
 {
+	if (!tech) return 0;
+
 	tech->effect->cur_technique = tech;
 	tech->effect->graphics->cur_effect = tech->effect;
 
@@ -53,6 +54,8 @@ size_t technique_begin(technique_t tech)
 
 void technique_end(technique_t tech)
 {
+	if (!tech) return;
+
 	struct gs_effect *effect = tech->effect;
 	struct effect_param *params = effect->params.array;
 	size_t i;
@@ -127,7 +130,8 @@ static inline void upload_parameters(struct gs_effect *effect,
 
 void effect_updateparams(effect_t effect)	
 {
-	upload_parameters(effect, true);
+	if (effect)
+		upload_parameters(effect, true);
 }
 
 bool technique_beginpass(technique_t tech, size_t idx)
@@ -135,7 +139,7 @@ bool technique_beginpass(technique_t tech, size_t idx)
 	struct effect_pass *passes;
 	struct effect_pass *cur_pass;
 
-	if (idx >= tech->passes.num)
+	if (!tech || idx >= tech->passes.num)
 		return false;
 
 	passes = tech->passes.array;
@@ -152,8 +156,10 @@ bool technique_beginpass(technique_t tech, size_t idx)
 bool technique_beginpassbyname(technique_t tech,
 		const char *name)
 {
-	size_t i;
-	for (i = 0; i < tech->passes.num; i++) {
+	if (!tech)
+		return false;
+
+	for (size_t i = 0; i < tech->passes.num; i++) {
 		struct effect_pass *pass = tech->passes.array+i;
 		if (strcmp(pass->name, name) == 0) {
 			technique_beginpass(tech, i);
@@ -167,9 +173,8 @@ bool technique_beginpassbyname(technique_t tech,
 static inline void clear_tex_params(shader_t shader, struct darray *in_params)
 {
 	struct pass_shaderparam *params = in_params->array;
-	size_t i;
 
-	for (i = 0; i < in_params->num; i++) {
+	for (size_t i = 0; i < in_params->num; i++) {
 		struct pass_shaderparam *param = params+i;
 		struct shader_param_info info;
 
@@ -181,6 +186,8 @@ static inline void clear_tex_params(shader_t shader, struct darray *in_params)
 
 void technique_endpass(technique_t tech)
 {
+	if (!tech) return;
+
 	struct effect_pass *pass = tech->effect->cur_pass;
 	if (!pass)
 		return;
@@ -192,13 +199,14 @@ void technique_endpass(technique_t tech)
 
 size_t effect_numparams(effect_t effect)
 {
-	return effect->params.num;
+	return effect ? effect->params.num : 0;
 }
 
 eparam_t effect_getparambyidx(effect_t effect, size_t param)
 {
-	struct effect_param *params = effect->params.array;
+	if (!effect) return NULL;
 
+	struct effect_param *params = effect->params.array;
 	if (param >= effect->params.num)
 		return NULL;
 
@@ -207,10 +215,11 @@ eparam_t effect_getparambyidx(effect_t effect, size_t param)
 
 eparam_t effect_getparambyname(effect_t effect, const char *name)
 {
-	struct effect_param *params = effect->params.array;
-	size_t i;
+	if (!effect) return NULL;
 
-	for (i = 0; i < effect->params.num; i++) {
+	struct effect_param *params = effect->params.array;
+
+	for (size_t i = 0; i < effect->params.num; i++) {
 		struct effect_param *param = params+i;
 
 		if (strcmp(param->name, name) == 0)
@@ -233,6 +242,9 @@ static inline bool matching_effect(effect_t effect, eparam_t param)
 void effect_getparaminfo(effect_t effect, eparam_t param,
 		struct effect_param_info *info)
 {
+	if (!effect || !param)
+		return;
+
 	if (!matching_effect(effect, param))
 		return;
 
@@ -242,12 +254,12 @@ void effect_getparaminfo(effect_t effect, eparam_t param,
 
 eparam_t effect_getviewprojmatrix(effect_t effect)
 {
-	return effect->view_proj;
+	return effect ? effect->view_proj : NULL;
 }
 
 eparam_t effect_getworldmatrix(effect_t effect)
 {
-	return effect->world;
+	return effect ? effect->world : NULL;
 }
 
 static inline void effect_setval_inline(effect_t effect, eparam_t param,

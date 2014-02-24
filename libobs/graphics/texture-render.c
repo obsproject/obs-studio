@@ -58,6 +58,9 @@ void texrender_destroy(texrender_t texrender)
 static bool texrender_resetbuffer(texrender_t texrender, uint32_t cx,
 		uint32_t cy)
 {
+	if (!texrender)
+		return false;
+
 	texture_destroy(texrender->target);
 	zstencil_destroy(texrender->zs);
 
@@ -86,7 +89,7 @@ static bool texrender_resetbuffer(texrender_t texrender, uint32_t cx,
 
 bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy)
 {
-	if (texrender->rendered)
+	if (!texrender || texrender->rendered)
 		return false;
 
 	if (cx == 0)
@@ -118,6 +121,9 @@ bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy)
 
 void texrender_end(texrender_t texrender)
 {
+	if (!texrender)
+		return;
+
 	gs_setrendertarget(texrender->prev_target, texrender->prev_zs);
 
 	gs_matrix_pop();
@@ -129,10 +135,11 @@ void texrender_end(texrender_t texrender)
 
 void texrender_reset(texrender_t texrender)
 {
-	texrender->rendered = false;
+	if (texrender)
+		texrender->rendered = false;
 }
 
 texture_t texrender_gettexture(texrender_t texrender)
 {
-	return texrender->target;
+	return texrender ? texrender->target : NULL;
 }

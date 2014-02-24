@@ -175,6 +175,10 @@ void source_frame_init(struct source_frame *frame, enum video_format format,
 		uint32_t width, uint32_t height)
 {
 	struct video_frame vid_frame;
+
+	if (!frame)
+		return;
+
 	video_frame_init(&vid_frame, format, width, height);
 	frame->format = format;
 	frame->width  = width;
@@ -189,6 +193,9 @@ void source_frame_init(struct source_frame *frame, enum video_format format,
 static void obs_source_destroy(struct obs_source *source)
 {
 	size_t i;
+
+	if (!source)
+		return;
 
 	obs_source_dosignal(source, "source-destroy", "destroy");
 
@@ -250,8 +257,10 @@ void obs_source_remove(obs_source_t source)
 
 	pthread_mutex_lock(&data->sources_mutex);
 
-	if (!source || source->removed)
+	if (!source || source->removed) {
+		pthread_mutex_unlock(&data->sources_mutex);
 		return;
+	}
 
 	source->removed = true;
 
@@ -271,7 +280,7 @@ void obs_source_remove(obs_source_t source)
 
 bool obs_source_removed(obs_source_t source)
 {
-	return source->removed;
+	return source ? source->removed : true;
 }
 
 obs_properties_t obs_source_properties(enum obs_source_type type,
@@ -285,11 +294,13 @@ obs_properties_t obs_source_properties(enum obs_source_type type,
 
 uint32_t obs_source_get_output_flags(obs_source_t source)
 {
-	return source->info.output_flags;
+	return source ? source->info.output_flags : 0;
 }
 
 void obs_source_update(obs_source_t source, obs_data_t settings)
 {
+	if (!source) return;
+
 	obs_data_apply(source->settings, settings);
 
 	if (source->info.update)
@@ -399,6 +410,8 @@ void obs_source_deactivate(obs_source_t source, enum view_type type)
 
 void obs_source_video_tick(obs_source_t source, float seconds)
 {
+	if (!source) return;
+
 	/* reset the filter render texture information once every frame */
 	if (source->filter_texrender)
 		texrender_reset(source->filter_texrender);
@@ -655,6 +668,8 @@ static inline void obs_source_main_render(obs_source_t source)
 
 void obs_source_video_render(obs_source_t source)
 {
+	if (!source) return;
+
 	if (source->info.video_render) {
 		if (source->filters.num && !source->rendering_filter)
 			obs_source_render_filters(source);
@@ -671,30 +686,33 @@ void obs_source_video_render(obs_source_t source)
 
 uint32_t obs_source_getwidth(obs_source_t source)
 {
-	if (source->info.getwidth)
+	if (source && source->info.getwidth)
 		return source->info.getwidth(source->data);
 	return 0;
 }
 
 uint32_t obs_source_getheight(obs_source_t source)
 {
-	if (source->info.getheight)
+	if (source && source->info.getheight)
 		return source->info.getheight(source->data);
 	return 0;
 }
 
 obs_source_t obs_filter_getparent(obs_source_t filter)
 {
-	return filter->filter_parent;
+	return filter ? filter->filter_parent : NULL;
 }
 
 obs_source_t obs_filter_gettarget(obs_source_t filter)
 {
-	return filter->filter_target;
+	return filter ? filter->filter_target : NULL;
 }
 
 void obs_source_filter_add(obs_source_t source, obs_source_t filter)
 {
+	if (!source || !filter)
+		return;
+
 	pthread_mutex_lock(&source->filter_mutex);
 
 	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
@@ -720,6 +738,9 @@ void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 {
 	size_t idx;
 
+	if (!source || !filter)
+		return;
+
 	pthread_mutex_lock(&source->filter_mutex);
 
 	idx = da_find(source->filters, &filter, 0);
@@ -742,8 +763,12 @@ void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 		enum order_movement movement)
 {
-	size_t idx = da_find(source->filters, &filter, 0);
-	size_t i;
+	size_t idx, i;
+
+	if (!source || !filter)
+		return;
+
+	idx = da_find(source->filters, &filter, 0);
 	if (idx == DARRAY_INVALID)
 		return;
 
@@ -778,6 +803,8 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 
 obs_data_t obs_source_getsettings(obs_source_t source)
 {
+	if (!source) return NULL;
+
 	obs_data_addref(source->settings);
 	return source->settings;
 }
@@ -863,6 +890,9 @@ static inline struct source_frame *cache_video(const struct source_frame *frame)
 void obs_source_output_video(obs_source_t source,
 		const struct source_frame *frame)
 {
+	if (!source || !frame)
+		return;
+
 	struct source_frame *output = cache_video(frame);
 
 	pthread_mutex_lock(&source->filter_mutex);
@@ -982,9 +1012,13 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
-	uint32_t flags = source->info.output_flags;
+	uint32_t flags;
 	struct filtered_audio *output;
 
+	if (!source || !audio)
+		return;
+
+	flags = source->info.output_flags;
 	process_audio(source, audio);
 
 	pthread_mutex_lock(&source->filter_mutex);
@@ -1074,6 +1108,9 @@ struct source_frame *obs_source_getframe(obs_source_t source)
 	int      audio_time_refs = 0;
 	uint64_t sys_time;
 
+	if (!source)
+		return NULL;
+
 	pthread_mutex_lock(&source->video_mutex);
 
 	if (!source->video_frames.num)
@@ -1110,7 +1147,7 @@ unlock:
 
 void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 {
-	if (frame) {
+	if (source && frame) {
 		source_frame_destroy(frame);
 		obs_source_release(source);
 	}
@@ -1118,11 +1155,13 @@ void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
 
 const char *obs_source_getname(obs_source_t source)
 {
-	return source->name;
+	return source ? source->name : NULL;
 }
 
 void obs_source_setname(obs_source_t source, const char *name)
 {
+	if (!source) return;
+
 	bfree(source->name);
 	source->name = bstrdup(name);
 }
@@ -1130,6 +1169,8 @@ void obs_source_setname(obs_source_t source, const char *name)
 void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
 		const char **id)
 {
+	if (!source) return;
+
 	if (type) *type = source->info.type;
 	if (id)   *id   = source->info.id;
 }
@@ -1173,15 +1214,22 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum allow_direct_render allow_direct)
 {
-	obs_source_t target       = obs_filter_gettarget(filter);
-	obs_source_t parent       = obs_filter_getparent(filter);
-	uint32_t     target_flags = target->info.output_flags;
-	uint32_t     parent_flags = parent->info.output_flags;
-	int          cx           = obs_source_getwidth(target);
-	int          cy           = obs_source_getheight(target);
-	bool         use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
-	bool         expects_def  = !(parent_flags & OBS_SOURCE_CUSTOM_DRAW);
-	bool         can_directly = allow_direct == ALLOW_DIRECT_RENDERING;
+	obs_source_t target, parent;
+	uint32_t     target_flags, parent_flags;
+	int          cx, cy;
+	bool         use_matrix, expects_def, can_directly;
+
+	if (!filter) return;
+
+	target       = obs_filter_gettarget(filter);
+	parent       = obs_filter_getparent(filter);
+	target_flags = target->info.output_flags;
+	parent_flags = parent->info.output_flags;
+	cx           = obs_source_getwidth(target);
+	cy           = obs_source_getheight(target);
+	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
+	expects_def  = !(parent_flags & OBS_SOURCE_CUSTOM_DRAW);
+	can_directly = allow_direct == ALLOW_DIRECT_RENDERING;
 
 	/* if the parent does not use any custom effects, and this is the last
 	 * filter in the chain for the parent, then render the parent directly
@@ -1213,7 +1261,7 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 
 signal_handler_t obs_source_signalhandler(obs_source_t source)
 {
-	return source->signals;
+	return source ? source->signals : NULL;
 }
 
 proc_handler_t obs_source_prochandler(obs_source_t source)

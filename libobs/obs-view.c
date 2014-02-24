@@ -20,6 +20,8 @@
 
 bool obs_view_init(struct obs_view *view)
 {
+	if (!view) return false;
+
 	pthread_mutex_init_value(&view->channels_mutex);
 
 	if (pthread_mutex_init(&view->channels_mutex, NULL) != 0) {
@@ -44,6 +46,8 @@ obs_view_t obs_view_create(void)
 
 void obs_view_free(struct obs_view *view)
 {
+	if (!view) return;
+
 	for (size_t i = 0; i < MAX_CHANNELS; i++)
 		obs_source_release(view->channels[i]);
 

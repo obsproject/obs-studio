@@ -236,7 +236,6 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 	gs_endscene();
 }
 
-/* TODO: replace with more optimal conversion */
 static inline bool download_frame(struct obs_core_video *video,
 		int prev_texture, struct video_data *frame)
 {

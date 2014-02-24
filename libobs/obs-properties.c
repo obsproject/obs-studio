@@ -76,19 +76,23 @@ static void obs_category_destroy(struct obs_category *category)
 
 void obs_properties_destroy(obs_properties_t props)
 {
-	struct obs_category *c = props->first_category;
-	while (c) {
-		struct obs_category *next = c->next;
-		obs_category_destroy(c);
-		c = next;
-	}
+	if (props) {
+		struct obs_category *c = props->first_category;
+		while (c) {
+			struct obs_category *next = c->next;
+			obs_category_destroy(c);
+			c = next;
+		}
 
-	bfree(props);
+		bfree(props);
+	}
 }
 
 obs_category_t obs_properties_add_category(obs_properties_t props,
 		const char *name)
 {
+	if (!props) return NULL;
+
 	struct obs_category *c = bzalloc(sizeof(struct obs_category));
 	c->name = name;
 	c->next = props->first_category;
@@ -99,7 +103,7 @@ obs_category_t obs_properties_add_category(obs_properties_t props,
 
 obs_category_t obs_properties_first_category(obs_properties_t props)
 {
-	return props->first_category;
+	return (props != NULL) ? props->first_category : NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -160,6 +164,8 @@ static inline void *get_type_data(struct obs_property *prop,
 void obs_category_add_int(obs_category_t cat, const char *name,
 		const char *desc, int min, int max, int step)
 {
+	if (!cat) return;
+
 	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_INT);
 	struct int_data *data = get_property_data(p);
 	data->min  = min;
@@ -170,6 +176,8 @@ void obs_category_add_int(obs_category_t cat, const char *name,
 void obs_category_add_float(obs_category_t cat, const char *name,
 		const char *desc, double min, double max, double step)
 {
+	if (!cat) return;
+
 	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_FLOAT);
 	struct float_data *data = get_property_data(p);
 	data->min  = min;
@@ -180,18 +188,22 @@ void obs_category_add_float(obs_category_t cat, const char *name,
 void obs_category_add_text(obs_category_t cat, const char *name,
 		const char *desc)
 {
+	if (!cat) return;
 	new_prop(cat, name, desc, OBS_PROPERTY_TEXT);
 }
 
 void obs_category_add_path(obs_category_t cat, const char *name,
 		const char *desc)
 {
+	if (!cat) return;
 	new_prop(cat, name, desc, OBS_PROPERTY_PATH);
 }
 
 void obs_category_add_enum_list(obs_category_t cat, const char *name,
 		const char *desc, const char **strings)
 {
+	if (!cat) return;
+
 	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_ENUM);
 	struct list_data *data = get_property_data(p);
 	data->strings = strings;
@@ -202,6 +214,8 @@ void obs_category_add_text_list(obs_category_t cat, const char *name,
 		const char *desc, const char **strings,
 		enum obs_dropdown_type type)
 {
+	if (!cat) return;
+
 	struct obs_property *p = new_prop(cat, name, desc,
 			OBS_PROPERTY_TEXT_LIST);
 	struct list_data *data = get_property_data(p);
@@ -212,6 +226,7 @@ void obs_category_add_text_list(obs_category_t cat, const char *name,
 void obs_category_add_color(obs_category_t cat, const char *name,
 		const char *desc)
 {
+	if (!cat) return;
 	new_prop(cat, name, desc, OBS_PROPERTY_COLOR);
 }
 
@@ -245,17 +260,17 @@ bool obs_property_next(obs_property_t *p)
 
 const char *obs_property_name(obs_property_t p)
 {
-	return p->name;
+	return p ? p->name : NULL;
 }
 
 const char *obs_property_description(obs_property_t p)
 {
-	return p->desc;
+	return p ? p->desc : NULL;
 }
 
 enum obs_property_type obs_property_type(obs_property_t p)
 {
-	return p->type;
+	return p ? p->type : OBS_PROPERTY_INVALID;
 }
 
 int obs_property_int_min(obs_property_t p)

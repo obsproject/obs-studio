@@ -79,17 +79,18 @@ void obs_output_destroy(obs_output_t output)
 
 bool obs_output_start(obs_output_t output)
 {
-	return output->info.start(output->data);
+	return (output != NULL) ? output->info.start(output->data) : false;
 }
 
 void obs_output_stop(obs_output_t output)
 {
-	output->info.stop(output->data);
+	if (output)
+		output->info.stop(output->data);
 }
 
 bool obs_output_active(obs_output_t output)
 {
-	return output->info.active(output);
+	return (output != NULL) ? output->info.active(output) : false;
 }
 
 obs_properties_t obs_output_properties(const char *id, const char *locale)
@@ -102,6 +103,8 @@ obs_properties_t obs_output_properties(const char *id, const char *locale)
 
 void obs_output_update(obs_output_t output, obs_data_t settings)
 {
+	if (!output) return;
+
 	obs_data_apply(output->settings, settings);
 
 	if (output->info.update)
@@ -119,11 +122,11 @@ obs_data_t obs_output_get_settings(obs_output_t output)
 
 bool obs_output_canpause(obs_output_t output)
 {
-	return output->info.pause != NULL;
+	return (output != NULL) ? output->info.pause != NULL : false;
 }
 
 void obs_output_pause(obs_output_t output)
 {
-	if (output->info.pause)
+	if (output && output->info.pause)
 		output->info.pause(output->data);
 }

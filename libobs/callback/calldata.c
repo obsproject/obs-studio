@@ -164,7 +164,7 @@ bool calldata_getdata(calldata_t data, const char *name, void *out, size_t size)
 	uint8_t *pos;
 	size_t data_size;
 
-	if (!name || !*name)
+	if (!data || !name || !*name)
 		return false;
 
 	if (!cd_getparam(data, name, &pos))
@@ -183,7 +183,7 @@ void calldata_setdata(calldata_t data, const char *name, const void *in,
 {
 	uint8_t *pos;
 
-	if (!name || !*name)
+	if (!data || !name || !*name)
 		return;
 
 	if (!data->stack) {
@@ -227,7 +227,7 @@ void calldata_setdata(calldata_t data, const char *name, const void *in,
 bool calldata_getstring(calldata_t data, const char *name, const char **str)
 {
 	uint8_t *pos;
-	if (!name || !*name)
+	if (!data || !name || !*name)
 		return false;
 
 	if (!cd_getparam(data, name, &pos))
