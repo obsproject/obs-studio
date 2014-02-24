@@ -123,13 +123,16 @@ bool obs_source_init(struct obs_source *source,
 }
 
 static inline void obs_source_dosignal(struct obs_source *source,
-		const char *signal)
+		const char *signal_obs, const char *signal_source)
 {
 	struct calldata data;
 
 	calldata_init(&data);
 	calldata_setptr(&data, "source", source);
-	signal_handler_signal(obs->signals, signal, &data);
+	if (signal_obs)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_source)
+		signal_handler_signal(source->signals, signal_source, &data);
 	calldata_free(&data);
 }
 
@@ -159,7 +162,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, info))
 		goto fail;
 
-	obs_source_dosignal(source, "source-create");
+	obs_source_dosignal(source, "source-create", NULL);
 	return source;
 
 fail:
@@ -187,7 +190,7 @@ static void obs_source_destroy(struct obs_source *source)
 {
 	size_t i;
 
-	obs_source_dosignal(source, "source-destroy");
+	obs_source_dosignal(source, "source-destroy", "destroy");
 
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);
@@ -243,7 +246,6 @@ void obs_source_release(obs_source_t source)
 void obs_source_remove(obs_source_t source)
 {
 	struct obs_core_data *data = &obs->data;
-	struct calldata cd = {0};
 	size_t id;
 
 	pthread_mutex_lock(&data->sources_mutex);
@@ -263,11 +265,7 @@ void obs_source_remove(obs_source_t source)
 
 	pthread_mutex_unlock(&data->sources_mutex);
 
-	calldata_setptr(&cd, "source", source);
-	signal_handler_signal(obs->signals, "source-remove", &cd);
-	signal_handler_signal(source->signals, "remove", &cd);
-	calldata_free(&cd);
-
+	obs_source_dosignal(source, "source-remove", "remove");
 	obs_source_release(source);
 }
 
@@ -300,28 +298,30 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 
 static void activate_source(obs_source_t source)
 {
-	struct calldata data = {0};
-
 	if (source->info.activate)
 		source->info.activate(source->data);
-
-	calldata_setptr(&data, "source", source);
-	signal_handler_signal(obs->signals, "source-activate", &data);
-	signal_handler_signal(source->signals, "activate", &data);
-	calldata_free(&data);
+	obs_source_dosignal(source, "source-activate", "activate");
 }
 
 static void deactivate_source(obs_source_t source)
 {
-	struct calldata data = {0};
-
 	if (source->info.deactivate)
 		source->info.deactivate(source->data);
+	obs_source_dosignal(source, "source-deactivate", "deactivate");
+}
 
-	calldata_setptr(&data, "source", source);
-	signal_handler_signal(obs->signals, "source-deactivate", &data);
-	signal_handler_signal(source->signals, "deactivate", &data);
-	calldata_free(&data);
+static void show_source(obs_source_t source)
+{
+	if (source->info.show)
+		source->info.show(source->data);
+	obs_source_dosignal(source, "source-show", "show");
+}
+
+static void hide_source(obs_source_t source)
+{
+	if (source->info.hide)
+		source->info.hide(source->data);
+	obs_source_dosignal(source, "source-hide", "hide");
 }
 
 static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
@@ -343,25 +343,57 @@ static void deactivate_tree(obs_source_t parent, obs_source_t child,
 	UNUSED_PARAMETER(param);
 }
 
-void obs_source_activate(obs_source_t source)
+static void show_tree(obs_source_t parent, obs_source_t child, void *param)
+{
+	if (++child->show_refs == 1)
+		show_source(child);
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
+}
+
+static void hide_tree(obs_source_t parent, obs_source_t child, void *param)
+{
+	if (--child->show_refs == 0)
+		hide_source(child);
+
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(param);
+}
+
+void obs_source_activate(obs_source_t source, enum view_type type)
 {
 	if (!source) return;
 
-	if (++source->activate_refs == 1) {
-		activate_source(source);
-		obs_source_enum_tree(source, activate_tree, NULL);
-		obs_source_set_present_volume(source, 1.0f);
+	if (++source->show_refs == 1) {
+		show_source(source);
+		obs_source_enum_tree(source, show_tree, NULL);
+	}
+
+	if (type == MAIN_VIEW) {
+		if (++source->activate_refs == 1) {
+			activate_source(source);
+			obs_source_enum_tree(source, activate_tree, NULL);
+			obs_source_set_present_volume(source, 1.0f);
+		}
 	}
 }
 
-void obs_source_deactivate(obs_source_t source)
+void obs_source_deactivate(obs_source_t source, enum view_type type)
 {
 	if (!source) return;
 
-	if (--source->activate_refs == 0) {
-		deactivate_source(source);
-		obs_source_enum_tree(source, deactivate_tree, NULL);
-		obs_source_set_present_volume(source, 0.0f);
+	if (--source->show_refs == 0) {
+		hide_source(source);
+		obs_source_enum_tree(source, hide_tree, NULL);
+	}
+
+	if (type == MAIN_VIEW) {
+		if (--source->activate_refs == 0) {
+			deactivate_source(source);
+			obs_source_enum_tree(source, deactivate_tree, NULL);
+			obs_source_set_present_volume(source, 0.0f);
+		}
 	}
 }
 
@@ -1311,16 +1343,22 @@ void obs_source_add_child(obs_source_t parent, obs_source_t child)
 {
 	if (!parent || !child) return;
 
-	if (parent->activate_refs > 0)
-		obs_source_activate(child);
+	for (int i = 0; i < parent->show_refs; i++) {
+		enum view_type type;
+		type = (i < parent->activate_refs) ? MAIN_VIEW : AUX_VIEW;
+		obs_source_activate(child, type);
+	}
 }
 
 void obs_source_remove_child(obs_source_t parent, obs_source_t child)
 {
 	if (!parent || !child) return;
 
-	if (parent->activate_refs > 0)
-		obs_source_deactivate(child);
+	for (int i = 0; i < parent->show_refs; i++) {
+		enum view_type type;
+		type = (i < parent->activate_refs) ? MAIN_VIEW : AUX_VIEW;
+		obs_source_deactivate(child, type);
+	}
 }
 
 static void reset_transition_vol(obs_source_t parent, obs_source_t child,

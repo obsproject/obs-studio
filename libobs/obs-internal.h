@@ -185,6 +185,9 @@ struct obs_source {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	/* ensures show/hide are only called once */
+	int                             show_refs;
+
 	/* ensures activate/deactivate are only called once */
 	int                             activate_refs;
 
@@ -241,8 +244,13 @@ bool obs_source_init_handlers(struct obs_source *source);
 extern bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info);
 
-extern void obs_source_activate(obs_source_t source);
-extern void obs_source_deactivate(obs_source_t source);
+enum view_type {
+	MAIN_VIEW,
+	AUX_VIEW
+};
+
+extern void obs_source_activate(obs_source_t source, enum view_type type);
+extern void obs_source_deactivate(obs_source_t source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t source, float seconds);
 
 

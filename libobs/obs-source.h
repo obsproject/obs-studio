@@ -151,14 +151,20 @@ struct obs_source_info {
 	 */
 	void (*update)(void *data, obs_data_t settings);
 
-	/** Called when the source has been activated */
+	/** Called when the source has been activated in the main view */
 	void (*activate)(void *data);
 
 	/**
-	 * Called when the source has been deactivated (no longer being
-	 * played/displayed)
+	 * Called when the source has been deactivated from the main view
+	 * (no longer being played/displayed)
 	 */
 	void (*deactivate)(void *data);
+
+	/** Called when the source is visible */
+	void (*show)(void *data);
+
+	/** Called when the source is no longer visible */
+	void (*hide)(void *data);
 
 	/**
 	 * Called each video frame with the time elapsed

@@ -707,11 +707,11 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 	if (source) {
 		obs_source_addref(source);
-		obs_source_activate(source);
+		obs_source_activate(source, MAIN_VIEW);
 	}
 
 	if (prev_source) {
-		obs_source_deactivate(prev_source);
+		obs_source_deactivate(prev_source, MAIN_VIEW);
 		obs_source_release(prev_source);
 	}
 

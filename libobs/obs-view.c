@@ -95,11 +95,11 @@ void obs_view_setsource(obs_view_t view, uint32_t channel,
 
 	if (source) {
 		obs_source_addref(source);
-		obs_source_activate(source);
+		obs_source_activate(source, AUX_VIEW);
 	}
 
 	if (prev_source) {
-		obs_source_deactivate(prev_source);
+		obs_source_deactivate(prev_source, AUX_VIEW);
 		obs_source_release(prev_source);
 	}
 
