@@ -503,7 +503,7 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!ca_success(stat, ca, "coreaudio_initialize", "initialize"))
 		goto fail;
 
-	if (coreaudio_start(ca))
+	if (!coreaudio_start(ca))
 		goto fail;
 
 	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
