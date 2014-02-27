@@ -83,9 +83,12 @@ static inline void ca_warn(struct coreaudio_data *ca, const char *func,
 	struct dstr str = {0};
 
 	va_start(args, format);
+
 	dstr_printf(&str, "[%s]:[device '%s'] ", func, ca->device_name);
 	dstr_vcatf(&str, format, args);
 	blog(LOG_WARNING, "%s", str.array);
+	dstr_free(&str);
+
 	va_end(args);
 }
 
