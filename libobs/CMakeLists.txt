@@ -46,7 +46,7 @@ elseif(APPLE)
 elseif(UNIX)
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
-		util/threading-posic.c
+		util/threading-posix.c
 		util/platform-nix.c)
 endif()
 
