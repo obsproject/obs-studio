@@ -85,9 +85,12 @@ static inline void ca_warn(struct coreaudio_data *ca, const char *func,
 	struct dstr str = {0};
 
 	va_start(args, format);
+
 	dstr_printf(&str, "[%s]:[device '%s'] ", func, ca->device_name);
 	dstr_vcatf(&str, format, args);
 	blog(LOG_WARNING, "%s", str.array);
+	dstr_free(&str);
+
 	va_end(args);
 }
 
@@ -292,11 +295,8 @@ static void *reconnect_thread(void *param)
 	ca->reconnecting = true;
 
 	while (event_timedwait(ca->exit_event, RETRY_TIME) == ETIMEDOUT) {
-		if (coreaudio_init(ca)) {
-			blog(LOG_INFO, "coreaudio: device '%s' connected",
-					ca->device_name);
+		if (coreaudio_init(ca))
 			break;
-		}
 	}
 
 	blog(LOG_DEBUG, "coreaudio: exit the reconnect thread");
@@ -515,7 +515,7 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!ca_success(stat, ca, "coreaudio_initialize", "initialize"))
 		goto fail;
 
-	if (coreaudio_start(ca))
+	if (!coreaudio_start(ca))
 		goto fail;
 
 	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
