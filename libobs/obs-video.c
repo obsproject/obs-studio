@@ -421,7 +421,6 @@ void *obs_video_thread(void *param)
 		render_displays();
 
 		output_frame(cur_time);
-
 	}
 
 	UNUSED_PARAMETER(param);

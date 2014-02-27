@@ -125,11 +125,11 @@ static void *video_thread(void *param)
 	struct video_output *video = param;
 	uint64_t cur_time = os_gettime_ns();
 
-	while (event_try(&video->stop_event) == EAGAIN) {
+	while (event_try(video->stop_event) == EAGAIN) {
 		/* wait half a frame, update frame */
 		os_sleepto_ns(cur_time += (video->frame_time/2));
 		video->cur_video_time = cur_time;
-		event_signal(&video->update_event);
+		event_signal(video->update_event);
 
 		/* wait another half a frame, swap and output frames */
 		os_sleepto_ns(cur_time += (video->frame_time/2));
@@ -198,8 +198,8 @@ void video_output_close(video_t video)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
-	event_destroy(&video->update_event);
-	event_destroy(&video->stop_event);
+	event_destroy(video->update_event);
+	event_destroy(video->stop_event);
 	pthread_mutex_destroy(&video->data_mutex);
 	pthread_mutex_destroy(&video->input_mutex);
 	bfree(video);
@@ -339,8 +339,8 @@ bool video_output_wait(video_t video)
 {
 	if (!video) return false;
 
-	event_wait(&video->update_event);
-	return event_try(&video->stop_event) == EAGAIN;
+	event_wait(video->update_event);
+	return event_try(video->stop_event) == EAGAIN;
 }
 
 uint64_t video_getframetime(video_t video)
@@ -361,8 +361,8 @@ void video_output_stop(video_t video)
 		return;
 
 	if (video->initialized) {
-		event_signal(&video->stop_event);
+		event_signal(video->stop_event);
 		pthread_join(video->thread, &thread_ret);
-		event_signal(&video->update_event);
+		event_signal(video->update_event);
 	}
 }

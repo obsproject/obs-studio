@@ -22,12 +22,14 @@ add_definitions(-DPTW32_STATIC_LIB)
 if(WIN32)
 	set(libobs_PLATFORM_SOURCES
 		obs-windows.c
+		util/threading-windows.c
 		util/platform-windows.c)
 	set(libobs_PLATFORM_DEPS
 		w32-pthreads)
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c
+		util/threading-posix.c
 		util/platform-cocoa.m)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}
@@ -44,6 +46,7 @@ elseif(APPLE)
 elseif(UNIX)
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
+		util/threading-posic.c
 		util/platform-nix.c)
 endif()
 

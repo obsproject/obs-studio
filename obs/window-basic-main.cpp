@@ -66,6 +66,9 @@ void OBSBasic::OBSInit()
 	/* TODO: this is a test */
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
+#ifdef __APPLE__
+	obs_load_module("mac-capture");
+#endif
 
 	/* HACK: fixes a qt bug with native widgets with native repaint */
 	ui->previewContainer->repaint();

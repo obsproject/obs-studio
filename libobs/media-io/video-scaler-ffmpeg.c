@@ -133,9 +133,9 @@ bool video_scaler_scale(video_scaler_t scaler,
 		return false;
 
 	int ret = sws_scale(scaler->swscale,
-			input, in_linesize,
+			input, (const int *)in_linesize,
 			0, scaler->src_height,
-			output, out_linesize);
+			output, (const int *)out_linesize);
 	if (ret <= 0) {
 		blog(LOG_DEBUG, "video_scaler_scale: sws_scale failed: %d",
 				ret);

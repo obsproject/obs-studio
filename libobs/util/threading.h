@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -46,90 +46,22 @@ static inline void pthread_mutex_init_value(pthread_mutex_t *mutex)
 	*mutex = init_val;
 }
 
-struct event_data {
-	pthread_mutex_t mutex;
-	pthread_cond_t  cond;
-	bool            signalled;
-	bool            manual;
-};
-
 enum event_type {
 	EVENT_TYPE_AUTO,
 	EVENT_TYPE_MANUAL
 };
 
-typedef struct event_data event_t;
+struct event_data;
+typedef struct event_data *event_t;
 
-static inline int event_init(event_t *event, enum event_type type)
-{
-	int code = 0;
+EXPORT int  event_init(event_t *event, enum event_type type);
+EXPORT void event_destroy(event_t event);
+EXPORT int  event_wait(event_t event);
+EXPORT int  event_timedwait(event_t event, unsigned long milliseconds);
+EXPORT int  event_try(event_t event);
+EXPORT int  event_signal(event_t event);
+EXPORT void event_reset(event_t event);
 
-	if ((code = pthread_mutex_init(&event->mutex, NULL)) < 0)
-		return code;
-
-	if ((code = pthread_cond_init(&event->cond, NULL)) < 0)
-		pthread_mutex_destroy(&event->mutex);
-
-	event->manual = (type == EVENT_TYPE_MANUAL);
-	event->signalled = false;
-
-	return code;
-}
-
-static inline void event_destroy(event_t *event)
-{
-	if (event) {
-		pthread_mutex_destroy(&event->mutex);
-		pthread_cond_destroy(&event->cond);
-	}
-}
-
-static inline int event_wait(event_t *event)
-{
-	int code = 0;
-	pthread_mutex_lock(&event->mutex);
-	if (event->signalled ||
-		(code = pthread_cond_wait(&event->cond, &event->mutex)) == 0) {
-		if (!event->manual)
-			event->signalled = false;
-		pthread_mutex_unlock(&event->mutex);
-	}
-
-	return code;
-}
-
-static inline int event_try(event_t *event)
-{
-	pthread_mutex_lock(&event->mutex);
-	if (event->signalled) {
-		if (!event->manual)
-			event->signalled = false;
-		pthread_mutex_unlock(&event->mutex);
-		return 0;
-	}
-	pthread_mutex_unlock(&event->mutex);
-
-	return EAGAIN;
-}
-
-static inline int event_signal(event_t *event)
-{
-	int code = 0;
-
-	pthread_mutex_lock(&event->mutex);
-	code = pthread_cond_signal(&event->cond);
-	event->signalled = true;
-	pthread_mutex_unlock(&event->mutex);
-
-	return code;
-}
-
-static inline void event_reset(event_t *event)
-{
-	pthread_mutex_lock(&event->mutex);
-	event->signalled = false;
-	pthread_mutex_unlock(&event->mutex);
-}
 
 #ifdef __cplusplus
 }

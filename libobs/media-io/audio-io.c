@@ -38,7 +38,7 @@ struct audio_input {
 	void *param;
 };
 
-static inline audio_input_free(struct audio_input *input)
+static inline void audio_input_free(struct audio_input *input)
 {
 	audio_resampler_destroy(input->resampler);
 }
@@ -435,7 +435,7 @@ static void *audio_thread(void *param)
 	uint64_t prev_time = os_gettime_ns() - buffer_time;
 	uint64_t audio_time;
 
-	while (event_try(&audio->stop_event) == EAGAIN) {
+	while (event_try(audio->stop_event) == EAGAIN) {
 		os_sleep_ms(AUDIO_WAIT_TIME);
 
 		pthread_mutex_lock(&audio->line_mutex);
@@ -611,7 +611,7 @@ void audio_output_close(audio_t audio)
 		return;
 
 	if (audio->initialized) {
-		event_signal(&audio->stop_event);
+		event_signal(audio->stop_event);
 		pthread_join(audio->thread, &thread_ret);
 	}
 
@@ -629,7 +629,7 @@ void audio_output_close(audio_t audio)
 		da_free(audio->mix_buffers[i]);
 
 	da_free(audio->inputs);
-	event_destroy(&audio->stop_event);
+	event_destroy(audio->stop_event);
 	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);
 }
@@ -764,7 +764,7 @@ static inline void mul_vol_32bit(void *array, float volume, size_t total_num)
 
 	for (size_t i = 0; i < total_num; i++) {
 		double val = (double)vals[i] / 2147483647.0;
-		double output = val * volume;
+		double output = val * dvol;
 		vals[i] = (int32_t)(CLAMP(output, -1.0, 1.0) * 2147483647.0);
 	}
 }

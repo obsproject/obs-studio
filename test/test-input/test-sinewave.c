@@ -28,7 +28,7 @@ static void *sinewave_thread(void *pdata)
 	double cos_val = 0.0;
 	uint8_t bytes[480];
 
-	while (event_try(&swd->event) == EAGAIN) {
+	while (event_try(swd->event) == EAGAIN) {
 		if (!os_sleepto_ns(last_time += 10000000))
 			last_time = os_gettime_ns();
 
@@ -71,11 +71,11 @@ static void sinewave_destroy(void *data)
 	if (swd) {
 		if (swd->initialized_thread) {
 			void *ret;
-			event_signal(&swd->event);
+			event_signal(swd->event);
 			pthread_join(swd->thread, &ret);
 		}
 
-		event_destroy(&swd->event);
+		event_destroy(swd->event);
 		bfree(swd);
 	}
 }
