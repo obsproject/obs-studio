@@ -346,9 +346,9 @@ static OSStatus disconnection_callback(
 }
 
 static const AudioObjectPropertyAddress alive_addr = {
-	kAudioHardwarePropertyDevices,
-	kAudioDevicePropertyScopeInput,
-	kAudioDevicePropertyDeviceIsAlive
+	kAudioDevicePropertyDeviceIsAlive,
+	kAudioObjectPropertyScopeGlobal,
+	kAudioObjectPropertyElementMaster
 };
 
 static bool coreaudio_init_hooks(struct coreaudio_data *ca)
