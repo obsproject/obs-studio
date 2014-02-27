@@ -359,5 +359,8 @@
     <ClCompile Include="..\..\..\libobs\media-io\video-frame.c">
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs\util\threading-windows.c">
+      <Filter>util\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
