@@ -293,11 +293,8 @@ static void *reconnect_thread(void *param)
 	ca->reconnecting = true;
 
 	while (event_timedwait(ca->exit_event, RETRY_TIME) == ETIMEDOUT) {
-		if (coreaudio_init(ca)) {
-			blog(LOG_INFO, "coreaudio: device '%s' connected",
-					ca->device_name);
+		if (coreaudio_init(ca))
 			break;
-		}
 	}
 
 	blog(LOG_DEBUG, "coreaudio: exit the reconnect thread");
