@@ -119,6 +119,7 @@
     <ClCompile Include="..\..\..\libobs\util\platform-windows.c" />
     <ClCompile Include="..\..\..\libobs\util\platform.c" />
     <ClCompile Include="..\..\..\libobs\util\text-lookup.c" />
+    <ClCompile Include="..\..\..\libobs\util\threading-windows.c" />
     <ClCompile Include="..\..\..\libobs\util\utf8.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
