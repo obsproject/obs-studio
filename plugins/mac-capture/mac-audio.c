@@ -461,6 +461,7 @@ static bool coreaudio_init_unit(struct coreaudio_data *ca)
 	if (!ca_success(stat, ca, "coreaudio_init_unit", "instance unit"))
 		return false;
 
+	ca->au_initialized = true;
 	return true;
 }
 
@@ -502,8 +503,7 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (!ca_success(stat, ca, "coreaudio_initialize", "initialize"))
 		goto fail;
 
-	ca->au_initialized = coreaudio_start(ca);
-	if (!ca->au_initialized)
+	if (coreaudio_start(ca))
 		goto fail;
 
 	blog(LOG_INFO, "coreaudio: device '%s' initialized", ca->device_name);
