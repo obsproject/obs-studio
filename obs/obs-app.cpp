@@ -99,7 +99,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(globalConfig, "Audio", "ChannelSetup",
 			"Stereo");
-	config_set_default_uint(globalConfig, "Audio", "BufferingTime", 700);
+	config_set_default_uint(globalConfig, "Audio", "BufferingTime", 1000);
 
 	return true;
 }
