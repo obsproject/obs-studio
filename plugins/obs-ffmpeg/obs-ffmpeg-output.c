@@ -17,6 +17,7 @@
 
 #include <obs.h>
 #include <util/circlebuf.h>
+#include <util/threading.h>
 
 #include <libavutil/opt.h>
 #include <libavformat/avformat.h>
@@ -48,6 +49,8 @@ struct ffmpeg_data {
 	uint8_t            *samples[MAX_AV_PLANES];
 	AVFrame            *aframe;
 	int                total_samples;
+
+	pthread_mutex_t    write_mutex;
 
 	const char         *filename_test;
 
@@ -332,6 +335,7 @@ static void close_audio(struct ffmpeg_data *data)
 
 static void ffmpeg_data_free(struct ffmpeg_data *data)
 {
+	pthread_mutex_lock(&data->write_mutex);
 	if (data->initialized)
 		av_write_trailer(data->output);
 
@@ -344,15 +348,23 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 
 	avformat_free_context(data->output);
 
+	pthread_mutex_unlock(&data->write_mutex);
+	pthread_mutex_destroy(&data->write_mutex);
+
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
 static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 {
 	memset(data, 0, sizeof(struct ffmpeg_data));
+	pthread_mutex_init_value(&data->write_mutex);
+
 	data->filename_test = filename;
 
 	if (!filename || !*filename)
+		return false;
+
+	if (pthread_mutex_init(&data->write_mutex, NULL) != 0)
 		return false;
 
 	av_register_all();
@@ -390,7 +402,6 @@ static const char *ffmpeg_output_getname(const char *locale)
 static void ffmpeg_log_callback(void *param, int level, const char *format,
 		va_list args)
 {
-	if (level < AV_LOG_WARNING)
 		blogva(LOG_DEBUG, format, args);
 
 	UNUSED_PARAMETER(param);
@@ -476,7 +487,9 @@ static void receive_video(void *param, const struct video_data *frame)
 		packet.data          = data->dst_picture.data[0];
 		packet.size          = sizeof(AVPicture);
 
+		pthread_mutex_lock(&data->write_mutex);
 		ret = av_interleaved_write_frame(data->output, &packet);
+		pthread_mutex_unlock(&data->write_mutex);
 
 	} else {
 		data->vframe->pts = data->total_frames;
@@ -497,8 +510,10 @@ static void receive_video(void *param, const struct video_data *frame)
 					context->time_base,
 					data->video->time_base);
 
+			pthread_mutex_lock(&data->write_mutex);
 			ret = av_interleaved_write_frame(data->output,
 					&packet);
+			pthread_mutex_unlock(&data->write_mutex);
 		} else {
 			ret = 0;
 		}
@@ -552,10 +567,12 @@ static inline void encode_audio(struct ffmpeg_data *output,
 			output->audio->time_base);
 	packet.stream_index = output->audio->index;
 
+	pthread_mutex_lock(&output->write_mutex);
 	ret = av_interleaved_write_frame(output->output, &packet);
 	if (ret != 0)
 		blog(LOG_ERROR, "receive_audio: Error writing audio: %s",
 				av_err2str(ret));
+	pthread_mutex_unlock(&output->write_mutex);
 }
 
 static bool prepare_audio(struct ffmpeg_data *data,
