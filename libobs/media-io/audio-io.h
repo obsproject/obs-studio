@@ -173,7 +173,7 @@ EXPORT int audio_output_open(audio_t *audio, struct audio_output_info *info);
 EXPORT void audio_output_close(audio_t audio);
 
 EXPORT bool audio_output_connect(audio_t video,
-		struct audio_convert_info *conversion,
+		const struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param);
 EXPORT void audio_output_disconnect(audio_t video,

@@ -497,7 +497,7 @@ static inline bool audio_input_init(struct audio_input *input,
 }
 
 bool audio_output_connect(audio_t audio,
-		struct audio_convert_info *conversion,
+		const struct audio_convert_info *conversion,
 		void (*callback)(void *param, const struct audio_data *data),
 		void *param)
 {

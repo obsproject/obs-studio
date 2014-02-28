@@ -255,7 +255,7 @@ static inline bool video_input_init(struct video_input *input,
 }
 
 bool video_output_connect(video_t video,
-		struct video_scale_info *conversion,
+		const struct video_scale_info *conversion,
 		void (*callback)(void *param, const struct video_data *frame),
 		void *param)
 {

@@ -18,6 +18,7 @@
 #include <obs.h>
 #include <util/circlebuf.h>
 
+#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
@@ -122,6 +123,9 @@ static bool open_video_codec(struct ffmpeg_data *data)
 {
 	AVCodecContext *context = data->video->codec;
 	int ret;
+
+	if (data->vcodec->id == AV_CODEC_ID_H264)
+		av_opt_set(context->priv_data, "preset", "veryfast", 0);
 
 	ret = avcodec_open2(context, data->vcodec, NULL);
 	if (ret < 0) {
@@ -383,13 +387,13 @@ static const char *ffmpeg_output_getname(const char *locale)
 	return "FFmpeg file output";
 }
 
-static void ffmpeg_log_callback(void *param, int bla, const char *format,
+static void ffmpeg_log_callback(void *param, int level, const char *format,
 		va_list args)
 {
-	blogva(LOG_DEBUG, format, args);
+	if (level < AV_LOG_WARNING)
+		blogva(LOG_DEBUG, format, args);
 
 	UNUSED_PARAMETER(param);
-	UNUSED_PARAMETER(bla);
 }
 
 static void *ffmpeg_output_create(obs_data_t settings, obs_output_t output)

@@ -111,7 +111,7 @@ EXPORT int video_output_open(video_t *video, struct video_output_info *info);
 EXPORT void video_output_close(video_t video);
 
 EXPORT bool video_output_connect(video_t video,
-		struct video_scale_info *conversion,
+		const struct video_scale_info *conversion,
 		void (*callback)(void *param, const struct video_data *frame),
 		void *param);
 EXPORT void video_output_disconnect(video_t video,
