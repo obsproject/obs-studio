@@ -109,24 +109,26 @@ int event_timedwait(event_t event, unsigned long milliseconds)
 	if (code == 0) {
 		if (!event->manual)
 			event->signalled = false;
-		pthread_mutex_unlock(&event->mutex);
 	}
+
+	pthread_mutex_unlock(&event->mutex);
 
 	return code;
 }
 
 int event_try(event_t event)
 {
+	int ret = EAGAIN;
+
 	pthread_mutex_lock(&event->mutex);
 	if (event->signalled) {
 		if (!event->manual)
 			event->signalled = false;
-		pthread_mutex_unlock(&event->mutex);
-		return 0;
+		ret = 0;
 	}
 	pthread_mutex_unlock(&event->mutex);
 
-	return EAGAIN;
+	return ret;
 }
 
 int event_signal(event_t event)
