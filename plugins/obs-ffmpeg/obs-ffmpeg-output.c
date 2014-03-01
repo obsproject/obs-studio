@@ -402,6 +402,7 @@ static const char *ffmpeg_output_getname(const char *locale)
 static void ffmpeg_log_callback(void *param, int level, const char *format,
 		va_list args)
 {
+	if (level <= AV_LOG_INFO)
 		blogva(LOG_DEBUG, format, args);
 
 	UNUSED_PARAMETER(param);

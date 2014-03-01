@@ -11,7 +11,8 @@
 
 #include "mac-helpers.h"
 
-#define FORMAT_CHANGED kAudioStreamPropertyAvailablePhysicalFormats
+#define PROPERTY_DEFAULT_DEVICE kAudioHardwarePropertyDefaultInputDevice
+#define PROPERTY_FORMATS kAudioStreamPropertyAvailablePhysicalFormats
 
 #define SCOPE_OUTPUT kAudioUnitScope_Output
 #define SCOPE_INPUT  kAudioUnitScope_Input
@@ -33,6 +34,7 @@ struct coreaudio_data {
 	AudioBufferList    *buf_list;
 	bool                au_initialized;
 	bool                active;
+	bool                default_device;
 
 	uint32_t            sample_rate;
 	enum audio_format   format;
@@ -41,15 +43,16 @@ struct coreaudio_data {
 	pthread_t           reconnect_thread;
 	event_t             exit_event;
 	volatile bool       reconnecting;
+	unsigned long       retry_time;
 
 	obs_source_t        source;
 };
 
-static bool find_device_id_by_uid(const char *uid, AudioDeviceID *id)
+static bool find_device_id_by_uid(struct coreaudio_data *ca)
 {
 	OSStatus    stat;
 	UInt32      size = sizeof(AudioDeviceID);
-	CFStringRef cf_uid = CFStringCreateWithCString(NULL, uid,
+	CFStringRef cf_uid = CFStringCreateWithCString(NULL, ca->device_uid,
 			kCFStringEncodingUTF8);
 	CFStringRef qual = NULL;
 	UInt32      qual_size = 0;
@@ -60,10 +63,10 @@ static bool find_device_id_by_uid(const char *uid, AudioDeviceID *id)
 		.mElement = kAudioObjectPropertyElementMaster
 	};
 
-	bool is_default = (strcmp(uid, "Default") == 0);
+	ca->default_device = (strcmp(ca->device_uid, "Default") == 0);
 
-	if (is_default) {
-		addr.mSelector = kAudioHardwarePropertyDefaultInputDevice;
+	if (ca->default_device) {
+		addr.mSelector = PROPERTY_DEFAULT_DEVICE;
 	} else {
 		addr.mSelector = kAudioHardwarePropertyTranslateUIDToDevice;
 		qual      = cf_uid;
@@ -71,7 +74,7 @@ static bool find_device_id_by_uid(const char *uid, AudioDeviceID *id)
 	}
 
 	stat = AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr,
-			qual_size, &qual, &size, id);
+			qual_size, &qual, &size, &ca->device_id);
 	success = (stat == noErr);
 
 	CFRelease(cf_uid);
@@ -286,15 +289,13 @@ static void coreaudio_stop(struct coreaudio_data *ca);
 static bool coreaudio_init(struct coreaudio_data *ca);
 static void coreaudio_uninit(struct coreaudio_data *ca);
 
-#define RETRY_TIME 3000
-
 static void *reconnect_thread(void *param)
 {
 	struct coreaudio_data *ca = param;
 
 	ca->reconnecting = true;
 
-	while (event_timedwait(ca->exit_event, RETRY_TIME) == ETIMEDOUT) {
+	while (event_timedwait(ca->exit_event, ca->retry_time) == ETIMEDOUT) {
 		if (coreaudio_init(ca))
 			break;
 	}
@@ -328,16 +329,32 @@ static OSStatus notification_callback(
 	coreaudio_stop(ca);
 	coreaudio_uninit(ca);
 
-	blog(LOG_INFO, "coreaudio: device '%s' disconnected or format "
-	               "changed.  attempting to reconnect", ca->device_name);
+	if (addresses[0].mSelector == PROPERTY_DEFAULT_DEVICE)
+		ca->retry_time = 300;
+	else
+		ca->retry_time = 2000;
+
+	blog(LOG_INFO, "coreaudio: device '%s' disconnected or changed.  "
+	               "attempting to reconnect", ca->device_name);
 
 	coreaudio_begin_reconnect(ca);
 
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(num_addresses);
-	UNUSED_PARAMETER(addresses);
 
 	return noErr;
+}
+
+static OSStatus add_listener(struct coreaudio_data *ca, UInt32 property)
+{
+	AudioObjectPropertyAddress addr = {
+		property,
+		kAudioObjectPropertyScopeGlobal,
+		kAudioObjectPropertyElementMaster
+	};
+
+	return AudioObjectAddPropertyListener(ca->device_id, &addr,
+			notification_callback, ca);
 }
 
 static bool coreaudio_init_hooks(struct coreaudio_data *ca)
@@ -348,24 +365,29 @@ static bool coreaudio_init_hooks(struct coreaudio_data *ca)
 		.inputProcRefCon = ca
 	};
 
-	AudioObjectPropertyAddress addr = {
-		kAudioDevicePropertyDeviceIsAlive,
-		kAudioObjectPropertyScopeGlobal,
-		kAudioObjectPropertyElementMaster
-	};
-
-	stat = AudioObjectAddPropertyListener(ca->device_id, &addr,
-			notification_callback, ca);
+	stat = add_listener(ca, kAudioDevicePropertyDeviceIsAlive);
 	if (!ca_success(stat, ca, "coreaudio_init_hooks",
 				"set disconnect callback"))
 		return false;
 
-	addr.mSelector = FORMAT_CHANGED;
-	stat = AudioObjectAddPropertyListener(ca->device_id, &addr,
-			notification_callback, ca);
+	stat = add_listener(ca, PROPERTY_FORMATS);
 	if (!ca_success(stat, ca, "coreaudio_init_hooks",
 				"set format change callback"))
 		return false;
+
+	if (ca->default_device) {
+		AudioObjectPropertyAddress addr = {
+			PROPERTY_DEFAULT_DEVICE,
+			kAudioObjectPropertyScopeGlobal,
+			kAudioObjectPropertyElementMaster
+		};
+
+		stat = AudioObjectAddPropertyListener(kAudioObjectSystemObject,
+				&addr, notification_callback, ca);
+		if (!ca_success(stat, ca, "coreaudio_init_hooks",
+					"set device change callback"))
+			return false;
+	}
 
 	stat = set_property(ca->unit, kAudioOutputUnitProperty_SetInputCallback,
 			SCOPE_GLOBAL, 0, &callback_info, sizeof(callback_info));
@@ -391,9 +413,15 @@ static void coreaudio_remove_hooks(struct coreaudio_data *ca)
 	AudioObjectRemovePropertyListener(ca->device_id, &addr,
 			notification_callback, ca);
 
-	addr.mSelector = FORMAT_CHANGED;
+	addr.mSelector = PROPERTY_FORMATS;
 	AudioObjectRemovePropertyListener(ca->device_id, &addr,
 			notification_callback, ca);
+
+	if (ca->default_device) {
+		addr.mSelector = PROPERTY_DEFAULT_DEVICE;
+		AudioObjectRemovePropertyListener(kAudioObjectSystemObject,
+				&addr, notification_callback, ca);
+	}
 
 	set_property(ca->unit, kAudioOutputUnitProperty_SetInputCallback,
 			SCOPE_GLOBAL, 0, &callback_info, sizeof(callback_info));
@@ -484,7 +512,7 @@ static bool coreaudio_init(struct coreaudio_data *ca)
 	if (ca->au_initialized)
 		return true;
 
-	if (!find_device_id_by_uid(ca->device_uid, &ca->device_id))
+	if (!find_device_id_by_uid(ca))
 		return false;
 	if (!coreaudio_get_device_name(ca))
 		return false;
@@ -533,6 +561,7 @@ static void coreaudio_try_init(struct coreaudio_data *ca)
 		               "uid: %s, waiting for connection",
 		               ca->device_uid);
 
+		ca->retry_time = 2000;
 		coreaudio_begin_reconnect(ca);
 	}
 }
