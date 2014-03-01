@@ -178,6 +178,8 @@ failed:
 	gl_bind_buffer(GL_PIXEL_PACK_BUFFER, 0);
 	gl_bind_texture(GL_TEXTURE_2D, 0);
 	blog(LOG_ERROR, "device_stage_texture (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 #endif

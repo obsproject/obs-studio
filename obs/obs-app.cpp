@@ -49,7 +49,7 @@ static void do_log(int log_level, const char *msg, va_list args)
 	vprintf(msg, args);
 	printf("\n");
 
-	UNUSED_PARAMETER(level);
+	UNUSED_PARAMETER(log_level);
 #endif
 }
 
