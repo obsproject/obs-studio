@@ -226,7 +226,7 @@ void gs_matrix_pop(void)
 		return;
 
 	if (graphics->cur_matrix == 0) {
-		blog(LOG_WARNING, "Tried to pop last matrix on stack");
+		blog(LOG_ERROR, "Tried to pop last matrix on stack");
 		return;
 	}
 
@@ -397,22 +397,22 @@ void gs_renderstop(enum gs_draw_mode mode)
 
 	if (graphics->norms.num &&
 	    (graphics->norms.num != graphics->verts.num)) {
-		blog(LOG_WARNING, "gs_renderstop: normal count does "
-		                  "not match vertex count");
+		blog(LOG_ERROR, "gs_renderstop: normal count does "
+		                "not match vertex count");
 		num = min_size(num, graphics->norms.num);
 	}
 
 	if (graphics->colors.num &&
 	    (graphics->colors.num != graphics->verts.num)) {
-		blog(LOG_WARNING, "gs_renderstop: color count does "
-		                  "not match vertex count");
+		blog(LOG_ERROR, "gs_renderstop: color count does "
+		                "not match vertex count");
 		num = min_size(num, graphics->colors.num);
 	}
 
 	if (graphics->texverts[0].num &&
 	    (graphics->texverts[0].num  != graphics->verts.num)) {
-		blog(LOG_WARNING, "gs_renderstop: texture vertex count does "
-		                  "not match vertex count");
+		blog(LOG_ERROR, "gs_renderstop: texture vertex count does "
+		                "not match vertex count");
 		num = min_size(num, graphics->texverts[0].num);
 	}
 
@@ -775,7 +775,7 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 		return;
 
 	if (gs_gettexturetype(tex) != GS_TEXTURE_2D) {
-		blog(LOG_WARNING, "A sprite must be a 2D texture");
+		blog(LOG_ERROR, "A sprite must be a 2D texture");
 		return;
 	}
 

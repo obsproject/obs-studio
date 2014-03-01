@@ -268,17 +268,17 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 	bool size_changed;
 
 	if (!effect) {
-		blog(LOG_WARNING, "effect_setval_inline: invalid effect");
+		blog(LOG_ERROR, "effect_setval_inline: invalid effect");
 		return;
 	}
 
 	if (!param) {
-		blog(LOG_WARNING, "effect_setval_inline: invalid param");
+		blog(LOG_ERROR, "effect_setval_inline: invalid param");
 		return;
 	}
 
 	if (!data) {
-		blog(LOG_WARNING, "effect_setval_inline: invalid data");
+		blog(LOG_ERROR, "effect_setval_inline: invalid data");
 		return;
 	}
 
