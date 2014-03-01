@@ -124,16 +124,16 @@ static int sp_parse_sampler_state_item(struct shader_parser *sp,
 	int ret;
 	char *state = NULL, *value = NULL;
 
-	ret = next_name(&sp->cfp, &state, "state name", ";");
+	ret = cf_next_name(&sp->cfp, &state, "state name", ";");
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_token_should_be(&sp->cfp, "=", ";", NULL);
+	ret = cf_next_token_should_be(&sp->cfp, "=", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_name(&sp->cfp, &value, "value name", ";");
+	ret = cf_next_name(&sp->cfp, &value, "value name", ";");
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_token_should_be(&sp->cfp, ";", ";", NULL);
+	ret = cf_next_token_should_be(&sp->cfp, ";", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
 	da_push_back(ss->states, &state);
@@ -152,12 +152,12 @@ static void sp_parse_sampler_state(struct shader_parser *sp)
 	struct cf_token peek;
 	shader_sampler_init(&ss);
 
-	if (next_name(&sp->cfp, &ss.name, "name", ";") != PARSE_SUCCESS)
+	if (cf_next_name(&sp->cfp, &ss.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&sp->cfp, "{", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&sp->cfp, "{", ";", NULL) != PARSE_SUCCESS)
 		goto error;
 
-	if (!peek_valid_token(&sp->cfp, &peek))
+	if (!cf_peek_valid_token(&sp->cfp, &peek))
 		goto error;
 
 	while (strref_cmp(&peek.str, "}") != 0) {
@@ -165,13 +165,13 @@ static void sp_parse_sampler_state(struct shader_parser *sp)
 		if (ret == PARSE_EOF)
 			goto error;
 
-		if (!peek_valid_token(&sp->cfp, &peek))
+		if (!cf_peek_valid_token(&sp->cfp, &peek))
 			goto error;
 	}
 
-	if (next_token_should_be(&sp->cfp, "}", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&sp->cfp, "}", ";", NULL) != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&sp->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&sp->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
 		goto error;
 
 	da_push_back(sp->samplers, &ss);
@@ -184,61 +184,64 @@ error:
 static inline int sp_parse_struct_var(struct shader_parser *sp,
 		struct shader_var *var)
 {
-	int errcode;
+	int code;
 
 	/* -------------------------------------- */
 	/* variable type */
 
-	if (!next_valid_token(&sp->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&sp->cfp)) return PARSE_EOF;
 
-	if (token_is(&sp->cfp, ";")) return PARSE_CONTINUE;
-	if (token_is(&sp->cfp, "}")) return PARSE_BREAK;
+	if (cf_token_is(&sp->cfp, ";")) return PARSE_CONTINUE;
+	if (cf_token_is(&sp->cfp, "}")) return PARSE_BREAK;
 
-	errcode = token_is_type(&sp->cfp, CFTOKEN_NAME, "type name", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&sp->cfp, CFTOKEN_NAME, "type name", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	copy_token(&sp->cfp, &var->type);
+	cf_copy_token(&sp->cfp, &var->type);
 
 	/* -------------------------------------- */
 	/* variable name */
 
-	if (!next_valid_token(&sp->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&sp->cfp)) return PARSE_EOF;
 
-	if (token_is(&sp->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
-	if (token_is(&sp->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
+	if (cf_token_is(&sp->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
+	if (cf_token_is(&sp->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
 
-	errcode = token_is_type(&sp->cfp, CFTOKEN_NAME, "variable name", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&sp->cfp, CFTOKEN_NAME, "variable name",
+			";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	copy_token(&sp->cfp, &var->name);
+	cf_copy_token(&sp->cfp, &var->name);
 
 	/* -------------------------------------- */
 	/* variable mapping if any (POSITION, TEXCOORD, etc) */
 
-	if (!next_valid_token(&sp->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&sp->cfp)) return PARSE_EOF;
 
-	if (token_is(&sp->cfp, ":")) {
-		if (!next_valid_token(&sp->cfp)) return PARSE_EOF;
+	if (cf_token_is(&sp->cfp, ":")) {
+		if (!cf_next_valid_token(&sp->cfp)) return PARSE_EOF;
 
-		if (token_is(&sp->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
-		if (token_is(&sp->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
+		if (cf_token_is(&sp->cfp, ";"))
+			return PARSE_UNEXPECTED_CONTINUE;
+		if (cf_token_is(&sp->cfp, "}"))
+			return PARSE_UNEXPECTED_BREAK;
 
-		errcode = token_is_type(&sp->cfp, CFTOKEN_NAME,
+		code = cf_token_is_type(&sp->cfp, CFTOKEN_NAME,
 				"mapping name", ";");
-		if (errcode != PARSE_SUCCESS)
-			return errcode;
+		if (code != PARSE_SUCCESS)
+			return code;
 
-		copy_token(&sp->cfp, &var->mapping);
+		cf_copy_token(&sp->cfp, &var->mapping);
 
-		if (!next_valid_token(&sp->cfp)) return PARSE_EOF;
+		if (!cf_next_valid_token(&sp->cfp)) return PARSE_EOF;
 	}
 
 	/* -------------------------------------- */
 
-	if (!token_is(&sp->cfp, ";")) {
-		if (!go_to_valid_token(&sp->cfp, ";", "}"))
+	if (!cf_token_is(&sp->cfp, ";")) {
+		if (!cf_go_to_valid_token(&sp->cfp, ";", "}"))
 			return PARSE_EOF;
 		return PARSE_CONTINUE;
 	}
@@ -251,9 +254,9 @@ static void sp_parse_struct(struct shader_parser *sp)
 	struct shader_struct ss;
 	shader_struct_init(&ss);
 
-	if (next_name(&sp->cfp, &ss.name, "name", ";") != PARSE_SUCCESS)
+	if (cf_next_name(&sp->cfp, &ss.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&sp->cfp, "{", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&sp->cfp, "{", ";", NULL) != PARSE_SUCCESS)
 		goto error;
 
 	/* get structure variables */
@@ -289,7 +292,7 @@ static void sp_parse_struct(struct shader_parser *sp)
 		da_push_back(ss.vars, &var);
 	}
 
-	if (next_token_should_be(&sp->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&sp->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
 		goto error;
 
 	da_push_back(sp->structs, &ss);
@@ -302,9 +305,9 @@ error:
 static inline int sp_check_for_keyword(struct shader_parser *sp,
 		const char *keyword, bool *val)
 {
-	bool new_val = token_is(&sp->cfp, keyword);
+	bool new_val = cf_token_is(&sp->cfp, keyword);
 	if (new_val) {
-		if (!next_valid_token(&sp->cfp))
+		if (!cf_next_valid_token(&sp->cfp))
 			return PARSE_EOF;
 
 		if (new_val && *val)
@@ -321,36 +324,36 @@ static inline int sp_check_for_keyword(struct shader_parser *sp,
 static inline int sp_parse_func_param(struct shader_parser *sp,
 		struct shader_var *var)
 {
-	int errcode;
+	int code;
 	bool is_uniform = false;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return PARSE_EOF;
 
-	errcode = sp_check_for_keyword(sp, "uniform", &is_uniform);
-	if (errcode == PARSE_EOF)
+	code = sp_check_for_keyword(sp, "uniform", &is_uniform);
+	if (code == PARSE_EOF)
 		return PARSE_EOF;
 
 	var->var_type = is_uniform ? SHADER_VAR_UNIFORM : SHADER_VAR_NONE;
 
-	errcode = get_name(&sp->cfp, &var->type, "type", ")");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_get_name(&sp->cfp, &var->type, "type", ")");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	errcode = next_name(&sp->cfp, &var->name, "name", ")");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_next_name(&sp->cfp, &var->name, "name", ")");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return PARSE_EOF;
 
-	if (token_is(&sp->cfp, ":")) {
-		errcode = next_name(&sp->cfp, &var->mapping,
+	if (cf_token_is(&sp->cfp, ":")) {
+		code = cf_next_name(&sp->cfp, &var->mapping,
 				"mapping specifier", ")");
-		if (errcode != PARSE_SUCCESS)
-			return errcode;
+		if (code != PARSE_SUCCESS)
+			return code;
 
-		if (!next_valid_token(&sp->cfp))
+		if (!cf_next_valid_token(&sp->cfp))
 			return PARSE_EOF;
 	}
 
@@ -361,15 +364,15 @@ static bool sp_parse_func_params(struct shader_parser *sp,
 		struct shader_func *func)
 {
 	struct cf_token peek;
-	int errcode;
+	int code;
 
 	cf_token_clear(&peek);
 
-	if (!peek_valid_token(&sp->cfp, &peek))
+	if (!cf_peek_valid_token(&sp->cfp, &peek))
 		return false;
 
 	if (*peek.str.array == ')') {
-		next_token(&sp->cfp);
+		cf_next_token(&sp->cfp);
 		goto exit;
 	}
 
@@ -377,21 +380,21 @@ static bool sp_parse_func_params(struct shader_parser *sp,
 		struct shader_var var;
 		shader_var_init(&var);
 
-		if (!token_is(&sp->cfp, "(") && !token_is(&sp->cfp, ","))
+		if (!cf_token_is(&sp->cfp, "(") && !cf_token_is(&sp->cfp, ","))
 			cf_adderror_syntax_error(&sp->cfp);
 
-		errcode = sp_parse_func_param(sp, &var);
-		if (errcode != PARSE_SUCCESS) {
+		code = sp_parse_func_param(sp, &var);
+		if (code != PARSE_SUCCESS) {
 			shader_var_free(&var);
 
-			if (errcode == PARSE_CONTINUE)
+			if (code == PARSE_CONTINUE)
 				goto exit;
-			else if (errcode == PARSE_EOF)
+			else if (code == PARSE_EOF)
 				return false;
 		}
 
 		da_push_back(func->params, &var);
-	} while (!token_is(&sp->cfp, ")"));
+	} while (!cf_token_is(&sp->cfp, ")"));
 
 exit:
 	return true;
@@ -405,33 +408,34 @@ static void sp_parse_function(struct shader_parser *sp, char *type, char *name)
 	if (!sp_parse_func_params(sp, &func))
 		goto error;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		goto error;
 
 	/* if function is mapped to something, for example COLOR */
-	if (token_is(&sp->cfp, ":")) {
+	if (cf_token_is(&sp->cfp, ":")) {
 		char *mapping = NULL;
-		int errorcode = next_name(&sp->cfp, &mapping, "mapping", "{");
+		int errorcode = cf_next_name(&sp->cfp, &mapping, "mapping",
+				"{");
 		if (errorcode != PARSE_SUCCESS)
 			goto error;
 
 		func.mapping = mapping;
 
-		if (!next_valid_token(&sp->cfp))
+		if (!cf_next_valid_token(&sp->cfp))
 			goto error;
 	}
 
-	if (!token_is(&sp->cfp, "{")) {
+	if (!cf_token_is(&sp->cfp, "{")) {
 		cf_adderror_expecting(&sp->cfp, "{");
 		goto error;
 	}
 
 	func.start = sp->cfp.cur_token;
-	if (!pass_pair(&sp->cfp, '{', '}'))
+	if (!cf_pass_pair(&sp->cfp, '{', '}'))
 		goto error;
 
 	/* it is established that the current token is '}' if we reach this */
-	next_token(&sp->cfp);
+	cf_next_token(&sp->cfp);
 
 	func.end = sp->cfp.cur_token;
 	da_push_back(sp->funcs, &func);
@@ -445,7 +449,7 @@ error:
 static bool sp_parse_param_array(struct shader_parser *sp,
 		struct shader_var *param)
 {
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return false;
 
 	if (sp->cfp.cur_token->type != CFTOKEN_NUM ||
@@ -455,10 +459,10 @@ static bool sp_parse_param_array(struct shader_parser *sp,
 
 	param->array_count =(int)strtol(sp->cfp.cur_token->str.array, NULL, 10);
 
-	if (next_token_should_be(&sp->cfp, "]", ";", NULL) == PARSE_EOF)
+	if (cf_next_token_should_be(&sp->cfp, "]", ";", NULL) == PARSE_EOF)
 		return false;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return false;
 
 	return true;
@@ -467,14 +471,14 @@ static bool sp_parse_param_array(struct shader_parser *sp,
 static inline int sp_parse_param_assign_intfloat(struct shader_parser *sp,
 		struct shader_var *param, bool is_float)
 {
-	int errcode;
+	int code;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return PARSE_EOF;
 
-	errcode = token_is_type(&sp->cfp, CFTOKEN_NUM, "numeric value", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&sp->cfp, CFTOKEN_NUM, "numeric value", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
 	if (is_float) {
 		float f = (float)strtod(sp->cfp.cur_token->str.array, NULL);
@@ -495,7 +499,7 @@ static inline int sp_parse_param_assign_float_array(struct shader_parser *sp,
 		struct shader_var *param)
 {
 	const char *float_type = param->type+5;
-	int float_count = 0, errcode, i;
+	int float_count = 0, code, i;
 
 	/* -------------------------------------------- */
 
@@ -515,17 +519,17 @@ static inline int sp_parse_param_assign_float_array(struct shader_parser *sp,
 
 	/* -------------------------------------------- */
 
-	errcode = next_token_should_be(&sp->cfp, "{", ";", NULL);
-	if (errcode != PARSE_SUCCESS) return errcode;
+	code = cf_next_token_should_be(&sp->cfp, "{", ";", NULL);
+	if (code != PARSE_SUCCESS) return code;
 
 	for (i = 0; i < float_count; i++) {
 		char *next = ((i+1) < float_count) ? "," : "}";
 
-		errcode = sp_parse_param_assign_intfloat(sp, param, true);
-		if (errcode != PARSE_SUCCESS) return errcode;
+		code = sp_parse_param_assign_intfloat(sp, param, true);
+		if (code != PARSE_SUCCESS) return code;
 
-		errcode = next_token_should_be(&sp->cfp, next, ";", NULL);
-		if (errcode != PARSE_SUCCESS) return errcode;
+		code = cf_next_token_should_be(&sp->cfp, next, ";", NULL);
+		if (code != PARSE_SUCCESS) return code;
 	}
 
 	return PARSE_SUCCESS;
@@ -547,13 +551,13 @@ static int sp_parse_param_assignment_val(struct shader_parser *sp,
 	return PARSE_CONTINUE;
 }
 
-static inline bool sp_parse_param_assignment(struct shader_parser *sp,
+static inline bool sp_parse_param_assign(struct shader_parser *sp,
 		struct shader_var *param)
 {
 	if (sp_parse_param_assignment_val(sp, param) != PARSE_SUCCESS)
 		return false;
 
-	if (!next_valid_token(&sp->cfp))
+	if (!cf_next_valid_token(&sp->cfp))
 		return false;
 
 	return true;
@@ -565,13 +569,13 @@ static void sp_parse_param(struct shader_parser *sp,
 	struct shader_var param;
 	shader_var_init_param(&param, type, name, is_uniform, is_const);
 
-	if (token_is(&sp->cfp, ";"))
+	if (cf_token_is(&sp->cfp, ";"))
 		goto complete;
-	if (token_is(&sp->cfp, "[") && !sp_parse_param_array(sp, &param))
+	if (cf_token_is(&sp->cfp, "[") && !sp_parse_param_array(sp, &param))
 		goto error;
-	if (token_is(&sp->cfp, "=") && !sp_parse_param_assignment(sp, &param))
+	if (cf_token_is(&sp->cfp, "=") && !sp_parse_param_assign(sp, &param))
 		goto error;
-	if (!token_is(&sp->cfp, ";"))
+	if (!cf_token_is(&sp->cfp, ";"))
 		goto error;
 
 complete:
@@ -586,17 +590,16 @@ static bool sp_get_var_specifiers(struct shader_parser *sp,
 		bool *is_const, bool *is_uniform)
 {
 	while(true) {
-		int errcode;
-		errcode = sp_check_for_keyword(sp, "const", is_const);
-		if (errcode == PARSE_EOF)
+		int code = sp_check_for_keyword(sp, "const", is_const);
+		if (code == PARSE_EOF)
 			return false;
-		else if (errcode == PARSE_CONTINUE)
+		else if (code == PARSE_CONTINUE)
 			continue;
 
-		errcode = sp_check_for_keyword(sp, "uniform", is_uniform);
-		if (errcode == PARSE_EOF)
+		code = sp_check_for_keyword(sp, "uniform", is_uniform);
+		if (code == PARSE_EOF)
 			return false;
-		else if (errcode == PARSE_CONTINUE)
+		else if (code == PARSE_CONTINUE)
 			continue;
 
 		break;
@@ -622,15 +625,15 @@ static void sp_parse_other(struct shader_parser *sp)
 	if (!sp_get_var_specifiers(sp, &is_const, &is_uniform))
 		goto error;
 
-	if (get_name(&sp->cfp, &type, "type", ";") != PARSE_SUCCESS)
+	if (cf_get_name(&sp->cfp, &type, "type", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_name(&sp->cfp, &name, "name", ";") != PARSE_SUCCESS)
-		goto error;
-
-	if (!next_valid_token(&sp->cfp))
+	if (cf_next_name(&sp->cfp, &name, "name", ";") != PARSE_SUCCESS)
 		goto error;
 
-	if (token_is(&sp->cfp, "(")) {
+	if (!cf_next_valid_token(&sp->cfp))
+		goto error;
+
+	if (cf_token_is(&sp->cfp, "(")) {
 		report_invalid_func_keyword(sp, "const",    is_const);
 		report_invalid_func_keyword(sp, "uniform",  is_uniform);
 
@@ -653,20 +656,20 @@ bool shader_parse(struct shader_parser *sp, const char *shader,
 		return false;
 
 	while (sp->cfp.cur_token && sp->cfp.cur_token->type != CFTOKEN_NONE) {
-		if (token_is(&sp->cfp, ";") ||
+		if (cf_token_is(&sp->cfp, ";") ||
 		    is_whitespace(*sp->cfp.cur_token->str.array)) {
 			sp->cfp.cur_token++;
 
-		} else if (token_is(&sp->cfp, "struct")) {
+		} else if (cf_token_is(&sp->cfp, "struct")) {
 			sp_parse_struct(sp);
 
-		} else if (token_is(&sp->cfp, "sampler_state")) {
+		} else if (cf_token_is(&sp->cfp, "sampler_state")) {
 			sp_parse_sampler_state(sp);
 
-		} else if (token_is(&sp->cfp, "{")) {
+		} else if (cf_token_is(&sp->cfp, "{")) {
 			cf_adderror(&sp->cfp, "Unexpected code segment",
 					LEVEL_ERROR, NULL, NULL, NULL);
-			pass_pair(&sp->cfp, '{', '}');
+			cf_pass_pair(&sp->cfp, '{', '}');
 
 		} else {
 			/* parameters and functions */

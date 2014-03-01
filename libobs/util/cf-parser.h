@@ -98,7 +98,7 @@ static inline void cf_adderror_syntax_error(struct cf_parser *p)
 			NULL, NULL, NULL);
 }
 
-static inline bool next_token(struct cf_parser *p)
+static inline bool cf_next_token(struct cf_parser *p)
 {
 	if (p->cur_token->type != CFTOKEN_SPACETAB &&
 	    p->cur_token->type != CFTOKEN_NEWLINE &&
@@ -112,9 +112,9 @@ static inline bool next_token(struct cf_parser *p)
 	return p->cur_token->type != CFTOKEN_NONE;
 }
 
-static inline bool next_valid_token(struct cf_parser *p)
+static inline bool cf_next_valid_token(struct cf_parser *p)
 {
-	if (!next_token(p)) {
+	if (!cf_next_token(p)) {
 		cf_adderror_unexpected_eof(p);
 		return false;
 	}
@@ -122,18 +122,18 @@ static inline bool next_valid_token(struct cf_parser *p)
 	return true;
 }
 
-EXPORT bool pass_pair(struct cf_parser *p, char in, char out);
+EXPORT bool cf_pass_pair(struct cf_parser *p, char in, char out);
 
-static inline bool go_to_token(struct cf_parser *p,
+static inline bool cf_go_to_token(struct cf_parser *p,
 		const char *str1, const char *str2)
 {
-	while (next_token(p)) {
+	while (cf_next_token(p)) {
 		if (strref_cmp(&p->cur_token->str, str1) == 0) {
 			return true;
 		} else if (str2 && strref_cmp(&p->cur_token->str, str2) == 0) {
 			return true;
 		} else if (*p->cur_token->str.array == '{') {
-			if (!pass_pair(p, '{', '}'))
+			if (!cf_pass_pair(p, '{', '}'))
 				break;
 		}
 	}
@@ -141,10 +141,10 @@ static inline bool go_to_token(struct cf_parser *p,
 	return false;
 }
 
-static inline bool go_to_valid_token(struct cf_parser *p,
+static inline bool cf_go_to_valid_token(struct cf_parser *p,
 		const char *str1, const char *str2)
 {
-	if (!go_to_token(p, str1, str2)) {
+	if (!cf_go_to_token(p, str1, str2)) {
 		cf_adderror_unexpected_eof(p);
 		return false;
 	}
@@ -152,7 +152,7 @@ static inline bool go_to_valid_token(struct cf_parser *p,
 	return true;
 }
 
-static inline bool go_to_token_type(struct cf_parser *p,
+static inline bool cf_go_to_token_type(struct cf_parser *p,
 		enum cf_token_type type)
 {
 	while (p->cur_token->type != CFTOKEN_NONE &&
@@ -162,10 +162,10 @@ static inline bool go_to_token_type(struct cf_parser *p,
 	return p->cur_token->type != CFTOKEN_NONE;
 }
 
-static inline int next_token_should_be(struct cf_parser *p,
+static inline int cf_next_token_should_be(struct cf_parser *p,
 		const char *str, const char *goto1, const char *goto2)
 {
-	if (!next_token(p)) {
+	if (!cf_next_token(p)) {
 		cf_adderror_unexpected_eof(p);
 		return PARSE_EOF;
 	} else if (strref_cmp(&p->cur_token->str, str) == 0) {
@@ -173,16 +173,16 @@ static inline int next_token_should_be(struct cf_parser *p,
 	}
 
 	if (goto1)
-		go_to_token(p, goto1, goto2);
+		cf_go_to_token(p, goto1, goto2);
 
 	cf_adderror_expecting(p, str);
 	return PARSE_CONTINUE;
 }
 
-static inline bool peek_token(struct cf_parser *p, struct cf_token *peek)
+static inline bool cf_peek_token(struct cf_parser *p, struct cf_token *peek)
 {
 	struct cf_token *cur_token = p->cur_token;
-	bool success = next_token(p);
+	bool success = cf_next_token(p);
 
 	*peek = *p->cur_token;
 	p->cur_token = cur_token;
@@ -190,28 +190,28 @@ static inline bool peek_token(struct cf_parser *p, struct cf_token *peek)
 	return success;
 }
 
-static inline bool peek_valid_token(struct cf_parser *p,
+static inline bool cf_peek_valid_token(struct cf_parser *p,
 		struct cf_token *peek)
 {
-	bool success = peek_token(p, peek);
+	bool success = cf_peek_token(p, peek);
 	if (!success)
 		cf_adderror_unexpected_eof(p);
 	return success;
 }
 
-static inline bool token_is(struct cf_parser *p, const char *val)
+static inline bool cf_token_is(struct cf_parser *p, const char *val)
 {
 	return strref_cmp(&p->cur_token->str, val) == 0;
 }
 
-static inline int token_is_type(struct cf_parser *p,
+static inline int cf_token_is_type(struct cf_parser *p,
 		enum cf_token_type type, const char *type_expected,
 		const char *goto_token)
 {
 	if (p->cur_token->type != type) {
 		cf_adderror_expecting(p, type_expected);
 		if (goto_token) {
-			if (!go_to_valid_token(p, goto_token, NULL))
+			if (!cf_go_to_valid_token(p, goto_token, NULL))
 				return PARSE_EOF;
 		}
 		return PARSE_CONTINUE;
@@ -220,17 +220,17 @@ static inline int token_is_type(struct cf_parser *p,
 	return PARSE_SUCCESS;
 }
 
-static inline void copy_token(struct cf_parser *p, char **dst)
+static inline void cf_copy_token(struct cf_parser *p, char **dst)
 {
 	*dst = bstrdup_n(p->cur_token->str.array, p->cur_token->str.len);
 }
 
-static inline int get_name(struct cf_parser *p, char **dst,
+static inline int cf_get_name(struct cf_parser *p, char **dst,
 		const char *name, const char *goto_token)
 {
 	int errcode;
 
-	errcode = token_is_type(p, CFTOKEN_NAME, name, goto_token);
+	errcode = cf_token_is_type(p, CFTOKEN_NAME, name, goto_token);
 	if (errcode != PARSE_SUCCESS)
 		return errcode;
 
@@ -238,21 +238,21 @@ static inline int get_name(struct cf_parser *p, char **dst,
 	return PARSE_SUCCESS;
 }
 
-static inline int next_name(struct cf_parser *p, char **dst,
+static inline int cf_next_name(struct cf_parser *p, char **dst,
 		const char *name, const char *goto_token)
 {
-	if (!next_valid_token(p))
+	if (!cf_next_valid_token(p))
 		return PARSE_EOF;
 
-	return get_name(p, dst, name, goto_token);
+	return cf_get_name(p, dst, name, goto_token);
 }
 
-static inline int get_name_ref(struct cf_parser *p, struct strref *dst,
+static inline int cf_get_name_ref(struct cf_parser *p, struct strref *dst,
 		const char *name, const char *goto_token)
 {
 	int errcode;
 
-	errcode = token_is_type(p, CFTOKEN_NAME, name, goto_token);
+	errcode = cf_token_is_type(p, CFTOKEN_NAME, name, goto_token);
 	if (errcode != PARSE_SUCCESS)
 		return errcode;
 
@@ -260,13 +260,13 @@ static inline int get_name_ref(struct cf_parser *p, struct strref *dst,
 	return PARSE_SUCCESS;
 }
 
-static inline int next_name_ref(struct cf_parser *p, struct strref *dst,
+static inline int cf_next_name_ref(struct cf_parser *p, struct strref *dst,
 		const char *name, const char *goto_token)
 {
-	if (!next_valid_token(p))
+	if (!cf_next_valid_token(p))
 		return PARSE_EOF;
 
-	return get_name_ref(p, dst, name, goto_token);
+	return cf_get_name_ref(p, dst, name, goto_token);
 }
 
 #ifdef __cplusplus

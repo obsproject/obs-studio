@@ -262,13 +262,13 @@ static bool gl_write_mul(struct gl_shader_parser *glsp,
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	cfp->cur_token = *p_token;
 
-	if (!next_token(cfp))    return false;
-	if (!token_is(cfp, "(")) return false;
+	if (!cf_next_token(cfp))    return false;
+	if (!cf_token_is(cfp, "(")) return false;
 
 	dstr_cat(&glsp->gl_string, "(");
 	gl_write_function_contents(glsp, &cfp->cur_token, ",");
 	dstr_cat(&glsp->gl_string, ") * (");
-	next_token(cfp);
+	cf_next_token(cfp);
 	gl_write_function_contents(glsp, &cfp->cur_token, ")");
 	dstr_cat(&glsp->gl_string, "))");
 
@@ -282,8 +282,8 @@ static bool gl_write_saturate(struct gl_shader_parser *glsp,
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	cfp->cur_token = *p_token;
 
-	if (!next_token(cfp))    return false;
-	if (!token_is(cfp, "(")) return false;
+	if (!cf_next_token(cfp))    return false;
+	if (!cf_token_is(cfp, "(")) return false;
 
 	dstr_cat(&glsp->gl_string, "clamp");
 	gl_write_function_contents(glsp, &cfp->cur_token, ")");
@@ -299,15 +299,15 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	size_t sampler_id = (size_t)-1;
 
-	if (!next_token(cfp))    return false;
-	if (!token_is(cfp, "(")) return false;
-	if (!next_token(cfp))    return false;
+	if (!cf_next_token(cfp))    return false;
+	if (!cf_token_is(cfp, "(")) return false;
+	if (!cf_next_token(cfp))    return false;
 
 	sampler_id = sp_getsampler(glsp, cfp->cur_token);
 	if (sampler_id == (size_t)-1) return false;
 
-	if (!next_token(cfp))    return false;
-	if (!token_is(cfp, ",")) return false;
+	if (!cf_next_token(cfp))    return false;
+	if (!cf_token_is(cfp, ",")) return false;
 
 	var->gl_sampler_id = sampler_id;
 
@@ -326,23 +326,23 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	bool written = false;
 	cfp->cur_token = *p_token;
 
-	if (!next_token(cfp))    return false;
-	if (!token_is(cfp, ".")) return false;
-	if (!next_token(cfp))    return false;
+	if (!cf_next_token(cfp))    return false;
+	if (!cf_token_is(cfp, ".")) return false;
+	if (!cf_next_token(cfp))    return false;
 
-	if (token_is(cfp, "Sample"))
+	if (cf_token_is(cfp, "Sample"))
 		written = gl_write_texture_call(glsp, var, "texture");
-	else if (token_is(cfp, "SampleBias"))
+	else if (cf_token_is(cfp, "SampleBias"))
 		written = gl_write_texture_call(glsp, var, "texture");
-	else if (token_is(cfp, "SampleGrad"))
+	else if (cf_token_is(cfp, "SampleGrad"))
 		written = gl_write_texture_call(glsp, var, "textureGrad");
-	else if (token_is(cfp, "SampleLevel"))
+	else if (cf_token_is(cfp, "SampleLevel"))
 		written = gl_write_texture_call(glsp, var, "textureLod");
 
 	if (!written)
 		return false;
 
-	if (!next_token(cfp)) return false;
+	if (!cf_next_token(cfp)) return false;
 
 	gl_write_function_contents(glsp, &cfp->cur_token, ")");
 	dstr_cat(&glsp->gl_string, ")");

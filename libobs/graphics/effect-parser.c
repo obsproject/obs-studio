@@ -141,61 +141,63 @@ static inline struct ep_param *ep_getparam_strref(struct effect_parser *ep,
 static inline int ep_parse_struct_var(struct effect_parser *ep,
 		struct ep_var *var)
 {
-	int errcode;
+	int code;
 
 	/* -------------------------------------- */
 	/* variable type */
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-	if (token_is(&ep->cfp, ";")) return PARSE_CONTINUE;
-	if (token_is(&ep->cfp, "}")) return PARSE_BREAK;
+	if (cf_token_is(&ep->cfp, ";")) return PARSE_CONTINUE;
+	if (cf_token_is(&ep->cfp, "}")) return PARSE_BREAK;
 
-	errcode = token_is_type(&ep->cfp, CFTOKEN_NAME, "type name", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_NAME, "type name", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	copy_token(&ep->cfp, &var->type);
+	cf_copy_token(&ep->cfp, &var->type);
 
 	/* -------------------------------------- */
 	/* variable name */
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-	if (token_is(&ep->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
-	if (token_is(&ep->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
+	if (cf_token_is(&ep->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
+	if (cf_token_is(&ep->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
 
-	errcode = token_is_type(&ep->cfp, CFTOKEN_NAME, "variable name", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_NAME, "variable name", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	copy_token(&ep->cfp, &var->name);
+	cf_copy_token(&ep->cfp, &var->name);
 
 	/* -------------------------------------- */
 	/* variable mapping if any (POSITION, TEXCOORD, etc) */
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-	if (token_is(&ep->cfp, ":")) {
-		if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (cf_token_is(&ep->cfp, ":")) {
+		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-		if (token_is(&ep->cfp, ";")) return PARSE_UNEXPECTED_CONTINUE;
-		if (token_is(&ep->cfp, "}")) return PARSE_UNEXPECTED_BREAK;
+		if (cf_token_is(&ep->cfp, ";"))
+			return PARSE_UNEXPECTED_CONTINUE;
+		if (cf_token_is(&ep->cfp, "}"))
+			return PARSE_UNEXPECTED_BREAK;
 
-		errcode = token_is_type(&ep->cfp, CFTOKEN_NAME,
+		code = cf_token_is_type(&ep->cfp, CFTOKEN_NAME,
 				"mapping name", ";");
-		if (errcode != PARSE_SUCCESS)
-			return errcode;
+		if (code != PARSE_SUCCESS)
+			return code;
 
-		copy_token(&ep->cfp, &var->mapping);
+		cf_copy_token(&ep->cfp, &var->mapping);
 
-		if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
 	/* -------------------------------------- */
 
-	if (!token_is(&ep->cfp, ";")) {
-		if (!go_to_valid_token(&ep->cfp, ";", "}"))
+	if (!cf_token_is(&ep->cfp, ";")) {
+		if (!cf_go_to_valid_token(&ep->cfp, ";", "}"))
 			return PARSE_EOF;
 		return PARSE_CONTINUE;
 	}
@@ -208,9 +210,9 @@ static void ep_parse_struct(struct effect_parser *ep)
 	struct ep_struct eps;
 	ep_struct_init(&eps);
 
-	if (next_name(&ep->cfp, &eps.name, "name", ";") != PARSE_SUCCESS)
+	if (cf_next_name(&ep->cfp, &eps.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
 		goto error;
 
 	/* get structure variables */
@@ -246,7 +248,7 @@ static void ep_parse_struct(struct effect_parser *ep)
 		da_push_back(eps.vars, &var);
 	}
 
-	if (next_token_should_be(&ep->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
 		goto error;
 
 	da_push_back(ep->structs, &eps);
@@ -262,15 +264,15 @@ static inline int ep_parse_pass_command_call(struct effect_parser *ep,
 	struct cf_token end_token;
 	cf_token_clear(&end_token);
 
-	while (!token_is(&ep->cfp, ";")) {
-		if (token_is(&ep->cfp, "}")) {
+	while (!cf_token_is(&ep->cfp, ";")) {
+		if (cf_token_is(&ep->cfp, "}")) {
 			cf_adderror_expecting(&ep->cfp, ";");
 			return PARSE_CONTINUE;
 		}
 
 		darray_push_back(sizeof(struct cf_token), call,
 				ep->cfp.cur_token);
-		if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
 	darray_push_back(sizeof(struct cf_token), call, ep->cfp.cur_token);
@@ -282,30 +284,30 @@ static int ep_parse_pass_command(struct effect_parser *ep, struct ep_pass *pass)
 {
 	struct darray *call; /* struct cf_token */
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-	if (token_is(&ep->cfp, "vertex_shader") ||
-	    token_is(&ep->cfp, "vertex_program")) {
+	if (cf_token_is(&ep->cfp, "vertex_shader") ||
+	    cf_token_is(&ep->cfp, "vertex_program")) {
 		call = &pass->vertex_program.da;
 
-	} else if (token_is(&ep->cfp, "pixel_shader") ||
-	           token_is(&ep->cfp, "pixel_program")) {
+	} else if (cf_token_is(&ep->cfp, "pixel_shader") ||
+	           cf_token_is(&ep->cfp, "pixel_program")) {
 		call = &pass->fragment_program.da;
 
 	} else {
 		cf_adderror_syntax_error(&ep->cfp);
-		if (!go_to_valid_token(&ep->cfp, ";", "}")) return PARSE_EOF;
+		if (!cf_go_to_valid_token(&ep->cfp, ";", "}")) return PARSE_EOF;
 		return PARSE_CONTINUE;
 	}
 
-	if (next_token_should_be(&ep->cfp, "=", ";", "}") != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, "=", ";", "}") != PARSE_SUCCESS)
 		return PARSE_CONTINUE;
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
-	if (token_is(&ep->cfp, "compile")) {
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (cf_token_is(&ep->cfp, "compile")) {
 		cf_adderror(&ep->cfp, "compile keyword not necessary",
 				LEVEL_WARNING, NULL, NULL, NULL);
-		if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
 	return ep_parse_pass_command_call(ep, call);
@@ -315,30 +317,30 @@ static int ep_parse_pass(struct effect_parser *ep, struct ep_pass *pass)
 {
 	struct cf_token peek;
 
-	if (!token_is(&ep->cfp, "pass"))
+	if (!cf_token_is(&ep->cfp, "pass"))
 		return PARSE_UNEXPECTED_CONTINUE;
 
-	if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 
-	if (!token_is(&ep->cfp, "{")) {
+	if (!cf_token_is(&ep->cfp, "{")) {
 		pass->name = bstrdup_n(ep->cfp.cur_token->str.array,
 		                        ep->cfp.cur_token->str.len);
-		if (!next_valid_token(&ep->cfp)) return PARSE_EOF;
+		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
-	if (!peek_valid_token(&ep->cfp, &peek)) return PARSE_EOF;
+	if (!cf_peek_valid_token(&ep->cfp, &peek)) return PARSE_EOF;
 
 	while (strref_cmp(&peek.str, "}") != 0) {
 		int ret = ep_parse_pass_command(ep, pass);
 		if (ret < 0 && ret != PARSE_CONTINUE)
 			return ret;
 
-		if (!peek_valid_token(&ep->cfp, &peek))
+		if (!cf_peek_valid_token(&ep->cfp, &peek))
 			return PARSE_EOF;
 	}
 
 	/* token is '}' */
-	next_token(&ep->cfp);
+	cf_next_token(&ep->cfp);
 
 	return PARSE_SUCCESS;
 }
@@ -348,22 +350,22 @@ static void ep_parse_technique(struct effect_parser *ep)
 	struct ep_technique ept;
 	ep_technique_init(&ept);
 
-	if (next_name(&ep->cfp, &ept.name, "name", ";") != PARSE_SUCCESS)
+	if (cf_next_name(&ep->cfp, &ept.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
-		goto error;
-
-	if (!next_valid_token(&ep->cfp))
+	if (cf_next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
 		goto error;
 
-	while (!token_is(&ep->cfp, "}")) {
+	if (!cf_next_valid_token(&ep->cfp))
+		goto error;
+
+	while (!cf_token_is(&ep->cfp, "}")) {
 		struct ep_pass pass;
 		ep_pass_init(&pass);
 
 		switch (ep_parse_pass(ep, &pass)) {
 		case PARSE_UNEXPECTED_CONTINUE:
 			ep_pass_free(&pass);
-			if (!go_to_token(&ep->cfp, "}", NULL))
+			if (!cf_go_to_token(&ep->cfp, "}", NULL))
 				goto error;
 			continue;
 		case PARSE_EOF:
@@ -373,18 +375,18 @@ static void ep_parse_technique(struct effect_parser *ep)
 
 		da_push_back(ept.passes, &pass);
 
-		if (!next_valid_token(&ep->cfp))
+		if (!cf_next_valid_token(&ep->cfp))
 			goto error;
 	}
 
 	/* pass the current token (which is '}') if we reached here */
-	next_token(&ep->cfp);
+	cf_next_token(&ep->cfp);
 
 	da_push_back(ep->techniques, &ept);
 	return;
 
 error:
-	next_token(&ep->cfp);
+	cf_next_token(&ep->cfp);
 	ep_technique_free(&ept);
 }
 
@@ -394,16 +396,16 @@ static int ep_parse_sampler_state_item(struct effect_parser *ep,
 	int ret;
 	char *state = NULL, *value = NULL;
 
-	ret = next_name(&ep->cfp, &state, "state name", ";");
+	ret = cf_next_name(&ep->cfp, &state, "state name", ";");
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_token_should_be(&ep->cfp, "=", ";", NULL);
+	ret = cf_next_token_should_be(&ep->cfp, "=", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_name(&ep->cfp, &value, "value name", ";");
+	ret = cf_next_name(&ep->cfp, &value, "value name", ";");
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = next_token_should_be(&ep->cfp, ";", ";", NULL);
+	ret = cf_next_token_should_be(&ep->cfp, ";", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
 	da_push_back(eps->states, &state);
@@ -422,12 +424,12 @@ static void ep_parse_sampler_state(struct effect_parser *ep)
 	struct cf_token peek;
 	ep_sampler_init(&eps);
 
-	if (next_name(&ep->cfp, &eps.name, "name", ";") != PARSE_SUCCESS)
+	if (cf_next_name(&ep->cfp, &eps.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
 		goto error;
 
-	if (!peek_valid_token(&ep->cfp, &peek))
+	if (!cf_peek_valid_token(&ep->cfp, &peek))
 		goto error;
 
 	while (strref_cmp(&peek.str, "}") != 0) {
@@ -435,13 +437,13 @@ static void ep_parse_sampler_state(struct effect_parser *ep)
 		if (ret == PARSE_EOF)
 			goto error;
 
-		if (!peek_valid_token(&ep->cfp, &peek))
+		if (!cf_peek_valid_token(&ep->cfp, &peek))
 			goto error;
 	}
 
-	if (next_token_should_be(&ep->cfp, "}", ";", NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, "}", ";", NULL) != PARSE_SUCCESS)
 		goto error;
-	if (next_token_should_be(&ep->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
+	if (cf_next_token_should_be(&ep->cfp, ";", NULL, NULL) != PARSE_SUCCESS)
 		goto error;
 
 	da_push_back(ep->samplers, &eps);
@@ -454,9 +456,9 @@ error:
 static inline int ep_check_for_keyword(struct effect_parser *ep,
 		const char *keyword, bool *val)
 {
-	bool new_val = token_is(&ep->cfp, keyword);
+	bool new_val = cf_token_is(&ep->cfp, keyword);
 	if (new_val) {
-		if (!next_valid_token(&ep->cfp))
+		if (!cf_next_valid_token(&ep->cfp))
 			return PARSE_EOF;
 
 		if (new_val && *val)
@@ -473,33 +475,33 @@ static inline int ep_check_for_keyword(struct effect_parser *ep,
 static inline int ep_parse_func_param(struct effect_parser *ep,
 		struct ep_func *func, struct ep_var *var)
 {
-	int errcode;
+	int code;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return PARSE_EOF;
 
-	errcode = ep_check_for_keyword(ep, "uniform", &var->uniform);
-	if (errcode == PARSE_EOF)
+	code = ep_check_for_keyword(ep, "uniform", &var->uniform);
+	if (code == PARSE_EOF)
 		return PARSE_EOF;
 
-	errcode = get_name(&ep->cfp, &var->type, "type", ")");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_get_name(&ep->cfp, &var->type, "type", ")");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	errcode = next_name(&ep->cfp, &var->name, "name", ")");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_next_name(&ep->cfp, &var->name, "name", ")");
+	if (code != PARSE_SUCCESS)
+		return code;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return PARSE_EOF;
 
-	if (token_is(&ep->cfp, ":")) {
-		errcode = next_name(&ep->cfp, &var->mapping,
+	if (cf_token_is(&ep->cfp, ":")) {
+		code = cf_next_name(&ep->cfp, &var->mapping,
 				"mapping specifier", ")");
-		if (errcode != PARSE_SUCCESS)
-			return errcode;
+		if (code != PARSE_SUCCESS)
+			return code;
 
-		if (!next_valid_token(&ep->cfp))
+		if (!cf_next_valid_token(&ep->cfp))
 			return PARSE_EOF;
 	}
 
@@ -514,15 +516,15 @@ static inline int ep_parse_func_param(struct effect_parser *ep,
 static bool ep_parse_func_params(struct effect_parser *ep, struct ep_func *func)
 {
 	struct cf_token peek;
-	int errcode;
+	int code;
 
 	cf_token_clear(&peek);
 
-	if (!peek_valid_token(&ep->cfp, &peek))
+	if (!cf_peek_valid_token(&ep->cfp, &peek))
 		return false;
 
 	if (*peek.str.array == ')') {
-		next_token(&ep->cfp);
+		cf_next_token(&ep->cfp);
 		goto exit;
 	}
 
@@ -530,21 +532,21 @@ static bool ep_parse_func_params(struct effect_parser *ep, struct ep_func *func)
 		struct ep_var var;
 		ep_var_init(&var);
 
-		if (!token_is(&ep->cfp, "(") && !token_is(&ep->cfp, ","))
+		if (!cf_token_is(&ep->cfp, "(") && !cf_token_is(&ep->cfp, ","))
 			cf_adderror_syntax_error(&ep->cfp);
 
-		errcode = ep_parse_func_param(ep, func, &var);
-		if (errcode != PARSE_SUCCESS) {
+		code = ep_parse_func_param(ep, func, &var);
+		if (code != PARSE_SUCCESS) {
 			ep_var_free(&var);
 
-			if (errcode == PARSE_CONTINUE)
+			if (code == PARSE_CONTINUE)
 				goto exit;
-			else if (errcode == PARSE_EOF)
+			else if (code == PARSE_EOF)
 				return false;
 		}
 
 		da_push_back(func->param_vars, &var);
-	} while (!token_is(&ep->cfp, ")"));
+	} while (!cf_token_is(&ep->cfp, ")"));
 
 exit:
 	return true;
@@ -602,9 +604,9 @@ static inline bool ep_parse_func_contents(struct effect_parser *ep,
 
 		if (ep->cfp.cur_token->type == CFTOKEN_SPACETAB ||
 		    ep->cfp.cur_token->type == CFTOKEN_NEWLINE) {
-		} else if (token_is(&ep->cfp, "{")) {
+		} else if (cf_token_is(&ep->cfp, "{")) {
 			braces++;
-		} else if (token_is(&ep->cfp, "}")) {
+		} else if (cf_token_is(&ep->cfp, "}")) {
 			braces--;
 		} else if (ep_process_struct_dep(ep, func)  ||
 		           ep_process_func_dep(ep, func)    ||
@@ -622,7 +624,7 @@ static void ep_parse_function(struct effect_parser *ep,
 		char *type, char *name)
 {
 	struct ep_func func;
-	int errcode;
+	int code;
 
 	ep_func_init(&func, type, name);
 	if (ep_getstruct(ep, type))
@@ -631,22 +633,22 @@ static void ep_parse_function(struct effect_parser *ep,
 	if (!ep_parse_func_params(ep, &func))
 		goto error;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		goto error;
 
 	/* if function is mapped to something, for example COLOR */
-	if (token_is(&ep->cfp, ":")) {
-		errcode = next_name(&ep->cfp, &func.mapping,
+	if (cf_token_is(&ep->cfp, ":")) {
+		code = cf_next_name(&ep->cfp, &func.mapping,
 				"mapping specifier", "{");
-		if (errcode == PARSE_EOF)
+		if (code == PARSE_EOF)
 			goto error;
-		else if (errcode != PARSE_CONTINUE) {
-			if (!next_valid_token(&ep->cfp))
+		else if (code != PARSE_CONTINUE) {
+			if (!cf_next_valid_token(&ep->cfp))
 				goto error;
 		}
 	}
 
-	if (!token_is(&ep->cfp, "{")) {
+	if (!cf_token_is(&ep->cfp, "{")) {
 		cf_adderror_expecting(&ep->cfp, "{");
 		goto error;
 	}
@@ -655,7 +657,7 @@ static void ep_parse_function(struct effect_parser *ep,
 		goto error;
 
 	/* it is established that the current token is '}' if we reach this */
-	next_token(&ep->cfp);
+	cf_next_token(&ep->cfp);
 
 	da_push_back(ep->funcs, &func);
 	return;
@@ -668,7 +670,7 @@ error:
 static bool ep_parse_param_array(struct effect_parser *ep,
 		struct ep_param *param)
 {
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return false;
 
 	if (ep->cfp.cur_token->type != CFTOKEN_NUM ||
@@ -678,10 +680,10 @@ static bool ep_parse_param_array(struct effect_parser *ep,
 
 	param->array_count =(int)strtol(ep->cfp.cur_token->str.array, NULL, 10);
 
-	if (next_token_should_be(&ep->cfp, "]", ";", NULL) == PARSE_EOF)
+	if (cf_next_token_should_be(&ep->cfp, "]", ";", NULL) == PARSE_EOF)
 		return false;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return false;
 
 	return true;
@@ -690,16 +692,16 @@ static bool ep_parse_param_array(struct effect_parser *ep,
 static inline int ep_parse_param_assign_texture(struct effect_parser *ep,
 		struct ep_param *param)
 {
-	int errcode;
+	int code;
 	char *str;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return PARSE_EOF;
 
-	errcode = token_is_type(&ep->cfp, CFTOKEN_STRING,
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_STRING,
 			"texture path string", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	if (code != PARSE_SUCCESS)
+		return code;
 
 	str = cf_literal_to_str(ep->cfp.cur_token->str.array,
 	                        ep->cfp.cur_token->str.len);
@@ -715,14 +717,14 @@ static inline int ep_parse_param_assign_texture(struct effect_parser *ep,
 static inline int ep_parse_param_assign_intfloat(struct effect_parser *ep,
 		struct ep_param *param, bool is_float)
 {
-	int errcode;
+	int code;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return PARSE_EOF;
 
-	errcode = token_is_type(&ep->cfp, CFTOKEN_NUM, "numeric value", ";");
-	if (errcode != PARSE_SUCCESS)
-		return errcode;
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_NUM, "numeric value", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
 
 	if (is_float) {
 		float f = (float)strtod(ep->cfp.cur_token->str.array, NULL);
@@ -743,7 +745,7 @@ static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
 		struct ep_param *param)
 {
 	const char *float_type = param->type+5;
-	int float_count = 0, errcode, i;
+	int float_count = 0, code, i;
 
 	/* -------------------------------------------- */
 
@@ -763,17 +765,17 @@ static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
 
 	/* -------------------------------------------- */
 
-	errcode = next_token_should_be(&ep->cfp, "{", ";", NULL);
-	if (errcode != PARSE_SUCCESS) return errcode;
+	code = cf_next_token_should_be(&ep->cfp, "{", ";", NULL);
+	if (code != PARSE_SUCCESS) return code;
 
 	for (i = 0; i < float_count; i++) {
 		char *next = ((i+1) < float_count) ? "," : "}";
 
-		errcode = ep_parse_param_assign_intfloat(ep, param, true);
-		if (errcode != PARSE_SUCCESS) return errcode;
+		code = ep_parse_param_assign_intfloat(ep, param, true);
+		if (code != PARSE_SUCCESS) return code;
 
-		errcode = next_token_should_be(&ep->cfp, next, ";", NULL);
-		if (errcode != PARSE_SUCCESS) return errcode;
+		code = cf_next_token_should_be(&ep->cfp, next, ";", NULL);
+		if (code != PARSE_SUCCESS) return code;
 	}
 
 	return PARSE_SUCCESS;
@@ -797,13 +799,13 @@ static int ep_parse_param_assignment_val(struct effect_parser *ep,
 	return PARSE_CONTINUE;
 }
 
-static inline bool ep_parse_param_assignment(struct effect_parser *ep,
+static inline bool ep_parse_param_assign(struct effect_parser *ep,
 		struct ep_param *param)
 {
 	if (ep_parse_param_assignment_val(ep, param) != PARSE_SUCCESS)
 		return false;
 
-	if (!next_valid_token(&ep->cfp))
+	if (!cf_next_valid_token(&ep->cfp))
 		return false;
 
 	return true;
@@ -821,15 +823,16 @@ static void ep_parse_param(struct effect_parser *ep,
 	struct ep_param param;
 	ep_param_init(&param, type, name, is_property, is_const, is_uniform);
 
-	if (token_is(&ep->cfp, ";"))
+	if (cf_token_is(&ep->cfp, ";"))
 		goto complete;
-	if (token_is(&ep->cfp, "[") && !ep_parse_param_array(ep, &param))
+	if (cf_token_is(&ep->cfp, "[") && !ep_parse_param_array(ep, &param))
 		goto error;
-	if (token_is(&ep->cfp, "=") && !ep_parse_param_assignment(ep, &param))
+	if (cf_token_is(&ep->cfp, "=") && !ep_parse_param_assign(ep, &param))
 		goto error;
-	/*if (token_is(&ep->cfp, "<") && !ep_parse_param_property(ep, &param))
+	/*
+	if (cf_token_is(&ep->cfp, "<") && !ep_parse_param_property(ep, &param))
 		goto error; */
-	if (!token_is(&ep->cfp, ";"))
+	if (!cf_token_is(&ep->cfp, ";"))
 		goto error;
 
 complete:
@@ -844,23 +847,23 @@ static bool ep_get_var_specifiers(struct effect_parser *ep,
 		bool *is_property, bool *is_const, bool *is_uniform)
 {
 	while(true) {
-		int errcode;
-		errcode = ep_check_for_keyword(ep, "property", is_property);
-		if (errcode == PARSE_EOF)
+		int code;
+		code = ep_check_for_keyword(ep, "property", is_property);
+		if (code == PARSE_EOF)
 			return false;
-		else if (errcode == PARSE_CONTINUE)
+		else if (code == PARSE_CONTINUE)
 			continue;
 
-		errcode = ep_check_for_keyword(ep, "const", is_const);
-		if (errcode == PARSE_EOF)
+		code = ep_check_for_keyword(ep, "const", is_const);
+		if (code == PARSE_EOF)
 			return false;
-		else if (errcode == PARSE_CONTINUE)
+		else if (code == PARSE_CONTINUE)
 			continue;
 
-		errcode = ep_check_for_keyword(ep, "uniform", is_uniform);
-		if (errcode == PARSE_EOF)
+		code = ep_check_for_keyword(ep, "uniform", is_uniform);
+		if (code == PARSE_EOF)
 			return false;
-		else if (errcode == PARSE_CONTINUE)
+		else if (code == PARSE_CONTINUE)
 			continue;
 
 		break;
@@ -886,15 +889,15 @@ static void ep_parse_other(struct effect_parser *ep)
 	if (!ep_get_var_specifiers(ep, &is_property, &is_const, &is_uniform))
 		goto error;
 
-	if (get_name(&ep->cfp, &type, "type", ";") != PARSE_SUCCESS)
+	if (cf_get_name(&ep->cfp, &type, "type", ";") != PARSE_SUCCESS)
 		goto error;
-	if (next_name(&ep->cfp, &name, "name", ";") != PARSE_SUCCESS)
-		goto error;
-
-	if (!next_valid_token(&ep->cfp))
+	if (cf_next_name(&ep->cfp, &name, "name", ";") != PARSE_SUCCESS)
 		goto error;
 
-	if (token_is(&ep->cfp, "(")) {
+	if (!cf_next_valid_token(&ep->cfp))
+		goto error;
+
+	if (cf_token_is(&ep->cfp, "(")) {
 		report_invalid_func_keyword(ep, "property", is_property);
 		report_invalid_func_keyword(ep, "const",    is_const);
 		report_invalid_func_keyword(ep, "uniform",  is_uniform);
@@ -939,25 +942,25 @@ bool ep_parse(struct effect_parser *ep, effect_t effect,
 		return false;
 
 	while (ep->cfp.cur_token && ep->cfp.cur_token->type != CFTOKEN_NONE) {
-		if (token_is(&ep->cfp, ";") ||
+		if (cf_token_is(&ep->cfp, ";") ||
 		    is_whitespace(*ep->cfp.cur_token->str.array)) {
 			/* do nothing */
 			ep->cfp.cur_token++;
 
-		} else if (token_is(&ep->cfp, "struct")) {
+		} else if (cf_token_is(&ep->cfp, "struct")) {
 			ep_parse_struct(ep);
 
-		} else if (token_is(&ep->cfp, "technique")) {
+		} else if (cf_token_is(&ep->cfp, "technique")) {
 			ep_parse_technique(ep);
 
-		} else if (token_is(&ep->cfp, "sampler_state")) {
+		} else if (cf_token_is(&ep->cfp, "sampler_state")) {
 			ep_parse_sampler_state(ep);
 
-		} else if (token_is(&ep->cfp, "{")) {
+		} else if (cf_token_is(&ep->cfp, "{")) {
 			/* add error and pass braces */
 			cf_adderror(&ep->cfp, "Unexpected code segment",
 					LEVEL_ERROR, NULL, NULL, NULL);
-			pass_pair(&ep->cfp, '{', '}');
+			cf_pass_pair(&ep->cfp, '{', '}');
 
 		} else {
 			/* parameters and functions */

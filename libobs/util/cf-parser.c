@@ -39,7 +39,7 @@ void cf_adderror(struct cf_parser *p, const char *error, int level,
 	}
 }
 
-bool pass_pair(struct cf_parser *p, char in, char out)
+bool cf_pass_pair(struct cf_parser *p, char in, char out)
 {
 	if (p->cur_token->type != CFTOKEN_OTHER ||
 	    *p->cur_token->str.array != in)
@@ -49,7 +49,7 @@ bool pass_pair(struct cf_parser *p, char in, char out)
 
 	while (p->cur_token->type != CFTOKEN_NONE) {
 		if (*p->cur_token->str.array == in) {
-			if (!pass_pair(p, in, out))
+			if (!cf_pass_pair(p, in, out))
 				break;
 			continue;
 
