@@ -235,11 +235,11 @@ static inline bool video_input_init(struct video_input *input,
 				VIDEO_SCALE_FAST_BILINEAR);
 		if (ret != VIDEO_SCALER_SUCCESS) {
 			if (ret == VIDEO_SCALER_BAD_CONVERSION)
-				blog(LOG_WARNING, "video_input_init: Bad "
-				                  "scale conversion type");
+				blog(LOG_ERROR, "video_input_init: Bad "
+				                "scale conversion type");
 			else
-				blog(LOG_WARNING, "video_input_init: Failed to "
-						  "create scaler");
+				blog(LOG_ERROR, "video_input_init: Failed to "
+				                "create scaler");
 
 			return false;
 		}

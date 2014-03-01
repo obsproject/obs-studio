@@ -51,7 +51,7 @@ static LRESULT CALLBACK sceneProc(HWND hwnd, UINT message, WPARAM wParam,
 	return 0;
 }
 
-static void do_log(enum log_type type, const char *msg, va_list args)
+static void do_log(int log_level, const char *msg, va_list args)
 {
 	char bla[4096];
 	vsnprintf(bla, 4095, msg, args);
@@ -59,7 +59,7 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (type >= LOG_WARNING)
+	if (log_level <= LOG_WARNING)
 		__debugbreak();
 }
 

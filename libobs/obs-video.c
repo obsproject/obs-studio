@@ -354,7 +354,7 @@ static bool convert_frame(struct obs_core_video *video,
 				new_frame->data, new_frame->linesize);
 
 	} else {
-		blog(LOG_WARNING, "convert_frame: unsupported texture format");
+		blog(LOG_ERROR, "convert_frame: unsupported texture format");
 		return false;
 	}
 

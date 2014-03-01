@@ -226,7 +226,7 @@ void gs_matrix_pop(void)
 		return;
 
 	if (graphics->cur_matrix == 0) {
-		blog(LOG_ERROR, "Tried to pop last matrix on stack");
+		blog(LOG_WARNING, "Tried to pop last matrix on stack");
 		return;
 	}
 
@@ -505,9 +505,9 @@ static inline bool validvertsize(graphics_t graphics, size_t num,
 		return false;
 
 	if (graphics->using_immediate && num == IMMEDIATE_COUNT) {
-		blog(LOG_WARNING, "%s: tried to use over %u "
-				  "for immediate rendering",
-				  name, IMMEDIATE_COUNT);
+		blog(LOG_ERROR, "%s: tried to use over %u "
+				"for immediate rendering",
+				name, IMMEDIATE_COUNT);
 		return false;
 	}
 
@@ -596,7 +596,7 @@ effect_t gs_create_effect_from_file(const char *file, char **error_string)
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
-		blog(LOG_WARNING, "Could not load effect file '%s'", file);
+		blog(LOG_ERROR, "Could not load effect file '%s'", file);
 		return NULL;
 	}
 
@@ -642,7 +642,7 @@ shader_t gs_create_vertexshader_from_file(const char *file, char **error_string)
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
-		blog(LOG_WARNING, "Could not load vertex shader file '%s'",
+		blog(LOG_ERROR, "Could not load vertex shader file '%s'",
 				file);
 		return NULL;
 	}
@@ -663,7 +663,7 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
-		blog(LOG_WARNING, "Could not load pixel shader file '%s'",
+		blog(LOG_ERROR, "Could not load pixel shader file '%s'",
 				file);
 		return NULL;
 	}
@@ -775,7 +775,7 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 		return;
 
 	if (gs_gettexturetype(tex) != GS_TEXTURE_2D) {
-		blog(LOG_ERROR, "A sprite must be a 2D texture");
+		blog(LOG_WARNING, "A sprite must be a 2D texture");
 		return;
 	}
 

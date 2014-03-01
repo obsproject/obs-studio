@@ -35,9 +35,9 @@ static size_t cur_modeless_ui_size  = 0;
 
 static inline int req_func_not_found(const char *name, const char *path)
 {
-	blog(LOG_WARNING, "Required module function '%s' in module '%s' not "
-	                  "found, loading of module failed",
-	                  name, path);
+	blog(LOG_ERROR, "Required module function '%s' in module '%s' not "
+	                "found, loading of module failed",
+	                name, path);
 	return MODULE_FUNCTION_NOT_FOUND;
 }
 
@@ -75,8 +75,8 @@ static int call_module_load(void *module, const char *path)
 	cur_modeless_ui_size  = obs_module_modeless_ui_size();
 
 	if (!obs_module_load(LIBOBS_API_VER)) {
-		blog(LOG_WARNING, "Module '%s' failed to load: "
-		                  "obs_module_load failed", path);
+		blog(LOG_ERROR, "Module '%s' failed to load: "
+		                "obs_module_load failed", path);
 		return MODULE_ERROR;
 	}
 
@@ -136,13 +136,13 @@ void obs_register_source(const struct obs_source_info *info)
 	struct darray *array;
 
 	if (!info) {
-		blog(LOG_WARNING, "obs_register_source: NULL info");
+		blog(LOG_ERROR, "obs_register_source: NULL info");
 		return;
 	}
 
 	if (!cur_source_info_size) {
-		blog(LOG_WARNING, "Tried to register obs_source_info"
-		                  " outside of obs_module_load");
+		blog(LOG_ERROR, "Tried to register obs_source_info"
+		                " outside of obs_module_load");
 		return;
 	}
 
@@ -155,7 +155,7 @@ void obs_register_source(const struct obs_source_info *info)
 	} else if (info->type == OBS_SOURCE_TYPE_TRANSITION) {
 		array = &obs->transition_types.da;
 	} else {
-		blog(LOG_WARNING, "Tried to register unknown source type: %u",
+		blog(LOG_ERROR, "Tried to register unknown source type: %u",
 				info->type);
 		return;
 	}
@@ -167,8 +167,8 @@ void obs_register_source(const struct obs_source_info *info)
 	do {                                                              \
 		struct structure data = {0};                              \
 		if (!size_var) {                                          \
-			blog(LOG_WARNING, "Tried to register " #structure \
-			                  " outside of obs_module_load"); \
+			blog(LOG_ERROR, "Tried to register " #structure   \
+			               " outside of obs_module_load");    \
 			return;                                           \
 		}                                                         \
                                                                           \
@@ -179,10 +179,9 @@ void obs_register_source(const struct obs_source_info *info)
 #define CHECK_REQUIRED_VAL(info, val, func) \
 	do { \
 		if (!info->val) {\
-			blog(LOG_WARNING, "Required value '" #val " for" \
-					  "'%s' not found.  " #func \
-			                  " failed.", \
-					  info->id);\
+			blog(LOG_ERROR, "Required value '" #val " for" \
+			                "'%s' not found.  " #func \
+			                " failed.", info->id); \
 			return; \
 		} \
 	} while (false)

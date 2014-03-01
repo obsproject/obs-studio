@@ -64,7 +64,7 @@ static const struct obs_source_info *get_source_info(enum obs_source_type type,
 
 	case OBS_SOURCE_TYPE_SCENE:
 	default:
-		blog(LOG_WARNING, "get_source_info: invalid source type");
+		blog(LOG_ERROR, "get_source_info: invalid source type");
 		return NULL;
 	}
 
@@ -143,7 +143,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (!info) {
-		blog(LOG_WARNING, "Source '%s' not found", id);
+		blog(LOG_ERROR, "Source '%s' not found", id);
 		return NULL;
 	}
 

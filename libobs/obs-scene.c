@@ -310,7 +310,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 		return NULL;
 
 	if (!source) {
-		blog(LOG_WARNING, "Tried to add a NULL source to a scene");
+		blog(LOG_ERROR, "Tried to add a NULL source to a scene");
 		return NULL;
 	}
 

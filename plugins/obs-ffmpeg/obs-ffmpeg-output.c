@@ -106,14 +106,14 @@ static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 {
 	*codec = avcodec_find_encoder(id);
 	if (!*codec) {
-		blog(LOG_ERROR, "Couldn't find encoder '%s'",
+		blog(LOG_WARNING, "Couldn't find encoder '%s'",
 				avcodec_get_name(id));
 		return false;
 	}
 
 	*stream = avformat_new_stream(data->output, *codec);
 	if (!*stream) {
-		blog(LOG_ERROR, "Couldn't create stream for encoder '%s'",
+		blog(LOG_WARNING, "Couldn't create stream for encoder '%s'",
 				avcodec_get_name(id));
 		return false;
 	}
@@ -132,14 +132,14 @@ static bool open_video_codec(struct ffmpeg_data *data)
 
 	ret = avcodec_open2(context, data->vcodec, NULL);
 	if (ret < 0) {
-		blog(LOG_ERROR, "Failed to open video codec: %s",
+		blog(LOG_WARNING, "Failed to open video codec: %s",
 				av_err2str(ret));
 		return false;
 	}
 
 	data->vframe = av_frame_alloc();
 	if (!data->vframe) {
-		blog(LOG_ERROR, "Failed to allocate video frame");
+		blog(LOG_WARNING, "Failed to allocate video frame");
 		return false;
 	}
 
@@ -150,7 +150,7 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	ret = avpicture_alloc(&data->dst_picture, context->pix_fmt,
 			context->width, context->height);
 	if (ret < 0) {
-		blog(LOG_ERROR, "Failed to allocate dst_picture: %s",
+		blog(LOG_WARNING, "Failed to allocate dst_picture: %s",
 				av_err2str(ret));
 		return false;
 	}
@@ -167,7 +167,7 @@ static bool init_swscale(struct ffmpeg_data *data, AVCodecContext *context)
 			SWS_BICUBIC, NULL, NULL, NULL);
 
 	if (!data->swscale) {
-		blog(LOG_ERROR, "Could not initialize swscale");
+		blog(LOG_WARNING, "Could not initialize swscale");
 		return false;
 	}
 
@@ -180,7 +180,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	struct obs_video_info ovi;
 
 	if (!obs_get_video_info(&ovi)) {
-		blog(LOG_ERROR, "No active video");
+		blog(LOG_WARNING, "No active video");
 		return false;
 	}
 
@@ -218,7 +218,7 @@ static bool open_audio_codec(struct ffmpeg_data *data)
 
 	data->aframe = av_frame_alloc();
 	if (!data->aframe) {
-		blog(LOG_ERROR, "Failed to allocate audio frame");
+		blog(LOG_WARNING, "Failed to allocate audio frame");
 		return false;
 	}
 
@@ -226,7 +226,7 @@ static bool open_audio_codec(struct ffmpeg_data *data)
 
 	ret = avcodec_open2(context, data->acodec, NULL);
 	if (ret < 0) {
-		blog(LOG_ERROR, "Failed to open audio codec: %s",
+		blog(LOG_WARNING, "Failed to open audio codec: %s",
 				av_err2str(ret));
 		return false;
 	}
@@ -236,7 +236,7 @@ static bool open_audio_codec(struct ffmpeg_data *data)
 	ret = av_samples_alloc(data->samples, NULL, context->channels,
 			data->frame_size, context->sample_fmt, 0);
 	if (ret < 0) {
-		blog(LOG_ERROR, "Failed to create audio buffer: %s",
+		blog(LOG_WARNING, "Failed to create audio buffer: %s",
 		                av_err2str(ret));
 		return false;
 	}
@@ -250,7 +250,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	struct audio_output_info aoi;
 
 	if (!obs_get_audio_info(&aoi)) {
-		blog(LOG_ERROR, "No active audio");
+		blog(LOG_WARNING, "No active audio");
 		return false;
 	}
 
@@ -300,7 +300,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 		ret = avio_open(&data->output->pb, data->filename_test,
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
-			blog(LOG_ERROR, "Couldn't open file '%s', %s",
+			blog(LOG_WARNING, "Couldn't open file '%s', %s",
 					data->filename_test, av_err2str(ret));
 			return false;
 		}
@@ -308,7 +308,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 
 	ret = avformat_write_header(data->output, NULL);
 	if (ret < 0) {
-		blog(LOG_ERROR, "Error opening file '%s': %s",
+		blog(LOG_WARNING, "Error opening file '%s': %s",
 				data->filename_test, av_err2str(ret));
 		return false;
 	}
@@ -373,7 +373,7 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 	avformat_alloc_output_context2(&data->output, NULL, NULL,
 			data->filename_test);
 	if (!data->output) {
-		blog(LOG_ERROR, "Couldn't create avformat context");
+		blog(LOG_WARNING, "Couldn't create avformat context");
 		goto fail;
 	}
 
@@ -386,7 +386,7 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 	return true;
 
 fail:
-	blog(LOG_ERROR, "ffmpeg_data_init failed");
+	blog(LOG_WARNING, "ffmpeg_data_init failed");
 	ffmpeg_data_free(data);
 	return false;
 }
@@ -496,8 +496,8 @@ static void receive_video(void *param, const struct video_data *frame)
 		ret = avcodec_encode_video2(context, &packet, data->vframe,
 				&got_packet);
 		if (ret < 0) {
-			blog(LOG_ERROR, "receive_video: Error encoding "
-			                "video: %s", av_err2str(ret));
+			blog(LOG_WARNING, "receive_video: Error encoding "
+			                  "video: %s", av_err2str(ret));
 			return;
 		}
 
@@ -520,7 +520,7 @@ static void receive_video(void *param, const struct video_data *frame)
 	}
 
 	if (ret != 0) {
-		blog(LOG_ERROR, "receive_video: Error writing video: %s",
+		blog(LOG_WARNING, "receive_video: Error writing video: %s",
 				av_err2str(ret));
 	}
 
@@ -543,8 +543,8 @@ static inline void encode_audio(struct ffmpeg_data *output,
 			context->sample_fmt, output->samples[0],
 			(int)total_size, 1);
 	if (ret < 0) {
-		blog(LOG_ERROR, "receive_audio: avcodec_fill_audio_frame "
-		                "failed: %s", av_err2str(ret));
+		blog(LOG_WARNING, "receive_audio: avcodec_fill_audio_frame "
+		                  "failed: %s", av_err2str(ret));
 		return;
 	}
 
@@ -553,7 +553,7 @@ static inline void encode_audio(struct ffmpeg_data *output,
 	ret = avcodec_encode_audio2(context, &packet, output->aframe,
 			&got_packet);
 	if (ret < 0) {
-		blog(LOG_ERROR, "receive_audio: Error encoding audio: %s",
+		blog(LOG_WARNING, "receive_audio: Error encoding audio: %s",
 				av_err2str(ret));
 		return;
 	}
@@ -570,7 +570,7 @@ static inline void encode_audio(struct ffmpeg_data *output,
 	pthread_mutex_lock(&output->write_mutex);
 	ret = av_interleaved_write_frame(output->output, &packet);
 	if (ret != 0)
-		blog(LOG_ERROR, "receive_audio: Error writing audio: %s",
+		blog(LOG_WARNING, "receive_audio: Error writing audio: %s",
 				av_err2str(ret));
 	pthread_mutex_unlock(&output->write_mutex);
 }
@@ -638,8 +638,8 @@ static bool ffmpeg_output_start(void *data)
 	audio_t audio = obs_audio();
 
 	if (!video || !audio) {
-		blog(LOG_ERROR, "ffmpeg_output_start: audio and video must "
-		                "both be active (at least as of this writing)");
+		blog(LOG_WARNING, "ffmpeg_output_start: audio and video must "
+		                  "both be active (as of this writing)");
 		return false;
 	}
 

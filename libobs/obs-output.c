@@ -35,7 +35,7 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	struct obs_output *output;
 
 	if (!info) {
-		blog(LOG_WARNING, "Output '%s' not found", id);
+		blog(LOG_ERROR, "Output '%s' not found", id);
 		return NULL;
 	}
 

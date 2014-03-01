@@ -34,7 +34,7 @@
 
 using namespace std;
 
-static void do_log(enum log_type type, const char *msg, va_list args)
+static void do_log(int log_level, const char *msg, va_list args)
 {
 #ifdef _WIN32
 	char bla[4096];
@@ -43,14 +43,14 @@ static void do_log(enum log_type type, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (type >= LOG_WARNING && IsDebuggerPresent())
+	if (log_level <= LOG_WARNING && IsDebuggerPresent())
 		__debugbreak();
 #else
 	vprintf(msg, args);
 	printf("\n");
-#endif
 
-	UNUSED_PARAMETER(type);
+	UNUSED_PARAMETER(level);
+#endif
 }
 
 bool OBSApp::InitGlobalConfigDefaults()
@@ -164,10 +164,10 @@ bool OBSApp::InitLocale()
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
 		if (!text_lookup_add(textLookup, path.c_str()))
-			blog(LOG_WARNING, "Failed to add locale file '%s'",
+			blog(LOG_ERROR, "Failed to add locale file '%s'",
 					path.c_str());
 	} else {
-		blog(LOG_WARNING, "Could not find locale file '%s'",
+		blog(LOG_ERROR, "Could not find locale file '%s'",
 				file.str().c_str());
 	}
 
@@ -285,7 +285,9 @@ int main(int argc, char *argv[])
 {
 	int ret = -1;
 	QCoreApplication::addLibraryPath(".");
+#ifdef _WIN32
 	base_set_log_handler(do_log);
+#endif
 
 	try {
 		OBSApp program(argc, argv);

@@ -28,18 +28,41 @@
 extern "C" {
 #endif
 
-enum log_type {
-	LOG_DEBUG,
-	LOG_INFO,
-	LOG_WARNING,
-	LOG_ERROR
+enum {
+	/**
+	 * Use if there's a problem that can potentially affect the program,
+	 * but isn't enough to require termination of the program.
+	 *
+	 * Use in creation functions and core subsystem functions.  Places that
+	 * should definitely not fail.
+	 */
+	LOG_ERROR   = 100, 
+
+	/**
+	 * Use if a problem occurs that doesn't affect the program and is
+	 * recoverable.
+	 *
+	 * Use in places where where failure isn't entirely unexpected, and can
+	 * be handled safely.
+	 */
+	LOG_WARNING = 200,
+
+	/**
+	 * Informative essage to be displayed in the log.
+	 */
+	LOG_INFO    = 300,
+
+	/**
+	 * Debug message to be used mostly by developers.
+	 */
+	LOG_DEBUG   = 400
 };
 
 EXPORT void base_set_log_handler(
-		void (*handler)(enum log_type, const char *, va_list));
+		void (*handler)(int log_level, const char *, va_list));
 EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list));
 
-EXPORT void blogva(enum log_type type, const char *format, va_list args);
+EXPORT void blogva(int log_level, const char *format, va_list args);
 
 #ifndef _MSC_VER
 #define PRINTFATTR(f, a) __attribute__((__format__(__printf__, f, a)))
@@ -48,7 +71,7 @@ EXPORT void blogva(enum log_type type, const char *format, va_list args);
 #endif
 
 PRINTFATTR(2, 3)
-EXPORT void blog(enum log_type type, const char *format, ...);
+EXPORT void blog(int log_level, const char *format, ...);
 PRINTFATTR(1, 2)
 EXPORT void bcrash(const char *format, ...);
 

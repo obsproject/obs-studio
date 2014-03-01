@@ -485,8 +485,8 @@ static inline bool audio_input_init(struct audio_input *input,
 
 		input->resampler = audio_resampler_create(&to, &from);
 		if (!input->resampler) {
-			blog(LOG_WARNING, "audio_input_init: Failed to "
-			                  "create resampler");
+			blog(LOG_ERROR, "audio_input_init: Failed to "
+			                "create resampler");
 			return false;
 		}
 	} else {

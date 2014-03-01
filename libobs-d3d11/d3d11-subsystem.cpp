@@ -1591,8 +1591,8 @@ void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
 {
 	if (!vertbuffer->dynamic) {
-		blog(LOG_WARNING, "vertexbuffer_flush: vertex buffer is "
-		                  "not dynamic");
+		blog(LOG_ERROR, "vertexbuffer_flush: vertex buffer is "
+		                "not dynamic");
 		return;
 	}
 

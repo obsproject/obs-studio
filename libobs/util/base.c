@@ -21,17 +21,22 @@
 #include "c99defs.h"
 #include "base.h"
 
-static enum log_type log_output_level = LOG_WARNING;
-static int  crashing = 0;
+#ifdef _DEBUG
+static int log_output_level = LOG_DEBUG;
+#else
+static int log_output_level = LOG_INFO;
+#endif
 
-static void def_log_handler(enum log_type type, const char *format,
+static int crashing = 0;
+
+static void def_log_handler(int log_level, const char *format,
 		va_list args)
 {
 	char out[4096];
 	vsnprintf(out, sizeof(out), format, args);
 
-	if (type >= log_output_level) {
-		switch (type) {
+	if (log_level >= log_output_level) {
+		switch (log_level) {
 		case LOG_DEBUG:
 			printf("debug: %s\n", out);
 			break;
@@ -41,7 +46,7 @@ static void def_log_handler(enum log_type type, const char *format,
 			break;
 
 		case LOG_WARNING:
-			fprintf(stderr, "warning: %s\n", out);
+			printf("warning: %s\n", out);
 			break;
 
 		case LOG_ERROR:
@@ -62,12 +67,12 @@ NORETURN static void def_crash_handler(const char *format, va_list args)
 	exit(0);
 }
 
-static void (*log_handler)(enum log_type, const char *, va_list) =
+static void (*log_handler)(int log_level, const char *, va_list) =
 		def_log_handler;
 static void (*crash_handler)(const char *, va_list) = def_crash_handler;
 
 void base_set_log_handler(
-	void (*handler)(enum log_type, const char *, va_list))
+	void (*handler)(int log_level, const char *, va_list))
 {
 	log_handler = handler;
 }
@@ -92,16 +97,16 @@ void bcrash(const char *format, ...)
 	va_end(args);
 }
 
-void blogva(enum log_type type, const char *format, va_list args)
+void blogva(int log_level, const char *format, va_list args)
 {
-	log_handler(type, format, args);
+	log_handler(log_level, format, args);
 }
 
-void blog(enum log_type type, const char *format, ...)
+void blog(int log_level, const char *format, ...)
 {
 	va_list args;
 
 	va_start(args, format);
-	log_handler(type, format, args);
+	log_handler(log_level, format, args);
 	va_end(args);
 }

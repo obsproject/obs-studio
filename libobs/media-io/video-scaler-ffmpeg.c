@@ -95,8 +95,8 @@ int video_scaler_create(video_scaler_t *scaler_out,
 			dst->width, dst->height, format_dst,
 			scale_type, NULL, NULL, NULL);
 	if (!scaler->swscale) {
-		blog(LOG_WARNING, "video_scaler_create: Could not create "
-		                  "swscale");
+		blog(LOG_ERROR, "video_scaler_create: Could not create "
+		                "swscale");
 		goto fail;
 	}
 
@@ -137,7 +137,7 @@ bool video_scaler_scale(video_scaler_t scaler,
 			0, scaler->src_height,
 			output, (const int *)out_linesize);
 	if (ret <= 0) {
-		blog(LOG_DEBUG, "video_scaler_scale: sws_scale failed: %d",
+		blog(LOG_ERROR, "video_scaler_scale: sws_scale failed: %d",
 				ret);
 		return false;
 	}
