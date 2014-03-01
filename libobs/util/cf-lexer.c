@@ -562,14 +562,14 @@ static inline void cf_adderror(struct cf_preprocessor *pp,
 		const struct cf_token *token, const char *error,
 		const char *val1, const char *val2, const char *val3)
 {
-	cf_addew(pp, token, error, LEVEL_ERROR, val1, val2, val3);
+	cf_addew(pp, token, error, LEX_ERROR, val1, val2, val3);
 }
 
 static inline void cf_addwarning(struct cf_preprocessor *pp,
 		const struct cf_token *token, const char *warning,
 		const char *val1, const char *val2, const char *val3)
 {
-	cf_addew(pp, token, warning, LEVEL_WARNING, val1, val2, val3);
+	cf_addew(pp, token, warning, LEX_WARNING, val1, val2, val3);
 }
 
 static inline void cf_adderror_expecting(struct cf_preprocessor *pp,

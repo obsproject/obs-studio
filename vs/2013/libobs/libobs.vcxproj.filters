@@ -213,6 +213,9 @@
     <ClInclude Include="..\..\..\libobs\media-io\video-frame.h">
       <Filter>media-io\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\callback\decl.h">
+      <Filter>callback\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -361,6 +364,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\util\threading-windows.c">
       <Filter>util\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\callback\decl.c">
+      <Filter>callback\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -407,6 +407,23 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->encoders_mutex);
 }
 
+static const char *obs_signals[] = {
+	"void source_create(ptr source)",
+	"void source_destroy(ptr source)",
+	"void source_add(ptr source)",
+	"void source_remove(ptr source)",
+	"void source_activate(ptr source)",
+	"void source_deactivate(ptr source)",
+	"void source_show(ptr source)",
+	"void source_hide(ptr source)",
+	"void source_volume(ptr source, in out float volume)",
+
+	"void channel_change(int channel, in out ptr source, ptr prev_source)",
+	"void master_volume(in out float volume)",
+
+	NULL
+};
+
 static inline bool obs_init_handlers(void)
 {
 	obs->signals = signal_handler_create();
@@ -414,7 +431,10 @@ static inline bool obs_init_handlers(void)
 		return false;
 
 	obs->procs   = proc_handler_create();
-	return (obs->procs != NULL);
+	if (!obs->procs)
+		return false;
+
+	return signal_handler_add_array(obs->signals, obs_signals);
 }
 
 static bool obs_init(void)
@@ -682,7 +702,7 @@ bool obs_add_source(obs_source_t source)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 
 	calldata_setptr(&params, "source", source);
-	signal_handler_signal(obs->signals, "source-add", &params);
+	signal_handler_signal(obs->signals, "source_add", &params);
 	calldata_free(&params);
 
 	return true;
@@ -709,10 +729,10 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 	prev_source = view->channels[channel];
 
-	calldata_setuint32(&params, "channel", channel);
+	calldata_setint(&params, "channel", channel);
 	calldata_setptr(&params, "prev_source", prev_source);
 	calldata_setptr(&params, "source", source);
-	signal_handler_signal(obs->signals, "channel-change", &params);
+	signal_handler_signal(obs->signals, "channel_change", &params);
 	calldata_getptr(&params, "source", &source);
 	calldata_free(&params);
 
@@ -854,8 +874,8 @@ void obs_set_master_volume(float volume)
 	if (!obs) return;
 
 	calldata_setfloat(&data, "volume", volume);
-	signal_handler_signal(obs->signals, "master-volume", &data);
-	volume = calldata_float(&data, "volume");
+	signal_handler_signal(obs->signals, "master_volume", &data);
+	volume = (float)calldata_float(&data, "volume");
 	calldata_free(&data);
 
 	obs->audio.user_volume = volume;

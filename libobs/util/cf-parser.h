@@ -83,18 +83,18 @@ EXPORT void cf_adderror(struct cf_parser *parser, const char *error,
 static inline void cf_adderror_expecting(struct cf_parser *p,
 		const char *expected)
 {
-	cf_adderror(p, "Expected $1", LEVEL_ERROR, expected, NULL, NULL);
+	cf_adderror(p, "Expected '$1'", LEX_ERROR, expected, NULL, NULL);
 }
 
 static inline void cf_adderror_unexpected_eof(struct cf_parser *p)
 {
-	cf_adderror(p, "Unexpected end of file", LEVEL_ERROR,
+	cf_adderror(p, "Unexpected EOF", LEX_ERROR,
 			NULL, NULL, NULL);
 }
 
 static inline void cf_adderror_syntax_error(struct cf_parser *p)
 {
-	cf_adderror(p, "Syntax error", LEVEL_ERROR,
+	cf_adderror(p, "Syntax error", LEX_ERROR,
 			NULL, NULL, NULL);
 }
 
@@ -162,6 +162,21 @@ static inline bool cf_go_to_token_type(struct cf_parser *p,
 	return p->cur_token->type != CFTOKEN_NONE;
 }
 
+static inline int cf_token_should_be(struct cf_parser *p,
+		const char *str, const char *goto1, const char *goto2)
+{
+	if (strref_cmp(&p->cur_token->str, str) == 0)
+		return PARSE_SUCCESS;
+
+	if (goto1) {
+		if (!cf_go_to_token(p, goto1, goto2))
+			return PARSE_EOF;
+	}
+
+	cf_adderror_expecting(p, str);
+	return PARSE_CONTINUE;
+}
+
 static inline int cf_next_token_should_be(struct cf_parser *p,
 		const char *str, const char *goto1, const char *goto2)
 {
@@ -172,8 +187,10 @@ static inline int cf_next_token_should_be(struct cf_parser *p,
 		return PARSE_SUCCESS;
 	}
 
-	if (goto1)
-		cf_go_to_token(p, goto1, goto2);
+	if (goto1) {
+		if (!cf_go_to_token(p, goto1, goto2))
+			return PARSE_EOF;
+	}
 
 	cf_adderror_expecting(p, str);
 	return PARSE_CONTINUE;

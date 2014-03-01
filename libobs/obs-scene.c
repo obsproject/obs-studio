@@ -24,7 +24,7 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 	calldata_setptr(&params, "scene", item->parent);
 	calldata_setptr(&params, "item", item);
 
-	signal_handler_signal(item->parent->source->signals, "item-remove",
+	signal_handler_signal(item->parent->source->signals, "item_remove",
 			&params);
 	calldata_free(&params);
 }
@@ -196,6 +196,14 @@ static const struct obs_source_info scene_info =
 	.enum_sources = scene_enum_sources
 };
 
+static const char *obs_scene_signals[] = {
+	"void item_add(ptr scene, ptr item)",
+	"void item_remove(ptr scene, ptr item)",
+	NULL
+};
+
+
+
 obs_scene_t obs_scene_create(const char *name)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
@@ -206,6 +214,8 @@ obs_scene_t obs_scene_create(const char *name)
 		return NULL;
 	}
 
+	signal_handler_add_array(source->signals, obs_scene_signals);
+
 	source->settings = obs_data_create();
 	scene = scene_create(source->settings, source);
 	source->data = scene;
@@ -213,6 +223,8 @@ obs_scene_t obs_scene_create(const char *name)
 	assert(scene);
 	if (!scene) {
 		obs_data_release(source->settings);
+		proc_handler_destroy(source->procs);
+		signal_handler_destroy(source->signals);
 		bfree(source);
 		return NULL;
 	}
@@ -289,8 +301,10 @@ void obs_scene_enum_items(obs_scene_t scene,
 
 		obs_sceneitem_addref(item);
 
-		if (!callback(scene, item, param))
+		if (!callback(scene, item, param)) {
+			obs_sceneitem_release(item);
 			break;
+		}
 
 		obs_sceneitem_release(item);
 
@@ -341,7 +355,7 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 
 	calldata_setptr(&params, "scene", scene);
 	calldata_setptr(&params, "item", item);
-	signal_handler_signal(scene->source->signals, "item-add", &params);
+	signal_handler_signal(scene->source->signals, "item_add", &params);
 	calldata_free(&params);
 
 	return item;
@@ -360,12 +374,16 @@ void obs_sceneitem_addref(obs_sceneitem_t item)
 {
 	if (item)
 		++item->ref;
+
+	blog(LOG_DEBUG, "addref %s, ref: %d", item->source->name, item->ref);
 }
 
 void obs_sceneitem_release(obs_sceneitem_t item)
 {
 	if (!item)
 		return;
+
+	blog(LOG_DEBUG, "release %s, ref: %d", item->source->name, item->ref);
 
 	if (--item->ref == 0)
 		obs_sceneitem_destroy(item);

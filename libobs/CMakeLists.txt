@@ -58,10 +58,12 @@ endif()
 
 set(libobs_callback_SOURCES
 	callback/calldata.c
+	callback/decl.c
 	callback/signal.c
 	callback/proc.c)
 set(libobs_callback_HEADERS
 	callback/calldata.h
+	callback/decl.h
 	callback/proc.h
 	callback/signal.h)
 

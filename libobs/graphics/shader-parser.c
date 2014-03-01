@@ -312,7 +312,7 @@ static inline int sp_check_for_keyword(struct shader_parser *sp,
 
 		if (new_val && *val)
 			cf_adderror(&sp->cfp, "'$1' keyword already specified",
-					LEVEL_WARNING, keyword, NULL, NULL);
+					LEX_WARNING, keyword, NULL, NULL);
 		*val = new_val;
 
 		return PARSE_CONTINUE;
@@ -504,7 +504,7 @@ static inline int sp_parse_param_assign_float_array(struct shader_parser *sp,
 	/* -------------------------------------------- */
 
 	if (float_type[0] < '1' || float_type[0] > '4')
-		cf_adderror(&sp->cfp, "Invalid row count", LEVEL_ERROR,
+		cf_adderror(&sp->cfp, "Invalid row count", LEX_ERROR,
 				NULL, NULL, NULL);
 
 	float_count = float_type[0]-'0';
@@ -512,7 +512,7 @@ static inline int sp_parse_param_assign_float_array(struct shader_parser *sp,
 	if (float_type[1] == 'x') {
 		if (float_type[2] < '1' || float_type[2] > '4')
 			cf_adderror(&sp->cfp, "Invalid column count",
-					LEVEL_ERROR, NULL, NULL, NULL);
+					LEX_ERROR, NULL, NULL, NULL);
 
 		float_count *= float_type[2]-'0';
 	}
@@ -546,7 +546,7 @@ static int sp_parse_param_assignment_val(struct shader_parser *sp,
 		return sp_parse_param_assign_float_array(sp, param);
 
 	cf_adderror(&sp->cfp, "Invalid type '$1' used for assignment",
-			LEVEL_ERROR, param->type, NULL, NULL);
+			LEX_ERROR, param->type, NULL, NULL);
 
 	return PARSE_CONTINUE;
 }
@@ -613,7 +613,7 @@ static inline void report_invalid_func_keyword(struct shader_parser *sp,
 {
 	if (val)
 		cf_adderror(&sp->cfp, "'$1' keyword cannot be used with a "
-		                      "function", LEVEL_ERROR,
+		                      "function", LEX_ERROR,
 		                      name, NULL, NULL);
 }
 
@@ -668,7 +668,7 @@ bool shader_parse(struct shader_parser *sp, const char *shader,
 
 		} else if (cf_token_is(&sp->cfp, "{")) {
 			cf_adderror(&sp->cfp, "Unexpected code segment",
-					LEVEL_ERROR, NULL, NULL, NULL);
+					LEX_ERROR, NULL, NULL, NULL);
 			cf_pass_pair(&sp->cfp, '{', '}');
 
 		} else {

@@ -306,7 +306,7 @@ static int ep_parse_pass_command(struct effect_parser *ep, struct ep_pass *pass)
 	if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	if (cf_token_is(&ep->cfp, "compile")) {
 		cf_adderror(&ep->cfp, "compile keyword not necessary",
-				LEVEL_WARNING, NULL, NULL, NULL);
+				LEX_WARNING, NULL, NULL, NULL);
 		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
@@ -463,7 +463,7 @@ static inline int ep_check_for_keyword(struct effect_parser *ep,
 
 		if (new_val && *val)
 			cf_adderror(&ep->cfp, "'$1' keyword already specified",
-					LEVEL_WARNING, keyword, NULL, NULL);
+					LEX_WARNING, keyword, NULL, NULL);
 		*val = new_val;
 
 		return PARSE_CONTINUE;
@@ -750,7 +750,7 @@ static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
 	/* -------------------------------------------- */
 
 	if (float_type[0] < '1' || float_type[0] > '4')
-		cf_adderror(&ep->cfp, "Invalid row count", LEVEL_ERROR,
+		cf_adderror(&ep->cfp, "Invalid row count", LEX_ERROR,
 				NULL, NULL, NULL);
 
 	float_count = float_type[0]-'0';
@@ -758,7 +758,7 @@ static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
 	if (float_type[1] == 'x') {
 		if (float_type[2] < '1' || float_type[2] > '4')
 			cf_adderror(&ep->cfp, "Invalid column count",
-					LEVEL_ERROR, NULL, NULL, NULL);
+					LEX_ERROR, NULL, NULL, NULL);
 
 		float_count *= float_type[2]-'0';
 	}
@@ -794,7 +794,7 @@ static int ep_parse_param_assignment_val(struct effect_parser *ep,
 		return ep_parse_param_assign_float_array(ep, param);
 
 	cf_adderror(&ep->cfp, "Invalid type '$1' used for assignment",
-			LEVEL_ERROR, param->type, NULL, NULL);
+			LEX_ERROR, param->type, NULL, NULL);
 
 	return PARSE_CONTINUE;
 }
@@ -877,7 +877,7 @@ static inline void report_invalid_func_keyword(struct effect_parser *ep,
 {
 	if (val)
 		cf_adderror(&ep->cfp, "'$1' keyword cannot be used with a "
-		                      "function", LEVEL_ERROR,
+		                      "function", LEX_ERROR,
 		                      name, NULL, NULL);
 }
 
@@ -959,7 +959,7 @@ bool ep_parse(struct effect_parser *ep, effect_t effect,
 		} else if (cf_token_is(&ep->cfp, "{")) {
 			/* add error and pass braces */
 			cf_adderror(&ep->cfp, "Unexpected code segment",
-					LEVEL_ERROR, NULL, NULL, NULL);
+					LEX_ERROR, NULL, NULL, NULL);
 			cf_pass_pair(&ep->cfp, '{', '}');
 
 		} else {

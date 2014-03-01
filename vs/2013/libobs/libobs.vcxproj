@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\libobs\callback\calldata.h" />
+    <ClInclude Include="..\..\..\libobs\callback\decl.h" />
     <ClInclude Include="..\..\..\libobs\callback\proc.h" />
     <ClInclude Include="..\..\..\libobs\callback\signal.h" />
     <ClInclude Include="..\..\..\libobs\graphics\axisang.h" />
@@ -73,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\callback\calldata.c" />
+    <ClCompile Include="..\..\..\libobs\callback\decl.c" />
     <ClCompile Include="..\..\..\libobs\callback\proc.c" />
     <ClCompile Include="..\..\..\libobs\callback\signal.c" />
     <ClCompile Include="..\..\..\libobs\graphics\axisang.c" />

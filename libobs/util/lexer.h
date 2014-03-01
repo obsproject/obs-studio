@@ -158,8 +158,8 @@ static inline void base_token_copy(struct base_token *dst,
 
 /* ------------------------------------------------------------------------- */
 
-#define LEVEL_ERROR   0
-#define LEVEL_WARNING 1
+#define LEX_ERROR   0
+#define LEX_WARNING 1
 
 struct error_item {
 	char *error;
@@ -230,7 +230,7 @@ static inline bool error_data_has_errors(struct error_data *ed)
 {
 	size_t i;
 	for (i = 0; i < ed->errors.num; i++)
-		if (ed->errors.array[i].level == LEVEL_ERROR)
+		if (ed->errors.array[i].level == LEX_ERROR)
 			return true;
 
 	return false;

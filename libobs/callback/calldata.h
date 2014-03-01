@@ -31,6 +31,18 @@ extern "C" {
  * procedures, and callbacks.
  */
 
+enum call_param_type {
+	CALL_PARAM_TYPE_VOID,
+	CALL_PARAM_TYPE_INT,
+	CALL_PARAM_TYPE_FLOAT,
+	CALL_PARAM_TYPE_BOOL,
+	CALL_PARAM_TYPE_PTR,
+	CALL_PARAM_TYPE_STRING
+};
+
+#define CALL_PARAM_IN  (1<<0)
+#define CALL_PARAM_OUT (1<<1)
+
 struct calldata {
 	size_t  size;     /* size of the stack, in bytes */
 	size_t  capacity; /* capacity of the stack, in bytes */
@@ -49,9 +61,6 @@ static inline void calldata_free(struct calldata *data)
 	bfree(data->stack);
 }
 
-/* NOTE: 'get' functions return true only if paramter exists, and is the
- *       same size.  They return false otherwise. */
-
 EXPORT bool calldata_getdata(calldata_t data, const char *name, void *out,
 		size_t size);
 EXPORT void calldata_setdata(calldata_t data, const char *name, const void *in,
@@ -65,109 +74,17 @@ static inline void calldata_clear(struct calldata *data)
 	}
 }
 
-static inline bool calldata_getchar  (calldata_t data, const char *name,
-		char *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
+/* ------------------------------------------------------------------------- */
+/* NOTE: 'get' functions return true only if paramter exists, and is the
+ *       same type.  They return false otherwise. */
 
-static inline bool calldata_getuchar (calldata_t data, const char *name,
-		unsigned char *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getshort (calldata_t data, const char *name,
-		short *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getushort(calldata_t data, const char *name,
-		unsigned short *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getint   (calldata_t data, const char *name,
-		int *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getuint  (calldata_t data, const char *name,
-		unsigned int *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getlong  (calldata_t data, const char *name,
-		long *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getulong (calldata_t data, const char *name,
-		unsigned long *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getint8  (calldata_t data, const char *name,
-		int8_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getuint8 (calldata_t data, const char *name,
-		uint8_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getint16 (calldata_t data, const char *name,
-		int8_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getuint16(calldata_t data, const char *name,
-		uint8_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getint32 (calldata_t data, const char *name,
-		int32_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getuint32(calldata_t data, const char *name,
-		uint32_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getint64 (calldata_t data, const char *name,
-		int64_t *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getuint64(calldata_t data, const char *name,
-		uint64_t *val)
+static inline bool calldata_getint(calldata_t data, const char *name,
+		long long *val)
 {
 	return calldata_getdata(data, name, val, sizeof(*val));
 }
 
 static inline bool calldata_getfloat (calldata_t data, const char *name,
-		float *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getdouble(calldata_t data, const char *name,
 		double *val)
 {
 	return calldata_getdata(data, name, val, sizeof(*val));
@@ -175,12 +92,6 @@ static inline bool calldata_getdouble(calldata_t data, const char *name,
 
 static inline bool calldata_getbool  (calldata_t data, const char *name,
 		bool *val)
-{
-	return calldata_getdata(data, name, val, sizeof(*val));
-}
-
-static inline bool calldata_getsize  (calldata_t data, const char *name,
-		size_t *val)
 {
 	return calldata_getdata(data, name, val, sizeof(*val));
 }
@@ -195,144 +106,26 @@ EXPORT bool calldata_getstring(calldata_t data, const char *name,
 		const char **str);
 
 /* ------------------------------------------------------------------------- */
+/* call if you know your data is valid */
 
-static inline char calldata_char(calldata_t data, const char *name)
+static inline long long calldata_int(calldata_t data, const char *name)
 {
-	char val;
-	calldata_getchar(data, name, &val);
-	return val;
-}
-
-static inline unsigned char calldata_uchar(calldata_t data, const char *name)
-{
-	unsigned char val;
-	calldata_getuchar(data, name, &val);
-	return val;
-}
-
-static inline short calldata_short(calldata_t data, const char *name)
-{
-	short val;
-	calldata_getshort(data, name, &val);
-	return val;
-}
-
-static inline unsigned short calldata_ushort(calldata_t data, const char *name)
-{
-	unsigned short val;
-	calldata_getushort(data, name, &val);
-	return val;
-}
-
-static inline int calldata_int(calldata_t data, const char *name)
-{
-	int val;
+	long long val = 0;
 	calldata_getint(data, name, &val);
 	return val;
 }
 
-static inline unsigned int calldata_uint(calldata_t data, const char *name)
+static inline double calldata_float(calldata_t data, const char *name)
 {
-	unsigned int val;
-	calldata_getuint(data, name, &val);
-	return val;
-}
-
-static inline long calldata_long(calldata_t data, const char *name)
-{
-	long val;
-	calldata_getlong(data, name, &val);
-	return val;
-}
-
-static inline unsigned long calldata_ulong(calldata_t data, const char *name)
-{
-	unsigned long val;
-	calldata_getulong(data, name, &val);
-	return val;
-}
-
-static inline int8_t calldata_int8(calldata_t data, const char *name)
-{
-	int8_t val;
-	calldata_getint8(data, name, &val);
-	return val;
-}
-
-static inline uint8_t calldata_uint8(calldata_t data, const char *name)
-{
-	uint8_t val;
-	calldata_getuint8(data, name, &val);
-	return val;
-}
-
-static inline int8_t calldata_int16(calldata_t data, const char *name)
-{
-	int8_t val;
-	calldata_getint16(data, name, &val);
-	return val;
-}
-
-static inline uint8_t calldata_uint16(calldata_t data, const char *name)
-{
-	uint8_t val;
-	calldata_getuint16(data, name, &val);
-	return val;
-}
-
-static inline int32_t calldata_int32(calldata_t data, const char *name)
-{
-	int32_t val;
-	calldata_getint32(data, name, &val);
-	return val;
-}
-
-static inline uint32_t calldata_uint32(calldata_t data, const char *name)
-{
-	uint32_t val;
-	calldata_getuint32(data, name, &val);
-	return val;
-}
-
-static inline int64_t calldata_int64(calldata_t data, const char *name)
-{
-	int64_t val;
-	calldata_getint64(data, name, &val);
-	return val;
-}
-
-static inline uint64_t calldata_uint64(calldata_t data, const char *name)
-{
-	uint64_t val;
-	calldata_getuint64(data, name, &val);
-	return val;
-}
-
-static inline float calldata_float(calldata_t data, const char *name)
-{
-	float val;
+	double val = 0.0;
 	calldata_getfloat(data, name, &val);
-	return val;
-}
-
-static inline double calldata_double(calldata_t data, const char *name)
-{
-	double val;
-	calldata_getdouble(data, name, &val);
 	return val;
 }
 
 static inline bool calldata_bool(calldata_t data, const char *name)
 {
-	bool val;
+	bool val = false;
 	calldata_getbool(data, name, &val);
-	return val;
-}
-
-static inline size_t calldata_size(calldata_t data, const char *name)
-{
-	size_t val;
-	calldata_getsize(data, name, &val);
 	return val;
 }
 
@@ -352,108 +145,13 @@ static inline const char *calldata_string(calldata_t data, const char *name)
 
 /* ------------------------------------------------------------------------- */
 
-static void calldata_setchar  (calldata_t data, const char *name, char val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuchar (calldata_t data, const char *name,
-		unsigned char val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setshort (calldata_t data, const char *name,
-		short val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setushort(calldata_t data, const char *name,
-		unsigned short val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
 static inline void calldata_setint   (calldata_t data, const char *name,
-		int val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuint  (calldata_t data, const char *name,
-		unsigned int val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setlong  (calldata_t data, const char *name,
-		long val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setulong (calldata_t data, const char *name,
-		unsigned long val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setint8  (calldata_t data, const char *name,
-		int8_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuint8 (calldata_t data, const char *name,
-		uint8_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setint16 (calldata_t data, const char *name,
-		int8_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuint16(calldata_t data, const char *name,
-		uint8_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setint32 (calldata_t data, const char *name,
-		int32_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuint32(calldata_t data, const char *name,
-		uint32_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setint64 (calldata_t data, const char *name,
-		int64_t val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setuint64(calldata_t data, const char *name,
-		uint64_t val)
+		long long val)
 {
 	calldata_setdata(data, name, &val, sizeof(val));
 }
 
 static inline void calldata_setfloat (calldata_t data, const char *name,
-		float val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setdouble(calldata_t data, const char *name,
 		double val)
 {
 	calldata_setdata(data, name, &val, sizeof(val));
@@ -461,12 +159,6 @@ static inline void calldata_setdouble(calldata_t data, const char *name,
 
 static inline void calldata_setbool  (calldata_t data, const char *name,
 		bool val)
-{
-	calldata_setdata(data, name, &val, sizeof(val));
-}
-
-static inline void calldata_setsize  (calldata_t data, const char *name,
-		size_t val)
 {
 	calldata_setdata(data, name, &val, sizeof(val));
 }

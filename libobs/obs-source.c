@@ -71,6 +71,18 @@ static const struct obs_source_info *get_source_info(enum obs_source_type type,
 	return find_source(list, id);
 }
 
+static const char *source_signals[] = {
+	"void destroy(ptr source)",
+	"void add(ptr source)",
+	"void remove(ptr source)",
+	"void activate(ptr source)",
+	"void deactivate(ptr source)",
+	"void show(ptr source)",
+	"void hide(ptr source)",
+	"void volume(ptr source, in out float volume)",
+	NULL
+};
+
 bool obs_source_init_handlers(struct obs_source *source)
 {
 	source->signals = signal_handler_create();
@@ -78,7 +90,10 @@ bool obs_source_init_handlers(struct obs_source *source)
 		return false;
 
 	source->procs = proc_handler_create();
-	return (source->procs != NULL);
+	if (!source->procs)
+		return false;
+
+	return signal_handler_add_array(source->signals, source_signals);
 }
 
 const char *obs_source_getdisplayname(enum obs_source_type type,
@@ -162,7 +177,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, info))
 		goto fail;
 
-	obs_source_dosignal(source, "source-create", NULL);
+	obs_source_dosignal(source, "source_create", NULL);
 	return source;
 
 fail:
@@ -197,7 +212,7 @@ static void obs_source_destroy(struct obs_source *source)
 	if (!source)
 		return;
 
-	obs_source_dosignal(source, "source-destroy", "destroy");
+	obs_source_dosignal(source, "source_destroy", "destroy");
 
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);
@@ -274,7 +289,7 @@ void obs_source_remove(obs_source_t source)
 
 	pthread_mutex_unlock(&data->sources_mutex);
 
-	obs_source_dosignal(source, "source-remove", "remove");
+	obs_source_dosignal(source, "source_remove", "remove");
 	obs_source_release(source);
 }
 
@@ -311,28 +326,28 @@ static void activate_source(obs_source_t source)
 {
 	if (source->info.activate)
 		source->info.activate(source->data);
-	obs_source_dosignal(source, "source-activate", "activate");
+	obs_source_dosignal(source, "source_activate", "activate");
 }
 
 static void deactivate_source(obs_source_t source)
 {
 	if (source->info.deactivate)
 		source->info.deactivate(source->data);
-	obs_source_dosignal(source, "source-deactivate", "deactivate");
+	obs_source_dosignal(source, "source_deactivate", "deactivate");
 }
 
 static void show_source(obs_source_t source)
 {
 	if (source->info.show)
 		source->info.show(source->data);
-	obs_source_dosignal(source, "source-show", "show");
+	obs_source_dosignal(source, "source_show", "show");
 }
 
 static void hide_source(obs_source_t source)
 {
 	if (source->info.hide)
 		source->info.hide(source->data);
-	obs_source_dosignal(source, "source-hide", "hide");
+	obs_source_dosignal(source, "source_hide", "hide");
 }
 
 static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
@@ -1277,9 +1292,9 @@ void obs_source_setvolume(obs_source_t source, float volume)
 		calldata_setfloat(&data, "volume", volume);
 
 		signal_handler_signal(source->signals, "volume", &data);
-		signal_handler_signal(obs->signals, "source-volume", &data);
+		signal_handler_signal(obs->signals, "source_volume", &data);
 
-		volume = calldata_float(&data, "volume");
+		volume = (float)calldata_float(&data, "volume");
 		calldata_free(&data);
 
 		source->user_volume = volume;

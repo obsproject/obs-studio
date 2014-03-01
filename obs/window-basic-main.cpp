@@ -56,11 +56,11 @@ void OBSBasic::OBSInit()
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
 
-	signal_handler_connect(obs_signalhandler(), "source-add",
+	signal_handler_connect(obs_signalhandler(), "source_add",
 			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_signalhandler(), "source-remove",
+	signal_handler_connect(obs_signalhandler(), "source_remove",
 			OBSBasic::SourceRemoved, this);
-	signal_handler_connect(obs_signalhandler(), "channel-change",
+	signal_handler_connect(obs_signalhandler(), "channel_change",
 			OBSBasic::ChannelChanged, this);
 
 	/* TODO: this is a test */
@@ -103,11 +103,23 @@ void OBSBasic::UpdateSources(OBSScene scene)
 			[] (obs_scene_t scene, obs_sceneitem_t item, void *p)
 			{
 				OBSBasic *window = static_cast<OBSBasic*>(p);
-				window->AddSceneItem(item);
+				window->InsertSceneItem(item);
 
 				UNUSED_PARAMETER(scene);
 				return true;
 			}, this);
+}
+
+void OBSBasic::InsertSceneItem(obs_sceneitem_t item)
+{
+	obs_source_t source = obs_sceneitem_getsource(item);
+	const char   *name  = obs_source_getname(source);
+
+	QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
+	listItem->setData(Qt::UserRole,
+			QVariant::fromValue(OBSSceneItem(item)));
+
+	ui->sources->insertItem(0, listItem);
 }
 
 /* Qt callbacks for invokeMethod */
@@ -122,9 +134,9 @@ void OBSBasic::AddScene(OBSSource source)
 	ui->scenes->addItem(item);
 
 	signal_handler_t handler = obs_source_signalhandler(source);
-	signal_handler_connect(handler, "item-add",
+	signal_handler_connect(handler, "item_add",
 			OBSBasic::SceneItemAdded, this);
-	signal_handler_connect(handler, "item-remove",
+	signal_handler_connect(handler, "item_remove",
 			OBSBasic::SceneItemRemoved, this);
 }
 
@@ -147,15 +159,9 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t  scene  = obs_sceneitem_getscene(item);
 	obs_source_t source = obs_sceneitem_getsource(item);
-	const char   *name  = obs_source_getname(source);
 
-	if (GetCurrentScene() == scene) {
-		QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
-		listItem->setData(Qt::UserRole,
-				QVariant::fromValue(OBSSceneItem(item)));
-
-		ui->sources->insertItem(0, listItem);
-	}
+	if (GetCurrentScene() == scene)
+		InsertSceneItem(item);
 
 	sourceSceneRefs[source] = sourceSceneRefs[source] + 1;
 }
@@ -261,7 +267,7 @@ void OBSBasic::SourceRemoved(void *data, calldata_t params)
 void OBSBasic::ChannelChanged(void *data, calldata_t params)
 {
 	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
-	uint32_t channel = calldata_uint32(params, "channel");
+	uint32_t channel = (uint32_t)calldata_int(params, "channel");
 
 	if (channel == 0)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
@@ -416,7 +422,6 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 		scene = current->data(Qt::UserRole).value<OBSScene>();
 		source = obs_scene_getsource(scene);
-		UpdateSources(scene);
 	}
 
 	/* TODO: allow transitions */

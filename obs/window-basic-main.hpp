@@ -38,6 +38,7 @@ private:
 	OBSSceneItem GetCurrentSceneItem();
 
 	void UpdateSources(OBSScene scene);
+	void InsertSceneItem(obs_sceneitem_t item);
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);

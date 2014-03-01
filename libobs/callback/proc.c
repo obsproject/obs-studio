@@ -16,17 +16,18 @@
 
 #include "../util/darray.h"
 
+#include "decl.h"
 #include "proc.h"
 
 struct proc_info {
-	char *name;
-	void *data;
-	proc_handler_proc_t proc;
+	struct decl_info    func;
+	void                *data;
+	proc_handler_proc_t callback;
 };
 
 static inline void proc_info_free(struct proc_info *pi)
 {
-	bfree(pi->name);
+	decl_info_free(&pi->func);
 }
 
 struct proc_handler {
@@ -51,12 +52,23 @@ void proc_handler_destroy(proc_handler_t handler)
 	}
 }
 
-void proc_handler_add(proc_handler_t handler, const char *name,
+void proc_handler_add(proc_handler_t handler, const char *decl_string,
 		proc_handler_proc_t proc, void *data)
 {
 	if (!handler) return;
 
-	struct proc_info pi = {bstrdup(name), data, proc};
+	struct proc_info pi;
+	memset(&pi, 0, sizeof(struct proc_info));
+
+	if (!parse_decl_string(&pi.func, decl_string)) {
+		blog(LOG_ERROR, "Dynamic function declaration invalid: %s",
+				decl_string);
+		return;
+	}
+
+	pi.callback = proc;
+	pi.data     = data;
+
 	da_push_back(handler->procs, &pi);
 }
 
@@ -68,8 +80,8 @@ bool proc_handler_call(proc_handler_t handler, const char *name,
 	for (size_t i = 0; i < handler->procs.num; i++) {
 		struct proc_info *info = handler->procs.array+i;
 
-		if (strcmp(info->name, name) == 0) {
-			info->proc(info->data, params);
+		if (strcmp(info->func.name, name) == 0) {
+			info->callback(info->data, params);
 			return true;
 		}
 	}

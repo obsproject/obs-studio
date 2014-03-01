@@ -22,7 +22,7 @@
 
 /*
  *   Uses a data stack.  Probably more complex than it should be, but reduces
- * cache fetching.
+ * fetching.
  *
  *   Stack format is:
  *     [size_t    param1_name_size]

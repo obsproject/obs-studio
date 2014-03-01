@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +17,7 @@
 #include "../util/darray.h"
 #include "../util/threading.h"
 
+#include "decl.h"
 #include "signal.h"
 
 struct signal_callback {
@@ -25,23 +26,25 @@ struct signal_callback {
 };
 
 struct signal_info {
-	char                           *name;
+	struct decl_info               func;
 	DARRAY(struct signal_callback) callbacks;
 	pthread_mutex_t                mutex;
 
 	struct signal_info             *next;
 };
 
-static inline struct signal_info *signal_info_create(const char *name)
+static inline struct signal_info *signal_info_create(struct decl_info *info)
 {
 	struct signal_info *si = bmalloc(sizeof(struct signal_info));
-	si->name = bstrdup(name);
+
+	si->func = *info;
 	si->next = NULL;
 	da_init(si->callbacks);
 
 	if (pthread_mutex_init(&si->mutex, NULL) != 0) {
-		blog(LOG_ERROR, "Could not create signal!");
-		bfree(si->name);
+		blog(LOG_ERROR, "Could not create signal");
+
+		decl_info_free(&si->func);
 		bfree(si);
 		return NULL;
 	}
@@ -53,7 +56,7 @@ static inline void signal_info_destroy(struct signal_info *si)
 {
 	if (si) {
 		pthread_mutex_destroy(&si->mutex);
-		bfree(si->name);
+		decl_info_free(&si->func);
 		da_free(si->callbacks);
 		bfree(si);
 	}
@@ -73,7 +76,6 @@ static inline size_t signal_get_callback_idx(struct signal_info *si,
 }
 
 struct signal_handler {
-	/* TODO: might be good to use hash table instead */
 	struct signal_info *first;
 	pthread_mutex_t    mutex;
 };
@@ -85,7 +87,7 @@ static struct signal_info *getsignal(signal_handler_t handler,
 
 	signal = handler->first;
 	while (signal != NULL) {
-		if (strcmp(signal->name, name) == 0)
+		if (strcmp(signal->func.name, name) == 0)
 			break;
 
 		last = signal;
@@ -128,6 +130,37 @@ void signal_handler_destroy(signal_handler_t handler)
 	}
 }
 
+bool signal_handler_add(signal_handler_t handler, const char *signal_decl)
+{
+	struct decl_info func = {0};
+	struct signal_info *sig, *last;
+	bool success = true;
+
+	if (!parse_decl_string(&func, signal_decl)) {
+		blog(LOG_ERROR, "Signal declaration invalid: %s", signal_decl);
+		return false;
+	}
+
+	pthread_mutex_lock(&handler->mutex);
+
+	sig = getsignal(handler, func.name, &last);
+	if (sig) {
+		blog(LOG_WARNING, "Signal declaration '%s' exists", func.name);
+		decl_info_free(&func);
+		success = false;
+	} else {
+		sig = signal_info_create(&func);
+		if (!last)
+			handler->first = sig;
+		else
+			last->next = sig;
+	}
+
+	pthread_mutex_unlock(&handler->mutex);
+
+	return success;
+}
+
 void signal_handler_connect(signal_handler_t handler, const char *signal,
 		signal_callback_t callback, void *data)
 {
@@ -140,16 +173,8 @@ void signal_handler_connect(signal_handler_t handler, const char *signal,
 
 	pthread_mutex_lock(&handler->mutex);
 	sig = getsignal(handler, signal, &last);
-	if (!sig) {
-		sig = signal_info_create(signal);
-		if (!last)
-			handler->first = sig;
-		else
-			last->next = sig;
-
-		if (!sig)
-			return;
-	}
+	if (!sig)
+		return;
 
 	pthread_mutex_unlock(&handler->mutex);
 

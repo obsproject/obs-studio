@@ -39,7 +39,7 @@ typedef void (*proc_handler_proc_t)(void*, calldata_t);
 EXPORT proc_handler_t proc_handler_create(void);
 EXPORT void proc_handler_destroy(proc_handler_t handler);
 
-EXPORT void proc_handler_add(proc_handler_t handler, const char *name,
+EXPORT void proc_handler_add(proc_handler_t handler, const char *decl_string,
 		proc_handler_proc_t proc, void *data);
 
 /**
