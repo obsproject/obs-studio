@@ -246,8 +246,8 @@ static char **dup_str_list(const char **str_list)
 void obs_category_add_list(obs_category_t cat,
 		const char *name, const char *desc,
 		const char **value_names, const char **values,
-		enum obs_dropdown_type type,
-		enum obs_dropdown_format format)
+		enum obs_combo_type type,
+		enum obs_combo_format format)
 {
 	if (!cat) return;
 
@@ -364,7 +364,7 @@ const char **obs_property_list_names(obs_property_t p)
 		return NULL;
 
 	struct list_data *data = get_property_data(p);
-	return data->names;
+	return (const char **)data->names;
 }
 
 const char **obs_property_list_values(obs_property_t p)
@@ -373,7 +373,7 @@ const char **obs_property_list_values(obs_property_t p)
 		return NULL;
 
 	struct list_data *data = get_property_data(p);
-	return data->values;
+	return (const char **)data->values;
 }
 
 enum obs_combo_type obs_property_list_type(obs_property_t p)
@@ -385,7 +385,7 @@ enum obs_combo_type obs_property_list_type(obs_property_t p)
 	return data->type;
 }
 
-enum obs_combo_type obs_property_list_format(obs_property_t p)
+enum obs_combo_format obs_property_list_format(obs_property_t p)
 {
 	if (!p || !is_combo(p))
 		return OBS_COMBO_FORMAT_INVALID;
