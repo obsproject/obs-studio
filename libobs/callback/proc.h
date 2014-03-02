@@ -25,11 +25,11 @@ extern "C" {
 #endif
 
 /*
- * Dynamic procedure handler
+ * Procedure handler
  *
- *   This handler is used to allow dynamic access to one or more procedures
- * that can be dynamically added and called without having to have direct
- * access to declarations or procedure callback pointers.
+ *   This handler is used to allow access to one or more procedures that can be
+ *   added and called without having to have direct access to declarations or
+ *   procedure callback pointers.
  */
 
 struct proc_handler;

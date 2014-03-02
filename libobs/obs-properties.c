@@ -18,6 +18,18 @@
 #include "util/bmem.h"
 #include "obs-properties.h"
 
+static inline void *get_property_data(struct obs_property *prop);
+
+static inline void free_str_list(char **str_list)
+{
+	char **temp_list = str_list;
+	while (*temp_list)
+		bfree(*(temp_list++));
+	bfree(str_list);
+}
+
+/* ------------------------------------------------------------------------- */
+
 struct float_data {
 	double min, max, step;
 };
@@ -27,9 +39,17 @@ struct int_data {
 };
 
 struct list_data {
-	const char             **strings;
-	enum obs_dropdown_type type;
+	char                   **names;
+	char                   **values;
+	enum obs_combo_type    type;
+	enum obs_combo_format  format;
 };
+
+static inline void list_data_free(struct list_data *data)
+{
+	free_str_list(data->names);
+	free_str_list(data->values);
+}
 
 struct obs_property {
 	const char             *name;
@@ -59,6 +79,11 @@ obs_properties_t obs_properties_create()
 
 static void obs_property_destroy(struct obs_property *property)
 {
+	if (property->type == OBS_PROPERTY_LIST) {
+		struct list_data *data = get_property_data(property);
+		list_data_free(data);
+	}
+
 	bfree(property);
 }
 
@@ -123,8 +148,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_FLOAT:     return sizeof(struct float_data);
 	case OBS_PROPERTY_TEXT:      return 0;
 	case OBS_PROPERTY_PATH:      return 0;
-	case OBS_PROPERTY_ENUM:      return sizeof(struct list_data);
-	case OBS_PROPERTY_TEXT_LIST: return sizeof(struct list_data);
+	case OBS_PROPERTY_LIST:     return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
 	}
 
@@ -199,28 +223,48 @@ void obs_category_add_path(obs_category_t cat, const char *name,
 	new_prop(cat, name, desc, OBS_PROPERTY_PATH);
 }
 
-void obs_category_add_enum_list(obs_category_t cat, const char *name,
-		const char *desc, const char **strings)
+static char **dup_str_list(const char **str_list)
 {
-	if (!cat) return;
+	int count = 0;
+	char **new_list;
+	const char **temp_list = str_list;
 
-	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_ENUM);
-	struct list_data *data = get_property_data(p);
-	data->strings = strings;
-	data->type    = OBS_DROPDOWN_LIST;
+	if (!str_list)
+		return NULL;
+
+	while (*(temp_list++) != NULL)
+		count++;
+
+	new_list  = bmalloc((count+1) * sizeof(char*));
+	new_list[count] = NULL;
+	for (int i = 0; i < count; i++)
+		new_list[i] = bstrdup(str_list[i]);
+
+	return new_list;
 }
 
-void obs_category_add_text_list(obs_category_t cat, const char *name,
-		const char *desc, const char **strings,
-		enum obs_dropdown_type type)
+void obs_category_add_list(obs_category_t cat,
+		const char *name, const char *desc,
+		const char **value_names, const char **values,
+		enum obs_dropdown_type type,
+		enum obs_dropdown_format format)
 {
 	if (!cat) return;
 
-	struct obs_property *p = new_prop(cat, name, desc,
-			OBS_PROPERTY_TEXT_LIST);
+	if (type   == OBS_COMBO_TYPE_EDITABLE &&
+	    format != OBS_COMBO_FORMAT_STRING) {
+		blog(LOG_WARNING, "Catagory '%s', list '%s', error: "
+		                  "Editable combo boxes must be strings",
+		                  cat->name, name);
+		return;
+	}
+
+	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_LIST);
 	struct list_data *data = get_property_data(p);
-	data->strings = strings;
-	data->type    = type;
+	data->names  = dup_str_list(value_names);
+	data->values = dup_str_list(values);
+	data->format = format;
+	data->type   = type;
 }
 
 void obs_category_add_color(obs_category_t cat, const char *name,
@@ -309,26 +353,43 @@ double obs_property_float_step(obs_property_t p)
 	return data ? data->step : 0;
 }
 
-static inline bool is_dropdown(struct obs_property *p)
+static inline bool is_combo(struct obs_property *p)
 {
-	return p->type == OBS_PROPERTY_ENUM ||
-	       p->type == OBS_PROPERTY_TEXT_LIST;
+	return p->type == OBS_PROPERTY_LIST;
 }
 
-const char **obs_property_dropdown_strings(obs_property_t p)
+const char **obs_property_list_names(obs_property_t p)
 {
-	if (!p || !is_dropdown(p))
+	if (!p || !is_combo(p))
 		return NULL;
 
 	struct list_data *data = get_property_data(p);
-	return data->strings;
+	return data->names;
 }
 
-enum obs_dropdown_type obs_property_dropdown_type(obs_property_t p)
+const char **obs_property_list_values(obs_property_t p)
 {
-	if (!p || !is_dropdown(p))
-		return OBS_DROPDOWN_INVALID;
+	if (!p || !is_combo(p))
+		return NULL;
+
+	struct list_data *data = get_property_data(p);
+	return data->values;
+}
+
+enum obs_combo_type obs_property_list_type(obs_property_t p)
+{
+	if (!p || !is_combo(p))
+		return OBS_COMBO_TYPE_INVALID;
 
 	struct list_data *data = get_property_data(p);
 	return data->type;
+}
+
+enum obs_combo_type obs_property_list_format(obs_property_t p)
+{
+	if (!p || !is_combo(p))
+		return OBS_COMBO_FORMAT_INVALID;
+
+	struct list_data *data = get_property_data(p);
+	return data->format;
 }

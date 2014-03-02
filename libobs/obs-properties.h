@@ -29,15 +29,21 @@ enum obs_property_type {
 	OBS_PROPERTY_FLOAT,
 	OBS_PROPERTY_TEXT,
 	OBS_PROPERTY_PATH,
-	OBS_PROPERTY_ENUM,
-	OBS_PROPERTY_TEXT_LIST,
+	OBS_PROPERTY_LIST,
 	OBS_PROPERTY_COLOR,
 };
 
-enum obs_dropdown_type {
-	OBS_DROPDOWN_INVALID,
-	OBS_DROPDOWN_EDIT,
-	OBS_DROPDOWN_LIST,
+enum obs_combo_format {
+	OBS_COMBO_FORMAT_INVALID,
+	OBS_COMBO_FORMAT_INT,
+	OBS_COMBO_FORMAT_FLOAT,
+	OBS_COMBO_FORMAT_STRING
+};
+
+enum obs_combo_type {
+	OBS_COMBO_TYPE_INVALID,
+	OBS_COMBO_TYPE_EDITABLE,
+	OBS_COMBO_TYPE_LIST,
 };
 
 struct obs_properties;
@@ -67,12 +73,11 @@ EXPORT void obs_category_add_text(obs_category_t cat, const char *name,
 		const char *description);
 EXPORT void obs_category_add_path(obs_category_t cat, const char *name,
 		const char *description);
-EXPORT void obs_category_add_enum_list(obs_category_t cat,
+EXPORT void obs_category_add_list(obs_category_t cat,
 		const char *name, const char *description,
-		const char **strings);
-EXPORT void obs_category_add_text_list(obs_category_t cat,
-		const char *name, const char *description,
-		const char **strings, enum obs_dropdown_type type);
+		const char **value_names, const char **values,
+		enum obs_combo_type type,
+		enum obs_combo_format format);
 EXPORT void obs_category_add_color(obs_category_t cat, const char *name,
 		const char *description);
 
@@ -93,8 +98,10 @@ EXPORT int                    obs_property_int_step(obs_property_t p);
 EXPORT double                 obs_property_float_min(obs_property_t p);
 EXPORT double                 obs_property_float_max(obs_property_t p);
 EXPORT double                 obs_property_float_step(obs_property_t p);
-EXPORT const char **          obs_property_dropdown_strings(obs_property_t p);
-EXPORT enum obs_dropdown_type obs_property_dropdown_type(obs_property_t p);
+EXPORT const char **          obs_property_list_names(obs_property_t p);
+EXPORT const char **          obs_property_list_values(obs_property_t p);
+EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t p);
+EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t p);
 
 #ifdef __cplusplus
 }

@@ -61,7 +61,7 @@ void proc_handler_add(proc_handler_t handler, const char *decl_string,
 	memset(&pi, 0, sizeof(struct proc_info));
 
 	if (!parse_decl_string(&pi.func, decl_string)) {
-		blog(LOG_ERROR, "Dynamic function declaration invalid: %s",
+		blog(LOG_ERROR, "Function declaration invalid: %s",
 				decl_string);
 		return;
 	}
