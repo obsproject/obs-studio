@@ -37,6 +37,7 @@ struct coreaudio_data {
 	bool                active;
 	bool                default_device;
 	bool                input;
+	bool                no_devices;
 
 	uint32_t            sample_rate;
 	enum audio_format   format;
@@ -213,8 +214,10 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 		if (ca->input) {
 			ca->default_device = true;
 		} else {
-			if (!get_default_output_device(ca))
+			if (!get_default_output_device(ca)) {
+				ca->no_devices = true;
 				return false;
+			}
 		}
 	}
 
@@ -718,7 +721,11 @@ static void coreaudio_try_init(struct coreaudio_data *ca)
 		               ca->device_uid);
 
 		ca->retry_time = 2000;
-		coreaudio_begin_reconnect(ca);
+
+		if (ca->no_devices)
+			blog(LOG_INFO, "coreaudio: no device found");
+		else
+			coreaudio_begin_reconnect(ca);
 	}
 }
 
