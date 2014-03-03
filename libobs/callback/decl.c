@@ -20,7 +20,7 @@
 static inline void err_specifier_exists(struct cf_parser *cfp,
 		const char *storage)
 {
-	cf_adderror(cfp, "'$1' specifier already exists", LEX_WARNING,
+	cf_adderror(cfp, "'$1' specifier already exists", LEX_ERROR,
 			storage, NULL, NULL);
 }
 
@@ -28,6 +28,11 @@ static inline void err_reserved_name(struct cf_parser *cfp, const char *name)
 {
 	cf_adderror(cfp, "'$1' is a reserved name", LEX_ERROR,
 			name, NULL, NULL);
+}
+
+static inline void err_existing_name(struct cf_parser *cfp, const char *name)
+{
+	cf_adderror(cfp, "'$1' already exists", LEX_ERROR, name, NULL, NULL);
 }
 
 static bool is_in_out_specifier(struct cf_parser *cfp, struct strref *name,
@@ -86,6 +91,18 @@ static bool is_reserved_name(const char *str)
 	       (strcmp(str, "return") == 0);
 }
 
+static bool name_exists(struct decl_info *decl, const char *name)
+{
+	for (size_t i = 0; i < decl->params.num; i++) {
+		const char *param_name = decl->params.array[i].name;
+
+		if (strcmp(name, param_name) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static int parse_param(struct cf_parser *cfp, struct decl_info *decl)
 {
 	struct strref      ref;
@@ -117,6 +134,9 @@ static int parse_param(struct cf_parser *cfp, struct decl_info *decl)
 	code = cf_next_name(cfp, &param.name, "parameter name", ",");
 	if (code != PARSE_SUCCESS)
 		return code;
+
+	if (name_exists(decl, param.name))
+		err_existing_name(cfp, param.name);
 
 	if (is_reserved_name(param.name))
 		err_reserved_name(cfp, param.name);
