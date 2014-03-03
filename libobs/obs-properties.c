@@ -16,17 +16,10 @@
 ******************************************************************************/
 
 #include "util/bmem.h"
+#include "util/darray.h"
 #include "obs-properties.h"
 
 static inline void *get_property_data(struct obs_property *prop);
-
-static inline void free_str_list(char **str_list)
-{
-	char **temp_list = str_list;
-	while (*temp_list)
-		bfree(*(temp_list++));
-	bfree(str_list);
-}
 
 /* ------------------------------------------------------------------------- */
 
@@ -38,17 +31,25 @@ struct int_data {
 	int min, max, step;
 };
 
+struct list_item {
+	char *name;
+	char *value;
+};
+
 struct list_data {
-	char                   **names;
-	char                   **values;
-	enum obs_combo_type    type;
-	enum obs_combo_format  format;
+	DARRAY(struct list_item) items;
+	enum obs_combo_type      type;
+	enum obs_combo_format    format;
 };
 
 static inline void list_data_free(struct list_data *data)
 {
-	free_str_list(data->names);
-	free_str_list(data->values);
+	for (size_t i = 0; i < data->items.num; i++) {
+		bfree(data->items.array[i].name);
+		bfree(data->items.array[i].value);
+	}
+
+	da_free(data->items);
 }
 
 struct obs_property {
@@ -136,7 +137,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_FLOAT:     return sizeof(struct float_data);
 	case OBS_PROPERTY_TEXT:      return 0;
 	case OBS_PROPERTY_PATH:      return 0;
-	case OBS_PROPERTY_LIST:     return sizeof(struct list_data);
+	case OBS_PROPERTY_LIST:      return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
 	}
 
@@ -228,47 +229,26 @@ void obs_properties_add_path(obs_properties_t props, const char *name,
 	new_prop(props, name, desc, OBS_PROPERTY_PATH);
 }
 
-static char **dup_str_list(const char **str_list)
-{
-	int count = 0;
-	char **new_list;
-	const char **temp_list = str_list;
-
-	if (!str_list)
-		return NULL;
-
-	while (*(temp_list++) != NULL)
-		count++;
-
-	new_list  = bmalloc((count+1) * sizeof(char*));
-	new_list[count] = NULL;
-	for (int i = 0; i < count; i++)
-		new_list[i] = bstrdup(str_list[i]);
-
-	return new_list;
-}
-
-void obs_properties_add_list(obs_properties_t props,
+obs_property_t obs_properties_add_list(obs_properties_t props,
 		const char *name, const char *desc,
-		const char **value_names, const char **values,
 		enum obs_combo_type type,
 		enum obs_combo_format format)
 {
-	if (!props || has_prop(props, name)) return;
+	if (!props || has_prop(props, name)) return NULL;
 
 	if (type   == OBS_COMBO_TYPE_EDITABLE &&
 	    format != OBS_COMBO_FORMAT_STRING) {
 		blog(LOG_WARNING, "List '%s', error: Editable combo boxes "
 		                  "must be of the 'string' type", name);
-		return;
+		return NULL;
 	}
 
 	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_LIST);
 	struct list_data *data = get_property_data(p);
-	data->names  = dup_str_list(value_names);
-	data->values = dup_str_list(values);
 	data->format = format;
 	data->type   = type;
+
+	return p;
 }
 
 void obs_properties_add_color(obs_properties_t props, const char *name,
@@ -276,6 +256,34 @@ void obs_properties_add_color(obs_properties_t props, const char *name,
 {
 	if (!props || has_prop(props, name)) return;
 	new_prop(props, name, desc, OBS_PROPERTY_COLOR);
+}
+
+
+static inline bool is_combo(struct obs_property *p)
+{
+	return p->type == OBS_PROPERTY_LIST;
+}
+
+static inline struct list_data *get_list_data(struct obs_property *p)
+{
+	if (!p || !is_combo(p))
+		return NULL;
+
+	return get_property_data(p);
+}
+
+void obs_property_list_add_item(obs_property_t p,
+		const char *name, const char *value)
+{
+	struct list_data *data = get_list_data(p);
+	if (data) {
+		struct list_item item = {
+			.name  = bstrdup(name),
+			.value = bstrdup(value)
+		};
+
+		da_insert(data->items, data->items.num-1, &item);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -340,43 +348,34 @@ double obs_property_float_step(obs_property_t p)
 	return data ? data->step : 0;
 }
 
-static inline bool is_combo(struct obs_property *p)
-{
-	return p->type == OBS_PROPERTY_LIST;
-}
-
-const char **obs_property_list_names(obs_property_t p)
-{
-	if (!p || !is_combo(p))
-		return NULL;
-
-	struct list_data *data = get_property_data(p);
-	return (const char **)data->names;
-}
-
-const char **obs_property_list_values(obs_property_t p)
-{
-	if (!p || !is_combo(p))
-		return NULL;
-
-	struct list_data *data = get_property_data(p);
-	return (const char **)data->values;
-}
-
 enum obs_combo_type obs_property_list_type(obs_property_t p)
 {
-	if (!p || !is_combo(p))
-		return OBS_COMBO_TYPE_INVALID;
-
-	struct list_data *data = get_property_data(p);
-	return data->type;
+	struct list_data *data = get_list_data(p);
+	return data ? data->type : OBS_COMBO_TYPE_INVALID;
 }
 
 enum obs_combo_format obs_property_list_format(obs_property_t p)
 {
-	if (!p || !is_combo(p))
-		return OBS_COMBO_FORMAT_INVALID;
+	struct list_data *data = get_list_data(p);
+	return data ? data->format : OBS_COMBO_FORMAT_INVALID;
+}
 
-	struct list_data *data = get_property_data(p);
-	return data->format;
+size_t obs_property_list_item_count(obs_property_t p)
+{
+	struct list_data *data = get_list_data(p);
+	return data ? data->items.num : 0;
+}
+
+const char *obs_property_list_item_name(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_data(p);
+	return (data && idx < data->items.num) ?
+		data->items.array[idx].name : NULL;
+}
+
+const char *obs_property_list_item_value(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_data(p);
+	return (data && idx < data->items.num) ?
+		data->items.array[idx].value : NULL;
 }

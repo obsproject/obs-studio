@@ -560,7 +560,6 @@ void gs_normal3v(const struct vec3 *v)
 void gs_color4v(const struct vec4 *v)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_color4v")
 	UNUSED_PARAMETER(v);
 }
 
@@ -577,7 +576,6 @@ void gs_texcoord2v(const struct vec2 *v, int unit)
 input_t gs_getinput(void)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_getinput (hmm, not sure about input yet)")
 	return NULL;
 }
 
@@ -677,7 +675,6 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_create_texture_from_file")
 	UNUSED_PARAMETER(file);
 	UNUSED_PARAMETER(flags);
 	return NULL;
@@ -686,7 +683,6 @@ texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
 texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_create_cubetexture_from_file")
 	UNUSED_PARAMETER(file);
 	UNUSED_PARAMETER(flags);
 	return NULL;
@@ -695,7 +691,6 @@ texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
 texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_create_volumetexture_from_file")
 	UNUSED_PARAMETER(file);
 	UNUSED_PARAMETER(flags);
 	return NULL;
@@ -799,7 +794,6 @@ void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_draw_cube_backdrop")
 	UNUSED_PARAMETER(cubetex);
 	UNUSED_PARAMETER(rot);
 	UNUSED_PARAMETER(left);
@@ -827,7 +821,6 @@ void gs_set2dmode(void)
 void gs_set3dmode(double fovy, double znear, double zvar)
 {
 	/* TODO */
-#pragma message ("TODO: implement gs_set3dmode")
 	UNUSED_PARAMETER(fovy);
 	UNUSED_PARAMETER(znear);
 	UNUSED_PARAMETER(zvar);
@@ -893,7 +886,6 @@ void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
 		uint32_t linesize, bool invert)
 {
 	/* TODO */
-#pragma message ("TODO: implement cubetexture_setimage")
 	UNUSED_PARAMETER(cubetex);
 	UNUSED_PARAMETER(side);
 	UNUSED_PARAMETER(data);

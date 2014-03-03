@@ -140,7 +140,7 @@ struct obs_encoder_info {
 	 * @param  locale  The locale to translate with
 	 * @return         The properties data
 	 */
-	obs_properties_t (*get_properties)(const char *locale);
+	obs_properties_t (*properties)(const char *locale);
 
 	/**
 	 * Updates the settings for this encoder

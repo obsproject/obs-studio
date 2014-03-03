@@ -91,8 +91,8 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 obs_properties_t obs_encoder_properties(const char *id, const char *locale)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
-	if (ei && ei->get_properties)
-		return ei->get_properties(locale);
+	if (ei && ei->properties)
+		return ei->properties(locale);
 	return NULL;
 }
 
@@ -144,7 +144,7 @@ bool obs_encoder_start(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param)
 {
-#pragma message ("TODO: implement obs_encoder_start")
+	/* TODO: implement */
 	UNUSED_PARAMETER(encoder);
 	UNUSED_PARAMETER(new_packet);
 	UNUSED_PARAMETER(param);
@@ -155,7 +155,7 @@ void obs_encoder_stop(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param)
 {
-#pragma message ("TODO: implement obs_encoder_stop")
+	/* TODO: implement */
 	UNUSED_PARAMETER(encoder);
 	UNUSED_PARAMETER(new_packet);
 	UNUSED_PARAMETER(param);

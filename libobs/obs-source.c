@@ -302,8 +302,8 @@ obs_properties_t obs_source_properties(enum obs_source_type type,
 		const char *id, const char *locale)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	if (info && info->get_properties)
-	       return info->get_properties(locale);
+	if (info && info->properties)
+	       return info->properties(locale);
 	return NULL;
 }
 

@@ -7,6 +7,7 @@
 #include <obs.h>
 #include <util/threading.h>
 #include <util/c99defs.h>
+#include <util/darray.h>
 #include <util/dstr.h>
 
 #include "mac-helpers.h"
@@ -35,6 +36,7 @@ struct coreaudio_data {
 	bool                au_initialized;
 	bool                active;
 	bool                default_device;
+	bool                input;
 
 	uint32_t            sample_rate;
 	enum audio_format   format;
@@ -48,14 +50,157 @@ struct coreaudio_data {
 	obs_source_t        source;
 };
 
+struct device_item {
+	struct dstr name, value;
+};
+
+static inline void device_item_free(struct device_item *item)
+{
+	dstr_free(&item->name);
+	dstr_free(&item->value);
+}
+
+struct device_list {
+	DARRAY(struct device_item) items;
+};
+
+static inline void device_list_add(struct device_list *list,
+		struct device_item *item)
+{
+	da_push_back(list->items, item);
+	memset(item, 0, sizeof(struct device_item));
+}
+
+static inline void device_list_free(struct device_list *list)
+{
+	for (size_t i = 0; i < list->items.num; i++)
+		device_item_free(list->items.array+i);
+
+	da_free(list->items);
+}
+
+/* ugh, because mac has no means of capturing output, we have to basically
+ * mark soundflower and wavtap as output devices. */
+static inline bool device_is_input(char *device)
+{
+	return astrstri(device, "soundflower") == NULL &&
+	       astrstri(device, "wavtap")      == NULL;
+}
+
+static inline bool enum_success(OSStatus stat, const char *msg)
+{
+	if (stat != noErr) {
+		blog(LOG_WARNING, "[coreaudio_enum_devices] %s failed: %d",
+				msg, (int)stat);
+		return false;
+	}
+
+	return true;
+}
+
+static void coreaudio_enum_add_device(struct device_list *list,
+		AudioDeviceID id, bool input)
+{
+	OSStatus           stat;
+	UInt32             size     = 0;
+	CFStringRef        cf_name  = NULL;
+	CFStringRef        cf_value = NULL;
+	struct device_item item;
+
+	AudioObjectPropertyAddress addr = {
+		kAudioDevicePropertyStreams,
+		kAudioDevicePropertyScopeInput,
+		kAudioObjectPropertyElementMaster
+	};
+
+	memset(&item, 0, sizeof(item));
+
+	/* check to see if it's a mac input device */
+	AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
+	if (!size)
+		return;
+
+	size = sizeof(CFStringRef);
+
+	addr.mSelector = kAudioDevicePropertyDeviceUID;
+	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_value);
+	if (!enum_success(stat, "get audio device UID"))
+		return;
+
+	addr.mSelector = kAudioDevicePropertyDeviceNameCFString;
+	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_name);
+	if (!enum_success(stat, "get audio device name"))
+		goto fail;
+
+	if (!cf_to_dstr(cf_name,  &item.name))
+		goto fail;
+	if (!cf_to_dstr(cf_value, &item.value))
+		goto fail;
+
+	if (input || !device_is_input(item.value.array))
+		device_list_add(list, &item);
+
+fail:
+	device_item_free(&item);
+	CFRelease(cf_name);
+	CFRelease(cf_value);
+}
+
+static void coreaudio_enum_devices(struct device_list *list, bool input)
+{
+	AudioObjectPropertyAddress addr = {
+		kAudioHardwarePropertyDevices,
+		kAudioObjectPropertyScopeGlobal,
+		kAudioObjectPropertyElementMaster
+	};
+
+	UInt32        size = 0;
+	UInt32        count;
+	OSStatus      stat;
+	AudioDeviceID *ids;
+
+	stat = AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &addr,
+			0, NULL, &size);
+	if (!enum_success(stat, "get kAudioObjectSystemObject data size"))
+		return;
+
+	ids   = bmalloc(size);
+	count = size / sizeof(AudioDeviceID);
+
+	stat = AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr,
+			0, NULL, &size, ids);
+
+	if (enum_success(stat, "get kAudioObjectSystemObject data"))
+		for (UInt32 i = 0; i < count; i++)
+			coreaudio_enum_add_device(list, ids[i], input);
+
+	bfree(ids);
+}
+
+static bool get_default_output_device(struct coreaudio_data *ca)
+{
+	struct device_list list;
+
+	memset(&list, 0, sizeof(struct device_list));
+	coreaudio_enum_devices(&list, false);
+
+	if (!list.items.num)
+		return false;
+
+	bfree(ca->device_uid);
+	ca->device_uid = bstrdup(list.items.array[0].value.array);
+
+	device_list_free(&list);
+	return true;
+}
+
 static bool find_device_id_by_uid(struct coreaudio_data *ca)
 {
-	OSStatus    stat;
-	UInt32      size = sizeof(AudioDeviceID);
-	CFStringRef cf_uid = CFStringCreateWithCString(NULL, ca->device_uid,
-			kCFStringEncodingUTF8);
-	CFStringRef qual = NULL;
+	UInt32      size      = sizeof(AudioDeviceID);
+	CFStringRef cf_uid    = NULL;
+	CFStringRef qual      = NULL;
 	UInt32      qual_size = 0;
+	OSStatus    stat;
 	bool        success;
 
 	AudioObjectPropertyAddress addr = {
@@ -63,7 +208,16 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 		.mElement = kAudioObjectPropertyElementMaster
 	};
 
-	ca->default_device = (strcmp(ca->device_uid, "Default") == 0);
+	/* have to do this because mac output devices don't actually exist */
+	if (astrcmpi(ca->device_uid, "default") == 0) {
+		if (ca->input)
+			ca->default_device = true;
+		else
+			get_default_output_device(ca);
+	}
+
+	cf_uid = CFStringCreateWithCString(NULL, ca->device_uid,
+			kCFStringEncodingUTF8);
 
 	if (ca->default_device) {
 		addr.mSelector = PROPERTY_DEFAULT_DEVICE;
@@ -593,11 +747,18 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *coreaudio_getname(const char *locale)
+static const char *coreaudio_input_getname(const char *locale)
 {
 	/* TODO: Locale */
 	UNUSED_PARAMETER(locale);
-	return "CoreAudio Input";
+	return "CoreAudio Input Capture";
+}
+
+static const char *coreaudio_output_getname(const char *locale)
+{
+	/* TODO: Locale */
+	UNUSED_PARAMETER(locale);
+	return "CoreAudio Output Capture";
 }
 
 static void coreaudio_destroy(void *data)
@@ -622,11 +783,12 @@ static void coreaudio_destroy(void *data)
 	}
 }
 
-static void *coreaudio_create(obs_data_t settings, obs_source_t source)
+static void *coreaudio_create(obs_data_t settings, obs_source_t source,
+		bool input)
 {
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
 
-	obs_data_set_default_string(settings, "device_id", "Default");
+	obs_data_set_default_string(settings, "device_id", "default");
 
 	if (event_init(&ca->exit_event, EVENT_TYPE_MANUAL) != 0) {
 		blog(LOG_WARNING, "[coreaudio_create] failed to create "
@@ -636,17 +798,81 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source)
 	}
 
 	ca->device_uid = bstrdup(obs_data_getstring(settings, "device_id"));
-	ca->source = source;
+	ca->source     = source;
+	ca->input      = input;
 
 	coreaudio_try_init(ca);
 	return ca;
 }
 
-struct obs_source_info coreaudio_info = {
-	.id           = "coreaudio_capture",
+static void *coreaudio_create_input_capture(obs_data_t settings,
+		obs_source_t source)
+{
+	return coreaudio_create(settings, source, true);
+}
+
+static void *coreaudio_create_output_capture(obs_data_t settings,
+		obs_source_t source)
+{
+	return coreaudio_create(settings, source, false);
+}
+
+static obs_properties_t coreaudio_properties(const char *locale, bool input)
+{
+	obs_properties_t   props = obs_properties_create();
+	obs_property_t     property;
+	struct device_list devices;
+
+	memset(&devices, 0, sizeof(struct device_list));
+
+	/* TODO: translate */
+	property = obs_properties_add_list(props, "device_id", "Device",
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	coreaudio_enum_devices(&devices, input);
+
+	/* TODO: translate */
+	if (devices.items.num)
+		obs_property_list_add_item(property, "Default", "default");
+
+	for (size_t i = 0; i < devices.items.num; i++) {
+		struct device_item *item = devices.items.array+i;
+		obs_property_list_add_item(property,
+				item->name.array, item->value.array);
+	}
+
+	device_list_free(&devices);
+
+	UNUSED_PARAMETER(locale);
+	return props;
+}
+
+static obs_properties_t coreaudio_input_properties(const char *locale)
+{
+	return coreaudio_properties(locale, true);
+}
+
+static obs_properties_t coreaudio_output_properties(const char *locale)
+{
+	return coreaudio_properties(locale, false);
+}
+
+struct obs_source_info coreaudio_input_capture_info = {
+	.id           = "coreaudio_input_capture",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_AUDIO,
-	.getname      = coreaudio_getname,
-	.create       = coreaudio_create,
+	.getname      = coreaudio_input_getname,
+	.create       = coreaudio_create_input_capture,
 	.destroy      = coreaudio_destroy,
+	.properties   = coreaudio_output_properties
+};
+
+struct obs_source_info coreaudio_output_capture_info = {
+	.id           = "coreaudio_output_capture",
+	.type         = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_AUDIO,
+	.getname      = coreaudio_output_getname,
+	.create       = coreaudio_create_output_capture,
+	.destroy      = coreaudio_destroy,
+	.properties   = coreaudio_input_properties
 };

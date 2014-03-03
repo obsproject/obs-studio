@@ -46,6 +46,8 @@ EXPORT int wstrcmp_n(const wchar_t *str1, const wchar_t *str2, size_t n);
 EXPORT int astrcmpi_n(const char *str1, const char *str2, size_t n);
 EXPORT int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n);
 
+EXPORT char *astrstri(char *str, const char *find);
+
 EXPORT char *strdepad(char *str);
 EXPORT wchar_t *wcsdepad(wchar_t *str);
 
@@ -108,6 +110,8 @@ EXPORT void dstr_safe_printf(struct dstr *dst, const char *format,
 		const char *val1, const char *val2, const char *val3,
 		const char *val4);
 
+static inline const char *dstr_find_i(const struct dstr *str,
+		const char *find);
 static inline const char *dstr_find(const struct dstr *str,
 		const char *find);
 
@@ -269,8 +273,12 @@ static inline void dstr_cat_ch(struct dstr *dst, char ch)
 	dst->array[dst->len]   = 0;
 }
 
-static inline const char *dstr_find(const struct dstr *str,
-		const char *find)
+static inline const char *dstr_find_i(const struct dstr *str, const char *find)
+{
+	return astrstri(str->array, find);
+}
+
+static inline const char *dstr_find(const struct dstr *str, const char *find)
 {
 	return strstr(str->array, find);
 }

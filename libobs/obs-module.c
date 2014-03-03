@@ -214,7 +214,6 @@ void obs_register_encoder(const struct obs_encoder_info *info)
 void obs_register_service(const struct obs_service_info *info)
 {
 	/* TODO */
-#pragma message ("TODO: implement obs_register_service")
 	UNUSED_PARAMETER(info);
 }
 

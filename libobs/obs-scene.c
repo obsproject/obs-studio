@@ -374,16 +374,12 @@ void obs_sceneitem_addref(obs_sceneitem_t item)
 {
 	if (item)
 		++item->ref;
-
-	blog(LOG_DEBUG, "addref %s, ref: %d", item->source->name, item->ref);
 }
 
 void obs_sceneitem_release(obs_sceneitem_t item)
 {
 	if (!item)
 		return;
-
-	blog(LOG_DEBUG, "release %s, ref: %d", item->source->name, item->ref);
 
 	if (--item->ref == 0)
 		obs_sceneitem_destroy(item);

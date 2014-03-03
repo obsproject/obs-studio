@@ -160,6 +160,23 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	return 0;
 }
 
+char *astrstri(char *str, const char *find)
+{
+	size_t len;
+
+	if (!str || !find)
+		return NULL;
+
+	len = strlen(find);
+
+	do {
+		if (astrcmpi_n(str, find, len) == 0)
+			return str;
+	} while (*str++);
+
+	return NULL;
+}
+
 char *strdepad(char *str)
 {
 	char *temp;

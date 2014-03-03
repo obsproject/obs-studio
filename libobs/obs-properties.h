@@ -71,16 +71,14 @@ EXPORT void obs_properties_add_text(obs_properties_t props, const char *name,
 		const char *description);
 EXPORT void obs_properties_add_path(obs_properties_t props, const char *name,
 		const char *description);
-EXPORT void obs_properties_add_list(obs_properties_t props,
+EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
 		const char *name, const char *description,
-		const char **value_names, const char **values,
-		enum obs_combo_type type,
-		enum obs_combo_format format);
+		enum obs_combo_type type, enum obs_combo_format format);
 EXPORT void obs_properties_add_color(obs_properties_t props, const char *name,
 		const char *description);
 
-EXPORT bool           obs_properties_next(obs_properties_t *props);
-EXPORT obs_property_t obs_properties_first_property(obs_properties_t props);
+EXPORT void obs_property_list_add_item(obs_property_t p,
+		const char *name, const char *value);
 
 /* ------------------------------------------------------------------------- */
 
@@ -96,10 +94,12 @@ EXPORT int                    obs_property_int_step(obs_property_t p);
 EXPORT double                 obs_property_float_min(obs_property_t p);
 EXPORT double                 obs_property_float_max(obs_property_t p);
 EXPORT double                 obs_property_float_step(obs_property_t p);
-EXPORT const char **          obs_property_list_names(obs_property_t p);
-EXPORT const char **          obs_property_list_values(obs_property_t p);
 EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t p);
 EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t p);
+
+EXPORT size_t      obs_property_list_item_count(obs_property_t p);
+EXPORT const char *obs_property_list_item_name(obs_property_t p, size_t idx);
+EXPORT const char *obs_property_list_item_value(obs_property_t p, size_t idx);
 
 #ifdef __cplusplus
 }
