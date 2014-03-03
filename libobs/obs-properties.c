@@ -59,22 +59,17 @@ struct obs_property {
 	struct obs_property    *next;
 };
 
-struct obs_category {
-	const char             *name;
-	struct obs_property    *first_property;
-
-	struct obs_category    *next;
-};
-
 struct obs_properties {
-	struct obs_category    *first_category;
+	struct obs_property    *first_property;
+	struct obs_property    **last;
 };
 
 obs_properties_t obs_properties_create()
 {
-	struct obs_properties *list;
-	list = bzalloc(sizeof(struct obs_properties));
-	return list;
+	struct obs_properties *props;
+	props = bzalloc(sizeof(struct obs_properties));
+	props->last = &props->first_property;
+	return props;
 }
 
 static void obs_property_destroy(struct obs_property *property)
@@ -87,57 +82,50 @@ static void obs_property_destroy(struct obs_property *property)
 	bfree(property);
 }
 
-static void obs_category_destroy(struct obs_category *category)
-{
-	struct obs_property *p = category->first_property;
-	while (p) {
-		struct obs_property *next = p->next;
-		obs_property_destroy(p);
-		p = next;
-	}
-
-	bfree(category);
-}
-
 void obs_properties_destroy(obs_properties_t props)
 {
 	if (props) {
-		struct obs_category *c = props->first_category;
-		while (c) {
-			struct obs_category *next = c->next;
-			obs_category_destroy(c);
-			c = next;
+		struct obs_property *p = props->first_property;
+		while (p) {
+			struct obs_property *next = p->next;
+			obs_property_destroy(p);
+			p = next;
 		}
 
 		bfree(props);
 	}
 }
 
-obs_category_t obs_properties_add_category(obs_properties_t props,
-		const char *name)
+obs_property_t obs_properties_first(obs_properties_t props)
 {
-	if (!props) return NULL;
-
-	struct obs_category *c = bzalloc(sizeof(struct obs_category));
-	c->name = name;
-	c->next = props->first_category;
-	props->first_category = c;
-
-	return c;
+	return (props != NULL) ? props->first_property : NULL;
 }
 
-obs_category_t obs_properties_first_category(obs_properties_t props)
+obs_property_t obs_properties_get(obs_properties_t props, const char *name)
 {
-	return (props != NULL) ? props->first_category : NULL;
+	struct obs_property *property;
+
+	if (!props)
+		return NULL;
+
+	property = props->first_property;
+	while (property) {
+		if (strcmp(property->name, name) == 0)
+			return property;
+
+		property = property->next;
+	}
+
+	return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 
-static inline void category_add(struct obs_category *cat,
+static inline void propertes_add(struct obs_properties *props,
 		struct obs_property *p)
 {
-	p->next = cat->first_property;
-	cat->first_property = p;
+	*props->last = p;
+	props->last = &p->next;
 }
 
 static inline size_t get_property_size(enum obs_property_type type)
@@ -155,7 +143,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	return 0;
 }
 
-static inline struct obs_property *new_prop(struct obs_category *cat,
+static inline struct obs_property *new_prop(struct obs_properties *props,
 		const char *name, const char *desc,
 		enum obs_property_type type)
 {
@@ -166,9 +154,25 @@ static inline struct obs_property *new_prop(struct obs_category *cat,
 	p->type = type;
 	p->name = name;
 	p->desc = desc;
-	category_add(cat, p);
+	propertes_add(props, p);
 
 	return p;
+}
+
+static inline bool has_prop(struct obs_properties *props, const char *name)
+{
+	struct obs_property *p = props->first_property;
+
+	while (p) {
+		if (strcmp(p->name, name) == 0) {
+			blog(LOG_WARNING, "Property '%s' exists", name);
+			return true;
+		}
+
+		p = p->next;
+	}
+
+	return false;
 }
 
 static inline void *get_property_data(struct obs_property *prop)
@@ -185,42 +189,43 @@ static inline void *get_type_data(struct obs_property *prop,
 	return get_property_data(prop);
 }
 
-void obs_category_add_int(obs_category_t cat, const char *name,
+void obs_properties_add_int(obs_properties_t props, const char *name,
 		const char *desc, int min, int max, int step)
 {
-	if (!cat) return;
+	if (!props || has_prop(props, name)) return;
 
-	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_INT);
+	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_INT);
 	struct int_data *data = get_property_data(p);
 	data->min  = min;
 	data->max  = max;
 	data->step = step;
 }
 
-void obs_category_add_float(obs_category_t cat, const char *name,
+void obs_properties_add_float(obs_properties_t props, const char *name,
 		const char *desc, double min, double max, double step)
 {
-	if (!cat) return;
+	if (!props || has_prop(props, name)) return;
 
-	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_FLOAT);
+	struct obs_property *p = new_prop(props, name, desc,
+			OBS_PROPERTY_FLOAT);
 	struct float_data *data = get_property_data(p);
 	data->min  = min;
 	data->max  = max;
 	data->step = step;
 }
 
-void obs_category_add_text(obs_category_t cat, const char *name,
+void obs_properties_add_text(obs_properties_t props, const char *name,
 		const char *desc)
 {
-	if (!cat) return;
-	new_prop(cat, name, desc, OBS_PROPERTY_TEXT);
+	if (!props || has_prop(props, name)) return;
+	new_prop(props, name, desc, OBS_PROPERTY_TEXT);
 }
 
-void obs_category_add_path(obs_category_t cat, const char *name,
+void obs_properties_add_path(obs_properties_t props, const char *name,
 		const char *desc)
 {
-	if (!cat) return;
-	new_prop(cat, name, desc, OBS_PROPERTY_PATH);
+	if (!props || has_prop(props, name)) return;
+	new_prop(props, name, desc, OBS_PROPERTY_PATH);
 }
 
 static char **dup_str_list(const char **str_list)
@@ -243,23 +248,22 @@ static char **dup_str_list(const char **str_list)
 	return new_list;
 }
 
-void obs_category_add_list(obs_category_t cat,
+void obs_properties_add_list(obs_properties_t props,
 		const char *name, const char *desc,
 		const char **value_names, const char **values,
 		enum obs_combo_type type,
 		enum obs_combo_format format)
 {
-	if (!cat) return;
+	if (!props || has_prop(props, name)) return;
 
 	if (type   == OBS_COMBO_TYPE_EDITABLE &&
 	    format != OBS_COMBO_FORMAT_STRING) {
-		blog(LOG_WARNING, "Catagory '%s', list '%s', error: "
-		                  "Editable combo boxes must be strings",
-		                  cat->name, name);
+		blog(LOG_WARNING, "List '%s', error: Editable combo boxes "
+		                  "must be of the 'string' type", name);
 		return;
 	}
 
-	struct obs_property *p = new_prop(cat, name, desc, OBS_PROPERTY_LIST);
+	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_LIST);
 	struct list_data *data = get_property_data(p);
 	data->names  = dup_str_list(value_names);
 	data->values = dup_str_list(values);
@@ -267,28 +271,11 @@ void obs_category_add_list(obs_category_t cat,
 	data->type   = type;
 }
 
-void obs_category_add_color(obs_category_t cat, const char *name,
+void obs_properties_add_color(obs_properties_t props, const char *name,
 		const char *desc)
 {
-	if (!cat) return;
-	new_prop(cat, name, desc, OBS_PROPERTY_COLOR);
-}
-
-bool obs_category_next(obs_category_t *cat)
-{
-	if (!cat || !*cat)
-		return false;
-
-	*cat = (*cat)->next;
-	return *cat != NULL;
-}
-
-obs_property_t obs_category_first_property(obs_category_t cat)
-{
-	if (!cat)
-		return NULL;
-
-	return cat->first_property;
+	if (!props || has_prop(props, name)) return;
+	new_prop(props, name, desc, OBS_PROPERTY_COLOR);
 }
 
 /* ------------------------------------------------------------------------- */
