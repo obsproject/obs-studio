@@ -210,10 +210,12 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 
 	/* have to do this because mac output devices don't actually exist */
 	if (astrcmpi(ca->device_uid, "default") == 0) {
-		if (ca->input)
+		if (ca->input) {
 			ca->default_device = true;
-		else
-			get_default_output_device(ca);
+		} else {
+			if (!get_default_output_device(ca))
+				return false;
+		}
 	}
 
 	cf_uid = CFStringCreateWithCString(NULL, ca->device_uid,
