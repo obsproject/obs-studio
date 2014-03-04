@@ -45,12 +45,12 @@ void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 	res = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
 			__uuidof(IMMDeviceEnumerator),
 			(void**)enumerator.Assign());
-	if (!res)
+	if (FAILED(res))
 		throw HRError("Failed to create enumerator", res);
 
 	res = enumerator->EnumAudioEndpoints(input ? eCapture : eRender,
 			DEVICE_STATE_ACTIVE, collection.Assign());
-	if (!res)
+	if (FAILED(res))
 		throw HRError("Failed to enumerate devices", res);
 
 	res = collection->GetCount(&count);
