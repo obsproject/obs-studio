@@ -1,5 +1,7 @@
 #pragma once
 
+#include <util/dstr.h>
+
 static inline bool mac_success(OSStatus stat, const char *action)
 {
 	if (stat != noErr) {
