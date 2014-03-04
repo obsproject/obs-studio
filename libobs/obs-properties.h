@@ -25,6 +25,7 @@ extern "C" {
 
 enum obs_property_type {
 	OBS_PROPERTY_INVALID,
+	OBS_PROPERTY_BOOL,
 	OBS_PROPERTY_INT,
 	OBS_PROPERTY_FLOAT,
 	OBS_PROPERTY_TEXT,
@@ -63,6 +64,8 @@ EXPORT obs_property_t obs_properties_get(obs_properties_t props,
 
 /* ------------------------------------------------------------------------- */
 
+EXPORT void obs_properties_add_bool(obs_properties_t props, const char *name,
+		const char *description);
 EXPORT void obs_properties_add_int(obs_properties_t props, const char *name,
 		const char *description, int min, int max, int step);
 EXPORT void obs_properties_add_float(obs_properties_t props, const char *name,

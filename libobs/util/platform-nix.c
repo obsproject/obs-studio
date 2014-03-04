@@ -28,6 +28,10 @@
 void *os_dlopen(const char *path)
 {
 	struct dstr dylib_name;
+
+	if (!path)
+		return NULL;
+
 	dstr_init_copy(&dylib_name, path);
 	if (!dstr_find(&dylib_name, ".so"))
 		dstr_cat(&dylib_name, ".so");

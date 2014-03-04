@@ -170,7 +170,7 @@ void gs_device::InitDevice(gs_init_data *data, IDXGIAdapter *adapter)
 		L"<unknown>";
 
 	char *adapterNameUTF8;
-	os_wcs_to_utf8(adapterName.c_str(), 0, &adapterNameUTF8);
+	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s", adapterNameUTF8);
 	bfree(adapterNameUTF8);
 

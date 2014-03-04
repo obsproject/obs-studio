@@ -63,11 +63,14 @@ void OBSBasic::OBSInit()
 	signal_handler_connect(obs_signalhandler(), "channel_change",
 			OBSBasic::ChannelChanged, this);
 
-	/* TODO: this is a test */
+	/* TODO: this is a test, all modules will be searched for and loaded
+	 * automatically later */
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
 #ifdef __APPLE__
 	obs_load_module("mac-capture");
+#elif _WIN32
+	obs_load_module("win-wasapi");
 #endif
 
 	/* HACK: fixes a qt bug with native widgets with native repaint */

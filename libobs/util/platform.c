@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -28,13 +28,13 @@ FILE *os_wfopen(const wchar_t *path, const char *mode)
 #ifdef _MSC_VER
 	wchar_t *wcs_mode;
 
-	os_utf8_to_wcs(mode, 0, &wcs_mode);
+	os_utf8_to_wcs_ptr(mode, 0, &wcs_mode);
 	file = _wfopen(path, wcs_mode);
 	bfree(wcs_mode);
 #else
 	char *mbs_path;
 
-	os_wcs_to_utf8(path, 0, &mbs_path);
+	os_wcs_to_utf8_ptr(path, 0, &mbs_path);
 	file = fopen(mbs_path, mode);
 	bfree(mbs_path);
 #endif
@@ -46,7 +46,7 @@ FILE *os_fopen(const char *path, const char *mode)
 #ifdef _WIN32
 	wchar_t *wpath = NULL;
 	FILE *file = NULL;
-	os_utf8_to_wcs(path, 0, &wpath);
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
 	file = os_wfopen(wpath, mode);
 	bfree(wpath);
 
@@ -95,7 +95,7 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 		}
 
 		mbstr[size] = 0;
-		len = os_mbs_to_utf8(mbstr, size, pstr);
+		len = os_mbs_to_utf8_ptr(mbstr, size, pstr);
 		bfree(mbstr);
 	}
 
@@ -180,7 +180,7 @@ bool os_quick_write_mbs_file(const char *path, const char *str, size_t len)
 	if (!f)
 		return false;
 
-	mbs_len = os_utf8_to_mbs(str, len, &mbs);
+	mbs_len = os_utf8_to_mbs_ptr(str, len, &mbs);
 	if (mbs_len)
 		fwrite(mbs, 1, mbs_len, f);
 	bfree(mbs);
@@ -205,74 +205,93 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 	return true;
 }
 
-size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t **pstr)
+size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst)
 {
-	size_t out_len = mbstowcs(NULL, str, len);
-	wchar_t *dst = NULL;
+	size_t out_len = dst ? len : mbstowcs(NULL, str, len);
 
-	if (len) {
-		dst = bmalloc((out_len+1) * sizeof(wchar_t));
+	if (len && dst) {
 		mbstowcs(dst, str, out_len+1);
 		dst[out_len] = 0;
 	}
 
-	*pstr = dst;
 	return out_len;
 }
 
-size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t **pstr)
+size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst)
 {
 	size_t in_len = len ? len : strlen(str);
-	size_t out_len = utf8_to_wchar(str, in_len, NULL, 0, 0);
-	wchar_t *dst = NULL;
+	size_t out_len = dst ? len : utf8_to_wchar(str, in_len, NULL, 0, 0);
 
-	if (out_len) {
-		dst = bmalloc((out_len+1) * sizeof(wchar_t));
+	if (out_len && dst) {
 		utf8_to_wchar(str, in_len, dst, out_len+1, 0);
 		dst[out_len] = 0;
 	}
 
-	*pstr = dst;
 	return out_len;
 }
 
-size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char **pstr)
+size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst)
 {
-	size_t out_len = wcstombs(NULL, str, len);
-	char *dst = NULL;
+	size_t out_len = dst ? len : wcstombs(NULL, str, len);
 
-	if (len) {
-		dst = bmalloc(out_len+1);
+	if (len && dst) {
 		wcstombs(dst, str, out_len+1);
 		dst[out_len] = 0;
 	}
 
-	*pstr = dst;
 	return out_len;
 }
 
-size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char **pstr)
+size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst)
 {
 	size_t in_len = (len != 0) ? len : wcslen(str);
-	size_t out_len = wchar_to_utf8(str, in_len, NULL, 0, 0);
-	char *dst = NULL;
+	size_t out_len = dst ? len : wchar_to_utf8(str, in_len, NULL, 0, 0);
 
-	if (out_len) {
-		dst = bmalloc(out_len+1);
+	if (out_len && dst) {
 		wchar_to_utf8(str, in_len, dst, out_len+1, 0);
 		dst[out_len] = 0;
 	}
 
-	*pstr = dst;
 	return out_len;
 }
 
-size_t os_utf8_to_mbs(const char *str, size_t len, char **pstr)
+size_t os_mbs_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
+{
+	size_t  out_len = os_mbs_to_wcs(str, len, NULL);
+
+	*pstr = bmalloc((out_len+1) * sizeof(wchar_t));
+	return os_mbs_to_wcs(str, out_len, *pstr);
+}
+
+size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
+{
+	size_t  out_len = os_utf8_to_wcs(str, len, NULL);
+	*pstr = bmalloc((out_len+1) * sizeof(wchar_t));
+	return os_utf8_to_wcs(str, out_len, *pstr);
+}
+
+size_t os_wcs_to_mbs_ptr(const wchar_t *str, size_t len, char **pstr)
+{
+	size_t out_len = os_wcs_to_mbs(str, len, NULL);
+
+	*pstr = bmalloc((out_len+1) * sizeof(char));
+	return os_wcs_to_mbs(str, out_len, *pstr);
+}
+
+size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr)
+{
+	size_t out_len = os_wcs_to_utf8(str, len, NULL);
+
+	*pstr = bmalloc((out_len+1) * sizeof(char));
+	return os_wcs_to_utf8(str, out_len, *pstr);
+}
+
+size_t os_utf8_to_mbs_ptr(const char *str, size_t len, char **pstr)
 {
 	wchar_t *wstr = NULL;
 	char *dst = NULL;
-	size_t wlen = os_utf8_to_wcs(str, len, &wstr);
-	size_t out_len = os_wcs_to_mbs(wstr, wlen, &dst);
+	size_t wlen = os_utf8_to_wcs_ptr(str, len, &wstr);
+	size_t out_len = os_wcs_to_mbs_ptr(wstr, wlen, &dst);
 
 	bfree(wstr);
 	*pstr = dst;
@@ -280,12 +299,12 @@ size_t os_utf8_to_mbs(const char *str, size_t len, char **pstr)
 	return out_len;
 }
 
-size_t os_mbs_to_utf8(const char *str, size_t len, char **pstr)
+size_t os_mbs_to_utf8_ptr(const char *str, size_t len, char **pstr)
 {
 	wchar_t *wstr = NULL;
 	char *dst = NULL;
-	size_t wlen = os_mbs_to_wcs(str, len, &wstr);
-	size_t out_len = os_wcs_to_utf8(wstr, wlen, &dst);
+	size_t wlen = os_mbs_to_wcs_ptr(str, len, &wstr);
+	size_t out_len = os_wcs_to_utf8_ptr(wstr, wlen, &dst);
 
 	bfree(wstr);
 	*pstr = dst;

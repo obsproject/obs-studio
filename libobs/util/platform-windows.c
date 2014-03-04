@@ -52,11 +52,14 @@ void *os_dlopen(const char *path)
 	wchar_t *wpath;
 	HMODULE h_library = NULL;
 
+	if (!path)
+		return NULL;
+
 	dstr_init_copy(&dll_name, path);
 	if (!dstr_find(&dll_name, ".dll"))
 		dstr_cat(&dll_name, ".dll");
 
-	os_utf8_to_wcs(dll_name.array, 0, &wpath);
+	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
 	h_library = LoadLibraryW(wpath);
 	bfree(wpath);
 	dstr_free(&dll_name);
@@ -139,7 +142,7 @@ char *os_get_config_path(const char *name)
 	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
-	os_wcs_to_utf8(path_utf16, 0, &ptr);
+	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
 	dstr_init_move_array(&path, ptr);
 	dstr_cat(&path, "\\");
 	dstr_cat(&path, name);
@@ -152,7 +155,7 @@ bool os_file_exists(const char *path)
 	HANDLE hFind;
 	wchar_t *path_utf16;
 
-	if (!os_utf8_to_wcs(path, 0, &path_utf16))
+	if (!os_utf8_to_wcs_ptr(path, 0, &path_utf16))
 		return false;
 
 	hFind = FindFirstFileW(path_utf16, &wfd);
@@ -168,7 +171,7 @@ int os_mkdir(const char *path)
 	wchar_t *path_utf16;
 	BOOL success;
 
-	if (!os_utf8_to_wcs(path, 0, &path_utf16))
+	if (!os_utf8_to_wcs_ptr(path, 0, &path_utf16))
 		return MKDIR_ERROR;
 
 	success = CreateDirectory(path_utf16, NULL);

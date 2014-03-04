@@ -190,6 +190,13 @@ static inline void *get_type_data(struct obs_property *prop,
 	return get_property_data(prop);
 }
 
+void obs_properties_add_bool(obs_properties_t props, const char *name,
+		const char *desc)
+{
+	if (!props || has_prop(props, name)) return;
+	new_prop(props, name, desc, OBS_PROPERTY_BOOL);
+}
+
 void obs_properties_add_int(obs_properties_t props, const char *name,
 		const char *desc, int min, int max, int step)
 {

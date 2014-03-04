@@ -39,6 +39,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\ob
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\obs-studio.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win-wasapi", "win-wasapi\win-wasapi.vcxproj", "{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -119,6 +121,14 @@ Global
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.Build.0 = Release|x64
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Debug|Win32.Build.0 = Debug|Win32
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Debug|x64.ActiveCfg = Debug|x64
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Debug|x64.Build.0 = Debug|x64
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|Win32.ActiveCfg = Release|Win32
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|Win32.Build.0 = Release|Win32
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|x64.ActiveCfg = Release|x64
+		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

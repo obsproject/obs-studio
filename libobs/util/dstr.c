@@ -585,13 +585,13 @@ void dstr_right(struct dstr *dst, const struct dstr *str, const size_t pos)
 void dstr_from_mbs(struct dstr *dst, const char *mbstr)
 {
 	dstr_free(dst);
-	dst->len = os_mbs_to_utf8(mbstr, 0, &dst->array);
+	dst->len = os_mbs_to_utf8_ptr(mbstr, 0, &dst->array);
 }
 
 char *dstr_to_mbs(const struct dstr *str)
 {
 	char *dst;
-	os_mbs_to_utf8(str->array, str->len, &dst);
+	os_mbs_to_utf8_ptr(str->array, str->len, &dst);
 	return dst;
 }
 
