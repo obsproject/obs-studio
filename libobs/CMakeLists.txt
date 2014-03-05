@@ -25,7 +25,8 @@ if(WIN32)
 		util/threading-windows.c
 		util/platform-windows.c)
 	set(libobs_PLATFORM_DEPS
-		w32-pthreads)
+		w32-pthreads
+		winmm.lib)
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c

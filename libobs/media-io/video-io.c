@@ -120,6 +120,8 @@ static inline void video_output_cur_frame(struct video_output *video)
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
+static inline void nop() {int test = 0;}
+
 static void *video_thread(void *param)
 {
 	struct video_output *video = param;
@@ -127,12 +129,15 @@ static void *video_thread(void *param)
 
 	while (event_try(video->stop_event) == EAGAIN) {
 		/* wait half a frame, update frame */
-		os_sleepto_ns(cur_time += (video->frame_time/2));
+		cur_time += (video->frame_time/2);
+		os_sleepto_ns(cur_time);
+
 		video->cur_video_time = cur_time;
 		event_signal(video->update_event);
 
 		/* wait another half a frame, swap and output frames */
-		os_sleepto_ns(cur_time += (video->frame_time/2));
+		cur_time += (video->frame_time/2);
+		os_sleepto_ns(cur_time);
 
 		pthread_mutex_lock(&video->data_mutex);
 

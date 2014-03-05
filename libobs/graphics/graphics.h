@@ -677,10 +677,24 @@ EXPORT void     *indexbuffer_getdata(indexbuffer_t indexbuffer);
 EXPORT size_t   indexbuffer_numindices(indexbuffer_t indexbuffer);
 EXPORT enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer);
 
+#ifdef __APPLE__
+
 /** platform specific function for creating (GL_TEXTURE_RECTANGLE) textures
  * from shared surface resources */
 EXPORT texture_t gs_create_texture_from_iosurface(void *iosurf);
 EXPORT bool     texture_rebind_iosurface(texture_t texture, void *iosurf);
+
+#elif _WIN32
+
+EXPORT bool gs_gdi_texture_available(void);
+
+/** creates a windows GDI-lockable texture */
+EXPORT texture_t gs_create_gdi_texture(uint32_t width, uint32_t height);
+
+EXPORT void *texture_get_dc(texture_t gdi_tex);
+EXPORT void texture_release_dc(texture_t gdi_tex);
+
+#endif
 
 /* inline functions used by modules */
 

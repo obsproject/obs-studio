@@ -202,9 +202,19 @@ struct gs_exports {
 			size_t size);
 	void (*shader_setdefault)(shader_t shader, sparam_t param);
 
+#ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
 	texture_t (*texture_create_from_iosurface)(device_t dev, void *iosurf);
 	bool (*texture_rebind_iosurface)(texture_t texture, void *iosurf);
+
+#elif _WIN32
+	bool (*gdi_texture_available)(void);
+	texture_t (*device_create_gdi_texture)(device_t device,
+			uint32_t width, uint32_t height);
+
+	void *(*texture_get_dc)(texture_t gdi_tex);
+	void (*texture_release_dc)(texture_t gdi_tex);
+#endif
 };
 
 struct graphics_subsystem {

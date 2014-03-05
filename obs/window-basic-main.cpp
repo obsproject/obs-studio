@@ -71,6 +71,7 @@ void OBSBasic::OBSInit()
 	obs_load_module("mac-capture");
 #elif _WIN32
 	obs_load_module("win-wasapi");
+	obs_load_module("win-capture");
 #endif
 
 	/* HACK: fixes a qt bug with native widgets with native repaint */

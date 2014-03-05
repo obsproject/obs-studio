@@ -194,7 +194,7 @@ void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
 	const char *val = config_get_string(globalConfig, "Video", "FPSCommon");
 
 	if (strcmp(val, "10") == 0) {
-		num = 30;
+		num = 10;
 		den = 1;
 	} else if (strcmp(val, "20") == 0) {
 		num = 20;

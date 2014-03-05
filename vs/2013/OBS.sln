@@ -41,6 +41,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\ob
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win-wasapi", "win-wasapi\win-wasapi.vcxproj", "{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win-capture", "win-capture\win-capture.vcxproj", "{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -129,6 +131,14 @@ Global
 		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|Win32.Build.0 = Release|Win32
 		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|x64.ActiveCfg = Release|x64
 		{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}.Release|x64.Build.0 = Release|x64
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Debug|Win32.Build.0 = Debug|Win32
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Debug|x64.ActiveCfg = Debug|x64
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Debug|x64.Build.0 = Debug|x64
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Release|Win32.ActiveCfg = Release|Win32
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Release|Win32.Build.0 = Release|Win32
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Release|x64.ActiveCfg = Release|x64
+		{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

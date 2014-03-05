@@ -1662,3 +1662,64 @@ enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
 {
 	return indexbuffer->type;
 }
+
+extern "C" EXPORT bool gdi_texture_available(void)
+{
+	return true;
+}
+
+extern "C" EXPORT texture_t device_create_gdi_texture(device_t device,
+		uint32_t width, uint32_t height)
+{
+	gs_texture *texture = nullptr;
+	try {
+		texture = new gs_texture_2d(device, width, height, GS_BGRA,
+				1, nullptr, GS_RENDERTARGET, GS_TEXTURE_2D,
+				true, false);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "device_create_gdi_texture (D3D11): %s (%08lX)",
+				error.str, error.hr);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "device_create_gdi_texture (D3D11): %s", error);
+	}
+
+	return texture;
+}
+
+static inline bool TextureGDICompatible(gs_texture_2d *tex2d, const char *func)
+{
+	if (!tex2d->isGDICompatible) {
+		blog(LOG_ERROR, "%s (D3D11): Texture is not GDI compatible",
+				func);
+		return false;
+	}
+
+	return true;
+}
+
+extern "C" EXPORT void *texture_get_dc(texture_t tex)
+{
+	HDC hDC = nullptr;
+
+	if (tex->type != GS_TEXTURE_2D)
+		return nullptr;
+
+	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
+	if (!TextureGDICompatible(tex2d, "texture_get_dc"))
+		return nullptr;
+
+	tex2d->gdiSurface->GetDC(true, &hDC);
+	return hDC;
+}
+
+extern "C" EXPORT void texture_release_dc(texture_t tex)
+{
+	if (tex->type != GS_TEXTURE_2D)
+		return;
+
+	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
+	if (!TextureGDICompatible(tex2d, "texture_release_dc"))
+		return;
+
+	tex2d->gdiSurface->ReleaseDC(nullptr);
+}

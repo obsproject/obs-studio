@@ -167,8 +167,17 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(shader_setdefault);
 
 	/* OSX/Cocoa specific functions */
+#ifdef __APPLE__
 	GRAPHICS_IMPORT_OPTIONAL(texture_create_from_iosurface);
 	GRAPHICS_IMPORT_OPTIONAL(texture_rebind_iosurface);
+
+	/* win32 specific functions */
+#elif _WIN32
+	GRAPHICS_IMPORT(gdi_texture_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_create_gdi_texture);
+	GRAPHICS_IMPORT_OPTIONAL(texture_get_dc);
+	GRAPHICS_IMPORT_OPTIONAL(texture_release_dc);
+#endif
 
 	return success;
 }

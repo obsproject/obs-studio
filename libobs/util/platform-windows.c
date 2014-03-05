@@ -15,6 +15,7 @@
  */
 
 #include <windows.h>
+#include <mmsystem.h>
 #include <shellapi.h>
 #include <shlobj.h>
 
@@ -95,7 +96,7 @@ bool os_sleepto_ns(uint64_t time_target)
 
 	milliseconds = (uint32_t)((time_target - t)/1000000);
 	if (milliseconds > 1)
-		os_sleep_ms(milliseconds);
+		Sleep(milliseconds-1);
 
 	for (;;) {
 		t = os_gettime_ns();
@@ -184,30 +185,38 @@ int os_mkdir(const char *path)
 	return MKDIR_SUCCESS;
 }
 
-#ifdef PTW32_STATIC_LIB
 
 BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 {
 	switch (reason) {
 
 	case DLL_PROCESS_ATTACH:
+		timeBeginPeriod(1);
+#ifdef PTW32_STATIC_LIB
 		pthread_win32_process_attach_np();
+#endif
 		break;
 
 	case DLL_PROCESS_DETACH:
+		timeEndPeriod(1);
+#ifdef PTW32_STATIC_LIB
 		pthread_win32_process_detach_np();
+#endif
 		break;
 
 	case DLL_THREAD_ATTACH:
+#ifdef PTW32_STATIC_LIB
 		pthread_win32_thread_attach_np();
+#endif
 		break;
 
 	case DLL_THREAD_DETACH:
+#ifdef PTW32_STATIC_LIB
 		pthread_win32_thread_detach_np();
+#endif
 		break;
 	}
 
 	return true;
 }
 
-#endif

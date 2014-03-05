@@ -1894,6 +1894,8 @@ enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
 	return thread_graphics->exports.indexbuffer_gettype(indexbuffer);
 }
 
+#ifdef __APPLE__
+
 /** Platform specific functions */
 texture_t gs_create_texture_from_iosurface(void *iosurf)
 {
@@ -1914,3 +1916,46 @@ bool texture_rebind_iosurface(texture_t texture, void *iosurf)
 
 	return graphics->exports.texture_rebind_iosurface(texture, iosurf);
 }
+
+#elif _WIN32
+
+bool gs_gdi_texture_available(void)
+{
+	if (!thread_graphics)
+		return false;
+
+	return thread_graphics->exports.gdi_texture_available();
+}
+
+/** creates a windows GDI-lockable texture */
+texture_t gs_create_gdi_texture(uint32_t width, uint32_t height)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return NULL;
+
+	if (graphics->exports.device_create_gdi_texture)
+		return graphics->exports.device_create_gdi_texture(
+				graphics->device, width, height);
+	return NULL;
+}
+
+void *texture_get_dc(texture_t gdi_tex)
+{
+	if (!thread_graphics || !gdi_tex)
+		return NULL;
+
+	if (thread_graphics->exports.texture_get_dc)
+		return thread_graphics->exports.texture_get_dc(gdi_tex);
+	return NULL;
+}
+
+void texture_release_dc(texture_t gdi_tex)
+{
+	if (!thread_graphics || !gdi_tex)
+		return;
+
+	if (thread_graphics->exports.texture_release_dc)
+		thread_graphics->exports.texture_release_dc(gdi_tex);
+}
+
+#endif

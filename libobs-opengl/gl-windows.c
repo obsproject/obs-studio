@@ -513,3 +513,8 @@ extern void gl_getclientsize(struct gs_swap_chain *swap,
 	*width  = rc.right;
 	*height = rc.bottom;
 }
+
+EXPORT bool gdi_texture_available(void)
+{
+	return false;
+}

@@ -73,6 +73,9 @@ void gs_texture_2d::InitTexture(const void **data)
 	if (isRenderTarget || isGDICompatible)
 		td.BindFlags |= D3D11_BIND_RENDER_TARGET;
 
+	if (isGDICompatible)
+		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+
 	if (data)
 		InitSRD(srd, data);
 
@@ -80,6 +83,13 @@ void gs_texture_2d::InitTexture(const void **data)
 			texture.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create 2D texture", hr);
+
+	if (isGDICompatible) {
+		hr = texture->QueryInterface(__uuidof(IDXGISurface1),
+				(void**)gdiSurface.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create GDI surface", hr);
+	}
 }
 
 void gs_texture_2d::InitResourceView()
