@@ -299,6 +299,8 @@ void OBSBasicSettings::LoadAudioDevices()
 	const char *input_id  = "wasapi_input_capture";
 	const char *output_id = "wasapi_output_capture";
 #else
+	const char *input_id;
+	const char *output_id;
 	return;
 #endif
 
