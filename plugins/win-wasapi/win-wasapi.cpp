@@ -431,6 +431,9 @@ static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 
 	GetWASAPIAudioDevices(devices, input);
 
+	if (devices.size())
+		obs_property_list_add_item(device_prop, "Default", "default");
+
 	for (size_t i = 0; i < devices.size(); i++) {
 		AudioDeviceInfo &device = devices[i];
 		obs_property_list_add_item(device_prop,
@@ -461,9 +464,9 @@ struct obs_source_info wasapiInput {
 	CreateWASAPIInput,
 	DestroyWASAPISource,
 	GetWASAPIPropertiesInput,	
-	NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL,
+	nullptr, nullptr, nullptr, nullptr,
+	nullptr, nullptr, nullptr, nullptr,
+	nullptr, nullptr, nullptr, nullptr,
 };
 
 struct obs_source_info wasapiOutput {
@@ -474,7 +477,7 @@ struct obs_source_info wasapiOutput {
 	CreateWASAPIOutput,
 	DestroyWASAPISource,
 	GetWASAPIPropertiesOutput,
-	NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL,
+	nullptr, nullptr, nullptr, nullptr,
+	nullptr, nullptr, nullptr, nullptr,
+	nullptr, nullptr, nullptr, nullptr,
 };

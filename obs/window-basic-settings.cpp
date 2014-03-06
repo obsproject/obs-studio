@@ -271,6 +271,55 @@ void OBSBasicSettings::LoadVideoSettings()
 	loading = false;
 }
 
+static inline void LoadListValue(QComboBox *widget, const char *text,
+		const char *val)
+{
+	widget->addItem(QT_UTF8(text), QT_UTF8(val));
+}
+
+static void LoadListValues(QComboBox *widget, obs_property_t prop)
+{
+	size_t count = obs_property_list_item_count(prop);
+
+	widget->addItem(QTStr("Disabled"), "disabled");
+
+	for (size_t i = 0; i < count; i++) {
+		const char *name = obs_property_list_item_name(prop, i);
+		const char *val  = obs_property_list_item_value(prop, i);
+		LoadListValue(widget, name, val);
+	}
+}
+
+void OBSBasicSettings::LoadAudioDevices()
+{
+#ifdef __APPLE__
+	const char *input_id  = "coreaudio_input_capture";
+	const char *output_id = "coreaudio_output_capture";
+#elif _WIN32
+	const char *input_id  = "wasapi_input_capture";
+	const char *output_id = "wasapi_output_capture";
+#else
+	return;
+#endif
+
+	obs_properties_t input_props = obs_source_properties(
+			OBS_SOURCE_TYPE_INPUT, input_id, App()->GetLocale());
+	obs_properties_t output_props = obs_source_properties(
+			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
+
+	obs_property_t inputs = obs_properties_get(input_props, "device_id");
+	obs_property_t outputs = obs_properties_get(output_props, "device_id");
+
+	LoadListValues(ui->desktopAudioDevice1, outputs);
+	LoadListValues(ui->desktopAudioDevice2, outputs);
+	LoadListValues(ui->auxAudioDevice1,     inputs);
+	LoadListValues(ui->auxAudioDevice2,     inputs);
+	LoadListValues(ui->auxAudioDevice3,     inputs);
+
+	obs_properties_destroy(input_props);
+	obs_properties_destroy(output_props);
+}
+
 void OBSBasicSettings::LoadAudioSettings()
 {
 	uint32_t sampleRate = config_get_uint(GetGlobalConfig(), "Audio",
@@ -300,6 +349,8 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(1);
 
 	ui->audioBufferingTime->setValue(bufferingTime);
+
+	LoadAudioDevices();
 
 	loading = false;
 }

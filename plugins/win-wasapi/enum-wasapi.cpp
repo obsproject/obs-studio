@@ -76,6 +76,8 @@ void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 		size = os_wcs_to_utf8(w_id, 0, nullptr);
 		info.id.resize(size);
 		os_wcs_to_utf8(w_id, size, &info.id[0]);
+
+		devices.push_back(info);
 	}
 }
 

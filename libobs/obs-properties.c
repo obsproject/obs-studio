@@ -289,7 +289,7 @@ void obs_property_list_add_item(obs_property_t p,
 			.value = bstrdup(value)
 		};
 
-		da_insert(data->items, data->items.num-1, &item);
+		da_push_back(data->items, &item);
 	}
 }
 

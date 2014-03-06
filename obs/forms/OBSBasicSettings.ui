@@ -205,7 +205,7 @@
          <item row="2" column="1">
           <widget class="QComboBox" name="desktopAudioDevice1">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -222,7 +222,7 @@
          <item row="3" column="1">
           <widget class="QComboBox" name="desktopAudioDevice2">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -236,7 +236,7 @@
          <item row="4" column="1">
           <widget class="QComboBox" name="auxAudioDevice1">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -250,7 +250,7 @@
          <item row="5" column="1">
           <widget class="QComboBox" name="auxAudioDevice2">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -264,7 +264,7 @@
          <item row="6" column="1">
           <widget class="QComboBox" name="auxAudioDevice3">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
