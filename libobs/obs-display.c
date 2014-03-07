@@ -130,7 +130,8 @@ static inline void render_display_begin(struct obs_display *display)
 	}
 
 	gs_beginscene();
-	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
+
+	vec4_set(&clear_color, 0.3f, 0.3f, 0.3f, 1.0f);
 	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
 			&clear_color, 1.0f, 0);
 
@@ -138,8 +139,8 @@ static inline void render_display_begin(struct obs_display *display)
 	/* gs_enable_blending(false); */
 	gs_setcullmode(GS_NEITHER);
 
-	gs_ortho(0.0f, (float)obs->video.base_width,
-			0.0f, (float)obs->video.base_height, -100.0f, 100.0f);
+	gs_ortho(0.0f, (float)display->cx,
+			0.0f, (float)display->cy, -100.0f, 100.0f);
 	gs_setviewport(0, 0, display->cx, display->cy);
 }
 

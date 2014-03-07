@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <QWidget>
+
 #define QT_UTF8(str) QString::fromUtf8(str)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 
@@ -25,4 +27,4 @@ struct gs_window;
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
 
-void QTToGSWindow(QWidget *widget, gs_window &gswindow);
+void QTToGSWindow(WId windowId, gs_window &gswindow);

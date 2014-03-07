@@ -36,16 +36,13 @@ void OBSErrorBox(QWidget *parent, const char *msg, ...)
 	va_end(args);
 }
 
-void QTToGSWindow(QWidget *widget, gs_window &gswindow)
+void QTToGSWindow(WId windowId, gs_window &gswindow)
 {
-	if (!widget)
-		return;
-
 #ifdef _WIN32
-	gswindow.hwnd = (HWND)widget->winId();
+	gswindow.hwnd = (HWND)windowId;
 #elif __APPLE__
-	gswindow.view = (id)widget->winId();
+	gswindow.view = (id)windowId;
 #else
-	gswindow.id = widget->winId();
+	gswindow.id = windowId;
 #endif
 }

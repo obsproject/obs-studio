@@ -133,9 +133,6 @@ void OBSBasic::OBSInit()
 	obs_load_module("win-wasapi");
 	obs_load_module("win-capture");
 #endif
-
-	/* HACK: fixes a qt bug with native widgets with native repaint */
-	ui->previewContainer->repaint();
 }
 
 OBSBasic::~OBSBasic()
@@ -341,9 +338,13 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+	gs_matrix_push();
+	gs_matrix_scale3f(window->previewScale, window->previewScale, 1.0f);
+	gs_matrix_translate3f(-window->previewX, -window->previewY, 0.0f);
 	obs_render_main_view();
+	gs_matrix_pop();
 
-	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
 }
@@ -369,7 +370,7 @@ bool OBSBasic::ResetVideo()
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
 
-	QTToGSWindow(ui->preview, ovi.window);
+	QTToGSWindow(ui->preview->winId(), ovi.window);
 
 	//required to make opengl display stuff on osx(?)
 	ResizePreview(ovi.base_width, ovi.base_height);
@@ -414,25 +415,28 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	int x, y;
 
 	/* resize preview panel to fix to the top section of the window */
-	targetSize   = ui->previewContainer->size();
+	targetSize   = ui->preview->size();
 	targetAspect = double(targetSize.width()) / double(targetSize.height());
 	baseAspect   = double(cx) / double(cy);
 
 	if (targetAspect > baseAspect) {
+		previewScale = float(targetSize.height()) / float(cy);
 		cx = targetSize.height() * baseAspect;
 		cy = targetSize.height();
 	} else {
+		previewScale = float(targetSize.width()) / float(cx);
 		cx = targetSize.width();
 		cy = targetSize.width() / baseAspect;
 	}
 
-	x = targetSize.width() /2 - cx/2;
-	y = targetSize.height()/2 - cy/2;
+	previewX = targetSize.width() /2 - cx/2;
+	previewY = targetSize.height()/2 - cy/2;
 
-	ui->preview->setGeometry(x, y, cx, cy);
-
-	if (isVisible())
-		obs_resize(cx, cy);
+	if (isVisible()) {
+		if (resizeTimer)
+			killTimer(resizeTimer);
+		resizeTimer = startTimer(100);
+	}
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)
@@ -455,6 +459,17 @@ void OBSBasic::resizeEvent(QResizeEvent *event)
 		ResizePreview(ovi.base_width, ovi.base_height);
 
 	UNUSED_PARAMETER(event);
+}
+
+void OBSBasic::timerEvent(QTimerEvent *event)
+{
+	if (event->timerId() == resizeTimer) {
+		killTimer(resizeTimer);
+		resizeTimer = 0;
+
+		QSize size = ui->preview->size();
+		obs_resize(size.width(), size.height());
+	}
 }
 
 void OBSBasic::on_action_New_triggered()

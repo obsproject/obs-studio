@@ -36,6 +36,10 @@ private:
 	obs_output_t outputTest;
 	bool         sceneChanging;
 
+	int          previewX,  previewY;
+	float        previewScale;
+	int          resizeTimer;
+
 	ConfigFile   basicConfig;
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
@@ -86,6 +90,7 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
+	virtual void timerEvent(QTimerEvent *event) override;
 
 private slots:
 	void on_action_New_triggered();

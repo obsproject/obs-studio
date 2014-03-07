@@ -83,7 +83,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 		int cur_texture)
 {
 	struct vec4 clear_color;
-	vec4_set(&clear_color, 0.3f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 1.0f);
 
 	gs_setrendertarget(video->render_textures[cur_texture], NULL);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
