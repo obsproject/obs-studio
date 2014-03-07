@@ -135,6 +135,13 @@ struct obs_source_info {
 	/* ----------------------------------------------------------------- */
 	/* Optional implementation */
 
+	/**
+	 * Gets the default settings for this source
+	 *
+	 * @param[out]  settings  Data to assign default settings to
+	 */
+	void (*defaults)(obs_data_t settings);
+
 	/** 
 	 * Gets the property information of this source
 	 *

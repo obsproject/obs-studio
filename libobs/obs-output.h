@@ -34,6 +34,8 @@ struct obs_output_info {
 	/* optional */
 	void (*update)(void *data, obs_data_t settings);
 
+	void (*defaults)(obs_data_t settings);
+
 	obs_properties_t (*properties)(const char *locale);
 
 	void (*pause)(void *data);

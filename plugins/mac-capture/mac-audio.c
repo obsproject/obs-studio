@@ -664,12 +664,15 @@ static void coreaudio_destroy(void *data)
 	}
 }
 
+static void coreaudio_defaults(obs_data_t settings)
+{
+	obs_data_set_default_string(settings, "device_id", "default");
+}
+
 static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 		bool input)
 {
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
-
-	obs_data_set_default_string(settings, "device_id", "default");
 
 	if (event_init(&ca->exit_event, EVENT_TYPE_MANUAL) != 0) {
 		blog(LOG_WARNING, "[coreaudio_create] failed to create "
@@ -745,6 +748,7 @@ struct obs_source_info coreaudio_input_capture_info = {
 	.getname      = coreaudio_input_getname,
 	.create       = coreaudio_create_input_capture,
 	.destroy      = coreaudio_destroy,
+	.defaults     = coreaudio_defaults,
 	.properties   = coreaudio_output_properties
 };
 
@@ -755,5 +759,6 @@ struct obs_source_info coreaudio_output_capture_info = {
 	.getname      = coreaudio_output_getname,
 	.create       = coreaudio_create_output_capture,
 	.destroy      = coreaudio_destroy,
+	.defaults     = coreaudio_defaults,
 	.properties   = coreaudio_input_properties
 };

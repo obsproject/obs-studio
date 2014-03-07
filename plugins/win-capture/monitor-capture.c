@@ -101,6 +101,13 @@ static void monitor_capture_destroy(void *data)
 	bfree(capture);
 }
 
+static void monitor_capture_defaults(obs_data_t settings)
+{
+	obs_data_set_default_int(settings, "monitor", 0);
+	obs_data_set_default_bool(settings, "capture_cursor", true);
+	obs_data_set_default_bool(settings, "compatibility", false);
+}
+
 static void *monitor_capture_create(obs_data_t settings, obs_source_t source)
 {
 	struct monitor_capture *capture;
@@ -112,9 +119,7 @@ static void *monitor_capture_create(obs_data_t settings, obs_source_t source)
 	capture = bzalloc(sizeof(struct monitor_capture));
 	capture->opaque_effect = opaque_effect;
 
-	obs_data_set_default_int(settings, "monitor", 0);
-	obs_data_set_default_bool(settings, "capture_cursor", true);
-	obs_data_set_default_bool(settings, "compatibility", false);
+	monitor_capture_defaults(settings);
 	update_settings(capture, settings);
 
 	return capture;
@@ -142,6 +147,7 @@ struct obs_source_info monitor_capture_info = {
 	.getname      = monitor_capture_getname,
 	.create       = monitor_capture_create,
 	.destroy      = monitor_capture_destroy,
+	.defaults     = monitor_capture_defaults,
 	.video_render = monitor_capture_render,
 	.video_tick   = monitor_capture_tick
 };

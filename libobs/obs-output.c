@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -91,6 +91,19 @@ void obs_output_stop(obs_output_t output)
 bool obs_output_active(obs_output_t output)
 {
 	return (output != NULL) ? output->info.active(output) : false;
+}
+
+obs_data_t obs_output_defaults(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	if (info) {
+		obs_data_t settings = obs_data_create();
+		if (info->defaults)
+			info->defaults(settings);
+		return settings;
+	}
+
+	return NULL;
 }
 
 obs_properties_t obs_output_properties(const char *id, const char *locale)

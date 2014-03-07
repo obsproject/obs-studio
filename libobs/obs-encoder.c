@@ -88,6 +88,19 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	}
 }
 
+obs_data_t obs_encoder_defaults(const char *id)
+{
+	const struct obs_encoder_info *info = get_encoder_info(id);
+	if (info) {
+		obs_data_t settings = obs_data_create();
+		if (info->defaults)
+			info->defaults(settings);
+		return settings;
+	}
+
+	return NULL;
+}
+
 obs_properties_t obs_encoder_properties(const char *id, const char *locale)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);

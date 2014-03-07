@@ -298,6 +298,19 @@ bool obs_source_removed(obs_source_t source)
 	return source ? source->removed : true;
 }
 
+obs_data_t obs_source_settings(enum obs_source_type type, const char *id)
+{
+	const struct obs_source_info *info = get_source_info(type, id);
+	if (info) {
+		obs_data_t settings = obs_data_create();
+		if (info->defaults)
+			info->defaults(settings);
+		return settings;
+	}
+
+	return NULL;
+}
+
 obs_properties_t obs_source_properties(enum obs_source_type type,
 		const char *id, const char *locale)
 {

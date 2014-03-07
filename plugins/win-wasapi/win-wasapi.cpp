@@ -9,6 +9,8 @@
 
 using namespace std;
 
+static void GetWASAPIDefaults(obs_data_t settings);
+
 #define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
 #define KSAUDIO_SPEAKER_2POINT1 (KSAUDIO_SPEAKER_STEREO|SPEAKER_LOW_FREQUENCY)
 
@@ -69,8 +71,7 @@ WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
 	  source          (source_),
 	  isInputDevice   (input)
 {
-	obs_data_set_default_string(settings, "device_id", "default");
-	obs_data_set_default_bool(settings, "use_device_timing", true);
+	GetWASAPIDefaults(settings);
 	UpdateSettings(settings);
 
 	stopSignal = CreateEvent(nullptr, true, false, nullptr);
@@ -392,6 +393,12 @@ static const char *GetWASAPIOutputName(const char *locale)
 	return "Audio Output Capture (WASAPI)";
 }
 
+static void GetWASAPIDefaults(obs_data_t settings)
+{
+	obs_data_set_default_string(settings, "device_id", "default");
+	obs_data_set_default_bool(settings, "use_device_timing", true);
+}
+
 static void *CreateWASAPISource(obs_data_t settings, obs_source_t source,
 		bool input)
 {
@@ -456,28 +463,30 @@ static obs_properties_t GetWASAPIPropertiesOutput(const char *locale)
 	return GetWASAPIProperties(locale, false);
 }
 
-struct obs_source_info wasapiInput {
-	"wasapi_input_capture",
-	OBS_SOURCE_TYPE_INPUT,
-	OBS_SOURCE_AUDIO,
-	GetWASAPIInputName,
-	CreateWASAPIInput,
-	DestroyWASAPISource,
-	GetWASAPIPropertiesInput,	
-	nullptr, nullptr, nullptr, nullptr,
-	nullptr, nullptr, nullptr, nullptr,
-	nullptr, nullptr, nullptr, nullptr,
-};
+void RegisterWASAPIInput()
+{
+	obs_source_info info = {};
+	info.id              = "wasapi_input_capture";
+	info.type            = OBS_SOURCE_TYPE_INPUT;
+	info.output_flags    = OBS_SOURCE_AUDIO;
+	info.getname         = GetWASAPIInputName;
+	info.create          = CreateWASAPIInput;
+	info.destroy         = DestroyWASAPISource;
+	info.defaults        = GetWASAPIDefaults;
+	info.properties      = GetWASAPIPropertiesInput;
+	obs_register_source(&info);
+}
 
-struct obs_source_info wasapiOutput {
-	"wasapi_output_capture",
-	OBS_SOURCE_TYPE_INPUT,
-	OBS_SOURCE_AUDIO,
-	GetWASAPIOutputName,
-	CreateWASAPIOutput,
-	DestroyWASAPISource,
-	GetWASAPIPropertiesOutput,
-	nullptr, nullptr, nullptr, nullptr,
-	nullptr, nullptr, nullptr, nullptr,
-	nullptr, nullptr, nullptr, nullptr,
-};
+void RegisterWASAPIOutput()
+{
+	obs_source_info info = {};
+	info.id              = "wasapi_output_capture";
+	info.type            = OBS_SOURCE_TYPE_INPUT;
+	info.output_flags    = OBS_SOURCE_AUDIO;
+	info.getname         = GetWASAPIOutputName;
+	info.create          = CreateWASAPIOutput;
+	info.destroy         = DestroyWASAPISource;
+	info.defaults        = GetWASAPIDefaults;
+	info.properties      = GetWASAPIPropertiesOutput;
+	obs_register_source(&info);
+}

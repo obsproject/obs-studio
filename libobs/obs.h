@@ -434,12 +434,12 @@ EXPORT bool obs_source_removed(obs_source_t source);
 
 /**
  * Retrieves flags that specify what type of data the source presents/modifies.
- *
- *   SOURCE_VIDEO if it presents/modifies video_frame
- *   SOURCE_ASYNC if the video is asynchronous.
- *   SOURCE_AUDIO if it presents/modifies audio (always async)
  */
 EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
+
+/** Gets the default settings for a source type */
+EXPORT obs_data_t obs_source_defaults(enum obs_source_type type,
+		const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t obs_source_properties(enum obs_source_type type,
@@ -658,6 +658,9 @@ EXPORT void obs_output_stop(obs_output_t output);
 /** Returns whether the output is active */
 EXPORT bool obs_output_active(obs_output_t output);
 
+/** Gets the default settings for an output type */
+EXPORT obs_data_t obs_output_defaults(const char *id);
+
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t obs_output_properties(const char *id,
 		const char *locale);
@@ -698,8 +701,11 @@ EXPORT void obs_encoder_stop(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
 
+/** Gets the default settings for an encoder type */
+EXPORT obs_data_t obs_encoder_defaults(const char *id);
+
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_output_properties(const char *id,
+EXPORT obs_properties_t obs_encoder_properties(const char *id,
 		const char *locale);
 
 EXPORT void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings);
