@@ -238,13 +238,13 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 
 	} catch (HRError error) {
-		blog(LOG_ERROR, "[WASAPISource::TryInitialize]:[%s] %s: %lX",
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s: %lX",
 				device_name.empty() ?
 					device_id.c_str() : device_name.c_str(),
 				error.str, error.hr);
 
 	} catch (const char *error) {
-		blog(LOG_ERROR, "[WASAPISource::TryInitialize]:[%s] %s",
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s",
 				device_name.empty() ?
 					device_id.c_str() : device_name.c_str(),
 				error);
@@ -261,7 +261,7 @@ void WASAPISource::Reconnect()
 			0, nullptr);
 
 	if (!reconnectThread.Valid())
-		blog(LOG_ERROR, "[WASAPISource::Reconnect] "
+		blog(LOG_WARNING, "[WASAPISource::Reconnect] "
 		                "Failed to intiialize reconnect thread: %d",
 		                 GetLastError());
 }
@@ -301,9 +301,10 @@ bool WASAPISource::ProcessCaptureData()
 
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
-				blog(LOG_ERROR, "[WASAPISource::GetCaptureData]"
-				                " capture->GetNextPacketSize"
-				                " failed: %lX", res);
+				blog(LOG_WARNING,
+						"[WASAPISource::GetCaptureData]"
+						" capture->GetNextPacketSize"
+						" failed: %lX", res);
 			return false;
 		}
 
@@ -313,7 +314,8 @@ bool WASAPISource::ProcessCaptureData()
 		res = capture->GetBuffer(&buffer, &frames, &flags, &pos, &ts);
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
-				blog(LOG_ERROR, "[WASAPISource::GetCaptureData]"
+				blog(LOG_WARNING,
+						"[WASAPISource::GetCaptureData]"
 						" capture->GetBuffer"
 						" failed: %lX", res);
 			return false;
