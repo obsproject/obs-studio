@@ -22,6 +22,8 @@
 #include <memory>
 #include "window-main.hpp"
 
+#include <util/util.hpp>
+
 class QListWidgetItem;
 
 #include "ui_OBSBasic.h"
@@ -33,6 +35,17 @@ private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 	obs_output_t outputTest;
 	bool         sceneChanging;
+
+	ConfigFile   basicConfig;
+
+	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
+	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
+	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
+	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
+	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
+
+	bool         InitBasicConfigDefaults();
+	bool         InitBasicConfig();
 
 	OBSScene     GetCurrentScene();
 	OBSSceneItem GetCurrentSceneItem();
@@ -102,6 +115,8 @@ public:
 	virtual ~OBSBasic();
 
 	virtual void OBSInit() override;
+
+	virtual config_t Config() const override;
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

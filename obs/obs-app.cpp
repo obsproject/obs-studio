@@ -56,50 +56,13 @@ static void do_log(int log_level, const char *msg, va_list args)
 bool OBSApp::InitGlobalConfigDefaults()
 {
 	config_set_default_string(globalConfig, "General", "Language", "en");
-	config_set_default_int(globalConfig, "Window", "PosX",  -1);
-	config_set_default_int(globalConfig, "Window", "PosY",  -1);
-	config_set_default_int(globalConfig, "Window", "SizeX", -1);
-	config_set_default_int(globalConfig, "Window", "SizeY", -1);
-
-	vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-
-	if (!monitors.size()) {
-		OBSErrorBox(NULL, "There appears to be no monitors.  Er, this "
-		                  "technically shouldn't be possible.");
-		return false;
-	}
-
-	uint32_t cx = monitors[0].cx;
-	uint32_t cy = monitors[0].cy;
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
 			"Direct3D 11");
 #else
-	config_set_default_string(globalConfig, "Video", "Renderer",
-			"OpenGL");
+	config_set_default_string(globalConfig, "Video", "Renderer", "OpenGL");
 #endif
-
-	config_set_default_uint(globalConfig, "Video", "BaseCX",   cx);
-	config_set_default_uint(globalConfig, "Video", "BaseCY",   cy);
-
-	cx = cx * 10 / 15;
-	cy = cy * 10 / 15;
-	config_set_default_uint(globalConfig, "Video", "OutputCX", cx);
-	config_set_default_uint(globalConfig, "Video", "OutputCY", cy);
-
-	config_set_default_uint(globalConfig, "Video", "FPSType", 0);
-	config_set_default_string(globalConfig, "Video", "FPSCommon", "30");
-	config_set_default_uint(globalConfig, "Video", "FPSInt", 30);
-	config_set_default_uint(globalConfig, "Video", "FPSNum", 30);
-	config_set_default_uint(globalConfig, "Video", "FPSDen", 1);
-	config_set_default_uint(globalConfig, "Video", "FPSNS", 33333333);
-
-	config_set_default_uint(globalConfig, "Audio", "SampleRate", 44100);
-	config_set_default_string(globalConfig, "Audio", "ChannelSetup",
-			"Stereo");
-	config_set_default_uint(globalConfig, "Audio", "BufferingTime", 1000);
 
 	return true;
 }
@@ -116,8 +79,21 @@ static bool do_mkdir(const char *path)
 
 static bool MakeUserDirs()
 {
-	BPtr<char> configPath(os_get_config_path("obs-studio"));
-	return do_mkdir(configPath);
+	BPtr<char> configPath;
+
+	configPath = os_get_config_path("obs-studio");
+	if (!do_mkdir(configPath))
+		return false;
+
+	configPath = os_get_config_path("obs-studio/basic");
+	if (!do_mkdir(configPath))
+		return false;
+
+	configPath = os_get_config_path("obs-studio/studio");
+	if (!do_mkdir(configPath))
+		return false;
+
+	return true;
 }
 
 bool OBSApp::InitGlobalConfig()
@@ -187,69 +163,6 @@ OBSApp::OBSApp(int &argc, char **argv)
 		throw "Failed to load locale";
 
 	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
-}
-
-void OBSApp::GetFPSCommon(uint32_t &num, uint32_t &den) const
-{
-	const char *val = config_get_string(globalConfig, "Video", "FPSCommon");
-
-	if (strcmp(val, "10") == 0) {
-		num = 10;
-		den = 1;
-	} else if (strcmp(val, "20") == 0) {
-		num = 20;
-		den = 1;
-	} else if (strcmp(val, "25") == 0) {
-		num = 25;
-		den = 1;
-	} else if (strcmp(val, "29.97") == 0) {
-		num = 30000;
-		den = 1001;
-	} else if (strcmp(val, "48") == 0) {
-		num = 48;
-		den = 1;
-	} else if (strcmp(val, "59.94") == 0) {
-		num = 60000;
-		den = 1001;
-	} else if (strcmp(val, "60") == 0) {
-		num = 60;
-		den = 1;
-	} else {
-		num = 30;
-		den = 1;
-	}
-}
-
-void OBSApp::GetFPSInteger(uint32_t &num, uint32_t &den) const
-{
-	num = (uint32_t)config_get_uint(globalConfig, "Video", "FPSInt");
-	den = 1;
-}
-
-void OBSApp::GetFPSFraction(uint32_t &num, uint32_t &den) const
-{
-	num = (uint32_t)config_get_uint(globalConfig, "Video", "FPSNum");
-	den = (uint32_t)config_get_uint(globalConfig, "Video", "FPSDen");
-}
-
-void OBSApp::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
-{
-	num = 1000000000;
-	den = (uint32_t)config_get_uint(globalConfig, "Video", "FPSNS");
-}
-
-void OBSApp::GetConfigFPS(uint32_t &num, uint32_t &den) const
-{
-	uint32_t type = config_get_uint(globalConfig, "Video", "FPSType");
-
-	if (type == 1) //"Integer"
-		GetFPSInteger(num, den);
-	else if (type == 2) //"Fraction"
-		GetFPSFraction(num, den);
-	else if (false) //"Nanoseconds", currently not implemented
-		GetFPSNanoseconds(num, den);
-	else
-		GetFPSCommon(num, den);
 }
 
 const char *OBSApp::GetRenderModule() const

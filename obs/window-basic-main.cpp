@@ -21,7 +21,11 @@
 #include <QShowEvent>
 #include <QFileDialog>
 
+#include <util/util.hpp>
+#include <util/platform.h>
+
 #include "obs-app.hpp"
+#include "platform.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-main.hpp"
@@ -43,6 +47,60 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->setupUi(this);
 }
 
+bool OBSBasic::InitBasicConfigDefaults()
+{
+	config_set_default_int(basicConfig, "Window", "PosX",  -1);
+	config_set_default_int(basicConfig, "Window", "PosY",  -1);
+	config_set_default_int(basicConfig, "Window", "SizeX", -1);
+	config_set_default_int(basicConfig, "Window", "SizeY", -1);
+
+	vector<MonitorInfo> monitors;
+	GetMonitors(monitors);
+
+	if (!monitors.size()) {
+		OBSErrorBox(NULL, "There appears to be no monitors.  Er, this "
+		                  "technically shouldn't be possible.");
+		return false;
+	}
+
+	uint32_t cx = monitors[0].cx;
+	uint32_t cy = monitors[0].cy;
+
+	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
+	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
+
+	cx = cx * 10 / 15;
+	cy = cy * 10 / 15;
+	config_set_default_uint  (basicConfig, "Video", "OutputCX", cx);
+	config_set_default_uint  (basicConfig, "Video", "OutputCY", cy);
+
+	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
+	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
+	config_set_default_uint  (basicConfig, "Video", "FPSInt", 30);
+	config_set_default_uint  (basicConfig, "Video", "FPSNum", 30);
+	config_set_default_uint  (basicConfig, "Video", "FPSDen", 1);
+
+	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
+	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
+			"Stereo");
+	config_set_default_uint  (basicConfig, "Audio", "BufferingTime", 1000);
+
+	return true;
+}
+
+bool OBSBasic::InitBasicConfig()
+{
+	BPtr<char> configPath(os_get_config_path("obs-studio/basic/basic.ini"));
+
+	int errorcode = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
+	if (errorcode != CONFIG_SUCCESS) {
+		OBSErrorBox(NULL, "Failed to open basic.ini: %d", errorcode);
+		return false;
+	}
+
+	return InitBasicConfigDefaults();
+}
+
 void OBSBasic::OBSInit()
 {
 	/* make sure it's fully displayed before doing any initialization */
@@ -51,6 +109,8 @@ void OBSBasic::OBSInit()
 
 	if (!obs_startup())
 		throw "Failed to initialize libobs";
+	if (!InitBasicConfig())
+		throw "Failed to load basic.ini";
 	if (!ResetVideo())
 		throw "Failed to initialize video";
 	if (!ResetAudio())
@@ -294,16 +354,16 @@ bool OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
 
-	App()->GetConfigFPS(ovi.fps_num, ovi.fps_den);
+	GetConfigFPS(ovi.fps_num, ovi.fps_den);
 
 	ovi.graphics_module = App()->GetRenderModule();
-	ovi.base_width     = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.base_width     = (uint32_t)config_get_uint(basicConfig,
 			"Video", "BaseCX");
-	ovi.base_height    = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.base_height    = (uint32_t)config_get_uint(basicConfig,
 			"Video", "BaseCY");
-	ovi.output_width   = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.output_width   = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCX");
-	ovi.output_height  = (uint32_t)config_get_uint(GetGlobalConfig(),
+	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
 	ovi.output_format  = VIDEO_FORMAT_I420;
 	ovi.adapter        = 0;
@@ -331,10 +391,10 @@ bool OBSBasic::ResetAudio()
 	ai.name = "Main Audio Track";
 	ai.format = AUDIO_FORMAT_FLOAT;
 
-	ai.samples_per_sec = config_get_uint(GetGlobalConfig(), "Audio",
+	ai.samples_per_sec = config_get_uint(basicConfig, "Audio",
 			"SampleRate");
 
-	const char *channelSetupStr = config_get_string(GetGlobalConfig(),
+	const char *channelSetupStr = config_get_string(basicConfig,
 			"Audio", "ChannelSetup");
 
 	if (strcmp(channelSetupStr, "Mono") == 0)
@@ -342,8 +402,7 @@ bool OBSBasic::ResetAudio()
 	else
 		ai.speakers = SPEAKERS_STEREO;
 
-	ai.buffer_ms = config_get_uint(GetGlobalConfig(), "Audio",
-			"BufferingTime");
+	ai.buffer_ms = config_get_uint(basicConfig, "Audio", "BufferingTime");
 
 	return obs_reset_audio(&ai);
 }
@@ -635,4 +694,72 @@ void OBSBasic::on_settingsButton_clicked()
 {
 	OBSBasicSettings settings(this);
 	settings.exec();
+}
+
+void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
+{
+	const char *val = config_get_string(basicConfig, "Video", "FPSCommon");
+
+	if (strcmp(val, "10") == 0) {
+		num = 10;
+		den = 1;
+	} else if (strcmp(val, "20") == 0) {
+		num = 20;
+		den = 1;
+	} else if (strcmp(val, "25") == 0) {
+		num = 25;
+		den = 1;
+	} else if (strcmp(val, "29.97") == 0) {
+		num = 30000;
+		den = 1001;
+	} else if (strcmp(val, "48") == 0) {
+		num = 48;
+		den = 1;
+	} else if (strcmp(val, "59.94") == 0) {
+		num = 60000;
+		den = 1001;
+	} else if (strcmp(val, "60") == 0) {
+		num = 60;
+		den = 1;
+	} else {
+		num = 30;
+		den = 1;
+	}
+}
+
+void OBSBasic::GetFPSInteger(uint32_t &num, uint32_t &den) const
+{
+	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSInt");
+	den = 1;
+}
+
+void OBSBasic::GetFPSFraction(uint32_t &num, uint32_t &den) const
+{
+	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNum");
+	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSDen");
+}
+
+void OBSBasic::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
+{
+	num = 1000000000;
+	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNS");
+}
+
+void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
+{
+	uint32_t type = config_get_uint(basicConfig, "Video", "FPSType");
+
+	if (type == 1) //"Integer"
+		GetFPSInteger(num, den);
+	else if (type == 2) //"Fraction"
+		GetFPSFraction(num, den);
+	else if (false) //"Nanoseconds", currently not implemented
+		GetFPSNanoseconds(num, den);
+	else
+		GetFPSCommon(num, den);
+}
+
+config_t OBSBasic::Config() const
+{
+	return basicConfig;
 }

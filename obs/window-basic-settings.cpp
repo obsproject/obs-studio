@@ -80,6 +80,7 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog        (parent),
+	  main           (qobject_cast<OBSBasic*>(parent)),
 	  ui             (new Ui::OBSBasicSettings),
 	  generalChanged (false),
 	  outputsChanged (false),
@@ -193,8 +194,8 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 
 void OBSBasicSettings::LoadResolutionLists()
 {
-	uint32_t cx = config_get_uint(GetGlobalConfig(), "Video", "BaseCX");
-	uint32_t cy = config_get_uint(GetGlobalConfig(), "Video", "BaseCY");
+	uint32_t cx = config_get_uint(main->Config(), "Video", "BaseCX");
+	uint32_t cy = config_get_uint(main->Config(), "Video", "BaseCY");
 	vector<MonitorInfo> monitors;
 
 	ui->baseResolution->clear();
@@ -210,15 +211,15 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ui->baseResolution->lineEdit()->setText(ResString(cx, cy).c_str());
 
-	cx = config_get_uint(GetGlobalConfig(), "Video", "OutputCX");
-	cy = config_get_uint(GetGlobalConfig(), "Video", "OutputCY");
+	cx = config_get_uint(main->Config(), "Video", "OutputCX");
+	cy = config_get_uint(main->Config(), "Video", "OutputCY");
 
 	ui->outputResolution->lineEdit()->setText(ResString(cx, cy).c_str());
 }
 
-static inline void LoadFPSCommon(Ui::OBSBasicSettings *ui)
+static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
 {
-	const char *val = config_get_string(GetGlobalConfig(), "Video",
+	const char *val = config_get_string(main->Config(), "Video",
 			"FPSCommon");
 
 	int idx = ui->fpsCommon->findText(val);
@@ -226,16 +227,16 @@ static inline void LoadFPSCommon(Ui::OBSBasicSettings *ui)
 	ui->fpsCommon->setCurrentIndex(idx);
 }
 
-static inline void LoadFPSInteger(Ui::OBSBasicSettings *ui)
+static inline void LoadFPSInteger(OBSBasic *main, Ui::OBSBasicSettings *ui)
 {
-	uint32_t val = config_get_uint(GetGlobalConfig(), "Video", "FPSInt");
+	uint32_t val = config_get_uint(main->Config(), "Video", "FPSInt");
 	ui->fpsInteger->setValue(val);
 }
 
-static inline void LoadFPSFraction(Ui::OBSBasicSettings *ui)
+static inline void LoadFPSFraction(OBSBasic *main, Ui::OBSBasicSettings *ui)
 {
-	uint32_t num = config_get_uint(GetGlobalConfig(), "Video", "FPSNum");
-	uint32_t den = config_get_uint(GetGlobalConfig(), "Video", "FPSDen");
+	uint32_t num = config_get_uint(main->Config(), "Video", "FPSNum");
+	uint32_t den = config_get_uint(main->Config(), "Video", "FPSDen");
 
 	ui->fpsNumerator->setValue(num);
 	ui->fpsDenominator->setValue(den);
@@ -243,11 +244,11 @@ static inline void LoadFPSFraction(Ui::OBSBasicSettings *ui)
 
 void OBSBasicSettings::LoadFPSData()
 {
-	LoadFPSCommon(ui.get());
-	LoadFPSInteger(ui.get());
-	LoadFPSFraction(ui.get());
+	LoadFPSCommon(main, ui.get());
+	LoadFPSInteger(main, ui.get());
+	LoadFPSFraction(main, ui.get());
 
-	uint32_t fpsType = config_get_uint(GetGlobalConfig(), "Video",
+	uint32_t fpsType = config_get_uint(main->Config(), "Video",
 			"FPSType");
 	if (fpsType > 2) fpsType = 0;
 
@@ -324,11 +325,11 @@ void OBSBasicSettings::LoadAudioDevices()
 
 void OBSBasicSettings::LoadAudioSettings()
 {
-	uint32_t sampleRate = config_get_uint(GetGlobalConfig(), "Audio",
+	uint32_t sampleRate = config_get_uint(main->Config(), "Audio",
 			"SampleRate");
-	const char *speakers = config_get_string(GetGlobalConfig(), "Audio",
+	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
-	uint32_t bufferingTime = config_get_uint(GetGlobalConfig(), "Audio",
+	uint32_t bufferingTime = config_get_uint(main->Config(), "Audio",
 			"BufferingTime");
 
 	loading = true;
@@ -397,25 +398,23 @@ void OBSBasicSettings::SaveVideoSettings()
 			QT_TO_UTF8(renderer));
 
 	if (ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
-		config_set_uint(GetGlobalConfig(), "Video", "BaseCX", cx);
-		config_set_uint(GetGlobalConfig(), "Video", "BaseCY", cy);
+		config_set_uint(main->Config(), "Video", "BaseCX", cx);
+		config_set_uint(main->Config(), "Video", "BaseCY", cy);
 	}
 
 	if (ConvertResText(QT_TO_UTF8(outputResolution), cx, cy)) {
-		config_set_uint(GetGlobalConfig(), "Video", "OutputCX", cx);
-		config_set_uint(GetGlobalConfig(), "Video", "OutputCY", cy);
+		config_set_uint(main->Config(), "Video", "OutputCX", cx);
+		config_set_uint(main->Config(), "Video", "OutputCY", cy);
 	}
 
-	config_set_uint(GetGlobalConfig(), "Video", "FPSType", fpsType);
-	config_set_string(GetGlobalConfig(), "Video", "FPSCommon",
+	config_set_uint(main->Config(), "Video", "FPSType", fpsType);
+	config_set_string(main->Config(), "Video", "FPSCommon",
 			QT_TO_UTF8(fpsCommon));
-	config_set_uint(GetGlobalConfig(), "Video", "FPSInt", fpsInteger);
-	config_set_uint(GetGlobalConfig(), "Video", "FPSNum", fpsNumerator);
-	config_set_uint(GetGlobalConfig(), "Video", "FPSDen", fpsDenominator);
+	config_set_uint(main->Config(), "Video", "FPSInt", fpsInteger);
+	config_set_uint(main->Config(), "Video", "FPSNum", fpsNumerator);
+	config_set_uint(main->Config(), "Video", "FPSDen", fpsDenominator);
 
-	OBSBasic *window = qobject_cast<OBSBasic*>(parent());
-	if (window)
-		window->ResetVideo();
+	main->ResetVideo();
 }
 
 void OBSBasicSettings::SaveAudioSettings()
@@ -436,10 +435,10 @@ void OBSBasicSettings::SaveAudioSettings()
 	else if (sampleRateStr == "48khz")
 		sampleRate = 48000;
 
-	config_set_uint(GetGlobalConfig(), "Audio", "SampleRate", sampleRate);
-	config_set_string(GetGlobalConfig(), "Audio", "ChannelSetup",
+	config_set_uint(main->Config(), "Audio", "SampleRate", sampleRate);
+	config_set_string(main->Config(), "Audio", "ChannelSetup",
 			channelSetup);
-	config_set_uint(GetGlobalConfig(), "Audio", "BufferingTime",
+	config_set_uint(main->Config(), "Audio", "BufferingTime",
 			bufferingTime);
 }
 
@@ -454,6 +453,7 @@ void OBSBasicSettings::SaveSettings()
 	if (videoChanged)
 		SaveVideoSettings();
 
+	config_save(main->Config());
 	config_save(GetGlobalConfig());
 }
 

@@ -35,13 +35,7 @@ private:
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
-	bool InitConfigDefaults();
 	bool InitLocale();
-
-	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
-	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
-	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
-	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
 
 public:
 	OBSApp(int &argc, char **argv);
@@ -62,7 +56,6 @@ public:
 		return textLookup.GetString(lookupVal);
 	}
 
-	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
 	const char *GetRenderModule() const;
 };
 

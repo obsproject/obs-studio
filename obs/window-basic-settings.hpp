@@ -21,6 +21,7 @@
 #include <QDialog>
 #include <memory>
 
+class OBSBasic;
 class QAbstractButton;
 
 #include "ui_OBSBasicSettings.h"
@@ -29,6 +30,8 @@ class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 
 private:
+	OBSBasic *main;
+
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
 	ConfigFile localeIni;
 	bool generalChanged;
