@@ -82,6 +82,8 @@ public:
 	bool ResetVideo();
 	bool ResetAudio();
 
+	bool ResetAudioDevices();
+
 	void NewProject();
 	void SaveProject();
 	void LoadProject();

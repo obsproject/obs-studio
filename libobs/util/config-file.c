@@ -542,3 +542,56 @@ double config_get_double(config_t config, const char *section,
 
 	return 0.0;
 }
+
+const char *config_get_default_string(config_t config, const char *section,
+		const char *name)
+{
+	struct config_item *item;
+
+	item = config_find_item(&config->defaults, section, name);
+	if (!item)
+		return NULL;
+
+	return item->value;
+}
+
+int64_t config_get_default_int(config_t config, const char *section,
+		const char *name)
+{
+	const char *value = config_get_default_string(config, section, name);
+	if (value)
+		return strtoll(value, NULL, 10);
+
+	return 0;
+}
+
+uint64_t config_get_default_uint(config_t config, const char *section,
+		const char *name)
+{
+	const char *value = config_get_default_string(config, section, name);
+	if (value)
+		return strtoul(value, NULL, 10);
+
+	return 0;
+}
+
+bool config_get_default_bool(config_t config, const char *section,
+		const char *name)
+{
+	const char *value = config_get_default_string(config, section, name);
+	if (value)
+		return astrcmpi(value, "true") == 0 ||
+		       strtoul(value, NULL, 10);
+
+	return false;
+}
+
+double config_get_default_double(config_t config, const char *section,
+		const char *name)
+{
+	const char *value = config_get_default_string(config, section, name);
+	if (value)
+		return strtod(value, NULL);
+
+	return 0.0;
+}

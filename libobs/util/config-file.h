@@ -81,6 +81,17 @@ EXPORT bool config_get_bool(config_t config, const char *section,
 EXPORT double config_get_double(config_t config, const char *section,
 		const char *name);
 
+EXPORT const char *config_get_default_string(config_t config,
+		const char *section, const char *name);
+EXPORT int64_t config_get_default_int(config_t config, const char *section,
+		const char *name);
+EXPORT uint64_t config_get_default_uint(config_t config, const char *section,
+		const char *name);
+EXPORT bool config_get_default_bool(config_t config, const char *section,
+		const char *name);
+EXPORT double config_get_default_double(config_t config, const char *section,
+		const char *name);
+
 #ifdef __cplusplus
 }
 #endif

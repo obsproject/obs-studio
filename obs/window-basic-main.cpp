@@ -85,6 +85,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 			"Stereo");
 	config_set_default_uint  (basicConfig, "Audio", "BufferingTime", 1000);
 
+	config_set_default_string(basicConfig, "Audio", "DesktopDevice1",
+			"default");
+	config_set_default_string(basicConfig, "Audio", "DesktopDevice2",
+			"disabled");
+	config_set_default_string(basicConfig, "Audio", "AuxDevice1",
+			"default");
+	config_set_default_string(basicConfig, "Audio", "AuxDevice2",
+			"disabled");
+	config_set_default_string(basicConfig, "Audio", "AuxDevice3",
+			"disabled");
+
 	return true;
 }
 
@@ -406,6 +417,11 @@ bool OBSBasic::ResetAudio()
 	ai.buffer_ms = config_get_uint(basicConfig, "Audio", "BufferingTime");
 
 	return obs_reset_audio(&ai);
+}
+
+bool OBSBasic::ResetAudioDevices()
+{
+	return false;
 }
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)

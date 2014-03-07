@@ -21,8 +21,11 @@
 #include <QDialog>
 #include <memory>
 
+#include <obs.h>
+
 class OBSBasic;
 class QAbstractButton;
+class QComboBox;
 
 #include "ui_OBSBasicSettings.h"
 
@@ -55,6 +58,8 @@ private:
 		videoChanged   = false;
 	}
 
+	void HookWidget(QWidget *widget, const char *signal, const char *slot);
+
 	bool QueryChanges();
 
 	void LoadGeneralSettings();
@@ -67,6 +72,8 @@ private:
 	void LoadLanguageList();
 
 	/* audio */
+	void LoadListValues(QComboBox *widget, obs_property_t prop,
+		const char *configName);
 	void LoadAudioDevices();
 
 	/* video */
@@ -85,20 +92,14 @@ private slots:
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
-	void on_language_currentIndexChanged(int index);
-
-	void on_sampleRate_currentIndexChanged(int index);
-	void on_channelSetup_currentIndexChanged(int index);
-	void on_audioBufferingTime_valueChanged(int index);
-
-	void on_renderer_currentIndexChanged(int index);
-	void on_fpsType_currentIndexChanged(int index);
 	void on_baseResolution_editTextChanged(const QString &text);
-	void on_outputResolution_editTextChanged(const QString &text);
-	void on_fpsCommon_currentIndexChanged(int index);
-	void on_fpsInteger_valueChanged(int value);
-	void on_fpsNumerator_valueChanged(int value);
-	void on_fpsDenominator_valueChanged(int value);
+
+	void GeneralChanged();
+	void AudioChanged();
+	void AudioChangedRestart();
+	void VideoChanged();
+	void VideoChangedResolution();
+	void VideoChangedRestart();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);

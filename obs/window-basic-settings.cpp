@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,6 +78,24 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	return true;
 }
 
+void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
+		const char *slot)
+{
+	QObject::connect(widget, signal, this, slot);
+}
+
+#define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
+#define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
+#define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
+#define SCROLL_CHANGED  SIGNAL(valueChanged(int))
+
+#define GENERAL_CHANGED SLOT(GeneralChanged())
+#define AUDIO_CHANGED   SLOT(AudioChangedRestart())
+#define AUDIO_RESTART   SLOT(AudioChanged())
+#define VIDEO_RESTART   SLOT(VideoChangedRestart())
+#define VIDEO_RES       SLOT(VideoChangedResolution())
+#define VIDEO_CHANGED   SLOT(VideoChanged())
+
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog        (parent),
 	  main           (qobject_cast<OBSBasic*>(parent)),
@@ -97,6 +115,26 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		throw "Could not find locale/locale.ini path";
 	if (localeIni.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
 		throw "Could not open locale.ini";
+
+	HookWidget(ui->language,            COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->channelSetup,        COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->sampleRate,          COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->desktopAudioDevice1, COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->desktopAudioDevice2, COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice1,     COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice2,     COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice3,     COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->renderer,            COMBO_CHANGED,  VIDEO_RESTART);
+	HookWidget(ui->adapter,             COMBO_CHANGED,  VIDEO_RESTART);
+	HookWidget(ui->baseResolution,      CBEDIT_CHANGED, VIDEO_RES);
+	HookWidget(ui->outputResolution,    CBEDIT_CHANGED, VIDEO_RES);
+	HookWidget(ui->downscaleFilter,     COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsType,             COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsCommon,           COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsInteger,          SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsInteger,          SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsNumerator,        SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsDenominator,      SCROLL_CHANGED, VIDEO_CHANGED);
 
 	LoadSettings(false);
 }
@@ -278,9 +316,12 @@ static inline void LoadListValue(QComboBox *widget, const char *text,
 	widget->addItem(QT_UTF8(text), QT_UTF8(val));
 }
 
-static void LoadListValues(QComboBox *widget, obs_property_t prop)
+void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t prop,
+		const char *configName)
 {
 	size_t count = obs_property_list_item_count(prop);
+	const char *deviceId = config_get_string(main->Config(), "Audio",
+			configName);
 
 	widget->addItem(QTStr("Disabled"), "disabled");
 
@@ -289,6 +330,16 @@ static void LoadListValues(QComboBox *widget, obs_property_t prop)
 		const char *val  = obs_property_list_item_value(prop, i);
 		LoadListValue(widget, name, val);
 	}
+
+	int idx = widget->findData(QVariant(QT_UTF8(deviceId)));
+	if (idx == -1) {
+		deviceId = config_get_default_string(main->Config(), "Audio",
+				configName);
+		idx = widget->findData(QVariant(QT_UTF8(deviceId)));
+	}
+
+	if (idx != -1)
+		widget->setCurrentIndex(idx);
 }
 
 void OBSBasicSettings::LoadAudioDevices()
@@ -310,14 +361,14 @@ void OBSBasicSettings::LoadAudioDevices()
 	obs_properties_t output_props = obs_source_properties(
 			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
 
-	obs_property_t inputs = obs_properties_get(input_props, "device_id");
+	obs_property_t inputs  = obs_properties_get(input_props,  "device_id");
 	obs_property_t outputs = obs_properties_get(output_props, "device_id");
 
-	LoadListValues(ui->desktopAudioDevice1, outputs);
-	LoadListValues(ui->desktopAudioDevice2, outputs);
-	LoadListValues(ui->auxAudioDevice1,     inputs);
-	LoadListValues(ui->auxAudioDevice2,     inputs);
-	LoadListValues(ui->auxAudioDevice3,     inputs);
+	LoadListValues(ui->desktopAudioDevice1, outputs, "DesktopDevice1");
+	LoadListValues(ui->desktopAudioDevice2, outputs, "DesktopDevice2");
+	LoadListValues(ui->auxAudioDevice1,     inputs,  "AuxDevice1");
+	LoadListValues(ui->auxAudioDevice2,     inputs,  "AuxDevice2");
+	LoadListValues(ui->auxAudioDevice3,     inputs,  "AuxDevice3");
 
 	obs_properties_destroy(input_props);
 	obs_properties_destroy(output_props);
@@ -329,8 +380,6 @@ void OBSBasicSettings::LoadAudioSettings()
 			"SampleRate");
 	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
-	uint32_t bufferingTime = config_get_uint(main->Config(), "Audio",
-			"BufferingTime");
 
 	loading = true;
 
@@ -350,8 +399,6 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(0);
 	else
 		ui->channelSetup->setCurrentIndex(1);
-
-	ui->audioBufferingTime->setValue(bufferingTime);
 
 	LoadAudioDevices();
 
@@ -417,11 +464,24 @@ void OBSBasicSettings::SaveVideoSettings()
 	main->ResetVideo();
 }
 
+static inline QString GetComboData(QComboBox *combo)
+{
+	int idx = combo->currentIndex();
+	if (idx == -1)
+		return QString();
+
+	return combo->itemData(idx).toString();
+}
+
 void OBSBasicSettings::SaveAudioSettings()
 {
-	QString sampleRateStr = ui->sampleRate->currentText();
-	int channelSetupIdx = ui->channelSetup->currentIndex();
-	int bufferingTime = ui->audioBufferingTime->value();
+	QString sampleRateStr  = ui->sampleRate->currentText();
+	int channelSetupIdx    = ui->channelSetup->currentIndex();
+	QString desktopDevice1 = GetComboData(ui->desktopAudioDevice1);
+	QString desktopDevice2 = GetComboData(ui->desktopAudioDevice2);
+	QString auxDevice1     = GetComboData(ui->auxAudioDevice1);
+	QString auxDevice2     = GetComboData(ui->auxAudioDevice2);
+	QString auxDevice3     = GetComboData(ui->auxAudioDevice2);
 
 	const char *channelSetup;
 	if (channelSetupIdx == 0)
@@ -438,8 +498,17 @@ void OBSBasicSettings::SaveAudioSettings()
 	config_set_uint(main->Config(), "Audio", "SampleRate", sampleRate);
 	config_set_string(main->Config(), "Audio", "ChannelSetup",
 			channelSetup);
-	config_set_uint(main->Config(), "Audio", "BufferingTime",
-			bufferingTime);
+
+	config_set_string(main->Config(), "Audio", "DesktopDevice1",
+			QT_TO_UTF8(desktopDevice1));
+	config_set_string(main->Config(), "Audio", "DesktopDevice2",
+			QT_TO_UTF8(desktopDevice2));
+	config_set_string(main->Config(), "Audio", "AuxDevice1",
+			QT_TO_UTF8(auxDevice1));
+	config_set_string(main->Config(), "Audio", "AuxDevice2",
+			QT_TO_UTF8(auxDevice2));
+	config_set_string(main->Config(), "Audio", "AuxDevice3",
+			QT_TO_UTF8(auxDevice3));
 }
 
 void OBSBasicSettings::SaveSettings()
@@ -534,62 +603,6 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	return true;
 }
 
-void OBSBasicSettings::on_language_currentIndexChanged(int index)
-{
-	if (!loading)
-		generalChanged = true;
-
-	UNUSED_PARAMETER(index);
-}
-
-void OBSBasicSettings::on_sampleRate_currentIndexChanged(int index)
-{
-	if (!loading) {
-		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Settings.ProgramRestart"));
-	}
-
-	UNUSED_PARAMETER(index);
-}
-
-void OBSBasicSettings::on_channelSetup_currentIndexChanged(int index)
-{
-	if (!loading) {
-		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Settings.ProgramRestart"));
-	}
-
-	UNUSED_PARAMETER(index);
-}
-
-void OBSBasicSettings::on_audioBufferingTime_valueChanged(int value)
-{
-	if (!loading) {
-		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Settings.ProgramRestart"));
-	}
-
-	UNUSED_PARAMETER(value);
-}
-
-void OBSBasicSettings::on_renderer_currentIndexChanged(int index)
-{
-	if (!loading) {
-		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
-	}
-
-	UNUSED_PARAMETER(index);
-}
-
-void OBSBasicSettings::on_fpsType_currentIndexChanged(int index)
-{
-	if (!loading)
-		videoChanged = true;
-
-	UNUSED_PARAMETER(index);
-}
-
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get())) {
@@ -598,48 +611,45 @@ void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 
 		ConvertResText(QT_TO_UTF8(baseResolution), cx, cy);
 		ResetDownscales(cx, cy);
-		videoChanged = true;
 	}
-
-	UNUSED_PARAMETER(text);
 }
 
-void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
+void OBSBasicSettings::GeneralChanged()
+{
+	if (!loading)
+		generalChanged = true;
+}
+
+void OBSBasicSettings::AudioChanged()
+{
+	if (!loading)
+		audioChanged = true;
+}
+
+void OBSBasicSettings::AudioChangedRestart()
+{
+	if (!loading) {
+		audioChanged = true;
+		ui->audioMsg->setText(QTStr("Settings.ProgramRestart"));
+	}
+}
+
+void OBSBasicSettings::VideoChangedRestart()
+{
+	if (!loading) {
+		videoChanged = true;
+		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
+	}
+}
+
+void OBSBasicSettings::VideoChangedResolution()
 {
 	if (!loading && ValidResolutions(ui.get()))
 		videoChanged = true;
-
-	UNUSED_PARAMETER(text);
 }
 
-void OBSBasicSettings::on_fpsCommon_currentIndexChanged(int index)
+void OBSBasicSettings::VideoChanged()
 {
 	if (!loading)
 		videoChanged = true;
-
-	UNUSED_PARAMETER(index);
-}
-
-void OBSBasicSettings::on_fpsInteger_valueChanged(int value)
-{
-	if (!loading)
-		videoChanged = true;
-
-	UNUSED_PARAMETER(value);
-}
-
-void OBSBasicSettings::on_fpsNumerator_valueChanged(int value)
-{
-	if (!loading)
-		videoChanged = true;
-
-	UNUSED_PARAMETER(value);
-}
-
-void OBSBasicSettings::on_fpsDenominator_valueChanged(int value)
-{
-	if (!loading)
-		videoChanged = true;
-
-	UNUSED_PARAMETER(value);
 }
