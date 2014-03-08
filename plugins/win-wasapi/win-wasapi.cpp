@@ -92,6 +92,10 @@ WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
 
 inline WASAPISource::~WASAPISource()
 {
+	if (active)
+		blog(LOG_INFO, "WASAPI: Device '%s' Terminated",
+				device_name.c_str());
+
 	SetEvent(stopSignal);
 
 	if (active)

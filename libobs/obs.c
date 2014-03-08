@@ -727,6 +727,8 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 	pthread_mutex_lock(&view->channels_mutex);
 
+	obs_source_addref(source);
+
 	prev_source = view->channels[channel];
 
 	calldata_setint(&params, "channel", channel);
@@ -738,17 +740,15 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 	view->channels[channel] = source;
 
-	if (source) {
-		obs_source_addref(source);
+	pthread_mutex_unlock(&view->channels_mutex);
+
+	if (source)
 		obs_source_activate(source, MAIN_VIEW);
-	}
 
 	if (prev_source) {
 		obs_source_deactivate(prev_source, MAIN_VIEW);
 		obs_source_release(prev_source);
 	}
-
-	pthread_mutex_unlock(&view->channels_mutex);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)

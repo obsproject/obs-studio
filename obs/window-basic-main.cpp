@@ -144,6 +144,8 @@ void OBSBasic::OBSInit()
 	obs_load_module("win-wasapi");
 	obs_load_module("win-capture");
 #endif
+
+	ResetAudioDevices();
 }
 
 OBSBasic::~OBSBasic()
@@ -419,9 +421,48 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio(&ai);
 }
 
-bool OBSBasic::ResetAudioDevices()
+void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
+		int channel)
 {
-	return false;
+	const char *deviceId = config_get_string(basicConfig, "Audio",
+			deviceName);
+	obs_source_t source;
+	obs_data_t settings;
+	bool same = false;
+
+	source = obs_get_output_source(channel);
+	if (source) {
+		settings = obs_source_getsettings(source);
+		const char *curId = obs_data_getstring(settings, "device_id");
+
+		same = (strcmp(curId, deviceId) == 0);
+
+		obs_data_release(settings);
+		obs_source_release(source);
+	}
+
+	if (!same)
+		obs_set_output_source(channel, nullptr);
+
+	if (!same && strcmp(deviceId, "disabled") != 0) {
+		obs_data_t settings = obs_data_create();
+		obs_data_setstring(settings, "device_id", deviceId);
+		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
+				sourceId, deviceName, settings);
+		obs_data_release(settings);
+
+		obs_set_output_source(channel, source);
+		obs_source_release(source);
+	}
+}
+
+void OBSBasic::ResetAudioDevices()
+{
+	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice1", 1);
+	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice2", 2);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice1", 3);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice2", 4);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice3", 5);
 }
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)

@@ -144,21 +144,23 @@ static inline uint64_t conv_frames_to_time(audio_t audio, uint32_t frames)
 
 /* ------------------------------------------------------------------------- */
 
+/* this only really happens with the very initial data insertion.  can be
+ * ignored safely. */
 static inline void clear_excess_audio_data(struct audio_line *line,
 		uint64_t prev_time)
 {
 	size_t size = ts_diff_bytes(line->audio, prev_time,
 			line->base_timestamp);
 
-	blog(LOG_WARNING, "Excess audio data for audio line '%s', somehow "
-	                  "audio data went back in time by %"PRIu32" bytes.  "
-	                  "prev_time: %"PRIu64", line->base_timestamp: %"PRIu64,
-	                  line->name, (uint32_t)size,
-	                  prev_time, line->base_timestamp);
+	/*blog(LOG_DEBUG, "Excess audio data for audio line '%s', somehow "
+	                "audio data went back in time by %"PRIu32" bytes.  "
+	                "prev_time: %"PRIu64", line->base_timestamp: %"PRIu64,
+	                line->name, (uint32_t)size,
+	                prev_time, line->base_timestamp);*/
 
 	for (size_t i = 0; i < line->audio->planes; i++) {
-		size_t clear_size = (size > line->buffers[i].size) ?
-			(size_t)size : line->buffers[i].size;
+		size_t clear_size = (size < line->buffers[i].size) ?
+			size : line->buffers[i].size;
 
 		circlebuf_pop_front(&line->buffers[i], NULL, clear_size);
 	}

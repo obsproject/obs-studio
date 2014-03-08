@@ -56,6 +56,9 @@ public:
 		return textLookup.GetString(lookupVal);
 	}
 
+	const char *InputAudioSource() const;
+	const char *OutputAudioSource() const;
+
 	const char *GetRenderModule() const;
 };
 

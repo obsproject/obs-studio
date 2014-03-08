@@ -481,7 +481,7 @@ void OBSBasicSettings::SaveAudioSettings()
 	QString desktopDevice2 = GetComboData(ui->desktopAudioDevice2);
 	QString auxDevice1     = GetComboData(ui->auxAudioDevice1);
 	QString auxDevice2     = GetComboData(ui->auxAudioDevice2);
-	QString auxDevice3     = GetComboData(ui->auxAudioDevice2);
+	QString auxDevice3     = GetComboData(ui->auxAudioDevice3);
 
 	const char *channelSetup;
 	if (channelSetupIdx == 0)
@@ -509,6 +509,8 @@ void OBSBasicSettings::SaveAudioSettings()
 			QT_TO_UTF8(auxDevice2));
 	config_set_string(main->Config(), "Audio", "AuxDevice3",
 			QT_TO_UTF8(auxDevice3));
+
+	main->ResetAudioDevices();
 }
 
 void OBSBasicSettings::SaveSettings()

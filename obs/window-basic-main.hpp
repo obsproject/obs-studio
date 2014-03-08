@@ -82,7 +82,9 @@ public:
 	bool ResetVideo();
 	bool ResetAudio();
 
-	bool ResetAudioDevices();
+	void ResetAudioDevice(const char *sourceId, const char *deviceName,
+			int channel);
+	void ResetAudioDevices();
 
 	void NewProject();
 	void SaveProject();

@@ -181,6 +181,27 @@ void OBSApp::OBSInit()
 	mainWindow->OBSInit();
 }
 
+#ifdef __APPLE__
+#define INPUT_AUDIO_SOURCE  "coreaudio_input_capture
+#define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture
+#elif _WIN32
+#define INPUT_AUDIO_SOURCE  "wasapi_input_capture"
+#define OUTPUT_AUDIO_SOURCE "wasapi_output_capture"
+#else
+#define INPUT_AUDIO_SOURCE  ""
+#define OUTPUT_AUDIO_SOURCE ""
+#endif
+
+const char *OBSApp::InputAudioSource() const
+{
+	return INPUT_AUDIO_SOURCE;
+}
+
+const char *OBSApp::OutputAudioSource() const
+{
+	return OUTPUT_AUDIO_SOURCE;
+}
+
 struct NoFocusFrameStyle : QProxyStyle
 {
 	void drawControl(ControlElement element, const QStyleOption *option,
