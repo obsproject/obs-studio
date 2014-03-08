@@ -847,8 +847,6 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 	pthread_mutex_lock(&line->mutex);
 
 	if (!line->buffers[0].size) {
-		/* XXX: not entirely sure if this is the wisest course of
-		 * action in all circumstances */
 		line->base_timestamp = data->timestamp -
 		                       line->audio->info.buffer_ms * 1000000;
 		audio_line_place_data(line, data);

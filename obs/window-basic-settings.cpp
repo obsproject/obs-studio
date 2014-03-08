@@ -90,8 +90,8 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
-#define AUDIO_CHANGED   SLOT(AudioChangedRestart())
-#define AUDIO_RESTART   SLOT(AudioChanged())
+#define AUDIO_RESTART   SLOT(AudioChangedRestart())
+#define AUDIO_CHANGED   SLOT(AudioChanged())
 #define VIDEO_RESTART   SLOT(VideoChangedRestart())
 #define VIDEO_RES       SLOT(VideoChangedResolution())
 #define VIDEO_CHANGED   SLOT(VideoChanged())
