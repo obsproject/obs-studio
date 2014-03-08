@@ -182,8 +182,8 @@ void OBSApp::OBSInit()
 }
 
 #ifdef __APPLE__
-#define INPUT_AUDIO_SOURCE  "coreaudio_input_capture
-#define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture
+#define INPUT_AUDIO_SOURCE  "coreaudio_input_capture"
+#define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
 #elif _WIN32
 #define INPUT_AUDIO_SOURCE  "wasapi_input_capture"
 #define OUTPUT_AUDIO_SOURCE "wasapi_output_capture"

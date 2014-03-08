@@ -133,6 +133,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 {
 	switch (type) {
 	case OBS_PROPERTY_INVALID:   return 0;
+	case OBS_PROPERTY_BOOL:      return 0;
 	case OBS_PROPERTY_INT:       return sizeof(struct int_data);
 	case OBS_PROPERTY_FLOAT:     return sizeof(struct float_data);
 	case OBS_PROPERTY_TEXT:      return 0;

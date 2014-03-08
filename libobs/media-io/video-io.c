@@ -120,8 +120,6 @@ static inline void video_output_cur_frame(struct video_output *video)
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
-static inline void nop() {int test = 0;}
-
 static void *video_thread(void *param)
 {
 	struct video_output *video = param;
