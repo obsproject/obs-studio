@@ -476,7 +476,6 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
 	double targetAspect, baseAspect;
 	QSize  targetSize;
-	int x, y;
 
 	/* resize preview panel to fix to the top section of the window */
 	targetSize   = ui->preview->size();
