@@ -647,7 +647,7 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get())) {
-		QString baseResolution = ui->baseResolution->currentText();
+		QString baseResolution = text;
 		uint32_t cx, cy;
 
 		ConvertResText(QT_TO_UTF8(baseResolution), cx, cy);
