@@ -791,6 +791,9 @@ void OBSBasic::on_streamButton_clicked()
 		int aBitrate = config_get_uint(basicConfig, "OutputTemp",
 				"ABitrate");
 
+		if (!url || !key)
+			return;
+
 		string fullURL = url;
 		fullURL = fullURL + "/" + key;
 
