@@ -813,11 +813,12 @@ void OBSBasic::on_streamButton_clicked()
 		int aBitrate = config_get_uint(basicConfig, "OutputTemp",
 				"ABitrate");
 
-		if (!url || !key)
+		if (!url)
 			return;
 
 		string fullURL = url;
-		fullURL = fullURL + "/" + key;
+		if (key && *key)
+			fullURL = fullURL + "/" + key;
 
 		obs_data_t data = obs_data_create();
 		obs_data_setstring(data, "filename", fullURL.c_str());

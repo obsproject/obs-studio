@@ -155,7 +155,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_18">
            <property name="text">
-            <string>URL:</string>
+            <string>URL/Filename:</string>
            </property>
           </widget>
          </item>
