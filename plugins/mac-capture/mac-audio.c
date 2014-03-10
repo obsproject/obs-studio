@@ -749,7 +749,7 @@ struct obs_source_info coreaudio_input_capture_info = {
 	.create       = coreaudio_create_input_capture,
 	.destroy      = coreaudio_destroy,
 	.defaults     = coreaudio_defaults,
-	.properties   = coreaudio_output_properties
+	.properties   = coreaudio_input_properties
 };
 
 struct obs_source_info coreaudio_output_capture_info = {
@@ -760,5 +760,5 @@ struct obs_source_info coreaudio_output_capture_info = {
 	.create       = coreaudio_create_output_capture,
 	.destroy      = coreaudio_destroy,
 	.defaults     = coreaudio_defaults,
-	.properties   = coreaudio_input_properties
+	.properties   = coreaudio_output_properties
 };

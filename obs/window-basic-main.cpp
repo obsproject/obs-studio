@@ -48,8 +48,30 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->setupUi(this);
 }
 
+static inline bool HasAudioDevices(const char *source_id)
+{
+	const char *output_id = source_id;
+	obs_properties_t props = obs_source_properties(
+			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
+	size_t count = 0;
+
+	if (!props)
+		return false;
+
+	obs_property_t devices = obs_properties_get(props, "device_id");
+	if (devices)
+		count = obs_property_list_item_count(devices);
+
+	obs_properties_destroy(props);
+
+	return count != 0;
+}
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
+	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
+	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
+
 	config_set_default_int(basicConfig, "Window", "PosX",  -1);
 	config_set_default_int(basicConfig, "Window", "PosY",  -1);
 	config_set_default_int(basicConfig, "Window", "SizeX", -1);
@@ -93,11 +115,11 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Audio", "BufferingTime", 1000);
 
 	config_set_default_string(basicConfig, "Audio", "DesktopDevice1",
-			"default");
+			hasDesktopAudio ? "default" : "disabled");
 	config_set_default_string(basicConfig, "Audio", "DesktopDevice2",
 			"disabled");
 	config_set_default_string(basicConfig, "Audio", "AuxDevice1",
-			"default");
+			hasInputAudio ? "default" : "disabled");
 	config_set_default_string(basicConfig, "Audio", "AuxDevice2",
 			"disabled");
 	config_set_default_string(basicConfig, "Audio", "AuxDevice3",

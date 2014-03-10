@@ -371,34 +371,32 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t prop,
 
 void OBSBasicSettings::LoadAudioDevices()
 {
-#ifdef __APPLE__
-	const char *input_id  = "coreaudio_input_capture";
-	const char *output_id = "coreaudio_output_capture";
-#elif _WIN32
-	const char *input_id  = "wasapi_input_capture";
-	const char *output_id = "wasapi_output_capture";
-#else
-	const char *input_id;
-	const char *output_id;
-	return;
-#endif
+	const char *input_id  = App()->InputAudioSource();
+	const char *output_id = App()->OutputAudioSource();
 
 	obs_properties_t input_props = obs_source_properties(
 			OBS_SOURCE_TYPE_INPUT, input_id, App()->GetLocale());
 	obs_properties_t output_props = obs_source_properties(
 			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
 
-	obs_property_t inputs  = obs_properties_get(input_props,  "device_id");
-	obs_property_t outputs = obs_properties_get(output_props, "device_id");
+	if (input_props) {
+		obs_property_t inputs  = obs_properties_get(input_props,
+				"device_id");
+		LoadListValues(ui->auxAudioDevice1, inputs, "AuxDevice1");
+		LoadListValues(ui->auxAudioDevice2, inputs, "AuxDevice2");
+		LoadListValues(ui->auxAudioDevice3, inputs, "AuxDevice3");
+		obs_properties_destroy(input_props);
+	}
 
-	LoadListValues(ui->desktopAudioDevice1, outputs, "DesktopDevice1");
-	LoadListValues(ui->desktopAudioDevice2, outputs, "DesktopDevice2");
-	LoadListValues(ui->auxAudioDevice1,     inputs,  "AuxDevice1");
-	LoadListValues(ui->auxAudioDevice2,     inputs,  "AuxDevice2");
-	LoadListValues(ui->auxAudioDevice3,     inputs,  "AuxDevice3");
-
-	obs_properties_destroy(input_props);
-	obs_properties_destroy(output_props);
+	if (output_props) {
+		obs_property_t outputs = obs_properties_get(output_props,
+				"device_id");
+		LoadListValues(ui->desktopAudioDevice1, outputs,
+				"DesktopDevice1");
+		LoadListValues(ui->desktopAudioDevice2, outputs,
+				"DesktopDevice2");
+		obs_properties_destroy(output_props);
+	}
 }
 
 void OBSBasicSettings::LoadAudioSettings()
