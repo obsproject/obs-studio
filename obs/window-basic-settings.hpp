@@ -63,7 +63,7 @@ private:
 	bool QueryChanges();
 
 	void LoadGeneralSettings();
-	//void LoadOutputSettings();
+	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
 	void LoadSettings(bool changedOnly);
@@ -83,7 +83,7 @@ private:
 	void LoadFPSData();
 
 	void SaveGeneralSettings();
-	//void SaveOutputSettings();
+	void SaveOutputSettings();
 	void SaveAudioSettings();
 	void SaveVideoSettings();
 	void SaveSettings();
@@ -97,6 +97,7 @@ private slots:
 	void GeneralChanged();
 	void AudioChanged();
 	void AudioChangedRestart();
+	void OutputsChanged();
 	void VideoChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();

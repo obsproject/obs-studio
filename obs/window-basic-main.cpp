@@ -42,6 +42,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
 	  outputTest    (NULL),
 	  sceneChanging (false),
+	  resizeTimer   (0),
 	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -65,6 +66,12 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
+
+	/* TODO: temporary */
+	config_set_default_string(basicConfig, "OutputTemp", "URL", "");
+	config_set_default_string(basicConfig, "OutputTemp", "Key", "");
+	config_set_default_uint  (basicConfig, "OutputTemp", "VBitrate", 2500);
+	config_set_default_uint  (basicConfig, "OutputTemp", "ABitrate", 128);
 
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
@@ -732,33 +739,62 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 }
 
-void OBSBasic::on_recordButton_clicked()
+void OBSBasic::OutputConnect(bool success)
+{
+	if (!success) {
+		obs_output_destroy(outputTest);
+		outputTest = NULL;
+	} else {
+		ui->streamButton->setText("Stop Streaming");
+	}
+
+	ui->streamButton->setEnabled(true);
+}
+
+static void OBSOutputConnect(void *data, calldata_t params)
+{
+	bool success = calldata_bool(params, "success");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"OutputConnect", Q_ARG(bool, success));
+}
+
+/* TODO: lots of temporary code */
+void OBSBasic::on_streamButton_clicked()
 {
 	if (outputTest) {
 		obs_output_destroy(outputTest);
 		outputTest = NULL;
-		ui->recordButton->setText("Start Recording");
+		ui->streamButton->setText("Start Streaming");
 	} else {
-		QString path = QFileDialog::getSaveFileName(this,
-				"Please enter a file name", QString(),
-				"MP4 Files (*.mp4)");
+		const char *url = config_get_string(basicConfig, "OutputTemp",
+				"URL");
+		const char *key = config_get_string(basicConfig, "OutputTemp",
+				"Key");
+		int vBitrate = config_get_uint(basicConfig, "OutputTemp",
+				"VBitrate");
+		int aBitrate = config_get_uint(basicConfig, "OutputTemp",
+				"ABitrate");
 
-		if (path.isNull() || path.isEmpty())
-			return;
+		string fullURL = url;
+		fullURL = fullURL + "/" + key;
 
 		obs_data_t data = obs_data_create();
-		obs_data_setstring(data, "filename", QT_TO_UTF8(path));
+		obs_data_setstring(data, "filename", fullURL.c_str());
+		obs_data_setint(data, "audio_bitrate", aBitrate);
+		obs_data_setint(data, "video_bitrate", vBitrate);
 
 		outputTest = obs_output_create("ffmpeg_output", "test", data);
 		obs_data_release(data);
 
-		if (!obs_output_start(outputTest)) {
-			obs_output_destroy(outputTest);
-			outputTest = NULL;
+		if (!outputTest)
 			return;
-		}
 
-		ui->recordButton->setText("Stop Recording");
+		signal_handler_connect(obs_output_signalhandler(outputTest),
+				"connect", OBSOutputConnect, this);
+
+		obs_output_start(outputTest);
+		ui->streamButton->setEnabled(false);
 	}
 }
 

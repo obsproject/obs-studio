@@ -39,38 +39,57 @@ obs_output_t obs_output_create(const char *id, const char *name,
 		return NULL;
 	}
 
-	output = bmalloc(sizeof(struct obs_output));
+	output = bzalloc(sizeof(struct obs_output));
+
+	output->signals = signal_handler_create();
+	if (!output->signals)
+		goto fail;
+
+	output->procs = proc_handler_create();
+	if (!output->procs)
+		goto fail;
+
 	output->info = *info;
 	output->settings  = obs_data_newref(settings);
 	output->data      = info->create(output->settings, output);
-
-	if (!output->data) {
-		obs_data_release(output->settings);
-		bfree(output);
-		return NULL;
-	}
+	if (!output->data)
+		goto fail;
 
 	output->name = bstrdup(name);
 
 	pthread_mutex_lock(&obs->data.outputs_mutex);
 	da_push_back(obs->data.outputs, &output);
 	pthread_mutex_unlock(&obs->data.outputs_mutex);
+
+	output->valid = true;
+
 	return output;
+
+fail:
+	obs_output_destroy(output);
+	return NULL;
 }
 
 void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
-		if (output->info.active) {
-			if (output->info.active(output->data))
-				output->info.stop(output->data);
+		if (output->valid) {
+			if (output->info.active) {
+				if (output->info.active(output->data))
+					output->info.stop(output->data);
+			}
+
+			pthread_mutex_lock(&obs->data.outputs_mutex);
+			da_erase_item(obs->data.outputs, &output);
+			pthread_mutex_unlock(&obs->data.outputs_mutex);
 		}
 
-		pthread_mutex_lock(&obs->data.outputs_mutex);
-		da_erase_item(obs->data.outputs, &output);
-		pthread_mutex_unlock(&obs->data.outputs_mutex);
+		if (output->data)
+			output->info.destroy(output->data);
 
-		output->info.destroy(output->data);
+		signal_handler_destroy(output->signals);
+		proc_handler_destroy(output->procs);
+
 		obs_data_release(output->settings);
 		bfree(output->name);
 		bfree(output);
@@ -142,4 +161,14 @@ void obs_output_pause(obs_output_t output)
 {
 	if (output && output->info.pause)
 		output->info.pause(output->data);
+}
+
+signal_handler_t obs_output_signalhandler(obs_output_t output)
+{
+	return output->signals;
+}
+
+proc_handler_t obs_output_prochandler(obs_output_t output)
+{
+	return output->procs;
 }

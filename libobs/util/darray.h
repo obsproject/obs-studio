@@ -125,7 +125,7 @@ static inline void darray_resize(const size_t element_size,
 	if (size == dst->num) {
 		return;
 	} else if (size == 0) {
-		darray_free(dst);
+		dst->num = 0;
 		return;
 	}
 
@@ -305,7 +305,7 @@ static inline void darray_erase(const size_t element_size, struct darray *dst,
 		return;
 
 	if (!--dst->num) {
-		darray_free(dst);
+		dst->num = 0;
 		return;
 	}
 
@@ -336,7 +336,7 @@ static inline void darray_erase_range(const size_t element_size,
 		darray_erase(element_size, dst, start);
 		return;
 	} else if (count == dst->num) {
-		darray_free(dst);
+		dst->num = 0;
 		return;
 	}
 

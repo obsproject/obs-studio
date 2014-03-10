@@ -86,10 +86,12 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
+#define EDIT_CHANGED    SIGNAL(textChanged(const QString &))
 #define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
+#define OUTPUTS_CHANGED SLOT(OutputsChanged())
 #define AUDIO_RESTART   SLOT(AudioChangedRestart())
 #define AUDIO_CHANGED   SLOT(AudioChanged())
 #define VIDEO_RESTART   SLOT(VideoChangedRestart())
@@ -117,6 +119,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		throw "Could not open locale.ini";
 
 	HookWidget(ui->language,            COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->streamVBitrate,      SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->streamABitrate,      SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->streamURL,           EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->streamKey,           EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,        COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,          COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->desktopAudioDevice1, COMBO_CHANGED,  AUDIO_CHANGED);
@@ -310,6 +316,27 @@ void OBSBasicSettings::LoadVideoSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::LoadOutputSettings()
+{
+	loading = true;
+
+	const char *url = config_get_string(main->Config(), "OutputTemp",
+			"URL");
+	const char *key = config_get_string(main->Config(), "OutputTemp",
+			"Key");
+	int videoBitrate = config_get_uint(main->Config(), "OutputTemp",
+			"VBitrate");
+	int audioBitrate = config_get_uint(main->Config(), "OutputTemp",
+			"ABitrate");
+
+	ui->streamURL->setText(QT_UTF8(url));
+	ui->streamKey->setText(QT_UTF8(key));
+	ui->streamVBitrate->setValue(videoBitrate);
+	ui->streamABitrate->setValue(audioBitrate);
+
+	loading = false;
+}
+
 static inline void LoadListValue(QComboBox *widget, const char *text,
 		const char *val)
 {
@@ -409,8 +436,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 {
 	if (!changedOnly || generalChanged)
 		LoadGeneralSettings();
-	//if (!changedOnly || outputChanged)
-	//	LoadOutputSettings();
+	if (!changedOnly || outputsChanged)
+		LoadOutputSettings();
 	if (!changedOnly || audioChanged)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
@@ -462,6 +489,20 @@ void OBSBasicSettings::SaveVideoSettings()
 	config_set_uint(main->Config(), "Video", "FPSDen", fpsDenominator);
 
 	main->ResetVideo();
+}
+
+/* TODO: Temporary! */
+void OBSBasicSettings::SaveOutputSettings()
+{
+	int videoBitrate = ui->streamVBitrate->value();
+	int audioBitrate = ui->streamABitrate->value();
+	QString url = ui->streamURL->text();
+	QString key = ui->streamKey->text();
+
+	config_set_uint(main->Config(), "OutputTemp", "VBitrate", videoBitrate);
+	config_set_uint(main->Config(), "OutputTemp", "ABitrate", audioBitrate);
+	config_set_string(main->Config(), "OutputTemp", "URL", QT_TO_UTF8(url));
+	config_set_string(main->Config(), "OutputTemp", "Key", QT_TO_UTF8(key));
 }
 
 static inline QString GetComboData(QComboBox *combo)
@@ -517,8 +558,8 @@ void OBSBasicSettings::SaveSettings()
 {
 	if (generalChanged)
 		SaveGeneralSettings();
-	//if (outputChanged)
-	//	SaveOutputSettings();
+	if (outputsChanged)
+		SaveOutputSettings();
 	if (audioChanged)
 		SaveAudioSettings();
 	if (videoChanged)
@@ -620,6 +661,12 @@ void OBSBasicSettings::GeneralChanged()
 {
 	if (!loading)
 		generalChanged = true;
+}
+
+void OBSBasicSettings::OutputsChanged()
+{
+	if (!loading)
+		outputsChanged = true;
 }
 
 void OBSBasicSettings::AudioChanged()

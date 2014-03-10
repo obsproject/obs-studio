@@ -319,7 +319,7 @@
           <item>
            <widget class="QPushButton" name="streamButton">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="text">
              <string>Start Streaming</string>
@@ -331,6 +331,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="recordButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Start Recording</string>
             </property>

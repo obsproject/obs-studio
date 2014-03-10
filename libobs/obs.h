@@ -677,6 +677,12 @@ EXPORT void obs_output_pause(obs_output_t output);
 /* Gets the current output settings string */
 EXPORT obs_data_t obs_output_get_settings(obs_output_t output);
 
+/** Returns the signal handler for an output  */
+EXPORT signal_handler_t obs_output_signalhandler(obs_output_t output);
+
+/** Returns the procedure handler for an output */
+EXPORT proc_handler_t obs_output_prochandler(obs_output_t output);
+
 
 /* ------------------------------------------------------------------------- */
 /* Encoders */

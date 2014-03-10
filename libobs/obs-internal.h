@@ -262,6 +262,11 @@ struct obs_output {
 	void                            *data;
 	struct obs_output_info          info;
 	obs_data_t                      settings;
+
+	signal_handler_t                signals;
+	proc_handler_t                  procs;
+
+	bool                            valid;
 };
 
 

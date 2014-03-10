@@ -57,6 +57,9 @@ private:
 	void UpdateSources(OBSScene scene);
 	void InsertSceneItem(obs_sceneitem_t item);
 
+public slots:
+	void         OutputConnect(bool success);
+
 private slots:
 	void AddSceneItem(OBSSceneItem item);
 	void RemoveSceneItem(OBSSceneItem item);
@@ -116,7 +119,7 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
-	void on_recordButton_clicked();
+	void on_streamButton_clicked();
 	void on_settingsButton_clicked();
 
 public:

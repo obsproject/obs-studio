@@ -18,6 +18,9 @@
 #include <obs.h>
 #include <util/circlebuf.h>
 #include <util/threading.h>
+#include <util/dstr.h>
+#include <util/darray.h>
+#include <util/platform.h>
 
 #include <libavutil/opt.h>
 #include <libavformat/avformat.h>
@@ -34,6 +37,7 @@ struct ffmpeg_data {
 	AVFormatContext    *output;
 	struct SwsContext  *swscale;
 
+	int                video_bitrate;
 	AVPicture          dst_picture;
 	AVFrame            *vframe;
 	int                frame_size;
@@ -41,6 +45,7 @@ struct ffmpeg_data {
 
 	uint64_t           start_timestamp;
 
+	int                audio_bitrate;
 	uint32_t           audio_samplerate;
 	enum audio_format  audio_format;
 	size_t             audio_planes;
@@ -49,8 +54,6 @@ struct ffmpeg_data {
 	uint8_t            *samples[MAX_AV_PLANES];
 	AVFrame            *aframe;
 	int                total_samples;
-
-	pthread_mutex_t    write_mutex;
 
 	const char         *filename_test;
 
@@ -61,6 +64,17 @@ struct ffmpeg_output {
 	obs_output_t       output;
 	volatile bool      active;
 	struct ffmpeg_data ff_data;
+
+	bool               connecting;
+	pthread_t          start_thread;
+
+	bool               write_thread_active;
+	pthread_mutex_t    write_mutex;
+	pthread_t          write_thread;
+	sem_t              write_sem;
+	event_t            stop_event;
+
+	DARRAY(AVPacket)   packets;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -127,8 +141,10 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	AVCodecContext *context = data->video->codec;
 	int ret;
 
-	if (data->vcodec->id == AV_CODEC_ID_H264)
+	if (data->vcodec->id == AV_CODEC_ID_H264) {
 		av_opt_set(context->priv_data, "preset", "veryfast", 0);
+		av_opt_set(context->priv_data, "x264-params", "nal-hrd=cbr", 0);
+	}
 
 	ret = avcodec_open2(context, data->vcodec, NULL);
 	if (ret < 0) {
@@ -188,15 +204,17 @@ static bool create_video_stream(struct ffmpeg_data *data)
 				data->output->oformat->video_codec))
 		return false;
 
-	context                = data->video->codec;
-	context->codec_id      = data->output->oformat->video_codec;
-	context->bit_rate      = 6000000;
-	context->width         = ovi.output_width;
-	context->height        = ovi.output_height;
-	context->time_base.num = ovi.fps_den;
-	context->time_base.den = ovi.fps_num;
-	context->gop_size      = 12;
-	context->pix_fmt       = AV_PIX_FMT_YUV420P;
+	context                 = data->video->codec;
+	context->codec_id       = data->output->oformat->video_codec;
+	context->bit_rate       = data->video_bitrate * 1000;
+	context->rc_buffer_size = data->video_bitrate * 1000;
+	context->rc_max_rate    = data->video_bitrate * 1000;
+	context->width          = ovi.output_width;
+	context->height         = ovi.output_height;
+	context->time_base.num  = ovi.fps_den;
+	context->time_base.den  = ovi.fps_num;
+	context->gop_size       = 120;
+	context->pix_fmt        = AV_PIX_FMT_YUV420P;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -259,7 +277,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 		return false;
 
 	context              = data->audio->codec;
-	context->bit_rate    = 128000;
+	context->bit_rate    = data->audio_bitrate * 1000;
 	context->channels    = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
 	context->sample_fmt  = data->acodec->sample_fmts ?
@@ -335,7 +353,6 @@ static void close_audio(struct ffmpeg_data *data)
 
 static void ffmpeg_data_free(struct ffmpeg_data *data)
 {
-	pthread_mutex_lock(&data->write_mutex);
 	if (data->initialized)
 		av_write_trailer(data->output);
 
@@ -348,30 +365,30 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 
 	avformat_free_context(data->output);
 
-	pthread_mutex_unlock(&data->write_mutex);
-	pthread_mutex_destroy(&data->write_mutex);
-
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
 static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 {
-	memset(data, 0, sizeof(struct ffmpeg_data));
-	pthread_mutex_init_value(&data->write_mutex);
+	bool is_rtmp = false;
 
+	memset(data, 0, sizeof(struct ffmpeg_data));
 	data->filename_test = filename;
 
 	if (!filename || !*filename)
 		return false;
 
-	if (pthread_mutex_init(&data->write_mutex, NULL) != 0)
-		return false;
-
 	av_register_all();
+	avformat_network_init();
+
+	is_rtmp = (astrcmp_n(filename, "rtmp://", 7) == 0);
 
 	/* TODO: settings */
-	avformat_alloc_output_context2(&data->output, NULL, NULL,
-			data->filename_test);
+	avformat_alloc_output_context2(&data->output, NULL,
+			is_rtmp ? "flv" : NULL, data->filename_test);
+	data->output->oformat->video_codec = AV_CODEC_ID_H264;
+	data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
+
 	if (!data->output) {
 		blog(LOG_WARNING, "Couldn't create avformat context");
 		goto fail;
@@ -381,6 +398,8 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data, const char *filename)
 		goto fail;
 	if (!open_output_file(data))
 		goto fail;
+
+	av_dump_format(data->output, 0, NULL, 1);
 
 	data->initialized = true;
 	return true;
@@ -411,21 +430,46 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 static void *ffmpeg_output_create(obs_data_t settings, obs_output_t output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
+	pthread_mutex_init_value(&data->write_mutex);
 	data->output = output;
+
+	if (pthread_mutex_init(&data->write_mutex, NULL) != 0)
+		goto fail;
+	if (event_init(&data->stop_event, EVENT_TYPE_AUTO) != 0)
+		goto fail;
+	if (sem_init(&data->write_sem, 0, 0) != 0)
+		goto fail;
+
+	signal_handler_add(obs_output_signalhandler(output),
+			"void connect(ptr output, bool success)");
 
 	av_log_set_callback(ffmpeg_log_callback);
 
 	UNUSED_PARAMETER(settings);
 	return data;
+
+fail:
+	pthread_mutex_destroy(&data->write_mutex);
+	event_destroy(data->stop_event);
+	bfree(data);
+	return NULL;
 }
+
+static void ffmpeg_output_stop(void *data);
 
 static void ffmpeg_output_destroy(void *data)
 {
 	struct ffmpeg_output *output = data;
 
 	if (output) {
-		if (output->active)
-			ffmpeg_data_free(&output->ff_data);
+		if (output->connecting)
+			pthread_join(output->start_thread, NULL);
+
+		ffmpeg_output_stop(output);
+
+		pthread_mutex_destroy(&output->write_mutex);
+		sem_destroy(&output->write_sem);
+		event_destroy(output->stop_event);
 		bfree(data);
 	}
 }
@@ -488,9 +532,10 @@ static void receive_video(void *param, const struct video_data *frame)
 		packet.data          = data->dst_picture.data[0];
 		packet.size          = sizeof(AVPicture);
 
-		pthread_mutex_lock(&data->write_mutex);
-		ret = av_interleaved_write_frame(data->output, &packet);
-		pthread_mutex_unlock(&data->write_mutex);
+		pthread_mutex_lock(&output->write_mutex);
+		da_push_back(output->packets, &packet);
+		pthread_mutex_unlock(&output->write_mutex);
+		sem_post(&output->write_sem);
 
 	} else {
 		data->vframe->pts = data->total_frames;
@@ -511,10 +556,10 @@ static void receive_video(void *param, const struct video_data *frame)
 					context->time_base,
 					data->video->time_base);
 
-			pthread_mutex_lock(&data->write_mutex);
-			ret = av_interleaved_write_frame(data->output,
-					&packet);
-			pthread_mutex_unlock(&data->write_mutex);
+			pthread_mutex_lock(&output->write_mutex);
+			da_push_back(output->packets, &packet);
+			pthread_mutex_unlock(&output->write_mutex);
+			sem_post(&output->write_sem);
 		} else {
 			ret = 0;
 		}
@@ -528,20 +573,22 @@ static void receive_video(void *param, const struct video_data *frame)
 	data->total_frames++;
 }
 
-static inline void encode_audio(struct ffmpeg_data *output,
+static inline void encode_audio(struct ffmpeg_output *output,
 		struct AVCodecContext *context, size_t block_size)
 {
+	struct ffmpeg_data *data = &output->ff_data;
+
 	AVPacket packet = {0};
 	int ret, got_packet;
-	size_t total_size = output->frame_size * block_size * context->channels;
+	size_t total_size = data->frame_size * block_size * context->channels;
 
-	output->aframe->nb_samples = output->frame_size;
-	output->aframe->pts = av_rescale_q(output->total_samples,
+	data->aframe->nb_samples = data->frame_size;
+	data->aframe->pts = av_rescale_q(data->total_samples,
 			(AVRational){1, context->sample_rate},
 			context->time_base);
 
-	ret = avcodec_fill_audio_frame(output->aframe, context->channels,
-			context->sample_fmt, output->samples[0],
+	ret = avcodec_fill_audio_frame(data->aframe, context->channels,
+			context->sample_fmt, data->samples[0],
 			(int)total_size, 1);
 	if (ret < 0) {
 		blog(LOG_WARNING, "receive_audio: avcodec_fill_audio_frame "
@@ -549,9 +596,9 @@ static inline void encode_audio(struct ffmpeg_data *output,
 		return;
 	}
 
-	output->total_samples += output->frame_size;
+	data->total_samples += data->frame_size;
 
-	ret = avcodec_encode_audio2(context, &packet, output->aframe,
+	ret = avcodec_encode_audio2(context, &packet, data->aframe,
 			&got_packet);
 	if (ret < 0) {
 		blog(LOG_WARNING, "receive_audio: Error encoding audio: %s",
@@ -562,18 +609,16 @@ static inline void encode_audio(struct ffmpeg_data *output,
 	if (!got_packet)
 		return;
 
-	packet.pts = rescale_ts(packet.pts, context, output->audio);
-	packet.dts = rescale_ts(packet.dts, context, output->audio);
+	packet.pts = rescale_ts(packet.pts, context, data->audio);
+	packet.dts = rescale_ts(packet.dts, context, data->audio);
 	packet.duration = (int)av_rescale_q(packet.duration, context->time_base,
-			output->audio->time_base);
-	packet.stream_index = output->audio->index;
+			data->audio->time_base);
+	packet.stream_index = data->audio->index;
 
 	pthread_mutex_lock(&output->write_mutex);
-	ret = av_interleaved_write_frame(output->output, &packet);
-	if (ret != 0)
-		blog(LOG_WARNING, "receive_audio: Error writing audio: %s",
-				av_err2str(ret));
+	da_push_back(output->packets, &packet);
 	pthread_mutex_unlock(&output->write_mutex);
+	sem_post(&output->write_sem);
 }
 
 static bool prepare_audio(struct ffmpeg_data *data,
@@ -627,16 +672,76 @@ static void receive_audio(void *param, const struct audio_data *frame)
 			circlebuf_pop_front(&data->excess_frames[i],
 					data->samples[i], frame_size_bytes);
 
-		encode_audio(data, context, data->audio_size);
+		encode_audio(output, context, data->audio_size);
 	}
 }
 
-static bool ffmpeg_output_start(void *data)
+static bool process_packet(struct ffmpeg_output *output)
+{
+	AVPacket packet;
+	bool new_packet = false;
+	uint64_t time1, time2;
+	int ret;
+
+	pthread_mutex_lock(&output->write_mutex);
+	if (output->packets.num) {
+		packet = output->packets.array[0];
+		da_erase(output->packets, 0);
+		new_packet = true;
+	}
+	pthread_mutex_unlock(&output->write_mutex);
+
+	if (!new_packet)
+		return true;
+
+	time1 = os_gettime_ns();
+
+	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
+	if (ret < 0) {
+		blog(LOG_WARNING, "receive_audio: Error writing packet: %s",
+				av_err2str(ret));
+
+		pthread_detach(output->write_thread);
+		output->write_thread_active = false;
+		return false;
+	}
+
+	time2 = os_gettime_ns();
+	/*blog(LOG_DEBUG, "%llu, size = %d, flags = %lX, stream = %d, "
+			"packets queued: %lu: time1; %llu",
+			time2-time1, packet.size, packet.flags,
+			packet.stream_index, output->packets.num, time1);*/
+
+	return true;
+}
+
+static void *write_thread(void *data)
 {
 	struct ffmpeg_output *output = data;
 
+	while (sem_wait(&output->write_sem) == 0) {
+		/* check to see if shutting down */
+		if (event_try(output->stop_event) == 0)
+			break;
+
+		if (!process_packet(output)) {
+			ffmpeg_output_stop(output);
+			break;
+		}
+	}
+
+	output->active = false;
+	return NULL;
+}
+
+static bool try_connect(struct ffmpeg_output *output)
+{
 	video_t video = obs_video();
 	audio_t audio = obs_audio();
+	const char *filename_test;
+	obs_data_t settings;
+	int audio_bitrate, video_bitrate;
+	int ret;
 
 	if (!video || !audio) {
 		blog(LOG_WARNING, "ffmpeg_output_start: audio and video must "
@@ -644,13 +749,17 @@ static bool ffmpeg_output_start(void *data)
 		return false;
 	}
 
-	const char *filename_test;
-	obs_data_t settings = obs_output_get_settings(output->output);
+	settings = obs_output_get_settings(output->output);
 	filename_test = obs_data_getstring(settings, "filename");
+	video_bitrate = (int)obs_data_getint(settings, "video_bitrate");
+	audio_bitrate = (int)obs_data_getint(settings, "audio_bitrate");
 	obs_data_release(settings);
 
 	if (!filename_test || !*filename_test)
 		return false;
+
+	output->ff_data.video_bitrate = video_bitrate;
+	output->ff_data.audio_bitrate = audio_bitrate;
 
 	if (!ffmpeg_data_init(&output->ff_data, filename_test))
 		return false;
@@ -663,11 +772,50 @@ static bool ffmpeg_output_start(void *data)
 		.format = VIDEO_FORMAT_I420
 	};
 
-	video_output_connect(video, &vsi, receive_video, output);
-	audio_output_connect(audio, &aci, receive_audio, output);
 	output->active = true;
 
+	ret = pthread_create(&output->write_thread, NULL, write_thread, output);
+	if (ret != 0) {
+		blog(LOG_WARNING, "ffmpeg_output_start: failed to create write "
+		                  "thread.");
+		ffmpeg_output_stop(output);
+		return false;
+	}
+
+	video_output_connect(video, &vsi, receive_video, output);
+	audio_output_connect(audio, &aci, receive_audio, output);
+	output->write_thread_active = true;
 	return true;
+}
+
+static void *start_thread(void *data)
+{
+	struct ffmpeg_output *output = data;
+	struct calldata params       = {0};
+
+	bool success = try_connect(output);
+
+	output->connecting = false;
+
+	calldata_setbool(&params, "success", success);
+	calldata_setptr(&params, "output", output->output);
+	signal_handler_signal(obs_output_signalhandler(output->output),
+			"connect", &params);
+	calldata_free(&params);
+
+	return NULL;
+}
+
+static bool ffmpeg_output_start(void *data)
+{
+	struct ffmpeg_output *output = data;
+	int ret;
+
+	if (output->connecting)
+		return false;
+
+	ret = pthread_create(&output->start_thread, NULL, start_thread, output);
+	return (output->connecting = (ret == 0));
 }
 
 static void ffmpeg_output_stop(void *data)
@@ -675,9 +823,20 @@ static void ffmpeg_output_stop(void *data)
 	struct ffmpeg_output *output = data;
 
 	if (output->active) {
-		output->active = false;
 		video_output_disconnect(obs_video(), receive_video, data);
 		audio_output_disconnect(obs_audio(), receive_audio, data);
+
+		if (output->write_thread_active) {
+			event_signal(output->stop_event);
+			sem_post(&output->write_sem);
+			pthread_join(output->write_thread, NULL);
+			output->write_thread_active = false;
+		}
+
+		for (size_t i = 0; i < output->packets.num; i++)
+			av_free_packet(output->packets.array+i);
+
+		da_free(output->packets);
 		ffmpeg_data_free(&output->ff_data);
 	}
 }

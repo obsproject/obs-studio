@@ -43,7 +43,7 @@ static void do_log(int log_level, const char *msg, va_list args)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (log_level <= LOG_WARNING && IsDebuggerPresent())
+	if (log_level <= LOG_ERROR && IsDebuggerPresent())
 		__debugbreak();
 #else
 	vprintf(msg, args);

@@ -487,6 +487,11 @@ void obs_shutdown(void)
 		free_module(obs->modules.array+i);
 	da_free(obs->modules);
 
+	da_free(obs->data.sources);
+	da_free(obs->data.outputs);
+	da_free(obs->data.encoders);
+	da_free(obs->data.displays);
+
 	bfree(obs);
 	obs = NULL;
 }
