@@ -188,8 +188,8 @@ void OBSApp::OBSInit()
 #define INPUT_AUDIO_SOURCE  "wasapi_input_capture"
 #define OUTPUT_AUDIO_SOURCE "wasapi_output_capture"
 #else
-#define INPUT_AUDIO_SOURCE  ""
-#define OUTPUT_AUDIO_SOURCE ""
+#define INPUT_AUDIO_SOURCE  "pulse_input_capture"
+#define OUTPUT_AUDIO_SOURCE "pulse_output_capture"
 #endif
 
 const char *OBSApp::InputAudioSource() const
