@@ -202,7 +202,7 @@ static const char *obs_scene_signals[] = {
 	NULL
 };
 
-
+void source_init_name(struct obs_source *source, const char *name);
 
 obs_scene_t obs_scene_create(const char *name)
 {
@@ -229,7 +229,7 @@ obs_scene_t obs_scene_create(const char *name)
 		return NULL;
 	}
 
-	source->name  = bstrdup(name);
+	source_init_name(source, name);
 
 	scene->source = source;
 	obs_source_init(source, &scene_info);

@@ -151,6 +151,18 @@ static inline void obs_source_dosignal(struct obs_source *source,
 	calldata_free(&data);
 }
 
+void source_init_name(struct obs_source *source, const char *name)
+{
+	if (!name || !*name) {
+		struct dstr unnamed = {0};
+		dstr_printf(&unnamed, "__unnamed%004lld",
+				obs->data.unnamed_index++);
+		source->name = unnamed.array;
+	} else {
+		source->name = bstrdup(name);
+	}
+}
+
 obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		const char *name, obs_data_t settings)
 {
@@ -167,7 +179,8 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init_handlers(source))
 		goto fail;
 
-	source->name     = bstrdup(name);
+	source_init_name(source, name);
+
 	source->settings = obs_data_newref(settings);
 	source->data     = info->create(source->settings, source);
 

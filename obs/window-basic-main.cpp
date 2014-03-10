@@ -586,6 +586,14 @@ void OBSBasic::on_actionAddScene_triggered()
 			name);
 
 	if (accepted) {
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("MainWindow.NoNameEntered"),
+					QTStr("MainWindow.NoNameEntered"));
+			on_actionAddScene_triggered();
+			return;
+		}
+
 		obs_source_t source = obs_get_source_by_name(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
@@ -661,9 +669,17 @@ void OBSBasic::AddSource(obs_scene_t scene, const char *id)
 		if (!accepted)
 			break;
 
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("MainWindow.NoNameEntered"),
+					QTStr("MainWindow.NoNameEntered"));
+			continue;
+		}
+
 		obs_source_t source = obs_get_source_by_name(name.c_str());
 		if (!source) {
 			success = true;
+			break;
 		} else {
 			QMessageBox::information(this,
 					QTStr("MainWindow.NameExists.Title"),
