@@ -41,7 +41,7 @@ const uint64_t pulse_start_delay = 100000;
 
 struct pulse_data {
 	pthread_t thread;
-	event_t event;
+	os_event_t event;
 	obs_source_t source;
 	
 	enum speaker_layout speakers;
@@ -321,7 +321,7 @@ static int pulse_skip(struct pulse_data *data)
 	size_t bytes;
 	uint64_t pa_time;
 	
-	while (event_try(data->event) == EAGAIN) {
+	while (os_event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
 		pa_stream_peek(data->stream, &frames, &bytes);
 		
@@ -374,7 +374,7 @@ static void *pulse_thread(void *vptr)
 	out.samples_per_sec = data->samples_per_sec;
 	out.format = pulse_to_obs_audio_format(data->format);
 	
-	while (event_try(data->event) == EAGAIN) {
+	while (os_event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
 		
 		pa_stream_peek(data->stream, &frames, &bytes);
@@ -609,11 +609,11 @@ static void pulse_destroy(void *vptr)
 	
 	if (data->thread) {
 		void *ret;
-		event_signal(data->event);
+		os_event_signal(data->event);
 		pthread_join(data->thread, &ret);
 	}
 	
-	event_destroy(data->event);
+	os_event_destroy(data->event);
 	
 	pa_proplist_free(data->props);
 	
@@ -647,7 +647,7 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 	pa_proplist_sets(data->props, PA_PROP_MEDIA_ROLE,
 		"production");
 	
-	if (event_init(&data->event, EVENT_TYPE_MANUAL) != 0)
+	if (os_event_init(&data->event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&data->thread, NULL, pulse_thread, data) != 0)
 		goto fail;
