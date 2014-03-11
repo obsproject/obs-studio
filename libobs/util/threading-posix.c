@@ -24,18 +24,18 @@
 #include "bmem.h"
 #include "threading.h"
 
-struct event_data {
+struct os_event_data {
 	pthread_mutex_t mutex;
 	pthread_cond_t  cond;
 	volatile bool   signalled;
 	bool            manual;
 };
 
-int event_init(event_t *event, enum event_type type)
+int os_event_init(os_event_t *event, enum os_event_type type)
 {
 	int code = 0;
 
-	struct event_data *data = bzalloc(sizeof(struct event_data));
+	struct os_event_data *data = bzalloc(sizeof(struct os_event_data));
 
 	if ((code = pthread_mutex_init(&data->mutex, NULL)) < 0) {
 		bfree(data);
@@ -55,7 +55,7 @@ int event_init(event_t *event, enum event_type type)
 	return 0;
 }
 
-void event_destroy(event_t event)
+void os_event_destroy(os_event_t event)
 {
 	if (event) {
 		pthread_mutex_destroy(&event->mutex);
@@ -64,7 +64,7 @@ void event_destroy(event_t event)
 	}
 }
 
-int event_wait(event_t event)
+int os_event_wait(os_event_t event)
 {
 	int code = 0;
 	pthread_mutex_lock(&event->mutex);
@@ -91,7 +91,7 @@ static inline void add_ms_to_ts(struct timespec *ts,
 	}
 }
 
-int event_timedwait(event_t event, unsigned long milliseconds)
+int os_event_timedwait(os_event_t event, unsigned long milliseconds)
 {
 	int code = 0;
 	pthread_mutex_lock(&event->mutex);
@@ -119,7 +119,7 @@ int event_timedwait(event_t event, unsigned long milliseconds)
 	return code;
 }
 
-int event_try(event_t event)
+int os_event_try(os_event_t event)
 {
 	int ret = EAGAIN;
 
@@ -134,7 +134,7 @@ int event_try(event_t event)
 	return ret;
 }
 
-int event_signal(event_t event)
+int os_event_signal(os_event_t event)
 {
 	int code = 0;
 
@@ -146,7 +146,7 @@ int event_signal(event_t event)
 	return code;
 }
 
-void event_reset(event_t event)
+void os_event_reset(os_event_t event)
 {
 	pthread_mutex_lock(&event->mutex);
 	event->signalled = false;
