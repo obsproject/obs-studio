@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*
  * delay in usecs before starting to record, this eliminates problems with
  * pulse audio sending weird data/timestamps when the stream is connected
- * 
+ *
  * for more information see:
  * github.com/MaartenBaert/ssr/blob/master/src/AV/Input/PulseAudioInput.cpp
  */
@@ -43,14 +43,14 @@ struct pulse_data {
 	pthread_t thread;
 	os_event_t event;
 	obs_source_t source;
-	
+
 	enum speaker_layout speakers;
 	pa_sample_format_t format;
 	uint_fast32_t samples_per_sec;
 	uint_fast8_t channels;
-	
+
 	uint_fast32_t bytes_per_frame;
-	
+
 	pa_mainloop *mainloop;
 	pa_context *context;
 	pa_stream *stream;
@@ -86,7 +86,7 @@ static enum audio_format pulse_to_obs_audio_format(
 		default:
 			return AUDIO_FORMAT_UNKNOWN;
 	}
-	
+
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
@@ -115,7 +115,7 @@ static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
 	int ret;
 	int sign;
 	pa_usec_t abs;
-	
+
 	ret = pa_stream_get_latency(stream, &abs, &sign);
 	*latency = (sign) ? -(int64_t) abs : (int64_t) abs;
 	return ret;
@@ -123,7 +123,7 @@ static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
 
 /*
  * Iterate the mainloop
- * 
+ *
  * The custom implementation gives better performance than the function
  * provided by pulse audio, maybe due to the timeout set in prepare ?
  */
@@ -150,11 +150,11 @@ static void pulse_get_server_info_cb(pa_context *c, const pa_server_info *i,
 {
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
-	
+
 	const pa_sample_spec *spec = &i->sample_spec;
 	data->format = spec->format;
 	data->samples_per_sec = spec->rate;
-	
+
 	blog(LOG_DEBUG, "pulse-input: Default format: %s, %u Hz, %u channels",
 		pa_sample_format_to_string(spec->format),
 		spec->rate,
@@ -169,7 +169,7 @@ static int pulse_get_server_info(struct pulse_data *data)
 {
 	pa_server_info_cb_t cb = pulse_get_server_info_cb;
 	pa_operation *op = pa_context_get_server_info(data->context, cb, data);
-	
+
 	for(;;) {
 		pulse_iterate(data);
 		pa_operation_state_t state = pa_operation_get_state(op);
@@ -178,13 +178,13 @@ static int pulse_get_server_info(struct pulse_data *data)
 			break;
 		}
 	}
-	
+
 	return 0;
 }
 
 /*
  * Create a new pulse audio main loop and connect to the server
- * 
+ *
  * Returns a negative value on error
  */
 static int pulse_connect(struct pulse_data *data)
@@ -194,14 +194,14 @@ static int pulse_connect(struct pulse_data *data)
 		blog(LOG_ERROR, "pulse-input: Unable to create main loop");
 		return -1;
 	}
-	
+
 	data->context = pa_context_new_with_proplist(
 		pa_mainloop_get_api(data->mainloop), "OBS Studio", data->props);
 	if (!data->context) {
 		blog(LOG_ERROR, "pulse-input: Unable to create context");
 		return -1;
 	}
-	
+
 	int status = pa_context_connect(
 		data->context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
 	if (status < 0) {
@@ -209,7 +209,7 @@ static int pulse_connect(struct pulse_data *data)
 		     status);
 		return -1;
 	}
-	
+
 	// wait until connected
 	for (;;) {
 		pulse_iterate(data);
@@ -223,7 +223,7 @@ static int pulse_connect(struct pulse_data *data)
 			return -1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -236,14 +236,14 @@ static void pulse_disconnect(struct pulse_data *data)
 		pa_context_disconnect(data->context);
 		pa_context_unref(data->context);
 	}
-	
+
 	if (data->mainloop)
 		pa_mainloop_free(data->mainloop);
 }
 
 /*
  * Create a new pulse audio stream and connect to it
- * 
+ *
  * Return a negative value on error
  */
 static int pulse_connect_stream(struct pulse_data *data)
@@ -252,23 +252,23 @@ static int pulse_connect_stream(struct pulse_data *data)
 	spec.format = data->format;
 	spec.rate = data->samples_per_sec;
 	spec.channels = get_audio_channels(data->speakers);
-	
+
 	if (!pa_sample_spec_valid(&spec)) {
 		blog(LOG_ERROR, "pulse-input: Sample spec is not valid");
 		return -1;
 	}
-	
+
 	data->bytes_per_frame = pa_frame_size(&spec);
 	blog(LOG_DEBUG, "pulse-input: %u bytes per frame",
 	     (unsigned int) data->bytes_per_frame);
-	
+
 	pa_buffer_attr attr;
 	attr.fragsize = get_buffer_size(data, 250);
 	attr.maxlength = (uint32_t) -1;
 	attr.minreq = (uint32_t) -1;
 	attr.prebuf = (uint32_t) -1;
 	attr.tlength = (uint32_t) -1;
-	
+
 	data->stream = pa_stream_new_with_proplist(data->context,
 		obs_source_getname(data->source), &spec, NULL, data->props);
 	if (!data->stream) {
@@ -283,7 +283,7 @@ static int pulse_connect_stream(struct pulse_data *data)
 		blog(LOG_ERROR, "pulse-input: Unable to connect to stream");
 		return -1;
 	}
-	
+
 	for (;;) {
 		pulse_iterate(data);
 		pa_stream_state_t state = pa_stream_get_state(data->stream);
@@ -296,7 +296,7 @@ static int pulse_connect_stream(struct pulse_data *data)
 			return -1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -320,65 +320,65 @@ static int pulse_skip(struct pulse_data *data)
 	const void *frames;
 	size_t bytes;
 	uint64_t pa_time;
-	
+
 	while (os_event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
 		pa_stream_peek(data->stream, &frames, &bytes);
-		
+
 		if (!bytes)
 			continue;
 		if (!frames || pa_stream_get_time(data->stream, &pa_time) < 0) {
 			pa_stream_drop(data->stream);
 			continue;
 		}
-		
+
 		if (skip == 1 && pa_time)
 			skip = pa_time;
 		if (skip + pulse_start_delay < pa_time)
 			return 0;
-		
+
 		pa_stream_drop(data->stream);
 	}
-	
+
 	return -1;
 }
 
 /*
  * Worker thread to get audio data
- * 
+ *
  * Will run until signaled
  */
 static void *pulse_thread(void *vptr)
 {
 	PULSE_DATA(vptr);
-	
+
 	if (pulse_connect(data) < 0)
 		return NULL;
 	if (pulse_get_server_info(data) < 0)
 		return NULL;
 	if (pulse_connect_stream(data) < 0)
 		return NULL;
-	
+
 	if (pulse_skip(data) < 0)
 		return NULL;
-	
+
 	blog(LOG_DEBUG, "pulse-input: Start recording");
-	
+
 	const void *frames;
 	size_t bytes;
 	uint64_t pa_time;
 	int64_t pa_latency;
-	
+
 	struct source_audio out;
 	out.speakers = data->speakers;
 	out.samples_per_sec = data->samples_per_sec;
 	out.format = pulse_to_obs_audio_format(data->format);
-	
+
 	while (os_event_try(data->event) == EAGAIN) {
 		pulse_iterate(data);
-		
+
 		pa_stream_peek(data->stream, &frames, &bytes);
-		
+
 		// check if we got data
 		if (!bytes)
 			continue;
@@ -389,27 +389,27 @@ static void *pulse_thread(void *vptr)
 			pa_stream_drop(data->stream);
 			continue;
 		}
-		
+
 		if (pa_stream_get_time(data->stream, &pa_time) < 0) {
 			blog(LOG_ERROR,
 				"pulse-input: Failed to get timing info !");
 			pa_stream_drop(data->stream);
 			continue;
 		}
-		
+
 		pulse_get_stream_latency(data->stream, &pa_latency);
-		
+
 		out.data[0] = (uint8_t *) frames;
 		out.frames = frames_to_bytes(data, bytes);
 		out.timestamp = (pa_time - pa_latency) * 1000;
 		obs_source_output_audio(data->source, &out);
-		
+
 		pa_stream_drop(data->stream);
 	}
-	
+
 	pulse_diconnect_stream(data);
 	pulse_disconnect(data);
-	
+
 	return NULL;
 }
 
@@ -420,19 +420,19 @@ static pa_context *pulse_context_create(pa_threaded_mainloop *m)
 {
 	pa_context *c;
 	pa_proplist *p;
-	
+
 	p = pa_proplist_new();
 	pa_proplist_sets(p, PA_PROP_APPLICATION_NAME, "OBS Studio");
 	pa_proplist_sets(p, PA_PROP_APPLICATION_ICON_NAME, "application-exit");
 	pa_proplist_sets(p, PA_PROP_MEDIA_ROLE, "production");
-	
+
 	pa_threaded_mainloop_lock(m);
 	c = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(m),
 		"OBS Studio", p);
 	pa_threaded_mainloop_unlock(m);
-	
+
 	pa_proplist_free(p);
-	
+
 	return c;
 }
 
@@ -444,7 +444,7 @@ static void pulse_context_state_changed(pa_context *c, void *userdata)
 	struct pulse_context_change *ctx =
 		(struct pulse_context_change *) userdata;
 	ctx->state = pa_context_get_state(c);
-	
+
 	pa_threaded_mainloop_signal(ctx->mainloop, 0);
 }
 
@@ -457,11 +457,11 @@ static int pulse_context_connect(pa_threaded_mainloop *m, pa_context *c)
 	struct pulse_context_change ctx;
 	ctx.mainloop = m;
 	ctx.state = PA_CONTEXT_UNCONNECTED;
-	
+
 	pa_threaded_mainloop_lock(m);
 	pa_context_set_state_callback(c, pulse_context_state_changed,
 		(void *) &ctx);
-	
+
 	status = pa_context_connect(c, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
 	if (status < 0) {
 		blog(LOG_ERROR, "pulse-input: Unable to connect! Status: %d",
@@ -482,7 +482,7 @@ static int pulse_context_connect(pa_threaded_mainloop *m, pa_context *c)
 			pa_threaded_mainloop_wait(m);
 		}
 	}
-	
+
 	pa_threaded_mainloop_unlock(m);
 	return status;
 }
@@ -494,20 +494,20 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	
+
 	if (eol != 0)
 		return;
-	
+
 	struct pulse_enumerate *e = (struct pulse_enumerate *) userdata;
-	
+
 	if ((e->input) ^ (i->monitor_of_sink == PA_INVALID_INDEX))
 		return;
-	
+
 	blog(LOG_DEBUG, "pulse-input: Got source #%u '%s'",
 	     i->index, i->description);
-	
+
 	obs_property_list_add_item(e->devices, i->description, i->name);
-	
+
 	pa_threaded_mainloop_signal(e->mainloop, 0);
 }
 
@@ -520,27 +520,27 @@ static void pulse_enumerate_devices(obs_properties_t props, bool input)
 	pa_operation *op;
 	pa_threaded_mainloop *m = pa_threaded_mainloop_new();
 	struct pulse_enumerate e;
-	
+
 	e.mainloop = m;
 	e.devices = obs_properties_add_list(props, "device_id", "Device",
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	e.input = input;
-	
+
 	pa_threaded_mainloop_start(m);
 	c = pulse_context_create(m);
-	
+
 	if (pulse_context_connect(m, c) < 0)
 		goto fail;
-	
+
 	pa_threaded_mainloop_lock(m);
-	
+
 	op = pa_context_get_source_info_list(c, pulse_source_info, (void *) &e);
 	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
 		pa_threaded_mainloop_wait(m);
 	pa_operation_unref(op);
-	
+
 	pa_threaded_mainloop_unlock(m);
-	
+
 	pa_context_disconnect(c);
 fail:
 	pa_context_unref(c);
@@ -554,13 +554,13 @@ fail:
 static obs_properties_t pulse_properties(const char *locale, bool input)
 {
 	UNUSED_PARAMETER(locale);
-	
+
 	blog(LOG_DEBUG, "pulse-input: properties requested !");
-	
+
 	obs_properties_t props = obs_properties_create();
-	
+
 	pulse_enumerate_devices(props, input);
-	
+
 	return props;
 }
 
@@ -603,22 +603,22 @@ static const char *pulse_output_getname(const char *locale)
 static void pulse_destroy(void *vptr)
 {
 	PULSE_DATA(vptr);
-	
+
 	if (!data)
 		return;
-	
+
 	if (data->thread) {
 		void *ret;
 		os_event_signal(data->event);
 		pthread_join(data->thread, &ret);
 	}
-	
+
 	os_event_destroy(data->event);
-	
+
 	pa_proplist_free(data->props);
-	
+
 	blog(LOG_DEBUG, "pulse-input: Input destroyed");
-	
+
 	bfree(data);
 }
 
@@ -628,16 +628,16 @@ static void pulse_destroy(void *vptr)
 static void *pulse_create(obs_data_t settings, obs_source_t source)
 {
 	UNUSED_PARAMETER(settings);
-	
+
 	struct pulse_data *data = bmalloc(sizeof(struct pulse_data));
 	memset(data, 0, sizeof(struct pulse_data));
-	
+
 	data->source = source;
 	data->speakers = SPEAKERS_STEREO;
-	
+
 	blog(LOG_DEBUG, "pulse-input: obs wants '%s'",
 		obs_data_getstring(settings, "device_id"));
-	
+
 	/* TODO: use obs-studio icon */
 	data->props = pa_proplist_new();
 	pa_proplist_sets(data->props, PA_PROP_APPLICATION_NAME,
@@ -646,14 +646,14 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 		"application-exit");
 	pa_proplist_sets(data->props, PA_PROP_MEDIA_ROLE,
 		"production");
-	
+
 	if (os_event_init(&data->event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&data->thread, NULL, pulse_thread, data) != 0)
 		goto fail;
-	
+
 	return data;
-	
+
 fail:
 	pulse_destroy(data);
 	return NULL;

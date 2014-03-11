@@ -6,7 +6,7 @@ set(linux-pulseaudio_SOURCES
 	linux-pulseaudio.c
 	pulse-input.c
 )
-    
+
 add_library(linux-pulseaudio MODULE
 	${linux-pulseaudio_SOURCES}
 )

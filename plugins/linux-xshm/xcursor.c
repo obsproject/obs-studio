@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /*
  * Get pixel data for the cursor
- * 
+ *
  * XFixes has the data defined as unsigned long, so we can not use memcpy.
  * Theres a lot of talk about this in other implementation and they tend to
  * be really complicated, but this naive approach seems to work fine ...
@@ -31,17 +31,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
 	uint_fast32_t size = xc->width * xc->height;
 	uint32_t *pixels = bmalloc(size * sizeof(uint32_t));
-	
+
 	for (uint_fast32_t i = 0; i < size; ++i)
 		pixels[i] = (uint32_t) xc->pixels[i];
-	
+
 	return pixels;
 }
 
 /*
  * Create the cursor texture, either by updating if the new cursor has the same
  * size or by creating a new texture if the size is different
- */ 
+ */
 static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 	uint32_t *pixels = xcursor_pixels(xc);
 
@@ -53,13 +53,13 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 	} else {
 		if (data->tex)
 			texture_destroy(data->tex);
-			
+
 		data->tex = gs_create_texture(xc->width, xc->height,
 			GS_RGBA, 1, (const void **) &pixels, GS_DYNAMIC);
 	}
-	
+
 	bfree(pixels);
-	
+
 	data->last_serial = xc->cursor_serial;
 	data->last_width = xc->width;
 	data->last_height = xc->height;
@@ -68,10 +68,10 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 xcursor_t *xcursor_init(Display *dpy) {
 	xcursor_t *data = bmalloc(sizeof(xcursor_t));
 	memset(data, 0, sizeof(xcursor_t));
-	
+
 	data->dpy = dpy;
 	xcursor_tick(data);
-	
+
 	return data;
 }
 
@@ -83,12 +83,12 @@ void xcursor_destroy(xcursor_t *data) {
 
 void xcursor_tick(xcursor_t *data) {
 	XFixesCursorImage *xc = XFixesGetCursorImage(data->dpy);
-	
+
 	if (!data->tex || data->last_serial != xc->cursor_serial)
 		xcursor_create(data, xc);
 	data->pos_x = -1.0 * (xc->x - xc->xhot);
 	data->pos_y = -1.0 * (xc->y - xc->yhot);
-	
+
 	XFree(xc);
 }
 
@@ -96,17 +96,17 @@ void xcursor_render(xcursor_t *data) {
 	/* TODO: why do i need effects ? */
 	effect_t effect  = gs_geteffect();
 	eparam_t image = effect_getparambyname(effect, "image");
-	
+
 	effect_settexture(effect, image, data->tex);
-	
+
 	gs_matrix_push();
-	
+
 	gs_matrix_translate3f(data->pos_x, data->pos_y, 0);
-	
+
 	gs_enable_blending(True);
 	gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	gs_draw_sprite(data->tex, 0, 0, 0);
 	gs_enable_blending(False);
-	
+
 	gs_matrix_pop();
 }

@@ -35,7 +35,7 @@ typedef struct {
 
 /**
  * Initializes the xcursor object
- * 
+ *
  * This needs to be executed within a valid render context
  */
 xcursor_t *xcursor_init(Display *dpy);
@@ -47,14 +47,14 @@ void xcursor_destroy(xcursor_t *data);
 
 /**
  * Update the cursor texture
- * 
+ *
  * This needs to be executed within a valid render context
  */
 void xcursor_tick(xcursor_t *data);
 
 /**
  * Draw the cursor
- * 
+ *
  * This needs to be executed within a valid render context
  */
 void xcursor_render(xcursor_t *data);

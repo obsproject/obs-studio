@@ -10,7 +10,7 @@ set(linux-xshm_SOURCES
 set(linux-xshm_HEADERS
 	xcursor.h
 )
-    
+
 add_library(linux-xshm MODULE
 	${linux-xshm_SOURCES}
 	${linux-xshm_HEADERS}
