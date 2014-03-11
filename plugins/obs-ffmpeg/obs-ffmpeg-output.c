@@ -519,7 +519,7 @@ static void receive_video(void *param, const struct video_data *frame)
 	struct ffmpeg_data   *data   = &output->ff_data;
 	AVCodecContext *context = data->video->codec;
 	AVPacket packet = {0};
-	int ret, got_packet;
+	int ret = 0, got_packet;
 
 	av_init_packet(&packet);
 
