@@ -217,7 +217,7 @@ int  os_sem_init(os_sem_t *sem, int value)
 void os_sem_destroy(os_sem_t sem)
 {
 	if (sem) {
-		semaphore_destroy(&sem->sem);
+		sem_destroy(&sem->sem);
 		bfree(sem);
 	}
 }
