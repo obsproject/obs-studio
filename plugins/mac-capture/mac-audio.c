@@ -43,7 +43,7 @@ struct coreaudio_data {
 	enum speaker_layout speakers;
 
 	pthread_t           reconnect_thread;
-	event_t             exit_event;
+	os_event_t          exit_event;
 	volatile bool       reconnecting;
 	unsigned long       retry_time;
 
@@ -326,7 +326,7 @@ static void *reconnect_thread(void *param)
 
 	ca->reconnecting = true;
 
-	while (event_timedwait(ca->exit_event, ca->retry_time) == ETIMEDOUT) {
+	while (os_event_timedwait(ca->exit_event, ca->retry_time) == ETIMEDOUT) {
 		if (coreaudio_init(ca))
 			break;
 	}
@@ -648,7 +648,7 @@ static void coreaudio_destroy(void *data)
 
 	if (ca) {
 		if (ca->reconnecting) {
-			event_signal(ca->exit_event);
+			os_event_signal(ca->exit_event);
 			pthread_join(ca->reconnect_thread, NULL);
 		}
 
@@ -657,7 +657,7 @@ static void coreaudio_destroy(void *data)
 		if (ca->unit)
 			AudioComponentInstanceDispose(ca->unit);
 
-		event_destroy(ca->exit_event);
+		os_event_destroy(ca->exit_event);
 		bfree(ca->device_name);
 		bfree(ca->device_uid);
 		bfree(ca);
@@ -674,7 +674,7 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 {
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
 
-	if (event_init(&ca->exit_event, EVENT_TYPE_MANUAL) != 0) {
+	if (os_event_init(&ca->exit_event, OS_EVENT_TYPE_MANUAL) != 0) {
 		blog(LOG_WARNING, "[coreaudio_create] failed to create "
 		                  "semephore: %d", errno);
 		bfree(ca);

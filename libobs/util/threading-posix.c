@@ -17,6 +17,8 @@
 #ifdef __APPLE__
 #include <sys/time.h>
 #include <mach/semaphore.h>
+#include <mach/task.h>
+#include <mach/mach_init.h>
 #else
 #include <semaphore.h>
 #endif
