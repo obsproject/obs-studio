@@ -360,10 +360,13 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 		close_video(data);
 	if (data->audio)
 		close_audio(data);
-	if ((data->output->oformat->flags & AVFMT_NOFILE) == 0)
-		avio_close(data->output->pb);
 
-	avformat_free_context(data->output);
+	if (data->output) {
+		if ((data->output->oformat->flags & AVFMT_NOFILE) == 0)
+			avio_close(data->output->pb);
+
+		avformat_free_context(data->output);
+	}
 
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
