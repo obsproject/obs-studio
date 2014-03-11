@@ -705,11 +705,9 @@ static bool process_packet(struct ffmpeg_output *output)
 
 	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
 	if (ret < 0) {
+		av_free_packet(&packet);
 		blog(LOG_WARNING, "receive_audio: Error writing packet: %s",
 				av_err2str(ret));
-
-		pthread_detach(output->write_thread);
-		output->write_thread_active = false;
 		return false;
 	}
 
@@ -726,6 +724,9 @@ static void *write_thread(void *data)
 			break;
 
 		if (!process_packet(output)) {
+			pthread_detach(output->write_thread);
+			output->write_thread_active = false;
+
 			ffmpeg_output_stop(output);
 			break;
 		}
@@ -832,10 +833,14 @@ static void ffmpeg_output_stop(void *data)
 			output->write_thread_active = false;
 		}
 
+		pthread_mutex_lock(&output->write_mutex);
+
 		for (size_t i = 0; i < output->packets.num; i++)
 			av_free_packet(output->packets.array+i);
-
 		da_free(output->packets);
+
+		pthread_mutex_lock(&output->write_mutex);
+
 		ffmpeg_data_free(&output->ff_data);
 	}
 }
