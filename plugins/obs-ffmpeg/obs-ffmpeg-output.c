@@ -839,7 +839,7 @@ static void ffmpeg_output_stop(void *data)
 			av_free_packet(output->packets.array+i);
 		da_free(output->packets);
 
-		pthread_mutex_lock(&output->write_mutex);
+		pthread_mutex_unlock(&output->write_mutex);
 
 		ffmpeg_data_free(&output->ff_data);
 	}
