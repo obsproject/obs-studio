@@ -80,7 +80,7 @@ struct audio_output {
 	size_t                     planes;
 
 	pthread_t                  thread;
-	event_t                    stop_event;
+	os_event_t                 stop_event;
 
 	DARRAY(uint8_t)            mix_buffers[MAX_AV_PLANES];
 
@@ -437,7 +437,7 @@ static void *audio_thread(void *param)
 	uint64_t prev_time = os_gettime_ns() - buffer_time;
 	uint64_t audio_time;
 
-	while (event_try(audio->stop_event) == EAGAIN) {
+	while (os_event_try(audio->stop_event) == EAGAIN) {
 		os_sleep_ms(AUDIO_WAIT_TIME);
 
 		pthread_mutex_lock(&audio->line_mutex);
@@ -590,7 +590,7 @@ int audio_output_open(audio_t *audio, struct audio_output_info *info)
 		goto fail;
 	if (pthread_mutex_init(&out->input_mutex, NULL) != 0)
 		goto fail;
-	if (event_init(&out->stop_event, EVENT_TYPE_MANUAL) != 0)
+	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
 		goto fail;
@@ -613,7 +613,7 @@ void audio_output_close(audio_t audio)
 		return;
 
 	if (audio->initialized) {
-		event_signal(audio->stop_event);
+		os_event_signal(audio->stop_event);
 		pthread_join(audio->thread, &thread_ret);
 	}
 
@@ -631,7 +631,7 @@ void audio_output_close(audio_t audio)
 		da_free(audio->mix_buffers[i]);
 
 	da_free(audio->inputs);
-	event_destroy(audio->stop_event);
+	os_event_destroy(audio->stop_event);
 	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);
 }

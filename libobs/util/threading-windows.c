@@ -20,27 +20,31 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-struct event_data {
+struct os_event_data {
 	HANDLE handle;
 };
 
-int event_init(event_t *event, enum event_type type)
+struct os_sem_data {
+	HANDLE handle;
+};
+
+int os_event_init(os_event_t *event, enum os_event_type type)
 {
 	HANDLE handle;
-	struct event_data *data;
+	struct os_event_data *data;
 
-	handle = CreateEvent(NULL, (type == EVENT_TYPE_MANUAL), FALSE, NULL);
+	handle = CreateEvent(NULL, (type == OS_EVENT_TYPE_MANUAL), FALSE, NULL);
 	if (!handle)
 		return -1;
 
-	data = bmalloc(sizeof(struct event_data));
+	data = bmalloc(sizeof(struct os_event_data));
 	data->handle = handle;
 
 	*event = data;
 	return 0;
 }
 
-void event_destroy(event_t event)
+void os_event_destroy(os_event_t event)
 {
 	if (event) {
 		CloseHandle(event->handle);
@@ -48,7 +52,7 @@ void event_destroy(event_t event)
 	}
 }
 
-int event_wait(event_t event)
+int os_event_wait(os_event_t event)
 {
 	DWORD code;
 
@@ -62,7 +66,7 @@ int event_wait(event_t event)
 	return 0;
 }
 
-int event_timedwait(event_t event, unsigned long milliseconds)
+int os_event_timedwait(os_event_t event, unsigned long milliseconds)
 {
 	DWORD code;
 
@@ -78,7 +82,7 @@ int event_timedwait(event_t event, unsigned long milliseconds)
 	return 0;
 }
 
-int event_try(event_t event)
+int os_event_try(os_event_t event)
 {
 	DWORD code;
 
@@ -94,7 +98,7 @@ int event_try(event_t event)
 	return 0;
 }
 
-int event_signal(event_t event)
+int os_event_signal(os_event_t event)
 {
 	if (!event)
 		return EINVAL;
@@ -105,10 +109,44 @@ int event_signal(event_t event)
 	return 0;
 }
 
-void event_reset(event_t event)
+void os_event_reset(os_event_t event)
 {
 	if (!event)
 		return;
 
 	ResetEvent(event->handle);
+}
+
+int  os_sem_init(os_sem_t *sem, int value)
+{
+	HANDLE handle = CreateSemaphore(NULL, (LONG)value, 0x7FFFFFFF, NULL);
+	if (!handle)
+		return -1;
+
+	*sem = bzalloc(sizeof(struct os_sem_data));
+	(*sem)->handle = handle;
+	return 0;
+}
+
+void os_sem_destroy(os_sem_t sem)
+{
+	if (sem) {
+		CloseHandle(sem->handle);
+		bfree(sem);
+	}
+}
+
+int  os_sem_post(os_sem_t sem)
+{
+	if (!sem) return -1;
+	return ReleaseSemaphore(sem->handle, 1, NULL) ? 0 : -1;
+}
+
+int  os_sem_wait(os_sem_t sem)
+{
+	DWORD ret;
+
+	if (!sem) return -1;
+	ret = WaitForSingleObject(sem->handle, INFINITE);
+	return (ret == WAIT_OBJECT_0) ? 0 : -1;
 }

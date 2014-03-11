@@ -16,6 +16,9 @@
 
 #ifdef __APPLE__
 #include <sys/time.h>
+#include <mach/semaphore.h>
+#else
+#include <semaphore.h>
 #endif
 
 #include "bmem.h"
@@ -45,7 +48,7 @@ int event_init(event_t *event, enum event_type type)
 		return code;
 	}
 
-	data->manual = (type == EVENT_TYPE_MANUAL);
+	data->manual = (type == OS_EVENT_TYPE_MANUAL);
 	data->signalled = false;
 	*event = data;
 
@@ -149,3 +152,84 @@ void event_reset(event_t event)
 	event->signalled = false;
 	pthread_mutex_unlock(&event->mutex);
 }
+
+#ifdef __APPLE__
+
+struct os_sem_data {
+	semaphore_t sem;
+	task_t      task;
+};
+
+int  os_sem_init(os_sem_t *sem, int value)
+{
+	semaphore_t new_sem;
+	task_t      task = mach_task_self();
+
+	if (semaphore_create(task, &new_sem, 0, value) != KERN_SUCCESS)
+		return -1;
+
+	*sem = bzalloc(sizeof(struct os_sem_data));
+	(*sem)->sem  = new_sem;
+	(*sem)->task = task;
+	return 0;
+}
+
+void os_sem_destroy(os_sem_t sem)
+{
+	if (sem) {
+		semaphore_destroy(sem->task, sem->sem);
+		bfree(sem);
+	}
+}
+
+int  os_sem_post(os_sem_t sem)
+{
+	if (!sem) return -1;
+	return (semaphore_signal(sem->sem) == KERN_SUCCESS) ? 0 : -1;
+}
+
+int  os_sem_wait(os_sem_t sem)
+{
+	if (!sem) return -1;
+	return (semaphore_wait(sem->sem) == KERN_SUCCESS) ? 0 : -1;
+}
+
+#else
+
+struct os_sem_data {
+	sem_t sem;
+};
+
+int  os_sem_init(os_sem_t *sem, int value)
+{
+	sem_t new_sem;
+	int ret = sem_init(&new_sem, 0, value);
+	if (ret != 0)
+		return ret;
+
+	*sem = bzalloc(sizeof(struct os_sem_data));
+	(*sem)->sem = new_sem;
+	return 0;
+}
+
+void os_sem_destroy(os_sem_t sem)
+{
+	if (sem) {
+		semaphore_destroy(&sem->sem);
+		bfree(sem);
+	}
+}
+
+int  os_sem_post(os_sem_t sem)
+{
+	if (!sem) return -1;
+	return sem_post(&sem->sem);
+}
+
+int  os_sem_wait(os_sem_t sem)
+{
+	if (!sem) return -1;
+	return sem_wait(&sem->sem);
+}
+
+#endif

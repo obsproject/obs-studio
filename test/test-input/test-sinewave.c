@@ -7,7 +7,7 @@
 struct sinewave_data {
 	bool         initialized_thread;
 	pthread_t    thread;
-	event_t      event;
+	os_event_t   event;
 	obs_source_t source;
 };
 
@@ -28,7 +28,7 @@ static void *sinewave_thread(void *pdata)
 	double cos_val = 0.0;
 	uint8_t bytes[480];
 
-	while (event_try(swd->event) == EAGAIN) {
+	while (os_event_try(swd->event) == EAGAIN) {
 		if (!os_sleepto_ns(last_time += 10000000))
 			last_time = os_gettime_ns();
 
@@ -71,11 +71,11 @@ static void sinewave_destroy(void *data)
 	if (swd) {
 		if (swd->initialized_thread) {
 			void *ret;
-			event_signal(swd->event);
+			os_event_signal(swd->event);
 			pthread_join(swd->thread, &ret);
 		}
 
-		event_destroy(swd->event);
+		os_event_destroy(swd->event);
 		bfree(swd);
 	}
 }
@@ -86,7 +86,7 @@ static void *sinewave_create(obs_data_t settings,
 	struct sinewave_data *swd = bzalloc(sizeof(struct sinewave_data));
 	swd->source = source;
 
-	if (event_init(&swd->event, EVENT_TYPE_MANUAL) != 0)
+	if (os_event_init(&swd->event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&swd->thread, NULL, sinewave_thread, swd) != 0)
 		goto fail;
