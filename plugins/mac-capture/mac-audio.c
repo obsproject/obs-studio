@@ -82,7 +82,7 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 	};
 
 	if (!ca->device_uid)
-		ca->device_uid = bstrdup("");
+		ca->device_uid = bstrdup("default");
 
 	/* have to do this because mac output devices don't actually exist */
 	if (astrcmpi(ca->device_uid, "default") == 0) {
@@ -690,11 +690,8 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 	ca->source     = source;
 	ca->input      = input;
 
-	if (!ca->device_uid) {
-		blog(LOG_ERROR, "[coreaudio_create] null device id");
-		bfree(ca);
-		return NULL;
-	}
+	if (!ca->device_uid)
+		ca->device_uid = bstrdup("default");
 
 	coreaudio_try_init(ca);
 	return ca;
