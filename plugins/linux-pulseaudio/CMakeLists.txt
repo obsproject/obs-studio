@@ -10,6 +10,7 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 set(linux-pulseaudio_SOURCES
 	linux-pulseaudio.c
+	pulse-wrapper.c
 	pulse-input.c
 )
 
