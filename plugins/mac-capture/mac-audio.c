@@ -81,6 +81,9 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 		.mElement = kAudioObjectPropertyElementMaster
 	};
 
+	if (!ca->device_uid)
+		ca->device_uid = bstrdup("");
+
 	/* have to do this because mac output devices don't actually exist */
 	if (astrcmpi(ca->device_uid, "default") == 0) {
 		if (ca->input) {
@@ -675,15 +678,23 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
 
 	if (os_event_init(&ca->exit_event, OS_EVENT_TYPE_MANUAL) != 0) {
-		blog(LOG_WARNING, "[coreaudio_create] failed to create "
-		                  "semephore: %d", errno);
+		blog(LOG_ERROR, "[coreaudio_create] failed to create "
+		                "semephore: %d", errno);
 		bfree(ca);
 		return NULL;
 	}
 
+	coreaudio_defaults(settings);
+
 	ca->device_uid = bstrdup(obs_data_getstring(settings, "device_id"));
 	ca->source     = source;
 	ca->input      = input;
+
+	if (!ca->device_uid) {
+		blog(LOG_ERROR, "[coreaudio_create] null device id");
+		bfree(ca);
+		return NULL;
+	}
 
 	coreaudio_try_init(ca);
 	return ca;
