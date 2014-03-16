@@ -34,7 +34,7 @@ struct video_input {
 	struct video_frame        frame[MAX_CONVERT_BUFFERS];
 	int                       cur_frame;
 
-	void (*callback)(void *param, const struct video_data *frame);
+	void (*callback)(void *param, struct video_data *frame);
 	void *param;
 };
 
@@ -91,7 +91,8 @@ static inline bool scale_video_output(struct video_input *input,
 
 		success = video_scaler_scale(input->scaler,
 				frame->data, frame->linesize,
-				data->data, data->linesize);
+				(const uint8_t * const*)data->data,
+				data->linesize);
 
 		if (success) {
 			for (size_t i = 0; i < MAX_AV_PLANES; i++) {
@@ -209,7 +210,7 @@ void video_output_close(video_t video)
 }
 
 static size_t video_get_input_idx(video_t video,
-		void (*callback)(void *param, const struct video_data *frame),
+		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
@@ -259,7 +260,7 @@ static inline bool video_input_init(struct video_input *input,
 
 bool video_output_connect(video_t video,
 		const struct video_scale_info *conversion,
-		void (*callback)(void *param, const struct video_data *frame),
+		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
 	bool success = false;
@@ -300,7 +301,7 @@ bool video_output_connect(video_t video,
 }
 
 void video_output_disconnect(video_t video,
-		void (*callback)(void *param, const struct video_data *frame),
+		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
 	if (!video || !callback)

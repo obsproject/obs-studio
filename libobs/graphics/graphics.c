@@ -1805,8 +1805,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return graphics->exports.stagesurface_getcolorformat(stagesurf);
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
-		uint32_t *linesize)
+bool stagesurface_map(stagesurf_t stagesurf, uint8_t **data, uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return false;

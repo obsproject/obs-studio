@@ -34,7 +34,7 @@ struct audio_input {
 	struct audio_convert_info conversion;
 	audio_resampler_t         resampler;
 
-	void (*callback)(void *param, const struct audio_data *data);
+	void (*callback)(void *param, struct audio_data *data);
 	void *param;
 };
 
@@ -337,7 +337,8 @@ static bool resample_audio_output(struct audio_input *input,
 
 		success = audio_resampler_resample(input->resampler,
 				output, &frames, &offset,
-				data->data, data->frames);
+				(const uint8_t *const *)data->data,
+				data->frames);
 
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
 			data->data[i] = output[i];
@@ -455,7 +456,7 @@ static void *audio_thread(void *param)
 /* ------------------------------------------------------------------------- */
 
 static size_t audio_get_input_idx(audio_t video,
-		void (*callback)(void *param, const struct audio_data *data),
+		void (*callback)(void *param, struct audio_data *data),
 		void *param)
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
@@ -500,7 +501,7 @@ static inline bool audio_input_init(struct audio_input *input,
 
 bool audio_output_connect(audio_t audio,
 		const struct audio_convert_info *conversion,
-		void (*callback)(void *param, const struct audio_data *data),
+		void (*callback)(void *param, struct audio_data *data),
 		void *param)
 {
 	bool success = false;
@@ -542,7 +543,7 @@ bool audio_output_connect(audio_t audio,
 }
 
 void audio_output_disconnect(audio_t audio,
-		void (*callback)(void *param, const struct audio_data *data),
+		void (*callback)(void *param, struct audio_data *data),
 		void *param)
 {
 	if (!audio) return;

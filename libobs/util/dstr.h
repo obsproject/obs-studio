@@ -51,6 +51,9 @@ EXPORT char *astrstri(char *str, const char *find);
 EXPORT char *strdepad(char *str);
 EXPORT wchar_t *wcsdepad(wchar_t *str);
 
+EXPORT char **strlist_split(const char *str, char split_ch, bool include_empty);
+EXPORT void strlist_free(char **strlist);
+
 static inline void dstr_init(struct dstr *dst);
 static inline void dstr_init_move(struct dstr *dst, struct dstr *src);
 static inline void dstr_init_move_array(struct dstr *dst, char *str);

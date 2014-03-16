@@ -158,7 +158,7 @@ struct gs_exports {
 	enum gs_color_format (*stagesurface_getcolorformat)(
 			stagesurf_t stagesurf);
 	bool     (*stagesurface_map)(stagesurf_t stagesurf,
-			const uint8_t **data, uint32_t *linesize);
+			uint8_t **data, uint32_t *linesize);
 	void     (*stagesurface_unmap)(stagesurf_t stagesurf);
 
 	void (*zstencil_destroy)(zstencil_t zstencil);

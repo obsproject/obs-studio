@@ -1552,8 +1552,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return stagesurf->format;
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
-		uint32_t *linesize)
+bool stagesurface_map(stagesurf_t stagesurf, uint8_t **data, uint32_t *linesize)
 {
 	D3D11_MAPPED_SUBRESOURCE map;
 	if (FAILED(stagesurf->device->context->Map(stagesurf->texture, 0,

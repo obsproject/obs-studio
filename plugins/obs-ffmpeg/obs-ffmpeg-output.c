@@ -513,7 +513,7 @@ static inline void copy_data(AVPicture *pic, const struct video_data *frame,
 	}
 }
 
-static void receive_video(void *param, const struct video_data *frame)
+static void receive_video(void *param, struct video_data *frame)
 {
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data   *data   = &output->ff_data;
@@ -527,7 +527,7 @@ static void receive_video(void *param, const struct video_data *frame)
 		data->start_timestamp = frame->timestamp;
 
 	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
-		sws_scale(data->swscale, frame->data,
+		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 				(const int*)frame->linesize,
 				0, context->height, data->dst_picture.data,
 				data->dst_picture.linesize);
@@ -599,7 +599,7 @@ static inline void encode_audio(struct ffmpeg_output *output,
 			context->sample_fmt, data->samples[0],
 			(int)total_size, 1);
 	if (ret < 0) {
-		blog(LOG_WARNING, "receive_audio: avcodec_fill_audio_frame "
+		blog(LOG_WARNING, "encode_audio: avcodec_fill_audio_frame "
 		                  "failed: %s", av_err2str(ret));
 		return;
 	}
@@ -609,7 +609,7 @@ static inline void encode_audio(struct ffmpeg_output *output,
 	ret = avcodec_encode_audio2(context, &packet, data->aframe,
 			&got_packet);
 	if (ret < 0) {
-		blog(LOG_WARNING, "receive_audio: Error encoding audio: %s",
+		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 				av_err2str(ret));
 		return;
 	}
@@ -655,7 +655,7 @@ static bool prepare_audio(struct ffmpeg_data *data,
 	return true;
 }
 
-static void receive_audio(void *param, const struct audio_data *frame)
+static void receive_audio(void *param, struct audio_data *frame)
 {
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data   *data   = &output->ff_data;

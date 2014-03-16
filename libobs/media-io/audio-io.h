@@ -63,7 +63,7 @@ enum speaker_layout {
 };
 
 struct audio_data {
-	const uint8_t       *data[MAX_AV_PLANES];
+	uint8_t             *data[MAX_AV_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;
 	float               volume;
@@ -174,10 +174,10 @@ EXPORT void audio_output_close(audio_t audio);
 
 EXPORT bool audio_output_connect(audio_t video,
 		const struct audio_convert_info *conversion,
-		void (*callback)(void *param, const struct audio_data *data),
+		void (*callback)(void *param, struct audio_data *data),
 		void *param);
 EXPORT void audio_output_disconnect(audio_t video,
-		void (*callback)(void *param, const struct audio_data *data),
+		void (*callback)(void *param, struct audio_data *data),
 		void *param);
 
 EXPORT bool audio_output_active(audio_t audio);

@@ -47,7 +47,7 @@ enum video_format {
 };
 
 struct video_data {
-	const uint8_t     *data[MAX_AV_PLANES];
+	uint8_t           *data[MAX_AV_PLANES];
 	uint32_t          linesize[MAX_AV_PLANES];
 	uint64_t          timestamp;
 };
@@ -82,24 +82,30 @@ static inline bool format_is_yuv(enum video_format format)
 }
 
 enum video_scale_type {
-	VIDEO_SCALE_POINT         = 0,
-	VIDEO_SCALE_FAST_BILINEAR = 1,
-	VIDEO_SCALE_DEFAULT       = VIDEO_SCALE_FAST_BILINEAR,
-	VIDEO_SCALE_BILINEAR      = 2,
-	VIDEO_SCALE_BICUBIC       = 3,
+	VIDEO_SCALE_DEFAULT,
+	VIDEO_SCALE_POINT,
+	VIDEO_SCALE_FAST_BILINEAR,
+	VIDEO_SCALE_BILINEAR,
+	VIDEO_SCALE_BICUBIC,
 };
 
 enum video_colorspace {
-	VIDEO_CS_601              = 0,
-	VIDEO_CS_DEFAULT          = VIDEO_CS_601,
-	VIDEO_CS_709              = 1,
+	VIDEO_CS_DEFAULT,
+	VIDEO_CS_601,
+	VIDEO_CS_709,
+};
+
+enum video_range_type {
+	VIDEO_RANGE_DEFAULT,
+	VIDEO_RANGE_PARTIAL,
+	VIDEO_RANGE_FULL
 };
 
 struct video_scale_info {
 	enum video_format     format;
 	uint32_t              width;
 	uint32_t              height;
-	bool                  full_range;
+	enum video_range_type range;
 	enum video_colorspace colorspace;
 };
 
@@ -112,10 +118,10 @@ EXPORT void video_output_close(video_t video);
 
 EXPORT bool video_output_connect(video_t video,
 		const struct video_scale_info *conversion,
-		void (*callback)(void *param, const struct video_data *frame),
+		void (*callback)(void *param, struct video_data *frame),
 		void *param);
 EXPORT void video_output_disconnect(video_t video,
-		void (*callback)(void *param, const struct video_data *frame),
+		void (*callback)(void *param, struct video_data *frame),
 		void *param);
 
 EXPORT bool video_output_active(video_t video);

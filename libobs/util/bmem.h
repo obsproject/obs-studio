@@ -66,7 +66,7 @@ static inline char *bstrdup_n(const char *str, size_t n)
 static inline wchar_t *bwstrdup_n(const wchar_t *str, size_t n)
 {
 	wchar_t *dup;
-	if (!str || !*str)
+	if (!str || (!*str && n > 0))
 		return NULL;
 
 	dup = (wchar_t*)bmemdup(str, (n+1) * sizeof(wchar_t));

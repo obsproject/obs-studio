@@ -22,8 +22,10 @@
 #include <ctype.h>
 #include <wchar.h>
 #include <wctype.h>
+
 #include "c99defs.h"
 #include "dstr.h"
+#include "darray.h"
 #include "bmem.h"
 #include "utf8.h"
 #include "lexer.h"
@@ -233,6 +235,53 @@ wchar_t *wcsdepad(wchar_t *str)
 	}
 
 	return str;
+}
+
+char **strlist_split(const char *str, char split_ch, bool include_empty)
+{
+	const char    *cur_str = str;
+	const char    *next_str;
+	const char    *new_str;
+	DARRAY(char*) list;
+
+	da_init(list);
+
+	if (str) {
+		next_str = strchr(str, split_ch);
+
+		while (next_str) {
+			size_t size = next_str - cur_str;
+
+			if (size || include_empty) {
+				new_str = bstrdup_n(cur_str, size);
+				da_push_back(list, &new_str);
+			}
+
+			cur_str = next_str;
+			next_str = strchr(cur_str, split_ch);
+		}
+
+		if (*cur_str || include_empty) {
+			new_str = bstrdup(cur_str);
+			da_push_back(list, &new_str);
+		}
+	}
+
+	new_str = NULL;
+	da_push_back(list, &new_str);
+
+	return list.array;
+}
+
+void strlist_free(char **strlist)
+{
+	if (strlist) {
+		char **temp = strlist;
+		while (*temp)
+			bfree(*(temp++));
+
+		bfree(strlist);
+	}
 }
 
 void dstr_init_strref(struct dstr *dst, const struct strref *src)

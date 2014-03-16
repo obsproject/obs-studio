@@ -15,36 +15,45 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "rtmp-stream.h"
+#include <obs.h>
 
-const char *rtmp_stream_getname(const char *locale)
+struct rtmp_stream {
+	obs_output_t  output;
+	obs_encoder_t video_encoder;
+	obs_encoder_t audio_encoder;
+	obs_service_t service;
+
+	bool active;
+};
+
+static const char *rtmp_stream_getname(const char *locale)
 {
 	/* TODO: locale stuff */
 	return "RTMP Stream";
 }
 
-void *rtmp_stream_create(obs_data_t settings, obs_output_t output)
+static void *rtmp_stream_create(obs_data_t settings, obs_output_t output)
 {
 	struct rtmp_stream *stream = bmalloc(sizeof(struct rtmp_stream));
 	memset(stream, 0, sizeof(struct rtmp_stream));
 }
 
-void rtmp_stream_destroy(struct rtmp_stream *stream)
+static void rtmp_stream_destroy(struct rtmp_stream *stream)
 {
 }
 
-void rtmp_stream_update(struct rtmp_stream *stream, obs_data_t settings)
+static void rtmp_stream_update(struct rtmp_stream *stream, obs_data_t settings)
 {
 }
 
-bool rtmp_stream_start(struct rtmp_stream *stream)
+static bool rtmp_stream_start(struct rtmp_stream *stream)
 {
 }
 
-void rtmp_stream_stop(struct rtmp_stream *stream)
+static void rtmp_stream_stop(struct rtmp_stream *stream)
 {
 }
 
-bool rtmp_stream_active(struct rtmp_stream *stream)
+static bool rtmp_stream_active(struct rtmp_stream *stream)
 {
 }

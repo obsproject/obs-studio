@@ -276,6 +276,7 @@ struct obs_output {
 /* encoders  */
 
 struct encoder_callback {
+	bool sent_first_packet;
 	void (*new_packet)(void *param, struct encoder_packet *packet);
 	void *param;
 };
@@ -286,6 +287,13 @@ struct obs_encoder {
 	struct obs_encoder_info         info;
 	obs_data_t                      settings;
 
-	pthread_mutex_t                 data_callbacks_mutex;
-	DARRAY(struct encoder_callback) data_callbacks;
+	uint32_t                        timebase_num;
+	uint32_t                        timebase_den;
+
+	int64_t                         cur_pts;
+
+	void                            *output;
+
+	pthread_mutex_t                 callbacks_mutex;
+	DARRAY(struct encoder_callback) callbacks;
 };

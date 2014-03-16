@@ -686,23 +686,54 @@ EXPORT proc_handler_t obs_output_prochandler(obs_output_t output);
 
 /* ------------------------------------------------------------------------- */
 /* Encoders */
+
 EXPORT const char *obs_encoder_getdisplayname(const char *id,
 		const char *locale);
 
-EXPORT obs_encoder_t obs_encoder_create(const char *id, const char *name,
-		obs_data_t settings);
+/**
+ * Creates a video encoder context
+ *
+ * @param  id        Video encoder ID
+ * @param  name      Name to assign to this context
+ * @param  settings  Settings
+ * @param  video     Video output context to encode data from
+ * @return           The video encoder context, or NULL if failed or not found.
+ */
+EXPORT obs_encoder_t obs_encoder_create_video(const char *id, const char *name,
+		obs_data_t settings, video_t video);
+
+/**
+ * Creates an audio encoder context
+ *
+ * @param  id        Audio Encoder ID
+ * @param  name      Name to assign to this context
+ * @param  settings  Settings
+ * @param  audio     Audio output context to encode data from
+ * @return           The video encoder context, or NULL if failed or not found.
+ */
+EXPORT obs_encoder_t obs_encoder_create_audio(const char *id, const char *name,
+		obs_data_t settings, audio_t audio);
+
+/** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
 
-EXPORT bool obs_encoder_reset(obs_encoder_t encoder, obs_data_t settings);
-
-EXPORT bool obs_encoder_encode(obs_encoder_t encoder,
-		const struct encoder_frame *frame,
-		struct encoder_packet *packet,
-		bool *received_packet);
-
+/**
+ * Starts encoding.  This function can be called more than once, and each
+ * callback will receive the same encoder data.
+ *
+ * @param  encoder     Encoder context
+ * @param  new_packet  Callback that receives encoded packets
+ * @param  param       Callback parameter
+ */
 EXPORT bool obs_encoder_start(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
+
+/**
+ * Stops encoding.  You must use the same callback/parameter combination that
+ * was used for obs_encoder_start.  Only when the last callback has been
+ * removed will all encoding stop.
+ */
 EXPORT void obs_encoder_stop(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
@@ -714,12 +745,30 @@ EXPORT obs_data_t obs_encoder_defaults(const char *id);
 EXPORT obs_properties_t obs_encoder_properties(const char *id,
 		const char *locale);
 
+/**
+ * Updates the settings of the encoder context.  Usually used for changing
+ * bitrate while active
+ */
 EXPORT void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings);
 
+/** Gets extra data (headers) associated with this context */
 EXPORT bool obs_encoder_get_extra_data(obs_encoder_t encoder,
 		uint8_t **extra_data, size_t *size);
 
+/** Returns the current settings for this encoder */
 EXPORT obs_data_t obs_encoder_get_settings(obs_encoder_t encoder);
+
+/**
+ * Returns the video output context used with this encoder, or NULL if not
+ * a video context
+ */
+EXPORT video_t obs_encoder_video(obs_encoder_t encoder);
+
+/**
+ * Returns the audio output context used with this encoder, or NULL if not
+ * a audio context
+ */
+EXPORT audio_t obs_encoder_audio(obs_encoder_t encoder);
 
 
 /* ------------------------------------------------------------------------- */

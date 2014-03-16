@@ -204,7 +204,7 @@ void obs_register_encoder(const struct obs_encoder_info *info)
 	CHECK_REQUIRED_VAL(info, getname,   obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, create,    obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, destroy,   obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, reset,     obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, start,     obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, encode,    obs_register_encoder);
 
 	REGISTER_OBS_DEF(cur_encoder_info_size, obs_encoder_info,

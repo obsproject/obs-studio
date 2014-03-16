@@ -145,7 +145,7 @@ EXPORT void     stagesurface_destroy(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
 EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
 EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
-EXPORT bool     stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
+EXPORT bool     stagesurface_map(stagesurf_t stagesurf, uint8_t **data,
 		uint32_t *linesize);
 EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
 

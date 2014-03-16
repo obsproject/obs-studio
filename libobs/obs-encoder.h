@@ -19,34 +19,38 @@
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
-	OBS_PACKET_AUDIO,
-	OBS_PACKET_VIDEO
+	OBS_ENCODER_AUDIO,
+	OBS_ENCODER_VIDEO
 };
 
 /** Encoder output packet */
 struct encoder_packet {
-	uint8_t               *data;      /**< Packet data */
-	size_t                size;       /**< Packet size */
+	uint8_t               *data;        /**< Packet data */
+	size_t                size;         /**< Packet size */
 
-	int64_t               pts;        /**< Presentation timestamp */
-	int64_t               dts;        /**< Decode timestamp */
+	int64_t               pts;          /**< Presentation timestamp */
+	int64_t               dts;          /**< Decode timestamp */
 
-	enum obs_encoder_type type;       /**< Encoder type */
+	int32_t               timebase_num; /**< Timebase numerator */
+	int32_t               timebase_den; /**< Timebase denominator */
+
+	enum obs_encoder_type type;         /**< Encoder type */
+
+	bool                  keyframe;     /**< Is a keyframe */
 
 	/**
 	 * Packet priority
 	 *
 	 * This is generally use by video encoders to specify the priority
-	 * of the packet.  If this frame is dropped, it will have to wait for
-	 * another packet of drop_priority.
+	 * of the packet.
 	 */
 	int                   priority;
 
 	/**
 	 * Dropped packet priority
 	 *
-	 * If this packet is dropped, the next packet must be of this priority
-	 * or higher to continue transmission.
+	 * If this packet needs to be dropped, the next packet must be of this
+	 * priority or higher to continue transmission.
 	 */
 	int                   drop_priority;
 };
@@ -83,6 +87,12 @@ struct obs_encoder_info {
 	/** Specifies the named identifier of this encoder */
 	const char *id;
 
+	/** Specifies the encoder type (video or audio) */
+	enum obs_encoder_type type;
+
+	/** Specifies the codec */
+	const char *codec;
+
 	/**
 	 * Gets the full translated name of this encoder
 	 *
@@ -108,13 +118,13 @@ struct obs_encoder_info {
 	void (*destroy)(void *data);
 
 	/**
-	 * Resets the encoder with the specified settings
+	 * Starts the encoder
 	 *
 	 * @param  data      Data associated with this encoder context
-	 * @param  settings  New settings for the encoder
+	 * @param  settings  Settings for the encoder
 	 * @return           true if successful, false otherwise
 	 */
-	bool (*reset)(void *data, obs_data_t settings);
+	bool (*start)(void *data, obs_data_t settings);
 
 	/**
 	 * Encodes frame(s), and outputs encoded packets as they become
@@ -128,7 +138,7 @@ struct obs_encoder_info {
 	 *                               false otherwise
 	 * @return                       true if successful, false otherwise.
 	 */
-	int (*encode)(void *data, const struct encoder_frame *frame,
+	bool (*encode)(void *data, struct encoder_frame *frame,
 			struct encoder_packet *packet, bool *received_packet);
 
 	/* ----------------------------------------------------------------- */
@@ -141,6 +151,13 @@ struct obs_encoder_info {
 	 */
 	void (*defaults)(obs_data_t settings);
 
+	/**
+	 * Stops the encoder
+	 *
+	 * @param  data  Data associated with this encoder context
+	 */
+	void (*stop)(void *data);
+
 	/** 
 	 * Gets the property information of this encoder
 	 *
@@ -150,21 +167,56 @@ struct obs_encoder_info {
 	obs_properties_t (*properties)(const char *locale);
 
 	/**
-	 * Updates the settings for this encoder
+	 * Updates the settings for this encoder (usually used for things like
+	 * changeing birate while active)
 	 *
 	 * @param  data      Data associated with this encoder context
 	 * @param  settings  New settings for this encoder
+	 * @return           true if successful, false otherwise
 	 */
-	void (*update)(void *data, obs_data_t settings);
+	bool (*update)(void *data, obs_data_t settings);
 
 	/**
 	 * Returns extra data associated with this encoder (usually header)
 	 *
-	 * @param  data        Data associated with this encoder context
-	 * @param  extra_data  Pointer to receive the extra data
-	 * @param  size        Pointer to receive the size of the extra data
+	 * @param  data             Data associated with this encoder context
+	 * @param[out]  extra_data  Pointer to receive the extra data
+	 * @param[out]  size        Pointer to receive the size of the extra
+	 *                          data
+	 * @return                  true if extra data available, false
+	 *                          otherwise
 	 */
-	bool (*get_extra_data)(void *data, uint8_t **extra_data, size_t *size);
+	bool (*extra_data)(void *data, uint8_t **extra_data, size_t *size);
+
+	/**
+	 * Gets the SEI data, if any
+	 *
+	 * @param       data      Data associated with this encoder context
+	 * @param[out]  sei_data  Pointer to receive the SEI data
+	 * @param[out]  size      Pointer to receive the SEI data size
+	 * @return                true if SEI data available, false otherwise
+	 */
+	bool (*sei_data)(void *data, uint8_t **sei_data, size_t *size);
+
+	/**
+	 * Returns desired audio format and sample information
+	 *
+	 * @param       data  Data associated with this encoder context
+	 * @param[out]  info  Audio format information
+	 * @return            true if specific format is desired, false
+	 *                    otherwise
+	 */
+	bool (*audio_info)(void *data, struct audio_convert_info *info);
+
+	/**
+	 * Returns desired video format information
+	 *
+	 * @param       data  Data associated with this encoder context
+	 * @param[out]  info  Video format information
+	 * @return            true if specific format is desired, false
+	 *                    otherwise
+	 */
+	bool (*video_info)(void *data, struct video_scale_info *info);
 };
 
 /**

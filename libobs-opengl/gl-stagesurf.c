@@ -199,8 +199,7 @@ enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
 	return stagesurf->format;
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, const uint8_t **data,
-		uint32_t *linesize)
+bool stagesurface_map(stagesurf_t stagesurf, uint8_t **data, uint32_t *linesize)
 {
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))
 		goto fail;

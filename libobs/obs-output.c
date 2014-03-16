@@ -154,7 +154,7 @@ obs_data_t obs_output_get_settings(obs_output_t output)
 
 bool obs_output_canpause(obs_output_t output)
 {
-	return (output != NULL) ? output->info.pause != NULL : false;
+	return output ? (output->info.pause != NULL) : false;
 }
 
 void obs_output_pause(obs_output_t output)
@@ -165,10 +165,10 @@ void obs_output_pause(obs_output_t output)
 
 signal_handler_t obs_output_signalhandler(obs_output_t output)
 {
-	return output->signals;
+	return output ? output->signals : NULL;
 }
 
 proc_handler_t obs_output_prochandler(obs_output_t output)
 {
-	return output->procs;
+	return output ? output->procs : NULL;
 }

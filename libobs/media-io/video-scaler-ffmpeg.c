@@ -46,6 +46,7 @@ static inline enum AVPixelFormat get_ffmpeg_video_format(
 static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 {
 	switch (type) {
+	case VIDEO_SCALE_DEFAULT:       return SWS_FAST_BILINEAR;
 	case VIDEO_SCALE_POINT:         return SWS_POINT;
 	case VIDEO_SCALE_FAST_BILINEAR: return SWS_FAST_BILINEAR;
 	case VIDEO_SCALE_BILINEAR:      return SWS_BILINEAR | SWS_AREA;
@@ -58,11 +59,23 @@ static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 {
 	switch (cs) {
-	case VIDEO_CS_601: return sws_getCoefficients(SWS_CS_ITU601);
-	case VIDEO_CS_709: return sws_getCoefficients(SWS_CS_ITU709);
+	case VIDEO_CS_DEFAULT: return sws_getCoefficients(SWS_CS_ITU601);
+	case VIDEO_CS_601:     return sws_getCoefficients(SWS_CS_ITU601);
+	case VIDEO_CS_709:     return sws_getCoefficients(SWS_CS_ITU709);
 	}
 
 	return sws_getCoefficients(SWS_CS_ITU601);
+}
+
+static inline int get_ffmpeg_range_type(enum video_range_type type)
+{
+	switch (type) {
+	case VIDEO_RANGE_DEFAULT: return 0;
+	case VIDEO_RANGE_PARTIAL: return 0;
+	case VIDEO_RANGE_FULL:    return 1;
+	}
+
+	return 0;
 }
 
 #define FIXED_1_0 (1<<16)
@@ -77,6 +90,8 @@ int video_scaler_create(video_scaler_t *scaler_out,
 	int                scale_type = get_ffmpeg_scale_type(type);
 	const int          *coeff_src = get_ffmpeg_coeffs(src->colorspace);
 	const int          *coeff_dst = get_ffmpeg_coeffs(dst->colorspace);
+	int                range_src  = get_ffmpeg_range_type(src->range);
+	int                range_dst  = get_ffmpeg_range_type(dst->range);
 	struct video_scaler *scaler;
 	int ret;
 
@@ -101,8 +116,8 @@ int video_scaler_create(video_scaler_t *scaler_out,
 	}
 
 	ret = sws_setColorspaceDetails(scaler->swscale,
-			coeff_src, src->full_range,
-			coeff_dst, dst->full_range,
+			coeff_src, range_src,
+			coeff_dst, range_dst,
 			0, FIXED_1_0, FIXED_1_0);
 	if (ret < 0) {
 		blog(LOG_DEBUG, "video_scaler_create: "
