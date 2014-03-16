@@ -398,8 +398,8 @@ static inline void do_encode(struct obs_encoder *encoder,
 
 		for (size_t i = 0; i < encoder->callbacks.num; i++) {
 			struct encoder_callback *cb;
-
 			cb = encoder->callbacks.array+i;
+			send_packet(encoder, cb, packet);
 		}
 
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
