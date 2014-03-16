@@ -76,6 +76,9 @@ EXPORT char *os_get_config_path(const char *name);
 
 EXPORT bool os_file_exists(const char *path);
 
+EXPORT long atomic_inc_long(volatile long *val);
+EXPORT long atomic_dec_long(volatile long *val);
+
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
 #define MKDIR_ERROR   -1
