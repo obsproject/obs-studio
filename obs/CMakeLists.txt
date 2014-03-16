@@ -1,6 +1,6 @@
 project(obs)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM Qt5 "${CMAKE_SOURCE_DIR}/libobs")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(_lib_suffix 64)
