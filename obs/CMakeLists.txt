@@ -1,6 +1,6 @@
 project(obs)
 
-include_directories(SYSTEM Qt5 "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(_lib_suffix 64)
@@ -81,6 +81,8 @@ add_executable(obs WIN32
 	${obs_UI_HEADERS}
 	${obs_QRC_SOURCES})
 
+qt5_use_modules(obs Widgets)
+
 if(WIN32)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_output_suffix "64")
@@ -95,7 +97,6 @@ endif()
 
 target_link_libraries(obs
 	libobs
-	Qt5::Widgets
 	${obs_PLATFORM_LIBRARIES})
 
 install_obs_core(obs)
