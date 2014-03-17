@@ -238,10 +238,10 @@ int  os_sem_wait(os_sem_t sem)
 
 long os_atomic_inc_long(volatile long *val)
 {
-	return __sync_fetch_and_add(val, 1);
+	return __sync_add_and_fetch(val, 1);
 }
 
 long os_atomic_dec_long(volatile long *val)
 {
-	return __sync_fetch_and_sub(val, 1);
+	return __sync_sub_and_fetch(val, 1);
 }
