@@ -41,6 +41,14 @@ struct obs_data_array {
 	DARRAY(obs_data_t)   objects;
 };
 
+struct obs_data_number {
+	enum obs_data_number_type type;
+	union {
+		long long int_val;
+		double    double_val;
+	};
+};
+
 /* ------------------------------------------------------------------------- */
 /* Item structure, designed to be one allocation only */
 
@@ -384,13 +392,20 @@ void obs_data_setstring(obs_data_t data, const char *name, const char *val)
 
 void obs_data_setint(obs_data_t data, const char *name, long long val)
 {
-	double f_val = (double)val;
-	set_item(data, name, &f_val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type    = OBS_DATA_NUM_INT;
+	num.int_val = val;
+	set_item(data, name, &num, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_setdouble(obs_data_t data, const char *name, double val)
 {
-	set_item(data, name, &val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type       = OBS_DATA_NUM_DOUBLE;
+	num.double_val = val;
+	set_item(data, name, &num, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_setbool(obs_data_t data, const char *name, bool val)
@@ -418,13 +433,20 @@ void obs_data_set_default_string(obs_data_t data, const char *name,
 
 void obs_data_set_default_int(obs_data_t data, const char *name, long long val)
 {
-	double f_val = (double)val;
-	set_item_def(data, name, &f_val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type    = OBS_DATA_NUM_INT;
+	num.int_val = val;
+	set_item_def(data, name, &num, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_set_default_double(obs_data_t data, const char *name, double val)
 {
-	set_item_def(data, name, &val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type       = OBS_DATA_NUM_DOUBLE;
+	num.double_val = val;
+	set_item_def(data, name, &num, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_set_default_bool(obs_data_t data, const char *name, bool val)
@@ -443,16 +465,36 @@ const char *obs_data_getstring(obs_data_t data, const char *name)
 	return item ? get_item_data(item) : "";
 }
 
+static inline long long item_int(struct obs_data_item *item)
+{
+	if (item) {
+		struct obs_data_number *num = get_item_data(item);
+		return (num->type == OBS_DATA_NUM_INT) ?
+			num->int_val : (long long)num->double_val;
+	}
+
+	return 0;
+}
+
+static inline double item_double(struct obs_data_item *item)
+{
+	if (item) {
+		struct obs_data_number *num = get_item_data(item);
+		return (num->type == OBS_DATA_NUM_INT) ?
+			(double)num->int_val : num->double_val;
+	}
+
+	return 0.0;
+}
+
 long long obs_data_getint(obs_data_t data, const char *name)
 {
-	struct obs_data_item *item = get_item_of(data, name, OBS_DATA_NUMBER);
-	return item ? (long long)*(double*)get_item_data(item) : 0;
+	return item_int(get_item_of(data, name, OBS_DATA_NUMBER));
 }
 
 double obs_data_getdouble(obs_data_t data, const char *name)
 {
-	struct obs_data_item *item = get_item_of(data, name, OBS_DATA_NUMBER);
-	return item ? *(double*)get_item_data(item) : 0.0;
+	return item_double(get_item_of(data, name, OBS_DATA_NUMBER));
 }
 
 bool obs_data_getbool(obs_data_t data, const char *name)
@@ -624,6 +666,17 @@ enum obs_data_type obs_data_item_gettype(obs_data_item_t item)
 	return item ? item->type : OBS_DATA_NULL;
 }
 
+enum obs_data_num_type obs_data_item_numtype(obs_data_item_t item)
+{
+	struct obs_data_number *num;
+
+	if (!item || item->type != OBS_DATA_NUMBER)
+		return OBS_DATA_NUM_INVALID;
+
+	num = get_item_data(item);
+	return num->type;
+}
+
 void obs_data_item_setstring(obs_data_item_t *item, const char *val)
 {
 	if (!val) val = "";
@@ -632,13 +685,20 @@ void obs_data_item_setstring(obs_data_item_t *item, const char *val)
 
 void obs_data_item_setint(obs_data_item_t *item, long long val)
 {
-	double f_val = (double)val;
-	obs_data_item_setdata(item, &f_val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type    = OBS_DATA_NUM_INT;
+	num.int_val = val;
+	obs_data_item_setdata(item, &val, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_item_setdouble(obs_data_item_t *item, double val)
 {
-	obs_data_item_setdata(item, &val, sizeof(double), OBS_DATA_NUMBER);
+	struct obs_data_number num;
+	num.type       = OBS_DATA_NUM_DOUBLE;
+	num.double_val = val;
+	obs_data_item_setdata(item, &val, sizeof(struct obs_data_number),
+			OBS_DATA_NUMBER);
 }
 
 void obs_data_item_setbool(obs_data_item_t *item, bool val)
@@ -671,13 +731,13 @@ const char *obs_data_item_getstring(obs_data_item_t item)
 long long obs_data_item_getint(obs_data_item_t item)
 {
 	return item_valid(item, OBS_DATA_NUMBER) ?
-		(long long)*(double*)get_item_data(item) : 0;
+		item_int(item) : 0;
 }
 
 double obs_data_item_getdouble(obs_data_item_t item)
 {
 	return item_valid(item, OBS_DATA_NUMBER) ?
-		*(double*)get_item_data(item) : 0.0;
+		item_double(item) : 0.0;
 }
 
 bool obs_data_item_getbool(obs_data_item_t item)
