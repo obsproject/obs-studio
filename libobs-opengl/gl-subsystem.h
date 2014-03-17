@@ -274,7 +274,7 @@ extern void convert_sampler_info(struct gs_sampler_state *sampler,
 
 struct gs_sampler_state {
 	device_t             device;
-	volatile uint32_t    ref;
+	volatile long        ref;
 
 	GLint                min_filter;
 	GLint                mag_filter;
