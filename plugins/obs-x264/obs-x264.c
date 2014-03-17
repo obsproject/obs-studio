@@ -358,8 +358,6 @@ static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	struct obs_x264 *data = bzalloc(sizeof(struct obs_x264));
 	data->encoder = encoder;
-
-	obs_x264_defaults(settings);
 	return data;
 }
 

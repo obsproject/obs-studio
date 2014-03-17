@@ -71,7 +71,6 @@ WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
 	  source          (source_),
 	  isInputDevice   (input)
 {
-	GetWASAPIDefaults(settings);
 	UpdateSettings(settings);
 
 	stopSignal = CreateEvent(nullptr, true, false, nullptr);

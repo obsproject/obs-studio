@@ -49,8 +49,11 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	if (!output->procs)
 		goto fail;
 
-	output->info = *info;
+	output->info      = *info;
 	output->settings  = obs_data_newref(settings);
+	if (output->info.defaults)
+		output->info.defaults(output->settings);
+
 	output->data      = info->create(output->settings, output);
 	if (!output->data)
 		goto fail;

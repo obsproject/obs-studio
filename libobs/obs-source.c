@@ -182,8 +182,10 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	source_init_name(source, name);
 
 	source->settings = obs_data_newref(settings);
-	source->data     = info->create(source->settings, source);
+	if (info->defaults)
+		info->defaults(source->settings);
 
+	source->data = info->create(source->settings, source);
 	if (!source->data)
 		goto fail;
 

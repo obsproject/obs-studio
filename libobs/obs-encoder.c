@@ -43,7 +43,10 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		return false;
 
 	encoder->settings = obs_data_newref(settings);
-	encoder->data     = encoder->info.create(encoder->settings, encoder);
+	if (encoder->info.defaults)
+		encoder->info.defaults(encoder->settings);
+
+	encoder->data = encoder->info.create(encoder->settings, encoder);
 
 	if (!encoder->data) {
 		pthread_mutex_destroy(&encoder->callbacks_mutex);
