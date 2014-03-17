@@ -666,7 +666,7 @@ enum obs_data_type obs_data_item_gettype(obs_data_item_t item)
 	return item ? item->type : OBS_DATA_NULL;
 }
 
-enum obs_data_num_type obs_data_item_numtype(obs_data_item_t item)
+enum obs_data_number_type obs_data_item_numtype(obs_data_item_t item)
 {
 	struct obs_data_number *num;
 
