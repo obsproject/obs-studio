@@ -176,7 +176,7 @@ extern void *obs_video_thread(void *param);
 /* sources  */
 
 struct obs_source {
-	volatile int                    refs;
+	volatile long                   refs;
 	struct obs_source_info          info;
 
 	/* source-specific data */
@@ -188,13 +188,13 @@ struct obs_source {
 	proc_handler_t                  procs;
 
 	/* ensures show/hide are only called once */
-	int                             show_refs;
+	volatile long                   show_refs;
 
 	/* ensures activate/deactivate are only called once */
-	int                             activate_refs;
+	volatile long                   activate_refs;
 
 	/* prevents infinite recursion when enumerating sources */
-	int                             enum_refs;
+	volatile long                   enum_refs;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer
@@ -204,7 +204,7 @@ struct obs_source {
 	/* timing (if video is present, is based upon video) */
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;
-	volatile int                    audio_reset_ref;
+	volatile long                   audio_reset_ref;
 	uint64_t                        next_audio_ts_min;
 	uint64_t                        last_frame_ts;
 	uint64_t                        last_sys_timestamp;

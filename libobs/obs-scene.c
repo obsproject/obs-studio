@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/threading.h"
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
@@ -373,7 +374,7 @@ static void obs_sceneitem_destroy(obs_sceneitem_t item)
 void obs_sceneitem_addref(obs_sceneitem_t item)
 {
 	if (item)
-		++item->ref;
+		os_atomic_inc_long(&item->ref);
 }
 
 void obs_sceneitem_release(obs_sceneitem_t item)
@@ -381,7 +382,7 @@ void obs_sceneitem_release(obs_sceneitem_t item)
 	if (!item)
 		return;
 
-	if (--item->ref == 0)
+	if (os_atomic_dec_long(&item->ref) == 0)
 		obs_sceneitem_destroy(item);
 }
 

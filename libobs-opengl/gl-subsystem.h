@@ -18,6 +18,7 @@
 #pragma once
 
 #include <util/darray.h>
+#include <util/threading.h>
 #include <graphics/graphics.h>
 #include <graphics/matrix4.h>
 
@@ -285,12 +286,12 @@ struct gs_sampler_state {
 
 static inline void samplerstate_addref(samplerstate_t ss)
 {
-	ss->ref++;
+	os_atomic_inc_long(&ss->ref);
 }
 
 static inline void samplerstate_release(samplerstate_t ss)
 {
-	if (--ss->ref == 0)
+	if (os_atomic_dec_long(&ss->ref) == 0)
 		bfree(ss);
 }
 

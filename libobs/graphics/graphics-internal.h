@@ -241,5 +241,5 @@ struct graphics_subsystem {
 	DARRAY(struct vec2)    texverts[16];
 
 	pthread_mutex_t        mutex;
-	volatile int           ref;
+	volatile long          ref;
 };

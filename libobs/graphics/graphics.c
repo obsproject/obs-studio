@@ -179,13 +179,13 @@ void gs_entercontext(graphics_t graphics)
 		thread_graphics = graphics;
 	}
 
-	graphics->ref++;
+	os_atomic_inc_long(&graphics->ref);
 }
 
 void gs_leavecontext(void)
 {
 	if (thread_graphics) {
-		if (!--thread_graphics->ref) {
+		if (!os_atomic_dec_long(&thread_graphics->ref)) {
 			graphics_t graphics = thread_graphics;
 
 			graphics->exports.device_leavecontext(graphics->device);

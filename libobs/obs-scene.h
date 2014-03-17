@@ -23,7 +23,7 @@
 /* how obs scene! */
 
 struct obs_scene_item {
-	volatile int          ref;
+	volatile long         ref;
 	volatile bool         removed;
 
 	struct obs_scene      *parent;

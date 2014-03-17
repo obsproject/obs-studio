@@ -116,13 +116,3 @@ int os_mkdir(const char *path)
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
 }
-
-long atomic_inc_long(volatile long *val)
-{
-	return __sync_fetch_and_add(val, 1);
-}
-
-long atomic_dec_long(volatile long *val)
-{
-	return __sync_fetch_and_sub(val, 1);
-}

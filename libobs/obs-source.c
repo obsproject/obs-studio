@@ -19,6 +19,7 @@
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
+#include "util/threading.h"
 #include "util/platform.h"
 #include "callback/calldata.h"
 #include "graphics/matrix3.h"
@@ -268,7 +269,7 @@ static void obs_source_destroy(struct obs_source *source)
 void obs_source_addref(obs_source_t source)
 {
 	if (source)
-		++source->refs;
+		os_atomic_inc_long(&source->refs);
 }
 
 void obs_source_release(obs_source_t source)
@@ -276,7 +277,7 @@ void obs_source_release(obs_source_t source)
 	if (!source)
 		return;
 
-	if (--source->refs == 0)
+	if (os_atomic_dec_long(&source->refs) == 0)
 		obs_source_destroy(source);
 }
 
@@ -380,7 +381,7 @@ static void hide_source(obs_source_t source)
 
 static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
 {
-	if (++child->activate_refs == 1)
+	if (os_atomic_inc_long(&child->activate_refs) == 1)
 		activate_source(child);
 
 	UNUSED_PARAMETER(parent);
@@ -390,7 +391,7 @@ static void activate_tree(obs_source_t parent, obs_source_t child, void *param)
 static void deactivate_tree(obs_source_t parent, obs_source_t child,
 		void *param)
 {
-	if (--child->activate_refs == 0)
+	if (os_atomic_dec_long(&child->activate_refs) == 0)
 		deactivate_source(child);
 
 	UNUSED_PARAMETER(parent);
@@ -399,7 +400,7 @@ static void deactivate_tree(obs_source_t parent, obs_source_t child,
 
 static void show_tree(obs_source_t parent, obs_source_t child, void *param)
 {
-	if (++child->show_refs == 1)
+	if (os_atomic_inc_long(&child->show_refs) == 1)
 		show_source(child);
 
 	UNUSED_PARAMETER(parent);
@@ -408,7 +409,7 @@ static void show_tree(obs_source_t parent, obs_source_t child, void *param)
 
 static void hide_tree(obs_source_t parent, obs_source_t child, void *param)
 {
-	if (--child->show_refs == 0)
+	if (os_atomic_dec_long(&child->show_refs) == 0)
 		hide_source(child);
 
 	UNUSED_PARAMETER(parent);
@@ -419,13 +420,13 @@ void obs_source_activate(obs_source_t source, enum view_type type)
 {
 	if (!source) return;
 
-	if (++source->show_refs == 1) {
+	if (os_atomic_inc_long(&source->show_refs) == 1) {
 		show_source(source);
 		obs_source_enum_tree(source, show_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
-		if (++source->activate_refs == 1) {
+		if (os_atomic_inc_long(&source->activate_refs) == 1) {
 			activate_source(source);
 			obs_source_enum_tree(source, activate_tree, NULL);
 			obs_source_set_present_volume(source, 1.0f);
@@ -437,13 +438,13 @@ void obs_source_deactivate(obs_source_t source, enum view_type type)
 {
 	if (!source) return;
 
-	if (--source->show_refs == 0) {
+	if (os_atomic_dec_long(&source->show_refs) == 0) {
 		hide_source(source);
 		obs_source_enum_tree(source, hide_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
-		if (--source->activate_refs == 0) {
+		if (os_atomic_dec_long(&source->activate_refs) == 0) {
 			deactivate_source(source);
 			obs_source_enum_tree(source, deactivate_tree, NULL);
 			obs_source_set_present_volume(source, 0.0f);
@@ -496,7 +497,7 @@ static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
 
 	/* if has video, ignore audio data until reset */
 	if (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO)
-		source->audio_reset_ref--;
+		os_atomic_dec_long(&source->audio_reset_ref);
 	else 
 		reset_audio_timing(source, ts);
 }
@@ -1384,12 +1385,12 @@ static void enum_source_tree_callback(obs_source_t parent, obs_source_t child,
 	struct source_enum_data *data = param;
 
 	if (child->info.enum_sources && !child->enum_refs) {
-		child->enum_refs++;
+		os_atomic_inc_long(&child->enum_refs);
 
 		child->info.enum_sources(child->data,
 				enum_source_tree_callback, data);
 
-		child->enum_refs--;
+		os_atomic_dec_long(&child->enum_refs);
 	}
 
 	data->enum_callback(parent, child, data->param);
@@ -1404,9 +1405,9 @@ void obs_source_enum_sources(obs_source_t source,
 
 	obs_source_addref(source);
 
-	source->enum_refs++;
+	os_atomic_inc_long(&source->enum_refs);
 	source->info.enum_sources(source->data, enum_callback, param);
-	source->enum_refs--;
+	os_atomic_dec_long(&source->enum_refs);
 
 	obs_source_release(source);
 }
@@ -1422,10 +1423,10 @@ void obs_source_enum_tree(obs_source_t source,
 
 	obs_source_addref(source);
 
-	source->enum_refs++;
+	os_atomic_inc_long(&source->enum_refs);
 	source->info.enum_sources(source->data, enum_source_tree_callback,
 			&data);
-	source->enum_refs--;
+	os_atomic_dec_long(&source->enum_refs);
 
 	obs_source_release(source);
 }

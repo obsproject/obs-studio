@@ -185,16 +185,6 @@ int os_mkdir(const char *path)
 	return MKDIR_SUCCESS;
 }
 
-long atomic_inc_long(volatile long *val)
-{
-	return InterlockedIncrement(val);
-}
-
-long atomic_dec_long(volatile long *val)
-{
-	return InterlockedDecrement(val);
-}
-
 
 BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 {

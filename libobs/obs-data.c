@@ -16,11 +16,12 @@
 ******************************************************************************/
 
 #include "util/bmem.h"
+#include "util/threading.h"
 #include "util/darray.h"
 #include "obs-data.h"
 
 struct obs_data_item {
-	volatile int         ref;
+	volatile long        ref;
 	struct obs_data      *parent;
 	struct obs_data_item *next;
 	enum obs_data_type   type;
@@ -30,13 +31,13 @@ struct obs_data_item {
 };
 
 struct obs_data {
-	volatile int         ref;
+	volatile long        ref;
 	char                 *json;
 	struct obs_data_item *first_item;
 };
 
 struct obs_data_array {
-	volatile int         ref;
+	volatile long        ref;
 	DARRAY(obs_data_t)   objects;
 };
 
@@ -244,7 +245,7 @@ obs_data_t obs_data_create_from_json(const char *json_string)
 void obs_data_addref(obs_data_t data)
 {
 	if (data)
-		++data->ref;
+		os_atomic_inc_long(&data->ref);
 }
 
 static inline void obs_data_destroy(struct obs_data *data)
@@ -265,7 +266,7 @@ void obs_data_release(obs_data_t data)
 {
 	if (!data) return;
 
-	if (--data->ref == 0)
+	if (os_atomic_dec_long(&data->ref) == 0)
 		obs_data_destroy(data);
 }
 
@@ -466,7 +467,7 @@ obs_data_t obs_data_getobj(obs_data_t data, const char *name)
 	obs_data_t obj = get_item_obj(item);
 
 	if (obj)
-		obj->ref++;
+		os_atomic_inc_long(&obj->ref);
 	return obj;
 }
 
@@ -476,7 +477,7 @@ obs_data_array_t obs_data_getarray(obs_data_t data, const char *name)
 	obs_data_array_t array = get_item_array(item);
 
 	if (array)
-		array->ref++;
+		os_atomic_inc_long(&array->ref);
 	return array;
 }
 
@@ -491,7 +492,7 @@ obs_data_array_t obs_data_array_create()
 void obs_data_array_addref(obs_data_array_t array)
 {
 	if (array)
-		++array->ref;
+		os_atomic_inc_long(&array->ref);
 }
 
 static inline void obs_data_array_destroy(obs_data_array_t array)
@@ -509,7 +510,7 @@ void obs_data_array_release(obs_data_array_t array)
 	if (!array)
 		return;
 
-	if (--array->ref == 0)
+	if (os_atomic_dec_long(&array->ref) == 0)
 		obs_data_array_destroy(array);
 }
 
@@ -528,7 +529,7 @@ obs_data_t obs_data_array_item(obs_data_array_t array, size_t idx)
 	data = (idx < array->objects.num) ? array->objects.array[idx] : NULL;
 
 	if (data)
-		data->ref++;
+		os_atomic_inc_long(&data->ref);
 	return data;
 }
 
@@ -537,7 +538,7 @@ size_t obs_data_array_push_back(obs_data_array_t array, obs_data_t obj)
 	if (!array || !obj)
 		return 0;
 
-	obj->ref++;
+	os_atomic_inc_long(&obj->ref);
 	return da_push_back(array->objects, &obj);
 }
 
@@ -546,7 +547,7 @@ void obs_data_array_insert(obs_data_array_t array, size_t idx, obs_data_t obj)
 	if (!array || !obj)
 		return;
 
-	obj->ref++;
+	os_atomic_inc_long(&obj->ref);
 	da_insert(array->objects, idx, &obj);
 }
 
@@ -567,7 +568,7 @@ obs_data_item_t obs_data_first(obs_data_t data)
 		return NULL;
 
 	if (data->first_item)
-		data->first_item->ref++;
+		os_atomic_inc_long(&data->first_item->ref);
 	return data->first_item;
 }
 
@@ -578,18 +579,20 @@ obs_data_item_t obs_data_item_byname(obs_data_t data, const char *name)
 
 	struct obs_data_item *item = get_item(data, name);
 	if (item)
-		item->ref++;
+		os_atomic_inc_long(&item->ref);
 	return item;
 }
 
 bool obs_data_item_next(obs_data_item_t *item)
 {
 	if (item && *item) {
-		(*item)->ref--;
-		*item = (*item)->next;
+		obs_data_item_t next = (*item)->next;
+		obs_data_item_release(item);
 
-		if (*item) {
-			(*item)->ref++;
+		*item = next;
+
+		if (next) {
+			os_atomic_inc_long(&next->ref);
 			return true;
 		}
 	}
@@ -600,7 +603,7 @@ bool obs_data_item_next(obs_data_item_t *item)
 void obs_data_item_release(obs_data_item_t *item)
 {
 	if (item && *item) {
-		int ref = --(*item)->ref;
+		long ref = os_atomic_dec_long(&(*item)->ref);
 		if (!ref) {
 			obs_data_item_destroy(*item);
 			*item = NULL;
@@ -689,7 +692,7 @@ obs_data_t obs_data_item_getobj(obs_data_item_t item)
 		get_item_obj(item) : NULL;
 
 	if (obj)
-		obj->ref++;
+		os_atomic_inc_long(&obj->ref);
 	return obj;
 }
 
@@ -699,6 +702,6 @@ obs_data_array_t obs_data_item_getarray(obs_data_item_t item)
 		get_item_array(item) : NULL;
 
 	if (array)
-		array->ref++;
+		os_atomic_inc_long(&array->ref);
 	return array;
 }

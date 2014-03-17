@@ -150,3 +150,13 @@ int  os_sem_wait(os_sem_t sem)
 	ret = WaitForSingleObject(sem->handle, INFINITE);
 	return (ret == WAIT_OBJECT_0) ? 0 : -1;
 }
+
+long os_atomic_inc_long(volatile long *val)
+{
+	return InterlockedIncrement(val);
+}
+
+long os_atomic_dec_long(volatile long *val)
+{
+	return InterlockedDecrement(val);
+}

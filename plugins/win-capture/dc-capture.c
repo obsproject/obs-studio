@@ -5,7 +5,7 @@
 
 static inline void init_textures(struct dc_capture *capture)
 {
-	for (size_t i = 0; i < capture->num_textures; i++) {
+	for (int i = 0; i < capture->num_textures; i++) {
 		if (capture->compatibility)
 			capture->textures[i] = gs_create_texture(
 					capture->width, capture->height,
@@ -28,6 +28,8 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 		uint32_t width, uint32_t height, bool cursor,
 		bool compatibility)
 {
+	memset(capture, 0, sizeof(struct dc_capture));
+
 	capture->x              = x;
 	capture->y              = y;
 	capture->width          = width;
@@ -76,7 +78,7 @@ void dc_capture_free(struct dc_capture *capture)
 
 	gs_entercontext(obs_graphics());
 
-	for (size_t i = 0; i < capture->num_textures; i++)
+	for (int i = 0; i < capture->num_textures; i++)
 		texture_destroy(capture->textures[i]);
 
 	gs_leavecontext();

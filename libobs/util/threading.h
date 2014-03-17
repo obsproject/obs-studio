@@ -67,6 +67,9 @@ EXPORT void os_sem_destroy(os_sem_t sem);
 EXPORT int  os_sem_post(os_sem_t sem);
 EXPORT int  os_sem_wait(os_sem_t sem);
 
+EXPORT long os_atomic_inc_long(volatile long *val);
+EXPORT long os_atomic_dec_long(volatile long *val);
+
 
 #ifdef __cplusplus
 }
