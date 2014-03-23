@@ -52,16 +52,24 @@ QWidget *OBSPropertiesView::NewWidget(obs_property_t prop, QWidget *widget,
 
 QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
 {
+	const char *name = obs_property_name(prop);
 	const char *desc = obs_property_description(prop);
+	bool       val   = obs_data_getbool(settings, name);
 
-	return NewWidget(prop, new QCheckBox(QT_UTF8(desc)),
-			SIGNAL(stateChanged(int)));
+	QCheckBox *checkbox = new QCheckBox(QT_UTF8(desc));
+	checkbox->setCheckState(val ? Qt::Checked : Qt::Unchecked);
+	return NewWidget(prop, checkbox, SIGNAL(stateChanged(int)));
 }
 
 QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 {
-	return NewWidget(prop, new QLineEdit(),
-			SIGNAL(textEdited(const QString &)));
+	const char *name = obs_property_name(prop);
+	const char *val  = obs_data_getstring(settings, name);
+	QLineEdit  *edit = new QLineEdit();
+
+	edit->setText(QT_UTF8(val));
+
+	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
 void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
@@ -73,29 +81,40 @@ void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
 
 QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
 {
-	QSpinBox *spin = new QSpinBox();
+	const char *name = obs_property_name(prop);
+	int        val   = (int)obs_data_getint(settings, name);
+	QSpinBox   *spin = new QSpinBox();
+
 	spin->setMinimum(obs_property_int_min(prop));
 	spin->setMaximum(obs_property_int_max(prop));
 	spin->setSingleStep(obs_property_int_step(prop));
+	spin->setValue(val);
 
 	return NewWidget(prop, spin, SIGNAL(valueChanged(int)));
 }
 
 QWidget *OBSPropertiesView::AddFloat(obs_property_t prop)
 {
+	const char     *name = obs_property_name(prop);
+	double         val   = obs_data_getdouble(settings, name);
 	QDoubleSpinBox *spin = new QDoubleSpinBox();
+
 	spin->setMinimum(obs_property_float_min(prop));
 	spin->setMaximum(obs_property_float_max(prop));
 	spin->setSingleStep(obs_property_float_step(prop));
+	spin->setValue(val);
 
 	return NewWidget(prop, spin, SIGNAL(valueChanged(double)));
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 {
-	QComboBox *combo        = new QComboBox();
+	const char       *name  = obs_property_name(prop);
+	QComboBox        *combo = new QComboBox();
 	obs_combo_type   type   = obs_property_list_type(prop);
+	obs_combo_format format = obs_property_list_format(prop);
 	size_t           count  = obs_property_list_item_count(prop);
+	int              idx    = -1;
 
 	for (size_t i = 0; i < count; i++) {
 		const char *name  = obs_property_list_item_name(prop, i);
@@ -103,11 +122,33 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 		combo->addItem(QT_UTF8(name), QT_UTF8(val));
 	}
 
+	if (format == OBS_COMBO_FORMAT_INT) {
+		int    val       = (int)obs_data_getint(settings, name);
+		string valString = to_string(val);
+		idx              = combo->findData(QT_UTF8(valString.c_str()));
+
+	} else if (format == OBS_COMBO_FORMAT_FLOAT) {
+		double val       = obs_data_getdouble(settings, name);
+		string valString = to_string(val);
+		idx              = combo->findData(QT_UTF8(valString.c_str()));
+
+	} else if (format == OBS_COMBO_FORMAT_STRING) {
+		const char *val  = obs_data_getstring(settings, name);
+
+		if (type == OBS_COMBO_TYPE_EDITABLE)
+			combo->lineEdit()->setText(val);
+		else
+			idx      = combo->findData(QT_UTF8(val));
+	}
+
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
 		combo->setEditable(true);
 		return NewWidget(prop, combo,
 				SLOT(editTextChanged(const QString &)));
 	}
+
+	if (idx != -1)
+		combo->setCurrentIndex(idx);
 
 	return NewWidget(prop, combo, SIGNAL(currentIndexChanged(int)));
 }
