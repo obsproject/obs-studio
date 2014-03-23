@@ -1,62 +1,143 @@
 #include <stdlib.h>
 #include <obs.h>
+#include <util/threading.h>
 #include <pthread.h>
 
 #import <CoreGraphics/CGDisplayStream.h>
 #import <Cocoa/Cocoa.h>
-#import <AppKit/AppKit.h>
-#import <OpenGL/OpenGL.h>
-#import <OpenGL/CGLIOSurface.h>
-#import <OpenGL/CGLMacro.h>
-#import <CoreGraphics/CGDisplayStream.h>
 
-struct desktop_tex {
+struct display_capture {
 	samplerstate_t sampler;
-	effect_t whatever;
+	effect_t draw_effect;
+	texture_t tex;
 
-	CGDisplayStreamRef disp;
+	unsigned display;
 	uint32_t width, height;
 
-	texture_t tex;
-	pthread_mutex_t mutex;
+	os_event_t disp_finished;
+	CGDisplayStreamRef disp;
 	IOSurfaceRef current, prev;
+
+	pthread_mutex_t mutex;
 };
 
-static const char *osx_desktop_test_getname(const char *locale)
+static void destroy_display_stream(struct display_capture *dc)
 {
-	UNUSED_PARAMETER(locale);
-	return "OSX Monitor Capture";
-}
-
-static void osx_desktop_test_destroy(void *data)
-{
-	struct desktop_tex *rt = data;
-
-	if (rt) {
-		pthread_mutex_lock(&rt->mutex);
-		gs_entercontext(obs_graphics());
-
-		if (rt->current) {
-			IOSurfaceDecrementUseCount(rt->current);
-			CFRelease(rt->current);
-		}
-		if (rt->sampler)
-			samplerstate_destroy(rt->sampler);
-		if (rt->tex)
-			texture_destroy(rt->tex);
-		CGDisplayStreamStop(rt->disp);
-		effect_destroy(rt->whatever);
-		bfree(rt);
-
-		gs_leavecontext();
-		pthread_mutex_unlock(&rt->mutex);
+	if (dc->disp) {
+		CGDisplayStreamStop(dc->disp);
+		os_event_wait(dc->disp_finished);
 	}
+
+	if (dc->tex) {
+		texture_destroy(dc->tex);
+		dc->tex = NULL;
+	}
+
+	if (dc->current) {
+		IOSurfaceDecrementUseCount(dc->current);
+		CFRelease(dc->current);
+		dc->current = NULL;
+	}
+
+	if (dc->disp) {
+		CFRelease(dc->disp);
+		dc->disp = NULL;
+	}
+
+	os_event_destroy(dc->disp_finished);
 }
 
-static void *osx_desktop_test_create(obs_data_t settings, obs_source_t source)
+static void display_capture_destroy(void *data)
 {
-	struct desktop_tex *rt = bzalloc(sizeof(struct desktop_tex));
-	char *effect_file;
+	struct display_capture *dc = data;
+
+	if (!dc)
+		return;
+
+	pthread_mutex_lock(&dc->mutex);
+	gs_entercontext(obs_graphics());
+
+	destroy_display_stream(dc);
+
+	if (dc->sampler)
+		samplerstate_destroy(dc->sampler);
+	if (dc->draw_effect)
+		effect_destroy(dc->draw_effect);
+
+	gs_leavecontext();
+
+	pthread_mutex_destroy(&dc->mutex);
+	bfree(dc);
+}
+
+static bool init_display_stream(struct display_capture *dc)
+{
+	if (dc->display >= [NSScreen screens].count)
+		return false;
+
+	NSScreen *screen = [NSScreen screens][dc->display];
+
+	NSRect frame = [screen convertRectToBacking:screen.frame];
+
+	dc->width = frame.size.width;
+	dc->height = frame.size.height;
+
+	NSNumber *screen_num = screen.deviceDescription[@"NSScreenNumber"];
+	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
+
+	NSDictionary *dict = @{
+		(__bridge NSString*)kCGDisplayStreamSourceRect:
+		(__bridge NSDictionary*)CGRectCreateDictionaryRepresentation(
+				CGRectMake(0, 0, dc->width, dc->height)),
+		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5
+	};
+
+	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
+
+	dc->disp = CGDisplayStreamCreateWithDispatchQueue(disp_id,
+			dc->width, dc->height, 'BGRA',
+			(__bridge CFDictionaryRef)dict,
+			dispatch_queue_create(NULL, NULL),
+			^(CGDisplayStreamFrameStatus status, uint64_t
+				displayTime, IOSurfaceRef frameSurface,
+				CGDisplayStreamUpdateRef updateRef)
+			{
+				UNUSED_PARAMETER(displayTime);
+				UNUSED_PARAMETER(updateRef);
+
+				if (status ==
+					kCGDisplayStreamFrameStatusStopped) {
+					os_event_signal(dc->disp_finished);
+					return;
+				}
+
+				if (!frameSurface ||
+					pthread_mutex_trylock(&dc->mutex))
+					return;
+
+				if (dc->current) {
+					IOSurfaceDecrementUseCount(dc->current);
+					CFRelease(dc->current);
+					dc->current = NULL;
+				}
+
+				dc->current = frameSurface;
+				CFRetain(dc->current);
+				IOSurfaceIncrementUseCount(dc->current);
+				pthread_mutex_unlock(&dc->mutex);
+			}
+	);
+
+	return !CGDisplayStreamStart(dc->disp);
+}
+
+static void *display_capture_create(obs_data_t settings,
+		obs_source_t source)
+{
+	UNUSED_PARAMETER(source);
+	UNUSED_PARAMETER(settings);
+
+	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
 
 	gs_entercontext(obs_graphics());
 
@@ -67,134 +148,141 @@ static void *osx_desktop_test_create(obs_data_t settings, obs_source_t source)
 		.address_w = GS_ADDRESS_CLAMP,
 		.max_anisotropy = 1,
 	};
-	rt->sampler = gs_create_samplerstate(&info);
+	dc->sampler = gs_create_samplerstate(&info);
+	if (!dc->sampler)
+		goto fail;
 
-	effect_file = obs_find_plugin_file("test-input/draw_rect.effect");
-	rt->whatever = gs_create_effect_from_file(effect_file, NULL);
+	char *effect_file = obs_find_plugin_file("test-input/draw_rect.effect");
+	dc->draw_effect = gs_create_effect_from_file(effect_file, NULL);
 	bfree(effect_file);
-
-	if (!rt->whatever) {
-		osx_desktop_test_destroy(rt);
-		return NULL;
-	}
-
-	if ([[NSScreen screens] count] < 1) {
-		osx_desktop_test_destroy(rt);
-		return NULL;
-	}
-
-	NSScreen *screen = [NSScreen screens][0];
-
-	NSRect frame = [screen convertRectToBacking:[screen frame]];
-
-	rt->width = frame.size.width;
-	rt->height = frame.size.height;
-
-	pthread_mutex_init(&rt->mutex, NULL);
-
-	NSDictionary *dict = @{
-		(__bridge NSString*)kCGDisplayStreamSourceRect:
-		(__bridge NSDictionary*)CGRectCreateDictionaryRepresentation(
-				CGRectMake(0, 0, rt->width, rt->height)),
-		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5
-	};
-
-	rt->disp = CGDisplayStreamCreateWithDispatchQueue(CGMainDisplayID(),
-			rt->width, rt->height, 'BGRA',
-			(__bridge CFDictionaryRef)dict,
-			dispatch_queue_create(NULL, NULL),
-			^(CGDisplayStreamFrameStatus status, uint64_t
-				displayTime, IOSurfaceRef frameSurface,
-				CGDisplayStreamUpdateRef updateRef)
-			{
-				if (!frameSurface ||
-					pthread_mutex_trylock(&rt->mutex))
-					return;
-
-				if (rt->current) {
-					IOSurfaceDecrementUseCount(rt->current);
-					CFRelease(rt->current);
-					rt->current = NULL;
-				}
-
-				rt->current = frameSurface;
-				CFRetain(rt->current);
-				IOSurfaceIncrementUseCount(rt->current);
-				pthread_mutex_unlock(&rt->mutex);
-
-				UNUSED_PARAMETER(status);
-				UNUSED_PARAMETER(displayTime);
-				UNUSED_PARAMETER(updateRef);
-			}
-	);
+	if (!dc->draw_effect)
+		goto fail;
 
 	gs_leavecontext();
 
-	if (CGDisplayStreamStart(rt->disp)) {
-		osx_desktop_test_destroy(rt);
-		return NULL;
-	}
+	dc->display = obs_data_getint(settings, "display");
+	pthread_mutex_init(&dc->mutex, NULL);
 
-	UNUSED_PARAMETER(source);
-	UNUSED_PARAMETER(settings);
-	return rt;
+	if (!init_display_stream(dc))
+		goto fail;
+
+	return dc;
+
+fail:
+	gs_leavecontext();
+	display_capture_destroy(dc);
+	return NULL;
 }
 
-static void osx_desktop_test_video_render(void *data, effect_t effect)
+static void display_capture_video_render(void *data, effect_t effect)
 {
-	struct desktop_tex *rt = data;
+	UNUSED_PARAMETER(effect);
 
-	pthread_mutex_lock(&rt->mutex);
+	struct display_capture *dc = data;
 
-	if (rt->prev != rt->current) {
-		if (rt->tex)
-			texture_rebind_iosurface(rt->tex, rt->current);
+	pthread_mutex_lock(&dc->mutex);
+
+	if (dc->prev != dc->current) {
+		if (dc->tex)
+			texture_rebind_iosurface(dc->tex, dc->current);
 		else
-			rt->tex = gs_create_texture_from_iosurface(
-					rt->current);
-		rt->prev = rt->current;
+			dc->tex = gs_create_texture_from_iosurface(
+					dc->current);
+		dc->prev = dc->current;
 	}
 
-	if (!rt->tex) goto fail;
+	if (!dc->tex) goto fail;
 
-	gs_load_samplerstate(rt->sampler, 0);
-	technique_t tech = effect_gettechnique(rt->whatever, "Default");
-	effect_settexture(rt->whatever, effect_getparambyidx(rt->whatever, 1),
-			rt->tex);
+	gs_load_samplerstate(dc->sampler, 0);
+	technique_t tech = effect_gettechnique(dc->draw_effect, "Default");
+	effect_settexture(dc->draw_effect,
+			effect_getparambyidx(dc->draw_effect, 1),
+			dc->tex);
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	gs_draw_sprite(rt->tex, 0, 0, 0);
+	gs_draw_sprite(dc->tex, 0, 0, 0);
 
 	technique_endpass(tech);
 	technique_end(tech);
 
 fail:
-	pthread_mutex_unlock(&rt->mutex);
-
-	UNUSED_PARAMETER(effect);
+	pthread_mutex_unlock(&dc->mutex);
 }
 
-static uint32_t osx_desktop_test_getwidth(void *data)
+static const char *display_capture_getname(const char *locale)
 {
-	struct desktop_tex *rt = data;
-	return rt->width;
+	UNUSED_PARAMETER(locale);
+	return "Display Capture";
 }
 
-static uint32_t osx_desktop_test_getheight(void *data)
+static uint32_t display_capture_getwidth(void *data)
 {
-	struct desktop_tex *rt = data;
-	return rt->height;
+	struct display_capture *dc = data;
+	return dc->width;
 }
 
-struct obs_source_info osx_desktop = {
-	.id           = "osx_desktop",
+static uint32_t display_capture_getheight(void *data)
+{
+	struct display_capture *dc = data;
+	return dc->height;
+}
+
+static void display_capture_defaults(obs_data_t settings)
+{
+	obs_data_set_default_int(settings, "display", 0);
+}
+
+static void display_capture_update(void *data, obs_data_t settings)
+{
+	struct display_capture *dc = data;
+	unsigned display = obs_data_getint(settings, "display");
+	if (dc->display == display)
+		return;
+
+	gs_entercontext(obs_graphics());
+
+	destroy_display_stream(dc);
+	dc->display = display;
+	init_display_stream(dc);
+
+	gs_leavecontext();
+}
+
+static obs_properties_t display_capture_properties(char const *locale)
+{
+	UNUSED_PARAMETER(locale);
+	obs_properties_t props = obs_properties_create();
+
+	obs_property_t list = obs_properties_add_list(props,
+			"display", "Display",
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	for (unsigned i = 0; i < [NSScreen screens].count; i++)
+	{
+		char buf[10];
+		sprintf(buf, "%u", i);
+		obs_property_list_add_item(list, buf, buf);
+	}
+
+	return props;
+}
+
+struct obs_source_info display_capture_info = {
+	.id           = "display_capture",
 	.type         = OBS_SOURCE_TYPE_INPUT,
+	.getname      = display_capture_getname,
+
+	.create       = display_capture_create,
+	.destroy      = display_capture_destroy,
+
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
-	.getname      = osx_desktop_test_getname,
-	.create       = osx_desktop_test_create,
-	.destroy      = osx_desktop_test_destroy,
-	.video_render = osx_desktop_test_video_render,
-	.getwidth     = osx_desktop_test_getwidth,
-	.getheight    = osx_desktop_test_getheight,
+	.video_render = display_capture_video_render,
+
+	.getwidth     = display_capture_getwidth,
+	.getheight    = display_capture_getheight,
+
+	.defaults     = display_capture_defaults,
+	.properties   = display_capture_properties,
+	.update       = display_capture_update,
 };

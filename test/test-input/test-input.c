@@ -7,7 +7,7 @@ extern struct obs_source_info test_sinewave;
 extern struct obs_source_info test_filter;
 
 #ifdef __APPLE__
-extern struct obs_source_info osx_desktop;
+extern struct obs_source_info display_capture_info;
 #endif
 
 bool obs_module_load(uint32_t libobs_version)
@@ -17,7 +17,7 @@ bool obs_module_load(uint32_t libobs_version)
 	obs_register_source(&test_filter);
 
 #ifdef __APPLE__
-	obs_register_source(&osx_desktop);
+	obs_register_source(&display_capture_info);
 #endif
 
 	UNUSED_PARAMETER(libobs_version);
