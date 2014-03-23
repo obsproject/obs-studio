@@ -327,12 +327,19 @@ obs_data_t obs_source_settings(enum obs_source_type type, const char *id)
 	return NULL;
 }
 
-obs_properties_t obs_source_properties(enum obs_source_type type,
+obs_properties_t obs_get_source_properties(enum obs_source_type type,
 		const char *id, const char *locale)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (info && info->properties)
 	       return info->properties(locale);
+	return NULL;
+}
+
+obs_properties_t obs_source_properties(obs_source_t source, const char *locale)
+{
+	if (source && source->info.properties)
+		return source->info.properties(locale);
 	return NULL;
 }
 

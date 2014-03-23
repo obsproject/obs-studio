@@ -51,7 +51,9 @@ set(obs_SOURCES
 	obs-app.cpp
 	window-basic-main.cpp
 	window-basic-settings.cpp
+	window-basic-properties.cpp
 	window-namedialog.cpp
+	properties-view.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -60,14 +62,18 @@ set(obs_HEADERS
 	window-main.hpp
 	window-basic-main.hpp
 	window-basic-settings.hpp
+	window-basic-properties.hpp
 	window-namedialog.hpp
+	properties-view.hpp
+	display-helpers.hpp
 	qt-display.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI
 	forms/NameDialog.ui
 	forms/OBSBasic.ui
-	forms/OBSBasicSettings.ui)
+	forms/OBSBasicSettings.ui
+	forms/OBSBasicProperties.ui)
 
 set(obs_QRC
 	forms/obs.qrc)

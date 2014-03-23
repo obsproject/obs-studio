@@ -114,6 +114,9 @@ int gs_create(graphics_t *pgraphics, const char *module,
 	graphics_t graphics = bzalloc(sizeof(struct graphics_subsystem));
 	pthread_mutex_init_value(&graphics->mutex);
 
+	if (!data->num_backbuffers)
+		data->num_backbuffers = 1;
+
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {
 		errcode = GS_ERROR_MODULENOTFOUND;

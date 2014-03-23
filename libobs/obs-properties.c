@@ -315,7 +315,7 @@ const char *obs_property_description(obs_property_t p)
 	return p ? p->desc : NULL;
 }
 
-enum obs_property_type obs_property_type(obs_property_t p)
+enum obs_property_type obs_property_get_type(obs_property_t p)
 {
 	return p ? p->type : OBS_PROPERTY_INVALID;
 }

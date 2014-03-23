@@ -48,10 +48,21 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
+	gs_entercontext(obs_graphics());
+
+	if (!graphics_data->num_backbuffers)
+		graphics_data->num_backbuffers = 1;
+
 	if (!obs_display_init(display, graphics_data)) {
 		obs_display_destroy(display);
 		display = NULL;
+	} else {
+		pthread_mutex_lock(&obs->data.displays_mutex);
+		da_push_back(obs->data.displays, &display);
+		pthread_mutex_unlock(&obs->data.displays_mutex);
 	}
+
+	gs_leavecontext();
 
 	return display;
 }
@@ -74,7 +85,10 @@ void obs_display_destroy(obs_display_t display)
 		da_erase_item(obs->data.displays, &display);
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 
+		gs_entercontext(obs_graphics());
 		obs_display_free(display);
+		gs_leavecontext();
+
 		bfree(display);
 	}
 }

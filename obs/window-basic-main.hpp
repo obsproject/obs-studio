@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <memory>
 #include "window-main.hpp"
+#include "window-basic-properties.hpp"
 
 #include <util/util.hpp>
 
@@ -41,6 +42,8 @@ private:
 	int          resizeTimer;
 
 	ConfigFile   basicConfig;
+
+	OBSBasicProperties *properties;
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -92,6 +95,8 @@ public:
 	void NewProject();
 	void SaveProject();
 	void LoadProject();
+
+	void UnloadProperties();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

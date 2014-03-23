@@ -29,7 +29,9 @@
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-properties.hpp"
 #include "qt-wrappers.hpp"
+#include "display-helpers.hpp"
 
 #include "ui_OBSBasic.h"
 
@@ -43,6 +45,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	  outputTest    (NULL),
 	  sceneChanging (false),
 	  resizeTimer   (0),
+	  properties    (nullptr),
 	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -51,7 +54,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
-	obs_properties_t props = obs_source_properties(
+	obs_properties_t props = obs_get_source_properties(
 			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
 	size_t count = 0;
 
@@ -182,6 +185,9 @@ void OBSBasic::OBSInit()
 
 OBSBasic::~OBSBasic()
 {
+	if (properties)
+		delete properties;
+
 	/* free the lists before shutting down to remove the scene/item
 	 * references */
 	ui->sources->clear();
@@ -499,26 +505,13 @@ void OBSBasic::ResetAudioDevices()
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
-	double targetAspect, baseAspect;
 	QSize  targetSize;
 
 	/* resize preview panel to fix to the top section of the window */
-	targetSize   = ui->preview->size();
-	targetAspect = double(targetSize.width()) / double(targetSize.height());
-	baseAspect   = double(cx) / double(cy);
-
-	if (targetAspect > baseAspect) {
-		previewScale = float(targetSize.height()) / float(cy);
-		cx = targetSize.height() * baseAspect;
-		cy = targetSize.height();
-	} else {
-		previewScale = float(targetSize.width()) / float(cx);
-		cx = targetSize.width();
-		cy = targetSize.width() / baseAspect;
-	}
-
-	previewX = targetSize.width() /2 - cx/2;
-	previewY = targetSize.height()/2 - cy/2;
+	targetSize = ui->preview->size();
+	GetScaleAndCenterPos(int(cx), int(cy),
+			targetSize.width(), targetSize.height(),
+			previewX, previewY, previewScale);
 
 	if (isVisible()) {
 		if (resizeTimer)
@@ -769,6 +762,14 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 void OBSBasic::on_actionSourceProperties_triggered()
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_getsource(item);
+
+	if (source) {
+		delete properties;
+		properties = new OBSBasicProperties(this, source);
+		properties->Init();
+	}
 }
 
 void OBSBasic::on_actionSourceUp_triggered()
@@ -914,4 +915,9 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 config_t OBSBasic::Config() const
 {
 	return basicConfig;
+}
+
+void OBSBasic::UnloadProperties()
+{
+	properties = nullptr;
 }

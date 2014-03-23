@@ -130,14 +130,42 @@ void free_module(struct obs_module *mod)
 	bfree(mod->name);
 }
 
+#define REGISTER_OBS_DEF(size_var, structure, dest, info)                 \
+	do {                                                              \
+		struct structure data = {0};                              \
+		if (!size_var) {                                          \
+			blog(LOG_ERROR, "Tried to register " #structure   \
+			               " outside of obs_module_load");    \
+			return;                                           \
+		}                                                         \
+                                                                          \
+		memcpy(&data, info, size_var);                            \
+		da_push_back(dest, &data);                                \
+	} while (false)
+
+#define CHECK_REQUIRED_VAL(info, val, func) \
+	do { \
+		if (!info->val) {\
+			blog(LOG_ERROR, "Required value '" #val " for" \
+			                "'%s' not found.  " #func \
+			                " failed.", info->id); \
+			return; \
+		} \
+	} while (false)
+
 void obs_register_source(const struct obs_source_info *info)
 {
 	struct obs_source_info data = {0};
 	struct darray *array;
 
-	if (!info) {
-		blog(LOG_ERROR, "obs_register_source: NULL info");
-		return;
+	CHECK_REQUIRED_VAL(info, getname,   obs_register_source);
+	CHECK_REQUIRED_VAL(info, create,    obs_register_source);
+	CHECK_REQUIRED_VAL(info, destroy,   obs_register_source);
+
+	if (info->type == OBS_SOURCE_TYPE_INPUT &&
+	    info->output_flags & OBS_SOURCE_VIDEO) {
+		CHECK_REQUIRED_VAL(info, getwidth,  obs_register_source);
+		CHECK_REQUIRED_VAL(info, getheight, obs_register_source);
 	}
 
 	if (!cur_source_info_size) {
@@ -162,29 +190,6 @@ void obs_register_source(const struct obs_source_info *info)
 
 	darray_push_back(sizeof(struct obs_source_info), array, &data);
 }
-
-#define REGISTER_OBS_DEF(size_var, structure, dest, info)                 \
-	do {                                                              \
-		struct structure data = {0};                              \
-		if (!size_var) {                                          \
-			blog(LOG_ERROR, "Tried to register " #structure   \
-			               " outside of obs_module_load");    \
-			return;                                           \
-		}                                                         \
-                                                                          \
-		memcpy(&data, info, size_var);                            \
-		da_push_back(dest, &data);                                \
-	} while (false)
-
-#define CHECK_REQUIRED_VAL(info, val, func) \
-	do { \
-		if (!info->val) {\
-			blog(LOG_ERROR, "Required value '" #val " for" \
-			                "'%s' not found.  " #func \
-			                " failed.", info->id); \
-			return; \
-		} \
-	} while (false)
 
 void obs_register_output(const struct obs_output_info *info)
 {

@@ -87,7 +87,7 @@ EXPORT void obs_property_list_add_item(obs_property_t p,
 
 EXPORT const char *           obs_property_name(obs_property_t p);
 EXPORT const char *           obs_property_description(obs_property_t p);
-EXPORT enum obs_property_type obs_property_type(obs_property_t p);
+EXPORT enum obs_property_type obs_property_get_type(obs_property_t p);
 
 EXPORT bool                   obs_property_next(obs_property_t *p);
 

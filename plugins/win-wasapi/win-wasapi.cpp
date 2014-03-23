@@ -44,6 +44,8 @@ class WASAPISource {
 
 	bool ProcessCaptureData();
 
+	inline void Start();
+	inline void Stop();
 	void Reconnect();
 
 	bool InitDevice(IMMDeviceEnumerator *enumerator);
@@ -55,11 +57,13 @@ class WASAPISource {
 
 	bool TryInitialize();
 
+	void UpdateSettings(obs_data_t settings);
+
 public:
 	WASAPISource(obs_data_t settings, obs_source_t source_, bool input);
 	inline ~WASAPISource();
 
-	void UpdateSettings(obs_data_t settings);
+	void Update(obs_data_t settings);
 };
 
 WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
@@ -81,6 +85,11 @@ WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
 	if (!receiveSignal.Valid())
 		throw "Could not create receive signal";
 
+	Start();
+}
+
+inline void WASAPISource::Start()
+{
 	if (!TryInitialize()) {
 		blog(LOG_INFO, "[WASAPISource::WASAPISource] "
 		               "Device '%s' not found.  Waiting for device",
@@ -89,18 +98,25 @@ WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
 	}
 }
 
-inline WASAPISource::~WASAPISource()
+inline void WASAPISource::Stop()
 {
-	if (active)
-		blog(LOG_INFO, "WASAPI: Device '%s' Terminated",
-				device_name.c_str());
-
 	SetEvent(stopSignal);
 
-	if (active)
+	if (active) {
+		blog(LOG_INFO, "WASAPI: Device '%s' Terminated",
+				device_name.c_str());
 		WaitForSingleObject(captureThread, INFINITE);
+	}
+
 	if (reconnecting)
 		WaitForSingleObject(reconnectThread, INFINITE);
+
+	ResetEvent(stopSignal);
+}
+
+inline WASAPISource::~WASAPISource()
+{
+	Stop();
 }
 
 void WASAPISource::UpdateSettings(obs_data_t settings)
@@ -108,6 +124,20 @@ void WASAPISource::UpdateSettings(obs_data_t settings)
 	device_id       = obs_data_getstring(settings, "device_id");
 	useDeviceTiming = obs_data_getbool(settings, "useDeviceTiming");
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
+}
+
+void WASAPISource::Update(obs_data_t settings)
+{
+	string newDevice = obs_data_getstring(settings, "device_id");
+	bool restart = newDevice.compare(device_id) != 0;
+
+	if (restart)
+		Stop();
+
+	UpdateSettings(settings);
+
+	if (restart)
+		Start();
 }
 
 bool WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator)
@@ -431,6 +461,11 @@ static void DestroyWASAPISource(void *obj)
 	delete static_cast<WASAPISource*>(obj);
 }
 
+static void UpdateWASAPISource(void *obj, obs_data_t settings)
+{
+	static_cast<WASAPISource*>(obj)->Update(settings);
+}
+
 static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 {
 	obs_properties_t props = obs_properties_create();
@@ -477,6 +512,7 @@ void RegisterWASAPIInput()
 	info.getname         = GetWASAPIInputName;
 	info.create          = CreateWASAPIInput;
 	info.destroy         = DestroyWASAPISource;
+	info.update          = UpdateWASAPISource;
 	info.defaults        = GetWASAPIDefaults;
 	info.properties      = GetWASAPIPropertiesInput;
 	obs_register_source(&info);
@@ -491,6 +527,7 @@ void RegisterWASAPIOutput()
 	info.getname         = GetWASAPIOutputName;
 	info.create          = CreateWASAPIOutput;
 	info.destroy         = DestroyWASAPISource;
+	info.update          = UpdateWASAPISource;
 	info.defaults        = GetWASAPIDefaults;
 	info.properties      = GetWASAPIPropertiesOutput;
 	obs_register_source(&info);

@@ -132,6 +132,12 @@ struct obs_source_info {
 	/** Destroys the private data for the source */
 	void (*destroy)(void *data);
 
+	/** Returns the width of the source.  Required if input and video */
+	uint32_t (*getwidth)(void *data);
+
+	/** Returns the height of the source.  Required if input and video */
+	uint32_t (*getheight)(void *data);
+
 	/* ----------------------------------------------------------------- */
 	/* Optional implementation */
 
@@ -209,12 +215,6 @@ struct obs_source_info {
 	 *                an effect manually.
 	 */
 	void (*video_render)(void *data, effect_t effect);
-
-	/** @return The width of the source */
-	uint32_t (*getwidth)(void *data);
-
-	/** @return The height of the source */
-	uint32_t (*getheight)(void *data);
 
 	/**
 	 * Called to filter raw async video data.

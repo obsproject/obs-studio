@@ -128,11 +128,18 @@ obs_data_t obs_output_defaults(const char *id)
 	return NULL;
 }
 
-obs_properties_t obs_output_properties(const char *id, const char *locale)
+obs_properties_t obs_get_output_properties(const char *id, const char *locale)
 {
 	const struct obs_output_info *info = find_output(id);
 	if (info && info->properties)
 		return info->properties(locale);
+	return NULL;
+}
+
+obs_properties_t obs_output_properties(obs_output_t output, const char *locale)
+{
+	if (output && output->info.properties)
+		return output->info.properties(locale);
 	return NULL;
 }
 

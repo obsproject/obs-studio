@@ -138,6 +138,18 @@ static void monitor_capture_render(void *data, effect_t effect)
 	dc_capture_render(&capture->data, capture->opaque_effect);
 }
 
+static uint32_t monitor_capture_width(void *data)
+{
+	struct monitor_capture *capture = data;
+	return capture->data.width;
+}
+
+static uint32_t monitor_capture_height(void *data)
+{
+	struct monitor_capture *capture = data;
+	return capture->data.height;
+}
+
 struct obs_source_info monitor_capture_info = {
 	.id           = "monitor_capture",
 	.type         = OBS_SOURCE_TYPE_INPUT,
@@ -145,6 +157,8 @@ struct obs_source_info monitor_capture_info = {
 	.getname      = monitor_capture_getname,
 	.create       = monitor_capture_create,
 	.destroy      = monitor_capture_destroy,
+	.getwidth     = monitor_capture_width,
+	.getheight    = monitor_capture_height,
 	.defaults     = monitor_capture_defaults,
 	.video_render = monitor_capture_render,
 	.video_tick   = monitor_capture_tick

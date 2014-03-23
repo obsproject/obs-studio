@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ struct obs_encoder;
 struct obs_service;
 
 typedef struct obs_display    *obs_display_t;
-typedef struct obs_view   *obs_view_t;
+typedef struct obs_view       *obs_view_t;
 typedef struct obs_source     *obs_source_t;
 typedef struct obs_scene      *obs_scene_t;
 typedef struct obs_scene_item *obs_sceneitem_t;
@@ -438,12 +438,19 @@ EXPORT bool obs_source_removed(obs_source_t source);
 EXPORT uint32_t obs_source_get_output_flags(obs_source_t source);
 
 /** Gets the default settings for a source type */
-EXPORT obs_data_t obs_source_defaults(enum obs_source_type type,
+EXPORT obs_data_t obs_get_source_defaults(enum obs_source_type type,
 		const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_source_properties(enum obs_source_type type,
+EXPORT obs_properties_t obs_get_source_properties(enum obs_source_type type,
 		const char *id, const char *locale);
+
+/**
+ * Returns the properties list for a specific existing source.  Free with
+ * obs_properties_destroy
+ */
+EXPORT obs_properties_t obs_source_properties(obs_source_t source,
+		const char *locale);
 
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t source, obs_data_t settings);
@@ -662,7 +669,14 @@ EXPORT bool obs_output_active(obs_output_t output);
 EXPORT obs_data_t obs_output_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_output_properties(const char *id,
+EXPORT obs_properties_t obs_get_output_properties(const char *id,
+		const char *locale);
+
+/**
+ * Returns the property list of an existing output, if any.  Free with
+ * obs_properties_destroy
+ */
+EXPORT obs_properties_t obs_output_properties(obs_output_t output,
 		const char *locale);
 
 /** Updates the settings for this output context */
@@ -742,7 +756,14 @@ EXPORT void obs_encoder_stop(obs_encoder_t encoder,
 EXPORT obs_data_t obs_encoder_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_encoder_properties(const char *id,
+EXPORT obs_properties_t obs_get_encoder_properties(const char *id,
+		const char *locale);
+
+/**
+ * Returns the property list of an existing encoder, if any.  Free with
+ * obs_properties_destroy
+ */
+EXPORT obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
 		const char *locale);
 
 /**

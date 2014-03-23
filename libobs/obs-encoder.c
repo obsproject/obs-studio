@@ -208,11 +208,19 @@ obs_data_t obs_encoder_defaults(const char *id)
 	return NULL;
 }
 
-obs_properties_t obs_encoder_properties(const char *id, const char *locale)
+obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
 	if (ei && ei->properties)
 		return ei->properties(locale);
+	return NULL;
+}
+
+obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
+		const char *locale)
+{
+	if (encoder && encoder->info.properties)
+		return encoder->info.properties(locale);
 	return NULL;
 }
 
