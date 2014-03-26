@@ -39,6 +39,12 @@ static void destroy_display_stream(struct display_capture *dc)
 		dc->current = NULL;
 	}
 
+	if (dc->prev) {
+		IOSurfaceDecrementUseCount(dc->prev);
+		CFRelease(dc->prev);
+		dc->prev = NULL;
+	}
+
 	if (dc->disp) {
 		CFRelease(dc->disp);
 		dc->disp = NULL;
@@ -182,13 +188,19 @@ static void display_capture_video_render(void *data, effect_t effect)
 
 	pthread_mutex_lock(&dc->mutex);
 
-	if (dc->prev != dc->current) {
+	if (dc->current && dc->prev != dc->current) {
 		if (dc->tex)
 			texture_rebind_iosurface(dc->tex, dc->current);
 		else
 			dc->tex = gs_create_texture_from_iosurface(
 					dc->current);
+
+		if (dc->prev) {
+			IOSurfaceDecrementUseCount(dc->prev);
+			CFRelease(dc->prev);
+		}
 		dc->prev = dc->current;
+		dc->current = NULL;
 	}
 
 	if (!dc->tex) goto fail;
