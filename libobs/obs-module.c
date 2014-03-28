@@ -198,7 +198,24 @@ void obs_register_output(const struct obs_output_info *info)
 	CHECK_REQUIRED_VAL(info, destroy, obs_register_output);
 	CHECK_REQUIRED_VAL(info, start,   obs_register_output);
 	CHECK_REQUIRED_VAL(info, stop,    obs_register_output);
-	CHECK_REQUIRED_VAL(info, active,  obs_register_output);
+
+	if (info->flags & OBS_OUTPUT_ENCODED) {
+		if (info->flags & OBS_OUTPUT_VIDEO)
+			CHECK_REQUIRED_VAL(info, encoded_video,
+					obs_register_output);
+
+		if (info->flags & OBS_OUTPUT_AUDIO)
+			CHECK_REQUIRED_VAL(info, encoded_audio,
+					obs_register_output);
+	} else {
+		if (info->flags & OBS_OUTPUT_VIDEO)
+			CHECK_REQUIRED_VAL(info, raw_video,
+					obs_register_output);
+
+		if (info->flags & OBS_OUTPUT_AUDIO)
+			CHECK_REQUIRED_VAL(info, raw_audio,
+					obs_register_output);
+	}
 
 	REGISTER_OBS_DEF(cur_output_info_size, obs_output_info,
 			obs->output_types, info);
@@ -206,11 +223,11 @@ void obs_register_output(const struct obs_output_info *info)
 
 void obs_register_encoder(const struct obs_encoder_info *info)
 {
-	CHECK_REQUIRED_VAL(info, getname,   obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, create,    obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, destroy,   obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, start,     obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, encode,    obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, getname,    obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, create,     obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, destroy,    obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, initialize, obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, encode,     obs_register_encoder);
 
 	REGISTER_OBS_DEF(cur_encoder_info_size, obs_encoder_info,
 			obs->encoder_types, info);

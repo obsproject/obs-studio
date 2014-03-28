@@ -47,12 +47,25 @@ static const char *obs_x264_getname(const char *locale)
 
 static void obs_x264_stop(void *data);
 
+static void clear_data(struct obs_x264 *obsx264)
+{
+	if (obsx264->context) {
+		x264_encoder_close(obsx264->context);
+		bfree(obsx264->sei);
+		bfree(obsx264->extra_data);
+
+		obsx264->context    = NULL;
+		obsx264->sei        = NULL;
+		obsx264->extra_data = NULL;
+	}
+}
+
 static void obs_x264_destroy(void *data)
 {
 	struct obs_x264 *obsx264 = data;
 
 	if (obsx264) {
-		obs_x264_stop(obsx264);
+		clear_data(obsx264);
 		da_free(obsx264->packet_data);
 		bfree(obsx264);
 	}
@@ -318,12 +331,11 @@ static void load_headers(struct obs_x264 *obsx264)
 	obsx264->sei_size        = sei.num;
 }
 
-static bool obs_x264_start(void *data, obs_data_t settings)
+static bool obs_x264_initialize(void *data, obs_data_t settings)
 {
 	struct obs_x264 *obsx264 = data;
 
-	assert(obsx264->context == NULL);
-	obs_x264_stop(data);
+	clear_data(data);
 
 	if (update_settings(obsx264, settings)) {
 		obsx264->context = x264_encoder_open(&obsx264->params);
@@ -339,25 +351,12 @@ static bool obs_x264_start(void *data, obs_data_t settings)
 	return obsx264->context != NULL;
 }
 
-static void obs_x264_stop(void *data)
-{
-	struct obs_x264 *obsx264 = data;
-
-	if (obsx264->context) {
-		x264_encoder_close(obsx264->context);
-		bfree(obsx264->sei);
-		bfree(obsx264->extra_data);
-
-		obsx264->context    = NULL;
-		obsx264->sei        = NULL;
-		obsx264->extra_data = NULL;
-	}
-}
-
 static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	struct obs_x264 *data = bzalloc(sizeof(struct obs_x264));
 	data->encoder = encoder;
+
+	UNUSED_PARAMETER(settings);
 	return data;
 }
 
@@ -428,10 +427,11 @@ static bool obs_x264_encode(void *data, struct encoder_frame *frame,
 	if (!frame || !packet || !received_packet)
 		return false;
 
-	init_pic_data(obsx264, &pic, frame);
+	if (frame)
+		init_pic_data(obsx264, &pic, frame);
 
-	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count, &pic,
-			&pic_out);
+	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count,
+			(frame ? &pic : NULL), &pic_out);
 	if (ret < 0) {
 		blog(LOG_WARNING, "x264 encode failed");
 		return false;
@@ -492,8 +492,7 @@ struct obs_encoder_info obs_x264_encoder = {
 	.getname    = obs_x264_getname,
 	.create     = obs_x264_create,
 	.destroy    = obs_x264_destroy,
-	.start      = obs_x264_start,
-	.stop       = obs_x264_stop,
+	.initialize = obs_x264_initialize,
 	.encode     = obs_x264_encode,
 	.properties = obs_x264_props,
 	.defaults   = obs_x264_defaults,

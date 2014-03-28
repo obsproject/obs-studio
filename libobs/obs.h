@@ -697,6 +697,73 @@ EXPORT signal_handler_t obs_output_signalhandler(obs_output_t output);
 /** Returns the procedure handler for an output */
 EXPORT proc_handler_t obs_output_prochandler(obs_output_t output);
 
+/**
+ * Sets the current video media context associated with this output,
+ * required for non-encoded outputs
+ */
+EXPORT void obs_output_set_video(obs_output_t output, video_t video);
+
+/**
+ * Sets the current audio/video media contexts associated with this output,
+ * required for non-encoded outputs.  Can be null.
+ */
+EXPORT void obs_output_set_media(obs_output_t output,
+		video_t video, audio_t audio);
+
+/** Returns the video media context associated with this output */
+EXPORT video_t obs_output_video(obs_output_t output);
+
+/** Returns the audio media context associated with this output */
+EXPORT audio_t obs_output_audio(obs_output_t output);
+
+/**
+ * Sets the current video encoder associated with this output,
+ * required for encoded outputs
+ */
+EXPORT void obs_output_set_video_encoder(obs_output_t output,
+		obs_encoder_t encoder);
+
+/**
+ * Sets the current audio encoder associated with this output,
+ * required for encoded outputs
+ */
+EXPORT void obs_output_set_audio_encoder(obs_output_t output,
+		obs_encoder_t encoder);
+
+/** Returns the current video encoder associated with this output */
+EXPORT obs_encoder_t obs_output_get_video_encoder(obs_output_t output);
+
+/** Returns the current audio encoder associated with this output */
+EXPORT obs_encoder_t obs_output_get_audio_encoder(obs_output_t output);
+
+/* ------------------------------------------------------------------------- */
+/* Functions used by outputs */
+
+/** Optionally sets the video conversion info.  Used only for raw output */
+EXPORT void obs_output_set_video_conversion(obs_output_t output,
+		const struct video_scale_info *conversion);
+
+/** Optionally sets the audio conversion info.  Used only for raw output */
+EXPORT void obs_output_set_audio_conversion(obs_output_t output,
+		const struct audio_convert_info *conversion);
+
+/**
+ * Begins data capture from media/encoders.
+ *
+ * @param  output  Output context
+ * @param  flags   Set this to 0 to use default output flags set in the
+ *                 obs_output_info structure, otherwise set to a either
+ *                 OBS_OUTPUT_VIDEO or OBS_OUTPUT_AUDIO to specify whether to
+ *                 connect audio or video.  This is useful for things like
+ *                 ffmpeg which may or may not always want to use both audio
+ *                 and video.
+ * @return         true if successful, false otherwise.
+ */
+EXPORT bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags);
+
+/** Ends data capture from media/encoders */
+EXPORT void obs_output_end_data_capture(obs_output_t output);
+
 
 /* ------------------------------------------------------------------------- */
 /* Encoders */
@@ -732,6 +799,12 @@ EXPORT obs_encoder_t obs_encoder_create_audio(const char *id, const char *name,
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
 
 /**
+ * Initializes the encoder and returns whether settings are valid.
+ * Must be called before obs_encoder_start
+ */
+EXPORT bool obs_encoder_initialize(obs_encoder_t encoder);
+
+/**
  * Starts encoding.  This function can be called more than once, and each
  * callback will receive the same encoder data.
  *
@@ -739,7 +812,7 @@ EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
  * @param  new_packet  Callback that receives encoded packets
  * @param  param       Callback parameter
  */
-EXPORT bool obs_encoder_start(obs_encoder_t encoder,
+EXPORT void obs_encoder_start(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
 

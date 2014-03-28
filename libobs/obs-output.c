@@ -49,12 +49,14 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	if (!output->procs)
 		goto fail;
 
-	output->info      = *info;
-	output->settings  = obs_data_newref(settings);
+	output->info     = *info;
+	output->video    = obs_video();
+	output->audio    = obs_audio();
+	output->settings = obs_data_newref(settings);
 	if (output->info.defaults)
 		output->info.defaults(output->settings);
 
-	output->data      = info->create(output->settings, output);
+	output->data = info->create(output->settings, output);
 	if (!output->data)
 		goto fail;
 
@@ -77,10 +79,8 @@ void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
 		if (output->valid) {
-			if (output->info.active) {
-				if (output->info.active(output->data))
-					output->info.stop(output->data);
-			}
+			if (output->active)
+				output->info.stop(output->data);
 
 			pthread_mutex_lock(&obs->data.outputs_mutex);
 			da_erase_item(obs->data.outputs, &output);
@@ -112,7 +112,7 @@ void obs_output_stop(obs_output_t output)
 
 bool obs_output_active(obs_output_t output)
 {
-	return (output != NULL) ? output->info.active(output) : false;
+	return (output != NULL) ? output->active : false;
 }
 
 obs_data_t obs_output_defaults(const char *id)
@@ -181,4 +181,210 @@ signal_handler_t obs_output_signalhandler(obs_output_t output)
 proc_handler_t obs_output_prochandler(obs_output_t output)
 {
 	return output ? output->procs : NULL;
+}
+
+void obs_output_set_media(obs_output_t output, video_t video, audio_t audio)
+{
+	if (!output)
+		return;
+
+	output->video = video;
+	output->audio = audio;
+}
+
+video_t obs_output_video(obs_output_t output)
+{
+	return output ? output->video : NULL;
+}
+
+audio_t obs_output_audio(obs_output_t output)
+{
+	return output ? output->audio : NULL;
+}
+
+void obs_output_remove_encoder(struct obs_output *output,
+		struct obs_encoder *encoder)
+{
+	if (!output) return;
+
+	if (output->video_encoder == encoder)
+		output->video_encoder = NULL;
+	else if (output->audio_encoder == encoder)
+		output->audio_encoder = NULL;
+}
+
+void obs_output_set_video_encoder(obs_output_t output, obs_encoder_t encoder)
+{
+	if (!output) return;
+	if (output->video_encoder == encoder) return;
+	if (encoder && encoder->info.type != OBS_ENCODER_VIDEO) return;
+
+	obs_encoder_remove_output(encoder, output);
+	obs_encoder_add_output(encoder, output);
+	output->video_encoder = encoder;
+}
+
+void obs_output_set_audio_encoder(obs_output_t output, obs_encoder_t encoder)
+{
+	if (!output) return;
+	if (output->audio_encoder == encoder) return;
+	if (encoder && encoder->info.type != OBS_ENCODER_AUDIO) return;
+
+	obs_encoder_remove_output(encoder, output);
+	obs_encoder_add_output(encoder, output);
+	output->audio_encoder = encoder;
+}
+
+obs_encoder_t obs_output_get_video_encoder(obs_output_t output)
+{
+	return output ? output->video_encoder : NULL;
+}
+
+obs_encoder_t obs_output_get_audio_encoder(obs_output_t output)
+{
+	return output ? output->audio_encoder : NULL;
+}
+
+void obs_output_set_video_conversion(obs_output_t output,
+		const struct video_scale_info *conversion)
+{
+	if (!output || !conversion) return;
+
+	output->video_conversion = *conversion;
+	output->video_conversion_set = true;
+}
+
+void obs_output_set_audio_conversion(obs_output_t output,
+		const struct audio_convert_info *conversion)
+{
+	if (!output || !conversion) return;
+
+	output->audio_conversion = *conversion;
+	output->audio_conversion_set = true;
+}
+
+static bool can_begin_data_capture(struct obs_output *output, bool encoded,
+		bool has_video, bool has_audio)
+{
+	if (has_video) {
+		if (encoded) {
+			if (!output->video_encoder)
+				return false;
+		} else {
+			if (!output->video)
+				return false;
+		}
+	}
+
+	if (has_audio) {
+		if (encoded) {
+			if (!output->audio_encoder)
+				return false;
+		} else {
+			if (!output->audio)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+static inline struct video_scale_info *get_video_conversion(
+		struct obs_output *output)
+{
+	return output->video_conversion_set ? &output->video_conversion : NULL;
+}
+
+static inline struct audio_convert_info *get_audio_conversion(
+		struct obs_output *output)
+{
+	return output->audio_conversion_set ? &output->audio_conversion : NULL;
+}
+
+static void hook_data_capture(struct obs_output *output, bool encoded,
+		bool has_video, bool has_audio)
+{
+	if (encoded) {
+		if (has_video)
+			obs_encoder_start(output->video_encoder,
+					output->info.encoded_video,
+					output->data);
+		if (has_audio)
+			obs_encoder_start(output->audio_encoder,
+					output->info.encoded_audio,
+					output->data);
+	} else {
+		if (has_video)
+			video_output_connect(output->video,
+					get_video_conversion(output),
+					output->info.raw_video,
+					output->data);
+		if (has_audio)
+			audio_output_connect(output->audio,
+					get_audio_conversion(output),
+					output->info.raw_audio,
+					output->data);
+	}
+}
+
+static inline void convert_flags(struct obs_output *output, uint32_t flags,
+		bool *encoded, bool *has_video, bool *has_audio)
+{
+	*encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
+	if (!flags)
+		flags = output->info.flags;
+	else
+		flags &= output->info.flags;
+
+	*has_video = (flags & OBS_OUTPUT_VIDEO) != 0;
+	*has_audio = (flags & OBS_OUTPUT_AUDIO) != 0;
+}
+
+bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
+{
+	bool encoded, has_video, has_audio;
+
+	if (!output) return false;
+	if (output->active) return false;
+
+	convert_flags(output, flags, &encoded, &has_video, &has_audio);
+
+	if (!can_begin_data_capture(output, encoded, has_video, has_audio))
+		return false;
+
+	hook_data_capture(output, encoded, has_video, has_audio);
+	output->active = true;
+	return true;
+}
+
+void obs_output_end_data_capture(obs_output_t output)
+{
+	bool encoded, has_video, has_audio;
+
+	if (!output) return;
+	if (!output->active) return;
+
+	convert_flags(output, 0, &encoded, &has_video, &has_audio);
+
+	if (encoded) {
+		if (has_video)
+			obs_encoder_stop(output->video_encoder,
+					output->info.encoded_video,
+					output->data);
+		if (has_audio)
+			obs_encoder_stop(output->audio_encoder,
+					output->info.encoded_audio,
+					output->data);
+	} else {
+		if (has_video)
+			video_output_disconnect(output->video,
+					output->info.raw_video,
+					output->data);
+		if (has_audio)
+			audio_output_disconnect(output->audio,
+					output->info.raw_audio,
+					output->data);
+	}
+
+	output->active = false;
 }

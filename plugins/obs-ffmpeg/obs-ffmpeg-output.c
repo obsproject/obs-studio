@@ -741,18 +741,10 @@ static void *write_thread(void *data)
 
 static bool try_connect(struct ffmpeg_output *output)
 {
-	video_t video = obs_video();
-	audio_t audio = obs_audio();
 	const char *filename_test;
 	obs_data_t settings;
 	int audio_bitrate, video_bitrate;
 	int ret;
-
-	if (!video || !audio) {
-		blog(LOG_WARNING, "ffmpeg_output_start: audio and video must "
-		                  "both be active (as of this writing)");
-		return false;
-	}
 
 	settings = obs_output_get_settings(output->output);
 	filename_test = obs_data_getstring(settings, "filename");
@@ -785,8 +777,9 @@ static bool try_connect(struct ffmpeg_output *output)
 		return false;
 	}
 
-	video_output_connect(video, &vsi, receive_video, output);
-	audio_output_connect(audio, &aci, receive_audio, output);
+	obs_output_set_video_conversion(output->output, &vsi);
+	obs_output_set_audio_conversion(output->output, &aci);
+	obs_output_begin_data_capture(output->output, 0);
 	output->write_thread_active = true;
 	return true;
 }
@@ -826,8 +819,7 @@ static void ffmpeg_output_stop(void *data)
 	struct ffmpeg_output *output = data;
 
 	if (output->active) {
-		video_output_disconnect(obs_video(), receive_video, data);
-		audio_output_disconnect(obs_audio(), receive_audio, data);
+		obs_output_end_data_capture(output->output);
 
 		if (output->write_thread_active) {
 			os_event_signal(output->stop_event);
@@ -848,18 +840,14 @@ static void ffmpeg_output_stop(void *data)
 	}
 }
 
-static bool ffmpeg_output_active(void *data)
-{
-	struct ffmpeg_output *output = data;
-	return output->active;
-}
-
 struct obs_output_info ffmpeg_output = {
-	.id      = "ffmpeg_output",
-	.getname = ffmpeg_output_getname,
-	.create  = ffmpeg_output_create,
-	.destroy = ffmpeg_output_destroy,
-	.start   = ffmpeg_output_start,
-	.stop    = ffmpeg_output_stop,
-	.active  = ffmpeg_output_active
+	.id        = "ffmpeg_output",
+	.flags     = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO,
+	.getname   = ffmpeg_output_getname,
+	.create    = ffmpeg_output_create,
+	.destroy   = ffmpeg_output_destroy,
+	.start     = ffmpeg_output_start,
+	.stop      = ffmpeg_output_stop,
+	.raw_video = receive_video,
+	.raw_audio = receive_audio,
 };

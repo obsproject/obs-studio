@@ -39,7 +39,12 @@ const char *obs_encoder_getdisplayname(const char *id, const char *locale)
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		obs_data_t settings)
 {
+	pthread_mutex_init_value(&encoder->callbacks_mutex);
+	pthread_mutex_init_value(&encoder->outputs_mutex);
+
 	if (pthread_mutex_init(&encoder->callbacks_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
 	encoder->settings = obs_data_newref(settings);
@@ -64,7 +69,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 
 static struct obs_encoder *create_encoder(const char *id,
 		enum obs_encoder_type type, const char *name,
-		obs_data_t settings, void *output,
+		obs_data_t settings, void *media,
 		uint32_t timebase_num, uint32_t timebase_den)
 {
 	struct obs_encoder *encoder;
@@ -76,7 +81,7 @@ static struct obs_encoder *create_encoder(const char *id,
 
 	encoder = bzalloc(sizeof(struct obs_encoder));
 	encoder->info         = *ei;
-	encoder->output       = output;
+	encoder->media        = media;
 	encoder->timebase_num = timebase_num;
 	encoder->timebase_den = timebase_den;
 
@@ -147,51 +152,70 @@ static void add_connection(struct obs_encoder *encoder)
 		struct audio_convert_info *info = NULL;
 
 		info = get_audio_info(encoder, &audio_info);
-		audio_output_connect(encoder->output, info, receive_audio,
+		audio_output_connect(encoder->media, info, receive_audio,
 				encoder);
 	} else {
 		struct video_scale_info *info = NULL;
 
 		info = get_video_info(encoder, &video_info);
-		video_output_connect(encoder->output, info, receive_video,
+		video_output_connect(encoder->media, info, receive_video,
 				encoder);
 	}
+
+	encoder->active = true;
 }
 
 static void remove_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO)
-		audio_output_disconnect(encoder->output, receive_audio,
+		audio_output_disconnect(encoder->media, receive_audio,
 				encoder);
 	else
-		video_output_disconnect(encoder->output, receive_video,
+		video_output_disconnect(encoder->media, receive_video,
 				encoder);
+
+	encoder->active = false;
 }
 
-static void full_stop(struct obs_encoder *encoder)
+static void obs_encoder_actually_destroy(obs_encoder_t encoder)
 {
 	if (encoder) {
-		pthread_mutex_lock(&encoder->callbacks_mutex);
-		da_free(encoder->callbacks);
-		remove_connection(encoder);
-		pthread_mutex_unlock(&encoder->callbacks_mutex);
+		pthread_mutex_lock(&encoder->outputs_mutex);
+		for (size_t i = 0; i < encoder->outputs.num; i++) {
+			struct obs_output *output = encoder->outputs.array[i];
+			obs_output_remove_encoder(output, encoder);
+		}
+		da_free(encoder->outputs);
+		pthread_mutex_unlock(&encoder->outputs_mutex);
+
+		encoder->info.destroy(encoder->data);
+		obs_data_release(encoder->settings);
+		pthread_mutex_destroy(&encoder->callbacks_mutex);
+		pthread_mutex_destroy(&encoder->outputs_mutex);
+		bfree(encoder->name);
+		bfree(encoder);
 	}
 }
 
+/* does not actually destroy the encoder until all connections to it have been
+ * removed. (full reference counting really would have been superfluous) */
 void obs_encoder_destroy(obs_encoder_t encoder)
 {
 	if (encoder) {
-		full_stop(encoder);
+		bool destroy;
 
 		pthread_mutex_lock(&obs->data.encoders_mutex);
 		da_erase_item(obs->data.encoders, &encoder);
 		pthread_mutex_unlock(&obs->data.encoders_mutex);
 
-		encoder->info.destroy(encoder->data);
-		obs_data_release(encoder->settings);
-		pthread_mutex_destroy(&encoder->callbacks_mutex);
-		bfree(encoder->name);
-		bfree(encoder);
+		pthread_mutex_lock(&encoder->callbacks_mutex);
+		destroy = encoder->callbacks.num == 0;
+		if (!destroy)
+			encoder->destroy_on_stop = true;
+		pthread_mutex_unlock(&encoder->callbacks_mutex);
+
+		if (destroy)
+			obs_encoder_actually_destroy(encoder);
 	}
 }
 
@@ -250,6 +274,18 @@ obs_data_t obs_encoder_get_settings(obs_encoder_t encoder)
 	return encoder->settings;
 }
 
+bool obs_encoder_initialize(obs_encoder_t encoder)
+{
+	if (!encoder) return false;
+
+	if (encoder->active)
+		return true;
+
+	encoder->initialized = encoder->info.initialize(encoder,
+			encoder->settings);
+	return encoder->initialized;
+}
+
 static inline size_t get_callback_idx(
 		struct obs_encoder *encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
@@ -265,7 +301,7 @@ static inline size_t get_callback_idx(
 	return DARRAY_INVALID;
 }
 
-bool obs_encoder_start(obs_encoder_t encoder,
+void obs_encoder_start(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param)
 {
@@ -273,13 +309,11 @@ bool obs_encoder_start(obs_encoder_t encoder,
 	bool success = true;
 	bool first   = false;
 
-	if (!encoder || !new_packet) return false;
+	if (!encoder || !new_packet || !encoder->initialized) return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
 	first = (encoder->callbacks.num == 0);
-	if (first)
-		success = encoder->info.start(encoder->data, encoder->settings);
 
 	if (success) {
 		size_t idx = get_callback_idx(encoder, new_packet, param);
@@ -295,8 +329,6 @@ bool obs_encoder_start(obs_encoder_t encoder,
 		encoder->cur_pts = 0;
 		add_connection(encoder);
 	}
-
-	return success;
 }
 
 void obs_encoder_stop(obs_encoder_t encoder,
@@ -314,27 +346,28 @@ void obs_encoder_stop(obs_encoder_t encoder,
 	if (idx != DARRAY_INVALID) {
 		da_erase(encoder->callbacks, idx);
 		last = (encoder->callbacks.num == 0);
-
-		if (last)
-			encoder->info.stop(encoder->data);
 	}
 
 	pthread_mutex_unlock(&encoder->callbacks_mutex);
 
-	if (last)
+	if (last) {
 		remove_connection(encoder);
+
+		if (encoder->destroy_on_stop)
+			obs_encoder_actually_destroy(encoder);
+	}
 }
 
 video_t obs_encoder_video(obs_encoder_t encoder)
 {
 	return (encoder && encoder->info.type == OBS_ENCODER_VIDEO) ?
-		encoder->output : NULL;
+		encoder->media : NULL;
 }
 
 audio_t obs_encoder_audio(obs_encoder_t encoder)
 {
 	return (encoder && encoder->info.type == OBS_ENCODER_AUDIO) ?
-		encoder->output : NULL;
+		encoder->media : NULL;
 }
 
 static inline bool get_sei(struct obs_encoder *encoder,
@@ -385,6 +418,16 @@ static inline void send_packet(struct obs_encoder *encoder,
 		send_first_video_packet(encoder, cb, packet);
 	else
 		cb->new_packet(cb->param, packet);
+}
+
+static void full_stop(struct obs_encoder *encoder)
+{
+	if (encoder) {
+		pthread_mutex_lock(&encoder->callbacks_mutex);
+		da_free(encoder->callbacks);
+		remove_connection(encoder);
+		pthread_mutex_unlock(&encoder->callbacks_mutex);
+	}
 }
 
 static inline void do_encode(struct obs_encoder *encoder,
@@ -447,7 +490,7 @@ static void receive_audio(void *param, struct audio_data *data)
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
-	data_size = audio_output_blocksize(encoder->output) * data->frames;
+	data_size = audio_output_blocksize(encoder->media) * data->frames;
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		if (data->data[i]) {
@@ -462,4 +505,24 @@ static void receive_audio(void *param, struct audio_data *data)
 	do_encode(encoder, &enc_frame, &packet);
 
 	encoder->cur_pts += data->frames;
+}
+
+void obs_encoder_add_output(struct obs_encoder *encoder,
+		struct obs_output *output)
+{
+	if (!encoder) return;
+
+	pthread_mutex_lock(&encoder->outputs_mutex);
+	da_push_back(encoder->outputs, &output);
+	pthread_mutex_unlock(&encoder->outputs_mutex);
+}
+
+void obs_encoder_remove_output(struct obs_encoder *encoder,
+		struct obs_output *output)
+{
+	if (!encoder) return;
+
+	pthread_mutex_lock(&encoder->outputs_mutex);
+	da_erase_item(encoder->outputs, &output);
+	pthread_mutex_unlock(&encoder->outputs_mutex);
 }

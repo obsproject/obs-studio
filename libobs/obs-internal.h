@@ -268,8 +268,22 @@ struct obs_output {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	bool                            active;
+	video_t                         video;
+	audio_t                         audio;
+	obs_encoder_t                   video_encoder;
+	obs_encoder_t                   audio_encoder;
+
+	bool                            video_conversion_set;
+	bool                            audio_conversion_set;
+	struct video_scale_info         video_conversion;
+	struct audio_convert_info       audio_conversion;
+
 	bool                            valid;
 };
+
+extern void obs_output_remove_encoder(struct obs_output *output,
+		struct obs_encoder *encoder);
 
 
 /* ------------------------------------------------------------------------- */
@@ -287,13 +301,27 @@ struct obs_encoder {
 	struct obs_encoder_info         info;
 	obs_data_t                      settings;
 
+	bool                            initialized;
+	bool                            active;
+
 	uint32_t                        timebase_num;
 	uint32_t                        timebase_den;
 
 	int64_t                         cur_pts;
 
-	void                            *output;
+	pthread_mutex_t                 outputs_mutex;
+	DARRAY(obs_output_t)            outputs;
+
+	bool                            destroy_on_stop;
+
+	/* stores the video/audio media output pointer.  video_t or audio_t */
+	void                            *media;
 
 	pthread_mutex_t                 callbacks_mutex;
 	DARRAY(struct encoder_callback) callbacks;
 };
+
+extern void obs_encoder_add_output(struct obs_encoder *encoder,
+		struct obs_output *output);
+extern void obs_encoder_remove_output(struct obs_encoder *encoder,
+		struct obs_output *output);

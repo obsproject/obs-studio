@@ -118,13 +118,14 @@ struct obs_encoder_info {
 	void (*destroy)(void *data);
 
 	/**
-	 * Starts the encoder
+	 * Initializes the encoder with the specified settings
 	 *
 	 * @param  data      Data associated with this encoder context
 	 * @param  settings  Settings for the encoder
-	 * @return           true if successful, false otherwise
+	 * @return           true if the encoder settings are valid and the
+	 *                   encoder is ready to be used, false otherwise
 	 */
-	bool (*start)(void *data, obs_data_t settings);
+	bool (*initialize)(void *data, obs_data_t settings);
 
 	/**
 	 * Encodes frame(s), and outputs encoded packets as they become
@@ -150,13 +151,6 @@ struct obs_encoder_info {
 	 * @param[out]  settings  Data to assign default settings to
 	 */
 	void (*defaults)(obs_data_t settings);
-
-	/**
-	 * Stops the encoder
-	 *
-	 * @param  data  Data associated with this encoder context
-	 */
-	void (*stop)(void *data);
 
 	/** 
 	 * Gets the property information of this encoder

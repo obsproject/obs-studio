@@ -17,9 +17,18 @@
 
 #pragma once
 
+#define OBS_OUTPUT_VIDEO       (1<<0)
+#define OBS_OUTPUT_AUDIO       (1<<1)
+#define OBS_OUTPUT_AV          (OBS_OUTPUT_VIDEO | OBS_OUTPUT_AUDIO)
+#define OBS_OUTPUT_ENCODED     (1<<2)
+
+struct encoder_packet;
+
 struct obs_output_info {
 	/* required */
 	const char *id;
+
+	uint32_t flags;
 
 	const char *(*getname)(const char *locale);
 
@@ -29,7 +38,11 @@ struct obs_output_info {
 	bool (*start)(void *data);
 	void (*stop)(void *data);
 
-	bool (*active)(void *data);
+	void (*raw_video)(void *data, struct video_data *frame);
+	void (*raw_audio)(void *data, struct audio_data *frames);
+
+	void (*encoded_video)(void *data, struct encoder_packet *packet);
+	void (*encoded_audio)(void *data, struct encoder_packet *packet);
 
 	/* optional */
 	void (*update)(void *data, obs_data_t settings);
