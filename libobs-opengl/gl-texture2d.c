@@ -132,7 +132,7 @@ void texture_destroy(texture_t tex)
 	if (tex->cur_sampler)
 		samplerstate_destroy(tex->cur_sampler);
 
-	if (tex->is_dynamic && tex2d->unpack_buffer)
+	if (!tex->is_dummy && tex->is_dynamic && tex2d->unpack_buffer)
 		gl_delete_buffers(1, &tex2d->unpack_buffer);
 
 	if (tex->texture)
