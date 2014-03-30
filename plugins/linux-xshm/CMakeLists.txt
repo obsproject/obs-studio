@@ -1,3 +1,5 @@
+project(linux-xshm)
+
 find_package(X11 REQUIRED)
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")

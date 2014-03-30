@@ -1,3 +1,5 @@
+project(linux-pulseaudio)
+
 find_package(PulseAudio REQUIRED)
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
