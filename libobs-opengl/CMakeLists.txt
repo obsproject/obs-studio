@@ -53,7 +53,6 @@ set(libobs-opengl_SOURCES
 	GL/gl_obs.c)
 
 set(libobs-opengl_HEADERS
-	gl-exports.h
 	gl-helpers.h
 	gl-shaderparser.h
 	gl-subsystem.h)

@@ -96,6 +96,7 @@ set(libobs_graphics_HEADERS
 	graphics/matrix4.h
 	graphics/graphics.h
 	graphics/graphics-internal.h
+	graphics/device-exports.h
 	graphics/vec2.h
 	graphics/vec4.h
 	graphics/matrix3.h

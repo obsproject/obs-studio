@@ -23,7 +23,6 @@ set(libobs-d3d11_SOURCES
 	d3d11-zstencilbuffer.cpp)
 
 set(libobs-d3d11_HEADERS
-	d3d11-exports.h
 	d3d11-shaderprocessor.hpp
 	d3d11-subsystem.hpp)
 	
