@@ -30,14 +30,13 @@
 #include <util/base.h>
 #include <graphics/matrix4.h>
 #include <graphics/graphics.h>
+#include <graphics/device-exports.h>
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/HRError.hpp>
 
 struct shader_var;
 struct shader_sampler;
 struct gs_vertex_shader;
-
-#include "d3d11-exports.h"
 
 using namespace std;
 

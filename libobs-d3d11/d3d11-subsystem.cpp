@@ -1477,6 +1477,15 @@ void texture_unmap(texture_t tex)
 	tex2d->device->context->Unmap(tex2d->texture, 0);
 }
 
+void *texture_getobj(texture_t tex)
+{
+	if (tex->type != GS_TEXTURE_2D)
+		return nullptr;
+
+	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
+	return tex2d->texture.Get();
+}
+
 
 void cubetexture_destroy(texture_t cubetex)
 {

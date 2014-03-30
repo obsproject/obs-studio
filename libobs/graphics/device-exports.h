@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -120,76 +120,3 @@ EXPORT void device_frustum(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_projection_push(device_t device);
 EXPORT void device_projection_pop(device_t device);
-
-EXPORT void     swapchain_destroy(swapchain_t swapchain);
-
-EXPORT void     texture_destroy(texture_t tex);
-EXPORT uint32_t texture_getwidth(texture_t tex);
-EXPORT uint32_t texture_getheight(texture_t tex);
-EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *linesize);
-EXPORT void     texture_unmap(texture_t tex);
-EXPORT bool     texture_isrect(texture_t tex);
-
-EXPORT void     cubetexture_destroy(texture_t cubetex);
-EXPORT uint32_t cubetexture_getsize(texture_t cubetex);
-EXPORT enum gs_color_format cubetexture_getcolorformat(texture_t cubetex);
-
-EXPORT void     volumetexture_destroy(texture_t voltex);
-EXPORT uint32_t volumetexture_getwidth(texture_t voltex);
-EXPORT uint32_t volumetexture_getheight(texture_t voltex);
-EXPORT uint32_t volumetexture_getdepth(texture_t voltex);
-EXPORT enum gs_color_format volumetexture_getcolorformat(texture_t voltex);
-
-EXPORT void     stagesurface_destroy(stagesurf_t stagesurf);
-EXPORT uint32_t stagesurface_getwidth(stagesurf_t stagesurf);
-EXPORT uint32_t stagesurface_getheight(stagesurf_t stagesurf);
-EXPORT enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf);
-EXPORT bool     stagesurface_map(stagesurf_t stagesurf, uint8_t **data,
-		uint32_t *linesize);
-EXPORT void     stagesurface_unmap(stagesurf_t stagesurf);
-
-EXPORT void zstencil_destroy(zstencil_t zstencil);
-
-EXPORT void samplerstate_destroy(samplerstate_t samplerstate);
-
-EXPORT void vertexbuffer_destroy(vertbuffer_t vertbuffer);
-EXPORT void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild);
-EXPORT struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer);
-
-EXPORT void   indexbuffer_destroy(indexbuffer_t indexbuffer);
-EXPORT void   indexbuffer_flush(indexbuffer_t indexbuffer);
-EXPORT void  *indexbuffer_getdata(indexbuffer_t indexbuffer);
-EXPORT size_t indexbuffer_numindices(indexbuffer_t indexbuffer);
-EXPORT enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer);
-
-EXPORT void shader_destroy(shader_t shader);
-EXPORT int shader_numparams(shader_t shader);
-EXPORT sparam_t shader_getparambyidx(shader_t shader, uint32_t param);
-EXPORT sparam_t shader_getparambyname(shader_t shader, const char *name);
-EXPORT void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info);
-EXPORT sparam_t shader_getviewprojmatrix(shader_t shader);
-EXPORT sparam_t shader_getworldmatrix(shader_t shader);
-EXPORT void shader_setbool(shader_t shader, sparam_t param, bool val);
-EXPORT void shader_setfloat(shader_t shader, sparam_t param, float val);
-EXPORT void shader_setint(shader_t shader, sparam_t param, int val);
-EXPORT void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val);
-EXPORT void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val);
-EXPORT void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val);
-EXPORT void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val);
-EXPORT void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val);
-EXPORT void shader_settexture(shader_t shader, sparam_t param, texture_t val);
-EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size);
-EXPORT void shader_setdefault(shader_t shader, sparam_t param);
-
-#ifdef __APPLE__
-EXPORT texture_t texture_create_from_iosurface(device_t device, void *iosurf);
-EXPORT bool texture_rebind_iosurface(texture_t texture, void *iosurf);
-#endif

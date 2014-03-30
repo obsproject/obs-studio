@@ -87,18 +87,22 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_type            = get_gl_format_type(color_format);
 	tex->base.gl_target          = GL_TEXTURE_2D;
-	tex->base.is_dynamic         = (flags & GS_DYNAMIC) != 0;
+	tex->base.is_dynamic         = (flags & GS_DYNAMIC)      != 0;
 	tex->base.is_render_target   = (flags & GS_RENDERTARGET) != 0;
+	tex->base.is_dummy           = (flags & GS_GL_DUMMYTEX)  != 0;
 	tex->base.gen_mipmaps        = (flags & GS_BUILDMIPMAPS) != 0;
 	tex->width                   = width;
 	tex->height                  = height;
 
 	if (!gl_gen_textures(1, &tex->base.texture))
 		goto fail;
-	if (tex->base.is_dynamic && !create_pixel_unpack_buffer(tex))
-		goto fail;
-	if (!upload_texture_2d(tex, data))
-		goto fail;
+
+	if (!tex->base.is_dummy) {
+		if (tex->base.is_dynamic && !create_pixel_unpack_buffer(tex))
+			goto fail;
+		if (!upload_texture_2d(tex, data))
+			goto fail;
+	}
 
 	return (texture_t)tex;
 
@@ -231,4 +235,15 @@ bool texture_isrect(texture_t tex)
 	}
 
 	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
+}
+
+void *texture_getobj(texture_t tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	if (!is_texture_2d(tex, "texture_unmap")) {
+		blog(LOG_ERROR, "texture_getobj (GL) failed");
+		return NULL;
+	}
+
+	return &tex2d->base.texture;
 }

@@ -75,6 +75,8 @@ public:
 	inline T **Assign()                {Clear(); return &ptr;}
 	inline void Set(T *p)              {Kill(); ptr = p;}
 
+	inline T *Get() const              {return ptr;}
+
 	inline    operator T*() const      {return ptr;}
 	inline T *operator->() const       {return ptr;}
 

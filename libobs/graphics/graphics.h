@@ -399,6 +399,7 @@ EXPORT texture_t texrender_gettexture(texrender_t texrender);
 #define GS_BUILDMIPMAPS (1<<0)
 #define GS_DYNAMIC      (1<<1)
 #define GS_RENDERTARGET (1<<2)
+#define GS_GL_DUMMYTEX  (1<<3) /**<< texture with no allocated texture data */
 
 /* ---------------- */
 /* global functions */
@@ -644,6 +645,11 @@ EXPORT void     texture_unmap(texture_t tex);
  * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture
  * coordinates, doesn't support mipmapping, and requires address clamping */
 EXPORT bool     texture_isrect(texture_t tex);
+/**
+ * Gets a pointer to the context-specific object associated with the texture.
+ * For example, for GL, this is a GLuint*.  For D3D11, ID3D11Texture2D*.
+ */
+EXPORT void    *texture_getobj(texture_t tex);
 
 EXPORT void     cubetexture_destroy(texture_t cubetex);
 EXPORT uint32_t cubetexture_getsize(texture_t cubetex);

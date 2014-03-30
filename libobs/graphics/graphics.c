@@ -1712,6 +1712,14 @@ bool texture_isrect(texture_t tex)
 		return false;
 }
 
+void *texture_getobj(texture_t tex)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics || !tex) return NULL;
+
+	return graphics->exports.texture_getobj(tex);
+}
+
 void cubetexture_destroy(texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;

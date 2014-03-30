@@ -20,12 +20,12 @@
 #include <util/darray.h>
 #include <util/threading.h>
 #include <graphics/graphics.h>
+#include <graphics/device-exports.h>
 #include <graphics/matrix4.h>
 
 #include "GL/gl_obs.h"
 
 #include "gl-helpers.h"
-#include "gl-exports.h"
 
 struct gl_platform;
 struct gl_windowinfo;
@@ -384,6 +384,7 @@ struct gs_texture {
 	uint32_t             levels;
 	bool                 is_dynamic;
 	bool                 is_render_target;
+	bool                 is_dummy;
 	bool                 gen_mipmaps;
 
 	samplerstate_t       cur_sampler;

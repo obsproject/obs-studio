@@ -141,6 +141,7 @@ struct gs_exports {
 			uint32_t *linesize);
 	void     (*texture_unmap)(texture_t tex);
 	bool     (*texture_isrect)(texture_t tex);
+	void    *(*texture_getobj)(texture_t tex);
 
 	void     (*cubetexture_destroy)(texture_t cubetex);
 	uint32_t (*cubetexture_getsize)(texture_t cubetex);
