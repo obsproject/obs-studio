@@ -11,8 +11,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 include(ObsHelpers)
 include(ObsCpack)
 
-add_definitions(-DOBS_VERSION="${OBS_VERSION}")
-
 if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
 	file(GENERATE
 		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
@@ -55,6 +53,10 @@ endif()
 
 if(NOT INSTALLER_RUN)
 	add_subdirectory(deps)
+
+	add_definitions(-DHAVE_CONFIG_H=1)
+	include_directories("${CMAKE_BINARY_DIR}/config")
+
 	add_subdirectory(libobs)
 
 	if(WIN32)
