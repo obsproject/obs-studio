@@ -747,6 +747,10 @@ EXPORT void obs_output_set_video_conversion(obs_output_t output,
 EXPORT void obs_output_set_audio_conversion(obs_output_t output,
 		const struct audio_convert_info *conversion);
 
+/** Returns whether data capture can begin with the specified flags */
+EXPORT bool obs_output_can_begin_data_capture(obs_output_t output,
+		uint32_t flags);
+
 /**
  * Begins data capture from media/encoders.
  *
@@ -763,6 +767,9 @@ EXPORT bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags);
 
 /** Ends data capture from media/encoders */
 EXPORT void obs_output_end_data_capture(obs_output_t output);
+
+/** Signals that start failed */
+EXPORT void obs_output_signal_start_fail(obs_output_t output, int code);
 
 
 /* ------------------------------------------------------------------------- */
@@ -825,6 +832,9 @@ EXPORT void obs_encoder_stop(obs_encoder_t encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
 
+/** Returns the codec of the encoder */
+EXPORT const char *obs_encoder_get_codec(obs_encoder_t encoder);
+
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t obs_encoder_defaults(const char *id);
 
@@ -863,6 +873,12 @@ EXPORT video_t obs_encoder_video(obs_encoder_t encoder);
  * a audio context
  */
 EXPORT audio_t obs_encoder_audio(obs_encoder_t encoder);
+
+/** Duplicates an encoder packet */
+EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
+		const struct encoder_packet *src);
+
+EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 
 
 /* ------------------------------------------------------------------------- */

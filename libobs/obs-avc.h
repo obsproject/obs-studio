@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,20 +17,13 @@
 
 #pragma once
 
-struct obs_service_info {
-	/* required */
-	char *id;
+struct encoder_packet;
 
-	const char *(*getname)(const char *locale);
-	void *(*create)(obs_data_t settings, obs_service_t service);
-	void (*destroy)(void *data);
+/* Helpers for parsing AVC NAL units.  */
 
-	/* optional */
-	void (*update)(void *data, obs_data_t settings);
+const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end);
 
-	/* get stream url/key */
-	const char *(*get_url)(void *data);
-	const char *(*get_key)(void *data);
-
-	/* send (current game/title/activate commercial/etc) */
-};
+EXPORT void obs_create_avc_packet(struct encoder_packet *avc_packet,
+		struct encoder_packet *src);
+EXPORT size_t obs_create_avc_header(uint8_t **header, const uint8_t *data,
+		size_t size);

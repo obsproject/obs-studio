@@ -216,6 +216,12 @@
     <ClInclude Include="..\..\..\libobs\callback\decl.h">
       <Filter>callback\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\libobs\util\array-serializer.h">
+      <Filter>util\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\libobs\obs-avc.h">
+      <Filter>libobs\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\libobs\obs-output.c">
@@ -367,6 +373,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\libobs\callback\decl.c">
       <Filter>callback\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\util\array-serializer.c">
+      <Filter>util\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libobs\obs-avc.c">
+      <Filter>libobs\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -122,6 +122,7 @@ set(libobs_mediaio_HEADERS
 	media-io/video-scaler.h)
 
 set(libobs_util_SOURCES
+	util/array-serializer.c
 	util/base.c
 	util/platform.c
 	util/cf-lexer.c
@@ -133,6 +134,7 @@ set(libobs_util_SOURCES
 	util/text-lookup.c
 	util/cf-parser.c)
 set(libobs_util_HEADERS
+	util/array-serializer.h
 	util/utf8.h
 	util/base.h
 	util/text-lookup.h
@@ -154,6 +156,7 @@ set(libobs_util_HEADERS
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
+	obs-avc.c
 	obs-encoder.c
 	obs-source.c
 	obs-output.c
@@ -167,6 +170,7 @@ set(libobs_libobs_SOURCES
 	obs-video.c)
 set(libobs_libobs_HEADERS
 	obs-defs.h
+	obs-avc.h
 	obs-encoder.h
 	obs-service.h
 	obs-internal.h

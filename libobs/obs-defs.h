@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,3 +25,8 @@
 #define MODULE_FILE_NOT_FOUND     -2
 #define MODULE_FUNCTION_NOT_FOUND -3
 #define MODULE_INCOMPATIBLE_VER   -4
+
+#define OBS_OUTPUT_SUCCESS         0
+#define OBS_OUTPUT_BAD_PATH       -1
+#define OBS_OUTPUT_CONNECT_FAILED -2
+#define OBS_OUTPUT_INVALID_STREAM -3

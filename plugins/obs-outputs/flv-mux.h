@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,20 +17,8 @@
 
 #pragma once
 
-struct obs_service_info {
-	/* required */
-	char *id;
+#include <obs.h>
 
-	const char *(*getname)(const char *locale);
-	void *(*create)(obs_data_t settings, obs_service_t service);
-	void (*destroy)(void *data);
-
-	/* optional */
-	void (*update)(void *data, obs_data_t settings);
-
-	/* get stream url/key */
-	const char *(*get_url)(void *data);
-	const char *(*get_key)(void *data);
-
-	/* send (current game/title/activate commercial/etc) */
-};
+extern void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size);
+extern void flv_packet_mux(struct encoder_packet *packet,
+		uint8_t **output, size_t *size, bool is_header);

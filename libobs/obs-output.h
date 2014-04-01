@@ -21,6 +21,7 @@
 #define OBS_OUTPUT_AUDIO       (1<<1)
 #define OBS_OUTPUT_AV          (OBS_OUTPUT_VIDEO | OBS_OUTPUT_AUDIO)
 #define OBS_OUTPUT_ENCODED     (1<<2)
+#define OBS_OUTPUT_SERVICE     (1<<3)
 
 struct encoder_packet;
 

@@ -38,12 +38,29 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\ob
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\obs-studio.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win-wasapi", "win-wasapi\win-wasapi.vcxproj", "{A3D24C9D-669D-4DDF-91BA-152D7DDD7C04}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win-capture", "win-capture\win-capture.vcxproj", "{AB83E5F0-D76E-45AB-A4C9-4711B1BE6916}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-x264", "obs-x264\obs-x264.vcxproj", "{1798CAF2-531A-4E0E-A722-29F4B1B5D49F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-outputs", "obs-outputs\obs-outputs.vcxproj", "{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -199,6 +216,18 @@ Global
 		{1798CAF2-531A-4E0E-A722-29F4B1B5D49F}.Release|Win32.Build.0 = Release|Win32
 		{1798CAF2-531A-4E0E-A722-29F4B1B5D49F}.Release|x64.ActiveCfg = Release|x64
 		{1798CAF2-531A-4E0E-A722-29F4B1B5D49F}.Release|x64.Build.0 = Release|x64
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|Win32.Build.0 = Debug|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|x64.ActiveCfg = Debug|x64
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Debug|x64.Build.0 = Debug|x64
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|Win32.ActiveCfg = Release|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|Win32.Build.0 = Release|Win32
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|x64.ActiveCfg = Release|x64
+		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

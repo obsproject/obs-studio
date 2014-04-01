@@ -448,9 +448,6 @@ static void *ffmpeg_output_create(obs_data_t settings, obs_output_t output)
 	if (os_sem_init(&data->write_sem, 0) != 0)
 		goto fail;
 
-	signal_handler_add(obs_output_signalhandler(output),
-			"void connect(ptr output, bool success)");
-
 	av_log_set_callback(ffmpeg_log_callback);
 
 	UNUSED_PARAMETER(settings);
@@ -769,6 +766,9 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	output->active = true;
 
+	if (!obs_output_can_begin_data_capture(output->output, 0))
+		return false;
+
 	ret = pthread_create(&output->write_thread, NULL, write_thread, output);
 	if (ret != 0) {
 		blog(LOG_WARNING, "ffmpeg_output_start: failed to create write "
@@ -787,18 +787,12 @@ static bool try_connect(struct ffmpeg_output *output)
 static void *start_thread(void *data)
 {
 	struct ffmpeg_output *output = data;
-	struct calldata params       = {0};
 
-	bool success = try_connect(output);
+	if (!try_connect(output))
+		obs_output_signal_start_fail(output->output,
+				OBS_OUTPUT_CONNECT_FAILED);
 
 	output->connecting = false;
-
-	calldata_setbool(&params, "success", success);
-	calldata_setptr(&params, "output", output->output);
-	signal_handler_signal(obs_output_signalhandler(output->output),
-			"connect", &params);
-	calldata_free(&params);
-
 	return NULL;
 }
 

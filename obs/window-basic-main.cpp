@@ -836,7 +836,7 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 
 		signal_handler_connect(obs_output_signalhandler(outputTest),
-				"connect", OBSOutputConnect, this);
+				"start", OBSOutputConnect, this);
 
 		obs_output_start(outputTest);
 		ui->streamButton->setEnabled(false);

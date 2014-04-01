@@ -370,3 +370,21 @@ void video_output_stop(video_t video)
 		os_event_signal(video->update_event);
 	}
 }
+
+uint32_t video_output_width(video_t video)
+{
+	return video ? video->info.width : 0;
+}
+
+uint32_t video_output_height(video_t video)
+{
+	return video ? video->info.height : 0;
+}
+
+double video_output_framerate(video_t video)
+{
+	if (!video)
+		return 0.0;
+
+	return (double)video->info.fps_num / (double)video->info.fps_den;
+}

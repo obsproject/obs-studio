@@ -1,18 +1,50 @@
 project(obs-outputs)
 
-find_package(Libx264 REQUIRED)
-include_directories(${Libx264_INCLUDE_DIR})
+if(WIN32)
+	set(obs-outputs_PLATFORM_DEPS
+		ws2_32.lib)
+endif()
 
+set(obs-outputs_librtmp_HEADERS
+	librtmp/amf.h
+	librtmp/bytes.h
+	librtmp/cencode.h
+	librtmp/dh.h
+	librtmp/dhgroups.h
+	librtmp/handshake.h
+	librtmp/http.h
+	librtmp/log.h
+	librtmp/md5.h
+	librtmp/rtmp.h
+	librtmp/rtmp_sys.h)
+set(obs-outputs_librtmp_SOURCES
+	librtmp/amf.c
+	librtmp/cencode.c
+	librtmp/hashswf.c
+	librtmp/log.c
+	librtmp/md5.c
+	librtmp/parseurl.c
+	librtmp/rtmp.c)
+
+set(obs-outputs_HEADERS
+	obs-output-ver.h
+	rtmp-helpers.h
+	flv-mux.h
+	librtmp)
 set(obs-outputs_SOURCES
 	obs-outputs.c
-	rtmp-stream.c)
+	rtmp-stream.c
+	flv-mux.c)
 	
 add_library(obs-outputs MODULE
-	${obs-outputs_SOURCES})
+	${obs-outputs_SOURCES}
+	${obs-outputs_HEADER}
+	${obs-outputs_librtmp_SOURCES}
+	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
-	${Libx264_LIBRARIES})
+	${libobs_PLATFORM_DEPS})
 
 install_obs_plugin(obs-outputs)
 
-obs_fixup_install_target(obs-outputs PATH ${Libx264_LIBRARIES})
+obs_fixup_install_target(obs-outputs PATH)

@@ -28,6 +28,26 @@ static inline const struct obs_output_info *find_output(const char *id)
 	return NULL;
 }
 
+static const char *output_signals[] = {
+	"void start(ptr output, int errorcode)",
+	"void stop(ptr output)",
+	NULL
+};
+
+static bool init_output_handlers(struct obs_output *output)
+{
+	output->signals = signal_handler_create();
+	if (!output->signals)
+		return false;
+
+	output->procs = proc_handler_create();
+	if (!output->procs)
+		return false;
+
+	signal_handler_add_array(output->signals, output_signals);
+	return true;
+}
+
 obs_output_t obs_output_create(const char *id, const char *name,
 		obs_data_t settings)
 {
@@ -41,12 +61,7 @@ obs_output_t obs_output_create(const char *id, const char *name,
 
 	output = bzalloc(sizeof(struct obs_output));
 
-	output->signals = signal_handler_create();
-	if (!output->signals)
-		goto fail;
-
-	output->procs = proc_handler_create();
-	if (!output->procs)
+	if (!init_output_handlers(output))
 		goto fail;
 
 	output->info     = *info;
@@ -327,6 +342,23 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	}
 }
 
+static inline void signal_start(struct obs_output *output, int code)
+{
+	struct calldata params = {0};
+	calldata_setint(&params, "code", code);
+	calldata_setptr(&params, "output", output);
+	signal_handler_signal(output->signals, "start", &params);
+	calldata_free(&params);
+}
+
+static inline void signal_stop(struct obs_output *output)
+{
+	struct calldata params = {0};
+	calldata_setptr(&params, "output", output);
+	signal_handler_signal(output->signals, "stop", &params);
+	calldata_free(&params);
+}
+
 static inline void convert_flags(struct obs_output *output, uint32_t flags,
 		bool *encoded, bool *has_video, bool *has_audio)
 {
@@ -338,6 +370,18 @@ static inline void convert_flags(struct obs_output *output, uint32_t flags,
 
 	*has_video = (flags & OBS_OUTPUT_VIDEO) != 0;
 	*has_audio = (flags & OBS_OUTPUT_AUDIO) != 0;
+}
+
+bool obs_output_can_begin_data_capture(obs_output_t output, uint32_t flags)
+{
+	bool encoded, has_video, has_audio;
+
+	if (!output) return false;
+	if (output->active) return false;
+
+	convert_flags(output, flags, &encoded, &has_video, &has_audio);
+
+	return can_begin_data_capture(output, encoded, has_video, has_audio);
 }
 
 bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
@@ -354,6 +398,7 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 
 	hook_data_capture(output, encoded, has_video, has_audio);
 	output->active = true;
+	signal_start(output, OBS_OUTPUT_SUCCESS);
 	return true;
 }
 
@@ -387,4 +432,10 @@ void obs_output_end_data_capture(obs_output_t output)
 	}
 
 	output->active = false;
+	signal_stop(output);
+}
+
+void obs_output_signal_start_fail(obs_output_t output, int code)
+{
+	signal_start(output, code);
 }

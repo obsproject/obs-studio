@@ -133,6 +133,11 @@ EXPORT uint64_t video_getframetime(video_t video);
 EXPORT uint64_t video_gettime(video_t video);
 EXPORT void video_output_stop(video_t video);
 
+EXPORT uint32_t video_output_width(video_t video);
+EXPORT uint32_t video_output_height(video_t video);
+EXPORT double video_output_framerate(video_t video);
+
+
 #ifdef __cplusplus
 }
 #endif

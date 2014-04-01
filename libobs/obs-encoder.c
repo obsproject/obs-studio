@@ -358,6 +358,11 @@ void obs_encoder_stop(obs_encoder_t encoder,
 	}
 }
 
+const char *obs_encoder_get_codec(obs_encoder_t encoder)
+{
+	return encoder ? encoder->info.codec : NULL;
+}
+
 video_t obs_encoder_video(obs_encoder_t encoder)
 {
 	return (encoder && encoder->info.type == OBS_ENCODER_VIDEO) ?
@@ -525,4 +530,17 @@ void obs_encoder_remove_output(struct obs_encoder *encoder,
 	pthread_mutex_lock(&encoder->outputs_mutex);
 	da_erase_item(encoder->outputs, &output);
 	pthread_mutex_unlock(&encoder->outputs_mutex);
+}
+
+void obs_duplicate_encoder_packet(struct encoder_packet *dst,
+		const struct encoder_packet *src)
+{
+	*dst = *src;
+	dst->data = bmemdup(src->data, src->size);
+}
+
+void obs_free_encoder_packet(struct encoder_packet *packet)
+{
+	bfree(packet->data);
+	memset(packet, 0, sizeof(struct encoder_packet));
 }

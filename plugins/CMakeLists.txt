@@ -13,4 +13,4 @@ endif()
 
 add_subdirectory(obs-x264)
 add_subdirectory(obs-ffmpeg)
-# add_subdirectory(obs-outputs)
+add_subdirectory(obs-outputs)

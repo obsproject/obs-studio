@@ -90,11 +90,11 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libobs.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/plugins/32bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/obs-plugins/32bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -109,11 +109,11 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libobs.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/plugins/64bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/obs-plugins/64bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -132,11 +132,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libobs.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/plugins/32bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/obs-plugins/32bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -155,22 +155,40 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libobs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libobs.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/plugins/64bit/$(TargetName)$(TargetExt)"</Command>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/obs-plugins/64bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-outputs.h" />
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-stream.h" />
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-x264.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\flv-mux.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\amf.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\bytes.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\cencode.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\dh.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\dhgroups.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\handshake.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\http.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\log.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\md5.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\rtmp.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\rtmp_sys.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-output-ver.h" />
+    <ClInclude Include="..\..\..\plugins\obs-outputs\rtmp-helpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\flv-mux.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\amf.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\cencode.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\hashswf.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\log.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\md5.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\parseurl.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\rtmp.c" />
     <ClCompile Include="..\..\..\plugins\obs-outputs\obs-outputs.c" />
-    <ClCompile Include="..\..\..\plugins\obs-outputs\obs-stream.c" />
-    <ClCompile Include="..\..\..\plugins\obs-outputs\obs-x264.c" />
+    <ClCompile Include="..\..\..\plugins\obs-outputs\rtmp-stream.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

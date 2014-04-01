@@ -13,27 +13,90 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="librtmp">
+      <UniqueIdentifier>{6b714a6d-2272-49ba-b4cd-99cf60857bae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtmp\Source Files">
+      <UniqueIdentifier>{57e42abc-f21b-4bd3-a032-9cab6303dd1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="librtmp\Header Files">
+      <UniqueIdentifier>{59c34a42-3966-49f7-9758-2914dfec75e1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-outputs.h">
+    <ClInclude Include="..\..\..\plugins\obs-outputs\flv-mux.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-x264.h">
+    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-output-ver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\plugins\obs-outputs\obs-stream.h">
+    <ClInclude Include="..\..\..\plugins\obs-outputs\rtmp-helpers.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\dhgroups.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\handshake.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\http.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\log.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\md5.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\rtmp.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\rtmp_sys.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\amf.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\bytes.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\cencode.h">
+      <Filter>librtmp\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\plugins\obs-outputs\librtmp\dh.h">
+      <Filter>librtmp\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\plugins\obs-outputs\obs-outputs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\plugins\obs-outputs\obs-stream.c">
+    <ClCompile Include="..\..\..\plugins\obs-outputs\flv-mux.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\plugins\obs-outputs\obs-x264.c">
+    <ClCompile Include="..\..\..\plugins\obs-outputs\rtmp-stream.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\md5.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\parseurl.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\rtmp.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\amf.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\cencode.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\hashswf.c">
+      <Filter>librtmp\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\log.c">
+      <Filter>librtmp\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

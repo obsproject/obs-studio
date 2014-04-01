@@ -704,6 +704,11 @@ size_t audio_output_channels(audio_t audio)
 	return audio ? audio->channels : 0;
 }
 
+uint32_t audio_output_samplerate(audio_t audio)
+{
+	return audio ? audio->info.samples_per_sec : 0;
+}
+
 /* TODO: Optimization of volume multiplication functions */
 
 static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
