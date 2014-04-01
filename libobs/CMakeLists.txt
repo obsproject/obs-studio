@@ -17,7 +17,6 @@ include_directories(${Libavformat_INCLUDE_DIR})
 add_definitions(${Libavformat_DEFINITIONS})
 
 add_definitions(-DLIBOBS_EXPORTS)
-add_definitions(-DPTW32_STATIC_LIB)
 
 if(WIN32)
 	set(libobs_PLATFORM_SOURCES
@@ -27,6 +26,8 @@ if(WIN32)
 	set(libobs_PLATFORM_DEPS
 		w32-pthreads
 		winmm.lib)
+
+	add_definitions(-DPTW32_STATIC_LIB)
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c
@@ -56,6 +57,14 @@ if(MSVC)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /EHc-")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc-")
 endif()
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
+	"${CMAKE_BINARY_DIR}/config/config.h")
+
+set(libobs_config_HEADERS
+	config.h
+	obs-config.h)
 
 set(libobs_callback_SOURCES
 	callback/calldata.c

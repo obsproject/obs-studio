@@ -232,6 +232,25 @@ macro(install_obs_data target datadir datadest)
 	endif()
 endmacro()
 
+macro(install_obs_datatarget target datadest)
+	install(TARGETS ${target}
+		LIBRARY DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
+		RUNTIME DESTINATION "${OBS_DATA_DESTINATION}/${datadest}")
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy
+			"$<TARGET_FILE:${target}>"
+			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}/$<TARGET_FILE_NAME:${target}>"
+		VERBATIM)
+
+	if(DEFINED ENV{obsInstallerTempDir})
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy
+				"$<TARGET_FILE:${target}>"
+				"$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}/$<TARGET_FILE_NAME:${target}>"
+			VERBATIM)
+	endif()
+endmacro()
+
 macro(install_obs_plugin_data target datadir)
 	install_obs_plugin(${target})
 	install_obs_data(${target} "${datadir}" "obs-plugins/${target}")

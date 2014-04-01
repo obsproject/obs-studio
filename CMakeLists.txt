@@ -11,8 +11,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 include(ObsHelpers)
 include(ObsCpack)
 
-add_definitions(-DOBS_VERSION="${OBS_VERSION}")
-
 if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
 	file(GENERATE
 		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
@@ -31,9 +29,9 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Clang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "C
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
-	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99")
-	
+	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
+
 	option(USE_LIBC++ "Use libc++ instead of libstdc++" ${APPLE})
 	if(USE_LIBC++)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -55,6 +53,10 @@ endif()
 
 if(NOT INSTALLER_RUN)
 	add_subdirectory(deps)
+
+	add_definitions(-DHAVE_CONFIG_H=1)
+	include_directories("${CMAKE_BINARY_DIR}/config")
+
 	add_subdirectory(libobs)
 
 	if(WIN32)

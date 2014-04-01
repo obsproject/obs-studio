@@ -1,0 +1,5 @@
+
+#pragma once
+
+#define OBS_VERSION "@OBS_VERSION@"
+

@@ -1,4 +1,10 @@
-find_package(PulseAudio REQUIRED)
+project(linux-pulseaudio)
+
+find_package(PulseAudio)
+if(NOT PulseAudio_FOUND)
+	message(STATUS "PulseAudio not found, disabling PulseAudio plugin")
+	return()
+endif()
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
