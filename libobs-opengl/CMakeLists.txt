@@ -3,9 +3,7 @@ project(libobs-opengl)
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIRS})
-include_directories(SYSTEM glew/include)
-add_definitions(-DGLEW_STATIC)
+include_directories(${OPENGL_INCLUDE_DIR})
 
 add_definitions(-DLIBOBS_EXPORTS)
 
@@ -22,8 +20,8 @@ elseif(APPLE)
 			LANGUAGE C)
 	
 	find_library(COCOA Cocoa)
-	mark_as_advanced(COCOA)
 	include_directories(${COCOA})
+	mark_as_advanced(COCOA)
 
 	find_library(IOSURF IOSurface)
 	include_directories(${IOSURF})
@@ -67,6 +65,6 @@ set_target_properties(libobs-opengl
 target_link_libraries(libobs-opengl
 	libobs
 	${libobs-opengl_PLATFORM_DEPS}
-	${OPENGL_LIBRARIES})
+	${OPENGL_gl_LIBRARY})
 
 install_obs_core(libobs-opengl)
