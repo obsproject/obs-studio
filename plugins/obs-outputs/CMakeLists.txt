@@ -43,8 +43,6 @@ add_library(obs-outputs MODULE
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
-	${libobs_PLATFORM_DEPS})
+	${obs-outputs_PLATFORM_DEPS})
 
 install_obs_plugin(obs-outputs)
-
-obs_fixup_install_target(obs-outputs PATH)
