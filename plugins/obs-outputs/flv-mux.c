@@ -82,10 +82,11 @@ void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
 	uint8_t *meta_data;
 	size_t  meta_data_size;
 
+	array_output_serializer_init(&s, &data);
+
 	build_flv_meta_data(context, &meta_data, &meta_data_size);
 
-	array_output_serializer_init(&s, &data);
-	s_w8(&s, RTMP_PACKET_TYPE_VIDEO);
+	s_w8(&s, RTMP_PACKET_TYPE_INFO);
 
 	s_wb24(&s, (uint32_t)meta_data_size);
 	s_wb32(&s, 0);

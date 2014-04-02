@@ -63,9 +63,13 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
 
 QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 {
-	const char *name = obs_property_name(prop);
-	const char *val  = obs_data_getstring(settings, name);
-	QLineEdit  *edit = new QLineEdit();
+	const char    *name = obs_property_name(prop);
+	const char    *val  = obs_data_getstring(settings, name);
+	obs_text_type type  = obs_proprety_text_type(prop);  
+	QLineEdit     *edit = new QLineEdit();
+
+	if (type == OBS_TEXT_PASSWORD)
+		edit->setEchoMode(QLineEdit::Password);
 
 	edit->setText(QT_UTF8(val));
 

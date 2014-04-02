@@ -36,6 +36,10 @@ struct list_item {
 	char *value;
 };
 
+struct text_data {
+	enum obs_text_type type;
+};
+
 struct list_data {
 	DARRAY(struct list_item) items;
 	enum obs_combo_type      type;
@@ -136,7 +140,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_BOOL:      return 0;
 	case OBS_PROPERTY_INT:       return sizeof(struct int_data);
 	case OBS_PROPERTY_FLOAT:     return sizeof(struct float_data);
-	case OBS_PROPERTY_TEXT:      return 0;
+	case OBS_PROPERTY_TEXT:      return sizeof(struct text_data);
 	case OBS_PROPERTY_PATH:      return 0;
 	case OBS_PROPERTY_LIST:      return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
@@ -224,10 +228,13 @@ void obs_properties_add_float(obs_properties_t props, const char *name,
 }
 
 void obs_properties_add_text(obs_properties_t props, const char *name,
-		const char *desc)
+		const char *desc, enum obs_text_type type)
 {
 	if (!props || has_prop(props, name)) return;
-	new_prop(props, name, desc, OBS_PROPERTY_TEXT);
+
+	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_TEXT);
+	struct text_data *data = get_property_data(p);
+	data->type = type;
 }
 
 void obs_properties_add_path(obs_properties_t props, const char *name,
@@ -354,6 +361,12 @@ double obs_property_float_step(obs_property_t p)
 {
 	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
 	return data ? data->step : 0;
+}
+
+enum obs_text_type obs_proprety_text_type(obs_property_t p)
+{
+	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
+	return data ? data->type : OBS_TEXT_DEFAULT;
 }
 
 enum obs_combo_type obs_property_list_type(obs_property_t p)

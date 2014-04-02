@@ -47,6 +47,11 @@ enum obs_combo_type {
 	OBS_COMBO_TYPE_LIST,
 };
 
+enum obs_text_type {
+	OBS_TEXT_DEFAULT,
+	OBS_TEXT_PASSWORD,
+};
+
 struct obs_properties;
 struct obs_property;
 typedef struct obs_properties *obs_properties_t;
@@ -71,7 +76,7 @@ EXPORT void obs_properties_add_int(obs_properties_t props, const char *name,
 EXPORT void obs_properties_add_float(obs_properties_t props, const char *name,
 		const char *description, double min, double max, double step);
 EXPORT void obs_properties_add_text(obs_properties_t props, const char *name,
-		const char *description);
+		const char *description, enum obs_text_type type);
 EXPORT void obs_properties_add_path(obs_properties_t props, const char *name,
 		const char *description);
 EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
@@ -97,6 +102,7 @@ EXPORT int                    obs_property_int_step(obs_property_t p);
 EXPORT double                 obs_property_float_min(obs_property_t p);
 EXPORT double                 obs_property_float_max(obs_property_t p);
 EXPORT double                 obs_property_float_step(obs_property_t p);
+EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t p);
 EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t p);
 EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t p);
 

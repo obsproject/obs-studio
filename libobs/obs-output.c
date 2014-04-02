@@ -322,11 +322,11 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	if (encoded) {
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
-					output->info.encoded_video,
+					output->info.encoded_data,
 					output->data);
 		if (has_audio)
 			obs_encoder_start(output->audio_encoder,
-					output->info.encoded_audio,
+					output->info.encoded_data,
 					output->data);
 	} else {
 		if (has_video)
@@ -414,11 +414,11 @@ void obs_output_end_data_capture(obs_output_t output)
 	if (encoded) {
 		if (has_video)
 			obs_encoder_stop(output->video_encoder,
-					output->info.encoded_video,
+					output->info.encoded_data,
 					output->data);
 		if (has_audio)
 			obs_encoder_stop(output->audio_encoder,
-					output->info.encoded_audio,
+					output->info.encoded_data,
 					output->data);
 	} else {
 		if (has_video)

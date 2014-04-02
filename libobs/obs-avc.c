@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "obs.h"
+#include "obs-avc.h"
 #include "util/array-serializer.h"
 
 enum {
@@ -127,8 +128,8 @@ static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 	}
 }
 
-void obs_create_avc_packet(struct encoder_packet *avc_packet,
-		struct encoder_packet *src)
+void obs_parse_avc_packet(struct encoder_packet *avc_packet,
+		const struct encoder_packet *src)
 {
 	struct array_output_data output;
 	struct serializer s;
@@ -182,7 +183,7 @@ static void get_sps_pps(const uint8_t *data, size_t size,
 	}
 }
 
-size_t obs_create_avc_header(uint8_t **header, const uint8_t *data, size_t size)
+size_t obs_parse_avc_header(uint8_t **header, const uint8_t *data, size_t size)
 {
 	struct array_output_data output;
 	struct serializer s;

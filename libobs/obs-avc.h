@@ -17,13 +17,23 @@
 
 #pragma once
 
+#include "util/c99defs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct encoder_packet;
 
 /* Helpers for parsing AVC NAL units.  */
 
-const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end);
-
-EXPORT void obs_create_avc_packet(struct encoder_packet *avc_packet,
-		struct encoder_packet *src);
-EXPORT size_t obs_create_avc_header(uint8_t **header, const uint8_t *data,
+EXPORT const uint8_t *obs_avc_find_startcode(const uint8_t *p,
+		const uint8_t *end);
+EXPORT void obs_parse_avc_packet(struct encoder_packet *avc_packet,
+		const struct encoder_packet *src);
+EXPORT size_t obs_parse_avc_header(uint8_t **header, const uint8_t *data,
 		size_t size);
+
+#ifdef __cplusplus
+}
+#endif

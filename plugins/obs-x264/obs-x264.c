@@ -122,7 +122,8 @@ static obs_properties_t obs_x264_props(const char *locale)
 	add_strings(list, x264_tune_names);
 
 	obs_properties_add_text(props, "x264opts",
-			"x264 encoder options (separated by ':')");
+			"x264 encoder options (separated by ':')",
+			OBS_TEXT_DEFAULT);
 
 	return props;
 }

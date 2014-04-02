@@ -200,13 +200,7 @@ void obs_register_output(const struct obs_output_info *info)
 	CHECK_REQUIRED_VAL(info, stop,    obs_register_output);
 
 	if (info->flags & OBS_OUTPUT_ENCODED) {
-		if (info->flags & OBS_OUTPUT_VIDEO)
-			CHECK_REQUIRED_VAL(info, encoded_video,
-					obs_register_output);
-
-		if (info->flags & OBS_OUTPUT_AUDIO)
-			CHECK_REQUIRED_VAL(info, encoded_audio,
-					obs_register_output);
+		CHECK_REQUIRED_VAL(info, encoded_data, obs_register_output);
 	} else {
 		if (info->flags & OBS_OUTPUT_VIDEO)
 			CHECK_REQUIRED_VAL(info, raw_video,
