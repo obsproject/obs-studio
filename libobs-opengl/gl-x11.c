@@ -100,7 +100,7 @@ struct gl_platform *gl_platform_create(device_t device,
 {
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;
-	Display *display = XOpenDisplay(NULL); /* Open default screen */
+	Display *display = info->window.display;
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	GLXFBConfig* configs;
 
@@ -176,7 +176,6 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->swap.device = device;
 	plat->swap.info	  = *info;
 	plat->swap.wi     = gl_windowinfo_create(info);
-	plat->swap.wi->display = display;
 
 	XFree(configs);
 	XSync(display, False);
