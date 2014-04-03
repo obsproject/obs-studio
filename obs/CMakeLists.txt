@@ -31,6 +31,8 @@ elseif(APPLE)
 
 	add_definitions(-fobjc-arc)
 elseif(UNIX)
+        find_package(Qt5X11Extras REQUIRED)
+
 	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
 
@@ -44,6 +46,9 @@ elseif(UNIX)
 	set(obs_PLATFORM_LIBRARIES
 		${X11_LIBRARIES}
 		${X11_Xinerama_LIB})
+
+        set(obs_PLATFORM_QT_MODULES
+                X11Extras)
 endif()
 
 set(obs_SOURCES
@@ -87,7 +92,7 @@ add_executable(obs WIN32
 	${obs_UI_HEADERS}
 	${obs_QRC_SOURCES})
 
-qt5_use_modules(obs Widgets)
+qt5_use_modules(obs Widgets ${obs_PLATFORM_QT_MODULES})
 
 if(WIN32)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
