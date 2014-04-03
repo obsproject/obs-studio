@@ -217,8 +217,7 @@ void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
 texture_t texture_create_from_iosurface(device_t device, void *iosurf)
 {
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
-	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
-	memset(tex, 0, sizeof(struct gs_texture_2d));
+	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
 	if (pf != 'BGRA')
