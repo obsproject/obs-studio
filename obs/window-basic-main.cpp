@@ -780,9 +780,9 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 }
 
-void OBSBasic::OutputConnect(bool success)
+void OBSBasic::OutputStart(int errorcode)
 {
-	if (!success) {
+	if (errorcode != OBS_OUTPUT_SUCCESS) {
 		obs_output_destroy(outputTest);
 		outputTest = NULL;
 	} else {
@@ -792,12 +792,12 @@ void OBSBasic::OutputConnect(bool success)
 	ui->streamButton->setEnabled(true);
 }
 
-static void OBSOutputConnect(void *data, calldata_t params)
+static void OBSOutputStart(void *data, calldata_t params)
 {
-	bool success = calldata_bool(params, "success");
+	int code = calldata_bool(params, "errorcode");
 
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"OutputConnect", Q_ARG(bool, success));
+			"OutputStart", Q_ARG(int, code));
 }
 
 /* TODO: lots of temporary code */
@@ -836,7 +836,7 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 
 		signal_handler_connect(obs_output_signalhandler(outputTest),
-				"start", OBSOutputConnect, this);
+				"start", OBSOutputStart, this);
 
 		obs_output_start(outputTest);
 		ui->streamButton->setEnabled(false);

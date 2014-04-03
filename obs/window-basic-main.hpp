@@ -61,7 +61,7 @@ private:
 	void InsertSceneItem(obs_sceneitem_t item);
 
 public slots:
-	void         OutputConnect(bool success);
+	void OutputStart(int errorcode);
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);
