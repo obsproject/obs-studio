@@ -20,6 +20,10 @@
 #include <QWidget>
 #include <QMessageBox>
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <QX11Info>
+#endif
+
 static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
 {
 	char full_message[4096];
@@ -44,5 +48,6 @@ void QTToGSWindow(WId windowId, gs_window &gswindow)
 	gswindow.view = (id)windowId;
 #else
 	gswindow.id = windowId;
+	gswindow.display = QX11Info::display();
 #endif
 }

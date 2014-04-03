@@ -59,12 +59,7 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 {
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 	wi->id = info->window.id;
-	/* wi->display = info->window.display; */
-
-	/*
-		The above no longer works with Qt.
-		Let's hope it continues to work.
-	*/
+	wi->display = info->window.display;
 
 	return wi;
 }

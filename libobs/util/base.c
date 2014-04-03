@@ -35,7 +35,7 @@ static void def_log_handler(int log_level, const char *format,
 	char out[4096];
 	vsnprintf(out, sizeof(out), format, args);
 
-	if (log_level >= log_output_level) {
+	if (log_level <= log_output_level) {
 		switch (log_level) {
 		case LOG_DEBUG:
 			printf("debug: %s\n", out);
