@@ -83,6 +83,34 @@ static inline void set_420p_sizes(const struct obs_video_info *ovi)
 	video->conversion_tech = "Planar420";
 }
 
+static inline void set_nv12_sizes(const struct obs_video_info *ovi)
+{
+	struct obs_core_video *video = &obs->video;
+	uint32_t chroma_pixels;
+	uint32_t total_bytes;
+
+	chroma_pixels = (ovi->output_width * ovi->output_height / 2);
+	chroma_pixels = GET_ALIGN(chroma_pixels, PIXEL_SIZE);
+
+	video->plane_offsets[0] = 0;
+	video->plane_offsets[1] = ovi->output_width * ovi->output_height;
+
+	video->plane_linewidth[0] = ovi->output_width;
+	video->plane_linewidth[1] = ovi->output_width;
+
+	video->plane_sizes[0] = video->plane_offsets[1];
+	video->plane_sizes[1] = video->plane_sizes[0]/2;
+
+	total_bytes = video->plane_offsets[1] + chroma_pixels;
+
+	video->conversion_height =
+		(total_bytes/PIXEL_SIZE + ovi->output_width-1) /
+		ovi->output_width;
+
+	video->conversion_height = GET_ALIGN(video->conversion_height, 2);
+	video->conversion_tech = "NV12";
+}
+
 static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 {
 	obs->video.conversion_height = 0;
@@ -94,6 +122,10 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 	switch ((uint32_t)ovi->output_format) {
 	case VIDEO_FORMAT_I420:
 		set_420p_sizes(ovi);
+		break;
+	case VIDEO_FORMAT_NV12:
+		set_nv12_sizes(ovi);
+		break;
 	}
 }
 

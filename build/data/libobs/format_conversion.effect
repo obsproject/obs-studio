@@ -56,6 +56,70 @@ VertInOut VSDefault(VertInOut vert_in)
 /* used to prevent internal GPU precision issues width fmod in particular */
 #define PRECISION_OFFSET 0.1
 
+float4 PSNV12(VertInOut vert_in) : TARGET
+{
+#ifdef _OPENGL
+	float v_mul = floor((1.0 - vert_in.uv.y) * input_height);
+#else
+	float v_mul = floor(vert_in.uv.y * input_height);
+#endif
+
+	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
+	byte_offset += PRECISION_OFFSET;
+
+	float2 sample_pos[4];
+
+	if (byte_offset < u_plane_offset) {
+#ifdef DEBUGGING
+		return float4(1.0, 1.0, 1.0, 1.0);
+#endif
+
+		float lum_u = floor(fmod(byte_offset, width)) * width_i;
+		float lum_v = floor(byte_offset * width_i)    * height_i;
+
+		/* move to texel centers to sample the 4 pixels properly */
+		lum_u += width_i  * 0.5;
+		lum_v += height_i * 0.5;
+
+		sample_pos[0] = float2(lum_u,            lum_v);
+		sample_pos[1] = float2(lum_u += width_i, lum_v);
+		sample_pos[2] = float2(lum_u += width_i, lum_v);
+		sample_pos[3] = float2(lum_u +  width_i, lum_v);
+
+		float4x4 out_val = float4x4(
+			image.Sample(def_sampler, sample_pos[0]),
+			image.Sample(def_sampler, sample_pos[1]),
+			image.Sample(def_sampler, sample_pos[2]),
+			image.Sample(def_sampler, sample_pos[3])
+		);
+
+		return transpose(out_val)[1];
+	} else {
+#ifdef DEBUGGING
+		return float4(0.5, 0.2, 0.5, 0.2);
+#endif
+
+		float new_offset = byte_offset - u_plane_offset;
+
+		float ch_u = floor(fmod(new_offset, width)) * width_i;
+		float ch_v = floor(new_offset * width_i)    * height_d2_i;
+		float width_i2 = width_i*2.0;
+
+		/* move to the borders of each set of 4 pixels to force it
+		 * to do bilinear averaging */
+		ch_u += width_i;
+		ch_v += height_i;
+
+		sample_pos[0] = float2(ch_u,             ch_v);
+		sample_pos[1] = float2(ch_u + width_i2,  ch_v);
+		
+		return float4(
+				image.Sample(def_sampler, sample_pos[0]).rb,
+				image.Sample(def_sampler, sample_pos[1]).rb
+				);
+	}
+}
+
 float4 PSPlanar420(VertInOut vert_in) : TARGET
 {
 #ifdef _OPENGL
@@ -135,5 +199,14 @@ technique Planar420
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSPlanar420(vert_in);
+	}
+}
+
+technique NV12
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSNV12(vert_in);
 	}
 }
