@@ -177,6 +177,8 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->swap.info	  = *info;
 	plat->swap.wi     = gl_windowinfo_create(info);
 
+	device->cur_swap = &plat->swap; /* We assume later that cur_swap is already set. */
+
 	XFree(configs);
 	XSync(display, False);
 
@@ -197,9 +199,10 @@ void gl_platform_destroy(struct gl_platform *platform)
 	if (!platform)
 		return;
 
-	glXMakeCurrent(platform->swap.wi->display, None, NULL);
-	glXDestroyContext(platform->swap.wi->display, platform->context);
-	XCloseDisplay(platform->swap.wi->display);
+	Display *dpy = platform->swap.wi->display;
+
+	glXMakeCurrent(dpy, None, NULL);
+	glXDestroyContext(dpy, platform->context);
 	gl_windowinfo_destroy(platform->swap.wi);
 	bfree(platform);
 }
@@ -207,11 +210,8 @@ void gl_platform_destroy(struct gl_platform *platform)
 void device_entercontext(device_t device)
 {
 	GLXContext context = device->plat->context;
-	XID window = device->plat->swap.wi->id;
-	Display *display = device->plat->swap.wi->display;
-
-	if (device->cur_swap)
-		 device->plat->swap.wi->id = device->cur_swap->wi->id;
+	XID window = device->cur_swap->wi->id;
+	Display *display = device->cur_swap->wi->display;
 
 	if (!glXMakeCurrent(display, window, context)) {
 		blog(LOG_ERROR, "Failed to make context current.");
@@ -220,7 +220,7 @@ void device_entercontext(device_t device)
 
 void device_leavecontext(device_t device)
 {
-	Display *display = device->plat->swap.wi->display;
+	Display *display = device->cur_swap->wi->display;
 
 	if(!glXMakeCurrent(display, None, NULL)) {
 		blog(LOG_ERROR, "Failed to reset current context.");
@@ -238,13 +238,25 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 	if(!swap)
 		swap = &device->plat->swap;
 
+	if (device->cur_swap == swap)
+		return;
+
+	Display *dpy = swap->wi->display;
+	XID window = swap->wi->id;
+	GLXContext ctx = device->plat->context;
+
 	device->cur_swap = swap;
+
+	if (!glXMakeCurrent(dpy, window, ctx)) {
+		blog(LOG_ERROR, "Failed to make context current.");
+	}
 }
 
 void device_present(device_t device)
 {
-	Display *display = device->plat->swap.wi->display;
-	XID window = device->plat->swap.wi->id;
+	/* What's to assure cur_swap is valid? */
+	Display *display = device->cur_swap->wi->display;
+	XID window = device->cur_swap->wi->id;
 
 	glXSwapBuffers(display, window);
 }
