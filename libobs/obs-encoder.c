@@ -219,32 +219,44 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	}
 }
 
+static inline obs_data_t get_defaults(const struct obs_encoder_info *info)
+{
+	obs_data_t settings = obs_data_create();
+	if (info->defaults)
+		info->defaults(settings);
+	return settings;
+}
+
 obs_data_t obs_encoder_defaults(const char *id)
 {
 	const struct obs_encoder_info *info = get_encoder_info(id);
-	if (info) {
-		obs_data_t settings = obs_data_create();
-		if (info->defaults)
-			info->defaults(settings);
-		return settings;
-	}
-
-	return NULL;
+	return (info) ? get_defaults(info) : NULL;
 }
 
 obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
-	if (ei && ei->properties)
-		return ei->properties(locale);
+	if (ei && ei->properties) {
+		obs_data_t       defaults = get_defaults(ei);
+		obs_properties_t properties;
+
+		properties = ei->properties(locale);
+		obs_properties_apply_settings(properties, defaults);
+		obs_data_release(defaults);
+		return properties;
+	}
 	return NULL;
 }
 
 obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
 		const char *locale)
 {
-	if (encoder && encoder->info.properties)
-		return encoder->info.properties(locale);
+	if (encoder && encoder->info.properties) {
+		obs_properties_t props;
+		props = encoder->info.properties(locale);
+		obs_properties_apply_settings(props, encoder->settings);
+		return props;
+	}
 	return NULL;
 }
 

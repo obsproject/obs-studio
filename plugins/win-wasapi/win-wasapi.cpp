@@ -468,7 +468,7 @@ static void UpdateWASAPISource(void *obj, obs_data_t settings)
 
 static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t props = obs_properties_create(locale);
 	vector<AudioDeviceInfo> devices;
 
 	/* TODO: translate */
@@ -479,15 +479,16 @@ static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 	GetWASAPIAudioDevices(devices, input);
 
 	if (devices.size())
-		obs_property_list_add_item(device_prop, "Default", "default");
+		obs_property_list_add_string(device_prop, "Default", "default");
 
 	for (size_t i = 0; i < devices.size(); i++) {
 		AudioDeviceInfo &device = devices[i];
-		obs_property_list_add_item(device_prop,
+		obs_property_list_add_string(device_prop,
 				device.name.c_str(), device.id.c_str());
 	}
 
-	obs_properties_add_bool(props, "use_device_timing",
+	obs_property_t prop;
+	prop = obs_properties_add_bool(props, "use_device_timing",
 			"Use Device Timing");
 
 	return props;

@@ -354,7 +354,7 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t prop,
 
 	for (size_t i = 0; i < count; i++) {
 		const char *name = obs_property_list_item_name(prop, i);
-		const char *val  = obs_property_list_item_value(prop, i);
+		const char *val  = obs_property_list_item_string(prop, i);
 		LoadListValue(widget, name, val);
 	}
 

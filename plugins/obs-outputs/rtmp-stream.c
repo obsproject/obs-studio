@@ -383,7 +383,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 static obs_properties_t rtmp_stream_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t props = obs_properties_create(locale);
 
 	/* TODO: locale */
 	obs_properties_add_text(props, "path", "Stream URL", OBS_TEXT_DEFAULT);
@@ -392,19 +392,18 @@ static obs_properties_t rtmp_stream_properties(const char *locale)
 			OBS_TEXT_DEFAULT);
 	obs_properties_add_text(props, "password", "Password",
 			OBS_TEXT_PASSWORD);
-
-	UNUSED_PARAMETER(locale);
 	return props;
 }
 
 struct obs_output_info rtmp_output_info = {
-	.id           = "rtmp_output",
-	.flags        = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE,
-	.getname      = rtmp_stream_getname,
-	.create       = rtmp_stream_create,
-	.destroy      = rtmp_stream_destroy,
-	.start        = rtmp_stream_start,
-	.stop         = rtmp_stream_stop,
-	.encoded_data = rtmp_stream_data,
+	.id             = "rtmp_output",
+	.flags          = OBS_OUTPUT_AV      |
+	                  OBS_OUTPUT_ENCODED,
+	.getname        = rtmp_stream_getname,
+	.create         = rtmp_stream_create,
+	.destroy        = rtmp_stream_destroy,
+	.start          = rtmp_stream_start,
+	.stop           = rtmp_stream_stop,
+	.encoded_packet = rtmp_stream_data,
 	.properties   = rtmp_stream_properties
 };

@@ -268,6 +268,9 @@ struct obs_output {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	pthread_mutex_t                 interleaved_mutex;
+	DARRAY(struct encoder_packet)   interleaved_packets;
+
 	bool                            active;
 	video_t                         video;
 	audio_t                         audio;

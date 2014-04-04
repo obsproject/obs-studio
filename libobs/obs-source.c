@@ -314,32 +314,45 @@ bool obs_source_removed(obs_source_t source)
 	return source ? source->removed : true;
 }
 
+static inline obs_data_t get_defaults(const struct obs_source_info *info)
+{
+	obs_data_t settings = obs_data_create();
+	if (info->defaults)
+		info->defaults(settings);
+	return settings;
+}
+
 obs_data_t obs_source_settings(enum obs_source_type type, const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	if (info) {
-		obs_data_t settings = obs_data_create();
-		if (info->defaults)
-			info->defaults(settings);
-		return settings;
-	}
-
-	return NULL;
+	return (info) ? get_defaults(info) : NULL;
 }
 
 obs_properties_t obs_get_source_properties(enum obs_source_type type,
 		const char *id, const char *locale)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	if (info && info->properties)
-	       return info->properties(locale);
+	if (info && info->properties) {
+		obs_data_t       defaults = get_defaults(info);
+		obs_properties_t properties;
+
+		properties = info->properties(locale);
+		obs_properties_apply_settings(properties, defaults);
+		obs_data_release(defaults);
+		return properties;
+	}
 	return NULL;
 }
 
 obs_properties_t obs_source_properties(obs_source_t source, const char *locale)
 {
-	if (source && source->info.properties)
-		return source->info.properties(locale);
+	if (source && source->info.properties) {
+		obs_properties_t props;
+		props = source->info.properties(locale);
+		obs_properties_apply_settings(props, source->settings);
+		return props;
+	}
+
 	return NULL;
 }
 

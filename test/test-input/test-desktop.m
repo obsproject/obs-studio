@@ -263,18 +263,16 @@ static void display_capture_update(void *data, obs_data_t settings)
 
 static obs_properties_t display_capture_properties(char const *locale)
 {
-	UNUSED_PARAMETER(locale);
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t props = obs_properties_create(locale);
 
 	obs_property_t list = obs_properties_add_list(props,
 			"display", "Display",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	for (unsigned i = 0; i < [NSScreen screens].count; i++)
-	{
+	for (unsigned i = 0; i < [NSScreen screens].count; i++) {
 		char buf[10];
 		sprintf(buf, "%u", i);
-		obs_property_list_add_item(list, buf, buf);
+		obs_property_list_add_int(list, buf, i);
 	}
 
 	return props;

@@ -709,7 +709,7 @@ static void *coreaudio_create_output_capture(obs_data_t settings,
 
 static obs_properties_t coreaudio_properties(const char *locale, bool input)
 {
-	obs_properties_t   props = obs_properties_create();
+	obs_properties_t   props = obs_properties_create(locale);
 	obs_property_t     property;
 	struct device_list devices;
 
@@ -723,17 +723,15 @@ static obs_properties_t coreaudio_properties(const char *locale, bool input)
 
 	/* TODO: translate */
 	if (devices.items.num)
-		obs_property_list_add_item(property, "Default", "default");
+		obs_property_list_add_string(property, "Default", "default");
 
 	for (size_t i = 0; i < devices.items.num; i++) {
 		struct device_item *item = devices.items.array+i;
-		obs_property_list_add_item(property,
+		obs_property_list_add_string(property,
 				item->name.array, item->value.array);
 	}
 
 	device_list_free(&devices);
-
-	UNUSED_PARAMETER(locale);
 	return props;
 }
 

@@ -98,8 +98,10 @@ int obs_load_module(const char *path)
 
 	mod.module = os_dlopen(plugin_path);
 	bfree(plugin_path);
-	if (!mod.module)
+	if (!mod.module) {
+		blog(LOG_DEBUG, "Module '%s' not found", path);
 		return MODULE_FILE_NOT_FOUND;
+	}
 
 	errorcode = call_module_load(mod.module, path);
 	if (errorcode != MODULE_SUCCESS) {
@@ -200,7 +202,7 @@ void obs_register_output(const struct obs_output_info *info)
 	CHECK_REQUIRED_VAL(info, stop,    obs_register_output);
 
 	if (info->flags & OBS_OUTPUT_ENCODED) {
-		CHECK_REQUIRED_VAL(info, encoded_data, obs_register_output);
+		CHECK_REQUIRED_VAL(info, encoded_packet, obs_register_output);
 	} else {
 		if (info->flags & OBS_OUTPUT_VIDEO)
 			CHECK_REQUIRED_VAL(info, raw_video,

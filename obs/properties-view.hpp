@@ -53,12 +53,14 @@ private:
 	PropertiesUpdateCallback                 callback;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 
+	void RefreshProperties();
+
 	QWidget *NewWidget(obs_property_t prop, QWidget *widget,
 			const char *signal);
 
 	QWidget *AddCheckbox(obs_property_t prop);
 	QWidget *AddText(obs_property_t prop);
-	void     AddPath(obs_property_t prop, QFormLayout *layout);
+	QWidget *AddPath(obs_property_t prop, QFormLayout *layout);
 	QWidget *AddInt(obs_property_t prop);
 	QWidget *AddFloat(obs_property_t prop);
 	QWidget *AddList(obs_property_t prop);

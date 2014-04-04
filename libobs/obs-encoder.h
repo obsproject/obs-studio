@@ -36,10 +36,10 @@ struct encoder_packet {
 
 	enum obs_encoder_type type;         /**< Encoder type */
 
+	bool                  keyframe;     /**< Is a keyframe */
+
 	/* ---------------------------------------------------------------- */
 	/* Internal video variables (will be parsed automatically) */
-
-	bool                  keyframe;     /**< Is a keyframe */
 
 	/**
 	 * Packet priority

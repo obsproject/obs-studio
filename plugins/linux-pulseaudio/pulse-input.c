@@ -506,7 +506,7 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	blog(LOG_DEBUG, "pulse-input: Got source #%u '%s'",
 	     i->index, i->description);
 
-	obs_property_list_add_item(e->devices, i->description, i->name);
+	obs_property_list_add_string(e->devices, i->description, i->name);
 
 	pa_threaded_mainloop_signal(e->mainloop, 0);
 }
@@ -553,11 +553,9 @@ fail:
  */
 static obs_properties_t pulse_properties(const char *locale, bool input)
 {
-	UNUSED_PARAMETER(locale);
-
 	blog(LOG_DEBUG, "pulse-input: properties requested !");
 
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t props = obs_properties_create(locale);
 
 	pulse_enumerate_devices(props, input);
 

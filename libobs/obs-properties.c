@@ -33,7 +33,12 @@ struct int_data {
 
 struct list_item {
 	char *name;
-	char *value;
+
+	union {
+		char      *str;
+		long long ll;
+		double    d;
+	};
 };
 
 struct text_data {
@@ -46,34 +51,51 @@ struct list_data {
 	enum obs_combo_format    format;
 };
 
+static inline void list_item_free(struct list_data *data,
+		struct list_item *item)
+{
+	bfree(item->name);
+	if (data->format == OBS_COMBO_FORMAT_STRING)
+		bfree(item->str);
+}
+
 static inline void list_data_free(struct list_data *data)
 {
-	for (size_t i = 0; i < data->items.num; i++) {
-		bfree(data->items.array[i].name);
-		bfree(data->items.array[i].value);
-	}
+	for (size_t i = 0; i < data->items.num; i++)
+		list_item_free(data, data->items.array+i);
 
 	da_free(data->items);
 }
 
-struct obs_property {
-	const char             *name;
-	const char             *desc;
-	enum obs_property_type type;
+struct obs_properties;
 
-	struct obs_property    *next;
+struct obs_property {
+	const char              *name;
+	const char              *desc;
+	enum obs_property_type  type;
+	bool                    visible;
+	bool                    enabled;
+
+	struct obs_properties   *parent;
+
+	obs_property_modified_t modified;
+
+	struct obs_property     *next;
 };
 
 struct obs_properties {
-	struct obs_property    *first_property;
-	struct obs_property    **last;
+	const char              *locale;
+
+	struct obs_property     *first_property;
+	struct obs_property     **last;
 };
 
-obs_properties_t obs_properties_create()
+obs_properties_t obs_properties_create(const char *locale)
 {
 	struct obs_properties *props;
 	props = bzalloc(sizeof(struct obs_properties));
-	props->last = &props->first_property;
+	props->locale = locale;
+	props->last   = &props->first_property;
 	return props;
 }
 
@@ -101,6 +123,11 @@ void obs_properties_destroy(obs_properties_t props)
 	}
 }
 
+const char *obs_properties_locale(obs_properties_t props)
+{
+	return props ? props->locale : NULL;
+}
+
 obs_property_t obs_properties_first(obs_properties_t props)
 {
 	return (props != NULL) ? props->first_property : NULL;
@@ -122,6 +149,17 @@ obs_property_t obs_properties_get(obs_properties_t props, const char *name)
 	}
 
 	return NULL;
+}
+
+void obs_properties_apply_settings(obs_properties_t props, obs_data_t settings)
+{
+	struct obs_property *p = props->first_property;
+
+	while (p) {
+		if (p->modified)
+			p->modified(props, p, settings);
+		p = p->next;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -157,9 +195,12 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	struct obs_property *p;
 
 	p = bzalloc(sizeof(struct obs_property) + data_size);
-	p->type = type;
-	p->name = name;
-	p->desc = desc;
+	p->parent  = props;
+	p->enabled = true;
+	p->visible = true;
+	p->type    = type;
+	p->name    = name;
+	p->desc    = desc;
 	propertes_add(props, p);
 
 	return p;
@@ -195,29 +236,31 @@ static inline void *get_type_data(struct obs_property *prop,
 	return get_property_data(prop);
 }
 
-void obs_properties_add_bool(obs_properties_t props, const char *name,
+obs_property_t obs_properties_add_bool(obs_properties_t props, const char *name,
 		const char *desc)
 {
-	if (!props || has_prop(props, name)) return;
-	new_prop(props, name, desc, OBS_PROPERTY_BOOL);
+	if (!props || has_prop(props, name)) return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_BOOL);
 }
 
-void obs_properties_add_int(obs_properties_t props, const char *name,
+obs_property_t obs_properties_add_int(obs_properties_t props, const char *name,
 		const char *desc, int min, int max, int step)
 {
-	if (!props || has_prop(props, name)) return;
+	if (!props || has_prop(props, name)) return NULL;
 
 	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_INT);
 	struct int_data *data = get_property_data(p);
 	data->min  = min;
 	data->max  = max;
 	data->step = step;
+	return p;
 }
 
-void obs_properties_add_float(obs_properties_t props, const char *name,
-		const char *desc, double min, double max, double step)
+obs_property_t obs_properties_add_float(obs_properties_t props,
+		const char *name, const char *desc,
+		double min, double max, double step)
 {
-	if (!props || has_prop(props, name)) return;
+	if (!props || has_prop(props, name)) return NULL;
 
 	struct obs_property *p = new_prop(props, name, desc,
 			OBS_PROPERTY_FLOAT);
@@ -225,23 +268,25 @@ void obs_properties_add_float(obs_properties_t props, const char *name,
 	data->min  = min;
 	data->max  = max;
 	data->step = step;
+	return p;
 }
 
-void obs_properties_add_text(obs_properties_t props, const char *name,
+obs_property_t obs_properties_add_text(obs_properties_t props, const char *name,
 		const char *desc, enum obs_text_type type)
 {
-	if (!props || has_prop(props, name)) return;
+	if (!props || has_prop(props, name)) return NULL;
 
 	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_TEXT);
 	struct text_data *data = get_property_data(p);
 	data->type = type;
+	return p;
 }
 
-void obs_properties_add_path(obs_properties_t props, const char *name,
+obs_property_t obs_properties_add_path(obs_properties_t props, const char *name,
 		const char *desc)
 {
-	if (!props || has_prop(props, name)) return;
-	new_prop(props, name, desc, OBS_PROPERTY_PATH);
+	if (!props || has_prop(props, name)) return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_PATH);
 }
 
 obs_property_t obs_properties_add_list(obs_properties_t props,
@@ -266,11 +311,11 @@ obs_property_t obs_properties_add_list(obs_properties_t props,
 	return p;
 }
 
-void obs_properties_add_color(obs_properties_t props, const char *name,
-		const char *desc)
+obs_property_t obs_properties_add_color(obs_properties_t props,
+		const char *name, const char *desc)
 {
-	if (!props || has_prop(props, name)) return;
-	new_prop(props, name, desc, OBS_PROPERTY_COLOR);
+	if (!props || has_prop(props, name)) return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_COLOR);
 }
 
 
@@ -287,18 +332,11 @@ static inline struct list_data *get_list_data(struct obs_property *p)
 	return get_property_data(p);
 }
 
-void obs_property_list_add_item(obs_property_t p,
-		const char *name, const char *value)
+static inline struct list_data *get_list_fmt_data(struct obs_property *p,
+		enum obs_combo_format format)
 {
 	struct list_data *data = get_list_data(p);
-	if (data) {
-		struct list_item item = {
-			.name  = bstrdup(name),
-			.value = bstrdup(value)
-		};
-
-		da_push_back(data->items, &item);
-	}
+	return (data->format == format) ? data : NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -310,6 +348,29 @@ bool obs_property_next(obs_property_t *p)
 
 	*p = (*p)->next;
 	return *p != NULL;
+}
+
+void obs_property_set_modified_callback(obs_property_t p,
+		obs_property_modified_t modified)
+{
+	if (p) p->modified = modified;
+}
+
+bool obs_property_modified(obs_property_t p, obs_data_t settings)
+{
+	if (p && p->modified)
+		return p->modified(p->parent, p, settings);
+	return false;
+}
+
+void obs_property_set_visible(obs_property_t p, bool visible)
+{
+	if (p) p->visible = visible;
+}
+
+void obs_property_set_enabled(obs_property_t p, bool enabled)
+{
+	if (p) p->enabled = enabled;
 }
 
 const char *obs_property_name(obs_property_t p)
@@ -325,6 +386,16 @@ const char *obs_property_description(obs_property_t p)
 enum obs_property_type obs_property_get_type(obs_property_t p)
 {
 	return p ? p->type : OBS_PROPERTY_INVALID;
+}
+
+bool obs_property_enabled(obs_property_t p)
+{
+	return p ? p->enabled : false;
+}
+
+bool obs_property_visible(obs_property_t p)
+{
+	return p ? p->visible : false;
 }
 
 int obs_property_int_min(obs_property_t p)
@@ -381,6 +452,61 @@ enum obs_combo_format obs_property_list_format(obs_property_t p)
 	return data ? data->format : OBS_COMBO_FORMAT_INVALID;
 }
 
+void obs_property_list_clear(obs_property_t p)
+{
+	struct list_data *data = get_list_data(p);
+	if (data)
+		list_data_free(data);
+}
+
+static void add_item(struct list_data *data, const char *name, const void *val)
+{
+	struct list_item item;
+	item.name  = bstrdup(name);
+
+	if (data->format == OBS_COMBO_FORMAT_INT)
+		item.ll  = *(const long long*)val;
+	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
+		item.d   = *(const double*)val;
+	else
+		item.str = bstrdup(val);
+
+	da_push_back(data->items, &item);
+}
+
+void obs_property_list_add_string(obs_property_t p,
+		const char *name, const char *val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_STRING)
+		add_item(data, name, val);
+}
+
+void obs_property_list_add_int(obs_property_t p,
+		const char *name, long long val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_INT)
+		add_item(data, name, &val);
+}
+
+void obs_property_list_add_float(obs_property_t p,
+		const char *name, double val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
+		add_item(data, name, &val);
+}
+
+void obs_property_list_item_remove(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && idx < data->items.num) {
+		list_item_free(data, data->items.array+idx);
+		da_erase(data->items, idx);
+	}
+}
+
 size_t obs_property_list_item_count(obs_property_t p)
 {
 	struct list_data *data = get_list_data(p);
@@ -394,9 +520,23 @@ const char *obs_property_list_item_name(obs_property_t p, size_t idx)
 		data->items.array[idx].name : NULL;
 }
 
-const char *obs_property_list_item_value(obs_property_t p, size_t idx)
+const char *obs_property_list_item_string(obs_property_t p, size_t idx)
 {
-	struct list_data *data = get_list_data(p);
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_STRING);
 	return (data && idx < data->items.num) ?
-		data->items.array[idx].value : NULL;
+		data->items.array[idx].str : "";
+}
+
+long long obs_property_list_item_int(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_INT);
+	return (data && idx < data->items.num) ?
+		data->items.array[idx].ll : 0;
+}
+
+double obs_property_list_item_float(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_FLOAT);
+	return (data && idx < data->items.num) ?
+		data->items.array[idx].d : 0.0;
 }

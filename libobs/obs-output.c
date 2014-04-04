@@ -60,7 +60,10 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	}
 
 	output = bzalloc(sizeof(struct obs_output));
+	pthread_mutex_init_value(&output->interleaved_mutex);
 
+	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
+		goto fail;
 	if (!init_output_handlers(output))
 		goto fail;
 
@@ -90,6 +93,13 @@ fail:
 	return NULL;
 }
 
+static inline void free_packets(struct obs_output *output)
+{
+	for (size_t i = 0; i < output->interleaved_packets.num; i++)
+		obs_free_encoder_packet(output->interleaved_packets.array+i);
+	da_free(output->interleaved_packets);
+}
+
 void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
@@ -102,6 +112,8 @@ void obs_output_destroy(obs_output_t output)
 			pthread_mutex_unlock(&obs->data.outputs_mutex);
 		}
 
+		free_packets(output);
+
 		if (output->data)
 			output->info.destroy(output->data);
 
@@ -109,6 +121,7 @@ void obs_output_destroy(obs_output_t output)
 		proc_handler_destroy(output->procs);
 
 		obs_data_release(output->settings);
+		pthread_mutex_destroy(&output->interleaved_mutex);
 		bfree(output->name);
 		bfree(output);
 	}
@@ -130,31 +143,44 @@ bool obs_output_active(obs_output_t output)
 	return (output != NULL) ? output->active : false;
 }
 
+static inline obs_data_t get_defaults(const struct obs_output_info *info)
+{
+	obs_data_t settings = obs_data_create();
+	if (info->defaults)
+		info->defaults(settings);
+	return settings;
+}
+
 obs_data_t obs_output_defaults(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
-	if (info) {
-		obs_data_t settings = obs_data_create();
-		if (info->defaults)
-			info->defaults(settings);
-		return settings;
-	}
-
-	return NULL;
+	return (info) ? get_defaults(info) : NULL;
 }
 
 obs_properties_t obs_get_output_properties(const char *id, const char *locale)
 {
 	const struct obs_output_info *info = find_output(id);
-	if (info && info->properties)
-		return info->properties(locale);
+	if (info && info->properties) {
+		obs_data_t       defaults = get_defaults(info);
+		obs_properties_t properties;
+
+		properties = info->properties(locale);
+		obs_properties_apply_settings(properties, defaults);
+		obs_data_release(defaults);
+		return properties;
+	}
 	return NULL;
 }
 
 obs_properties_t obs_output_properties(obs_output_t output, const char *locale)
 {
-	if (output && output->info.properties)
-		return output->info.properties(locale);
+	if (output && output->info.properties) {
+		obs_properties_t props;
+		props = output->info.properties(locale);
+		obs_properties_apply_settings(props, output->settings);
+		return props;
+	}
+
 	return NULL;
 }
 
@@ -316,18 +342,28 @@ static inline struct audio_convert_info *get_audio_conversion(
 	return output->audio_conversion_set ? &output->audio_conversion : NULL;
 }
 
+static void interleave_packets(void *data, struct encoder_packet *packet)
+{
+	
+}
+
 static void hook_data_capture(struct obs_output *output, bool encoded,
 		bool has_video, bool has_audio)
 {
+	void (*encoded_callback)(void *data, struct encoder_packet *packet);
+	void *param;
+
 	if (encoded) {
+		encoded_callback = (has_video && has_audio) ?
+			interleave_packets : output->info.encoded_packet;
+		param = (has_video && has_audio) ? output : output->data;
+
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
-					output->info.encoded_data,
-					output->data);
+					encoded_callback, param);
 		if (has_audio)
 			obs_encoder_start(output->audio_encoder,
-					output->info.encoded_data,
-					output->data);
+					encoded_callback, param);
 	} else {
 		if (has_video)
 			video_output_connect(output->video,
@@ -405,6 +441,8 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 void obs_output_end_data_capture(obs_output_t output)
 {
 	bool encoded, has_video, has_audio;
+	void (*encoded_callback)(void *data, struct encoder_packet *packet);
+	void *param;
 
 	if (!output) return;
 	if (!output->active) return;
@@ -412,14 +450,16 @@ void obs_output_end_data_capture(obs_output_t output)
 	convert_flags(output, 0, &encoded, &has_video, &has_audio);
 
 	if (encoded) {
+		encoded_callback = (has_video && has_audio) ?
+			interleave_packets : output->info.encoded_packet;
+		param = (has_video && has_audio) ? output : output->data;
+
 		if (has_video)
 			obs_encoder_stop(output->video_encoder,
-					output->info.encoded_data,
-					output->data);
+					encoded_callback, param);
 		if (has_audio)
 			obs_encoder_stop(output->audio_encoder,
-					output->info.encoded_data,
-					output->data);
+					encoded_callback, param);
 	} else {
 		if (has_video)
 			video_output_disconnect(output->video,

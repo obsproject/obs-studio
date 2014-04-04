@@ -11,15 +11,12 @@
 
 using namespace std;
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_,
-		obs_properties_t properties_, void *obj_,
-		PropertiesUpdateCallback callback_)
-	: QScrollArea (nullptr),
-	  properties  (properties_),
-	  settings    (settings_),
-	  obj         (obj_),
-	  callback    (callback_)
+void OBSPropertiesView::RefreshProperties()
 {
+	children.clear();
+	if (widget)
+		widget->deleteLater();
+
 	widget = new QWidget();
 
 	QFormLayout *layout = new QFormLayout;
@@ -39,6 +36,19 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_,
 
 	setWidget(widget);
 	setSizePolicy(policy);
+}
+
+OBSPropertiesView::OBSPropertiesView(OBSData settings_,
+		obs_properties_t properties_, void *obj_,
+		PropertiesUpdateCallback callback_)
+	: QScrollArea (nullptr),
+	  widget      (nullptr),
+	  properties  (properties_),
+	  settings    (settings_),
+	  obj         (obj_),
+	  callback    (callback_)
+{
+	RefreshProperties();
 }
 
 QWidget *OBSPropertiesView::NewWidget(obs_property_t prop, QWidget *widget,
@@ -76,11 +86,12 @@ QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
-void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
+QWidget *OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
 {
 	/* TODO */
 	UNUSED_PARAMETER(prop);
 	UNUSED_PARAMETER(layout);
+	return nullptr;
 }
 
 QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
@@ -111,6 +122,27 @@ QWidget *OBSPropertiesView::AddFloat(obs_property_t prop)
 	return NewWidget(prop, spin, SIGNAL(valueChanged(double)));
 }
 
+static void AddComboItem(QComboBox *combo, obs_property_t prop,
+		obs_combo_format format, size_t idx)
+{
+	const char *name = obs_property_list_item_name(prop, idx);
+	QVariant var;
+
+	if (format == OBS_COMBO_FORMAT_INT) {
+		long long val = obs_property_list_item_int(prop, idx);
+		var = QVariant::fromValue<long long>(val);
+
+	} else if (format == OBS_COMBO_FORMAT_FLOAT) {
+		double val = obs_property_list_item_float(prop, idx);
+		var = QVariant::fromValue<double>(val);
+
+	} else if (format == OBS_COMBO_FORMAT_STRING) {
+		var = obs_property_list_item_string(prop, idx);
+	}
+
+	combo->addItem(QT_UTF8(name), var);
+}
+
 QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 {
 	const char       *name  = obs_property_name(prop);
@@ -120,11 +152,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 	size_t           count  = obs_property_list_item_count(prop);
 	int              idx    = -1;
 
-	for (size_t i = 0; i < count; i++) {
-		const char *name  = obs_property_list_item_name(prop, i);
-		const char *val   = obs_property_list_item_value(prop, i);
-		combo->addItem(QT_UTF8(name), QT_UTF8(val));
-	}
+	for (size_t i = 0; i < count; i++)
+		AddComboItem(combo, prop, format, i);
 
 	if (format == OBS_COMBO_FORMAT_INT) {
 		int    val       = (int)obs_data_getint(settings, name);
@@ -154,13 +183,25 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 
-	return NewWidget(prop, combo, SIGNAL(currentIndexChanged(int)));
+	WidgetInfo *info = new WidgetInfo(this, prop, combo);
+	connect(combo, SIGNAL(currentIndexChanged(int)), info,
+				SLOT(ControlChanged()));
+	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+
+	/* trigger a settings update if the index was not found */
+	if (idx == -1)
+		info->ControlChanged();
+
+	return combo;
 }
 
 void OBSPropertiesView::AddProperty(obs_property_t property,
 		QFormLayout *layout)
 {
 	obs_property_type type = obs_property_get_type(property);
+
+	if (!obs_property_visible(property))
+		return;
 
 	QWidget *widget = nullptr;
 
@@ -192,6 +233,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 
 	if (!widget)
 		return;
+
+	if (!obs_property_enabled(property))
+		widget->setEnabled(false);
 
 	QLabel *label = nullptr;
 	if (type != OBS_PROPERTY_BOOL)
@@ -236,29 +280,32 @@ void WidgetInfo::ListChanged(const char *setting)
 	QComboBox        *combo = static_cast<QComboBox*>(widget);
 	obs_combo_format format = obs_property_list_format(property);
 	obs_combo_type   type   = obs_property_list_type(property);
+	QVariant         data;
 
-	string val;
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		val = QT_TO_UTF8(combo->currentText());
+		data = combo->currentText();
 	} else {
 		int index = combo->currentIndex();
-		if (index != -1) {
-			QVariant variant = combo->itemData(index);
-			val = QT_TO_UTF8(variant.toString());
-		}
+		if (index != -1)
+			data = combo->itemData(index);
+		else
+			return;
 	}
 
 	switch (format) {
 	case OBS_COMBO_FORMAT_INVALID:
 		return;
 	case OBS_COMBO_FORMAT_INT:
-		obs_data_setint(view->settings, setting, stol(val));
+		obs_data_setint(view->settings, setting,
+				data.value<long long>());
 		break;
 	case OBS_COMBO_FORMAT_FLOAT:
-		obs_data_setdouble(view->settings, setting, stod(val));
+		obs_data_setdouble(view->settings, setting,
+				data.value<double>());
 		break;
 	case OBS_COMBO_FORMAT_STRING:
-		obs_data_setstring(view->settings, setting, val.c_str());
+		obs_data_setstring(view->settings, setting,
+				QT_TO_UTF8(data.toString()));
 		break;
 	}
 }
@@ -286,4 +333,6 @@ void WidgetInfo::ControlChanged()
 	}
 
 	view->callback(view->obj, view->settings);
+	if (obs_property_modified(property, view->settings))
+		view->RefreshProperties();
 }

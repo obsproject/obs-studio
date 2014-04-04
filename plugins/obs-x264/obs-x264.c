@@ -86,17 +86,16 @@ static void obs_x264_defaults(obs_data_t settings)
 static inline void add_strings(obs_property_t list, const char *const *strings)
 {
 	while (*strings) {
-		obs_property_list_add_item(list, *strings, *strings);
+		obs_property_list_add_string(list, *strings, *strings);
 		strings++;
 	}
 }
 
 static obs_properties_t obs_x264_props(const char *locale)
 {
-	UNUSED_PARAMETER(locale);
 	/* TODO: locale */
 
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t props = obs_properties_create(locale);
 	obs_property_t list;
 
 	obs_properties_add_int(props, "bitrate", "Bitrate", 50, 100000, 1);
@@ -113,9 +112,9 @@ static obs_properties_t obs_x264_props(const char *locale)
 
 	list = obs_properties_add_list(props, "profile", "Profile",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_item(list, "baseline", "baseline");
-	obs_property_list_add_item(list, "main", "main");
-	obs_property_list_add_item(list, "high", "high");
+	obs_property_list_add_string(list, "baseline", "baseline");
+	obs_property_list_add_string(list, "main", "main");
+	obs_property_list_add_string(list, "high", "high");
 
 	list = obs_properties_add_list(props, "tune", "Tune",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
