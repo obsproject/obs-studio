@@ -26,7 +26,6 @@
 
 
 struct gl_windowinfo {
-	NSOpenGLContext *context;
 	NSView *view;
 };
 
@@ -34,8 +33,6 @@ struct gl_platform {
 	NSOpenGLContext *context;
 	struct gs_swap_chain swap;
 };
-
-static NSOpenGLContext *plat_context;
 
 static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 {
@@ -87,8 +84,7 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 	}
 
 	NSOpenGLContext *context;
-	context = [[NSOpenGLContext alloc] initWithFormat:pf
-					     shareContext:plat_context];
+	context = [[NSOpenGLContext alloc] initWithFormat:pf shareContext:nil];
 	[pf release];
 	if(!context) {
 		blog(LOG_ERROR, "Failed to create context");
@@ -103,29 +99,20 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 static bool gl_init_default_swap(struct gl_platform *plat, device_t dev,
 		struct gs_init_data *info)
 {
-	plat_context = nil;
-
-	struct gl_windowinfo *wi = gl_windowinfo_create(info);
-
-	if (!wi)
+	if(!(plat->context = gl_context_create(info)))
 		return false;
 
 	plat->swap.device = dev;
 	plat->swap.info	  = *info;
-	plat->swap.wi     = wi;
+	plat->swap.wi     = gl_windowinfo_create(info);
 
-	plat->context     = wi->context;
-
-	plat_context = plat->context;
-
-	return true;
+	return plat->swap.wi != NULL;
 }
 
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {
-	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
-	memset(plat, 0, sizeof(struct gl_platform));
+	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 
 	if(!gl_init_default_swap(plat, device, info))
 		goto fail;
@@ -155,6 +142,8 @@ void gl_platform_destroy(struct gl_platform *platform)
 	if(!platform)
 		return;
 
+	[platform->context release];
+	platform->context = nil;
 	gl_windowinfo_destroy(platform->swap.wi);
 
 	bfree(platform);
@@ -170,7 +159,6 @@ struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 
-	wi->context = gl_context_create(info);
 	wi->view = info->window.view;
 
 	return wi;
@@ -181,27 +169,18 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	if(!wi)
 		return;
 
-	[wi->context release];
-	wi->context = nil;
 	wi->view = nil;
 	bfree(wi);
 }
 
-static inline NSOpenGLContext *current_context(device_t device)
-{
-	if (device->cur_swap)
-		return device->cur_swap->wi->context;
-	return device->plat->context;
-}
-
 void gl_update(device_t device)
 {
-	[current_context(device) update];
+	[device->plat->context update];
 }
 
 void device_entercontext(device_t device)
 {
-	[current_context(device) makeCurrentContext];
+	[device->plat->context makeCurrentContext];
 }
 
 void device_leavecontext(device_t device)
@@ -220,12 +199,12 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 		return;
 
 	device->cur_swap = swap;
-	[current_context(device) makeCurrentContext];
+	[device->plat->context setView:swap->wi->view];
 }
 
 void device_present(device_t device)
 {
-	[current_context(device) flushBuffer];
+	[device->plat->context flushBuffer];
 }
 
 void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
@@ -238,8 +217,7 @@ void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
 texture_t texture_create_from_iosurface(device_t device, void *iosurf)
 {
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
-	struct gs_texture_2d *tex = bmalloc(sizeof(struct gs_texture_2d));
-	memset(tex, 0, sizeof(struct gs_texture_2d));
+	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
 	if (pf != 'BGRA')
