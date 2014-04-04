@@ -254,7 +254,6 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 
 void device_present(device_t device)
 {
-	/* What's to assure cur_swap is valid? */
 	Display *display = device->cur_swap->wi->display;
 	XID window = device->cur_swap->wi->id;
 
