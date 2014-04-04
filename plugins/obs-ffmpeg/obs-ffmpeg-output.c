@@ -26,6 +26,9 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+//#define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_I420
+#define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_NV12
+
 /* NOTE: much of this stuff is test stuff that was more or less copied from
  * the muxing.c ffmpeg example */
 
@@ -177,8 +180,9 @@ static bool open_video_codec(struct ffmpeg_data *data)
 
 static bool init_swscale(struct ffmpeg_data *data, AVCodecContext *context)
 {
+	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
 	data->swscale = sws_getContext(
-			context->width, context->height, AV_PIX_FMT_YUV420P,
+			context->width, context->height, format,
 			context->width, context->height, context->pix_fmt,
 			SWS_BICUBIC, NULL, NULL, NULL);
 
@@ -214,7 +218,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->time_base.num  = ovi.fps_den;
 	context->time_base.den  = ovi.fps_num;
 	context->gop_size       = 120;
-	context->pix_fmt        = AV_PIX_FMT_YUV420P;
+	context->pix_fmt        = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -222,7 +226,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	if (!open_video_codec(data))
 		return false;
 
-	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
+	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+	if (context->pix_fmt != format)
 		if (!init_swscale(data, context))
 			return false;
 
@@ -487,12 +492,13 @@ static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
 			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
-#define YUV420_PLANES 3
-
 static inline void copy_data(AVPicture *pic, const struct video_data *frame,
 		int height)
 {
-	for (int plane = 0; plane < YUV420_PLANES; plane++) {
+	for (int plane = 0; plane < MAX_AV_PLANES; plane++) {
+		if (!frame->data[plane])
+			continue;
+
 		int frame_rowsize = (int)frame->linesize[plane];
 		int pic_rowsize   = pic->linesize[plane];
 		int bytes = frame_rowsize < pic_rowsize ?
@@ -523,7 +529,8 @@ static void receive_video(void *param, struct video_data *frame)
 	if (!data->start_timestamp)
 		data->start_timestamp = frame->timestamp;
 
-	if (context->pix_fmt != AV_PIX_FMT_YUV420P)
+	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+	if (context->pix_fmt != format)
 		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 				(const int*)frame->linesize,
 				0, context->height, data->dst_picture.data,
@@ -761,7 +768,7 @@ static bool try_connect(struct ffmpeg_output *output)
 	};
 
 	struct video_scale_info vsi = {
-		.format = VIDEO_FORMAT_I420
+		.format = OBS_FFMPEG_VIDEO_FORMAT
 	};
 
 	output->active = true;

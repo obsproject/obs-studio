@@ -417,7 +417,8 @@ bool OBSBasic::ResetVideo()
 			"Video", "OutputCX");
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
-	ovi.output_format  = VIDEO_FORMAT_I420;
+	//ovi.output_format  = VIDEO_FORMAT_I420;
+	ovi.output_format  = VIDEO_FORMAT_NV12;
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
 
