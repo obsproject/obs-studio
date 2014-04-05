@@ -25,11 +25,6 @@
 #define MODULE_EXPORT EXPORT
 #endif
 
-#define OBS_SIZE_FUNC(structure, func)                         \
-	MODULE_EXPORT size_t func(void);                       \
-	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;} \
-	size_t func(void) {return sizeof(struct structure);}
-
 /**
  * @file
  *
