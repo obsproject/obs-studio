@@ -454,14 +454,6 @@ static void ffmpeg_output_destroy(void *data)
 	}
 }
 
-static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
-		AVStream *stream)
-{
-	return av_rescale_q_rnd(val, context->time_base,
-			stream->time_base,
-			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-}
-
 static inline void copy_data(AVPicture *pic, const struct video_data *frame,
 		int height)
 {
@@ -532,9 +524,9 @@ static void receive_video(void *param, struct video_data *frame)
 
 		if (!ret && got_packet && packet.size) {
 			packet.pts = rescale_ts(packet.pts, context,
-					data->video);
+					data->video->time_base);
 			packet.dts = rescale_ts(packet.dts, context,
-					data->video);
+					data->video->time_base);
 			packet.duration = (int)av_rescale_q(packet.duration,
 					context->time_base,
 					data->video->time_base);
@@ -592,8 +584,8 @@ static void encode_audio(struct ffmpeg_output *output,
 	if (!got_packet)
 		return;
 
-	packet.pts = rescale_ts(packet.pts, context, data->audio);
-	packet.dts = rescale_ts(packet.dts, context, data->audio);
+	packet.pts = rescale_ts(packet.pts, context, data->audio->time_base);
+	packet.dts = rescale_ts(packet.dts, context, data->audio->time_base);
 	packet.duration = (int)av_rescale_q(packet.duration, context->time_base,
 			data->audio->time_base);
 	packet.stream_index = data->audio->index;

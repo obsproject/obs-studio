@@ -1,5 +1,12 @@
 #pragma once
 
+static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
+		AVRational new_base)
+{
+	return av_rescale_q_rnd(val, context->time_base, new_base,
+			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+}
+
 static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 		enum video_format format)
 {
