@@ -20,7 +20,9 @@
 #include <obs.h>
 
 #include <libavformat/avformat.h>
+
 #include "obs-ffmpeg-formats.h"
+#include "obs-ffmpeg-compat.h"
 
 struct aac_encoder {
 	obs_encoder_t    encoder;

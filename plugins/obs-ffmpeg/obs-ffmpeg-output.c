@@ -27,6 +27,7 @@
 #include <libswscale/swscale.h>
 
 #include "obs-ffmpeg-formats.h"
+#include "obs-ffmpeg-compat.h"
 
 //#define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_I420
 #define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_NV12
