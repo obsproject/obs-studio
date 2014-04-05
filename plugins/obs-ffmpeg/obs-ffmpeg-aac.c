@@ -223,7 +223,7 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 
 static void aac_defaults(obs_data_t settings)
 {
-	obs_data_setint(settings, "bitrate", 128);
+	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
 static obs_properties_t aac_properties(const char *locale)
