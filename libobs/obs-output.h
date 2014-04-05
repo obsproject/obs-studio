@@ -54,4 +54,8 @@ struct obs_output_info {
 	void (*pause)(void *data);
 };
 
-EXPORT void obs_register_output(const struct obs_output_info *info);
+EXPORT void obs_register_output_s(const struct obs_output_info *info,
+		size_t size);
+
+#define obs_register_output(info) \
+	obs_register_output_s(info, sizeof(struct obs_output_info))

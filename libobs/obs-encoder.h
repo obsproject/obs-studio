@@ -207,10 +207,14 @@ struct obs_encoder_info {
 	bool (*video_info)(void *data, struct video_scale_info *info);
 };
 
+EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
+		size_t size);
+
 /**
  * Register an encoder definition to the current obs context.  This should be
  * used in obs_module_load.
  *
  * @param  info  Pointer to the source definition structure.
  */
-EXPORT void obs_register_encoder(const struct obs_encoder_info *info);
+#define obs_register_encoder(info) \
+	obs_register_encoder_s(info, sizeof(struct obs_encoder_info))

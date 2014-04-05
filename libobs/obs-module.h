@@ -38,13 +38,7 @@
 /** Required: Declares a libobs module. */
 #define OBS_DECLARE_MODULE()                                          \
 	MODULE_EXPORT uint32_t obs_module_ver(void);                  \
-	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;}        \
-	OBS_SIZE_FUNC(obs_source_info,  obs_module_source_info_size)  \
-	OBS_SIZE_FUNC(obs_output_info,  obs_module_output_info_size)  \
-	OBS_SIZE_FUNC(obs_encoder_info, obs_module_encoder_info_size) \
-	OBS_SIZE_FUNC(obs_encoder_info, obs_module_service_info_size) \
-	OBS_SIZE_FUNC(obs_modal_ui,     obs_module_modal_ui_size)     \
-	OBS_SIZE_FUNC(obs_modeless_ui,  obs_module_modeless_ui_size)
+	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;}
 
 /**
  * Required: Called when the module is loaded.  Use this function to load all

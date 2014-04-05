@@ -256,13 +256,17 @@ struct obs_source_info {
 			void *param);
 };
 
+EXPORT void obs_register_source_s(const struct obs_source_info *info,
+		size_t size);
+
 /**
  * Regsiters a source definition to the current obs context.  This should be
  * used in obs_module_load.
  *
  * @param  info  Pointer to the source definition structure
  */
-EXPORT void obs_register_source(const struct obs_source_info *info);
+#define obs_register_source(info) \
+	obs_register_source_s(info, sizeof(struct obs_source_info))
 
 #ifdef __cplusplus
 }

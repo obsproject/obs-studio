@@ -53,7 +53,7 @@ static void aac_warn(const char *func, const char *format, ...)
 
 	va_start(args, format);
 	vsnprintf(msg, sizeof(msg), format, args);
-	blog(LOG_WARNING, "[%s}: %s", func, msg);
+	blog(LOG_WARNING, "[%s]: %s", func, msg);
 	va_end(args);
 }
 
@@ -193,6 +193,7 @@ static bool do_aac_encode(struct aac_encoder *enc,
 	packet->pts  = rescale_ts(avpacket.pts, enc->context, time_base);
 	packet->dts  = rescale_ts(avpacket.dts, enc->context, time_base);
 	packet->data = bmemdup(avpacket.data, avpacket.size);
+	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
 	packet->timebase_num = 1;
 	packet->timebase_den = (int32_t)enc->context->sample_rate;
