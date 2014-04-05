@@ -38,19 +38,23 @@ static void def_log_handler(int log_level, const char *format,
 	if (log_level <= log_output_level) {
 		switch (log_level) {
 		case LOG_DEBUG:
-			printf("debug: %s\n", out);
+			fprintf(stdout, "debug: %s\n", out);
+			fflush(stdout);
 			break;
 
 		case LOG_INFO:
-			printf("info: %s\n", out);
+			fprintf(stdout, "info: %s\n", out);
+			fflush(stdout);
 			break;
 
 		case LOG_WARNING:
-			printf("warning: %s\n", out);
+			fprintf(stdout, "warning: %s\n", out);
+			fflush(stdout);
 			break;
 
 		case LOG_ERROR:
 			fprintf(stderr, "error: %s\n", out);
+			fflush(stderr);
 		}
 	}
 }
