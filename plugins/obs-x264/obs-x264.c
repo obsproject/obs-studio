@@ -331,11 +331,10 @@ static void load_headers(struct obs_x264 *obsx264)
 	obsx264->sei_size        = sei.num;
 }
 
-static bool obs_x264_initialize(void *data, obs_data_t settings)
+static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 {
-	struct obs_x264 *obsx264 = data;
-
-	clear_data(data);
+	struct obs_x264 *obsx264 = bzalloc(sizeof(struct obs_x264));
+	obsx264->encoder = encoder;
 
 	if (update_settings(obsx264, settings)) {
 		obsx264->context = x264_encoder_open(&obsx264->params);
@@ -348,16 +347,12 @@ static bool obs_x264_initialize(void *data, obs_data_t settings)
 		blog(LOG_WARNING, "bad settings specified for x264");
 	}
 
-	return obsx264->context != NULL;
-}
+	if (!obsx264->context) {
+		bfree(obsx264);
+		return NULL;
+	}
 
-static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
-{
-	struct obs_x264 *data = bzalloc(sizeof(struct obs_x264));
-	data->encoder = encoder;
-
-	UNUSED_PARAMETER(settings);
-	return data;
+	return obsx264;
 }
 
 static inline int drop_priority(int priority)
@@ -492,7 +487,6 @@ struct obs_encoder_info obs_x264_encoder = {
 	.getname    = obs_x264_getname,
 	.create     = obs_x264_create,
 	.destroy    = obs_x264_destroy,
-	.initialize = obs_x264_initialize,
 	.encode     = obs_x264_encode,
 	.properties = obs_x264_props,
 	.defaults   = obs_x264_defaults,

@@ -26,6 +26,8 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+#include "obs-ffmpeg-formats.h"
+
 //#define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_I420
 #define OBS_FFMPEG_VIDEO_FORMAT VIDEO_FORMAT_NV12
 
@@ -81,42 +83,6 @@ struct ffmpeg_output {
 };
 
 /* ------------------------------------------------------------------------- */
-
-static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
-		enum video_format format)
-{
-	switch (format) {
-	case VIDEO_FORMAT_NONE: return AV_PIX_FMT_NONE;
-	case VIDEO_FORMAT_I420: return AV_PIX_FMT_YUV420P;
-	case VIDEO_FORMAT_NV12: return AV_PIX_FMT_NV12;
-	case VIDEO_FORMAT_YVYU: return AV_PIX_FMT_NONE;
-	case VIDEO_FORMAT_YUY2: return AV_PIX_FMT_YUYV422;
-	case VIDEO_FORMAT_UYVY: return AV_PIX_FMT_UYVY422;
-	case VIDEO_FORMAT_RGBA: return AV_PIX_FMT_RGBA;
-	case VIDEO_FORMAT_BGRA: return AV_PIX_FMT_BGRA;
-	case VIDEO_FORMAT_BGRX: return AV_PIX_FMT_BGRA;
-	}
-
-	return AV_PIX_FMT_NONE;
-}
-
-static inline enum audio_format convert_ffmpeg_sample_format(
-		enum AVSampleFormat format)
-{
-	switch ((uint32_t)format) {
-	case AV_SAMPLE_FMT_U8:   return AUDIO_FORMAT_U8BIT;
-	case AV_SAMPLE_FMT_S16:  return AUDIO_FORMAT_16BIT;
-	case AV_SAMPLE_FMT_S32:  return AUDIO_FORMAT_32BIT;
-	case AV_SAMPLE_FMT_FLT:  return AUDIO_FORMAT_FLOAT;
-	case AV_SAMPLE_FMT_U8P:  return AUDIO_FORMAT_U8BIT_PLANAR;
-	case AV_SAMPLE_FMT_S16P: return AUDIO_FORMAT_16BIT_PLANAR;
-	case AV_SAMPLE_FMT_S32P: return AUDIO_FORMAT_32BIT_PLANAR;
-	case AV_SAMPLE_FMT_FLTP: return AUDIO_FORMAT_FLOAT_PLANAR;
-	}
-
-	/* shouldn't get here */
-	return AUDIO_FORMAT_16BIT;
-}
 
 static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 		AVCodec **codec, enum AVCodecID id)
@@ -180,7 +146,9 @@ static bool open_video_codec(struct ffmpeg_data *data)
 
 static bool init_swscale(struct ffmpeg_data *data, AVCodecContext *context)
 {
-	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+	enum AVPixelFormat format;
+	format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+
 	data->swscale = sws_getContext(
 			context->width, context->height, format,
 			context->width, context->height, context->pix_fmt,
@@ -198,6 +166,9 @@ static bool create_video_stream(struct ffmpeg_data *data)
 {
 	AVCodecContext *context;
 	struct obs_video_info ovi;
+	enum AVPixelFormat vformat;
+
+	vformat = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
 
 	if (!obs_get_video_info(&ovi)) {
 		blog(LOG_WARNING, "No active video");
@@ -218,7 +189,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->time_base.num  = ovi.fps_den;
 	context->time_base.den  = ovi.fps_num;
 	context->gop_size       = 120;
-	context->pix_fmt        = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+	context->pix_fmt        = vformat;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -226,8 +197,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	if (!open_video_codec(data))
 		return false;
 
-	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
-	if (context->pix_fmt != format)
+	if (context->pix_fmt != vformat)
 		if (!init_swscale(data, context))
 			return false;
 
@@ -523,13 +493,14 @@ static void receive_video(void *param, struct video_data *frame)
 	AVCodecContext *context = data->video->codec;
 	AVPacket packet = {0};
 	int ret = 0, got_packet;
+	enum AVPixelFormat format;
 
 	av_init_packet(&packet);
 
 	if (!data->start_timestamp)
 		data->start_timestamp = frame->timestamp;
 
-	enum AVPixelFormat format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
+	format = obs_to_ffmpeg_video_format(OBS_FFMPEG_VIDEO_FORMAT);
 	if (context->pix_fmt != format)
 		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 				(const int*)frame->linesize,
@@ -585,7 +556,7 @@ static void receive_video(void *param, struct video_data *frame)
 	data->total_frames++;
 }
 
-static inline void encode_audio(struct ffmpeg_output *output,
+static void encode_audio(struct ffmpeg_output *output,
 		struct AVCodecContext *context, size_t block_size)
 {
 	struct ffmpeg_data *data = &output->ff_data;

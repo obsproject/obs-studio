@@ -259,6 +259,12 @@ extern void obs_source_video_tick(obs_source_t source, float seconds);
 /* ------------------------------------------------------------------------- */
 /* outputs  */
 
+struct il_packet {
+	int64_t                         input_ts_us;
+	int64_t                         output_ts_us;
+	struct encoder_packet           packet;
+};
+
 struct obs_output {
 	char                            *name;
 	void                            *data;
@@ -268,8 +274,13 @@ struct obs_output {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	bool                            received_video;
+	bool                            received_audio;
+	int64_t                         first_video_ts;
+	int64_t                         video_offset;
+	int64_t                         audio_offset;
 	pthread_mutex_t                 interleaved_mutex;
-	DARRAY(struct encoder_packet)   interleaved_packets;
+	DARRAY(struct il_packet)        interleaved_packets;
 
 	bool                            active;
 	video_t                         video;
@@ -304,7 +315,6 @@ struct obs_encoder {
 	struct obs_encoder_info         info;
 	obs_data_t                      settings;
 
-	bool                            initialized;
 	bool                            active;
 
 	uint32_t                        timebase_num;

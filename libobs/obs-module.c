@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -222,7 +222,6 @@ void obs_register_encoder(const struct obs_encoder_info *info)
 	CHECK_REQUIRED_VAL(info, getname,    obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, create,     obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, destroy,    obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, initialize, obs_register_encoder);
 	CHECK_REQUIRED_VAL(info, encode,     obs_register_encoder);
 
 	REGISTER_OBS_DEF(cur_encoder_info_size, obs_encoder_info,

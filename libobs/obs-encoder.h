@@ -109,7 +109,8 @@ struct obs_encoder_info {
 	 *
 	 * @param  settings  Settings for the encoder
 	 * @param  encoder   OBS encoder context
-	 * @return           Data associated with this encoder context
+	 * @return           Data associated with this encoder context, or
+	 *                   NULL if initialization failed.
 	 */
 	void *(*create)(obs_data_t settings, obs_encoder_t encoder);
 
@@ -119,16 +120,6 @@ struct obs_encoder_info {
 	 * @param  data  Data associated with this encoder context
 	 */
 	void (*destroy)(void *data);
-
-	/**
-	 * Initializes the encoder with the specified settings
-	 *
-	 * @param  data      Data associated with this encoder context
-	 * @param  settings  Settings for the encoder
-	 * @return           true if the encoder settings are valid and the
-	 *                   encoder is ready to be used, false otherwise
-	 */
-	bool (*initialize)(void *data, obs_data_t settings);
 
 	/**
 	 * Encodes frame(s), and outputs encoded packets as they become

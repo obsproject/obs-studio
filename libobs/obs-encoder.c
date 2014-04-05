@@ -51,14 +51,6 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (encoder->info.defaults)
 		encoder->info.defaults(encoder->settings);
 
-	encoder->data = encoder->info.create(encoder->settings, encoder);
-
-	if (!encoder->data) {
-		pthread_mutex_destroy(&encoder->callbacks_mutex);
-		obs_data_release(encoder->settings);
-		return false;
-	}
-
 	pthread_mutex_lock(&obs->data.encoders_mutex);
 	da_push_back(obs->data.encoders, &encoder);
 	pthread_mutex_unlock(&obs->data.encoders_mutex);
@@ -188,7 +180,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t encoder)
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
-		encoder->info.destroy(encoder->data);
+		if (encoder->data)
+			encoder->info.destroy(encoder->data);
 		obs_data_release(encoder->settings);
 		pthread_mutex_destroy(&encoder->callbacks_mutex);
 		pthread_mutex_destroy(&encoder->outputs_mutex);
@@ -265,15 +258,16 @@ void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 	if (!encoder) return;
 
 	obs_data_apply(encoder->settings, settings);
-	if (encoder->info.update)
+	if (encoder->info.update && encoder->data)
 		encoder->info.update(encoder->data, encoder->settings);
 }
 
 bool obs_encoder_get_extra_data(obs_encoder_t encoder, uint8_t **extra_data,
 		size_t *size)
 {
-	if (encoder && encoder->info.extra_data)
-		return encoder->info.extra_data(encoder, extra_data, size);
+	if (encoder && encoder->info.extra_data && encoder->data)
+		return encoder->info.extra_data(encoder->data, extra_data,
+				size);
 
 	return false;
 }
@@ -293,9 +287,11 @@ bool obs_encoder_initialize(obs_encoder_t encoder)
 	if (encoder->active)
 		return true;
 
-	encoder->initialized = encoder->info.initialize(encoder,
-			encoder->settings);
-	return encoder->initialized;
+	if (encoder->data)
+		encoder->info.destroy(encoder->data);
+
+	encoder->data = encoder->info.create(encoder->settings, encoder);
+	return encoder->data != NULL;
 }
 
 static inline size_t get_callback_idx(
@@ -321,7 +317,7 @@ void obs_encoder_start(obs_encoder_t encoder,
 	bool success = true;
 	bool first   = false;
 
-	if (!encoder || !new_packet || !encoder->initialized) return;
+	if (!encoder || !new_packet || !encoder->data) return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
