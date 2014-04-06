@@ -119,19 +119,52 @@ typedef unsigned __int64 uint64_t;
 extern "C" {
 #endif /*__cplusplus*/
 
-extern int glx_ext_NV_copy_image;
+extern int glx_ext_AMD_gpu_association;
 extern int glx_ext_ARB_create_context;
 extern int glx_ext_ARB_create_context_profile;
 extern int glx_ext_ARB_create_context_robustness;
 extern int glx_ext_ARB_fbconfig_float;
 extern int glx_ext_ARB_framebuffer_sRGB;
+extern int glx_ext_ARB_get_proc_address;
 extern int glx_ext_ARB_multisample;
+extern int glx_ext_ARB_robustness_application_isolation;
+extern int glx_ext_ARB_robustness_share_group_isolation;
+extern int glx_ext_ARB_vertex_buffer_object;
+extern int glx_ext_EXT_buffer_age;
 extern int glx_ext_EXT_create_context_es2_profile;
+extern int glx_ext_EXT_create_context_es_profile;
 extern int glx_ext_EXT_fbconfig_packed_float;
 extern int glx_ext_EXT_framebuffer_sRGB;
 extern int glx_ext_EXT_import_context;
 extern int glx_ext_EXT_swap_control;
 extern int glx_ext_EXT_swap_control_tear;
+extern int glx_ext_EXT_texture_from_pixmap;
+extern int glx_ext_EXT_visual_info;
+extern int glx_ext_EXT_visual_rating;
+extern int glx_ext_INTEL_swap_event;
+extern int glx_ext_MESA_agp_offset;
+extern int glx_ext_MESA_copy_sub_buffer;
+extern int glx_ext_MESA_pixmap_colormap;
+extern int glx_ext_MESA_release_buffers;
+extern int glx_ext_MESA_set_3dfx_mode;
+extern int glx_ext_NV_copy_image;
+extern int glx_ext_NV_float_buffer;
+extern int glx_ext_NV_multisample_coverage;
+extern int glx_ext_NV_present_video;
+extern int glx_ext_NV_swap_group;
+extern int glx_ext_NV_video_capture;
+extern int glx_ext_NV_video_output;
+
+#define GLX_GPU_CLOCK_AMD 0x21A4
+#define GLX_GPU_FASTEST_TARGET_GPUS_AMD 0x21A2
+#define GLX_GPU_NUM_PIPES_AMD 0x21A5
+#define GLX_GPU_NUM_RB_AMD 0x21A7
+#define GLX_GPU_NUM_SIMD_AMD 0x21A6
+#define GLX_GPU_NUM_SPI_AMD 0x21A8
+#define GLX_GPU_OPENGL_VERSION_STRING_AMD 0x1F02
+#define GLX_GPU_RAM_AMD 0x21A3
+#define GLX_GPU_RENDERER_STRING_AMD 0x1F01
+#define GLX_GPU_VENDOR_AMD 0x1F00
 
 #define GLX_CONTEXT_DEBUG_BIT_ARB 0x00000001
 #define GLX_CONTEXT_FLAGS_ARB 0x2094
@@ -156,7 +189,17 @@ extern int glx_ext_EXT_swap_control_tear;
 #define GLX_SAMPLES_ARB 100001
 #define GLX_SAMPLE_BUFFERS_ARB 100000
 
+#define GLX_CONTEXT_RESET_ISOLATION_BIT_ARB 0x00000008
+
+/*Copied GLX_CONTEXT_RESET_ISOLATION_BIT_ARB From: ARB_robustness_application_isolation*/
+
+#define GLX_CONTEXT_ALLOW_BUFFER_BYTE_ORDER_MISMATCH_ARB 0x2095
+
+#define GLX_BACK_BUFFER_AGE_EXT 0x20F4
+
 #define GLX_CONTEXT_ES2_PROFILE_BIT_EXT 0x00000004
+
+#define GLX_CONTEXT_ES_PROFILE_BIT_EXT 0x00000004
 
 #define GLX_RGBA_UNSIGNED_FLOAT_BIT_EXT 0x00000008
 #define GLX_RGBA_UNSIGNED_FLOAT_TYPE_EXT 0x20B1
@@ -172,17 +215,109 @@ extern int glx_ext_EXT_swap_control_tear;
 
 #define GLX_LATE_SWAPS_TEAR_EXT 0x20F3
 
-#ifndef GLX_NV_copy_image
-#define GLX_NV_copy_image 1
-extern void (CODEGEN_FUNCPTR *_ptrc_glXCopyImageSubDataNV)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei);
-#define glXCopyImageSubDataNV _ptrc_glXCopyImageSubDataNV
-#endif /*GLX_NV_copy_image*/ 
+#define GLX_AUX0_EXT 0x20E2
+#define GLX_AUX1_EXT 0x20E3
+#define GLX_AUX2_EXT 0x20E4
+#define GLX_AUX3_EXT 0x20E5
+#define GLX_AUX4_EXT 0x20E6
+#define GLX_AUX5_EXT 0x20E7
+#define GLX_AUX6_EXT 0x20E8
+#define GLX_AUX7_EXT 0x20E9
+#define GLX_AUX8_EXT 0x20EA
+#define GLX_AUX9_EXT 0x20EB
+#define GLX_BACK_EXT 0x20E0
+#define GLX_BACK_LEFT_EXT 0x20E0
+#define GLX_BACK_RIGHT_EXT 0x20E1
+#define GLX_BIND_TO_MIPMAP_TEXTURE_EXT 0x20D2
+#define GLX_BIND_TO_TEXTURE_RGBA_EXT 0x20D1
+#define GLX_BIND_TO_TEXTURE_RGB_EXT 0x20D0
+#define GLX_BIND_TO_TEXTURE_TARGETS_EXT 0x20D3
+#define GLX_FRONT_EXT 0x20DE
+#define GLX_FRONT_LEFT_EXT 0x20DE
+#define GLX_FRONT_RIGHT_EXT 0x20DF
+#define GLX_MIPMAP_TEXTURE_EXT 0x20D7
+#define GLX_TEXTURE_1D_BIT_EXT 0x00000001
+#define GLX_TEXTURE_1D_EXT 0x20DB
+#define GLX_TEXTURE_2D_BIT_EXT 0x00000002
+#define GLX_TEXTURE_2D_EXT 0x20DC
+#define GLX_TEXTURE_FORMAT_EXT 0x20D5
+#define GLX_TEXTURE_FORMAT_NONE_EXT 0x20D8
+#define GLX_TEXTURE_FORMAT_RGBA_EXT 0x20DA
+#define GLX_TEXTURE_FORMAT_RGB_EXT 0x20D9
+#define GLX_TEXTURE_RECTANGLE_BIT_EXT 0x00000004
+#define GLX_TEXTURE_RECTANGLE_EXT 0x20DD
+#define GLX_TEXTURE_TARGET_EXT 0x20D6
+#define GLX_Y_INVERTED_EXT 0x20D4
+
+#define GLX_DIRECT_COLOR_EXT 0x8003
+#define GLX_GRAY_SCALE_EXT 0x8006
+#define GLX_NONE_EXT 0x8000
+#define GLX_PSEUDO_COLOR_EXT 0x8004
+#define GLX_STATIC_COLOR_EXT 0x8005
+#define GLX_STATIC_GRAY_EXT 0x8007
+#define GLX_TRANSPARENT_ALPHA_VALUE_EXT 0x28
+#define GLX_TRANSPARENT_BLUE_VALUE_EXT 0x27
+#define GLX_TRANSPARENT_GREEN_VALUE_EXT 0x26
+#define GLX_TRANSPARENT_INDEX_EXT 0x8009
+#define GLX_TRANSPARENT_INDEX_VALUE_EXT 0x24
+#define GLX_TRANSPARENT_RED_VALUE_EXT 0x25
+#define GLX_TRANSPARENT_RGB_EXT 0x8008
+#define GLX_TRANSPARENT_TYPE_EXT 0x23
+#define GLX_TRUE_COLOR_EXT 0x8002
+#define GLX_X_VISUAL_TYPE_EXT 0x22
+
+/*Copied GLX_NONE_EXT From: EXT_visual_info*/
+#define GLX_NON_CONFORMANT_VISUAL_EXT 0x800D
+#define GLX_SLOW_VISUAL_EXT 0x8001
+#define GLX_VISUAL_CAVEAT_EXT 0x20
+
+#define GLX_BUFFER_SWAP_COMPLETE_INTEL_MASK 0x04000000
+#define GLX_COPY_COMPLETE_INTEL 0x8181
+#define GLX_EXCHANGE_COMPLETE_INTEL 0x8180
+#define GLX_FLIP_COMPLETE_INTEL 0x8182
+
+#define GLX_3DFX_FULLSCREEN_MODE_MESA 0x2
+#define GLX_3DFX_WINDOW_MODE_MESA 0x1
+
+#define GLX_FLOAT_COMPONENTS_NV 0x20B0
+
+#define GLX_COLOR_SAMPLES_NV 0x20B3
+#define GLX_COVERAGE_SAMPLES_NV 100001
+
+#define GLX_NUM_VIDEO_SLOTS_NV 0x20F0
+
+#define GLX_DEVICE_ID_NV 0x20CD
+#define GLX_NUM_VIDEO_CAPTURE_SLOTS_NV 0x20CF
+#define GLX_UNIQUE_ID_NV 0x20CE
+
+#define GLX_VIDEO_OUT_ALPHA_NV 0x20C4
+#define GLX_VIDEO_OUT_COLOR_AND_ALPHA_NV 0x20C6
+#define GLX_VIDEO_OUT_COLOR_AND_DEPTH_NV 0x20C7
+#define GLX_VIDEO_OUT_COLOR_NV 0x20C3
+#define GLX_VIDEO_OUT_DEPTH_NV 0x20C5
+#define GLX_VIDEO_OUT_FIELD_1_NV 0x20C9
+#define GLX_VIDEO_OUT_FIELD_2_NV 0x20CA
+#define GLX_VIDEO_OUT_FRAME_NV 0x20C8
+#define GLX_VIDEO_OUT_STACKED_FIELDS_1_2_NV 0x20CB
+#define GLX_VIDEO_OUT_STACKED_FIELDS_2_1_NV 0x20CC
+
 
 #ifndef GLX_ARB_create_context
 #define GLX_ARB_create_context 1
 extern GLXContext (CODEGEN_FUNCPTR *_ptrc_glXCreateContextAttribsARB)(Display *, GLXFBConfig, GLXContext, Bool, const int *);
 #define glXCreateContextAttribsARB _ptrc_glXCreateContextAttribsARB
 #endif /*GLX_ARB_create_context*/ 
+
+
+
+
+
+#ifndef GLX_ARB_get_proc_address
+#define GLX_ARB_get_proc_address 1
+extern __GLXextFuncPtr (CODEGEN_FUNCPTR *_ptrc_glXGetProcAddressARB)(const GLubyte *);
+#define glXGetProcAddressARB _ptrc_glXGetProcAddressARB
+#endif /*GLX_ARB_get_proc_address*/ 
+
 
 
 
@@ -212,6 +347,109 @@ extern void (CODEGEN_FUNCPTR *_ptrc_glXSwapIntervalEXT)(Display *, GLXDrawable, 
 #define glXSwapIntervalEXT _ptrc_glXSwapIntervalEXT
 #endif /*GLX_EXT_swap_control*/ 
 
+
+#ifndef GLX_EXT_texture_from_pixmap
+#define GLX_EXT_texture_from_pixmap 1
+extern void (CODEGEN_FUNCPTR *_ptrc_glXBindTexImageEXT)(Display *, GLXDrawable, int, const int *);
+#define glXBindTexImageEXT _ptrc_glXBindTexImageEXT
+extern void (CODEGEN_FUNCPTR *_ptrc_glXReleaseTexImageEXT)(Display *, GLXDrawable, int);
+#define glXReleaseTexImageEXT _ptrc_glXReleaseTexImageEXT
+#endif /*GLX_EXT_texture_from_pixmap*/ 
+
+
+
+
+#ifndef GLX_MESA_agp_offset
+#define GLX_MESA_agp_offset 1
+extern unsigned int (CODEGEN_FUNCPTR *_ptrc_glXGetAGPOffsetMESA)(const void *);
+#define glXGetAGPOffsetMESA _ptrc_glXGetAGPOffsetMESA
+#endif /*GLX_MESA_agp_offset*/ 
+
+#ifndef GLX_MESA_copy_sub_buffer
+#define GLX_MESA_copy_sub_buffer 1
+extern void (CODEGEN_FUNCPTR *_ptrc_glXCopySubBufferMESA)(Display *, GLXDrawable, int, int, int, int);
+#define glXCopySubBufferMESA _ptrc_glXCopySubBufferMESA
+#endif /*GLX_MESA_copy_sub_buffer*/ 
+
+#ifndef GLX_MESA_pixmap_colormap
+#define GLX_MESA_pixmap_colormap 1
+extern GLXPixmap (CODEGEN_FUNCPTR *_ptrc_glXCreateGLXPixmapMESA)(Display *, XVisualInfo *, Pixmap, Colormap);
+#define glXCreateGLXPixmapMESA _ptrc_glXCreateGLXPixmapMESA
+#endif /*GLX_MESA_pixmap_colormap*/ 
+
+#ifndef GLX_MESA_release_buffers
+#define GLX_MESA_release_buffers 1
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXReleaseBuffersMESA)(Display *, GLXDrawable);
+#define glXReleaseBuffersMESA _ptrc_glXReleaseBuffersMESA
+#endif /*GLX_MESA_release_buffers*/ 
+
+#ifndef GLX_MESA_set_3dfx_mode
+#define GLX_MESA_set_3dfx_mode 1
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXSet3DfxModeMESA)(int);
+#define glXSet3DfxModeMESA _ptrc_glXSet3DfxModeMESA
+#endif /*GLX_MESA_set_3dfx_mode*/ 
+
+#ifndef GLX_NV_copy_image
+#define GLX_NV_copy_image 1
+extern void (CODEGEN_FUNCPTR *_ptrc_glXCopyImageSubDataNV)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei);
+#define glXCopyImageSubDataNV _ptrc_glXCopyImageSubDataNV
+#endif /*GLX_NV_copy_image*/ 
+
+
+
+#ifndef GLX_NV_present_video
+#define GLX_NV_present_video 1
+extern int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoDeviceNV)(Display *, unsigned int, unsigned int, const int *);
+#define glXBindVideoDeviceNV _ptrc_glXBindVideoDeviceNV
+extern unsigned int * (CODEGEN_FUNCPTR *_ptrc_glXEnumerateVideoDevicesNV)(Display *, int, int *);
+#define glXEnumerateVideoDevicesNV _ptrc_glXEnumerateVideoDevicesNV
+#endif /*GLX_NV_present_video*/ 
+
+#ifndef GLX_NV_swap_group
+#define GLX_NV_swap_group 1
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXBindSwapBarrierNV)(Display *, GLuint, GLuint);
+#define glXBindSwapBarrierNV _ptrc_glXBindSwapBarrierNV
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXJoinSwapGroupNV)(Display *, GLXDrawable, GLuint);
+#define glXJoinSwapGroupNV _ptrc_glXJoinSwapGroupNV
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXQueryFrameCountNV)(Display *, int, GLuint *);
+#define glXQueryFrameCountNV _ptrc_glXQueryFrameCountNV
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXQueryMaxSwapGroupsNV)(Display *, int, GLuint *, GLuint *);
+#define glXQueryMaxSwapGroupsNV _ptrc_glXQueryMaxSwapGroupsNV
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXQuerySwapGroupNV)(Display *, GLXDrawable, GLuint *, GLuint *);
+#define glXQuerySwapGroupNV _ptrc_glXQuerySwapGroupNV
+extern Bool (CODEGEN_FUNCPTR *_ptrc_glXResetFrameCountNV)(Display *, int);
+#define glXResetFrameCountNV _ptrc_glXResetFrameCountNV
+#endif /*GLX_NV_swap_group*/ 
+
+#ifndef GLX_NV_video_capture
+#define GLX_NV_video_capture 1
+extern int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoCaptureDeviceNV)(Display *, unsigned int, GLXVideoCaptureDeviceNV);
+#define glXBindVideoCaptureDeviceNV _ptrc_glXBindVideoCaptureDeviceNV
+extern GLXVideoCaptureDeviceNV * (CODEGEN_FUNCPTR *_ptrc_glXEnumerateVideoCaptureDevicesNV)(Display *, int, int *);
+#define glXEnumerateVideoCaptureDevicesNV _ptrc_glXEnumerateVideoCaptureDevicesNV
+extern void (CODEGEN_FUNCPTR *_ptrc_glXLockVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV);
+#define glXLockVideoCaptureDeviceNV _ptrc_glXLockVideoCaptureDeviceNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXQueryVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV, int, int *);
+#define glXQueryVideoCaptureDeviceNV _ptrc_glXQueryVideoCaptureDeviceNV
+extern void (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV);
+#define glXReleaseVideoCaptureDeviceNV _ptrc_glXReleaseVideoCaptureDeviceNV
+#endif /*GLX_NV_video_capture*/ 
+
+#ifndef GLX_NV_video_output
+#define GLX_NV_video_output 1
+extern int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoImageNV)(Display *, GLXVideoDeviceNV, GLXPbuffer, int);
+#define glXBindVideoImageNV _ptrc_glXBindVideoImageNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXGetVideoDeviceNV)(Display *, int, int, GLXVideoDeviceNV *);
+#define glXGetVideoDeviceNV _ptrc_glXGetVideoDeviceNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXGetVideoInfoNV)(Display *, int, GLXVideoDeviceNV, unsigned long *, unsigned long *);
+#define glXGetVideoInfoNV _ptrc_glXGetVideoInfoNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoDeviceNV)(Display *, int, GLXVideoDeviceNV);
+#define glXReleaseVideoDeviceNV _ptrc_glXReleaseVideoDeviceNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoImageNV)(Display *, GLXPbuffer);
+#define glXReleaseVideoImageNV _ptrc_glXReleaseVideoImageNV
+extern int (CODEGEN_FUNCPTR *_ptrc_glXSendPbufferToVideoNV)(Display *, GLXPbuffer, int, unsigned long *, GLboolean);
+#define glXSendPbufferToVideoNV _ptrc_glXSendPbufferToVideoNV
+#endif /*GLX_NV_video_output*/ 
 
 enum glx_LoadStatus
 {

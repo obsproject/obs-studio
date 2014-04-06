@@ -7,7 +7,7 @@
 #if defined(__APPLE__)
 #include <dlfcn.h>
 
-static void* AppleGLGetProcAddress (const const char *name)
+static void* AppleGLGetProcAddress (const char *name)
 {
 	static void* image = NULL;
 	
@@ -52,29 +52,41 @@ static PROC WinGetProcAddress(const char *name)
 
 /* TODO: Need to eventually use eglGetProcAddress */
 
-int glx_ext_NV_copy_image = glx_LOAD_FAILED;
+int glx_ext_AMD_gpu_association = glx_LOAD_FAILED;
 int glx_ext_ARB_create_context = glx_LOAD_FAILED;
 int glx_ext_ARB_create_context_profile = glx_LOAD_FAILED;
 int glx_ext_ARB_create_context_robustness = glx_LOAD_FAILED;
 int glx_ext_ARB_fbconfig_float = glx_LOAD_FAILED;
 int glx_ext_ARB_framebuffer_sRGB = glx_LOAD_FAILED;
+int glx_ext_ARB_get_proc_address = glx_LOAD_FAILED;
 int glx_ext_ARB_multisample = glx_LOAD_FAILED;
+int glx_ext_ARB_robustness_application_isolation = glx_LOAD_FAILED;
+int glx_ext_ARB_robustness_share_group_isolation = glx_LOAD_FAILED;
+int glx_ext_ARB_vertex_buffer_object = glx_LOAD_FAILED;
+int glx_ext_EXT_buffer_age = glx_LOAD_FAILED;
 int glx_ext_EXT_create_context_es2_profile = glx_LOAD_FAILED;
+int glx_ext_EXT_create_context_es_profile = glx_LOAD_FAILED;
 int glx_ext_EXT_fbconfig_packed_float = glx_LOAD_FAILED;
 int glx_ext_EXT_framebuffer_sRGB = glx_LOAD_FAILED;
 int glx_ext_EXT_import_context = glx_LOAD_FAILED;
 int glx_ext_EXT_swap_control = glx_LOAD_FAILED;
 int glx_ext_EXT_swap_control_tear = glx_LOAD_FAILED;
-
-void (CODEGEN_FUNCPTR *_ptrc_glXCopyImageSubDataNV)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei) = NULL;
-
-static int Load_NV_copy_image(void)
-{
-	int numFailed = 0;
-	_ptrc_glXCopyImageSubDataNV = (void (CODEGEN_FUNCPTR *)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei))IntGetProcAddress("glXCopyImageSubDataNV");
-	if(!_ptrc_glXCopyImageSubDataNV) numFailed++;
-	return numFailed;
-}
+int glx_ext_EXT_texture_from_pixmap = glx_LOAD_FAILED;
+int glx_ext_EXT_visual_info = glx_LOAD_FAILED;
+int glx_ext_EXT_visual_rating = glx_LOAD_FAILED;
+int glx_ext_INTEL_swap_event = glx_LOAD_FAILED;
+int glx_ext_MESA_agp_offset = glx_LOAD_FAILED;
+int glx_ext_MESA_copy_sub_buffer = glx_LOAD_FAILED;
+int glx_ext_MESA_pixmap_colormap = glx_LOAD_FAILED;
+int glx_ext_MESA_release_buffers = glx_LOAD_FAILED;
+int glx_ext_MESA_set_3dfx_mode = glx_LOAD_FAILED;
+int glx_ext_NV_copy_image = glx_LOAD_FAILED;
+int glx_ext_NV_float_buffer = glx_LOAD_FAILED;
+int glx_ext_NV_multisample_coverage = glx_LOAD_FAILED;
+int glx_ext_NV_present_video = glx_LOAD_FAILED;
+int glx_ext_NV_swap_group = glx_LOAD_FAILED;
+int glx_ext_NV_video_capture = glx_LOAD_FAILED;
+int glx_ext_NV_video_output = glx_LOAD_FAILED;
 
 GLXContext (CODEGEN_FUNCPTR *_ptrc_glXCreateContextAttribsARB)(Display *, GLXFBConfig, GLXContext, Bool, const int *) = NULL;
 
@@ -83,6 +95,16 @@ static int Load_ARB_create_context(void)
 	int numFailed = 0;
 	_ptrc_glXCreateContextAttribsARB = (GLXContext (CODEGEN_FUNCPTR *)(Display *, GLXFBConfig, GLXContext, Bool, const int *))IntGetProcAddress("glXCreateContextAttribsARB");
 	if(!_ptrc_glXCreateContextAttribsARB) numFailed++;
+	return numFailed;
+}
+
+__GLXextFuncPtr (CODEGEN_FUNCPTR *_ptrc_glXGetProcAddressARB)(const GLubyte *) = NULL;
+
+static int Load_ARB_get_proc_address(void)
+{
+	int numFailed = 0;
+	_ptrc_glXGetProcAddressARB = (__GLXextFuncPtr (CODEGEN_FUNCPTR *)(const GLubyte *))IntGetProcAddress("glXGetProcAddressARB");
+	if(!_ptrc_glXGetProcAddressARB) numFailed++;
 	return numFailed;
 }
 
@@ -118,6 +140,164 @@ static int Load_EXT_swap_control(void)
 	return numFailed;
 }
 
+void (CODEGEN_FUNCPTR *_ptrc_glXBindTexImageEXT)(Display *, GLXDrawable, int, const int *) = NULL;
+void (CODEGEN_FUNCPTR *_ptrc_glXReleaseTexImageEXT)(Display *, GLXDrawable, int) = NULL;
+
+static int Load_EXT_texture_from_pixmap(void)
+{
+	int numFailed = 0;
+	_ptrc_glXBindTexImageEXT = (void (CODEGEN_FUNCPTR *)(Display *, GLXDrawable, int, const int *))IntGetProcAddress("glXBindTexImageEXT");
+	if(!_ptrc_glXBindTexImageEXT) numFailed++;
+	_ptrc_glXReleaseTexImageEXT = (void (CODEGEN_FUNCPTR *)(Display *, GLXDrawable, int))IntGetProcAddress("glXReleaseTexImageEXT");
+	if(!_ptrc_glXReleaseTexImageEXT) numFailed++;
+	return numFailed;
+}
+
+unsigned int (CODEGEN_FUNCPTR *_ptrc_glXGetAGPOffsetMESA)(const void *) = NULL;
+
+static int Load_MESA_agp_offset(void)
+{
+	int numFailed = 0;
+	_ptrc_glXGetAGPOffsetMESA = (unsigned int (CODEGEN_FUNCPTR *)(const void *))IntGetProcAddress("glXGetAGPOffsetMESA");
+	if(!_ptrc_glXGetAGPOffsetMESA) numFailed++;
+	return numFailed;
+}
+
+void (CODEGEN_FUNCPTR *_ptrc_glXCopySubBufferMESA)(Display *, GLXDrawable, int, int, int, int) = NULL;
+
+static int Load_MESA_copy_sub_buffer(void)
+{
+	int numFailed = 0;
+	_ptrc_glXCopySubBufferMESA = (void (CODEGEN_FUNCPTR *)(Display *, GLXDrawable, int, int, int, int))IntGetProcAddress("glXCopySubBufferMESA");
+	if(!_ptrc_glXCopySubBufferMESA) numFailed++;
+	return numFailed;
+}
+
+GLXPixmap (CODEGEN_FUNCPTR *_ptrc_glXCreateGLXPixmapMESA)(Display *, XVisualInfo *, Pixmap, Colormap) = NULL;
+
+static int Load_MESA_pixmap_colormap(void)
+{
+	int numFailed = 0;
+	_ptrc_glXCreateGLXPixmapMESA = (GLXPixmap (CODEGEN_FUNCPTR *)(Display *, XVisualInfo *, Pixmap, Colormap))IntGetProcAddress("glXCreateGLXPixmapMESA");
+	if(!_ptrc_glXCreateGLXPixmapMESA) numFailed++;
+	return numFailed;
+}
+
+Bool (CODEGEN_FUNCPTR *_ptrc_glXReleaseBuffersMESA)(Display *, GLXDrawable) = NULL;
+
+static int Load_MESA_release_buffers(void)
+{
+	int numFailed = 0;
+	_ptrc_glXReleaseBuffersMESA = (Bool (CODEGEN_FUNCPTR *)(Display *, GLXDrawable))IntGetProcAddress("glXReleaseBuffersMESA");
+	if(!_ptrc_glXReleaseBuffersMESA) numFailed++;
+	return numFailed;
+}
+
+Bool (CODEGEN_FUNCPTR *_ptrc_glXSet3DfxModeMESA)(int) = NULL;
+
+static int Load_MESA_set_3dfx_mode(void)
+{
+	int numFailed = 0;
+	_ptrc_glXSet3DfxModeMESA = (Bool (CODEGEN_FUNCPTR *)(int))IntGetProcAddress("glXSet3DfxModeMESA");
+	if(!_ptrc_glXSet3DfxModeMESA) numFailed++;
+	return numFailed;
+}
+
+void (CODEGEN_FUNCPTR *_ptrc_glXCopyImageSubDataNV)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei) = NULL;
+
+static int Load_NV_copy_image(void)
+{
+	int numFailed = 0;
+	_ptrc_glXCopyImageSubDataNV = (void (CODEGEN_FUNCPTR *)(Display *, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei))IntGetProcAddress("glXCopyImageSubDataNV");
+	if(!_ptrc_glXCopyImageSubDataNV) numFailed++;
+	return numFailed;
+}
+
+int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoDeviceNV)(Display *, unsigned int, unsigned int, const int *) = NULL;
+unsigned int * (CODEGEN_FUNCPTR *_ptrc_glXEnumerateVideoDevicesNV)(Display *, int, int *) = NULL;
+
+static int Load_NV_present_video(void)
+{
+	int numFailed = 0;
+	_ptrc_glXBindVideoDeviceNV = (int (CODEGEN_FUNCPTR *)(Display *, unsigned int, unsigned int, const int *))IntGetProcAddress("glXBindVideoDeviceNV");
+	if(!_ptrc_glXBindVideoDeviceNV) numFailed++;
+	_ptrc_glXEnumerateVideoDevicesNV = (unsigned int * (CODEGEN_FUNCPTR *)(Display *, int, int *))IntGetProcAddress("glXEnumerateVideoDevicesNV");
+	if(!_ptrc_glXEnumerateVideoDevicesNV) numFailed++;
+	return numFailed;
+}
+
+Bool (CODEGEN_FUNCPTR *_ptrc_glXBindSwapBarrierNV)(Display *, GLuint, GLuint) = NULL;
+Bool (CODEGEN_FUNCPTR *_ptrc_glXJoinSwapGroupNV)(Display *, GLXDrawable, GLuint) = NULL;
+Bool (CODEGEN_FUNCPTR *_ptrc_glXQueryFrameCountNV)(Display *, int, GLuint *) = NULL;
+Bool (CODEGEN_FUNCPTR *_ptrc_glXQueryMaxSwapGroupsNV)(Display *, int, GLuint *, GLuint *) = NULL;
+Bool (CODEGEN_FUNCPTR *_ptrc_glXQuerySwapGroupNV)(Display *, GLXDrawable, GLuint *, GLuint *) = NULL;
+Bool (CODEGEN_FUNCPTR *_ptrc_glXResetFrameCountNV)(Display *, int) = NULL;
+
+static int Load_NV_swap_group(void)
+{
+	int numFailed = 0;
+	_ptrc_glXBindSwapBarrierNV = (Bool (CODEGEN_FUNCPTR *)(Display *, GLuint, GLuint))IntGetProcAddress("glXBindSwapBarrierNV");
+	if(!_ptrc_glXBindSwapBarrierNV) numFailed++;
+	_ptrc_glXJoinSwapGroupNV = (Bool (CODEGEN_FUNCPTR *)(Display *, GLXDrawable, GLuint))IntGetProcAddress("glXJoinSwapGroupNV");
+	if(!_ptrc_glXJoinSwapGroupNV) numFailed++;
+	_ptrc_glXQueryFrameCountNV = (Bool (CODEGEN_FUNCPTR *)(Display *, int, GLuint *))IntGetProcAddress("glXQueryFrameCountNV");
+	if(!_ptrc_glXQueryFrameCountNV) numFailed++;
+	_ptrc_glXQueryMaxSwapGroupsNV = (Bool (CODEGEN_FUNCPTR *)(Display *, int, GLuint *, GLuint *))IntGetProcAddress("glXQueryMaxSwapGroupsNV");
+	if(!_ptrc_glXQueryMaxSwapGroupsNV) numFailed++;
+	_ptrc_glXQuerySwapGroupNV = (Bool (CODEGEN_FUNCPTR *)(Display *, GLXDrawable, GLuint *, GLuint *))IntGetProcAddress("glXQuerySwapGroupNV");
+	if(!_ptrc_glXQuerySwapGroupNV) numFailed++;
+	_ptrc_glXResetFrameCountNV = (Bool (CODEGEN_FUNCPTR *)(Display *, int))IntGetProcAddress("glXResetFrameCountNV");
+	if(!_ptrc_glXResetFrameCountNV) numFailed++;
+	return numFailed;
+}
+
+int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoCaptureDeviceNV)(Display *, unsigned int, GLXVideoCaptureDeviceNV) = NULL;
+GLXVideoCaptureDeviceNV * (CODEGEN_FUNCPTR *_ptrc_glXEnumerateVideoCaptureDevicesNV)(Display *, int, int *) = NULL;
+void (CODEGEN_FUNCPTR *_ptrc_glXLockVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXQueryVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV, int, int *) = NULL;
+void (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoCaptureDeviceNV)(Display *, GLXVideoCaptureDeviceNV) = NULL;
+
+static int Load_NV_video_capture(void)
+{
+	int numFailed = 0;
+	_ptrc_glXBindVideoCaptureDeviceNV = (int (CODEGEN_FUNCPTR *)(Display *, unsigned int, GLXVideoCaptureDeviceNV))IntGetProcAddress("glXBindVideoCaptureDeviceNV");
+	if(!_ptrc_glXBindVideoCaptureDeviceNV) numFailed++;
+	_ptrc_glXEnumerateVideoCaptureDevicesNV = (GLXVideoCaptureDeviceNV * (CODEGEN_FUNCPTR *)(Display *, int, int *))IntGetProcAddress("glXEnumerateVideoCaptureDevicesNV");
+	if(!_ptrc_glXEnumerateVideoCaptureDevicesNV) numFailed++;
+	_ptrc_glXLockVideoCaptureDeviceNV = (void (CODEGEN_FUNCPTR *)(Display *, GLXVideoCaptureDeviceNV))IntGetProcAddress("glXLockVideoCaptureDeviceNV");
+	if(!_ptrc_glXLockVideoCaptureDeviceNV) numFailed++;
+	_ptrc_glXQueryVideoCaptureDeviceNV = (int (CODEGEN_FUNCPTR *)(Display *, GLXVideoCaptureDeviceNV, int, int *))IntGetProcAddress("glXQueryVideoCaptureDeviceNV");
+	if(!_ptrc_glXQueryVideoCaptureDeviceNV) numFailed++;
+	_ptrc_glXReleaseVideoCaptureDeviceNV = (void (CODEGEN_FUNCPTR *)(Display *, GLXVideoCaptureDeviceNV))IntGetProcAddress("glXReleaseVideoCaptureDeviceNV");
+	if(!_ptrc_glXReleaseVideoCaptureDeviceNV) numFailed++;
+	return numFailed;
+}
+
+int (CODEGEN_FUNCPTR *_ptrc_glXBindVideoImageNV)(Display *, GLXVideoDeviceNV, GLXPbuffer, int) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXGetVideoDeviceNV)(Display *, int, int, GLXVideoDeviceNV *) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXGetVideoInfoNV)(Display *, int, GLXVideoDeviceNV, unsigned long *, unsigned long *) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoDeviceNV)(Display *, int, GLXVideoDeviceNV) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXReleaseVideoImageNV)(Display *, GLXPbuffer) = NULL;
+int (CODEGEN_FUNCPTR *_ptrc_glXSendPbufferToVideoNV)(Display *, GLXPbuffer, int, unsigned long *, GLboolean) = NULL;
+
+static int Load_NV_video_output(void)
+{
+	int numFailed = 0;
+	_ptrc_glXBindVideoImageNV = (int (CODEGEN_FUNCPTR *)(Display *, GLXVideoDeviceNV, GLXPbuffer, int))IntGetProcAddress("glXBindVideoImageNV");
+	if(!_ptrc_glXBindVideoImageNV) numFailed++;
+	_ptrc_glXGetVideoDeviceNV = (int (CODEGEN_FUNCPTR *)(Display *, int, int, GLXVideoDeviceNV *))IntGetProcAddress("glXGetVideoDeviceNV");
+	if(!_ptrc_glXGetVideoDeviceNV) numFailed++;
+	_ptrc_glXGetVideoInfoNV = (int (CODEGEN_FUNCPTR *)(Display *, int, GLXVideoDeviceNV, unsigned long *, unsigned long *))IntGetProcAddress("glXGetVideoInfoNV");
+	if(!_ptrc_glXGetVideoInfoNV) numFailed++;
+	_ptrc_glXReleaseVideoDeviceNV = (int (CODEGEN_FUNCPTR *)(Display *, int, GLXVideoDeviceNV))IntGetProcAddress("glXReleaseVideoDeviceNV");
+	if(!_ptrc_glXReleaseVideoDeviceNV) numFailed++;
+	_ptrc_glXReleaseVideoImageNV = (int (CODEGEN_FUNCPTR *)(Display *, GLXPbuffer))IntGetProcAddress("glXReleaseVideoImageNV");
+	if(!_ptrc_glXReleaseVideoImageNV) numFailed++;
+	_ptrc_glXSendPbufferToVideoNV = (int (CODEGEN_FUNCPTR *)(Display *, GLXPbuffer, int, unsigned long *, GLboolean))IntGetProcAddress("glXSendPbufferToVideoNV");
+	if(!_ptrc_glXSendPbufferToVideoNV) numFailed++;
+	return numFailed;
+}
+
 typedef int (*PFN_LOADFUNCPOINTERS)(void);
 typedef struct glx_StrToExtMap_s
 {
@@ -126,23 +306,45 @@ typedef struct glx_StrToExtMap_s
 	PFN_LOADFUNCPOINTERS LoadExtension;
 } glx_StrToExtMap;
 
-static glx_StrToExtMap ExtensionMap[13] = {
-	{"GLX_NV_copy_image", &glx_ext_NV_copy_image, Load_NV_copy_image},
+static glx_StrToExtMap ExtensionMap[35] = {
+	{"GLX_AMD_gpu_association", &glx_ext_AMD_gpu_association, NULL},
 	{"GLX_ARB_create_context", &glx_ext_ARB_create_context, Load_ARB_create_context},
 	{"GLX_ARB_create_context_profile", &glx_ext_ARB_create_context_profile, NULL},
 	{"GLX_ARB_create_context_robustness", &glx_ext_ARB_create_context_robustness, NULL},
 	{"GLX_ARB_fbconfig_float", &glx_ext_ARB_fbconfig_float, NULL},
 	{"GLX_ARB_framebuffer_sRGB", &glx_ext_ARB_framebuffer_sRGB, NULL},
+	{"GLX_ARB_get_proc_address", &glx_ext_ARB_get_proc_address, Load_ARB_get_proc_address},
 	{"GLX_ARB_multisample", &glx_ext_ARB_multisample, NULL},
+	{"GLX_ARB_robustness_application_isolation", &glx_ext_ARB_robustness_application_isolation, NULL},
+	{"GLX_ARB_robustness_share_group_isolation", &glx_ext_ARB_robustness_share_group_isolation, NULL},
+	{"GLX_ARB_vertex_buffer_object", &glx_ext_ARB_vertex_buffer_object, NULL},
+	{"GLX_EXT_buffer_age", &glx_ext_EXT_buffer_age, NULL},
 	{"GLX_EXT_create_context_es2_profile", &glx_ext_EXT_create_context_es2_profile, NULL},
+	{"GLX_EXT_create_context_es_profile", &glx_ext_EXT_create_context_es_profile, NULL},
 	{"GLX_EXT_fbconfig_packed_float", &glx_ext_EXT_fbconfig_packed_float, NULL},
 	{"GLX_EXT_framebuffer_sRGB", &glx_ext_EXT_framebuffer_sRGB, NULL},
 	{"GLX_EXT_import_context", &glx_ext_EXT_import_context, Load_EXT_import_context},
 	{"GLX_EXT_swap_control", &glx_ext_EXT_swap_control, Load_EXT_swap_control},
 	{"GLX_EXT_swap_control_tear", &glx_ext_EXT_swap_control_tear, NULL},
+	{"GLX_EXT_texture_from_pixmap", &glx_ext_EXT_texture_from_pixmap, Load_EXT_texture_from_pixmap},
+	{"GLX_EXT_visual_info", &glx_ext_EXT_visual_info, NULL},
+	{"GLX_EXT_visual_rating", &glx_ext_EXT_visual_rating, NULL},
+	{"GLX_INTEL_swap_event", &glx_ext_INTEL_swap_event, NULL},
+	{"GLX_MESA_agp_offset", &glx_ext_MESA_agp_offset, Load_MESA_agp_offset},
+	{"GLX_MESA_copy_sub_buffer", &glx_ext_MESA_copy_sub_buffer, Load_MESA_copy_sub_buffer},
+	{"GLX_MESA_pixmap_colormap", &glx_ext_MESA_pixmap_colormap, Load_MESA_pixmap_colormap},
+	{"GLX_MESA_release_buffers", &glx_ext_MESA_release_buffers, Load_MESA_release_buffers},
+	{"GLX_MESA_set_3dfx_mode", &glx_ext_MESA_set_3dfx_mode, Load_MESA_set_3dfx_mode},
+	{"GLX_NV_copy_image", &glx_ext_NV_copy_image, Load_NV_copy_image},
+	{"GLX_NV_float_buffer", &glx_ext_NV_float_buffer, NULL},
+	{"GLX_NV_multisample_coverage", &glx_ext_NV_multisample_coverage, NULL},
+	{"GLX_NV_present_video", &glx_ext_NV_present_video, Load_NV_present_video},
+	{"GLX_NV_swap_group", &glx_ext_NV_swap_group, Load_NV_swap_group},
+	{"GLX_NV_video_capture", &glx_ext_NV_video_capture, Load_NV_video_capture},
+	{"GLX_NV_video_output", &glx_ext_NV_video_output, Load_NV_video_output},
 };
 
-static int g_extensionMapSize = 13;
+static int g_extensionMapSize = 35;
 
 static glx_StrToExtMap *FindExtEntry(const char *extensionName)
 {
@@ -159,19 +361,41 @@ static glx_StrToExtMap *FindExtEntry(const char *extensionName)
 
 static void ClearExtensionVars(void)
 {
-	glx_ext_NV_copy_image = glx_LOAD_FAILED;
+	glx_ext_AMD_gpu_association = glx_LOAD_FAILED;
 	glx_ext_ARB_create_context = glx_LOAD_FAILED;
 	glx_ext_ARB_create_context_profile = glx_LOAD_FAILED;
 	glx_ext_ARB_create_context_robustness = glx_LOAD_FAILED;
 	glx_ext_ARB_fbconfig_float = glx_LOAD_FAILED;
 	glx_ext_ARB_framebuffer_sRGB = glx_LOAD_FAILED;
+	glx_ext_ARB_get_proc_address = glx_LOAD_FAILED;
 	glx_ext_ARB_multisample = glx_LOAD_FAILED;
+	glx_ext_ARB_robustness_application_isolation = glx_LOAD_FAILED;
+	glx_ext_ARB_robustness_share_group_isolation = glx_LOAD_FAILED;
+	glx_ext_ARB_vertex_buffer_object = glx_LOAD_FAILED;
+	glx_ext_EXT_buffer_age = glx_LOAD_FAILED;
 	glx_ext_EXT_create_context_es2_profile = glx_LOAD_FAILED;
+	glx_ext_EXT_create_context_es_profile = glx_LOAD_FAILED;
 	glx_ext_EXT_fbconfig_packed_float = glx_LOAD_FAILED;
 	glx_ext_EXT_framebuffer_sRGB = glx_LOAD_FAILED;
 	glx_ext_EXT_import_context = glx_LOAD_FAILED;
 	glx_ext_EXT_swap_control = glx_LOAD_FAILED;
 	glx_ext_EXT_swap_control_tear = glx_LOAD_FAILED;
+	glx_ext_EXT_texture_from_pixmap = glx_LOAD_FAILED;
+	glx_ext_EXT_visual_info = glx_LOAD_FAILED;
+	glx_ext_EXT_visual_rating = glx_LOAD_FAILED;
+	glx_ext_INTEL_swap_event = glx_LOAD_FAILED;
+	glx_ext_MESA_agp_offset = glx_LOAD_FAILED;
+	glx_ext_MESA_copy_sub_buffer = glx_LOAD_FAILED;
+	glx_ext_MESA_pixmap_colormap = glx_LOAD_FAILED;
+	glx_ext_MESA_release_buffers = glx_LOAD_FAILED;
+	glx_ext_MESA_set_3dfx_mode = glx_LOAD_FAILED;
+	glx_ext_NV_copy_image = glx_LOAD_FAILED;
+	glx_ext_NV_float_buffer = glx_LOAD_FAILED;
+	glx_ext_NV_multisample_coverage = glx_LOAD_FAILED;
+	glx_ext_NV_present_video = glx_LOAD_FAILED;
+	glx_ext_NV_swap_group = glx_LOAD_FAILED;
+	glx_ext_NV_video_capture = glx_LOAD_FAILED;
+	glx_ext_NV_video_output = glx_LOAD_FAILED;
 }
 
 
