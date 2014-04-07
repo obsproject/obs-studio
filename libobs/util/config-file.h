@@ -20,6 +20,9 @@
 
 /*
  * Generic ini-style config file functions
+ *
+ * NOTE: It is highly recommended to use the default value functions (bottom of
+ * the file) before reading any variables from config files.
  */
 
 #ifdef __cplusplus
@@ -41,7 +44,6 @@ enum config_open_type {
 EXPORT config_t config_create(const char *file);
 EXPORT int config_open(config_t *config, const char *file,
 		enum config_open_type open_type);
-EXPORT int config_open_defaults(config_t config, const char *file);
 EXPORT int config_save(config_t config);
 EXPORT void config_close(config_t config);
 
@@ -59,17 +61,6 @@ EXPORT void config_set_bool(config_t config, const char *section,
 EXPORT void config_set_double(config_t config, const char *section,
 		const char *name, double value);
 
-EXPORT void config_set_default_string(config_t config, const char *section,
-		const char *name, const char *value);
-EXPORT void config_set_default_int(config_t config, const char *section,
-		const char *name, int64_t value);
-EXPORT void config_set_default_uint(config_t config, const char *section,
-		const char *name, uint64_t value);
-EXPORT void config_set_default_bool(config_t config, const char *section,
-		const char *name, bool value);
-EXPORT void config_set_default_double(config_t config, const char *section,
-		const char *name, double value);
-
 EXPORT const char *config_get_string(config_t config, const char *section,
 		const char *name);
 EXPORT int64_t config_get_int(config_t config, const char *section,
@@ -81,6 +72,35 @@ EXPORT bool config_get_bool(config_t config, const char *section,
 EXPORT double config_get_double(config_t config, const char *section,
 		const char *name);
 
+/*
+ * DEFAULT VALUES
+ *
+ * The following functions are used to set what values will return if they do
+ * not exist.  Call these functions *once* for each known value before reading
+ * any of them anywhere else.
+ *
+ * These do *not* actually set any values, they only set what values will be
+ * returned for config_get_* if the specified variable does not exist.
+ *
+ * You can initialize the defaults programmitically using config_set_default_*
+ * functions (recommended for most cases), or you can initialize it via a file
+ * with config_open_defaults.
+ */
+EXPORT int config_open_defaults(config_t config, const char *file);
+
+EXPORT void config_set_default_string(config_t config, const char *section,
+		const char *name, const char *value);
+EXPORT void config_set_default_int(config_t config, const char *section,
+		const char *name, int64_t value);
+EXPORT void config_set_default_uint(config_t config, const char *section,
+		const char *name, uint64_t value);
+EXPORT void config_set_default_bool(config_t config, const char *section,
+		const char *name, bool value);
+EXPORT void config_set_default_double(config_t config, const char *section,
+		const char *name, double value);
+
+/* These functions allow you to get the current default values rather than get
+ * the actual values.  Probably almost never really needed */
 EXPORT const char *config_get_default_string(config_t config,
 		const char *section, const char *name);
 EXPORT int64_t config_get_default_int(config_t config, const char *section,
