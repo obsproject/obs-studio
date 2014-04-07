@@ -18,6 +18,7 @@
 #include <string.h>
 #include "base.h"
 #include "bmem.h"
+#include "threading.h"
 
 /*
  * NOTE: totally jacked the mem alignment trick from ffmpeg, credit to them:
@@ -84,7 +85,7 @@ static void a_free(void *ptr)
 }
 
 static struct base_allocator alloc = {a_malloc, a_realloc, a_free};
-static uint64_t num_allocs = 0;
+static long num_allocs = 0;
 
 void base_set_allocator(struct base_allocator *defs)
 {
@@ -100,14 +101,14 @@ void *bmalloc(size_t size)
 		bcrash("Out of memory while trying to allocate %lu bytes",
 				(unsigned long)size);
 
-	num_allocs++;
+	os_atomic_inc_long(&num_allocs);
 	return ptr;
 }
 
 void *brealloc(void *ptr, size_t size)
 {
 	if (!ptr)
-		num_allocs++;
+		os_atomic_inc_long(&num_allocs);
 
 	ptr = alloc.realloc(ptr, size);
 	if (!ptr && !size)
@@ -122,11 +123,11 @@ void *brealloc(void *ptr, size_t size)
 void bfree(void *ptr)
 {
 	if (ptr)
-		num_allocs--;
+		os_atomic_dec_long(&num_allocs);
 	alloc.free(ptr);
 }
 
-uint64_t bnum_allocs(void)
+long bnum_allocs(void)
 {
 	return num_allocs;
 }

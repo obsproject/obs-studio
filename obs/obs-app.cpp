@@ -233,7 +233,6 @@ int main(int argc, char *argv[])
 		blog(LOG_ERROR, "%s", error);
 	}
 
-	blog(LOG_INFO, "Number of memory leaks: %llu",
-			(unsigned long long int)bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	return ret;
 }
