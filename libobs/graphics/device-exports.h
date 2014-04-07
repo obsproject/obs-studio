@@ -19,6 +19,10 @@
 
 #include <util/c99defs.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 EXPORT const char *device_preprocessor_name(void);
 EXPORT device_t device_create(struct gs_init_data *data);
 EXPORT void device_destroy(device_t device);
@@ -120,3 +124,7 @@ EXPORT void device_frustum(device_t device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_projection_push(device_t device);
 EXPORT void device_projection_pop(device_t device);
+
+#ifdef __cplusplus
+}
+#endif
