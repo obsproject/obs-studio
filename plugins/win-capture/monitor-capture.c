@@ -130,6 +130,8 @@ static void monitor_capture_tick(void *data, float seconds)
 	gs_entercontext(obs_graphics());
 	dc_capture_capture(&capture->data, NULL);
 	gs_leavecontext();
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static void monitor_capture_render(void *data, effect_t effect)

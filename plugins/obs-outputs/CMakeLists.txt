@@ -2,7 +2,8 @@ project(obs-outputs)
 
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
-		ws2_32.lib)
+		ws2_32.lib
+		winmm.lib)
 endif()
 
 set(obs-outputs_librtmp_HEADERS

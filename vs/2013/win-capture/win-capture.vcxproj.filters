@@ -24,6 +24,9 @@
     <ClCompile Include="..\..\..\plugins\win-capture\dc-capture.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\plugins\win-capture\window-capture.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\plugins\win-capture\dc-capture.h">
