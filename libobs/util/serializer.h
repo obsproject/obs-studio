@@ -61,9 +61,9 @@ static inline size_t serialize(struct serializer *s, void *data, size_t len)
 {
 	if (s) {
 		if (s->write)
-			return s->write(s, data, len);
+			return s->write(s->data, data, len);
 		else if (s->read)
-			return s->read(s, data, len);
+			return s->read(s->data, data, len);
 	}
 
 	return 0;
@@ -73,14 +73,14 @@ static inline uint64_t serializer_seek(struct serializer *s, int64_t offset,
 		enum serialize_seek_type seek_type)
 {
 	if (s && s->seek)
-		return s->seek(s, offset, seek_type);
+		return s->seek(s->data, offset, seek_type);
 	return 0;
 }
 
 static inline uint64_t serializer_get_pos(struct serializer *s)
 {
 	if (s && s->get_pos)
-		return s->get_pos(s);
+		return s->get_pos(s->data);
 	return 0;
 }
 

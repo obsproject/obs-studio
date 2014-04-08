@@ -35,6 +35,8 @@ class OBSBasic : public OBSMainWindow {
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 	obs_output_t outputTest;
+	obs_encoder_t aac;
+	obs_encoder_t x264;
 	bool         sceneChanging;
 
 	int          previewX,  previewY;
@@ -61,7 +63,8 @@ private:
 	void InsertSceneItem(obs_sceneitem_t item);
 
 public slots:
-	void OutputStart(int errorcode);
+	void OutputStart();
+	void OutputStop(int errorcode);
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);

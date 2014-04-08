@@ -17,6 +17,7 @@
 
 #include <util/base.h>
 #include <util/circlebuf.h>
+#include <util/darray.h>
 #include <obs.h>
 
 #include <libavformat/avformat.h>
@@ -30,10 +31,11 @@ struct aac_encoder {
 	AVCodec          *aac;
 	AVCodecContext   *context;
 
-	struct circlebuf buffers[MAX_AV_PLANES];
 	uint8_t          *samples[MAX_AV_PLANES];
 	AVFrame          *aframe;
 	int              total_samples;
+
+	DARRAY(uint8_t)  packet_buffer;
 
 	size_t           audio_planes;
 	size_t           audio_size;
@@ -63,15 +65,14 @@ static void aac_destroy(void *data)
 {
 	struct aac_encoder *enc = data;
 
-	for (size_t i = 0; i < MAX_AV_PLANES; i++)
-		circlebuf_free(&enc->buffers[i]);
-
 	if (enc->samples[0])
 		av_freep(&enc->samples[0]);
 	if (enc->context)
 		avcodec_close(enc->context);
 	if (enc->aframe)
 		av_frame_free(&enc->aframe);
+
+	da_free(enc->packet_buffer);
 	bfree(enc);
 }
 
@@ -109,6 +110,18 @@ static bool initialize_codec(struct aac_encoder *enc)
 	return true;
 }
 
+static void init_sizes(struct aac_encoder *enc, audio_t audio)
+{
+	const struct audio_output_info *aoi;
+	enum audio_format format;
+
+	aoi    = audio_output_getinfo(audio);
+	format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
+
+	enc->audio_planes = get_audio_planes(format, aoi->speakers);
+	enc->audio_size   = get_audio_size(format, aoi->speakers, 1);
+}
+
 static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	struct aac_encoder *enc;
@@ -120,6 +133,8 @@ static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 		return NULL;
 	}
 
+	avcodec_register_all();
+
 	enc          = bzalloc(sizeof(struct aac_encoder));
 	enc->encoder = encoder;
 	enc->aac     = avcodec_find_encoder(AV_CODEC_ID_AAC);
@@ -128,22 +143,19 @@ static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 		goto fail;
 	}
 
-	avcodec_register(enc->aac);
-
 	enc->context = avcodec_alloc_context3(enc->aac);
 	if (!enc->context) {
 		aac_warn("aac_create", "Failed to create codec context");
 		goto fail;
 	}
 
-	enc->context->bit_rate    = bitrate;
+	enc->context->bit_rate    = bitrate * 1000;
 	enc->context->channels    = (int)audio_output_channels(audio);
 	enc->context->sample_rate = audio_output_samplerate(audio);
 	enc->context->sample_fmt  = enc->aac->sample_fmts ?
 		enc->aac->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
-	enc->audio_planes = audio_output_planes(audio);
-	enc->audio_size   = audio_output_blocksize(audio);
+	init_sizes(enc, audio);
 
 	/* enable experimental FFmpeg encoder if the only one available */
 	enc->context->strict_std_compliance = -2;
@@ -192,9 +204,12 @@ static bool do_aac_encode(struct aac_encoder *enc,
 	if (!got_packet)
 		return true;
 
+	da_resize(enc->packet_buffer, 0);
+	da_push_back_array(enc->packet_buffer, avpacket.data, avpacket.size);
+
 	packet->pts  = rescale_ts(avpacket.pts, enc->context, time_base);
 	packet->dts  = rescale_ts(avpacket.dts, enc->context, time_base);
-	packet->data = bmemdup(avpacket.data, avpacket.size);
+	packet->data = enc->packet_buffer.array;
 	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
 	packet->timebase_num = 1;
@@ -207,19 +222,9 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 		struct encoder_packet *packet, bool *received_packet)
 {
 	struct aac_encoder *enc = data;
-	size_t size = frame->frames * enc->audio_size;
 
 	for (size_t i = 0; i < enc->audio_planes; i++)
-		circlebuf_push_back(&enc->buffers[i], frame->data[i], size);
-
-	if (enc->buffers[0].size < (size_t)enc->frame_size_bytes) {
-		*received_packet = false;
-		return true;
-	}
-
-	for (size_t i = 0; i < enc->audio_planes; i++)
-		circlebuf_pop_front(&enc->buffers[i], enc->samples[i],
-				enc->frame_size_bytes);
+		memcpy(enc->samples[i], frame->data[i], enc->frame_size_bytes);
 
 	return do_aac_encode(enc, packet, received_packet);
 }
@@ -234,8 +239,7 @@ static obs_properties_t aac_properties(const char *locale)
 	obs_properties_t props = obs_properties_create(locale);
 
 	/* TODO: locale */
-	obs_properties_add_int(props, "bitrate", "Bitrate",
-			32, 320, 32);
+	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 320, 32);
 	return props;
 }
 
@@ -257,6 +261,12 @@ static bool aac_audio_info(void *data, struct audio_convert_info *info)
 	return true;
 }
 
+static size_t aac_frame_size(void *data)
+{
+	struct aac_encoder *enc =data;
+	return enc->frame_size;
+}
+
 struct obs_encoder_info aac_encoder_info = {
 	.id         = "ffmpeg_aac",
 	.type       = OBS_ENCODER_AUDIO,
@@ -265,6 +275,7 @@ struct obs_encoder_info aac_encoder_info = {
 	.create     = aac_create,
 	.destroy    = aac_destroy,
 	.encode     = aac_encode,
+	.frame_size = aac_frame_size,
 	.defaults   = aac_defaults,
 	.properties = aac_properties,
 	.extra_data = aac_extra_data,

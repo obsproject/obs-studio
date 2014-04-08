@@ -361,14 +361,24 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 	return source ? source->info.output_flags : 0;
 }
 
+static void obs_source_deferred_update(obs_source_t source)
+{
+	source->info.update(source->data, source->settings);
+	source->defer_update = false;
+}
+
 void obs_source_update(obs_source_t source, obs_data_t settings)
 {
 	if (!source) return;
 
 	obs_data_apply(source->settings, settings);
 
-	if (source->info.update)
-		source->info.update(source->data, source->settings);
+	if (source->info.update) {
+		if (source->info.output_flags & OBS_SOURCE_VIDEO)
+			source->defer_update = true;
+		else
+			source->info.update(source->data, source->settings);
+	}
 }
 
 static void activate_source(obs_source_t source)
@@ -475,6 +485,9 @@ void obs_source_deactivate(obs_source_t source, enum view_type type)
 void obs_source_video_tick(obs_source_t source, float seconds)
 {
 	if (!source) return;
+
+	if (source->defer_update)
+		obs_source_deferred_update(source);
 
 	/* reset the filter render texture information once every frame */
 	if (source->filter_texrender)

@@ -78,20 +78,26 @@ extern void obs_properties_apply_settings(obs_properties_t props,
 
 EXPORT obs_property_t obs_properties_add_bool(obs_properties_t props,
 		const char *name, const char *description);
+
 EXPORT obs_property_t obs_properties_add_int(obs_properties_t props,
 		const char *name, const char *description,
 		int min, int max, int step);
+
 EXPORT obs_property_t obs_properties_add_float(obs_properties_t props,
 		const char *name, const char *description,
 		double min, double max, double step);
+
 EXPORT obs_property_t obs_properties_add_text(obs_properties_t props,
 		const char *name, const char *description,
 		enum obs_text_type type);
+
 EXPORT obs_property_t obs_properties_add_path(obs_properties_t props,
 		const char *name, const char *description);
+
 EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
 		const char *name, const char *description,
 		enum obs_combo_type type, enum obs_combo_format format);
+
 EXPORT obs_property_t obs_properties_add_color(obs_properties_t props,
 		const char *name, const char *description);
 

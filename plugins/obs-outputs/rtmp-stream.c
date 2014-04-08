@@ -17,12 +17,15 @@
 
 #include <obs.h>
 #include <obs-avc.h>
+#include <util/platform.h>
 #include <util/circlebuf.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include "librtmp/rtmp.h"
 #include "librtmp/log.h"
 #include "flv-mux.h"
+
+//#define FILE_TEST
 
 struct rtmp_stream {
 	obs_output_t     output;
@@ -41,6 +44,10 @@ struct rtmp_stream {
 
 	struct dstr      path, key;
 	struct dstr      username, password;
+
+#ifdef FILE_TEST
+	FILE             *test;
+#endif
 
 	RTMP             rtmp;
 };
@@ -68,15 +75,11 @@ static inline void free_packets(struct rtmp_stream *stream)
 	}
 }
 
-static void rtmp_stream_stop(void *data);
-
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
 	if (stream) {
-		rtmp_stream_stop(stream);
-
 		free_packets(stream);
 		dstr_free(&stream->path);
 		dstr_free(&stream->key);
@@ -86,6 +89,7 @@ static void rtmp_stream_destroy(void *data)
 		os_event_destroy(stream->stop_event);
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
+		circlebuf_free(&stream->packets);
 		bfree(stream);
 	}
 }
@@ -117,6 +121,10 @@ static void rtmp_stream_stop(void *data)
 	struct rtmp_stream *stream = data;
 	void *ret;
 
+#ifdef FILE_TEST
+	fclose(stream->test);
+#endif
+
 	os_event_signal(stream->stop_event);
 
 	if (stream->connecting)
@@ -133,7 +141,7 @@ static void rtmp_stream_stop(void *data)
 
 static inline void set_rtmp_str(AVal *val, const char *str)
 {
-	bool valid  = (!str || !*str);
+	bool valid  = (str && *str);
 	val->av_val = valid ? (char*)str       : NULL;
 	val->av_len = valid ? (int)strlen(str) : 0;
 }
@@ -166,10 +174,14 @@ static int send_packet(struct rtmp_stream *stream,
 {
 	uint8_t *data;
 	size_t  size;
-	int     ret;
+	int     ret = 0;
 
 	flv_packet_mux(packet, &data, &size, is_header);
+#ifdef FILE_TEST
+	fwrite(data, 1, size, stream->test);
+#else
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
+#endif
 	bfree(data);
 
 	obs_free_encoder_packet(packet);
@@ -211,8 +223,10 @@ static void *send_thread(void *data)
 	if (disconnected)
 		free_packets(stream);
 
-	if (os_event_try(stream->stop_event) == EAGAIN)
+	if (os_event_try(stream->stop_event) == EAGAIN) {
 		pthread_detach(stream->send_thread);
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
+	}
 
 	stream->active = false;
 	return NULL;
@@ -226,7 +240,11 @@ static void send_meta_data(struct rtmp_stream *stream)
 	size_t  meta_data_size;
 
 	flv_meta_data(stream->output, &meta_data, &meta_data_size);
+#ifdef FILE_TEST
+	fwrite(meta_data, 1, meta_data_size, stream->test);
+#else
 	RTMP_Write(&stream->rtmp, (char*)meta_data, (int)meta_data_size);
+#endif
 	bfree(meta_data);
 }
 
@@ -234,13 +252,15 @@ static void send_audio_header(struct rtmp_stream *stream)
 {
 	obs_output_t  context  = stream->output;
 	obs_encoder_t aencoder = obs_output_get_audio_encoder(context);
+	uint8_t       *header;
 
 	struct encoder_packet packet   = {
-		.type = OBS_ENCODER_AUDIO,
+		.type         = OBS_ENCODER_AUDIO,
 		.timebase_den = 1
 	};
 
-	obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size);
+	obs_encoder_get_extra_data(aencoder, &header, &packet.size);
+	packet.data = bmemdup(header, packet.size);
 	send_packet(stream, &packet, true);
 }
 
@@ -252,18 +272,21 @@ static void send_video_header(struct rtmp_stream *stream)
 	size_t        size;
 
 	struct encoder_packet packet   = {
-		.type = OBS_ENCODER_VIDEO,
-		.timebase_den = 1
+		.type         = OBS_ENCODER_VIDEO,
+		.timebase_den = 1,
+		.keyframe     = true
 	};
 
 	obs_encoder_get_extra_data(vencoder, &header, &size);
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
 	send_packet(stream, &packet, true);
-	obs_free_encoder_packet(&packet);
 }
 
 static void send_headers(struct rtmp_stream *stream)
 {
+#ifdef FILE_TEST
+	stream->test = os_fopen("D:\\bla.flv", "wb");
+#endif
 	send_meta_data(stream);
 	send_audio_header(stream);
 	send_video_header(stream);
@@ -302,8 +325,10 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_FAIL;
 	}
 
+	stream->active = true;
 	send_headers(stream);
 	obs_output_begin_data_capture(stream->output, 0);
+
 	return OBS_OUTPUT_SUCCESS;
 }
 
@@ -312,6 +337,8 @@ static int try_connect(struct rtmp_stream *stream)
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
 				stream->key.array))
 		return OBS_OUTPUT_BAD_PATH;
+
+	RTMP_EnableWrite(&stream->rtmp);
 
 	set_rtmp_dstr(&stream->rtmp.Link.pubUser,   &stream->username);
 	set_rtmp_dstr(&stream->rtmp.Link.pubPasswd, &stream->password);
@@ -323,10 +350,12 @@ static int try_connect(struct rtmp_stream *stream)
 	stream->rtmp.m_bSendChunkSizeInfo = true;
 	stream->rtmp.m_bUseNagle          = true;
 
+#ifndef FILE_TEST
 	if (!RTMP_Connect(&stream->rtmp, NULL))
 		return OBS_OUTPUT_CONNECT_FAILED;
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
+#endif
 
 	return init_send(stream);
 }
@@ -337,7 +366,7 @@ static void *connect_thread(void *data)
 	int ret = try_connect(stream);
 
 	if (ret != OBS_OUTPUT_SUCCESS)
-		obs_output_signal_start_fail(stream->output, ret);
+		obs_output_signal_stop(stream->output, ret);
 
 	if (os_event_try(stream->stop_event) == EAGAIN)
 		pthread_detach(stream->connect_thread);
@@ -353,6 +382,8 @@ static bool rtmp_stream_start(void *data)
 
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
+	if (!obs_output_initialize_encoders(stream->output, 0))
+		return false;
 
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,     obs_data_getstring(settings, "path"));
@@ -362,7 +393,7 @@ static bool rtmp_stream_start(void *data)
 	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
-			stream) != 0;
+			stream) == 0;
 }
 
 static void rtmp_stream_data(void *data, struct encoder_packet *packet)
@@ -405,5 +436,5 @@ struct obs_output_info rtmp_output_info = {
 	.start          = rtmp_stream_start,
 	.stop           = rtmp_stream_stop,
 	.encoded_packet = rtmp_stream_data,
-	.properties   = rtmp_stream_properties
+	.properties     = rtmp_stream_properties
 };

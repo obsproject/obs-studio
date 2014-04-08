@@ -136,6 +136,9 @@ struct obs_encoder_info {
 	bool (*encode)(void *data, struct encoder_frame *frame,
 			struct encoder_packet *packet, bool *received_packet);
 
+	/** Audio encoder only:  Returns the frame size for this encoder */
+	size_t (*frame_size)(void *data);
+
 	/* ----------------------------------------------------------------- */
 	/* Optional implementation */
 

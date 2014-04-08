@@ -18,6 +18,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+static inline void signal_stop(struct obs_output *output, int code);
+
 static inline const struct obs_output_info *find_output(const char *id)
 {
 	size_t i;
@@ -139,8 +141,10 @@ bool obs_output_start(obs_output_t output)
 
 void obs_output_stop(obs_output_t output)
 {
-	if (output)
+	if (output) {
 		output->info.stop(output->data);
+		signal_stop(output, OBS_OUTPUT_SUCCESS);
+	}
 }
 
 bool obs_output_active(obs_output_t output)
@@ -411,8 +415,7 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 
 	pthread_mutex_lock(&output->interleaved_mutex);
 
-	if (!prepare_interleaved_packet(output, &out, packet)) {
-
+	if (prepare_interleaved_packet(output, &out, packet)) {
 		for (idx = 0; idx < output->interleaved_packets.num; idx++) {
 			struct il_packet *cur_packet;
 			cur_packet = output->interleaved_packets.array + idx;
@@ -425,8 +428,13 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 
 		/* when both video and audio have been received, we're ready
 		 * to start sending out packets (one at a time) */
-		if (output->received_audio && output->received_video)
+		if (!output->interleaved_wait &&
+		    output->received_audio &&
+		    output->received_video)
 			send_interleaved(output);
+
+		if (output->interleaved_wait > 0)
+			output->interleaved_wait--;
 	}
 
 	pthread_mutex_unlock(&output->interleaved_mutex);
@@ -439,8 +447,10 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	void *param;
 
 	if (encoded) {
-		output->received_video = false;
-		output->received_video = false;
+		output->received_video   = false;
+		output->received_video   = false;
+		output->interleaved_wait = 5;
+		free_packets(output);
 
 		encoded_callback = (has_video && has_audio) ?
 			interleave_packets : output->info.encoded_packet;
@@ -456,28 +466,26 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 		if (has_video)
 			video_output_connect(output->video,
 					get_video_conversion(output),
-					output->info.raw_video,
-					output->data);
+					output->info.raw_video, output->data);
 		if (has_audio)
 			audio_output_connect(output->audio,
 					get_audio_conversion(output),
-					output->info.raw_audio,
-					output->data);
+					output->info.raw_audio, output->data);
 	}
 }
 
-static inline void signal_start(struct obs_output *output, int code)
+static inline void signal_start(struct obs_output *output)
 {
 	struct calldata params = {0};
-	calldata_setint(&params, "code", code);
 	calldata_setptr(&params, "output", output);
 	signal_handler_signal(output->signals, "start", &params);
 	calldata_free(&params);
 }
 
-static inline void signal_stop(struct obs_output *output)
+static inline void signal_stop(struct obs_output *output, int code)
 {
 	struct calldata params = {0};
+	calldata_setint(&params, "errorcode", code);
 	calldata_setptr(&params, "output", output);
 	signal_handler_signal(output->signals, "stop", &params);
 	calldata_free(&params);
@@ -508,6 +516,32 @@ bool obs_output_can_begin_data_capture(obs_output_t output, uint32_t flags)
 	return can_begin_data_capture(output, encoded, has_video, has_audio);
 }
 
+bool obs_output_initialize_encoders(obs_output_t output, uint32_t flags)
+{
+	bool encoded, has_video, has_audio;
+
+	if (!output) return false;
+	if (output->active) return false;
+
+	convert_flags(output, flags, &encoded, &has_video, &has_audio);
+
+	if (!encoded)
+		return false;
+	if (has_video && !obs_encoder_initialize(output->video_encoder))
+		return false;
+	if (has_audio && !obs_encoder_initialize(output->audio_encoder))
+		return false;
+
+	if (has_video && has_audio && !output->audio_encoder->active &&
+	    !output->video_encoder->active) {
+		output->audio_encoder->wait_for_video = true;
+		output->video_encoder->paired_encoder = output->audio_encoder;
+		output->audio_encoder->paired_encoder = output->video_encoder;
+	}
+
+	return true;
+}
+
 bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio;
@@ -522,7 +556,7 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 
 	hook_data_capture(output, encoded, has_video, has_audio);
 	output->active = true;
-	signal_start(output, OBS_OUTPUT_SUCCESS);
+	signal_start(output);
 	return true;
 }
 
@@ -551,19 +585,17 @@ void obs_output_end_data_capture(obs_output_t output)
 	} else {
 		if (has_video)
 			video_output_disconnect(output->video,
-					output->info.raw_video,
-					output->data);
+					output->info.raw_video, output->data);
 		if (has_audio)
 			audio_output_disconnect(output->audio,
-					output->info.raw_audio,
-					output->data);
+					output->info.raw_audio, output->data);
 	}
 
 	output->active = false;
-	signal_stop(output);
 }
 
-void obs_output_signal_start_fail(obs_output_t output, int code)
+void obs_output_signal_stop(obs_output_t output, int code)
 {
-	signal_start(output, code);
+	obs_output_end_data_capture(output);
+	signal_stop(output, code);
 }

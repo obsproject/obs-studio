@@ -35,6 +35,8 @@
 
 #include "ui_OBSBasic.h"
 
+#include <sstream>
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -42,7 +44,9 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
-	  outputTest    (NULL),
+	  outputTest    (nullptr),
+	  aac           (nullptr),
+	  x264          (nullptr),
 	  sceneChanging (false),
 	  resizeTimer   (0),
 	  properties    (nullptr),
@@ -170,6 +174,8 @@ void OBSBasic::OBSInit()
 	 * automatically later */
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
+	obs_load_module("obs-x264");
+	obs_load_module("obs-outputs");
 #ifdef __APPLE__
 	obs_load_module("mac-capture");
 #elif _WIN32
@@ -781,33 +787,35 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 }
 
-void OBSBasic::OutputStart(int errorcode)
+void OBSBasic::OutputStop(int errorcode)
 {
-	if (errorcode != OBS_OUTPUT_SUCCESS) {
-		obs_output_destroy(outputTest);
-		outputTest = NULL;
-	} else {
-		ui->streamButton->setText("Stop Streaming");
-	}
+	UNUSED_PARAMETER(errorcode);
+	ui->streamButton->setText("Start Streaming");
+}
 
-	ui->streamButton->setEnabled(true);
+void OBSBasic::OutputStart()
+{
+	ui->streamButton->setText("Stop Streaming");
 }
 
 static void OBSOutputStart(void *data, calldata_t params)
 {
-	int code = calldata_bool(params, "errorcode");
+	UNUSED_PARAMETER(params);
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data), "OutputStart");
+}
 
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"OutputStart", Q_ARG(int, code));
+static void OBSOutputStop(void *data, calldata_t params)
+{
+	int code = (int)calldata_int(params, "errorcode");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data), "OutputStop",
+			Q_ARG(int, code));
 }
 
 /* TODO: lots of temporary code */
 void OBSBasic::on_streamButton_clicked()
 {
-	if (outputTest) {
-		obs_output_destroy(outputTest);
-		outputTest = NULL;
-		ui->streamButton->setText("Start Streaming");
+	if (obs_output_active(outputTest)) {
+		obs_output_stop(outputTest);
 	} else {
 		const char *url = config_get_string(basicConfig, "OutputTemp",
 				"URL");
@@ -821,6 +829,14 @@ void OBSBasic::on_streamButton_clicked()
 		if (!url)
 			return;
 
+		obs_output_destroy(outputTest);
+		obs_encoder_destroy(aac);
+		obs_encoder_destroy(x264);
+		outputTest = nullptr;
+		aac        = nullptr;
+		x264       = nullptr;
+
+#if 0
 		string fullURL = url;
 		if (key && *key)
 			fullURL = fullURL + "/" + key;
@@ -832,15 +848,50 @@ void OBSBasic::on_streamButton_clicked()
 
 		outputTest = obs_output_create("ffmpeg_output", "test", data);
 		obs_data_release(data);
+#else
+		obs_data_t aac_settings    = obs_data_create();
+		obs_data_t x264_settings   = obs_data_create();
+		obs_data_t output_settings = obs_data_create();
+		stringstream ss;
 
-		if (!outputTest)
+		ss << "filler=1:crf=0:bitrate=" << vBitrate;
+
+		obs_data_setint(aac_settings, "bitrate", aBitrate);
+
+		obs_data_setint(x264_settings, "bitrate", vBitrate);
+		obs_data_setint(x264_settings, "buffer_size", vBitrate);
+		obs_data_setint(x264_settings, "keyint_sec", 2);
+		obs_data_setstring(x264_settings, "x264opts", ss.str().c_str());
+
+		obs_data_setstring(output_settings, "path", url);
+		obs_data_setstring(output_settings, "key", key);
+
+		aac  = obs_audio_encoder_create("ffmpeg_aac", "blabla1",
+				aac_settings, obs_audio());
+		x264 = obs_video_encoder_create("obs_x264", "blabla2",
+				x264_settings, obs_video());
+		outputTest = obs_output_create("rtmp_output", "test",
+				output_settings);
+
+		obs_output_set_video_encoder(outputTest, x264);
+		obs_output_set_audio_encoder(outputTest, aac);
+
+		obs_data_release(aac_settings);
+		obs_data_release(x264_settings);
+		obs_data_release(output_settings);
+#endif
+
+		if (!outputTest) {
+			OutputStop(OBS_OUTPUT_FAIL);
 			return;
+		}
 
 		signal_handler_connect(obs_output_signalhandler(outputTest),
 				"start", OBSOutputStart, this);
+		signal_handler_connect(obs_output_signalhandler(outputTest),
+				"stop", OBSOutputStop, this);
 
 		obs_output_start(outputTest);
-		ui->streamButton->setEnabled(false);
 	}
 }
 

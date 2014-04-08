@@ -21,6 +21,11 @@
 #include "obs-output-ver.h"
 #include "rtmp-helpers.h"
 
+/* FIXME: this is currently hard-coded to h264 and aac!  ..not that we'll
+ * use anything else for a long time. */
+
+// #define DEBUG_TIMESTAMPS
+
 #define VIDEO_HEADER_SIZE 5
 #define MILLISECOND_DEN   1000
 
@@ -44,28 +49,30 @@ static void build_flv_meta_data(obs_output_t context,
 	char *enc = buf;
 	char *end = enc+sizeof(buf);
 
+	enc_str(&enc, end, "onMetaData");
+
 	*enc++ = AMF_ECMA_ARRAY;
 	enc    = AMF_EncodeInt32(enc, end, 14);
 
-	enc_num(&enc, end, "duration", 0.0);
-	enc_num(&enc, end, "fileSize", 0.0);
+	enc_num_val(&enc, end, "duration", 0.0);
+	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	enc_num(&enc, end, "width",  (double)video_output_width(video));
-	enc_num(&enc, end, "height", (double)video_output_height(video));
-	enc_str(&enc, end, "videocodecid", "avc1");
-	enc_num(&enc, end, "videodatarate", encoder_bitrate(vencoder));
-	enc_num(&enc, end, "framerate", video_output_framerate(video));
+	enc_num_val(&enc, end, "width",  (double)video_output_width(video));
+	enc_num_val(&enc, end, "height", (double)video_output_height(video));
+	enc_str_val(&enc, end, "videocodecid", "avc1");
+	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
+	enc_num_val(&enc, end, "framerate", video_output_framerate(video));
 
-	enc_str(&enc, end, "audiocodecid", "mp4a");
-	enc_num(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
-	enc_num(&enc, end, "audiosamplerate",
+	enc_str_val(&enc, end, "audiocodecid", "mp4a");
+	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
+	enc_num_val(&enc, end, "audiosamplerate",
 			(double)audio_output_samplerate(audio));
-	enc_num(&enc, end, "audiosamplesize", 16.0);
-	enc_num(&enc, end, "audiochannels",
+	enc_num_val(&enc, end, "audiosamplesize", 16.0);
+	enc_num_val(&enc, end, "audiochannels",
 			(double)audio_output_channels(audio));
 
-	enc_bool(&enc, end, "stereo", audio_output_channels(audio) == 2);
-	enc_str(&enc, end, "encoder", MODULE_NAME);
+	enc_bool_val(&enc, end, "stereo", audio_output_channels(audio) == 2);
+	enc_str_val(&enc, end, "encoder", MODULE_NAME);
 
 	*enc++  = 0;
 	*enc++  = 0;
@@ -81,19 +88,29 @@ void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
 	struct serializer s;
 	uint8_t *meta_data;
 	size_t  meta_data_size;
+	uint32_t start_pos;
 
 	array_output_serializer_init(&s, &data);
 
 	build_flv_meta_data(context, &meta_data, &meta_data_size);
+
+	/* s_write(&s, "FLV", 3);
+	s_w8(&s, 1);
+	s_w8(&s, 5);
+	s_wb32(&s, 9);
+	s_wb32(&s, 0); */
+
+	start_pos = serializer_get_pos(&s);
 
 	s_w8(&s, RTMP_PACKET_TYPE_INFO);
 
 	s_wb24(&s, (uint32_t)meta_data_size);
 	s_wb32(&s, 0);
 	s_wb24(&s, 0);
+
 	s_write(&s, meta_data, meta_data_size);
 
-	s_wb32(&s, (uint32_t)serializer_get_pos(&s) + 4 - 1);
+	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - start_pos + 4 - 1);
 
 	*output = data.bytes.array;
 	*size   = data.bytes.num;
@@ -109,15 +126,21 @@ static uint32_t get_ms_time(struct encoder_packet *packet, int64_t val)
 static void flv_video(struct serializer *s, struct encoder_packet *packet,
 		bool is_header)
 {
-	int64_t offset = packet->pts - packet->dts;
+	int64_t offset  = packet->pts - packet->dts;
+	int32_t time_ms = get_ms_time(packet, packet->dts);
 
 	if (!packet->data || !packet->size)
 		return;
 
 	s_w8(s, RTMP_PACKET_TYPE_VIDEO);
 
+#ifdef DEBUG_TIMESTAMPS
+	blog(LOG_DEBUG, "Video: %lu", time_ms);
+#endif
+
 	s_wb24(s, (uint32_t)packet->size + 5);
-	s_wb32(s, get_ms_time(packet, packet->pts));
+	s_wb24(s, time_ms);
+	s_w8(s, (time_ms >> 24) & 0x7F);
 	s_wb24(s, 0);
 
 	/* these are the 5 extra bytes mentioned above */
@@ -133,13 +156,20 @@ static void flv_video(struct serializer *s, struct encoder_packet *packet,
 static void flv_audio(struct serializer *s, struct encoder_packet *packet,
 		bool is_header)
 {
+	int32_t time_ms = get_ms_time(packet, packet->dts);
+
 	if (!packet->data || !packet->size)
 		return;
 
 	s_w8(s, RTMP_PACKET_TYPE_AUDIO);
 
+#ifdef DEBUG_TIMESTAMPS
+	blog(LOG_DEBUG, "Audio: %lu", time_ms);
+#endif
+
 	s_wb24(s, (uint32_t)packet->size + 2);
-	s_wb32(s, get_ms_time(packet, packet->pts));
+	s_wb24(s, time_ms);
+	s_w8(s, (time_ms >> 24) & 0x7F);
 	s_wb24(s, 0);
 
 	/* these are the two extra bytes mentioned above */

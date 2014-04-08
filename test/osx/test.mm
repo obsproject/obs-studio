@@ -93,6 +93,7 @@ static void AddTestItems(obs_scene_t scene, obs_source_t source)
 
 -(void)windowWillClose:(NSNotification *)notification
 {
+	(void)notification;
 	[NSApp stop:self];
 }
 @end
@@ -183,7 +184,7 @@ static void test()
 
 	obs_shutdown();
 
-	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %lu", bnum_allocs());
 }
 
 /* --------------------------------------------------- */

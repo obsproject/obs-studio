@@ -18,7 +18,7 @@
 #pragma once
 
 /** Maximum number of source channels for output and per display */
-#define MAX_CHANNELS 32
+#define MAX_CHANNELS 64
 
 #define MODULE_SUCCESS             0
 #define MODULE_ERROR              -1
@@ -31,3 +31,4 @@
 #define OBS_OUTPUT_CONNECT_FAILED -2
 #define OBS_OUTPUT_INVALID_STREAM -3
 #define OBS_OUTPUT_FAIL           -4
+#define OBS_OUTPUT_DISCONNECTED   -5

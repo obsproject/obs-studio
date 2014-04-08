@@ -760,7 +760,7 @@ static void *start_thread(void *data)
 	struct ffmpeg_output *output = data;
 
 	if (!try_connect(output))
-		obs_output_signal_start_fail(output->output,
+		obs_output_signal_stop(output->output,
 				OBS_OUTPUT_CONNECT_FAILED);
 
 	output->connecting = false;

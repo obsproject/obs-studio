@@ -190,8 +190,6 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 static inline void apply_x264_profile(struct obs_x264 *obsx264,
 		const char *profile)
 {
-	if (!*profile) profile = NULL;
-
 	if (!obsx264->context && profile) {
 		int ret = x264_param_apply_profile(&obsx264->params, profile);
 		if (ret != 0)
@@ -203,9 +201,6 @@ static inline void apply_x264_profile(struct obs_x264 *obsx264,
 static bool reset_x264_params(struct obs_x264 *obsx264,
 		const char *preset, const char *tune)
 {
-	if (!*preset)  preset  = NULL;
-	if (!*tune)    tune    = NULL;
-
 	return x264_param_default_preset(&obsx264->params, preset, tune) == 0;
 }
 
@@ -277,6 +272,8 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 		if (!obsx264->context)
 			apply_x264_profile(obsx264, profile);
 	}
+
+	obsx264->params.b_repeat_headers = false;
 
 	strlist_free(paramlist);
 	bfree(preset);
@@ -355,18 +352,6 @@ static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 	return obsx264;
 }
 
-static inline int drop_priority(int priority)
-{
-	switch (priority) {
-	case NAL_PRIORITY_DISPOSABLE: return NAL_PRIORITY_DISPOSABLE;
-	case NAL_PRIORITY_LOW:        return NAL_PRIORITY_LOW;
-	case NAL_PRIORITY_HIGH:       return NAL_PRIORITY_HIGHEST;
-	case NAL_PRIORITY_HIGHEST:    return NAL_PRIORITY_HIGHEST;
-	}
-
-	return NAL_PRIORITY_HIGHEST;
-}
-
 static void parse_packet(struct obs_x264 *obsx264,
 		struct encoder_packet *packet, x264_nal_t *nals,
 		int nal_count, x264_picture_t *pic_out)
@@ -386,9 +371,7 @@ static void parse_packet(struct obs_x264 *obsx264,
 	packet->type          = OBS_ENCODER_VIDEO;
 	packet->pts           = pic_out->i_pts;
 	packet->dts           = pic_out->i_dts;
-	packet->keyframe      = nals[0].i_type == NAL_SLICE_IDR;
-	packet->priority      = nals[0].i_ref_idc;
-	packet->drop_priority = drop_priority(nals[0].i_ref_idc);
+	packet->keyframe      = pic_out->b_keyframe != 0;
 }
 
 static inline void init_pic_data(struct obs_x264 *obsx264, x264_picture_t *pic,

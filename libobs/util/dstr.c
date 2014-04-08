@@ -257,7 +257,7 @@ char **strlist_split(const char *str, char split_ch, bool include_empty)
 				da_push_back(list, &new_str);
 			}
 
-			cur_str = next_str;
+			cur_str = next_str+1;
 			next_str = strchr(cur_str, split_ch);
 		}
 

@@ -500,6 +500,7 @@ void obs_shutdown(void)
 
 	da_free(obs->input_types);
 	da_free(obs->filter_types);
+	da_free(obs->encoder_types);
 	da_free(obs->transition_types);
 	da_free(obs->output_types);
 	da_free(obs->service_types);
