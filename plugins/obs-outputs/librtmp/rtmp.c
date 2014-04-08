@@ -141,7 +141,7 @@ static void DecodeTEA(AVal *key, AVal *text);
 static int HTTP_Post(RTMP *r, RTMPTCmd cmd, const char *buf, int len);
 static int HTTP_read(RTMP *r, int fill);
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_DEBUG)
 static int clk_tck;
 #endif
 
@@ -1651,7 +1651,7 @@ RTMP_ClientPacket(RTMP *r, RTMPPacket *packet)
         RTMP_Log(RTMP_LOGDEBUG, "%s, unknown packet type received: 0x%02x", __FUNCTION__,
                  packet->m_packetType);
 #ifdef _DEBUG
-        RTMP_LogHex(RTMP_LOGDEBUG, packet->m_body, packet->m_nBodySize);
+        RTMP_LogHex(RTMP_LOGDEBUG, (uint8_t*)packet->m_body, packet->m_nBodySize);
 #endif
     }
 
@@ -2201,7 +2201,9 @@ SendFCUnpublish(RTMP *r)
 
 SAVC(publish);
 SAVC(live);
+#if 0
 SAVC(record);
+#endif
 
 static int
 SendPublish(RTMP *r)
@@ -3246,8 +3248,10 @@ static const AVal av_NetStream_Play_UnpublishNotify =
 static const AVal av_NetStream_Publish_Start = AVC("NetStream.Publish.Start");
 static const AVal av_NetStream_Publish_Rejected = AVC("NetStream.Publish.Rejected");
 static const AVal av_NetStream_Publish_Denied = AVC("NetStream.Publish.Denied");
+#if 0
 static const AVal av_NetConnection_Connect_Rejected =
     AVC("NetConnection.Connect.Rejected");
+#endif
 
 /* Returns 0 for OK/Failed/error, 1 for 'Stop or Complete' */
 static int
@@ -5289,7 +5293,7 @@ stopKeyframeSearch:
 
 #ifdef _DEBUG
                     RTMP_Log(RTMP_LOGDEBUG,
-                             "FLV Packet: type %02X, dataSize: %lu, tagSize: %lu, timeStamp: %lu ms",
+                             "FLV Packet: type %02X, dataSize: %u, tagSize: %u, timeStamp: %u ms",
                              (unsigned char)packetBody[pos], dataSize, prevTagSize,
                              nTimeStamp);
 #endif
