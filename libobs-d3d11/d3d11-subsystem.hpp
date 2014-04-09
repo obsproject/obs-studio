@@ -618,7 +618,9 @@ struct gs_device {
 	void UpdateRasterState();
 	void UpdateBlendState();
 
-	inline void CopyTex(ID3D11Texture2D *dst, texture_t src);
+	inline void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
 

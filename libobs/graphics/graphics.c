@@ -1243,6 +1243,18 @@ void gs_copy_texture(texture_t dst, texture_t src)
 	graphics->exports.device_copy_texture(graphics->device, dst, src);
 }
 
+void gs_copy_texture_region(texture_t dst, uint32_t dst_x, uint32_t dst_y,
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
+	graphics->exports.device_copy_texture_region(graphics->device,
+			dst, dst_x, dst_y,
+			src, src_x, src_y, src_w, src_h);
+}
+
 void gs_stage_texture(stagesurf_t dst, texture_t src)
 {
 	graphics_t graphics = thread_graphics;
