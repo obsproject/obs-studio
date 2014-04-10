@@ -21,10 +21,11 @@
 #include "obs-output-ver.h"
 #include "rtmp-helpers.h"
 
-/* FIXME: this is currently hard-coded to h264 and aac!  ..not that we'll
+/* TODO: FIXME: this is currently hard-coded to h264 and aac!  ..not that we'll
  * use anything else for a long time. */
 
-// #define DEBUG_TIMESTAMPS
+//#define DEBUG_TIMESTAMPS
+//#define WRITE_FLV_HEADER
 
 #define VIDEO_HEADER_SIZE 5
 #define MILLISECOND_DEN   1000
@@ -94,11 +95,13 @@ void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
 
 	build_flv_meta_data(context, &meta_data, &meta_data_size);
 
-	/* s_write(&s, "FLV", 3);
+#ifdef WRITE_FLV_HEADER
+	s_write(&s, "FLV", 3);
 	s_w8(&s, 1);
 	s_w8(&s, 5);
 	s_wb32(&s, 9);
-	s_wb32(&s, 0); */
+	s_wb32(&s, 0);
+#endif
 
 	start_pos = serializer_get_pos(&s);
 

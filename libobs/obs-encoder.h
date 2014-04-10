@@ -41,6 +41,9 @@ struct encoder_packet {
 	/* ---------------------------------------------------------------- */
 	/* Internal video variables (will be parsed automatically) */
 
+	/* DTS in microseconds */
+	int64_t               dts_usec;
+
 	/**
 	 * Packet priority
 	 *

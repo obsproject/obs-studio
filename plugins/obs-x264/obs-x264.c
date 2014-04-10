@@ -226,6 +226,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 		obsx264->params.i_keyint_max =
 			keyint_sec * voi->fps_num / voi->fps_den;
 
+	obsx264->params.b_vfr_input          = false;
 	obsx264->params.rc.i_vbv_max_bitrate = bitrate;
 	obsx264->params.rc.i_vbv_buffer_size = buffer_size;
 	obsx264->params.rc.i_bitrate         = bitrate;
@@ -233,8 +234,6 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.i_height             = voi->height;
 	obsx264->params.i_fps_num            = voi->fps_num;
 	obsx264->params.i_fps_den            = voi->fps_den;
-	obsx264->params.i_timebase_num       = voi->fps_den;
-	obsx264->params.i_timebase_den       = voi->fps_num;
 	obsx264->params.pf_log               = log_x264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
 

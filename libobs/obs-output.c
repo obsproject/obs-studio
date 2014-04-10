@@ -95,15 +95,10 @@ fail:
 	return NULL;
 }
 
-static inline void free_il_packet(struct il_packet *data)
-{
-	obs_free_encoder_packet(&data->packet);
-}
-
 static inline void free_packets(struct obs_output *output)
 {
 	for (size_t i = 0; i < output->interleaved_packets.num; i++)
-		free_il_packet(output->interleaved_packets.array+i);
+		obs_free_encoder_packet(output->interleaved_packets.array+i);
 	da_free(output->interleaved_packets);
 }
 
@@ -351,28 +346,19 @@ static inline struct audio_convert_info *get_audio_conversion(
 	return output->audio_conversion_set ? &output->audio_conversion : NULL;
 }
 
-#define MICROSECOND_DEN 1000000
-
-static inline int64_t convert_packet_dts(struct encoder_packet *packet)
-{
-	return packet->dts * MICROSECOND_DEN / packet->timebase_den;
-}
-
 static bool prepare_interleaved_packet(struct obs_output *output,
-		struct il_packet *out, struct encoder_packet *packet)
+		struct encoder_packet *out, struct encoder_packet *in)
 {
 	int64_t offset;
-
-	out->input_ts_us = convert_packet_dts(packet);
 
 	/* audio and video need to start at timestamp 0, and the encoders
 	 * may not currently be at 0 when we get data.  so, we store the
 	 * current dts as offset and subtract that value from the dts/pts
 	 * of the output packet. */
-	if (packet->type == OBS_ENCODER_VIDEO) {
+	if (in->type == OBS_ENCODER_VIDEO) {
 		if (!output->received_video) {
-			output->first_video_ts = out->input_ts_us;
-			output->video_offset   = packet->dts;
+			output->first_video_ts = in->dts_usec;
+			output->video_offset   = in->dts;
 			output->received_video = true;
 		}
 
@@ -380,47 +366,54 @@ static bool prepare_interleaved_packet(struct obs_output *output,
 	} else{
 		/* don't accept audio that's before the first video timestamp */
 		if (!output->received_video ||
-		    out->input_ts_us < output->first_video_ts)
+		    in->dts_usec < output->first_video_ts)
 			return false;
 
 		if (!output->received_audio) {
-			output->audio_offset   = packet->dts;
+			output->audio_offset   = in->dts;
 			output->received_audio = true;
 		}
 
 		offset = output->audio_offset;
 	}
 
-	obs_duplicate_encoder_packet(&out->packet, packet);
-	out->packet.dts -= offset;
-	out->packet.pts -= offset;
-	out->output_ts_us = convert_packet_dts(&out->packet);
+	obs_duplicate_encoder_packet(out, in);
+	out->dts -= offset;
+	out->pts -= offset;
+
+	/* convert the newly adjusted dts to relative dts time to ensure proper
+	 * interleaving.  if we're using an audio encoder that's already been
+	 * started on another output, then the first audio packet may not be
+	 * quite perfectly synced up in terms of system time (and there's
+	 * nothing we can really do about that), but it will always at least be
+	 * within a 23ish millisecond threshold (at least for AAC) */
+	out->dts_usec = packet_dts_usec(out);
 	return true;
 }
 
 static inline void send_interleaved(struct obs_output *output)
 {
-	struct il_packet out = output->interleaved_packets.array[0];
+	struct encoder_packet out = output->interleaved_packets.array[0];
 	da_erase(output->interleaved_packets, 0);
 
-	output->info.encoded_packet(output->data, &out.packet);
-	free_il_packet(&out);
+	output->info.encoded_packet(output->data, &out);
+	obs_free_encoder_packet(&out);
 }
 
 static void interleave_packets(void *data, struct encoder_packet *packet)
 {
-	struct obs_output *output = data;
-	struct il_packet  out;
-	size_t            idx;
+	struct obs_output     *output = data;
+	struct encoder_packet out;
+	size_t                idx;
 
 	pthread_mutex_lock(&output->interleaved_mutex);
 
 	if (prepare_interleaved_packet(output, &out, packet)) {
 		for (idx = 0; idx < output->interleaved_packets.num; idx++) {
-			struct il_packet *cur_packet;
+			struct encoder_packet *cur_packet;
 			cur_packet = output->interleaved_packets.array + idx;
 
-			if (out.output_ts_us < cur_packet->output_ts_us)
+			if (out.dts_usec < cur_packet->dts_usec)
 				break;
 		}
 

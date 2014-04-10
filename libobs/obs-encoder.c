@@ -514,6 +514,10 @@ static inline void do_encode(struct obs_encoder *encoder,
 	}
 
 	if (received) {
+		/* we use system time here to ensure sync with other encoders,
+		 * you do not want to use relative timestamps here */
+		pkt.dts_usec = encoder->start_ts / 1000 + packet_dts_usec(&pkt);
+
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 
 		for (size_t i = 0; i < encoder->callbacks.num; i++) {

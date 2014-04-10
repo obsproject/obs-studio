@@ -34,7 +34,12 @@
 #include "obs.h"
 
 #define NUM_TEXTURES 2
+#define MICROSECOND_DEN 1000000
 
+static inline int64_t packet_dts_usec(struct encoder_packet *packet)
+{
+	return packet->dts * MICROSECOND_DEN / packet->timebase_den;
+}
 
 struct draw_callback {
 	void (*draw)(void *param, uint32_t cx, uint32_t cy);
@@ -262,12 +267,6 @@ extern void obs_source_video_tick(obs_source_t source, float seconds);
 /* ------------------------------------------------------------------------- */
 /* outputs  */
 
-struct il_packet {
-	int64_t                         input_ts_us;
-	int64_t                         output_ts_us;
-	struct encoder_packet           packet;
-};
-
 struct obs_output {
 	char                            *name;
 	void                            *data;
@@ -284,7 +283,7 @@ struct obs_output {
 	int64_t                         audio_offset;
 	int                             interleaved_wait;
 	pthread_mutex_t                 interleaved_mutex;
-	DARRAY(struct il_packet)        interleaved_packets;
+	DARRAY(struct encoder_packet)   interleaved_packets;
 
 	bool                            active;
 	video_t                         video;
