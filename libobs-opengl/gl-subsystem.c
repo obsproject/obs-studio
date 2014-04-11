@@ -311,9 +311,28 @@ static void strip_mipmap_filter(GLint *filter)
 	*filter = GL_NEAREST;
 }
 
+static inline void apply_swizzle(struct gs_texture *tex)
+{
+	if (tex->format == GS_A8) {
+		gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_R, GL_ALPHA);
+	} else {
+#ifdef USE_FORMAT_SWIZZLE
+		bool invert_format =
+			(tex->format == GS_BGRA || tex->format == GS_BGRX);
+
+		gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_R,
+				invert_format ? GL_BLUE : GL_RED);
+		gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_B,
+				invert_format ? GL_RED  : GL_BLUE);
+#else
+		gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_R, GL_RED);
+#endif
+	}
+}
+
 static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 {
-	bool success = true;
+	bool  success = true;
 	GLint min_filter;
 
 	if (tex->cur_sampler == ss)
@@ -346,6 +365,8 @@ static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAX_ANISOTROPY_EXT,
 			ss->max_anisotropy))
 		success = false;
+
+	apply_swizzle(tex);
 
 	return success;
 }
