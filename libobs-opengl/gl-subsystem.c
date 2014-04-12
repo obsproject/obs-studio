@@ -233,6 +233,13 @@ swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 		return NULL;
 	}
 
+	if(!gl_platform_init_swapchain(swap))
+	{
+		blog(LOG_ERROR, "gl_platform_init_swapchain  failed");
+		swapchain_destroy(swap);
+		return NULL;
+	}
+
 	return swap;
 }
 
@@ -790,7 +797,8 @@ fail:
 
 void device_copy_texture_region(device_t device,
 		texture_t dst, uint32_t dst_x, uint32_t dst_y,
-		texture_t src, uint32_t src_x, uint32_t src_y, uint32_t src_w, uint32_t src_h)
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h)
 {
 	struct gs_texture_2d *src2d = (struct gs_texture_2d*)src;
 	struct gs_texture_2d *dst2d = (struct gs_texture_2d*)dst;
@@ -1264,6 +1272,8 @@ void swapchain_destroy(swapchain_t swapchain)
 
 	if (swapchain->device->cur_swap == swapchain)
 		device_load_swapchain(swapchain->device, NULL);
+
+	gl_platform_cleanup_swapchain(swapchain);
 
 	gl_windowinfo_destroy(swapchain->wi);
 	bfree(swapchain);
