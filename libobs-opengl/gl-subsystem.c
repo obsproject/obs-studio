@@ -55,7 +55,7 @@ static const char* debug_severity_table[] = {
 #define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
 #define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
 
-static void APIENTRY gl_debug_proc(
+static void GLAPIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
 	GLsizei length, const GLchar *message, const GLvoid *data )
 {
@@ -74,10 +74,10 @@ static void APIENTRY gl_debug_proc(
 static void gl_enable_debug()
 {
 	 /* Perhaps we should create GLEW contexts? */
-	if (ogl_IsVersionGEQ(4, 3)) {
+	if (GLEW_VERSION_4_3) {
 		glDebugMessageCallback(gl_debug_proc, NULL);
 		gl_enable(GL_DEBUG_OUTPUT);
-	} else if (ogl_ext_ARB_debug_output) {
+	} else if (GLEW_ARB_debug_output) {
 		glDebugMessageCallbackARB(gl_debug_proc, NULL);
 	} else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
@@ -90,7 +90,7 @@ static void gl_enable_debug() {}
 
 static bool gl_init_extensions(struct gs_device* device)
 {
-	if (!ogl_IsVersionGEQ(2, 1)) {
+	if (!GLEW_VERSION_2_1) {
 		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
 		                "higher.");
 		return false;
@@ -98,25 +98,25 @@ static bool gl_init_extensions(struct gs_device* device)
 
 	gl_enable_debug();
 
-	if (!ogl_IsVersionGEQ(3, 0) && !ogl_ext_ARB_framebuffer_object) {
+	if (!GLEW_VERSION_3_0 && !GLEW_ARB_framebuffer_object) {
 		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
 		                "is required.");
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(3, 2) || ogl_ext_ARB_seamless_cube_map) {
+	if (GLEW_VERSION_3_2 || GLEW_ARB_seamless_cube_map) {
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-	if (!ogl_IsVersionGEQ(4, 1) && !ogl_ext_ARB_separate_shader_objects) {
+	if (!GLEW_VERSION_4_1 && !GLEW_ARB_separate_shader_objects) {
 		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects "
 		                "is required.");
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(4, 3) || ogl_ext_ARB_copy_image)
+	if (GLEW_VERSION_4_3 || GLEW_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
-	else if (ogl_ext_NV_copy_image)
+	else if (GLEW_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
 	else
 		device->copy_type = COPY_TYPE_FBO_BLIT;

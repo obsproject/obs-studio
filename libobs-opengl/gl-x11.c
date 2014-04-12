@@ -21,7 +21,7 @@
 
 #include "gl-subsystem.h"
 
-#include "GL/glx_obs.h"
+#include <glxew.h>
 
 static const int fb_attribs[] = {
 	/* Hardcoded for now... */
@@ -148,6 +148,12 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	print_info_stuff(info);
 
+	if (glxewContextInit() != 0)
+	{
+		blog(LOG_ERROR, "Failed to initialize glxew");
+		goto fail0;
+	}
+
 	if (!display) {
 		blog(LOG_ERROR, "Unable to find display. DISPLAY variable "
 		                "may not be set correctly.");
@@ -160,11 +166,6 @@ struct gl_platform *gl_platform_create(device_t device,
 	}
 
 	screen = XScreenNumberOfScreen(attrs.screen);
-
-	if (!glx_LoadFunctions(display, screen)) {
-		blog(LOG_ERROR, "Unable to load GLX entry functions.");
-		goto fail0;
-	}
 
 	if (!glXQueryExtension(display, &error_base, &event_base)) {
 		blog(LOG_ERROR, "GLX not supported.");
@@ -180,7 +181,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	if (!glx_ext_ARB_create_context) {
+	if (!GLXEW_ARB_create_context) {
 		blog(LOG_ERROR, "ARB_GLX_create_context not supported!");
 		goto fail0;
 	}
@@ -238,8 +239,8 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail2;
 	}
 
-	if (!ogl_LoadFunctions()) {
-		blog(LOG_ERROR, "Failed to load OpenGL entry functions.");
+	if (glewInit() != 0) {
+		blog(LOG_ERROR, "Failed to re-init glew.");
 		goto fail2;
 	}
 
