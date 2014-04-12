@@ -233,8 +233,7 @@ swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 		return NULL;
 	}
 
-	if(!gl_platform_init_swapchain(swap))
-	{
+	if (!gl_platform_init_swapchain(swap)) {
 		blog(LOG_ERROR, "gl_platform_init_swapchain  failed");
 		swapchain_destroy(swap);
 		return NULL;

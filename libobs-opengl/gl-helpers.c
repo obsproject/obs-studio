@@ -43,6 +43,7 @@ bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 
 		if (data)
 			data++;
+
 		size   /= 4;
 		width  /= 2;
 		height /= 2;
@@ -85,7 +86,8 @@ static bool gl_copy_fbo(struct gs_device *device,
 	if (!gl_success("glReadBuffer"))
 		goto fail;
 
-	glCopyTexSubImage2D(dst_target, 0, dst_x, dst_y, src_x, src_y, width, height);
+	glCopyTexSubImage2D(dst_target, 0, dst_x, dst_y, src_x, src_y,
+			width, height);
 	if (!gl_success("glCopyTexSubImage2D"))
 		goto fail;
 
@@ -101,31 +103,29 @@ fail:
 }
 
 bool gl_copy_texture(struct gs_device *device,
-					 GLuint dst, GLenum dst_target, uint32_t dst_x, uint32_t dst_y,
-					 GLuint src, GLenum src_target, uint32_t src_x, uint32_t src_y,
-                     uint32_t width, uint32_t height,
-                     enum gs_color_format format)
+		GLuint dst, GLenum dst_target, uint32_t dst_x, uint32_t dst_y,
+		GLuint src, GLenum src_target, uint32_t src_x, uint32_t src_y,
+		uint32_t width, uint32_t height, enum gs_color_format format)
 {
 	bool success = false;
 
 	if (device->copy_type == COPY_TYPE_ARB) {
 		glCopyImageSubData(src, src_target, 0, src_x, src_y, 0,
-						   dst, dst_target, 0, dst_x, dst_y, 0,
+		                   dst, dst_target, 0, dst_x, dst_y, 0,
 		                   width, height, 1);
 		success = gl_success("glCopyImageSubData");
 
 	} else if (device->copy_type == COPY_TYPE_NV) {
 		glCopyImageSubDataNV(src, src_target, 0, src_x, src_y, 0,
-							 dst, dst_target, 0, dst_x, dst_y, 0,
+		                     dst, dst_target, 0, dst_x, dst_y, 0,
 		                     width, height, 1);
 		success = gl_success("glCopyImageSubDataNV");
 
 	} else if (device->copy_type == COPY_TYPE_FBO_BLIT) {
-		if (gl_copy_fbo(device, dst, dst_target, dst_x, dst_y,
-					src, src_target, src_x, src_y,
-					width, height, format))
-			success = true;
-		else
+		success = gl_copy_fbo(device, dst, dst_target, dst_x, dst_y,
+		                              src, src_target, src_x, src_y,
+		                              width, height, format);
+		if (!success)
 			blog(LOG_ERROR, "gl_copy_texture failed");
 	}
 

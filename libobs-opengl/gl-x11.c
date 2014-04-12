@@ -26,10 +26,10 @@
 static const int fb_attribs[] = {
 	/* Hardcoded for now... */
 	GLX_STENCIL_SIZE, 8,
-	GLX_DEPTH_SIZE, 24, 
+	GLX_DEPTH_SIZE, 24,
 	GLX_BUFFER_SIZE, 32, /* Color buffer depth */
-	GLX_DOUBLEBUFFER, True,
-	GLX_X_RENDERABLE, True,
+	GLX_DOUBLEBUFFER, true,
+	GLX_X_RENDERABLE, true,
 	GLX_RENDER_TYPE, GLX_RGBA_BIT,
 	None
 };
@@ -39,7 +39,7 @@ static const int ctx_attribs[] = {
 	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
 	GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-	None, 
+	None,
 };
 
 struct gl_windowinfo {
@@ -69,7 +69,7 @@ extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 	return wi;
 }
 
-extern void gl_windowinfo_destroy(struct gl_windowinfo *wi) 
+extern void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 {
 	bfree(wi);
 }
@@ -123,9 +123,8 @@ static bool handle_x_error(Display *disp, const char *error_string)
 {
 	XSync(disp, 0);
 
-	if(got_x_error)
-	{
-		if(error_string)
+	if (got_x_error) {
+		if (error_string)
 			blog(LOG_ERROR, "%s", error_string);
 
 		got_x_error = false;
@@ -145,6 +144,7 @@ struct gl_platform *gl_platform_create(device_t device,
 	GLXFBConfig* configs;
 	XWindowAttributes attrs;
 	int screen;
+	int major = 0, minor = 0;
 
 	print_info_stuff(info);
 
@@ -154,8 +154,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	if(!XGetWindowAttributes(display, info->window.id, &attrs))
-	{
+	if (!XGetWindowAttributes(display, info->window.id, &attrs)) {
 		blog(LOG_ERROR, "Failed getting window attributes");
 		goto fail0;
 	}
@@ -173,15 +172,12 @@ struct gl_platform *gl_platform_create(device_t device,
 	}
 
 	/* We require glX version 1.3 */
-	{
-		int major = 0, minor = 0;
-		
-		glXQueryVersion(display, &major, &minor);
-		if (major < 1 || (major == 1 && minor < 3)) {
-			blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: "
-			                "1.3", major, minor);
-			goto fail0;
-		}
+
+	glXQueryVersion(display, &major, &minor);
+	if (major < 1 || (major == 1 && minor < 3)) {
+		blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: "
+				"1.3", major, minor);
+		goto fail0;
 	}
 
 	if (!glx_ext_ARB_create_context) {
@@ -192,12 +188,12 @@ struct gl_platform *gl_platform_create(device_t device,
 	configs = glXChooseFBConfig(display, screen,
 			fb_attribs, &num_configs);
 
-	if(!configs) {
+	if (!configs) {
 		blog(LOG_ERROR, "Attribute list or screen is invalid.");
 		goto fail0;
 	}
 
-	if(num_configs == 0) {
+	if (num_configs == 0) {
 		XFree(configs);
 		blog(LOG_ERROR, "No framebuffer configurations found.");
 		goto fail0;
@@ -212,18 +208,18 @@ struct gl_platform *gl_platform_create(device_t device,
 	/* We just use the first configuration found... as it does everything
 	 * we want at the very least. */
 	plat->context = glXCreateContextAttribsARB(display, plat->fbcfg, NULL,
-			True, ctx_attribs);
-	if(!plat->context) {
+			true, ctx_attribs);
+	if (!plat->context) {
 		blog(LOG_ERROR, "Failed to create OpenGL context.");
 		goto fail0;
 	}
 
-	if(handle_x_error(display, "Failed to create OpenGL context."))
+	if (handle_x_error(display, "Failed to create OpenGL context."))
 		goto fail2;
 
 	device->plat = plat;
 
-	plat->swap.device = device;
+	plat->swap.device               = device;
 	plat->swap.info.window.id       = info->window.id;
 	plat->swap.info.window.display  = display;
 	plat->swap.info.format          = GS_RGBA;
@@ -234,10 +230,10 @@ struct gl_platform *gl_platform_create(device_t device,
 	plat->swap.info.cy              = attrs.height;
 	plat->swap.wi                   = gl_windowinfo_create(info);
 
-	if(!gl_platform_init_swapchain(&plat->swap))
+	if (!gl_platform_init_swapchain(&plat->swap))
 		goto fail2;
 
-	if(!glXMakeCurrent(display, plat->swap.wi->glxid, plat->context)) {
+	if (!glXMakeCurrent(display, plat->swap.wi->glxid, plat->context)) {
 		blog(LOG_ERROR, "Failed to make context current.");
 		goto fail2;
 	}
@@ -252,7 +248,7 @@ struct gl_platform *gl_platform_create(device_t device,
 	/* We assume later that cur_swap is already set. */
 	device->cur_swap = &plat->swap;
 
-	XSync(display, False);
+	XSync(display, false);
 
 	blog(LOG_INFO, "Created new platform data");
 
@@ -299,20 +295,19 @@ bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 
 	gl_platform_cleanup_swapchain(swap);
 
-	if(!XGetWindowAttributes(display, info->id, &attrs))
-	{
+	if (!XGetWindowAttributes(display, info->id, &attrs)) {
 		blog(LOG_ERROR, "Failed getting window attributes");
 		goto fail;
 	}
 
 	vi = glXGetVisualFromFBConfig(display, plat->fbcfg);
 
-	if(handle_x_error(display, "Failed to get visual from fb config."))
+	if (handle_x_error(display, "Failed to get visual from fb config."))
 		goto fail;
 
 	cmap = XCreateColormap(display, info->id, vi->visual, AllocNone);
 
-	if(handle_x_error(display, "Failed creating colormap"))
+	if (handle_x_error(display, "Failed creating colormap"))
 		goto fail;
 
 	swa.colormap = cmap;
@@ -324,12 +319,12 @@ bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 	                             CWBorderPixel|CWColormap, &swa);
 	XMapWindow(display, info->int_id);
 
-	if(handle_x_error(display, "Failed creating intermediate X window"))
+	if (handle_x_error(display, "Failed creating intermediate X window"))
 		goto fail;
 
 	info->glxid = glXCreateWindow(display, plat->fbcfg, info->int_id, 0);
 
-	if(handle_x_error(display, "Failed creating intermediate GLX window"))
+	if (handle_x_error(display, "Failed creating intermediate GLX window"))
 		goto fail;
 
 	XFreeColormap(display, cmap);
@@ -341,10 +336,10 @@ fail:
 
 	gl_platform_cleanup_swapchain(swap);
 
-	if(cmap)
+	if (cmap)
 		XFreeColormap(display, cmap);
 
-	if(vi)
+	if (vi)
 		XFree(vi);
 
 	XSetErrorHandler(phandler);
@@ -357,13 +352,13 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	Display *display = swap->wi->display;
 	struct gl_windowinfo *info = swap->wi;
 
-	if(!info)
+	if (!info)
 		return;
 
-	if(info->glxid)
+	if (info->glxid)
 		glXDestroyWindow(display, info->glxid);
 
-	if(info->int_id)
+	if (info->int_id)
 		XDestroyWindow(display, info->int_id);
 
 	info->glxid = 0;
@@ -385,7 +380,7 @@ void device_leavecontext(device_t device)
 {
 	Display *display = device->cur_swap->wi->display;
 
-	if(!glXMakeCurrent(display, None, NULL)) {
+	if (!glXMakeCurrent(display, None, NULL)) {
 		blog(LOG_ERROR, "Failed to reset current context.");
 	}
 }
@@ -396,12 +391,12 @@ void gl_update(device_t device)
 	XID window = device->cur_swap->wi->int_id;
 
 	XResizeWindow(display, window,
-				  device->cur_swap->info.cx, device->cur_swap->info.cy);
+			device->cur_swap->info.cx, device->cur_swap->info.cy);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swap)
 {
-	if(!swap)
+	if (!swap)
 		swap = &device->plat->swap;
 
 	if (device->cur_swap == swap)
