@@ -432,6 +432,17 @@ void gl_platform_destroy(struct gl_platform *plat)
 	}
 }
 
+bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
+{
+	UNUSED_PARAMETER(swap);
+	return true;
+}
+
+void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
+{
+	UNUSED_PARAMETER(swap);
+}
+
 struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
 {
 	struct gl_windowinfo *wi = gl_windowinfo_bare(info);

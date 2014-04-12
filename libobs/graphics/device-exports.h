@@ -80,6 +80,9 @@ EXPORT void device_setrendertarget(device_t device, texture_t tex,
 EXPORT void device_setcuberendertarget(device_t device, texture_t cubetex,
 		int side, zstencil_t zstencil);
 EXPORT void device_copy_texture(device_t device, texture_t dst, texture_t src);
+EXPORT void device_copy_texture_region(device_t device,
+		texture_t dst, uint32_t dst_x, uint32_t dst_y,
+		texture_t src, uint32_t src_x, uint32_t src_y, uint32_t src_w, uint32_t src_h);
 EXPORT void device_stage_texture(device_t device, stagesurf_t dst,
 		texture_t src);
 EXPORT void device_beginscene(device_t device);

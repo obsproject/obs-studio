@@ -29,6 +29,8 @@ static const int fb_attribs[] = {
 	GLX_DEPTH_SIZE, 24, 
 	GLX_BUFFER_SIZE, 32, /* Color buffer depth */
 	GLX_DOUBLEBUFFER, True,
+	GLX_X_RENDERABLE, True,
+	GLX_RENDER_TYPE, GLX_RGBA_BIT,
 	None
 };
 
@@ -41,12 +43,15 @@ static const int ctx_attribs[] = {
 };
 
 struct gl_windowinfo {
-	uint32_t id;
 	Display *display;
+	uint32_t id;
+	uint32_t int_id;
+	uint32_t glxid;
 };
 
 struct gl_platform {
 	GLXContext context;
+	GLXFBConfig fbcfg;
 	struct gs_swap_chain swap;
 };
 
@@ -95,6 +100,41 @@ static void print_info_stuff(struct gs_init_data *info)
 	);
 }
 
+int wait_for_notify(Display *dpy, XEvent *e, char *arg)
+{
+	UNUSED_PARAMETER(dpy);
+	return (e->type == MapNotify) && (e->xmap.window == (Window)arg);
+}
+
+static bool got_x_error = false;
+static int err_handler(Display *disp, XErrorEvent *e)
+{
+	char estr[128];
+	XGetErrorText(disp, e->error_code, estr, 128);
+
+	blog(LOG_DEBUG, "Got X error: %s", estr);
+
+	got_x_error = true;
+
+	return 0;
+}
+
+static bool handle_x_error(Display *disp, const char *error_string)
+{
+	XSync(disp, 0);
+
+	if(got_x_error)
+	{
+		if(error_string)
+			blog(LOG_ERROR, "%s", error_string);
+
+		got_x_error = false;
+		return true;
+	}
+
+	return false;
+}
+
 struct gl_platform *gl_platform_create(device_t device,
 		struct gs_init_data *info)
 {
@@ -103,6 +143,8 @@ struct gl_platform *gl_platform_create(device_t device,
 	Display *display = info->window.display;
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	GLXFBConfig* configs;
+	XWindowAttributes attrs;
+	int screen;
 
 	print_info_stuff(info);
 
@@ -112,7 +154,15 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	if (!glx_LoadFunctions(display, DefaultScreen(display))) {
+	if(!XGetWindowAttributes(display, info->window.id, &attrs))
+	{
+		blog(LOG_ERROR, "Failed getting window attributes");
+		goto fail0;
+	}
+
+	screen = XScreenNumberOfScreen(attrs.screen);
+
+	if (!glx_LoadFunctions(display, screen)) {
 		blog(LOG_ERROR, "Unable to load GLX entry functions.");
 		goto fail0;
 	}
@@ -139,7 +189,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	configs = glXChooseFBConfig(display, DefaultScreen(display),
+	configs = glXChooseFBConfig(display, screen,
 			fb_attribs, &num_configs);
 
 	if(!configs) {
@@ -148,20 +198,46 @@ struct gl_platform *gl_platform_create(device_t device,
 	}
 
 	if(num_configs == 0) {
+		XFree(configs);
 		blog(LOG_ERROR, "No framebuffer configurations found.");
-		goto fail1;
+		goto fail0;
 	}
+
+	plat->fbcfg = configs[0];
+
+	XFree(configs);
+
+	handle_x_error(display, NULL);
 
 	/* We just use the first configuration found... as it does everything
 	 * we want at the very least. */
-	plat->context = glXCreateContextAttribsARB(display, configs[0], NULL,
+	plat->context = glXCreateContextAttribsARB(display, plat->fbcfg, NULL,
 			True, ctx_attribs);
 	if(!plat->context) {
 		blog(LOG_ERROR, "Failed to create OpenGL context.");
-		goto fail1;
+		goto fail0;
 	}
 
-	if(!glXMakeCurrent(display, info->window.id, plat->context)) {
+	if(handle_x_error(display, "Failed to create OpenGL context."))
+		goto fail2;
+
+	device->plat = plat;
+
+	plat->swap.device = device;
+	plat->swap.info.window.id       = info->window.id;
+	plat->swap.info.window.display  = display;
+	plat->swap.info.format          = GS_RGBA;
+	plat->swap.info.zsformat        = GS_Z24_S8;
+	plat->swap.info.num_backbuffers = 1;
+	plat->swap.info.adapter         = info->adapter;
+	plat->swap.info.cx              = attrs.width;
+	plat->swap.info.cy              = attrs.height;
+	plat->swap.wi                   = gl_windowinfo_create(info);
+
+	if(!gl_platform_init_swapchain(&plat->swap))
+		goto fail2;
+
+	if(!glXMakeCurrent(display, plat->swap.wi->glxid, plat->context)) {
 		blog(LOG_ERROR, "Failed to make context current.");
 		goto fail2;
 	}
@@ -173,24 +249,25 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
 
-	plat->swap.device = device;
-	plat->swap.info	  = *info;
-	plat->swap.wi     = gl_windowinfo_create(info);
+	/* We assume later that cur_swap is already set. */
+	device->cur_swap = &plat->swap;
 
-	device->cur_swap = &plat->swap; /* We assume later that cur_swap is already set. */
-
-	XFree(configs);
 	XSync(display, False);
+
+	blog(LOG_INFO, "Created new platform data");
 
 	return plat;
 
 fail2:
 	glXMakeCurrent(display, None, NULL);
 	glXDestroyContext(display, plat->context);
-fail1:
-	XFree(configs);
+
+	gl_platform_cleanup_swapchain(&plat->swap);
+
 fail0:
 	bfree(plat);
+	device->plat = 0;
+
 	return NULL;
 }
 
@@ -204,13 +281,99 @@ void gl_platform_destroy(struct gl_platform *platform)
 	glXMakeCurrent(dpy, None, NULL);
 	glXDestroyContext(dpy, platform->context);
 	gl_windowinfo_destroy(platform->swap.wi);
+	gl_platform_cleanup_swapchain(&platform->swap);
 	bfree(platform);
+}
+
+bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
+{
+	Display *display = swap->wi->display;
+	struct gl_windowinfo *info = swap->wi;
+	struct gl_platform *plat = swap->device->plat;
+	XVisualInfo *vi = 0;
+	Colormap cmap = 0;
+	XSetWindowAttributes swa;
+	XWindowAttributes attrs;
+
+	XErrorHandler phandler = XSetErrorHandler(err_handler);
+
+	gl_platform_cleanup_swapchain(swap);
+
+	if(!XGetWindowAttributes(display, info->id, &attrs))
+	{
+		blog(LOG_ERROR, "Failed getting window attributes");
+		goto fail;
+	}
+
+	vi = glXGetVisualFromFBConfig(display, plat->fbcfg);
+
+	if(handle_x_error(display, "Failed to get visual from fb config."))
+		goto fail;
+
+	cmap = XCreateColormap(display, info->id, vi->visual, AllocNone);
+
+	if(handle_x_error(display, "Failed creating colormap"))
+		goto fail;
+
+	swa.colormap = cmap;
+	swa.border_pixel = 0;
+
+	info->int_id = XCreateWindow(display, info->id, 0, 0,
+	                             attrs.width, attrs.height,
+	                             0, 24, InputOutput, vi->visual,
+	                             CWBorderPixel|CWColormap, &swa);
+	XMapWindow(display, info->int_id);
+
+	if(handle_x_error(display, "Failed creating intermediate X window"))
+		goto fail;
+
+	info->glxid = glXCreateWindow(display, plat->fbcfg, info->int_id, 0);
+
+	if(handle_x_error(display, "Failed creating intermediate GLX window"))
+		goto fail;
+
+	XFreeColormap(display, cmap);
+	XFree(vi);
+
+	return true;
+
+fail:
+
+	gl_platform_cleanup_swapchain(swap);
+
+	if(cmap)
+		XFreeColormap(display, cmap);
+
+	if(vi)
+		XFree(vi);
+
+	XSetErrorHandler(phandler);
+
+	return false;
+}
+
+void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
+{
+	Display *display = swap->wi->display;
+	struct gl_windowinfo *info = swap->wi;
+
+	if(!info)
+		return;
+
+	if(info->glxid)
+		glXDestroyWindow(display, info->glxid);
+
+	if(info->int_id)
+		XDestroyWindow(display, info->int_id);
+
+	info->glxid = 0;
+	info->int_id = 0;
 }
 
 void device_entercontext(device_t device)
 {
 	GLXContext context = device->plat->context;
-	XID window = device->cur_swap->wi->id;
+	XID window = device->cur_swap->wi->glxid;
 	Display *display = device->cur_swap->wi->display;
 
 	if (!glXMakeCurrent(display, window, context)) {
@@ -229,8 +392,11 @@ void device_leavecontext(device_t device)
 
 void gl_update(device_t device)
 {
-	/* I don't know of anything we can do here. */
-	UNUSED_PARAMETER(device);
+	Display *display = device->cur_swap->wi->display;
+	XID window = device->cur_swap->wi->int_id;
+
+	XResizeWindow(display, window,
+				  device->cur_swap->info.cx, device->cur_swap->info.cy);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swap)
@@ -242,7 +408,7 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 		return;
 
 	Display *dpy = swap->wi->display;
-	XID window = swap->wi->id;
+	XID window = swap->wi->glxid;
 	GLXContext ctx = device->plat->context;
 
 	device->cur_swap = swap;
@@ -255,7 +421,7 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 void device_present(device_t device)
 {
 	Display *display = device->cur_swap->wi->display;
-	XID window = device->cur_swap->wi->id;
+	XID window = device->cur_swap->wi->glxid;
 
 	glXSwapBuffers(display, window);
 }

@@ -959,41 +959,88 @@ void device_setcuberendertarget(device_t device, texture_t tex, int side,
 	device->context->OMSetRenderTargets(1, &rt, zstencil->view);
 }
 
-inline void gs_device::CopyTex(ID3D11Texture2D *dst, texture_t src)
+inline void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h)
 {
 	if (src->type != GS_TEXTURE_2D)
 		throw "Source texture must be a 2D texture";
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(src);
-	context->CopyResource(dst, tex2d->texture);
+
+	if(dst_x == 0 && dst_y == 0 && src_x == 0 && src_y == 0 && src_w == 0 && src_h == 0)
+	{
+		context->CopyResource(dst, tex2d->texture);
+	}
+	else
+	{
+		D3D11_BOX sbox;
+
+		sbox.left = src_x;
+		if(src_w > 0)
+			sbox.right = src_x + src_w;
+		else
+			sbox.right = tex2d->width - 1;
+
+		sbox.top = src_y;
+		if(src_h > 0)
+			sbox.bottom = src_y + src_h;
+		else
+			sbox.bottom = tex2d->height - 1;
+
+		sbox.front = 0;
+		sbox.back = 1;
+
+		context->CopySubresourceRegion(dst, 0, dst_x, dst_y, 0, tex2d->texture, 0, &sbox);
+	}
+}
+
+void device_copy_texture_region(device_t device,
+	texture_t dst, uint32_t dst_x, uint32_t dst_y,
+	texture_t src, uint32_t src_x, uint32_t src_y,
+	uint32_t src_w, uint32_t src_h)
+{
+	try
+	{
+		gs_texture_2d *src2d = static_cast<gs_texture_2d*>(src);
+		gs_texture_2d *dst2d = static_cast<gs_texture_2d*>(dst);
+
+		if(!src)
+			throw "Source texture is NULL";
+		if(!dst)
+			throw "Destination texture is NULL";
+		if(src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D)
+			throw "Source and destination textures must be a 2D "
+			"textures";
+		if(dst->format != src->format)
+			throw "Source and destination formats do not match";
+
+		uint32_t nw = (uint32_t)src_w ? (uint32_t)src_w : (src2d->width - src_x);
+		uint32_t nh = (uint32_t)src_h ? (uint32_t)src_h : (src2d->height - src_y);
+
+		if(dst2d->width - dst_x < nw || dst2d->height - dst_y < nh)
+			throw "Destination texture region is not big "
+			      "enough to hold the source region";
+
+		if(dst_x == 0 && dst_y == 0 && src_x == 0 && src_y == 0 && src_w == 0 && src_h == 0)
+		{
+			nw = 0;
+			nh = 0;
+		}
+
+		gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(dst);
+		device->CopyTex(tex2d->texture, dst_x, dst_y, src, src_x, src_y, nw, nh);
+
+	}
+	catch(const char *error)
+	{
+		blog(LOG_ERROR, "device_copy_texture (D3D11): %s", error);
+	}
 }
 
 void device_copy_texture(device_t device, texture_t dst, texture_t src)
 {
-	try {
-		gs_texture_2d *src2d = static_cast<gs_texture_2d*>(src);
-		gs_texture_2d *dst2d = static_cast<gs_texture_2d*>(dst);
-
-		if (!src)
-			throw "Source texture is NULL";
-		if (!dst)
-			throw "Destination texture is NULL";
-		if (src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D)
-			throw "Source and destination textures must be a 2D "
-			      "textures";
-		if (dst->format != src->format)
-			throw "Source and destination formats do not match";
-		if (dst2d->width  != src2d->width ||
-		    dst2d->height != src2d->height)
-			throw "Source and destination must have the same "
-			      "dimensions";
-
-		gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(dst);
-		device->CopyTex(tex2d->texture, src);
-
-	} catch (const char *error) {
-		blog(LOG_ERROR, "device_copy_texture (D3D11): %s", error);
-	}
+	device_copy_texture_region(device, dst, 0, 0, src, 0, 0, 0, 0);
 }
 
 void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
@@ -1014,7 +1061,7 @@ void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
 			throw "Source and destination must have the same "
 			      "dimensions";
 
-		device->CopyTex(dst->texture, src);
+		device->CopyTex(dst->texture, 0, 0, src, 0, 0, 0, 0);
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_copy_texture (D3D11): %s", error);

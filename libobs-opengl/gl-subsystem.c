@@ -59,6 +59,9 @@ static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
 	GLsizei length, const GLchar *message, const GLvoid *data )
 {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(data);
+
 	blog(	LOG_DEBUG,
 		"[%s][%s]{%s}: %.*s",
 		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
@@ -226,6 +229,13 @@ swapchain_t device_create_swapchain(device_t device, struct gs_init_data *info)
 	swap->wi     = gl_windowinfo_create(info);
 	if (!swap->wi) {
 		blog(LOG_ERROR, "device_create_swapchain (GL) failed");
+		swapchain_destroy(swap);
+		return NULL;
+	}
+
+	if(!gl_platform_init_swapchain(swap))
+	{
+		blog(LOG_ERROR, "gl_platform_init_swapchain  failed");
 		swapchain_destroy(swap);
 		return NULL;
 	}
@@ -785,7 +795,10 @@ fail:
 	blog(LOG_ERROR, "device_setcuberendertarget (GL) failed");
 }
 
-void device_copy_texture(device_t device, texture_t dst, texture_t src)
+void device_copy_texture_region(device_t device,
+		texture_t dst, uint32_t dst_x, uint32_t dst_y,
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h)
 {
 	struct gs_texture_2d *src2d = (struct gs_texture_2d*)src;
 	struct gs_texture_2d *dst2d = (struct gs_texture_2d*)dst;
@@ -802,7 +815,7 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 
 	if (dst->type != GS_TEXTURE_2D || src->type != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "Source and destination textures must be 2D "
-		                "textures");
+						"textures");
 		goto fail;
 	}
 
@@ -811,21 +824,29 @@ void device_copy_texture(device_t device, texture_t dst, texture_t src)
 		goto fail;
 	}
 
-	if (dst2d->width != src2d->width || dst2d->height != src2d->height) {
-		blog(LOG_ERROR, "Source and destination must have "
-		                "the same dimensions");
+	uint32_t nw = (uint32_t)src_w ? (uint32_t)src_w : (src2d->width - src_x);
+	uint32_t nh = (uint32_t)src_h ? (uint32_t)src_h : (src2d->height - src_y);
+
+	if (dst2d->width - dst_x < nw || dst2d->height - dst_y < nh) {
+		blog(LOG_ERROR, "Destination texture region is not big "
+						"enough to hold the source region");
 		goto fail;
 	}
 
-	if (!gl_copy_texture(device, dst->texture, dst->gl_target,
-				src->texture, src->gl_target,
-				src2d->width, src2d->height, src->format))
+	if (!gl_copy_texture(device, dst->texture, dst->gl_target, dst_x, dst_y,
+				src->texture, src->gl_target, src_x, src_y,
+				nw, nh, src->format))
 		goto fail;
 
 	return;
 
 fail:
 	blog(LOG_ERROR, "device_copy_texture (GL) failed");
+}
+
+void device_copy_texture(device_t device, texture_t dst, texture_t src)
+{
+	device_copy_texture_region(device, dst, 0, 0, src, 0, 0, 0, 0);
 }
 
 void device_beginscene(device_t device)
@@ -1251,6 +1272,8 @@ void swapchain_destroy(swapchain_t swapchain)
 
 	if (swapchain->device->cur_swap == swapchain)
 		device_load_swapchain(swapchain->device, NULL);
+
+	gl_platform_cleanup_swapchain(swapchain);
 
 	gl_windowinfo_destroy(swapchain->wi);
 	bfree(swapchain);

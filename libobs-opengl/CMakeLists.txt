@@ -8,9 +8,10 @@ include_directories(${OPENGL_INCLUDE_DIR})
 add_definitions(-DLIBOBS_EXPORTS)
 
 if(WIN32)
-	set(libobs-opengl_PLATFORM_SOURCES
-		gl-windows.c
+	set(obs-opengl_PLATFORM_SOURCES
 		GL/wgl_obs.c)
+	set(libobs-opengl_PLATFORM_SOURCES
+		gl-windows.c)
 elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
@@ -32,9 +33,13 @@ elseif(APPLE)
 		${IOSURF})
 else()
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11.c
+		gl-x11.c)
+	set(obs-opengl_PLATFORM_SOURCES
 		GL/glx_obs.c)
 endif()
+
+set(obs-opengl_SOURCES
+	GL/gl_obs.c)
 
 set(libobs-opengl_SOURCES
 	${libobs-opengl_PLATFORM_SOURCES}
@@ -47,13 +52,22 @@ set(libobs-opengl_SOURCES
 	gl-texture2d.c
 	gl-texturecube.c
 	gl-vertexbuffer.c
-	gl-zstencil.c
-	GL/gl_obs.c)
+	gl-zstencil.c)
 
 set(libobs-opengl_HEADERS
 	gl-helpers.h
 	gl-shaderparser.h
 	gl-subsystem.h)
+
+add_library(obs-opengl STATIC
+	${obs-opengl_SOURCES}
+	${obs-opengl_PLATFORM_SOURCES})
+if(NOT WIN32)
+	set_property(TARGET obs-opengl APPEND_STRING
+		PROPERTY COMPILE_FLAGS " -fPIC")
+endif()
+target_link_libraries(obs-opengl
+	${OPENGL_gl_LIBRARY})
 
 add_library(libobs-opengl MODULE
 	${libobs-opengl_SOURCES}
@@ -64,7 +78,7 @@ set_target_properties(libobs-opengl
 		PREFIX "")
 target_link_libraries(libobs-opengl
 	libobs
-	${libobs-opengl_PLATFORM_DEPS}
-	${OPENGL_gl_LIBRARY})
+	obs-opengl
+	${libobs-opengl_PLATFORM_DEPS})
 
 install_obs_core(libobs-opengl)
