@@ -168,7 +168,7 @@ static inline void circlebuf_push_back(struct circlebuf *cb, const void *data,
 	cb->end_pos = new_end_pos;
 }
 
-static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
+static inline void circlebuf_peek_front(struct circlebuf *cb, void *data,
 		size_t size)
 {
 	size_t start_size;
@@ -186,6 +186,12 @@ static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 			memcpy(data, (uint8_t*)cb->data + cb->start_pos, size);
 		}
 	}
+}
+
+static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
+		size_t size)
+{
+	circlebuf_peek_front(cb, data, size);
 
 	cb->size -= size;
 	cb->start_pos += size;
