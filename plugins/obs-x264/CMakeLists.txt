@@ -16,4 +16,3 @@ target_link_libraries(obs-x264
 
 install_obs_plugin(obs-x264)
 
-obs_fixup_install_target(obs-x264 PATH ${Libx264_LIBRARIES})

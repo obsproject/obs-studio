@@ -70,29 +70,15 @@ else()
 	add_definitions(-DOBS_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}/")
 endif()
 
-function(obs_fixup_install_target target type)
-	if(NOT APPLE OR NOT BUILD_REDISTRIBUTABLE)
+function(obs_finish_bundle)
+	if(NOT APPLE OR UNIX_STRUCTURE)
 		return()
 	endif()
 
-	foreach(data ${ARGN})
-		if(type STREQUAL "TARGET")
-			get_property(fullpath TARGET "${data}" PROPERTY LOCATION)
-		else()
-			set(fullpath "${data}")
-		endif()
-
-		execute_process(COMMAND otool -D "${fullpath}" OUTPUT_VARIABLE otool_out)
-		string(REGEX REPLACE "(\r?\n)+$" "" otool_out "${otool_out}")
-		string(REGEX REPLACE ".*\n" "" otool_out "${otool_out}")
-
-		string(REGEX REPLACE ".*/" "@rpath/" newpath "${otool_out}")
-
-		add_custom_command(TARGET ${target} POST_BUILD
-			COMMAND
-				install_name_tool -change "${otool_out}" "${newpath}" "$<TARGET_FILE:${target}>"
-			VERBATIM)
-	endforeach()
+	install(CODE
+		"if(DEFINED ENV{FIXUP_BUNDLE})
+			execute_process(COMMAND \"${CMAKE_SOURCE_DIR}/cmake/osxbundle/fixup_bundle.sh\" . bin WORKING_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}\")
+		endif()")
 endfunction()
 
 function(obs_generate_multiarch_installer)

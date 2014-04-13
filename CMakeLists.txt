@@ -76,6 +76,8 @@ if(NOT INSTALLER_RUN)
 	add_subdirectory(obs)
 	add_subdirectory(plugins)
 	add_subdirectory(test)
+
+	add_subdirectory(cmake/helper_subdir)
 else()
 	obs_generate_multiarch_installer()
 endif()
