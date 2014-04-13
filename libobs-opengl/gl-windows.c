@@ -20,7 +20,7 @@
 
 #include <util/darray.h>
 #include "gl-subsystem.h"
-#include "GL/wgl_obs.h"
+#include <wglew.h>
 
 /* Basically swapchain-specific information.  Fortunately for windows this is
  * super basic stuff */
@@ -165,7 +165,7 @@ static const int attribs[] =
 static inline HGLRC gl_init_context(HDC hdc)
 {
 #ifdef _DEBUG
-	if (wgl_ext_ARB_create_context) {
+	if (WGLEW_ARB_create_context) {
 		HGLRC hglrc = wglCreateContextAttribsARB(hdc, 0, attribs);
 		if (!hglrc) {
 			blog(LOG_ERROR, "wglCreateContextAttribsARB failed, %u",
@@ -235,24 +235,24 @@ static inline void required_extension_error(const char *extension)
 	blog(LOG_ERROR, "OpenGL extension %s is required", extension);
 }
 
-static bool gl_init_extensions(HDC hdc)
+static bool gl_init_extensions()
 {
-	if (!wgl_LoadFunctions(hdc)) {
+	if (wglewContextInit() != 0) {
 		blog(LOG_ERROR, "Failed to load WGL entry functions.");
 		return false;
 	}
 
-	if (!wgl_ext_ARB_pixel_format) {
+	if (!WGLEW_ARB_pixel_format) {
 		required_extension_error("ARB_pixel_format");
 		return false;
 	}
 
-	if (!wgl_ext_ARB_create_context) {
+	if (!WGLEW_ARB_create_context) {
 		required_extension_error("ARB_create_context");
 		return false;
 	}
 
-	if (!wgl_ext_ARB_create_context_profile) {
+	if (!WGLEW_ARB_create_context_profile) {
 		required_extension_error("ARB_create_context_profile");
 		return false;
 	}
@@ -400,7 +400,7 @@ struct gl_platform *gl_platform_create(device_t device,
 	if (!plat->hrc)
 		goto fail;
 
-	if (!ogl_LoadFunctions()) {
+	if (glewInit() != 0) {
 		blog(LOG_ERROR, "Failed to initialize OpenGL entry functions.");
 		goto fail;
 	}

@@ -119,7 +119,7 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	[plat->context makeCurrentContext];
 
-	if (!ogl_LoadFunctions())
+	if (glewInit() != 0)
 		goto fail;
 
 	return plat;

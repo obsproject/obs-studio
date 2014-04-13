@@ -23,7 +23,7 @@
 #include <graphics/device-exports.h>
 #include <graphics/matrix4.h>
 
-#include "GL/gl_obs.h"
+#include <glew.h>
 
 #include "gl-helpers.h"
 
