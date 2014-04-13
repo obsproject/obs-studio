@@ -240,7 +240,7 @@ static void obs_source_destroy(struct obs_source *source)
 		source_frame_destroy(source->video_frames.array[i]);
 
 	gs_entercontext(obs->video.graphics);
-	texture_destroy(source->output_texture);
+	texture_destroy(source->async_texture);
 	gs_leavecontext();
 
 	if (source->data)
@@ -529,7 +529,7 @@ static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
 	                source->name, diff, expected, ts);
 
 	/* if has video, ignore audio data until reset */
-	if (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO)
+	if (source->info.output_flags & OBS_SOURCE_ASYNC)
 		os_atomic_dec_long(&source->audio_reset_ref);
 	else 
 		reset_audio_timing(source, ts);
@@ -577,21 +577,25 @@ static void source_output_audio_line(obs_source_t source,
 	audio_line_output(source->audio_line, &in);
 }
 
-static bool set_texture_size(obs_source_t source, struct source_frame *frame)
+static inline bool set_async_texture_size(struct obs_source *source,
+		struct source_frame *frame)
 {
-	if (source->output_texture) {
-		uint32_t width  = texture_getwidth(source->output_texture);
-		uint32_t height = texture_getheight(source->output_texture);
-
-		if (width == frame->width && height == frame->height)
+	if (source->async_texture) {
+		if (source->async_width  == frame->width &&
+		    source->async_height == frame->height)
 			return true;
 	}
 
-	texture_destroy(source->output_texture);
-	source->output_texture = gs_create_texture(frame->width, frame->height,
+	texture_destroy(source->async_texture);
+	source->async_texture = gs_create_texture(frame->width, frame->height,
 			GS_RGBA, 1, NULL, GS_DYNAMIC);
 
-	return source->output_texture != NULL;
+	if (!source->async_texture)
+		return false;
+
+	source->async_width  = frame->width;
+	source->async_height = frame->height;
+	return true;
 }
 
 enum convert_type {
@@ -626,11 +630,18 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	return CONVERT_NONE;
 }
 
-static bool upload_frame(texture_t tex, const struct source_frame *frame)
+static bool update_async_texture(struct obs_source *source,
+		const struct source_frame *frame)
 {
-	void *ptr;
-	uint32_t linesize;
+	texture_t         tex  = source->async_texture;
 	enum convert_type type = get_convert_type(frame->format);
+	void              *ptr;
+	uint32_t          linesize;
+
+	source->async_format = frame->format;
+	source->async_flip   = frame->flip;
+	memcpy(source->async_color_matrix, frame->color_matrix,
+			sizeof(frame->color_matrix));
 
 	if (type == CONVERT_NONE) {
 		texture_setimage(tex, frame->data[0], frame->linesize[0],
@@ -663,44 +674,59 @@ static bool upload_frame(texture_t tex, const struct source_frame *frame)
 	return true;
 }
 
-static void obs_source_draw_texture(texture_t tex, struct source_frame *frame)
+static inline void obs_source_draw_texture(struct obs_source *source,
+		effect_t effect, float *color_matrix)
 {
-	effect_t    effect = obs->video.default_effect;
-	bool        yuv    = format_is_yuv(frame->format);
-	const char  *type  = yuv ? "DrawMatrix" : "Draw";
-	technique_t tech;
-	eparam_t    param;
+	texture_t tex = source->async_texture;
+	eparam_t  param;
 
-	if (!upload_frame(tex, frame))
-		return;
-
-	tech = effect_gettechnique(effect, type);
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
-
-	if (yuv) {
+	if (color_matrix) {
 		param = effect_getparambyname(effect, "color_matrix");
-		effect_setval(effect, param, frame->color_matrix,
-				sizeof(float) * 16);
+		effect_setval(effect, param, color_matrix, sizeof(float) * 16);
 	}
 
 	param = effect_getparambyname(effect, "image");
 	effect_settexture(effect, param, tex);
 
-	gs_draw_sprite(tex, frame->flip ? GS_FLIP_V : 0, 0, 0);
+	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
+}
 
-	technique_endpass(tech);
-	technique_end(tech);
+static void obs_source_draw_async_texture(struct obs_source *source)
+{
+	effect_t    effect   = gs_geteffect();
+	bool        yuv      = format_is_yuv(source->async_format);
+	const char  *type    = yuv ? "DrawMatrix" : "Draw";
+	bool        def_draw = (!effect);
+	technique_t tech;
+
+	if (def_draw) {
+		effect = obs_get_default_effect();
+		tech = effect_gettechnique(effect, type);
+		technique_begin(tech);
+		technique_beginpass(tech, 0);
+	}
+
+	obs_source_draw_texture(source, effect,
+			yuv ? source->async_color_matrix : NULL);
+
+	if (def_draw) {
+		technique_endpass(tech);
+		technique_end(tech);
+	}
 }
 
 static void obs_source_render_async_video(obs_source_t source)
 {
 	struct source_frame *frame = obs_source_getframe(source);
-	if (!frame)
-		return;
+	if (frame) {
+		if (!set_async_texture_size(source, frame))
+			return;
+		if (!update_async_texture(source, frame))
+			return;
+	}
 
-	if (set_texture_size(source, frame))
-		obs_source_draw_texture(source->output_texture, frame);
+	if (source->async_texture)
+		obs_source_draw_async_texture(source);
 
 	obs_source_releaseframe(source, frame);
 }
@@ -731,48 +757,53 @@ static inline void obs_source_default_render(obs_source_t source,
 
 static inline void obs_source_main_render(obs_source_t source)
 {
-	uint32_t flags = source->info.output_flags;
-	bool color_matrix = (flags & OBS_SOURCE_COLOR_MATRIX) != 0;
+	uint32_t flags      = source->info.output_flags;
+	bool color_matrix   = (flags & OBS_SOURCE_COLOR_MATRIX) != 0;
+	bool custom_draw    = (flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	bool default_effect = !source->filter_parent &&
 	                      source->filters.num == 0 &&
-	                      (flags & OBS_SOURCE_CUSTOM_DRAW) == 0;
+	                      !custom_draw;
 
 	if (default_effect)
 		obs_source_default_render(source, color_matrix);
 	else
-		source->info.video_render(source->data, NULL);
+		source->info.video_render(source->data,
+				custom_draw ? NULL : gs_geteffect());
 }
 
 void obs_source_video_render(obs_source_t source)
 {
 	if (!source) return;
 
-	if (source->info.video_render) {
-		if (source->filters.num && !source->rendering_filter)
-			obs_source_render_filters(source);
-		else
-			obs_source_main_render(source);
+	if (source->filters.num && !source->rendering_filter)
+		obs_source_render_filters(source);
 
-	} else if (source->filter_target) {
+	else if (source->info.video_render)
+		obs_source_main_render(source);
+
+	else if (source->filter_target)
 		obs_source_video_render(source->filter_target);
 
-	} else {
+	else
 		obs_source_render_async_video(source);
-	}
 }
 
 uint32_t obs_source_getwidth(obs_source_t source)
 {
-	if (source && source->info.getwidth)
+	if (!source) return 0;
+
+	if (source->info.getwidth)
 		return source->info.getwidth(source->data);
-	return 0;
+	return source->async_width;
 }
 
 uint32_t obs_source_getheight(obs_source_t source)
 {
-	if (source && source->info.getheight)
+	if (!source) return 0;
+
+	if (source->info.getheight)
 		return source->info.getheight(source->data);
-	return 0;
+	return source->async_height;
 }
 
 obs_source_t obs_filter_getparent(obs_source_t filter)
@@ -1102,7 +1133,7 @@ void obs_source_output_audio(obs_source_t source,
 	output = filter_async_audio(source, &source->audio_data);
 
 	if (output) {
-		bool async = (flags & OBS_SOURCE_ASYNC_VIDEO) != 0;
+		bool async = (flags & OBS_SOURCE_ASYNC) != 0;
 
 		pthread_mutex_lock(&source->audio_mutex);
 

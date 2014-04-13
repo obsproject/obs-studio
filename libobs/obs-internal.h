@@ -193,6 +193,7 @@ struct obs_source {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	/* signals to call the source update in the video thread */
 	bool                            defer_update;
 
 	/* ensures show/hide are only called once */
@@ -237,9 +238,14 @@ struct obs_source {
 	float                           transition_volume;
 
 	/* async video data */
-	texture_t                       output_texture;
+	texture_t                       async_texture;
+	enum video_format               async_format;
+	float                           async_color_matrix[16];
+	bool                            async_flip;
 	DARRAY(struct source_frame*)    video_frames;
 	pthread_mutex_t                 video_mutex;
+	uint32_t                        async_width;
+	uint32_t                        async_height;
 
 	/* filters */
 	struct obs_source               *filter_parent;

@@ -1,8 +1,13 @@
 #include <stdlib.h>
+#include <util/threading.h>
+#include <util/platform.h>
 #include <obs.h>
 
 struct random_tex {
-	texture_t texture;
+	obs_source_t source;
+	os_event_t   stop_signal;
+	pthread_t    thread;
+	bool         initialized;
 };
 
 static const char *random_getname(const char *locale)
@@ -16,19 +21,18 @@ static void random_destroy(void *data)
 	struct random_tex *rt = data;
 
 	if (rt) {
-		gs_entercontext(obs_graphics());
+		if (rt->initialized) {
+			os_event_signal(rt->stop_signal);
+			pthread_join(rt->thread, NULL);
+		}
 
-		texture_destroy(rt->texture);
+		os_event_destroy(rt->stop_signal);
 		bfree(rt);
-
-		gs_leavecontext();
 	}
 }
 
-static void *random_create(obs_data_t settings, obs_source_t source)
+static inline void fill_texture(uint32_t *pixels)
 {
-	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
-	uint32_t *pixels = bmalloc(20*20*4);
 	size_t x, y;
 
 	for (y = 0; y < 20; y++) {
@@ -41,53 +45,62 @@ static void *random_create(obs_data_t settings, obs_source_t source)
 			pixels[y*20 + x] = pixel;
 		}
 	}
+}
 
-	gs_entercontext(obs_graphics());
+static void *video_thread(void *data)
+{
+	struct random_tex   *rt = data;
+	uint32_t            pixels[20*20];
+	uint64_t            cur_time = os_gettime_ns();
 
-	rt->texture = gs_create_texture(20, 20, GS_RGBA, 1,
-			(const void**)&pixels, 0);
-	bfree(pixels);
+	struct source_frame frame = {
+		.data     = {[0] = (uint8_t*)pixels},
+		.linesize = {[0] = 20*4},
+		.width    = 20,
+		.height   = 20,
+		.format   = VIDEO_FORMAT_BGRX
+	};
 
-	if (!rt->texture) {
+	while (os_event_try(rt->stop_signal) == EAGAIN) {
+		fill_texture(pixels);
+
+		frame.timestamp = cur_time;
+
+		obs_source_output_video(rt->source, &frame);
+
+		os_sleepto_ns(cur_time += 250000000);
+	}
+
+	return NULL;
+}
+
+static void *random_create(obs_data_t settings, obs_source_t source)
+{
+	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
+	rt->source = source;
+
+	if (os_event_init(&rt->stop_signal, OS_EVENT_TYPE_MANUAL) != 0) {
 		random_destroy(rt);
 		return NULL;
 	}
 
-	gs_leavecontext();
+	if (pthread_create(&rt->thread, NULL, video_thread, rt) != 0) {
+		random_destroy(rt);
+		return NULL;
+	}
+
+	rt->initialized = true;
 
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
 	return rt;
 }
 
-static void random_video_render(void *data, effect_t effect)
-{
-	struct random_tex *rt = data;
-	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(effect, image, rt->texture);
-	gs_draw_sprite(rt->texture, 0, 0, 0);
-}
-
-static uint32_t random_getwidth(void *data)
-{
-	struct random_tex *rt = data;
-	return texture_getwidth(rt->texture);
-}
-
-static uint32_t random_getheight(void *data)
-{
-	struct random_tex *rt = data;
-	return texture_getheight(rt->texture);
-}
-
 struct obs_source_info test_random = {
 	.id           = "random",
 	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_ASYNC_VIDEO,
 	.getname      = random_getname,
 	.create       = random_create,
 	.destroy      = random_destroy,
-	.video_render = random_video_render,
-	.getwidth     = random_getwidth,
-	.getheight    = random_getheight
 };

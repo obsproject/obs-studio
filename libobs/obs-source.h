@@ -23,6 +23,7 @@
 extern "C" {
 #endif
 
+
 enum obs_source_type {
 	OBS_SOURCE_TYPE_INPUT,
 	OBS_SOURCE_TYPE_FILTER,
@@ -30,6 +31,7 @@ enum obs_source_type {
 
 	OBS_SOURCE_TYPE_SCENE = 0x80000000
 };
+
 
 /**
  * @name Source output flags
@@ -55,6 +57,9 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_AUDIO        (1<<1)
 
+/** Async video flag (use OBS_SOURCE_ASYNC_VIDEO) */
+#define OBS_SOURCE_ASYNC        (1<<2)
+
 /**
  * Source passes raw video data via RAM.
  *
@@ -66,7 +71,7 @@ enum obs_source_type {
  * obs_source_getframe to get the current frame data, and
  * obs_source_releaseframe to release the data when complete.
  */
-#define OBS_SOURCE_ASYNC_VIDEO  ((1<<2) | OBS_SOURCE_VIDEO)
+#define OBS_SOURCE_ASYNC_VIDEO  (OBS_SOURCE_ASYNC | OBS_SOURCE_VIDEO)
 
 /**
  * Source uses custom drawing, rather than a default effect.
@@ -132,10 +137,12 @@ struct obs_source_info {
 	/** Destroys the private data for the source */
 	void (*destroy)(void *data);
 
-	/** Returns the width of the source.  Required if input and video */
+	/** Returns the width of the source.  Required if this is an input
+	 * source and has non-async video */
 	uint32_t (*getwidth)(void *data);
 
-	/** Returns the height of the source.  Required if input and video */
+	/** Returns the height of the source.  Required if this is an input
+	 * source and has non-async video */
 	uint32_t (*getheight)(void *data);
 
 	/* ----------------------------------------------------------------- */
