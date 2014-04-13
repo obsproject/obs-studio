@@ -27,8 +27,6 @@
 
 #include "gl-helpers.h"
 
-#define USE_FORMAT_SWIZZLE
-
 struct gl_platform;
 struct gl_windowinfo;
 
@@ -44,13 +42,8 @@ static inline GLint convert_gs_format(enum gs_color_format format)
 	case GS_A8:          return GL_RGBA;
 	case GS_R8:          return GL_RED;
 	case GS_RGBA:        return GL_RGBA;
-#ifdef USE_FORMAT_SWIZZLE
-	case GS_BGRX:        return GL_RGB;
-	case GS_BGRA:        return GL_RGBA;
-#else
 	case GS_BGRX:        return GL_BGR;
 	case GS_BGRA:        return GL_BGRA;
-#endif
 	case GS_R10G10B10A2: return GL_RGBA;
 	case GS_RGBA16:      return GL_RGBA;
 	case GS_R16:         return GL_RED;
