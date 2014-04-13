@@ -30,7 +30,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
 	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
-	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
 
 	option(USE_LIBC++ "Use libc++ instead of libstdc++" ${APPLE})
 	if(USE_LIBC++)
@@ -76,6 +76,8 @@ if(NOT INSTALLER_RUN)
 	add_subdirectory(obs)
 	add_subdirectory(plugins)
 	add_subdirectory(test)
+
+	add_subdirectory(cmake/helper_subdir)
 else()
 	obs_generate_multiarch_installer()
 endif()

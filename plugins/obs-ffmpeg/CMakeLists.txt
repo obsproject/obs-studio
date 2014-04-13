@@ -40,8 +40,3 @@ target_link_libraries(obs-ffmpeg
 
 install_obs_plugin(obs-ffmpeg)
 
-obs_fixup_install_target(obs-ffmpeg PATH ${Libavcodec_LIBRARIES})
-obs_fixup_install_target(obs-ffmpeg PATH ${Libavutil_LIBRARIES})
-obs_fixup_install_target(obs-ffmpeg PATH ${Libswscale_LIBRARIES})
-obs_fixup_install_target(obs-ffmpeg PATH ${Libavformat_LIBRARIES})
-obs_fixup_install_target(obs-ffmpeg PATH ${Libswresample_LIBRARIES})
