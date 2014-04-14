@@ -21,7 +21,7 @@
 
 #include "gl-subsystem.h"
 
-#include "GL/glx_obs.h"
+#include <glad/glad_glx.h>
 
 static const int fb_attribs[] = {
 	/* Hardcoded for now... */
@@ -161,7 +161,7 @@ struct gl_platform *gl_platform_create(device_t device,
 
 	screen = XScreenNumberOfScreen(attrs.screen);
 
-	if (!glx_LoadFunctions(display, screen)) {
+	if (!gladLoadGLX(display, screen)) {
 		blog(LOG_ERROR, "Unable to load GLX entry functions.");
 		goto fail0;
 	}
@@ -180,7 +180,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail0;
 	}
 
-	if (!glx_ext_ARB_create_context) {
+	if (!GLAD_GLX_ARB_create_context) {
 		blog(LOG_ERROR, "ARB_GLX_create_context not supported!");
 		goto fail0;
 	}
@@ -238,7 +238,7 @@ struct gl_platform *gl_platform_create(device_t device,
 		goto fail2;
 	}
 
-	if (!ogl_LoadFunctions()) {
+	if (!gladLoadGL()) {
 		blog(LOG_ERROR, "Failed to load OpenGL entry functions.");
 		goto fail2;
 	}

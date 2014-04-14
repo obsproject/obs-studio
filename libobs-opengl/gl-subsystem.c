@@ -73,11 +73,10 @@ static void APIENTRY gl_debug_proc(
 
 static void gl_enable_debug()
 {
-	 /* Perhaps we should create GLEW contexts? */
-	if (ogl_IsVersionGEQ(4, 3)) {
+	if (GLAD_GL_VERSION_4_3) {
 		glDebugMessageCallback(gl_debug_proc, NULL);
 		gl_enable(GL_DEBUG_OUTPUT);
-	} else if (ogl_ext_ARB_debug_output) {
+	} else if (GLAD_GL_ARB_debug_output) {
 		glDebugMessageCallbackARB(gl_debug_proc, NULL);
 	} else {
 		blog(LOG_DEBUG, "Failed to set GL debug callback as it is "
@@ -90,7 +89,7 @@ static void gl_enable_debug() {}
 
 static bool gl_init_extensions(struct gs_device* device)
 {
-	if (!ogl_IsVersionGEQ(2, 1)) {
+	if (!GLAD_GL_VERSION_2_1) {
 		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
 		                "higher.");
 		return false;
@@ -98,25 +97,25 @@ static bool gl_init_extensions(struct gs_device* device)
 
 	gl_enable_debug();
 
-	if (!ogl_IsVersionGEQ(3, 0) && !ogl_ext_ARB_framebuffer_object) {
+	if (!GLAD_GL_VERSION_3_0 && !GLAD_GL_ARB_framebuffer_object) {
 		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
 		                "is required.");
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(3, 2) || ogl_ext_ARB_seamless_cube_map) {
+	if (GLAD_GL_VERSION_3_2 || GLAD_GL_ARB_seamless_cube_map) {
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-	if (!ogl_IsVersionGEQ(4, 1) && !ogl_ext_ARB_separate_shader_objects) {
+	if (!GLAD_GL_VERSION_4_1 && !GLAD_GL_ARB_separate_shader_objects) {
 		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects "
 		                "is required.");
 		return false;
 	}
 
-	if (ogl_IsVersionGEQ(4, 3) || ogl_ext_ARB_copy_image)
+	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
-	else if (ogl_ext_NV_copy_image)
+	else if (GLAD_GL_NV_copy_image)
 		device->copy_type = COPY_TYPE_NV;
 	else
 		device->copy_type = COPY_TYPE_FBO_BLIT;
