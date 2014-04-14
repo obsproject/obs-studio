@@ -29,29 +29,29 @@
 #include "platform.hpp"
 
 #ifdef _WIN32
+#include <fstream>
 #include <windows.h>
 #endif
 
 using namespace std;
 
-static void do_log(int log_level, const char *msg, va_list args)
-{
 #ifdef _WIN32
+static void do_log(int log_level, const char *msg, va_list args, void *param)
+{
+	fstream &logFile = *static_cast<fstream*>(param);
 	char bla[4096];
 	vsnprintf(bla, 4095, msg, args);
 
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
+	if (log_level <= LOG_INFO)
+		logFile << bla << endl;
+
 	if (log_level <= LOG_ERROR && IsDebuggerPresent())
 		__debugbreak();
-#else
-	vprintf(msg, args);
-	printf("\n");
-
-	UNUSED_PARAMETER(log_level);
-#endif
 }
+#endif
 
 bool OBSApp::InitGlobalConfigDefaults()
 {
@@ -220,7 +220,15 @@ int main(int argc, char *argv[])
 	int ret = -1;
 	QCoreApplication::addLibraryPath(".");
 #ifdef _WIN32
-	base_set_log_handler(do_log);
+	char *logPath = os_get_config_path("obs-studio/log.txt");
+	fstream logFile;
+
+	logFile.open(logPath, ios_base::in | ios_base::out | ios_base::trunc,
+			_SH_DENYNO);
+	bfree(logPath);
+
+	if (logFile.is_open())
+		base_set_log_handler(do_log, &logFile);
 #endif
 
 	try {
@@ -234,5 +242,6 @@ int main(int argc, char *argv[])
 	}
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
+	base_set_log_handler(nullptr, nullptr);
 	return ret;
 }

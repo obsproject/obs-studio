@@ -26,7 +26,7 @@ static inline bool check_path(const char* data, const char *path,
 	dstr_copy(output, path);
 	dstr_cat(output, data);
 
-	blog(LOG_INFO, "Attempting path: %s\n", output->array);
+	blog(LOG_DEBUG, "Attempting path: %s\n", output->array);
 
 	return os_file_exists(output->array);
 }

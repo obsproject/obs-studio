@@ -27,10 +27,12 @@ static int log_output_level = LOG_DEBUG;
 static int log_output_level = LOG_INFO;
 #endif
 
-static int crashing = 0;
+static int  crashing     = 0;
+static void *log_param   = NULL;
+static void *crash_param = NULL;
 
 static void def_log_handler(int log_level, const char *format,
-		va_list args)
+		va_list args, void *param)
 {
 	char out[4096];
 	vsnprintf(out, sizeof(out), format, args);
@@ -57,6 +59,8 @@ static void def_log_handler(int log_level, const char *format,
 			fflush(stderr);
 		}
 	}
+
+	UNUSED_PARAMETER(param);
 }
 
 #ifdef _MSC_VER
@@ -65,24 +69,35 @@ static void def_log_handler(int log_level, const char *format,
 #define NORETURN __attribute__((noreturn))
 #endif
 
-NORETURN static void def_crash_handler(const char *format, va_list args)
+NORETURN static void def_crash_handler(const char *format, va_list args,
+		void *param)
 {
 	vfprintf(stderr, format, args);
 	exit(0);
+
+	UNUSED_PARAMETER(param);
 }
 
-static void (*log_handler)(int log_level, const char *, va_list) =
+static void (*log_handler)(int log_level, const char *, va_list, void *) =
 		def_log_handler;
-static void (*crash_handler)(const char *, va_list) = def_crash_handler;
+static void (*crash_handler)(const char *, va_list, void *) = def_crash_handler;
 
 void base_set_log_handler(
-	void (*handler)(int log_level, const char *, va_list))
+	void (*handler)(int log_level, const char *, va_list, void *),
+	void *param)
 {
+	if (!handler)
+		handler = def_log_handler;
+
+	log_param   = param;
 	log_handler = handler;
 }
 
-void base_set_crash_handler(void (*handler)(const char *, va_list))
+void base_set_crash_handler(
+		void (*handler)(const char *, va_list, void *),
+		void *param)
 {
+	crash_param   = param;
 	crash_handler = handler;
 }
 
@@ -97,13 +112,13 @@ void bcrash(const char *format, ...)
 
 	crashing = 1;
 	va_start(args, format);
-	crash_handler(format, args);
+	crash_handler(format, args, crash_param);
 	va_end(args);
 }
 
 void blogva(int log_level, const char *format, va_list args)
 {
-	log_handler(log_level, format, args);
+	log_handler(log_level, format, args, log_param);
 }
 
 void blog(int log_level, const char *format, ...)
@@ -111,6 +126,6 @@ void blog(int log_level, const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	log_handler(log_level, format, args);
+	blogva(log_level, format, args);
 	va_end(args);
 }

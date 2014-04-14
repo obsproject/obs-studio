@@ -51,7 +51,7 @@ static LRESULT CALLBACK sceneProc(HWND hwnd, UINT message, WPARAM wParam,
 	return 0;
 }
 
-static void do_log(int log_level, const char *msg, va_list args)
+static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	char bla[4096];
 	vsnprintf(bla, 4095, msg, args);
@@ -61,6 +61,8 @@ static void do_log(int log_level, const char *msg, va_list args)
 
 	if (log_level <= LOG_WARNING)
 		__debugbreak();
+
+	UNUSED_PARAMETER(param);
 }
 
 static void CreateOBS(HWND hwnd)
@@ -122,7 +124,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		int numCmd)
 {
 	HWND hwnd = NULL;
-	base_set_log_handler(do_log);
+	base_set_log_handler(do_log, nullptr);
 
 	try {
 		hwnd = CreateTestWindow(instance);

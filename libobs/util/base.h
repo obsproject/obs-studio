@@ -59,8 +59,11 @@ enum {
 };
 
 EXPORT void base_set_log_handler(
-		void (*handler)(int log_level, const char *, va_list));
-EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list));
+		void (*handler)(int log_level, const char *, va_list, void *),
+		void *param);
+EXPORT void base_set_crash_handler(
+		void (*handler)(const char *, va_list, void *),
+		void *param);
 
 EXPORT void blogva(int log_level, const char *format, va_list args);
 
