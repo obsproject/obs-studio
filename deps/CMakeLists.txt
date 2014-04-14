@@ -3,6 +3,8 @@ if(WIN32)
 	add_subdirectory(w32-pthreads)
 endif()
 
+add_subdirectory(glad)
+
 set(BUILD_DOCS FALSE CACHE INTERNAL "" FORCE)
 set(STATIC_CRT TRUE CACHE INTERNAL "" FORCE)
 set(BUILD_SHARED_LIBS FALSE CACHE INTERNAL "" FORCE)
