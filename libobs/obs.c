@@ -387,6 +387,8 @@ static bool obs_init_data(void)
 	struct obs_core_data *data = &obs->data;
 	pthread_mutexattr_t attr;
 
+	assert(data != NULL);
+
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 
 	if (pthread_mutexattr_init(&attr) != 0)

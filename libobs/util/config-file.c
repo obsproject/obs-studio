@@ -234,6 +234,9 @@ int config_open(config_t *config, const char *file,
 		return CONFIG_ERROR;
 
 	*config = bzalloc(sizeof(struct config_data));
+	if (!*config)
+		return CONFIG_ERROR;
+
 	(*config)->file = bstrdup(file);
 
 	errorcode = config_parse(&(*config)->sections, file, always_open);

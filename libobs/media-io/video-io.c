@@ -165,6 +165,8 @@ int video_output_open(video_t *video, struct video_output_info *info)
 		return VIDEO_OUTPUT_INVALIDPARAM;
 
 	out = bzalloc(sizeof(struct video_output));
+	if (!out)
+		goto fail;
 
 	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time = (uint64_t)(1000000000.0 * (double)info->fps_den /

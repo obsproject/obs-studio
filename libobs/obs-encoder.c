@@ -366,7 +366,6 @@ void obs_encoder_start(obs_encoder_t encoder,
 		void *param)
 {
 	struct encoder_callback cb = {false, new_packet, param};
-	bool success = true;
 	bool first   = false;
 
 	if (!encoder || !new_packet || !encoder->data) return;
@@ -375,13 +374,9 @@ void obs_encoder_start(obs_encoder_t encoder,
 
 	first = (encoder->callbacks.num == 0);
 
-	if (success) {
-		size_t idx = get_callback_idx(encoder, new_packet, param);
-		if (idx == DARRAY_INVALID)
-			da_push_back(encoder->callbacks, &cb);
-		else
-			success = false;
-	}
+	size_t idx = get_callback_idx(encoder, new_packet, param);
+	if (idx == DARRAY_INVALID)
+		da_push_back(encoder->callbacks, &cb);
 
 	pthread_mutex_unlock(&encoder->callbacks_mutex);
 

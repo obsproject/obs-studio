@@ -40,6 +40,9 @@ extern "C" {
 /* this may seem strange, but you can't use it unless it's an initializer */
 static inline void pthread_mutex_init_value(pthread_mutex_t *mutex)
 {
+	if (!mutex)
+		return;
+
 	pthread_mutex_t init_val = PTHREAD_MUTEX_INITIALIZER;
 	*mutex = init_val;
 }

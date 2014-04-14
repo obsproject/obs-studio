@@ -575,6 +575,8 @@ int audio_output_open(audio_t *audio, struct audio_output_info *info)
 		return AUDIO_OUTPUT_INVALIDPARAM;
 
 	out = bzalloc(sizeof(struct audio_output));
+	if (!out)
+		goto fail;
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	pthread_mutex_init_value(&out->line_mutex);

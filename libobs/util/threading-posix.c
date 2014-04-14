@@ -171,6 +171,9 @@ int  os_sem_init(os_sem_t *sem, int value)
 		return -1;
 
 	*sem = bzalloc(sizeof(struct os_sem_data));
+	if (!*sem)
+		return -2;
+
 	(*sem)->sem  = new_sem;
 	(*sem)->task = task;
 	return 0;
