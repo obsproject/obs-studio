@@ -133,6 +133,19 @@ static NSWindow *CreateTestWindow()
 	return win;
 }
 
+/* --------------------------------------------------- */
+
+static void RenderWindow(void *data, uint32_t cx, uint32_t cy)
+{
+	obs_render_main_view();
+
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
+}
+
+/* --------------------------------------------------- */
+
 static void test()
 {
 	try {
@@ -157,7 +170,7 @@ static void test()
 		/* ------------------------------------------------------ */
 		/* create filter */
 		SourceContext filter{obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				"test", "a test filter", NULL)};
+				"test_filter", "a test filter", NULL)};
 		if (!filter)
 			throw "Couldn't create test filter";
 		obs_source_filter_add(source, filter);
@@ -173,6 +186,10 @@ static void test()
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
 		obs_set_output_source(0, obs_scene_getsource(scene));
+
+		/* ------------------------------------------------------ */
+		/* set the main output render callback */
+		obs_add_draw_callback(RenderWindow, nullptr);
 
 		[NSApp run];
 

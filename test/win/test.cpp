@@ -120,6 +120,17 @@ static HWND CreateTestWindow(HINSTANCE instance)
 
 /* --------------------------------------------------- */
 
+static void RenderWindow(void *data, uint32_t cx, uint32_t cy)
+{
+	obs_render_main_view();
+
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
+}
+
+/* --------------------------------------------------- */
+
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		int numCmd)
 {
@@ -150,7 +161,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		/* ------------------------------------------------------ */
 		/* create filter */
 		SourceContext filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				"test", "a nice little green filter", NULL);
+				"test_filter", "a nice green filter", NULL);
 		if (!filter)
 			throw "Couldn't create test filter";
 		obs_source_filter_add(source, filter);
@@ -166,6 +177,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
 		obs_set_output_source(0, source);
+
+		/* ------------------------------------------------------ */
+		/* set the main output render callback */
+		obs_add_draw_callback(RenderWindow, nullptr);
 
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) {

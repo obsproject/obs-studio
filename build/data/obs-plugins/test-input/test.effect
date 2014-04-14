@@ -1,5 +1,5 @@
 uniform float4x4 ViewProj;
-uniform texture2d diffuse;
+uniform texture2d image;
 
 uniform float4 color = {0.0, 1.0, 0.0, 1.0};
 
@@ -24,10 +24,10 @@ VertexInOut VShader(VertexInOut vert_in)
 
 float4 PShader(VertexInOut fragment_in) : TARGET
 {
-	return diffuse.Sample(texSampler, fragment_in.uv) * color;
+	return image.Sample(texSampler, fragment_in.uv) * color;
 }
 
-technique DrawRGB
+technique Draw
 {
 	pass
 	{
