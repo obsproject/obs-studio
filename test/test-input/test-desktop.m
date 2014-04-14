@@ -91,10 +91,12 @@ static bool init_display_stream(struct display_capture *dc)
 	NSNumber *screen_num = screen.deviceDescription[@"NSScreenNumber"];
 	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
 
+	NSDictionary *rect_dict = CFBridgingRelease(
+			CGRectCreateDictionaryRepresentation(
+				CGRectMake(0, 0, dc->width, dc->height)));
+
 	NSDictionary *dict = @{
-		(__bridge NSString*)kCGDisplayStreamSourceRect:
-		(__bridge NSDictionary*)CGRectCreateDictionaryRepresentation(
-				CGRectMake(0, 0, dc->width, dc->height)),
+		(__bridge NSString*)kCGDisplayStreamSourceRect: rect_dict,
 		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5
 	};
 
