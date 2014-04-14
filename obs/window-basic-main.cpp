@@ -811,6 +811,51 @@ static void OBSOutputStop(void *data, calldata_t params)
 			Q_ARG(int, code));
 }
 
+void OBSBasic::TempFileOutput(const char *path, int vBitrate, int aBitrate)
+{
+	obs_data_t data = obs_data_create();
+	obs_data_setstring(data, "filename", path);
+	obs_data_setint(data, "audio_bitrate", aBitrate);
+	obs_data_setint(data, "video_bitrate", vBitrate);
+
+	outputTest = obs_output_create("ffmpeg_output", "test", data);
+	obs_data_release(data);
+}
+
+void OBSBasic::TempStreamOutput(const char *url, const char *key,
+		int vBitrate, int aBitrate)
+{
+	obs_data_t aac_settings    = obs_data_create();
+	obs_data_t x264_settings   = obs_data_create();
+	obs_data_t output_settings = obs_data_create();
+	stringstream ss;
+
+	ss << "filler=1:crf=0:bitrate=" << vBitrate;
+
+	obs_data_setint(aac_settings, "bitrate", aBitrate);
+
+	obs_data_setint(x264_settings, "bitrate", vBitrate);
+	obs_data_setint(x264_settings, "buffer_size", vBitrate);
+	obs_data_setint(x264_settings, "keyint_sec", 2);
+	obs_data_setstring(x264_settings, "x264opts", ss.str().c_str());
+
+	obs_data_setstring(output_settings, "path", url);
+	obs_data_setstring(output_settings, "key", key);
+
+	aac  = obs_audio_encoder_create("ffmpeg_aac", "blabla1",
+			aac_settings, obs_audio());
+	x264 = obs_video_encoder_create("obs_x264", "blabla2",
+			x264_settings, obs_video());
+	outputTest = obs_output_create("rtmp_output", "test", output_settings);
+
+	obs_output_set_video_encoder(outputTest, x264);
+	obs_output_set_audio_encoder(outputTest, aac);
+
+	obs_data_release(aac_settings);
+	obs_data_release(x264_settings);
+	obs_data_release(output_settings);
+}
+
 /* TODO: lots of temporary code */
 void OBSBasic::on_streamButton_clicked()
 {
@@ -836,50 +881,10 @@ void OBSBasic::on_streamButton_clicked()
 		aac        = nullptr;
 		x264       = nullptr;
 
-#if 0
-		string fullURL = url;
-		if (key && *key)
-			fullURL = fullURL + "/" + key;
-
-		obs_data_t data = obs_data_create();
-		obs_data_setstring(data, "filename", fullURL.c_str());
-		obs_data_setint(data, "audio_bitrate", aBitrate);
-		obs_data_setint(data, "video_bitrate", vBitrate);
-
-		outputTest = obs_output_create("ffmpeg_output", "test", data);
-		obs_data_release(data);
-#else
-		obs_data_t aac_settings    = obs_data_create();
-		obs_data_t x264_settings   = obs_data_create();
-		obs_data_t output_settings = obs_data_create();
-		stringstream ss;
-
-		ss << "filler=1:crf=0:bitrate=" << vBitrate;
-
-		obs_data_setint(aac_settings, "bitrate", aBitrate);
-
-		obs_data_setint(x264_settings, "bitrate", vBitrate);
-		obs_data_setint(x264_settings, "buffer_size", vBitrate);
-		obs_data_setint(x264_settings, "keyint_sec", 2);
-		obs_data_setstring(x264_settings, "x264opts", ss.str().c_str());
-
-		obs_data_setstring(output_settings, "path", url);
-		obs_data_setstring(output_settings, "key", key);
-
-		aac  = obs_audio_encoder_create("ffmpeg_aac", "blabla1",
-				aac_settings, obs_audio());
-		x264 = obs_video_encoder_create("obs_x264", "blabla2",
-				x264_settings, obs_video());
-		outputTest = obs_output_create("rtmp_output", "test",
-				output_settings);
-
-		obs_output_set_video_encoder(outputTest, x264);
-		obs_output_set_audio_encoder(outputTest, aac);
-
-		obs_data_release(aac_settings);
-		obs_data_release(x264_settings);
-		obs_data_release(output_settings);
-#endif
+		if (strstr(url, "rtmp://") != NULL)
+			TempStreamOutput(url, key, vBitrate, aBitrate);
+		else
+			TempFileOutput(url, vBitrate, aBitrate);
 
 		if (!outputTest) {
 			OutputStop(OBS_OUTPUT_FAIL);

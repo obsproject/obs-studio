@@ -62,6 +62,10 @@ private:
 	void UpdateSources(OBSScene scene);
 	void InsertSceneItem(obs_sceneitem_t item);
 
+	void TempFileOutput(const char *path, int vBitrate, int aBitrate);
+	void TempStreamOutput(const char *url, const char *key,
+			int vBitrate, int aBitrate);
+
 public slots:
 	void OutputStart();
 	void OutputStop(int errorcode);
