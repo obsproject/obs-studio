@@ -809,13 +809,16 @@ void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 void gs_resetviewport(void)
 {
 	uint32_t cx, cy;
+	assert(thread_graphics != NULL);
 	gs_getsize(&cx, &cy);
+
 	gs_setviewport(0, 0, (int)cx, (int)cy);
 }
 
 void gs_set2dmode(void)
 {
 	uint32_t cx, cy;
+	assert(thread_graphics != NULL);
 	gs_getsize(&cx, &cy);
 
 	gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -1.0, -1024.0f);

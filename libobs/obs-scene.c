@@ -130,6 +130,8 @@ static inline void attach_sceneitem(struct obs_scene_item *item,
 			prev->next->prev = item;
 		prev->next = item;
 	} else {
+		assert(item->parent != NULL);
+
 		item->next = item->parent->first_item;
 		item->parent->first_item = item;
 	}
@@ -406,6 +408,8 @@ void obs_sceneitem_remove(obs_sceneitem_t item)
 
 	item->removed = true;
 
+	assert(scene != NULL);
+	assert(scene->source != NULL);
 	obs_source_remove_child(scene->source, item->source);
 
 	signal_item_remove(item);
