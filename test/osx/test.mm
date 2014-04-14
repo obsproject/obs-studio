@@ -14,15 +14,13 @@
 static const int cx = 800;
 static const int cy = 600;
 
-
-
 /* --------------------------------------------------- */
 
 template <typename T, typename D_T, D_T D>
 struct OBSUniqueHandle : std::unique_ptr<T, std::function<D_T>>
 {
 	using base = std::unique_ptr<T, std::function<D_T>>;
-	explicit OBSUniqueHandle(T *obj) : base(obj, D) {}
+	explicit OBSUniqueHandle(T *obj=nullptr) : base(obj, D) {}
 	operator T*() { return base::get(); }
 };
 
@@ -38,7 +36,7 @@ using SceneContext = OBSUniqueHandle<obs_scene,
 
 /* --------------------------------------------------- */
 
-static void CreateOBS(NSWindow *win)
+static void CreateOBS(NSView *view)
 {
 	if (!obs_startup())
 		throw "Couldn't create OBS";
@@ -55,144 +53,124 @@ static void CreateOBS(NSWindow *win)
 	ovi.output_height   = cy;
 	ovi.window_width    = cx;
 	ovi.window_height   = cy;
-	ovi.window.view     = [win contentView];
+	ovi.window.view     = view;
 
 	if (!obs_reset_video(&ovi))
 		throw "Couldn't initialize video";
 }
 
-static void AddTestItems(obs_scene_t scene, obs_source_t source)
+static SceneContext SetupScene()
 {
-	obs_sceneitem_t item = NULL;
-	struct vec2 v2;
+	/* ------------------------------------------------------ */
+	/* load module */
+	if (obs_load_module("test-input") != 0)
+		throw "Couldn't load module";
 
-	item = obs_scene_add(scene, source);
-	vec2_set(&v2, 100.0f, 200.0f);
-	obs_sceneitem_setpos(item, &v2);
-	obs_sceneitem_setrot(item, 10.0f);
-	vec2_set(&v2, 20.0f, 2.0f);
-	obs_sceneitem_setscale(item, &v2);
+	/* ------------------------------------------------------ */
+	/* create source */
+	SourceContext source{obs_source_create(OBS_SOURCE_TYPE_INPUT,
+			"random", "a test source", nullptr)};
+	if (!source)
+		throw "Couldn't create random test source";
 
-	item = obs_scene_add(scene, source);
-	vec2_set(&v2, 200.0f, 100.0f);
-	obs_sceneitem_setpos(item, &v2);
-	obs_sceneitem_setrot(item, -45.0f);
-	vec2_set(&v2, 5.0f, 7.0f);
-	obs_sceneitem_setscale(item, &v2);
+	/* ------------------------------------------------------ */
+	/* create scene and add source to scene */
+	SceneContext scene{obs_scene_create("test scene")};
+	if (!scene)
+		throw "Couldn't create scene";
+
+	obs_scene_add(scene, source);
+
+	/* ------------------------------------------------------ */
+	/* set the scene as the primary draw source and go */
+	obs_set_output_source(0, obs_scene_getsource(scene));
+
+	return scene;
 }
 
-@interface window_closer : NSObject {}
+@interface OBSTest : NSObject<NSApplicationDelegate, NSWindowDelegate>
+{
+	NSWindow *win;
+	NSView *view;
+	SceneContext scene;
+}
+- (void)applicationDidFinishLaunching:(NSNotification*)notification;
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)app;
+- (void)windowWillClose:(NSNotification*)notification;
 @end
 
-@implementation window_closer
-
-+(id)window_closer
+@implementation OBSTest
+- (void)applicationDidFinishLaunching:(NSNotification*)notification
 {
-	return [[window_closer alloc] init];
-}
+	UNUSED_PARAMETER(notification);
 
--(void)windowWillClose:(NSNotification *)notification
-{
-	(void)notification;
-	[NSApp stop:self];
-}
-@end
-
-static NSWindow *CreateTestWindow()
-{
-	[NSApplication sharedApplication];
-
-	ProcessSerialNumber psn = {0, kCurrentProcess};
-	TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"	
-	SetFrontProcess(&psn);
-#pragma clang diagnostic pop
-
-	NSRect content_rect = NSMakeRect(0, 0, cx, cy);
-	NSWindow *win = [[NSWindow alloc]
-		initWithContentRect:content_rect
-		styleMask:NSTitledWindowMask | NSClosableWindowMask
-		backing:NSBackingStoreBuffered
-		defer:NO];
-	if(!win)
-		return nil;
-
-	[win orderFrontRegardless];
-
-	NSView *view = [[NSView alloc] initWithFrame:content_rect];
-	if(!view)
-		return nil;
-
-
-	[win setContentView:view];
-	[win setTitle:@"foo"];
-	[win center];
-	[win makeMainWindow];
-	[win setDelegate:[window_closer window_closer]];
-	return win;
-}
-
-static void test()
-{
 	try {
-		static NSWindow *win = CreateTestWindow();
+		NSRect content_rect = NSMakeRect(0, 0, cx, cy);
+		win = [[NSWindow alloc]
+			initWithContentRect:content_rect
+			styleMask:NSTitledWindowMask | NSClosableWindowMask
+			backing:NSBackingStoreBuffered
+			defer:NO];
 		if (!win)
-			throw "Couldn't create main window";
+			throw "Could not create window";
 
-		CreateOBS(win);
+		view = [[NSView alloc] initWithFrame:content_rect];
+		if (!view)
+			throw "Could not create view";
 
-		/* ------------------------------------------------------ */
-		/* load module */
-		if (obs_load_module("test-input") != 0)
-			throw "Couldn't load module";
+		win.title = @"foo";
+		win.delegate = self;
+		win.contentView = view;
 
-		/* ------------------------------------------------------ */
-		/* create source */
-		SourceContext source{obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				"random", "a test source", NULL)};
-		if (!source)
-			throw "Couldn't create random test source";
+		[win orderFrontRegardless];
+		[win center];
+		[win makeMainWindow];
 
-		/* ------------------------------------------------------ */
-		/* create filter */
-		SourceContext filter{obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				"test", "a test filter", NULL)};
-		if (!filter)
-			throw "Couldn't create test filter";
-		obs_source_filter_add(source, filter);
+		CreateOBS(view);
 
-		/* ------------------------------------------------------ */
-		/* create scene and add source to scene (twice) */
-		SceneContext scene{obs_scene_create("test scene")};
-		if (!scene)
-			throw "Couldn't create scene";
+		scene = SetupScene();
 
-		AddTestItems(scene, source);
-
-		/* ------------------------------------------------------ */
-		/* set the scene as the primary draw source and go */
-		obs_set_output_source(0, obs_scene_getsource(scene));
-
-		[NSApp run];
-
-		obs_set_output_source(0, NULL);
+		obs_add_draw_callback(
+				[](void *, uint32_t, uint32_t) {
+					obs_render_main_view();
+				}, nullptr);
 
 	} catch (char const *error) {
-		printf("%s\n", error);
+		NSLog(@"%s\n", error);
+
+		[NSApp terminate:nil];
 	}
+}
+
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)app
+{
+	UNUSED_PARAMETER(app);
+
+	return YES;
+}
+
+- (void)windowWillClose:(NSNotification*)notification
+{
+	UNUSED_PARAMETER(notification);
+
+	obs_set_output_source(0, nullptr);
+	scene.reset();
 
 	obs_shutdown();
-
-	blog(LOG_INFO, "Number of memory leaks: %lu", bnum_allocs());
+	NSLog(@"Number of memory leaks: %lu", bnum_allocs());
 }
+@end
 
 /* --------------------------------------------------- */
 
 int main()
 {
 	@autoreleasepool {
-		test();
+		[NSApplication sharedApplication];
+		OBSTest *test = [[OBSTest alloc] init];
+		[NSApp setDelegate:test];
+
+		[NSApp run];
 	}
 
 	return 0;
