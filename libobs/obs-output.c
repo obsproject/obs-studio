@@ -421,13 +421,12 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 
 		/* when both video and audio have been received, we're ready
 		 * to start sending out packets (one at a time) */
-		if (!output->interleaved_wait &&
-		    output->received_audio &&
-		    output->received_video)
-			send_interleaved(output);
-
-		if (output->interleaved_wait > 0)
-			output->interleaved_wait--;
+		if (output->received_audio && output->received_video) {
+			if (output->interleaved_wait > 0)
+				output->interleaved_wait--;
+			else
+				send_interleaved(output);
+		}
 	}
 
 	pthread_mutex_unlock(&output->interleaved_mutex);

@@ -126,6 +126,10 @@ static uint32_t get_ms_time(struct encoder_packet *packet, int64_t val)
 	return (uint32_t)(val * MILLISECOND_DEN / packet->timebase_den);
 }
 
+#ifdef DEBUG_TIMESTAMPS
+static int32_t last_time = 0;
+#endif
+
 static void flv_video(struct serializer *s, struct encoder_packet *packet,
 		bool is_header)
 {
@@ -139,6 +143,11 @@ static void flv_video(struct serializer *s, struct encoder_packet *packet,
 
 #ifdef DEBUG_TIMESTAMPS
 	blog(LOG_DEBUG, "Video: %lu", time_ms);
+
+	if (last_time > time_ms)
+		blog(LOG_DEBUG, "Non-monotonic");
+
+	last_time = time_ms;
 #endif
 
 	s_wb24(s, (uint32_t)packet->size + 5);
@@ -168,6 +177,11 @@ static void flv_audio(struct serializer *s, struct encoder_packet *packet,
 
 #ifdef DEBUG_TIMESTAMPS
 	blog(LOG_DEBUG, "Audio: %lu", time_ms);
+
+	if (last_time > time_ms)
+		blog(LOG_DEBUG, "Non-monotonic");
+
+	last_time = time_ms;
 #endif
 
 	s_wb24(s, (uint32_t)packet->size + 2);
