@@ -19,36 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}</ProjectGuid>
+    <ProjectGuid>{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libobsopengl</RootNamespace>
+    <RootNamespace>glad</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -84,15 +84,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBOBSOPENGL_EXPORTS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../libobs;../../../deps/glad/include</AdditionalIncludeDirectories>
-      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>GLAD_GLAPI_EXPORT_BUILD;WIN32;_DEBUG;_WINDOWS;_USRDLL;GLAD_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../deps/glad/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;libobs.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/32bit/$(TargetName)$(TargetExt)"</Command>
@@ -104,15 +101,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBOBSOPENGL_EXPORTS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../libobs;../../../deps/glad/include</AdditionalIncludeDirectories>
-      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>GLAD_GLAPI_EXPORT_BUILD;WIN32;_DEBUG;_WINDOWS;_USRDLL;GLAD_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../deps/glad/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;libobs.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/64bit/$(TargetName)$(TargetExt)"</Command>
@@ -126,17 +120,14 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBOBSOPENGL_EXPORTS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../libobs;../../../deps/glad/include</AdditionalIncludeDirectories>
-      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>GLAD_GLAPI_EXPORT_BUILD;WIN32;NDEBUG;_WINDOWS;_USRDLL;GLAD_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../deps/glad/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;libobs.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/32bit/$(TargetName)$(TargetExt)"</Command>
@@ -150,39 +141,26 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBOBSOPENGL_EXPORTS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../libobs;../../../deps/glad/include</AdditionalIncludeDirectories>
-      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>GLAD_GLAPI_EXPORT_BUILD;WIN32;NDEBUG;_WINDOWS;_USRDLL;GLAD_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../deps/glad/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;libobs.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "../../../build/bin/64bit/$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\libobs-opengl\gl-helpers.h" />
-    <ClInclude Include="..\..\..\libobs-opengl\gl-shaderparser.h" />
-    <ClInclude Include="..\..\..\libobs-opengl\gl-subsystem.h" />
+    <ClCompile Include="..\..\..\deps\glad\src\glad.c" />
+    <ClCompile Include="..\..\..\deps\glad\src\glad_wgl.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\libobs-opengl\gl-helpers.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-indexbuffer.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-shader.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-shaderparser.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-stagesurf.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-subsystem.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-texture2d.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-texturecube.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-vertexbuffer.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-windows.c" />
-    <ClCompile Include="..\..\..\libobs-opengl\gl-zstencil.c" />
+    <ClInclude Include="..\..\..\deps\glad\include\glad\glad.h" />
+    <ClInclude Include="..\..\..\deps\glad\include\glad\glad_wgl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
