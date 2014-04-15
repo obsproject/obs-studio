@@ -575,6 +575,12 @@ void OBSBasic::on_action_Save_triggered()
 	/* TODO */
 }
 
+void OBSBasic::on_action_Settings_triggered()
+{
+	OBSBasicSettings settings(this);
+	settings.exec();
+}
+
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 		QListWidgetItem *prev)
 {

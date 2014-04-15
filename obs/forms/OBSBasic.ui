@@ -378,6 +378,8 @@
     <addaction name="action_Open"/>
     <addaction name="action_Save"/>
     <addaction name="separator"/>
+    <addaction name="action_Settings"/>
+    <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
    <addaction name="menu_File"/>
@@ -492,6 +494,11 @@
   <action name="action_Save">
    <property name="text">
     <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="action_Settings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
   <action name="actionE_xit">

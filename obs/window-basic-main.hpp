@@ -115,6 +115,7 @@ private slots:
 	void on_action_New_triggered();
 	void on_action_Open_triggered();
 	void on_action_Save_triggered();
+	void on_action_Settings_triggered();
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 			QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
