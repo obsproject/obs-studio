@@ -322,8 +322,8 @@ static void strip_mipmap_filter(GLint *filter)
 
 static inline void apply_swizzle(struct gs_texture *tex)
 {
-	gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_R,
-			(tex->format == GS_A8) ? GL_ALPHA : GL_RED);
+	if (tex->format == GS_A8)
+		gl_tex_param_i(tex->gl_target, GL_TEXTURE_SWIZZLE_R, GL_ALPHA);
 }
 
 static bool load_texture_sampler(texture_t tex, samplerstate_t ss)
