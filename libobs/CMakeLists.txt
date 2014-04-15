@@ -116,6 +116,7 @@ set(libobs_graphics_HEADERS
 
 set(libobs_mediaio_SOURCES
 	media-io/video-io.c
+	media-io/video-fourcc.c
 	media-io/audio-io.c
 	media-io/video-frame.c
 	media-io/format-conversion.c

@@ -109,6 +109,8 @@ struct video_scale_info {
 	enum video_colorspace colorspace;
 };
 
+EXPORT enum video_format video_format_from_fourcc(uint32_t fourcc);
+
 #define VIDEO_OUTPUT_SUCCESS       0
 #define VIDEO_OUTPUT_INVALIDPARAM -1
 #define VIDEO_OUTPUT_FAIL         -2

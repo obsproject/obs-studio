@@ -98,6 +98,7 @@
     <ClCompile Include="..\..\..\libobs\media-io\audio-io.c" />
     <ClCompile Include="..\..\..\libobs\media-io\audio-resampler-ffmpeg.c" />
     <ClCompile Include="..\..\..\libobs\media-io\format-conversion.c" />
+    <ClCompile Include="..\..\..\libobs\media-io\video-fourcc.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-frame.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-scaler-ffmpeg.c" />
