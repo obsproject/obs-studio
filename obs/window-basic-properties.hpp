@@ -50,7 +50,6 @@ public:
 	void Init();
 
 protected:
-	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void timerEvent(QTimerEvent *event) override;
 };

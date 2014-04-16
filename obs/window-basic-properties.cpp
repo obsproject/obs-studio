@@ -78,12 +78,6 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_pop();
 }
 
-void OBSBasicProperties::closeEvent(QCloseEvent *event)
-{
-	main->UnloadProperties();
-	UNUSED_PARAMETER(event);
-}
-
 void OBSBasicProperties::resizeEvent(QResizeEvent *event)
 {
 	if (isVisible()) {

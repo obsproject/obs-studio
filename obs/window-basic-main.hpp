@@ -25,6 +25,8 @@
 
 #include <util/util.hpp>
 
+#include <QPointer>
+
 class QListWidgetItem;
 
 #include "ui_OBSBasic.h"
@@ -45,7 +47,7 @@ private:
 
 	ConfigFile   basicConfig;
 
-	OBSBasicProperties *properties;
+	QPointer<OBSBasicProperties> properties;
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -102,8 +104,6 @@ public:
 	void NewProject();
 	void SaveProject();
 	void LoadProject();
-
-	void UnloadProperties();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

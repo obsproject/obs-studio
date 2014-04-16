@@ -979,8 +979,3 @@ config_t OBSBasic::Config() const
 {
 	return basicConfig;
 }
-
-void OBSBasic::UnloadProperties()
-{
-	properties = nullptr;
-}
