@@ -21,6 +21,9 @@
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 
+#include <QScreen>
+#include <QWindow>
+
 using namespace std;
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
@@ -46,6 +49,12 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	layout()->addWidget(view);
 	layout()->setAlignment(view, Qt::AlignRight);
 	view->show();
+
+	connect(windowHandle(), &QWindow::screenChanged, [this]() {
+		if (resizeTimer)
+			killTimer(resizeTimer);
+		resizeTimer = startTimer(100);
+	});
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t params)

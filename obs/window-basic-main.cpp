@@ -37,6 +37,9 @@
 
 #include <sstream>
 
+#include <QScreen>
+#include <QWindow>
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -53,6 +56,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
+
+	connect(windowHandle(), &QWindow::screenChanged, [this]() {
+		struct obs_video_info ovi;
+
+		if (obs_get_video_info(&ovi))
+			ResizePreview(ovi.base_width, ovi.base_height);
+	});
 }
 
 static inline bool HasAudioDevices(const char *source_id)
