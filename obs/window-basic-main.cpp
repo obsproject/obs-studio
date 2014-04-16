@@ -433,7 +433,7 @@ bool OBSBasic::ResetVideo()
 	//required to make opengl display stuff on osx(?)
 	ResizePreview(ovi.base_width, ovi.base_height);
 
-	QSize size = ui->preview->size();
+	QSize size = GetPixelSize(ui->preview);
 	ovi.window_width  = size.width();
 	ovi.window_height = size.height();
 
@@ -515,7 +515,7 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	QSize  targetSize;
 
 	/* resize preview panel to fix to the top section of the window */
-	targetSize = ui->preview->size();
+	targetSize = GetPixelSize(ui->preview);
 	GetScaleAndCenterPos(int(cx), int(cy),
 			targetSize.width(), targetSize.height(),
 			previewX, previewY, previewScale);
@@ -555,7 +555,7 @@ void OBSBasic::timerEvent(QTimerEvent *event)
 		killTimer(resizeTimer);
 		resizeTimer = 0;
 
-		QSize size = ui->preview->size();
+		QSize size = GetPixelSize(ui->preview);
 		obs_resize(size.width(), size.height());
 	}
 }

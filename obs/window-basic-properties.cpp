@@ -95,7 +95,7 @@ void OBSBasicProperties::timerEvent(QTimerEvent *event)
 		killTimer(resizeTimer);
 		resizeTimer = 0;
 
-		QSize size = ui->preview->size();
+		QSize size = GetPixelSize(ui->preview);
 		obs_display_resize(display, size.width(), size.height());
 	}
 }
@@ -107,7 +107,7 @@ void OBSBasicProperties::Init()
 	show();
 	App()->processEvents();
 
-	QSize previewSize = ui->preview->size();
+	QSize previewSize = GetPixelSize(ui->preview);
 	init_data.cx      = uint32_t(previewSize.width());
 	init_data.cy      = uint32_t(previewSize.height());
 	init_data.format  = GS_RGBA;

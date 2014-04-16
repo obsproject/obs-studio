@@ -40,3 +40,8 @@ static inline void GetScaleAndCenterPos(
 	x = windowCX/2 - newCX/2;
 	y = windowCY/2 - newCY/2;
 }
+
+static inline QSize GetPixelSize(QWidget *widget)
+{
+	return widget->size() * widget->devicePixelRatio();
+}
