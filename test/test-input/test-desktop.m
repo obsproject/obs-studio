@@ -13,6 +13,7 @@ struct display_capture {
 
 	unsigned display;
 	uint32_t width, height;
+	bool hide_cursor;
 
 	os_event_t disp_finished;
 	CGDisplayStreamRef disp;
@@ -99,7 +100,9 @@ static bool init_display_stream(struct display_capture *dc)
 
 	NSDictionary *dict = @{
 		(__bridge NSString*)kCGDisplayStreamSourceRect: rect_dict,
-		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5
+		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5,
+		(__bridge NSString*)kCGDisplayStreamShowCursor:
+			@(!dc->hide_cursor),
 	};
 
 	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
@@ -108,8 +111,9 @@ static bool init_display_stream(struct display_capture *dc)
 			dc->width, dc->height, 'BGRA',
 			(__bridge CFDictionaryRef)dict,
 			dispatch_queue_create(NULL, NULL),
-			^(CGDisplayStreamFrameStatus status, uint64_t
-				displayTime, IOSurfaceRef frameSurface,
+			^(CGDisplayStreamFrameStatus status,
+				uint64_t displayTime,
+				IOSurfaceRef frameSurface,
 				CGDisplayStreamUpdateRef updateRef)
 			{
 				UNUSED_PARAMETER(displayTime);
@@ -247,19 +251,22 @@ static uint32_t display_capture_getheight(void *data)
 static void display_capture_defaults(obs_data_t settings)
 {
 	obs_data_set_default_int(settings, "display", 0);
+	obs_data_set_default_bool(settings, "show_cursor", true);
 }
 
 static void display_capture_update(void *data, obs_data_t settings)
 {
 	struct display_capture *dc = data;
 	unsigned display = obs_data_getint(settings, "display");
-	if (dc->display == display)
+	bool show_cursor = obs_data_getbool(settings, "show_cursor");
+	if (dc->display == display && dc->hide_cursor != show_cursor)
 		return;
 
 	gs_entercontext(obs_graphics());
 
 	destroy_display_stream(dc);
 	dc->display = display;
+	dc->hide_cursor = !show_cursor;
 	init_display_stream(dc);
 
 	gs_leavecontext();
@@ -278,6 +285,8 @@ static obs_properties_t display_capture_properties(char const *locale)
 		sprintf(buf, "%u", i);
 		obs_property_list_add_int(list, buf, i);
 	}
+
+	obs_properties_add_bool(props, "show_cursor", "Show Cursor");
 
 	return props;
 }
