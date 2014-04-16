@@ -93,7 +93,9 @@ static bool init_display_stream(struct display_capture *dc)
 
 	NSDictionary *rect_dict = CFBridgingRelease(
 			CGRectCreateDictionaryRepresentation(
-				CGRectMake(0, 0, dc->width, dc->height)));
+				CGRectMake(0, 0,
+					screen.frame.size.width,
+					screen.frame.size.height)));
 
 	NSDictionary *dict = @{
 		(__bridge NSString*)kCGDisplayStreamSourceRect: rect_dict,
