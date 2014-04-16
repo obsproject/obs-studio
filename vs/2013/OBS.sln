@@ -27,6 +27,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test-input", "test-input\te
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libobs-opengl", "libobs-opengl\libobs-opengl.vcxproj", "{B6EAE19B-79BF-4F7C-9E66-976D14B9DC6C}"
 	ProjectSection(ProjectDependencies) = postProject
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA} = {B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}
 		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
 	EndProjectSection
 EndProject
@@ -61,6 +62,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-outputs", "obs-outputs\
 	ProjectSection(ProjectDependencies) = postProject
 		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glad", "glad\glad.vcxproj", "{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -228,6 +231,18 @@ Global
 		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|Win32.Build.0 = Release|Win32
 		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|x64.ActiveCfg = Release|x64
 		{CDC3B5C9-2BEA-4509-A2A8-6477506010ED}.Release|x64.Build.0 = Release|x64
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|Win32.Build.0 = Debug|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|x64.ActiveCfg = Debug|x64
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Debug|x64.Build.0 = Debug|x64
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|Win32.ActiveCfg = Release|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|Win32.Build.0 = Release|Win32
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|x64.ActiveCfg = Release|x64
+		{B9F9CE2C-FAC8-4528-AAFF-0BC3753C7BDA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
