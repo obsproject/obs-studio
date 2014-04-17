@@ -52,4 +52,5 @@ public:
 protected:
 	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void timerEvent(QTimerEvent *event) override;
+	virtual void closeEvent(QCloseEvent *event) override;
 };

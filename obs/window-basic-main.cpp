@@ -539,8 +539,13 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
-	/* TODO */
-	UNUSED_PARAMETER(event);
+	QWidget::closeEvent(event);
+	if (!event->isAccepted())
+		return;
+
+	// remove draw callback in case our drawable surfaces go away before
+	// the destructor gets called
+	obs_remove_draw_callback(OBSBasic::RenderMain, this);
 }
 
 void OBSBasic::changeEvent(QEvent *event)

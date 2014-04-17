@@ -21,6 +21,7 @@
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 
+#include <QCloseEvent>
 #include <QScreen>
 #include <QWindow>
 
@@ -107,6 +108,18 @@ void OBSBasicProperties::timerEvent(QTimerEvent *event)
 		QSize size = GetPixelSize(ui->preview);
 		obs_display_resize(display, size.width(), size.height());
 	}
+}
+
+void OBSBasicProperties::closeEvent(QCloseEvent *event)
+{
+	QDialog::closeEvent(event);
+	if (!event->isAccepted())
+		return;
+
+	// remove draw callback in case our drawable surfaces go away before
+	// the destructor gets called
+	obs_display_remove_draw_callback(display,
+			OBSBasicProperties::DrawPreview, this);
 }
 
 void OBSBasicProperties::Init()
