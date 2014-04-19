@@ -20,21 +20,22 @@
 #include "graphics/vec4.h"
 #include "media-io/format-conversion.h"
 
-static void tick_sources(uint64_t cur_time, uint64_t *last_time)
+static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	size_t i;
 	uint64_t delta_time;
 	float seconds;
 
 	if (!last_time)
-		*last_time = cur_time - video_getframetime(obs->video.video);
-	delta_time = cur_time - *last_time;
+		last_time = cur_time - video_getframetime(obs->video.video);
+	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
 
 	for (i = 0; i < obs->data.sources.num; i++)
 		obs_source_video_tick(obs->data.sources.array[i], seconds);
 
-	*last_time = cur_time;
+	last_time = cur_time;
+	return last_time;
 }
 
 /* in obs-display.c */
@@ -416,7 +417,7 @@ void *obs_video_thread(void *param)
 	while (video_output_wait(obs->video.video)) {
 		uint64_t cur_time = video_gettime(obs->video.video);
 
-		tick_sources(cur_time, &last_time);
+		last_time = tick_sources(cur_time, last_time);
 
 		render_displays();
 
