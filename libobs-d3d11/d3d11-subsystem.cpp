@@ -1641,6 +1641,15 @@ void zstencil_destroy(zstencil_t zstencil)
 
 void samplerstate_destroy(samplerstate_t samplerstate)
 {
+	if (!samplerstate)
+		return;
+
+	if (samplerstate->device)
+		for (int i = 0; i < GS_MAX_TEXTURES; i++)
+			if (samplerstate->device->curSamplers[i] ==
+					samplerstate)
+				samplerstate->device->curSamplers[i] = nullptr;
+
 	delete samplerstate;
 }
 

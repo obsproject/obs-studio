@@ -1304,5 +1304,14 @@ enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 
 void samplerstate_destroy(samplerstate_t samplerstate)
 {
+	if (!samplerstate)
+		return;
+
+	if (samplerstate->device)
+		for (int i = 0; i < GS_MAX_TEXTURES; i++)
+			if (samplerstate->device->cur_samplers[i] ==
+					samplerstate)
+				samplerstate->device->cur_samplers[i] = NULL;
+
 	samplerstate_release(samplerstate);
 }
