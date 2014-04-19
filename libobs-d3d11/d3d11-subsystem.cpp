@@ -857,6 +857,11 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 	device->context->PSSetShader(shader, NULL, 0);
 	device->context->PSSetConstantBuffers(0, 1, &constants);
 	device->context->PSSetSamplers(0, GS_MAX_TEXTURES, states);
+
+	for (int i = 0; i < GS_MAX_TEXTURES; i++)
+		if (device->curSamplers[i] &&
+				device->curSamplers[i]->state != states[i])
+			device->curSamplers[i] = nullptr;
 }
 
 void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
