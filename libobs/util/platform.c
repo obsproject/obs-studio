@@ -108,6 +108,8 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 	size_t size_read;
 	size_t len = 0;
 
+	*pstr = NULL;
+
 	fseeko(file, 0, SEEK_END);
 	size = (size_t)ftello(file);
 
@@ -125,6 +127,9 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
 
 		size -= offset;
+		if (size == 0)
+			return 0;
+
 		utf8str = bmalloc(size+1);
 		fseeko(file, offset, SEEK_SET);
 
@@ -137,8 +142,6 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 		utf8str[size] = 0;
 
 		*pstr = utf8str;
-	} else {
-		*pstr = NULL;
 	}
 
 	return len;
