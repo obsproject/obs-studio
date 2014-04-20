@@ -60,7 +60,7 @@ static void update_settings(struct window_capture *wc, obs_data_t s)
 	if (window) {
 		char **strlist = strlist_split(window, ':', true);
 
-		if (strlist[0] && strlist[1] && strlist[2]) {
+		if (strlist && strlist[0] && strlist[1] && strlist[2]) {
 			wc->title      = decode_str(strlist[0]);
 			wc->class      = decode_str(strlist[1]);
 			wc->executable = decode_str(strlist[2]);
