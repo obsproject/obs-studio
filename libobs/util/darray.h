@@ -143,8 +143,6 @@ static inline void darray_resize(const size_t element_size,
 static inline void darray_copy(const size_t element_size, struct darray *dst,
 		const struct darray *da)
 {
-	assert(element_size == element_size);
-
 	if (da->num == 0) {
 		darray_free(dst);
 	} else {
