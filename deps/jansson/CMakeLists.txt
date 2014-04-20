@@ -50,15 +50,6 @@ cmake_minimum_required (VERSION 2.8)
 # required for exports? cmake_minimum_required (VERSION 2.8.6)
 project (jansson C)
 
-# Options
-OPTION (BUILD_SHARED_LIBS "Build shared libraries." OFF)
-
-if (MSVC)
-   # This option must match the settings used in your program, in particular if you
-	# are linking statically
-	OPTION( STATIC_CRT "Link the static CRT libraries" OFF )
-endif ()
-
 # Set some nicer output dirs.
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -95,7 +86,8 @@ if (MSVC)
    # Turn off Microsofts "security" warnings.
    add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /nologo" )
    
-   if (STATIC_CRT)
+   # Disabled by OBS, options already set by top level CMakeLists
+   if (FALSE)
       set(CMAKE_C_FLAGS_RELEASE "/MT")
       set(CMAKE_C_FLAGS_DEBUG "/MTd")
    endif()
@@ -273,7 +265,8 @@ include_directories (${CMAKE_CURRENT_BINARY_DIR}/private_include)
 # Add the lib sources.
 file (GLOB C_FILES src/*.c)
 
-if (BUILD_SHARED_LIBS)
+# Disabled by OBS, we use it as a static library
+if (FALSE)
 
    add_library (jansson SHARED ${C_FILES} src/jansson.def)
 
@@ -305,8 +298,9 @@ endif ()
 #         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 # For building Documentation (uses Sphinx)
-OPTION (BUILD_DOCS "Build documentation (uses python-sphinx)." ON)
-if (BUILD_DOCS)
+# OPTION (BUILD_DOCS "Build documentation (uses python-sphinx)." ON)
+# Disabled by OBS
+if (FALSE)
    find_package(Sphinx)
 
    if (NOT SPHINX_FOUND)
@@ -390,10 +384,8 @@ if (BUILD_DOCS)
    endif()
 endif ()
 
-
-OPTION (WITHOUT_TESTS "Don't build tests ('make test' to execute tests)" OFF)
-
-if (NOT WITHOUT_TESTS)
+# Disabled by OBS, we don't test this.
+if (FALSE)
    OPTION (TEST_WITH_VALGRIND "Enable valgrind tests." OFF)
 
    ENABLE_TESTING()
@@ -479,10 +471,5 @@ if (NOT WITHOUT_TESTS)
                      DEPENDS json_process ${api_tests})
 endif ()
 
-file (COPY ${CMAKE_CURRENT_BINARY_DIR}/include/jansson_config.h
-	DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src/)
-
 target_include_directories(jansson
-	PUBLIC src)
-
-install_obs_core(jansson)
+	PUBLIC src "${CMAKE_CURRENT_BINARY_DIR}/include")
