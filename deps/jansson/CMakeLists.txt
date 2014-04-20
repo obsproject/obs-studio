@@ -479,3 +479,7 @@ if (NOT WITHOUT_TESTS)
                      DEPENDS json_process ${api_tests})
 endif ()
 
+target_include_directories(jansson
+	PUBLIC src)
+
+install_obs_core(jansson)
