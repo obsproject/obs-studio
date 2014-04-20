@@ -85,6 +85,8 @@ struct obs_property {
 
 struct obs_properties {
 	const char              *locale;
+	void                    *param;
+	void                    (*destroy)(void *param);
 
 	struct obs_property     *first_property;
 	struct obs_property     **last;
@@ -96,6 +98,32 @@ obs_properties_t obs_properties_create(const char *locale)
 	props = bzalloc(sizeof(struct obs_properties));
 	props->locale = locale;
 	props->last   = &props->first_property;
+	return props;
+}
+
+void obs_properties_set_param(obs_properties_t props,
+		void *param, void (*destroy)(void *param))
+{
+	if (!props)
+		return;
+
+	if (props->param && props->destroy)
+		props->destroy(props->param);
+
+	props->param   = param;
+	props->destroy = destroy;
+}
+
+void *obs_properties_get_param(obs_properties_t props)
+{
+	return props ? props->param : NULL;
+}
+
+obs_properties_t obs_properties_create_param(const char *locale,
+		void *param, void (*destroy)(void *param))
+{
+	struct obs_properties *props = obs_properties_create(locale);
+	obs_properties_set_param(props, param, destroy);
 	return props;
 }
 
@@ -113,6 +141,10 @@ void obs_properties_destroy(obs_properties_t props)
 {
 	if (props) {
 		struct obs_property *p = props->first_property;
+
+		if (props->destroy && props->param)
+			props->destroy(props->param);
+
 		while (p) {
 			struct obs_property *next = p->next;
 			obs_property_destroy(p);
