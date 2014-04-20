@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <util/base.h>
+#include <graphics/vec2.h>
 #include <media-io/audio-resampler.h>
 #include <obs.h>
 
@@ -94,8 +95,12 @@ static void CreateOBS(HWND hwnd)
 static void AddTestItems(obs_scene_t scene, obs_source_t source)
 {
 	obs_sceneitem_t item = NULL;
+	struct vec2 scale;
+
+	vec2_set(&scale, 20.0f, 20.0f);
 
 	item = obs_scene_add(scene, source);
+	obs_sceneitem_setscale(item, &scale);
 }
 
 static HWND CreateTestWindow(HINSTANCE instance)
@@ -176,7 +181,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 		/* ------------------------------------------------------ */
 		/* set the scene as the primary draw source and go */
-		obs_set_output_source(0, source);
+		obs_set_output_source(0, obs_scene_getsource(scene));
 
 		/* ------------------------------------------------------ */
 		/* set the main output render callback */
