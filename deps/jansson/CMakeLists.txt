@@ -479,6 +479,9 @@ if (NOT WITHOUT_TESTS)
                      DEPENDS json_process ${api_tests})
 endif ()
 
+file (COPY ${CMAKE_CURRENT_BINARY_DIR}/include/jansson_config.h
+	DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
 target_include_directories(jansson
 	PUBLIC src)
 
