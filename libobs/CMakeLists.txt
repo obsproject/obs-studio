@@ -167,6 +167,7 @@ set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
 	obs-avc.c
 	obs-encoder.c
+	obs-service.c
 	obs-source.c
 	obs-output.c
 	obs.c

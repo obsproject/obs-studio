@@ -78,6 +78,9 @@ struct obs_display {
 	swapchain_t                     swap;
 	pthread_mutex_t                 draw_callbacks_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
+
+	struct obs_display              *next;
+	struct obs_display              **prev_next;
 };
 
 extern bool obs_display_init(struct obs_display *display,
@@ -133,17 +136,20 @@ struct obs_core_audio {
 
 /* user sources, output channels, and displays */
 struct obs_core_data {
-	/* arrays of pointers jim?  you should really stop being lazy and use
-	 * linked lists. */
-	DARRAY(struct obs_display*)     displays;
-	DARRAY(struct obs_source*)      sources;
-	DARRAY(struct obs_output*)      outputs;
-	DARRAY(struct obs_encoder*)     encoders;
+	pthread_mutex_t                 user_sources_mutex;
+	DARRAY(struct obs_source*)      user_sources;
+
+	struct obs_source               *first_source;
+	struct obs_display              *first_display;
+	struct obs_output               *first_output;
+	struct obs_encoder              *first_encoder;
+	struct obs_service              *first_service;
 
 	pthread_mutex_t                 sources_mutex;
 	pthread_mutex_t                 displays_mutex;
 	pthread_mutex_t                 outputs_mutex;
 	pthread_mutex_t                 encoders_mutex;
+	pthread_mutex_t                 services_mutex;
 
 	struct obs_view                 main_view;
 
@@ -179,19 +185,41 @@ extern void *obs_video_thread(void *param);
 
 
 /* ------------------------------------------------------------------------- */
+/* obs shared context data */
+
+struct obs_context_data {
+	char                            *name;
+	void                            *data;
+	obs_data_t                      settings;
+	signal_handler_t                signals;
+	proc_handler_t                  procs;
+
+	pthread_mutex_t                 *mutex;
+	struct obs_context_data         *next;
+	struct obs_context_data         **prev_next;
+};
+
+extern bool obs_context_data_init(
+		struct obs_context_data *context,
+		obs_data_t              settings,
+		const char              *name);
+extern void obs_context_data_free(struct obs_context_data *context);
+
+extern void obs_context_data_insert(struct obs_context_data *context,
+		pthread_mutex_t *mutex, void *first);
+extern void obs_context_data_remove(struct obs_context_data *context);
+
+extern void obs_context_data_setname(struct obs_context_data *context,
+		const char *name);
+
+
+/* ------------------------------------------------------------------------- */
 /* sources  */
 
 struct obs_source {
-	volatile long                   refs;
+	struct obs_context_data         context;
 	struct obs_source_info          info;
-
-	/* source-specific data */
-	char                            *name; /* user-defined name */
-	obs_data_t                      settings;
-	void                            *data;
-
-	signal_handler_t                signals;
-	proc_handler_t                  procs;
+	volatile long                   refs;
 
 	/* signals to call the source update in the video thread */
 	bool                            defer_update;
@@ -256,9 +284,12 @@ struct obs_source {
 	bool                            rendering_filter;
 };
 
-bool obs_source_init_handlers(struct obs_source *source);
+extern bool obs_source_init_context(struct obs_source *source,
+		obs_data_t settings, const char *name);
 extern bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info);
+
+extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {
 	MAIN_VIEW,
@@ -274,13 +305,8 @@ extern void obs_source_video_tick(obs_source_t source, float seconds);
 /* outputs  */
 
 struct obs_output {
-	char                            *name;
-	void                            *data;
+	struct obs_context_data         context;
 	struct obs_output_info          info;
-	obs_data_t                      settings;
-
-	signal_handler_t                signals;
-	proc_handler_t                  procs;
 
 	bool                            received_video;
 	bool                            received_audio;
@@ -319,10 +345,8 @@ struct encoder_callback {
 };
 
 struct obs_encoder {
-	char                            *name;
-	void                            *data;
+	struct obs_context_data         context;
 	struct obs_encoder_info         info;
-	obs_data_t                      settings;
 
 	uint32_t                        samplerate;
 	size_t                          planes;
@@ -373,3 +397,11 @@ extern void obs_encoder_add_output(struct obs_encoder *encoder,
 		struct obs_output *output);
 extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 		struct obs_output *output);
+
+/* ------------------------------------------------------------------------- */
+/* services */
+
+struct obs_service {
+	struct obs_context_data         context;
+	struct obs_service_info         info;
+};

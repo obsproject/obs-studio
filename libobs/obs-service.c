@@ -1,0 +1,158 @@
+/******************************************************************************
+    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+#include "obs-internal.h"
+
+static inline const struct obs_service_info *find_service(const char *id)
+{
+	size_t i;
+	for (i = 0; i < obs->service_types.num; i++)
+		if (strcmp(obs->service_types.array[i].id, id) == 0)
+			return obs->service_types.array+i;
+
+	return NULL;
+}
+
+const char *obs_service_getdisplayname(const char *id, const char *locale)
+{
+	const struct obs_service_info *info = find_service(id);
+	return (info != NULL) ? info->getname(locale) : NULL;
+}
+
+obs_service_t obs_service_create(const char *id, const char *name,
+		obs_data_t settings)
+{
+	const struct obs_service_info *info = find_service(id);
+	struct obs_service *service;
+
+	if (!info) {
+		blog(LOG_ERROR, "Service '%s' not found", id);
+		return NULL;
+	}
+
+	service = bzalloc(sizeof(struct obs_service));
+
+	if (!obs_context_data_init(&service->context, settings, name)) {
+		bfree(service);
+		return NULL;
+	}
+
+	service->info = *info;
+
+	obs_context_data_insert(&service->context,
+			&obs->data.services_mutex,
+			&obs->data.first_service);
+
+	return service;
+}
+
+void obs_service_destroy(obs_service_t service)
+{
+	if (service) {
+		obs_context_data_remove(&service->context);
+
+		if (service->context.data)
+			service->info.destroy(service->context.data);
+
+		obs_context_data_free(&service->context);
+		bfree(service);
+	}
+}
+
+static inline obs_data_t get_defaults(const struct obs_service_info *info)
+{
+	obs_data_t settings = obs_data_create();
+	if (info->defaults)
+		info->defaults(settings);
+	return settings;
+}
+
+obs_data_t obs_service_defaults(const char *id)
+{
+	const struct obs_service_info *info = find_service(id);
+	return (info) ? get_defaults(info) : NULL;
+}
+
+obs_properties_t obs_get_service_properties(const char *id, const char *locale)
+{
+	const struct obs_service_info *info = find_service(id);
+	if (info && info->properties) {
+		obs_data_t       defaults = get_defaults(info);
+		obs_properties_t properties;
+
+		properties = info->properties(locale);
+		obs_properties_apply_settings(properties, defaults);
+		obs_data_release(defaults);
+		return properties;
+	}
+	return NULL;
+}
+
+obs_properties_t obs_service_properties(obs_service_t service,
+		const char *locale)
+{
+	if (service && service->info.properties) {
+		obs_properties_t props;
+		props = service->info.properties(locale);
+		obs_properties_apply_settings(props, service->context.settings);
+		return props;
+	}
+
+	return NULL;
+}
+
+void obs_service_update(obs_service_t service, obs_data_t settings)
+{
+	if (!service) return;
+
+	obs_data_apply(service->context.settings, settings);
+
+	if (service->info.update)
+		service->info.update(service->context.data,
+				service->context.settings);
+}
+
+obs_data_t obs_service_get_settings(obs_service_t service)
+{
+	if (!service)
+		return NULL;
+
+	obs_data_addref(service->context.settings);
+	return service->context.settings;
+}
+
+signal_handler_t obs_service_signalhandler(obs_service_t service)
+{
+	return service ? service->context.signals : NULL;
+}
+
+proc_handler_t obs_service_prochandler(obs_service_t service)
+{
+	return service ? service->context.procs : NULL;
+}
+
+const char *obs_service_get_url(obs_service_t service)
+{
+	if (!service || !service->info.get_url) return NULL;
+	return service->info.get_url(service->context.data);
+}
+
+const char *obs_service_get_key(obs_service_t service)
+{
+	if (!service || !service->info.get_key) return NULL;
+	return service->info.get_key(service->context.data);
+}

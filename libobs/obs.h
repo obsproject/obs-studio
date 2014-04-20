@@ -234,13 +234,14 @@ EXPORT bool obs_enum_filter_types(size_t idx, const char **id);
  */
 EXPORT bool obs_enum_transition_types(size_t idx, const char **id);
 
-/**
- * Enumerates all available ouput types.
- *
- *   Outputs handle color space conversion, encoding, and output to file or
- * streams.
- */
+/** Enumerates all available output types. */
 EXPORT bool obs_enum_output_types(size_t idx, const char **id);
+
+/** Enumerates all available encoder types. */
+EXPORT bool obs_enum_encoder_types(size_t idx, const char **id);
+
+/** Enumerates all available service types. */
+EXPORT bool obs_enum_service_types(size_t idx, const char **id);
 
 /** Gets the main graphics context for this OBS context */
 EXPORT graphics_t obs_graphics(void);
@@ -864,12 +865,33 @@ EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
+
 EXPORT const char *obs_service_getdisplayname(const char *id,
 		const char *locale);
 
-EXPORT obs_service_t obs_service_create(const char *service,
+EXPORT obs_service_t obs_service_create(const char *id, const char *name,
 		obs_data_t settings);
 EXPORT void obs_service_destroy(obs_service_t service);
+
+/** Gets the default settings for a service */
+EXPORT obs_data_t obs_service_defaults(const char *id);
+
+/** Returns the property list, if any.  Free with obs_properties_destroy */
+EXPORT obs_properties_t obs_get_service_properties(const char *id,
+		const char *locale);
+
+/**
+ * Returns the property list of an existing service context, if any.  Free with
+ * obs_properties_destroy
+ */
+EXPORT obs_properties_t obs_service_properties(obs_service_t service,
+		const char *locale);
+
+/** Returns the URL for this service context */
+const char *obs_service_get_url(obs_service_t service);
+
+/** Returns the stream key (if any) for this service context */
+const char *obs_service_get_key(obs_service_t service);
 
 
 /* ------------------------------------------------------------------------- */

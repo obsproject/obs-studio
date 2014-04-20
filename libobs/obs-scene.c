@@ -25,8 +25,8 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 	calldata_setptr(&params, "scene", item->parent);
 	calldata_setptr(&params, "item", item);
 
-	signal_handler_signal(item->parent->source->signals, "item_remove",
-			&params);
+	signal_handler_signal(item->parent->source->context.signals,
+			"item_remove", &params);
 	calldata_free(&params);
 }
 
@@ -205,34 +205,27 @@ static const char *obs_scene_signals[] = {
 	NULL
 };
 
-void source_init_name(struct obs_source *source, const char *name);
-
 obs_scene_t obs_scene_create(const char *name)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 	struct obs_scene  *scene;
 
-	if (!obs_source_init_handlers(source)) {
+	if (!obs_source_init_context(source, NULL, name)) {
 		bfree(source);
 		return NULL;
 	}
 
-	signal_handler_add_array(source->signals, obs_scene_signals);
+	signal_handler_add_array(source->context.signals, obs_scene_signals);
 
-	source->settings = obs_data_create();
-	scene = scene_create(source->settings, source);
-	source->data = scene;
+	scene = scene_create(source->context.settings, source);
+	source->context.data = scene;
 
 	assert(scene);
 	if (!scene) {
-		obs_data_release(source->settings);
-		proc_handler_destroy(source->procs);
-		signal_handler_destroy(source->signals);
+		obs_context_data_free(&source->context);
 		bfree(source);
 		return NULL;
 	}
-
-	source_init_name(source, name);
 
 	scene->source = source;
 	obs_source_init(source, &scene_info);
@@ -262,7 +255,7 @@ obs_scene_t obs_scene_fromsource(obs_source_t source)
 	if (!source || source->info.type != OBS_SOURCE_TYPE_SCENE)
 		return NULL;
 
-	return source->data;
+	return source->context.data;
 }
 
 obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
@@ -276,7 +269,7 @@ obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
 
 	item = scene->first_item;
 	while (item) {
-		if (strcmp(item->source->name, name) == 0)
+		if (strcmp(item->source->context.name, name) == 0)
 			break;
 
 		item = item->next;
@@ -358,7 +351,8 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 
 	calldata_setptr(&params, "scene", scene);
 	calldata_setptr(&params, "item", item);
-	signal_handler_signal(scene->source->signals, "item_add", &params);
+	signal_handler_signal(scene->source->context.signals, "item_add",
+			&params);
 	calldata_free(&params);
 
 	return item;

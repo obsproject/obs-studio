@@ -22,20 +22,28 @@
 
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
-	size_t i;
-	uint64_t delta_time;
-	float seconds;
+	struct obs_core_data *data = &obs->data;
+	struct obs_source    *source;
+	uint64_t             delta_time;
+	float                seconds;
 
 	if (!last_time)
 		last_time = cur_time - video_getframetime(obs->video.video);
 	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
 
-	for (i = 0; i < obs->data.sources.num; i++)
-		obs_source_video_tick(obs->data.sources.array[i], seconds);
+	pthread_mutex_lock(&data->sources_mutex);
 
-	last_time = cur_time;
-	return last_time;
+	source = data->first_source;
+	while (source) {
+		if (source->refs)
+			obs_source_video_tick(source, seconds);
+		source = (struct obs_source*)source->context.next;
+	}
+
+	pthread_mutex_unlock(&data->sources_mutex);
+
+	return cur_time;
 }
 
 /* in obs-display.c */
@@ -43,6 +51,8 @@ extern void render_display(struct obs_display *display);
 
 static inline void render_displays(void)
 {
+	struct obs_display *display;
+
 	if (!obs->data.valid)
 		return;
 
@@ -51,8 +61,11 @@ static inline void render_displays(void)
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
 
-	for (size_t i = 0; i < obs->data.displays.num; i++)
-		render_display(obs->data.displays.array[i]);
+	display = obs->data.first_display;
+	while (display) {
+		render_display(display);
+		display = display->next;
+	}
 
 	pthread_mutex_unlock(&obs->data.displays_mutex);
 

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 struct obs_service_info {
 	/* required */
-	char *id;
+	const char *id;
 
 	const char *(*getname)(const char *locale);
 	void *(*create)(obs_data_t settings, obs_service_t service);
@@ -28,9 +28,18 @@ struct obs_service_info {
 	/* optional */
 	void (*update)(void *data, obs_data_t settings);
 
-	/* get stream url/key */
+	void (*defaults)(obs_data_t settings);
+
+	obs_properties_t (*properties)(const char *locale);
+
 	const char *(*get_url)(void *data);
 	const char *(*get_key)(void *data);
 
-	/* send (current game/title/activate commercial/etc) */
+	/* TODO: more stuff later */
 };
+
+EXPORT void obs_register_service_s(const struct obs_service_info *info,
+		size_t size);
+
+#define obs_register_service(info) \
+	obs_register_service_s(info, sizeof(struct obs_service_info))

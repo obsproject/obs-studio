@@ -30,23 +30,25 @@ static inline const struct obs_output_info *find_output(const char *id)
 	return NULL;
 }
 
+const char *obs_output_getdisplayname(const char *id, const char *locale)
+{
+	const struct obs_output_info *info = find_output(id);
+	return (info != NULL) ? info->getname(locale) : NULL;
+}
+
 static const char *output_signals[] = {
 	"void start(ptr output, int errorcode)",
 	"void stop(ptr output)",
 	NULL
 };
 
-static bool init_output_handlers(struct obs_output *output)
+static bool init_output_handlers(struct obs_output *output, const char *name,
+		obs_data_t settings)
 {
-	output->signals = signal_handler_create();
-	if (!output->signals)
+	if (!obs_context_data_init(&output->context, settings, name))
 		return false;
 
-	output->procs = proc_handler_create();
-	if (!output->procs)
-		return false;
-
-	signal_handler_add_array(output->signals, output_signals);
+	signal_handler_add_array(output->context.signals, output_signals);
 	return true;
 }
 
@@ -66,27 +68,24 @@ obs_output_t obs_output_create(const char *id, const char *name,
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
-	if (!init_output_handlers(output))
+	if (!init_output_handlers(output, name, settings))
 		goto fail;
 
 	output->info     = *info;
 	output->video    = obs_video();
 	output->audio    = obs_audio();
-	output->settings = obs_data_newref(settings);
 	if (output->info.defaults)
-		output->info.defaults(output->settings);
+		output->info.defaults(output->context.settings);
 
-	output->data = info->create(output->settings, output);
-	if (!output->data)
+	output->context.data = info->create(output->context.settings, output);
+	if (!output->context.data)
 		goto fail;
 
-	output->name = bstrdup(name);
-
-	pthread_mutex_lock(&obs->data.outputs_mutex);
-	da_push_back(obs->data.outputs, &output);
-	pthread_mutex_unlock(&obs->data.outputs_mutex);
-
 	output->valid = true;
+
+	obs_context_data_insert(&output->context,
+			&obs->data.outputs_mutex,
+			&obs->data.first_output);
 
 	return output;
 
@@ -105,39 +104,32 @@ static inline void free_packets(struct obs_output *output)
 void obs_output_destroy(obs_output_t output)
 {
 	if (output) {
-		if (output->valid) {
-			if (output->active)
-				output->info.stop(output->data);
+		obs_context_data_remove(&output->context);
 
-			pthread_mutex_lock(&obs->data.outputs_mutex);
-			da_erase_item(obs->data.outputs, &output);
-			pthread_mutex_unlock(&obs->data.outputs_mutex);
-		}
+		if (output->valid && output->active)
+			output->info.stop(output->context.data);
 
 		free_packets(output);
 
-		if (output->data)
-			output->info.destroy(output->data);
+		if (output->context.data)
+			output->info.destroy(output->context.data);
 
-		signal_handler_destroy(output->signals);
-		proc_handler_destroy(output->procs);
-
-		obs_data_release(output->settings);
 		pthread_mutex_destroy(&output->interleaved_mutex);
-		bfree(output->name);
+		obs_context_data_free(&output->context);
 		bfree(output);
 	}
 }
 
 bool obs_output_start(obs_output_t output)
 {
-	return (output != NULL) ? output->info.start(output->data) : false;
+	return (output != NULL) ?
+		output->info.start(output->context.data) : false;
 }
 
 void obs_output_stop(obs_output_t output)
 {
 	if (output) {
-		output->info.stop(output->data);
+		output->info.stop(output->context.data);
 		signal_stop(output, OBS_OUTPUT_SUCCESS);
 	}
 }
@@ -181,7 +173,7 @@ obs_properties_t obs_output_properties(obs_output_t output, const char *locale)
 	if (output && output->info.properties) {
 		obs_properties_t props;
 		props = output->info.properties(locale);
-		obs_properties_apply_settings(props, output->settings);
+		obs_properties_apply_settings(props, output->context.settings);
 		return props;
 	}
 
@@ -192,10 +184,11 @@ void obs_output_update(obs_output_t output, obs_data_t settings)
 {
 	if (!output) return;
 
-	obs_data_apply(output->settings, settings);
+	obs_data_apply(output->context.settings, settings);
 
 	if (output->info.update)
-		output->info.update(output->data, output->settings);
+		output->info.update(output->context.data,
+				output->context.settings);
 }
 
 obs_data_t obs_output_get_settings(obs_output_t output)
@@ -203,8 +196,8 @@ obs_data_t obs_output_get_settings(obs_output_t output)
 	if (!output)
 		return NULL;
 
-	obs_data_addref(output->settings);
-	return output->settings;
+	obs_data_addref(output->context.settings);
+	return output->context.settings;
 }
 
 bool obs_output_canpause(obs_output_t output)
@@ -215,17 +208,17 @@ bool obs_output_canpause(obs_output_t output)
 void obs_output_pause(obs_output_t output)
 {
 	if (output && output->info.pause)
-		output->info.pause(output->data);
+		output->info.pause(output->context.data);
 }
 
 signal_handler_t obs_output_signalhandler(obs_output_t output)
 {
-	return output ? output->signals : NULL;
+	return output ? output->context.signals : NULL;
 }
 
 proc_handler_t obs_output_prochandler(obs_output_t output)
 {
-	return output ? output->procs : NULL;
+	return output ? output->context.procs : NULL;
 }
 
 void obs_output_set_media(obs_output_t output, video_t video, audio_t audio)
@@ -396,7 +389,7 @@ static inline void send_interleaved(struct obs_output *output)
 	struct encoder_packet out = output->interleaved_packets.array[0];
 	da_erase(output->interleaved_packets, 0);
 
-	output->info.encoded_packet(output->data, &out);
+	output->info.encoded_packet(output->context.data, &out);
 	obs_free_encoder_packet(&out);
 }
 
@@ -446,7 +439,8 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 
 		encoded_callback = (has_video && has_audio) ?
 			interleave_packets : output->info.encoded_packet;
-		param = (has_video && has_audio) ? output : output->data;
+		param = (has_video && has_audio) ?
+			output : output->context.data;
 
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
@@ -458,11 +452,13 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 		if (has_video)
 			video_output_connect(output->video,
 					get_video_conversion(output),
-					output->info.raw_video, output->data);
+					output->info.raw_video,
+					output->context.data);
 		if (has_audio)
 			audio_output_connect(output->audio,
 					get_audio_conversion(output),
-					output->info.raw_audio, output->data);
+					output->info.raw_audio,
+					output->context.data);
 	}
 }
 
@@ -470,7 +466,7 @@ static inline void signal_start(struct obs_output *output)
 {
 	struct calldata params = {0};
 	calldata_setptr(&params, "output", output);
-	signal_handler_signal(output->signals, "start", &params);
+	signal_handler_signal(output->context.signals, "start", &params);
 	calldata_free(&params);
 }
 
@@ -479,7 +475,7 @@ static inline void signal_stop(struct obs_output *output, int code)
 	struct calldata params = {0};
 	calldata_setint(&params, "errorcode", code);
 	calldata_setptr(&params, "output", output);
-	signal_handler_signal(output->signals, "stop", &params);
+	signal_handler_signal(output->context.signals, "stop", &params);
 	calldata_free(&params);
 }
 
@@ -566,7 +562,8 @@ void obs_output_end_data_capture(obs_output_t output)
 	if (encoded) {
 		encoded_callback = (has_video && has_audio) ?
 			interleave_packets : output->info.encoded_packet;
-		param = (has_video && has_audio) ? output : output->data;
+		param = (has_video && has_audio) ?
+			output : output->context.data;
 
 		if (has_video)
 			obs_encoder_stop(output->video_encoder,
@@ -577,10 +574,12 @@ void obs_output_end_data_capture(obs_output_t output)
 	} else {
 		if (has_video)
 			video_output_disconnect(output->video,
-					output->info.raw_video, output->data);
+					output->info.raw_video,
+					output->context.data);
 		if (has_audio)
 			audio_output_disconnect(output->audio,
-					output->info.raw_audio, output->data);
+					output->info.raw_audio,
+					output->context.data);
 	}
 
 	output->active = false;

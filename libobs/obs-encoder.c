@@ -42,20 +42,16 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
 	pthread_mutex_init_value(&encoder->outputs_mutex);
 
+	if (!obs_context_data_init(&encoder->context, settings, name))
+		return false;
 	if (pthread_mutex_init(&encoder->callbacks_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
-	encoder->settings = obs_data_newref(settings);
 	if (encoder->info.defaults)
-		encoder->info.defaults(encoder->settings);
+		encoder->info.defaults(encoder->context.settings);
 
-	pthread_mutex_lock(&obs->data.encoders_mutex);
-	da_push_back(obs->data.encoders, &encoder);
-	pthread_mutex_unlock(&obs->data.encoders_mutex);
-
-	encoder->name = bstrdup(name);
 	return true;
 }
 
@@ -79,9 +75,13 @@ static struct obs_encoder *create_encoder(const char *id,
 
 	success = init_encoder(encoder, name, settings);
 	if (!success) {
-		bfree(encoder);
+		obs_encoder_destroy(encoder);
 		encoder = NULL;
 	}
+
+	obs_context_data_insert(&encoder->context,
+			&obs->data.encoders_mutex,
+			&obs->data.first_encoder);
 
 	return encoder;
 }
@@ -123,7 +123,7 @@ static inline struct audio_convert_info *get_audio_info(
 	memset(info, 0, sizeof(struct audio_convert_info));
 
 	if (encoder->info.audio_info)
-		encoder->info.audio_info(encoder->data, info);
+		encoder->info.audio_info(encoder->context.data, info);
 
 	if (info->format == AUDIO_FORMAT_UNKNOWN)
 		info->format = aoi->format;
@@ -139,7 +139,7 @@ static inline struct video_scale_info *get_video_info(
 		struct obs_encoder *encoder, struct video_scale_info *info)
 {
 	if (encoder->info.video_info)
-		if (encoder->info.video_info(encoder->data, info))
+		if (encoder->info.video_info(encoder->context.data, info))
 			return info;
 
 	return NULL;
@@ -199,13 +199,12 @@ static void obs_encoder_actually_destroy(obs_encoder_t encoder)
 
 		free_audio_buffers(encoder);
 
-		if (encoder->data)
-			encoder->info.destroy(encoder->data);
+		if (encoder->context.data)
+			encoder->info.destroy(encoder->context.data);
 		da_free(encoder->callbacks);
-		obs_data_release(encoder->settings);
 		pthread_mutex_destroy(&encoder->callbacks_mutex);
 		pthread_mutex_destroy(&encoder->outputs_mutex);
-		bfree(encoder->name);
+		obs_context_data_free(&encoder->context);
 		bfree(encoder);
 	}
 }
@@ -217,9 +216,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	if (encoder) {
 		bool destroy;
 
-		pthread_mutex_lock(&obs->data.encoders_mutex);
-		da_erase_item(obs->data.encoders, &encoder);
-		pthread_mutex_unlock(&obs->data.encoders_mutex);
+		obs_context_data_remove(&encoder->context);
 
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 		destroy = encoder->callbacks.num == 0;
@@ -267,7 +264,7 @@ obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
 	if (encoder && encoder->info.properties) {
 		obs_properties_t props;
 		props = encoder->info.properties(locale);
-		obs_properties_apply_settings(props, encoder->settings);
+		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}
 	return NULL;
@@ -277,17 +274,19 @@ void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 {
 	if (!encoder) return;
 
-	obs_data_apply(encoder->settings, settings);
-	if (encoder->info.update && encoder->data)
-		encoder->info.update(encoder->data, encoder->settings);
+	obs_data_apply(encoder->context.settings, settings);
+
+	if (encoder->info.update && encoder->context.data)
+		encoder->info.update(encoder->context.data,
+				encoder->context.settings);
 }
 
 bool obs_encoder_get_extra_data(obs_encoder_t encoder, uint8_t **extra_data,
 		size_t *size)
 {
-	if (encoder && encoder->info.extra_data && encoder->data)
-		return encoder->info.extra_data(encoder->data, extra_data,
-				size);
+	if (encoder && encoder->info.extra_data && encoder->context.data)
+		return encoder->info.extra_data(encoder->context.data,
+				extra_data, size);
 
 	return false;
 }
@@ -296,8 +295,8 @@ obs_data_t obs_encoder_get_settings(obs_encoder_t encoder)
 {
 	if (!encoder) return NULL;
 
-	obs_data_addref(encoder->settings);
-	return encoder->settings;
+	obs_data_addref(encoder->context.settings);
+	return encoder->context.settings;
 }
 
 static inline void reset_audio_buffers(struct obs_encoder *encoder)
@@ -317,7 +316,7 @@ static void intitialize_audio_encoder(struct obs_encoder *encoder)
 	encoder->samplerate = info.samples_per_sec;
 	encoder->planes     = get_audio_planes(info.format, info.speakers);
 	encoder->blocksize  = get_audio_size(info.format, info.speakers, 1);
-	encoder->framesize  = encoder->info.frame_size(encoder->data);
+	encoder->framesize  = encoder->info.frame_size(encoder->context.data);
 
 	encoder->framesize_bytes = encoder->blocksize * encoder->framesize;
 	reset_audio_buffers(encoder);
@@ -330,11 +329,12 @@ bool obs_encoder_initialize(obs_encoder_t encoder)
 	if (encoder->active)
 		return true;
 
-	if (encoder->data)
-		encoder->info.destroy(encoder->data);
+	if (encoder->context.data)
+		encoder->info.destroy(encoder->context.data);
 
-	encoder->data = encoder->info.create(encoder->settings, encoder);
-	if (!encoder->data)
+	encoder->context.data = encoder->info.create(encoder->context.settings,
+			encoder);
+	if (!encoder->context.data)
 		return false;
 
 	encoder->paired_encoder  = NULL;
@@ -368,7 +368,7 @@ void obs_encoder_start(obs_encoder_t encoder,
 	struct encoder_callback cb = {false, new_packet, param};
 	bool first   = false;
 
-	if (!encoder || !new_packet || !encoder->data) return;
+	if (!encoder || !new_packet || !encoder->context.data) return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -434,7 +434,7 @@ static inline bool get_sei(struct obs_encoder *encoder,
 		uint8_t **sei, size_t *size)
 {
 	if (encoder->info.sei_data)
-		return encoder->info.sei_data(encoder->data, sei, size);
+		return encoder->info.sei_data(encoder->context.data, sei, size);
 	return false;
 }
 
@@ -500,11 +500,12 @@ static inline void do_encode(struct obs_encoder *encoder,
 	pkt.timebase_num = encoder->timebase_num;
 	pkt.timebase_den = encoder->timebase_den;
 
-	success = encoder->info.encode(encoder->data, frame, &pkt, &received);
+	success = encoder->info.encode(encoder->context.data, frame, &pkt,
+			&received);
 	if (!success) {
 		full_stop(encoder);
 		blog(LOG_ERROR, "Error encoding with encoder '%s'",
-				encoder->name);
+				encoder->context.name);
 		return;
 	}
 

@@ -58,7 +58,11 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 		display = NULL;
 	} else {
 		pthread_mutex_lock(&obs->data.displays_mutex);
-		da_push_back(obs->data.displays, &display);
+		display->prev_next      = &obs->data.first_display;
+		display->next           = obs->data.first_display;
+		obs->data.first_display = display;
+		if (display->next)
+			display->next->prev_next = &display->next;
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 	}
 
@@ -82,7 +86,9 @@ void obs_display_destroy(obs_display_t display)
 {
 	if (display) {
 		pthread_mutex_lock(&obs->data.displays_mutex);
-		da_erase_item(obs->data.displays, &display);
+		*display->prev_next = display->next;
+		if (display->next)
+			display->next->prev_next = display->prev_next;
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 
 		gs_entercontext(obs_graphics());

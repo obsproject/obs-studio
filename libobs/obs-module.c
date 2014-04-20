@@ -124,9 +124,9 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	struct obs_source_info data = {0};
 	struct darray *array;
 
-	CHECK_REQUIRED_VAL(info, getname,   obs_register_source);
-	CHECK_REQUIRED_VAL(info, create,    obs_register_source);
-	CHECK_REQUIRED_VAL(info, destroy,   obs_register_source);
+	CHECK_REQUIRED_VAL(info, getname, obs_register_source);
+	CHECK_REQUIRED_VAL(info, create,  obs_register_source);
+	CHECK_REQUIRED_VAL(info, destroy, obs_register_source);
 
 	if (info->type == OBS_SOURCE_TYPE_INPUT          &&
 	    (info->output_flags & OBS_SOURCE_VIDEO) != 0 &&
@@ -177,10 +177,10 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 
 void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 {
-	CHECK_REQUIRED_VAL(info, getname,    obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, create,     obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, destroy,    obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, encode,     obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, getname, obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, create,  obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, destroy, obs_register_encoder);
+	CHECK_REQUIRED_VAL(info, encode,  obs_register_encoder);
 
 	if (info->type == OBS_ENCODER_AUDIO)
 		CHECK_REQUIRED_VAL(info, frame_size, obs_register_encoder);
@@ -190,9 +190,11 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 
 void obs_register_service_s(const struct obs_service_info *info, size_t size)
 {
-	/* TODO */
-	UNUSED_PARAMETER(size);
-	UNUSED_PARAMETER(info);
+	CHECK_REQUIRED_VAL(info, getname, obs_register_service);
+	CHECK_REQUIRED_VAL(info, create,  obs_register_service);
+	CHECK_REQUIRED_VAL(info, destroy, obs_register_service);
+
+	REGISTER_OBS_DEF(size, obs_service_info, obs->service_types, info);
 }
 
 void obs_regsiter_modal_ui_s(const struct obs_modal_ui *info, size_t size)

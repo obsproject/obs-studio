@@ -380,5 +380,8 @@
     <ClCompile Include="..\..\..\libobs\obs-avc.c">
       <Filter>libobs\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs\obs-service.c">
+      <Filter>libobs\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

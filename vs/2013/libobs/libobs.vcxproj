@@ -109,6 +109,7 @@
     <ClCompile Include="..\..\..\libobs\obs-output.c" />
     <ClCompile Include="..\..\..\libobs\obs-properties.c" />
     <ClCompile Include="..\..\..\libobs\obs-scene.c" />
+    <ClCompile Include="..\..\..\libobs\obs-service.c" />
     <ClCompile Include="..\..\..\libobs\obs-source.c" />
     <ClCompile Include="..\..\..\libobs\obs-video.c" />
     <ClCompile Include="..\..\..\libobs\obs-view.c" />
@@ -210,7 +211,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -231,7 +232,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -256,7 +257,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -281,7 +282,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
