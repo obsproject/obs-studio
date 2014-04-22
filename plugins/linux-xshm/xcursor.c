@@ -66,8 +66,7 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 }
 
 xcursor_t *xcursor_init(Display *dpy) {
-	xcursor_t *data = bmalloc(sizeof(xcursor_t));
-	memset(data, 0, sizeof(xcursor_t));
+	xcursor_t *data = bzalloc(sizeof(xcursor_t));
 
 	data->dpy = dpy;
 	xcursor_tick(data);
