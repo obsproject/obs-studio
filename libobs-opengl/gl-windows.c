@@ -310,10 +310,10 @@ static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
 static inline bool gl_getpixelformat(HDC hdc, struct gs_init_data *info,
 		int *format, PIXELFORMATDESCRIPTOR *pfd)
 {
-	*format = gl_choose_pixel_format(hdc, info);
-
 	if (!format)
 		return false;
+
+	*format = gl_choose_pixel_format(hdc, info);
 
 	if (!DescribePixelFormat(hdc, *format, sizeof(*pfd), pfd)) {
 		blog(LOG_ERROR, "DescribePixelFormat failed, %u",
