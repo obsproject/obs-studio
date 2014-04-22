@@ -77,15 +77,24 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	uint32_t sourceCY = obs_source_getheight(window->source);
 
 	int   x, y;
+	int   newCX, newCY;
 	float scale;
 
 	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
 
-	gs_matrix_push();
-	gs_matrix_scale3f(scale, scale, 1.0f);
-	gs_matrix_translate3f(-x, -y, 0.0f);
+	newCX = int(scale * float(sourceCX));
+	newCY = int(scale * float(sourceCY));
+
+	gs_viewport_push();
+	gs_projection_push();
+	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY),
+			-100.0f, 100.0f);
+	gs_setviewport(x, y, newCX, newCY);
+
 	obs_source_video_render(window->source);
-	gs_matrix_pop();
+
+	gs_projection_pop();
+	gs_viewport_pop();
 }
 
 void OBSBasicProperties::resizeEvent(QResizeEvent *event)

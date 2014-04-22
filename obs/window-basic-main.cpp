@@ -406,11 +406,24 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
-	gs_matrix_push();
-	gs_matrix_scale3f(window->previewScale, window->previewScale, 1.0f);
-	gs_matrix_translate3f(-window->previewX, -window->previewY, 0.0f);
+	obs_video_info ovi;
+	int newCX, newCY;
+
+	obs_get_video_info(&ovi);
+
+	newCX = int(window->previewScale * float(ovi.base_width));
+	newCY = int(window->previewScale * float(ovi.base_height));
+
+	gs_viewport_push();
+	gs_projection_push();
+	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
+			-100.0f, 100.0f);
+	gs_setviewport(window->previewX, window->previewY, newCX, newCY);
+
 	obs_render_main_view();
-	gs_matrix_pop();
+
+	gs_projection_pop();
+	gs_viewport_pop();
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
