@@ -101,6 +101,7 @@
     <ClCompile Include="..\..\..\libobs\media-io\video-fourcc.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-frame.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-io.c" />
+    <ClCompile Include="..\..\..\libobs\media-io\video-matrices.c" />
     <ClCompile Include="..\..\..\libobs\media-io\video-scaler-ffmpeg.c" />
     <ClCompile Include="..\..\..\libobs\obs-avc.c" />
     <ClCompile Include="..\..\..\libobs\obs-data.c" />

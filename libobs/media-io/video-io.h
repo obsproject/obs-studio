@@ -111,6 +111,10 @@ struct video_scale_info {
 
 EXPORT enum video_format video_format_from_fourcc(uint32_t fourcc);
 
+EXPORT bool video_format_get_parameters(enum video_colorspace color_space,
+		enum video_range_type range, float matrix[16],
+		float min_range[3], float max_range[3]);
+
 #define VIDEO_OUTPUT_SUCCESS       0
 #define VIDEO_OUTPUT_INVALIDPARAM -1
 #define VIDEO_OUTPUT_FAIL         -2
