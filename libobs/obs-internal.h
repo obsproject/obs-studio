@@ -269,6 +269,9 @@ struct obs_source {
 	texture_t                       async_texture;
 	enum video_format               async_format;
 	float                           async_color_matrix[16];
+	bool                            async_full_range;
+	float                           async_color_range_min[3];
+	float                           async_color_range_max[3];
 	bool                            async_flip;
 	DARRAY(struct source_frame*)    video_frames;
 	pthread_mutex_t                 video_mutex;
