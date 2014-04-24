@@ -564,27 +564,6 @@ static void source_output_audio_line(obs_source_t source,
 	audio_line_output(source->audio_line, &in);
 }
 
-static inline bool set_async_texture_size(struct obs_source *source,
-		struct source_frame *frame)
-{
-	if (source->async_texture) {
-		if (source->async_width  == frame->width &&
-		    source->async_height == frame->height)
-			return true;
-	}
-
-	texture_destroy(source->async_texture);
-	source->async_texture = gs_create_texture(frame->width, frame->height,
-			GS_RGBA, 1, NULL, GS_DYNAMIC);
-
-	if (!source->async_texture)
-		return false;
-
-	source->async_width  = frame->width;
-	source->async_height = frame->height;
-	return true;
-}
-
 enum convert_type {
 	CONVERT_NONE,
 	CONVERT_NV12,
@@ -617,11 +596,185 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	return CONVERT_NONE;
 }
 
+static inline bool set_packed422_sizes(struct obs_source *source,
+		struct source_frame *frame)
+{
+	source->async_convert_height = frame->height;
+	source->async_convert_width = frame->width / 2;
+	return true;
+}
+
+static inline bool init_gpu_conversion(struct obs_source *source,
+		struct source_frame *frame)
+{
+	switch (get_convert_type(frame->format)) {
+		case CONVERT_422_Y:
+		case CONVERT_422_U:
+			return set_packed422_sizes(source, frame);
+
+		case CONVERT_NV12:
+		case CONVERT_420:
+			/* TODO: implement conversion */
+			break;
+
+		case CONVERT_NONE:
+			assert(false && "No conversion requested");
+			break;
+
+	}
+	return false;
+}
+
+static inline bool set_async_texture_size(struct obs_source *source,
+		struct source_frame *frame)
+{
+	enum convert_type prev, cur;
+	prev = get_convert_type(source->async_format);
+	cur  = get_convert_type(frame->format);
+	if (source->async_texture) {
+		if (source->async_width  == frame->width &&
+		    source->async_height == frame->height &&
+		    prev == cur)
+			return true;
+	}
+
+	texture_destroy(source->async_texture);
+	texrender_destroy(source->async_convert_texrender);
+	source->async_convert_texrender = NULL;
+
+	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
+		source->async_gpu_conversion = true;
+
+		source->async_convert_texrender =
+			texrender_create(GS_RGBA, GS_ZS_NONE);
+
+		source->async_texture = gs_create_texture(
+				source->async_convert_width,
+				source->async_convert_height,
+				GS_RGBA, 1, NULL, GS_DYNAMIC);
+
+	} else {
+		source->async_gpu_conversion = false;
+
+		source->async_texture = gs_create_texture(
+				frame->width, frame->height,
+				GS_RGBA, 1, NULL, GS_DYNAMIC);
+	}
+
+	if (!source->async_texture)
+		return false;
+
+	source->async_width  = frame->width;
+	source->async_height = frame->height;
+	return true;
+}
+
+static void upload_raw_frame(texture_t tex, const struct source_frame *frame)
+{
+	switch (get_convert_type(frame->format)) {
+		case CONVERT_422_U:
+		case CONVERT_422_Y:
+			texture_setimage(tex, frame->data[0],
+					frame->linesize[0], false);
+			break;
+
+		case CONVERT_NV12:
+		case CONVERT_420:
+			assert(false && "Conversion not yet implemented");
+			break;
+
+		case CONVERT_NONE:
+			assert(false && "No conversion requested");
+			break;
+	}
+}
+
+static const char *select_conversion_technique(enum video_format format)
+{
+	switch (format) {
+		case VIDEO_FORMAT_UYVY:
+			return "UYUV_Reverse";
+
+		case VIDEO_FORMAT_YUY2:
+			return "YUY2_Reverse";
+
+		case VIDEO_FORMAT_YVYU:
+			return "YVYU_Reverse";
+
+		case VIDEO_FORMAT_NV12:
+		case VIDEO_FORMAT_I420:
+			assert(false && "Conversion not yet implemented");
+			break;
+
+		case VIDEO_FORMAT_BGRA:
+		case VIDEO_FORMAT_BGRX:
+		case VIDEO_FORMAT_RGBA:
+		case VIDEO_FORMAT_NONE:
+			assert(false && "No conversion requested");
+			break;
+	}
+	return NULL;
+}
+
+static inline void set_eparam(effect_t effect, const char *name, float val)
+{
+	eparam_t param = effect_getparambyname(effect, name);
+	effect_setfloat(effect, param, val);
+}
+
+static bool update_async_texrender(struct obs_source *source,
+		const struct source_frame *frame)
+{
+	texture_t   tex       = source->async_texture;
+	texrender_t texrender = source->async_convert_texrender;
+
+	texrender_reset(texrender);
+
+	upload_raw_frame(tex, frame);
+
+	uint32_t cx = source->async_width;
+	uint32_t cy = source->async_height;
+
+	effect_t conv = obs->video.conversion_effect;
+	technique_t tech = effect_gettechnique(conv,
+			select_conversion_technique(frame->format));
+
+	if (!texrender_begin(texrender, cx, cy))
+		return false;
+
+	technique_begin(tech);
+	technique_beginpass(tech, 0);
+
+	effect_settexture(conv, effect_getparambyname(conv, "image"),
+			tex);
+	set_eparam(conv, "width",  (float)cx);
+	set_eparam(conv, "height", (float)cy);
+	set_eparam(conv, "width_i",  1.0f / cx);
+	set_eparam(conv, "height_i", 1.0f / cy);
+	set_eparam(conv, "width_d2",  cx  * 0.5f);
+	set_eparam(conv, "height_d2", cy * 0.5f);
+	set_eparam(conv, "width_d2_i",  1.0f / (cx  * 0.5f));
+	set_eparam(conv, "height_d2_i", 1.0f / (cy * 0.5f));
+	set_eparam(conv, "input_height", (float)cy);
+
+	gs_ortho(0.f, (float)cx, 0.f, (float)cy, -100.f, 100.f);
+
+	gs_draw_sprite(tex, 0, cx, cy);
+
+	technique_endpass(tech);
+	technique_end(tech);
+
+	texrender_end(texrender);
+
+	return true;
+}
+
 static bool update_async_texture(struct obs_source *source,
 		const struct source_frame *frame)
 {
-	texture_t         tex  = source->async_texture;
-	enum convert_type type = get_convert_type(frame->format);
+	texture_t         tex       = source->async_texture;
+	texrender_t       texrender = source->async_convert_texrender;
+	enum convert_type type      = get_convert_type(frame->format);
 	void              *ptr;
 	uint32_t          linesize;
 
@@ -634,6 +787,9 @@ static bool update_async_texture(struct obs_source *source,
 			sizeof frame->color_range_min);
 	memcpy(source->async_color_range_max, frame->color_range_max,
 			sizeof frame->color_range_max);
+
+	if (source->async_gpu_conversion && texrender)
+		return update_async_texrender(source, frame);
 
 	if (type == CONVERT_NONE) {
 		texture_setimage(tex, frame->data[0], frame->linesize[0],
@@ -675,6 +831,9 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 {
 	texture_t tex = source->async_texture;
 	eparam_t  param;
+
+	if (source->async_convert_texrender)
+		tex = texrender_gettexture(source->async_convert_texrender);
 
 	if (color_matrix) {
 		size_t const size = sizeof(float) * 3;

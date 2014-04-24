@@ -267,6 +267,8 @@ struct obs_source {
 
 	/* async video data */
 	texture_t                       async_texture;
+	texrender_t                     async_convert_texrender;
+	bool                            async_gpu_conversion;
 	enum video_format               async_format;
 	float                           async_color_matrix[16];
 	bool                            async_full_range;
@@ -277,6 +279,8 @@ struct obs_source {
 	pthread_mutex_t                 video_mutex;
 	uint32_t                        async_width;
 	uint32_t                        async_height;
+	uint32_t                        async_convert_width;
+	uint32_t                        async_convert_height;
 
 	/* filters */
 	struct obs_source               *filter_parent;
