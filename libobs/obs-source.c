@@ -822,9 +822,6 @@ static bool update_async_texture(struct obs_source *source,
 	return true;
 }
 
-static float const full_range_min[] = {0., 0., 0.};
-static float const full_range_max[] = {1., 1., 1.};
-
 static inline void obs_source_draw_texture(struct obs_source *source,
 		effect_t effect, float *color_matrix,
 		float const *color_range_min, float const *color_range_max)
@@ -835,19 +832,19 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	if (source->async_convert_texrender)
 		tex = texrender_gettexture(source->async_convert_texrender);
 
-	if (color_matrix) {
+	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
-		
-		if (!color_range_min)
-			color_range_min = full_range_min;
-		if (!color_range_max)
-			color_range_max = full_range_max;
-		
 		param = effect_getparambyname(effect, "color_range_min");
 		effect_setval(effect, param, color_range_min, size);
+	}
+	
+	if (color_range_max) {
+		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_max");
 		effect_setval(effect, param, color_range_max, size);
-
+	}
+	
+	if (color_matrix) {
 		param = effect_getparambyname(effect, "color_matrix");
 		effect_setval(effect, param, color_matrix, sizeof(float) * 16);
 	}
