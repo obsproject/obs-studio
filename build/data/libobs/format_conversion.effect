@@ -193,6 +193,23 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 		return out_val[2];
 }
 
+float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
+		int y0_pos, int y1_pos) : TARGET
+{
+	float y = vert_in.uv.y;
+#ifdef _OPENGL
+	y = 1. - y;
+#endif
+	float odd = floor(fmod(width * vert_in.uv.x + PRECISION_OFFSET, 2.0));
+	float x = floor(width_d2 * vert_in.uv.x + PRECISION_OFFSET) *
+			width_d2_i;
+	float4 texel = image.Sample(def_sampler, float2(x, y));
+	return float4(odd > 0.5 ? texel[y1_pos] : texel[y0_pos],
+			texel[u_pos], texel[v_pos], 1.0);
+}
+
+
+
 technique Planar420
 {
 	pass
@@ -208,5 +225,32 @@ technique NV12
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSNV12(vert_in);
+	}
+}
+
+technique UYUV_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 0, 2, 1, 3);
+	}
+}
+
+technique YUY2_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 1, 3, 0, 2);
+	}
+}
+
+technique YVYU_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 3, 1, 0, 2);
 	}
 }
