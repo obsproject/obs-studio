@@ -22,7 +22,8 @@ void OBSPropertiesView::RefreshProperties()
 	QFormLayout *layout = new QFormLayout;
 	widget->setLayout(layout);
 
-	QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+	QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 	widget->setSizePolicy(policy);
 	layout->setSizeConstraint(QLayout::SetMaximumSize);
 	layout->setLabelAlignment(Qt::AlignRight);
@@ -35,19 +36,28 @@ void OBSPropertiesView::RefreshProperties()
 	}
 
 	setWidget(widget);
-	setSizePolicy(policy);
+	setSizePolicy(mainPolicy);
+
+	lastFocused.clear();
+	if (lastWidget) {
+		lastWidget->setFocus(Qt::OtherFocusReason);
+		lastWidget = nullptr;
+	}
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_,
 		obs_properties_t properties_, void *obj_,
-		PropertiesUpdateCallback callback_)
+		PropertiesUpdateCallback callback_, int minSize_)
 	: QScrollArea (nullptr),
 	  widget      (nullptr),
 	  properties  (properties_),
 	  settings    (settings_),
 	  obj         (obj_),
-	  callback    (callback_)
+	  callback    (callback_),
+	  minSize     (minSize_),
+	  lastWidget  (nullptr)
 {
+	setFrameShape(QFrame::NoFrame);
 	RefreshProperties();
 }
 
@@ -198,7 +208,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 void OBSPropertiesView::AddProperty(obs_property_t property,
 		QFormLayout *layout)
 {
-	obs_property_type type = obs_property_get_type(property);
+	const char        *name = obs_property_name(property);
+	obs_property_type type  = obs_property_get_type(property);
 
 	if (!obs_property_visible(property))
 		return;
@@ -241,7 +252,16 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 	if (type != OBS_PROPERTY_BOOL)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
+	if (label && minSize) {
+		label->setMinimumWidth(minSize);
+		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+	}
+
 	layout->addRow(label, widget);
+
+	if (!lastFocused.empty())
+		if (lastFocused.compare(name) == 0)
+			lastWidget = widget;
 }
 
 void WidgetInfo::BoolChanged(const char *setting)
@@ -333,6 +353,9 @@ void WidgetInfo::ControlChanged()
 	}
 
 	view->callback(view->obj, view->settings);
-	if (obs_property_modified(property, view->settings))
-		view->RefreshProperties();
+	if (obs_property_modified(property, view->settings)) {
+		view->lastFocused = setting;
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+				Qt::QueuedConnection);
+	}
 }

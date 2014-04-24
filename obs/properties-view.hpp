@@ -51,9 +51,10 @@ private:
 	OBSData                                  settings;
 	void                                     *obj;
 	PropertiesUpdateCallback                 callback;
+	int                                      minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
-
-	void RefreshProperties();
+	std::string                              lastFocused;
+	QWidget                                  *lastWidget;
 
 	QWidget *NewWidget(obs_property_t prop, QWidget *widget,
 			const char *signal);
@@ -67,10 +68,14 @@ private:
 
 	void AddProperty(obs_property_t property, QFormLayout *layout);
 
+public slots:
+	void RefreshProperties();
+
 public:
 	OBSPropertiesView(OBSData settings,
 			obs_properties_t properties,
-			void *obj, PropertiesUpdateCallback callback);
+			void *obj, PropertiesUpdateCallback callback,
+			int minSize = 0);
 
 	inline ~OBSPropertiesView()
 	{
