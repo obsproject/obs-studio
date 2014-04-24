@@ -1,102 +1,229 @@
-{
-	"Twitch / Justin.tv": {
-		"servers": {
-			"US West: San Francisco, CA" : "rtmp://live.justin.tv/app",
-			"Asia: Singapore"            : "rtmp://live-sin-backup.justin.tv/app",
-			"EU: Amsterdam, NL"          : "rtmp://live-ams.justin.tv/app",
-			"EU: Frankfurt, DE"          : "rtmp://live-fra.justin.tv/app",
-			"EU: London, UK"             : "rtmp://live-lhr.justin.tv/app",
-			"EU: Paris, FR"              : "rtmp://live-cdg.justin.tv/app",
-			"EU: Prague, CZ"             : "rtmp://live-prg.justin.tv/app",
-			"EU: Stockholm, SE"          : "rtmp://live-arn.justin.tv/app",
-			"US Central: Dallas, TX"     : "rtmp://live-dfw.justin.tv/app",
-			"US East: Ashburn, VA"       : "rtmp://live-iad.justin.tv/app",
-			"US East: Miami, FL"         : "rtmp://live-mia.justin.tv/app",
-			"US East: New York, NY"      : "rtmp://live-jfk.justin.tv/app",
-			"US Midwest: Chicago, IL"    : "rtmp://live-ord.justin.tv/app",
-			"US West: Los Angeles, CA"   : "rtmp://live-lax.justin.tv/app"
-		},
-		"recommended": {
-			"keyint"            : 2,
-			"cbr"               : true,
-			"profile"           : "main",
-			"max video bitrate" : 3500,
-			"max audio bitrate" : 160
-		}
-	},
-	"Youtube": {
-		"servers": {
-			"Primary Youtube ingest server" : "rtmp://a.rtmp.youtube.com/live2",
-			"Backup Youtube ingest server"  : "rtmp://b.rtmp.youtube.com/live2?backup=1"
-		},
-		"recommended": {
-			"keyint"            : 2,
-			"cbr"               : true,
-			"profile"           : "main",
-			"max video bitrate" : 3500,
-			"max audio bitrate" : 160
-		}
-	},
-	"hitbox.tv": {
-		"servers": {
-			"Default"       : "rtmp://live.hitbox.tv/push",
-			"EU-East"       : "rtmp://live.vie.hitbox.tv/push",
-			"EU-Central"    : "rtmp://live.nbg.hitbox.tv/push",
-			"EU-West"       : "rtmp://live.fra.hitbox.tv/push",
-			"EU-North"      : "rtmp://live.ams.hitbox.tv/push",
-			"US-East"       : "rtmp://live.vgn.hitbox.tv/push",
-			"US-West"       : "rtmp://live.lax.hitbox.tv/push",
-			"South America" : "rtmp://live.gru.hitbox.tv/push",
-			"Asia"          : "rtmp://live.lax.hitbox.tv/push"
-		},
-		"recommended": {
-			"keyint"            : 2,
-			"cbr"               : true,
-			"profile"           : "main",
-			"max video bitrate" : 3500,
-			"max audio bitrate" : 160
-		}
-	},
-	"Vaughn Live / iNSTAGIB.tv": {
-		"servers": {
-			"US: Primary"            : "rtmp://live.vaughnsoft.net:443/live",
-			"US: Virginia, USA"      : "rtmp://live-iad.vaughnsoft.net:443/live",
-			"US: Chicago, IL"        : "rtmp://live-ord.vaughnsoft.net:443/live",
-			"EU: Frankfurt, Germany" : "rtmp://live-de.vaughnsoft.net:443/live"
-		}
-	},
-	"DailyMotion": {
-		"servers": {
-			"Primary" : "rtmp://publish.dailymotion.com/publish-dm"
-		}
-	},
-	"connectcast.tv": {
-		"servers": {
-			"Default" : "rtmp://stream.connectcast.tv/live"
-		}
-	},
-	"iNSTAGIB.tv": {
-		"servers": {
-			"US Chicago (Primary)" : "rtmp://live.instagib.tv:443/live"
-		}
-	},
-	"GoodGame.ru": {
-		"servers": {
-			"Moscow M9"        : "rtmp://stream.goodgame.ru:1940/live",
-			"Moscow M10"       : "rtmp://stream2.goodgame.ru:1940/live",
-			"Saint-Petersburg" : "rtmp://spb1.goodgame.ru:1940/live"
-		}
-	},
-	"CyberGame.TV": {
-		"servers": {
-			"RU Origin"  : "rtmp://st.cybergame.tv:1953/live",
-			"RU Premium" : "rtmp://premium.cybergame.tv:1953/premium"
-		}
-	},
-	"CashPlay.tv": {
-		"servers": {
-			"Primary, UK"      : "rtmp://live.cashplay.tv/live",
-			"Low Priority, DE" : "rtmp://de.live.cashplay.tv/live"
-		}
-	}
-}
+[
+    {
+        "name": "Twitch / Justin.tv",
+        "servers": [
+            {
+                "name": "US West: San Francisco, CA",
+                "url": "rtmp://live.justin.tv/app"
+            },
+            {
+                "name": "Asia: Singapore",
+                "url": "rtmp://live-sin-backup.justin.tv/app"
+            },
+            {
+                "name": "EU: Amsterdam, NL",
+                "url": "rtmp://live-ams.justin.tv/app"
+            },
+            {
+                "name": "EU: Frankfurt, DE",
+                "url": "rtmp://live-fra.justin.tv/app"
+            },
+            {
+                "name": "EU: London, UK",
+                "url": "rtmp://live-lhr.justin.tv/app"
+            },
+            {
+                "name": "EU: Paris, FR",
+                "url": "rtmp://live-cdg.justin.tv/app"
+            },
+            {
+                "name": "EU: Prague, CZ",
+                "url": "rtmp://live-prg.justin.tv/app"
+            },
+            {
+                "name": "EU: Stockholm, SE",
+                "url": "rtmp://live-arn.justin.tv/app"
+            },
+            {
+                "name": "US Central: Dallas, TX",
+                "url": "rtmp://live-dfw.justin.tv/app"
+            },
+            {
+                "name": "US East: Ashburn, VA",
+                "url": "rtmp://live-iad.justin.tv/app"
+            },
+            {
+                "name": "US East: Miami, FL",
+                "url": "rtmp://live-mia.justin.tv/app"
+            },
+            {
+                "name": "US East: New York, NY",
+                "url": "rtmp://live-jfk.justin.tv/app"
+            },
+            {
+                "name": "US Midwest: Chicago, IL",
+                "url": "rtmp://live-ord.justin.tv/app"
+            },
+            {
+                "name": "US West: Los Angeles, CA",
+                "url": "rtmp://live-lax.justin.tv/app"
+            }
+        ],
+        "recommended": {
+            "keyint": 2,
+            "cbr": true,
+            "profile": "main",
+            "max video bitrate": 3500,
+            "max audio bitrate": 160
+        }
+    },
+    {
+        "name": "Youtube",
+        "servers": [
+            {
+                "name": "Primary Youtube ingest server",
+                "url": "rtmp://a.rtmp.youtube.com/live2"
+            },
+            {
+                "name": "Backup Youtube ingest server",
+                "url": "rtmp://b.rtmp.youtube.com/live2?backup=1"
+            }
+        ],
+        "recommended": {
+            "keyint": 2,
+            "cbr": true,
+            "profile": "main",
+            "max video bitrate": 3500,
+            "max audio bitrate": 160
+        }
+    },
+    {
+        "name": "hitbox.tv",
+        "servers": [
+            {
+                "name": "Default",
+                "url": "rtmp://live.hitbox.tv/push"
+            },
+            {
+                "name": "EU-East",
+                "url": "rtmp://live.vie.hitbox.tv/push"
+            },
+            {
+                "name": "EU-Central",
+                "url": "rtmp://live.nbg.hitbox.tv/push"
+            },
+            {
+                "name": "EU-West",
+                "url": "rtmp://live.fra.hitbox.tv/push"
+            },
+            {
+                "name": "EU-North",
+                "url": "rtmp://live.ams.hitbox.tv/push"
+            },
+            {
+                "name": "US-East",
+                "url": "rtmp://live.vgn.hitbox.tv/push"
+            },
+            {
+                "name": "US-West",
+                "url": "rtmp://live.lax.hitbox.tv/push"
+            },
+            {
+                "name": "South America",
+                "url": "rtmp://live.gru.hitbox.tv/push"
+            },
+            {
+                "name": "Asia",
+                "url": "rtmp://live.lax.hitbox.tv/push"
+            }
+        ],
+        "recommended": {
+            "keyint": 2,
+            "cbr": true,
+            "profile": "main",
+            "max video bitrate": 3500,
+            "max audio bitrate": 160
+        }
+    },
+    {
+        "name": "Vaughn Live / iNSTAGIB.tv",
+        "servers": [
+            {
+                "name": "US: Primary",
+                "url": "rtmp://live.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "US: Virginia, USA",
+                "url": "rtmp://live-iad.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "US: Chicago, IL",
+                "url": "rtmp://live-ord.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "EU: Frankfurt, Germany",
+                "url": "rtmp://live-de.vaughnsoft.net:443/live"
+            }
+        ]
+    },
+    {
+        "name": "DailyMotion",
+        "servers": [
+            {
+                "name": "Primary",
+                "url": "rtmp://publish.dailymotion.com/publish-dm"
+            }
+        ]
+    },
+    {
+        "name": "connectcast.tv",
+        "servers": [
+            {
+                "name": "Default",
+                "url": "rtmp://stream.connectcast.tv/live"
+            }
+        ]
+    },
+    {
+        "name": "iNSTAGIB.tv",
+        "servers": [
+            {
+                "name": "US Chicago (Primary)",
+                "url": "rtmp://live.instagib.tv:443/live"
+            }
+        ]
+    },
+    {
+        "name": "GoodGame.ru",
+        "servers": [
+            {
+                "name": "Moscow M9",
+                "url": "rtmp://stream.goodgame.ru:1940/live"
+            },
+            {
+                "name": "Moscow M10",
+                "url": "rtmp://stream2.goodgame.ru:1940/live"
+            },
+            {
+                "name": "Saint-Petersburg",
+                "url": "rtmp://spb1.goodgame.ru:1940/live"
+            }
+        ]
+    },
+    {
+        "name": "CyberGame.TV",
+        "servers": [
+            {
+                "name": "RU Origin",
+                "url": "rtmp://st.cybergame.tv:1953/live"
+            },
+            {
+                "name": "RU Premium",
+                "url": "rtmp://premium.cybergame.tv:1953/premium"
+            }
+        ]
+    },
+    {
+        "name": "CashPlay.tv",
+        "servers": [
+            {
+                "name": "Primary, UK",
+                "url": "rtmp://live.cashplay.tv/live"
+            },
+            {
+                "name": "Low Priority, DE",
+                "url": "rtmp://de.live.cashplay.tv/live"
+            }
+        ]
+    }
+]

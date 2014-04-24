@@ -57,8 +57,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 
 static struct obs_encoder *create_encoder(const char *id,
 		enum obs_encoder_type type, const char *name,
-		obs_data_t settings, void *media,
-		uint32_t timebase_num, uint32_t timebase_den)
+		obs_data_t settings)
 {
 	struct obs_encoder *encoder;
 	struct obs_encoder_info *ei = get_encoder_info(id);
@@ -68,10 +67,7 @@ static struct obs_encoder *create_encoder(const char *id,
 		return NULL;
 
 	encoder = bzalloc(sizeof(struct obs_encoder));
-	encoder->info         = *ei;
-	encoder->media        = media;
-	encoder->timebase_num = timebase_num;
-	encoder->timebase_den = timebase_den;
+	encoder->info = *ei;
 
 	success = init_encoder(encoder, name, settings);
 	if (!success) {
@@ -87,29 +83,17 @@ static struct obs_encoder *create_encoder(const char *id,
 }
 
 obs_encoder_t obs_video_encoder_create(const char *id, const char *name,
-		obs_data_t settings, video_t video)
+		obs_data_t settings)
 {
-	const struct video_output_info *voi;
-
-	if (!name || !id || !video)
-		return NULL;
-
-	voi = video_output_getinfo(video);
-	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings, video,
-			voi->fps_den, voi->fps_num);
+	if (!name || !id) return NULL;
+	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings);
 }
 
 obs_encoder_t obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t settings, audio_t audio)
+		obs_data_t settings)
 {
-	const struct audio_output_info *aoi;
-
-	if (!name || !id || !audio)
-		return NULL;
-
-	aoi = audio_output_getinfo(audio);
-	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings, audio,
-			1, aoi->samples_per_sec);
+	if (!name || !id) return NULL;
+	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings);
 }
 
 static void receive_video(void *param, struct video_data *frame);
@@ -416,6 +400,30 @@ void obs_encoder_stop(obs_encoder_t encoder,
 const char *obs_encoder_get_codec(obs_encoder_t encoder)
 {
 	return encoder ? encoder->info.codec : NULL;
+}
+
+void obs_encoder_set_video(obs_encoder_t encoder, video_t video)
+{
+	const struct video_output_info *voi;
+
+	if (!video || !encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	voi = video_output_getinfo(video);
+
+	encoder->media        = video;
+	encoder->timebase_num = voi->fps_den;
+	encoder->timebase_den = voi->fps_num;
+}
+
+void obs_encoder_set_audio(obs_encoder_t encoder, audio_t audio)
+{
+	if (!audio || !encoder || encoder->info.type != OBS_ENCODER_AUDIO)
+		return;
+
+	encoder->media        = audio;
+	encoder->timebase_num = 1;
+	encoder->timebase_den = audio_output_samplerate(audio);
 }
 
 video_t obs_encoder_video(obs_encoder_t encoder)

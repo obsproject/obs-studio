@@ -288,6 +288,10 @@ EXPORT void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t),
 EXPORT void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t),
 		void *param);
 
+/** Enumerates encoders */
+EXPORT void obs_enum_services(bool (*enum_proc)(void*, obs_service_t),
+		void *param);
+
 /**
  * Gets a source by its name.
  *
@@ -295,6 +299,15 @@ EXPORT void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t),
  * release it when complete.
  */
 EXPORT obs_source_t obs_get_source_by_name(const char *name);
+
+/** Gets an output by its name. */
+EXPORT obs_output_t obs_get_output_by_name(const char *name);
+
+/** Gets an encoder by its name. */
+EXPORT obs_encoder_t obs_get_encoder_by_name(const char *name);
+
+/** Gets an service by its name. */
+EXPORT obs_service_t obs_get_service_by_name(const char *name);
 
 /**
  * Returns the location of a plugin data file.
@@ -737,6 +750,12 @@ EXPORT obs_encoder_t obs_output_get_video_encoder(obs_output_t output);
 /** Returns the current audio encoder associated with this output */
 EXPORT obs_encoder_t obs_output_get_audio_encoder(obs_output_t output);
 
+/** Sets the current service associated with this output. */
+EXPORT void obs_output_set_service(obs_output_t output, obs_service_t service);
+
+/** Gets the current service associated with this output. */
+EXPORT obs_service_t obs_output_get_service(obs_output_t output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -793,11 +812,10 @@ EXPORT const char *obs_encoder_getdisplayname(const char *id,
  * @param  id        Video encoder ID
  * @param  name      Name to assign to this context
  * @param  settings  Settings
- * @param  video     Video output context to encode data from
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t obs_video_encoder_create(const char *id, const char *name,
-		obs_data_t settings, video_t video);
+		obs_data_t settings);
 
 /**
  * Creates an audio encoder context
@@ -805,11 +823,10 @@ EXPORT obs_encoder_t obs_video_encoder_create(const char *id, const char *name,
  * @param  id        Audio Encoder ID
  * @param  name      Name to assign to this context
  * @param  settings  Settings
- * @param  audio     Audio output context to encode data from
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t settings, audio_t audio);
+		obs_data_t settings);
 
 /** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
@@ -844,6 +861,12 @@ EXPORT bool obs_encoder_get_extra_data(obs_encoder_t encoder,
 /** Returns the current settings for this encoder */
 EXPORT obs_data_t obs_encoder_get_settings(obs_encoder_t encoder);
 
+/** Sets the video output context to be used with this encoder */
+EXPORT void obs_encoder_set_video(obs_encoder_t encoder, video_t video);
+
+/** Sets the audio output context to be used with this encoder */
+EXPORT void obs_encoder_set_audio(obs_encoder_t encoder, audio_t audio);
+
 /**
  * Returns the video output context used with this encoder, or NULL if not
  * a video context
@@ -873,6 +896,8 @@ EXPORT obs_service_t obs_service_create(const char *id, const char *name,
 		obs_data_t settings);
 EXPORT void obs_service_destroy(obs_service_t service);
 
+EXPORT const char *obs_service_getname(obs_service_t service);
+
 /** Gets the default settings for a service */
 EXPORT obs_data_t obs_service_defaults(const char *id);
 
@@ -887,11 +912,26 @@ EXPORT obs_properties_t obs_get_service_properties(const char *id,
 EXPORT obs_properties_t obs_service_properties(obs_service_t service,
 		const char *locale);
 
+/** Gets the service type */
+EXPORT const char *obs_service_gettype(obs_service_t service);
+
+/** Updates the settings of the service context */
+EXPORT void obs_service_update(obs_service_t service, obs_data_t settings);
+
+/** Returns the current settings for this service */
+EXPORT obs_data_t obs_service_get_settings(obs_service_t service);
+
 /** Returns the URL for this service context */
-const char *obs_service_get_url(obs_service_t service);
+EXPORT const char *obs_service_get_url(obs_service_t service);
 
 /** Returns the stream key (if any) for this service context */
-const char *obs_service_get_key(obs_service_t service);
+EXPORT const char *obs_service_get_key(obs_service_t service);
+
+/** Returns the username (if any) for this service context */
+EXPORT const char *obs_service_get_username(obs_service_t service);
+
+/** Returns the password (if any) for this service context */
+EXPORT const char *obs_service_get_password(obs_service_t service);
 
 
 /* ------------------------------------------------------------------------- */

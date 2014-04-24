@@ -26,6 +26,9 @@ struct obs_service_info {
 	void (*destroy)(void *data);
 
 	/* optional */
+	void (*activate)(void *data, obs_data_t settings);
+	void (*deactivate)(void *data);
+
 	void (*update)(void *data, obs_data_t settings);
 
 	void (*defaults)(obs_data_t settings);
@@ -34,6 +37,9 @@ struct obs_service_info {
 
 	const char *(*get_url)(void *data);
 	const char *(*get_key)(void *data);
+
+	const char *(*get_username)(void *data);
+	const char *(*get_password)(void *data);
 
 	/* TODO: more stuff later */
 };

@@ -399,6 +399,7 @@ static void *connect_thread(void *data)
 static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
+	obs_service_t service = obs_output_get_service(stream->output);
 	obs_data_t settings;
 
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
@@ -407,10 +408,10 @@ static bool rtmp_stream_start(void *data)
 		return false;
 
 	settings = obs_output_get_settings(stream->output);
-	dstr_copy(&stream->path,     obs_data_getstring(settings, "path"));
-	dstr_copy(&stream->key,      obs_data_getstring(settings, "key"));
-	dstr_copy(&stream->username, obs_data_getstring(settings, "username"));
-	dstr_copy(&stream->password, obs_data_getstring(settings, "password"));
+	dstr_copy(&stream->path,     obs_service_get_url(service));
+	dstr_copy(&stream->key,      obs_service_get_key(service));
+	dstr_copy(&stream->username, obs_service_get_username(service));
+	dstr_copy(&stream->password, obs_service_get_password(service));
 	stream->drop_threshold_usec =
 		(int64_t)obs_data_getint(settings, "drop_threshold");
 	obs_data_release(settings);
@@ -555,7 +556,9 @@ static obs_properties_t rtmp_stream_properties(const char *locale)
 
 struct obs_output_info rtmp_output_info = {
 	.id             = "rtmp_output",
-	.flags          = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
+	.flags          = OBS_OUTPUT_AV |
+	                  OBS_OUTPUT_ENCODED |
+	                  OBS_OUTPUT_SERVICE,
 	.getname        = rtmp_stream_getname,
 	.create         = rtmp_stream_create,
 	.destroy        = rtmp_stream_destroy,

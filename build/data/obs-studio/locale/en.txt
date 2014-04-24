@@ -1,8 +1,5 @@
 Language="English"
 
-OK="OK"
-Cancel="Cancel"
-
 MainMenu.File="File"
 
 MainMenu.File.New="New"
@@ -40,6 +37,12 @@ Settings.Confirm="You have unsaved changes.  Save changes?"
 
 Settings.General="General"
 Settings.General.Language="Language:"
+
+Settings.Streams="Streams"
+Settings.Streams.AddName.Title="Add Stream"
+Settings.Streams.AddName.Text="Please enter the name of the stream"
+Settings.Streams.Exists.Title="Stream already exists"
+Settings.Streams.Exists.Text="The name is already in use by another stream"
 
 Settings.Outputs="Outputs"
 

@@ -53,6 +53,13 @@ obs_service_t obs_service_create(const char *id, const char *name,
 
 	service->info = *info;
 
+	service->context.data = service->info.create(service->context.settings,
+			service);
+	if (!service->context.data) {
+		obs_service_destroy(service);
+		return NULL;
+	}
+
 	obs_context_data_insert(&service->context,
 			&obs->data.services_mutex,
 			&obs->data.first_service);
@@ -60,17 +67,35 @@ obs_service_t obs_service_create(const char *id, const char *name,
 	return service;
 }
 
+static void actually_destroy_service(struct obs_service *service)
+{
+	if (service->context.data)
+		service->info.destroy(service->context.data);
+
+	if (service->output)
+		service->output->service = NULL;
+
+	obs_context_data_free(&service->context);
+	bfree(service);
+}
+
 void obs_service_destroy(obs_service_t service)
 {
 	if (service) {
 		obs_context_data_remove(&service->context);
 
-		if (service->context.data)
-			service->info.destroy(service->context.data);
+		service->destroy = true;
 
-		obs_context_data_free(&service->context);
-		bfree(service);
+		/* do NOT destroy the service until the service is no
+		 * longer in use */
+		if (!service->active)
+			actually_destroy_service(service);
 	}
+}
+
+const char *obs_service_getname(obs_service_t service)
+{
+	return service ? service->context.name : NULL;
 }
 
 static inline obs_data_t get_defaults(const struct obs_service_info *info)
@@ -115,6 +140,11 @@ obs_properties_t obs_service_properties(obs_service_t service,
 	return NULL;
 }
 
+const char *obs_service_gettype(obs_service_t service)
+{
+	return service ? service->info.id : NULL;
+}
+
 void obs_service_update(obs_service_t service, obs_data_t settings)
 {
 	if (!service) return;
@@ -155,4 +185,40 @@ const char *obs_service_get_key(obs_service_t service)
 {
 	if (!service || !service->info.get_key) return NULL;
 	return service->info.get_key(service->context.data);
+}
+
+const char *obs_service_get_username(obs_service_t service)
+{
+	if (!service || !service->info.get_username) return NULL;
+	return service->info.get_username(service->context.data);
+}
+
+const char *obs_service_get_password(obs_service_t service)
+{
+	if (!service || !service->info.get_password) return NULL;
+	return service->info.get_password(service->context.data);
+}
+
+void obs_service_activate(struct obs_service *service)
+{
+	if (!service || !service->output || service->active) return;
+
+	if (service->info.activate)
+		service->info.activate(service->context.data,
+				service->context.settings);
+	service->active = true;
+}
+
+void obs_service_deactivate(struct obs_service *service, bool remove)
+{
+	if (!service || !service->output || !service->active) return;
+
+	if (service->info.deactivate)
+		service->info.deactivate(service->context.data);
+	service->active = false;
+
+	if (service->destroy)
+		actually_destroy_service(service);
+	else if (remove)
+		service->output = NULL;
 }

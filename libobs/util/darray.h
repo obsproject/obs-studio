@@ -359,8 +359,6 @@ static inline void darray_pop_back(const size_t element_size,
 static inline void darray_join(const size_t element_size, struct darray *dst,
 		struct darray *da)
 {
-	assert(element_size == element_size);
-
 	darray_push_back_darray(element_size, dst, da);
 	darray_free(da);
 }

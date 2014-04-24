@@ -26,6 +26,7 @@
 class OBSBasic;
 class QAbstractButton;
 class QComboBox;
+class OBSPropertiesView;
 
 #include "ui_OBSBasicSettings.h"
 
@@ -44,10 +45,12 @@ private:
 	int  pageIndex;
 	bool loading;
 
+	OBSPropertiesView *streamProperties;
+
 	inline bool Changed() const
 	{
-		return generalChanged || outputsChanged || audioChanged ||
-			videoChanged;
+		return generalChanged || outputsChanged ||
+			audioChanged || videoChanged;
 	}
 
 	inline void ClearChanged()
@@ -62,6 +65,9 @@ private:
 
 	bool QueryChanges();
 
+	void LoadServiceTypes();
+	void LoadServiceInfo();
+
 	void LoadGeneralSettings();
 	void LoadOutputSettings();
 	void LoadAudioSettings();
@@ -70,6 +76,9 @@ private:
 
 	/* general */
 	void LoadLanguageList();
+
+	/* output */
+	void LoadSimpleOutputSettings();
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t prop,
@@ -91,6 +100,8 @@ private:
 private slots:
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
+
+	void on_streamType_currentIndexChanged(int idx);
 
 	void on_baseResolution_editTextChanged(const QString &text);
 

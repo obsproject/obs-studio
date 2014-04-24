@@ -36,30 +36,40 @@ class OBSBasic : public OBSMainWindow {
 
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
-	obs_output_t outputTest;
+
+	obs_output_t  streamOutput;
+	obs_service_t service;
 	obs_encoder_t aac;
 	obs_encoder_t x264;
-	bool         sceneChanging;
 
-	int          previewX,  previewY;
-	float        previewScale;
-	int          resizeTimer;
+	bool          sceneChanging;
 
-	ConfigFile   basicConfig;
+	int           previewX,  previewY;
+	float         previewScale;
+	int           resizeTimer;
+
+	ConfigFile    basicConfig;
 
 	QPointer<OBSBasicProperties> properties;
+
+	void          SaveService();
+	bool          LoadService();
+
+	bool          InitOutputs();
+	bool          InitEncoders();
+	bool          InitService();
+
+	bool          InitBasicConfigDefaults();
+	bool          InitBasicConfig();
+
+	OBSScene      GetCurrentScene();
+	OBSSceneItem  GetCurrentSceneItem();
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
 	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
 	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
 	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
-
-	bool         InitBasicConfigDefaults();
-	bool         InitBasicConfig();
-
-	OBSScene     GetCurrentScene();
-	OBSSceneItem GetCurrentSceneItem();
 
 	void UpdateSources(OBSScene scene);
 	void InsertSceneItem(obs_sceneitem_t item);
@@ -69,8 +79,8 @@ private:
 			int vBitrate, int aBitrate);
 
 public slots:
-	void OutputStart();
-	void OutputStop(int errorcode);
+	void StreamingStart();
+	void StreamingStop(int errorcode);
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);
@@ -94,6 +104,9 @@ private:
 	void AddSourcePopupMenu(const QPoint &pos);
 
 public:
+	obs_service_t GetService();
+	void          SetService(obs_service_t service);
+
 	bool ResetVideo();
 	bool ResetAudio();
 

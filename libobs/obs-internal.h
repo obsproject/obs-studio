@@ -322,6 +322,7 @@ struct obs_output {
 	audio_t                         audio;
 	obs_encoder_t                   video_encoder;
 	obs_encoder_t                   audio_encoder;
+	obs_service_t                   service;
 
 	bool                            video_conversion_set;
 	bool                            audio_conversion_set;
@@ -404,4 +405,11 @@ extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 struct obs_service {
 	struct obs_context_data         context;
 	struct obs_service_info         info;
+
+	bool                            active;
+	bool                            destroy;
+	struct obs_output               *output;
 };
+
+void obs_service_activate(struct obs_service *service);
+void obs_service_deactivate(struct obs_service *service, bool remove);

@@ -908,6 +908,46 @@ obs_source_t obs_get_source_by_name(const char *name)
 	return source;
 }
 
+static inline void *get_context_by_name(void *vfirst, const char *name,
+		pthread_mutex_t *mutex)
+{
+	struct obs_context_data **first = vfirst;
+	struct obs_context_data *context;
+
+	pthread_mutex_lock(mutex);
+
+	context = *first;
+	while (context) {
+		if (strcmp(context->name, name) == 0)
+			break;
+		context = context->next;
+	}
+
+	pthread_mutex_unlock(mutex);
+	return context;
+}
+
+obs_output_t obs_get_output_by_name(const char *name)
+{
+	if (!obs) return NULL;
+	return get_context_by_name(&obs->data.first_output, name,
+			&obs->data.outputs_mutex);
+}
+
+obs_encoder_t obs_get_encoder_by_name(const char *name)
+{
+	if (!obs) return NULL;
+	return get_context_by_name(&obs->data.first_encoder, name,
+			&obs->data.encoders_mutex);
+}
+
+obs_service_t obs_get_service_by_name(const char *name)
+{
+	if (!obs) return NULL;
+	return get_context_by_name(&obs->data.first_service, name,
+			&obs->data.services_mutex);
+}
+
 effect_t obs_get_default_effect(void)
 {
 	if (!obs) return NULL;

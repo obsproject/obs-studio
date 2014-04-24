@@ -25,6 +25,7 @@
 
 #include "obs-app.hpp"
 #include "platform.hpp"
+#include "properties-view.hpp"
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
@@ -78,6 +79,20 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	return true;
 }
 
+static inline void SetComboByName(QComboBox *combo, const char *name)
+{
+	int idx = combo->findText(QT_UTF8(name));
+	if (idx != -1)
+		combo->setCurrentIndex(idx);
+}
+
+static inline void SetComboByValue(QComboBox *combo, const char *name)
+{
+	int idx = combo->findData(QT_UTF8(name));
+	if (idx != -1)
+		combo->setCurrentIndex(idx);
+}
+
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 		const char *slot)
 {
@@ -99,15 +114,16 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
-	: QDialog        (parent),
-	  main           (qobject_cast<OBSBasic*>(parent)),
-	  ui             (new Ui::OBSBasicSettings),
-	  generalChanged (false),
-	  outputsChanged (false),
-	  audioChanged   (false),
-	  videoChanged   (false),
-	  pageIndex      (0),
-	  loading        (true)
+	: QDialog          (parent),
+	  main             (qobject_cast<OBSBasic*>(parent)),
+	  ui               (new Ui::OBSBasicSettings),
+	  generalChanged   (false),
+	  outputsChanged   (false),
+	  audioChanged     (false),
+	  videoChanged     (false),
+	  pageIndex        (0),
+	  loading          (true),
+	  streamProperties (nullptr)
 {
 	string path;
 
@@ -118,31 +134,72 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	if (localeIni.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
 		throw "Could not open locale.ini";
 
-	HookWidget(ui->language,            COMBO_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->streamVBitrate,      SCROLL_CHANGED, OUTPUTS_CHANGED);
-	HookWidget(ui->streamABitrate,      SCROLL_CHANGED, OUTPUTS_CHANGED);
-	HookWidget(ui->streamURL,           EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->streamKey,           EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->channelSetup,        COMBO_CHANGED,  AUDIO_RESTART);
-	HookWidget(ui->sampleRate,          COMBO_CHANGED,  AUDIO_RESTART);
-	HookWidget(ui->desktopAudioDevice1, COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->desktopAudioDevice2, COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->auxAudioDevice1,     COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->auxAudioDevice2,     COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->auxAudioDevice3,     COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->renderer,            COMBO_CHANGED,  VIDEO_RESTART);
-	HookWidget(ui->adapter,             COMBO_CHANGED,  VIDEO_RESTART);
-	HookWidget(ui->baseResolution,      CBEDIT_CHANGED, VIDEO_RES);
-	HookWidget(ui->outputResolution,    CBEDIT_CHANGED, VIDEO_RES);
-	HookWidget(ui->downscaleFilter,     COMBO_CHANGED,  VIDEO_CHANGED);
-	HookWidget(ui->fpsType,             COMBO_CHANGED,  VIDEO_CHANGED);
-	HookWidget(ui->fpsCommon,           COMBO_CHANGED,  VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,          SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,          SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->fpsNumerator,        SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->fpsDenominator,      SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputABitrate, COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice2,      COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->renderer,             COMBO_CHANGED,  VIDEO_RESTART);
+	HookWidget(ui->adapter,              COMBO_CHANGED,  VIDEO_RESTART);
+	HookWidget(ui->baseResolution,       CBEDIT_CHANGED, VIDEO_RES);
+	HookWidget(ui->outputResolution,     CBEDIT_CHANGED, VIDEO_RES);
+	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
+	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
 
+	LoadServiceTypes();
+	LoadServiceInfo();
 	LoadSettings(false);
+}
+
+void OBSBasicSettings::LoadServiceTypes()
+{
+	const char    *type;
+	size_t        idx = 0;
+
+	while (obs_enum_service_types(idx++, &type)) {
+		const char *name = obs_service_getdisplayname(type,
+				App()->GetLocale());
+		QString qName = QT_UTF8(name);
+		QString qType = QT_UTF8(type);
+
+		ui->streamType->addItem(qName, qType);
+	}
+
+	type = obs_service_gettype(main->GetService());
+	SetComboByValue(ui->streamType, type);
+}
+
+void OBSBasicSettings::LoadServiceInfo()
+{
+	QLayout          *layout    = ui->streamContainer->layout();
+	obs_service_t    service    = main->GetService();
+	obs_data_t       settings   = obs_service_get_settings(service);
+	obs_properties_t properties = obs_service_properties(service,
+			App()->GetLocale());
+
+	delete streamProperties;
+	streamProperties = new OBSPropertiesView(
+			settings,
+			properties,
+			service,
+			(PropertiesUpdateCallback)obs_service_update,
+			170);
+
+	layout->addWidget(streamProperties);
+
+	obs_data_release(settings);
 }
 
 void OBSBasicSettings::LoadLanguageList()
@@ -316,23 +373,27 @@ void OBSBasicSettings::LoadVideoSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::LoadSimpleOutputSettings()
+{
+	const char *path = config_get_string(main->Config(), "SimpleOutput",
+			"path");
+	int videoBitrate = config_get_uint(main->Config(), "SimpleOutput",
+			"VBitrate");
+	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
+			"ABitrate");
+
+	ui->simpleOutputPath->setText(path);
+	ui->simpleOutputVBitrate->setValue(videoBitrate);
+
+	SetComboByName(ui->simpleOutputABitrate,
+			std::to_string(audioBitrate).c_str());
+}
+
 void OBSBasicSettings::LoadOutputSettings()
 {
 	loading = true;
 
-	const char *url = config_get_string(main->Config(), "OutputTemp",
-			"URL");
-	const char *key = config_get_string(main->Config(), "OutputTemp",
-			"Key");
-	int videoBitrate = config_get_uint(main->Config(), "OutputTemp",
-			"VBitrate");
-	int audioBitrate = config_get_uint(main->Config(), "OutputTemp",
-			"ABitrate");
-
-	ui->streamURL->setText(QT_UTF8(url));
-	ui->streamKey->setText(QT_UTF8(key));
-	ui->streamVBitrate->setValue(videoBitrate);
-	ui->streamABitrate->setValue(audioBitrate);
+	LoadSimpleOutputSettings();
 
 	loading = false;
 }
@@ -492,15 +553,16 @@ void OBSBasicSettings::SaveVideoSettings()
 /* TODO: Temporary! */
 void OBSBasicSettings::SaveOutputSettings()
 {
-	int videoBitrate = ui->streamVBitrate->value();
-	int audioBitrate = ui->streamABitrate->value();
-	QString url = ui->streamURL->text();
-	QString key = ui->streamKey->text();
+	int videoBitrate     = ui->simpleOutputVBitrate->value();
+	QString audioBitrate = ui->simpleOutputABitrate->currentText();
+	QString path         = ui->simpleOutputPath->text();
 
-	config_set_uint(main->Config(), "OutputTemp", "VBitrate", videoBitrate);
-	config_set_uint(main->Config(), "OutputTemp", "ABitrate", audioBitrate);
-	config_set_string(main->Config(), "OutputTemp", "URL", QT_TO_UTF8(url));
-	config_set_string(main->Config(), "OutputTemp", "Key", QT_TO_UTF8(key));
+	config_set_uint(main->Config(), "SimpleOutput", "VBitrate",
+			videoBitrate);
+	config_set_string(main->Config(), "SimpleOutput", "ABitrate",
+			QT_TO_UTF8(audioBitrate));
+	config_set_string(main->Config(), "SimpleOutput", "path",
+			QT_TO_UTF8(path));
 }
 
 static inline QString GetComboData(QComboBox *combo)
@@ -624,6 +686,29 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 		ClearChanged();
 		close();
 	}
+}
+
+void OBSBasicSettings::on_streamType_currentIndexChanged(int idx)
+{
+	QString val = ui->streamType->itemData(idx).toString();
+	obs_service_t newService;
+
+	if (loading)
+		return;
+
+	delete streamProperties;
+	streamProperties = nullptr;
+
+	newService = obs_service_create(QT_TO_UTF8(val), nullptr, nullptr);
+	if (newService)
+		main->SetService(newService);
+
+	LoadServiceInfo();
+}
+
+static inline bool StreamExists(const char *name)
+{
+	return obs_get_service_by_name(name) != nullptr;
 }
 
 static bool ValidResolutions(Ui::OBSBasicSettings *ui)

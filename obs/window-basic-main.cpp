@@ -47,7 +47,8 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
-	  outputTest    (nullptr),
+	  streamOutput  (nullptr),
+	  service       (nullptr),
 	  aac           (nullptr),
 	  x264          (nullptr),
 	  sceneChanging (false),
@@ -84,6 +85,111 @@ static inline bool HasAudioDevices(const char *source_id)
 	return count != 0;
 }
 
+static void OBSStartStreaming(void *data, calldata_t params)
+{
+	UNUSED_PARAMETER(params);
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"StreamingStart");
+}
+
+static void OBSStopStreaming(void *data, calldata_t params)
+{
+	int code = (int)calldata_int(params, "errorcode");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"StreamingStop", Q_ARG(int, code));
+}
+
+#define SERVICE_PATH "obs-studio/basic/service.json"
+
+void OBSBasic::SaveService()
+{
+	if (!service)
+		return;
+
+	BPtr<char> serviceJsonPath(os_get_config_path(SERVICE_PATH));
+	if (!serviceJsonPath)
+		return;
+
+	obs_data_t data     = obs_data_create();
+	obs_data_t settings = obs_service_get_settings(service);
+
+	obs_data_setstring(data, "type", obs_service_gettype(service));
+	obs_data_setobj(data, "settings", settings);
+
+	const char *json = obs_data_getjson(data);
+
+	os_quick_write_utf8_file(serviceJsonPath, json, strlen(json), false);
+
+	obs_data_release(settings);
+	obs_data_release(data);
+}
+
+bool OBSBasic::LoadService()
+{
+	const char *type;
+
+	BPtr<char> serviceJsonPath(os_get_config_path(SERVICE_PATH));
+	if (!serviceJsonPath)
+		return false;
+
+	BPtr<char> jsonText = os_quick_read_utf8_file(serviceJsonPath);
+	if (!jsonText)
+		return false;
+
+	obs_data_t data = obs_data_create_from_json(jsonText);
+
+	obs_data_set_default_string(data, "type", "rtmp_common");
+	type = obs_data_getstring(data, "type");
+
+	obs_data_t settings = obs_data_getobj(data, "settings");
+
+	service = obs_service_create(type, "default", settings);
+
+	obs_data_release(settings);
+	obs_data_release(data);
+
+	return !!service;
+}
+
+bool OBSBasic::InitOutputs()
+{
+	streamOutput = obs_output_create("rtmp_output", "default", nullptr);
+	if (!streamOutput)
+		return false;
+
+	signal_handler_connect(obs_output_signalhandler(streamOutput),
+			"start", OBSStartStreaming, this);
+	signal_handler_connect(obs_output_signalhandler(streamOutput),
+			"stop", OBSStopStreaming, this);
+
+	return true;
+}
+
+bool OBSBasic::InitEncoders()
+{
+	aac = obs_audio_encoder_create("ffmpeg_aac", "aac", nullptr);
+	if (!aac)
+		return false;
+
+	x264 = obs_video_encoder_create("obs_x264", "h264", nullptr);
+	if (!x264)
+		return false;
+
+	return true;
+}
+
+bool OBSBasic::InitService()
+{
+	if (LoadService())
+		return true;
+
+	service = obs_service_create("rtmp_common", nullptr, nullptr);
+	if (!service)
+		return false;
+
+	return true;
+}
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
 	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
@@ -107,10 +213,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cy = monitors[0].cy;
 
 	/* TODO: temporary */
-	config_set_default_string(basicConfig, "OutputTemp", "URL", "");
-	config_set_default_string(basicConfig, "OutputTemp", "Key", "");
-	config_set_default_uint  (basicConfig, "OutputTemp", "VBitrate", 2500);
-	config_set_default_uint  (basicConfig, "OutputTemp", "ABitrate", 128);
+	config_set_default_string(basicConfig, "SimpleOutput", "path", "");
+	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
+			2500);
+	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 128);
 
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
@@ -186,6 +292,7 @@ void OBSBasic::OBSInit()
 	obs_load_module("obs-ffmpeg");
 	obs_load_module("obs-x264");
 	obs_load_module("obs-outputs");
+	obs_load_module("rtmp-services");
 #ifdef __APPLE__
 	obs_load_module("mac-capture");
 #elif _WIN32
@@ -196,11 +303,20 @@ void OBSBasic::OBSInit()
 	obs_load_module("linux-pulseaudio");
 #endif
 
+	if (!InitOutputs())
+		throw "Failed to initialize outputs";
+	if (!InitEncoders())
+		throw "Failed to initialize encoders";
+	if (!InitService())
+		throw "Failed to initialize service";
+
 	ResetAudioDevices();
 }
 
 OBSBasic::~OBSBasic()
 {
+	SaveService();
+
 	if (properties)
 		delete properties;
 
@@ -431,6 +547,22 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 /* Main class functions */
 
+obs_service_t OBSBasic::GetService()
+{
+	if (!service)
+		service = obs_service_create("rtmp_common", NULL, NULL);
+	return service;
+}
+
+void OBSBasic::SetService(obs_service_t newService)
+{
+	if (newService) {
+		if (service)
+			obs_service_destroy(service);
+		service = newService;
+	}
+}
+
 bool OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
@@ -446,7 +578,6 @@ bool OBSBasic::ResetVideo()
 			"Video", "OutputCX");
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
-	//ovi.output_format  = VIDEO_FORMAT_I420;
 	ovi.output_format  = VIDEO_FORMAT_NV12;
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
@@ -821,116 +952,50 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 }
 
-void OBSBasic::OutputStop(int errorcode)
+void OBSBasic::StreamingStart()
+{
+	ui->streamButton->setText("Stop Streaming");
+}
+
+void OBSBasic::StreamingStop(int errorcode)
 {
 	UNUSED_PARAMETER(errorcode);
 	ui->streamButton->setText("Start Streaming");
 }
 
-void OBSBasic::OutputStart()
-{
-	ui->streamButton->setText("Stop Streaming");
-}
-
-static void OBSOutputStart(void *data, calldata_t params)
-{
-	UNUSED_PARAMETER(params);
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data), "OutputStart");
-}
-
-static void OBSOutputStop(void *data, calldata_t params)
-{
-	int code = (int)calldata_int(params, "errorcode");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data), "OutputStop",
-			Q_ARG(int, code));
-}
-
-void OBSBasic::TempFileOutput(const char *path, int vBitrate, int aBitrate)
-{
-	obs_data_t data = obs_data_create();
-	obs_data_setstring(data, "filename", path);
-	obs_data_setint(data, "audio_bitrate", aBitrate);
-	obs_data_setint(data, "video_bitrate", vBitrate);
-
-	outputTest = obs_output_create("ffmpeg_output", "test", data);
-	obs_data_release(data);
-}
-
-void OBSBasic::TempStreamOutput(const char *url, const char *key,
-		int vBitrate, int aBitrate)
-{
-	obs_data_t aac_settings    = obs_data_create();
-	obs_data_t x264_settings   = obs_data_create();
-	obs_data_t output_settings = obs_data_create();
-	stringstream ss;
-
-	ss << "filler=1:crf=0:bitrate=" << vBitrate;
-
-	obs_data_setint(aac_settings, "bitrate", aBitrate);
-
-	obs_data_setint(x264_settings, "bitrate", vBitrate);
-	obs_data_setint(x264_settings, "buffer_size", vBitrate);
-	obs_data_setint(x264_settings, "keyint_sec", 2);
-	obs_data_setstring(x264_settings, "x264opts", ss.str().c_str());
-
-	obs_data_setstring(output_settings, "path", url);
-	obs_data_setstring(output_settings, "key", key);
-
-	aac  = obs_audio_encoder_create("ffmpeg_aac", "blabla1",
-			aac_settings, obs_audio());
-	x264 = obs_video_encoder_create("obs_x264", "blabla2",
-			x264_settings, obs_video());
-	outputTest = obs_output_create("rtmp_output", "test", output_settings);
-
-	obs_output_set_video_encoder(outputTest, x264);
-	obs_output_set_audio_encoder(outputTest, aac);
-
-	obs_data_release(aac_settings);
-	obs_data_release(x264_settings);
-	obs_data_release(output_settings);
-}
-
-/* TODO: lots of temporary code */
 void OBSBasic::on_streamButton_clicked()
 {
-	if (obs_output_active(outputTest)) {
-		obs_output_stop(outputTest);
+	if (obs_output_active(streamOutput)) {
+		obs_output_stop(streamOutput);
+
 	} else {
-		const char *url = config_get_string(basicConfig, "OutputTemp",
-				"URL");
-		const char *key = config_get_string(basicConfig, "OutputTemp",
-				"Key");
-		int vBitrate = config_get_uint(basicConfig, "OutputTemp",
+		obs_data_t x264Settings = obs_data_create();
+		obs_data_t aacSettings  = obs_data_create();
+
+		int videoBitrate = config_get_uint(basicConfig, "SimpleOutput",
 				"VBitrate");
-		int aBitrate = config_get_uint(basicConfig, "OutputTemp",
+		int audioBitrate = config_get_uint(basicConfig, "SimpleOutput",
 				"ABitrate");
 
-		if (!url)
-			return;
+		SaveService();
 
-		obs_output_destroy(outputTest);
-		obs_encoder_destroy(aac);
-		obs_encoder_destroy(x264);
-		outputTest = nullptr;
-		aac        = nullptr;
-		x264       = nullptr;
+		obs_data_setint(x264Settings, "bitrate", videoBitrate);
+		obs_data_setbool(x264Settings, "cbr", true);
 
-		if (strstr(url, "rtmp://") != NULL)
-			TempStreamOutput(url, key, vBitrate, aBitrate);
-		else
-			TempFileOutput(url, vBitrate, aBitrate);
+		obs_data_setint(aacSettings, "bitrate", audioBitrate);
 
-		if (!outputTest) {
-			OutputStop(OBS_OUTPUT_FAIL);
-			return;
-		}
+		obs_encoder_update(x264, x264Settings);
+		obs_encoder_update(aac,  aacSettings);
 
-		signal_handler_connect(obs_output_signalhandler(outputTest),
-				"start", OBSOutputStart, this);
-		signal_handler_connect(obs_output_signalhandler(outputTest),
-				"stop", OBSOutputStop, this);
+		obs_data_release(x264Settings);
+		obs_data_release(aacSettings);
 
-		obs_output_start(outputTest);
+		obs_encoder_set_video(x264, obs_video());
+		obs_encoder_set_audio(aac,  obs_audio());
+		obs_output_set_video_encoder(streamOutput, x264);
+		obs_output_set_audio_encoder(streamOutput, aac);
+		obs_output_set_service(streamOutput, service);
+		obs_output_start(streamOutput);
 	}
 }
 

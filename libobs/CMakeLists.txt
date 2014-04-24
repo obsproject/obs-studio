@@ -224,6 +224,7 @@ set_target_properties(libobs PROPERTIES
 	VERSION "0"
 	SOVERSION "0")
 target_link_libraries(libobs
+	jansson
 	${libobs_PLATFORM_DEPS}
 	${Libswscale_LIBRARIES}
 	${Libswresample_LIBRARIES}

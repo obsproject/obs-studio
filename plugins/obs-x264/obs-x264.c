@@ -76,6 +76,8 @@ static void obs_x264_defaults(obs_data_t settings)
 	obs_data_set_default_int   (settings, "bitrate",     1000);
 	obs_data_set_default_int   (settings, "buffer_size", 1000);
 	obs_data_set_default_int   (settings, "keyint_sec",  0);
+	obs_data_set_default_int   (settings, "crf",         23);
+	obs_data_set_default_bool  (settings, "cbr",         false);
 
 	obs_data_set_default_string(settings, "preset",      "veryfast");
 	obs_data_set_default_string(settings, "profile",     "");
@@ -221,6 +223,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	int bitrate      = (int)obs_data_getint(settings, "bitrate");
 	int buffer_size  = (int)obs_data_getint(settings, "buffer_size");
 	int keyint_sec   = (int)obs_data_getint(settings, "keyint_sec");
+	int crf          = (int)obs_data_getint(settings, "crf");
+	bool cbr         = obs_data_getbool(settings, "cbr");
 
 	if (keyint_sec)
 		obsx264->params.i_keyint_max =
@@ -236,6 +240,17 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.i_fps_den            = voi->fps_den;
 	obsx264->params.pf_log               = log_x264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
+
+	/* use the new filler method for CBR to allow real-time adjusting of
+	 * the bitrate */
+	if (cbr) {
+		obsx264->params.rc.b_filler      = true;
+		obsx264->params.rc.f_rf_constant = 0.0f;
+		obsx264->params.rc.i_rc_method   = X264_RC_ABR;
+	} else {
+		obsx264->params.rc.i_rc_method   = X264_RC_CRF;
+		obsx264->params.rc.f_rf_constant = (float)crf;
+	}
 
 	if (voi->format == VIDEO_FORMAT_NV12)
 		obsx264->params.i_csp = X264_CSP_NV12;
