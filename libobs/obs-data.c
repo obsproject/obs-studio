@@ -20,6 +20,8 @@
 #include "util/darray.h"
 #include "obs-data.h"
 
+#include <jansson.h>
+
 struct obs_data_item {
 	volatile long        ref;
 	struct obs_data      *parent;
@@ -235,6 +237,154 @@ static inline void obs_data_item_setdata(
 
 /* ------------------------------------------------------------------------- */
 
+static void obs_data_add_json_item(obs_data_t data, const char *key,
+		json_t *json);
+
+static inline void obs_data_add_json_object_data(obs_data_t data, json_t *jobj)
+{
+	const char *item_key;
+	json_t *jitem;
+
+	json_object_foreach (jobj, item_key, jitem) {
+		obs_data_add_json_item(data, item_key, jitem);
+	}
+}
+
+static inline void obs_data_add_json_object(obs_data_t data, const char *key,
+		json_t *jobj)
+{
+	obs_data_t sub_obj = obs_data_create();
+
+	obs_data_add_json_object_data(sub_obj, jobj);
+	obs_data_setobj(data, key, sub_obj);
+	obs_data_release(sub_obj);
+}
+
+static void obs_data_add_json_array(obs_data_t data, const char *key,
+		json_t *jarray)
+{
+	obs_data_array_t array = obs_data_array_create();
+	size_t idx;
+	json_t *jitem;
+
+	json_array_foreach (jarray, idx, jitem) {
+		obs_data_t item;
+
+		if (!json_is_object(jitem))
+			continue;
+
+		item = obs_data_create();
+		obs_data_add_json_object_data(item, jitem);
+		obs_data_array_push_back(array, item);
+		obs_data_release(item);
+	}
+
+	obs_data_setarray(data, key, array);
+	obs_data_array_release(array);
+}
+
+static void obs_data_add_json_item(obs_data_t data, const char *key,
+		json_t *json)
+{
+	if (json_is_object(json))
+		obs_data_add_json_object(data, key, json);
+	else if (json_is_array(json))
+		obs_data_add_json_array(data, key, json);
+	else if (json_is_string(json))
+		obs_data_setstring(data, key, json_string_value(json));
+	else if (json_is_integer(json))
+		obs_data_setint(data, key, json_integer_value(json));
+	else if (json_is_real(json))
+		obs_data_setdouble(data, key, json_real_value(json));
+	else if (json_is_true(json))
+		obs_data_setbool(data, key, true);
+	else if (json_is_false(json))
+		obs_data_setbool(data, key, false);
+}
+
+/* ------------------------------------------------------------------------- */
+
+static inline void set_json_string(json_t *json, const char *name,
+		obs_data_item_t item)
+{
+	const char *val = obs_data_item_getstring(item);
+	json_object_set_new(json, name, json_string(val));
+}
+
+static inline void set_json_number(json_t *json, const char *name,
+		obs_data_item_t item)
+{
+	enum obs_data_number_type type = obs_data_item_numtype(item);
+
+	if (type == OBS_DATA_NUM_INT) {
+		long long val = obs_data_item_getint(item);
+		json_object_set_new(json, name, json_integer(val));
+	} else {
+		double val = obs_data_item_getdouble(item);
+		json_object_set_new(json, name, json_real(val));
+	}
+}
+
+static inline void set_json_bool(json_t *json, const char *name,
+		obs_data_item_t item)
+{
+	bool val = obs_data_item_getbool(item);
+	json_object_set_new(json, name, val ? json_true() : json_false());
+}
+
+static json_t *obs_data_to_json(obs_data_t data);
+
+static inline void set_json_obj(json_t *json, const char *name,
+		obs_data_item_t item)
+{
+	obs_data_t obj = obs_data_item_getobj(item);
+	json_object_set_new(json, name, obs_data_to_json(obj));
+	obs_data_release(obj);
+}
+
+static inline void set_json_array(json_t *json, const char *name,
+		obs_data_item_t item)
+{
+	json_t           *jarray = json_array();
+	obs_data_array_t array   = obs_data_item_getarray(item);
+	size_t           count   = obs_data_array_count(array);
+
+	for (size_t idx = 0; idx < count; idx++) {
+		obs_data_t sub_item = obs_data_array_item(array, idx);
+		json_t     *jitem   = obs_data_to_json(sub_item);
+		json_array_append_new(jarray, jitem);
+	}
+
+	json_object_set_new(json, name, jarray);
+	obs_data_array_release(array);
+}
+
+static json_t *obs_data_to_json(obs_data_t data)
+{
+	json_t *json = json_object();
+	obs_data_item_t item = obs_data_first(data);
+
+	while (item) {
+		enum obs_data_type type = obs_data_item_gettype(item);
+		const char *name        = get_item_name(item);
+
+		if (type == OBS_DATA_STRING)
+			set_json_string(json, name, item);
+		else if (type == OBS_DATA_NUMBER)
+			set_json_number(json, name, item);
+		else if (type == OBS_DATA_BOOLEAN)
+			set_json_bool(json, name, item);
+		else if (type == OBS_DATA_OBJECT)
+			set_json_obj(json, name, item);
+
+		obs_data_item_next(&item);
+	}
+
+	return json;
+}
+
+/* ------------------------------------------------------------------------- */
+
 obs_data_t obs_data_create()
 {
 	struct obs_data *data = bzalloc(sizeof(struct obs_data));
@@ -245,9 +395,21 @@ obs_data_t obs_data_create()
 
 obs_data_t obs_data_create_from_json(const char *json_string)
 {
-	/* TODO */
-	UNUSED_PARAMETER(json_string);
-	return NULL;
+	obs_data_t data = obs_data_create();
+
+	json_error_t error;
+	json_t *root = json_loads(json_string, JSON_REJECT_DUPLICATES, &error);
+
+	if (root) {
+		obs_data_add_json_object_data(data, root);
+		json_decref(root);
+	} else {
+		blog(LOG_ERROR, "obs-data.c: [obs_data_create_from_json] "
+		                "Failed reading json string (%d): %s",
+		                error.line, error.text);
+	}
+
+	return data;
 }
 
 void obs_data_addref(obs_data_t data)
@@ -266,7 +428,8 @@ static inline void obs_data_destroy(struct obs_data *data)
 		item = next;
 	}
 
-	bfree(data->json);
+	/* NOTE: don't use bfree for json text, allocated by json */
+	free(data->json);
 	bfree(data);
 }
 
@@ -282,7 +445,14 @@ const char *obs_data_getjson(obs_data_t data)
 {
 	if (!data) return NULL;
 
-	/* TODO */
+	/* NOTE: don't use libobs bfree for json text */
+	free(data->json);
+	data->json = NULL;
+
+	json_t *root = obs_data_to_json(data);
+	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_INDENT(4));
+	json_decref(root);
+
 	return data->json;
 }
 
