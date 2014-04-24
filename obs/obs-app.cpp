@@ -31,6 +31,8 @@
 #ifdef _WIN32
 #include <fstream>
 #include <windows.h>
+#else
+#include <signal.h>
 #endif
 
 using namespace std;
@@ -217,6 +219,10 @@ struct NoFocusFrameStyle : QProxyStyle
 
 int main(int argc, char *argv[])
 {
+#ifndef WIN32
+	signal(SIGPIPE, SIG_IGN);
+#endif
+
 	int ret = -1;
 	QCoreApplication::addLibraryPath(".");
 #ifdef _WIN32
