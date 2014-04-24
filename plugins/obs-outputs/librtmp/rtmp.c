@@ -1220,6 +1220,8 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
         }
     }
 
+    setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &on, sizeof(on));
+
     if(!r->m_bUseNagle)
         setsockopt(r->m_sb.sb_socket, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on));
 
