@@ -492,8 +492,8 @@ extern struct gl_platform   *gl_platform_create(device_t device,
 extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
 extern void                  gl_platform_destroy(struct gl_platform *platform);
 
-extern bool                  gl_platform_init_swapchain(struct gs_swap_chain *swap);
-extern void                  gl_platform_cleanup_swapchain(struct gs_swap_chain *swap);
+extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap);
+extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap);
 
 extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);

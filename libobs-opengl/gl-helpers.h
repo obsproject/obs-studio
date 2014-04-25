@@ -149,10 +149,10 @@ extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		const void ***p_data);
 
 extern bool gl_copy_texture(struct gs_device *device,
-							GLuint dst, GLenum dst_target, uint32_t dst_x, uint32_t dst_y,
-							GLuint src, GLenum src_target, uint32_t src_x, uint32_t src_y,
-                            uint32_t width, uint32_t height,
-			    enum gs_color_format format);
+		GLuint dst, GLenum dst_target, uint32_t dst_x, uint32_t dst_y,
+		GLuint src, GLenum src_target, uint32_t src_x, uint32_t src_y,
+		uint32_t width, uint32_t height,
+		enum gs_color_format format);
 
 extern bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
 		const GLvoid *data, GLenum usage);
