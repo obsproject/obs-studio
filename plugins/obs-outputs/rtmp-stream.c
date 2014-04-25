@@ -69,7 +69,7 @@ static const char *rtmp_stream_getname(const char *locale)
 
 static void log_rtmp(int level, const char *format, va_list args)
 {
-	if (level > RTMP_LOGERROR)
+	if (level > RTMP_LOGWARNING)
 		return;
 
 	blogva(LOG_INFO, format, args);
@@ -111,6 +111,7 @@ static void *rtmp_stream_create(obs_data_t settings, obs_output_t output)
 
 	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetCallback(log_rtmp);
+	RTMP_LogSetLevel(RTMP_LOGWARNING);
 
 	if (pthread_mutex_init(&stream->packets_mutex, NULL) != 0)
 		goto fail;
@@ -229,8 +230,10 @@ static void *send_thread(void *data)
 	if (!disconnected && !send_remaining_packets(stream))
 		disconnected = true;
 
-	if (disconnected)
+	if (disconnected) {
+		blog(LOG_INFO, "Disconnected from %s", stream->path.array);
 		free_packets(stream);
+	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN) {
 		pthread_detach(stream->send_thread);
@@ -356,6 +359,8 @@ static int init_send(struct rtmp_stream *stream)
 static int try_connect(struct rtmp_stream *stream)
 {
 #ifndef FILE_TEST
+	blog(LOG_INFO, "Connecting to RTMP URL %s...", stream->path.array);
+
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
 				stream->key.array))
 		return OBS_OUTPUT_BAD_PATH;
@@ -376,6 +381,8 @@ static int try_connect(struct rtmp_stream *stream)
 		return OBS_OUTPUT_CONNECT_FAILED;
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
+
+	blog(LOG_INFO, "Connection to %s successful", stream->path.array);
 #endif
 
 	return init_send(stream);
@@ -386,8 +393,11 @@ static void *connect_thread(void *data)
 	struct rtmp_stream *stream = data;
 	int ret = try_connect(stream);
 
-	if (ret != OBS_OUTPUT_SUCCESS)
+	if (ret != OBS_OUTPUT_SUCCESS) {
 		obs_output_signal_stop(stream->output, ret);
+		blog(LOG_INFO, "Connection to %s failed: %d",
+			stream->path.array, ret);
+	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN)
 		pthread_detach(stream->connect_thread);
