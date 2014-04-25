@@ -367,6 +367,7 @@ void video_output_stop(video_t video)
 		return;
 
 	if (video->initialized) {
+		video->initialized = false;
 		os_event_signal(video->stop_event);
 		pthread_join(video->thread, &thread_ret);
 		os_event_signal(video->update_event);
