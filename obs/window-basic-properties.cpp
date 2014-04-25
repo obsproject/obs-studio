@@ -48,7 +48,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			source, (PropertiesUpdateCallback)obs_source_update);
 
 	layout()->addWidget(view);
-	layout()->setAlignment(view, Qt::AlignRight);
+	layout()->setAlignment(view, Qt::AlignBottom);
+	view->setMinimumHeight(150);
 	view->show();
 
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {

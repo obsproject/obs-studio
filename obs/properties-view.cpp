@@ -24,7 +24,7 @@ void OBSPropertiesView::RefreshProperties()
 
 	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-	widget->setSizePolicy(policy);
+	//widget->setSizePolicy(policy);
 	layout->setSizeConstraint(QLayout::SetMaximumSize);
 	layout->setLabelAlignment(Qt::AlignRight);
 
@@ -35,6 +35,7 @@ void OBSPropertiesView::RefreshProperties()
 		obs_property_next(&property);
 	}
 
+	setWidgetResizable(true);
 	setWidget(widget);
 	setSizePolicy(mainPolicy);
 
