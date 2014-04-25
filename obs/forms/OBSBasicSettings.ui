@@ -249,6 +249,9 @@
             </sizepolicy>
            </property>
            <layout class="QFormLayout" name="formLayout_5">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_16">
               <property name="minimumSize">
