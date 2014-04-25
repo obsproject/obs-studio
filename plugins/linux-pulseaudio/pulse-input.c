@@ -36,7 +36,9 @@ struct pulse_data {
 	pa_stream *stream;
 };
 
-/*
+static void pulse_stop_recording(struct pulse_data *data);
+
+/**
  * get obs from pulse audio format
  */
 static enum audio_format pulse_to_obs_audio_format(
@@ -58,8 +60,8 @@ static enum audio_format pulse_to_obs_audio_format(
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
-/*
- * get the buffer size needed for length msec with current settings
+/**
+ * Get the buffer size needed for length msec with current settings
  */
 static uint_fast32_t get_buffer_size(struct pulse_data *data,
 	uint_fast32_t length)
@@ -67,7 +69,7 @@ static uint_fast32_t get_buffer_size(struct pulse_data *data,
 	return (length * data->samples_per_sec * data->bytes_per_frame) / 1000;
 }
 
-/*
+/**
  * Get latency for a pulse audio stream
  */
 static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
@@ -81,8 +83,10 @@ static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
 	return ret;
 }
 
-/*
+/**
  * Callback for pulse which gets executed when new audio data is available
+ *
+ * @warning The function may be called even after disconnecting the stream
  */
 static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 {
@@ -94,6 +98,9 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	size_t bytes;
 	uint64_t pa_time;
 	int64_t pa_latency;
+
+	if (!data->stream)
+		goto exit;
 
 	pa_stream_peek(data->stream, &frames, &bytes);
 
@@ -133,7 +140,7 @@ exit:
 	pulse_signal(0);
 }
 
-/*
+/**
  * Server info callback
  */
 static void pulse_server_info(pa_context *c, const pa_server_info *i,
@@ -154,7 +161,7 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	pulse_signal(0);
 }
 
-/*
+/**
  * start recording
  */
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
@@ -207,6 +214,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 		&attr, flags);
 	pulse_unlock();
 	if (ret < 0) {
+		pulse_stop_recording(data);
 		blog(LOG_ERROR, "pulse-input: Unable to connect to stream");
 		return -1;
 	}
@@ -215,7 +223,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	return 0;
 }
 
-/*
+/**
  * stop recording
  */
 static void pulse_stop_recording(struct pulse_data *data)
@@ -224,11 +232,12 @@ static void pulse_stop_recording(struct pulse_data *data)
 		pulse_lock();
 		pa_stream_disconnect(data->stream);
 		pa_stream_unref(data->stream);
+		data->stream = NULL;
 		pulse_unlock();
 	}
 }
 
-/*
+/**
  * input info callback
  */
 static void pulse_input_info(pa_context *c, const pa_source_info *i, int eol,
@@ -262,8 +271,8 @@ skip:
 	pulse_signal(0);
 }
 
-/*
- * get plugin properties
+/**
+ * Get plugin properties
  */
 static obs_properties_t pulse_properties(const char *locale, bool input)
 {
@@ -289,15 +298,15 @@ static obs_properties_t pulse_output_properties(const char *locale)
 	return pulse_properties(locale, false);
 }
 
-/*
- * get plugin defaults
+/**
+ * Get plugin defaults
  */
 static void pulse_defaults(obs_data_t settings)
 {
 	obs_data_set_default_string(settings, "device_id", "default");
 }
 
-/*
+/**
  * Returns the name of the plugin
  */
 static const char *pulse_input_getname(const char *locale)
@@ -312,7 +321,7 @@ static const char *pulse_output_getname(const char *locale)
 	return "Pulse Audio Output Capture";
 }
 
-/*
+/**
  * Destroy the plugin object and free all memory
  */
 static void pulse_destroy(void *vptr)
@@ -322,7 +331,8 @@ static void pulse_destroy(void *vptr)
 	if (!data)
 		return;
 
-	pulse_stop_recording(data);
+	if (data->stream)
+		pulse_stop_recording(data);
 	pulse_unref();
 
 	if (data->device)
@@ -332,7 +342,28 @@ static void pulse_destroy(void *vptr)
 	blog(LOG_DEBUG, "pulse-input: Input destroyed");
 }
 
-/*
+/**
+ * Update the input settings
+ */
+static void pulse_update(void *vptr, obs_data_t settings)
+{
+	PULSE_DATA(vptr);
+	char *new_device;
+
+	new_device = bstrdup(obs_data_getstring(settings, "device_id"));
+	if (data->device && strcmp(data->device, new_device) == 0)
+		return;
+
+	if (data->device)
+		bfree(data->device);
+	data->device = new_device;
+
+	if (data->stream)
+		pulse_stop_recording(data);
+	pulse_start_recording(data);
+}
+
+/**
  * Create the plugin object
  */
 static void *pulse_create(obs_data_t settings, obs_source_t source)
@@ -341,22 +372,15 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 
 	data->source   = source;
 	data->speakers = SPEAKERS_STEREO;
-	data->device   = bstrdup(obs_data_getstring(settings, "device_id"));
 
 	pulse_init();
-	if (pulse_start_recording(data) < 0)
-		goto fail;
+	pulse_update(data, settings);
 
-	return data;
-fail:
+	if (data->stream)
+		return data;
+
 	pulse_destroy(data);
 	return NULL;
-}
-
-static void pulse_update(void *vptr, obs_data_t settings)
-{
-	UNUSED_PARAMETER(vptr);
-	UNUSED_PARAMETER(settings);
 }
 
 struct obs_source_info pulse_input_capture = {
