@@ -84,9 +84,14 @@ static inline void free_packets(struct rtmp_stream *stream)
 	}
 }
 
+static void rtmp_stream_stop(void *data);
+
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
+
+	if (stream->active)
+		rtmp_stream_stop(data);
 
 	if (stream) {
 		free_packets(stream);
@@ -94,7 +99,6 @@ static void rtmp_stream_destroy(void *data)
 		dstr_free(&stream->key);
 		dstr_free(&stream->username);
 		dstr_free(&stream->password);
-		RTMP_Close(&stream->rtmp);
 		os_event_destroy(stream->stop_event);
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
@@ -144,6 +148,7 @@ static void rtmp_stream_stop(void *data)
 		obs_output_end_data_capture(stream->output);
 		os_sem_post(stream->send_sem);
 		pthread_join(stream->send_thread, &ret);
+		RTMP_Close(&stream->rtmp);
 	}
 
 	os_event_reset(stream->stop_event);

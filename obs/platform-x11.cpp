@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 /* Here we use xinerama to fetch data about monitor geometry
- * Even if there are not multiple monitors, this should still work. 
+ * Even if there are not multiple monitors, this should still work.
  */
 
 #include <X11/Xlib.h>
@@ -75,7 +75,7 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 
 	screens = XineramaQueryScreens(display, &num_screens);
 
-	if (num_screens == 0 || !screens) { 
+	if (num_screens == 0 || !screens) {
 		printf("Xinerama isn't active on this screen.\n");
 		return;
 	}
@@ -86,13 +86,14 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 		--num_screens;
 
 		monitors.emplace_back(
-			screens[num_screens].x_org, 
+			screens[num_screens].x_org,
 			screens[num_screens].y_org,
 			screens[num_screens].width,
 			screens[num_screens].height
                 );
 	} while (num_screens > 0);
 
+	XFree(screens);
 	XCloseDisplay(display);
 }
 
