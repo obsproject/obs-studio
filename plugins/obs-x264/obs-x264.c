@@ -244,9 +244,14 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
 	if (cbr) {
-		obsx264->params.rc.b_filler      = true;
 		obsx264->params.rc.f_rf_constant = 0.0f;
+
+#if X264_BUILD >= 139
+		obsx264->params.rc.b_filler      = true;
 		obsx264->params.rc.i_rc_method   = X264_RC_ABR;
+#else
+		obsx264->params.rc.i_nal_hrd     = X264_NAL_HRD_CBR;
+#endif
 	} else {
 		obsx264->params.rc.i_rc_method   = X264_RC_CRF;
 		obsx264->params.rc.f_rf_constant = (float)crf;
