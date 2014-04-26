@@ -52,13 +52,13 @@ void gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
 	PushBuffer(buffers, strides, vertexBuffer, sizeof(vec3), "point");
 
 	if (shader->hasNormals)
-		PushBuffer(buffers, strides, vertexBuffer, sizeof(vec3),
+		PushBuffer(buffers, strides, normalBuffer, sizeof(vec3),
 				"normal");
 	if (shader->hasColors)
-		PushBuffer(buffers, strides, vertexBuffer, sizeof(vec3),
+		PushBuffer(buffers, strides, colorBuffer, sizeof(uint32_t),
 				"color");
 	if (shader->hasTangents)
-		PushBuffer(buffers, strides, vertexBuffer, sizeof(vec3),
+		PushBuffer(buffers, strides, tangentBuffer, sizeof(vec3),
 				"tangent");
 	if (shader->nTexUnits <= uvBuffers.size()) {
 		for (size_t i = 0; i < shader->nTexUnits; i++) {
