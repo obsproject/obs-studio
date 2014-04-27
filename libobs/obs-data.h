@@ -147,6 +147,26 @@ EXPORT obs_data_t obs_data_item_getobj(obs_data_item_t item);
 EXPORT obs_data_array_t obs_data_item_getarray(obs_data_item_t item);
 
 /* ------------------------------------------------------------------------- */
+/* Helper functions for certain structures */
+EXPORT void obs_data_set_vec2(obs_data_t data, const char *name,
+		const struct vec2 *val);
+EXPORT void obs_data_set_vec3(obs_data_t data, const char *name,
+		const struct vec3 *val);
+EXPORT void obs_data_set_vec4(obs_data_t data, const char *name,
+		const struct vec4 *val);
+EXPORT void obs_data_set_quat(obs_data_t data, const char *name,
+		const struct quat *val);
+
+EXPORT void obs_data_get_vec2(obs_data_t data, const char *name,
+		struct vec2 *val);
+EXPORT void obs_data_get_vec3(obs_data_t data, const char *name,
+		struct vec3 *val);
+EXPORT void obs_data_get_vec4(obs_data_t data, const char *name,
+		struct vec4 *val);
+EXPORT void obs_data_get_quat(obs_data_t data, const char *name,
+		struct quat *val);
+
+/* ------------------------------------------------------------------------- */
 /* OBS-specific functions */
 
 static inline obs_data_t obs_data_newref(obs_data_t data)

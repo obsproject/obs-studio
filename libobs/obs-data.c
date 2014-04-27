@@ -18,6 +18,10 @@
 #include "util/bmem.h"
 #include "util/threading.h"
 #include "util/darray.h"
+#include "graphics/vec2.h"
+#include "graphics/vec3.h"
+#include "graphics/vec4.h"
+#include "graphics/quat.h"
 #include "obs-data.h"
 
 #include <jansson.h>
@@ -353,6 +357,7 @@ static inline void set_json_array(json_t *json, const char *name,
 		obs_data_t sub_item = obs_data_array_item(array, idx);
 		json_t     *jitem   = obs_data_to_json(sub_item);
 		json_array_append_new(jarray, jitem);
+		obs_data_release(sub_item);
 	}
 
 	json_object_set_new(json, name, jarray);
@@ -376,6 +381,8 @@ static json_t *obs_data_to_json(obs_data_t data)
 			set_json_bool(json, name, item);
 		else if (type == OBS_DATA_OBJECT)
 			set_json_obj(json, name, item);
+		else if (type == OBS_DATA_ARRAY)
+			set_json_array(json, name, item);
 
 		obs_data_item_next(&item);
 	}
@@ -934,4 +941,96 @@ obs_data_array_t obs_data_item_getarray(obs_data_item_t item)
 	if (array)
 		os_atomic_inc_long(&array->ref);
 	return array;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Helper functions for certain structures */
+void obs_data_set_vec2(obs_data_t data, const char *name,
+		const struct vec2 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setobj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_vec3(obs_data_t data, const char *name,
+		const struct vec3 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_setobj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_vec4(obs_data_t data, const char *name,
+		const struct vec4 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_setdouble(obj, "w", val->w);
+	obs_data_setobj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_quat(obs_data_t data, const char *name,
+		const struct quat *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_setdouble(obj, "w", val->w);
+	obs_data_setobj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_get_vec2(obs_data_t data, const char *name, struct vec2 *val)
+{
+	obs_data_t obj = obs_data_getobj(data, name);
+	if (!obj) return;
+
+	val->x = (float)obs_data_getdouble(obj, "x");
+	val->y = (float)obs_data_getdouble(obj, "y");
+	obs_data_release(obj);
+}
+
+void obs_data_get_vec3(obs_data_t data, const char *name, struct vec3 *val)
+{
+	obs_data_t obj = obs_data_getobj(data, name);
+	if (!obj) return;
+
+	val->x = (float)obs_data_getdouble(obj, "x");
+	val->y = (float)obs_data_getdouble(obj, "y");
+	val->z = (float)obs_data_getdouble(obj, "z");
+	obs_data_release(obj);
+}
+
+void obs_data_get_vec4(obs_data_t data, const char *name, struct vec4 *val)
+{
+	obs_data_t obj = obs_data_getobj(data, name);
+	if (!obj) return;
+
+	val->x = (float)obs_data_getdouble(obj, "x");
+	val->y = (float)obs_data_getdouble(obj, "y");
+	val->z = (float)obs_data_getdouble(obj, "z");
+	val->w = (float)obs_data_getdouble(obj, "w");
+	obs_data_release(obj);
+}
+
+void obs_data_get_quat(obs_data_t data, const char *name, struct quat *val)
+{
+	obs_data_t obj = obs_data_getobj(data, name);
+	if (!obj) return;
+
+	val->x = (float)obs_data_getdouble(obj, "x");
+	val->y = (float)obs_data_getdouble(obj, "y");
+	val->z = (float)obs_data_getdouble(obj, "z");
+	val->w = (float)obs_data_getdouble(obj, "w");
+	obs_data_release(obj);
 }
