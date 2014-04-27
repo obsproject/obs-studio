@@ -305,7 +305,7 @@ void gs_matrix_rotaa4f(float x, float y, float z, float angle)
 	struct matrix3 *top_mat = top_matrix(thread_graphics);
 	struct axisang aa;
 
-	if (!top_mat) {
+	if (top_mat) {
 		axisang_set(&aa, x, y, z, angle);
 		matrix3_rotate_aa(top_mat, top_mat, &aa);
 	}
