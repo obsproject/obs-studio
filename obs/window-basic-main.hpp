@@ -52,6 +52,9 @@ private:
 
 	QPointer<OBSBasicProperties> properties;
 
+	void          Save(const char *file);
+	void          Load(const char *file);
+
 	void          SaveService();
 	bool          LoadService();
 

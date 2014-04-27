@@ -60,11 +60,6 @@ static const struct obs_source_info *get_source_info(enum obs_source_type type,
 	case OBS_SOURCE_TYPE_TRANSITION:
 		list = &obs->transition_types.da;
 		break;
-
-	case OBS_SOURCE_TYPE_SCENE:
-	default:
-		blog(LOG_ERROR, "get_source_info: invalid source type");
-		return NULL;
 	}
 
 	return find_source(list, id);
@@ -1736,4 +1731,16 @@ void obs_transition_end_frame(obs_source_t transition)
 {
 	if (!transition) return;
 	obs_source_enum_tree(transition, apply_transition_vol, NULL);
+}
+
+void obs_source_save(obs_source_t source)
+{
+	if (!source || !source->info.save) return;
+	source->info.save(source->context.data, source->context.settings);
+}
+
+void obs_source_load(obs_source_t source)
+{
+	if (!source || !source->info.load) return;
+	source->info.load(source->context.data, source->context.settings);
 }

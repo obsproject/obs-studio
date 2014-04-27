@@ -19,6 +19,12 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
+static const char *obs_scene_signals[] = {
+	"void item_add(ptr scene, ptr item)",
+	"void item_remove(ptr scene, ptr item)",
+	NULL
+};
+
 static inline void signal_item_remove(struct obs_scene_item *item)
 {
 	struct calldata params = {0};
@@ -32,8 +38,9 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 
 static const char *scene_getname(const char *locale)
 {
+	/* TODO: locale */
 	UNUSED_PARAMETER(locale);
-	return "Scene internal source type";
+	return "Scene";
 }
 
 static void *scene_create(obs_data_t settings, struct obs_source *source)
@@ -42,6 +49,9 @@ static void *scene_create(obs_data_t settings, struct obs_source *source)
 	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
 	scene->source     = source;
 	scene->first_item = NULL;
+
+	signal_handler_add_array(obs_source_signalhandler(source),
+			obs_scene_signals);
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
@@ -61,9 +71,8 @@ fail:
 	return NULL;
 }
 
-static void scene_destroy(void *data)
+static void remove_all_items(struct obs_scene *scene)
 {
-	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
 
 	pthread_mutex_lock(&scene->mutex);
@@ -78,7 +87,13 @@ static void scene_destroy(void *data)
 	}
 
 	pthread_mutex_unlock(&scene->mutex);
+}
 
+static void scene_destroy(void *data)
+{
+	struct obs_scene *scene = data;
+
+	remove_all_items(scene);
 	pthread_mutex_destroy(&scene->mutex);
 	bfree(scene);
 }
@@ -173,6 +188,85 @@ static void scene_video_render(void *data, effect_t effect)
 	UNUSED_PARAMETER(effect);
 }
 
+static void scene_load_item(struct obs_scene *scene, obs_data_t item_data)
+{
+	const char            *name = obs_data_getstring(item_data, "name");
+	obs_source_t          source = obs_get_source_by_name(name);
+	struct obs_scene_item *item;
+
+	if (!source) {
+		blog(LOG_WARNING, "[scene_load_item] Source %s not found!",
+				name);
+		return;
+	}
+
+	item = obs_scene_add(scene, source);
+
+	item->rot     = (float)obs_data_getdouble(item_data, "rot");
+	item->visible = obs_data_getbool(item_data, "visible");
+	obs_data_get_vec2(item_data, "origin", &item->origin);
+	obs_data_get_vec2(item_data, "pos",    &item->pos);
+	obs_data_get_vec2(item_data, "scale",  &item->scale);
+	obs_source_release(source);
+}
+
+static void scene_load(void *scene, obs_data_t settings)
+{
+	obs_data_array_t items = obs_data_getarray(settings, "items");
+	size_t           count, i;
+
+	remove_all_items(scene);
+
+	if (!items) return;
+
+	count = obs_data_array_count(items);
+
+	for (i = 0; i < count; i++) {
+		obs_data_t item_data = obs_data_array_item(items, i);
+		scene_load_item(scene, item_data);
+		obs_data_release(item_data);
+	}
+
+	obs_data_array_release(items);
+}
+
+static void scene_save_item(struct obs_scene *scene, obs_data_array_t array,
+		struct obs_scene_item *item)
+{
+	obs_data_t item_data = obs_data_create();
+	const char *name     = obs_source_getname(item->source);
+
+	obs_data_setstring(item_data, "name",    name);
+	obs_data_setbool  (item_data, "visible", item->visible);
+	obs_data_setdouble(item_data, "rot",     item->rot);
+	obs_data_set_vec2 (item_data, "origin",  &item->origin);
+	obs_data_set_vec2 (item_data, "pos",     &item->pos);
+	obs_data_set_vec2 (item_data, "scale",   &item->scale);
+
+	obs_data_array_push_back(array, item_data);
+	obs_data_release(item_data);
+}
+
+static void scene_save(void *data, obs_data_t settings)
+{
+	struct obs_scene      *scene = data;
+	obs_data_array_t      array  = obs_data_array_create();
+	struct obs_scene_item *item;
+
+	pthread_mutex_lock(&scene->mutex);
+
+	item = scene->first_item;
+	while (item) {
+		scene_save_item(scene, array, item);
+		item = item->next;
+	}
+
+	pthread_mutex_unlock(&scene->mutex);
+
+	obs_data_setarray(settings, "items", array);
+	obs_data_array_release(array);
+}
+
 static uint32_t scene_getwidth(void *data)
 {
 	UNUSED_PARAMETER(data);
@@ -185,10 +279,10 @@ static uint32_t scene_getheight(void *data)
 	return obs->video.base_height;
 }
 
-static const struct obs_source_info scene_info =
+const struct obs_source_info scene_info =
 {
 	.id           = "scene",
-	.type         = OBS_SOURCE_TYPE_SCENE,
+	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
 	.getname      = scene_getname,
 	.create       = scene_create,
@@ -196,41 +290,16 @@ static const struct obs_source_info scene_info =
 	.video_render = scene_video_render,
 	.getwidth     = scene_getwidth,
 	.getheight    = scene_getheight,
+	.load         = scene_load,
+	.save         = scene_save,
 	.enum_sources = scene_enum_sources
-};
-
-static const char *obs_scene_signals[] = {
-	"void item_add(ptr scene, ptr item)",
-	"void item_remove(ptr scene, ptr item)",
-	NULL
 };
 
 obs_scene_t obs_scene_create(const char *name)
 {
-	struct obs_source *source = bzalloc(sizeof(struct obs_source));
-	struct obs_scene  *scene;
-
-	if (!obs_source_init_context(source, NULL, name)) {
-		bfree(source);
-		return NULL;
-	}
-
-	signal_handler_add_array(source->context.signals, obs_scene_signals);
-
-	scene = scene_create(source->context.settings, source);
-	source->context.data = scene;
-
-	assert(scene);
-	if (!scene) {
-		obs_context_data_free(&source->context);
-		bfree(source);
-		return NULL;
-	}
-
-	scene->source = source;
-	obs_source_init(source, &scene_info);
-	memcpy(&source->info, &scene_info, sizeof(struct obs_source_info));
-	return scene;
+	struct obs_source *source =
+		obs_source_create(OBS_SOURCE_TYPE_INPUT, "scene", name, NULL);
+	return source->context.data;
 }
 
 void obs_scene_addref(obs_scene_t scene)
@@ -252,7 +321,7 @@ obs_source_t obs_scene_getsource(obs_scene_t scene)
 
 obs_scene_t obs_scene_fromsource(obs_source_t source)
 {
-	if (!source || source->info.type != OBS_SOURCE_TYPE_SCENE)
+	if (!source || source->info.id != scene_info.id)
 		return NULL;
 
 	return source->context.data;

@@ -28,8 +28,6 @@ enum obs_source_type {
 	OBS_SOURCE_TYPE_INPUT,
 	OBS_SOURCE_TYPE_FILTER,
 	OBS_SOURCE_TYPE_TRANSITION,
-
-	OBS_SOURCE_TYPE_SCENE = 0x80000000
 };
 
 
@@ -261,6 +259,27 @@ struct obs_source_info {
 	void (*enum_sources)(void *data,
 			obs_source_enum_proc_t enum_callback,
 			void *param);
+
+	/**
+	 * Called when saving a source.  This is a separate function because
+	 * sometimes a source needs to know when it is being saved so it
+	 * doesn't always have to update the current settings until a certain
+	 * point.
+	 *
+	 * @param  data      Source data
+	 * @param  settings  Settings
+	 */
+	void (*save)(void *data, obs_data_t settings);
+
+	/**
+	 * Called when loading a source from saved data.  This should be called
+	 * after all the loading sources have actually been created because
+	 * sometimes there are sources that depend on each other.
+	 *
+	 * @param  data      Source data
+	 * @param  settings  Settings
+	 */
+	void (*load)(void *data, obs_data_t settings);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

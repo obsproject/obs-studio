@@ -66,6 +66,59 @@ OBSBasic::OBSBasic(QWidget *parent)
 	});
 }
 
+static obs_data_t GenerateSaveData()
+{
+	obs_data_t       saveData     = obs_data_create();
+	obs_data_array_t sourcesArray = obs_save_sources();
+	obs_source_t     currentScene = obs_get_output_source(0);
+	const char       *sceneName   = obs_source_getname(currentScene);
+
+	obs_data_setstring(saveData, "current_scene", sceneName);
+	obs_data_setarray(saveData, "sources", sourcesArray);
+	obs_data_array_release(sourcesArray);
+	obs_source_release(currentScene);
+
+	return saveData;
+}
+
+void OBSBasic::Save(const char *file)
+{
+	obs_data_t saveData  = GenerateSaveData();
+	const char *jsonData = obs_data_getjson(saveData);
+
+	/* TODO maybe a message box here? */
+	if (!os_quick_write_utf8_file(file, jsonData, strlen(jsonData), false))
+		blog(LOG_ERROR, "Could not save scene data to %s", file);
+
+	obs_data_release(saveData);
+}
+
+void OBSBasic::Load(const char *file)
+{
+	if (!file) {
+		blog(LOG_ERROR, "Could not find file %s", file);
+		return;
+	}
+
+	BPtr<char> jsonData = os_quick_read_utf8_file(file);
+	if (!jsonData)
+		return;
+
+	obs_data_t       data       = obs_data_create_from_json(jsonData);
+	obs_data_array_t sources    = obs_data_getarray(data, "sources");
+	const char       *sceneName = obs_data_getstring(data, "current_scene");
+	obs_source_t     curScene;
+
+	obs_load_sources(sources);
+
+	curScene = obs_get_source_by_name(sceneName);
+	obs_set_output_source(0, curScene);
+	obs_source_release(curScene);
+
+	obs_data_array_release(sources);
+	obs_data_release(data);
+}
+
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
@@ -310,12 +363,17 @@ void OBSBasic::OBSInit()
 	if (!InitService())
 		throw "Failed to initialize service";
 
+	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
+	Load(savePath);
+
 	ResetAudioDevices();
 }
 
 OBSBasic::~OBSBasic()
 {
+	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
 	SaveService();
+	Save(savePath);
 
 	if (properties)
 		delete properties;
@@ -441,11 +499,11 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 		obs_source_type type;
 		obs_source_gettype(source, &type, NULL);
 
-		if (type != OBS_SOURCE_TYPE_SCENE)
-			return;
-
 		obs_scene_t scene = obs_scene_fromsource(source);
 		const char *name = obs_source_getname(source);
+
+		if (!scene)
+			return;
 
 		QList<QListWidgetItem*> items =
 			ui->scenes->findItems(QT_UTF8(name), Qt::MatchExactly);
@@ -486,10 +544,7 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 {
 	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
-	obs_source_type type;
-	obs_source_gettype(source, &type, NULL);
-
-	if (type == OBS_SOURCE_TYPE_SCENE)
+	if (obs_scene_fromsource(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
@@ -499,10 +554,7 @@ void OBSBasic::SourceRemoved(void *data, calldata_t params)
 {
 	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
-	obs_source_type type;
-	obs_source_gettype(source, &type, NULL);
-
-	if (type == OBS_SOURCE_TYPE_SCENE)
+	if (obs_scene_fromsource(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"RemoveScene",
 				Q_ARG(OBSSource, OBSSource(source)));
@@ -905,6 +957,9 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 		const char *name = obs_source_getdisplayname(
 				OBS_SOURCE_TYPE_INPUT,
 				type, App()->GetLocale());
+
+		if (strcmp(type, "scene") == 0)
+			continue;
 
 		QAction *popupItem = new QAction(QT_UTF8(name), this);
 		popupItem->setData(QT_UTF8(type));

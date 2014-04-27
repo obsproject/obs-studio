@@ -491,12 +491,19 @@ static inline bool obs_init_handlers(void)
 	return signal_handler_add_array(obs->signals, obs_signals);
 }
 
+extern const struct obs_source_info scene_info;
+
 static bool obs_init(void)
 {
 	obs = bzalloc(sizeof(struct obs_core));
 
-	obs_init_data();
-	return obs_init_handlers();
+	if (!obs_init_data())
+		return false;
+	if (!obs_init_handlers())
+		return false;
+
+	obs_register_source(&scene_info);
+	return true;
 }
 
 bool obs_startup(void)
@@ -1024,6 +1031,82 @@ float obs_get_master_volume(void)
 float obs_get_present_volume(void)
 {
 	return obs ? obs->audio.present_volume : 0.0f;
+}
+
+void obs_load_sources(obs_data_array_t array)
+{
+	size_t count;
+	size_t i;
+
+	if (!obs) return;
+
+	count = obs_data_array_count(array);
+
+	pthread_mutex_lock(&obs->data.user_sources_mutex);
+
+	for (i = 0; i < count; i++) {
+		obs_data_t source_data = obs_data_array_item(array, i);
+
+		const char *name    = obs_data_getstring(source_data, "name");
+		const char *id      = obs_data_getstring(source_data, "id");
+		obs_data_t settings = obs_data_getobj(source_data, "settings");
+		obs_source_t source;
+
+		source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name,
+				settings);
+		obs_add_source(source);
+		obs_source_release(source);
+
+		obs_data_release(settings);
+		obs_data_release(source_data);
+	}
+
+	/* tell sources that we want to load */
+	for (i = 0; i < obs->data.user_sources.num; i++)
+		obs_source_load(obs->data.user_sources.array[i]);
+
+	pthread_mutex_unlock(&obs->data.user_sources_mutex);
+}
+
+static void save_source_data(obs_data_array_t array, obs_source_t source)
+{
+	obs_data_t       source_data = obs_data_create();
+	obs_data_t       settings    = obs_source_getsettings(source);
+	const char       *name       = obs_source_getname(source);
+	const char       *id;
+
+	obs_source_gettype(source, NULL, &id);
+
+	obs_data_setstring(source_data, "name",     name);
+	obs_data_setstring(source_data, "id",       id);
+	obs_data_setobj   (source_data, "settings", settings);
+
+	obs_data_array_push_back(array, source_data);
+
+	obs_data_release(source_data);
+	obs_data_release(settings);
+}
+
+obs_data_array_t obs_save_sources(void)
+{
+	obs_data_array_t array;
+	size_t i;
+
+	if (!obs) return NULL;
+
+	array = obs_data_array_create();
+
+	pthread_mutex_lock(&obs->data.user_sources_mutex);
+
+	for (i = 0; i < obs->data.user_sources.num; i++) {
+		obs_source_t source = obs->data.user_sources.array[i];
+		obs_source_save(source);
+		save_source_data(array, source);
+	}
+
+	pthread_mutex_unlock(&obs->data.user_sources_mutex);
+
+	return array;
 }
 
 /* ensures that names are never blank */

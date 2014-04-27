@@ -357,6 +357,12 @@ EXPORT float obs_get_master_volume(void);
 /** Gets the master presentation volume */
 EXPORT float obs_get_present_volume(void);
 
+/** Loads sources from a data array */
+EXPORT void obs_load_sources(obs_data_array_t array);
+
+/** Saves sources to a data array */
+EXPORT obs_data_array_t obs_save_sources(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */
@@ -546,6 +552,22 @@ EXPORT void obs_source_enum_tree(obs_source_t source,
 
 /** Returns true if active, false if not */
 EXPORT bool obs_source_active(obs_source_t source);
+
+/**
+ * Sometimes sources need to be told when to save their settings so they
+ * don't have to constantly update and keep track of their settings.  This will
+ * call the source's 'save' callback if any, which will save its current
+ * data to its settings.
+ */
+EXPORT void obs_source_save(obs_source_t source);
+
+/**
+ * Sometimes sources need to be told when they are loading their settings
+ * from prior saved data.  This is different from a source 'update' in that
+ * it's meant to be used after the source has been created and loaded from
+ * somewhere (such as a saved file).
+ */
+EXPORT void obs_source_load(obs_source_t source);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
