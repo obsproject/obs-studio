@@ -320,7 +320,8 @@ struct obs_output {
 	int64_t                         first_video_ts;
 	int64_t                         video_offset;
 	int64_t                         audio_offset;
-	int                             interleaved_wait;
+	int64_t                         highest_audio_ts;
+	int64_t                         highest_video_ts;
 	pthread_mutex_t                 interleaved_mutex;
 	DARRAY(struct encoder_packet)   interleaved_packets;
 

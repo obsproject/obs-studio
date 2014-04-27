@@ -405,13 +405,40 @@ static bool prepare_interleaved_packet(struct obs_output *output,
 	return true;
 }
 
+static inline bool has_higher_opposing_ts(struct obs_output *output,
+		struct encoder_packet *packet)
+{
+	if (packet->type == OBS_ENCODER_VIDEO)
+		return output->highest_audio_ts > packet->dts_usec;
+	else
+		return output->highest_video_ts > packet->dts_usec;
+}
+
 static inline void send_interleaved(struct obs_output *output)
 {
 	struct encoder_packet out = output->interleaved_packets.array[0];
-	da_erase(output->interleaved_packets, 0);
 
+	/* do not send an interleaved packet if there's no packet of the
+	 * opposing type of a higher timstamp in the interleave buffer.
+	 * this ensures that the timestamps are monotonic */
+	if (!has_higher_opposing_ts(output, &out))
+		return;
+
+	da_erase(output->interleaved_packets, 0);
 	output->info.encoded_packet(output->context.data, &out);
 	obs_free_encoder_packet(&out);
+}
+
+static inline void set_higher_ts(struct obs_output *output,
+		struct encoder_packet *packet)
+{
+	if (packet->type == OBS_ENCODER_VIDEO) {
+		if (output->highest_video_ts < packet->dts_usec)
+			output->highest_video_ts = packet->dts_usec;
+	} else {
+		if (output->highest_audio_ts < packet->dts_usec)
+			output->highest_audio_ts = packet->dts_usec;
+	}
 }
 
 static void interleave_packets(void *data, struct encoder_packet *packet)
@@ -432,15 +459,12 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 		}
 
 		da_insert(output->interleaved_packets, idx, &out);
+		set_higher_ts(output, &out);
 
 		/* when both video and audio have been received, we're ready
 		 * to start sending out packets (one at a time) */
-		if (output->received_audio && output->received_video) {
-			if (output->interleaved_wait > 0)
-				output->interleaved_wait--;
-			else
-				send_interleaved(output);
-		}
+		if (output->received_audio && output->received_video)
+			send_interleaved(output);
 	}
 
 	pthread_mutex_unlock(&output->interleaved_mutex);
@@ -455,7 +479,8 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	if (encoded) {
 		output->received_video   = false;
 		output->received_video   = false;
-		output->interleaved_wait = 5;
+		output->highest_audio_ts = 0;
+		output->highest_video_ts = 0;
 		free_packets(output);
 
 		encoded_callback = (has_video && has_audio) ?
