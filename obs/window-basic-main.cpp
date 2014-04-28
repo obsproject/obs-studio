@@ -347,6 +347,7 @@ void OBSBasic::OBSInit()
 	obs_load_module("obs-outputs");
 	obs_load_module("rtmp-services");
 #ifdef __APPLE__
+	obs_load_module("mac-avcapture");
 	obs_load_module("mac-capture");
 #elif _WIN32
 	obs_load_module("win-wasapi");
