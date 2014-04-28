@@ -86,7 +86,7 @@ static void pulse_init_context()
 static int_fast32_t pulse_context_ready()
 {
 	pulse_lock();
-	
+
 	if (!PA_CONTEXT_IS_GOOD(pa_context_get_state(pulse_context))) {
 		pulse_unlock();
 		return -1;

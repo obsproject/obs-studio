@@ -83,7 +83,7 @@ void pulse_accept();
  * Request source information
  *
  * The function will block until the operation was executed and the mainloop
- * called the provided callback functions.
+ * called the provided callback function.
  *
  * @return negative on error
  *
@@ -97,7 +97,7 @@ int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void *userdata);
  * Request server information
  *
  * The function will block until the operation was executed and the mainloop
- * called the provided callback functions
+ * called the provided callback function.
  *
  * @return negative on error
  *

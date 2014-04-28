@@ -299,11 +299,61 @@ static obs_properties_t pulse_output_properties(const char *locale)
 }
 
 /**
+ * Server info callback
+ */
+static void pulse_input_device(pa_context *c, const pa_server_info *i,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	obs_data_t settings = (obs_data_t) userdata;
+
+	obs_data_set_default_string(settings, "device_id",
+		i->default_source_name);
+	blog(LOG_DEBUG, "pulse-input: Default input device: '%s'",
+	     i->default_source_name);
+
+	pulse_signal(0);
+}
+
+static void pulse_output_device(pa_context *c, const pa_server_info *i,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	obs_data_t settings = (obs_data_t) userdata;
+
+	char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
+	strcat(monitor, i->default_sink_name);
+	strcat(monitor, ".monitor");
+
+	obs_data_set_default_string(settings, "device_id", monitor);
+	blog(LOG_DEBUG, "pulse-input: Default output device: '%s'", monitor);
+	bfree(monitor);
+
+	pulse_signal(0);
+}
+
+/**
  * Get plugin defaults
  */
-static void pulse_defaults(obs_data_t settings)
+static void pulse_defaults(obs_data_t settings, bool input)
 {
-	obs_data_set_default_string(settings, "device_id", "default");
+	pulse_init();
+
+	pa_server_info_cb_t cb = (input)
+		? pulse_input_device : pulse_output_device;
+	pulse_get_server_info(cb, (void *) settings);
+
+	pulse_unref();
+}
+
+static void pulse_input_defaults(obs_data_t settings)
+{
+	return pulse_defaults(settings, true);
+}
+
+static void pulse_output_defaults(obs_data_t settings)
+{
+	return pulse_defaults(settings, false);
 }
 
 /**
@@ -391,7 +441,7 @@ struct obs_source_info pulse_input_capture = {
 	.create       = pulse_create,
 	.destroy      = pulse_destroy,
 	.update       = pulse_update,
-	.defaults     = pulse_defaults,
+	.defaults     = pulse_input_defaults,
 	.properties   = pulse_input_properties
 };
 
@@ -403,6 +453,6 @@ struct obs_source_info pulse_output_capture = {
 	.create       = pulse_create,
 	.destroy      = pulse_destroy,
 	.update       = pulse_update,
-	.defaults     = pulse_defaults,
+	.defaults     = pulse_output_defaults,
 	.properties   = pulse_output_properties
 };
