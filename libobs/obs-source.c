@@ -221,6 +221,7 @@ void obs_source_destroy(struct obs_source *source)
 		source_frame_destroy(source->video_frames.array[i]);
 
 	gs_entercontext(obs->video.graphics);
+	texrender_destroy(source->async_convert_texrender);
 	texture_destroy(source->async_texture);
 	gs_leavecontext();
 
