@@ -74,8 +74,8 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	if (!window->source)
 		return;
 
-	uint32_t sourceCX = obs_source_getwidth(window->source);
-	uint32_t sourceCY = obs_source_getheight(window->source);
+	uint32_t sourceCX = max(obs_source_getwidth(window->source), 1u);
+	uint32_t sourceCY = max(obs_source_getheight(window->source), 1u);
 
 	int   x, y;
 	int   newCX, newCY;
