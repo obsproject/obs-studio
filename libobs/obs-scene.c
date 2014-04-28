@@ -230,8 +230,7 @@ static void scene_load(void *scene, obs_data_t settings)
 	obs_data_array_release(items);
 }
 
-static void scene_save_item(struct obs_scene *scene, obs_data_array_t array,
-		struct obs_scene_item *item)
+static void scene_save_item(obs_data_array_t array, struct obs_scene_item *item)
 {
 	obs_data_t item_data = obs_data_create();
 	const char *name     = obs_source_getname(item->source);
@@ -257,7 +256,7 @@ static void scene_save(void *data, obs_data_t settings)
 
 	item = scene->first_item;
 	while (item) {
-		scene_save_item(scene, array, item);
+		scene_save_item(array, item);
 		item = item->next;
 	}
 

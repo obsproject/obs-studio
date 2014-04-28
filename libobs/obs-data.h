@@ -23,6 +23,11 @@
 extern "C" {
 #endif
 
+struct vec2;
+struct vec3;
+struct vec4;
+struct quat;
+
 /*
  * OBS data settings storage
  *
