@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <util/platform.h>
 #include <util/bmem.h>
 #include <obs.h>
 
@@ -34,6 +35,8 @@ struct pulse_data {
 	uint_fast32_t bytes_per_frame;
 
 	pa_stream *stream;
+
+	bool ostime;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -122,6 +125,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
+	pa_time = (!data->ostime) ? pa_time * 1000 : os_gettime_ns();
 
 	pulse_get_stream_latency(data->stream, &pa_latency);
 
@@ -131,7 +135,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	out.format          = pulse_to_obs_audio_format(data->format);
 	out.data[0]         = (uint8_t *) frames;
 	out.frames          = bytes / data->bytes_per_frame;
-	out.timestamp       = (pa_time - pa_latency) * 1000;
+	out.timestamp       = pa_time - (pa_latency * 1000);
 	obs_source_output_audio(data->source, &out);
 
 	pa_stream_drop(data->stream);
@@ -285,6 +289,8 @@ static obs_properties_t pulse_properties(const char *locale, bool input)
 	pulse_get_source_info_list(cb, (void *) devices);
 	pulse_unref();
 
+	obs_properties_add_bool(props, "ostime", "Use OS timestamps");
+
 	return props;
 }
 
@@ -344,6 +350,8 @@ static void pulse_defaults(obs_data_t settings, bool input)
 	pulse_get_server_info(cb, (void *) settings);
 
 	pulse_unref();
+
+	obs_data_set_default_bool(settings, "ostime", false);
 }
 
 static void pulse_input_defaults(obs_data_t settings)
@@ -398,15 +406,24 @@ static void pulse_destroy(void *vptr)
 static void pulse_update(void *vptr, obs_data_t settings)
 {
 	PULSE_DATA(vptr);
+	bool restart = false;
 	char *new_device;
 
 	new_device = bstrdup(obs_data_getstring(settings, "device_id"));
-	if (data->device && strcmp(data->device, new_device) == 0)
-		return;
+	if (!data->device || strcmp(data->device, new_device) != 0) {
+		if (data->device)
+			bfree(data->device);
+		data->device = new_device;
+		restart = true;
+	}
 
-	if (data->device)
-		bfree(data->device);
-	data->device = new_device;
+	if (data->ostime != obs_data_getbool(settings, "ostime")) {
+		data->ostime = obs_data_getbool(settings, "ostime");
+		restart = true;
+	}
+
+	if (!restart)
+		return;
 
 	if (data->stream)
 		pulse_stop_recording(data);
