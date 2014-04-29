@@ -86,9 +86,10 @@ struct av_capture {
 
 	uint8_t *addr = CVPixelBufferGetBaseAddress(img);
 
+	AVCaptureInputPort *port = capture->device_input.ports[0];
+
 	CMTime host_pts = CMSyncConvertTime(info.presentationTimeStamp,
-			capture->session.masterClock,
-			CMClockGetHostTimeClock());
+			port->clock, CMClockGetHostTimeClock());
 
 	frame->data[0] = addr;
 	frame->timestamp = host_pts.value;
