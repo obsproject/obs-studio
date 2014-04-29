@@ -9,6 +9,7 @@ elseif(APPLE)
 	add_subdirectory(mac-capture)
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	add_subdirectory(linux-xshm)
+	add_subdirectory(linux-xcomposite)
 	add_subdirectory(linux-pulseaudio)
 endif()
 

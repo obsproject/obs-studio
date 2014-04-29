@@ -445,6 +445,7 @@ void OBSBasic::OBSInit()
 	obs_load_module("win-capture");
 #else
 	obs_load_module("linux-xshm");
+	obs_load_module("linux-xcomposite");
 	obs_load_module("linux-pulseaudio");
 #endif
 
