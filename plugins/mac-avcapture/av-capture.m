@@ -100,8 +100,9 @@ struct av_capture {
 
 static const char *av_capture_getname(const char *locale)
 {
+	/* TODO: locale */
 	UNUSED_PARAMETER(locale);
-	return "AV Capture";
+	return "Video Capture Device";
 }
 
 static void av_capture_destroy(void *data)
@@ -370,6 +371,7 @@ static obs_properties_t av_capture_properties(char const *locale)
 {
 	obs_properties_t props = obs_properties_create(locale);
 
+	/* TODO: locale */
 	obs_property_t dev_list = obs_properties_add_list(props, "device",
 			"Device", OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);

@@ -241,10 +241,28 @@ struct obs_source {
 	/* timing (if video is present, is based upon video) */
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;
-	volatile long                   audio_reset_ref;
 	uint64_t                        next_audio_ts_min;
 	uint64_t                        last_frame_ts;
 	uint64_t                        last_sys_timestamp;
+
+	/*
+	 * audio/video timestamp synchronization reference counter
+	 *
+	 * if audio goes outside of expected timing bounds, this number will
+	 * be deremented.
+	 *
+	 * if video goes outside of expecting timing bounds, this number will
+	 * be incremented.
+	 *
+	 * when this reference counter is at 0, it means ths audio is
+	 * synchronized with the video and it is safe to play.  when it's not
+	 * 0, it means that audio and video are desynchronized, and thus not
+	 * safe to play.  this just generally ensures synchronization between
+	 * audio/video when timing somehow becomes 'reset'.
+	 *
+	 * XXX: may be an overly cautious check
+	 */
+	volatile long                   av_sync_ref;
 
 	/* audio */
 	bool                            audio_failed;

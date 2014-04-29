@@ -513,7 +513,7 @@ static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
 
 	/* if has video, ignore audio data until reset */
 	if (source->info.output_flags & OBS_SOURCE_ASYNC)
-		os_atomic_dec_long(&source->audio_reset_ref);
+		os_atomic_dec_long(&source->av_sync_ref);
 	else 
 		reset_audio_timing(source, ts);
 }
@@ -550,7 +550,7 @@ static void source_output_audio_line(obs_source_t source,
 	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(in.frames);
 
-	if (source->audio_reset_ref != 0)
+	if (source->av_sync_ref != 0)
 		return;
 
 	in.timestamp += source->timing_adjust + source->sync_offset;
@@ -1165,6 +1165,14 @@ static inline struct source_frame *cache_video(const struct source_frame *frame)
 	return new_frame;
 }
 
+static bool new_frame_ready(obs_source_t source, uint64_t sys_time);
+
+static inline void cycle_frames(struct obs_source *source)
+{
+	if (source->video_frames.num && !source->activate_refs)
+		new_frame_ready(source, os_gettime_ns());
+}
+
 void obs_source_output_video(obs_source_t source,
 		const struct source_frame *frame)
 {
@@ -1179,6 +1187,7 @@ void obs_source_output_video(obs_source_t source,
 
 	if (output) {
 		pthread_mutex_lock(&source->video_mutex);
+		cycle_frames(source);
 		da_push_back(source->video_frames, &output);
 		pthread_mutex_unlock(&source->video_mutex);
 	}
@@ -1332,8 +1341,7 @@ static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
 	return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
 }
 
-static inline struct source_frame *get_closest_frame(obs_source_t source,
-		uint64_t sys_time, int *audio_time_refs)
+static bool new_frame_ready(obs_source_t source, uint64_t sys_time)
 {
 	struct source_frame *next_frame = source->video_frames.array[0];
 	struct source_frame *frame      = NULL;
@@ -1344,35 +1352,46 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
 	/* account for timestamp invalidation */
 	if (frame_out_of_bounds(source, frame_time)) {
 		source->last_frame_ts = next_frame->timestamp;
-		(*audio_time_refs)++;
+		os_atomic_inc_long(&source->av_sync_ref);
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
-		source->last_frame_ts += sys_offset;
+		source->last_frame_ts += frame_offset;
 	}
 
 	while (frame_offset <= sys_offset) {
 		source_frame_destroy(frame);
 
+		if (source->video_frames.num == 1)
+			return true;
+
 		frame = next_frame;
 		da_erase(source->video_frames, 0);
-
-		if (!source->video_frames.num)
-			break;
-
 		next_frame = source->video_frames.array[0];
 
 		/* more timestamp checking and compensating */
 		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
 			source->last_frame_ts =
 				next_frame->timestamp - frame_offset;
-			(*audio_time_refs)++;
+			os_atomic_inc_long(&source->av_sync_ref);
 		}
 
 		frame_time   = next_frame->timestamp;
 		frame_offset = frame_time - source->last_frame_ts;
 	}
 
-	return frame;
+	return frame != NULL;
+}
+
+static inline struct source_frame *get_closest_frame(obs_source_t source,
+		uint64_t sys_time)
+{
+	if (new_frame_ready(source, sys_time)) {
+		struct source_frame *frame = source->video_frames.array[0];
+		da_erase(source->video_frames, 0);
+		return frame;
+	}
+
+	return NULL;
 }
 
 /*
@@ -1384,7 +1403,6 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
 struct source_frame *obs_source_getframe(obs_source_t source)
 {
 	struct source_frame *frame = NULL;
-	int      audio_time_refs = 0;
 	uint64_t sys_time;
 
 	if (!source)
@@ -1403,12 +1421,11 @@ struct source_frame *obs_source_getframe(obs_source_t source)
 
 		source->last_frame_ts = frame->timestamp;
 	} else {
-		frame = get_closest_frame(source, sys_time, &audio_time_refs);
+		frame = get_closest_frame(source, sys_time);
 	}
 
 	/* reset timing to current system time */
 	if (frame) {
-		source->audio_reset_ref += audio_time_refs;
 		source->timing_adjust = sys_time - frame->timestamp;
 		source->timing_set = true;
 	}
