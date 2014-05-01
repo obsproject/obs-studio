@@ -961,10 +961,6 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 
 		if (strcmp(type, "scene") == 0)
 			continue;
-		if (strcmp(type, App()->InputAudioSource()) == 0)
-			continue;
-		if (strcmp(type, App()->OutputAudioSource()) == 0)
-			continue;
 
 		QAction *popupItem = new QAction(QT_UTF8(name), this);
 		popupItem->setData(QT_UTF8(type));
