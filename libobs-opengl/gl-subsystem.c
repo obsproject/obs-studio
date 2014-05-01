@@ -1180,9 +1180,17 @@ void device_getviewport(device_t device, struct gs_rect *rect)
 void device_setscissorrect(device_t device, struct gs_rect *rect)
 {
 	UNUSED_PARAMETER(device);
-	glScissor(rect->x, rect->y, rect->cx, rect->cy);
-	if (!gl_success("glScissor"))
-		blog(LOG_ERROR, "device_setscissorrect (GL) failed");
+
+	if (rect != NULL) {
+		glScissor(rect->x, rect->y, rect->cx, rect->cy);
+		if (gl_success("glScissor") && gl_enable(GL_SCISSOR_TEST))
+			return;
+
+	} else if (gl_disable(GL_SCISSOR_TEST)) {
+		return;
+	}
+
+	blog(LOG_ERROR, "device_setscissorrect (GL) failed");
 }
 
 void device_ortho(device_t device, float left, float right,

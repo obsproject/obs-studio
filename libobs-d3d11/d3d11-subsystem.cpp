@@ -1386,11 +1386,16 @@ void device_getviewport(device_t device, struct gs_rect *rect)
 void device_setscissorrect(device_t device, struct gs_rect *rect)
 {
 	D3D11_RECT d3drect;
-	d3drect.left   = rect->x;
-	d3drect.top    = rect->y;
-	d3drect.right  = rect->x + rect->cx;
-	d3drect.bottom = rect->y + rect->cy;
-	device->context->RSSetScissorRects(1, &d3drect);
+
+	device->rasterState.scissorEnabled = (rect != NULL);
+
+	if (rect != NULL) {
+		d3drect.left   = rect->x;
+		d3drect.top    = rect->y;
+		d3drect.right  = rect->x + rect->cx;
+		d3drect.bottom = rect->y + rect->cy;
+		device->context->RSSetScissorRects(1, &d3drect);
+	}
 }
 
 void device_ortho(device_t device, float left, float right, float top,
