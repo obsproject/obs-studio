@@ -221,7 +221,7 @@ static bool load_vb_buffer(struct shader_attrib *attrib,
 	if (!gl_bind_buffer(GL_ARRAY_BUFFER, buffer))
 		return false;
 
-	glVertexAttribPointer(attrib->attrib, width, type, GL_FALSE, 0, 0);
+	glVertexAttribPointer(attrib->attrib, width, type, GL_TRUE, 0, 0);
 	if (!gl_success("glVertexAttribPointer"))
 		success = false;
 
