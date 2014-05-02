@@ -108,7 +108,7 @@ void gs_shader::BuildConstantBuffer()
 		case SHADER_PARAM_INT:
 		case SHADER_PARAM_FLOAT: constantSize += sizeof(float); break;
 		case SHADER_PARAM_VEC2:  constantSize += sizeof(vec2); break;
-		case SHADER_PARAM_VEC3:  constantSize += sizeof(float)*3; break;
+		case SHADER_PARAM_VEC3:  constantSize += sizeof(vec3); break;
 		case SHADER_PARAM_VEC4:  constantSize += sizeof(vec4); break;
 		case SHADER_PARAM_MATRIX4X4:
 			constantSize += sizeof(float)*4*4;
@@ -166,6 +166,12 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 		constData.insert(constData.end(),
 				param.curValue.begin(),
 				param.curValue.end());
+
+		/* alignment required for float3 constants */
+		if (param.type == SHADER_PARAM_VEC3) {
+			uint8_t zero = 0;
+			constData.insert(constData.end(), sizeof(float), zero);
+		}
 
 		if (param.changed) {
 			upload = true;
