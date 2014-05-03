@@ -1396,6 +1396,8 @@ void device_setscissorrect(device_t device, struct gs_rect *rect)
 		d3drect.bottom = rect->y + rect->cy;
 		device->context->RSSetScissorRects(1, &d3drect);
 	}
+
+	device->rasterStateChanged = true;
 }
 
 void device_ortho(device_t device, float left, float right, float top,
