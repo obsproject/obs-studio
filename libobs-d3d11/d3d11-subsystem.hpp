@@ -329,13 +329,15 @@ struct shader_param {
 	string            name;
 	shader_param_type type;
 
-	uint32_t textureID;
+	uint32_t          textureID;
 
-	int arrayCount;
+	int               arrayCount;
 
-	vector<uint8_t> curValue;
-	vector<uint8_t> defaultValue;
-	bool            changed;
+	size_t            pos;
+
+	vector<uint8_t>   curValue;
+	vector<uint8_t>   defaultValue;
+	bool              changed;
 
 	shader_param(shader_var &var, uint32_t &texCounter);
 };

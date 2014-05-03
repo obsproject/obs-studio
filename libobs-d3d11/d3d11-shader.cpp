@@ -99,20 +99,56 @@ gs_pixel_shader::gs_pixel_shader(device_t device, const char *file,
 		throw HRError("Failed to create vertex shader", hr);
 }
 
+/*
+ * Shader compilers will pack constants in to single registers when possible.
+ * For example:
+ *
+ *   uniform float3 test1;
+ *   uniform float  test2;
+ *
+ * will inhabit a single constant register (c0.xyz for 'test1', and c0.w for
+ * 'test2')
+ *
+ * However, if two constants cannot inhabit the same register, the second one
+ * must begin at a new register, for example:
+ *
+ *   uniform float2 test1;
+ *   uniform float3 test2;
+ *
+ * 'test1' will inhabit register constant c0.xy.  However, because there's no
+ * room for 'test2, it must use a new register constant entirely (c1.xyz).
+ *
+ * So if we want to calculate the position of the constants in the constant
+ * buffer, we must take this in to account.
+ */
+
 void gs_shader::BuildConstantBuffer()
 {
 	for (size_t i = 0; i < params.size(); i++) {
 		shader_param &param = params[i];
+		size_t       size   = 0;
+
 		switch (param.type) {
 		case SHADER_PARAM_BOOL:
 		case SHADER_PARAM_INT:
-		case SHADER_PARAM_FLOAT: constantSize += sizeof(float); break;
-		case SHADER_PARAM_VEC2:  constantSize += sizeof(vec2); break;
-		case SHADER_PARAM_VEC3:  constantSize += sizeof(vec3); break;
-		case SHADER_PARAM_VEC4:  constantSize += sizeof(vec4); break;
-		case SHADER_PARAM_MATRIX4X4:
-			constantSize += sizeof(float)*4*4;
+		case SHADER_PARAM_FLOAT:     size = sizeof(float);   break;
+		case SHADER_PARAM_VEC2:      size = sizeof(vec2);    break;
+		case SHADER_PARAM_VEC3:      size = sizeof(float)*3; break;
+		case SHADER_PARAM_VEC4:      size = sizeof(vec4);    break;
+		case SHADER_PARAM_MATRIX4X4: size = sizeof(float)*4*4;
 		}
+
+		/* checks to see if this constant needs to start at a new
+		 * register */
+		if (size && (constantSize & 15) != 0) {
+			size_t alignMax = (constantSize + 15) & ~15;
+
+			if ((size + constantSize) > alignMax)
+				constantSize = alignMax;
+		}
+
+		param.pos     = constantSize;
+		constantSize += size;
 	}
 
 	if (constantSize) {
@@ -163,15 +199,18 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 		if (!param.curValue.size())
 			throw "Not all shader parameters were set";
 
+		/* padding in case the constant needs to start at a new
+		 * register */
+		if (param.pos > constData.size()) {
+			uint8_t zero  = 0;
+
+			constData.insert(constData.end(),
+					param.pos - constData.size(), zero);
+		}
+
 		constData.insert(constData.end(),
 				param.curValue.begin(),
 				param.curValue.end());
-
-		/* alignment required for float3 constants */
-		if (param.type == SHADER_PARAM_VEC3) {
-			uint8_t zero = 0;
-			constData.insert(constData.end(), sizeof(float), zero);
-		}
 
 		if (param.changed) {
 			upload = true;
