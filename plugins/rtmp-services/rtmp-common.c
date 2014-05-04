@@ -13,7 +13,7 @@ static const char *rtmp_common_getname(const char *locale)
 	UNUSED_PARAMETER(locale);
 
 	/* TODO: locale */
-	return "Other Streaming Services";
+	return "Streaming Services";
 }
 
 static void rtmp_common_update(void *data, obs_data_t settings)

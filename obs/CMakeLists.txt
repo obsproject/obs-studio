@@ -59,6 +59,7 @@ set(obs_SOURCES
 	window-basic-properties.cpp
 	window-namedialog.cpp
 	properties-view.cpp
+	volume-control.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -71,6 +72,7 @@ set(obs_HEADERS
 	window-namedialog.hpp
 	properties-view.hpp
 	display-helpers.hpp
+	volume-control.hpp
 	qt-display.hpp
 	qt-wrappers.hpp)
 

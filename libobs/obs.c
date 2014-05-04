@@ -1033,6 +1033,25 @@ float obs_get_present_volume(void)
 	return obs ? obs->audio.present_volume : 0.0f;
 }
 
+obs_source_t obs_load_source(obs_data_t source_data)
+{
+	obs_source_t source;
+	const char   *name    = obs_data_getstring(source_data, "name");
+	const char   *id      = obs_data_getstring(source_data, "id");
+	obs_data_t   settings = obs_data_getobj(source_data, "settings");
+	double       volume;
+
+	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
+
+	obs_data_set_default_double(source_data, "volume", 1.0);
+	volume = obs_data_getdouble(source_data, "volume");
+	obs_source_setvolume(source, (float)volume);
+
+	obs_data_release(settings);
+
+	return source;
+}
+
 void obs_load_sources(obs_data_array_t array)
 {
 	size_t count;
@@ -1045,19 +1064,12 @@ void obs_load_sources(obs_data_array_t array)
 	pthread_mutex_lock(&obs->data.user_sources_mutex);
 
 	for (i = 0; i < count; i++) {
-		obs_data_t source_data = obs_data_array_item(array, i);
+		obs_data_t   source_data = obs_data_array_item(array, i);
+		obs_source_t source      = obs_load_source(source_data);
 
-		const char *name    = obs_data_getstring(source_data, "name");
-		const char *id      = obs_data_getstring(source_data, "id");
-		obs_data_t settings = obs_data_getobj(source_data, "settings");
-		obs_source_t source;
-
-		source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name,
-				settings);
 		obs_add_source(source);
-		obs_source_release(source);
 
-		obs_data_release(settings);
+		obs_source_release(source);
 		obs_data_release(source_data);
 	}
 
@@ -1068,23 +1080,26 @@ void obs_load_sources(obs_data_array_t array)
 	pthread_mutex_unlock(&obs->data.user_sources_mutex);
 }
 
-static void save_source_data(obs_data_array_t array, obs_source_t source)
+obs_data_t obs_save_source(obs_source_t source)
 {
-	obs_data_t       source_data = obs_data_create();
-	obs_data_t       settings    = obs_source_getsettings(source);
-	const char       *name       = obs_source_getname(source);
-	const char       *id;
+	obs_data_t source_data = obs_data_create();
+	obs_data_t settings    = obs_source_getsettings(source);
+	float      volume      = obs_source_getvolume(source);
+	const char *name       = obs_source_getname(source);
+	const char *id;
+
+	obs_source_save(source);
 
 	obs_source_gettype(source, NULL, &id);
 
 	obs_data_setstring(source_data, "name",     name);
 	obs_data_setstring(source_data, "id",       id);
 	obs_data_setobj   (source_data, "settings", settings);
+	obs_data_setdouble(source_data, "volume",   volume);
 
-	obs_data_array_push_back(array, source_data);
-
-	obs_data_release(source_data);
 	obs_data_release(settings);
+
+	return source_data;
 }
 
 obs_data_array_t obs_save_sources(void)
@@ -1099,9 +1114,11 @@ obs_data_array_t obs_save_sources(void)
 	pthread_mutex_lock(&obs->data.user_sources_mutex);
 
 	for (i = 0; i < obs->data.user_sources.num; i++) {
-		obs_source_t source = obs->data.user_sources.array[i];
-		obs_source_save(source);
-		save_source_data(array, source);
+		obs_source_t source      = obs->data.user_sources.array[i];
+		obs_data_t   source_data = obs_save_source(source);
+
+		obs_data_array_push_back(array, source_data);
+		obs_data_release(source_data);
 	}
 
 	pthread_mutex_unlock(&obs->data.user_sources_mutex);

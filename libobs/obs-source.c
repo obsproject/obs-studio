@@ -100,7 +100,7 @@ bool obs_source_init(struct obs_source *source,
 {
 	source->refs = 1;
 	source->user_volume = 1.0f;
-	source->present_volume = 1.0f;
+	source->present_volume = 0.0f;
 	source->sync_offset = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->video_mutex);

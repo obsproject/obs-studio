@@ -19,6 +19,7 @@
 
 #include <obs.hpp>
 #include <unordered_map>
+#include <vector>
 #include <memory>
 #include "window-main.hpp"
 #include "window-basic-properties.hpp"
@@ -28,14 +29,25 @@
 #include <QPointer>
 
 class QListWidgetItem;
+class VolControl;
 
 #include "ui_OBSBasic.h"
+
+#define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
+#define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
+#define AUX_AUDIO_1     Str("AuxAudioDevice1")
+#define AUX_AUDIO_2     Str("AuxAudioDevice2")
+#define AUX_AUDIO_3     Str("AuxAudioDevice3")
 
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
+
+	std::vector<VolControl*> volumes;
+
+	QPointer<OBSBasicProperties> properties;
 
 	obs_output_t  streamOutput;
 	obs_service_t service;
@@ -50,7 +62,9 @@ private:
 
 	ConfigFile    basicConfig;
 
-	QPointer<OBSBasicProperties> properties;
+	void          CreateDefaultScene();
+
+	void          ClearVolumeControls();
 
 	void          Save(const char *file);
 	void          Load(const char *file);
@@ -64,6 +78,8 @@ private:
 
 	bool          InitBasicConfigDefaults();
 	bool          InitBasicConfig();
+
+	void          InitOBSCallbacks();
 
 	OBSScene      GetCurrentScene();
 	OBSSceneItem  GetCurrentSceneItem();
@@ -92,12 +108,17 @@ private slots:
 	void RemoveScene(OBSSource source);
 	void UpdateSceneSelection(OBSSource source);
 
+	void ActivateAudioSource(OBSSource source);
+	void DeactivateAudioSource(OBSSource source);
+
 private:
 	/* OBS Callbacks */
 	static void SceneItemAdded(void *data, calldata_t params);
 	static void SceneItemRemoved(void *data, calldata_t params);
 	static void SourceAdded(void *data, calldata_t params);
 	static void SourceRemoved(void *data, calldata_t params);
+	static void SourceActivated(void *data, calldata_t params);
+	static void SourceDeactivated(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 

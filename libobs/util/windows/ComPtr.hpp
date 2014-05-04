@@ -16,6 +16,9 @@
 
 #pragma once
 
+/* Oh no I have my own com pointer class, the world is ending, how dare you
+ * write your own! */
+
 template<typename T> class ComPtr {
 	T *ptr;
 
@@ -76,6 +79,9 @@ public:
 	inline void Set(T *p)              {Kill(); ptr = p;}
 
 	inline T *Get() const              {return ptr;}
+
+	/* nabbed this one from virtualdub */
+	inline T **operator~()             {return Assign();}
 
 	inline    operator T*() const      {return ptr;}
 	inline T *operator->() const       {return ptr;}

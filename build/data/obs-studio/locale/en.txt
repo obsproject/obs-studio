@@ -1,5 +1,15 @@
 Language="English"
 
+DesktopDevice1="Desktop Audio"
+DesktopDevice2="Desktop Audio 2"
+AuxDevice1="Mic/Aux"
+AuxDevice2="Mic/Aux 2"
+AuxDevice3="Mic/Aux 3"
+AuxDevice4="Mic/Aux 4"
+
+Studio.Basic.Scene="Scene"
+Studio.Basic.DisplayCapture="Display Capture"
+
 MainMenu.File="File"
 
 MainMenu.File.New="New"
@@ -64,9 +74,3 @@ Settings.Video.InvalidResolution="Invalid resolution value.  Must be [width]x[he
 Settings.Video.CurrentlyActive="Video output is currently active.  Please turn off any outputs to change video settings."
 
 Settings.Audio="Audio"
-Settings.Audio.DesktopAudioDevice1="Desktop Audio Device 1:"
-Settings.Audio.DesktopAudioDevice2="Desktop Audio Device 2:"
-Settings.Audio.AuxAudioDevice1="Auxilary Audio Device 1:"
-Settings.Audio.AuxAudioDevice2="Auxilary Audio Device 2:"
-Settings.Audio.AuxAudioDevice3="Auxilary Audio Device 3:"
-Settings.Audio.AuxAudioDevice4="Auxilary Audio Device 4:"

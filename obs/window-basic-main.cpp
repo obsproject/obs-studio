@@ -32,6 +32,7 @@
 #include "window-basic-properties.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
+#include "volume-control.hpp"
 
 #include "ui_OBSBasic.h"
 
@@ -47,13 +48,13 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
+	  properties    (nullptr),
 	  streamOutput  (nullptr),
 	  service       (nullptr),
 	  aac           (nullptr),
 	  x264          (nullptr),
 	  sceneChanging (false),
 	  resizeTimer   (0),
-	  properties    (nullptr),
 	  ui            (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -66,6 +67,20 @@ OBSBasic::OBSBasic(QWidget *parent)
 	});
 }
 
+static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
+{
+	obs_source_t source = obs_get_output_source(channel);
+	if (!source)
+		return;
+
+	obs_data_t data = obs_save_source(source);
+
+	obs_data_setobj(parent, name, data);
+
+	obs_data_release(data);
+	obs_source_release(source);
+}
+
 static obs_data_t GenerateSaveData()
 {
 	obs_data_t       saveData     = obs_data_create();
@@ -73,12 +88,30 @@ static obs_data_t GenerateSaveData()
 	obs_source_t     currentScene = obs_get_output_source(0);
 	const char       *sceneName   = obs_source_getname(currentScene);
 
+	SaveAudioDevice(DESKTOP_AUDIO_1, 1, saveData);
+	SaveAudioDevice(DESKTOP_AUDIO_2, 2, saveData);
+	SaveAudioDevice(AUX_AUDIO_1,     3, saveData);
+	SaveAudioDevice(AUX_AUDIO_2,     4, saveData);
+	SaveAudioDevice(AUX_AUDIO_3,     5, saveData);
+
 	obs_data_setstring(saveData, "current_scene", sceneName);
 	obs_data_setarray(saveData, "sources", sourcesArray);
 	obs_data_array_release(sourcesArray);
 	obs_source_release(currentScene);
 
 	return saveData;
+}
+
+void OBSBasic::ClearVolumeControls()
+{
+	VolControl *control;
+
+	for (size_t i = 0; i < volumes.size(); i++) {
+		control = volumes[i];
+		delete control;
+	}
+
+	volumes.clear();
 }
 
 void OBSBasic::Save(const char *file)
@@ -93,6 +126,45 @@ void OBSBasic::Save(const char *file)
 	obs_data_release(saveData);
 }
 
+static void LoadAudioDevice(const char *name, int channel, obs_data_t parent)
+{
+	obs_data_t data = obs_data_getobj(parent, name);
+	if (!data)
+		return;
+
+	obs_source_t source = obs_load_source(data);
+	if (source) {
+		obs_set_output_source(channel, source);
+		obs_source_release(source);
+	}
+
+	obs_data_release(data);
+}
+
+void OBSBasic::CreateDefaultScene()
+{
+	obs_scene_t  scene  = obs_scene_create(Str("Studio.Basic.Scene"));
+	obs_source_t source = obs_scene_getsource(scene);
+
+	obs_add_source(source);
+
+#ifdef __APPLE__
+	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, "display_capture",
+			Str("Studio.Basic.DisplayCapture"), NULL);
+
+	if (source) {
+		sourceSceneRefs[source] = 0;
+
+		obs_scene_add(scene, source);
+		obs_add_source(source);
+		obs_source_release(source);
+	}
+#endif
+
+	obs_set_output_source(0, obs_scene_getsource(scene));
+	obs_scene_release(scene);
+}
+
 void OBSBasic::Load(const char *file)
 {
 	if (!file) {
@@ -101,13 +173,21 @@ void OBSBasic::Load(const char *file)
 	}
 
 	BPtr<char> jsonData = os_quick_read_utf8_file(file);
-	if (!jsonData)
+	if (!jsonData) {
+		CreateDefaultScene();
 		return;
+	}
 
 	obs_data_t       data       = obs_data_create_from_json(jsonData);
 	obs_data_array_t sources    = obs_data_getarray(data, "sources");
 	const char       *sceneName = obs_data_getstring(data, "current_scene");
 	obs_source_t     curScene;
+
+	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data);
+	LoadAudioDevice(DESKTOP_AUDIO_2, 2, data);
+	LoadAudioDevice(AUX_AUDIO_1,     3, data);
+	LoadAudioDevice(AUX_AUDIO_2,     4, data);
+	LoadAudioDevice(AUX_AUDIO_3,     5, data);
 
 	obs_load_sources(sources);
 
@@ -317,8 +397,24 @@ bool OBSBasic::InitBasicConfig()
 	return InitBasicConfigDefaults();
 }
 
+void OBSBasic::InitOBSCallbacks()
+{
+	signal_handler_connect(obs_signalhandler(), "source_add",
+			OBSBasic::SourceAdded, this);
+	signal_handler_connect(obs_signalhandler(), "source_remove",
+			OBSBasic::SourceRemoved, this);
+	signal_handler_connect(obs_signalhandler(), "channel_change",
+			OBSBasic::ChannelChanged, this);
+	signal_handler_connect(obs_signalhandler(), "source_activate",
+			OBSBasic::SourceActivated, this);
+	signal_handler_connect(obs_signalhandler(), "source_deactivate",
+			OBSBasic::SourceDeactivated, this);
+}
+
 void OBSBasic::OBSInit()
 {
+	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
+
 	/* make sure it's fully displayed before doing any initialization */
 	show();
 	App()->processEvents();
@@ -332,12 +428,7 @@ void OBSBasic::OBSInit()
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
 
-	signal_handler_connect(obs_signalhandler(), "source_add",
-			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_signalhandler(), "source_remove",
-			OBSBasic::SourceRemoved, this);
-	signal_handler_connect(obs_signalhandler(), "channel_change",
-			OBSBasic::ChannelChanged, this);
+	InitOBSCallbacks();
 
 	/* TODO: this is a test, all modules will be searched for and loaded
 	 * automatically later */
@@ -364,9 +455,7 @@ void OBSBasic::OBSInit()
 	if (!InitService())
 		throw "Failed to initialize service";
 
-	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
 	Load(savePath);
-
 	ResetAudioDevices();
 }
 
@@ -381,6 +470,7 @@ OBSBasic::~OBSBasic()
 
 	/* free the lists before shutting down to remove the scene/item
 	 * references */
+	ClearVolumeControls();
 	ui->sources->clear();
 	ui->scenes->clear();
 	obs_shutdown();
@@ -519,6 +609,25 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 	}
 }
 
+void OBSBasic::ActivateAudioSource(OBSSource source)
+{
+	VolControl *vol = new VolControl(source);
+
+	volumes.push_back(vol);
+	ui->volumeWidgets->layout()->addWidget(vol);
+}
+
+void OBSBasic::DeactivateAudioSource(OBSSource source)
+{
+	for (size_t i = 0; i < volumes.size(); i++) {
+		if (volumes[i]->GetSource() == source) {
+			delete volumes[i];
+			volumes.erase(volumes.begin() + i);
+			break;
+		}
+	}
+}
+
 /* OBS Callbacks */
 
 void OBSBasic::SceneItemAdded(void *data, calldata_t params)
@@ -558,6 +667,28 @@ void OBSBasic::SourceRemoved(void *data, calldata_t params)
 	if (obs_scene_fromsource(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"RemoveScene",
+				Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceActivated(void *data, calldata_t params)
+{
+	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
+	uint32_t     flags  = obs_source_get_output_flags(source);
+
+	if (flags & OBS_SOURCE_AUDIO)
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"ActivateAudioSource",
+				Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceDeactivated(void *data, calldata_t params)
+{
+	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
+	uint32_t     flags  = obs_source_get_output_flags(source);
+
+	if (flags & OBS_SOURCE_AUDIO)
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"DeactivateAudioSource",
 				Q_ARG(OBSSource, OBSSource(source)));
 }
 
@@ -700,7 +831,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 		obs_data_t settings = obs_data_create();
 		obs_data_setstring(settings, "device_id", deviceId);
 		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				sourceId, deviceName, settings);
+				sourceId, Str(deviceName), settings);
 		obs_data_release(settings);
 
 		obs_set_output_source(channel, source);
