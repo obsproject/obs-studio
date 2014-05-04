@@ -28,9 +28,12 @@ typedef struct {
 	float pos_x;
 	float pos_y;
 	unsigned long last_serial;
-	unsigned short int last_width;
-	unsigned short int last_height;
+	uint_fast32_t last_width;
+	uint_fast32_t last_height;
 	texture_t tex;
+
+	int_fast32_t x_org;
+	int_fast32_t y_org;
 } xcursor_t;
 
 /**
@@ -58,6 +61,11 @@ void xcursor_tick(xcursor_t *data);
  * This needs to be executed within a valid render context
  */
 void xcursor_render(xcursor_t *data);
+
+/**
+ * Specify offset for the cursor
+ */
+void xcursor_offset(xcursor_t *data, int_fast32_t x_org, int_fast32_t y_org);
 
 #ifdef __cplusplus
 }

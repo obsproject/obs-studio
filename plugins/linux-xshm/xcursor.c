@@ -55,7 +55,7 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 			texture_destroy(data->tex);
 
 		data->tex = gs_create_texture(xc->width, xc->height,
-			GS_RGBA, 1, (const void **) &pixels, GS_DYNAMIC);
+			GS_BGRA, 1, (const void **) &pixels, GS_DYNAMIC);
 	}
 
 	bfree(pixels);
@@ -86,8 +86,8 @@ void xcursor_tick(xcursor_t *data) {
 
 	if (!data->tex || data->last_serial != xc->cursor_serial)
 		xcursor_create(data, xc);
-	data->pos_x = -1.0 * (xc->x - xc->xhot);
-	data->pos_y = -1.0 * (xc->y - xc->yhot);
+	data->pos_x = -1.0 * (xc->x - xc->xhot - data->x_org);
+	data->pos_y = -1.0 * (xc->y - xc->yhot - data->y_org);
 
 	XFree(xc);
 }
@@ -110,3 +110,10 @@ void xcursor_render(xcursor_t *data) {
 
 	gs_matrix_pop();
 }
+
+void xcursor_offset(xcursor_t* data, int_fast32_t x_org, int_fast32_t y_org)
+{
+	data->x_org = x_org;
+	data->y_org = y_org;
+}
+
