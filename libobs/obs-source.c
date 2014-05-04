@@ -211,6 +211,9 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
+	if (source->context.data)
+		source->info.destroy(source->context.data);
+
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);
 
@@ -224,9 +227,6 @@ void obs_source_destroy(struct obs_source *source)
 	texrender_destroy(source->async_convert_texrender);
 	texture_destroy(source->async_texture);
 	gs_leavecontext();
-
-	if (source->context.data)
-		source->info.destroy(source->context.data);
 
 	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);

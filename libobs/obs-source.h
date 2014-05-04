@@ -132,7 +132,12 @@ struct obs_source_info {
 	 */
 	void *(*create)(obs_data_t settings, obs_source_t source);
 
-	/** Destroys the private data for the source */
+	/**
+	 * Destroys the private data for the source
+	 *
+	 * Async sources must not call obs_source_output_video after returning
+	 * from destroy
+	 */
 	void (*destroy)(void *data);
 
 	/** Returns the width of the source.  Required if this is an input
