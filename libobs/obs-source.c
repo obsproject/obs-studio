@@ -28,6 +28,11 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+static inline bool source_valid(struct obs_source *source)
+{
+	return source && source->context.data;
+}
+
 static inline const struct obs_source_info *find_source(struct darray *list,
 		const char *id)
 {
@@ -165,9 +170,11 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (info->defaults)
 		info->defaults(source->context.settings);
 
+	/* allow the source to be created even if creation fails so that the
+	 * user's data doesn't become lost */
 	source->context.data = info->create(source->context.settings, source);
 	if (!source->context.data)
-		goto fail;
+		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
 	if (!obs_source_init(source, info))
 		goto fail;
@@ -211,8 +218,10 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
-	if (source->context.data)
+	if (source->context.data) {
 		source->info.destroy(source->context.data);
+		source->context.data = NULL;
+	}
 
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);
@@ -328,7 +337,7 @@ obs_properties_t obs_get_source_properties(enum obs_source_type type,
 
 obs_properties_t obs_source_properties(obs_source_t source, const char *locale)
 {
-	if (source && source->info.properties) {
+	if (source_valid(source) && source->info.properties) {
 		obs_properties_t props;
 		props = source->info.properties(locale);
 		obs_properties_apply_settings(props, source->context.settings);
@@ -345,7 +354,10 @@ uint32_t obs_source_get_output_flags(obs_source_t source)
 
 static void obs_source_deferred_update(obs_source_t source)
 {
-	source->info.update(source->context.data, source->context.settings);
+	if (source->context.data && source->info.update)
+		source->info.update(source->context.data,
+				source->context.settings);
+
 	source->defer_update = false;
 }
 
@@ -355,7 +367,7 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 
 	obs_data_apply(source->context.settings, settings);
 
-	if (source->info.update) {
+	if (source->context.data && source->info.update) {
 		if (source->info.output_flags & OBS_SOURCE_VIDEO)
 			source->defer_update = true;
 		else
@@ -366,28 +378,28 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 
 static void activate_source(obs_source_t source)
 {
-	if (source->info.activate)
+	if (source->context.data && source->info.activate)
 		source->info.activate(source->context.data);
 	obs_source_dosignal(source, "source_activate", "activate");
 }
 
 static void deactivate_source(obs_source_t source)
 {
-	if (source->info.deactivate)
+	if (source->context.data && source->info.deactivate)
 		source->info.deactivate(source->context.data);
 	obs_source_dosignal(source, "source_deactivate", "deactivate");
 }
 
 static void show_source(obs_source_t source)
 {
-	if (source->info.show)
+	if (source->context.data && source->info.show)
 		source->info.show(source->context.data);
 	obs_source_dosignal(source, "source_show", "show");
 }
 
 static void hide_source(obs_source_t source)
 {
-	if (source->info.hide)
+	if (source->context.data && source->info.hide)
 		source->info.hide(source->context.data);
 	obs_source_dosignal(source, "source_hide", "hide");
 }
@@ -476,7 +488,7 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 	if (source->filter_texrender)
 		texrender_reset(source->filter_texrender);
 
-	if (source->info.video_tick)
+	if (source->context.data && source->info.video_tick)
 		source->info.video_tick(source->context.data, seconds);
 }
 
@@ -912,7 +924,8 @@ static inline void obs_source_default_render(obs_source_t source,
 	passes = technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		technique_beginpass(tech, i);
-		source->info.video_render(source->context.data, effect);
+		if (source->context.data)
+			source->info.video_render(source->context.data, effect);
 		technique_endpass(tech);
 	}
 	technique_end(tech);
@@ -929,14 +942,14 @@ static inline void obs_source_main_render(obs_source_t source)
 
 	if (default_effect)
 		obs_source_default_render(source, color_matrix);
-	else
+	else if (source->context.data)
 		source->info.video_render(source->context.data,
 				custom_draw ? NULL : gs_geteffect());
 }
 
 void obs_source_video_render(obs_source_t source)
 {
-	if (!source) return;
+	if (!source_valid(source)) return;
 
 	if (source->filters.num && !source->rendering_filter)
 		obs_source_render_filters(source);
@@ -953,7 +966,7 @@ void obs_source_video_render(obs_source_t source)
 
 uint32_t obs_source_getwidth(obs_source_t source)
 {
-	if (!source) return 0;
+	if (!source_valid(source)) return 0;
 
 	if (source->info.getwidth)
 		return source->info.getwidth(source->context.data);
@@ -962,7 +975,7 @@ uint32_t obs_source_getwidth(obs_source_t source)
 
 uint32_t obs_source_getheight(obs_source_t source)
 {
-	if (!source) return 0;
+	if (!source_valid(source)) return 0;
 
 	if (source->info.getheight)
 		return source->info.getheight(source->context.data);
@@ -1086,7 +1099,8 @@ static inline struct source_frame *filter_async_video(obs_source_t source,
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
-		if (filter->info.filter_video) {
+
+		if (filter->context.data && filter->info.filter_video) {
 			in = filter->info.filter_video(filter->context.data,
 					in);
 			if (!in)
@@ -1165,12 +1179,12 @@ static inline struct source_frame *cache_video(const struct source_frame *frame)
 	return new_frame;
 }
 
-static bool new_frame_ready(obs_source_t source, uint64_t sys_time);
+static bool ready_async_frame(obs_source_t source, uint64_t sys_time);
 
 static inline void cycle_frames(struct obs_source *source)
 {
 	if (source->video_frames.num && !source->activate_refs)
-		new_frame_ready(source, os_gettime_ns());
+		ready_async_frame(source, os_gettime_ns());
 }
 
 void obs_source_output_video(obs_source_t source,
@@ -1199,7 +1213,8 @@ static inline struct filtered_audio *filter_async_audio(obs_source_t source,
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
-		if (filter->info.filter_audio) {
+
+		if (filter->context.data && filter->info.filter_audio) {
 			in = filter->info.filter_audio(filter->context.data,
 					in);
 			if (!in)
@@ -1341,7 +1356,7 @@ static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
 	return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
 }
 
-static bool new_frame_ready(obs_source_t source, uint64_t sys_time)
+static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 {
 	struct source_frame *next_frame = source->video_frames.array[0];
 	struct source_frame *frame      = NULL;
@@ -1379,13 +1394,15 @@ static bool new_frame_ready(obs_source_t source, uint64_t sys_time)
 		frame_offset = frame_time - source->last_frame_ts;
 	}
 
+	source_frame_destroy(frame);
+
 	return frame != NULL;
 }
 
 static inline struct source_frame *get_closest_frame(obs_source_t source,
 		uint64_t sys_time)
 {
-	if (new_frame_ready(source, sys_time)) {
+	if (ready_async_frame(source, sys_time)) {
 		struct source_frame *frame = source->video_frames.array[0];
 		da_erase(source->video_frames, 0);
 		return frame;
@@ -1637,8 +1654,9 @@ static void enum_source_tree_callback(obs_source_t parent, obs_source_t child,
 	if (child->info.enum_sources && !child->enum_refs) {
 		os_atomic_inc_long(&child->enum_refs);
 
-		child->info.enum_sources(child->context.data,
-				enum_source_tree_callback, data);
+		if (child->context.data)
+			child->info.enum_sources(child->context.data,
+					enum_source_tree_callback, data);
 
 		os_atomic_dec_long(&child->enum_refs);
 	}
@@ -1650,7 +1668,9 @@ void obs_source_enum_sources(obs_source_t source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
-	if (!source || !source->info.enum_sources || source->enum_refs)
+	if (!source_valid(source)      ||
+	    !source->info.enum_sources ||
+	    source->enum_refs)
 		return;
 
 	obs_source_addref(source);
@@ -1668,7 +1688,9 @@ void obs_source_enum_tree(obs_source_t source,
 {
 	struct source_enum_data data = {enum_callback, param};
 
-	if (!source || !source->info.enum_sources || source->enum_refs)
+	if (!source_valid(source)      ||
+	    !source->info.enum_sources ||
+	    source->enum_refs)
 		return;
 
 	obs_source_addref(source);
@@ -1753,12 +1775,12 @@ void obs_transition_end_frame(obs_source_t transition)
 
 void obs_source_save(obs_source_t source)
 {
-	if (!source || !source->info.save) return;
+	if (!source_valid(source) || !source->info.save) return;
 	source->info.save(source->context.data, source->context.settings);
 }
 
 void obs_source_load(obs_source_t source)
 {
-	if (!source || !source->info.load) return;
+	if (!source_valid(source) || !source->info.load) return;
 	source->info.load(source->context.data, source->context.settings);
 }
