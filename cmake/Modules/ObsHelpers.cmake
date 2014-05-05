@@ -145,6 +145,7 @@ macro(export_obs_core target exportname)
 	install(TARGETS ${target}
 		EXPORT "${exportname}Target"
 		LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
+		ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}"
 		RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
 
 	export(TARGETS ${target} FILE "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Target.cmake")
@@ -153,8 +154,11 @@ macro(export_obs_core target exportname)
 	set(CONF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
 	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Config.cmake" @ONLY)
 
-	set(CONF_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${OBS_INCLUDE_DESTINATION}")
+	file(RELATIVE_PATH _pinclude_dir "${CMAKE_INSTALL_PREFIX}/${OBS_CMAKE_DESTINATION}/${exportname}" "${CMAKE_INSTALL_PREFIX}/${OBS_INCLUDE_DESTINATION}")
+	set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${_pinclude_dir}")
 	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${exportname}Config.cmake" @ONLY)
+
+	set(_pinclude_dir)
 
 	configure_file("${exportname}ConfigVersion.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}ConfigVersion.cmake" @ONLY)
 
@@ -169,7 +173,7 @@ endmacro()
 
 macro(install_obs_headers)
 	foreach(hdr ${ARGN})
-		if("${hdr}" MATCHES "^(/|[a-zA-Z]:[/\\\\]).*$")
+		if(IS_ABSOLUTE "${hdr}")
 			set(subdir)
 		else()
 			get_filename_component(subdir "${hdr}" DIRECTORY)
