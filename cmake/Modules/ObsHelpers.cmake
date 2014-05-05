@@ -152,13 +152,19 @@ macro(export_obs_core target exportname)
 	export(PACKAGE "${exportname}")
 
 	set(CONF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
+	set(CONF_PLUGIN_DEST "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/${_lib_suffix}bit")
+	set(CONF_PLUGIN_DEST32 "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/32bit")
+	set(CONF_PLUGIN_DEST64 "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/64bit")
 	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Config.cmake" @ONLY)
 
-	file(RELATIVE_PATH _pinclude_dir "${CMAKE_INSTALL_PREFIX}/${OBS_CMAKE_DESTINATION}/${exportname}" "${CMAKE_INSTALL_PREFIX}/${OBS_INCLUDE_DESTINATION}")
-	set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${_pinclude_dir}")
+	file(RELATIVE_PATH _pdir "${CMAKE_INSTALL_PREFIX}/${OBS_CMAKE_DESTINATION}/${exportname}" "${CMAKE_INSTALL_PREFIX}")
+	set(CONF_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${_pdir}${OBS_INCLUDE_DESTINATION}")
+	set(CONF_PLUGIN_DEST "\${CMAKE_CURRENT_LIST_DIR}/${_pdir}${OBS_PLUGIN_DESTINATION}")
+	set(CONF_PLUGIN_DEST32 "\${CMAKE_CURRENT_LIST_DIR}/${_pdir}${OBS_PLUGIN32_DESTINATION}")
+	set(CONF_PLUGIN_DEST64 "\${CMAKE_CURRENT_LIST_DIR}/${_pdir}${OBS_PLUGIN64_DESTINATION}")
 	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${exportname}Config.cmake" @ONLY)
 
-	set(_pinclude_dir)
+	set(_pdir)
 
 	configure_file("${exportname}ConfigVersion.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}ConfigVersion.cmake" @ONLY)
 
