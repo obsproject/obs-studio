@@ -1,5 +1,10 @@
 project(obs-ffmpeg)
 
+if(WIN32)
+	set(obs-ffmpeg_PLATFORM_DEPS
+		w32-pthreads)
+endif()
+
 find_package(Libavcodec REQUIRED)
 include_directories(${Libavcodec_INCLUDE_DIR})
 add_definitions(${Libavcodec_DEFINITIONS})
@@ -32,6 +37,7 @@ add_library(obs-ffmpeg MODULE
 	${obs-ffmpeg_SOURCES})
 target_link_libraries(obs-ffmpeg
 	libobs
+	${obs-ffmpeg_PLATFORM_DEPS}
 	${Libavcodec_LIBRARIES}
 	${Libavutil_LIBRARIES}
 	${Libswscale_LIBRARIES}
