@@ -169,7 +169,7 @@ endmacro()
 
 macro(install_obs_headers)
 	foreach(hdr ${ARGN})
-		if("${hdr}" MATCHES "^/.*$")
+		if("${hdr}" MATCHES "^(/|[a-zA-Z]:[/\\\\]).*$")
 			set(subdir)
 		else()
 			get_filename_component(subdir "${hdr}" DIRECTORY)
