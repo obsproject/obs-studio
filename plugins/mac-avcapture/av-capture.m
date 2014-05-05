@@ -42,6 +42,23 @@ struct av_capture {
 	struct source_frame frame;
 };
 
+static inline void update_frame_size(struct source_frame *frame,
+		uint32_t width, uint32_t height)
+{
+	if (width != frame->width) {
+		blog(LOG_DEBUG, "Changed width from %d to %d",
+				frame->width, width);
+		frame->width = width;
+		frame->linesize[0] = width * 2;
+	}
+
+	if (height != frame->height) {
+		blog(LOG_DEBUG, "Changed height from %d to %d",
+				frame->height, height);
+		frame->height = height;
+	}
+}
+
 @implementation OBSAVCaptureDelegate
 - (void)captureOutput:(AVCaptureOutput *)out
         didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -65,37 +82,26 @@ struct av_capture {
 
 	struct source_frame *frame = &capture->frame;
 
+	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
+
+	update_frame_size(frame, CVPixelBufferGetWidth(img),
+			CVPixelBufferGetHeight(img));
+
 	CMSampleTimingInfo info;
 	CMSampleBufferGetSampleTimingInfo(sampleBuffer, 0, &info);
-
-	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
-	CVPixelBufferLockBaseAddress(img, 0);
-	uint32_t h = CVPixelBufferGetHeight(img);
-	if (h != frame->height) {
-		blog(LOG_DEBUG, "Changed height from %d to %d",
-				frame->height, h);
-		frame->height = h;
-	}
-	uint32_t w = CVPixelBufferGetWidth(img);
-	if (w != frame->width) {
-		blog(LOG_DEBUG, "Changed width from %d to %d",
-				frame->width, w);
-		frame->width = w;
-		frame->linesize[0] = w*2;
-	}
-
-	uint8_t *addr = CVPixelBufferGetBaseAddress(img);
 
 	AVCaptureInputPort *port = capture->device_input.ports[0];
 
 	CMTime host_pts = CMSyncConvertTime(info.presentationTimeStamp,
 			port.clock, CMClockGetHostTimeClock());
 
-	frame->data[0] = addr;
+	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
+
 	frame->timestamp = host_pts.value;
+	frame->data[0] = CVPixelBufferGetBaseAddress(img);
 	obs_source_output_video(capture->source, frame);
 
-	CVPixelBufferUnlockBaseAddress(img, 0);
+	CVPixelBufferUnlockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 }
 @end
 
