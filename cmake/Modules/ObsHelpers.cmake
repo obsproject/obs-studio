@@ -55,6 +55,8 @@ if(NOT UNIX_STRUCTURE)
 		set(OBS_PLUGIN64_DESTINATION "obs-plugins/64bit")
 		add_definitions(-DOBS_DATA_PATH="../../${OBS_DATA_DESTINATION}")
 	endif()
+	set(OBS_CMAKE_DESTINATION "cmake")
+	set(OBS_INCLUDE_DESTINATION "include")
 else()
 	set(OBS_EXECUTABLE_DESTINATION "bin")
 	set(OBS_EXECUTABLE32_DESTINATION "bin32")
@@ -66,6 +68,8 @@ else()
 	set(OBS_PLUGIN32_DESTINATION "lib32/obs-plugins")
 	set(OBS_PLUGIN64_DESTINATION "lib64/obs-plugins")
 	set(OBS_DATA_DESTINATION "share/obs")
+	set(OBS_CMAKE_DESTINATION "lib/cmake")
+	set(OBS_INCLUDE_DESTINATION "include/obs")
 	add_definitions(-DOBS_DATA_PATH="${OBS_DATA_DESTINATION}")
 	add_definitions(-DOBS_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}/")
 endif()
@@ -137,6 +141,46 @@ function(obs_install_additional)
 	endif()
 endfunction()
 
+macro(export_obs_core target exportname)
+	install(TARGETS ${target}
+		EXPORT "${exportname}Target"
+		LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
+		RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
+
+	export(TARGETS ${target} FILE "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Target.cmake")
+	export(PACKAGE "${exportname}")
+
+	set(CONF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
+	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Config.cmake" @ONLY)
+
+	set(CONF_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${OBS_INCLUDE_DESTINATION}")
+	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${exportname}Config.cmake" @ONLY)
+
+	configure_file("${exportname}ConfigVersion.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}ConfigVersion.cmake" @ONLY)
+
+	install(FILES
+		"${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${exportname}Config.cmake"
+		"${CMAKE_CURRENT_BINARY_DIR}/${exportname}ConfigVersion.cmake"
+		DESTINATION "${OBS_CMAKE_DESTINATION}/${exportname}")
+
+	install(EXPORT "${exportname}Target"
+		DESTINATION "${OBS_CMAKE_DESTINATION}/${exportname}")
+endmacro()
+
+macro(install_obs_headers)
+	foreach(hdr ${ARGN})
+		if("${hdr}" MATCHES "^/.*$")
+			set(subdir)
+		else()
+			get_filename_component(subdir "${hdr}" DIRECTORY)
+			if(subdir)
+				set(subdir "/${subdir}")
+			endif()
+		endif()
+		install(FILES "${hdr}" DESTINATION "${OBS_INCLUDE_DESTINATION}${subdir}")
+	endforeach()
+endmacro()
+
 macro(install_obs_core target)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_bit_suffix "64bit/")
@@ -148,9 +192,14 @@ macro(install_obs_core target)
 		set(_bit_suffix "")
 	endif()
 
-	install(TARGETS ${target}
-		LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
-		RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
+	if("${ARGV1}" STREQUAL "EXPORT")
+		export_obs_core("${target}" "${ARGV2}")
+	else()
+		install(TARGETS ${target}
+			LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
+			RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
+	endif()
+
 	add_custom_command(TARGET ${target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
 			"$<TARGET_FILE:${target}>"

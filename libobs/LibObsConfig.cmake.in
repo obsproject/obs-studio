@@ -1,0 +1,13 @@
+# - Config file for the LibObs package
+# It defines the following variables
+#  LIBOBS_INCLUDE_DIRS
+#  LIBOBS_LIBRARIES
+
+set(LIBOBS_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+
+if(NOT TARGET libobs)
+	include("${CMAKE_CURRENT_LIST_DIR}/LibObsTarget.cmake")
+endif()
+
+set(LIBOBS_LIBRARIES libobs)
+

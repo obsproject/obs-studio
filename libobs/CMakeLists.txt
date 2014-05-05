@@ -59,11 +59,11 @@ if(MSVC)
 endif()
 
 configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-	"${CMAKE_BINARY_DIR}/config/config.h")
+	"${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in"
+	"${CMAKE_BINARY_DIR}/config/obsconfig.h")
 
 set(libobs_config_HEADERS
-	config.h
+	"${CMAKE_BINARY_DIR}/config/obsconfig.h"
 	obs-config.h)
 
 set(libobs_callback_SOURCES
@@ -203,6 +203,7 @@ set(libobs_SOURCES
 	${libobs_libobs_SOURCES})
 
 set(libobs_HEADERS
+	${libobs_config_HEADERS}
 	${libobs_callback_HEADERS}
 	${libobs_graphics_HEADERS}
 	${libobs_mediaio_HEADERS}
@@ -225,13 +226,16 @@ set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")
+target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 target_link_libraries(libobs
-	jansson
-	${libobs_PLATFORM_DEPS}
-	${Libswscale_LIBRARIES}
-	${Libswresample_LIBRARIES}
-	${Libavutil_LIBRARIES})
+	PRIVATE
+		jansson
+		${libobs_PLATFORM_DEPS}
+		${Libswscale_LIBRARIES}
+		${Libswresample_LIBRARIES}
+		${Libavutil_LIBRARIES})
 
-install_obs_core(libobs)
+install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs ../build/data/libobs libobs)
+install_obs_headers(${libobs_HEADERS})
 
