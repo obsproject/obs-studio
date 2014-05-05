@@ -65,12 +65,35 @@ typedef struct obs_service    *obs_service_t;
 extern "C" {
 #endif
 
-/* LIBOBS_API_VER must be returned by module_version in each module */
+/*
+ * LIBOBS_API_VER is returned by module_version in each module.
+ *
+ * Libobs uses semantic versioning.  See http://semver.org/ for more
+ * information.
+ */
 
-#define LIBOBS_API_MAJOR_VER  0 /* increment if major breaking changes */
-#define LIBOBS_API_MINOR_VER  1 /* increment if minor non-breaking additions */
-#define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 16) | \
-                               LIBOBS_API_MINOR_VER)
+/*
+ * Increment if major breaking API changes
+ */
+#define LIBOBS_API_MAJOR_VER  0 /* 0 means development, anything can break */
+
+/*
+ * Increment if backward-compatible additions
+ *
+ * Reset to zero each major version
+ */
+#define LIBOBS_API_MINOR_VER  2
+
+/*
+ * Increment if backward-compatible bug fix
+ *
+ * Reset to zero each major or minor version
+ */
+#define LIBOBS_API_PATCH_VER  0
+
+#define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 24) | \
+                              (LIBOBS_API_MINOR_VER << 16) | \
+                               LIBOBS_API_PATCH_VER        )
 
 /** Used for changing the order of items (for example, filters in a source,
  * or items in a scene) */
