@@ -4,6 +4,7 @@
 #  LIBOBS_LIBRARIES
 
 set(LIBOBS_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+get_filename_component(LIBOBS_INCLUDE_DIRS "${LIBOBS_INCLUDE_DIRS}" ABSOLUTE)
 
 if(NOT TARGET libobs)
 	include("${CMAKE_CURRENT_LIST_DIR}/LibObsTarget.cmake")
