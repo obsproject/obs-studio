@@ -6,6 +6,10 @@
 #include <obs.h>
 #include <media-io/video-io.h>
 
+#define MILLI_TIMESCALE 1000
+#define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
+#define NANO_TIMESCALE  (MICRO_TIMESCALE * 1000)
+
 #define AV_REV_FOURCC(x) \
 	(x >> 24), ((x >> 16) & 255), ((x >> 8) & 255), (x & 255)
 
@@ -33,6 +37,7 @@ struct av_capture {
 	
 	OBSAVCaptureDelegate *delegate;
 	dispatch_queue_t queue;
+	bool has_clock;
 
 	unsigned fourcc;
 	enum video_format video_format;
@@ -89,15 +94,23 @@ static inline void update_frame_size(struct source_frame *frame,
 
 	CMSampleTimingInfo info;
 	CMSampleBufferGetSampleTimingInfo(sampleBuffer, 0, &info);
+	CMTime target_pts;
+	if (capture->has_clock) {
+		AVCaptureInputPort *port = capture->device_input.ports[0];
+		target_pts = CMSyncConvertTime(info.presentationTimeStamp,
+				port.clock, CMClockGetHostTimeClock());
 
-	AVCaptureInputPort *port = capture->device_input.ports[0];
+	} else {
+		target_pts = info.presentationTimeStamp;
+	}
 
-	CMTime host_pts = CMSyncConvertTime(info.presentationTimeStamp,
-			port.clock, CMClockGetHostTimeClock());
+	CMTime target_pts_nano = 
+		CMTimeConvertScale(info.presentationTimeStamp, NANO_TIMESCALE,
+				kCMTimeRoundingMethod_Default);
+	frame->timestamp = target_pts_nano.value;
 
 	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 
-	frame->timestamp = host_pts.value;
 	frame->data[0] = CVPixelBufferGetBaseAddress(img);
 	obs_source_output_video(capture->source, frame);
 
@@ -289,6 +302,9 @@ static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 
 	if (!init_device_input(capture, settings))
 		return;
+
+	AVCaptureInputPort *port = capture->device_input.ports[0];
+	capture->has_clock = [port respondsToSelector:@selector(clock)];
 
 	if (obs_data_getbool(settings, "use_preset")) {
 		NSString *preset = [NSString
