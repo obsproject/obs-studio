@@ -43,7 +43,8 @@ What is OBS?
    detrimental to progression to continue working on it rather than rewrite it.
 
 
-##What was wrong with the original OBS?
+What was wrong with the original OBS?
+=====================================
 
   The original OBS was rewritten not because it was bad, at least in terms of
   optimization.  Optimization and graphics are things I love.  However, there
@@ -51,94 +52,94 @@ What is OBS?
   fundamental, which prevented myself and other developers from being able to
   improve/extend the application or add new features very easily.
 
-  ##The Design Flaws:
+##The Design Flaws:
 
-    - The original OBS was completely and hopelessly hard-coded for windows,
-      and only windows.  It was just totally impossible to use it on other
-      systems.
+  - The original OBS was completely and hopelessly hard-coded for windows,
+    and only windows.  It was just totally impossible to use it on other
+    systems.
 
-    - All the sub-systems were written before I really knew what I was getting
-      into.  When I started the project, I didn't really fully comprehend the
-      scope of what I would need or how to properly design the project.  My
-      design and plans for the application were just to write something that
-      would "stream games and a webcam, with things like overlays and such."
-      This turned out fine for most casual gamers and streamers (and very
-      successful), but left anyone wanting to do anything more advanced left
-      massively wanting.
+  - All the sub-systems were written before I really knew what I was getting
+    into.  When I started the project, I didn't really fully comprehend the
+    scope of what I would need or how to properly design the project.  My
+    design and plans for the application were just to write something that
+    would "stream games and a webcam, with things like overlays and such."
+    This turned out fine for most casual gamers and streamers (and very
+    successful), but left anyone wanting to do anything more advanced left
+    massively wanting.
 
-    - Subsystems and core functionalities intermingled in such a way that it
-      was a nightmare to get proper custom functionality out of it.  Things
-      like QSV had to be meshed in with the main encoding loop, and it just
-      made things a nightmare to deal with.  Custom outputs were nigh
-      impossible.
+  - Subsystems and core functionalities intermingled in such a way that it
+    was a nightmare to get proper custom functionality out of it.  Things
+    like QSV had to be meshed in with the main encoding loop, and it just
+    made things a nightmare to deal with.  Custom outputs were nigh
+    impossible.
 
-    - The API was poorly designed because most of it came after I originally
-      wrote the application, it was more of an afterthought, and plugin API
-      would routinely break for plugin developers due to changing C++
-      interfaces (one of the reasons the core is now C).
+  - The API was poorly designed because most of it came after I originally
+    wrote the application, it was more of an afterthought, and plugin API
+    would routinely break for plugin developers due to changing C++
+    interfaces (one of the reasons the core is now C).
 
-    - API was intermeshed with the main executable.  The OBSApi DLL was
-      nothing more than basically this mutant growth upon OBS.exe that allowed
-      plugin developers to barely write plugins, but all the important API
-      code was actually stored in the executable.  Navigation was a total mess.
+   - API was intermeshed with the main executable.  The OBSApi DLL was
+    nothing more than basically this mutant growth upon OBS.exe that allowed
+    plugin developers to barely write plugins, but all the important API
+    code was actually stored in the executable.  Navigation was a total mess.
 
-    - The graphics subsystem, while not bad, was incomplete, and though far
-      easier to use than bare D3D, wasn't ideal, and was hard-coded for D3D
-      specifically.
+  - The graphics subsystem, while not bad, was incomplete, and though far
+    easier to use than bare D3D, wasn't ideal, and was hard-coded for D3D
+    specifically.
 
-    - The devices and audio code was poor, I had no idea what I was getting into
-      when I started writing them in.  I did not realize beforehand all the
-      device-specific quirks that each device/system could have.  Some devices
-      had bad timing and quirks that I never aniticipated while writing them.
-      I struggled with devices, and my original design for the audio subsystem
-      for example morphed over and over into an abomination that, though works,
-      is basically this giant duct-taped zombie monster.
+  - The devices and audio code was poor, I had no idea what I was getting into
+    when I started writing them in.  I did not realize beforehand all the
+    device-specific quirks that each device/system could have.  Some devices
+    had bad timing and quirks that I never aniticipated while writing them.
+    I struggled with devices, and my original design for the audio subsystem
+    for example morphed over and over into an abomination that, though works,
+    is basically this giant duct-taped zombie monster.
 
-    - Shaders were difficult to customize because they had to be duplicated if
-      you wanted slightly different functionality that required more than just
-      changing shader constants.
+  - Shaders were difficult to customize because they had to be duplicated if
+    you wanted slightly different functionality that required more than just
+    changing shader constants.
 
-    - Oriantation of sources was fixed, and required special code for each
-      source to do any custom modification of rotation/position/scale/etc.
-      This is one of those fundamental flaws that I look back on and regret, as
-      it was a stupid idea from the beginning.  I originally thought I could
-      get more accurate source position/sizes, but it just turned out to be
-      totally bad.  Should have been matrices from the beginning just like with
-      a regular 3D engine.
+  - Oriantation of sources was fixed, and required special code for each
+    source to do any custom modification of rotation/position/scale/etc.
+    This is one of those fundamental flaws that I look back on and regret, as
+    it was a stupid idea from the beginning.  I originally thought I could
+    get more accurate source position/sizes, but it just turned out to be
+    totally bad.  Should have been matrices from the beginning just like with
+    a regular 3D engine.
 
-  ##The Coding Flaws:
+##The Coding Flaws:
 
-    - The coding style was inconsistent.
+  - The coding style was inconsistent.
 
-    - C++98, C-Style C++, there was no exception usage, no STL.  C++ used
-      poorly.
+  - C++98, C-Style C++, there was no exception usage, no STL.  C++ used
+    poorly.
 
-    - Not Invented Here Syndrome everywhere.  Custom string functions/classes,
-      custom templates, custom everything everywhere.  To be fair, it was all
-      hand-me-down code from the early 2000s that I had become used to, but
-      that was no excuse -- C-standard libraries and the STL should have been
-      used from the beginning over anything else.  That doesn't mean to say
-      that using custom stuff is always bad, but doing it to the extent I did
-      definitely was.  Made it horrible to maintain as well, required extra
-      knowledge for plugin developers and anyone messing with the code.
+  - Not Invented Here Syndrome everywhere.  Custom string functions/classes,
+    custom templates, custom everything everywhere.  To be fair, it was all
+    hand-me-down code from the early 2000s that I had become used to, but
+    that was no excuse -- C-standard libraries and the STL should have been
+    used from the beginning over anything else.  That doesn't mean to say
+    that using custom stuff is always bad, but doing it to the extent I did
+    definitely was.  Made it horrible to maintain as well, required extra
+    knowledge for plugin developers and anyone messing with the code.
 
-    - Giant monolithic classes everywhere, the main OBS class was paricularly
-      bad in this regard.  This meant navigation was a nightmare, and no one
-      really knew where to go or where to add/change things.
+  - Giant monolithic classes everywhere, the main OBS class was paricularly
+    bad in this regard.  This meant navigation was a nightmare, and no one
+    really knew where to go or where to add/change things.
 
-    - Giant monolithic functions everywhere.  This was particularly bad
-      because it meant that functions became harder to debug and harder to
-      keep track of what was going on in any particular function at any given
-      time.  These large functions, though not inefficient, were delicate and
-      easily breakable.  (See OBS::MainCaptureLoop for a nightmarish example,
-      or the listbox subclass window procedure in WindowStuff.cpp)
+  - Giant monolithic functions everywhere.  This was particularly bad
+    because it meant that functions became harder to debug and harder to
+    keep track of what was going on in any particular function at any given
+    time.  These large functions, though not inefficient, were delicate and
+    easily breakable.  (See OBS::MainCaptureLoop for a nightmarish example,
+    or the listbox subclass window procedure in WindowStuff.cpp)
 
-    - Very large file sizes with everything clumped up into single files (for
-      another particularly nightmarish example, see WindowStuff.cpp)
+  - Very large file sizes with everything clumped up into single files (for
+    another particularly nightmarish example, see WindowStuff.cpp)
 
-    - Bad formatting.  Code could go beyond 200 columns in some cases, making
-      it very unpleasant to read with many editors.  Spaces instead of tabs,
-      K&R mixed with allman (which was admittedly my fault).
+  - Bad formatting.  Code could go beyond 200 columns in some cases, making
+    it very unpleasant to read with many editors.  Spaces instead of tabs,
+    K&R mixed with allman (which was admittedly my fault).
 
 
 ##New Coding Guidelines
