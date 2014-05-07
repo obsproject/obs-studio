@@ -1,12 +1,12 @@
-
 What is OBS?
+============
 
   This project is a rewrite of what was formerly known as "Open Broadcaster
   Software", software originally designed for recording and streaming live
   video content, efficiently.
 
 
-What's the goal of rewriting OBS?
+##What's the goal of rewriting OBS?
 
  - Make it multiplatform.  Use multiplatform libraries/functions/classes where
    possible to allow this.  Multi-platform support was one of the primary
@@ -141,7 +141,7 @@ What was wrong with the original OBS?
       K&R mixed with allman (which was admittedly my fault).
 
 
-New (actual) coding guidelines
+##New (actual) coding guidelines
 
  - For the C code (especially in the core), guidelines are pretty strict K&R,
    kernel style.  See the linux kernel "CodingStyle" document for more
