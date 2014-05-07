@@ -78,4 +78,8 @@ endif()
 
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
 
+if(UNIX_STRUCTURE)
+	set(CPACK_SET_DESTDIR TRUE)
+endif()
+
 include(CPack)
