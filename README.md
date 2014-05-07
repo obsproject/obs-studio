@@ -43,7 +43,7 @@ What is OBS?
    detrimental to progression to continue working on it rather than rewrite it.
 
 
-What was wrong with the original OBS?
+##What was wrong with the original OBS?
 
   The original OBS was rewritten not because it was bad, at least in terms of
   optimization.  Optimization and graphics are things I love.  However, there
@@ -51,7 +51,7 @@ What was wrong with the original OBS?
   fundamental, which prevented myself and other developers from being able to
   improve/extend the application or add new features very easily.
 
-  First, the design flaws:
+  ##The Design Flaws:
 
     - The original OBS was completely and hopelessly hard-coded for windows,
       and only windows.  It was just totally impossible to use it on other
@@ -106,7 +106,7 @@ What was wrong with the original OBS?
       totally bad.  Should have been matrices from the beginning just like with
       a regular 3D engine.
 
-  Second, the coding flaws:
+  ##The Coding Flaws:
 
     - The coding style was inconsistent.
 
@@ -141,7 +141,7 @@ What was wrong with the original OBS?
       K&R mixed with allman (which was admittedly my fault).
 
 
-##New (actual) coding guidelines
+##New Coding Guidelines
 
  - For the C code (especially in the core), guidelines are pretty strict K&R,
    kernel style.  See the linux kernel "CodingStyle" document for more
