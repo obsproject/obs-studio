@@ -225,6 +225,11 @@ set_target_properties(libobs PROPERTIES
 	VERSION "0"
 	SOVERSION "0")
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
+
+if(NOT MSVC)
+	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
+endif()
+
 target_link_libraries(libobs
 	PRIVATE
 		jansson
