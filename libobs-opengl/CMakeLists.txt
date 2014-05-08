@@ -28,7 +28,8 @@ elseif(APPLE)
 
 	set(libobs-opengl_PLATFORM_DEPS
 		${COCOA}
-		${IOSURF})
+		${IOSURF}
+		${OPENGL_gl_LIBRARY})
 else()
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-x11.c)

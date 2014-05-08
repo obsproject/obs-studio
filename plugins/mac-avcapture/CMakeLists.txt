@@ -1,12 +1,14 @@
 project(mac-avcapture)
 
 find_library(AVFOUNDATION AVFoundation)
+find_library(COCOA Cocoa)
 find_library(COREFOUNDATION CoreFoundation)
 find_library(COREMEDIA CoreMedia)
 find_library(COREVIDEO CoreVideo)
 
 
 include_directories(${AVFOUNDATION}
+                    ${COCOA}
                     ${COREFOUNDATION}
                     ${COREMEDIA}
                     ${COREVIDEO})
@@ -28,6 +30,7 @@ add_library(mac-avcapture MODULE
 target_link_libraries(mac-avcapture
 	libobs
 	${AVFOUNDATION}
+	${COCOA}
 	${COREFOUNDATION}
 	${COREMEDIA}
 	${COREVIDEO})
