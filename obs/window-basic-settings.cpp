@@ -158,6 +158,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
 
+	//Apply button disabled until change.
+	EnableApplyButton(false);
+
 	LoadServiceTypes();
 	LoadServiceInfo();
 	LoadSettings(false);
@@ -664,11 +667,6 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	if (loading || row == pageIndex)
 		return;
 
-	if (Changed() && !QueryChanges()) {
-		ui->listWidget->setCurrentRow(pageIndex);
-		return;
-	}
-
 	pageIndex = row;
 }
 
@@ -744,20 +742,26 @@ void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 
 void OBSBasicSettings::GeneralChanged()
 {
-	if (!loading)
+	if (!loading) {
 		generalChanged = true;
+		EnableApplyButton(true);
+	}
 }
 
 void OBSBasicSettings::OutputsChanged()
 {
-	if (!loading)
+	if (!loading) {
 		outputsChanged = true;
+		EnableApplyButton(true);
+	}
 }
 
 void OBSBasicSettings::AudioChanged()
 {
-	if (!loading)
+	if (!loading) {
 		audioChanged = true;
+		EnableApplyButton(true);
+	}
 }
 
 void OBSBasicSettings::AudioChangedRestart()
@@ -765,6 +769,7 @@ void OBSBasicSettings::AudioChangedRestart()
 	if (!loading) {
 		audioChanged = true;
 		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		EnableApplyButton(true);
 	}
 }
 
@@ -773,17 +778,22 @@ void OBSBasicSettings::VideoChangedRestart()
 	if (!loading) {
 		videoChanged = true;
 		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		EnableApplyButton(true);
 	}
 }
 
 void OBSBasicSettings::VideoChangedResolution()
 {
-	if (!loading && ValidResolutions(ui.get()))
+	if (!loading && ValidResolutions(ui.get())) {
 		videoChanged = true;
+		EnableApplyButton(true);
+	}
 }
 
 void OBSBasicSettings::VideoChanged()
 {
-	if (!loading)
+	if (!loading) {
 		videoChanged = true;
+		EnableApplyButton(true);
+	}
 }

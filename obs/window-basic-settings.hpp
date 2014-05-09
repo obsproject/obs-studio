@@ -53,12 +53,18 @@ private:
 			audioChanged || videoChanged;
 	}
 
+	inline void EnableApplyButton(bool en)
+	{
+		ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(en);
+	}
+
 	inline void ClearChanged()
 	{
 		generalChanged = false;
 		outputsChanged = false;
 		audioChanged   = false;
 		videoChanged   = false;
+		EnableApplyButton(false);
 	}
 
 	void HookWidget(QWidget *widget, const char *signal, const char *slot);
