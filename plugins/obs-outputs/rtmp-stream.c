@@ -21,6 +21,7 @@
 #include <util/circlebuf.h>
 #include <util/dstr.h>
 #include <util/threading.h>
+#include <inttypes.h>
 #include "librtmp/rtmp.h"
 #include "librtmp/log.h"
 #include "flv-mux.h"
@@ -505,7 +506,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream)
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
 	if (buffer_duration_usec > stream->drop_threshold_usec) {
 		drop_frames(stream);
-		blog(LOG_INFO, "dropping %lld worth of frames",
+		blog(LOG_INFO, "dropping %" PRId64 " worth of frames",
 				buffer_duration_usec);
 	}
 }
