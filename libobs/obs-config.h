@@ -17,8 +17,8 @@
 
 #pragma once
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
+#ifdef HAVE_OBSCONFIG_H
+# include "obsconfig.h"
 #else
 
 #define OBS_VERSION "unknown"

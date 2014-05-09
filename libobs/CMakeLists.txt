@@ -26,8 +26,6 @@ if(WIN32)
 	set(libobs_PLATFORM_DEPS
 		w32-pthreads
 		winmm.lib)
-
-	add_definitions(-DPTW32_STATIC_LIB)
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c
@@ -59,11 +57,11 @@ if(MSVC)
 endif()
 
 configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-	"${CMAKE_BINARY_DIR}/config/config.h")
+	"${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in"
+	"${CMAKE_BINARY_DIR}/config/obsconfig.h")
 
 set(libobs_config_HEADERS
-	config.h
+	"${CMAKE_BINARY_DIR}/config/obsconfig.h"
 	obs-config.h)
 
 set(libobs_callback_SOURCES
@@ -203,6 +201,7 @@ set(libobs_SOURCES
 	${libobs_libobs_SOURCES})
 
 set(libobs_HEADERS
+	${libobs_config_HEADERS}
 	${libobs_callback_HEADERS}
 	${libobs_graphics_HEADERS}
 	${libobs_mediaio_HEADERS}
@@ -225,13 +224,21 @@ set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")
-target_link_libraries(libobs
-	jansson
-	${libobs_PLATFORM_DEPS}
-	${Libswscale_LIBRARIES}
-	${Libswresample_LIBRARIES}
-	${Libavutil_LIBRARIES})
+target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
-install_obs_core(libobs)
+if(NOT MSVC)
+	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
+endif()
+
+target_link_libraries(libobs
+	PRIVATE
+		jansson
+		${libobs_PLATFORM_DEPS}
+		${Libswscale_LIBRARIES}
+		${Libswresample_LIBRARIES}
+		${Libavutil_LIBRARIES})
+
+install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs ../build/data/libobs libobs)
+install_obs_headers(${libobs_HEADERS})
 

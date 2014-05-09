@@ -1,5 +1,9 @@
 project(w32-pthreads)
 
+if(NOT WIN32)
+	return()
+endif()
+
 set(w32-pthreads_SOURCES
 	pthread.c)
 

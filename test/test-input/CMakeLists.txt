@@ -21,6 +21,9 @@ if(APPLE)
 	set(test-input_PLATFORM_DEPS
 		${IOSURF}
 		${COCOA})
+elseif(WIN32)
+	set(test-input_PLATFORM_DEPS
+		w32-pthreads)
 endif()
 
 set(test-input_SOURCES

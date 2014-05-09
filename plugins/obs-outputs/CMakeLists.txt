@@ -2,6 +2,7 @@ project(obs-outputs)
 
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
+		w32-pthreads
 		ws2_32.lib
 		winmm.lib)
 endif()
