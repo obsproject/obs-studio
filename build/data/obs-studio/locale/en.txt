@@ -42,6 +42,9 @@ Basic.DisplayCapture="Display Capture"
 Basic.Main.AddSceneDlg.Title="Add Scene"
 Basic.Main.AddSceneDlg.Text="Please enter the name of the scene"
 
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Scene %1"
+
 # add source dialog
 Basic.SourceSelect.CreateNew="Create new"
 Basic.SourceSelect.AddExisting="Add Existing"

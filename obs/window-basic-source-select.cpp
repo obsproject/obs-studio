@@ -18,6 +18,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-source-select.hpp"
 #include "qt-wrappers.hpp"
+#include "obs-app.hpp"
 
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t source)
 {
@@ -142,6 +143,14 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *type_)
 	  type    (type_)
 {
 	ui->setupUi(this);
+
+	const char *placeHolderText = obs_source_getdisplayname(
+		OBS_SOURCE_TYPE_INPUT,
+		type_, App()->GetLocale());
+
+	ui->sourceName->setText(QT_UTF8(placeHolderText));
+	ui->sourceName->setFocus();	//Fixes deselect of text.
+	ui->sourceName->selectAll();
 
 	obs_enum_sources(EnumSources, this);
 }

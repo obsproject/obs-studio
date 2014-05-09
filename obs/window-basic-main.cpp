@@ -958,10 +958,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionAddScene_triggered()
 {
 	string name;
+	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
+	QString placeHolderText = format.arg(ui->scenes->count() + 1);
+
 	bool accepted = NameDialog::AskForName(this,
 			QTStr("MainWindow.AddSceneDlg.Title"),
 			QTStr("MainWindow.AddSceneDlg.Text"),
-			name);
+			name,
+			placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {

@@ -28,11 +28,13 @@ NameDialog::NameDialog(QWidget *parent)
 }
 
 bool NameDialog::AskForName(QWidget *parent, const QString &title,
-		const QString &text, string &str)
+		const QString &text, string &str, const QString &placeHolder)
 {
 	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);
 	dialog.ui->label->setText(text);
+	dialog.ui->userText->setText(placeHolder);
+	dialog.ui->userText->selectAll();
 
 	bool accepted = (dialog.exec() == DialogCode::Accepted);
 	if (accepted)
