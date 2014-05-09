@@ -1045,8 +1045,14 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 	bool foundValues = false;
 	size_t idx = 0;
 
-	if (!GetCurrentScene())
+	if (!GetCurrentScene()) {
+		// Tell the user he needs a scene first (help beginners).
+		QMessageBox::information(this,
+				QTStr("Basic.Main.AddSourceHelp.Title"),
+				QTStr("Basic.Main.AddSourceHelp.Text"));
 		return;
+	}
+
 
 	QMenu popup;
 	while (obs_enum_input_types(idx++, &type)) {
