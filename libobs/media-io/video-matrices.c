@@ -24,7 +24,7 @@
 #include "../graphics/matrix3.h"
 #endif
 
-struct {
+static struct {
 	enum video_colorspace const color_space;
 	float const Kb, Kr;
 	int const range_min[3];
@@ -35,7 +35,7 @@ struct {
 	float float_range_max[3];
 	float matrix[2][16];
 
-} static format_info[] = {
+} format_info[] = {
 	{VIDEO_CS_601,
 		0.114f, 0.299f, {16, 16, 16}, {235, 240, 240},
 		{{16, 128, 128}, {0, 128, 128}},
