@@ -865,7 +865,7 @@ void obs_data_item_setint(obs_data_item_t *item, long long val)
 	struct obs_data_number num;
 	num.type    = OBS_DATA_NUM_INT;
 	num.int_val = val;
-	obs_data_item_setdata(item, &val, sizeof(struct obs_data_number),
+	obs_data_item_setdata(item, &num, sizeof(struct obs_data_number),
 			OBS_DATA_NUMBER);
 }
 
@@ -874,7 +874,7 @@ void obs_data_item_setdouble(obs_data_item_t *item, double val)
 	struct obs_data_number num;
 	num.type       = OBS_DATA_NUM_DOUBLE;
 	num.double_val = val;
-	obs_data_item_setdata(item, &val, sizeof(struct obs_data_number),
+	obs_data_item_setdata(item, &num, sizeof(struct obs_data_number),
 			OBS_DATA_NUMBER);
 }
 
