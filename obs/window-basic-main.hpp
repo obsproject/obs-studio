@@ -124,7 +124,7 @@ private:
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
-	void AddSource(obs_scene_t scene, const char *id);
+	void AddSource(const char *id);
 	void AddSourcePopupMenu(const QPoint &pos);
 
 public:

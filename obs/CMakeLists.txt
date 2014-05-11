@@ -57,6 +57,7 @@ set(obs_SOURCES
 	window-basic-main.cpp
 	window-basic-settings.cpp
 	window-basic-properties.cpp
+	window-basic-source-select.cpp
 	window-namedialog.cpp
 	properties-view.cpp
 	volume-control.cpp
@@ -69,6 +70,7 @@ set(obs_HEADERS
 	window-basic-main.hpp
 	window-basic-settings.hpp
 	window-basic-properties.hpp
+	window-basic-source-select.hpp
 	window-namedialog.hpp
 	properties-view.hpp
 	display-helpers.hpp
@@ -80,6 +82,7 @@ set(obs_UI
 	forms/NameDialog.ui
 	forms/OBSBasic.ui
 	forms/OBSBasicSettings.ui
+	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicProperties.ui)
 
 set(obs_QRC

@@ -163,8 +163,6 @@ OBSApp::OBSApp(int &argc, char **argv)
 		throw "Failed to initialize global config";
 	if (!InitLocale())
 		throw "Failed to load locale";
-
-	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
 }
 
 const char *OBSApp::GetRenderModule() const
@@ -180,6 +178,7 @@ const char *OBSApp::GetRenderModule() const
 
 void OBSApp::OBSInit()
 {
+	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
 	mainWindow->OBSInit();
 }
 
@@ -202,6 +201,19 @@ const char *OBSApp::InputAudioSource() const
 const char *OBSApp::OutputAudioSource() const
 {
 	return OUTPUT_AUDIO_SOURCE;
+}
+
+QString OBSTranslator::translate(const char *context, const char *sourceText,
+		const char *disambiguation, int n) const
+{
+	const char *out = nullptr;
+	if (!text_lookup_getstr(App()->GetTextLookup(), sourceText, &out))
+		return QString();
+
+	UNUSED_PARAMETER(context);
+	UNUSED_PARAMETER(disambiguation);
+	UNUSED_PARAMETER(n);
+	return QT_UTF8(out);
 }
 
 struct NoFocusFrameStyle : QProxyStyle
@@ -239,6 +251,8 @@ int main(int argc, char *argv[])
 
 	try {
 		OBSApp program(argc, argv);
+		OBSTranslator test;
+		program.installTranslator(&test);
 		program.setStyle(new NoFocusFrameStyle);
 		program.OBSInit();
 		ret = program.exec();

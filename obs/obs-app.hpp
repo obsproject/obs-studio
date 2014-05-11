@@ -18,11 +18,22 @@
 #pragma once
 
 #include <QApplication>
+#include <QTranslator>
 #include <util/util.hpp>
 #include <string>
 #include <memory>
 
 #include "window-main.hpp"
+
+class OBSTranslator : public QTranslator {
+	Q_OBJECT
+
+public:
+	virtual bool isEmpty() const override {return false;}
+
+	virtual QString translate(const char *context, const char *sourceText,
+			const char *disambiguation, int n) const override;
+};
 
 class OBSApp : public QApplication {
 	Q_OBJECT
@@ -50,6 +61,8 @@ public:
 	{
 		return locale.c_str();
 	}
+
+	inline lookup_t GetTextLookup() const {return textLookup;}
 
 	inline const char *GetString(const char *lookupVal) const
 	{

@@ -28,6 +28,7 @@
 #include "platform.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
+#include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-properties.hpp"
 #include "qt-wrappers.hpp"
@@ -153,8 +154,6 @@ void OBSBasic::CreateDefaultScene()
 			Str("Studio.Basic.DisplayCapture"), NULL);
 
 	if (source) {
-		sourceSceneRefs[source] = 0;
-
 		obs_scene_add(scene, source);
 		obs_add_source(source);
 		obs_source_release(source);
@@ -652,12 +651,15 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t params)
 
 void OBSBasic::SourceAdded(void *data, calldata_t params)
 {
+	OBSBasic *window = static_cast<OBSBasic*>(data);
 	obs_source_t source = (obs_source_t)calldata_ptr(params, "source");
 
 	if (obs_scene_fromsource(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+		QMetaObject::invokeMethod(window,
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
+	else
+		window->sourceSceneRefs[source] = 0;
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t params)
@@ -1029,59 +1031,19 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 	UNUSED_PARAMETER(pos);
 }
 
-void OBSBasic::AddSource(obs_scene_t scene, const char *id)
+void OBSBasic::AddSource(const char *id)
 {
-	string name;
-
-	bool success = false;
-	while (!success) {
-		bool accepted = NameDialog::AskForName(this,
-				Str("MainWindow.AddSourceDlg.Title"),
-				Str("MainWindow.AddSourceDlg.Text"),
-				name);
-
-		if (!accepted)
-			break;
-
-		if (name.empty()) {
-			QMessageBox::information(this,
-					QTStr("MainWindow.NoNameEntered"),
-					QTStr("MainWindow.NoNameEntered"));
-			continue;
-		}
-
-		obs_source_t source = obs_get_source_by_name(name.c_str());
-		if (!source) {
-			success = true;
-			break;
-		} else {
-			QMessageBox::information(this,
-					QTStr("MainWindow.NameExists.Title"),
-					QTStr("MainWindow.NameExists.Text"));
-			obs_source_release(source);
-		}
-	}
-
-	if (success) {
-		obs_source_t source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				id, name.c_str(), NULL);
-
-		sourceSceneRefs[source] = 0;
-
-		obs_add_source(source);
-		obs_scene_add(scene, source);
-		obs_source_release(source);
-	}
+	OBSBasicSourceSelect sourceSelect(this, id);
+	sourceSelect.exec();
 }
 
 void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
-	OBSScene scene = GetCurrentScene();
 	const char *type;
 	bool foundValues = false;
 	size_t idx = 0;
 
-	if (!scene)
+	if (!GetCurrentScene())
 		return;
 
 	QMenu popup;
@@ -1103,7 +1065,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 	if (foundValues) {
 		QAction *ret = popup.exec(pos);
 		if (ret)
-			AddSource(scene, ret->data().toString().toUtf8());
+			AddSource(ret->data().toString().toUtf8());
 	}
 }
 

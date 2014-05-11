@@ -24,7 +24,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>.MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -107,7 +107,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Scenes</string>
+             <string>Basic.Main.Scenes</string>
             </property>
            </widget>
           </item>
@@ -215,7 +215,7 @@
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Sources</string>
+             <string>Basic.Main.Sources</string>
             </property>
            </widget>
           </item>
@@ -322,7 +322,7 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>233</width>
+               <width>148</width>
                <height>16</height>
               </rect>
              </property>
@@ -391,7 +391,7 @@
              <bool>true</bool>
             </property>
             <property name="text">
-             <string>Start Streaming</string>
+             <string>Basic.Main.StartStreaming</string>
             </property>
             <property name="checkable">
              <bool>false</bool>
@@ -404,7 +404,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Start Recording</string>
+             <string>Basic.Main.StartRecording</string>
             </property>
            </widget>
           </item>
@@ -436,16 +436,15 @@
      <x>0</x>
      <y>0</y>
      <width>927</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
     <property name="title">
-     <string>&amp;File</string>
+     <string>Basic.MainMenu.File</string>
     </property>
-    <addaction name="action_New"/>
-    <addaction name="action_Open"/>
     <addaction name="action_Save"/>
+    <addaction name="action_Open"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
     <addaction name="separator"/>
@@ -460,7 +459,7 @@
      <normaloff>:/res/images/add.ico</normaloff>:/res/images/add.ico</iconset>
    </property>
    <property name="text">
-    <string>AddScene</string>
+    <string>Add</string>
    </property>
   </action>
   <action name="actionAddSource">
@@ -469,7 +468,7 @@
      <normaloff>:/res/images/add.ico</normaloff>:/res/images/add.ico</iconset>
    </property>
    <property name="text">
-    <string>AddSource</string>
+    <string>Add</string>
    </property>
   </action>
   <action name="actionRemoveScene">
@@ -478,7 +477,7 @@
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
    </property>
    <property name="text">
-    <string>RemoveScene</string>
+    <string>Remove</string>
    </property>
   </action>
   <action name="actionRemoveSource">
@@ -487,7 +486,7 @@
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
    </property>
    <property name="text">
-    <string>RemoveSource</string>
+    <string>Remove</string>
    </property>
   </action>
   <action name="actionSceneProperties">
@@ -499,7 +498,7 @@
      <normaloff>:/res/images/properties.ico</normaloff>:/res/images/properties.ico</iconset>
    </property>
    <property name="text">
-    <string>SceneProperties</string>
+    <string>Properties</string>
    </property>
   </action>
   <action name="actionSourceProperties">
@@ -511,7 +510,7 @@
      <normaloff>:/res/images/properties.ico</normaloff>:/res/images/properties.ico</iconset>
    </property>
    <property name="text">
-    <string>SourceProperties</string>
+    <string>Properties</string>
    </property>
   </action>
   <action name="actionSceneUp">
@@ -523,7 +522,7 @@
      <normaloff>:/res/images/up.ico</normaloff>:/res/images/up.ico</iconset>
    </property>
    <property name="text">
-    <string>SceneMoveUp</string>
+    <string>Basic.Main.MoveUp</string>
    </property>
   </action>
   <action name="actionSourceUp">
@@ -535,7 +534,7 @@
      <normaloff>:/res/images/up.ico</normaloff>:/res/images/up.ico</iconset>
    </property>
    <property name="text">
-    <string>SourceMoveUp</string>
+    <string>MoveUp</string>
    </property>
   </action>
   <action name="actionSceneDown">
@@ -547,7 +546,7 @@
      <normaloff>:/res/images/down.ico</normaloff>:/res/images/down.ico</iconset>
    </property>
    <property name="text">
-    <string>SceneMoveDown</string>
+    <string>Basic.Main.MoveDown</string>
    </property>
   </action>
   <action name="actionSourceDown">
@@ -559,32 +558,32 @@
      <normaloff>:/res/images/down.ico</normaloff>:/res/images/down.ico</iconset>
    </property>
    <property name="text">
-    <string>SourceMoveDown</string>
+    <string>MoveDown</string>
    </property>
   </action>
   <action name="action_New">
    <property name="text">
-    <string>&amp;New</string>
+    <string>Basic.MainMenu.SwitchMode</string>
    </property>
   </action>
   <action name="action_Open">
    <property name="text">
-    <string>&amp;Open</string>
+    <string>Basic.MainMenu.File.Export</string>
    </property>
   </action>
   <action name="action_Save">
    <property name="text">
-    <string>&amp;Save</string>
+    <string>Basic.MainMenu.File.Import</string>
    </property>
   </action>
   <action name="action_Settings">
    <property name="text">
-    <string>Settings</string>
+    <string>Basic.MainMenu.File.Settings</string>
    </property>
   </action>
   <action name="actionE_xit">
    <property name="text">
-    <string>E&amp;xit</string>
+    <string>Basic.MainMenu.File.Exit</string>
    </property>
   </action>
  </widget>

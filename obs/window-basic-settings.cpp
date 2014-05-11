@@ -363,7 +363,8 @@ void OBSBasicSettings::LoadVideoSettings()
 
 	if (video_output_active(obs_video())) {
 		ui->videoPage->setEnabled(false);
-		ui->videoMsg->setText(QTStr("Settings.Video.CurrentlyActive"));
+		ui->videoMsg->setText(
+				QTStr("Basic.Settings.Video.CurrentlyActive"));
 	}
 
 	LoadRendererList();
@@ -634,8 +635,8 @@ bool OBSBasicSettings::QueryChanges()
 	QMessageBox::StandardButton button;
 
 	button = QMessageBox::question(this,
-			QTStr("Settings.ConfirmTitle"),
-			QTStr("Settings.Confirm"),
+			QTStr("Basic.Settings.ConfirmTitle"),
+			QTStr("Basic.Settings.Confirm"),
 			QMessageBox::Yes | QMessageBox::No |
 			QMessageBox::Cancel);
 
@@ -711,6 +712,8 @@ static inline bool StreamExists(const char *name)
 	return obs_get_service_by_name(name) != nullptr;
 }
 
+#define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"
+
 static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 {
 	QString baseRes   = ui->baseResolution->lineEdit()->text();
@@ -720,8 +723,7 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	if (!ConvertResText(QT_TO_UTF8(baseRes), cx, cy) ||
 	    !ConvertResText(QT_TO_UTF8(outputRes), cx, cy)) {
 
-		ui->videoMsg->setText(
-				QTStr("Settings.Video.InvalidResolution"));
+		ui->videoMsg->setText(QTStr(INVALID_RES_STR));
 		return false;
 	}
 
@@ -762,7 +764,7 @@ void OBSBasicSettings::AudioChangedRestart()
 {
 	if (!loading) {
 		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Settings.ProgramRestart"));
+		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
 	}
 }
 
@@ -770,7 +772,7 @@ void OBSBasicSettings::VideoChangedRestart()
 {
 	if (!loading) {
 		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Settings.ProgramRestart"));
+		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
 	}
 }
 

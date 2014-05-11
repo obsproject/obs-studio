@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>752</width>
+    <width>770</width>
     <height>602</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Settings</string>
+   <string>Basic.Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -44,7 +44,7 @@
        </property>
        <item>
         <property name="text">
-         <string>General</string>
+         <string>Basic.Settings.General</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -53,7 +53,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Stream</string>
+         <string>Basic.Settings.Stream</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -62,7 +62,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Output</string>
+         <string>Basic.Settings.Output</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -71,7 +71,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Audio</string>
+         <string>Basic.Settings.Audio</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -80,7 +80,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Video</string>
+         <string>Basic.Settings.Video</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -92,10 +92,13 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QFormLayout" name="formLayout_2">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
          <property name="labelAlignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
@@ -119,12 +122,12 @@
           <widget class="QLabel" name="label">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>170</width>
              <height>0</height>
             </size>
            </property>
            <property name="text">
-            <string>Language:</string>
+            <string>Basic.Settings.General.Language</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -204,7 +207,7 @@
                      </size>
                     </property>
                     <property name="text">
-                     <string>Stream Type</string>
+                     <string>Basic.Settings.Stream.StreamType</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -267,7 +270,7 @@
                </size>
               </property>
               <property name="text">
-               <string>Mode</string>
+               <string>Basic.Settings.Output.Mode</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -290,12 +293,12 @@
               </property>
               <item>
                <property name="text">
-                <string>Simple</string>
+                <string>Basic.Settings.Output.Mode.Simple</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>Custom</string>
+                <string>Basic.Settings.Output.Mode.Custom</string>
                </property>
               </item>
              </widget>
@@ -368,7 +371,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Save Path</string>
+                      <string>Basic.Settings.Output.Simple.SavePath</string>
                      </property>
                      <property name="alignment">
                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -399,7 +402,7 @@
                    <item row="1" column="0">
                     <widget class="QLabel" name="label_19">
                      <property name="text">
-                      <string>Video Bitrate</string>
+                      <string>Basic.Settings.Output.Simple.VideoBitrate</string>
                      </property>
                     </widget>
                    </item>
@@ -419,7 +422,7 @@
                    <item row="2" column="0">
                     <widget class="QLabel" name="label_20">
                      <property name="text">
-                      <string>Audio Bitrate</string>
+                      <string>Basic.Settings.Output.Simple.AudioBitrate</string>
                      </property>
                     </widget>
                    </item>
@@ -485,13 +488,16 @@
        </widget>
        <widget class="QWidget" name="audioPage">
         <layout class="QFormLayout" name="formLayout">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
          <property name="labelAlignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_14">
            <property name="text">
-            <string>Sample Rate:</string>
+            <string>Basic.Settings.Audio.SampleRate</string>
            </property>
           </widget>
          </item>
@@ -523,17 +529,17 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_15">
            <property name="text">
-            <string>Channels:</string>
+            <string>Basic.Settings.Audio.Channels</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
           <widget class="QComboBox" name="channelSetup">
            <property name="currentText">
-            <string>Stereo</string>
+            <string>Mono</string>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <item>
             <property name="text">
@@ -556,7 +562,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Desktop Audio Device 1:</string>
+            <string>Basic.Settings.Audio.DesktopDevice</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -573,7 +579,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Desktop Audio Device 2:</string>
+            <string>Basic.Settings.Audio.DesktopDevice2</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -590,7 +596,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Mic/Aux Audio Device 1:</string>
+            <string>Basic.Settings.Audio.AuxDevice</string>
            </property>
           </widget>
          </item>
@@ -604,7 +610,7 @@
          <item row="5" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Mic/Aux Audio Device 2:</string>
+            <string>Basic.Settings.Audio.AuxDevice2</string>
            </property>
           </widget>
          </item>
@@ -618,7 +624,7 @@
          <item row="6" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>Mic/Aux Audio Device 3:</string>
+            <string>Basic.Settings.Audio.AuxDevice3</string>
            </property>
           </widget>
          </item>
@@ -646,13 +652,16 @@
        </widget>
        <widget class="QWidget" name="videoPage">
         <layout class="QFormLayout" name="formLayout_3">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
          <property name="labelAlignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_9">
            <property name="text">
-            <string>Renderer:</string>
+            <string>Basic.Settings.Video.Renderer</string>
            </property>
           </widget>
          </item>
@@ -672,7 +681,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Video Adapter:</string>
+            <string>Basic.Settings.Video.Adapter</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -692,7 +701,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="label_8">
            <property name="text">
-            <string>Base Resolution:</string>
+            <string>Basic.Settings.Video.BaseResolution</string>
            </property>
           </widget>
          </item>
@@ -715,7 +724,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
-            <string>Output Resolution:</string>
+            <string>Basic.Settings.Video.ScaledResolution</string>
            </property>
           </widget>
          </item>
@@ -739,7 +748,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
-            <string>Downscale Filter:</string>
+            <string>Basic.Settings.Video.DownscaleFilter</string>
            </property>
           </widget>
          </item>
@@ -752,24 +761,24 @@
             </sizepolicy>
            </property>
            <property name="currentText">
-            <string>FPS (Common)</string>
+            <string>Basic.Settings.Video.FPSCommon</string>
            </property>
            <property name="sizeAdjustPolicy">
             <enum>QComboBox::AdjustToContents</enum>
            </property>
            <item>
             <property name="text">
-             <string>FPS (Common)</string>
+             <string>Basic.Settings.Video.FPSCommon</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>FPS (Integer)</string>
+             <string>Basic.Settings.Video.FPSInteger</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>FPS (Fractional)</string>
+             <string>Basic.Settings.Video.FPSFraction</string>
             </property>
            </item>
           </widget>
@@ -777,7 +786,7 @@
          <item row="5" column="1">
           <widget class="QStackedWidget" name="fpsTypes">
            <property name="currentIndex">
-            <number>0</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -871,6 +880,9 @@
            </widget>
            <widget class="QWidget" name="page_2">
             <layout class="QFormLayout" name="formLayout_4">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::ExpandingFieldsGrow</enum>
+             </property>
              <property name="labelAlignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
@@ -912,14 +924,14 @@
              <item row="0" column="0">
               <widget class="QLabel" name="label_12">
                <property name="text">
-                <string>Numerator:</string>
+                <string>Basic.Settings.Video.Numerator</string>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_13">
                <property name="text">
-                <string>Denomniator:</string>
+                <string>Basic.Settings.Video.Denominator</string>
                </property>
               </widget>
              </item>
