@@ -3,6 +3,8 @@
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
 
+#include <arpa/inet.h>
+
 #include <obs.h>
 #include <media-io/video-io.h>
 
@@ -13,7 +15,7 @@
 #define NANO_TIMESCALE  (MICRO_TIMESCALE * 1000)
 
 #define AV_REV_FOURCC(x) \
-	(x >> 24), ((x >> 16) & 255), ((x >> 8) & 255), (x & 255)
+	(x & 255), ((x >> 8) & 255), ((x >> 16) & 255), (x >> 24)
 
 struct av_capture;
 
@@ -237,14 +239,8 @@ static bool init_format(struct av_capture *capture)
 	}
 
 	capture->out.videoSettings = nil;
-	capture->fourcc = uint_from_dict(capture->out.videoSettings,
-			kCVPixelBufferPixelFormatTypeKey);
-	// TODO: support fourcc other than 2vuy/yuvs
-	if (capture->fourcc != '2vuy' && capture->fourcc != 'yuvs') {
-		blog(LOG_ERROR, "FourCC '%c%c%c%c' unsupported",
-				AV_REV_FOURCC(capture->fourcc));
-		return false;
-	}
+	capture->fourcc = htonl(uint_from_dict(capture->out.videoSettings,
+			kCVPixelBufferPixelFormatTypeKey));
 	
 	capture->video_format = video_format_from_fourcc(capture->fourcc);
 	if (capture->video_format == VIDEO_FORMAT_NONE) {
