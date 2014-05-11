@@ -188,20 +188,22 @@ fail:
 	return NULL;
 }
 
-static void display_capture_video_render(void *data, effect_t effect)
+static void display_capture_video_tick(void *data, float seconds)
 {
-	UNUSED_PARAMETER(effect);
+	UNUSED_PARAMETER(seconds);
 
 	struct display_capture *dc = data;
 
 	pthread_mutex_lock(&dc->mutex);
 
 	if (dc->current && dc->prev != dc->current) {
+		gs_entercontext(obs_graphics());
 		if (dc->tex)
 			texture_rebind_iosurface(dc->tex, dc->current);
 		else
 			dc->tex = gs_create_texture_from_iosurface(
 					dc->current);
+		gs_leavecontext();
 
 		if (dc->prev) {
 			IOSurfaceDecrementUseCount(dc->prev);
@@ -211,7 +213,17 @@ static void display_capture_video_render(void *data, effect_t effect)
 		dc->current = NULL;
 	}
 
-	if (!dc->tex) goto fail;
+	pthread_mutex_unlock(&dc->mutex);
+}
+
+static void display_capture_video_render(void *data, effect_t effect)
+{
+	UNUSED_PARAMETER(effect);
+
+	struct display_capture *dc = data;
+
+	if (!dc->tex)
+		return;
 
 	gs_load_samplerstate(dc->sampler, 0);
 	technique_t tech = effect_gettechnique(dc->draw_effect, "Default");
@@ -225,9 +237,6 @@ static void display_capture_video_render(void *data, effect_t effect)
 
 	technique_endpass(tech);
 	technique_end(tech);
-
-fail:
-	pthread_mutex_unlock(&dc->mutex);
 }
 
 static const char *display_capture_getname(const char *locale)
@@ -300,6 +309,7 @@ struct obs_source_info display_capture_info = {
 	.destroy      = display_capture_destroy,
 
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.video_tick   = display_capture_video_tick,
 	.video_render = display_capture_video_render,
 
 	.getwidth     = display_capture_getwidth,
