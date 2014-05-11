@@ -77,6 +77,33 @@ static void display_capture_destroy(void *data)
 	bfree(dc);
 }
 
+static inline void display_stream_update(struct display_capture *dc,
+		CGDisplayStreamFrameStatus status, uint64_t display_time,
+		IOSurfaceRef frame_surface, CGDisplayStreamUpdateRef update_ref)
+{
+	UNUSED_PARAMETER(display_time);
+	UNUSED_PARAMETER(update_ref);
+
+	if (status == kCGDisplayStreamFrameStatusStopped) {
+		os_event_signal(dc->disp_finished);
+		return;
+	}
+
+	if (!frame_surface || pthread_mutex_trylock(&dc->mutex))
+		return;
+
+	if (dc->current) {
+		IOSurfaceDecrementUseCount(dc->current);
+		CFRelease(dc->current);
+		dc->current = NULL;
+	}
+
+	dc->current = frame_surface;
+	CFRetain(dc->current);
+	IOSurfaceIncrementUseCount(dc->current);
+	pthread_mutex_unlock(&dc->mutex);
+}
+
 static bool init_display_stream(struct display_capture *dc)
 {
 	if (dc->display >= [NSScreen screens].count)
@@ -116,29 +143,8 @@ static bool init_display_stream(struct display_capture *dc)
 				IOSurfaceRef frameSurface,
 				CGDisplayStreamUpdateRef updateRef)
 			{
-				UNUSED_PARAMETER(displayTime);
-				UNUSED_PARAMETER(updateRef);
-
-				if (status ==
-					kCGDisplayStreamFrameStatusStopped) {
-					os_event_signal(dc->disp_finished);
-					return;
-				}
-
-				if (!frameSurface ||
-					pthread_mutex_trylock(&dc->mutex))
-					return;
-
-				if (dc->current) {
-					IOSurfaceDecrementUseCount(dc->current);
-					CFRelease(dc->current);
-					dc->current = NULL;
-				}
-
-				dc->current = frameSurface;
-				CFRetain(dc->current);
-				IOSurfaceIncrementUseCount(dc->current);
-				pthread_mutex_unlock(&dc->mutex);
+				display_stream_update(dc, status, displayTime,
+					frameSurface, updateRef);
 			}
 	);
 
