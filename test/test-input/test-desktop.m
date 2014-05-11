@@ -89,19 +89,20 @@ static inline void display_stream_update(struct display_capture *dc,
 		return;
 	}
 
-	if (!frame_surface || pthread_mutex_trylock(&dc->mutex))
-		return;
+	IOSurfaceRef prev_current = NULL;
 
-	if (dc->current) {
-		IOSurfaceDecrementUseCount(dc->current);
-		CFRelease(dc->current);
-		dc->current = NULL;
+	if (frame_surface && !pthread_mutex_lock(&dc->mutex)) {
+		prev_current = dc->current;
+		dc->current = frame_surface;
+		CFRetain(dc->current);
+		IOSurfaceIncrementUseCount(dc->current);
+		pthread_mutex_unlock(&dc->mutex);
 	}
 
-	dc->current = frame_surface;
-	CFRetain(dc->current);
-	IOSurfaceIncrementUseCount(dc->current);
-	pthread_mutex_unlock(&dc->mutex);
+	if (prev_current) {
+		IOSurfaceDecrementUseCount(prev_current);
+		CFRelease(prev_current);
+	}
 }
 
 static bool init_display_stream(struct display_capture *dc)
@@ -200,26 +201,30 @@ static void display_capture_video_tick(void *data, float seconds)
 
 	struct display_capture *dc = data;
 
-	pthread_mutex_lock(&dc->mutex);
+	if (!dc->current)
+		return;
 
-	if (dc->current && dc->prev != dc->current) {
-		gs_entercontext(obs_graphics());
-		if (dc->tex)
-			texture_rebind_iosurface(dc->tex, dc->current);
-		else
-			dc->tex = gs_create_texture_from_iosurface(
-					dc->current);
-		gs_leavecontext();
-
-		if (dc->prev) {
-			IOSurfaceDecrementUseCount(dc->prev);
-			CFRelease(dc->prev);
-		}
-		dc->prev = dc->current;
-		dc->current = NULL;
-	}
-
+	IOSurfaceRef prev_prev = dc->prev;
+	if (pthread_mutex_lock(&dc->mutex))
+		return;
+	dc->prev = dc->current;
+	dc->current = NULL;
 	pthread_mutex_unlock(&dc->mutex);
+
+	if (prev_prev == dc->prev)
+		return;
+
+	gs_entercontext(obs_graphics());
+	if (dc->tex)
+		texture_rebind_iosurface(dc->tex, dc->prev);
+	else
+		dc->tex = gs_create_texture_from_iosurface(dc->prev);
+	gs_leavecontext();
+
+	if (prev_prev) {
+		IOSurfaceDecrementUseCount(prev_prev);
+		CFRelease(prev_prev);
+	}
 }
 
 static void display_capture_video_render(void *data, effect_t effect)
