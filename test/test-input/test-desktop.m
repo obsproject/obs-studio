@@ -7,6 +7,8 @@
 #import <Cocoa/Cocoa.h>
 
 struct display_capture {
+	obs_source_t source;
+
 	samplerstate_t sampler;
 	effect_t draw_effect;
 	texture_t tex;
@@ -103,6 +105,11 @@ static inline void display_stream_update(struct display_capture *dc,
 		IOSurfaceDecrementUseCount(prev_current);
 		CFRelease(prev_current);
 	}
+
+	size_t dropped_frames = CGDisplayStreamUpdateGetDropCount(update_ref);
+	if (dropped_frames > 0)
+		blog(LOG_INFO, "%s: Dropped %zu frames",
+				obs_source_getname(dc->source), dropped_frames);
 }
 
 static bool init_display_stream(struct display_capture *dc)
@@ -159,6 +166,8 @@ static void *display_capture_create(obs_data_t settings,
 	UNUSED_PARAMETER(settings);
 
 	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
+
+	dc->source = source;
 
 	gs_entercontext(obs_graphics());
 
