@@ -6,6 +6,8 @@
 #include <obs.h>
 #include <media-io/video-io.h>
 
+#import "AVCaptureInputPort+PreMavericksCompat.h"
+
 #define MILLI_TIMESCALE 1000
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
 #define NANO_TIMESCALE  (MICRO_TIMESCALE * 1000)
