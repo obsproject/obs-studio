@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <QMessageBox>
 #include "window-basic-main.hpp"
 #include "window-basic-source-select.hpp"
 #include "qt-wrappers.hpp"
@@ -98,21 +99,36 @@ static void AddExisting(const char *name)
 	obs_scene_release(scene);
 }
 
-void AddNew(const char *id, const char *name)
+bool AddNew(QWidget *parent, const char *id, const char *name)
 {
-	obs_source_t source = obs_get_output_source(0);
-	obs_scene_t  scene  = obs_scene_fromsource(source);
-	if (!scene)
-		return;
+	obs_source_t source  = obs_get_output_source(0);
+	obs_scene_t  scene   = obs_scene_fromsource(source);
+	bool         success = false;
+	if (!source)
+		return false;
 
-	source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-			id, name, NULL);
+	source = obs_get_source_by_name(name);
+	if (source) {
+		QMessageBox::information(parent,
+				QTStr("NameExists.Title"),
+				QTStr("NameExists.Text"));
 
-	obs_add_source(source);
-	obs_scene_add(scene, source);
+	} else {
+		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
+				id, name, NULL);
+
+		if (source) {
+			obs_add_source(source);
+			obs_scene_add(scene, source);
+
+			success = true;
+		}
+	}
+
 	obs_source_release(source);
-
 	obs_scene_release(scene);
+
+	return success;
 }
 
 void OBSBasicSourceSelect::on_buttonBox_accepted()
@@ -126,7 +142,15 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 		AddExisting(QT_TO_UTF8(item->text()));
 	} else {
-		AddNew(type, QT_TO_UTF8(ui->sourceName->text()));
+		if (ui->sourceName->text().isEmpty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered"),
+					QTStr("NoNameEntered"));
+			return;
+		}
+
+		if (!AddNew(this, type, QT_TO_UTF8(ui->sourceName->text())))
+			return;
 	}
 
 	done(DialogCode::Accepted);
