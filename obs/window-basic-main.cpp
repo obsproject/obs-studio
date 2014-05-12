@@ -577,6 +577,8 @@ void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 	obs_source_t source = obs_sceneitem_getsource(item);
 
 	int scenes = sourceSceneRefs[source] - 1;
+	sourceSceneRefs[source] = scenes;
+
 	if (scenes == 0) {
 		obs_source_remove(source);
 		sourceSceneRefs.erase(source);
