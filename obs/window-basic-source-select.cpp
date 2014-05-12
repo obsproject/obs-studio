@@ -168,11 +168,16 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *type_)
 {
 	ui->setupUi(this);
 
-	const char *placeHolderText = obs_source_getdisplayname(
-		OBS_SOURCE_TYPE_INPUT,
-		type_, App()->GetLocale());
+	QString placeHolderText{QT_UTF8(obs_source_getdisplayname(
+				OBS_SOURCE_TYPE_INPUT,
+				type_, App()->GetLocale()))};
 
-	ui->sourceName->setText(QT_UTF8(placeHolderText));
+	QString text{placeHolderText};
+	int i = 1;
+	while (obs_get_source_by_name(QT_TO_UTF8(text)))
+		text = QString("%1 %2").arg(placeHolderText).arg(i++);
+
+	ui->sourceName->setText(text);
 	ui->sourceName->setFocus();	//Fixes deselect of text.
 	ui->sourceName->selectAll();
 
