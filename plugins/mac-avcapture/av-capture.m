@@ -104,9 +104,8 @@ static inline void update_frame_size(struct source_frame *frame,
 		target_pts = info.presentationTimeStamp;
 	}
 
-	CMTime target_pts_nano = 
-		CMTimeConvertScale(info.presentationTimeStamp, NANO_TIMESCALE,
-				kCMTimeRoundingMethod_Default);
+	CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
+			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
 
 	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
