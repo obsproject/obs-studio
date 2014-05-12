@@ -26,6 +26,14 @@ NameExists.Text="The name is already in use."
 
 NoNameEntered="Please enter a valid name"
 
+# output connect messages
+Output.ConnectFail.Title="Failed to connect"
+Output.ConnectFail.BadPath="Invalid Path or Connection URL.  Please check your settings to confirm that they are valid."
+Output.ConnectFail.ConnectFailed="Failed to connect to server"
+Output.ConnectFail.InvalidStream="Could not access the specified channel or stream key.  This could be because the key/channel is invalid, or because the server still thinks you are logged in."
+Output.ConnectFail.Error="An unexpected error occurred when trying to connect to the server.  More information in the log file."
+Output.ConnectFail.Disconnected="Disconnected from server."
+
 # audio device names
 Basic.DesktopDevice1="Desktop Audio"
 Basic.DesktopDevice2="Desktop Audio 2"

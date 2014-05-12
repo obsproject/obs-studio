@@ -352,7 +352,8 @@ static int init_send(struct rtmp_stream *stream)
 	ret = pthread_create(&stream->send_thread, NULL, send_thread, stream);
 	if (ret != 0) {
 		RTMP_Close(&stream->rtmp);
-		return OBS_OUTPUT_FAIL;
+		blog(LOG_ERROR, __FILE__": Failed to create send thread");
+		return OBS_OUTPUT_ERROR;
 	}
 
 	stream->active = true;
@@ -365,6 +366,16 @@ static int init_send(struct rtmp_stream *stream)
 static int try_connect(struct rtmp_stream *stream)
 {
 #ifndef FILE_TEST
+	if (dstr_isempty(&stream->path)) {
+		blog(LOG_WARNING, FILE_LINE "URL is empty");
+		return OBS_OUTPUT_BAD_PATH;
+	}
+
+	if (dstr_isempty(&stream->key)) {
+		blog(LOG_WARNING, FILE_LINE "Stream key is empty");
+		return OBS_OUTPUT_BAD_PATH;
+	}
+
 	blog(LOG_INFO, "Connecting to RTMP URL %s...", stream->path.array);
 
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,

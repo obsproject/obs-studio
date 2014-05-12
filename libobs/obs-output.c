@@ -37,8 +37,10 @@ const char *obs_output_getdisplayname(const char *id, const char *locale)
 }
 
 static const char *output_signals[] = {
-	"void start(ptr output, int errorcode)",
-	"void stop(ptr output)",
+	"void start(ptr output)",
+	"void stop(ptr output, int code)",
+	"void reconnect(ptr output)",
+	"void reconnect_success(ptr output)",
 	NULL
 };
 
@@ -519,7 +521,7 @@ static inline void signal_start(struct obs_output *output)
 static inline void signal_stop(struct obs_output *output, int code)
 {
 	struct calldata params = {0};
-	calldata_setint(&params, "errorcode", code);
+	calldata_setint(&params, "code", code);
 	calldata_setptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "stop", &params);
 	calldata_free(&params);

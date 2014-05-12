@@ -144,14 +144,14 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t parent)
 
 void OBSBasic::CreateDefaultScene()
 {
-	obs_scene_t  scene  = obs_scene_create(Str("Studio.Basic.Scene"));
+	obs_scene_t  scene  = obs_scene_create(Str("Basic.Scene"));
 	obs_source_t source = obs_scene_getsource(scene);
 
 	obs_add_source(source);
 
 #ifdef __APPLE__
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, "display_capture",
-			Str("Studio.Basic.DisplayCapture"), NULL);
+			Str("Basic.DisplayCapture"), NULL);
 
 	if (source) {
 		obs_scene_add(scene, source);
@@ -226,7 +226,7 @@ static void OBSStartStreaming(void *data, calldata_t params)
 
 static void OBSStopStreaming(void *data, calldata_t params)
 {
-	int code = (int)calldata_int(params, "errorcode");
+	int code = (int)calldata_int(params, "code");
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 			"StreamingStop", Q_ARG(int, code));
 }
@@ -387,9 +387,9 @@ bool OBSBasic::InitBasicConfig()
 {
 	BPtr<char> configPath(os_get_config_path("obs-studio/basic/basic.ini"));
 
-	int errorcode = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
-	if (errorcode != CONFIG_SUCCESS) {
-		OBSErrorBox(NULL, "Failed to open basic.ini: %d", errorcode);
+	int code = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
+	if (code != CONFIG_SUCCESS) {
+		OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
 		return false;
 	}
 
@@ -809,7 +809,7 @@ bool OBSBasic::ResetAudio()
 }
 
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
-		int channel)
+		const char *deviceDesc, int channel)
 {
 	const char *deviceId = config_get_string(basicConfig, "Audio",
 			deviceName);
@@ -835,7 +835,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 		obs_data_t settings = obs_data_create();
 		obs_data_setstring(settings, "device_id", deviceId);
 		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				sourceId, Str(deviceName), settings);
+				sourceId, deviceDesc, settings);
 		obs_data_release(settings);
 
 		obs_set_output_source(channel, source);
@@ -845,11 +845,16 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 
 void OBSBasic::ResetAudioDevices()
 {
-	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice1", 1);
-	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice2", 2);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice1", 3);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice2", 4);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice3", 5);
+	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice1",
+			Str("Basic.DesktopDevice1"), 1);
+	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice2",
+			Str("Basic.DesktopDevice2"), 2);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice1",
+			Str("Basic.AuxDevice1"), 3);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice2",
+			Str("Basic.AuxDevice2"), 4);
+	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice3",
+			Str("Basic.AuxDevice3"), 5);
 }
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
@@ -962,16 +967,16 @@ void OBSBasic::on_actionAddScene_triggered()
 	QString placeHolderText = format.arg(ui->scenes->count() + 1);
 
 	bool accepted = NameDialog::AskForName(this,
-			QTStr("MainWindow.AddSceneDlg.Title"),
-			QTStr("MainWindow.AddSceneDlg.Text"),
+			QTStr("Basic.Main.AddSceneDlg.Title"),
+			QTStr("Basic.Main.AddSceneDlg.Text"),
 			name,
 			placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("MainWindow.NoNameEntered"),
-					QTStr("MainWindow.NoNameEntered"));
+					QTStr("NoNameEntered"),
+					QTStr("NoNameEntered"));
 			on_actionAddScene_triggered();
 			return;
 		}
@@ -979,8 +984,8 @@ void OBSBasic::on_actionAddScene_triggered()
 		obs_source_t source = obs_get_source_by_name(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
-					QTStr("MainWindow.NameExists.Title"),
-					QTStr("MainWindow.NameExists.Text"));
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
 
 			obs_source_release(source);
 			on_actionAddScene_triggered();
@@ -1118,10 +1123,39 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText("Stop Streaming");
 }
 
-void OBSBasic::StreamingStop(int errorcode)
+void OBSBasic::StreamingStop(int code)
 {
-	UNUSED_PARAMETER(errorcode);
-	ui->streamButton->setText("Start Streaming");
+	const char *errorMessage;
+
+	switch (code) {
+	case OBS_OUTPUT_BAD_PATH:
+		errorMessage = Str("Output.ConnectFail.BadPath");
+		break;
+
+	case OBS_OUTPUT_CONNECT_FAILED:
+		errorMessage = Str("Output.ConnectFail.ConnectFailed");
+		break;
+
+	case OBS_OUTPUT_INVALID_STREAM:
+		errorMessage = Str("Output.ConnectFail.InvalidStream");
+		break;
+
+	case OBS_OUTPUT_ERROR:
+		errorMessage = Str("Output.ConnectFail.Error");
+		break;
+
+	case OBS_OUTPUT_DISCONNECTED:
+		/* doesn't happen if output is set to reconnect.  note that
+		 * reconnects are handled in the output, not in the UI */
+		errorMessage = Str("Output.ConnectFail.Disconnected");
+	}
+
+	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+
+	if (code != OBS_OUTPUT_SUCCESS)
+		QMessageBox::information(this,
+				QTStr("Output.ConnectFail.Title"),
+				QT_UTF8(errorMessage));
 }
 
 void OBSBasic::on_streamButton_clicked()

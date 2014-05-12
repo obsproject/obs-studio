@@ -28,6 +28,13 @@
 extern "C" {
 #endif
 
+#define STRINGIFY(x) #x
+#define STRINGIFY_(x) STRINGIFY(x)
+#define S__LINE__ STRINGIFY_(__LINE__)
+
+#define INT_CUR_LINE __LINE__
+#define FILE_LINE __FILE__ " (" S__LINE__ "): "
+
 enum {
 	/**
 	 * Use if there's a problem that can potentially affect the program,

@@ -135,7 +135,7 @@ public:
 	bool ResetAudio();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceName,
-			int channel);
+			const char *deviceDesc, int channel);
 	void ResetAudioDevices();
 
 	void NewProject();

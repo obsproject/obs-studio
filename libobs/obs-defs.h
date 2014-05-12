@@ -30,5 +30,5 @@
 #define OBS_OUTPUT_BAD_PATH       -1
 #define OBS_OUTPUT_CONNECT_FAILED -2
 #define OBS_OUTPUT_INVALID_STREAM -3
-#define OBS_OUTPUT_FAIL           -4
+#define OBS_OUTPUT_ERROR          -4
 #define OBS_OUTPUT_DISCONNECTED   -5
