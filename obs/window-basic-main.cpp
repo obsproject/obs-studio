@@ -958,10 +958,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionAddScene_triggered()
 {
 	string name;
+	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
+	QString placeHolderText = format.arg(ui->scenes->count() + 1);
+
 	bool accepted = NameDialog::AskForName(this,
 			QTStr("MainWindow.AddSceneDlg.Title"),
 			QTStr("MainWindow.AddSceneDlg.Text"),
-			name);
+			name,
+			placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {
@@ -1045,8 +1049,14 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 	bool foundValues = false;
 	size_t idx = 0;
 
-	if (!GetCurrentScene())
+	if (!GetCurrentScene()) {
+		// Tell the user he needs a scene first (help beginners).
+		QMessageBox::information(this,
+				QTStr("Basic.Main.AddSourceHelp.Title"),
+				QTStr("Basic.Main.AddSourceHelp.Text"));
 		return;
+	}
+
 
 	QMenu popup;
 	while (obs_enum_input_types(idx++, &type)) {

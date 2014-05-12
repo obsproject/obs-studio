@@ -42,9 +42,16 @@ Basic.DisplayCapture="Display Capture"
 Basic.Main.AddSceneDlg.Title="Add Scene"
 Basic.Main.AddSceneDlg.Text="Please enter the name of the scene"
 
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Scene %1"
+
 # add source dialog
 Basic.SourceSelect.CreateNew="Create new"
 Basic.SourceSelect.AddExisting="Add Existing"
+
+# no scene warning
+Basic.Main.AddSourceHelp.Title="Cannot Add Source"
+Basic.Main.AddSourceHelp.Text="You need to have at least 1 scene to add a source."
 
 # basic mode main window
 Basic.Main.Scenes="Scenes"

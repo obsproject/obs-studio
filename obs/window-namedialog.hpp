@@ -33,5 +33,6 @@ public:
 	NameDialog(QWidget *parent);
 
 	static bool AskForName(QWidget *parent, const QString &title,
-			const QString &text, std::string &str);
+			const QString &text, std::string &str,
+			const QString &placeHolder = QString(""));
 };
