@@ -276,9 +276,9 @@ void gl_platform_destroy(struct gl_platform *platform)
 	Display *dpy = platform->swap.wi->display;
 
 	glXMakeCurrent(dpy, None, NULL);
+	gl_platform_cleanup_swapchain(&platform->swap);
 	glXDestroyContext(dpy, platform->context);
 	gl_windowinfo_destroy(platform->swap.wi);
-	gl_platform_cleanup_swapchain(&platform->swap);
 	bfree(platform);
 }
 
