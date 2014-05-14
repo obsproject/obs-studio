@@ -63,7 +63,6 @@ static void display_capture_destroy(void *data)
 	if (!dc)
 		return;
 
-	pthread_mutex_lock(&dc->mutex);
 	gs_entercontext(obs_graphics());
 
 	destroy_display_stream(dc);
