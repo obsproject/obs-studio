@@ -967,8 +967,11 @@ void OBSBasic::on_actionAddScene_triggered()
 
 	int i = 1;
 	QString placeHolderText = format.arg(i);
-	while (obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))
+	obs_source_t source = nullptr;
+	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
+		obs_source_release(source);
 		placeHolderText = format.arg(++i);
+	}
 
 	bool accepted = NameDialog::AskForName(this,
 			QTStr("Basic.Main.AddSceneDlg.Title"),

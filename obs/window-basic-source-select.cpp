@@ -174,8 +174,11 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *type_)
 
 	QString text{placeHolderText};
 	int i = 1;
-	while (obs_get_source_by_name(QT_TO_UTF8(text)))
+	obs_source_t source = nullptr;
+	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
+		obs_source_release(source);
 		text = QString("%1 %2").arg(placeHolderText).arg(i++);
+	}
 
 	ui->sourceName->setText(text);
 	ui->sourceName->setFocus();	//Fixes deselect of text.
