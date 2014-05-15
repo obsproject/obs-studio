@@ -14,36 +14,167 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdlib.h>
-#include <stdio.h>
 
-#include <sys/shm.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <inttypes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/extensions/XShm.h>
 
 #include <obs.h>
 #include "xcursor.h"
+#include "xhelpers.h"
 
 #define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
 
 struct xshm_data {
 	Display *dpy;
-	Window root_window;
-	uint32_t width, height;
-	int shm_attached;
-	XShmSegmentInfo shm_info;
-	XImage *image;
+	Screen *screen;
+
+	int_fast32_t x_org, y_org;
+	int_fast32_t width, height;
+
+	xshm_t *xshm;
 	texture_t texture;
+
+	bool show_cursor;
 	xcursor_t *cursor;
+
+	bool use_xinerama;
 };
 
+/**
+ * Resize the texture
+ *
+ * This will automatically create the texture if it does not exist
+ */
+static void xshm_resize_texture(struct xshm_data *data)
+{
+	gs_entercontext(obs_graphics());
+
+	if (data->texture)
+		texture_destroy(data->texture);
+	data->texture = gs_create_texture(data->width, data->height,
+		GS_BGRA, 1, NULL, GS_DYNAMIC);
+
+	gs_leavecontext();
+}
+
+/**
+ * Update the capture
+ *
+ * @return < 0 on error, 0 when size is unchanged, > 1 on size change
+ */
+static int_fast32_t xshm_update_geometry(struct xshm_data *data,
+	obs_data_t settings)
+{
+	int_fast32_t old_width = data->width;
+	int_fast32_t old_height = data->height;
+	int_fast32_t screen = obs_data_getint(settings, "screen");
+
+	if (data->use_xinerama) {
+		if (xinerama_screen_geo(data->dpy, screen,
+			&data->x_org, &data->y_org,
+			&data->width, &data->height) < 0) {
+			return -1;
+		}
+		data->screen = XDefaultScreenOfDisplay(data->dpy);
+	}
+	else {
+		data->x_org = 0;
+		data->y_org = 0;
+		if (x11_screen_geo(data->dpy, screen,
+			&data->width, &data->height) < 0) {
+			return -1;
+		}
+		data->screen = XScreenOfDisplay(data->dpy, screen);
+	}
+
+	if (!data->width || !data->height) {
+		blog(LOG_ERROR, "xshm-input: Failed to get geometry");
+		return -1;
+	}
+
+	blog(LOG_INFO, "xshm-input: Geometry %"PRIdFAST32"x%"PRIdFAST32
+		" @ %"PRIdFAST32",%"PRIdFAST32,
+		data->width, data->height, data->x_org, data->y_org);
+
+	if (old_width == data->width && old_height == data->height)
+		return 0;
+
+	return 1;
+}
+
+/**
+ * Returns the name of the plugin
+ */
 static const char* xshm_getname(const char* locale)
 {
 	UNUSED_PARAMETER(locale);
 	return "X11 Shared Memory Screen Input";
 }
 
+/**
+ * Update the capture with changed settings
+ */
+static void xshm_update(void *vptr, obs_data_t settings)
+{
+	XSHM_DATA(vptr);
+
+	data->show_cursor = obs_data_getbool(settings, "show_cursor");
+
+	if (data->xshm)
+		xshm_detach(data->xshm);
+
+	if (xshm_update_geometry(data, settings) < 0) {
+		blog(LOG_ERROR, "xshm-input: failed to update geometry !");
+		return;
+	}
+
+	xshm_resize_texture(data);
+	xcursor_offset(data->cursor, data->x_org, data->y_org);
+
+	data->xshm = xshm_attach(data->dpy, data->screen,
+		data->width, data->height);
+	if (!data->xshm) {
+		blog(LOG_ERROR, "xshm-input: failed to attach shm !");
+		return;
+	}
+}
+
+/**
+ * Get the default settings for the capture
+ */
+static void xshm_defaults(obs_data_t defaults)
+{
+	obs_data_set_default_int(defaults, "screen", 0);
+	obs_data_setbool(defaults, "show_cursor", true);
+}
+
+/**
+ * Get the properties for the capture
+ */
+static obs_properties_t xshm_properties(const char *locale)
+{
+	obs_properties_t props = obs_properties_create(locale);
+	int_fast32_t screen_max;
+
+	Display *dpy = XOpenDisplay(NULL);
+	screen_max = xinerama_is_active(dpy)
+		? xinerama_screen_count(dpy)
+		: XScreenCount(dpy);
+	screen_max = (screen_max) ? screen_max - 1 : 0;
+	XCloseDisplay(dpy);
+
+	obs_properties_add_int(props, "screen", "Screen", 0, screen_max, 1);
+	obs_properties_add_bool(props, "show_cursor", "Capture Cursor");
+
+	return props;
+}
+
+/**
+ * Destroy the capture
+ */
 static void xshm_destroy(void *vptr)
 {
 	XSHM_DATA(vptr);
@@ -53,154 +184,128 @@ static void xshm_destroy(void *vptr)
 
 	gs_entercontext(obs_graphics());
 
-	texture_destroy(data->texture);
-	xcursor_destroy(data->cursor);
+	if (data->texture)
+		texture_destroy(data->texture);
+	if (data->cursor)
+		xcursor_destroy(data->cursor);
 
 	gs_leavecontext();
 
-	if (data->shm_attached)
-		XShmDetach(data->dpy, &data->shm_info);
-
-	if (data->shm_info.shmaddr != (char *) -1) {
-		shmdt(data->shm_info.shmaddr);
-		data->shm_info.shmaddr = (char *) -1;
-	}
-
-	if (data->shm_info.shmid != -1)
-		shmctl(data->shm_info.shmid, IPC_RMID, NULL);
-
-	if (data->image)
-		XDestroyImage(data->image);
-
+	if (data->xshm)
+		xshm_detach(data->xshm);
 	if (data->dpy)
 		XCloseDisplay(data->dpy);
 
 	bfree(data);
 }
 
+/**
+ * Create the capture
+ */
 static void *xshm_create(obs_data_t settings, obs_source_t source)
 {
-	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
 
-
-	struct xshm_data *data = bmalloc(sizeof(struct xshm_data));
-	memset(data, 0, sizeof(struct xshm_data));
+	struct xshm_data *data = bzalloc(sizeof(struct xshm_data));
 
 	data->dpy = XOpenDisplay(NULL);
-	if (!data->dpy)
-		goto fail;
-
-	Screen *screen = XDefaultScreenOfDisplay(data->dpy);
-	data->width = WidthOfScreen(screen);
-	data->height = HeightOfScreen(screen);
-	data->root_window = XRootWindowOfScreen(screen);
-	Visual *visual = DefaultVisualOfScreen(screen);
-	int depth = DefaultDepthOfScreen(screen);
-
-	if (!XShmQueryExtension(data->dpy))
-		goto fail;
-
-	data->image = XShmCreateImage(data->dpy, visual, depth,
-		ZPixmap, NULL, &data->shm_info, data->width, data->height);
-	if (!data->image)
-		goto fail;
-
-	data->shm_info.shmid = shmget(IPC_PRIVATE,
-		data->image->bytes_per_line * data->image->height,
-		IPC_CREAT | 0700);
-	if (data->shm_info.shmid < 0)
-		goto fail;
-
-	data->shm_info.shmaddr
-		= data->image->data
-		= (char *) shmat(data->shm_info.shmid, 0, 0);
-	if (data->shm_info.shmaddr == (char *) -1)
-		goto fail;
-	data->shm_info.readOnly = False;
-
-
-	if (!XShmAttach(data->dpy, &data->shm_info))
-		goto fail;
-	data->shm_attached = 1;
-
-	if (!XShmGetImage(data->dpy, data->root_window, data->image,
-		0, 0, AllPlanes)) {
+	if (!data->dpy) {
+		blog(LOG_ERROR, "xshm-input: Unable to open X display !");
 		goto fail;
 	}
 
+	if (!XShmQueryExtension(data->dpy)) {
+		blog(LOG_ERROR, "xshm-input: XShm extension not found !");
+		goto fail;
+	}
+
+	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
 
 	gs_entercontext(obs_graphics());
-	data->texture = gs_create_texture(data->width, data->height,
-		GS_BGRA, 1, (const void**) &data->image->data, GS_DYNAMIC);
 	data->cursor = xcursor_init(data->dpy);
 	gs_leavecontext();
 
-	if (!data->texture)
-		goto fail;
+	xshm_update(data, settings);
 
 	return data;
-
 fail:
 	xshm_destroy(data);
 	return NULL;
 }
 
+/**
+ * Prepare the capture data
+ */
 static void xshm_video_tick(void *vptr, float seconds)
 {
 	UNUSED_PARAMETER(seconds);
 	XSHM_DATA(vptr);
 
+	if (!data->xshm)
+		return;
+
 	gs_entercontext(obs_graphics());
 
-
-	XShmGetImage(data->dpy, data->root_window, data->image,
-		0, 0, AllPlanes);
-	texture_setimage(data->texture, (void *) data->image->data,
-		data->width * 4, False);
+	XShmGetImage(data->dpy, XRootWindowOfScreen(data->screen),
+		data->xshm->image, data->x_org, data->y_org, AllPlanes);
+	texture_setimage(data->texture, (void *) data->xshm->image->data,
+		data->width * 4, false);
 
 	xcursor_tick(data->cursor);
 
 	gs_leavecontext();
 }
 
+/**
+ * Render the capture data
+ */
 static void xshm_video_render(void *vptr, effect_t effect)
 {
 	XSHM_DATA(vptr);
 
+	if (!data->xshm)
+		return;
+
 	eparam_t image = effect_getparambyname(effect, "image");
 	effect_settexture(effect, image, data->texture);
 
-	gs_enable_blending(False);
-
+	gs_enable_blending(false);
 	gs_draw_sprite(data->texture, 0, 0, 0);
 
-	xcursor_render(data->cursor);
+	if (data->show_cursor)
+		xcursor_render(data->cursor);
 }
 
+/**
+ * Width of the captured data
+ */
 static uint32_t xshm_getwidth(void *vptr)
 {
 	XSHM_DATA(vptr);
-
-	return texture_getwidth(data->texture);
+	return data->width;
 }
 
+/**
+ * Height of the captured data
+ */
 static uint32_t xshm_getheight(void *vptr)
 {
 	XSHM_DATA(vptr);
-
-	return texture_getheight(data->texture);
+	return data->height;
 }
 
 struct obs_source_info xshm_input = {
-    .id           = "xshm_input",
-    .type         = OBS_SOURCE_TYPE_INPUT,
-    .output_flags = OBS_SOURCE_VIDEO,
-    .getname      = xshm_getname,
-    .create       = xshm_create,
-    .destroy      = xshm_destroy,
-    .video_tick   = xshm_video_tick,
-    .video_render = xshm_video_render,
-    .getwidth     = xshm_getwidth,
-    .getheight    = xshm_getheight
+	.id           = "xshm_input",
+	.type         = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.getname      = xshm_getname,
+	.create       = xshm_create,
+	.destroy      = xshm_destroy,
+	.update       = xshm_update,
+	.defaults     = xshm_defaults,
+	.properties   = xshm_properties,
+	.video_tick   = xshm_video_tick,
+	.video_render = xshm_video_render,
+	.getwidth     = xshm_getwidth,
+	.getheight    = xshm_getheight
 };

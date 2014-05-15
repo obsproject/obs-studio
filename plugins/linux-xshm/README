@@ -1,0 +1,19 @@
+
+Linux XShm capture plugin
+
+  This plugin uses the MIT-SHM extension for the X-server to capture the
+  desktop.
+
+Todo:
+
+ - handle resolution changes of screens
+ - handle adding/removing screens while recording
+ - support different depths
+
+Contributing:
+
+  If you are interested in helping out with the plugin, please drop by in the
+  #obs-dev channel on quakenet.
+
+References:
+ - http://www.x.org/releases/current/doc/xextproto/shm.html
