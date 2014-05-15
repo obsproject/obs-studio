@@ -30,6 +30,7 @@ elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c
 		util/threading-posix.c
+		util/platform-nix.c
 		util/platform-cocoa.m)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}

@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <unistd.h>
@@ -82,6 +83,8 @@ void os_sleep_ms(uint32_t duration)
 	usleep(duration*1000);
 }
 
+#if !defined(__APPLE__)
+
 uint64_t os_gettime_ns(void)
 {
 	struct timespec ts;
@@ -103,15 +106,78 @@ char *os_get_config_path(const char *name)
 	return path.array;
 }
 
+#endif
+
 bool os_file_exists(const char *path)
 {
 	return access(path, F_OK) == 0;
 }
 
+struct os_dir {
+	const char       *path;
+	DIR              *dir;
+	struct dirent    *cur_dirent;
+	struct os_dirent out;
+};
+
+os_dir_t os_opendir(const char *path)
+{
+	struct os_dir *dir;
+	DIR           *dir_val;
+
+	dir_val = opendir(path);
+	if (!dir_val)
+		return NULL;
+
+	dir = bzalloc(sizeof(struct os_dir));
+	dir->dir = dir_val;
+	return dir;
+}
+
+struct os_dirent *os_readdir(os_dir_t dir)
+{
+	struct dstr file_path = {0};
+	struct stat stat_info;
+
+	if (!dir) return NULL;
+
+	dir->cur_dirent = readdir(dir->dir);
+	if (!dir->cur_dirent)
+		return NULL;
+
+	strncpy(dir->out.d_name, dir->cur_dirent->d_name, 255);
+
+	dstr_copy(&file_path, dir->path);
+	dstr_cat(&file_path, "/");
+	dstr_cat(&file_path, dir->out.d_name);
+
+	if (stat(file_path.array, &stat_info) == 0)
+		dir->out.directory = !!S_ISDIR(stat_info.st_mode);
+	else
+		blog(LOG_DEBUG, FILE_LINE "stat for %s failed, errno: %d",
+				file_path.array, errno);
+
+	dstr_free(&file_path);
+
+	return &dir->out;
+}
+
+void os_closedir(os_dir_t dir)
+{
+	if (dir) {
+		closedir(dir->dir);
+		bfree(dir);
+	}
+}
+
+int os_unlink(const char *path)
+{
+	return unlink(path);
+}
+
 int os_mkdir(const char *path)
 {
-	int errorcode = mkdir(path, S_IRWXU);
-	if (errorcode == 0)
+	if (mkdir(path, 0777) == 0)
 		return MKDIR_SUCCESS;
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;

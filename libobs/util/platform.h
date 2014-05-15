@@ -76,6 +76,20 @@ EXPORT char *os_get_config_path(const char *name);
 
 EXPORT bool os_file_exists(const char *path);
 
+struct os_dir;
+typedef struct os_dir *os_dir_t;
+
+struct os_dirent {
+	char d_name[256];
+	bool directory;
+};
+
+EXPORT os_dir_t os_opendir(const char *path);
+EXPORT struct os_dirent *os_readdir(os_dir_t dir);
+EXPORT void os_closedir(os_dir_t dir);
+
+EXPORT int os_unlink(const char *path);
+
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
 #define MKDIR_ERROR   -1

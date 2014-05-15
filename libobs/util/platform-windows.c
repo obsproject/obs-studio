@@ -167,6 +167,83 @@ bool os_file_exists(const char *path)
 	return hFind != INVALID_HANDLE_VALUE;
 }
 
+struct os_dir {
+	HANDLE           handle;
+	WIN32_FIND_DATA  wfd;
+	bool             first;
+	struct os_dirent out;
+};
+
+os_dir_t os_opendir(const char *path)
+{
+	struct dstr     path_str = {0};
+	struct os_dir   *dir     = NULL;
+	WIN32_FIND_DATA wfd;
+	HANDLE          handle;
+	wchar_t         *w_path;
+
+	dstr_copy(&path_str, path);
+	dstr_cat(&path_str, "/*.*");
+
+	if (os_utf8_to_wcs_ptr(path_str.array, path_str.len, &w_path) > 0) {
+		handle = FindFirstFileW(w_path, &wfd);
+		if (handle != INVALID_HANDLE_VALUE) {
+			dir         = bzalloc(sizeof(struct os_dir));
+			dir->handle = handle;
+			dir->first  = true;
+			dir->wfd    = wfd;
+		}
+
+		bfree(w_path);
+	}
+
+	dstr_free(&path_str);
+
+	return dir;
+}
+
+struct os_dirent *os_readdir(os_dir_t dir)
+{
+	if (!dir)
+		return NULL;
+
+	if (dir->first) {
+		dir->first = false;
+	} else {
+		if (!FindNextFileW(dir->handle, &dir->wfd))
+			return NULL;
+	}
+
+	os_wcs_to_utf8(dir->wfd.cFileName, 255, dir->out.d_name);
+	dir->out.directory =
+		!!(dir->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+
+	return &dir->out;
+}
+
+void os_closedir(os_dir_t dir)
+{
+	if (dir) {
+		FindClose(dir->handle);
+		bfree(dir);
+	}
+}
+
+int os_unlink(const char *path)
+{
+	wchar_t *w_path;
+	bool success;
+
+	os_utf8_to_wcs_ptr(path, 0, &w_path);
+	if (!w_path)
+		return -1;
+
+	success = !!DeleteFileW(w_path);
+	bfree(w_path);
+
+	return success ? 0 : -1;
+}
+
 int os_mkdir(const char *path)
 {
 	wchar_t *path_utf16;
