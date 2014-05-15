@@ -78,13 +78,18 @@ NORETURN static void def_crash_handler(const char *format, va_list args,
 	UNUSED_PARAMETER(param);
 }
 
-static void (*log_handler)(int log_level, const char *, va_list, void *) =
-		def_log_handler;
+static log_handler_t log_handler = def_log_handler;
 static void (*crash_handler)(const char *, va_list, void *) = def_crash_handler;
 
-void base_set_log_handler(
-	void (*handler)(int log_level, const char *, va_list, void *),
-	void *param)
+void base_get_log_handler(log_handler_t *handler, void **param)
+{
+	if (handler)
+		*handler = log_handler;
+	if (param)
+		*param = log_param;
+}
+
+void base_set_log_handler(log_handler_t handler, void *param)
 {
 	if (!handler)
 		handler = def_log_handler;
