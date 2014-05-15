@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
-    Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
+                               Zachary Lund <admin@computerquip.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -66,6 +66,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 		if (obs_get_video_info(&ovi))
 			ResizePreview(ovi.base_width, ovi.base_height);
 	});
+
+	stringstream name;
+	name << "OBS " << App()->GetVersionString();
+
+	setWindowTitle(QT_UTF8(name.str().c_str()));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -1129,6 +1134,7 @@ void OBSBasic::on_actionSourceDown_triggered()
 void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText("Stop Streaming");
+	ui->streamButton->setEnabled(true);
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -1159,6 +1165,7 @@ void OBSBasic::StreamingStop(int code)
 	}
 
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+	ui->streamButton->setEnabled(true);
 
 	if (code != OBS_OUTPUT_SUCCESS)
 		QMessageBox::information(this,
@@ -1179,6 +1186,9 @@ void OBSBasic::on_streamButton_clicked()
 				"VBitrate");
 		int audioBitrate = config_get_uint(basicConfig, "SimpleOutput",
 				"ABitrate");
+
+		ui->streamButton->setEnabled(false);
+		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
 
 		SaveService();
 

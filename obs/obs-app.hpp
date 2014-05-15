@@ -69,6 +69,8 @@ public:
 		return textLookup.GetString(lookupVal);
 	}
 
+	std::string GetVersionString() const;
+
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
 

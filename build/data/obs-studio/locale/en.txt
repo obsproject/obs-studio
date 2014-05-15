@@ -64,6 +64,7 @@ Basic.Main.AddSourceHelp.Text="You need to have at least 1 scene to add a source
 # basic mode main window
 Basic.Main.Scenes="Scenes"
 Basic.Main.Sources="Sources"
+Basic.Main.Connecting="Connecting..."
 Basic.Main.StartRecording="Start Recording"
 Basic.Main.StartStreaming="Start Streaming"
 Basic.Main.StopRecording="Stop Recording"

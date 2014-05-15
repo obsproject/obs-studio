@@ -201,6 +201,22 @@ void OBSApp::OBSInit()
 	mainWindow->OBSInit();
 }
 
+string OBSApp::GetVersionString() const
+{
+	stringstream ver;
+	ver << "v" <<
+		LIBOBS_API_MAJOR_VER << "." <<
+		LIBOBS_API_MINOR_VER << "." <<
+		LIBOBS_API_PATCH_VER;
+
+	if (sizeof(void*) == 8)
+		ver << " (64bit)";
+	else
+		ver << " (32bit)";
+
+	return ver.str();
+}
+
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE  "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
