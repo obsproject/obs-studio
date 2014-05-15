@@ -66,7 +66,7 @@ bool obs_module_load(uint32_t libobs_version)
 {
 	UNUSED_PARAMETER(libobs_version);
 
-	if(!XCompcapMain::init())
+	if (!XCompcapMain::init())
 		return false;
 
 	obs_source_info sinfo;

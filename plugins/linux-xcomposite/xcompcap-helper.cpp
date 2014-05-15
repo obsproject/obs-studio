@@ -16,7 +16,7 @@ namespace XCompcap
 
 	Display *disp()
 	{
-		if(!xdisplay)
+		if (!xdisplay)
 			xdisplay = XOpenDisplay(NULL);
 
 		return xdisplay;
@@ -24,7 +24,7 @@ namespace XCompcap
 
 	void cleanupDisplay()
 	{
-		if(!xdisplay)
+		if (!xdisplay)
 			return;
 
 		XCloseDisplay(xdisplay);
@@ -41,7 +41,7 @@ namespace XCompcap
 	{
 		std::list<Window> res;
 
-		for(int i = 0; i < ScreenCount(disp()); ++i)
+		for (int i = 0; i < ScreenCount(disp()); ++i)
 			getAllWindows(RootWindow(disp(), i), res);
 
 		return res;
@@ -51,14 +51,13 @@ namespace XCompcap
 	{
 		std::list<Window> res;
 
-		Atom netClList = XInternAtom(disp(), "_NET_CLIENT_LIST",  true);
+		Atom netClList = XInternAtom(disp(), "_NET_CLIENT_LIST", true);
 		Atom actualType;
 		int format;
 		unsigned long num, bytes;
 		Window* data = 0;
 
-		for(int i = 0; i < ScreenCount(disp()); ++i)
-		{
+		for (int i = 0; i < ScreenCount(disp()); ++i) {
 			Window rootWin = RootWindow(disp(), i);
 
 			int status = XGetWindowProperty(
@@ -75,16 +74,14 @@ namespace XCompcap
 							 &bytes,
 							 (uint8_t**)&data);
 
-			if(status != Success)
-			{
-				blog(LOG_WARNING, "Failed getting root window properties");
+			if (status != Success) {
+				blog(LOG_WARNING, "Failed getting root "
+				                  "window properties");
 				continue;
 			}
 
-			for(unsigned long i = 0; i < num; ++i)
-			{
+			for (unsigned long i = 0; i < num; ++i)
 				res.push_back(data[i]);
-			}
 
 			XFree(data);
 		}
@@ -96,7 +93,7 @@ namespace XCompcap
 	{
 		XWindowAttributes attr;
 
-		if(!XGetWindowAttributes(disp(), root, &attr))
+		if (!XGetWindowAttributes(disp(), root, &attr))
 			return DefaultScreen(disp());
 
 		return XScreenNumberOfScreen(attr.screen);
@@ -112,20 +109,22 @@ namespace XCompcap
 
 		XGetTextProperty(disp(), win, &tp, netWmName);
 
-		if(!tp.nitems)
+		if (!tp.nitems)
 			XGetWMName(disp(), win, &tp);
 
-		if(!tp.nitems)
+		if (!tp.nitems)
 			return "error";
 
-		if(tp.encoding == XA_STRING)
-		{
+		if (tp.encoding == XA_STRING) {
 			res = (char*)tp.value;
-		}
-		else if(XmbTextPropertyToTextList(disp(), &tp, &list, &n) >= Success && n > 0 && *list)
-		{
-			res = *list;
-			XFreeStringList(list);
+		} else {
+			int ret = XmbTextPropertyToTextList(disp(), &tp, &list,
+					&n);
+
+			if (ret >= Success && n > 0 && *list) {
+				res = *list;
+				XFreeStringList(list);
+			}
 		}
 
 		XFree(tp.value);
@@ -143,17 +142,18 @@ namespace XCompcap
 
 		XGetTextProperty(disp(), win, &tp, xi);
 
-		if(!tp.nitems)
+		if (!tp.nitems)
 			return std::string();
 
-		if(tp.encoding == XA_STRING)
-		{
+		if (tp.encoding == XA_STRING) {
 			res = (char*)tp.value;
-		}
-		else if(XmbTextPropertyToTextList(disp(), &tp, &list, &n) >= Success && n > 0 && *list)
-		{
-			res = *list;
-			XFreeStringList(list);
+		} else {
+			int ret = XmbTextPropertyToTextList(disp(), &tp, &list,
+					&n);
+			if (ret >= Success && n > 0 && *list) {
+				res = *list;
+				XFreeStringList(list);
+			}
 		}
 
 		XFree(tp.value);
@@ -175,26 +175,19 @@ namespace XCompcap
 
 		XLockDisplay(disp());
 
-		while(XEventsQueued(disp(), QueuedAfterReading) > 0)
-		{
+		while (XEventsQueued(disp(), QueuedAfterReading) > 0) {
 			XEvent ev;
 
 			XNextEvent(disp(), &ev);
 
-			if(ev.type == ConfigureNotify)
-			{
+			if (ev.type == ConfigureNotify)
 				changedWindows.insert(ev.xconfigure.event);
-			}
 
-			if(ev.type == MapNotify)
-			{
+			if (ev.type == MapNotify)
 				changedWindows.insert(ev.xmap.event);
-			}
 
-			if(ev.type == DestroyNotify)
-			{
+			if (ev.type == DestroyNotify)
 				changedWindows.insert(ev.xdestroywindow.event);
-			}
 		}
 
 		XUnlockDisplay(disp());
@@ -205,8 +198,8 @@ namespace XCompcap
 		PLock lock(&changeLock);
 
 		auto it = changedWindows.find(win);
-		if(it != changedWindows.end())
-		{
+
+		if (it != changedWindows.end()) {
 			changedWindows.erase(it);
 			return true;
 		}
@@ -220,7 +213,7 @@ namespace XCompcap
 PLock::PLock(pthread_mutex_t* mtx, bool trylock)
 	:m(mtx)
 {
-	if(trylock)
+	if (trylock)
 		islock = mtx && pthread_mutex_trylock(mtx) == 0;
 	else
 		islock = mtx && pthread_mutex_lock(mtx) == 0;
@@ -228,8 +221,7 @@ PLock::PLock(pthread_mutex_t* mtx, bool trylock)
 
 PLock::~PLock()
 {
-	if(islock)
-	{
+	if (islock) {
 		pthread_mutex_unlock(m);
 	}
 }
@@ -241,8 +233,7 @@ bool PLock::isLocked()
 
 void PLock::unlock()
 {
-	if(islock)
-	{
+	if (islock) {
 		pthread_mutex_unlock(m);
 		islock = false;
 	}
@@ -250,8 +241,7 @@ void PLock::unlock()
 
 void PLock::lock()
 {
-	if(!islock)
-	{
+	if (!islock) {
 		pthread_mutex_lock(m);
 		islock = true;
 	}
@@ -264,7 +254,7 @@ static char curErrorText[200];
 static int xerrorlock_handler(Display* disp, XErrorEvent* err)
 {
 
-	if(curErrorTarget)
+	if (curErrorTarget)
 		*curErrorTarget = true;
 
 	XGetErrorText(disp, err->error_code, curErrorText, 200);
@@ -293,8 +283,7 @@ bool XErrorLock::isLocked()
 
 void XErrorLock::lock()
 {
-	if(!islock)
-	{
+	if (!islock) {
 		XLockDisplay(XCompcap::disp());
 		XSync(XCompcap::disp(), 0);
 
@@ -308,8 +297,7 @@ void XErrorLock::lock()
 
 void XErrorLock::unlock()
 {
-	if(islock)
-	{
+	if (islock) {
 		curErrorTarget = 0;
 		XSetErrorHandler(prevhandler);
 		prevhandler = 0;
@@ -320,7 +308,7 @@ void XErrorLock::unlock()
 
 bool XErrorLock::gotError()
 {
-	if(!islock)
+	if (!islock)
 		return false;
 
 	XSync(XCompcap::disp(), 0);
@@ -337,7 +325,7 @@ std::string XErrorLock::getErrorText()
 
 void XErrorLock::resetError()
 {
-	if(islock)
+	if (islock)
 		XSync(XCompcap::disp(), 0);
 
 	goterr = false;
