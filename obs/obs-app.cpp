@@ -219,6 +219,8 @@ string OBSApp::GetVersionString() const
 		ver << " (32bit)";
 #endif
 
+	blog(LOG_INFO, "%s", ver.str().c_str());
+
 	return ver.str();
 }
 
