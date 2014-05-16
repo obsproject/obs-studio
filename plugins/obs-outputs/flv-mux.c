@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <obs.h>
+#include <stdio.h>
 #include <util/array-serializer.h>
 #include "flv-mux.h"
 #include "obs-output-ver.h"
@@ -28,7 +29,6 @@
 //#define WRITE_FLV_HEADER
 
 #define VIDEO_HEADER_SIZE 5
-#define MILLISECOND_DEN   1000
 
 static inline double encoder_bitrate(obs_encoder_t encoder)
 {
@@ -37,6 +37,22 @@ static inline double encoder_bitrate(obs_encoder_t encoder)
 
 	obs_data_release(settings);
 	return bitrate;
+}
+
+#define FLV_INFO_SIZE_OFFSET 42
+
+void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
+{
+	char buf[64];
+	char *enc = buf;
+	char *end = enc + sizeof(buf);
+
+	fseek(file, FLV_INFO_SIZE_OFFSET, SEEK_SET);
+
+	enc_num_val(&enc, end, "duration", (double)duration_ms / 1000.0);
+	enc_num_val(&enc, end, "fileSize", (double)size);
+
+	fwrite(buf, 1, enc - buf, file);
 }
 
 static void build_flv_meta_data(obs_output_t context,
@@ -83,7 +99,8 @@ static void build_flv_meta_data(obs_output_t context,
 	*output = bmemdup(buf, *size);
 }
 
-void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
+void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size,
+		bool write_header)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -95,13 +112,13 @@ void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
 
 	build_flv_meta_data(context, &meta_data, &meta_data_size);
 
-#ifdef WRITE_FLV_HEADER
-	s_write(&s, "FLV", 3);
-	s_w8(&s, 1);
-	s_w8(&s, 5);
-	s_wb32(&s, 9);
-	s_wb32(&s, 0);
-#endif
+	if (write_header) {
+		s_write(&s, "FLV", 3);
+		s_w8(&s, 1);
+		s_w8(&s, 5);
+		s_wb32(&s, 9);
+		s_wb32(&s, 0);
+	}
 
 	start_pos = serializer_get_pos(&s);
 
@@ -119,11 +136,6 @@ void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size)
 	*size   = data.bytes.num;
 
 	bfree(meta_data);
-}
-
-static uint32_t get_ms_time(struct encoder_packet *packet, int64_t val)
-{
-	return (uint32_t)(val * MILLISECOND_DEN / packet->timebase_den);
 }
 
 #ifdef DEBUG_TIMESTAMPS

@@ -98,5 +98,8 @@
     <ClCompile Include="..\..\..\plugins\obs-outputs\librtmp\log.c">
       <Filter>librtmp\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\plugins\obs-outputs\flv-output.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

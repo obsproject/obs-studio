@@ -32,7 +32,10 @@ extern "C" {
 
 EXPORT FILE *os_wfopen(const wchar_t *path, const char *mode);
 EXPORT FILE *os_fopen(const char *path, const char *mode);
-EXPORT off_t os_fgetsize(FILE *file);
+EXPORT int64_t os_fgetsize(FILE *file);
+
+EXPORT int os_fseeki64(FILE *file, int64_t offset, int origin);
+EXPORT int64_t os_ftelli64(FILE *file);
 
 EXPORT size_t os_fread_mbs(FILE *file, char **pstr);
 EXPORT size_t os_fread_utf8(FILE *file, char **pstr);
@@ -97,8 +100,6 @@ EXPORT int os_unlink(const char *path);
 EXPORT int os_mkdir(const char *path);
 
 #ifdef _MSC_VER
-EXPORT int fseeko(FILE *stream, off_t offset, int whence);
-EXPORT off_t ftello(FILE *stream);
 #define strtoll _strtoi64
 #endif
 

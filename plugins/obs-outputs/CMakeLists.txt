@@ -32,10 +32,12 @@ set(obs-outputs_HEADERS
 	obs-output-ver.h
 	rtmp-helpers.h
 	flv-mux.h
+	flv-output.h
 	librtmp)
 set(obs-outputs_SOURCES
 	obs-outputs.c
 	rtmp-stream.c
+	flv-output.c
 	flv-mux.c)
 	
 add_library(obs-outputs MODULE

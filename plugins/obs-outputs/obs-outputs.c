@@ -8,6 +8,7 @@
 OBS_DECLARE_MODULE()
 
 extern struct obs_output_info rtmp_output_info;
+extern struct obs_output_info flv_output_info;
 
 bool obs_module_load(uint32_t libobs_ver)
 {
@@ -17,6 +18,7 @@ bool obs_module_load(uint32_t libobs_ver)
 #endif
 
 	obs_register_output(&rtmp_output_info);
+	obs_register_output(&flv_output_info);
 
 	UNUSED_PARAMETER(libobs_ver);
 	return true;

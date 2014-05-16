@@ -255,7 +255,7 @@ static void send_meta_data(struct rtmp_stream *stream)
 	uint8_t *meta_data;
 	size_t  meta_data_size;
 
-	flv_meta_data(stream->output, &meta_data, &meta_data_size);
+	flv_meta_data(stream->output, &meta_data, &meta_data_size, false);
 #ifdef FILE_TEST
 	fwrite(meta_data, 1, meta_data_size, stream->test);
 #else

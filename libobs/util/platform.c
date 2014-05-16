@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define _FILE_OFFSET_BITS 64
+
 #include <errno.h>
 #include <stdlib.h>
 #include "c99defs.h"
@@ -56,23 +58,41 @@ FILE *os_fopen(const char *path, const char *mode)
 #endif
 }
 
-off_t os_fgetsize(FILE *file)
+int64_t os_fgetsize(FILE *file)
 {
-	off_t cur_offset = ftello(file);
-	off_t size;
+	int64_t cur_offset = os_ftelli64(file);
+	int64_t size;
 	int errval = 0;
 
-	if (fseeko(file, 0, SEEK_END) == -1)
+	if (fseek(file, 0, SEEK_END) == -1)
 		return -1;
 
-	size = ftello(file);
+	size = os_ftelli64(file);
 	if (size == -1)
 		errval = errno;
 
-	if (fseeko(file, cur_offset, SEEK_SET) != 0 && errval != 0)
+	if (os_fseeki64(file, cur_offset, SEEK_SET) != 0 && errval != 0)
 		errno = errval;
 
 	return size;
+}
+
+int os_fseeki64(FILE *file, int64_t offset, int origin)
+{
+#ifdef _MSC_VER
+	return _fseeki64(file, offset, origin);
+#else
+	return fseeko(file, offset, origin);
+#endif
+}
+
+int64_t os_ftelli64(FILE *file)
+{
+#ifdef _MSC_VER
+	return _ftelli64(file);
+#else
+	return ftello(file);
+#endif
 }
 
 size_t os_fread_mbs(FILE *file, char **pstr)
@@ -80,14 +100,14 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 	size_t size = 0;
 	size_t len = 0;
 
-	fseeko(file, 0, SEEK_END);
-	size = (size_t)ftello(file);
+	fseek(file, 0, SEEK_END);
+	size = (size_t)os_ftelli64(file);
 	*pstr = NULL;
 
 	if (size > 0) {
 		char *mbstr = bmalloc(size+1);
 
-		fseeko(file, 0, SEEK_SET);
+		fseek(file, 0, SEEK_SET);
 		size = fread(mbstr, 1, size, file);
 		if (size == 0) {
 			bfree(mbstr);
@@ -110,8 +130,8 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 
 	*pstr = NULL;
 
-	fseeko(file, 0, SEEK_END);
-	size = (size_t)ftello(file);
+	fseek(file, 0, SEEK_END);
+	size = (size_t)os_ftelli64(file);
 
 	if (size > 0) {
 		char bom[3];
@@ -119,7 +139,7 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 		off_t offset;
 
 		/* remove the ghastly BOM if present */
-		fseeko(file, 0, SEEK_SET);
+		fseek(file, 0, SEEK_SET);
 		size_read = fread(bom, 1, 3, file);
 		if (size_read != 3)
 			return 0;
@@ -131,7 +151,7 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 			return 0;
 
 		utf8str = bmalloc(size+1);
-		fseeko(file, offset, SEEK_SET);
+		fseek(file, offset, SEEK_SET);
 
 		size = fread(utf8str, 1, size, file);
 		if (size == 0) {
@@ -314,23 +334,3 @@ size_t os_mbs_to_utf8_ptr(const char *str, size_t len, char **pstr)
 
 	return out_len;
 }
-
-#ifdef _MSC_VER
-int fseeko(FILE *stream, off_t offset, int whence)
-{
-#if _FILE_OFFSET_BITS == 64
-	return _fseeki64(stream, offset, whence);
-#else
-	return fseek(stream, offset, whence);
-#endif /* _FILE_OFFSET_BITS == 64 */
-}
-
-off_t ftello(FILE *stream)
-{
-#if _FILE_OFFSET_BITS == 64
-	return _ftelli64(stream);
-#else
-	return ftell(stream);
-#endif /* _FILE_OFFSET_BITS == 64 */
-}
-#endif /* _MSC_VER */
