@@ -108,6 +108,8 @@ private slots:
 	void RemoveScene(OBSSource source);
 	void UpdateSceneSelection(OBSSource source);
 
+	void MoveSceneItem(OBSSceneItem item, order_movement movement);
+
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
@@ -121,6 +123,11 @@ private:
 	static void SourceDeactivated(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
+
+	static void SceneItemMoveUp(void *data, calldata_t params);
+	static void SceneItemMoveDown(void *data, calldata_t params);
+	static void SceneItemMoveTop(void *data, calldata_t params);
+	static void SceneItemMoveBottom(void *data, calldata_t params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 

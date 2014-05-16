@@ -22,6 +22,10 @@
 static const char *obs_scene_signals[] = {
 	"void item_add(ptr scene, ptr item)",
 	"void item_remove(ptr scene, ptr item)",
+	"void item_move_up(ptr scene, ptr item)",
+	"void item_move_down(ptr scene, ptr item)",
+	"void item_move_top(ptr scene, ptr item)",
+	"void item_move_bottom(ptr scene, ptr item)",
 	NULL
 };
 
@@ -134,10 +138,11 @@ static inline void detach_sceneitem(struct obs_scene_item *item)
 	item->parent = NULL;
 }
 
-static inline void attach_sceneitem(struct obs_scene_item *item,
-		struct obs_scene_item *prev)
+static inline void attach_sceneitem(struct obs_scene *parent,
+		struct obs_scene_item *item, struct obs_scene_item *prev)
 {
-	item->prev = prev;
+	item->prev   = prev;
+	item->parent = parent;
 
 	if (prev) {
 		item->next = prev->next;
@@ -145,8 +150,6 @@ static inline void attach_sceneitem(struct obs_scene_item *item,
 			prev->next->prev = item;
 		prev->next = item;
 	} else {
-		assert(item->parent != NULL);
-
 		item->next = item->parent->first_item;
 		item->parent->first_item = item;
 	}
@@ -516,37 +519,65 @@ void obs_sceneitem_setscale(obs_sceneitem_t item, const struct vec2 *scale)
 		vec2_copy(&item->scale, scale);
 }
 
+static inline void signal_move_dir(struct obs_scene_item *item,
+		enum order_movement movement)
+{
+	const char *command;
+	struct calldata params = {0};
+
+	switch (movement) {
+	case ORDER_MOVE_UP:     command = "item_move_up";     break;
+	case ORDER_MOVE_DOWN:   command = "item_move_down";   break;
+	case ORDER_MOVE_TOP:    command = "item_move_top";    break;
+	case ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
+	}
+
+	calldata_setptr(&params, "scene", item->parent);
+	calldata_setptr(&params, "item",  item);
+
+	signal_handler_signal(item->parent->source->context.signals,
+			command, &params);
+
+	calldata_free(&params);
+}
+
 void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 {
 	if (!item) return;
 
+	struct obs_scene_item *next, *prev;
 	struct obs_scene *scene = item->parent;
 
 	obs_scene_addref(scene);
 	pthread_mutex_lock(&scene->mutex);
 
+	next = item->next;
+	prev = item->prev;
+
 	detach_sceneitem(item);
 
-	if (movement == ORDER_MOVE_UP) {
-		attach_sceneitem(item, item->prev);
+	if (movement == ORDER_MOVE_DOWN) {
+		attach_sceneitem(scene, item, prev ? prev->prev : NULL);
 
-	} else if (movement == ORDER_MOVE_DOWN) {
-		attach_sceneitem(item, item->next);
+	} else if (movement == ORDER_MOVE_UP) {
+		attach_sceneitem(scene, item, next ? next : prev);
 
 	} else if (movement == ORDER_MOVE_TOP) {
-		struct obs_scene_item *last = item->next;
+		struct obs_scene_item *last = next;
 		if (!last) {
-			last = item->prev;
+			last = prev;
 		} else {
 			while (last->next)
 				last = last->next;
 		}
 
-		attach_sceneitem(item, last);
+		attach_sceneitem(scene, item, last);
 
 	} else if (movement == ORDER_MOVE_BOTTOM) {
-		attach_sceneitem(item, NULL);
+		attach_sceneitem(scene, item, NULL);
 	}
+
+	signal_move_dir(item, movement);
 
 	pthread_mutex_unlock(&scene->mutex);
 	obs_scene_release(scene);

@@ -46,6 +46,7 @@ using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
+Q_DECLARE_METATYPE(order_movement);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
@@ -536,6 +537,14 @@ void OBSBasic::AddScene(OBSSource source)
 			OBSBasic::SceneItemAdded, this);
 	signal_handler_connect(handler, "item_remove",
 			OBSBasic::SceneItemRemoved, this);
+	signal_handler_connect(handler, "item_move_up",
+			OBSBasic::SceneItemMoveUp, this);
+	signal_handler_connect(handler, "item_move_down",
+			OBSBasic::SceneItemMoveDown, this);
+	signal_handler_connect(handler, "item_move_top",
+			OBSBasic::SceneItemMoveTop, this);
+	signal_handler_connect(handler, "item_move_bottom",
+			OBSBasic::SceneItemMoveBottom, this);
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -614,6 +623,42 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 			UpdateSources(scene);
 		}
 	}
+}
+
+void OBSBasic::MoveSceneItem(OBSSceneItem item, order_movement movement)
+{
+	OBSScene scene = obs_sceneitem_getscene(item);
+	if (scene != GetCurrentScene())
+		return;
+
+	int curRow = ui->sources->currentRow();
+	if (curRow == -1)
+		return;
+
+	QListWidgetItem *listItem = ui->sources->takeItem(curRow);
+
+	switch (movement) {
+	case ORDER_MOVE_UP:
+		if (curRow > 0)
+			curRow--;
+		break;
+
+	case ORDER_MOVE_DOWN:
+		if (curRow < ui->sources->count())
+			curRow++;
+		break;
+
+	case ORDER_MOVE_TOP:
+		curRow = 0;
+		break;
+
+	case ORDER_MOVE_BOTTOM:
+		curRow = ui->sources->count();
+		break;
+	}
+
+	ui->sources->insertItem(curRow, listItem);
+	ui->sources->setCurrentRow(curRow);
 }
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
@@ -737,6 +782,42 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
+}
+
+void OBSBasic::SceneItemMoveUp(void *data, calldata_t params)
+{
+	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(params, "item");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"MoveSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
+			Q_ARG(order_movement, ORDER_MOVE_UP));
+}
+
+void OBSBasic::SceneItemMoveDown(void *data, calldata_t params)
+{
+	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(params, "item");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"MoveSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
+			Q_ARG(order_movement, ORDER_MOVE_DOWN));
+}
+
+void OBSBasic::SceneItemMoveTop(void *data, calldata_t params)
+{
+	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(params, "item");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"MoveSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
+			Q_ARG(order_movement, ORDER_MOVE_TOP));
+}
+
+void OBSBasic::SceneItemMoveBottom(void *data, calldata_t params)
+{
+	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(params, "item");
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"MoveSceneItem",
+			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
+			Q_ARG(order_movement, ORDER_MOVE_BOTTOM));
 }
 
 /* Main class functions */
@@ -1125,10 +1206,14 @@ void OBSBasic::on_actionSourceProperties_triggered()
 
 void OBSBasic::on_actionSourceUp_triggered()
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_UP);
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
 }
 
 void OBSBasic::StreamingStart()

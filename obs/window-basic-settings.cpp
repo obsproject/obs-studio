@@ -588,11 +588,7 @@ void OBSBasicSettings::SaveAudioSettings()
 	QString auxDevice2     = GetComboData(ui->auxAudioDevice2);
 	QString auxDevice3     = GetComboData(ui->auxAudioDevice3);
 
-	const char *channelSetup;
-	if (channelSetupIdx == 0)
-		channelSetup = "Mono";
-	else
-		channelSetup = "Stereo";
+	const char *channelSetup = (channelSetupIdx == 0) ? "Mono" : "Stereo";
 
 	int sampleRate = 44100;
 	if (sampleRateStr == "22.05khz")
