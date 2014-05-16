@@ -21,6 +21,7 @@
 #include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/platform.h>
+#include <obs-config.h>
 #include <obs.hpp>
 
 #include <QProxyStyle>
@@ -209,10 +210,14 @@ string OBSApp::GetVersionString() const
 		LIBOBS_API_MINOR_VER << "." <<
 		LIBOBS_API_PATCH_VER;
 
+#ifndef _WIN32
+	ver << " (" << OBS_VERSION << ")";
+#else
 	if (sizeof(void*) == 8)
 		ver << " (64bit)";
 	else
 		ver << " (32bit)";
+#endif
 
 	return ver.str();
 }
