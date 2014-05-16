@@ -777,6 +777,7 @@ bool obs_add_source(obs_source_t source)
 	struct calldata params = {0};
 
 	if (!obs) return false;
+	if (!source) return false;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
 	da_push_back(obs->data.user_sources, &source);
