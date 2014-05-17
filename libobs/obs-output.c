@@ -118,6 +118,15 @@ void obs_output_destroy(obs_output_t output)
 		if (output->context.data)
 			output->info.destroy(output->context.data);
 
+		if (output->video_encoder) {
+			obs_encoder_remove_output(output->video_encoder,
+					output);
+		}
+		if (output->audio_encoder) {
+			obs_encoder_remove_output(output->audio_encoder,
+					output);
+		}
+
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		obs_context_data_free(&output->context);
 		bfree(output);
