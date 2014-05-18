@@ -41,8 +41,6 @@ static void pulse_context_state_changed(pa_context *c, void *userdata)
 	UNUSED_PARAMETER(userdata);
 	UNUSED_PARAMETER(c);
 
-	blog(LOG_DEBUG, "pulse: context state changed");
-
 	pulse_signal(0);
 }
 
@@ -111,8 +109,6 @@ int_fast32_t pulse_init()
 	}
 
 	pulse_refs++;
-	blog(LOG_DEBUG, "pulse: Reference count increased to %"PRIuFAST32,
-	     pulse_refs);
 
 	pthread_mutex_unlock(&pulse_mutex);
 
@@ -123,11 +119,7 @@ void pulse_unref()
 {
 	pthread_mutex_lock(&pulse_mutex);
 
-	pulse_refs--;
-	blog(LOG_DEBUG, "pulse: Reference count decreased to %"PRIuFAST32,
-	     pulse_refs);
-
-	if (pulse_refs == 0) {
+	if (--pulse_refs == 0) {
 		pulse_lock();
 		if (pulse_context != NULL) {
 			pa_context_disconnect(pulse_context);
