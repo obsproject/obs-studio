@@ -46,10 +46,8 @@ elseif(UNIX)
 
 	set(obs_PLATFORM_LIBRARIES
 		${X11_LIBRARIES}
-		${X11_Xinerama_LIB})
-
-        set(obs_PLATFORM_QT_MODULES
-                X11Extras)
+		${X11_Xinerama_LIB}
+                Qt5::X11Extras)
 endif()
 
 set(obs_SOURCES
@@ -101,9 +99,6 @@ add_executable(obs WIN32
 	${obs_UI_HEADERS}
 	${obs_QRC_SOURCES})
 
-qt5_use_modules(obs Widgets ${obs_PLATFORM_QT_MODULES})
-qt5_use_modules(obs Network ${obs_PLATFORM_QT_MODULES})
-
 if(WIN32)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_output_suffix "64")
@@ -118,6 +113,8 @@ endif()
 
 target_link_libraries(obs
 	libobs
+	Qt5::Widgets
+	Qt5::Network
 	${obs_PLATFORM_LIBRARIES})
 
 install_obs_core(obs)
