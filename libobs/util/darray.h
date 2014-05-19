@@ -299,15 +299,10 @@ static inline void darray_erase(const size_t element_size, struct darray *dst,
 {
 	assert(idx < dst->num);
 
-	if (idx >= dst->num)
+	if (idx >= dst->num || !--dst->num)
 		return;
 
-	if (!--dst->num) {
-		dst->num = 0;
-		return;
-	}
-
-	memcpy(darray_item(element_size, dst, idx),
+	memmove(darray_item(element_size, dst, idx),
 			darray_item(element_size, dst, idx+1),
 			element_size*(dst->num-idx));
 }
@@ -408,7 +403,7 @@ static inline void darray_move_item(const size_t element_size,
 		memmove(darray_item(element_size, dst, to+1), p_to,
 				element_size*(from-to));
 	else
-		memcpy(p_from, darray_item(element_size, dst, from+1),
+		memmove(p_from, darray_item(element_size, dst, from+1),
 				element_size*(to-from));
 
 	memcpy(p_to, temp, element_size);
@@ -454,7 +449,7 @@ static inline void darray_swap(const size_t element_size,
 			size_t num;      \
 			size_t capacity; \
 		};                       \
-	} 
+	}
 
 #define da_init(v) darray_init(&v.da)
 
