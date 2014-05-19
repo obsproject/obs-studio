@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <QNetworkAccessManager>
+#include <QBuffer>
 #include <obs.hpp>
 #include <unordered_map>
 #include <vector>
@@ -30,6 +32,7 @@
 
 class QListWidgetItem;
 class VolControl;
+class QNetworkReply;
 
 #include "ui_OBSBasic.h"
 
@@ -49,6 +52,12 @@ private:
 
 	QPointer<OBSBasicProperties> properties;
 
+	QNetworkAccessManager networkManager;
+
+	QBuffer       logUploadPostData;
+	QNetworkReply *logUploadReply;
+	QByteArray    logUploadReturnData;
+
 	obs_output_t  streamOutput;
 	obs_service_t service;
 	obs_encoder_t aac;
@@ -65,6 +74,8 @@ private:
 	void          CreateDefaultScene();
 
 	void          ClearVolumeControls();
+
+	void          UploadLog(const char *file);
 
 	void          Save(const char *file);
 	void          Load(const char *file);
@@ -176,8 +187,13 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
+	void on_actionUploadCurrentLog_triggered();
+	void on_actionUploadLastLog_triggered();
 	void on_streamButton_clicked();
 	void on_settingsButton_clicked();
+
+	void logUploadRead();
+	void logUploadFinished();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

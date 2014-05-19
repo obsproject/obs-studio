@@ -18,6 +18,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
 find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Network REQUIRED)
 
 if(WIN32)
 	set(obs_PLATFORM_SOURCES
@@ -59,6 +60,7 @@ set(obs_SOURCES
 	window-basic-properties.cpp
 	window-basic-source-select.cpp
 	window-namedialog.cpp
+	window-log-reply.cpp
 	properties-view.cpp
 	volume-control.cpp
 	qt-wrappers.cpp)
@@ -72,6 +74,7 @@ set(obs_HEADERS
 	window-basic-properties.hpp
 	window-basic-source-select.hpp
 	window-namedialog.hpp
+	window-log-reply.hpp
 	properties-view.hpp
 	display-helpers.hpp
 	volume-control.hpp
@@ -80,6 +83,7 @@ set(obs_HEADERS
 
 set(obs_UI
 	forms/NameDialog.ui
+	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
@@ -98,6 +102,7 @@ add_executable(obs WIN32
 	${obs_QRC_SOURCES})
 
 qt5_use_modules(obs Widgets ${obs_PLATFORM_QT_MODULES})
+qt5_use_modules(obs Network ${obs_PLATFORM_QT_MODULES})
 
 if(WIN32)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)

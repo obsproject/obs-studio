@@ -19,11 +19,23 @@
 
 #include <QApplication>
 #include <QTranslator>
+#include <util/lexer.h>
 #include <util/util.hpp>
 #include <string>
 #include <memory>
 
 #include "window-main.hpp"
+
+std::string CurrentTimeString();
+std::string CurrentDateTimeString();
+
+struct BaseLexer {
+	lexer lex;
+public:
+	inline BaseLexer() {lexer_init(&lex);}
+	inline ~BaseLexer() {lexer_free(&lex);}
+	operator lexer*() {return &lex;}
+};
 
 class OBSTranslator : public QTranslator {
 	Q_OBJECT
@@ -68,6 +80,9 @@ public:
 	{
 		return textLookup.GetString(lookupVal);
 	}
+
+	const char *GetLastLog() const;
+	const char *GetCurrentLog() const;
 
 	std::string GetVersionString() const;
 

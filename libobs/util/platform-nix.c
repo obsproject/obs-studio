@@ -130,7 +130,8 @@ os_dir_t os_opendir(const char *path)
 		return NULL;
 
 	dir = bzalloc(sizeof(struct os_dir));
-	dir->dir = dir_val;
+	dir->dir  = dir_val;
+	dir->path = path;
 	return dir;
 }
 

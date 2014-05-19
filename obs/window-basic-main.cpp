@@ -20,7 +20,10 @@
 #include <QMessageBox>
 #include <QShowEvent>
 #include <QFileDialog>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
+#include <util/dstr.h>
 #include <util/util.hpp>
 #include <util/platform.h>
 
@@ -31,12 +34,14 @@
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-properties.hpp"
+#include "window-log-reply.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 
 #include "ui_OBSBasic.h"
 
+#include <fstream>
 #include <sstream>
 
 #include <QScreen>
@@ -50,14 +55,14 @@ Q_DECLARE_METATYPE(order_movement);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow (parent),
-	  properties    (nullptr),
-	  streamOutput  (nullptr),
-	  service       (nullptr),
-	  aac           (nullptr),
-	  x264          (nullptr),
-	  sceneChanging (false),
-	  resizeTimer   (0),
-	  ui            (new Ui::OBSBasic)
+	  properties     (nullptr),
+	  streamOutput   (nullptr),
+	  service        (nullptr),
+	  aac            (nullptr),
+	  x264           (nullptr),
+	  sceneChanging  (false),
+	  resizeTimer    (0),
+	  ui             (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
 
@@ -71,6 +76,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	stringstream name;
 	name << "OBS " << App()->GetVersionString();
 
+	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
 }
 
@@ -1214,6 +1220,106 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
+}
+
+static char *ReadLogFile(const char *log)
+{
+	BPtr<char> logDir(os_get_config_path("obs-studio/logs"));
+
+	string path = (char*)logDir;
+	path += "/";
+	path += log;
+
+	char *file = os_quick_read_utf8_file(path.c_str());
+	if (!file)
+		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
+
+	return file;
+}
+
+void OBSBasic::UploadLog(const char *file)
+{
+	dstr fileString = {};
+	stringstream ss;
+	string       jsonData;
+
+	dstr_move_array(&fileString, ReadLogFile(file));
+
+	if (!fileString.array)
+		return;
+
+	if (!*fileString.array) {
+		dstr_free(&fileString);
+		return;
+	}
+
+	ui->menuLogFiles->setEnabled(false);
+
+	dstr_replace(&fileString, "\\", "\\\\");
+	dstr_replace(&fileString, "\"", "\\\"");
+	dstr_replace(&fileString, "\n", "\\n");
+	dstr_replace(&fileString, "\r", "\\r");
+	dstr_replace(&fileString, "\t", "\\t");
+	dstr_replace(&fileString, "\t", "\\t");
+	dstr_replace(&fileString, "/",  "\\/");
+
+	ss << "{ \"public\": false, \"description\": \"OBS " <<
+		App()->GetVersionString() << " log file uploaded at " <<
+		CurrentDateTimeString() << "\", \"files\": { \"" <<
+		file << "\": { \"content\": \"" <<
+		fileString.array << "\" } } }";
+
+	jsonData = std::move(ss.str());
+
+	logUploadPostData.setData(jsonData.c_str(), jsonData.size());
+
+	QUrl url("https://api.github.com/gists");
+	logUploadReply = networkManager.post(QNetworkRequest(url),
+			&logUploadPostData);
+	connect(logUploadReply, SIGNAL(finished()),
+			this, SLOT(logUploadFinished()));
+	connect(logUploadReply, SIGNAL(readyRead()),
+			this, SLOT(logUploadRead()));
+
+	dstr_free(&fileString);
+}
+
+void OBSBasic::on_actionUploadCurrentLog_triggered()
+{
+	UploadLog(App()->GetCurrentLog());
+}
+
+void OBSBasic::on_actionUploadLastLog_triggered()
+{
+	UploadLog(App()->GetLastLog());
+}
+
+void OBSBasic::logUploadRead()
+{
+	logUploadReturnData.push_back(logUploadReply->readAll());
+}
+
+void OBSBasic::logUploadFinished()
+{
+	ui->menuLogFiles->setEnabled(true);
+
+	if (logUploadReply->error()) {
+		QMessageBox::information(this,
+				QTStr("LogReturnDialog.ErrorUploadingLog"),
+				logUploadReply->errorString());
+		return;
+	}
+
+	const char *jsonReply = logUploadReturnData.constData();
+	if (!jsonReply || !*jsonReply)
+		return;
+
+	obs_data_t returnData = obs_data_create_from_json(jsonReply);
+	QString logURL = obs_data_getstring(returnData, "html_url");
+	obs_data_release(returnData);
+
+	OBSLogReply logDialog(this, logURL);
+	logDialog.exec();
 }
 
 void OBSBasic::StreamingStart()

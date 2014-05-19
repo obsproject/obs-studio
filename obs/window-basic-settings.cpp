@@ -34,14 +34,6 @@
 
 using namespace std;
 
-struct BaseLexer {
-	lexer lex;
-public:
-	inline BaseLexer() {lexer_init(&lex);}
-	inline ~BaseLexer() {lexer_free(&lex);}
-	operator lexer*() {return &lex;}
-};
-
 /* parses "[width]x[height]", string, i.e. 1024x768 */
 static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {

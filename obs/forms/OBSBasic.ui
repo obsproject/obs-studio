@@ -450,7 +450,21 @@
     <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
+   <widget class="QMenu" name="menuBasic_MainMenu_Help">
+    <property name="title">
+     <string>Basic.MainMenu.Help</string>
+    </property>
+    <widget class="QMenu" name="menuLogFiles">
+     <property name="title">
+      <string>Basic.MainMenu.Help.Logs</string>
+     </property>
+     <addaction name="actionUploadCurrentLog"/>
+     <addaction name="actionUploadLastLog"/>
+    </widget>
+    <addaction name="menuLogFiles"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAddScene">
@@ -584,6 +598,16 @@
   <action name="actionE_xit">
    <property name="text">
     <string>Basic.MainMenu.File.Exit</string>
+   </property>
+  </action>
+  <action name="actionUploadLastLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Logs.UploadLastLog</string>
+   </property>
+  </action>
+  <action name="actionUploadCurrentLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Logs.UploadCurrentLog</string>
    </property>
   </action>
  </widget>

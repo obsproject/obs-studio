@@ -44,13 +44,38 @@ using namespace std;
 
 static log_handler_t def_log_handler;
 
+static string currentLogFile;
+static string lastLogFile;
+
+string CurrentTimeString()
+{
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%X", &tstruct);
+	return buf;
+}
+
+string CurrentDateTimeString()
+{
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%Y-%m-%d, %X", &tstruct);
+	return buf;
+}
+
 static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream*>(param);
 	char str[4096];
 	va_list args2;
 
+#ifndef _WIN32
 	va_copy(args2, args);
+#endif
 
 	vsnprintf(str, 4095, msg, args);
 
@@ -62,7 +87,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #endif
 
 	if (log_level <= LOG_INFO)
-		logFile << str << endl;
+		logFile << CurrentTimeString() << ": " << str << endl;
 
 #ifdef _WIN32
 	if (log_level <= LOG_ERROR && IsDebuggerPresent())
@@ -190,10 +215,8 @@ const char *OBSApp::GetRenderModule() const
 	const char *renderer = config_get_string(globalConfig, "Video",
 			"Renderer");
 
-	if (astrcmpi(renderer, "Direct3D 11") == 0)
-		return "libobs-d3d11";
-	else
-		return "libobs-opengl";
+	return (astrcmpi(renderer, "Direct3D 11") == 0) ?
+		"libobs-d3d11" : "libobs-opengl";
 }
 
 void OBSApp::OBSInit()
@@ -210,18 +233,24 @@ string OBSApp::GetVersionString() const
 		LIBOBS_API_MINOR_VER << "." <<
 		LIBOBS_API_PATCH_VER;
 
+	ver << " (";
+
 #ifdef HAVE_OBSCONFIG_H
-	ver << " (" << OBS_VERSION << ")";
+	ver << OBS_VERSION << ", ";
 #endif
 
 #ifdef _WIN32
 	if (sizeof(void*) == 8)
-		ver << " (64bit)";
+		ver << "64bit, ";
 	else
-		ver << " (32bit)";
-#endif
+		ver << "32bit, ";
 
-	blog(LOG_INFO, "%s", ver.str().c_str());
+	ver << "windows)";
+#elif __APPLE__
+	ver << "mac)";
+#else /* assume linux for the time being */
+	ver << "linux)";
+#endif
 
 	return ver.str();
 }
@@ -245,6 +274,16 @@ const char *OBSApp::InputAudioSource() const
 const char *OBSApp::OutputAudioSource() const
 {
 	return OUTPUT_AUDIO_SOURCE;
+}
+
+const char *OBSApp::GetLastLog() const
+{
+	return lastLogFile.c_str();
+}
+
+const char *OBSApp::GetCurrentLog() const
+{
+	return currentLogFile.c_str();
 }
 
 QString OBSTranslator::translate(const char *context, const char *sourceText,
@@ -273,10 +312,57 @@ struct NoFocusFrameStyle : QProxyStyle
 	}
 };
 
+static bool get_token(lexer *lex, string &str, base_token_type type)
+{
+	base_token token;
+	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
+		return false;
+	if (token.type != type)
+		return false;
+
+	str.assign(token.text.array, token.text.len);
+	return true;
+}
+
+static bool expect_token(lexer *lex, const char *str, base_token_type type)
+{
+	base_token token;
+	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
+		return false;
+	if (token.type != type)
+		return false;
+
+	return strref_cmp(&token.text, str) == 0;
+}
+
+static uint64_t convert_log_name(const char *name)
+{
+	BaseLexer  lex;
+	string     year, month, day, hour, minute, second;
+
+	lexer_start(lex, name);
+
+	if (!get_token(lex, year,   BASETOKEN_DIGIT)) return 0;
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) return 0;
+	if (!get_token(lex, month,  BASETOKEN_DIGIT)) return 0;
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) return 0;
+	if (!get_token(lex, day,    BASETOKEN_DIGIT)) return 0;
+	if (!get_token(lex, hour,   BASETOKEN_DIGIT)) return 0;
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) return 0;
+	if (!get_token(lex, minute, BASETOKEN_DIGIT)) return 0;
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) return 0;
+	if (!get_token(lex, second, BASETOKEN_DIGIT)) return 0;
+
+	stringstream timestring;
+	timestring << year << month << day << hour << minute << second;
+	return std::stoull(timestring.str());
+}
+
 static void delete_oldest_log(void)
 {
 	BPtr<char>       logDir(os_get_config_path("obs-studio/logs"));
-	char             firstLog[256] = {};
+	string           oldestLog;
+	uint64_t         oldest_ts = -1;
 	struct os_dirent *entry;
 
 	unsigned int maxLogs = (unsigned int)config_get_uint(
@@ -287,27 +373,53 @@ static void delete_oldest_log(void)
 		unsigned int count = 0;
 
 		while ((entry = os_readdir(dir)) != NULL) {
-			if (entry->directory)
+			if (entry->directory || *entry->d_name == '.')
 				continue;
 
-			/* no hidden files */
-			if (*entry->d_name == '.')
-				continue;
+			uint64_t ts = convert_log_name(entry->d_name);
 
-			if (!*firstLog)
-				strncpy(firstLog, entry->d_name, 255);
+			if (ts) {
+				if (ts < oldest_ts) {
+					oldestLog = entry->d_name;
+					oldest_ts = ts;
+				}
 
-			count++;
+				count++;
+			}
 		}
 
 		os_closedir(dir);
 
-		if (count > maxLogs && *firstLog) {
+		if (count > maxLogs) {
 			stringstream delPath;
 
-			delPath << logDir << "/" << firstLog;
+			delPath << logDir << "/" << oldestLog;
 			os_unlink(delPath.str().c_str());
 		}
+	}
+}
+
+static void get_last_log(void)
+{
+	BPtr<char>       logDir(os_get_config_path("obs-studio/logs"));
+	struct os_dirent *entry;
+	os_dir_t         dir        = os_opendir(logDir);
+	uint64_t         highest_ts = 0;
+
+	if (dir) {
+		while ((entry = os_readdir(dir)) != NULL) {
+			if (entry->directory || *entry->d_name == '.')
+				continue;
+
+			uint64_t ts = convert_log_name(entry->d_name);
+
+			if (ts > highest_ts) {
+				lastLogFile = entry->d_name;
+				highest_ts  = ts;
+			}
+		}
+
+		os_closedir(dir);
 	}
 }
 
@@ -316,6 +428,8 @@ static void create_log_file(fstream &logFile)
 	stringstream dst;
 	time_t       now = time(0);
 	struct tm    *cur_time;
+
+	get_last_log();
 
 	cur_time = localtime(&now);
 	if (cur_time) {
@@ -328,6 +442,8 @@ static void create_log_file(fstream &logFile)
 				cur_time->tm_hour,
 				cur_time->tm_min,
 				cur_time->tm_sec);
+
+		currentLogFile = file;
 
 		dst << "obs-studio/logs/" << file;
 

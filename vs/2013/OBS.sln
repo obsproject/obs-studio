@@ -39,6 +39,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-ffmpeg", "obs-ffmpeg\ob
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obs-studio", "obs-studio\obs-studio.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{C7549517-7FAB-46A5-BB21-228984573265} = {C7549517-7FAB-46A5-BB21-228984573265}
 		{6F1AC2AE-6424-401A-AF9F-A771E6BEE026} = {6F1AC2AE-6424-401A-AF9F-A771E6BEE026}
 	EndProjectSection
 EndProject

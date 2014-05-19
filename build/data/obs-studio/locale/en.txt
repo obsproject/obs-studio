@@ -34,6 +34,11 @@ Output.ConnectFail.InvalidStream="Could not access the specified channel or stre
 Output.ConnectFail.Error="An unexpected error occurred when trying to connect to the server.  More information in the log file."
 Output.ConnectFail.Disconnected="Disconnected from server."
 
+# log upload dialog text and messages
+LogReturnDialog="Log Upload Successful"
+LogReturnDialog.CopyURL="Copy URL"
+LogReturnDialog.ErrorUploadingLog="Error uploading log file"
+
 # audio device names
 Basic.DesktopDevice1="Desktop Audio"
 Basic.DesktopDevice2="Desktop Audio 2"
@@ -70,12 +75,18 @@ Basic.Main.StartStreaming="Start Streaming"
 Basic.Main.StopRecording="Stop Recording"
 Basic.Main.StopStreaming="Stop Streaming"
 
-# basic mode menu
+# basic mode file menu
 Basic.MainMenu.File="&File"
 Basic.MainMenu.File.Export="&Export"
 Basic.MainMenu.File.Import="&Import"
 Basic.MainMenu.File.Settings="&Settings"
 Basic.MainMenu.File.Exit="E&xit"
+
+# basic mode help menu
+Basic.MainMenu.Help="&Help"
+Basic.MainMenu.Help.Logs="&Log Files"
+Basic.MainMenu.Help.Logs.UploadCurrentLog="Upload &Current Log File"
+Basic.MainMenu.Help.Logs.UploadLastLog="Upload &Last Log File"
 
 # basic mode settings dialog
 Basic.Settings.ProgramRestart="The program must be restarted for these settings to take effect."
