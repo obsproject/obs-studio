@@ -25,18 +25,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 struct pulse_data {
 	obs_source_t source;
+	pa_stream *stream;
+
+	/* user settings */
+	bool ostime;
 	char *device;
 
+	/* server info */
 	enum speaker_layout speakers;
 	pa_sample_format_t format;
 	uint_fast32_t samples_per_sec;
+	uint_fast32_t bytes_per_frame;
 	uint_fast8_t channels;
 
-	uint_fast32_t bytes_per_frame;
-
-	pa_stream *stream;
-
-	bool ostime;
+	/* statistics */
+	uint_fast32_t packets;
+	uint_fast64_t frames;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -136,8 +140,10 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	out.timestamp       = pa_time - (pa_latency * 1000);
 	obs_source_output_audio(data->source, &out);
 
-	pa_stream_drop(data->stream);
+	data->packets++;
+	data->frames += out.frames;
 
+	pa_stream_drop(data->stream);
 exit:
 	pulse_signal(0);
 }
@@ -244,6 +250,9 @@ static void pulse_stop_recording(struct pulse_data *data)
 
 	blog(LOG_INFO, "pulse-input: Stopped recording from '%s'",
 		data->device);
+	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
+		" packets with %"PRIuFAST64" frames",
+		data->packets, data->frames);
 }
 
 /**
