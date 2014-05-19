@@ -410,13 +410,13 @@ static void pulse_update(void *vptr, obs_data_t settings)
 {
 	PULSE_DATA(vptr);
 	bool restart = false;
-	char *new_device;
+	const char *new_device;
 
-	new_device = bstrdup(obs_data_getstring(settings, "device_id"));
+	new_device = obs_data_getstring(settings, "device_id");
 	if (!data->device || strcmp(data->device, new_device) != 0) {
 		if (data->device)
 			bfree(data->device);
-		data->device = new_device;
+		data->device = bstrdup(new_device);
 		restart = true;
 	}
 
