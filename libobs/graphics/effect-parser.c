@@ -1395,11 +1395,13 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		pass_params = &pass->pixelshader_params.da;
 	}
 
+#if 0
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
 	blog(LOG_DEBUG, "  %s", location.array);
 	blog(LOG_DEBUG, "-----------------------------------");
 	blog(LOG_DEBUG, "%s", shader_str.array);
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
+#endif
 
 	if (shader)
 		success = ep_compile_pass_shaderparams(ep, pass_params,

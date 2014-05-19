@@ -208,11 +208,13 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (!gl_success("glCreateShaderProgramv") || !shader->program)
 		return false;
 
+#if 0
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
 	blog(LOG_DEBUG, "  GL shader string for: %s", file);
 	blog(LOG_DEBUG, "-----------------------------------");
 	blog(LOG_DEBUG, "%s", glsp->gl_string.array);
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
+#endif
 
 	glGetProgramiv(shader->program, GL_LINK_STATUS, &compiled);
 	if (!gl_success("glGetProgramiv"))
