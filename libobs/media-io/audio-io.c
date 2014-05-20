@@ -713,8 +713,9 @@ uint32_t audio_output_samplerate(audio_t audio)
 
 /* TODO: Optimization of volume multiplication functions */
 
-static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
+static inline int mul_vol_u8bit(void *array, float volume, size_t total_num)
 {
+	int maxVol = 0;
 	uint8_t *vals = array;
 	int32_t vol = (int32_t)(volume * 127.0f);
 
@@ -722,18 +723,23 @@ static inline void mul_vol_u8bit(void *array, float volume, size_t total_num)
 		int32_t val = (int32_t)vals[i] - 128;
 		int32_t output = val * vol / 127;
 		vals[i] = (uint8_t)(CLAMP(output, MIN_S8, MAX_S8) + 128);
+		maxVol = max(maxVol, abs(vals[i]));
 	}
+	return maxVol * (10000 / MAX_S8);
 }
 
-static inline void mul_vol_16bit(void *array, float volume, size_t total_num)
+static inline int mul_vol_16bit(void *array, float volume, size_t total_num)
 {
+	int maxVol = 0;
 	uint16_t *vals = array;
 	int64_t vol = (int64_t)(volume * 32767.0f);
 
 	for (size_t i = 0; i < total_num; i++) {
 		int64_t output = (int64_t)vals[i] * vol / 32767;
 		vals[i] = (int32_t)CLAMP(output, MIN_S16, MAX_S16);
+		maxVol = max(maxVol, abs(vals[i]));
 	}
+	return maxVol * (10000 / MAX_S16);
 }
 
 static inline float conv_24bit_to_float(uint8_t *vals)
@@ -756,19 +762,23 @@ static inline void conv_float_to_24bit(float fval, uint8_t *vals)
 	vals[2] = (val >> 16) & 0xFF;
 }
 
-static inline void mul_vol_24bit(void *array, float volume, size_t total_num)
+static inline int mul_vol_24bit(void *array, float volume, size_t total_num)
 {
+	float maxVol = 0.f;
 	uint8_t *vals = array;
 
 	for (size_t i = 0; i < total_num; i++) {
 		float val = conv_24bit_to_float(vals) * volume;
 		conv_float_to_24bit(CLAMP(val, -1.0f, 1.0f), vals);
 		vals += 3;
+		maxVol = max(maxVol, (float)fabs(val));
 	}
+	return (int) (maxVol * 10000.f);
 }
 
-static inline void mul_vol_32bit(void *array, float volume, size_t total_num)
+static inline int mul_vol_32bit(void *array, float volume, size_t total_num)
 {
+	int maxVol = 0;
 	int32_t *vals = array;
 	double dvol = (double)volume;
 
@@ -776,20 +786,33 @@ static inline void mul_vol_32bit(void *array, float volume, size_t total_num)
 		double val = (double)vals[i] / 2147483647.0;
 		double output = val * dvol;
 		vals[i] = (int32_t)(CLAMP(output, -1.0, 1.0) * 2147483647.0);
+		maxVol = max(maxVol, abs(vals[i])); 
 	}
+	return maxVol * (10000 / MAX_S32);
 }
 
-static inline void mul_vol_float(void *array, float volume, size_t total_num)
+static inline int mul_vol_float(void *array, float volume, size_t total_num)
 {
+	float maxVol = 0; 
 	float *vals = array;
 
-	for (size_t i = 0; i < total_num; i++)
+	for (size_t i = 0; i < total_num; i++) {
 		vals[i] *= volume;
+		maxVol = max(maxVol, (float)fabs(vals[i]));
+	}
+
+	return (int)(maxVol * 10000.f);
 }
 
-static void audio_line_place_data_pos(struct audio_line *line,
+// [Danni] changed to int for volume feedback. Seems like the most logical 
+//		   place to calculate this to avoid unnessisary iterations.
+//		   scaled to max of 10000.
+
+static int audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
+	int maxVol = 0;
+
 	bool   planar     = line->audio->planes > 1;
 	size_t total_num  = data->frames * (planar ? 1 : line->audio->channels);
 	size_t total_size = data->frames * line->audio->block_size;
@@ -803,19 +826,19 @@ static void audio_line_place_data_pos(struct audio_line *line,
 		switch (line->audio->info.format) {
 		case AUDIO_FORMAT_U8BIT:
 		case AUDIO_FORMAT_U8BIT_PLANAR:
-			mul_vol_u8bit(array, data->volume, total_num);
+			maxVol = mul_vol_u8bit(array, data->volume, total_num);
 			break;
 		case AUDIO_FORMAT_16BIT:
 		case AUDIO_FORMAT_16BIT_PLANAR:
-			mul_vol_16bit(array, data->volume, total_num);
+			maxVol = mul_vol_16bit(array, data->volume, total_num);
 			break;
 		case AUDIO_FORMAT_32BIT:
 		case AUDIO_FORMAT_32BIT_PLANAR:
-			mul_vol_32bit(array, data->volume, total_num);
+			maxVol = mul_vol_32bit(array, data->volume, total_num);
 			break;
 		case AUDIO_FORMAT_FLOAT:
 		case AUDIO_FORMAT_FLOAT_PLANAR:
-			mul_vol_float(array, data->volume, total_num);
+			maxVol = mul_vol_float(array, data->volume, total_num);
 			break;
 		case AUDIO_FORMAT_UNKNOWN:
 			blog(LOG_ERROR, "audio_line_place_data_pos: "
@@ -826,9 +849,10 @@ static void audio_line_place_data_pos(struct audio_line *line,
 		circlebuf_place(&line->buffers[i], position,
 				line->volume_buffers[i].array, total_size);
 	}
+	return maxVol;
 }
 
-static void audio_line_place_data(struct audio_line *line,
+static int audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
 	size_t pos = ts_diff_bytes(line->audio, data->timestamp,
@@ -842,25 +866,26 @@ static void audio_line_place_data(struct audio_line *line,
 			line->buffers[0].size);
 #endif
 
-	audio_line_place_data_pos(line, data, pos);
+	return audio_line_place_data_pos(line, data, pos);
 }
 
-void audio_line_output(audio_line_t line, const struct audio_data *data)
+int audio_line_output(audio_line_t line, const struct audio_data *data)
 {
 	/* TODO: prevent insertation of data too far away from expected
 	 * audio timing */
 
-	if (!line || !data) return;
+	if (!line || !data) return 0;
 
+	int maxVol = 0;
 	pthread_mutex_lock(&line->mutex);
 
 	if (!line->buffers[0].size) {
 		line->base_timestamp = data->timestamp -
 		                       line->audio->info.buffer_ms * 1000000;
-		audio_line_place_data(line, data);
+		maxVol = audio_line_place_data(line, data);
 
 	} else if (line->base_timestamp <= data->timestamp) {
-		audio_line_place_data(line, data);
+		maxVol = audio_line_place_data(line, data);
 
 	} else {
 		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
@@ -872,4 +897,5 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 	}
 
 	pthread_mutex_unlock(&line->mutex);
+	return maxVol;
 }

@@ -554,6 +554,9 @@ EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
 /** Sets the user volume for a source that has audio output */
 EXPORT void obs_source_setvolume(obs_source_t source, float volume);
 
+/** Updates live volume for a source */
+EXPORT void obs_source_updatevolumelevel(obs_source_t source, int volume);
+
 /** Sets the presentation volume for a source */
 EXPORT void obs_source_set_present_volume(obs_source_t source, float volume);
 

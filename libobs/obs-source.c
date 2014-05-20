@@ -19,6 +19,7 @@
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
+#include "media-io/audio-io.h"
 #include "util/threading.h"
 #include "util/platform.h"
 #include "callback/calldata.h"
@@ -27,6 +28,8 @@
 
 #include "obs.h"
 #include "obs-internal.h"
+
+
 
 static inline bool source_valid(struct obs_source *source)
 {
@@ -79,6 +82,7 @@ static const char *source_signals[] = {
 	"void show(ptr source)",
 	"void hide(ptr source)",
 	"void volume(ptr source, in out float volume)",
+	"void volumelevel(ptr source, in out float volume)",
 	NULL
 };
 
@@ -568,8 +572,9 @@ static void source_output_audio_line(obs_source_t source,
 	in.timestamp += source->timing_adjust + source->sync_offset;
 	in.volume = source->user_volume * source->present_volume *
 		obs->audio.user_volume * obs->audio.present_volume;
-
-	audio_line_output(source->audio_line, &in);
+	
+	int vol = audio_line_output(source->audio_line, &in);
+	obs_source_updatevolumelevel(source, vol);
 }
 
 enum convert_type {
@@ -1596,6 +1601,22 @@ void obs_source_setvolume(obs_source_t source, float volume)
 		source->user_volume = volume;
 	}
 }
+
+void obs_source_updatevolumelevel(obs_source_t source, int volume)
+{
+	if (source) {
+		struct calldata data = { 0 };
+		calldata_setptr(&data, "source", source);
+		calldata_setint(&data, "volumelevel", volume);
+
+		signal_handler_signal(source->context.signals, "volumelevel", &data);
+		signal_handler_signal(obs->signals, "source_volumelevel", &data);
+
+		volume = (int)calldata_int(&data, "volumelevel");
+		calldata_free(&data);
+	}
+}
+
 
 static void set_tree_preset_vol(obs_source_t parent, obs_source_t child,
 		void *param)
