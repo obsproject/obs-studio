@@ -25,18 +25,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 struct pulse_data {
 	obs_source_t source;
+	pa_stream *stream;
+
+	/* user settings */
+	bool ostime;
 	char *device;
 
+	/* server info */
 	enum speaker_layout speakers;
 	pa_sample_format_t format;
 	uint_fast32_t samples_per_sec;
+	uint_fast32_t bytes_per_frame;
 	uint_fast8_t channels;
 
-	uint_fast32_t bytes_per_frame;
-
-	pa_stream *stream;
-
-	bool ostime;
+	/* statistics */
+	uint_fast32_t packets;
+	uint_fast64_t frames;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -112,16 +116,14 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 
 	if (!frames) {
-		blog(LOG_DEBUG,
-			"pulse-input: Got audio hole of %u bytes",
+		blog(LOG_ERROR, "pulse-input: Got audio hole of %u bytes",
 			(unsigned int) bytes);
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
 
 	if (pa_stream_get_time(data->stream, &pa_time) < 0) {
-		blog(LOG_ERROR,
-			"pulse-input: Failed to get timing info !");
+		blog(LOG_ERROR, "pulse-input: Failed to get timing info !");
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
@@ -138,8 +140,10 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	out.timestamp       = pa_time - (pa_latency * 1000);
 	obs_source_output_audio(data->source, &out);
 
-	pa_stream_drop(data->stream);
+	data->packets++;
+	data->frames += out.frames;
 
+	pa_stream_drop(data->stream);
 exit:
 	pulse_signal(0);
 }
@@ -153,14 +157,19 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
 
+	blog(LOG_INFO, "pulse-input: Server name: '%s %s'",
+		i->server_name, i->server_version);
+
 	data->format          = i->sample_spec.format;
 	data->samples_per_sec = i->sample_spec.rate;
 	data->channels        = i->sample_spec.channels;
 
-	blog(LOG_DEBUG, "pulse-input: Default format: %s, %u Hz, %u channels",
+	blog(LOG_INFO, "pulse-input: "
+		"Audio format: %s, %u Hz, %u channels with %s timestamps",
 		pa_sample_format_to_string(i->sample_spec.format),
 		i->sample_spec.rate,
-		i->sample_spec.channels);
+		i->sample_spec.channels,
+		(data->ostime) ? "OS" : "PA");
 
 	pulse_signal(0);
 }
@@ -186,8 +195,6 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	}
 
 	data->bytes_per_frame = pa_frame_size(&spec);
-	blog(LOG_DEBUG, "pulse-input: %u bytes per frame",
-	     (unsigned int) data->bytes_per_frame);
 
 	data->stream = pulse_stream_new(obs_source_getname(data->source),
 		&spec, NULL);
@@ -223,7 +230,8 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 		return -1;
 	}
 
-	blog(LOG_DEBUG, "pulse-input: Recording started");
+	blog(LOG_INFO, "pulse-input: Started recording from '%s'",
+		data->device);
 	return 0;
 }
 
@@ -239,6 +247,12 @@ static void pulse_stop_recording(struct pulse_data *data)
 		data->stream = NULL;
 		pulse_unlock();
 	}
+
+	blog(LOG_INFO, "pulse-input: Stopped recording from '%s'",
+		data->device);
+	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
+		" packets with %"PRIuFAST64" frames",
+		data->packets, data->frames);
 }
 
 /**
@@ -396,8 +410,6 @@ static void pulse_destroy(void *vptr)
 	if (data->device)
 		bfree(data->device);
 	bfree(data);
-
-	blog(LOG_DEBUG, "pulse-input: Input destroyed");
 }
 
 /**
@@ -407,13 +419,13 @@ static void pulse_update(void *vptr, obs_data_t settings)
 {
 	PULSE_DATA(vptr);
 	bool restart = false;
-	char *new_device;
+	const char *new_device;
 
-	new_device = bstrdup(obs_data_getstring(settings, "device_id"));
+	new_device = obs_data_getstring(settings, "device_id");
 	if (!data->device || strcmp(data->device, new_device) != 0) {
 		if (data->device)
 			bfree(data->device);
-		data->device = new_device;
+		data->device = bstrdup(new_device);
 		restart = true;
 	}
 
