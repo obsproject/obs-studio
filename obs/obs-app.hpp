@@ -28,6 +28,7 @@
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
+std::string GenerateTimeDateFilename(const char *extension);
 
 struct BaseLexer {
 	lexer lex;

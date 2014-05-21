@@ -423,34 +423,37 @@ static void get_last_log(void)
 	}
 }
 
+string GenerateTimeDateFilename(const char *extension)
+{
+	time_t    now = time(0);
+	char      file[256] = {};
+	struct tm *cur_time;
+
+	cur_time = localtime(&now);
+	snprintf(file, sizeof(file), "%d-%02d-%02d %02d-%02d-%02d.%s",
+			cur_time->tm_year+1900,
+			cur_time->tm_mon+1,
+			cur_time->tm_mday,
+			cur_time->tm_hour,
+			cur_time->tm_min,
+			cur_time->tm_sec,
+			extension);
+
+	return string(file);
+}
+
 static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
-	time_t       now = time(0);
-	struct tm    *cur_time;
 
 	get_last_log();
 
-	cur_time = localtime(&now);
-	if (cur_time) {
-		char file[256] = {};
+	currentLogFile = GenerateTimeDateFilename("txt");
+	dst << "obs-studio/logs/" << currentLogFile.c_str();
 
-		snprintf(file, sizeof(file), "%d-%02d-%02d %02d-%02d-%02d.txt",
-				cur_time->tm_year+1900,
-				cur_time->tm_mon+1,
-				cur_time->tm_mday,
-				cur_time->tm_hour,
-				cur_time->tm_min,
-				cur_time->tm_sec);
-
-		currentLogFile = file;
-
-		dst << "obs-studio/logs/" << file;
-
-		BPtr<char> path(os_get_config_path(dst.str().c_str()));
-		logFile.open(path,
-				ios_base::in | ios_base::out | ios_base::trunc);
-	}
+	BPtr<char> path(os_get_config_path(dst.str().c_str()));
+	logFile.open(path,
+			ios_base::in | ios_base::out | ios_base::trunc);
 
 	if (logFile.is_open()) {
 		delete_oldest_log();
