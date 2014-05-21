@@ -68,15 +68,6 @@ static enum audio_format pulse_to_obs_audio_format(
 }
 
 /**
- * Get the buffer size needed for length msec with current settings
- */
-static uint_fast32_t get_buffer_size(struct pulse_data *data,
-	uint_fast32_t length)
-{
-	return (length * data->samples_per_sec * data->bytes_per_frame) / 1000;
-}
-
-/**
  * Get latency for a pulse audio stream
  */
 static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
@@ -175,7 +166,12 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 }
 
 /**
- * start recording
+ * Start recording
+ *
+ * We request the default format used by pulse here because the data will be
+ * converted and possibly re-sampled by obs anyway.
+ *
+ * The targeted latency for recording is 25ms.
  */
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
@@ -209,11 +205,8 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pulse_unlock();
 
 	pa_buffer_attr attr;
-	attr.fragsize  = get_buffer_size(data, 250);
+	attr.fragsize  = 25000;
 	attr.maxlength = (uint32_t) -1;
-	attr.minreq    = (uint32_t) -1;
-	attr.prebuf    = (uint32_t) -1;
-	attr.tlength   = (uint32_t) -1;
 
 	pa_stream_flags_t flags =
 		PA_STREAM_INTERPOLATE_TIMING
