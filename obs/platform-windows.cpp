@@ -23,6 +23,8 @@ using namespace std;
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
+#include <shlobj.h>
 
 static inline bool check_path(const char* data, const char *path,
 		string &output)
@@ -66,4 +68,16 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 bool InitApplicationBundle()
 {
 	return true;
+}
+
+string GetDefaultVideoSavePath()
+{
+	wchar_t path_utf16[MAX_PATH];
+	char    path_utf8[MAX_PATH];
+
+	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT,
+			path_utf16);
+
+	os_wcs_to_utf8(path_utf16, MAX_PATH, path_utf8);
+	return string(path_utf8);
 }

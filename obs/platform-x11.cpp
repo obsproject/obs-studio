@@ -101,3 +101,8 @@ bool InitApplicationBundle()
 {
 	return true;
 }
+
+string GetDefaultVideoSavePath()
+{
+	return string(getenv("HOME"));
+}

@@ -39,3 +39,4 @@ void GetMonitors(std::vector<MonitorInfo> &monitors);
 /* Updates the working directory for OSX application bundles */
 bool InitApplicationBundle();
 
+std::string GetDefaultVideoSavePath();
