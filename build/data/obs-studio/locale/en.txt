@@ -34,6 +34,10 @@ Output.ConnectFail.InvalidStream="Could not access the specified channel or stre
 Output.ConnectFail.Error="An unexpected error occurred when trying to connect to the server.  More information in the log file."
 Output.ConnectFail.Disconnected="Disconnected from server."
 
+# output recording messages
+Output.BadPath.Title="Bad File Path"
+Output.BadPath.Text="The configured file output path is invalid.  Please check your settings to confirm that a valid file path has been set."
+
 # log upload dialog text and messages
 LogReturnDialog="Log Upload Successful"
 LogReturnDialog.CopyURL="Copy URL"
@@ -106,7 +110,7 @@ Basic.Settings.Output="Output"
 Basic.Settings.Output.Mode="Output Mode"
 Basic.Settings.Output.Mode.Simple="Simple (Stream and/or record)"
 Basic.Settings.Output.Mode.Advanced="Advanced (Custom output type)"
-Basic.Settings.Output.Simple.SavePath="Recording Path"
+Basic.Settings.Output.Simple.SavePath="FLV Recording Path"
 Basic.Settings.Output.Simple.VideoBitrate="Video Bitrate"
 Basic.Settings.output.Simple.AudioBitrate="Audio Bitrate"
 

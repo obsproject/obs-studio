@@ -401,7 +401,7 @@
           <item>
            <widget class="QPushButton" name="recordButton">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="text">
              <string>Basic.Main.StartRecording</string>

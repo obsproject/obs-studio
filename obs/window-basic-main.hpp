@@ -58,6 +58,7 @@ private:
 	QNetworkReply *logUploadReply;
 	QByteArray    logUploadReturnData;
 
+	obs_output_t  fileOutput;
 	obs_output_t  streamOutput;
 	obs_service_t service;
 	obs_encoder_t aac;
@@ -70,6 +71,10 @@ private:
 	int           resizeTimer;
 
 	ConfigFile    basicConfig;
+
+	int           activeRefs;
+
+	void          SetupEncoders();
 
 	void          CreateDefaultScene();
 
@@ -111,6 +116,8 @@ private:
 public slots:
 	void StreamingStart();
 	void StreamingStop(int errorcode);
+
+	void RecordingStop();
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);
@@ -190,6 +197,7 @@ private slots:
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
 	void on_streamButton_clicked();
+	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
 	void logUploadRead();

@@ -22,6 +22,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QFileDialog>
 
 #include "obs-app.hpp"
 #include "platform.hpp"
@@ -372,7 +373,7 @@ void OBSBasicSettings::LoadVideoSettings()
 void OBSBasicSettings::LoadSimpleOutputSettings()
 {
 	const char *path = config_get_string(main->Config(), "SimpleOutput",
-			"path");
+			"FilePath");
 	int videoBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"VBitrate");
 	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
@@ -557,7 +558,7 @@ void OBSBasicSettings::SaveOutputSettings()
 			videoBitrate);
 	config_set_string(main->Config(), "SimpleOutput", "ABitrate",
 			QT_TO_UTF8(audioBitrate));
-	config_set_string(main->Config(), "SimpleOutput", "path",
+	config_set_string(main->Config(), "SimpleOutput", "FilePath",
 			QT_TO_UTF8(path));
 }
 
@@ -691,6 +692,19 @@ void OBSBasicSettings::on_streamType_currentIndexChanged(int idx)
 		main->SetService(newService);
 
 	LoadServiceInfo();
+}
+
+void OBSBasicSettings::on_simpleOutputBrowse_clicked()
+{
+	QString dir = QFileDialog::getExistingDirectory(this,
+			QTStr("OpenDirectory"),
+			ui->simpleOutputPath->text(),
+			QFileDialog::ShowDirsOnly |
+			QFileDialog::DontResolveSymlinks);
+	if (dir.isEmpty())
+		return;
+
+	ui->simpleOutputPath->setText(dir);
 }
 
 static inline bool StreamExists(const char *name)

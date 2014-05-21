@@ -54,14 +54,16 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(order_movement);
 
 OBSBasic::OBSBasic(QWidget *parent)
-	: OBSMainWindow (parent),
+	: OBSMainWindow  (parent),
 	  properties     (nullptr),
+	  fileOutput     (nullptr),
 	  streamOutput   (nullptr),
 	  service        (nullptr),
 	  aac            (nullptr),
 	  x264           (nullptr),
 	  sceneChanging  (false),
 	  resizeTimer    (0),
+	  activeRefs     (0),
 	  ui             (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -243,6 +245,14 @@ static void OBSStopStreaming(void *data, calldata_t params)
 			"StreamingStop", Q_ARG(int, code));
 }
 
+static void OBSStopRecording(void *data, calldata_t params)
+{
+	UNUSED_PARAMETER(params);
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"RecordingStop");
+}
+
 #define SERVICE_PATH "obs-studio/basic/service.json"
 
 void OBSBasic::SaveService()
@@ -297,6 +307,10 @@ bool OBSBasic::LoadService()
 
 bool OBSBasic::InitOutputs()
 {
+	fileOutput = obs_output_create("flv_output", "default", nullptr);
+	if (!fileOutput)
+		return false;
+
 	streamOutput = obs_output_create("rtmp_output", "default", nullptr);
 	if (!streamOutput)
 		return false;
@@ -305,6 +319,9 @@ bool OBSBasic::InitOutputs()
 			"start", OBSStartStreaming, this);
 	signal_handler_connect(obs_output_signalhandler(streamOutput),
 			"stop", OBSStopStreaming, this);
+
+	signal_handler_connect(obs_output_signalhandler(fileOutput),
+			"stop", OBSStopRecording, this);
 
 	return true;
 }
@@ -357,7 +374,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cy = monitors[0].cy;
 
 	/* TODO: temporary */
-	config_set_default_string(basicConfig, "SimpleOutput", "path", "");
+	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
+			GetDefaultVideoSavePath().c_str());
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 128);
@@ -1355,6 +1373,8 @@ void OBSBasic::StreamingStop(int code)
 		errorMessage = Str("Output.ConnectFail.Disconnected");
 	}
 
+	activeRefs--;
+
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
@@ -1364,12 +1384,15 @@ void OBSBasic::StreamingStop(int code)
 				QT_UTF8(errorMessage));
 }
 
-void OBSBasic::on_streamButton_clicked()
+void OBSBasic::RecordingStop()
 {
-	if (obs_output_active(streamOutput)) {
-		obs_output_stop(streamOutput);
+	activeRefs--;
+	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+}
 
-	} else {
+void OBSBasic::SetupEncoders()
+{
+	if (activeRefs == 0) {
 		obs_data_t x264Settings = obs_data_create();
 		obs_data_t aacSettings  = obs_data_create();
 
@@ -1377,11 +1400,6 @@ void OBSBasic::on_streamButton_clicked()
 				"VBitrate");
 		int audioBitrate = config_get_uint(basicConfig, "SimpleOutput",
 				"ABitrate");
-
-		ui->streamButton->setEnabled(false);
-		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
-
-		SaveService();
 
 		obs_data_setint(x264Settings, "bitrate", videoBitrate);
 		obs_data_setbool(x264Settings, "cbr", true);
@@ -1396,10 +1414,79 @@ void OBSBasic::on_streamButton_clicked()
 
 		obs_encoder_set_video(x264, obs_video());
 		obs_encoder_set_audio(aac,  obs_audio());
+	}
+}
+
+void OBSBasic::on_streamButton_clicked()
+{
+	if (obs_output_active(streamOutput)) {
+		obs_output_stop(streamOutput);
+	} else {
+
+		SaveService();
+		SetupEncoders();
+
 		obs_output_set_video_encoder(streamOutput, x264);
 		obs_output_set_audio_encoder(streamOutput, aac);
 		obs_output_set_service(streamOutput, service);
-		obs_output_start(streamOutput);
+
+		if (obs_output_start(streamOutput)) {
+			activeRefs++;
+
+			ui->streamButton->setEnabled(false);
+			ui->streamButton->setText(
+					QTStr("Basic.Main.Connecting"));
+		}
+	}
+}
+
+void OBSBasic::on_recordButton_clicked()
+{
+	if (obs_output_active(fileOutput)) {
+		obs_output_stop(fileOutput);
+	} else {
+
+		const char *path = config_get_string(basicConfig,
+				"SimpleOutput", "FilePath");
+
+		os_dir_t dir = path ? os_opendir(path) : nullptr;
+
+		if (!dir) {
+			QMessageBox::information(this,
+					QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"));
+			return;
+		}
+
+		os_closedir(dir);
+
+		string strPath;
+		strPath += path;
+
+		char lastChar = strPath.back();
+		if (lastChar != '/' && lastChar != '\\')
+			strPath += "/";
+
+		strPath += GenerateTimeDateFilename("flv");
+
+		SetupEncoders();
+
+		obs_output_set_video_encoder(fileOutput, x264);
+		obs_output_set_audio_encoder(fileOutput, aac);
+
+		obs_data_t settings = obs_data_create();
+		obs_data_setstring(settings, "path", strPath.c_str());
+
+		obs_output_update(fileOutput, settings);
+
+		obs_data_release(settings);
+
+		if (obs_output_start(fileOutput)) {
+			activeRefs++;
+
+			ui->recordButton->setText(
+					QTStr("Basic.Main.StopRecording"));
+		}
 	}
 }
 

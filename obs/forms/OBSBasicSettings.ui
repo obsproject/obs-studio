@@ -383,14 +383,14 @@
                      <item>
                       <widget class="QLineEdit" name="simpleOutputPath">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                       </widget>
                      </item>
                      <item>
                       <widget class="QPushButton" name="simpleOutputBrowse">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                        <property name="text">
                         <string>Browse</string>

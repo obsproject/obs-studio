@@ -108,6 +108,7 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_streamType_currentIndexChanged(int idx);
+	void on_simpleOutputBrowse_clicked();
 
 	void on_baseResolution_editTextChanged(const QString &text);
 
