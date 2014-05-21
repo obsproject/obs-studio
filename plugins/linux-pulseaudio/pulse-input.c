@@ -253,6 +253,8 @@ static void pulse_stop_recording(struct pulse_data *data)
 	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
 		" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
+	data->packets = 0;
+	data->frames = 0;
 }
 
 /**
