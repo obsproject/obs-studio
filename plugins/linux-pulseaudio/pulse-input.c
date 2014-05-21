@@ -28,7 +28,6 @@ struct pulse_data {
 	pa_stream *stream;
 
 	/* user settings */
-	bool ostime;
 	char *device;
 
 	/* server info */
@@ -94,8 +93,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 
 	const void *frames;
 	size_t bytes;
-	uint64_t pa_time;
-	int64_t pa_latency;
+	int64_t latency;
 
 	if (!data->stream)
 		goto exit;
@@ -113,14 +111,11 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 	}
 
-	if (pa_stream_get_time(data->stream, &pa_time) < 0) {
+	if (pulse_get_stream_latency(data->stream, &latency) < 0) {
 		blog(LOG_ERROR, "pulse-input: Failed to get timing info !");
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
-	pa_time = (!data->ostime) ? pa_time * 1000 : os_gettime_ns();
-
-	pulse_get_stream_latency(data->stream, &pa_latency);
 
 	struct source_audio out;
 	out.speakers        = data->speakers;
@@ -128,7 +123,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	out.format          = pulse_to_obs_audio_format(data->format);
 	out.data[0]         = (uint8_t *) frames;
 	out.frames          = bytes / data->bytes_per_frame;
-	out.timestamp       = pa_time - (pa_latency * 1000);
+	out.timestamp       = os_gettime_ns() - (latency * 1000ULL);
 	obs_source_output_audio(data->source, &out);
 
 	data->packets++;
@@ -156,11 +151,10 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	data->channels        = i->sample_spec.channels;
 
 	blog(LOG_INFO, "pulse-input: "
-		"Audio format: %s, %u Hz, %u channels with %s timestamps",
+		"Audio format: %s, %u Hz, %u channels",
 		pa_sample_format_to_string(i->sample_spec.format),
 		i->sample_spec.rate,
-		i->sample_spec.channels,
-		(data->ostime) ? "OS" : "PA");
+		i->sample_spec.channels);
 
 	pulse_signal(0);
 }
@@ -298,8 +292,6 @@ static obs_properties_t pulse_properties(const char *locale, bool input)
 	pulse_get_source_info_list(cb, (void *) devices);
 	pulse_unref();
 
-	obs_properties_add_bool(props, "ostime", "Use OS timestamps");
-
 	return props;
 }
 
@@ -359,8 +351,6 @@ static void pulse_defaults(obs_data_t settings, bool input)
 	pulse_get_server_info(cb, (void *) settings);
 
 	pulse_unref();
-
-	obs_data_set_default_bool(settings, "ostime", false);
 }
 
 static void pulse_input_defaults(obs_data_t settings)
@@ -421,11 +411,6 @@ static void pulse_update(void *vptr, obs_data_t settings)
 		if (data->device)
 			bfree(data->device);
 		data->device = bstrdup(new_device);
-		restart = true;
-	}
-
-	if (data->ostime != obs_data_getbool(settings, "ostime")) {
-		data->ostime = obs_data_getbool(settings, "ostime");
 		restart = true;
 	}
 
