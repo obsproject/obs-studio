@@ -26,6 +26,7 @@
 #include "callback/signal.h"
 #include "callback/proc.h"
 
+#include "obs-config.h"
 #include "obs-defs.h"
 #include "obs-data.h"
 #include "obs-ui.h"
@@ -64,36 +65,6 @@ typedef struct obs_service    *obs_service_t;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
- * LIBOBS_API_VER is returned by module_version in each module.
- *
- * Libobs uses semantic versioning.  See http://semver.org/ for more
- * information.
- */
-
-/*
- * Increment if major breaking API changes
- */
-#define LIBOBS_API_MAJOR_VER  0 /* 0 means development, anything can break */
-
-/*
- * Increment if backward-compatible additions
- *
- * Reset to zero each major version
- */
-#define LIBOBS_API_MINOR_VER  2
-
-/*
- * Increment if backward-compatible bug fix
- *
- * Reset to zero each major or minor version
- */
-#define LIBOBS_API_PATCH_VER  4
-
-#define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 24) | \
-                              (LIBOBS_API_MINOR_VER << 16) | \
-                               LIBOBS_API_PATCH_VER        )
 
 /** Used for changing the order of items (for example, filters in a source,
  * or items in a scene) */
