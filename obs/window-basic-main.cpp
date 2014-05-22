@@ -1289,7 +1289,7 @@ void OBSBasic::UploadLog(const char *file)
 
 	jsonData = std::move(ss.str());
 
-	logUploadPostData.setData(jsonData.c_str(), jsonData.size());
+	logUploadPostData.setData(jsonData.c_str(), (int)jsonData.size());
 
 	QUrl url("https://api.github.com/gists");
 	logUploadReply = networkManager.post(QNetworkRequest(url),

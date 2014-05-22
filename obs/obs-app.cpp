@@ -71,9 +71,9 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream*>(param);
 	char str[4096];
-	va_list args2;
 
 #ifndef _WIN32
+	va_list args2;
 	va_copy(args2, args);
 #endif
 
