@@ -6,24 +6,24 @@ if(WIN32)
 endif()
 
 find_package(Libavcodec REQUIRED)
-include_directories(${Libavcodec_INCLUDE_DIR})
-add_definitions(${Libavcodec_DEFINITIONS})
+include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+add_definitions(${LIBAVCODEC_DEFINITIONS})
 
 find_package(Libavutil REQUIRED)
-include_directories(${Libavutil_INCLUDE_DIR})
-add_definitions(${Libavutil_DEFINITIONS})
+include_directories(${LIBAVUTIL_INCLUDE_DIRS})
+add_definitions(${LIBAVUTIL_DEFINITIONS})
 
 find_package(Libswscale REQUIRED)
-include_directories(${Libswscale_INCLUDE_DIR})
-add_definitions(${Libswscale_DEFINITIONS})
+include_directories(${LIBSWSCALE_INCLUDE_DIRS})
+add_definitions(${LIBSWSCALE_DEFINITIONS})
 
 find_package(Libavformat REQUIRED)
-include_directories(${Libavformat_INCLUDE_DIR})
-add_definitions(${Libavformat_DEFINITIONS})
+include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
+add_definitions(${LIBAVFORMAT_DEFINITIONS})
 
 find_package(Libswresample REQUIRED)
-include_directories(${Libswresample_INCLUDE_DIR})
-add_definitions(${Libswresample_DEFINITIONS})
+include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
+add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h)
@@ -38,11 +38,11 @@ add_library(obs-ffmpeg MODULE
 target_link_libraries(obs-ffmpeg
 	libobs
 	${obs-ffmpeg_PLATFORM_DEPS}
-	${Libavcodec_LIBRARIES}
-	${Libavutil_LIBRARIES}
-	${Libswscale_LIBRARIES}
-	${Libavformat_LIBRARIES}
-	${Libswresample_LIBRARIES})
+	${LIBAVCODEC_LIBRARIES}
+	${LIBAVUTIL_LIBRARIES}
+	${LIBSWSCALE_LIBRARIES}
+	${LIBAVFORMAT_LIBRARIES}
+	${LIBSWRESAMPLE_LIBRARIES})
 
 install_obs_plugin(obs-ffmpeg)
 

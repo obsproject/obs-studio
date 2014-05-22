@@ -1,12 +1,12 @@
 # Once done these will be defined:
 #
-#  Libswscale_FOUND
-#  Libswscale_INCLUDE_DIR
-#  Libswscale_LIBRARIES
+#  LIBSWSCALE_FOUND
+#  LIBSWSCALE_INCLUDE_DIRS
+#  LIBSWSCALE_LIBRARIES
 #
 
-if(Libswscale_INCLUDE_DIR AND Libswscale_LIBRARIES)
-	set(Libswscale_FOUND TRUE)
+if(LIBSWSCALE_INCLUDE_DIRS AND LIBSWSCALE_LIBRARIES)
+	set(LIBSWSCALE_FOUND TRUE)
 else()
 	find_package(PkgConfig QUIET)
 	if (PKG_CONFIG_FOUND)
@@ -31,8 +31,8 @@ else()
 		NAMES swscale
 		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_SWSCALE_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
-	set(Libswscale_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswscale include dir")
-	set(Libswscale_LIBRARIES ${SWSCALE_LIB} CACHE STRING "Libswscale libraries")
+	set(LIBSWSCALE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswscale include dir")
+	set(LIBSWSCALE_LIBRARIES ${SWSCALE_LIB} CACHE STRING "Libswscale libraries")
 
 	find_package_handle_standard_args(Libswscale DEFAULT_MSG SWSCALE_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR SWSCALE_LIB)

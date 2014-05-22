@@ -1,12 +1,12 @@
 # Once done these will be defined:
 #
-#  Libavutil_FOUND
-#  Libavutil_INCLUDE_DIR
-#  Libavutil_LIBRARIES
+#  LIBAVUTIL_FOUND
+#  LIBAVUTIL_INCLUDE_DIRS
+#  LIBAVUTIL_LIBRARIES
 #
 
-if(Libavutil_INCLUDE_DIR AND Libavutil_LIBRARIES)
-	set(Libavutil_FOUND TRUE)
+if(LIBAVUTIL_INCLUDE_DIRS AND LIBAVUTIL_LIBRARIES)
+	set(LIBAVUTIL_FOUND TRUE)
 else()
 	find_package(PkgConfig QUIET)
 	if (PKG_CONFIG_FOUND)
@@ -31,8 +31,8 @@ else()
 		NAMES avutil
 		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVUTIL_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
-	set(Libavutil_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavutil include dir")
-	set(Libavutil_LIBRARIES ${AVUTIL_LIB} CACHE STRING "Libavutil libraries")
+	set(LIBAVUTIL_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavutil include dir")
+	set(LIBAVUTIL_LIBRARIES ${AVUTIL_LIB} CACHE STRING "Libavutil libraries")
 
 	find_package_handle_standard_args(Libavutil DEFAULT_MSG AVUTIL_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR AVUTIL_LIB)
