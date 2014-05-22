@@ -28,7 +28,6 @@ struct pulse_data {
 	pa_stream *stream;
 
 	/* user settings */
-	bool ostime;
 	char *device;
 
 	/* server info */
@@ -68,15 +67,6 @@ static enum audio_format pulse_to_obs_audio_format(
 }
 
 /**
- * Get the buffer size needed for length msec with current settings
- */
-static uint_fast32_t get_buffer_size(struct pulse_data *data,
-	uint_fast32_t length)
-{
-	return (length * data->samples_per_sec * data->bytes_per_frame) / 1000;
-}
-
-/**
  * Get latency for a pulse audio stream
  */
 static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
@@ -103,8 +93,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 
 	const void *frames;
 	size_t bytes;
-	uint64_t pa_time;
-	int64_t pa_latency;
+	int64_t latency;
 
 	if (!data->stream)
 		goto exit;
@@ -122,14 +111,11 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 	}
 
-	if (pa_stream_get_time(data->stream, &pa_time) < 0) {
+	if (pulse_get_stream_latency(data->stream, &latency) < 0) {
 		blog(LOG_ERROR, "pulse-input: Failed to get timing info !");
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
-	pa_time = (!data->ostime) ? pa_time * 1000 : os_gettime_ns();
-
-	pulse_get_stream_latency(data->stream, &pa_latency);
 
 	struct source_audio out;
 	out.speakers        = data->speakers;
@@ -137,7 +123,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 	out.format          = pulse_to_obs_audio_format(data->format);
 	out.data[0]         = (uint8_t *) frames;
 	out.frames          = bytes / data->bytes_per_frame;
-	out.timestamp       = pa_time - (pa_latency * 1000);
+	out.timestamp       = os_gettime_ns() - (latency * 1000ULL);
 	obs_source_output_audio(data->source, &out);
 
 	data->packets++;
@@ -165,17 +151,21 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	data->channels        = i->sample_spec.channels;
 
 	blog(LOG_INFO, "pulse-input: "
-		"Audio format: %s, %u Hz, %u channels with %s timestamps",
+		"Audio format: %s, %u Hz, %u channels",
 		pa_sample_format_to_string(i->sample_spec.format),
 		i->sample_spec.rate,
-		i->sample_spec.channels,
-		(data->ostime) ? "OS" : "PA");
+		i->sample_spec.channels);
 
 	pulse_signal(0);
 }
 
 /**
- * start recording
+ * Start recording
+ *
+ * We request the default format used by pulse here because the data will be
+ * converted and possibly re-sampled by obs anyway.
+ *
+ * The targeted latency for recording is 25ms.
  */
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
@@ -209,11 +199,8 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pulse_unlock();
 
 	pa_buffer_attr attr;
-	attr.fragsize  = get_buffer_size(data, 250);
+	attr.fragsize  = 25000;
 	attr.maxlength = (uint32_t) -1;
-	attr.minreq    = (uint32_t) -1;
-	attr.prebuf    = (uint32_t) -1;
-	attr.tlength   = (uint32_t) -1;
 
 	pa_stream_flags_t flags =
 		PA_STREAM_INTERPOLATE_TIMING
@@ -253,6 +240,8 @@ static void pulse_stop_recording(struct pulse_data *data)
 	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
 		" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
+	data->packets = 0;
+	data->frames = 0;
 }
 
 /**
@@ -302,8 +291,6 @@ static obs_properties_t pulse_properties(const char *locale, bool input)
 	pa_source_info_cb_t cb = (input) ? pulse_input_info : pulse_output_info;
 	pulse_get_source_info_list(cb, (void *) devices);
 	pulse_unref();
-
-	obs_properties_add_bool(props, "ostime", "Use OS timestamps");
 
 	return props;
 }
@@ -364,8 +351,6 @@ static void pulse_defaults(obs_data_t settings, bool input)
 	pulse_get_server_info(cb, (void *) settings);
 
 	pulse_unref();
-
-	obs_data_set_default_bool(settings, "ostime", false);
 }
 
 static void pulse_input_defaults(obs_data_t settings)
@@ -426,11 +411,6 @@ static void pulse_update(void *vptr, obs_data_t settings)
 		if (data->device)
 			bfree(data->device);
 		data->device = bstrdup(new_device);
-		restart = true;
-	}
-
-	if (data->ostime != obs_data_getbool(settings, "ostime")) {
-		data->ostime = obs_data_getbool(settings, "ostime");
 		restart = true;
 	}
 
