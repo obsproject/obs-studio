@@ -78,6 +78,6 @@ string GetDefaultVideoSavePath()
 	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
-	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8);
+	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8, MAX_PATH);
 	return string(path_utf8);
 }

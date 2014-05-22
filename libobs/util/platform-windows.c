@@ -214,7 +214,9 @@ struct os_dirent *os_readdir(os_dir_t dir)
 			return NULL;
 	}
 
-	os_wcs_to_utf8(dir->wfd.cFileName, 255, dir->out.d_name);
+	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name,
+			sizeof(dir->out.d_name));
+
 	dir->out.directory =
 		!!(dir->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 

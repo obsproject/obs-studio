@@ -21,14 +21,14 @@ string GetDeviceName(IMMDevice *device)
 		res = store->GetValue(PKEY_Device_FriendlyName, &nameVar);
 
 		if (SUCCEEDED(res)) {
+			size_t len = wcslen(nameVar.pwszVal);
 			size_t size;
 
-			size = os_wcs_to_utf8(nameVar.pwszVal, 0, nullptr);
-			if (size) {
-				device_name.resize(size);
-				os_wcs_to_utf8(nameVar.pwszVal, size,
-						&device_name[0]);
-			}
+			size = os_wcs_to_utf8(nameVar.pwszVal, len,
+					nullptr, 0) + 1;
+			device_name.resize(size);
+			os_wcs_to_utf8(nameVar.pwszVal, len,
+					&device_name[0], size);
 		}
 	}
 
@@ -61,7 +61,7 @@ void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 		ComPtr<IMMDevice>   device;
 		CoTaskMemPtr<WCHAR> w_id;
 		AudioDeviceInfo     info;
-		size_t              size;
+		size_t              len, size;
 
 		res = collection->Item(i, device.Assign());
 		if (FAILED(res))
@@ -73,9 +73,10 @@ void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 
 		info.name = GetDeviceName(device);
 
-		size = os_wcs_to_utf8(w_id, 0, nullptr);
+		len  = wcslen(w_id);
+		size = os_wcs_to_utf8(w_id, len, nullptr, 0) + 1;
 		info.id.resize(size);
-		os_wcs_to_utf8(w_id, size, &info.id[0]);
+		os_wcs_to_utf8(w_id, len, &info.id[0], size);
 
 		devices.push_back(info);
 	}
