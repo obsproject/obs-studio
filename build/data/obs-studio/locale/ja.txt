@@ -1,1 +1,43 @@
+Lanuage="日本語"
+Region="日本"
+
+# commonly shared locale
+OK="OK"
+Apply="適用"
 Cancel="キャンセル"
+Yes="はい"
+No="いいえ"
+Add="追加"
+Remove="削除"
+Properties="プロパティ"
+MoveUp="上へ移動"
+MoveDown="下へ移動"
+Settings="設定"
+Exit="終了"
+Volume="ボリューム"
+Browse="ブラウズ" #間違ってそう
+Mono="モノラル"
+Stereo="ステレオ"
+
+#すでに使われていた場合のダイアログ
+NameExists.Title="この名前はすでに使用されています"
+NameExists.Text="この名前はすでに使用されています"
+
+NoNameEntered="有効な名前を入力してください"
+
+# output connect messages
+Output.ConnectFail.Title="接続失敗"
+Output.ConnectFail.BadPath="パスかURLが無効です。再確認して下さい。"
+Output.ConnectFail.ConnectFailed="サーバーへの接続に失敗しました"
+Output.ConnectFail.InvalidStream="指定されたチャンネルかストリームキーにアクセスできませんでした。ストリームキーかチャンネルが間違ってるか、サーバーにすでに接続されている可能性があります。" #合ってるか不安
+Output.ConnectFail.Error="サーバー接続時に予期しないエラーが発生しました。ログファイルを確認して下さい。"
+Output.ConnectFail.Disconnected="サーバーから切断されました。"
+
+# output recording messages
+Output.BadPath.Title="無効なパス"
+Output.BadPath.Text="設定されたファイルの出力パスが無効です。有効なファイルパスが設定されていることを確認するために設定を確認してください。"
+
+# log upload dialog text and messages
+LogReturnDialog="ログの送信成功"
+LogReturnDialog.CopyURL="URLのコピー"
+LogReturnDialog.ErrorUploadingLog="ログの送信失敗"
