@@ -328,12 +328,16 @@ bool OBSBasic::InitOutputs()
 
 bool OBSBasic::InitEncoders()
 {
-	aac = obs_audio_encoder_create("ffmpeg_aac", "aac", nullptr);
-	if (!aac)
-		return false;
-
 	x264 = obs_video_encoder_create("obs_x264", "h264", nullptr);
 	if (!x264)
+		return false;
+
+	aac = obs_audio_encoder_create("libfdk_aac", "aac", nullptr);
+
+	if(!aac)
+		aac = obs_audio_encoder_create("ffmpeg_aac", "aac", nullptr);
+
+	if (!aac)
 		return false;
 
 	return true;
@@ -463,6 +467,7 @@ void OBSBasic::OBSInit()
 	 * automatically later */
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
+	obs_load_module("obs-libfdk");
 	obs_load_module("obs-x264");
 	obs_load_module("obs-outputs");
 	obs_load_module("rtmp-services");

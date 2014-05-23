@@ -1,12 +1,12 @@
 # Once done these will be defined:
 #
-#  Libavcodec_FOUND
-#  Libavcodec_INCLUDE_DIR
-#  Libavcodec_LIBRARIES
+#  LIBAVCODEC_FOUND
+#  LIBAVCODEC_INCLUDE_DIRS
+#  LIBAVCODEC_LIBRARIES
 #
 
-if(Libavcodec_INCLUDE_DIR AND Libavcodec_LIBRARIES)
-	set(Libavcodec_FOUND TRUE)
+if(LIBAVCODEC_INCLUDE_DIRS AND LIBAVCODEC_LIBRARIES)
+	set(LIBAVCODEC_FOUND TRUE)
 else()
 	find_package(PkgConfig QUIET)
 	if (PKG_CONFIG_FOUND)
@@ -31,8 +31,8 @@ else()
 		NAMES avcodec
 		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVCODEC_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
-	set(Libavcodec_INCLUDE_DIR ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavcodec include dir")
-	set(Libavcodec_LIBRARIES ${AVCODEC_LIB} CACHE STRING "Libavcodec libraries")
+	set(LIBAVCODEC_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavcodec include dir")
+	set(LIBAVCODEC_LIBRARIES ${AVCODEC_LIB} CACHE STRING "Libavcodec libraries")
 
 	find_package_handle_standard_args(Libavcodec DEFAULT_MSG AVCODEC_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR AVCODEC_LIB)

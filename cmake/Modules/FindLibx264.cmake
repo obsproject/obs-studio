@@ -1,12 +1,12 @@
 # Once done these will be defined:
 #
-#  Libx264_FOUND
-#  Libx264_INCLUDE_DIR
-#  Libx264_LIBRARIES
+#  LIBX264_FOUND
+#  LIBX264_INCLUDE_DIRS
+#  LIBX264_LIBRARIES
 #
 
-if(Libx264_INCLUDE_DIR AND Libx264_LIBRARIES)
-	set(Libx264_FOUND TRUE)
+if(LIBX264_INCLUDE_DIRS AND LIBX264_LIBRARIES)
+	set(LIBX264_FOUND TRUE)
 else()
 	find_package(PkgConfig QUIET)
 	if (PKG_CONFIG_FOUND)
@@ -23,6 +23,7 @@ else()
 		NAMES x264.h
 		HINTS
 			ENV x264Path
+			ENV FFmpegPath
 			${_X264_INCLUDE_DIRS}
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
@@ -30,8 +31,8 @@ else()
 		NAMES x264 libx264
 		HINTS ${X264_INCLUDE_DIR}/../lib ${X264_INCLUDE_DIR}/lib${_lib_suffix} ${_X264_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
-	set(Libx264_INCLUDE_DIR ${X264_INCLUDE_DIR} CACHE PATH "x264 include dir")
-	set(Libx264_LIBRARIES ${X264_LIB} CACHE STRING "x264 libraries")
+	set(LIBX264_INCLUDE_DIRS ${X264_INCLUDE_DIR} CACHE PATH "x264 include dir")
+	set(LIBX264_LIBRARIES ${X264_LIB} CACHE STRING "x264 libraries")
 
 	find_package_handle_standard_args(Libx264 DEFAULT_MSG X264_LIB X264_INCLUDE_DIR)
 	mark_as_advanced(X264_INCLUDE_DIR X264_LIB)

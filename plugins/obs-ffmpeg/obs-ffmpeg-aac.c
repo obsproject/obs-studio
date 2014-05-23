@@ -143,6 +143,8 @@ static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 		goto fail;
 	}
 
+	blog(LOG_INFO, "Using ffmpeg \"%s\" aac encoder", enc->aac->name);
+
 	enc->context = avcodec_alloc_context3(enc->aac);
 	if (!enc->context) {
 		aac_warn("aac_create", "Failed to create codec context");

@@ -14,6 +14,7 @@ elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 endif()
 
 add_subdirectory(obs-x264)
+add_subdirectory(obs-libfdk)
 add_subdirectory(obs-ffmpeg)
 add_subdirectory(obs-outputs)
 add_subdirectory(rtmp-services)
