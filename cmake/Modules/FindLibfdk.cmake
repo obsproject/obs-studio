@@ -28,7 +28,7 @@ else()
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
 	find_library(Libfdk_LIB
-		NAMES libfdk-aac
+		NAMES fdk-aac libfdk-aac
 		HINTS
 			${Libfdk_INCLUDE_DIR}/../lib
 			${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}
