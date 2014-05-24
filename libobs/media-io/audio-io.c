@@ -711,6 +711,11 @@ uint32_t audio_output_samplerate(audio_t audio)
 	return audio ? audio->info.samples_per_sec : 0;
 }
 
+/* On some platforms, max() may already be defined */
+#ifndef max
+#define max(a, b)  ((a) > (b) ? (a) : (b))
+#endif
+
 /* TODO: Optimization of volume multiplication functions */
 
 static inline int mul_vol_u8bit(void *array, float volume, size_t total_num)
@@ -798,15 +803,15 @@ static inline int mul_vol_float(void *array, float volume, size_t total_num)
 
 	for (size_t i = 0; i < total_num; i++) {
 		vals[i] *= volume;
-		maxVol = max(maxVol, (float)fabs(vals[i]));
+		maxVol = fmaxf(maxVol, (float)fabs(vals[i]));
 	}
 
 	return (int)(maxVol * 10000.f);
 }
 
-// [Danni] changed to int for volume feedback. Seems like the most logical 
-//		   place to calculate this to avoid unnessisary iterations.
-//		   scaled to max of 10000.
+/* [Danni] changed to int for volume feedback. Seems like the most logical 
+		   place to calculate this to avoid unnessisary iterations.
+		   scaled to max of 10000. */
 
 static int audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)

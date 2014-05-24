@@ -29,8 +29,6 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-
-
 static inline bool source_valid(struct obs_source *source)
 {
 	return source && source->context.data;
@@ -82,7 +80,7 @@ static const char *source_signals[] = {
 	"void show(ptr source)",
 	"void hide(ptr source)",
 	"void volume(ptr source, in out float volume)",
-	"void volumelevel(ptr source, in out float volume)",
+	"void volumelevel(ptr source, in out int volume)",
 	NULL
 };
 
@@ -1616,7 +1614,6 @@ void obs_source_updatevolumelevel(obs_source_t source, int volume)
 		calldata_free(&data);
 	}
 }
-
 
 static void set_tree_preset_vol(obs_source_t parent, obs_source_t child,
 		void *param)

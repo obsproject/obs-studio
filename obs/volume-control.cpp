@@ -18,8 +18,8 @@ void VolControl::OBSVolumeChanged(void *data, calldata_t calldata)
 }
 
 
-// [Danni] This may be a bit too resource intensive for such a simple 
-//		   application.
+/* [Danni] This may be a bit too resource intensive for such a simple 
+		   application. */
 
 void VolControl::OBSVolumeLevel(void *data, calldata_t calldata)
 {
