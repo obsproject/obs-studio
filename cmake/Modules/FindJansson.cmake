@@ -1,0 +1,63 @@
+# Once done these will be defined:
+#
+#  JANSSON_FOUND
+#  JANSSON_INCLUDE_DIRS
+#  JANSSON_LIBRARIES
+#  JANSSON_VERSION
+#
+
+if(JANSSON_INCLUDE_DIRS AND JANSSON_LIBRARIES)
+	set(JANSSON_FOUND TRUE)
+else()
+	find_package(PkgConfig QUIET)
+	if (PKG_CONFIG_FOUND)
+		pkg_check_modules(_JANSSON QUIET jansson)
+	endif()
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_lib_suffix 64)
+	else()
+		set(_lib_suffix 32)
+	endif()
+
+	find_path(Jansson_INCLUDE_DIR
+		NAMES jansson.h
+		HINTS
+			ENV JanssonPath
+			${_JANSSON_INCLUDE_DIRS}
+			/usr/include /usr/local/include /opt/local/include /sw/include)
+
+	find_library(Jansson_LIB
+		NAMES jansson libjansson
+		HINTS
+			${Jansson_INCLUDE_DIR}/../lib
+			${Jansson_INCLUDE_DIR}/lib${_lib_suffix}
+			${_JANSSON_LIBRARY_DIRS}
+			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+ 
+	if(JANSSON_VERSION)
+		set(_JANSSON_VERSION_STRING "${JANSSON_VERSION}")
+	elseif(_JANSSON_FOUND AND _JANSSON_VERSION)
+		set(_JANSSON_VERSION_STRING "${_JANSSON_VERSION}")
+	elseif(EXISTS "${Jansson_INCLUDE_DIR}/jansson.h")
+		file(STRINGS "${Jansson_INCLUDE_DIR}/jansson.h" _jansson_version_parse
+			REGEX "#define[ \t]+JANSSON_VERSION[ \t]+.+")
+		string(REGEX REPLACE
+			".*#define[ \t]+JANSSON_VERSION[ \t]+\"(.+)\".*" "\\1"
+			_JANSSON_VERSION_STRING "${_jansson_version_parse}")
+	else()
+		message(WARNING "Failed to find Jansson version")
+		set(_JANSSON_VERSION_STRING "unknown")
+	endif()
+
+	set(JANSSON_INCLUDE_DIRS ${Jansson_INCLUDE_DIR} CACHE PATH "Jansson include dir")
+	set(JANSSON_LIBRARIES ${Jansson_LIB} CACHE STRING "Jansson libraries")
+	set(JANSSON_VERSION "${_JANSSON_VERSION_STRING}" CACHE STRING "Jansson version")
+
+	find_package_handle_standard_args(Jansson
+		FOUND_VAR JANSSON_FOUND
+		REQUIRED_VARS Jansson_LIB Jansson_INCLUDE_DIR
+		VERSION_VAR JANSSON_VERSION)
+	mark_as_advanced(Jansson_INCLUDE_DIR Jansson_LIB)
+endif()
+
