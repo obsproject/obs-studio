@@ -711,16 +711,10 @@ uint32_t audio_output_samplerate(audio_t audio)
 	return audio ? audio->info.samples_per_sec : 0;
 }
 
-/* On some platforms, max() may already be defined */
-#ifndef max
-#define max(a, b)  ((a) > (b) ? (a) : (b))
-#endif
-
 /* TODO: Optimization of volume multiplication functions */
 
 static inline int mul_vol_u8bit(void *array, float volume, size_t total_num)
 {
-	int maxVol = 0;
 	uint8_t *vals = array;
 	int32_t vol = (int32_t)(volume * 127.0f);
 
@@ -728,23 +722,20 @@ static inline int mul_vol_u8bit(void *array, float volume, size_t total_num)
 		int32_t val = (int32_t)vals[i] - 128;
 		int32_t output = val * vol / 127;
 		vals[i] = (uint8_t)(CLAMP(output, MIN_S8, MAX_S8) + 128);
-		maxVol = max(maxVol, abs(vals[i]));
 	}
-	return maxVol * (10000 / MAX_S8);
+	return 0;
 }
 
 static inline int mul_vol_16bit(void *array, float volume, size_t total_num)
 {
-	int maxVol = 0;
 	uint16_t *vals = array;
 	int64_t vol = (int64_t)(volume * 32767.0f);
 
 	for (size_t i = 0; i < total_num; i++) {
 		int64_t output = (int64_t)vals[i] * vol / 32767;
 		vals[i] = (int32_t)CLAMP(output, MIN_S16, MAX_S16);
-		maxVol = max(maxVol, abs(vals[i]));
 	}
-	return maxVol * (10000 / MAX_S16);
+	return 0;
 }
 
 static inline float conv_24bit_to_float(uint8_t *vals)
@@ -769,21 +760,18 @@ static inline void conv_float_to_24bit(float fval, uint8_t *vals)
 
 static inline int mul_vol_24bit(void *array, float volume, size_t total_num)
 {
-	float maxVol = 0.f;
 	uint8_t *vals = array;
 
 	for (size_t i = 0; i < total_num; i++) {
 		float val = conv_24bit_to_float(vals) * volume;
 		conv_float_to_24bit(CLAMP(val, -1.0f, 1.0f), vals);
 		vals += 3;
-		maxVol = max(maxVol, (float)fabs(val));
 	}
-	return (int) (maxVol * 10000.f);
+	return 0;
 }
 
 static inline int mul_vol_32bit(void *array, float volume, size_t total_num)
 {
-	int maxVol = 0;
 	int32_t *vals = array;
 	double dvol = (double)volume;
 
@@ -791,9 +779,8 @@ static inline int mul_vol_32bit(void *array, float volume, size_t total_num)
 		double val = (double)vals[i] / 2147483647.0;
 		double output = val * dvol;
 		vals[i] = (int32_t)(CLAMP(output, -1.0, 1.0) * 2147483647.0);
-		maxVol = max(maxVol, abs(vals[i])); 
 	}
-	return maxVol * (10000 / MAX_S32);
+	return 0;
 }
 
 static inline int mul_vol_float(void *array, float volume, size_t total_num)
