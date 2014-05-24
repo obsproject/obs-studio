@@ -79,7 +79,7 @@ VolControl::VolControl(OBSSource source_)
 	slider->setMinimum(0);
 	slider->setMaximum(100);
 	slider->setValue(vol);
-	slider->setMaximumHeight(10);
+//	slider->setMaximumHeight(13);
 
 	volMeter->setMaximumHeight(1);
 	volMeter->setMinimum(0);
