@@ -28,6 +28,11 @@ set(obs-outputs_librtmp_SOURCES
 	librtmp/parseurl.c
 	librtmp/rtmp.c)
 
+if(NOT WIN32)
+	set_source_files_properties(${obs-outputs_librtmp_SOURCES} PROPERTIES
+		COMPILE_FLAGS "-fvisibility=hidden")
+endif()
+
 set(obs-outputs_HEADERS
 	obs-output-ver.h
 	rtmp-helpers.h
@@ -50,3 +55,4 @@ target_link_libraries(obs-outputs
 	${obs-outputs_PLATFORM_DEPS})
 
 install_obs_plugin(obs-outputs)
+
