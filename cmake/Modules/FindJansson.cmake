@@ -59,5 +59,10 @@ else()
 		REQUIRED_VARS Jansson_LIB Jansson_INCLUDE_DIR
 		VERSION_VAR JANSSON_VERSION)
 	mark_as_advanced(Jansson_INCLUDE_DIR Jansson_LIB)
+
+	if(NOT JANSSON_FOUND)
+		unset(JANSSON_INCLUDE_DIRS CACHE)
+		unset(JANSSON_LIBRARIES CACHE)
+	endif()
 endif()
 
