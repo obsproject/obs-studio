@@ -1,0 +1,142 @@
+# Language and language region of this file
+Language="Русский"
+Region="Российская Федерация"
+
+# commonly shared locale
+OK="OK"
+Apply="Применить"
+Cancel="Отмена"
+Yes="Да"
+No="Нет"
+Add="Добавить"
+Remove="Удалить"
+Properties="Свойства"
+MoveUp="Выше"
+MoveDown="Ниже"
+Settings="Настройки"
+Exit="Выход"
+Volume="Громкость"
+Browse="Обзор"
+Mono="Моно"
+Stereo="Стерео"
+
+# "name already exists" dialog box
+NameExists.Title="Название уже существует"
+NameExists.Text="Это название уже используется."
+
+NoNameEntered="Пожалуйста, укажите Ваше имя"
+
+# output connect messages
+Output.ConnectFail.Title="Не удалось подключиться"
+Output.ConnectFail.BadPath="Неверный путь или URL соединения. Пожалуйста, проверьте настройки, чтобы подтвердить, что они являются действительными."
+Output.ConnectFail.ConnectFailed="Не удалось подключиться к серверу"
+Output.ConnectFail.InvalidStream="Не удалось получить доступ к указанному каналу или к stream key. Это может быть, потому что ключ/канал является недействительным, или потому, что сервер все еще думает, что вы зашли"
+Output.ConnectFail.Error="Произошла непредвиденная ошибка при попытке подключиться к серверу. Более подробная информация в лог-файле."
+Output.ConnectFail.Disconnected="Отключен от сервера."
+
+# output recording messages
+Output.BadPath.Title="Bad File Path"
+Output.BadPath.Text="Некорректный путь к файлу.  Пожалуйста, проверьте настройки, чтобы убедиться в корректности установленного пути."
+
+# log upload dialog text and messages
+LogReturnDialog="Log загружен успешно"
+LogReturnDialog.CopyURL="Скопировать URL"
+LogReturnDialog.ErrorUploadingLog="Ошибка загрузки log файла"
+
+# audio device names
+Basic.DesktopDevice1="Desktop Audio"
+Basic.DesktopDevice2="Desktop Audio 2"
+Basic.AuxDevice1="Mic/Aux"
+Basic.AuxDevice2="Mic/Aux 2"
+Basic.AuxDevice3="Mic/Aux 3"
+Basic.AuxDevice4="Mic/Aux 4"
+
+# startup scene/capture
+Basic.Scene="Сцена"
+Basic.DisplayCapture="Захват экрана"
+
+# add scene dialog
+Basic.Main.AddSceneDlg.Title="Добавить сцену"
+Basic.Main.AddSceneDlg.Text="Пожалуйста, введите название сцены"
+
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Сцена %1"
+
+# add source dialog
+Basic.SourceSelect.CreateNew="Создать новый"
+Basic.SourceSelect.AddExisting="Добавить существующий"
+
+# no scene warning
+Basic.Main.AddSourceHelp.Title="невозможно добавить источник"
+Basic.Main.AddSourceHelp.Text="Вы должны создать по крайней мере одну сцену чтобы добавить источник."
+
+# basic mode main window
+Basic.Main.Scenes="Сцены"
+Basic.Main.Sources="Источники"
+Basic.Main.Connecting="Соединение..."
+Basic.Main.StartRecording="Начать запись"
+Basic.Main.StartStreaming="Запустить Вещание"
+Basic.Main.StopRecording="Остановить запись"
+Basic.Main.StopStreaming="Остановить Вещание"
+
+# basic mode file menu
+Basic.MainMenu.File="&Файл"
+Basic.MainMenu.File.Export="&Экспорт"
+Basic.MainMenu.File.Import="&Импорт"
+Basic.MainMenu.File.Settings="&Настройки"
+Basic.MainMenu.File.Exit="&Выход"
+
+# basic mode help menu
+Basic.MainMenu.Help="&Справка"
+Basic.MainMenu.Help.Logs="&Log файлы"
+Basic.MainMenu.Help.Logs.UploadCurrentLog="Загрузить &текущий Log файл"
+Basic.MainMenu.Help.Logs.UploadLastLog="Загрузить &последний Log файл"
+
+# basic mode settings dialog
+Basic.Settings.ProgramRestart="Необходимо перезапустить программу для изменения этих параметров."
+Basic.Settings.ConfirmTitle="Подтверждить Изменения"
+Basic.Settings.Confirm="У вас есть несохраненные изменения. Сохранить изменения?"
+
+# basic mode 'general' settings
+Basic.Settings.General="Общие"
+Basic.Settings.General.Language="Язык:"
+
+# basic mode 'stream' settings
+Basic.Settings.Stream="Вещание"
+Basic.Settings.Stream.StreamType="Тип вещания"
+
+# basic mode 'output' settings
+Basic.Settings.Output="Вывод"
+Basic.Settings.Output.Mode="Режим вывода"
+Basic.Settings.Output.Mode.Simple="Простой (Прямая трансляция и/или запись)"
+Basic.Settings.Output.Mode.Advanced="Расширенный (Настраиваемый тип вывода)"
+Basic.Settings.Output.Simple.SavePath="Путь для записи FLV"
+Basic.Settings.Output.Simple.VideoBitrate="Качество видео"
+Basic.Settings.output.Simple.AudioBitrate="Качество аудио"
+
+# basic mode 'video' settings
+Basic.Settings.Video="Видео"
+Basic.Settings.Video.Adapter="Видеоадаптер:"
+Basic.Settings.Video.BaseResolution="Базовое разрешение:"
+Basic.Settings.Video.ScaledResolution="Масштабированное разрешение:"
+Basic.Settings.Video.DownscaleFilter="Фильтр масштабирования:"
+Basic.Settings.Video.DisableAeroWindows="Отключить Aero (только для Windows)"
+Basic.Settings.Video.FPS="FPS:"
+Basic.Settings.Video.FPSCommon="Общие значения FPS"
+Basic.Settings.Video.FPSInteger="Целое значение FPS"
+Basic.Settings.Video.FPSFraction="Дробное значение FPS"
+Basic.Settings.Video.Numerator="Числитель:"
+Basic.Settings.Video.Denominator="Знаменатель:"
+Basic.Settings.Video.Renderer="Рендер:"
+Basic.Settings.Video.InvalidResolution="Неверное разрешение.  Должно быть [Ширина]x[Высота] (т.е. 1920x1080)"
+Basic.Settings.Video.CurrentlyActive="Видео выход в данный момент активен. Пожалуйста, отключите все выходы, чтобы изменить настройки видео."
+
+# basic mode 'audio' settings
+Basic.Settings.Audio="Аудио"
+Basic.Settings.Audio.SampleRate="Частота дискретизации"
+Basic.Settings.Audio.Channels="Каналы"
+Basic.Settings.Audio.DesktopDevice="Desktop Аудиоустройство"
+Basic.Settings.Audio.DesktopDevice2="Desktop Аудиоустройство 2"
+Basic.Settings.Audio.AuxDevice="Mic/Auxiliary Аудиоустройство"
+Basic.Settings.Audio.AuxDevice2="Mic/Auxiliary Аудиоустройство 2"
+Basic.Settings.Audio.AuxDevice3="Mic/Auxiliary Аудиоустройство 3"
