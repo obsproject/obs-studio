@@ -2,6 +2,7 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(WIN32)
 	add_subdirectory(win-wasapi)
+	add_subdirectory(win-dshow)
 	add_subdirectory(win-capture)
 elseif(APPLE)
 	add_subdirectory(mac-avcapture)
