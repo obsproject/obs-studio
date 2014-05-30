@@ -477,6 +477,7 @@ void OBSBasic::OBSInit()
 #elif _WIN32
 	obs_load_module("win-wasapi");
 	obs_load_module("win-capture");
+	obs_load_module("win-dshow");
 #else
 	obs_load_module("linux-xshm");
 	obs_load_module("linux-xcomposite");
