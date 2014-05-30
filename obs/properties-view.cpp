@@ -5,6 +5,7 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QPushButton>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include <string>
@@ -167,6 +168,9 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 	for (size_t i = 0; i < count; i++)
 		AddComboItem(combo, prop, format, i);
 
+	if (type == OBS_COMBO_TYPE_EDITABLE)
+		combo->setEditable(true);
+
 	if (format == OBS_COMBO_FORMAT_INT) {
 		int    val       = (int)obs_data_getint(settings, name);
 		string valString = to_string(val);
@@ -186,11 +190,9 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 			idx      = combo->findData(QT_UTF8(val));
 	}
 
-	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		combo->setEditable(true);
+	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
-				SLOT(editTextChanged(const QString &)));
-	}
+				SIGNAL(editTextChanged(const QString &)));
 
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
@@ -205,6 +207,16 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 		info->ControlChanged();
 
 	return combo;
+}
+
+QWidget *OBSPropertiesView::AddButton(obs_property_t prop)
+{
+	const char *name = obs_property_name(prop);
+	const char *desc = obs_property_description(prop);
+
+	QPushButton *button = new QPushButton(QT_UTF8(desc));
+	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	return NewWidget(prop, button, SIGNAL(clicked()));
 }
 
 void OBSPropertiesView::AddProperty(obs_property_t property,
@@ -242,6 +254,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 	case OBS_PROPERTY_COLOR:
 		/* TODO */
 		break;
+	case OBS_PROPERTY_BUTTON:
+		widget = AddButton(property);
+		break;
 	}
 
 	if (!widget)
@@ -251,7 +266,8 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		widget->setEnabled(false);
 
 	QLabel *label = nullptr;
-	if (type != OBS_PROPERTY_BOOL)
+	if (type != OBS_PROPERTY_BOOL &&
+	    type != OBS_PROPERTY_BUTTON)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (label && minSize) {
@@ -338,6 +354,11 @@ void WidgetInfo::ColorChanged(const char *setting)
 	UNUSED_PARAMETER(setting);
 }
 
+void WidgetInfo::ButtonClicked()
+{
+	obs_property_button_clicked(property, view->obj);
+}
+
 void WidgetInfo::ControlChanged()
 {
 	const char        *setting = obs_property_name(property);
@@ -352,6 +373,7 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_PATH:    PathChanged(setting); break;
 	case OBS_PROPERTY_LIST:    ListChanged(setting); break;
 	case OBS_PROPERTY_COLOR:   ColorChanged(setting); break;
+	case OBS_PROPERTY_BUTTON:  ButtonClicked(); return;
 	}
 
 	view->callback(view->obj, view->settings);

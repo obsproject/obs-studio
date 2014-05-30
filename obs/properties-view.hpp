@@ -27,6 +27,7 @@ private:
 	void PathChanged(const char *setting);
 	void ListChanged(const char *setting);
 	void ColorChanged(const char *setting);
+	void ButtonClicked();
 
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t prop,
@@ -65,6 +66,7 @@ private:
 	QWidget *AddInt(obs_property_t prop);
 	QWidget *AddFloat(obs_property_t prop);
 	QWidget *AddList(obs_property_t prop);
+	QWidget *AddButton(obs_property_t prop);
 
 	void AddProperty(obs_property_t property, QFormLayout *layout);
 
