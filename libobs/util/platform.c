@@ -230,18 +230,15 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 
 size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
-	size_t out_len = dst ? len : mbstowcs(NULL, str, len);
+	size_t out_len = dst ?
+		(dst_size - 1) : mbstowcs(NULL, str, len);
 
 	if (len && dst) {
 		if (!dst_size)
 			return 0;
 
-		if (out_len) {
-			if ((out_len + 1) > dst_size)
-				out_len = dst_size - 1;
-
+		if (out_len)
 			mbstowcs(dst, str, out_len + 1);
-		}
 
 		dst[out_len] = 0;
 	}
@@ -253,18 +250,15 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 		size_t dst_size)
 {
 	size_t in_len = len ? len : strlen(str);
-	size_t out_len = dst ? len : utf8_to_wchar(str, in_len, NULL, 0, 0);
+	size_t out_len = dst ?
+		(dst_size - 1) : utf8_to_wchar(str, in_len, NULL, 0, 0);
 
 	if (out_len && dst) {
 		if (!dst_size)
 			return 0;
 
-		if (out_len) {
-			if ((out_len + 1) > dst_size)
-				out_len = dst_size - 1;
-
+		if (out_len)
 			utf8_to_wchar(str, in_len, dst, out_len + 1, 0);
-		}
 
 		dst[out_len] = 0;
 	}
@@ -274,18 +268,15 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 
 size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 {
-	size_t out_len = dst ? len : wcstombs(NULL, str, len);
+	size_t out_len = dst ?
+		(dst_size - 1) : wcstombs(NULL, str, len);
 
 	if (len && dst) {
 		if (!dst_size)
 			return 0;
 
-		if (out_len) {
-			if ((out_len + 1) > dst_size)
-				out_len = dst_size - 1;
-
+		if (out_len)
 			wcstombs(dst, str, out_len + 1);
-		}
 
 		dst[out_len] = 0;
 	}
@@ -297,18 +288,15 @@ size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 		size_t dst_size)
 {
 	size_t in_len = (len != 0) ? len : wcslen(str);
-	size_t out_len = dst ? len : wchar_to_utf8(str, in_len, NULL, 0, 0);
+	size_t out_len = dst ?
+		(dst_size - 1) : wchar_to_utf8(str, in_len, NULL, 0, 0);
 
 	if (out_len && dst) {
 		if (!dst_size)
 			return 0;
 
-		if (out_len) {
-			if ((out_len + 1) > dst_size)
-				out_len = dst_size - 1;
-
+		if (out_len)
 			wchar_to_utf8(str, in_len, dst, out_len + 1, 0);
-		}
 
 		dst[out_len] = 0;
 	}
@@ -321,7 +309,7 @@ size_t os_mbs_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
 	size_t  out_len = os_mbs_to_wcs(str, len, NULL, 0);
 
 	*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
-	return os_mbs_to_wcs(str, out_len, *pstr, out_len + 1);
+	return os_mbs_to_wcs(str, len, *pstr, out_len + 1);
 }
 
 size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
@@ -329,7 +317,7 @@ size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
 	size_t  out_len = os_utf8_to_wcs(str, len, NULL, 0);
 
 	*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
-	return os_utf8_to_wcs(str, out_len, *pstr, out_len + 1);
+	return os_utf8_to_wcs(str, len, *pstr, out_len + 1);
 }
 
 size_t os_wcs_to_mbs_ptr(const wchar_t *str, size_t len, char **pstr)
@@ -337,7 +325,7 @@ size_t os_wcs_to_mbs_ptr(const wchar_t *str, size_t len, char **pstr)
 	size_t out_len = os_wcs_to_mbs(str, len, NULL, 0);
 
 	*pstr = bmalloc((out_len + 1) * sizeof(char));
-	return os_wcs_to_mbs(str, out_len, *pstr, out_len + 1);
+	return os_wcs_to_mbs(str, len, *pstr, out_len + 1);
 }
 
 size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr)
@@ -345,7 +333,7 @@ size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr)
 	size_t out_len = os_wcs_to_utf8(str, len, NULL, 0);
 
 	*pstr = bmalloc((out_len + 1) * sizeof(char));
-	return os_wcs_to_utf8(str, out_len, *pstr, out_len + 1);
+	return os_wcs_to_utf8(str, len, *pstr, out_len + 1);
 }
 
 size_t os_utf8_to_mbs_ptr(const char *str, size_t len, char **pstr)
