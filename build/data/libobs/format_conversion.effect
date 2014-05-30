@@ -30,7 +30,12 @@ uniform float     width_d2;
 uniform float     height_d2;
 uniform float     width_d2_i;
 uniform float     height_d2_i;
+uniform float     input_width;
 uniform float     input_height;
+uniform float     input_width_i;
+uniform float     input_height_i;
+uniform float     input_width_i_d2;
+uniform float     input_height_i_d2;
 
 uniform texture2d image;
 
@@ -208,7 +213,43 @@ float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 			texel[u_pos], texel[v_pos], 1.0);
 }
 
+float GetOffsetColor(float offset)
+{
+	float2 uv;
 
+	offset += PRECISION_OFFSET;
+	uv.x = floor(fmod(offset, input_width)) * input_width_i;
+	uv.y = floor(offset * input_width_i)    * input_height_i;
+
+	uv.xy += float2(input_width_i_d2, input_height_i_d2);
+
+	return image.Sample(def_sampler, uv).r;
+}
+
+float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
+{
+	float x = vert_in.uv.x;
+	float y = vert_in.uv.y;
+#ifdef _OPENGL
+	y = 1. - y;
+#endif
+	float x_offset   = floor(x * width  + PRECISION_OFFSET);
+	float y_offset   = floor(y * height + PRECISION_OFFSET);
+
+	float lum_offset = y_offset * width + x_offset + PRECISION_OFFSET;
+	lum_offset       = floor(lum_offset);
+
+	float ch_offset  = floor(y_offset * 0.5 + PRECISION_OFFSET) * width_d2 +
+		(x_offset * 0.5) + PRECISION_OFFSET;
+	ch_offset        = floor(ch_offset);
+
+	return float4(
+		GetOffsetColor(lum_offset),
+		GetOffsetColor(u_plane_offset + ch_offset),
+		GetOffsetColor(v_plane_offset + ch_offset),
+		1.0
+	);
+}
 
 technique Planar420
 {
@@ -252,5 +293,14 @@ technique YVYU_Reverse
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSPacked422_Reverse(vert_in, 3, 1, 0, 2);
+	}
+}
+
+technique I420_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPlanar420_Reverse(vert_in);
 	}
 }
