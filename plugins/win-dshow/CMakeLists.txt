@@ -5,7 +5,7 @@ set(win-dshow_SOURCES
 
 set(libdshowcapture_SOURCES
 	libdshowcapture/source/capture-filter.cpp
-	libdshowcapture/soruce/dshowcapture.cpp
+	libdshowcapture/source/dshowcapture.cpp
 	libdshowcapture/source/device.cpp
 	libdshowcapture/source/dshow-base.cpp
 	libdshowcapture/source/dshow-enum.cpp
