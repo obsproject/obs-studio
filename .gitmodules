@@ -1,0 +1,3 @@
+[submodule "plugins/win-dshow/libdshowcapture"]
+	path = plugins/win-dshow/libdshowcapture
+	url = https://github.com/jp9000/libdshowcapture.git
