@@ -5,6 +5,7 @@ set(win-dshow_SOURCES
 
 set(libdshowcapture_SOURCES
 	libdshowcapture/source/capture-filter.cpp
+	libdshowcapture/soruce/dshowcapture.cpp
 	libdshowcapture/source/device.cpp
 	libdshowcapture/source/dshow-base.cpp
 	libdshowcapture/source/dshow-enum.cpp
@@ -27,6 +28,7 @@ add_library(win-dshow MODULE
 	${libdshowcapture_SOURCES}
 	${libdshowcapture_HEADERS})
 target_link_libraries(win-dshow
-	libobs)
+	libobs
+	strmiids.lib)
 
 install_obs_plugin(win-dshow)
