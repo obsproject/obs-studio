@@ -608,7 +608,23 @@ static inline bool set_packed422_sizes(struct obs_source *source,
 		struct source_frame *frame)
 {
 	source->async_convert_height = frame->height;
-	source->async_convert_width = frame->width / 2;
+	source->async_convert_width  = frame->width / 2;
+	source->async_texture_format = GS_BGRA;
+	return true;
+}
+
+static inline bool set_planar420_sizes(struct obs_source *source,
+		struct source_frame *frame)
+{
+	uint32_t size = frame->width * frame->height;
+	size += size/2;
+
+	source->async_convert_width   = frame->width;
+	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_texture_format  = GS_R8;
+	source->async_plane_offset[0] = frame->width * frame->height;
+	source->async_plane_offset[1] = source->async_plane_offset[0] +
+		frame->width * frame->height / 4;
 	return true;
 }
 
@@ -620,8 +636,11 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 		case CONVERT_422_U:
 			return set_packed422_sizes(source, frame);
 
-		case CONVERT_NV12:
 		case CONVERT_420:
+			return set_planar420_sizes(source, frame);
+
+		case CONVERT_NV12:
+			assert(false && "NV12 not yet implemented");
 			/* TODO: implement conversion */
 			break;
 
@@ -631,6 +650,17 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	}
 	return false;
+}
+
+static inline enum gs_color_format convert_video_format(
+		enum video_format format)
+{
+	if (format == VIDEO_FORMAT_RGBA)
+		return GS_RGBA;
+	else if (format == VIDEO_FORMAT_BGRA)
+		return GS_BGRA;
+
+	return GS_BGRX;
 }
 
 static inline bool set_async_texture_size(struct obs_source *source,
@@ -654,19 +684,22 @@ static inline bool set_async_texture_size(struct obs_source *source,
 		source->async_gpu_conversion = true;
 
 		source->async_convert_texrender =
-			texrender_create(GS_RGBA, GS_ZS_NONE);
+			texrender_create(GS_BGRX, GS_ZS_NONE);
 
 		source->async_texture = gs_create_texture(
 				source->async_convert_width,
 				source->async_convert_height,
-				GS_RGBA, 1, NULL, GS_DYNAMIC);
+				source->async_texture_format,
+				1, NULL, GS_DYNAMIC);
 
 	} else {
+		enum gs_color_format format = convert_video_format(
+				frame->format);
 		source->async_gpu_conversion = false;
 
 		source->async_texture = gs_create_texture(
 				frame->width, frame->height,
-				GS_RGBA, 1, NULL, GS_DYNAMIC);
+				format, 1, NULL, GS_DYNAMIC);
 	}
 
 	if (!source->async_texture)
@@ -686,8 +719,12 @@ static void upload_raw_frame(texture_t tex, const struct source_frame *frame)
 					frame->linesize[0], false);
 			break;
 
-		case CONVERT_NV12:
 		case CONVERT_420:
+			texture_setimage(tex, frame->data[0],
+					frame->width, false);
+			break;
+
+		case CONVERT_NV12:
 			assert(false && "Conversion not yet implemented");
 			break;
 
@@ -709,8 +746,10 @@ static const char *select_conversion_technique(enum video_format format)
 		case VIDEO_FORMAT_YVYU:
 			return "YVYU_Reverse";
 
-		case VIDEO_FORMAT_NV12:
 		case VIDEO_FORMAT_I420:
+			return "I420_Reverse";
+
+		case VIDEO_FORMAT_NV12:
 			assert(false && "Conversion not yet implemented");
 			break;
 
@@ -743,6 +782,9 @@ static bool update_async_texrender(struct obs_source *source,
 	uint32_t cx = source->async_width;
 	uint32_t cy = source->async_height;
 
+	float convert_width  = (float)source->async_convert_width;
+	float convert_height = (float)source->async_convert_height;
+
 	effect_t conv = obs->video.conversion_effect;
 	technique_t tech = effect_gettechnique(conv,
 			select_conversion_technique(frame->format));
@@ -753,17 +795,25 @@ static bool update_async_texrender(struct obs_source *source,
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	effect_settexture(conv, effect_getparambyname(conv, "image"),
-			tex);
+	effect_settexture(conv, effect_getparambyname(conv, "image"), tex);
 	set_eparam(conv, "width",  (float)cx);
 	set_eparam(conv, "height", (float)cy);
 	set_eparam(conv, "width_i",  1.0f / cx);
 	set_eparam(conv, "height_i", 1.0f / cy);
-	set_eparam(conv, "width_d2",  cx  * 0.5f);
+	set_eparam(conv, "width_d2",  cx * 0.5f);
 	set_eparam(conv, "height_d2", cy * 0.5f);
-	set_eparam(conv, "width_d2_i",  1.0f / (cx  * 0.5f));
+	set_eparam(conv, "width_d2_i",  1.0f / (cx * 0.5f));
 	set_eparam(conv, "height_d2_i", 1.0f / (cy * 0.5f));
-	set_eparam(conv, "input_height", (float)cy);
+	set_eparam(conv, "input_width",  convert_width);
+	set_eparam(conv, "input_height", convert_height);
+	set_eparam(conv, "input_width_i",  1.0f / convert_width);
+	set_eparam(conv, "input_height_i", 1.0f / convert_height);
+	set_eparam(conv, "input_width_i_d2",  (1.0f / convert_width)  * 0.5f);
+	set_eparam(conv, "input_height_i_d2", (1.0f / convert_height) * 0.5f);
+	set_eparam(conv, "u_plane_offset",
+			(float)source->async_plane_offset[0]);
+	set_eparam(conv, "v_plane_offset",
+			(float)source->async_plane_offset[1]);
 
 	gs_ortho(0.f, (float)cx, 0.f, (float)cy, -100.f, 100.f);
 
