@@ -364,14 +364,14 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 {
 	if (!source) return;
 
-	obs_data_apply(source->context.settings, settings);
+	if (settings)
+		obs_data_apply(source->context.settings, settings);
 
-	if (source->context.data && source->info.update) {
-		if (source->info.output_flags & OBS_SOURCE_VIDEO)
-			source->defer_update = true;
-		else
-			source->info.update(source->context.data,
-					source->context.settings);
+	if (source->info.output_flags & OBS_SOURCE_VIDEO) {
+		source->defer_update = true;
+	} else if (source->context.data && source->info.update) {
+		source->info.update(source->context.data,
+				source->context.settings);
 	}
 }
 
