@@ -17,6 +17,7 @@
 
 #include "util/bmem.h"
 #include "util/darray.h"
+#include "obs-internal.h"
 #include "obs-properties.h"
 
 static inline void *get_property_data(struct obs_property *prop);
@@ -49,6 +50,10 @@ struct list_data {
 	DARRAY(struct list_item) items;
 	enum obs_combo_type      type;
 	enum obs_combo_format    format;
+};
+
+struct button_data {
+	obs_property_clicked_t callback;
 };
 
 static inline void list_item_free(struct list_data *data,
@@ -214,6 +219,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_PATH:      return 0;
 	case OBS_PROPERTY_LIST:      return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
+	case OBS_PROPERTY_BUTTON:    return sizeof(struct button_data);
 	}
 
 	return 0;
@@ -350,6 +356,18 @@ obs_property_t obs_properties_add_color(obs_properties_t props,
 	return new_prop(props, name, desc, OBS_PROPERTY_COLOR);
 }
 
+obs_property_t obs_properties_add_button(obs_properties_t props,
+		const char *name, const char *text,
+		obs_property_clicked_t callback)
+{
+	if (!props || has_prop(props, name)) return NULL;
+
+	struct obs_property *p = new_prop(props, name, text,
+			OBS_PROPERTY_BUTTON);
+	struct button_data *data = get_property_data(p);
+	data->callback = callback;
+	return p;
+}
 
 static inline bool is_combo(struct obs_property *p)
 {
@@ -392,6 +410,19 @@ bool obs_property_modified(obs_property_t p, obs_data_t settings)
 {
 	if (p && p->modified)
 		return p->modified(p->parent, p, settings);
+	return false;
+}
+
+bool obs_property_button_clicked(obs_property_t p, void *obj)
+{
+	struct obs_context_data *context = obj;
+	if (p) {
+		struct button_data *data = get_type_data(p,
+				OBS_PROPERTY_BUTTON);
+		if (data && data->callback)
+			return data->callback(p->parent, p, context->data);
+	}
+
 	return false;
 }
 

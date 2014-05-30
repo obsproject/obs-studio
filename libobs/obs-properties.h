@@ -33,6 +33,7 @@ enum obs_property_type {
 	OBS_PROPERTY_PATH,
 	OBS_PROPERTY_LIST,
 	OBS_PROPERTY_COLOR,
+	OBS_PROPERTY_BUTTON,
 };
 
 enum obs_combo_format {
@@ -82,6 +83,14 @@ extern void obs_properties_apply_settings(obs_properties_t props,
 
 /* ------------------------------------------------------------------------- */
 
+/**
+ * Callback for when a button property is clicked.  If the properties
+ * need to be refreshed due to changes to the property layout, return true,
+ * otherwise return false.
+ */
+typedef bool (*obs_property_clicked_t)(obs_properties_t props,
+		obs_property_t property, void *data);
+
 EXPORT obs_property_t obs_properties_add_bool(obs_properties_t props,
 		const char *name, const char *description);
 
@@ -107,6 +116,10 @@ EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
 EXPORT obs_property_t obs_properties_add_color(obs_properties_t props,
 		const char *name, const char *description);
 
+EXPORT obs_property_t obs_properties_add_button(obs_properties_t props,
+		const char *name, const char *text,
+		obs_property_clicked_t callback);
+
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -121,6 +134,7 @@ EXPORT void obs_property_set_modified_callback(obs_property_t p,
 		obs_property_modified_t modified);
 
 EXPORT bool obs_property_modified(obs_property_t p, obs_data_t settings);
+EXPORT bool obs_property_button_clicked(obs_property_t p, void *obj);
 
 EXPORT void obs_property_set_visible(obs_property_t p, bool visible);
 EXPORT void obs_property_set_enabled(obs_property_t p, bool enabled);
