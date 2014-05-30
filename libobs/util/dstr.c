@@ -647,6 +647,13 @@ char *dstr_to_mbs(const struct dstr *str)
 	return dst;
 }
 
+wchar_t *dstr_to_wcs(const struct dstr *str)
+{
+	wchar_t *dst;
+	os_utf8_to_wcs_ptr(str->array, str->len, &dst);
+	return dst;
+}
+
 void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr)
 {
 	size_t len = wchar_to_utf8(wstr, 0, NULL, 0, 0);
