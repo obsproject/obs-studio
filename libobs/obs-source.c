@@ -111,8 +111,6 @@ bool obs_source_init(struct obs_source *source,
 	pthread_mutex_init_value(&source->video_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
 
-	memcpy(&source->info, info, sizeof(struct obs_source_info));
-
 	if (pthread_mutex_init(&source->filter_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
@@ -162,7 +160,8 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		return NULL;
 	}
 
-	source = bzalloc(sizeof(struct obs_source));
+	source       = bzalloc(sizeof(struct obs_source));
+	source->info = *info;
 
 	if (!obs_source_init_context(source, settings, name))
 		goto fail;
