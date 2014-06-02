@@ -274,7 +274,7 @@ technique UYUV_Reverse
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSPacked422_Reverse(vert_in, 0, 2, 1, 3);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 2, 0, 1, 3);
 	}
 }
 
@@ -283,7 +283,7 @@ technique YUY2_Reverse
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSPacked422_Reverse(vert_in, 1, 3, 0, 2);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 1, 3, 2, 0);
 	}
 }
 
@@ -292,7 +292,7 @@ technique YVYU_Reverse
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSPacked422_Reverse(vert_in, 3, 1, 0, 2);
+		pixel_shader  = PSPacked422_Reverse(vert_in, 3, 1, 2, 0);
 	}
 }
 
