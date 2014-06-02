@@ -269,7 +269,7 @@ technique NV12
 	}
 }
 
-technique UYUV_Reverse
+technique UYVY_Reverse
 {
 	pass
 	{

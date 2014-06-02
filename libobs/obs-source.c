@@ -737,7 +737,7 @@ static const char *select_conversion_technique(enum video_format format)
 {
 	switch (format) {
 		case VIDEO_FORMAT_UYVY:
-			return "UYUV_Reverse";
+			return "UYVY_Reverse";
 
 		case VIDEO_FORMAT_YUY2:
 			return "YUY2_Reverse";
