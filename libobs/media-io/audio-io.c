@@ -181,78 +181,9 @@ static inline size_t min_size(size_t a, size_t b)
 	((val > maxval) ? maxval : ((val < minval) ? minval : val))
 #endif
 
-#define MIN_S8  -128
-#define MAX_S8   127
-#define MIN_S16 -32767
-#define MAX_S16  32767
-#define MIN_S32 -2147483647
-#define MAX_S32  2147483647
-
 #define MIX_BUFFER_SIZE 256
 
 /* TODO: optimize mixing */
-static void mix_u8(uint8_t *mix, struct circlebuf *buf, size_t size)
-{
-	uint8_t  vals[MIX_BUFFER_SIZE];
-	register int16_t mix_val;
-
-	while (size) {
-		size_t pop_count = min_size(size, sizeof(vals));
-		size -= pop_count;
-
-		circlebuf_pop_front(buf, vals, pop_count);
-
-		for (size_t i = 0; i < pop_count; i++) {
-			mix_val =  (int16_t)*mix - 128;
-			mix_val += (int16_t)vals[i] - 128;
-			mix_val = CLAMP(mix_val, MIN_S8, MAX_S8) + 128;
-			*(mix++) = (uint8_t)mix_val;
-		}
-	}
-}
-
-static void mix_s16(uint8_t *mix_in, struct circlebuf *buf, size_t size)
-{
-	int16_t *mix = (int16_t*)mix_in;
-	int16_t vals[MIX_BUFFER_SIZE];
-	register int32_t mix_val;
-
-	while (size) {
-		size_t pop_count = min_size(size, sizeof(vals));
-		size -= pop_count;
-
-		circlebuf_pop_front(buf, vals, pop_count);
-		pop_count /= sizeof(int16_t);
-
-		for (size_t i = 0; i < pop_count; i++) {
-			mix_val =  (int32_t)*mix;
-			mix_val += (int32_t)vals[i];
-			*(mix++) = (int16_t)CLAMP(mix_val, MIN_S16, MAX_S16);
-		}
-	}
-}
-
-static void mix_s32(uint8_t *mix_in, struct circlebuf *buf, size_t size)
-{
-	int32_t *mix = (int32_t*)mix_in;
-	int32_t vals[MIX_BUFFER_SIZE];
-	register int64_t mix_val;
-
-	while (size) {
-		size_t pop_count = min_size(size, sizeof(vals));
-		size -= pop_count;
-
-		circlebuf_pop_front(buf, vals, pop_count);
-		pop_count /= sizeof(int32_t);
-
-		for (size_t i = 0; i < pop_count; i++) {
-			mix_val =  (int64_t)*mix;
-			mix_val += (int64_t)vals[i];
-			*(mix++) = (int32_t)CLAMP(mix_val, MIN_S32, MAX_S32);
-		}
-	}
-}
-
 static void mix_float(uint8_t *mix_in, struct circlebuf *buf, size_t size)
 {
 	float *mix = (float*)mix_in;
@@ -273,31 +204,6 @@ static void mix_float(uint8_t *mix_in, struct circlebuf *buf, size_t size)
 	}
 }
 
-static inline void mix_audio(enum audio_format format,
-		uint8_t *mix, struct circlebuf *buf, size_t size)
-{
-	switch (format) {
-	case AUDIO_FORMAT_UNKNOWN:
-		break;
-
-	case AUDIO_FORMAT_U8BIT:
-	case AUDIO_FORMAT_U8BIT_PLANAR:
-		mix_u8(mix, buf, size); break;
-
-	case AUDIO_FORMAT_16BIT:
-	case AUDIO_FORMAT_16BIT_PLANAR:
-		mix_s16(mix, buf, size); break;
-
-	case AUDIO_FORMAT_32BIT:
-	case AUDIO_FORMAT_32BIT_PLANAR:
-		mix_s32(mix, buf, size); break;
-
-	case AUDIO_FORMAT_FLOAT:
-	case AUDIO_FORMAT_FLOAT_PLANAR:
-		mix_float(mix, buf, size); break;
-	}
-}
-
 static inline bool mix_audio_line(struct audio_output *audio,
 		struct audio_line *line, size_t size, uint64_t timestamp)
 {
@@ -315,8 +221,7 @@ static inline bool mix_audio_line(struct audio_output *audio,
 	for (size_t i = 0; i < audio->planes; i++) {
 		size_t pop_size = min_size(size, line->buffers[i].size);
 
-		mix_audio(audio->info.format,
-				audio->mix_buffers[i].array + time_offset,
+		mix_float(audio->mix_buffers[i].array + time_offset,
 				&line->buffers[i], pop_size);
 	}
 
@@ -711,100 +616,16 @@ uint32_t audio_output_samplerate(audio_t audio)
 	return audio ? audio->info.samples_per_sec : 0;
 }
 
-/* TODO: Optimization of volume multiplication functions */
-
-static inline int mul_vol_u8bit(void *array, float volume, size_t total_num)
+/* TODO: optimize these two functions */
+static inline void mul_vol_float(float *array, float volume, size_t count)
 {
-	uint8_t *vals = array;
-	int32_t vol = (int32_t)(volume * 127.0f);
-
-	for (size_t i = 0; i < total_num; i++) {
-		int32_t val = (int32_t)vals[i] - 128;
-		int32_t output = val * vol / 127;
-		vals[i] = (uint8_t)(CLAMP(output, MIN_S8, MAX_S8) + 128);
-	}
-	return 0;
+	for (size_t i = 0; i < count; i++)
+		array[i] *= volume;
 }
 
-static inline int mul_vol_16bit(void *array, float volume, size_t total_num)
-{
-	uint16_t *vals = array;
-	int64_t vol = (int64_t)(volume * 32767.0f);
-
-	for (size_t i = 0; i < total_num; i++) {
-		int64_t output = (int64_t)vals[i] * vol / 32767;
-		vals[i] = (int32_t)CLAMP(output, MIN_S16, MAX_S16);
-	}
-	return 0;
-}
-
-static inline float conv_24bit_to_float(uint8_t *vals)
-{
-	int32_t val = ((int32_t)vals[0]) |
-	              ((int32_t)vals[1] << 8) |
-	              ((int32_t)vals[2] << 16);
-
-	if ((val & 0x800000) != 0)
-		val |= 0xFF000000;
-
-	return (float)val / 8388607.0f;
-}
-
-static inline void conv_float_to_24bit(float fval, uint8_t *vals)
-{
-	int32_t val = (int32_t)(fval * 8388607.0f);
-	vals[0] = (val)       & 0xFF;
-	vals[1] = (val >> 8)  & 0xFF;
-	vals[2] = (val >> 16) & 0xFF;
-}
-
-static inline int mul_vol_24bit(void *array, float volume, size_t total_num)
-{
-	uint8_t *vals = array;
-
-	for (size_t i = 0; i < total_num; i++) {
-		float val = conv_24bit_to_float(vals) * volume;
-		conv_float_to_24bit(CLAMP(val, -1.0f, 1.0f), vals);
-		vals += 3;
-	}
-	return 0;
-}
-
-static inline int mul_vol_32bit(void *array, float volume, size_t total_num)
-{
-	int32_t *vals = array;
-	double dvol = (double)volume;
-
-	for (size_t i = 0; i < total_num; i++) {
-		double val = (double)vals[i] / 2147483647.0;
-		double output = val * dvol;
-		vals[i] = (int32_t)(CLAMP(output, -1.0, 1.0) * 2147483647.0);
-	}
-	return 0;
-}
-
-static inline int mul_vol_float(void *array, float volume, size_t total_num)
-{
-	float maxVol = 0; 
-	float *vals = array;
-
-	for (size_t i = 0; i < total_num; i++) {
-		vals[i] *= volume;
-		maxVol = fmaxf(maxVol, (float)fabs(vals[i]));
-	}
-
-	return (int)(maxVol * 10000.f);
-}
-
-/* [Danni] changed to int for volume feedback. Seems like the most logical 
-		   place to calculate this to avoid unnessisary iterations.
-		   scaled to max of 10000. */
-
-static int audio_line_place_data_pos(struct audio_line *line,
+static void audio_line_place_data_pos(struct audio_line *line,
 		const struct audio_data *data, size_t position)
 {
-	int maxVol = 0;
-
 	bool   planar     = line->audio->planes > 1;
 	size_t total_num  = data->frames * (planar ? 1 : line->audio->channels);
 	size_t total_size = data->frames * line->audio->block_size;
@@ -816,35 +637,22 @@ static int audio_line_place_data_pos(struct audio_line *line,
 		uint8_t *array = line->volume_buffers[i].array;
 
 		switch (line->audio->info.format) {
-		case AUDIO_FORMAT_U8BIT:
-		case AUDIO_FORMAT_U8BIT_PLANAR:
-			maxVol = mul_vol_u8bit(array, data->volume, total_num);
-			break;
-		case AUDIO_FORMAT_16BIT:
-		case AUDIO_FORMAT_16BIT_PLANAR:
-			maxVol = mul_vol_16bit(array, data->volume, total_num);
-			break;
-		case AUDIO_FORMAT_32BIT:
-		case AUDIO_FORMAT_32BIT_PLANAR:
-			maxVol = mul_vol_32bit(array, data->volume, total_num);
-			break;
 		case AUDIO_FORMAT_FLOAT:
 		case AUDIO_FORMAT_FLOAT_PLANAR:
-			maxVol = mul_vol_float(array, data->volume, total_num);
+			mul_vol_float((float*)array, data->volume, total_num);
 			break;
 		case AUDIO_FORMAT_UNKNOWN:
 			blog(LOG_ERROR, "audio_line_place_data_pos: "
-					"Unknown format");
+			                "Unsupported or unknown format");
 			break;
 		}
 
 		circlebuf_place(&line->buffers[i], position,
 				line->volume_buffers[i].array, total_size);
 	}
-	return maxVol;
 }
 
-static int audio_line_place_data(struct audio_line *line,
+static void audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
 	size_t pos = ts_diff_bytes(line->audio, data->timestamp,
@@ -858,26 +666,25 @@ static int audio_line_place_data(struct audio_line *line,
 			line->buffers[0].size);
 #endif
 
-	return audio_line_place_data_pos(line, data, pos);
+	audio_line_place_data_pos(line, data, pos);
 }
 
-int audio_line_output(audio_line_t line, const struct audio_data *data)
+void audio_line_output(audio_line_t line, const struct audio_data *data)
 {
 	/* TODO: prevent insertation of data too far away from expected
 	 * audio timing */
 
-	if (!line || !data) return 0;
+	if (!line || !data) return;
 
-	int maxVol = 0;
 	pthread_mutex_lock(&line->mutex);
 
 	if (!line->buffers[0].size) {
 		line->base_timestamp = data->timestamp -
 		                       line->audio->info.buffer_ms * 1000000;
-		maxVol = audio_line_place_data(line, data);
+		audio_line_place_data(line, data);
 
 	} else if (line->base_timestamp <= data->timestamp) {
-		maxVol = audio_line_place_data(line, data);
+		audio_line_place_data(line, data);
 
 	} else {
 		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
@@ -889,5 +696,4 @@ int audio_line_output(audio_line_t line, const struct audio_data *data)
 	}
 
 	pthread_mutex_unlock(&line->mutex);
-	return maxVol;
 }
