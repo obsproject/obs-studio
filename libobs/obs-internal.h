@@ -276,6 +276,12 @@ struct obs_source {
 	float                           present_volume;
 	int64_t                         sync_offset;
 
+	/* audio levels*/
+	float                           vol_mag;
+	float                           vol_max;
+	float                           vol_peak;
+	size_t                          vol_update_count;
+
 	/* transition volume is meant to store the sum of transitioning volumes
 	 * of a source, i.e. if a source is within both the "to" and "from"
 	 * targets of a transition, it would add both volumes to this variable,

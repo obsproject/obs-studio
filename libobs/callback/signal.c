@@ -173,10 +173,13 @@ void signal_handler_connect(signal_handler_t handler, const char *signal,
 
 	pthread_mutex_lock(&handler->mutex);
 	sig = getsignal(handler, signal, &last);
-	if (!sig)
-		return;
-
 	pthread_mutex_unlock(&handler->mutex);
+
+	if (!sig) {
+		blog(LOG_WARNING, "signal_handler_connect: "
+		                  "signal '%s' not found", signal);
+		return;
+	}
 
 	/* -------------- */
 

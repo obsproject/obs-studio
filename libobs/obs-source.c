@@ -19,6 +19,7 @@
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
+#include "media-io/audio-io.h"
 #include "util/threading.h"
 #include "util/platform.h"
 #include "callback/calldata.h"
@@ -79,6 +80,8 @@ static const char *source_signals[] = {
 	"void show(ptr source)",
 	"void hide(ptr source)",
 	"void volume(ptr source, in out float volume)",
+	"void volume_level(ptr source, float level, float magnitude, "
+		"float peak)",
 	NULL
 };
 
@@ -525,8 +528,81 @@ static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
 	/* if has video, ignore audio data until reset */
 	if (source->info.output_flags & OBS_SOURCE_ASYNC)
 		os_atomic_dec_long(&source->av_sync_ref);
-	else 
+	else
 		reset_audio_timing(source, ts);
+}
+
+#define VOL_MIN -96.0f
+#define VOL_MAX  0.0f
+
+static inline float to_db(float val)
+{
+	float db = 20.0f * log10f(val);
+	return isfinite(db) ? db : VOL_MIN;
+}
+
+static void calc_volume_levels(struct obs_source *source, float *array,
+		size_t frames)
+{
+	float sum_val = 0.0f;
+	float max_val = 0.0f;
+	float rms_val = 0.0f;
+
+	const uint32_t sample_rate    = audio_output_samplerate(obs_audio());
+	const size_t   channels       = audio_output_channels(obs_audio());
+	const size_t   count          = frames * channels;
+	const size_t   vol_peak_delay = sample_rate * 3;
+	const float    alpha          = 0.15f;
+
+	for (size_t i = 0; i < count; i++) {
+		float val      = array[i];
+		float val_pow2 = val * val;
+
+		sum_val += val_pow2;
+		max_val  = fmaxf(max_val, val_pow2);
+	}
+
+	rms_val = to_db(sqrtf(sum_val / (float)count));
+	max_val = to_db(sqrtf(max_val));
+
+	if (max_val > source->vol_max)
+		source->vol_max = max_val;
+	else
+		source->vol_max = alpha * source->vol_max +
+			(1.0f - alpha) * max_val;
+
+	if (source->vol_max > source->vol_peak ||
+	    source->vol_update_count > vol_peak_delay) {
+		source->vol_peak         = source->vol_max;
+		source->vol_update_count = 0;
+	} else {
+		source->vol_update_count += count;
+	}
+
+	source->vol_mag = alpha * rms_val + source->vol_mag * (1.0f - alpha);
+}
+
+/* TODO update peak/etc later */
+static void obs_source_update_volume_level(obs_source_t source,
+		struct audio_data *in)
+{
+	if (source && in) {
+		struct calldata data = {0};
+
+		calc_volume_levels(source, (float*)in->data[0], in->frames);
+
+		calldata_setptr  (&data, "source",    source);
+		calldata_setfloat(&data, "level",     source->vol_max);
+		calldata_setfloat(&data, "magnitude", source->vol_mag);
+		calldata_setfloat(&data, "peak",      source->vol_peak);
+
+		signal_handler_signal(source->context.signals, "volume_level",
+				&data);
+		signal_handler_signal(obs->signals, "source_volume_level",
+				&data);
+
+		calldata_free(&data);
+	}
 }
 
 static void source_output_audio_line(obs_source_t source,
@@ -569,6 +645,7 @@ static void source_output_audio_line(obs_source_t source,
 		obs->audio.user_volume * obs->audio.present_volume;
 
 	audio_line_output(source->audio_line, &in);
+	obs_source_update_volume_level(source, &in);
 }
 
 enum convert_type {
@@ -894,13 +971,13 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 		param = effect_getparambyname(effect, "color_range_min");
 		effect_setval(effect, param, color_range_min, size);
 	}
-	
+
 	if (color_range_max) {
 		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_max");
 		effect_setval(effect, param, color_range_max, size);
 	}
-	
+
 	if (color_matrix) {
 		param = effect_getparambyname(effect, "color_matrix");
 		effect_setval(effect, param, color_matrix, sizeof(float) * 16);
