@@ -19,6 +19,10 @@
 
 struct av_capture;
 
+#define AVLOG(level, format, ...) \
+	blog(level, "%s: " format, \
+			obs_source_getname(capture->source), ##__VA_ARGS__)
+
 @interface OBSAVCaptureDelegate :
 	NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
 {
@@ -51,18 +55,18 @@ struct av_capture {
 	struct source_frame frame;
 };
 
-static inline void update_frame_size(struct source_frame *frame,
-		uint32_t width, uint32_t height)
+static inline void update_frame_size(struct av_capture *capture,
+		struct source_frame *frame, uint32_t width, uint32_t height)
 {
 	if (width != frame->width) {
-		blog(LOG_DEBUG, "Changed width from %d to %d",
+		AVLOG(LOG_DEBUG, "Changed width from %d to %d",
 				frame->width, width);
 		frame->width = width;
 		frame->linesize[0] = width * 2;
 	}
 
 	if (height != frame->height) {
-		blog(LOG_DEBUG, "Changed height from %d to %d",
+		AVLOG(LOG_DEBUG, "Changed height from %d to %d",
 				frame->height, height);
 		frame->height = height;
 	}
@@ -93,7 +97,7 @@ static inline void update_frame_size(struct source_frame *frame,
 
 	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
 
-	update_frame_size(frame, CVPixelBufferGetWidth(img),
+	update_frame_size(capture, frame, CVPixelBufferGetWidth(img),
 			CVPixelBufferGetHeight(img));
 
 	CMSampleTimingInfo info;
@@ -157,13 +161,13 @@ static bool init_session(struct av_capture *capture)
 {
 	capture->session = [[AVCaptureSession alloc] init];
 	if (!capture->session) {
-		blog(LOG_ERROR, "Could not create AVCaptureSession");
-		return false;
+		AVLOG(LOG_ERROR, "Could not create AVCaptureSession");
+		goto error;
 	}
 
 	capture->delegate = [[OBSAVCaptureDelegate alloc] init];
 	if (!capture->delegate) {
-		blog(LOG_ERROR, "Could not create OBSAvCaptureDelegate");
+		AVLOG(LOG_ERROR, "Could not create OBSAVCaptureDelegate");
 		return false;
 	}
 
@@ -171,13 +175,13 @@ static bool init_session(struct av_capture *capture)
 
 	capture->out = [[AVCaptureVideoDataOutput alloc] init];
 	if (!capture->out) {
-		blog(LOG_ERROR, "Could not create AVCaptureVideoDataOutput");
+		AVLOG(LOG_ERROR, "Could not create AVCaptureVideoDataOutput");
 		return false;
 	}
 
 	capture->queue = dispatch_queue_create(NULL, NULL);
 	if (!capture->queue) {
-		blog(LOG_ERROR, "Could not create dispatch queue");
+		AVLOG(LOG_ERROR, "Could not create dispatch queue");
 		return false;
 	}
 
@@ -195,22 +199,22 @@ static bool init_device_input(struct av_capture *capture, obs_data_t settings)
 	capture->device = [[AVCaptureDevice deviceWithUniqueID:uid] retain];
 	if (!capture->device) {
 		if (uid.length < 1)
-			blog(LOG_ERROR, "No device selected");
+			AVLOG(LOG_ERROR, "No device selected");
 		else
-			blog(LOG_ERROR, "Could not initialize device " \
+			AVLOG(LOG_ERROR, "Could not initialize device "
 					"with unique ID '%s'",
 					uid.UTF8String);
 		return false;
 	}
 
-	blog(LOG_DEBUG, "Selected device '%s'",
+	AVLOG(LOG_DEBUG, "Selected device '%s'",
 			capture->device.localizedName.UTF8String);
 
 	NSError *err = nil;
 	capture->device_input = [[AVCaptureDeviceInput
 		deviceInputWithDevice:capture->device error:&err] retain];
 	if (!capture->device_input) {
-		blog(LOG_ERROR, "Error while initializing av-capture: %s",
+		AVLOG(LOG_ERROR, "Error while initializing device input: %s",
 				err.localizedFailureReason.UTF8String);
 		return false;
 	}
@@ -233,7 +237,7 @@ static bool init_format(struct av_capture *capture)
 			format.formatDescription);
 	// TODO: support other media types
 	if (mtype != kCMMediaType_Video) {
-		blog(LOG_ERROR, "CMMediaType '%c%c%c%c' is unsupported",
+		AVLOG(LOG_ERROR, "CMMediaType '%c%c%c%c' is unsupported",
 				AV_REV_FOURCC(mtype));
 		return false;
 	}
@@ -244,12 +248,12 @@ static bool init_format(struct av_capture *capture)
 	
 	capture->video_format = video_format_from_fourcc(capture->fourcc);
 	if (capture->video_format == VIDEO_FORMAT_NONE) {
-		blog(LOG_ERROR, "FourCC '%c%c%c%c' unsupported by libobs",
+		AVLOG(LOG_ERROR, "FourCC '%c%c%c%c' unsupported by libobs",
 				AV_REV_FOURCC(capture->fourcc));
 		return false;
 	}
 
-	blog(LOG_DEBUG, "Using FourCC '%c%c%c%c'",
+	AVLOG(LOG_DEBUG, "Using FourCC '%c%c%c%c'",
 			AV_REV_FOURCC(capture->fourcc));
 
 	return true;
@@ -284,7 +288,7 @@ static bool init_frame(struct av_capture *capture)
 			capture->frame.color_matrix,
 			capture->frame.color_range_min,
 			capture->frame.color_range_max)) {
-		blog(LOG_ERROR, "Failed to get video format parameters for " \
+		AVLOG(LOG_ERROR, "Failed to get video format parameters for "
 				"video format %u", colorspace);
 		return false;
 	}
@@ -307,7 +311,7 @@ static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 		NSString *preset = [NSString
 			stringWithUTF8String:obs_data_getstring(settings,
 								"preset")];
-		blog(LOG_DEBUG, "Using preset %s", preset.UTF8String);
+		AVLOG(LOG_DEBUG, "Using preset %s", preset.UTF8String);
 		capture->session.sessionPreset = preset;
 	}
 
