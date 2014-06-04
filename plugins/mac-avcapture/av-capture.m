@@ -376,7 +376,8 @@ static void *av_capture_create(obs_data_t settings, obs_source_t source)
 	return capture;
 }
 
-static NSArray *presets() {
+static NSArray *presets(void)
+{
 	return @[
 		//AVCaptureSessionPresetPhoto,
 		//AVCaptureSessionPresetLow,
