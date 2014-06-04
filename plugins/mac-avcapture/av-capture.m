@@ -23,6 +23,8 @@ struct av_capture;
 	blog(level, "%s: " format, \
 			obs_source_getname(capture->source), ##__VA_ARGS__)
 
+#define AVFREE(x) {[x release]; x = nil;}
+
 @interface OBSAVCaptureDelegate :
 	NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
 {
@@ -140,14 +142,15 @@ static void av_capture_destroy(void *data)
 
 	[capture->session stopRunning];
 
-	[capture->out release];
-	[capture->device_input release];
-	[capture->device release];
+	AVFREE(capture->out);
+	AVFREE(capture->device_input);
+	AVFREE(capture->device);
 
 	if (capture->queue)
 		dispatch_release(capture->queue);
-	[capture->delegate release];
-	[capture->session release];
+
+	AVFREE(capture->delegate);
+	AVFREE(capture->session);
 
 	bfree(capture);
 }
@@ -168,7 +171,7 @@ static bool init_session(struct av_capture *capture)
 	capture->delegate = [[OBSAVCaptureDelegate alloc] init];
 	if (!capture->delegate) {
 		AVLOG(LOG_ERROR, "Could not create OBSAVCaptureDelegate");
-		return false;
+		goto error;
 	}
 
 	capture->delegate->capture = capture;
@@ -176,13 +179,13 @@ static bool init_session(struct av_capture *capture)
 	capture->out = [[AVCaptureVideoDataOutput alloc] init];
 	if (!capture->out) {
 		AVLOG(LOG_ERROR, "Could not create AVCaptureVideoDataOutput");
-		return false;
+		goto error;
 	}
 
 	capture->queue = dispatch_queue_create(NULL, NULL);
 	if (!capture->queue) {
 		AVLOG(LOG_ERROR, "Could not create dispatch queue");
-		return false;
+		goto error;
 	}
 
 	[capture->session addOutput:capture->out];
@@ -191,6 +194,12 @@ static bool init_session(struct av_capture *capture)
 				  queue:capture->queue];
 
 	return true;
+
+error:
+	AVFREE(capture->session);
+	AVFREE(capture->delegate);
+	AVFREE(capture->out);
+	return false;
 }
 
 static bool init_device_input(struct av_capture *capture, obs_data_t settings)
@@ -302,7 +311,7 @@ static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 		return;
 
 	if (!init_device_input(capture, settings))
-		return;
+		goto error_input;
 
 	AVCaptureInputPort *port = capture->device_input.ports[0];
 	capture->has_clock = [port respondsToSelector:@selector(clock)];
@@ -316,12 +325,19 @@ static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 	}
 
 	if (!init_format(capture))
-		return;
+		goto error;
 
 	if (!init_frame(capture))
-		return;
+		goto error;
 	
 	[capture->session startRunning];
+	return;
+
+error:
+	[capture->session removeInput:capture->device_input];
+	AVFREE(capture->device_input);
+error_input:
+	AVFREE(capture->device);
 }
 
 static void *av_capture_create(obs_data_t settings, obs_source_t source)
@@ -332,6 +348,13 @@ static void *av_capture_create(obs_data_t settings, obs_source_t source)
 	capture->source = source;
 
 	av_capture_init(capture, settings);
+
+	if (!capture->session) {
+		AVLOG(LOG_ERROR, "No valid session, returning NULL context");
+		av_capture_destroy(capture);
+		bfree(capture);
+		capture = NULL;
+	}
 
 	return capture;
 }
