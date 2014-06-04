@@ -465,6 +465,38 @@ static void av_capture_defaults(obs_data_t settings)
 	obs_data_set_default_string(settings, "preset", highest.UTF8String);
 }
 
+static bool properties_device_changed(obs_properties_t props, obs_property_t p,
+		obs_data_t settings)
+{
+	UNUSED_PARAMETER(p);
+
+	NSString *uid = get_string(settings, "device");
+
+	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
+	if (!dev)
+		return false;
+
+	obs_property_t preset_list = obs_properties_get(props, "preset");
+	obs_property_list_clear(preset_list);
+
+	for (NSString *preset in presets()) {
+		if (![dev supportsAVCaptureSessionPreset:preset])
+			continue;
+
+		obs_property_list_add_string(preset_list,
+				preset_names(preset).UTF8String,
+				preset.UTF8String);
+
+	}
+
+	NSString *preset = get_string(settings, "preset");
+	if (![dev supportsAVCaptureSessionPreset:preset])
+		obs_data_setstring(settings, "preset",
+				select_preset(dev, preset).UTF8String);
+
+	return true;
+}
+
 static obs_properties_t av_capture_properties(char const *locale)
 {
 	obs_properties_t props = obs_properties_create(locale);
@@ -479,8 +511,9 @@ static obs_properties_t av_capture_properties(char const *locale)
 				dev.localizedName.UTF8String,
 				dev.uniqueID.UTF8String);
 	}
-	// TODO: implement device selection
-	obs_property_set_enabled(dev_list, false);
+
+	obs_property_set_modified_callback(dev_list,
+			properties_device_changed);
 
 	obs_property_t use_preset = obs_properties_add_bool(props,
 			"use_preset", "Use preset");
@@ -507,18 +540,35 @@ static obs_properties_t av_capture_properties(char const *locale)
 	return props;
 }
 
-// TODO: implement device selection
+static void switch_device(struct av_capture *capture, NSString *uid,
+		obs_data_t settings)
+{
+	if (!uid)
+		return;
+
+	if (capture->device)
+		remove_device(capture);
+
+	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
+	if (!dev) {
+		AVLOG(LOG_ERROR, "Device with unique id '%s' not found",
+				uid.UTF8String);
+		return;
+	}
+
+	capture_device(capture, [dev retain], settings);
+}
+
 static void av_capture_update(void *data, obs_data_t settings)
 {
-	struct av_capture *cap = data;
-	if (!cap || !settings)
-		return;
+	struct av_capture *capture = data;
 
 	NSString *uid = get_string(settings, "device");
 
-	if ([cap->device.uniqueID isEqualToString:uid]) {
-		cap->session.sessionPreset = get_string(settings, "preset");
-	}
+	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
+		return switch_device(capture, uid, settings);
+
+	capture->session.sessionPreset = get_string(settings, "preset");
 }
 
 struct obs_source_info av_capture_info = {
