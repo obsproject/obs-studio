@@ -297,6 +297,28 @@ static bool init_frame(struct av_capture *capture)
 	return true;
 }
 
+static NSArray *presets(void);
+static NSString *preset_names(NSString *preset);
+
+static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
+{
+	NSString *new_preset = nil;
+	bool found_previous_preset = false;
+	for (NSString *preset in presets()) {
+		if (!found_previous_preset)
+			found_previous_preset =
+				[cur_preset isEqualToString:preset];
+
+		if (![dev supportsAVCaptureSessionPreset:preset])
+			continue;
+
+		if (!new_preset || !found_previous_preset)
+			new_preset = preset;
+	}
+
+	return new_preset;
+}
+
 static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t settings)
 {
@@ -304,19 +326,30 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 	AVLOG(LOG_INFO, "Selected device '%s' %p",
 			capture->device.localizedName.UTF8String, capture);
 
+	if (obs_data_getbool(settings, "use_preset")) {
+		NSString *preset = get_string(settings, "preset");
+		if (![dev supportsAVCaptureSessionPreset:preset]) {
+			AVLOG(LOG_ERROR, "Preset %s not available",
+					preset_names(preset).UTF8String);
+			preset = select_preset(dev, preset);
+		}
+
+		if (!preset) {
+			AVLOG(LOG_ERROR, "Could not select a preset, "
+					"initialization failed");
+			return;
+		}
+
+		capture->session.sessionPreset = preset;
+		AVLOG(LOG_INFO, "Using preset %s",
+				preset_names(preset).UTF8String);
+	}
+
 	if (!init_device_input(capture))
 		goto error_input;
 
 	AVCaptureInputPort *port = capture->device_input.ports[0];
 	capture->has_clock = [port respondsToSelector:@selector(clock)];
-
-	if (obs_data_getbool(settings, "use_preset")) {
-		NSString *preset = [NSString
-			stringWithUTF8String:obs_data_getstring(settings,
-								"preset")];
-		AVLOG(LOG_DEBUG, "Using preset %s", preset.UTF8String);
-		capture->session.sessionPreset = preset;
-	}
 
 	if (!init_format(capture))
 		goto error;
