@@ -49,6 +49,10 @@ struct av_capture {
 	dispatch_queue_t queue;
 	bool has_clock;
 
+	NSString *uid;
+	id connect_observer;
+	id disconnect_observer;
+
 	unsigned fourcc;
 	enum video_format video_format;
 
@@ -149,6 +153,9 @@ static void av_capture_destroy(void *data)
 	if (!capture)
 		return;
 
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	[nc removeObserver:capture->connect_observer];
+	[nc removeObserver:capture->disconnect_observer];
 
 	remove_device(capture);
 	AVFREE(capture->out);
@@ -158,6 +165,8 @@ static void av_capture_destroy(void *data)
 
 	AVFREE(capture->delegate);
 	AVFREE(capture->session);
+
+	AVFREE(capture->uid);
 
 	bfree(capture);
 }
@@ -367,27 +376,90 @@ error_input:
 	AVFREE(capture->device);
 }
 
+static inline void handle_disconnect(struct av_capture* capture,
+		AVCaptureDevice *dev)
+{
+	if (!dev)
+		return;
+
+	if (![dev.uniqueID isEqualTo:capture->uid])
+		return;
+
+	if (!capture->device) {
+		AVLOG(LOG_ERROR, "Received disconnect for unused device '%s'",
+				capture->uid.UTF8String);
+		return;
+	}
+
+	AVLOG(LOG_ERROR, "Device with unique ID '%s' disconnected",
+			dev.uniqueID.UTF8String);
+
+	remove_device(capture);
+}
+
+static inline void handle_connect(struct av_capture *capture,
+		AVCaptureDevice *dev, obs_data_t settings)
+{
+	if (!dev)
+		return;
+
+	if (![dev.uniqueID isEqualTo:capture->uid])
+		return;
+
+	if (capture->device) {
+		AVLOG(LOG_ERROR, "Received connect for in-use device '%s'",
+				capture->uid.UTF8String);
+		return;
+	}
+
+	AVLOG(LOG_INFO, "Device with unique ID '%s' connected, "
+			"resuming capture", dev.uniqueID.UTF8String);
+
+	capture_device(capture, [dev retain], settings);
+}
+
 static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 {
 	if (!init_session(capture))
 		return;
 
-	NSString *uid = get_string(settings, "device");
+	capture->uid = [get_string(settings, "device") retain];
+
+	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+	capture->disconnect_observer = [nc
+		addObserverForName:AVCaptureDeviceWasDisconnectedNotification
+			    object:nil
+			     queue:[NSOperationQueue mainQueue]
+			usingBlock:^(NSNotification *note)
+			{
+				handle_disconnect(capture, note.object);
+			}
+	];
+
+	capture->connect_observer = [nc
+		addObserverForName:AVCaptureDeviceWasConnectedNotification
+			    object:nil
+			     queue:[NSOperationQueue mainQueue]
+			usingBlock:^(NSNotification *note)
+			{
+				handle_connect(capture, note.object, settings);
+			}
+	];
 
 	AVCaptureDevice *dev =
-		[[AVCaptureDevice deviceWithUniqueID:uid] retain];
+		[[AVCaptureDevice deviceWithUniqueID:capture->uid] retain];
 
 	if (!dev) {
-		if (uid.length < 1)
+		if (capture->uid.length < 1)
 			AVLOG(LOG_ERROR, "No device selected");
 		else
 			AVLOG(LOG_ERROR, "Could not initialize device " \
 					"with unique ID '%s'",
-					uid.UTF8String);
+					capture->uid.UTF8String);
 		return;
 	}
 
-	init_with_device(capture, dev, settings);
+	capture_device(capture, dev, settings);
 }
 
 static void *av_capture_create(obs_data_t settings, obs_source_t source)
@@ -548,6 +620,9 @@ static void switch_device(struct av_capture *capture, NSString *uid,
 
 	if (capture->device)
 		remove_device(capture);
+
+	AVFREE(capture->uid);
+	capture->uid = [uid retain];
 
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 	if (!dev) {
