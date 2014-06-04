@@ -134,17 +134,24 @@ static const char *av_capture_getname(const char *locale)
 	return "Video Capture Device";
 }
 
+static void remove_device(struct av_capture *capture)
+{
+	[capture->session stopRunning];
+	[capture->session removeInput:capture->device_input];
+
+	AVFREE(capture->device_input);
+	AVFREE(capture->device);
+}
+
 static void av_capture_destroy(void *data)
 {
 	struct av_capture *capture = data;
 	if (!capture)
 		return;
 
-	[capture->session stopRunning];
 
+	remove_device(capture);
 	AVFREE(capture->out);
-	AVFREE(capture->device_input);
-	AVFREE(capture->device);
 
 	if (capture->queue)
 		dispatch_release(capture->queue);
@@ -202,23 +209,8 @@ error:
 	return false;
 }
 
-static bool init_device_input(struct av_capture *capture, obs_data_t settings)
+static bool init_device_input(struct av_capture *capture)
 {
-	NSString *uid = get_string(settings, "device");
-	capture->device = [[AVCaptureDevice deviceWithUniqueID:uid] retain];
-	if (!capture->device) {
-		if (uid.length < 1)
-			AVLOG(LOG_ERROR, "No device selected");
-		else
-			AVLOG(LOG_ERROR, "Could not initialize device "
-					"with unique ID '%s'",
-					uid.UTF8String);
-		return false;
-	}
-
-	AVLOG(LOG_DEBUG, "Selected device '%s'",
-			capture->device.localizedName.UTF8String);
-
 	NSError *err = nil;
 	capture->device_input = [[AVCaptureDeviceInput
 		deviceInputWithDevice:capture->device error:&err] retain];
@@ -305,12 +297,14 @@ static bool init_frame(struct av_capture *capture)
 	return true;
 }
 
-static void av_capture_init(struct av_capture *capture, obs_data_t settings)
+static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
+		obs_data_t settings)
 {
-	if (!init_session(capture))
-		return;
+	capture->device = dev;
+	AVLOG(LOG_INFO, "Selected device '%s' %p",
+			capture->device.localizedName.UTF8String, capture);
 
-	if (!init_device_input(capture, settings))
+	if (!init_device_input(capture))
 		goto error_input;
 
 	AVCaptureInputPort *port = capture->device_input.ports[0];
@@ -338,6 +332,29 @@ error:
 	AVFREE(capture->device_input);
 error_input:
 	AVFREE(capture->device);
+}
+
+static void av_capture_init(struct av_capture *capture, obs_data_t settings)
+{
+	if (!init_session(capture))
+		return;
+
+	NSString *uid = get_string(settings, "device");
+
+	AVCaptureDevice *dev =
+		[[AVCaptureDevice deviceWithUniqueID:uid] retain];
+
+	if (!dev) {
+		if (uid.length < 1)
+			AVLOG(LOG_ERROR, "No device selected");
+		else
+			AVLOG(LOG_ERROR, "Could not initialize device " \
+					"with unique ID '%s'",
+					uid.UTF8String);
+		return;
+	}
+
+	init_with_device(capture, dev, settings);
 }
 
 static void *av_capture_create(obs_data_t settings, obs_source_t source)
