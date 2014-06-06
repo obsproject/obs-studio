@@ -542,7 +542,7 @@ static inline float to_db(float val)
 }
 
 static void calc_volume_levels(struct obs_source *source, float *array,
-		size_t frames)
+		size_t frames, float volume)
 {
 	float sum_val = 0.0f;
 	float max_val = 0.0f;
@@ -562,8 +562,8 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 		max_val  = fmaxf(max_val, val_pow2);
 	}
 
-	rms_val = to_db(sqrtf(sum_val / (float)count));
-	max_val = to_db(sqrtf(max_val));
+	rms_val = to_db(sqrtf(sum_val / (float)count * volume));
+	max_val = to_db(sqrtf(max_val * volume));
 
 	if (max_val > source->vol_max)
 		source->vol_max = max_val;
@@ -589,7 +589,8 @@ static void obs_source_update_volume_level(obs_source_t source,
 	if (source && in) {
 		struct calldata data = {0};
 
-		calc_volume_levels(source, (float*)in->data[0], in->frames);
+		calc_volume_levels(source, (float*)in->data[0], in->frames,
+				in->volume);
 
 		calldata_setptr  (&data, "source",    source);
 		calldata_setfloat(&data, "level",     source->vol_max);
