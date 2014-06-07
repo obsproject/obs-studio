@@ -42,7 +42,7 @@ static inline GLint convert_gs_format(enum gs_color_format format)
 	case GS_A8:          return GL_RGBA;
 	case GS_R8:          return GL_RED;
 	case GS_RGBA:        return GL_RGBA;
-	case GS_BGRX:        return GL_BGR;
+	case GS_BGRX:        return GL_BGRA;
 	case GS_BGRA:        return GL_BGRA;
 	case GS_R10G10B10A2: return GL_RGBA;
 	case GS_RGBA16:      return GL_RGBA;
@@ -68,7 +68,7 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	case GS_A8:          return GL_R8; /* NOTE: use GL_TEXTURE_SWIZZLE_x */
 	case GS_R8:          return GL_R8;
 	case GS_RGBA:        return GL_RGBA;
-	case GS_BGRX:        return GL_RGBA;
+	case GS_BGRX:        return GL_RGB;
 	case GS_BGRA:        return GL_RGBA;
 	case GS_R10G10B10A2: return GL_RGB10_A2;
 	case GS_RGBA16:      return GL_RGBA16;
