@@ -641,7 +641,7 @@ static void audio_line_place_data_pos(struct audio_line *line,
 		case AUDIO_FORMAT_FLOAT_PLANAR:
 			mul_vol_float((float*)array, data->volume, total_num);
 			break;
-		case AUDIO_FORMAT_UNKNOWN:
+		default:
 			blog(LOG_ERROR, "audio_line_place_data_pos: "
 			                "Unsupported or unknown format");
 			break;
