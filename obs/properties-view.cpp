@@ -211,7 +211,6 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 
 QWidget *OBSPropertiesView::AddButton(obs_property_t prop)
 {
-	const char *name = obs_property_name(prop);
 	const char *desc = obs_property_description(prop);
 
 	QPushButton *button = new QPushButton(QT_UTF8(desc));
