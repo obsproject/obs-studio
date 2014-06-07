@@ -37,10 +37,11 @@ static inline void fill_texture(uint32_t *pixels)
 
 	for (y = 0; y < 20; y++) {
 		for (x = 0; x < 20; x++) {
-			uint32_t pixel = 0xFF000000;
+			uint32_t pixel = 0;
 			pixel |= (rand()%256);
 			pixel |= (rand()%256) << 8;
 			pixel |= (rand()%256) << 16;
+			//pixel |= (rand()%256) << 24;
 			//pixel |= 0xFFFFFFFF;
 			pixels[y*20 + x] = pixel;
 		}
