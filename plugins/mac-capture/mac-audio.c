@@ -101,15 +101,12 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 
 	if (ca->default_device) {
 		addr.mSelector = PROPERTY_DEFAULT_DEVICE;
+		stat = AudioObjectGetPropertyData(kAudioObjectSystemObject,
+				&addr, qual_size, &qual, &size, &ca->device_id);
+		success = (stat == noErr);
 	} else {
-		addr.mSelector = kAudioHardwarePropertyTranslateUIDToDevice;
-		qual      = cf_uid;
-		qual_size = sizeof(CFStringRef);
+		success = coreaudio_get_device_id(cf_uid, &ca->device_id);
 	}
-
-	stat = AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr,
-			qual_size, &qual, &size, &ca->device_id);
-	success = (stat == noErr);
 
 	CFRelease(cf_uid);
 	return success;
