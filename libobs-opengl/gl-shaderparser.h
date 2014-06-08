@@ -59,7 +59,7 @@ static inline void gl_shader_parser_init(struct gl_shader_parser *glsp,
 	glsp->type = type;
 
 	if (type == SHADER_VERTEX) {
-		glsp->input_prefix  = "_geom_shader_attrib";
+		glsp->input_prefix  = "_input_attrib";
 		glsp->output_prefix = "_vertex_shader_attrib";
 	} else if (type == SHADER_PIXEL) {
 		glsp->input_prefix  = "_vertex_shader_attrib";
