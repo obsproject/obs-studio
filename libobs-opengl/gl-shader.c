@@ -168,15 +168,22 @@ static inline bool gl_process_attrib(struct gs_shader *shader,
 		struct gl_parser_attrib *pa)
 {
 	struct shader_attrib attrib = {0};
+
+	/* don't parse output attributes */
+	if (!pa->input)
+		return true;
+
 	get_attrib_type(pa->mapping, &attrib.type, &attrib.index);
 
 	attrib.attrib = glGetAttribLocation(shader->program, pa->name.array);
 	if (!gl_success("glGetAttribLocation"))
 		return false;
 
-	/* If the attribute is not found, it's usually just an output */
-	if (attrib.attrib == -1)
-		return true;
+	if (attrib.attrib == -1) {
+		blog(LOG_ERROR, "glGetAttribLocation: Could not find "
+		                "attribute '%s'", pa->name.array);
+		return false;
+	}
 
 	da_push_back(shader->attribs, &attrib);
 	return true;
@@ -208,7 +215,7 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (!gl_success("glCreateShaderProgramv") || !shader->program)
 		return false;
 
-#if 0
+#if 1
 	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
 	blog(LOG_DEBUG, "  GL shader string for: %s", file);
 	blog(LOG_DEBUG, "-----------------------------------");
