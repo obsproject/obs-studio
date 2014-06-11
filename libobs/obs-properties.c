@@ -522,7 +522,8 @@ void obs_property_list_clear(obs_property_t p)
 		list_data_free(data);
 }
 
-static void add_item(struct list_data *data, const char *name, const void *val)
+static size_t add_item(struct list_data *data, const char *name,
+		const void *val)
 {
 	struct list_item item;
 	item.name  = bstrdup(name);
@@ -534,31 +535,34 @@ static void add_item(struct list_data *data, const char *name, const void *val)
 	else
 		item.str = bstrdup(val);
 
-	da_push_back(data->items, &item);
+	return da_push_back(data->items, &item);
 }
 
-void obs_property_list_add_string(obs_property_t p,
+size_t obs_property_list_add_string(obs_property_t p,
 		const char *name, const char *val)
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_STRING)
-		add_item(data, name, val);
+		return add_item(data, name, val);
+	return 0;
 }
 
-void obs_property_list_add_int(obs_property_t p,
+size_t obs_property_list_add_int(obs_property_t p,
 		const char *name, long long val)
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_INT)
-		add_item(data, name, &val);
+		return add_item(data, name, &val);
+	return 0;
 }
 
-void obs_property_list_add_float(obs_property_t p,
+size_t obs_property_list_add_float(obs_property_t p,
 		const char *name, double val)
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
-		add_item(data, name, &val);
+		return add_item(data, name, &val);
+	return 0;
 }
 
 void obs_property_list_item_remove(obs_property_t p, size_t idx)
