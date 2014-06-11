@@ -197,9 +197,16 @@ static void mix_float(uint8_t *mix_in, struct circlebuf *buf, size_t size)
 		circlebuf_pop_front(buf, vals, pop_count);
 		pop_count /= sizeof(float);
 
+		/* This sequence provides hints for MSVC to use packed SSE 
+		 * instructions addps, minps, maxps, etc. */
 		for (size_t i = 0; i < pop_count; i++) {
 			mix_val =  *mix + vals[i];
-			*(mix++) = CLAMP(mix_val, -1.0f, 1.0f);
+
+			/* clamp confuses the optimisation */
+			mix_val = (mix_val >  1.0f) ?  1.0f : mix_val; 
+			mix_val = (mix_val < -1.0f) ? -1.0f : mix_val;
+
+			*(mix++) = mix_val;
 		}
 	}
 }
