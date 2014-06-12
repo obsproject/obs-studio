@@ -592,22 +592,8 @@ static obs_properties_t av_capture_properties(char const *locale)
 	// TODO: implement manual configuration
 	obs_property_set_enabled(use_preset, false);
 
-	AVCaptureDevice *dev = [AVCaptureDevice
-		defaultDeviceWithMediaType:AVMediaTypeVideo];
-
-	obs_property_t preset_list = obs_properties_add_list(props, "preset",
-			"Preset", OBS_COMBO_TYPE_LIST,
+	obs_properties_add_list(props, "preset", "Preset", OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
-	if (dev) {
-		for (NSString *preset in presets()) {
-			if (![dev supportsAVCaptureSessionPreset:preset])
-				continue;
-
-			obs_property_list_add_string(preset_list,
-					preset_names(preset).UTF8String,
-					preset.UTF8String);
-		}
-	}
 
 	return props;
 }
