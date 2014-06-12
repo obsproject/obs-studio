@@ -34,6 +34,7 @@ struct int_data {
 
 struct list_item {
 	char *name;
+	bool disabled;
 
 	union {
 		char      *str;
@@ -525,7 +526,7 @@ void obs_property_list_clear(obs_property_t p)
 static size_t add_item(struct list_data *data, const char *name,
 		const void *val)
 {
-	struct list_item item;
+	struct list_item item = { NULL };
 	item.name  = bstrdup(name);
 
 	if (data->format == OBS_COMBO_FORMAT_INT)
@@ -578,6 +579,21 @@ size_t obs_property_list_item_count(obs_property_t p)
 {
 	struct list_data *data = get_list_data(p);
 	return data ? data->items.num : 0;
+}
+
+bool obs_property_list_item_disabled(obs_property_t p, size_t idx)
+{
+	struct list_data *data = get_list_data(p);
+	return (data && idx < data->items.num) ?
+		data->items.array[idx].disabled : false;
+}
+
+void obs_property_list_item_disable(obs_property_t p, size_t idx, bool disabled)
+{
+	struct list_data *data = get_list_data(p);
+	if (!data || idx >= data->items.num)
+		return;
+	data->items.array[idx].disabled = disabled;
 }
 
 const char *obs_property_list_item_name(obs_property_t p, size_t idx)
