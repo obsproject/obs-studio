@@ -331,8 +331,12 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t settings)
 {
 	capture->device = dev;
-	AVLOG(LOG_INFO, "Selected device '%s' %p",
-			capture->device.localizedName.UTF8String, capture);
+
+	const char *name = capture->device.localizedName.UTF8String;
+	obs_data_setstring(settings, "device_name", name);
+	obs_data_setstring(settings, "device",
+			capture->device.uniqueID.UTF8String);
+	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
 	if (obs_data_getbool(settings, "use_preset")) {
 		NSString *preset = get_string(settings, "preset");
@@ -534,9 +538,51 @@ static void av_capture_defaults(obs_data_t settings)
 
 	obs_data_set_default_string(settings, "device",
 			dev.uniqueID.UTF8String);
+	obs_data_set_default_string(settings, "device_name",
+			dev.localizedName.UTF8String);
 	obs_data_set_default_bool(settings, "use_preset", true);
 
 	obs_data_set_default_string(settings, "preset", highest.UTF8String);
+}
+
+static bool update_device_list(obs_property_t list,
+		NSString *uid, NSString *name, bool disconnected)
+{
+	bool dev_found     = false;
+	bool list_modified = false;
+
+	size_t size = obs_property_list_item_count(list);
+	for (size_t i = 0; i < size;) {
+		const char *uid_ = obs_property_list_item_string(list, i);
+		bool found       = [uid isEqualToString:@(uid_)];
+		bool disabled    = obs_property_list_item_disabled(list, i);
+		if (!found && !disabled) {
+			i += 1;
+			continue;
+		}
+
+		if (disabled && !found) {
+			list_modified = true;
+			obs_property_list_item_remove(list, i);
+			continue;
+		}
+		
+		if (disabled != disconnected)
+			list_modified = true;
+
+		dev_found = true;
+		obs_property_list_item_disable(list, i, disconnected);
+		i += 1;
+	}
+
+	if (dev_found)
+		return list_modified;
+
+	size_t idx = obs_property_list_add_string(list, name.UTF8String,
+			uid.UTF8String);
+	obs_property_list_item_disable(list, idx, disconnected);
+
+	return true;
 }
 
 static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
@@ -546,8 +592,9 @@ static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
 
 	bool preset_found = false;
 	for (NSString *preset in presets()) {
-		bool supported  = [dev supportsAVCaptureSessionPreset:preset];
 		bool is_current = [preset isEqualToString:current_preset];
+		bool supported  = !dev ||
+			[dev supportsAVCaptureSessionPreset:preset];
 
 		if (is_current)
 			preset_found = true;
@@ -584,7 +631,8 @@ static bool check_preset(AVCaptureDevice *dev,
 	bool presets_changed = false;
 	for (NSString *preset in presets()) {
 		bool is_listed = [listed member:preset] != nil;
-		bool supported = [dev supportsAVCaptureSessionPreset:preset];
+		bool supported = !dev || 
+			[dev supportsAVCaptureSessionPreset:preset];
 
 		if (supported == is_listed)
 			continue;
@@ -602,15 +650,14 @@ static bool check_preset(AVCaptureDevice *dev,
 static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
-	UNUSED_PARAMETER(p);
-
 	NSString *uid = get_string(settings, "device");
-
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
-	if (!dev)
-		return false;
 
-	return check_preset(dev, obs_properties_get(props, "preset"), settings);
+	NSString *name = get_string(settings, "device_name");
+	bool dev_list_updated = update_device_list(p, uid, name, !dev);
+
+	p = obs_properties_get(props, "preset");
+	return check_preset(dev, p, settings) || dev_list_updated;
 }
 
 static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
@@ -620,9 +667,6 @@ static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
 
 	NSString *uid = get_string(settings, "device");
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
-
-	if (!dev)
-		return false;
 
 	return check_preset(dev, p, settings);
 }
