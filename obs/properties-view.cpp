@@ -6,6 +6,7 @@
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QStandardItem>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include <string>
@@ -154,6 +155,21 @@ static void AddComboItem(QComboBox *combo, obs_property_t prop,
 	}
 
 	combo->addItem(QT_UTF8(name), var);
+
+	if (!obs_property_list_item_disabled(prop, idx))
+		return;
+
+	int index = combo->findText(QT_UTF8(name));
+	if (index < 0)
+		return;
+
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel*>(combo->model());
+	if (!model)
+		return;
+
+	QStandardItem *item = model->item(index);
+	item->setFlags(Qt::NoItemFlags);
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t prop)
