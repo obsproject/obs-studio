@@ -103,6 +103,7 @@ struct obs_core_video {
 	bool                            textures_converted[NUM_TEXTURES];
 	struct source_frame             convert_frames[NUM_TEXTURES];
 	effect_t                        default_effect;
+	effect_t                        solid_effect;
 	effect_t                        conversion_effect;
 	stagesurf_t                     mapped_surface;
 	int                             cur_texture;
