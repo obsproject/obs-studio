@@ -990,6 +990,51 @@ void obs_data_set_quat(obs_data_t data, const char *name,
 	obs_data_release(obj);
 }
 
+void obs_data_set_default_vec2(obs_data_t data, const char *name,
+		const struct vec2 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_set_default_obj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_default_vec3(obs_data_t data, const char *name,
+		const struct vec3 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_set_default_obj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_default_vec4(obs_data_t data, const char *name,
+		const struct vec4 *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_setdouble(obj, "w", val->w);
+	obs_data_set_default_obj(data, name, obj);
+	obs_data_release(obj);
+}
+
+void obs_data_set_default_quat(obs_data_t data, const char *name,
+		const struct quat *val)
+{
+	obs_data_t obj = obs_data_create();
+	obs_data_setdouble(obj, "x", val->x);
+	obs_data_setdouble(obj, "y", val->y);
+	obs_data_setdouble(obj, "z", val->z);
+	obs_data_setdouble(obj, "w", val->w);
+	obs_data_set_default_obj(data, name, obj);
+	obs_data_release(obj);
+}
+
 void obs_data_get_vec2(obs_data_t data, const char *name, struct vec2 *val)
 {
 	obs_data_t obj = obs_data_getobj(data, name);
