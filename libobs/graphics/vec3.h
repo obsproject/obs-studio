@@ -18,6 +18,7 @@
 #pragma once
 
 #include "math-defs.h"
+#include "vec4.h"
 #include <xmmintrin.h>
 
 #ifdef __cplusplus
@@ -26,6 +27,7 @@ extern "C" {
 
 struct plane;
 struct matrix3;
+struct matrix4;
 struct quat;
 
 struct vec3 {
@@ -52,6 +54,8 @@ static inline void vec3_copy(struct vec3 *dst, const struct vec3 *v)
 {
 	dst->m = v->m;
 }
+
+EXPORT void vec3_from_vec4(struct vec3 *dst, const struct vec4 *v);
 
 static inline void vec3_add(struct vec3 *dst, const struct vec3 *v1,
 		const struct vec3 *v2)
@@ -131,6 +135,7 @@ static inline void vec3_neg(struct vec3 *dst, const struct vec3 *v)
 	dst->x = -v->x;
 	dst->y = -v->y;
 	dst->z = -v->z;
+	dst->w = 0.0f;
 }
 
 static inline float vec3_len(const struct vec3 *v)
@@ -198,6 +203,7 @@ static inline void vec3_abs(struct vec3 *dst, const struct vec3 *v)
 	dst->x = fabsf(v->x);
 	dst->y = fabsf(v->y);
 	dst->z = fabsf(v->z);
+	dst->w = 0.0f;
 }
 
 static inline void vec3_floor(struct vec3 *dst, const struct vec3 *v)
@@ -205,6 +211,7 @@ static inline void vec3_floor(struct vec3 *dst, const struct vec3 *v)
 	dst->x = floorf(v->x);
 	dst->y = floorf(v->y);
 	dst->z = floorf(v->z);
+	dst->w = 0.0f;
 }
 
 static inline void vec3_ceil(struct vec3 *dst, const struct vec3 *v)
@@ -212,13 +219,17 @@ static inline void vec3_ceil(struct vec3 *dst, const struct vec3 *v)
 	dst->x = ceilf(v->x);
 	dst->y = ceilf(v->y);
 	dst->z = ceilf(v->z);
+	dst->w = 0.0f;
 }
 
 EXPORT float vec3_plane_dist(const struct vec3 *v, const struct plane *p);
 
+EXPORT void vec3_transform(struct vec3 *dst, const struct vec3 *v,
+		const struct matrix4 *m);
+
 EXPORT void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
 		const struct matrix3 *m);
-EXPORT void vec3_transform(struct vec3 *dst, const struct vec3 *v,
+EXPORT void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v,
 		const struct matrix3 *m);
 
 EXPORT void vec3_mirror(struct vec3 *dst, const struct vec3 *v,

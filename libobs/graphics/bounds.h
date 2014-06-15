@@ -72,6 +72,8 @@ EXPORT void bounds_get_center(struct vec3 *dst, const struct bounds *b);
  * the actual size becoming larger than it originally was.
  */
 EXPORT void bounds_transform(struct bounds *dst, const struct bounds *b,
+		const struct matrix4 *m);
+EXPORT void bounds_transform3x4(struct bounds *dst, const struct bounds *b,
 		const struct matrix3 *m);
 
 EXPORT bool bounds_intersection_ray(const struct bounds *b,
@@ -108,6 +110,9 @@ static inline bool bounds_vec3_inside(const struct bounds *b,
 EXPORT bool bounds_intersects(const struct bounds *b,
 		const struct bounds *test, float epsilon);
 EXPORT bool bounds_intersects_obb(const struct bounds *b,
+		const struct bounds *test, const struct matrix4 *m,
+		float epsilon);
+EXPORT bool bounds_intersects_obb3x4(const struct bounds *b,
 		const struct bounds *test, const struct matrix3 *m,
 		float epsilon);
 

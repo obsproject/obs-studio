@@ -17,6 +17,7 @@
 
 #include "bounds.h"
 #include "matrix3.h"
+#include "matrix4.h"
 #include "plane.h"
 
 void bounds_move(struct bounds *dst, const struct bounds *b,
@@ -83,7 +84,7 @@ void bounds_get_center(struct vec3 *dst, const struct bounds *b)
 }
 
 void bounds_transform(struct bounds *dst, const struct bounds *b,
-		const struct matrix3 *m)
+		const struct matrix4 *m)
 {
 	struct bounds temp;
 	bool b_init = false;
@@ -101,17 +102,54 @@ void bounds_transform(struct bounds *dst, const struct bounds *b,
 		} else {
 			if (p.x < temp.min.x)
 				temp.min.x = p.x;
-			else if(p.x > temp.max.x)
+			else if (p.x > temp.max.x)
 				temp.max.x = p.x;
 
-			if(p.y < temp.min.y)
+			if (p.y < temp.min.y)
 				temp.min.y = p.y;
-			else if(p.y > temp.max.y)
+			else if (p.y > temp.max.y)
 				temp.max.y = p.y;
 
-			if(p.z < temp.min.z)
+			if (p.z < temp.min.z)
 				temp.min.z = p.z;
-			else if(p.z > temp.max.z)
+			else if (p.z > temp.max.z)
+				temp.max.z = p.z;
+		}
+	}
+
+	bounds_copy(dst, &temp);
+}
+
+void bounds_transform3x4(struct bounds *dst, const struct bounds *b,
+		const struct matrix3 *m)
+{
+	struct bounds temp;
+	bool b_init = false;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		struct vec3 p;
+		bounds_get_point(&p, b, i);
+		vec3_transform3x4(&p, &p, m);
+
+		if (!b_init) {
+			vec3_copy(&temp.min, &p);
+			vec3_copy(&temp.max, &p);
+			b_init = true;
+		} else {
+			if (p.x < temp.min.x)
+				temp.min.x = p.x;
+			else if (p.x > temp.max.x)
+				temp.max.x = p.x;
+
+			if (p.y < temp.min.y)
+				temp.min.y = p.y;
+			else if (p.y > temp.max.y)
+				temp.max.y = p.y;
+
+			if (p.z < temp.min.z)
+				temp.min.z = p.z;
+			else if (p.z > temp.max.z)
 				temp.max.z = p.z;
 		}
 	}
@@ -227,6 +265,21 @@ bool bounds_intersects(const struct bounds *b, const struct bounds *test,
 }
 
 bool bounds_intersects_obb(const struct bounds *b, const struct bounds *test,
+		const struct matrix4 *m, float epsilon)
+{
+	struct bounds b_tr, test_tr;
+	struct matrix4 m_inv;
+
+	matrix4_inv(&m_inv, m);
+
+	bounds_transform(&b_tr, b, m);
+	bounds_transform(&test_tr, test, &m_inv);
+
+	return bounds_intersects(b, &test_tr, epsilon) &&
+	       bounds_intersects(&b_tr, test, epsilon);
+}
+
+bool bounds_intersects_obb3x4(const struct bounds *b, const struct bounds *test,
 		const struct matrix3 *m, float epsilon)
 {
 	struct bounds b_tr, test_tr;
@@ -234,8 +287,8 @@ bool bounds_intersects_obb(const struct bounds *b, const struct bounds *test,
 
 	matrix3_transpose(&m_inv, m);
 
-	bounds_transform(&b_tr, b, m);
-	bounds_transform(&test_tr, test, &m_inv);
+	bounds_transform3x4(&b_tr, b, m);
+	bounds_transform3x4(&test_tr, test, &m_inv);
 
 	return bounds_intersects(b, &test_tr, epsilon) &&
 	       bounds_intersects(&b_tr, test, epsilon);

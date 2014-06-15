@@ -34,14 +34,28 @@ void plane_from_tri(struct plane *dst,
 }
 
 void plane_transform(struct plane *dst, const struct plane *p,
-		const struct matrix3 *m)
+		const struct matrix4 *m)
 {
 	struct vec3 temp;
+
+	vec3_zero(&temp);
 
 	vec3_transform(&dst->dir, &p->dir, m);
 	vec3_norm(&dst->dir, &dst->dir);
 
-	vec3_transform(&temp, &m->t, m);
+	vec3_transform(&temp, &temp, m);
+	dst->dist = p->dist - vec3_dot(&dst->dir, &temp);
+}
+
+void plane_transform3x4(struct plane *dst, const struct plane *p,
+		const struct matrix3 *m)
+{
+	struct vec3 temp;
+
+	vec3_transform3x4(&dst->dir, &p->dir, m);
+	vec3_norm(&dst->dir, &dst->dir);
+
+	vec3_transform3x4(&temp, &m->t, m);
 	dst->dist = p->dist - vec3_dot(&dst->dir, &temp);
 }
 

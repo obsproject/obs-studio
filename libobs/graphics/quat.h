@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 struct matrix3;
+struct matrix4;
 struct axisang;
 
 struct quat {
@@ -162,6 +163,7 @@ static inline bool quat_close(const struct quat *q1, const struct quat *q2,
 
 EXPORT void quat_from_axisang(struct quat *dst, const struct axisang *aa);
 EXPORT void quat_from_matrix3(struct quat *dst, const struct matrix3 *m);
+EXPORT void quat_from_matrix4(struct quat *dst, const struct matrix4 *m);
 
 EXPORT void quat_get_dir(struct vec3 *dst, const struct quat *q);
 EXPORT void quat_set_look_dir(struct quat *dst, const struct vec3 *dir);

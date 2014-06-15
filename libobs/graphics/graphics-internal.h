@@ -229,7 +229,7 @@ struct graphics_subsystem {
 
 	DARRAY(struct gs_rect) viewport_stack;
 
-	DARRAY(struct matrix3) matrix_stack;
+	DARRAY(struct matrix4) matrix_stack;
 	size_t                 cur_matrix;
 
 	struct matrix4         projection;
