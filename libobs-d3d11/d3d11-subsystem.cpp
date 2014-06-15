@@ -367,10 +367,7 @@ void gs_device::UpdateBlendState()
 
 void gs_device::UpdateViewProjMatrix()
 {
-	matrix3 cur_matrix;
-	gs_matrix_get(&cur_matrix);
-
-	matrix4_from_matrix3(&curViewMatrix, &cur_matrix);
+	gs_matrix_get(&curViewMatrix);
 
 	/* negate Z col of the view matrix for right-handed coordinate system */
 	curViewMatrix.x.z = -curViewMatrix.x.z;

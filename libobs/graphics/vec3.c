@@ -16,11 +16,18 @@
 ******************************************************************************/
 
 #include "vec3.h"
+#include "vec4.h"
 #include "quat.h"
 #include "axisang.h"
 #include "plane.h"
 #include "matrix3.h"
 #include "math-extra.h"
+
+void vec3_from_vec4(struct vec3 *dst, const struct vec4 *v)
+{
+	dst->m = v->m;
+	dst->w = 0.0f;
+}
 
 float vec3_plane_dist(const struct vec3 *v, const struct plane *p)
 {
@@ -36,9 +43,19 @@ void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
 	dst->x = vec3_dot(&temp, &m->x);
 	dst->y = vec3_dot(&temp, &m->y);
 	dst->z = vec3_dot(&temp, &m->z);
+	dst->w = 0.0f;
 }
 
 void vec3_transform(struct vec3 *dst, const struct vec3 *v,
+		const struct matrix4 *m)
+{
+	struct vec4 v4;
+	vec4_from_vec3(&v4, v);
+	vec4_transform(&v4, &v4, m);
+	vec3_from_vec4(dst, &v4);
+}
+
+void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v,
 		const struct matrix3 *m)
 {
 	struct vec3 temp;
@@ -47,6 +64,7 @@ void vec3_transform(struct vec3 *dst, const struct vec3 *v,
 	dst->x = vec3_dot(&temp, &m->x);
 	dst->y = vec3_dot(&temp, &m->y);
 	dst->z = vec3_dot(&temp, &m->z);
+	dst->w = 0.0f;
 }
 
 void vec3_mirror(struct vec3 *dst, const struct vec3 *v, const struct plane *p)

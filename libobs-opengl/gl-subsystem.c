@@ -866,10 +866,8 @@ static inline bool can_render(device_t device)
 static void update_viewproj_matrix(struct gs_device *device)
 {
 	struct gs_shader *vs = device->cur_vertex_shader;
-	struct matrix3 cur_matrix;
-	gs_matrix_get(&cur_matrix);
+	gs_matrix_get(&device->cur_view);
 
-	matrix4_from_matrix3(&device->cur_view, &cur_matrix);
 	matrix4_mul(&device->cur_viewproj, &device->cur_view,
 			&device->cur_proj);
 	matrix4_transpose(&device->cur_viewproj, &device->cur_viewproj);

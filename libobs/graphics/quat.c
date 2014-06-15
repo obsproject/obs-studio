@@ -18,6 +18,7 @@
 #include "quat.h"
 #include "vec3.h"
 #include "matrix3.h"
+#include "matrix4.h"
 #include "axisang.h"
 
 static inline void quat_vec3(struct vec3 *v, const struct quat *q)
@@ -60,19 +61,24 @@ struct f4x4 {
 
 void quat_from_matrix3(struct quat *dst, const struct matrix3 *m)
 {
+	quat_from_matrix4(dst, (const struct matrix4*)m);
+}
+
+void quat_from_matrix4(struct quat *dst, const struct matrix4 *m)
+{
 	float tr = (m->x.x + m->y.y + m->z.z);
 	float inv_half;
 	float four_d;
 	int i,j,k;
 
 	if (tr > 0.0f) {
-		four_d = sqrtf(tr+1.0f);
-		dst->w = four_d*0.5f;
+		four_d = sqrtf(tr + 1.0f);
+		dst->w = four_d * 0.5f;
 
-		inv_half = 0.5f/four_d;
-		dst->x = (m->y.z - m->z.y)*inv_half;
-		dst->y = (m->z.x - m->x.z)*inv_half;
-		dst->z = (m->x.y - m->y.x)*inv_half;
+		inv_half = 0.5f / four_d;
+		dst->x = (m->y.z - m->z.y) * inv_half;
+		dst->y = (m->z.x - m->x.z) * inv_half;
+		dst->z = (m->x.y - m->y.x) * inv_half;
 	} else {
 		struct f4x4 *val = (struct f4x4*)m;
 
@@ -81,20 +87,20 @@ void quat_from_matrix3(struct quat *dst, const struct matrix3 *m)
 		if (m->z.z > val->ptr[i][i])
 			i = 2;
 
-		j = (i+1)%3;
-		k = (i+2)%3;
+		j = (i+1) % 3;
+		k = (i+2) % 3;
 
 		/* ---------------------------------- */
 
 		four_d = sqrtf((val->ptr[i][i] - val->ptr[j][j] -
 					val->ptr[k][k]) + 1.0f);
 
-		dst->ptr[i] = four_d*0.5f;
+		dst->ptr[i] = four_d * 0.5f;
 
-		inv_half = 0.5f/four_d;
-		dst->ptr[j]  = (val->ptr[i][j] + val->ptr[j][i])*inv_half;
-		dst->ptr[k]  = (val->ptr[i][k] + val->ptr[k][i])*inv_half;
-		dst->w =       (val->ptr[j][k] - val->ptr[k][j])*inv_half;
+		inv_half = 0.5f / four_d;
+		dst->ptr[j]  = (val->ptr[i][j] + val->ptr[j][i]) * inv_half;
+		dst->ptr[k]  = (val->ptr[i][k] + val->ptr[k][i]) * inv_half;
+		dst->w =       (val->ptr[j][k] - val->ptr[k][j]) * inv_half;
 	}
 }
 

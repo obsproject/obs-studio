@@ -37,21 +37,9 @@ void matrix3_from_quat(struct matrix3 *dst, const struct quat *q)
 	float wy = q->w * q->y * s;
 	float wz = q->w * q->z * s;
 
-	dst->x.x = 1.0f - (yy + zz);
-	dst->x.y = xy + wz;
-	dst->x.z = xz - wy;
-	dst->x.w = 0.0f;
-
-	dst->y.x = xy - wz;
-	dst->y.y = 1.0f - (xx + zz);
-	dst->y.z = yz + wx;
-	dst->y.w = 0.0f;
-
-	dst->z.x = xz + wy;
-	dst->z.y = yz - wx;
-	dst->z.z = 1.0f - (xx + yy);
-	dst->z.w = 0.0f;
-
+	vec3_set(&dst->x, 1.0f - (yy + zz), xy + wz, xz - wy);
+	vec3_set(&dst->y, xy - wz, 1.0f - (xx + zz), yz + wx);
+	vec3_set(&dst->z, xz + wy, yz - wx, 1.0f - (xx + yy));
 	vec3_zero(&dst->t);
 }
 
@@ -77,10 +65,19 @@ void matrix3_from_matrix4(struct matrix3 *dst, const struct matrix4 *m)
 void matrix3_mul(struct matrix3 *dst, const struct matrix3 *m1,
 		const struct matrix3 *m2)
 {
-	vec3_rotate(&dst->x, &m1->x, m2);
-	vec3_rotate(&dst->y, &m1->y, m2);
-	vec3_rotate(&dst->z, &m1->z, m2);
-	vec3_transform(&dst->t, &m1->t, m2);
+	if (dst == m2) {
+		struct matrix3 temp;
+		vec3_rotate(&temp.x, &m1->x, m2);
+		vec3_rotate(&temp.y, &m1->y, m2);
+		vec3_rotate(&temp.z, &m1->z, m2);
+		vec3_transform3x4(&temp.t, &m1->t, m2);
+		matrix3_copy(dst, &temp);
+	} else {
+		vec3_rotate(&dst->x, &m1->x, m2);
+		vec3_rotate(&dst->y, &m1->y, m2);
+		vec3_rotate(&dst->z, &m1->z, m2);
+		vec3_transform3x4(&dst->t, &m1->t, m2);
+	}
 }
 
 void matrix3_rotate(struct matrix3 *dst, const struct matrix3 *m,
@@ -123,7 +120,10 @@ void matrix3_transpose(struct matrix3 *dst, const struct matrix3 *m)
 
 void matrix3_inv(struct matrix3 *dst, const struct matrix3 *m)
 {
-	matrix4_inv((struct matrix4*)dst, (struct matrix4*)m);
+	struct matrix4 m4;
+	matrix4_from_matrix3(&m4, m);
+	matrix4_inv((struct matrix4*)dst, &m4);
+	dst->t.w = 0.0f;
 }
 
 void matrix3_mirror(struct matrix3 *dst, const struct matrix3 *m,

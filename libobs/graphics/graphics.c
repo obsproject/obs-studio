@@ -87,9 +87,9 @@ static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
 
 static bool graphics_init(struct graphics_subsystem *graphics)
 {
-	struct matrix3 top_mat;
+	struct matrix4 top_mat;
 
-	matrix3_identity(&top_mat);
+	matrix4_identity(&top_mat);
 	da_push_back(graphics->matrix_stack, &top_mat);
 
 	graphics->exports.device_entercontext(graphics->device);
@@ -203,7 +203,7 @@ graphics_t gs_getcontext(void)
 	return thread_graphics;
 }
 
-static inline struct matrix3 *top_matrix(graphics_t graphics)
+static inline struct matrix4 *top_matrix(graphics_t graphics)
 {
 	return graphics ? 
 		(graphics->matrix_stack.array + graphics->cur_matrix) : NULL;
@@ -215,9 +215,9 @@ void gs_matrix_push(void)
 	if (!graphics)
 		return;
 
-	struct matrix3 mat, *top_mat = top_matrix(graphics);
+	struct matrix4 mat, *top_mat = top_matrix(graphics);
 
-	memcpy(&mat, top_mat, sizeof(struct matrix3));
+	memcpy(&mat, top_mat, sizeof(struct matrix4));
 	da_push_back(graphics->matrix_stack, &mat);
 	graphics->cur_matrix++;
 }
@@ -239,97 +239,97 @@ void gs_matrix_pop(void)
 
 void gs_matrix_identity(void)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_identity(top_mat);
+		matrix4_identity(top_mat);
 }
 
 void gs_matrix_transpose(void)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_transpose(top_mat, top_mat);
+		matrix4_transpose(top_mat, top_mat);
 }
 
-void gs_matrix_set(const struct matrix3 *matrix)
+void gs_matrix_set(const struct matrix4 *matrix)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_copy(top_mat, matrix);
+		matrix4_copy(top_mat, matrix);
 }
 
-void gs_matrix_get(struct matrix3 *dst)
+void gs_matrix_get(struct matrix4 *dst)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_copy(dst, top_mat);
+		matrix4_copy(dst, top_mat);
 }
 
-void gs_matrix_mul(const struct matrix3 *matrix)
+void gs_matrix_mul(const struct matrix4 *matrix)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_mul(top_mat, top_mat, matrix);
+		matrix4_mul(top_mat, top_mat, matrix);
 }
 
 void gs_matrix_rotquat(const struct quat *rot)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_rotate(top_mat, top_mat, rot);
+		matrix4_rotate(top_mat, top_mat, rot);
 }
 
 void gs_matrix_rotaa(const struct axisang *rot)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_rotate_aa(top_mat, top_mat, rot);
+		matrix4_rotate_aa(top_mat, top_mat, rot);
 }
 
 void gs_matrix_translate(const struct vec3 *pos)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_translate(top_mat, top_mat, pos);
+		matrix4_translate3v(top_mat, top_mat, pos);
 }
 
 void gs_matrix_scale(const struct vec3 *scale)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_scale(top_mat, top_mat, scale);
+		matrix4_scale(top_mat, top_mat, scale);
 }
 
 void gs_matrix_rotaa4f(float x, float y, float z, float angle)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct axisang aa;
 
 	if (top_mat) {
 		axisang_set(&aa, x, y, z, angle);
-		matrix3_rotate_aa(top_mat, top_mat, &aa);
+		matrix4_rotate_aa(top_mat, top_mat, &aa);
 	}
 }
 
 void gs_matrix_translate3f(float x, float y, float z)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix3_translate(top_mat, top_mat, &p);
+		matrix4_translate3v(top_mat, top_mat, &p);
 	}
 }
 
 void gs_matrix_scale3f(float x, float y, float z)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix3_scale(top_mat, top_mat, &p);
+		matrix4_scale(top_mat, top_mat, &p);
 	}
 }
 
