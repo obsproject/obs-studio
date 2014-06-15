@@ -136,8 +136,6 @@ gs_vertex_buffer::gs_vertex_buffer(device_t device, struct vb_data *data,
 		uvSizes.push_back(tverts->width * sizeof(float));
 	}
 
-	if (!dynamic) {
-		bfree(data);
-		data = NULL;
-	}
+	if (!dynamic)
+		vbd.Clear();
 }

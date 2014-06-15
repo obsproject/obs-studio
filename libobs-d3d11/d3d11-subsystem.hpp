@@ -169,6 +169,8 @@ static inline D3D11_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 struct VBDataPtr {
 	vb_data *data;
 
+	inline void Clear() {vbdata_destroy(data); data = nullptr;}
+
 	inline VBDataPtr(vb_data *data) : data(data) {}
 	inline ~VBDataPtr() {vbdata_destroy(data);}
 };
