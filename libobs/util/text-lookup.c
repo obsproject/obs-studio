@@ -27,9 +27,11 @@ struct text_leaf {
 
 static inline void text_leaf_destroy(struct text_leaf *leaf)
 {
-	bfree(leaf->lookup);
-	bfree(leaf->value);
-	bfree(leaf);
+	if (leaf) {
+		bfree(leaf->lookup);
+		bfree(leaf->value);
+		bfree(leaf);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
