@@ -21,6 +21,7 @@
 #include "util/bmem.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
+#include "graphics/vec3.h"
 #include "media-io/audio-io.h"
 #include "media-io/video-io.h"
 #include "callback/signal.h"
@@ -31,6 +32,8 @@
 #include "obs-data.h"
 #include "obs-ui.h"
 #include "obs-properties.h"
+
+struct matrix4;
 
 /* opaque types */
 struct obs_display;
@@ -86,12 +89,37 @@ enum allow_direct_render {
 };
 
 /**
+ * Used with scene items to indicate the type of bounds to use for scene items.
+ * Mostly determines how the image will be scaled within those bounds, or
+ * whether to use bounds at all.
+ */
+enum obs_bounds_type {
+	OBS_BOUNDS_NONE,            /**< no bounds */
+	OBS_BOUNDS_ALIGN_ONLY,      /**< no scaling to bounds, align only */
+	OBS_BOUNDS_SCALE_INNER,     /**< scales to inner rectangle */
+	OBS_BOUNDS_SCALE_OUTER,     /**< scales to outer rectangle */
+	OBS_BOUNDS_SCALE_TO_WIDTH,  /**< scales to the width  */
+	OBS_BOUNDS_SCALE_TO_HEIGHT, /**< scales to the height */
+	OBS_BOUNDS_STRETCH          /**< stretch (ignores base scale) */
+};
+
+struct obs_sceneitem_info {
+	struct vec2          pos;
+	float                rot;
+	struct vec2          scale;
+	uint32_t             alignment;
+
+	enum obs_bounds_type bounds_type;
+	uint32_t             bounds_alignment;
+	struct vec2          bounds;
+};
+
+/**
  * Video initialization structure
  */
 struct obs_video_info {
 	/**
-	 * Graphics module to use (usually "libobs-opengl" or
-	 * "libobs-d3d11")
+	 * Graphics module to use (usually "libobs-opengl" or "libobs-d3d11")
 	 */
 	const char          *graphics_module;
 
@@ -669,20 +697,44 @@ EXPORT obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item);
 /** Gets the source of a scene item. */
 EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
 
-/* Functions for gettings/setting specific oriantation of a scene item */
+EXPORT void obs_sceneitem_select(obs_sceneitem_t item, bool select);
+EXPORT bool obs_sceneitem_selected(obs_sceneitem_t item);
+
+/* Functions for gettings/setting specific orientation of a scene item */
 EXPORT void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos);
-EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot);
-EXPORT void obs_sceneitem_setorigin(obs_sceneitem_t item,
-		const struct vec2 *origin);
+EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot_deg);
 EXPORT void obs_sceneitem_setscale(obs_sceneitem_t item,
 		const struct vec2 *scale);
+EXPORT void obs_sceneitem_setalignment(obs_sceneitem_t item,
+		uint32_t alignment);
 EXPORT void obs_sceneitem_setorder(obs_sceneitem_t item,
 		enum order_movement movement);
 
+EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t item,
+		enum obs_bounds_type type);
+EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t item,
+		uint32_t alignment);
+EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t item,
+		const struct vec2 *bounds);
+
 EXPORT void  obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos);
 EXPORT float obs_sceneitem_getrot(obs_sceneitem_t item);
-EXPORT void  obs_sceneitem_getorigin(obs_sceneitem_t item, struct vec2 *center);
 EXPORT void  obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale);
+EXPORT uint32_t obs_sceneitem_getalignment(obs_sceneitem_t item);
+
+EXPORT enum obs_bounds_type obs_sceneitem_get_bounds_type(obs_sceneitem_t item);
+EXPORT uint32_t obs_sceneitem_get_bounds_alignment(obs_sceneitem_t item);
+EXPORT void obs_sceneitem_get_bounds(obs_sceneitem_t item, struct vec2 *bounds);
+
+EXPORT void obs_sceneitem_get_info(obs_sceneitem_t item,
+		struct obs_sceneitem_info *info);
+EXPORT void obs_sceneitem_set_info(obs_sceneitem_t item,
+		const struct obs_sceneitem_info *info);
+
+EXPORT void obs_sceneitem_get_draw_transform(obs_sceneitem_t item,
+		struct matrix4 *transform);
+EXPORT void obs_sceneitem_get_box_transform(obs_sceneitem_t item,
+		struct matrix4 *transform);
 
 
 /* ------------------------------------------------------------------------- */
