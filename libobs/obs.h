@@ -317,6 +317,9 @@ EXPORT char *obs_find_plugin_file(const char *file);
 /** Returns the default effect for generic RGB/YUV drawing */
 EXPORT effect_t obs_get_default_effect(void);
 
+/** Returns the solid effect for drawing solid colors */
+EXPORT effect_t obs_get_solid_effect(void);
+
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t obs_signalhandler(void);
 

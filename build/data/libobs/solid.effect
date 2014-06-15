@@ -1,0 +1,54 @@
+uniform float4x4 ViewProj;
+uniform float4 color = {1.0, 1.0, 1.0, 1.0};
+
+struct SolidVertInOut {
+	float4 pos : POSITION;
+};
+
+SolidVertInOut VSSolid(SolidVertInOut vert_in)
+{
+	SolidVertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	return vert_out;
+}
+
+float4 PSSolid(SolidVertInOut vert_in) : TARGET
+{
+	return color;
+}
+
+struct SolidColoredVertInOut {
+	float4 pos   : POSITION;
+	float4 color : COLOR;
+};
+
+SolidColoredVertInOut VSSolidColored(SolidColoredVertInOut vert_in)
+{
+	SolidColoredVertInOut vert_out;
+	vert_out.pos   = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.color = vert_in.color;
+	return vert_out;
+}
+
+float4 PSSolidColored(SolidColoredVertInOut vert_in) : TARGET
+{
+	return vert_in.color * color;
+}
+
+technique Solid
+{
+	pass
+	{
+		vertex_shader = VSSolid(vert_in);
+		pixel_shader  = PSSolid(vert_in);
+	}
+}
+
+technique SolidColored
+{
+	pass
+	{
+		vertex_shader = VSSolidColored(vert_in);
+		pixel_shader  = PSSolidColored(vert_in);
+	}
+}

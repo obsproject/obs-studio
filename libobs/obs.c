@@ -218,12 +218,19 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 				NULL);
 		bfree(filename);
 
+		filename = find_libobs_data_file("solid.effect");
+		video->solid_effect = gs_create_effect_from_file(filename,
+				NULL);
+		bfree(filename);
+
 		filename = find_libobs_data_file("format_conversion.effect");
 		video->conversion_effect = gs_create_effect_from_file(filename,
 				NULL);
 		bfree(filename);
 
 		if (!video->default_effect)
+			success = false;
+		if (!video->solid_effect)
 			success = false;
 		if (!video->conversion_effect)
 			success = false;
@@ -342,6 +349,7 @@ static void obs_free_graphics(void)
 		gs_entercontext(video->graphics);
 
 		effect_destroy(video->default_effect);
+		effect_destroy(video->solid_effect);
 		effect_destroy(video->conversion_effect);
 		video->default_effect = NULL;
 
@@ -962,6 +970,12 @@ effect_t obs_get_default_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.default_effect;
+}
+
+effect_t obs_get_solid_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.solid_effect;
 }
 
 signal_handler_t obs_signalhandler(void)
