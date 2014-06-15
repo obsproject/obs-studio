@@ -86,11 +86,12 @@ void dc_capture_free(struct dc_capture *capture)
 	memset(capture, 0, sizeof(struct dc_capture));
 }
 
-static void draw_cursor(struct dc_capture *capture, HDC hdc)
+static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 {
-	HICON icon;
-	ICONINFO ii;
+	HICON      icon;
+	ICONINFO   ii;
 	CURSORINFO *ci = &capture->ci;
+	POINT      win_pos = {capture->x, capture->y};
 
 	if (!(capture->ci.flags & CURSOR_SHOWING))
 		return;
@@ -101,8 +102,12 @@ static void draw_cursor(struct dc_capture *capture, HDC hdc)
 
 	if (GetIconInfo(icon, &ii)) {
 		POINT pos;
-		pos.x = ci->ptScreenPos.x - (int)ii.xHotspot - capture->x;
-		pos.y = ci->ptScreenPos.y - (int)ii.yHotspot - capture->y;
+
+		if (window)
+			ClientToScreen(window, &win_pos);
+
+		pos.x = ci->ptScreenPos.x - (int)ii.xHotspot - win_pos.x;
+		pos.y = ci->ptScreenPos.y - (int)ii.yHotspot - win_pos.y;
 
 		DrawIcon(hdc, pos.x, pos.y, icon);
 
@@ -163,7 +168,7 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 	ReleaseDC(NULL, hdc_target);
 
 	if (capture->cursor_captured)
-		draw_cursor(capture, hdc);
+		draw_cursor(capture, hdc, window);
 
 	dc_capture_release_dc(capture);
 
