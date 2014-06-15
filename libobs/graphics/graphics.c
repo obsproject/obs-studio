@@ -451,25 +451,30 @@ vertbuffer_t gs_rendersave(void)
 	if (graphics->using_immediate)
 		return NULL;
 
-	if (!graphics->vbd->num) {
+	if (!graphics->verts.num) {
 		vbdata_destroy(graphics->vbd);
 		return NULL;
 	}
 
-	for (num_tex = 0; num_tex < 16; num_tex++) {
+	for (num_tex = 0; num_tex < 16; num_tex++)
 		if (!graphics->texverts[num_tex].num)
 			break;
-	}
 
 	graphics->vbd->points  = graphics->verts.array;
 	graphics->vbd->normals = graphics->norms.array;
 	graphics->vbd->colors  = graphics->colors.array;
 	graphics->vbd->num     = graphics->verts.num;
 	graphics->vbd->num_tex = num_tex;
-	graphics->vbd->tvarray = bmalloc(sizeof(struct tvertarray) * num_tex);
-	for (i = 0; i < num_tex; i++) {
-		graphics->vbd->tvarray[i].width = 2;
-		graphics->vbd->tvarray[i].array = graphics->texverts[i].array;
+
+	if (graphics->vbd->num_tex) {
+		graphics->vbd->tvarray =
+			bmalloc(sizeof(struct tvertarray) * num_tex);
+
+		for (i = 0; i < num_tex; i++) {
+			graphics->vbd->tvarray[i].width = 2;
+			graphics->vbd->tvarray[i].array =
+				graphics->texverts[i].array;
+		}
 	}
 
 	reset_immediate_arrays(graphics);
@@ -504,9 +509,6 @@ void gs_normal3f(float x, float y, float z)
 static inline bool validvertsize(graphics_t graphics, size_t num,
 		const char *name)
 {
-	if (!graphics)
-		return false;
-
 	if (graphics->using_immediate && num == IMMEDIATE_COUNT) {
 		blog(LOG_ERROR, "%s: tried to use over %u "
 				"for immediate rendering",
@@ -520,6 +522,8 @@ static inline bool validvertsize(graphics_t graphics, size_t num,
 void gs_color(uint32_t color)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->colors.num, "gs_color"))
 		return;
 	
@@ -545,6 +549,8 @@ void gs_vertex2v(const struct vec2 *v)
 void gs_vertex3v(const struct vec3 *v)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->verts.num, "gs_vertex"))
 		return;
 
@@ -554,6 +560,8 @@ void gs_vertex3v(const struct vec3 *v)
 void gs_normal3v(const struct vec3 *v)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->norms.num, "gs_normal"))
 		return;
 	
@@ -569,6 +577,8 @@ void gs_color4v(const struct vec4 *v)
 void gs_texcoord2v(const struct vec2 *v, int unit)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->texverts[unit].num,
 				"gs_texcoord"))
 		return;
