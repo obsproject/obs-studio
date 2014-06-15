@@ -95,12 +95,12 @@ enum allow_direct_render {
  */
 enum obs_bounds_type {
 	OBS_BOUNDS_NONE,            /**< no bounds */
-	OBS_BOUNDS_ALIGN_ONLY,      /**< no scaling to bounds, align only */
+	OBS_BOUNDS_STRETCH,         /**< stretch (ignores base scale) */
 	OBS_BOUNDS_SCALE_INNER,     /**< scales to inner rectangle */
 	OBS_BOUNDS_SCALE_OUTER,     /**< scales to outer rectangle */
 	OBS_BOUNDS_SCALE_TO_WIDTH,  /**< scales to the width  */
 	OBS_BOUNDS_SCALE_TO_HEIGHT, /**< scales to the height */
-	OBS_BOUNDS_STRETCH          /**< stretch (ignores base scale) */
+	OBS_BOUNDS_MAX_ONLY,        /**< no scaling, maximum size only */
 };
 
 struct obs_sceneitem_info {

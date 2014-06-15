@@ -175,14 +175,19 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 		struct vec2 *origin, struct vec2 *scale,
 		uint32_t *cx, uint32_t *cy)
 {
-	float width         = (float)(*cx) * fabsf(scale->x);
-	float height        = (float)(*cy) * fabsf(scale->y);
-	float item_aspect   = width / height;
-	float bounds_aspect = item->bounds.x / item->bounds.y;
-	float width_diff, height_diff;
+	float    width         = (float)(*cx) * fabsf(scale->x);
+	float    height        = (float)(*cy) * fabsf(scale->y);
+	float    item_aspect   = width / height;
+	float    bounds_aspect = item->bounds.x / item->bounds.y;
+	uint32_t bounds_type   = item->bounds_type;
+	float    width_diff, height_diff;
 
-	if (item->bounds_type == OBS_BOUNDS_SCALE_INNER ||
-	    item->bounds_type == OBS_BOUNDS_SCALE_OUTER) {
+	if (item->bounds_type == OBS_BOUNDS_MAX_ONLY)
+		if (width > item->bounds.x || height > item->bounds.y)
+			bounds_type = OBS_BOUNDS_SCALE_INNER;
+
+	if (bounds_type == OBS_BOUNDS_SCALE_INNER ||
+	    bounds_type == OBS_BOUNDS_SCALE_OUTER) {
 		bool  use_width = (bounds_aspect < item_aspect);
 		float mul;
 
@@ -195,13 +200,13 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 
 		vec2_mulf(scale, scale, mul);
 
-	} else if (item->bounds_type == OBS_BOUNDS_SCALE_TO_WIDTH) {
+	} else if (bounds_type == OBS_BOUNDS_SCALE_TO_WIDTH) {
 		vec2_mulf(scale, scale, item->bounds.x / width);
 
-	} else if (item->bounds_type == OBS_BOUNDS_SCALE_TO_HEIGHT) {
+	} else if (bounds_type == OBS_BOUNDS_SCALE_TO_HEIGHT) {
 		vec2_mulf(scale, scale, item->bounds.y / height);
 
-	} else if (item->bounds_type == OBS_BOUNDS_STRETCH) {
+	} else if (bounds_type == OBS_BOUNDS_STRETCH) {
 		scale->x = item->bounds.x / (float)(*cx);
 		scale->y = item->bounds.y / (float)(*cy);
 	}

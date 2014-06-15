@@ -26,6 +26,7 @@
 #include <util/dstr.h>
 #include <util/util.hpp>
 #include <util/platform.h>
+#include <graphics/math-defs.h>
 
 #include "obs-app.hpp"
 #include "platform.hpp"
@@ -55,15 +56,6 @@ Q_DECLARE_METATYPE(order_movement);
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
-	  properties     (nullptr),
-	  fileOutput     (nullptr),
-	  streamOutput   (nullptr),
-	  service        (nullptr),
-	  aac            (nullptr),
-	  x264           (nullptr),
-	  sceneChanging  (false),
-	  resizeTimer    (0),
-	  activeRefs     (0),
 	  ui             (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
@@ -444,6 +436,28 @@ void OBSBasic::InitOBSCallbacks()
 			OBSBasic::SourceDeactivated, this);
 }
 
+void OBSBasic::InitPrimitives()
+{
+	gs_entercontext(obs_graphics());
+
+	gs_renderstart(true);
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(0.0f, 1.0f);
+	gs_vertex2f(1.0f, 1.0f);
+	gs_vertex2f(1.0f, 0.0f);
+	gs_vertex2f(0.0f, 0.0f);
+	box = gs_rendersave();
+
+	gs_renderstart(true);
+	for (int i = 0; i <= 360; i += (360/20)) {
+		float pos = RAD(float(i));
+		gs_vertex2f(cosf(pos), sinf(pos));
+	}
+	circle = gs_rendersave();
+
+	gs_leavecontext();
+}
+
 void OBSBasic::OBSInit()
 {
 	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
@@ -491,6 +505,8 @@ void OBSBasic::OBSInit()
 	if (!InitService())
 		throw "Failed to initialize service";
 
+	InitPrimitives();
+
 	Load(savePath);
 	ResetAudioDevices();
 }
@@ -501,14 +517,26 @@ OBSBasic::~OBSBasic()
 	SaveService();
 	Save(savePath);
 
+	/* XXX: any obs data must be released before calling obs_shutdown.
+	 * currently, we can't automate this with C++ RAII because of the
+	 * delicate nature of obs_shutdown needing to be freed before the UI
+	 * can be freed, and we have no control over the destruction order of
+	 * the Qt UI stuff, so we have to manually clear any references to
+	 * libobs. */
 	if (properties)
 		delete properties;
+	if (transformWindow)
+		delete transformWindow;
 
-	/* free the lists before shutting down to remove the scene/item
-	 * references */
 	ClearVolumeControls();
 	ui->sources->clear();
 	ui->scenes->clear();
+
+	gs_entercontext(obs_graphics());
+	vertexbuffer_destroy(box);
+	vertexbuffer_destroy(circle);
+	gs_leavecontext();
+
 	obs_shutdown();
 }
 
@@ -792,20 +820,25 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
 	obs_video_info ovi;
-	int newCX, newCY;
 
 	obs_get_video_info(&ovi);
 
-	newCX = int(window->previewScale * float(ovi.base_width));
-	newCY = int(window->previewScale * float(ovi.base_height));
+	window->previewCX = int(window->previewScale * float(ovi.base_width));
+	window->previewCY = int(window->previewScale * float(ovi.base_height));
 
 	gs_viewport_push();
 	gs_projection_push();
 	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
 			-100.0f, 100.0f);
-	gs_setviewport(window->previewX, window->previewY, newCX, newCY);
+	gs_setviewport(window->previewX, window->previewY,
+			window->previewCX, window->previewCY);
 
 	obs_render_main_view();
+
+	gs_ortho(0.0f, float(window->previewCX), 0.0f, float(window->previewCY),
+			-100.0f, 100.0f);
+
+	window->ui->preview->DrawSceneEditing();
 
 	gs_projection_pop();
 	gs_viewport_pop();
@@ -1155,8 +1188,23 @@ void OBSBasic::on_actionSceneDown_triggered()
 void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 		QListWidgetItem *prev)
 {
-	/* TODO */
-	UNUSED_PARAMETER(current);
+	auto select_one = [] (obs_scene_t scene, obs_sceneitem_t item,
+			void *param)
+	{
+		obs_sceneitem_t selectedItem =
+			*reinterpret_cast<OBSSceneItem*>(param);
+		obs_sceneitem_select(item, (selectedItem == item));
+
+		UNUSED_PARAMETER(scene);
+		return true;
+	};
+
+	if (!current)
+		return;
+
+	OBSSceneItem item = current->data(Qt::UserRole).value<OBSSceneItem>();
+	obs_scene_enum_items(GetCurrentScene(), select_one, &item);
+
 	UNUSED_PARAMETER(prev);
 }
 
@@ -1568,4 +1616,193 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 config_t OBSBasic::Config() const
 {
 	return basicConfig;
+}
+
+void OBSBasic::on_actionEditTransform_triggered()
+{
+	delete transformWindow;
+	transformWindow = new OBSBasicTransform(this);
+	transformWindow->show();
+}
+
+void OBSBasic::on_actionResetTransform_triggered()
+{
+	auto func = [] (obs_scene_t scene, obs_sceneitem_t item, void *param)
+	{
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		obs_sceneitem_info info;
+		vec2_set(&info.pos, 0.0f, 0.0f);
+		vec2_set(&info.scale, 1.0f, 1.0f);
+		info.rot = 0.0f;
+		info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
+		info.bounds_type = OBS_BOUNDS_NONE;
+		info.bounds_alignment = OBS_ALIGN_CENTER;
+		vec2_set(&info.bounds, 0.0f, 0.0f);
+		obs_sceneitem_set_info(item, &info);
+
+		UNUSED_PARAMETER(scene);
+		UNUSED_PARAMETER(param);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+}
+
+static vec3 GetItemTL(obs_sceneitem_t item)
+{
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(item, &boxTransform);
+
+	vec3 tl;
+	vec3_set(&tl, M_INFINITE, M_INFINITE, 0.0f);
+
+	auto GetMinPos = [&] (vec3 &val, float x, float y)
+	{
+		vec3 pos;
+		vec3_set(&pos, x, y, 0.0f);
+		vec3_transform(&pos, &pos, &boxTransform);
+		vec3_min(&val, &val, &pos);
+	};
+
+	GetMinPos(tl, 0.0f, 0.0f);
+	GetMinPos(tl, 1.0f, 0.0f);
+	GetMinPos(tl, 0.0f, 1.0f);
+	GetMinPos(tl, 1.0f, 1.0f);
+	return tl;
+}
+
+static void SetItemTL(obs_sceneitem_t item, const vec3 &tl)
+{
+	vec3 newTL;
+	vec2 pos;
+
+	obs_sceneitem_getpos(item, &pos);
+	newTL = GetItemTL(item);
+	pos.x += tl.x - newTL.x;
+	pos.y += tl.y - newTL.y;
+	obs_sceneitem_setpos(item, &pos);
+}
+
+static bool RotateSelectedSources(obs_scene_t scene, obs_sceneitem_t item,
+		void *param)
+{
+	if (!obs_sceneitem_selected(item))
+		return true;
+
+	float rot = *reinterpret_cast<float*>(param);
+
+	vec3 tl = GetItemTL(item);
+
+	rot += obs_sceneitem_getrot(item);
+	if (rot >= 360.0f)       rot -= 360.0f;
+	else if (rot <= -360.0f) rot += 360.0f;
+	obs_sceneitem_setrot(item, rot);
+
+	SetItemTL(item, tl);
+
+	UNUSED_PARAMETER(scene);
+	UNUSED_PARAMETER(param);
+	return true;
+};
+
+void OBSBasic::on_actionRotate90CW_triggered()
+{
+	float f90CW = 90.0f;
+	obs_scene_enum_items(GetCurrentScene(), RotateSelectedSources, &f90CW);
+}
+
+void OBSBasic::on_actionRotate90CCW_triggered()
+{
+	float f90CCW = -90.0f;
+	obs_scene_enum_items(GetCurrentScene(), RotateSelectedSources, &f90CCW);
+}
+
+void OBSBasic::on_actionRotate180_triggered()
+{
+	float f180 = 180.0f;
+	obs_scene_enum_items(GetCurrentScene(), RotateSelectedSources, &f180);
+}
+
+static bool MultiplySelectedItemScale(obs_scene_t scene, obs_sceneitem_t item,
+		void *param)
+{
+	vec2 &mul = *reinterpret_cast<vec2*>(param);
+
+	if (!obs_sceneitem_selected(item))
+		return true;
+
+	vec3 tl = GetItemTL(item);
+
+	vec2 scale;
+	obs_sceneitem_getscale(item, &scale);
+	vec2_mul(&scale, &scale, &mul);
+	obs_sceneitem_setscale(item, &scale);
+
+	SetItemTL(item, tl);
+	return true;
+}
+
+void OBSBasic::on_actionFlipHorizontal_triggered()
+{
+	vec2 scale = {-1.0f, 1.0f};
+	obs_scene_enum_items(GetCurrentScene(), MultiplySelectedItemScale,
+			&scale);
+}
+
+void OBSBasic::on_actionFlipVertical_triggered()
+{
+	vec2 scale = {1.0f, -1.0f};
+	obs_scene_enum_items(GetCurrentScene(), MultiplySelectedItemScale,
+			&scale);
+}
+
+static bool CenterAlignSelectedItems(obs_scene_t scene, obs_sceneitem_t item,
+		void *param)
+{
+	obs_bounds_type boundsType = *reinterpret_cast<obs_bounds_type*>(param);
+
+	if (!obs_sceneitem_selected(item))
+		return true;
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	obs_sceneitem_info itemInfo;
+	vec2_set(&itemInfo.pos, 0.0f, 0.0f);
+	vec2_set(&itemInfo.scale, 1.0f, 1.0f);
+	itemInfo.alignment = OBS_ALIGN_LEFT | OBS_ALIGN_TOP;
+	itemInfo.rot = 0.0f;
+
+	vec2_set(&itemInfo.bounds,
+			float(ovi.base_width), float(ovi.base_height));
+	itemInfo.bounds_type = boundsType;
+	itemInfo.bounds_alignment = OBS_ALIGN_CENTER;
+
+	obs_sceneitem_set_info(item, &itemInfo);
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
+void OBSBasic::on_actionFitToScreen_triggered()
+{
+	obs_bounds_type boundsType = OBS_BOUNDS_SCALE_INNER;
+	obs_scene_enum_items(GetCurrentScene(), CenterAlignSelectedItems,
+			&boundsType);
+}
+
+void OBSBasic::on_actionStretchToScreen_triggered()
+{
+	obs_bounds_type boundsType = OBS_BOUNDS_STRETCH;
+	obs_scene_enum_items(GetCurrentScene(), CenterAlignSelectedItems,
+			&boundsType);
+}
+
+void OBSBasic::on_actionCenterToScreen_triggered()
+{
+	obs_bounds_type boundsType = OBS_BOUNDS_MAX_ONLY;
+	obs_scene_enum_items(GetCurrentScene(), CenterAlignSelectedItems,
+			&boundsType);
 }

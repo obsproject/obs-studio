@@ -93,7 +93,6 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 }
 
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
-#define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
 #define EDIT_CHANGED    SIGNAL(textChanged(const QString &))
 #define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
