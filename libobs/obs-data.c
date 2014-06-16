@@ -864,42 +864,32 @@ enum obs_data_number_type obs_data_item_numtype(obs_data_item_t item)
 
 void obs_data_item_setstring(obs_data_item_t *item, const char *val)
 {
-	if (!val) val = "";
-	obs_data_item_setdata(item, val, strlen(val)+1, OBS_DATA_STRING);
+	obs_set_string(NULL, item, NULL, val, set_item);
 }
 
 void obs_data_item_setint(obs_data_item_t *item, long long val)
 {
-	struct obs_data_number num;
-	num.type    = OBS_DATA_NUM_INT;
-	num.int_val = val;
-	obs_data_item_setdata(item, &num, sizeof(struct obs_data_number),
-			OBS_DATA_NUMBER);
+	obs_set_int(NULL, item, NULL, val, set_item);
 }
 
 void obs_data_item_setdouble(obs_data_item_t *item, double val)
 {
-	struct obs_data_number num;
-	num.type       = OBS_DATA_NUM_DOUBLE;
-	num.double_val = val;
-	obs_data_item_setdata(item, &num, sizeof(struct obs_data_number),
-			OBS_DATA_NUMBER);
+	obs_set_double(NULL, item, NULL, val, set_item);
 }
 
 void obs_data_item_setbool(obs_data_item_t *item, bool val)
 {
-	obs_data_item_setdata(item, &val, sizeof(bool), OBS_DATA_BOOLEAN);
+	obs_set_bool(NULL, item, NULL, val, set_item);
 }
 
 void obs_data_item_setobj(obs_data_item_t *item, obs_data_t val)
 {
-	obs_data_item_setdata(item, &val, sizeof(obs_data_t), OBS_DATA_OBJECT);
+	obs_set_obj(NULL, item, NULL, val, set_item);
 }
 
 void obs_data_item_setarray(obs_data_item_t *item, obs_data_array_t val)
 {
-	obs_data_item_setdata(item, &val, sizeof(obs_data_array_t),
-			OBS_DATA_ARRAY);
+	obs_set_array(NULL, item, NULL, val, set_item);
 }
 
 static inline bool item_valid(struct obs_data_item *item,
