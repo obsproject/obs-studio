@@ -48,6 +48,8 @@
 #include <QScreen>
 #include <QWindow>
 
+#define PREVIEW_EDGE_SIZE 10
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -816,6 +818,35 @@ void OBSBasic::ChannelChanged(void *data, calldata_t params)
 				Q_ARG(OBSSource, OBSSource(source)));
 }
 
+void OBSBasic::DrawBackdrop(float cx, float cy)
+{
+	if (!box)
+		return;
+
+	effect_t    solid = obs_get_solid_effect();
+	eparam_t    color = effect_getparambyname(solid, "color");
+	technique_t tech  = effect_gettechnique(solid, "Solid");
+
+	vec4 colorVal;
+	vec4_set(&colorVal, 0.0f, 0.0f, 0.0f, 1.0f);
+	effect_setvec4(solid, color, &colorVal);
+
+	technique_begin(tech);
+	technique_beginpass(tech, 0);
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_scale3f(float(cx), float(cy), 1.0f);
+
+	gs_load_vertexbuffer(box);
+	gs_draw(GS_TRISTRIP, 0, 0);
+
+	gs_matrix_pop();
+	technique_endpass(tech);
+	technique_end(tech);
+
+	gs_load_vertexbuffer(nullptr);
+}
+
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
@@ -828,17 +859,32 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	gs_viewport_push();
 	gs_projection_push();
+
+	/* --------------------------------------- */
+
 	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
 			-100.0f, 100.0f);
 	gs_setviewport(window->previewX, window->previewY,
 			window->previewCX, window->previewCY);
 
-	obs_render_main_view();
+	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
 
-	gs_ortho(0.0f, float(window->previewCX), 0.0f, float(window->previewCY),
-			-100.0f, 100.0f);
+	obs_render_main_view();
+	gs_load_vertexbuffer(nullptr);
+
+	/* --------------------------------------- */
+
+	float right  = float(window->ui->preview->width())  - window->previewX;
+	float bottom = float(window->ui->preview->height()) - window->previewY;
+
+	gs_ortho(-window->previewX, right,
+	         -window->previewY, bottom,
+	         -100.0f, 100.0f);
+	gs_resetviewport();
 
 	window->ui->preview->DrawSceneEditing();
+
+	/* --------------------------------------- */
 
 	gs_projection_pop();
 	gs_viewport_pop();
@@ -1014,8 +1060,12 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	/* resize preview panel to fix to the top section of the window */
 	targetSize = GetPixelSize(ui->preview);
 	GetScaleAndCenterPos(int(cx), int(cy),
-			targetSize.width(), targetSize.height(),
+			targetSize.width()  - PREVIEW_EDGE_SIZE * 2,
+			targetSize.height() - PREVIEW_EDGE_SIZE * 2,
 			previewX, previewY, previewScale);
+
+	previewX += float(PREVIEW_EDGE_SIZE);
+	previewY += float(PREVIEW_EDGE_SIZE);
 
 	if (isVisible()) {
 		if (resizeTimer)

@@ -82,6 +82,8 @@ private:
 
 	int           activeRefs = 0;
 
+	void          DrawBackdrop(float cx, float cy);
+
 	void          SetupEncoders();
 
 	void          CreateDefaultScene();
