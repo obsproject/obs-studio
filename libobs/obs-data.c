@@ -479,46 +479,56 @@ static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 	return NULL;
 }
 
-static void set_item_data(struct obs_data *data, struct obs_data_item *item,
+static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 		const char *name, const void *ptr, size_t size,
 		enum obs_data_type type)
 {
-	if (!item && data) {
-		item = obs_data_item_create(name, ptr, size, type);
-		item->next = data->first_item;
-		item->parent = data;
+	obs_data_item_t new_item = NULL;
 
-		data->first_item = item;
+	if ((!item || (item && !*item)) && data) {
+		new_item = obs_data_item_create(name, ptr, size, type);
+		new_item->next = data->first_item;
+		new_item->parent = data;
+
+		data->first_item = new_item;
 
 	} else {
-		obs_data_item_setdata(&item, ptr, size, type);
+		obs_data_item_setdata(item, ptr, size, type);
 	}
 }
 
-static inline void set_item(struct obs_data *data, obs_data_item_t item,
+static inline void set_item(struct obs_data *data, obs_data_item_t *item,
 		const char *name,
 		const void *ptr, size_t size, enum obs_data_type type)
 {
+	obs_data_item_t actual_item = NULL;
+
 	if (!data && !item)
 		return;
 
-	if (!item)
-		item = get_item(data, name);
+	if (!item) {
+		actual_item = get_item(data, name);
+		item = &actual_item;
+	}
 
 	set_item_data(data, item, name, ptr, size, type);
 }
 
-static inline void set_item_def(struct obs_data *data, obs_data_item_t item,
+static inline void set_item_def(struct obs_data *data, obs_data_item_t *item,
 		const char *name,
 		const void *ptr, size_t size, enum obs_data_type type)
 {
+	obs_data_item_t actual_item = NULL;
+
 	if (!data && !item)
 		return;
 
-	if (!item)
-		item = get_item(data, name);
+	if (!item) {
+		actual_item = get_item(data, name);
+		item = &actual_item;
+	}
 
-	if (item && item->type == type)
+	if (item && *item && (*item)->type == type)
 		return;
 
 	set_item_data(data, item, name, ptr, size, type);
@@ -557,10 +567,10 @@ void obs_data_erase(obs_data_t data, const char *name)
 	}
 }
 
-typedef void (*set_item_t)(obs_data_t, obs_data_item_t, const char*,
+typedef void (*set_item_t)(obs_data_t, obs_data_item_t*, const char*,
 		const void*, size_t, enum obs_data_type);
 
-static inline void obs_set_string(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_string(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		const char *val, set_item_t set_item_)
 {
@@ -568,7 +578,7 @@ static inline void obs_set_string(obs_data_t data, obs_data_item_t item,
 	set_item_(data, item, name, val, strlen(val)+1, OBS_DATA_STRING);
 }
 
-static inline void obs_set_int(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_int(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		long long val, set_item_t set_item_)
 {
@@ -579,7 +589,7 @@ static inline void obs_set_int(obs_data_t data, obs_data_item_t item,
 			OBS_DATA_NUMBER);
 }
 
-static inline void obs_set_double(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_double(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		double val, set_item_t set_item_)
 {
@@ -590,21 +600,21 @@ static inline void obs_set_double(obs_data_t data, obs_data_item_t item,
 			OBS_DATA_NUMBER);
 }
 
-static inline void obs_set_bool(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_bool(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		bool val, set_item_t set_item_)
 {
 	set_item_(data, item, name, &val, sizeof(bool), OBS_DATA_BOOLEAN);
 }
 
-static inline void obs_set_obj(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_obj(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		obs_data_t obj, set_item_t set_item_)
 {
 	set_item_(data, item, name, &obj, sizeof(obs_data_t), OBS_DATA_OBJECT);
 }
 
-static inline void obs_set_array(obs_data_t data, obs_data_item_t item,
+static inline void obs_set_array(obs_data_t data, obs_data_item_t *item,
 		const char *name,
 		obs_data_array_t array, set_item_t set_item_)
 {
