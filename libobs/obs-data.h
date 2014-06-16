@@ -97,6 +97,22 @@ EXPORT void obs_data_set_default_obj(obs_data_t data, const char *name,
 		obs_data_t obj);
 
 /*
+ * Application overrides
+ * Use these to communicate the actual values of settings in case the user
+ * settings aren't appropriate
+ */
+EXPORT void obs_data_set_autoselect_string(obs_data_t data, const char *name,
+		const char *val);
+EXPORT void obs_data_set_autoselect_int(obs_data_t data, const char *name,
+		long long val);
+EXPORT void obs_data_set_autoselect_double(obs_data_t data, const char *name,
+		double val);
+EXPORT void obs_data_set_autoselect_bool(obs_data_t data, const char *name,
+		bool val);
+EXPORT void obs_data_set_autoselect_obj(obs_data_t data, const char *name,
+		obs_data_t obj);
+
+/*
  * Get functions
  */
 EXPORT const char *obs_data_getstring(obs_data_t data, const char *name);
@@ -113,6 +129,16 @@ EXPORT double obs_data_get_default_double(obs_data_t data, const char *name);
 EXPORT bool obs_data_get_default_bool(obs_data_t data, const char *name);
 EXPORT obs_data_t obs_data_get_default_obj(obs_data_t data, const char *name);
 EXPORT obs_data_array_t obs_data_get_default_array(obs_data_t data,
+		const char *name);
+
+EXPORT const char *obs_data_get_autoselect_string(obs_data_t data,
+		const char *name);
+EXPORT long long obs_data_get_autoselect_int(obs_data_t data, const char *name);
+EXPORT double obs_data_get_autoselect_double(obs_data_t data, const char *name);
+EXPORT bool obs_data_get_autoselect_bool(obs_data_t data, const char *name);
+EXPORT obs_data_t obs_data_get_autoselect_obj(obs_data_t data,
+		const char *name);
+EXPORT obs_data_array_t obs_data_get_autoselect_array(obs_data_t data,
 		const char *name);
 
 /* Array functions */
@@ -132,18 +158,22 @@ EXPORT void obs_data_array_erase(obs_data_array_t array, size_t idx);
 
 EXPORT bool obs_data_has_user_value(obs_data_t data, const char *name);
 EXPORT bool obs_data_has_default(obs_data_t data, const char *name);
+EXPORT bool obs_data_has_autoselect(obs_data_t data, const char *name);
 
 EXPORT bool obs_data_item_has_user_value(obs_data_item_t data);
 EXPORT bool obs_data_item_has_default(obs_data_item_t data);
+EXPORT bool obs_data_item_has_autoselect(obs_data_item_t data);
 
 /* ------------------------------------------------------------------------- */
 /* Clearing data values */
 
 EXPORT void obs_data_unset_user_value(obs_data_t data, const char *name);
 EXPORT void obs_data_unset_default_value(obs_data_t data, const char *name);
+EXPORT void obs_data_unset_autoselect_value(obs_data_t data, const char *name);
 
 EXPORT void obs_data_item_unset_user_value(obs_data_item_t data);
 EXPORT void obs_data_item_unset_default_value(obs_data_item_t data);
+EXPORT void obs_data_item_unset_autoselect_value(obs_data_item_t data);
 
 /* ------------------------------------------------------------------------- */
 /* Item iteration */
@@ -176,6 +206,18 @@ EXPORT void obs_data_item_set_default_obj(obs_data_item_t *item,
 EXPORT void obs_data_item_set_default_array(obs_data_item_t *item,
 		obs_data_array_t val);
 
+EXPORT void obs_data_item_set_autoselect_string(obs_data_item_t *item,
+		const char *val);
+EXPORT void obs_data_item_set_autoselect_int(obs_data_item_t *item,
+		long long val);
+EXPORT void obs_data_item_set_autoselect_double(obs_data_item_t *item,
+		double val);
+EXPORT void obs_data_item_set_autoselect_bool(obs_data_item_t *item, bool val);
+EXPORT void obs_data_item_set_autoselect_obj(obs_data_item_t *item,
+		obs_data_t val);
+EXPORT void obs_data_item_set_autoselect_array(obs_data_item_t *item,
+		obs_data_array_t val);
+
 /* Item get functions */
 EXPORT const char *obs_data_item_getstring(obs_data_item_t item);
 EXPORT long long obs_data_item_getint(obs_data_item_t item);
@@ -190,6 +232,14 @@ EXPORT double obs_data_item_get_default_double(obs_data_item_t item);
 EXPORT bool obs_data_item_get_default_bool(obs_data_item_t item);
 EXPORT obs_data_t obs_data_item_get_default_obj(obs_data_item_t item);
 EXPORT obs_data_array_t obs_data_item_get_default_array(obs_data_item_t item);
+
+EXPORT const char *obs_data_item_get_autoselect_string(obs_data_item_t item);
+EXPORT long long obs_data_item_get_autoselect_int(obs_data_item_t item);
+EXPORT double obs_data_item_get_autoselect_double(obs_data_item_t item);
+EXPORT bool obs_data_item_get_autoselect_bool(obs_data_item_t item);
+EXPORT obs_data_t obs_data_item_get_autoselect_obj(obs_data_item_t item);
+EXPORT obs_data_array_t obs_data_item_get_autoselect_array(
+		obs_data_item_t item);
 
 /* ------------------------------------------------------------------------- */
 /* Helper functions for certain structures */
@@ -211,6 +261,15 @@ EXPORT void obs_data_set_default_vec4(obs_data_t data, const char *name,
 EXPORT void obs_data_set_default_quat(obs_data_t data, const char *name,
 		const struct quat *val);
 
+EXPORT void obs_data_set_autoselect_vec2(obs_data_t data, const char *name,
+		const struct vec2 *val);
+EXPORT void obs_data_set_autoselect_vec3(obs_data_t data, const char *name,
+		const struct vec3 *val);
+EXPORT void obs_data_set_autoselect_vec4(obs_data_t data, const char *name,
+		const struct vec4 *val);
+EXPORT void obs_data_set_autoselect_quat(obs_data_t data, const char *name,
+		const struct quat *val);
+
 EXPORT void obs_data_get_vec2(obs_data_t data, const char *name,
 		struct vec2 *val);
 EXPORT void obs_data_get_vec3(obs_data_t data, const char *name,
@@ -227,6 +286,15 @@ EXPORT void obs_data_get_default_vec3(obs_data_t data, const char *name,
 EXPORT void obs_data_get_default_vec4(obs_data_t data, const char *name,
 		struct vec4 *val);
 EXPORT void obs_data_get_default_quat(obs_data_t data, const char *name,
+		struct quat *val);
+
+EXPORT void obs_data_get_autoselect_vec2(obs_data_t data, const char *name,
+		struct vec2 *val);
+EXPORT void obs_data_get_autoselect_vec3(obs_data_t data, const char *name,
+		struct vec3 *val);
+EXPORT void obs_data_get_autoselect_vec4(obs_data_t data, const char *name,
+		struct vec4 *val);
+EXPORT void obs_data_get_autoselect_quat(obs_data_t data, const char *name,
 		struct quat *val);
 
 /* ------------------------------------------------------------------------- */

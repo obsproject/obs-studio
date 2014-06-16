@@ -34,7 +34,9 @@ struct obs_data_item {
 	size_t               name_len;
 	size_t               data_len;
 	size_t               data_size;
+	size_t               default_len;
 	size_t               default_size;
+	size_t               autoselect_size;
 	size_t               capacity;
 };
 
@@ -91,7 +93,7 @@ static inline void *get_data_ptr(obs_data_item_t item)
 
 static inline void *get_item_data(struct obs_data_item *item)
 {
-	if (!item->data_size && !item->default_size)
+	if (!item->data_size && !item->default_size && !item->autoselect_size)
 		return NULL;
 	return get_data_ptr(item);
 }
@@ -106,10 +108,20 @@ static inline void *get_item_default_data(struct obs_data_item *item)
 	return item->default_size ? get_default_data_ptr(item) : NULL;
 }
 
+static inline void *get_autoselect_data_ptr(obs_data_item_t item)
+{
+	return (uint8_t*)get_default_data_ptr(item) + item->default_len;
+}
+
+static inline void *get_item_autoselect_data(struct obs_data_item *item)
+{
+	return item->autoselect_size ? get_autoselect_data_ptr(item) : NULL;
+}
+
 static inline size_t obs_data_item_total_size(struct obs_data_item *item)
 {
 	return sizeof(struct obs_data_item) + item->name_len +
-		item->data_len + item->default_size;
+		item->data_len + item->default_len + item->autoselect_size;
 }
 
 static inline obs_data_t get_item_obj(struct obs_data_item *item)
@@ -128,6 +140,14 @@ static inline obs_data_t get_item_default_obj(struct obs_data_item *item)
 	return *(obs_data_t*)get_item_data(item);
 }
 
+static inline obs_data_t get_item_autoselect_obj(struct obs_data_item *item)
+{
+	if (!item || !item->autoselect_size)
+		return NULL;
+
+	return *(obs_data_t*)get_item_data(item);
+}
+
 static inline obs_data_array_t get_item_array(struct obs_data_item *item)
 {
 	if (!item)
@@ -140,6 +160,15 @@ static inline obs_data_array_t get_item_default_array(
 		struct obs_data_item *item)
 {
 	if (!item || !item->default_size)
+		return NULL;
+
+	return *(obs_data_array_t*)get_item_data(item);
+}
+
+static inline obs_data_array_t get_item_autoselect_array(
+		struct obs_data_item *item)
+{
+	if (!item || !item->autoselect_size)
 		return NULL;
 
 	return *(obs_data_array_t*)get_item_data(item);
@@ -172,6 +201,18 @@ static inline void item_default_data_release(struct obs_data_item *item)
 	}
 }
 
+static inline void item_autoselect_data_release(struct obs_data_item *item)
+{
+	if (item->type == OBS_DATA_OBJECT) {
+		obs_data_t obj = get_item_autoselect_obj(item);
+		obs_data_release(obj);
+
+	} else if (item->type == OBS_DATA_ARRAY) {
+		obs_data_array_t array = get_item_autoselect_array(item);
+		obs_data_array_release(array);
+	}
+}
+
 static inline void item_data_addref(struct obs_data_item *item)
 {
 	if (item->type == OBS_DATA_OBJECT) {
@@ -199,9 +240,21 @@ static inline void item_default_data_addref(struct obs_data_item *item)
 	}
 }
 
+static inline void item_autoselect_data_addref(struct obs_data_item *item)
+{
+	if (item->type == OBS_DATA_OBJECT) {
+		obs_data_t obj = get_item_autoselect_obj(item);
+		obs_data_addref(obj);
+
+	} else if (item->type == OBS_DATA_ARRAY) {
+		obs_data_array_t array = get_item_autoselect_array(item);
+		obs_data_array_addref(array);
+	}
+}
+
 static struct obs_data_item *obs_data_item_create(const char *name,
 		const void *data, size_t size, enum obs_data_type type,
-		bool default_data)
+		bool default_data, bool autoselect_data)
 {
 	struct obs_data_item *item;
 	size_t name_size, total_size;
@@ -220,7 +273,11 @@ static struct obs_data_item *obs_data_item_create(const char *name,
 	item->ref      = 1;
 
 	if (default_data) {
+		item->default_len = size;
 		item->default_size = size;
+
+	} else if (autoselect_data) {
+		item->autoselect_size = size;
 
 	} else {
 		item->data_len = size;
@@ -295,6 +352,7 @@ static inline void obs_data_item_destroy(struct obs_data_item *item)
 {
 	item_data_release(item);
 	item_default_data_release(item);
+	item_autoselect_data_release(item);
 	obs_data_item_detach(item);
 	bfree(item);
 }
@@ -324,11 +382,11 @@ static inline void obs_data_item_setdata(
 
 	item->data_size = size;
 	item->type      = type;
-	item->data_len  = item->default_size ? 
+	item->data_len  = (item->default_size || item->autoselect_size) ? 
 		get_align_size(size) : size;
 	item = obs_data_item_ensure_capacity(item);
 
-	if (item->default_size)
+	if (item->default_size || item->autoselect_size)
 		move_data(*p_item, old_non_user_data, item,
 				get_default_data_ptr(item),
 				item->default_len + item->autoselect_size);
@@ -349,17 +407,51 @@ static inline void obs_data_item_set_default_data(
 		return;
 
 	struct obs_data_item *item = *p_item;
+	void *old_autoselect_data = get_autoselect_data_ptr(item);
 	item_default_data_release(item);
 
 	item->type         = type;
 	item->default_size = size;
+	item->default_len  = item->autoselect_size ?
+				get_align_size(size) : size;
 	item->data_len     = item->data_size ?
 				get_align_size(item->data_size) : 0;
 	item = obs_data_item_ensure_capacity(item);
 
+	if (item->autoselect_size)
+		move_data(*p_item, old_autoselect_data, item,
+				get_autoselect_data_ptr(item),
+				item->autoselect_size);
+
 	if (size) {
 		memcpy(get_item_default_data(item), data, size);
 		item_default_data_addref(item);
+	}
+
+	*p_item = item;
+}
+
+static inline void obs_data_item_set_autoselect_data(
+		struct obs_data_item **p_item, const void *data, size_t size,
+		enum obs_data_type type)
+{
+	if (!p_item || !*p_item)
+		return;
+
+	struct obs_data_item *item = *p_item;
+	item_autoselect_data_release(item);
+
+	item->autoselect_size = size;
+	item->type            = type;
+	item->data_len        = item->data_size ?
+					get_align_size(item->data_size) : 0;
+	item->default_len     = item->default_size ?
+					get_align_size(item->default_size) : 0;
+	item = obs_data_item_ensure_capacity(item);
+
+	if (size) {
+		memcpy(get_item_autoselect_data(item), data, size);
+		item_autoselect_data_addref(item);
 	}
 
 	*p_item = item;
@@ -609,13 +701,13 @@ static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 		const char *name, const void *ptr, size_t size,
 		enum obs_data_type type,
-		bool default_data)
+		bool default_data, bool autoselect_data)
 {
 	obs_data_item_t new_item = NULL;
 
 	if ((!item || (item && !*item)) && data) {
 		new_item = obs_data_item_create(name, ptr, size, type,
-				default_data);
+				default_data, autoselect_data);
 		new_item->next = data->first_item;
 		new_item->parent = data;
 
@@ -623,6 +715,8 @@ static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 
 	} else if (default_data) {
 		obs_data_item_set_default_data(item, ptr, size, type);
+	} else if (autoselect_data) {
+		obs_data_item_set_autoselect_data(item, ptr, size, type);
 	} else {
 		obs_data_item_setdata(item, ptr, size, type);
 	}
@@ -642,7 +736,7 @@ static inline void set_item(struct obs_data *data, obs_data_item_t *item,
 		item = &actual_item;
 	}
 
-	set_item_data(data, item, name, ptr, size, type, false);
+	set_item_data(data, item, name, ptr, size, type, false, false);
 }
 
 static inline void set_item_def(struct obs_data *data, obs_data_item_t *item,
@@ -662,7 +756,24 @@ static inline void set_item_def(struct obs_data *data, obs_data_item_t *item,
 	if (item && *item && (*item)->type == type)
 		return;
 
-	set_item_data(data, item, name, ptr, size, type, true);
+	set_item_data(data, item, name, ptr, size, type, true, false);
+}
+
+static inline void set_item_auto(struct obs_data *data, obs_data_item_t *item,
+		const char *name,
+		const void *ptr, size_t size, enum obs_data_type type)
+{
+	obs_data_item_t actual_item = NULL;
+
+	if (!data && !item)
+		return;
+
+	if (!item) {
+		actual_item = get_item(data, name);
+		item = &actual_item;
+	}
+
+	set_item_data(data, item, name, ptr, size, type, false, true);
 }
 
 static inline void copy_item(struct obs_data *data, struct obs_data_item *item)
@@ -809,6 +920,41 @@ void obs_data_set_default_obj(obs_data_t data, const char *name, obs_data_t obj)
 	obs_set_obj(data, NULL, name, obj, set_item_def);
 }
 
+void obs_data_set_autoselect_string(obs_data_t data, const char *name,
+		const char *val)
+{
+	obs_set_string(data, NULL, name, val, set_item_auto);
+}
+
+void obs_data_set_autoselect_int(obs_data_t data, const char *name,
+		long long val)
+{
+	obs_set_int(data, NULL, name, val, set_item_auto);
+}
+
+void obs_data_set_autoselect_double(obs_data_t data, const char *name,
+		double val)
+{
+	obs_set_double(data, NULL, name, val, set_item_auto);
+}
+
+void obs_data_set_autoselect_bool(obs_data_t data, const char *name, bool val)
+{
+	obs_set_bool(data, NULL, name, val, set_item_auto);
+}
+
+void obs_data_set_autoselect_obj(obs_data_t data, const char *name,
+		obs_data_t obj)
+{
+	obs_set_obj(data, NULL, name, obj, set_item_auto);
+}
+
+void obs_data_set_autoselect_array(obs_data_t data, const char *name,
+		obs_data_array_t arr)
+{
+	obs_set_array(data, NULL, name, arr, set_item_auto);
+}
+
 const char *obs_data_getstring(obs_data_t data, const char *name)
 {
 	return obs_data_item_getstring(get_item(data, name));
@@ -867,6 +1013,37 @@ obs_data_t obs_data_get_default_obj(obs_data_t data, const char *name)
 obs_data_array_t obs_data_get_default_array(obs_data_t data, const char *name)
 {
 	return obs_data_item_get_default_array(get_item(data, name));
+}
+
+const char *obs_data_get_autoselect_string(obs_data_t data, const char *name)
+{
+	return obs_data_item_get_autoselect_string(get_item(data, name));
+}
+
+long long obs_data_get_autoselect_int(obs_data_t data, const char *name)
+{
+	return obs_data_item_get_autoselect_int(get_item(data, name));
+}
+
+double obs_data_get_autoselect_double(obs_data_t data, const char *name)
+{
+	return obs_data_item_get_autoselect_double(get_item(data, name));
+}
+
+bool obs_data_getautoselect_bool(obs_data_t data, const char *name)
+{
+	return obs_data_item_get_autoselect_bool(get_item(data, name));
+}
+
+obs_data_t obs_data_get_autoselect_obj(obs_data_t data, const char *name)
+{
+	return obs_data_item_get_autoselect_obj(get_item(data, name));
+}
+
+obs_data_array_t obs_data_get_autoselect_array(obs_data_t data,
+		const char *name)
+{
+	return obs_data_item_get_autoselect_array(get_item(data, name));
 }
 
 obs_data_array_t obs_data_array_create()
@@ -960,6 +1137,11 @@ bool obs_data_has_default(obs_data_t data, const char *name)
 	return data && obs_data_item_has_default(get_item(data, name));
 }
 
+bool obs_data_has_autoselect(obs_data_t data, const char *name)
+{
+	return data && obs_data_item_has_autoselect(get_item(data, name));
+}
+
 bool obs_data_item_has_user_value(obs_data_item_t item)
 {
 	return item && item->data_size;
@@ -968,6 +1150,11 @@ bool obs_data_item_has_user_value(obs_data_item_t item)
 bool obs_data_item_has_default(obs_data_item_t item)
 {
 	return item && item->default_size;
+}
+
+bool obs_data_item_has_autoselect(obs_data_item_t item)
+{
+	return item && item->autoselect_size;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -983,6 +1170,11 @@ void obs_data_unset_default_value(obs_data_t data, const char *name)
 	obs_data_item_unset_default_value(get_item(data, name));
 }
 
+void obs_data_unset_autoselect_value(obs_data_t data, const char *name)
+{
+	obs_data_item_unset_autoselect_value(get_item(data, name));
+}
+
 void obs_data_item_unset_user_value(obs_data_item_t item)
 {
 	if (!item || !item->data_size)
@@ -994,10 +1186,10 @@ void obs_data_item_unset_user_value(obs_data_item_t item)
 	item->data_size = 0;
 	item->data_len = 0;
 
-	if (item->default_size)
+	if (item->default_size || item->autoselect_size)
 		move_data(item, old_non_user_data, item,
 				get_default_data_ptr(item),
-				item->default_len);
+				item->default_len + item->autoselect_size);
 }
 
 void obs_data_item_unset_default_value(obs_data_item_t item)
@@ -1005,9 +1197,25 @@ void obs_data_item_unset_default_value(obs_data_item_t item)
 	if (!item || !item->default_size)
 		return;
 
+	void *old_autoselect_data = get_autoselect_data_ptr(item);
+
 	item_default_data_release(item);
 	item->default_size = 0;
+	item->default_len = 0;
 
+	if (item->autoselect_size)
+		move_data(item, old_autoselect_data, item,
+				get_autoselect_data_ptr(item),
+				item->autoselect_size);
+}
+
+void obs_data_item_unset_autoselect_value(obs_data_item_t item)
+{
+	if (!item || !item->autoselect_size)
+		return;
+
+	item_autoselect_data_release(item);
+	item->autoselect_size = 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1145,6 +1353,37 @@ void obs_data_item_set_default_array(obs_data_item_t *item,
 		obs_data_array_t val)
 {
 	obs_set_array(NULL, item, NULL, val, set_item_def);
+}
+
+void obs_data_item_set_autoselect_string(obs_data_item_t *item, const char *val)
+{
+	obs_set_string(NULL, item, NULL, val, set_item_auto);
+}
+
+void obs_data_item_set_autoselect_int(obs_data_item_t *item, long long val)
+{
+	obs_set_int(NULL, item, NULL, val, set_item_auto);
+}
+
+void obs_data_item_set_autoselect_double(obs_data_item_t *item, double val)
+{
+	obs_set_double(NULL, item, NULL, val, set_item_auto);
+}
+
+void obs_data_item_set_autoselect_bool(obs_data_item_t *item, bool val)
+{
+	obs_set_bool(NULL, item, NULL, val, set_item_auto);
+}
+
+void obs_data_item_set_autoselect_obj(obs_data_item_t *item, obs_data_t val)
+{
+	obs_set_obj(NULL, item, NULL, val, set_item_auto);
+}
+
+void obs_data_item_set_autoselect_array(obs_data_item_t *item,
+		obs_data_array_t val)
+{
+	obs_set_array(NULL, item, NULL, val, set_item_auto);
 }
 
 static inline bool item_valid(struct obs_data_item *item,
@@ -1292,6 +1531,36 @@ obs_data_array_t obs_data_item_get_default_array(obs_data_item_t item)
 	return data_item_get_array(item, get_item_array);
 }
 
+const char *obs_data_item_get_autoselect_string(obs_data_item_t item)
+{
+	return data_item_get_string(item, get_item_autoselect_data);
+}
+
+long long obs_data_item_get_autoselect_int(obs_data_item_t item)
+{
+	return data_item_get_int(item, get_item_autoselect_data);
+}
+
+double obs_data_item_get_autoselect_double(obs_data_item_t item)
+{
+	return data_item_get_double(item, get_item_autoselect_data);
+}
+
+bool obs_data_item_get_autoselect_bool(obs_data_item_t item)
+{
+	return data_item_get_bool(item, get_item_autoselect_data);
+}
+
+obs_data_t obs_data_item_get_autoselect_obj(obs_data_item_t item)
+{
+	return data_item_get_obj(item, get_item_autoselect_obj);
+}
+
+obs_data_array_t obs_data_item_get_autoselect_array(obs_data_item_t item)
+{
+	return data_item_get_array(item, get_item_autoselect_array);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Helper functions for certain structures */
 
@@ -1390,6 +1659,30 @@ void obs_data_set_default_quat(obs_data_t data, const char *name,
 	set_quat(data, name, val, obs_data_set_default_obj);
 }
 
+void obs_data_set_autoselect_vec2(obs_data_t data, const char *name,
+		const struct vec2 *val)
+{
+	set_vec2(data, name, val, obs_data_set_autoselect_obj);
+}
+
+void obs_data_set_autoselect_vec3(obs_data_t data, const char *name,
+		const struct vec3 *val)
+{
+	set_vec3(data, name, val, obs_data_set_autoselect_obj);
+}
+
+void obs_data_set_autoselect_vec4(obs_data_t data, const char *name,
+		const struct vec4 *val)
+{
+	set_vec4(data, name, val, obs_data_set_autoselect_obj);
+}
+
+void obs_data_set_autoselect_quat(obs_data_t data, const char *name,
+		const struct quat *val)
+{
+	set_quat(data, name, val, obs_data_set_autoselect_obj);
+}
+
 static inline void get_vec2(obs_data_t obj, struct vec2 *val)
 {
 	if (!obj) return;
@@ -1473,4 +1766,28 @@ void obs_data_get_default_quat(obs_data_t data, const char *name,
 		struct quat *val)
 {
 	get_quat(obs_data_get_default_obj(data, name), val);
+}
+
+void obs_data_get_autoselect_vec2(obs_data_t data, const char *name,
+		struct vec2 *val)
+{
+	get_vec2(obs_data_get_autoselect_obj(data, name), val);
+}
+
+void obs_data_get_autoselect_vec3(obs_data_t data, const char *name,
+		struct vec3 *val)
+{
+	get_vec3(obs_data_get_autoselect_obj(data, name), val);
+}
+
+void obs_data_get_autoselect_vec4(obs_data_t data, const char *name,
+		struct vec4 *val)
+{
+	get_vec4(obs_data_get_autoselect_obj(data, name), val);
+}
+
+void obs_data_get_autoselect_quat(obs_data_t data, const char *name,
+		struct quat *val)
+{
+	get_quat(obs_data_get_autoselect_obj(data, name), val);
 }
