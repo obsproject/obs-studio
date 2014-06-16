@@ -296,8 +296,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	float x = float(event->x()) - main->previewX;
 	float y = float(event->y()) - main->previewY;
 
-	if (event->button() != Qt::LeftButton ||
-	    x < 0.0f || y < 0.0f || x > main->previewCX || y > main->previewCY)
+	if (event->button() != Qt::LeftButton)
 		return;
 
 	mouseDown = true;
