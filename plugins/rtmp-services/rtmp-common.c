@@ -101,7 +101,7 @@ static void add_services(obs_property_t list, const char *file, json_t *root)
 	}
 }
 
-static json_t *build_service_list(obs_property_t list, const char *file)
+static json_t *open_json_file(const char *file)
 {
 	char         *file_data = os_quick_read_utf8_file(file);
 	json_error_t error;
@@ -114,12 +114,18 @@ static json_t *build_service_list(obs_property_t list, const char *file)
 	bfree(file_data);
 
 	if (!root) {
-		blog(LOG_WARNING, "rtmp-common.c: [build_service_list] "
+		blog(LOG_WARNING, "rtmp-common.c: [open_json_file] "
 		                  "Error reading JSON file '%s' (%d): %s",
 		                  file, error.line, error.text);
 		return NULL;
 	}
 
+	return root;
+}
+
+static json_t *build_service_list(obs_property_t list, const char *file)
+{
+	json_t *root = open_json_file(file);
 	add_services(list, file, root);
 	return root;
 }
@@ -220,6 +226,101 @@ static obs_properties_t rtmp_common_properties(const char *locale)
 	return ppts;
 }
 
+static void apply_video_encoder_settings(obs_encoder_t encoder,
+		json_t *recommended)
+{
+	obs_data_t settings = obs_encoder_get_settings(encoder);
+
+	json_t *item = json_object_get(recommended, "keyint");
+	if (item && json_is_integer(item)) {
+		int keyint = (int)json_integer_value(item);
+		obs_data_setint(settings, "keyint_sec", keyint);
+	}
+
+	item = json_object_get(recommended, "cbr");
+	if (item && json_is_boolean(item)) {
+		bool cbr = json_boolean_value(item);
+		obs_data_setbool(settings, "cbr", cbr);
+	}
+
+	item = json_object_get(recommended, "profile");
+	if (item && json_is_string(item)) {
+		const char *profile = json_string_value(item);
+		obs_data_setbool(settings, "profile", profile);
+	}
+
+	item = json_object_get(recommended, "max video bitrate");
+	if (item && json_is_integer(item)) {
+		int max_bitrate = (int)json_integer_value(item);
+		if (obs_data_getint(settings, "bitrate") > max_bitrate) {
+			obs_data_setint(settings, "bitrate", max_bitrate);
+			obs_data_setint(settings, "buffer_size", max_bitrate);
+		}
+	}
+
+	obs_encoder_update(encoder, settings);
+	obs_data_release(settings);
+}
+
+static void apply_audio_encoder_settings(obs_encoder_t encoder,
+		json_t *recommended)
+{
+	obs_data_t settings = obs_encoder_get_settings(encoder);
+
+	json_t *item = json_object_get(recommended, "max audio bitrate");
+	if (item && json_is_integer(item)) {
+		int max_bitrate = (int)json_integer_value(item);
+		if (obs_data_getint(settings, "bitrate") > max_bitrate)
+			obs_data_setint(settings, "bitrate", max_bitrate);
+	}
+
+	obs_encoder_update(encoder, settings);
+	obs_data_release(settings);
+}
+
+static void initialize_output(struct rtmp_common *service, obs_output_t output,
+		json_t *root)
+{
+	obs_encoder_t video_encoder = obs_output_get_video_encoder(output);
+	obs_encoder_t audio_encoder = obs_output_get_audio_encoder(output);
+	json_t        *json_service = find_service(root, service->service);
+	json_t        *recommended;
+
+	if (!json_service) {
+		blog(LOG_WARNING, "rtmp-common.c: [initialize_output] "
+		                  "Could not find service '%s'",
+		                  service->service);
+		return;
+	}
+
+	recommended = json_object_get(json_service, "recommended");
+	if (!recommended)
+		return;
+
+	if (video_encoder)
+		apply_video_encoder_settings(video_encoder, recommended);
+	if (audio_encoder)
+		apply_audio_encoder_settings(audio_encoder, recommended);
+}
+
+static bool rtmp_common_initialize(void *data, obs_output_t output)
+{
+	struct rtmp_common *service = data;
+	char               *file;
+
+	file = obs_find_plugin_file("rtmp-services/services.json");
+	if (file) {
+		json_t *root = open_json_file(file);
+		if (root) {
+			initialize_output(service, output, root);
+			json_decref(root);
+		}
+		bfree(file);
+	}
+
+	return true;
+}
+
 static const char *rtmp_common_url(void *data)
 {
 	struct rtmp_common *service = data;
@@ -239,6 +340,7 @@ struct obs_service_info rtmp_common_service = {
 	.destroy    = rtmp_common_destroy,
 	.update     = rtmp_common_update,
 	.properties = rtmp_common_properties,
+	.initialize = rtmp_common_initialize,
 	.get_url    = rtmp_common_url,
 	.get_key    = rtmp_common_key
 };
