@@ -24,7 +24,7 @@ Stereo="Stereo"
 NameExists.Title="Nimi on jo olemassa"
 NameExists.Text="Nimi on jo käytössä."
 
-NoNameEntered="Please enter a valid name"
+NoNameEntered="Aseta sopiva nimi"
 
 # output connect messages
 Output.ConnectFail.Title="Yhdistäminen epäonnistui"
@@ -66,6 +66,34 @@ Basic.Main.DefaultSceneName.Text="Skene %1"
 Basic.SourceSelect.CreateNew="Luo uusi"
 Basic.SourceSelect.AddExisting="Lisää olemassaoleva"
 
+# transform window
+Basic.TransformWindow="Skenen lähteen muuntaminen"
+Basic.TransformWindow.Position="Sijainti"
+Basic.TransformWindow.Rotation="Kierto"
+Basic.TransformWindow.Scale="Mittakaava"
+Basic.TransformWindow.Alignment="Sijaintiin kohdistus"
+Basic.TransformWindow.BoundsType="Rajauslaatikon tyyppi"
+Basic.TransformWindow.BoundsAlignment="Rajauslaatikon kohdistus"
+Basic.TransformWindow.Bounds="Rajauslaatikon koko"
+
+Basic.TransformWindow.Alignment.TopLeft="Ylävasen"
+Basic.TransformWindow.Alignment.TopCenter="Yläkeski"
+Basic.TransformWindow.Alignment.TopRight="Yläoikea"
+Basic.TransformWindow.Alignment.CenterLeft="Keskivasen"
+Basic.TransformWindow.Alignment.Center="Keskellä"
+Basic.TransformWindow.Alignment.CenterRight="Keskioieka"
+Basic.TransformWindow.Alignment.BottomLeft="Alavasen"
+Basic.TransformWindow.Alignment.BottomCenter="Alakeski"
+Basic.TransformWindow.Alignment.BottomRight="Alaoikea"
+
+Basic.TransformWindow.BoundsType.None="Ei rajoja"
+Basic.TransformWindow.BoundsType.MaxOnly="Vain täysi koko"
+Basic.TransformWindow.BoundsType.ScaleInner="Skaalaa sisäisiin rajoihin"
+Basic.TransformWindow.BoundsType.ScaleOuter="Skaalaa ulkoisiin rajoihin"
+Basic.TransformWindow.BoundsType.ScaleToWidth="Skaalaa pituuden rajoihin"
+Basic.TransformWindow.BoundsType.ScaleToHeight="Skaalaa korkeuden rajoihin"
+Basic.TransformWindow.BoundsType.Stretch="Venytä rajoihin"
+
 # no scene warning
 Basic.Main.AddSourceHelp.Title="Lähdettä ei voi lisätä"
 Basic.Main.AddSourceHelp.Text="Tarvitset vähintään yhden skenen, jotta voit lisätä lähteen."
@@ -85,6 +113,24 @@ Basic.MainMenu.File.Export="&Vie"
 Basic.MainMenu.File.Import="T&uo"
 Basic.MainMenu.File.Settings="&Asetukset"
 Basic.MainMenu.File.Exit="&Sulje"
+
+# basic mode edit menu
+Basic.MainMenu.Edit="&Muokkaa"
+Basic.MainMenu.Edit.Undo="&Kumoa"
+Basic.MainMenu.Edit.Redo="&Tee uudelleen"
+Basic.MainMenu.Edit.UndoAction="Kum&oa $1"
+Basic.MainMenu.Edit.RedoAction="T&ee uudelleen $1"
+Basic.MainMenu.Edit.Transform="Muu&nna"
+Basic.MainMenu.Edit.Transform.EditTransform="M&uokkaa muunnosta..."
+Basic.MainMenu.Edit.Transform.ResetTransform="&Nollaa muunnos"
+Basic.MainMenu.Edit.Transform.Rotate90CW="Pyöritä 90 astetta myötäpäivään"
+Basic.MainMenu.Edit.Transform.Rotate90CCW="Pyöritä 90 astetta vastapäivään"
+Basic.MainMenu.Edit.Transform.Rotate180="Pyöritä 180 astetta"
+Basic.MainMenu.Edit.Transform.FlipHorizontal="Käännä &vaakatasossa"
+Basic.MainMenu.Edit.Transform.FlipVertical="Käännä &pystytasossa"
+Basic.MainMenu.Edit.Transform.FitToScreen="&Sovita ikkunaan"
+Basic.MainMenu.Edit.Transform.StretchToScreen="&Venytä ikkunaan"
+Basic.MainMenu.Edit.Transform.CenterToScreen="&Keskitä ikkunaan"
 
 # basic mode help menu
 Basic.MainMenu.Help="&Apua"
