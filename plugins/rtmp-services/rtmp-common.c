@@ -239,7 +239,7 @@ static void apply_video_encoder_settings(obs_encoder_t encoder,
 
 	item = json_object_get(recommended, "cbr");
 	if (item && json_is_boolean(item)) {
-		bool cbr = json_boolean_value(item);
+		bool cbr = json_is_true(item);
 		obs_data_setbool(settings, "cbr", cbr);
 	}
 
