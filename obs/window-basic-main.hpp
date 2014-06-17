@@ -53,6 +53,8 @@ private:
 
 	std::vector<VolControl*> volumes;
 
+	bool loaded = false;
+
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
 

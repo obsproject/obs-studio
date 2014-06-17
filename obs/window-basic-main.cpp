@@ -511,6 +511,8 @@ void OBSBasic::OBSInit()
 
 	Load(savePath);
 	ResetAudioDevices();
+
+	loaded = true;
 }
 
 OBSBasic::~OBSBasic()
@@ -579,6 +581,14 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t item)
 			QVariant::fromValue(OBSSceneItem(item)));
 
 	ui->sources->insertItem(0, listItem);
+	ui->sources->setCurrentRow(0);
+
+	/* if the source was just created, open properties dialog */
+	if (sourceSceneRefs[source] == 0 && loaded) {
+		delete properties;
+		properties = new OBSBasicProperties(this, source);
+		properties->Init();
+	}
 }
 
 /* Qt callbacks for invokeMethod */
