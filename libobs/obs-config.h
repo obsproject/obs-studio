@@ -41,7 +41,7 @@
  *
  * Reset to zero each major or minor version
  */
-#define LIBOBS_API_PATCH_VER  0
+#define LIBOBS_API_PATCH_VER  1
 
 #define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 24) | \
                               (LIBOBS_API_MINOR_VER << 16) | \

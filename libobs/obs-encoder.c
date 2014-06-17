@@ -438,6 +438,11 @@ audio_t obs_encoder_audio(obs_encoder_t encoder)
 		encoder->media : NULL;
 }
 
+bool obs_encoder_active(obs_encoder_t encoder)
+{
+	return encoder ? encoder->active : false;
+}
+
 static inline bool get_sei(struct obs_encoder *encoder,
 		uint8_t **sei, size_t *size)
 {

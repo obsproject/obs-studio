@@ -446,5 +446,7 @@ struct obs_service {
 	struct obs_output               *output;
 };
 
-void obs_service_activate(struct obs_service *service);
-void obs_service_deactivate(struct obs_service *service, bool remove);
+extern void obs_service_activate(struct obs_service *service);
+extern void obs_service_deactivate(struct obs_service *service, bool remove);
+extern bool obs_service_initialize(struct obs_service *service,
+		struct obs_output *output);

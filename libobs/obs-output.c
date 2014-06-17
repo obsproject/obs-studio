@@ -577,6 +577,8 @@ bool obs_output_initialize_encoders(obs_output_t output, uint32_t flags)
 
 	if (!encoded)
 		return false;
+	if (has_service && !obs_service_initialize(output->service, output))
+		return false;
 	if (has_video && !obs_encoder_initialize(output->video_encoder))
 		return false;
 	if (has_audio && !obs_encoder_initialize(output->audio_encoder))

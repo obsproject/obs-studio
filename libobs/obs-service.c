@@ -222,3 +222,14 @@ void obs_service_deactivate(struct obs_service *service, bool remove)
 	else if (remove)
 		service->output = NULL;
 }
+
+bool obs_service_initialize(struct obs_service *service,
+		struct obs_output *output)
+{
+	if (!service || !output)
+		return false;
+
+	if (service->info.initialize)
+		return service->info.initialize(service->context.data, output);
+	return true;
+}

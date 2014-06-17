@@ -35,6 +35,17 @@ struct obs_service_info {
 
 	obs_properties_t (*properties)(const char *locale);
 
+	/**
+	 * Called when getting ready to start up an output, before the encoders
+	 * and output are initialized
+	 *
+	 * @param  data    Internal service data
+	 * @param  output  Output context
+	 * @eturn          true to allow the output to start up,
+	 *                 false to prevent output from starting up
+	 */
+	bool (*initialize)(void *data, obs_output_t output);
+
 	const char *(*get_url)(void *data);
 	const char *(*get_key)(void *data);
 

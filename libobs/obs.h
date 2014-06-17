@@ -959,6 +959,9 @@ EXPORT video_t obs_encoder_video(obs_encoder_t encoder);
  */
 EXPORT audio_t obs_encoder_audio(obs_encoder_t encoder);
 
+/** Returns true if encoder is active, false otherwise */
+EXPORT bool obs_encoder_active(obs_encoder_t encoder);
+
 /** Duplicates an encoder packet */
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src);
