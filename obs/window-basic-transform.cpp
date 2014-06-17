@@ -14,6 +14,7 @@ static OBSSceneItem FindASelectedItem(OBSScene scene)
 			return false;
 		}
 
+		UNUSED_PARAMETER(scene);
 		return true;
 	};
 

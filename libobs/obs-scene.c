@@ -228,10 +228,13 @@ static void update_item_transform(struct obs_scene_item *item)
 	uint32_t        height        = obs_source_getheight(item->source);
 	uint32_t        cx            = width;
 	uint32_t        cy            = height;
-	struct vec2     base_origin   = {0.0f, 0.0f};
-	struct vec2     origin        = {0.0f, 0.0f};
+	struct vec2     base_origin;
+	struct vec2     origin;
 	struct vec2     scale         = item->scale;
 	struct calldata params        = {0};
+
+	vec2_zero(&base_origin);
+	vec2_zero(&origin);
 
 	/* ----------------------- */
 

@@ -23,10 +23,10 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
-	vec2 pos = {
+	vec2 pos;
+	vec2_set(&pos,
 		(float(event->x()) - main->previewX) / main->previewScale,
-		(float(event->y()) - main->previewY) / main->previewScale
-	};
+		(float(event->y()) - main->previewY) / main->previewScale);
 
 	return pos;
 }
@@ -47,7 +47,9 @@ static bool FindItemAtPos(obs_scene_t scene, obs_sceneitem_t item, void *param)
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
 	matrix4       transform;
 	vec3          transformedPos;
-	vec3          pos3 = {data->pos.x, data->pos.y, 0.0f};
+	vec3          pos3;
+
+	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
@@ -91,7 +93,8 @@ static vec3 GetTransformedPosScaled(float x, float y, const matrix4 &mat,
 static inline vec2 GetOBSScreenSize()
 {
 	obs_video_info ovi;
-	vec2 size = {0.0f, 0.0f};
+	vec2 size;
+	vec2_zero(&size);
 
 	if (obs_get_video_info(&ovi)) {
 		size.x = float(ovi.base_width);
@@ -145,7 +148,9 @@ static bool CheckItemSelected(obs_scene_t scene, obs_sceneitem_t item,
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
 	matrix4       transform;
 	vec3          transformedPos;
-	vec3          pos3 = {data->pos.x, data->pos.y, 0.0f};
+	vec3          pos3;
+
+	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
@@ -198,8 +203,10 @@ static bool FindHandleAtPos(obs_scene_t scene, obs_sceneitem_t item,
 
 	HandleFindData *data = reinterpret_cast<HandleFindData*>(param);
 	matrix4        transform;
-	vec3           pos3 = {data->pos.x, data->pos.y, 0.0f};
+	vec3           pos3;
 	float          closestHandle = HANDLE_SEL_RADIUS;
+
+	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
@@ -581,12 +588,14 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 		SnapStretchingToScreen(tl, br);
 
 	obs_source_t source = obs_sceneitem_getsource(stretchItem);
-	vec2 baseSize = {
-		float(obs_source_getwidth(source)),
-		float(obs_source_getheight(source))
-	};
 
-	vec2 size = {br.x - tl.x, br.y - tl.y};
+	vec2 baseSize;
+	vec2_set(&baseSize,
+		float(obs_source_getwidth(source)),
+		float(obs_source_getheight(source)));
+
+	vec2 size;
+	vec2_set(&size,br. x - tl.x, br.y - tl.y);
 
 	if (boundsType != OBS_BOUNDS_NONE) {
 		if (boundsType == OBS_BOUNDS_STRETCH && !shiftDown)
@@ -608,11 +617,9 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 	pos3 = CalculateStretchPos(tl, br);
 	vec3_transform(&pos3, &pos3, &itemToScreen);
-	vec2 newPos = {pos3.x, pos3.y};
 
-	newPos.x = std::round(newPos.x);
-	newPos.y = std::round(newPos.y);
-
+	vec2 newPos;
+	vec2_set(&newPos, std::round(pos3.x), std::round(pos3.y));
 	obs_sceneitem_setpos(stretchItem, &newPos);
 }
 
@@ -659,7 +666,6 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
 	if (!obs_sceneitem_selected(item))
 		return true;
 
-	OBSBasicPreview *preview = reinterpret_cast<OBSBasicPreview*>(param);
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
 	gs_load_vertexbuffer(main->circle);
@@ -689,6 +695,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
 	gs_matrix_pop();
 
 	UNUSED_PARAMETER(scene);
+	UNUSED_PARAMETER(param);
 	return true;
 }
 

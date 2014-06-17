@@ -1791,19 +1791,23 @@ static bool MultiplySelectedItemScale(obs_scene_t scene, obs_sceneitem_t item,
 	obs_sceneitem_setscale(item, &scale);
 
 	SetItemTL(item, tl);
+
+	UNUSED_PARAMETER(scene);
 	return true;
 }
 
 void OBSBasic::on_actionFlipHorizontal_triggered()
 {
-	vec2 scale = {-1.0f, 1.0f};
+	vec2 scale;
+	vec2_set(&scale, -1.0f, 1.0f);
 	obs_scene_enum_items(GetCurrentScene(), MultiplySelectedItemScale,
 			&scale);
 }
 
 void OBSBasic::on_actionFlipVertical_triggered()
 {
-	vec2 scale = {1.0f, -1.0f};
+	vec2 scale;
+	vec2_set(&scale, 1.0f, -1.0f);
 	obs_scene_enum_items(GetCurrentScene(), MultiplySelectedItemScale,
 			&scale);
 }
