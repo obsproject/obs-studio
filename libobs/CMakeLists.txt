@@ -234,6 +234,7 @@ endif()
 target_link_libraries(libobs
 	PRIVATE
 		jansson
+		libsamplerate
 		${libobs_PLATFORM_DEPS}
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}

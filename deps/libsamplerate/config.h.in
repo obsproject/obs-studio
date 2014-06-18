@@ -1,0 +1,31 @@
+/* Target processor clips on negative float to int conversion. */
+#define CPU_CLIPS_NEGATIVE @CPU_CLIPS_NEGATIVE@
+
+/* Target processor clips on positive float to int conversion. */
+#define CPU_CLIPS_POSITIVE @CPU_CLIPS_POSITIVE@
+
+/* Define if you have C99's lrint function. */
+#define HAVE_LRINT @HAVE_LRINT@
+
+/* Define if you have C99's lrintf function. */
+#define HAVE_LRINTF @HAVE_LRINT@
+
+/* Name of package */
+#define PACKAGE "libsamplerate"
+
+/* Version number of package */
+#define VERSION "0.1.8"
+
+/* Define if this is MSVC */
+#cmakedefine IS_MSVC
+
+#ifdef IS_MSVC
+
+/* Disable pointless double to float conversion warnings */
+#pragma warning(disable: 4305)
+#pragma warning(disable: 4244)
+
+/* MSVC in C mode still doesn't know inline... */
+#define inline __inline
+
+#endif
