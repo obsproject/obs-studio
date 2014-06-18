@@ -46,7 +46,9 @@ else()
 			".*#define[ \t]+JANSSON_VERSION[ \t]+\"(.+)\".*" "\\1"
 			_JANSSON_VERSION_STRING "${_jansson_version_parse}")
 	else()
-		message(WARNING "Failed to find Jansson version")
+		if(NOT Jansson_FIND_QUIETLY)
+			message(WARNING "Failed to find Jansson version")
+		endif()
 		set(_JANSSON_VERSION_STRING "unknown")
 	endif()
 
