@@ -498,6 +498,7 @@ void OBSBasic::OBSInit()
 	obs_load_module("linux-xshm");
 	obs_load_module("linux-xcomposite");
 	obs_load_module("linux-pulseaudio");
+	obs_load_module("linux-v4l2");
 #endif
 
 	if (!InitOutputs())
