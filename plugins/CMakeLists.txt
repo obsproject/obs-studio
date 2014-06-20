@@ -11,6 +11,7 @@ elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	add_subdirectory(linux-xshm)
 	add_subdirectory(linux-xcomposite)
 	add_subdirectory(linux-pulseaudio)
+	add_subdirectory(linux-v4l2)
 endif()
 
 add_subdirectory(obs-x264)
