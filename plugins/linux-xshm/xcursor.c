@@ -100,7 +100,7 @@ void xcursor_render(xcursor_t *data) {
 
 	gs_matrix_push();
 
-	gs_matrix_translate3f(data->pos_x, data->pos_y, 0);
+	gs_matrix_translate3f(-data->pos_x, -data->pos_y, 0);
 
 	gs_enable_blending(True);
 	gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
