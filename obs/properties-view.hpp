@@ -65,7 +65,7 @@ private:
 	QWidget *AddPath(obs_property_t prop, QFormLayout *layout);
 	QWidget *AddInt(obs_property_t prop);
 	QWidget *AddFloat(obs_property_t prop);
-	QWidget *AddList(obs_property_t prop);
+	QWidget *AddList(obs_property_t prop, bool &warning);
 	QWidget *AddButton(obs_property_t prop);
 
 	void AddProperty(obs_property_t property, QFormLayout *layout);

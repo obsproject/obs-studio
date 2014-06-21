@@ -172,7 +172,7 @@ static void AddComboItem(QComboBox *combo, obs_property_t prop,
 	item->setFlags(Qt::NoItemFlags);
 }
 
-QWidget *OBSPropertiesView::AddList(obs_property_t prop)
+QWidget *OBSPropertiesView::AddList(obs_property_t prop, bool &warning)
 {
 	const char       *name  = obs_property_name(prop);
 	QComboBox        *combo = new QComboBox();
@@ -213,6 +213,10 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 
+	QAbstractItemModel *model = combo->model();
+	warning = idx != -1 &&
+		model->flags(model->index(idx, 0)) == Qt::NoItemFlags;
+
 	WidgetInfo *info = new WidgetInfo(this, prop, combo);
 	connect(combo, SIGNAL(currentIndexChanged(int)), info,
 				SLOT(ControlChanged()));
@@ -244,6 +248,7 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		return;
 
 	QWidget *widget = nullptr;
+	bool    warning = false;
 
 	switch (type) {
 	case OBS_PROPERTY_INVALID:
@@ -264,7 +269,7 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		AddPath(property, layout);
 		break;
 	case OBS_PROPERTY_LIST:
-		widget = AddList(property);
+		widget = AddList(property, warning);
 		break;
 	case OBS_PROPERTY_COLOR:
 		/* TODO */
@@ -284,6 +289,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 	if (type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
+
+	if (warning && label) //TODO: select color based on background color
+		label->setStyleSheet("QLabel { color: red; }");
 
 	if (label && minSize) {
 		label->setMinimumWidth(minSize);
