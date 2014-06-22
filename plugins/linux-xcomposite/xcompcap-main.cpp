@@ -84,13 +84,13 @@ obs_properties_t XCompcapMain::properties(const char *locale)
 
 void XCompcapMain::defaults(obs_data_t settings)
 {
-	obs_data_setstring(settings, "capture_window", "");
-	obs_data_setint(settings, "cut_top", 0);
-	obs_data_setint(settings, "cut_left", 0);
-	obs_data_setint(settings, "cut_right", 0);
-	obs_data_setint(settings, "cut_bot", 0);
-	obs_data_setbool(settings, "swap_redblue", false);
-	obs_data_setbool(settings, "lock_x", false);
+	obs_data_set_default_string(settings, "capture_window", "");
+	obs_data_set_default_int(settings, "cut_top", 0);
+	obs_data_set_default_int(settings, "cut_left", 0);
+	obs_data_set_default_int(settings, "cut_right", 0);
+	obs_data_set_default_int(settings, "cut_bot", 0);
+	obs_data_set_default_bool(settings, "swap_redblue", false);
+	obs_data_set_default_bool(settings, "lock_x", false);
 }
 
 
