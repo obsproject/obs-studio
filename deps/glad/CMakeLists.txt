@@ -30,7 +30,7 @@ target_include_directories(glad
 target_compile_definitions(glad
 	PRIVATE GLAD_GLAPI_EXPORT_BUILD)
 
-if(NOT WIN32)
+if(NOT MSVC)
 	target_compile_options(glad
 		PRIVATE -DPIC -fPIC -fvisibility=hidden)
 endif()
