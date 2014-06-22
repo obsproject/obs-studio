@@ -66,6 +66,9 @@ Basic.Main.DefaultSceneName.Text="Scene %1"
 Basic.SourceSelect.CreateNew="Create new"
 Basic.SourceSelect.AddExisting="Add Existing"
 
+# properties window
+Basic.PropertiesWindow.AutoSelectFormat="%1 (unsupported; autoselect: %2)"
+
 # transform window
 Basic.TransformWindow="Scene Item Transform"
 Basic.TransformWindow.Position="Position"
