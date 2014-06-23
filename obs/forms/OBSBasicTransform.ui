@@ -76,11 +76,14 @@
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
-           <double>-9001.000000000000000</double>
+           <double>-90001.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -92,11 +95,14 @@
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
-           <double>-9001.000000000000000</double>
+           <double>-90001.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -138,7 +144,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Basic.TransformWindow.Scale</string>
+        <string>Basic.TransformWindow.Size</string>
        </property>
       </widget>
      </item>
@@ -164,40 +170,46 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QDoubleSpinBox" name="scaleX">
+         <widget class="QDoubleSpinBox" name="sizeX">
           <property name="minimumSize">
            <size>
             <width>100</width>
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
-           <double>-9001.000000000000000</double>
+           <double>-90001.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
           <property name="singleStep">
-           <double>0.010000000000000</double>
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="scaleY">
+         <widget class="QDoubleSpinBox" name="sizeY">
           <property name="minimumSize">
            <size>
             <width>100</width>
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
-           <double>-9001.000000000000000</double>
+           <double>-90001.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
           <property name="singleStep">
-           <double>0.010000000000000</double>
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -368,11 +380,14 @@
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
            <double>1.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -387,11 +402,14 @@
             <height>0</height>
            </size>
           </property>
+          <property name="decimals">
+           <number>4</number>
+          </property>
           <property name="minimum">
            <double>1.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>9001.000000000000000</double>
+           <double>90001.000000000000000</double>
           </property>
          </widget>
         </item>

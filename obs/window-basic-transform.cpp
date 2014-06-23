@@ -44,8 +44,8 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->positionX,    DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->positionY,    DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->rotation,     DSCROLL_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->scaleX,       DSCROLL_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->scaleY,       DSCROLL_CHANGED, SLOT(OnControlChanged()));
+	HookWidget(ui->sizeX,        DSCROLL_CHANGED, SLOT(OnControlChanged()));
+	HookWidget(ui->sizeY,        DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->align,        COMBO_CHANGED,   SLOT(OnControlChanged()));
 	HookWidget(ui->boundsType,   COMBO_CHANGED,   SLOT(OnBoundsType(int)));
 	HookWidget(ui->boundsAlign,  COMBO_CHANGED,   SLOT(OnControlChanged()));
@@ -185,6 +185,10 @@ void OBSBasicTransform::RefreshControls()
 	obs_sceneitem_info osi;
 	obs_sceneitem_get_info(item, &osi);
 
+	obs_source_t source = obs_sceneitem_getsource(item);
+	float width  = float(obs_source_getwidth(source));
+	float height = float(obs_source_getheight(source));
+
 	int alignIndex       = AlignToList(osi.alignment);
 	int boundsAlignIndex = AlignToList(osi.bounds_alignment);
 
@@ -192,8 +196,8 @@ void OBSBasicTransform::RefreshControls()
 	ui->positionX->setValue(osi.pos.x);
 	ui->positionY->setValue(osi.pos.y);
 	ui->rotation->setValue(osi.rot);
-	ui->scaleX->setValue(osi.scale.x);
-	ui->scaleY->setValue(osi.scale.y);
+	ui->sizeX->setValue(osi.scale.x * width);
+	ui->sizeY->setValue(osi.scale.y * height);
 	ui->align->setCurrentIndex(alignIndex);
 
 	ui->boundsType->setCurrentIndex(int(osi.bounds_type));
@@ -235,12 +239,16 @@ void OBSBasicTransform::OnControlChanged()
 	if (ignoreItemChange)
 		return;
 
+	obs_source_t source = obs_sceneitem_getsource(item);
+	double width  = double(obs_source_getwidth(source));
+	double height = double(obs_source_getheight(source));
+
 	obs_sceneitem_info osi;
 	osi.pos.x            = float(ui->positionX->value());
 	osi.pos.y            = float(ui->positionY->value());
 	osi.rot              = float(ui->rotation->value());
-	osi.scale.x          = float(ui->scaleX->value());
-	osi.scale.y          = float(ui->scaleY->value());
+	osi.scale.x          = float(ui->sizeX->value() / width);
+	osi.scale.y          = float(ui->sizeY->value() / height);
 	osi.alignment        = listToAlign[ui->align->currentIndex()];
 
 	osi.bounds_type      = (obs_bounds_type)ui->boundsType->currentIndex();
