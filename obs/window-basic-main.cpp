@@ -1711,26 +1711,33 @@ void OBSBasic::on_actionResetTransform_triggered()
 	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
 }
 
-static vec3 GetItemTL(obs_sceneitem_t item)
+static void GetItemBox(obs_sceneitem_t item, vec3 &tl, vec3 &br)
 {
 	matrix4 boxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
-	vec3 tl;
 	vec3_set(&tl, M_INFINITE, M_INFINITE, 0.0f);
+	vec3_set(&br, -M_INFINITE, -M_INFINITE, 0.0f);
 
-	auto GetMinPos = [&] (vec3 &val, float x, float y)
+	auto GetMinPos = [&] (float x, float y)
 	{
 		vec3 pos;
 		vec3_set(&pos, x, y, 0.0f);
 		vec3_transform(&pos, &pos, &boxTransform);
-		vec3_min(&val, &val, &pos);
+		vec3_min(&tl, &tl, &pos);
+		vec3_max(&br, &br, &pos);
 	};
 
-	GetMinPos(tl, 0.0f, 0.0f);
-	GetMinPos(tl, 1.0f, 0.0f);
-	GetMinPos(tl, 0.0f, 1.0f);
-	GetMinPos(tl, 1.0f, 1.0f);
+	GetMinPos(0.0f, 0.0f);
+	GetMinPos(1.0f, 0.0f);
+	GetMinPos(0.0f, 1.0f);
+	GetMinPos(1.0f, 1.0f);
+}
+
+static vec3 GetItemTL(obs_sceneitem_t item)
+{
+	vec3 tl, br;
+	GetItemBox(item, tl, br);
 	return tl;
 }
 
@@ -1867,7 +1874,34 @@ void OBSBasic::on_actionStretchToScreen_triggered()
 
 void OBSBasic::on_actionCenterToScreen_triggered()
 {
-	obs_bounds_type boundsType = OBS_BOUNDS_MAX_ONLY;
-	obs_scene_enum_items(GetCurrentScene(), CenterAlignSelectedItems,
-			&boundsType);
+	auto func = [] (obs_scene_t scene, obs_sceneitem_t item, void *param)
+	{
+		vec3 tl, br, itemCenter, screenCenter, offset;
+		obs_video_info ovi;
+
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		obs_get_video_info(&ovi);
+
+		vec3_set(&screenCenter, float(ovi.base_width),
+				float(ovi.base_height), 0.0f);
+		vec3_mulf(&screenCenter, &screenCenter, 0.5f);
+
+		GetItemBox(item, tl, br);
+
+		vec3_sub(&itemCenter, &br, &tl);
+		vec3_mulf(&itemCenter, &itemCenter, 0.5f);
+		vec3_add(&itemCenter, &itemCenter, &tl);
+
+		vec3_sub(&offset, &screenCenter, &itemCenter);
+		vec3_add(&tl, &tl, &offset);
+
+		SetItemTL(item, tl);
+
+		UNUSED_PARAMETER(scene);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
 }
