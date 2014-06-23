@@ -598,7 +598,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	vec2_set(&size,br. x - tl.x, br.y - tl.y);
 
 	if (boundsType != OBS_BOUNDS_NONE) {
-		if (boundsType == OBS_BOUNDS_STRETCH && !shiftDown)
+		if (shiftDown)
 			ClampAspect(tl, br, size, baseSize);
 
 		if (tl.x > br.x) std::swap(tl.x, br.x);
