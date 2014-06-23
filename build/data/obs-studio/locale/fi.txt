@@ -66,11 +66,14 @@ Basic.Main.DefaultSceneName.Text="Skene %1"
 Basic.SourceSelect.CreateNew="Luo uusi"
 Basic.SourceSelect.AddExisting="Lisää olemassaoleva"
 
+# properties window
+Basic.PropertiesWindow.AutoSelectFormat="%1 (ei tueta; automaattinen: %2)" 
+
 # transform window
 Basic.TransformWindow="Skenen lähteen muuntaminen"
 Basic.TransformWindow.Position="Sijainti"
 Basic.TransformWindow.Rotation="Kierto"
-Basic.TransformWindow.Scale="Mittakaava"
+Basic.TransformWindow.Size="Koko"
 Basic.TransformWindow.Alignment="Sijaintiin kohdistus"
 Basic.TransformWindow.BoundsType="Rajauslaatikon tyyppi"
 Basic.TransformWindow.BoundsAlignment="Rajauslaatikon kohdistus"
