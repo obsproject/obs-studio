@@ -47,6 +47,15 @@ private:
 
 	OBSPropertiesView *streamProperties;
 
+	void SaveCombo(QComboBox *widget, const char *section,
+			const char *value);
+	void SaveComboData(QComboBox *widget, const char *section,
+			const char *value);
+	void SaveEdit(QLineEdit *widget, const char *section,
+			const char *value);
+	void SaveSpinBox(QSpinBox *widget, const char *section,
+			const char *value);
+
 	inline bool Changed() const
 	{
 		return generalChanged || outputsChanged ||

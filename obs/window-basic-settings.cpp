@@ -72,6 +72,11 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	return true;
 }
 
+static inline bool WidgetChanged(QWidget *widget)
+{
+	return widget->property("changed").toBool();
+}
+
 static inline void SetComboByName(QComboBox *combo, const char *name)
 {
 	int idx = combo->findText(QT_UTF8(name));
@@ -86,10 +91,20 @@ static inline void SetComboByValue(QComboBox *combo, const char *name)
 		combo->setCurrentIndex(idx);
 }
 
+static inline QString GetComboData(QComboBox *combo)
+{
+	int idx = combo->currentIndex();
+	if (idx == -1)
+		return QString();
+
+	return combo->itemData(idx).toString();
+}
+
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 		const char *slot)
 {
 	QObject::connect(widget, signal, this, slot);
+	widget->setProperty("changed", QVariant(false));
 }
 
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
@@ -156,6 +171,39 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadServiceTypes();
 	LoadServiceInfo();
 	LoadSettings(false);
+}
+
+void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
+		const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_string(main->Config(), section, value,
+				QT_TO_UTF8(widget->currentText()));
+}
+
+void OBSBasicSettings::SaveComboData(QComboBox *widget, const char *section,
+		const char *value)
+{
+	if (WidgetChanged(widget)) {
+		QString str = GetComboData(widget);
+		config_set_string(main->Config(), section, value,
+				QT_TO_UTF8(str));
+	}
+}
+
+void OBSBasicSettings::SaveEdit(QLineEdit *widget, const char *section,
+		const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_string(main->Config(), section, value,
+				QT_TO_UTF8(widget->text()));
+}
+
+void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
+		const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_int(main->Config(), section, value, widget->value());
 }
 
 void OBSBasicSettings::LoadServiceTypes()
@@ -505,43 +553,41 @@ void OBSBasicSettings::SaveGeneralSettings()
 	QVariant langData = ui->language->itemData(languageIndex);
 	string language = langData.toString().toStdString();
 
-	config_set_string(GetGlobalConfig(), "General", "Language",
-			language.c_str());
+	if (WidgetChanged(ui->language))
+		config_set_string(GetGlobalConfig(), "General", "Language",
+				language.c_str());
 }
 
 void OBSBasicSettings::SaveVideoSettings()
 {
-	QString renderer         = ui->renderer->currentText();
 	QString baseResolution   = ui->baseResolution->currentText();
 	QString outputResolution = ui->outputResolution->currentText();
 	int     fpsType          = ui->fpsType->currentIndex();
-	QString fpsCommon        = ui->fpsCommon->currentText();
-	int     fpsInteger       = ui->fpsInteger->value();
-	int     fpsNumerator     = ui->fpsNumerator->value();
-	int     fpsDenominator   = ui->fpsDenominator->value();
 	uint32_t cx, cy;
 
 	/* ------------------- */
 
-	config_set_string(GetGlobalConfig(), "Video", "Renderer",
-			QT_TO_UTF8(renderer));
+	SaveCombo(ui->renderer, "Video", "Renderer");
 
-	if (ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
+	if (WidgetChanged(ui->baseResolution) &&
+	    ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
 		config_set_uint(main->Config(), "Video", "BaseCX", cx);
 		config_set_uint(main->Config(), "Video", "BaseCY", cy);
 	}
 
-	if (ConvertResText(QT_TO_UTF8(outputResolution), cx, cy)) {
+	if (WidgetChanged(ui->outputResolution) &&
+	    ConvertResText(QT_TO_UTF8(outputResolution), cx, cy)) {
 		config_set_uint(main->Config(), "Video", "OutputCX", cx);
 		config_set_uint(main->Config(), "Video", "OutputCY", cy);
 	}
 
-	config_set_uint(main->Config(), "Video", "FPSType", fpsType);
-	config_set_string(main->Config(), "Video", "FPSCommon",
-			QT_TO_UTF8(fpsCommon));
-	config_set_uint(main->Config(), "Video", "FPSInt", fpsInteger);
-	config_set_uint(main->Config(), "Video", "FPSNum", fpsNumerator);
-	config_set_uint(main->Config(), "Video", "FPSDen", fpsDenominator);
+	if (WidgetChanged(ui->fpsType))
+		config_set_uint(main->Config(), "Video", "FPSType", fpsType);
+
+	SaveCombo(ui->fpsCommon, "Video", "FPSCommon");
+	SaveSpinBox(ui->fpsInteger, "Video", "FPSInt");
+	SaveSpinBox(ui->fpsNumerator, "Video", "FPSNum");
+	SaveSpinBox(ui->fpsDenominator, "Video", "FPSDen");
 
 	main->ResetVideo();
 }
@@ -549,36 +595,15 @@ void OBSBasicSettings::SaveVideoSettings()
 /* TODO: Temporary! */
 void OBSBasicSettings::SaveOutputSettings()
 {
-	int videoBitrate     = ui->simpleOutputVBitrate->value();
-	QString audioBitrate = ui->simpleOutputABitrate->currentText();
-	QString path         = ui->simpleOutputPath->text();
-
-	config_set_uint(main->Config(), "SimpleOutput", "VBitrate",
-			videoBitrate);
-	config_set_string(main->Config(), "SimpleOutput", "ABitrate",
-			QT_TO_UTF8(audioBitrate));
-	config_set_string(main->Config(), "SimpleOutput", "FilePath",
-			QT_TO_UTF8(path));
-}
-
-static inline QString GetComboData(QComboBox *combo)
-{
-	int idx = combo->currentIndex();
-	if (idx == -1)
-		return QString();
-
-	return combo->itemData(idx).toString();
+	SaveSpinBox(ui->simpleOutputVBitrate, "SimpleOutput", "VBitrate");
+	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
+	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 }
 
 void OBSBasicSettings::SaveAudioSettings()
 {
 	QString sampleRateStr  = ui->sampleRate->currentText();
 	int channelSetupIdx    = ui->channelSetup->currentIndex();
-	QString desktopDevice1 = GetComboData(ui->desktopAudioDevice1);
-	QString desktopDevice2 = GetComboData(ui->desktopAudioDevice2);
-	QString auxDevice1     = GetComboData(ui->auxAudioDevice1);
-	QString auxDevice2     = GetComboData(ui->auxAudioDevice2);
-	QString auxDevice3     = GetComboData(ui->auxAudioDevice3);
 
 	const char *channelSetup = (channelSetupIdx == 0) ? "Mono" : "Stereo";
 
@@ -588,20 +613,19 @@ void OBSBasicSettings::SaveAudioSettings()
 	else if (sampleRateStr == "48khz")
 		sampleRate = 48000;
 
-	config_set_uint(main->Config(), "Audio", "SampleRate", sampleRate);
-	config_set_string(main->Config(), "Audio", "ChannelSetup",
-			channelSetup);
+	if (WidgetChanged(ui->sampleRate))
+		config_set_uint(main->Config(), "Audio", "SampleRate",
+				sampleRate);
 
-	config_set_string(main->Config(), "Audio", "DesktopDevice1",
-			QT_TO_UTF8(desktopDevice1));
-	config_set_string(main->Config(), "Audio", "DesktopDevice2",
-			QT_TO_UTF8(desktopDevice2));
-	config_set_string(main->Config(), "Audio", "AuxDevice1",
-			QT_TO_UTF8(auxDevice1));
-	config_set_string(main->Config(), "Audio", "AuxDevice2",
-			QT_TO_UTF8(auxDevice2));
-	config_set_string(main->Config(), "Audio", "AuxDevice3",
-			QT_TO_UTF8(auxDevice3));
+	if (WidgetChanged(ui->channelSetup))
+		config_set_string(main->Config(), "Audio", "ChannelSetup",
+				channelSetup);
+
+	SaveComboData(ui->desktopAudioDevice1, "Audio", "DesktopDevice1");
+	SaveComboData(ui->desktopAudioDevice2, "Audio", "DesktopDevice2");
+	SaveComboData(ui->auxAudioDevice1, "Audio", "AuxDevice1");
+	SaveComboData(ui->auxAudioDevice2, "Audio", "AuxDevice2");
+	SaveComboData(ui->auxAudioDevice3, "Audio", "AuxDevice3");
 
 	main->ResetAudioDevices();
 }
@@ -745,6 +769,7 @@ void OBSBasicSettings::GeneralChanged()
 {
 	if (!loading) {
 		generalChanged = true;
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -753,6 +778,7 @@ void OBSBasicSettings::OutputsChanged()
 {
 	if (!loading) {
 		outputsChanged = true;
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -761,6 +787,7 @@ void OBSBasicSettings::AudioChanged()
 {
 	if (!loading) {
 		audioChanged = true;
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -770,6 +797,7 @@ void OBSBasicSettings::AudioChangedRestart()
 	if (!loading) {
 		audioChanged = true;
 		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -779,6 +807,7 @@ void OBSBasicSettings::VideoChangedRestart()
 	if (!loading) {
 		videoChanged = true;
 		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -787,6 +816,7 @@ void OBSBasicSettings::VideoChangedResolution()
 {
 	if (!loading && ValidResolutions(ui.get())) {
 		videoChanged = true;
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
@@ -795,6 +825,7 @@ void OBSBasicSettings::VideoChanged()
 {
 	if (!loading) {
 		videoChanged = true;
+		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
 }
