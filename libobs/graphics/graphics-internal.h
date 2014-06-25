@@ -171,7 +171,7 @@ struct gs_exports {
 	void (*samplerstate_destroy)(samplerstate_t samplerstate);
 
 	void (*vertexbuffer_destroy)(vertbuffer_t vertbuffer);
-	void (*vertexbuffer_flush)(vertbuffer_t vertbuffer, bool rebuild);
+	void (*vertexbuffer_flush)(vertbuffer_t vertbuffer);
 	struct vb_data *(*vertexbuffer_getdata)(vertbuffer_t vertbuffer);
 
 	void   (*indexbuffer_destroy)(indexbuffer_t indexbuffer);

@@ -420,7 +420,7 @@ void gs_renderstop(enum gs_draw_mode mode)
 	}
 
 	if (graphics->using_immediate) {
-		vertexbuffer_flush(graphics->immediate_vertbuffer, false);
+		vertexbuffer_flush(graphics->immediate_vertbuffer);
 
 		gs_load_vertexbuffer(graphics->immediate_vertbuffer);
 		gs_load_indexbuffer(NULL);
@@ -796,7 +796,7 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 	else
 		build_sprite_norm(data, fcx, fcy, flip);
 
-	vertexbuffer_flush(graphics->sprite_buffer, false);
+	vertexbuffer_flush(graphics->sprite_buffer);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);
 
@@ -1879,11 +1879,11 @@ void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 	graphics->exports.vertexbuffer_destroy(vertbuffer);
 }
 
-void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
+void vertexbuffer_flush(vertbuffer_t vertbuffer)
 {
 	if (!thread_graphics || !vertbuffer) return;
 
-	thread_graphics->exports.vertexbuffer_flush(vertbuffer, rebuild);
+	thread_graphics->exports.vertexbuffer_flush(vertbuffer);
 }
 
 struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)

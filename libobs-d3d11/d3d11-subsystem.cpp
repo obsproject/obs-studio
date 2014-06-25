@@ -1668,7 +1668,7 @@ void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 	delete vertbuffer;
 }
 
-void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
+void vertexbuffer_flush(vertbuffer_t vertbuffer)
 {
 	if (!vertbuffer->dynamic) {
 		blog(LOG_ERROR, "vertexbuffer_flush: vertex buffer is "

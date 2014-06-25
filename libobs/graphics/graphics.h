@@ -678,7 +678,7 @@ EXPORT void     zstencil_destroy(zstencil_t zstencil);
 EXPORT void     samplerstate_destroy(samplerstate_t samplerstate);
 
 EXPORT void     vertexbuffer_destroy(vertbuffer_t vertbuffer);
-EXPORT void     vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild);
+EXPORT void     vertexbuffer_flush(vertbuffer_t vertbuffer);
 EXPORT struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer);
 
 EXPORT void     indexbuffer_destroy(indexbuffer_t indexbuffer);
