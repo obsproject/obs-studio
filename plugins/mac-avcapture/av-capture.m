@@ -312,7 +312,7 @@ static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
 {
 	NSString *new_preset = nil;
 	bool found_previous_preset = false;
-	for (NSString *preset in presets()) {
+	for (NSString *preset in presets().reverseObjectEnumerator) {
 		if (!found_previous_preset)
 			found_previous_preset =
 				[cur_preset isEqualToString:preset];
@@ -483,17 +483,17 @@ static void *av_capture_create(obs_data_t settings, obs_source_t source)
 static NSArray *presets(void)
 {
 	return @[
-		//AVCaptureSessionPresetPhoto,
-		//AVCaptureSessionPresetLow,
-		//AVCaptureSessionPresetMedium,
-		//AVCaptureSessionPresetHigh,
-		AVCaptureSessionPreset320x240,
-		AVCaptureSessionPreset352x288,
-		AVCaptureSessionPreset640x480,
-		AVCaptureSessionPreset960x540,
-		AVCaptureSessionPreset1280x720,
-		//AVCaptureSessionPresetiFrame960x540,
 		//AVCaptureSessionPresetiFrame1280x720,
+		//AVCaptureSessionPresetiFrame960x540,
+		AVCaptureSessionPreset1280x720,
+		AVCaptureSessionPreset960x540,
+		AVCaptureSessionPreset640x480,
+		AVCaptureSessionPreset352x288,
+		AVCaptureSessionPreset320x240,
+		//AVCaptureSessionPresetHigh,
+		//AVCaptureSessionPresetMedium,
+		//AVCaptureSessionPresetLow,
+		//AVCaptureSessionPresetPhoto,
 	];
 }
 
