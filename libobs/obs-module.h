@@ -50,6 +50,9 @@ MODULE_EXPORT bool obs_module_load(uint32_t libobs_version);
 /** Optional: Called when the module is unloaded.  */
 MODULE_EXPORT void obs_module_unload(void);
 
+/** Called to set the current locale data for the module.  */
+MODULE_EXPORT void obs_module_set_locale(const char *locale);
+
 /**
  * Optional: Declares the author(s) of the module
  *
@@ -59,9 +62,5 @@ MODULE_EXPORT void obs_module_unload(void);
 	MODULE_EXPORT const char *obs_module_author(void); \
 	const char *obs_module_author(void) {return name;}
 
-/**
- * Optional: Declares the author of the module
- *
- * @param locale Locale to look up the description for.
- */
-MODULE_EXPORT const char *obs_module_description(const char *locale);
+/** Optional: Returns a description of the module */
+MODULE_EXPORT const char *obs_module_description(void);

@@ -52,6 +52,7 @@ struct draw_callback {
 struct obs_module {
 	char *name;
 	void *module;
+	void (*set_locale)(const char *locale);
 };
 
 extern void free_module(struct obs_module *mod);

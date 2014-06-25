@@ -578,6 +578,13 @@ void obs_set_locale(const char *locale)
 	if (obs->locale)
 		bfree(obs->locale);
 	obs->locale = bstrdup(locale);
+
+	for (size_t i = 0; i < obs->modules.num; i++) {
+		struct obs_module *module = obs->modules.array+i;
+
+		if (module->set_locale)
+			module->set_locale(locale);
+	}
 }
 
 const char *obs_get_locale(void)
