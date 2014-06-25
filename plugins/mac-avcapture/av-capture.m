@@ -522,27 +522,11 @@ static NSString *preset_names(NSString *preset)
 
 static void av_capture_defaults(obs_data_t settings)
 {
-	AVCaptureDevice *dev = [AVCaptureDevice
-		defaultDeviceWithMediaType:AVMediaTypeVideo];
-	if (!dev)
-		return;
-
-	NSString *highest = nil;
-	for (NSString *preset in presets()) {
-		if (![dev supportsAVCaptureSessionPreset:preset])
-			continue;
-		highest = preset;
-	}
-	if (!highest)
-		return;
-
-	obs_data_set_default_string(settings, "device",
-			dev.uniqueID.UTF8String);
-	obs_data_set_default_string(settings, "device_name",
-			dev.localizedName.UTF8String);
+	//TODO: localize
+	obs_data_set_default_string(settings, "device_name", "none");
 	obs_data_set_default_bool(settings, "use_preset", true);
-
-	obs_data_set_default_string(settings, "preset", highest.UTF8String);
+	obs_data_set_default_string(settings, "preset",
+			AVCaptureSessionPreset1280x720.UTF8String);
 }
 
 static bool update_device_list(obs_property_t list,
