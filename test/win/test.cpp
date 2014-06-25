@@ -71,7 +71,7 @@ static void CreateOBS(HWND hwnd)
 	RECT rc;
 	GetClientRect(hwnd, &rc);
 
-	if (!obs_startup())
+	if (!obs_startup("en"))
 		throw "Couldn't create OBS";
 
 	struct obs_video_info ovi;

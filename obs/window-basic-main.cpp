@@ -468,7 +468,7 @@ void OBSBasic::OBSInit()
 	show();
 	App()->processEvents();
 
-	if (!obs_startup())
+	if (!obs_startup(App()->GetLocale()))
 		throw "Failed to initialize libobs";
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";

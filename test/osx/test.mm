@@ -38,7 +38,7 @@ using SceneContext = OBSUniqueHandle<obs_scene,
 
 static void CreateOBS(NSView *view)
 {
-	if (!obs_startup())
+	if (!obs_startup("en"))
 		throw "Couldn't create OBS";
 
 	struct obs_video_info ovi;

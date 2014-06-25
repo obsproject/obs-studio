@@ -197,14 +197,29 @@ struct source_frame {
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
-/** Initializes OBS */
-EXPORT bool obs_startup(void);
+/**
+ * Initializes OBS
+ *
+ * @param  locale  The locale to use for modules
+ */
+EXPORT bool obs_startup(const char *locale);
 
 /** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);
 
 /** @return true if the main OBS context has been initialized */
 EXPORT bool obs_initialized(void);
+
+/**
+ * Sets a new locale to use for modules.  This will call obs_module_set_locale
+ * for each module with the new locale.
+ *
+ * @param  locale  The locale to use for modules
+ */
+EXPORT void obs_set_locale(const char *locale);
+
+/** @return the current locale */
+EXPORT const char *obs_get_locale(void);
 
 /**
  * Sets base video ouput base resolution/fps/format

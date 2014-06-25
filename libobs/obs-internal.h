@@ -173,6 +173,8 @@ struct obs_core {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	char                            *locale;
+
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
 	struct obs_core_video           video;
