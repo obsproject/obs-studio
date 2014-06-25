@@ -661,7 +661,7 @@ static bool VideoConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }
 
-static bool AudioConfigClicked(obs_properties_t props, obs_property_t p,
+/*static bool AudioConfigClicked(obs_properties_t props, obs_property_t p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -670,7 +670,7 @@ static bool AudioConfigClicked(obs_properties_t props, obs_property_t p,
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(p);
 	return false;
-}
+}*/
 
 static bool CrossbarConfigClicked(obs_properties_t props, obs_property_t p,
 		void *data)
@@ -683,7 +683,7 @@ static bool CrossbarConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }
 
-static bool Crossbar2ConfigClicked(obs_properties_t props, obs_property_t p,
+/*static bool Crossbar2ConfigClicked(obs_properties_t props, obs_property_t p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -692,7 +692,7 @@ static bool Crossbar2ConfigClicked(obs_properties_t props, obs_property_t p,
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(p);
 	return false;
-}
+}*/
 
 static bool AddDevice(obs_property_t device_list, const VideoDevice &device)
 {
