@@ -202,5 +202,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
 	DestroyWindow(hwnd);
 
+	UNUSED_PARAMETER(prevInstance);
+	UNUSED_PARAMETER(cmdLine);
+	UNUSED_PARAMETER(numCmd);
 	return 0;
 }
