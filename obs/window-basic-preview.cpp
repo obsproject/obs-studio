@@ -36,6 +36,11 @@ struct SceneFindData {
 	OBSSceneItem item;
 	bool         selectBelow;
 
+	SceneFindData(const SceneFindData &) = delete;
+	SceneFindData(SceneFindData &) = delete;
+	SceneFindData& operator=(const SceneFindData &) = delete;
+	SceneFindData& operator=(SceneFindData &&) = delete;
+
 	inline SceneFindData(const vec2 &pos_, bool selectBelow_)
 		: pos         (pos_),
 		  selectBelow (selectBelow_)
@@ -188,6 +193,11 @@ struct HandleFindData {
 
 	OBSSceneItem item;
 	ItemHandle   handle = ItemHandle::None;
+
+	HandleFindData(const HandleFindData &) = delete;
+	HandleFindData(HandleFindData &) = delete;
+	HandleFindData& operator=(const HandleFindData &) = delete;
+	HandleFindData& operator=(HandleFindData &&) = delete;
 
 	inline HandleFindData(const vec2 &pos_, float scale_)
 		: pos   (pos_),

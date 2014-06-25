@@ -362,7 +362,7 @@ static void delete_oldest_log(void)
 {
 	BPtr<char>       logDir(os_get_config_path("obs-studio/logs"));
 	string           oldestLog;
-	uint64_t         oldest_ts = -1;
+	uint64_t         oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
 	unsigned int maxLogs = (unsigned int)config_get_uint(
