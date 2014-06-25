@@ -617,14 +617,6 @@ EXPORT void gs_stencilfunction(enum gs_stencil_side side,
 EXPORT void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 		enum gs_stencil_op zfail, enum gs_stencil_op zpass);
 
-EXPORT void gs_setclip(struct plane *p);
-
-EXPORT void gs_enable_fullscreen(bool enable);
-EXPORT int gs_fullscreen_enabled(void);
-EXPORT void gs_setdisplaymode(const struct gs_display_mode *mode);
-EXPORT void gs_getdisplaymode(struct gs_display_mode *mode);
-EXPORT void gs_setcolorramp(float gamma, float brightness, float contrast);
-
 EXPORT void gs_setviewport(int x, int y, int width, int height);
 EXPORT void gs_getviewport(struct gs_rect *rect);
 EXPORT void gs_setscissorrect(struct gs_rect *rect);

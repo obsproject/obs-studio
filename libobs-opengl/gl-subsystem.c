@@ -1096,46 +1096,6 @@ void device_stencilop(device_t device, enum gs_stencil_side side,
 	UNUSED_PARAMETER(device);
 }
 
-void device_enable_fullscreen(device_t device, bool enable)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(enable);
-}
-
-int device_fullscreen_enabled(device_t device)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	return false;
-}
-
-void device_setdisplaymode(device_t device,
-		const struct gs_display_mode *mode)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(mode);
-}
-
-void device_getdisplaymode(device_t device,
-		struct gs_display_mode *mode)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(mode);
-}
-
-void device_setcolorramp(device_t device, float gamma, float brightness,
-		float contrast)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(gamma);
-	UNUSED_PARAMETER(brightness);
-	UNUSED_PARAMETER(contrast);
-}
-
 static inline uint32_t get_target_height(struct gs_device *device)
 {
 	if (!device->cur_render_target)

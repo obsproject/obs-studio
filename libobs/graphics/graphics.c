@@ -1417,47 +1417,6 @@ void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 			zpass);
 }
 
-void gs_enable_fullscreen(bool enable)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_enable_fullscreen(graphics->device, enable);
-}
-
-int gs_fullscreen_enabled(void)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return 0;
-
-	return graphics->exports.device_fullscreen_enabled(graphics->device);
-}
-
-void gs_setdisplaymode(const struct gs_display_mode *mode)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_setdisplaymode(graphics->device, mode);
-}
-
-void gs_getdisplaymode(struct gs_display_mode *mode)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_getdisplaymode(graphics->device, mode);
-}
-
-void gs_setcolorramp(float gamma, float brightness, float contrast)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_setcolorramp(graphics->device, gamma,
-			brightness, contrast);
-}
-
 void gs_setviewport(int x, int y, int width, int height)
 {
 	graphics_t graphics = thread_graphics;

@@ -94,11 +94,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_depthfunction);
 	GRAPHICS_IMPORT(device_stencilfunction);
 	GRAPHICS_IMPORT(device_stencilop);
-	GRAPHICS_IMPORT(device_enable_fullscreen);
-	GRAPHICS_IMPORT(device_fullscreen_enabled);
-	GRAPHICS_IMPORT(device_setdisplaymode);
-	GRAPHICS_IMPORT(device_getdisplaymode);
-	GRAPHICS_IMPORT(device_setcolorramp);
 	GRAPHICS_IMPORT(device_setviewport);
 	GRAPHICS_IMPORT(device_getviewport);
 	GRAPHICS_IMPORT(device_setscissorrect);

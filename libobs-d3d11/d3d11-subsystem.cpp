@@ -1328,35 +1328,6 @@ void device_stencilop(device_t device, enum gs_stencil_side side,
 				fail, zfail, zpass);
 }
 
-void device_enable_fullscreen(device_t device, bool enable)
-{
-	/* TODO */
-}
-
-int device_fullscreen_enabled(device_t device)
-{
-	/* TODO */
-	return 0;
-}
-
-void device_setdisplaymode(device_t device,
-		const struct gs_display_mode *mode)
-{
-	/* TODO */
-}
-
-void device_getdisplaymode(device_t device,
-		struct gs_display_mode *mode)
-{
-	/* TODO */
-}
-
-void device_setcolorramp(device_t device, float gamma, float brightness,
-		float contrast)
-{
-	/* TODO */
-}
-
 void device_setviewport(device_t device, int x, int y, int width,
 		int height)
 {

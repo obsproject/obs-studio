@@ -116,14 +116,6 @@ struct gs_exports {
 	void (*device_stencilop)(device_t device, enum gs_stencil_side side,
 			enum gs_stencil_op fail, enum gs_stencil_op zfail,
 			enum gs_stencil_op zpass);
-	void (*device_enable_fullscreen)(device_t device, bool enable);
-	int (*device_fullscreen_enabled)(device_t device);
-	void (*device_setdisplaymode)(device_t device,
-			const struct gs_display_mode *mode);
-	void (*device_getdisplaymode)(device_t device,
-			struct gs_display_mode *mode);
-	void (*device_setcolorramp)(device_t device, float gamma,
-			float brightness, float contrast);
 	void (*device_setviewport)(device_t device, int x, int y, int width,
 			int height);
 	void (*device_getviewport)(device_t device, struct gs_rect *rect);
