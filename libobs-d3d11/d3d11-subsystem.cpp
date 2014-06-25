@@ -445,11 +445,13 @@ void device_destroy(device_t device)
 void device_entercontext(device_t device)
 {
 	/* does nothing */
+	UNUSED_PARAMETER(device);
 }
 
 void device_leavecontext(device_t device)
 {
 	/* does nothing */
+	UNUSED_PARAMETER(device);
 }
 
 swapchain_t device_create_swapchain(device_t device, struct gs_init_data *data)
@@ -550,6 +552,14 @@ texture_t device_create_volumetexture(device_t device, uint32_t width,
 		const void **data, uint32_t flags)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(width);
+	UNUSED_PARAMETER(height);
+	UNUSED_PARAMETER(depth);
+	UNUSED_PARAMETER(color_format);
+	UNUSED_PARAMETER(levels);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
@@ -735,6 +745,7 @@ void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer)
 	if (indexbuffer) {
 		switch (indexbuffer->indexSize) {
 		case 2: format = DXGI_FORMAT_R16_UINT; break;
+		default:
 		case 4: format = DXGI_FORMAT_R32_UINT; break;
 		}
 
@@ -864,6 +875,9 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(b_3d);
+	UNUSED_PARAMETER(unit);
 }
 
 shader_t device_getvertexshader(device_t device)
@@ -1136,6 +1150,7 @@ void device_draw(device_t device, enum gs_draw_mode draw_mode,
 void device_endscene(device_t device)
 {
 	/* does nothing in D3D11 */
+	UNUSED_PARAMETER(device);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swapchain)
@@ -1553,24 +1568,28 @@ void volumetexture_destroy(texture_t voltex)
 uint32_t volumetexture_getwidth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getheight(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getdepth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return GS_UNKNOWN;
 }
 

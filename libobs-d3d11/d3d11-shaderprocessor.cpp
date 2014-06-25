@@ -35,7 +35,6 @@ static const char *ConvertSemanticName(const char *name)
 	}
 
 	throw "Unknown Semantic Name";
-	return NULL;
 }
 
 static void GetSemanticInfo(shader_var *var, const char *&name,
