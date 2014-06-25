@@ -647,6 +647,29 @@ static bool check_preset(AVCaptureDevice *dev,
 	return true;
 }
 
+static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t settings)
+{
+	NSString *preset = get_string(settings, "preset");
+	if (!dev || [dev supportsAVCaptureSessionPreset:preset]) {
+		if (obs_data_has_autoselect(settings, "preset")) {
+			obs_data_unset_autoselect_value(settings, "preset");
+			return true;
+		}
+
+	} else {
+		preset = select_preset(dev, preset);
+		const char *autoselect =
+			obs_data_get_autoselect_string(settings, "preset");
+		if (![preset isEqualToString:@(autoselect)]) {
+			obs_data_set_autoselect_string(settings, "preset",
+				preset.UTF8String);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
@@ -657,7 +680,10 @@ static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 	bool dev_list_updated = update_device_list(p, uid, name, !dev);
 
 	p = obs_properties_get(props, "preset");
-	return check_preset(dev, p, settings) || dev_list_updated;
+	bool preset_list_changed = check_preset(dev, p, settings);
+	bool autoselect_changed  = autoselect_preset(dev, settings);
+
+	return preset_list_changed || autoselect_changed || dev_list_updated;
 }
 
 static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
@@ -668,7 +694,10 @@ static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
 	NSString *uid = get_string(settings, "device");
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 
-	return check_preset(dev, p, settings);
+	bool preset_list_changed = check_preset(dev, p, settings);
+	bool autoselect_changed  = autoselect_preset(dev, settings);
+
+	return preset_list_changed || autoselect_changed;
 }
 
 static obs_properties_t av_capture_properties(void)
