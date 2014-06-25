@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <X11/extensions/Xfixes.h>
 
+#include <graphics/matrix4.h>
 #include <util/bmem.h>
 #include "xcursor.h"
 
@@ -85,22 +86,25 @@ void xcursor_tick(xcursor_t *data) {
 
 	if (!data->tex || data->last_serial != xc->cursor_serial)
 		xcursor_create(data, xc);
-	data->pos_x = -1.0 * (xc->x - xc->xhot - data->x_org);
-	data->pos_y = -1.0 * (xc->y - xc->yhot - data->y_org);
+	data->pos_x = xc->x - xc->xhot - data->x_org;
+	data->pos_y = xc->y - xc->yhot - data->y_org;
 
 	XFree(xc);
 }
 
 void xcursor_render(xcursor_t *data) {
-	/* TODO: why do i need effects ? */
+	struct matrix4 trans;
+
 	gs_effect_t effect  = gs_get_effect();
 	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
-
 	gs_effect_set_texture(image, data->tex);
 
 	gs_matrix_push();
 
-	gs_matrix_translate3f(-data->pos_x, -data->pos_y, 0);
+	gs_matrix_get(&trans);
+	gs_matrix_identity();
+	gs_matrix_translate3f(data->pos_x, data->pos_y, 0.0f);
+	gs_matrix_mul(&trans);
 
 	gs_enable_blending(True);
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
