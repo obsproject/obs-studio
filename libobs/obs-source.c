@@ -95,11 +95,10 @@ bool obs_source_init_context(struct obs_source *source,
 			source_signals);
 }
 
-const char *obs_source_getdisplayname(enum obs_source_type type,
-		const char *id, const char *locale)
+const char *obs_source_getdisplayname(enum obs_source_type type, const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	return (info != NULL) ? info->getname(locale) : NULL;
+	return (info != NULL) ? info->getname() : NULL;
 }
 
 /* internal initialization */
@@ -322,14 +321,14 @@ obs_data_t obs_source_settings(enum obs_source_type type, const char *id)
 }
 
 obs_properties_t obs_get_source_properties(enum obs_source_type type,
-		const char *id, const char *locale)
+		const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (info && info->properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties(locale);
+		properties = info->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -337,11 +336,11 @@ obs_properties_t obs_get_source_properties(enum obs_source_type type,
 	return NULL;
 }
 
-obs_properties_t obs_source_properties(obs_source_t source, const char *locale)
+obs_properties_t obs_source_properties(obs_source_t source)
 {
 	if (source_valid(source) && source->info.properties) {
 		obs_properties_t props;
-		props = source->info.properties(locale);
+		props = source->info.properties();
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}

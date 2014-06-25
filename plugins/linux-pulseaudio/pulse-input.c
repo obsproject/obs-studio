@@ -281,7 +281,7 @@ skip:
 /**
  * Get plugin properties
  */
-static obs_properties_t pulse_properties(const char *locale, bool input)
+static obs_properties_t pulse_properties(bool input)
 {
 	obs_properties_t props = obs_properties_create();
 	obs_property_t devices = obs_properties_add_list(props, "device_id",
@@ -295,14 +295,14 @@ static obs_properties_t pulse_properties(const char *locale, bool input)
 	return props;
 }
 
-static obs_properties_t pulse_input_properties(const char *locale)
+static obs_properties_t pulse_input_properties(void)
 {
-	return pulse_properties(locale, true);
+	return pulse_properties(true);
 }
 
-static obs_properties_t pulse_output_properties(const char *locale)
+static obs_properties_t pulse_output_properties(void)
 {
-	return pulse_properties(locale, false);
+	return pulse_properties(false);
 }
 
 /**
@@ -366,15 +366,15 @@ static void pulse_output_defaults(obs_data_t settings)
 /**
  * Returns the name of the plugin
  */
-static const char *pulse_input_getname(const char *locale)
+static const char *pulse_input_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "Pulse Audio Input Capture";
 }
 
-static const char *pulse_output_getname(const char *locale)
+static const char *pulse_output_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "Pulse Audio Output Capture";
 }
 

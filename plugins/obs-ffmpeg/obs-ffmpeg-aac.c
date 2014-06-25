@@ -44,9 +44,9 @@ struct aac_encoder {
 	int              frame_size_bytes;
 };
 
-static const char *aac_getname(const char *locale)
+static const char *aac_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "FFmpeg Default AAC Encoder";
 }
 
@@ -238,7 +238,7 @@ static void aac_defaults(obs_data_t settings)
 	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
-static obs_properties_t aac_properties(const char *locale)
+static obs_properties_t aac_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 

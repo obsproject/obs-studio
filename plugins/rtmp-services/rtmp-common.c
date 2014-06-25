@@ -8,10 +8,8 @@ struct rtmp_common {
 	char *key;
 };
 
-static const char *rtmp_common_getname(const char *locale)
+static const char *rtmp_common_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-
 	/* TODO: locale */
 	return "Streaming Services";
 }
@@ -200,7 +198,7 @@ static bool service_selected(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t rtmp_common_properties(const char *locale)
+static obs_properties_t rtmp_common_properties(void)
 {
 	obs_properties_t ppts = obs_properties_create();
 	obs_property_t   list;

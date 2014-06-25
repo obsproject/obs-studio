@@ -258,9 +258,8 @@ static void display_capture_video_render(void *data, effect_t effect)
 	technique_end(tech);
 }
 
-static const char *display_capture_getname(const char *locale)
+static const char *display_capture_getname(void)
 {
-	UNUSED_PARAMETER(locale);
 	return "Display Capture";
 }
 
@@ -300,9 +299,9 @@ static void display_capture_update(void *data, obs_data_t settings)
 	gs_leavecontext();
 }
 
-static obs_properties_t display_capture_properties(char const *locale)
+static obs_properties_t display_capture_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	obs_property_t list = obs_properties_add_list(props,
 			"display", "Display",

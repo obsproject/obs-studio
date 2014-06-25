@@ -46,7 +46,7 @@ void XCompcapMain::deinit()
 	XCompcap::cleanupDisplay();
 }
 
-obs_properties_t XCompcapMain::properties(const char *locale)
+obs_properties_t XCompcapMain::properties()
 {
 	obs_properties_t props = obs_properties_create();
 

@@ -38,10 +38,9 @@ struct obs_x264 {
 
 /* ------------------------------------------------------------------------- */
 
-static const char *obs_x264_getname(const char *locale)
+static const char *obs_x264_getname(void)
 {
 	/* TODO locale lookup */
-	UNUSED_PARAMETER(locale);
 	return "x264";
 }
 
@@ -93,7 +92,7 @@ static inline void add_strings(obs_property_t list, const char *const *strings)
 	}
 }
 
-static obs_properties_t obs_x264_props(const char *locale)
+static obs_properties_t obs_x264_props(void)
 {
 	/* TODO: locale */
 

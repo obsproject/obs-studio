@@ -30,10 +30,10 @@ static inline const struct obs_output_info *find_output(const char *id)
 	return NULL;
 }
 
-const char *obs_output_getdisplayname(const char *id, const char *locale)
+const char *obs_output_getdisplayname(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
-	return (info != NULL) ? info->getname(locale) : NULL;
+	return (info != NULL) ? info->getname() : NULL;
 }
 
 static const char *output_signals[] = {
@@ -166,14 +166,14 @@ obs_data_t obs_output_defaults(const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_properties_t obs_get_output_properties(const char *id, const char *locale)
+obs_properties_t obs_get_output_properties(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	if (info && info->properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties(locale);
+		properties = info->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -181,11 +181,11 @@ obs_properties_t obs_get_output_properties(const char *id, const char *locale)
 	return NULL;
 }
 
-obs_properties_t obs_output_properties(obs_output_t output, const char *locale)
+obs_properties_t obs_output_properties(obs_output_t output)
 {
 	if (output && output->info.properties) {
 		obs_properties_t props;
-		props = output->info.properties(locale);
+		props = output->info.properties();
 		obs_properties_apply_settings(props, output->context.settings);
 		return props;
 	}

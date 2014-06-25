@@ -266,9 +266,9 @@ exit:
 	return NULL;
 }
 
-static const char* v4l2_getname(const char* locale)
+static const char* v4l2_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "V4L2 Capture Input";
 }
 
@@ -452,8 +452,9 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t v4l2_properties(const char *locale)
+static obs_properties_t v4l2_properties(void)
 {
+	/* TODO: locale */
 	obs_properties_t props = obs_properties_create();
 	obs_property_t device_list = obs_properties_add_list(props, "device_id",
 			"Device", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);

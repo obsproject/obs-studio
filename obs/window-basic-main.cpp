@@ -210,7 +210,7 @@ static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
 	obs_properties_t props = obs_get_source_properties(
-			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
+			OBS_SOURCE_TYPE_INPUT, output_id);
 	size_t count = 0;
 
 	if (!props)
@@ -1299,8 +1299,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 	QMenu popup;
 	while (obs_enum_input_types(idx++, &type)) {
 		const char *name = obs_source_getdisplayname(
-				OBS_SOURCE_TYPE_INPUT,
-				type, App()->GetLocale());
+				OBS_SOURCE_TYPE_INPUT, type);
 
 		if (strcmp(type, "scene") == 0)
 			continue;

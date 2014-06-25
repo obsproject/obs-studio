@@ -212,8 +212,7 @@ void OBSBasicSettings::LoadServiceTypes()
 	size_t        idx = 0;
 
 	while (obs_enum_service_types(idx++, &type)) {
-		const char *name = obs_service_getdisplayname(type,
-				App()->GetLocale());
+		const char *name = obs_service_getdisplayname(type);
 		QString qName = QT_UTF8(name);
 		QString qType = QT_UTF8(type);
 
@@ -229,8 +228,7 @@ void OBSBasicSettings::LoadServiceInfo()
 	QLayout          *layout    = ui->streamContainer->layout();
 	obs_service_t    service    = main->GetService();
 	obs_data_t       settings   = obs_service_get_settings(service);
-	obs_properties_t properties = obs_service_properties(service,
-			App()->GetLocale());
+	obs_properties_t properties = obs_service_properties(service);
 
 	delete streamProperties;
 	streamProperties = new OBSPropertiesView(
@@ -480,9 +478,9 @@ void OBSBasicSettings::LoadAudioDevices()
 	const char *output_id = App()->OutputAudioSource();
 
 	obs_properties_t input_props = obs_get_source_properties(
-			OBS_SOURCE_TYPE_INPUT, input_id, App()->GetLocale());
+			OBS_SOURCE_TYPE_INPUT, input_id);
 	obs_properties_t output_props = obs_get_source_properties(
-			OBS_SOURCE_TYPE_INPUT, output_id, App()->GetLocale());
+			OBS_SOURCE_TYPE_INPUT, output_id);
 
 	if (input_props) {
 		obs_property_t inputs  = obs_properties_get(input_props,

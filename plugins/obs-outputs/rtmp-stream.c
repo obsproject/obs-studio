@@ -61,10 +61,9 @@ struct rtmp_stream {
 	RTMP             rtmp;
 };
 
-static const char *rtmp_stream_getname(const char *locale)
+static const char *rtmp_stream_getname(void)
 {
 	/* TODO: locale stuff */
-	UNUSED_PARAMETER(locale);
 	return "RTMP Stream";
 }
 
@@ -567,7 +566,7 @@ static void rtmp_stream_defaults(obs_data_t defaults)
 	obs_data_set_default_int(defaults, "drop_threshold", 600000);
 }
 
-static obs_properties_t rtmp_stream_properties(const char *locale)
+static obs_properties_t rtmp_stream_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 

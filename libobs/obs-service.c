@@ -27,10 +27,10 @@ static inline const struct obs_service_info *find_service(const char *id)
 	return NULL;
 }
 
-const char *obs_service_getdisplayname(const char *id, const char *locale)
+const char *obs_service_getdisplayname(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
-	return (info != NULL) ? info->getname(locale) : NULL;
+	return (info != NULL) ? info->getname() : NULL;
 }
 
 obs_service_t obs_service_create(const char *id, const char *name,
@@ -112,14 +112,14 @@ obs_data_t obs_service_defaults(const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_properties_t obs_get_service_properties(const char *id, const char *locale)
+obs_properties_t obs_get_service_properties(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
 	if (info && info->properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties(locale);
+		properties = info->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -127,12 +127,11 @@ obs_properties_t obs_get_service_properties(const char *id, const char *locale)
 	return NULL;
 }
 
-obs_properties_t obs_service_properties(obs_service_t service,
-		const char *locale)
+obs_properties_t obs_service_properties(obs_service_t service)
 {
 	if (service && service->info.properties) {
 		obs_properties_t props;
-		props = service->info.properties(locale);
+		props = service->info.properties();
 		obs_properties_apply_settings(props, service->context.settings);
 		return props;
 	}

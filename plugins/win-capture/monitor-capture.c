@@ -81,9 +81,9 @@ static inline void update_settings(struct monitor_capture *capture,
 
 /* ------------------------------------------------------------------------- */
 
-static const char *monitor_capture_getname(const char *locale)
+static const char *monitor_capture_getname(void)
 {
-	/* TODO: translate */
+	/* TODO: locale */
 	return "Monitor Capture";
 }
 

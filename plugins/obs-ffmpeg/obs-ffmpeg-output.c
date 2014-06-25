@@ -396,9 +396,9 @@ fail:
 
 /* ------------------------------------------------------------------------- */
 
-static const char *ffmpeg_output_getname(const char *locale)
+static const char *ffmpeg_output_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "FFmpeg file output";
 }
 

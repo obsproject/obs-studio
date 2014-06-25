@@ -118,10 +118,9 @@ struct obs_source_info {
 	/**
 	 * Get the translated name of the source type
 	 *
-	 * @param  locale  The locale to translate with
 	 * @return         The translated name of the source type
 	 */
-	const char *(*getname)(const char *locale);
+	const char *(*getname)(void);
 
 	/**
 	 * Creates the source data for the source
@@ -161,10 +160,9 @@ struct obs_source_info {
 	/** 
 	 * Gets the property information of this source
 	 *
-	 * @param  locale  The locale to translate with
 	 * @return         The properties data
 	 */
-	obs_properties_t (*properties)(const char *locale);
+	obs_properties_t (*properties)(void);
 
 	/**
 	 * Updates the settings for this source
