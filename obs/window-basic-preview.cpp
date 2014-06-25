@@ -37,7 +37,7 @@ struct SceneFindData {
 	bool         selectBelow;
 
 	SceneFindData(const SceneFindData &) = delete;
-	SceneFindData(SceneFindData &) = delete;
+	SceneFindData(SceneFindData &&) = delete;
 	SceneFindData& operator=(const SceneFindData &) = delete;
 	SceneFindData& operator=(SceneFindData &&) = delete;
 
@@ -195,7 +195,7 @@ struct HandleFindData {
 	ItemHandle   handle = ItemHandle::None;
 
 	HandleFindData(const HandleFindData &) = delete;
-	HandleFindData(HandleFindData &) = delete;
+	HandleFindData(HandleFindData &&) = delete;
 	HandleFindData& operator=(const HandleFindData &) = delete;
 	HandleFindData& operator=(HandleFindData &&) = delete;
 
