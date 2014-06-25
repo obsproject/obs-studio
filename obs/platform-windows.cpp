@@ -56,6 +56,9 @@ static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
 			rect->top,
 			rect->right - rect->left,
 			rect->bottom - rect->top);
+
+	UNUSED_PARAMETER(hMonitor);
+	UNUSED_PARAMETER(hdcMonitor);
 	return true;
 }
 
