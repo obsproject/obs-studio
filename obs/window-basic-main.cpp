@@ -1478,6 +1478,7 @@ void OBSBasic::StreamingStop(int code)
 		errorMessage = Str("Output.ConnectFail.InvalidStream");
 		break;
 
+	default:
 	case OBS_OUTPUT_ERROR:
 		errorMessage = Str("Output.ConnectFail.Error");
 		break;

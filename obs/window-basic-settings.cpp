@@ -563,7 +563,7 @@ void OBSBasicSettings::SaveVideoSettings()
 	QString baseResolution   = ui->baseResolution->currentText();
 	QString outputResolution = ui->outputResolution->currentText();
 	int     fpsType          = ui->fpsType->currentIndex();
-	uint32_t cx, cy;
+	uint32_t cx = 0, cy = 0;
 
 	/* ------------------- */
 
