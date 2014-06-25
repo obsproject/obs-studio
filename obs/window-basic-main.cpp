@@ -1900,6 +1900,7 @@ void OBSBasic::on_actionCenterToScreen_triggered()
 		SetItemTL(item, tl);
 
 		UNUSED_PARAMETER(scene);
+		UNUSED_PARAMETER(param);
 		return true;
 	};
 
