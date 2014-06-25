@@ -26,7 +26,7 @@ class DStr {
 
 public:
 	inline DStr() {dstr_init(&str);}
-	inline DStr(DStr &&other)
+	inline DStr(DStr &&other) : DStr()
 	{
 		dstr_move(&str, &other.str);
 	}
