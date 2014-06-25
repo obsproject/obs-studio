@@ -191,7 +191,7 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 
 static obs_properties_t flv_output_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_properties_add_text(props, "path", "File Path", OBS_TEXT_DEFAULT);

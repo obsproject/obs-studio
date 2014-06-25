@@ -454,7 +454,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t v4l2_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	obs_property_t device_list = obs_properties_add_list(props, "device_id",
 			"Device", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_t format_list = obs_properties_add_list(props,

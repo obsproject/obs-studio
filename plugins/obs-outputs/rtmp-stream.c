@@ -569,7 +569,7 @@ static void rtmp_stream_defaults(obs_data_t defaults)
 
 static obs_properties_t rtmp_stream_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_properties_add_text(props, "path", "Stream URL", OBS_TEXT_DEFAULT);

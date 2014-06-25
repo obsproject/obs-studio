@@ -283,7 +283,7 @@ skip:
  */
 static obs_properties_t pulse_properties(const char *locale, bool input)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	obs_property_t devices = obs_properties_add_list(props, "device_id",
 		"Device", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 

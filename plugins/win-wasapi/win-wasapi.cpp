@@ -468,7 +468,7 @@ static void UpdateWASAPISource(void *obj, obs_data_t settings)
 
 static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
 
 	/* TODO: translate */

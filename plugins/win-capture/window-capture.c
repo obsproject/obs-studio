@@ -364,7 +364,7 @@ static void wc_defaults(obs_data_t defaults)
 
 static obs_properties_t wc_properties(const char *locale)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	obs_property_t p;
 
 	/* TODO: locale */

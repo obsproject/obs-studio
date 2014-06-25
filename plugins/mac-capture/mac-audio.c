@@ -706,7 +706,7 @@ static void *coreaudio_create_output_capture(obs_data_t settings,
 
 static obs_properties_t coreaudio_properties(const char *locale, bool input)
 {
-	obs_properties_t   props = obs_properties_create(locale);
+	obs_properties_t   props = obs_properties_create();
 	obs_property_t     property;
 	struct device_list devices;
 

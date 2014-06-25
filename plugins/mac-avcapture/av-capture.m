@@ -571,7 +571,7 @@ static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t av_capture_properties(char const *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_property_t dev_list = obs_properties_add_list(props, "device",

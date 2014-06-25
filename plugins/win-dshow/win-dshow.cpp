@@ -780,7 +780,7 @@ static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t GetDShowProperties(const char *locale)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;
 
 	obs_properties_set_param(ppts, data, PropertiesDataDestroy);

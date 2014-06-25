@@ -240,7 +240,7 @@ static void aac_defaults(obs_data_t settings)
 
 static obs_properties_t aac_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 320, 32);

@@ -43,7 +43,7 @@ static void *rtmp_custom_create(obs_data_t settings, obs_service_t service)
 
 static obs_properties_t rtmp_custom_properties(const char *locale)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 
 	/* TODO: locale */
 

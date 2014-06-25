@@ -90,7 +90,6 @@ struct obs_property {
 };
 
 struct obs_properties {
-	const char              *locale;
 	void                    *param;
 	void                    (*destroy)(void *param);
 
@@ -98,12 +97,11 @@ struct obs_properties {
 	struct obs_property     **last;
 };
 
-obs_properties_t obs_properties_create(const char *locale)
+obs_properties_t obs_properties_create(void)
 {
 	struct obs_properties *props;
 	props = bzalloc(sizeof(struct obs_properties));
-	props->locale = locale;
-	props->last   = &props->first_property;
+	props->last = &props->first_property;
 	return props;
 }
 
@@ -125,10 +123,10 @@ void *obs_properties_get_param(obs_properties_t props)
 	return props ? props->param : NULL;
 }
 
-obs_properties_t obs_properties_create_param(const char *locale,
-		void *param, void (*destroy)(void *param))
+obs_properties_t obs_properties_create_param(void *param,
+		void (*destroy)(void *param))
 {
-	struct obs_properties *props = obs_properties_create(locale);
+	struct obs_properties *props = obs_properties_create();
 	obs_properties_set_param(props, param, destroy);
 	return props;
 }
@@ -159,11 +157,6 @@ void obs_properties_destroy(obs_properties_t props)
 
 		bfree(props);
 	}
-}
-
-const char *obs_properties_locale(obs_properties_t props)
-{
-	return props ? props->locale : NULL;
 }
 
 obs_property_t obs_properties_first(obs_properties_t props)

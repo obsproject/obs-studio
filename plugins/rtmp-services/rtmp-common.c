@@ -202,7 +202,7 @@ static bool service_selected(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t rtmp_common_properties(const char *locale)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	obs_property_t   list;
 	char             *file;
 

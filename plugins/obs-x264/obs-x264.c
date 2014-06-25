@@ -97,7 +97,7 @@ static obs_properties_t obs_x264_props(const char *locale)
 {
 	/* TODO: locale */
 
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	obs_property_t list;
 
 	obs_properties_add_int(props, "bitrate", "Bitrate", 50, 100000, 1);

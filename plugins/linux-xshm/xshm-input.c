@@ -156,7 +156,7 @@ static void xshm_defaults(obs_data_t defaults)
  */
 static obs_properties_t xshm_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	int_fast32_t screen_max;
 
 	Display *dpy = XOpenDisplay(NULL);

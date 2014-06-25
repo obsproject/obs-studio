@@ -67,7 +67,7 @@ static const char *libfdk_getname(const char *locale)
 
 static obs_properties_t libfdk_properties(const char *locale)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 256, 32);
 	obs_properties_add_bool(props, "afterburner", "Enable AAC Afterburner");
