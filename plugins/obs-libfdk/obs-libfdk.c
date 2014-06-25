@@ -59,15 +59,15 @@ typedef struct libfdk_encoder {
 	int packet_buffer_size;
 } libfdk_encoder_t;
 
-static const char *libfdk_getname(const char *locale)
+static const char *libfdk_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "libfdk aac encoder";
 }
 
-static obs_properties_t libfdk_properties(const char *locale)
+static obs_properties_t libfdk_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 256, 32);
 	obs_properties_add_bool(props, "afterburner", "Enable AAC Afterburner");

@@ -416,13 +416,13 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *GetWASAPIInputName(const char *locale)
+static const char *GetWASAPIInputName(void)
 {
 	/* TODO: translate */
 	return "Audio Input Capture (WASAPI)";
 }
 
-static const char *GetWASAPIOutputName(const char *locale)
+static const char *GetWASAPIOutputName(void)
 {
 	/* TODO: translate */
 	return "Audio Output Capture (WASAPI)";
@@ -466,9 +466,9 @@ static void UpdateWASAPISource(void *obj, obs_data_t settings)
 	static_cast<WASAPISource*>(obj)->Update(settings);
 }
 
-static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
+static obs_properties_t GetWASAPIProperties(bool input)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
 
 	/* TODO: translate */
@@ -494,14 +494,14 @@ static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 	return props;
 }
 
-static obs_properties_t GetWASAPIPropertiesInput(const char *locale)
+static obs_properties_t GetWASAPIPropertiesInput(void)
 {
-	return GetWASAPIProperties(locale, true);
+	return GetWASAPIProperties(true);
 }
 
-static obs_properties_t GetWASAPIPropertiesOutput(const char *locale)
+static obs_properties_t GetWASAPIPropertiesOutput(void)
 {
-	return GetWASAPIProperties(locale, false);
+	return GetWASAPIProperties(false);
 }
 
 void RegisterWASAPIInput()

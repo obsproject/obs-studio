@@ -44,8 +44,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	obs_data_release(settings);
 
 	view = new OBSPropertiesView(settings,
-			obs_source_properties(source, App()->GetLocale()),
-			source, (PropertiesUpdateCallback)obs_source_update);
+			obs_source_properties(source), source,
+			(PropertiesUpdateCallback)obs_source_update);
 
 	layout()->addWidget(view);
 	layout()->setAlignment(view, Qt::AlignBottom);

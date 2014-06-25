@@ -169,8 +169,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *type_)
 	ui->setupUi(this);
 
 	QString placeHolderText{QT_UTF8(obs_source_getdisplayname(
-				OBS_SOURCE_TYPE_INPUT,
-				type_, App()->GetLocale()))};
+				OBS_SOURCE_TYPE_INPUT, type_))};
 
 	QString text{placeHolderText};
 	int i = 1;

@@ -251,9 +251,9 @@ void DShowInput::Update(obs_data_t settings)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *GetDShowInputName(const char *locale)
+static const char *GetDShowInputName(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "Video Capture Device";
 }
 
@@ -778,9 +778,9 @@ static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t GetDShowProperties(const char *locale)
+static obs_properties_t GetDShowProperties(void)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;
 
 	obs_properties_set_param(ppts, data, PropertiesDataDestroy);

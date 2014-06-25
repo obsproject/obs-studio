@@ -294,10 +294,9 @@ static HWND find_window(struct window_capture *wc)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *wc_getname(const char *locale)
+static const char *wc_getname(void)
 {
 	/* TODO: locale */
-	UNUSED_PARAMETER(locale);
 	return "Window capture";
 }
 
@@ -362,9 +361,9 @@ static void wc_defaults(obs_data_t defaults)
 	obs_data_setbool(defaults, "compatibility", false);
 }
 
-static obs_properties_t wc_properties(const char *locale)
+static obs_properties_t wc_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	obs_property_t p;
 
 	/* TODO: locale */

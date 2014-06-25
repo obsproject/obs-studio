@@ -503,7 +503,7 @@ static inline bool obs_init_handlers(void)
 
 extern const struct obs_source_info scene_info;
 
-static bool obs_init(void)
+static bool obs_init(const char *locale)
 {
 	obs = bzalloc(sizeof(struct obs_core));
 
@@ -512,11 +512,12 @@ static bool obs_init(void)
 	if (!obs_init_handlers())
 		return false;
 
+	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
 	return true;
 }
 
-bool obs_startup(void)
+bool obs_startup(const char *locale)
 {
 	bool success;
 
@@ -525,7 +526,7 @@ bool obs_startup(void)
 		return false;
 	}
 
-	success = obs_init();
+	success = obs_init(locale);
 	if (!success)
 		obs_shutdown();
 
@@ -559,6 +560,7 @@ void obs_shutdown(void)
 		free_module(obs->modules.array+i);
 	da_free(obs->modules);
 
+	bfree(obs->locale);
 	bfree(obs);
 	obs = NULL;
 }
@@ -566,6 +568,28 @@ void obs_shutdown(void)
 bool obs_initialized(void)
 {
 	return obs != NULL;
+}
+
+void obs_set_locale(const char *locale)
+{
+	if (!obs)
+		return;
+
+	if (obs->locale)
+		bfree(obs->locale);
+	obs->locale = bstrdup(locale);
+
+	for (size_t i = 0; i < obs->modules.num; i++) {
+		struct obs_module *module = obs->modules.array+i;
+
+		if (module->set_locale)
+			module->set_locale(locale);
+	}
+}
+
+const char *obs_get_locale(void)
+{
+	return obs ? obs->locale : NULL;
 }
 
 bool obs_reset_video(struct obs_video_info *ovi)

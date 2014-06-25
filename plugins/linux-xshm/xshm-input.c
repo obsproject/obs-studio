@@ -108,9 +108,9 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
 /**
  * Returns the name of the plugin
  */
-static const char* xshm_getname(const char* locale)
+static const char* xshm_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "X11 Shared Memory Screen Input";
 }
 
@@ -154,9 +154,10 @@ static void xshm_defaults(obs_data_t defaults)
 /**
  * Get the properties for the capture
  */
-static obs_properties_t xshm_properties(const char *locale)
+static obs_properties_t xshm_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	/* TODO: locale */
+	obs_properties_t props = obs_properties_create();
 	int_fast32_t screen_max;
 
 	Display *dpy = XOpenDisplay(NULL);

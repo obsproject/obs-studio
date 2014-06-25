@@ -628,17 +628,15 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *coreaudio_input_getname(const char *locale)
+static const char *coreaudio_input_getname(void)
 {
 	/* TODO: Locale */
-	UNUSED_PARAMETER(locale);
 	return "CoreAudio Input Capture";
 }
 
-static const char *coreaudio_output_getname(const char *locale)
+static const char *coreaudio_output_getname(void)
 {
 	/* TODO: Locale */
-	UNUSED_PARAMETER(locale);
 	return "CoreAudio Output Capture";
 }
 
@@ -704,9 +702,9 @@ static void *coreaudio_create_output_capture(obs_data_t settings,
 	return coreaudio_create(settings, source, false);
 }
 
-static obs_properties_t coreaudio_properties(const char *locale, bool input)
+static obs_properties_t coreaudio_properties(bool input)
 {
-	obs_properties_t   props = obs_properties_create(locale);
+	obs_properties_t   props = obs_properties_create();
 	obs_property_t     property;
 	struct device_list devices;
 
@@ -732,14 +730,14 @@ static obs_properties_t coreaudio_properties(const char *locale, bool input)
 	return props;
 }
 
-static obs_properties_t coreaudio_input_properties(const char *locale)
+static obs_properties_t coreaudio_input_properties(void)
 {
-	return coreaudio_properties(locale, true);
+	return coreaudio_properties(true);
 }
 
-static obs_properties_t coreaudio_output_properties(const char *locale)
+static obs_properties_t coreaudio_output_properties(void)
 {
-	return coreaudio_properties(locale, false);
+	return coreaudio_properties(false);
 }
 
 struct obs_source_info coreaudio_input_capture_info = {

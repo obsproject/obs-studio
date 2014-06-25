@@ -4,10 +4,8 @@ struct rtmp_custom {
 	char *server, *key;
 };
 
-static const char *rtmp_custom_name(const char *locale)
+static const char *rtmp_custom_name(void)
 {
-	UNUSED_PARAMETER(locale);
-
 	/* TODO: locale */
 	return "Custom Streaming Server";
 }
@@ -41,9 +39,9 @@ static void *rtmp_custom_create(obs_data_t settings, obs_service_t service)
 	return data;
 }
 
-static obs_properties_t rtmp_custom_properties(const char *locale)
+static obs_properties_t rtmp_custom_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 
 	/* TODO: locale */
 

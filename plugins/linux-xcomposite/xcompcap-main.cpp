@@ -46,9 +46,9 @@ void XCompcapMain::deinit()
 	XCompcap::cleanupDisplay();
 }
 
-obs_properties_t XCompcapMain::properties(const char *locale)
+obs_properties_t XCompcapMain::properties()
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	obs_property_t wins = obs_properties_add_list(props, "capture_window",
 			"Captured Window", OBS_COMBO_TYPE_LIST,

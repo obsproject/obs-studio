@@ -131,10 +131,9 @@ static inline void update_frame_size(struct av_capture *capture,
 }
 @end
 
-static const char *av_capture_getname(const char *locale)
+static const char *av_capture_getname(void)
 {
 	/* TODO: locale */
-	UNUSED_PARAMETER(locale);
 	return "Video Capture Device";
 }
 
@@ -569,9 +568,9 @@ static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t av_capture_properties(char const *locale)
+static obs_properties_t av_capture_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_property_t dev_list = obs_properties_add_list(props, "device",

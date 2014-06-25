@@ -30,10 +30,10 @@ static inline struct obs_encoder_info *get_encoder_info(const char *id)
 	return NULL;
 }
 
-const char *obs_encoder_getdisplayname(const char *id, const char *locale)
+const char *obs_encoder_getdisplayname(const char *id)
 {
 	struct obs_encoder_info *ei = get_encoder_info(id);
-	return ei ? ei->getname(locale) : NULL;
+	return ei ? ei->getname() : NULL;
 }
 
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
@@ -227,14 +227,14 @@ obs_data_t obs_encoder_defaults(const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
+obs_properties_t obs_get_encoder_properties(const char *id)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
 	if (ei && ei->properties) {
 		obs_data_t       defaults = get_defaults(ei);
 		obs_properties_t properties;
 
-		properties = ei->properties(locale);
+		properties = ei->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -242,12 +242,11 @@ obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
 	return NULL;
 }
 
-obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
-		const char *locale)
+obs_properties_t obs_encoder_properties(obs_encoder_t encoder)
 {
 	if (encoder && encoder->info.properties) {
 		obs_properties_t props;
-		props = encoder->info.properties(locale);
+		props = encoder->info.properties();
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}

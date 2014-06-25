@@ -73,7 +73,12 @@ int obs_load_module(const char *path)
 		return errorcode;
 	}
 
-	mod.name = bstrdup(path);
+	mod.name       = bstrdup(path);
+	mod.set_locale = os_dlsym(mod.module, "obs_module_set_locale");
+
+	if (mod.set_locale)
+		mod.set_locale(obs->locale);
+
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;
 }

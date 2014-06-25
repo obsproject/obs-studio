@@ -32,9 +32,9 @@ struct flv_output {
 	int64_t      last_packet_ts;
 };
 
-static const char *flv_output_getname(const char *locale)
+static const char *flv_output_getname(void)
 {
-	UNUSED_PARAMETER(locale);
+	/* TODO: locale */
 	return "FLV File Output";
 }
 
@@ -189,9 +189,9 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 }
 
-static obs_properties_t flv_output_properties(const char *locale)
+static obs_properties_t flv_output_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
 	obs_properties_add_text(props, "path", "File Path", OBS_TEXT_DEFAULT);

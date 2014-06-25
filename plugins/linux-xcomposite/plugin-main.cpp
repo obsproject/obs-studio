@@ -37,9 +37,9 @@ static uint32_t xcompcap_getheight(void* data)
 	return cc->height();
 }
 
-static obs_properties_t xcompcap_props(const char *locale)
+static obs_properties_t xcompcap_props(void)
 {
-	return XCompcapMain::properties(locale);
+	return XCompcapMain::properties();
 }
 
 void xcompcap_defaults(obs_data_t settings)
@@ -55,10 +55,9 @@ void xcompcap_update(void *data, obs_data_t settings)
 
 OBS_DECLARE_MODULE()
 
-static const char* xcompcap_getname(const char* locale)
+static const char* xcompcap_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-
+	/* TODO: locale */
 	return "Xcomposite capture";
 }
 

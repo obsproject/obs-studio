@@ -61,16 +61,14 @@ typedef struct obs_property   *obs_property_t;
 
 /* ------------------------------------------------------------------------- */
 
-EXPORT obs_properties_t obs_properties_create(const char *locale);
-EXPORT obs_properties_t obs_properties_create_param(const char *locale,
-		void *param, void (*destroy)(void *param));
+EXPORT obs_properties_t obs_properties_create(void);
+EXPORT obs_properties_t obs_properties_create_param(void *param,
+		void (*destroy)(void *param));
 EXPORT void obs_properties_destroy(obs_properties_t props);
 
 EXPORT void obs_properties_set_param(obs_properties_t props,
 		void *param, void (*destroy)(void *param));
 EXPORT void *obs_properties_get_param(obs_properties_t props);
-
-EXPORT const char *obs_properties_locale(obs_properties_t props);
 
 EXPORT obs_property_t obs_properties_first(obs_properties_t props);
 

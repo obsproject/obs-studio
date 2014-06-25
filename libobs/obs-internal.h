@@ -52,6 +52,7 @@ struct draw_callback {
 struct obs_module {
 	char *name;
 	void *module;
+	void (*set_locale)(const char *locale);
 };
 
 extern void free_module(struct obs_module *mod);
@@ -172,6 +173,8 @@ struct obs_core {
 
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
+
+	char                            *locale;
 
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
