@@ -170,7 +170,7 @@ EXPORT void obs_property_list_item_disable(obs_property_t p, size_t idx,
 								bool disabled);
 EXPORT bool obs_property_list_item_disabled(obs_property_t p, size_t idx);
 
-EXPORT void obs_property_list_remove(obs_property_t p, size_t idx);
+EXPORT void obs_property_list_item_remove(obs_property_t p, size_t idx);
 
 EXPORT size_t      obs_property_list_item_count(obs_property_t p);
 EXPORT const char *obs_property_list_item_name(obs_property_t p, size_t idx);
