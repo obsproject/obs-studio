@@ -479,8 +479,7 @@ EXPORT shader_t gs_create_vertexshader_from_file(const char *file,
 EXPORT shader_t gs_create_pixelshader_from_file(const char *file,
 		char **error_string);
 
-EXPORT texture_t gs_create_texture_from_file(const char *file,
-		uint32_t flags);
+EXPORT texture_t gs_create_texture_from_file(const char *file);
 
 #define GS_FLIP_U (1<<0)
 #define GS_FLIP_V (1<<1)

@@ -685,11 +685,10 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 	return shader;
 }
 
-texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
+texture_t gs_create_texture_from_file(const char *file)
 {
 	/* TODO */
 	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
