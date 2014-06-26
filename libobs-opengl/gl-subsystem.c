@@ -975,6 +975,8 @@ void device_clear(device_t device, uint32_t clear_flags,
 void device_flush(device_t device)
 {
 	glFlush();
+
+	UNUSED_PARAMETER(device);
 }
 
 void device_setcullmode(device_t device, enum gs_cull_mode mode)
