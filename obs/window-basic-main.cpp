@@ -840,7 +840,7 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 
 	vec4 colorVal;
 	vec4_set(&colorVal, 0.0f, 0.0f, 0.0f, 1.0f);
-	effect_setvec4(solid, color, &colorVal);
+	effect_setvec4(color, &colorVal);
 
 	technique_begin(tech);
 	technique_beginpass(tech, 0);

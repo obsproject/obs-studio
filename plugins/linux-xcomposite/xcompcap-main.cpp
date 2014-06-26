@@ -438,7 +438,7 @@ void XCompcapMain::render(effect_t effect)
 		return;
 
 	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(effect, image, p->tex);
+	effect_settexture(image, p->tex);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);

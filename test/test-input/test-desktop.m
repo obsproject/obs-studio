@@ -246,8 +246,7 @@ static void display_capture_video_render(void *data, effect_t effect)
 
 	gs_load_samplerstate(dc->sampler, 0);
 	technique_t tech = effect_gettechnique(dc->draw_effect, "Default");
-	effect_settexture(dc->draw_effect,
-			effect_getparambyidx(dc->draw_effect, 1),
+	effect_settexture(effect_getparambyidx(dc->draw_effect, 1),
 			dc->tex);
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
