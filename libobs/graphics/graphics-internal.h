@@ -100,6 +100,7 @@ struct gs_exports {
 	void (*device_clear)(device_t device, uint32_t clear_flags,
 			struct vec4 *color, float depth, uint8_t stencil);
 	void (*device_present)(device_t device);
+	void (*device_flush)(device_t device);
 	void (*device_setcullmode)(device_t device, enum gs_cull_mode mode);
 	enum gs_cull_mode (*device_getcullmode)(device_t device);
 	void (*device_enable_blending)(device_t device, bool enable);

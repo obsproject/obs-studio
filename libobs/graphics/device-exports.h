@@ -94,6 +94,7 @@ EXPORT void device_load_swapchain(device_t device, swapchain_t swapchain);
 EXPORT void device_clear(device_t device, uint32_t clear_flags,
 		struct vec4 *color, float depth, uint8_t stencil);
 EXPORT void device_present(device_t device);
+EXPORT void device_flush(device_t device);
 EXPORT void device_setcullmode(device_t device, enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode device_getcullmode(device_t device);
 EXPORT void device_enable_blending(device_t device, bool enable);

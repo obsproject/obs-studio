@@ -594,6 +594,7 @@ EXPORT void gs_load_swapchain(swapchain_t swapchain);
 EXPORT void gs_clear(uint32_t clear_flags, struct vec4 *color,
 		float depth, uint8_t stencil);
 EXPORT void gs_present(void);
+EXPORT void gs_flush(void);
 
 EXPORT void gs_setcullmode(enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode gs_getcullmode(void);

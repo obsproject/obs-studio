@@ -1309,6 +1309,14 @@ void gs_present(void)
 	graphics->exports.device_present(graphics->device);
 }
 
+void gs_flush(void)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
+	graphics->exports.device_flush(graphics->device);
+}
+
 void gs_setcullmode(enum gs_cull_mode mode)
 {
 	graphics_t graphics = thread_graphics;

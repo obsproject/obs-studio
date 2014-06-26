@@ -83,6 +83,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_endscene);
 	GRAPHICS_IMPORT(device_clear);
 	GRAPHICS_IMPORT(device_present);
+	GRAPHICS_IMPORT(device_flush);
 	GRAPHICS_IMPORT(device_setcullmode);
 	GRAPHICS_IMPORT(device_getcullmode);
 	GRAPHICS_IMPORT(device_enable_blending);

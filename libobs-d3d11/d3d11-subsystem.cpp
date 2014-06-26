@@ -1204,6 +1204,11 @@ void device_present(device_t device)
 	device->curSwapChain->swap->Present(0, 0);
 }
 
+void device_flush(device_t device)
+{
+	device->context->Flush();
+}
+
 void device_setcullmode(device_t device, enum gs_cull_mode mode)
 {
 	if (mode == device->rasterState.cullMode)
