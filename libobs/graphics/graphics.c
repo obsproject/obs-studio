@@ -693,22 +693,6 @@ texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
 	return NULL;
 }
 
-texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
-texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
 static inline void assign_sprite_rect(float *start, float *end, float size,
 		bool flip)
 {

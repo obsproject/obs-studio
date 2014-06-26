@@ -481,10 +481,6 @@ EXPORT shader_t gs_create_pixelshader_from_file(const char *file,
 
 EXPORT texture_t gs_create_texture_from_file(const char *file,
 		uint32_t flags);
-EXPORT texture_t gs_create_cubetexture_from_file(const char *flie,
-		uint32_t flags);
-EXPORT texture_t gs_create_volumetexture_from_file(const char *flie,
-		uint32_t flags);
 
 #define GS_FLIP_U (1<<0)
 #define GS_FLIP_V (1<<1)
