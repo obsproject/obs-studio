@@ -718,7 +718,7 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	vec4 color;
 	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
-	effect_setvec4(solid, effect_getparambyname(solid, "color"), &color);
+	effect_setvec4(effect_getparambyname(solid, "color"), &color);
 
 	technique_begin(tech);
 	technique_beginpass(tech, 0);

@@ -348,8 +348,6 @@ EXPORT void technique_endpass(technique_t technique);
 EXPORT size_t effect_numparams(effect_t effect);
 EXPORT eparam_t effect_getparambyidx(effect_t effect, size_t param);
 EXPORT eparam_t effect_getparambyname(effect_t effect, const char *name);
-EXPORT void effect_getparaminfo(effect_t effect, eparam_t param,
-		struct effect_param_info *info);
 
 /** used internally */
 EXPORT void effect_updateparams(effect_t effect);
@@ -357,21 +355,17 @@ EXPORT void effect_updateparams(effect_t effect);
 EXPORT eparam_t effect_getviewprojmatrix(effect_t effect);
 EXPORT eparam_t effect_getworldmatrix(effect_t effect);
 
-EXPORT void effect_setbool(effect_t effect, eparam_t param, bool val);
-EXPORT void effect_setfloat(effect_t effect, eparam_t param, float val);
-EXPORT void effect_setint(effect_t effect, eparam_t param, int val);
-EXPORT void effect_setmatrix4(effect_t effect, eparam_t param,
-		const struct matrix4 *val);
-EXPORT void effect_setvec2(effect_t effect, eparam_t param,
-		const struct vec2 *val);
-EXPORT void effect_setvec3(effect_t effect, eparam_t param,
-		const struct vec3 *val);
-EXPORT void effect_setvec4(effect_t effect, eparam_t param,
-		const struct vec4 *val);
-EXPORT void effect_settexture(effect_t effect, eparam_t param, texture_t val);
-EXPORT void effect_setval(effect_t effect, eparam_t param, const void *val,
-		size_t size);
-EXPORT void effect_setdefault(effect_t effect, eparam_t param);
+EXPORT void effect_getparaminfo(eparam_t param, struct effect_param_info *info);
+EXPORT void effect_setbool(eparam_t param, bool val);
+EXPORT void effect_setfloat(eparam_t param, float val);
+EXPORT void effect_setint(eparam_t param, int val);
+EXPORT void effect_setmatrix4(eparam_t param, const struct matrix4 *val);
+EXPORT void effect_setvec2(eparam_t param, const struct vec2 *val);
+EXPORT void effect_setvec3(eparam_t param, const struct vec3 *val);
+EXPORT void effect_setvec4(eparam_t param, const struct vec4 *val);
+EXPORT void effect_settexture(eparam_t param, texture_t val);
+EXPORT void effect_setval(eparam_t param, const void *val, size_t size);
+EXPORT void effect_setdefault(eparam_t param);
 
 /* ---------------------------------------------------
  * texture render helper functions

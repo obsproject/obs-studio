@@ -842,7 +842,7 @@ static const char *select_conversion_technique(enum video_format format)
 static inline void set_eparam(effect_t effect, const char *name, float val)
 {
 	eparam_t param = effect_getparambyname(effect, name);
-	effect_setfloat(effect, param, val);
+	effect_setfloat(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
@@ -871,7 +871,7 @@ static bool update_async_texrender(struct obs_source *source,
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	effect_settexture(conv, effect_getparambyname(conv, "image"), tex);
+	effect_settexture(effect_getparambyname(conv, "image"), tex);
 	set_eparam(conv, "width",  (float)cx);
 	set_eparam(conv, "height", (float)cy);
 	set_eparam(conv, "width_i",  1.0f / cx);
@@ -969,22 +969,22 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_min");
-		effect_setval(effect, param, color_range_min, size);
+		effect_setval(param, color_range_min, size);
 	}
 
 	if (color_range_max) {
 		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_max");
-		effect_setval(effect, param, color_range_max, size);
+		effect_setval(param, color_range_max, size);
 	}
 
 	if (color_matrix) {
 		param = effect_getparambyname(effect, "color_matrix");
-		effect_setval(effect, param, color_matrix, sizeof(float) * 16);
+		effect_setval(param, color_matrix, sizeof(float) * 16);
 	}
 
 	param = effect_getparambyname(effect, "image");
-	effect_settexture(effect, param, tex);
+	effect_settexture(param, tex);
 
 	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
 }
@@ -1636,7 +1636,7 @@ static inline void render_filter_tex(texture_t tex, effect_t effect,
 	eparam_t    image      = effect_getparambyname(effect, "image");
 	size_t      passes, i;
 
-	effect_settexture(effect, image, tex);
+	effect_settexture(image, tex);
 
 	passes = technique_begin(tech);
 	for (i = 0; i < passes; i++) {

@@ -96,7 +96,7 @@ void xcursor_render(xcursor_t *data) {
 	effect_t effect  = gs_geteffect();
 	eparam_t image = effect_getparambyname(effect, "image");
 
-	effect_settexture(effect, image, data->tex);
+	effect_settexture(image, data->tex);
 
 	gs_matrix_push();
 

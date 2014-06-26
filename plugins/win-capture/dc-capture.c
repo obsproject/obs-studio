@@ -182,7 +182,7 @@ static void draw_texture(struct dc_capture *capture, int id, effect_t effect)
 	eparam_t    image   = effect_getparambyname(effect, "image");
 	size_t      passes;
 
-	effect_settexture(effect, image, texture);
+	effect_settexture(image, texture);
 
 	passes = technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {

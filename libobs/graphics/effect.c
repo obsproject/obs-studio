@@ -226,29 +226,6 @@ eparam_t effect_getparambyname(effect_t effect, const char *name)
 	return NULL;
 }
 
-static inline bool matching_effect(effect_t effect, eparam_t param)
-{
-	if (effect != param->effect) {
-		blog(LOG_ERROR, "Effect and effect parameter do not match");
-		return false;
-	}
-
-	return true;
-}
-
-void effect_getparaminfo(effect_t effect, eparam_t param,
-		struct effect_param_info *info)
-{
-	if (!effect || !param)
-		return;
-
-	if (!matching_effect(effect, param))
-		return;
-
-	info->name = param->name;
-	info->type = param->type;
-}
-
 eparam_t effect_getviewprojmatrix(effect_t effect)
 {
 	return effect ? effect->view_proj : NULL;
@@ -259,15 +236,19 @@ eparam_t effect_getworldmatrix(effect_t effect)
 	return effect ? effect->world : NULL;
 }
 
-static inline void effect_setval_inline(effect_t effect, eparam_t param,
+void effect_getparaminfo(eparam_t param, struct effect_param_info *info)
+{
+	if (!param)
+		return;
+
+	info->name = param->name;
+	info->type = param->type;
+}
+
+static inline void effect_setval_inline(eparam_t param,
 		const void *data, size_t size)
 {
 	bool size_changed;
-
-	if (!effect) {
-		blog(LOG_ERROR, "effect_setval_inline: invalid effect");
-		return;
-	}
 
 	if (!param) {
 		blog(LOG_ERROR, "effect_setval_inline: invalid param");
@@ -280,8 +261,6 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 	}
 
 	size_changed = param->cur_val.num != size;
-	if (!matching_effect(effect, param))
-		return;
 
 	if (size_changed)
 		da_resize(param->cur_val, size);
@@ -292,58 +271,53 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 	}
 }
 
-void effect_setbool(effect_t effect, eparam_t param, bool val)
+void effect_setbool(eparam_t param, bool val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(bool));
+	effect_setval_inline(param, &val, sizeof(bool));
 }
 
-void effect_setfloat(effect_t effect, eparam_t param, float val)
+void effect_setfloat(eparam_t param, float val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(float));
+	effect_setval_inline(param, &val, sizeof(float));
 }
 
-void effect_setint(effect_t effect, eparam_t param, int val)
+void effect_setint(eparam_t param, int val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(int));
+	effect_setval_inline(param, &val, sizeof(int));
 }
 
-void effect_setmatrix4(effect_t effect, eparam_t param,
-		const struct matrix4 *val)
+void effect_setmatrix4(eparam_t param, const struct matrix4 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct matrix4));
+	effect_setval_inline(param, val, sizeof(struct matrix4));
 }
 
-void effect_setvec2(effect_t effect, eparam_t param,
-		const struct vec2 *val)
+void effect_setvec2(eparam_t param, const struct vec2 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct vec2));
+	effect_setval_inline(param, val, sizeof(struct vec2));
 }
 
-void effect_setvec3(effect_t effect, eparam_t param,
-		const struct vec3 *val)
+void effect_setvec3(eparam_t param, const struct vec3 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(float) * 3);
+	effect_setval_inline(param, val, sizeof(float) * 3);
 }
 
-void effect_setvec4(effect_t effect, eparam_t param,
-		const struct vec4 *val)
+void effect_setvec4(eparam_t param, const struct vec4 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct vec4));
+	effect_setval_inline(param, val, sizeof(struct vec4));
 }
 
-void effect_settexture(effect_t effect, eparam_t param, texture_t val)
+void effect_settexture(eparam_t param, texture_t val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(texture_t));
+	effect_setval_inline(param, &val, sizeof(texture_t));
 }
 
-void effect_setval(effect_t effect, eparam_t param, const void *val,
-		size_t size)
+void effect_setval(eparam_t param, const void *val, size_t size)
 {
-	effect_setval_inline(effect, param, val, size);
+	effect_setval_inline(param, val, size);
 }
 
-void effect_setdefault(effect_t effect, eparam_t param)
+void effect_setdefault(eparam_t param)
 {
-	effect_setval_inline(effect, param, param->default_val.array,
+	effect_setval_inline(param, param->default_val.array,
 			param->default_val.num);
 }

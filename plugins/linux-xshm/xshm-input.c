@@ -268,7 +268,7 @@ static void xshm_video_render(void *vptr, effect_t effect)
 		return;
 
 	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(effect, image, data->texture);
+	effect_settexture(image, data->texture);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(data->texture, 0, 0, 0);
