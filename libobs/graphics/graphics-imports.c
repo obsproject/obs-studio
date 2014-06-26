@@ -149,9 +149,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(shader_numparams);
 	GRAPHICS_IMPORT(shader_getparambyidx);
 	GRAPHICS_IMPORT(shader_getparambyname);
-	GRAPHICS_IMPORT(shader_getparaminfo);
 	GRAPHICS_IMPORT(shader_getviewprojmatrix);
 	GRAPHICS_IMPORT(shader_getworldmatrix);
+	GRAPHICS_IMPORT(shader_getparaminfo);
 	GRAPHICS_IMPORT(shader_setbool);
 	GRAPHICS_IMPORT(shader_setfloat);
 	GRAPHICS_IMPORT(shader_setint);

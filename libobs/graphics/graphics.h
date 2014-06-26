@@ -295,29 +295,22 @@ EXPORT void shader_destroy(shader_t shader);
 EXPORT int shader_numparams(shader_t shader);
 EXPORT sparam_t shader_getparambyidx(shader_t shader, uint32_t param);
 EXPORT sparam_t shader_getparambyname(shader_t shader, const char *name);
-EXPORT void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info);
 
 EXPORT sparam_t shader_getviewprojmatrix(shader_t shader);
 EXPORT sparam_t shader_getworldmatrix(shader_t shader);
 
-EXPORT void shader_setbool(shader_t shader, sparam_t param, bool val);
-EXPORT void shader_setfloat(shader_t shader, sparam_t param, float val);
-EXPORT void shader_setint(shader_t shader, sparam_t param, int val);
-EXPORT void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val);
-EXPORT void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val);
-EXPORT void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val);
-EXPORT void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val);
-EXPORT void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val);
-EXPORT void shader_settexture(shader_t shader, sparam_t param, texture_t val);
-EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size);
-EXPORT void shader_setdefault(shader_t shader, sparam_t param);
+EXPORT void shader_getparaminfo(sparam_t param, struct shader_param_info *info);
+EXPORT void shader_setbool(sparam_t param, bool val);
+EXPORT void shader_setfloat(sparam_t param, float val);
+EXPORT void shader_setint(sparam_t param, int val);
+EXPORT void shader_setmatrix3(sparam_t param, const struct matrix3 *val);
+EXPORT void shader_setmatrix4(sparam_t param, const struct matrix4 *val);
+EXPORT void shader_setvec2(sparam_t param, const struct vec2 *val);
+EXPORT void shader_setvec3(sparam_t param, const struct vec3 *val);
+EXPORT void shader_setvec4(sparam_t param, const struct vec4 *val);
+EXPORT void shader_settexture(sparam_t param, texture_t val);
+EXPORT void shader_setval(sparam_t param, const void *val, size_t size);
+EXPORT void shader_setdefault(sparam_t param);
 
 /* ---------------------------------------------------
  * effect functions

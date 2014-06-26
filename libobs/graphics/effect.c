@@ -104,7 +104,7 @@ static void upload_shader_params(shader_t shader, struct darray *pass_params,
 				continue;
 		}
 
-		shader_setval(shader, sparam, eparam->cur_val.array,
+		shader_setval(sparam, eparam->cur_val.array,
 				eparam->cur_val.num);
 	}
 }
@@ -178,9 +178,9 @@ static inline void clear_tex_params(shader_t shader, struct darray *in_params)
 		struct pass_shaderparam *param = params+i;
 		struct shader_param_info info;
 
-		shader_getparaminfo(shader, param->sparam, &info);
+		shader_getparaminfo(param->sparam, &info);
 		if (info.type == SHADER_PARAM_TEXTURE)
-			shader_settexture(shader, param->sparam, NULL);
+			shader_settexture(param->sparam, NULL);
 	}
 }
 

@@ -379,7 +379,7 @@ void gs_device::UpdateViewProjMatrix()
 	matrix4_transpose(&curViewProjMatrix, &curViewProjMatrix);
 
 	if (curVertexShader->viewProj)
-		shader_setmatrix4(curVertexShader, curVertexShader->viewProj,
+		shader_setmatrix4(curVertexShader->viewProj,
 				&curViewProjMatrix);
 }
 

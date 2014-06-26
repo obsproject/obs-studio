@@ -1509,15 +1509,6 @@ sparam_t shader_getparambyname(shader_t shader, const char *name)
 	return graphics->exports.shader_getparambyname(shader, name);
 }
 
-void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
-
-	graphics->exports.shader_getparaminfo(shader, param, info);
-}
-
 sparam_t shader_getviewprojmatrix(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
@@ -1534,98 +1525,100 @@ sparam_t shader_getworldmatrix(shader_t shader)
 	return graphics->exports.shader_getworldmatrix(shader);
 }
 
-void shader_setbool(shader_t shader, sparam_t param, bool val)
+void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setbool(shader, param, val);
+	graphics->exports.shader_getparaminfo(param, info);
 }
 
-void shader_setfloat(shader_t shader, sparam_t param, float val)
+void shader_setbool(sparam_t param, bool val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setfloat(shader, param, val);
+	graphics->exports.shader_setbool(param, val);
 }
 
-void shader_setint(shader_t shader, sparam_t param, int val)
+void shader_setfloat(sparam_t param, float val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setint(shader, param, val);
+	graphics->exports.shader_setfloat(param, val);
 }
 
-void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val)
+void shader_setint(sparam_t param, int val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix3(shader, param, val);
+	graphics->exports.shader_setint(param, val);
 }
 
-void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val)
+void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix4(shader, param, val);
+	graphics->exports.shader_setmatrix3(param, val);
 }
 
-void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val)
+void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec2(shader, param, val);
+	graphics->exports.shader_setmatrix4(param, val);
 }
 
-void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val)
+void shader_setvec2(sparam_t param, const struct vec2 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec3(shader, param, val);
+	graphics->exports.shader_setvec2(param, val);
 }
 
-void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val)
+void shader_setvec3(sparam_t param, const struct vec3 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec4(shader, param, val);
+	graphics->exports.shader_setvec3(param, val);
 }
 
-void shader_settexture(shader_t shader, sparam_t param, texture_t val)
+void shader_setvec4(sparam_t param, const struct vec4 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_settexture(shader, param, val);
+	graphics->exports.shader_setvec4(param, val);
 }
 
-void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size)
+void shader_settexture(sparam_t param, texture_t val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setval(shader, param, val, size);
+	graphics->exports.shader_settexture(param, val);
 }
 
-void shader_setdefault(shader_t shader, sparam_t param)
+void shader_setval(sparam_t param, const void *val, size_t size)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setdefault(shader, param);
+	graphics->exports.shader_setval(param, val, size);
+}
+
+void shader_setdefault(sparam_t param)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics || !param) return;
+
+	graphics->exports.shader_setdefault(param);
 }
 
 void texture_destroy(texture_t tex)

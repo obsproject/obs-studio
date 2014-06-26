@@ -873,7 +873,7 @@ static void update_viewproj_matrix(struct gs_device *device)
 	matrix4_transpose(&device->cur_viewproj, &device->cur_viewproj);
 
 	if (vs->viewproj)
-		shader_setmatrix4(vs, vs->viewproj, &device->cur_viewproj);
+		shader_setmatrix4(vs->viewproj, &device->cur_viewproj);
 }
 
 static inline bool check_shader_pipeline_validity(device_t device)
