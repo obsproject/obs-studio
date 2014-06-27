@@ -204,7 +204,7 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
 			&graphics_data);
 	if (errorcode != GS_SUCCESS) {
-		if (errorcode == GS_ERROR_MODULENOTFOUND)
+		if (errorcode == GS_ERROR_MODULE_NOT_FOUND)
 			blog(LOG_ERROR, "Could not find graphics module '%s'",
 					ovi->graphics_module);
 		return false;

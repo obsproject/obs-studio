@@ -119,7 +119,7 @@ int gs_create(graphics_t *pgraphics, const char *module,
 
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {
-		errcode = GS_ERROR_MODULENOTFOUND;
+		errcode = GS_ERROR_MODULE_NOT_FOUND;
 		goto error;
 	}
 
