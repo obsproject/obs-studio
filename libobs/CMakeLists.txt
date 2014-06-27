@@ -16,6 +16,10 @@ find_package(Libavformat REQUIRED)
 include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
 add_definitions(${LIBAVFORMAT_DEFINITIONS})
 
+find_package(Libavcodec REQUIRED)
+include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+add_definitions(${LIBAVCODEC_DEFINITIONS})
+
 add_definitions(-DLIBOBS_EXPORTS)
 
 if(WIN32)
@@ -88,6 +92,7 @@ set(libobs_graphics_SOURCES
 	graphics/matrix4.c
 	graphics/vec3.c
 	graphics/graphics.c
+	graphics/graphics-ffmpeg.c
 	graphics/shader-parser.c
 	graphics/plane.c
 	graphics/effect.c
@@ -238,7 +243,8 @@ target_link_libraries(libobs
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}
 		${LIBAVFORMAT_LIBRARIES}
-		${LIBAVUTIL_LIBRARIES})
+		${LIBAVUTIL_LIBRARIES}
+		${LIBAVCODEC_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs ../build/data/libobs libobs)

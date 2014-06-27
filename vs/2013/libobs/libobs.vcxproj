@@ -83,6 +83,7 @@
     <ClCompile Include="..\..\..\libobs\graphics\bounds.c" />
     <ClCompile Include="..\..\..\libobs\graphics\effect-parser.c" />
     <ClCompile Include="..\..\..\libobs\graphics\effect.c" />
+    <ClCompile Include="..\..\..\libobs\graphics\graphics-ffmpeg.c" />
     <ClCompile Include="..\..\..\libobs\graphics\graphics-imports.c" />
     <ClCompile Include="..\..\..\libobs\graphics\graphics.c" />
     <ClCompile Include="..\..\..\libobs\graphics\math-extra.c" />
@@ -213,7 +214,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;avformat.lib;avcodec.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -234,7 +235,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;avformat.lib;avcodec.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -259,7 +260,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;avformat.lib;avcodec.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -284,7 +285,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jansson.lib;winmm.lib;avutil.lib;avformat.lib;avcodec.lib;swresample.lib;swscale.lib;pthreads.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>

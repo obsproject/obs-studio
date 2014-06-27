@@ -36,6 +36,9 @@ static __thread graphics_t thread_graphics = NULL;
 
 #define IMMEDIATE_COUNT 512
 
+extern void gs_init_image_deps(void);
+extern void gs_free_image_deps(void);
+
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name);
 
@@ -103,6 +106,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_leavecontext(graphics->device);
 
+	gs_init_image_deps();
 	return true;
 }
 
@@ -164,6 +168,8 @@ void gs_destroy(graphics_t graphics)
 	if (graphics->module)
 		os_dlclose(graphics->module);
 	bfree(graphics);
+
+	gs_free_image_deps();
 }
 
 void gs_entercontext(graphics_t graphics)
@@ -683,13 +689,6 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 	bfree(file_string);
 
 	return shader;
-}
-
-texture_t gs_create_texture_from_file(const char *file)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	return NULL;
 }
 
 static inline void assign_sprite_rect(float *start, float *end, float size,
