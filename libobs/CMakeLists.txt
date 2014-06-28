@@ -16,9 +16,35 @@ find_package(Libavformat REQUIRED)
 include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
 add_definitions(${LIBAVFORMAT_DEFINITIONS})
 
-find_package(Libavcodec REQUIRED)
-include_directories(${LIBAVCODEC_INCLUDE_DIRS})
-add_definitions(${LIBAVCODEC_DEFINITIONS})
+find_package(Libavcodec QUIET)
+find_package(ImageMagick QUIET COMPONENTS MagickCore)
+
+if(NOT ImageMagick_MagickCore_FOUND AND NOT LIBAVCODEC_FOUND)
+	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
+endif()
+
+option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
+
+if(NOT LIBAVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
+	message(STATUS "Using ImageMagick for image loading in libobs")
+
+	set(libobs_image_loading_SOURCES
+		graphics/graphics-magick.c)
+	set(libobs_image_loading_LIBRARIES
+		${ImageMagick_LIBRARIES})
+
+	include_directories(
+		${ImageMagick_INCLUDE_DIRS})
+else()
+	message(STATUS "Using libavcodec for image loading in libobs")
+
+	set(libobs_image_loading_SOURCES
+		graphics/graphics-ffmpeg.c)
+	set(libobs_image_loading_LIBRARIES
+		${LIBAVCODEC_LIBRARIES})
+
+	include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+endif()
 
 add_definitions(-DLIBOBS_EXPORTS)
 
@@ -81,6 +107,7 @@ set(libobs_callback_HEADERS
 	callback/signal.h)
 
 set(libobs_graphics_SOURCES
+	${libobs_image_loading_SOURCES}
 	graphics/quat.c
 	graphics/effect-parser.c
 	graphics/axisang.c
@@ -92,7 +119,6 @@ set(libobs_graphics_SOURCES
 	graphics/matrix4.c
 	graphics/vec3.c
 	graphics/graphics.c
-	graphics/graphics-ffmpeg.c
 	graphics/shader-parser.c
 	graphics/plane.c
 	graphics/effect.c
@@ -240,11 +266,11 @@ target_link_libraries(libobs
 	PRIVATE
 		jansson
 		${libobs_PLATFORM_DEPS}
+		${libobs_image_loading_LIBRARIES}
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}
 		${LIBAVFORMAT_LIBRARIES}
-		${LIBAVUTIL_LIBRARIES}
-		${LIBAVCODEC_LIBRARIES})
+		${LIBAVUTIL_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs ../build/data/libobs libobs)

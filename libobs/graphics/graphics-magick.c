@@ -30,7 +30,7 @@ texture_t gs_create_texture_from_file(const char *file)
 				data, exception);
 		if (exception->severity == UndefinedException)
 			tex = gs_create_texture(cx, cy, GS_BGRA, 1,
-					(const uint8**)&data, 0);
+					(const uint8_t**)&data, 0);
 		else
 			blog(LOG_WARNING, "magickcore warning/error getting "
 			                  "pixels from file '%s': %s", file,
