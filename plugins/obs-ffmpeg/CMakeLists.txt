@@ -26,7 +26,8 @@ include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
 add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
 
 set(obs-ffmpeg_HEADERS
-	obs-ffmpeg-formats.h)
+	obs-ffmpeg-formats.h
+	obs-ffmpeg-compat.h)
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-aac.c
