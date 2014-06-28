@@ -48,14 +48,14 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 	if (data->tex
 	&& data->last_height == xc->width
 	&& data->last_width == xc->height) {
-		texture_setimage(data->tex, (void **) pixels,
+		texture_setimage(data->tex, (const uint8_t *) pixels,
 			xc->width * sizeof(uint32_t), False);
 	} else {
 		if (data->tex)
 			texture_destroy(data->tex);
 
 		data->tex = gs_create_texture(xc->width, xc->height,
-			GS_BGRA, 1, (const void **) &pixels, GS_DYNAMIC);
+			GS_BGRA, 1, (const uint8_t **) &pixels, GS_DYNAMIC);
 	}
 
 	bfree(pixels);

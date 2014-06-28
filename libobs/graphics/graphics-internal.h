@@ -37,14 +37,14 @@ struct gs_exports {
 	uint32_t (*device_getheight)(device_t device);
 	texture_t (*device_create_texture)(device_t device, uint32_t width,
 			uint32_t height, enum gs_color_format color_format,
-			uint32_t levels, const void **data, uint32_t flags);
+			uint32_t levels, const uint8_t **data, uint32_t flags);
 	texture_t (*device_create_cubetexture)(device_t device, uint32_t size,
 			enum gs_color_format color_format, uint32_t levels,
-			const void **data, uint32_t flags);
+			const uint8_t **data, uint32_t flags);
 	texture_t (*device_create_volumetexture)(device_t device,
 			uint32_t width, uint32_t height, uint32_t depth,
 			enum gs_color_format color_format, uint32_t levels,
-			const void **data, uint32_t flags);
+			const uint8_t **data, uint32_t flags);
 	zstencil_t (*device_create_zstencil)(device_t device,
 			uint32_t width, uint32_t height,
 			enum gs_zstencil_format format);
@@ -134,7 +134,7 @@ struct gs_exports {
 	uint32_t (*texture_getwidth)(texture_t tex);
 	uint32_t (*texture_getheight)(texture_t tex);
 	enum gs_color_format (*texture_getcolorformat)(texture_t tex);
-	bool     (*texture_map)(texture_t tex, void **ptr,
+	bool     (*texture_map)(texture_t tex, uint8_t **ptr,
 			uint32_t *linesize);
 	void     (*texture_unmap)(texture_t tex);
 	bool     (*texture_isrect)(texture_t tex);
