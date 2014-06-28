@@ -121,7 +121,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 {
 	AVPacket          packet    = {0};
 	bool              success   = false;
-	AVFrame           *frame    = av_frame_alloc();
+	AVFrame           *frame    = avcodec_alloc_frame();
 	int               got_frame = 0;
 	int               ret;
 
@@ -152,7 +152,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 
 fail:
 	av_free_packet(&packet);
-	av_frame_free(&frame);
+	avcodec_free_frame(&frame);
 	return success;
 }
 
