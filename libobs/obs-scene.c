@@ -711,7 +711,7 @@ void obs_sceneitem_setalignment(obs_sceneitem_t item, uint32_t alignment)
 static inline void signal_move_dir(struct obs_scene_item *item,
 		enum order_movement movement)
 {
-	const char *command;
+	const char *command = NULL;
 	struct calldata params = {0};
 
 	switch (movement) {
