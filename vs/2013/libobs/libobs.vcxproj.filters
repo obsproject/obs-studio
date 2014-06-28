@@ -389,5 +389,8 @@
     <ClCompile Include="..\..\..\libobs\media-io\video-matrices.c">
       <Filter>media-io\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\libobs\graphics\graphics-ffmpeg.c">
+      <Filter>graphics\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

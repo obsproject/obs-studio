@@ -508,7 +508,7 @@ uint32_t device_getheight(device_t device)
 
 texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags)
+		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -527,7 +527,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -549,7 +549,7 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	/* TODO */
 	UNUSED_PARAMETER(device);
@@ -1502,7 +1502,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return static_cast<gs_texture_2d*>(tex)->format;
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
+bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	HRESULT hr;
 
@@ -1517,7 +1517,7 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
 	if (FAILED(hr))
 		return false;
 
-	*ptr = map.pData;
+	*ptr = (uint8_t*)map.pData;
 	*linesize = map.RowPitch;
 	return true;
 }

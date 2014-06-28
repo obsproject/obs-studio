@@ -495,7 +495,7 @@ EXPORT void gs_set3dmode(double fovy, double znear, double zvar);
 EXPORT void gs_viewport_push(void);
 EXPORT void gs_viewport_pop(void);
 
-EXPORT void texture_setimage(texture_t tex, const void *data,
+EXPORT void texture_setimage(texture_t tex, const uint8_t *data,
 		uint32_t linesize, bool invert);
 EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
 		const void *data, uint32_t linesize, bool invert);
@@ -514,13 +514,13 @@ EXPORT uint32_t gs_getheight(void);
 
 EXPORT texture_t gs_create_texture(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags);
+		uint32_t levels, const uint8_t **data, uint32_t flags);
 
 EXPORT zstencil_t gs_create_zstencil(uint32_t width, uint32_t height,
 		enum gs_zstencil_format format);
@@ -618,7 +618,7 @@ EXPORT void     texture_destroy(texture_t tex);
 EXPORT uint32_t texture_getwidth(texture_t tex);
 EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *linesize);
+EXPORT bool     texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize);
 EXPORT void     texture_unmap(texture_t tex);
 /** special-case function (GL only) - specifies whether the texture is a
  * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture

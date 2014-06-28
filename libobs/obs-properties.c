@@ -43,6 +43,12 @@ struct list_item {
 	};
 };
 
+struct path_data {
+	char               *filter;
+	char               *default_path;
+	enum obs_path_type type;
+};
+
 struct text_data {
 	enum obs_text_type type;
 };
@@ -56,6 +62,13 @@ struct list_data {
 struct button_data {
 	obs_property_clicked_t callback;
 };
+
+static inline void path_data_free(struct path_data *data)
+{
+	bfree(data->default_path);
+	if (data->type == OBS_PATH_FILE)
+		bfree(data->filter);
+}
 
 static inline void list_item_free(struct list_data *data,
 		struct list_item *item)
@@ -133,10 +146,10 @@ obs_properties_t obs_properties_create_param(void *param,
 
 static void obs_property_destroy(struct obs_property *property)
 {
-	if (property->type == OBS_PROPERTY_LIST) {
-		struct list_data *data = get_property_data(property);
-		list_data_free(data);
-	}
+	if (property->type == OBS_PROPERTY_LIST)
+		list_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_PATH)
+		path_data_free(get_property_data(property));
 
 	bfree(property);
 }
@@ -210,7 +223,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_INT:       return sizeof(struct int_data);
 	case OBS_PROPERTY_FLOAT:     return sizeof(struct float_data);
 	case OBS_PROPERTY_TEXT:      return sizeof(struct text_data);
-	case OBS_PROPERTY_PATH:      return 0;
+	case OBS_PROPERTY_PATH:      return sizeof(struct path_data);
 	case OBS_PROPERTY_LIST:      return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
 	case OBS_PROPERTY_BUTTON:    return sizeof(struct button_data);
@@ -315,10 +328,20 @@ obs_property_t obs_properties_add_text(obs_properties_t props, const char *name,
 }
 
 obs_property_t obs_properties_add_path(obs_properties_t props, const char *name,
-		const char *desc)
+		const char *desc, enum obs_path_type type, const char *filter,
+		const char *default_path)
 {
 	if (!props || has_prop(props, name)) return NULL;
-	return new_prop(props, name, desc, OBS_PROPERTY_PATH);
+
+	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_PATH);
+	struct path_data *data = get_property_data(p);
+	data->type         = type;
+	data->default_path = bstrdup(default_path);
+
+	if (data->type == OBS_PATH_FILE)
+		data->filter = bstrdup(filter);
+
+	return p;
 }
 
 obs_property_t obs_properties_add_list(obs_properties_t props,
@@ -495,6 +518,24 @@ enum obs_text_type obs_proprety_text_type(obs_property_t p)
 {
 	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
 	return data ? data->type : OBS_TEXT_DEFAULT;
+}
+
+enum obs_path_type obs_property_path_type(obs_property_t p)
+{
+	struct path_data *data = get_type_data(p, OBS_PROPERTY_PATH);
+	return data ? data->type : OBS_PATH_DIRECTORY;
+}
+
+const char *obs_property_path_filter(obs_property_t p)
+{
+	struct path_data *data = get_type_data(p, OBS_PROPERTY_PATH);
+	return data ? data->filter : NULL;
+}
+
+const char *obs_property_path_default_path(obs_property_t p)
+{
+	struct path_data *data = get_type_data(p, OBS_PROPERTY_PATH);
+	return data ? data->default_path : NULL;
 }
 
 enum obs_combo_type obs_property_list_type(obs_property_t p)

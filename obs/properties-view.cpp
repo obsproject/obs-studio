@@ -7,6 +7,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QStandardItem>
+#include <QFileDialog>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "obs-app.hpp"
@@ -101,12 +102,27 @@ QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
-QWidget *OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
+void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
+		QLabel **label)
 {
-	/* TODO */
-	UNUSED_PARAMETER(prop);
-	UNUSED_PARAMETER(layout);
-	return nullptr;
+	const char  *name      = obs_property_name(prop);
+	const char  *val       = obs_data_getstring(settings, name);
+	QLayout     *subLayout = new QHBoxLayout();
+	QLineEdit   *edit      = new QLineEdit();
+	QPushButton *button    = new QPushButton(QTStr("Browse"));
+
+	edit->setText(QT_UTF8(val));
+	edit->setReadOnly(true);
+
+	subLayout->addWidget(edit);
+	subLayout->addWidget(button);
+
+	WidgetInfo *info = new WidgetInfo(this, prop, edit);
+	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
+	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+
+	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(*label, subLayout);
 }
 
 QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
@@ -286,6 +302,7 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 	if (!obs_property_visible(property))
 		return;
 
+	QLabel  *label  = nullptr;
 	QWidget *widget = nullptr;
 	bool    warning = false;
 
@@ -305,7 +322,7 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		widget = AddText(property);
 		break;
 	case OBS_PROPERTY_PATH:
-		AddPath(property, layout);
+		AddPath(property, layout, &label);
 		break;
 	case OBS_PROPERTY_LIST:
 		widget = AddList(property, warning);
@@ -318,14 +335,11 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		break;
 	}
 
-	if (!widget)
-		return;
-
-	if (!obs_property_enabled(property))
+	if (widget && !obs_property_enabled(property))
 		widget->setEnabled(false);
 
-	QLabel *label = nullptr;
-	if (type != OBS_PROPERTY_BOOL &&
+	if (!label &&
+	    type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
@@ -336,6 +350,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		label->setMinimumWidth(minSize);
 		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	}
+
+	if (!widget)
+		return;
 
 	layout->addRow(label, widget);
 
@@ -369,10 +386,31 @@ void WidgetInfo::TextChanged(const char *setting)
 	obs_data_setstring(view->settings, setting, QT_TO_UTF8(edit->text()));
 }
 
-void WidgetInfo::PathChanged(const char *setting)
+bool WidgetInfo::PathChanged(const char *setting)
 {
-	/* TODO */
-	UNUSED_PARAMETER(setting);
+	const char    *desc         = obs_property_description(property);
+	obs_path_type type          = obs_property_path_type(property);
+	const char    *filter       = obs_property_path_filter(property);
+	const char    *default_path = obs_property_path_default_path(property);
+	QString       path;
+
+	if (type == OBS_PATH_DIRECTORY)
+		path = QFileDialog::getExistingDirectory(view,
+				QT_UTF8(desc), QT_UTF8(default_path),
+				QFileDialog::ShowDirsOnly |
+				QFileDialog::DontResolveSymlinks);
+	else if (type == OBS_PATH_FILE)
+		path = QFileDialog::getOpenFileName(view,
+				QT_UTF8(desc), QT_UTF8(default_path),
+				QT_UTF8(filter));
+
+	if (path.isEmpty())
+		return false;
+
+	QLineEdit *edit = static_cast<QLineEdit*>(widget);
+	edit->setText(path);
+	obs_data_setstring(view->settings, setting, QT_TO_UTF8(path));
+	return true;
 }
 
 void WidgetInfo::ListChanged(const char *setting)
@@ -432,10 +470,12 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_INT:     IntChanged(setting); break;
 	case OBS_PROPERTY_FLOAT:   FloatChanged(setting); break;
 	case OBS_PROPERTY_TEXT:    TextChanged(setting); break;
-	case OBS_PROPERTY_PATH:    PathChanged(setting); break;
 	case OBS_PROPERTY_LIST:    ListChanged(setting); break;
 	case OBS_PROPERTY_COLOR:   ColorChanged(setting); break;
 	case OBS_PROPERTY_BUTTON:  ButtonClicked(); return;
+	case OBS_PROPERTY_PATH:
+		if (!PathChanged(setting))
+			return;
 	}
 
 	view->callback(view->obj, view->settings);

@@ -36,6 +36,9 @@ static __thread graphics_t thread_graphics = NULL;
 
 #define IMMEDIATE_COUNT 512
 
+extern void gs_init_image_deps(void);
+extern void gs_free_image_deps(void);
+
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name);
 
@@ -103,6 +106,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_leavecontext(graphics->device);
 
+	gs_init_image_deps();
 	return true;
 }
 
@@ -164,6 +168,8 @@ void gs_destroy(graphics_t graphics)
 	if (graphics->module)
 		os_dlclose(graphics->module);
 	bfree(graphics);
+
+	gs_free_image_deps();
 }
 
 void gs_entercontext(graphics_t graphics)
@@ -685,13 +691,6 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 	return shader;
 }
 
-texture_t gs_create_texture_from_file(const char *file)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	return NULL;
-}
-
 static inline void assign_sprite_rect(float *start, float *end, float size,
 		bool flip)
 {
@@ -845,17 +844,19 @@ void gs_viewport_pop(void)
 	da_pop_back(thread_graphics->viewport_stack);
 }
 
-void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
+void texture_setimage(texture_t tex, const uint8_t *data, uint32_t linesize,
 		bool flip)
 {
+	uint8_t *ptr;
+	uint32_t linesize_out;
+	uint32_t row_copy;
+	int32_t height;
+	int32_t y;
+
 	if (!thread_graphics || !tex)
 		return;
 
-	void *ptr;
-	uint32_t linesize_out;
-	uint32_t row_copy;
-	int32_t height = (int32_t)texture_getheight(tex);
-	int32_t y;
+	height = (int32_t)texture_getheight(tex);
 
 	if (!texture_map(tex, &ptr, &linesize_out))
 		return;
@@ -864,8 +865,8 @@ void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 
 	if (flip) {
 		for (y = height-1; y >= 0; y--)
-			memcpy((uint8_t*)ptr  + (uint32_t)y * linesize_out,
-			       (uint8_t*)data + (uint32_t)y * linesize,
+			memcpy(ptr  + (uint32_t)y * linesize_out,
+			       data + (uint32_t)y * linesize,
 			       row_copy);
 
 	} else if (linesize == linesize_out) {
@@ -873,8 +874,8 @@ void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 
 	} else {
 		for (y = 0; y < height; y++)
-			memcpy((uint8_t*)ptr  + (uint32_t)y * linesize_out,
-			       (uint8_t*)data + (uint32_t)y * linesize,
+			memcpy(ptr  + (uint32_t)y * linesize_out,
+			       data + (uint32_t)y * linesize,
 			       row_copy);
 	}
 
@@ -967,7 +968,7 @@ static inline bool is_pow2(uint32_t size)
 
 texture_t gs_create_texture(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(width) && is_pow2(height);
@@ -999,7 +1000,7 @@ texture_t gs_create_texture(uint32_t width, uint32_t height,
 
 texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(size);
@@ -1032,7 +1033,7 @@ texture_t gs_create_cubetexture(uint32_t size,
 
 texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags)
+		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
@@ -1653,7 +1654,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return graphics->exports.texture_getcolorformat(tex);
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
+bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return false;

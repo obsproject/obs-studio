@@ -909,7 +909,7 @@ static bool update_async_texture(struct obs_source *source,
 	texture_t         tex       = source->async_texture;
 	texrender_t       texrender = source->async_convert_texrender;
 	enum convert_type type      = get_convert_type(frame->format);
-	void              *ptr;
+	uint8_t           *ptr;
 	uint32_t          linesize;
 
 	source->async_format     = frame->format;

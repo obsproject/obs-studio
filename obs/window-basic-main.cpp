@@ -481,6 +481,7 @@ void OBSBasic::OBSInit()
 
 	/* TODO: this is a test, all modules will be searched for and loaded
 	 * automatically later */
+	obs_load_module("image-source");
 	obs_load_module("test-input");
 	obs_load_module("obs-ffmpeg");
 	obs_load_module("obs-libfdk");

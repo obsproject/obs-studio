@@ -317,7 +317,7 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 	const uint8_t* texDataArr[] = { texData, 0 };
 
 	p->tex = gs_create_texture(width(), height(), cf, 1,
-			(const void**)texDataArr, 0);
+			texDataArr, 0);
 
 	delete[] texData;
 

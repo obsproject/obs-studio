@@ -269,7 +269,7 @@ uint32_t device_getheight(device_t device)
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	/* TODO */
 	UNUSED_PARAMETER(device);
