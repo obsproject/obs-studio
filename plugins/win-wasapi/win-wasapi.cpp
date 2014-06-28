@@ -9,6 +9,9 @@
 
 using namespace std;
 
+#define OPT_DEVICE_ID         "device_id"
+#define OPT_USE_DEVICE_TIMING "use_device_timing"
+
 static void GetWASAPIDefaults(obs_data_t settings);
 
 #define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
@@ -121,14 +124,14 @@ inline WASAPISource::~WASAPISource()
 
 void WASAPISource::UpdateSettings(obs_data_t settings)
 {
-	device_id       = obs_data_getstring(settings, "device_id");
-	useDeviceTiming = obs_data_getbool(settings, "useDeviceTiming");
+	device_id       = obs_data_getstring(settings, OPT_DEVICE_ID);
+	useDeviceTiming = obs_data_getbool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
 }
 
 void WASAPISource::Update(obs_data_t settings)
 {
-	string newDevice = obs_data_getstring(settings, "device_id");
+	string newDevice = obs_data_getstring(settings, OPT_DEVICE_ID);
 	bool restart = newDevice.compare(device_id) != 0;
 
 	if (restart)
@@ -430,8 +433,8 @@ static const char *GetWASAPIOutputName(void)
 
 static void GetWASAPIDefaults(obs_data_t settings)
 {
-	obs_data_set_default_string(settings, "device_id", "default");
-	obs_data_set_default_bool(settings, "use_device_timing", true);
+	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
+	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
 }
 
 static void *CreateWASAPISource(obs_data_t settings, obs_source_t source,
@@ -473,7 +476,7 @@ static obs_properties_t GetWASAPIProperties(bool input)
 
 	/* TODO: translate */
 	obs_property_t device_prop = obs_properties_add_list(props,
-			"device_id", "Device",
+			OPT_DEVICE_ID, "Device",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	GetWASAPIAudioDevices(devices, input);
@@ -488,7 +491,7 @@ static obs_properties_t GetWASAPIProperties(bool input)
 	}
 
 	obs_property_t prop;
-	prop = obs_properties_add_bool(props, "use_device_timing",
+	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 			"Use Device Timing");
 
 	return props;
