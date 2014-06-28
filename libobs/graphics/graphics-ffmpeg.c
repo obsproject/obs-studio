@@ -4,6 +4,8 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+#include "../obs-ffmpeg-compat.h"
+
 struct ffmpeg_image {
 	const char         *file;
 	AVFormatContext    *fmt_ctx;
@@ -121,7 +123,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 {
 	AVPacket          packet    = {0};
 	bool              success   = false;
-	AVFrame           *frame    = avcodec_alloc_frame();
+	AVFrame           *frame    = av_frame_alloc();
 	int               got_frame = 0;
 	int               ret;
 
@@ -152,7 +154,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 
 fail:
 	av_free_packet(&packet);
-	avcodec_free_frame(&frame);
+	av_frame_free(&frame);
 	return success;
 }
 

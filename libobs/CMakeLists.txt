@@ -223,7 +223,8 @@ set(libobs_libobs_HEADERS
 	obs-module.h
 	obs-scene.h
 	obs-source.h
-	obs-output.h)
+	obs-output.h
+	obs-ffmpeg-compat.h)
 
 set(libobs_SOURCES
 	${libobs_callback_SOURCES}
