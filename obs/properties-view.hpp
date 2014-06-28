@@ -7,6 +7,7 @@
 
 class QFormLayout;
 class OBSPropertiesView;
+class QLabel;
 
 typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t settings);
 
@@ -24,7 +25,7 @@ private:
 	void IntChanged(const char *setting);
 	void FloatChanged(const char *setting);
 	void TextChanged(const char *setting);
-	void PathChanged(const char *setting);
+	bool PathChanged(const char *setting);
 	void ListChanged(const char *setting);
 	void ColorChanged(const char *setting);
 	void ButtonClicked();
@@ -62,7 +63,7 @@ private:
 
 	QWidget *AddCheckbox(obs_property_t prop);
 	QWidget *AddText(obs_property_t prop);
-	QWidget *AddPath(obs_property_t prop, QFormLayout *layout);
+	void AddPath(obs_property_t prop, QFormLayout *layout, QLabel **label);
 	QWidget *AddInt(obs_property_t prop);
 	QWidget *AddFloat(obs_property_t prop);
 	QWidget *AddList(obs_property_t prop, bool &warning);
