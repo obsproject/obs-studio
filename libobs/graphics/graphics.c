@@ -104,6 +104,8 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
 		return false;
 
+	graphics->exports.device_blendfunction(graphics->device,
+			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
 	graphics->exports.device_leavecontext(graphics->device);
 
 	gs_init_image_deps();
