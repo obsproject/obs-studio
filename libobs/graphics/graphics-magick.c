@@ -14,10 +14,16 @@ void gs_free_image_deps()
 
 texture_t gs_create_texture_from_file(const char *file)
 {
-	texture_t     tex        = NULL;
-	ImageInfo     *info      = CloneImageInfo(NULL);
-	ExceptionInfo *exception = AcquireExceptionInfo();
+	texture_t     tex = NULL;
+	ImageInfo     *info;
+	ExceptionInfo *exception;
 	Image         *image;
+
+	if (!file || !*file)
+		return NULL;
+
+	info      = CloneImageInfo(NULL);
+	exception = AcquireExceptionInfo();
 
 	strcpy(info->filename, file);
 	image = ReadImage(info, exception);
