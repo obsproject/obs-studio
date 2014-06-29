@@ -96,23 +96,43 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 	struct SwsContext *sws_ctx = NULL;
 	int               ret      = 0;
 
-	sws_ctx = sws_getContext(info->cx, info->cy, info->format,
-			info->cx, info->cy, AV_PIX_FMT_BGRA,
-			SWS_POINT, NULL, NULL, NULL);
-	if (!sws_ctx) {
-		blog(LOG_WARNING, "Failed to create scale context for '%s'",
-				info->file);
-		return false;
-	}
+	if (info->format == AV_PIX_FMT_RGBA ||
+	    info->format == AV_PIX_FMT_BGRA ||
+	    info->format == AV_PIX_FMT_BGR0) {
 
-	ret = sws_scale(sws_ctx, (const uint8_t *const*)frame->data,
-			frame->linesize, 0, info->cy, &out, &linesize);
-	sws_freeContext(sws_ctx);
+		if (linesize != frame->linesize[0]) {
+			int min_line = linesize < frame->linesize[0] ?
+				linesize : frame->linesize[0];
 
-	if (ret < 0) {
-		blog(LOG_WARNING, "sws_scale failed for '%s': %s",
-				info->file, av_err2str(ret));
-		return false;
+			for (int y = 0; y < info->cy; y++)
+				memcpy(out + y * linesize,
+				       frame->data[0] + y * frame->linesize[0],
+				       min_line);
+		} else {
+			memcpy(out, frame->data[0], linesize * info->cy);
+		}
+
+	} else {
+		sws_ctx = sws_getContext(info->cx, info->cy, info->format,
+				info->cx, info->cy, AV_PIX_FMT_BGRA,
+				SWS_POINT, NULL, NULL, NULL);
+		if (!sws_ctx) {
+			blog(LOG_WARNING, "Failed to create scale context "
+			                  "for '%s'", info->file);
+			return false;
+		}
+
+		ret = sws_scale(sws_ctx, (const uint8_t *const*)frame->data,
+				frame->linesize, 0, info->cy, &out, &linesize);
+		sws_freeContext(sws_ctx);
+
+		if (ret < 0) {
+			blog(LOG_WARNING, "sws_scale failed for '%s': %s",
+					info->file, av_err2str(ret));
+			return false;
+		}
+
+		info->format = AV_PIX_FMT_BGRA;
 	}
 
 	return true;
@@ -167,6 +187,17 @@ void gs_free_image_deps(void)
 {
 }
 
+static inline enum gs_color_format convert_format(enum AVPixelFormat format)
+{
+	switch ((int)format) {
+	case AV_PIX_FMT_RGBA: return GS_RGBA;
+	case AV_PIX_FMT_BGRA: return GS_BGRA;
+	case AV_PIX_FMT_BGR0: return GS_BGRX;
+	}
+
+	return GS_BGRX;
+}
+
 texture_t gs_create_texture_from_file(const char *file)
 {
 	struct ffmpeg_image image;
@@ -174,9 +205,11 @@ texture_t gs_create_texture_from_file(const char *file)
 
 	if (ffmpeg_image_init(&image, file)) {
 		uint8_t *data = malloc(image.cx * image.cy * 4);
-		if (ffmpeg_image_decode(&image, data, image.cx * 4))
-			tex = gs_create_texture(image.cx, image.cy, GS_BGRA, 1, 
-					(const uint8_t**)&data, 0);
+		if (ffmpeg_image_decode(&image, data, image.cx * 4)) {
+			tex = gs_create_texture(image.cx, image.cy,
+					convert_format(image.format),
+					1, (const uint8_t**)&data, 0);
+		}
 
 		ffmpeg_image_free(&image);
 		free(data);
