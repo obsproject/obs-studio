@@ -1520,28 +1520,34 @@ void OBSBasic::logUploadFinished()
 	logDialog.exec();
 }
 
+static void RenameListItem(QListWidget *listWidget, obs_source_t source,
+		const string &name)
+{
+	const char      *prevName   = obs_source_getname(source);
+	obs_source_t    foundSource = obs_get_source_by_name(name.c_str());
+	QListWidgetItem *listItem   = listWidget->currentItem();
+
+	if (foundSource || name.compare(prevName) == 0 || name.empty()) {
+		listItem->setText(QT_UTF8(prevName));
+		obs_source_release(foundSource);
+	} else {
+		listItem->setText(QT_UTF8(name.c_str()));
+		obs_source_setname(source, name.c_str());
+	}
+}
+
 void OBSBasic::SceneNameEdited(QWidget *editor,
 		QAbstractItemDelegate::EndEditHint endHint)
 {
 	OBSScene  scene = GetCurrentScene();
 	QLineEdit *edit = qobject_cast<QLineEdit*>(editor);
-	string    text  = QT_TO_UTF8(edit->text());
+	string    text  = QT_TO_UTF8(edit->text().trimmed());
 
 	if (!scene)
 		return;
 
-	obs_source_t sceneSource = obs_scene_getsource(scene);
-	const char   *prevName   = obs_source_getname(sceneSource);
-	obs_source_t source      = obs_get_source_by_name(text.c_str());
-
-	if (source && text.compare(prevName) != 0) {
-		QListWidgetItem *listItem = ui->scenes->currentItem();
-		if (listItem)
-			listItem->setText(QT_UTF8(prevName));
-		obs_source_release(source);
-	} else {
-		obs_source_setname(sceneSource, text.c_str());
-	}
+	obs_source_t source = obs_scene_getsource(scene);
+	RenameListItem(ui->scenes, source, text);
 
 	UNUSED_PARAMETER(endHint);
 }
@@ -1551,23 +1557,13 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 {
 	OBSSceneItem item  = GetCurrentSceneItem();
 	QLineEdit    *edit = qobject_cast<QLineEdit*>(editor);
-	string       text  = QT_TO_UTF8(edit->text());
+	string       text  = QT_TO_UTF8(edit->text().trimmed());
 
 	if (!item)
 		return;
 
-	obs_source_t itemSource = obs_sceneitem_getsource(item);
-	const char   *prevName  = obs_source_getname(itemSource);
-	obs_source_t source     = obs_get_source_by_name(text.c_str());
-
-	if (source && text.compare(prevName) != 0) {
-		QListWidgetItem *listItem = ui->sources->currentItem();
-		if (listItem)
-			listItem->setText(QT_UTF8(prevName));
-		obs_source_release(source);
-	} else {
-		obs_source_setname(itemSource, text.c_str());
-	}
+	obs_source_t source = obs_sceneitem_getsource(item);
+	RenameListItem(ui->sources, source, text);
 
 	UNUSED_PARAMETER(endHint);
 }
