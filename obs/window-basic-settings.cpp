@@ -565,7 +565,9 @@ void OBSBasicSettings::SaveVideoSettings()
 
 	/* ------------------- */
 
-	SaveCombo(ui->renderer, "Video", "Renderer");
+	if (WidgetChanged(ui->renderer))
+		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
+				QT_TO_UTF8(ui->renderer->currentText()));
 
 	if (WidgetChanged(ui->baseResolution) &&
 	    ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
