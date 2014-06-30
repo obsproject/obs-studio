@@ -79,6 +79,7 @@ static const char *source_signals[] = {
 	"void deactivate(ptr source)",
 	"void show(ptr source)",
 	"void hide(ptr source)",
+	"void rename(ptr source, string new_name, string prev_name)",
 	"void volume(ptr source, in out float volume)",
 	"void volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
@@ -1600,7 +1601,21 @@ const char *obs_source_getname(obs_source_t source)
 void obs_source_setname(obs_source_t source, const char *name)
 {
 	if (!source) return;
-	obs_context_data_setname(&source->context, name);
+
+	if (!name || !*name || strcmp(name, source->context.name) != 0) {
+		struct calldata data;
+		char *prev_name = bstrdup(source->context.name);
+		obs_context_data_setname(&source->context, name);
+
+		calldata_init(&data);
+		calldata_setptr(&data, "source", source);
+		calldata_setstring(&data, "new_name", source->context.name);
+		calldata_setstring(&data, "prev_name", prev_name);
+		signal_handler_signal(obs->signals, "source_rename", &data);
+		signal_handler_signal(source->context.signals, "rename", &data);
+		calldata_free(&data);
+		bfree(prev_name);
+	}
 }
 
 void obs_source_gettype(obs_source_t source, enum obs_source_type *type,

@@ -478,6 +478,7 @@ static const char *obs_signals[] = {
 	"void source_deactivate(ptr source)",
 	"void source_show(ptr source)",
 	"void source_hide(ptr source)",
+	"void source_rename(ptr source, string new_name, string prev_name)",
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
