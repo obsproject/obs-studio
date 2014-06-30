@@ -116,6 +116,8 @@ private:
 
 	OBSSceneItem  GetCurrentSceneItem();
 
+	bool          QueryRemoveSource(obs_source_t source);
+
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
 	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
@@ -148,7 +150,8 @@ private slots:
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
-	void RemoveSelectedItem();
+	void RemoveSelectedScene();
+	void RemoveSelectedSceneItem();
 
 private:
 	/* OBS Callbacks */

@@ -92,7 +92,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	removeItemAction = new QAction(QTStr("Remove"), this);
 	removeItemAction->setShortcut(QKeySequence(Qt::Key_Delete));
 	connect(removeItemAction, SIGNAL(triggered()),
-			this, SLOT(RemoveSelectedItem()));
+			this, SLOT(RemoveSelectedSceneItem()));
 	addAction(removeItemAction);
 }
 
@@ -792,21 +792,36 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 	}
 }
 
-void OBSBasic::RemoveSelectedItem()
+bool OBSBasic::QueryRemoveSource(obs_source_t source)
+{
+	const char *name  = obs_source_getname(source);
+
+	QString text = QTStr("ConfirmRemove.Text");
+	text.replace("$1", QT_UTF8(name));
+
+	QMessageBox::StandardButton button;
+	button = QMessageBox::question(this,
+			QTStr("ConfirmRemove.Remove"), text);
+
+	return button == QMessageBox::Yes;
+}
+
+void OBSBasic::RemoveSelectedScene()
+{
+	OBSScene scene = GetCurrentScene();
+	if (scene) {
+		obs_source_t source = obs_scene_getsource(scene);
+		if (QueryRemoveSource(source))
+			obs_source_remove(source);
+	}
+}
+
+void OBSBasic::RemoveSelectedSceneItem()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	if (item) {
 		obs_source_t source = obs_sceneitem_getsource(item);
-		const char   *name  = obs_source_getname(source);
-
-		QString text = QTStr("ConfirmRemove.Text");
-		text.replace("$1", QT_UTF8(name));
-
-		QMessageBox::StandardButton button;
-		button = QMessageBox::question(this,
-				QTStr("ConfirmRemove.Remove"), text);
-
-		if (button == QMessageBox::Yes)
+		if (QueryRemoveSource(source))
 			obs_sceneitem_remove(item);
 	}
 }
@@ -1297,14 +1312,11 @@ void OBSBasic::on_actionAddScene_triggered()
 
 void OBSBasic::on_actionRemoveScene_triggered()
 {
-	QListWidgetItem *item = ui->scenes->currentItem();
-	if (!item)
-		return;
-
-	QVariant userData = item->data(Qt::UserRole);
-	obs_scene_t scene = userData.value<OBSScene>();
+	OBSScene     scene  = GetCurrentScene();
 	obs_source_t source = obs_scene_getsource(scene);
-	obs_source_remove(source);
+
+	if (source && QueryRemoveSource(source))
+		obs_source_remove(source);
 }
 
 void OBSBasic::on_actionSceneProperties_triggered()
@@ -1445,8 +1457,10 @@ void OBSBasic::on_actionAddSource_triggered()
 
 void OBSBasic::on_actionRemoveSource_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (item)
+	OBSSceneItem item   = GetCurrentSceneItem();
+	obs_source_t source = obs_sceneitem_getsource(item);
+
+	if (source && QueryRemoveSource(source))
 		obs_sceneitem_remove(item);
 }
 
