@@ -1534,7 +1534,7 @@ void OBSBasic::SceneNameEdited(QWidget *editor,
 	const char   *prevName   = obs_source_getname(sceneSource);
 	obs_source_t source      = obs_get_source_by_name(text.c_str());
 
-	if (source) {
+	if (source && text.compare(prevName) != 0) {
 		QListWidgetItem *listItem = ui->scenes->currentItem();
 		if (listItem)
 			listItem->setText(QT_UTF8(prevName));
@@ -1560,7 +1560,7 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 	const char   *prevName  = obs_source_getname(itemSource);
 	obs_source_t source     = obs_get_source_by_name(text.c_str());
 
-	if (source) {
+	if (source && text.compare(prevName) != 0) {
 		QListWidgetItem *listItem = ui->sources->currentItem();
 		if (listItem)
 			listItem->setText(QT_UTF8(prevName));
