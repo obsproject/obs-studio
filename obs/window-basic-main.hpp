@@ -144,6 +144,8 @@ private slots:
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
+	void AddSourceFromAction();
+
 private:
 	/* OBS Callbacks */
 	static void SceneItemAdded(void *data, calldata_t params);
@@ -163,6 +165,7 @@ private:
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(const char *id);
+	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
 
 public:

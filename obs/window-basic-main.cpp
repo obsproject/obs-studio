@@ -1278,26 +1278,19 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 
 void OBSBasic::AddSource(const char *id)
 {
-	OBSBasicSourceSelect sourceSelect(this, id);
-	sourceSelect.exec();
+	if (id && *id) {
+		OBSBasicSourceSelect sourceSelect(this, id);
+		sourceSelect.exec();
+	}
 }
 
-void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
+QMenu *OBSBasic::CreateAddSourcePopupMenu()
 {
 	const char *type;
 	bool foundValues = false;
 	size_t idx = 0;
 
-	if (!GetCurrentScene()) {
-		// Tell the user he needs a scene first (help beginners).
-		QMessageBox::information(this,
-				QTStr("Basic.Main.AddSourceHelp.Title"),
-				QTStr("Basic.Main.AddSourceHelp.Text"));
-		return;
-	}
-
-
-	QMenu popup;
+	QMenu *popup = new QMenu;
 	while (obs_enum_input_types(idx++, &type)) {
 		const char *name = obs_source_getdisplayname(
 				OBS_SOURCE_TYPE_INPUT, type);
@@ -1307,16 +1300,43 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 
 		QAction *popupItem = new QAction(QT_UTF8(name), this);
 		popupItem->setData(QT_UTF8(type));
-		popup.addAction(popupItem);
+		connect(popupItem, SIGNAL(triggered(bool)),
+				this, SLOT(AddSourceFromAction()));
+		popup->addAction(popupItem);
 
 		foundValues = true;
 	}
 
-	if (foundValues) {
-		QAction *ret = popup.exec(pos);
-		if (ret)
-			AddSource(ret->data().toString().toUtf8());
+	if (!foundValues) {
+		delete popup;
+		popup = nullptr;
 	}
+
+	return popup;
+}
+
+void OBSBasic::AddSourceFromAction()
+{
+	QAction *action = qobject_cast<QAction*>(sender());
+	if (!action)
+		return;
+
+	AddSource(QT_TO_UTF8(action->data().toString()));
+}
+
+void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
+{
+	if (!GetCurrentScene()) {
+		// Tell the user he needs a scene first (help beginners).
+		QMessageBox::information(this,
+				QTStr("Basic.Main.AddSourceHelp.Title"),
+				QTStr("Basic.Main.AddSourceHelp.Text"));
+		return;
+	}
+
+	QPointer<QMenu> popup = CreateAddSourcePopupMenu();
+	if (popup)
+		popup->exec(pos);
 }
 
 void OBSBasic::on_actionAddSource_triggered()
