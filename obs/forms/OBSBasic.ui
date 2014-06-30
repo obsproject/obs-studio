@@ -152,6 +152,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="contextMenuPolicy">
+                <enum>Qt::CustomContextMenu</enum>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
                </property>
@@ -256,6 +259,9 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="contextMenuPolicy">
+                <enum>Qt::CustomContextMenu</enum>
                </property>
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
@@ -467,7 +473,7 @@
     <property name="title">
      <string>Basic.MainMenu.Edit</string>
     </property>
-    <widget class="QMenu" name="menuBasic_MainMenu_Edit_Transform">
+    <widget class="QMenu" name="transformMenu">
      <property name="title">
       <string>Basic.MainMenu.Edit.Transform</string>
      </property>
@@ -488,7 +494,7 @@
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
-    <addaction name="menuBasic_MainMenu_Edit_Transform"/>
+    <addaction name="transformMenu"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>

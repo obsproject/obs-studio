@@ -10,6 +10,7 @@ Yes="Yes"
 No="No"
 Add="Add"
 Remove="Remove"
+Rename="Rename"
 Properties="Properties"
 MoveUp="Move Up"
 MoveDown="Move Down"
@@ -25,6 +26,10 @@ NameExists.Title="Name already exists"
 NameExists.Text="The name is already in use."
 
 NoNameEntered="Please enter a valid name"
+
+# confirm delete dialog box
+ConfirmRemove.Title="Confirm Remove"
+ConfirmRemove.Text="Are you sure you wish to remove '$1'?"
 
 # output connect messages
 Output.ConnectFail.Title="Failed to connect"

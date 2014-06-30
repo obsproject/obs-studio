@@ -19,6 +19,7 @@
 
 #include <QNetworkAccessManager>
 #include <QBuffer>
+#include <QAction>
 #include <obs.hpp>
 #include <unordered_map>
 #include <vector>
@@ -59,6 +60,8 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 
 	QNetworkAccessManager networkManager;
+
+	QPointer<QAction> removeItemAction;
 
 	QBuffer       logUploadPostData;
 	QNetworkReply *logUploadReply = nullptr;
@@ -144,6 +147,8 @@ private slots:
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
+
+	void RemoveSelectedItem();
 
 private:
 	/* OBS Callbacks */
@@ -243,6 +248,9 @@ private slots:
 	void logUploadFinished();
 
 	void AddSourceFromAction();
+
+	void EditSceneName();
+	void EditSceneItemName();
 
 	void SceneNameEdited(QWidget *editor,
 			QAbstractItemDelegate::EndEditHint endHint);

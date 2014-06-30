@@ -88,6 +88,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 			this,
 			SLOT(SceneItemNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
+
+	removeItemAction = new QAction(QTStr("Remove"), this);
+	removeItemAction->setShortcut(QKeySequence(Qt::Key_Delete));
+	connect(removeItemAction, SIGNAL(triggered()),
+			this, SLOT(RemoveSelectedItem()));
+	addAction(removeItemAction);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -786,6 +792,25 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 	}
 }
 
+void OBSBasic::RemoveSelectedItem()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	if (item) {
+		obs_source_t source = obs_sceneitem_getsource(item);
+		const char   *name  = obs_source_getname(source);
+
+		QString text = QTStr("ConfirmRemove.Text");
+		text.replace("$1", QT_UTF8(name));
+
+		QMessageBox::StandardButton button;
+		button = QMessageBox::question(this,
+				QTStr("ConfirmRemove.Remove"), text);
+
+		if (button == QMessageBox::Yes)
+			obs_sceneitem_remove(item);
+	}
+}
+
 /* OBS Callbacks */
 
 void OBSBasic::SceneItemAdded(void *data, calldata_t params)
@@ -1211,6 +1236,11 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 	UNUSED_PARAMETER(prev);
 }
 
+void OBSBasic::EditSceneName()
+{
+	ui->scenes->editItem(ui->scenes->currentItem());
+}
+
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
 	/* TODO */
@@ -1315,10 +1345,34 @@ void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 	UNUSED_PARAMETER(prev);
 }
 
+void OBSBasic::EditSceneItemName()
+{
+	ui->sources->editItem(ui->sources->currentItem());
+}
+
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
-	/* TODO */
-	UNUSED_PARAMETER(pos);
+	QListWidgetItem *item = ui->sources->itemAt(pos);
+
+	QMenu popup;
+	QPointer<QMenu> addSourceMenu = CreateAddSourcePopupMenu();
+	if (addSourceMenu)
+		popup.addMenu(addSourceMenu);
+
+	if (item) {
+		if (addSourceMenu)
+			popup.addSeparator();
+
+		popup.addAction(QTStr("Rename"), this,
+				SLOT(EditSceneItemName()));
+		popup.addAction(removeItemAction);
+		popup.addMenu(ui->transformMenu);
+		popup.addSeparator();
+		popup.addAction(QTStr("Properties"), this,
+				SLOT(on_actionSourceProperties_triggered()));
+	}
+
+	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::AddSource(const char *id)
