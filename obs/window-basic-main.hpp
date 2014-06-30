@@ -138,13 +138,12 @@ private slots:
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
 	void UpdateSceneSelection(OBSSource source);
+	void RenameSources(QString newName, QString prevName);
 
 	void MoveSceneItem(OBSSceneItem item, order_movement movement);
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
-
-	void AddSourceFromAction();
 
 private:
 	/* OBS Callbacks */
@@ -154,6 +153,7 @@ private:
 	static void SourceRemoved(void *data, calldata_t params);
 	static void SourceActivated(void *data, calldata_t params);
 	static void SourceDeactivated(void *data, calldata_t params);
+	static void SourceRenamed(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
@@ -241,6 +241,13 @@ private slots:
 
 	void logUploadRead();
 	void logUploadFinished();
+
+	void AddSourceFromAction();
+
+	void SceneNameEdited(QWidget *editor,
+			QAbstractItemDelegate::EndEditHint endHint);
+	void SceneItemNameEdited(QWidget *editor,
+			QAbstractItemDelegate::EndEditHint endHint);
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

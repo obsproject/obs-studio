@@ -74,6 +74,20 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
+
+	connect(ui->scenes->itemDelegate(),
+			SIGNAL(closeEditor(QWidget*,
+					QAbstractItemDelegate::EndEditHint)),
+			this,
+			SLOT(SceneNameEdited(QWidget*,
+					QAbstractItemDelegate::EndEditHint)));
+
+	connect(ui->sources->itemDelegate(),
+			SIGNAL(closeEditor(QWidget*,
+					QAbstractItemDelegate::EndEditHint)),
+			this,
+			SLOT(SceneItemNameEdited(QWidget*,
+					QAbstractItemDelegate::EndEditHint)));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -436,6 +450,8 @@ void OBSBasic::InitOBSCallbacks()
 			OBSBasic::SourceActivated, this);
 	signal_handler_connect(obs_signalhandler(), "source_deactivate",
 			OBSBasic::SourceDeactivated, this);
+	signal_handler_connect(obs_signalhandler(), "source_rename",
+			OBSBasic::SourceRenamed, this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -579,6 +595,7 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t item)
 	const char   *name  = obs_source_getname(source);
 
 	QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
+	listItem->setFlags(listItem->flags() | Qt::ItemIsEditable);
 	listItem->setData(Qt::UserRole,
 			QVariant::fromValue(OBSSceneItem(item)));
 
@@ -601,6 +618,7 @@ void OBSBasic::AddScene(OBSSource source)
 	obs_scene_t scene = obs_scene_fromsource(source);
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
+	item->setFlags(item->flags() | Qt::ItemIsEditable);
 	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
 	ui->scenes->addItem(item);
 
@@ -695,6 +713,22 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 			UpdateSources(scene);
 		}
 	}
+}
+
+static void RenameListValues(QListWidget *listWidget, const QString &newName,
+		const QString &prevName)
+{
+	QList<QListWidgetItem*> items =
+		listWidget->findItems(prevName, Qt::MatchExactly);
+
+	for (int i = 0; i < items.count(); i++)
+		items[i]->setText(newName);
+}
+
+void OBSBasic::RenameSources(QString newName, QString prevName)
+{
+	RenameListValues(ui->scenes,  newName, prevName);
+	RenameListValues(ui->sources, newName, prevName);
 }
 
 void OBSBasic::MoveSceneItem(OBSSceneItem item, order_movement movement)
@@ -817,6 +851,17 @@ void OBSBasic::SourceDeactivated(void *data, calldata_t params)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"DeactivateAudioSource",
 				Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceRenamed(void *data, calldata_t params)
+{
+	const char *newName  = calldata_string(params, "new_name");
+	const char *prevName = calldata_string(params, "prev_name");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"RenameSources",
+			Q_ARG(QString, QT_UTF8(newName)),
+			Q_ARG(QString, QT_UTF8(prevName)));
 }
 
 void OBSBasic::ChannelChanged(void *data, calldata_t params)
@@ -1473,6 +1518,58 @@ void OBSBasic::logUploadFinished()
 
 	OBSLogReply logDialog(this, logURL);
 	logDialog.exec();
+}
+
+void OBSBasic::SceneNameEdited(QWidget *editor,
+		QAbstractItemDelegate::EndEditHint endHint)
+{
+	OBSScene  scene = GetCurrentScene();
+	QLineEdit *edit = qobject_cast<QLineEdit*>(editor);
+	string    text  = QT_TO_UTF8(edit->text());
+
+	if (!scene)
+		return;
+
+	obs_source_t sceneSource = obs_scene_getsource(scene);
+	const char   *prevName   = obs_source_getname(sceneSource);
+	obs_source_t source      = obs_get_source_by_name(text.c_str());
+
+	if (source) {
+		QListWidgetItem *listItem = ui->scenes->currentItem();
+		if (listItem)
+			listItem->setText(QT_UTF8(prevName));
+		obs_source_release(source);
+	} else {
+		obs_source_setname(sceneSource, text.c_str());
+	}
+
+	UNUSED_PARAMETER(endHint);
+}
+
+void OBSBasic::SceneItemNameEdited(QWidget *editor,
+		QAbstractItemDelegate::EndEditHint endHint)
+{
+	OBSSceneItem item  = GetCurrentSceneItem();
+	QLineEdit    *edit = qobject_cast<QLineEdit*>(editor);
+	string       text  = QT_TO_UTF8(edit->text());
+
+	if (!item)
+		return;
+
+	obs_source_t itemSource = obs_sceneitem_getsource(item);
+	const char   *prevName  = obs_source_getname(itemSource);
+	obs_source_t source     = obs_get_source_by_name(text.c_str());
+
+	if (source) {
+		QListWidgetItem *listItem = ui->sources->currentItem();
+		if (listItem)
+			listItem->setText(QT_UTF8(prevName));
+		obs_source_release(source);
+	} else {
+		obs_source_setname(itemSource, text.c_str());
+	}
+
+	UNUSED_PARAMETER(endHint);
 }
 
 void OBSBasic::StreamingStart()
