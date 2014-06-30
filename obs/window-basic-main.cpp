@@ -1290,7 +1290,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	bool foundValues = false;
 	size_t idx = 0;
 
-	QMenu *popup = new QMenu;
+	QMenu *popup = new QMenu(QTStr("Add"));
 	while (obs_enum_input_types(idx++, &type)) {
 		const char *name = obs_source_getdisplayname(
 				OBS_SOURCE_TYPE_INPUT, type);
