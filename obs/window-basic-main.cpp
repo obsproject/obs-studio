@@ -1258,8 +1258,17 @@ void OBSBasic::EditSceneName()
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
-	/* TODO */
-	UNUSED_PARAMETER(pos);
+	QListWidgetItem *item = ui->scenes->itemAt(pos);
+
+	QMenu popup;
+	popup.addAction(QTStr("Add"),
+			this, SLOT(on_actionAddScene_triggered()));
+
+	if (item)
+		popup.addAction(QTStr("Remove"),
+				this, SLOT(RemoveSelectedScene()));
+
+	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::on_actionAddScene_triggered()
