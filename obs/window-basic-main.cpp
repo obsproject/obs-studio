@@ -1383,6 +1383,8 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()),
 				QKeySequence::Delete);
+		popup.addSeparator();
+		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
 		popup.addSeparator();
 		popup.addAction(QTStr("Properties"), this,
@@ -1491,6 +1493,30 @@ void OBSBasic::on_actionSourceDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
+}
+
+void OBSBasic::on_actionMoveUp_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_UP);
+}
+
+void OBSBasic::on_actionMoveDown_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
+}
+
+void OBSBasic::on_actionMoveToTop_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_TOP);
+}
+
+void OBSBasic::on_actionMoveToBottom_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_setorder(item, ORDER_MOVE_BOTTOM);
 }
 
 static char *ReadLogFile(const char *log)

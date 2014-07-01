@@ -491,10 +491,21 @@
      <addaction name="actionStretchToScreen"/>
      <addaction name="actionCenterToScreen"/>
     </widget>
+    <widget class="QMenu" name="orderMenu">
+     <property name="title">
+      <string>Basic.MainMenu.Edit.Order</string>
+     </property>
+     <addaction name="actionMoveUp"/>
+     <addaction name="actionMoveDown"/>
+     <addaction name="separator"/>
+     <addaction name="actionMoveToTop"/>
+     <addaction name="actionMoveToBottom"/>
+    </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
     <addaction name="transformMenu"/>
+    <addaction name="orderMenu"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -723,6 +734,38 @@
   <action name="actionFlipVertical">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.FlipVertical</string>
+   </property>
+  </action>
+  <action name="actionMoveUp">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveUp</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Up</string>
+   </property>
+  </action>
+  <action name="actionMoveDown">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveDown</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Down</string>
+   </property>
+  </action>
+  <action name="actionMoveToTop">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveToTop</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Home</string>
+   </property>
+  </action>
+  <action name="actionMoveToBottom">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveToBottom</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+End</string>
    </property>
   </action>
  </widget>
