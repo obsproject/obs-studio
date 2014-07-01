@@ -26,6 +26,8 @@
 #include "librtmp/log.h"
 #include "flv-mux.h"
 
+#define OPT_DROP_THRESHOLD "drop_threshold_ms"
+
 //#define TEST_FRAMEDROPS
 
 struct rtmp_stream {
@@ -417,7 +419,7 @@ static bool rtmp_stream_start(void *data)
 	dstr_copy(&stream->username, obs_service_get_username(service));
 	dstr_copy(&stream->password, obs_service_get_password(service));
 	stream->drop_threshold_usec =
-		(int64_t)obs_data_getint(settings, "drop_threshold");
+		(int64_t)obs_data_getint(settings, OPT_DROP_THRESHOLD) * 1000;
 	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
@@ -541,7 +543,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 static void rtmp_stream_defaults(obs_data_t defaults)
 {
-	obs_data_set_default_int(defaults, "drop_threshold", 600000);
+	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
 }
 
 static obs_properties_t rtmp_stream_properties(void)
@@ -549,6 +551,8 @@ static obs_properties_t rtmp_stream_properties(void)
 	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
+	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
+			"Drop threshold (milliseconds)", 200, 10000, 100);
 	return props;
 }
 
