@@ -10,12 +10,13 @@ Yes="Kyllä"
 No="Ei"
 Add="Lisää"
 Remove="Poista"
+Rename="Uudelleennimeä"
 Properties="Ominaisuudet"
 MoveUp="Siirrä ylös"
 MoveDown="Siirrä alas"
 Settings="Asetukset"
 Exit="Poistu"
-Volume="Äänenvoimakkuus"
+Mixer="Mikseri"
 Browse="Selaa"
 Mono="Mono"
 Stereo="Stereo"
@@ -25,6 +26,10 @@ NameExists.Title="Nimi on jo olemassa"
 NameExists.Text="Nimi on jo käytössä."
 
 NoNameEntered="Aseta sopiva nimi"
+
+# confirm delete dialog box
+ConfirmRemove.Title="Vahvista poisto"
+ConfirmRemove.Text="Haluatko varmasti poistaa '$1'?"
 
 # output connect messages
 Output.ConnectFail.Title="Yhdistäminen epäonnistui"
@@ -134,6 +139,11 @@ Basic.MainMenu.Edit.Transform.FlipVertical="Käännä &pystytasossa"
 Basic.MainMenu.Edit.Transform.FitToScreen="&Sovita ikkunaan"
 Basic.MainMenu.Edit.Transform.StretchToScreen="&Venytä ikkunaan"
 Basic.MainMenu.Edit.Transform.CenterToScreen="&Keskitä ikkunaan"
+Basic.MainMenu.Edit.Order="&Järjestä"
+Basic.MainMenu.Edit.Order.MoveUp="Siirrä &ylös"
+Basic.MainMenu.Edit.Order.MoveDown="Siirrä &alas"
+Basic.MainMenu.Edit.Order.MoveToTop="Siirrä &ylimmäksi"
+Basic.MainMenu.Edit.Order.MoveToBottom="Siirrä &alimmaksi"
 
 # basic mode help menu
 Basic.MainMenu.Help="&Apua"
