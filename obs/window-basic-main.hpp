@@ -61,8 +61,6 @@ private:
 
 	QNetworkAccessManager networkManager;
 
-	QPointer<QAction> removeItemAction;
-
 	QBuffer       logUploadPostData;
 	QNetworkReply *logUploadReply = nullptr;
 	QByteArray    logUploadReturnData;

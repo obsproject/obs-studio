@@ -536,6 +536,9 @@
    <property name="text">
     <string>Remove</string>
    </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
   </action>
   <action name="actionSceneProperties">
    <property name="enabled">

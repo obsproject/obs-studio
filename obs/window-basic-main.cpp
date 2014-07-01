@@ -88,12 +88,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 			this,
 			SLOT(SceneItemNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
-
-	removeItemAction = new QAction(QTStr("Remove"), this);
-	removeItemAction->setShortcut(QKeySequence(Qt::Key_Delete));
-	connect(removeItemAction, SIGNAL(triggered()),
-			this, SLOT(RemoveSelectedSceneItem()));
-	addAction(removeItemAction);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -1386,7 +1380,9 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
-		popup.addAction(removeItemAction);
+		popup.addAction(QTStr("Remove"), this,
+				SLOT(on_actionRemoveSource_triggered()),
+				QKeySequence::Delete);
 		popup.addMenu(ui->transformMenu);
 		popup.addSeparator();
 		popup.addAction(QTStr("Properties"), this,
