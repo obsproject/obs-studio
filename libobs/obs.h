@@ -763,6 +763,8 @@ EXPORT obs_output_t obs_output_create(const char *id, const char *name,
 		obs_data_t settings);
 EXPORT void obs_output_destroy(obs_output_t output);
 
+EXPORT const char *obs_output_getname(obs_output_t output);
+
 /** Starts the output. */
 EXPORT bool obs_output_start(obs_output_t output);
 

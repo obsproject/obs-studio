@@ -133,6 +133,11 @@ void obs_output_destroy(obs_output_t output)
 	}
 }
 
+const char *obs_output_getname(obs_output_t output)
+{
+	return output ? output->context.name : NULL;
+}
+
 bool obs_output_start(obs_output_t output)
 {
 	return (output != NULL) ?
