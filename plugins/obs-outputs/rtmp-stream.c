@@ -26,7 +26,6 @@
 #include "librtmp/log.h"
 #include "flv-mux.h"
 
-//#define FILE_TEST
 //#define TEST_FRAMEDROPS
 
 struct rtmp_stream {
@@ -53,10 +52,6 @@ struct rtmp_stream {
 	int              min_priority;
 
 	int64_t          last_dts_usec;
-
-#ifdef FILE_TEST
-	FILE             *test;
-#endif
 
 	RTMP             rtmp;
 };
@@ -135,10 +130,6 @@ static void rtmp_stream_stop(void *data)
 	struct rtmp_stream *stream = data;
 	void *ret;
 
-#ifdef FILE_TEST
-	fclose(stream->test);
-#endif
-
 	os_event_signal(stream->stop_event);
 
 	if (stream->connecting)
@@ -192,11 +183,7 @@ static int send_packet(struct rtmp_stream *stream,
 	int     ret = 0;
 
 	flv_packet_mux(packet, &data, &size, is_header);
-#ifdef FILE_TEST
-	fwrite(data, 1, size, stream->test);
-#else
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
-#endif
 	bfree(data);
 
 	obs_free_encoder_packet(packet);
@@ -255,11 +242,7 @@ static void send_meta_data(struct rtmp_stream *stream)
 	size_t  meta_data_size;
 
 	flv_meta_data(stream->output, &meta_data, &meta_data_size, false);
-#ifdef FILE_TEST
-	fwrite(meta_data, 1, meta_data_size, stream->test);
-#else
 	RTMP_Write(&stream->rtmp, (char*)meta_data, (int)meta_data_size);
-#endif
 	bfree(meta_data);
 }
 
@@ -299,9 +282,6 @@ static void send_video_header(struct rtmp_stream *stream)
 
 static void send_headers(struct rtmp_stream *stream)
 {
-#ifdef FILE_TEST
-	stream->test = os_fopen("D:\\bla.flv", "wb");
-#endif
 	send_meta_data(stream);
 	send_audio_header(stream);
 	send_video_header(stream);
@@ -342,7 +322,7 @@ static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
 
-#if defined(_WIN32) && !defined(FILE_TEST)
+#if defined(_WIN32)
 	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
 #endif
 
@@ -364,7 +344,6 @@ static int init_send(struct rtmp_stream *stream)
 
 static int try_connect(struct rtmp_stream *stream)
 {
-#ifndef FILE_TEST
 	if (dstr_isempty(&stream->path)) {
 		blog(LOG_WARNING, FILE_LINE "URL is empty");
 		return OBS_OUTPUT_BAD_PATH;
@@ -399,7 +378,6 @@ static int try_connect(struct rtmp_stream *stream)
 		return OBS_OUTPUT_INVALID_STREAM;
 
 	blog(LOG_INFO, "Connection to %s successful", stream->path.array);
-#endif
 
 	return init_send(stream);
 }
