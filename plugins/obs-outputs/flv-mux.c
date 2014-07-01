@@ -17,6 +17,7 @@
 
 #include <obs.h>
 #include <stdio.h>
+#include <util/dstr.h>
 #include <util/array-serializer.h>
 #include "flv-mux.h"
 #include "obs-output-ver.h"
@@ -65,6 +66,7 @@ static void build_flv_meta_data(obs_output_t context,
 	char buf[4096];
 	char *enc = buf;
 	char *end = enc+sizeof(buf);
+	struct dstr encoder_name = {0};
 
 	enc_str(&enc, end, "onMetaData");
 
@@ -89,7 +91,21 @@ static void build_flv_meta_data(obs_output_t context,
 			(double)audio_output_channels(audio));
 
 	enc_bool_val(&enc, end, "stereo", audio_output_channels(audio) == 2);
-	enc_str_val(&enc, end, "encoder", MODULE_NAME);
+
+	dstr_printf(&encoder_name, "%s (libobs version %d.%d.%d",
+			MODULE_NAME,
+			LIBOBS_API_MAJOR_VER,
+			LIBOBS_API_MINOR_VER,
+			LIBOBS_API_PATCH_VER);
+
+#ifdef HAVE_OBSCONFIG_H
+	dstr_catf(&encoder_name, ", %s", OBS_VERSION);
+#endif
+
+	dstr_cat(&encoder_name, ")");
+
+	enc_str_val(&enc, end, "encoder", encoder_name.array);
+	dstr_free(&encoder_name);
 
 	*enc++  = 0;
 	*enc++  = 0;
