@@ -549,12 +549,6 @@ static obs_properties_t rtmp_stream_properties(void)
 	obs_properties_t props = obs_properties_create();
 
 	/* TODO: locale */
-	obs_properties_add_text(props, "path", "Stream URL", OBS_TEXT_DEFAULT);
-	obs_properties_add_text(props, "key", "Stream Key", OBS_TEXT_PASSWORD);
-	obs_properties_add_text(props, "username", "User Name",
-			OBS_TEXT_DEFAULT);
-	obs_properties_add_text(props, "password", "Password",
-			OBS_TEXT_PASSWORD);
 	return props;
 }
 
