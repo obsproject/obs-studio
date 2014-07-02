@@ -61,6 +61,9 @@ struct DShowInput {
 	void Update(obs_data_t settings);
 };
 
+#define FPS_HIGHEST   0LL
+#define FPS_MATCHING -1LL
+
 template <typename T, typename U, typename V>
 static bool between(T &&lower, U &&value, V &&upper)
 {
@@ -77,7 +80,8 @@ static bool ResolutionAvailable(const VideoInfo &cap, int cx, int cy)
 
 static bool FrameRateAvailable(const VideoInfo &cap, long long interval)
 {
-	return between(cap.minInterval - DEVICE_INTERVAL_DIFF_LIMIT,
+	return interval == FPS_HIGHEST || interval == FPS_MATCHING ||
+		between(cap.minInterval - DEVICE_INTERVAL_DIFF_LIMIT,
 				interval,
 				cap.maxInterval + DEVICE_INTERVAL_DIFF_LIMIT);
 }
@@ -347,6 +351,8 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
 	return false;
 }
 
+static long long GetOBSFPS();
+
 void DShowInput::Update(obs_data_t settings)
 {
 	string video_device_id = obs_data_getstring(settings, VIDEO_DEVICE_ID);
@@ -382,6 +388,9 @@ void DShowInput::Update(obs_data_t settings)
 		interval = obs_data_has_autoselect(settings, FRAME_INTERVAL) ?
 			obs_data_get_autoselect_int(settings, FRAME_INTERVAL) :
 			obs_data_getint(settings, FRAME_INTERVAL);
+
+		if (interval == FPS_MATCHING)
+			interval = GetOBSFPS();
 
 		format = (VideoFormat)obs_data_getint(settings, VIDEO_FORMAT);
 
@@ -482,6 +491,7 @@ static void UpdateDShowInput(void *data, obs_data_t settings)
 
 static void GetDShowDefaults(obs_data_t settings)
 {
+	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
 }
@@ -524,6 +534,15 @@ static inline void AddCap(vector<Resolution> &resolutions, const VideoInfo &cap)
 
 #define MAKE_DSHOW_FPS(fps)                 (10000000LL/(fps))
 #define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num)*10000000LL/(den))
+
+static long long GetOBSFPS()
+{
+	obs_video_info ovi;
+	if (!obs_get_video_info(&ovi))
+		return 0;
+
+	return MAKE_DSHOW_FRACTIONAL_FPS(ovi.fps_num, ovi.fps_den);
+}
 
 struct FPSFormat {
 	const char *text;
@@ -819,6 +838,16 @@ static DStr GetFPSName(long long interval)
 {
 	DStr name;
 
+	if (interval == FPS_MATCHING) {
+		dstr_cat(name, "Match OBS FPS");
+		return name;
+	}
+
+	if (interval == FPS_HIGHEST) {
+		dstr_cat(name, "Highest");
+		return name;
+	}
+
 	for (const FPSFormat &format : validFPSFormats) {
 		if (format.interval != interval)
 			continue;
@@ -838,7 +867,11 @@ static void UpdateFPS(VideoDevice &device, VideoFormat format,
 
 	obs_property_list_clear(list);
 
-	bool interval_added = false;
+	obs_property_list_add_int(list, "Match OBS FPS", FPS_MATCHING);
+	obs_property_list_add_int(list, "Highest", FPS_HIGHEST);
+
+	bool interval_added = interval == FPS_HIGHEST ||
+				interval == FPS_MATCHING;
 	for (const FPSFormat &fps_format : validFPSFormats) {
 		bool video_format_match = false;
 		long long format_interval = fps_format.interval;
@@ -974,6 +1007,9 @@ static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 	int resType = (int)obs_data_getint(settings, RES_TYPE);
 	if (resType != ResType_Custom)
 		return true;
+
+	if (val == FPS_MATCHING)
+		val = GetOBSFPS();
 
 	VideoFormat format = (VideoFormat)obs_data_getint(settings,
 							VIDEO_FORMAT);
