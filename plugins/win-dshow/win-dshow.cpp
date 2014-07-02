@@ -610,6 +610,9 @@ struct VideoFormatName {
 };
 
 static const VideoFormatName videoFormatNames[] = {
+	/* autoselect format*/
+	{VideoFormat::Any,   "Any"},
+
 	/* raw formats */
 	{VideoFormat::ARGB,  "ARGB"},
 	{VideoFormat::XRGB,  "XRGB"},
