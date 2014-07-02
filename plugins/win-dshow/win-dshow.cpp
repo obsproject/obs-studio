@@ -7,6 +7,7 @@
 #include <util/platform.h>
 #include "libdshowcapture/dshowcapture.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <vector>
@@ -80,6 +81,14 @@ static bool FrameRateAvailable(const VideoInfo &cap, long long interval)
 	return between(cap.minInterval - DEVICE_INTERVAL_DIFF_LIMIT,
 				interval,
 				cap.maxInterval + DEVICE_INTERVAL_DIFF_LIMIT);
+}
+
+static long long FrameRateInterval(const VideoInfo &cap,
+		long long desired_interval)
+{
+	return desired_interval < cap.minInterval ?
+		cap.minInterval :
+		min(desired_interval, cap.maxInterval);
 }
 
 void encode_dstr(struct dstr *str)
@@ -189,6 +198,125 @@ static bool FormatMatches(VideoFormat left, VideoFormat right)
 {
 	return left == VideoFormat::Any || right == VideoFormat::Any ||
 		left == right;
+}
+
+static bool ResolutionValid(string res, int &cx, int &cy)
+{
+	if (!res.size())
+		return false;
+
+	return ConvertRes(cx, cy, res.c_str());
+}
+
+template <typename F, typename ... Fs>
+static bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
+{
+	return f(info) && CapsMatch(info, fs ...);
+}
+
+static bool CapsMatch(const VideoInfo&)
+{
+	return true;
+}
+
+template <typename ... F>
+static bool CapsMatch(const VideoDevice &dev, F ... fs)
+{
+	auto matcher = [&](const VideoInfo &info)
+	{
+		return CapsMatch(info, fs ...);
+	};
+
+	return any_of(begin(dev.caps), end(dev.caps), matcher);
+}
+
+bool MatcherMatchVideoFormat(VideoFormat format, bool &did_match,
+		const VideoInfo &info)
+{
+	bool match = FormatMatches(format, info.format);
+	did_match = did_match || match;
+	return match;
+}
+
+bool MatcherClosestFrameRateSelector(long long interval, long long &best_match,
+		const VideoInfo &info)
+{
+	long long current = FrameRateInterval(info, interval);
+	if (llabs(interval - best_match) > llabs(interval - current))
+		best_match = current;
+	return true;
+}
+
+#if 0
+auto ResolutionMatcher = [](int cx, int cy)
+{
+	return [cx, cy](const VideoInfo &info)
+	{
+		return ResolutionAvailable(info, cx, cy);
+	};
+};
+
+auto FrameRateMatcher = [](long long interval)
+{
+	return [interval](const VideoInfo &info)
+	{
+		return FrameRateAvailable(info, interval);
+	};
+};
+
+auto VideoFormatMatcher = [](VideoFormat format, bool &did_match)
+{
+	return [format, &did_match](const VideoInfo &info)
+	{
+		return MatcherMatchVideoFormat(format, did_match, info);
+	};
+};
+
+auto ClosestFrameRateSelector = [](long long interval, long long &best_match)
+{
+	return [interval, &best_match](const VideoInfo &info) mutable -> bool
+	{
+		MatcherClosestFrameRateSelector(interval, best_match, info);
+	};
+}
+#else
+#define ResolutionMatcher(cx, cy) \
+	[cx, cy](const VideoInfo &info) -> bool \
+	{ return ResolutionAvailable(info, cx, cy); }
+#define FrameRateMatcher(interval) \
+	[interval](const VideoInfo &info) -> bool \
+	{ return FrameRateAvailable(info, interval); }
+#define VideoFormatMatcher(format, did_match) \
+	[format, &did_match](const VideoInfo &info) mutable -> bool \
+	{ return MatcherMatchVideoFormat(format, did_match, info); }
+#define ClosestFrameRateSelector(interval, best_match) \
+	[interval, &best_match](const VideoInfo &info) mutable -> bool \
+	{ return MatcherClosestFrameRateSelector(interval, best_match, info); }
+#endif
+
+static bool ResolutionAvailable(const VideoDevice &dev, int cx, int cy)
+{
+	return CapsMatch(dev, ResolutionMatcher(cx, cy));
+}
+
+static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
+		VideoDevice dev)
+{
+	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
+	if (obs_data_has_autoselect(settings, RESOLUTION) &&
+			ConvertRes(cx, cy, res) &&
+			ResolutionAvailable(dev, cx, cy))
+		return true;
+
+	res = obs_data_getstring(settings, RESOLUTION);
+	if (ConvertRes(cx, cy, res) && ResolutionAvailable(dev, cx, cy))
+		return true;
+
+	res = obs_data_getstring(settings, LAST_RESOLUTION);
+	if (ConvertRes(cx, cy, res) && ResolutionAvailable(dev, cx, cy))
+		return true;
+
+	return false;
 }
 
 void DShowInput::Update(obs_data_t settings)
