@@ -191,19 +191,6 @@ static bool FormatMatches(VideoFormat left, VideoFormat right)
 		left == right;
 }
 
-static void ApplyDefaultConfigSettings(obs_data_t settings,
-		const VideoConfig &config)
-{
-	string res = to_string(config.cx) + string("x") + to_string(config.cy);
-	obs_data_setstring(settings, RESOLUTION, res.c_str());
-	obs_data_setint(settings, FRAME_INTERVAL, config.frameInterval);
-	obs_data_setint(settings, VIDEO_FORMAT, (int)config.internalFormat);
-
-	obs_data_setstring(settings, LAST_RESOLUTION, res.c_str());
-	obs_data_setint(settings, LAST_INTERVAL, config.frameInterval);
-	obs_data_setint(settings, LAST_RES_TYPE, ResType_Preferred);
-}
-
 void DShowInput::Update(obs_data_t settings)
 {
 	const char *video_device_id, *res;
@@ -260,9 +247,6 @@ void DShowInput::Update(obs_data_t settings)
 
 	if (device.Start() != Result::Success)
 		return;
-
-	if (videoConfig.useDefaultConfig)
-		ApplyDefaultConfigSettings(settings, videoConfig);
 
 	frame.width      = videoConfig.cx;
 	frame.height     = videoConfig.cy;
@@ -477,8 +461,7 @@ static bool DeviceResolutionChanged(obs_properties_t props, obs_property_t p,
 	p = obs_properties_get(props, FRAME_INTERVAL);
 
 	obs_property_list_clear(p);
-	if (!AddFPSRates(p, device, cx, cy, interval))
-		obs_data_setint(settings, FRAME_INTERVAL, interval);
+	AddFPSRates(p, device, cx, cy, interval);
 
 	if (res && last_res && strcmp(res, last_res) != 0) {
 		DeviceIntervalChanged(props, p, settings);
@@ -486,78 +469,6 @@ static bool DeviceResolutionChanged(obs_properties_t props, obs_property_t p,
 	}
 
 	return true;
-}
-
-template<typename T> static inline T GetRating(T desired, T minVal, T maxVal,
-		T &bestVal)
-{
-	T rating = 0;
-
-	if (desired < minVal) {
-		rating = minVal - desired;
-		bestVal = minVal;
-
-	} else if (desired > maxVal) {
-		rating = desired - maxVal;
-		bestVal = maxVal;
-
-	} else {
-		bestVal = desired;
-	}
-
-	return rating;
-}
-
-static void SetClosestResFPS(obs_properties_t props, obs_data_t settings)
-{
-	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
-	const char *id = obs_data_getstring(settings, VIDEO_DEVICE_ID);
-	VideoDevice device;
-
-	if (!data->GetDevice(device, id))
-		return;
-
-	obs_video_info ovi;
-	if (!obs_get_video_info(&ovi))
-		return;
-
-	long long desiredInterval =
-		MAKE_DSHOW_FRACTIONAL_FPS(ovi.fps_num, ovi.fps_den);
-
-	long long bestRating = numeric_limist<long long>::max();
-	long long bestInterval = 0;
-	int       bestCX = 0, bestCY = 0;
-
-	for (const VideoInfo &cap : device.caps) {
-		long long rating = 0;
-		long long interval = 0;
-		int       cx = 0, cy = 0;
-
-		rating += GetRating<long long>(desiredInterval,
-				cap.minInterval, cap.maxInterval, interval);
-		rating += GetRating<int>(ovi.base_width,
-				cap.minCX, cap.maxCX, cx);
-		rating += GetRating<int>(ovi.base_height,
-				cap.minCY, cap.maxCY, cy);
-
-		if (rating < bestRating) {
-			bestInterval = interval;
-			bestCX       = cx;
-			bestCY       = cy;
-			bestRating   = rating;
-
-			if (rating == 0)
-				break;
-		}
-	}
-
-	if (bestRating != numeric_limist<long long>::max()) {
-		string strRes;
-		strRes = to_string(bestCX) + string("x") + to_string(bestCY);
-
-		obs_data_setstring(settings, RESOLUTION, strRes.c_str());
-		obs_data_setint(settings, FRAME_INTERVAL, bestInterval);
-	}
 }
 
 struct VideoFormatName {
@@ -648,9 +559,7 @@ static bool DeviceSelectionChanged(obs_properties_t props, obs_property_t p,
 
 	/* only reset resolution if device legitimately changed */
 	if (old_id && id && strcmp(id, old_id) != 0) {
-		SetClosestResFPS(props, settings);
 		DeviceResolutionChanged(props, p, settings);
-		obs_data_setint(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
 		obs_data_setstring(settings, LAST_VIDEO_DEV_ID, id);
 	}
 
