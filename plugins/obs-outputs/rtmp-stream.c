@@ -26,6 +26,14 @@
 #include "librtmp/log.h"
 #include "flv-mux.h"
 
+#define do_log(level, format, ...) \
+	blog(level, "[rtmp stream: '%s'] " format, \
+			obs_output_getname(stream->output), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
 
 //#define TEST_FRAMEDROPS
@@ -225,7 +233,7 @@ static void *send_thread(void *data)
 		disconnected = true;
 
 	if (disconnected) {
-		blog(LOG_INFO, "Disconnected from %s", stream->path.array);
+		info("Disconnected from %s", stream->path.array);
 		free_packets(stream);
 	}
 
@@ -333,7 +341,7 @@ static int init_send(struct rtmp_stream *stream)
 	ret = pthread_create(&stream->send_thread, NULL, send_thread, stream);
 	if (ret != 0) {
 		RTMP_Close(&stream->rtmp);
-		blog(LOG_ERROR, __FILE__": Failed to create send thread");
+		warn("Failed to create send thread");
 		return OBS_OUTPUT_ERROR;
 	}
 
@@ -347,16 +355,16 @@ static int init_send(struct rtmp_stream *stream)
 static int try_connect(struct rtmp_stream *stream)
 {
 	if (dstr_isempty(&stream->path)) {
-		blog(LOG_WARNING, FILE_LINE "URL is empty");
+		warn("URL is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
 	if (dstr_isempty(&stream->key)) {
-		blog(LOG_WARNING, FILE_LINE "Stream key is empty");
+		warn("Stream key is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
-	blog(LOG_INFO, "Connecting to RTMP URL %s...", stream->path.array);
+	info("Connecting to RTMP URL %s...", stream->path.array);
 
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
 				stream->key.array))
@@ -379,7 +387,7 @@ static int try_connect(struct rtmp_stream *stream)
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
 
-	blog(LOG_INFO, "Connection to %s successful", stream->path.array);
+	info("Connection to %s successful", stream->path.array);
 
 	return init_send(stream);
 }
@@ -391,8 +399,7 @@ static void *connect_thread(void *data)
 
 	if (ret != OBS_OUTPUT_SUCCESS) {
 		obs_output_signal_stop(stream->output, ret);
-		blog(LOG_INFO, "Connection to %s failed: %d",
-			stream->path.array, ret);
+		info("Connection to %s failed: %d", stream->path.array, ret);
 	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN)
@@ -446,8 +453,7 @@ static void drop_frames(struct rtmp_stream *stream)
 	int              drop_priority      = 0;
 	uint64_t         last_drop_dts_usec = 0;
 
-	blog(LOG_DEBUG, "Previous packet count: %d",
-			(int)num_buffered_packets(stream));
+	debug("Previous packet count: %d", (int)num_buffered_packets(stream));
 
 	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
@@ -473,8 +479,7 @@ static void drop_frames(struct rtmp_stream *stream)
 	stream->min_priority      = drop_priority;
 	stream->min_drop_dts_usec = last_drop_dts_usec;
 
-	blog(LOG_DEBUG, "New packet count: %d",
-			(int)num_buffered_packets(stream));
+	debug("New packet count: %d", (int)num_buffered_packets(stream));
 }
 
 static void check_to_drop_frames(struct rtmp_stream *stream)
@@ -496,7 +501,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream)
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
 	if (buffer_duration_usec > stream->drop_threshold_usec) {
 		drop_frames(stream);
-		blog(LOG_INFO, "dropping %" PRId64 " worth of frames",
+		debug("dropping %" PRId64 " worth of frames",
 				buffer_duration_usec);
 	}
 }
