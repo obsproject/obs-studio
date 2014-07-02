@@ -849,6 +849,12 @@ EXPORT void obs_output_set_service(obs_output_t output, obs_service_t service);
 /** Gets the current service associated with this output. */
 EXPORT obs_service_t obs_output_get_service(obs_output_t output);
 
+/**
+ * Sets the reconnect settings.  Set retry_count to 0 to disable reconnecting.
+ */
+EXPORT void obs_output_set_reconnect_settings(obs_output_t output,
+		int retry_count, int retry_sec);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

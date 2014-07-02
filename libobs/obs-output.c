@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/platform.h"
 #include "obs.h"
 #include "obs-internal.h"
 
@@ -59,6 +60,7 @@ obs_output_t obs_output_create(const char *id, const char *name,
 {
 	const struct obs_output_info *info = find_output(id);
 	struct obs_output *output;
+	int ret;
 
 	if (!info) {
 		blog(LOG_ERROR, "Output '%s' not found", id);
@@ -79,11 +81,18 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	if (output->info.defaults)
 		output->info.defaults(output->context.settings);
 
+	ret = os_event_init(&output->reconnect_stop_event,
+			OS_EVENT_TYPE_MANUAL);
+	if (ret < 0)
+		goto fail;
+
 	output->context.data = info->create(output->context.settings, output);
 	if (!output->context.data)
 		goto fail;
 
-	output->valid = true;
+	output->reconnect_retry_sec = 2;
+	output->reconnect_retry_max = 20;
+	output->valid               = true;
 
 	obs_context_data_insert(&output->context,
 			&obs->data.outputs_mutex,
@@ -109,7 +118,7 @@ void obs_output_destroy(obs_output_t output)
 		obs_context_data_remove(&output->context);
 
 		if (output->valid && output->active)
-			output->info.stop(output->context.data);
+			obs_output_stop(output);
 		if (output->service)
 			output->service->output = NULL;
 
@@ -128,6 +137,7 @@ void obs_output_destroy(obs_output_t output)
 		}
 
 		pthread_mutex_destroy(&output->interleaved_mutex);
+		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		bfree(output);
 	}
@@ -147,6 +157,10 @@ bool obs_output_start(obs_output_t output)
 void obs_output_stop(obs_output_t output)
 {
 	if (output) {
+		os_event_signal(output->reconnect_stop_event);
+		if (output->reconnect_thread_active)
+			pthread_join(output->reconnect_thread, NULL);
+
 		output->info.stop(output->context.data);
 		signal_stop(output, OBS_OUTPUT_SUCCESS);
 	}
@@ -154,7 +168,8 @@ void obs_output_stop(obs_output_t output)
 
 bool obs_output_active(obs_output_t output)
 {
-	return (output != NULL) ? output->active : false;
+	return (output != NULL) ?
+		(output->active || output->reconnecting) : false;
 }
 
 static inline obs_data_t get_defaults(const struct obs_output_info *info)
@@ -315,6 +330,15 @@ void obs_output_set_service(obs_output_t output, obs_service_t service)
 obs_service_t obs_output_get_service(obs_output_t output)
 {
 	return output ? output->service : NULL;
+}
+
+void obs_output_set_reconnect_settings(obs_output_t output,
+		int retry_count, int retry_sec)
+{
+	if (!output) return;
+
+	output->reconnect_retry_max = retry_count;
+	output->reconnect_retry_sec = retry_sec;
 }
 
 void obs_output_set_video_conversion(obs_output_t output,
@@ -524,12 +548,28 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	}
 }
 
-static inline void signal_start(struct obs_output *output)
+static inline void do_output_signal(struct obs_output *output,
+		const char *signal)
 {
 	struct calldata params = {0};
 	calldata_setptr(&params, "output", output);
-	signal_handler_signal(output->context.signals, "start", &params);
+	signal_handler_signal(output->context.signals, signal, &params);
 	calldata_free(&params);
+}
+
+static inline void signal_start(struct obs_output *output)
+{
+	do_output_signal(output, "start");
+}
+
+static inline void signal_reconnect(struct obs_output *output)
+{
+	do_output_signal(output, "reconnect");
+}
+
+static inline void signal_reconnect_success(struct obs_output *output)
+{
+	do_output_signal(output, "reconnect_success");
 }
 
 static inline void signal_stop(struct obs_output *output, int code)
@@ -619,7 +659,14 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 		obs_service_activate(output->service);
 
 	output->active = true;
-	signal_start(output);
+
+	if (output->reconnecting) {
+		signal_reconnect_success(output);
+		output->reconnecting = false;
+	} else {
+		signal_start(output);
+	}
+
 	return true;
 }
 
@@ -664,8 +711,66 @@ void obs_output_end_data_capture(obs_output_t output)
 	output->active = false;
 }
 
+static void *reconnect_thread(void *param)
+{
+	struct obs_output *output = param;
+	unsigned long ms = output->reconnect_retry_sec * 1000;
+
+	output->reconnect_thread_active = true;
+
+	if (os_event_timedwait(output->reconnect_stop_event, ms) == ETIMEDOUT)
+		obs_output_start(output);
+
+	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
+		pthread_detach(output->reconnect_thread);
+
+	output->reconnect_thread_active = false;
+	return NULL;
+}
+
+static void output_reconnect(struct obs_output *output)
+{
+	int ret;
+
+	if (!output->reconnecting)
+		output->reconnect_retries = 0;
+
+	if (output->reconnect_retries >= output->reconnect_retry_max) {
+		output->reconnecting = false;
+		signal_stop(output, OBS_OUTPUT_DISCONNECTED);
+		return;
+	}
+
+	if (!output->reconnecting) {
+		output->reconnecting = true;
+		os_event_reset(output->reconnect_stop_event);
+	}
+
+	output->reconnect_retries++;
+
+	ret = pthread_create(&output->reconnect_thread, NULL,
+			&reconnect_thread, output);
+	if (ret < 0) {
+		blog(LOG_WARNING, "Failed to create reconnect thread");
+		output->reconnecting = false;
+		signal_stop(output, OBS_OUTPUT_DISCONNECTED);
+	} else {
+		blog(LOG_INFO, "Output '%s':  Reconnecting in %d seconds..",
+				output->context.name,
+				output->reconnect_retry_sec);
+
+		signal_reconnect(output);
+	}
+}
+
 void obs_output_signal_stop(obs_output_t output, int code)
 {
+	if (!output)
+		return;
+
 	obs_output_end_data_capture(output);
-	signal_stop(output, code);
+	if (code == OBS_OUTPUT_DISCONNECTED)
+		output_reconnect(output);
+	else
+		signal_stop(output, code);
 }

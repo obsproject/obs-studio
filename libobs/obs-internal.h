@@ -355,6 +355,14 @@ struct obs_output {
 	pthread_mutex_t                 interleaved_mutex;
 	DARRAY(struct encoder_packet)   interleaved_packets;
 
+	int                             reconnect_retry_sec;
+	int                             reconnect_retry_max;
+	int                             reconnect_retries;
+	bool                            reconnecting;
+	pthread_t                       reconnect_thread;
+	os_event_t                      reconnect_stop_event;
+	volatile bool                   reconnect_thread_active;
+
 	bool                            active;
 	video_t                         video;
 	audio_t                         audio;
