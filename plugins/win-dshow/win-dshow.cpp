@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -32,8 +33,6 @@ using namespace DShow;
 #define VIDEO_FORMAT      "video_format"
 #define LAST_VIDEO_DEV_ID "last_video_device_id"
 #define LAST_RESOLUTION   "last_resolution"
-#define LAST_RES_TYPE     "last_res_type"
-#define LAST_INTERVAL     "last_interval"
 
 enum ResType {
 	ResType_Preferred,
@@ -530,82 +529,58 @@ static const FPSFormat validFPSFormats[] = {
 	{"1",          MAKE_DSHOW_FPS(1)},
 };
 
-static bool AddFPSRate(obs_property_t p, const FPSFormat &format,
-		const VideoInfo &cap)
-{
-	long long interval = format.interval;
-
-	if (!FrameRateAvailable(format, cap))
-		return false;
-
-	obs_property_list_add_int(p, format.text, interval);
-	return true;
-}
-
-static inline bool AddFPSRates(obs_property_t p, const VideoDevice &device,
-		int cx, int cy, long long &interval)
-{
-	long long bestInterval = numeric_limits<long long>::max();
-	bool intervalFound = false;
-
-	for (const FPSFormat &format : validFPSFormats) {
-		for (const VideoInfo &cap : device.caps) {
-			if (ResolutionAvailable(cap, cx, cy)) {
-				if (!intervalFound) {
-					if (FrameRateAvailable(cap, interval))
-						intervalFound = true;
-					else if (cap.minInterval < bestInterval)
-						bestInterval = cap.minInterval;
-				}
-
-				if (AddFPSRate(p, format, cap))
-					break;
-			}
-		}
-	}
-
-	if (!intervalFound) {
-		interval = bestInterval;
-		return false;
-	}
-
-	return true;
-}
-
 static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings);
+
+static bool TryResolution(VideoDevice &dev, string res)
+{
+	int cx, cy;
+	if (!ConvertRes(cx, cy, res.c_str()))
+		return false;
+
+	return ResolutionAvailable(dev, cx, cy);
+}
+
+static bool SetResolution(obs_properties_t props, obs_data_t settings,
+		string res, bool autoselect=false)
+{
+	if (autoselect)
+		obs_data_set_autoselect_string(settings, RESOLUTION,
+				res.c_str());
+	else
+		obs_data_unset_autoselect_value(settings, RESOLUTION);
+
+	DeviceIntervalChanged(props, obs_properties_get(props, FRAME_INTERVAL),
+			settings);
+
+	if (!autoselect)
+		obs_data_setstring(settings, LAST_RESOLUTION, res.c_str());
+	return true;
+}
 
 static bool DeviceResolutionChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
+	UNUSED_PARAMETER(p);
+
 	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
-	const char *res, *last_res, *id;
-	long long interval;
+	const char *id;
 	VideoDevice device;
 
 	id       = obs_data_getstring(settings, VIDEO_DEVICE_ID);
-	res      = obs_data_getstring(settings, RESOLUTION);
-	last_res = obs_data_getstring(settings, LAST_RESOLUTION);
-	interval = obs_data_getint   (settings, FRAME_INTERVAL);
+	string res = obs_data_getstring(settings, RESOLUTION);
+	string last_res = obs_data_getstring(settings, LAST_RESOLUTION);
 
 	if (!data->GetDevice(device, id))
-		return true;
+		return false;
 
-	int cx, cy;
-	if (!ConvertRes(cx, cy, res))
-		return true;
+	if (TryResolution(device, res))
+		return SetResolution(props, settings, res);
 
-	p = obs_properties_get(props, FRAME_INTERVAL);
+	if (TryResolution(device, last_res))
+		return SetResolution(props, settings, last_res, true);
 
-	obs_property_list_clear(p);
-	AddFPSRates(p, device, cx, cy, interval);
-
-	if (res && last_res && strcmp(res, last_res) != 0) {
-		DeviceIntervalChanged(props, p, settings);
-		obs_data_setstring(settings, LAST_RESOLUTION, res);
-	}
-
-	return true;
+	return false;
 }
 
 struct VideoFormatName {
@@ -634,47 +609,66 @@ static const VideoFormatName videoFormatNames[] = {
 	{VideoFormat::H264,  "H264"}
 };
 
-static bool UpdateVideoFormats(obs_properties_t props, VideoDevice &device,
-		long long interval, int cx, int cy, VideoFormat format)
+static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
+		obs_data_t settings);
+
+static size_t AddDevice(obs_property_t device_list, const string &id)
 {
-	bool foundFormat = false;
-	obs_property_t p = obs_properties_get(props, VIDEO_FORMAT);
+	DStr name, path;
+	if (!DecodeDeviceId(name, path, id.c_str()))
+		return numeric_limits<size_t>::max();
 
-	obs_property_list_clear(p);
-	obs_property_list_add_int(p, "Any", (int)VideoFormat::Any);
+	return obs_property_list_add_string(device_list, name, id.c_str());
+}
 
-	for (const VideoFormatName &name : videoFormatNames) {
-		for (const VideoInfo &cap : device.caps) {
+static bool UpdateDeviceList(obs_property_t list, const string &id)
+{
+	size_t size = obs_property_list_item_count(list);
+	bool found = false;
+	bool disabled_unknown_found = false;
 
-			if (FrameRateAvailable(cap, interval) &&
-			    ResolutionAvailable(cap, cx, cy) &&
-			    FormatMatches(cap.format, name.format)) {
-
-				if (format == cap.format)
-					foundFormat = true;
-
-				obs_property_list_add_int(p, name.name,
-						(int)name.format);
-				break;
-			}
+	for (size_t i = 0; i < size; i++) {
+		if (obs_property_list_item_string(list, i) == id) {
+			found = true;
+			continue;
 		}
+		if (obs_property_list_item_disabled(list, i))
+			disabled_unknown_found = true;
 	}
 
-	return foundFormat;
+	if (!found && !disabled_unknown_found) {
+		size_t idx = AddDevice(list, id);
+		obs_property_list_item_disable(list, idx, true);
+		return true;
+	}
+
+	if (found && !disabled_unknown_found)
+		return false;
+
+	for (size_t i = 0; i < size;) {
+		if (obs_property_list_item_disabled(list, i)) {
+			obs_property_list_item_remove(list, i);
+			continue;
+		}
+		i += 1;
+	}
+
+	return true;
 }
 
 static bool DeviceSelectionChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
-	const char *id, *old_id;
 	VideoDevice device;
 
-	id     = obs_data_getstring(settings, VIDEO_DEVICE_ID);
-	old_id = obs_data_getstring(settings, LAST_VIDEO_DEV_ID);
+	string id     = obs_data_getstring(settings, VIDEO_DEVICE_ID);
+	string old_id = obs_data_getstring(settings, LAST_VIDEO_DEV_ID);
 
-	if (!data->GetDevice(device, id))
-		return false;
+	bool device_list_updated = UpdateDeviceList(p, id);
+
+	if (!data->GetDevice(device, id.c_str()))
+		return !device_list_updated;
 
 	vector<Resolution> resolutions;
 	for (const VideoInfo &cap : device.caps)
@@ -694,10 +688,11 @@ static bool DeviceSelectionChanged(obs_properties_t props, obs_property_t p,
 		obs_property_list_add_string(p, strRes.c_str(), strRes.c_str());
 	}
 
-	/* only reset resolution if device legitimately changed */
-	if (old_id && id && strcmp(id, old_id) != 0) {
-		DeviceResolutionChanged(props, p, settings);
-		obs_data_setstring(settings, LAST_VIDEO_DEV_ID, id);
+	/* only refresh properties if device legitimately changed */
+	if (!id.size() || !old_id.size() || id != old_id) {
+		p = obs_properties_get(props, RES_TYPE);
+		ResTypeChanged(props, p, settings);
+		obs_data_setstring(settings, LAST_VIDEO_DEV_ID, id.c_str());
 	}
 
 	return true;
@@ -775,7 +770,6 @@ static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	int  val     = (int)obs_data_getint(settings, RES_TYPE);
-	int  lastVal = (int)obs_data_getint(settings, LAST_RES_TYPE);
 	bool enabled = (val != ResType_Preferred);
 
 	p = obs_properties_get(props, RESOLUTION);
@@ -787,9 +781,11 @@ static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
 	p = obs_properties_get(props, VIDEO_FORMAT);
 	obs_property_set_enabled(p, enabled);
 
-	if (val == ResType_Custom && lastVal != val) {
-		SetClosestResFPS(props, settings);
-		obs_data_setint(settings, LAST_RES_TYPE, val);
+	if (val == ResType_Custom) {
+		p = obs_properties_get(props, RESOLUTION);
+		DeviceResolutionChanged(props, p, settings);
+	} else {
+		obs_data_unset_autoselect_value(settings, FRAME_INTERVAL);
 	}
 
 	return true;
@@ -811,6 +807,42 @@ static DStr GetFPSName(long long interval)
 	return name;
 }
 
+static void UpdateFPS(VideoDevice &device, VideoFormat format,
+		long long interval, int cx, int cy, obs_properties_t props)
+{
+	obs_property_t list = obs_properties_get(props, FRAME_INTERVAL);
+
+	obs_property_list_clear(list);
+
+	bool interval_added = false;
+	for (const FPSFormat &fps_format : validFPSFormats) {
+		bool video_format_match = false;
+		long long format_interval = fps_format.interval;
+
+		bool available = CapsMatch(device,
+				ResolutionMatcher(cx, cy),
+				VideoFormatMatcher(format, video_format_match),
+				FrameRateMatcher(format_interval));
+
+		if (!available && interval != fps_format.interval)
+			continue;
+
+		if (interval == fps_format.interval)
+			interval_added = true;
+
+		size_t idx = obs_property_list_add_int(list, fps_format.text,
+				fps_format.interval);
+		obs_property_list_item_disable(list, idx, !available);
+	}
+
+	if (interval_added)
+		return;
+
+	size_t idx = obs_property_list_add_int(list, GetFPSName(interval),
+			interval);
+	obs_property_list_item_disable(list, idx, true);
+}
+
 static DStr GetVideoFormatName(VideoFormat format)
 {
 	DStr name;
@@ -825,39 +857,189 @@ static DStr GetVideoFormatName(VideoFormat format)
 	return name;
 }
 
+static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
+		int cx, int cy, long long interval, obs_properties_t props)
+{
+	set<VideoFormat> formats = { VideoFormat::Any };
+	auto format_gatherer = [&formats](const VideoInfo &info) mutable -> bool
+	{
+		formats.insert(info.format);
+		return false;
+	};
+
+	CapsMatch(device,
+			ResolutionMatcher(cx, cy),
+			FrameRateMatcher(interval),
+			format_gatherer);
+
+	obs_property_t list = obs_properties_get(props, VIDEO_FORMAT);
+	obs_property_list_clear(list);
+
+	bool format_added = false;
+	for (const VideoFormatName &format : videoFormatNames) {
+		bool available = formats.find(format.format) != end(formats);
+
+		if (!available && format.format != format_)
+			continue;
+
+		if (format.format == format_)
+			format_added = true;
+
+		size_t idx = obs_property_list_add_int(list, format.name,
+				(long long)format.format);
+		obs_property_list_item_disable(list, idx, !available);
+	}
+
+	if (format_added)
+		return;
+
+	size_t idx = obs_property_list_add_int(list,
+			GetVideoFormatName(format_), (long long)format_);
+	obs_property_list_item_disable(list, idx, true);
+}
+
+static bool UpdateFPS(long long interval, obs_property_t list)
+{
+	size_t size = obs_property_list_item_count(list);
+	bool fps_found = false;
+	DStr name;
+
+	for (size_t i = 0; i < size; i++) {
+		if (obs_property_list_item_int(list, i) != interval)
+			continue;
+
+		obs_property_list_item_disable(list, i, true);
+		if (size == 1)
+			return false;
+
+		dstr_cat(name, obs_property_list_item_name(list, i));
+		fps_found = true;
+		break;
+	}
+
+	obs_property_list_clear(list);
+
+	if (!name->len)
+		name = GetFPSName(interval);
+
+	obs_property_list_add_int(list, name, interval);
+	obs_property_list_item_disable(list, 0, true);
+
+	return true;
+}
+
 static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
-	int  val     = (int)obs_data_getint(settings, FRAME_INTERVAL);
-	int  lastVal = (int)obs_data_getint(settings, LAST_INTERVAL);
+	long long val = obs_data_getint(settings, FRAME_INTERVAL);
 
 	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
 	const char *id = obs_data_getstring(settings, VIDEO_DEVICE_ID);
 	VideoDevice device;
 
 	if (!data->GetDevice(device, id))
-		return false;
+		return UpdateFPS(val, p);
 
-	int cx, cy;
-	const char *res = obs_data_getstring(settings, RESOLUTION);
-	if (!ConvertRes(cx, cy, res))
+	int cx = 0, cy = 0;
+	if (!DetermineResolution(cx, cy, settings, device)) {
+		UpdateVideoFormats(device, VideoFormat::Any, 0, 0, 0, props);
+		UpdateFPS(device, VideoFormat::Any, 0, 0, 0, props);
 		return true;
+	}
+
+	int resType = (int)obs_data_getint(settings, RES_TYPE);
+	if (resType != ResType_Custom)
+		return true;
+
+	VideoFormat format = (VideoFormat)obs_data_getint(settings,
+							VIDEO_FORMAT);
+
+	bool video_format_matches = false;
+	long long best_interval = numeric_limits<long long>::max();
+	bool frameRateSupported = CapsMatch(device,
+			ResolutionMatcher(cx, cy),
+			VideoFormatMatcher(format, video_format_matches),
+			ClosestFrameRateSelector(val, best_interval),
+			FrameRateMatcher(val));
+
+	if (video_format_matches &&
+			!frameRateSupported &&
+			best_interval != val) {
+		long long listed_val = 0;
+		for (const FPSFormat &format : validFPSFormats) {
+			long long diff = llabs(format.interval - best_interval);
+			if (diff < DEVICE_INTERVAL_DIFF_LIMIT) {
+				listed_val = format.interval;
+				break;
+			}
+		}
+
+		if (listed_val != val)
+			obs_data_set_autoselect_int(settings, FRAME_INTERVAL,
+					listed_val);
+
+	} else {
+		obs_data_unset_autoselect_value(settings, FRAME_INTERVAL);
+	}
+
+	UpdateVideoFormats(device, format, cx, cy, val, props);
+	UpdateFPS(device, format, val, cx, cy, props);
+
+	UNUSED_PARAMETER(p);
+	return true;
+}
+
+static bool UpdateVideoFormats(VideoFormat format, obs_property_t list)
+{
+	size_t size = obs_property_list_item_count(list);
+	DStr name;
+
+	for (size_t i = 0; i < size; i++) {
+		if ((VideoFormat)obs_property_list_item_int(list, i) != format)
+			continue;
+
+		if (size == 1)
+			return false;
+
+		dstr_cat(name, obs_property_list_item_name(list, i));
+		break;
+	}
+
+	obs_property_list_clear(list);
+
+	if (!name->len)
+		name = GetVideoFormatName(format);
+
+	obs_property_list_add_int(list, name, (long long)format);
+	obs_property_list_item_disable(list, 0, true);
+
+	return true;
+}
+
+static bool VideoFormatChanged(obs_properties_t props, obs_property_t p,
+		obs_data_t settings)
+{
+	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
+	const char *id = obs_data_getstring(settings, VIDEO_DEVICE_ID);
+	VideoDevice device;
 
 	VideoFormat curFormat =
 		(VideoFormat)obs_data_getint(settings, VIDEO_FORMAT);
 
-	bool foundFormat =
-		UpdateVideoFormats(props, device, val, cx, cy, curFormat);
+	if (!data->GetDevice(device, id))
+		return UpdateVideoFormats(curFormat, p);
 
-	if (val != lastVal) {
-		if (!foundFormat)
-			obs_data_setint(settings, VIDEO_FORMAT,
-					(int)VideoFormat::Any);
-
-		obs_data_setint(settings, LAST_INTERVAL, val);
+	int cx, cy;
+	if (!DetermineResolution(cx, cy, settings, device)) {
+		UpdateVideoFormats(device, VideoFormat::Any, cx, cy, 0, props);
+		UpdateFPS(device, VideoFormat::Any, 0, 0, 0, props);
+		return true;
 	}
 
-	UNUSED_PARAMETER(p);
+	long long interval = obs_data_getint(settings, FRAME_INTERVAL);
+
+	UpdateVideoFormats(device, curFormat, cx, cy, interval, props);
+	UpdateFPS(device, curFormat, interval, cx, cy, props);
 	return true;
 }
 
@@ -904,8 +1086,10 @@ static obs_properties_t GetDShowProperties(void)
 
 	obs_property_set_modified_callback(p, DeviceIntervalChanged);
 
-	obs_properties_add_list(ppts, VIDEO_FORMAT, "Video Format",
+	p = obs_properties_add_list(ppts, VIDEO_FORMAT, "Video Format",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	obs_property_set_modified_callback(p, VideoFormatChanged);
 
 	return ppts;
 }
