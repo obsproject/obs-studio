@@ -197,6 +197,26 @@ static bool DecodeDeviceId(DeviceId &out, const char *device_id)
 	return true;
 }
 
+struct PropertiesData {
+	vector<VideoDevice> devices;
+
+	bool GetDevice(VideoDevice &device, const char *encoded_id) const
+	{
+		DeviceId deviceId;
+		DecodeDeviceId(deviceId, encoded_id);
+
+		for (const VideoDevice &curDevice : devices) {
+			if (deviceId.name == curDevice.name &&
+				deviceId.path == curDevice.path) {
+				device = curDevice;
+				return true;
+			}
+		}
+
+		return false;
+	}
+};
+
 static inline bool ConvertRes(int &cx, int &cy, const char *res)
 {
 	return sscanf(res, "%dx%d", &cx, &cy) == 2;
@@ -329,16 +349,7 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
 
 void DShowInput::Update(obs_data_t settings)
 {
-	const char *video_device_id, *res;
-	DeviceId id;
-
-	video_device_id    = obs_data_getstring  (settings, VIDEO_DEVICE_ID);
-	res                = obs_data_getstring  (settings, RESOLUTION);
-	long long interval = obs_data_getint     (settings, FRAME_INTERVAL);
-	int resType        = (int)obs_data_getint(settings, RES_TYPE);
-
-	VideoFormat format = (VideoFormat)obs_data_getint(settings,
-			VIDEO_FORMAT);
+	string video_device_id = obs_data_getstring(settings, VIDEO_DEVICE_ID);
 
 	if (!comInitialized) {
 		CoInitialize(nullptr);
@@ -348,14 +359,44 @@ void DShowInput::Update(obs_data_t settings)
 	if (!device.ResetGraph())
 		return;
 
-	if (!DecodeDeviceId(id, video_device_id))
+	DeviceId id;
+	if (!DecodeDeviceId(id, video_device_id.c_str()))
 		return;
 
-	int cx, cy;
-	if (!ConvertRes(cx, cy, res)) {
-		blog(LOG_WARNING, "DShowInput::Update: Bad resolution '%s'",
-				res);
+	PropertiesData data;
+	Device::EnumVideoDevices(data.devices);
+	VideoDevice dev;
+	if (!data.GetDevice(dev, video_device_id.c_str()))
 		return;
+
+	int resType = (int)obs_data_getint(settings, RES_TYPE);
+	int cx = 0, cy = 0;
+	long long interval = 0;
+	VideoFormat format = VideoFormat::Any;
+
+	if (resType == ResType_Custom) {
+		string resolution = obs_data_getstring(settings, RESOLUTION);
+		if (!ResolutionValid(resolution, cx, cy))
+			return;
+
+		interval = obs_data_has_autoselect(settings, FRAME_INTERVAL) ?
+			obs_data_get_autoselect_int(settings, FRAME_INTERVAL) :
+			obs_data_getint(settings, FRAME_INTERVAL);
+
+		format = (VideoFormat)obs_data_getint(settings, VIDEO_FORMAT);
+
+		long long best_interval = numeric_limits<long long>::max();
+		bool video_format_match = false;
+		if (!CapsMatch(dev,
+			ResolutionMatcher(cx, cy),
+			VideoFormatMatcher(format, video_format_match),
+			ClosestFrameRateSelector(interval, best_interval),
+			FrameRateMatcher(interval)) && !video_format_match)
+			return;
+
+		interval = best_interval;
+		blog(LOG_INFO, "%s: Using interval %lld",
+				obs_source_getname(source), interval);
 	}
 
 	videoConfig.name             = id.name.c_str();
@@ -444,26 +485,6 @@ static void GetDShowDefaults(obs_data_t settings)
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
 }
-
-struct PropertiesData {
-	vector<VideoDevice> devices;
-
-	const bool GetDevice(VideoDevice &device, const char *encoded_id)
-	{
-		DeviceId deviceId;
-		DecodeDeviceId(deviceId, encoded_id);
-
-		for (const VideoDevice &curDevice : devices) {
-			if (deviceId.name.compare(curDevice.name) == 0 &&
-			    deviceId.path.compare(curDevice.path) == 0) {
-				device = curDevice;
-				return true;
-			}
-		}
-
-		return false;
-	}
-};
 
 struct Resolution {
 	int cx, cy;
