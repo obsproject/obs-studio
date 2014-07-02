@@ -7,6 +7,7 @@
 #include <util/platform.h>
 #include "libdshowcapture/dshowcapture.hpp"
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -380,8 +381,6 @@ static inline void AddCap(vector<Resolution> &resolutions, const VideoInfo &cap)
 	InsertResolution(resolutions, cap.maxCX, cap.maxCY);
 }
 
-#define MAX_LL 0x7FFFFFFFFFFFFFFFLL
-
 #define MAKE_DSHOW_FPS(fps)                 (10000000LL/(fps))
 #define MAKE_DSHOW_FRACTIONAL_FPS(den, num) ((num)*10000000LL/(den))
 
@@ -425,7 +424,7 @@ static bool AddFPSRate(obs_property_t p, const FPSFormat &format,
 static inline bool AddFPSRates(obs_property_t p, const VideoDevice &device,
 		int cx, int cy, long long &interval)
 {
-	long long bestInterval = MAX_LL;
+	long long bestInterval = numeric_limits<long long>::max();
 	bool intervalFound = false;
 
 	for (const FPSFormat &format : validFPSFormats) {
@@ -525,7 +524,7 @@ static void SetClosestResFPS(obs_properties_t props, obs_data_t settings)
 	long long desiredInterval =
 		MAKE_DSHOW_FRACTIONAL_FPS(ovi.fps_num, ovi.fps_den);
 
-	long long bestRating = MAX_LL;
+	long long bestRating = numeric_limist<long long>::max();
 	long long bestInterval = 0;
 	int       bestCX = 0, bestCY = 0;
 
@@ -552,7 +551,7 @@ static void SetClosestResFPS(obs_properties_t props, obs_data_t settings)
 		}
 	}
 
-	if (bestRating != MAX_LL) {
+	if (bestRating != numeric_limist<long long>::max()) {
 		string strRes;
 		strRes = to_string(bestCX) + string("x") + to_string(bestCY);
 
