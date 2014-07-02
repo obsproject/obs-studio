@@ -235,6 +235,8 @@ static void *send_thread(void *data)
 	if (disconnected) {
 		info("Disconnected from %s", stream->path.array);
 		free_packets(stream);
+	} else {
+		info("User stopped the stream");
 	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN) {
