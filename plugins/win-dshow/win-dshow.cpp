@@ -16,6 +16,9 @@
  *   - if device not present, wait for device to be plugged in
  */
 
+#undef min
+#undef max
+
 using namespace std;
 using namespace DShow;
 
@@ -56,6 +59,27 @@ struct DShowInput {
 
 	void Update(obs_data_t settings);
 };
+
+template <typename T, typename U, typename V>
+static bool between(T &&lower, U &&value, V &&upper)
+{
+	return value >= lower && value <= upper;
+}
+
+static bool ResolutionAvailable(const VideoInfo &cap, int cx, int cy)
+{
+	return between(cap.minCX, cx, cap.maxCX) &&
+		between(cap.minCY, cy, cap.maxCY);
+}
+
+#define DEVICE_INTERVAL_DIFF_LIMIT 20
+
+static bool FrameRateAvailable(const VideoInfo &cap, long long interval)
+{
+	return between(cap.minInterval - DEVICE_INTERVAL_DIFF_LIMIT,
+				interval,
+				cap.maxInterval + DEVICE_INTERVAL_DIFF_LIMIT);
+}
 
 void encode_dstr(struct dstr *str)
 {
@@ -158,6 +182,12 @@ static bool DecodeDeviceId(DeviceId &out, const char *device_id)
 static inline bool ConvertRes(int &cx, int &cy, const char *res)
 {
 	return sscanf(res, "%dx%d", &cx, &cy) == 2;
+}
+
+static bool FormatMatches(VideoFormat left, VideoFormat right)
+{
+	return left == VideoFormat::Any || right == VideoFormat::Any ||
+		left == right;
 }
 
 static void ApplyDefaultConfigSettings(obs_data_t settings,
@@ -380,30 +410,13 @@ static const FPSFormat validFPSFormats[] = {
 	{"1",          MAKE_DSHOW_FPS(1)},
 };
 
-#define DEVICE_INTERVAL_DIFF_LIMIT 20
-
 static bool AddFPSRate(obs_property_t p, const FPSFormat &format,
 		const VideoInfo &cap)
 {
 	long long interval = format.interval;
 
-	if (format.interval < cap.minInterval ||
-	    format.interval > cap.maxInterval) {
-		/* account for slight inaccuracies in intervals
-		 * among different devices */
-		long long diff     = 0;
-
-		if (format.interval < cap.minInterval) {
-			interval = cap.minInterval;
-			diff     = cap.minInterval - format.interval;
-		} else if (format.interval > cap.maxInterval) {
-			interval = cap.maxInterval;
-			diff     = format.interval - cap.minInterval;
-		}
-
-		if (diff > DEVICE_INTERVAL_DIFF_LIMIT)
-			return false;
-	}
+	if (!FrameRateAvailable(format, cap))
+		return false;
 
 	obs_property_list_add_int(p, format.text, interval);
 	return true;
@@ -417,12 +430,9 @@ static inline bool AddFPSRates(obs_property_t p, const VideoDevice &device,
 
 	for (const FPSFormat &format : validFPSFormats) {
 		for (const VideoInfo &cap : device.caps) {
-			if (cx >= cap.minCX && cx <= cap.maxCX &&
-			    cy >= cap.minCY && cy <= cap.maxCY) {
-
+			if (ResolutionAvailable(cap, cx, cy)) {
 				if (!intervalFound) {
-					if (interval >= cap.minInterval &&
-					    interval <= cap.maxInterval)
+					if (FrameRateAvailable(cap, interval))
 						intervalFound = true;
 					else if (cap.minInterval < bestInterval)
 						bestInterval = cap.minInterval;
@@ -589,11 +599,9 @@ static bool UpdateVideoFormats(obs_properties_t props, VideoDevice &device,
 	for (const VideoFormatName &name : videoFormatNames) {
 		for (const VideoInfo &cap : device.caps) {
 
-			if (interval >= cap.minInterval &&
-			    interval <= cap.maxInterval &&
-			    cx >= cap.minCX && cx <= cap.maxCX &&
-			    cy >= cap.minCY && cy <= cap.maxCY &&
-			    cap.format == name.format) {
+			if (FrameRateAvailable(cap, interval) &&
+			    ResolutionAvailable(cap, cx, cy) &&
+			    FormatMatches(cap.format, name.format)) {
 
 				if (format == cap.format)
 					foundFormat = true;
