@@ -786,6 +786,36 @@ static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
+static DStr GetFPSName(long long interval)
+{
+	DStr name;
+
+	for (const FPSFormat &format : validFPSFormats) {
+		if (format.interval != interval)
+			continue;
+
+		dstr_cat(name, format.text);
+		return name;
+	}
+
+	dstr_cat(name, to_string(10000000. / interval).c_str());
+	return name;
+}
+
+static DStr GetVideoFormatName(VideoFormat format)
+{
+	DStr name;
+	for (const VideoFormatName &format_ : videoFormatNames) {
+		if (format_.format == format) {
+			dstr_cat(name, format_.name);
+			return name;
+		}
+	}
+
+	dstr_catf(name, "Unknown (%lld)", (long long)format);
+	return name;
+}
+
 static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
