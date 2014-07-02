@@ -156,10 +156,9 @@ void DShowInput::OnVideoData(DShowInput *input, unsigned char *data,
 	UNUSED_PARAMETER(size);
 }
 
-static bool DecodeDeviceId(DeviceId &out, const char *device_id)
+static bool DecodeDeviceId(DStr &name, DStr &path, const char *device_id)
 {
-	const char    *path_str;
-	DStr          name, path;
+	const char *path_str;
 
 	if (!device_id || !*device_id)
 		return false;
@@ -177,6 +176,16 @@ static bool DecodeDeviceId(DeviceId &out, const char *device_id)
 
 	decode_dstr(name);
 	decode_dstr(path);
+
+	return true;
+}
+
+static bool DecodeDeviceId(DeviceId &out, const char *device_id)
+{
+	DStr name, path;
+
+	if (!DecodeDeviceId(name, path, device_id))
+		return false;
 
 	BPtr<wchar_t> wname = dstr_to_wcs(name);
 	out.name = wname;
