@@ -106,6 +106,10 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_blendfunction(graphics->device,
 			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	graphics->cur_blend_state.enabled = true;
+	graphics->cur_blend_state.src     = GS_BLEND_SRCALPHA;
+	graphics->cur_blend_state.dest    = GS_BLEND_INVSRCALPHA;
+
 	graphics->exports.device_leavecontext(graphics->device);
 
 	gs_init_image_deps();
