@@ -1189,7 +1189,11 @@ static inline bool obs_context_data_init_wrap(
 {
 	assert(context);
 
+	pthread_mutex_init_value(&context->rename_cache_mutex);
 	obs_context_data_free(context);
+
+	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
+		return false;
 
 	context->signals = signal_handler_create();
 	if (!context)
@@ -1201,6 +1205,8 @@ static inline bool obs_context_data_init_wrap(
 
 	context->name     = dup_name(name);
 	context->settings = obs_data_newref(settings);
+
+	da_init(context->rename_cache);
 	return true;
 }
 
@@ -1223,7 +1229,12 @@ void obs_context_data_free(struct obs_context_data *context)
 	proc_handler_destroy(context->procs);
 	obs_data_release(context->settings);
 	obs_context_data_remove(context);
+	pthread_mutex_destroy(&context->rename_cache_mutex);
 	bfree(context->name);
+
+	for (size_t i = 0; i < context->rename_cache.num; i++)
+		bfree(context->rename_cache.array[i]);
+	da_free(context->rename_cache);
 
 	memset(context, 0, sizeof(*context));
 }
@@ -1264,6 +1275,11 @@ void obs_context_data_remove(struct obs_context_data *context)
 void obs_context_data_setname(struct obs_context_data *context,
 		const char *name)
 {
-	bfree(context->name);
+	pthread_mutex_lock(&context->rename_cache_mutex);
+
+	if (context->name)
+		da_push_back(context->rename_cache, &context->name);
 	context->name = dup_name(name);
+
+	pthread_mutex_unlock(&context->rename_cache_mutex);
 }

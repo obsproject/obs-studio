@@ -198,6 +198,9 @@ struct obs_context_data {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	DARRAY(char*)                   rename_cache;
+	pthread_mutex_t                 rename_cache_mutex;
+
 	pthread_mutex_t                 *mutex;
 	struct obs_context_data         *next;
 	struct obs_context_data         **prev_next;
