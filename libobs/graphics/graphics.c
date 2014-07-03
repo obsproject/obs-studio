@@ -912,6 +912,19 @@ void gs_perspective(float angle, float aspect, float near, float far)
 			ymin, ymax, near, far);
 }
 
+void gs_reset_blend_state(void)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
+	if (!graphics->cur_blend_state.enabled)
+		gs_enable_blending(true);
+
+	if (graphics->cur_blend_state.src  != GS_BLEND_SRCALPHA ||
+	    graphics->cur_blend_state.dest != GS_BLEND_INVSRCALPHA)
+		gs_blendfunction(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+}
+
 /* ------------------------------------------------------------------------- */
 
 const char *gs_preprocessor_name(void)
@@ -1341,6 +1354,7 @@ void gs_enable_blending(bool enable)
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
+	graphics->cur_blend_state.enabled = enable;
 	graphics->exports.device_enable_blending(graphics->device, enable);
 }
 
@@ -1382,6 +1396,8 @@ void gs_blendfunction(enum gs_blend_type src, enum gs_blend_type dest)
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
+	graphics->cur_blend_state.src  = src;
+	graphics->cur_blend_state.dest = dest;
 	graphics->exports.device_blendfunction(graphics->device, src, dest);
 }
 

@@ -208,6 +208,12 @@ struct gs_exports {
 #endif
 };
 
+struct blend_state {
+	bool               enabled;
+	enum gs_blend_type src;
+	enum gs_blend_type dest;
+};
+
 struct graphics_subsystem {
 	void                   *module;
 	device_t               device;
@@ -233,4 +239,6 @@ struct graphics_subsystem {
 
 	pthread_mutex_t        mutex;
 	volatile long          ref;
+
+	struct blend_state     cur_blend_state;
 };

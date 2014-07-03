@@ -502,6 +502,8 @@ EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
 
 EXPORT void gs_perspective(float fovy, float aspect, float znear, float zfar);
 
+EXPORT void gs_reset_blend_state(void);
+
 /* -------------------------- */
 /* library-specific functions */
 
