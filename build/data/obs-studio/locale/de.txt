@@ -28,15 +28,15 @@ NoNameEntered="Bitte gebe einen validen Namen ein"
 
 # output connect messages
 Output.ConnectFail.Title="Verbindung fehlgeschalgen"
-Output.ConnectFail.BadPath="Ungültiger Pfad oder Verbindungs URL. Bitte prüfe deine Einstellungen und verifiziere dass diese valid sind."
-Output.ConnectFail.ConnectFailed="Verbindung zum server fehlgeschalgen"
-Output.ConnectFail.InvalidStream="Konnte auf den angegebenen Kanal oder Streamschlüssel nicht zugreifen. Dies kann daran liegen, dass der Schlüssel oder Kanal ungültig ist, oder der Server noch denkt dass du angemeldet bist."
+Output.ConnectFail.BadPath="Ungültiger Pfad oder Verbindungs URL. Bitte prüfe deine Einstellungen und verifiziere, dass diese valid sind."
+Output.ConnectFail.ConnectFailed="Verbindung zum Server fehlgeschlagen"
+Output.ConnectFail.InvalidStream="Konnte auf den angegebenen Kanal oder Streamschlüssel nicht zugreifen. Dies kann daran liegen, dass der Schlüssel oder Kanal ungültig ist, oder der Server noch denkt, dass du angemeldet bist."
 Output.ConnectFail.Error="Ein unerwarteter Fehler ist beim Verbindungsversuch zum Server aufgetreten. Mehr Informationen in der Log Datei."
 Output.ConnectFail.Disconnected="Verbindung zum Server getrennt."
 
 # output recording messages
 Output.BadPath.Title="Ungültiger Dateipfad"
-Output.BadPath.Text="Der Konfigurierte Ausgabepfad ist ungültig. Bitte prüfe deine Einstellungen und verifiziere dass ein gültiger Pfad angegeben wurde."
+Output.BadPath.Text="Der konfigurierte Ausgabepfad ist ungültig. Bitte prüfe deine Einstellungen und verifiziere, dass ein gültiger Pfad angegeben wurde."
 
 # log upload dialog text and messages
 LogReturnDialog="Log Upload erfolgreich"
@@ -57,7 +57,7 @@ Basic.DisplayCapture="Display Aufnahme"
 
 # add scene dialog
 Basic.Main.AddSceneDlg.Title="Szene hinzufügen"
-Basic.Main.AddSceneDlg.Text="Bitte gebe einen Namen für die Szene ein"
+Basic.Main.AddSceneDlg.Text="Bitte gib einen Namen für die Szene ein"
 
 # add scene suggested name
 Basic.Main.DefaultSceneName.Text="Szene %1"
@@ -93,7 +93,7 @@ Basic.MainMenu.Help.Logs.UploadCurrentLog="Upload A&ktuelle Log Datei"
 Basic.MainMenu.Help.Logs.UploadLastLog="Upload Le&tzte Log Datei"
 
 # basic mode settings dialog
-Basic.Settings.ProgramRestart="Dass Programm muss neu gestartet werden, damit die Änderungen wirksam werden."
+Basic.Settings.ProgramRestart="Das Programm muss neu gestartet werden, damit die Änderungen wirksam werden."
 Basic.Settings.ConfirmTitle="Änderungen bestätigen"
 Basic.Settings.Confirm="Du hast ungespeicherte Änderungen. Änderungen speichern?"
 
@@ -120,7 +120,7 @@ Basic.Settings.Video.Adapter="Video Adapter:"
 Basic.Settings.Video.BaseResolution="Basisauflösung:"
 Basic.Settings.Video.ScaledResolution="Skalierte Auflösung:"
 Basic.Settings.Video.DownscaleFilter="Skalierungs Filter:"
-Basic.Settings.Video.DisableAeroWindows="Aero deaktivieren (nu Windows)"
+Basic.Settings.Video.DisableAeroWindows="Aero deaktivieren (nur Windows)"
 Basic.Settings.Video.FPS="FPS:"
 Basic.Settings.Video.FPSCommon="Übliche FPS Werte"
 Basic.Settings.Video.FPSInteger="Ganzzahl FPS Wert"
@@ -129,7 +129,7 @@ Basic.Settings.Video.Numerator="Zähler:"
 Basic.Settings.Video.Denominator="Nenner:"
 Basic.Settings.Video.Renderer="Renderer:"
 Basic.Settings.Video.InvalidResolution="Ungültige Auflösung. Muss sein [Breite]x[Höhe] (z.B. 1920x1080)"
-Basic.Settings.Video.CurrentlyActive="Videoausgabe ist derzeit aktiv. Bitte schalte alle ausgaben ab um die Videoeinstellungen zu ändern."
+Basic.Settings.Video.CurrentlyActive="Videoausgabe ist derzeit aktiv. Bitte schalte alle Ausgaben ab um die Videoeinstellungen zu ändern."
 
 # basic mode 'audio' settings
 Basic.Settings.Audio="Audio"
