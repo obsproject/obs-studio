@@ -1188,10 +1188,9 @@ static inline bool obs_context_data_init_wrap(
 		const char              *name)
 {
 	assert(context);
+	memset(context, 0, sizeof(*context));
 
 	pthread_mutex_init_value(&context->rename_cache_mutex);
-	obs_context_data_free(context);
-
 	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
 		return false;
 
@@ -1205,8 +1204,6 @@ static inline bool obs_context_data_init_wrap(
 
 	context->name     = dup_name(name);
 	context->settings = obs_data_newref(settings);
-
-	da_init(context->rename_cache);
 	return true;
 }
 
