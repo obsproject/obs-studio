@@ -275,6 +275,8 @@ static void xshm_video_render(void *vptr, effect_t effect)
 
 	if (data->show_cursor)
 		xcursor_render(data->cursor);
+
+	gs_reset_blend_state();
 }
 
 /**

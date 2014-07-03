@@ -442,6 +442,8 @@ void XCompcapMain::render(effect_t effect)
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);
+
+	gs_reset_blend_state();
 }
 
 uint32_t XCompcapMain::width()

@@ -105,7 +105,6 @@ void xcursor_render(xcursor_t *data) {
 	gs_enable_blending(True);
 	gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	gs_draw_sprite(data->tex, 0, 0, 0);
-	gs_enable_blending(False);
 
 	gs_matrix_pop();
 }
