@@ -1776,8 +1776,8 @@ void OBSBasic::on_streamButton_clicked()
 		if (!reconnect)
 			maxRetries = 0;
 
-		obs_output_set_reconnect_settings(streamOutput, retryDelay,
-				maxRetries);
+		obs_output_set_reconnect_settings(streamOutput, maxRetries,
+				retryDelay);
 
 		if (obs_output_start(streamOutput)) {
 			activeRefs++;
