@@ -170,8 +170,11 @@ Basic.Settings.Output.Mode="Output Mode"
 Basic.Settings.Output.Mode.Simple="Simple (Stream and/or record)"
 Basic.Settings.Output.Mode.Advanced="Advanced (Custom output type)"
 Basic.Settings.Output.Simple.SavePath="FLV Recording Path"
-Basic.Settings.Output.Simple.VideoBitrate="Video Bitrate"
-Basic.Settings.output.Simple.AudioBitrate="Audio Bitrate"
+Basic.Settings.Output.VideoBitrate="Video Bitrate"
+Basic.Settings.Output.AudioBitrate="Audio Bitrate"
+Basic.Settings.Output.Reconnect="Automatically Reconnect"
+Basic.Settings.Output.RetryDelay="Retry Delay (seconds)"
+Basic.Settings.Output.MaxRetries="Maximum Retries"
 
 # basic mode 'video' settings
 Basic.Settings.Video="Video"

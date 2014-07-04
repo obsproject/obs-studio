@@ -402,7 +402,7 @@
                    <item row="1" column="0">
                     <widget class="QLabel" name="label_19">
                      <property name="text">
-                      <string>Basic.Settings.Output.Simple.VideoBitrate</string>
+                      <string>Basic.Settings.Output.VideoBitrate</string>
                      </property>
                     </widget>
                    </item>
@@ -422,7 +422,7 @@
                    <item row="2" column="0">
                     <widget class="QLabel" name="label_20">
                      <property name="text">
-                      <string>Basic.Settings.Output.Simple.AudioBitrate</string>
+                      <string>Basic.Settings.Output.AudioBitrate</string>
                      </property>
                     </widget>
                    </item>
@@ -471,6 +471,47 @@
                        <string>320</string>
                       </property>
                      </item>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="simpleOutReconnect">
+                     <property name="text">
+                      <string>Basic.Settings.Output.Reconnect</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QSpinBox" name="simpleOutRetryDelay">
+                     <property name="maximum">
+                      <number>30</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QSpinBox" name="simpleOutMaxRetries">
+                     <property name="minimum">
+                      <number>1</number>
+                     </property>
+                     <property name="maximum">
+                      <number>10000</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Basic.Settings.Output.RetryDelay</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QLabel" name="label_22">
+                     <property name="text">
+                      <string>Basic.Settings.Output.MaxRetries</string>
+                     </property>
                     </widget>
                    </item>
                   </layout>
@@ -1021,12 +1062,44 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>586</x>
+     <y>38</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>401</x>
+     <y>79</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutReconnect</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>simpleOutRetryDelay</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>422</x>
+     <y>168</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>188</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutReconnect</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>simpleOutMaxRetries</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>503</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>501</x>
+     <y>209</y>
     </hint>
    </hints>
   </connection>

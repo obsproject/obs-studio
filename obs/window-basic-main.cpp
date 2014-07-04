@@ -391,6 +391,11 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 128);
+	config_set_default_bool  (basicConfig, "SimpleOutput", "Reconnect",
+			true);
+	config_set_default_uint  (basicConfig, "SimpleOutput", "RetryDelay", 2);
+	config_set_default_uint  (basicConfig, "SimpleOutput", "MaxRetries",
+			20);
 
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
@@ -1757,6 +1762,18 @@ void OBSBasic::on_streamButton_clicked()
 		obs_output_set_video_encoder(streamOutput, x264);
 		obs_output_set_audio_encoder(streamOutput, aac);
 		obs_output_set_service(streamOutput, service);
+
+		bool reconnect = config_get_bool(basicConfig, "SimpleOutput",
+				"Reconnect");
+		int retryDelay = config_get_uint(basicConfig, "SimpleOutput",
+				"RetryDelay");
+		int maxRetries = config_get_uint(basicConfig, "SimpleOutput",
+				"MaxRetries");
+		if (!reconnect)
+			maxRetries = 0;
+
+		obs_output_set_reconnect_settings(streamOutput, retryDelay,
+				maxRetries);
 
 		if (obs_output_start(streamOutput)) {
 			activeRefs++;

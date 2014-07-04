@@ -110,6 +110,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
 #define EDIT_CHANGED    SIGNAL(textChanged(const QString &))
 #define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
+#define CHECK_CHANGED   SIGNAL(clicked(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
@@ -146,6 +147,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputABitrate, COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutReconnect,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRetryDelay,  SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutMaxRetries,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
@@ -189,6 +193,14 @@ void OBSBasicSettings::SaveComboData(QComboBox *widget, const char *section,
 		config_set_string(main->Config(), section, value,
 				QT_TO_UTF8(str));
 	}
+}
+
+void OBSBasicSettings::SaveCheckBox(QCheckBox *widget, const char *section,
+		const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_bool(main->Config(), section, value,
+				widget->isChecked());
 }
 
 void OBSBasicSettings::SaveEdit(QLineEdit *widget, const char *section,
@@ -423,12 +435,22 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"VBitrate");
 	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"ABitrate");
+	bool reconnect = config_get_bool(main->Config(), "SimpleOutput",
+			"Reconnect");
+	int retryDelay = config_get_uint(main->Config(), "SimpleOutput",
+			"RetryDelay");
+	int maxRetries = config_get_uint(main->Config(), "SimpleOutput",
+			"MaxRetries");
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
 
 	SetComboByName(ui->simpleOutputABitrate,
 			std::to_string(audioBitrate).c_str());
+
+	ui->simpleOutReconnect->setChecked(reconnect);
+	ui->simpleOutRetryDelay->setValue(retryDelay);
+	ui->simpleOutMaxRetries->setValue(maxRetries);
 }
 
 void OBSBasicSettings::LoadOutputSettings()
@@ -598,6 +620,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->simpleOutputVBitrate, "SimpleOutput", "VBitrate");
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
+	SaveCheckBox(ui->simpleOutReconnect, "SimpleOutput", "Reconnect");
+	SaveSpinBox(ui->simpleOutRetryDelay, "SimpleOutput", "RetryDelay");
+	SaveSpinBox(ui->simpleOutMaxRetries, "SimpleOutput", "MaxRetries");
 }
 
 void OBSBasicSettings::SaveAudioSettings()

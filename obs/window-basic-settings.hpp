@@ -51,6 +51,8 @@ private:
 			const char *value);
 	void SaveComboData(QComboBox *widget, const char *section,
 			const char *value);
+	void SaveCheckBox(QCheckBox *widget, const char *section,
+			const char *value);
 	void SaveEdit(QLineEdit *widget, const char *section,
 			const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
