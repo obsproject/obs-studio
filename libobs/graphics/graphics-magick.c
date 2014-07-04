@@ -1,5 +1,7 @@
 #include "graphics.h"
 
+#define MAGICKCORE_QUANTUM_DEPTH 16
+#define MAGICKCORE_HDRI_ENABLE   0
 #include <magick/MagickCore.h>
 
 void gs_init_image_deps()
