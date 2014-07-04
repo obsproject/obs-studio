@@ -1360,6 +1360,10 @@ void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 		return;
 
 	OBSSceneItem item = current->data(Qt::UserRole).value<OBSSceneItem>();
+	obs_source_t source = obs_sceneitem_getsource(item);
+	if ((obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO) == 0)
+		return;
+
 	obs_scene_enum_items(GetCurrentScene(), select_one, &item);
 
 	UNUSED_PARAMETER(prev);

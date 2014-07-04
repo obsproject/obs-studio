@@ -47,12 +47,22 @@ struct SceneFindData {
 	{}
 };
 
+static bool SceneItemHasVideo(obs_sceneitem_t item)
+{
+	obs_source_t source = obs_sceneitem_getsource(item);
+	uint32_t flags = obs_source_get_output_flags(source);
+	return (flags & OBS_SOURCE_VIDEO) != 0;
+}
+
 static bool FindItemAtPos(obs_scene_t scene, obs_sceneitem_t item, void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
 	matrix4       transform;
 	vec3          transformedPos;
 	vec3          pos3;
+
+	if (!SceneItemHasVideo(item))
+		return true;
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
@@ -154,6 +164,9 @@ static bool CheckItemSelected(obs_scene_t scene, obs_sceneitem_t item,
 	matrix4       transform;
 	vec3          transformedPos;
 	vec3          pos3;
+
+	if (!SceneItemHasVideo(item))
+		return true;
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
