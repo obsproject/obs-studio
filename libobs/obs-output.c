@@ -769,7 +769,8 @@ void obs_output_signal_stop(obs_output_t output, int code)
 		return;
 
 	obs_output_end_data_capture(output);
-	if (code == OBS_OUTPUT_DISCONNECTED)
+	if ((output->reconnecting && code != OBS_OUTPUT_SUCCESS) ||
+	    code == OBS_OUTPUT_DISCONNECTED)
 		output_reconnect(output);
 	else
 		signal_stop(output, code);
