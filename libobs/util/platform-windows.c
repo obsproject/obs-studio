@@ -86,6 +86,62 @@ void os_dlclose(void *module)
 	FreeLibrary(module);
 }
 
+union time_data {
+	FILETIME           ft;
+	unsigned long long val;
+};
+
+struct os_cpu_usage_info {
+	union time_data last_time, last_sys_time, last_user_time;
+	DWORD core_count;
+};
+
+os_cpu_usage_info_t os_cpu_usage_info_start(void)
+{
+	struct os_cpu_usage_info *info = bzalloc(sizeof(*info));
+	SYSTEM_INFO           si;
+	FILETIME              dummy;
+
+	GetSystemInfo(&si);
+	GetSystemTimeAsFileTime(&info->last_time.ft);
+	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy,
+			&info->last_sys_time.ft, &info->last_user_time.ft);
+	info->core_count = si.dwNumberOfProcessors;
+
+	return info;
+}
+
+double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+{
+	union time_data cur_time, cur_sys_time, cur_user_time;
+	FILETIME        dummy;
+	double          percent;
+
+	if (!info)
+		return 0.0;
+
+	GetSystemTimeAsFileTime(&cur_time.ft);
+	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy,
+			&cur_sys_time.ft, &cur_user_time.ft);
+
+	percent = (double)(cur_sys_time.val - info->last_sys_time.val +
+		(cur_user_time.val - info->last_user_time.val));
+	percent /= (double)(cur_time.val - info->last_time.val);
+	percent /= (double)info->core_count;
+
+	info->last_time.val      = cur_time.val;
+	info->last_sys_time.val  = cur_sys_time.val;
+	info->last_user_time.val = cur_user_time.val;
+
+	return percent * 100.0;
+}
+
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+{
+	if (info)
+		bfree(info);
+}
+
 bool os_sleepto_ns(uint64_t time_target)
 {
 	uint64_t t = os_gettime_ns();
