@@ -95,7 +95,7 @@ Basic.TransformWindow.Alignment.BottomCenter="Nederst i midten"
 Basic.TransformWindow.Alignment.BottomRight="Nederst til høyre"
 
 Basic.TransformWindow.BoundsType.None="Ingen avgrensning"
-Basic.TransformWindow.BoundsType.MaxOnly="Maximum size only"
+Basic.TransformWindow.BoundsType.MaxOnly="Kun maksimal størrelse"
 Basic.TransformWindow.BoundsType.ScaleInner="Skalér etter innsiden av avgrensningen"
 Basic.TransformWindow.BoundsType.ScaleOuter="Skalér etter utkanten av avgrensningen"
 Basic.TransformWindow.BoundsType.ScaleToWidth="Skalér etter bredden av avgrensningen"
