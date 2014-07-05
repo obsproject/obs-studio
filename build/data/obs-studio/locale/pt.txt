@@ -1,0 +1,204 @@
+# Language and language region of this file
+Language="Português"
+Region="Portugal"
+
+# commonly shared locale
+OK="OK"
+Apply="Aplicar"
+Cancel="Cancelar"
+Yes="Sim"
+No="Não"
+Add="Adicionar"
+Remove="Remover"
+Rename="Renomear"
+Properties="Propriedades"
+MoveUp="Mover para Cima"
+MoveDown="Mover para Baixo"
+Settings="Definições"
+Exit="Sair"
+Mixer="Misturador"
+Browse="Localizar"
+Mono="Mono"
+Stereo="Estéreo"
+
+# "name already exists" dialog box
+NameExists.Title="O nome já existe"
+NameExists.Text="O nome já encontra-se em utilização."
+
+NoNameEntered="Por favor, introduza um nome válido"
+
+# confirm delete dialog box
+ConfirmRemove.Title="Comfirmar Remover"
+ConfirmRemove.Text="Tem a certeza que quer remover '$1'?"
+
+# output connect messages
+Output.ConnectFail.Title="Falha ao ligar"
+Output.ConnectFail.BadPath="Caminho inválido ou erro no endereço. Por favor verifiique as definições e confirme que são válidas."
+Output.ConnectFail.ConnectFailed="Falhou a ligação ao servidor"
+Output.ConnectFail.InvalidStream="Sem acesso ao canal ou chave de stream. Pode ser porque a chave ou o canal é inválido, ou porque o servidor pensa que voçê ainda encontra-se ligado."
+Output.ConnectFail.Error="Ocurreu um erro inesperado ao ligar-se ao servidor. Mais informação no ficheiro Log."
+Output.ConnectFail.Disconnected="Desligado do servidor."
+
+# output recording messages
+Output.BadPath.Title="Caminho de Ficheiro de Gravação Inválido"
+Output.BadPath.Text="O caminho de ficheiro de gravação definido é inválido. Por favor verifique as definições e confirme que um caminho válido foi introduzido."
+
+# log upload dialog text and messages
+LogReturnDialog="Envio de Log Sucedido"
+LogReturnDialog.CopyURL="Copiar endereçoCopy URL"
+LogReturnDialog.ErrorUploadingLog="Erro no envio de ficheiro Log"
+
+# audio device names
+Basic.DesktopDevice1="Desktop Audio"
+Basic.DesktopDevice2="Desktop Audio 2"
+Basic.AuxDevice1="Mic/Aux"
+Basic.AuxDevice2="Mic/Aux 2"
+Basic.AuxDevice3="Mic/Aux 3"
+Basic.AuxDevice4="Mic/Aux 4"
+
+# startup scene/capture
+Basic.Scene="Cena"
+Basic.DisplayCapture="Captura de Ecrã"
+
+# add scene dialog
+Basic.Main.AddSceneDlg.Title="Adicionar Cena"
+Basic.Main.AddSceneDlg.Text="Por favor introduza o nome da cena"
+
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Cena %1"
+
+# add source dialog
+Basic.SourceSelect.CreateNew="Criar Novo"
+Basic.SourceSelect.AddExisting="Adicionar Existente"
+
+# properties window
+Basic.PropertiesWindow.AutoSelectFormat="%1 (unsupported; autoselect: %2)"
+
+# transform window
+Basic.TransformWindow="Transformação de Elemento de Cena"
+Basic.TransformWindow.Position="Posição"
+Basic.TransformWindow.Rotation="Rotação"
+Basic.TransformWindow.Size="Tamanho"
+Basic.TransformWindow.Alignment="Alinhamento da Posição"
+Basic.TransformWindow.BoundsType="Tipo da Caixa de Rebordo"
+Basic.TransformWindow.BoundsAlignment="Alinhamento da Caixa de Rebordo"
+Basic.TransformWindow.Bounds="Tamanho da Caixa de Rebordo"
+
+Basic.TransformWindow.Alignment.TopLeft="Superior Esquerdo"
+Basic.TransformWindow.Alignment.TopCenter="Superior Central"
+Basic.TransformWindow.Alignment.TopRight="Superior Direito"
+Basic.TransformWindow.Alignment.CenterLeft="Centro Esquerda"
+Basic.TransformWindow.Alignment.Center="Centro"
+Basic.TransformWindow.Alignment.CenterRight="Centro Direito"
+Basic.TransformWindow.Alignment.BottomLeft="Inferior Esquerdo"
+Basic.TransformWindow.Alignment.BottomCenter="Inferior Centro"
+Basic.TransformWindow.Alignment.BottomRight="Inferior Direito"
+
+Basic.TransformWindow.BoundsType.None="Sem Bordas"
+Basic.TransformWindow.BoundsType.MaxOnly="Apenas Tamanho Máximo"
+Basic.TransformWindow.BoundsType.ScaleInner="Escalar até às bordas internas"
+Basic.TransformWindow.BoundsType.ScaleOuter="Escalar até às bordas externas"
+Basic.TransformWindow.BoundsType.ScaleToWidth="Escalar até à largura das bordas"
+Basic.TransformWindow.BoundsType.ScaleToHeight="Escalar até à altura das bordas"
+Basic.TransformWindow.BoundsType.Stretch="Esticar até às bordas"
+
+# no scene warning
+Basic.Main.AddSourceHelp.Title="Não é Possível Adicionar Fonte"
+Basic.Main.AddSourceHelp.Text="Precisa de pelo menos uma cena para adicionar uma fonte."
+
+# basic mode main window
+Basic.Main.Scenes="Cenas"
+Basic.Main.Sources="Fontes"
+Basic.Main.Connecting="A ligar..."
+Basic.Main.StartRecording="Começar Gravação"
+Basic.Main.StartStreaming="Começar Stream"
+Basic.Main.StopRecording="Parar Gravação"
+Basic.Main.StopStreaming="Parar Stream"
+
+# basic mode file menu
+Basic.MainMenu.File="&Ficheiro"
+Basic.MainMenu.File.Export="&Exportar"
+Basic.MainMenu.File.Import="&Importar"
+Basic.MainMenu.File.Settings="&Definições"
+Basic.MainMenu.File.Exit="&Sair"
+
+# basic mode edit menu
+Basic.MainMenu.Edit="&Editar"
+Basic.MainMenu.Edit.Undo="Desfazer"
+Basic.MainMenu.Edit.Redo="&Refazer"
+Basic.MainMenu.Edit.UndoAction="Desfazer $1"
+Basic.MainMenu.Edit.RedoAction="&Refazer $1"
+Basic.MainMenu.Edit.Transform="&Transformar"
+Basic.MainMenu.Edit.Transform.EditTransform="&Editar Transformação..."
+Basic.MainMenu.Edit.Transform.ResetTransform="&Reset Transform"
+Basic.MainMenu.Edit.Transform.Rotate90CW="Rodar 90 graus CW"
+Basic.MainMenu.Edit.Transform.Rotate90CCW="Rodar 90 graus CCW"
+Basic.MainMenu.Edit.Transform.Rotate180="Rodar 180 graus"
+Basic.MainMenu.Edit.Transform.FlipHorizontal="Inverter &Horizontalmente"
+Basic.MainMenu.Edit.Transform.FlipVertical="Inverter &Verticalmente"
+Basic.MainMenu.Edit.Transform.FitToScreen="Escalar ao ecrã"
+Basic.MainMenu.Edit.Transform.StretchToScreen="E&sticar ao ecrã"
+Basic.MainMenu.Edit.Transform.CenterToScreen="&Centrar ao ecrã"
+Basic.MainMenu.Edit.Order="&Ordem"
+Basic.MainMenu.Edit.Order.MoveUp="Mover para Cima"
+Basic.MainMenu.Edit.Order.MoveDown="Mover para Baixo"
+Basic.MainMenu.Edit.Order.MoveToTop="Mover para p &Topo"
+Basic.MainMenu.Edit.Order.MoveToBottom="Mover para o Fundo"
+
+# basic mode help menu
+Basic.MainMenu.Help="&Ajuda"
+Basic.MainMenu.Help.Logs="Ficeiros de &Log"
+Basic.MainMenu.Help.Logs.UploadCurrentLog="Enviar Ficheiro &Currente de Log"
+Basic.MainMenu.Help.Logs.UploadLastLog="Enviar Ultímo Ficheiro de &Log"
+
+# basic mode settings dialog
+Basic.Settings.ProgramRestart="O programa necessita de ser reinicializado para estas alterações terem efeito."
+Basic.Settings.ConfirmTitle="Confirmar Alterações"
+Basic.Settings.Confirm="Voçê tem alterações não salvadas. Deseja salvar as alterações?"
+
+# basic mode 'general' settings
+Basic.Settings.General="Geral"
+Basic.Settings.General.Language="Lingua:"
+
+# basic mode 'stream' settings
+Basic.Settings.Stream="Stream"
+Basic.Settings.Stream.StreamType="Tipo de Stream"
+
+# basic mode 'output' settings
+Basic.Settings.Output="Saída Output"
+Basic.Settings.Output.Mode="Modo de Saída"
+Basic.Settings.Output.Mode.Simple="Simples (Stream e/ou gravação)"
+Basic.Settings.Output.Mode.Advanced="Avançado (Definições manuais)"
+Basic.Settings.Output.Simple.SavePath="Caminho de Gravação FLV"
+Basic.Settings.Output.VideoBitrate="Bitrate de Vídeo"
+Basic.Settings.Output.AudioBitrate="Bitrate de Áudio"
+Basic.Settings.Output.Reconnect="Religar Automaticamente"
+Basic.Settings.Output.RetryDelay="Atraso de Tentatica de Religação (segundos)"
+Basic.Settings.Output.MaxRetries="Número Máximo de Tentativas de Religação"
+
+# basic mode 'video' settings
+Basic.Settings.Video="Vídeo"
+Basic.Settings.Video.Adapter="Adaptador de Vídeo:"
+Basic.Settings.Video.BaseResolution="Resolução de Captura:"
+Basic.Settings.Video.ScaledResolution="Resolução de Saída:"
+Basic.Settings.Video.DownscaleFilter="Filtro de Escalamento:"
+Basic.Settings.Video.DisableAeroWindows="Desactivar Aero (apenas no Windows)"
+Basic.Settings.Video.FPS="FPS:"
+Basic.Settings.Video.FPSCommon="Valor de FPS Comum"
+Basic.Settings.Video.FPSInteger="Valor de FPS Íntegro"
+Basic.Settings.Video.FPSFraction="Valor de FPS Fracional"
+Basic.Settings.Video.Numerator="Numerador:"
+Basic.Settings.Video.Denominator="Demoninador:"
+Basic.Settings.Video.Renderer="Renderizador:"
+Basic.Settings.Video.InvalidResolution="Resolução Inválida, Tem de ser [largura]x[altura] (ex. 1920x1080)"
+Basic.Settings.Video.CurrentlyActive="A Saída de Vídeo encontra-se activa. Por favor desligue a saída de vídeo para mudar as definições de vídeo."
+
+# basic mode 'audio' settings
+Basic.Settings.Audio="Áudio"
+Basic.Settings.Audio.SampleRate="Frequência de Samplagem"
+Basic.Settings.Audio.Channels="Canias"
+Basic.Settings.Audio.DesktopDevice="Desktop Audio Device"
+Basic.Settings.Audio.DesktopDevice2="Desktop Audio Device 2"
+Basic.Settings.Audio.AuxDevice="Mic/Auxiliary Audio Device"
+Basic.Settings.Audio.AuxDevice2="Mic/Auxiliary Audio Device 2"
+Basic.Settings.Audio.AuxDevice3="Mic/Auxiliary Audio Device 3"
