@@ -100,12 +100,6 @@ struct os_cpu_usage_info {
 	int     core_count;
 };
 
-static inline void convert_time_value(struct timeval *dst, time_value_t *src)
-{
-	dst->tv_sec  = src->seconds;
-	dst->tv_usec = src->microseconds;
-}
-
 static inline void add_time_value(time_value_t *dst, time_value_t *a,
 		time_value_t *b)
 {
