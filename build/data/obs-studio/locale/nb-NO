@@ -1,0 +1,204 @@
+# Language and language region of this file
+Language="Norwegian (Bokmål)"
+Region="Norway"
+
+# commonly shared locale
+OK="OK"
+Apply="Bruk"
+Cancel="Avbryt"
+Yes="Ja"
+No="Nei"
+Add="Legg til"
+Remove="Fjern"
+Rename="Gi nytt navn"
+Properties="Egenskaper"
+MoveUp="Flytt opp"
+MoveDown="Flytt ned"
+Settings="Innstillinger"
+Exit="Avslutt"
+Mixer="Mikser"
+Browse="Bla gjennom"
+Mono="Mono"
+Stereo="Stereo"
+
+# "name already exists" dialog box
+NameExists.Title="Navn Eksisterer Allerede"
+NameExists.Text="Dette navnet er allerede i bruk."
+
+NoNameEntered="Vennligst oppgi et gyldig navn."
+
+# confirm delete dialog box
+ConfirmRemove.Title="Bekreft Fjerning"
+ConfirmRemove.Text="Er du sikker på at du vil fjerne '$1'?"
+
+# output connect messages
+Output.ConnectFail.Title="Tilkobling Misklytes"
+Output.ConnectFail.BadPath="Ugyldig filbane eller tilkoblings URL. Vennligst bekreft at instillingene dine er riktige."
+Output.ConnectFail.ConnectFailed="Kunne ikke koble til server."
+Output.ConnectFail.InvalidStream="Fikk ikke adgang til den opgitte kanalen eller strømnøkkelen. Årsaken kan være ugyldig nøkkel/kanalnavn eller at serveren tror du fortsatt er pålogget."
+Output.ConnectFail.Error="En uventet feil oppstod ved tilkobling til serveren. Detaljert informasjon kan du finne i loggfila."
+Output.ConnectFail.Disconnected="Frakoblet serveren."
+
+# output recording messages
+Output.BadPath.Title="Ugyldig Filbane"
+Output.BadPath.Text="Den oppgitte fillagringsbanen er ugyldig. Vennligst kontrollér instillingene dine og bekreft at filbanen er gyldig."
+
+# log upload dialog text and messages
+LogReturnDialog="Vellykket Loggopplasting"
+LogReturnDialog.CopyURL="Kopiér URL"
+LogReturnDialog.ErrorUploadingLog="Feil ved opplasting av loggfil."
+
+# audio device names
+Basic.DesktopDevice1="Skrivebordslyd"
+Basic.DesktopDevice2="Skrivebordslyd 2"
+Basic.AuxDevice1="Mikrofon/Aux"
+Basic.AuxDevice2="Mikrofon/Aux 2"
+Basic.AuxDevice3="Mikrofon/Aux 3"
+Basic.AuxDevice4="Mikrofon/Aux 4"
+
+# startup scene/capture
+Basic.Scene="Scene"
+Basic.DisplayCapture="Skjerm Opptak"
+
+# add scene dialog
+Basic.Main.AddSceneDlg.Title="Ny Scene"
+Basic.Main.AddSceneDlg.Text="Vennligst oppgi navnet til scenen."
+
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Scene %1"
+
+# add source dialog
+Basic.SourceSelect.CreateNew="Lag ny"
+Basic.SourceSelect.AddExisting="Legg til eksisterende"
+
+# properties window
+Basic.PropertiesWindow.AutoSelectFormat="%1 (ikke støttet; auto-velg: %2)"
+
+# transform window
+Basic.TransformWindow="Omform Sceneelemnt"
+Basic.TransformWindow.Position="Posisjon"
+Basic.TransformWindow.Rotation="Rotasjon"
+Basic.TransformWindow.Size="Størrelse"
+Basic.TransformWindow.Alignment="Posisjonsoppstilling"
+Basic.TransformWindow.BoundsType="Innholdsavgrensningstype"
+Basic.TransformWindow.BoundsAlignment="Oppstilling i innholdsavgrensning"
+Basic.TransformWindow.Bounds="Innholdsavgrensningsstørrelse"
+
+Basic.TransformWindow.Alignment.TopLeft="Øverst til venstre"
+Basic.TransformWindow.Alignment.TopCenter="Øverst i midten"
+Basic.TransformWindow.Alignment.TopRight="Øverst til høyre"
+Basic.TransformWindow.Alignment.CenterLeft="I midten til venstre"
+Basic.TransformWindow.Alignment.Center="I midten"
+Basic.TransformWindow.Alignment.CenterRight="I midten til høyre"
+Basic.TransformWindow.Alignment.BottomLeft="Nederst til venstre"
+Basic.TransformWindow.Alignment.BottomCenter="Nederst i midten"
+Basic.TransformWindow.Alignment.BottomRight="Nederst til høyre"
+
+Basic.TransformWindow.BoundsType.None="Ingen avgrensning"
+Basic.TransformWindow.BoundsType.MaxOnly="Maximum size only"
+Basic.TransformWindow.BoundsType.ScaleInner="Skalér etter innsiden av avgrensningen"
+Basic.TransformWindow.BoundsType.ScaleOuter="Skalér etter utkanten av avgrensningen"
+Basic.TransformWindow.BoundsType.ScaleToWidth="Skalér etter bredden av avgrensningen"
+Basic.TransformWindow.BoundsType.ScaleToHeight="Skalér etter høyden av avgrensningen"
+Basic.TransformWindow.BoundsType.Stretch="Strekk etter avgrensningen"
+
+# no scene warning
+Basic.Main.AddSourceHelp.Title="Kan ikke legge til kilde"
+Basic.Main.AddSourceHelp.Text="Du må ha minst én scene for å legge til en kilde."
+
+# basic mode main window
+Basic.Main.Scenes="Scener"
+Basic.Main.Sources="Kilder"
+Basic.Main.Connecting="Kobler til..."
+Basic.Main.StartRecording="Start Opptak"
+Basic.Main.StartStreaming="Start Strømming"
+Basic.Main.StopRecording="Stopp Opptak"
+Basic.Main.StopStreaming="Stopp Strømming"
+
+# basic mode file menu
+Basic.MainMenu.File="&Fil"
+Basic.MainMenu.File.Export="&Eksportér"
+Basic.MainMenu.File.Import="&Importér"
+Basic.MainMenu.File.Settings="Inn&stillinger"
+Basic.MainMenu.File.Exit="&Avslutt"
+
+# basic mode edit menu
+Basic.MainMenu.Edit="&Redigér"
+Basic.MainMenu.Edit.Undo="&Angre"
+Basic.MainMenu.Edit.Redo="&Gjør om"
+Basic.MainMenu.Edit.UndoAction="&Angre $1"
+Basic.MainMenu.Edit.RedoAction="&Gjør om $1"
+Basic.MainMenu.Edit.Transform="&Omform"
+Basic.MainMenu.Edit.Transform.EditTransform="&Redigér omforming..."
+Basic.MainMenu.Edit.Transform.ResetTransform="&Angre omforming"
+Basic.MainMenu.Edit.Transform.Rotate90CW="Rotér 90 grader med klokka"
+Basic.MainMenu.Edit.Transform.Rotate90CCW="Rotér 90 grader mot klokka"
+Basic.MainMenu.Edit.Transform.Rotate180="Rotér 180 grader"
+Basic.MainMenu.Edit.Transform.FlipHorizontal="Vend &horisontalt"
+Basic.MainMenu.Edit.Transform.FlipVertical="Vend &vertikalt"
+Basic.MainMenu.Edit.Transform.FitToScreen="&Tilpass skjerm"
+Basic.MainMenu.Edit.Transform.StretchToScreen="&Strekk til skjerm"
+Basic.MainMenu.Edit.Transform.CenterToScreen="&Midstill på skjermen"
+Basic.MainMenu.Edit.Order="A&rrangér"
+Basic.MainMenu.Edit.Order.MoveUp="Flytt &opp"
+Basic.MainMenu.Edit.Order.MoveDown="Flytt &ned"
+Basic.MainMenu.Edit.Order.MoveToTop="Legg på &toppen"
+Basic.MainMenu.Edit.Order.MoveToBottom="Legg på &bunnen"
+
+# basic mode help menu
+Basic.MainMenu.Help="&Hjelp"
+Basic.MainMenu.Help.Logs="&Loggfiler"
+Basic.MainMenu.Help.Logs.UploadCurrentLog="Last opp &nåværende loggfil"
+Basic.MainMenu.Help.Logs.UploadLastLog="Last opp &siste loggfil"
+
+# basic mode settings dialog
+Basic.Settings.ProgramRestart="Programmet må startes på nytt for at disse instillingene skal tre i kraft."
+Basic.Settings.ConfirmTitle="Bekreft endringer"
+Basic.Settings.Confirm="Du har endringer som ikke er lagret. Vil du lagre?"
+
+# basic mode 'general' settings
+Basic.Settings.General="Generelt"
+Basic.Settings.General.Language="Språk:"
+
+# basic mode 'stream' settings
+Basic.Settings.Stream="Strøm"
+Basic.Settings.Stream.StreamType="Strømmetype"
+
+# basic mode 'output' settings
+Basic.Settings.Output="Innspilling"
+Basic.Settings.Output.Mode="Innspillingsmodus"
+Basic.Settings.Output.Mode.Simple="Lett (Strøm og/eller ta opp)"
+Basic.Settings.Output.Mode.Advanced="Avansert (Tilpasset inspillingstyper)"
+Basic.Settings.Output.Simple.SavePath="FLV Opptaksbane"
+Basic.Settings.Output.VideoBitrate="Bildeoverføringshastighet"
+Basic.Settings.Output.AudioBitrate="Lydoverføringshastighet"
+Basic.Settings.Output.Reconnect="Koble til automatisk"
+Basic.Settings.Output.RetryDelay="Opphold mellom tilkoblingsforsøk (sekunder)"
+Basic.Settings.Output.MaxRetries="Høyst antall tilkoblingsforsøk"
+
+# basic mode 'video' settings
+Basic.Settings.Video="Bilde"
+Basic.Settings.Video.Adapter="Bildeadapter:"
+Basic.Settings.Video.BaseResolution="Grunnoppløsning:"
+Basic.Settings.Video.ScaledResolution="Skalért oppløsning:"
+Basic.Settings.Video.DownscaleFilter="Nedskaleringsfilter:"
+Basic.Settings.Video.DisableAeroWindows="Deaktiver Aero (kun Windows)"
+Basic.Settings.Video.FPS="FPS:"
+Basic.Settings.Video.FPSCommon="FPS samleverdi"
+Basic.Settings.Video.FPSInteger="FPS heltallverdi"
+Basic.Settings.Video.FPSFraction="FPS brøkverdi"
+Basic.Settings.Video.Numerator="Teller:"
+Basic.Settings.Video.Denominator="Nevner:"
+Basic.Settings.Video.Renderer="Renderer:"
+Basic.Settings.Video.InvalidResolution="Ugyldig oppløsningsverdi. Må være [bredde]x[høyde] (f.eks. 1920x1080)"
+Basic.Settings.Video.CurrentlyActive="Bildeinnspilling er aktiv. Vennligst skru av alle innspillinger for å endre bildeinstillingene"
+
+# basic mode 'audio' settings
+Basic.Settings.Audio="Lyd"
+Basic.Settings.Audio.SampleRate="Samplingsfrekvens"
+Basic.Settings.Audio.Channels="Kanaler"
+Basic.Settings.Audio.DesktopDevice="Skrivebordslyd"
+Basic.Settings.Audio.DesktopDevice2="Skrivebordslyd 2"
+Basic.Settings.Audio.AuxDevice="Mikrofon/Aux"
+Basic.Settings.Audio.AuxDevice2="Mikrofon/Aux 2"
+Basic.Settings.Audio.AuxDevice3="Mikrofon/Aux 3"
