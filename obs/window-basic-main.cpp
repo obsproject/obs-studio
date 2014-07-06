@@ -88,6 +88,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 			this,
 			SLOT(SceneItemNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
+
+	cpuUsageInfo = os_cpu_usage_info_start();
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -550,6 +552,8 @@ OBSBasic::~OBSBasic()
 	 * can be freed, and we have no control over the destruction order of
 	 * the Qt UI stuff, so we have to manually clear any references to
 	 * libobs. */
+	os_cpu_usage_info_destroy(cpuUsageInfo);
+
 	delete properties;
 	delete transformWindow;
 

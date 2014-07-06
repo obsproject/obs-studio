@@ -28,6 +28,7 @@
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 
+#include <util/platform.h>
 #include <util/util.hpp>
 
 #include <QPointer>
@@ -60,6 +61,8 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 
 	QNetworkAccessManager networkManager;
+
+	os_cpu_usage_info_t cpuUsageInfo = nullptr;
 
 	QBuffer       logUploadPostData;
 	QNetworkReply *logUploadReply = nullptr;
@@ -197,6 +200,11 @@ public:
 		y  = previewY;
 		cx = previewCX;
 		cy = previewCY;
+	}
+
+	inline double GetCPUUsage() const
+	{
+		return os_cpu_usage_info_query(cpuUsageInfo);
 	}
 
 protected:
