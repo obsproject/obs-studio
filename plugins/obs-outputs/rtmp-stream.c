@@ -193,6 +193,9 @@ static int send_packet(struct rtmp_stream *stream,
 	int     ret = 0;
 
 	flv_packet_mux(packet, &data, &size, is_header);
+#ifdef TEST_FRAMEDROPS
+	os_sleep_ms(rand() % 40);
+#endif
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
 	bfree(data);
 
@@ -316,15 +319,11 @@ static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
 	int cur_sendbuf_size = new_size;
 	socklen_t int_size = sizeof(int);
 
-#ifndef TEST_FRAMEDROPS
 	getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
 			(char*)&cur_sendbuf_size, &int_size);
 
 	if (cur_sendbuf_size < new_size) {
 		cur_sendbuf_size = new_size;
-#else
-		{cur_sendbuf_size = 1024*8;
-#endif
 		setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
 				(const char*)&cur_sendbuf_size, int_size);
 	}
