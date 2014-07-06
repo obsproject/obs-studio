@@ -1,0 +1,204 @@
+# Language and language region of this file
+Language="Polish"
+Region="Poland"
+
+# commonly shared locale
+OK="OK"
+Apply="Akceptuj"
+Cancel="Anuluj"
+Yes="Tak"
+No="Nie"
+Add="Dodaj"
+Remove="Usuń"
+Rename="Zmień nazwę"
+Properties="Właściwości"
+MoveUp="W górę"
+MoveDown="W dół"
+Settings="Ustawienia"
+Exit="Wyjście"
+Mixer="Mikser"
+Browse="Przeglądaj"
+Mono="Mono"
+Stereo="Stereo"
+
+# "name already exists" dialog box
+NameExists.Title="Nazwa jest używana"
+NameExists.Text="Ta nazwa jest już aktualnie używana."
+
+NoNameEntered="Proszę podać prawidłową nazwę"
+
+# confirm delete dialog box
+ConfirmRemove.Title="Potwierdź usunięcie"
+ConfirmRemove.Text="Jesteś pewny że chcesz usunąć '$1'?"
+
+# output connect messages
+Output.ConnectFail.Title="Nie udało się połączyć"
+Output.ConnectFail.BadPath="Nieprawidłowa ścieżka lub adres URL. Proszę sprawdzić ustawienia i upewnić się że dane są prawdiłowe."
+Output.ConnectFail.ConnectFailed="Nie udało się połączyć z serwerem"
+Output.ConnectFail.InvalidStream="Nie udało się uzyskać dostępu do kanału. Może to być spowodowane niepoprawną nazwą kanału lub kluczem, lub serwer uważa że jesteś wciąż zalogowany."
+Output.ConnectFail.Error="Wystąpił nieoczekiwany błąd podczas podłączania do serwera.  Więcej informacji w pliku logu."
+Output.ConnectFail.Disconnected="Odłączono od serwera."
+
+# output recording messages
+Output.BadPath.Title="Niepoprawna ścieżka do pliku"
+Output.BadPath.Text="Podana ścieżka do pliku nie jest poprawna.  Proszę sprawdzić ustawienia i upewnić się że została podana prawidłowa ścieżka."
+
+# log upload dialog text and messages
+LogReturnDialog="Log został wysłany pomyślnie"
+LogReturnDialog.CopyURL="Kopiuj URL"
+LogReturnDialog.ErrorUploadingLog="Błąd podczas wgrywania logu."
+
+# audio device names
+Basic.DesktopDevice1="Dźwięk pulpitu"
+Basic.DesktopDevice2="Dźwięk pulpitu 2"
+Basic.AuxDevice1="Mic/Aux"
+Basic.AuxDevice2="Mic/Aux 2"
+Basic.AuxDevice3="Mic/Aux 3"
+Basic.AuxDevice4="Mic/Aux 4"
+
+# startup scene/capture
+Basic.Scene="Scena"
+Basic.DisplayCapture="Przechwytywanie ekranu"
+
+# add scene dialog
+Basic.Main.AddSceneDlg.Title="Dodaj scenę"
+Basic.Main.AddSceneDlg.Text="Proszę podać nazwę sceny"
+
+# add scene suggested name
+Basic.Main.DefaultSceneName.Text="Scena %1"
+
+# add source dialog
+Basic.SourceSelect.CreateNew="Stwórz nowe"
+Basic.SourceSelect.AddExisting="Dodaj istniejące"
+
+# properties window
+Basic.PropertiesWindow.AutoSelectFormat="%1 (nieobsługiwane; ustawiono: %2)"
+
+# transform window
+Basic.TransformWindow="Przekształcenie elementu sceny"
+Basic.TransformWindow.Position="Pozycja"
+Basic.TransformWindow.Rotation="Rotacja"
+Basic.TransformWindow.Size="Rozmiar"
+Basic.TransformWindow.Alignment="Wyrównanie"
+Basic.TransformWindow.BoundsType="Typ Bounding Box"
+Basic.TransformWindow.BoundsAlignment="Wyrównanie w Bounding Box"
+Basic.TransformWindow.Bounds="Rozmiar Bounding Box"
+
+Basic.TransformWindow.Alignment.TopLeft="Top Left"
+Basic.TransformWindow.Alignment.TopCenter="Top Center"
+Basic.TransformWindow.Alignment.TopRight="Top Right"
+Basic.TransformWindow.Alignment.CenterLeft="Center Left"
+Basic.TransformWindow.Alignment.Center="Center"
+Basic.TransformWindow.Alignment.CenterRight="Center Right"
+Basic.TransformWindow.Alignment.BottomLeft="Bottom Left"
+Basic.TransformWindow.Alignment.BottomCenter="Bottom Center"
+Basic.TransformWindow.Alignment.BottomRight="Bottom Right"
+
+Basic.TransformWindow.BoundsType.None="Brak"
+Basic.TransformWindow.BoundsType.MaxOnly="Tylko maksymalny rozmiar"
+Basic.TransformWindow.BoundsType.ScaleInner="Skaluj do wewnętrznych krawędzi"
+Basic.TransformWindow.BoundsType.ScaleOuter="Skaluj do zewnętrznych krawędzi"
+Basic.TransformWindow.BoundsType.ScaleToWidth="Skaluj do szerokości"
+Basic.TransformWindow.BoundsType.ScaleToHeight="Skaluj do wysokości"
+Basic.TransformWindow.BoundsType.Stretch="Rozciągnij do krawędzi"
+
+# no scene warning
+Basic.Main.AddSourceHelp.Title="Nie można dodać źródła"
+Basic.Main.AddSourceHelp.Text="Musisz stworzyć przynajmniej 1 scenę aby dodać źródło."
+
+# basic mode main window
+Basic.Main.Scenes="Sceny"
+Basic.Main.Sources="Żródła"
+Basic.Main.Connecting="Łączenie..."
+Basic.Main.StartRecording="Rozpocznij nagrywanie"
+Basic.Main.StartStreaming="Rozpocznij streamowanie"
+Basic.Main.StopRecording="Zatrzymaj nagrywanie"
+Basic.Main.StopStreaming="Zatrzymaj streamowanie"
+
+# basic mode file menu
+Basic.MainMenu.File="&Plik"
+Basic.MainMenu.File.Export="&Eksport"
+Basic.MainMenu.File.Import="&Import"
+Basic.MainMenu.File.Settings="&Ustawienia"
+Basic.MainMenu.File.Exit="&Wyjście"
+
+# basic mode edit menu
+Basic.MainMenu.Edit="&Edytuj"
+Basic.MainMenu.Edit.Undo="&Cofnij"
+Basic.MainMenu.Edit.Redo="&Ponów"
+Basic.MainMenu.Edit.UndoAction="&Cofnij $1"
+Basic.MainMenu.Edit.RedoAction="&Ponów $1"
+Basic.MainMenu.Edit.Transform="&Przekształć"
+Basic.MainMenu.Edit.Transform.EditTransform="&Edytuj przekształcenie..."
+Basic.MainMenu.Edit.Transform.ResetTransform="&Resetuj przekształcenie"
+Basic.MainMenu.Edit.Transform.Rotate90CW="Obrót o 90 stopni w lewo"
+Basic.MainMenu.Edit.Transform.Rotate90CCW="Obrót o 90 stopni w prawo"
+Basic.MainMenu.Edit.Transform.Rotate180="Obrót o 180 stopni"
+Basic.MainMenu.Edit.Transform.FlipHorizontal="Odwróć &w poziomie"
+Basic.MainMenu.Edit.Transform.FlipVertical="Odwróć &w pionie"
+Basic.MainMenu.Edit.Transform.FitToScreen="&Dopasuj do ekranu"
+Basic.MainMenu.Edit.Transform.StretchToScreen="&Rozciągnij do ekranu"
+Basic.MainMenu.Edit.Transform.CenterToScreen="&Wycentruj"
+Basic.MainMenu.Edit.Order="&Kolejność"
+Basic.MainMenu.Edit.Order.MoveUp="W &górę"
+Basic.MainMenu.Edit.Order.MoveDown="W &dół"
+Basic.MainMenu.Edit.Order.MoveToTop="Na &początek"
+Basic.MainMenu.Edit.Order.MoveToBottom="Na &koniec"
+
+# basic mode help menu
+Basic.MainMenu.Help="&Pomoc"
+Basic.MainMenu.Help.Logs="&Logi"
+Basic.MainMenu.Help.Logs.UploadCurrentLog="Wyślij &Aktualny log"
+Basic.MainMenu.Help.Logs.UploadLastLog="Wyślij &Ostatni log"
+
+# basic mode settings dialog
+Basic.Settings.ProgramRestart="Program musi zostać zrestartowany aby zmiany zostały zastosowane."
+Basic.Settings.ConfirmTitle="Potwierdź zmiany"
+Basic.Settings.Confirm="Masz niezapisane zmiany. Zapisać?"
+
+# basic mode 'general' settings
+Basic.Settings.General="Ogólne"
+Basic.Settings.General.Language="Język:"
+
+# basic mode 'stream' settings
+Basic.Settings.Stream="Stream"
+Basic.Settings.Stream.StreamType="Tryb streamu"
+
+# basic mode 'output' settings
+Basic.Settings.Output="Wyjście Audio/Wideo"
+Basic.Settings.Output.Mode="Tryb Wyjćia"
+Basic.Settings.Output.Mode.Simple="Prosty (stream i/lub nagrywanie)"
+Basic.Settings.Output.Mode.Advanced="Zaawansowany (niestandardowe wyjścia)"
+Basic.Settings.Output.Simple.SavePath="Ścieżka zapisu FLV"
+Basic.Settings.Output.VideoBitrate="Wideo Bitrate"
+Basic.Settings.Output.AudioBitrate="Audio Bitrate"
+Basic.Settings.Output.Reconnect="Automatycznie ponawiaj połączenie"
+Basic.Settings.Output.RetryDelay="Opoźnienie ponownego połączenia (sekundy)"
+Basic.Settings.Output.MaxRetries="Maksymalna ilość ponownych połączeń"
+
+# basic mode 'video' settings
+Basic.Settings.Video="Wideo"
+Basic.Settings.Video.Adapter="Adapter Wideo:"
+Basic.Settings.Video.BaseResolution="Domyślna rozdzielczość:"
+Basic.Settings.Video.ScaledResolution="Rozdzielczość po skalowaniu:"
+Basic.Settings.Video.DownscaleFilter="Filter skalowania:"
+Basic.Settings.Video.DisableAeroWindows="Wyłącz Aero (tylko Windows)"
+Basic.Settings.Video.FPS="FPS:"
+Basic.Settings.Video.FPSCommon="Wartość FPS"
+Basic.Settings.Video.FPSInteger="FPS (liczba całkowita)"
+Basic.Settings.Video.FPSFraction="FPS (uławek)"
+Basic.Settings.Video.Numerator="Licznik:"
+Basic.Settings.Video.Denominator="Mianownik:"
+Basic.Settings.Video.Renderer="Render:"
+Basic.Settings.Video.InvalidResolution="Niepoprawna rozdzielczość. Format: [szerokość]x[wysokość] (np. 1920x1080)"
+Basic.Settings.Video.CurrentlyActive="Wyjście Wideo jest aktualnie aktywne.  Proszę wyłączyć wszystkie wyjścia wideo aby zmienić ustawienia wideo."
+
+# basic mode 'audio' settings
+Basic.Settings.Audio="Audio"
+Basic.Settings.Audio.SampleRate="Częstotliwość próbkowania"
+Basic.Settings.Audio.Channels="Kanały"
+Basic.Settings.Audio.DesktopDevice="Dźwięk pulpitu"
+Basic.Settings.Audio.DesktopDevice2="Dźwięk pulpitu 2"
+Basic.Settings.Audio.AuxDevice="Mic/Auxiliary Audio"
+Basic.Settings.Audio.AuxDevice2="Mic/Auxiliary Audio 2"
+Basic.Settings.Audio.AuxDevice3="Mic/Auxiliary Audio 3"
