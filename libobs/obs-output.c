@@ -464,6 +464,9 @@ static inline void send_interleaved(struct obs_output *output)
 	if (!has_higher_opposing_ts(output, &out))
 		return;
 
+	if (out.type == OBS_ENCODER_VIDEO)
+		output->total_frames++;
+
 	da_erase(output->interleaved_packets, 0);
 	output->info.encoded_packet(output->context.data, &out);
 	obs_free_encoder_packet(&out);
@@ -510,11 +513,26 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	pthread_mutex_unlock(&output->interleaved_mutex);
 }
 
+static void default_encoded_callback(void *param, struct encoder_packet *packet)
+{
+	struct obs_output *output = param;
+	output->info.encoded_packet(output->context.data, packet);
+
+	if (packet->type == OBS_ENCODER_VIDEO)
+		output->total_frames++;
+}
+
+static void default_raw_video_callback(void *param, struct video_data *frame)
+{
+	struct obs_output *output = param;
+	output->info.raw_video(output->context.data, frame);
+	output->total_frames++;
+}
+
 static void hook_data_capture(struct obs_output *output, bool encoded,
 		bool has_video, bool has_audio)
 {
 	void (*encoded_callback)(void *data, struct encoder_packet *packet);
-	void *param;
 
 	if (encoded) {
 		output->received_video   = false;
@@ -524,22 +542,19 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 		free_packets(output);
 
 		encoded_callback = (has_video && has_audio) ?
-			interleave_packets : output->info.encoded_packet;
-		param = (has_video && has_audio) ?
-			output : output->context.data;
+			interleave_packets : default_encoded_callback;
 
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
-					encoded_callback, param);
+					encoded_callback, output);
 		if (has_audio)
 			obs_encoder_start(output->audio_encoder,
-					encoded_callback, param);
+					encoded_callback, output);
 	} else {
 		if (has_video)
 			video_output_connect(output->video,
 					get_video_conversion(output),
-					output->info.raw_video,
-					output->context.data);
+					default_raw_video_callback, output);
 		if (has_audio)
 			audio_output_connect(output->audio,
 					get_audio_conversion(output),
@@ -646,6 +661,8 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 	if (!output) return false;
 	if (output->active) return false;
 
+	output->total_frames   = 0;
+
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
 			&has_service);
 
@@ -674,7 +691,6 @@ void obs_output_end_data_capture(obs_output_t output)
 {
 	bool encoded, has_video, has_audio, has_service;
 	void (*encoded_callback)(void *data, struct encoder_packet *packet);
-	void *param;
 
 	if (!output) return;
 	if (!output->active) return;
@@ -684,21 +700,18 @@ void obs_output_end_data_capture(obs_output_t output)
 
 	if (encoded) {
 		encoded_callback = (has_video && has_audio) ?
-			interleave_packets : output->info.encoded_packet;
-		param = (has_video && has_audio) ?
-			output : output->context.data;
+			interleave_packets : default_encoded_callback;
 
 		if (has_video)
 			obs_encoder_stop(output->video_encoder,
-					encoded_callback, param);
+					encoded_callback, output);
 		if (has_audio)
 			obs_encoder_stop(output->audio_encoder,
-					encoded_callback, param);
+					encoded_callback, output);
 	} else {
 		if (has_video)
 			video_output_disconnect(output->video,
-					output->info.raw_video,
-					output->context.data);
+					default_raw_video_callback, output);
 		if (has_audio)
 			audio_output_disconnect(output->audio,
 					output->info.raw_audio,
