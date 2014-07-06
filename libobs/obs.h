@@ -855,6 +855,10 @@ EXPORT obs_service_t obs_output_get_service(obs_output_t output);
 EXPORT void obs_output_set_reconnect_settings(obs_output_t output,
 		int retry_count, int retry_sec);
 
+EXPORT uint64_t obs_output_get_total_bytes(obs_output_t output);
+EXPORT int obs_output_get_frames_dropped(obs_output_t output);
+EXPORT int obs_output_get_total_frames(obs_output_t output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

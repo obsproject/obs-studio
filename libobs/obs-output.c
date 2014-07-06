@@ -341,6 +341,27 @@ void obs_output_set_reconnect_settings(obs_output_t output,
 	output->reconnect_retry_sec = retry_sec;
 }
 
+uint64_t obs_output_get_total_bytes(obs_output_t output)
+{
+	if (!output || !output->info.total_bytes)
+		return 0;
+
+	return output->info.total_bytes(output->context.data);
+}
+
+int obs_output_get_frames_dropped(obs_output_t output)
+{
+	if (!output || !output->info.dropped_frames)
+		return 0;
+
+	return output->info.dropped_frames(output->context.data);
+}
+
+int obs_output_get_total_frames(obs_output_t output)
+{
+	return output ? output->total_frames : 0;
+}
+
 void obs_output_set_video_conversion(obs_output_t output,
 		const struct video_scale_info *conversion)
 {
