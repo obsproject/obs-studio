@@ -1,4 +1,3 @@
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(WIN32)
 	add_subdirectory(win-wasapi)
