@@ -7,14 +7,17 @@ if(NOT WIN32 AND NOT APPLE)
 endif()
 
 set(glad_SOURCES
-	src/glad.c)
+	src/glad.c
+	include/glad/glad.h)
 
 if(WIN32)
 	set(glad_PLATFORM_SOURCES
-		src/glad_wgl.c)
+		src/glad_wgl.c
+		include/glad/glad_wgl.h)
 elseif(NOT APPLE)
 	set(glad_PLATFORM_SOURCES
-		src/glad_glx.c)
+		src/glad_glx.c
+		include/glad/glad_glx.h)
 endif()
 
 add_library(glad SHARED
