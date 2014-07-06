@@ -26,6 +26,7 @@
 #ifdef _DEBUG
 /* Tables for OpenGL debug */
 static const char* debug_source_table[] = {
+	"Unknown",
 	"API",
 	"Window System",
 	"Shader Compiler",
@@ -35,6 +36,7 @@ static const char* debug_source_table[] = {
 };
 
 static const char* debug_type_table[] = {
+	"Unknown",
 	"Error",
 	"Deprecated Behavior",
 	"Undefined Behavior",
@@ -44,16 +46,18 @@ static const char* debug_type_table[] = {
 };
 
 static const char* debug_severity_table[] = {
+	"Unknown",
 	"High",
 	"Medium",
-	"Low"
+	"Low",
+	"Notification"
 };
 
 /* ARB and core values are the same. They'll always be linear so no hardcoding.
  * The values subtracted are the lowest value in the list of valid values. */
-#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB)
-#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
-#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
+#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB + 1)
+#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB + 1)
+#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB + 1)
 
 static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
@@ -62,11 +66,43 @@ static void APIENTRY gl_debug_proc(
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 
-	blog(	LOG_DEBUG,
+	if(severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+		severity = GL_DEBUG_SEVERITY_LOW + 1;
+
+	int source_table_offset = GL_DEBUG_SOURCE_OFFSET(source);
+	int type_table_offset = GL_DEBUG_TYPE_OFFSET(type);
+	int sev_table_offset = GL_DEBUG_SEVERITY_OFFSET(severity);
+
+	int source_table_size =
+		sizeof(debug_source_table) / sizeof(debug_source_table[0]);
+	int type_table_size =
+		sizeof(debug_type_table) / sizeof(debug_type_table[0]);
+	int sev_table_size =
+		sizeof(debug_severity_table) / sizeof(debug_severity_table[0]);
+
+	if(source_table_offset <= 0 || source_table_offset >= source_table_size)
+	{
+		blog(LOG_DEBUG, "Unknown source value: 0x%x", source);
+		source_table_offset = 0;
+	}
+
+	if(type_table_offset <= 0 || type_table_offset >= type_table_size)
+	{
+		blog(LOG_DEBUG, "Unknown type value: 0x%x", type);
+		type_table_offset = 0;
+	}
+
+	if(sev_table_offset <= 0 || sev_table_offset >= sev_table_size)
+	{
+		blog(LOG_DEBUG, "Unknown severity value: 0x%x", severity);
+		sev_table_offset = 0;
+	}
+
+	blog(LOG_DEBUG,
 		"[%s][%s]{%s}: %.*s",
-		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
-		debug_type_table[GL_DEBUG_TYPE_OFFSET(type)],
-		debug_severity_table[GL_DEBUG_SEVERITY_OFFSET(severity)],
+		debug_source_table[source_table_offset],
+		debug_type_table[type_table_offset],
+		debug_severity_table[sev_table_offset],
 		length, message
 	);
 }
