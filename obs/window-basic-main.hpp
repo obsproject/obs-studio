@@ -62,6 +62,7 @@ private:
 
 	QNetworkAccessManager networkManager;
 
+	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t cpuUsageInfo = nullptr;
 
 	QBuffer       logUploadPostData;

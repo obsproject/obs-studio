@@ -98,6 +98,9 @@
     <CustomBuild Include="..\..\..\obs\window-basic-transform.hpp">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\..\..\obs\window-basic-status-bar.hpp">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\obs\platform.hpp">
@@ -254,6 +257,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\obs\window-basic-transform.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\obs\window-basic-status-bar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_window-basic-status-bar.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_window-basic-status-bar.cpp">
+      <Filter>Generated Files\Release</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

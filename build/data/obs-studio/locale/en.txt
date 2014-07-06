@@ -20,6 +20,7 @@ Mixer="Mixer"
 Browse="Browse"
 Mono="Mono"
 Stereo="Stereo"
+DroppedFrames="Dropped Frames %1 (%2%)"
 
 # "name already exists" dialog box
 NameExists.Title="Name already exists"
@@ -73,6 +74,10 @@ Basic.SourceSelect.AddExisting="Add Existing"
 
 # properties window
 Basic.PropertiesWindow.AutoSelectFormat="%1 (unsupported; autoselect: %2)"
+
+# status bar
+Basic.StatusBar.Reconnecting="Disconnected, reconnecting (attempt %1)"
+Basic.StatusBar.ReconnectSuccessful="Reconnection successful"
 
 # transform window
 Basic.TransformWindow="Scene Item Transform"
