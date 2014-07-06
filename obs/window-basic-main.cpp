@@ -550,10 +550,8 @@ OBSBasic::~OBSBasic()
 	 * can be freed, and we have no control over the destruction order of
 	 * the Qt UI stuff, so we have to manually clear any references to
 	 * libobs. */
-	if (properties)
-		delete properties;
-	if (transformWindow)
-		delete transformWindow;
+	delete properties;
+	delete transformWindow;
 
 	ClearVolumeControls();
 	ui->sources->clear();
