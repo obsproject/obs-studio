@@ -63,6 +63,9 @@ struct rtmp_stream {
 
 	int64_t          last_dts_usec;
 
+	uint64_t         total_bytes_sent;
+	int              dropped_frames;
+
 	RTMP             rtmp;
 };
 
@@ -200,6 +203,8 @@ static int send_packet(struct rtmp_stream *stream,
 	bfree(data);
 
 	obs_free_encoder_packet(packet);
+
+	stream->total_bytes_sent += size;
 	return ret;
 }
 
@@ -421,6 +426,9 @@ static bool rtmp_stream_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
+	stream->total_bytes_sent = 0;
+	stream->dropped_frames   = 0;
+
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,     obs_service_get_url(service));
 	dstr_copy(&stream->key,      obs_service_get_key(service));
@@ -453,6 +461,7 @@ static void drop_frames(struct rtmp_stream *stream)
 	struct circlebuf new_buf            = {0};
 	int              drop_priority      = 0;
 	uint64_t         last_drop_dts_usec = 0;
+	int              num_frames_dropped = 0;
 
 	debug("Previous packet count: %d", (int)num_buffered_packets(stream));
 
@@ -471,6 +480,7 @@ static void drop_frames(struct rtmp_stream *stream)
 			if (drop_priority < packet.drop_priority)
 				drop_priority = packet.drop_priority;
 
+			num_frames_dropped++;
 			obs_free_encoder_packet(&packet);
 		}
 	}
@@ -480,6 +490,7 @@ static void drop_frames(struct rtmp_stream *stream)
 	stream->min_priority      = drop_priority;
 	stream->min_drop_dts_usec = last_drop_dts_usec;
 
+	stream->dropped_frames += num_frames_dropped;
 	debug("New packet count: %d", (int)num_buffered_packets(stream));
 }
 
@@ -500,6 +511,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream)
 	/* if the amount of time stored in the buffered packets waiting to be
 	 * sent is higher than threshold, drop frames */
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
+
 	if (buffer_duration_usec > stream->drop_threshold_usec) {
 		drop_frames(stream);
 		debug("dropping %" PRId64 " worth of frames",
@@ -514,10 +526,12 @@ static bool add_video_packet(struct rtmp_stream *stream,
 
 	/* if currently dropping frames, drop packets until it reaches the
 	 * desired priority */
-	if (packet->priority < stream->min_priority)
+	if (packet->priority < stream->min_priority) {
+		stream->dropped_frames++;
 		return false;
-	else
+	} else {
 		stream->min_priority = 0;
+	}
 
 	return add_packet(stream, packet);
 }
@@ -562,6 +576,18 @@ static obs_properties_t rtmp_stream_properties(void)
 	return props;
 }
 
+static uint64_t rtmp_stream_total_bytes_sent(void *data)
+{
+	struct rtmp_stream *stream = data;
+	return stream->total_bytes_sent;
+}
+
+static int rtmp_stream_dropped_frames(void *data)
+{
+	struct rtmp_stream *stream = data;
+	return stream->dropped_frames;
+}
+
 struct obs_output_info rtmp_output_info = {
 	.id             = "rtmp_output",
 	.flags          = OBS_OUTPUT_AV |
@@ -574,5 +600,7 @@ struct obs_output_info rtmp_output_info = {
 	.stop           = rtmp_stream_stop,
 	.encoded_packet = rtmp_stream_data,
 	.defaults       = rtmp_stream_defaults,
-	.properties     = rtmp_stream_properties
+	.properties     = rtmp_stream_properties,
+	.total_bytes    = rtmp_stream_total_bytes_sent,
+	.dropped_frames = rtmp_stream_dropped_frames
 };
