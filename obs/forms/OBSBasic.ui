@@ -511,7 +511,7 @@
    <addaction name="menuBasic_MainMenu_Edit"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="OBSBasicStatusBar" name="statusbar"/>
   <action name="actionAddScene">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -775,6 +775,11 @@
    <extends>QWidget</extends>
    <header>window-basic-preview.hpp</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OBSBasicStatusBar</class>
+   <extends>QStatusBar</extends>
+   <header>window-basic-status-bar.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

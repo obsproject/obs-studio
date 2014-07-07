@@ -366,6 +366,8 @@ struct obs_output {
 	os_event_t                      reconnect_stop_event;
 	volatile bool                   reconnect_thread_active;
 
+	int                             total_frames;
+
 	bool                            active;
 	video_t                         video;
 	audio_t                         audio;
