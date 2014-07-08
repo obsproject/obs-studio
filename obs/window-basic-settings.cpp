@@ -137,8 +137,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
-	if (!GetDataFilePath("locale/locale.ini", path))
-		throw "Could not find locale/locale.ini path";
+	if (!GetDataFilePath("locale.ini", path))
+		throw "Could not find locale.ini path";
 	if (localeIni.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
 		throw "Could not open locale.ini";
 
