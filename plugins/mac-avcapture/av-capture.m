@@ -106,18 +106,8 @@ static inline void update_frame_size(struct av_capture *capture,
 	update_frame_size(capture, frame, CVPixelBufferGetWidth(img),
 			CVPixelBufferGetHeight(img));
 
-	CMSampleTimingInfo info;
-	CMSampleBufferGetSampleTimingInfo(sampleBuffer, 0, &info);
-	CMTime target_pts;
-	if (capture->has_clock) {
-		AVCaptureInputPort *port = capture->device_input.ports[0];
-		target_pts = CMSyncConvertTime(info.presentationTimeStamp,
-				port.clock, CMClockGetHostTimeClock());
-
-	} else {
-		target_pts = info.presentationTimeStamp;
-	}
-
+	CMTime target_pts =
+		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
 	CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
 			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
