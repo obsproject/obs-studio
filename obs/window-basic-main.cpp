@@ -741,6 +741,11 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 {
 	RenameListValues(ui->scenes,  newName, prevName);
 	RenameListValues(ui->sources, newName, prevName);
+
+	for (size_t i = 0; i < volumes.size(); i++) {
+		if (volumes[i]->GetName().compare(prevName) == 0)
+			volumes[i]->SetName(newName);
+	}
 }
 
 void OBSBasic::MoveSceneItem(OBSSceneItem item, order_movement movement)

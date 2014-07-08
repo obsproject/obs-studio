@@ -95,6 +95,16 @@ void VolControl::SliderChanged(int vol)
 	volLabel->setText(QString::number(vol));
 }
 
+QString VolControl::GetName() const
+{
+	return nameLabel->text();
+}
+
+void VolControl::SetName(const QString &newName)
+{
+	nameLabel->setText(newName);
+}
+
 VolControl::VolControl(OBSSource source_)
 	: source        (source_),
 	  signalChanged (true),
