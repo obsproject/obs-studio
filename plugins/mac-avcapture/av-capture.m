@@ -14,9 +14,6 @@
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
 #define NANO_TIMESCALE  (MICRO_TIMESCALE * 1000)
 
-#define AV_REV_FOURCC(x) \
-	(x & 255), ((x >> 8) & 255), ((x >> 16) & 255), (x >> 24)
-
 #define AV_FOURCC_STR(code) \
 	(char[5]) { \
 		(code >> 24) & 0xFF, \
@@ -357,8 +354,8 @@ static bool init_format(struct av_capture *capture)
 			format.formatDescription);
 	// TODO: support other media types
 	if (mtype != kCMMediaType_Video) {
-		AVLOG(LOG_ERROR, "CMMediaType '%c%c%c%c' is unsupported",
-				AV_REV_FOURCC(mtype));
+		AVLOG(LOG_ERROR, "CMMediaType '%s' is unsupported",
+				AV_FOURCC_STR(mtype));
 		return false;
 	}
 
