@@ -70,7 +70,7 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	double kbitsPerSec = double(bitsBetween) / timePassed / 1000.0;
 
 	QString text;
-	text += QString("kbp/s: ") +
+	text += QString("kb/s: ") +
 		QString::number(kbitsPerSec, 'f', 0);
 	kbps->setText(text);
 	kbps->setMinimumWidth(kbps->width());
