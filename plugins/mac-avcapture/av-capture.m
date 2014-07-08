@@ -17,6 +17,15 @@
 #define AV_REV_FOURCC(x) \
 	(x & 255), ((x >> 8) & 255), ((x >> 16) & 255), (x >> 24)
 
+#define AV_FOURCC_STR(code) \
+	(char[5]) { \
+		(code >> 24) & 0xFF, \
+		(code >> 16) & 0xFF, \
+		(code >>  8) & 0xFF, \
+		 code        & 0xFF, \
+		                  0  \
+	}
+
 struct av_capture;
 
 #define AVLOG(level, format, ...) \
@@ -53,29 +62,145 @@ struct av_capture {
 	id connect_observer;
 	id disconnect_observer;
 
-	unsigned fourcc;
+	FourCharCode fourcc;
 	enum video_format video_format;
+	enum video_colorspace colorspace;
+	enum video_range_type video_range;
 
 	obs_source_t source;
 
 	struct source_frame frame;
 };
 
-static inline void update_frame_size(struct av_capture *capture,
-		struct source_frame *frame, uint32_t width, uint32_t height)
+static inline enum video_format format_from_subtype(FourCharCode subtype)
 {
-	if (width != frame->width) {
-		AVLOG(LOG_DEBUG, "Changed width from %d to %d",
-				frame->width, width);
-		frame->width = width;
-		frame->linesize[0] = width * 2;
+	//TODO: uncomment VIDEO_FORMAT_NV12 and VIDEO_FORMAT_ARGB once libobs
+	//      gains matching GPU conversions or a CPU fallback is implemented
+	switch (subtype) {
+	case kCVPixelFormatType_422YpCbCr8:
+		return VIDEO_FORMAT_UYVY;
+	case kCVPixelFormatType_422YpCbCr8_yuvs:
+		return VIDEO_FORMAT_YUY2;
+	/*case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+	case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+		return VIDEO_FORMAT_NV12;*/
+	/*case kCVPixelFormatType_32ARGB:
+		return VIDEO_FORMAT_ARGB;*/
+	case kCVPixelFormatType_32BGRA:
+		return VIDEO_FORMAT_BGRA;
+	default:
+		return VIDEO_FORMAT_NONE;
+	}
+}
+
+static inline bool is_fullrange_yuv(FourCharCode pixel_format)
+{
+	switch (pixel_format) {
+	case kCVPixelFormatType_420YpCbCr8PlanarFullRange:
+	case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+	case kCVPixelFormatType_422YpCbCr8FullRange:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+static inline enum video_colorspace get_colorspace(CMFormatDescriptionRef desc)
+{
+	CFPropertyListRef matrix = CMFormatDescriptionGetExtension(desc,
+			kCMFormatDescriptionExtension_YCbCrMatrix);
+
+	if (!matrix)
+		return VIDEO_CS_DEFAULT;
+
+	if (CFStringCompare(matrix, kCVImageBufferYCbCrMatrix_ITU_R_709_2, 0)
+			== kCFCompareEqualTo)
+		return VIDEO_CS_709;
+
+	return VIDEO_CS_601;
+}
+
+static inline bool update_colorspace(struct av_capture *capture,
+		struct source_frame *frame, CMFormatDescriptionRef desc,
+		bool full_range)
+{
+	enum video_colorspace colorspace = get_colorspace(desc);
+	enum video_range_type range      = full_range ?
+		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+	if (colorspace == capture->colorspace && range == capture->video_range)
+		return true;
+
+	frame->full_range = full_range;
+
+	if (!video_format_get_parameters(colorspace, range,
+				frame->color_matrix,
+				frame->color_range_min,
+				frame->color_range_max)) {
+		AVLOG(LOG_ERROR, "Failed to get colorspace parameters for "
+				 "colorspace %u range %u", colorspace, range);
+		return false;
 	}
 
-	if (height != frame->height) {
-		AVLOG(LOG_DEBUG, "Changed height from %d to %d",
-				frame->height, height);
-		frame->height = height;
+	capture->colorspace  = colorspace;
+	capture->video_range = range;
+
+	return true;
+}
+
+static inline bool update_frame(struct av_capture *capture,
+		struct source_frame *frame, CMSampleBufferRef sample_buffer)
+{
+	CMFormatDescriptionRef desc =
+		CMSampleBufferGetFormatDescription(sample_buffer);
+
+	FourCharCode      fourcc = CMFormatDescriptionGetMediaSubType(desc);
+	enum video_format format = format_from_subtype(fourcc);
+	CMVideoDimensions   dims = CMVideoFormatDescriptionGetDimensions(desc);
+
+	CVImageBufferRef     img = CMSampleBufferGetImageBuffer(sample_buffer);
+
+	if (format == VIDEO_FORMAT_NONE) {
+		if (capture->fourcc == fourcc)
+			return false;
+
+		capture->fourcc = fourcc;
+		AVLOG(LOG_ERROR, "Unhandled fourcc: %s (0x%x) (%zu planes)",
+				AV_FOURCC_STR(fourcc), fourcc,
+				CVPixelBufferGetPlaneCount(img));
+		NSLog(@"%@", sample_buffer);
+		return false;
 	}
+
+	if (frame->format != format)
+		AVLOG(LOG_DEBUG, "Switching fourcc: "
+				"'%s' (0x%x) -> '%s' (0x%x)",
+				AV_FOURCC_STR(capture->fourcc), capture->fourcc,
+				AV_FOURCC_STR(fourcc), fourcc);
+
+	capture->fourcc = fourcc;
+	frame->format   = format;
+	frame->width    = dims.width;
+	frame->height   = dims.height;
+
+	if (format_is_yuv(format) && !update_colorspace(capture, frame, desc,
+				is_fullrange_yuv(fourcc)))
+		return false;
+
+	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
+
+	if (!CVPixelBufferIsPlanar(img)) {
+		frame->linesize[0] = CVPixelBufferGetBytesPerRow(img);
+		frame->data[0]     = CVPixelBufferGetBaseAddress(img);
+		return true;
+	}
+
+	size_t count = CVPixelBufferGetPlaneCount(img);
+	for (size_t i = 0; i < count; i++) {
+		frame->linesize[i] = CVPixelBufferGetBytesPerRowOfPlane(img, i);
+		frame->data[i]     = CVPixelBufferGetBaseAddressOfPlane(img, i);
+	}
+	return true;
 }
 
 @implementation OBSAVCaptureDelegate
@@ -101,22 +226,18 @@ static inline void update_frame_size(struct av_capture *capture,
 
 	struct source_frame *frame = &capture->frame;
 
-	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
-
-	update_frame_size(capture, frame, CVPixelBufferGetWidth(img),
-			CVPixelBufferGetHeight(img));
-
 	CMTime target_pts =
 		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
 	CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
 			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
 
-	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
+	if (!update_frame(capture, frame, sampleBuffer))
+		return;
 
-	frame->data[0] = CVPixelBufferGetBaseAddress(img);
 	obs_source_output_video(capture->source, frame);
 
+	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
 	CVPixelBufferUnlockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 }
 @end
@@ -242,56 +363,22 @@ static bool init_format(struct av_capture *capture)
 	}
 
 	capture->out.videoSettings = nil;
-	capture->fourcc = htonl(uint_from_dict(capture->out.videoSettings,
-			kCVPixelBufferPixelFormatTypeKey));
-	
-	capture->video_format = video_format_from_fourcc(capture->fourcc);
-	if (capture->video_format == VIDEO_FORMAT_NONE) {
-		AVLOG(LOG_ERROR, "FourCC '%c%c%c%c' unsupported by libobs",
-				AV_REV_FOURCC(capture->fourcc));
-		return false;
+	FourCharCode subtype = uint_from_dict(capture->out.videoSettings,
+					kCVPixelBufferPixelFormatTypeKey);
+	if (format_from_subtype(subtype) != VIDEO_FORMAT_NONE) {
+		AVLOG(LOG_DEBUG, "Using native fourcc '%s'",
+				AV_FOURCC_STR(subtype));
+		return true;
 	}
 
-	AVLOG(LOG_DEBUG, "Using FourCC '%c%c%c%c'",
-			AV_REV_FOURCC(capture->fourcc));
+	AVLOG(LOG_DEBUG, "Using fallback fourcc '%s' ('%s' 0x%08x unsupported)",
+			AV_FOURCC_STR(kCVPixelFormatType_32BGRA),
+			AV_FOURCC_STR(subtype), subtype);
 
-	return true;
-}
-
-static bool init_frame(struct av_capture *capture)
-{
-	AVCaptureDeviceFormat *format = capture->device.activeFormat;
-
-	CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions(
-			format.formatDescription);
-	capture->frame.width = size.width;
-	capture->frame.linesize[0] = size.width * 2;
-	capture->frame.height = size.height;
-	capture->frame.format = capture->video_format;
-	capture->frame.full_range = false;
-
-	NSDictionary *exts =
-		(__bridge NSDictionary*)CMFormatDescriptionGetExtensions(
-				format.formatDescription);
-
-	capture->frame.linesize[0] = uint_from_dict(exts,
-			(__bridge CFStringRef)@"CVBytesPerRow");
-
-	NSString *matrix_key =
-		(__bridge NSString*)kCVImageBufferYCbCrMatrixKey;
-	enum video_colorspace colorspace =
-		exts[matrix_key] == (id)kCVImageBufferYCbCrMatrix_ITU_R_709_2 ?
-			VIDEO_CS_709 : VIDEO_CS_601;
-
-	if (!video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
-			capture->frame.color_matrix,
-			capture->frame.color_range_min,
-			capture->frame.color_range_max)) {
-		AVLOG(LOG_ERROR, "Failed to get video format parameters for "
-				"video format %u", colorspace);
-		return false;
-	}
-
+	capture->out.videoSettings = @{
+		(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey:
+			@(kCVPixelFormatType_32BGRA)
+	};
 	return true;
 }
 
@@ -356,9 +443,6 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 	if (!init_format(capture))
 		goto error;
 
-	if (!init_frame(capture))
-		goto error;
-	
 	[capture->session startRunning];
 	return;
 
