@@ -122,7 +122,7 @@ static obs_properties_t obs_x264_props(void)
 	add_strings(list, x264_tune_names);
 
 	obs_properties_add_text(props, "x264opts",
-			"x264 encoder options (separated by ':')",
+			"x264 encoder options (separated by space)",
 			OBS_TEXT_DEFAULT);
 
 	return props;
@@ -277,7 +277,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 	char **paramlist;
 	bool success = true;
 
-	paramlist = strlist_split(opts, ':', false);
+	paramlist = strlist_split(opts, ' ', false);
 
 	if (!obsx264->context) {
 		override_base_params(paramlist, &preset, &tune, &profile);
