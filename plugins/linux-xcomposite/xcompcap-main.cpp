@@ -320,9 +320,9 @@ void XCompcapMain::update(obs_data_t settings)
 	uint8_t *texData = new uint8_t[getWidth() * getHeight() * 4];
 
 	for (unsigned int i = 0; i < getWidth() * getHeight() * 4; i += 4) {
-		texData[i + 0] = p->swapRedBlue ? 0xFF : 0;
+		texData[i + 0] = p->swapRedBlue ? 0 : 0xFF;
 		texData[i + 1] = 0;
-		texData[i + 2] = p->swapRedBlue ? 0 : 0xFF;
+		texData[i + 2] = p->swapRedBlue ? 0xFF : 0;
 		texData[i + 3] = 0xFF;
 	}
 
@@ -333,7 +333,7 @@ void XCompcapMain::update(obs_data_t settings)
 
 	delete[] texData;
 
-	if (!p->swapRedBlue) {
+	if (p->swapRedBlue) {
 		GLuint tex = *(GLuint*)texture_getobj(p->tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
