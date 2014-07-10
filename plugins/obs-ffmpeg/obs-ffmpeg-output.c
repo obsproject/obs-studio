@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <obs.h>
+#include <obs-module.h>
 #include <util/circlebuf.h>
 #include <util/threading.h>
 #include <util/dstr.h>
@@ -398,8 +398,7 @@ fail:
 
 static const char *ffmpeg_output_getname(void)
 {
-	/* TODO: locale */
-	return "FFmpeg file output";
+	return obs_module_text("FFmpegOutput");
 }
 
 static void ffmpeg_log_callback(void *param, int level, const char *format,

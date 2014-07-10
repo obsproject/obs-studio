@@ -34,6 +34,19 @@ using namespace DShow;
 #define LAST_VIDEO_DEV_ID "last_video_device_id"
 #define LAST_RESOLUTION   "last_resolution"
 
+#define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
+#define TEXT_DEVICE         obs_module_text("Device")
+#define TEXT_CONFIG_VIDEO   obs_module_text("ConfigureVideo")
+#define TEXT_CONFIG_XBAR    obs_module_text("ConfigureCrossbar")
+#define TEXT_RES_FPS_TYPE   obs_module_text("ResFPSType")
+#define TEXT_CUSTOM_RES     obs_module_text("ResFPSType.Custom")
+#define TEXT_PREFERRED_RES  obs_module_text("ResFPSType.DevPreferred")
+#define TEXT_FPS_MATCHING   obs_module_text("FPS.Matching")
+#define TEXT_FPS_HIGHEST    obs_module_text("FPS.Highest")
+#define TEXT_RESOLUTION     obs_module_text("Resolution")
+#define TEXT_VIDEO_FORMAT   obs_module_text("VideoFormat")
+#define TEXT_FORMAT_UNKNOWN obs_module_text("VideoFormat.Unknown")
+
 enum ResType {
 	ResType_Preferred,
 	ResType_Custom
@@ -454,8 +467,7 @@ void DShowInput::Update(obs_data_t settings)
 
 static const char *GetDShowInputName(void)
 {
-	/* TODO: locale */
-	return "Video Capture Device";
+	return TEXT_INPUT_NAME;
 }
 
 static void *CreateDShowInput(obs_data_t settings, obs_source_t source)
@@ -630,7 +642,7 @@ struct VideoFormatName {
 
 static const VideoFormatName videoFormatNames[] = {
 	/* autoselect format*/
-	{VideoFormat::Any,   "Any"},
+	{VideoFormat::Any,   "VideoFormat.Any"},
 
 	/* raw formats */
 	{VideoFormat::ARGB,  "ARGB"},
@@ -839,12 +851,12 @@ static DStr GetFPSName(long long interval)
 	DStr name;
 
 	if (interval == FPS_MATCHING) {
-		dstr_cat(name, "Match OBS FPS");
+		dstr_cat(name, TEXT_FPS_MATCHING);
 		return name;
 	}
 
 	if (interval == FPS_HIGHEST) {
-		dstr_cat(name, "Highest");
+		dstr_cat(name, TEXT_FPS_HIGHEST);
 		return name;
 	}
 
@@ -867,8 +879,8 @@ static void UpdateFPS(VideoDevice &device, VideoFormat format,
 
 	obs_property_list_clear(list);
 
-	obs_property_list_add_int(list, "Match OBS FPS", FPS_MATCHING);
-	obs_property_list_add_int(list, "Highest", FPS_HIGHEST);
+	obs_property_list_add_int(list, TEXT_FPS_MATCHING, FPS_MATCHING);
+	obs_property_list_add_int(list, TEXT_FPS_HIGHEST,  FPS_HIGHEST);
 
 	bool interval_added = interval == FPS_HIGHEST ||
 				interval == FPS_MATCHING;
@@ -905,12 +917,13 @@ static DStr GetVideoFormatName(VideoFormat format)
 	DStr name;
 	for (const VideoFormatName &format_ : videoFormatNames) {
 		if (format_.format == format) {
-			dstr_cat(name, format_.name);
+			dstr_cat(name, obs_module_text(format_.name));
 			return name;
 		}
 	}
 
-	dstr_catf(name, "Unknown (%lld)", (long long)format);
+	dstr_cat(name, TEXT_FORMAT_UNKNOWN);
+	dstr_replace(name, "%1", std::to_string((long long)format).c_str());
 	return name;
 }
 
@@ -942,7 +955,8 @@ static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
 		if (format.format == format_)
 			format_added = true;
 
-		size_t idx = obs_property_list_add_int(list, format.name,
+		size_t idx = obs_property_list_add_int(list,
+				obs_module_text(format.name),
 				(long long)format.format);
 		obs_property_list_item_disable(list, idx, !available);
 	}
@@ -1110,10 +1124,9 @@ static obs_properties_t GetDShowProperties(void)
 
 	obs_properties_set_param(ppts, data, PropertiesDataDestroy);
 
-	/* TODO: locale */
 	obs_property_t p = obs_properties_add_list(ppts,
-		VIDEO_DEVICE_ID, "Device",
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+			VIDEO_DEVICE_ID, TEXT_DEVICE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	obs_property_set_modified_callback(p, DeviceSelectionChanged);
 
@@ -1121,22 +1134,22 @@ static obs_properties_t GetDShowProperties(void)
 	for (const VideoDevice &device : data->devices)
 		AddDevice(p, device);
 
-	obs_properties_add_button(ppts, "video_config", "Configure Video",
+	obs_properties_add_button(ppts, "video_config", TEXT_CONFIG_VIDEO,
 			VideoConfigClicked);
-	obs_properties_add_button(ppts, "xbar_config", "Configure Crossbar",
+	obs_properties_add_button(ppts, "xbar_config", TEXT_CONFIG_XBAR,
 			CrossbarConfigClicked);
 
 	/* ------------------------------------- */
 
-	p = obs_properties_add_list(ppts, RES_TYPE, "Resolution/FPS Type",
+	p = obs_properties_add_list(ppts, RES_TYPE, TEXT_RES_FPS_TYPE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(p, ResTypeChanged);
 
-	obs_property_list_add_int(p, "Device Preferred", ResType_Preferred);
-	obs_property_list_add_int(p, "Custom", ResType_Custom);
+	obs_property_list_add_int(p, TEXT_PREFERRED_RES, ResType_Preferred);
+	obs_property_list_add_int(p, TEXT_CUSTOM_RES, ResType_Custom);
 
-	p = obs_properties_add_list(ppts, RESOLUTION, "Resolution",
+	p = obs_properties_add_list(ppts, RESOLUTION, TEXT_RESOLUTION,
 			OBS_COMBO_TYPE_EDITABLE, OBS_COMBO_FORMAT_STRING);
 
 	obs_property_set_modified_callback(p, DeviceResolutionChanged);
@@ -1146,7 +1159,7 @@ static obs_properties_t GetDShowProperties(void)
 
 	obs_property_set_modified_callback(p, DeviceIntervalChanged);
 
-	p = obs_properties_add_list(ppts, VIDEO_FORMAT, "Video Format",
+	p = obs_properties_add_list(ppts, VIDEO_FORMAT, TEXT_VIDEO_FORMAT,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(p, VideoFormatChanged);
@@ -1155,6 +1168,7 @@ static obs_properties_t GetDShowProperties(void)
 }
 
 OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("win-dshow", "en-US")
 
 void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 {
@@ -1197,4 +1211,9 @@ bool obs_module_load(uint32_t libobs_ver)
 	obs_register_source(&info);
 
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	OBS_MODULE_FREE_DEFAULT_LOCALE();
 }

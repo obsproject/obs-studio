@@ -32,3 +32,4 @@ target_link_libraries(win-dshow
 	strmiids.lib)
 
 install_obs_plugin(win-dshow)
+install_obs_plugin_data(win-dshow ../../build/data/obs-plugins/win-dshow)

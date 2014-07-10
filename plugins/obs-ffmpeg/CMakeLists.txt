@@ -46,4 +46,4 @@ target_link_libraries(obs-ffmpeg
 	${LIBSWRESAMPLE_LIBRARIES})
 
 install_obs_plugin(obs-ffmpeg)
-
+install_obs_plugin_data(obs-ffmpeg ../../build/data/obs-plugins/obs-ffmpeg)

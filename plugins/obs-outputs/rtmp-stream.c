@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <obs.h>
+#include <obs-module.h>
 #include <obs-avc.h>
 #include <util/platform.h>
 #include <util/circlebuf.h>
@@ -71,8 +71,7 @@ struct rtmp_stream {
 
 static const char *rtmp_stream_getname(void)
 {
-	/* TODO: locale stuff */
-	return "RTMP Stream";
+	return obs_module_text("RTMPStream");
 }
 
 static void log_rtmp(int level, const char *format, va_list args)
@@ -570,9 +569,9 @@ static obs_properties_t rtmp_stream_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
 	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
-			"Drop threshold (milliseconds)", 200, 10000, 100);
+			obs_module_text("RTMPStream.DropThreshold"),
+			200, 10000, 100);
 	return props;
 }
 

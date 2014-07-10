@@ -15,4 +15,4 @@ target_link_libraries(obs-x264
 	${LIBX264_LIBRARIES})
 
 install_obs_plugin(obs-x264)
-
+install_obs_plugin_data(obs-x264 ../../build/data/obs-plugins/obs-x264)

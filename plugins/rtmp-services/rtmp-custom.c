@@ -6,8 +6,7 @@ struct rtmp_custom {
 
 static const char *rtmp_custom_name(void)
 {
-	/* TODO: locale */
-	return "Custom Streaming Server";
+	return obs_module_text("CustomStreamingServer");
 }
 
 static void rtmp_custom_update(void *data, obs_data_t settings)
@@ -43,10 +42,10 @@ static obs_properties_t rtmp_custom_properties(void)
 {
 	obs_properties_t ppts = obs_properties_create();
 
-	/* TODO: locale */
-
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);
-	obs_properties_add_text(ppts, "key", "Stream Key", OBS_TEXT_PASSWORD);
+
+	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"),
+			OBS_TEXT_PASSWORD);
 	return ppts;
 }
 

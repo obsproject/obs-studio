@@ -28,3 +28,4 @@ target_link_libraries(linux-xshm
 )
 
 install_obs_plugin(linux-xshm)
+install_obs_plugin_data(linux-xshm ../../build/data/obs-plugins/linux-xshm)
