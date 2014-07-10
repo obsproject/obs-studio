@@ -19,6 +19,7 @@
 
 #include "util/c99defs.h"
 #include "util/bmem.h"
+#include "util/text-lookup.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
 #include "graphics/vec3.h"
@@ -249,6 +250,10 @@ EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
  * use.
  */
 EXPORT int obs_load_module(const char *path);
+
+/** Helper function for using default module locale */
+EXPORT lookup_t obs_module_load_locale(const char *module,
+		const char *default_locale, const char *locale);
 
 /**
  * Enumerates all available inputs source types.
