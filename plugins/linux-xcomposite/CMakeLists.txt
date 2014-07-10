@@ -11,7 +11,6 @@ include_directories(
 	${X11_X11_INCLUDE_PATH})
 
 set(linux-xcomposite_SOURCES
-	plugin-main.cpp
 	xcompcap-main.cpp
 	xcompcap-main.h
 	xcompcap-helper.cpp

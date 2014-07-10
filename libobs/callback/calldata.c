@@ -181,7 +181,7 @@ bool calldata_getdata(calldata_t data, const char *name, void *out, size_t size)
 void calldata_setdata(calldata_t data, const char *name, const void *in,
 		size_t size)
 {
-	uint8_t *pos;
+	uint8_t *pos = 0;
 
 	if (!data || !name || !*name)
 		return;

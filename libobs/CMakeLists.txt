@@ -224,7 +224,9 @@ set(libobs_libobs_HEADERS
 	obs-scene.h
 	obs-source.h
 	obs-output.h
-	obs-ffmpeg-compat.h)
+	obs-ffmpeg-compat.h
+	obs.hpp
+	obs-plugin.hpp)
 
 set(libobs_SOURCES
 	${libobs_callback_SOURCES}
@@ -252,7 +254,9 @@ source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
 
+
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
@@ -262,6 +266,11 @@ target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 if(NOT MSVC)
 	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
 endif()
+
+target_include_directories(libobs PUBLIC
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
+
 
 target_link_libraries(libobs
 	PRIVATE
