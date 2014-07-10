@@ -91,7 +91,7 @@ void free_module(struct obs_module *mod)
 	if (mod->module) {
 		void (*module_unload)(void);
 
-		module_unload = os_dlsym(mod->module, "module_unload");
+		module_unload = os_dlsym(mod->module, "obs_module_unload");
 		if (module_unload)
 			module_unload();
 
