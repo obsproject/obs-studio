@@ -650,7 +650,7 @@ static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
 	bool preset_found = false;
 	for (NSString *preset in presets()) {
 		bool is_current = [preset isEqualToString:current_preset];
-		bool supported  = !dev ||
+		bool supported  = dev &&
 			[dev supportsAVCaptureSessionPreset:preset];
 
 		if (is_current)
@@ -688,7 +688,7 @@ static bool check_preset(AVCaptureDevice *dev,
 	bool presets_changed = false;
 	for (NSString *preset in presets()) {
 		bool is_listed = [listed member:preset] != nil;
-		bool supported = !dev || 
+		bool supported = dev && 
 			[dev supportsAVCaptureSessionPreset:preset];
 
 		if (supported == is_listed)
