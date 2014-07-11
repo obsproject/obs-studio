@@ -440,6 +440,29 @@ string GenerateTimeDateFilename(const char *extension)
 	return string(file);
 }
 
+vector<pair<string, string>> GetLocaleNames()
+{
+	string path;
+	if (!GetDataFilePath("locale.ini", path))
+		throw "Could not find locale.ini path";
+
+	ConfigFile ini;
+	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
+		throw "Could not open locale.ini";
+
+	size_t sections = config_num_sections(ini);
+
+	vector<pair<string, string>> names;
+	names.reserve(sections);
+	for (size_t i = 0; i < sections; i++) {
+		const char *tag = config_get_section(ini, i);
+		const char *name = config_get_string(ini, tag, "Name");
+		names.emplace_back(tag, name);
+	}
+
+	return names;
+}
+
 static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
