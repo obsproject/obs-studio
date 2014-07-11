@@ -252,8 +252,7 @@ void OBSBasicSettings::LoadServiceInfo()
 
 void OBSBasicSettings::LoadLanguageList()
 {
-	const char *currentLang = config_get_string(GetGlobalConfig(),
-			"General", "Language");
+	const char *currentLang = App()->GetLocale();
 
 	ui->language->clear();
 
