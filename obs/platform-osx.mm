@@ -89,5 +89,5 @@ string GetDefaultVideoSavePath()
 	if (!url)
 		return getenv("HOME");
 
-	return url.fileSystemRepresentation;
+	return url.path.fileSystemRepresentation;
 }
