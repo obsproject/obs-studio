@@ -137,11 +137,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
-	if (!GetDataFilePath("locale.ini", path))
-		throw "Could not find locale.ini path";
-	if (localeIni.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
-		throw "Could not open locale.ini";
-
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -262,16 +257,13 @@ void OBSBasicSettings::LoadLanguageList()
 
 	ui->language->clear();
 
-	size_t numSections = config_num_sections(localeIni);
-
-	for (size_t i = 0; i < numSections; i++) {
-		const char *tag = config_get_section(localeIni, i);
-		const char *name = config_get_string(localeIni, tag, "Name");
+	for (const auto &locale : GetLocaleNames()) {
 		int idx = ui->language->count();
 
-		ui->language->addItem(QT_UTF8(name), QT_UTF8(tag));
+		ui->language->addItem(QT_UTF8(locale.second.c_str()),
+				QT_UTF8(locale.first.c_str()));
 
-		if (strcmp(tag, currentLang) == 0)
+		if (locale.first == currentLang)
 			ui->language->setCurrentIndex(idx);
 	}
 

@@ -37,7 +37,6 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
-	ConfigFile localeIni;
 	bool generalChanged;
 	bool outputsChanged;
 	bool audioChanged;
