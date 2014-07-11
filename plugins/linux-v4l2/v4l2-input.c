@@ -408,6 +408,9 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 	UNUSED_PARAMETER(p);
 	int dev = open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
+	if (dev == -1)
+		return false;
+
 	obs_property_t prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
 	obs_property_modified(prop, settings);
@@ -424,6 +427,9 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 	UNUSED_PARAMETER(p);
 	int dev = open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
+	if (dev == -1)
+		return false;
+
 	obs_property_t prop = obs_properties_get(props, "resolution");
 	v4l2_resolution_list(dev, obs_data_getint(settings, "pixelformat"),
 			prop);
@@ -442,6 +448,9 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	int width, height;
 	int dev = open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
+	if (dev == -1)
+		return false;
+
 	obs_property_t prop = obs_properties_get(props, "framerate");
 	unpack_tuple(&width, &height, obs_data_getint(settings,
 				"resolution"));
