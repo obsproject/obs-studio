@@ -97,7 +97,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 
 bool OBSApp::InitGlobalConfigDefaults()
 {
-	config_set_default_string(globalConfig, "General", "Language", "en");
+	config_set_default_string(globalConfig, "General", "Language", "en-US");
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 
 #if _WIN32
@@ -156,7 +156,7 @@ bool OBSApp::InitGlobalConfig()
 	return InitGlobalConfigDefaults();
 }
 
-#define DEFAULT_LANG "en"
+#define DEFAULT_LANG "en-US"
 
 bool OBSApp::InitLocale()
 {
