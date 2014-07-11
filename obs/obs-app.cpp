@@ -162,9 +162,6 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	stringstream file;
-	file << "locale/" << lang << ".ini";
-
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -178,8 +175,39 @@ bool OBSApp::InitLocale()
 		return false;
 	}
 
-	if (astrcmpi(lang, DEFAULT_LANG) == 0)
+	bool userLocale = config_has_user_value(globalConfig, "General",
+			"Language");
+	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
+
+	if (userLocale && defaultLang)
 		return true;
+
+	if (!userLocale && defaultLang) {
+		for (auto &locale_ : GetPreferredLocales()) {
+			if (locale_ == lang)
+				return true;
+
+			stringstream file;
+			file << "locale/" << locale_ << ".ini";
+
+			string path;
+			if (!GetDataFilePath(file.str().c_str(), path))
+				continue;
+
+			if (!text_lookup_add(textLookup, path.c_str()))
+				continue;
+
+			blog(LOG_INFO, "Using preferred locale '%s'",
+					locale_.c_str());
+			locale = locale_;
+			return true;
+		}
+
+		return true;
+	}
+
+	stringstream file;
+	file << "locale/" << lang << ".ini";
 
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
