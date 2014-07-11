@@ -20,10 +20,13 @@
  * Even if there are not multiple monitors, this should still work.
  */
 
+#include "obs-app.hpp"
+
 #include <X11/Xlib.h>
 #include <X11/extensions/Xinerama.h>
 #include <unistd.h>
 #include <sstream>
+#include <locale.h>
 
 #include "platform.hpp"
 using namespace std;
@@ -105,4 +108,26 @@ bool InitApplicationBundle()
 string GetDefaultVideoSavePath()
 {
 	return string(getenv("HOME"));
+}
+
+vector<string> GetPreferredLocales()
+{
+	setlocale(LC_ALL, "");
+	string messages = setlocale(LC_MESSAGES, NULL);
+	if (!messages.size() || messages == "C" || messages == "POSIX")
+		return {};
+
+	if (messages.size() > 2)
+		messages[2] = '-';
+
+	for (auto &locale_pair : GetLocaleNames()) {
+		auto &locale = locale_pair.first;
+		if (locale == messages.substr(0, locale.size()))
+			return {locale};
+
+		if (locale.substr(0, 2) == messages.substr(0, 2))
+			return {locale};
+	}
+
+	return {};
 }

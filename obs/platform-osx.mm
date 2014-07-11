@@ -18,6 +18,7 @@
 #include <sstream>
 #include <util/base.h>
 #include "platform.hpp"
+#include "obs-app.hpp"
 
 #include <unistd.h>
 
@@ -90,4 +91,41 @@ string GetDefaultVideoSavePath()
 		return getenv("HOME");
 
 	return url.path.fileSystemRepresentation;
+}
+
+vector<string> GetPreferredLocales()
+{
+	NSArray *preferred = [NSLocale preferredLanguages];
+
+	auto locales = GetLocaleNames();
+	auto lang_to_locale = [&locales](string lang) -> string {
+		string lang_match = "";
+
+		for (const auto &locale : locales) {
+			if (locale.first == lang.substr(0, locale.first.size()))
+				return locale.first;
+
+			if (!lang_match.size() &&
+				locale.first.substr(0, 2) == lang.substr(0, 2))
+				lang_match = locale.first;
+		}
+
+		return lang_match;
+	};
+
+	vector<string> result;
+	result.reserve(preferred.count);
+
+	for (NSString *lang in preferred) {
+		string locale = lang_to_locale(lang.UTF8String);
+		if (!locale.size())
+			continue;
+
+		if (find(begin(result), end(result), locale) != end(result))
+			continue;
+
+		result.emplace_back(locale);
+	}
+
+	return result;
 }
