@@ -597,7 +597,6 @@ static NSString *preset_names(NSString *preset)
 
 static void av_capture_defaults(obs_data_t settings)
 {
-	obs_data_set_default_string(settings, "device_name", "none");
 	obs_data_set_default_bool(settings, "use_preset", true);
 	obs_data_set_default_string(settings, "preset",
 			AVCaptureSessionPreset1280x720.UTF8String);
