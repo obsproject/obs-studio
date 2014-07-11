@@ -24,40 +24,6 @@
 #undef near
 
 #ifdef _DEBUG
-/* Tables for OpenGL debug */
-static const char* debug_source_table[] = {
-	"Unknown",
-	"API",
-	"Window System",
-	"Shader Compiler",
-	"Third Party"
-	"Application",
-	"Other"
-};
-
-static const char* debug_type_table[] = {
-	"Unknown",
-	"Error",
-	"Deprecated Behavior",
-	"Undefined Behavior",
-	"Portability",
-	"Performance",
-	"Other"
-};
-
-static const char* debug_severity_table[] = {
-	"Unknown",
-	"High",
-	"Medium",
-	"Low",
-	"Notification"
-};
-
-/* ARB and core values are the same. They'll always be linear so no hardcoding.
- * The values subtracted are the lowest value in the list of valid values. */
-#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB + 1)
-#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB + 1)
-#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB + 1)
 
 static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
@@ -66,43 +32,58 @@ static void APIENTRY gl_debug_proc(
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 
-	if(severity == GL_DEBUG_SEVERITY_NOTIFICATION)
-		severity = GL_DEBUG_SEVERITY_LOW + 1;
+	char *source_str, *type_str, *severity_str;
 
-	int source_table_offset = GL_DEBUG_SOURCE_OFFSET(source);
-	int type_table_offset = GL_DEBUG_TYPE_OFFSET(type);
-	int sev_table_offset = GL_DEBUG_SEVERITY_OFFSET(severity);
-
-	int source_table_size =
-		sizeof(debug_source_table) / sizeof(debug_source_table[0]);
-	int type_table_size =
-		sizeof(debug_type_table) / sizeof(debug_type_table[0]);
-	int sev_table_size =
-		sizeof(debug_severity_table) / sizeof(debug_severity_table[0]);
-
-	if(source_table_offset <= 0 || source_table_offset >= source_table_size)
-	{
-		blog(LOG_DEBUG, "Unknown source value: 0x%x", source);
-		source_table_offset = 0;
+	switch(source) {
+	case GL_DEBUG_SOURCE_API:
+		source_str = "API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		source_str = "Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		source_str = "Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		source_str = "Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		source_str = "Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:
+		source_str = "Other"; break;
+	default:
+		source_str = "Unknown";
 	}
 
-	if(type_table_offset <= 0 || type_table_offset >= type_table_size)
-	{
-		blog(LOG_DEBUG, "Unknown type value: 0x%x", type);
-		type_table_offset = 0;
+	switch(type) {
+	case GL_DEBUG_TYPE_ERROR:
+		type_str = "Error"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		type_str = "Deprecated Behavior"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		type_str = "Undefined Behavior"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		type_str = "Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		type_str = "Performance"; break;
+	case GL_DEBUG_TYPE_OTHER:
+		type_str = "Other"; break;
+	default: 
+		type_str = "Unknown";
 	}
 
-	if(sev_table_offset <= 0 || sev_table_offset >= sev_table_size)
-	{
-		blog(LOG_DEBUG, "Unknown severity value: 0x%x", severity);
-		sev_table_offset = 0;
+	switch(severity) {
+	case GL_DEBUG_SEVERITY_HIGH:
+		severity_str = "High"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		severity_str = "Medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:
+		severity_str = "Low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		severity_str = "Notification"; break;
+	default:
+		severity_str = "Unknown";
 	}
 
 	blog(LOG_DEBUG,
 		"[%s][%s]{%s}: %.*s",
-		debug_source_table[source_table_offset],
-		debug_type_table[type_table_offset],
-		debug_severity_table[sev_table_offset],
+		source_str, type_str, severity_str,
 		length, message
 	);
 }
