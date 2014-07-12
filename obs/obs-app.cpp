@@ -195,6 +195,9 @@ bool OBSApp::InitLocale()
 
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
+{}
+
+void OBSApp::AppInit()
 {
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
@@ -464,6 +467,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	try {
 		OBSApp program(argc, argv);
+		program.AppInit();
+
 		OBSTranslator translator;
 
 		create_log_file(logFile);
