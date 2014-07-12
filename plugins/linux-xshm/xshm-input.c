@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <obs.h>
+#include <obs-module.h>
 #include "xcursor.h"
 #include "xhelpers.h"
 
@@ -110,8 +110,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
  */
 static const char* xshm_getname(void)
 {
-	/* TODO: locale */
-	return "X11 Shared Memory Screen Input";
+	return obs_module_text("X11SharedMemoryScreenInput");
 }
 
 /**
@@ -156,7 +155,6 @@ static void xshm_defaults(obs_data_t defaults)
  */
 static obs_properties_t xshm_properties(void)
 {
-	/* TODO: locale */
 	obs_properties_t props = obs_properties_create();
 	int_fast32_t screen_max;
 
@@ -167,8 +165,10 @@ static obs_properties_t xshm_properties(void)
 	screen_max = (screen_max) ? screen_max - 1 : 0;
 	XCloseDisplay(dpy);
 
-	obs_properties_add_int(props, "screen", "Screen", 0, screen_max, 1);
-	obs_properties_add_bool(props, "show_cursor", "Capture Cursor");
+	obs_properties_add_int(props, "screen",
+			obs_module_text("Screen"), 0, screen_max, 1);
+	obs_properties_add_bool(props, "show_cursor",
+			obs_module_text("CaptureCursor"));
 
 	return props;
 }

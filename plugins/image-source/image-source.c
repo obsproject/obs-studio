@@ -14,8 +14,7 @@ struct image_source {
 
 static const char *image_source_get_name(void)
 {
-	/* TODO: locale */
-	return "Image";
+	return obs_module_text("Image");
 }
 
 static void image_source_update(void *data, obs_data_t settings)
@@ -99,9 +98,9 @@ static obs_properties_t image_source_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
-	obs_properties_add_path(props, "file", "Image file", OBS_PATH_FILE,
-			image_filter, NULL);
+	obs_properties_add_path(props,
+			"file", obs_module_text("File"),
+			OBS_PATH_FILE, image_filter, NULL);
 
 	return props;
 }
@@ -121,6 +120,7 @@ static struct obs_source_info image_source_info = {
 };
 
 OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
 
 bool obs_module_load(uint32_t libobs_version)
 {
@@ -128,4 +128,9 @@ bool obs_module_load(uint32_t libobs_version)
 
 	UNUSED_PARAMETER(libobs_version);
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	OBS_MODULE_FREE_DEFAULT_LOCALE();
 }

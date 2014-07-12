@@ -13,3 +13,4 @@ target_link_libraries(linux-v4l2
 )
 
 install_obs_plugin(linux-v4l2)
+install_obs_plugin_data(linux-v4l2 ../../build/data/obs-plugins/linux-v4l2)

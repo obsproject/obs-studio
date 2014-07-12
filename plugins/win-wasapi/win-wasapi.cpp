@@ -1,6 +1,6 @@
 #include "enum-wasapi.hpp"
 
-#include <obs.h>
+#include <obs-module.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -421,14 +421,12 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 static const char *GetWASAPIInputName(void)
 {
-	/* TODO: translate */
-	return "Audio Input Capture (WASAPI)";
+	return obs_module_text("AudioInput");
 }
 
 static const char *GetWASAPIOutputName(void)
 {
-	/* TODO: translate */
-	return "Audio Output Capture (WASAPI)";
+	return obs_module_text("AudioOutput");
 }
 
 static void GetWASAPIDefaults(obs_data_t settings)
@@ -476,13 +474,14 @@ static obs_properties_t GetWASAPIProperties(bool input)
 
 	/* TODO: translate */
 	obs_property_t device_prop = obs_properties_add_list(props,
-			OPT_DEVICE_ID, "Device",
+			OPT_DEVICE_ID, obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	GetWASAPIAudioDevices(devices, input);
 
 	if (devices.size())
-		obs_property_list_add_string(device_prop, "Default", "default");
+		obs_property_list_add_string(device_prop,
+				obs_module_text("Default"), "default");
 
 	for (size_t i = 0; i < devices.size(); i++) {
 		AudioDeviceInfo &device = devices[i];
@@ -492,7 +491,7 @@ static obs_properties_t GetWASAPIProperties(bool input)
 
 	obs_property_t prop;
 	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
-			"Use Device Timing");
+			obs_module_text("UseDeviceTiming"));
 
 	return props;
 }

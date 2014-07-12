@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <util/platform.h>
 #include <util/bmem.h>
-#include <obs.h>
+#include <obs-module.h>
 
 #include "pulse-wrapper.h"
 
@@ -285,7 +285,8 @@ static obs_properties_t pulse_properties(bool input)
 {
 	obs_properties_t props = obs_properties_create();
 	obs_property_t devices = obs_properties_add_list(props, "device_id",
-		"Device", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+		obs_module_text("Device"), OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_STRING);
 
 	pulse_init();
 	pa_source_info_cb_t cb = (input) ? pulse_input_info : pulse_output_info;
@@ -368,14 +369,12 @@ static void pulse_output_defaults(obs_data_t settings)
  */
 static const char *pulse_input_getname(void)
 {
-	/* TODO: locale */
-	return "Pulse Audio Input Capture";
+	return obs_module_text("PulseInput");
 }
 
 static const char *pulse_output_getname(void)
 {
-	/* TODO: locale */
-	return "Pulse Audio Output Capture";
+	return obs_module_text("PulseOutput");
 }
 
 /**

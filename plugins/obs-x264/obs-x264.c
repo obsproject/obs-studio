@@ -17,7 +17,7 @@
 
 #include <util/dstr.h>
 #include <util/darray.h>
-#include <obs.h>
+#include <obs-module.h>
 #include <x264.h>
 
 struct obs_x264 {
@@ -40,7 +40,6 @@ struct obs_x264 {
 
 static const char *obs_x264_getname(void)
 {
-	/* TODO locale lookup */
 	return "x264";
 }
 
@@ -92,37 +91,39 @@ static inline void add_strings(obs_property_t list, const char *const *strings)
 	}
 }
 
+#define TEXT_BITRATE    obs_module_text("Bitrate")
+#define TEXT_BUF_SIZE   obs_module_text("BufferSize")
+#define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
+#define TEXT_PRESET     obs_module_text("CPUPreset")
+#define TEXT_PROFILE    obs_module_text("Profile")
+#define TEXT_TUNE       obs_module_text("Tune")
+#define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
+
 static obs_properties_t obs_x264_props(void)
 {
-	/* TODO: locale */
-
 	obs_properties_t props = obs_properties_create();
 	obs_property_t list;
 
-	obs_properties_add_int(props, "bitrate", "Bitrate", 50, 100000, 1);
-	obs_properties_add_int(props, "buffer_size", "Buffer Size", 50, 100000,
+	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 100000, 1);
+	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50, 100000,
 			1);
-	obs_properties_add_int(props,
-			"keyint_sec", "Keyframe interval (seconds, 0=auto)",
-			0, 20, 1);
+	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
 
-	list = obs_properties_add_list(props,
-			"preset", "CPU Usage Preset (encoder speed)",
+	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, x264_preset_names);
 
-	list = obs_properties_add_list(props, "profile", "Profile",
+	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(list, "baseline", "baseline");
 	obs_property_list_add_string(list, "main", "main");
 	obs_property_list_add_string(list, "high", "high");
 
-	list = obs_properties_add_list(props, "tune", "Tune",
+	list = obs_properties_add_list(props, "tune", TEXT_TUNE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, x264_tune_names);
 
-	obs_properties_add_text(props, "x264opts",
-			"x264 encoder options (separated by space)",
+	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS,
 			OBS_TEXT_DEFAULT);
 
 	return props;

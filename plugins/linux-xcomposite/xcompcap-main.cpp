@@ -51,8 +51,8 @@ obs_properties_t XCompcapMain::properties()
 	obs_properties_t props = obs_properties_create();
 
 	obs_property_t wins = obs_properties_add_list(props, "capture_window",
-			"Captured Window", OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
+			obs_module_text("Window"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	for (Window win: XCompcap::getTopLevelWindows()) {
 		std::string wname = XCompcap::getWindowName(win);
@@ -66,18 +66,18 @@ obs_properties_t XCompcapMain::properties()
 				desc.c_str());
 	}
 
-	obs_properties_add_int(props, "cut_top", "Cut top pixels",
+	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_left", "Cut left pixels",
+	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_right", "Cut right pixels",
+	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_bot", "Cut bottom pixels",
+	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
 			0, 4096, 1);
 
-	obs_properties_add_bool(props, "swap_redblue", "Swap red and blue");
-	obs_properties_add_bool(props, "lock_x", "Lock X server when "
-	                                         "capturing");
+	obs_properties_add_bool(props, "swap_redblue",
+			obs_module_text("SwapRedBlue"));
+	obs_properties_add_bool(props, "lock_x", obs_module_text("LockX"));
 
 	return props;
 }

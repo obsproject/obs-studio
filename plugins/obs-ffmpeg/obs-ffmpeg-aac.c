@@ -18,7 +18,7 @@
 #include <util/base.h>
 #include <util/circlebuf.h>
 #include <util/darray.h>
-#include <obs.h>
+#include <obs-module.h>
 
 #include <libavformat/avformat.h>
 
@@ -46,8 +46,7 @@ struct aac_encoder {
 
 static const char *aac_getname(void)
 {
-	/* TODO: locale */
-	return "FFmpeg Default AAC Encoder";
+	return obs_module_text("FFmpegAAC");
 }
 
 static void aac_warn(const char *func, const char *format, ...)
@@ -242,8 +241,8 @@ static obs_properties_t aac_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
-	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 320, 32);
+	obs_properties_add_int(props, "bitrate",
+			obs_module_text("Bitrate"), 32, 320, 32);
 	return props;
 }
 

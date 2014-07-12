@@ -54,6 +54,32 @@ MODULE_EXPORT void obs_module_unload(void);
 MODULE_EXPORT void obs_module_set_locale(const char *locale);
 
 /**
+ * Optional: Use this macro in a module to use default locale handling.  Use
+ * the OBS_MODULE_FREE_DEFAULT_LOCALE macro in obs_module_unload to free the
+ * locale data when the module unloads.
+ */
+#define OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale) \
+	lookup_t obs_module_lookup = NULL; \
+	const char *obs_module_text(const char *val) \
+	{ \
+		const char *out = val; \
+		text_lookup_getstr(obs_module_lookup, val, &out); \
+		return out; \
+	} \
+	void obs_module_set_locale(const char *locale) \
+	{ \
+		if (obs_module_lookup) text_lookup_destroy(obs_module_lookup); \
+		obs_module_lookup = obs_module_load_locale(module_name, \
+				default_locale, locale); \
+	}
+
+#define OBS_MODULE_FREE_DEFAULT_LOCALE() \
+	text_lookup_destroy(obs_module_lookup)
+
+/** Helper function for looking up locale if default locale handler was used */
+extern const char *obs_module_text(const char *lookup_string);
+
+/**
  * Optional: Declares the author(s) of the module
  *
  * @param name Author name(s)

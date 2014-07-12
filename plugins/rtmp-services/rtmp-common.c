@@ -10,8 +10,7 @@ struct rtmp_common {
 
 static const char *rtmp_common_getname(void)
 {
-	/* TODO: locale */
-	return "Streaming Services";
+	return obs_module_text("StreamingServices");
 }
 
 static void rtmp_common_update(void *data, obs_data_t settings)
@@ -204,9 +203,8 @@ static obs_properties_t rtmp_common_properties(void)
 	obs_property_t   list;
 	char             *file;
 
-	/* TODO: locale */
-
-	list = obs_properties_add_list(ppts, "service", "Service",
+	list = obs_properties_add_list(ppts, "service",
+			obs_module_text("Service"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	file = obs_find_plugin_file("rtmp-services/services.json");
@@ -217,10 +215,11 @@ static obs_properties_t rtmp_common_properties(void)
 		bfree(file);
 	}
 
-	obs_properties_add_list(ppts, "server", "Server",
+	obs_properties_add_list(ppts, "server", obs_module_text("Server"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	obs_properties_add_text(ppts, "key", "Stream Key", OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"),
+			OBS_TEXT_PASSWORD);
 	return ppts;
 }
 

@@ -5,10 +5,15 @@
 
 #include <arpa/inet.h>
 
-#include <obs.h>
+#include <obs-module.h>
 #include <media-io/video-io.h>
 
 #import "AVCaptureInputPort+PreMavericksCompat.h"
+
+#define TEXT_AVCAPTURE  obs_module_text("AVCapture")
+#define TEXT_DEVICE     obs_module_text("Device")
+#define TEXT_USE_PRESET obs_module_text("UsePreset")
+#define TEXT_PRESET     obs_module_text("Preset")
 
 #define MILLI_TIMESCALE 1000
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
@@ -241,8 +246,7 @@ static inline bool update_frame(struct av_capture *capture,
 
 static const char *av_capture_getname(void)
 {
-	/* TODO: locale */
-	return "Video Capture Device";
+	return TEXT_AVCAPTURE;
 }
 
 static void remove_device(struct av_capture *capture)
@@ -593,7 +597,6 @@ static NSString *preset_names(NSString *preset)
 
 static void av_capture_defaults(obs_data_t settings)
 {
-	//TODO: localize
 	obs_data_set_default_string(settings, "device_name", "none");
 	obs_data_set_default_bool(settings, "use_preset", true);
 	obs_data_set_default_string(settings, "preset",
@@ -759,9 +762,8 @@ static obs_properties_t av_capture_properties(void)
 {
 	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
 	obs_property_t dev_list = obs_properties_add_list(props, "device",
-			"Device", OBS_COMBO_TYPE_LIST,
+			TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 	for (AVCaptureDevice *dev in [AVCaptureDevice
 			devicesWithMediaType:AVMediaTypeVideo]) {
@@ -774,12 +776,13 @@ static obs_properties_t av_capture_properties(void)
 			properties_device_changed);
 
 	obs_property_t use_preset = obs_properties_add_bool(props,
-			"use_preset", "Use preset");
+			"use_preset", TEXT_USE_PRESET);
 	// TODO: implement manual configuration
 	obs_property_set_enabled(use_preset, false);
 
 	obs_property_t preset_list = obs_properties_add_list(props, "preset",
-			"Preset", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+			TEXT_PRESET, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
 	for (NSString *preset in presets())
 		obs_property_list_add_string(preset_list,
 				preset_names(preset).UTF8String,

@@ -83,8 +83,7 @@ static inline void update_settings(struct monitor_capture *capture,
 
 static const char *monitor_capture_getname(void)
 {
-	/* TODO: locale */
-	return "Monitor Capture";
+	return obs_module_text("MonitorCapture");
 }
 
 static void monitor_capture_destroy(void *data)

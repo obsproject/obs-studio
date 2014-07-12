@@ -26,3 +26,4 @@ target_link_libraries(linux-xcomposite
 	${X11_Xcomposite_LIB})
 
 install_obs_plugin(linux-xcomposite)
+install_obs_plugin_data(linux-xcomposite ../../build/data/obs-plugins/linux-xcomposite)
