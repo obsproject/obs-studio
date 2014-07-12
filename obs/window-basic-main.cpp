@@ -1690,7 +1690,7 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 
 void OBSBasic::StreamingStart()
 {
-	ui->streamButton->setText("Stop Streaming");
+	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(streamOutput);
 }
