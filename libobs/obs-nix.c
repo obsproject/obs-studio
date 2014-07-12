@@ -27,9 +27,9 @@ static inline bool check_path(const char* data, const char *path,
 {
 	dstr_copy(output, path);
 	dstr_cat(output, data);
-	
+
 	blog(LOG_INFO, "Attempting path: %s\n", output->array);
-	
+
 	return access(output->array, R_OK) == 0;
 }
 
@@ -38,14 +38,14 @@ static inline bool check_lib_path(const char* data, const char *path,
 {
 	bool result = false;
 	struct dstr tmp;
-	
+
 	dstr_init_copy(&tmp, "lib");
 	dstr_cat(&tmp, data);
 	dstr_cat(&tmp, ".so");
-	result = check_path(tmp.array, path, output); 
-	
+	result = check_path(tmp.array, path, output);
+
 	dstr_free(&tmp);
-	
+
 	return result;
 }
 
@@ -54,7 +54,7 @@ static inline bool check_lib_path(const char* data, const char *path,
  *   /usr/lib/obs-plugins
  */
 char *find_plugin(const char *plugin)
-{ 
+{
 	struct dstr output;
 	dstr_init(&output);
 
@@ -104,7 +104,7 @@ char *find_libobs_data_file(const char *file)
  *   /usr/share/obs-plugins
  */
 char *obs_find_plugin_file(const char *file)
-{ 	
+{
 	struct dstr output;
 	dstr_init(&output);
 
