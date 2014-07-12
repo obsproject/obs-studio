@@ -20,9 +20,9 @@ set(mac-capture_SOURCES
 	plugin-main.c
 	audio-device-enum.c
 	mac-audio.c
-	mac-screen-capture.m)
+	mac-display-capture.m)
 	
-set_source_files_properties(mac-screen-capture.m
+set_source_files_properties(mac-display-capture.m
 	PROPERTIES LANGUAGE C
 		COMPILE_FLAGS "-fobjc-arc")
 
