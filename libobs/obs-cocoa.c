@@ -24,6 +24,8 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
+#include <objc/objc.h>
+
 // support both foo.so and libfoo.so for now
 static const char *plugin_patterns[] = {
 	OBS_INSTALL_PREFIX "obs-plugins/%s.so",
@@ -129,6 +131,44 @@ static void log_available_memory(void)
 				memory_available / 1024 / 1024);
 }
 
+static void log_os_name(id pi, SEL UTF8String)
+{
+	unsigned long os_id = (unsigned long)objc_msgSend(pi,
+			sel_registerName("operatingSystem"));
+
+	id os = objc_msgSend(pi,
+			sel_registerName("operatingSystemName"));
+	const char *name = (const char*)objc_msgSend(os, UTF8String);
+
+	if (os_id == 5 /*NSMACHOperatingSystem*/) {
+		blog(LOG_INFO, "OS Name: Mac OS X (%s)", name);
+		return;
+	}
+
+	blog(LOG_INFO, "OS Name: %s", name ? name : "Unknown");
+}
+
+static void log_os_version(id pi, SEL UTF8String)
+{
+	id vs = objc_msgSend(pi,
+			sel_registerName("operatingSystemVersionString"));
+	const char *version = (const char*)objc_msgSend(vs, UTF8String);
+
+	blog(LOG_INFO, "OS Version: %s", version ? version : "Unknown");
+}
+
+static void log_os(void)
+{
+	Class NSProcessInfo = objc_getClass("NSProcessInfo");
+	id pi  = objc_msgSend((id)NSProcessInfo,
+			sel_registerName("processInfo"));
+
+	SEL UTF8String = sel_registerName("UTF8String");
+
+	log_os_name(pi, UTF8String);
+	log_os_version(pi, UTF8String);
+}
+
 static void log_kernel_version(void)
 {
 	char   kernel_version[1024];
@@ -147,5 +187,6 @@ void log_system_info(void)
 	log_processor_speed();
 	log_processor_cores();
 	log_available_memory();
+	log_os();
 	log_kernel_version();
 }
