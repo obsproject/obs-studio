@@ -465,8 +465,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	int ret = -1;
 	QCoreApplication::addLibraryPath(".");
 
+	OBSApp program(argc, argv);
 	try {
-		OBSApp program(argc, argv);
 		program.AppInit();
 
 		OBSTranslator translator;
@@ -481,6 +481,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "%s", error);
+		OBSErrorBox(nullptr, "%s", error);
 	}
 
 	return ret;
