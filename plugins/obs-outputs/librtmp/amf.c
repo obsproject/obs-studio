@@ -483,7 +483,6 @@ AMF3ReadString(const char *data, AVal *str)
 
         return len + nSize;
     }
-    return len;
 }
 
 int
