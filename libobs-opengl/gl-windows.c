@@ -502,11 +502,12 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 
 	device->cur_swap = swap;
 
-	if (swap)
+	if (swap) {
 		hdc = swap->wi->hdc;
 
-	if (!wgl_make_current(hdc, device->plat->hrc))
-		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
+		if (!wgl_make_current(hdc, device->plat->hrc))
+			blog(LOG_ERROR, "device_load_swapchain (GL) failed");
+	}
 }
 
 void device_present(device_t device)

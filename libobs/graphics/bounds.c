@@ -86,7 +86,7 @@ void bounds_get_center(struct vec3 *dst, const struct bounds *b)
 void bounds_transform(struct bounds *dst, const struct bounds *b,
 		const struct matrix4 *m)
 {
-	struct bounds temp;
+	struct bounds temp = {0};
 	bool b_init = false;
 	int i;
 
@@ -123,7 +123,7 @@ void bounds_transform(struct bounds *dst, const struct bounds *b,
 void bounds_transform3x4(struct bounds *dst, const struct bounds *b,
 		const struct matrix3 *m)
 {
-	struct bounds temp;
+	struct bounds temp = {0};
 	bool b_init = false;
 	int i;
 

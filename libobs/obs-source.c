@@ -997,7 +997,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	bool        limited_range = yuv && !source->async_full_range;
 	const char  *type         = yuv ? "DrawMatrix" : "Draw";
 	bool        def_draw      = (!effect);
-	technique_t tech;
+	technique_t tech          = NULL;
 
 	if (def_draw) {
 		effect = obs_get_default_effect();
