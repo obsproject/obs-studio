@@ -57,6 +57,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			killTimer(resizeTimer);
 		resizeTimer = startTimer(100);
 	});
+
+	const char *name = obs_source_getname(source);
+	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t params)
