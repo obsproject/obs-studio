@@ -369,6 +369,7 @@ static bool init_default_swap(struct gl_platform *plat, device_t device,
 void gl_update(device_t device)
 {
 	/* does nothing on windows */
+	UNUSED_PARAMETER(device);
 }
 
 struct gl_platform *gl_platform_create(device_t device,
@@ -487,6 +488,7 @@ void device_entercontext(device_t device)
 void device_leavecontext(device_t device)
 {
 	wglMakeCurrent(NULL, NULL);
+	UNUSED_PARAMETER(device);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swap)

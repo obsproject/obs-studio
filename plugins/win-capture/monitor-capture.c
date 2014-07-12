@@ -47,6 +47,8 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 		monitor->id   = monitor->cur_id;
 	}
 
+	UNUSED_PARAMETER(hdc);
+	UNUSED_PARAMETER(handle);
 	return (monitor->desired_id < monitor->cur_id++);
 }
 
@@ -119,6 +121,8 @@ static void *monitor_capture_create(obs_data_t settings, obs_source_t source)
 	capture->opaque_effect = opaque_effect;
 
 	update_settings(capture, settings);
+
+	UNUSED_PARAMETER(source);
 	return capture;
 }
 
@@ -137,6 +141,8 @@ static void monitor_capture_render(void *data, effect_t effect)
 {
 	struct monitor_capture *capture = data;
 	dc_capture_render(&capture->data, capture->opaque_effect);
+
+	UNUSED_PARAMETER(effect);
 }
 
 static uint32_t monitor_capture_width(void *data)

@@ -352,5 +352,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 		break;
 	}
 
+	UNUSED_PARAMETER(hinst_dll);
+	UNUSED_PARAMETER(reserved);
 	return true;
 }

@@ -445,6 +445,8 @@ static void wc_render(void *data, effect_t effect)
 {
 	struct window_capture *wc = data;
 	dc_capture_render(&wc->capture, wc->opaque_effect);
+
+	UNUSED_PARAMETER(effect);
 }
 
 struct obs_source_info window_capture_info = {
