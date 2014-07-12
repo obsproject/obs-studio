@@ -717,7 +717,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -739,7 +739,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -760,7 +760,7 @@
       <DebugInformationFormat />
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level4</WarningLevel>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -781,7 +781,7 @@
       <DebugInformationFormat />
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level4</WarningLevel>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

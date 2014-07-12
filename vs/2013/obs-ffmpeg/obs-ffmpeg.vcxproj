@@ -94,7 +94,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OBSFFMPEG_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../libobs</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -115,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OBSFFMPEG_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../libobs</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,7 +138,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OBSFFMPEG_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../libobs</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,7 +163,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OBSFFMPEG_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../../libobs</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -210,7 +210,7 @@
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>../../../libobs/util/vc;../../../deps/jansson/src;../../../deps/jansson/win32</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -232,7 +232,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBOBS_EXPORTS;PTW32_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>../../../libobs/util/vc;../../../deps/jansson/src;../../../deps/jansson/win32</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -256,7 +256,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBOBS_EXPORTS;PTW32_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>../../../libobs/util/vc;../../../deps/jansson/src;../../../deps/jansson/win32</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -282,7 +282,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBOBS_EXPORTS;PTW32_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <AdditionalIncludeDirectories>../../../libobs/util/vc;../../../deps/jansson/src;../../../deps/jansson/win32</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;4201;4152;4706;4204</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4201;4152;4706;4204;4244;4245;4221;4054</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
