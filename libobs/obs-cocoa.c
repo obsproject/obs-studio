@@ -102,12 +102,12 @@ static void log_processor_cores(void)
 	int    ret;
 
 	size = sizeof(physical_cores);
-	ret = sysctlbyname("machdep.cpu.cores_per_package", &physical_cores,
+	ret = sysctlbyname("machdep.cpu.core_count", &physical_cores,
 			&size, NULL, 0);
 	if (ret != 0)
 		return;
 
-	ret = sysctlbyname("machdep.cpu.logical_per_package", &logical_cores,
+	ret = sysctlbyname("machdep.cpu.thread_count", &logical_cores,
 			&size, NULL, 0);
 	if (ret != 0)
 		return;
