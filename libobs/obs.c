@@ -504,9 +504,13 @@ static inline bool obs_init_handlers(void)
 
 extern const struct obs_source_info scene_info;
 
+extern void log_system_info(void);
+
 static bool obs_init(const char *locale)
 {
 	obs = bzalloc(sizeof(struct obs_core));
+
+	log_system_info();
 
 	if (!obs_init_data())
 		return false;
