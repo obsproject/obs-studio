@@ -156,6 +156,9 @@ static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 	enc->context->sample_fmt  = enc->aac->sample_fmts ?
 		enc->aac->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
+	blog(LOG_INFO, "FFmpeg AAC: bitrate: %d, channels: %d",
+			enc->context->bit_rate / 1000, enc->context->channels);
+
 	init_sizes(enc, audio);
 
 	/* enable experimental FFmpeg encoder if the only one available */
