@@ -311,7 +311,7 @@ bool OBSBasic::LoadService()
 
 	obs_data_t settings = obs_data_getobj(data, "settings");
 
-	service = obs_service_create(type, "default", settings);
+	service = obs_service_create(type, "default_service", settings);
 
 	obs_data_release(settings);
 	obs_data_release(data);
@@ -321,11 +321,13 @@ bool OBSBasic::LoadService()
 
 bool OBSBasic::InitOutputs()
 {
-	fileOutput = obs_output_create("flv_output", "default", nullptr);
+	fileOutput = obs_output_create("flv_output", "default_file_output",
+			nullptr);
 	if (!fileOutput)
 		return false;
 
-	streamOutput = obs_output_create("rtmp_output", "default", nullptr);
+	streamOutput = obs_output_create("rtmp_output", "default_stream",
+			nullptr);
 	if (!streamOutput)
 		return false;
 
@@ -342,14 +344,15 @@ bool OBSBasic::InitOutputs()
 
 bool OBSBasic::InitEncoders()
 {
-	x264 = obs_video_encoder_create("obs_x264", "h264", nullptr);
+	x264 = obs_video_encoder_create("obs_x264", "default_h264", nullptr);
 	if (!x264)
 		return false;
 
-	aac = obs_audio_encoder_create("libfdk_aac", "aac", nullptr);
+	aac = obs_audio_encoder_create("libfdk_aac", "default_aac", nullptr);
 
-	if(!aac)
-		aac = obs_audio_encoder_create("ffmpeg_aac", "aac", nullptr);
+	if (!aac)
+		aac = obs_audio_encoder_create("ffmpeg_aac", "default_aac",
+				nullptr);
 
 	if (!aac)
 		return false;
@@ -362,7 +365,7 @@ bool OBSBasic::InitService()
 	if (LoadService())
 		return true;
 
-	service = obs_service_create("rtmp_common", nullptr, nullptr);
+	service = obs_service_create("rtmp_common", "default_service", nullptr);
 	if (!service)
 		return false;
 
