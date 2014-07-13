@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <string.h>
 #include "bounds.h"
 #include "matrix3.h"
 #include "matrix4.h"
@@ -86,9 +87,11 @@ void bounds_get_center(struct vec3 *dst, const struct bounds *b)
 void bounds_transform(struct bounds *dst, const struct bounds *b,
 		const struct matrix4 *m)
 {
-	struct bounds temp = {0};
+	struct bounds temp;
 	bool b_init = false;
 	int i;
+
+	memset(&temp, 0, sizeof(temp));
 
 	for (i = 0; i < 8; i++) {
 		struct vec3 p;
@@ -123,9 +126,11 @@ void bounds_transform(struct bounds *dst, const struct bounds *b,
 void bounds_transform3x4(struct bounds *dst, const struct bounds *b,
 		const struct matrix3 *m)
 {
-	struct bounds temp = {0};
+	struct bounds temp;
 	bool b_init = false;
 	int i;
+
+	memset(&temp, 0, sizeof(temp));
 
 	for (i = 0; i < 8; i++) {
 		struct vec3 p;
