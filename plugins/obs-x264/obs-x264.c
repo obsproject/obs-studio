@@ -202,7 +202,7 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 static inline void apply_x264_profile(struct obs_x264 *obsx264,
 		const char *profile)
 {
-	if (!obsx264->context && profile) {
+	if (!obsx264->context && profile && *profile) {
 		int ret = x264_param_apply_profile(&obsx264->params, profile);
 		if (ret != 0)
 			warn("Failed to set x264 profile '%s'", profile);
