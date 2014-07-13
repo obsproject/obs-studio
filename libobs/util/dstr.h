@@ -92,8 +92,6 @@ EXPORT void dstr_ncat(struct dstr *dst, const char *array, const size_t len);
 EXPORT void dstr_ncat_dstr(struct dstr *dst, const struct dstr *str,
 		const size_t len);
 
-EXPORT void dstr_cat_strref(struct dstr *dst, const struct strref *str);
-
 EXPORT void dstr_insert(struct dstr *dst, const size_t idx,
 		const char *array);
 EXPORT void dstr_insert_dstr(struct dstr *dst, const size_t idx,
