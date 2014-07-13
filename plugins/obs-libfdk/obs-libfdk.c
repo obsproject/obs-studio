@@ -162,6 +162,9 @@ static void *libfdk_create(obs_data_t settings, obs_encoder_t encoder)
 
 	blog(LOG_INFO, "libfdk_aac encoder created");
 
+	blog(LOG_INFO, "libfdk_aac bitrate: %d, channels: %d",
+			bitrate / 1000, enc->channels);
+
 	return enc;
 
 fail:
