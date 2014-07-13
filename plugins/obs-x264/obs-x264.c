@@ -15,10 +15,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <stdio.h>
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <obs-module.h>
 #include <x264.h>
+
+#define do_log(level, format, ...) \
+	blog(level, "[x264 encoder: '%s'] " format, \
+			obs_encoder_getname(obsx264->encoder), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
+/* ------------------------------------------------------------------------- */
 
 struct obs_x264 {
 	obs_encoder_t   encoder;
@@ -34,7 +45,6 @@ struct obs_x264 {
 	size_t          extra_data_size;
 	size_t          sei_size;
 };
-
 
 /* ------------------------------------------------------------------------- */
 
@@ -183,7 +193,7 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 
 	if (getparam(param, &name, &val)) {
 		if (x264_param_parse(&obsx264->params, name, val) != 0)
-			blog(LOG_WARNING, "x264 param: %s failed", param);
+			warn("x264 param: %s failed", param);
 
 		bfree(name);
 	}
@@ -195,8 +205,7 @@ static inline void apply_x264_profile(struct obs_x264 *obsx264,
 	if (!obsx264->context && profile) {
 		int ret = x264_param_apply_profile(&obsx264->params, profile);
 		if (ret != 0)
-			blog(LOG_WARNING, "Failed to set x264 "
-					"profile '%s'", profile);
+			warn("Failed to set x264 profile '%s'", profile);
 	}
 }
 
@@ -311,8 +320,7 @@ static bool obs_x264_update(void *data, obs_data_t settings)
 	if (success) {
 		ret = x264_encoder_reconfig(obsx264->context, &obsx264->params);
 		if (ret != 0)
-			blog(LOG_WARNING, "Failed to reconfigure x264: %d",
-					ret);
+			warn("Failed to reconfigure: %d", ret);
 		return ret == 0;
 	}
 
@@ -356,11 +364,11 @@ static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 		obsx264->context = x264_encoder_open(&obsx264->params);
 
 		if (obsx264->context == NULL)
-			blog(LOG_WARNING, "x264 failed to load");
+			warn("x264 failed to load");
 		else
 			load_headers(obsx264);
 	} else {
-		blog(LOG_WARNING, "bad settings specified for x264");
+		warn("bad settings specified");
 	}
 
 	if (!obsx264->context) {
@@ -430,7 +438,7 @@ static bool obs_x264_encode(void *data, struct encoder_frame *frame,
 	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count,
 			(frame ? &pic : NULL), &pic_out);
 	if (ret < 0) {
-		blog(LOG_WARNING, "x264 encode failed");
+		warn("encode failed");
 		return false;
 	}
 
