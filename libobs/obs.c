@@ -622,6 +622,14 @@ bool obs_reset_video(struct obs_video_info *ovi)
 	if (!video->graphics && !obs_init_graphics(ovi))
 		return false;
 
+	blog(LOG_INFO, "video settings reset:\n"
+	               "\tbase resolution:   %dx%d\n"
+	               "\toutput resolution: %dx%d\n"
+	               "\tfps:               %d/%d",
+	               ovi->base_width, ovi->base_height,
+	               ovi->output_width, ovi->output_height,
+	               ovi->fps_num, ovi->fps_den);
+
 	return obs_init_video(ovi);
 }
 
@@ -636,6 +644,14 @@ bool obs_reset_audio(struct audio_output_info *ai)
 	obs_free_audio();
 	if(!ai)
 		return true;
+
+	blog(LOG_INFO, "audio settings reset:\n"
+	               "\tsamples per sec: %d\n"
+	               "\tspeakers:        %d\n"
+	               "\tbuffering (ms):  %d\n",
+	               (int)ai->samples_per_sec,
+	               (int)ai->speakers,
+	               (int)ai->buffer_ms);
 
 	return obs_init_audio(ai);
 }
