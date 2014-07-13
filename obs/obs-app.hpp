@@ -66,7 +66,7 @@ public:
 	OBSApp(int &argc, char **argv);
 
 	void AppInit();
-	void OBSInit();
+	bool OBSInit();
 
 	inline QMainWindow *GetMainWindow() const {return mainWindow.get();}
 

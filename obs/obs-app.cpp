@@ -29,6 +29,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
+#include "window-license-agreement.hpp"
 #include "platform.hpp"
 
 #include <fstream>
@@ -247,10 +248,26 @@ const char *OBSApp::GetRenderModule() const
 		"libobs-d3d11" : "libobs-opengl";
 }
 
-void OBSApp::OBSInit()
+bool OBSApp::OBSInit()
 {
-	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
-	mainWindow->OBSInit();
+	bool licenseAccepted = config_get_bool(globalConfig, "General",
+			"LicenseAccepted");
+	OBSLicenseAgreement agreement(nullptr);
+
+	if (licenseAccepted || agreement.exec() == QDialog::Accepted) {
+		if (!licenseAccepted) {
+			config_set_bool(globalConfig, "General",
+					"LicenseAccepted", true);
+			config_save(globalConfig);
+		}
+
+		mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
+		mainWindow->OBSInit();
+
+		return true;
+	} else {
+		return false;
+	}
 }
 
 string OBSApp::GetVersionString() const
@@ -527,9 +544,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		program.installTranslator(&translator);
 		program.setStyle(new NoFocusFrameStyle);
-		program.OBSInit();
 
-		ret = program.exec();
+		ret = program.OBSInit() ? program.exec() : 0;
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "%s", error);
