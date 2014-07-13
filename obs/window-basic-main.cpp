@@ -1753,6 +1753,7 @@ void OBSBasic::SetupEncoders()
 				"ABitrate");
 
 		obs_data_setint(x264Settings, "bitrate", videoBitrate);
+		obs_data_setint(x264Settings, "buffer_size", videoBitrate);
 		obs_data_setbool(x264Settings, "cbr", true);
 
 		obs_data_setint(aacSettings, "bitrate", audioBitrate);
