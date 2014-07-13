@@ -284,7 +284,7 @@ void strlist_free(char **strlist)
 	}
 }
 
-void dstr_init_strref(struct dstr *dst, const struct strref *src)
+void dstr_init_copy_strref(struct dstr *dst, const struct strref *src)
 {
 	dstr_init(dst);
 	dstr_copy_strref(dst, src);

@@ -955,7 +955,7 @@ static bool cf_preprocessor(struct cf_preprocessor *pp,
 	           strref_cmp(&cur_token->str, "endif") == 0) {
 		if (!if_block) {
 			struct dstr name;
-			dstr_init_strref(&name, &cur_token->str);
+			dstr_init_copy_strref(&name, &cur_token->str);
 			cf_adderror(pp, cur_token,"#$1 outside of "
 			                          "#if/#ifdef/#ifndef block",
 			                          name.array, NULL, NULL);
@@ -1285,7 +1285,7 @@ void cf_preprocessor_add_def(struct cf_preprocessor *pp, struct cf_def *def)
 
 	if (existing) {
 		struct dstr name;
-		dstr_init_strref(&name, &def->name.str);
+		dstr_init_copy_strref(&name, &def->name.str);
 		cf_addwarning(pp, &def->name, "Token $1 already defined",
 				name.array, NULL, NULL);
 		cf_addwarning(pp, &existing->name,
