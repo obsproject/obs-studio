@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "bmem.h"
 #include "config-file.h"
 #include "text-lookup.h"
 
