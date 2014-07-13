@@ -575,6 +575,10 @@ OBSBasic::~OBSBasic()
 	gs_leavecontext();
 
 	obs_shutdown();
+
+	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
+			LIBOBS_API_VER);
+	config_save(App()->GlobalConfig());
 }
 
 OBSScene OBSBasic::GetCurrentScene()
