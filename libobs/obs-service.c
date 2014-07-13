@@ -64,6 +64,7 @@ obs_service_t obs_service_create(const char *id, const char *name,
 			&obs->data.services_mutex,
 			&obs->data.first_service);
 
+	blog(LOG_INFO, "service '%s' (%s) created", name, id);
 	return service;
 }
 
@@ -74,6 +75,8 @@ static void actually_destroy_service(struct obs_service *service)
 
 	if (service->output)
 		service->output->service = NULL;
+
+	blog(LOG_INFO, "service '%s' destroyed", service->context.name);
 
 	obs_context_data_free(&service->context);
 	bfree(service);

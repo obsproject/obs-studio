@@ -181,6 +181,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, info))
 		goto fail;
 
+	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 	return source;
 
@@ -217,6 +218,8 @@ void obs_source_destroy(struct obs_source *source)
 		return;
 
 	obs_context_data_remove(&source->context);
+
+	blog(LOG_INFO, "source '%s' destroyed", source->context.name);
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
