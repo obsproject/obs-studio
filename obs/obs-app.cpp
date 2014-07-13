@@ -132,10 +132,6 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 
-	path = os_get_config_path("obs-studio/studio");
-	if (!do_mkdir(path))
-		return false;
-
 	path = os_get_config_path("obs-studio/logs");
 	if (!do_mkdir(path))
 		return false;
