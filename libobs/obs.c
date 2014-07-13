@@ -607,10 +607,6 @@ bool obs_reset_video(struct obs_video_info *ovi)
 
 	struct obs_core_video *video = &obs->video;
 
-	/* align to multiple-of-two and SSE alignment sizes */
-	ovi->output_width  &= 0xFFFFFFFC;
-	ovi->output_height &= 0xFFFFFFFE;
-
 	stop_video();
 	obs_free_video();
 
@@ -618,6 +614,10 @@ bool obs_reset_video(struct obs_video_info *ovi)
 		obs_free_graphics();
 		return true;
 	}
+
+	/* align to multiple-of-two and SSE alignment sizes */
+	ovi->output_width  &= 0xFFFFFFFC;
+	ovi->output_height &= 0xFFFFFFFE;
 
 	if (!video->graphics && !obs_init_graphics(ovi))
 		return false;
