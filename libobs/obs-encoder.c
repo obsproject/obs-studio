@@ -213,6 +213,11 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	}
 }
 
+const char *obs_encoder_getname(obs_encoder_t encoder)
+{
+	return encoder ? encoder->context.name : NULL;
+}
+
 static inline obs_data_t get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t settings = obs_data_create();
