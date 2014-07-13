@@ -217,9 +217,12 @@ static bool reset_x264_params(struct obs_x264 *obsx264,
 
 static void log_x264(void *param, int level, const char *format, va_list args)
 {
-	blogva(LOG_INFO, format, args);
+	struct obs_x264 *obsx264 = param;
+	char str[1024];
 
-	UNUSED_PARAMETER(param);
+	vsnprintf(str, 1024, format, args);
+	info("%s", str);
+
 	UNUSED_PARAMETER(level);
 }
 
@@ -248,6 +251,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.i_fps_num            = voi->fps_num;
 	obsx264->params.i_fps_den            = voi->fps_den;
 	obsx264->params.pf_log               = log_x264;
+	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
 
 	/* use the new filler method for CBR to allow real-time adjusting of
