@@ -94,6 +94,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(cpuUsageTimer, SIGNAL(timeout()),
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
+
+#ifdef __APPLE__
+	QList<QKeySequence> keys;
+	keys.append(QKeySequence::Delete);
+	keys.append(QKeySequence(Qt::Key_Backspace));
+	ui->actionRemoveSource->setShortcuts(keys);
+#endif
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
