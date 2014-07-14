@@ -2,9 +2,19 @@
 
 #include <obs.hpp>
 #include <QWidget>
-#include <QProgressBar>
 
-/* TODO: Make a real volume control that isn't terrible */
+class VolumeMeter : public QWidget
+{
+	Q_OBJECT
+private:
+	float mag, peak, peakHold;
+	QColor bkColor, magColor, peakColor, peakHoldColor;
+public:
+	explicit VolumeMeter(QWidget *parent = 0);
+	void setLevels(float nmag, float npeak, float npeakHold);
+protected:
+	void paintEvent(QPaintEvent *event);
+};
 
 class QLabel;
 class QSlider;
@@ -16,7 +26,7 @@ private:
 	OBSSource source;
 	QLabel          *nameLabel;
 	QLabel          *volLabel;
-	QProgressBar    *volMeter;
+	VolumeMeter     *volMeter;
 	QSlider         *slider;
 	bool            signalChanged;
 	uint64_t        lastMeterTime;
@@ -28,7 +38,7 @@ private:
 
 private slots:
 	void VolumeChanged(int vol);
-	void VolumeLevel(float level);
+	void VolumeLevel(float mag, float peak, float peakHold);
 	void SliderChanged(int vol);
 
 public:

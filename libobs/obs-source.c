@@ -565,8 +565,15 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 		max_val  = fmaxf(max_val, val_pow2);
 	}
 
-	rms_val = to_db(sqrtf(sum_val / (float)count * volume));
-	max_val = to_db(sqrtf(max_val * volume));
+	/*
+	  We want the volume meters scale linearly in respect to current
+	  volume, so, no need to apply volume here.
+	*/
+
+	UNUSED_PARAMETER(volume);
+
+	rms_val = to_db(sqrtf(sum_val / (float)count));
+	max_val = to_db(sqrtf(max_val));
 
 	if (max_val > source->vol_max)
 		source->vol_max = max_val;
