@@ -281,7 +281,19 @@ string OBSApp::GetVersionString() const
 	ver << " (";
 
 #ifdef HAVE_OBSCONFIG_H
-	ver << OBS_VERSION << ", ";
+	const char *hash = OBS_VERSION;
+	const char *temp = hash;
+
+	/* only use the commit hash from the OBS_VERSION string */
+	while (temp) {
+		if (*temp == '-')
+			temp++;
+
+		hash = temp;
+		temp = strchr(temp, '-');
+	}
+
+	ver << hash << ", ";
 #endif
 
 #ifdef _WIN32
