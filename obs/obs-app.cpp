@@ -273,28 +273,16 @@ bool OBSApp::OBSInit()
 string OBSApp::GetVersionString() const
 {
 	stringstream ver;
-	ver << "v" <<
-		LIBOBS_API_MAJOR_VER << "." <<
+
+#ifdef HAVE_OBSCONFIG_H
+	ver << OBS_VERSION;
+#else
+	ver <<  LIBOBS_API_MAJOR_VER << "." <<
 		LIBOBS_API_MINOR_VER << "." <<
 		LIBOBS_API_PATCH_VER;
 
-	ver << " (";
-
-#ifdef HAVE_OBSCONFIG_H
-	const char *hash = OBS_VERSION;
-	const char *temp = hash;
-
-	/* only use the commit hash from the OBS_VERSION string */
-	while (temp) {
-		if (*temp == '-')
-			temp++;
-
-		hash = temp;
-		temp = strchr(temp, '-');
-	}
-
-	ver << hash << ", ";
 #endif
+	ver << " (";
 
 #ifdef _WIN32
 	if (sizeof(void*) == 8)
