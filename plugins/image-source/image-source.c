@@ -14,7 +14,7 @@ struct image_source {
 
 static const char *image_source_get_name(void)
 {
-	return obs_module_text("Image");
+	return obs_module_text("ImageInput");
 }
 
 static void image_source_update(void *data, obs_data_t settings)
