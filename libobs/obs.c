@@ -204,7 +204,7 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
 			&graphics_data);
 	if (errorcode != GS_SUCCESS) {
-		if (errorcode == GS_ERROR_MODULENOTFOUND)
+		if (errorcode == GS_ERROR_MODULE_NOT_FOUND)
 			blog(LOG_ERROR, "Could not find graphics module '%s'",
 					ovi->graphics_module);
 		return false;
@@ -218,12 +218,19 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 				NULL);
 		bfree(filename);
 
+		filename = find_libobs_data_file("solid.effect");
+		video->solid_effect = gs_create_effect_from_file(filename,
+				NULL);
+		bfree(filename);
+
 		filename = find_libobs_data_file("format_conversion.effect");
 		video->conversion_effect = gs_create_effect_from_file(filename,
 				NULL);
 		bfree(filename);
 
 		if (!video->default_effect)
+			success = false;
+		if (!video->solid_effect)
 			success = false;
 		if (!video->conversion_effect)
 			success = false;
@@ -342,6 +349,7 @@ static void obs_free_graphics(void)
 		gs_entercontext(video->graphics);
 
 		effect_destroy(video->default_effect);
+		effect_destroy(video->solid_effect);
 		effect_destroy(video->conversion_effect);
 		video->default_effect = NULL;
 
@@ -470,6 +478,7 @@ static const char *obs_signals[] = {
 	"void source_deactivate(ptr source)",
 	"void source_show(ptr source)",
 	"void source_hide(ptr source)",
+	"void source_rename(ptr source, string new_name, string prev_name)",
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
@@ -495,20 +504,25 @@ static inline bool obs_init_handlers(void)
 
 extern const struct obs_source_info scene_info;
 
-static bool obs_init(void)
+extern void log_system_info(void);
+
+static bool obs_init(const char *locale)
 {
 	obs = bzalloc(sizeof(struct obs_core));
+
+	log_system_info();
 
 	if (!obs_init_data())
 		return false;
 	if (!obs_init_handlers())
 		return false;
 
+	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
 	return true;
 }
 
-bool obs_startup(void)
+bool obs_startup(const char *locale)
 {
 	bool success;
 
@@ -517,7 +531,7 @@ bool obs_startup(void)
 		return false;
 	}
 
-	success = obs_init();
+	success = obs_init(locale);
 	if (!success)
 		obs_shutdown();
 
@@ -551,6 +565,7 @@ void obs_shutdown(void)
 		free_module(obs->modules.array+i);
 	da_free(obs->modules);
 
+	bfree(obs->locale);
 	bfree(obs);
 	obs = NULL;
 }
@@ -558,6 +573,28 @@ void obs_shutdown(void)
 bool obs_initialized(void)
 {
 	return obs != NULL;
+}
+
+void obs_set_locale(const char *locale)
+{
+	if (!obs)
+		return;
+
+	if (obs->locale)
+		bfree(obs->locale);
+	obs->locale = bstrdup(locale);
+
+	for (size_t i = 0; i < obs->modules.num; i++) {
+		struct obs_module *module = obs->modules.array+i;
+
+		if (module->set_locale)
+			module->set_locale(locale);
+	}
+}
+
+const char *obs_get_locale(void)
+{
+	return obs ? obs->locale : NULL;
 }
 
 bool obs_reset_video(struct obs_video_info *ovi)
@@ -570,10 +607,6 @@ bool obs_reset_video(struct obs_video_info *ovi)
 
 	struct obs_core_video *video = &obs->video;
 
-	/* align to multiple-of-two and SSE alignment sizes */
-	ovi->output_width  &= 0xFFFFFFFC;
-	ovi->output_height &= 0xFFFFFFFE;
-
 	stop_video();
 	obs_free_video();
 
@@ -582,8 +615,20 @@ bool obs_reset_video(struct obs_video_info *ovi)
 		return true;
 	}
 
+	/* align to multiple-of-two and SSE alignment sizes */
+	ovi->output_width  &= 0xFFFFFFFC;
+	ovi->output_height &= 0xFFFFFFFE;
+
 	if (!video->graphics && !obs_init_graphics(ovi))
 		return false;
+
+	blog(LOG_INFO, "video settings reset:\n"
+	               "\tbase resolution:   %dx%d\n"
+	               "\toutput resolution: %dx%d\n"
+	               "\tfps:               %d/%d",
+	               ovi->base_width, ovi->base_height,
+	               ovi->output_width, ovi->output_height,
+	               ovi->fps_num, ovi->fps_den);
 
 	return obs_init_video(ovi);
 }
@@ -599,6 +644,14 @@ bool obs_reset_audio(struct audio_output_info *ai)
 	obs_free_audio();
 	if(!ai)
 		return true;
+
+	blog(LOG_INFO, "audio settings reset:\n"
+	               "\tsamples per sec: %d\n"
+	               "\tspeakers:        %d\n"
+	               "\tbuffering (ms):  %d\n",
+	               (int)ai->samples_per_sec,
+	               (int)ai->speakers,
+	               (int)ai->buffer_ms);
 
 	return obs_init_audio(ai);
 }
@@ -964,6 +1017,12 @@ effect_t obs_get_default_effect(void)
 	return obs->video.default_effect;
 }
 
+effect_t obs_get_solid_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.solid_effect;
+}
+
 signal_handler_t obs_signalhandler(void)
 {
 	if (!obs) return NULL;
@@ -1149,8 +1208,11 @@ static inline bool obs_context_data_init_wrap(
 		const char              *name)
 {
 	assert(context);
+	memset(context, 0, sizeof(*context));
 
-	obs_context_data_free(context);
+	pthread_mutex_init_value(&context->rename_cache_mutex);
+	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
+		return false;
 
 	context->signals = signal_handler_create();
 	if (!context)
@@ -1184,7 +1246,12 @@ void obs_context_data_free(struct obs_context_data *context)
 	proc_handler_destroy(context->procs);
 	obs_data_release(context->settings);
 	obs_context_data_remove(context);
+	pthread_mutex_destroy(&context->rename_cache_mutex);
 	bfree(context->name);
+
+	for (size_t i = 0; i < context->rename_cache.num; i++)
+		bfree(context->rename_cache.array[i]);
+	da_free(context->rename_cache);
 
 	memset(context, 0, sizeof(*context));
 }
@@ -1225,6 +1292,11 @@ void obs_context_data_remove(struct obs_context_data *context)
 void obs_context_data_setname(struct obs_context_data *context,
 		const char *name)
 {
-	bfree(context->name);
+	pthread_mutex_lock(&context->rename_cache_mutex);
+
+	if (context->name)
+		da_push_back(context->rename_cache, &context->name);
 	context->name = dup_name(name);
+
+	pthread_mutex_unlock(&context->rename_cache_mutex);
 }

@@ -6,6 +6,7 @@
 #endif
 
 OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("obs-outputs", "en-US")
 
 extern struct obs_output_info rtmp_output_info;
 extern struct obs_output_info flv_output_info;
@@ -24,9 +25,11 @@ bool obs_module_load(uint32_t libobs_ver)
 	return true;
 }
 
-#ifdef _WIN32
 void obs_module_unload(void)
 {
+#ifdef _WIN32
 	WSACleanup();
-}
 #endif
+
+	OBS_MODULE_FREE_DEFAULT_LOCALE();
+}

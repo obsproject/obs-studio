@@ -1,8 +1,4 @@
-if(WIN32 OR APPLE)
-	cmake_minimum_required(VERSION 2.8.12)
-else()
-	cmake_minimum_required(VERSION 2.8.11)
-endif()
+cmake_minimum_required(VERSION 2.8.12)
 
 project(obs-studio)
 
@@ -36,6 +32,15 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLAN
 	if(USE_LIBC++)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 	endif()
+elseif(MSVC)
+	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	else()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+	endif()
+
+	# Disable pointless constant condition warnings
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4127 /wd4201")
 endif()
 
 if(WIN32)
@@ -55,7 +60,6 @@ if(APPLE)
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	list(APPEND CMAKE_INSTALL_RPATH "@loader_path/" "@executable_path/")
 elseif(UNIX AND NOT UNIX_STRUCTURE)
-	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
 

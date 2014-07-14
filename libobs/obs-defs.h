@@ -20,6 +20,12 @@
 /** Maximum number of source channels for output and per display */
 #define MAX_CHANNELS 64
 
+#define OBS_ALIGN_CENTER (0)
+#define OBS_ALIGN_LEFT   (1<<0)
+#define OBS_ALIGN_RIGHT  (1<<1)
+#define OBS_ALIGN_TOP    (1<<2)
+#define OBS_ALIGN_BOTTOM (1<<3)
+
 #define MODULE_SUCCESS             0
 #define MODULE_ERROR              -1
 #define MODULE_FILE_NOT_FOUND     -2

@@ -17,7 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static bool upload_texture_2d(struct gs_texture_2d *tex, const void **data)
+static bool upload_texture_2d(struct gs_texture_2d *tex, const uint8_t **data)
 {
 	uint32_t row_size   = tex->width  * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->height * row_size / 8;
@@ -76,7 +76,7 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 
 texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags)
+		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 	tex->base.device             = device;
@@ -164,7 +164,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return tex->format;
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
+bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 

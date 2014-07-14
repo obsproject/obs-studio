@@ -23,6 +23,11 @@
 #include <unistd.h>
 #include <time.h>
 
+#if !defined(__APPLE__)
+#include <sys/times.h>
+#include <sys/vtimes.h>
+#endif
+
 #include "dstr.h"
 #include "platform.h"
 
@@ -55,6 +60,60 @@ void os_dlclose(void *module)
 {
 	dlclose(module);
 }
+
+#if !defined(__APPLE__)
+
+struct os_cpu_usage_info {
+	clock_t last_cpu_time, last_sys_time, last_user_time;
+	int core_count;
+};
+
+os_cpu_usage_info_t os_cpu_usage_info_start(void)
+{
+	struct os_cpu_usage_info *info = bmalloc(sizeof(*info));
+	struct tms               time_sample;
+
+	info->last_cpu_time  = times(&time_sample);
+	info->last_sys_time  = time_sample.tms_stime;
+	info->last_user_time = time_sample.tms_utime;
+	info->core_count     = sysconf(_SC_NPROCESSORS_ONLN);
+	return info;
+}
+
+double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+{
+	struct tms time_sample;
+	clock_t    cur_cpu_time;
+	double     percent;
+
+	if (!info)
+		return 0.0;
+
+	cur_cpu_time = times(&time_sample);
+	if (cur_cpu_time <= info->last_cpu_time ||
+	    time_sample.tms_stime < info->last_sys_time ||
+	    time_sample.tms_utime < info->last_user_time)
+		return 0.0;
+
+	percent = (double)(time_sample.tms_stime - info->last_sys_time +
+			(time_sample.tms_utime - info->last_user_time));
+	percent /= (double)(cur_cpu_time - info->last_cpu_time);
+	percent /= (double)info->core_count;
+
+	info->last_cpu_time  = cur_cpu_time;
+	info->last_sys_time  = time_sample.tms_stime;
+	info->last_user_time = time_sample.tms_utime;
+
+	return percent * 100.0;
+}
+
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+{
+	if (info)
+		bfree(info);
+}
+
+#endif
 
 bool os_sleepto_ns(uint64_t time_target)
 {

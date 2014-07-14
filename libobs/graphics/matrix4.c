@@ -18,6 +18,7 @@
 #include "math-defs.h"
 #include "matrix4.h"
 #include "matrix3.h"
+#include "quat.h"
 
 void matrix4_from_matrix3(struct matrix4 *dst, const struct matrix3 *m)
 {
@@ -26,6 +27,34 @@ void matrix4_from_matrix3(struct matrix4 *dst, const struct matrix3 *m)
 	dst->z.m = m->z.m;
 	dst->t.m = m->t.m;
 	dst->t.w = 1.0f;
+}
+
+void matrix4_from_quat(struct matrix4 *dst, const struct quat *q)
+{
+	float norm = quat_dot(q, q);
+	float s = (norm > 0.0f) ? (2.0f/norm) : 0.0f;
+
+	float xx = q->x * q->x * s;
+	float yy = q->y * q->y * s;
+	float zz = q->z * q->z * s;
+	float xy = q->x * q->y * s;
+	float xz = q->x * q->z * s;
+	float yz = q->y * q->z * s;
+	float wx = q->w * q->x * s;
+	float wy = q->w * q->y * s;
+	float wz = q->w * q->z * s;
+
+	vec4_set(&dst->x, 1.0f - (yy + zz), xy + wz, xz - wy, 0.0f);
+	vec4_set(&dst->y, xy - wz, 1.0f - (xx + zz), yz + wx, 0.0f);
+	vec4_set(&dst->z, xz + wy, yz - wx, 1.0f - (xx + yy), 0.0f);
+	vec4_set(&dst->t, 0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+void matrix4_from_axisang(struct matrix4 *dst, const struct axisang *aa)
+{
+	struct quat q;
+	quat_from_axisang(&q, aa);
+	matrix4_from_quat(dst, &q);
 }
 
 void matrix4_mul(struct matrix4 *dst, const struct matrix4 *m1,
@@ -98,12 +127,71 @@ float matrix4_determinant(const struct matrix4 *m)
 	return result;
 }
 
+void matrix4_translate3v(struct matrix4 *dst, const struct matrix4 *m,
+		const struct vec3 *v)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, 1.0f, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, 1.0f, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, 1.0f, 0.0f);
+	vec4_from_vec3(&temp.t, v);
+
+	matrix4_mul(dst, m, &temp);
+}
+
+void matrix4_translate4v(struct matrix4 *dst, const struct matrix4 *m,
+		const struct vec4 *v)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, 1.0f, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, 1.0f, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, 1.0f, 0.0f);
+	vec4_copy(&temp.t, v);
+
+	matrix4_mul(dst, m, &temp);
+}
+
+void matrix4_rotate(struct matrix4 *dst, const struct matrix4 *m,
+		const struct quat *q)
+{
+	struct matrix4 temp;
+	matrix4_from_quat(&temp, q);
+	matrix4_mul(dst, m, &temp);
+}
+
+void matrix4_rotate_aa(struct matrix4 *dst, const struct matrix4 *m,
+		const struct axisang *aa)
+{
+	struct matrix4 temp;
+	matrix4_from_axisang(&temp, aa);
+	matrix4_mul(dst, m, &temp);
+}
+
+void matrix4_scale(struct matrix4 *dst, const struct matrix4 *m,
+		const struct vec3 *v)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, v->x, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, v->y, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, v->z, 0.0f);
+	vec4_set(&temp.t, 0.0f, 0.0f, 0.0f, 1.0f);
+	matrix4_mul(dst, m, &temp);
+}
+
 bool matrix4_inv(struct matrix4 *dst, const struct matrix4 *m)
 {
 	struct vec4 *dstv = (struct vec4 *)dst;
 	float det = matrix4_determinant(m);
 	float m3x3[9];
 	int   i, j, sign;
+
+	if (dst == m) {
+		struct matrix4 temp = *m;
+		return matrix4_inv(dst, &temp);
+	}
+
+	dstv = (struct vec4 *)dst;
+	det  = matrix4_determinant(m);
 
 	if (fabs(det) < 0.0005f)
 		return false;

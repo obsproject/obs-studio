@@ -46,13 +46,13 @@ void XCompcapMain::deinit()
 	XCompcap::cleanupDisplay();
 }
 
-obs_properties_t XCompcapMain::properties(const char *locale)
+obs_properties_t XCompcapMain::properties()
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
 	obs_property_t wins = obs_properties_add_list(props, "capture_window",
-			"Captured Window", OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
+			obs_module_text("Window"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	for (Window win: XCompcap::getTopLevelWindows()) {
 		std::string wname = XCompcap::getWindowName(win);
@@ -66,31 +66,31 @@ obs_properties_t XCompcapMain::properties(const char *locale)
 				desc.c_str());
 	}
 
-	obs_properties_add_int(props, "cut_top", "Cut top pixels",
+	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_left", "Cut left pixels",
+	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_right", "Cut right pixels",
+	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
 			0, 4096, 1);
-	obs_properties_add_int(props, "cut_bot", "Cut bottom pixels",
+	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
 			0, 4096, 1);
 
-	obs_properties_add_bool(props, "swap_redblue", "Swap red and blue");
-	obs_properties_add_bool(props, "lock_x", "Lock X server when "
-	                                         "capturing");
+	obs_properties_add_bool(props, "swap_redblue",
+			obs_module_text("SwapRedBlue"));
+	obs_properties_add_bool(props, "lock_x", obs_module_text("LockX"));
 
 	return props;
 }
 
 void XCompcapMain::defaults(obs_data_t settings)
 {
-	obs_data_setstring(settings, "capture_window", "");
-	obs_data_setint(settings, "cut_top", 0);
-	obs_data_setint(settings, "cut_left", 0);
-	obs_data_setint(settings, "cut_right", 0);
-	obs_data_setint(settings, "cut_bot", 0);
-	obs_data_setbool(settings, "swap_redblue", false);
-	obs_data_setbool(settings, "lock_x", false);
+	obs_data_set_default_string(settings, "capture_window", "");
+	obs_data_set_default_int(settings, "cut_top", 0);
+	obs_data_set_default_int(settings, "cut_left", 0);
+	obs_data_set_default_int(settings, "cut_right", 0);
+	obs_data_set_default_int(settings, "cut_bot", 0);
+	obs_data_set_default_bool(settings, "swap_redblue", false);
+	obs_data_set_default_bool(settings, "lock_x", false);
 }
 
 
@@ -308,20 +308,20 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 	uint8_t *texData = new uint8_t[width() * height() * 4];
 
 	for (unsigned int i = 0; i < width() * height() * 4; i += 4) {
-		texData[i + 0] = p->swapRedBlue ? 0xFF : 0;
+		texData[i + 0] = p->swapRedBlue ? 0 : 0xFF;
 		texData[i + 1] = 0;
-		texData[i + 2] = p->swapRedBlue ? 0 : 0xFF;
+		texData[i + 2] = p->swapRedBlue ? 0xFF : 0;
 		texData[i + 3] = 0xFF;
 	}
 
 	const uint8_t* texDataArr[] = { texData, 0 };
 
 	p->tex = gs_create_texture(width(), height(), cf, 1,
-			(const void**)texDataArr, 0);
+			texDataArr, 0);
 
 	delete[] texData;
 
-	if (!p->swapRedBlue) {
+	if (p->swapRedBlue) {
 		GLuint tex = *(GLuint*)texture_getobj(p->tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
@@ -438,10 +438,12 @@ void XCompcapMain::render(effect_t effect)
 		return;
 
 	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(effect, image, p->tex);
+	effect_settexture(image, p->tex);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);
+
+	gs_reset_blend_state();
 }
 
 uint32_t XCompcapMain::width()

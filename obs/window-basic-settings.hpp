@@ -37,7 +37,6 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
-	ConfigFile localeIni;
 	bool generalChanged;
 	bool outputsChanged;
 	bool audioChanged;
@@ -46,6 +45,17 @@ private:
 	bool loading;
 
 	OBSPropertiesView *streamProperties;
+
+	void SaveCombo(QComboBox *widget, const char *section,
+			const char *value);
+	void SaveComboData(QComboBox *widget, const char *section,
+			const char *value);
+	void SaveCheckBox(QCheckBox *widget, const char *section,
+			const char *value);
+	void SaveEdit(QLineEdit *widget, const char *section,
+			const char *value);
+	void SaveSpinBox(QSpinBox *widget, const char *section,
+			const char *value);
 
 	inline bool Changed() const
 	{

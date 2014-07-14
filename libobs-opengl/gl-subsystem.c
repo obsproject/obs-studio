@@ -24,36 +24,6 @@
 #undef near
 
 #ifdef _DEBUG
-/* Tables for OpenGL debug */
-static const char* debug_source_table[] = {
-	"API",
-	"Window System",
-	"Shader Compiler",
-	"Third Party"
-	"Application",
-	"Other"
-};
-
-static const char* debug_type_table[] = {
-	"Error",
-	"Deprecated Behavior",
-	"Undefined Behavior",
-	"Portability",
-	"Performance",
-	"Other"
-};
-
-static const char* debug_severity_table[] = {
-	"High",
-	"Medium",
-	"Low"
-};
-
-/* ARB and core values are the same. They'll always be linear so no hardcoding.
- * The values subtracted are the lowest value in the list of valid values. */
-#define GL_DEBUG_SOURCE_OFFSET(x) (x - GL_DEBUG_SOURCE_API_ARB)
-#define GL_DEBUG_TYPE_OFFSET(x) (x - GL_DEBUG_TYPE_ERROR_ARB)
-#define GL_DEBUG_SEVERITY_OFFSET(x) (x - GL_DEBUG_SEVERITY_HIGH_ARB)
 
 static void APIENTRY gl_debug_proc(
 	GLenum source, GLenum type, GLuint id, GLenum severity, 
@@ -62,11 +32,58 @@ static void APIENTRY gl_debug_proc(
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(data);
 
-	blog(	LOG_DEBUG,
+	char *source_str, *type_str, *severity_str;
+
+	switch(source) {
+	case GL_DEBUG_SOURCE_API:
+		source_str = "API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		source_str = "Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		source_str = "Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		source_str = "Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		source_str = "Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:
+		source_str = "Other"; break;
+	default:
+		source_str = "Unknown";
+	}
+
+	switch(type) {
+	case GL_DEBUG_TYPE_ERROR:
+		type_str = "Error"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		type_str = "Deprecated Behavior"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		type_str = "Undefined Behavior"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		type_str = "Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		type_str = "Performance"; break;
+	case GL_DEBUG_TYPE_OTHER:
+		type_str = "Other"; break;
+	default: 
+		type_str = "Unknown";
+	}
+
+	switch(severity) {
+	case GL_DEBUG_SEVERITY_HIGH:
+		severity_str = "High"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		severity_str = "Medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:
+		severity_str = "Low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		severity_str = "Notification"; break;
+	default:
+		severity_str = "Unknown";
+	}
+
+	blog(LOG_DEBUG,
 		"[%s][%s]{%s}: %.*s",
-		debug_source_table[GL_DEBUG_SOURCE_OFFSET(source)],
-		debug_type_table[GL_DEBUG_TYPE_OFFSET(type)],
-		debug_severity_table[GL_DEBUG_SEVERITY_OFFSET(severity)],
+		source_str, type_str, severity_str,
 		length, message
 	);
 }
@@ -269,7 +286,7 @@ uint32_t device_getheight(device_t device)
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	/* TODO */
 	UNUSED_PARAMETER(device);
@@ -866,16 +883,14 @@ static inline bool can_render(device_t device)
 static void update_viewproj_matrix(struct gs_device *device)
 {
 	struct gs_shader *vs = device->cur_vertex_shader;
-	struct matrix3 cur_matrix;
-	gs_matrix_get(&cur_matrix);
+	gs_matrix_get(&device->cur_view);
 
-	matrix4_from_matrix3(&device->cur_view, &cur_matrix);
 	matrix4_mul(&device->cur_viewproj, &device->cur_view,
 			&device->cur_proj);
 	matrix4_transpose(&device->cur_viewproj, &device->cur_viewproj);
 
 	if (vs->viewproj)
-		shader_setmatrix4(vs, vs->viewproj, &device->cur_viewproj);
+		shader_setmatrix4(vs->viewproj, &device->cur_viewproj);
 }
 
 static inline bool check_shader_pipeline_validity(device_t device)
@@ -970,6 +985,13 @@ void device_clear(device_t device, uint32_t clear_flags,
 	glClear(gl_flags);
 	if (!gl_success("glClear"))
 		blog(LOG_ERROR, "device_clear (GL) failed");
+
+	UNUSED_PARAMETER(device);
+}
+
+void device_flush(device_t device)
+{
+	glFlush();
 
 	UNUSED_PARAMETER(device);
 }
@@ -1096,46 +1118,6 @@ void device_stencilop(device_t device, enum gs_stencil_side side,
 		blog(LOG_ERROR, "device_stencilop (GL) failed");
 
 	UNUSED_PARAMETER(device);
-}
-
-void device_enable_fullscreen(device_t device, bool enable)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(enable);
-}
-
-int device_fullscreen_enabled(device_t device)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	return false;
-}
-
-void device_setdisplaymode(device_t device,
-		const struct gs_display_mode *mode)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(mode);
-}
-
-void device_getdisplaymode(device_t device,
-		struct gs_display_mode *mode)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(mode);
-}
-
-void device_setcolorramp(device_t device, float gamma, float brightness,
-		float contrast)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(gamma);
-	UNUSED_PARAMETER(brightness);
-	UNUSED_PARAMETER(contrast);
 }
 
 static inline uint32_t get_target_height(struct gs_device *device)

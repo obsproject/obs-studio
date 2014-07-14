@@ -19,8 +19,10 @@
 
 #include "util/c99defs.h"
 #include "util/bmem.h"
+#include "util/text-lookup.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
+#include "graphics/vec3.h"
 #include "media-io/audio-io.h"
 #include "media-io/video-io.h"
 #include "callback/signal.h"
@@ -31,6 +33,8 @@
 #include "obs-data.h"
 #include "obs-ui.h"
 #include "obs-properties.h"
+
+struct matrix4;
 
 /* opaque types */
 struct obs_display;
@@ -86,12 +90,37 @@ enum allow_direct_render {
 };
 
 /**
+ * Used with scene items to indicate the type of bounds to use for scene items.
+ * Mostly determines how the image will be scaled within those bounds, or
+ * whether to use bounds at all.
+ */
+enum obs_bounds_type {
+	OBS_BOUNDS_NONE,            /**< no bounds */
+	OBS_BOUNDS_STRETCH,         /**< stretch (ignores base scale) */
+	OBS_BOUNDS_SCALE_INNER,     /**< scales to inner rectangle */
+	OBS_BOUNDS_SCALE_OUTER,     /**< scales to outer rectangle */
+	OBS_BOUNDS_SCALE_TO_WIDTH,  /**< scales to the width  */
+	OBS_BOUNDS_SCALE_TO_HEIGHT, /**< scales to the height */
+	OBS_BOUNDS_MAX_ONLY,        /**< no scaling, maximum size only */
+};
+
+struct obs_sceneitem_info {
+	struct vec2          pos;
+	float                rot;
+	struct vec2          scale;
+	uint32_t             alignment;
+
+	enum obs_bounds_type bounds_type;
+	uint32_t             bounds_alignment;
+	struct vec2          bounds;
+};
+
+/**
  * Video initialization structure
  */
 struct obs_video_info {
 	/**
-	 * Graphics module to use (usually "libobs-opengl" or
-	 * "libobs-d3d11")
+	 * Graphics module to use (usually "libobs-opengl" or "libobs-d3d11")
 	 */
 	const char          *graphics_module;
 
@@ -169,14 +198,29 @@ struct source_frame {
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
-/** Initializes OBS */
-EXPORT bool obs_startup(void);
+/**
+ * Initializes OBS
+ *
+ * @param  locale  The locale to use for modules
+ */
+EXPORT bool obs_startup(const char *locale);
 
 /** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);
 
 /** @return true if the main OBS context has been initialized */
 EXPORT bool obs_initialized(void);
+
+/**
+ * Sets a new locale to use for modules.  This will call obs_module_set_locale
+ * for each module with the new locale.
+ *
+ * @param  locale  The locale to use for modules
+ */
+EXPORT void obs_set_locale(const char *locale);
+
+/** @return the current locale */
+EXPORT const char *obs_get_locale(void);
 
 /**
  * Sets base video ouput base resolution/fps/format
@@ -206,6 +250,10 @@ EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
  * use.
  */
 EXPORT int obs_load_module(const char *path);
+
+/** Helper function for using default module locale */
+EXPORT lookup_t obs_module_load_locale(const char *module,
+		const char *default_locale, const char *locale);
 
 /**
  * Enumerates all available inputs source types.
@@ -316,6 +364,9 @@ EXPORT char *obs_find_plugin_file(const char *file);
 
 /** Returns the default effect for generic RGB/YUV drawing */
 EXPORT effect_t obs_get_default_effect(void);
+
+/** Returns the solid effect for drawing solid colors */
+EXPORT effect_t obs_get_solid_effect(void);
 
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t obs_signalhandler(void);
@@ -431,7 +482,7 @@ EXPORT void obs_display_remove_draw_callback(obs_display_t display,
 
 /** Returns the translated display name of a source */
 EXPORT const char *obs_source_getdisplayname(enum obs_source_type type,
-		const char *id, const char *locale);
+		const char *id);
 
 /**
  * Creates a source of the specified type with the specified settings.
@@ -466,14 +517,13 @@ EXPORT obs_data_t obs_get_source_defaults(enum obs_source_type type,
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t obs_get_source_properties(enum obs_source_type type,
-		const char *id, const char *locale);
+		const char *id);
 
 /**
  * Returns the properties list for a specific existing source.  Free with
  * obs_properties_destroy
  */
-EXPORT obs_properties_t obs_source_properties(obs_source_t source,
-		const char *locale);
+EXPORT obs_properties_t obs_source_properties(obs_source_t source);
 
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t source, obs_data_t settings);
@@ -524,9 +574,6 @@ EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
 
 /** Sets the user volume for a source that has audio output */
 EXPORT void obs_source_setvolume(obs_source_t source, float volume);
-
-/** Updates live volume for a source */
-EXPORT void obs_source_updatevolumelevel(obs_source_t source, int volume);
 
 /** Sets the presentation volume for a source */
 EXPORT void obs_source_set_present_volume(obs_source_t source, float volume);
@@ -666,27 +713,50 @@ EXPORT obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item);
 /** Gets the source of a scene item. */
 EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
 
-/* Functions for gettings/setting specific oriantation of a scene item */
+EXPORT void obs_sceneitem_select(obs_sceneitem_t item, bool select);
+EXPORT bool obs_sceneitem_selected(obs_sceneitem_t item);
+
+/* Functions for gettings/setting specific orientation of a scene item */
 EXPORT void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos);
-EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot);
-EXPORT void obs_sceneitem_setorigin(obs_sceneitem_t item,
-		const struct vec2 *origin);
+EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot_deg);
 EXPORT void obs_sceneitem_setscale(obs_sceneitem_t item,
 		const struct vec2 *scale);
+EXPORT void obs_sceneitem_setalignment(obs_sceneitem_t item,
+		uint32_t alignment);
 EXPORT void obs_sceneitem_setorder(obs_sceneitem_t item,
 		enum order_movement movement);
 
+EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t item,
+		enum obs_bounds_type type);
+EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t item,
+		uint32_t alignment);
+EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t item,
+		const struct vec2 *bounds);
+
 EXPORT void  obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos);
 EXPORT float obs_sceneitem_getrot(obs_sceneitem_t item);
-EXPORT void  obs_sceneitem_getorigin(obs_sceneitem_t item, struct vec2 *center);
 EXPORT void  obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale);
+EXPORT uint32_t obs_sceneitem_getalignment(obs_sceneitem_t item);
+
+EXPORT enum obs_bounds_type obs_sceneitem_get_bounds_type(obs_sceneitem_t item);
+EXPORT uint32_t obs_sceneitem_get_bounds_alignment(obs_sceneitem_t item);
+EXPORT void obs_sceneitem_get_bounds(obs_sceneitem_t item, struct vec2 *bounds);
+
+EXPORT void obs_sceneitem_get_info(obs_sceneitem_t item,
+		struct obs_sceneitem_info *info);
+EXPORT void obs_sceneitem_set_info(obs_sceneitem_t item,
+		const struct obs_sceneitem_info *info);
+
+EXPORT void obs_sceneitem_get_draw_transform(obs_sceneitem_t item,
+		struct matrix4 *transform);
+EXPORT void obs_sceneitem_get_box_transform(obs_sceneitem_t item,
+		struct matrix4 *transform);
 
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */
 
-EXPORT const char *obs_output_getdisplayname(const char *id,
-		const char *locale);
+EXPORT const char *obs_output_getdisplayname(const char *id);
 
 /**
  * Creates an output.
@@ -697,6 +767,8 @@ EXPORT const char *obs_output_getdisplayname(const char *id,
 EXPORT obs_output_t obs_output_create(const char *id, const char *name,
 		obs_data_t settings);
 EXPORT void obs_output_destroy(obs_output_t output);
+
+EXPORT const char *obs_output_getname(obs_output_t output);
 
 /** Starts the output. */
 EXPORT bool obs_output_start(obs_output_t output);
@@ -711,15 +783,13 @@ EXPORT bool obs_output_active(obs_output_t output);
 EXPORT obs_data_t obs_output_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_get_output_properties(const char *id,
-		const char *locale);
+EXPORT obs_properties_t obs_get_output_properties(const char *id);
 
 /**
  * Returns the property list of an existing output, if any.  Free with
  * obs_properties_destroy
  */
-EXPORT obs_properties_t obs_output_properties(obs_output_t output,
-		const char *locale);
+EXPORT obs_properties_t obs_output_properties(obs_output_t output);
 
 /** Updates the settings for this output context */
 EXPORT void obs_output_update(obs_output_t output, obs_data_t settings);
@@ -784,6 +854,16 @@ EXPORT void obs_output_set_service(obs_output_t output, obs_service_t service);
 /** Gets the current service associated with this output. */
 EXPORT obs_service_t obs_output_get_service(obs_output_t output);
 
+/**
+ * Sets the reconnect settings.  Set retry_count to 0 to disable reconnecting.
+ */
+EXPORT void obs_output_set_reconnect_settings(obs_output_t output,
+		int retry_count, int retry_sec);
+
+EXPORT uint64_t obs_output_get_total_bytes(obs_output_t output);
+EXPORT int obs_output_get_frames_dropped(obs_output_t output);
+EXPORT int obs_output_get_total_frames(obs_output_t output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -831,8 +911,7 @@ EXPORT void obs_output_signal_stop(obs_output_t output, int code);
 /* ------------------------------------------------------------------------- */
 /* Encoders */
 
-EXPORT const char *obs_encoder_getdisplayname(const char *id,
-		const char *locale);
+EXPORT const char *obs_encoder_getdisplayname(const char *id);
 
 /**
  * Creates a video encoder context
@@ -859,6 +938,8 @@ EXPORT obs_encoder_t obs_audio_encoder_create(const char *id, const char *name,
 /** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t encoder);
 
+EXPORT const char *obs_encoder_getname(obs_encoder_t encoder);
+
 /** Returns the codec of the encoder */
 EXPORT const char *obs_encoder_get_codec(obs_encoder_t encoder);
 
@@ -866,15 +947,13 @@ EXPORT const char *obs_encoder_get_codec(obs_encoder_t encoder);
 EXPORT obs_data_t obs_encoder_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_get_encoder_properties(const char *id,
-		const char *locale);
+EXPORT obs_properties_t obs_get_encoder_properties(const char *id);
 
 /**
  * Returns the property list of an existing encoder, if any.  Free with
  * obs_properties_destroy
  */
-EXPORT obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
-		const char *locale);
+EXPORT obs_properties_t obs_encoder_properties(obs_encoder_t encoder);
 
 /**
  * Updates the settings of the encoder context.  Usually used for changing
@@ -907,6 +986,9 @@ EXPORT video_t obs_encoder_video(obs_encoder_t encoder);
  */
 EXPORT audio_t obs_encoder_audio(obs_encoder_t encoder);
 
+/** Returns true if encoder is active, false otherwise */
+EXPORT bool obs_encoder_active(obs_encoder_t encoder);
+
 /** Duplicates an encoder packet */
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src);
@@ -917,8 +999,7 @@ EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
 
-EXPORT const char *obs_service_getdisplayname(const char *id,
-		const char *locale);
+EXPORT const char *obs_service_getdisplayname(const char *id);
 
 EXPORT obs_service_t obs_service_create(const char *id, const char *name,
 		obs_data_t settings);
@@ -930,15 +1011,13 @@ EXPORT const char *obs_service_getname(obs_service_t service);
 EXPORT obs_data_t obs_service_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t obs_get_service_properties(const char *id,
-		const char *locale);
+EXPORT obs_properties_t obs_get_service_properties(const char *id);
 
 /**
  * Returns the property list of an existing service context, if any.  Free with
  * obs_properties_destroy
  */
-EXPORT obs_properties_t obs_service_properties(obs_service_t service,
-		const char *locale);
+EXPORT obs_properties_t obs_service_properties(obs_service_t service);
 
 /** Gets the service type */
 EXPORT const char *obs_service_gettype(obs_service_t service);

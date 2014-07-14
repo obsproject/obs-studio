@@ -54,7 +54,7 @@ static inline void *bzalloc(size_t size)
 static inline char *bstrdup_n(const char *str, size_t n)
 {
 	char *dup;
-	if (!str || !*str)
+	if (!str)
 		return NULL;
 
 	dup = (char*)bmemdup(str, n+1);
@@ -66,7 +66,7 @@ static inline char *bstrdup_n(const char *str, size_t n)
 static inline wchar_t *bwstrdup_n(const wchar_t *str, size_t n)
 {
 	wchar_t *dup;
-	if (!str || (!*str && n > 0))
+	if (!str)
 		return NULL;
 
 	dup = (wchar_t*)bmemdup(str, (n+1) * sizeof(wchar_t));

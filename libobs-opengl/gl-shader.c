@@ -338,26 +338,6 @@ sparam_t shader_getparambyname(shader_t shader, const char *name)
 	return NULL;
 }
 
-static inline bool matching_shader(shader_t shader, sparam_t sparam)
-{
-	if (shader != sparam->shader) {
-		blog(LOG_ERROR, "Shader and shader parameter do not match");
-		return false;
-	}
-
-	return true;
-}
-
-void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info)
-{
-	if (!matching_shader(shader, param))
-		return;
-
-	info->type = param->type;
-	info->name = param->name;
-}
-
 sparam_t shader_getviewprojmatrix(shader_t shader)
 {
 	return shader->viewproj;
@@ -368,91 +348,81 @@ sparam_t shader_getworldmatrix(shader_t shader)
 	return shader->world;
 }
 
-void shader_setbool(shader_t shader, sparam_t param, bool val)
+void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform1i(shader->program, param->param, (GLint)val);
-		gl_success("glProgramUniform1i");
-	}
+	info->type = param->type;
+	info->name = param->name;
 }
 
-void shader_setfloat(shader_t shader, sparam_t param, float val)
+void shader_setbool(sparam_t param, bool val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform1f(shader->program, param->param, val);
-		gl_success("glProgramUniform1f");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniform1i(shader->program, param->param, (GLint)val);
+	gl_success("glProgramUniform1i");
 }
 
-void shader_setint(shader_t shader, sparam_t param, int val)
+void shader_setfloat(sparam_t param, float val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform1i(shader->program, param->param, val);
-		gl_success("glProgramUniform1i");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniform1f(shader->program, param->param, val);
+	gl_success("glProgramUniform1f");
 }
 
-void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val)
+void shader_setint(sparam_t param, int val)
 {
+	struct gs_shader *shader = param->shader;
+	glProgramUniform1i(shader->program, param->param, val);
+	gl_success("glProgramUniform1i");
+}
+
+void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
+{
+	struct gs_shader *shader = param->shader;
 	struct matrix4 mat;
 	matrix4_from_matrix3(&mat, val);
 
-	if (matching_shader(shader, param)) {
-		glProgramUniformMatrix4fv(shader->program, param->param, 1,
-				false, mat.x.ptr);
-		gl_success("glProgramUniformMatrix4fv");
-	}
+	glProgramUniformMatrix4fv(shader->program, param->param, 1,
+			false, mat.x.ptr);
+	gl_success("glProgramUniformMatrix4fv");
 }
 
-void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val)
+void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniformMatrix4fv(shader->program, param->param, 1,
-				false, val->x.ptr);
-		gl_success("glProgramUniformMatrix4fv");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniformMatrix4fv(shader->program, param->param, 1,
+			false, val->x.ptr);
+	gl_success("glProgramUniformMatrix4fv");
 }
 
-void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val)
+void shader_setvec2(sparam_t param, const struct vec2 *val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform2fv(shader->program, param->param, 1, val->ptr);
-		gl_success("glProgramUniform2fv");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniform2fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform2fv");
 }
 
-void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val)
+void shader_setvec3(sparam_t param, const struct vec3 *val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform3fv(shader->program, param->param, 1, val->ptr);
-		gl_success("glProgramUniform3fv");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniform3fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform3fv");
 }
 
-void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val)
+void shader_setvec4(sparam_t param, const struct vec4 *val)
 {
-	if (matching_shader(shader, param)) {
-		glProgramUniform4fv(shader->program, param->param, 1, val->ptr);
-		gl_success("glProgramUniform4fv");
-	}
+	struct gs_shader *shader = param->shader;
+	glProgramUniform4fv(shader->program, param->param, 1, val->ptr);
+	gl_success("glProgramUniform4fv");
 }
 
-void shader_settexture(shader_t shader, sparam_t param, texture_t val)
+void shader_settexture(sparam_t param, texture_t val)
 {
-	if (matching_shader(shader, param))
-		param->texture = val;
+	param->texture = val;
 }
 
-static void shader_setval_data(shader_t shader, sparam_t param,
-		const void *val, int count)
+static void shader_setval_data(sparam_t param, const void *val, int count)
 {
-	if (!matching_shader(shader, param))
-		return;
+	struct gs_shader *shader = param->shader;
 
 	if (param->type == SHADER_PARAM_BOOL ||
 	    param->type == SHADER_PARAM_INT) {
@@ -494,16 +464,12 @@ void shader_update_textures(struct gs_shader *shader)
 	}
 }
 
-void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size)
+void shader_setval(sparam_t param, const void *val, size_t size)
 {
 	int count = param->array_count;
 	size_t expected_size = 0;
 	if (!count)
 		count = 1;
-
-	if (!matching_shader(shader, param))
-		return;
 
 	switch ((uint32_t)param->type) {
 	case SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
@@ -528,13 +494,12 @@ void shader_setval(shader_t shader, sparam_t param, const void *val,
 	}
 
 	if (param->type == SHADER_PARAM_TEXTURE)
-		shader_settexture(shader, param, *(texture_t*)val);
+		shader_settexture(param, *(texture_t*)val);
 	else
-		shader_setval_data(shader, param, val, count);
+		shader_setval_data(param, val, count);
 }
 
-void shader_setdefault(shader_t shader, sparam_t param)
+void shader_setdefault(sparam_t param)
 {
-	shader_setval(shader, param, param->def_value.array,
-			param->def_value.num);
+	shader_setval(param, param->def_value.array, param->def_value.num);
 }

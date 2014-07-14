@@ -60,7 +60,7 @@ static inline void dstr_init_move_array(struct dstr *dst, char *str);
 static inline void dstr_init_copy(struct dstr *dst, const char *src);
 static inline void dstr_init_copy_dstr(struct dstr *dst,
 		const struct dstr *src);
-EXPORT void dstr_init_strref(struct dstr *dst, const struct strref *src);
+EXPORT void dstr_init_copy_strref(struct dstr *dst, const struct strref *src);
 
 static inline void dstr_free(struct dstr *dst);
 static inline void dstr_array_free(struct dstr *array, const size_t count);
@@ -91,8 +91,6 @@ static inline void dstr_cat_ch(struct dstr *dst, char ch);
 EXPORT void dstr_ncat(struct dstr *dst, const char *array, const size_t len);
 EXPORT void dstr_ncat_dstr(struct dstr *dst, const struct dstr *str,
 		const size_t len);
-
-EXPORT void dstr_cat_strref(struct dstr *dst, const struct strref *str);
 
 EXPORT void dstr_insert(struct dstr *dst, const size_t idx,
 		const char *array);

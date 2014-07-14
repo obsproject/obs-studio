@@ -102,10 +102,9 @@ struct obs_encoder_info {
 	/**
 	 * Gets the full translated name of this encoder
 	 *
-	 * @param  locale  Locale to use for translation
 	 * @return         Translated name of the encoder
 	 */
-	const char *(*getname)(const char *locale);
+	const char *(*getname)(void);
 
 	/**
 	 * Creates the encoder with the specified settings
@@ -155,10 +154,9 @@ struct obs_encoder_info {
 	/** 
 	 * Gets the property information of this encoder
 	 *
-	 * @param  locale  The locale to translate with
 	 * @return         The properties data
 	 */
-	obs_properties_t (*properties)(const char *locale);
+	obs_properties_t (*properties)(void);
 
 	/**
 	 * Updates the settings for this encoder (usually used for things like

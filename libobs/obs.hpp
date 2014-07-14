@@ -115,9 +115,9 @@ public:
 	{}
 
 	inline OBSSignal(signal_handler_t handler_,
-			const char *signal_,
+			const char        *signal_,
 			signal_callback_t callback_,
-			void *param_)
+			void              *param_)
 		: handler  (handler_),
 		  signal   (signal_),
 		  callback (callback_),

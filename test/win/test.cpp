@@ -71,7 +71,7 @@ static void CreateOBS(HWND hwnd)
 	RECT rc;
 	GetClientRect(hwnd, &rc);
 
-	if (!obs_startup())
+	if (!obs_startup("en-US"))
 		throw "Couldn't create OBS";
 
 	struct obs_video_info ovi;
@@ -202,5 +202,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
 	DestroyWindow(hwnd);
 
+	UNUSED_PARAMETER(prevInstance);
+	UNUSED_PARAMETER(cmdLine);
+	UNUSED_PARAMETER(numCmd);
 	return 0;
 }

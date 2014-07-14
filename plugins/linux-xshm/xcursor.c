@@ -48,14 +48,14 @@ static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 	if (data->tex
 	&& data->last_height == xc->width
 	&& data->last_width == xc->height) {
-		texture_setimage(data->tex, (void **) pixels,
+		texture_setimage(data->tex, (const uint8_t *) pixels,
 			xc->width * sizeof(uint32_t), False);
 	} else {
 		if (data->tex)
 			texture_destroy(data->tex);
 
 		data->tex = gs_create_texture(xc->width, xc->height,
-			GS_BGRA, 1, (const void **) &pixels, GS_DYNAMIC);
+			GS_BGRA, 1, (const uint8_t **) &pixels, GS_DYNAMIC);
 	}
 
 	bfree(pixels);
@@ -96,16 +96,15 @@ void xcursor_render(xcursor_t *data) {
 	effect_t effect  = gs_geteffect();
 	eparam_t image = effect_getparambyname(effect, "image");
 
-	effect_settexture(effect, image, data->tex);
+	effect_settexture(image, data->tex);
 
 	gs_matrix_push();
 
-	gs_matrix_translate3f(data->pos_x, data->pos_y, 0);
+	gs_matrix_translate3f(-data->pos_x, -data->pos_y, 0);
 
 	gs_enable_blending(True);
 	gs_blendfunction(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	gs_draw_sprite(data->tex, 0, 0, 0);
-	gs_enable_blending(False);
 
 	gs_matrix_pop();
 }

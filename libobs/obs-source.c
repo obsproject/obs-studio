@@ -79,6 +79,7 @@ static const char *source_signals[] = {
 	"void deactivate(ptr source)",
 	"void show(ptr source)",
 	"void hide(ptr source)",
+	"void rename(ptr source, string new_name, string prev_name)",
 	"void volume(ptr source, in out float volume)",
 	"void volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
@@ -95,11 +96,10 @@ bool obs_source_init_context(struct obs_source *source,
 			source_signals);
 }
 
-const char *obs_source_getdisplayname(enum obs_source_type type,
-		const char *id, const char *locale)
+const char *obs_source_getdisplayname(enum obs_source_type type, const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	return (info != NULL) ? info->getname(locale) : NULL;
+	return (info != NULL) ? info->getname() : NULL;
 }
 
 /* internal initialization */
@@ -181,6 +181,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init(source, info))
 		goto fail;
 
+	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 	return source;
 
@@ -217,6 +218,8 @@ void obs_source_destroy(struct obs_source *source)
 		return;
 
 	obs_context_data_remove(&source->context);
+
+	blog(LOG_INFO, "source '%s' destroyed", source->context.name);
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
@@ -322,14 +325,14 @@ obs_data_t obs_source_settings(enum obs_source_type type, const char *id)
 }
 
 obs_properties_t obs_get_source_properties(enum obs_source_type type,
-		const char *id, const char *locale)
+		const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (info && info->properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties(locale);
+		properties = info->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -337,11 +340,11 @@ obs_properties_t obs_get_source_properties(enum obs_source_type type,
 	return NULL;
 }
 
-obs_properties_t obs_source_properties(obs_source_t source, const char *locale)
+obs_properties_t obs_source_properties(obs_source_t source)
 {
 	if (source_valid(source) && source->info.properties) {
 		obs_properties_t props;
-		props = source->info.properties(locale);
+		props = source->info.properties();
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}
@@ -843,7 +846,7 @@ static const char *select_conversion_technique(enum video_format format)
 static inline void set_eparam(effect_t effect, const char *name, float val)
 {
 	eparam_t param = effect_getparambyname(effect, name);
-	effect_setfloat(effect, param, val);
+	effect_setfloat(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
@@ -872,7 +875,7 @@ static bool update_async_texrender(struct obs_source *source,
 	technique_begin(tech);
 	technique_beginpass(tech, 0);
 
-	effect_settexture(conv, effect_getparambyname(conv, "image"), tex);
+	effect_settexture(effect_getparambyname(conv, "image"), tex);
 	set_eparam(conv, "width",  (float)cx);
 	set_eparam(conv, "height", (float)cy);
 	set_eparam(conv, "width_i",  1.0f / cx);
@@ -910,7 +913,7 @@ static bool update_async_texture(struct obs_source *source,
 	texture_t         tex       = source->async_texture;
 	texrender_t       texrender = source->async_convert_texrender;
 	enum convert_type type      = get_convert_type(frame->format);
-	void              *ptr;
+	uint8_t           *ptr;
 	uint32_t          linesize;
 
 	source->async_format     = frame->format;
@@ -970,22 +973,22 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_min");
-		effect_setval(effect, param, color_range_min, size);
+		effect_setval(param, color_range_min, size);
 	}
 
 	if (color_range_max) {
 		size_t const size = sizeof(float) * 3;
 		param = effect_getparambyname(effect, "color_range_max");
-		effect_setval(effect, param, color_range_max, size);
+		effect_setval(param, color_range_max, size);
 	}
 
 	if (color_matrix) {
 		param = effect_getparambyname(effect, "color_matrix");
-		effect_setval(effect, param, color_matrix, sizeof(float) * 16);
+		effect_setval(param, color_matrix, sizeof(float) * 16);
 	}
 
 	param = effect_getparambyname(effect, "image");
-	effect_settexture(effect, param, tex);
+	effect_settexture(param, tex);
 
 	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
 }
@@ -997,7 +1000,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	bool        limited_range = yuv && !source->async_full_range;
 	const char  *type         = yuv ? "DrawMatrix" : "Draw";
 	bool        def_draw      = (!effect);
-	technique_t tech;
+	technique_t tech          = NULL;
 
 	if (def_draw) {
 		effect = obs_get_default_effect();
@@ -1601,7 +1604,21 @@ const char *obs_source_getname(obs_source_t source)
 void obs_source_setname(obs_source_t source, const char *name)
 {
 	if (!source) return;
-	obs_context_data_setname(&source->context, name);
+
+	if (!name || !*name || strcmp(name, source->context.name) != 0) {
+		struct calldata data;
+		char *prev_name = bstrdup(source->context.name);
+		obs_context_data_setname(&source->context, name);
+
+		calldata_init(&data);
+		calldata_setptr(&data, "source", source);
+		calldata_setstring(&data, "new_name", source->context.name);
+		calldata_setstring(&data, "prev_name", prev_name);
+		signal_handler_signal(obs->signals, "source_rename", &data);
+		signal_handler_signal(source->context.signals, "rename", &data);
+		calldata_free(&data);
+		bfree(prev_name);
+	}
 }
 
 void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
@@ -1637,7 +1654,7 @@ static inline void render_filter_tex(texture_t tex, effect_t effect,
 	eparam_t    image      = effect_getparambyname(effect, "image");
 	size_t      passes, i;
 
-	effect_settexture(effect, image, tex);
+	effect_settexture(image, tex);
 
 	passes = technique_begin(tech);
 	for (i = 0; i < passes; i++) {

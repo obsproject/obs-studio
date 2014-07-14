@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <obs.h>
+#include <obs-module.h>
 #include "xcursor.h"
 #include "xhelpers.h"
 
@@ -108,10 +108,9 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
 /**
  * Returns the name of the plugin
  */
-static const char* xshm_getname(const char* locale)
+static const char* xshm_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-	return "X11 Shared Memory Screen Input";
+	return obs_module_text("X11SharedMemoryScreenInput");
 }
 
 /**
@@ -154,9 +153,9 @@ static void xshm_defaults(obs_data_t defaults)
 /**
  * Get the properties for the capture
  */
-static obs_properties_t xshm_properties(const char *locale)
+static obs_properties_t xshm_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	int_fast32_t screen_max;
 
 	Display *dpy = XOpenDisplay(NULL);
@@ -166,8 +165,10 @@ static obs_properties_t xshm_properties(const char *locale)
 	screen_max = (screen_max) ? screen_max - 1 : 0;
 	XCloseDisplay(dpy);
 
-	obs_properties_add_int(props, "screen", "Screen", 0, screen_max, 1);
-	obs_properties_add_bool(props, "show_cursor", "Capture Cursor");
+	obs_properties_add_int(props, "screen",
+			obs_module_text("Screen"), 0, screen_max, 1);
+	obs_properties_add_bool(props, "show_cursor",
+			obs_module_text("CaptureCursor"));
 
 	return props;
 }
@@ -267,13 +268,15 @@ static void xshm_video_render(void *vptr, effect_t effect)
 		return;
 
 	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(effect, image, data->texture);
+	effect_settexture(image, data->texture);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(data->texture, 0, 0, 0);
 
 	if (data->show_cursor)
 		xcursor_render(data->cursor);
+
+	gs_reset_blend_state();
 }
 
 /**

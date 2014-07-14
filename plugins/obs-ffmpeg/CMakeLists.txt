@@ -26,7 +26,8 @@ include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
 add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
 
 set(obs-ffmpeg_HEADERS
-	obs-ffmpeg-formats.h)
+	obs-ffmpeg-formats.h
+	obs-ffmpeg-compat.h)
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-aac.c
@@ -45,4 +46,4 @@ target_link_libraries(obs-ffmpeg
 	${LIBSWRESAMPLE_LIBRARIES})
 
 install_obs_plugin(obs-ffmpeg)
-
+install_obs_plugin_data(obs-ffmpeg ../../build/data/obs-plugins/obs-ffmpeg)

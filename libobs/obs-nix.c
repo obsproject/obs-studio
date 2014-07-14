@@ -120,3 +120,15 @@ char *obs_find_plugin_file(const char *file)
 	dstr_free(&output);
 	return NULL;
 }
+
+void log_system_info(void)
+{
+	/* TODO */
+#if 0
+	log_processor_name();
+	log_processor_speed();
+	log_processor_cores();
+	log_available_memory();
+	log_distribution();
+#endif
+}

@@ -40,3 +40,5 @@ void GetMonitors(std::vector<MonitorInfo> &monitors);
 bool InitApplicationBundle();
 
 std::string GetDefaultVideoSavePath();
+
+std::vector<std::string> GetPreferredLocales();

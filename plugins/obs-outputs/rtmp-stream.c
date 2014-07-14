@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <obs.h>
+#include <obs-module.h>
 #include <obs-avc.h>
 #include <util/platform.h>
 #include <util/circlebuf.h>
@@ -26,7 +26,16 @@
 #include "librtmp/log.h"
 #include "flv-mux.h"
 
-//#define FILE_TEST
+#define do_log(level, format, ...) \
+	blog(level, "[rtmp stream: '%s'] " format, \
+			obs_output_getname(stream->output), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
+#define OPT_DROP_THRESHOLD "drop_threshold_ms"
+
 //#define TEST_FRAMEDROPS
 
 struct rtmp_stream {
@@ -54,18 +63,15 @@ struct rtmp_stream {
 
 	int64_t          last_dts_usec;
 
-#ifdef FILE_TEST
-	FILE             *test;
-#endif
+	uint64_t         total_bytes_sent;
+	int              dropped_frames;
 
 	RTMP             rtmp;
 };
 
-static const char *rtmp_stream_getname(const char *locale)
+static const char *rtmp_stream_getname(void)
 {
-	/* TODO: locale stuff */
-	UNUSED_PARAMETER(locale);
-	return "RTMP Stream";
+	return obs_module_text("RTMPStream");
 }
 
 static void log_rtmp(int level, const char *format, va_list args)
@@ -136,10 +142,6 @@ static void rtmp_stream_stop(void *data)
 	struct rtmp_stream *stream = data;
 	void *ret;
 
-#ifdef FILE_TEST
-	fclose(stream->test);
-#endif
-
 	os_event_signal(stream->stop_event);
 
 	if (stream->connecting)
@@ -193,14 +195,15 @@ static int send_packet(struct rtmp_stream *stream,
 	int     ret = 0;
 
 	flv_packet_mux(packet, &data, &size, is_header);
-#ifdef FILE_TEST
-	fwrite(data, 1, size, stream->test);
-#else
-	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
+#ifdef TEST_FRAMEDROPS
+	os_sleep_ms(rand() % 40);
 #endif
+	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
 	bfree(data);
 
 	obs_free_encoder_packet(packet);
+
+	stream->total_bytes_sent += size;
 	return ret;
 }
 
@@ -237,8 +240,10 @@ static void *send_thread(void *data)
 		disconnected = true;
 
 	if (disconnected) {
-		blog(LOG_INFO, "Disconnected from %s", stream->path.array);
+		info("Disconnected from %s", stream->path.array);
 		free_packets(stream);
+	} else {
+		info("User stopped the stream");
 	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN) {
@@ -256,11 +261,7 @@ static void send_meta_data(struct rtmp_stream *stream)
 	size_t  meta_data_size;
 
 	flv_meta_data(stream->output, &meta_data, &meta_data_size, false);
-#ifdef FILE_TEST
-	fwrite(meta_data, 1, meta_data_size, stream->test);
-#else
 	RTMP_Write(&stream->rtmp, (char*)meta_data, (int)meta_data_size);
-#endif
 	bfree(meta_data);
 }
 
@@ -300,9 +301,6 @@ static void send_video_header(struct rtmp_stream *stream)
 
 static void send_headers(struct rtmp_stream *stream)
 {
-#ifdef FILE_TEST
-	stream->test = os_fopen("D:\\bla.flv", "wb");
-#endif
 	send_meta_data(stream);
 	send_audio_header(stream);
 	send_video_header(stream);
@@ -325,15 +323,11 @@ static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
 	int cur_sendbuf_size = new_size;
 	socklen_t int_size = sizeof(int);
 
-#ifndef TEST_FRAMEDROPS
 	getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
 			(char*)&cur_sendbuf_size, &int_size);
 
 	if (cur_sendbuf_size < new_size) {
 		cur_sendbuf_size = new_size;
-#else
-		{cur_sendbuf_size = 1024*8;
-#endif
 		setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
 				(const char*)&cur_sendbuf_size, int_size);
 	}
@@ -343,7 +337,7 @@ static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
 
-#if defined(_WIN32) && !defined(FILE_TEST)
+#if defined(_WIN32)
 	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
 #endif
 
@@ -352,7 +346,7 @@ static int init_send(struct rtmp_stream *stream)
 	ret = pthread_create(&stream->send_thread, NULL, send_thread, stream);
 	if (ret != 0) {
 		RTMP_Close(&stream->rtmp);
-		blog(LOG_ERROR, __FILE__": Failed to create send thread");
+		warn("Failed to create send thread");
 		return OBS_OUTPUT_ERROR;
 	}
 
@@ -365,18 +359,17 @@ static int init_send(struct rtmp_stream *stream)
 
 static int try_connect(struct rtmp_stream *stream)
 {
-#ifndef FILE_TEST
 	if (dstr_isempty(&stream->path)) {
-		blog(LOG_WARNING, FILE_LINE "URL is empty");
+		warn("URL is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
 	if (dstr_isempty(&stream->key)) {
-		blog(LOG_WARNING, FILE_LINE "Stream key is empty");
+		warn("Stream key is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
-	blog(LOG_INFO, "Connecting to RTMP URL %s...", stream->path.array);
+	info("Connecting to RTMP URL %s...", stream->path.array);
 
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
 				stream->key.array))
@@ -399,8 +392,7 @@ static int try_connect(struct rtmp_stream *stream)
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
 
-	blog(LOG_INFO, "Connection to %s successful", stream->path.array);
-#endif
+	info("Connection to %s successful", stream->path.array);
 
 	return init_send(stream);
 }
@@ -412,8 +404,7 @@ static void *connect_thread(void *data)
 
 	if (ret != OBS_OUTPUT_SUCCESS) {
 		obs_output_signal_stop(stream->output, ret);
-		blog(LOG_INFO, "Connection to %s failed: %d",
-			stream->path.array, ret);
+		info("Connection to %s failed: %d", stream->path.array, ret);
 	}
 
 	if (os_event_try(stream->stop_event) == EAGAIN)
@@ -434,13 +425,16 @@ static bool rtmp_stream_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
+	stream->total_bytes_sent = 0;
+	stream->dropped_frames   = 0;
+
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,     obs_service_get_url(service));
 	dstr_copy(&stream->key,      obs_service_get_key(service));
 	dstr_copy(&stream->username, obs_service_get_username(service));
 	dstr_copy(&stream->password, obs_service_get_password(service));
 	stream->drop_threshold_usec =
-		(int64_t)obs_data_getint(settings, "drop_threshold");
+		(int64_t)obs_data_getint(settings, OPT_DROP_THRESHOLD) * 1000;
 	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
@@ -466,9 +460,9 @@ static void drop_frames(struct rtmp_stream *stream)
 	struct circlebuf new_buf            = {0};
 	int              drop_priority      = 0;
 	uint64_t         last_drop_dts_usec = 0;
+	int              num_frames_dropped = 0;
 
-	blog(LOG_DEBUG, "Previous packet count: %d",
-			(int)num_buffered_packets(stream));
+	debug("Previous packet count: %d", (int)num_buffered_packets(stream));
 
 	circlebuf_reserve(&new_buf, sizeof(struct encoder_packet) * 8);
 
@@ -485,6 +479,7 @@ static void drop_frames(struct rtmp_stream *stream)
 			if (drop_priority < packet.drop_priority)
 				drop_priority = packet.drop_priority;
 
+			num_frames_dropped++;
 			obs_free_encoder_packet(&packet);
 		}
 	}
@@ -494,8 +489,8 @@ static void drop_frames(struct rtmp_stream *stream)
 	stream->min_priority      = drop_priority;
 	stream->min_drop_dts_usec = last_drop_dts_usec;
 
-	blog(LOG_DEBUG, "New packet count: %d",
-			(int)num_buffered_packets(stream));
+	stream->dropped_frames += num_frames_dropped;
+	debug("New packet count: %d", (int)num_buffered_packets(stream));
 }
 
 static void check_to_drop_frames(struct rtmp_stream *stream)
@@ -515,9 +510,10 @@ static void check_to_drop_frames(struct rtmp_stream *stream)
 	/* if the amount of time stored in the buffered packets waiting to be
 	 * sent is higher than threshold, drop frames */
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
+
 	if (buffer_duration_usec > stream->drop_threshold_usec) {
 		drop_frames(stream);
-		blog(LOG_INFO, "dropping %" PRId64 " worth of frames",
+		debug("dropping %" PRId64 " worth of frames",
 				buffer_duration_usec);
 	}
 }
@@ -529,10 +525,12 @@ static bool add_video_packet(struct rtmp_stream *stream,
 
 	/* if currently dropping frames, drop packets until it reaches the
 	 * desired priority */
-	if (packet->priority < stream->min_priority)
+	if (packet->priority < stream->min_priority) {
+		stream->dropped_frames++;
 		return false;
-	else
+	} else {
 		stream->min_priority = 0;
+	}
 
 	return add_packet(stream, packet);
 }
@@ -564,21 +562,29 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 static void rtmp_stream_defaults(obs_data_t defaults)
 {
-	obs_data_set_default_int(defaults, "drop_threshold", 600000);
+	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
 }
 
-static obs_properties_t rtmp_stream_properties(const char *locale)
+static obs_properties_t rtmp_stream_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
-	obs_properties_add_text(props, "path", "Stream URL", OBS_TEXT_DEFAULT);
-	obs_properties_add_text(props, "key", "Stream Key", OBS_TEXT_PASSWORD);
-	obs_properties_add_text(props, "username", "User Name",
-			OBS_TEXT_DEFAULT);
-	obs_properties_add_text(props, "password", "Password",
-			OBS_TEXT_PASSWORD);
+	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
+			obs_module_text("RTMPStream.DropThreshold"),
+			200, 10000, 100);
 	return props;
+}
+
+static uint64_t rtmp_stream_total_bytes_sent(void *data)
+{
+	struct rtmp_stream *stream = data;
+	return stream->total_bytes_sent;
+}
+
+static int rtmp_stream_dropped_frames(void *data)
+{
+	struct rtmp_stream *stream = data;
+	return stream->dropped_frames;
 }
 
 struct obs_output_info rtmp_output_info = {
@@ -593,5 +599,7 @@ struct obs_output_info rtmp_output_info = {
 	.stop           = rtmp_stream_stop,
 	.encoded_packet = rtmp_stream_data,
 	.defaults       = rtmp_stream_defaults,
-	.properties     = rtmp_stream_properties
+	.properties     = rtmp_stream_properties,
+	.total_bytes    = rtmp_stream_total_bytes_sent,
+	.dropped_frames = rtmp_stream_dropped_frames
 };

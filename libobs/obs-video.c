@@ -138,8 +138,8 @@ static inline void render_output_texture(struct obs_core_video *video,
 		 0.000000f,  0.000000f,  0.000000f,  1.000000f
 	};
 
-	effect_setval(effect, matrix, mat_val, sizeof(mat_val));
-	effect_settexture(effect, image, texture);
+	effect_setval(matrix, mat_val, sizeof(mat_val));
+	effect_settexture(image, texture);
 
 	passes = technique_begin(tech);
 	for (i = 0; i < passes; i++) {
@@ -155,7 +155,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 static inline void set_eparam(effect_t effect, const char *name, float val)
 {
 	eparam_t param = effect_getparambyname(effect, name);
-	effect_setfloat(effect, param, val);
+	effect_setfloat(param, val);
 }
 
 static void render_convert_texture(struct obs_core_video *video,
@@ -187,7 +187,7 @@ static void render_convert_texture(struct obs_core_video *video,
 	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
 	set_eparam(effect, "input_height", (float)video->conversion_height);
 
-	effect_settexture(effect, image, texture);
+	effect_settexture(image, texture);
 
 	gs_setrendertarget(target, NULL);
 	set_render_size(video->output_width, video->conversion_height);

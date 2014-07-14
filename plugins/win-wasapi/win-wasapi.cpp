@@ -1,6 +1,6 @@
 #include "enum-wasapi.hpp"
 
-#include <obs.h>
+#include <obs-module.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -8,6 +8,9 @@
 #include <util/windows/CoTaskMemPtr.hpp>
 
 using namespace std;
+
+#define OPT_DEVICE_ID         "device_id"
+#define OPT_USE_DEVICE_TIMING "use_device_timing"
 
 static void GetWASAPIDefaults(obs_data_t settings);
 
@@ -121,14 +124,14 @@ inline WASAPISource::~WASAPISource()
 
 void WASAPISource::UpdateSettings(obs_data_t settings)
 {
-	device_id       = obs_data_getstring(settings, "device_id");
-	useDeviceTiming = obs_data_getbool(settings, "useDeviceTiming");
+	device_id       = obs_data_getstring(settings, OPT_DEVICE_ID);
+	useDeviceTiming = obs_data_getbool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
 }
 
 void WASAPISource::Update(obs_data_t settings)
 {
-	string newDevice = obs_data_getstring(settings, "device_id");
+	string newDevice = obs_data_getstring(settings, OPT_DEVICE_ID);
 	bool restart = newDevice.compare(device_id) != 0;
 
 	if (restart)
@@ -416,22 +419,20 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *GetWASAPIInputName(const char *locale)
+static const char *GetWASAPIInputName(void)
 {
-	/* TODO: translate */
-	return "Audio Input Capture (WASAPI)";
+	return obs_module_text("AudioInput");
 }
 
-static const char *GetWASAPIOutputName(const char *locale)
+static const char *GetWASAPIOutputName(void)
 {
-	/* TODO: translate */
-	return "Audio Output Capture (WASAPI)";
+	return obs_module_text("AudioOutput");
 }
 
 static void GetWASAPIDefaults(obs_data_t settings)
 {
-	obs_data_set_default_string(settings, "device_id", "default");
-	obs_data_set_default_bool(settings, "use_device_timing", true);
+	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
+	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
 }
 
 static void *CreateWASAPISource(obs_data_t settings, obs_source_t source,
@@ -466,20 +467,21 @@ static void UpdateWASAPISource(void *obj, obs_data_t settings)
 	static_cast<WASAPISource*>(obj)->Update(settings);
 }
 
-static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
+static obs_properties_t GetWASAPIProperties(bool input)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
 
 	/* TODO: translate */
 	obs_property_t device_prop = obs_properties_add_list(props,
-			"device_id", "Device",
+			OPT_DEVICE_ID, obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	GetWASAPIAudioDevices(devices, input);
 
 	if (devices.size())
-		obs_property_list_add_string(device_prop, "Default", "default");
+		obs_property_list_add_string(device_prop,
+				obs_module_text("Default"), "default");
 
 	for (size_t i = 0; i < devices.size(); i++) {
 		AudioDeviceInfo &device = devices[i];
@@ -488,20 +490,20 @@ static obs_properties_t GetWASAPIProperties(const char *locale, bool input)
 	}
 
 	obs_property_t prop;
-	prop = obs_properties_add_bool(props, "use_device_timing",
-			"Use Device Timing");
+	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
+			obs_module_text("UseDeviceTiming"));
 
 	return props;
 }
 
-static obs_properties_t GetWASAPIPropertiesInput(const char *locale)
+static obs_properties_t GetWASAPIPropertiesInput(void)
 {
-	return GetWASAPIProperties(locale, true);
+	return GetWASAPIProperties(true);
 }
 
-static obs_properties_t GetWASAPIPropertiesOutput(const char *locale)
+static obs_properties_t GetWASAPIPropertiesOutput(void)
 {
-	return GetWASAPIProperties(locale, false);
+	return GetWASAPIProperties(false);
 }
 
 void RegisterWASAPIInput()

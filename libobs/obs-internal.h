@@ -52,6 +52,7 @@ struct draw_callback {
 struct obs_module {
 	char *name;
 	void *module;
+	void (*set_locale)(const char *locale);
 };
 
 extern void free_module(struct obs_module *mod);
@@ -103,6 +104,7 @@ struct obs_core_video {
 	bool                            textures_converted[NUM_TEXTURES];
 	struct source_frame             convert_frames[NUM_TEXTURES];
 	effect_t                        default_effect;
+	effect_t                        solid_effect;
 	effect_t                        conversion_effect;
 	stagesurf_t                     mapped_surface;
 	int                             cur_texture;
@@ -172,6 +174,8 @@ struct obs_core {
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
 
+	char                            *locale;
+
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */
 	struct obs_core_video           video;
@@ -193,6 +197,9 @@ struct obs_context_data {
 	obs_data_t                      settings;
 	signal_handler_t                signals;
 	proc_handler_t                  procs;
+
+	DARRAY(char*)                   rename_cache;
+	pthread_mutex_t                 rename_cache_mutex;
 
 	pthread_mutex_t                 *mutex;
 	struct obs_context_data         *next;
@@ -351,6 +358,16 @@ struct obs_output {
 	pthread_mutex_t                 interleaved_mutex;
 	DARRAY(struct encoder_packet)   interleaved_packets;
 
+	int                             reconnect_retry_sec;
+	int                             reconnect_retry_max;
+	int                             reconnect_retries;
+	bool                            reconnecting;
+	pthread_t                       reconnect_thread;
+	os_event_t                      reconnect_stop_event;
+	volatile bool                   reconnect_thread_active;
+
+	int                             total_frames;
+
 	bool                            active;
 	video_t                         video;
 	audio_t                         audio;
@@ -445,5 +462,7 @@ struct obs_service {
 	struct obs_output               *output;
 };
 
-void obs_service_activate(struct obs_service *service);
-void obs_service_deactivate(struct obs_service *service, bool remove);
+extern void obs_service_activate(struct obs_service *service);
+extern void obs_service_deactivate(struct obs_service *service, bool remove);
+extern bool obs_service_initialize(struct obs_service *service,
+		struct obs_output *output);

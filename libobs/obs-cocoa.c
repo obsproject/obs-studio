@@ -21,6 +21,10 @@
 #include "obs-internal.h"
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+#include <objc/objc.h>
 
 // support both foo.so and libfoo.so for now
 static const char *plugin_patterns[] = {
@@ -60,4 +64,129 @@ char *obs_find_plugin_file(const char *file)
 	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/obs-plugins/");
 	dstr_cat(&path, file);
 	return path.array;
+}
+
+static void log_processor_name(void)
+{
+	char   *name = NULL;
+	size_t size;
+	int    ret;
+
+	ret = sysctlbyname("machdep.cpu.brand_string", NULL, &size, NULL, 0);
+	if (ret != 0)
+		return;
+
+	name = malloc(size);
+
+	ret = sysctlbyname("machdep.cpu.brand_string", name, &size, NULL, 0);
+	if (ret == 0)
+		blog(LOG_INFO, "CPU Name: %s", name);
+
+	free(name);
+}
+
+static void log_processor_speed(void)
+{
+	size_t    size;
+	long long freq;
+	int       ret;
+
+	size = sizeof(freq);
+	ret = sysctlbyname("hw.cpufrequency", &freq, &size, NULL, 0);
+	if (ret == 0)
+		blog(LOG_INFO, "CPU Speed: %lldMHz", freq / 1000000);
+}
+
+static void log_processor_cores(void)
+{
+	size_t size;
+	int    physical_cores = 0, logical_cores = 0;
+	int    ret;
+
+	size = sizeof(physical_cores);
+	ret = sysctlbyname("machdep.cpu.core_count", &physical_cores,
+			&size, NULL, 0);
+	if (ret != 0)
+		return;
+
+	ret = sysctlbyname("machdep.cpu.thread_count", &logical_cores,
+			&size, NULL, 0);
+	if (ret != 0)
+		return;
+
+	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
+			physical_cores, logical_cores);
+}
+
+static void log_available_memory(void)
+{
+	size_t    size;
+	long long memory_available;
+	int       ret;
+
+	size = sizeof(memory_available);
+	ret = sysctlbyname("hw.memsize", &memory_available, &size, NULL, 0);
+	if (ret == 0)
+		blog(LOG_INFO, "Physical Memory: %lldMB Total",
+				memory_available / 1024 / 1024);
+}
+
+static void log_os_name(id pi, SEL UTF8String)
+{
+	unsigned long os_id = (unsigned long)objc_msgSend(pi,
+			sel_registerName("operatingSystem"));
+
+	id os = objc_msgSend(pi,
+			sel_registerName("operatingSystemName"));
+	const char *name = (const char*)objc_msgSend(os, UTF8String);
+
+	if (os_id == 5 /*NSMACHOperatingSystem*/) {
+		blog(LOG_INFO, "OS Name: Mac OS X (%s)", name);
+		return;
+	}
+
+	blog(LOG_INFO, "OS Name: %s", name ? name : "Unknown");
+}
+
+static void log_os_version(id pi, SEL UTF8String)
+{
+	id vs = objc_msgSend(pi,
+			sel_registerName("operatingSystemVersionString"));
+	const char *version = (const char*)objc_msgSend(vs, UTF8String);
+
+	blog(LOG_INFO, "OS Version: %s", version ? version : "Unknown");
+}
+
+static void log_os(void)
+{
+	Class NSProcessInfo = objc_getClass("NSProcessInfo");
+	id pi  = objc_msgSend((id)NSProcessInfo,
+			sel_registerName("processInfo"));
+
+	SEL UTF8String = sel_registerName("UTF8String");
+
+	log_os_name(pi, UTF8String);
+	log_os_version(pi, UTF8String);
+}
+
+static void log_kernel_version(void)
+{
+	char   kernel_version[1024];
+	size_t size = sizeof(kernel_version);
+	int    ret;
+
+	ret = sysctlbyname("kern.osrelease", kernel_version, &size,
+			NULL, 0);
+	if (ret == 0)
+		blog(LOG_INFO, "Kernel Version: %s", kernel_version);
+}
+
+void log_system_info(void)
+{
+	log_processor_name();
+	log_processor_speed();
+	log_processor_cores();
+	log_available_memory();
+	log_os();
+	log_kernel_version();
 }

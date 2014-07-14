@@ -19,7 +19,7 @@
 #include "d3d11-subsystem.hpp"
 
 void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
-		const void **data)
+		const uint8_t **data)
 {
 	uint32_t rowSizeBytes  = width  * gs_get_format_bpp(format);
 	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
@@ -49,7 +49,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 	}
 }
 
-void gs_texture_2d::InitTexture(const void **data)
+void gs_texture_2d::InitTexture(const uint8_t **data)
 {
 	vector<D3D11_SUBRESOURCE_DATA> srd;
 	D3D11_TEXTURE2D_DESC td;
@@ -142,9 +142,9 @@ void gs_texture_2d::InitRenderTargets()
 }
 
 gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
-		gs_color_format colorFormat, uint32_t levels, const void **data,
-		uint32_t flags, gs_texture_type type, bool gdiCompatible,
-		bool shared)
+		gs_color_format colorFormat, uint32_t levels,
+		const uint8_t **data, uint32_t flags, gs_texture_type type,
+		bool gdiCompatible, bool shared)
 	: gs_texture      (device, type, levels, colorFormat),
 	  width           (width),
 	  height          (height),

@@ -36,6 +36,9 @@ static __thread graphics_t thread_graphics = NULL;
 
 #define IMMEDIATE_COUNT 512
 
+extern void gs_init_image_deps(void);
+extern void gs_free_image_deps(void);
+
 bool load_graphics_imports(struct gs_exports *exports, void *module,
 		const char *module_name);
 
@@ -87,9 +90,9 @@ static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
 
 static bool graphics_init(struct graphics_subsystem *graphics)
 {
-	struct matrix3 top_mat;
+	struct matrix4 top_mat;
 
-	matrix3_identity(&top_mat);
+	matrix4_identity(&top_mat);
 	da_push_back(graphics->matrix_stack, &top_mat);
 
 	graphics->exports.device_entercontext(graphics->device);
@@ -101,8 +104,15 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
 		return false;
 
+	graphics->exports.device_blendfunction(graphics->device,
+			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	graphics->cur_blend_state.enabled = true;
+	graphics->cur_blend_state.src     = GS_BLEND_SRCALPHA;
+	graphics->cur_blend_state.dest    = GS_BLEND_INVSRCALPHA;
+
 	graphics->exports.device_leavecontext(graphics->device);
 
+	gs_init_image_deps();
 	return true;
 }
 
@@ -119,7 +129,7 @@ int gs_create(graphics_t *pgraphics, const char *module,
 
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {
-		errcode = GS_ERROR_MODULENOTFOUND;
+		errcode = GS_ERROR_MODULE_NOT_FOUND;
 		goto error;
 	}
 
@@ -164,6 +174,8 @@ void gs_destroy(graphics_t graphics)
 	if (graphics->module)
 		os_dlclose(graphics->module);
 	bfree(graphics);
+
+	gs_free_image_deps();
 }
 
 void gs_entercontext(graphics_t graphics)
@@ -203,7 +215,7 @@ graphics_t gs_getcontext(void)
 	return thread_graphics;
 }
 
-static inline struct matrix3 *top_matrix(graphics_t graphics)
+static inline struct matrix4 *top_matrix(graphics_t graphics)
 {
 	return graphics ? 
 		(graphics->matrix_stack.array + graphics->cur_matrix) : NULL;
@@ -215,9 +227,9 @@ void gs_matrix_push(void)
 	if (!graphics)
 		return;
 
-	struct matrix3 mat, *top_mat = top_matrix(graphics);
+	struct matrix4 mat, *top_mat = top_matrix(graphics);
 
-	memcpy(&mat, top_mat, sizeof(struct matrix3));
+	memcpy(&mat, top_mat, sizeof(struct matrix4));
 	da_push_back(graphics->matrix_stack, &mat);
 	graphics->cur_matrix++;
 }
@@ -239,97 +251,97 @@ void gs_matrix_pop(void)
 
 void gs_matrix_identity(void)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_identity(top_mat);
+		matrix4_identity(top_mat);
 }
 
 void gs_matrix_transpose(void)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_transpose(top_mat, top_mat);
+		matrix4_transpose(top_mat, top_mat);
 }
 
-void gs_matrix_set(const struct matrix3 *matrix)
+void gs_matrix_set(const struct matrix4 *matrix)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_copy(top_mat, matrix);
+		matrix4_copy(top_mat, matrix);
 }
 
-void gs_matrix_get(struct matrix3 *dst)
+void gs_matrix_get(struct matrix4 *dst)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_copy(dst, top_mat);
+		matrix4_copy(dst, top_mat);
 }
 
-void gs_matrix_mul(const struct matrix3 *matrix)
+void gs_matrix_mul(const struct matrix4 *matrix)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_mul(top_mat, top_mat, matrix);
+		matrix4_mul(top_mat, top_mat, matrix);
 }
 
 void gs_matrix_rotquat(const struct quat *rot)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_rotate(top_mat, top_mat, rot);
+		matrix4_rotate(top_mat, top_mat, rot);
 }
 
 void gs_matrix_rotaa(const struct axisang *rot)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_rotate_aa(top_mat, top_mat, rot);
+		matrix4_rotate_aa(top_mat, top_mat, rot);
 }
 
 void gs_matrix_translate(const struct vec3 *pos)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_translate(top_mat, top_mat, pos);
+		matrix4_translate3v(top_mat, top_mat, pos);
 }
 
 void gs_matrix_scale(const struct vec3 *scale)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix3_scale(top_mat, top_mat, scale);
+		matrix4_scale(top_mat, top_mat, scale);
 }
 
 void gs_matrix_rotaa4f(float x, float y, float z, float angle)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct axisang aa;
 
 	if (top_mat) {
 		axisang_set(&aa, x, y, z, angle);
-		matrix3_rotate_aa(top_mat, top_mat, &aa);
+		matrix4_rotate_aa(top_mat, top_mat, &aa);
 	}
 }
 
 void gs_matrix_translate3f(float x, float y, float z)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix3_translate(top_mat, top_mat, &p);
+		matrix4_translate3v(top_mat, top_mat, &p);
 	}
 }
 
 void gs_matrix_scale3f(float x, float y, float z)
 {
-	struct matrix3 *top_mat = top_matrix(thread_graphics);
+	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	struct vec3 p;
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix3_scale(top_mat, top_mat, &p);
+		matrix4_scale(top_mat, top_mat, &p);
 	}
 }
 
@@ -420,7 +432,7 @@ void gs_renderstop(enum gs_draw_mode mode)
 	}
 
 	if (graphics->using_immediate) {
-		vertexbuffer_flush(graphics->immediate_vertbuffer, false);
+		vertexbuffer_flush(graphics->immediate_vertbuffer);
 
 		gs_load_vertexbuffer(graphics->immediate_vertbuffer);
 		gs_load_indexbuffer(NULL);
@@ -451,25 +463,30 @@ vertbuffer_t gs_rendersave(void)
 	if (graphics->using_immediate)
 		return NULL;
 
-	if (!graphics->vbd->num) {
+	if (!graphics->verts.num) {
 		vbdata_destroy(graphics->vbd);
 		return NULL;
 	}
 
-	for (num_tex = 0; num_tex < 16; num_tex++) {
+	for (num_tex = 0; num_tex < 16; num_tex++)
 		if (!graphics->texverts[num_tex].num)
 			break;
-	}
 
 	graphics->vbd->points  = graphics->verts.array;
 	graphics->vbd->normals = graphics->norms.array;
 	graphics->vbd->colors  = graphics->colors.array;
 	graphics->vbd->num     = graphics->verts.num;
 	graphics->vbd->num_tex = num_tex;
-	graphics->vbd->tvarray = bmalloc(sizeof(struct tvertarray) * num_tex);
-	for (i = 0; i < num_tex; i++) {
-		graphics->vbd->tvarray[i].width = 2;
-		graphics->vbd->tvarray[i].array = graphics->texverts[i].array;
+
+	if (graphics->vbd->num_tex) {
+		graphics->vbd->tvarray =
+			bmalloc(sizeof(struct tvertarray) * num_tex);
+
+		for (i = 0; i < num_tex; i++) {
+			graphics->vbd->tvarray[i].width = 2;
+			graphics->vbd->tvarray[i].array =
+				graphics->texverts[i].array;
+		}
 	}
 
 	reset_immediate_arrays(graphics);
@@ -504,9 +521,6 @@ void gs_normal3f(float x, float y, float z)
 static inline bool validvertsize(graphics_t graphics, size_t num,
 		const char *name)
 {
-	if (!graphics)
-		return false;
-
 	if (graphics->using_immediate && num == IMMEDIATE_COUNT) {
 		blog(LOG_ERROR, "%s: tried to use over %u "
 				"for immediate rendering",
@@ -520,6 +534,8 @@ static inline bool validvertsize(graphics_t graphics, size_t num,
 void gs_color(uint32_t color)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->colors.num, "gs_color"))
 		return;
 	
@@ -545,6 +561,8 @@ void gs_vertex2v(const struct vec2 *v)
 void gs_vertex3v(const struct vec3 *v)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->verts.num, "gs_vertex"))
 		return;
 
@@ -554,6 +572,8 @@ void gs_vertex3v(const struct vec3 *v)
 void gs_normal3v(const struct vec3 *v)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->norms.num, "gs_normal"))
 		return;
 	
@@ -569,6 +589,8 @@ void gs_color4v(const struct vec4 *v)
 void gs_texcoord2v(const struct vec2 *v, int unit)
 {
 	graphics_t graphics = thread_graphics;
+	if (!graphics)
+		return;
 	if (!validvertsize(graphics, graphics->texverts[unit].num,
 				"gs_texcoord"))
 		return;
@@ -675,30 +697,6 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 	return shader;
 }
 
-texture_t gs_create_texture_from_file(const char *file, uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
-texture_t gs_create_cubetexture_from_file(const char *file, uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
-texture_t gs_create_volumetexture_from_file(const char *file, uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(file);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
 static inline void assign_sprite_rect(float *start, float *end, float size,
 		bool flip)
 {
@@ -786,7 +784,7 @@ void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
 	else
 		build_sprite_norm(data, fcx, fcy, flip);
 
-	vertexbuffer_flush(graphics->sprite_buffer, false);
+	vertexbuffer_flush(graphics->sprite_buffer);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);
 
@@ -852,17 +850,19 @@ void gs_viewport_pop(void)
 	da_pop_back(thread_graphics->viewport_stack);
 }
 
-void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
+void texture_setimage(texture_t tex, const uint8_t *data, uint32_t linesize,
 		bool flip)
 {
+	uint8_t *ptr;
+	uint32_t linesize_out;
+	uint32_t row_copy;
+	int32_t height;
+	int32_t y;
+
 	if (!thread_graphics || !tex)
 		return;
 
-	void *ptr;
-	uint32_t linesize_out;
-	uint32_t row_copy;
-	int32_t height = (int32_t)texture_getheight(tex);
-	int32_t y;
+	height = (int32_t)texture_getheight(tex);
 
 	if (!texture_map(tex, &ptr, &linesize_out))
 		return;
@@ -871,8 +871,8 @@ void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 
 	if (flip) {
 		for (y = height-1; y >= 0; y--)
-			memcpy((uint8_t*)ptr  + (uint32_t)y * linesize_out,
-			       (uint8_t*)data + (uint32_t)y * linesize,
+			memcpy(ptr  + (uint32_t)y * linesize_out,
+			       data + (uint32_t)y * linesize,
 			       row_copy);
 
 	} else if (linesize == linesize_out) {
@@ -880,8 +880,8 @@ void texture_setimage(texture_t tex, const void *data, uint32_t linesize,
 
 	} else {
 		for (y = 0; y < height; y++)
-			memcpy((uint8_t*)ptr  + (uint32_t)y * linesize_out,
-			       (uint8_t*)data + (uint32_t)y * linesize,
+			memcpy(ptr  + (uint32_t)y * linesize_out,
+			       data + (uint32_t)y * linesize,
 			       row_copy);
 	}
 
@@ -914,6 +914,19 @@ void gs_perspective(float angle, float aspect, float near, float far)
 
 	graphics->exports.device_frustum(graphics->device, xmin, xmax,
 			ymin, ymax, near, far);
+}
+
+void gs_reset_blend_state(void)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
+	if (!graphics->cur_blend_state.enabled)
+		gs_enable_blending(true);
+
+	if (graphics->cur_blend_state.src  != GS_BLEND_SRCALPHA ||
+	    graphics->cur_blend_state.dest != GS_BLEND_INVSRCALPHA)
+		gs_blendfunction(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -974,7 +987,7 @@ static inline bool is_pow2(uint32_t size)
 
 texture_t gs_create_texture(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(width) && is_pow2(height);
@@ -1006,7 +1019,7 @@ texture_t gs_create_texture(uint32_t width, uint32_t height,
 
 texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(size);
@@ -1039,7 +1052,7 @@ texture_t gs_create_cubetexture(uint32_t size,
 
 texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags)
+		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
@@ -1316,6 +1329,14 @@ void gs_present(void)
 	graphics->exports.device_present(graphics->device);
 }
 
+void gs_flush(void)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics) return;
+
+	graphics->exports.device_flush(graphics->device);
+}
+
 void gs_setcullmode(enum gs_cull_mode mode)
 {
 	graphics_t graphics = thread_graphics;
@@ -1337,6 +1358,7 @@ void gs_enable_blending(bool enable)
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
+	graphics->cur_blend_state.enabled = enable;
 	graphics->exports.device_enable_blending(graphics->device, enable);
 }
 
@@ -1378,6 +1400,8 @@ void gs_blendfunction(enum gs_blend_type src, enum gs_blend_type dest)
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
+	graphics->cur_blend_state.src  = src;
+	graphics->cur_blend_state.dest = dest;
 	graphics->exports.device_blendfunction(graphics->device, src, dest);
 }
 
@@ -1405,47 +1429,6 @@ void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 
 	graphics->exports.device_stencilop(graphics->device, side, fail, zfail,
 			zpass);
-}
-
-void gs_enable_fullscreen(bool enable)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_enable_fullscreen(graphics->device, enable);
-}
-
-int gs_fullscreen_enabled(void)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return 0;
-
-	return graphics->exports.device_fullscreen_enabled(graphics->device);
-}
-
-void gs_setdisplaymode(const struct gs_display_mode *mode)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_setdisplaymode(graphics->device, mode);
-}
-
-void gs_getdisplaymode(struct gs_display_mode *mode)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_getdisplaymode(graphics->device, mode);
-}
-
-void gs_setcolorramp(float gamma, float brightness, float contrast)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics) return;
-
-	graphics->exports.device_setcolorramp(graphics->device, gamma,
-			brightness, contrast);
 }
 
 void gs_setviewport(int x, int y, int width, int height)
@@ -1549,15 +1532,6 @@ sparam_t shader_getparambyname(shader_t shader, const char *name)
 	return graphics->exports.shader_getparambyname(shader, name);
 }
 
-void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info)
-{
-	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
-
-	graphics->exports.shader_getparaminfo(shader, param, info);
-}
-
 sparam_t shader_getviewprojmatrix(shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
@@ -1574,98 +1548,100 @@ sparam_t shader_getworldmatrix(shader_t shader)
 	return graphics->exports.shader_getworldmatrix(shader);
 }
 
-void shader_setbool(shader_t shader, sparam_t param, bool val)
+void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setbool(shader, param, val);
+	graphics->exports.shader_getparaminfo(param, info);
 }
 
-void shader_setfloat(shader_t shader, sparam_t param, float val)
+void shader_setbool(sparam_t param, bool val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setfloat(shader, param, val);
+	graphics->exports.shader_setbool(param, val);
 }
 
-void shader_setint(shader_t shader, sparam_t param, int val)
+void shader_setfloat(sparam_t param, float val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setint(shader, param, val);
+	graphics->exports.shader_setfloat(param, val);
 }
 
-void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val)
+void shader_setint(sparam_t param, int val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix3(shader, param, val);
+	graphics->exports.shader_setint(param, val);
 }
 
-void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val)
+void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix4(shader, param, val);
+	graphics->exports.shader_setmatrix3(param, val);
 }
 
-void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val)
+void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec2(shader, param, val);
+	graphics->exports.shader_setmatrix4(param, val);
 }
 
-void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val)
+void shader_setvec2(sparam_t param, const struct vec2 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec3(shader, param, val);
+	graphics->exports.shader_setvec2(param, val);
 }
 
-void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val)
+void shader_setvec3(sparam_t param, const struct vec3 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec4(shader, param, val);
+	graphics->exports.shader_setvec3(param, val);
 }
 
-void shader_settexture(shader_t shader, sparam_t param, texture_t val)
+void shader_setvec4(sparam_t param, const struct vec4 *val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_settexture(shader, param, val);
+	graphics->exports.shader_setvec4(param, val);
 }
 
-void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size)
+void shader_settexture(sparam_t param, texture_t val)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setval(shader, param, val, size);
+	graphics->exports.shader_settexture(param, val);
 }
 
-void shader_setdefault(shader_t shader, sparam_t param)
+void shader_setval(sparam_t param, const void *val, size_t size)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !shader || !param) return;
+	if (!graphics || !param) return;
 
-	graphics->exports.shader_setdefault(shader, param);
+	graphics->exports.shader_setval(param, val, size);
+}
+
+void shader_setdefault(sparam_t param)
+{
+	graphics_t graphics = thread_graphics;
+	if (!graphics || !param) return;
+
+	graphics->exports.shader_setdefault(param);
 }
 
 void texture_destroy(texture_t tex)
@@ -1700,7 +1676,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return graphics->exports.texture_getcolorformat(tex);
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
+bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return false;
@@ -1869,11 +1845,11 @@ void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 	graphics->exports.vertexbuffer_destroy(vertbuffer);
 }
 
-void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
+void vertexbuffer_flush(vertbuffer_t vertbuffer)
 {
 	if (!thread_graphics || !vertbuffer) return;
 
-	thread_graphics->exports.vertexbuffer_flush(vertbuffer, rebuild);
+	thread_graphics->exports.vertexbuffer_flush(vertbuffer);
 }
 
 struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)

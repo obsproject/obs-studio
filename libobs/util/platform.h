@@ -69,6 +69,13 @@ EXPORT void *os_dlopen(const char *path);
 EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);
 
+struct os_cpu_usage_info;
+typedef struct os_cpu_usage_info *os_cpu_usage_info_t;
+
+EXPORT os_cpu_usage_info_t os_cpu_usage_info_start(void);
+EXPORT double              os_cpu_usage_info_query(os_cpu_usage_info_t info);
+EXPORT void                os_cpu_usage_info_destroy(os_cpu_usage_info_t info);
+
 /**
  * Sleeps to a specific time (in nanoseconds).  Doesn't have to be super
  * accurate in terms of actual slept time because the target time is ensured.

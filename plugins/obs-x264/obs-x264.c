@@ -15,10 +15,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <stdio.h>
 #include <util/dstr.h>
 #include <util/darray.h>
-#include <obs.h>
+#include <obs-module.h>
 #include <x264.h>
+
+#define do_log(level, format, ...) \
+	blog(level, "[x264 encoder: '%s'] " format, \
+			obs_encoder_getname(obsx264->encoder), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
+/* ------------------------------------------------------------------------- */
 
 struct obs_x264 {
 	obs_encoder_t   encoder;
@@ -35,13 +46,10 @@ struct obs_x264 {
 	size_t          sei_size;
 };
 
-
 /* ------------------------------------------------------------------------- */
 
-static const char *obs_x264_getname(const char *locale)
+static const char *obs_x264_getname(void)
 {
-	/* TODO locale lookup */
-	UNUSED_PARAMETER(locale);
 	return "x264";
 }
 
@@ -93,37 +101,39 @@ static inline void add_strings(obs_property_t list, const char *const *strings)
 	}
 }
 
-static obs_properties_t obs_x264_props(const char *locale)
-{
-	/* TODO: locale */
+#define TEXT_BITRATE    obs_module_text("Bitrate")
+#define TEXT_BUF_SIZE   obs_module_text("BufferSize")
+#define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
+#define TEXT_PRESET     obs_module_text("CPUPreset")
+#define TEXT_PROFILE    obs_module_text("Profile")
+#define TEXT_TUNE       obs_module_text("Tune")
+#define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
 
-	obs_properties_t props = obs_properties_create(locale);
+static obs_properties_t obs_x264_props(void)
+{
+	obs_properties_t props = obs_properties_create();
 	obs_property_t list;
 
-	obs_properties_add_int(props, "bitrate", "Bitrate", 50, 100000, 1);
-	obs_properties_add_int(props, "buffer_size", "Buffer Size", 50, 100000,
+	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 100000, 1);
+	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50, 100000,
 			1);
-	obs_properties_add_int(props,
-			"keyint_sec", "Keyframe interval (seconds, 0=auto)",
-			0, 20, 1);
+	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
 
-	list = obs_properties_add_list(props,
-			"preset", "CPU Usage Preset (encoder speed)",
+	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, x264_preset_names);
 
-	list = obs_properties_add_list(props, "profile", "Profile",
+	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(list, "baseline", "baseline");
 	obs_property_list_add_string(list, "main", "main");
 	obs_property_list_add_string(list, "high", "high");
 
-	list = obs_properties_add_list(props, "tune", "Tune",
+	list = obs_properties_add_list(props, "tune", TEXT_TUNE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, x264_tune_names);
 
-	obs_properties_add_text(props, "x264opts",
-			"x264 encoder options (separated by ':')",
+	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS,
 			OBS_TEXT_DEFAULT);
 
 	return props;
@@ -183,7 +193,7 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 
 	if (getparam(param, &name, &val)) {
 		if (x264_param_parse(&obsx264->params, name, val) != 0)
-			blog(LOG_WARNING, "x264 param: %s failed", param);
+			warn("x264 param: %s failed", param);
 
 		bfree(name);
 	}
@@ -192,11 +202,10 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 static inline void apply_x264_profile(struct obs_x264 *obsx264,
 		const char *profile)
 {
-	if (!obsx264->context && profile) {
+	if (!obsx264->context && profile && *profile) {
 		int ret = x264_param_apply_profile(&obsx264->params, profile);
 		if (ret != 0)
-			blog(LOG_WARNING, "Failed to set x264 "
-					"profile '%s'", profile);
+			warn("Failed to set x264 profile '%s'", profile);
 	}
 }
 
@@ -208,9 +217,12 @@ static bool reset_x264_params(struct obs_x264 *obsx264,
 
 static void log_x264(void *param, int level, const char *format, va_list args)
 {
-	blogva(LOG_INFO, format, args);
+	struct obs_x264 *obsx264 = param;
+	char str[1024];
 
-	UNUSED_PARAMETER(param);
+	vsnprintf(str, 1024, format, args);
+	info("%s", str);
+
 	UNUSED_PARAMETER(level);
 }
 
@@ -239,7 +251,19 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.i_fps_num            = voi->fps_num;
 	obsx264->params.i_fps_den            = voi->fps_den;
 	obsx264->params.pf_log               = log_x264;
+	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
+
+	info("settings:\n"
+	     "\tbitrate:     %d\n"
+	     "\tbuffer size: %d\n"
+	     "\tfps_num:     %d\n"
+	     "\tfps_den:     %d\n"
+	     "\tkeyint:      %d\n"
+	     "\tcbr:         %s",
+	     bitrate, buffer_size, voi->fps_num, voi->fps_den,
+	     obsx264->params.i_keyint_max,
+	     cbr ? "on" : "off");
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
@@ -278,7 +302,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 	char **paramlist;
 	bool success = true;
 
-	paramlist = strlist_split(opts, ':', false);
+	paramlist = strlist_split(opts, ' ', false);
 
 	if (!obsx264->context) {
 		override_base_params(paramlist, &preset, &tune, &profile);
@@ -311,8 +335,7 @@ static bool obs_x264_update(void *data, obs_data_t settings)
 	if (success) {
 		ret = x264_encoder_reconfig(obsx264->context, &obsx264->params);
 		if (ret != 0)
-			blog(LOG_WARNING, "Failed to reconfigure x264: %d",
-					ret);
+			warn("Failed to reconfigure: %d", ret);
 		return ret == 0;
 	}
 
@@ -356,11 +379,11 @@ static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 		obsx264->context = x264_encoder_open(&obsx264->params);
 
 		if (obsx264->context == NULL)
-			blog(LOG_WARNING, "x264 failed to load");
+			warn("x264 failed to load");
 		else
 			load_headers(obsx264);
 	} else {
-		blog(LOG_WARNING, "bad settings specified for x264");
+		warn("bad settings specified");
 	}
 
 	if (!obsx264->context) {
@@ -430,7 +453,7 @@ static bool obs_x264_encode(void *data, struct encoder_frame *frame,
 	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count,
 			(frame ? &pic : NULL), &pic_out);
 	if (ret < 0) {
-		blog(LOG_WARNING, "x264 encode failed");
+		warn("encode failed");
 		return false;
 	}
 

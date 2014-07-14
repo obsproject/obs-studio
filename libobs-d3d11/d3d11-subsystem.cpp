@@ -367,10 +367,7 @@ void gs_device::UpdateBlendState()
 
 void gs_device::UpdateViewProjMatrix()
 {
-	matrix3 cur_matrix;
-	gs_matrix_get(&cur_matrix);
-
-	matrix4_from_matrix3(&curViewMatrix, &cur_matrix);
+	gs_matrix_get(&curViewMatrix);
 
 	/* negate Z col of the view matrix for right-handed coordinate system */
 	curViewMatrix.x.z = -curViewMatrix.x.z;
@@ -382,7 +379,7 @@ void gs_device::UpdateViewProjMatrix()
 	matrix4_transpose(&curViewProjMatrix, &curViewProjMatrix);
 
 	if (curVertexShader->viewProj)
-		shader_setmatrix4(curVertexShader, curVertexShader->viewProj,
+		shader_setmatrix4(curVertexShader->viewProj,
 				&curViewProjMatrix);
 }
 
@@ -448,11 +445,13 @@ void device_destroy(device_t device)
 void device_entercontext(device_t device)
 {
 	/* does nothing */
+	UNUSED_PARAMETER(device);
 }
 
 void device_leavecontext(device_t device)
 {
 	/* does nothing */
+	UNUSED_PARAMETER(device);
 }
 
 swapchain_t device_create_swapchain(device_t device, struct gs_init_data *data)
@@ -509,7 +508,7 @@ uint32_t device_getheight(device_t device)
 
 texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags)
+		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -528,7 +527,7 @@ texture_t device_create_texture(device_t device, uint32_t width,
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	gs_texture *texture = NULL;
 	try {
@@ -550,9 +549,17 @@ texture_t device_create_cubetexture(device_t device, uint32_t size,
 texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(width);
+	UNUSED_PARAMETER(height);
+	UNUSED_PARAMETER(depth);
+	UNUSED_PARAMETER(color_format);
+	UNUSED_PARAMETER(levels);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(flags);
 	return NULL;
 }
 
@@ -738,6 +745,7 @@ void device_load_indexbuffer(device_t device, indexbuffer_t indexbuffer)
 	if (indexbuffer) {
 		switch (indexbuffer->indexSize) {
 		case 2: format = DXGI_FORMAT_R16_UINT; break;
+		default:
 		case 4: format = DXGI_FORMAT_R32_UINT; break;
 		}
 
@@ -867,6 +875,9 @@ void device_load_pixelshader(device_t device, shader_t pixelshader)
 void device_load_defaultsamplerstate(device_t device, bool b_3d, int unit)
 {
 	/* TODO */
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(b_3d);
+	UNUSED_PARAMETER(unit);
 }
 
 shader_t device_getvertexshader(device_t device)
@@ -1139,6 +1150,7 @@ void device_draw(device_t device, enum gs_draw_mode draw_mode,
 void device_endscene(device_t device)
 {
 	/* does nothing in D3D11 */
+	UNUSED_PARAMETER(device);
 }
 
 void device_load_swapchain(device_t device, swapchain_t swapchain)
@@ -1190,6 +1202,11 @@ void device_clear(device_t device, uint32_t clear_flags, struct vec4 *color,
 void device_present(device_t device)
 {
 	device->curSwapChain->swap->Present(0, 0);
+}
+
+void device_flush(device_t device)
+{
+	device->context->Flush();
 }
 
 void device_setcullmode(device_t device, enum gs_cull_mode mode)
@@ -1329,35 +1346,6 @@ void device_stencilop(device_t device, enum gs_stencil_side side,
 		update_stencilside_op(device,
 				device->zstencilState.stencilBack,
 				fail, zfail, zpass);
-}
-
-void device_enable_fullscreen(device_t device, bool enable)
-{
-	/* TODO */
-}
-
-int device_fullscreen_enabled(device_t device)
-{
-	/* TODO */
-	return 0;
-}
-
-void device_setdisplaymode(device_t device,
-		const struct gs_display_mode *mode)
-{
-	/* TODO */
-}
-
-void device_getdisplaymode(device_t device,
-		struct gs_display_mode *mode)
-{
-	/* TODO */
-}
-
-void device_setcolorramp(device_t device, float gamma, float brightness,
-		float contrast)
-{
-	/* TODO */
 }
 
 void device_setviewport(device_t device, int x, int y, int width,
@@ -1514,7 +1502,7 @@ enum gs_color_format texture_getcolorformat(texture_t tex)
 	return static_cast<gs_texture_2d*>(tex)->format;
 }
 
-bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
+bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	HRESULT hr;
 
@@ -1529,7 +1517,7 @@ bool texture_map(texture_t tex, void **ptr, uint32_t *linesize)
 	if (FAILED(hr))
 		return false;
 
-	*ptr = map.pData;
+	*ptr = (uint8_t*)map.pData;
 	*linesize = map.RowPitch;
 	return true;
 }
@@ -1585,24 +1573,28 @@ void volumetexture_destroy(texture_t voltex)
 uint32_t volumetexture_getwidth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getheight(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 uint32_t volumetexture_getdepth(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
 enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
 {
 	/* TODO */
+	UNUSED_PARAMETER(voltex);
 	return GS_UNKNOWN;
 }
 
@@ -1671,7 +1663,7 @@ void vertexbuffer_destroy(vertbuffer_t vertbuffer)
 	delete vertbuffer;
 }
 
-void vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild)
+void vertexbuffer_flush(vertbuffer_t vertbuffer)
 {
 	if (!vertbuffer->dynamic) {
 		blog(LOG_ERROR, "vertexbuffer_flush: vertex buffer is "

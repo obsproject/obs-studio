@@ -36,14 +36,14 @@ EXPORT uint32_t device_getwidth(device_t device);
 EXPORT uint32_t device_getheight(device_t device);
 EXPORT texture_t device_create_texture(device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags);
+		uint32_t levels, const uint8_t **data, uint32_t flags);
 EXPORT texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT texture_t device_create_volumetexture(device_t device, uint32_t width,
 		uint32_t height, uint32_t depth,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT zstencil_t device_create_zstencil(device_t device, uint32_t width,
 		uint32_t height, enum gs_zstencil_format format);
 EXPORT stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
@@ -82,7 +82,8 @@ EXPORT void device_setcuberendertarget(device_t device, texture_t cubetex,
 EXPORT void device_copy_texture(device_t device, texture_t dst, texture_t src);
 EXPORT void device_copy_texture_region(device_t device,
 		texture_t dst, uint32_t dst_x, uint32_t dst_y,
-		texture_t src, uint32_t src_x, uint32_t src_y, uint32_t src_w, uint32_t src_h);
+		texture_t src, uint32_t src_x, uint32_t src_y,
+		uint32_t src_w, uint32_t src_h);
 EXPORT void device_stage_texture(device_t device, stagesurf_t dst,
 		texture_t src);
 EXPORT void device_beginscene(device_t device);
@@ -93,6 +94,7 @@ EXPORT void device_load_swapchain(device_t device, swapchain_t swapchain);
 EXPORT void device_clear(device_t device, uint32_t clear_flags,
 		struct vec4 *color, float depth, uint8_t stencil);
 EXPORT void device_present(device_t device);
+EXPORT void device_flush(device_t device);
 EXPORT void device_setcullmode(device_t device, enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode device_getcullmode(device_t device);
 EXPORT void device_enable_blending(device_t device, bool enable);

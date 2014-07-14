@@ -30,10 +30,10 @@ static inline struct obs_encoder_info *get_encoder_info(const char *id)
 	return NULL;
 }
 
-const char *obs_encoder_getdisplayname(const char *id, const char *locale)
+const char *obs_encoder_getdisplayname(const char *id)
 {
 	struct obs_encoder_info *ei = get_encoder_info(id);
-	return ei ? ei->getname(locale) : NULL;
+	return ei ? ei->getname() : NULL;
 }
 
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
@@ -79,6 +79,7 @@ static struct obs_encoder *create_encoder(const char *id,
 			&obs->data.encoders_mutex,
 			&obs->data.first_encoder);
 
+	blog(LOG_INFO, "encoder '%s' (%s) created", name, id);
 	return encoder;
 }
 
@@ -181,6 +182,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t encoder)
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
+		blog(LOG_INFO, "encoder '%s' destroyed", encoder->context.name);
+
 		free_audio_buffers(encoder);
 
 		if (encoder->context.data)
@@ -213,6 +216,11 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	}
 }
 
+const char *obs_encoder_getname(obs_encoder_t encoder)
+{
+	return encoder ? encoder->context.name : NULL;
+}
+
 static inline obs_data_t get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t settings = obs_data_create();
@@ -227,14 +235,14 @@ obs_data_t obs_encoder_defaults(const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
+obs_properties_t obs_get_encoder_properties(const char *id)
 {
 	const struct obs_encoder_info *ei = get_encoder_info(id);
 	if (ei && ei->properties) {
 		obs_data_t       defaults = get_defaults(ei);
 		obs_properties_t properties;
 
-		properties = ei->properties(locale);
+		properties = ei->properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -242,12 +250,11 @@ obs_properties_t obs_get_encoder_properties(const char *id, const char *locale)
 	return NULL;
 }
 
-obs_properties_t obs_encoder_properties(obs_encoder_t encoder,
-		const char *locale)
+obs_properties_t obs_encoder_properties(obs_encoder_t encoder)
 {
 	if (encoder && encoder->info.properties) {
 		obs_properties_t props;
-		props = encoder->info.properties(locale);
+		props = encoder->info.properties();
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}
@@ -436,6 +443,11 @@ audio_t obs_encoder_audio(obs_encoder_t encoder)
 {
 	return (encoder && encoder->info.type == OBS_ENCODER_AUDIO) ?
 		encoder->media : NULL;
+}
+
+bool obs_encoder_active(obs_encoder_t encoder)
+{
+	return encoder ? encoder->active : false;
 }
 
 static inline bool get_sei(struct obs_encoder *encoder,

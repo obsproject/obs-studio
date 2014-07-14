@@ -49,6 +49,7 @@ ltmain.sh
 *.app
 .DS_Store
 
+.directory
 .hg
 .depend
 tags

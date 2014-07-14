@@ -26,20 +26,24 @@
 
 FILE *os_wfopen(const wchar_t *path, const char *mode)
 {
-	FILE *file;
+	FILE *file = NULL;
+
+	if (path) {
 #ifdef _MSC_VER
-	wchar_t *wcs_mode;
+		wchar_t *wcs_mode;
 
-	os_utf8_to_wcs_ptr(mode, 0, &wcs_mode);
-	file = _wfopen(path, wcs_mode);
-	bfree(wcs_mode);
+		os_utf8_to_wcs_ptr(mode, 0, &wcs_mode);
+		file = _wfopen(path, wcs_mode);
+		bfree(wcs_mode);
 #else
-	char *mbs_path;
+		char *mbs_path;
 
-	os_wcs_to_utf8_ptr(path, 0, &mbs_path);
-	file = fopen(mbs_path, mode);
-	bfree(mbs_path);
+		os_wcs_to_utf8_ptr(path, 0, &mbs_path);
+		file = fopen(mbs_path, mode);
+		bfree(mbs_path);
 #endif
+	}
+
 	return file;
 }
 
@@ -48,13 +52,16 @@ FILE *os_fopen(const char *path, const char *mode)
 #ifdef _WIN32
 	wchar_t *wpath = NULL;
 	FILE *file = NULL;
-	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	file = os_wfopen(wpath, mode);
-	bfree(wpath);
+
+	if (path) {
+		os_utf8_to_wcs_ptr(path, 0, &wpath);
+		file = os_wfopen(wpath, mode);
+		bfree(wpath);
+	}
 
 	return file;
 #else
-	return fopen(path, mode);
+	return path ? fopen(path, mode) : NULL;
 #endif
 }
 
@@ -230,8 +237,12 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 
 size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
-	size_t out_len = dst ?
-		(dst_size - 1) : mbstowcs(NULL, str, len);
+	size_t out_len;
+
+	if (!str)
+		return 0;
+
+	out_len = dst ? (dst_size - 1) : mbstowcs(NULL, str, len);
 
 	if (len && dst) {
 		if (!dst_size)
@@ -249,9 +260,14 @@ size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 		size_t dst_size)
 {
-	size_t in_len = len ? len : strlen(str);
-	size_t out_len = dst ?
-		(dst_size - 1) : utf8_to_wchar(str, in_len, NULL, 0, 0);
+	size_t in_len;
+	size_t out_len;
+
+	if (!str)
+		return 0;
+
+	in_len = len ? len : strlen(str);
+	out_len = dst ? (dst_size - 1) : utf8_to_wchar(str, in_len, NULL, 0, 0);
 
 	if (out_len && dst) {
 		if (!dst_size)
@@ -268,8 +284,12 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 
 size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 {
-	size_t out_len = dst ?
-		(dst_size - 1) : wcstombs(NULL, str, len);
+	size_t out_len;
+
+	if (!str)
+		return 0;
+
+	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, len);
 
 	if (len && dst) {
 		if (!dst_size)
@@ -287,9 +307,14 @@ size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 		size_t dst_size)
 {
-	size_t in_len = (len != 0) ? len : wcslen(str);
-	size_t out_len = dst ?
-		(dst_size - 1) : wchar_to_utf8(str, in_len, NULL, 0, 0);
+	size_t in_len;
+	size_t out_len;
+
+	if (!str)
+		return 0;
+
+	in_len = (len != 0) ? len : wcslen(str);
+	out_len = dst ? (dst_size - 1) : wchar_to_utf8(str, in_len, NULL, 0, 0);
 
 	if (out_len && dst) {
 		if (!dst_size)
@@ -306,44 +331,67 @@ size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 
 size_t os_mbs_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
 {
-	size_t  out_len = os_mbs_to_wcs(str, len, NULL, 0);
+	if (str) {
+		size_t out_len = os_mbs_to_wcs(str, len, NULL, 0);
 
-	*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
-	return os_mbs_to_wcs(str, len, *pstr, out_len + 1);
+		*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
+		return os_mbs_to_wcs(str, len, *pstr, out_len + 1);
+	} else {
+		*pstr = NULL;
+		return 0;
+	}
 }
 
 size_t os_utf8_to_wcs_ptr(const char *str, size_t len, wchar_t **pstr)
 {
-	size_t  out_len = os_utf8_to_wcs(str, len, NULL, 0);
+	if (str) {
+		size_t out_len = os_utf8_to_wcs(str, len, NULL, 0);
 
-	*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
-	return os_utf8_to_wcs(str, len, *pstr, out_len + 1);
+		*pstr = bmalloc((out_len + 1) * sizeof(wchar_t));
+		return os_utf8_to_wcs(str, len, *pstr, out_len + 1);
+	} else {
+		*pstr = NULL;
+		return 0;
+	}
 }
 
 size_t os_wcs_to_mbs_ptr(const wchar_t *str, size_t len, char **pstr)
 {
-	size_t out_len = os_wcs_to_mbs(str, len, NULL, 0);
+	if (str) {
+		size_t out_len = os_wcs_to_mbs(str, len, NULL, 0);
 
-	*pstr = bmalloc((out_len + 1) * sizeof(char));
-	return os_wcs_to_mbs(str, len, *pstr, out_len + 1);
+		*pstr = bmalloc((out_len + 1) * sizeof(char));
+		return os_wcs_to_mbs(str, len, *pstr, out_len + 1);
+	} else {
+		*pstr = NULL;
+		return 0;
+	}
 }
 
 size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr)
 {
-	size_t out_len = os_wcs_to_utf8(str, len, NULL, 0);
+	if (str) {
+		size_t out_len = os_wcs_to_utf8(str, len, NULL, 0);
 
-	*pstr = bmalloc((out_len + 1) * sizeof(char));
-	return os_wcs_to_utf8(str, len, *pstr, out_len + 1);
+		*pstr = bmalloc((out_len + 1) * sizeof(char));
+		return os_wcs_to_utf8(str, len, *pstr, out_len + 1);
+	} else {
+		*pstr = NULL;
+		return 0;
+	}
 }
 
 size_t os_utf8_to_mbs_ptr(const char *str, size_t len, char **pstr)
 {
-	wchar_t *wstr = NULL;
-	char *dst = NULL;
-	size_t wlen = os_utf8_to_wcs_ptr(str, len, &wstr);
-	size_t out_len = os_wcs_to_mbs_ptr(wstr, wlen, &dst);
+	char    *dst    = NULL;
+	size_t  out_len = 0;
 
-	bfree(wstr);
+	if (str) {
+		wchar_t *wstr = NULL;
+		size_t  wlen  = os_utf8_to_wcs_ptr(str, len, &wstr);
+		out_len = os_wcs_to_mbs_ptr(wstr, wlen, &dst);
+		bfree(wstr);
+	}
 	*pstr = dst;
 
 	return out_len;
@@ -351,13 +399,16 @@ size_t os_utf8_to_mbs_ptr(const char *str, size_t len, char **pstr)
 
 size_t os_mbs_to_utf8_ptr(const char *str, size_t len, char **pstr)
 {
-	wchar_t *wstr = NULL;
-	char *dst = NULL;
-	size_t wlen = os_mbs_to_wcs_ptr(str, len, &wstr);
-	size_t out_len = os_wcs_to_utf8_ptr(wstr, wlen, &dst);
+	char    *dst    = NULL;
+	size_t  out_len = 0;
 
-	bfree(wstr);
+	if (str) {
+		wchar_t *wstr = NULL;
+		size_t  wlen  = os_mbs_to_wcs_ptr(str, len, &wstr);
+		out_len = os_wcs_to_utf8_ptr(wstr, wlen, &dst);
+		bfree(wstr);
+	}
+
 	*pstr = dst;
-
 	return out_len;
 }

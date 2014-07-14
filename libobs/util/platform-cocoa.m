@@ -93,3 +93,95 @@ char *os_get_config_path(const char *name)
 	dstr_cat(&path, name);
 	return path.array;
 }
+
+struct os_cpu_usage_info {
+	int64_t last_cpu_time;
+	int64_t last_sys_time;
+	int     core_count;
+};
+
+static inline void add_time_value(time_value_t *dst, time_value_t *a,
+		time_value_t *b)
+{
+	dst->microseconds = a->microseconds + b->microseconds;
+	dst->seconds      = a->seconds      + b->seconds;
+
+	if (dst->microseconds >= 1000000) {
+		dst->seconds      += dst->microseconds / 1000000;
+		dst->microseconds %= 1000000;
+	}
+}
+
+static bool get_time_info(int64_t *cpu_time, int64_t *sys_time)
+{
+	mach_port_t                   task = mach_task_self();
+	struct task_thread_times_info thread_data;
+	struct task_basic_info_64     task_data;
+	mach_msg_type_number_t        count;
+	kern_return_t                 kern_ret;
+	time_value_t                  cur_time;
+
+	*cpu_time = 0;
+	*sys_time = 0;
+
+	count = TASK_THREAD_TIMES_INFO_COUNT;
+	kern_ret = task_info(task, TASK_THREAD_TIMES_INFO,
+			(task_info_t)&thread_data, &count);
+	if (kern_ret != KERN_SUCCESS)
+		return false;
+
+	count = TASK_BASIC_INFO_64_COUNT;
+	kern_ret = task_info(task, TASK_BASIC_INFO_64,
+			(task_info_t)&task_data, &count);
+	if (kern_ret != KERN_SUCCESS)
+		return false;
+
+	add_time_value(&cur_time, &thread_data.user_time,
+			&thread_data.system_time);
+	add_time_value(&cur_time, &cur_time, &task_data.user_time);
+	add_time_value(&cur_time, &cur_time, &task_data.system_time);
+
+	*cpu_time = os_gettime_ns() / 1000;
+	*sys_time = cur_time.seconds * 1000000 + cur_time.microseconds;
+	return true;
+}
+
+os_cpu_usage_info_t os_cpu_usage_info_start(void)
+{
+	struct os_cpu_usage_info *info = bmalloc(sizeof(*info));
+
+	if (!get_time_info(&info->last_cpu_time, &info->last_sys_time)) {
+		bfree(info);
+		return NULL;
+	}
+
+	info->core_count = sysconf(_SC_NPROCESSORS_ONLN);
+	return info;
+}
+
+double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+{
+	int64_t sys_time,       cpu_time;
+	int64_t sys_time_delta, cpu_time_delta;
+
+	if (!info || !get_time_info(&cpu_time, &sys_time))
+		return 0.0;
+
+	sys_time_delta = sys_time - info->last_sys_time;
+	cpu_time_delta = cpu_time - info->last_cpu_time;
+
+	if (cpu_time_delta == 0)
+		return 0.0;
+
+	info->last_sys_time = sys_time;
+	info->last_cpu_time = cpu_time;
+
+	return (double)sys_time_delta * 100.0 / (double)cpu_time_delta /
+		(double)info->core_count;
+}
+
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+{
+	if (info)
+		bfree(info);
+}

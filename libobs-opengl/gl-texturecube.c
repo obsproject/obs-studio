@@ -18,7 +18,7 @@
 #include "gl-subsystem.h"
 
 static inline bool upload_texture_cube(struct gs_texture_cube *tex,
-		const void **data)
+		const uint8_t **data)
 {
 	uint32_t row_size   = tex->size * gs_get_format_bpp(tex->base.format);
 	uint32_t tex_size   = tex->size * row_size / 8;
@@ -60,7 +60,7 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex,
 
 texture_t device_create_cubetexture(device_t device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags)
+		const uint8_t **data, uint32_t flags)
 {
 	struct gs_texture_cube *tex = bzalloc(sizeof(struct gs_texture_cube));
 	tex->base.device             = device;

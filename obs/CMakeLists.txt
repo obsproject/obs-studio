@@ -57,6 +57,10 @@ set(obs_SOURCES
 	window-basic-settings.cpp
 	window-basic-properties.cpp
 	window-basic-source-select.cpp
+	window-license-agreement.cpp
+	window-basic-status-bar.cpp
+	window-basic-transform.cpp
+	window-basic-preview.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
 	properties-view.cpp
@@ -71,6 +75,10 @@ set(obs_HEADERS
 	window-basic-settings.hpp
 	window-basic-properties.hpp
 	window-basic-source-select.hpp
+	window-license-agreement.hpp
+	window-basic-status-bar.hpp
+	window-basic-transform.hpp
+	window-basic-preview.hpp
 	window-namedialog.hpp
 	window-log-reply.hpp
 	properties-view.hpp
@@ -81,8 +89,10 @@ set(obs_HEADERS
 
 set(obs_UI
 	forms/NameDialog.ui
+	forms/OBSLicenseAgreement.ui
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
+	forms/OBSBasicTransform.ui
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicProperties.ui)

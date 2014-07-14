@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <obs.h>
+#include <obs-module.h>
 #include <util/threading.h>
 #include <util/c99defs.h>
 
@@ -25,6 +25,11 @@
 
 #define set_property AudioUnitSetProperty
 #define get_property AudioUnitGetProperty
+
+#define TEXT_AUDIO_INPUT    obs_module_text("CoreAudio.InputCapture");
+#define TEXT_AUDIO_OUTPUT   obs_module_text("CoreAudio.OutputCapture");
+#define TEXT_DEVICE         obs_module_text("CoreAudio.Device")
+#define TEXT_DEVICE_DEFAULT obs_module_text("CoreAudio.Device.Default")
 
 struct coreaudio_data {
 	char               *device_name;
@@ -628,18 +633,14 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *coreaudio_input_getname(const char *locale)
+static const char *coreaudio_input_getname(void)
 {
-	/* TODO: Locale */
-	UNUSED_PARAMETER(locale);
-	return "CoreAudio Input Capture";
+	return TEXT_AUDIO_INPUT;
 }
 
-static const char *coreaudio_output_getname(const char *locale)
+static const char *coreaudio_output_getname(void)
 {
-	/* TODO: Locale */
-	UNUSED_PARAMETER(locale);
-	return "CoreAudio Output Capture";
+	return TEXT_AUDIO_OUTPUT;
 }
 
 static void coreaudio_destroy(void *data)
@@ -704,23 +705,22 @@ static void *coreaudio_create_output_capture(obs_data_t settings,
 	return coreaudio_create(settings, source, false);
 }
 
-static obs_properties_t coreaudio_properties(const char *locale, bool input)
+static obs_properties_t coreaudio_properties(bool input)
 {
-	obs_properties_t   props = obs_properties_create(locale);
+	obs_properties_t   props = obs_properties_create();
 	obs_property_t     property;
 	struct device_list devices;
 
 	memset(&devices, 0, sizeof(struct device_list));
 
-	/* TODO: translate */
-	property = obs_properties_add_list(props, "device_id", "Device",
+	property = obs_properties_add_list(props, "device_id", TEXT_DEVICE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	coreaudio_enum_devices(&devices, input);
 
-	/* TODO: translate */
 	if (devices.items.num)
-		obs_property_list_add_string(property, "Default", "default");
+		obs_property_list_add_string(property, TEXT_DEVICE_DEFAULT,
+				"default");
 
 	for (size_t i = 0; i < devices.items.num; i++) {
 		struct device_item *item = devices.items.array+i;
@@ -732,14 +732,14 @@ static obs_properties_t coreaudio_properties(const char *locale, bool input)
 	return props;
 }
 
-static obs_properties_t coreaudio_input_properties(const char *locale)
+static obs_properties_t coreaudio_input_properties(void)
 {
-	return coreaudio_properties(locale, true);
+	return coreaudio_properties(true);
 }
 
-static obs_properties_t coreaudio_output_properties(const char *locale)
+static obs_properties_t coreaudio_output_properties(void)
 {
-	return coreaudio_properties(locale, false);
+	return coreaudio_properties(false);
 }
 
 struct obs_source_info coreaudio_input_capture_info = {

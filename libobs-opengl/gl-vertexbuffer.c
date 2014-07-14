@@ -120,7 +120,7 @@ void vertexbuffer_destroy(vertbuffer_t vb)
 	}
 }
 
-void vertexbuffer_flush(vertbuffer_t vb, bool rebuild)
+void vertexbuffer_flush(vertbuffer_t vb)
 {
 	size_t i;
 
@@ -164,7 +164,6 @@ void vertexbuffer_flush(vertbuffer_t vb, bool rebuild)
 			goto failed;
 	}
 
-	UNUSED_PARAMETER(rebuild);
 	return;
 
 failed:

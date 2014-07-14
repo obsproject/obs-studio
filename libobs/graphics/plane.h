@@ -25,6 +25,7 @@ extern "C" {
 #endif
 
 struct matrix3;
+struct matrix4;
 
 struct plane {
 	struct vec3 dir;
@@ -57,6 +58,8 @@ EXPORT void plane_from_tri(struct plane *dst,
                            const struct vec3 *v3);
 
 EXPORT void plane_transform(struct plane *dst, const struct plane *p,
+		const struct matrix4 *m);
+EXPORT void plane_transform3x4(struct plane *dst, const struct plane *p,
 		const struct matrix3 *m);
 
 EXPORT bool plane_intersection_ray(const struct plane *p,

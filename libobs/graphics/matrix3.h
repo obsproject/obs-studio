@@ -18,6 +18,7 @@
 #pragma once
 
 #include "vec3.h"
+#include "axisang.h"
 
 /* 3x4 Matrix */
 
@@ -25,7 +26,6 @@
 extern "C" {
 #endif
 
-struct axisang;
 struct matrix4;
 
 struct matrix3 {
@@ -78,6 +78,30 @@ EXPORT void matrix3_mirror(struct matrix3 *dst, const struct matrix3 *m,
 		const struct plane *p);
 EXPORT void matrix3_mirrorv(struct matrix3 *dst, const struct matrix3 *m,
 		const struct vec3 *v);
+
+static inline void matrix3_translate3f(struct matrix3 *dst,
+		const struct matrix3 *m, float x, float y, float z)
+{
+	struct vec3 v;
+	vec3_set(&v, x, y, z);
+	matrix3_translate(dst, m, &v);
+}
+
+static inline void matrix3_rotate_aa4f(struct matrix3 *dst,
+		const struct matrix3 *m, float x, float y, float z, float rot)
+{
+	struct axisang aa;
+	axisang_set(&aa, x, y, z, rot);
+	matrix3_rotate_aa(dst, m, &aa);
+}
+
+static inline void matrix3_scale3f(struct matrix3 *dst,
+		const struct matrix3 *m, float x, float y, float z)
+{
+	struct vec3 v;
+	vec3_set(&v, x, y, z);
+	matrix3_scale(dst, m, &v);
+}
 
 #ifdef __cplusplus
 }

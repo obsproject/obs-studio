@@ -29,6 +29,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
+#include "window-license-agreement.hpp"
 #include "platform.hpp"
 
 #include <fstream>
@@ -95,9 +96,12 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #endif
 }
 
+#define DEFAULT_LANG "en-US"
+
 bool OBSApp::InitGlobalConfigDefaults()
 {
-	config_set_default_string(globalConfig, "General", "Language", "en");
+	config_set_default_string(globalConfig, "General", "Language",
+			DEFAULT_LANG);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 
 #if _WIN32
@@ -132,10 +136,6 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 
-	path = os_get_config_path("obs-studio/studio");
-	if (!do_mkdir(path))
-		return false;
-
 	path = os_get_config_path("obs-studio/logs");
 	if (!do_mkdir(path))
 		return false;
@@ -156,8 +156,6 @@ bool OBSApp::InitGlobalConfig()
 	return InitGlobalConfigDefaults();
 }
 
-#define DEFAULT_LANG "en"
-
 bool OBSApp::InitLocale()
 {
 	const char *lang = config_get_string(globalConfig, "General",
@@ -165,12 +163,9 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	stringstream file;
-	file << "locale/" << lang << ".txt";
-
 	string englishPath;
-	if (!GetDataFilePath("locale/" DEFAULT_LANG ".txt", englishPath)) {
-		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".txt");
+	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
+		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
 		return false;
 	}
 
@@ -181,8 +176,39 @@ bool OBSApp::InitLocale()
 		return false;
 	}
 
-	if (astrcmpi(lang, DEFAULT_LANG) == 0)
+	bool userLocale = config_has_user_value(globalConfig, "General",
+			"Language");
+	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
+
+	if (userLocale && defaultLang)
 		return true;
+
+	if (!userLocale && defaultLang) {
+		for (auto &locale_ : GetPreferredLocales()) {
+			if (locale_ == lang)
+				return true;
+
+			stringstream file;
+			file << "locale/" << locale_ << ".ini";
+
+			string path;
+			if (!GetDataFilePath(file.str().c_str(), path))
+				continue;
+
+			if (!text_lookup_add(textLookup, path.c_str()))
+				continue;
+
+			blog(LOG_INFO, "Using preferred locale '%s'",
+					locale_.c_str());
+			locale = locale_;
+			return true;
+		}
+
+		return true;
+	}
+
+	stringstream file;
+	file << "locale/" << lang << ".ini";
 
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
@@ -199,6 +225,9 @@ bool OBSApp::InitLocale()
 
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
+{}
+
+void OBSApp::AppInit()
 {
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
@@ -219,10 +248,26 @@ const char *OBSApp::GetRenderModule() const
 		"libobs-d3d11" : "libobs-opengl";
 }
 
-void OBSApp::OBSInit()
+bool OBSApp::OBSInit()
 {
-	mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
-	mainWindow->OBSInit();
+	bool licenseAccepted = config_get_bool(globalConfig, "General",
+			"LicenseAccepted");
+	OBSLicenseAgreement agreement(nullptr);
+
+	if (licenseAccepted || agreement.exec() == QDialog::Accepted) {
+		if (!licenseAccepted) {
+			config_set_bool(globalConfig, "General",
+					"LicenseAccepted", true);
+			config_save(globalConfig);
+		}
+
+		mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
+		mainWindow->OBSInit();
+
+		return true;
+	} else {
+		return false;
+	}
 }
 
 string OBSApp::GetVersionString() const
@@ -242,8 +287,6 @@ string OBSApp::GetVersionString() const
 #ifdef _WIN32
 	if (sizeof(void*) == 8)
 		ver << "64bit, ";
-	else
-		ver << "32bit, ";
 
 	ver << "windows)";
 #elif __APPLE__
@@ -362,7 +405,7 @@ static void delete_oldest_log(void)
 {
 	BPtr<char>       logDir(os_get_config_path("obs-studio/logs"));
 	string           oldestLog;
-	uint64_t         oldest_ts = -1;
+	uint64_t         oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
 	unsigned int maxLogs = (unsigned int)config_get_uint(
@@ -442,6 +485,29 @@ string GenerateTimeDateFilename(const char *extension)
 	return string(file);
 }
 
+vector<pair<string, string>> GetLocaleNames()
+{
+	string path;
+	if (!GetDataFilePath("locale.ini", path))
+		throw "Could not find locale.ini path";
+
+	ConfigFile ini;
+	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
+		throw "Could not open locale.ini";
+
+	size_t sections = config_num_sections(ini);
+
+	vector<pair<string, string>> names;
+	names.reserve(sections);
+	for (size_t i = 0; i < sections; i++) {
+		const char *tag = config_get_section(ini, i);
+		const char *name = config_get_string(ini, tag, "Name");
+		names.emplace_back(tag, name);
+	}
+
+	return names;
+}
+
 static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
@@ -468,20 +534,22 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	int ret = -1;
 	QCoreApplication::addLibraryPath(".");
 
+	OBSApp program(argc, argv);
 	try {
-		OBSApp program(argc, argv);
+		program.AppInit();
+
 		OBSTranslator translator;
 
 		create_log_file(logFile);
 
 		program.installTranslator(&translator);
 		program.setStyle(new NoFocusFrameStyle);
-		program.OBSInit();
 
-		ret = program.exec();
+		ret = program.OBSInit() ? program.exec() : 0;
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "%s", error);
+		OBSErrorBox(nullptr, "%s", error);
 	}
 
 	return ret;

@@ -3,6 +3,15 @@
 #include "dc-capture.h"
 #include <psapi.h>
 
+#define TEXT_WINDOW_CAPTURE obs_module_text("WindowCapture")
+#define TEXT_WINDOW         obs_module_text("WindowCapture.Window")
+#define TEXT_MATCH_PRIORITY obs_module_text("WindowCapture.Priority")
+#define TEXT_MATCH_TITLE    obs_module_text("WindowCapture.Priority.Title")
+#define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
+#define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
+#define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
+#define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
+
 enum window_priority {
 	WINDOW_PRIORITY_CLASS,
 	WINDOW_PRIORITY_TITLE,
@@ -294,11 +303,9 @@ static HWND find_window(struct window_capture *wc)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *wc_getname(const char *locale)
+static const char *wc_getname(void)
 {
-	/* TODO: locale */
-	UNUSED_PARAMETER(locale);
-	return "Window capture";
+	return TEXT_WINDOW_CAPTURE;
 }
 
 static void *wc_create(obs_data_t settings, obs_source_t source)
@@ -362,26 +369,24 @@ static void wc_defaults(obs_data_t defaults)
 	obs_data_setbool(defaults, "compatibility", false);
 }
 
-static obs_properties_t wc_properties(const char *locale)
+static obs_properties_t wc_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create(locale);
+	obs_properties_t ppts = obs_properties_create();
 	obs_property_t p;
 
-	/* TODO: locale */
-	p = obs_properties_add_list(ppts, "window", "Window",
+	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	fill_window_list(p);
 
-	p = obs_properties_add_list(ppts, "priority", "Window Match Priority",
+	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(p, "Window Title", WINDOW_PRIORITY_TITLE);
-	obs_property_list_add_int(p, "Window Class", WINDOW_PRIORITY_CLASS);
-	obs_property_list_add_int(p, "Executable",   WINDOW_PRIORITY_EXE);
+	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
+	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
+	obs_property_list_add_int(p, TEXT_MATCH_EXE,   WINDOW_PRIORITY_EXE);
 
-	obs_properties_add_bool(ppts, "cursor", "Capture Cursor");
+	obs_properties_add_bool(ppts, "cursor", TEXT_CAPTURE_CURSOR);
 
-	obs_properties_add_bool(ppts, "compatibility",
-			"Laptop Compatibility Mode");
+	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
 
 	return ppts;
 }
@@ -440,6 +445,8 @@ static void wc_render(void *data, effect_t effect)
 {
 	struct window_capture *wc = data;
 	dc_capture_render(&wc->capture, wc->opaque_effect);
+
+	UNUSED_PARAMETER(effect);
 }
 
 struct obs_source_info window_capture_info = {

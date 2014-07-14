@@ -8,7 +8,7 @@ class XCompcapMain
 	static bool init();
 	static void deinit();
 
-	static obs_properties_t properties(const char *locale);
+	static obs_properties_t properties();
 	static void defaults(obs_data_t settings);
 
 	XCompcapMain(obs_data_t settings, obs_source_t source);

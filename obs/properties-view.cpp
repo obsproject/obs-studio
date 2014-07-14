@@ -6,8 +6,11 @@
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QPushButton>
+#include <QStandardItem>
+#include <QFileDialog>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
+#include "obs-app.hpp"
 #include <string>
 
 using namespace std;
@@ -99,12 +102,27 @@ QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
-QWidget *OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout)
+void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
+		QLabel **label)
 {
-	/* TODO */
-	UNUSED_PARAMETER(prop);
-	UNUSED_PARAMETER(layout);
-	return nullptr;
+	const char  *name      = obs_property_name(prop);
+	const char  *val       = obs_data_getstring(settings, name);
+	QLayout     *subLayout = new QHBoxLayout();
+	QLineEdit   *edit      = new QLineEdit();
+	QPushButton *button    = new QPushButton(QTStr("Browse"));
+
+	edit->setText(QT_UTF8(val));
+	edit->setReadOnly(true);
+
+	subLayout->addWidget(edit);
+	subLayout->addWidget(button);
+
+	WidgetInfo *info = new WidgetInfo(this, prop, edit);
+	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
+	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+
+	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(*label, subLayout);
 }
 
 QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
@@ -154,9 +172,57 @@ static void AddComboItem(QComboBox *combo, obs_property_t prop,
 	}
 
 	combo->addItem(QT_UTF8(name), var);
+
+	if (!obs_property_list_item_disabled(prop, idx))
+		return;
+
+	int index = combo->findText(QT_UTF8(name));
+	if (index < 0)
+		return;
+
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel*>(combo->model());
+	if (!model)
+		return;
+
+	QStandardItem *item = model->item(index);
+	item->setFlags(Qt::NoItemFlags);
 }
 
-QWidget *OBSPropertiesView::AddList(obs_property_t prop)
+template <long long get_int(obs_data_t, const char*),
+	 double get_double(obs_data_t, const char*),
+	 const char *get_string(obs_data_t, const char*)>
+static string from_obs_data(obs_data_t data, const char *name,
+		obs_combo_format format)
+{
+	switch (format) {
+	case OBS_COMBO_FORMAT_INT:
+		return to_string(get_int(data, name));
+	case OBS_COMBO_FORMAT_FLOAT:
+		return to_string(get_double(data, name));
+	case OBS_COMBO_FORMAT_STRING:
+		return get_string(data, name);
+	default:
+		return "";
+	}
+}
+
+static string from_obs_data(obs_data_t data, const char *name,
+		obs_combo_format format)
+{
+	return from_obs_data<obs_data_getint, obs_data_getdouble,
+	       obs_data_getstring>(data, name, format);
+}
+
+static string from_obs_data_autoselect(obs_data_t data, const char *name,
+		obs_combo_format format)
+{
+	return from_obs_data<obs_data_get_autoselect_int,
+	       obs_data_get_autoselect_double,
+	       obs_data_get_autoselect_string>(data, name, format);
+}
+
+QWidget *OBSPropertiesView::AddList(obs_property_t prop, bool &warning)
 {
 	const char       *name  = obs_property_name(prop);
 	QComboBox        *combo = new QComboBox();
@@ -171,24 +237,13 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		combo->setEditable(true);
 
-	if (format == OBS_COMBO_FORMAT_INT) {
-		int    val       = (int)obs_data_getint(settings, name);
-		string valString = to_string(val);
-		idx              = combo->findData(QT_UTF8(valString.c_str()));
+	string value = from_obs_data(settings, name, format);
 
-	} else if (format == OBS_COMBO_FORMAT_FLOAT) {
-		double val       = obs_data_getdouble(settings, name);
-		string valString = to_string(val);
-		idx              = combo->findData(QT_UTF8(valString.c_str()));
-
-	} else if (format == OBS_COMBO_FORMAT_STRING) {
-		const char *val  = obs_data_getstring(settings, name);
-
-		if (type == OBS_COMBO_TYPE_EDITABLE)
-			combo->lineEdit()->setText(val);
-		else
-			idx      = combo->findData(QT_UTF8(val));
-	}
+	if (format == OBS_COMBO_FORMAT_STRING &&
+			type == OBS_COMBO_TYPE_EDITABLE)
+		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
+	else
+		idx = combo->findData(QT_UTF8(value.c_str()));
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
@@ -196,6 +251,26 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop)
 
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
+	
+	if (obs_data_has_autoselect(settings, name)) {
+		string autoselect =
+			from_obs_data_autoselect(settings, name, format);
+		int id = combo->findData(QT_UTF8(autoselect.c_str()));
+
+		if (id != -1 && id != idx) {
+			QString actual   = combo->itemText(id);
+			QString selected = combo->itemText(idx);
+			QString combined = QTStr(
+				"Basic.PropertiesWindow.AutoSelectFormat");
+			combo->setItemText(idx,
+					combined.arg(selected).arg(actual));
+		}
+	}
+
+
+	QAbstractItemModel *model = combo->model();
+	warning = idx != -1 &&
+		model->flags(model->index(idx, 0)) == Qt::NoItemFlags;
 
 	WidgetInfo *info = new WidgetInfo(this, prop, combo);
 	connect(combo, SIGNAL(currentIndexChanged(int)), info,
@@ -227,7 +302,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 	if (!obs_property_visible(property))
 		return;
 
+	QLabel  *label  = nullptr;
 	QWidget *widget = nullptr;
+	bool    warning = false;
 
 	switch (type) {
 	case OBS_PROPERTY_INVALID:
@@ -245,10 +322,10 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		widget = AddText(property);
 		break;
 	case OBS_PROPERTY_PATH:
-		AddPath(property, layout);
+		AddPath(property, layout, &label);
 		break;
 	case OBS_PROPERTY_LIST:
-		widget = AddList(property);
+		widget = AddList(property, warning);
 		break;
 	case OBS_PROPERTY_COLOR:
 		/* TODO */
@@ -258,21 +335,24 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		break;
 	}
 
-	if (!widget)
-		return;
-
-	if (!obs_property_enabled(property))
+	if (widget && !obs_property_enabled(property))
 		widget->setEnabled(false);
 
-	QLabel *label = nullptr;
-	if (type != OBS_PROPERTY_BOOL &&
+	if (!label &&
+	    type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
+
+	if (warning && label) //TODO: select color based on background color
+		label->setStyleSheet("QLabel { color: red; }");
 
 	if (label && minSize) {
 		label->setMinimumWidth(minSize);
 		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	}
+
+	if (!widget)
+		return;
 
 	layout->addRow(label, widget);
 
@@ -306,10 +386,31 @@ void WidgetInfo::TextChanged(const char *setting)
 	obs_data_setstring(view->settings, setting, QT_TO_UTF8(edit->text()));
 }
 
-void WidgetInfo::PathChanged(const char *setting)
+bool WidgetInfo::PathChanged(const char *setting)
 {
-	/* TODO */
-	UNUSED_PARAMETER(setting);
+	const char    *desc         = obs_property_description(property);
+	obs_path_type type          = obs_property_path_type(property);
+	const char    *filter       = obs_property_path_filter(property);
+	const char    *default_path = obs_property_path_default_path(property);
+	QString       path;
+
+	if (type == OBS_PATH_DIRECTORY)
+		path = QFileDialog::getExistingDirectory(view,
+				QT_UTF8(desc), QT_UTF8(default_path),
+				QFileDialog::ShowDirsOnly |
+				QFileDialog::DontResolveSymlinks);
+	else if (type == OBS_PATH_FILE)
+		path = QFileDialog::getOpenFileName(view,
+				QT_UTF8(desc), QT_UTF8(default_path),
+				QT_UTF8(filter));
+
+	if (path.isEmpty())
+		return false;
+
+	QLineEdit *edit = static_cast<QLineEdit*>(widget);
+	edit->setText(path);
+	obs_data_setstring(view->settings, setting, QT_TO_UTF8(path));
+	return true;
 }
 
 void WidgetInfo::ListChanged(const char *setting)
@@ -369,10 +470,12 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_INT:     IntChanged(setting); break;
 	case OBS_PROPERTY_FLOAT:   FloatChanged(setting); break;
 	case OBS_PROPERTY_TEXT:    TextChanged(setting); break;
-	case OBS_PROPERTY_PATH:    PathChanged(setting); break;
 	case OBS_PROPERTY_LIST:    ListChanged(setting); break;
 	case OBS_PROPERTY_COLOR:   ColorChanged(setting); break;
 	case OBS_PROPERTY_BUTTON:  ButtonClicked(); return;
+	case OBS_PROPERTY_PATH:
+		if (!PathChanged(setting))
+			return;
 	}
 
 	view->callback(view->obj, view->settings);

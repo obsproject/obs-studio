@@ -83,8 +83,7 @@ static inline void reset_params(struct darray *shaderparams)
 		params[i].eparam->changed = false;
 }
 
-static void upload_shader_params(shader_t shader, struct darray *pass_params,
-		bool changed_only)
+static void upload_shader_params(struct darray *pass_params, bool changed_only)
 {
 	struct pass_shaderparam *params = pass_params->array;
 	size_t i;
@@ -104,7 +103,7 @@ static void upload_shader_params(shader_t shader, struct darray *pass_params,
 				continue;
 		}
 
-		shader_setval(shader, sparam, eparam->cur_val.array,
+		shader_setval(sparam, eparam->cur_val.array,
 				eparam->cur_val.num);
 	}
 }
@@ -120,10 +119,8 @@ static inline void upload_parameters(struct gs_effect *effect,
 	vshader_params = &effect->cur_pass->vertshader_params.da;
 	pshader_params = &effect->cur_pass->pixelshader_params.da;
 
-	upload_shader_params(effect->cur_pass->vertshader, vshader_params,
-			changed_only);
-	upload_shader_params(effect->cur_pass->pixelshader, pshader_params,
-			changed_only);
+	upload_shader_params(vshader_params, changed_only);
+	upload_shader_params(pshader_params, changed_only);
 	reset_params(vshader_params);
 	reset_params(pshader_params);
 }
@@ -170,7 +167,7 @@ bool technique_beginpassbyname(technique_t tech,
 	return false;
 }
 
-static inline void clear_tex_params(shader_t shader, struct darray *in_params)
+static inline void clear_tex_params(struct darray *in_params)
 {
 	struct pass_shaderparam *params = in_params->array;
 
@@ -178,9 +175,9 @@ static inline void clear_tex_params(shader_t shader, struct darray *in_params)
 		struct pass_shaderparam *param = params+i;
 		struct shader_param_info info;
 
-		shader_getparaminfo(shader, param->sparam, &info);
+		shader_getparaminfo(param->sparam, &info);
 		if (info.type == SHADER_PARAM_TEXTURE)
-			shader_settexture(shader, param->sparam, NULL);
+			shader_settexture(param->sparam, NULL);
 	}
 }
 
@@ -192,8 +189,8 @@ void technique_endpass(technique_t tech)
 	if (!pass)
 		return;
 
-	clear_tex_params(pass->vertshader, &pass->vertshader_params.da);
-	clear_tex_params(pass->pixelshader, &pass->pixelshader_params.da);
+	clear_tex_params(&pass->vertshader_params.da);
+	clear_tex_params(&pass->pixelshader_params.da);
 	tech->effect->cur_pass = NULL;
 }
 
@@ -229,29 +226,6 @@ eparam_t effect_getparambyname(effect_t effect, const char *name)
 	return NULL;
 }
 
-static inline bool matching_effect(effect_t effect, eparam_t param)
-{
-	if (effect != param->effect) {
-		blog(LOG_ERROR, "Effect and effect parameter do not match");
-		return false;
-	}
-
-	return true;
-}
-
-void effect_getparaminfo(effect_t effect, eparam_t param,
-		struct effect_param_info *info)
-{
-	if (!effect || !param)
-		return;
-
-	if (!matching_effect(effect, param))
-		return;
-
-	info->name = param->name;
-	info->type = param->type;
-}
-
 eparam_t effect_getviewprojmatrix(effect_t effect)
 {
 	return effect ? effect->view_proj : NULL;
@@ -262,15 +236,19 @@ eparam_t effect_getworldmatrix(effect_t effect)
 	return effect ? effect->world : NULL;
 }
 
-static inline void effect_setval_inline(effect_t effect, eparam_t param,
+void effect_getparaminfo(eparam_t param, struct effect_param_info *info)
+{
+	if (!param)
+		return;
+
+	info->name = param->name;
+	info->type = param->type;
+}
+
+static inline void effect_setval_inline(eparam_t param,
 		const void *data, size_t size)
 {
 	bool size_changed;
-
-	if (!effect) {
-		blog(LOG_ERROR, "effect_setval_inline: invalid effect");
-		return;
-	}
 
 	if (!param) {
 		blog(LOG_ERROR, "effect_setval_inline: invalid param");
@@ -283,8 +261,6 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 	}
 
 	size_changed = param->cur_val.num != size;
-	if (!matching_effect(effect, param))
-		return;
 
 	if (size_changed)
 		da_resize(param->cur_val, size);
@@ -295,58 +271,53 @@ static inline void effect_setval_inline(effect_t effect, eparam_t param,
 	}
 }
 
-void effect_setbool(effect_t effect, eparam_t param, bool val)
+void effect_setbool(eparam_t param, bool val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(bool));
+	effect_setval_inline(param, &val, sizeof(bool));
 }
 
-void effect_setfloat(effect_t effect, eparam_t param, float val)
+void effect_setfloat(eparam_t param, float val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(float));
+	effect_setval_inline(param, &val, sizeof(float));
 }
 
-void effect_setint(effect_t effect, eparam_t param, int val)
+void effect_setint(eparam_t param, int val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(int));
+	effect_setval_inline(param, &val, sizeof(int));
 }
 
-void effect_setmatrix4(effect_t effect, eparam_t param,
-		const struct matrix4 *val)
+void effect_setmatrix4(eparam_t param, const struct matrix4 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct matrix4));
+	effect_setval_inline(param, val, sizeof(struct matrix4));
 }
 
-void effect_setvec2(effect_t effect, eparam_t param,
-		const struct vec2 *val)
+void effect_setvec2(eparam_t param, const struct vec2 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct vec2));
+	effect_setval_inline(param, val, sizeof(struct vec2));
 }
 
-void effect_setvec3(effect_t effect, eparam_t param,
-		const struct vec3 *val)
+void effect_setvec3(eparam_t param, const struct vec3 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(float) * 3);
+	effect_setval_inline(param, val, sizeof(float) * 3);
 }
 
-void effect_setvec4(effect_t effect, eparam_t param,
-		const struct vec4 *val)
+void effect_setvec4(eparam_t param, const struct vec4 *val)
 {
-	effect_setval_inline(effect, param, val, sizeof(struct vec4));
+	effect_setval_inline(param, val, sizeof(struct vec4));
 }
 
-void effect_settexture(effect_t effect, eparam_t param, texture_t val)
+void effect_settexture(eparam_t param, texture_t val)
 {
-	effect_setval_inline(effect, param, &val, sizeof(texture_t));
+	effect_setval_inline(param, &val, sizeof(texture_t));
 }
 
-void effect_setval(effect_t effect, eparam_t param, const void *val,
-		size_t size)
+void effect_setval(eparam_t param, const void *val, size_t size)
 {
-	effect_setval_inline(effect, param, val, size);
+	effect_setval_inline(param, val, size);
 }
 
-void effect_setdefault(effect_t effect, eparam_t param)
+void effect_setdefault(eparam_t param)
 {
-	effect_setval_inline(effect, param, param->default_val.array,
+	effect_setval_inline(param, param->default_val.array,
 			param->default_val.num);
 }

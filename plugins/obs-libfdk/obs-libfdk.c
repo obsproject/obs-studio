@@ -59,18 +59,19 @@ typedef struct libfdk_encoder {
 	int packet_buffer_size;
 } libfdk_encoder_t;
 
-static const char *libfdk_getname(const char *locale)
+static const char *libfdk_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-	return "libfdk aac encoder";
+	return obs_module_text("LibFDK");
 }
 
-static obs_properties_t libfdk_properties(const char *locale)
+static obs_properties_t libfdk_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
-	obs_properties_add_int(props, "bitrate", "Bitrate", 32, 256, 32);
-	obs_properties_add_bool(props, "afterburner", "Enable AAC Afterburner");
+	obs_properties_add_int(props, "bitrate",
+			obs_module_text("Bitrate"), 32, 256, 32);
+	obs_properties_add_bool(props, "afterburner",
+			obs_module_text("Afterburner"));
 
 	return props;
 }
@@ -160,6 +161,9 @@ static void *libfdk_create(obs_data_t settings, obs_encoder_t encoder)
 	enc->packet_buffer = bmalloc(enc->packet_buffer_size);
 
 	blog(LOG_INFO, "libfdk_aac encoder created");
+
+	blog(LOG_INFO, "libfdk_aac bitrate: %d, channels: %d",
+			bitrate / 1000, enc->channels);
 
 	return enc;
 
@@ -309,3 +313,9 @@ bool obs_module_load(uint32_t libobs_ver)
 }
 
 OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("obs-libfdk", "en-US")
+
+void obs_module_unload(void)
+{
+	OBS_MODULE_FREE_DEFAULT_LOCALE();
+}

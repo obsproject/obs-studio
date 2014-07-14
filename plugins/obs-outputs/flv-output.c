@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <stdio.h>
-#include <obs.h>
+#include <obs-module.h>
 #include <obs-avc.h>
 #include <util/platform.h>
 #include <util/dstr.h>
@@ -32,10 +32,9 @@ struct flv_output {
 	int64_t      last_packet_ts;
 };
 
-static const char *flv_output_getname(const char *locale)
+static const char *flv_output_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-	return "FLV File Output";
+	return obs_module_text("FLVOutput");
 }
 
 static void flv_output_stop(void *data);
@@ -189,12 +188,13 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 }
 
-static obs_properties_t flv_output_properties(const char *locale)
+static obs_properties_t flv_output_properties(void)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	obs_properties_t props = obs_properties_create();
 
-	/* TODO: locale */
-	obs_properties_add_text(props, "path", "File Path", OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "path",
+			obs_module_text("FLVOutput.FilePath"),
+			OBS_TEXT_DEFAULT);
 	return props;
 }
 

@@ -73,7 +73,12 @@ int obs_load_module(const char *path)
 		return errorcode;
 	}
 
-	mod.name = bstrdup(path);
+	mod.name       = bstrdup(path);
+	mod.set_locale = os_dlsym(mod.module, "obs_module_set_locale");
+
+	if (mod.set_locale)
+		mod.set_locale(obs->locale);
+
 	da_push_back(obs->modules, &mod);
 	return MODULE_SUCCESS;
 }
@@ -86,7 +91,7 @@ void free_module(struct obs_module *mod)
 	if (mod->module) {
 		void (*module_unload)(void);
 
-		module_unload = os_dlsym(mod->module, "module_unload");
+		module_unload = os_dlsym(mod->module, "obs_module_unload");
 		if (module_unload)
 			module_unload();
 
@@ -94,6 +99,54 @@ void free_module(struct obs_module *mod)
 	}
 
 	bfree(mod->name);
+}
+
+lookup_t obs_module_load_locale(const char *module, const char *default_locale,
+		const char *locale)
+{
+	struct dstr str    = {0};
+	lookup_t    lookup = NULL;
+
+	if (!module || !default_locale || !locale) {
+		blog(LOG_WARNING, "obs_module_load_locale: Invalid parameters");
+		return NULL;
+	}
+
+	dstr_copy(&str, module);
+	dstr_cat(&str, "/locale/");
+	dstr_cat(&str, default_locale);
+	dstr_cat(&str, ".ini");
+
+	char *file = obs_find_plugin_file(str.array);
+	if (file)
+		lookup = text_lookup_create(file);
+
+	bfree(file);
+
+	if (!lookup) {
+		blog(LOG_WARNING, "Failed to load '%s' text for module: '%s'",
+				default_locale, module);
+		goto cleanup;
+	}
+
+	if (astrcmpi(locale, default_locale) == 0)
+		goto cleanup;
+
+	dstr_copy(&str, module);
+	dstr_cat(&str, "/locale/");
+	dstr_cat(&str, locale);
+	dstr_cat(&str, ".ini");
+
+	file = obs_find_plugin_file(str.array);
+
+	if (!text_lookup_add(lookup, file))
+		blog(LOG_WARNING, "Failed to load '%s' text for module: '%s'",
+				locale, module);
+
+	bfree(file);
+cleanup:
+	dstr_free(&str);
+	return lookup;
 }
 
 #define REGISTER_OBS_DEF(size_var, structure, dest, info)                 \

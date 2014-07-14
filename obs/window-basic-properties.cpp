@@ -44,8 +44,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	obs_data_release(settings);
 
 	view = new OBSPropertiesView(settings,
-			obs_source_properties(source, App()->GetLocale()),
-			source, (PropertiesUpdateCallback)obs_source_update);
+			obs_source_properties(source), source,
+			(PropertiesUpdateCallback)obs_source_update);
 
 	layout()->addWidget(view);
 	layout()->setAlignment(view, Qt::AlignBottom);
@@ -57,6 +57,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			killTimer(resizeTimer);
 		resizeTimer = startTimer(100);
 	});
+
+	const char *name = obs_source_getname(source);
+	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t params)

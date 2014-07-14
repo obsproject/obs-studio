@@ -36,4 +36,7 @@ public:
 	~VolControl();
 
 	inline obs_source_t GetSource() const {return source;}
+
+	QString GetName() const;
+	void SetName(const QString &newName);
 };

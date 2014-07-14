@@ -37,14 +37,14 @@ struct gs_exports {
 	uint32_t (*device_getheight)(device_t device);
 	texture_t (*device_create_texture)(device_t device, uint32_t width,
 			uint32_t height, enum gs_color_format color_format,
-			uint32_t levels, const void **data, uint32_t flags);
+			uint32_t levels, const uint8_t **data, uint32_t flags);
 	texture_t (*device_create_cubetexture)(device_t device, uint32_t size,
 			enum gs_color_format color_format, uint32_t levels,
-			const void **data, uint32_t flags);
+			const uint8_t **data, uint32_t flags);
 	texture_t (*device_create_volumetexture)(device_t device,
 			uint32_t width, uint32_t height, uint32_t depth,
 			enum gs_color_format color_format, uint32_t levels,
-			const void **data, uint32_t flags);
+			const uint8_t **data, uint32_t flags);
 	zstencil_t (*device_create_zstencil)(device_t device,
 			uint32_t width, uint32_t height,
 			enum gs_zstencil_format format);
@@ -100,6 +100,7 @@ struct gs_exports {
 	void (*device_clear)(device_t device, uint32_t clear_flags,
 			struct vec4 *color, float depth, uint8_t stencil);
 	void (*device_present)(device_t device);
+	void (*device_flush)(device_t device);
 	void (*device_setcullmode)(device_t device, enum gs_cull_mode mode);
 	enum gs_cull_mode (*device_getcullmode)(device_t device);
 	void (*device_enable_blending)(device_t device, bool enable);
@@ -116,14 +117,6 @@ struct gs_exports {
 	void (*device_stencilop)(device_t device, enum gs_stencil_side side,
 			enum gs_stencil_op fail, enum gs_stencil_op zfail,
 			enum gs_stencil_op zpass);
-	void (*device_enable_fullscreen)(device_t device, bool enable);
-	int (*device_fullscreen_enabled)(device_t device);
-	void (*device_setdisplaymode)(device_t device,
-			const struct gs_display_mode *mode);
-	void (*device_getdisplaymode)(device_t device,
-			struct gs_display_mode *mode);
-	void (*device_setcolorramp)(device_t device, float gamma,
-			float brightness, float contrast);
 	void (*device_setviewport)(device_t device, int x, int y, int width,
 			int height);
 	void (*device_getviewport)(device_t device, struct gs_rect *rect);
@@ -141,7 +134,7 @@ struct gs_exports {
 	uint32_t (*texture_getwidth)(texture_t tex);
 	uint32_t (*texture_getheight)(texture_t tex);
 	enum gs_color_format (*texture_getcolorformat)(texture_t tex);
-	bool     (*texture_map)(texture_t tex, void **ptr,
+	bool     (*texture_map)(texture_t tex, uint8_t **ptr,
 			uint32_t *linesize);
 	void     (*texture_unmap)(texture_t tex);
 	bool     (*texture_isrect)(texture_t tex);
@@ -171,7 +164,7 @@ struct gs_exports {
 	void (*samplerstate_destroy)(samplerstate_t samplerstate);
 
 	void (*vertexbuffer_destroy)(vertbuffer_t vertbuffer);
-	void (*vertexbuffer_flush)(vertbuffer_t vertbuffer, bool rebuild);
+	void (*vertexbuffer_flush)(vertbuffer_t vertbuffer);
 	struct vb_data *(*vertexbuffer_getdata)(vertbuffer_t vertbuffer);
 
 	void   (*indexbuffer_destroy)(indexbuffer_t indexbuffer);
@@ -184,28 +177,21 @@ struct gs_exports {
 	int (*shader_numparams)(shader_t shader);
 	sparam_t (*shader_getparambyidx)(shader_t shader, uint32_t param);
 	sparam_t (*shader_getparambyname)(shader_t shader, const char *name);
-	void (*shader_getparaminfo)(shader_t shader, sparam_t param,
-			struct shader_param_info *info);
 	sparam_t (*shader_getviewprojmatrix)(shader_t shader);
 	sparam_t (*shader_getworldmatrix)(shader_t shader);
-	void (*shader_setbool)(shader_t shader, sparam_t param, bool val);
-	void (*shader_setfloat)(shader_t shader, sparam_t param, float val);
-	void (*shader_setint)(shader_t shader, sparam_t param, int val);
-	void (*shader_setmatrix3)(shader_t shader, sparam_t param,
-			const struct matrix3 *val);
-	void (*shader_setmatrix4)(shader_t shader, sparam_t param,
-			const struct matrix4 *val);
-	void (*shader_setvec2)(shader_t shader, sparam_t param,
-			const struct vec2 *val);
-	void (*shader_setvec3)(shader_t shader, sparam_t param,
-			const struct vec3 *val);
-	void (*shader_setvec4)(shader_t shader, sparam_t param,
-			const struct vec4 *val);
-	void (*shader_settexture)(shader_t shader, sparam_t param,
-			texture_t val);
-	void (*shader_setval)(shader_t shader, sparam_t param, const void *val,
-			size_t size);
-	void (*shader_setdefault)(shader_t shader, sparam_t param);
+	void (*shader_getparaminfo)(sparam_t param,
+			struct shader_param_info *info);
+	void (*shader_setbool)(sparam_t param, bool val);
+	void (*shader_setfloat)(sparam_t param, float val);
+	void (*shader_setint)(sparam_t param, int val);
+	void (*shader_setmatrix3)(sparam_t param, const struct matrix3 *val);
+	void (*shader_setmatrix4)(sparam_t param, const struct matrix4 *val);
+	void (*shader_setvec2)(sparam_t param, const struct vec2 *val);
+	void (*shader_setvec3)(sparam_t param, const struct vec3 *val);
+	void (*shader_setvec4)(sparam_t param, const struct vec4 *val);
+	void (*shader_settexture)(sparam_t param, texture_t val);
+	void (*shader_setval)(sparam_t param, const void *val, size_t size);
+	void (*shader_setdefault)(sparam_t param);
 
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
@@ -222,6 +208,12 @@ struct gs_exports {
 #endif
 };
 
+struct blend_state {
+	bool               enabled;
+	enum gs_blend_type src;
+	enum gs_blend_type dest;
+};
+
 struct graphics_subsystem {
 	void                   *module;
 	device_t               device;
@@ -229,7 +221,7 @@ struct graphics_subsystem {
 
 	DARRAY(struct gs_rect) viewport_stack;
 
-	DARRAY(struct matrix3) matrix_stack;
+	DARRAY(struct matrix4) matrix_stack;
 	size_t                 cur_matrix;
 
 	struct matrix4         projection;
@@ -247,4 +239,6 @@ struct graphics_subsystem {
 
 	pthread_mutex_t        mutex;
 	volatile long          ref;
+
+	struct blend_state     cur_blend_state;
 };

@@ -169,6 +169,8 @@ static inline D3D11_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 struct VBDataPtr {
 	vb_data *data;
 
+	inline void Clear() {vbdata_destroy(data); data = nullptr;}
+
 	inline VBDataPtr(vb_data *data) : data(data) {}
 	inline ~VBDataPtr() {vbdata_destroy(data);}
 };
@@ -257,8 +259,8 @@ struct gs_texture_2d : gs_texture {
 	bool            genMipmaps;
 	HANDLE          sharedHandle;
 
-	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const void **data);
-	void InitTexture(const void **data);
+	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const uint8_t **data);
+	void InitTexture(const uint8_t **data);
 	void InitResourceView();
 	void InitRenderTargets();
 
@@ -278,8 +280,8 @@ struct gs_texture_2d : gs_texture {
 
 	gs_texture_2d(device_t device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
-			const void **data, uint32_t flags, gs_texture_type type,
-			bool gdiCompatible, bool shared);
+			const uint8_t **data, uint32_t flags,
+			gs_texture_type type, bool gdiCompatible, bool shared);
 };
 
 struct gs_zstencil_buffer {

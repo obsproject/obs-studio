@@ -47,7 +47,7 @@ int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
 	int_fast32_t *x, int_fast32_t *y, int_fast32_t *w, int_fast32_t *h)
 {
 	int screens;
-	XineramaScreenInfo *info;
+	XineramaScreenInfo *info = NULL;
 
 	if (!dpy)
 		goto fail;

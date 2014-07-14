@@ -112,6 +112,11 @@ EXPORT bool config_get_default_bool(config_t config, const char *section,
 EXPORT double config_get_default_double(config_t config, const char *section,
 		const char *name);
 
+EXPORT bool config_has_user_value(config_t config, const char *section,
+		const char *name);
+EXPORT bool config_has_default_value(config_t config, const char *section,
+		const char *name);
+
 #ifdef __cplusplus
 }
 #endif

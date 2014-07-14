@@ -16,6 +16,36 @@ find_package(Libavformat REQUIRED)
 include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
 add_definitions(${LIBAVFORMAT_DEFINITIONS})
 
+find_package(Libavcodec QUIET)
+find_package(ImageMagick QUIET COMPONENTS MagickCore)
+
+if(NOT ImageMagick_MagickCore_FOUND AND NOT LIBAVCODEC_FOUND)
+	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
+endif()
+
+option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
+
+if(NOT LIBAVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
+	message(STATUS "Using ImageMagick for image loading in libobs")
+
+	set(libobs_image_loading_SOURCES
+		graphics/graphics-magick.c)
+	set(libobs_image_loading_LIBRARIES
+		${ImageMagick_LIBRARIES})
+
+	include_directories(
+		${ImageMagick_INCLUDE_DIRS})
+else()
+	message(STATUS "Using libavcodec for image loading in libobs")
+
+	set(libobs_image_loading_SOURCES
+		graphics/graphics-ffmpeg.c)
+	set(libobs_image_loading_LIBRARIES
+		${LIBAVCODEC_LIBRARIES})
+
+	include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+endif()
+
 add_definitions(-DLIBOBS_EXPORTS)
 
 if(WIN32)
@@ -77,6 +107,7 @@ set(libobs_callback_HEADERS
 	callback/signal.h)
 
 set(libobs_graphics_SOURCES
+	${libobs_image_loading_SOURCES}
 	graphics/quat.c
 	graphics/effect-parser.c
 	graphics/axisang.c
@@ -192,7 +223,9 @@ set(libobs_libobs_HEADERS
 	obs-module.h
 	obs-scene.h
 	obs-source.h
-	obs-output.h)
+	obs-output.h
+	obs-ffmpeg-compat.h
+	obs.hpp)
 
 set(libobs_SOURCES
 	${libobs_callback_SOURCES}
@@ -220,7 +253,9 @@ source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
 
+
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
@@ -231,10 +266,16 @@ if(NOT MSVC)
 	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
 endif()
 
+target_include_directories(libobs PUBLIC
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
+
+
 target_link_libraries(libobs
 	PRIVATE
 		jansson
 		${libobs_PLATFORM_DEPS}
+		${libobs_image_loading_LIBRARIES}
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}
 		${LIBAVFORMAT_LIBRARIES}

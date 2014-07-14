@@ -24,6 +24,7 @@
 extern "C" {
 #endif
 
+struct vec3;
 struct matrix4;
 
 struct vec4 {
@@ -51,6 +52,8 @@ static inline void vec4_copy(struct vec4 *dst, const struct vec4 *v)
 {
 	dst->m = v->m;
 }
+
+EXPORT void vec4_from_vec3(struct vec4 *dst, const struct vec3 *v);
 
 static inline void vec4_add(struct vec4 *dst, const struct vec4 *v1,
 		const struct vec4 *v2)

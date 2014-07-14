@@ -20,10 +20,10 @@
 bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 		GLenum format, GLint internal_format, bool compressed,
 		uint32_t width, uint32_t height, uint32_t size,
-		const void ***p_data)
+		const uint8_t ***p_data)
 {
 	bool success = true;
-	const void **data = p_data ? *p_data : NULL;
+	const uint8_t **data = p_data ? *p_data : NULL;
 	uint32_t i;
 
 	for (i = 0; i < num_levels; i++) {

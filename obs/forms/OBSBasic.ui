@@ -29,7 +29,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="OBSQTDisplay" name="preview" native="true">
+     <widget class="OBSBasicPreview" name="preview" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -152,6 +152,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="contextMenuPolicy">
+                <enum>Qt::CustomContextMenu</enum>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
                </property>
@@ -257,6 +260,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="contextMenuPolicy">
+                <enum>Qt::CustomContextMenu</enum>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
                </property>
@@ -305,7 +311,7 @@
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Volume</string>
+             <string>Mixer</string>
             </property>
            </widget>
           </item>
@@ -462,11 +468,51 @@
      <addaction name="actionUploadLastLog"/>
     </widget>
     <addaction name="menuLogFiles"/>
+    <addaction name="actionCheckForUpdates"/>
+   </widget>
+   <widget class="QMenu" name="menuBasic_MainMenu_Edit">
+    <property name="title">
+     <string>Basic.MainMenu.Edit</string>
+    </property>
+    <widget class="QMenu" name="transformMenu">
+     <property name="title">
+      <string>Basic.MainMenu.Edit.Transform</string>
+     </property>
+     <addaction name="actionEditTransform"/>
+     <addaction name="actionResetTransform"/>
+     <addaction name="separator"/>
+     <addaction name="actionRotate90CW"/>
+     <addaction name="actionRotate90CCW"/>
+     <addaction name="actionRotate180"/>
+     <addaction name="separator"/>
+     <addaction name="actionFlipHorizontal"/>
+     <addaction name="actionFlipVertical"/>
+     <addaction name="separator"/>
+     <addaction name="actionFitToScreen"/>
+     <addaction name="actionStretchToScreen"/>
+     <addaction name="actionCenterToScreen"/>
+    </widget>
+    <widget class="QMenu" name="orderMenu">
+     <property name="title">
+      <string>Basic.MainMenu.Edit.Order</string>
+     </property>
+     <addaction name="actionMoveUp"/>
+     <addaction name="actionMoveDown"/>
+     <addaction name="separator"/>
+     <addaction name="actionMoveToTop"/>
+     <addaction name="actionMoveToBottom"/>
+    </widget>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="transformMenu"/>
+    <addaction name="orderMenu"/>
    </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuBasic_MainMenu_Edit"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="OBSBasicStatusBar" name="statusbar"/>
   <action name="actionAddScene">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -501,6 +547,9 @@
    </property>
    <property name="text">
     <string>Remove</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
    </property>
   </action>
   <action name="actionSceneProperties">
@@ -610,13 +659,133 @@
     <string>Basic.MainMenu.Help.Logs.UploadCurrentLog</string>
    </property>
   </action>
+  <action name="actionUndo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Undo</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Redo</string>
+   </property>
+  </action>
+  <action name="actionEditTransform">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.EditTransform</string>
+   </property>
+  </action>
+  <action name="actionRotate90CW">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.Rotate90CW</string>
+   </property>
+  </action>
+  <action name="actionRotate90CCW">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.Rotate90CCW</string>
+   </property>
+  </action>
+  <action name="actionRotate180">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.Rotate180</string>
+   </property>
+  </action>
+  <action name="actionFitToScreen">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.FitToScreen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionStretchToScreen">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.StretchToScreen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionResetTransform">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.ResetTransform</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionCenterToScreen">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.CenterToScreen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionFlipHorizontal">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.FlipHorizontal</string>
+   </property>
+  </action>
+  <action name="actionFlipVertical">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.FlipVertical</string>
+   </property>
+  </action>
+  <action name="actionMoveUp">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveUp</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Up</string>
+   </property>
+  </action>
+  <action name="actionMoveDown">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveDown</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Down</string>
+   </property>
+  </action>
+  <action name="actionMoveToTop">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveToTop</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Home</string>
+   </property>
+  </action>
+  <action name="actionMoveToBottom">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Order.MoveToBottom</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+End</string>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="text">
+    <string>Basic.MainMenu.Help.CheckForUpdates</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>OBSQTDisplay</class>
+   <class>OBSBasicPreview</class>
    <extends>QWidget</extends>
-   <header>qt-display.hpp</header>
+   <header>window-basic-preview.hpp</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OBSBasicStatusBar</class>
+   <extends>QStatusBar</extends>
+   <header>window-basic-status-bar.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

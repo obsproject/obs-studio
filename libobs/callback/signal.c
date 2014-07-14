@@ -22,26 +22,37 @@
 
 struct signal_callback {
 	signal_callback_t callback;
-	void *data;
+	void              *data;
+	bool              remove;
 };
 
 struct signal_info {
 	struct decl_info               func;
 	DARRAY(struct signal_callback) callbacks;
 	pthread_mutex_t                mutex;
+	bool                           signalling;
 
 	struct signal_info             *next;
 };
 
 static inline struct signal_info *signal_info_create(struct decl_info *info)
 {
-	struct signal_info *si = bmalloc(sizeof(struct signal_info));
+	pthread_mutexattr_t attr;
+	struct signal_info *si;
 
-	si->func = *info;
-	si->next = NULL;
+	if (pthread_mutexattr_init(&attr) != 0)
+		return NULL;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		return NULL;
+
+	si = bmalloc(sizeof(struct signal_info));
+
+	si->func       = *info;
+	si->next       = NULL;
+	si->signalling = false;
 	da_init(si->callbacks);
 
-	if (pthread_mutex_init(&si->mutex, NULL) != 0) {
+	if (pthread_mutex_init(&si->mutex, &attr) != 0) {
 		blog(LOG_ERROR, "Could not create signal");
 
 		decl_info_free(&si->func);
@@ -165,7 +176,7 @@ void signal_handler_connect(signal_handler_t handler, const char *signal,
 		signal_callback_t callback, void *data)
 {
 	struct signal_info *sig, *last;
-	struct signal_callback cb_data = {callback, data};
+	struct signal_callback cb_data = {callback, data, false};
 	size_t idx;
 
 	if (!handler)
@@ -219,8 +230,12 @@ void signal_handler_disconnect(signal_handler_t handler, const char *signal,
 	pthread_mutex_lock(&sig->mutex);
 
 	idx = signal_get_callback_idx(sig, callback, data);
-	if (idx != DARRAY_INVALID)
-		da_erase(sig->callbacks, idx);
+	if (idx != DARRAY_INVALID) {
+		if (sig->signalling)
+			sig->callbacks.array[idx].remove = true;
+		else
+			da_erase(sig->callbacks, idx);
+	}
 	
 	pthread_mutex_unlock(&sig->mutex);
 }
@@ -234,11 +249,19 @@ void signal_handler_signal(signal_handler_t handler, const char *signal,
 		return;
 
 	pthread_mutex_lock(&sig->mutex);
+	sig->signalling = true;
 
 	for (size_t i = 0; i < sig->callbacks.num; i++) {
 		struct signal_callback *cb = sig->callbacks.array+i;
 		cb->callback(cb->data, params);
 	}
 
+	for (size_t i = sig->callbacks.num; i > 0; i--) {
+		struct signal_callback *cb = sig->callbacks.array+i-1;
+		if (cb->remove)
+			da_erase(sig->callbacks, i-1);
+	}
+
+	sig->signalling = false;
 	pthread_mutex_unlock(&sig->mutex);
 }

@@ -83,6 +83,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_endscene);
 	GRAPHICS_IMPORT(device_clear);
 	GRAPHICS_IMPORT(device_present);
+	GRAPHICS_IMPORT(device_flush);
 	GRAPHICS_IMPORT(device_setcullmode);
 	GRAPHICS_IMPORT(device_getcullmode);
 	GRAPHICS_IMPORT(device_enable_blending);
@@ -94,11 +95,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_depthfunction);
 	GRAPHICS_IMPORT(device_stencilfunction);
 	GRAPHICS_IMPORT(device_stencilop);
-	GRAPHICS_IMPORT(device_enable_fullscreen);
-	GRAPHICS_IMPORT(device_fullscreen_enabled);
-	GRAPHICS_IMPORT(device_setdisplaymode);
-	GRAPHICS_IMPORT(device_getdisplaymode);
-	GRAPHICS_IMPORT(device_setcolorramp);
 	GRAPHICS_IMPORT(device_setviewport);
 	GRAPHICS_IMPORT(device_getviewport);
 	GRAPHICS_IMPORT(device_setscissorrect);
@@ -153,9 +149,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(shader_numparams);
 	GRAPHICS_IMPORT(shader_getparambyidx);
 	GRAPHICS_IMPORT(shader_getparambyname);
-	GRAPHICS_IMPORT(shader_getparaminfo);
 	GRAPHICS_IMPORT(shader_getviewprojmatrix);
 	GRAPHICS_IMPORT(shader_getworldmatrix);
+	GRAPHICS_IMPORT(shader_getparaminfo);
 	GRAPHICS_IMPORT(shader_setbool);
 	GRAPHICS_IMPORT(shader_setfloat);
 	GRAPHICS_IMPORT(shader_setint);

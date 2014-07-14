@@ -59,6 +59,7 @@ struct video_output {
 	os_event_t                 update_event;
 	uint64_t                   frame_time;
 	volatile uint64_t          cur_video_time;
+	uint32_t                   skipped_frames;
 
 	bool                       initialized;
 
@@ -121,22 +122,38 @@ static inline void video_output_cur_frame(struct video_output *video)
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
+#define MAX_MISSED_TIMINGS 8
+
+static inline bool safe_sleepto(uint64_t t, uint32_t *missed_timings)
+{
+	if (!os_sleepto_ns(t))
+		(*missed_timings)++;
+	else
+		*missed_timings = 0;
+
+	return *missed_timings <= MAX_MISSED_TIMINGS;
+}
+
 static void *video_thread(void *param)
 {
-	struct video_output *video = param;
-	uint64_t cur_time = os_gettime_ns();
+	struct video_output *video         = param;
+	uint64_t            cur_time       = os_gettime_ns();
+	uint32_t            missed_timings = 0;
 
 	while (os_event_try(video->stop_event) == EAGAIN) {
 		/* wait half a frame, update frame */
 		cur_time += (video->frame_time/2);
-		os_sleepto_ns(cur_time);
 
-		video->cur_video_time = cur_time;
-		os_event_signal(video->update_event);
+		if (safe_sleepto(cur_time, &missed_timings)) {
+			video->cur_video_time = cur_time;
+			os_event_signal(video->update_event);
+		} else {
+			video->skipped_frames++;
+		}
 
 		/* wait another half a frame, swap and output frames */
 		cur_time += (video->frame_time/2);
-		os_sleepto_ns(cur_time);
+		safe_sleepto(cur_time, &missed_timings);
 
 		pthread_mutex_lock(&video->data_mutex);
 
@@ -390,4 +407,9 @@ double video_output_framerate(video_t video)
 		return 0.0;
 
 	return (double)video->info.fps_num / (double)video->info.fps_den;
+}
+
+uint32_t video_output_num_skipped_frames(video_t video)
+{
+	return video->skipped_frames;
 }

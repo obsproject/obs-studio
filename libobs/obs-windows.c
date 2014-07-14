@@ -20,6 +20,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#include <windows.h>
+
 static inline bool check_path(const char* data, const char *path,
 		struct dstr * output)
 {
@@ -100,4 +102,131 @@ char *obs_find_plugin_file(const char *file)
 
 	dstr_free(&path);
 	return NULL;
+}
+
+static void log_processor_info(void)
+{
+	HKEY    key;
+	wchar_t data[1024];
+	char    *str = NULL;
+	DWORD   size, speed;
+	LSTATUS status;
+
+	memset(data, 0, 1024);
+
+	status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
+			L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+			&key);
+	if (status != ERROR_SUCCESS)
+		return;
+
+	size = 1024;
+	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
+			(LPBYTE)data, &size);
+	if (status == ERROR_SUCCESS) {
+		os_wcs_to_utf8_ptr(data, 0, &str);
+		blog(LOG_INFO, "CPU Name: %s", str);
+		bfree(str);
+	}
+
+	size = sizeof(speed);
+	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
+			&size);
+	if (status == ERROR_SUCCESS)
+		blog(LOG_INFO, "CPU Speed: %dMHz", speed);
+
+	RegCloseKey(key);
+}
+
+static DWORD num_logical_cores(ULONG_PTR mask)
+{
+	DWORD     left_shift    = sizeof(ULONG_PTR) * 8 - 1;
+	DWORD     bit_set_count = 0;
+	ULONG_PTR bit_test      = (ULONG_PTR)1 << left_shift;
+
+	for (DWORD i = 0; i <= left_shift; ++i) {
+		bit_set_count += ((mask & bit_test) ? 1 : 0);
+		bit_test      /= 2;
+	}
+
+	return bit_set_count;
+}
+
+static void log_processor_cores(void)
+{
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION info = NULL, temp = NULL;
+	DWORD len = 0;
+
+	GetLogicalProcessorInformation(info, &len);
+	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+		return;
+
+	info = malloc(len);
+
+	if (GetLogicalProcessorInformation(info, &len)) {
+		DWORD num            = len / sizeof(*info);
+		int   physical_cores = 0;
+		int   logical_cores  = 0;
+
+		temp = info;
+
+		for (DWORD i = 0; i < num; i++) {
+			if (temp->Relationship == RelationProcessorCore) {
+				ULONG_PTR mask = temp->ProcessorMask;
+
+				physical_cores++;
+				logical_cores += num_logical_cores(mask);
+			}
+
+			temp++;
+		}
+
+		blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
+				physical_cores, logical_cores);
+	}
+
+	free(info);
+}
+
+static void log_available_memory(void)
+{
+	MEMORYSTATUS ms;
+	GlobalMemoryStatus(&ms);
+
+#ifdef _WIN64
+	const char *note = "";
+#else
+	const char *note = " (NOTE: 4 gigs max is normal for 32bit programs)";
+#endif
+
+	blog(LOG_INFO, "Physical Memory: %ldMB Total, %ldMB Free%s",
+			ms.dwTotalPhys / 1048576,
+			ms.dwAvailPhys / 1048576,
+			note);
+}
+
+static void log_windows_version(void)
+{
+	OSVERSIONINFOW osvi;
+	char           *build = NULL;
+
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	GetVersionExW(&osvi);
+
+	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
+	blog(LOG_INFO, "Windows Version: %u.%u Build %u %s",
+			osvi.dwMajorVersion,
+			osvi.dwMinorVersion,
+			osvi.dwBuildNumber,
+			build);
+
+	bfree(build);
+}
+
+void log_system_info(void)
+{
+	log_processor_info();
+	log_processor_cores();
+	log_available_memory();
+	log_windows_version();
 }

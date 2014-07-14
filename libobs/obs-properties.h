@@ -49,6 +49,11 @@ enum obs_combo_type {
 	OBS_COMBO_TYPE_LIST,
 };
 
+enum obs_path_type {
+	OBS_PATH_FILE,
+	OBS_PATH_DIRECTORY
+};
+
 enum obs_text_type {
 	OBS_TEXT_DEFAULT,
 	OBS_TEXT_PASSWORD,
@@ -61,16 +66,14 @@ typedef struct obs_property   *obs_property_t;
 
 /* ------------------------------------------------------------------------- */
 
-EXPORT obs_properties_t obs_properties_create(const char *locale);
-EXPORT obs_properties_t obs_properties_create_param(const char *locale,
-		void *param, void (*destroy)(void *param));
+EXPORT obs_properties_t obs_properties_create(void);
+EXPORT obs_properties_t obs_properties_create_param(void *param,
+		void (*destroy)(void *param));
 EXPORT void obs_properties_destroy(obs_properties_t props);
 
 EXPORT void obs_properties_set_param(obs_properties_t props,
 		void *param, void (*destroy)(void *param));
 EXPORT void *obs_properties_get_param(obs_properties_t props);
-
-EXPORT const char *obs_properties_locale(obs_properties_t props);
 
 EXPORT obs_property_t obs_properties_first(obs_properties_t props);
 
@@ -106,8 +109,26 @@ EXPORT obs_property_t obs_properties_add_text(obs_properties_t props,
 		const char *name, const char *description,
 		enum obs_text_type type);
 
+/**
+ * Adds a 'path' property.  Can be a directory or a file.
+ *
+ * If target is a file path, the filters should be this format, separated by
+ * double semi-colens, and extensions separated by space:
+ *   "Example types 1 and 2 (*.ex1 *.ex2);;Example type 3 (*.ex3)"
+ *
+ * @param  props        Properties object
+ * @param  name         Settings name
+ * @param  description  Description (display name) of the property
+ * @param  type         Type of path (directory or file)
+ * @param  filter       If type is a file path, then describes the file filter
+ *                      that the user can browse.  Items are separated via
+ *                      double semi-colens.  If multiple file types in a
+ *                      filter, separate with space.
+ */
 EXPORT obs_property_t obs_properties_add_path(obs_properties_t props,
-		const char *name, const char *description);
+		const char *name, const char *description,
+		enum obs_path_type type, const char *filter,
+		const char *default_path);
 
 EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
 		const char *name, const char *description,
@@ -154,19 +175,26 @@ EXPORT double                 obs_property_float_min(obs_property_t p);
 EXPORT double                 obs_property_float_max(obs_property_t p);
 EXPORT double                 obs_property_float_step(obs_property_t p);
 EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t p);
+EXPORT enum obs_path_type     obs_property_path_type(obs_property_t p);
+EXPORT const char *           obs_property_path_filter(obs_property_t p);
+EXPORT const char *           obs_property_path_default_path(obs_property_t p);
 EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t p);
 EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t p);
 
 EXPORT void obs_property_list_clear(obs_property_t p);
 
-EXPORT void obs_property_list_add_string(obs_property_t p,
+EXPORT size_t obs_property_list_add_string(obs_property_t p,
 		const char *name, const char *val);
-EXPORT void obs_property_list_add_int(obs_property_t p,
+EXPORT size_t obs_property_list_add_int(obs_property_t p,
 		const char *name, long long val);
-EXPORT void obs_property_list_add_float(obs_property_t p,
+EXPORT size_t obs_property_list_add_float(obs_property_t p,
 		const char *name, double val);
 
-EXPORT void obs_property_list_remove(obs_property_t p, size_t idx);
+EXPORT void obs_property_list_item_disable(obs_property_t p, size_t idx,
+								bool disabled);
+EXPORT bool obs_property_list_item_disabled(obs_property_t p, size_t idx);
+
+EXPORT void obs_property_list_item_remove(obs_property_t p, size_t idx);
 
 EXPORT size_t      obs_property_list_item_count(obs_property_t p);
 EXPORT const char *obs_property_list_item_name(obs_property_t p, size_t idx);

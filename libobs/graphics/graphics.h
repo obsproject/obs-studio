@@ -295,29 +295,22 @@ EXPORT void shader_destroy(shader_t shader);
 EXPORT int shader_numparams(shader_t shader);
 EXPORT sparam_t shader_getparambyidx(shader_t shader, uint32_t param);
 EXPORT sparam_t shader_getparambyname(shader_t shader, const char *name);
-EXPORT void shader_getparaminfo(shader_t shader, sparam_t param,
-		struct shader_param_info *info);
 
 EXPORT sparam_t shader_getviewprojmatrix(shader_t shader);
 EXPORT sparam_t shader_getworldmatrix(shader_t shader);
 
-EXPORT void shader_setbool(shader_t shader, sparam_t param, bool val);
-EXPORT void shader_setfloat(shader_t shader, sparam_t param, float val);
-EXPORT void shader_setint(shader_t shader, sparam_t param, int val);
-EXPORT void shader_setmatrix3(shader_t shader, sparam_t param,
-		const struct matrix3 *val);
-EXPORT void shader_setmatrix4(shader_t shader, sparam_t param,
-		const struct matrix4 *val);
-EXPORT void shader_setvec2(shader_t shader, sparam_t param,
-		const struct vec2 *val);
-EXPORT void shader_setvec3(shader_t shader, sparam_t param,
-		const struct vec3 *val);
-EXPORT void shader_setvec4(shader_t shader, sparam_t param,
-		const struct vec4 *val);
-EXPORT void shader_settexture(shader_t shader, sparam_t param, texture_t val);
-EXPORT void shader_setval(shader_t shader, sparam_t param, const void *val,
-		size_t size);
-EXPORT void shader_setdefault(shader_t shader, sparam_t param);
+EXPORT void shader_getparaminfo(sparam_t param, struct shader_param_info *info);
+EXPORT void shader_setbool(sparam_t param, bool val);
+EXPORT void shader_setfloat(sparam_t param, float val);
+EXPORT void shader_setint(sparam_t param, int val);
+EXPORT void shader_setmatrix3(sparam_t param, const struct matrix3 *val);
+EXPORT void shader_setmatrix4(sparam_t param, const struct matrix4 *val);
+EXPORT void shader_setvec2(sparam_t param, const struct vec2 *val);
+EXPORT void shader_setvec3(sparam_t param, const struct vec3 *val);
+EXPORT void shader_setvec4(sparam_t param, const struct vec4 *val);
+EXPORT void shader_settexture(sparam_t param, texture_t val);
+EXPORT void shader_setval(sparam_t param, const void *val, size_t size);
+EXPORT void shader_setdefault(sparam_t param);
 
 /* ---------------------------------------------------
  * effect functions
@@ -355,8 +348,6 @@ EXPORT void technique_endpass(technique_t technique);
 EXPORT size_t effect_numparams(effect_t effect);
 EXPORT eparam_t effect_getparambyidx(effect_t effect, size_t param);
 EXPORT eparam_t effect_getparambyname(effect_t effect, const char *name);
-EXPORT void effect_getparaminfo(effect_t effect, eparam_t param,
-		struct effect_param_info *info);
 
 /** used internally */
 EXPORT void effect_updateparams(effect_t effect);
@@ -364,21 +355,17 @@ EXPORT void effect_updateparams(effect_t effect);
 EXPORT eparam_t effect_getviewprojmatrix(effect_t effect);
 EXPORT eparam_t effect_getworldmatrix(effect_t effect);
 
-EXPORT void effect_setbool(effect_t effect, eparam_t param, bool val);
-EXPORT void effect_setfloat(effect_t effect, eparam_t param, float val);
-EXPORT void effect_setint(effect_t effect, eparam_t param, int val);
-EXPORT void effect_setmatrix4(effect_t effect, eparam_t param,
-		const struct matrix4 *val);
-EXPORT void effect_setvec2(effect_t effect, eparam_t param,
-		const struct vec2 *val);
-EXPORT void effect_setvec3(effect_t effect, eparam_t param,
-		const struct vec3 *val);
-EXPORT void effect_setvec4(effect_t effect, eparam_t param,
-		const struct vec4 *val);
-EXPORT void effect_settexture(effect_t effect, eparam_t param, texture_t val);
-EXPORT void effect_setval(effect_t effect, eparam_t param, const void *val,
-		size_t size);
-EXPORT void effect_setdefault(effect_t effect, eparam_t param);
+EXPORT void effect_getparaminfo(eparam_t param, struct effect_param_info *info);
+EXPORT void effect_setbool(eparam_t param, bool val);
+EXPORT void effect_setfloat(eparam_t param, float val);
+EXPORT void effect_setint(eparam_t param, int val);
+EXPORT void effect_setmatrix4(eparam_t param, const struct matrix4 *val);
+EXPORT void effect_setvec2(eparam_t param, const struct vec2 *val);
+EXPORT void effect_setvec3(eparam_t param, const struct vec3 *val);
+EXPORT void effect_setvec4(eparam_t param, const struct vec4 *val);
+EXPORT void effect_settexture(eparam_t param, texture_t val);
+EXPORT void effect_setval(eparam_t param, const void *val, size_t size);
+EXPORT void effect_setdefault(eparam_t param);
 
 /* ---------------------------------------------------
  * texture render helper functions
@@ -404,9 +391,9 @@ EXPORT texture_t texrender_gettexture(texrender_t texrender);
 /* ---------------- */
 /* global functions */
 
-#define GS_SUCCESS               0
-#define GS_ERROR_MODULENOTFOUND -1
-#define GS_ERROR_FAIL           -2
+#define GS_SUCCESS                 0
+#define GS_ERROR_MODULE_NOT_FOUND -1
+#define GS_ERROR_FAIL             -2
 
 struct gs_window {
 #if defined(_WIN32)
@@ -441,9 +428,9 @@ EXPORT void gs_matrix_push(void);
 EXPORT void gs_matrix_pop(void);
 EXPORT void gs_matrix_identity(void);
 EXPORT void gs_matrix_transpose(void);
-EXPORT void gs_matrix_set(const struct matrix3 *matrix);
-EXPORT void gs_matrix_get(struct matrix3 *dst);
-EXPORT void gs_matrix_mul(const struct matrix3 *matrix);
+EXPORT void gs_matrix_set(const struct matrix4 *matrix);
+EXPORT void gs_matrix_get(struct matrix4 *dst);
+EXPORT void gs_matrix_mul(const struct matrix4 *matrix);
 EXPORT void gs_matrix_rotquat(const struct quat *rot);
 EXPORT void gs_matrix_rotaa(const struct axisang *rot);
 EXPORT void gs_matrix_translate(const struct vec3 *pos);
@@ -479,12 +466,7 @@ EXPORT shader_t gs_create_vertexshader_from_file(const char *file,
 EXPORT shader_t gs_create_pixelshader_from_file(const char *file,
 		char **error_string);
 
-EXPORT texture_t gs_create_texture_from_file(const char *file,
-		uint32_t flags);
-EXPORT texture_t gs_create_cubetexture_from_file(const char *flie,
-		uint32_t flags);
-EXPORT texture_t gs_create_volumetexture_from_file(const char *flie,
-		uint32_t flags);
+EXPORT texture_t gs_create_texture_from_file(const char *file);
 
 #define GS_FLIP_U (1<<0)
 #define GS_FLIP_V (1<<1)
@@ -513,12 +495,14 @@ EXPORT void gs_set3dmode(double fovy, double znear, double zvar);
 EXPORT void gs_viewport_push(void);
 EXPORT void gs_viewport_pop(void);
 
-EXPORT void texture_setimage(texture_t tex, const void *data,
+EXPORT void texture_setimage(texture_t tex, const uint8_t *data,
 		uint32_t linesize, bool invert);
 EXPORT void cubetexture_setimage(texture_t cubetex, uint32_t side,
 		const void *data, uint32_t linesize, bool invert);
 
 EXPORT void gs_perspective(float fovy, float aspect, float znear, float zfar);
+
+EXPORT void gs_reset_blend_state(void);
 
 /* -------------------------- */
 /* library-specific functions */
@@ -532,13 +516,13 @@ EXPORT uint32_t gs_getheight(void);
 
 EXPORT texture_t gs_create_texture(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT texture_t gs_create_cubetexture(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
-		const void **data, uint32_t flags);
+		const uint8_t **data, uint32_t flags);
 EXPORT texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
-		uint32_t levels, const void **data, uint32_t flags);
+		uint32_t levels, const uint8_t **data, uint32_t flags);
 
 EXPORT zstencil_t gs_create_zstencil(uint32_t width, uint32_t height,
 		enum gs_zstencil_format format);
@@ -599,6 +583,7 @@ EXPORT void gs_load_swapchain(swapchain_t swapchain);
 EXPORT void gs_clear(uint32_t clear_flags, struct vec4 *color,
 		float depth, uint8_t stencil);
 EXPORT void gs_present(void);
+EXPORT void gs_flush(void);
 
 EXPORT void gs_setcullmode(enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode gs_getcullmode(void);
@@ -616,14 +601,6 @@ EXPORT void gs_stencilfunction(enum gs_stencil_side side,
 		enum gs_depth_test test);
 EXPORT void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
 		enum gs_stencil_op zfail, enum gs_stencil_op zpass);
-
-EXPORT void gs_setclip(struct plane *p);
-
-EXPORT void gs_enable_fullscreen(bool enable);
-EXPORT int gs_fullscreen_enabled(void);
-EXPORT void gs_setdisplaymode(const struct gs_display_mode *mode);
-EXPORT void gs_getdisplaymode(struct gs_display_mode *mode);
-EXPORT void gs_setcolorramp(float gamma, float brightness, float contrast);
 
 EXPORT void gs_setviewport(int x, int y, int width, int height);
 EXPORT void gs_getviewport(struct gs_rect *rect);
@@ -643,7 +620,7 @@ EXPORT void     texture_destroy(texture_t tex);
 EXPORT uint32_t texture_getwidth(texture_t tex);
 EXPORT uint32_t texture_getheight(texture_t tex);
 EXPORT enum gs_color_format texture_getcolorformat(texture_t tex);
-EXPORT bool     texture_map(texture_t tex, void **ptr, uint32_t *linesize);
+EXPORT bool     texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize);
 EXPORT void     texture_unmap(texture_t tex);
 /** special-case function (GL only) - specifies whether the texture is a
  * GL_TEXTURE_RECTANGLE type, which doesn't use normalized texture
@@ -678,7 +655,7 @@ EXPORT void     zstencil_destroy(zstencil_t zstencil);
 EXPORT void     samplerstate_destroy(samplerstate_t samplerstate);
 
 EXPORT void     vertexbuffer_destroy(vertbuffer_t vertbuffer);
-EXPORT void     vertexbuffer_flush(vertbuffer_t vertbuffer, bool rebuild);
+EXPORT void     vertexbuffer_flush(vertbuffer_t vertbuffer);
 EXPORT struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer);
 
 EXPORT void     indexbuffer_destroy(indexbuffer_t indexbuffer);

@@ -5,9 +5,8 @@ struct test_filter {
 	effect_t whatever;
 };
 
-static const char *filter_getname(const char *locale)
+static const char *filter_getname(void)
 {
-	UNUSED_PARAMETER(locale);
 	return "Test";
 }
 

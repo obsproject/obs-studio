@@ -5,17 +5,28 @@
 
 #include <arpa/inet.h>
 
-#include <obs.h>
+#include <obs-module.h>
 #include <media-io/video-io.h>
 
 #import "AVCaptureInputPort+PreMavericksCompat.h"
+
+#define TEXT_AVCAPTURE  obs_module_text("AVCapture")
+#define TEXT_DEVICE     obs_module_text("Device")
+#define TEXT_USE_PRESET obs_module_text("UsePreset")
+#define TEXT_PRESET     obs_module_text("Preset")
 
 #define MILLI_TIMESCALE 1000
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
 #define NANO_TIMESCALE  (MICRO_TIMESCALE * 1000)
 
-#define AV_REV_FOURCC(x) \
-	(x & 255), ((x >> 8) & 255), ((x >> 16) & 255), (x >> 24)
+#define AV_FOURCC_STR(code) \
+	(char[5]) { \
+		(code >> 24) & 0xFF, \
+		(code >> 16) & 0xFF, \
+		(code >>  8) & 0xFF, \
+		 code        & 0xFF, \
+		                  0  \
+	}
 
 struct av_capture;
 
@@ -53,29 +64,145 @@ struct av_capture {
 	id connect_observer;
 	id disconnect_observer;
 
-	unsigned fourcc;
+	FourCharCode fourcc;
 	enum video_format video_format;
+	enum video_colorspace colorspace;
+	enum video_range_type video_range;
 
 	obs_source_t source;
 
 	struct source_frame frame;
 };
 
-static inline void update_frame_size(struct av_capture *capture,
-		struct source_frame *frame, uint32_t width, uint32_t height)
+static inline enum video_format format_from_subtype(FourCharCode subtype)
 {
-	if (width != frame->width) {
-		AVLOG(LOG_DEBUG, "Changed width from %d to %d",
-				frame->width, width);
-		frame->width = width;
-		frame->linesize[0] = width * 2;
+	//TODO: uncomment VIDEO_FORMAT_NV12 and VIDEO_FORMAT_ARGB once libobs
+	//      gains matching GPU conversions or a CPU fallback is implemented
+	switch (subtype) {
+	case kCVPixelFormatType_422YpCbCr8:
+		return VIDEO_FORMAT_UYVY;
+	case kCVPixelFormatType_422YpCbCr8_yuvs:
+		return VIDEO_FORMAT_YUY2;
+	/*case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+	case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+		return VIDEO_FORMAT_NV12;*/
+	/*case kCVPixelFormatType_32ARGB:
+		return VIDEO_FORMAT_ARGB;*/
+	case kCVPixelFormatType_32BGRA:
+		return VIDEO_FORMAT_BGRA;
+	default:
+		return VIDEO_FORMAT_NONE;
+	}
+}
+
+static inline bool is_fullrange_yuv(FourCharCode pixel_format)
+{
+	switch (pixel_format) {
+	case kCVPixelFormatType_420YpCbCr8PlanarFullRange:
+	case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+	case kCVPixelFormatType_422YpCbCr8FullRange:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+static inline enum video_colorspace get_colorspace(CMFormatDescriptionRef desc)
+{
+	CFPropertyListRef matrix = CMFormatDescriptionGetExtension(desc,
+			kCMFormatDescriptionExtension_YCbCrMatrix);
+
+	if (!matrix)
+		return VIDEO_CS_DEFAULT;
+
+	if (CFStringCompare(matrix, kCVImageBufferYCbCrMatrix_ITU_R_709_2, 0)
+			== kCFCompareEqualTo)
+		return VIDEO_CS_709;
+
+	return VIDEO_CS_601;
+}
+
+static inline bool update_colorspace(struct av_capture *capture,
+		struct source_frame *frame, CMFormatDescriptionRef desc,
+		bool full_range)
+{
+	enum video_colorspace colorspace = get_colorspace(desc);
+	enum video_range_type range      = full_range ?
+		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+	if (colorspace == capture->colorspace && range == capture->video_range)
+		return true;
+
+	frame->full_range = full_range;
+
+	if (!video_format_get_parameters(colorspace, range,
+				frame->color_matrix,
+				frame->color_range_min,
+				frame->color_range_max)) {
+		AVLOG(LOG_ERROR, "Failed to get colorspace parameters for "
+				 "colorspace %u range %u", colorspace, range);
+		return false;
 	}
 
-	if (height != frame->height) {
-		AVLOG(LOG_DEBUG, "Changed height from %d to %d",
-				frame->height, height);
-		frame->height = height;
+	capture->colorspace  = colorspace;
+	capture->video_range = range;
+
+	return true;
+}
+
+static inline bool update_frame(struct av_capture *capture,
+		struct source_frame *frame, CMSampleBufferRef sample_buffer)
+{
+	CMFormatDescriptionRef desc =
+		CMSampleBufferGetFormatDescription(sample_buffer);
+
+	FourCharCode      fourcc = CMFormatDescriptionGetMediaSubType(desc);
+	enum video_format format = format_from_subtype(fourcc);
+	CMVideoDimensions   dims = CMVideoFormatDescriptionGetDimensions(desc);
+
+	CVImageBufferRef     img = CMSampleBufferGetImageBuffer(sample_buffer);
+
+	if (format == VIDEO_FORMAT_NONE) {
+		if (capture->fourcc == fourcc)
+			return false;
+
+		capture->fourcc = fourcc;
+		AVLOG(LOG_ERROR, "Unhandled fourcc: %s (0x%x) (%zu planes)",
+				AV_FOURCC_STR(fourcc), fourcc,
+				CVPixelBufferGetPlaneCount(img));
+		NSLog(@"%@", sample_buffer);
+		return false;
 	}
+
+	if (frame->format != format)
+		AVLOG(LOG_DEBUG, "Switching fourcc: "
+				"'%s' (0x%x) -> '%s' (0x%x)",
+				AV_FOURCC_STR(capture->fourcc), capture->fourcc,
+				AV_FOURCC_STR(fourcc), fourcc);
+
+	capture->fourcc = fourcc;
+	frame->format   = format;
+	frame->width    = dims.width;
+	frame->height   = dims.height;
+
+	if (format_is_yuv(format) && !update_colorspace(capture, frame, desc,
+				is_fullrange_yuv(fourcc)))
+		return false;
+
+	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
+
+	if (!CVPixelBufferIsPlanar(img)) {
+		frame->linesize[0] = CVPixelBufferGetBytesPerRow(img);
+		frame->data[0]     = CVPixelBufferGetBaseAddress(img);
+		return true;
+	}
+
+	size_t count = CVPixelBufferGetPlaneCount(img);
+	for (size_t i = 0; i < count; i++) {
+		frame->linesize[i] = CVPixelBufferGetBytesPerRowOfPlane(img, i);
+		frame->data[i]     = CVPixelBufferGetBaseAddressOfPlane(img, i);
+	}
+	return true;
 }
 
 @implementation OBSAVCaptureDelegate
@@ -101,41 +228,25 @@ static inline void update_frame_size(struct av_capture *capture,
 
 	struct source_frame *frame = &capture->frame;
 
-	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
-
-	update_frame_size(capture, frame, CVPixelBufferGetWidth(img),
-			CVPixelBufferGetHeight(img));
-
-	CMSampleTimingInfo info;
-	CMSampleBufferGetSampleTimingInfo(sampleBuffer, 0, &info);
-	CMTime target_pts;
-	if (capture->has_clock) {
-		AVCaptureInputPort *port = capture->device_input.ports[0];
-		target_pts = CMSyncConvertTime(info.presentationTimeStamp,
-				port.clock, CMClockGetHostTimeClock());
-
-	} else {
-		target_pts = info.presentationTimeStamp;
-	}
-
+	CMTime target_pts =
+		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
 	CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
 			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
 
-	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
+	if (!update_frame(capture, frame, sampleBuffer))
+		return;
 
-	frame->data[0] = CVPixelBufferGetBaseAddress(img);
 	obs_source_output_video(capture->source, frame);
 
+	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
 	CVPixelBufferUnlockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 }
 @end
 
-static const char *av_capture_getname(const char *locale)
+static const char *av_capture_getname(void)
 {
-	/* TODO: locale */
-	UNUSED_PARAMETER(locale);
-	return "Video Capture Device";
+	return TEXT_AVCAPTURE;
 }
 
 static void remove_device(struct av_capture *capture)
@@ -247,62 +358,28 @@ static bool init_format(struct av_capture *capture)
 			format.formatDescription);
 	// TODO: support other media types
 	if (mtype != kCMMediaType_Video) {
-		AVLOG(LOG_ERROR, "CMMediaType '%c%c%c%c' is unsupported",
-				AV_REV_FOURCC(mtype));
+		AVLOG(LOG_ERROR, "CMMediaType '%s' is unsupported",
+				AV_FOURCC_STR(mtype));
 		return false;
 	}
 
 	capture->out.videoSettings = nil;
-	capture->fourcc = htonl(uint_from_dict(capture->out.videoSettings,
-			kCVPixelBufferPixelFormatTypeKey));
-	
-	capture->video_format = video_format_from_fourcc(capture->fourcc);
-	if (capture->video_format == VIDEO_FORMAT_NONE) {
-		AVLOG(LOG_ERROR, "FourCC '%c%c%c%c' unsupported by libobs",
-				AV_REV_FOURCC(capture->fourcc));
-		return false;
+	FourCharCode subtype = uint_from_dict(capture->out.videoSettings,
+					kCVPixelBufferPixelFormatTypeKey);
+	if (format_from_subtype(subtype) != VIDEO_FORMAT_NONE) {
+		AVLOG(LOG_DEBUG, "Using native fourcc '%s'",
+				AV_FOURCC_STR(subtype));
+		return true;
 	}
 
-	AVLOG(LOG_DEBUG, "Using FourCC '%c%c%c%c'",
-			AV_REV_FOURCC(capture->fourcc));
+	AVLOG(LOG_DEBUG, "Using fallback fourcc '%s' ('%s' 0x%08x unsupported)",
+			AV_FOURCC_STR(kCVPixelFormatType_32BGRA),
+			AV_FOURCC_STR(subtype), subtype);
 
-	return true;
-}
-
-static bool init_frame(struct av_capture *capture)
-{
-	AVCaptureDeviceFormat *format = capture->device.activeFormat;
-
-	CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions(
-			format.formatDescription);
-	capture->frame.width = size.width;
-	capture->frame.linesize[0] = size.width * 2;
-	capture->frame.height = size.height;
-	capture->frame.format = capture->video_format;
-	capture->frame.full_range = false;
-
-	NSDictionary *exts =
-		(__bridge NSDictionary*)CMFormatDescriptionGetExtensions(
-				format.formatDescription);
-
-	capture->frame.linesize[0] = uint_from_dict(exts,
-			(__bridge CFStringRef)@"CVBytesPerRow");
-
-	NSString *matrix_key =
-		(__bridge NSString*)kCVImageBufferYCbCrMatrixKey;
-	enum video_colorspace colorspace =
-		exts[matrix_key] == (id)kCVImageBufferYCbCrMatrix_ITU_R_709_2 ?
-			VIDEO_CS_709 : VIDEO_CS_601;
-
-	if (!video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
-			capture->frame.color_matrix,
-			capture->frame.color_range_min,
-			capture->frame.color_range_max)) {
-		AVLOG(LOG_ERROR, "Failed to get video format parameters for "
-				"video format %u", colorspace);
-		return false;
-	}
-
+	capture->out.videoSettings = @{
+		(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey:
+			@(kCVPixelFormatType_32BGRA)
+	};
 	return true;
 }
 
@@ -313,7 +390,7 @@ static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
 {
 	NSString *new_preset = nil;
 	bool found_previous_preset = false;
-	for (NSString *preset in presets()) {
+	for (NSString *preset in presets().reverseObjectEnumerator) {
 		if (!found_previous_preset)
 			found_previous_preset =
 				[cur_preset isEqualToString:preset];
@@ -332,8 +409,12 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t settings)
 {
 	capture->device = dev;
-	AVLOG(LOG_INFO, "Selected device '%s' %p",
-			capture->device.localizedName.UTF8String, capture);
+
+	const char *name = capture->device.localizedName.UTF8String;
+	obs_data_setstring(settings, "device_name", name);
+	obs_data_setstring(settings, "device",
+			capture->device.uniqueID.UTF8String);
+	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
 	if (obs_data_getbool(settings, "use_preset")) {
 		NSString *preset = get_string(settings, "preset");
@@ -363,9 +444,6 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 	if (!init_format(capture))
 		goto error;
 
-	if (!init_frame(capture))
-		goto error;
-	
 	[capture->session startRunning];
 	return;
 
@@ -484,17 +562,17 @@ static void *av_capture_create(obs_data_t settings, obs_source_t source)
 static NSArray *presets(void)
 {
 	return @[
-		//AVCaptureSessionPresetPhoto,
-		//AVCaptureSessionPresetLow,
-		//AVCaptureSessionPresetMedium,
-		//AVCaptureSessionPresetHigh,
-		AVCaptureSessionPreset320x240,
-		AVCaptureSessionPreset352x288,
-		AVCaptureSessionPreset640x480,
-		AVCaptureSessionPreset960x540,
-		AVCaptureSessionPreset1280x720,
-		//AVCaptureSessionPresetiFrame960x540,
 		//AVCaptureSessionPresetiFrame1280x720,
+		//AVCaptureSessionPresetiFrame960x540,
+		AVCaptureSessionPreset1280x720,
+		AVCaptureSessionPreset960x540,
+		AVCaptureSessionPreset640x480,
+		AVCaptureSessionPreset352x288,
+		AVCaptureSessionPreset320x240,
+		//AVCaptureSessionPresetHigh,
+		//AVCaptureSessionPresetMedium,
+		//AVCaptureSessionPresetLow,
+		//AVCaptureSessionPresetPhoto,
 	];
 }
 
@@ -510,72 +588,181 @@ static NSString *preset_names(NSString *preset)
 		AVCaptureSessionPreset960x540:@"960x540",
 		AVCaptureSessionPreset1280x720:@"1280x720",
 	};
-	return preset_names[preset];
+	NSString *name = preset_names[preset];
+	if (name)
+		return name;
+	return [NSString stringWithFormat:@"Unknown (%@)", preset];
 }
 
 
 static void av_capture_defaults(obs_data_t settings)
 {
-	AVCaptureDevice *dev = [AVCaptureDevice
-		defaultDeviceWithMediaType:AVMediaTypeVideo];
-	if (!dev)
-		return;
-
-	NSString *highest = nil;
-	for (NSString *preset in presets()) {
-		if (![dev supportsAVCaptureSessionPreset:preset])
-			continue;
-		highest = preset;
-	}
-	if (!highest)
-		return;
-
-	obs_data_set_default_string(settings, "device",
-			dev.uniqueID.UTF8String);
 	obs_data_set_default_bool(settings, "use_preset", true);
+	obs_data_set_default_string(settings, "preset",
+			AVCaptureSessionPreset1280x720.UTF8String);
+}
 
-	obs_data_set_default_string(settings, "preset", highest.UTF8String);
+static bool update_device_list(obs_property_t list,
+		NSString *uid, NSString *name, bool disconnected)
+{
+	bool dev_found     = false;
+	bool list_modified = false;
+
+	size_t size = obs_property_list_item_count(list);
+	for (size_t i = 0; i < size;) {
+		const char *uid_ = obs_property_list_item_string(list, i);
+		bool found       = [uid isEqualToString:@(uid_)];
+		bool disabled    = obs_property_list_item_disabled(list, i);
+		if (!found && !disabled) {
+			i += 1;
+			continue;
+		}
+
+		if (disabled && !found) {
+			list_modified = true;
+			obs_property_list_item_remove(list, i);
+			continue;
+		}
+		
+		if (disabled != disconnected)
+			list_modified = true;
+
+		dev_found = true;
+		obs_property_list_item_disable(list, i, disconnected);
+		i += 1;
+	}
+
+	if (dev_found)
+		return list_modified;
+
+	size_t idx = obs_property_list_add_string(list, name.UTF8String,
+			uid.UTF8String);
+	obs_property_list_item_disable(list, idx, disconnected);
+
+	return true;
+}
+
+static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
+		NSString *current_preset)
+{
+	obs_property_list_clear(list);
+
+	bool preset_found = false;
+	for (NSString *preset in presets()) {
+		bool is_current = [preset isEqualToString:current_preset];
+		bool supported  = dev &&
+			[dev supportsAVCaptureSessionPreset:preset];
+
+		if (is_current)
+			preset_found = true;
+
+		if (!supported && !is_current)
+			continue;
+
+		size_t idx = obs_property_list_add_string(list,
+				preset_names(preset).UTF8String,
+				preset.UTF8String);
+		obs_property_list_item_disable(list, idx, !supported);
+	}
+
+	if (preset_found)
+		return;
+
+	size_t idx = obs_property_list_add_string(list,
+			preset_names(current_preset).UTF8String,
+			current_preset.UTF8String);
+	obs_property_list_item_disable(list, idx, true);
+}
+
+static bool check_preset(AVCaptureDevice *dev,
+		obs_property_t list, obs_data_t settings)
+{
+	NSString *current_preset = get_string(settings, "preset");
+
+	size_t size = obs_property_list_item_count(list);
+	NSMutableSet *listed = [NSMutableSet setWithCapacity:size];
+
+	for (size_t i = 0; i < size; i++)
+		[listed addObject:@(obs_property_list_item_string(list, i))];
+
+	bool presets_changed = false;
+	for (NSString *preset in presets()) {
+		bool is_listed = [listed member:preset] != nil;
+		bool supported = dev && 
+			[dev supportsAVCaptureSessionPreset:preset];
+
+		if (supported == is_listed)
+			continue;
+
+		presets_changed = true;
+	}
+
+	if (!presets_changed && [listed member:current_preset] != nil)
+		return false;
+
+	fill_presets(dev, list, current_preset);
+	return true;
+}
+
+static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t settings)
+{
+	NSString *preset = get_string(settings, "preset");
+	if (!dev || [dev supportsAVCaptureSessionPreset:preset]) {
+		if (obs_data_has_autoselect(settings, "preset")) {
+			obs_data_unset_autoselect_value(settings, "preset");
+			return true;
+		}
+
+	} else {
+		preset = select_preset(dev, preset);
+		const char *autoselect =
+			obs_data_get_autoselect_string(settings, "preset");
+		if (![preset isEqualToString:@(autoselect)]) {
+			obs_data_set_autoselect_string(settings, "preset",
+				preset.UTF8String);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
-	UNUSED_PARAMETER(p);
-
 	NSString *uid = get_string(settings, "device");
-
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
-	if (!dev)
-		return false;
 
-	obs_property_t preset_list = obs_properties_get(props, "preset");
-	obs_property_list_clear(preset_list);
+	NSString *name = get_string(settings, "device_name");
+	bool dev_list_updated = update_device_list(p, uid, name, !dev);
 
-	for (NSString *preset in presets()) {
-		if (![dev supportsAVCaptureSessionPreset:preset])
-			continue;
+	p = obs_properties_get(props, "preset");
+	bool preset_list_changed = check_preset(dev, p, settings);
+	bool autoselect_changed  = autoselect_preset(dev, settings);
 
-		obs_property_list_add_string(preset_list,
-				preset_names(preset).UTF8String,
-				preset.UTF8String);
-
-	}
-
-	NSString *preset = get_string(settings, "preset");
-	if (![dev supportsAVCaptureSessionPreset:preset])
-		obs_data_setstring(settings, "preset",
-				select_preset(dev, preset).UTF8String);
-
-	return true;
+	return preset_list_changed || autoselect_changed || dev_list_updated;
 }
 
-static obs_properties_t av_capture_properties(char const *locale)
+static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
+		obs_data_t settings)
 {
-	obs_properties_t props = obs_properties_create(locale);
+	UNUSED_PARAMETER(props);
 
-	/* TODO: locale */
+	NSString *uid = get_string(settings, "device");
+	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
+
+	bool preset_list_changed = check_preset(dev, p, settings);
+	bool autoselect_changed  = autoselect_preset(dev, settings);
+
+	return preset_list_changed || autoselect_changed;
+}
+
+static obs_properties_t av_capture_properties(void)
+{
+	obs_properties_t props = obs_properties_create();
+
 	obs_property_t dev_list = obs_properties_add_list(props, "device",
-			"Device", OBS_COMBO_TYPE_LIST,
+			TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 	for (AVCaptureDevice *dev in [AVCaptureDevice
 			devicesWithMediaType:AVMediaTypeVideo]) {
@@ -588,12 +775,20 @@ static obs_properties_t av_capture_properties(char const *locale)
 			properties_device_changed);
 
 	obs_property_t use_preset = obs_properties_add_bool(props,
-			"use_preset", "Use preset");
+			"use_preset", TEXT_USE_PRESET);
 	// TODO: implement manual configuration
 	obs_property_set_enabled(use_preset, false);
 
-	obs_properties_add_list(props, "preset", "Preset", OBS_COMBO_TYPE_LIST,
+	obs_property_t preset_list = obs_properties_add_list(props, "preset",
+			TEXT_PRESET, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
+	for (NSString *preset in presets())
+		obs_property_list_add_string(preset_list,
+				preset_names(preset).UTF8String,
+				preset.UTF8String);
+
+	obs_property_set_modified_callback(preset_list,
+			properties_preset_changed);
 
 	return props;
 }
@@ -629,7 +824,15 @@ static void av_capture_update(void *data, obs_data_t settings)
 	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
 		return switch_device(capture, uid, settings);
 
-	capture->session.sessionPreset = get_string(settings, "preset");
+	NSString *preset = get_string(settings, "preset");
+	NSLog(@"%@", preset);
+	if (![capture->device supportsAVCaptureSessionPreset:preset]) {
+		AVLOG(LOG_ERROR, "Preset %s not available", preset.UTF8String);
+		preset = select_preset(capture->device, preset);
+	}
+
+	capture->session.sessionPreset = preset;
+	AVLOG(LOG_INFO, "Selected preset %s", preset.UTF8String);
 }
 
 struct obs_source_info av_capture_info = {

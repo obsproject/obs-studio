@@ -37,9 +37,9 @@ static uint32_t xcompcap_getheight(void* data)
 	return cc->height();
 }
 
-static obs_properties_t xcompcap_props(const char *locale)
+static obs_properties_t xcompcap_props(void)
 {
-	return XCompcapMain::properties(locale);
+	return XCompcapMain::properties();
 }
 
 void xcompcap_defaults(obs_data_t settings)
@@ -54,12 +54,11 @@ void xcompcap_update(void *data, obs_data_t settings)
 }
 
 OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("linux-xcomposite", "en-US")
 
-static const char* xcompcap_getname(const char* locale)
+static const char* xcompcap_getname(void)
 {
-	UNUSED_PARAMETER(locale);
-
-	return "Xcomposite capture";
+	return obs_module_text("XCCapture");
 }
 
 bool obs_module_load(uint32_t libobs_version)
@@ -96,6 +95,8 @@ bool obs_module_load(uint32_t libobs_version)
 void obs_module_unload()
 {
 	XCompcapMain::deinit();
+
+	OBS_MODULE_FREE_DEFAULT_LOCALE();
 
 	blog(LOG_INFO, "Xcomposite capture plugin unloaded");
 }

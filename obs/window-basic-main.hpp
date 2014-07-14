@@ -19,13 +19,16 @@
 
 #include <QNetworkAccessManager>
 #include <QBuffer>
+#include <QAction>
 #include <obs.hpp>
 #include <unordered_map>
 #include <vector>
 #include <memory>
 #include "window-main.hpp"
 #include "window-basic-properties.hpp"
+#include "window-basic-transform.hpp"
 
+#include <util/platform.h>
 #include <util/util.hpp>
 
 #include <QPointer>
@@ -45,34 +48,52 @@ class QNetworkReply;
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
+	friend class OBSBasicPreview;
+
 private:
 	std::unordered_map<obs_source_t, int> sourceSceneRefs;
 
 	std::vector<VolControl*> volumes;
 
+	bool loaded = false;
+
 	QPointer<OBSBasicProperties> properties;
+	QPointer<OBSBasicTransform> transformWindow;
 
 	QNetworkAccessManager networkManager;
 
+	QPointer<QTimer>    cpuUsageTimer;
+	os_cpu_usage_info_t cpuUsageInfo = nullptr;
+
 	QBuffer       logUploadPostData;
-	QNetworkReply *logUploadReply;
+	QNetworkReply *logUploadReply = nullptr;
 	QByteArray    logUploadReturnData;
 
-	obs_output_t  fileOutput;
-	obs_output_t  streamOutput;
-	obs_service_t service;
-	obs_encoder_t aac;
-	obs_encoder_t x264;
+	QBuffer       updatePostData;
+	QNetworkReply *updateReply = nullptr;
+	QByteArray    updateReturnData;
 
-	bool          sceneChanging;
+	obs_output_t  fileOutput = nullptr;
+	obs_output_t  streamOutput = nullptr;
+	obs_service_t service = nullptr;
+	obs_encoder_t aac = nullptr;
+	obs_encoder_t x264 = nullptr;
 
-	int           previewX,  previewY;
-	float         previewScale;
-	int           resizeTimer;
+	vertbuffer_t  box = nullptr;
+	vertbuffer_t  circle = nullptr;
+
+	bool          sceneChanging = false;
+
+	int           previewX = 0,  previewY = 0;
+	int           previewCX = 0, previewCY = 0;
+	float         previewScale = 0.0f;
+	int           resizeTimer = 0;
 
 	ConfigFile    basicConfig;
 
-	int           activeRefs;
+	int           activeRefs = 0;
+
+	void          DrawBackdrop(float cx, float cy);
 
 	void          SetupEncoders();
 
@@ -97,8 +118,14 @@ private:
 
 	void          InitOBSCallbacks();
 
-	OBSScene      GetCurrentScene();
+	void          InitPrimitives();
+
 	OBSSceneItem  GetCurrentSceneItem();
+
+	bool          QueryRemoveSource(obs_source_t source);
+
+	void          TimedCheckForUpdates();
+	void          CheckForUpdates();
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -125,11 +152,15 @@ private slots:
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
 	void UpdateSceneSelection(OBSSource source);
+	void RenameSources(QString newName, QString prevName);
 
 	void MoveSceneItem(OBSSceneItem item, order_movement movement);
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
+
+	void RemoveSelectedScene();
+	void RemoveSelectedSceneItem();
 
 private:
 	/* OBS Callbacks */
@@ -139,6 +170,7 @@ private:
 	static void SourceRemoved(void *data, calldata_t params);
 	static void SourceActivated(void *data, calldata_t params);
 	static void SourceDeactivated(void *data, calldata_t params);
+	static void SourceRenamed(void *data, calldata_t params);
 	static void ChannelChanged(void *data, calldata_t params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
@@ -150,9 +182,12 @@ private:
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(const char *id);
+	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
 
 public:
+	OBSScene      GetCurrentScene();
+
 	obs_service_t GetService();
 	void          SetService(obs_service_t service);
 
@@ -167,6 +202,19 @@ public:
 	void SaveProject();
 	void LoadProject();
 
+	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
+	{
+		x  = previewX;
+		y  = previewY;
+		cx = previewCX;
+		cy = previewCY;
+	}
+
+	inline double GetCPUUsage() const
+	{
+		return os_cpu_usage_info_query(cpuUsageInfo);
+	}
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -178,6 +226,21 @@ private slots:
 	void on_action_Open_triggered();
 	void on_action_Save_triggered();
 	void on_action_Settings_triggered();
+	void on_actionUploadCurrentLog_triggered();
+	void on_actionUploadLastLog_triggered();
+	void on_actionCheckForUpdates_triggered();
+
+	void on_actionEditTransform_triggered();
+	void on_actionResetTransform_triggered();
+	void on_actionRotate90CW_triggered();
+	void on_actionRotate90CCW_triggered();
+	void on_actionRotate180_triggered();
+	void on_actionFlipHorizontal_triggered();
+	void on_actionFlipVertical_triggered();
+	void on_actionFitToScreen_triggered();
+	void on_actionStretchToScreen_triggered();
+	void on_actionCenterToScreen_triggered();
+
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 			QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
@@ -194,14 +257,31 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
-	void on_actionUploadCurrentLog_triggered();
-	void on_actionUploadLastLog_triggered();
+
+	void on_actionMoveUp_triggered();
+	void on_actionMoveDown_triggered();
+	void on_actionMoveToTop_triggered();
+	void on_actionMoveToBottom_triggered();
+
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
 	void logUploadRead();
 	void logUploadFinished();
+
+	void updateFileRead();
+	void updateFileFinished();
+
+	void AddSourceFromAction();
+
+	void EditSceneName();
+	void EditSceneItemName();
+
+	void SceneNameEdited(QWidget *editor,
+			QAbstractItemDelegate::EndEditHint endHint);
+	void SceneItemNameEdited(QWidget *editor,
+			QAbstractItemDelegate::EndEditHint endHint);
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

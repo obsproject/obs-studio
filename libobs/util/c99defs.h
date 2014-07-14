@@ -68,6 +68,7 @@ typedef int64_t off64_t;
 
 #else
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>

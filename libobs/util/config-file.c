@@ -598,3 +598,16 @@ double config_get_default_double(config_t config, const char *section,
 
 	return 0.0;
 }
+
+bool config_has_user_value(config_t config, const char *section,
+		const char *name)
+{
+	return config_find_item(&config->sections, section, name) != NULL;
+}
+
+bool config_has_default_value(config_t config, const char *section,
+		const char *name)
+{
+	return config_find_item(&config->defaults, section, name) != NULL;
+}
+

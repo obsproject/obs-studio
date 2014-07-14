@@ -1,4 +1,3 @@
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(WIN32)
 	add_subdirectory(win-wasapi)
@@ -11,8 +10,10 @@ elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	add_subdirectory(linux-xshm)
 	add_subdirectory(linux-xcomposite)
 	add_subdirectory(linux-pulseaudio)
+	add_subdirectory(linux-v4l2)
 endif()
 
+add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
 add_subdirectory(obs-ffmpeg)
