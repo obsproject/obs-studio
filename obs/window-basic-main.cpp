@@ -859,8 +859,14 @@ void OBSBasic::CheckForUpdates()
 {
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	QUrl url("https://obsproject.com/obs2_update/basic.json");
-	updateReply = networkManager.get(QNetworkRequest(url));
+	string versionString("obs-basic ");
+	versionString += App()->GetVersionString();
+
+	QNetworkRequest request;
+	request.setUrl(QUrl("https://obsproject.com/obs2_update/basic.json"));
+	request.setRawHeader("User-Agent", versionString.c_str());
+
+	updateReply = networkManager.get(request);
 	connect(updateReply, SIGNAL(finished()),
 			this, SLOT(updateFileFinished()));
 	connect(updateReply, SIGNAL(readyRead()),
