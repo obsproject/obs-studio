@@ -74,10 +74,11 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 
 	/* only update after a certain amount of time */
 	if ((curMeterTime - lastMeterTime) > UPDATE_INTERVAL_MS) {
+		float vol = (float)slider->value() * 0.01f;
 		lastMeterTime = curMeterTime;
-		volMeter->setLevels(DBToLinear(mag),
-				    DBToLinear(peak),
-				    DBToLinear(peakHold));
+		volMeter->setLevels(DBToLinear(mag) * vol,
+				    DBToLinear(peak) * vol,
+				    DBToLinear(peakHold) * vol);
 	}
 }
 
