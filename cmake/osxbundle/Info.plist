@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIconFile</key>
-	<string>OBS Studio.icns</string>
+	<string>OBS.icns</string>
 	<key>CFBundleName</key>
-	<string>OBS Studio</string>	
+	<string>OBS</string>
 	<key>CFBundleGetInfoString</key>
-	<string>OBS Studio - Open Source Streaming Software</string>
+	<string>OBS - Free and Open Source Streaming/Recording Software</string>
 	<key>CFBundleExecutable</key>
-	<string>OBS Studio</string>
+	<string>OBS</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.obsproject.obs-studio</string>
 	<key>CFBundlePackageType</key>
