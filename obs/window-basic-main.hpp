@@ -69,6 +69,10 @@ private:
 	QNetworkReply *logUploadReply = nullptr;
 	QByteArray    logUploadReturnData;
 
+	QBuffer       updatePostData;
+	QNetworkReply *updateReply = nullptr;
+	QByteArray    updateReturnData;
+
 	obs_output_t  fileOutput = nullptr;
 	obs_output_t  streamOutput = nullptr;
 	obs_service_t service = nullptr;
@@ -119,6 +123,9 @@ private:
 	OBSSceneItem  GetCurrentSceneItem();
 
 	bool          QueryRemoveSource(obs_source_t source);
+
+	void          TimedCheckForUpdates();
+	void          CheckForUpdates();
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -221,6 +228,7 @@ private slots:
 	void on_action_Settings_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
+	void on_actionCheckForUpdates_triggered();
 
 	void on_actionEditTransform_triggered();
 	void on_actionResetTransform_triggered();
@@ -261,6 +269,9 @@ private slots:
 
 	void logUploadRead();
 	void logUploadFinished();
+
+	void updateFileRead();
+	void updateFileFinished();
 
 	void AddSourceFromAction();
 

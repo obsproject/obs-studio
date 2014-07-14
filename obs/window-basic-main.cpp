@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <time.h>
 #include <obs.hpp>
 #include <QMessageBox>
 #include <QShowEvent>
@@ -551,6 +552,7 @@ void OBSBasic::OBSInit()
 	Load(savePath);
 	ResetAudioDevices();
 
+	TimedCheckForUpdates();
 	loaded = true;
 }
 
@@ -829,6 +831,101 @@ bool OBSBasic::QueryRemoveSource(obs_source_t source)
 			QTStr("ConfirmRemove.Remove"), text);
 
 	return button == QMessageBox::Yes;
+}
+
+#define UPDATE_CHECK_INTERVAL (60*60*24*4) /* 4 days */
+
+void OBSBasic::TimedCheckForUpdates()
+{
+	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
+			"LastUpdateCheck");
+	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
+			"LastVersion");
+
+	if (lastVersion < LIBOBS_API_VER) {
+		lastUpdate = 0;
+		config_set_int(App()->GlobalConfig(), "General",
+				"LastUpdateCheck", 0);
+	}
+
+	long long t    = (long long)time(nullptr);
+	long long secs = t - lastUpdate;
+
+	if (secs > UPDATE_CHECK_INTERVAL)
+		CheckForUpdates();
+}
+
+void OBSBasic::CheckForUpdates()
+{
+	ui->actionCheckForUpdates->setEnabled(false);
+
+	QUrl url("https://obsproject.com/obs2_update/mac_basic.json");
+	updateReply = networkManager.get(QNetworkRequest(url));
+	connect(updateReply, SIGNAL(finished()),
+			this, SLOT(updateFileFinished()));
+	connect(updateReply, SIGNAL(readyRead()),
+			this, SLOT(updateFileRead()));
+}
+
+void OBSBasic::updateFileRead()
+{
+	updateReturnData.push_back(updateReply->readAll());
+}
+
+void OBSBasic::updateFileFinished()
+{
+	ui->actionCheckForUpdates->setEnabled(true);
+
+	if (updateReply->error()) {
+		blog(LOG_WARNING, "Update check failed: %s",
+				QT_TO_UTF8(updateReply->errorString()));
+		return;
+	}
+
+	const char *jsonReply = updateReturnData.constData();
+	if (!jsonReply || !*jsonReply)
+		return;
+
+	obs_data_t returnData   = obs_data_create_from_json(jsonReply);
+	obs_data_t versionData  = obs_data_getobj(returnData, "version");
+	const char *description = obs_data_getstring(returnData, "description");
+	const char *download    = obs_data_getstring(returnData, "download");
+
+	if (returnData && versionData && description && download) {
+		long major   = obs_data_getint(versionData, "major");
+		long minor   = obs_data_getint(versionData, "minor");
+		long patch   = obs_data_getint(versionData, "patch");
+		long version = MAKE_SEMANTIC_VERSION(major, minor, patch);
+
+		blog(LOG_INFO, "Update check: latest version is: %ld.%ld.%ld",
+				major, minor, patch);
+
+		if (version > LIBOBS_API_VER) {
+			QString     str = QTStr("UpdateAvailable.Text");
+			QMessageBox messageBox(this);
+
+			str = str.arg(QString::number(major),
+			              QString::number(minor),
+			              QString::number(patch),
+			              download);
+
+			messageBox.setWindowTitle(QTStr("UpdateAvailable"));
+			messageBox.setTextFormat(Qt::RichText);
+			messageBox.setText(str);
+			messageBox.setInformativeText(QT_UTF8(description));
+			messageBox.exec();
+
+			long long t = (long long)time(nullptr);
+			config_set_int(App()->GlobalConfig(), "General",
+					"LastUpdateCheck", t);
+			config_save(App()->GlobalConfig());
+		}
+	} else {
+		blog(LOG_WARNING, "Bad JSON file received from server");
+	}
+
+	obs_data_release(versionData);
+	obs_data_release(returnData);
 }
 
 void OBSBasic::RemoveSelectedScene()
@@ -1624,6 +1721,11 @@ void OBSBasic::on_actionUploadCurrentLog_triggered()
 void OBSBasic::on_actionUploadLastLog_triggered()
 {
 	UploadLog(App()->GetLastLog());
+}
+
+void OBSBasic::on_actionCheckForUpdates_triggered()
+{
+	CheckForUpdates();
 }
 
 void OBSBasic::logUploadRead()
