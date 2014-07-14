@@ -43,9 +43,15 @@
  */
 #define LIBOBS_API_PATCH_VER  0
 
-#define LIBOBS_API_VER       ((LIBOBS_API_MAJOR_VER << 24) | \
-                              (LIBOBS_API_MINOR_VER << 16) | \
-                               LIBOBS_API_PATCH_VER        )
+#define MAKE_SEMANTIC_VERSION(major, minor, patch) \
+                             ((major << 24) | \
+                              (minor << 16) | \
+                               patch        )
+
+#define LIBOBS_API_VER \
+	MAKE_SEMANTIC_VERSION(LIBOBS_API_MAJOR_VER, \
+                              LIBOBS_API_MINOR_VER, \
+                              LIBOBS_API_PATCH_VER)
 
 #ifdef HAVE_OBSCONFIG_H
 # include "obsconfig.h"
