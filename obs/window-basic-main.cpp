@@ -859,7 +859,7 @@ void OBSBasic::CheckForUpdates()
 {
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	QUrl url("https://obsproject.com/obs2_update/mac_basic.json");
+	QUrl url("https://obsproject.com/obs2_update/basic.json");
 	updateReply = networkManager.get(QNetworkRequest(url));
 	connect(updateReply, SIGNAL(finished()),
 			this, SLOT(updateFileFinished()));
@@ -871,6 +871,14 @@ void OBSBasic::updateFileRead()
 {
 	updateReturnData.push_back(updateReply->readAll());
 }
+
+#ifdef __APPLE__
+#define VERSION_ENTRY "windows"
+#elif _WIN32
+#define VERSION_ENTRY "mac"
+#else
+#define VERSION_ENTRY "other"
+#endif
 
 void OBSBasic::updateFileFinished()
 {
@@ -887,9 +895,9 @@ void OBSBasic::updateFileFinished()
 		return;
 
 	obs_data_t returnData   = obs_data_create_from_json(jsonReply);
-	obs_data_t versionData  = obs_data_getobj(returnData, "version");
+	obs_data_t versionData  = obs_data_getobj(returnData, VERSION_ENTRY);
 	const char *description = obs_data_getstring(returnData, "description");
-	const char *download    = obs_data_getstring(returnData, "download");
+	const char *download    = obs_data_getstring(versionData, "download");
 
 	if (returnData && versionData && description && download) {
 		long major   = obs_data_getint(versionData, "major");
