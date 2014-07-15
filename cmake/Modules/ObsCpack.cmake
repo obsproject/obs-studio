@@ -7,7 +7,7 @@ endif()
 
 set(CPACK_PACKAGE_NAME "OBS")
 set(CPACK_PACKAGE_VENDOR "obsproject.com")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OBS - Multi-platform live broadcaasting/recording software")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OBS - Live video and audio streaming and recording software")
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
