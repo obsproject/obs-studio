@@ -209,6 +209,9 @@ static void *v4l2_thread(void *vptr)
 	if (v4l2_start_capture(data) < 0)
 		goto exit;
 
+	data->frames = 0;
+	blog(LOG_INFO, "Started recording from %s", data->device);
+
 	while (os_event_try(data->event) == EAGAIN) {
 		int r;
 		fd_set fds;
@@ -263,6 +266,9 @@ static void *v4l2_thread(void *vptr)
 		data->frames++;
 	}
 
+	blog(LOG_INFO, "Stopped recording from %s after %"PRIu64" frames",
+	     data->device, data->frames);
+
 exit:
 	v4l2_stop_capture(data);
 	return NULL;
@@ -307,11 +313,14 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		dstr_resize(&device, 5);
 		dstr_cat(&device, dp->d_name);
 
-		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1)
+		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1) {
+			blog(LOG_INFO, "Unable to open %s", device.array);
 			continue;
+		}
 
 		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
-
+			blog(LOG_INFO, "Failed to query capabilities for %s",
+			     device.array);
 		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
 			obs_property_list_add_string(prop,
 					(char *) video_cap.card,
@@ -321,6 +330,12 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 					"device_id", device.array);
 				first = false;
 			}
+			blog(LOG_INFO, "Found device '%s' at %s",
+			     video_cap.card, device.array);
+		}
+		else {
+			blog(LOG_INFO, "%s seems to not support video capture",
+			     device.array);
 		}
 
 		close(fd);
@@ -347,6 +362,11 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 			obs_property_list_add_int(prop,
 					(char *) fmt.description,
 					fmt.pixelformat);
+			blog(LOG_INFO, "Pixelformat: %s (available)",
+			     (char *) fmt.description);
+		} else {
+			blog(LOG_INFO, "Pixelformat: %s (unavailable)",
+			     (char *) fmt.description);
 		}
 		fmt.index++;
 	}
@@ -374,6 +394,12 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 				frmsize.discrete.height));
 		frmsize.index++;
 	}
+
+	if (frmsize.type != V4L2_FRMSIZE_TYPE_DISCRETE) {
+		blog(LOG_INFO, "Stepwise and Continuous framesizes "
+			"are currently not supported");
+	}
+
 	dstr_free(&buffer);
 }
 
@@ -402,6 +428,12 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		obs_property_list_add_int(prop, buffer.array, pack);
 		frmival.index++;
 	}
+
+	if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE) {
+		blog(LOG_INFO, "Stepwise and Continuous framerates "
+			"are currently not supported");
+	}
+
 	dstr_free(&buffer);
 }
 
