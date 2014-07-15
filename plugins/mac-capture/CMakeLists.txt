@@ -23,8 +23,7 @@ set(mac-capture_SOURCES
 	mac-display-capture.m)
 	
 set_source_files_properties(mac-display-capture.m
-	PROPERTIES LANGUAGE C
-		COMPILE_FLAGS "-fobjc-arc")
+	PROPERTIES LANGUAGE C)
 
 add_library(mac-capture MODULE
 	${mac-capture_SOURCES}
