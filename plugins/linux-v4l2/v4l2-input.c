@@ -39,6 +39,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define timeval2ns(tv) \
 	(((uint64_t) tv.tv_sec * 1000000000) + ((uint64_t) tv.tv_usec * 1000))
 
+#define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
+
 struct v4l2_buffer_data {
 	size_t length;
 	void *start;
@@ -105,14 +107,14 @@ static int_fast32_t v4l2_start_capture(struct v4l2_data *data)
 		buf.index = i;
 
 		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "v4l2-input: unable to queue buffer");
+			blog(LOG_ERROR, "unable to queue buffer");
 			return -1;
 		}
 	}
 
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
-		blog(LOG_ERROR, "v4l2-input: unable to start stream");
+		blog(LOG_ERROR, "unable to start stream");
 		return -1;
 	}
 
@@ -127,7 +129,7 @@ static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 	if (ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
-		blog(LOG_ERROR, "v4l2-input: unable to stop stream");
+		blog(LOG_ERROR, "unable to stop stream");
 	}
 
 	return 0;
@@ -145,12 +147,12 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	req.memory = V4L2_MEMORY_MMAP;
 
 	if (ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
-		blog(LOG_DEBUG, "v4l2-input: request for buffers failed !");
+		blog(LOG_DEBUG, "request for buffers failed !");
 		return -1;
 	}
 
 	if (req.count < 2) {
-		blog(LOG_DEBUG, "v4l2-input: not enough memory !");
+		blog(LOG_DEBUG, "not enough memory !");
 		return -1;
 	}
 
@@ -165,7 +167,7 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 		buf.index = i;
 
 		if (ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_ERROR, "v4l2-input: failed to query buffer");
+			blog(LOG_ERROR, "failed to query buffer");
 			return -1;
 		}
 
@@ -175,7 +177,7 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 			data->dev, buf.m.offset);
 
 		if (data->buf[i].start == MAP_FAILED) {
-			blog(LOG_ERROR, "v4l2-input: mmap for buffer failed");
+			blog(LOG_ERROR, "mmap for buffer failed");
 			return -1;
 		}
 	}
@@ -224,10 +226,10 @@ static void *v4l2_thread(void *vptr)
 		if (r < 0) {
 			if (errno == EINTR)
 				continue;
-			blog(LOG_DEBUG, "v4l2-input: select failed");
+			blog(LOG_DEBUG, "select failed");
 			break;
 		} else if (r == 0) {
-			blog(LOG_DEBUG, "v4l2-input: select timeout");
+			blog(LOG_DEBUG, "select timeout");
 			continue;
 		}
 
@@ -237,7 +239,7 @@ static void *v4l2_thread(void *vptr)
 		if (ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN)
 				continue;
-			blog(LOG_DEBUG, "v4l2-input: failed to dequeue buffer");
+			blog(LOG_DEBUG, "failed to dequeue buffer");
 			break;
 		}
 
@@ -254,7 +256,7 @@ static void *v4l2_thread(void *vptr)
 		obs_source_output_video(data->source, &out);
 
 		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_DEBUG, "v4l2-input: failed to enqueue buffer");
+			blog(LOG_DEBUG, "failed to enqueue buffer");
 			break;
 		}
 
@@ -309,7 +311,7 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 			continue;
 
 		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
-			
+
 		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
 			obs_property_list_add_string(prop,
 					(char *) video_cap.card,
@@ -546,8 +548,7 @@ static void v4l2_init(struct v4l2_data *data)
 
 	data->dev = open(data->device, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
-		blog(LOG_ERROR, "v4l2-input: Unable to open device: %s",
-				data->device);
+		blog(LOG_ERROR, "Unable to open device: %s", data->device);
 		goto fail;
 	}
 
@@ -558,7 +559,7 @@ static void v4l2_init(struct v4l2_data *data)
 	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
 	if (ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
-		blog(LOG_DEBUG, "v4l2-input: unable to set format");
+		blog(LOG_DEBUG, "unable to set format");
 		goto fail;
 	}
 	data->pixelformat = fmt.fmt.pix.pixelformat;
@@ -570,17 +571,17 @@ static void v4l2_init(struct v4l2_data *data)
 	par.parm.capture.timeperframe.denominator = data->fps_denominator;
 
 	if (ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
-		blog(LOG_DEBUG, "v4l2-input: unable to set params");
+		blog(LOG_DEBUG, "unable to set params");
 		goto fail;
 	}
 	data->fps_numerator = par.parm.capture.timeperframe.numerator;
 	data->fps_denominator = par.parm.capture.timeperframe.denominator;
 
 	data->linesize = fmt.fmt.pix.bytesperline;
-	blog(LOG_DEBUG, "v4l2-input: Linesize: %"PRIuFAST32, data->linesize);
+	blog(LOG_DEBUG, "Linesize: %"PRIuFAST32, data->linesize);
 
 	if (v4l2_create_mmap(data) < 0) {
-		blog(LOG_ERROR, "v4l2-input: failed to map buffers");
+		blog(LOG_ERROR, "failed to map buffers");
 		goto fail;
 	}
 
@@ -590,7 +591,7 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	return;
 fail:
-	blog(LOG_DEBUG, "v4l2-input: initialization failed");
+	blog(LOG_DEBUG, "initialization failed");
 	v4l2_terminate(data);
 }
 
@@ -656,7 +657,7 @@ static void *v4l2_create(obs_data_t settings, obs_source_t source)
 	data->source = source;
 
 	v4l2_update(data, settings);
-	blog(LOG_DEBUG, "v4l2-input: New input created");
+	blog(LOG_DEBUG, "New input created");
 
 	return data;
 }
