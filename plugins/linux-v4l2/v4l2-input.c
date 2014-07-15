@@ -92,6 +92,57 @@ static void unpack_tuple(int *a, int *b, int packed)
 	*b = packed & 0xffff;
 }
 
+/* fixed framesizes as fallback */
+static int fixed_framesizes[] =
+{
+	/* 4:3 */
+	160<<16		| 120,
+	320<<16		| 240,
+	480<<16		| 320,
+	640<<16		| 480,
+	800<<16		| 600,
+	1024<<16	| 768,
+	1280<<16	| 960,
+	1440<<16	| 1050,
+	1440<<16	| 1080,
+	1600<<16	| 1200,
+
+	/* 16:9 */
+	640<<16		| 360,
+	960<<16		| 540,
+	1280<<16	| 720,
+	1600<<16	| 900,
+	1920<<16	| 1080,
+	1920<<16	| 1200,
+
+	/* tv */
+	432<<16		| 520,
+	480<<16		| 320,
+	480<<16		| 530,
+	486<<16		| 440,
+	576<<16		| 310,
+	576<<16		| 520,
+	576<<16		| 570,
+	1024<<16	| 576,
+
+	0
+};
+
+/* fixed framerates as fallback */
+static int fixed_framerates[] =
+{
+	1<<16		| 60,
+	1<<16		| 50,
+	1<<16		| 30,
+	1<<16		| 25,
+	1<<16		| 20,
+	1<<16		| 15,
+	1<<16		| 10,
+	1<<16		| 5,
+
+	0
+};
+
 /*
  * start capture
  */
@@ -304,6 +355,7 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		return;
 
 	obs_property_list_clear(prop);
+
 	dstr_init_copy(&device, "/dev/");
 
 	while ((dp = readdir(dirp)) != NULL) {
@@ -386,18 +438,34 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	while (ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
-		dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
-				frmsize.discrete.height);
-		obs_property_list_add_int(prop, buffer.array,
-				pack_tuple(frmsize.discrete.width,
-				frmsize.discrete.height));
-		frmsize.index++;
-	}
+	ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
 
-	if (frmsize.type != V4L2_FRMSIZE_TYPE_DISCRETE) {
+	switch(frmsize.type) {
+	case V4L2_FRMSIZE_TYPE_DISCRETE:
+		while (ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
+			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
+					frmsize.discrete.height);
+			obs_property_list_add_int(prop, buffer.array,
+					pack_tuple(frmsize.discrete.width,
+					frmsize.discrete.height));
+			frmsize.index++;
+		}
+		break;
+	default:
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
-			"are currently not supported");
+			"are currently hardcoded");
+
+		for (uint_fast32_t i = 0; ; ++i) {
+			int packed = fixed_framesizes[i];
+			if (!packed)
+				break;
+			int width;
+			int height;
+			unpack_tuple(&width, &height, packed);
+			dstr_printf(&buffer, "%dx%d", width, height);
+			obs_property_list_add_int(prop, buffer.array, packed);
+		}
+		break;
 	}
 
 	dstr_free(&buffer);
@@ -419,19 +487,35 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	while (ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
-		float fps = (float) frmival.discrete.denominator /
-			frmival.discrete.numerator;
-		int pack = pack_tuple(frmival.discrete.numerator,
-				frmival.discrete.denominator);
-		dstr_printf(&buffer, "%.2f", fps);
-		obs_property_list_add_int(prop, buffer.array, pack);
-		frmival.index++;
-	}
+	ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
 
-	if (frmival.type != V4L2_FRMIVAL_TYPE_DISCRETE) {
+	switch(frmival.type) {
+	case V4L2_FRMIVAL_TYPE_DISCRETE:
+		while (ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
+			float fps = (float) frmival.discrete.denominator /
+				frmival.discrete.numerator;
+			int pack = pack_tuple(frmival.discrete.numerator,
+					frmival.discrete.denominator);
+			dstr_printf(&buffer, "%.2f", fps);
+			obs_property_list_add_int(prop, buffer.array, pack);
+			frmival.index++;
+		}
+		break;
+	default:
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
-			"are currently not supported");
+			"are currently hardcoded");
+		for (uint_fast32_t i = 0; ; ++i) {
+			int packed = fixed_framerates[i];
+			if (!packed)
+				break;
+			int num;
+			int denom;
+			unpack_tuple(&num, &denom, packed);
+			float fps = (float) denom / num;
+			dstr_printf(&buffer, "%.2f", fps);
+			obs_property_list_add_int(prop, buffer.array, packed);
+		}
+		break;
 	}
 
 	dstr_free(&buffer);
