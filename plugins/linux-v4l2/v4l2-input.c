@@ -299,16 +299,18 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 	dstr_init_copy(&device, "/dev/");
 
 	while ((dp = readdir(dirp)) != NULL) {
+		if (dp->d_type == DT_DIR)
+			continue;
+
 		dstr_resize(&device, 5);
 		dstr_cat(&device, dp->d_name);
 
 		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1)
 			continue;
 
-		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1)
-			continue;
-
-		if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
+		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
+			
+		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
 			obs_property_list_add_string(prop,
 					(char *) video_cap.card,
 					device.array);
@@ -318,6 +320,7 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 				first = false;
 			}
 		}
+
 		close(fd);
 	}
 
