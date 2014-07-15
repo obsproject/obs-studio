@@ -38,4 +38,4 @@ target_link_libraries(mac-capture
 	${COCOA})
 
 install_obs_plugin(mac-capture)
-install_obs_plugin_data(mac-capture ../../build/data/obs-plugins/mac-capture)
+install_obs_plugin_data(mac-capture data)

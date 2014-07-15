@@ -45,7 +45,6 @@ libtool
 ltmain.sh
 
 *.dmg
-*.json
 *.app
 .DS_Store
 
@@ -95,6 +94,7 @@ tags
 
 #cmake
 cmbuild/
+build/
 
 #xcode
 *.xcodeproj/

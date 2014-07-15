@@ -14,4 +14,4 @@ target_link_libraries(rtmp-services
 	${OBS_JANSSON_IMPORT})
 
 install_obs_plugin(rtmp-services)
-install_obs_plugin_data(rtmp-services ../../build/data/obs-plugins/rtmp-services)
+install_obs_plugin_data(rtmp-services data)

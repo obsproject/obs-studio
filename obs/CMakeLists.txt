@@ -128,5 +128,5 @@ target_link_libraries(obs
 	${obs_PLATFORM_LIBRARIES})
 
 install_obs_core(obs)
-install_obs_data(obs ../build/data/obs-studio obs-studio)
+install_obs_data(obs data obs-studio)
 
