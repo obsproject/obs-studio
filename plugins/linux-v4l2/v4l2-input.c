@@ -291,35 +291,37 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 	struct dstr device;
 	bool first = true;
 
+	dirp = opendir("/sys/class/video4linux");
+	if (!dirp)
+		return;
+
 	obs_property_list_clear(prop);
 	dstr_init_copy(&device, "/dev/");
 
-	dirp = opendir("/sys/class/video4linux");
-	if (dirp) {
-		while ((dp = readdir(dirp)) != NULL) {
-			dstr_resize(&device, 5);
-			dstr_cat(&device, dp->d_name);
-			if ((fd = open(device.array,
-						O_RDWR | O_NONBLOCK)) == -1) {
-				continue;
+	while ((dp = readdir(dirp)) != NULL) {
+		dstr_resize(&device, 5);
+		dstr_cat(&device, dp->d_name);
+
+		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1)
+			continue;
+
+		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1)
+			continue;
+
+		if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
+			obs_property_list_add_string(prop,
+					(char *) video_cap.card,
+					device.array);
+			if (first) {
+				obs_data_setstring(settings,
+					"device_id", device.array);
+				first = false;
 			}
-			if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
-				continue;
-			} else if (video_cap.capabilities &
-					V4L2_CAP_VIDEO_CAPTURE) {
-				obs_property_list_add_string(prop,
-						(char *) video_cap.card,
-						device.array);
-				if (first) {
-					obs_data_setstring(settings,
-						"device_id", device.array);
-					first = false;
-				}
-			}
-			close(fd);
 		}
-		closedir(dirp);
+		close(fd);
 	}
+
+	closedir(dirp);
 	dstr_free(&device);
 }
 
