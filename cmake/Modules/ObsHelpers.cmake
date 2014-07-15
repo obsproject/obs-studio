@@ -191,6 +191,53 @@ macro(install_obs_headers)
 	endforeach()
 endmacro()
 
+function(obs_debug_copy_helper target dest)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}"
+			"-DCONFIG=$<CONFIGURATION>"
+			"-DFNAME=$<TARGET_FILE_NAME:${target}>"
+			"-DINPUT=$<TARGET_FILE_DIR:${target}>"
+			"-DOUTPUT=${dest}"
+			-P "${CMAKE_SOURCE_DIR}/cmake/copy_on_debug_helper.cmake"
+		VERBATIM)
+endfunction()
+
+function(install_obs_pdb ttype target)
+	if(NOT MSVC)
+		return()
+	endif()
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_bit_suffix "64bit")
+	else()
+		set(_bit_suffix "32bit")
+	endif()
+
+	obs_debug_copy_helper(${target} "${CMAKE_CURRENT_BINARY_DIR}/pdbs")
+
+	if("${ttype}" STREQUAL "PLUGIN")
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			obs_debug_copy_helper(${target} "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}")
+		endif()
+
+		install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+			DESTINATION "${OBS_PLUGIN_DESTINATION}"
+			CONFIGURATIONS Debug RelWithDebInfo)
+	else()
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			obs_debug_copy_helper(${target} "$ENV{obsInstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}")
+		endif()
+
+		install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+			CONFIGURATIONS Debug RelWithDebInfo)
+	endif()
+endfunction()
+
 macro(install_obs_core target)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_bit_suffix "64bit/")
@@ -216,7 +263,6 @@ macro(install_obs_core target)
 			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
 
-
 	if(DEFINED ENV{obsInstallerTempDir})
 		get_property(target_type TARGET ${target} PROPERTY TYPE)
 		if("${target_type}" STREQUAL "EXECUTABLE")
@@ -227,9 +273,12 @@ macro(install_obs_core target)
 
 		add_custom_command(TARGET ${target} POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E copy
-				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${tmp_target_dir}/$<TARGET_FILE_NAME:${target}>"
+				"$<TARGET_FILE:${target}>"
+				"$ENV{obsInstallerTempDir}/${tmp_target_dir}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
+
+	install_obs_pdb(CORE ${target})
 endmacro()
 
 macro(install_obs_plugin target)
@@ -258,6 +307,8 @@ macro(install_obs_plugin target)
 				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
+
+	install_obs_pdb(PLUGIN ${target})
 endmacro()
 
 macro(install_obs_data target datadir datadest)
