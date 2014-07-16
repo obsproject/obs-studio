@@ -287,3 +287,5 @@ target_link_libraries(libobs
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)
 install_obs_headers(${libobs_HEADERS})
+
+obs_install_additional(libobs)

@@ -22,14 +22,22 @@ else()
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libavutil/avutil.h
 		HINTS
+			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
-			${_AVUTIL_INCLUDE_DIRS}
+			"${_AVUTIL_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include
 		PATH_SUFFIXES ffmpeg libav)
 
 	find_library(AVUTIL_LIB
 		NAMES avutil
-		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_AVUTIL_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS
+			"${FFMPEG_INCLUDE_DIR}/../lib"
+			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
+			"${_AVUTIL_LIBRARY_DIRS}"
+			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBAVUTIL_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavutil include dir")
 	set(LIBAVUTIL_LIBRARIES ${AVUTIL_LIB} CACHE STRING "Libavutil libraries")

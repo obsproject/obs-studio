@@ -91,7 +91,15 @@ function(obs_generate_multiarch_installer)
 		USE_SOURCE_PERMISSIONS)
 endfunction()
 
-function(obs_install_additional)
+function(obs_helper_copy_dir target source dest)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory
+			"${source}"
+			"${dest}"
+		VERBATIM)
+endfunction()
+
+function(obs_install_additional maintarget)
 	set(addfdir "${CMAKE_SOURCE_DIR}/additional_install_files")
 	if(DEFINED ENV{obsAdditionalInstallFiles})
 		set(addfdir "$ENV{obsAdditionalInstallFiles}")
@@ -111,7 +119,7 @@ function(obs_install_additional)
 		DESTINATION "${OBS_DATA_DESTINATION}"
 		USE_SOURCE_PERMISSIONS
 		PATTERN ".gitignore" EXCLUDE)
-	
+
 	if(INSTALLER_RUN)
 		install(DIRECTORY "${addfdir}/libs32/"
 			DESTINATION "${OBS_LIBRARY32_DESTINATION}"
@@ -139,6 +147,16 @@ function(obs_install_additional)
 			USE_SOURCE_PERMISSIONS
 			PATTERN ".gitignore" EXCLUDE)
 	endif()
+
+	obs_helper_copy_dir(${maintarget}
+		"${addfdir}/misc/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/")
+	obs_helper_copy_dir(${maintarget}
+		"${addfdir}/data/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_DATA_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget}
+		"${addfdir}/exec${_lib_suffix}/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
 endfunction()
 
 macro(export_obs_core target exportname)

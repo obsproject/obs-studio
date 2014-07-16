@@ -129,4 +129,3 @@ target_link_libraries(obs
 
 install_obs_core(obs)
 install_obs_data(obs data obs-studio)
-

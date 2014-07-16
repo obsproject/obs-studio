@@ -22,17 +22,21 @@ else()
 	find_path(Libfdk_INCLUDE_DIR
 		NAMES fdk-aac/aacenc_lib.h
 		HINTS
+			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV LibfdkPath
 			ENV FFmpegPath
-			${_LIBFDK_INCLUDE_DIRS}
+			"${_LIBFDK_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
 	find_library(Libfdk_LIB
 		NAMES fdk-aac libfdk-aac
 		HINTS
-			${Libfdk_INCLUDE_DIR}/../lib
-			${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}
-			${_LIBFDK_LIBRARY_DIRS}
+			"${Libfdk_INCLUDE_DIR}/../lib"
+			"${Libfdk_INCLUDE_DIR}/../lib${_lib_suffix}"
+			"${Libfdk_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}"
+			"${_LIBFDK_LIBRARY_DIRS}"
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBFDK_INCLUDE_DIRS ${Libfdk_INCLUDE_DIR} CACHE PATH "Libfdk include dir")

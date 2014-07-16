@@ -82,5 +82,3 @@ if(NOT INSTALLER_RUN)
 else()
 	obs_generate_multiarch_installer()
 endif()
-
-obs_install_additional()

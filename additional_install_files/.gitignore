@@ -1,0 +1,8 @@
+*
+!.gitignore
+!data/
+!exec32/
+!exec64/
+!libs32/
+!libs64/
+!misc/
