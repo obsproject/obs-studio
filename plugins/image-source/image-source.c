@@ -82,6 +82,7 @@ static void image_source_render(void *data, effect_t effect)
 	if (!context->tex)
 		return;
 
+	gs_reset_blend_state();
 	effect_settexture(effect_getparambyname(effect, "image"), context->tex);
 	gs_draw_sprite(context->tex, 0, context->cx, context->cy);
 }
