@@ -993,8 +993,6 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 		QMetaObject::invokeMethod(window,
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
-	else
-		window->sourceSceneRefs[source] = 0;
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t params)
