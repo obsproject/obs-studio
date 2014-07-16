@@ -1107,8 +1107,9 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	/* --------------------------------------- */
 
-	float right  = float(window->ui->preview->width())  - window->previewX;
-	float bottom = float(window->ui->preview->height()) - window->previewY;
+	QSize previewSize = GetPixelSize(window->ui->preview);
+	float right  = float(previewSize.width())  - window->previewX;
+	float bottom = float(previewSize.height()) - window->previewY;
 
 	gs_ortho(-window->previewX, right,
 	         -window->previewY, bottom,
