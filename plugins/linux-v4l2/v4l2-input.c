@@ -297,9 +297,9 @@ static void *v4l2_thread(void *vptr)
 			break;
 		}
 
-		video_format_get_parameters(VIDEO_CS_709, VIDEO_RANGE_PARTIAL,
-				out.color_matrix, out.color_range_min,
-				out.color_range_max);
+		video_format_get_parameters(VIDEO_CS_DEFAULT,
+				VIDEO_RANGE_PARTIAL, out.color_matrix,
+				out.color_range_min, out.color_range_max);
 		out.data[0] = (uint8_t *) data->buf[buf.index].start;
 		out.linesize[0] = data->linesize;
 		out.width = data->width;
