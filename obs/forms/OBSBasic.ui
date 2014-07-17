@@ -631,12 +631,12 @@
   </action>
   <action name="action_Open">
    <property name="text">
-    <string>Basic.MainMenu.File.Export</string>
+    <string>Basic.MainMenu.File.Import</string>
    </property>
   </action>
   <action name="action_Save">
    <property name="text">
-    <string>Basic.MainMenu.File.Import</string>
+    <string>Basic.MainMenu.File.Export</string>
    </property>
   </action>
   <action name="action_Settings">
