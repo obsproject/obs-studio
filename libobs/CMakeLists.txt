@@ -270,6 +270,7 @@ endif()
 
 target_include_directories(libobs PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+	"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
 	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
 
 
