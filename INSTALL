@@ -44,11 +44,47 @@ Mac OSX
 
 
 Linux
-  - If using debian-based distributions, you may have to get the latest FFmpeg
-    repo -- default debian packages seem to be a bit lacking, so you might have
-    to either get precompiled packages from http://deb-multimedia.org/ (or
-    similar sources, use your own judgement) or get the latest FFmpeg repo,
-    compile, and do a make install
+  - You need a fairly recent Linux distribution.
+    Ubuntu 14.04 or a similar recent Linux distribution works fine, but
+    anything that's up-to-date should work.
+    Ubuntu 13.10 or older will _not_ work because of the ancient
+    version of libav they use.
 
-  - Instructions pending -- linux code still under construction, and not yet
-    fully functioning.  Will add more information later
+  - Because Ubuntu and Debian come with libav instead of ffmpeg, you have
+    to get the original ffmpeg. Recommended:
+    For Ubuntu 14.04:
+      https://launchpad.net/~jon-severinsson/+archive/ubuntu/ffmpeg
+    For Debian:
+      http://www.deb-multimedia.org/
+
+  - There is also a ppa available in case you do not want to compile
+    yourself(Ubuntu 14.04 only):
+      https://launchpad.net/~btbn/+archive/ubuntu/obs-studio
+
+  - Build dependencies on Ubuntu 14.04 with ppa from above:
+    cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
+    libavformat-dev libswscale-dev libx264-dev libswresample-dev
+    libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
+
+  - Building in portable mode(assuming you are in a terminal in the
+    obs-studio base dir):
+    
+    mkdir build && cd build
+    cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
+    make -j4 && make install
+
+  - After that you should have a portable install in ~/obs-studio-portable
+    Change to bin/64bit or bin/32bit and run ./obs to run it.
+
+  - If you want to install obs-studio into your system, it's recommended
+    to use checkinstall instead of a plain make install. It allows for a
+    clean uninstall and allows the package manager to keep track of the
+    installed files:
+
+    sudo apt-get install checkinstall
+    mkdir build && cd build
+    cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+    make -j4
+    sudo checkinstall
+
+
