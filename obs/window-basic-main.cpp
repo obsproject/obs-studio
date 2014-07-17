@@ -879,9 +879,9 @@ void OBSBasic::updateFileRead()
 }
 
 #ifdef __APPLE__
-#define VERSION_ENTRY "windows"
-#elif _WIN32
 #define VERSION_ENTRY "mac"
+#elif _WIN32
+#define VERSION_ENTRY "windows"
 #else
 #define VERSION_ENTRY "other"
 #endif
