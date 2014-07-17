@@ -31,7 +31,7 @@ Windows:
 
 
 Mac OSX
-  - Use macports or homebrew and get FFmpeg, glew, qt5 and cmake.
+  - Use macports or homebrew and get FFmpeg, glew, cmake, and qt5.
 
   - In a terminal, go to the obs-studio directory create a cmbuild subdir
     and change to it, then to build, type: cmake .. && make
