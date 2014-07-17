@@ -449,8 +449,8 @@
     <property name="title">
      <string>Basic.MainMenu.File</string>
     </property>
-    <addaction name="action_Save"/>
     <addaction name="action_Open"/>
+    <addaction name="action_Save"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
     <addaction name="separator"/>
