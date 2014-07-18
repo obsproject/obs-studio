@@ -82,3 +82,5 @@ if(NOT INSTALLER_RUN)
 else()
 	obs_generate_multiarch_installer()
 endif()
+
+include(CopyMSVCBins)
