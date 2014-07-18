@@ -170,7 +170,6 @@ static inline bool update_frame(struct av_capture *capture,
 		AVLOG(LOG_ERROR, "Unhandled fourcc: %s (0x%x) (%zu planes)",
 				AV_FOURCC_STR(fourcc), fourcc,
 				CVPixelBufferGetPlaneCount(img));
-		NSLog(@"%@", sample_buffer);
 		return false;
 	}
 
@@ -825,7 +824,6 @@ static void av_capture_update(void *data, obs_data_t settings)
 		return switch_device(capture, uid, settings);
 
 	NSString *preset = get_string(settings, "preset");
-	NSLog(@"%@", preset);
 	if (![capture->device supportsAVCaptureSessionPreset:preset]) {
 		AVLOG(LOG_ERROR, "Preset %s not available", preset.UTF8String);
 		preset = select_preset(capture->device, preset);

@@ -92,14 +92,16 @@ static void build_flv_meta_data(obs_output_t context,
 
 	enc_bool_val(&enc, end, "stereo", audio_output_channels(audio) == 2);
 
-	dstr_printf(&encoder_name, "%s (libobs version %d.%d.%d",
-			MODULE_NAME,
+	dstr_printf(&encoder_name, "%s (libobs version ",
+			MODULE_NAME);
+
+#ifdef HAVE_OBSCONFIG_H
+	dstr_cat(&encoder_name, OBS_VERSION);
+#else
+	dstr_catf(&encoder_name, "%d.%d.%d",
 			LIBOBS_API_MAJOR_VER,
 			LIBOBS_API_MINOR_VER,
 			LIBOBS_API_PATCH_VER);
-
-#ifdef HAVE_OBSCONFIG_H
-	dstr_catf(&encoder_name, ", %s", OBS_VERSION);
 #endif
 
 	dstr_cat(&encoder_name, ")");

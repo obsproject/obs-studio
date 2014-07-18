@@ -14,7 +14,7 @@ struct image_source {
 
 static const char *image_source_get_name(void)
 {
-	return obs_module_text("Image");
+	return obs_module_text("ImageInput");
 }
 
 static void image_source_update(void *data, obs_data_t settings)
@@ -82,6 +82,7 @@ static void image_source_render(void *data, effect_t effect)
 	if (!context->tex)
 		return;
 
+	gs_reset_blend_state();
 	effect_settexture(effect_getparambyname(effect, "image"), context->tex);
 	gs_draw_sprite(context->tex, 0, context->cx, context->cy);
 }

@@ -859,8 +859,14 @@ void OBSBasic::CheckForUpdates()
 {
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	QUrl url("https://obsproject.com/obs2_update/mac_basic.json");
-	updateReply = networkManager.get(QNetworkRequest(url));
+	string versionString("obs-basic ");
+	versionString += App()->GetVersionString();
+
+	QNetworkRequest request;
+	request.setUrl(QUrl("https://obsproject.com/obs2_update/basic.json"));
+	request.setRawHeader("User-Agent", versionString.c_str());
+
+	updateReply = networkManager.get(request);
 	connect(updateReply, SIGNAL(finished()),
 			this, SLOT(updateFileFinished()));
 	connect(updateReply, SIGNAL(readyRead()),
@@ -871,6 +877,14 @@ void OBSBasic::updateFileRead()
 {
 	updateReturnData.push_back(updateReply->readAll());
 }
+
+#ifdef __APPLE__
+#define VERSION_ENTRY "mac"
+#elif _WIN32
+#define VERSION_ENTRY "windows"
+#else
+#define VERSION_ENTRY "other"
+#endif
 
 void OBSBasic::updateFileFinished()
 {
@@ -887,9 +901,9 @@ void OBSBasic::updateFileFinished()
 		return;
 
 	obs_data_t returnData   = obs_data_create_from_json(jsonReply);
-	obs_data_t versionData  = obs_data_getobj(returnData, "version");
+	obs_data_t versionData  = obs_data_getobj(returnData, VERSION_ENTRY);
 	const char *description = obs_data_getstring(returnData, "description");
-	const char *download    = obs_data_getstring(returnData, "download");
+	const char *download    = obs_data_getstring(versionData, "download");
 
 	if (returnData && versionData && description && download) {
 		long major   = obs_data_getint(versionData, "major");
@@ -979,8 +993,6 @@ void OBSBasic::SourceAdded(void *data, calldata_t params)
 		QMetaObject::invokeMethod(window,
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
-	else
-		window->sourceSceneRefs[source] = 0;
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t params)
@@ -1093,8 +1105,9 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	/* --------------------------------------- */
 
-	float right  = float(window->ui->preview->width())  - window->previewX;
-	float bottom = float(window->ui->preview->height()) - window->previewY;
+	QSize previewSize = GetPixelSize(window->ui->preview);
+	float right  = float(previewSize.width())  - window->previewX;
+	float bottom = float(previewSize.height()) - window->previewY;
 
 	gs_ortho(-window->previewX, right,
 	         -window->previewY, bottom,

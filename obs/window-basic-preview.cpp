@@ -23,10 +23,12 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	float pixelRatio = main->devicePixelRatio();
+	float scale = pixelRatio / main->previewScale;
 	vec2 pos;
 	vec2_set(&pos,
-		(float(event->x()) - main->previewX) / main->previewScale,
-		(float(event->y()) - main->previewY) / main->previewScale);
+		(float(event->x()) - main->previewX / pixelRatio) * scale,
+		(float(event->y()) - main->previewY / pixelRatio) * scale);
 
 	return pos;
 }
@@ -288,7 +290,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	if (!scene)
 		return;
 
-	HandleFindData data(pos, main->previewScale);
+	HandleFindData data(pos, main->previewScale / main->devicePixelRatio());
 	obs_scene_enum_items(scene, FindHandleAtPos, &data);
 
 	stretchItem     = std::move(data.item);
@@ -323,8 +325,9 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
-	float x = float(event->x()) - main->previewX;
-	float y = float(event->y()) - main->previewY;
+	float pixelRatio = main->devicePixelRatio();
+	float x = float(event->x()) - main->previewX / pixelRatio;
+	float y = float(event->y()) - main->previewY / pixelRatio;
 
 	if (event->button() != Qt::LeftButton)
 		return;
@@ -334,7 +337,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_set(&startPos, x, y);
 	GetStretchHandleData(startPos);
 
-	vec2_divf(&startPos, &startPos, main->previewScale);
+	vec2_divf(&startPos, &startPos, main->previewScale / pixelRatio);
 	startPos.x = std::round(startPos.x);
 	startPos.y = std::round(startPos.y);
 
