@@ -48,6 +48,8 @@ endif()
 
 add_definitions(-DLIBOBS_EXPORTS)
 
+include_directories(${OBS_JANSSON_INCLUDE_DIRS})
+
 if(WIN32)
 	set(libobs_PLATFORM_SOURCES
 		obs-windows.c
@@ -268,14 +270,15 @@ endif()
 
 target_include_directories(libobs PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+	"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
 	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
 
 
 target_link_libraries(libobs
 	PRIVATE
-		jansson
 		${libobs_PLATFORM_DEPS}
 		${libobs_image_loading_LIBRARIES}
+		${OBS_JANSSON_IMPORT}
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}
 		${LIBAVFORMAT_LIBRARIES}
