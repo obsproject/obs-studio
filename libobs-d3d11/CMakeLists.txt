@@ -18,7 +18,7 @@ set(libobs-d3d11_SOURCES
 set(libobs-d3d11_HEADERS
 	d3d11-shaderprocessor.hpp
 	d3d11-subsystem.hpp)
-	
+
 add_library(libobs-d3d11 MODULE
 	${libobs-d3d11_SOURCES}
 	${libobs-d3d11_HEADERS})
