@@ -41,7 +41,7 @@ static inline bool check_lib_path(const char* data, const char *path,
 	bool result = false;
 	struct dstr tmp;
 
-	dstr_init_copy(&tmp, "lib");
+	dstr_init(&tmp);
 	dstr_cat(&tmp, data);
 	dstr_cat(&tmp, ".so");
 	result = check_path(tmp.array, path, output);
@@ -63,14 +63,25 @@ char *find_plugin(const char *plugin)
 	if(sizeof(void*) == 4) {
 		if (check_lib_path(plugin, "../../obs-plugins/32bit/", &output))
 			return output.array;
+
+		if (check_lib_path(plugin, "../../obs-plugins/32bit/lib", &output))
+			return output.array;
 	} else {
 		if (check_lib_path(plugin, "../../obs-plugins/64bit/", &output))
+			return output.array;
+
+		if (check_lib_path(plugin, "../../obs-plugins/64bit/lib", &output))
 			return output.array;
 	}
 
 	if (OBS_INSTALL_PREFIX [0] != 0) {
 		if (check_lib_path(plugin,
 					OBS_INSTALL_PREFIX "lib/obs-plugins/",
+					&output))
+			return output.array;
+
+		if (check_lib_path(plugin,
+					OBS_INSTALL_PREFIX "lib/obs-plugins/lib",
 					&output))
 			return output.array;
 	}
