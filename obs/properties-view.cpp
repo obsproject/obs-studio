@@ -9,6 +9,7 @@
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
+#include <QPlainTextEdit>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "obs-app.hpp"
@@ -113,8 +114,14 @@ QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 {
 	const char    *name = obs_property_name(prop);
 	const char    *val  = obs_data_getstring(settings, name);
-	obs_text_type type  = obs_proprety_text_type(prop);  
-	QLineEdit     *edit = new QLineEdit();
+	obs_text_type type  = obs_proprety_text_type(prop);
+
+	if (type == OBS_TEXT_MULTILINE) {
+		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
+		return NewWidget(prop, edit, SIGNAL(textChanged()));
+	}
+
+	QLineEdit *edit = new QLineEdit();
 
 	if (type == OBS_TEXT_PASSWORD)
 		edit->setEchoMode(QLineEdit::Password);
@@ -435,6 +442,15 @@ void WidgetInfo::FloatChanged(const char *setting)
 
 void WidgetInfo::TextChanged(const char *setting)
 {
+	obs_text_type type  = obs_proprety_text_type(property);
+
+	if (type == OBS_TEXT_MULTILINE) {
+		QPlainTextEdit *edit = static_cast<QPlainTextEdit*>(widget);
+		obs_data_setstring(view->settings, setting,
+				QT_TO_UTF8(edit->toPlainText()));
+		return;
+	}
+
 	QLineEdit *edit = static_cast<QLineEdit*>(widget);
 	obs_data_setstring(view->settings, setting, QT_TO_UTF8(edit->text()));
 }
