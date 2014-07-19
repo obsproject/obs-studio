@@ -348,14 +348,12 @@ function(install_obs_pdb ttype target)
 endfunction()
 
 macro(install_obs_core target)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	if(APPLE)
+		set(_bit_suffix "")
+	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_bit_suffix "64bit/")
 	else()
 		set(_bit_suffix "32bit/")
-	endif()
-
-	if(APPLE)
-		set(_bit_suffix "")
 	endif()
 
 	if("${ARGV1}" STREQUAL "EXPORT")
@@ -391,15 +389,16 @@ macro(install_obs_core target)
 endmacro()
 
 macro(install_obs_plugin target)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	if(APPLE)
+		set(_bit_suffix "")
+	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_bit_suffix "64bit/")
 	else()
 		set(_bit_suffix "32bit/")
 	endif()
 
-	if(APPLE)
-		set(_bit_suffix "")
-	endif()
+	set_target_properties(${target} PROPERTIES
+		PREFIX "")
 
 	install(TARGETS ${target}
 		LIBRARY DESTINATION "${OBS_PLUGIN_DESTINATION}"
