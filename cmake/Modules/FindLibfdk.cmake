@@ -23,6 +23,9 @@ else()
 		set(_lib_suffix 32)
 	endif()
 
+	set(LIBFDK_PATH_ARCH LibfdkPath${_lib_suffix})
+	set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
+
 	find_path(Libfdk_INCLUDE_DIR
 		NAMES fdk-aac/aacenc_lib.h
 		HINTS
@@ -30,6 +33,8 @@ else()
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV LibfdkPath
 			ENV FFmpegPath
+			ENV ${LIBFDK_PATH_ARCH}
+			ENV ${FFMPEG_PATH_ARCH}
 			"${_LIBFDK_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
@@ -39,6 +44,7 @@ else()
 			"${Libfdk_INCLUDE_DIR}/../lib"
 			"${Libfdk_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${Libfdk_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${Libfdk_INCLUDE_DIR}/lib"
 			"${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}"
 			"${_LIBFDK_LIBRARY_DIRS}"
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)

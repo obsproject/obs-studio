@@ -23,6 +23,9 @@ else()
 		set(_lib_suffix 32)
 	endif()
 
+	set(X264_PATH_ARCH x264Path${_lib_suffix})
+	set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
+
 	find_path(X264_INCLUDE_DIR
 		NAMES x264.h
 		HINTS
@@ -30,6 +33,8 @@ else()
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV x264Path
 			ENV FFmpegPath
+			ENV ${X264_PATH_ARCH}
+			ENV ${FFMPEG_PATH_ARCH}
 			"${_X264_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
@@ -39,6 +44,7 @@ else()
 			"${X264_INCLUDE_DIR}/../lib"
 			"${X264_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${X264_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${X264_INCLUDE_DIR}/lib"
 			"${X264_INCLUDE_DIR}/lib${_lib_suffix}"
 			"${_X264_LIBRARY_DIRS}"
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
