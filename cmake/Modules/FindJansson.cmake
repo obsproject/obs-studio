@@ -20,10 +20,13 @@ else()
 		set(_lib_suffix 32)
 	endif()
 
+	set(JANSSON_PATH_ARCH JanssonPath${_lib_suffix})
+
 	find_path(Jansson_INCLUDE_DIR
 		NAMES jansson.h
 		HINTS
 			ENV JanssonPath
+			ENV ${JANSSON_PATH_ARCH}
 			${_JANSSON_INCLUDE_DIRS}
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 

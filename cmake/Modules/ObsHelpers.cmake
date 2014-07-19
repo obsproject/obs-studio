@@ -91,7 +91,18 @@ function(obs_generate_multiarch_installer)
 		USE_SOURCE_PERMISSIONS)
 endfunction()
 
-function(obs_install_additional)
+function(obs_helper_copy_dir target target_configs source dest)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}"
+			"-DCONFIG=$<CONFIGURATION>"
+			"-DTARGET_CONFIGS=${target_configs}"
+			"-DINPUT=${source}"
+			"-DOUTPUT=${dest}"
+			-P "${CMAKE_SOURCE_DIR}/cmake/copy_helper.cmake"
+		VERBATIM)
+endfunction()
+
+function(obs_install_additional maintarget)
 	set(addfdir "${CMAKE_SOURCE_DIR}/additional_install_files")
 	if(DEFINED ENV{obsAdditionalInstallFiles})
 		set(addfdir "$ENV{obsAdditionalInstallFiles}")
@@ -111,7 +122,7 @@ function(obs_install_additional)
 		DESTINATION "${OBS_DATA_DESTINATION}"
 		USE_SOURCE_PERMISSIONS
 		PATTERN ".gitignore" EXCLUDE)
-	
+
 	if(INSTALLER_RUN)
 		install(DIRECTORY "${addfdir}/libs32/"
 			DESTINATION "${OBS_LIBRARY32_DESTINATION}"
@@ -129,6 +140,48 @@ function(obs_install_additional)
 			DESTINATION "${OBS_EXECUTABLE64_DESTINATION}"
 			USE_SOURCE_PERMISSIONS
 			PATTERN ".gitignore" EXCLUDE)
+
+		install(DIRECTORY "${addfdir}/libs32d/"
+			DESTINATION "${OBS_LIBRARY32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec32d/"
+			DESTINATION "${OBS_EXECUTABLE32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/libs64d/"
+			DESTINATION "${OBS_LIBRARY64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec64d/"
+			DESTINATION "${OBS_EXECUTABLE64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+
+		install(DIRECTORY "${addfdir}/libs32r/"
+			DESTINATION "${OBS_LIBRARY32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec32r/"
+			DESTINATION "${OBS_EXECUTABLE32_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/libs64r/"
+			DESTINATION "${OBS_LIBRARY64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec64r/"
+			DESTINATION "${OBS_EXECUTABLE64_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
 	else()
 		install(DIRECTORY "${addfdir}/libs${_lib_suffix}/"
 			DESTINATION "${OBS_LIBRARY_DESTINATION}"
@@ -138,7 +191,55 @@ function(obs_install_additional)
 			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
 			USE_SOURCE_PERMISSIONS
 			PATTERN ".gitignore" EXCLUDE)
+
+		install(DIRECTORY "${addfdir}/libs${_lib_suffix}d/"
+			DESTINATION "${OBS_LIBRARY_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec${_lib_suffix}d/"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Debug
+			PATTERN ".gitignore" EXCLUDE)
+
+		install(DIRECTORY "${addfdir}/libs${_lib_suffix}r/"
+			DESTINATION "${OBS_LIBRARY_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
+		install(DIRECTORY "${addfdir}/exec${_lib_suffix}r/"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+			USE_SOURCE_PERMISSIONS
+			CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+			PATTERN ".gitignore" EXCLUDE)
 	endif()
+
+	obs_helper_copy_dir(${maintarget} ALL
+		"${addfdir}/misc/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/")
+	obs_helper_copy_dir(${maintarget} ALL
+		"${addfdir}/data/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_DATA_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget} ALL
+		"${addfdir}/libs${_lib_suffix}/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget} ALL
+		"${addfdir}/exec${_lib_suffix}/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+
+	obs_helper_copy_dir(${maintarget} "Release;MinSizeRel;RelWithDebInfo"
+		"${addfdir}/exec${_lib_suffix}r/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget} "Debug"
+		"${addfdir}/exec${_lib_suffix}d/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget} "Release;MinSizeRel;RelWithDebInfo"
+		"${addfdir}/libs${_lib_suffix}r/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
+	obs_helper_copy_dir(${maintarget} "Debug"
+		"${addfdir}/libs${_lib_suffix}d/"
+		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
 endfunction()
 
 macro(export_obs_core target exportname)
@@ -191,6 +292,53 @@ macro(install_obs_headers)
 	endforeach()
 endmacro()
 
+function(obs_debug_copy_helper target dest)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}"
+			"-DCONFIG=$<CONFIGURATION>"
+			"-DFNAME=$<TARGET_FILE_NAME:${target}>"
+			"-DINPUT=$<TARGET_FILE_DIR:${target}>"
+			"-DOUTPUT=${dest}"
+			-P "${CMAKE_SOURCE_DIR}/cmake/copy_on_debug_helper.cmake"
+		VERBATIM)
+endfunction()
+
+function(install_obs_pdb ttype target)
+	if(NOT MSVC)
+		return()
+	endif()
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_bit_suffix "64bit")
+	else()
+		set(_bit_suffix "32bit")
+	endif()
+
+	obs_debug_copy_helper(${target} "${CMAKE_CURRENT_BINARY_DIR}/pdbs")
+
+	if("${ttype}" STREQUAL "PLUGIN")
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/obs-plugins/${_bit_suffix}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			obs_debug_copy_helper(${target} "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}")
+		endif()
+
+		install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+			DESTINATION "${OBS_PLUGIN_DESTINATION}"
+			CONFIGURATIONS Debug RelWithDebInfo)
+	else()
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			obs_debug_copy_helper(${target} "$ENV{obsInstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}")
+		endif()
+
+		install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+			CONFIGURATIONS Debug RelWithDebInfo)
+	endif()
+endfunction()
+
 macro(install_obs_core target)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(_bit_suffix "64bit/")
@@ -216,7 +364,6 @@ macro(install_obs_core target)
 			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}$<TARGET_FILE_NAME:${target}>"
 		VERBATIM)
 
-
 	if(DEFINED ENV{obsInstallerTempDir})
 		get_property(target_type TARGET ${target} PROPERTY TYPE)
 		if("${target_type}" STREQUAL "EXECUTABLE")
@@ -227,9 +374,12 @@ macro(install_obs_core target)
 
 		add_custom_command(TARGET ${target} POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E copy
-				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${tmp_target_dir}/$<TARGET_FILE_NAME:${target}>"
+				"$<TARGET_FILE:${target}>"
+				"$ENV{obsInstallerTempDir}/${tmp_target_dir}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
+
+	install_obs_pdb(CORE ${target})
 endmacro()
 
 macro(install_obs_plugin target)
@@ -258,6 +408,8 @@ macro(install_obs_plugin target)
 				"$<TARGET_FILE:${target}>" "$ENV{obsInstallerTempDir}/${OBS_PLUGIN_DESTINATION}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
+
+	install_obs_pdb(PLUGIN ${target})
 endmacro()
 
 macro(install_obs_data target datadir datadest)

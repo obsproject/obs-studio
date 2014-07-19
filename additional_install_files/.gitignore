@@ -1,0 +1,16 @@
+*
+!.gitignore
+!data/
+!exec32/
+!exec32r/
+!exec32d/
+!exec64/
+!exec64r/
+!exec64d/
+!libs32/
+!libs32r/
+!libs32d/
+!libs64/
+!libs64r/
+!libs64d/
+!misc/

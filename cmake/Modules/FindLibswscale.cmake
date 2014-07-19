@@ -19,17 +19,29 @@ else()
 		set(_lib_suffix 32)
 	endif()
 	
+	set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
+
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libswscale/swscale.h
 		HINTS
+			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
-			${_SWSCALE_INCLUDE_DIRS}
+			ENV ${FFMPEG_PATH_ARCH}
+			"${_SWSCALE_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include
 		PATH_SUFFIXES ffmpeg libav)
 
 	find_library(SWSCALE_LIB
 		NAMES swscale
-		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_SWSCALE_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS
+			"${FFMPEG_INCLUDE_DIR}/../lib"
+			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/lib"
+			"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
+			"${_SWSCALE_LIBRARY_DIRS}"
+			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBSWSCALE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswscale include dir")
 	set(LIBSWSCALE_LIBRARIES ${SWSCALE_LIB} CACHE STRING "Libswscale libraries")

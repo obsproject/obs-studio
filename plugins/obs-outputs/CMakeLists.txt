@@ -55,4 +55,4 @@ target_link_libraries(obs-outputs
 	${obs-outputs_PLATFORM_DEPS})
 
 install_obs_plugin(obs-outputs)
-install_obs_plugin_data(obs-outputs ../../build/data/obs-plugins/obs-outputs)
+install_obs_plugin_data(obs-outputs data)

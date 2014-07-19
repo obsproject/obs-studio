@@ -4,6 +4,10 @@
 #  LIBFDK_INCLUDE_DIRS
 #  LIBFDK_LIBRARIES
 #
+# For use in OBS: 
+#
+#  Libfdk_INCLUDE_DIR
+#
 
 if(LIBFDK_INCLUDE_DIRS AND LIBFDK_LIBRARIES)
 	set(LIBFDK_FOUND TRUE)
@@ -19,20 +23,30 @@ else()
 		set(_lib_suffix 32)
 	endif()
 
+	set(LIBFDK_PATH_ARCH LibfdkPath${_lib_suffix})
+	set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
+
 	find_path(Libfdk_INCLUDE_DIR
 		NAMES fdk-aac/aacenc_lib.h
 		HINTS
+			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV LibfdkPath
 			ENV FFmpegPath
-			${_LIBFDK_INCLUDE_DIRS}
+			ENV ${LIBFDK_PATH_ARCH}
+			ENV ${FFMPEG_PATH_ARCH}
+			"${_LIBFDK_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
 	find_library(Libfdk_LIB
 		NAMES fdk-aac libfdk-aac
 		HINTS
-			${Libfdk_INCLUDE_DIR}/../lib
-			${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}
-			${_LIBFDK_LIBRARY_DIRS}
+			"${Libfdk_INCLUDE_DIR}/../lib"
+			"${Libfdk_INCLUDE_DIR}/../lib${_lib_suffix}"
+			"${Libfdk_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${Libfdk_INCLUDE_DIR}/lib"
+			"${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}"
+			"${_LIBFDK_LIBRARY_DIRS}"
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBFDK_INCLUDE_DIRS ${Libfdk_INCLUDE_DIR} CACHE PATH "Libfdk include dir")

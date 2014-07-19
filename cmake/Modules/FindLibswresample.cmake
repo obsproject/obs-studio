@@ -19,17 +19,29 @@ else()
 		set(_lib_suffix 32)
 	endif()
 	
+	set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
+
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libswresample/swresample.h
 		HINTS
+			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
-			${_SWRESAMPLE_INCLUDE_DIRS}
+			ENV ${FFMPEG_PATH_ARCH}
+			"${_SWRESAMPLE_INCLUDE_DIRS}"
 			/usr/include /usr/local/include /opt/local/include /sw/include
 		PATH_SUFFIXES ffmpeg libav)
 
 	find_library(SWRESAMPLE_LIB
 		NAMES swresample
-		HINTS ${FFMPEG_INCLUDE_DIR}/../lib ${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix} ${_SWRESAMPLE_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		HINTS
+			"${FFMPEG_INCLUDE_DIR}/../lib"
+			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
+			"${FFMPEG_INCLUDE_DIR}/lib"
+			"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
+			"${_SWRESAMPLE_LIBRARY_DIRS}"
+			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBSWRESAMPLE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswresample include dir")
 	set(LIBSWRESAMPLE_LIBRARIES ${SWRESAMPLE_LIB} CACHE STRING "Libswresample libraries")

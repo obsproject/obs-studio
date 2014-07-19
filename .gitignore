@@ -1,13 +1,24 @@
+#binaries
 *.exe
 *.dll
-
 *.dylib
 *.so
 
+#cmake
+/cmbuild/
+/build/
 /release/
 /debug/
 /builds/
-/other/
+*.o.d
+*.ninja
+.ninja*
+.dirstamp
+
+#xcode
+*.xcodeproj/
+
+#other stuff (windows stuff, qt moc stuff, etc)
 Release_MD/
 Release/
 Debug/
@@ -16,39 +27,19 @@ ipch/
 GeneratedFiles/
 .moc/
 
-*/bin/obs
-*/bin/test
-*/bin/obs.app
+/other/
 
-#autotools
-m4/libtool.m4
-m4/lt~obsolete.m4
-m4/ltoptions.m4
-m4/ltsugar.m4
-m4/ltversion.m4
-.deps
-.libs
-aclocal.m4
-autom4te.cache
-config.guess
-config.log
-config.status
-config.sub
+#make stuff
 configure
 depcomp
 install-sh
 Makefile.in
 Makefile
-missing
-compile
-libtool
-ltmain.sh
 
+#random useless file stuff
 *.dmg
-*.json
 *.app
 .DS_Store
-
 .directory
 .hg
 .depend
@@ -87,14 +78,3 @@ tags
 .DS_Store
 */.DS_Store
 */**/.DS_Store
-
-*.o.d
-*.ninja
-.ninja*
-.dirstamp
-
-#cmake
-cmbuild/
-
-#xcode
-*.xcodeproj/

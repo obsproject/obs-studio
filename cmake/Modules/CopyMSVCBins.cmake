@@ -1,0 +1,181 @@
+# Doesn't realy make sense anywhere else
+if(NOT MSVC)
+	return()
+endif()
+
+# Internal variable to avoid copying more than once
+if(COPIED_DEPENDENCIES)
+	return()
+endif()
+
+# Do not attempt to copy if an external intall files dir is in use
+if(DEFINED ENV{obsAdditionalInstallFiles})
+	return()
+endif()
+
+option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" OFF)
+if(NOT COPY_DEPENDENCIES)
+	return()
+endif()
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(_bin_suffix 64)
+else()
+	set(_bin_suffix 32)
+endif()
+
+find_package(Libavcodec QUIET)
+find_package(Libx264 QUIET)
+find_package(Libfdk QUIET)
+find_package(Qt5Core QUIET)
+
+file(GLOB FFMPEG_BIN_FILES
+	"${FFMPEG_INCLUDE_DIR}/../bin${_bin_suffix}/av*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin${_bin_suffix}/sw*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin/av*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin/sw*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin/libbz2*.dll"
+	"${FFMPEG_INCLUDE_DIR}/../bin/zlib*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin/av*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin/sw*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin/libbz2*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin/zlib*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin${_bin_suffix}/av*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin${_bin_suffix}/sw*-*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin${_bin_suffix}/libbz2*.dll"
+	"${FFMPEG_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll")
+
+file(GLOB X264_BIN_FILES
+	"${X264_INCLUDE_DIR}/../bin${_bin_suffix}/libx264-*.dll"
+	"${X264_INCLUDE_DIR}/../bin/libx264-*.dll"
+	"${X264_INCLUDE_DIR}/bin/libx264-*.dll"
+	"${X264_INCLUDE_DIR}/bin${_bin_suffix}/libx264-*.dll")
+
+file(GLOB LIBFDK_BIN_FILES
+	"${Libfdk_INCLUDE_DIR}/../bin${_bin_suffix}/libfdk*-*.dll"
+	"${Libfdk_INCLUDE_DIR}/../bin/libfdk*-*.dll"
+	"${Libfdk_INCLUDE_DIR}/bin/libfdk*-*.dll"
+	"${Libfdk_INCLUDE_DIR}/bin${_bin_suffix}/libfdk*-*.dll")
+
+if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
+	file(GLOB QT_DEBUG_BIN_FILES
+		"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Networkd.dll"
+		"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
+		"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
+	file(GLOB QT_DEBUG_PLAT_BIN_FILES
+		"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
+endif()
+
+if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
+	file(GLOB QT_BIN_FILES
+		"${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Network.dll"
+		"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
+		"${Qt5Core_DIR}/../../../bin/libEGL.dll")
+	file(GLOB QT_PLAT_BIN_FILES
+		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
+endif()
+
+file(GLOB QT_ICU_BIN_FILES
+	"${Qt5Core_DIR}/../../../bin/icu*.dll")
+
+if(MSVC12)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(D3D_COMPILER_PATH
+			"$ENV{VS120COMNTOOLS}/../../VC/bin/amd64/D3DCompiler_*.dll"
+			"$ENV{WindowsSdkDir}/bin/x64/d3dcompiler_*.dll"
+			"C:/Program Files (x86)/Windows Kits/8.1/bin/x64/d3dcompiler_*.dll"
+			"C:/Program Files/Windows Kits/8.1/bin/x64/d3dcompiler_*.dll")
+	else()
+		set(D3D_COMPILER_PATH
+			"$ENV{VS120COMNTOOLS}/../../VC/bin/D3DCompiler_*.dll"
+			"$ENV{WindowsSdkDir}/bin/x86/d3dcompiler_*.dll"
+			"C:/Program Files (x86)/Windows Kits/8.1/bin/x86/d3dcompiler_*.dll"
+			"C:/Program Files/Windows Kits/8.1/bin/x86/d3dcompiler_*.dll"
+			"C:/Program Files/Windows Kits/8.1/bin/d3dcompiler_*.dll")
+	endif()
+endif()
+
+file(TO_CMAKE_PATH "${D3D_COMPILER_PATH}" D3D_COMPILER_PATH)
+string(REGEX REPLACE "//" "/" D3D_COMPILER_PATH "${D3D_COMPILER_PATH}")
+
+file(GLOB D3D_COMPILER_BIN
+	${D3D_COMPILER_PATH})
+
+set(ALL_BASE_BIN_FILES
+	${FFMPEG_BIN_FILES}
+	${X264_BIN_FILES}
+	${LIBFDK_BIN_FILES}
+	${QT_ICU_BIN_FILES}
+	${D3D_COMPILER_BIN})
+
+set(ALL_REL_BIN_FILES
+	${QT_BIN_FILES})
+
+set(ALL_DBG_BIN_FILES
+	${QT_DEBUG_BIN_FILES})
+
+set(ALL_PLATFORM_BIN_FILES)
+
+set(ALL_PLATFORM_REL_BIN_FILES
+	${QT_PLAT_BIN_FILES})
+
+set(ALL_PLATFORM_DBG_BIN_FILES
+	${QT_DEBUG_PLAT_BIN_FILES})
+
+foreach(list
+		ALL_BASE_BIN_FILES ALL_REL_BIN_FILES ALL_DBG_BIN_FILES
+		ALL_PLATFORM_BIN_FILES ALL_PLATFORM_REL_BIN_FILES ALL_PLATFORM_DBG_BIN_FILES)
+	if(${list})
+		list(REMOVE_DUPLICATES ${list})
+	endif()
+endforeach()
+
+message(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
+message(STATUS "x264 files: ${X264_BIN_FILES}")
+message(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")
+message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
+message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
+message(STATUS "QT Release files: ${QT_BIN_FILES}")
+message(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
+message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
+message(STATUS "D3D Compiler: ${D3D_COMPILER_BIN}")
+
+foreach(BinFile ${ALL_BASE_BIN_FILES})
+	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}/")
+endforeach()
+
+foreach(BinFile ${ALL_REL_BIN_FILES})
+	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r/")
+endforeach()
+
+foreach(BinFile ${ALL_DBG_BIN_FILES})
+	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/")
+endforeach()
+
+foreach(BinFile ${ALL_PLATFORM_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}/platforms")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}/platforms/")
+endforeach()
+
+foreach(BinFile ${ALL_PLATFORM_REL_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r/platforms")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r/platforms/")
+endforeach()
+
+foreach(BinFile ${ALL_PLATFORM_DBG_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/platforms")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/platforms/")
+endforeach()
+
+set(COPIED_DEPENDENCIES TRUE CACHE BOOL "Dependencies have been copied, set to false to copy again" FORCE)
