@@ -8,12 +8,34 @@
 #include <QPushButton>
 #include <QStandardItem>
 #include <QFileDialog>
+#include <QColorDialog>
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "obs-app.hpp"
 #include <string>
 
 using namespace std;
+
+static inline QColor color_from_int(long long val)
+{
+	return QColor( val        & 0xff,
+		      (val >>  8) & 0xff,
+		      (val >> 16) & 0xff,
+		      (val >> 24) & 0xff);
+}
+
+static inline long long color_to_int(QColor color)
+{
+	auto shift = [&](unsigned val, int shift)
+	{
+		return ((val & 0xff) << shift);
+	};
+
+	return  shift(color.red(),    0) |
+		shift(color.green(),  8) |
+		shift(color.blue(),  16) |
+		shift(color.alpha(), 24);
+}
 
 void OBSPropertiesView::RefreshProperties()
 {
@@ -293,6 +315,37 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t prop)
 	return NewWidget(prop, button, SIGNAL(clicked()));
 }
 
+void OBSPropertiesView::AddColor(obs_property_t prop, QFormLayout *layout,
+		QLabel *&label)
+{
+	QPushButton *button     = new QPushButton;
+	QLabel      *colorLabel = new QLabel;
+	const char  *name       = obs_property_name(prop);
+	long long   val         = obs_data_getint(settings, name);
+	QColor      color       = color_from_int(val);
+
+	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
+
+	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+	colorLabel->setText(color.name(QColor::HexArgb));
+	colorLabel->setPalette(QPalette(color));
+	colorLabel->setAutoFillBackground(true);
+	colorLabel->setAlignment(Qt::AlignCenter);
+
+	QHBoxLayout *subLayout = new QHBoxLayout;
+	subLayout->setContentsMargins(0, 0, 0, 0);
+
+	subLayout->addWidget(colorLabel);
+	subLayout->addWidget(button);
+
+	WidgetInfo *info = new WidgetInfo(this, prop, colorLabel);
+	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
+	children.emplace_back(info);
+
+	label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(label, subLayout);
+}
+
 void OBSPropertiesView::AddProperty(obs_property_t property,
 		QFormLayout *layout)
 {
@@ -328,7 +381,7 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		widget = AddList(property, warning);
 		break;
 	case OBS_PROPERTY_COLOR:
-		/* TODO */
+		AddColor(property, layout, label);
 		break;
 	case OBS_PROPERTY_BUTTON:
 		widget = AddButton(property);
@@ -448,10 +501,35 @@ void WidgetInfo::ListChanged(const char *setting)
 	}
 }
 
-void WidgetInfo::ColorChanged(const char *setting)
+bool WidgetInfo::ColorChanged(const char *setting)
 {
-	/* TODO */
-	UNUSED_PARAMETER(setting);
+	const char *desc = obs_property_description(property);
+	long long  val   = obs_data_getint(view->settings, setting);
+	QColor     color = color_from_int(val);
+
+	QColorDialog::ColorDialogOptions options =
+		QColorDialog::ShowAlphaChannel;
+
+	/* The native dialog on OSX has all kinds of problems, like closing
+	 * other open QDialogs on exit, and
+	 * https://bugreports.qt-project.org/browse/QTBUG-34532
+	 */
+#ifdef __APPLE__
+	options |= QColorDialog::DontUseNativeDialog;
+#endif
+
+	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
+
+	if (!color.isValid())
+		return false;
+
+	QLabel *label = static_cast<QLabel*>(widget);
+	label->setText(color.name(QColor::HexArgb));
+	label->setPalette(QPalette(color));
+
+	obs_data_setint(view->settings, setting, color_to_int(color));
+
+	return true;
 }
 
 void WidgetInfo::ButtonClicked()
@@ -471,8 +549,11 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_FLOAT:   FloatChanged(setting); break;
 	case OBS_PROPERTY_TEXT:    TextChanged(setting); break;
 	case OBS_PROPERTY_LIST:    ListChanged(setting); break;
-	case OBS_PROPERTY_COLOR:   ColorChanged(setting); break;
 	case OBS_PROPERTY_BUTTON:  ButtonClicked(); return;
+	case OBS_PROPERTY_COLOR:
+		if (!ColorChanged(setting))
+			return;
+		break;
 	case OBS_PROPERTY_PATH:
 		if (!PathChanged(setting))
 			return;

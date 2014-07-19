@@ -27,7 +27,7 @@ private:
 	void TextChanged(const char *setting);
 	bool PathChanged(const char *setting);
 	void ListChanged(const char *setting);
-	void ColorChanged(const char *setting);
+	bool ColorChanged(const char *setting);
 	void ButtonClicked();
 
 public:
@@ -68,6 +68,7 @@ private:
 	QWidget *AddFloat(obs_property_t prop);
 	QWidget *AddList(obs_property_t prop, bool &warning);
 	QWidget *AddButton(obs_property_t prop);
+	void AddColor(obs_property_t prop, QFormLayout *layout, QLabel *&label);
 
 	void AddProperty(obs_property_t property, QFormLayout *layout);
 
