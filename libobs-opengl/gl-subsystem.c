@@ -182,6 +182,11 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	               info->max_anisotropy, sampler->max_anisotropy);
 }
 
+const char *device_name(void)
+{
+	return "OpenGL";
+}
+
 const char *device_preprocessor_name(void)
 {
 	return "_OPENGL";

@@ -418,6 +418,11 @@ gs_device::gs_device(gs_init_data *data)
 	device_setrendertarget(this, NULL, NULL);
 }
 
+const char *device_name(void)
+{
+	return "Direct3D 11";
+}
+
 const char *device_preprocessor_name(void)
 {
 	return "_D3D11";

@@ -215,6 +215,11 @@ graphics_t gs_getcontext(void)
 	return thread_graphics;
 }
 
+const char *gs_device_name(void)
+{
+	return thread_graphics ? thread_graphics->exports.device_name() : NULL;
+}
+
 static inline struct matrix4 *top_matrix(graphics_t graphics)
 {
 	return graphics ? 

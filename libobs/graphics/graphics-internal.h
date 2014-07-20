@@ -24,6 +24,7 @@
 #include "matrix4.h"
 
 struct gs_exports {
+	const char *(*device_name)(void);
 	const char *(*device_preprocessor_name)(void);
 	device_t (*device_create)(struct gs_init_data *data);
 	void (*device_destroy)(device_t device);
