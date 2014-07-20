@@ -220,6 +220,11 @@ const char *gs_device_name(void)
 	return thread_graphics ? thread_graphics->exports.device_name() : NULL;
 }
 
+int gs_device_type(void)
+{
+	return thread_graphics ? thread_graphics->exports.device_type() : -1;
+}
+
 static inline struct matrix4 *top_matrix(graphics_t graphics)
 {
 	return graphics ? 

@@ -423,6 +423,11 @@ const char *device_name(void)
 	return "Direct3D 11";
 }
 
+int device_type(void)
+{
+	return GS_DEVICE_DIRECT3D_11;
+}
+
 const char *device_preprocessor_name(void)
 {
 	return "_D3D11";

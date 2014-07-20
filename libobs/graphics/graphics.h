@@ -416,7 +416,11 @@ struct gs_init_data {
 	uint32_t                adapter;
 };
 
+#define GS_DEVICE_OPENGL      1
+#define GS_DEVICE_DIRECT3D_11 2
+
 EXPORT const char *gs_device_name(void);
+EXPORT int gs_device_type(void);
 
 EXPORT int gs_create(graphics_t *graphics, const char *module,
 		struct gs_init_data *data);

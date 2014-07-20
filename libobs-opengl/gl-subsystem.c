@@ -187,6 +187,11 @@ const char *device_name(void)
 	return "OpenGL";
 }
 
+int device_type(void)
+{
+	return GS_DEVICE_OPENGL;
+}
+
 const char *device_preprocessor_name(void)
 {
 	return "_OPENGL";
