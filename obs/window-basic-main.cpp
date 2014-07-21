@@ -101,6 +101,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	keys.append(QKeySequence::Delete);
 	keys.append(QKeySequence(Qt::Key_Backspace));
 	ui->actionRemoveSource->setShortcuts(keys);
+
+	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
+	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #endif
 }
 
