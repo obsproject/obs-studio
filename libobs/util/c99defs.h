@@ -76,13 +76,3 @@ typedef int64_t off64_t;
 #define SIZE_T_FORMAT "%zu"
 
 #endif /* _MSC_VER */
-
-#ifndef OBS_DATA_PATH
-#define OBS_DATA_PATH "../../data"
-#endif
-
-#ifndef OBS_INSTALL_PREFIX
-#define OBS_INSTALL_PREFIX ""
-#endif
-
-#define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH
