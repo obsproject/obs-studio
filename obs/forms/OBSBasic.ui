@@ -449,12 +449,12 @@
     <property name="title">
      <string>Basic.MainMenu.File</string>
     </property>
-    <addaction name="action_Save"/>
     <addaction name="action_Open"/>
+    <addaction name="action_Save"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
     <addaction name="separator"/>
-    <addaction name="actionE_xit"/>
+    <addaction name="action_Exit"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Help">
     <property name="title">
@@ -631,12 +631,12 @@
   </action>
   <action name="action_Open">
    <property name="text">
-    <string>Basic.MainMenu.File.Export</string>
+    <string>Basic.MainMenu.File.Import</string>
    </property>
   </action>
   <action name="action_Save">
    <property name="text">
-    <string>Basic.MainMenu.File.Import</string>
+    <string>Basic.MainMenu.File.Export</string>
    </property>
   </action>
   <action name="action_Settings">
@@ -644,7 +644,7 @@
     <string>Basic.MainMenu.File.Settings</string>
    </property>
   </action>
-  <action name="actionE_xit">
+  <action name="action_Exit">
    <property name="text">
     <string>Basic.MainMenu.File.Exit</string>
    </property>
@@ -793,7 +793,7 @@
  </resources>
  <connections>
   <connection>
-   <sender>actionE_xit</sender>
+   <sender>action_Exit</sender>
    <signal>triggered()</signal>
    <receiver>OBSBasic</receiver>
    <slot>close()</slot>
