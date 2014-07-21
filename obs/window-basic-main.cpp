@@ -1196,6 +1196,27 @@ void OBSBasic::SetService(obs_service_t newService)
 	}
 }
 
+static inline int AttemptToResetVideo(struct obs_video_info *ovi)
+{
+	int ret = obs_reset_video(ovi);
+	if (ret == OBS_VIDEO_INVALID_PARAM) {
+		struct obs_video_info new_params = *ovi;
+
+		if (new_params.window_width == 0)
+			new_params.window_width = 512;
+		if (new_params.window_height == 0)
+			new_params.window_height = 512;
+
+		new_params.output_width  = new_params.window_width;
+		new_params.output_height = new_params.window_height;
+		new_params.base_width    = new_params.window_width;
+		new_params.base_height   = new_params.window_height;
+		ret = obs_reset_video(&new_params);
+	}
+
+	return ret;
+}
+
 int OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
@@ -1225,7 +1246,7 @@ int OBSBasic::ResetVideo()
 	ovi.window_width  = size.width();
 	ovi.window_height = size.height();
 
-	ret = obs_reset_video(&ovi);
+	ret = AttemptToResetVideo(&ovi);
 	if (ret == OBS_VIDEO_SUCCESS)
 		obs_add_draw_callback(OBSBasic::RenderMain, this);
 
