@@ -59,6 +59,7 @@
 # define OBS_VERSION "unknown"
 # define OBS_DATA_PATH "../../data"
 # define OBS_INSTALL_PREFIX ""
+# define OBS_RELATIVE_PLUGIN_DEST "../../obs-plugins"
 #endif
 
 #define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH
