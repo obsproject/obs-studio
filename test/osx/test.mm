@@ -55,7 +55,7 @@ static void CreateOBS(NSView *view)
 	ovi.window_height   = cy;
 	ovi.window.view     = view;
 
-	if (!obs_reset_video(&ovi))
+	if (obs_reset_video(&ovi) != 0)
 		throw "Couldn't initialize video";
 }
 

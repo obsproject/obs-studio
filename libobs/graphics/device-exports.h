@@ -26,7 +26,7 @@ extern "C" {
 EXPORT const char *device_name(void);
 EXPORT int device_type(void);
 EXPORT const char *device_preprocessor_name(void);
-EXPORT device_t device_create(struct gs_init_data *data);
+EXPORT int device_create(device_t *device, struct gs_init_data *data);
 EXPORT void device_destroy(device_t device);
 EXPORT void device_entercontext(device_t device);
 EXPORT void device_leavecontext(device_t device);

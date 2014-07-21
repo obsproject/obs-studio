@@ -137,15 +137,17 @@ int gs_create(graphics_t *pgraphics, const char *module,
 	                           module))
 		goto error;
 
-	graphics->device = graphics->exports.device_create(data);
-	if (!graphics->device)
+	errcode = graphics->exports.device_create(&graphics->device, data);
+	if (errcode != GS_SUCCESS)
 		goto error;
 
-	if (!graphics_init(graphics))
+	if (!graphics_init(graphics)) {
+		errcode = GS_ERROR_FAIL;
 		goto error;
+	}
 
 	*pgraphics = graphics;
-	return GS_SUCCESS;
+	return errcode;
 
 error:
 	gs_destroy(graphics);

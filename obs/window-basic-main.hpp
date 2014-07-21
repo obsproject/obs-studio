@@ -191,7 +191,7 @@ public:
 	obs_service_t GetService();
 	void          SetService(obs_service_t service);
 
-	bool ResetVideo();
+	int  ResetVideo();
 	bool ResetAudio();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceName,

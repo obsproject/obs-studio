@@ -27,7 +27,7 @@ struct gs_exports {
 	const char *(*device_name)(void);
 	int (*device_type)(void);
 	const char *(*device_preprocessor_name)(void);
-	device_t (*device_create)(struct gs_init_data *data);
+	int (*device_create)(device_t *device, struct gs_init_data *data);
 	void (*device_destroy)(device_t device);
 	void (*device_entercontext)(device_t device);
 	void (*device_leavecontext)(device_t device);

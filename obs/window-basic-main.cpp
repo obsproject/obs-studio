@@ -513,10 +513,24 @@ void OBSBasic::OBSInit()
 		throw "Failed to initialize libobs";
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";
-	if (!ResetVideo())
-		throw "Failed to initialize video";
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
+
+	int ret = ResetVideo();
+
+	switch (ret) {
+	case OBS_VIDEO_MODULE_NOT_FOUND:
+		throw "Failed to initialize video:  Graphics module not found";
+	case OBS_VIDEO_NOT_SUPPORTED:
+		throw "Failed to initialize video:  Your graphics adapter "
+		      "is either too old or does not have the required "
+		      "capabilities required for this program";
+	case OBS_VIDEO_INVALID_PARAM:
+		throw "Failed to initialize video:  Invalid parameters";
+	default:
+		if (ret != OBS_VIDEO_SUCCESS)
+			throw "Failed to initialize video:  Unspecified error";
+	}
 
 	InitOBSCallbacks();
 
@@ -1182,9 +1196,10 @@ void OBSBasic::SetService(obs_service_t newService)
 	}
 }
 
-bool OBSBasic::ResetVideo()
+int OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
+	int ret;
 
 	GetConfigFPS(ovi.fps_num, ovi.fps_den);
 
@@ -1210,11 +1225,11 @@ bool OBSBasic::ResetVideo()
 	ovi.window_width  = size.width();
 	ovi.window_height = size.height();
 
-	if (!obs_reset_video(&ovi))
-		return false;
+	ret = obs_reset_video(&ovi);
+	if (ret == OBS_VIDEO_SUCCESS)
+		obs_add_draw_callback(OBSBasic::RenderMain, this);
 
-	obs_add_draw_callback(OBSBasic::RenderMain, this);
-	return true;
+	return ret;
 }
 
 bool OBSBasic::ResetAudio()

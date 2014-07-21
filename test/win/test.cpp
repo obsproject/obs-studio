@@ -88,7 +88,7 @@ static void CreateOBS(HWND hwnd)
 	ovi.output_height   = rc.bottom;
 	ovi.window.hwnd     = hwnd;
 
-	if (!obs_reset_video(&ovi))
+	if (obs_reset_video(&ovi) != 0)
 		throw "Couldn't initialize video";
 }
 

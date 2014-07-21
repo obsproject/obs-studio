@@ -392,8 +392,9 @@ EXPORT texture_t texrender_gettexture(texrender_t texrender);
 /* global functions */
 
 #define GS_SUCCESS                 0
-#define GS_ERROR_MODULE_NOT_FOUND -1
-#define GS_ERROR_FAIL             -2
+#define GS_ERROR_FAIL             -1
+#define GS_ERROR_MODULE_NOT_FOUND -2
+#define GS_ERROR_NOT_SUPPORTED    -3
 
 struct gs_window {
 #if defined(_WIN32)

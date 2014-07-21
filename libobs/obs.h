@@ -223,11 +223,22 @@ EXPORT void obs_set_locale(const char *locale);
 EXPORT const char *obs_get_locale(void);
 
 /**
- * Sets base video ouput base resolution/fps/format
+ * Sets base video ouput base resolution/fps/format.
  *
- * @note Cannot set base video if an output is currently active.
+ * @note This data cannot be changed if an output is corrently active.
+ * @note The graphics module cannot be changed without fully destroying the
+ *       OBS context.
+ *
+ * @param   ovi  Pointer to an obs_video_info structure containing the
+ *               specification of the graphics subsystem,
+ * @return       OBS_VIDEO_SUCCESS if sucessful
+ *               OBS_VIDEO_NOT_SUPPORTED if the adapter lacks capabilities
+ *               OBS_VIDEO_INVALID_PARAM if a parameter is invalid
+ *               OBS_VIDEO_CURRENTLY_ACTIVE if video is currently active
+ *               OBS_VIDEO_MODULE_NOT_FOUND if the graphics module is not found
+ *               OBS_VIDEO_FAIL for generic failure
  */
-EXPORT bool obs_reset_video(struct obs_video_info *ovi);
+EXPORT int obs_reset_video(struct obs_video_info *ovi);
 
 /**
  * Sets base audio output format/channels/samples/etc

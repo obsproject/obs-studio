@@ -20,6 +20,13 @@
 #include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
+struct UnsupportedHWError : HRError {
+	inline UnsupportedHWError(const char *str, HRESULT hr)
+		: HRError(str, hr)
+	{
+	}
+};
+
 #ifdef _MSC_VER
 /* alignment warning - despite the fact that alignment is already fixed */
 #pragma warning (disable : 4316)
@@ -136,11 +143,11 @@ void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
 
 	hr = CreateDXGIFactory1(factoryIID, (void**)factory.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create DXGIFactory", hr);
+		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 
 	hr = factory->EnumAdapters1(adapterIdx, padapter);
 	if (FAILED(hr))
-		throw HRError("Failed to enumerate DXGIAdapter", hr);
+		throw UnsupportedHWError("Failed to enumerate DXGIAdapter", hr);
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] =
@@ -181,7 +188,8 @@ void gs_device::InitDevice(gs_init_data *data, IDXGIAdapter *adapter)
 			defaultSwap.swap.Assign(), device.Assign(),
 			&levelUsed, context.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create device and swap chain", hr);
+		throw UnsupportedHWError("Failed to create device and "
+		                         "swap chain", hr);
 
 	blog(LOG_INFO, "D3D11 loaded sucessfully, feature level used: %u",
 			(uint32_t)levelUsed);
@@ -433,18 +441,27 @@ const char *device_preprocessor_name(void)
 	return "_D3D11";
 }
 
-gs_device *device_create(gs_init_data *data)
+int device_create(device_t *p_device, gs_init_data *data)
 {
 	gs_device *device = NULL;
+	int errorcode = GS_SUCCESS;
 
 	try {
 		device = new gs_device(data);
+
+	} catch (UnsupportedHWError error) {
+		blog(LOG_ERROR, "device_create (D3D11): %s (%08lX)", error.str,
+				error.hr);
+		errorcode = GS_ERROR_NOT_SUPPORTED;
+
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_create (D3D11): %s (%08lX)", error.str,
 				error.hr);
+		errorcode = GS_ERROR_FAIL;
 	}
 
-	return device;
+	*p_device = device;
+	return errorcode;
 }
 
 void device_destroy(device_t device)

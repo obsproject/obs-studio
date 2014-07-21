@@ -197,16 +197,19 @@ const char *device_preprocessor_name(void)
 	return "_OPENGL";
 }
 
-device_t device_create(struct gs_init_data *info)
+int device_create(device_t *p_device, struct gs_init_data *info)
 {
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));
+	int errorcode = GS_ERROR_FAIL;
 
 	device->plat = gl_platform_create(device, info);
 	if (!device->plat)
 		goto fail;
 
-	if (!gl_init_extensions(device))
+	if (!gl_init_extensions(device)) {
+		errorcode = GS_ERROR_NOT_SUPPORTED;
 		goto fail;
+	}
 	
 	gl_enable(GL_CULL_FACE);
 	
@@ -221,12 +224,15 @@ device_t device_create(struct gs_init_data *info)
 	device_leavecontext(device);
 	device->cur_swap = gl_platform_getswap(device->plat);
 
-	return device;
+	*p_device = device;
+	return GS_SUCCESS;
 
 fail:
 	blog(LOG_ERROR, "device_create (GL) failed");
 	bfree(device);
-	return NULL;
+
+	*p_device = NULL;
+	return errorcode;
 }
 
 void device_destroy(device_t device)

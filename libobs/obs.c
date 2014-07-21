@@ -192,7 +192,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	return true;
 }
 
-static bool obs_init_graphics(struct obs_video_info *ovi)
+static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 	struct gs_init_data graphics_data;
@@ -204,43 +204,45 @@ static bool obs_init_graphics(struct obs_video_info *ovi)
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
 			&graphics_data);
 	if (errorcode != GS_SUCCESS) {
-		if (errorcode == GS_ERROR_MODULE_NOT_FOUND)
-			blog(LOG_ERROR, "Could not find graphics module '%s'",
-					ovi->graphics_module);
-		return false;
+		switch (errorcode) {
+		case GS_ERROR_MODULE_NOT_FOUND:
+			return OBS_VIDEO_MODULE_NOT_FOUND;
+		case GS_ERROR_NOT_SUPPORTED:
+			return OBS_VIDEO_NOT_SUPPORTED;
+		default:
+			return OBS_VIDEO_FAIL;
+		}
 	}
 
 	gs_entercontext(video->graphics);
 
-	if (success) {
-		char *filename = find_libobs_data_file("default.effect");
-		video->default_effect = gs_create_effect_from_file(filename,
-				NULL);
-		bfree(filename);
+	char *filename = find_libobs_data_file("default.effect");
+	video->default_effect = gs_create_effect_from_file(filename,
+			NULL);
+	bfree(filename);
 
-		filename = find_libobs_data_file("solid.effect");
-		video->solid_effect = gs_create_effect_from_file(filename,
-				NULL);
-		bfree(filename);
+	filename = find_libobs_data_file("solid.effect");
+	video->solid_effect = gs_create_effect_from_file(filename,
+			NULL);
+	bfree(filename);
 
-		filename = find_libobs_data_file("format_conversion.effect");
-		video->conversion_effect = gs_create_effect_from_file(filename,
-				NULL);
-		bfree(filename);
+	filename = find_libobs_data_file("format_conversion.effect");
+	video->conversion_effect = gs_create_effect_from_file(filename,
+			NULL);
+	bfree(filename);
 
-		if (!video->default_effect)
-			success = false;
-		if (!video->solid_effect)
-			success = false;
-		if (!video->conversion_effect)
-			success = false;
-	}
+	if (!video->default_effect)
+		success = false;
+	if (!video->solid_effect)
+		success = false;
+	if (!video->conversion_effect)
+		success = false;
 
 	gs_leavecontext();
-	return success;
+	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
-static bool obs_init_video(struct obs_video_info *ovi)
+static int obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 	struct video_output_info vi;
@@ -256,16 +258,17 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	errorcode = video_output_open(&video->video, &vi);
 
 	if (errorcode != VIDEO_OUTPUT_SUCCESS) {
-		if (errorcode == VIDEO_OUTPUT_INVALIDPARAM)
+		if (errorcode == VIDEO_OUTPUT_INVALIDPARAM) {
 			blog(LOG_ERROR, "Invalid video parameters specified");
-		else
+			return OBS_VIDEO_INVALID_PARAM;
+		} else {
 			blog(LOG_ERROR, "Could not open video output");
-
-		return false;
+		}
+		return OBS_VIDEO_FAIL;
 	}
 
 	if (!obs_display_init(&video->main_display, NULL))
-		return false;
+		return OBS_VIDEO_FAIL;
 
 	video->main_display.cx = ovi->window_width;
 	video->main_display.cy = ovi->window_height;
@@ -273,19 +276,19 @@ static bool obs_init_video(struct obs_video_info *ovi)
 	gs_entercontext(video->graphics);
 
 	if (ovi->gpu_conversion && !obs_init_gpu_conversion(ovi))
-		return false;
+		return OBS_VIDEO_FAIL;
 	if (!obs_init_textures(ovi))
-		return false;
+		return OBS_VIDEO_FAIL;
 
 	gs_leavecontext();
 
 	errorcode = pthread_create(&video->video_thread, NULL,
 			obs_video_thread, obs);
 	if (errorcode != 0)
-		return false;
+		return OBS_VIDEO_FAIL;
 
 	video->thread_initialized = true;
-	return true;
+	return OBS_VIDEO_SUCCESS;
 }
 
 static void stop_video(void)
@@ -597,13 +600,26 @@ const char *obs_get_locale(void)
 	return obs ? obs->locale : NULL;
 }
 
-bool obs_reset_video(struct obs_video_info *ovi)
+#define OBS_SIZE_MIN 2
+#define OBS_SIZE_MAX (32 * 1024)
+
+static inline bool size_valid(uint32_t width, uint32_t height)
 {
-	if (!obs) return false;
+	return (width >= OBS_SIZE_MIN && height >= OBS_SIZE_MIN &&
+	        width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
+}
+
+int obs_reset_video(struct obs_video_info *ovi)
+{
+	if (!obs) return OBS_VIDEO_FAIL;
 
 	/* don't allow changing of video settings if active. */
 	if (obs->video.video && video_output_active(obs->video.video))
-		return false;
+		return OBS_VIDEO_CURRENTLY_ACTIVE;
+
+	if (!size_valid(ovi->output_width, ovi->output_height) ||
+	    !size_valid(ovi->base_width,   ovi->base_height))
+		return OBS_VIDEO_INVALID_PARAM;
 
 	struct obs_core_video *video = &obs->video;
 
@@ -612,15 +628,18 @@ bool obs_reset_video(struct obs_video_info *ovi)
 
 	if (!ovi) {
 		obs_free_graphics();
-		return true;
+		return OBS_VIDEO_SUCCESS;
 	}
 
 	/* align to multiple-of-two and SSE alignment sizes */
 	ovi->output_width  &= 0xFFFFFFFC;
 	ovi->output_height &= 0xFFFFFFFE;
 
-	if (!video->graphics && !obs_init_graphics(ovi))
-		return false;
+	if (!video->graphics) {
+		int errorcode = obs_init_graphics(ovi);
+		if (errorcode != OBS_VIDEO_SUCCESS)
+			return errorcode;
+	}
 
 	blog(LOG_INFO, "video settings reset:\n"
 	               "\tbase resolution:   %dx%d\n"
