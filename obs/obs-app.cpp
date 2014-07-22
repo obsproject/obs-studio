@@ -261,7 +261,11 @@ bool OBSApp::OBSInit()
 			config_save(globalConfig);
 		}
 
-		mainWindow = move(unique_ptr<OBSBasic>(new OBSBasic()));
+		mainWindow = new OBSBasic();
+
+		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+		connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
+
 		mainWindow->OBSInit();
 
 		return true;

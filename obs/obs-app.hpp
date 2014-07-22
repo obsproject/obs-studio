@@ -19,6 +19,7 @@
 
 #include <QApplication>
 #include <QTranslator>
+#include <QPointer>
 #include <util/lexer.h>
 #include <util/util.hpp>
 #include <string>
@@ -56,7 +57,7 @@ private:
 	std::string                    locale;
 	ConfigFile                     globalConfig;
 	TextLookup                     textLookup;
-	std::unique_ptr<OBSMainWindow> mainWindow;
+	QPointer<OBSMainWindow>        mainWindow;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
@@ -68,7 +69,7 @@ public:
 	void AppInit();
 	bool OBSInit();
 
-	inline QMainWindow *GetMainWindow() const {return mainWindow.get();}
+	inline QMainWindow *GetMainWindow() const {return mainWindow.data();}
 
 	inline config_t GlobalConfig() const {return globalConfig;}
 
