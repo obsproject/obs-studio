@@ -37,8 +37,6 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	  ui      (new Ui::OBSBasicTransform),
 	  main    (parent)
 {
-	setAttribute(Qt::WA_DeleteOnClose);
-
 	ui->setupUi(this);
 
 	HookWidget(ui->positionX,    DSCROLL_CHANGED, SLOT(OnControlChanged()));

@@ -140,6 +140,8 @@ private:
 	void TempStreamOutput(const char *url, const char *key,
 			int vBitrate, int aBitrate);
 
+	void CreatePropertiesWindow(obs_source_t source);
+
 public slots:
 	void StreamingStart();
 	void StreamingStop(int errorcode);

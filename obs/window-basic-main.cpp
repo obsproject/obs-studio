@@ -588,8 +588,11 @@ OBSBasic::~OBSBasic()
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
 
-	delete properties;
-	delete transformWindow;
+	if (properties)
+		delete properties;
+
+	if (transformWindow)
+		delete transformWindow;
 
 	ClearVolumeControls();
 	ui->sources->clear();
@@ -648,11 +651,18 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t item)
 	ui->sources->setCurrentRow(0);
 
 	/* if the source was just created, open properties dialog */
-	if (sourceSceneRefs[source] == 0 && loaded) {
-		delete properties;
-		properties = new OBSBasicProperties(this, source);
-		properties->Init();
-	}
+	if (sourceSceneRefs[source] == 0 && loaded)
+		CreatePropertiesWindow(source);
+}
+
+void OBSBasic::CreatePropertiesWindow(obs_source_t source)
+{
+	if (properties)
+		properties->close();
+
+	properties = new OBSBasicProperties(this, source);
+	properties->Init();
+	properties->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 /* Qt callbacks for invokeMethod */
@@ -1674,11 +1684,8 @@ void OBSBasic::on_actionSourceProperties_triggered()
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_getsource(item);
 
-	if (source) {
-		delete properties;
-		properties = new OBSBasicProperties(this, source);
-		properties->Init();
-	}
+	if (source)
+		CreatePropertiesWindow(source);
 }
 
 void OBSBasic::on_actionSourceUp_triggered()
@@ -2112,9 +2119,12 @@ config_t OBSBasic::Config() const
 
 void OBSBasic::on_actionEditTransform_triggered()
 {
-	delete transformWindow;
+	if (transformWindow)
+		transformWindow->close();
+
 	transformWindow = new OBSBasicTransform(this);
 	transformWindow->show();
+	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 void OBSBasic::on_actionResetTransform_triggered()
