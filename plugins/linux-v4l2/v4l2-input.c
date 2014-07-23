@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/select.h>
 
 #include <linux/videodev2.h>
+#include <libv4l2.h>
 
 #include <util/threading.h>
 #include <util/bmem.h>
@@ -158,14 +159,14 @@ static int_fast32_t v4l2_start_capture(struct v4l2_data *data)
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.index = i;
 
-		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_ERROR, "unable to queue buffer");
 			return -1;
 		}
 	}
 
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
 		blog(LOG_ERROR, "unable to start stream");
 		return -1;
 	}
@@ -180,7 +181,7 @@ static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
 {
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-	if (ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
 		blog(LOG_ERROR, "unable to stop stream");
 	}
 
@@ -198,7 +199,7 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_MMAP;
 
-	if (ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
 		blog(LOG_DEBUG, "request for buffers failed !");
 		return -1;
 	}
@@ -218,13 +219,13 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.index = i;
 
-		if (ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
 			blog(LOG_ERROR, "failed to query buffer");
 			return -1;
 		}
 
 		data->buf[i].length = buf.length;
-		data->buf[i].start = mmap(NULL, buf.length,
+		data->buf[i].start = v4l2_mmap(NULL, buf.length,
 			PROT_READ | PROT_WRITE, MAP_SHARED,
 			data->dev, buf.m.offset);
 
@@ -244,7 +245,7 @@ static void v4l2_destroy_mmap(struct v4l2_data *data)
 {
 	for(uint_fast32_t i = 0; i < data->buf_count; ++i) {
 		if (data->buf[i].start != MAP_FAILED)
-			munmap(data->buf[i].start, data->buf[i].length);
+			v4l2_munmap(data->buf[i].start, data->buf[i].length);
 	}
 
 	data->buf_count = 0;
@@ -291,7 +292,7 @@ static void *v4l2_thread(void *vptr)
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		buf.memory = V4L2_MEMORY_MMAP;
 
-		if (ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN)
 				continue;
 			blog(LOG_DEBUG, "failed to dequeue buffer");
@@ -310,7 +311,7 @@ static void *v4l2_thread(void *vptr)
 
 		obs_source_output_video(data->source, &out);
 
-		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_DEBUG, "failed to enqueue buffer");
 			break;
 		}
@@ -366,12 +367,12 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		dstr_resize(&device, 5);
 		dstr_cat(&device, dp->d_name);
 
-		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1) {
+		if ((fd = v4l2_open(device.array, O_RDWR | O_NONBLOCK)) == -1) {
 			blog(LOG_INFO, "Unable to open %s", device.array);
 			continue;
 		}
 
-		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
+		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
 			blog(LOG_INFO, "Failed to query capabilities for %s",
 			     device.array);
 		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
@@ -409,7 +410,7 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 
 	obs_property_list_clear(prop);
 
-	while (ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
+	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
 		if (v4l2_to_obs_video_format(fmt.pixelformat)
 				!= VIDEO_FORMAT_NONE) {
 			obs_property_list_add_int(prop,
@@ -439,11 +440,11 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
+	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
 
 	switch(frmsize.type) {
 	case V4L2_FRMSIZE_TYPE_DISCRETE:
-		while (ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
+		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
 			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
 					frmsize.discrete.height);
 			obs_property_list_add_int(prop, buffer.array,
@@ -488,11 +489,12 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
+	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
 
 	switch(frmival.type) {
 	case V4L2_FRMIVAL_TYPE_DISCRETE:
-		while (ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
+		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS,
+				&frmival) == 0) {
 			float fps = (float) frmival.discrete.denominator /
 				frmival.discrete.numerator;
 			int pack = pack_tuple(frmival.discrete.numerator,
@@ -529,7 +531,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -537,7 +539,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 	obs_property_t prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -548,7 +550,7 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -557,7 +559,7 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 	v4l2_resolution_list(dev, obs_data_getint(settings, "pixelformat"),
 			prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -569,7 +571,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 {
 	UNUSED_PARAMETER(p);
 	int width, height;
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -580,7 +582,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	v4l2_framerate_list(dev, obs_data_getint(settings, "pixelformat"),
 			width, height, prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -639,7 +641,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		v4l2_destroy_mmap(data);
 
 	if (data->dev != -1) {
-		close(data->dev);
+		v4l2_close(data->dev);
 		data->dev = -1;
 	}
 }
@@ -663,7 +665,7 @@ static void v4l2_init(struct v4l2_data *data)
 	struct v4l2_format fmt;
 	struct v4l2_streamparm par;
 
-	data->dev = open(data->device, O_RDWR | O_NONBLOCK);
+	data->dev = v4l2_open(data->device, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
 		blog(LOG_ERROR, "Unable to open device: %s", data->device);
 		goto fail;
@@ -675,7 +677,7 @@ static void v4l2_init(struct v4l2_data *data)
 	fmt.fmt.pix.pixelformat = data->pixelformat;
 	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
-	if (ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
 		blog(LOG_DEBUG, "unable to set format");
 		goto fail;
 	}
@@ -687,7 +689,7 @@ static void v4l2_init(struct v4l2_data *data)
 	par.parm.capture.timeperframe.numerator = data->fps_numerator;
 	par.parm.capture.timeperframe.denominator = data->fps_denominator;
 
-	if (ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
 		blog(LOG_DEBUG, "unable to set params");
 		goto fail;
 	}
