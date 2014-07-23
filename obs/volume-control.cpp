@@ -6,6 +6,7 @@
 #include <QSlider>
 #include <QLabel>
 #include <QPainter>
+#include <QTimer>
 #include <string>
 #include <math.h>
 
@@ -178,8 +179,17 @@ VolumeMeter::VolumeMeter(QWidget *parent)
 	peakColor.setRgb(0x3E, 0xF1, 0x2B);
 	peakHoldColor.setRgb(0x00, 0x00, 0x00);
 	
+	resetTimer = new QTimer(this);
+	connect(resetTimer, SIGNAL(timeout()), this, SLOT(resetState()));
 
+	resetState();
+}
+
+void VolumeMeter::resetState(void)
+{
 	setLevels(0.0f, 0.0f, 0.0f);
+	if (resetTimer->isActive())
+		resetTimer->stop();
 }
 
 void VolumeMeter::setLevels(float nmag, float npeak, float npeakHold)
@@ -187,7 +197,13 @@ void VolumeMeter::setLevels(float nmag, float npeak, float npeakHold)
 	mag      = nmag;
 	peak     = npeak;
 	peakHold = npeakHold;
+
 	update();
+
+	if (resetTimer->isActive())
+		resetTimer->stop();
+	resetTimer->start(250);
+
 }
 
 void VolumeMeter::paintEvent(QPaintEvent *event)
@@ -225,7 +241,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 			bkColor);
 
 	// Peak hold
-	if(peakHold == 1.0f)
+	if (peakHold == 1.0f)
 		scaledPeakHold--;
 
 	painter.setPen(peakHoldColor);
