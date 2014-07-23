@@ -9,11 +9,15 @@ class VolumeMeter : public QWidget
 private:
 	float mag, peak, peakHold;
 	QColor bkColor, magColor, peakColor, peakHoldColor;
+	QTimer *resetTimer;
+	
 public:
 	explicit VolumeMeter(QWidget *parent = 0);
 	void setLevels(float nmag, float npeak, float npeakHold);
 protected:
 	void paintEvent(QPaintEvent *event);
+private slots:
+	void resetState();
 };
 
 class QLabel;
