@@ -19,6 +19,11 @@
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <obs-module.h>
+
+#ifndef _STDINT_H_INCLUDED
+#define _STDINT_H_INCLUDED
+#endif
+
 #include <x264.h>
 
 #define do_log(level, format, ...) \
