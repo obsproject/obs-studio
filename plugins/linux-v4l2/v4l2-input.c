@@ -407,23 +407,30 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 	struct v4l2_fmtdesc fmt;
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.index = 0;
+	struct dstr buffer;
+	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
+		dstr_copy(&buffer, (char *) fmt.description);
+		if (fmt.flags & V4L2_FMT_FLAG_EMULATED)
+			dstr_cat(&buffer, " (Emulated)");
+
 		if (v4l2_to_obs_video_format(fmt.pixelformat)
 				!= VIDEO_FORMAT_NONE) {
-			obs_property_list_add_int(prop,
-					(char *) fmt.description,
+			obs_property_list_add_int(prop, buffer.array,
 					fmt.pixelformat);
 			blog(LOG_INFO, "Pixelformat: %s (available)",
-			     (char *) fmt.description);
+			     buffer.array);
 		} else {
 			blog(LOG_INFO, "Pixelformat: %s (unavailable)",
-			     (char *) fmt.description);
+			     buffer.array);
 		}
 		fmt.index++;
 	}
+
+	dstr_free(&buffer);
 }
 
 /*
