@@ -36,8 +36,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  removedSignal (obs_source_signalhandler(source), "remove",
 	                 OBSBasicProperties::SourceRemoved, this)
 {
-	setAttribute(Qt::WA_DeleteOnClose);
-
 	ui->setupUi(this);
 
 	OBSData settings = obs_source_getsettings(source);
