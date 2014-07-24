@@ -135,6 +135,8 @@ EXPORT void dstr_mid(struct dstr *dst, const struct dstr *str,
 EXPORT void dstr_right(struct dstr *dst, const struct dstr *str,
 		const size_t pos);
 
+static inline char dstr_end(const struct dstr *str);
+
 EXPORT void dstr_from_mbs(struct dstr *dst, const char *mbstr);
 EXPORT char *dstr_to_mbs(const struct dstr *str);
 EXPORT void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr);
@@ -304,6 +306,14 @@ static inline int dstr_ncmpi(const struct dstr *str1, const char *str2,
 		const size_t n)
 {
 	return astrcmpi_n(str1->array, str2, n);
+}
+
+static inline char dstr_end(const struct dstr *str)
+{
+	if (dstr_isempty(str))
+		return 0;
+
+	return str->array[str->len];
 }
 
 #ifdef __cplusplus
