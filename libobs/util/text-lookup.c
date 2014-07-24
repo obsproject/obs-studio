@@ -409,5 +409,7 @@ void text_lookup_destroy(lookup_t lookup)
 bool text_lookup_getstr(lookup_t lookup, const char *lookup_val,
 		const char **out)
 {
-	return lookup_getstring(lookup_val, out, lookup->top);
+	if (lookup)
+		return lookup_getstring(lookup_val, out, lookup->top);
+	return false;
 }
