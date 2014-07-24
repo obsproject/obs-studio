@@ -313,7 +313,7 @@ static inline char dstr_end(const struct dstr *str)
 	if (dstr_isempty(str))
 		return 0;
 
-	return str->array[str->len];
+	return str->array[str->len - 1];
 }
 
 #ifdef __cplusplus
