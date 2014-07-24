@@ -39,7 +39,7 @@ static inline int req_func_not_found(const char *name, const char *path)
 
 static int call_module_load(void *module, const char *path)
 {
-	bool   (*obs_module_load)(uint32_t obs_ver)  = NULL;
+	bool (*obs_module_load)(uint32_t obs_ver) = NULL;
 
 	obs_module_load = os_dlsym(module, "obs_module_load");
 	if (!obs_module_load)
