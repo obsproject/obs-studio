@@ -59,6 +59,9 @@ static bool ffmpeg_image_init(struct ffmpeg_image *info, const char *file)
 {
 	int ret;
 
+	if (!file || !*file)
+		return false;
+
 	memset(info, 0, sizeof(struct ffmpeg_image));
 	info->file       = file;
 	info->stream_idx = -1;

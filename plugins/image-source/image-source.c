@@ -29,7 +29,7 @@ static void image_source_update(void *data, obs_data_t settings)
 		context->tex = NULL;
 	}
 
-	if (file) {
+	if (file && *file) {
 		context->tex = gs_create_texture_from_file(file);
 		if (context->tex) {
 			context->cx = texture_getwidth(context->tex);
