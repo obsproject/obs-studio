@@ -16,7 +16,11 @@
 #define xdisp (XCompcap::disp())
 #define WIN_STRING_DIV "\r\n"
 
-bool XCompcapMain::init()
+
+OBS_DECLARE_CPP_CLASS_MODULE(XCompcapMain)
+
+
+bool XCompcapMain::initialize()
 {
 	if (!xdisp) {
 		blog(LOG_ERROR, "failed opening display");
@@ -41,7 +45,7 @@ bool XCompcapMain::init()
 	return true;
 }
 
-void XCompcapMain::deinit()
+void XCompcapMain::deinitialize()
 {
 	XCompcap::cleanupDisplay();
 }
@@ -150,7 +154,7 @@ XCompcapMain::XCompcapMain(obs_data_t settings, obs_source_t source)
 	p = new XCompcapMain_private;
 	p->source = source;
 
-	updateSettings(settings);
+	update(settings);
 }
 
 static void xcc_cleanup(XCompcapMain_private *p);
@@ -232,7 +236,7 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	}
 }
 
-void XCompcapMain::updateSettings(obs_data_t settings)
+void XCompcapMain::update(obs_data_t settings)
 {
 	PLock lock(&p->lock);
 	XErrorLock xlock;
@@ -305,9 +309,9 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 	if (p->tex)
 		texture_destroy(p->tex);
 
-	uint8_t *texData = new uint8_t[width() * height() * 4];
+	uint8_t *texData = new uint8_t[getWidth() * getHeight() * 4];
 
-	for (unsigned int i = 0; i < width() * height() * 4; i += 4) {
+	for (unsigned int i = 0; i < getWidth() * getHeight() * 4; i += 4) {
 		texData[i + 0] = p->swapRedBlue ? 0 : 0xFF;
 		texData[i + 1] = 0;
 		texData[i + 2] = p->swapRedBlue ? 0xFF : 0;
@@ -316,7 +320,7 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 
 	const uint8_t* texDataArr[] = { texData, 0 };
 
-	p->tex = gs_create_texture(width(), height(), cf, 1,
+	p->tex = gs_create_texture(getWidth(), getHeight(), cf, 1,
 			texDataArr, 0);
 
 	delete[] texData;
@@ -409,7 +413,7 @@ void XCompcapMain::tick(float seconds)
 	XCompcap::processEvents();
 
 	if (XCompcap::windowWasReconfigured(p->win))
-		updateSettings(0);
+		update(0);
 
 	if (!p->tex || !p->gltex)
 		return;
@@ -422,7 +426,7 @@ void XCompcapMain::tick(float seconds)
 	}
 
 	gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
-			p->cur_cut_top, width(), height());
+			p->cur_cut_top, getWidth(), getHeight());
 
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
@@ -446,12 +450,23 @@ void XCompcapMain::render(effect_t effect)
 	gs_reset_blend_state();
 }
 
-uint32_t XCompcapMain::width()
+uint32_t XCompcapMain::getWidth()
 {
 	return p->width - p->cur_cut_left - p->cur_cut_right;
 }
 
-uint32_t XCompcapMain::height()
+uint32_t XCompcapMain::getHeight()
 {
 	return p->height - p->cur_cut_bot - p->cur_cut_top;
+}
+
+
+const char *XCompcapMain::getId()
+{
+	return "xcomposite_input";
+}
+
+const char *XCompcapMain::getName()
+{
+	return "Xcomposite capture";
 }
