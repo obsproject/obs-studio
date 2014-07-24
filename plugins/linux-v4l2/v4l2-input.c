@@ -75,6 +75,7 @@ static enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
 	case V4L2_PIX_FMT_UYVY:   return VIDEO_FORMAT_UYVY;
 	case V4L2_PIX_FMT_NV12:   return VIDEO_FORMAT_NV12;
 	case V4L2_PIX_FMT_YUV420: return VIDEO_FORMAT_I420;
+	case V4L2_PIX_FMT_YVU420: return VIDEO_FORMAT_I420;
 	default:                  return VIDEO_FORMAT_NONE;
 	}
 }
@@ -265,9 +266,13 @@ static void *v4l2_thread(void *vptr)
 	data->frames = 0;
 	blog(LOG_INFO, "Started recording from %s", data->device);
 
+	uint_fast8_t cb = (data->pixelformat == V4L2_PIX_FMT_YUV420) ? 1 : 2;
+	uint_fast8_t cr = (cb == 1) ? 2 : 1;
+
 	while (os_event_try(data->event) == EAGAIN) {
 		int r;
 		fd_set fds;
+		uint8_t *start;
 		struct timeval tv;
 		struct v4l2_buffer buf;
 		struct source_frame out;
@@ -302,8 +307,32 @@ static void *v4l2_thread(void *vptr)
 		video_format_get_parameters(VIDEO_CS_DEFAULT,
 				VIDEO_RANGE_PARTIAL, out.color_matrix,
 				out.color_range_min, out.color_range_max);
-		out.data[0] = (uint8_t *) data->buf[buf.index].start;
-		out.linesize[0] = data->linesize;
+
+		start = (uint8_t *) data->buf[buf.index].start;
+		switch (data->pixelformat) {
+		case V4L2_PIX_FMT_NV12:
+			out.data[0] = start;
+			out.data[1] = start + data->linesize * data->height;
+			out.linesize[0] = data->linesize;
+			out.linesize[1] = data->linesize / 2;
+			break;
+		case V4L2_PIX_FMT_YVU420:
+		case V4L2_PIX_FMT_YUV420: {
+			out.data[0] = start;
+			out.data[cb] = start + data->linesize * data->height;
+			out.data[cr] = start + data->linesize * data->height
+					* 5 / 4;
+			out.linesize[0] = data->linesize;
+			out.linesize[cb] = data->linesize / 2;
+			out.linesize[cr] = data->linesize / 2;
+			break;
+		}
+		default:
+			out.data[0] = start;
+			out.linesize[0] = data->linesize;
+			break;
+		}
+
 		out.width = data->width;
 		out.height = data->height;
 		out.timestamp = timeval2ns(buf.timestamp);
