@@ -16,6 +16,8 @@
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.8.5</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
