@@ -204,8 +204,12 @@ static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
 	return 0;
 }
 
-/*
- * create memory mapping for buffers
+/**
+ * Create memory mapping for buffers
+ *
+ * This tries to map at least 2, preferably 4, buffers to userspace.
+ *
+ * @return 0 on success, -1 on failure
  */
 static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 {
@@ -216,12 +220,12 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	req.memory = V4L2_MEMORY_MMAP;
 
 	if (v4l2_ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
-		blog(LOG_DEBUG, "request for buffers failed !");
+		blog(LOG_ERROR, "Request for buffers failed !");
 		return -1;
 	}
 
 	if (req.count < 2) {
-		blog(LOG_DEBUG, "not enough memory !");
+		blog(LOG_ERROR, "Device returned less than 2 buffers");
 		return -1;
 	}
 
@@ -236,7 +240,7 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 		buf.index = i;
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_ERROR, "failed to query buffer");
+			blog(LOG_ERROR, "Failed to query buffer details");
 			return -1;
 		}
 
@@ -254,8 +258,8 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	return 0;
 }
 
-/*
- * destroy memory mapping for buffers
+/**
+ * Destroy memory mapping for buffers
  */
 static void v4l2_destroy_mmap(struct v4l2_data *data)
 {
