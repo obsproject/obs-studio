@@ -110,7 +110,7 @@ static void unpack_tuple(int *a, int *b, int packed)
 }
 
 /* fixed framesizes as fallback */
-static int fixed_framesizes[] =
+static const int fixed_framesizes[] =
 {
 	/* 4:3 */
 	160<<16		| 120,
@@ -147,7 +147,7 @@ static int fixed_framesizes[] =
 };
 
 /* fixed framerates as fallback */
-static int fixed_framerates[] =
+static const int fixed_framerates[] =
 {
 	1<<16		| 60,
 	1<<16		| 50,
