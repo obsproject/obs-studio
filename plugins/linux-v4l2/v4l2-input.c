@@ -683,20 +683,6 @@ static obs_properties_t v4l2_properties(void)
 	return props;
 }
 
-static uint32_t v4l2_getwidth(void *vptr)
-{
-	V4L2_DATA(vptr);
-
-	return data->width;
-}
-
-static uint32_t v4l2_getheight(void *vptr)
-{
-	V4L2_DATA(vptr);
-
-	return data->height;
-}
-
 static void v4l2_terminate(struct v4l2_data *data)
 {
 	if (data->thread) {
@@ -849,7 +835,5 @@ struct obs_source_info v4l2_input = {
 	.destroy      = v4l2_destroy,
 	.update       = v4l2_update,
 	.defaults     = v4l2_defaults,
-	.properties   = v4l2_properties,
-	.getwidth     = v4l2_getwidth,
-	.getheight    = v4l2_getheight
+	.properties   = v4l2_properties
 };
