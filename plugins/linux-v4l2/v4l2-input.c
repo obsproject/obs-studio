@@ -714,61 +714,80 @@ static void v4l2_destroy(void *vptr)
 	bfree(data);
 }
 
+/**
+ * Initialize the v4l2 device
+ *
+ * This function:
+ * - tries to open the device
+ * - sets pixelformat and requested resolution
+ * - sets the requested framerate
+ * - maps the buffers
+ * - starts the capture thread
+ */
 static void v4l2_init(struct v4l2_data *data)
 {
 	struct v4l2_format fmt;
 	struct v4l2_streamparm par;
+	struct dstr fps;
 	int width, height;
 	int fps_num, fps_denom;
 
+	blog(LOG_INFO, "Start capture from %s", data->set_device);
 	data->dev = v4l2_open(data->set_device, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
-		blog(LOG_ERROR, "Unable to open device: %s", data->set_device);
+		blog(LOG_ERROR, "Unable to open device");
 		goto fail;
 	}
 
+	/* set pixel format and resolution */
 	unpack_tuple(&width, &height, data->set_res);
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.fmt.pix.width = width;
 	fmt.fmt.pix.height = height;
 	fmt.fmt.pix.pixelformat = data->set_pixfmt;
 	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-
 	if (v4l2_ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
-		blog(LOG_DEBUG, "unable to set format");
+		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	data->pixfmt = fmt.fmt.pix.pixelformat;
 	data->width = fmt.fmt.pix.width;
 	data->height = fmt.fmt.pix.height;
+	data->pixfmt = fmt.fmt.pix.pixelformat;
+	data->linesize = fmt.fmt.pix.bytesperline;
+	blog(LOG_INFO, "Resolution: %"PRIuFAST32"x%"PRIuFAST32,
+	     data->width, data->height);
+	blog(LOG_INFO, "Linesize: %"PRIuFAST32" Bytes", data->linesize);
 
+	/* set framerate */
 	unpack_tuple(&fps_num, &fps_denom, data->set_fps);
 	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	par.parm.capture.timeperframe.numerator = fps_num;
 	par.parm.capture.timeperframe.denominator = fps_denom;
-
 	if (v4l2_ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
-		blog(LOG_DEBUG, "unable to set params");
+		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
 	}
+	dstr_init(&fps);
+	dstr_printf(&fps, "%.2f",
+		(float) par.parm.capture.timeperframe.denominator
+		/ par.parm.capture.timeperframe.numerator);
+	blog(LOG_INFO, "Framerate: %s fps", fps.array);
+	dstr_free(&fps);
 
-	data->linesize = fmt.fmt.pix.bytesperline;
-	blog(LOG_DEBUG, "Linesize: %"PRIuFAST32, data->linesize);
-
+	/* map buffers */
 	if (v4l2_create_mmap(data) < 0) {
-		blog(LOG_ERROR, "failed to map buffers");
+		blog(LOG_ERROR, "Failed to map buffers");
 		goto fail;
 	}
 
-	blog(LOG_INFO, "Start capturing  from %s", data->set_device);
-
+	/* start the capture thread */
 	if (os_event_init(&data->event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&data->thread, NULL, v4l2_thread, data) != 0)
 		goto fail;
 	return;
 fail:
-	blog(LOG_DEBUG, "initialization failed");
+	blog(LOG_ERROR, "Initialization failed");
 	v4l2_terminate(data);
 }
 
@@ -821,7 +840,6 @@ static void *v4l2_create(obs_data_t settings, obs_source_t source)
 	data->source = source;
 
 	v4l2_update(data, settings);
-	blog(LOG_DEBUG, "New input created");
 
 	return data;
 }
