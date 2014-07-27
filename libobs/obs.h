@@ -289,6 +289,18 @@ EXPORT int obs_open_module(obs_module_t *module, const char *path,
  */
 EXPORT bool obs_init_module(obs_module_t module);
 
+/** Returns the module file name */
+EXPORT const char *obs_get_module_file_name(obs_module_t module);
+
+/** Returns the module full name */
+EXPORT const char *obs_get_module_name(obs_module_t module);
+
+/** Returns the module author(s) */
+EXPORT const char *obs_get_module_author(obs_module_t module);
+
+/** Returns the module description */
+EXPORT const char *obs_get_module_description(obs_module_t module);
+
 /**
  * Adds a module search path to be used with obs_find_modules.  If the search
  * path strings contain %module%, that text will be replaced with the module

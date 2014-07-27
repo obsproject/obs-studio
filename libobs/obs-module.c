@@ -106,6 +106,26 @@ bool obs_init_module(obs_module_t module)
 	return module->loaded;
 }
 
+const char *obs_get_module_file_name(obs_module_t module)
+{
+	return module ? module->file : NULL;
+}
+
+const char *obs_get_module_name(obs_module_t module)
+{
+	return (module && module->name) ? module->name() : NULL;
+}
+
+const char *obs_get_module_author(obs_module_t module)
+{
+	return (module && module->author) ? module->author() : NULL;
+}
+
+const char *obs_get_module_description(obs_module_t module)
+{
+	return (module && module->description) ? module->description() : NULL;
+}
+
 char *obs_find_module_file(obs_module_t module, const char *file)
 {
 	struct dstr output = {0};
