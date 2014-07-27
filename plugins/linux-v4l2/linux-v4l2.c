@@ -21,9 +21,8 @@ OBS_MODULE_USE_DEFAULT_LOCALE("linux-v4l2", "en-US")
 
 extern struct obs_source_info v4l2_input;
 
-bool obs_module_load(uint32_t obs_version)
+bool obs_module_load(void)
 {
-	UNUSED_PARAMETER(obs_version);
 	obs_register_source(&v4l2_input);
 	return true;
 }

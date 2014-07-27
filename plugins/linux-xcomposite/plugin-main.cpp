@@ -61,10 +61,8 @@ static const char* xcompcap_getname(void)
 	return obs_module_text("XCCapture");
 }
 
-bool obs_module_load(uint32_t libobs_version)
+bool obs_module_load(void)
 {
-	UNUSED_PARAMETER(libobs_version);
-
 	if (!XCompcapMain::init())
 		return false;
 

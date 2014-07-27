@@ -57,7 +57,7 @@ struct obs_module {
 	void *module;
 	bool loaded;
 
-	bool        (*load)(uint32_t libobs_ver);
+	bool        (*load)(void);
 	void        (*unload)(void);
 	void        (*set_locale)(const char *locale);
 	void        (*free_locale)(void);

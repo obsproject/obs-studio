@@ -123,11 +123,9 @@ static struct obs_source_info image_source_info = {
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
 
-bool obs_module_load(uint32_t libobs_version)
+bool obs_module_load(void)
 {
 	obs_register_source(&image_source_info);
-
-	UNUSED_PARAMETER(libobs_version);
 	return true;
 }
 

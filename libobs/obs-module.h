@@ -48,11 +48,10 @@
  * the sources/encoders/outputs/services for your module, or anything else that
  * may need loading.
  *
- * @param libobs_ver The version of libobs.
  * @return           Return true to continue loading the module, otherwise
  *                   false to indcate failure and unload the module
  */
-MODULE_EXPORT bool obs_module_load(uint32_t libobs_version);
+MODULE_EXPORT bool obs_module_load(void);
 
 /** Optional: Called when the module is unloaded.  */
 MODULE_EXPORT void obs_module_unload(void);

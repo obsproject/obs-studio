@@ -98,7 +98,7 @@ bool obs_init_module(obs_module_t module)
 	if (module->loaded)
 		return true;
 
-	module->loaded = module->load(LIBOBS_API_VER);
+	module->loaded = module->load();
 	if (!module->loaded)
 		blog(LOG_WARNING, "Failed to initialize module '%s'",
 				module->file);
