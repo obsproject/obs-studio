@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include "obs-config.h"
 #include "obs-app.hpp"
 #include "platform.hpp"
 using namespace std;

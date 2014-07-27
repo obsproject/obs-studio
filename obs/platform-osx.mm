@@ -17,6 +17,7 @@
 
 #include <sstream>
 #include <util/base.h>
+#include <obs-config.h>
 #include "platform.hpp"
 #include "obs-app.hpp"
 

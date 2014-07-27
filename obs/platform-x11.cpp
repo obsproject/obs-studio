@@ -20,6 +20,7 @@
  * Even if there are not multiple monitors, this should still work.
  */
 
+#include <obs-config.h>
 #include "obs-app.hpp"
 
 #include <X11/Xlib.h>
