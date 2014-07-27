@@ -29,7 +29,7 @@
 #define MODULE_SUCCESS             0
 #define MODULE_ERROR              -1
 #define MODULE_FILE_NOT_FOUND     -2
-#define MODULE_FUNCTION_NOT_FOUND -3
+#define MODULE_MISSING_EXPORTS    -3
 #define MODULE_INCOMPATIBLE_VER   -4
 
 #define OBS_OUTPUT_SUCCESS         0
