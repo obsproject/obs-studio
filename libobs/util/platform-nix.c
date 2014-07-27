@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <glob.h>
 #include <time.h>
 
 #if !defined(__APPLE__)
@@ -28,6 +29,7 @@
 #include <sys/vtimes.h>
 #endif
 
+#include "darray.h"
 #include "dstr.h"
 #include "platform.h"
 
@@ -194,10 +196,19 @@ os_dir_t os_opendir(const char *path)
 	return dir;
 }
 
+static inline bool is_dir(const char *path)
+{
+	struct stat stat_info;
+	if (stat(path, &stat_info) == 0)
+		return !!S_ISDIR(stat_info.st_mode);
+
+	blog(LOG_DEBUG, "is_dir: stat for %s failed, errno: %d", path, errno);
+	return false;
+}
+
 struct os_dirent *os_readdir(os_dir_t dir)
 {
 	struct dstr file_path = {0};
-	struct stat stat_info;
 
 	if (!dir) return NULL;
 
@@ -211,11 +222,7 @@ struct os_dirent *os_readdir(os_dir_t dir)
 	dstr_cat(&file_path, "/");
 	dstr_cat(&file_path, dir->out.d_name);
 
-	if (stat(file_path.array, &stat_info) == 0)
-		dir->out.directory = !!S_ISDIR(stat_info.st_mode);
-	else
-		blog(LOG_DEBUG, FILE_LINE "stat for %s failed, errno: %d",
-				file_path.array, errno);
+	dir->out.directory = is_dir(file_path.array);
 
 	dstr_free(&file_path);
 
@@ -227,6 +234,51 @@ void os_closedir(os_dir_t dir)
 	if (dir) {
 		closedir(dir->dir);
 		bfree(dir);
+	}
+}
+
+struct posix_glob_info {
+	struct os_glob_info base;
+	glob_t gl;
+};
+
+int os_glob(const char *pattern, int flags, os_glob_t *pglob)
+{
+	struct posix_glob_info pgi;
+	int ret = glob(pattern, 0, NULL, &pgi.gl);
+
+	if (ret == 0) {
+		DARRAY(struct os_globent) list;
+		da_init(list);
+
+		for (size_t i = 0; i < pgi.gl.gl_pathc; i++) {
+			struct os_globent ent = {0};
+
+			ent.path = pgi.gl.gl_pathv[i];
+			ent.directory = is_dir(ent.path);
+			da_push_back(list, &ent);
+		}
+
+		pgi.base.gl_pathc = list.num;
+		pgi.base.gl_pathv = list.array;
+
+		*pglob = bmemdup(&pgi, sizeof(pgi));
+	} else {
+		*pglob = NULL;
+	}
+
+	UNUSED_PARAMETER(flags);
+	return ret;
+}
+
+void os_globfree(os_glob_t pglob)
+{
+	if (pglob) {
+		struct posix_glob_info *pgi = (struct linux_glob_info*)pglob;
+		globfree(&pgi->gl);
+
+		bfree(pgi->base.gl_pathv);
+		bfree(pgi);
 	}
 }
 

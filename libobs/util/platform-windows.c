@@ -21,6 +21,7 @@
 
 #include "base.h"
 #include "platform.h"
+#include "darray.h"
 #include "dstr.h"
 
 #include "../../deps/w32-pthreads/pthread.h"
@@ -258,6 +259,11 @@ os_dir_t os_opendir(const char *path)
 	return dir;
 }
 
+static inline bool is_dir(WIN32_FIND_DATA *wfd)
+{
+	return !!(wfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+}
+
 struct os_dirent *os_readdir(os_dir_t dir)
 {
 	if (!dir)
@@ -273,8 +279,7 @@ struct os_dirent *os_readdir(os_dir_t dir)
 	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name,
 			sizeof(dir->out.d_name));
 
-	dir->out.directory =
-		!!(dir->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+	dir->out.directory = is_dir(&dir->wfd);
 
 	return &dir->out;
 }
@@ -284,6 +289,77 @@ void os_closedir(os_dir_t dir)
 	if (dir) {
 		FindClose(dir->handle);
 		bfree(dir);
+	}
+}
+
+static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
+		const char *pattern)
+{
+	struct dstr name = {0};
+	struct dstr path = {0};
+	char *slash;
+
+	dstr_from_wcs(&name, wfd->cFileName);
+	dstr_copy(&path, pattern);
+	slash = strrchr(path.array, '/');
+	if (slash)
+		dstr_resize(&path, slash + 1 - path.array);
+	else
+		dstr_free(&path);
+
+	dstr_cat_dstr(&path, &name);
+	ent->path = path.array;
+	ent->directory = is_dir(wfd);
+
+	dstr_free(&name);
+}
+
+int os_glob(const char *pattern, int flags, os_glob_t *pglob)
+{
+	DARRAY(struct os_globent) files;
+	HANDLE                    handle;
+	WIN32_FIND_DATA           wfd;
+	int                       ret = -1;
+	os_glob_t                 out = NULL;
+	wchar_t                   *w_path;
+
+	da_init(files);
+
+	if (os_utf8_to_wcs_ptr(pattern, 0, &w_path) > 0) {
+		handle = FindFirstFileW(w_path, &wfd);
+		if (handle != INVALID_HANDLE_VALUE) {
+			do {
+				struct os_globent ent = {0};
+				make_globent(&ent, &wfd, pattern);
+				if (ent.path)
+					da_push_back(files, &ent);
+			} while (FindNextFile(handle, &wfd));
+			FindClose(handle);
+
+			*pglob = bmalloc(sizeof(**pglob));
+			(*pglob)->gl_pathc = files.num;
+			(*pglob)->gl_pathv = files.array;
+
+			ret = 0;
+		}
+
+		bfree(w_path);
+	}
+
+	if (ret != 0)
+		*pglob = NULL;
+
+	UNUSED_PARAMETER(flags);
+	return ret;
+}
+
+void os_globfree(os_glob_t pglob)
+{
+	if (pglob) {
+		for (size_t i = 0; i < pglob->gl_pathc; i++)
+			bfree(pglob->gl_pathv[i].path);
+		bfree(pglob->gl_pathv);
+		bfree(pglob);
 	}
 }
 

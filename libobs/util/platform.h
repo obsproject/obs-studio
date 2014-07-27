@@ -102,6 +102,23 @@ EXPORT os_dir_t os_opendir(const char *path);
 EXPORT struct os_dirent *os_readdir(os_dir_t dir);
 EXPORT void os_closedir(os_dir_t dir);
 
+struct os_globent {
+	char *path;
+	bool directory;
+};
+
+struct os_glob_info {
+	size_t             gl_pathc;
+	struct os_globent *gl_pathv;
+};
+
+typedef struct os_glob_info *os_glob_t;
+
+/* currently no flags available */
+
+EXPORT int os_glob(const char *pattern, int flags, os_glob_t *pglob);
+EXPORT void os_globfree(os_glob_t pglob);
+
 EXPORT int os_unlink(const char *path);
 
 #define MKDIR_EXISTS   1
