@@ -534,28 +534,7 @@ void OBSBasic::OBSInit()
 
 	InitOBSCallbacks();
 
-	/* TODO: this is a test, all modules will be searched for and loaded
-	 * automatically later */
-	obs_load_module("image-source");
-	// obs_load_module("test-input");
-	obs_load_module("obs-ffmpeg");
-	obs_load_module("obs-libfdk");
-	obs_load_module("obs-x264");
-	obs_load_module("obs-outputs");
-	obs_load_module("rtmp-services");
-#ifdef __APPLE__
-	obs_load_module("mac-avcapture");
-	obs_load_module("mac-capture");
-#elif _WIN32
-	obs_load_module("win-wasapi");
-	obs_load_module("win-capture");
-	obs_load_module("win-dshow");
-#else
-	obs_load_module("linux-xshm");
-	obs_load_module("linux-xcomposite");
-	obs_load_module("linux-pulseaudio");
-	obs_load_module("linux-v4l2");
-#endif
+	obs_load_all_modules();
 
 	if (!InitOutputs())
 		throw "Failed to initialize outputs";

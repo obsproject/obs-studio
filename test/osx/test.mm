@@ -62,9 +62,8 @@ static void CreateOBS(NSView *view)
 static SceneContext SetupScene()
 {
 	/* ------------------------------------------------------ */
-	/* load module */
-	if (obs_load_module("test-input") != 0)
-		throw "Couldn't load module";
+	/* load modules */
+	obs_load_all_modules();
 
 	/* ------------------------------------------------------ */
 	/* create source */

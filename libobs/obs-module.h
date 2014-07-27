@@ -32,8 +32,15 @@
  */
 
 /** Required: Declares a libobs module. */
-#define OBS_DECLARE_MODULE()                                          \
-	MODULE_EXPORT uint32_t obs_module_ver(void);                  \
+#define OBS_DECLARE_MODULE() \
+	static obs_module_t obs_module_pointer; \
+	MODULE_EXPORT void obs_module_set_pointer(obs_module_t module); \
+	void obs_module_set_pointer(obs_module_t module) \
+	{ \
+		obs_module_pointer = module; \
+	} \
+	obs_module_t obs_current_module(void) {return obs_module_pointer;} \
+	MODULE_EXPORT uint32_t obs_module_ver(void); \
 	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;}
 
 /**
@@ -53,11 +60,10 @@ MODULE_EXPORT void obs_module_unload(void);
 /** Called to set the current locale data for the module.  */
 MODULE_EXPORT void obs_module_set_locale(const char *locale);
 
-/**
- * Optional: Use this macro in a module to use default locale handling.  Use
- * the OBS_MODULE_FREE_DEFAULT_LOCALE macro in obs_module_unload to free the
- * locale data when the module unloads.
- */
+/** Called to free the current locale data for the module.  */
+MODULE_EXPORT void obs_module_free_locale(void);
+
+/** Optional: Use this macro in a module to use default locale handling. */
 #define OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale) \
 	lookup_t obs_module_lookup = NULL; \
 	const char *obs_module_text(const char *val) \
@@ -69,7 +75,8 @@ MODULE_EXPORT void obs_module_set_locale(const char *locale);
 	void obs_module_set_locale(const char *locale) \
 	{ \
 		if (obs_module_lookup) text_lookup_destroy(obs_module_lookup); \
-		obs_module_lookup = obs_module_load_locale(module_name, \
+		obs_module_lookup = obs_module_load_locale( \
+				obs_current_module(), \
 				default_locale, locale); \
 	}
 
@@ -79,6 +86,16 @@ MODULE_EXPORT void obs_module_set_locale(const char *locale);
 /** Helper function for looking up locale if default locale handler was used */
 extern const char *obs_module_text(const char *lookup_string);
 
+/** Helper function that returns the current module */
+extern obs_module_t obs_current_module(void);
+
+/**
+ * Returns the location to a module data file associated with the current
+ * module.  Free with bfree when complete.  Equivalent to:
+ *    obs_find_module_file(obs_current_modile(), file);
+ */
+#define obs_module_file(file) obs_find_module_file(obs_current_module(), file)
+
 /**
  * Optional: Declares the author(s) of the module
  *
@@ -87,6 +104,9 @@ extern const char *obs_module_text(const char *lookup_string);
 #define OBS_MODULE_AUTHOR(name) \
 	MODULE_EXPORT const char *obs_module_author(void); \
 	const char *obs_module_author(void) {return name;}
+
+/** Optional: Returns the full name of the module */
+MODULE_EXPORT const char *obs_module_name(void);
 
 /** Optional: Returns a description of the module */
 MODULE_EXPORT const char *obs_module_description(void);

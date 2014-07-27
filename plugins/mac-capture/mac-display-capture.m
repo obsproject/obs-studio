@@ -181,8 +181,7 @@ static void *display_capture_create(obs_data_t settings,
 	if (!dc->sampler)
 		goto fail;
 
-	char *effect_file = obs_find_plugin_file(
-			"mac-capture/draw_rect.effect");
+	char *effect_file = obs_module_file("draw_rect.effect");
 	dc->draw_effect = gs_create_effect_from_file(effect_file, NULL);
 	bfree(effect_file);
 	if (!dc->draw_effect)

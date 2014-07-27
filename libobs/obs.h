@@ -45,6 +45,7 @@ struct obs_scene_item;
 struct obs_output;
 struct obs_encoder;
 struct obs_service;
+struct obs_module;
 
 typedef struct obs_display    *obs_display_t;
 typedef struct obs_view       *obs_view_t;
@@ -54,6 +55,7 @@ typedef struct obs_scene_item *obs_sceneitem_t;
 typedef struct obs_output     *obs_output_t;
 typedef struct obs_encoder    *obs_encoder_t;
 typedef struct obs_service    *obs_service_t;
+typedef struct obs_module     *obs_module_t;
 
 #include "obs-source.h"
 #include "obs-encoder.h"
@@ -257,17 +259,81 @@ EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
 
 /**
- * Loads a plugin module
+ * Opens a plugin module directly from a specific path.
  *
- *   A plugin module contains exports for inputs/fitlers/transitions/outputs.
- * See obs-source.h and obs-output.h for more information on the exports to
- * use.
+ * If the module already exists then the function will return successful, and
+ * the module parameter will be given the pointer to the existing module.
+ *
+ * This does not initialize the module, it only loads the module image.  To
+ * initialize the module, call obs_init_module.
+ *
+ * @param  module     The pointer to the created module.
+ * @param  path       Specifies the path to the module library file.  If the
+ *                    extension is not specified, it will use the extension
+ *                    appropriate to the operating system.
+ * @param  data_path  Specifies the path to the directory where the module's
+ *                    data files are stored.
+ * @returns           MODULE_SUCCESS if successful
+ *                    MODULE_ERROR if a generic error occurred
+ *                    MODULE_FILE_NOT_FOUND if the module was not found
+ *                    MODULE_MISSING_EXPORTS if required exports are missing
+ *                    MODULE_INCOMPATIBLE_VER if incompatible version
  */
-EXPORT int obs_load_module(const char *path);
+EXPORT int obs_open_module(obs_module_t *module, const char *path,
+		const char *data_path);
+
+/**
+ * Initializes the module, which calls its obs_module_load export.  If the
+ * module is alrady loaded, then this function does nothing and returns
+ * successful.
+ */
+EXPORT bool obs_init_module(obs_module_t module);
+
+/**
+ * Adds a module search path to be used with obs_find_modules.  If the search
+ * path strings contain %module%, that text will be replaced with the module
+ * name when used.
+ *
+ * @param  bin   Specifies the module's binary directory search path.
+ * @param  data  Specifies the module's data directory search path.
+ */
+EXPORT void obs_add_module_path(const char *bin, const char *data);
+
+/** Automatically loads all modules from module paths (convenience function) */
+EXPORT void obs_load_all_modules(void);
+
+struct obs_module_info {
+	const char *bin_path;
+	const char *data_path;
+};
+
+typedef void (*obs_find_module_callback_t)(void *param,
+		const struct obs_module_info *info);
+
+/** Finds all modules within the search paths added by obs_add_module_path. */
+EXPORT void obs_find_modules(obs_find_module_callback_t callback, void *param);
+
+typedef void (*obs_enum_module_callback_t)(void *param, obs_module_t module);
+
+/** Enumerates all loaded modules */
+EXPORT void obs_enum_modules(obs_enum_module_callback_t callback, void *param);
 
 /** Helper function for using default module locale */
-EXPORT lookup_t obs_module_load_locale(const char *module,
+EXPORT lookup_t obs_module_load_locale(obs_module_t module,
 		const char *default_locale, const char *locale);
+
+/**
+ * Returns the location of a plugin module data file.
+ *
+ * @note   Modules should use obs_module_file function defined in obs-module.h
+ *         as a more elegant means of getting their files without having to
+ *         specify the module parameter.
+ *
+ * @param  module  The module associated with the file to locate
+ * @param  file    The file to locate
+ * @return         Path string, or NULL if not found.  Use bfree to free string.
+ */
+EXPORT char *obs_find_module_file(obs_module_t module, const char *file);
 
 /**
  * Enumerates all available inputs source types.
@@ -367,14 +433,6 @@ EXPORT obs_encoder_t obs_get_encoder_by_name(const char *name);
 
 /** Gets an service by its name. */
 EXPORT obs_service_t obs_get_service_by_name(const char *name);
-
-/**
- * Returns the location of a plugin data file.
- *
- *   file: Name of file to locate.  For example, "myplugin/mydata.data"
- *   returns: Path string, or NULL if not found.  Use bfree to free string.
- */
-EXPORT char *obs_find_plugin_file(const char *file);
 
 /** Returns the default effect for generic RGB/YUV drawing */
 EXPORT effect_t obs_get_default_effect(void);

@@ -1,4 +1,4 @@
-#include <obs.h>
+#include <obs-module.h>
 
 struct test_filter {
 	obs_source_t source;
@@ -31,7 +31,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 
 	gs_entercontext(obs_graphics());
 
-	effect_file = obs_find_plugin_file("test-input/test.effect");
+	effect_file = obs_module_file("test.effect");
 
 	tf->source = source;
 	tf->whatever = gs_create_effect_from_file(effect_file, NULL);

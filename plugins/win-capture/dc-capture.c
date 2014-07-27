@@ -216,7 +216,7 @@ effect_t create_opaque_effect(void)
 	char *effect_file;
 	char *error_string = NULL;
 
-	effect_file = obs_find_plugin_file("win-capture/opaque.effect");
+	effect_file = obs_module_file("opaque.effect");
 	if (!effect_file) {
 		blog(LOG_ERROR, "[create_opaque_effect] Could not find "
 		                "opaque effect file");
