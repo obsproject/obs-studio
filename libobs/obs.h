@@ -211,6 +211,9 @@ EXPORT void obs_shutdown(void);
 /** @return true if the main OBS context has been initialized */
 EXPORT bool obs_initialized(void);
 
+/** @return The current core version */
+EXPORT uint32_t obs_get_version(void);
+
 /**
  * Sets a new locale to use for modules.  This will call obs_module_set_locale
  * for each module with the new locale.

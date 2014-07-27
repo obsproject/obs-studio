@@ -596,6 +596,11 @@ bool obs_initialized(void)
 	return obs != NULL;
 }
 
+uint32_t obs_get_version(void)
+{
+	return LIBOBS_API_VER;
+}
+
 void obs_set_locale(const char *locale)
 {
 	if (!obs)
