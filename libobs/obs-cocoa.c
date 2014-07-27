@@ -26,6 +26,11 @@
 
 #include <objc/objc.h>
 
+const char *get_module_extension(void)
+{
+	return ".so";
+}
+
 // support both foo.so and libfoo.so for now
 static const char *plugin_patterns[] = {
 	OBS_INSTALL_PREFIX "obs-plugins/%s.so",

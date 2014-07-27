@@ -22,6 +22,11 @@
 
 #include <windows.h>
 
+const char *get_module_extension(void)
+{
+	return ".dll";
+}
+
 static inline bool check_path(const char* data, const char *path,
 		struct dstr * output)
 {

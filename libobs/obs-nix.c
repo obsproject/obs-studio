@@ -24,6 +24,11 @@
 #include "util/dstr.h"
 #include "obs.h"
 
+const char *get_module_extension(void)
+{
+	return ".so";
+}
+
 static inline bool check_path(const char* data, const char *path,
 		struct dstr * output)
 {

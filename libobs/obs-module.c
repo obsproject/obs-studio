@@ -23,6 +23,7 @@
 #include "obs-module.h"
 
 extern char *find_plugin(const char *plugin);
+extern const char *get_module_extension(void);
 
 static inline int req_func_not_found(const char *name, const char *path)
 {
