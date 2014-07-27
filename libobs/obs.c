@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <inttypes.h>
+
 #include "callback/calldata.h"
 
 #include "obs.h"
@@ -311,7 +313,23 @@ static void obs_free_video(void)
 	struct obs_core_video *video = &obs->video;
 
 	if (video->video) {
+		uint32_t total_frames = video_output_total_frames(video->video);
+		uint32_t skipped_frames =
+			video_output_num_skipped_frames(video->video);
+		double percentage_skipped =
+			(double)skipped_frames / (double)total_frames * 100.0;
+
 		obs_display_free(&video->main_display);
+
+		blog(LOG_INFO, "Video session ending");
+		blog(LOG_INFO, "Total frames: %"PRIu32, total_frames);
+		if (total_frames) {
+			blog(LOG_INFO, "Number of skipped frames: "
+					"%"PRIu32" (%g%%)",
+					skipped_frames, percentage_skipped);
+		}
+		blog(LOG_INFO, "-------------------------------------------");
+
 		video_output_close(video->video);
 		video->video = NULL;
 
