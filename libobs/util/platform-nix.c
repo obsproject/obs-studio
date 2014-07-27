@@ -274,7 +274,7 @@ int os_glob(const char *pattern, int flags, os_glob_t *pglob)
 void os_globfree(os_glob_t pglob)
 {
 	if (pglob) {
-		struct posix_glob_info *pgi = (struct linux_glob_info*)pglob;
+		struct posix_glob_info *pgi = (struct posix_glob_info*)pglob;
 		globfree(&pgi->gl);
 
 		bfree(pgi->base.gl_pathv);
