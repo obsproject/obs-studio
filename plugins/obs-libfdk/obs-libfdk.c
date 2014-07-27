@@ -311,8 +311,3 @@ bool obs_module_load(void)
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-libfdk", "en-US")
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-}

@@ -10,8 +10,3 @@ bool obs_module_load(void)
 	obs_register_encoder(&obs_x264_encoder);
 	return true;
 }
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-}

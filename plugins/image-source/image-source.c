@@ -128,8 +128,3 @@ bool obs_module_load(void)
 	obs_register_source(&image_source_info);
 	return true;
 }
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-}

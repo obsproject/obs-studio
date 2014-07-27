@@ -12,8 +12,3 @@ bool obs_module_load(void)
 	RegisterWASAPIOutput();
 	return true;
 }
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-}

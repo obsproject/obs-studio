@@ -77,10 +77,11 @@ MODULE_EXPORT void obs_module_free_locale(void);
 		obs_module_lookup = obs_module_load_locale( \
 				obs_current_module(), \
 				default_locale, locale); \
+	} \
+	void obs_module_free_locale(void) \
+	{ \
+		text_lookup_destroy(obs_module_lookup); \
 	}
-
-#define OBS_MODULE_FREE_DEFAULT_LOCALE() \
-	text_lookup_destroy(obs_module_lookup)
 
 /** Helper function for looking up locale if default locale handler was used */
 extern const char *obs_module_text(const char *lookup_string);

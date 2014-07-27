@@ -94,7 +94,5 @@ void obs_module_unload()
 {
 	XCompcapMain::deinit();
 
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-
 	blog(LOG_INFO, "Xcomposite capture plugin unloaded");
 }

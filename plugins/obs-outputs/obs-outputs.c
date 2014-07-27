@@ -28,6 +28,4 @@ void obs_module_unload(void)
 #ifdef _WIN32
 	WSACleanup();
 #endif
-
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
 }
