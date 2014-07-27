@@ -60,6 +60,7 @@ struct video_output {
 	uint64_t                   frame_time;
 	volatile uint64_t          cur_video_time;
 	uint32_t                   skipped_frames;
+	uint32_t                   total_frames;
 
 	bool                       initialized;
 
@@ -161,6 +162,8 @@ static void *video_thread(void *param)
 		video_output_cur_frame(video);
 
 		pthread_mutex_unlock(&video->data_mutex);
+
+		video->total_frames++;
 	}
 
 	return NULL;
@@ -412,4 +415,9 @@ double video_output_framerate(video_t video)
 uint32_t video_output_num_skipped_frames(video_t video)
 {
 	return video->skipped_frames;
+}
+
+uint32_t video_output_total_frames(video_t video)
+{
+	return video->total_frames;
 }

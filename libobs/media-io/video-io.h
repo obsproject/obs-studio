@@ -144,6 +144,7 @@ EXPORT uint32_t video_output_height(video_t video);
 EXPORT double video_output_framerate(video_t video);
 
 EXPORT uint32_t video_output_num_skipped_frames(video_t video);
+EXPORT uint32_t video_output_total_frames(video_t video);
 
 
 #ifdef __cplusplus
