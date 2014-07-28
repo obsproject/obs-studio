@@ -1189,10 +1189,8 @@ void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 	UNUSED_PARAMETER(param);
 }
 
-bool obs_module_load(uint32_t libobs_ver)
+bool obs_module_load(void)
 {
-	UNUSED_PARAMETER(libobs_ver);
-
 	SetLogCallback(DShowModuleLogCallback, nullptr);
 
 	obs_source_info info = {};
@@ -1211,9 +1209,4 @@ bool obs_module_load(uint32_t libobs_ver)
 	obs_register_source(&info);
 
 	return true;
-}
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
 }

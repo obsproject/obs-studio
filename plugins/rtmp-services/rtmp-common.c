@@ -207,7 +207,7 @@ static obs_properties_t rtmp_common_properties(void)
 			obs_module_text("Service"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	file = obs_find_plugin_file("rtmp-services/services.json");
+	file = obs_module_file("services.json");
 	if (file) {
 		json_t *root = build_service_list(list, file);
 		obs_properties_set_param(ppts, root, properties_data_destroy);
@@ -305,7 +305,7 @@ static bool rtmp_common_initialize(void *data, obs_output_t output)
 	struct rtmp_common *service = data;
 	char               *file;
 
-	file = obs_find_plugin_file("rtmp-services/services.json");
+	file = obs_module_file("services.json");
 	if (file) {
 		json_t *root = open_json_file(file);
 		if (root) {

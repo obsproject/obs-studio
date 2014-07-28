@@ -24,6 +24,7 @@
 
 struct obs_core *obs = NULL;
 
+extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
 static inline void make_gs_init_data(struct gs_init_data *gid,
@@ -540,6 +541,7 @@ static bool obs_init(const char *locale)
 
 	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
+	add_default_module_paths();
 	return true;
 }
 
@@ -561,6 +563,8 @@ bool obs_startup(const char *locale)
 
 void obs_shutdown(void)
 {
+	struct obs_module *module;
+
 	if (!obs)
 		return;
 
@@ -582,9 +586,17 @@ void obs_shutdown(void)
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
 
-	for (size_t i = 0; i < obs->modules.num; i++)
-		free_module(obs->modules.array+i);
-	da_free(obs->modules);
+	module = obs->first_module;
+	while (module) {
+		struct obs_module *next = module->next;
+		free_module(module);
+		module = next;
+	}
+	obs->first_module = NULL;
+
+	for (size_t i = 0; i < obs->module_paths.num; i++)
+		free_module_path(obs->module_paths.array+i);
+	da_free(obs->module_paths);
 
 	bfree(obs->locale);
 	bfree(obs);
@@ -603,6 +615,7 @@ uint32_t obs_get_version(void)
 
 void obs_set_locale(const char *locale)
 {
+	struct obs_module *module;
 	if (!obs)
 		return;
 
@@ -610,11 +623,12 @@ void obs_set_locale(const char *locale)
 		bfree(obs->locale);
 	obs->locale = bstrdup(locale);
 
-	for (size_t i = 0; i < obs->modules.num; i++) {
-		struct obs_module *module = obs->modules.array+i;
-
+	module = obs->first_module;
+	while (module) {
 		if (module->set_locale)
 			module->set_locale(locale);
+
+		module = module->next;
 	}
 }
 

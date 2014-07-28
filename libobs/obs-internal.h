@@ -22,6 +22,7 @@
 #include "util/circlebuf.h"
 #include "util/dstr.h"
 #include "util/threading.h"
+#include "util/platform.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -50,12 +51,48 @@ struct draw_callback {
 /* modules */
 
 struct obs_module {
-	char *name;
+	const char *file;
+	char *bin_path;
+	char *data_path;
 	void *module;
-	void (*set_locale)(const char *locale);
+	bool loaded;
+
+	bool        (*load)(void);
+	void        (*unload)(void);
+	void        (*set_locale)(const char *locale);
+	void        (*free_locale)(void);
+	uint32_t    (*ver)(void);
+	void        (*set_pointer)(obs_module_t module);
+	const char *(*name)(void);
+	const char *(*description)(void);
+	const char *(*author)(void);
+
+	struct obs_module *next;
 };
 
 extern void free_module(struct obs_module *mod);
+
+struct obs_module_path {
+	char *bin;
+	char *data;
+};
+
+static inline void free_module_path(struct obs_module_path *omp)
+{
+	if (omp) {
+		bfree(omp->bin);
+		bfree(omp->data);
+	}
+}
+
+static inline bool check_path(const char *data, const char *path,
+		struct dstr *output)
+{
+	dstr_copy(output, path);
+	dstr_cat(output, data);
+
+	return os_file_exists(output->array);
+}
 
 
 /* ------------------------------------------------------------------------- */
@@ -161,7 +198,9 @@ struct obs_core_data {
 };
 
 struct obs_core {
-	DARRAY(struct obs_module)       modules;
+	struct obs_module               *first_module;
+	DARRAY(struct obs_module_path)  module_paths;
+
 	DARRAY(struct obs_source_info)  input_types;
 	DARRAY(struct obs_source_info)  filter_types;
 	DARRAY(struct obs_source_info)  transition_types;
@@ -324,6 +363,8 @@ struct obs_source {
 	bool                            rendering_filter;
 };
 
+extern const struct obs_source_info *find_source(struct darray *list,
+		const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t settings, const char *name);
 extern bool obs_source_init(struct obs_source *source,
@@ -383,6 +424,8 @@ struct obs_output {
 	bool                            valid;
 };
 
+extern const struct obs_output_info *find_output(const char *id);
+
 extern void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder);
 
@@ -436,6 +479,8 @@ struct obs_encoder {
 	DARRAY(struct encoder_callback) callbacks;
 };
 
+extern struct obs_encoder_info *find_encoder(const char *id);
+
 extern bool obs_encoder_initialize(obs_encoder_t encoder);
 
 extern void obs_encoder_start(obs_encoder_t encoder,
@@ -461,6 +506,8 @@ struct obs_service {
 	bool                            destroy;
 	struct obs_output               *output;
 };
+
+extern const struct obs_service_info *find_service(const char *id);
 
 extern void obs_service_activate(struct obs_service *service);
 extern void obs_service_deactivate(struct obs_service *service, bool remove);

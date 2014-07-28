@@ -18,7 +18,7 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-static inline struct obs_encoder_info *get_encoder_info(const char *id)
+struct obs_encoder_info *find_encoder(const char *id)
 {
 	for (size_t i = 0; i < obs->encoder_types.num; i++) {
 		struct obs_encoder_info *info = obs->encoder_types.array+i;
@@ -32,7 +32,7 @@ static inline struct obs_encoder_info *get_encoder_info(const char *id)
 
 const char *obs_encoder_getdisplayname(const char *id)
 {
-	struct obs_encoder_info *ei = get_encoder_info(id);
+	struct obs_encoder_info *ei = find_encoder(id);
 	return ei ? ei->getname() : NULL;
 }
 
@@ -60,7 +60,7 @@ static struct obs_encoder *create_encoder(const char *id,
 		obs_data_t settings)
 {
 	struct obs_encoder *encoder;
-	struct obs_encoder_info *ei = get_encoder_info(id);
+	struct obs_encoder_info *ei = find_encoder(id);
 	bool success;
 
 	if (!ei || ei->type != type)
@@ -231,13 +231,13 @@ static inline obs_data_t get_defaults(const struct obs_encoder_info *info)
 
 obs_data_t obs_encoder_defaults(const char *id)
 {
-	const struct obs_encoder_info *info = get_encoder_info(id);
+	const struct obs_encoder_info *info = find_encoder(id);
 	return (info) ? get_defaults(info) : NULL;
 }
 
 obs_properties_t obs_get_encoder_properties(const char *id)
 {
-	const struct obs_encoder_info *ei = get_encoder_info(id);
+	const struct obs_encoder_info *ei = find_encoder(id);
 	if (ei && ei->properties) {
 		obs_data_t       defaults = get_defaults(ei);
 		obs_properties_t properties;

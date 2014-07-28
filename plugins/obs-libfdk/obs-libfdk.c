@@ -303,19 +303,11 @@ struct obs_encoder_info obs_libfdk_encoder = {
 	.audio_info = libfdk_audio_info
 };
 
-bool obs_module_load(uint32_t libobs_ver)
+bool obs_module_load(void)
 {
-	UNUSED_PARAMETER(libobs_ver);
-
 	obs_register_encoder(&obs_libfdk_encoder);
-
 	return true;
 }
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-libfdk", "en-US")
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
-}

@@ -21,14 +21,8 @@ OBS_MODULE_USE_DEFAULT_LOCALE("linux-xshm", "en-US")
 
 extern struct obs_source_info xshm_input;
 
-bool obs_module_load(uint32_t obs_version)
+bool obs_module_load(void)
 {
-	UNUSED_PARAMETER(obs_version);
 	obs_register_source(&xshm_input);
 	return true;
-}
-
-void obs_module_unload(void)
-{
-	OBS_MODULE_FREE_DEFAULT_LOCALE();
 }

@@ -34,8 +34,7 @@ static inline bool source_valid(struct obs_source *source)
 	return source && source->context.data;
 }
 
-static inline const struct obs_source_info *find_source(struct darray *list,
-		const char *id)
+const struct obs_source_info *find_source(struct darray *list, const char *id)
 {
 	size_t i;
 	struct obs_source_info *array = list->array;

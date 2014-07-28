@@ -22,57 +22,37 @@
 
 #include <windows.h>
 
-static inline bool check_path(const char* data, const char *path,
-		struct dstr * output)
+const char *get_module_extension(void)
 {
-	dstr_copy(output, path);
-	dstr_cat(output, data);
-
-	blog(LOG_DEBUG, "Attempting path: %s\n", output->array);
-
-	return os_file_exists(output->array);
+	return ".dll";
 }
-
-static inline bool check_lib_path(const char* data, const char *path,
-		struct dstr *output)
-{
-	bool result = false;
-	struct dstr tmp;
-
-	dstr_init_copy(&tmp, data);
-	dstr_cat(&tmp, ".dll");
-	result = check_path(tmp.array, path, output);
-
-	dstr_free(&tmp);
-
-	return result;
-}
-
-/* on windows, plugin files are located in [base directory]/plugins/[bit] */
-char *find_plugin(const char *plugin)
-{
-	struct dstr path;
-	dstr_init(&path);
 
 #ifdef _WIN64
-	if (check_lib_path(plugin, "obs-plugins/64bit/", &path))
+#define BIT_STRING "64bit"
 #else
-	if (check_lib_path(plugin, "obs-plugins/32bit/", &path))
+#define BIT_STRING "32bit"
 #endif
-		return path.array;
 
-#ifdef _WIN64
-	if (check_lib_path(plugin, "../../obs-plugins/64bit/", &path))
-#else
-	if (check_lib_path(plugin, "../../obs-plugins/32bit/", &path))
-#endif
-		return path.array;
+static const char *module_bin[] = {
+	"obs-plugins/" BIT_STRING,
+	"../../obs-plugins/" BIT_STRING,
+};
 
-	dstr_free(&path);
-	return NULL;
+static const char *module_data[] = {
+	"data/%module%",
+	"../../data/obs-plugins/%module%"
+};
+
+static const int module_patterns_size =
+	sizeof(module_bin)/sizeof(module_bin[0]);
+
+void add_default_module_paths(void)
+{
+	for (int i = 0; i < module_patterns_size; i++)
+		obs_add_module_path(module_bin[i], module_data[i]);
 }
 
-/* on windows, points to [base directory]/libobs */
+/* on windows, points to [base directory]/data/libobs */
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
@@ -82,22 +62,6 @@ char *find_libobs_data_file(const char *file)
 		return path.array;
 
 	if (check_path(file, "../../data/libobs/", &path))
-		return path.array;
-
-	dstr_free(&path);
-	return NULL;
-}
-
-/* on windows, data files should always be in [base directory]/data */
-char *obs_find_plugin_file(const char *file)
-{
-	struct dstr path;
-	dstr_init(&path);
-
-	if (check_path(file, "data/obs-plugins/", &path))
-		return path.array;
-
-	if (check_path(file, "../../data/obs-plugins/", &path))
 		return path.array;
 
 	dstr_free(&path);

@@ -21,7 +21,7 @@
 
 static inline void signal_stop(struct obs_output *output, int code);
 
-static inline const struct obs_output_info *find_output(const char *id)
+const struct obs_output_info *find_output(const char *id)
 {
 	size_t i;
 	for (i = 0; i < obs->output_types.num; i++)

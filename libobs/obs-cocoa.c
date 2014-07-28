@@ -26,42 +26,34 @@
 
 #include <objc/objc.h>
 
-// support both foo.so and libfoo.so for now
-static const char *plugin_patterns[] = {
-	OBS_INSTALL_PREFIX "obs-plugins/%s.so",
-	OBS_INSTALL_PREFIX "obs-plugins/lib%s.so",
-	"../obs-plugins/%s.so",
-	"../obs-plugins/lib%s.so"
+const char *get_module_extension(void)
+{
+	return ".so";
+}
+
+static const char *module_bin[] = {
+	"../obs-plugins",
+	OBS_INSTALL_PREFIX "obs-plugins",
 };
 
-static const int plugin_patterns_size =
-	sizeof(plugin_patterns)/sizeof(plugin_patterns[0]);
+static const char *module_data[] = {
+	"../data/obs-plugins/%module%",
+	OBS_INSTALL_DATA_PATH "obs-plugins/%module%",
+};
 
-char *find_plugin(const char *plugin)
+static const int module_patterns_size =
+	sizeof(module_bin)/sizeof(module_bin[0]);
+
+void add_default_module_paths(void)
 {
-	struct dstr path;
-	dstr_init(&path);
-	for(int i = 0; i < plugin_patterns_size; i++) {
-		dstr_printf(&path, plugin_patterns[i], plugin);
-		if(!access(path.array, F_OK))
-			break;
-	}
-
-	return path.array;
+	for (int i = 0; i < module_patterns_size; i++)
+		obs_add_module_path(module_bin[i], module_data[i]);
 }
 
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
 	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
-	dstr_cat(&path, file);
-	return path.array;
-}
-
-char *obs_find_plugin_file(const char *file)
-{
-	struct dstr path;
-	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/obs-plugins/");
 	dstr_cat(&path, file);
 	return path.array;
 }
