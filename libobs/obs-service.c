@@ -17,7 +17,7 @@
 
 #include "obs-internal.h"
 
-static inline const struct obs_service_info *find_service(const char *id)
+const struct obs_service_info *find_service(const char *id)
 {
 	size_t i;
 	for (i = 0; i < obs->service_types.num; i++)

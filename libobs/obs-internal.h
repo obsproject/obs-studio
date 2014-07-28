@@ -363,6 +363,8 @@ struct obs_source {
 	bool                            rendering_filter;
 };
 
+extern const struct obs_source_info *find_source(struct darray *list,
+		const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t settings, const char *name);
 extern bool obs_source_init(struct obs_source *source,
@@ -422,6 +424,8 @@ struct obs_output {
 	bool                            valid;
 };
 
+extern const struct obs_output_info *find_output(const char *id);
+
 extern void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder);
 
@@ -475,6 +479,8 @@ struct obs_encoder {
 	DARRAY(struct encoder_callback) callbacks;
 };
 
+extern struct obs_encoder_info *find_encoder(const char *id);
+
 extern bool obs_encoder_initialize(obs_encoder_t encoder);
 
 extern void obs_encoder_start(obs_encoder_t encoder,
@@ -500,6 +506,8 @@ struct obs_service {
 	bool                            destroy;
 	struct obs_output               *output;
 };
+
+extern const struct obs_service_info *find_service(const char *id);
 
 extern void obs_service_activate(struct obs_service *service);
 extern void obs_service_deactivate(struct obs_service *service, bool remove);
