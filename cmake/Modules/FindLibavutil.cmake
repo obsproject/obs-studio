@@ -24,7 +24,7 @@ else()
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libavutil/avutil.h
 		HINTS
-			"${_AVUTIL_INCLUDE_DIRS}"
+			${_AVUTIL_INCLUDE_DIRS}
 			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
@@ -36,7 +36,7 @@ else()
 	find_library(AVUTIL_LIB
 		NAMES ${_AVUTIL_LIBRARIES} avutil-ffmpeg avutil
 		HINTS
-			"${_AVUTIL_LIBRARY_DIRS}"
+			${_AVUTIL_LIBRARY_DIRS}
 			"${FFMPEG_INCLUDE_DIR}/../lib"
 			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"

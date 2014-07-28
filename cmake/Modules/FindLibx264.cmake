@@ -29,24 +29,26 @@ else()
 	find_path(X264_INCLUDE_DIR
 		NAMES x264.h
 		HINTS
+			${_X264_INCLUDE_DIRS}
 			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV x264Path
 			ENV FFmpegPath
 			ENV ${X264_PATH_ARCH}
 			ENV ${FFMPEG_PATH_ARCH}
-			"${_X264_INCLUDE_DIRS}"
+		PATHS
 			/usr/include /usr/local/include /opt/local/include /sw/include)
 
 	find_library(X264_LIB
-		NAMES x264 libx264
+		NAMES ${_X264_LIBRARIES} x264 libx264
 		HINTS
+			${_X264_LIBRARY_DIRS}
 			"${X264_INCLUDE_DIR}/../lib"
 			"${X264_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${X264_INCLUDE_DIR}/../libs${_lib_suffix}"
 			"${X264_INCLUDE_DIR}/lib"
 			"${X264_INCLUDE_DIR}/lib${_lib_suffix}"
-			"${_X264_LIBRARY_DIRS}"
+		PATHS
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBX264_INCLUDE_DIRS ${X264_INCLUDE_DIR} CACHE PATH "x264 include dir")

@@ -24,7 +24,7 @@ else()
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libswscale/swscale.h
 		HINTS
-			"${_SWSCALE_INCLUDE_DIRS}"
+			${_SWSCALE_INCLUDE_DIRS}
 			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
@@ -36,7 +36,7 @@ else()
 	find_library(SWSCALE_LIB
 		NAMES ${_SWSCALE_LIBRARIES} swscale-ffmpeg swscale
 		HINTS
-			"${_SWSCALE_LIBRARY_DIRS}"
+			${_SWSCALE_LIBRARY_DIRS}
 			"${FFMPEG_INCLUDE_DIR}/../lib"
 			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"

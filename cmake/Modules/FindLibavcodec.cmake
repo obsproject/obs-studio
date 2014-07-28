@@ -28,7 +28,7 @@ else()
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libavcodec/avcodec.h
 		HINTS
-			"${_AVCODEC_INCLUDE_DIRS}"
+			${_AVCODEC_INCLUDE_DIRS}
 			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
@@ -40,7 +40,7 @@ else()
 	find_library(AVCODEC_LIB
 		NAMES ${_AVCODEC_LIBRARIES} avcodec-ffmpeg avcodec
 		HINTS
-			"${_AVCODEC_LIBRARY_DIRS}"
+			${_AVCODEC_LIBRARY_DIRS}
 			"${FFMPEG_INCLUDE_DIR}/../lib"
 			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
