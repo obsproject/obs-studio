@@ -28,23 +28,25 @@ else()
 	find_path(FFMPEG_INCLUDE_DIR
 		NAMES libavcodec/avcodec.h
 		HINTS
+			"${_AVCODEC_INCLUDE_DIRS}"
 			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
 			"$ENV{obsAdditionalInstallFiles}/include"
 			ENV FFmpegPath
 			ENV ${FFMPEG_PATH_ARCH}
-			"${_AVCODEC_INCLUDE_DIRS}"
+		PATHS
 			/usr/include /usr/local/include /opt/local/include /sw/include
 		PATH_SUFFIXES ffmpeg libav)
 
 	find_library(AVCODEC_LIB
-		NAMES avcodec
+		NAMES ${_AVCODEC_LIBRARIES} avcodec-ffmpeg avcodec
 		HINTS
+			"${_AVCODEC_LIBRARY_DIRS}"
 			"${FFMPEG_INCLUDE_DIR}/../lib"
 			"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
 			"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
 			"${FFMPEG_INCLUDE_DIR}/lib"
 			"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
-			"${_AVCODEC_LIBRARY_DIRS}"
+		PATHS
 			/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
 	set(LIBAVCODEC_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavcodec include dir")
