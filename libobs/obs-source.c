@@ -158,7 +158,7 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (!info) {
-		blog(LOG_ERROR, "Source '%s' not found", id);
+		blog(LOG_ERROR, "Source ID '%s' not found", id);
 		return NULL;
 	}
 
