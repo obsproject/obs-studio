@@ -274,10 +274,10 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	 * the bitrate */
 	if (cbr) {
 		obsx264->params.rc.f_rf_constant = 0.0f;
+		obsx264->params.rc.i_rc_method   = X264_RC_ABR;
 
 #if X264_BUILD >= 139
 		obsx264->params.rc.b_filler      = true;
-		obsx264->params.rc.i_rc_method   = X264_RC_ABR;
 #else
 		obsx264->params.i_nal_hrd        = X264_NAL_HRD_CBR;
 #endif
