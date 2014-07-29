@@ -267,6 +267,9 @@ struct obs_source {
 	struct obs_source_info          info;
 	volatile long                   refs;
 
+	/* indicates ownership of the info.id buffer */
+	bool                            owns_info_id;
+
 	/* signals to call the source update in the video thread */
 	bool                            defer_update;
 

@@ -120,7 +120,7 @@ bool obs_source_init(struct obs_source *source,
 	if (pthread_mutex_init(&source->video_mutex, NULL) != 0)
 		return false;
 
-	if (info->output_flags & OBS_SOURCE_AUDIO) {
+	if (info && info->output_flags & OBS_SOURCE_AUDIO) {
 		source->audio_line = audio_output_createline(obs->audio.audio,
 				source->context.name);
 		if (!source->audio_line) {
@@ -154,26 +154,30 @@ static inline void obs_source_dosignal(struct obs_source *source,
 obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 		const char *name, obs_data_t settings)
 {
-	struct obs_source *source;
+	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
 	const struct obs_source_info *info = get_source_info(type, id);
 	if (!info) {
 		blog(LOG_ERROR, "Source ID '%s' not found", id);
-		return NULL;
-	}
 
-	source       = bzalloc(sizeof(struct obs_source));
-	source->info = *info;
+		source->info.id      = bstrdup(id);
+		source->info.type    = type;
+		source->owns_info_id = true;
+	} else {
+		source->info = *info;
+	}
 
 	if (!obs_source_init_context(source, settings, name))
 		goto fail;
 
-	if (info->defaults)
+	if (info && info->defaults)
 		info->defaults(source->context.settings);
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
-	source->context.data = info->create(source->context.settings, source);
+	if (info)
+		source->context.data = info->create(source->context.settings,
+				source);
 	if (!source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
@@ -254,6 +258,10 @@ void obs_source_destroy(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->video_mutex);
 	obs_context_data_free(&source->context);
+	
+	if (source->owns_info_id)
+		bfree((void*)source->info.id);
+
 	bfree(source);
 }
 
