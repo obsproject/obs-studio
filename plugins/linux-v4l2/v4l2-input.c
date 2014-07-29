@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/select.h>
 
 #include <linux/videodev2.h>
+#include <libv4l2.h>
 
 #include <util/threading.h>
 #include <util/bmem.h>
@@ -46,22 +47,37 @@ struct v4l2_buffer_data {
 	void *start;
 };
 
+/**
+ * Data structure for the v4l2 source
+ *
+ * The data is divided into two sections, data being used inside and outside
+ * the capture thread. Data used by the capture thread must not be modified
+ * from the outside while the thread is running.
+ *
+ * Data members prefixed with "set_" are settings from the source properties
+ * and may be used from outside the capture thread.
+ */
 struct v4l2_data {
-	char *device;
+	/* data used outside of the capture thread */
+	obs_source_t source;
 
 	pthread_t thread;
 	os_event_t event;
-	obs_source_t source;
-	uint_fast32_t linesize;
+
+	char *set_device;
+	int_fast32_t set_pixfmt;
+	int_fast32_t set_res;
+	int_fast32_t set_fps;
+
+	/* data used within the capture thread */
+	int_fast32_t dev;
 
 	uint64_t frames;
-
-	int_fast32_t dev;
-	int_fast32_t pixelformat;
 	int_fast32_t width;
 	int_fast32_t height;
-	int_fast32_t fps_numerator;
-	int_fast32_t fps_denominator;
+	int_fast32_t pixfmt;
+	uint_fast32_t linesize;
+
 	uint_fast32_t buf_count;
 	struct v4l2_buffer_data *buf;
 };
@@ -74,6 +90,7 @@ static enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
 	case V4L2_PIX_FMT_UYVY:   return VIDEO_FORMAT_UYVY;
 	case V4L2_PIX_FMT_NV12:   return VIDEO_FORMAT_NV12;
 	case V4L2_PIX_FMT_YUV420: return VIDEO_FORMAT_I420;
+	case V4L2_PIX_FMT_YVU420: return VIDEO_FORMAT_I420;
 	default:                  return VIDEO_FORMAT_NONE;
 	}
 }
@@ -93,7 +110,7 @@ static void unpack_tuple(int *a, int *b, int packed)
 }
 
 /* fixed framesizes as fallback */
-static int fixed_framesizes[] =
+static const int fixed_framesizes[] =
 {
 	/* 4:3 */
 	160<<16		| 120,
@@ -130,7 +147,7 @@ static int fixed_framesizes[] =
 };
 
 /* fixed framerates as fallback */
-static int fixed_framerates[] =
+static const int fixed_framerates[] =
 {
 	1<<16		| 60,
 	1<<16		| 50,
@@ -158,14 +175,14 @@ static int_fast32_t v4l2_start_capture(struct v4l2_data *data)
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.index = i;
 
-		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_ERROR, "unable to queue buffer");
 			return -1;
 		}
 	}
 
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
 		blog(LOG_ERROR, "unable to start stream");
 		return -1;
 	}
@@ -180,15 +197,19 @@ static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
 {
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-	if (ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
+	if (v4l2_ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
 		blog(LOG_ERROR, "unable to stop stream");
 	}
 
 	return 0;
 }
 
-/*
- * create memory mapping for buffers
+/**
+ * Create memory mapping for buffers
+ *
+ * This tries to map at least 2, preferably 4, buffers to userspace.
+ *
+ * @return 0 on success, -1 on failure
  */
 static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 {
@@ -198,13 +219,13 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_MMAP;
 
-	if (ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
-		blog(LOG_DEBUG, "request for buffers failed !");
+	if (v4l2_ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
+		blog(LOG_ERROR, "Request for buffers failed !");
 		return -1;
 	}
 
 	if (req.count < 2) {
-		blog(LOG_DEBUG, "not enough memory !");
+		blog(LOG_ERROR, "Device returned less than 2 buffers");
 		return -1;
 	}
 
@@ -218,13 +239,13 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.index = i;
 
-		if (ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_ERROR, "failed to query buffer");
+		if (v4l2_ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
+			blog(LOG_ERROR, "Failed to query buffer details");
 			return -1;
 		}
 
 		data->buf[i].length = buf.length;
-		data->buf[i].start = mmap(NULL, buf.length,
+		data->buf[i].start = v4l2_mmap(NULL, buf.length,
 			PROT_READ | PROT_WRITE, MAP_SHARED,
 			data->dev, buf.m.offset);
 
@@ -237,18 +258,68 @@ static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
 	return 0;
 }
 
-/*
- * destroy memory mapping for buffers
+/**
+ * Destroy memory mapping for buffers
  */
 static void v4l2_destroy_mmap(struct v4l2_data *data)
 {
 	for(uint_fast32_t i = 0; i < data->buf_count; ++i) {
 		if (data->buf[i].start != MAP_FAILED)
-			munmap(data->buf[i].start, data->buf[i].length);
+			v4l2_munmap(data->buf[i].start, data->buf[i].length);
 	}
 
 	data->buf_count = 0;
 	bfree(data->buf);
+}
+
+/**
+ * Prepare the output frame structure for obs and compute plane offsets
+ *
+ * Basically all data apart from memory pointers and the timestamp is known
+ * before the capture starts. This function prepares the source_frame struct
+ * with all the data that is already known.
+ *
+ * v4l2 uses a continuous memory segment for all planes so we simply compute
+ * offsets to add to the start address in order to give obs the correct data
+ * pointers for the individual planes.
+ */
+static void v4l2_prep_obs_frame(struct v4l2_data *data,
+	struct source_frame *frame, size_t *plane_offsets)
+{
+	memset(frame, 0, sizeof(struct source_frame));
+	memset(plane_offsets, 0, sizeof(size_t) * MAX_AV_PLANES);
+
+	frame->width = data->width;
+	frame->height = data->height;
+	frame->format = v4l2_to_obs_video_format(data->pixfmt);
+	video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_PARTIAL,
+		frame->color_matrix, frame->color_range_min,
+		frame->color_range_max);
+
+	switch(data->pixfmt) {
+	case V4L2_PIX_FMT_NV12:
+		frame->linesize[0] = data->linesize;
+		frame->linesize[1] = data->linesize / 2;
+		plane_offsets[1] = data->linesize * data->height;
+		break;
+	case V4L2_PIX_FMT_YVU420:
+		frame->linesize[0] = data->linesize;
+		frame->linesize[1] = data->linesize / 2;
+		frame->linesize[2] = data->linesize / 2;
+		plane_offsets[1] = data->linesize * data->height * 5 / 4;
+		plane_offsets[2] = data->linesize * data->height;
+		break;
+	case V4L2_PIX_FMT_YUV420:
+		frame->linesize[0] = data->linesize;
+		frame->linesize[1] = data->linesize / 2;
+		frame->linesize[2] = data->linesize / 2;
+		plane_offsets[1] = data->linesize * data->height;
+		plane_offsets[2] = data->linesize * data->height * 5 / 4;
+		break;
+	default:
+		frame->linesize[0] = data->linesize;
+		break;
+	}
 }
 
 /*
@@ -257,23 +328,25 @@ static void v4l2_destroy_mmap(struct v4l2_data *data)
 static void *v4l2_thread(void *vptr)
 {
 	V4L2_DATA(vptr);
+	int r;
+	fd_set fds;
+	uint8_t *start;
+	struct timeval tv;
+	struct v4l2_buffer buf;
+	struct source_frame out;
+	size_t plane_offsets[MAX_AV_PLANES];
 
 	if (v4l2_start_capture(data) < 0)
 		goto exit;
 
 	data->frames = 0;
-	blog(LOG_INFO, "Started recording from %s", data->device);
+
+	FD_ZERO(&fds);
+	FD_SET(data->dev, &fds);
+
+	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
 	while (os_event_try(data->event) == EAGAIN) {
-		int r;
-		fd_set fds;
-		struct timeval tv;
-		struct v4l2_buffer buf;
-		struct source_frame out;
-
-		FD_ZERO(&fds);
-		FD_SET(data->dev, &fds);
-
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 
@@ -291,26 +364,20 @@ static void *v4l2_thread(void *vptr)
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		buf.memory = V4L2_MEMORY_MMAP;
 
-		if (ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN)
 				continue;
 			blog(LOG_DEBUG, "failed to dequeue buffer");
 			break;
 		}
 
-		video_format_get_parameters(VIDEO_CS_DEFAULT,
-				VIDEO_RANGE_PARTIAL, out.color_matrix,
-				out.color_range_min, out.color_range_max);
-		out.data[0] = (uint8_t *) data->buf[buf.index].start;
-		out.linesize[0] = data->linesize;
-		out.width = data->width;
-		out.height = data->height;
 		out.timestamp = timeval2ns(buf.timestamp);
-		out.format = v4l2_to_obs_video_format(data->pixelformat);
-
+		start = (uint8_t *) data->buf[buf.index].start;
+		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
+			out.data[i] = start + plane_offsets[i];
 		obs_source_output_video(data->source, &out);
 
-		if (ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
+		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_DEBUG, "failed to enqueue buffer");
 			break;
 		}
@@ -318,8 +385,7 @@ static void *v4l2_thread(void *vptr)
 		data->frames++;
 	}
 
-	blog(LOG_INFO, "Stopped recording from %s after %"PRIu64" frames",
-	     data->device, data->frames);
+	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", data->frames);
 
 exit:
 	v4l2_stop_capture(data);
@@ -366,12 +432,12 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		dstr_resize(&device, 5);
 		dstr_cat(&device, dp->d_name);
 
-		if ((fd = open(device.array, O_RDWR | O_NONBLOCK)) == -1) {
+		if ((fd = v4l2_open(device.array, O_RDWR | O_NONBLOCK)) == -1) {
 			blog(LOG_INFO, "Unable to open %s", device.array);
 			continue;
 		}
 
-		if (ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
+		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
 			blog(LOG_INFO, "Failed to query capabilities for %s",
 			     device.array);
 		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
@@ -406,23 +472,30 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 	struct v4l2_fmtdesc fmt;
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.index = 0;
+	struct dstr buffer;
+	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
 
-	while (ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
+	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
+		dstr_copy(&buffer, (char *) fmt.description);
+		if (fmt.flags & V4L2_FMT_FLAG_EMULATED)
+			dstr_cat(&buffer, " (Emulated)");
+
 		if (v4l2_to_obs_video_format(fmt.pixelformat)
 				!= VIDEO_FORMAT_NONE) {
-			obs_property_list_add_int(prop,
-					(char *) fmt.description,
+			obs_property_list_add_int(prop, buffer.array,
 					fmt.pixelformat);
 			blog(LOG_INFO, "Pixelformat: %s (available)",
-			     (char *) fmt.description);
+			     buffer.array);
 		} else {
 			blog(LOG_INFO, "Pixelformat: %s (unavailable)",
-			     (char *) fmt.description);
+			     buffer.array);
 		}
 		fmt.index++;
 	}
+
+	dstr_free(&buffer);
 }
 
 /*
@@ -439,11 +512,11 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
+	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
 
 	switch(frmsize.type) {
 	case V4L2_FRMSIZE_TYPE_DISCRETE:
-		while (ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
+		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
 			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
 					frmsize.discrete.height);
 			obs_property_list_add_int(prop, buffer.array,
@@ -488,11 +561,12 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
-	ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
+	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
 
 	switch(frmival.type) {
 	case V4L2_FRMIVAL_TYPE_DISCRETE:
-		while (ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
+		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS,
+				&frmival) == 0) {
 			float fps = (float) frmival.discrete.denominator /
 				frmival.discrete.numerator;
 			int pack = pack_tuple(frmival.discrete.numerator,
@@ -529,7 +603,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -537,7 +611,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 	obs_property_t prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -548,7 +622,7 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -557,7 +631,7 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 	v4l2_resolution_list(dev, obs_data_getint(settings, "pixelformat"),
 			prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -569,7 +643,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 {
 	UNUSED_PARAMETER(p);
 	int width, height;
-	int dev = open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -580,7 +654,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	v4l2_framerate_list(dev, obs_data_getint(settings, "pixelformat"),
 			width, height, prop);
 	obs_property_modified(prop, settings);
-	close(dev);
+	v4l2_close(dev);
 	return true;
 }
 
@@ -613,20 +687,6 @@ static obs_properties_t v4l2_properties(void)
 	return props;
 }
 
-static uint32_t v4l2_getwidth(void *vptr)
-{
-	V4L2_DATA(vptr);
-
-	return data->width;
-}
-
-static uint32_t v4l2_getheight(void *vptr)
-{
-	V4L2_DATA(vptr);
-
-	return data->height;
-}
-
 static void v4l2_terminate(struct v4l2_data *data)
 {
 	if (data->thread) {
@@ -639,7 +699,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		v4l2_destroy_mmap(data);
 
 	if (data->dev != -1) {
-		close(data->dev);
+		v4l2_close(data->dev);
 		data->dev = -1;
 	}
 }
@@ -653,62 +713,85 @@ static void v4l2_destroy(void *vptr)
 
 	v4l2_terminate(data);
 
-	if (data->device)
-		bfree(data->device);
+	if (data->set_device)
+		bfree(data->set_device);
 	bfree(data);
 }
 
+/**
+ * Initialize the v4l2 device
+ *
+ * This function:
+ * - tries to open the device
+ * - sets pixelformat and requested resolution
+ * - sets the requested framerate
+ * - maps the buffers
+ * - starts the capture thread
+ */
 static void v4l2_init(struct v4l2_data *data)
 {
 	struct v4l2_format fmt;
 	struct v4l2_streamparm par;
+	struct dstr fps;
+	int width, height;
+	int fps_num, fps_denom;
 
-	data->dev = open(data->device, O_RDWR | O_NONBLOCK);
+	blog(LOG_INFO, "Start capture from %s", data->set_device);
+	data->dev = v4l2_open(data->set_device, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
-		blog(LOG_ERROR, "Unable to open device: %s", data->device);
+		blog(LOG_ERROR, "Unable to open device");
 		goto fail;
 	}
 
+	/* set pixel format and resolution */
+	unpack_tuple(&width, &height, data->set_res);
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = data->width;
-	fmt.fmt.pix.height = data->height;
-	fmt.fmt.pix.pixelformat = data->pixelformat;
+	fmt.fmt.pix.width = width;
+	fmt.fmt.pix.height = height;
+	fmt.fmt.pix.pixelformat = data->set_pixfmt;
 	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-
-	if (ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
-		blog(LOG_DEBUG, "unable to set format");
+	if (v4l2_ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
+		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	data->pixelformat = fmt.fmt.pix.pixelformat;
 	data->width = fmt.fmt.pix.width;
 	data->height = fmt.fmt.pix.height;
-
-	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	par.parm.capture.timeperframe.numerator = data->fps_numerator;
-	par.parm.capture.timeperframe.denominator = data->fps_denominator;
-
-	if (ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
-		blog(LOG_DEBUG, "unable to set params");
-		goto fail;
-	}
-	data->fps_numerator = par.parm.capture.timeperframe.numerator;
-	data->fps_denominator = par.parm.capture.timeperframe.denominator;
-
+	data->pixfmt = fmt.fmt.pix.pixelformat;
 	data->linesize = fmt.fmt.pix.bytesperline;
-	blog(LOG_DEBUG, "Linesize: %"PRIuFAST32, data->linesize);
+	blog(LOG_INFO, "Resolution: %"PRIuFAST32"x%"PRIuFAST32,
+	     data->width, data->height);
+	blog(LOG_INFO, "Linesize: %"PRIuFAST32" Bytes", data->linesize);
 
+	/* set framerate */
+	unpack_tuple(&fps_num, &fps_denom, data->set_fps);
+	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	par.parm.capture.timeperframe.numerator = fps_num;
+	par.parm.capture.timeperframe.denominator = fps_denom;
+	if (v4l2_ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
+		blog(LOG_ERROR, "Unable to set framerate");
+		goto fail;
+	}
+	dstr_init(&fps);
+	dstr_printf(&fps, "%.2f",
+		(float) par.parm.capture.timeperframe.denominator
+		/ par.parm.capture.timeperframe.numerator);
+	blog(LOG_INFO, "Framerate: %s fps", fps.array);
+	dstr_free(&fps);
+
+	/* map buffers */
 	if (v4l2_create_mmap(data) < 0) {
-		blog(LOG_ERROR, "failed to map buffers");
+		blog(LOG_ERROR, "Failed to map buffers");
 		goto fail;
 	}
 
+	/* start the capture thread */
 	if (os_event_init(&data->event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
 	if (pthread_create(&data->thread, NULL, v4l2_thread, data) != 0)
 		goto fail;
 	return;
 fail:
-	blog(LOG_DEBUG, "initialization failed");
+	blog(LOG_ERROR, "Initialization failed");
 	v4l2_terminate(data);
 }
 
@@ -717,7 +800,6 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 	V4L2_DATA(vptr);
 	bool restart = false;
 	const char *new_device;
-	int width, height, fps_num, fps_denom;
 
 	new_device = obs_data_getstring(settings, "device_id");
 	if (strlen(new_device) == 0) {
@@ -725,42 +807,30 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 		new_device = obs_data_getstring(settings, "device_id");
 	}
 
-	if (!data->device || strcmp(data->device, new_device) != 0) {
-		if (data->device)
-			bfree(data->device);
-		data->device = bstrdup(new_device);
+	if (!data->set_device || strcmp(data->set_device, new_device) != 0) {
+		if (data->set_device)
+			bfree(data->set_device);
+		data->set_device = bstrdup(new_device);
 		restart = true;
 	}
 
-	if (data->pixelformat != obs_data_getint(settings, "pixelformat")) {
-		data->pixelformat = obs_data_getint(settings, "pixelformat");
+	if (data->set_pixfmt != obs_data_getint(settings, "pixelformat")) {
+		data->set_pixfmt = obs_data_getint(settings, "pixelformat");
 		restart = true;
 	}
 
-	unpack_tuple(&width, &height, obs_data_getint(settings,
-				"resolution"));
-	if (width != data->width || height != data->height) {
+	if (data->set_res != obs_data_getint(settings, "resolution")) {
+		data->set_res = obs_data_getint(settings, "resolution");
 		restart = true;
 	}
 
-	unpack_tuple(&fps_num, &fps_denom, obs_data_getint(settings,
-				"framerate"));
-
-	if (fps_num != data->fps_numerator
-			|| fps_denom != data->fps_denominator) {
-		data->fps_numerator = fps_num;
-		data->fps_denominator = fps_denom;
+	if (data->set_fps != obs_data_getint(settings, "framerate")) {
+		data->set_fps = obs_data_getint(settings, "framerate");
 		restart = true;
 	}
 
 	if (restart) {
 		v4l2_terminate(data);
-
-		/* Wait for v4l2_thread to finish before
-		 * updating width and height */
-		data->width = width;
-		data->height = height;
-
 		v4l2_init(data);
 	}
 }
@@ -774,7 +844,6 @@ static void *v4l2_create(obs_data_t settings, obs_source_t source)
 	data->source = source;
 
 	v4l2_update(data, settings);
-	blog(LOG_DEBUG, "New input created");
 
 	return data;
 }
@@ -788,7 +857,5 @@ struct obs_source_info v4l2_input = {
 	.destroy      = v4l2_destroy,
 	.update       = v4l2_update,
 	.defaults     = v4l2_defaults,
-	.properties   = v4l2_properties,
-	.getwidth     = v4l2_getwidth,
-	.getheight    = v4l2_getheight
+	.properties   = v4l2_properties
 };
