@@ -272,9 +272,9 @@ static inline bool video_input_init(struct video_input *input,
 
 		for (size_t i = 0; i < MAX_CONVERT_BUFFERS; i++)
 			video_frame_init(&input->frame[i],
-					input->conversion.format,
-					input->conversion.width,
-					input->conversion.height);
+					video->info.format,
+					video->info.width,
+					video->info.height);
 	}
 
 	return true;
