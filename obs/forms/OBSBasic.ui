@@ -26,6 +26,10 @@
   <property name="windowTitle">
    <string>.MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="obs.qrc">
+   <normaloff>:/res/images/obs.png</normaloff>:/res/images/obs.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
