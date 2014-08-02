@@ -709,16 +709,16 @@ void obs_sceneitem_setalignment(obs_sceneitem_t item, uint32_t alignment)
 }
 
 static inline void signal_move_dir(struct obs_scene_item *item,
-		enum order_movement movement)
+		enum obs_order_movement movement)
 {
 	const char *command = NULL;
 	struct calldata params = {0};
 
 	switch (movement) {
-	case ORDER_MOVE_UP:     command = "item_move_up";     break;
-	case ORDER_MOVE_DOWN:   command = "item_move_down";   break;
-	case ORDER_MOVE_TOP:    command = "item_move_top";    break;
-	case ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
+	case OBS_ORDER_MOVE_UP:     command = "item_move_up";     break;
+	case OBS_ORDER_MOVE_DOWN:   command = "item_move_down";   break;
+	case OBS_ORDER_MOVE_TOP:    command = "item_move_top";    break;
+	case OBS_ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
 	}
 
 	calldata_setptr(&params, "scene", item->parent);
@@ -730,7 +730,8 @@ static inline void signal_move_dir(struct obs_scene_item *item,
 	calldata_free(&params);
 }
 
-void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
+void obs_sceneitem_setorder(obs_sceneitem_t item,
+		enum obs_order_movement movement)
 {
 	if (!item) return;
 
@@ -745,13 +746,13 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 
 	detach_sceneitem(item);
 
-	if (movement == ORDER_MOVE_DOWN) {
+	if (movement == OBS_ORDER_MOVE_DOWN) {
 		attach_sceneitem(scene, item, prev ? prev->prev : NULL);
 
-	} else if (movement == ORDER_MOVE_UP) {
+	} else if (movement == OBS_ORDER_MOVE_UP) {
 		attach_sceneitem(scene, item, next ? next : prev);
 
-	} else if (movement == ORDER_MOVE_TOP) {
+	} else if (movement == OBS_ORDER_MOVE_TOP) {
 		struct obs_scene_item *last = next;
 		if (!last) {
 			last = prev;
@@ -762,7 +763,7 @@ void obs_sceneitem_setorder(obs_sceneitem_t item, enum order_movement movement)
 
 		attach_sceneitem(scene, item, last);
 
-	} else if (movement == ORDER_MOVE_BOTTOM) {
+	} else if (movement == OBS_ORDER_MOVE_BOTTOM) {
 		attach_sceneitem(scene, item, NULL);
 	}
 

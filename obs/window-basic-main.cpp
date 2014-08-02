@@ -55,7 +55,7 @@ using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
-Q_DECLARE_METATYPE(order_movement);
+Q_DECLARE_METATYPE(obs_order_movement);
 
 static void AddExtraModulePaths()
 {
@@ -781,7 +781,7 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 	}
 }
 
-void OBSBasic::MoveSceneItem(OBSSceneItem item, order_movement movement)
+void OBSBasic::MoveSceneItem(OBSSceneItem item, obs_order_movement movement)
 {
 	OBSScene scene = obs_sceneitem_getscene(item);
 	if (scene != GetCurrentScene())
@@ -794,21 +794,21 @@ void OBSBasic::MoveSceneItem(OBSSceneItem item, order_movement movement)
 	QListWidgetItem *listItem = ui->sources->takeItem(curRow);
 
 	switch (movement) {
-	case ORDER_MOVE_UP:
+	case OBS_ORDER_MOVE_UP:
 		if (curRow > 0)
 			curRow--;
 		break;
 
-	case ORDER_MOVE_DOWN:
+	case OBS_ORDER_MOVE_DOWN:
 		if (curRow < ui->sources->count())
 			curRow++;
 		break;
 
-	case ORDER_MOVE_TOP:
+	case OBS_ORDER_MOVE_TOP:
 		curRow = 0;
 		break;
 
-	case ORDER_MOVE_BOTTOM:
+	case OBS_ORDER_MOVE_BOTTOM:
 		curRow = ui->sources->count();
 		break;
 	}
@@ -1148,7 +1148,7 @@ void OBSBasic::SceneItemMoveUp(void *data, calldata_t params)
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 			"MoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(order_movement, ORDER_MOVE_UP));
+			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_UP));
 }
 
 void OBSBasic::SceneItemMoveDown(void *data, calldata_t params)
@@ -1157,7 +1157,7 @@ void OBSBasic::SceneItemMoveDown(void *data, calldata_t params)
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 			"MoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(order_movement, ORDER_MOVE_DOWN));
+			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_DOWN));
 }
 
 void OBSBasic::SceneItemMoveTop(void *data, calldata_t params)
@@ -1166,7 +1166,7 @@ void OBSBasic::SceneItemMoveTop(void *data, calldata_t params)
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 			"MoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(order_movement, ORDER_MOVE_TOP));
+			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_TOP));
 }
 
 void OBSBasic::SceneItemMoveBottom(void *data, calldata_t params)
@@ -1175,7 +1175,7 @@ void OBSBasic::SceneItemMoveBottom(void *data, calldata_t params)
 	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 			"MoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(order_movement, ORDER_MOVE_BOTTOM));
+			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_BOTTOM));
 }
 
 /* Main class functions */
@@ -1681,37 +1681,37 @@ void OBSBasic::on_actionSourceProperties_triggered()
 void OBSBasic::on_actionSourceUp_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_UP);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_UP);
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_DOWN);
 }
 
 void OBSBasic::on_actionMoveUp_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_UP);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_UP);
 }
 
 void OBSBasic::on_actionMoveDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_DOWN);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_DOWN);
 }
 
 void OBSBasic::on_actionMoveToTop_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_TOP);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_TOP);
 }
 
 void OBSBasic::on_actionMoveToBottom_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_setorder(item, ORDER_MOVE_BOTTOM);
+	obs_sceneitem_setorder(item, OBS_ORDER_MOVE_BOTTOM);
 }
 
 static char *ReadLogFile(const char *log)

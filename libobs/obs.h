@@ -74,11 +74,11 @@ extern "C" {
 
 /** Used for changing the order of items (for example, filters in a source,
  * or items in a scene) */
-enum order_movement {
-	ORDER_MOVE_UP,
-	ORDER_MOVE_DOWN,
-	ORDER_MOVE_TOP,
-	ORDER_MOVE_BOTTOM
+enum obs_order_movement {
+	OBS_ORDER_MOVE_UP,
+	OBS_ORDER_MOVE_DOWN,
+	OBS_ORDER_MOVE_TOP,
+	OBS_ORDER_MOVE_BOTTOM
 };
 
 /**
@@ -635,7 +635,7 @@ EXPORT void obs_source_filter_remove(obs_source_t source, obs_source_t filter);
 
 /** Modifies the order of a specific filter */
 EXPORT void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
-		enum order_movement movement);
+		enum obs_order_movement movement);
 
 /** Gets the settings string for a source */
 EXPORT obs_data_t obs_source_getsettings(obs_source_t source);
@@ -808,7 +808,7 @@ EXPORT void obs_sceneitem_setscale(obs_sceneitem_t item,
 EXPORT void obs_sceneitem_setalignment(obs_sceneitem_t item,
 		uint32_t alignment);
 EXPORT void obs_sceneitem_setorder(obs_sceneitem_t item,
-		enum order_movement movement);
+		enum obs_order_movement movement);
 
 EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t item,
 		enum obs_bounds_type type);

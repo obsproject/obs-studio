@@ -156,7 +156,7 @@ private slots:
 	void UpdateSceneSelection(OBSSource source);
 	void RenameSources(QString newName, QString prevName);
 
-	void MoveSceneItem(OBSSceneItem item, order_movement movement);
+	void MoveSceneItem(OBSSceneItem item, obs_order_movement movement);
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);

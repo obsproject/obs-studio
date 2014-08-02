@@ -1190,7 +1190,7 @@ void obs_source_filter_remove(obs_source_t source, obs_source_t filter)
 }
 
 void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
-		enum order_movement movement)
+		enum obs_order_movement movement)
 {
 	size_t idx, i;
 
@@ -1201,22 +1201,22 @@ void obs_source_filter_setorder(obs_source_t source, obs_source_t filter,
 	if (idx == DARRAY_INVALID)
 		return;
 
-	if (movement == ORDER_MOVE_UP) {
+	if (movement == OBS_ORDER_MOVE_UP) {
 		if (idx == source->filters.num-1)
 			return;
 		da_move_item(source->filters, idx, idx+1);
 
-	} else if (movement == ORDER_MOVE_DOWN) {
+	} else if (movement == OBS_ORDER_MOVE_DOWN) {
 		if (idx == 0)
 			return;
 		da_move_item(source->filters, idx, idx-1);
 
-	} else if (movement == ORDER_MOVE_TOP) {
+	} else if (movement == OBS_ORDER_MOVE_TOP) {
 		if (idx == source->filters.num-1)
 			return;
 		da_move_item(source->filters, idx, source->filters.num-1);
 
-	} else if (movement == ORDER_MOVE_BOTTOM) {
+	} else if (movement == OBS_ORDER_MOVE_BOTTOM) {
 		if (idx == 0)
 			return;
 		da_move_item(source->filters, idx, 0);
