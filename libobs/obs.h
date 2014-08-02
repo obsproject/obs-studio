@@ -152,7 +152,7 @@ struct obs_video_info {
  * Sent to source filters via the filter_audio callback to allow filtering of
  * audio data
  */
-struct filtered_audio {
+struct obs_audio_data {
 	uint8_t             *data[MAX_AV_PLANES];
 	uint32_t            frames;
 	uint64_t            timestamp;

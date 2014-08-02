@@ -248,8 +248,8 @@ struct obs_source_info {
 	 *                the data passed and return it, or you can defer audio
 	 *                data for later if time is needed for processing.
 	 */
-	struct filtered_audio *(*filter_audio)(void *data,
-			struct filtered_audio *audio);
+	struct obs_audio_data *(*filter_audio)(void *data,
+			struct obs_audio_data *audio);
 
 	/**
 	 * Called to enumerate all sources being used within this source.

@@ -1354,8 +1354,8 @@ void obs_source_output_video(obs_source_t source,
 	}
 }
 
-static inline struct filtered_audio *filter_async_audio(obs_source_t source,
-		struct filtered_audio *in)
+static inline struct obs_audio_data *filter_async_audio(obs_source_t source,
+		struct obs_audio_data *in)
 {
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
@@ -1463,7 +1463,7 @@ void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio)
 {
 	uint32_t flags;
-	struct filtered_audio *output;
+	struct obs_audio_data *output;
 
 	if (!source || !audio)
 		return;

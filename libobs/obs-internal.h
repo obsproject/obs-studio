@@ -319,7 +319,7 @@ struct obs_source {
 	audio_resampler_t               resampler;
 	audio_line_t                    audio_line;
 	pthread_mutex_t                 audio_mutex;
-	struct filtered_audio           audio_data;
+	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
 	float                           user_volume;
 	float                           present_volume;
