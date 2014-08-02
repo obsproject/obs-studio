@@ -51,8 +51,8 @@ static pa_proplist *pulse_properties()
 {
 	pa_proplist *p = pa_proplist_new();
 
-	pa_proplist_sets(p, PA_PROP_APPLICATION_NAME, "OBS Studio");
-	pa_proplist_sets(p, PA_PROP_APPLICATION_ICON_NAME, "application-exit");
+	pa_proplist_sets(p, PA_PROP_APPLICATION_NAME, "OBS");
+	pa_proplist_sets(p, PA_PROP_APPLICATION_ICON_NAME, "obs");
 	pa_proplist_sets(p, PA_PROP_MEDIA_ROLE, "production");
 
 	return p;
@@ -67,7 +67,7 @@ static void pulse_init_context()
 
 	pa_proplist *p = pulse_properties();
 	pulse_context = pa_context_new_with_proplist(
-		pa_threaded_mainloop_get_api(pulse_mainloop), "OBS Studio", p);
+		pa_threaded_mainloop_get_api(pulse_mainloop), "OBS", p);
 
 	pa_context_set_state_callback(pulse_context,
 		pulse_context_state_changed, NULL);
