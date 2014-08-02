@@ -529,15 +529,12 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
 			"are currently hardcoded");
 
-		for (uint_fast32_t i = 0; ; ++i) {
-			int packed = fixed_framesizes[i];
-			if (!packed)
-				break;
+		for (const int *packed = fixed_framesizes; *packed; ++packed) {
 			int width;
 			int height;
-			unpack_tuple(&width, &height, packed);
+			unpack_tuple(&width, &height, *packed);
 			dstr_printf(&buffer, "%dx%d", width, height);
-			obs_property_list_add_int(prop, buffer.array, packed);
+			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
 		break;
 	}
@@ -579,16 +576,14 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 	default:
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
 			"are currently hardcoded");
-		for (uint_fast32_t i = 0; ; ++i) {
-			int packed = fixed_framerates[i];
-			if (!packed)
-				break;
+
+		for (const int *packed = fixed_framerates; *packed; ++packed) {
 			int num;
 			int denom;
-			unpack_tuple(&num, &denom, packed);
+			unpack_tuple(&num, &denom, *packed);
 			float fps = (float) denom / num;
 			dstr_printf(&buffer, "%.2f", fps);
-			obs_property_list_add_int(prop, buffer.array, packed);
+			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
 		break;
 	}
