@@ -715,10 +715,10 @@ EXPORT void obs_source_output_audio(obs_source_t source,
 		const struct source_audio *audio);
 
 /** Gets the current async video frame */
-EXPORT struct source_frame *obs_source_getframe(obs_source_t source);
+EXPORT struct source_frame *obs_source_get_frame(obs_source_t source);
 
 /** Releases the current async video frame */
-EXPORT void obs_source_releaseframe(obs_source_t source,
+EXPORT void obs_source_release_frame(obs_source_t source,
 		struct source_frame *frame);
 
 /** Default RGB filter handler for generic effect filters */

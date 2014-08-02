@@ -1036,7 +1036,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 
 static void obs_source_render_async_video(obs_source_t source)
 {
-	struct source_frame *frame = obs_source_getframe(source);
+	struct source_frame *frame = obs_source_get_frame(source);
 	if (frame) {
 		if (!set_async_texture_size(source, frame))
 			return;
@@ -1047,7 +1047,7 @@ static void obs_source_render_async_video(obs_source_t source)
 	if (source->async_texture)
 		obs_source_draw_async_texture(source);
 
-	obs_source_releaseframe(source, frame);
+	obs_source_release_frame(source, frame);
 }
 
 static inline void obs_source_render_filters(obs_source_t source)
@@ -1561,7 +1561,7 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
  * the frame with the closest timing to ensure sync.  Also ensures that timing
  * with audio is synchronized.
  */
-struct source_frame *obs_source_getframe(obs_source_t source)
+struct source_frame *obs_source_get_frame(obs_source_t source)
 {
 	struct source_frame *frame = NULL;
 	uint64_t sys_time;
@@ -1602,7 +1602,7 @@ unlock:
 	return frame;
 }
 
-void obs_source_releaseframe(obs_source_t source, struct source_frame *frame)
+void obs_source_release_frame(obs_source_t source, struct source_frame *frame)
 {
 	if (source && frame) {
 		source_frame_destroy(frame);
