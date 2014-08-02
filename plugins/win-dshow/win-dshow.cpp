@@ -60,7 +60,7 @@ struct DShowInput {
 	VideoConfig  videoConfig;
 	AudioConfig  audioConfig;
 
-	source_frame frame;
+	obs_source_frame frame;
 
 	inline DShowInput(obs_source_t source_)
 		: source         (source_),

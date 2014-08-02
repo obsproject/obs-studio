@@ -139,7 +139,7 @@ struct obs_core_video {
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
-	struct source_frame             convert_frames[NUM_TEXTURES];
+	struct obs_source_frame         convert_frames[NUM_TEXTURES];
 	effect_t                        default_effect;
 	effect_t                        solid_effect;
 	effect_t                        conversion_effect;
@@ -350,7 +350,7 @@ struct obs_source {
 	float                           async_color_range_max[3];
 	int                             async_plane_offset[2];
 	bool                            async_flip;
-	DARRAY(struct source_frame*)    video_frames;
+	DARRAY(struct obs_source_frame*)video_frames;
 	pthread_mutex_t                 video_mutex;
 	uint32_t                        async_width;
 	uint32_t                        async_height;

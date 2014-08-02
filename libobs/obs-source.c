@@ -194,8 +194,8 @@ fail:
 	return NULL;
 }
 
-void source_frame_init(struct source_frame *frame, enum video_format format,
-		uint32_t width, uint32_t height)
+void obs_source_frame_init(struct obs_source_frame *frame,
+		enum video_format format, uint32_t width, uint32_t height)
 {
 	struct video_frame vid_frame;
 
@@ -238,7 +238,7 @@ void obs_source_destroy(struct obs_source *source)
 		obs_source_release(source->filters.array[i]);
 
 	for (i = 0; i < source->video_frames.num; i++)
-		source_frame_destroy(source->video_frames.array[i]);
+		obs_source_frame_destroy(source->video_frames.array[i]);
 
 	gs_entercontext(obs->video.graphics);
 	texrender_destroy(source->async_convert_texrender);
@@ -699,7 +699,7 @@ static inline enum convert_type get_convert_type(enum video_format format)
 }
 
 static inline bool set_packed422_sizes(struct obs_source *source,
-		struct source_frame *frame)
+		struct obs_source_frame *frame)
 {
 	source->async_convert_height = frame->height;
 	source->async_convert_width  = frame->width / 2;
@@ -708,7 +708,7 @@ static inline bool set_packed422_sizes(struct obs_source *source,
 }
 
 static inline bool set_planar420_sizes(struct obs_source *source,
-		struct source_frame *frame)
+		struct obs_source_frame *frame)
 {
 	uint32_t size = frame->width * frame->height;
 	size += size/2;
@@ -723,7 +723,7 @@ static inline bool set_planar420_sizes(struct obs_source *source,
 }
 
 static inline bool init_gpu_conversion(struct obs_source *source,
-		struct source_frame *frame)
+		struct obs_source_frame *frame)
 {
 	switch (get_convert_type(frame->format)) {
 		case CONVERT_422_Y:
@@ -758,7 +758,7 @@ static inline enum gs_color_format convert_video_format(
 }
 
 static inline bool set_async_texture_size(struct obs_source *source,
-		struct source_frame *frame)
+		struct obs_source_frame *frame)
 {
 	enum convert_type prev, cur;
 	prev = get_convert_type(source->async_format);
@@ -804,7 +804,8 @@ static inline bool set_async_texture_size(struct obs_source *source,
 	return true;
 }
 
-static void upload_raw_frame(texture_t tex, const struct source_frame *frame)
+static void upload_raw_frame(texture_t tex,
+		const struct obs_source_frame *frame)
 {
 	switch (get_convert_type(frame->format)) {
 		case CONVERT_422_U:
@@ -864,7 +865,7 @@ static inline void set_eparam(effect_t effect, const char *name, float val)
 }
 
 static bool update_async_texrender(struct obs_source *source,
-		const struct source_frame *frame)
+		const struct obs_source_frame *frame)
 {
 	texture_t   tex       = source->async_texture;
 	texrender_t texrender = source->async_convert_texrender;
@@ -922,7 +923,7 @@ static bool update_async_texrender(struct obs_source *source,
 }
 
 static bool update_async_texture(struct obs_source *source,
-		const struct source_frame *frame)
+		const struct obs_source_frame *frame)
 {
 	texture_t         tex       = source->async_texture;
 	texrender_t       texrender = source->async_convert_texrender;
@@ -1036,7 +1037,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 
 static void obs_source_render_async_video(obs_source_t source)
 {
-	struct source_frame *frame = obs_source_get_frame(source);
+	struct obs_source_frame *frame = obs_source_get_frame(source);
 	if (frame) {
 		if (!set_async_texture_size(source, frame))
 			return;
@@ -1237,8 +1238,8 @@ obs_data_t obs_source_getsettings(obs_source_t source)
 	return source->context.settings;
 }
 
-static inline struct source_frame *filter_async_video(obs_source_t source,
-		struct source_frame *in)
+static inline struct obs_source_frame *filter_async_video(obs_source_t source,
+		struct obs_source_frame *in)
 {
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
@@ -1255,8 +1256,8 @@ static inline struct source_frame *filter_async_video(obs_source_t source,
 	return in;
 }
 
-static inline void copy_frame_data_line(struct source_frame *dst,
-		const struct source_frame *src, uint32_t plane, uint32_t y)
+static inline void copy_frame_data_line(struct obs_source_frame *dst,
+		const struct obs_source_frame *src, uint32_t plane, uint32_t y)
 {
 	uint32_t pos_src = y * src->linesize[plane];
 	uint32_t pos_dst = y * dst->linesize[plane];
@@ -1266,8 +1267,9 @@ static inline void copy_frame_data_line(struct source_frame *dst,
 	memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
 }
 
-static inline void copy_frame_data_plane(struct source_frame *dst,
-		const struct source_frame *src, uint32_t plane, uint32_t lines)
+static inline void copy_frame_data_plane(struct obs_source_frame *dst,
+		const struct obs_source_frame *src,
+		uint32_t plane, uint32_t lines)
 {
 	if (dst->linesize[plane] != src->linesize[plane])
 		for (uint32_t y = 0; y < lines; y++)
@@ -1277,8 +1279,8 @@ static inline void copy_frame_data_plane(struct source_frame *dst,
 				dst->linesize[plane] * lines);
 }
 
-static void copy_frame_data(struct source_frame *dst,
-		const struct source_frame *src)
+static void copy_frame_data(struct obs_source_frame *dst,
+		const struct obs_source_frame *src)
 {
 	dst->flip         = src->flip;
 	dst->full_range   = src->full_range;
@@ -1313,11 +1315,12 @@ static void copy_frame_data(struct source_frame *dst,
 	}
 }
 
-static inline struct source_frame *cache_video(const struct source_frame *frame)
+static inline struct obs_source_frame *cache_video(
+		const struct obs_source_frame *frame)
 {
 	/* TODO: use an actual cache */
-	struct source_frame *new_frame = source_frame_create(frame->format,
-			frame->width, frame->height);
+	struct obs_source_frame *new_frame = obs_source_frame_create(
+			frame->format, frame->width, frame->height);
 
 	copy_frame_data(new_frame, frame);
 	return new_frame;
@@ -1332,12 +1335,12 @@ static inline void cycle_frames(struct obs_source *source)
 }
 
 void obs_source_output_video(obs_source_t source,
-		const struct source_frame *frame)
+		const struct obs_source_frame *frame)
 {
 	if (!source || !frame)
 		return;
 
-	struct source_frame *output = cache_video(frame);
+	struct obs_source_frame *output = cache_video(frame);
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_video(source, output);
@@ -1502,8 +1505,8 @@ static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
 
 static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 {
-	struct source_frame *next_frame = source->video_frames.array[0];
-	struct source_frame *frame      = NULL;
+	struct obs_source_frame *next_frame = source->video_frames.array[0];
+	struct obs_source_frame *frame      = NULL;
 	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
@@ -1518,7 +1521,7 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 	}
 
 	while (frame_offset <= sys_offset) {
-		source_frame_destroy(frame);
+		obs_source_frame_destroy(frame);
 
 		if (source->video_frames.num == 1)
 			return true;
@@ -1538,16 +1541,16 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 		frame_offset = frame_time - source->last_frame_ts;
 	}
 
-	source_frame_destroy(frame);
+	obs_source_frame_destroy(frame);
 
 	return frame != NULL;
 }
 
-static inline struct source_frame *get_closest_frame(obs_source_t source,
+static inline struct obs_source_frame *get_closest_frame(obs_source_t source,
 		uint64_t sys_time)
 {
 	if (ready_async_frame(source, sys_time)) {
-		struct source_frame *frame = source->video_frames.array[0];
+		struct obs_source_frame *frame = source->video_frames.array[0];
 		da_erase(source->video_frames, 0);
 		return frame;
 	}
@@ -1561,9 +1564,9 @@ static inline struct source_frame *get_closest_frame(obs_source_t source,
  * the frame with the closest timing to ensure sync.  Also ensures that timing
  * with audio is synchronized.
  */
-struct source_frame *obs_source_get_frame(obs_source_t source)
+struct obs_source_frame *obs_source_get_frame(obs_source_t source)
 {
-	struct source_frame *frame = NULL;
+	struct obs_source_frame *frame = NULL;
 	uint64_t sys_time;
 
 	if (!source)
@@ -1602,10 +1605,11 @@ unlock:
 	return frame;
 }
 
-void obs_source_release_frame(obs_source_t source, struct source_frame *frame)
+void obs_source_release_frame(obs_source_t source,
+		struct obs_source_frame *frame)
 {
 	if (source && frame) {
-		source_frame_destroy(frame);
+		obs_source_frame_destroy(frame);
 		obs_source_release(source);
 	}
 }

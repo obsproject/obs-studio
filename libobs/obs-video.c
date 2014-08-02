@@ -305,7 +305,8 @@ static inline uint32_t make_aligned_linesize_offset(uint32_t offset,
 static void fix_gpu_converted_alignment(struct obs_core_video *video,
 		struct video_data *frame, int cur_texture)
 {
-	struct source_frame *new_frame = &video->convert_frames[cur_texture];
+	struct obs_source_frame *new_frame =
+		&video->convert_frames[cur_texture];
 	uint32_t src_linesize = frame->linesize[0];
 	uint32_t dst_linesize = video->output_width * 4;
 	uint32_t src_pos      = 0;
@@ -353,7 +354,8 @@ static bool convert_frame(struct obs_core_video *video,
 		struct video_data *frame,
 		const struct video_output_info *info, int cur_texture)
 {
-	struct source_frame *new_frame = &video->convert_frames[cur_texture];
+	struct obs_source_frame *new_frame =
+		&video->convert_frames[cur_texture];
 
 	if (info->format == VIDEO_FORMAT_I420) {
 		compress_uyvx_to_i420(

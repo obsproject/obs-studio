@@ -276,17 +276,17 @@ static void v4l2_destroy_mmap(struct v4l2_data *data)
  * Prepare the output frame structure for obs and compute plane offsets
  *
  * Basically all data apart from memory pointers and the timestamp is known
- * before the capture starts. This function prepares the source_frame struct
- * with all the data that is already known.
+ * before the capture starts. This function prepares the obs_source_frame
+ * struct with all the data that is already known.
  *
  * v4l2 uses a continuous memory segment for all planes so we simply compute
  * offsets to add to the start address in order to give obs the correct data
  * pointers for the individual planes.
  */
 static void v4l2_prep_obs_frame(struct v4l2_data *data,
-	struct source_frame *frame, size_t *plane_offsets)
+	struct obs_source_frame *frame, size_t *plane_offsets)
 {
-	memset(frame, 0, sizeof(struct source_frame));
+	memset(frame, 0, sizeof(struct obs_source_frame));
 	memset(plane_offsets, 0, sizeof(size_t) * MAX_AV_PLANES);
 
 	frame->width = data->width;
@@ -333,7 +333,7 @@ static void *v4l2_thread(void *vptr)
 	uint8_t *start;
 	struct timeval tv;
 	struct v4l2_buffer buf;
-	struct source_frame out;
+	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
 
 	if (v4l2_start_capture(data) < 0)

@@ -53,7 +53,7 @@ static void *video_thread(void *data)
 	uint32_t            pixels[20*20];
 	uint64_t            cur_time = os_gettime_ns();
 
-	struct source_frame frame = {
+	struct obs_source_frame frame = {
 		.data     = {[0] = (uint8_t*)pixels},
 		.linesize = {[0] = 20*4},
 		.width    = 20,

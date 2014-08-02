@@ -187,9 +187,9 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 			return false;
 
 		if (yuv)
-			source_frame_init(&video->convert_frames[i],
+			obs_source_frame_init(&video->convert_frames[i],
 					ovi->output_format,
-					ovi->output_width, ovi->output_height);
+					ovi->output_width,ovi->output_height);
 	}
 
 	return true;
@@ -349,7 +349,7 @@ static void obs_free_video(void)
 			texture_destroy(video->render_textures[i]);
 			texture_destroy(video->convert_textures[i]);
 			texture_destroy(video->output_textures[i]);
-			source_frame_free(&video->convert_frames[i]);
+			obs_source_frame_free(&video->convert_frames[i]);
 
 			video->copy_surfaces[i]    = NULL;
 			video->render_textures[i]  = NULL;

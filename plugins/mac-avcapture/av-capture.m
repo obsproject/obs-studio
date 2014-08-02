@@ -71,7 +71,7 @@ struct av_capture {
 
 	obs_source_t source;
 
-	struct source_frame frame;
+	struct obs_source_frame frame;
 };
 
 static inline enum video_format format_from_subtype(FourCharCode subtype)
@@ -124,7 +124,7 @@ static inline enum video_colorspace get_colorspace(CMFormatDescriptionRef desc)
 }
 
 static inline bool update_colorspace(struct av_capture *capture,
-		struct source_frame *frame, CMFormatDescriptionRef desc,
+		struct obs_source_frame *frame, CMFormatDescriptionRef desc,
 		bool full_range)
 {
 	enum video_colorspace colorspace = get_colorspace(desc);
@@ -151,7 +151,7 @@ static inline bool update_colorspace(struct av_capture *capture,
 }
 
 static inline bool update_frame(struct av_capture *capture,
-		struct source_frame *frame, CMSampleBufferRef sample_buffer)
+		struct obs_source_frame *frame, CMSampleBufferRef sample_buffer)
 {
 	CMFormatDescriptionRef desc =
 		CMSampleBufferGetFormatDescription(sample_buffer);
@@ -225,7 +225,7 @@ static inline bool update_frame(struct av_capture *capture,
 	if (count < 1 || !capture)
 		return;
 
-	struct source_frame *frame = &capture->frame;
+	struct obs_source_frame *frame = &capture->frame;
 
 	CMTime target_pts =
 		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
