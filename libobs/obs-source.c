@@ -1685,7 +1685,7 @@ static inline void render_filter_tex(texture_t tex, effect_t effect,
 
 void obs_source_process_filter(obs_source_t filter, effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
-		enum allow_direct_render allow_direct)
+		enum obs_allow_direct_render allow_direct)
 {
 	obs_source_t target, parent;
 	uint32_t     target_flags, parent_flags;
@@ -1702,7 +1702,7 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 	cy           = obs_source_getheight(target);
 	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 	expects_def  = !(parent_flags & OBS_SOURCE_CUSTOM_DRAW);
-	can_directly = allow_direct == ALLOW_DIRECT_RENDERING;
+	can_directly = allow_direct == OBS_ALLOW_DIRECT_RENDERING;
 
 	/* if the parent does not use any custom effects, and this is the last
 	 * filter in the chain for the parent, then render the parent directly

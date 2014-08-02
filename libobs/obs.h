@@ -86,9 +86,9 @@ enum obs_order_movement {
  * render the source directly with the specified effect, or whether it should
  * render it to a texture
  */
-enum allow_direct_render {
-	NO_DIRECT_RENDERING,
-	ALLOW_DIRECT_RENDERING,
+enum obs_allow_direct_render {
+	OBS_NO_DIRECT_RENDERING,
+	OBS_ALLOW_DIRECT_RENDERING,
 };
 
 /**
@@ -724,7 +724,7 @@ EXPORT void obs_source_release_frame(obs_source_t source,
 /** Default RGB filter handler for generic effect filters */
 EXPORT void obs_source_process_filter(obs_source_t filter, effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
-		enum allow_direct_render allow_direct);
+		enum obs_allow_direct_render allow_direct);
 
 /**
  * Adds a child source.  Must be called by parent sources on child sources

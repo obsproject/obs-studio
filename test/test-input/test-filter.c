@@ -51,7 +51,7 @@ static void filter_render(void *data, effect_t effect)
 {
 	struct test_filter *tf = data;
 	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,
-			ALLOW_DIRECT_RENDERING);
+			OBS_ALLOW_DIRECT_RENDERING);
 
 	UNUSED_PARAMETER(effect);
 }
