@@ -837,7 +837,7 @@ void obs_sceneitem_get_bounds(obs_sceneitem_t item, struct vec2 *bounds)
 }
 
 void obs_sceneitem_get_info(obs_sceneitem_t item,
-		struct obs_sceneitem_info *info)
+		struct obs_transform_info *info)
 {
 	if (item && info) {
 		info->pos              = item->pos;
@@ -851,7 +851,7 @@ void obs_sceneitem_get_info(obs_sceneitem_t item,
 }
 
 void obs_sceneitem_set_info(obs_sceneitem_t item,
-		const struct obs_sceneitem_info *info)
+		const struct obs_transform_info *info)
 {
 	if (item && info) {
 		item->pos          = info->pos;

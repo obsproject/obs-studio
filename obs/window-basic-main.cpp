@@ -2124,7 +2124,7 @@ void OBSBasic::on_actionResetTransform_triggered()
 		if (!obs_sceneitem_selected(item))
 			return true;
 
-		obs_sceneitem_info info;
+		obs_transform_info info;
 		vec2_set(&info.pos, 0.0f, 0.0f);
 		vec2_set(&info.scale, 1.0f, 1.0f);
 		info.rot = 0.0f;
@@ -2272,7 +2272,7 @@ static bool CenterAlignSelectedItems(obs_scene_t scene, obs_sceneitem_t item,
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	obs_sceneitem_info itemInfo;
+	obs_transform_info itemInfo;
 	vec2_set(&itemInfo.pos, 0.0f, 0.0f);
 	vec2_set(&itemInfo.scale, 1.0f, 1.0f);
 	itemInfo.alignment = OBS_ALIGN_LEFT | OBS_ALIGN_TOP;

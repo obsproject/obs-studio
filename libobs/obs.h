@@ -106,7 +106,7 @@ enum obs_bounds_type {
 	OBS_BOUNDS_MAX_ONLY,        /**< no scaling, maximum size only */
 };
 
-struct obs_sceneitem_info {
+struct obs_transform_info {
 	struct vec2          pos;
 	float                rot;
 	struct vec2          scale;
@@ -827,9 +827,9 @@ EXPORT uint32_t obs_sceneitem_get_bounds_alignment(obs_sceneitem_t item);
 EXPORT void obs_sceneitem_get_bounds(obs_sceneitem_t item, struct vec2 *bounds);
 
 EXPORT void obs_sceneitem_get_info(obs_sceneitem_t item,
-		struct obs_sceneitem_info *info);
+		struct obs_transform_info *info);
 EXPORT void obs_sceneitem_set_info(obs_sceneitem_t item,
-		const struct obs_sceneitem_info *info);
+		const struct obs_transform_info *info);
 
 EXPORT void obs_sceneitem_get_draw_transform(obs_sceneitem_t item,
 		struct matrix4 *transform);
