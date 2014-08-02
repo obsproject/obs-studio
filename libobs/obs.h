@@ -162,7 +162,7 @@ struct obs_audio_data {
  * Source audio output structure.  Used with obs_source_output_audio to output
  * source audio.  Audio is automatically resampled and remixed as necessary.
  */
-struct source_audio {
+struct obs_source_audio {
 	const uint8_t       *data[MAX_AV_PLANES];
 	uint32_t            frames;
 
@@ -712,7 +712,7 @@ EXPORT void obs_source_output_video(obs_source_t source,
 
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_output_audio(obs_source_t source,
-		const struct source_audio *audio);
+		const struct obs_source_audio *audio);
 
 /** Gets the current async video frame */
 EXPORT struct obs_source_frame *obs_source_get_frame(obs_source_t source);

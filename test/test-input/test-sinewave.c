@@ -41,7 +41,7 @@ static void *sinewave_thread(void *pdata)
 			bytes[i] = (uint8_t)((wave+1.0)*0.5 * 255.0);
 		}
 
-		struct source_audio data;
+		struct obs_source_audio data;
 		data.data[0] = bytes;
 		data.frames = 480;
 		data.speakers = SPEAKERS_MONO;

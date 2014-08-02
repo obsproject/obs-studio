@@ -1373,7 +1373,7 @@ static inline struct obs_audio_data *filter_async_audio(obs_source_t source,
 }
 
 static inline void reset_resampler(obs_source_t source,
-		const struct source_audio *audio)
+		const struct obs_source_audio *audio)
 {
 	const struct audio_output_info *obs_info;
 	struct resample_info output_info;
@@ -1430,7 +1430,8 @@ static inline void copy_audio_data(obs_source_t source,
 }
 
 /* resamples/remixes new audio to the designated main audio output format */
-static void process_audio(obs_source_t source, const struct source_audio *audio)
+static void process_audio(obs_source_t source,
+		const struct obs_source_audio *audio)
 {
 	if (source->sample_info.samples_per_sec != audio->samples_per_sec ||
 	    source->sample_info.format          != audio->format          ||
@@ -1460,7 +1461,7 @@ static void process_audio(obs_source_t source, const struct source_audio *audio)
 }
 
 void obs_source_output_audio(obs_source_t source,
-		const struct source_audio *audio)
+		const struct obs_source_audio *audio)
 {
 	uint32_t flags;
 	struct obs_audio_data *output;

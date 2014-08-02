@@ -117,7 +117,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 	}
 
-	struct source_audio out;
+	struct obs_source_audio out;
 	out.speakers        = data->speakers;
 	out.samples_per_sec = data->samples_per_sec;
 	out.format          = pulse_to_obs_audio_format(data->format);

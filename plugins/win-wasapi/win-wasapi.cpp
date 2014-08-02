@@ -357,13 +357,13 @@ bool WASAPISource::ProcessCaptureData()
 			return false;
 		}
 
-		source_audio data    = {};
-		data.data[0]         = (const uint8_t*)buffer;
-		data.frames          = (uint32_t)frames;
-		data.speakers        = speakers;
-		data.samples_per_sec = sampleRate;
-		data.format          = format;
-		data.timestamp       = useDeviceTiming ?
+		obs_source_audio data = {};
+		data.data[0]          = (const uint8_t*)buffer;
+		data.frames           = (uint32_t)frames;
+		data.speakers         = speakers;
+		data.samples_per_sec  = sampleRate;
+		data.format           = format;
+		data.timestamp        = useDeviceTiming ?
 			ts*100 : os_gettime_ns();
 
 		obs_source_output_audio(source, &data);
