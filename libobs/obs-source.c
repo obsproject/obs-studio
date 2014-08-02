@@ -1640,13 +1640,14 @@ void obs_source_setname(obs_source_t source, const char *name)
 	}
 }
 
-void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
-		const char **id)
+enum obs_source_type obs_source_get_type(obs_source_t source)
 {
-	if (!source) return;
+	return source ? source->info.type : OBS_SOURCE_TYPE_INPUT;
+}
 
-	if (type) *type = source->info.type;
-	if (id)   *id   = source->info.id;
+const char *obs_source_get_id(obs_source_t source)
+{
+	return source ? source->info.id : NULL;
 }
 
 static inline void render_filter_bypass(obs_source_t target, effect_t effect,

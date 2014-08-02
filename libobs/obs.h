@@ -646,9 +646,11 @@ EXPORT const char *obs_source_getname(obs_source_t source);
 /** Sets the name of a source */
 EXPORT void obs_source_setname(obs_source_t source, const char *name);
 
-/** Gets the source type and identifier */
-EXPORT void obs_source_gettype(obs_source_t source, enum obs_source_type *type,
-		const char **id);
+/** Gets the source type */
+EXPORT enum obs_source_type obs_source_get_type(obs_source_t source);
+
+/** Gets the source identifier */
+EXPORT const char *obs_source_get_id(obs_source_t source);
 
 /** Returns the signal handler for a source */
 EXPORT signal_handler_t obs_source_signalhandler(obs_source_t source);

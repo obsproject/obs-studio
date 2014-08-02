@@ -1204,11 +1204,9 @@ obs_data_t obs_save_source(obs_source_t source)
 	obs_data_t settings    = obs_source_getsettings(source);
 	float      volume      = obs_source_getvolume(source);
 	const char *name       = obs_source_getname(source);
-	const char *id;
+	const char *id         = obs_source_get_id(source);
 
 	obs_source_save(source);
-
-	obs_source_gettype(source, NULL, &id);
 
 	obs_data_setstring(source_data, "name",     name);
 	obs_data_setstring(source_data, "id",       id);

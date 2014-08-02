@@ -25,9 +25,7 @@ bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t source)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
 	const char *name = obs_source_getname(source);
-	const char *id;
-
-	obs_source_gettype(source, nullptr, &id);
+	const char *id   = obs_source_get_id(source);
 
 	if (strcmp(id, window->id) == 0)
 		window->ui->sourceList->addItem(QT_UTF8(name));
@@ -55,10 +53,9 @@ void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t calldata)
 
 void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 {
-	const char *name = obs_source_getname(source);
-	const char *sourceId;
+	const char *name     = obs_source_getname(source);
+	const char *sourceId = obs_source_get_id(source);
 
-	obs_source_gettype(source, nullptr, &sourceId);
 	if (strcmp(sourceId, id) != 0)
 		return;
 
@@ -67,10 +64,9 @@ void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 
 void OBSBasicSourceSelect::SourceRemoved(OBSSource source)
 {
-	const char *name = obs_source_getname(source);
-	const char *sourceId;
+	const char *name     = obs_source_getname(source);
+	const char *sourceId = obs_source_get_id(source);
 
-	obs_source_gettype(source, nullptr, &sourceId);
 	if (strcmp(sourceId, id) != 0)
 		return;
 

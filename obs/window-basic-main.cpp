@@ -738,9 +738,6 @@ void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 void OBSBasic::UpdateSceneSelection(OBSSource source)
 {
 	if (source) {
-		obs_source_type type;
-		obs_source_gettype(source, &type, NULL);
-
 		obs_scene_t scene = obs_scene_fromsource(source);
 		const char *name = obs_source_getname(source);
 
