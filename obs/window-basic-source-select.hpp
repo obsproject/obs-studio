@@ -29,7 +29,7 @@ class OBSBasicSourceSelect : public QDialog {
 
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
-	const char *type;
+	const char *id;
 
 	static bool EnumSources(void *data, obs_source_t source);
 
@@ -44,5 +44,5 @@ private slots:
 	void SourceRemoved(OBSSource source);
 
 public:
-	OBSBasicSourceSelect(OBSBasic *parent, const char *type);
+	OBSBasicSourceSelect(OBSBasic *parent, const char *id);
 };

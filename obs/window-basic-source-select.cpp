@@ -25,11 +25,11 @@ bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t source)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
 	const char *name = obs_source_getname(source);
-	const char *type;
+	const char *id;
 
-	obs_source_gettype(source, nullptr, &type);
+	obs_source_gettype(source, nullptr, &id);
 
-	if (strcmp(type, window->type) == 0)
+	if (strcmp(id, window->id) == 0)
 		window->ui->sourceList->addItem(QT_UTF8(name));
 
 	return true;
@@ -56,10 +56,10 @@ void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t calldata)
 void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 {
 	const char *name = obs_source_getname(source);
-	const char *sourceType;
+	const char *sourceId;
 
-	obs_source_gettype(source, nullptr, &sourceType);
-	if (strcmp(sourceType, type) != 0)
+	obs_source_gettype(source, nullptr, &sourceId);
+	if (strcmp(sourceId, id) != 0)
 		return;
 
 	ui->sourceList->addItem(name);
@@ -68,10 +68,10 @@ void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 void OBSBasicSourceSelect::SourceRemoved(OBSSource source)
 {
 	const char *name = obs_source_getname(source);
-	const char *sourceType;
+	const char *sourceId;
 
-	obs_source_gettype(source, nullptr, &sourceType);
-	if (strcmp(sourceType, type) != 0)
+	obs_source_gettype(source, nullptr, &sourceId);
+	if (strcmp(sourceId, id) != 0)
 		return;
 
 	QList<QListWidgetItem*> items =
@@ -149,7 +149,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			return;
 		}
 
-		if (!AddNew(this, type, QT_TO_UTF8(ui->sourceName->text())))
+		if (!AddNew(this, id, QT_TO_UTF8(ui->sourceName->text())))
 			return;
 	}
 
@@ -161,15 +161,15 @@ void OBSBasicSourceSelect::on_buttonBox_rejected()
 	done(DialogCode::Rejected);
 }
 
-OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *type_)
+OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	: QDialog (parent),
 	  ui      (new Ui::OBSBasicSourceSelect),
-	  type    (type_)
+	  id      (id_)
 {
 	ui->setupUi(this);
 
 	QString placeHolderText{QT_UTF8(obs_source_getdisplayname(
-				OBS_SOURCE_TYPE_INPUT, type_))};
+				OBS_SOURCE_TYPE_INPUT, id))};
 
 	QString text{placeHolderText};
 	int i = 1;
