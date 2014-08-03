@@ -165,11 +165,11 @@ static SceneContext SetupScene()
 int main()
 {
 	@autoreleasepool {
-		[NSApplication sharedApplication];
+		NSApplication *app = [NSApplication sharedApplication];
 		OBSTest *test = [[OBSTest alloc] init];
-		[NSApp setDelegate:test];
+		app.delegate = test;
 
-		[NSApp run];
+		[app run];
 	}
 
 	return 0;
