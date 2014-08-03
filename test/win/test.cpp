@@ -100,7 +100,7 @@ static void AddTestItems(obs_scene_t scene, obs_source_t source)
 	vec2_set(&scale, 20.0f, 20.0f);
 
 	item = obs_scene_add(scene, source);
-	obs_sceneitem_setscale(item, &scale);
+	obs_sceneitem_set_scale(item, &scale);
 }
 
 static HWND CreateTestWindow(HINSTANCE instance)

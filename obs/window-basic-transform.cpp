@@ -183,7 +183,7 @@ void OBSBasicTransform::RefreshControls()
 	obs_transform_info osi;
 	obs_sceneitem_get_info(item, &osi);
 
-	obs_source_t source = obs_sceneitem_getsource(item);
+	obs_source_t source = obs_sceneitem_get_source(item);
 	float width  = float(obs_source_getwidth(source));
 	float height = float(obs_source_getheight(source));
 
@@ -220,7 +220,7 @@ void OBSBasicTransform::OnBoundsType(int index)
 	if (!ignoreItemChange) {
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
 		if (lastType == OBS_BOUNDS_NONE) {
-			OBSSource source = obs_sceneitem_getsource(item);
+			OBSSource source = obs_sceneitem_get_source(item);
 			int width  = (int)obs_source_getwidth(source);
 			int height = (int)obs_source_getheight(source);
 
@@ -237,7 +237,7 @@ void OBSBasicTransform::OnControlChanged()
 	if (ignoreItemChange)
 		return;
 
-	obs_source_t source = obs_sceneitem_getsource(item);
+	obs_source_t source = obs_sceneitem_get_source(item);
 	double width  = double(obs_source_getwidth(source));
 	double height = double(obs_source_getheight(source));
 

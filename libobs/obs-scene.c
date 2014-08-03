@@ -484,7 +484,7 @@ obs_scene_t obs_scene_fromsource(obs_source_t source)
 	return source->context.data;
 }
 
-obs_sceneitem_t obs_scene_findsource(obs_scene_t scene, const char *name)
+obs_sceneitem_t obs_scene_find_source(obs_scene_t scene, const char *name)
 {
 	struct obs_scene_item *item;
 
@@ -643,12 +643,12 @@ void obs_sceneitem_remove(obs_sceneitem_t item)
 	obs_sceneitem_release(item);
 }
 
-obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item)
+obs_scene_t obs_sceneitem_get_scene(obs_sceneitem_t item)
 {
 	return item ? item->parent : NULL;
 }
 
-obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item)
+obs_source_t obs_sceneitem_get_source(obs_sceneitem_t item)
 {
 	return item ? item->source : NULL;
 }
@@ -676,7 +676,7 @@ bool obs_sceneitem_selected(obs_sceneitem_t item)
 	return item ? item->selected : false;
 }
 
-void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos)
+void obs_sceneitem_set_pos(obs_sceneitem_t item, const struct vec2 *pos)
 {
 	if (item) {
 		vec2_copy(&item->pos, pos);
@@ -684,7 +684,7 @@ void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos)
 	}
 }
 
-void obs_sceneitem_setrot(obs_sceneitem_t item, float rot)
+void obs_sceneitem_set_rot(obs_sceneitem_t item, float rot)
 {
 	if (item) {
 		item->rot = rot;
@@ -692,7 +692,7 @@ void obs_sceneitem_setrot(obs_sceneitem_t item, float rot)
 	}
 }
 
-void obs_sceneitem_setscale(obs_sceneitem_t item, const struct vec2 *scale)
+void obs_sceneitem_set_scale(obs_sceneitem_t item, const struct vec2 *scale)
 {
 	if (item) {
 		vec2_copy(&item->scale, scale);
@@ -700,7 +700,7 @@ void obs_sceneitem_setscale(obs_sceneitem_t item, const struct vec2 *scale)
 	}
 }
 
-void obs_sceneitem_setalignment(obs_sceneitem_t item, uint32_t alignment)
+void obs_sceneitem_set_alignment(obs_sceneitem_t item, uint32_t alignment)
 {
 	if (item) {
 		item->align = alignment;
@@ -730,7 +730,7 @@ static inline void signal_move_dir(struct obs_scene_item *item,
 	calldata_free(&params);
 }
 
-void obs_sceneitem_setorder(obs_sceneitem_t item,
+void obs_sceneitem_set_order(obs_sceneitem_t item,
 		enum obs_order_movement movement)
 {
 	if (!item) return;
@@ -799,24 +799,24 @@ void obs_sceneitem_set_bounds(obs_sceneitem_t item, const struct vec2 *bounds)
 	}
 }
 
-void obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos)
+void obs_sceneitem_get_pos(obs_sceneitem_t item, struct vec2 *pos)
 {
 	if (item)
 		vec2_copy(pos, &item->pos);
 }
 
-float obs_sceneitem_getrot(obs_sceneitem_t item)
+float obs_sceneitem_get_rot(obs_sceneitem_t item)
 {
 	return item ? item->rot : 0.0f;
 }
 
-void obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale)
+void obs_sceneitem_get_scale(obs_sceneitem_t item, struct vec2 *scale)
 {
 	if (item)
 		vec2_copy(scale, &item->scale);
 }
 
-uint32_t obs_sceneitem_getalignment(obs_sceneitem_t item)
+uint32_t obs_sceneitem_get_alignment(obs_sceneitem_t item)
 {
 	return item ? item->align : 0;
 }

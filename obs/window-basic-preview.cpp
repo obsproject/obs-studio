@@ -51,7 +51,7 @@ struct SceneFindData {
 
 static bool SceneItemHasVideo(obs_sceneitem_t item)
 {
-	obs_source_t source = obs_sceneitem_getsource(item);
+	obs_source_t source = obs_sceneitem_get_source(item);
 	uint32_t flags = obs_source_get_output_flags(source);
 	return (flags & OBS_SOURCE_VIDEO) != 0;
 }
@@ -271,10 +271,10 @@ static vec2 GetItemSize(obs_sceneitem_t item)
 	if (boundsType != OBS_BOUNDS_NONE) {
 		obs_sceneitem_get_bounds(item, &size);
 	} else {
-		obs_source_t source = obs_sceneitem_getsource(item);
+		obs_source_t source = obs_sceneitem_get_source(item);
 		vec2 scale;
 
-		obs_sceneitem_getscale(item, &scale);
+		obs_sceneitem_get_scale(item, &scale);
 		size.x = float(obs_source_getwidth(source))  * scale.x;
 		size.y = float(obs_source_getheight(source)) * scale.y;
 	}
@@ -304,7 +304,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 		stretchItemSize = GetItemSize(stretchItem);
 
 		obs_sceneitem_get_box_transform(stretchItem, &boxTransform);
-		itemRot = obs_sceneitem_getrot(stretchItem);
+		itemRot = obs_sceneitem_get_rot(stretchItem);
 		vec3_from_vec4(&itemUL, &boxTransform.t);
 
 		/* build the item space conversion matrices */
@@ -460,9 +460,9 @@ static bool move_items(obs_scene_t scene, obs_sceneitem_t item, void *param)
 
 	if (obs_sceneitem_selected(item)) {
 		vec2 pos;
-		obs_sceneitem_getpos(item, &pos);
+		obs_sceneitem_get_pos(item, &pos);
 		vec2_add(&pos, &pos, offset);
-		obs_sceneitem_setpos(item, &pos);
+		obs_sceneitem_set_pos(item, &pos);
 	}
 
 	UNUSED_PARAMETER(scene);
@@ -489,7 +489,7 @@ void OBSBasicPreview::MoveItems(const vec2 &pos)
 
 vec3 OBSBasicPreview::CalculateStretchPos(const vec3 &tl, const vec3 &br)
 {
-	uint32_t alignment = obs_sceneitem_getalignment(stretchItem);
+	uint32_t alignment = obs_sceneitem_get_alignment(stretchItem);
 	vec3 pos;
 
 	vec3_zero(&pos);
@@ -613,7 +613,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	if (!(modifiers & Qt::ControlModifier))
 		SnapStretchingToScreen(tl, br);
 
-	obs_source_t source = obs_sceneitem_getsource(stretchItem);
+	obs_source_t source = obs_sceneitem_get_source(stretchItem);
 
 	vec2 baseSize;
 	vec2_set(&baseSize,
@@ -638,7 +638,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 			ClampAspect(tl, br, size, baseSize);
 
 		vec2_div(&size, &size, &baseSize);
-		obs_sceneitem_setscale(stretchItem, &size);
+		obs_sceneitem_set_scale(stretchItem, &size);
 	}
 
 	pos3 = CalculateStretchPos(tl, br);
@@ -646,7 +646,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 	vec2 newPos;
 	vec2_set(&newPos, std::round(pos3.x), std::round(pos3.y));
-	obs_sceneitem_setpos(stretchItem, &newPos);
+	obs_sceneitem_set_pos(stretchItem, &newPos);
 }
 
 void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)

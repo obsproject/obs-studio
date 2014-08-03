@@ -776,7 +776,7 @@ EXPORT obs_source_t obs_scene_getsource(obs_scene_t scene);
 EXPORT obs_scene_t obs_scene_fromsource(obs_source_t source);
 
 /** Determines whether a source is within a scene */
-EXPORT obs_sceneitem_t obs_scene_findsource(obs_scene_t scene,
+EXPORT obs_sceneitem_t obs_scene_find_source(obs_scene_t scene,
 		const char *name);
 
 /** Enumerates sources within a scene */
@@ -794,22 +794,22 @@ EXPORT void obs_sceneitem_release(obs_sceneitem_t item);
 EXPORT void obs_sceneitem_remove(obs_sceneitem_t item);
 
 /** Gets the scene parent associated with the scene item. */
-EXPORT obs_scene_t obs_sceneitem_getscene(obs_sceneitem_t item);
+EXPORT obs_scene_t obs_sceneitem_get_scene(obs_sceneitem_t item);
 
 /** Gets the source of a scene item. */
-EXPORT obs_source_t obs_sceneitem_getsource(obs_sceneitem_t item);
+EXPORT obs_source_t obs_sceneitem_get_source(obs_sceneitem_t item);
 
 EXPORT void obs_sceneitem_select(obs_sceneitem_t item, bool select);
 EXPORT bool obs_sceneitem_selected(obs_sceneitem_t item);
 
 /* Functions for gettings/setting specific orientation of a scene item */
-EXPORT void obs_sceneitem_setpos(obs_sceneitem_t item, const struct vec2 *pos);
-EXPORT void obs_sceneitem_setrot(obs_sceneitem_t item, float rot_deg);
-EXPORT void obs_sceneitem_setscale(obs_sceneitem_t item,
+EXPORT void obs_sceneitem_set_pos(obs_sceneitem_t item, const struct vec2 *pos);
+EXPORT void obs_sceneitem_set_rot(obs_sceneitem_t item, float rot_deg);
+EXPORT void obs_sceneitem_set_scale(obs_sceneitem_t item,
 		const struct vec2 *scale);
-EXPORT void obs_sceneitem_setalignment(obs_sceneitem_t item,
+EXPORT void obs_sceneitem_set_alignment(obs_sceneitem_t item,
 		uint32_t alignment);
-EXPORT void obs_sceneitem_setorder(obs_sceneitem_t item,
+EXPORT void obs_sceneitem_set_order(obs_sceneitem_t item,
 		enum obs_order_movement movement);
 
 EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t item,
@@ -819,10 +819,10 @@ EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t item,
 EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t item,
 		const struct vec2 *bounds);
 
-EXPORT void  obs_sceneitem_getpos(obs_sceneitem_t item, struct vec2 *pos);
-EXPORT float obs_sceneitem_getrot(obs_sceneitem_t item);
-EXPORT void  obs_sceneitem_getscale(obs_sceneitem_t item, struct vec2 *scale);
-EXPORT uint32_t obs_sceneitem_getalignment(obs_sceneitem_t item);
+EXPORT void  obs_sceneitem_get_pos(obs_sceneitem_t item, struct vec2 *pos);
+EXPORT float obs_sceneitem_get_rot(obs_sceneitem_t item);
+EXPORT void  obs_sceneitem_get_scale(obs_sceneitem_t item, struct vec2 *scale);
+EXPORT uint32_t obs_sceneitem_get_alignment(obs_sceneitem_t item);
 
 EXPORT enum obs_bounds_type obs_sceneitem_get_bounds_type(obs_sceneitem_t item);
 EXPORT uint32_t obs_sceneitem_get_bounds_alignment(obs_sceneitem_t item);
