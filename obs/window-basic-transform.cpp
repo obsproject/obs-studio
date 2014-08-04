@@ -66,7 +66,7 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 	removeSignal.Disconnect();
 
 	if (scene) {
-		OBSSource source = obs_scene_getsource(scene);
+		OBSSource source = obs_scene_get_source(scene);
 		signal_handler_t signal = obs_source_signalhandler(source);
 
 		transformSignal.Connect(signal, "item_transform",
@@ -102,7 +102,7 @@ void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t data)
 	OBSSource source = (obs_source_t)calldata_ptr(data, "source");
 
 	if (channel == 0) {
-		OBSScene scene = obs_scene_fromsource(source);
+		OBSScene scene = obs_scene_from_source(source);
 		window->SetScene(scene);
 
 		if (!scene)
@@ -184,8 +184,8 @@ void OBSBasicTransform::RefreshControls()
 	obs_sceneitem_get_info(item, &osi);
 
 	obs_source_t source = obs_sceneitem_get_source(item);
-	float width  = float(obs_source_getwidth(source));
-	float height = float(obs_source_getheight(source));
+	float width  = float(obs_source_get_width(source));
+	float height = float(obs_source_get_height(source));
 
 	int alignIndex       = AlignToList(osi.alignment);
 	int boundsAlignIndex = AlignToList(osi.bounds_alignment);
@@ -221,8 +221,8 @@ void OBSBasicTransform::OnBoundsType(int index)
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
 		if (lastType == OBS_BOUNDS_NONE) {
 			OBSSource source = obs_sceneitem_get_source(item);
-			int width  = (int)obs_source_getwidth(source);
-			int height = (int)obs_source_getheight(source);
+			int width  = (int)obs_source_get_width(source);
+			int height = (int)obs_source_get_height(source);
 
 			ui->boundsWidth->setValue(width);
 			ui->boundsHeight->setValue(height);
@@ -238,8 +238,8 @@ void OBSBasicTransform::OnControlChanged()
 		return;
 
 	obs_source_t source = obs_sceneitem_get_source(item);
-	double width  = double(obs_source_getwidth(source));
-	double height = double(obs_source_getheight(source));
+	double width  = double(obs_source_get_width(source));
+	double height = double(obs_source_get_height(source));
 
 	obs_transform_info oti;
 	oti.pos.x            = float(ui->positionX->value());

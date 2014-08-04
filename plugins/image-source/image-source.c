@@ -2,7 +2,7 @@
 
 #define warn(format, ...) \
 	blog(LOG_WARNING, "[image_source: '%s'] " format, \
-			obs_source_getname(context->source), ##__VA_ARGS__)
+			obs_source_get_name(context->source), ##__VA_ARGS__)
 
 struct image_source {
 	obs_source_t source;

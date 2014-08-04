@@ -27,7 +27,7 @@ const struct obs_service_info *find_service(const char *id)
 	return NULL;
 }
 
-const char *obs_service_getdisplayname(const char *id)
+const char *obs_service_get_display_name(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
 	return (info != NULL) ? info->getname() : NULL;
@@ -96,7 +96,7 @@ void obs_service_destroy(obs_service_t service)
 	}
 }
 
-const char *obs_service_getname(obs_service_t service)
+const char *obs_service_get_name(obs_service_t service)
 {
 	return service ? service->context.name : NULL;
 }

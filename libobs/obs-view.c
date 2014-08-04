@@ -63,7 +63,7 @@ void obs_view_destroy(obs_view_t view)
 	}
 }
 
-obs_source_t obs_view_getsource(obs_view_t view, uint32_t channel)
+obs_source_t obs_view_get_source(obs_view_t view, uint32_t channel)
 {
 	obs_source_t source;
 	assert(channel < MAX_CHANNELS);
@@ -82,7 +82,7 @@ obs_source_t obs_view_getsource(obs_view_t view, uint32_t channel)
 	return source;
 }
 
-void obs_view_setsource(obs_view_t view, uint32_t channel,
+void obs_view_set_source(obs_view_t view, uint32_t channel,
 		obs_source_t source)
 {
 	struct obs_source *prev_source;

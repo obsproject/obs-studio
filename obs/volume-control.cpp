@@ -89,7 +89,7 @@ void VolControl::SliderChanged(int vol)
 		signal_handler_disconnect(obs_source_signalhandler(source),
 				"volume", OBSVolumeChanged, this);
 
-		obs_source_setvolume(source, float(vol)*0.01f);
+		obs_source_set_volume(source, float(vol)*0.01f);
 
 		signal_handler_connect(obs_source_signalhandler(source),
 				"volume", OBSVolumeChanged, this);
@@ -117,7 +117,7 @@ VolControl::VolControl(OBSSource source_)
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
-	int         vol         = int(obs_source_getvolume(source) * 100.0f);
+	int         vol         = int(obs_source_get_volume(source) * 100.0f);
 
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
@@ -127,7 +127,7 @@ VolControl::VolControl(OBSSource source_)
 	QFont font = nameLabel->font();
 	font.setPointSize(font.pointSize()-1);
 
-	nameLabel->setText(obs_source_getname(source));
+	nameLabel->setText(obs_source_get_name(source));
 	nameLabel->setFont(font);
 	volLabel->setText(QString::number(vol));
 	volLabel->setFont(font);

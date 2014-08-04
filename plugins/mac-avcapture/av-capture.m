@@ -32,7 +32,7 @@ struct av_capture;
 
 #define AVLOG(level, format, ...) \
 	blog(level, "%s: " format, \
-			obs_source_getname(capture->source), ##__VA_ARGS__)
+			obs_source_get_name(capture->source), ##__VA_ARGS__)
 
 #define AVFREE(x) {[x release]; x = nil;}
 

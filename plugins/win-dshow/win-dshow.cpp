@@ -418,7 +418,7 @@ void DShowInput::Update(obs_data_t settings)
 
 		interval = best_interval;
 		blog(LOG_INFO, "%s: Using interval %lld",
-				obs_source_getname(source), interval);
+				obs_source_get_name(source), interval);
 	}
 
 	videoConfig.name             = id.name.c_str();

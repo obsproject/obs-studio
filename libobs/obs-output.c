@@ -31,7 +31,7 @@ const struct obs_output_info *find_output(const char *id)
 	return NULL;
 }
 
-const char *obs_output_getdisplayname(const char *id)
+const char *obs_output_get_display_name(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	return (info != NULL) ? info->getname() : NULL;
@@ -146,7 +146,7 @@ void obs_output_destroy(obs_output_t output)
 	}
 }
 
-const char *obs_output_getname(obs_output_t output)
+const char *obs_output_get_name(obs_output_t output)
 {
 	return output ? output->context.name : NULL;
 }

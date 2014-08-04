@@ -223,8 +223,8 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 
 static void update_item_transform(struct obs_scene_item *item)
 {
-	uint32_t        width         = obs_source_getwidth(item->source);
-	uint32_t        height        = obs_source_getheight(item->source);
+	uint32_t        width         = obs_source_get_width(item->source);
+	uint32_t        height        = obs_source_get_height(item->source);
 	uint32_t        cx            = width;
 	uint32_t        cy            = height;
 	struct vec2     base_origin;
@@ -291,8 +291,8 @@ static void update_item_transform(struct obs_scene_item *item)
 
 static inline bool source_size_changed(struct obs_scene_item *item)
 {
-	uint32_t width  = obs_source_getwidth(item->source);
-	uint32_t height = obs_source_getheight(item->source);
+	uint32_t width  = obs_source_get_width(item->source);
+	uint32_t height = obs_source_get_height(item->source);
 
 	return item->last_width != width || item->last_height != height;
 }
@@ -388,7 +388,7 @@ static void scene_load(void *scene, obs_data_t settings)
 static void scene_save_item(obs_data_array_t array, struct obs_scene_item *item)
 {
 	obs_data_t item_data = obs_data_create();
-	const char *name     = obs_source_getname(item->source);
+	const char *name     = obs_source_get_name(item->source);
 
 	obs_data_setstring(item_data, "name",         name);
 	obs_data_setbool  (item_data, "visible",      item->visible);
@@ -471,12 +471,12 @@ void obs_scene_release(obs_scene_t scene)
 		obs_source_release(scene->source);
 }
 
-obs_source_t obs_scene_getsource(obs_scene_t scene)
+obs_source_t obs_scene_get_source(obs_scene_t scene)
 {
 	return scene ? scene->source : NULL;
 }
 
-obs_scene_t obs_scene_fromsource(obs_source_t source)
+obs_scene_t obs_scene_from_source(obs_source_t source)
 {
 	if (!source || source->info.id != scene_info.id)
 		return NULL;

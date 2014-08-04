@@ -275,8 +275,8 @@ static vec2 GetItemSize(obs_sceneitem_t item)
 		vec2 scale;
 
 		obs_sceneitem_get_scale(item, &scale);
-		size.x = float(obs_source_getwidth(source))  * scale.x;
-		size.y = float(obs_source_getheight(source)) * scale.y;
+		size.x = float(obs_source_get_width(source))  * scale.x;
+		size.y = float(obs_source_get_height(source)) * scale.y;
 	}
 
 	return size;
@@ -617,8 +617,8 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 	vec2 baseSize;
 	vec2_set(&baseSize,
-		float(obs_source_getwidth(source)),
-		float(obs_source_getheight(source)));
+		float(obs_source_get_width(source)),
+		float(obs_source_get_height(source)));
 
 	vec2 size;
 	vec2_set(&size,br. x - tl.x, br.y - tl.y);

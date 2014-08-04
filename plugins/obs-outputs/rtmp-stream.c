@@ -28,7 +28,7 @@
 
 #define do_log(level, format, ...) \
 	blog(level, "[rtmp stream: '%s'] " format, \
-			obs_output_getname(stream->output), ##__VA_ARGS__)
+			obs_output_get_name(stream->output), ##__VA_ARGS__)
 
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)

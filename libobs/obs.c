@@ -912,7 +912,7 @@ bool obs_add_source(obs_source_t source)
 obs_source_t obs_get_output_source(uint32_t channel)
 {
 	if (!obs) return NULL;
-	return obs_view_getsource(&obs->data.main_view, channel);
+	return obs_view_get_source(&obs->data.main_view, channel);
 }
 
 void obs_set_output_source(uint32_t channel, obs_source_t source)
@@ -1170,7 +1170,7 @@ obs_source_t obs_load_source(obs_data_t source_data)
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_getdouble(source_data, "volume");
-	obs_source_setvolume(source, (float)volume);
+	obs_source_set_volume(source, (float)volume);
 
 	obs_data_release(settings);
 
@@ -1208,9 +1208,9 @@ void obs_load_sources(obs_data_array_t array)
 obs_data_t obs_save_source(obs_source_t source)
 {
 	obs_data_t source_data = obs_data_create();
-	obs_data_t settings    = obs_source_getsettings(source);
-	float      volume      = obs_source_getvolume(source);
-	const char *name       = obs_source_getname(source);
+	obs_data_t settings    = obs_source_get_settings(source);
+	float      volume      = obs_source_get_volume(source);
+	const char *name       = obs_source_get_name(source);
 	const char *id         = obs_source_get_id(source);
 
 	obs_source_save(source);

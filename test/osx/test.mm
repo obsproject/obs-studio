@@ -82,7 +82,7 @@ static SceneContext SetupScene()
 
 	/* ------------------------------------------------------ */
 	/* set the scene as the primary draw source and go */
-	obs_set_output_source(0, obs_scene_getsource(scene));
+	obs_set_output_source(0, obs_scene_get_source(scene));
 
 	return scene;
 }

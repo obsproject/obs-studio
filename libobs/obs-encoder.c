@@ -30,7 +30,7 @@ struct obs_encoder_info *find_encoder(const char *id)
 	return NULL;
 }
 
-const char *obs_encoder_getdisplayname(const char *id)
+const char *obs_encoder_get_display_name(const char *id)
 {
 	struct obs_encoder_info *ei = find_encoder(id);
 	return ei ? ei->getname() : NULL;
@@ -216,7 +216,7 @@ void obs_encoder_destroy(obs_encoder_t encoder)
 	}
 }
 
-const char *obs_encoder_getname(obs_encoder_t encoder)
+const char *obs_encoder_get_name(obs_encoder_t encoder)
 {
 	return encoder ? encoder->context.name : NULL;
 }

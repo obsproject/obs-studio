@@ -28,7 +28,7 @@
 
 #define do_log(level, format, ...) \
 	blog(level, "[x264 encoder: '%s'] " format, \
-			obs_encoder_getname(obsx264->encoder), ##__VA_ARGS__)
+			obs_encoder_get_name(obsx264->encoder), ##__VA_ARGS__)
 
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)

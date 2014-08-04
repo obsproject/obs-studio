@@ -38,7 +38,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 {
 	ui->setupUi(this);
 
-	OBSData settings = obs_source_getsettings(source);
+	OBSData settings = obs_source_get_settings(source);
 	obs_data_release(settings);
 
 	view = new OBSPropertiesView(settings,
@@ -56,7 +56,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		resizeTimer = startTimer(100);
 	});
 
-	const char *name = obs_source_getname(source);
+	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 }
 
@@ -75,8 +75,8 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	if (!window->source)
 		return;
 
-	uint32_t sourceCX = max(obs_source_getwidth(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_getheight(window->source), 1u);
+	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
+	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
 
 	int   x, y;
 	int   newCX, newCY;

@@ -186,7 +186,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 
 	data->bytes_per_frame = pa_frame_size(&spec);
 
-	data->stream = pulse_stream_new(obs_source_getname(data->source),
+	data->stream = pulse_stream_new(obs_source_get_name(data->source),
 		&spec, NULL);
 	if (!data->stream) {
 		blog(LOG_ERROR, "pulse-input: Unable to create stream");

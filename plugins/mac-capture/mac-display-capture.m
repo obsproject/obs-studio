@@ -108,7 +108,8 @@ static inline void display_stream_update(struct display_capture *dc,
 	size_t dropped_frames = CGDisplayStreamUpdateGetDropCount(update_ref);
 	if (dropped_frames > 0)
 		blog(LOG_INFO, "%s: Dropped %zu frames",
-				obs_source_getname(dc->source), dropped_frames);
+				obs_source_get_name(dc->source),
+				dropped_frames);
 }
 
 static bool init_display_stream(struct display_capture *dc)
