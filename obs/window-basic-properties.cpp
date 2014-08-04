@@ -33,7 +33,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  resizeTimer   (0),
 	  ui            (new Ui::OBSBasicProperties),
 	  source        (source_),
-	  removedSignal (obs_source_signalhandler(source), "remove",
+	  removedSignal (obs_source_get_signal_handler(source), "remove",
 	                 OBSBasicProperties::SourceRemoved, this)
 {
 	ui->setupUi(this);

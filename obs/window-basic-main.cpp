@@ -352,12 +352,12 @@ bool OBSBasic::InitOutputs()
 	if (!streamOutput)
 		return false;
 
-	signal_handler_connect(obs_output_signalhandler(streamOutput),
+	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
-	signal_handler_connect(obs_output_signalhandler(streamOutput),
+	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"stop", OBSStopStreaming, this);
 
-	signal_handler_connect(obs_output_signalhandler(fileOutput),
+	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
 
 	return true;
@@ -475,17 +475,17 @@ bool OBSBasic::InitBasicConfig()
 
 void OBSBasic::InitOBSCallbacks()
 {
-	signal_handler_connect(obs_signalhandler(), "source_add",
+	signal_handler_connect(obs_get_signal_handler(), "source_add",
 			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_signalhandler(), "source_remove",
+	signal_handler_connect(obs_get_signal_handler(), "source_remove",
 			OBSBasic::SourceRemoved, this);
-	signal_handler_connect(obs_signalhandler(), "channel_change",
+	signal_handler_connect(obs_get_signal_handler(), "channel_change",
 			OBSBasic::ChannelChanged, this);
-	signal_handler_connect(obs_signalhandler(), "source_activate",
+	signal_handler_connect(obs_get_signal_handler(), "source_activate",
 			OBSBasic::SourceActivated, this);
-	signal_handler_connect(obs_signalhandler(), "source_deactivate",
+	signal_handler_connect(obs_get_signal_handler(), "source_deactivate",
 			OBSBasic::SourceDeactivated, this);
-	signal_handler_connect(obs_signalhandler(), "source_rename",
+	signal_handler_connect(obs_get_signal_handler(), "source_rename",
 			OBSBasic::SourceRenamed, this);
 }
 
@@ -667,7 +667,7 @@ void OBSBasic::AddScene(OBSSource source)
 	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
 	ui->scenes->addItem(item);
 
-	signal_handler_t handler = obs_source_signalhandler(source);
+	signal_handler_t handler = obs_source_get_signal_handler(source);
 	signal_handler_connect(handler, "item_add",
 			OBSBasic::SceneItemAdded, this);
 	signal_handler_connect(handler, "item_remove",
@@ -1940,8 +1940,8 @@ void OBSBasic::SetupEncoders()
 		obs_data_release(x264Settings);
 		obs_data_release(aacSettings);
 
-		obs_encoder_set_video(x264, obs_video());
-		obs_encoder_set_audio(aac,  obs_audio());
+		obs_encoder_set_video(x264, obs_get_video());
+		obs_encoder_set_audio(aac,  obs_get_audio());
 	}
 }
 

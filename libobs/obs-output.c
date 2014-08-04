@@ -76,8 +76,8 @@ obs_output_t obs_output_create(const char *id, const char *name,
 		goto fail;
 
 	output->info     = *info;
-	output->video    = obs_video();
-	output->audio    = obs_audio();
+	output->video    = obs_get_video();
+	output->audio    = obs_get_audio();
 	if (output->info.defaults)
 		output->info.defaults(output->context.settings);
 
@@ -247,12 +247,12 @@ void obs_output_pause(obs_output_t output)
 		output->info.pause(output->context.data);
 }
 
-signal_handler_t obs_output_signalhandler(obs_output_t output)
+signal_handler_t obs_output_get_signal_handler(obs_output_t output)
 {
 	return output ? output->context.signals : NULL;
 }
 
-proc_handler_t obs_output_prochandler(obs_output_t output)
+proc_handler_t obs_output_get_proc_handler(obs_output_t output)
 {
 	return output ? output->context.procs : NULL;
 }

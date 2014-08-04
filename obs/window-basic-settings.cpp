@@ -405,7 +405,7 @@ void OBSBasicSettings::LoadVideoSettings()
 {
 	loading = true;
 
-	if (video_output_active(obs_video())) {
+	if (video_output_active(obs_get_video())) {
 		ui->videoPage->setEnabled(false);
 		ui->videoMsg->setText(
 				QTStr("Basic.Settings.Video.CurrentlyActive"));

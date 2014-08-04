@@ -86,12 +86,12 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 void VolControl::SliderChanged(int vol)
 {
 	if (signalChanged) {
-		signal_handler_disconnect(obs_source_signalhandler(source),
+		signal_handler_disconnect(obs_source_get_signal_handler(source),
 				"volume", OBSVolumeChanged, this);
 
 		obs_source_set_volume(source, float(vol)*0.01f);
 
-		signal_handler_connect(obs_source_signalhandler(source),
+		signal_handler_connect(obs_source_get_signal_handler(source),
 				"volume", OBSVolumeChanged, this);
 	}
 
@@ -150,10 +150,10 @@ VolControl::VolControl(OBSSource source_)
 
 	setLayout(mainLayout);
 
-	signal_handler_connect(obs_source_signalhandler(source),
+	signal_handler_connect(obs_source_get_signal_handler(source),
 			"volume", OBSVolumeChanged, this);
 
-	signal_handler_connect(obs_source_signalhandler(source),
+	signal_handler_connect(obs_source_get_signal_handler(source),
 		"volume_level", OBSVolumeLevel, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
@@ -162,10 +162,10 @@ VolControl::VolControl(OBSSource source_)
 
 VolControl::~VolControl()
 {
-	signal_handler_disconnect(obs_source_signalhandler(source),
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
 			"volume", OBSVolumeChanged, this);
 
-	signal_handler_disconnect(obs_source_signalhandler(source),
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
 		"volume_level", OBSVolumeLevel, this);
 }
 

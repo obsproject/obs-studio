@@ -173,9 +173,9 @@ void OBSBasicStatusBar::StreamStarted(obs_output_t output)
 {
 	streamOutput = output;
 
-	signal_handler_connect(obs_output_signalhandler(streamOutput),
+	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"reconnect", OBSOutputReconnect, this);
-	signal_handler_connect(obs_output_signalhandler(streamOutput),
+	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"reconnect_success", OBSOutputReconnectSuccess, this);
 
 	retries           = 0;
@@ -188,10 +188,10 @@ void OBSBasicStatusBar::StreamStopped()
 {
 	if (streamOutput) {
 		signal_handler_disconnect(
-				obs_output_signalhandler(streamOutput),
+				obs_output_get_signal_handler(streamOutput),
 				"reconnect", OBSOutputReconnect, this);
 		signal_handler_disconnect(
-				obs_output_signalhandler(streamOutput),
+				obs_output_get_signal_handler(streamOutput),
 				"reconnect_success", OBSOutputReconnectSuccess,
 				this);
 

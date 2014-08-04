@@ -820,12 +820,12 @@ void obs_leave_graphics(void)
 		gs_leavecontext();
 }
 
-audio_t obs_audio(void)
+audio_t obs_get_audio(void)
 {
 	return (obs != NULL) ? obs->audio.audio : NULL;
 }
 
-video_t obs_video(void)
+video_t obs_get_video(void)
 {
 	return (obs != NULL) ? obs->video.video : NULL;
 }
@@ -1086,13 +1086,13 @@ effect_t obs_get_solid_effect(void)
 	return obs->video.solid_effect;
 }
 
-signal_handler_t obs_signalhandler(void)
+signal_handler_t obs_get_signal_handler(void)
 {
 	if (!obs) return NULL;
 	return obs->signals;
 }
 
-proc_handler_t obs_prochandler(void)
+proc_handler_t obs_get_proc_handler(void)
 {
 	if (!obs) return NULL;
 	return obs->procs;

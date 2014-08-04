@@ -54,7 +54,7 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	SetScene(curScene);
 	SetItem(FindASelectedItem(curScene));
 
-	channelChangedSignal.Connect(obs_signalhandler(), "channel_change",
+	channelChangedSignal.Connect(obs_get_signal_handler(), "channel_change",
 			OBSChannelChanged, this);
 }
 
@@ -67,7 +67,7 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
-		signal_handler_t signal = obs_source_signalhandler(source);
+		signal_handler_t signal = obs_source_get_signal_handler(source);
 
 		transformSignal.Connect(signal, "item_transform",
 				OBSSceneItemTransform, this);

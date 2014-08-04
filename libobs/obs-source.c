@@ -559,8 +559,9 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 	float max_val = 0.0f;
 	float rms_val = 0.0f;
 
-	const uint32_t sample_rate    = audio_output_samplerate(obs_audio());
-	const size_t   channels       = audio_output_channels(obs_audio());
+	audio_t        audio          = obs_get_audio();
+	const uint32_t sample_rate    = audio_output_samplerate(audio);
+	const size_t   channels       = audio_output_channels(audio);
 	const size_t   count          = frames * channels;
 	const size_t   vol_peak_delay = sample_rate * 3;
 	const float    alpha          = 0.15f;
@@ -1735,12 +1736,12 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 			effect, width, height, use_matrix);
 }
 
-signal_handler_t obs_source_signalhandler(obs_source_t source)
+signal_handler_t obs_source_get_signal_handler(obs_source_t source)
 {
 	return source ? source->context.signals : NULL;
 }
 
-proc_handler_t obs_source_prochandler(obs_source_t source)
+proc_handler_t obs_source_get_proc_handler(obs_source_t source)
 {
 	return source ? source->context.procs : NULL;
 }

@@ -167,12 +167,12 @@ obs_data_t obs_service_get_settings(obs_service_t service)
 	return service->context.settings;
 }
 
-signal_handler_t obs_service_signalhandler(obs_service_t service)
+signal_handler_t obs_service_get_signal_handler(obs_service_t service)
 {
 	return service ? service->context.signals : NULL;
 }
 
-proc_handler_t obs_service_prochandler(obs_service_t service)
+proc_handler_t obs_service_get_proc_handler(obs_service_t service)
 {
 	return service ? service->context.procs : NULL;
 }

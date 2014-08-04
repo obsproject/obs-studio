@@ -56,7 +56,7 @@ static void *scene_create(obs_data_t settings, struct obs_source *source)
 	scene->source     = source;
 	scene->first_item = NULL;
 
-	signal_handler_add_array(obs_source_signalhandler(source),
+	signal_handler_add_array(obs_source_get_signal_handler(source),
 			obs_scene_signals);
 
 	if (pthread_mutexattr_init(&attr) != 0)

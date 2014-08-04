@@ -387,10 +387,10 @@ EXPORT void obs_enter_graphics(void);
 EXPORT void obs_leave_graphics(void);
 
 /** Gets the main audio output handler for this OBS context */
-EXPORT audio_t obs_audio(void);
+EXPORT audio_t obs_get_audio(void);
 
 /** Gets the main video output handler for this OBS context */
-EXPORT video_t obs_video(void);
+EXPORT video_t obs_get_video(void);
 
 /**
  * Adds a source to the user source list and increments the reference counter
@@ -456,10 +456,10 @@ EXPORT effect_t obs_get_default_effect(void);
 EXPORT effect_t obs_get_solid_effect(void);
 
 /** Returns the primary obs signal handler */
-EXPORT signal_handler_t obs_signalhandler(void);
+EXPORT signal_handler_t obs_get_signal_handler(void);
 
 /** Returns the primary obs procedure handler */
-EXPORT proc_handler_t obs_prochandler(void);
+EXPORT proc_handler_t obs_get_proc_handler(void);
 
 /** Adds a draw callback to the main render context */
 EXPORT void obs_add_draw_callback(
@@ -656,10 +656,10 @@ EXPORT enum obs_source_type obs_source_get_type(obs_source_t source);
 EXPORT const char *obs_source_get_id(obs_source_t source);
 
 /** Returns the signal handler for a source */
-EXPORT signal_handler_t obs_source_signalhandler(obs_source_t source);
+EXPORT signal_handler_t obs_source_get_signal_handler(obs_source_t source);
 
 /** Returns the procedure handler for a source */
-EXPORT proc_handler_t obs_source_prochandler(obs_source_t source);
+EXPORT proc_handler_t obs_source_get_proc_handler(obs_source_t source);
 
 /** Sets the user volume for a source that has audio output */
 EXPORT void obs_source_set_volume(obs_source_t source, float volume);
@@ -893,10 +893,10 @@ EXPORT void obs_output_pause(obs_output_t output);
 EXPORT obs_data_t obs_output_get_settings(obs_output_t output);
 
 /** Returns the signal handler for an output  */
-EXPORT signal_handler_t obs_output_signalhandler(obs_output_t output);
+EXPORT signal_handler_t obs_output_get_signal_handler(obs_output_t output);
 
 /** Returns the procedure handler for an output */
-EXPORT proc_handler_t obs_output_prochandler(obs_output_t output);
+EXPORT proc_handler_t obs_output_get_proc_handler(obs_output_t output);
 
 /**
  * Sets the current video media context associated with this output,
