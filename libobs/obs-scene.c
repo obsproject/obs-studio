@@ -438,18 +438,18 @@ static uint32_t scene_getheight(void *data)
 
 const struct obs_source_info scene_info =
 {
-	.id           = "scene",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
-	.getname      = scene_getname,
-	.create       = scene_create,
-	.destroy      = scene_destroy,
-	.video_render = scene_video_render,
-	.getwidth     = scene_getwidth,
-	.getheight    = scene_getheight,
-	.load         = scene_load,
-	.save         = scene_save,
-	.enum_sources = scene_enum_sources
+	.id            = "scene",
+	.type          = OBS_SOURCE_TYPE_INPUT,
+	.output_flags  = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.get_name      = scene_getname,
+	.create        = scene_create,
+	.destroy       = scene_destroy,
+	.video_render  = scene_video_render,
+	.get_width     = scene_getwidth,
+	.get_height    = scene_getheight,
+	.load          = scene_load,
+	.save          = scene_save,
+	.enum_sources  = scene_enum_sources
 };
 
 obs_scene_t obs_scene_create(const char *name)

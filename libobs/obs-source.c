@@ -99,7 +99,7 @@ const char *obs_source_get_display_name(enum obs_source_type type,
 		const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	return (info != NULL) ? info->getname() : NULL;
+	return (info != NULL) ? info->get_name() : NULL;
 }
 
 /* internal initialization */
@@ -1115,8 +1115,8 @@ uint32_t obs_source_get_width(obs_source_t source)
 {
 	if (!source_valid(source)) return 0;
 
-	if (source->info.getwidth)
-		return source->info.getwidth(source->context.data);
+	if (source->info.get_width)
+		return source->info.get_width(source->context.data);
 	return source->async_width;
 }
 
@@ -1124,8 +1124,8 @@ uint32_t obs_source_get_height(obs_source_t source)
 {
 	if (!source_valid(source)) return 0;
 
-	if (source->info.getheight)
-		return source->info.getheight(source->context.data);
+	if (source->info.get_height)
+		return source->info.get_height(source->context.data);
 	return source->async_height;
 }
 

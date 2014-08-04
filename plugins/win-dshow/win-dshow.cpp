@@ -1198,11 +1198,11 @@ bool obs_module_load(void)
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_VIDEO |
 	                       OBS_SOURCE_ASYNC;
-	info.getname         = GetDShowInputName;
+	info.get_name        = GetDShowInputName;
 	info.create          = CreateDShowInput;
 	info.destroy         = DestroyDShowInput;
-	info.getwidth        = GetDShowWidth;
-	info.getheight       = GetDShowHeight;
+	info.get_width       = GetDShowWidth;
+	info.get_height      = GetDShowHeight;
 	info.update          = UpdateDShowInput;
 	info.defaults        = GetDShowDefaults;
 	info.properties      = GetDShowProperties;

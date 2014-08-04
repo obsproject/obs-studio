@@ -332,7 +332,7 @@ static const char *rtmp_common_key(void *data)
 
 struct obs_service_info rtmp_common_service = {
 	.id         = "rtmp_common",
-	.getname    = rtmp_common_getname,
+	.get_name   = rtmp_common_getname,
 	.create     = rtmp_common_create,
 	.destroy    = rtmp_common_destroy,
 	.update     = rtmp_common_update,

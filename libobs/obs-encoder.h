@@ -104,7 +104,7 @@ struct obs_encoder_info {
 	 *
 	 * @return         Translated name of the encoder
 	 */
-	const char *(*getname)(void);
+	const char *(*get_name)(void);
 
 	/**
 	 * Creates the encoder with the specified settings

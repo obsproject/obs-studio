@@ -301,7 +301,7 @@ struct obs_source_info xshm_input = {
 	.id           = "xshm_input",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO,
-	.getname      = xshm_getname,
+	.get_name     = xshm_getname,
 	.create       = xshm_create,
 	.destroy      = xshm_destroy,
 	.update       = xshm_update,
@@ -309,6 +309,6 @@ struct obs_source_info xshm_input = {
 	.properties   = xshm_properties,
 	.video_tick   = xshm_video_tick,
 	.video_render = xshm_video_render,
-	.getwidth     = xshm_getwidth,
-	.getheight    = xshm_getheight
+	.get_width    = xshm_getwidth,
+	.get_height   = xshm_getheight
 };

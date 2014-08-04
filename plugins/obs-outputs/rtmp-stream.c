@@ -592,7 +592,7 @@ struct obs_output_info rtmp_output_info = {
 	.flags          = OBS_OUTPUT_AV |
 	                  OBS_OUTPUT_ENCODED |
 	                  OBS_OUTPUT_SERVICE,
-	.getname        = rtmp_stream_getname,
+	.get_name       = rtmp_stream_getname,
 	.create         = rtmp_stream_create,
 	.destroy        = rtmp_stream_destroy,
 	.start          = rtmp_stream_start,

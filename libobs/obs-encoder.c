@@ -33,7 +33,7 @@ struct obs_encoder_info *find_encoder(const char *id)
 const char *obs_encoder_get_display_name(const char *id)
 {
 	struct obs_encoder_info *ei = find_encoder(id);
-	return ei ? ei->getname() : NULL;
+	return ei ? ei->get_name() : NULL;
 }
 
 static bool init_encoder(struct obs_encoder *encoder, const char *name,

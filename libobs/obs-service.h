@@ -21,7 +21,7 @@ struct obs_service_info {
 	/* required */
 	const char *id;
 
-	const char *(*getname)(void);
+	const char *(*get_name)(void);
 	void *(*create)(obs_data_t settings, obs_service_t service);
 	void (*destroy)(void *data);
 

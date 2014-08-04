@@ -807,7 +807,7 @@ static void ffmpeg_output_stop(void *data)
 struct obs_output_info ffmpeg_output = {
 	.id        = "ffmpeg_output",
 	.flags     = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO,
-	.getname   = ffmpeg_output_getname,
+	.get_name  = ffmpeg_output_getname,
 	.create    = ffmpeg_output_create,
 	.destroy   = ffmpeg_output_destroy,
 	.start     = ffmpeg_output_start,

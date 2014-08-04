@@ -34,7 +34,7 @@ const struct obs_output_info *find_output(const char *id)
 const char *obs_output_get_display_name(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
-	return (info != NULL) ? info->getname() : NULL;
+	return (info != NULL) ? info->get_name() : NULL;
 }
 
 static const char *output_signals[] = {

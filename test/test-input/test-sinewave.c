@@ -104,7 +104,7 @@ struct obs_source_info test_sinewave = {
 	.id           = "test_sinewave",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_AUDIO,
-	.getname      = sinewave_getname,
+	.get_name     = sinewave_getname,
 	.create       = sinewave_create,
 	.destroy      = sinewave_destroy,
 };

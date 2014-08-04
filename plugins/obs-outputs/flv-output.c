@@ -201,7 +201,7 @@ static obs_properties_t flv_output_properties(void)
 struct obs_output_info flv_output_info = {
 	.id             = "flv_output",
 	.flags          = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
-	.getname        = flv_output_getname,
+	.get_name       = flv_output_getname,
 	.create         = flv_output_create,
 	.destroy        = flv_output_destroy,
 	.start          = flv_output_start,

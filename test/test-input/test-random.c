@@ -100,7 +100,7 @@ struct obs_source_info test_random = {
 	.id           = "random",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO,
-	.getname      = random_getname,
+	.get_name     = random_getname,
 	.create       = random_create,
 	.destroy      = random_destroy,
 };

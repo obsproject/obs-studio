@@ -120,7 +120,7 @@ struct obs_source_info {
 	 *
 	 * @return         The translated name of the source type
 	 */
-	const char *(*getname)(void);
+	const char *(*get_name)(void);
 
 	/**
 	 * Creates the source data for the source
@@ -141,11 +141,11 @@ struct obs_source_info {
 
 	/** Returns the width of the source.  Required if this is an input
 	 * source and has non-async video */
-	uint32_t (*getwidth)(void *data);
+	uint32_t (*get_width)(void *data);
 
 	/** Returns the height of the source.  Required if this is an input
 	 * source and has non-async video */
-	uint32_t (*getheight)(void *data);
+	uint32_t (*get_height)(void *data);
 
 	/* ----------------------------------------------------------------- */
 	/* Optional implementation */

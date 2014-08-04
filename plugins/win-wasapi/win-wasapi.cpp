@@ -512,7 +512,7 @@ void RegisterWASAPIInput()
 	info.id              = "wasapi_input_capture";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_AUDIO;
-	info.getname         = GetWASAPIInputName;
+	info.get_name        = GetWASAPIInputName;
 	info.create          = CreateWASAPIInput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
@@ -527,7 +527,7 @@ void RegisterWASAPIOutput()
 	info.id              = "wasapi_output_capture";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_AUDIO;
-	info.getname         = GetWASAPIOutputName;
+	info.get_name        = GetWASAPIOutputName;
 	info.create          = CreateWASAPIOutput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
