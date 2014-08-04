@@ -56,7 +56,7 @@ static inline void render_displays(void)
 	if (!obs->data.valid)
 		return;
 
-	gs_entercontext(obs_graphics());
+	gs_entercontext(obs->video.graphics);
 
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
@@ -411,7 +411,7 @@ static inline void output_frame(uint64_t timestamp)
 	memset(&frame, 0, sizeof(struct video_data));
 	frame.timestamp = timestamp;
 
-	gs_entercontext(obs_graphics());
+	gs_entercontext(video->graphics);
 
 	render_video(video, cur_texture, prev_texture);
 	frame_ready = download_frame(video, prev_texture, &frame);

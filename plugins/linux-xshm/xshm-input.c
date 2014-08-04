@@ -50,14 +50,14 @@ struct xshm_data {
  */
 static void xshm_resize_texture(struct xshm_data *data)
 {
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	if (data->texture)
 		texture_destroy(data->texture);
 	data->texture = gs_create_texture(data->width, data->height,
 		GS_BGRA, 1, NULL, GS_DYNAMIC);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 /**
@@ -183,14 +183,14 @@ static void xshm_destroy(void *vptr)
 	if (!data)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	if (data->texture)
 		texture_destroy(data->texture);
 	if (data->cursor)
 		xcursor_destroy(data->cursor);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	if (data->xshm)
 		xshm_detach(data->xshm);
@@ -222,9 +222,9 @@ static void *xshm_create(obs_data_t settings, obs_source_t source)
 
 	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 	data->cursor = xcursor_init(data->dpy);
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	xshm_update(data, settings);
 
@@ -245,7 +245,7 @@ static void xshm_video_tick(void *vptr, float seconds)
 	if (!data->xshm)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	XShmGetImage(data->dpy, XRootWindowOfScreen(data->screen),
 		data->xshm->image, data->x_org, data->y_org, AllPlanes);
@@ -254,7 +254,7 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	xcursor_tick(data->cursor);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 /**

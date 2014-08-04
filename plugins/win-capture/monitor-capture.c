@@ -92,12 +92,12 @@ static void monitor_capture_destroy(void *data)
 {
 	struct monitor_capture *capture = data;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	dc_capture_free(&capture->data);
 	effect_destroy(capture->opaque_effect);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	bfree(capture);
 }
@@ -130,9 +130,9 @@ static void monitor_capture_tick(void *data, float seconds)
 {
 	struct monitor_capture *capture = data;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 	dc_capture_capture(&capture->data, NULL);
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	UNUSED_PARAMETER(seconds);
 }

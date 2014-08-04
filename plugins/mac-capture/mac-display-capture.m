@@ -63,7 +63,7 @@ static void display_capture_destroy(void *data)
 	if (!dc)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	destroy_display_stream(dc);
 
@@ -72,7 +72,7 @@ static void display_capture_destroy(void *data)
 	if (dc->draw_effect)
 		effect_destroy(dc->draw_effect);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	pthread_mutex_destroy(&dc->mutex);
 	bfree(dc);
@@ -168,7 +168,7 @@ static void *display_capture_create(obs_data_t settings,
 
 	dc->source = source;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	struct gs_sampler_info info = {
 		.filter = GS_FILTER_LINEAR,
@@ -187,7 +187,7 @@ static void *display_capture_create(obs_data_t settings,
 	if (!dc->draw_effect)
 		goto fail;
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	dc->display = obs_data_getint(settings, "display");
 	pthread_mutex_init(&dc->mutex, NULL);
@@ -198,7 +198,7 @@ static void *display_capture_create(obs_data_t settings,
 	return dc;
 
 fail:
-	gs_leavecontext();
+	obs_leave_graphics();
 	display_capture_destroy(dc);
 	return NULL;
 }
@@ -222,12 +222,12 @@ static void display_capture_video_tick(void *data, float seconds)
 	if (prev_prev == dc->prev)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 	if (dc->tex)
 		texture_rebind_iosurface(dc->tex, dc->prev);
 	else
 		dc->tex = gs_create_texture_from_iosurface(dc->prev);
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	if (prev_prev) {
 		IOSurfaceDecrementUseCount(prev_prev);
@@ -288,14 +288,14 @@ static void display_capture_update(void *data, obs_data_t settings)
 	if (dc->display == display && dc->hide_cursor != show_cursor)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	destroy_display_stream(dc);
 	dc->display = display;
 	dc->hide_cursor = !show_cursor;
 	init_display_stream(dc);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 static obs_properties_t display_capture_properties(void)

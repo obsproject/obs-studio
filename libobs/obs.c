@@ -808,9 +808,16 @@ bool obs_enum_service_types(size_t idx, const char **id)
 	return true;
 }
 
-graphics_t obs_graphics(void)
+void obs_enter_graphics(void)
 {
-	return (obs != NULL) ? obs->video.graphics : NULL;
+	if (obs && obs->video.graphics)
+		gs_entercontext(obs->video.graphics);
+}
+
+void obs_leave_graphics(void)
+{
+	if (obs && obs->video.graphics)
+		gs_leavecontext();
 }
 
 audio_t obs_audio(void)

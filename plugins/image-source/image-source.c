@@ -22,7 +22,7 @@ static void image_source_update(void *data, obs_data_t settings)
 	struct image_source *context = data;
 	const char *file = obs_data_getstring(settings, "file");
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	if (context->tex) {
 		texture_destroy(context->tex);
@@ -41,7 +41,7 @@ static void image_source_update(void *data, obs_data_t settings)
 		}
 	}
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 static void *image_source_create(obs_data_t settings, obs_source_t source)
@@ -57,9 +57,9 @@ static void image_source_destroy(void *data)
 {
 	struct image_source *context = data;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 	texture_destroy(context->tex);
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	bfree(context);
 }

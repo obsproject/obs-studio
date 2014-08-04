@@ -36,7 +36,7 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 	capture->height         = height;
 	capture->capture_cursor = cursor;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	if (!gs_gdi_texture_available())
 		compatibility = true;
@@ -46,7 +46,7 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 
 	init_textures(capture);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	if (!capture->valid)
 		return;
@@ -76,12 +76,12 @@ void dc_capture_free(struct dc_capture *capture)
 		DeleteObject(capture->bmp);
 	}
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	for (int i = 0; i < capture->num_textures; i++)
 		texture_destroy(capture->textures[i]);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	memset(capture, 0, sizeof(struct dc_capture));
 }
@@ -223,7 +223,7 @@ effect_t create_opaque_effect(void)
 		return false;
 	}
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	opaque_effect = gs_create_effect_from_file(effect_file, &error_string);
 
@@ -240,7 +240,7 @@ effect_t create_opaque_effect(void)
 	bfree(effect_file);
 	bfree(error_string);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	return opaque_effect;
 }

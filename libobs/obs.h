@@ -380,8 +380,11 @@ EXPORT bool obs_enum_encoder_types(size_t idx, const char **id);
 /** Enumerates all available service types. */
 EXPORT bool obs_enum_service_types(size_t idx, const char **id);
 
-/** Gets the main graphics context for this OBS context */
-EXPORT graphics_t obs_graphics(void);
+/** Helper function for entering the OBS graphics context */
+EXPORT void obs_enter_graphics(void);
+
+/** Helper function for leaving the OBS graphics context */
+EXPORT void obs_leave_graphics(void);
 
 /** Gets the main audio output handler for this OBS context */
 EXPORT audio_t obs_audio(void);

@@ -414,7 +414,7 @@ void XCompcapMain::tick(float seconds)
 	if (!p->tex || !p->gltex)
 		return;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	if (p->lockX) {
 		XLockDisplay(xdisp);
@@ -427,7 +427,7 @@ void XCompcapMain::tick(float seconds)
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 void XCompcapMain::render(effect_t effect)

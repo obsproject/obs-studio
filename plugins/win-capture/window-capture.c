@@ -334,9 +334,9 @@ static void wc_destroy(void *data)
 		bfree(wc->class);
 		bfree(wc->executable);
 
-		gs_entercontext(obs_graphics());
+		obs_enter_graphics();
 		effect_destroy(wc->opaque_effect);
-		gs_leavecontext();
+		obs_leave_graphics();
 
 		bfree(wc);
 	}
@@ -413,7 +413,7 @@ static void wc_tick(void *data, float seconds)
 		return;
 	}
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	GetClientRect(wc->window, &rect);
 
@@ -438,7 +438,7 @@ static void wc_tick(void *data, float seconds)
 	}
 
 	dc_capture_capture(&wc->capture, wc->window);
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 static void wc_render(void *data, effect_t effect)

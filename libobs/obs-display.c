@@ -48,7 +48,7 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
-	gs_entercontext(obs_graphics());
+	gs_entercontext(obs->video.graphics);
 
 	if (!graphics_data->num_backbuffers)
 		graphics_data->num_backbuffers = 1;
@@ -91,9 +91,9 @@ void obs_display_destroy(obs_display_t display)
 			display->next->prev_next = display->prev_next;
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 
-		gs_entercontext(obs_graphics());
+		obs_enter_graphics();
 		obs_display_free(display);
-		gs_leavecontext();
+		obs_leave_graphics();
 
 		bfree(display);
 	}

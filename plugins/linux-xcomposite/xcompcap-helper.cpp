@@ -335,10 +335,10 @@ void XErrorLock::resetError()
 
 ObsGsContextHolder::ObsGsContextHolder()
 {
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 }
 
 ObsGsContextHolder::~ObsGsContextHolder()
 {
-	gs_leavecontext();
+	obs_leave_graphics();
 }

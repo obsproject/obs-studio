@@ -491,7 +491,7 @@ void OBSBasic::InitOBSCallbacks()
 
 void OBSBasic::InitPrimitives()
 {
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	gs_renderstart(true);
 	gs_vertex2f(0.0f, 0.0f);
@@ -508,7 +508,7 @@ void OBSBasic::InitPrimitives()
 	}
 	circle = gs_rendersave();
 
-	gs_leavecontext();
+	obs_leave_graphics();
 }
 
 void OBSBasic::OBSInit()
@@ -588,10 +588,10 @@ OBSBasic::~OBSBasic()
 	ui->sources->clear();
 	ui->scenes->clear();
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 	vertexbuffer_destroy(box);
 	vertexbuffer_destroy(circle);
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	obs_shutdown();
 

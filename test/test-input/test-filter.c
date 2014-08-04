@@ -15,12 +15,12 @@ static void filter_destroy(void *data)
 	struct test_filter *tf = data;
 
 	if (tf) {
-		gs_entercontext(obs_graphics());
+		obs_enter_graphics();
 
 		effect_destroy(tf->whatever);
 		bfree(tf);
 
-		gs_leavecontext();
+		obs_leave_graphics();
 	}
 }
 
@@ -29,7 +29,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 	struct test_filter *tf = bzalloc(sizeof(struct test_filter));
 	char *effect_file;
 
-	gs_entercontext(obs_graphics());
+	obs_enter_graphics();
 
 	effect_file = obs_module_file("test.effect");
 
@@ -41,7 +41,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 		return NULL;
 	}
 
-	gs_leavecontext();
+	obs_leave_graphics();
 
 	UNUSED_PARAMETER(settings);
 	return tf;
