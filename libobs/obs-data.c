@@ -1030,7 +1030,7 @@ double obs_data_get_autoselect_double(obs_data_t data, const char *name)
 	return obs_data_item_get_autoselect_double(get_item(data, name));
 }
 
-bool obs_data_getautoselect_bool(obs_data_t data, const char *name)
+bool obs_data_get_autoselect_bool(obs_data_t data, const char *name)
 {
 	return obs_data_item_get_autoselect_bool(get_item(data, name));
 }
