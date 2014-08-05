@@ -182,13 +182,13 @@ EXPORT void audio_output_disconnect(audio_t video,
 
 EXPORT bool audio_output_active(audio_t audio);
 
-EXPORT size_t audio_output_blocksize(audio_t audio);
-EXPORT size_t audio_output_planes(audio_t audio);
-EXPORT size_t audio_output_channels(audio_t audio);
-EXPORT uint32_t audio_output_samplerate(audio_t audio);
-EXPORT const struct audio_output_info *audio_output_getinfo(audio_t audio);
+EXPORT size_t audio_output_get_block_size(audio_t audio);
+EXPORT size_t audio_output_get_planes(audio_t audio);
+EXPORT size_t audio_output_get_channels(audio_t audio);
+EXPORT uint32_t audio_output_get_sample_rate(audio_t audio);
+EXPORT const struct audio_output_info *audio_output_get_info(audio_t audio);
 
-EXPORT audio_line_t audio_output_createline(audio_t audio, const char *name);
+EXPORT audio_line_t audio_output_create_line(audio_t audio, const char *name);
 EXPORT void audio_line_destroy(audio_line_t line);
 EXPORT void audio_line_output(audio_line_t line, const struct audio_data *data);
 

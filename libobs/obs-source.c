@@ -122,7 +122,7 @@ bool obs_source_init(struct obs_source *source,
 		return false;
 
 	if (info && info->output_flags & OBS_SOURCE_AUDIO) {
-		source->audio_line = audio_output_createline(obs->audio.audio,
+		source->audio_line = audio_output_create_line(obs->audio.audio,
 				source->context.name);
 		if (!source->audio_line) {
 			blog(LOG_ERROR, "Failed to create audio line for "
@@ -509,7 +509,7 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 static inline uint64_t conv_frames_to_time(size_t frames)
 {
 	const struct audio_output_info *info;
-	info = audio_output_getinfo(obs->audio.audio);
+	info = audio_output_get_info(obs->audio.audio);
 
 	return (uint64_t)frames * 1000000000ULL /
 		(uint64_t)info->samples_per_sec;
@@ -560,8 +560,8 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 	float rms_val = 0.0f;
 
 	audio_t        audio          = obs_get_audio();
-	const uint32_t sample_rate    = audio_output_samplerate(audio);
-	const size_t   channels       = audio_output_channels(audio);
+	const uint32_t sample_rate    = audio_output_get_sample_rate(audio);
+	const size_t   channels       = audio_output_get_channels(audio);
 	const size_t   count          = frames * channels;
 	const size_t   vol_peak_delay = sample_rate * 3;
 	const float    alpha          = 0.15f;
@@ -1380,7 +1380,7 @@ static inline void reset_resampler(obs_source_t source,
 	const struct audio_output_info *obs_info;
 	struct resample_info output_info;
 
-	obs_info = audio_output_getinfo(obs->audio.audio);
+	obs_info = audio_output_get_info(obs->audio.audio);
 
 	output_info.format           = obs_info->format;
 	output_info.samples_per_sec  = obs_info->samples_per_sec;
@@ -1409,8 +1409,8 @@ static inline void reset_resampler(obs_source_t source,
 static inline void copy_audio_data(obs_source_t source,
 		const uint8_t *const data[], uint32_t frames, uint64_t ts)
 {
-	size_t planes    = audio_output_planes(obs->audio.audio);
-	size_t blocksize = audio_output_blocksize(obs->audio.audio);
+	size_t planes    = audio_output_get_planes(obs->audio.audio);
+	size_t blocksize = audio_output_get_block_size(obs->audio.audio);
 	size_t size      = (size_t)frames * blocksize;
 	bool   resize    = source->audio_storage_size < size;
 

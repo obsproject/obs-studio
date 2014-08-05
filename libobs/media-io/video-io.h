@@ -132,19 +132,19 @@ EXPORT void video_output_disconnect(video_t video,
 
 EXPORT bool video_output_active(video_t video);
 
-EXPORT const struct video_output_info *video_output_getinfo(video_t video);
+EXPORT const struct video_output_info *video_output_get_info(video_t video);
 EXPORT void video_output_swap_frame(video_t video, struct video_data *frame);
 EXPORT bool video_output_wait(video_t video);
-EXPORT uint64_t video_getframetime(video_t video);
-EXPORT uint64_t video_gettime(video_t video);
+EXPORT uint64_t video_output_get_frame_time(video_t video);
+EXPORT uint64_t video_output_get_time(video_t video);
 EXPORT void video_output_stop(video_t video);
 
-EXPORT uint32_t video_output_width(video_t video);
-EXPORT uint32_t video_output_height(video_t video);
-EXPORT double video_output_framerate(video_t video);
+EXPORT uint32_t video_output_get_width(video_t video);
+EXPORT uint32_t video_output_get_height(video_t video);
+EXPORT double video_output_get_frame_rate(video_t video);
 
-EXPORT uint32_t video_output_num_skipped_frames(video_t video);
-EXPORT uint32_t video_output_total_frames(video_t video);
+EXPORT uint32_t video_output_get_skipped_frames(video_t video);
+EXPORT uint32_t video_output_get_total_frames(video_t video);
 
 
 #ifdef __cplusplus

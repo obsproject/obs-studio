@@ -106,8 +106,8 @@ static void *libfdk_create(obs_data_t settings, obs_encoder_t encoder)
 	enc = bzalloc(sizeof(libfdk_encoder_t));
 	enc->encoder = encoder;
 
-	enc->channels = (int)audio_output_channels(audio);
-	enc->sample_rate = audio_output_samplerate(audio);
+	enc->channels = (int)audio_output_get_channels(audio);
+	enc->sample_rate = audio_output_get_sample_rate(audio);
 
 	switch(enc->channels) {
 	case 1:

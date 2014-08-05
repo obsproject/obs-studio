@@ -28,7 +28,9 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	float                seconds;
 
 	if (!last_time)
-		last_time = cur_time - video_getframetime(obs->video.video);
+		last_time = cur_time -
+			video_output_get_frame_time(obs->video.video);
+
 	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
 
@@ -386,7 +388,7 @@ static inline void output_video_data(struct obs_core_video *video,
 		struct video_data *frame, int cur_texture)
 {
 	const struct video_output_info *info;
-	info = video_output_getinfo(video->video);
+	info = video_output_get_info(video->video);
 
 	if (video->gpu_conversion) {
 		if (!set_gpu_converted_data(video, frame, cur_texture))
@@ -430,7 +432,7 @@ void *obs_video_thread(void *param)
 	uint64_t last_time = 0;
 
 	while (video_output_wait(obs->video.video)) {
-		uint64_t cur_time = video_gettime(obs->video.video);
+		uint64_t cur_time = video_output_get_time(obs->video.video);
 
 		last_time = tick_sources(cur_time, last_time);
 

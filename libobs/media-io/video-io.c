@@ -346,7 +346,7 @@ bool video_output_active(video_t video)
 	return video->inputs.num != 0;
 }
 
-const struct video_output_info *video_output_getinfo(video_t video)
+const struct video_output_info *video_output_get_info(video_t video)
 {
 	return video ? &video->info : NULL;
 }
@@ -369,12 +369,12 @@ bool video_output_wait(video_t video)
 	return os_event_try(video->stop_event) == EAGAIN;
 }
 
-uint64_t video_getframetime(video_t video)
+uint64_t video_output_get_frame_time(video_t video)
 {
 	return video ? video->frame_time : 0;
 }
 
-uint64_t video_gettime(video_t video)
+uint64_t video_output_get_time(video_t video)
 {
 	return video ? video->cur_video_time : 0;
 }
@@ -394,17 +394,17 @@ void video_output_stop(video_t video)
 	}
 }
 
-uint32_t video_output_width(video_t video)
+uint32_t video_output_get_width(video_t video)
 {
 	return video ? video->info.width : 0;
 }
 
-uint32_t video_output_height(video_t video)
+uint32_t video_output_get_height(video_t video)
 {
 	return video ? video->info.height : 0;
 }
 
-double video_output_framerate(video_t video)
+double video_output_get_frame_rate(video_t video)
 {
 	if (!video)
 		return 0.0;
@@ -412,12 +412,12 @@ double video_output_framerate(video_t video)
 	return (double)video->info.fps_num / (double)video->info.fps_den;
 }
 
-uint32_t video_output_num_skipped_frames(video_t video)
+uint32_t video_output_get_skipped_frames(video_t video)
 {
 	return video->skipped_frames;
 }
 
-uint32_t video_output_total_frames(video_t video)
+uint32_t video_output_get_total_frames(video_t video)
 {
 	return video->total_frames;
 }

@@ -76,21 +76,22 @@ static void build_flv_meta_data(obs_output_t context,
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	enc_num_val(&enc, end, "width",  (double)video_output_width(video));
-	enc_num_val(&enc, end, "height", (double)video_output_height(video));
+	enc_num_val(&enc, end, "width", (double)video_output_get_width(video));
+	enc_num_val(&enc, end, "height",(double)video_output_get_height(video));
 	enc_str_val(&enc, end, "videocodecid", "avc1");
 	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
-	enc_num_val(&enc, end, "framerate", video_output_framerate(video));
+	enc_num_val(&enc, end, "framerate", video_output_get_frame_rate(video));
 
 	enc_str_val(&enc, end, "audiocodecid", "mp4a");
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
 	enc_num_val(&enc, end, "audiosamplerate",
-			(double)audio_output_samplerate(audio));
+			(double)audio_output_get_sample_rate(audio));
 	enc_num_val(&enc, end, "audiosamplesize", 16.0);
 	enc_num_val(&enc, end, "audiochannels",
-			(double)audio_output_channels(audio));
+			(double)audio_output_get_channels(audio));
 
-	enc_bool_val(&enc, end, "stereo", audio_output_channels(audio) == 2);
+	enc_bool_val(&enc, end, "stereo",
+			audio_output_get_channels(audio) == 2);
 
 	dstr_printf(&encoder_name, "%s (libobs version ",
 			MODULE_NAME);

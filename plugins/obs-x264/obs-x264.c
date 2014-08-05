@@ -235,7 +235,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 		char **params)
 {
 	video_t video = obs_encoder_video(obsx264->encoder);
-	const struct video_output_info *voi = video_output_getinfo(video);
+	const struct video_output_info *voi = video_output_get_info(video);
 
 	int bitrate      = (int)obs_data_get_int(settings, "bitrate");
 	int buffer_size  = (int)obs_data_get_int(settings, "buffer_size");
@@ -496,7 +496,7 @@ static bool obs_x264_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_x264 *obsx264 = data;
 	video_t video = obs_encoder_video(obsx264->encoder);
-	const struct video_output_info *vid_info = video_output_getinfo(video);
+	const struct video_output_info *vid_info = video_output_get_info(video);
 
 	if (vid_info->format == VIDEO_FORMAT_I420 ||
 	    vid_info->format == VIDEO_FORMAT_NV12)

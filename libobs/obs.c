@@ -314,9 +314,10 @@ static void obs_free_video(void)
 	struct obs_core_video *video = &obs->video;
 
 	if (video->video) {
-		uint32_t total_frames = video_output_total_frames(video->video);
+		uint32_t total_frames =
+			video_output_get_total_frames(video->video);
 		uint32_t skipped_frames =
-			video_output_num_skipped_frames(video->video);
+			video_output_get_skipped_frames(video->video);
 		double percentage_skipped =
 			(double)skipped_frames / (double)total_frames * 100.0;
 
@@ -720,7 +721,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	if (!obs || !video->graphics)
 		return false;
 
-	info = video_output_getinfo(video->video);
+	info = video_output_get_info(video->video);
 
 	memset(ovi, 0, sizeof(struct obs_video_info));
 	ovi->base_width    = video->base_width;
@@ -742,7 +743,7 @@ bool obs_get_audio_info(struct audio_output_info *aoi)
 	if (!obs || !audio->audio)
 		return false;
 
-	info = audio_output_getinfo(audio->audio);
+	info = audio_output_get_info(audio->audio);
 	memcpy(aoi, info, sizeof(struct audio_output_info));
 
 	return true;

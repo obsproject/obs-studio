@@ -551,7 +551,7 @@ void audio_output_close(audio_t audio)
 	bfree(audio);
 }
 
-audio_line_t audio_output_createline(audio_t audio, const char *name)
+audio_line_t audio_output_create_line(audio_t audio, const char *name)
 {
 	if (!audio) return NULL;
 
@@ -582,7 +582,7 @@ audio_line_t audio_output_createline(audio_t audio, const char *name)
 	return line;
 }
 
-const struct audio_output_info *audio_output_getinfo(audio_t audio)
+const struct audio_output_info *audio_output_get_info(audio_t audio)
 {
 	return audio ? &audio->info : NULL;
 }
@@ -603,22 +603,22 @@ bool audio_output_active(audio_t audio)
 	return audio->inputs.num != 0;
 }
 
-size_t audio_output_blocksize(audio_t audio)
+size_t audio_output_get_block_size(audio_t audio)
 {
 	return audio ? audio->block_size : 0;
 }
 
-size_t audio_output_planes(audio_t audio)
+size_t audio_output_get_planes(audio_t audio)
 {
 	return audio ? audio->planes : 0;
 }
 
-size_t audio_output_channels(audio_t audio)
+size_t audio_output_get_channels(audio_t audio)
 {
 	return audio ? audio->channels : 0;
 }
 
-uint32_t audio_output_samplerate(audio_t audio)
+uint32_t audio_output_get_sample_rate(audio_t audio)
 {
 	return audio ? audio->info.samples_per_sec : 0;
 }

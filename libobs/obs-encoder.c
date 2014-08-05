@@ -104,7 +104,7 @@ static inline struct audio_convert_info *get_audio_info(
 		struct obs_encoder *encoder, struct audio_convert_info *info)
 {
 	const struct audio_output_info *aoi;
-	aoi = audio_output_getinfo(encoder->media);
+	aoi = audio_output_get_info(encoder->media);
 	memset(info, 0, sizeof(struct audio_convert_info));
 
 	if (encoder->info.get_audio_info)
@@ -417,7 +417,7 @@ void obs_encoder_set_video(obs_encoder_t encoder, video_t video)
 	if (!video || !encoder || encoder->info.type != OBS_ENCODER_VIDEO)
 		return;
 
-	voi = video_output_getinfo(video);
+	voi = video_output_get_info(video);
 
 	encoder->media        = video;
 	encoder->timebase_num = voi->fps_den;
@@ -431,7 +431,7 @@ void obs_encoder_set_audio(obs_encoder_t encoder, audio_t audio)
 
 	encoder->media        = audio;
 	encoder->timebase_num = 1;
-	encoder->timebase_den = audio_output_samplerate(audio);
+	encoder->timebase_den = audio_output_get_sample_rate(audio);
 }
 
 video_t obs_encoder_video(obs_encoder_t encoder)
