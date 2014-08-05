@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=OBS
+GenericName=Streaming/Recording Software
+Comment=Free and Open Source Streaming/Recording Software
+Exec=obs
+Icon=obs
+Terminal=false
+Type=Application
+Categories=AudioVideo;Recorder;
+StartupNotify=true
