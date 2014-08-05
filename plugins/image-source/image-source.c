@@ -20,7 +20,7 @@ static const char *image_source_get_name(void)
 static void image_source_update(void *data, obs_data_t settings)
 {
 	struct image_source *context = data;
-	const char *file = obs_data_getstring(settings, "file");
+	const char *file = obs_data_get_string(settings, "file");
 
 	obs_enter_graphics();
 

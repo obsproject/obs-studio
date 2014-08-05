@@ -16,8 +16,8 @@ static void rtmp_custom_update(void *data, obs_data_t settings)
 	bfree(service->server);
 	bfree(service->key);
 
-	service->server = bstrdup(obs_data_getstring(settings, "server"));
-	service->key    = bstrdup(obs_data_getstring(settings, "key"));
+	service->server = bstrdup(obs_data_get_string(settings, "server"));
+	service->key    = bstrdup(obs_data_get_string(settings, "key"));
 }
 
 static void rtmp_custom_destroy(void *data)

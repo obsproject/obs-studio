@@ -283,7 +283,7 @@ static void av_capture_destroy(void *data)
 
 static NSString *get_string(obs_data_t data, char const *name)
 {
-	return @(obs_data_getstring(data, name));
+	return @(obs_data_get_string(data, name));
 }
 
 static bool init_session(struct av_capture *capture)
@@ -410,12 +410,12 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 	capture->device = dev;
 
 	const char *name = capture->device.localizedName.UTF8String;
-	obs_data_setstring(settings, "device_name", name);
-	obs_data_setstring(settings, "device",
+	obs_data_set_string(settings, "device_name", name);
+	obs_data_set_string(settings, "device",
 			capture->device.uniqueID.UTF8String);
 	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
-	if (obs_data_getbool(settings, "use_preset")) {
+	if (obs_data_get_bool(settings, "use_preset")) {
 		NSString *preset = get_string(settings, "preset");
 		if (![dev supportsAVCaptureSessionPreset:preset]) {
 			AVLOG(LOG_ERROR, "Preset %s not available",

@@ -714,9 +714,9 @@ static bool try_connect(struct ffmpeg_output *output)
 	int ret;
 
 	settings = obs_output_get_settings(output->output);
-	filename_test = obs_data_getstring(settings, "filename");
-	video_bitrate = (int)obs_data_getint(settings, "video_bitrate");
-	audio_bitrate = (int)obs_data_getint(settings, "audio_bitrate");
+	filename_test = obs_data_get_string(settings, "filename");
+	video_bitrate = (int)obs_data_get_int(settings, "video_bitrate");
+	audio_bitrate = (int)obs_data_get_int(settings, "audio_bitrate");
 	obs_data_release(settings);
 
 	if (!filename_test || !*filename_test)

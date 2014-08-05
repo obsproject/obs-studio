@@ -56,8 +56,8 @@ char *decode_str(const char *src)
 
 static void update_settings(struct window_capture *wc, obs_data_t s)
 {
-	const char *window     = obs_data_getstring(s, "window");
-	int        priority    = (int)obs_data_getint(s, "priority");
+	const char *window     = obs_data_get_string(s, "window");
+	int        priority    = (int)obs_data_get_int(s, "priority");
 
 	bfree(wc->title);
 	bfree(wc->class);
@@ -79,8 +79,8 @@ static void update_settings(struct window_capture *wc, obs_data_t s)
 	}
 
 	wc->priority      = (enum window_priority)priority;
-	wc->cursor        = obs_data_getbool(s, "cursor");
-	wc->use_wildcards = obs_data_getbool(s, "use_wildcards");
+	wc->cursor        = obs_data_get_bool(s, "cursor");
+	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 }
 
 static bool get_exe_name(struct dstr *name, HWND window)

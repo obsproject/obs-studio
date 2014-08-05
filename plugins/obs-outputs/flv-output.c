@@ -155,7 +155,7 @@ static bool flv_output_start(void *data)
 
 	/* get path */
 	settings = obs_output_get_settings(stream->output);
-	path = obs_data_getstring(settings, "path");
+	path = obs_data_get_string(settings, "path");
 	dstr_copy(&stream->path, path);
 	obs_data_release(settings);
 

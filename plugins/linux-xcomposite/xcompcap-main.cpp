@@ -245,17 +245,17 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 	xcc_cleanup(p);
 
 	if (settings) {
-		const char *windowName = obs_data_getstring(settings,
+		const char *windowName = obs_data_get_string(settings,
 				"capture_window");
 
 		p->win = getWindowFromString(windowName);
 
-		p->cut_top = obs_data_getint(settings, "cut_top");
-		p->cut_left = obs_data_getint(settings, "cut_left");
-		p->cut_right = obs_data_getint(settings, "cut_right");
-		p->cut_bot = obs_data_getint(settings, "cut_bot");
-		p->lockX = obs_data_getbool(settings, "lock_x");
-		p->swapRedBlue = obs_data_getbool(settings, "swap_redblue");
+		p->cut_top = obs_data_get_int(settings, "cut_top");
+		p->cut_left = obs_data_get_int(settings, "cut_left");
+		p->cut_right = obs_data_get_int(settings, "cut_right");
+		p->cut_bot = obs_data_get_int(settings, "cut_bot");
+		p->lockX = obs_data_get_bool(settings, "lock_x");
+		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 	} else {
 		p->win = prevWin;
 	}

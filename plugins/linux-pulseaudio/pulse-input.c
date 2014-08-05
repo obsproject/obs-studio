@@ -405,7 +405,7 @@ static void pulse_update(void *vptr, obs_data_t settings)
 	bool restart = false;
 	const char *new_device;
 
-	new_device = obs_data_getstring(settings, "device_id");
+	new_device = obs_data_get_string(settings, "device_id");
 	if (!data->device || strcmp(data->device, new_device) != 0) {
 		if (data->device)
 			bfree(data->device);

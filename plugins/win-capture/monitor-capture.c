@@ -58,7 +58,7 @@ static void update_monitor(struct monitor_capture *capture,
 	struct monitor_info monitor = {0};
 	uint32_t width, height;
 
-	monitor.desired_id = (int)obs_data_getint(settings, "monitor");
+	monitor.desired_id = (int)obs_data_get_int(settings, "monitor");
 	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
 
 	capture->monitor = monitor.id;
@@ -74,8 +74,8 @@ static void update_monitor(struct monitor_capture *capture,
 static inline void update_settings(struct monitor_capture *capture,
 		obs_data_t settings)
 {
-	capture->capture_cursor = obs_data_getbool(settings, "capture_cursor");
-	capture->compatibility  = obs_data_getbool(settings, "compatibility");
+	capture->capture_cursor = obs_data_get_bool(settings, "capture_cursor");
+	capture->compatibility  = obs_data_get_bool(settings, "compatibility");
 
 	dc_capture_free(&capture->data);
 	update_monitor(capture, settings);

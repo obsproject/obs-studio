@@ -333,7 +333,7 @@ static void scene_video_render(void *data, effect_t effect)
 
 static void scene_load_item(struct obs_scene *scene, obs_data_t item_data)
 {
-	const char            *name = obs_data_getstring(item_data, "name");
+	const char            *name = obs_data_get_string(item_data, "name");
 	obs_source_t          source = obs_get_source_by_name(name);
 	struct obs_scene_item *item;
 
@@ -348,16 +348,17 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t item_data)
 	obs_data_set_default_int(item_data, "align",
 			OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
 
-	item->rot     = (float)obs_data_getdouble(item_data, "rot");
-	item->align   = (uint32_t)obs_data_getint(item_data, "align");
-	item->visible = obs_data_getbool(item_data, "visible");
+	item->rot     = (float)obs_data_get_double(item_data, "rot");
+	item->align   = (uint32_t)obs_data_get_int(item_data, "align");
+	item->visible = obs_data_get_bool(item_data, "visible");
 	obs_data_get_vec2(item_data, "pos",    &item->pos);
 	obs_data_get_vec2(item_data, "scale",  &item->scale);
 
 	item->bounds_type =
-		(enum obs_bounds_type)obs_data_getint(item_data, "bounds_type");
+		(enum obs_bounds_type)obs_data_get_int(item_data,
+				"bounds_type");
 	item->bounds_align =
-		(uint32_t)obs_data_getint(item_data, "bounds_align");
+		(uint32_t)obs_data_get_int(item_data, "bounds_align");
 	obs_data_get_vec2(item_data, "bounds", &item->bounds);
 
 	obs_source_release(source);
@@ -367,7 +368,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t item_data)
 
 static void scene_load(void *scene, obs_data_t settings)
 {
-	obs_data_array_t items = obs_data_getarray(settings, "items");
+	obs_data_array_t items = obs_data_get_array(settings, "items");
 	size_t           count, i;
 
 	remove_all_items(scene);
@@ -390,14 +391,14 @@ static void scene_save_item(obs_data_array_t array, struct obs_scene_item *item)
 	obs_data_t item_data = obs_data_create();
 	const char *name     = obs_source_get_name(item->source);
 
-	obs_data_setstring(item_data, "name",         name);
-	obs_data_setbool  (item_data, "visible",      item->visible);
-	obs_data_setdouble(item_data, "rot",          item->rot);
+	obs_data_set_string(item_data, "name",         name);
+	obs_data_set_bool  (item_data, "visible",      item->visible);
+	obs_data_set_double(item_data, "rot",          item->rot);
 	obs_data_set_vec2 (item_data, "pos",          &item->pos);
 	obs_data_set_vec2 (item_data, "scale",        &item->scale);
-	obs_data_setint   (item_data, "align",        (int)item->align);
-	obs_data_setint   (item_data, "bounds_type",  (int)item->bounds_type);
-	obs_data_setint   (item_data, "bounds_align", (int)item->bounds_align);
+	obs_data_set_int   (item_data, "align",        (int)item->align);
+	obs_data_set_int   (item_data, "bounds_type",  (int)item->bounds_type);
+	obs_data_set_int   (item_data, "bounds_align", (int)item->bounds_align);
 	obs_data_set_vec2 (item_data, "bounds",       &item->bounds);
 
 	obs_data_array_push_back(array, item_data);
@@ -420,7 +421,7 @@ static void scene_save(void *data, obs_data_t settings)
 
 	pthread_mutex_unlock(&scene->mutex);
 
-	obs_data_setarray(settings, "items", array);
+	obs_data_set_array(settings, "items", array);
 	obs_data_array_release(array);
 }
 

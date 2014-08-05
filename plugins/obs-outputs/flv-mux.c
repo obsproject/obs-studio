@@ -34,7 +34,7 @@
 static inline double encoder_bitrate(obs_encoder_t encoder)
 {
 	obs_data_t settings = obs_encoder_get_settings(encoder);
-	double bitrate = obs_data_getdouble(settings, "bitrate");
+	double bitrate = obs_data_get_double(settings, "bitrate");
 
 	obs_data_release(settings);
 	return bitrate;

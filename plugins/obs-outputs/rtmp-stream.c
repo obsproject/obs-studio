@@ -434,7 +434,7 @@ static bool rtmp_stream_start(void *data)
 	dstr_copy(&stream->username, obs_service_get_username(service));
 	dstr_copy(&stream->password, obs_service_get_password(service));
 	stream->drop_threshold_usec =
-		(int64_t)obs_data_getint(settings, OPT_DROP_THRESHOLD) * 1000;
+		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
 	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,

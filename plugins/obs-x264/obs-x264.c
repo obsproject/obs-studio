@@ -237,11 +237,11 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	video_t video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_getinfo(video);
 
-	int bitrate      = (int)obs_data_getint(settings, "bitrate");
-	int buffer_size  = (int)obs_data_getint(settings, "buffer_size");
-	int keyint_sec   = (int)obs_data_getint(settings, "keyint_sec");
-	int crf          = (int)obs_data_getint(settings, "crf");
-	bool cbr         = obs_data_getbool(settings, "cbr");
+	int bitrate      = (int)obs_data_get_int(settings, "bitrate");
+	int buffer_size  = (int)obs_data_get_int(settings, "buffer_size");
+	int keyint_sec   = (int)obs_data_get_int(settings, "keyint_sec");
+	int crf          = (int)obs_data_get_int(settings, "crf");
+	bool cbr         = obs_data_get_bool(settings, "cbr");
 
 	if (keyint_sec)
 		obsx264->params.i_keyint_max =
@@ -299,10 +299,10 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 
 static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 {
-	char *preset     = bstrdup(obs_data_getstring(settings, "preset"));
-	char *profile    = bstrdup(obs_data_getstring(settings, "profile"));
-	char *tune       = bstrdup(obs_data_getstring(settings, "tune"));
-	const char *opts = obs_data_getstring(settings, "x264opts");
+	char *preset     = bstrdup(obs_data_get_string(settings, "preset"));
+	char *profile    = bstrdup(obs_data_get_string(settings, "profile"));
+	char *tune       = bstrdup(obs_data_get_string(settings, "tune"));
+	const char *opts = obs_data_get_string(settings, "x264opts");
 
 	char **paramlist;
 	bool success = true;

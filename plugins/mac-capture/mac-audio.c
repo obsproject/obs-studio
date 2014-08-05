@@ -682,7 +682,7 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 		return NULL;
 	}
 
-	ca->device_uid = bstrdup(obs_data_getstring(settings, "device_id"));
+	ca->device_uid = bstrdup(obs_data_get_string(settings, "device_id"));
 	ca->source     = source;
 	ca->input      = input;
 

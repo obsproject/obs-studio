@@ -190,7 +190,7 @@ static void *display_capture_create(obs_data_t settings,
 
 	obs_leave_graphics();
 
-	dc->display = obs_data_getint(settings, "display");
+	dc->display = obs_data_get_int(settings, "display");
 	pthread_mutex_init(&dc->mutex, NULL);
 
 	if (!init_display_stream(dc))
@@ -284,8 +284,8 @@ static void display_capture_defaults(obs_data_t settings)
 static void display_capture_update(void *data, obs_data_t settings)
 {
 	struct display_capture *dc = data;
-	unsigned display = obs_data_getint(settings, "display");
-	bool show_cursor = obs_data_getbool(settings, "show_cursor");
+	unsigned display = obs_data_get_int(settings, "display");
+	bool show_cursor = obs_data_get_bool(settings, "show_cursor");
 	if (dc->display == display && dc->hide_cursor != show_cursor)
 		return;
 

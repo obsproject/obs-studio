@@ -125,7 +125,7 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
 
 	obs_data_t data = obs_save_source(source);
 
-	obs_data_setobj(parent, name, data);
+	obs_data_set_obj(parent, name, data);
 
 	obs_data_release(data);
 	obs_source_release(source);
@@ -144,8 +144,8 @@ static obs_data_t GenerateSaveData()
 	SaveAudioDevice(AUX_AUDIO_2,     4, saveData);
 	SaveAudioDevice(AUX_AUDIO_3,     5, saveData);
 
-	obs_data_setstring(saveData, "current_scene", sceneName);
-	obs_data_setarray(saveData, "sources", sourcesArray);
+	obs_data_set_string(saveData, "current_scene", sceneName);
+	obs_data_set_array(saveData, "sources", sourcesArray);
 	obs_data_array_release(sourcesArray);
 	obs_source_release(currentScene);
 
@@ -167,7 +167,7 @@ void OBSBasic::ClearVolumeControls()
 void OBSBasic::Save(const char *file)
 {
 	obs_data_t saveData  = GenerateSaveData();
-	const char *jsonData = obs_data_getjson(saveData);
+	const char *jsonData = obs_data_get_json(saveData);
 
 	/* TODO maybe a message box here? */
 	if (!os_quick_write_utf8_file(file, jsonData, strlen(jsonData), false))
@@ -178,7 +178,7 @@ void OBSBasic::Save(const char *file)
 
 static void LoadAudioDevice(const char *name, int channel, obs_data_t parent)
 {
-	obs_data_t data = obs_data_getobj(parent, name);
+	obs_data_t data = obs_data_get_obj(parent, name);
 	if (!data)
 		return;
 
@@ -227,8 +227,9 @@ void OBSBasic::Load(const char *file)
 	}
 
 	obs_data_t       data       = obs_data_create_from_json(jsonData);
-	obs_data_array_t sources    = obs_data_getarray(data, "sources");
-	const char       *sceneName = obs_data_getstring(data, "current_scene");
+	obs_data_array_t sources    = obs_data_get_array(data, "sources");
+	const char       *sceneName = obs_data_get_string(data,
+			"current_scene");
 	obs_source_t     curScene;
 
 	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data);
@@ -302,10 +303,10 @@ void OBSBasic::SaveService()
 	obs_data_t data     = obs_data_create();
 	obs_data_t settings = obs_service_get_settings(service);
 
-	obs_data_setstring(data, "type", obs_service_gettype(service));
-	obs_data_setobj(data, "settings", settings);
+	obs_data_set_string(data, "type", obs_service_gettype(service));
+	obs_data_set_obj(data, "settings", settings);
 
-	const char *json = obs_data_getjson(data);
+	const char *json = obs_data_get_json(data);
 
 	os_quick_write_utf8_file(serviceJsonPath, json, strlen(json), false);
 
@@ -328,9 +329,9 @@ bool OBSBasic::LoadService()
 	obs_data_t data = obs_data_create_from_json(jsonText);
 
 	obs_data_set_default_string(data, "type", "rtmp_common");
-	type = obs_data_getstring(data, "type");
+	type = obs_data_get_string(data, "type");
 
-	obs_data_t settings = obs_data_getobj(data, "settings");
+	obs_data_t settings = obs_data_get_obj(data, "settings");
 
 	service = obs_service_create(type, "default_service", settings);
 
@@ -915,14 +916,15 @@ void OBSBasic::updateFileFinished()
 		return;
 
 	obs_data_t returnData   = obs_data_create_from_json(jsonReply);
-	obs_data_t versionData  = obs_data_getobj(returnData, VERSION_ENTRY);
-	const char *description = obs_data_getstring(returnData, "description");
-	const char *download    = obs_data_getstring(versionData, "download");
+	obs_data_t versionData  = obs_data_get_obj(returnData, VERSION_ENTRY);
+	const char *description = obs_data_get_string(returnData,
+			"description");
+	const char *download    = obs_data_get_string(versionData, "download");
 
 	if (returnData && versionData && description && download) {
-		long major   = obs_data_getint(versionData, "major");
-		long minor   = obs_data_getint(versionData, "minor");
-		long patch   = obs_data_getint(versionData, "patch");
+		long major   = obs_data_get_int(versionData, "major");
+		long minor   = obs_data_get_int(versionData, "minor");
+		long patch   = obs_data_get_int(versionData, "patch");
 		long version = MAKE_SEMANTIC_VERSION(major, minor, patch);
 
 		blog(LOG_INFO, "Update check: latest version is: %ld.%ld.%ld",
@@ -1298,7 +1300,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 	source = obs_get_output_source(channel);
 	if (source) {
 		settings = obs_source_get_settings(source);
-		const char *curId = obs_data_getstring(settings, "device_id");
+		const char *curId = obs_data_get_string(settings, "device_id");
 
 		same = (strcmp(curId, deviceId) == 0);
 
@@ -1311,7 +1313,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 
 	if (!same && strcmp(deviceId, "disabled") != 0) {
 		obs_data_t settings = obs_data_create();
-		obs_data_setstring(settings, "device_id", deviceId);
+		obs_data_set_string(settings, "device_id", deviceId);
 		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
 				sourceId, deviceDesc, settings);
 		obs_data_release(settings);
@@ -1809,7 +1811,7 @@ void OBSBasic::logUploadFinished()
 		return;
 
 	obs_data_t returnData = obs_data_create_from_json(jsonReply);
-	QString logURL = obs_data_getstring(returnData, "html_url");
+	QString logURL = obs_data_get_string(returnData, "html_url");
 	obs_data_release(returnData);
 
 	OBSLogReply logDialog(this, logURL);
@@ -1928,11 +1930,11 @@ void OBSBasic::SetupEncoders()
 		int audioBitrate = config_get_uint(basicConfig, "SimpleOutput",
 				"ABitrate");
 
-		obs_data_setint(x264Settings, "bitrate", videoBitrate);
-		obs_data_setint(x264Settings, "buffer_size", videoBitrate);
-		obs_data_setbool(x264Settings, "cbr", true);
+		obs_data_set_int(x264Settings, "bitrate", videoBitrate);
+		obs_data_set_int(x264Settings, "buffer_size", videoBitrate);
+		obs_data_set_bool(x264Settings, "cbr", true);
 
-		obs_data_setint(aacSettings, "bitrate", audioBitrate);
+		obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
 		obs_encoder_update(x264, x264Settings);
 		obs_encoder_update(aac,  aacSettings);
@@ -2015,7 +2017,7 @@ void OBSBasic::on_recordButton_clicked()
 		obs_output_set_audio_encoder(fileOutput, aac);
 
 		obs_data_t settings = obs_data_create();
-		obs_data_setstring(settings, "path", strPath.c_str());
+		obs_data_set_string(settings, "path", strPath.c_str());
 
 		obs_output_update(fileOutput, settings);
 

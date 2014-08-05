@@ -124,14 +124,14 @@ inline WASAPISource::~WASAPISource()
 
 void WASAPISource::UpdateSettings(obs_data_t settings)
 {
-	device_id       = obs_data_getstring(settings, OPT_DEVICE_ID);
-	useDeviceTiming = obs_data_getbool(settings, OPT_USE_DEVICE_TIMING);
+	device_id       = obs_data_get_string(settings, OPT_DEVICE_ID);
+	useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
 }
 
 void WASAPISource::Update(obs_data_t settings)
 {
-	string newDevice = obs_data_getstring(settings, OPT_DEVICE_ID);
+	string newDevice = obs_data_get_string(settings, OPT_DEVICE_ID);
 	bool restart = newDevice.compare(device_id) != 0;
 
 	if (restart)

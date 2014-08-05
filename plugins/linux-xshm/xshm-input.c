@@ -70,7 +70,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
 {
 	int_fast32_t old_width = data->width;
 	int_fast32_t old_height = data->height;
-	int_fast32_t screen = obs_data_getint(settings, "screen");
+	int_fast32_t screen = obs_data_get_int(settings, "screen");
 
 	if (data->use_xinerama) {
 		if (xinerama_screen_geo(data->dpy, screen,
@@ -120,7 +120,7 @@ static void xshm_update(void *vptr, obs_data_t settings)
 {
 	XSHM_DATA(vptr);
 
-	data->show_cursor = obs_data_getbool(settings, "show_cursor");
+	data->show_cursor = obs_data_get_bool(settings, "show_cursor");
 
 	if (data->xshm)
 		xshm_detach(data->xshm);

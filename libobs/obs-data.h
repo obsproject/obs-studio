@@ -65,21 +65,21 @@ EXPORT obs_data_t obs_data_create_from_json(const char *json_string);
 EXPORT void obs_data_addref(obs_data_t data);
 EXPORT void obs_data_release(obs_data_t data);
 
-EXPORT const char *obs_data_getjson(obs_data_t data);
+EXPORT const char *obs_data_get_json(obs_data_t data);
 
 EXPORT void obs_data_apply(obs_data_t target, obs_data_t apply_data);
 
 EXPORT void obs_data_erase(obs_data_t data, const char *name);
 
 /* Set functions */
-EXPORT void obs_data_setstring(obs_data_t data, const char *name,
+EXPORT void obs_data_set_string(obs_data_t data, const char *name,
 		const char *val);
-EXPORT void obs_data_setint(obs_data_t data, const char *name,
+EXPORT void obs_data_set_int(obs_data_t data, const char *name,
 		long long val);
-EXPORT void obs_data_setdouble(obs_data_t data, const char *name, double val);
-EXPORT void obs_data_setbool(obs_data_t data, const char *name, bool val);
-EXPORT void obs_data_setobj(obs_data_t data, const char *name, obs_data_t obj);
-EXPORT void obs_data_setarray(obs_data_t data, const char *name,
+EXPORT void obs_data_set_double(obs_data_t data, const char *name, double val);
+EXPORT void obs_data_set_bool(obs_data_t data, const char *name, bool val);
+EXPORT void obs_data_set_obj(obs_data_t data, const char *name, obs_data_t obj);
+EXPORT void obs_data_set_array(obs_data_t data, const char *name,
 		obs_data_array_t array);
 
 /*
@@ -115,12 +115,12 @@ EXPORT void obs_data_set_autoselect_obj(obs_data_t data, const char *name,
 /*
  * Get functions
  */
-EXPORT const char *obs_data_getstring(obs_data_t data, const char *name);
-EXPORT long long obs_data_getint(obs_data_t data, const char *name);
-EXPORT double obs_data_getdouble(obs_data_t data, const char *name);
-EXPORT bool obs_data_getbool(obs_data_t data, const char *name);
-EXPORT obs_data_t obs_data_getobj(obs_data_t data, const char *name);
-EXPORT obs_data_array_t obs_data_getarray(obs_data_t data, const char *name);
+EXPORT const char *obs_data_get_string(obs_data_t data, const char *name);
+EXPORT long long obs_data_get_int(obs_data_t data, const char *name);
+EXPORT double obs_data_get_double(obs_data_t data, const char *name);
+EXPORT bool obs_data_get_bool(obs_data_t data, const char *name);
+EXPORT obs_data_t obs_data_get_obj(obs_data_t data, const char *name);
+EXPORT obs_data_array_t obs_data_get_array(obs_data_t data, const char *name);
 
 EXPORT const char *obs_data_get_default_string(obs_data_t data,
 		const char *name);
@@ -189,12 +189,13 @@ EXPORT enum obs_data_type obs_data_item_gettype(obs_data_item_t item);
 EXPORT enum obs_data_number_type obs_data_item_numtype(obs_data_item_t item);
 
 /* Item set functions */
-EXPORT void obs_data_item_setstring(obs_data_item_t *item, const char *val);
-EXPORT void obs_data_item_setint(obs_data_item_t *item, long long val);
-EXPORT void obs_data_item_setdouble(obs_data_item_t *item, double val);
-EXPORT void obs_data_item_setbool(obs_data_item_t *item, bool val);
-EXPORT void obs_data_item_setobj(obs_data_item_t *item, obs_data_t val);
-EXPORT void obs_data_item_setarray(obs_data_item_t *item, obs_data_array_t val);
+EXPORT void obs_data_item_set_string(obs_data_item_t *item, const char *val);
+EXPORT void obs_data_item_set_int(obs_data_item_t *item, long long val);
+EXPORT void obs_data_item_set_double(obs_data_item_t *item, double val);
+EXPORT void obs_data_item_set_bool(obs_data_item_t *item, bool val);
+EXPORT void obs_data_item_set_obj(obs_data_item_t *item, obs_data_t val);
+EXPORT void obs_data_item_set_array(obs_data_item_t *item,
+		obs_data_array_t val);
 
 EXPORT void obs_data_item_set_default_string(obs_data_item_t *item,
 		const char *val);
@@ -219,12 +220,12 @@ EXPORT void obs_data_item_set_autoselect_array(obs_data_item_t *item,
 		obs_data_array_t val);
 
 /* Item get functions */
-EXPORT const char *obs_data_item_getstring(obs_data_item_t item);
-EXPORT long long obs_data_item_getint(obs_data_item_t item);
-EXPORT double obs_data_item_getdouble(obs_data_item_t item);
-EXPORT bool obs_data_item_getbool(obs_data_item_t item);
-EXPORT obs_data_t obs_data_item_getobj(obs_data_item_t item);
-EXPORT obs_data_array_t obs_data_item_getarray(obs_data_item_t item);
+EXPORT const char *obs_data_item_get_string(obs_data_item_t item);
+EXPORT long long obs_data_item_get_int(obs_data_item_t item);
+EXPORT double obs_data_item_get_double(obs_data_item_t item);
+EXPORT bool obs_data_item_get_bool(obs_data_item_t item);
+EXPORT obs_data_t obs_data_item_get_obj(obs_data_item_t item);
+EXPORT obs_data_array_t obs_data_item_get_array(obs_data_item_t item);
 
 EXPORT const char *obs_data_item_get_default_string(obs_data_item_t item);
 EXPORT long long obs_data_item_get_default_int(obs_data_item_t item);

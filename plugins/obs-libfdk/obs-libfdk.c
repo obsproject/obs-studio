@@ -92,8 +92,8 @@ static void *libfdk_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	bool hasFdkHandle = false;
 	libfdk_encoder_t *enc = 0;
-	int bitrate = (int)obs_data_getint(settings, "bitrate") * 1000;
-	int afterburner = obs_data_getbool(settings, "afterburner") ? 1 : 0;
+	int bitrate = (int)obs_data_get_int(settings, "bitrate") * 1000;
+	int afterburner = obs_data_get_bool(settings, "afterburner") ? 1 : 0;
 	audio_t audio = obs_encoder_audio(encoder);
 	int mode = 0;
 	AACENC_ERROR err;

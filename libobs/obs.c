@@ -1161,15 +1161,15 @@ float obs_get_present_volume(void)
 obs_source_t obs_load_source(obs_data_t source_data)
 {
 	obs_source_t source;
-	const char   *name    = obs_data_getstring(source_data, "name");
-	const char   *id      = obs_data_getstring(source_data, "id");
-	obs_data_t   settings = obs_data_getobj(source_data, "settings");
+	const char   *name    = obs_data_get_string(source_data, "name");
+	const char   *id      = obs_data_get_string(source_data, "id");
+	obs_data_t   settings = obs_data_get_obj(source_data, "settings");
 	double       volume;
 
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
-	volume = obs_data_getdouble(source_data, "volume");
+	volume = obs_data_get_double(source_data, "volume");
 	obs_source_set_volume(source, (float)volume);
 
 	obs_data_release(settings);
@@ -1215,10 +1215,10 @@ obs_data_t obs_save_source(obs_source_t source)
 
 	obs_source_save(source);
 
-	obs_data_setstring(source_data, "name",     name);
-	obs_data_setstring(source_data, "id",       id);
-	obs_data_setobj   (source_data, "settings", settings);
-	obs_data_setdouble(source_data, "volume",   volume);
+	obs_data_set_string(source_data, "name",     name);
+	obs_data_set_string(source_data, "id",       id);
+	obs_data_set_obj   (source_data, "settings", settings);
+	obs_data_set_double(source_data, "volume",   volume);
 
 	obs_data_release(settings);
 

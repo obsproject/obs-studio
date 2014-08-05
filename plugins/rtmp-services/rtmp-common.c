@@ -21,9 +21,9 @@ static void rtmp_common_update(void *data, obs_data_t settings)
 	bfree(service->server);
 	bfree(service->key);
 
-	service->service = bstrdup(obs_data_getstring(settings, "service"));
-	service->server  = bstrdup(obs_data_getstring(settings, "server"));
-	service->key     = bstrdup(obs_data_getstring(settings, "key"));
+	service->service = bstrdup(obs_data_get_string(settings, "service"));
+	service->server  = bstrdup(obs_data_get_string(settings, "server"));
+	service->key     = bstrdup(obs_data_get_string(settings, "key"));
 }
 
 static void rtmp_common_destroy(void *data)
@@ -180,7 +180,7 @@ static inline json_t *find_service(json_t *root, const char *name)
 static bool service_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
-	const char *name = obs_data_getstring(settings, "service");
+	const char *name = obs_data_get_string(settings, "service");
 	json_t *root     = obs_properties_get_param(props);
 	json_t *service;
 
@@ -231,27 +231,27 @@ static void apply_video_encoder_settings(obs_encoder_t encoder,
 	json_t *item = json_object_get(recommended, "keyint");
 	if (item && json_is_integer(item)) {
 		int keyint = (int)json_integer_value(item);
-		obs_data_setint(settings, "keyint_sec", keyint);
+		obs_data_set_int(settings, "keyint_sec", keyint);
 	}
 
 	item = json_object_get(recommended, "cbr");
 	if (item && json_is_boolean(item)) {
 		bool cbr = json_is_true(item);
-		obs_data_setbool(settings, "cbr", cbr);
+		obs_data_set_bool(settings, "cbr", cbr);
 	}
 
 	item = json_object_get(recommended, "profile");
 	if (item && json_is_string(item)) {
 		const char *profile = json_string_value(item);
-		obs_data_setbool(settings, "profile", profile);
+		obs_data_set_bool(settings, "profile", profile);
 	}
 
 	item = json_object_get(recommended, "max video bitrate");
 	if (item && json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
-		if (obs_data_getint(settings, "bitrate") > max_bitrate) {
-			obs_data_setint(settings, "bitrate", max_bitrate);
-			obs_data_setint(settings, "buffer_size", max_bitrate);
+		if (obs_data_get_int(settings, "bitrate") > max_bitrate) {
+			obs_data_set_int(settings, "bitrate", max_bitrate);
+			obs_data_set_int(settings, "buffer_size", max_bitrate);
 		}
 	}
 
@@ -267,8 +267,8 @@ static void apply_audio_encoder_settings(obs_encoder_t encoder,
 	json_t *item = json_object_get(recommended, "max audio bitrate");
 	if (item && json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
-		if (obs_data_getint(settings, "bitrate") > max_bitrate)
-			obs_data_setint(settings, "bitrate", max_bitrate);
+		if (obs_data_get_int(settings, "bitrate") > max_bitrate)
+			obs_data_set_int(settings, "bitrate", max_bitrate);
 	}
 
 	obs_encoder_update(encoder, settings);

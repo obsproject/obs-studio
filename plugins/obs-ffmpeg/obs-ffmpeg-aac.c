@@ -124,7 +124,7 @@ static void init_sizes(struct aac_encoder *enc, audio_t audio)
 static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
 {
 	struct aac_encoder *enc;
-	int                bitrate = (int)obs_data_getint(settings, "bitrate");
+	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t            audio   = obs_encoder_audio(encoder);
 
 	if (!bitrate) {

@@ -445,7 +445,7 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 					(char *) video_cap.card,
 					device.array);
 			if (first) {
-				obs_data_setstring(settings,
+				obs_data_set_string(settings,
 					"device_id", device.array);
 				first = false;
 			}
@@ -603,7 +603,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
@@ -622,13 +622,13 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
 
 	obs_property_t prop = obs_properties_get(props, "resolution");
-	v4l2_resolution_list(dev, obs_data_getint(settings, "pixelformat"),
+	v4l2_resolution_list(dev, obs_data_get_int(settings, "pixelformat"),
 			prop);
 	obs_property_modified(prop, settings);
 	v4l2_close(dev);
@@ -643,15 +643,15 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 {
 	UNUSED_PARAMETER(p);
 	int width, height;
-	int dev = v4l2_open(obs_data_getstring(settings, "device_id"),
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
 
 	obs_property_t prop = obs_properties_get(props, "framerate");
-	unpack_tuple(&width, &height, obs_data_getint(settings,
+	unpack_tuple(&width, &height, obs_data_get_int(settings,
 				"resolution"));
-	v4l2_framerate_list(dev, obs_data_getint(settings, "pixelformat"),
+	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
 			width, height, prop);
 	obs_property_modified(prop, settings);
 	v4l2_close(dev);
@@ -801,10 +801,10 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 	bool restart = false;
 	const char *new_device;
 
-	new_device = obs_data_getstring(settings, "device_id");
+	new_device = obs_data_get_string(settings, "device_id");
 	if (strlen(new_device) == 0) {
 		v4l2_device_list(NULL, settings);
-		new_device = obs_data_getstring(settings, "device_id");
+		new_device = obs_data_get_string(settings, "device_id");
 	}
 
 	if (!data->set_device || strcmp(data->set_device, new_device) != 0) {
@@ -814,18 +814,18 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 		restart = true;
 	}
 
-	if (data->set_pixfmt != obs_data_getint(settings, "pixelformat")) {
-		data->set_pixfmt = obs_data_getint(settings, "pixelformat");
+	if (data->set_pixfmt != obs_data_get_int(settings, "pixelformat")) {
+		data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
 		restart = true;
 	}
 
-	if (data->set_res != obs_data_getint(settings, "resolution")) {
-		data->set_res = obs_data_getint(settings, "resolution");
+	if (data->set_res != obs_data_get_int(settings, "resolution")) {
+		data->set_res = obs_data_get_int(settings, "resolution");
 		restart = true;
 	}
 
-	if (data->set_fps != obs_data_getint(settings, "framerate")) {
-		data->set_fps = obs_data_getint(settings, "framerate");
+	if (data->set_fps != obs_data_get_int(settings, "framerate")) {
+		data->set_fps = obs_data_get_int(settings, "framerate");
 		restart = true;
 	}
 

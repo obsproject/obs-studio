@@ -103,7 +103,7 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
 {
 	const char *name = obs_property_name(prop);
 	const char *desc = obs_property_description(prop);
-	bool       val   = obs_data_getbool(settings, name);
+	bool       val   = obs_data_get_bool(settings, name);
 
 	QCheckBox *checkbox = new QCheckBox(QT_UTF8(desc));
 	checkbox->setCheckState(val ? Qt::Checked : Qt::Unchecked);
@@ -113,7 +113,7 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
 QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 {
 	const char    *name = obs_property_name(prop);
-	const char    *val  = obs_data_getstring(settings, name);
+	const char    *val  = obs_data_get_string(settings, name);
 	obs_text_type type  = obs_proprety_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
@@ -135,7 +135,7 @@ void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
 		QLabel **label)
 {
 	const char  *name      = obs_property_name(prop);
-	const char  *val       = obs_data_getstring(settings, name);
+	const char  *val       = obs_data_get_string(settings, name);
 	QLayout     *subLayout = new QHBoxLayout();
 	QLineEdit   *edit      = new QLineEdit();
 	QPushButton *button    = new QPushButton(QTStr("Browse"));
@@ -157,7 +157,7 @@ void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
 QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
 {
 	const char *name = obs_property_name(prop);
-	int        val   = (int)obs_data_getint(settings, name);
+	int        val   = (int)obs_data_get_int(settings, name);
 	QSpinBox   *spin = new QSpinBox();
 
 	spin->setMinimum(obs_property_int_min(prop));
@@ -171,7 +171,7 @@ QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
 QWidget *OBSPropertiesView::AddFloat(obs_property_t prop)
 {
 	const char     *name = obs_property_name(prop);
-	double         val   = obs_data_getdouble(settings, name);
+	double         val   = obs_data_get_double(settings, name);
 	QDoubleSpinBox *spin = new QDoubleSpinBox();
 
 	spin->setMinimum(obs_property_float_min(prop));
@@ -239,8 +239,8 @@ static string from_obs_data(obs_data_t data, const char *name,
 static string from_obs_data(obs_data_t data, const char *name,
 		obs_combo_format format)
 {
-	return from_obs_data<obs_data_getint, obs_data_getdouble,
-	       obs_data_getstring>(data, name, format);
+	return from_obs_data<obs_data_get_int, obs_data_get_double,
+	       obs_data_get_string>(data, name, format);
 }
 
 static string from_obs_data_autoselect(obs_data_t data, const char *name,
@@ -328,7 +328,7 @@ void OBSPropertiesView::AddColor(obs_property_t prop, QFormLayout *layout,
 	QPushButton *button     = new QPushButton;
 	QLabel      *colorLabel = new QLabel;
 	const char  *name       = obs_property_name(prop);
-	long long   val         = obs_data_getint(settings, name);
+	long long   val         = obs_data_get_int(settings, name);
 	QColor      color       = color_from_int(val);
 
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
@@ -424,20 +424,20 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 void WidgetInfo::BoolChanged(const char *setting)
 {
 	QCheckBox *checkbox = static_cast<QCheckBox*>(widget);
-	obs_data_setbool(view->settings, setting,
+	obs_data_set_bool(view->settings, setting,
 			checkbox->checkState() == Qt::Checked);
 }
 
 void WidgetInfo::IntChanged(const char *setting)
 {
 	QSpinBox *spin = static_cast<QSpinBox*>(widget);
-	obs_data_setint(view->settings, setting, spin->value());
+	obs_data_set_int(view->settings, setting, spin->value());
 }
 
 void WidgetInfo::FloatChanged(const char *setting)
 {
 	QDoubleSpinBox *spin = static_cast<QDoubleSpinBox*>(widget);
-	obs_data_setdouble(view->settings, setting, spin->value());
+	obs_data_set_double(view->settings, setting, spin->value());
 }
 
 void WidgetInfo::TextChanged(const char *setting)
@@ -446,13 +446,13 @@ void WidgetInfo::TextChanged(const char *setting)
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = static_cast<QPlainTextEdit*>(widget);
-		obs_data_setstring(view->settings, setting,
+		obs_data_set_string(view->settings, setting,
 				QT_TO_UTF8(edit->toPlainText()));
 		return;
 	}
 
 	QLineEdit *edit = static_cast<QLineEdit*>(widget);
-	obs_data_setstring(view->settings, setting, QT_TO_UTF8(edit->text()));
+	obs_data_set_string(view->settings, setting, QT_TO_UTF8(edit->text()));
 }
 
 bool WidgetInfo::PathChanged(const char *setting)
@@ -478,7 +478,7 @@ bool WidgetInfo::PathChanged(const char *setting)
 
 	QLineEdit *edit = static_cast<QLineEdit*>(widget);
 	edit->setText(path);
-	obs_data_setstring(view->settings, setting, QT_TO_UTF8(path));
+	obs_data_set_string(view->settings, setting, QT_TO_UTF8(path));
 	return true;
 }
 
@@ -503,15 +503,15 @@ void WidgetInfo::ListChanged(const char *setting)
 	case OBS_COMBO_FORMAT_INVALID:
 		return;
 	case OBS_COMBO_FORMAT_INT:
-		obs_data_setint(view->settings, setting,
+		obs_data_set_int(view->settings, setting,
 				data.value<long long>());
 		break;
 	case OBS_COMBO_FORMAT_FLOAT:
-		obs_data_setdouble(view->settings, setting,
+		obs_data_set_double(view->settings, setting,
 				data.value<double>());
 		break;
 	case OBS_COMBO_FORMAT_STRING:
-		obs_data_setstring(view->settings, setting,
+		obs_data_set_string(view->settings, setting,
 				QT_TO_UTF8(data.toString()));
 		break;
 	}
@@ -520,7 +520,7 @@ void WidgetInfo::ListChanged(const char *setting)
 bool WidgetInfo::ColorChanged(const char *setting)
 {
 	const char *desc = obs_property_description(property);
-	long long  val   = obs_data_getint(view->settings, setting);
+	long long  val   = obs_data_get_int(view->settings, setting);
 	QColor     color = color_from_int(val);
 
 	QColorDialog::ColorDialogOptions options =
@@ -543,7 +543,7 @@ bool WidgetInfo::ColorChanged(const char *setting)
 	label->setText(color.name(QColor::HexArgb));
 	label->setPalette(QPalette(color));
 
-	obs_data_setint(view->settings, setting, color_to_int(color));
+	obs_data_set_int(view->settings, setting, color_to_int(color));
 
 	return true;
 }
