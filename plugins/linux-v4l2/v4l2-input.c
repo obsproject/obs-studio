@@ -65,6 +65,7 @@ struct v4l2_data {
 	os_event_t event;
 
 	char *set_device;
+	int_fast32_t set_input;
 	int_fast32_t set_pixfmt;
 	int_fast32_t set_res;
 	int_fast32_t set_fps;
@@ -399,6 +400,7 @@ static const char* v4l2_getname(void)
 
 static void v4l2_defaults(obs_data_t settings)
 {
+	obs_data_set_default_int(settings, "input", 0);
 	obs_data_set_default_int(settings, "pixelformat", V4L2_PIX_FMT_YUYV);
 	obs_data_set_default_int(settings, "resolution",
 			pack_tuple(640, 480));
@@ -462,6 +464,26 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 
 	closedir(dirp);
 	dstr_free(&device);
+}
+
+/*
+ * List inputs for device
+ */
+static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
+{
+	struct v4l2_input in;
+	memset(&in, 0, sizeof(in));
+
+	obs_property_list_clear(prop);
+
+	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
+		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
+			obs_property_list_add_int(prop, (char *) in.name,
+					in.index);
+			blog(LOG_INFO, "Found input '%s'", in.name);
+		}
+		in.index++;
+	}
 }
 
 /*
@@ -603,6 +625,25 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 	if (dev == -1)
 		return false;
 
+	obs_property_t prop = obs_properties_get(props, "input");
+	v4l2_input_list(dev, prop);
+	obs_property_modified(prop, settings);
+	v4l2_close(dev);
+	return true;
+}
+
+/*
+ * Input selected callback
+ */
+static bool input_selected(obs_properties_t props, obs_property_t p,
+		obs_data_t settings)
+{
+	UNUSED_PARAMETER(p);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
+			O_RDWR | O_NONBLOCK);
+	if (dev == -1)
+		return false;
+
 	obs_property_t prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
 	obs_property_modified(prop, settings);
@@ -662,6 +703,10 @@ static obs_properties_t v4l2_properties(void)
 			"device_id", obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
+	obs_property_t input_list = obs_properties_add_list(props,
+			"input", obs_module_text("Input"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
 	obs_property_t format_list = obs_properties_add_list(props,
 			"pixelformat", obs_module_text("VideoFormat"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -676,6 +721,7 @@ static obs_properties_t v4l2_properties(void)
 
 	v4l2_device_list(device_list, NULL);
 	obs_property_set_modified_callback(device_list, device_selected);
+	obs_property_set_modified_callback(input_list, input_selected);
 	obs_property_set_modified_callback(format_list, format_selected);
 	obs_property_set_modified_callback(resolution_list,
 			resolution_selected);
@@ -735,6 +781,12 @@ static void v4l2_init(struct v4l2_data *data)
 	data->dev = v4l2_open(data->set_device, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
 		blog(LOG_ERROR, "Unable to open device");
+		goto fail;
+	}
+
+	/* set input */
+	if (v4l2_ioctl(data->dev, VIDIOC_S_INPUT, &data->set_input) < 0) {
+		blog(LOG_ERROR, "Unable to set input");
 		goto fail;
 	}
 
@@ -806,6 +858,11 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 		if (data->set_device)
 			bfree(data->set_device);
 		data->set_device = bstrdup(new_device);
+		restart = true;
+	}
+
+	if (data->set_input != obs_data_get_int(settings, "input")) {
+		data->set_input = obs_data_get_int(settings, "input");
 		restart = true;
 	}
 
