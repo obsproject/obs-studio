@@ -320,21 +320,21 @@ static obs_properties_t display_capture_properties(void)
 }
 
 struct obs_source_info display_capture_info = {
-	.id           = "display_capture",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.get_name     = display_capture_getname,
+	.id             = "display_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.get_name       = display_capture_getname,
 
-	.create       = display_capture_create,
-	.destroy      = display_capture_destroy,
+	.create         = display_capture_create,
+	.destroy        = display_capture_destroy,
 
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
-	.video_tick   = display_capture_video_tick,
-	.video_render = display_capture_video_render,
+	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.video_tick     = display_capture_video_tick,
+	.video_render   = display_capture_video_render,
 
-	.get_width    = display_capture_getwidth,
-	.get_height   = display_capture_getheight,
+	.get_width      = display_capture_getwidth,
+	.get_height     = display_capture_getheight,
 
-	.defaults     = display_capture_defaults,
-	.properties   = display_capture_properties,
-	.update       = display_capture_update,
+	.get_defaults   = display_capture_defaults,
+	.get_properties = display_capture_properties,
+	.update         = display_capture_update,
 };

@@ -49,8 +49,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
-	if (encoder->info.defaults)
-		encoder->info.defaults(encoder->context.settings);
+	if (encoder->info.get_defaults)
+		encoder->info.get_defaults(encoder->context.settings);
 
 	return true;
 }
@@ -107,8 +107,8 @@ static inline struct audio_convert_info *get_audio_info(
 	aoi = audio_output_getinfo(encoder->media);
 	memset(info, 0, sizeof(struct audio_convert_info));
 
-	if (encoder->info.audio_info)
-		encoder->info.audio_info(encoder->context.data, info);
+	if (encoder->info.get_audio_info)
+		encoder->info.get_audio_info(encoder->context.data, info);
 
 	if (info->format == AUDIO_FORMAT_UNKNOWN)
 		info->format = aoi->format;
@@ -123,8 +123,8 @@ static inline struct audio_convert_info *get_audio_info(
 static inline struct video_scale_info *get_video_info(
 		struct obs_encoder *encoder, struct video_scale_info *info)
 {
-	if (encoder->info.video_info)
-		if (encoder->info.video_info(encoder->context.data, info))
+	if (encoder->info.get_video_info)
+		if (encoder->info.get_video_info(encoder->context.data, info))
 			return info;
 
 	return NULL;
@@ -224,8 +224,8 @@ const char *obs_encoder_get_name(obs_encoder_t encoder)
 static inline obs_data_t get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t settings = obs_data_create();
-	if (info->defaults)
-		info->defaults(settings);
+	if (info->get_defaults)
+		info->get_defaults(settings);
 	return settings;
 }
 
@@ -238,11 +238,11 @@ obs_data_t obs_encoder_defaults(const char *id)
 obs_properties_t obs_get_encoder_properties(const char *id)
 {
 	const struct obs_encoder_info *ei = find_encoder(id);
-	if (ei && ei->properties) {
+	if (ei && ei->get_properties) {
 		obs_data_t       defaults = get_defaults(ei);
 		obs_properties_t properties;
 
-		properties = ei->properties();
+		properties = ei->get_properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -252,9 +252,9 @@ obs_properties_t obs_get_encoder_properties(const char *id)
 
 obs_properties_t obs_encoder_properties(obs_encoder_t encoder)
 {
-	if (encoder && encoder->info.properties) {
+	if (encoder && encoder->info.get_properties) {
 		obs_properties_t props;
-		props = encoder->info.properties();
+		props = encoder->info.get_properties();
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}
@@ -275,8 +275,8 @@ void obs_encoder_update(obs_encoder_t encoder, obs_data_t settings)
 bool obs_encoder_get_extra_data(obs_encoder_t encoder, uint8_t **extra_data,
 		size_t *size)
 {
-	if (encoder && encoder->info.extra_data && encoder->context.data)
-		return encoder->info.extra_data(encoder->context.data,
+	if (encoder && encoder->info.get_extra_data && encoder->context.data)
+		return encoder->info.get_extra_data(encoder->context.data,
 				extra_data, size);
 
 	return false;
@@ -307,7 +307,8 @@ static void intitialize_audio_encoder(struct obs_encoder *encoder)
 	encoder->samplerate = info.samples_per_sec;
 	encoder->planes     = get_audio_planes(info.format, info.speakers);
 	encoder->blocksize  = get_audio_size(info.format, info.speakers, 1);
-	encoder->framesize  = encoder->info.frame_size(encoder->context.data);
+	encoder->framesize  = encoder->info.get_frame_size(
+			encoder->context.data);
 
 	encoder->framesize_bytes = encoder->blocksize * encoder->framesize;
 	reset_audio_buffers(encoder);
@@ -453,8 +454,9 @@ bool obs_encoder_active(obs_encoder_t encoder)
 static inline bool get_sei(struct obs_encoder *encoder,
 		uint8_t **sei, size_t *size)
 {
-	if (encoder->info.sei_data)
-		return encoder->info.sei_data(encoder->context.data, sei, size);
+	if (encoder->info.get_sei_data)
+		return encoder->info.get_sei_data(encoder->context.data, sei,
+				size);
 	return false;
 }
 

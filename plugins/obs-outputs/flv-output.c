@@ -207,5 +207,5 @@ struct obs_output_info flv_output_info = {
 	.start          = flv_output_start,
 	.stop           = flv_output_stop,
 	.encoded_packet = flv_output_data,
-	.properties     = flv_output_properties
+	.get_properties = flv_output_properties
 };

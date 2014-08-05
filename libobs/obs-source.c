@@ -171,8 +171,8 @@ obs_source_t obs_source_create(enum obs_source_type type, const char *id,
 	if (!obs_source_init_context(source, settings, name))
 		goto fail;
 
-	if (info && info->defaults)
-		info->defaults(source->context.settings);
+	if (info && info->get_defaults)
+		info->get_defaults(source->context.settings);
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
@@ -321,8 +321,8 @@ bool obs_source_removed(obs_source_t source)
 static inline obs_data_t get_defaults(const struct obs_source_info *info)
 {
 	obs_data_t settings = obs_data_create();
-	if (info->defaults)
-		info->defaults(settings);
+	if (info->get_defaults)
+		info->get_defaults(settings);
 	return settings;
 }
 
@@ -336,11 +336,11 @@ obs_properties_t obs_get_source_properties(enum obs_source_type type,
 		const char *id)
 {
 	const struct obs_source_info *info = get_source_info(type, id);
-	if (info && info->properties) {
+	if (info && info->get_properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties();
+		properties = info->get_properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -350,9 +350,9 @@ obs_properties_t obs_get_source_properties(enum obs_source_type type,
 
 obs_properties_t obs_source_properties(obs_source_t source)
 {
-	if (source_valid(source) && source->info.properties) {
+	if (source_valid(source) && source->info.get_properties) {
 		obs_properties_t props;
-		props = source->info.properties();
+		props = source->info.get_properties();
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}

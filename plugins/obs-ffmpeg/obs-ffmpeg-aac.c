@@ -274,16 +274,16 @@ static size_t aac_frame_size(void *data)
 }
 
 struct obs_encoder_info aac_encoder_info = {
-	.id         = "ffmpeg_aac",
-	.type       = OBS_ENCODER_AUDIO,
-	.codec      = "AAC",
-	.get_name   = aac_getname,
-	.create     = aac_create,
-	.destroy    = aac_destroy,
-	.encode     = aac_encode,
-	.frame_size = aac_frame_size,
-	.defaults   = aac_defaults,
-	.properties = aac_properties,
-	.extra_data = aac_extra_data,
-	.audio_info = aac_audio_info
+	.id             = "ffmpeg_aac",
+	.type           = OBS_ENCODER_AUDIO,
+	.codec          = "AAC",
+	.get_name       = aac_getname,
+	.create         = aac_create,
+	.destroy        = aac_destroy,
+	.encode         = aac_encode,
+	.get_frame_size = aac_frame_size,
+	.get_defaults   = aac_defaults,
+	.get_properties = aac_properties,
+	.get_extra_data = aac_extra_data,
+	.get_audio_info = aac_audio_info
 };

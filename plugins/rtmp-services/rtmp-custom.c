@@ -62,12 +62,12 @@ static const char *rtmp_custom_key(void *data)
 }
 
 struct obs_service_info rtmp_custom_service = {
-	.id         = "rtmp_custom",
-	.get_name   = rtmp_custom_name,
-	.create     = rtmp_custom_create,
-	.destroy    = rtmp_custom_destroy,
-	.update     = rtmp_custom_update,
-	.properties = rtmp_custom_properties,
-	.get_url    = rtmp_custom_url,
-	.get_key    = rtmp_custom_key
+	.id             = "rtmp_custom",
+	.get_name       = rtmp_custom_name,
+	.create         = rtmp_custom_create,
+	.destroy        = rtmp_custom_destroy,
+	.update         = rtmp_custom_update,
+	.get_properties = rtmp_custom_properties,
+	.get_url        = rtmp_custom_url,
+	.get_key        = rtmp_custom_key
 };

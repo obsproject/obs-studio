@@ -107,17 +107,17 @@ static obs_properties_t image_source_properties(void)
 }
 
 static struct obs_source_info image_source_info = {
-	.id           = "image_source",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,
-	.get_name     = image_source_get_name,
-	.create       = image_source_create,
-	.destroy      = image_source_destroy,
-	.update       = image_source_update,
-	.get_width    = image_source_getwidth,
-	.get_height   = image_source_getheight,
-	.video_render = image_source_render,
-	.properties   = image_source_properties
+	.id             = "image_source",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_VIDEO,
+	.get_name       = image_source_get_name,
+	.create         = image_source_create,
+	.destroy        = image_source_destroy,
+	.update         = image_source_update,
+	.get_width      = image_source_getwidth,
+	.get_height     = image_source_getheight,
+	.video_render   = image_source_render,
+	.get_properties = image_source_properties
 };
 
 OBS_DECLARE_MODULE()

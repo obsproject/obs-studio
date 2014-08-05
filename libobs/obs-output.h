@@ -47,15 +47,15 @@ struct obs_output_info {
 	/* optional */
 	void (*update)(void *data, obs_data_t settings);
 
-	void (*defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t settings);
 
-	obs_properties_t (*properties)(void);
+	obs_properties_t (*get_properties)(void);
 
 	void (*pause)(void *data);
 
-	uint64_t (*total_bytes)(void *data);
+	uint64_t (*get_total_bytes)(void *data);
 
-	int (*dropped_frames)(void *data);
+	int (*get_dropped_frames)(void *data);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,

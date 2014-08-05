@@ -442,25 +442,25 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 }
 
 struct obs_source_info pulse_input_capture = {
-	.id           = "pulse_input_capture",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_AUDIO,
-	.get_name     = pulse_input_getname,
-	.create       = pulse_create,
-	.destroy      = pulse_destroy,
-	.update       = pulse_update,
-	.defaults     = pulse_input_defaults,
-	.properties   = pulse_input_properties
+	.id             = "pulse_input_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_AUDIO,
+	.get_name       = pulse_input_getname,
+	.create         = pulse_create,
+	.destroy        = pulse_destroy,
+	.update         = pulse_update,
+	.get_defaults   = pulse_input_defaults,
+	.get_properties = pulse_input_properties
 };
 
 struct obs_source_info pulse_output_capture = {
-	.id           = "pulse_output_capture",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_AUDIO,
-	.get_name     = pulse_output_getname,
-	.create       = pulse_create,
-	.destroy      = pulse_destroy,
-	.update       = pulse_update,
-	.defaults     = pulse_output_defaults,
-	.properties   = pulse_output_properties
+	.id             = "pulse_output_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_AUDIO,
+	.get_name       = pulse_output_getname,
+	.create         = pulse_create,
+	.destroy        = pulse_destroy,
+	.update         = pulse_update,
+	.get_defaults   = pulse_output_defaults,
+	.get_properties = pulse_output_properties
 };

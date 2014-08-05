@@ -516,8 +516,8 @@ void RegisterWASAPIInput()
 	info.create          = CreateWASAPIInput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
-	info.defaults        = GetWASAPIDefaults;
-	info.properties      = GetWASAPIPropertiesInput;
+	info.get_defaults    = GetWASAPIDefaults;
+	info.get_properties  = GetWASAPIPropertiesInput;
 	obs_register_source(&info);
 }
 
@@ -531,7 +531,7 @@ void RegisterWASAPIOutput()
 	info.create          = CreateWASAPIOutput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
-	info.defaults        = GetWASAPIDefaults;
-	info.properties      = GetWASAPIPropertiesOutput;
+	info.get_defaults    = GetWASAPIDefaults;
+	info.get_properties  = GetWASAPIPropertiesOutput;
 	obs_register_source(&info);
 }

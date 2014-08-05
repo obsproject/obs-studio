@@ -289,18 +289,18 @@ static size_t libfdk_frame_size(void *data)
 }
 
 struct obs_encoder_info obs_libfdk_encoder = {
-	.id         = "libfdk_aac",
-	.type       = OBS_ENCODER_AUDIO,
-	.codec      = "AAC",
-	.get_name   = libfdk_getname,
-	.create     = libfdk_create,
-	.destroy    = libfdk_destroy,
-	.encode     = libfdk_encode,
-	.frame_size = libfdk_frame_size,
-	.defaults   = libfdk_defaults,
-	.properties = libfdk_properties,
-	.extra_data = libfdk_extra_data,
-	.audio_info = libfdk_audio_info
+	.id             = "libfdk_aac",
+	.type           = OBS_ENCODER_AUDIO,
+	.codec          = "AAC",
+	.get_name       = libfdk_getname,
+	.create         = libfdk_create,
+	.destroy        = libfdk_destroy,
+	.encode         = libfdk_encode,
+	.get_frame_size = libfdk_frame_size,
+	.get_defaults   = libfdk_defaults,
+	.get_properties = libfdk_properties,
+	.get_extra_data = libfdk_extra_data,
+	.get_audio_info = libfdk_audio_info
 };
 
 bool obs_module_load(void)

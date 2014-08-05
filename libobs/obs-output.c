@@ -78,8 +78,8 @@ obs_output_t obs_output_create(const char *id, const char *name,
 	output->info     = *info;
 	output->video    = obs_get_video();
 	output->audio    = obs_get_audio();
-	if (output->info.defaults)
-		output->info.defaults(output->context.settings);
+	if (output->info.get_defaults)
+		output->info.get_defaults(output->context.settings);
 
 	ret = os_event_init(&output->reconnect_stop_event,
 			OS_EVENT_TYPE_MANUAL);
@@ -178,8 +178,8 @@ bool obs_output_active(obs_output_t output)
 static inline obs_data_t get_defaults(const struct obs_output_info *info)
 {
 	obs_data_t settings = obs_data_create();
-	if (info->defaults)
-		info->defaults(settings);
+	if (info->get_defaults)
+		info->get_defaults(settings);
 	return settings;
 }
 
@@ -192,11 +192,11 @@ obs_data_t obs_output_defaults(const char *id)
 obs_properties_t obs_get_output_properties(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
-	if (info && info->properties) {
+	if (info && info->get_properties) {
 		obs_data_t       defaults = get_defaults(info);
 		obs_properties_t properties;
 
-		properties = info->properties();
+		properties = info->get_properties();
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -206,9 +206,9 @@ obs_properties_t obs_get_output_properties(const char *id)
 
 obs_properties_t obs_output_properties(obs_output_t output)
 {
-	if (output && output->info.properties) {
+	if (output && output->info.get_properties) {
 		obs_properties_t props;
-		props = output->info.properties();
+		props = output->info.get_properties();
 		obs_properties_apply_settings(props, output->context.settings);
 		return props;
 	}
@@ -346,18 +346,18 @@ void obs_output_set_reconnect_settings(obs_output_t output,
 
 uint64_t obs_output_get_total_bytes(obs_output_t output)
 {
-	if (!output || !output->info.total_bytes)
+	if (!output || !output->info.get_total_bytes)
 		return 0;
 
-	return output->info.total_bytes(output->context.data);
+	return output->info.get_total_bytes(output->context.data);
 }
 
 int obs_output_get_frames_dropped(obs_output_t output)
 {
-	if (!output || !output->info.dropped_frames)
+	if (!output || !output->info.get_dropped_frames)
 		return 0;
 
-	return output->info.dropped_frames(output->context.data);
+	return output->info.get_dropped_frames(output->context.data);
 }
 
 int obs_output_get_total_frames(obs_output_t output)

@@ -743,23 +743,23 @@ static obs_properties_t coreaudio_output_properties(void)
 }
 
 struct obs_source_info coreaudio_input_capture_info = {
-	.id           = "coreaudio_input_capture",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_AUDIO,
-	.get_name     = coreaudio_input_getname,
-	.create       = coreaudio_create_input_capture,
-	.destroy      = coreaudio_destroy,
-	.defaults     = coreaudio_defaults,
-	.properties   = coreaudio_input_properties
+	.id             = "coreaudio_input_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_AUDIO,
+	.get_name       = coreaudio_input_getname,
+	.create         = coreaudio_create_input_capture,
+	.destroy        = coreaudio_destroy,
+	.get_defaults   = coreaudio_defaults,
+	.get_properties = coreaudio_input_properties
 };
 
 struct obs_source_info coreaudio_output_capture_info = {
-	.id           = "coreaudio_output_capture",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_AUDIO,
-	.get_name     = coreaudio_output_getname,
-	.create       = coreaudio_create_output_capture,
-	.destroy      = coreaudio_destroy,
-	.defaults     = coreaudio_defaults,
-	.properties   = coreaudio_output_properties
+	.id             = "coreaudio_output_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_AUDIO,
+	.get_name       = coreaudio_output_getname,
+	.create         = coreaudio_create_output_capture,
+	.destroy        = coreaudio_destroy,
+	.get_defaults   = coreaudio_defaults,
+	.get_properties = coreaudio_output_properties
 };

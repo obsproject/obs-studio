@@ -164,9 +164,9 @@ struct obs_source_info monitor_capture_info = {
 	.get_name     = monitor_capture_getname,
 	.create       = monitor_capture_create,
 	.destroy      = monitor_capture_destroy,
+	.video_render = monitor_capture_render,
+	.video_tick   = monitor_capture_tick,
 	.get_width    = monitor_capture_width,
 	.get_height   = monitor_capture_height,
-	.defaults     = monitor_capture_defaults,
-	.video_render = monitor_capture_render,
-	.video_tick   = monitor_capture_tick
+	.get_defaults = monitor_capture_defaults
 };

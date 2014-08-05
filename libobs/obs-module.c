@@ -509,7 +509,7 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 	CHECK_REQUIRED_VAL(info, encode,   obs_register_encoder);
 
 	if (info->type == OBS_ENCODER_AUDIO)
-		CHECK_REQUIRED_VAL(info, frame_size, obs_register_encoder);
+		CHECK_REQUIRED_VAL(info, get_frame_size, obs_register_encoder);
 
 	REGISTER_OBS_DEF(size, obs_encoder_info, obs->encoder_types, info);
 }

@@ -139,7 +139,7 @@ struct obs_encoder_info {
 			struct encoder_packet *packet, bool *received_packet);
 
 	/** Audio encoder only:  Returns the frame size for this encoder */
-	size_t (*frame_size)(void *data);
+	size_t (*get_frame_size)(void *data);
 
 	/* ----------------------------------------------------------------- */
 	/* Optional implementation */
@@ -149,14 +149,14 @@ struct obs_encoder_info {
 	 *
 	 * @param[out]  settings  Data to assign default settings to
 	 */
-	void (*defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t settings);
 
 	/** 
 	 * Gets the property information of this encoder
 	 *
 	 * @return         The properties data
 	 */
-	obs_properties_t (*properties)(void);
+	obs_properties_t (*get_properties)(void);
 
 	/**
 	 * Updates the settings for this encoder (usually used for things like
@@ -178,7 +178,7 @@ struct obs_encoder_info {
 	 * @return                  true if extra data available, false
 	 *                          otherwise
 	 */
-	bool (*extra_data)(void *data, uint8_t **extra_data, size_t *size);
+	bool (*get_extra_data)(void *data, uint8_t **extra_data, size_t *size);
 
 	/**
 	 * Gets the SEI data, if any
@@ -188,7 +188,7 @@ struct obs_encoder_info {
 	 * @param[out]  size      Pointer to receive the SEI data size
 	 * @return                true if SEI data available, false otherwise
 	 */
-	bool (*sei_data)(void *data, uint8_t **sei_data, size_t *size);
+	bool (*get_sei_data)(void *data, uint8_t **sei_data, size_t *size);
 
 	/**
 	 * Returns desired audio format and sample information
@@ -198,7 +198,7 @@ struct obs_encoder_info {
 	 * @return            true if specific format is desired, false
 	 *                    otherwise
 	 */
-	bool (*audio_info)(void *data, struct audio_convert_info *info);
+	bool (*get_audio_info)(void *data, struct audio_convert_info *info);
 
 	/**
 	 * Returns desired video format information
@@ -208,7 +208,7 @@ struct obs_encoder_info {
 	 * @return            true if specific format is desired, false
 	 *                    otherwise
 	 */
-	bool (*video_info)(void *data, struct video_scale_info *info);
+	bool (*get_video_info)(void *data, struct video_scale_info *info);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

@@ -298,17 +298,17 @@ static uint32_t xshm_getheight(void *vptr)
 }
 
 struct obs_source_info xshm_input = {
-	.id           = "xshm_input",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,
-	.get_name     = xshm_getname,
-	.create       = xshm_create,
-	.destroy      = xshm_destroy,
-	.update       = xshm_update,
-	.defaults     = xshm_defaults,
-	.properties   = xshm_properties,
-	.video_tick   = xshm_video_tick,
-	.video_render = xshm_video_render,
-	.get_width    = xshm_getwidth,
-	.get_height   = xshm_getheight
+	.id             = "xshm_input",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_VIDEO,
+	.get_name       = xshm_getname,
+	.create         = xshm_create,
+	.destroy        = xshm_destroy,
+	.update         = xshm_update,
+	.get_defaults   = xshm_defaults,
+	.get_properties = xshm_properties,
+	.video_tick     = xshm_video_tick,
+	.video_render   = xshm_video_render,
+	.get_width      = xshm_getwidth,
+	.get_height     = xshm_getheight
 };

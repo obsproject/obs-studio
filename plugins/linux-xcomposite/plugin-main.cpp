@@ -72,16 +72,16 @@ bool obs_module_load(void)
 	sinfo.id = "xcomposite_input";
 	sinfo.output_flags = OBS_SOURCE_VIDEO;
 
-	sinfo.get_name     = xcompcap_getname;
-	sinfo.create       = xcompcap_create;
-	sinfo.destroy      = xcompcap_destroy;
-	sinfo.properties   = xcompcap_props;
-	sinfo.defaults     = xcompcap_defaults;
-	sinfo.update       = xcompcap_update;
-	sinfo.video_tick   = xcompcap_video_tick;
-	sinfo.video_render = xcompcap_video_render;
-	sinfo.get_width    = xcompcap_getwidth;
-	sinfo.get_height   = xcompcap_getheight;
+	sinfo.get_name       = xcompcap_getname;
+	sinfo.create         = xcompcap_create;
+	sinfo.destroy        = xcompcap_destroy;
+	sinfo.get_properties = xcompcap_props;
+	sinfo.get_defaults   = xcompcap_defaults;
+	sinfo.update         = xcompcap_update;
+	sinfo.video_tick     = xcompcap_video_tick;
+	sinfo.video_render   = xcompcap_video_render;
+	sinfo.get_width      = xcompcap_getwidth;
+	sinfo.get_height     = xcompcap_getheight;
 
 	obs_register_source(&sinfo);
 

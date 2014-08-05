@@ -849,13 +849,13 @@ static void *v4l2_create(obs_data_t settings, obs_source_t source)
 }
 
 struct obs_source_info v4l2_input = {
-	.id           = "v4l2_input",
-	.type         = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_ASYNC_VIDEO,
-	.get_name     = v4l2_getname,
-	.create       = v4l2_create,
-	.destroy      = v4l2_destroy,
-	.update       = v4l2_update,
-	.defaults     = v4l2_defaults,
-	.properties   = v4l2_properties
+	.id             = "v4l2_input",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_ASYNC_VIDEO,
+	.get_name       = v4l2_getname,
+	.create         = v4l2_create,
+	.destroy        = v4l2_destroy,
+	.update         = v4l2_update,
+	.get_defaults   = v4l2_defaults,
+	.get_properties = v4l2_properties
 };

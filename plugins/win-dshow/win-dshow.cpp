@@ -1196,16 +1196,15 @@ bool obs_module_load(void)
 	obs_source_info info = {};
 	info.id              = "dshow_input";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
-	info.output_flags    = OBS_SOURCE_VIDEO |
-	                       OBS_SOURCE_ASYNC;
+	info.output_flags    = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC;
 	info.get_name        = GetDShowInputName;
 	info.create          = CreateDShowInput;
 	info.destroy         = DestroyDShowInput;
+	info.update          = UpdateDShowInput;
 	info.get_width       = GetDShowWidth;
 	info.get_height      = GetDShowHeight;
-	info.update          = UpdateDShowInput;
-	info.defaults        = GetDShowDefaults;
-	info.properties      = GetDShowProperties;
+	info.get_defaults    = GetDShowDefaults;
+	info.get_properties  = GetDShowProperties;
 	obs_register_source(&info);
 
 	return true;
