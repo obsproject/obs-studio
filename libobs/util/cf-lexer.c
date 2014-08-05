@@ -621,7 +621,7 @@ static void cf_include_file(struct cf_preprocessor *pp,
 		struct cf_lexer *dep = pp->dependencies.array+i;
 
 		if (strcmp(dep->file, str_file.array) == 0) {
-			tokens = cf_lexer_gettokens(dep);
+			tokens = cf_lexer_get_tokens(dep);
 			cf_preprocess_tokens(pp, false, &tokens);
 			goto exit;
 		}
@@ -639,7 +639,7 @@ static void cf_include_file(struct cf_preprocessor *pp,
 
 	cf_lexer_init(&new_lex);
 	cf_lexer_lex(&new_lex, file_data, str_file.array);
-	tokens = cf_lexer_gettokens(&new_lex);
+	tokens = cf_lexer_get_tokens(&new_lex);
 	cf_preprocess_tokens(pp, false, &tokens);
 	bfree(file_data);
 
@@ -1267,7 +1267,7 @@ void cf_preprocessor_free(struct cf_preprocessor *pp)
 bool cf_preprocess(struct cf_preprocessor *pp, struct cf_lexer *lex,
 		struct error_data *ed)
 {
-	struct cf_token *token = cf_lexer_gettokens(lex);
+	struct cf_token *token = cf_lexer_get_tokens(lex);
 	if (!token)
 		return false;
 

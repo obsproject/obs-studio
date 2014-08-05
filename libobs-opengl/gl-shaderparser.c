@@ -515,7 +515,7 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 
 		dstr_free(&src_copy);
 	} else {
-		if (!dstr_isempty(&dst_copy))
+		if (!dstr_is_empty(&dst_copy))
 			dstr_cat_dstr(&glsp->gl_string, &dst_copy);
 		dstr_cat(&glsp->gl_string, " = ");
 		if (src)

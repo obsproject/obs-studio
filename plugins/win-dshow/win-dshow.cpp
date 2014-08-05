@@ -206,7 +206,7 @@ static bool DecodeDeviceId(DeviceId &out, const char *device_id)
 	BPtr<wchar_t> wname = dstr_to_wcs(name);
 	out.name = wname;
 
-	if (!dstr_isempty(path)) {
+	if (!dstr_is_empty(path)) {
 		BPtr<wchar_t> wpath = dstr_to_wcs(path);
 		out.path = wpath;
 	}

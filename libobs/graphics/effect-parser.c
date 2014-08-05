@@ -1165,7 +1165,7 @@ static void ep_write_main_params(struct effect_parser *ep,
 		struct ep_func *func)
 {
 	size_t i;
-	bool empty_params = dstr_isempty(param_str);
+	bool empty_params = dstr_is_empty(param_str);
 
 	for (i = 0; i < func->param_vars.num; i++) {
 		struct ep_var *var = func->param_vars.array+i;
@@ -1188,7 +1188,7 @@ static void ep_write_main_params(struct effect_parser *ep,
 				dstr_cat(shader, var->mapping);
 			}
 
-			if (!dstr_isempty(param_str))
+			if (!dstr_is_empty(param_str))
 				dstr_cat(param_str, ", ");
 			dstr_cat(param_str, var->name);
 		}

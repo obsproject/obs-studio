@@ -197,7 +197,7 @@ void ShaderProcessor::BuildSamplers(vector<ShaderSampler> &samplers)
 void ShaderProcessor::BuildString(string &outputString)
 {
 	stringstream output;
-	cf_token *token = cf_preprocessor_gettokens(&parser.cfp.pp);
+	cf_token *token = cf_preprocessor_get_tokens(&parser.cfp.pp);
 	while (token->type != CFTOKEN_NONE) {
 		/* cheaply just replace specific tokens */
 		if (strref_cmp(&token->str, "POSITION") == 0)

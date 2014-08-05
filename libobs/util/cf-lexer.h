@@ -93,7 +93,7 @@ struct cf_lexer {
 EXPORT void cf_lexer_init(struct cf_lexer *lex);
 EXPORT void cf_lexer_free(struct cf_lexer *lex);
 
-static inline struct cf_token *cf_lexer_gettokens(struct cf_lexer *lex)
+static inline struct cf_token *cf_lexer_get_tokens(struct cf_lexer *lex)
 {
 	return lex->tokens.array;
 }
@@ -195,7 +195,7 @@ EXPORT void cf_preprocessor_add_def(struct cf_preprocessor *pp,
 EXPORT void cf_preprocessor_remove_def(struct cf_preprocessor *pp,
 		const char *def_name);
 
-static inline struct cf_token *cf_preprocessor_gettokens(
+static inline struct cf_token *cf_preprocessor_get_tokens(
 		struct cf_preprocessor *pp)
 {
 	return pp->tokens.array;

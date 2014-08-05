@@ -528,7 +528,7 @@ void dstr_replace(struct dstr *str, const char *find,
 	size_t find_len, replace_len;
 	char *temp;
 
-	if (dstr_isempty(str))
+	if (dstr_is_empty(str))
 		return;
 
 	if (!replace)

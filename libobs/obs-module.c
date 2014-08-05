@@ -134,7 +134,7 @@ char *obs_find_module_file(obs_module_t module, const char *file)
 		return NULL;
 
 	dstr_copy(&output, module->data_path);
-	if (!dstr_isempty(&output) && dstr_end(&output) != '/')
+	if (!dstr_is_empty(&output) && dstr_end(&output) != '/')
 		dstr_cat_ch(&output, '/');
 	dstr_cat(&output, file);
 
@@ -292,7 +292,7 @@ static void find_modules_in_path(struct obs_module_path *omp,
 		search_directories = true;
 	}
 
-	if (!dstr_isempty(&search_path) && dstr_end(&search_path) != '/')
+	if (!dstr_is_empty(&search_path) && dstr_end(&search_path) != '/')
 		dstr_cat_ch(&search_path, '/');
 
 	dstr_cat_ch(&search_path, '*');

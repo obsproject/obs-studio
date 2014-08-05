@@ -72,7 +72,7 @@ static inline bool cf_parser_parse(struct cf_parser *parser,
 	if (!cf_preprocess(&parser->pp, &parser->lex, &parser->error_list))
 		return false;
 
-	parser->cur_token = cf_preprocessor_gettokens(&parser->pp);
+	parser->cur_token = cf_preprocessor_get_tokens(&parser->pp);
 	return true;
 }
 

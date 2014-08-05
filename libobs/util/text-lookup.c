@@ -70,7 +70,8 @@ static struct text_node *text_node_bychar(struct text_node *node, char ch)
 	struct text_node *subnode = node->first_subnode;
 
 	while (subnode) {
-		if (!dstr_isempty(&subnode->str) && subnode->str.array[0] == ch)
+		if (!dstr_is_empty(&subnode->str) &&
+		    subnode->str.array[0] == ch)
 			return subnode;
 
 		subnode = subnode->next;

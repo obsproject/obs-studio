@@ -166,7 +166,7 @@ static inline void set_rtmp_str(AVal *val, const char *str)
 
 static inline void set_rtmp_dstr(AVal *val, struct dstr *str)
 {
-	bool valid  = !dstr_isempty(str);
+	bool valid  = !dstr_is_empty(str);
 	val->av_val = valid ? str->array    : NULL;
 	val->av_len = valid ? (int)str->len : 0;
 }
@@ -359,12 +359,12 @@ static int init_send(struct rtmp_stream *stream)
 
 static int try_connect(struct rtmp_stream *stream)
 {
-	if (dstr_isempty(&stream->path)) {
+	if (dstr_is_empty(&stream->path)) {
 		warn("URL is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
-	if (dstr_isempty(&stream->key)) {
+	if (dstr_is_empty(&stream->key)) {
 		warn("Stream key is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
