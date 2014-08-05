@@ -147,7 +147,7 @@ static void xshm_update(void *vptr, obs_data_t settings)
 static void xshm_defaults(obs_data_t defaults)
 {
 	obs_data_set_default_int(defaults, "screen", 0);
-	obs_data_setbool(defaults, "show_cursor", true);
+	obs_data_set_default_bool(defaults, "show_cursor", true);
 }
 
 /**
