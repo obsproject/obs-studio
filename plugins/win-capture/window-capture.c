@@ -365,8 +365,8 @@ static uint32_t wc_height(void *data)
 
 static void wc_defaults(obs_data_t defaults)
 {
-	obs_data_setbool(defaults, "cursor", true);
-	obs_data_setbool(defaults, "compatibility", false);
+	obs_data_set_default_bool(defaults, "cursor", true);
+	obs_data_set_default_bool(defaults, "compatibility", false);
 }
 
 static obs_properties_t wc_properties(void)
