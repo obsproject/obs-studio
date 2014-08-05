@@ -19,11 +19,6 @@
 
 static const char *astrblank = "";
 
-static inline bool strref_is_empty(const struct strref *str)
-{
-	return !str || !str->array || !str->len || !*str->array;
-}
-
 int strref_cmp(const struct strref *str1, const char *str2)
 {
 	size_t i = 0;

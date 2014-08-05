@@ -58,14 +58,9 @@ static inline void strref_add(struct strref *dst, const struct strref *t)
 		dst->len += t->len;
 }
 
-static inline bool strref_isempty(const struct strref *str)
+static inline bool strref_is_empty(const struct strref *str)
 {
-	if (!str->array || !str->len)
-		return true;
-	if (!*str->array)
-		return true;
-
-	return false;
+	return !str || !str->array || !str->len || !*str->array;
 }
 
 EXPORT int strref_cmp(const struct strref *str1, const char *str2);
