@@ -903,7 +903,7 @@ bool obs_add_source(obs_source_t source)
 	obs_source_addref(source);
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 
-	calldata_setptr(&params, "source", source);
+	calldata_set_ptr(&params, "source", source);
 	signal_handler_signal(obs->signals, "source_add", &params);
 	calldata_free(&params);
 
@@ -933,11 +933,11 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 
 	prev_source = view->channels[channel];
 
-	calldata_setint(&params, "channel", channel);
-	calldata_setptr(&params, "prev_source", prev_source);
-	calldata_setptr(&params, "source", source);
+	calldata_set_int(&params, "channel", channel);
+	calldata_set_ptr(&params, "prev_source", prev_source);
+	calldata_set_ptr(&params, "source", source);
 	signal_handler_signal(obs->signals, "channel_change", &params);
-	calldata_getptr(&params, "source", &source);
+	calldata_get_ptr(&params, "source", &source);
 	calldata_free(&params);
 
 	view->channels[channel] = source;
@@ -1135,7 +1135,7 @@ void obs_set_master_volume(float volume)
 
 	if (!obs) return;
 
-	calldata_setfloat(&data, "volume", volume);
+	calldata_set_float(&data, "volume", volume);
 	signal_handler_signal(obs->signals, "master_volume", &data);
 	volume = (float)calldata_float(&data, "volume");
 	calldata_free(&data);

@@ -591,7 +591,7 @@ static inline void do_output_signal(struct obs_output *output,
 		const char *signal)
 {
 	struct calldata params = {0};
-	calldata_setptr(&params, "output", output);
+	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, signal, &params);
 	calldata_free(&params);
 }
@@ -614,8 +614,8 @@ static inline void signal_reconnect_success(struct obs_output *output)
 static inline void signal_stop(struct obs_output *output, int code)
 {
 	struct calldata params = {0};
-	calldata_setint(&params, "code", code);
-	calldata_setptr(&params, "output", output);
+	calldata_set_int(&params, "code", code);
+	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "stop", &params);
 	calldata_free(&params);
 }

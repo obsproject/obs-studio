@@ -159,7 +159,8 @@ static inline void cd_ensure_capacity(calldata_t data, uint8_t **pos,
 
 /* ------------------------------------------------------------------------- */
 
-bool calldata_getdata(calldata_t data, const char *name, void *out, size_t size)
+bool calldata_get_data(calldata_t data, const char *name, void *out,
+		size_t size)
 {
 	uint8_t *pos;
 	size_t data_size;
@@ -178,7 +179,7 @@ bool calldata_getdata(calldata_t data, const char *name, void *out, size_t size)
 	return true;
 }
 
-void calldata_setdata(calldata_t data, const char *name, const void *in,
+void calldata_set_data(calldata_t data, const char *name, const void *in,
 		size_t size)
 {
 	uint8_t *pos = NULL;
@@ -224,7 +225,7 @@ void calldata_setdata(calldata_t data, const char *name, const void *in,
 	}
 }
 
-bool calldata_getstring(calldata_t data, const char *name, const char **str)
+bool calldata_get_string(calldata_t data, const char *name, const char **str)
 {
 	uint8_t *pos;
 	if (!data || !name || !*name)

@@ -143,7 +143,7 @@ static inline void obs_source_dosignal(struct obs_source *source,
 	struct calldata data;
 
 	calldata_init(&data);
-	calldata_setptr(&data, "source", source);
+	calldata_set_ptr(&data, "source", source);
 	if (signal_obs)
 		signal_handler_signal(obs->signals, signal_obs, &data);
 	if (signal_source)
@@ -611,10 +611,10 @@ static void obs_source_update_volume_level(obs_source_t source,
 		calc_volume_levels(source, (float*)in->data[0], in->frames,
 				in->volume);
 
-		calldata_setptr  (&data, "source",    source);
-		calldata_setfloat(&data, "level",     source->vol_max);
-		calldata_setfloat(&data, "magnitude", source->vol_mag);
-		calldata_setfloat(&data, "peak",      source->vol_peak);
+		calldata_set_ptr  (&data, "source",    source);
+		calldata_set_float(&data, "level",     source->vol_max);
+		calldata_set_float(&data, "magnitude", source->vol_mag);
+		calldata_set_float(&data, "peak",      source->vol_peak);
 
 		signal_handler_signal(source->context.signals, "volume_level",
 				&data);
@@ -1632,9 +1632,9 @@ void obs_source_set_name(obs_source_t source, const char *name)
 		obs_context_data_setname(&source->context, name);
 
 		calldata_init(&data);
-		calldata_setptr(&data, "source", source);
-		calldata_setstring(&data, "new_name", source->context.name);
-		calldata_setstring(&data, "prev_name", prev_name);
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_string(&data, "new_name", source->context.name);
+		calldata_set_string(&data, "prev_name", prev_name);
 		signal_handler_signal(obs->signals, "source_rename", &data);
 		signal_handler_signal(source->context.signals, "rename", &data);
 		calldata_free(&data);
@@ -1750,8 +1750,8 @@ void obs_source_set_volume(obs_source_t source, float volume)
 {
 	if (source) {
 		struct calldata data = {0};
-		calldata_setptr(&data, "source", source);
-		calldata_setfloat(&data, "volume", volume);
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_float(&data, "volume", volume);
 
 		signal_handler_signal(source->context.signals, "volume", &data);
 		signal_handler_signal(obs->signals, "source_volume", &data);

@@ -35,8 +35,8 @@ static const char *obs_scene_signals[] = {
 static inline void signal_item_remove(struct obs_scene_item *item)
 {
 	struct calldata params = {0};
-	calldata_setptr(&params, "scene", item->parent);
-	calldata_setptr(&params, "item", item);
+	calldata_set_ptr(&params, "scene", item->parent);
+	calldata_set_ptr(&params, "item", item);
 
 	signal_handler_signal(item->parent->source->context.signals,
 			"item_remove", &params);
@@ -282,8 +282,8 @@ static void update_item_transform(struct obs_scene_item *item)
 	item->last_width  = width;
 	item->last_height = height;
 
-	calldata_setptr(&params, "scene", item->parent);
-	calldata_setptr(&params, "item", item);
+	calldata_set_ptr(&params, "scene", item->parent);
+	calldata_set_ptr(&params, "item", item);
 	signal_handler_signal(item->parent->source->context.signals,
 			"item_transform", &params);
 	calldata_free(&params);
@@ -579,8 +579,8 @@ obs_sceneitem_t obs_scene_add(obs_scene_t scene, obs_source_t source)
 
 	pthread_mutex_unlock(&scene->mutex);
 
-	calldata_setptr(&params, "scene", scene);
-	calldata_setptr(&params, "item", item);
+	calldata_set_ptr(&params, "scene", scene);
+	calldata_set_ptr(&params, "item", item);
 	signal_handler_signal(scene->source->context.signals, "item_add",
 			&params);
 	calldata_free(&params);
@@ -664,8 +664,8 @@ void obs_sceneitem_select(obs_sceneitem_t item, bool select)
 
 	item->selected = select;
 
-	calldata_setptr(&params, "scene", item->parent);
-	calldata_setptr(&params, "item",  item);
+	calldata_set_ptr(&params, "scene", item->parent);
+	calldata_set_ptr(&params, "item",  item);
 	signal_handler_signal(item->parent->source->context.signals,
 			command, &params);
 
@@ -722,8 +722,8 @@ static inline void signal_move_dir(struct obs_scene_item *item,
 	case OBS_ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
 	}
 
-	calldata_setptr(&params, "scene", item->parent);
-	calldata_setptr(&params, "item",  item);
+	calldata_set_ptr(&params, "scene", item->parent);
+	calldata_set_ptr(&params, "item",  item);
 
 	signal_handler_signal(item->parent->source->context.signals,
 			command, &params);
