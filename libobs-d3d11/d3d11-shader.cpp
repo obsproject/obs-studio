@@ -38,9 +38,9 @@ void gs_vertex_shader::GetBuffersExpected(
 	}
 }
 
-gs_vertex_shader::gs_vertex_shader(device_t device, const char *file,
+gs_vertex_shader::gs_vertex_shader(gs_device_t device, const char *file,
 		const char *shaderString)
-	: gs_shader   (device, SHADER_VERTEX),
+	: gs_shader   (device, GS_SHADER_VERTEX),
 	  hasNormals  (false),
 	  hasColors   (false),
 	  hasTangents (false),
@@ -72,13 +72,13 @@ gs_vertex_shader::gs_vertex_shader(device_t device, const char *file,
 	if (FAILED(hr))
 		throw HRError("Failed to create input layout", hr);
 
-	viewProj = shader_getparambyname(this, "ViewProj");
-	world    = shader_getparambyname(this, "World");
+	viewProj = gs_shader_get_param_by_name(this, "ViewProj");
+	world    = gs_shader_get_param_by_name(this, "World");
 }
 
-gs_pixel_shader::gs_pixel_shader(device_t device, const char *file,
+gs_pixel_shader::gs_pixel_shader(gs_device_t device, const char *file,
 		const char *shaderString)
-	: gs_shader(device, SHADER_PIXEL)
+	: gs_shader(device, GS_SHADER_PIXEL)
 {
 	ShaderProcessor    processor(device);
 	ComPtr<ID3D10Blob> shaderBlob;
@@ -125,17 +125,17 @@ gs_pixel_shader::gs_pixel_shader(device_t device, const char *file,
 void gs_shader::BuildConstantBuffer()
 {
 	for (size_t i = 0; i < params.size(); i++) {
-		shader_param &param = params[i];
+		gs_shader_param &param = params[i];
 		size_t       size   = 0;
 
 		switch (param.type) {
-		case SHADER_PARAM_BOOL:
-		case SHADER_PARAM_INT:
-		case SHADER_PARAM_FLOAT:     size = sizeof(float);   break;
-		case SHADER_PARAM_VEC2:      size = sizeof(vec2);    break;
-		case SHADER_PARAM_VEC3:      size = sizeof(float)*3; break;
-		case SHADER_PARAM_VEC4:      size = sizeof(vec4);    break;
-		case SHADER_PARAM_MATRIX4X4: size = sizeof(float)*4*4;
+		case GS_SHADER_PARAM_BOOL:
+		case GS_SHADER_PARAM_INT:
+		case GS_SHADER_PARAM_FLOAT:     size = sizeof(float);   break;
+		case GS_SHADER_PARAM_VEC2:      size = sizeof(vec2);    break;
+		case GS_SHADER_PARAM_VEC3:      size = sizeof(float)*3; break;
+		case GS_SHADER_PARAM_VEC4:      size = sizeof(vec4);    break;
+		case GS_SHADER_PARAM_MATRIX4X4: size = sizeof(float)*4*4;
 		}
 
 		/* checks to see if this constant needs to start at a new
@@ -168,7 +168,7 @@ void gs_shader::BuildConstantBuffer()
 	}
 
 	for (size_t i = 0; i < params.size(); i++)
-		shader_setdefault(&params[i]);
+		gs_shader_set_default(&params[i]);
 }
 
 void gs_shader::Compile(const char *shaderString, const char *file,
@@ -193,9 +193,9 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 }
 
 inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
-		shader_param &param, bool &upload)
+		gs_shader_param &param, bool &upload)
 {
-	if (param.type != SHADER_PARAM_TEXTURE) {
+	if (param.type != GS_SHADER_PARAM_TEXTURE) {
 		if (!param.curValue.size())
 			throw "Not all shader parameters were set";
 
@@ -216,9 +216,9 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 			upload = true;
 			param.changed = false;
 		}
-	} else if (param.curValue.size() == sizeof(texture_t)) {
-		texture_t tex;
-		memcpy(&tex, param.curValue.data(), sizeof(texture_t));
+	} else if (param.curValue.size() == sizeof(gs_texture_t)) {
+		gs_texture_t tex;
+		memcpy(&tex, param.curValue.data(), sizeof(gs_texture_t));
 		device_load_texture(device, tex, param.textureID);
 	}
 }
@@ -250,25 +250,25 @@ void gs_shader::UploadParams()
 	}
 }
 
-void shader_destroy(shader_t shader)
+void gs_shader_destroy(gs_shader_t shader)
 {
 	delete shader;
 }
 
-int shader_numparams(shader_t shader)
+int gs_shader_get_num_params(gs_shader_t shader)
 {
 	return (int)shader->params.size();
 }
 
-sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
+gs_sparam_t gs_shader_get_param_by_idx(gs_shader_t shader, uint32_t param)
 {
 	return &shader->params[param];
 }
 
-sparam_t shader_getparambyname(shader_t shader, const char *name)
+gs_sparam_t gs_shader_get_param_by_name(gs_shader_t shader, const char *name)
 {
 	for (size_t i = 0; i < shader->params.size(); i++) {
-		shader_param &param = shader->params[i];
+		gs_shader_param &param = shader->params[i];
 		if (strcmp(param.name.c_str(), name) == 0)
 			return &param;
 	}
@@ -276,23 +276,24 @@ sparam_t shader_getparambyname(shader_t shader, const char *name)
 	return NULL;
 }
 
-sparam_t shader_getviewprojmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_viewproj_matrix(gs_shader_t shader)
 {
-	if (shader->type != SHADER_VERTEX)
+	if (shader->type != GS_SHADER_VERTEX)
 		return NULL;
 
 	return static_cast<gs_vertex_shader*>(shader)->viewProj;
 }
 
-sparam_t shader_getworldmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_world_matrix(gs_shader_t shader)
 {
-	if (shader->type != SHADER_VERTEX)
+	if (shader->type != GS_SHADER_VERTEX)
 		return NULL;
 
 	return static_cast<gs_vertex_shader*>(shader)->world;
 }
 
-void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
+void gs_shader_get_param_info(gs_sparam_t param,
+		struct gs_shader_param_info *info)
 {
 	if (!param)
 		return;
@@ -301,8 +302,8 @@ void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
 	info->type = param->type;
 }
 
-static inline void shader_setval_inline(shader_param *param, const void *data,
-		size_t size)
+static inline void shader_setval_inline(gs_shader_param *param,
+		const void *data, size_t size)
 {
 	assert(param);
 	if (!param)
@@ -318,59 +319,59 @@ static inline void shader_setval_inline(shader_param *param, const void *data,
 	}
 }
 
-void shader_setbool(sparam_t param, bool val)
+void gs_shader_set_bool(gs_sparam_t param, bool val)
 {
 	shader_setval_inline(param, &val, sizeof(bool));
 }
 
-void shader_setfloat(sparam_t param, float val)
+void gs_shader_set_float(gs_sparam_t param, float val)
 {
 	shader_setval_inline(param, &val, sizeof(float));
 }
 
-void shader_setint(sparam_t param, int val)
+void gs_shader_set_int(gs_sparam_t param, int val)
 {
 	shader_setval_inline(param, &val, sizeof(int));
 }
 
-void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
+void gs_shader_setmatrix3(gs_sparam_t param, const struct matrix3 *val)
 {
 	struct matrix4 mat;
 	matrix4_from_matrix3(&mat, val);
 	shader_setval_inline(param, &mat, sizeof(matrix4));
 }
 
-void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
+void gs_shader_set_matrix4(gs_sparam_t param, const struct matrix4 *val)
 {
 	shader_setval_inline(param, val, sizeof(matrix4));
 }
 
-void shader_setvec2(sparam_t param, const struct vec2 *val)
+void gs_shader_set_vec2(gs_sparam_t param, const struct vec2 *val)
 {
 	shader_setval_inline(param, val, sizeof(vec2));
 }
 
-void shader_setvec3(sparam_t param, const struct vec3 *val)
+void gs_shader_set_vec3(gs_sparam_t param, const struct vec3 *val)
 {
 	shader_setval_inline(param, val, sizeof(float) * 3);
 }
 
-void shader_setvec4(sparam_t param, const struct vec4 *val)
+void gs_shader_set_vec4(gs_sparam_t param, const struct vec4 *val)
 {
 	shader_setval_inline(param, val, sizeof(vec4));
 }
 
-void shader_settexture(sparam_t param, texture_t val)
+void gs_shader_set_texture(gs_sparam_t param, gs_texture_t val)
 {
-	shader_setval_inline(param, &val, sizeof(texture_t));
+	shader_setval_inline(param, &val, sizeof(gs_texture_t));
 }
 
-void shader_setval(sparam_t param, const void *val, size_t size)
+void gs_shader_set_val(gs_sparam_t param, const void *val, size_t size)
 {
 	shader_setval_inline(param, val, size);
 }
 
-void shader_setdefault(sparam_t param)
+void gs_shader_set_default(gs_sparam_t param)
 {
 	if (param->defaultValue.size())
 		shader_setval_inline(param, param->defaultValue.data(),

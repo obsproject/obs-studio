@@ -61,7 +61,7 @@ struct ep_param {
 	char             *type, *name;
 	DARRAY(uint8_t)  default_val;
 	DARRAY(char*)    properties;
-	struct effect_param *param;
+	struct gs_effect_param *param;
 	bool is_const, is_property, is_uniform, is_texture, written;
 	int writeorder, array_count;
 };
@@ -162,7 +162,7 @@ struct ep_pass {
 	char *name;
 	DARRAY(struct cf_token) vertex_program;
 	DARRAY(struct cf_token) fragment_program;
-	struct effect_pass *pass;
+	struct gs_effect_pass *pass;
 };
 
 static inline void ep_pass_init(struct ep_pass *epp)
@@ -243,7 +243,7 @@ static inline void ep_func_free(struct ep_func *epf)
 /* ------------------------------------------------------------------------- */
 
 struct effect_parser {
-	effect_t effect;
+	gs_effect_t effect;
 
 	DARRAY(struct ep_param)     params;
 	DARRAY(struct ep_struct)    structs;
@@ -254,7 +254,7 @@ struct effect_parser {
 	/* internal vars */
 	DARRAY(struct cf_lexer) files;
 	DARRAY(struct cf_token) tokens;
-	struct effect_pass *cur_pass;
+	struct gs_effect_pass *cur_pass;
 
 	struct cf_parser cfp;
 };
@@ -275,7 +275,7 @@ static inline void ep_init(struct effect_parser *ep)
 
 extern void ep_free(struct effect_parser *ep);
 
-extern bool ep_parse(struct effect_parser *ep, effect_t effect,
+extern bool ep_parse(struct effect_parser *ep, gs_effect_t effect,
                      const char *effect_string, const char *file);
 
 #ifdef __cplusplus

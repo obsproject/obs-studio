@@ -9,9 +9,9 @@
 struct display_capture {
 	obs_source_t source;
 
-	samplerstate_t sampler;
-	effect_t draw_effect;
-	texture_t tex;
+	gs_samplerstate_t sampler;
+	gs_effect_t draw_effect;
+	gs_texture_t tex;
 
 	unsigned display;
 	uint32_t width, height;
@@ -32,7 +32,7 @@ static void destroy_display_stream(struct display_capture *dc)
 	}
 
 	if (dc->tex) {
-		texture_destroy(dc->tex);
+		gs_texture_destroy(dc->tex);
 		dc->tex = NULL;
 	}
 
@@ -68,9 +68,9 @@ static void display_capture_destroy(void *data)
 	destroy_display_stream(dc);
 
 	if (dc->sampler)
-		samplerstate_destroy(dc->sampler);
+		gs_samplerstate_destroy(dc->sampler);
 	if (dc->draw_effect)
-		effect_destroy(dc->draw_effect);
+		gs_effect_destroy(dc->draw_effect);
 
 	obs_leave_graphics();
 
@@ -178,12 +178,12 @@ static void *display_capture_create(obs_data_t settings,
 		.address_w = GS_ADDRESS_CLAMP,
 		.max_anisotropy = 1,
 	};
-	dc->sampler = gs_create_samplerstate(&info);
+	dc->sampler = gs_samplerstate_create(&info);
 	if (!dc->sampler)
 		goto fail;
 
 	char *effect_file = obs_module_file("draw_rect.effect");
-	dc->draw_effect = gs_create_effect_from_file(effect_file, NULL);
+	dc->draw_effect = gs_effect_create_from_file(effect_file, NULL);
 	bfree(effect_file);
 	if (!dc->draw_effect)
 		goto fail;
@@ -225,9 +225,9 @@ static void display_capture_video_tick(void *data, float seconds)
 
 	obs_enter_graphics();
 	if (dc->tex)
-		texture_rebind_iosurface(dc->tex, dc->prev);
+		gs_texture_rebind_iosurface(dc->tex, dc->prev);
 	else
-		dc->tex = gs_create_texture_from_iosurface(dc->prev);
+		dc->tex = gs_texture_create_from_iosurface(dc->prev);
 	obs_leave_graphics();
 
 	if (prev_prev) {
@@ -236,7 +236,7 @@ static void display_capture_video_tick(void *data, float seconds)
 	}
 }
 
-static void display_capture_video_render(void *data, effect_t effect)
+static void display_capture_video_render(void *data, gs_effect_t effect)
 {
 	UNUSED_PARAMETER(effect);
 
@@ -246,16 +246,17 @@ static void display_capture_video_render(void *data, effect_t effect)
 		return;
 
 	gs_load_samplerstate(dc->sampler, 0);
-	technique_t tech = effect_gettechnique(dc->draw_effect, "Default");
-	effect_settexture(effect_getparambyidx(dc->draw_effect, 1),
+	gs_technique_t tech = gs_effect_get_technique(dc->draw_effect,
+			"Default");
+	gs_effect_set_texture(gs_effect_get_param_by_idx(dc->draw_effect, 1),
 			dc->tex);
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
 	gs_draw_sprite(dc->tex, 0, 0, 0);
 
-	technique_endpass(tech);
-	technique_end(tech);
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 }
 
 static const char *display_capture_getname(void)

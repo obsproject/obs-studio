@@ -7,7 +7,7 @@
 struct image_source {
 	obs_source_t source;
 
-	texture_t    tex;
+	gs_texture_t tex;
 	uint32_t     cx;
 	uint32_t     cy;
 };
@@ -25,15 +25,15 @@ static void image_source_update(void *data, obs_data_t settings)
 	obs_enter_graphics();
 
 	if (context->tex) {
-		texture_destroy(context->tex);
+		gs_texture_destroy(context->tex);
 		context->tex = NULL;
 	}
 
 	if (file && *file) {
-		context->tex = gs_create_texture_from_file(file);
+		context->tex = gs_texture_create_from_file(file);
 		if (context->tex) {
-			context->cx = texture_getwidth(context->tex);
-			context->cy = texture_getheight(context->tex);
+			context->cx = gs_texture_get_width(context->tex);
+			context->cy = gs_texture_get_height(context->tex);
 		} else {
 			warn("failed to load texture '%s'", file);
 			context->cx = 0;
@@ -58,7 +58,7 @@ static void image_source_destroy(void *data)
 	struct image_source *context = data;
 
 	obs_enter_graphics();
-	texture_destroy(context->tex);
+	gs_texture_destroy(context->tex);
 	obs_leave_graphics();
 
 	bfree(context);
@@ -76,14 +76,15 @@ static uint32_t image_source_getheight(void *data)
 	return context->cy;
 }
 
-static void image_source_render(void *data, effect_t effect)
+static void image_source_render(void *data, gs_effect_t effect)
 {
 	struct image_source *context = data;
 	if (!context->tex)
 		return;
 
 	gs_reset_blend_state();
-	effect_settexture(effect_getparambyname(effect, "image"), context->tex);
+	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
+			context->tex);
 	gs_draw_sprite(context->tex, 0, context->cx, context->cy);
 }
 

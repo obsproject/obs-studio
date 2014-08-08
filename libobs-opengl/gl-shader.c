@@ -25,12 +25,12 @@
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
 
-static inline void shader_param_init(struct shader_param *param)
+static inline void shader_param_init(struct gs_shader_param *param)
 {
-	memset(param, 0, sizeof(struct shader_param));
+	memset(param, 0, sizeof(struct gs_shader_param));
 }
 
-static inline void shader_param_free(struct shader_param *param)
+static inline void shader_param_free(struct gs_shader_param *param)
 {
 	bfree(param->name);
 	da_free(param->cur_value);
@@ -63,14 +63,14 @@ static void gl_get_program_info(GLuint program, const char *file,
 static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 		GLint *texture_id)
 {
-	struct shader_param param = {0};
+	struct gs_shader_param param = {0};
 
 	param.array_count = var->array_count;
 	param.name        = bstrdup(var->name);
 	param.shader      = shader;
 	param.type        = get_shader_param_type(var->type);
 
-	if (param.type == SHADER_PARAM_TEXTURE) {
+	if (param.type == GS_SHADER_PARAM_TEXTURE) {
 		param.sampler_id  = var->gl_sampler_id;
 		param.texture_id  = (*texture_id)++;
 	} else {
@@ -84,7 +84,7 @@ static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 	if (!gl_success("glGetUniformLocation"))
 		goto fail;
 
-	if (param.type == SHADER_PARAM_TEXTURE) {
+	if (param.type == GS_SHADER_PARAM_TEXTURE) {
 		glProgramUniform1i(shader->program, param.param,
 				param.texture_id);
 		if (!gl_success("glProgramUniform1i"))
@@ -109,8 +109,8 @@ static inline bool gl_add_params(struct gs_shader *shader,
 		if (!gl_add_param(shader, glsp->parser.params.array+i, &tex_id))
 			return false;
 
-	shader->viewproj = shader_getparambyname(shader, "ViewProj");
-	shader->world    = shader_getparambyname(shader, "World");
+	shader->viewproj = gs_shader_get_param_by_name(shader, "ViewProj");
+	shader->world    = gs_shader_get_param_by_name(shader, "World");
 
 	return true;
 }
@@ -118,11 +118,11 @@ static inline bool gl_add_params(struct gs_shader *shader,
 static inline void gl_add_sampler(struct gs_shader *shader,
 		struct shader_sampler *sampler)
 {
-	samplerstate_t new_sampler;
+	gs_samplerstate_t new_sampler;
 	struct gs_sampler_info info;
 
 	shader_sampler_convert(sampler, &info);
-	new_sampler = device_create_samplerstate(shader->device, &info);
+	new_sampler = device_samplerstate_create(shader->device, &info);
 
 	da_push_back(shader->samplers, &new_sampler);
 }
@@ -235,7 +235,7 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (success)
 		success = gl_add_params(shader, glsp);
 	/* Only vertex shaders actually require input attributes */
-	if (success && shader->type == SHADER_VERTEX)
+	if (success && shader->type == GS_SHADER_VERTEX)
 		success = gl_process_attribs(shader, glsp);
 	if (success)
 		gl_add_samplers(shader, glsp);
@@ -243,8 +243,9 @@ static bool gl_shader_init(struct gs_shader *shader,
 	return success;
 }
 
-static struct gs_shader *shader_create(device_t device, enum shader_type type,
-		const char *shader_str, const char *file, char **error_string)
+static struct gs_shader *shader_create(gs_device_t device,
+		enum gs_shader_type type, const char *shader_str,
+		const char *file, char **error_string)
 {
 	struct gs_shader *shader = bzalloc(sizeof(struct gs_shader));
 	struct gl_shader_parser glsp;
@@ -260,7 +261,7 @@ static struct gs_shader *shader_create(device_t device, enum shader_type type,
 		success = gl_shader_init(shader, &glsp, file, error_string);
 
 	if (!success) {
-		shader_destroy(shader);
+		gs_shader_destroy(shader);
 		shader = NULL;
 	}
 
@@ -268,29 +269,31 @@ static struct gs_shader *shader_create(device_t device, enum shader_type type,
 	return shader;
 }
 
-shader_t device_create_vertexshader(device_t device,
+gs_shader_t device_vertexshader_create(gs_device_t device,
 		const char *shader, const char *file,
 		char **error_string)
 {
 	struct gs_shader *ptr;
-	ptr = shader_create(device, SHADER_VERTEX, shader, file, error_string);
+	ptr = shader_create(device, GS_SHADER_VERTEX, shader, file,
+			error_string);
 	if (!ptr)
-		blog(LOG_ERROR, "device_create_vertexshader (GL) failed");
+		blog(LOG_ERROR, "device_vertexshader_create (GL) failed");
 	return ptr;
 }
 
-shader_t device_create_pixelshader(device_t device,
+gs_shader_t device_pixelshader_create(gs_device_t device,
 		const char *shader, const char *file,
 		char **error_string)
 {
 	struct gs_shader *ptr;
-	ptr = shader_create(device, SHADER_PIXEL, shader, file, error_string);
+	ptr = shader_create(device, GS_SHADER_PIXEL, shader, file,
+			error_string);
 	if (!ptr)
-		blog(LOG_ERROR, "device_create_pixelshader (GL) failed");
+		blog(LOG_ERROR, "device_pixelshader_create (GL) failed");
 	return ptr;
 }
 
-void shader_destroy(shader_t shader)
+void gs_shader_destroy(gs_shader_t shader)
 {
 	size_t i;
 
@@ -298,7 +301,7 @@ void shader_destroy(shader_t shader)
 		return;
 
 	for (i = 0; i < shader->samplers.num; i++)
-		samplerstate_destroy(shader->samplers.array[i]);
+		gs_samplerstate_destroy(shader->samplers.array[i]);
 
 	for (i = 0; i < shader->params.num; i++)
 		shader_param_free(shader->params.array+i);
@@ -314,22 +317,22 @@ void shader_destroy(shader_t shader)
 	bfree(shader);
 }
 
-int shader_numparams(shader_t shader)
+int gs_shader_get_num_params(gs_shader_t shader)
 {
 	return (int)shader->params.num;
 }
 
-sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
+gs_sparam_t gs_shader_get_param_by_idx(gs_shader_t shader, uint32_t param)
 {
 	assert(param < shader->params.num);
 	return shader->params.array+param;
 }
 
-sparam_t shader_getparambyname(shader_t shader, const char *name)
+gs_sparam_t gs_shader_get_param_by_name(gs_shader_t shader, const char *name)
 {
 	size_t i;
 	for (i = 0; i < shader->params.num; i++) {
-		struct shader_param *param = shader->params.array+i;
+		struct gs_shader_param *param = shader->params.array+i;
 
 		if (strcmp(param->name, name) == 0)
 			return param;
@@ -338,44 +341,45 @@ sparam_t shader_getparambyname(shader_t shader, const char *name)
 	return NULL;
 }
 
-sparam_t shader_getviewprojmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_viewproj_matrix(gs_shader_t shader)
 {
 	return shader->viewproj;
 }
 
-sparam_t shader_getworldmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_world_matrix(gs_shader_t shader)
 {
 	return shader->world;
 }
 
-void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
+void gs_shader_get_param_info(gs_sparam_t param,
+		struct gs_shader_param_info *info)
 {
 	info->type = param->type;
 	info->name = param->name;
 }
 
-void shader_setbool(sparam_t param, bool val)
+void gs_shader_set_bool(gs_sparam_t param, bool val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform1i(shader->program, param->param, (GLint)val);
 	gl_success("glProgramUniform1i");
 }
 
-void shader_setfloat(sparam_t param, float val)
+void gs_shader_set_float(gs_sparam_t param, float val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform1f(shader->program, param->param, val);
 	gl_success("glProgramUniform1f");
 }
 
-void shader_setint(sparam_t param, int val)
+void gs_shader_set_int(gs_sparam_t param, int val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform1i(shader->program, param->param, val);
 	gl_success("glProgramUniform1i");
 }
 
-void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
+void gs_shader_setmatrix3(gs_sparam_t param, const struct matrix3 *val)
 {
 	struct gs_shader *shader = param->shader;
 	struct matrix4 mat;
@@ -386,7 +390,7 @@ void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
 	gl_success("glProgramUniformMatrix4fv");
 }
 
-void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
+void gs_shader_set_matrix4(gs_sparam_t param, const struct matrix4 *val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniformMatrix4fv(shader->program, param->param, 1,
@@ -394,58 +398,58 @@ void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
 	gl_success("glProgramUniformMatrix4fv");
 }
 
-void shader_setvec2(sparam_t param, const struct vec2 *val)
+void gs_shader_set_vec2(gs_sparam_t param, const struct vec2 *val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform2fv(shader->program, param->param, 1, val->ptr);
 	gl_success("glProgramUniform2fv");
 }
 
-void shader_setvec3(sparam_t param, const struct vec3 *val)
+void gs_shader_set_vec3(gs_sparam_t param, const struct vec3 *val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform3fv(shader->program, param->param, 1, val->ptr);
 	gl_success("glProgramUniform3fv");
 }
 
-void shader_setvec4(sparam_t param, const struct vec4 *val)
+void gs_shader_set_vec4(gs_sparam_t param, const struct vec4 *val)
 {
 	struct gs_shader *shader = param->shader;
 	glProgramUniform4fv(shader->program, param->param, 1, val->ptr);
 	gl_success("glProgramUniform4fv");
 }
 
-void shader_settexture(sparam_t param, texture_t val)
+void gs_shader_set_texture(gs_sparam_t param, gs_texture_t val)
 {
 	param->texture = val;
 }
 
-static void shader_setval_data(sparam_t param, const void *val, int count)
+static void shader_setval_data(gs_sparam_t param, const void *val, int count)
 {
 	struct gs_shader *shader = param->shader;
 
-	if (param->type == SHADER_PARAM_BOOL ||
-	    param->type == SHADER_PARAM_INT) {
+	if (param->type == GS_SHADER_PARAM_BOOL ||
+	    param->type == GS_SHADER_PARAM_INT) {
 		glProgramUniform1iv(shader->program, param->param, count, val);
 		gl_success("glProgramUniform1iv");
 
-	} else if (param->type == SHADER_PARAM_FLOAT) {
+	} else if (param->type == GS_SHADER_PARAM_FLOAT) {
 		glProgramUniform1fv(shader->program, param->param, count, val);
 		gl_success("glProgramUniform1fv");
 
-	} else if (param->type == SHADER_PARAM_VEC2) {
+	} else if (param->type == GS_SHADER_PARAM_VEC2) {
 		glProgramUniform2fv(shader->program, param->param, count, val);
 		gl_success("glProgramUniform2fv");
 
-	} else if (param->type == SHADER_PARAM_VEC3) {
+	} else if (param->type == GS_SHADER_PARAM_VEC3) {
 		glProgramUniform3fv(shader->program, param->param, count, val);
 		gl_success("glProgramUniform3fv");
 
-	} else if (param->type == SHADER_PARAM_VEC4) {
+	} else if (param->type == GS_SHADER_PARAM_VEC4) {
 		glProgramUniform4fv(shader->program, param->param, count, val);
 		gl_success("glProgramUniform4fv");
 
-	} else if (param->type == SHADER_PARAM_MATRIX4X4) {
+	} else if (param->type == GS_SHADER_PARAM_MATRIX4X4) {
 		glProgramUniformMatrix4fv(shader->program, param->param,
 				count, false, val);
 		gl_success("glProgramUniformMatrix4fv");
@@ -456,15 +460,15 @@ void shader_update_textures(struct gs_shader *shader)
 {
 	size_t i;
 	for (i = 0; i < shader->params.num; i++) {
-		struct shader_param *param = shader->params.array+i;
+		struct gs_shader_param *param = shader->params.array+i;
 
-		if (param->type == SHADER_PARAM_TEXTURE)
+		if (param->type == GS_SHADER_PARAM_TEXTURE)
 			device_load_texture(shader->device, param->texture,
 					param->texture_id);
 	}
 }
 
-void shader_setval(sparam_t param, const void *val, size_t size)
+void gs_shader_set_val(gs_sparam_t param, const void *val, size_t size)
 {
 	int count = param->array_count;
 	size_t expected_size = 0;
@@ -472,14 +476,14 @@ void shader_setval(sparam_t param, const void *val, size_t size)
 		count = 1;
 
 	switch ((uint32_t)param->type) {
-	case SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
-	case SHADER_PARAM_BOOL:
-	case SHADER_PARAM_INT:       expected_size = sizeof(int); break;
-	case SHADER_PARAM_VEC2:      expected_size = sizeof(float)*2; break;
-	case SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
-	case SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
-	case SHADER_PARAM_MATRIX4X4: expected_size = sizeof(float)*4*4; break;
-	case SHADER_PARAM_TEXTURE:   expected_size = sizeof(void*); break;
+	case GS_SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
+	case GS_SHADER_PARAM_BOOL:
+	case GS_SHADER_PARAM_INT:       expected_size = sizeof(int); break;
+	case GS_SHADER_PARAM_VEC2:      expected_size = sizeof(float)*2; break;
+	case GS_SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
+	case GS_SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
+	case GS_SHADER_PARAM_MATRIX4X4: expected_size = sizeof(float)*4*4;break;
+	case GS_SHADER_PARAM_TEXTURE:   expected_size = sizeof(void*); break;
 	default:                     expected_size = 0;
 	}
 
@@ -488,18 +492,18 @@ void shader_setval(sparam_t param, const void *val, size_t size)
 		return;
 
 	if (expected_size != size) {
-		blog(LOG_ERROR, "shader_setval (GL): Size of shader param does "
-		                "not match the size of the input");
+		blog(LOG_ERROR, "gs_shader_set_val (GL): Size of shader "
+		                "param does not match the size of the input");
 		return;
 	}
 
-	if (param->type == SHADER_PARAM_TEXTURE)
-		shader_settexture(param, *(texture_t*)val);
+	if (param->type == GS_SHADER_PARAM_TEXTURE)
+		gs_shader_set_texture(param, *(gs_texture_t*)val);
 	else
 		shader_setval_data(param, val, count);
 }
 
-void shader_setdefault(sparam_t param)
+void gs_shader_set_default(gs_sparam_t param)
 {
-	shader_setval(param, param->def_value.array, param->def_value.num);
+	gs_shader_set_val(param, param->def_value.array, param->def_value.num);
 }

@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-EXPORT enum shader_param_type get_shader_param_type(const char *type);
+EXPORT enum gs_shader_param_type get_shader_param_type(const char *type);
 EXPORT enum gs_sample_filter get_sample_filter(const char *filter);
 EXPORT enum gs_address_mode get_address_mode(const char *address_mode);
 

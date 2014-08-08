@@ -33,7 +33,7 @@ static inline bool init_ib(struct gs_index_buffer *ib)
 	return success;
 }
 
-indexbuffer_t device_create_indexbuffer(device_t device,
+gs_indexbuffer_t device_indexbuffer_create(gs_device_t device,
 		enum gs_index_type type, void *indices, size_t num,
 		uint32_t flags)
 {
@@ -51,15 +51,15 @@ indexbuffer_t device_create_indexbuffer(device_t device,
 	                                         GL_UNSIGNED_SHORT;
 
 	if (!init_ib(ib)) {
-		blog(LOG_ERROR, "device_create_indexbuffer (GL) failed");
-		indexbuffer_destroy(ib);
+		blog(LOG_ERROR, "device_indexbuffer_create (GL) failed");
+		gs_indexbuffer_destroy(ib);
 		return NULL;
 	}
 
 	return ib;
 }
 
-void indexbuffer_destroy(indexbuffer_t ib)
+void gs_indexbuffer_destroy(gs_indexbuffer_t ib)
 {
 	if (ib) {
 		if (ib->buffer)
@@ -70,7 +70,7 @@ void indexbuffer_destroy(indexbuffer_t ib)
 	}
 }
 
-void indexbuffer_flush(indexbuffer_t ib)
+void gs_indexbuffer_flush(gs_indexbuffer_t ib)
 {
 	if (!ib->dynamic) {
 		blog(LOG_ERROR, "Index buffer is not dynamic");
@@ -83,25 +83,25 @@ void indexbuffer_flush(indexbuffer_t ib)
 	return;
 
 fail:
-	blog(LOG_ERROR, "indexbuffer_flush (GL) failed");
+	blog(LOG_ERROR, "gs_indexbuffer_flush (GL) failed");
 }
 
-void *indexbuffer_getdata(indexbuffer_t ib)
+void *gs_indexbuffer_get_data(gs_indexbuffer_t ib)
 {
 	return ib->data;
 }
 
-size_t indexbuffer_numindices(indexbuffer_t ib)
+size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t ib)
 {
 	return ib->num;
 }
 
-enum gs_index_type indexbuffer_gettype(indexbuffer_t ib)
+enum gs_index_type gs_indexbuffer_get_type(gs_indexbuffer_t ib)
 {
 	return ib->type;
 }
 
-void device_load_indexbuffer(device_t device, indexbuffer_t ib)
+void device_load_indexbuffer(gs_device_t device, gs_indexbuffer_t ib)
 {
 	if (ib == device->cur_index_buffer)
 		return;

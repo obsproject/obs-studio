@@ -17,7 +17,7 @@ class XCompcapMain
 	void updateSettings(obs_data_t settings);
 
 	void tick(float seconds);
-	void render(effect_t effect);
+	void render(gs_effect_t effect);
 
 	uint32_t width();
 	uint32_t height();

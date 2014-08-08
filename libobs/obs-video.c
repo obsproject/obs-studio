@@ -58,7 +58,7 @@ static inline void render_displays(void)
 	if (!obs->data.valid)
 		return;
 
-	gs_entercontext(obs->video.graphics);
+	gs_enter_context(obs->video.graphics);
 
 	/* render extra displays/swaps */
 	pthread_mutex_lock(&obs->data.displays_mutex);
@@ -74,23 +74,23 @@ static inline void render_displays(void)
 	/* render main display */
 	render_display(&obs->video.main_display);
 
-	gs_leavecontext();
+	gs_leave_context();
 }
 
 static inline void set_render_size(uint32_t width, uint32_t height)
 {
-	gs_enable_depthtest(false);
+	gs_enable_depth_test(false);
 	gs_enable_blending(false);
-	gs_setcullmode(GS_NEITHER);
+	gs_set_cull_mode(GS_NEITHER);
 
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
-	gs_setviewport(0, 0, width, height);
+	gs_set_viewport(0, 0, width, height);
 }
 
 static inline void unmap_last_surface(struct obs_core_video *video)
 {
 	if (video->mapped_surface) {
-		stagesurface_unmap(video->mapped_surface);
+		gs_stagesurface_unmap(video->mapped_surface);
 		video->mapped_surface = NULL;
 	}
 }
@@ -101,7 +101,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	gs_setrendertarget(video->render_textures[cur_texture], NULL);
+	gs_set_render_target(video->render_textures[cur_texture], NULL);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);
@@ -113,22 +113,23 @@ static inline void render_main_texture(struct obs_core_video *video,
 static inline void render_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	texture_t   texture = video->render_textures[prev_texture];
-	texture_t   target  = video->output_textures[cur_texture];
-	uint32_t    width   = texture_getwidth(target);
-	uint32_t    height  = texture_getheight(target);
+	gs_texture_t texture = video->render_textures[prev_texture];
+	gs_texture_t target  = video->output_textures[cur_texture];
+	uint32_t     width   = gs_texture_get_width(target);
+	uint32_t     height  = gs_texture_get_height(target);
 
 	/* TODO: replace with actual downscalers or unpackers */
-	effect_t    effect  = video->default_effect;
-	technique_t tech    = effect_gettechnique(effect, "DrawMatrix");
-	eparam_t    image   = effect_getparambyname(effect, "image");
-	eparam_t    matrix  = effect_getparambyname(effect, "color_matrix");
+	gs_effect_t    effect  = video->default_effect;
+	gs_technique_t tech    = gs_effect_get_technique(effect, "DrawMatrix");
+	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
+	gs_eparam_t    matrix  = gs_effect_get_param_by_name(effect,
+			"color_matrix");
 	size_t      passes, i;
 
 	if (!video->textures_rendered[prev_texture])
 		return;
 
-	gs_setrendertarget(target, NULL);
+	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
 
 	/* TODO: replace with programmable code */
@@ -140,38 +141,38 @@ static inline void render_output_texture(struct obs_core_video *video,
 		 0.000000f,  0.000000f,  0.000000f,  1.000000f
 	};
 
-	effect_setval(matrix, mat_val, sizeof(mat_val));
-	effect_settexture(image, texture);
+	gs_effect_set_val(matrix, mat_val, sizeof(mat_val));
+	gs_effect_set_texture(image, texture);
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
-		technique_beginpass(tech, i);
+		gs_technique_begin_pass(tech, i);
 		gs_draw_sprite(texture, 0, width, height);
-		technique_endpass(tech);
+		gs_technique_end_pass(tech);
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 
 	video->textures_output[cur_texture] = true;
 }
 
-static inline void set_eparam(effect_t effect, const char *name, float val)
+static inline void set_eparam(gs_effect_t effect, const char *name, float val)
 {
-	eparam_t param = effect_getparambyname(effect, name);
-	effect_setfloat(param, val);
+	gs_eparam_t param = gs_effect_get_param_by_name(effect, name);
+	gs_effect_set_float(param, val);
 }
 
 static void render_convert_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	texture_t   texture = video->output_textures[prev_texture];
-	texture_t   target  = video->convert_textures[cur_texture];
-	float       fwidth  = (float)video->output_width;
-	float       fheight = (float)video->output_height;
-	size_t      passes, i;
+	gs_texture_t texture = video->output_textures[prev_texture];
+	gs_texture_t target  = video->convert_textures[cur_texture];
+	float        fwidth  = (float)video->output_width;
+	float        fheight = (float)video->output_height;
+	size_t       passes, i;
 
-	effect_t    effect  = video->conversion_effect;
-	eparam_t    image   = effect_getparambyname(effect, "image");
-	technique_t tech    = effect_gettechnique(effect,
+	gs_effect_t    effect  = video->conversion_effect;
+	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
+	gs_technique_t tech    = gs_effect_get_technique(effect,
 			video->conversion_tech);
 
 	if (!video->textures_output[prev_texture])
@@ -189,19 +190,19 @@ static void render_convert_texture(struct obs_core_video *video,
 	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
 	set_eparam(effect, "input_height", (float)video->conversion_height);
 
-	effect_settexture(image, texture);
+	gs_effect_set_texture(image, texture);
 
-	gs_setrendertarget(target, NULL);
+	gs_set_render_target(target, NULL);
 	set_render_size(video->output_width, video->conversion_height);
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
-		technique_beginpass(tech, i);
+		gs_technique_begin_pass(tech, i);
 		gs_draw_sprite(texture, 0, video->output_width,
 				video->conversion_height);
-		technique_endpass(tech);
+		gs_technique_end_pass(tech);
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 
 	video->textures_converted[cur_texture] = true;
 }
@@ -209,9 +210,9 @@ static void render_convert_texture(struct obs_core_video *video,
 static inline void stage_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	texture_t   texture;
+	gs_texture_t   texture;
 	bool        texture_ready;
-	stagesurf_t copy = video->copy_surfaces[cur_texture];
+	gs_stagesurf_t copy = video->copy_surfaces[cur_texture];
 
 	if (video->gpu_conversion) {
 		texture = video->convert_textures[prev_texture];
@@ -234,10 +235,10 @@ static inline void stage_output_texture(struct obs_core_video *video,
 static inline void render_video(struct obs_core_video *video, int cur_texture,
 		int prev_texture)
 {
-	gs_beginscene();
+	gs_begin_scene();
 
-	gs_enable_depthtest(false);
-	gs_setcullmode(GS_NEITHER);
+	gs_enable_depth_test(false);
+	gs_set_cull_mode(GS_NEITHER);
 
 	render_main_texture(video, cur_texture);
 	render_output_texture(video, cur_texture, prev_texture);
@@ -246,21 +247,21 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 
 	stage_output_texture(video, cur_texture, prev_texture);
 
-	gs_setrendertarget(NULL, NULL);
+	gs_set_render_target(NULL, NULL);
 	gs_enable_blending(true);
 
-	gs_endscene();
+	gs_end_scene();
 }
 
 static inline bool download_frame(struct obs_core_video *video,
 		int prev_texture, struct video_data *frame)
 {
-	stagesurf_t surface = video->copy_surfaces[prev_texture];
+	gs_stagesurf_t surface = video->copy_surfaces[prev_texture];
 
 	if (!video->textures_copied[prev_texture])
 		return false;
 
-	if (!stagesurface_map(surface, &frame->data[0], &frame->linesize[0]))
+	if (!gs_stagesurface_map(surface, &frame->data[0], &frame->linesize[0]))
 		return false;
 
 	video->mapped_surface = surface;
@@ -413,12 +414,12 @@ static inline void output_frame(uint64_t timestamp)
 	memset(&frame, 0, sizeof(struct video_data));
 	frame.timestamp = timestamp;
 
-	gs_entercontext(video->graphics);
+	gs_enter_context(video->graphics);
 
 	render_video(video, cur_texture, prev_texture);
 	frame_ready = download_frame(video, prev_texture, &frame);
 
-	gs_leavecontext();
+	gs_leave_context();
 
 	if (frame_ready)
 		output_video_data(video, &frame, cur_texture);

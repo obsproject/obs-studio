@@ -46,28 +46,28 @@ enum effect_section {
 
 /* ------------------------------------------------------------------------- */
 
-struct effect_param {
+struct gs_effect_param {
 	char *name;
 	enum effect_section section;
 
-	enum shader_param_type type;
+	enum gs_shader_param_type type;
 
 	bool changed;
 	DARRAY(uint8_t) cur_val;
 	DARRAY(uint8_t) default_val;
 
-	effect_t effect;
+	gs_effect_t effect;
 
 	/*char *full_name;
 	float scroller_min, scroller_max, scroller_inc, scroller_mul;*/
 };
 
-static inline void effect_param_init(struct effect_param *param)
+static inline void effect_param_init(struct gs_effect_param *param)
 {
-	memset(param, 0, sizeof(struct effect_param));
+	memset(param, 0, sizeof(struct gs_effect_param));
 }
 
-static inline void effect_param_free(struct effect_param *param)
+static inline void effect_param_free(struct gs_effect_param *param)
 {
 	bfree(param->name);
 	//bfree(param->full_name);
@@ -75,56 +75,56 @@ static inline void effect_param_free(struct effect_param *param)
 	da_free(param->default_val);
 }
 
-EXPORT void effect_param_parse_property(eparam_t param,
+EXPORT void effect_param_parse_property(gs_eparam_t param,
 		const char *property);
 
 /* ------------------------------------------------------------------------- */
 
 struct pass_shaderparam {
-	struct effect_param *eparam;
-	sparam_t sparam;
+	struct gs_effect_param *eparam;
+	gs_sparam_t sparam;
 };
 
-struct effect_pass {
+struct gs_effect_pass {
 	char *name;
 	enum effect_section section;
 
-	shader_t vertshader;
-	shader_t pixelshader;
+	gs_shader_t vertshader;
+	gs_shader_t pixelshader;
 	DARRAY(struct pass_shaderparam) vertshader_params;
 	DARRAY(struct pass_shaderparam) pixelshader_params;
 };
 
-static inline void effect_pass_init(struct effect_pass *pass)
+static inline void effect_pass_init(struct gs_effect_pass *pass)
 {
-	memset(pass, 0, sizeof(struct effect_pass));
+	memset(pass, 0, sizeof(struct gs_effect_pass));
 }
 
-static inline void effect_pass_free(struct effect_pass *pass)
+static inline void effect_pass_free(struct gs_effect_pass *pass)
 {
 	bfree(pass->name);
 	da_free(pass->vertshader_params);
 	da_free(pass->pixelshader_params);
-	shader_destroy(pass->vertshader);
-	shader_destroy(pass->pixelshader);
+	gs_shader_destroy(pass->vertshader);
+	gs_shader_destroy(pass->pixelshader);
 }
 
 /* ------------------------------------------------------------------------- */
 
-struct effect_technique {
+struct gs_effect_technique {
 	char *name;
 	enum effect_section section;
 	struct gs_effect *effect;
 
-	DARRAY(struct effect_pass) passes;
+	DARRAY(struct gs_effect_pass) passes;
 };
 
-static inline void effect_technique_init(struct effect_technique *t)
+static inline void effect_technique_init(struct gs_effect_technique *t)
 {
-	memset(t, 0, sizeof(struct effect_technique));
+	memset(t, 0, sizeof(struct gs_effect_technique));
 }
 
-static inline void effect_technique_free(struct effect_technique *t)
+static inline void effect_technique_free(struct gs_effect_technique *t)
 {
 	size_t i;
 	for (i = 0; i < t->passes.num; i++)
@@ -139,22 +139,22 @@ struct gs_effect {
 	bool processing;
 	char *effect_path, *effect_dir;
 
-	DARRAY(struct effect_param) params;
-	DARRAY(struct effect_technique) techniques;
+	DARRAY(struct gs_effect_param) params;
+	DARRAY(struct gs_effect_technique) techniques;
 
-	struct effect_technique *cur_technique;
-	struct effect_pass *cur_pass;
+	struct gs_effect_technique *cur_technique;
+	struct gs_effect_pass *cur_pass;
 
-	eparam_t view_proj, world, scale;
+	gs_eparam_t view_proj, world, scale;
 	graphics_t graphics;
 };
 
-static inline void effect_init(effect_t effect)
+static inline void effect_init(gs_effect_t effect)
 {
 	memset(effect, 0, sizeof(struct gs_effect));
 }
 
-static inline void effect_free(effect_t effect)
+static inline void effect_free(gs_effect_t effect)
 {
 	size_t i;
 	for (i = 0; i < effect->params.num; i++)
@@ -171,8 +171,8 @@ static inline void effect_free(effect_t effect)
 	effect->effect_dir = NULL;
 }
 
-EXPORT void effect_upload_params(effect_t effect, bool changed_only);
-EXPORT void effect_upload_shader_params(effect_t effect, shader_t shader,
+EXPORT void effect_upload_params(gs_effect_t effect, bool changed_only);
+EXPORT void effect_upload_shader_params(gs_effect_t effect, gs_shader_t shader,
 		struct darray *pass_params, bool changed_only);
 
 #ifdef __cplusplus

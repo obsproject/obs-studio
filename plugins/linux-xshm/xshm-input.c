@@ -35,7 +35,7 @@ struct xshm_data {
 	int_fast32_t width, height;
 
 	xshm_t *xshm;
-	texture_t texture;
+	gs_texture_t texture;
 
 	bool show_cursor;
 	xcursor_t *cursor;
@@ -53,8 +53,8 @@ static void xshm_resize_texture(struct xshm_data *data)
 	obs_enter_graphics();
 
 	if (data->texture)
-		texture_destroy(data->texture);
-	data->texture = gs_create_texture(data->width, data->height,
+		gs_texture_destroy(data->texture);
+	data->texture = gs_texture_create(data->width, data->height,
 		GS_BGRA, 1, NULL, GS_DYNAMIC);
 
 	obs_leave_graphics();
@@ -186,7 +186,7 @@ static void xshm_destroy(void *vptr)
 	obs_enter_graphics();
 
 	if (data->texture)
-		texture_destroy(data->texture);
+		gs_texture_destroy(data->texture);
 	if (data->cursor)
 		xcursor_destroy(data->cursor);
 
@@ -249,7 +249,7 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	XShmGetImage(data->dpy, XRootWindowOfScreen(data->screen),
 		data->xshm->image, data->x_org, data->y_org, AllPlanes);
-	texture_setimage(data->texture, (void *) data->xshm->image->data,
+	gs_texture_set_image(data->texture, (void *) data->xshm->image->data,
 		data->width * 4, false);
 
 	xcursor_tick(data->cursor);
@@ -260,15 +260,15 @@ static void xshm_video_tick(void *vptr, float seconds)
 /**
  * Render the capture data
  */
-static void xshm_video_render(void *vptr, effect_t effect)
+static void xshm_video_render(void *vptr, gs_effect_t effect)
 {
 	XSHM_DATA(vptr);
 
 	if (!data->xshm)
 		return;
 
-	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(image, data->texture);
+	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(image, data->texture);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(data->texture, 0, 0, 0);

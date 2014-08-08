@@ -137,8 +137,8 @@ struct XCompcapMain_private
 
 	Pixmap pixmap;
 	GLXPixmap glxpixmap;
-	texture_t tex;
-	texture_t gltex;
+	gs_texture_t tex;
+	gs_texture_t gltex;
 
 	pthread_mutex_t lock;
 	pthread_mutexattr_t lockattr;
@@ -160,7 +160,7 @@ XCompcapMain::~XCompcapMain()
 	ObsGsContextHolder obsctx;
 
 	if (p->tex) {
-		texture_destroy(p->tex);
+		gs_texture_destroy(p->tex);
 		p->tex = 0;
 	}
 
@@ -210,7 +210,7 @@ static Window getWindowFromString(std::string wstr)
 static void xcc_cleanup(XCompcapMain_private *p)
 {
 	if (p->gltex) {
-		texture_destroy(p->gltex);
+		gs_texture_destroy(p->gltex);
 		p->gltex = 0;
 	}
 
@@ -303,7 +303,7 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 	}
 
 	if (p->tex)
-		texture_destroy(p->tex);
+		gs_texture_destroy(p->tex);
 
 	uint8_t *texData = new uint8_t[width() * height() * 4];
 
@@ -316,13 +316,13 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 
 	const uint8_t* texDataArr[] = { texData, 0 };
 
-	p->tex = gs_create_texture(width(), height(), cf, 1,
+	p->tex = gs_texture_create(width(), height(), cf, 1,
 			texDataArr, 0);
 
 	delete[] texData;
 
 	if (p->swapRedBlue) {
-		GLuint tex = *(GLuint*)texture_getobj(p->tex);
+		GLuint tex = *(GLuint*)gs_texture_get_obj(p->tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
@@ -387,10 +387,10 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 
 	XFree(configs);
 
-	p->gltex = gs_create_texture(p->width, p->height, cf, 1, 0,
+	p->gltex = gs_texture_create(p->width, p->height, cf, 1, 0,
 			GS_GL_DUMMYTEX);
 
-	GLuint gltex = *(GLuint*)texture_getobj(p->gltex);
+	GLuint gltex = *(GLuint*)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
 	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -430,15 +430,15 @@ void XCompcapMain::tick(float seconds)
 	obs_leave_graphics();
 }
 
-void XCompcapMain::render(effect_t effect)
+void XCompcapMain::render(gs_effect_t effect)
 {
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked() || !p->tex)
 		return;
 
-	eparam_t image = effect_getparambyname(effect, "image");
-	effect_settexture(image, p->tex);
+	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(image, p->tex);
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);

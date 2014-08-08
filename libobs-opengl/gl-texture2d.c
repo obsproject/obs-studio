@@ -26,7 +26,7 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, const uint8_t **data)
 	bool     success;
 
 	if (!num_levels)
-		num_levels = gs_num_total_levels(tex->width, tex->height);
+		num_levels = gs_get_total_levels(tex->width, tex->height);
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
@@ -74,7 +74,7 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 	return success;
 }
 
-texture_t device_create_texture(device_t device, uint32_t width,
+gs_texture_t device_texture_create(gs_device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
 		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
@@ -87,10 +87,10 @@ texture_t device_create_texture(device_t device, uint32_t width,
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_type            = get_gl_format_type(color_format);
 	tex->base.gl_target          = GL_TEXTURE_2D;
-	tex->base.is_dynamic         = (flags & GS_DYNAMIC)      != 0;
-	tex->base.is_render_target   = (flags & GS_RENDERTARGET) != 0;
-	tex->base.is_dummy           = (flags & GS_GL_DUMMYTEX)  != 0;
-	tex->base.gen_mipmaps        = (flags & GS_BUILDMIPMAPS) != 0;
+	tex->base.is_dynamic         = (flags & GS_DYNAMIC)       != 0;
+	tex->base.is_render_target   = (flags & GS_RENDER_TARGET) != 0;
+	tex->base.is_dummy           = (flags & GS_GL_DUMMYTEX)   != 0;
+	tex->base.gen_mipmaps        = (flags & GS_BUILD_MIPMAPS) != 0;
 	tex->width                   = width;
 	tex->height                  = height;
 
@@ -104,15 +104,15 @@ texture_t device_create_texture(device_t device, uint32_t width,
 			goto fail;
 	}
 
-	return (texture_t)tex;
+	return (gs_texture_t)tex;
 
 fail:
-	texture_destroy((texture_t)tex);
-	blog(LOG_ERROR, "device_create_texture (GL) failed");
+	gs_texture_destroy((gs_texture_t)tex);
+	blog(LOG_ERROR, "device_texture_create (GL) failed");
 	return NULL;
 }
 
-static inline bool is_texture_2d(texture_t tex, const char *func)
+static inline bool is_texture_2d(gs_texture_t tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;
 	if (!is_tex2d)
@@ -120,17 +120,17 @@ static inline bool is_texture_2d(texture_t tex, const char *func)
 	return is_tex2d;
 }
 
-void texture_destroy(texture_t tex)
+void gs_texture_destroy(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!tex)
 		return;
 
-	if (!is_texture_2d(tex, "texture_destroy"))
+	if (!is_texture_2d(tex, "gs_texture_destroy"))
 		return;
 
 	if (tex->cur_sampler)
-		samplerstate_destroy(tex->cur_sampler);
+		gs_samplerstate_destroy(tex->cur_sampler);
 
 	if (!tex->is_dummy && tex->is_dynamic && tex2d->unpack_buffer)
 		gl_delete_buffers(1, &tex2d->unpack_buffer);
@@ -141,34 +141,34 @@ void texture_destroy(texture_t tex)
 	bfree(tex);
 }
 
-uint32_t texture_getwidth(texture_t tex)
+uint32_t gs_texture_get_width(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
-	if (!is_texture_2d(tex, "texture_getwidth"))
+	if (!is_texture_2d(tex, "gs_texture_get_width"))
 		return 0;
 
 	return tex2d->width;
 }
 
-uint32_t texture_getheight(texture_t tex)
+uint32_t gs_texture_get_height(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
-	if (!is_texture_2d(tex, "texture_getheight"))
+	if (!is_texture_2d(tex, "gs_texture_get_height"))
 		return 0;
 
 	return tex2d->height;
 }
 
-enum gs_color_format texture_getcolorformat(texture_t tex)
+enum gs_color_format gs_texture_get_color_format(gs_texture_t tex)
 {
 	return tex->format;
 }
 
-bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
+bool gs_texture_map(gs_texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 
-	if (!is_texture_2d(tex, "texture_map"))
+	if (!is_texture_2d(tex, "gs_texture_map"))
 		goto fail;
 
 	if (!tex2d->base.is_dynamic) {
@@ -190,14 +190,14 @@ bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
 	return true;
 
 fail:
-	blog(LOG_ERROR, "texture_map (GL) failed");
+	blog(LOG_ERROR, "gs_texture_map (GL) failed");
 	return false;
 }
 
-void texture_unmap(texture_t tex)
+void gs_texture_unmap(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
-	if (!is_texture_2d(tex, "texture_unmap"))
+	if (!is_texture_2d(tex, "gs_texture_unmap"))
 		goto failed;
 
 	if (!gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, tex2d->unpack_buffer))
@@ -223,25 +223,25 @@ void texture_unmap(texture_t tex)
 failed:
 	gl_bind_buffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	gl_bind_texture(GL_TEXTURE_2D, 0);
-	blog(LOG_ERROR, "texture_unmap (GL) failed");
+	blog(LOG_ERROR, "gs_texture_unmap (GL) failed");
 }
 
-bool texture_isrect(texture_t tex)
+bool gs_texture_is_rect(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
-	if (!is_texture_2d(tex, "texture_unmap")) {
-		blog(LOG_ERROR, "texture_isrect (GL) failed");
+	if (!is_texture_2d(tex, "gs_texture_unmap")) {
+		blog(LOG_ERROR, "gs_texture_is_rect (GL) failed");
 		return false;
 	}
 
 	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
 }
 
-void *texture_getobj(texture_t tex)
+void *gs_texture_get_obj(gs_texture_t tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
-	if (!is_texture_2d(tex, "texture_unmap")) {
-		blog(LOG_ERROR, "texture_getobj (GL) failed");
+	if (!is_texture_2d(tex, "gs_texture_unmap")) {
+		blog(LOG_ERROR, "gs_texture_get_obj (GL) failed");
 		return NULL;
 	}
 

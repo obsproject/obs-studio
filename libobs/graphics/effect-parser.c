@@ -919,7 +919,7 @@ static bool ep_compile(struct effect_parser *ep);
 
 extern const char *gs_preprocessor_name(void);
 
-bool ep_parse(struct effect_parser *ep, effect_t effect,
+bool ep_parse(struct effect_parser *ep, gs_effect_t effect,
               const char *effect_string, const char *file)
 {
 	bool success;
@@ -1283,7 +1283,7 @@ static void ep_makeshaderstring(struct effect_parser *ep,
 
 static void ep_compile_param(struct effect_parser *ep, size_t idx)
 {
-	struct effect_param *param;
+	struct gs_effect_param *param;
 	struct ep_param *param_in;
 
 	param = ep->effect->params.array+idx;
@@ -1296,21 +1296,21 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 	da_move(param->default_val, param_in->default_val);
 
 	if (strcmp(param_in->type, "bool") == 0)
-		param->type = SHADER_PARAM_BOOL;
+		param->type = GS_SHADER_PARAM_BOOL;
 	else if (strcmp(param_in->type, "float") == 0)
-		param->type = SHADER_PARAM_FLOAT;
+		param->type = GS_SHADER_PARAM_FLOAT;
 	else if (strcmp(param_in->type, "int") == 0)
-		param->type = SHADER_PARAM_INT;
+		param->type = GS_SHADER_PARAM_INT;
 	else if (strcmp(param_in->type, "float2") == 0)
-		param->type = SHADER_PARAM_VEC2;
+		param->type = GS_SHADER_PARAM_VEC2;
 	else if (strcmp(param_in->type, "float3") == 0)
-		param->type = SHADER_PARAM_VEC3;
+		param->type = GS_SHADER_PARAM_VEC3;
 	else if (strcmp(param_in->type, "float4") == 0)
-		param->type = SHADER_PARAM_VEC4;
+		param->type = GS_SHADER_PARAM_VEC4;
 	else if (strcmp(param_in->type, "float4x4") == 0)
-		param->type = SHADER_PARAM_MATRIX4X4;
+		param->type = GS_SHADER_PARAM_MATRIX4X4;
 	else if (param_in->is_texture)
-		param->type = SHADER_PARAM_TEXTURE;
+		param->type = GS_SHADER_PARAM_TEXTURE;
 
 	if (strcmp(param_in->name, "ViewProj") == 0)
 		ep->effect->view_proj = param;
@@ -1320,7 +1320,7 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 
 static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 		struct darray *pass_params, struct darray *used_params,
-		shader_t shader)
+		gs_shader_t shader)
 {
 	size_t i;
 	darray_resize(sizeof(struct pass_shaderparam), pass_params,
@@ -1334,9 +1334,9 @@ static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 		param = darray_item(sizeof(struct pass_shaderparam),
 				pass_params, i);
 
-		param->eparam = effect_getparambyname(ep->effect,
+		param->eparam = gs_effect_get_param_by_name(ep->effect,
 				param_name->array);
-		param->sparam = shader_getparambyname(shader,
+		param->sparam = gs_shader_get_param_by_name(shader,
 				param_name->array);
 
 		if (!param->sparam) {
@@ -1349,15 +1349,15 @@ static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 }
 
 static inline bool ep_compile_pass_shader(struct effect_parser *ep,
-		struct effect_technique *tech,
-		struct effect_pass *pass, struct ep_pass *pass_in,
-		size_t pass_idx, enum shader_type type)
+		struct gs_effect_technique *tech,
+		struct gs_effect_pass *pass, struct ep_pass *pass_in,
+		size_t pass_idx, enum gs_shader_type type)
 {
 	struct dstr shader_str;
 	struct dstr location;
 	struct darray used_params; /* struct dstr */
 	struct darray *pass_params = NULL; /* struct pass_shaderparam */
-	shader_t shader = NULL;
+	gs_shader_t shader = NULL;
 	bool success = true;
 
 	dstr_init(&shader_str);
@@ -1365,9 +1365,9 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	dstr_init(&location);
 
 	dstr_copy(&location, ep->cfp.lex.file);
-	if (type == SHADER_VERTEX)
+	if (type == GS_SHADER_VERTEX)
 		dstr_cat(&location, " (Vertex ");
-	else if (type == SHADER_PIXEL)
+	else if (type == GS_SHADER_PIXEL)
 		dstr_cat(&location, " (Pixel ");
 	/*else if (type == SHADER_GEOMETRY)
 		dstr_cat(&location, " (Geometry ");*/
@@ -1375,20 +1375,20 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	dstr_catf(&location, "shader, technique %s, pass %u)", tech->name,
 			pass_idx);
 
-	if (type == SHADER_VERTEX) {
+	if (type == GS_SHADER_VERTEX) {
 		ep_makeshaderstring(ep, &shader_str,
 				&pass_in->vertex_program.da, &used_params);
 
-		pass->vertshader = gs_create_vertexshader(shader_str.array,
+		pass->vertshader = gs_vertexshader_create(shader_str.array,
 				location.array, NULL);
 
 		shader = pass->vertshader;
 		pass_params = &pass->vertshader_params.da;
-	} else if (type == SHADER_PIXEL) {
+	} else if (type == GS_SHADER_PIXEL) {
 		ep_makeshaderstring(ep, &shader_str,
 				&pass_in->fragment_program.da, &used_params);
 
-		pass->pixelshader = gs_create_pixelshader(shader_str.array,
+		pass->pixelshader = gs_pixelshader_create(shader_str.array,
 				location.array, NULL);
 
 		shader = pass->pixelshader;
@@ -1418,11 +1418,11 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 }
 
 static bool ep_compile_pass(struct effect_parser *ep,
-		struct effect_technique *tech,
+		struct gs_effect_technique *tech,
 		struct ep_technique *tech_in,
 		size_t idx)
 {
-	struct effect_pass *pass;
+	struct gs_effect_pass *pass;
 	struct ep_pass *pass_in;
 	bool success = true;
 
@@ -1433,11 +1433,11 @@ static bool ep_compile_pass(struct effect_parser *ep,
 	pass->section = EFFECT_PASS;
 
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
-				SHADER_VERTEX))
+				GS_SHADER_VERTEX))
 		success = false;
 
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
-				SHADER_PIXEL))
+				GS_SHADER_PIXEL))
 		success = false;
 
 	return success;
@@ -1445,7 +1445,7 @@ static bool ep_compile_pass(struct effect_parser *ep,
 
 static inline bool ep_compile_technique(struct effect_parser *ep, size_t idx)
 {
-	struct effect_technique *tech;
+	struct gs_effect_technique *tech;
 	struct ep_technique *tech_in;
 	bool success = true;
 	size_t i;

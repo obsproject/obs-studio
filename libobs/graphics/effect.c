@@ -21,7 +21,7 @@
 #include "vec3.h"
 #include "vec4.h"
 
-void effect_destroy(effect_t effect)
+void gs_effect_destroy(gs_effect_t effect)
 {
 	if (effect) {
 		effect_free(effect);
@@ -29,12 +29,12 @@ void effect_destroy(effect_t effect)
 	}
 }
 
-technique_t effect_gettechnique(effect_t effect, const char *name)
+gs_technique_t gs_effect_get_technique(gs_effect_t effect, const char *name)
 {
 	if (!effect) return NULL;
 
 	for (size_t i = 0; i < effect->techniques.num; i++) {
-		struct effect_technique *tech = effect->techniques.array+i;
+		struct gs_effect_technique *tech = effect->techniques.array+i;
 		if (strcmp(tech->name, name) == 0)
 			return tech;
 	}
@@ -42,7 +42,7 @@ technique_t effect_gettechnique(effect_t effect, const char *name)
 	return NULL;
 }
 
-size_t technique_begin(technique_t tech)
+size_t gs_technique_begin(gs_technique_t tech)
 {
 	if (!tech) return 0;
 
@@ -52,12 +52,12 @@ size_t technique_begin(technique_t tech)
 	return tech->passes.num;
 }
 
-void technique_end(technique_t tech)
+void gs_technique_end(gs_technique_t tech)
 {
 	if (!tech) return;
 
 	struct gs_effect *effect = tech->effect;
-	struct effect_param *params = effect->params.array;
+	struct gs_effect_param *params = effect->params.array;
 	size_t i;
 
 	gs_load_vertexshader(NULL);
@@ -67,7 +67,7 @@ void technique_end(technique_t tech)
 	tech->effect->graphics->cur_effect = NULL;
 
 	for (i = 0; i < effect->params.num; i++) {
-		struct effect_param *param = params+i;
+		struct gs_effect_param *param = params+i;
 
 		da_free(param->cur_val);
 		param->changed = false;
@@ -90,8 +90,8 @@ static void upload_shader_params(struct darray *pass_params, bool changed_only)
 
 	for (i = 0; i < pass_params->num; i++) {
 		struct pass_shaderparam *param = params+i;
-		struct effect_param *eparam = param->eparam;
-		sparam_t sparam = param->sparam;
+		struct gs_effect_param *eparam = param->eparam;
+		gs_sparam_t sparam = param->sparam;
 
 		if (changed_only && !eparam->changed)
 			continue;
@@ -103,7 +103,7 @@ static void upload_shader_params(struct darray *pass_params, bool changed_only)
 				continue;
 		}
 
-		shader_setval(sparam, eparam->cur_val.array,
+		gs_shader_set_val(sparam, eparam->cur_val.array,
 				eparam->cur_val.num);
 	}
 }
@@ -125,16 +125,16 @@ static inline void upload_parameters(struct gs_effect *effect,
 	reset_params(pshader_params);
 }
 
-void effect_updateparams(effect_t effect)	
+void gs_effect_update_params(gs_effect_t effect)	
 {
 	if (effect)
 		upload_parameters(effect, true);
 }
 
-bool technique_beginpass(technique_t tech, size_t idx)
+bool gs_technique_begin_pass(gs_technique_t tech, size_t idx)
 {
-	struct effect_pass *passes;
-	struct effect_pass *cur_pass;
+	struct gs_effect_pass *passes;
+	struct gs_effect_pass *cur_pass;
 
 	if (!tech || idx >= tech->passes.num)
 		return false;
@@ -150,16 +150,16 @@ bool technique_beginpass(technique_t tech, size_t idx)
 	return true;
 }
 
-bool technique_beginpassbyname(technique_t tech,
+bool gs_technique_begin_pass_by_name(gs_technique_t tech,
 		const char *name)
 {
 	if (!tech)
 		return false;
 
 	for (size_t i = 0; i < tech->passes.num; i++) {
-		struct effect_pass *pass = tech->passes.array+i;
+		struct gs_effect_pass *pass = tech->passes.array+i;
 		if (strcmp(pass->name, name) == 0) {
-			technique_beginpass(tech, i);
+			gs_technique_begin_pass(tech, i);
 			return true;
 		}
 	}
@@ -173,19 +173,19 @@ static inline void clear_tex_params(struct darray *in_params)
 
 	for (size_t i = 0; i < in_params->num; i++) {
 		struct pass_shaderparam *param = params+i;
-		struct shader_param_info info;
+		struct gs_shader_param_info info;
 
-		shader_getparaminfo(param->sparam, &info);
-		if (info.type == SHADER_PARAM_TEXTURE)
-			shader_settexture(param->sparam, NULL);
+		gs_shader_get_param_info(param->sparam, &info);
+		if (info.type == GS_SHADER_PARAM_TEXTURE)
+			gs_shader_set_texture(param->sparam, NULL);
 	}
 }
 
-void technique_endpass(technique_t tech)
+void gs_technique_end_pass(gs_technique_t tech)
 {
 	if (!tech) return;
 
-	struct effect_pass *pass = tech->effect->cur_pass;
+	struct gs_effect_pass *pass = tech->effect->cur_pass;
 	if (!pass)
 		return;
 
@@ -194,30 +194,30 @@ void technique_endpass(technique_t tech)
 	tech->effect->cur_pass = NULL;
 }
 
-size_t effect_numparams(effect_t effect)
+size_t gs_effect_get_num_params(gs_effect_t effect)
 {
 	return effect ? effect->params.num : 0;
 }
 
-eparam_t effect_getparambyidx(effect_t effect, size_t param)
+gs_eparam_t gs_effect_get_param_by_idx(gs_effect_t effect, size_t param)
 {
 	if (!effect) return NULL;
 
-	struct effect_param *params = effect->params.array;
+	struct gs_effect_param *params = effect->params.array;
 	if (param >= effect->params.num)
 		return NULL;
 
 	return params+param;
 }
 
-eparam_t effect_getparambyname(effect_t effect, const char *name)
+gs_eparam_t gs_effect_get_param_by_name(gs_effect_t effect, const char *name)
 {
 	if (!effect) return NULL;
 
-	struct effect_param *params = effect->params.array;
+	struct gs_effect_param *params = effect->params.array;
 
 	for (size_t i = 0; i < effect->params.num; i++) {
-		struct effect_param *param = params+i;
+		struct gs_effect_param *param = params+i;
 
 		if (strcmp(param->name, name) == 0)
 			return param;
@@ -226,17 +226,18 @@ eparam_t effect_getparambyname(effect_t effect, const char *name)
 	return NULL;
 }
 
-eparam_t effect_getviewprojmatrix(effect_t effect)
+gs_eparam_t gs_effect_get_viewproj_matrix(gs_effect_t effect)
 {
 	return effect ? effect->view_proj : NULL;
 }
 
-eparam_t effect_getworldmatrix(effect_t effect)
+gs_eparam_t gs_effect_get_world_matrix(gs_effect_t effect)
 {
 	return effect ? effect->world : NULL;
 }
 
-void effect_getparaminfo(eparam_t param, struct effect_param_info *info)
+void gs_effect_get_param_info(gs_eparam_t param,
+		struct gs_effect_param_info *info)
 {
 	if (!param)
 		return;
@@ -245,7 +246,7 @@ void effect_getparaminfo(eparam_t param, struct effect_param_info *info)
 	info->type = param->type;
 }
 
-static inline void effect_setval_inline(eparam_t param,
+static inline void effect_setval_inline(gs_eparam_t param,
 		const void *data, size_t size)
 {
 	bool size_changed;
@@ -271,52 +272,52 @@ static inline void effect_setval_inline(eparam_t param,
 	}
 }
 
-void effect_setbool(eparam_t param, bool val)
+void gs_effect_set_bool(gs_eparam_t param, bool val)
 {
 	effect_setval_inline(param, &val, sizeof(bool));
 }
 
-void effect_setfloat(eparam_t param, float val)
+void gs_effect_set_float(gs_eparam_t param, float val)
 {
 	effect_setval_inline(param, &val, sizeof(float));
 }
 
-void effect_setint(eparam_t param, int val)
+void gs_effect_set_int(gs_eparam_t param, int val)
 {
 	effect_setval_inline(param, &val, sizeof(int));
 }
 
-void effect_setmatrix4(eparam_t param, const struct matrix4 *val)
+void gs_effect_set_matrix4(gs_eparam_t param, const struct matrix4 *val)
 {
 	effect_setval_inline(param, val, sizeof(struct matrix4));
 }
 
-void effect_setvec2(eparam_t param, const struct vec2 *val)
+void gs_effect_set_vec2(gs_eparam_t param, const struct vec2 *val)
 {
 	effect_setval_inline(param, val, sizeof(struct vec2));
 }
 
-void effect_setvec3(eparam_t param, const struct vec3 *val)
+void gs_effect_set_vec3(gs_eparam_t param, const struct vec3 *val)
 {
 	effect_setval_inline(param, val, sizeof(float) * 3);
 }
 
-void effect_setvec4(eparam_t param, const struct vec4 *val)
+void gs_effect_set_vec4(gs_eparam_t param, const struct vec4 *val)
 {
 	effect_setval_inline(param, val, sizeof(struct vec4));
 }
 
-void effect_settexture(eparam_t param, texture_t val)
+void gs_effect_set_texture(gs_eparam_t param, gs_texture_t val)
 {
-	effect_setval_inline(param, &val, sizeof(texture_t));
+	effect_setval_inline(param, &val, sizeof(gs_texture_t));
 }
 
-void effect_setval(eparam_t param, const void *val, size_t size)
+void gs_effect_set_val(gs_eparam_t param, const void *val, size_t size)
 {
 	effect_setval_inline(param, val, size);
 }
 
-void effect_setdefault(eparam_t param)
+void gs_effect_set_default(gs_eparam_t param)
 {
 	effect_setval_inline(param, param->default_val.array,
 			param->default_val.num);

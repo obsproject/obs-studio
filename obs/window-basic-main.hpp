@@ -79,8 +79,8 @@ private:
 	obs_encoder_t aac = nullptr;
 	obs_encoder_t x264 = nullptr;
 
-	vertbuffer_t  box = nullptr;
-	vertbuffer_t  circle = nullptr;
+	gs_vertbuffer_t box = nullptr;
+	gs_vertbuffer_t circle = nullptr;
 
 	bool          sceneChanging = false;
 

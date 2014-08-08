@@ -241,10 +241,10 @@ void obs_source_destroy(struct obs_source *source)
 	for (i = 0; i < source->video_frames.num; i++)
 		obs_source_frame_destroy(source->video_frames.array[i]);
 
-	gs_entercontext(obs->video.graphics);
-	texrender_destroy(source->async_convert_texrender);
-	texture_destroy(source->async_texture);
-	gs_leavecontext();
+	gs_enter_context(obs->video.graphics);
+	gs_texrender_destroy(source->async_convert_texrender);
+	gs_texture_destroy(source->async_texture);
+	gs_leave_context();
 
 	for (i = 0; i < MAX_AV_PLANES; i++)
 		bfree(source->audio_data.data[i]);
@@ -252,7 +252,7 @@ void obs_source_destroy(struct obs_source *source)
 	audio_line_destroy(source->audio_line);
 	audio_resampler_destroy(source->resampler);
 
-	texrender_destroy(source->filter_texrender);
+	gs_texrender_destroy(source->filter_texrender);
 	da_free(source->video_frames);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
@@ -499,7 +499,7 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 
 	/* reset the filter render texture information once every frame */
 	if (source->filter_texrender)
-		texrender_reset(source->filter_texrender);
+		gs_texrender_reset(source->filter_texrender);
 
 	if (source->context.data && source->info.video_tick)
 		source->info.video_tick(source->context.data, seconds);
@@ -772,17 +772,17 @@ static inline bool set_async_texture_size(struct obs_source *source,
 			return true;
 	}
 
-	texture_destroy(source->async_texture);
-	texrender_destroy(source->async_convert_texrender);
+	gs_texture_destroy(source->async_texture);
+	gs_texrender_destroy(source->async_convert_texrender);
 	source->async_convert_texrender = NULL;
 
 	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
 		source->async_gpu_conversion = true;
 
 		source->async_convert_texrender =
-			texrender_create(GS_BGRX, GS_ZS_NONE);
+			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
 
-		source->async_texture = gs_create_texture(
+		source->async_texture = gs_texture_create(
 				source->async_convert_width,
 				source->async_convert_height,
 				source->async_texture_format,
@@ -793,7 +793,7 @@ static inline bool set_async_texture_size(struct obs_source *source,
 				frame->format);
 		source->async_gpu_conversion = false;
 
-		source->async_texture = gs_create_texture(
+		source->async_texture = gs_texture_create(
 				frame->width, frame->height,
 				format, 1, NULL, GS_DYNAMIC);
 	}
@@ -806,18 +806,18 @@ static inline bool set_async_texture_size(struct obs_source *source,
 	return true;
 }
 
-static void upload_raw_frame(texture_t tex,
+static void upload_raw_frame(gs_texture_t tex,
 		const struct obs_source_frame *frame)
 {
 	switch (get_convert_type(frame->format)) {
 		case CONVERT_422_U:
 		case CONVERT_422_Y:
-			texture_setimage(tex, frame->data[0],
+			gs_texture_set_image(tex, frame->data[0],
 					frame->linesize[0], false);
 			break;
 
 		case CONVERT_420:
-			texture_setimage(tex, frame->data[0],
+			gs_texture_set_image(tex, frame->data[0],
 					frame->width, false);
 			break;
 
@@ -860,19 +860,19 @@ static const char *select_conversion_technique(enum video_format format)
 	return NULL;
 }
 
-static inline void set_eparam(effect_t effect, const char *name, float val)
+static inline void set_eparam(gs_effect_t effect, const char *name, float val)
 {
-	eparam_t param = effect_getparambyname(effect, name);
-	effect_setfloat(param, val);
+	gs_eparam_t param = gs_effect_get_param_by_name(effect, name);
+	gs_effect_set_float(param, val);
 }
 
 static bool update_async_texrender(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
-	texture_t   tex       = source->async_texture;
-	texrender_t texrender = source->async_convert_texrender;
+	gs_texture_t   tex       = source->async_texture;
+	gs_texrender_t texrender = source->async_convert_texrender;
 
-	texrender_reset(texrender);
+	gs_texrender_reset(texrender);
 
 	upload_raw_frame(tex, frame);
 
@@ -882,17 +882,17 @@ static bool update_async_texrender(struct obs_source *source,
 	float convert_width  = (float)source->async_convert_width;
 	float convert_height = (float)source->async_convert_height;
 
-	effect_t conv = obs->video.conversion_effect;
-	technique_t tech = effect_gettechnique(conv,
+	gs_effect_t conv = obs->video.conversion_effect;
+	gs_technique_t tech = gs_effect_get_technique(conv,
 			select_conversion_technique(frame->format));
 
-	if (!texrender_begin(texrender, cx, cy))
+	if (!gs_texrender_begin(texrender, cx, cy))
 		return false;
 
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
-	effect_settexture(effect_getparambyname(conv, "image"), tex);
+	gs_effect_set_texture(gs_effect_get_param_by_name(conv, "image"), tex);
 	set_eparam(conv, "width",  (float)cx);
 	set_eparam(conv, "height", (float)cy);
 	set_eparam(conv, "width_i",  1.0f / cx);
@@ -916,10 +916,10 @@ static bool update_async_texrender(struct obs_source *source,
 
 	gs_draw_sprite(tex, 0, cx, cy);
 
-	technique_endpass(tech);
-	technique_end(tech);
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 
-	texrender_end(texrender);
+	gs_texrender_end(texrender);
 
 	return true;
 }
@@ -927,8 +927,8 @@ static bool update_async_texrender(struct obs_source *source,
 static bool update_async_texture(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
-	texture_t         tex       = source->async_texture;
-	texrender_t       texrender = source->async_convert_texrender;
+	gs_texture_t      tex       = source->async_texture;
+	gs_texrender_t    texrender = source->async_convert_texrender;
 	enum convert_type type      = get_convert_type(frame->format);
 	uint8_t           *ptr;
 	uint32_t          linesize;
@@ -947,12 +947,12 @@ static bool update_async_texture(struct obs_source *source,
 		return update_async_texrender(source, frame);
 
 	if (type == CONVERT_NONE) {
-		texture_setimage(tex, frame->data[0], frame->linesize[0],
+		gs_texture_set_image(tex, frame->data[0], frame->linesize[0],
 				false);
 		return true;
 	}
 
-	if (!texture_map(tex, &ptr, &linesize))
+	if (!gs_texture_map(tex, &ptr, &linesize))
 		return false;
 
 	if (type == CONVERT_420)
@@ -973,57 +973,57 @@ static bool update_async_texture(struct obs_source *source,
 		decompress_422(frame->data[0], frame->linesize[0],
 				0, frame->height, ptr, linesize, false);
 
-	texture_unmap(tex);
+	gs_texture_unmap(tex);
 	return true;
 }
 
 static inline void obs_source_draw_texture(struct obs_source *source,
-		effect_t effect, float *color_matrix,
+		gs_effect_t effect, float *color_matrix,
 		float const *color_range_min, float const *color_range_max)
 {
-	texture_t tex = source->async_texture;
-	eparam_t  param;
+	gs_texture_t tex = source->async_texture;
+	gs_eparam_t  param;
 
 	if (source->async_convert_texrender)
-		tex = texrender_gettexture(source->async_convert_texrender);
+		tex = gs_texrender_get_texture(source->async_convert_texrender);
 
 	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
-		param = effect_getparambyname(effect, "color_range_min");
-		effect_setval(param, color_range_min, size);
+		param = gs_effect_get_param_by_name(effect, "color_range_min");
+		gs_effect_set_val(param, color_range_min, size);
 	}
 
 	if (color_range_max) {
 		size_t const size = sizeof(float) * 3;
-		param = effect_getparambyname(effect, "color_range_max");
-		effect_setval(param, color_range_max, size);
+		param = gs_effect_get_param_by_name(effect, "color_range_max");
+		gs_effect_set_val(param, color_range_max, size);
 	}
 
 	if (color_matrix) {
-		param = effect_getparambyname(effect, "color_matrix");
-		effect_setval(param, color_matrix, sizeof(float) * 16);
+		param = gs_effect_get_param_by_name(effect, "color_matrix");
+		gs_effect_set_val(param, color_matrix, sizeof(float) * 16);
 	}
 
-	param = effect_getparambyname(effect, "image");
-	effect_settexture(param, tex);
+	param = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(param, tex);
 
 	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
 }
 
 static void obs_source_draw_async_texture(struct obs_source *source)
 {
-	effect_t    effect        = gs_geteffect();
-	bool        yuv           = format_is_yuv(source->async_format);
-	bool        limited_range = yuv && !source->async_full_range;
-	const char  *type         = yuv ? "DrawMatrix" : "Draw";
-	bool        def_draw      = (!effect);
-	technique_t tech          = NULL;
+	gs_effect_t    effect        = gs_get_effect();
+	bool           yuv           = format_is_yuv(source->async_format);
+	bool           limited_range = yuv && !source->async_full_range;
+	const char     *type         = yuv ? "DrawMatrix" : "Draw";
+	bool           def_draw      = (!effect);
+	gs_technique_t tech          = NULL;
 
 	if (def_draw) {
 		effect = obs_get_default_effect();
-		tech = effect_gettechnique(effect, type);
-		technique_begin(tech);
-		technique_beginpass(tech, 0);
+		tech = gs_effect_get_technique(effect, type);
+		gs_technique_begin(tech);
+		gs_technique_begin_pass(tech, 0);
 	}
 
 	obs_source_draw_texture(source, effect,
@@ -1032,8 +1032,8 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 			limited_range ? source->async_color_range_max : NULL);
 
 	if (def_draw) {
-		technique_endpass(tech);
-		technique_end(tech);
+		gs_technique_end_pass(tech);
+		gs_technique_end(tech);
 	}
 }
 
@@ -1063,19 +1063,19 @@ static inline void obs_source_render_filters(obs_source_t source)
 static inline void obs_source_default_render(obs_source_t source,
 		bool color_matrix)
 {
-	effect_t    effect     = obs->video.default_effect;
-	const char  *tech_name = color_matrix ? "DrawMatrix" : "Draw";
-	technique_t tech       = effect_gettechnique(effect, tech_name);
-	size_t      passes, i;
+	gs_effect_t    effect     = obs->video.default_effect;
+	const char     *tech_name = color_matrix ? "DrawMatrix" : "Draw";
+	gs_technique_t tech       = gs_effect_get_technique(effect, tech_name);
+	size_t         passes, i;
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
-		technique_beginpass(tech, i);
+		gs_technique_begin_pass(tech, i);
 		if (source->context.data)
 			source->info.video_render(source->context.data, effect);
-		technique_endpass(tech);
+		gs_technique_end_pass(tech);
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 }
 
 static inline void obs_source_main_render(obs_source_t source)
@@ -1091,7 +1091,7 @@ static inline void obs_source_main_render(obs_source_t source)
 		obs_source_default_render(source, color_matrix);
 	else if (source->context.data)
 		source->info.video_render(source->context.data,
-				custom_draw ? NULL : gs_geteffect());
+				custom_draw ? NULL : gs_get_effect());
 }
 
 void obs_source_video_render(obs_source_t source)
@@ -1652,42 +1652,42 @@ const char *obs_source_get_id(obs_source_t source)
 	return source ? source->info.id : NULL;
 }
 
-static inline void render_filter_bypass(obs_source_t target, effect_t effect,
+static inline void render_filter_bypass(obs_source_t target, gs_effect_t effect,
 		bool use_matrix)
 {
 	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
-	technique_t tech       = effect_gettechnique(effect, tech_name);
+	gs_technique_t tech    = gs_effect_get_technique(effect, tech_name);
 	size_t      passes, i;
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
-		technique_beginpass(tech, i);
+		gs_technique_begin_pass(tech, i);
 		obs_source_video_render(target);
-		technique_endpass(tech);
+		gs_technique_end_pass(tech);
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 }
 
-static inline void render_filter_tex(texture_t tex, effect_t effect,
+static inline void render_filter_tex(gs_texture_t tex, gs_effect_t effect,
 		uint32_t width, uint32_t height, bool use_matrix)
 {
 	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
-	technique_t tech       = effect_gettechnique(effect, tech_name);
-	eparam_t    image      = effect_getparambyname(effect, "image");
+	gs_technique_t tech    = gs_effect_get_technique(effect, tech_name);
+	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes, i;
 
-	effect_settexture(image, tex);
+	gs_effect_set_texture(image, tex);
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
-		technique_beginpass(tech, i);
+		gs_technique_begin_pass(tech, i);
 		gs_draw_sprite(tex, width, height, 0);
-		technique_endpass(tech);
+		gs_technique_end_pass(tech);
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 }
 
-void obs_source_process_filter(obs_source_t filter, effect_t effect,
+void obs_source_process_filter(obs_source_t filter, gs_effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct)
 {
@@ -1718,21 +1718,21 @@ void obs_source_process_filter(obs_source_t filter, effect_t effect,
 	}
 
 	if (!filter->filter_texrender)
-		filter->filter_texrender = texrender_create(format,
+		filter->filter_texrender = gs_texrender_create(format,
 				GS_ZS_NONE);
 
-	if (texrender_begin(filter->filter_texrender, cx, cy)) {
+	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 		if (expects_def && parent == target)
 			obs_source_default_render(parent, use_matrix);
 		else
 			obs_source_video_render(target);
-		texrender_end(filter->filter_texrender);
+		gs_texrender_end(filter->filter_texrender);
 	}
 
 	/* --------------------------- */
 
-	render_filter_tex(texrender_gettexture(filter->filter_texrender),
+	render_filter_tex(gs_texrender_get_texture(filter->filter_texrender),
 			effect, width, height, use_matrix);
 }
 

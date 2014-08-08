@@ -146,7 +146,7 @@ void ShaderProcessor::BuildInputLayout(
 	BuildInputLayoutFromVars(&parser, &func->params.da, layout);
 }
 
-shader_param::shader_param(shader_var &var, uint32_t &texCounter)
+gs_shader_param::gs_shader_param(shader_var &var, uint32_t &texCounter)
 	: type       (get_shader_param_type(var.type)),
 	  name       (var.name),
 	  textureID  (texCounter),
@@ -156,23 +156,23 @@ shader_param::shader_param(shader_var &var, uint32_t &texCounter)
 	defaultValue.resize(var.default_val.num);
 	memcpy(defaultValue.data(), var.default_val.array, var.default_val.num);
 
-	if (type == SHADER_PARAM_TEXTURE)
+	if (type == GS_SHADER_PARAM_TEXTURE)
 		texCounter++;
 	else
 		textureID = 0;
 }
 
-static inline void AddParam(shader_var &var, vector<shader_param> &params,
+static inline void AddParam(shader_var &var, vector<gs_shader_param> &params,
 		uint32_t &texCounter)
 {
 	if (var.var_type != SHADER_VAR_UNIFORM ||
 	    strcmp(var.type, "sampler") == 0)
 		return;
 
-	params.push_back(shader_param(var, texCounter));
+	params.push_back(gs_shader_param(var, texCounter));
 }
 
-void ShaderProcessor::BuildParams(vector<shader_param> &params)
+void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)
 {
 	uint32_t texCounter = 0;
 
@@ -180,7 +180,7 @@ void ShaderProcessor::BuildParams(vector<shader_param> &params)
 		AddParam(parser.params.array[i], params, texCounter);
 }
 
-static inline void AddSampler(device_t device, shader_sampler &sampler,
+static inline void AddSampler(gs_device_t device, shader_sampler &sampler,
 		vector<ShaderSampler> &samplers)
 {
 	gs_sampler_info si;

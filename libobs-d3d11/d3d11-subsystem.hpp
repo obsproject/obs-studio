@@ -108,7 +108,7 @@ static inline D3D11_COMPARISON_FUNC ConvertGSDepthTest(gs_depth_test test)
 	return D3D11_COMPARISON_NEVER;
 }
 
-static inline D3D11_STENCIL_OP ConvertGSStencilOp(gs_stencil_op op)
+static inline D3D11_STENCIL_OP ConvertGSStencilOp(gs_stencil_op_type op)
 {
 	switch (op) {
 	case GS_KEEP:    return D3D11_STENCIL_OP_KEEP;
@@ -167,12 +167,12 @@ static inline D3D11_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 
 /* exception-safe RAII wrapper for vertex buffer data (NOTE: not copy-safe) */
 struct VBDataPtr {
-	vb_data *data;
+	gs_vb_data *data;
 
-	inline void Clear() {vbdata_destroy(data); data = nullptr;}
+	inline void Clear() {gs_vbdata_destroy(data); data = nullptr;}
 
-	inline VBDataPtr(vb_data *data) : data(data) {}
-	inline ~VBDataPtr() {vbdata_destroy(data);}
+	inline VBDataPtr(gs_vb_data *data) : data(data) {}
+	inline ~VBDataPtr() {gs_vbdata_destroy(data);}
 };
 
 struct gs_vertex_buffer {
@@ -182,7 +182,7 @@ struct gs_vertex_buffer {
 	ComPtr<ID3D11Buffer>         tangentBuffer;
 	vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
-	device_t       device;
+	gs_device_t       device;
 	bool           dynamic;
 	VBDataPtr      vbd;
 	size_t         numVerts;
@@ -199,7 +199,8 @@ struct gs_vertex_buffer {
 			const size_t numVerts, void *array,
 			ID3D11Buffer **buffer);
 
-	gs_vertex_buffer(device_t device, struct vb_data *data, uint32_t flags);
+	gs_vertex_buffer(gs_device_t device, struct gs_vb_data *data,
+			uint32_t flags);
 };
 
 /* exception-safe RAII wrapper for index buffer data (NOTE: not copy-safe) */
@@ -212,7 +213,7 @@ struct DataPtr {
 
 struct gs_index_buffer {
 	ComPtr<ID3D11Buffer> indexBuffer;
-	device_t             device;
+	gs_device_t          device;
 	bool                 dynamic;
 	gs_index_type        type;
 	size_t               indexSize;
@@ -221,7 +222,7 @@ struct gs_index_buffer {
 
 	void InitBuffer();
 
-	gs_index_buffer(device_t device, enum gs_index_type type,
+	gs_index_buffer(gs_device_t device, enum gs_index_type type,
 			void *indices, size_t num, uint32_t flags);
 };
 
@@ -278,7 +279,7 @@ struct gs_texture_2d : gs_texture {
 	{
 	}
 
-	gs_texture_2d(device_t device, uint32_t width, uint32_t height,
+	gs_texture_2d(gs_device_t device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
 			gs_texture_type type, bool gdiCompatible, bool shared);
@@ -303,7 +304,7 @@ struct gs_zstencil_buffer {
 	{
 	}
 
-	gs_zstencil_buffer(device_t device, uint32_t width, uint32_t height,
+	gs_zstencil_buffer(gs_device_t device, uint32_t width, uint32_t height,
 			gs_zstencil_format format);
 };
 
@@ -315,21 +316,21 @@ struct gs_stage_surface {
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 
-	gs_stage_surface(device_t device, uint32_t width, uint32_t height,
+	gs_stage_surface(gs_device_t device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat);
 };
 
 struct gs_sampler_state {
 	ComPtr<ID3D11SamplerState> state;
-	device_t                   device;
+	gs_device_t                device;
 	gs_sampler_info            info;
 
-	gs_sampler_state(device_t device, gs_sampler_info *info);
+	gs_sampler_state(gs_device_t device, gs_sampler_info *info);
 };
 
-struct shader_param {
+struct gs_shader_param {
 	string            name;
-	shader_param_type type;
+	gs_shader_param_type type;
 
 	uint32_t          textureID;
 
@@ -341,7 +342,7 @@ struct shader_param {
 	vector<uint8_t>   defaultValue;
 	bool              changed;
 
-	shader_param(shader_var &var, uint32_t &texCounter);
+	gs_shader_param(shader_var &var, uint32_t &texCounter);
 };
 
 struct ShaderError {
@@ -356,21 +357,21 @@ struct ShaderError {
 };
 
 struct gs_shader {
-	device_t             device;
-	shader_type          type;
-	vector<shader_param> params;
+	gs_device_t             device;
+	gs_shader_type          type;
+	vector<gs_shader_param> params;
 	ComPtr<ID3D11Buffer> constants;
 	size_t               constantSize;
 
-	inline void UpdateParam(vector<uint8_t> &constData, shader_param &param,
-			bool &upload);
+	inline void UpdateParam(vector<uint8_t> &constData,
+			gs_shader_param &param, bool &upload);
 	void UploadParams();
 
 	void BuildConstantBuffer();
 	void Compile(const char *shaderStr, const char *file,
 			const char *target, ID3D10Blob **shader);
 
-	inline gs_shader(device_t device, shader_type type)
+	inline gs_shader(gs_device_t device, gs_shader_type type)
 		: device       (device),
 		  type         (type),
 		  constantSize (0)
@@ -384,7 +385,7 @@ struct ShaderSampler {
 	string           name;
 	gs_sampler_state sampler;
 
-	inline ShaderSampler(const char *name, device_t device,
+	inline ShaderSampler(const char *name, gs_device_t device,
 			gs_sampler_info *info)
 		: name    (name),
 		  sampler (device, info)
@@ -396,7 +397,7 @@ struct gs_vertex_shader : gs_shader {
 	ComPtr<ID3D11VertexShader> shader;
 	ComPtr<ID3D11InputLayout>  layout;
 
-	shader_param *world, *viewProj;
+	gs_shader_param *world, *viewProj;
 
 	bool     hasNormals;
 	bool     hasColors;
@@ -415,7 +416,7 @@ struct gs_vertex_shader : gs_shader {
 
 	void GetBuffersExpected(const vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
 
-	gs_vertex_shader(device_t device, const char *file,
+	gs_vertex_shader(gs_device_t device, const char *file,
 			const char *shaderString);
 };
 
@@ -432,7 +433,7 @@ struct gs_pixel_shader : gs_shader {
 			states[i] = NULL;
 	}
 
-	gs_pixel_shader(device_t device, const char *file,
+	gs_pixel_shader(gs_device_t device, const char *file,
 			const char *shaderString);
 };
 
@@ -497,9 +498,9 @@ struct SavedBlendState : BlendState {
 
 struct StencilSide {
 	gs_depth_test test;
-	gs_stencil_op fail;
-	gs_stencil_op zfail;
-	gs_stencil_op zpass;
+	gs_stencil_op_type fail;
+	gs_stencil_op_type zfail;
+	gs_stencil_op_type zpass;
 
 	inline StencilSide()
 		: test  (GS_ALWAYS),
@@ -623,7 +624,7 @@ struct gs_device {
 	void UpdateBlendState();
 
 	inline void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
-		texture_t src, uint32_t src_x, uint32_t src_y,
+		gs_texture_t src, uint32_t src_x, uint32_t src_y,
 		uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();

@@ -14,9 +14,9 @@ void gs_free_image_deps()
 	MagickCoreTerminus();
 }
 
-texture_t gs_create_texture_from_file(const char *file)
+gs_texture_t gs_texture_create_from_file(const char *file)
 {
-	texture_t     tex = NULL;
+	gs_texture_t  tex = NULL;
 	ImageInfo     *info;
 	ExceptionInfo *exception;
 	Image         *image;
@@ -37,7 +37,7 @@ texture_t gs_create_texture_from_file(const char *file)
 		ExportImagePixels(image, 0, 0, cx, cy, "BGRA", CharPixel,
 				data, exception);
 		if (exception->severity == UndefinedException)
-			tex = gs_create_texture(cx, cy, GS_BGRA, 1,
+			tex = gs_texture_create(cx, cy, GS_BGRA, 1,
 					(const uint8_t**)&data, 0);
 		else
 			blog(LOG_WARNING, "magickcore warning/error getting "

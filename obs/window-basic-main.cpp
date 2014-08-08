@@ -494,20 +494,20 @@ void OBSBasic::InitPrimitives()
 {
 	obs_enter_graphics();
 
-	gs_renderstart(true);
+	gs_render_start(true);
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(1.0f, 0.0f);
 	gs_vertex2f(0.0f, 0.0f);
-	box = gs_rendersave();
+	box = gs_render_save();
 
-	gs_renderstart(true);
+	gs_render_start(true);
 	for (int i = 0; i <= 360; i += (360/20)) {
 		float pos = RAD(float(i));
 		gs_vertex2f(cosf(pos), sinf(pos));
 	}
-	circle = gs_rendersave();
+	circle = gs_render_save();
 
 	obs_leave_graphics();
 }
@@ -590,8 +590,8 @@ OBSBasic::~OBSBasic()
 	ui->scenes->clear();
 
 	obs_enter_graphics();
-	vertexbuffer_destroy(box);
-	vertexbuffer_destroy(circle);
+	gs_vertexbuffer_destroy(box);
+	gs_vertexbuffer_destroy(circle);
 	obs_leave_graphics();
 
 	obs_shutdown();
@@ -1070,16 +1070,16 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	if (!box)
 		return;
 
-	effect_t    solid = obs_get_solid_effect();
-	eparam_t    color = effect_getparambyname(solid, "color");
-	technique_t tech  = effect_gettechnique(solid, "Solid");
+	gs_effect_t    solid = obs_get_solid_effect();
+	gs_eparam_t    color = gs_effect_get_param_by_name(solid, "color");
+	gs_technique_t tech  = gs_effect_get_technique(solid, "Solid");
 
 	vec4 colorVal;
 	vec4_set(&colorVal, 0.0f, 0.0f, 0.0f, 1.0f);
-	effect_setvec4(color, &colorVal);
+	gs_effect_set_vec4(color, &colorVal);
 
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 	gs_matrix_push();
 	gs_matrix_identity();
 	gs_matrix_scale3f(float(cx), float(cy), 1.0f);
@@ -1088,8 +1088,8 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
-	technique_endpass(tech);
-	technique_end(tech);
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 
 	gs_load_vertexbuffer(nullptr);
 }
@@ -1111,7 +1111,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
 			-100.0f, 100.0f);
-	gs_setviewport(window->previewX, window->previewY,
+	gs_set_viewport(window->previewX, window->previewY,
 			window->previewCX, window->previewCY);
 
 	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
@@ -1128,7 +1128,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(-window->previewX, right,
 	         -window->previewY, bottom,
 	         -100.0f, 100.0f);
-	gs_resetviewport();
+	gs_reset_viewport();
 
 	window->ui->preview->DrawSceneEditing();
 

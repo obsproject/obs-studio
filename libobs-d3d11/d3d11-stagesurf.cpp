@@ -17,7 +17,7 @@
 
 #include "d3d11-subsystem.hpp"
 
-gs_stage_surface::gs_stage_surface(device_t device, uint32_t width,
+gs_stage_surface::gs_stage_surface(gs_device_t device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat)
 	: device     (device),
 	  width      (width),

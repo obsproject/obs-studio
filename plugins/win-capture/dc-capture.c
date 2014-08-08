@@ -7,11 +7,11 @@ static inline void init_textures(struct dc_capture *capture)
 {
 	for (int i = 0; i < capture->num_textures; i++) {
 		if (capture->compatibility)
-			capture->textures[i] = gs_create_texture(
+			capture->textures[i] = gs_texture_create(
 					capture->width, capture->height,
 					GS_BGRA, 1, NULL, GS_DYNAMIC);
 		else
-			capture->textures[i] = gs_create_gdi_texture(
+			capture->textures[i] = gs_texture_create_gdi(
 					capture->width, capture->height);
 
 		if (!capture->textures[i]) {
@@ -79,7 +79,7 @@ void dc_capture_free(struct dc_capture *capture)
 	obs_enter_graphics();
 
 	for (int i = 0; i < capture->num_textures; i++)
-		texture_destroy(capture->textures[i]);
+		gs_texture_destroy(capture->textures[i]);
 
 	obs_leave_graphics();
 
@@ -126,16 +126,16 @@ static inline HDC dc_capture_get_dc(struct dc_capture *capture)
 	if (capture->compatibility)
 		return capture->hdc;
 	else
-		return texture_get_dc(capture->textures[capture->cur_tex]);
+		return gs_texture_get_dc(capture->textures[capture->cur_tex]);
 }
 
 static inline void dc_capture_release_dc(struct dc_capture *capture)
 {
 	if (capture->compatibility) {
-		texture_setimage(capture->textures[capture->cur_tex],
+		gs_texture_set_image(capture->textures[capture->cur_tex],
 				capture->bits, capture->width*4, false);
 	} else {
-		texture_release_dc(capture->textures[capture->cur_tex]);
+		gs_texture_release_dc(capture->textures[capture->cur_tex]);
 	}
 }
 
@@ -175,30 +175,30 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 	capture->textures_written[capture->cur_tex] = true;
 }
 
-static void draw_texture(struct dc_capture *capture, int id, effect_t effect)
+static void draw_texture(struct dc_capture *capture, int id, gs_effect_t effect)
 {
-	texture_t   texture = capture->textures[id];
-	technique_t tech    = effect_gettechnique(effect, "Draw");
-	eparam_t    image   = effect_getparambyname(effect, "image");
+	gs_texture_t   texture = capture->textures[id];
+	gs_technique_t tech    = gs_effect_get_technique(effect, "Draw");
+	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes;
 
-	effect_settexture(image, texture);
+	gs_effect_set_texture(image, texture);
 
-	passes = technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
-		if (technique_beginpass(tech, i)) {
+		if (gs_technique_begin_pass(tech, i)) {
 			if (capture->compatibility)
 				gs_draw_sprite(texture, GS_FLIP_V, 0, 0);
 			else
 				gs_draw_sprite(texture, 0, 0, 0);
 
-			technique_endpass(tech);
+			gs_technique_end_pass(tech);
 		}
 	}
-	technique_end(tech);
+	gs_technique_end(tech);
 }
 
-void dc_capture_render(struct dc_capture *capture, effect_t effect)
+void dc_capture_render(struct dc_capture *capture, gs_effect_t effect)
 {
 	int last_tex = (capture->cur_tex > 0) ?
 		capture->cur_tex-1 : capture->num_textures-1;
@@ -210,9 +210,9 @@ void dc_capture_render(struct dc_capture *capture, effect_t effect)
 		draw_texture(capture, last_tex, effect);
 }
 
-effect_t create_opaque_effect(void)
+gs_effect_t create_opaque_effect(void)
 {
-	effect_t opaque_effect;
+	gs_effect_t opaque_effect;
 	char *effect_file;
 	char *error_string = NULL;
 
@@ -225,7 +225,7 @@ effect_t create_opaque_effect(void)
 
 	obs_enter_graphics();
 
-	opaque_effect = gs_create_effect_from_file(effect_file, &error_string);
+	opaque_effect = gs_effect_create_from_file(effect_file, &error_string);
 
 	if (!opaque_effect) {
 		if (error_string)

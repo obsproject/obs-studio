@@ -146,9 +146,9 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 	}
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
-		video->convert_textures[i] = gs_create_texture(
+		video->convert_textures[i] = gs_texture_create(
 				ovi->output_width, video->conversion_height,
-				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
 
 		if (!video->convert_textures[i])
 			return false;
@@ -166,22 +166,22 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
-		video->copy_surfaces[i] = gs_create_stagesurface(
+		video->copy_surfaces[i] = gs_stagesurface_create(
 				ovi->output_width, output_height, GS_RGBA);
 
 		if (!video->copy_surfaces[i])
 			return false;
 
-		video->render_textures[i] = gs_create_texture(
+		video->render_textures[i] = gs_texture_create(
 				ovi->base_width, ovi->base_height,
-				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
 
 		if (!video->render_textures[i])
 			return false;
 
-		video->output_textures[i] = gs_create_texture(
+		video->output_textures[i] = gs_texture_create(
 				ovi->output_width, ovi->output_height,
-				GS_RGBA, 1, NULL, GS_RENDERTARGET);
+				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
 
 		if (!video->output_textures[i])
 			return false;
@@ -217,20 +217,20 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		}
 	}
 
-	gs_entercontext(video->graphics);
+	gs_enter_context(video->graphics);
 
 	char *filename = find_libobs_data_file("default.effect");
-	video->default_effect = gs_create_effect_from_file(filename,
+	video->default_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
 	filename = find_libobs_data_file("solid.effect");
-	video->solid_effect = gs_create_effect_from_file(filename,
+	video->solid_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
 	filename = find_libobs_data_file("format_conversion.effect");
-	video->conversion_effect = gs_create_effect_from_file(filename,
+	video->conversion_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
@@ -241,7 +241,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	if (!video->conversion_effect)
 		success = false;
 
-	gs_leavecontext();
+	gs_leave_context();
 	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
@@ -276,14 +276,14 @@ static int obs_init_video(struct obs_video_info *ovi)
 	video->main_display.cx = ovi->window_width;
 	video->main_display.cy = ovi->window_height;
 
-	gs_entercontext(video->graphics);
+	gs_enter_context(video->graphics);
 
 	if (ovi->gpu_conversion && !obs_init_gpu_conversion(ovi))
 		return OBS_VIDEO_FAIL;
 	if (!obs_init_textures(ovi))
 		return OBS_VIDEO_FAIL;
 
-	gs_leavecontext();
+	gs_leave_context();
 
 	errorcode = pthread_create(&video->video_thread, NULL,
 			obs_video_thread, obs);
@@ -338,18 +338,18 @@ static void obs_free_video(void)
 		if (!video->graphics)
 			return;
 
-		gs_entercontext(video->graphics);
+		gs_enter_context(video->graphics);
 
 		if (video->mapped_surface) {
-			stagesurface_unmap(video->mapped_surface);
+			gs_stagesurface_unmap(video->mapped_surface);
 			video->mapped_surface = NULL;
 		}
 
 		for (size_t i = 0; i < NUM_TEXTURES; i++) {
-			stagesurface_destroy(video->copy_surfaces[i]);
-			texture_destroy(video->render_textures[i]);
-			texture_destroy(video->convert_textures[i]);
-			texture_destroy(video->output_textures[i]);
+			gs_stagesurface_destroy(video->copy_surfaces[i]);
+			gs_texture_destroy(video->render_textures[i]);
+			gs_texture_destroy(video->convert_textures[i]);
+			gs_texture_destroy(video->output_textures[i]);
 			obs_source_frame_free(&video->convert_frames[i]);
 
 			video->copy_surfaces[i]    = NULL;
@@ -358,7 +358,7 @@ static void obs_free_video(void)
 			video->output_textures[i]  = NULL;
 		}
 
-		gs_leavecontext();
+		gs_leave_context();
 
 		video->cur_texture = 0;
 	}
@@ -369,14 +369,14 @@ static void obs_free_graphics(void)
 	struct obs_core_video *video = &obs->video;
 
 	if (video->graphics) {
-		gs_entercontext(video->graphics);
+		gs_enter_context(video->graphics);
 
-		effect_destroy(video->default_effect);
-		effect_destroy(video->solid_effect);
-		effect_destroy(video->conversion_effect);
+		gs_effect_destroy(video->default_effect);
+		gs_effect_destroy(video->solid_effect);
+		gs_effect_destroy(video->conversion_effect);
 		video->default_effect = NULL;
 
-		gs_leavecontext();
+		gs_leave_context();
 
 		gs_destroy(video->graphics);
 		video->graphics = NULL;
@@ -812,13 +812,13 @@ bool obs_enum_service_types(size_t idx, const char **id)
 void obs_enter_graphics(void)
 {
 	if (obs && obs->video.graphics)
-		gs_entercontext(obs->video.graphics);
+		gs_enter_context(obs->video.graphics);
 }
 
 void obs_leave_graphics(void)
 {
 	if (obs && obs->video.graphics)
-		gs_leavecontext();
+		gs_leave_context();
 }
 
 audio_t obs_get_audio(void)
@@ -1075,13 +1075,13 @@ obs_service_t obs_get_service_by_name(const char *name)
 			&obs->data.services_mutex);
 }
 
-effect_t obs_get_default_effect(void)
+gs_effect_t obs_get_default_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.default_effect;
 }
 
-effect_t obs_get_solid_effect(void)
+gs_effect_t obs_get_solid_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.solid_effect;

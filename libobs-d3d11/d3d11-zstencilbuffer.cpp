@@ -47,7 +47,7 @@ void gs_zstencil_buffer::InitBuffer()
 		throw HRError("Failed to create depth stencil view", hr);
 }
 
-gs_zstencil_buffer::gs_zstencil_buffer(device_t device,
+gs_zstencil_buffer::gs_zstencil_buffer(gs_device_t device,
 		uint32_t width, uint32_t height,
 		gs_zstencil_format format)
 	: device     (device),

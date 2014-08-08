@@ -44,21 +44,21 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 
 static bool graphics_init_immediate_vb(struct graphics_subsystem *graphics)
 {
-	struct vb_data *vbd;
+	struct gs_vb_data *vbd;
 
-	vbd = vbdata_create();
+	vbd = gs_vbdata_create();
 	vbd->num     = IMMEDIATE_COUNT;
 	vbd->points  = bmalloc(sizeof(struct vec3)*IMMEDIATE_COUNT);
 	vbd->normals = bmalloc(sizeof(struct vec3)*IMMEDIATE_COUNT);
 	vbd->colors  = bmalloc(sizeof(uint32_t)   *IMMEDIATE_COUNT);
 	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
+	vbd->tvarray = bmalloc(sizeof(struct gs_tvertarray));
 	vbd->tvarray[0].width = 2;
 	vbd->tvarray[0].array =
 		bmalloc(sizeof(struct vec2) * IMMEDIATE_COUNT);
 
 	graphics->immediate_vertbuffer = graphics->exports.
-		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
+		device_vertexbuffer_create(graphics->device, vbd, GS_DYNAMIC);
 	if (!graphics->immediate_vertbuffer)
 		return false;
 
@@ -67,13 +67,13 @@ static bool graphics_init_immediate_vb(struct graphics_subsystem *graphics)
 
 static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
 {
-	struct vb_data *vbd;
+	struct gs_vb_data *vbd;
 
-	vbd = vbdata_create();
+	vbd = gs_vbdata_create();
 	vbd->num     = 4;
 	vbd->points  = bmalloc(sizeof(struct vec3) * 4);
 	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct tvertarray));
+	vbd->tvarray = bmalloc(sizeof(struct gs_tvertarray));
 	vbd->tvarray[0].width = 2;
 	vbd->tvarray[0].array = bmalloc(sizeof(struct vec2) * 4);
 
@@ -81,7 +81,7 @@ static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
 	memset(vbd->tvarray[0].array, 0, sizeof(struct vec2) * 4);
 
 	graphics->sprite_buffer = graphics->exports.
-		device_create_vertexbuffer(graphics->device, vbd, GS_DYNAMIC);
+		device_vertexbuffer_create(graphics->device, vbd, GS_DYNAMIC);
 	if (!graphics->sprite_buffer)
 		return false;
 
@@ -95,7 +95,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	matrix4_identity(&top_mat);
 	da_push_back(graphics->matrix_stack, &top_mat);
 
-	graphics->exports.device_entercontext(graphics->device);
+	graphics->exports.device_enter_context(graphics->device);
 
 	if (!graphics_init_immediate_vb(graphics))
 		return false;
@@ -104,13 +104,13 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
 		return false;
 
-	graphics->exports.device_blendfunction(graphics->device,
+	graphics->exports.device_blend_function(graphics->device,
 			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
 	graphics->cur_blend_state.enabled = true;
 	graphics->cur_blend_state.src     = GS_BLEND_SRCALPHA;
 	graphics->cur_blend_state.dest    = GS_BLEND_INVSRCALPHA;
 
-	graphics->exports.device_leavecontext(graphics->device);
+	graphics->exports.device_leave_context(graphics->device);
 
 	gs_init_image_deps();
 	return true;
@@ -160,12 +160,13 @@ void gs_destroy(graphics_t graphics)
 		return;
 
 	while (thread_graphics)
-		gs_leavecontext();
+		gs_leave_context();
 
 	if (graphics->device) {
-		graphics->exports.device_entercontext(graphics->device);
-		graphics->exports.vertexbuffer_destroy(graphics->sprite_buffer);
-		graphics->exports.vertexbuffer_destroy(
+		graphics->exports.device_enter_context(graphics->device);
+		graphics->exports.gs_vertexbuffer_destroy(
+				graphics->sprite_buffer);
+		graphics->exports.gs_vertexbuffer_destroy(
 				graphics->immediate_vertbuffer);
 		graphics->exports.device_destroy(graphics->device);
 	}
@@ -180,51 +181,54 @@ void gs_destroy(graphics_t graphics)
 	gs_free_image_deps();
 }
 
-void gs_entercontext(graphics_t graphics)
+void gs_enter_context(graphics_t graphics)
 {
 	if (!graphics) return;
 
 	bool is_current = thread_graphics == graphics;
 	if (thread_graphics && !is_current) {
 		while (thread_graphics)
-			gs_leavecontext();
+			gs_leave_context();
 	}
 
 	if (!is_current) {
 		pthread_mutex_lock(&graphics->mutex);
-		graphics->exports.device_entercontext(graphics->device);
+		graphics->exports.device_enter_context(graphics->device);
 		thread_graphics = graphics;
 	}
 
 	os_atomic_inc_long(&graphics->ref);
 }
 
-void gs_leavecontext(void)
+void gs_leave_context(void)
 {
 	if (thread_graphics) {
 		if (!os_atomic_dec_long(&thread_graphics->ref)) {
 			graphics_t graphics = thread_graphics;
 
-			graphics->exports.device_leavecontext(graphics->device);
+			graphics->exports.device_leave_context(
+					graphics->device);
 			pthread_mutex_unlock(&graphics->mutex);
 			thread_graphics = NULL;
 		}
 	}
 }
 
-graphics_t gs_getcontext(void)
+graphics_t gs_get_context(void)
 {
 	return thread_graphics;
 }
 
-const char *gs_device_name(void)
+const char *gs_get_device_name(void)
 {
-	return thread_graphics ? thread_graphics->exports.device_name() : NULL;
+	return thread_graphics ?
+		thread_graphics->exports.device_get_name() : NULL;
 }
 
-int gs_device_type(void)
+int gs_get_device_type(void)
 {
-	return thread_graphics ? thread_graphics->exports.device_type() : -1;
+	return thread_graphics ?
+		thread_graphics->exports.device_get_type() : -1;
 }
 
 static inline struct matrix4 *top_matrix(graphics_t graphics)
@@ -366,7 +370,7 @@ static inline void reset_immediate_arrays(graphics_t graphics)
 		da_init(graphics->texverts[i]);
 }
 
-void gs_renderstart(bool b_new)
+void gs_render_start(bool b_new)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics)
@@ -376,9 +380,9 @@ void gs_renderstart(bool b_new)
 	reset_immediate_arrays(graphics);
 
 	if (b_new) {
-		graphics->vbd = vbdata_create();
+		graphics->vbd = gs_vbdata_create();
 	} else {
-		graphics->vbd = vertexbuffer_getdata(
+		graphics->vbd = gs_vertexbuffer_get_data(
 				graphics->immediate_vertbuffer);
 		memset(graphics->vbd->colors, 0xFF,
 				sizeof(uint32_t) * IMMEDIATE_COUNT);
@@ -400,7 +404,7 @@ static inline size_t min_size(const size_t a, const size_t b)
 	return (a < b) ? a : b;
 }
 
-void gs_renderstop(enum gs_draw_mode mode)
+void gs_render_stop(enum gs_draw_mode mode)
 {
 	graphics_t graphics = thread_graphics;
 	size_t i, num;
@@ -416,7 +420,7 @@ void gs_renderstop(enum gs_draw_mode mode)
 			da_free(graphics->colors);
 			for (i = 0; i < 16; i++)
 				da_free(graphics->texverts[i]);
-			vbdata_destroy(graphics->vbd);
+			gs_vbdata_destroy(graphics->vbd);
 		}
 
 		return;
@@ -424,27 +428,27 @@ void gs_renderstop(enum gs_draw_mode mode)
 
 	if (graphics->norms.num &&
 	    (graphics->norms.num != graphics->verts.num)) {
-		blog(LOG_ERROR, "gs_renderstop: normal count does "
+		blog(LOG_ERROR, "gs_render_stop: normal count does "
 		                "not match vertex count");
 		num = min_size(num, graphics->norms.num);
 	}
 
 	if (graphics->colors.num &&
 	    (graphics->colors.num != graphics->verts.num)) {
-		blog(LOG_ERROR, "gs_renderstop: color count does "
+		blog(LOG_ERROR, "gs_render_stop: color count does "
 		                "not match vertex count");
 		num = min_size(num, graphics->colors.num);
 	}
 
 	if (graphics->texverts[0].num &&
 	    (graphics->texverts[0].num  != graphics->verts.num)) {
-		blog(LOG_ERROR, "gs_renderstop: texture vertex count does "
+		blog(LOG_ERROR, "gs_render_stop: texture vertex count does "
 		                "not match vertex count");
 		num = min_size(num, graphics->texverts[0].num);
 	}
 
 	if (graphics->using_immediate) {
-		vertexbuffer_flush(graphics->immediate_vertbuffer);
+		gs_vertexbuffer_flush(graphics->immediate_vertbuffer);
 
 		gs_load_vertexbuffer(graphics->immediate_vertbuffer);
 		gs_load_indexbuffer(NULL);
@@ -452,19 +456,19 @@ void gs_renderstop(enum gs_draw_mode mode)
 
 		reset_immediate_arrays(graphics);
 	} else {
-		vertbuffer_t vb = gs_rendersave();
+		gs_vertbuffer_t vb = gs_render_save();
 
 		gs_load_vertexbuffer(vb);
 		gs_load_indexbuffer(NULL);
 		gs_draw(mode, 0, 0);
 
-		vertexbuffer_destroy(vb);
+		gs_vertexbuffer_destroy(vb);
 	}
 
 	graphics->vbd = NULL;
 }
 
-vertbuffer_t gs_rendersave(void)
+gs_vertbuffer_t gs_render_save(void)
 {
 	graphics_t graphics = thread_graphics;
 	size_t num_tex, i;
@@ -476,7 +480,7 @@ vertbuffer_t gs_rendersave(void)
 		return NULL;
 
 	if (!graphics->verts.num) {
-		vbdata_destroy(graphics->vbd);
+		gs_vbdata_destroy(graphics->vbd);
 		return NULL;
 	}
 
@@ -492,7 +496,7 @@ vertbuffer_t gs_rendersave(void)
 
 	if (graphics->vbd->num_tex) {
 		graphics->vbd->tvarray =
-			bmalloc(sizeof(struct tvertarray) * num_tex);
+			bmalloc(sizeof(struct gs_tvertarray) * num_tex);
 
 		for (i = 0; i < num_tex; i++) {
 			graphics->vbd->tvarray[i].width = 2;
@@ -503,7 +507,7 @@ vertbuffer_t gs_rendersave(void)
 
 	reset_immediate_arrays(graphics);
 
-	return gs_create_vertexbuffer(graphics->vbd, 0);
+	return gs_vertexbuffer_create(graphics->vbd, 0);
 }
 
 void gs_vertex2f(float x, float y)
@@ -610,21 +614,21 @@ void gs_texcoord2v(const struct vec2 *v, int unit)
 	da_push_back(graphics->texverts[unit], v);
 }
 
-input_t gs_getinput(void)
+input_t gs_get_input(void)
 {
 	/* TODO */
 	return NULL;
 }
 
-effect_t gs_geteffect(void)
+gs_effect_t gs_get_effect(void)
 {
 	return thread_graphics ? thread_graphics->cur_effect : NULL;
 }
 
-effect_t gs_create_effect_from_file(const char *file, char **error_string)
+gs_effect_t gs_effect_create_from_file(const char *file, char **error_string)
 {
 	char *file_string;
-	effect_t effect = NULL;
+	gs_effect_t effect = NULL;
 
 	if (!thread_graphics || !file)
 		return NULL;
@@ -635,13 +639,13 @@ effect_t gs_create_effect_from_file(const char *file, char **error_string)
 		return NULL;
 	}
 
-	effect = gs_create_effect(file_string, file, error_string);
+	effect = gs_effect_create(file_string, file, error_string);
 	bfree(file_string);
 
 	return effect;
 }
 
-effect_t gs_create_effect(const char *effect_string, const char *filename,
+gs_effect_t gs_effect_create(const char *effect_string, const char *filename,
 		char **error_string)
 {
 	if (!thread_graphics || !effect_string)
@@ -659,7 +663,7 @@ effect_t gs_create_effect(const char *effect_string, const char *filename,
 		if (error_string)
 			*error_string = error_data_buildstring(
 					&parser.cfp.error_list);
-		effect_destroy(effect);
+		gs_effect_destroy(effect);
 		effect = NULL;
 	}
 
@@ -667,13 +671,14 @@ effect_t gs_create_effect(const char *effect_string, const char *filename,
 	return effect;
 }
 
-shader_t gs_create_vertexshader_from_file(const char *file, char **error_string)
+gs_shader_t gs_vertexshader_create_from_file(const char *file,
+		char **error_string)
 {
 	if (!thread_graphics || !file)
 		return NULL;
 
 	char *file_string;
-	shader_t shader = NULL;
+	gs_shader_t shader = NULL;
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
@@ -682,16 +687,17 @@ shader_t gs_create_vertexshader_from_file(const char *file, char **error_string)
 		return NULL;
 	}
 
-	shader = gs_create_vertexshader(file_string, file, error_string);
+	shader = gs_vertexshader_create(file_string, file, error_string);
 	bfree(file_string);
 
 	return shader;
 }
 
-shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
+gs_shader_t gs_pixelshader_create_from_file(const char *file,
+		char **error_string)
 {
 	char *file_string;
-	shader_t shader = NULL;
+	gs_shader_t shader = NULL;
 
 	if (!thread_graphics || !file)
 		return NULL;
@@ -703,7 +709,7 @@ shader_t gs_create_pixelshader_from_file(const char *file, char **error_string)
 		return NULL;
 	}
 
-	shader = gs_create_pixelshader(file_string, file, error_string);
+	shader = gs_pixelshader_create(file_string, file, error_string);
 	bfree(file_string);
 
 	return shader;
@@ -732,7 +738,7 @@ static inline void assign_sprite_uv(float *start, float *end, bool flip)
 	}
 }
 
-static void build_sprite(struct vb_data *data, float fcx, float fcy,
+static void build_sprite(struct gs_vb_data *data, float fcx, float fcy,
 		float start_u, float end_u, float start_v, float end_v)
 {
 	struct vec2 *tvarray = data->tvarray[0].array;
@@ -747,8 +753,8 @@ static void build_sprite(struct vb_data *data, float fcx, float fcy,
 	vec2_set(tvarray+3, end_u,   end_v);
 }
 
-static inline void build_sprite_norm(struct vb_data *data, float fcx, float fcy,
-		uint32_t flip)
+static inline void build_sprite_norm(struct gs_vb_data *data, float fcx,
+		float fcy, uint32_t flip)
 {
 	float start_u, end_u;
 	float start_v, end_v;
@@ -758,52 +764,52 @@ static inline void build_sprite_norm(struct vb_data *data, float fcx, float fcy,
 	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
-static inline void build_sprite_rect(struct vb_data *data, texture_t tex,
+static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t tex,
 		float fcx, float fcy, uint32_t flip)
 {
 	float start_u, end_u;
 	float start_v, end_v;
-	float width  = (float)texture_getwidth(tex);
-	float height = (float)texture_getheight(tex);
+	float width  = (float)gs_texture_get_width(tex);
+	float height = (float)gs_texture_get_height(tex);
 
 	assign_sprite_rect(&start_u, &end_u, width,  (flip & GS_FLIP_U) != 0);
 	assign_sprite_rect(&start_v, &end_v, height, (flip & GS_FLIP_V) != 0);
 	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
-void gs_draw_sprite(texture_t tex, uint32_t flip, uint32_t width,
+void gs_draw_sprite(gs_texture_t tex, uint32_t flip, uint32_t width,
 		uint32_t height)
 {
 	graphics_t graphics = thread_graphics;
 	float fcx, fcy;
-	struct vb_data *data;
+	struct gs_vb_data *data;
 
 	assert(tex);
 	if (!tex || !thread_graphics)
 		return;
 
-	if (gs_gettexturetype(tex) != GS_TEXTURE_2D) {
+	if (gs_get_texture_type(tex) != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "A sprite must be a 2D texture");
 		return;
 	}
 
-	fcx = width  ? (float)width  : (float)texture_getwidth(tex);
-	fcy = height ? (float)height : (float)texture_getheight(tex);
+	fcx = width  ? (float)width  : (float)gs_texture_get_width(tex);
+	fcy = height ? (float)height : (float)gs_texture_get_height(tex);
 
-	data = vertexbuffer_getdata(graphics->sprite_buffer);
-	if (texture_isrect(tex))
+	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
+	if (gs_texture_is_rect(tex))
 		build_sprite_rect(data, tex, fcx, fcy, flip);
 	else
 		build_sprite_norm(data, fcx, fcy, flip);
 
-	vertexbuffer_flush(graphics->sprite_buffer);
+	gs_vertexbuffer_flush(graphics->sprite_buffer);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);
 
 	gs_draw(GS_TRISTRIP, 0, 0);
 }
 
-void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
+void gs_draw_cube_backdrop(gs_texture_t cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear)
 {
 	/* TODO */
@@ -816,25 +822,25 @@ void gs_draw_cube_backdrop(texture_t cubetex, const struct quat *rot,
 	UNUSED_PARAMETER(znear);
 }
 
-void gs_resetviewport(void)
+void gs_reset_viewport(void)
 {
 	uint32_t cx, cy;
 	assert(thread_graphics != NULL);
-	gs_getsize(&cx, &cy);
+	gs_get_size(&cx, &cy);
 
-	gs_setviewport(0, 0, (int)cx, (int)cy);
+	gs_set_viewport(0, 0, (int)cx, (int)cy);
 }
 
-void gs_set2dmode(void)
+void gs_set_2d_mode(void)
 {
 	uint32_t cx, cy;
 	assert(thread_graphics != NULL);
-	gs_getsize(&cx, &cy);
+	gs_get_size(&cx, &cy);
 
 	gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -1.0, -1024.0f);
 }
 
-void gs_set3dmode(double fovy, double znear, double zvar)
+void gs_set_3d_mode(double fovy, double znear, double zvar)
 {
 	/* TODO */
 	UNUSED_PARAMETER(fovy);
@@ -848,7 +854,7 @@ void gs_viewport_push(void)
 
 	struct gs_rect *rect = da_push_back_new(
 			thread_graphics->viewport_stack);
-	gs_getviewport(rect);
+	gs_get_viewport(rect);
 }
 
 void gs_viewport_pop(void)
@@ -858,12 +864,12 @@ void gs_viewport_pop(void)
 		return;
 
 	rect = da_end(thread_graphics->viewport_stack);
-	gs_setviewport(rect->x, rect->y, rect->cx, rect->cy);
+	gs_set_viewport(rect->x, rect->y, rect->cx, rect->cy);
 	da_pop_back(thread_graphics->viewport_stack);
 }
 
-void texture_setimage(texture_t tex, const uint8_t *data, uint32_t linesize,
-		bool flip)
+void gs_texture_set_image(gs_texture_t tex, const uint8_t *data,
+		uint32_t linesize, bool flip)
 {
 	uint8_t *ptr;
 	uint32_t linesize_out;
@@ -874,9 +880,9 @@ void texture_setimage(texture_t tex, const uint8_t *data, uint32_t linesize,
 	if (!thread_graphics || !tex)
 		return;
 
-	height = (int32_t)texture_getheight(tex);
+	height = (int32_t)gs_texture_get_height(tex);
 
-	if (!texture_map(tex, &ptr, &linesize_out))
+	if (!gs_texture_map(tex, &ptr, &linesize_out))
 		return;
 
 	row_copy = (linesize < linesize_out) ? linesize : linesize_out;
@@ -897,11 +903,11 @@ void texture_setimage(texture_t tex, const uint8_t *data, uint32_t linesize,
 			       row_copy);
 	}
 
-	texture_unmap(tex);
+	gs_texture_unmap(tex);
 }
 
-void cubetexture_setimage(texture_t cubetex, uint32_t side, const void *data,
-		uint32_t linesize, bool invert)
+void gs_cubetexture_set_image(gs_texture_t cubetex, uint32_t side,
+		const void *data, uint32_t linesize, bool invert)
 {
 	/* TODO */
 	UNUSED_PARAMETER(cubetex);
@@ -938,7 +944,7 @@ void gs_reset_blend_state(void)
 
 	if (graphics->cur_blend_state.src  != GS_BLEND_SRCALPHA ||
 	    graphics->cur_blend_state.dest != GS_BLEND_INVSRCALPHA)
-		gs_blendfunction(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+		gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -951,12 +957,12 @@ const char *gs_preprocessor_name(void)
 	return graphics->exports.device_preprocessor_name();
 }
 
-swapchain_t gs_create_swapchain(struct gs_init_data *data)
+gs_swapchain_t gs_swapchain_create(struct gs_init_data *data)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_swapchain(graphics->device,
+	return graphics->exports.device_swapchain_create(graphics->device,
 			data);
 }
 
@@ -968,28 +974,28 @@ void gs_resize(uint32_t x, uint32_t y)
 	graphics->exports.device_resize(graphics->device, x, y);
 }
 
-void gs_getsize(uint32_t *x, uint32_t *y)
+void gs_get_size(uint32_t *x, uint32_t *y)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_getsize(graphics->device, x, y);
+	graphics->exports.device_get_size(graphics->device, x, y);
 }
 
-uint32_t gs_getwidth(void)
+uint32_t gs_get_width(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return 0;
 
-	return graphics->exports.device_getwidth(graphics->device);
+	return graphics->exports.device_get_width(graphics->device);
 }
 
-uint32_t gs_getheight(void)
+uint32_t gs_get_height(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return 0;
 
-	return graphics->exports.device_getheight(graphics->device);
+	return graphics->exports.device_get_height(graphics->device);
 }
 
 static inline bool is_pow2(uint32_t size)
@@ -997,13 +1003,13 @@ static inline bool is_pow2(uint32_t size)
 	return size >= 2 && (size & (size-1)) == 0;
 }
 
-texture_t gs_create_texture(uint32_t width, uint32_t height,
+gs_texture_t gs_texture_create(uint32_t width, uint32_t height,
 		enum gs_color_format color_format, uint32_t levels,
 		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(width) && is_pow2(height);
-	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
+	bool uses_mipmaps = (flags & GS_BUILD_MIPMAPS || levels != 1);
 
 	if (!graphics)
 		return NULL;
@@ -1014,28 +1020,28 @@ texture_t gs_create_texture(uint32_t width, uint32_t height,
 		                  "mipmaps for this texture.");
 
 		uses_mipmaps = false;
-		flags &= ~GS_BUILDMIPMAPS;
+		flags &= ~GS_BUILD_MIPMAPS;
 		levels = 1;
 	}
 
-	if (uses_mipmaps && flags & GS_RENDERTARGET) {
+	if (uses_mipmaps && flags & GS_RENDER_TARGET) {
 		blog(LOG_WARNING, "Cannot use mipmaps with render targets.  "
 		                  "Disabling mipmaps for this texture.");
-		flags &= ~GS_BUILDMIPMAPS;
+		flags &= ~GS_BUILD_MIPMAPS;
 		levels = 1;
 	}
 
-	return graphics->exports.device_create_texture(graphics->device,
+	return graphics->exports.device_texture_create(graphics->device,
 			width, height, color_format, levels, data, flags);
 }
 
-texture_t gs_create_cubetexture(uint32_t size,
+gs_texture_t gs_cubetexture_create(uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
 		const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	bool pow2tex = is_pow2(size);
-	bool uses_mipmaps = (flags & GS_BUILDMIPMAPS || levels != 1);
+	bool uses_mipmaps = (flags & GS_BUILD_MIPMAPS || levels != 1);
 
 	if (!graphics)
 		return NULL;
@@ -1046,112 +1052,112 @@ texture_t gs_create_cubetexture(uint32_t size,
 		                  "mipmaps for this texture.");
 
 		uses_mipmaps = false;
-		flags &= ~GS_BUILDMIPMAPS;
+		flags &= ~GS_BUILD_MIPMAPS;
 		levels = 1;
 	}
 
-	if (uses_mipmaps && flags & GS_RENDERTARGET) {
+	if (uses_mipmaps && flags & GS_RENDER_TARGET) {
 		blog(LOG_WARNING, "Cannot use mipmaps with render targets.  "
 		                  "Disabling mipmaps for this texture.");
-		flags &= ~GS_BUILDMIPMAPS;
+		flags &= ~GS_BUILD_MIPMAPS;
 		levels = 1;
 		data   = NULL;
 	}
 
-	return graphics->exports.device_create_cubetexture(graphics->device,
+	return graphics->exports.device_cubetexture_create(graphics->device,
 			size, color_format, levels, data, flags);
 }
 
-texture_t gs_create_volumetexture(uint32_t width, uint32_t height,
+gs_texture_t gs_voltexture_create(uint32_t width, uint32_t height,
 		uint32_t depth, enum gs_color_format color_format,
 		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_volumetexture(graphics->device,
+	return graphics->exports.device_voltexture_create(graphics->device,
 			width, height, depth, color_format, levels, data,
 			flags);
 }
 
-zstencil_t gs_create_zstencil(uint32_t width, uint32_t height,
+gs_zstencil_t gs_zstencil_create(uint32_t width, uint32_t height,
 		enum gs_zstencil_format format)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_zstencil(graphics->device,
+	return graphics->exports.device_zstencil_create(graphics->device,
 			width, height, format);
 }
 
-stagesurf_t gs_create_stagesurface(uint32_t width, uint32_t height,
+gs_stagesurf_t gs_stagesurface_create(uint32_t width, uint32_t height,
 		enum gs_color_format color_format)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_stagesurface(graphics->device,
+	return graphics->exports.device_stagesurface_create(graphics->device,
 			width, height, color_format);
 }
 
-samplerstate_t gs_create_samplerstate(struct gs_sampler_info *info)
+gs_samplerstate_t gs_samplerstate_create(struct gs_sampler_info *info)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_samplerstate(graphics->device,
+	return graphics->exports.device_samplerstate_create(graphics->device,
 			info);
 }
 
-shader_t gs_create_vertexshader(const char *shader, const char *file,
+gs_shader_t gs_vertexshader_create(const char *shader, const char *file,
 		char **error_string)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_vertexshader(graphics->device,
+	return graphics->exports.device_vertexshader_create(graphics->device,
 			shader, file, error_string);
 }
 
-shader_t gs_create_pixelshader(const char *shader,
+gs_shader_t gs_pixelshader_create(const char *shader,
 		const char *file, char **error_string)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_pixelshader(graphics->device,
+	return graphics->exports.device_pixelshader_create(graphics->device,
 			shader, file, error_string);
 }
 
-vertbuffer_t gs_create_vertexbuffer(struct vb_data *data,
+gs_vertbuffer_t gs_vertexbuffer_create(struct gs_vb_data *data,
 		uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_vertexbuffer(graphics->device,
+	return graphics->exports.device_vertexbuffer_create(graphics->device,
 			data, flags);
 }
 
-indexbuffer_t gs_create_indexbuffer(enum gs_index_type type,
+gs_indexbuffer_t gs_indexbuffer_create(enum gs_index_type type,
 		void *indices, size_t num, uint32_t flags)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_create_indexbuffer(graphics->device,
+	return graphics->exports.device_indexbuffer_create(graphics->device,
 			type, indices, num, flags);
 }
 
-enum gs_texture_type gs_gettexturetype(texture_t texture)
+enum gs_texture_type gs_get_texture_type(gs_texture_t texture)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return GS_TEXTURE_2D;
 
-	return graphics->exports.device_gettexturetype(texture);
+	return graphics->exports.device_get_texture_type(texture);
 }
 
-void gs_load_vertexbuffer(vertbuffer_t vertbuffer)
+void gs_load_vertexbuffer(gs_vertbuffer_t vertbuffer)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1160,7 +1166,7 @@ void gs_load_vertexbuffer(vertbuffer_t vertbuffer)
 			vertbuffer);
 }
 
-void gs_load_indexbuffer(indexbuffer_t indexbuffer)
+void gs_load_indexbuffer(gs_indexbuffer_t indexbuffer)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1169,7 +1175,7 @@ void gs_load_indexbuffer(indexbuffer_t indexbuffer)
 			indexbuffer);
 }
 
-void gs_load_texture(texture_t tex, int unit)
+void gs_load_texture(gs_texture_t tex, int unit)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1177,7 +1183,7 @@ void gs_load_texture(texture_t tex, int unit)
 	graphics->exports.device_load_texture(graphics->device, tex, unit);
 }
 
-void gs_load_samplerstate(samplerstate_t samplerstate, int unit)
+void gs_load_samplerstate(gs_samplerstate_t samplerstate, int unit)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1186,7 +1192,7 @@ void gs_load_samplerstate(samplerstate_t samplerstate, int unit)
 			samplerstate, unit);
 }
 
-void gs_load_vertexshader(shader_t vertshader)
+void gs_load_vertexshader(gs_shader_t vertshader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1195,7 +1201,7 @@ void gs_load_vertexshader(shader_t vertshader)
 			vertshader);
 }
 
-void gs_load_pixelshader(shader_t pixelshader)
+void gs_load_pixelshader(gs_shader_t pixelshader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1204,66 +1210,67 @@ void gs_load_pixelshader(shader_t pixelshader)
 			pixelshader);
 }
 
-void gs_load_defaultsamplerstate(bool b_3d, int unit)
+void gs_load_default_samplerstate(bool b_3d, int unit)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_load_defaultsamplerstate(graphics->device,
+	graphics->exports.device_load_default_samplerstate(graphics->device,
 			b_3d, unit);
 }
 
-shader_t gs_getvertexshader(void)
+gs_shader_t gs_get_vertex_shader(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_getvertexshader(graphics->device);
+	return graphics->exports.device_get_vertex_shader(graphics->device);
 }
 
-shader_t gs_getpixelshader(void)
+gs_shader_t gs_get_pixel_shader(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_getpixelshader(graphics->device);
+	return graphics->exports.device_get_pixel_shader(graphics->device);
 }
 
-texture_t gs_getrendertarget(void)
+gs_texture_t gs_get_render_target(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_getrendertarget(graphics->device);
+	return graphics->exports.device_get_render_target(graphics->device);
 }
 
-zstencil_t gs_getzstenciltarget(void)
+gs_zstencil_t gs_get_zstencil_target(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	return graphics->exports.device_getzstenciltarget(graphics->device);
+	return graphics->exports.device_get_zstencil_target(graphics->device);
 }
 
-void gs_setrendertarget(texture_t tex, zstencil_t zstencil)
+void gs_set_render_target(gs_texture_t tex, gs_zstencil_t zstencil)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_setrendertarget(graphics->device, tex,
+	graphics->exports.device_set_render_target(graphics->device, tex,
 			zstencil);
 }
 
-void gs_setcuberendertarget(texture_t cubetex, int side, zstencil_t zstencil)
+void gs_set_cube_render_target(gs_texture_t cubetex, int side,
+		gs_zstencil_t zstencil)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_setcuberendertarget(graphics->device, cubetex,
-			side, zstencil);
+	graphics->exports.device_set_cube_render_target(graphics->device,
+			cubetex, side, zstencil);
 }
 
-void gs_copy_texture(texture_t dst, texture_t src)
+void gs_copy_texture(gs_texture_t dst, gs_texture_t src)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1271,8 +1278,8 @@ void gs_copy_texture(texture_t dst, texture_t src)
 	graphics->exports.device_copy_texture(graphics->device, dst, src);
 }
 
-void gs_copy_texture_region(texture_t dst, uint32_t dst_x, uint32_t dst_y,
-		texture_t src, uint32_t src_x, uint32_t src_y,
+void gs_copy_texture_region(gs_texture_t dst, uint32_t dst_x, uint32_t dst_y,
+		gs_texture_t src, uint32_t src_x, uint32_t src_y,
 		uint32_t src_w, uint32_t src_h)
 {
 	graphics_t graphics = thread_graphics;
@@ -1283,7 +1290,7 @@ void gs_copy_texture_region(texture_t dst, uint32_t dst_x, uint32_t dst_y,
 			src, src_x, src_y, src_w, src_h);
 }
 
-void gs_stage_texture(stagesurf_t dst, texture_t src)
+void gs_stage_texture(gs_stagesurf_t dst, gs_texture_t src)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1291,12 +1298,12 @@ void gs_stage_texture(stagesurf_t dst, texture_t src)
 	graphics->exports.device_stage_texture(graphics->device, dst, src);
 }
 
-void gs_beginscene(void)
+void gs_begin_scene(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_beginscene(graphics->device);
+	graphics->exports.device_begin_scene(graphics->device);
 }
 
 void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert,
@@ -1309,15 +1316,15 @@ void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert,
 			start_vert, num_verts);
 }
 
-void gs_endscene(void)
+void gs_end_scene(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_endscene(graphics->device);
+	graphics->exports.device_end_scene(graphics->device);
 }
 
-void gs_load_swapchain(swapchain_t swapchain)
+void gs_load_swapchain(gs_swapchain_t swapchain)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
@@ -1349,20 +1356,20 @@ void gs_flush(void)
 	graphics->exports.device_flush(graphics->device);
 }
 
-void gs_setcullmode(enum gs_cull_mode mode)
+void gs_set_cull_mode(enum gs_cull_mode mode)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_setcullmode(graphics->device, mode);
+	graphics->exports.device_set_cull_mode(graphics->device, mode);
 }
 
-enum gs_cull_mode gs_getcullmode(void)
+enum gs_cull_mode gs_get_cull_mode(void)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return GS_NEITHER;
 
-	return graphics->exports.device_getcullmode(graphics->device);
+	return graphics->exports.device_get_cull_mode(graphics->device);
 }
 
 void gs_enable_blending(bool enable)
@@ -1374,28 +1381,28 @@ void gs_enable_blending(bool enable)
 	graphics->exports.device_enable_blending(graphics->device, enable);
 }
 
-void gs_enable_depthtest(bool enable)
+void gs_enable_depth_test(bool enable)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_enable_depthtest(graphics->device, enable);
+	graphics->exports.device_enable_depth_test(graphics->device, enable);
 }
 
-void gs_enable_stenciltest(bool enable)
+void gs_enable_stencil_test(bool enable)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_enable_stenciltest(graphics->device, enable);
+	graphics->exports.device_enable_stencil_test(graphics->device, enable);
 }
 
-void gs_enable_stencilwrite(bool enable)
+void gs_enable_stencil_write(bool enable)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_enable_stencilwrite(graphics->device, enable);
+	graphics->exports.device_enable_stencil_write(graphics->device, enable);
 }
 
 void gs_enable_color(bool red, bool green, bool blue, bool alpha)
@@ -1407,65 +1414,65 @@ void gs_enable_color(bool red, bool green, bool blue, bool alpha)
 			blue, alpha);
 }
 
-void gs_blendfunction(enum gs_blend_type src, enum gs_blend_type dest)
+void gs_blend_function(enum gs_blend_type src, enum gs_blend_type dest)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
 	graphics->cur_blend_state.src  = src;
 	graphics->cur_blend_state.dest = dest;
-	graphics->exports.device_blendfunction(graphics->device, src, dest);
+	graphics->exports.device_blend_function(graphics->device, src, dest);
 }
 
-void gs_depthfunction(enum gs_depth_test test)
+void gs_depth_function(enum gs_depth_test test)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_depthfunction(graphics->device, test);
+	graphics->exports.device_depth_function(graphics->device, test);
 }
 
-void gs_stencilfunction(enum gs_stencil_side side, enum gs_depth_test test)
+void gs_stencil_function(enum gs_stencil_side side, enum gs_depth_test test)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_stencilfunction(graphics->device, side, test);
+	graphics->exports.device_stencil_function(graphics->device, side, test);
 }
 
-void gs_stencilop(enum gs_stencil_side side, enum gs_stencil_op fail,
-		enum gs_stencil_op zfail, enum gs_stencil_op zpass)
+void gs_stencil_op(enum gs_stencil_side side, enum gs_stencil_op_type fail,
+		enum gs_stencil_op_type zfail, enum gs_stencil_op_type zpass)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_stencilop(graphics->device, side, fail, zfail,
+	graphics->exports.device_stencil_op(graphics->device, side, fail, zfail,
 			zpass);
 }
 
-void gs_setviewport(int x, int y, int width, int height)
+void gs_set_viewport(int x, int y, int width, int height)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_setviewport(graphics->device, x, y, width,
+	graphics->exports.device_set_viewport(graphics->device, x, y, width,
 			height);
 }
 
-void gs_getviewport(struct gs_rect *rect)
+void gs_get_viewport(struct gs_rect *rect)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_getviewport(graphics->device, rect);
+	graphics->exports.device_get_viewport(graphics->device, rect);
 }
 
-void gs_setscissorrect(struct gs_rect *rect)
+void gs_set_scissor_rect(struct gs_rect *rect)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->exports.device_setscissorrect(graphics->device, rect);
+	graphics->exports.device_set_scissor_rect(graphics->device, rect);
 }
 
 void gs_ortho(float left, float right, float top, float bottom, float znear,
@@ -1504,430 +1511,434 @@ void gs_projection_pop(void)
 	graphics->exports.device_projection_pop(graphics->device);
 }
 
-void swapchain_destroy(swapchain_t swapchain)
+void gs_swapchain_destroy(gs_swapchain_t swapchain)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !swapchain) return;
 
-	graphics->exports.swapchain_destroy(swapchain);
+	graphics->exports.gs_swapchain_destroy(swapchain);
 }
 
-void shader_destroy(shader_t shader)
+void gs_shader_destroy(gs_shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return;
 
-	graphics->exports.shader_destroy(shader);
+	graphics->exports.gs_shader_destroy(shader);
 }
 
-int shader_numparams(shader_t shader)
+int gs_shader_get_num_params(gs_shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return 0;
 
-	return graphics->exports.shader_numparams(shader);
+	return graphics->exports.gs_shader_get_num_params(shader);
 }
 
-sparam_t shader_getparambyidx(shader_t shader, uint32_t param)
+gs_sparam_t gs_shader_get_param_by_idx(gs_shader_t shader, uint32_t param)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
 
-	return graphics->exports.shader_getparambyidx(shader, param);
+	return graphics->exports.gs_shader_get_param_by_idx(shader, param);
 }
 
-sparam_t shader_getparambyname(shader_t shader, const char *name)
+gs_sparam_t gs_shader_get_param_by_name(gs_shader_t shader, const char *name)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
 
-	return graphics->exports.shader_getparambyname(shader, name);
+	return graphics->exports.gs_shader_get_param_by_name(shader, name);
 }
 
-sparam_t shader_getviewprojmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_viewproj_matrix(gs_shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
 
-	return graphics->exports.shader_getviewprojmatrix(shader);
+	return graphics->exports.gs_shader_get_viewproj_matrix(shader);
 }
 
-sparam_t shader_getworldmatrix(shader_t shader)
+gs_sparam_t gs_shader_get_world_matrix(gs_shader_t shader)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
 
-	return graphics->exports.shader_getworldmatrix(shader);
+	return graphics->exports.gs_shader_get_world_matrix(shader);
 }
 
-void shader_getparaminfo(sparam_t param, struct shader_param_info *info)
+void gs_shader_get_param_info(gs_sparam_t param,
+		struct gs_shader_param_info *info)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_getparaminfo(param, info);
+	graphics->exports.gs_shader_get_param_info(param, info);
 }
 
-void shader_setbool(sparam_t param, bool val)
+void gs_shader_set_bool(gs_sparam_t param, bool val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setbool(param, val);
+	graphics->exports.gs_shader_set_bool(param, val);
 }
 
-void shader_setfloat(sparam_t param, float val)
+void gs_shader_set_float(gs_sparam_t param, float val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setfloat(param, val);
+	graphics->exports.gs_shader_set_float(param, val);
 }
 
-void shader_setint(sparam_t param, int val)
+void gs_shader_set_int(gs_sparam_t param, int val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setint(param, val);
+	graphics->exports.gs_shader_set_int(param, val);
 }
 
-void shader_setmatrix3(sparam_t param, const struct matrix3 *val)
+void gs_shader_setmatrix3(gs_sparam_t param, const struct matrix3 *val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix3(param, val);
+	graphics->exports.gs_shader_setmatrix3(param, val);
 }
 
-void shader_setmatrix4(sparam_t param, const struct matrix4 *val)
+void gs_shader_set_matrix4(gs_sparam_t param, const struct matrix4 *val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setmatrix4(param, val);
+	graphics->exports.gs_shader_set_matrix4(param, val);
 }
 
-void shader_setvec2(sparam_t param, const struct vec2 *val)
+void gs_shader_set_vec2(gs_sparam_t param, const struct vec2 *val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec2(param, val);
+	graphics->exports.gs_shader_set_vec2(param, val);
 }
 
-void shader_setvec3(sparam_t param, const struct vec3 *val)
+void gs_shader_set_vec3(gs_sparam_t param, const struct vec3 *val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec3(param, val);
+	graphics->exports.gs_shader_set_vec3(param, val);
 }
 
-void shader_setvec4(sparam_t param, const struct vec4 *val)
+void gs_shader_set_vec4(gs_sparam_t param, const struct vec4 *val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setvec4(param, val);
+	graphics->exports.gs_shader_set_vec4(param, val);
 }
 
-void shader_settexture(sparam_t param, texture_t val)
+void gs_shader_set_texture(gs_sparam_t param, gs_texture_t val)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_settexture(param, val);
+	graphics->exports.gs_shader_set_texture(param, val);
 }
 
-void shader_setval(sparam_t param, const void *val, size_t size)
+void gs_shader_set_val(gs_sparam_t param, const void *val, size_t size)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setval(param, val, size);
+	graphics->exports.gs_shader_set_val(param, val, size);
 }
 
-void shader_setdefault(sparam_t param)
+void gs_shader_set_default(gs_sparam_t param)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !param) return;
 
-	graphics->exports.shader_setdefault(param);
+	graphics->exports.gs_shader_set_default(param);
 }
 
-void texture_destroy(texture_t tex)
+void gs_texture_destroy(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return;
 
-	graphics->exports.texture_destroy(tex);
+	graphics->exports.gs_texture_destroy(tex);
 }
 
-uint32_t texture_getwidth(texture_t tex)
+uint32_t gs_texture_get_width(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return 0;
 
-	return graphics->exports.texture_getwidth(tex);
+	return graphics->exports.gs_texture_get_width(tex);
 }
 
-uint32_t texture_getheight(texture_t tex)
+uint32_t gs_texture_get_height(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return 0;
 
-	return graphics->exports.texture_getheight(tex);
+	return graphics->exports.gs_texture_get_height(tex);
 }
 
-enum gs_color_format texture_getcolorformat(texture_t tex)
+enum gs_color_format gs_texture_get_color_format(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return GS_UNKNOWN;
 
-	return graphics->exports.texture_getcolorformat(tex);
+	return graphics->exports.gs_texture_get_color_format(tex);
 }
 
-bool texture_map(texture_t tex, uint8_t **ptr, uint32_t *linesize)
+bool gs_texture_map(gs_texture_t tex, uint8_t **ptr, uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return false;
 
-	return graphics->exports.texture_map(tex, ptr, linesize);
+	return graphics->exports.gs_texture_map(tex, ptr, linesize);
 }
 
-void texture_unmap(texture_t tex)
+void gs_texture_unmap(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return;
 
-	graphics->exports.texture_unmap(tex);
+	graphics->exports.gs_texture_unmap(tex);
 }
 
-bool texture_isrect(texture_t tex)
+bool gs_texture_is_rect(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return false;
 
-	if (graphics->exports.texture_isrect)
-		return graphics->exports.texture_isrect(tex);
+	if (graphics->exports.gs_texture_is_rect)
+		return graphics->exports.gs_texture_is_rect(tex);
 	else
 		return false;
 }
 
-void *texture_getobj(texture_t tex)
+void *gs_texture_get_obj(gs_texture_t tex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !tex) return NULL;
 
-	return graphics->exports.texture_getobj(tex);
+	return graphics->exports.gs_texture_get_obj(tex);
 }
 
-void cubetexture_destroy(texture_t cubetex)
+void gs_cubetexture_destroy(gs_texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !cubetex) return;
 
-	graphics->exports.cubetexture_destroy(cubetex);
+	graphics->exports.gs_cubetexture_destroy(cubetex);
 }
 
-uint32_t cubetexture_getsize(texture_t cubetex)
+uint32_t gs_cubetexture_get_size(gs_texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !cubetex) return 0;
 
-	return graphics->exports.cubetexture_getsize(cubetex);
+	return graphics->exports.gs_cubetexture_get_size(cubetex);
 }
 
-enum gs_color_format cubetexture_getcolorformat(texture_t cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t cubetex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !cubetex) return GS_UNKNOWN;
 
-	return graphics->exports.cubetexture_getcolorformat(cubetex);
+	return graphics->exports.gs_cubetexture_get_color_format(cubetex);
 }
 
-void volumetexture_destroy(texture_t voltex)
+void gs_voltexture_destroy(gs_texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !voltex) return;
 
-	graphics->exports.volumetexture_destroy(voltex);
+	graphics->exports.gs_voltexture_destroy(voltex);
 }
 
-uint32_t volumetexture_getwidth(texture_t voltex)
+uint32_t gs_voltexture_get_width(gs_texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
 
-	return graphics->exports.volumetexture_getwidth(voltex);
+	return graphics->exports.gs_voltexture_get_width(voltex);
 }
 
-uint32_t volumetexture_getheight(texture_t voltex)
+uint32_t gs_voltexture_get_height(gs_texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
 
-	return graphics->exports.volumetexture_getheight(voltex);
+	return graphics->exports.gs_voltexture_get_height(voltex);
 }
 
-uint32_t volumetexture_getdepth(texture_t voltex)
+uint32_t gs_voltexture_getdepth(gs_texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
 
-	return graphics->exports.volumetexture_getdepth(voltex);
+	return graphics->exports.gs_voltexture_getdepth(voltex);
 }
 
-enum gs_color_format volumetexture_getcolorformat(texture_t voltex)
+enum gs_color_format gs_voltexture_get_color_format(gs_texture_t voltex)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !voltex) return GS_UNKNOWN;
 
-	return graphics->exports.volumetexture_getcolorformat(voltex);
+	return graphics->exports.gs_voltexture_get_color_format(voltex);
 }
 
-void stagesurface_destroy(stagesurf_t stagesurf)
+void gs_stagesurface_destroy(gs_stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return;
 
-	graphics->exports.stagesurface_destroy(stagesurf);
+	graphics->exports.gs_stagesurface_destroy(stagesurf);
 }
 
-uint32_t stagesurface_getwidth(stagesurf_t stagesurf)
+uint32_t gs_stagesurface_get_width(gs_stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return 0;
 
-	return graphics->exports.stagesurface_getwidth(stagesurf);
+	return graphics->exports.gs_stagesurface_get_width(stagesurf);
 }
 
-uint32_t stagesurface_getheight(stagesurf_t stagesurf)
+uint32_t gs_stagesurface_get_height(gs_stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return 0;
 
-	return graphics->exports.stagesurface_getheight(stagesurf);
+	return graphics->exports.gs_stagesurface_get_height(stagesurf);
 }
 
-enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
+enum gs_color_format gs_stagesurface_get_color_format(gs_stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return GS_UNKNOWN;
 
-	return graphics->exports.stagesurface_getcolorformat(stagesurf);
+	return graphics->exports.gs_stagesurface_get_color_format(stagesurf);
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, uint8_t **data, uint32_t *linesize)
+bool gs_stagesurface_map(gs_stagesurf_t stagesurf, uint8_t **data,
+		uint32_t *linesize)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return false;
 
-	return graphics->exports.stagesurface_map(stagesurf, data, linesize);
+	return graphics->exports.gs_stagesurface_map(stagesurf, data, linesize);
 }
 
-void stagesurface_unmap(stagesurf_t stagesurf)
+void gs_stagesurface_unmap(gs_stagesurf_t stagesurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !stagesurf) return;
 
-	graphics->exports.stagesurface_unmap(stagesurf);
+	graphics->exports.gs_stagesurface_unmap(stagesurf);
 }
 
-void zstencil_destroy(zstencil_t zstencil)
+void gs_zstencil_destroy(gs_zstencil_t zstencil)
 {
 	if (!thread_graphics || !zstencil) return;
 
-	thread_graphics->exports.zstencil_destroy(zstencil);
+	thread_graphics->exports.gs_zstencil_destroy(zstencil);
 }
 
-void samplerstate_destroy(samplerstate_t samplerstate)
+void gs_samplerstate_destroy(gs_samplerstate_t samplerstate)
 {
 	if (!thread_graphics || !samplerstate) return;
 
-	thread_graphics->exports.samplerstate_destroy(samplerstate);
+	thread_graphics->exports.gs_samplerstate_destroy(samplerstate);
 }
 
-void vertexbuffer_destroy(vertbuffer_t vertbuffer)
+void gs_vertexbuffer_destroy(gs_vertbuffer_t vertbuffer)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !vertbuffer) return;
 
-	graphics->exports.vertexbuffer_destroy(vertbuffer);
+	graphics->exports.gs_vertexbuffer_destroy(vertbuffer);
 }
 
-void vertexbuffer_flush(vertbuffer_t vertbuffer)
+void gs_vertexbuffer_flush(gs_vertbuffer_t vertbuffer)
 {
 	if (!thread_graphics || !vertbuffer) return;
 
-	thread_graphics->exports.vertexbuffer_flush(vertbuffer);
+	thread_graphics->exports.gs_vertexbuffer_flush(vertbuffer);
 }
 
-struct vb_data *vertexbuffer_getdata(vertbuffer_t vertbuffer)
+struct gs_vb_data *gs_vertexbuffer_get_data(gs_vertbuffer_t vertbuffer)
 {
 	if (!thread_graphics || !vertbuffer) return NULL;
 
-	return thread_graphics->exports.vertexbuffer_getdata(vertbuffer);
+	return thread_graphics->exports.gs_vertexbuffer_get_data(vertbuffer);
 }
 
-void indexbuffer_destroy(indexbuffer_t indexbuffer)
+void gs_indexbuffer_destroy(gs_indexbuffer_t indexbuffer)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !indexbuffer) return;
 
-	graphics->exports.indexbuffer_destroy(indexbuffer);
+	graphics->exports.gs_indexbuffer_destroy(indexbuffer);
 }
 
-void   indexbuffer_flush(indexbuffer_t indexbuffer)
+void   gs_indexbuffer_flush(gs_indexbuffer_t indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return;
 
-	thread_graphics->exports.indexbuffer_flush(indexbuffer);
+	thread_graphics->exports.gs_indexbuffer_flush(indexbuffer);
 }
 
-void  *indexbuffer_getdata(indexbuffer_t indexbuffer)
+void  *gs_indexbuffer_get_data(gs_indexbuffer_t indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return NULL;
 
-	return thread_graphics->exports.indexbuffer_getdata(indexbuffer);
+	return thread_graphics->exports.gs_indexbuffer_get_data(indexbuffer);
 }
 
-size_t indexbuffer_numindices(indexbuffer_t indexbuffer)
+size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return 0;
 
-	return thread_graphics->exports.indexbuffer_numindices(indexbuffer);
+	return thread_graphics->exports.gs_indexbuffer_get_num_indices(
+			indexbuffer);
 }
 
-enum gs_index_type indexbuffer_gettype(indexbuffer_t indexbuffer)
+enum gs_index_type gs_indexbuffer_get_type(gs_indexbuffer_t indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return (enum gs_index_type)0;
 
-	return thread_graphics->exports.indexbuffer_gettype(indexbuffer);
+	return thread_graphics->exports.gs_indexbuffer_get_type(indexbuffer);
 }
 
 #ifdef __APPLE__
 
 /** Platform specific functions */
-texture_t gs_create_texture_from_iosurface(void *iosurf)
+gs_texture_t gs_texture_create_from_iosurface(void *iosurf)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics || !iosurf ||
-			!graphics->exports.texture_create_from_iosurface)
+			!graphics->exports.device_texture_create_from_iosurface)
 		return NULL;
 
-	return graphics->exports.texture_create_from_iosurface(
+	return graphics->exports.device_texture_create_from_iosurface(
 			graphics->device, iosurf);
 }
 
-bool texture_rebind_iosurface(texture_t texture, void *iosurf)
+bool gs_texture_rebind_iosurface(gs_texture_t texture, void *iosurf)
 {
 	graphics_t graphics = thread_graphics;
-	if (!graphics || !iosurf || !graphics->exports.texture_rebind_iosurface)
+	if (!graphics || !iosurf ||
+	    !graphics->exports.gs_texture_rebind_iosurface)
 		return false;
 
-	return graphics->exports.texture_rebind_iosurface(texture, iosurf);
+	return graphics->exports.gs_texture_rebind_iosurface(texture, iosurf);
 }
 
 #elif _WIN32
@@ -1937,38 +1948,38 @@ bool gs_gdi_texture_available(void)
 	if (!thread_graphics)
 		return false;
 
-	return thread_graphics->exports.gdi_texture_available();
+	return thread_graphics->exports.device_gdi_texture_available();
 }
 
 /** creates a windows GDI-lockable texture */
-texture_t gs_create_gdi_texture(uint32_t width, uint32_t height)
+gs_texture_t gs_texture_create_gdi(uint32_t width, uint32_t height)
 {
 	graphics_t graphics = thread_graphics;
 	if (!graphics) return NULL;
 
-	if (graphics->exports.device_create_gdi_texture)
-		return graphics->exports.device_create_gdi_texture(
+	if (graphics->exports.device_texture_create_gdi)
+		return graphics->exports.device_texture_create_gdi(
 				graphics->device, width, height);
 	return NULL;
 }
 
-void *texture_get_dc(texture_t gdi_tex)
+void *gs_texture_get_dc(gs_texture_t gdi_tex)
 {
 	if (!thread_graphics || !gdi_tex)
 		return NULL;
 
-	if (thread_graphics->exports.texture_get_dc)
-		return thread_graphics->exports.texture_get_dc(gdi_tex);
+	if (thread_graphics->exports.gs_texture_get_dc)
+		return thread_graphics->exports.gs_texture_get_dc(gdi_tex);
 	return NULL;
 }
 
-void texture_release_dc(texture_t gdi_tex)
+void gs_texture_release_dc(gs_texture_t gdi_tex)
 {
 	if (!thread_graphics || !gdi_tex)
 		return;
 
-	if (thread_graphics->exports.texture_release_dc)
-		thread_graphics->exports.texture_release_dc(gdi_tex);
+	if (thread_graphics->exports.gs_texture_release_dc)
+		thread_graphics->exports.gs_texture_release_dc(gdi_tex);
 }
 
 #endif

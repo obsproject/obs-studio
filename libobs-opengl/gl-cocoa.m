@@ -96,7 +96,7 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 	return context;
 }
 
-static bool gl_init_default_swap(struct gl_platform *plat, device_t dev,
+static bool gl_init_default_swap(struct gl_platform *plat, gs_device_t dev,
 		struct gs_init_data *info)
 {
 	if(!(plat->context = gl_context_create(info)))
@@ -109,7 +109,7 @@ static bool gl_init_default_swap(struct gl_platform *plat, device_t dev,
 	return plat->swap.wi != NULL;
 }
 
-struct gl_platform *gl_platform_create(device_t device,
+struct gl_platform *gl_platform_create(gs_device_t device,
 		struct gs_init_data *info)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
@@ -186,24 +186,24 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	bfree(wi);
 }
 
-void gl_update(device_t device)
+void gl_update(gs_device_t device)
 {
 	[device->plat->context update];
 }
 
-void device_entercontext(device_t device)
+void device_enter_context(gs_device_t device)
 {
 	[device->plat->context makeCurrentContext];
 }
 
-void device_leavecontext(device_t device)
+void device_leave_context(gs_device_t device)
 {
 	UNUSED_PARAMETER(device);
 
 	[NSOpenGLContext clearCurrentContext];
 }
 
-void device_load_swapchain(device_t device, swapchain_t swap)
+void device_load_swapchain(gs_device_t device, gs_swapchain_t swap)
 {
 	if(!swap)
 		swap = &device->plat->swap;
@@ -215,7 +215,7 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 	[device->plat->context setView:swap->wi->view];
 }
 
-void device_present(device_t device)
+void device_present(gs_device_t device)
 {
 	[device->plat->context flushBuffer];
 }
@@ -227,7 +227,8 @@ void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
 	if(height) *height = swap->info.cy;
 }
 
-texture_t texture_create_from_iosurface(device_t device, void *iosurf)
+gs_texture_t device_texture_create_from_iosurface(gs_device_t device,
+		void *iosurf)
 {
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
@@ -270,7 +271,7 @@ texture_t texture_create_from_iosurface(device_t device, void *iosurf)
 	
 	if(err != kCGLNoError) {
 		blog(LOG_ERROR, "CGLTexImageIOSurface2D: %u, %s"
-			        " (texture_create_from_iosurface)",
+			        " (device_texture_create_from_iosurface)",
 				err, CGLErrorString(err));
 
 		gl_success("CGLTexImageIOSurface2D");
@@ -284,15 +285,15 @@ texture_t texture_create_from_iosurface(device_t device, void *iosurf)
 	if (!gl_bind_texture(tex->base.gl_target, 0))
 		goto fail;
 
-	return (texture_t)tex;
+	return (gs_texture_t)tex;
 
 fail:
-	texture_destroy((texture_t)tex);
-	blog(LOG_ERROR, "texture_create_from_iosurface (GL) failed");
+	gs_texture_destroy((gs_texture_t)tex);
+	blog(LOG_ERROR, "device_texture_create_from_iosurface (GL) failed");
 	return NULL;
 }
 
-bool texture_rebind_iosurface(texture_t texture, void *iosurf)
+bool gs_texture_rebind_iosurface(gs_texture_t texture, void *iosurf)
 {
 	if (!texture)
 		return false;
@@ -326,7 +327,7 @@ bool texture_rebind_iosurface(texture_t texture, void *iosurf)
 	
 	if(err != kCGLNoError) {
 		blog(LOG_ERROR, "CGLTexImageIOSurface2D: %u, %s"
-			        " (texture_rebind_iosurface)",
+			        " (gs_texture_rebind_iosurface)",
 				err, CGLErrorString(err));
 
 		gl_success("CGLTexImageIOSurface2D");

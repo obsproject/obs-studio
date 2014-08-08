@@ -218,7 +218,7 @@ static void gl_write_struct(struct gl_shader_parser *glsp,
 
 static void gl_write_interface_block(struct gl_shader_parser *glsp)
 {
-	if (glsp->type == SHADER_VERTEX) {
+	if (glsp->type == GS_SHADER_VERTEX) {
 		dstr_cat(&glsp->gl_string, "out gl_PerVertex {\n"
 		                           "\tvec4 gl_Position;\n};\n\n");
 	}
@@ -470,7 +470,7 @@ static inline void gl_write_main_interface_assign(
 		const char *src)
 {
 	/* vertex shaders: write gl_Position */
-	if (glsp->type == SHADER_VERTEX &&
+	if (glsp->type == GS_SHADER_VERTEX &&
 	    strcmp(var->mapping, "POSITION") == 0) {
 		dstr_cat(&glsp->gl_string, "\tgl_Position = ");
 		dstr_cat(&glsp->gl_string, src);

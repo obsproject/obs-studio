@@ -54,7 +54,7 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 
 	for (i = 0; i < vb->data->num_tex; i++) {
 		GLuint tex_buffer;
-		struct tvertarray *tv = vb->data->tvarray+i;
+		struct gs_tvertarray *tv = vb->data->tvarray+i;
 		size_t size = vb->data->num * sizeof(float) * tv->width;
 
 		if (!gl_create_buffer(GL_ARRAY_BUFFER, &tex_buffer, size,
@@ -66,7 +66,7 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 	}
 
 	if (!vb->dynamic) {
-		vbdata_destroy(vb->data);
+		gs_vbdata_destroy(vb->data);
 		vb->data = NULL;
 	}
 
@@ -76,8 +76,8 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 	return true;
 }
 
-vertbuffer_t device_create_vertexbuffer(device_t device,
-		struct vb_data *data, uint32_t flags)
+gs_vertbuffer_t device_vertexbuffer_create(gs_device_t device,
+		struct gs_vb_data *data, uint32_t flags)
 {
 	struct gs_vertex_buffer *vb = bzalloc(sizeof(struct gs_vertex_buffer));
 	vb->device  = device;
@@ -86,15 +86,15 @@ vertbuffer_t device_create_vertexbuffer(device_t device,
 	vb->dynamic = flags & GS_DYNAMIC;
 
 	if (!create_buffers(vb)) {
-		blog(LOG_ERROR, "device_create_vertexbuffer (GL) failed");
-		vertexbuffer_destroy(vb);
+		blog(LOG_ERROR, "device_vertexbuffer_create (GL) failed");
+		gs_vertexbuffer_destroy(vb);
 		return NULL;
 	}
 
 	return vb;
 }
 
-void vertexbuffer_destroy(vertbuffer_t vb)
+void gs_vertexbuffer_destroy(gs_vertbuffer_t vb)
 {
 	if (vb) {
 		if (vb->vertex_buffer)
@@ -114,13 +114,13 @@ void vertexbuffer_destroy(vertbuffer_t vb)
 
 		da_free(vb->uv_sizes);
 		da_free(vb->uv_buffers);
-		vbdata_destroy(vb->data);
+		gs_vbdata_destroy(vb->data);
 
 		bfree(vb);
 	}
 }
 
-void vertexbuffer_flush(vertbuffer_t vb)
+void gs_vertexbuffer_flush(gs_vertbuffer_t vb)
 {
 	size_t i;
 
@@ -157,7 +157,7 @@ void vertexbuffer_flush(vertbuffer_t vb)
 
 	for (i = 0; i < vb->data->num_tex; i++) {
 		GLuint buffer = vb->uv_buffers.array[i];
-		struct tvertarray *tv = vb->data->tvarray+i;
+		struct gs_tvertarray *tv = vb->data->tvarray+i;
 		size_t size = vb->data->num * tv->width * sizeof(float);
 
 		if (!update_buffer(GL_ARRAY_BUFFER, buffer, tv->array, size))
@@ -167,10 +167,10 @@ void vertexbuffer_flush(vertbuffer_t vb)
 	return;
 
 failed:
-	blog(LOG_ERROR, "vertexbuffer_flush (GL) failed");
+	blog(LOG_ERROR, "gs_vertexbuffer_flush (GL) failed");
 }
 
-struct vb_data *vertexbuffer_getdata(vertbuffer_t vb)
+struct gs_vb_data *gs_vertexbuffer_get_data(gs_vertbuffer_t vb)
 {
 	return vb->data;
 }
@@ -251,7 +251,7 @@ static inline bool load_vb_buffers(struct gs_shader *shader,
 	return true;
 }
 
-bool vertexbuffer_load(device_t device, vertbuffer_t vb)
+bool vertexbuffer_load(gs_device_t device, gs_vertbuffer_t vb)
 {
 	if (device->cur_vertex_buffer == vb)
 		return true;
@@ -268,7 +268,7 @@ bool vertexbuffer_load(device_t device, vertbuffer_t vb)
 	return true;
 }
 
-void device_load_vertexbuffer(device_t device, vertbuffer_t vb)
+void device_load_vertexbuffer(gs_device_t device, gs_vertbuffer_t vb)
 {
 	if (!vertexbuffer_load(device, vb))
 		blog(LOG_ERROR, "device_load_vertexbuffer (GL) failed");

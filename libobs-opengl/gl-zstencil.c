@@ -48,7 +48,7 @@ static inline GLenum get_attachment(enum gs_zstencil_format format)
 	return 0;
 }
 
-zstencil_t device_create_zstencil(device_t device, uint32_t width,
+gs_zstencil_t device_zstencil_create(gs_device_t device, uint32_t width,
 		uint32_t height, enum gs_zstencil_format format)
 {
 	struct gs_zstencil_buffer *zs;
@@ -59,15 +59,15 @@ zstencil_t device_create_zstencil(device_t device, uint32_t width,
 	zs->device     = device;
 
 	if (!gl_init_zsbuffer(zs, width, height)) {
-		blog(LOG_ERROR, "device_create_zstencil (GL) failed");
-		zstencil_destroy(zs);
+		blog(LOG_ERROR, "device_zstencil_create (GL) failed");
+		gs_zstencil_destroy(zs);
 		return NULL;
 	}
 
 	return zs;
 }
 
-void zstencil_destroy(zstencil_t zs)
+void gs_zstencil_destroy(gs_zstencil_t zs)
 {
 	if (zs) {
 		if (zs->buffer) {

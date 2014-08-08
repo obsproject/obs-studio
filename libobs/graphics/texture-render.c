@@ -24,8 +24,8 @@
 #include "graphics.h"
 
 struct gs_texture_render {
-	texture_t  target, prev_target;
-	zstencil_t zs, prev_zs;
+	gs_texture_t  target, prev_target;
+	gs_zstencil_t zs, prev_zs;
 
 	uint32_t cx, cy;
 
@@ -35,7 +35,7 @@ struct gs_texture_render {
 	bool rendered;
 };
 
-texrender_t texrender_create(enum gs_color_format format,
+gs_texrender_t gs_texrender_create(enum gs_color_format format,
 		enum gs_zstencil_format zsformat)
 {
 	struct gs_texture_render *texrender;
@@ -46,38 +46,38 @@ texrender_t texrender_create(enum gs_color_format format,
 	return texrender;
 }
 
-void texrender_destroy(texrender_t texrender)
+void gs_texrender_destroy(gs_texrender_t texrender)
 {
 	if (texrender) {
-		texture_destroy(texrender->target);
-		zstencil_destroy(texrender->zs);
+		gs_texture_destroy(texrender->target);
+		gs_zstencil_destroy(texrender->zs);
 		bfree(texrender);
 	}
 }
 
-static bool texrender_resetbuffer(texrender_t texrender, uint32_t cx,
+static bool texrender_resetbuffer(gs_texrender_t texrender, uint32_t cx,
 		uint32_t cy)
 {
 	if (!texrender)
 		return false;
 
-	texture_destroy(texrender->target);
-	zstencil_destroy(texrender->zs);
+	gs_texture_destroy(texrender->target);
+	gs_zstencil_destroy(texrender->zs);
 
 	texrender->target = NULL;
 	texrender->zs     = NULL;
 	texrender->cx     = cx;
 	texrender->cy     = cy;
 
-	texrender->target = gs_create_texture(cx, cy, texrender->format,
-			1, NULL, GS_RENDERTARGET);
+	texrender->target = gs_texture_create(cx, cy, texrender->format,
+			1, NULL, GS_RENDER_TARGET);
 	if (!texrender->target)
 		return false;
 
 	if (texrender->zsformat != GS_ZS_NONE) {
-		texrender->zs = gs_create_zstencil(cx, cy, texrender->zsformat);
+		texrender->zs = gs_zstencil_create(cx, cy, texrender->zsformat);
 		if (!texrender->zs) {
-			texture_destroy(texrender->target);
+			gs_texture_destroy(texrender->target);
 			texrender->target = NULL;
 
 			return false;
@@ -87,15 +87,15 @@ static bool texrender_resetbuffer(texrender_t texrender, uint32_t cx,
 	return true;
 }
 
-bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy)
+bool gs_texrender_begin(gs_texrender_t texrender, uint32_t cx, uint32_t cy)
 {
 	if (!texrender || texrender->rendered)
 		return false;
 
 	if (cx == 0)
-		cx = gs_getwidth();
+		cx = gs_get_width();
 	if (cy == 0)
-		cy = gs_getheight();
+		cy = gs_get_height();
 
 	assert(cx && cy);
 	if (!cx || !cy)
@@ -110,21 +110,21 @@ bool texrender_begin(texrender_t texrender, uint32_t cx, uint32_t cy)
 	gs_matrix_push();
 	gs_matrix_identity();
 
-	texrender->prev_target = gs_getrendertarget();
-	texrender->prev_zs     = gs_getzstenciltarget();
-	gs_setrendertarget(texrender->target, texrender->zs);
+	texrender->prev_target = gs_get_render_target();
+	texrender->prev_zs     = gs_get_zstencil_target();
+	gs_set_render_target(texrender->target, texrender->zs);
 
-	gs_setviewport(0, 0, texrender->cx, texrender->cy);
+	gs_set_viewport(0, 0, texrender->cx, texrender->cy);
 
 	return true;
 }
 
-void texrender_end(texrender_t texrender)
+void gs_texrender_end(gs_texrender_t texrender)
 {
 	if (!texrender)
 		return;
 
-	gs_setrendertarget(texrender->prev_target, texrender->prev_zs);
+	gs_set_render_target(texrender->prev_target, texrender->prev_zs);
 
 	gs_matrix_pop();
 	gs_projection_pop();
@@ -133,13 +133,13 @@ void texrender_end(texrender_t texrender)
 	texrender->rendered = true;
 }
 
-void texrender_reset(texrender_t texrender)
+void gs_texrender_reset(gs_texrender_t texrender)
 {
 	if (texrender)
 		texrender->rendered = false;
 }
 
-texture_t texrender_gettexture(texrender_t texrender)
+gs_texture_t gs_texrender_get_texture(gs_texrender_t texrender)
 {
 	return texrender ? texrender->target : NULL;
 }

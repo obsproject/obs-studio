@@ -27,7 +27,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 	uint32_t actual_levels = levels;
 	
 	if (!actual_levels)
-		actual_levels = gs_num_total_levels(width, height);
+		actual_levels = gs_get_total_levels(width, height);
 
 	rowSizeBytes /= 8;
 
@@ -141,7 +141,7 @@ void gs_texture_2d::InitRenderTargets()
 	}
 }
 
-gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
+gs_texture_2d::gs_texture_2d(gs_device_t device, uint32_t width, uint32_t height,
 		gs_color_format colorFormat, uint32_t levels,
 		const uint8_t **data, uint32_t flags, gs_texture_type type,
 		bool gdiCompatible, bool shared)
@@ -152,8 +152,8 @@ gs_texture_2d::gs_texture_2d(device_t device, uint32_t width, uint32_t height,
 	  isGDICompatible (gdiCompatible),
 	  isShared        (shared),
 	  isDynamic       ((flags & GS_DYNAMIC) != 0),
-	  isRenderTarget  ((flags & GS_RENDERTARGET) != 0),
-	  genMipmaps      ((flags & GS_BUILDMIPMAPS) != 0)
+	  isRenderTarget  ((flags & GS_RENDER_TARGET) != 0),
+	  genMipmaps      ((flags & GS_BUILD_MIPMAPS) != 0)
 {
 	InitTexture(data);
 	InitResourceView();

@@ -43,7 +43,7 @@ static inline void gl_parser_attrib_free(struct gl_parser_attrib *attr)
 }
 
 struct gl_shader_parser {
-	enum shader_type                type;
+	enum gs_shader_type             type;
 	const char                      *input_prefix;
 	const char                      *output_prefix;
 	struct shader_parser            parser;
@@ -54,14 +54,14 @@ struct gl_shader_parser {
 };
 
 static inline void gl_shader_parser_init(struct gl_shader_parser *glsp,
-		enum shader_type type)
+		enum gs_shader_type type)
 {
 	glsp->type = type;
 
-	if (type == SHADER_VERTEX) {
+	if (type == GS_SHADER_VERTEX) {
 		glsp->input_prefix  = "_input_attrib";
 		glsp->output_prefix = "_vertex_shader_attrib";
-	} else if (type == SHADER_PIXEL) {
+	} else if (type == GS_SHADER_PIXEL) {
 		glsp->input_prefix  = "_vertex_shader_attrib";
 		glsp->output_prefix = "_pixel_shader_attrib";
 	}

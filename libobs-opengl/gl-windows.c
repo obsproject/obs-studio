@@ -350,7 +350,7 @@ static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
 	return wi;
 }
 
-static bool init_default_swap(struct gl_platform *plat, device_t device,
+static bool init_default_swap(struct gl_platform *plat, gs_device_t device,
 		int pixel_format, PIXELFORMATDESCRIPTOR *pfd,
 		struct gs_init_data *info)
 {
@@ -366,13 +366,13 @@ static bool init_default_swap(struct gl_platform *plat, device_t device,
 	return true;
 }
 
-void gl_update(device_t device)
+void gl_update(gs_device_t device)
 {
 	/* does nothing on windows */
 	UNUSED_PARAMETER(device);
 }
 
-struct gl_platform *gl_platform_create(device_t device,
+struct gl_platform *gl_platform_create(gs_device_t device,
 		struct gs_init_data *info)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
@@ -475,7 +475,7 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	}
 }
 
-void device_entercontext(device_t device)
+void device_enter_context(gs_device_t device)
 {
 	HDC hdc = device->plat->swap.wi->hdc;
 	if (device->cur_swap)
@@ -485,13 +485,13 @@ void device_entercontext(device_t device)
 		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
 }
 
-void device_leavecontext(device_t device)
+void device_leave_context(gs_device_t device)
 {
 	wglMakeCurrent(NULL, NULL);
 	UNUSED_PARAMETER(device);
 }
 
-void device_load_swapchain(device_t device, swapchain_t swap)
+void device_load_swapchain(gs_device_t device, gs_swapchain_t swap)
 {
 	HDC hdc;
 	if (!swap)
@@ -510,7 +510,7 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 	}
 }
 
-void device_present(device_t device)
+void device_present(gs_device_t device)
 {
 	if (!SwapBuffers(device->cur_swap->wi->hdc)) {
 		blog(LOG_ERROR, "SwapBuffers failed, GetLastError "
@@ -528,7 +528,7 @@ extern void gl_getclientsize(struct gs_swap_chain *swap,
 	*height = rc.bottom;
 }
 
-EXPORT bool gdi_texture_available(void)
+EXPORT bool device_gdi_texture_available(void)
 {
 	return false;
 }

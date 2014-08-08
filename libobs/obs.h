@@ -450,10 +450,10 @@ EXPORT obs_encoder_t obs_get_encoder_by_name(const char *name);
 EXPORT obs_service_t obs_get_service_by_name(const char *name);
 
 /** Returns the default effect for generic RGB/YUV drawing */
-EXPORT effect_t obs_get_default_effect(void);
+EXPORT gs_effect_t obs_get_default_effect(void);
 
 /** Returns the solid effect for drawing solid colors */
-EXPORT effect_t obs_get_solid_effect(void);
+EXPORT gs_effect_t obs_get_solid_effect(void);
 
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t obs_get_signal_handler(void);
@@ -727,7 +727,7 @@ EXPORT void obs_source_release_frame(obs_source_t source,
 		struct obs_source_frame *frame);
 
 /** Default RGB filter handler for generic effect filters */
-EXPORT void obs_source_process_filter(obs_source_t filter, effect_t effect,
+EXPORT void obs_source_process_filter(obs_source_t filter, gs_effect_t effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct);
 

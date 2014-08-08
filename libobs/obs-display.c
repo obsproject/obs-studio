@@ -25,7 +25,7 @@ bool obs_display_init(struct obs_display *display,
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
 
 	if (graphics_data) {
-		display->swap = gs_create_swapchain(graphics_data);
+		display->swap = gs_swapchain_create(graphics_data);
 		if (!display->swap) {
 			blog(LOG_ERROR, "obs_display_init: Failed to "
 			                "create swap chain");
@@ -48,7 +48,7 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
-	gs_entercontext(obs->video.graphics);
+	gs_enter_context(obs->video.graphics);
 
 	if (!graphics_data->num_backbuffers)
 		graphics_data->num_backbuffers = 1;
@@ -66,7 +66,7 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 	}
 
-	gs_leavecontext();
+	gs_leave_context();
 
 	return display;
 }
@@ -77,7 +77,7 @@ void obs_display_free(obs_display_t display)
 	da_free(display->draw_callbacks);
 
 	if (display->swap) {
-		swapchain_destroy(display->swap);
+		gs_swapchain_destroy(display->swap);
 		display->swap = NULL;
 	}
 }
@@ -149,24 +149,24 @@ static inline void render_display_begin(struct obs_display *display)
 		display->size_changed = false;
 	}
 
-	gs_beginscene();
+	gs_begin_scene();
 
 	vec4_set(&clear_color, 0.3f, 0.3f, 0.3f, 1.0f);
 	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
 			&clear_color, 1.0f, 0);
 
-	gs_enable_depthtest(false);
+	gs_enable_depth_test(false);
 	/* gs_enable_blending(false); */
-	gs_setcullmode(GS_NEITHER);
+	gs_set_cull_mode(GS_NEITHER);
 
 	gs_ortho(0.0f, (float)display->cx,
 			0.0f, (float)display->cy, -100.0f, 100.0f);
-	gs_setviewport(0, 0, display->cx, display->cy);
+	gs_set_viewport(0, 0, display->cx, display->cy);
 }
 
 static inline void render_display_end()
 {
-	gs_endscene();
+	gs_end_scene();
 	gs_present();
 }
 

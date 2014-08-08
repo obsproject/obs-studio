@@ -113,7 +113,7 @@ extern void obs_view_free(struct obs_view *view);
 struct obs_display {
 	bool                            size_changed;
 	uint32_t                        cx, cy;
-	swapchain_t                     swap;
+	gs_swapchain_t                  swap;
 	pthread_mutex_t                 draw_callbacks_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
 
@@ -131,19 +131,19 @@ extern void obs_display_free(struct obs_display *display);
 
 struct obs_core_video {
 	graphics_t                      graphics;
-	stagesurf_t                     copy_surfaces[NUM_TEXTURES];
-	texture_t                       render_textures[NUM_TEXTURES];
-	texture_t                       output_textures[NUM_TEXTURES];
-	texture_t                       convert_textures[NUM_TEXTURES];
+	gs_stagesurf_t                  copy_surfaces[NUM_TEXTURES];
+	gs_texture_t                    render_textures[NUM_TEXTURES];
+	gs_texture_t                    output_textures[NUM_TEXTURES];
+	gs_texture_t                    convert_textures[NUM_TEXTURES];
 	bool                            textures_rendered[NUM_TEXTURES];
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
 	struct obs_source_frame         convert_frames[NUM_TEXTURES];
-	effect_t                        default_effect;
-	effect_t                        solid_effect;
-	effect_t                        conversion_effect;
-	stagesurf_t                     mapped_surface;
+	gs_effect_t                     default_effect;
+	gs_effect_t                     solid_effect;
+	gs_effect_t                     conversion_effect;
+	gs_stagesurf_t                  mapped_surface;
 	int                             cur_texture;
 
 	video_t                         video;
@@ -339,8 +339,8 @@ struct obs_source {
 	float                           transition_volume;
 
 	/* async video data */
-	texture_t                       async_texture;
-	texrender_t                     async_convert_texrender;
+	gs_texture_t                    async_texture;
+	gs_texrender_t                  async_convert_texrender;
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
 	enum gs_color_format            async_texture_format;
@@ -362,7 +362,7 @@ struct obs_source {
 	struct obs_source               *filter_target;
 	DARRAY(struct obs_source*)      filters;
 	pthread_mutex_t                 filter_mutex;
-	texrender_t                     filter_texrender;
+	gs_texrender_t                  filter_texrender;
 	bool                            rendering_filter;
 };
 

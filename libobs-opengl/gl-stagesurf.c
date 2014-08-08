@@ -42,7 +42,7 @@ static bool create_pixel_pack_buffer(struct gs_stage_surface *surf)
 	return success;
 }
 
-stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
+gs_stagesurf_t device_stagesurface_create(gs_device_t device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format)
 {
 	struct gs_stage_surface *surf;
@@ -57,15 +57,15 @@ stagesurf_t device_create_stagesurface(device_t device, uint32_t width,
 	surf->bytes_per_pixel    = gs_get_format_bpp(color_format)/8;
 
 	if (!create_pixel_pack_buffer(surf)) {
-		blog(LOG_ERROR, "device_create_stagesurface (GL) failed");
-		stagesurface_destroy(surf);
+		blog(LOG_ERROR, "device_stagesurface_create (GL) failed");
+		gs_stagesurface_destroy(surf);
 		return NULL;
 	}
 
 	return surf;
 }
 
-void stagesurface_destroy(stagesurf_t stagesurf)
+void gs_stagesurface_destroy(gs_stagesurf_t stagesurf)
 {
 	if (stagesurf) {
 		if (stagesurf->pack_buffer)
@@ -110,7 +110,8 @@ static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 
 /* Apparently for mac, PBOs won't do an asynchronous transfer unless you use
  * FBOs aong with glReadPixels, which is really dumb. */
-void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
+void device_stage_texture(gs_device_t device, gs_stagesurf_t dst,
+		gs_texture_t src)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
 	struct fbo_info *fbo;
@@ -155,7 +156,8 @@ failed:
 
 #else
 
-void device_stage_texture(device_t device, stagesurf_t dst, texture_t src)
+void device_stage_texture(gs_device_t device, gs_stagesurf_t dst,
+		gs_texture_t src)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)src;
 	if (!can_stage(dst, tex2d))
@@ -184,22 +186,23 @@ failed:
 
 #endif
 
-uint32_t stagesurface_getwidth(stagesurf_t stagesurf)
+uint32_t gs_stagesurface_get_width(gs_stagesurf_t stagesurf)
 {
 	return stagesurf->width;
 }
 
-uint32_t stagesurface_getheight(stagesurf_t stagesurf)
+uint32_t gs_stagesurface_get_height(gs_stagesurf_t stagesurf)
 {
 	return stagesurf->height;
 }
 
-enum gs_color_format stagesurface_getcolorformat(stagesurf_t stagesurf)
+enum gs_color_format gs_stagesurface_get_color_format(gs_stagesurf_t stagesurf)
 {
 	return stagesurf->format;
 }
 
-bool stagesurface_map(stagesurf_t stagesurf, uint8_t **data, uint32_t *linesize)
+bool gs_stagesurface_map(gs_stagesurf_t stagesurf, uint8_t **data,
+		uint32_t *linesize)
 {
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))
 		goto fail;
@@ -218,7 +221,7 @@ fail:
 	return false;
 }
 
-void stagesurface_unmap(stagesurf_t stagesurf)
+void gs_stagesurface_unmap(gs_stagesurf_t stagesurf)
 {
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, stagesurf->pack_buffer))
 		return;

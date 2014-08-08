@@ -729,15 +729,15 @@ void OBSBasicPreview::DrawSceneEditing()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
-	effect_t    solid = obs_get_solid_effect();
-	technique_t tech  = effect_gettechnique(solid, "Solid");
+	gs_effect_t    solid = obs_get_solid_effect();
+	gs_technique_t tech  = gs_effect_get_technique(solid, "Solid");
 
 	vec4 color;
 	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
-	effect_setvec4(effect_getparambyname(solid, "color"), &color);
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
 
-	technique_begin(tech);
-	technique_beginpass(tech, 0);
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
 	OBSScene scene = main->GetCurrentScene();
 	if (scene)
@@ -745,6 +745,6 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	gs_load_vertexbuffer(nullptr);
 
-	technique_endpass(tech);
-	technique_end(tech);
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 }

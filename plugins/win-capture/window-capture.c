@@ -33,7 +33,7 @@ struct window_capture {
 
 	float                resize_timer;
 
-	effect_t             opaque_effect;
+	gs_effect_t          opaque_effect;
 
 	HWND                 window;
 	RECT                 last_rect;
@@ -311,7 +311,7 @@ static const char *wc_getname(void)
 static void *wc_create(obs_data_t settings, obs_source_t source)
 {
 	struct window_capture *wc;
-	effect_t opaque_effect = create_opaque_effect();
+	gs_effect_t opaque_effect = create_opaque_effect();
 	if (!opaque_effect)
 		return NULL;
 
@@ -335,7 +335,7 @@ static void wc_destroy(void *data)
 		bfree(wc->executable);
 
 		obs_enter_graphics();
-		effect_destroy(wc->opaque_effect);
+		gs_effect_destroy(wc->opaque_effect);
 		obs_leave_graphics();
 
 		bfree(wc);
@@ -441,7 +441,7 @@ static void wc_tick(void *data, float seconds)
 	obs_leave_graphics();
 }
 
-static void wc_render(void *data, effect_t effect)
+static void wc_render(void *data, gs_effect_t effect)
 {
 	struct window_capture *wc = data;
 	dc_capture_render(&wc->capture, wc->opaque_effect);

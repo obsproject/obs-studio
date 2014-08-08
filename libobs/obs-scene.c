@@ -297,7 +297,7 @@ static inline bool source_size_changed(struct obs_scene_item *item)
 	return item->last_width != width || item->last_height != height;
 }
 
-static void scene_video_render(void *data, effect_t effect)
+static void scene_video_render(void *data, gs_effect_t effect)
 {
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;

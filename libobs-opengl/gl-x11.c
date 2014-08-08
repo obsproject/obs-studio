@@ -135,7 +135,7 @@ static bool handle_x_error(Display *disp, const char *error_string)
 	return false;
 }
 
-struct gl_platform *gl_platform_create(device_t device,
+struct gl_platform *gl_platform_create(gs_device_t device,
 		struct gs_init_data *info)
 {
 	int num_configs = 0;
@@ -366,7 +366,7 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	info->int_id = 0;
 }
 
-void device_entercontext(device_t device)
+void device_enter_context(gs_device_t device)
 {
 	GLXContext context = device->plat->context;
 	XID window = device->cur_swap->wi->glxid;
@@ -377,7 +377,7 @@ void device_entercontext(device_t device)
 	}
 }
 
-void device_leavecontext(device_t device)
+void device_leave_context(gs_device_t device)
 {
 	Display *display = device->cur_swap->wi->display;
 
@@ -386,7 +386,7 @@ void device_leavecontext(device_t device)
 	}
 }
 
-void gl_update(device_t device)
+void gl_update(gs_device_t device)
 {
 	Display *display = device->cur_swap->wi->display;
 	XID window = device->cur_swap->wi->int_id;
@@ -395,7 +395,7 @@ void gl_update(device_t device)
 			device->cur_swap->info.cx, device->cur_swap->info.cy);
 }
 
-void device_load_swapchain(device_t device, swapchain_t swap)
+void device_load_swapchain(gs_device_t device, gs_swapchain_t swap)
 {
 	if (!swap)
 		swap = &device->plat->swap;
@@ -414,7 +414,7 @@ void device_load_swapchain(device_t device, swapchain_t swap)
 	}
 }
 
-void device_present(device_t device)
+void device_present(gs_device_t device)
 {
 	Display *display = device->cur_swap->wi->display;
 	XID window = device->cur_swap->wi->glxid;

@@ -93,7 +93,7 @@ inline void gs_vertex_buffer::InitBuffer(const size_t elementSize,
 		throw HRError("Failed to create buffer", hr);
 }
 
-gs_vertex_buffer::gs_vertex_buffer(device_t device, struct vb_data *data,
+gs_vertex_buffer::gs_vertex_buffer(gs_device_t device, struct gs_vb_data *data,
 		uint32_t flags)
 	: device   (device),
 	  vbd      (data),
@@ -121,7 +121,7 @@ gs_vertex_buffer::gs_vertex_buffer(device_t device, struct vb_data *data,
 				colorBuffer.Assign());
 
 	for (size_t i = 0; i < data->num_tex; i++) {
-		struct tvertarray *tverts = data->tvarray+i;
+		struct gs_tvertarray *tverts = data->tvarray+i;
 
 		if (tverts->width != 2 && tverts->width != 4)
 			throw "Invalid texture vertex size specified";

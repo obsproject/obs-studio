@@ -2,7 +2,7 @@
 
 struct test_filter {
 	obs_source_t source;
-	effect_t whatever;
+	gs_effect_t whatever;
 };
 
 static const char *filter_getname(void)
@@ -17,7 +17,7 @@ static void filter_destroy(void *data)
 	if (tf) {
 		obs_enter_graphics();
 
-		effect_destroy(tf->whatever);
+		gs_effect_destroy(tf->whatever);
 		bfree(tf);
 
 		obs_leave_graphics();
@@ -34,7 +34,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 	effect_file = obs_module_file("test.effect");
 
 	tf->source = source;
-	tf->whatever = gs_create_effect_from_file(effect_file, NULL);
+	tf->whatever = gs_effect_create_from_file(effect_file, NULL);
 	bfree(effect_file);
 	if (!tf->whatever) {
 		filter_destroy(tf);
@@ -47,7 +47,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 	return tf;
 }
 
-static void filter_render(void *data, effect_t effect)
+static void filter_render(void *data, gs_effect_t effect)
 {
 	struct test_filter *tf = data;
 	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,

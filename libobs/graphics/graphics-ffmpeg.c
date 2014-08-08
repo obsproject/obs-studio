@@ -201,15 +201,15 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 	return GS_BGRX;
 }
 
-texture_t gs_create_texture_from_file(const char *file)
+gs_texture_t gs_texture_create_from_file(const char *file)
 {
 	struct ffmpeg_image image;
-	texture_t           tex = NULL;
+	gs_texture_t           tex = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
 		uint8_t *data = malloc(image.cx * image.cy * 4);
 		if (ffmpeg_image_decode(&image, data, image.cx * 4)) {
-			tex = gs_create_texture(image.cx, image.cy,
+			tex = gs_texture_create(image.cx, image.cy,
 					convert_format(image.format),
 					1, (const uint8_t**)&data, 0);
 		}
