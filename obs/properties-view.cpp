@@ -281,7 +281,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop, bool &warning)
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 	
-	if (obs_data_has_autoselect(settings, name)) {
+	if (obs_data_has_autoselect_value(settings, name)) {
 		string autoselect =
 			from_obs_data_autoselect(settings, name, format);
 		int id = combo->findData(QT_UTF8(autoselect.c_str()));

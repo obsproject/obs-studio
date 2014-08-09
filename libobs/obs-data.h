@@ -157,12 +157,12 @@ EXPORT void obs_data_array_erase(obs_data_array_t array, size_t idx);
 /* Item status inspection */
 
 EXPORT bool obs_data_has_user_value(obs_data_t data, const char *name);
-EXPORT bool obs_data_has_default(obs_data_t data, const char *name);
-EXPORT bool obs_data_has_autoselect(obs_data_t data, const char *name);
+EXPORT bool obs_data_has_default_value(obs_data_t data, const char *name);
+EXPORT bool obs_data_has_autoselect_value(obs_data_t data, const char *name);
 
 EXPORT bool obs_data_item_has_user_value(obs_data_item_t data);
-EXPORT bool obs_data_item_has_default(obs_data_item_t data);
-EXPORT bool obs_data_item_has_autoselect(obs_data_item_t data);
+EXPORT bool obs_data_item_has_default_value(obs_data_item_t data);
+EXPORT bool obs_data_item_has_autoselect_value(obs_data_item_t data);
 
 /* ------------------------------------------------------------------------- */
 /* Clearing data values */

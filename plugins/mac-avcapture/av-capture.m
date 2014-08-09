@@ -707,7 +707,7 @@ static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t settings)
 {
 	NSString *preset = get_string(settings, "preset");
 	if (!dev || [dev supportsAVCaptureSessionPreset:preset]) {
-		if (obs_data_has_autoselect(settings, "preset")) {
+		if (obs_data_has_autoselect_value(settings, "preset")) {
 			obs_data_unset_autoselect_value(settings, "preset");
 			return true;
 		}
