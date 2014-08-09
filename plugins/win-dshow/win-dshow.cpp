@@ -348,7 +348,7 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
 		VideoDevice dev)
 {
 	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
-	if (obs_data_has_autoselect(settings, RESOLUTION) &&
+	if (obs_data_has_autoselect_value(settings, RESOLUTION) &&
 			ConvertRes(cx, cy, res) &&
 			ResolutionAvailable(dev, cx, cy))
 		return true;
@@ -394,11 +394,14 @@ void DShowInput::Update(obs_data_t settings)
 	VideoFormat format = VideoFormat::Any;
 
 	if (resType == ResType_Custom) {
+		bool has_autosel_val;
 		string resolution = obs_data_get_string(settings, RESOLUTION);
 		if (!ResolutionValid(resolution, cx, cy))
 			return;
 
-		interval = obs_data_has_autoselect(settings, FRAME_INTERVAL) ?
+		has_autosel_val = obs_data_has_autoselect_value(settings,
+				FRAME_INTERVAL);
+		interval = has_autosel_val ?
 			obs_data_get_autoselect_int(settings, FRAME_INTERVAL) :
 			obs_data_get_int(settings, FRAME_INTERVAL);
 

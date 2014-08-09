@@ -1132,14 +1132,14 @@ bool obs_data_has_user_value(obs_data_t data, const char *name)
 	return data && obs_data_item_has_user_value(get_item(data, name));
 }
 
-bool obs_data_has_default(obs_data_t data, const char *name)
+bool obs_data_has_default_value(obs_data_t data, const char *name)
 {
-	return data && obs_data_item_has_default(get_item(data, name));
+	return data && obs_data_item_has_default_value(get_item(data, name));
 }
 
-bool obs_data_has_autoselect(obs_data_t data, const char *name)
+bool obs_data_has_autoselect_value(obs_data_t data, const char *name)
 {
-	return data && obs_data_item_has_autoselect(get_item(data, name));
+	return data && obs_data_item_has_autoselect_value(get_item(data, name));
 }
 
 bool obs_data_item_has_user_value(obs_data_item_t item)
@@ -1147,12 +1147,12 @@ bool obs_data_item_has_user_value(obs_data_item_t item)
 	return item && item->data_size;
 }
 
-bool obs_data_item_has_default(obs_data_item_t item)
+bool obs_data_item_has_default_value(obs_data_item_t item)
 {
 	return item && item->default_size;
 }
 
-bool obs_data_item_has_autoselect(obs_data_item_t item)
+bool obs_data_item_has_autoselect_value(obs_data_item_t item)
 {
 	return item && item->autoselect_size;
 }
