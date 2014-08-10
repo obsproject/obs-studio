@@ -101,6 +101,8 @@ static inline bool scale_video_output(struct video_input *input,
 				data->data[i]     = frame->data[i];
 				data->linesize[i] = frame->linesize[i];
 			}
+		} else {
+			blog(LOG_WARNING, "video-io: Could not scale frame!");
 		}
 	}
 
@@ -116,8 +118,10 @@ static inline void video_output_cur_frame(struct video_output *video)
 
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array+i;
-		if (scale_video_output(input, &video->cur_frame))
-			input->callback(input->param, &video->cur_frame);
+		struct video_data frame = video->cur_frame;
+
+		if (scale_video_output(input, &frame))
+			input->callback(input->param, &frame);
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
@@ -272,9 +276,9 @@ static inline bool video_input_init(struct video_input *input,
 
 		for (size_t i = 0; i < MAX_CONVERT_BUFFERS; i++)
 			video_frame_init(&input->frame[i],
-					video->info.format,
-					video->info.width,
-					video->info.height);
+					input->conversion.format,
+					input->conversion.width,
+					input->conversion.height);
 	}
 
 	return true;
