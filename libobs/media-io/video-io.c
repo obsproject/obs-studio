@@ -398,6 +398,11 @@ void video_output_stop(video_t video)
 	}
 }
 
+enum video_format video_output_get_format(video_t video)
+{
+	return video ? video->info.format : VIDEO_FORMAT_NONE;
+}
+
 uint32_t video_output_get_width(video_t video)
 {
 	return video ? video->info.width : 0;
