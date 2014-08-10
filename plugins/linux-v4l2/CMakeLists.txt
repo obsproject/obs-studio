@@ -11,6 +11,7 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 set(linux-v4l2_SOURCES
 	linux-v4l2.c
 	v4l2-input.c
+	v4l2-helpers.c
 )
 
 add_library(linux-v4l2 MODULE

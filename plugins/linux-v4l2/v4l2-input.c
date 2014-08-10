@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -35,17 +34,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/dstr.h>
 #include <obs-module.h>
 
+#include "v4l2-helpers.h"
+
 #define V4L2_DATA(voidptr) struct v4l2_data *data = voidptr;
 
 #define timeval2ns(tv) \
 	(((uint64_t) tv.tv_sec * 1000000000) + ((uint64_t) tv.tv_usec * 1000))
 
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
-
-struct v4l2_buffer_data {
-	size_t length;
-	void *start;
-};
 
 /**
  * Data structure for the v4l2 source
@@ -79,22 +75,8 @@ struct v4l2_data {
 	int_fast32_t pixfmt;
 	uint_fast32_t linesize;
 
-	uint_fast32_t buf_count;
-	struct v4l2_buffer_data *buf;
+	struct v4l2_buffer_data buffers;
 };
-
-static enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
-{
-	switch (format) {
-	case V4L2_PIX_FMT_YVYU:   return VIDEO_FORMAT_YVYU;
-	case V4L2_PIX_FMT_YUYV:   return VIDEO_FORMAT_YUY2;
-	case V4L2_PIX_FMT_UYVY:   return VIDEO_FORMAT_UYVY;
-	case V4L2_PIX_FMT_NV12:   return VIDEO_FORMAT_NV12;
-	case V4L2_PIX_FMT_YUV420: return VIDEO_FORMAT_I420;
-	case V4L2_PIX_FMT_YVU420: return VIDEO_FORMAT_I420;
-	default:                  return VIDEO_FORMAT_NONE;
-	}
-}
 
 /*
  * used to store framerate and resolution values
@@ -108,169 +90,6 @@ static void unpack_tuple(int *a, int *b, int packed)
 {
 	*a = packed >> 16;
 	*b = packed & 0xffff;
-}
-
-/* fixed framesizes as fallback */
-static const int fixed_framesizes[] =
-{
-	/* 4:3 */
-	160<<16		| 120,
-	320<<16		| 240,
-	480<<16		| 320,
-	640<<16		| 480,
-	800<<16		| 600,
-	1024<<16	| 768,
-	1280<<16	| 960,
-	1440<<16	| 1050,
-	1440<<16	| 1080,
-	1600<<16	| 1200,
-
-	/* 16:9 */
-	640<<16		| 360,
-	960<<16		| 540,
-	1280<<16	| 720,
-	1600<<16	| 900,
-	1920<<16	| 1080,
-	1920<<16	| 1200,
-
-	/* tv */
-	432<<16		| 520,
-	480<<16		| 320,
-	480<<16		| 530,
-	486<<16		| 440,
-	576<<16		| 310,
-	576<<16		| 520,
-	576<<16		| 570,
-	720<<16		| 576,
-	1024<<16	| 576,
-
-	0
-};
-
-/* fixed framerates as fallback */
-static const int fixed_framerates[] =
-{
-	1<<16		| 60,
-	1<<16		| 50,
-	1<<16		| 30,
-	1<<16		| 25,
-	1<<16		| 20,
-	1<<16		| 15,
-	1<<16		| 10,
-	1<<16		| 5,
-
-	0
-};
-
-/*
- * start capture
- */
-static int_fast32_t v4l2_start_capture(struct v4l2_data *data)
-{
-	enum v4l2_buf_type type;
-
-	for (uint_fast32_t i = 0; i < data->buf_count; ++i) {
-		struct v4l2_buffer buf;
-
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = i;
-
-		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "unable to queue buffer");
-			return -1;
-		}
-	}
-
-	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (v4l2_ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
-		blog(LOG_ERROR, "unable to start stream");
-		return -1;
-	}
-
-	return 0;
-}
-
-/*
- * stop capture
- */
-static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
-{
-	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-	if (v4l2_ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
-		blog(LOG_ERROR, "unable to stop stream");
-	}
-
-	return 0;
-}
-
-/**
- * Create memory mapping for buffers
- *
- * This tries to map at least 2, preferably 4, buffers to userspace.
- *
- * @return 0 on success, -1 on failure
- */
-static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
-{
-	struct v4l2_requestbuffers req;
-
-	req.count = 4;
-	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	req.memory = V4L2_MEMORY_MMAP;
-
-	if (v4l2_ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
-		blog(LOG_ERROR, "Request for buffers failed !");
-		return -1;
-	}
-
-	if (req.count < 2) {
-		blog(LOG_ERROR, "Device returned less than 2 buffers");
-		return -1;
-	}
-
-	data->buf_count = req.count;
-	data->buf = bzalloc(req.count * sizeof(struct v4l2_buffer_data));
-
-	for (uint_fast32_t i = 0; i < req.count; ++i) {
-		struct v4l2_buffer buf;
-
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = i;
-
-		if (v4l2_ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_ERROR, "Failed to query buffer details");
-			return -1;
-		}
-
-		data->buf[i].length = buf.length;
-		data->buf[i].start = v4l2_mmap(NULL, buf.length,
-			PROT_READ | PROT_WRITE, MAP_SHARED,
-			data->dev, buf.m.offset);
-
-		if (data->buf[i].start == MAP_FAILED) {
-			blog(LOG_ERROR, "mmap for buffer failed");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-/**
- * Destroy memory mapping for buffers
- */
-static void v4l2_destroy_mmap(struct v4l2_data *data)
-{
-	for(uint_fast32_t i = 0; i < data->buf_count; ++i) {
-		if (data->buf[i].start != MAP_FAILED)
-			v4l2_munmap(data->buf[i].start, data->buf[i].length);
-	}
-
-	data->buf_count = 0;
-	bfree(data->buf);
 }
 
 /**
@@ -337,7 +156,7 @@ static void *v4l2_thread(void *vptr)
 	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
 
-	if (v4l2_start_capture(data) < 0)
+	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
 
 	data->frames = 0;
@@ -373,7 +192,7 @@ static void *v4l2_thread(void *vptr)
 		}
 
 		out.timestamp = timeval2ns(buf.timestamp);
-		start = (uint8_t *) data->buf[buf.index].start;
+		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 			out.data[i] = start + plane_offsets[i];
 		obs_source_output_video(data->source, &out);
@@ -389,7 +208,7 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", data->frames);
 
 exit:
-	v4l2_stop_capture(data);
+	v4l2_stop_capture(data->dev);
 	return NULL;
 }
 
@@ -551,7 +370,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
 			"are currently hardcoded");
 
-		for (const int *packed = fixed_framesizes; *packed; ++packed) {
+		for (const int *packed = v4l2_framesizes; *packed; ++packed) {
 			int width;
 			int height;
 			unpack_tuple(&width, &height, *packed);
@@ -599,7 +418,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
 			"are currently hardcoded");
 
-		for (const int *packed = fixed_framerates; *packed; ++packed) {
+		for (const int *packed = v4l2_framerates; *packed; ++packed) {
 			int num;
 			int denom;
 			unpack_tuple(&num, &denom, *packed);
@@ -735,8 +554,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		os_event_destroy(data->event);
 	}
 
-	if (data->buf_count)
-		v4l2_destroy_mmap(data);
+	v4l2_destroy_mmap(&data->buffers);
 
 	if (data->dev != -1) {
 		v4l2_close(data->dev);
@@ -825,7 +643,7 @@ static void v4l2_init(struct v4l2_data *data)
 	dstr_free(&fps);
 
 	/* map buffers */
-	if (v4l2_create_mmap(data) < 0) {
+	if (v4l2_create_mmap(data->dev, &data->buffers) < 0) {
 		blog(LOG_ERROR, "Failed to map buffers");
 		goto fail;
 	}
