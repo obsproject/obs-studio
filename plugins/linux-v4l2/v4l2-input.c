@@ -696,7 +696,6 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t v4l2_properties(void)
 {
-	/* TODO: locale */
 	obs_properties_t props = obs_properties_create();
 
 	obs_property_t device_list = obs_properties_add_list(props,
@@ -889,8 +888,6 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 
 static void *v4l2_create(obs_data_t settings, obs_source_t source)
 {
-	UNUSED_PARAMETER(settings);
-
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;
 	data->source = source;
