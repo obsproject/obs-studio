@@ -296,6 +296,11 @@ void obs_output_set_video_encoder(obs_output_t output, obs_encoder_t encoder)
 	obs_encoder_remove_output(encoder, output);
 	obs_encoder_add_output(encoder, output);
 	output->video_encoder = encoder;
+
+	/* set the preferred resolution on the encoder */
+	if (output->scaled_width && output->scaled_height)
+		obs_encoder_set_scaled_size(output->video_encoder,
+				output->scaled_width, output->scaled_height);
 }
 
 void obs_output_set_audio_encoder(obs_output_t output, obs_encoder_t encoder)
@@ -365,6 +370,55 @@ int obs_output_get_total_frames(obs_output_t output)
 	return output ? output->total_frames : 0;
 }
 
+void obs_output_set_preferred_size(obs_output_t output, uint32_t width,
+		uint32_t height)
+{
+	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
+		return;
+
+	if (output->active) {
+		blog(LOG_WARNING, "output '%s': Cannot set the preferred "
+		                  "resolution while the output is active",
+		                  obs_output_get_name(output));
+		return;
+	}
+
+	output->scaled_width  = width;
+	output->scaled_height = height;
+
+	if (output->info.flags & OBS_OUTPUT_ENCODED) {
+		if (output->video_encoder)
+			obs_encoder_set_scaled_size(output->video_encoder,
+					width, height);
+	}
+}
+
+uint32_t obs_output_get_width(obs_output_t output)
+{
+	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
+		return 0;
+
+	if (output->info.flags & OBS_OUTPUT_ENCODED)
+		return obs_encoder_get_width(output->video_encoder);
+	else
+		return output->scaled_width != 0 ?
+			output->scaled_width :
+			video_output_get_width(output->video);
+}
+
+uint32_t obs_output_get_height(obs_output_t output)
+{
+	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
+		return 0;
+
+	if (output->info.flags & OBS_OUTPUT_ENCODED)
+		return obs_encoder_get_height(output->video_encoder);
+	else
+		return output->scaled_height != 0 ?
+			output->scaled_height :
+			video_output_get_height(output->video);
+}
+
 void obs_output_set_video_conversion(obs_output_t output,
 		const struct video_scale_info *conversion)
 {
@@ -412,10 +466,43 @@ static bool can_begin_data_capture(struct obs_output *output, bool encoded,
 	return true;
 }
 
+static inline bool has_scaling(struct obs_output *output)
+{
+	uint32_t video_width  = video_output_get_width(output->video);
+	uint32_t video_height = video_output_get_height(output->video);
+
+	return output->scaled_width && output->scaled_height &&
+		(video_width  != output->scaled_width ||
+		 video_height != output->scaled_height);
+}
+
 static inline struct video_scale_info *get_video_conversion(
 		struct obs_output *output)
 {
-	return output->video_conversion_set ? &output->video_conversion : NULL;
+	if (output->video_conversion_set) {
+		if (!output->video_conversion.width)
+			output->video_conversion.width =
+				obs_output_get_width(output);
+
+		if (!output->video_conversion.height)
+			output->video_conversion.height =
+				obs_output_get_height(output);
+
+		return &output->video_conversion;
+
+	} else if (has_scaling(output)) {
+		const struct video_output_info *info =
+			video_output_get_info(output->video);
+
+		output->video_conversion.format     = info->format;
+		output->video_conversion.colorspace = VIDEO_CS_DEFAULT;
+		output->video_conversion.range      = VIDEO_RANGE_DEFAULT;
+		output->video_conversion.width      = output->scaled_width;
+		output->video_conversion.height     = output->scaled_height;
+		return &output->video_conversion;
+	}
+
+	return NULL;
 }
 
 static inline struct audio_convert_info *get_audio_conversion(

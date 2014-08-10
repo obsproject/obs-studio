@@ -419,6 +419,9 @@ struct obs_output {
 	obs_encoder_t                   audio_encoder;
 	obs_service_t                   service;
 
+	uint32_t                        scaled_width;
+	uint32_t                        scaled_height;
+
 	bool                            video_conversion_set;
 	bool                            audio_conversion_set;
 	struct video_scale_info         video_conversion;
@@ -451,6 +454,9 @@ struct obs_encoder {
 	size_t                          blocksize;
 	size_t                          framesize;
 	size_t                          framesize_bytes;
+
+	uint32_t                        scaled_width;
+	uint32_t                        scaled_height;
 
 	bool                            active;
 

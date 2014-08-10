@@ -953,6 +953,23 @@ EXPORT uint64_t obs_output_get_total_bytes(obs_output_t output);
 EXPORT int obs_output_get_frames_dropped(obs_output_t output);
 EXPORT int obs_output_get_total_frames(obs_output_t output);
 
+/**
+ * Sets the preferred scaled resolution for this output.  Set width and height
+ * to 0 to disable scaling.
+ *
+ * If this output uses an encoder, it will call obs_encoder_set_scaled_size on
+ * the encoder before the stream is started.  If the encoder is already active,
+ * then this function will trigger a warning and do nothing.
+ */
+EXPORT void obs_output_set_preferred_size(obs_output_t output, uint32_t width,
+		uint32_t height);
+
+/** For video outputs, returns the width of the encoded image */
+EXPORT uint32_t obs_output_get_width(obs_output_t output);
+
+/** For video outputs, returns the height of the encoded image */
+EXPORT uint32_t obs_output_get_height(obs_output_t output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -1031,6 +1048,20 @@ EXPORT const char *obs_encoder_get_name(obs_encoder_t encoder);
 
 /** Returns the codec of the encoder */
 EXPORT const char *obs_encoder_get_codec(obs_encoder_t encoder);
+
+/**
+ * Sets the scaled resolution for a video encoder.  Set width and height to 0
+ * to disable scaling.  If the encoder is active, this function will trigger
+ * a warning, and do nothing.
+ */
+EXPORT void obs_encoder_set_scaled_size(obs_encoder_t encoder, uint32_t width,
+		uint32_t height);
+
+/** For video encoders, returns the width of the encoded image */
+EXPORT uint32_t obs_encoder_get_width(obs_encoder_t encoder);
+
+/** For video encoders, returns the height of the encoded image */
+EXPORT uint32_t obs_encoder_get_height(obs_encoder_t encoder);
 
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t obs_encoder_defaults(const char *id);

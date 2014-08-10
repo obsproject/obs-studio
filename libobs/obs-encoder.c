@@ -130,6 +130,16 @@ static inline struct video_scale_info *get_video_info(
 	return NULL;
 }
 
+static inline bool has_scaling(struct obs_encoder *encoder)
+{
+	uint32_t video_width  = video_output_get_width(encoder->media);
+	uint32_t video_height = video_output_get_height(encoder->media);
+
+	return encoder->scaled_width && encoder->scaled_height &&
+		(video_width  != encoder->scaled_width ||
+		 video_height != encoder->scaled_height);
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	struct audio_convert_info audio_info = {0};
@@ -140,11 +150,23 @@ static void add_connection(struct obs_encoder *encoder)
 		audio_output_connect(encoder->media, &audio_info, receive_audio,
 				encoder);
 	} else {
-		struct video_scale_info *info = NULL;
+		struct video_scale_info *info =
+			get_video_info(encoder, &video_info);
 
-		info = get_video_info(encoder, &video_info);
+		if (!info && has_scaling(encoder)) {
+			info = &video_info;
+			info->format = video_output_get_format(encoder->media);
+			info->colorspace = VIDEO_CS_DEFAULT;
+			info->range      = VIDEO_RANGE_DEFAULT;
+		}
+
+		if (info && (!info->width || !info->height)) {
+			info->width  = obs_encoder_get_width(encoder);
+			info->height = obs_encoder_get_height(encoder);
+		}
+
 		video_output_connect(encoder->media, info, receive_video,
-				encoder);
+			encoder);
 	}
 
 	encoder->active = true;
@@ -408,6 +430,45 @@ void obs_encoder_stop(obs_encoder_t encoder,
 const char *obs_encoder_get_codec(obs_encoder_t encoder)
 {
 	return encoder ? encoder->info.codec : NULL;
+}
+
+void obs_encoder_set_scaled_size(obs_encoder_t encoder, uint32_t width,
+		uint32_t height)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	if (encoder->active) {
+		blog(LOG_WARNING, "encoder '%s': Cannot set the scaled "
+		                  "resolution while the encoder is active",
+		                  obs_encoder_get_name(encoder));
+		return;
+	}
+
+	encoder->scaled_width  = width;
+	encoder->scaled_height = height;
+}
+
+uint32_t obs_encoder_get_width(obs_encoder_t encoder)
+{
+	if (!encoder || !encoder->media ||
+	    encoder->info.type != OBS_ENCODER_VIDEO)
+		return 0;
+
+	return encoder->scaled_width != 0 ?
+		encoder->scaled_width :
+		video_output_get_width(encoder->media);
+}
+
+uint32_t obs_encoder_get_height(obs_encoder_t encoder)
+{
+	if (!encoder || !encoder->media ||
+	    encoder->info.type != OBS_ENCODER_VIDEO)
+		return 0;
+
+	return encoder->scaled_width != 0 ?
+		encoder->scaled_height :
+		video_output_get_height(encoder->media);
 }
 
 void obs_encoder_set_video(obs_encoder_t encoder, video_t video)
