@@ -1,6 +1,6 @@
 project(linux-xcomposite)
 
-find_package(X11)
+find_package(X11 REQUIRED)
 if(NOT X11_Xcomposite_FOUND)
 	message(STATUS "Xcomposite library not found, Xcomposite plugin disabled")
 	return()
@@ -15,7 +15,10 @@ set(linux-xcomposite_SOURCES
 	xcompcap-main.cpp
 	xcompcap-main.h
 	xcompcap-helper.cpp
-	xcompcap-helper.h)
+	xcompcap-helper.h
+	xcursor.c
+	xcursor.h
+)
 
 add_library(linux-xcomposite MODULE
 	${linux-xcomposite_SOURCES})
@@ -23,7 +26,12 @@ target_link_libraries(linux-xcomposite
 	libobs
 	glad
 	${X11_X11_LIB}
-	${X11_Xcomposite_LIB})
+	${X11_Xcomposite_LIB}
+        ${X11_LIBRARIES}
+        ${X11_XShm_LIB}
+        ${X11_Xfixes_LIB}
+        ${X11_Xinerama_LIB}
+)
 
 install_obs_plugin(linux-xcomposite)
 install_obs_plugin_data(linux-xcomposite data)
