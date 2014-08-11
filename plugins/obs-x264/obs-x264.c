@@ -241,6 +241,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	int buffer_size  = (int)obs_data_get_int(settings, "buffer_size");
 	int keyint_sec   = (int)obs_data_get_int(settings, "keyint_sec");
 	int crf          = (int)obs_data_get_int(settings, "crf");
+	int width        = (int)obs_encoder_get_width(obsx264->encoder);
+	int height       = (int)obs_encoder_get_height(obsx264->encoder);
 	bool cbr         = obs_data_get_bool(settings, "cbr");
 
 	if (keyint_sec)
@@ -251,8 +253,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.rc.i_vbv_max_bitrate = bitrate;
 	obsx264->params.rc.i_vbv_buffer_size = buffer_size;
 	obsx264->params.rc.i_bitrate         = bitrate;
-	obsx264->params.i_width              = voi->width;
-	obsx264->params.i_height             = voi->height;
+	obsx264->params.i_width              = width;
+	obsx264->params.i_height             = height;
 	obsx264->params.i_fps_num            = voi->fps_num;
 	obsx264->params.i_fps_den            = voi->fps_den;
 	obsx264->params.pf_log               = log_x264;
@@ -264,9 +266,12 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	     "\tbuffer size: %d\n"
 	     "\tfps_num:     %d\n"
 	     "\tfps_den:     %d\n"
+	     "\twidth:       %d\n"
+	     "\theight:      %d\n"
 	     "\tkeyint:      %d\n"
 	     "\tcbr:         %s",
 	     bitrate, buffer_size, voi->fps_num, voi->fps_den,
+	     width, height,
 	     obsx264->params.i_keyint_max,
 	     cbr ? "on" : "off");
 

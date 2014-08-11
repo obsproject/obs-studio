@@ -76,8 +76,11 @@ static void build_flv_meta_data(obs_output_t context,
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	enc_num_val(&enc, end, "width", (double)video_output_get_width(video));
-	enc_num_val(&enc, end, "height",(double)video_output_get_height(video));
+	enc_num_val(&enc, end, "width",
+			(double)obs_encoder_get_width(vencoder));
+	enc_num_val(&enc, end, "height",
+			(double)obs_encoder_get_height(vencoder));
+
 	enc_str_val(&enc, end, "videocodecid", "avc1");
 	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
 	enc_num_val(&enc, end, "framerate", video_output_get_frame_rate(video));
