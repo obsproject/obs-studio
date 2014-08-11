@@ -552,6 +552,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		os_event_signal(data->event);
 		pthread_join(data->thread, NULL);
 		os_event_destroy(data->event);
+		data->thread = 0;
 	}
 
 	v4l2_destroy_mmap(&data->buffers);
