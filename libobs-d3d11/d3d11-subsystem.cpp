@@ -274,12 +274,14 @@ ID3D11BlendState *gs_device::AddBlendState()
 		bd.RenderTarget[i].BlendEnable    = blendState.blendEnabled;
 		bd.RenderTarget[i].BlendOp        = D3D11_BLEND_OP_ADD;
 		bd.RenderTarget[i].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
-		bd.RenderTarget[i].SrcBlendAlpha  = D3D11_BLEND_ONE;
-		bd.RenderTarget[i].DestBlendAlpha = D3D11_BLEND_ZERO;
 		bd.RenderTarget[i].SrcBlend =
 			ConvertGSBlendType(blendState.srcFactor);
 		bd.RenderTarget[i].DestBlend =
 			ConvertGSBlendType(blendState.destFactor);
+		bd.RenderTarget[i].SrcBlendAlpha =
+			bd.RenderTarget[i].SrcBlend;
+		bd.RenderTarget[i].DestBlendAlpha =
+			bd.RenderTarget[i].DestBlend;
 		bd.RenderTarget[i].RenderTargetWriteMask =
 			D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
