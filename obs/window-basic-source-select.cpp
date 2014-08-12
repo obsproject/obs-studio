@@ -140,8 +140,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered"),
-					QTStr("NoNameEntered"));
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
 			return;
 		}
 

@@ -1480,8 +1480,8 @@ void OBSBasic::on_actionAddScene_triggered()
 	if (accepted) {
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered"),
-					QTStr("NoNameEntered"));
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
 			on_actionAddScene_triggered();
 			return;
 		}
@@ -1818,7 +1818,7 @@ void OBSBasic::logUploadFinished()
 	logDialog.exec();
 }
 
-static void RenameListItem(QListWidget *listWidget, obs_source_t source,
+static void RenameListItem(OBSBasic *parent, QListWidget *listWidget, obs_source_t source,
 		const string &name)
 {
 	const char      *prevName   = obs_source_get_name(source);
@@ -1827,6 +1827,17 @@ static void RenameListItem(QListWidget *listWidget, obs_source_t source,
 
 	if (foundSource || name.compare(prevName) == 0 || name.empty()) {
 		listItem->setText(QT_UTF8(prevName));
+
+		if (foundSource || name.compare(prevName) == 0) {
+			QMessageBox::information(parent,
+				QTStr("NameExists.Title"),
+				QTStr("NameExists.Text"));
+		} else if (name.empty()) {
+			QMessageBox::information(parent,
+				QTStr("NoNameEntered.Title"),
+				QTStr("NoNameEntered.Text"));
+		}
+
 		obs_source_release(foundSource);
 	} else {
 		listItem->setText(QT_UTF8(name.c_str()));
@@ -1845,7 +1856,7 @@ void OBSBasic::SceneNameEdited(QWidget *editor,
 		return;
 
 	obs_source_t source = obs_scene_get_source(scene);
-	RenameListItem(ui->scenes, source, text);
+	RenameListItem(this, ui->scenes, source, text);
 
 	UNUSED_PARAMETER(endHint);
 }
@@ -1861,7 +1872,7 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 		return;
 
 	obs_source_t source = obs_sceneitem_get_source(item);
-	RenameListItem(ui->sources, source, text);
+	RenameListItem(this, ui->sources, source, text);
 
 	UNUSED_PARAMETER(endHint);
 }
