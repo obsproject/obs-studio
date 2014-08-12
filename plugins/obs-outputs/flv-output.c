@@ -24,6 +24,13 @@
 #include <inttypes.h>
 #include "flv-mux.h"
 
+#define do_log(level, format, ...) \
+	blog(level, "[rtmp stream: '%s'] " format, \
+			obs_output_get_name(stream->output), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+
 struct flv_output {
 	obs_output_t output;
 	struct dstr  path;
@@ -71,6 +78,8 @@ static void flv_output_stop(void *data)
 		fclose(stream->file);
 		obs_output_end_data_capture(stream->output);
 		stream->active = false;
+
+		info("FLV file output complete");
 	}
 }
 
@@ -161,8 +170,7 @@ static bool flv_output_start(void *data)
 
 	stream->file = os_fopen(stream->path.array, "wb");
 	if (!stream->file) {
-		blog(LOG_WARNING, "Unable to open FLV file '%s'",
-				stream->path.array);
+		warn("Unable to open FLV file '%s'", stream->path.array);
 		return false;
 	}
 
@@ -171,6 +179,7 @@ static bool flv_output_start(void *data)
 	write_headers(stream);
 	obs_output_begin_data_capture(stream->output, 0);
 
+	info("Writing FLV file '%s'...", stream->path.array);
 	return true;
 }
 
