@@ -25,7 +25,7 @@
 #include "flv-mux.h"
 
 #define do_log(level, format, ...) \
-	blog(level, "[rtmp stream: '%s'] " format, \
+	blog(level, "[flv output: '%s'] " format, \
 			obs_output_get_name(stream->output), ##__VA_ARGS__)
 
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
