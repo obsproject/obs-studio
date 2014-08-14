@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -35,17 +34,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/dstr.h>
 #include <obs-module.h>
 
+#include "v4l2-helpers.h"
+
 #define V4L2_DATA(voidptr) struct v4l2_data *data = voidptr;
 
 #define timeval2ns(tv) \
 	(((uint64_t) tv.tv_sec * 1000000000) + ((uint64_t) tv.tv_usec * 1000))
 
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
-
-struct v4l2_buffer_data {
-	size_t length;
-	void *start;
-};
 
 /**
  * Data structure for the v4l2 source
@@ -65,6 +61,7 @@ struct v4l2_data {
 	os_event_t event;
 
 	char *set_device;
+	int_fast32_t set_input;
 	int_fast32_t set_pixfmt;
 	int_fast32_t set_res;
 	int_fast32_t set_fps;
@@ -78,22 +75,8 @@ struct v4l2_data {
 	int_fast32_t pixfmt;
 	uint_fast32_t linesize;
 
-	uint_fast32_t buf_count;
-	struct v4l2_buffer_data *buf;
+	struct v4l2_buffer_data buffers;
 };
-
-static enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
-{
-	switch (format) {
-	case V4L2_PIX_FMT_YVYU:   return VIDEO_FORMAT_YVYU;
-	case V4L2_PIX_FMT_YUYV:   return VIDEO_FORMAT_YUY2;
-	case V4L2_PIX_FMT_UYVY:   return VIDEO_FORMAT_UYVY;
-	case V4L2_PIX_FMT_NV12:   return VIDEO_FORMAT_NV12;
-	case V4L2_PIX_FMT_YUV420: return VIDEO_FORMAT_I420;
-	case V4L2_PIX_FMT_YVU420: return VIDEO_FORMAT_I420;
-	default:                  return VIDEO_FORMAT_NONE;
-	}
-}
 
 /*
  * used to store framerate and resolution values
@@ -107,169 +90,6 @@ static void unpack_tuple(int *a, int *b, int packed)
 {
 	*a = packed >> 16;
 	*b = packed & 0xffff;
-}
-
-/* fixed framesizes as fallback */
-static const int fixed_framesizes[] =
-{
-	/* 4:3 */
-	160<<16		| 120,
-	320<<16		| 240,
-	480<<16		| 320,
-	640<<16		| 480,
-	800<<16		| 600,
-	1024<<16	| 768,
-	1280<<16	| 960,
-	1440<<16	| 1050,
-	1440<<16	| 1080,
-	1600<<16	| 1200,
-
-	/* 16:9 */
-	640<<16		| 360,
-	960<<16		| 540,
-	1280<<16	| 720,
-	1600<<16	| 900,
-	1920<<16	| 1080,
-	1920<<16	| 1200,
-
-	/* tv */
-	432<<16		| 520,
-	480<<16		| 320,
-	480<<16		| 530,
-	486<<16		| 440,
-	576<<16		| 310,
-	576<<16		| 520,
-	576<<16		| 570,
-	720<<16		| 576,
-	1024<<16	| 576,
-
-	0
-};
-
-/* fixed framerates as fallback */
-static const int fixed_framerates[] =
-{
-	1<<16		| 60,
-	1<<16		| 50,
-	1<<16		| 30,
-	1<<16		| 25,
-	1<<16		| 20,
-	1<<16		| 15,
-	1<<16		| 10,
-	1<<16		| 5,
-
-	0
-};
-
-/*
- * start capture
- */
-static int_fast32_t v4l2_start_capture(struct v4l2_data *data)
-{
-	enum v4l2_buf_type type;
-
-	for (uint_fast32_t i = 0; i < data->buf_count; ++i) {
-		struct v4l2_buffer buf;
-
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = i;
-
-		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "unable to queue buffer");
-			return -1;
-		}
-	}
-
-	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (v4l2_ioctl(data->dev, VIDIOC_STREAMON, &type) < 0) {
-		blog(LOG_ERROR, "unable to start stream");
-		return -1;
-	}
-
-	return 0;
-}
-
-/*
- * stop capture
- */
-static int_fast32_t v4l2_stop_capture(struct v4l2_data *data)
-{
-	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-	if (v4l2_ioctl(data->dev, VIDIOC_STREAMOFF, &type) < 0) {
-		blog(LOG_ERROR, "unable to stop stream");
-	}
-
-	return 0;
-}
-
-/**
- * Create memory mapping for buffers
- *
- * This tries to map at least 2, preferably 4, buffers to userspace.
- *
- * @return 0 on success, -1 on failure
- */
-static int_fast32_t v4l2_create_mmap(struct v4l2_data *data)
-{
-	struct v4l2_requestbuffers req;
-
-	req.count = 4;
-	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	req.memory = V4L2_MEMORY_MMAP;
-
-	if (v4l2_ioctl(data->dev, VIDIOC_REQBUFS, &req) < 0) {
-		blog(LOG_ERROR, "Request for buffers failed !");
-		return -1;
-	}
-
-	if (req.count < 2) {
-		blog(LOG_ERROR, "Device returned less than 2 buffers");
-		return -1;
-	}
-
-	data->buf_count = req.count;
-	data->buf = bzalloc(req.count * sizeof(struct v4l2_buffer_data));
-
-	for (uint_fast32_t i = 0; i < req.count; ++i) {
-		struct v4l2_buffer buf;
-
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = i;
-
-		if (v4l2_ioctl(data->dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_ERROR, "Failed to query buffer details");
-			return -1;
-		}
-
-		data->buf[i].length = buf.length;
-		data->buf[i].start = v4l2_mmap(NULL, buf.length,
-			PROT_READ | PROT_WRITE, MAP_SHARED,
-			data->dev, buf.m.offset);
-
-		if (data->buf[i].start == MAP_FAILED) {
-			blog(LOG_ERROR, "mmap for buffer failed");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-/**
- * Destroy memory mapping for buffers
- */
-static void v4l2_destroy_mmap(struct v4l2_data *data)
-{
-	for(uint_fast32_t i = 0; i < data->buf_count; ++i) {
-		if (data->buf[i].start != MAP_FAILED)
-			v4l2_munmap(data->buf[i].start, data->buf[i].length);
-	}
-
-	data->buf_count = 0;
-	bfree(data->buf);
 }
 
 /**
@@ -336,7 +156,7 @@ static void *v4l2_thread(void *vptr)
 	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
 
-	if (v4l2_start_capture(data) < 0)
+	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
 
 	data->frames = 0;
@@ -372,7 +192,7 @@ static void *v4l2_thread(void *vptr)
 		}
 
 		out.timestamp = timeval2ns(buf.timestamp);
-		start = (uint8_t *) data->buf[buf.index].start;
+		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 			out.data[i] = start + plane_offsets[i];
 		obs_source_output_video(data->source, &out);
@@ -388,7 +208,7 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", data->frames);
 
 exit:
-	v4l2_stop_capture(data);
+	v4l2_stop_capture(data->dev);
 	return NULL;
 }
 
@@ -399,6 +219,7 @@ static const char* v4l2_getname(void)
 
 static void v4l2_defaults(obs_data_t settings)
 {
+	obs_data_set_default_int(settings, "input", 0);
 	obs_data_set_default_int(settings, "pixelformat", V4L2_PIX_FMT_YUYV);
 	obs_data_set_default_int(settings, "resolution",
 			pack_tuple(640, 480));
@@ -462,6 +283,26 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 
 	closedir(dirp);
 	dstr_free(&device);
+}
+
+/*
+ * List inputs for device
+ */
+static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
+{
+	struct v4l2_input in;
+	memset(&in, 0, sizeof(in));
+
+	obs_property_list_clear(prop);
+
+	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
+		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
+			obs_property_list_add_int(prop, (char *) in.name,
+					in.index);
+			blog(LOG_INFO, "Found input '%s'", in.name);
+		}
+		in.index++;
+	}
 }
 
 /*
@@ -529,15 +370,12 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
 			"are currently hardcoded");
 
-		for (uint_fast32_t i = 0; ; ++i) {
-			int packed = fixed_framesizes[i];
-			if (!packed)
-				break;
+		for (const int *packed = v4l2_framesizes; *packed; ++packed) {
 			int width;
 			int height;
-			unpack_tuple(&width, &height, packed);
+			unpack_tuple(&width, &height, *packed);
 			dstr_printf(&buffer, "%dx%d", width, height);
-			obs_property_list_add_int(prop, buffer.array, packed);
+			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
 		break;
 	}
@@ -579,16 +417,14 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 	default:
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
 			"are currently hardcoded");
-		for (uint_fast32_t i = 0; ; ++i) {
-			int packed = fixed_framerates[i];
-			if (!packed)
-				break;
+
+		for (const int *packed = v4l2_framerates; *packed; ++packed) {
 			int num;
 			int denom;
-			unpack_tuple(&num, &denom, packed);
+			unpack_tuple(&num, &denom, *packed);
 			float fps = (float) denom / num;
 			dstr_printf(&buffer, "%.2f", fps);
-			obs_property_list_add_int(prop, buffer.array, packed);
+			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
 		break;
 	}
@@ -600,6 +436,25 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
  * Device selected callback
  */
 static bool device_selected(obs_properties_t props, obs_property_t p,
+		obs_data_t settings)
+{
+	UNUSED_PARAMETER(p);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
+			O_RDWR | O_NONBLOCK);
+	if (dev == -1)
+		return false;
+
+	obs_property_t prop = obs_properties_get(props, "input");
+	v4l2_input_list(dev, prop);
+	obs_property_modified(prop, settings);
+	v4l2_close(dev);
+	return true;
+}
+
+/*
+ * Input selected callback
+ */
+static bool input_selected(obs_properties_t props, obs_property_t p,
 		obs_data_t settings)
 {
 	UNUSED_PARAMETER(p);
@@ -660,12 +515,15 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 
 static obs_properties_t v4l2_properties(void)
 {
-	/* TODO: locale */
 	obs_properties_t props = obs_properties_create();
 
 	obs_property_t device_list = obs_properties_add_list(props,
 			"device_id", obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	obs_property_t input_list = obs_properties_add_list(props,
+			"input", obs_module_text("Input"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_t format_list = obs_properties_add_list(props,
 			"pixelformat", obs_module_text("VideoFormat"),
@@ -681,6 +539,7 @@ static obs_properties_t v4l2_properties(void)
 
 	v4l2_device_list(device_list, NULL);
 	obs_property_set_modified_callback(device_list, device_selected);
+	obs_property_set_modified_callback(input_list, input_selected);
 	obs_property_set_modified_callback(format_list, format_selected);
 	obs_property_set_modified_callback(resolution_list,
 			resolution_selected);
@@ -693,10 +552,10 @@ static void v4l2_terminate(struct v4l2_data *data)
 		os_event_signal(data->event);
 		pthread_join(data->thread, NULL);
 		os_event_destroy(data->event);
+		data->thread = 0;
 	}
 
-	if (data->buf_count)
-		v4l2_destroy_mmap(data);
+	v4l2_destroy_mmap(&data->buffers);
 
 	if (data->dev != -1) {
 		v4l2_close(data->dev);
@@ -743,6 +602,12 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	}
 
+	/* set input */
+	if (v4l2_ioctl(data->dev, VIDIOC_S_INPUT, &data->set_input) < 0) {
+		blog(LOG_ERROR, "Unable to set input");
+		goto fail;
+	}
+
 	/* set pixel format and resolution */
 	unpack_tuple(&width, &height, data->set_res);
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -779,7 +644,7 @@ static void v4l2_init(struct v4l2_data *data)
 	dstr_free(&fps);
 
 	/* map buffers */
-	if (v4l2_create_mmap(data) < 0) {
+	if (v4l2_create_mmap(data->dev, &data->buffers) < 0) {
 		blog(LOG_ERROR, "Failed to map buffers");
 		goto fail;
 	}
@@ -814,6 +679,11 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 		restart = true;
 	}
 
+	if (data->set_input != obs_data_get_int(settings, "input")) {
+		data->set_input = obs_data_get_int(settings, "input");
+		restart = true;
+	}
+
 	if (data->set_pixfmt != obs_data_get_int(settings, "pixelformat")) {
 		data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
 		restart = true;
@@ -837,8 +707,6 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 
 static void *v4l2_create(obs_data_t settings, obs_source_t source)
 {
-	UNUSED_PARAMETER(settings);
-
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;
 	data->source = source;
