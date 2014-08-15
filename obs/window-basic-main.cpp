@@ -841,11 +841,15 @@ bool OBSBasic::QueryRemoveSource(obs_source_t source)
 	QString text = QTStr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(name));
 
-	QMessageBox::StandardButton button;
-	button = QMessageBox::question(this,
-			QTStr("ConfirmRemove.Remove"), text);
+	QMessageBox remove_source;
+	remove_source.setInformativeText(text);
+	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	remove_source.addButton(QTStr("No"), QMessageBox::NoRole);
+	remove_source.setIcon(QMessageBox::Question);
+	remove_source.setWindowTitle(QTStr("ConfirmRemove.Title"));
+	remove_source.exec();
 
-	return button == QMessageBox::Yes;
+	return Yes == remove_source.clickedButton();
 }
 
 #define UPDATE_CHECK_INTERVAL (60*60*24*4) /* 4 days */
