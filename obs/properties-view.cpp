@@ -1,6 +1,8 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QCheckBox>
+#include <QFont>
+#include <QFontDialog>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -353,6 +355,64 @@ void OBSPropertiesView::AddColor(obs_property_t prop, QFormLayout *layout,
 	layout->addRow(label, subLayout);
 }
 
+static void MakeQFont(obs_data_t font_obj, QFont &font)
+{
+	const char *face  = obs_data_get_string(font_obj, "face");
+	const char *style = obs_data_get_string(font_obj, "style");
+	int        size   = (int)obs_data_get_int(font_obj, "size");
+	uint32_t   flags  = (uint32_t)obs_data_get_int(font_obj, "flags");
+
+	if (face) {
+		font.setFamily(face);
+		font.setStyleName(style);
+	}
+
+	if (size)
+		font.setPointSize(size);
+
+	if (flags & OBS_FONT_BOLD) font.setBold(true);
+	if (flags & OBS_FONT_ITALIC) font.setItalic(true);
+	if (flags & OBS_FONT_UNDERLINE) font.setUnderline(true);
+	if (flags & OBS_FONT_STRIKEOUT) font.setStrikeOut(true);
+}
+
+void OBSPropertiesView::AddFont(obs_property_t prop, QFormLayout *layout,
+		QLabel *&label)
+{
+	const char  *name      = obs_property_name(prop);
+	obs_data_t  font_obj   = obs_data_get_obj(settings, name);
+	const char  *face      = obs_data_get_string(font_obj, "face");
+	const char  *style     = obs_data_get_string(font_obj, "style");
+	QPushButton *button    = new QPushButton;
+	QLabel      *fontLabel = new QLabel;
+	QFont       font;
+
+	font = fontLabel->font();
+	MakeQFont(font_obj, font);
+
+	button->setText(QTStr("Basic.PropertiesWindow.SelectFont"));
+
+	fontLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+	fontLabel->setFont(font);
+	fontLabel->setText(QString("%1 %2").arg(face, style));
+	fontLabel->setAlignment(Qt::AlignCenter);
+
+	QHBoxLayout *subLayout = new QHBoxLayout;
+	subLayout->setContentsMargins(0, 0, 0, 0);
+
+	subLayout->addWidget(fontLabel);
+	subLayout->addWidget(button);
+
+	WidgetInfo *info = new WidgetInfo(this, prop, fontLabel);
+	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
+	children.emplace_back(info);
+
+	label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(label, subLayout);
+
+	obs_data_release(font_obj);
+}
+
 void OBSPropertiesView::AddProperty(obs_property_t property,
 		QFormLayout *layout)
 {
@@ -389,6 +449,9 @@ void OBSPropertiesView::AddProperty(obs_property_t property,
 		break;
 	case OBS_PROPERTY_COLOR:
 		AddColor(property, layout, label);
+		break;
+	case OBS_PROPERTY_FONT:
+		AddFont(property, layout, label);
 		break;
 	case OBS_PROPERTY_BUTTON:
 		widget = AddButton(property);
@@ -548,6 +611,47 @@ bool WidgetInfo::ColorChanged(const char *setting)
 	return true;
 }
 
+bool WidgetInfo::FontChanged(const char *setting)
+{
+	obs_data_t font_obj = obs_data_get_obj(view->settings, setting);
+	bool       success;
+	uint32_t   flags;
+	QFont      font;
+
+	if (!font_obj) {
+		font = QFontDialog::getFont(&success, view);
+	} else {
+		MakeQFont(font_obj, font);
+		font = QFontDialog::getFont(&success, font, view);
+	}
+
+	if (!success) {
+		obs_data_release(font_obj);
+		return false;
+	}
+
+	if (!font_obj) {
+		font_obj = obs_data_create();
+		obs_data_set_obj(view->settings, setting, font_obj);
+	}
+
+	obs_data_set_string(font_obj, "face", QT_TO_UTF8(font.family()));
+	obs_data_set_string(font_obj, "style", QT_TO_UTF8(font.styleName()));
+	obs_data_set_int(font_obj, "size", font.pointSize());
+	flags  = font.bold() ? OBS_FONT_BOLD : 0;
+	flags |= font.italic() ? OBS_FONT_ITALIC : 0;
+	flags |= font.underline() ? OBS_FONT_UNDERLINE : 0;
+	flags |= font.strikeOut() ? OBS_FONT_STRIKEOUT : 0;
+	obs_data_set_int(font_obj, "flags", flags);
+
+	QLabel *label = static_cast<QLabel*>(widget);
+	label->setFont(font);
+	label->setText(QString("%1 %2").arg(font.family(), font.styleName()));
+
+	obs_data_release(font_obj);
+	return true;
+}
+
 void WidgetInfo::ButtonClicked()
 {
 	obs_property_button_clicked(property, view->obj);
@@ -568,6 +672,10 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_BUTTON:  ButtonClicked(); return;
 	case OBS_PROPERTY_COLOR:
 		if (!ColorChanged(setting))
+			return;
+		break;
+	case OBS_PROPERTY_FONT:
+		if (!FontChanged(setting))
 			return;
 		break;
 	case OBS_PROPERTY_PATH:
