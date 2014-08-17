@@ -28,11 +28,13 @@ struct glyph_info {
 };
 
 struct ft2_source {
-	uint8_t font_type;
-	char *font_name;
+	char     *font_name;
+	char     *font_style;
+	uint16_t font_size;
+	uint32_t font_flags;
+
 	char *text_file;
 	wchar_t *text;
-	uint16_t font_size;
 	time_t m_timestamp;
 	uint64_t last_checked;
 

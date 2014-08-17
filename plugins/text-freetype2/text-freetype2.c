@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include "text-freetype2.h"
 #include "obs-convenience.h"
+#include "find-font.h"
 
 FT_Library ft2_lib;
 
@@ -54,6 +55,8 @@ bool obs_module_load()
 		return false;
 	}
 
+	load_os_font_list();
+
 	obs_register_source(&freetype2_source_info);
 
 	return true;
@@ -61,6 +64,7 @@ bool obs_module_load()
 
 void obs_module_unload(void)
 {
+	free_os_font_list();
 	FT_Done_FreeType(ft2_lib);
 }
 
@@ -89,15 +93,13 @@ static obs_properties_t ft2_source_properties(void)
 	//obs_property_t prop;
 
 	// TODO:
-	//	Get system fonts, no idea how.
 	//	Scrolling. Can't think of a way to do it with the render
 	//		targets currently being broken. (0.4.2)
 	//	Better/pixel shader outline/drop shadow
 	//	Some way to pull text files from network, I dunno
 
-	obs_properties_add_path(props,
-		"font_file", obs_module_text("FontFile"),
-		OBS_PATH_FILE, "All font formats (*.ttf *.otf);;", NULL);
+	obs_properties_add_font(props, "font",
+		obs_module_text("Font"));
 
 	obs_properties_add_text(props, "text",
 		obs_module_text("Text"), OBS_TEXT_MULTILINE);
@@ -111,9 +113,6 @@ static obs_properties_t ft2_source_properties(void)
 	obs_properties_add_path(props,
 		"text_file", obs_module_text("TextFile"),
 		OBS_PATH_FILE, "All font formats (*.txt);;", NULL);
-
-	obs_properties_add_int(props, "font_size",
-		obs_module_text("FontSize"), 0, 72, 1);
 
 	obs_properties_add_color(props, "color1",
 		obs_module_text("Color1"));
@@ -154,6 +153,8 @@ static void ft2_source_destroy(void *data)
 
 	if (srcdata->font_name != NULL)
 		bfree(srcdata->font_name);
+	if (srcdata->font_style != NULL)
+		bfree(srcdata->font_style);
 	if (srcdata->text != NULL)
 		bfree(srcdata->text);
 	if (srcdata->texbuf != NULL)
@@ -207,9 +208,10 @@ static void ft2_video_tick(void *data, float seconds)
 	if (srcdata->text_file == NULL) return;
 
 	if (os_gettime_ns() - srcdata->last_checked >= 1000000000) {
+		time_t t = get_modified_timestamp(srcdata->text_file);
 		srcdata->last_checked = os_gettime_ns();
-		if (srcdata->m_timestamp !=
-			get_modified_timestamp(srcdata->text_file)) {
+
+		if (srcdata->m_timestamp != t) {
 			if (srcdata->log_mode)
 				read_from_end(srcdata, srcdata->text_file);
 			else
@@ -222,14 +224,38 @@ static void ft2_video_tick(void *data, float seconds)
 	UNUSED_PARAMETER(seconds);
 }
 
+static bool init_font(struct ft2_source *srcdata)
+{
+	FT_Long index;
+	const char *path = get_font_path(srcdata->font_name, srcdata->font_size,
+			srcdata->font_style, srcdata->font_flags, &index);
+	if (!path)
+		return false;
+
+	if (srcdata->font_face != NULL) {
+		FT_Done_Face(srcdata->font_face);
+		srcdata->font_face = NULL;
+	}
+
+	return FT_New_Face(ft2_lib, path, index, &srcdata->font_face) == 0;
+}
+
 static void ft2_source_update(void *data, obs_data_t settings)
 {
 	struct ft2_source *srcdata = data;
-	const char *tmp = obs_data_get_string(settings, "font_file");
+	obs_data_t font_obj = obs_data_get_obj(settings, "font");
 	bool vbuf_needs_update = false;
 	bool word_wrap = false;
 	uint32_t color[2];
 	uint32_t custom_width = 0;
+
+	const char *font_name  = obs_data_get_string(font_obj, "face");
+	const char *font_style = obs_data_get_string(font_obj, "style");
+	uint16_t   font_size   = (uint16_t)obs_data_get_int(font_obj, "size");
+	uint32_t   font_flags  = (uint32_t)obs_data_get_int(font_obj, "flags");
+
+	if (!font_obj)
+		return;
 
 	srcdata->drop_shadow = obs_data_get_bool(settings, "drop_shadow");
 	srcdata->outline_text = obs_data_get_bool(settings, "outline");
@@ -295,38 +321,34 @@ static void ft2_source_update(void *data, obs_data_t settings)
 		}
 	}
 
-	if (srcdata->font_size != obs_data_get_int(settings, "font_size"))
+	if (srcdata->font_size != font_size)
 		vbuf_needs_update = true;
 
 	if (srcdata->font_name != NULL) {
-		if (strcmp(tmp, srcdata->font_name) == 0 &&
-			srcdata->font_size ==
-			obs_data_get_int(settings, "font_size"))
-				goto skip_font_load;
+		if (strcmp(font_name,  srcdata->font_name)  == 0 &&
+		    strcmp(font_style, srcdata->font_style) == 0 &&
+		    font_flags == srcdata->font_flags &&
+		    font_size  == srcdata->font_size)
+			goto skip_font_load;
+
 		bfree(srcdata->font_name);
+		bfree(srcdata->font_style);
 		srcdata->font_name = NULL;
+		srcdata->font_style = NULL;
 		srcdata->max_h = 0;
 	}
 
-	srcdata->font_name = bzalloc(strlen(tmp) + 1);
-	strcpy(srcdata->font_name, tmp);
+	srcdata->font_name  = bstrdup(font_name);
+	srcdata->font_style = bstrdup(font_style);
+	srcdata->font_size  = font_size;
+	srcdata->font_flags = font_flags;
 
-	if (srcdata->font_face != NULL) {
-		FT_Done_Face(srcdata->font_face);
-		srcdata->font_face = NULL;
-	}
-
-	FT_New_Face(ft2_lib, srcdata->font_name, 0,
-		&srcdata->font_face);
-
-	if (srcdata->font_face == NULL) {
+	if (!init_font(srcdata) || srcdata->font_face == NULL) {
 		blog(LOG_WARNING, "FT2-text: Failed to load font %s",
 			srcdata->font_name);
-		return;
+		goto error;
 	}
 	else {
-		srcdata->font_size = (uint16_t)obs_data_get_int(settings,
-			"font_size");
 		FT_Set_Pixel_Sizes(srcdata->font_face, 0, srcdata->font_size); 
 		FT_Select_Charmap(srcdata->font_face, FT_ENCODING_UNICODE);
 	}
@@ -340,21 +362,20 @@ static void ft2_source_update(void *data, obs_data_t settings)
 	cache_standard_glyphs(srcdata);
 skip_font_load:;
 	if (from_file) {
-		tmp = obs_data_get_string(settings, "text_file");
+		const char *tmp = obs_data_get_string(settings, "text_file");
 		if (strlen(tmp) == 0)
 			return;
 		if (srcdata->text_file != NULL) {
 			if (strcmp(srcdata->text_file, tmp) == 0
 				&& !vbuf_needs_update)
-				return;
+				goto error;
 			bfree(srcdata->text_file);
 			srcdata->text_file = NULL;
 		}
 		else
 			blog(LOG_WARNING,
 				"FT2-text: Failed to open %s for reading", tmp);
-		srcdata->text_file = bzalloc(strlen(tmp) + 1);
-		strcpy(srcdata->text_file, tmp);
+		srcdata->text_file = bstrdup(tmp);
 
 		if (chat_log_mode)
 			read_from_end(srcdata, tmp);
@@ -363,37 +384,45 @@ skip_font_load:;
 		srcdata->last_checked = os_gettime_ns();
 	}
 	else {
-		tmp = obs_data_get_string(settings, "text");
-		if (strlen(tmp) == 0) return;
+		const char *tmp = obs_data_get_string(settings, "text");
+		if (strlen(tmp) == 0) goto error;
 
 		if (srcdata->text != NULL) {
 			bfree(srcdata->text);
 			srcdata->text = NULL;
 		}
-		srcdata->text = bzalloc((strlen(tmp) + 1)*sizeof(wchar_t));
-		os_utf8_to_wcs(tmp, strlen(tmp), srcdata->text,
-			(strlen(tmp) + 1));
+
+		os_utf8_to_wcs_ptr(tmp, strlen(tmp), &srcdata->text);
 	}
 
 	cache_glyphs(srcdata, srcdata->text);
 
 	set_up_vertex_buffer(srcdata);
+
+error:
+	obs_data_release(font_obj);
 }
 
 static void *ft2_source_create(obs_data_t settings, obs_source_t source)
 {
 	struct ft2_source *srcdata = bzalloc(sizeof(struct ft2_source));
+	obs_data_t font_obj = obs_data_create();
 	srcdata->src = source;
 
 	srcdata->font_size = 32;
 
-	obs_data_set_default_int(settings, "font_size", 32);
+	obs_data_set_default_string(font_obj, "face", "Arial");
+	obs_data_set_default_int(font_obj, "size", 32);
+	obs_data_set_default_obj(settings, "font", font_obj);
+
 	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
 	obs_data_set_default_string(settings, "text",
 		"The lazy snake jumps over the happy MASKEN.");
 
 	ft2_source_update(srcdata, settings);
+
+	obs_data_release(font_obj);
 
 	return srcdata;
 }
