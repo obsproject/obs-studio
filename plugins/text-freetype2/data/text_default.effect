@@ -1,0 +1,56 @@
+uniform float4x4 ViewProj;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+uniform texture2d image;
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+	float4 col : COLOR;
+};
+
+VertInOut VSDefault(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	vert_out.col = vert_in.col;
+	return vert_out;
+}
+
+float4 PSDrawBare(VertInOut vert_in) : TARGET
+{
+	return image.Sample(def_sampler, vert_in.uv) * vert_in.col;
+}
+
+float4 PSDrawMatrix(VertInOut vert_in) : TARGET
+{
+	float4 yuv = image.Sample(def_sampler, vert_in.uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrix(vert_in);
+	}
+}
