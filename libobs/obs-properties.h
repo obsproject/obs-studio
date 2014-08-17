@@ -34,6 +34,7 @@ enum obs_property_type {
 	OBS_PROPERTY_LIST,
 	OBS_PROPERTY_COLOR,
 	OBS_PROPERTY_BUTTON,
+	OBS_PROPERTY_FONT,
 };
 
 enum obs_combo_format {
@@ -59,6 +60,11 @@ enum obs_text_type {
 	OBS_TEXT_PASSWORD,
 	OBS_TEXT_MULTILINE,
 };
+
+#define OBS_FONT_BOLD      (1<<0)
+#define OBS_FONT_ITALIC    (1<<1)
+#define OBS_FONT_UNDERLINE (1<<2)
+#define OBS_FONT_STRIKEOUT (1<<3)
 
 struct obs_properties;
 struct obs_property;
@@ -141,6 +147,18 @@ EXPORT obs_property_t obs_properties_add_color(obs_properties_t props,
 EXPORT obs_property_t obs_properties_add_button(obs_properties_t props,
 		const char *name, const char *text,
 		obs_property_clicked_t callback);
+
+/**
+ * Adds a font selection property.
+ *
+ * A font is an obs_data sub-object which contains the following items:
+ *   face:   face name string
+ *   style:  style name string
+ *   size:   size integer
+ *   flags:  font flags integer (OBS_FONT_* defined above)
+ */
+EXPORT obs_property_t obs_properties_add_font(obs_properties_t props,
+		const char *name, const char *description);
 
 /* ------------------------------------------------------------------------- */
 
