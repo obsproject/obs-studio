@@ -141,7 +141,7 @@ static void ft2_source_destroy(void *data)
 	struct ft2_source *srcdata = data;
 
 	if (srcdata->font_face != NULL) {
-		free(srcdata->font_face);
+		FT_Done_Face(srcdata->font_face);
 		srcdata->font_face = NULL;
 	}
 	
@@ -312,7 +312,7 @@ static void ft2_source_update(void *data, obs_data_t settings)
 	strcpy(srcdata->font_name, tmp);
 
 	if (srcdata->font_face != NULL) {
-		free(srcdata->font_face);
+		FT_Done_Face(srcdata->font_face);
 		srcdata->font_face = NULL;
 	}
 
