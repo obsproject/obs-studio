@@ -47,8 +47,7 @@ struct ft2_source {
 
 	struct glyph_info *cacheglyphs[num_cache_slots];
 
-	FT_Library	ft2_lib;
-	FT_Face		font_face;
+	FT_Face	font_face;
 
 	uint32_t *texbuf;
 	gs_vertbuffer_t vbuf;
@@ -59,6 +58,8 @@ struct ft2_source {
 
 	obs_source_t src;
 };
+
+extern FT_Library ft2_lib;
 
 static void *ft2_source_create(obs_data_t settings, obs_source_t source);
 static void ft2_source_destroy(void *data);
