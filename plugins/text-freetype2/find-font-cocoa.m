@@ -28,12 +28,9 @@ static void add_path_fonts(NSFileManager *file_manager, NSString *path)
 	files = [file_manager contentsOfDirectoryAtPath:path error:&error];
 
 	for (NSString *file in files) {
-		NSMutableString *full_path = [[NSMutableString alloc] init];
-		[full_path setString:path];
-		[full_path appendString:@"/"];
-		[full_path appendString:file];
+		NSString *full_path = [path stringByAppendingPathComponent:file];
 
-		add_path_font(full_path.UTF8String);
+		add_path_font(full_path.fileSystemRepresentation);
 	}
 }
 
