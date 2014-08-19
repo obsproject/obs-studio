@@ -35,7 +35,7 @@ else()
 	message(STATUS "Linux-specific code has yet to be written for the text plugin, just needs load_os_font_list written..  which, er, may or may not be a pain.  (My apologies in advance, please don't strangle me)")
 	return()
 
-	find_package(ICONV QUIET)
+	find_package(iconv QUIET)
 	if(NOT LIBICONV_FOUND)
 		message(STATUS "IConv library not found, Freetype text plugin disabled")
 		return()
@@ -45,7 +45,6 @@ else()
 		find-font-iconv.c)
 
 	include_directories(${LIBICONV_INCLUDE_DIR})
-	target_link_libraries(${LIBICONV_LIBRARIES})
 endif()
 
 include_directories(${LIBFREETYPE_INCLUDE_DIRS})
@@ -67,6 +66,9 @@ target_link_libraries(text-freetype2
 	libobs
 	${text-freetype2_PLATFORM_DEPS}
 	${LIBFREETYPE_LIBRARIES})
+if(UNIX AND LIBICONV_FOUND)
+	target_link_libraries(text-freetype2 ${LIBICONV_LIBRARIES})
+endif()
 
 install_obs_plugin(text-freetype2)
 install_obs_plugin_data(text-freetype2 data)
