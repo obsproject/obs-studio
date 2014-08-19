@@ -459,7 +459,7 @@ macro(install_obs_datatarget target datadest)
 	endif()
 endmacro()
 
-macro(install_obs_plugin_data target datadir)
+macro(install_obs_plugin_with_data target datadir)
 	install_obs_plugin(${target})
 	install_obs_data(${target} "${datadir}" "obs-plugins/${target}")
 endmacro()

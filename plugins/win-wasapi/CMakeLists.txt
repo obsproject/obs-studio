@@ -14,5 +14,4 @@ add_library(win-wasapi MODULE
 target_link_libraries(win-wasapi
 	libobs)
 
-install_obs_plugin(win-wasapi)
-install_obs_plugin_data(win-wasapi data)
+install_obs_plugin_with_data(win-wasapi data)

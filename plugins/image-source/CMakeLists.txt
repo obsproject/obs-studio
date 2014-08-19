@@ -8,5 +8,4 @@ add_library(image-source MODULE
 target_link_libraries(image-source
 	libobs)
 
-install_obs_plugin(image-source)
-install_obs_plugin_data(image-source data)
+install_obs_plugin_with_data(image-source data)

@@ -27,5 +27,4 @@ target_link_libraries(linux-xshm
 	${X11_Xinerama_LIB}
 )
 
-install_obs_plugin(linux-xshm)
-install_obs_plugin_data(linux-xshm data)
+install_obs_plugin_with_data(linux-xshm data)

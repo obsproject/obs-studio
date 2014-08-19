@@ -25,5 +25,4 @@ target_link_libraries(linux-xcomposite
 	${X11_X11_LIB}
 	${X11_Xcomposite_LIB})
 
-install_obs_plugin(linux-xcomposite)
-install_obs_plugin_data(linux-xcomposite data)
+install_obs_plugin_with_data(linux-xcomposite data)

@@ -37,5 +37,4 @@ target_link_libraries(mac-avcapture
 	${COREVIDEO}
 	${COCOA})
 
-install_obs_plugin(mac-avcapture)
-install_obs_plugin_data(mac-avcapture data)
+install_obs_plugin_with_data(mac-avcapture data)

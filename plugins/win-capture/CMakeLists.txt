@@ -16,5 +16,4 @@ target_link_libraries(win-capture
 	libobs
 	psapi.lib)
 
-install_obs_plugin(win-capture)
-install_obs_plugin_data(win-capture data)
+install_obs_plugin_with_data(win-capture data)

@@ -22,5 +22,4 @@ target_link_libraries(linux-pulseaudio
 	${PULSEAUDIO_LIBRARY}
 )
 
-install_obs_plugin(linux-pulseaudio)
-install_obs_plugin_data(linux-pulseaudio data)
+install_obs_plugin_with_data(linux-pulseaudio data)

@@ -70,5 +70,4 @@ if(UNIX AND LIBICONV_FOUND)
 	target_link_libraries(text-freetype2 ${LIBICONV_LIBRARIES})
 endif()
 
-install_obs_plugin(text-freetype2)
-install_obs_plugin_data(text-freetype2 data)
+install_obs_plugin_with_data(text-freetype2 data)

@@ -45,5 +45,4 @@ target_link_libraries(obs-ffmpeg
 	${LIBAVFORMAT_LIBRARIES}
 	${LIBSWRESAMPLE_LIBRARIES})
 
-install_obs_plugin(obs-ffmpeg)
-install_obs_plugin_data(obs-ffmpeg data)
+install_obs_plugin_with_data(obs-ffmpeg data)
