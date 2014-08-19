@@ -22,9 +22,11 @@ set(mac-capture_SOURCES
 	audio-device-enum.c
 	mac-audio.c
 	mac-display-capture.m
+	mac-window-capture.m
 	window-utils.m)
 	
 set_source_files_properties(mac-display-capture.m
+			    mac-window-capture.m
 			    window-utils.m
 	PROPERTIES LANGUAGE C)
 
