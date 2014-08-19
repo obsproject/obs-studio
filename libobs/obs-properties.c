@@ -227,6 +227,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_LIST:      return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:     return 0;
 	case OBS_PROPERTY_BUTTON:    return sizeof(struct button_data);
+	case OBS_PROPERTY_FONT:      return 0;
 	}
 
 	return 0;
@@ -384,6 +385,13 @@ obs_property_t obs_properties_add_button(obs_properties_t props,
 	struct button_data *data = get_property_data(p);
 	data->callback = callback;
 	return p;
+}
+
+obs_property_t obs_properties_add_font(obs_properties_t props,
+		const char *name, const char *desc)
+{
+	if (!props || has_prop(props, name)) return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_FONT);
 }
 
 static inline bool is_combo(struct obs_property *p)
