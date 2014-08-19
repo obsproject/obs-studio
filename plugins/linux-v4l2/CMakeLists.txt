@@ -22,5 +22,4 @@ target_link_libraries(linux-v4l2
 	${LIBV4L2_LIBRARIES}
 )
 
-install_obs_plugin(linux-v4l2)
-install_obs_plugin_data(linux-v4l2 data)
+install_obs_plugin_with_data(linux-v4l2 data)

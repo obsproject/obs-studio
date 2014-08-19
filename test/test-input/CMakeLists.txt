@@ -21,4 +21,4 @@ target_link_libraries(test-input
 	${test-input_PLATFORM_DEPS}
 	libobs)
 
-install_obs_plugin_data(test-input data)
+install_obs_plugin_with_data(test-input data)

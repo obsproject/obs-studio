@@ -36,5 +36,4 @@ target_link_libraries(mac-capture
 	${IOSURF}
 	${COCOA})
 
-install_obs_plugin(mac-capture)
-install_obs_plugin_data(mac-capture data)
+install_obs_plugin_with_data(mac-capture data)
