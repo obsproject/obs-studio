@@ -25,16 +25,20 @@ else()
 
 	set(FREETYPE_PATH_ARCH FreetypePath${_lib_suffix})
 
-	find_path(FREETYPE_INCLUDE_DIR
-		NAMES ft2build.h
-		HINTS
-			${_FREETYPE_INCLUDE_DIRS}
-			"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-			"$ENV{obsAdditionalInstallFiles}/include"
-			ENV FreetypePath
-			ENV ${FREETYPE_PATH_ARCH}
-		PATHS
-			/usr/include /usr/local/include /opt/local/include /sw/include)
+	if (NOT _FREETYPE_INCLUDE_DIRS STREQUAL "")
+		set (FREETYPE_INCLUDE_DIR ${_FREETYPE_INCLUDE_DIRS})
+	else()
+		find_path(FREETYPE_INCLUDE_DIR
+			NAMES ft2build.h
+			HINTS
+				${_FREETYPE_INCLUDE_DIRS}
+				"${CMAKE_SOURCE_DIR}/additional_install_files/include"
+				"$ENV{obsAdditionalInstallFiles}/include"
+				ENV FreetypePath
+				ENV ${FREETYPE_PATH_ARCH}
+			PATHS
+				/usr/include /usr/local/include /opt/local/include /sw/include)
+	endif()
 
 	find_library(FREETYPE_LIB
 		NAMES ${_FREETYPE_LIBRARIES} freetype libfreetype
