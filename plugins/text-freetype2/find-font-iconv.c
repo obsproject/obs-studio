@@ -127,6 +127,16 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 	char *conv_in, *conv_out;
 	size_t in_len, out_len;
 
+	if (!charset) {
+		blog(LOG_DEBUG, "invalid character set found, "
+		                "platform_id: %d, encoding_id: %d, "
+		                "language_id: %d",
+		                sfnt_name->platform_id,
+		                sfnt_name->encoding_id,
+		                sfnt_name->language_id);
+		return NULL;
+	}
+
 	iconv_t ic = iconv_open("UTF-8", charset);
 	if (ic == (iconv_t)-1) {
 		blog(LOG_WARNING, "couldn't intialize font code page "
