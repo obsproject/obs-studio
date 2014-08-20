@@ -297,35 +297,35 @@ void gs_matrix_mul(const struct matrix4 *matrix)
 {
 	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix4_mul(top_mat, top_mat, matrix);
+		matrix4_mul(top_mat, matrix, top_mat);
 }
 
 void gs_matrix_rotquat(const struct quat *rot)
 {
 	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix4_rotate(top_mat, top_mat, rot);
+		matrix4_rotate_i(top_mat, rot, top_mat);
 }
 
 void gs_matrix_rotaa(const struct axisang *rot)
 {
 	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix4_rotate_aa(top_mat, top_mat, rot);
+		matrix4_rotate_aa_i(top_mat, rot, top_mat);
 }
 
 void gs_matrix_translate(const struct vec3 *pos)
 {
 	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix4_translate3v(top_mat, top_mat, pos);
+		matrix4_translate3v_i(top_mat, pos, top_mat);
 }
 
 void gs_matrix_scale(const struct vec3 *scale)
 {
 	struct matrix4 *top_mat = top_matrix(thread_graphics);
 	if (top_mat)
-		matrix4_scale(top_mat, top_mat, scale);
+		matrix4_scale_i(top_mat, scale, top_mat);
 }
 
 void gs_matrix_rotaa4f(float x, float y, float z, float angle)
@@ -335,7 +335,7 @@ void gs_matrix_rotaa4f(float x, float y, float z, float angle)
 
 	if (top_mat) {
 		axisang_set(&aa, x, y, z, angle);
-		matrix4_rotate_aa(top_mat, top_mat, &aa);
+		matrix4_rotate_aa_i(top_mat, &aa, top_mat);
 	}
 }
 
@@ -346,7 +346,7 @@ void gs_matrix_translate3f(float x, float y, float z)
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix4_translate3v(top_mat, top_mat, &p);
+		matrix4_translate3v_i(top_mat, &p, top_mat);
 	}
 }
 
@@ -357,7 +357,7 @@ void gs_matrix_scale3f(float x, float y, float z)
 
 	if (top_mat) {
 		vec3_set(&p, x, y, z);
-		matrix4_scale(top_mat, top_mat, &p);
+		matrix4_scale_i(top_mat, &p, top_mat);
 	}
 }
 

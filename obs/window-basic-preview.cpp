@@ -682,6 +682,7 @@ static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
 
 	gs_matrix_push();
 	gs_matrix_translate(&pos);
+	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
 	gs_draw(GS_LINESTRIP, 0, 0);
 	gs_matrix_pop();
 }
@@ -699,8 +700,6 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
 	matrix4 boxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
-	gs_matrix_push();
-	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
 	DrawCircleAtPos(0.0f, 0.0f, boxTransform, main->previewScale);
 	DrawCircleAtPos(0.0f, 1.0f, boxTransform, main->previewScale);
 	DrawCircleAtPos(1.0f, 0.0f, boxTransform, main->previewScale);
@@ -709,13 +708,12 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
 	DrawCircleAtPos(0.0f, 0.5f, boxTransform, main->previewScale);
 	DrawCircleAtPos(0.5f, 1.0f, boxTransform, main->previewScale);
 	DrawCircleAtPos(1.0f, 0.5f, boxTransform, main->previewScale);
-	gs_matrix_pop();
 
 	gs_load_vertexbuffer(main->box);
 
 	gs_matrix_push();
-	gs_matrix_set(&boxTransform);
 	gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
+	gs_matrix_mul(&boxTransform);
 	gs_draw(GS_LINESTRIP, 0, 0);
 
 	gs_matrix_pop();
