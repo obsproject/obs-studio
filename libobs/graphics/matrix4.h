@@ -76,6 +76,17 @@ EXPORT void matrix4_scale(struct matrix4 *dst, const struct matrix4 *m,
 EXPORT bool matrix4_inv(struct matrix4 *dst, const struct matrix4 *m);
 EXPORT void matrix4_transpose(struct matrix4 *dst, const struct matrix4 *m);
 
+EXPORT void matrix4_translate3v_i(struct matrix4 *dst, const struct vec3 *v,
+		const struct matrix4 *m);
+EXPORT void matrix4_translate4v_i(struct matrix4 *dst, const struct vec4 *v,
+		const struct matrix4 *m);
+EXPORT void matrix4_rotate_i(struct matrix4 *dst, const struct quat *q,
+		const struct matrix4 *m);
+EXPORT void matrix4_rotate_aa_i(struct matrix4 *dst, const struct axisang *aa,
+		const struct matrix4 *m);
+EXPORT void matrix4_scale_i(struct matrix4 *dst, const struct vec3 *v,
+		const struct matrix4 *m);
+
 static inline void matrix4_translate3f(struct matrix4 *dst,
 		const struct matrix4 *m, float x, float y, float z)
 {

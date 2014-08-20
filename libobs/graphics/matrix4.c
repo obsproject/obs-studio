@@ -178,6 +178,57 @@ void matrix4_scale(struct matrix4 *dst, const struct matrix4 *m,
 	matrix4_mul(dst, m, &temp);
 }
 
+void matrix4_translate3v_i(struct matrix4 *dst, const struct vec3 *v,
+		const struct matrix4 *m)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, 1.0f, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, 1.0f, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, 1.0f, 0.0f);
+	vec4_from_vec3(&temp.t, v);
+
+	matrix4_mul(dst, &temp, m);
+}
+
+void matrix4_translate4v_i(struct matrix4 *dst, const struct vec4 *v,
+		const struct matrix4 *m)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, 1.0f, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, 1.0f, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, 1.0f, 0.0f);
+	vec4_copy(&temp.t, v);
+
+	matrix4_mul(dst, &temp, m);
+}
+
+void matrix4_rotate_i(struct matrix4 *dst, const struct quat *q,
+		const struct matrix4 *m)
+{
+	struct matrix4 temp;
+	matrix4_from_quat(&temp, q);
+	matrix4_mul(dst, &temp, m);
+}
+
+void matrix4_rotate_aa_i(struct matrix4 *dst, const struct axisang *aa,
+		const struct matrix4 *m)
+{
+	struct matrix4 temp;
+	matrix4_from_axisang(&temp, aa);
+	matrix4_mul(dst, &temp, m);
+}
+
+void matrix4_scale_i(struct matrix4 *dst, const struct vec3 *v,
+		const struct matrix4 *m)
+{
+	struct matrix4 temp;
+	vec4_set(&temp.x, v->x, 0.0f, 0.0f, 0.0f);
+	vec4_set(&temp.y, 0.0f, v->y, 0.0f, 0.0f);
+	vec4_set(&temp.z, 0.0f, 0.0f, v->z, 0.0f);
+	vec4_set(&temp.t, 0.0f, 0.0f, 0.0f, 1.0f);
+	matrix4_mul(dst, &temp, m);
+}
+
 bool matrix4_inv(struct matrix4 *dst, const struct matrix4 *m)
 {
 	struct vec4 *dstv = (struct vec4 *)dst;
