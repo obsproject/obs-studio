@@ -1,62 +1,62 @@
 [
     {
-        "name": "Twitch / Justin.tv",
+        "name": "Twitch",
         "servers": [
             {
                 "name": "US West: San Francisco, CA",
-                "url": "rtmp://live.justin.tv/app"
+                "url": "rtmp://live.twitch.tv/app"
             },
             {
                 "name": "Asia: Singapore",
-                "url": "rtmp://live-sin-backup.justin.tv/app"
+                "url": "rtmp://live-sin-backup.twitch.tv/app"
             },
             {
                 "name": "EU: Amsterdam, NL",
-                "url": "rtmp://live-ams.justin.tv/app"
+                "url": "rtmp://live-ams.twitch.tv/app"
             },
             {
                 "name": "EU: Frankfurt, DE",
-                "url": "rtmp://live-fra.justin.tv/app"
+                "url": "rtmp://live-fra.twitch.tv/app"
             },
             {
                 "name": "EU: London, UK",
-                "url": "rtmp://live-lhr.justin.tv/app"
+                "url": "rtmp://live-lhr.twitch.tv/app"
             },
             {
                 "name": "EU: Paris, FR",
-                "url": "rtmp://live-cdg.justin.tv/app"
+                "url": "rtmp://live-cdg.twitch.tv/app"
             },
             {
                 "name": "EU: Prague, CZ",
-                "url": "rtmp://live-prg.justin.tv/app"
+                "url": "rtmp://live-prg.twitch.tv/app"
             },
             {
                 "name": "EU: Stockholm, SE",
-                "url": "rtmp://live-arn.justin.tv/app"
+                "url": "rtmp://live-arn.twitch.tv/app"
             },
             {
                 "name": "US Central: Dallas, TX",
-                "url": "rtmp://live-dfw.justin.tv/app"
+                "url": "rtmp://live-dfw.twitch.tv/app"
             },
             {
                 "name": "US East: Ashburn, VA",
-                "url": "rtmp://live-iad.justin.tv/app"
+                "url": "rtmp://live-iad.twitch.tv/app"
             },
             {
                 "name": "US East: Miami, FL",
-                "url": "rtmp://live-mia.justin.tv/app"
+                "url": "rtmp://live-mia.twitch.tv/app"
             },
             {
                 "name": "US East: New York, NY",
-                "url": "rtmp://live-jfk.justin.tv/app"
+                "url": "rtmp://live-jfk.twitch.tv/app"
             },
             {
                 "name": "US Midwest: Chicago, IL",
-                "url": "rtmp://live-ord.justin.tv/app"
+                "url": "rtmp://live-ord.twitch.tv/app"
             },
             {
                 "name": "US West: Los Angeles, CA",
-                "url": "rtmp://live-lax.justin.tv/app"
+                "url": "rtmp://live-lax.twitch.tv/app"
             }
         ],
         "recommended": {
