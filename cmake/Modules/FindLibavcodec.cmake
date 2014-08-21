@@ -52,6 +52,7 @@ else()
 	set(LIBAVCODEC_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavcodec include dir")
 	set(LIBAVCODEC_LIBRARIES ${AVCODEC_LIB} CACHE STRING "Libavcodec libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Libavcodec DEFAULT_MSG AVCODEC_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR AVCODEC_LIB)
 endif()

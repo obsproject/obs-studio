@@ -75,6 +75,7 @@ else()
 	set(FREETYPE_INCLUDE_DIRS ${FREETYPE_INCLUDE_DIR} CACHE PATH "freetype include dirs")
 	set(FREETYPE_LIBRARIES ${FREETYPE_LIB} CACHE STRING "freetype libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Freetype DEFAULT_MSG FREETYPE_LIB FREETYPE_INCLUDE_DIR_ft2build FREETYPE_INCLUDE_DIR_freetype2)
 	mark_as_advanced(FREETYPE_INCLUDE_DIR FREETYPE_INCLUDE_DIR_ft2build FREETYPE_INCLUDE_DIR_freetype2 FREETYPE_LIB)
 endif()

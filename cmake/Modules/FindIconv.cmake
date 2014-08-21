@@ -47,6 +47,7 @@ else()
 	set(ICONV_INCLUDE_DIRS ${ICONV_INCLUDE_DIR} CACHE PATH "iconv include dir")
 	set(ICONV_LIBRARIES ${ICONV_LIB} CACHE STRING "iconv libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Iconv DEFAULT_MSG ICONV_LIB ICONV_INCLUDE_DIR)
 	mark_as_advanced(ICONV_INCLUDE_DIR ICONV_LIB)
 endif()

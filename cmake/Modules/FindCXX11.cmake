@@ -13,7 +13,6 @@ if(CXX11_FLAGS)
 endif()
 
 include(CheckCXXSourceCompiles)
-include(FindPackageHandleStandardArgs)
 
 if(MSVC)
     set(CXX11_FLAG_CANDIDATES
@@ -64,5 +63,6 @@ endforeach(FLAG ${CXX11_FLAG_CANDIDATES})
 
 set(CXX11_FLAGS "${CXX11_FLAGS_INTERNAL}" CACHE STRING "C++11 Flags")
 
+include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(CXX11 DEFAULT_MSG CXX11_FLAGS)
 mark_as_advanced(CXX11_FLAGS)
