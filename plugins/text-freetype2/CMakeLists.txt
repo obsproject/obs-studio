@@ -1,7 +1,7 @@
 project(text-freetype2)
 
 find_package(Freetype QUIET)
-if(NOT LIBFREETYPE_FOUND)
+if(NOT FREETYPE_FOUND)
 	message(STATUS "Freetype library not found, Freetype text plugin disabled")
 	return()
 endif()
@@ -47,8 +47,7 @@ else()
 	include_directories(${ICONV_INCLUDE_DIR})
 endif()
 
-include_directories(${LIBFREETYPE_INCLUDE_DIRS})
-add_definitions(${LIBFREETYPE_DEFINITIONS})
+include_directories(${FREETYPE_INCLUDE_DIRS})
 
 set(text-freetype2_SOURCES
 	find-font.h
@@ -65,7 +64,7 @@ add_library(text-freetype2 MODULE
 target_link_libraries(text-freetype2
 	libobs
 	${text-freetype2_PLATFORM_DEPS}
-	${LIBFREETYPE_LIBRARIES})
+	${FREETYPE_LIBRARIES})
 
 if(UNIX AND ICONV_FOUND)
 	target_link_libraries(text-freetype2 ${ICONV_LIBRARIES})
