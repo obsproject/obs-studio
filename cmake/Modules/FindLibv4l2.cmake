@@ -15,13 +15,17 @@ else()
 
 	find_path(V4L2_INCLUDE_DIR
 		NAMES libv4l2.h
-		HINTS ${_V4L2_INCLUDE_DIRS} /usr/include /usr/local/include
-			/opt/local/include)
+		HINTS
+			${_V4L2_INCLUDE_DIRS}
+		PATHS
+			/usr/include /usr/local/include /opt/local/include)
 
 	find_library(V4L2_LIB
 		NAMES v4l2
-		HINTS ${_V4L2_LIBRARY_DIRS} /usr/lib /usr/local/lib
-			/opt/local/lib)
+		HINTS
+			${_V4L2_LIBRARY_DIRS}
+		PATHS
+			/usr/lib /usr/local/lib /opt/local/lib)
 
 	set(LIBV4L2_INCLUDE_DIRS ${V4L2_INCLUDE_DIR}
 		CACHE PATH "v4l2 include dir")
