@@ -48,6 +48,7 @@ else()
 	set(LIBSWSCALE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libswscale include dir")
 	set(LIBSWSCALE_LIBRARIES ${SWSCALE_LIB} CACHE STRING "Libswscale libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Libswscale DEFAULT_MSG SWSCALE_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR SWSCALE_LIB)
 endif()

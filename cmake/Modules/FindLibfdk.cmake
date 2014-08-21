@@ -54,6 +54,7 @@ else()
 	set(LIBFDK_INCLUDE_DIRS ${Libfdk_INCLUDE_DIR} CACHE PATH "Libfdk include dir")
 	set(LIBFDK_LIBRARIES ${Libfdk_LIB} CACHE STRING "Libfdk libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Libfdk DEFAULT_MSG Libfdk_LIB Libfdk_INCLUDE_DIR)
 	mark_as_advanced(Libfdk_INCLUDE_DIR Libfdk_LIB)
 endif()

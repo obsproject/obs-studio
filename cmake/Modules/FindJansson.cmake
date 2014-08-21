@@ -61,6 +61,7 @@ else()
 	set(JANSSON_LIBRARIES ${Jansson_LIB} CACHE STRING "Jansson libraries")
 	set(JANSSON_VERSION "${_JANSSON_VERSION_STRING}" CACHE STRING "Jansson version")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Jansson
 		FOUND_VAR JANSSON_FOUND
 		REQUIRED_VARS Jansson_LIB Jansson_INCLUDE_DIR

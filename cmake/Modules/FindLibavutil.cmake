@@ -48,6 +48,7 @@ else()
 	set(LIBAVUTIL_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR} CACHE PATH "Libavutil include dir")
 	set(LIBAVUTIL_LIBRARIES ${AVUTIL_LIB} CACHE STRING "Libavutil libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Libavutil DEFAULT_MSG AVUTIL_LIB FFMPEG_INCLUDE_DIR)
 	mark_as_advanced(FFMPEG_INCLUDE_DIR AVUTIL_LIB)
 endif()

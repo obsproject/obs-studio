@@ -54,6 +54,7 @@ else()
 	set(LIBX264_INCLUDE_DIRS ${X264_INCLUDE_DIR} CACHE PATH "x264 include dir")
 	set(LIBX264_LIBRARIES ${X264_LIB} CACHE STRING "x264 libraries")
 
+	include(FindPackageHandleStandardArgs)
 	find_package_handle_standard_args(Libx264 DEFAULT_MSG X264_LIB X264_INCLUDE_DIR)
 	mark_as_advanced(X264_INCLUDE_DIR X264_LIB)
 endif()
