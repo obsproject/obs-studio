@@ -137,7 +137,7 @@ static inline obs_data_t get_item_default_obj(struct obs_data_item *item)
 	if (!item || !item->default_size)
 		return NULL;
 
-	return *(obs_data_t*)get_item_data(item);
+	return *(obs_data_t*)get_default_data_ptr(item);
 }
 
 static inline obs_data_t get_item_autoselect_obj(struct obs_data_item *item)
@@ -145,7 +145,7 @@ static inline obs_data_t get_item_autoselect_obj(struct obs_data_item *item)
 	if (!item || !item->autoselect_size)
 		return NULL;
 
-	return *(obs_data_t*)get_item_data(item);
+	return *(obs_data_t*)get_autoselect_data_ptr(item);
 }
 
 static inline obs_data_array_t get_item_array(struct obs_data_item *item)
@@ -162,7 +162,7 @@ static inline obs_data_array_t get_item_default_array(
 	if (!item || !item->default_size)
 		return NULL;
 
-	return *(obs_data_array_t*)get_item_data(item);
+	return *(obs_data_array_t*)get_default_data_ptr(item);
 }
 
 static inline obs_data_array_t get_item_autoselect_array(
@@ -171,7 +171,7 @@ static inline obs_data_array_t get_item_autoselect_array(
 	if (!item || !item->autoselect_size)
 		return NULL;
 
-	return *(obs_data_array_t*)get_item_data(item);
+	return *(obs_data_array_t*)get_autoselect_data_ptr(item);
 }
 
 static inline void item_data_release(struct obs_data_item *item)
