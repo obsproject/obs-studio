@@ -1787,6 +1787,13 @@ void OBSBasic::UploadLog(const char *file)
 	dstr_free(&fileString);
 }
 
+void OBSBasic::on_actionShowLogs_triggered()
+{
+	BPtr<char> logDir(os_get_config_path("obs-studio/logs"));
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_actionUploadCurrentLog_triggered()
 {
 	UploadLog(App()->GetCurrentLog());

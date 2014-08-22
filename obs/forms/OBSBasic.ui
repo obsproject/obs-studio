@@ -470,6 +470,7 @@
      <property name="title">
       <string>Basic.MainMenu.Help.Logs</string>
      </property>
+     <addaction name="actionShowLogs"/>
      <addaction name="actionUploadCurrentLog"/>
      <addaction name="actionUploadLastLog"/>
     </widget>
@@ -658,6 +659,11 @@
   <action name="actionE_xit">
    <property name="text">
     <string>Basic.MainMenu.File.Exit</string>
+   </property>
+  </action>
+  <action name="actionShowLogs">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Logs.ShowLogs</string>
    </property>
   </action>
   <action name="actionUploadLastLog">
