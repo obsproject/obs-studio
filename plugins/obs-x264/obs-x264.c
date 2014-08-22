@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <util/dstr.h>
 #include <util/darray.h>
+#include <util/platform.h>
 #include <obs-module.h>
 
 #ifndef _STDINT_H_INCLUDED
@@ -37,18 +38,20 @@
 /* ------------------------------------------------------------------------- */
 
 struct obs_x264 {
-	obs_encoder_t   encoder;
+	obs_encoder_t          encoder;
 
-	x264_param_t    params;
-	x264_t          *context;
+	x264_param_t           params;
+	x264_t                 *context;
 
-	DARRAY(uint8_t) packet_data;
+	DARRAY(uint8_t)        packet_data;
 
-	uint8_t         *extra_data;
-	uint8_t         *sei;
+	uint8_t                *extra_data;
+	uint8_t                *sei;
 
-	size_t          extra_data_size;
-	size_t          sei_size;
+	size_t                 extra_data_size;
+	size_t                 sei_size;
+
+	os_performance_token_t performance_token;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -78,6 +81,7 @@ static void obs_x264_destroy(void *data)
 	struct obs_x264 *obsx264 = data;
 
 	if (obsx264) {
+		os_end_high_performance(obsx264->performance_token);
 		clear_data(obsx264);
 		da_free(obsx264->packet_data);
 		bfree(obsx264);
@@ -400,6 +404,9 @@ static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
 		bfree(obsx264);
 		return NULL;
 	}
+
+	obsx264->performance_token =
+		os_request_high_performance("x264 encoding");
 
 	return obsx264;
 }
