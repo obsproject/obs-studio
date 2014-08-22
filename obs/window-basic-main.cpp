@@ -20,6 +20,7 @@
 #include <obs.hpp>
 #include <QMessageBox>
 #include <QShowEvent>
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -1413,6 +1414,13 @@ void OBSBasic::on_action_Open_triggered()
 void OBSBasic::on_action_Save_triggered()
 {
 	/* TODO */
+}
+
+void OBSBasic::on_actionShow_Recordings_triggered()
+{
+	const char *path = config_get_string(basicConfig,
+			"SimpleOutput", "FilePath");
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void OBSBasic::on_action_Settings_triggered()
