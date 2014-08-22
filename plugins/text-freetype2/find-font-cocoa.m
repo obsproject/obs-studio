@@ -23,9 +23,8 @@ static inline void add_path_font(const char *path)
 static void add_path_fonts(NSFileManager *file_manager, NSString *path)
 {
 	NSArray *files = NULL;
-	NSError *error = NULL;
 
-	files = [file_manager contentsOfDirectoryAtPath:path error:&error];
+	files = [file_manager contentsOfDirectoryAtPath:path error:nil];
 
 	for (NSString *file in files) {
 		NSString *full_path = [path stringByAppendingPathComponent:file];
