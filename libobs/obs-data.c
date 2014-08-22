@@ -377,7 +377,8 @@ static inline void obs_data_item_setdata(
 		return;
 
 	struct obs_data_item *item = *p_item;
-	void *old_non_user_data = get_default_data_ptr(item);
+	ptrdiff_t old_default_data_pos =
+		(uint8_t*)get_default_data_ptr(item) - (uint8_t*)item;
 	item_data_release(item);
 
 	item->data_size = size;
@@ -387,8 +388,8 @@ static inline void obs_data_item_setdata(
 	item = obs_data_item_ensure_capacity(item);
 
 	if (item->default_size || item->autoselect_size)
-		move_data(*p_item, old_non_user_data, item,
-				get_default_data_ptr(item),
+		memmove(get_default_data_ptr(item),
+				(uint8_t*)item + old_default_data_pos,
 				item->default_len + item->autoselect_size);
 
 	if (size) {
