@@ -623,17 +623,13 @@ bool WidgetInfo::FontChanged(const char *setting)
 	} else {
 		MakeQFont(font_obj, font);
 		font = QFontDialog::getFont(&success, font, view);
-	}
-
-	if (!success) {
 		obs_data_release(font_obj);
-		return false;
 	}
 
-	if (!font_obj) {
-		font_obj = obs_data_create();
-		obs_data_set_obj(view->settings, setting, font_obj);
-	}
+	if (!success)
+		return false;
+
+	font_obj = obs_data_create();
 
 	obs_data_set_string(font_obj, "face", QT_TO_UTF8(font.family()));
 	obs_data_set_string(font_obj, "style", QT_TO_UTF8(font.styleName()));
@@ -648,6 +644,7 @@ bool WidgetInfo::FontChanged(const char *setting)
 	label->setFont(font);
 	label->setText(QString("%1 %2").arg(font.family(), font.styleName()));
 
+	obs_data_set_obj(view->settings, setting, font_obj);
 	obs_data_release(font_obj);
 	return true;
 }
