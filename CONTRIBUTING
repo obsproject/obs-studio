@@ -112,3 +112,13 @@ About these guidelines
    contribute to on some measure of even ground.  Everyone has their own
    personal style but sometimes there just has to be common ground for the sake
    of the project as a whole.
+
+Bug Tracker: https://obsproject.com/mantis/
+
+   We are no longer using github issues!  Please use mantis, and only report
+   bugs and major issues.  Do NOT use mantis to ask questions or request
+   features, please keep that to the forums.
+
+   Forum accounts are now linked to mantis bug tracker.  To use the bug
+   tracker, simply log in to the forums and then go to the bug tracker link
+   above.

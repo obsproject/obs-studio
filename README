@@ -5,6 +5,15 @@ What is OBS?
   Software", software originally designed for recording and streaming live
   video content, efficiently.
 
+Bug Tracker: https://obsproject.com/mantis/
+
+   We are no longer using github issues!  Please use mantis, and only report
+   bugs and major issues.  Do NOT use mantis to ask questions or request
+   features, please keep that to the forums.
+
+   Forum accounts are now linked to mantis bug tracker.  To use the bug
+   tracker, simply log in to the forums and then go to the bug tracker link
+   above.
 
 What's the goal of rewriting OBS?
 
