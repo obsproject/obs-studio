@@ -294,3 +294,17 @@ int os_mkdir(const char *path)
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
 }
+
+#if !defined(__APPLE__)
+os_performance_token_t os_request_high_performance(const char *reason)
+{
+	UNUSED_PARAMETER(reason);
+	return NULL;
+}
+
+void os_end_high_performance(os_performance_token_t token)
+{
+	UNUSED_PARAMETER(token);
+}
+#endif
+

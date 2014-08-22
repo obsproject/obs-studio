@@ -76,6 +76,10 @@ EXPORT os_cpu_usage_info_t os_cpu_usage_info_start(void);
 EXPORT double              os_cpu_usage_info_query(os_cpu_usage_info_t info);
 EXPORT void                os_cpu_usage_info_destroy(os_cpu_usage_info_t info);
 
+typedef const void *os_performance_token_t;
+EXPORT os_performance_token_t os_request_high_performance(const char *reason);
+EXPORT void                   os_end_high_performance(os_performance_token_t);
+
 /**
  * Sleeps to a specific time (in nanoseconds).  Doesn't have to be super
  * accurate in terms of actual slept time because the target time is ensured.

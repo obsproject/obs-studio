@@ -432,3 +432,15 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 	UNUSED_PARAMETER(reserved);
 	return true;
 }
+
+os_performance_token_t os_request_high_performance(const char *reason)
+{
+	UNUSED_PARAMETER(reason);
+	return NULL;
+}
+
+void os_end_high_performance(os_performance_token_t token)
+{
+	UNUSED_PARAMETER(token);
+}
+
