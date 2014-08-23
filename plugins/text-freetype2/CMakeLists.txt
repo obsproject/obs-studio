@@ -32,19 +32,27 @@ elseif(WIN32)
 	set(text-freetype2_PLATFORM_SOURCES
 		find-font-windows.c)
 else()
-	message(STATUS "Linux-specific code has yet to be written for the text plugin, just needs load_os_font_list written..  which, er, may or may not be a pain.  (My apologies in advance, please don't strangle me)")
-	return()
-
+	include(CheckFunctionExists)
+	check_function_exists(iconv SYSTEM_ICONV_FOUND)
 	find_package(Iconv QUIET)
-	if(NOT ICONV_FOUND)
+
+	if(NOT ICONV_FOUND AND NOT SYSTEM_ICONV_FOUND)
 		message(STATUS "Iconv library not found, Freetype text plugin disabled")
 		return()
 	endif()
 
+	find_package(Fontconfig QUIET)
+	if(NOT FONTCONFIG_FOUND)
+		message(STATUS "fontconfig not found, Freetype text plugin disabled")
+		return()
+	endif()
+
 	set(text-freetype2_PLATFORM_SOURCES
+		find-font-linux.c
 		find-font-iconv.c)
 
 	include_directories(${ICONV_INCLUDE_DIR})
+	include_directories(${FONTCONFIG_INCLUDE_DIRS})
 endif()
 
 include_directories(${FREETYPE_INCLUDE_DIRS})
@@ -68,6 +76,9 @@ target_link_libraries(text-freetype2
 
 if(UNIX AND ICONV_FOUND)
 	target_link_libraries(text-freetype2 ${ICONV_LIBRARIES})
+endif()
+if(UNIX AND FONTCONFIG_FOUND)
+	target_link_libraries(text-freetype2 ${FONTCONFIG_LIBRARIES})
 endif()
 
 install_obs_plugin_with_data(text-freetype2 data)
