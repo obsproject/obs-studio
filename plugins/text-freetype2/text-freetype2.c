@@ -372,9 +372,11 @@ skip_font_load:;
 			bfree(srcdata->text_file);
 			srcdata->text_file = NULL;
 		}
-		else
+		else {
 			blog(LOG_WARNING,
 				"FT2-text: Failed to open %s for reading", tmp);
+			goto error;
+		}
 		srcdata->text_file = bstrdup(tmp);
 
 		if (chat_log_mode)
