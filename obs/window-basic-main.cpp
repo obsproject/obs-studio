@@ -1776,7 +1776,7 @@ void OBSBasic::UploadLog(const char *file)
 		return;
 	}
 
-	logUploadPostData.setData(json, strlen(json));
+	logUploadPostData.setData(json, (int)strlen(json));
 
 	QUrl url("https://api.github.com/gists");
 	logUploadReply = networkManager.post(QNetworkRequest(url),
