@@ -843,8 +843,9 @@ bool OBSBasic::QueryRemoveSource(obs_source_t source)
 	text.replace("$1", QT_UTF8(name));
 
 	QMessageBox remove_source;
-	remove_source.setInformativeText(text);
-	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	remove_source.setText(text);
+	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"),
+			QMessageBox::YesRole);
 	remove_source.addButton(QTStr("No"), QMessageBox::NoRole);
 	remove_source.setIcon(QMessageBox::Question);
 	remove_source.setWindowTitle(QTStr("ConfirmRemove.Title"));
