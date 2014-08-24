@@ -295,13 +295,6 @@ static void ft2_source_update(void *data, obs_data_t settings)
 
 	if (ft2_lib == NULL) return;
 
-	if (!from_file) {
-		if (srcdata->text_file != NULL) {
-			bfree(srcdata->text_file);
-			srcdata->text_file = NULL;
-		}
-	}
-
 	if (srcdata->draw_effect == NULL) {
 		char *effect_file = NULL;
 		char *error_string = NULL;
@@ -321,8 +314,11 @@ static void ft2_source_update(void *data, obs_data_t settings)
 		}
 	}
 
-	if (srcdata->font_size != font_size)
+	if (srcdata->font_size != font_size ||
+	    srcdata->from_file != from_file)
 		vbuf_needs_update = true;
+
+	srcdata->from_file = from_file;
 
 	if (srcdata->font_name != NULL) {
 		if (strcmp(font_name,  srcdata->font_name)  == 0 &&
@@ -363,22 +359,20 @@ static void ft2_source_update(void *data, obs_data_t settings)
 skip_font_load:;
 	if (from_file) {
 		const char *tmp = obs_data_get_string(settings, "text_file");
-		if (strlen(tmp) == 0)
-			return;
-		if (srcdata->text_file != NULL) {
-			if (strcmp(srcdata->text_file, tmp) == 0
-				&& !vbuf_needs_update)
-				goto error;
-			bfree(srcdata->text_file);
-			srcdata->text_file = NULL;
-		}
-		else {
+		if (!tmp || !*tmp) {
 			blog(LOG_WARNING,
 				"FT2-text: Failed to open %s for reading", tmp);
 			goto error;
 		}
-		srcdata->text_file = bstrdup(tmp);
 
+		if (srcdata->text_file != NULL &&
+		    strcmp(srcdata->text_file, tmp) == 0 &&
+		    !vbuf_needs_update)
+			goto error;
+
+		bfree(srcdata->text_file);
+
+		srcdata->text_file = bstrdup(tmp);
 		if (chat_log_mode)
 			read_from_end(srcdata, tmp);
 		else
@@ -387,7 +381,7 @@ skip_font_load:;
 	}
 	else {
 		const char *tmp = obs_data_get_string(settings, "text");
-		if (strlen(tmp) == 0) goto error;
+		if (!tmp || !*tmp) goto error;
 
 		if (srcdata->text != NULL) {
 			bfree(srcdata->text);
