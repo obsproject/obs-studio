@@ -293,7 +293,7 @@ static void ft2_source_update(void *data, obs_data_t settings)
 
 	srcdata->log_mode = chat_log_mode;
 
-	if (ft2_lib == NULL) return;
+	if (ft2_lib == NULL) goto error;
 
 	if (srcdata->draw_effect == NULL) {
 		char *effect_file = NULL;
