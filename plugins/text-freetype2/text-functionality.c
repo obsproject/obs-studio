@@ -222,7 +222,6 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	uint32_t dx = srcdata->texbuf_x, dy = srcdata->texbuf_y;
 	uint8_t alpha;
 
-	int32_t g_pitch = 0;
 	int32_t cached_glyphs = 0;
 
 	for (uint32_t i = 0; i < wcslen(cache_glyphs); i++) {
@@ -237,7 +236,6 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 
 		uint32_t g_w = slot->bitmap.width;
 		uint32_t g_h = slot->bitmap.rows;
-		g_pitch = slot->bitmap.pitch;
 
 		if (srcdata->max_h < g_h) srcdata->max_h = g_h;
 
