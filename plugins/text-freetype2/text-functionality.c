@@ -314,7 +314,10 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 
 	tmp_file = fopen(filename, "rb");
 	if (tmp_file == NULL) {
-		blog(LOG_WARNING, "Failed to open file %s", filename);
+		if (!srcdata->file_load_failed) {
+			blog(LOG_WARNING, "Failed to open file %s", filename);
+			srcdata->file_load_failed = true;
+		}
 		return;
 	}
 	fseek(tmp_file, 0, SEEK_END);
@@ -368,7 +371,10 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 
 	tmp_file = fopen(filename, "rb");
 	if (tmp_file == NULL) {
-		blog(LOG_WARNING, "Failed to open file %s", filename);
+		if (!srcdata->file_load_failed) {
+			blog(LOG_WARNING, "Failed to open file %s", filename);
+			srcdata->file_load_failed = true;
+		}
 		return;
 	}
 	fread(&value, 2, 1, tmp_file);

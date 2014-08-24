@@ -33,6 +33,7 @@ struct ft2_source {
 	uint16_t font_size;
 	uint32_t font_flags;
 
+	bool file_load_failed;
 	bool from_file;
 	char *text_file;
 	wchar_t *text;

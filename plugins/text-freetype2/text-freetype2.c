@@ -318,6 +318,7 @@ static void ft2_source_update(void *data, obs_data_t settings)
 	    srcdata->from_file != from_file)
 		vbuf_needs_update = true;
 
+	srcdata->file_load_failed = false;
 	srcdata->from_file = from_file;
 
 	if (srcdata->font_name != NULL) {
