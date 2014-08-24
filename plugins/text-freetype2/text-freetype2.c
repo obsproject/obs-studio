@@ -405,6 +405,14 @@ error:
 	obs_data_release(font_obj);
 }
 
+#ifdef _WIN32
+#define DEFAULT_FACE "Arial"
+#elif __APPLE__
+#define DEFAULT_FACE "Helvetica"
+#else
+#define DEFAULT_FACE "Sans Serif"
+#endif
+
 static void *ft2_source_create(obs_data_t settings, obs_source_t source)
 {
 	struct ft2_source *srcdata = bzalloc(sizeof(struct ft2_source));
@@ -413,7 +421,7 @@ static void *ft2_source_create(obs_data_t settings, obs_source_t source)
 
 	srcdata->font_size = 32;
 
-	obs_data_set_default_string(font_obj, "face", "Arial");
+	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
 	obs_data_set_default_int(font_obj, "size", 32);
 	obs_data_set_default_obj(settings, "font", font_obj);
 
