@@ -1725,7 +1725,7 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
 }
 
-static char *ReadLogFile(const char *log)
+static BPtr<char> ReadLogFile(const char *log)
 {
 	BPtr<char> logDir(os_get_config_path("obs-studio/logs"));
 
@@ -1733,7 +1733,7 @@ static char *ReadLogFile(const char *log)
 	path += "/";
 	path += log;
 
-	char *file = os_quick_read_utf8_file(path.c_str());
+	BPtr<char> file = os_quick_read_utf8_file(path.c_str());
 	if (!file)
 		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
 
@@ -1742,39 +1742,41 @@ static char *ReadLogFile(const char *log)
 
 void OBSBasic::UploadLog(const char *file)
 {
-	dstr fileString = {};
-	stringstream ss;
-	string       jsonData;
+	BPtr<char> fileString{ReadLogFile(file)};
 
-	dstr_move_array(&fileString, ReadLogFile(file));
-
-	if (!fileString.array)
+	if (!fileString)
 		return;
 
-	if (!*fileString.array) {
-		dstr_free(&fileString);
+	if (!*fileString)
 		return;
-	}
 
 	ui->menuLogFiles->setEnabled(false);
 
-	dstr_replace(&fileString, "\\", "\\\\");
-	dstr_replace(&fileString, "\"", "\\\"");
-	dstr_replace(&fileString, "\n", "\\n");
-	dstr_replace(&fileString, "\r", "\\r");
-	dstr_replace(&fileString, "\t", "\\t");
-	dstr_replace(&fileString, "\t", "\\t");
-	dstr_replace(&fileString, "/",  "\\/");
+	auto data_deleter = [](obs_data_t d) { obs_data_release(d); };
+	using data_t = unique_ptr<struct obs_data, decltype(data_deleter)>;
 
-	ss << "{ \"public\": false, \"description\": \"OBS " <<
-		App()->GetVersionString() << " log file uploaded at " <<
-		CurrentDateTimeString() << "\", \"files\": { \"" <<
-		file << "\": { \"content\": \"" <<
-		fileString.array << "\" } } }";
+	data_t content{obs_data_create(), data_deleter};
+	data_t files{obs_data_create(), data_deleter};
+	data_t request{obs_data_create(), data_deleter};
 
-	jsonData = std::move(ss.str());
+	obs_data_set_string(content.get(), "content", fileString);
 
-	logUploadPostData.setData(jsonData.c_str(), (int)jsonData.size());
+	obs_data_set_obj(files.get(), file, content.get());
+
+	stringstream ss;
+	ss << "OBS " << App()->GetVersionString()
+	   << " log file uploaded at " << CurrentDateTimeString();
+	obs_data_set_string(request.get(), "description", ss.str().c_str());
+	obs_data_set_bool(request.get(), "public", false);
+	obs_data_set_obj(request.get(), "files", files.get());
+
+	const char *json = obs_data_get_json(request.get());
+	if (json) {
+		blog(LOG_ERROR, "Failed to get JSON data for log upload");
+		return;
+	}
+
+	logUploadPostData.setData(json, strlen(json));
 
 	QUrl url("https://api.github.com/gists");
 	logUploadReply = networkManager.post(QNetworkRequest(url),
@@ -1783,8 +1785,6 @@ void OBSBasic::UploadLog(const char *file)
 			this, SLOT(logUploadFinished()));
 	connect(logUploadReply, SIGNAL(readyRead()),
 			this, SLOT(logUploadRead()));
-
-	dstr_free(&fileString);
 }
 
 void OBSBasic::on_actionShowLogs_triggered()
