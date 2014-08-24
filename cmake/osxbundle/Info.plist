@@ -20,5 +20,7 @@
 	<string>10.8.5</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>LSAppNapIsDisabled</key>
+	<true/>
 </dict>
 </plist>
