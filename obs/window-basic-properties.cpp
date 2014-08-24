@@ -36,7 +36,15 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  removedSignal (obs_source_get_signal_handler(source), "remove",
 	                 OBSBasicProperties::SourceRemoved, this)
 {
+	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
+			"cx");
+	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
+			"cy");
+
 	ui->setupUi(this);
+
+	if (cx > 400 && cy > 400)
+		resize(cx, cy);
 
 	OBSData settings = obs_source_get_settings(source);
 	obs_data_release(settings);
@@ -131,6 +139,11 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	// the destructor gets called
 	obs_display_remove_draw_callback(display,
 			OBSBasicProperties::DrawPreview, this);
+
+	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
+			width());
+	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
+			height());
 }
 
 void OBSBasicProperties::Init()
