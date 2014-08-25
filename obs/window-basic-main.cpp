@@ -1788,7 +1788,7 @@ void OBSBasic::UploadLog(const char *file)
 	obs_data_set_obj(request.get(), "files", files.get());
 
 	const char *json = obs_data_get_json(request.get());
-	if (json) {
+	if (!json) {
 		blog(LOG_ERROR, "Failed to get JSON data for log upload");
 		return;
 	}
