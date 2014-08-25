@@ -362,7 +362,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 
 	if (!obsx264->context) {
 		override_base_params(obsx264, paramlist,
-				&preset, &tune, &profile);
+				&preset, &profile, &tune);
 		success = reset_x264_params(obsx264, preset, tune);
 	}
 
