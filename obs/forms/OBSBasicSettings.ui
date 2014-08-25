@@ -514,6 +514,80 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="6" column="1">
+                    <widget class="QCheckBox" name="simpleOutAdvanced">
+                     <property name="text">
+                      <string>Basic.Settings.Output.Advanced</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="8" column="1">
+                    <widget class="QLineEdit" name="simpleOutCustomX264"/>
+                   </item>
+                   <item row="8" column="0">
+                    <widget class="QLabel" name="label_23">
+                     <property name="text">
+                      <string>Basic.Settings.Output.CustomX264Settings</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="7" column="0">
+                    <widget class="QLabel" name="label_24">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Output.X264Preset</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="7" column="1">
+                    <widget class="QComboBox" name="simpleOutPreset">
+                     <item>
+                      <property name="text">
+                       <string notr="true">ultrafast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">superfast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">veryfast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">faster</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">fast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">medium</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">slow</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">slower</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -1100,6 +1174,70 @@
     <hint type="destinationlabel">
      <x>501</x>
      <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutPreset</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>439</x>
+     <y>240</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>432</x>
+     <y>256</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_24</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>482</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>308</x>
+     <y>266</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutCustomX264</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>234</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>452</x>
+     <y>292</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_23</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>554</x>
+     <y>236</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>350</x>
+     <y>286</y>
     </hint>
    </hints>
   </connection>

@@ -145,6 +145,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutReconnect,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRetryDelay,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMaxRetries,  SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutCustomX264,  EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
@@ -432,6 +435,12 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"RetryDelay");
 	int maxRetries = config_get_uint(main->Config(), "SimpleOutput",
 			"MaxRetries");
+	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
+			"UseAdvanced");
+	const char *preset = config_get_string(main->Config(), "SimpleOutput",
+			"Preset");
+	const char *custom = config_get_string(main->Config(), "SimpleOutput",
+			"x264Settings");
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
@@ -442,6 +451,9 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutReconnect->setChecked(reconnect);
 	ui->simpleOutRetryDelay->setValue(retryDelay);
 	ui->simpleOutMaxRetries->setValue(maxRetries);
+	ui->simpleOutAdvanced->setChecked(advanced);
+	ui->simpleOutPreset->setCurrentText(preset);
+	ui->simpleOutCustomX264->setText(custom);
 }
 
 void OBSBasicSettings::LoadOutputSettings()
@@ -614,6 +626,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->simpleOutReconnect, "SimpleOutput", "Reconnect");
 	SaveSpinBox(ui->simpleOutRetryDelay, "SimpleOutput", "RetryDelay");
 	SaveSpinBox(ui->simpleOutMaxRetries, "SimpleOutput", "MaxRetries");
+	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
+	SaveCombo(ui->simpleOutPreset, "SimpleOutput", "Preset");
+	SaveEdit(ui->simpleOutCustomX264, "SimpleOutput", "x264Settings");
 }
 
 void OBSBasicSettings::SaveAudioSettings()
