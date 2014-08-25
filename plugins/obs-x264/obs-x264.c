@@ -164,7 +164,25 @@ static bool getparam(const char *param, char **name, const char **value)
 	return true;
 }
 
-static void override_base_param(const char *param,
+static const char *validate(struct obs_x264 *obsx264,
+		const char *val, const char *name,
+		const char *const *list)
+{
+	if (!val || !*val)
+		return val;
+
+	while (*list) {
+		if (strcmp(val, *list) == 0)
+			return val;
+
+		list++;
+	}
+
+	warn("Invalid %s: %s", name, val);
+	return NULL;
+}
+
+static void override_base_param(struct obs_x264 *obsx264, const char *param,
 		char **preset, char **profile, char **tune)
 {
 	char       *name;
@@ -172,27 +190,40 @@ static void override_base_param(const char *param,
 
 	if (getparam(param, &name, &val)) {
 		if (astrcmpi(name, "preset") == 0) {
-			bfree(*preset);
-			*preset = bstrdup(val);
+			const char *valid_name = validate(obsx264, val,
+					"preset", x264_preset_names);
+			if (valid_name) {
+				bfree(*preset);
+				*preset = bstrdup(val);
+			}
 
 		} else if (astrcmpi(name, "profile") == 0) {
-			bfree(*profile);
-			*profile = bstrdup(val);
+			const char *valid_name = validate(obsx264, val,
+					"profile", x264_profile_names);
+			if (valid_name) {
+				bfree(*profile);
+				*profile = bstrdup(val);
+			}
 
 		} else if (astrcmpi(name, "tune") == 0) {
-			bfree(*tune);
-			*tune = bstrdup(val);
+			const char *valid_name = validate(obsx264, val,
+					"tune", x264_tune_names);
+			if (valid_name) {
+				bfree(*tune);
+				*tune = bstrdup(val);
+			}
 		}
 
 		bfree(name);
 	}
 }
 
-static inline void override_base_params(char **params,
+static inline void override_base_params(struct obs_x264 *obsx264, char **params,
 		char **preset, char **profile, char **tune)
 {
 	while (*params)
-		override_base_param(*(params++), preset, profile, tune);
+		override_base_param(obsx264, *(params++),
+				preset, profile, tune);
 }
 
 static inline void set_param(struct obs_x264 *obsx264, const char *param)
@@ -218,10 +249,21 @@ static inline void apply_x264_profile(struct obs_x264 *obsx264,
 	}
 }
 
+static inline const char *validate_preset(struct obs_x264 *obsx264,
+		const char *preset)
+{
+	const char *new_preset = validate(obsx264, preset, "preset",
+			x264_preset_names);
+	return new_preset ? new_preset : "veryfast";
+}
+
 static bool reset_x264_params(struct obs_x264 *obsx264,
 		const char *preset, const char *tune)
 {
-	return x264_param_default_preset(&obsx264->params, preset, tune) == 0;
+	int ret = x264_param_default_preset(&obsx264->params,
+			validate_preset(obsx264, preset),
+			validate(obsx264, tune, "tune", x264_tune_names));
+	return ret == 0;
 }
 
 static void log_x264(void *param, int level, const char *format, va_list args)
@@ -319,7 +361,8 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 	paramlist = strlist_split(opts, ' ', false);
 
 	if (!obsx264->context) {
-		override_base_params(paramlist, &preset, &tune, &profile);
+		override_base_params(obsx264, paramlist,
+				&preset, &tune, &profile);
 		success = reset_x264_params(obsx264, preset, tune);
 	}
 
