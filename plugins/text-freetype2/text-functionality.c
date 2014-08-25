@@ -311,6 +311,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	uint32_t filesize = 0;
 	char *tmp_read = NULL;
 	uint16_t header = 0;
+	size_t bytes_read;
 
 	tmp_file = fopen(filename, "rb");
 	if (tmp_file == NULL) {
@@ -323,16 +324,16 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_END);
 	filesize = (uint32_t)ftell(tmp_file);
 	fseek(tmp_file, 0, SEEK_SET);
-	fread(&header, 2, 1, tmp_file);
+	bytes_read = fread(&header, 2, 1, tmp_file);
 
-	if (header == 0xFEFF) {
+	if (bytes_read == 2 && header == 0xFEFF) {
 		// File is already in UTF-16 format
 		if (srcdata->text != NULL) {
 			bfree(srcdata->text);
 			srcdata->text = NULL;
 		}
 		srcdata->text = bzalloc(filesize);
-		fread(srcdata->text, filesize - 2, 1, tmp_file);
+		bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
 
 		srcdata->m_timestamp =
 			get_modified_timestamp(srcdata->text_file);
@@ -346,7 +347,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	srcdata->m_timestamp = get_modified_timestamp(srcdata->text_file);
 
 	tmp_read = bzalloc(filesize + 1);
-	fread(tmp_read, filesize, 1, tmp_file);
+	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
 	fclose(tmp_file);
 
 	if (srcdata->text != NULL) {
@@ -365,6 +366,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	uint32_t filesize = 0, cur_pos = 0;
 	char *tmp_read = NULL;
 	uint16_t value = 0, line_breaks = 0;
+	size_t bytes_read;
 	char bvalue;
 
 	bool utf16 = false;
@@ -377,9 +379,9 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		}
 		return;
 	}
-	fread(&value, 2, 1, tmp_file);
+	bytes_read = fread(&value, 2, 1, tmp_file);
 
-	if (value == 0xFEFF)
+	if (bytes_read == 2 && value == 0xFEFF)
 		utf16 = true;
 
 	fseek(tmp_file, 0, SEEK_END);
@@ -392,13 +394,13 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		fseek(tmp_file, cur_pos, SEEK_SET);
 
 		if (!utf16) {
-			fread(&bvalue, 1, 1, tmp_file);
-			if (bvalue == '\n')
+			bytes_read = fread(&bvalue, 1, 1, tmp_file);
+			if (bytes_read == 1 && bvalue == '\n')
 				line_breaks++;
 		}
 		else {
-			fread(&value, 2, 1, tmp_file);
-			if (value == L'\n')
+			bytes_read = fread(&value, 2, 1, tmp_file);
+			if (bytes_read == 1 && value == L'\n')
 				line_breaks++;
 		}
 	}
@@ -414,7 +416,8 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 			srcdata->text = NULL;
 		}
 		srcdata->text = bzalloc(filesize - cur_pos);
-		fread(srcdata->text, (filesize - cur_pos), 1, tmp_file);
+		bytes_read = fread(srcdata->text, (filesize - cur_pos), 1,
+				tmp_file);
 
 		srcdata->m_timestamp =
 			get_modified_timestamp(srcdata->text_file);
@@ -425,7 +428,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	}
 
 	tmp_read = bzalloc((filesize - cur_pos) + 1);
-	fread(tmp_read, filesize - cur_pos, 1, tmp_file);
+	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
 	fclose(tmp_file);
 
 	if (srcdata->text != NULL) {
