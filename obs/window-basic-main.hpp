@@ -146,6 +146,7 @@ public slots:
 	void StreamingStart();
 	void StreamingStop(int errorcode);
 
+	void RecordingStart();
 	void RecordingStop();
 
 private slots:

@@ -282,6 +282,14 @@ static void OBSStopStreaming(void *data, calldata_t params)
 			"StreamingStop", Q_ARG(int, code));
 }
 
+static void OBSStartRecording(void *data, calldata_t params)
+{
+	UNUSED_PARAMETER(params);
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"RecordingStart");
+}
+
 static void OBSStopRecording(void *data, calldata_t params)
 {
 	UNUSED_PARAMETER(params);
@@ -359,6 +367,8 @@ bool OBSBasic::InitOutputs()
 	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"stop", OBSStopStreaming, this);
 
+	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
+			"start", OBSStartRecording, this);
 	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
 
@@ -1944,8 +1954,14 @@ void OBSBasic::StreamingStop(int code)
 				QT_UTF8(errorMessage));
 }
 
+void OBSBasic::RecordingStart()
+{
+	ui->statusbar->RecordingStarted(fileOutput);
+}
+
 void OBSBasic::RecordingStop()
 {
+	ui->statusbar->RecordingStopped();
 	activeRefs--;
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 }
