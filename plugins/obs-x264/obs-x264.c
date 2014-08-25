@@ -365,11 +365,18 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 	if (!obsx264->context) {
 		override_base_params(obsx264, paramlist,
 				&preset, &profile, &tune);
+
+		if (preset  && *preset)  info("preset: %s",  preset);
+		if (profile && *profile) info("profile: %s", profile);
+		if (tune    && *tune)    info("tune: %s",    tune);
+
 		success = reset_x264_params(obsx264, preset, tune);
 	}
 
 	if (success) {
 		update_params(obsx264, settings, paramlist);
+		if (opts && *opts)
+			info("custom settings: %s", opts);
 
 		if (!obsx264->context)
 			apply_x264_profile(obsx264, profile);
