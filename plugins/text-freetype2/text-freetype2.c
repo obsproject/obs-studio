@@ -112,7 +112,7 @@ static obs_properties_t ft2_source_properties(void)
 
 	obs_properties_add_path(props,
 		"text_file", obs_module_text("TextFile"),
-		OBS_PATH_FILE, "All font formats (*.txt);;", NULL);
+		OBS_PATH_FILE, "Text Files (*.txt);;", NULL);
 
 	obs_properties_add_color(props, "color1",
 		obs_module_text("Color1"));
