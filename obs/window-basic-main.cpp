@@ -548,9 +548,9 @@ void OBSBasic::OBSInit()
 	case OBS_VIDEO_MODULE_NOT_FOUND:
 		throw "Failed to initialize video:  Graphics module not found";
 	case OBS_VIDEO_NOT_SUPPORTED:
-		throw "Failed to initialize video:  Your graphics adapter "
-		      "is either too old or does not have the required "
-		      "capabilities required for this program";
+		throw "Failed to initialize video:  Required graphics API "
+		      "functionality not found on these drivers or "
+		      "unavailable on this equipment";
 	case OBS_VIDEO_INVALID_PARAM:
 		throw "Failed to initialize video:  Invalid parameters";
 	default:
