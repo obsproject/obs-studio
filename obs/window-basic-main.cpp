@@ -935,8 +935,6 @@ void OBSBasic::updateFileFinished()
 	if (!jsonReply || !*jsonReply)
 		return;
 
-	blog(LOG_DEBUG, "%s", jsonReply);
-
 	obs_data_t returnData   = obs_data_create_from_json(jsonReply);
 	obs_data_t versionData  = obs_data_get_obj(returnData, VERSION_ENTRY);
 	const char *description = obs_data_get_string(returnData,
