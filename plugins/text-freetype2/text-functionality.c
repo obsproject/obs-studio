@@ -400,7 +400,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		}
 		else {
 			bytes_read = fread(&value, 2, 1, tmp_file);
-			if (bytes_read == 1 && value == L'\n')
+			if (bytes_read == 2 && value == L'\n')
 				line_breaks++;
 		}
 	}
