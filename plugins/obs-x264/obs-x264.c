@@ -307,20 +307,6 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
 
-	info("settings:\n"
-	     "\tbitrate:     %d\n"
-	     "\tbuffer size: %d\n"
-	     "\tfps_num:     %d\n"
-	     "\tfps_den:     %d\n"
-	     "\twidth:       %d\n"
-	     "\theight:      %d\n"
-	     "\tkeyint:      %d\n"
-	     "\tcbr:         %s",
-	     bitrate, buffer_size, voi->fps_num, voi->fps_den,
-	     width, height,
-	     obsx264->params.i_keyint_max,
-	     cbr ? "on" : "off");
-
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
 	if (cbr) {
@@ -346,6 +332,22 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 
 	while (*params)
 		set_param(obsx264, *(params++));
+
+	info("settings:\n"
+	     "\tbitrate:     %d\n"
+	     "\tbuffer size: %d\n"
+	     "\tfps_num:     %d\n"
+	     "\tfps_den:     %d\n"
+	     "\twidth:       %d\n"
+	     "\theight:      %d\n"
+	     "\tkeyint:      %d\n"
+	     "\tcbr:         %s",
+	     obsx264->params.rc.i_vbv_max_bitrate,
+	     obsx264->params.rc.i_vbv_buffer_size,
+	     voi->fps_num, voi->fps_den,
+	     width, height,
+	     obsx264->params.i_keyint_max,
+	     cbr ? "on" : "off");
 }
 
 static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
