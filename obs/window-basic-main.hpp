@@ -67,14 +67,6 @@ private:
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
-	QBuffer       logUploadPostData;
-	QNetworkReply *logUploadReply = nullptr;
-	QByteArray    logUploadReturnData;
-
-	QBuffer       updatePostData;
-	QNetworkReply *updateReply = nullptr;
-	QByteArray    updateReturnData;
-
 	obs_output_t  *fileOutput = nullptr;
 	obs_output_t  *streamOutput = nullptr;
 	obs_service_t *service = nullptr;
@@ -282,10 +274,8 @@ private slots:
 	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
-	void logUploadRead();
 	void logUploadFinished();
 
-	void updateFileRead();
 	void updateFileFinished();
 
 	void AddSourceFromAction();
