@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <inttypes.h>
 #include "util/platform.h"
 #include "obs.h"
 #include "obs-internal.h"
@@ -153,8 +154,42 @@ const char *obs_output_get_name(obs_output_t output)
 
 bool obs_output_start(obs_output_t output)
 {
-	return (output != NULL) ?
-		output->info.start(output->context.data) : false;
+	bool success;
+
+	if (!output)
+		return false;
+
+	success = output->info.start(output->context.data);
+
+	if (success && output->video) {
+		output->starting_frame_count =
+			video_output_get_total_frames(output->video);
+		output->starting_skipped_frame_count =
+			video_output_get_skipped_frames(output->video);
+	}
+
+	return success;
+}
+
+static void log_frame_info(struct obs_output *output)
+{
+	uint32_t video_frames  = video_output_get_total_frames(output->video);
+	uint32_t video_skipped = video_output_get_skipped_frames(output->video);
+
+	uint32_t total   = video_frames  - output->starting_frame_count;
+	uint32_t skipped = video_skipped - output->starting_skipped_frame_count;
+
+	double percentage_skipped = (double)skipped / (double)total * 100.0;
+
+	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
+	blog(LOG_INFO, "Output '%s': Total frames: %"PRIu32,
+			output->context.name, total);
+
+	if (total)
+		blog(LOG_INFO, "Output '%s': Number of skipped frames: "
+				"%"PRIu32" (%g%%)",
+				output->context.name,
+				skipped, percentage_skipped);
 }
 
 void obs_output_stop(obs_output_t output)
@@ -166,6 +201,9 @@ void obs_output_stop(obs_output_t output)
 
 		output->info.stop(output->context.data);
 		signal_stop(output, OBS_OUTPUT_SUCCESS);
+
+		if (output->video)
+			log_frame_info(output);
 	}
 }
 
