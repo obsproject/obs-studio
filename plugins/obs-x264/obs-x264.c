@@ -232,8 +232,16 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 	const char *val;
 
 	if (getparam(param, &name, &val)) {
-		if (x264_param_parse(&obsx264->params, name, val) != 0)
-			warn("x264 param: %s failed", param);
+		if (strcmp(name, "preset")    != 0 &&
+		    strcmp(name, "profile")   != 0 &&
+		    strcmp(name, "tune")      != 0 &&
+		    strcmp(name, "fps")       != 0 &&
+		    strcmp(name, "force-cfr") != 0 &&
+		    strcmp(name, "width")     != 0 &&
+		    strcmp(name, "height")    != 0) {
+			if (x264_param_parse(&obsx264->params, name, val) != 0)
+				warn("x264 param: %s failed", param);
+		}
 
 		bfree(name);
 	}
