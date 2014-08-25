@@ -1858,8 +1858,8 @@ void OBSBasic::logUploadFinished()
 	logUploadReturnData.clear();
 }
 
-static void RenameListItem(OBSBasic *parent, QListWidget *listWidget, obs_source_t source,
-		const string &name)
+static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
+		obs_source_t source, const string &name)
 {
 	const char      *prevName   = obs_source_get_name(source);
 	obs_source_t    foundSource = obs_get_source_by_name(name.c_str());
