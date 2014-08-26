@@ -10,6 +10,29 @@ if(WIN32)
 	set(text-freetype2_PLATFORM_SOURCES
 		find-font.c
 		find-font-windows.c)
+elseif(APPLE)
+	find_package(Iconv QUIET)
+	if(NOT ICONV_FOUND)
+		message(STATUS "Iconv library not found, Freetype text plugin disabled")
+		return()
+	endif()
+
+	find_library(COCOA Cocoa)
+
+	set(text-freetype2_PLATFORM_SOURCES
+		find-font.c
+		find-font-cocoa.m
+		find-font-iconv.c)
+
+	include_directories(${COCOA}
+		${ICONV_INCLUDE_DIRS})
+
+	set(text-freetype2_PLATFORM_DEPS
+		${COCOA}
+		${ICONV_LIBRARIES})
+
+	set_source_files_properties(find-font-cocoa.m
+		PROPERTIES LANGUAGE C)
 else()
 	find_package(Fontconfig QUIET)
 	if(NOT FONTCONFIG_FOUND)
@@ -45,6 +68,10 @@ if(NOT WIN32)
 	if(FONTCONFIG_FOUND)
 		target_link_libraries(text-freetype2 ${FONTCONFIG_LIBRARIES})
 	endif()
+endif()
+
+if(APPLE AND ICONV_FOUND)
+	target_link_libraries(text-freetype2 ${ICONV_LIBRARIES})
 endif()
 
 install_obs_plugin_with_data(text-freetype2 data)
