@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <fontconfig/fontconfig.h>
 
+#include <util/base.h>
 #include <util/dstr.h>
 
 #include "find-font.h"
@@ -66,6 +67,9 @@ const char *get_font_path(const char *family, uint16_t size, const char *style,
 
 		FcPatternDestroy(match);
 		success = true;
+	} else {
+		blog(LOG_WARNING, "no matching font for '%s' found",
+				family);
 	}
 
 	FcPatternDestroy(pattern);
