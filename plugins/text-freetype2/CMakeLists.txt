@@ -8,6 +8,7 @@ endif()
 
 if(WIN32)
 	set(text-freetype2_PLATFORM_SOURCES
+		find-font.c
 		find-font-windows.c)
 else()
 	find_package(Fontconfig QUIET)
