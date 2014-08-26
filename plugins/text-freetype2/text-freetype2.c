@@ -356,7 +356,8 @@ static void ft2_source_update(void *data, obs_data_t settings)
 	}
 	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h * 4);
 
-	cache_standard_glyphs(srcdata);
+	if (srcdata->font_face)
+		cache_standard_glyphs(srcdata);
 skip_font_load:;
 	if (from_file) {
 		const char *tmp = obs_data_get_string(settings, "text_file");
@@ -392,9 +393,10 @@ skip_font_load:;
 		os_utf8_to_wcs_ptr(tmp, strlen(tmp), &srcdata->text);
 	}
 
-	cache_glyphs(srcdata, srcdata->text);
-
-	set_up_vertex_buffer(srcdata);
+	if (srcdata->font_face) {
+		cache_glyphs(srcdata, srcdata->text);
+		set_up_vertex_buffer(srcdata);
+	}
 
 error:
 	obs_data_release(font_obj);

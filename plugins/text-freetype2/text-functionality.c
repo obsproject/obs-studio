@@ -216,8 +216,13 @@ void cache_standard_glyphs(struct ft2_source *srcdata)
 
 void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 {
-	FT_GlyphSlot slot = srcdata->font_face->glyph;
+	FT_GlyphSlot slot;
 	FT_UInt glyph_index = 0;
+
+	if (!srcdata->font_face)
+		return;
+
+	slot = srcdata->font_face->glyph;
 
 	uint32_t dx = srcdata->texbuf_x, dy = srcdata->texbuf_y;
 	uint8_t alpha;
