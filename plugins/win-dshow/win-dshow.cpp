@@ -107,13 +107,13 @@ static long long FrameRateInterval(const VideoInfo &cap,
 		min(desired_interval, cap.maxInterval);
 }
 
-void encode_dstr(struct dstr *str)
+static inline void encode_dstr(struct dstr *str)
 {
 	dstr_replace(str, "#", "#22");
 	dstr_replace(str, ":", "#3A");
 }
 
-void decode_dstr(struct dstr *str)
+static inline void decode_dstr(struct dstr *str)
 {
 	dstr_replace(str, "#3A", ":");
 	dstr_replace(str, "#22", "#");
@@ -239,13 +239,13 @@ static inline bool ConvertRes(int &cx, int &cy, const char *res)
 	return sscanf(res, "%dx%d", &cx, &cy) == 2;
 }
 
-static bool FormatMatches(VideoFormat left, VideoFormat right)
+static inline bool FormatMatches(VideoFormat left, VideoFormat right)
 {
 	return left == VideoFormat::Any || right == VideoFormat::Any ||
 		left == right;
 }
 
-static bool ResolutionValid(string res, int &cx, int &cy)
+static inline bool ResolutionValid(string res, int &cx, int &cy)
 {
 	if (!res.size())
 		return false;
@@ -254,12 +254,12 @@ static bool ResolutionValid(string res, int &cx, int &cy)
 }
 
 template <typename F, typename ... Fs>
-static bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
+static inline bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
 {
 	return f(info) && CapsMatch(info, fs ...);
 }
 
-static bool CapsMatch(const VideoInfo&)
+static inline bool CapsMatch(const VideoInfo&)
 {
 	return true;
 }
@@ -275,16 +275,16 @@ static bool CapsMatch(const VideoDevice &dev, F ... fs)
 	return any_of(begin(dev.caps), end(dev.caps), matcher);
 }
 
-bool MatcherMatchVideoFormat(VideoFormat format, bool &did_match,
-		const VideoInfo &info)
+static inline bool MatcherMatchVideoFormat(VideoFormat format,
+		bool &did_match, const VideoInfo &info)
 {
 	bool match = FormatMatches(format, info.format);
 	did_match = did_match || match;
 	return match;
 }
 
-bool MatcherClosestFrameRateSelector(long long interval, long long &best_match,
-		const VideoInfo &info)
+static inline bool MatcherClosestFrameRateSelector(long long interval,
+		long long &best_match, const VideoInfo &info)
 {
 	long long current = FrameRateInterval(info, interval);
 	if (llabs(interval - best_match) > llabs(interval - current))
