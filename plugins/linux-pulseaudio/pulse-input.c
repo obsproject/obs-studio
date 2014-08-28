@@ -67,6 +67,32 @@ static enum audio_format pulse_to_obs_audio_format(
 }
 
 /**
+ * Get obs speaker layout from number of channels
+ *
+ * @param channels number of channels reported by pulseaudio
+ *
+ * @return obs speaker_layout id
+ *
+ * @note This *might* not work for some rather unusual setups, but should work
+ *       fine for the majority of cases.
+ */
+static enum speaker_layout pulse_channels_to_obs_speakers(
+	uint_fast32_t channels)
+{
+	switch(channels) {
+		case 1: return SPEAKERS_MONO;
+		case 2: return SPEAKERS_STEREO;
+		case 3: return SPEAKERS_2POINT1;
+		case 4: return SPEAKERS_SURROUND;
+		case 5: return SPEAKERS_4POINT1;
+		case 6: return SPEAKERS_5POINT1;
+		case 8: return SPEAKERS_7POINT1;
+	}
+
+	return SPEAKERS_UNKNOWN;
+}
+
+/**
  * Get latency for a pulse audio stream
  */
 static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
@@ -184,6 +210,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 		return -1;
 	}
 
+	data->speakers = pulse_channels_to_obs_speakers(spec.channels);
 	data->bytes_per_frame = pa_frame_size(&spec);
 
 	data->stream = pulse_stream_new(obs_source_get_name(data->source),
@@ -429,7 +456,6 @@ static void *pulse_create(obs_data_t settings, obs_source_t source)
 	struct pulse_data *data = bzalloc(sizeof(struct pulse_data));
 
 	data->source   = source;
-	data->speakers = SPEAKERS_STEREO;
 
 	pulse_init();
 	pulse_update(data, settings);
