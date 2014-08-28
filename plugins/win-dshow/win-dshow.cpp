@@ -68,8 +68,8 @@ struct DShowInput {
 		  comInitialized (false)
 	{}
 
-	static void OnVideoData(DShowInput *input, unsigned char *data,
-			size_t size, long long startTime, long long endTime);
+	void OnVideoData(unsigned char *data, size_t size,
+			long long startTime, long long endTime);
 
 	void Update(obs_data_t settings);
 };
@@ -134,39 +134,39 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 	}
 }
 
-void DShowInput::OnVideoData(DShowInput *input, unsigned char *data,
-		size_t size, long long startTime, long long endTime)
+void DShowInput::OnVideoData(unsigned char *data, size_t size,
+		long long startTime, long long endTime)
 {
-	const int cx = input->videoConfig.cx;
-	const int cy = input->videoConfig.cy;
+	const int cx = videoConfig.cx;
+	const int cy = videoConfig.cy;
 
-	input->frame.timestamp = (uint64_t)startTime * 100;
+	frame.timestamp = (uint64_t)startTime * 100;
 
-	if (input->videoConfig.format == VideoFormat::XRGB ||
-	    input->videoConfig.format == VideoFormat::ARGB) {
-		input->frame.data[0]     = data;
-		input->frame.linesize[0] = cx * 4;
+	if (videoConfig.format == VideoFormat::XRGB ||
+	    videoConfig.format == VideoFormat::ARGB) {
+		frame.data[0]     = data;
+		frame.linesize[0] = cx * 4;
 
-	} else if (input->videoConfig.format == VideoFormat::YVYU ||
-	           input->videoConfig.format == VideoFormat::YUY2 ||
-	           input->videoConfig.format == VideoFormat::UYVY) {
-		input->frame.data[0]     = data;
-		input->frame.linesize[0] = cx * 2;
+	} else if (videoConfig.format == VideoFormat::YVYU ||
+	           videoConfig.format == VideoFormat::YUY2 ||
+	           videoConfig.format == VideoFormat::UYVY) {
+		frame.data[0]     = data;
+		frame.linesize[0] = cx * 2;
 
-	} else if (input->videoConfig.format == VideoFormat::I420) {
-		input->frame.data[0] = data;
-		input->frame.data[1] = input->frame.data[0] + (cx * cy);
-		input->frame.data[2] = input->frame.data[1] + (cx * cy / 4);
-		input->frame.linesize[0] = cx;
-		input->frame.linesize[1] = cx / 2;
-		input->frame.linesize[2] = cx / 2;
+	} else if (videoConfig.format == VideoFormat::I420) {
+		frame.data[0] = data;
+		frame.data[1] = frame.data[0] + (cx * cy);
+		frame.data[2] = frame.data[1] + (cx * cy / 4);
+		frame.linesize[0] = cx;
+		frame.linesize[1] = cx / 2;
+		frame.linesize[2] = cx / 2;
 
 	} else {
 		/* TODO: other formats */
 		return;
 	}
 
-	obs_source_output_video(input->source, &input->frame);
+	obs_source_output_video(source, &frame);
 
 	UNUSED_PARAMETER(endTime); /* it's the enndd tiimmes! */
 	UNUSED_PARAMETER(size);
@@ -426,13 +426,15 @@ void DShowInput::Update(obs_data_t settings)
 
 	videoConfig.name             = id.name.c_str();
 	videoConfig.path             = id.path.c_str();
-	videoConfig.callback         = CaptureProc(DShowInput::OnVideoData);
-	videoConfig.param            = this;
 	videoConfig.useDefaultConfig = resType == ResType_Preferred;
 	videoConfig.cx               = cx;
 	videoConfig.cy               = cy;
 	videoConfig.frameInterval    = interval;
 	videoConfig.internalFormat   = format;
+
+	videoConfig.callback = std::bind(&DShowInput::OnVideoData, this,
+			placeholders::_1, placeholders::_2,
+			placeholders::_3, placeholders::_4);
 
 	if (videoConfig.internalFormat != VideoFormat::MJPEG)
 		videoConfig.format = videoConfig.internalFormat;
