@@ -74,8 +74,13 @@ private:
 
 	void AddProperty(obs_property_t property, QFormLayout *layout);
 
+	void resizeEvent(QResizeEvent *event) override;
+
 public slots:
 	void RefreshProperties();
+
+signals:
+	void PropertiesResized();
 
 public:
 	OBSPropertiesView(OBSData settings,

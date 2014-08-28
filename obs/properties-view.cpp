@@ -92,6 +92,12 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_,
 	RefreshProperties();
 }
 
+void OBSPropertiesView::resizeEvent(QResizeEvent *event)
+{
+	emit PropertiesResized();
+	UNUSED_PARAMETER(event);
+}
+
 QWidget *OBSPropertiesView::NewWidget(obs_property_t prop, QWidget *widget,
 		const char *signal)
 {

@@ -58,6 +58,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	view->setMinimumHeight(150);
 	view->show();
 
+	connect(view, SIGNAL(PropertiesResized()),
+			this, SLOT(OnPropertiesResized()));
+
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
 		if (resizeTimer)
 			killTimer(resizeTimer);
@@ -105,6 +108,13 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 	gs_projection_pop();
 	gs_viewport_pop();
+}
+
+void OBSBasicProperties::OnPropertiesResized()
+{
+	if (resizeTimer)
+		killTimer(resizeTimer);
+	resizeTimer = startTimer(100);
 }
 
 void OBSBasicProperties::resizeEvent(QResizeEvent *event)
