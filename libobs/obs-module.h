@@ -21,8 +21,10 @@
 
 #ifdef __cplusplus
 #define MODULE_EXPORT extern "C" EXPORT
+#define MODULE_EXTERN extern "C"
 #else
 #define MODULE_EXPORT EXPORT
+#define MODULE_EXTERN extern
 #endif
 
 /**
@@ -84,10 +86,10 @@ MODULE_EXPORT void obs_module_free_locale(void);
 	}
 
 /** Helper function for looking up locale if default locale handler was used */
-extern const char *obs_module_text(const char *lookup_string);
+MODULE_EXTERN const char *obs_module_text(const char *lookup_string);
 
 /** Helper function that returns the current module */
-extern obs_module_t obs_current_module(void);
+MODULE_EXTERN obs_module_t obs_current_module(void);
 
 /**
  * Returns the location to a module data file associated with the current
