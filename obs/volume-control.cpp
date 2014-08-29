@@ -202,8 +202,7 @@ void VolumeMeter::setLevels(float nmag, float npeak, float npeakHold)
 
 	if (resetTimer->isActive())
 		resetTimer->stop();
-	resetTimer->start(250);
-
+	resetTimer->start(1000);
 }
 
 void VolumeMeter::paintEvent(QPaintEvent *event)
