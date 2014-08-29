@@ -181,6 +181,25 @@ int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void* userdata)
 	return 0;
 }
 
+int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name,
+	void *userdata)
+{
+	if (pulse_context_ready() < 0)
+		return -1;
+
+	pulse_lock();
+
+	pa_operation *op = pa_context_get_source_info_by_name(
+		pulse_context, name, cb, userdata);
+	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+		pulse_wait();
+	pa_operation_unref(op);
+
+	pulse_unlock();
+
+	return 0;
+}
+
 int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void* userdata)
 {
 	if (pulse_context_ready() < 0)
