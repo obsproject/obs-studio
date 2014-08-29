@@ -167,21 +167,36 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	PULSE_DATA(userdata);
+	UNUSED_PARAMETER(userdata);
 
 	blog(LOG_INFO, "pulse-input: Server name: '%s %s'",
 		i->server_name, i->server_version);
+
+	pulse_signal(0);
+}
+
+/**
+ * Source info callback
+ */
+static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	PULSE_DATA(userdata);
+	if (eol != 0)
+		goto skip;
 
 	data->format          = i->sample_spec.format;
 	data->samples_per_sec = i->sample_spec.rate;
 	data->channels        = i->sample_spec.channels;
 
 	blog(LOG_INFO, "pulse-input: "
-		"Audio format: %s, %u Hz, %u channels",
-		pa_sample_format_to_string(i->sample_spec.format),
-		i->sample_spec.rate,
-		i->sample_spec.channels);
+		"Audio format: %s, %"PRIuFAST32" Hz, %"PRIuFAST8" channels",
+		pa_sample_format_to_string(data->format),
+		data->samples_per_sec,
+		data->channels);
 
+skip:
 	pulse_signal(0);
 }
 
@@ -197,6 +212,12 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
 	if (pulse_get_server_info(pulse_server_info, (void *) data) < 0) {
 		blog(LOG_ERROR, "pulse-input: Unable to get server info !");
+		return -1;
+	}
+
+	if (pulse_get_source_info(pulse_source_info, data->device,
+			(void *) data) < 0) {
+		blog(LOG_ERROR, "pulse-input: Unable to get source info !");
 		return -1;
 	}
 
