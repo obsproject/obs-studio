@@ -52,16 +52,11 @@ static enum audio_format pulse_to_obs_audio_format(
 	pa_sample_format_t format)
 {
 	switch (format) {
-		case PA_SAMPLE_U8:
-			return AUDIO_FORMAT_U8BIT;
-		case PA_SAMPLE_S16LE:
-			return AUDIO_FORMAT_16BIT;
-		case PA_SAMPLE_S24_32LE:
-			return AUDIO_FORMAT_32BIT;
-		case PA_SAMPLE_FLOAT32LE:
-			return AUDIO_FORMAT_FLOAT;
-		default:
-			return AUDIO_FORMAT_UNKNOWN;
+	case PA_SAMPLE_U8:        return AUDIO_FORMAT_U8BIT;
+	case PA_SAMPLE_S16LE:     return AUDIO_FORMAT_16BIT;
+	case PA_SAMPLE_S24_32LE:  return AUDIO_FORMAT_32BIT;
+	case PA_SAMPLE_FLOAT32LE: return AUDIO_FORMAT_FLOAT;
+	default:                  return AUDIO_FORMAT_UNKNOWN;
 	}
 
 	return AUDIO_FORMAT_UNKNOWN;
@@ -81,13 +76,13 @@ static enum speaker_layout pulse_channels_to_obs_speakers(
 	uint_fast32_t channels)
 {
 	switch(channels) {
-		case 1: return SPEAKERS_MONO;
-		case 2: return SPEAKERS_STEREO;
-		case 3: return SPEAKERS_2POINT1;
-		case 4: return SPEAKERS_SURROUND;
-		case 5: return SPEAKERS_4POINT1;
-		case 6: return SPEAKERS_5POINT1;
-		case 8: return SPEAKERS_7POINT1;
+	case 1: return SPEAKERS_MONO;
+	case 2: return SPEAKERS_STEREO;
+	case 3: return SPEAKERS_2POINT1;
+	case 4: return SPEAKERS_SURROUND;
+	case 5: return SPEAKERS_4POINT1;
+	case 6: return SPEAKERS_5POINT1;
+	case 8: return SPEAKERS_7POINT1;
 	}
 
 	return SPEAKERS_UNKNOWN;
