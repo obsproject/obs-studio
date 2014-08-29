@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pulse-wrapper.h"
 
 #define PULSE_DATA(voidptr) struct pulse_data *data = voidptr;
+#define blog(level, msg, ...) blog(level, "pulse-input: " msg, ##__VA_ARGS__)
 
 struct pulse_data {
 	obs_source_t source;
@@ -131,14 +132,14 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 
 	if (!frames) {
-		blog(LOG_ERROR, "pulse-input: Got audio hole of %u bytes",
+		blog(LOG_ERROR, "Got audio hole of %u bytes",
 			(unsigned int) bytes);
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
 
 	if (pulse_get_stream_latency(data->stream, &latency) < 0) {
-		blog(LOG_ERROR, "pulse-input: Failed to get timing info !");
+		blog(LOG_ERROR, "Failed to get timing info !");
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
@@ -169,7 +170,7 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	UNUSED_PARAMETER(c);
 	UNUSED_PARAMETER(userdata);
 
-	blog(LOG_INFO, "pulse-input: Server name: '%s %s'",
+	blog(LOG_INFO, "Server name: '%s %s'",
 		i->server_name, i->server_version);
 
 	pulse_signal(0);
@@ -190,8 +191,8 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	data->samples_per_sec = i->sample_spec.rate;
 	data->channels        = i->sample_spec.channels;
 
-	blog(LOG_INFO, "pulse-input: "
-		"Audio format: %s, %"PRIuFAST32" Hz, %"PRIuFAST8" channels",
+	blog(LOG_INFO, "Audio format: %s, %"PRIuFAST32" Hz"
+		", %"PRIuFAST8" channels",
 		pa_sample_format_to_string(data->format),
 		data->samples_per_sec,
 		data->channels);
@@ -211,13 +212,13 @@ skip:
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
 	if (pulse_get_server_info(pulse_server_info, (void *) data) < 0) {
-		blog(LOG_ERROR, "pulse-input: Unable to get server info !");
+		blog(LOG_ERROR, "Unable to get server info !");
 		return -1;
 	}
 
 	if (pulse_get_source_info(pulse_source_info, data->device,
 			(void *) data) < 0) {
-		blog(LOG_ERROR, "pulse-input: Unable to get source info !");
+		blog(LOG_ERROR, "Unable to get source info !");
 		return -1;
 	}
 
@@ -227,7 +228,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	spec.channels = data->channels;
 
 	if (!pa_sample_spec_valid(&spec)) {
-		blog(LOG_ERROR, "pulse-input: Sample spec is not valid");
+		blog(LOG_ERROR, "Sample spec is not valid");
 		return -1;
 	}
 
@@ -237,7 +238,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	data->stream = pulse_stream_new(obs_source_get_name(data->source),
 		&spec, NULL);
 	if (!data->stream) {
-		blog(LOG_ERROR, "pulse-input: Unable to create stream");
+		blog(LOG_ERROR, "Unable to create stream");
 		return -1;
 	}
 
@@ -261,12 +262,11 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pulse_unlock();
 	if (ret < 0) {
 		pulse_stop_recording(data);
-		blog(LOG_ERROR, "pulse-input: Unable to connect to stream");
+		blog(LOG_ERROR, "Unable to connect to stream");
 		return -1;
 	}
 
-	blog(LOG_INFO, "pulse-input: Started recording from '%s'",
-		data->device);
+	blog(LOG_INFO, "Started recording from '%s'", data->device);
 	return 0;
 }
 
@@ -283,10 +283,8 @@ static void pulse_stop_recording(struct pulse_data *data)
 		pulse_unlock();
 	}
 
-	blog(LOG_INFO, "pulse-input: Stopped recording from '%s'",
-		data->device);
-	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
-		" packets with %"PRIuFAST64" frames",
+	blog(LOG_INFO, "Stopped recording from '%s'", data->device);
+	blog(LOG_INFO, "Got %"PRIuFAST32" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
 	data->packets = 0;
 	data->frames = 0;
@@ -365,8 +363,7 @@ static void pulse_input_device(pa_context *c, const pa_server_info *i,
 
 	obs_data_set_default_string(settings, "device_id",
 		i->default_source_name);
-	blog(LOG_DEBUG, "pulse-input: Default input device: '%s'",
-	     i->default_source_name);
+	blog(LOG_DEBUG, "Default input device: '%s'", i->default_source_name);
 
 	pulse_signal(0);
 }
@@ -382,7 +379,7 @@ static void pulse_output_device(pa_context *c, const pa_server_info *i,
 	strcat(monitor, ".monitor");
 
 	obs_data_set_default_string(settings, "device_id", monitor);
-	blog(LOG_DEBUG, "pulse-input: Default output device: '%s'", monitor);
+	blog(LOG_DEBUG, "Default output device: '%s'", monitor);
 	bfree(monitor);
 
 	pulse_signal(0);
