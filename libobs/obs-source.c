@@ -639,7 +639,7 @@ static void source_output_audio_line(obs_source_t source,
 		if ((source->timing_adjust + MAX_TS_VAR) < MAX_TS_VAR * 2)
 			source->timing_adjust = 0;
 
-	} else {
+	} else if (source->next_audio_ts_min != 0) {
 		bool ts_under = (in.timestamp < source->next_audio_ts_min);
 
 		diff = ts_under ?
