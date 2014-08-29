@@ -12,6 +12,7 @@
 
 #include "xcompcap-main.h"
 #include "xcompcap-helper.h"
+#include "xcursor.h"
 
 #define xdisp (XCompcap::disp())
 #define WIN_STRING_DIV "\r\n"
@@ -142,6 +143,8 @@ struct XCompcapMain_private
 
 	pthread_mutex_t lock;
 	pthread_mutexattr_t lockattr;
+	
+	xcursor_t *cursor;
 };
 
 
@@ -149,6 +152,8 @@ XCompcapMain::XCompcapMain(obs_data_t settings, obs_source_t source)
 {
 	p = new XCompcapMain_private;
 	p->source = source;
+	
+	p->cursor = xcursor_init(XOpenDisplay(NULL));
 
 	updateSettings(settings);
 }
@@ -165,6 +170,9 @@ XCompcapMain::~XCompcapMain()
 	}
 
 	xcc_cleanup(p);
+	
+	if (p->cursor)
+		xcursor_destroy(p->cursor);
 
 	delete p;
 }
@@ -280,6 +288,13 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 		p->height = 0;
 		return;
 	}
+	
+	Window child;
+	int x, y;
+	XTranslateCoordinates( xdisp, p->win, attr.root, 0, 0, &x, &y, &child );
+	blog(LOG_ERROR, "2Window data: %d %d", x, y);
+	
+	xcursor_offset(p->cursor, x - attr.x, y - attr.y);
 
 	gs_color_format cf = GS_RGBA;
 
@@ -423,6 +438,8 @@ void XCompcapMain::tick(float seconds)
 
 	gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
 			p->cur_cut_top, width(), height());
+	
+	xcursor_tick(p->cursor);
 
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
@@ -442,6 +459,8 @@ void XCompcapMain::render(gs_effect_t effect)
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);
+	
+	xcursor_render(p->cursor);
 
 	gs_reset_blend_state();
 }
