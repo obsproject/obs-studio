@@ -53,6 +53,8 @@ struct audio_line {
 	uint64_t                   base_timestamp;
 	uint64_t                   last_timestamp;
 
+	uint64_t                   next_ts_min;
+
 	/* states whether this line is still being used.  if not, then when the
 	 * buffer is depleted, it's destroyed */
 	bool                       alive;
@@ -659,16 +661,33 @@ static void audio_line_place_data_pos(struct audio_line *line,
 	}
 }
 
+static inline uint64_t smooth_ts(struct audio_line *line, uint64_t timestamp)
+{
+	if (!line->next_ts_min)
+		return timestamp;
+
+	bool ts_under = (timestamp < line->next_ts_min);
+	uint64_t diff = ts_under ?
+		(line->next_ts_min - timestamp) :
+		(timestamp - line->next_ts_min);
+
+	return (diff < TS_SMOOTHING_THRESHOLD) ? line->next_ts_min : timestamp;
+}
+
 static void audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
-	size_t pos = ts_diff_bytes(line->audio, data->timestamp,
-			line->base_timestamp);
+	size_t pos;
+	uint64_t timestamp = smooth_ts(line, data->timestamp);
+
+	pos = ts_diff_bytes(line->audio, timestamp, line->base_timestamp);
+	line->next_ts_min =
+		timestamp + conv_frames_to_time(line->audio, data->frames);
 
 #ifdef DEBUG_AUDIO
 	blog(LOG_DEBUG, "data->timestamp: %llu, line->base_timestamp: %llu, "
 			"pos: %lu, bytes: %lu, buf size: %lu",
-			data->timestamp, line->base_timestamp, pos,
+			timestamp, line->base_timestamp, pos,
 			data->frames * line->audio->block_size,
 			line->buffers[0].size);
 #endif
