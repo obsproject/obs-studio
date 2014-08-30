@@ -12,6 +12,7 @@
 
 #include "xcompcap-main.hpp"
 #include "xcompcap-helper.hpp"
+#include "xcursor.h"
 
 #define xdisp (XCompcap::disp())
 #define WIN_STRING_DIV "\r\n"
@@ -79,6 +80,9 @@ obs_properties_t XCompcapMain::properties()
 			obs_module_text("SwapRedBlue"));
 	obs_properties_add_bool(props, "lock_x", obs_module_text("LockX"));
 
+	obs_properties_add_bool(props, "show_cursor",
+			obs_module_text("CaptureCursor"));
+
 	return props;
 }
 
@@ -91,6 +95,7 @@ void XCompcapMain::defaults(obs_data_t settings)
 	obs_data_set_default_int(settings, "cut_bot", 0);
 	obs_data_set_default_bool(settings, "swap_redblue", false);
 	obs_data_set_default_bool(settings, "lock_x", false);
+	obs_data_set_default_bool(settings, "show_cursor", true);
 }
 
 
@@ -142,6 +147,10 @@ struct XCompcapMain_private
 
 	pthread_mutex_t lock;
 	pthread_mutexattr_t lockattr;
+
+	bool show_cursor = true;
+	bool cursor_outside = false;
+	xcursor_t *cursor = nullptr;
 };
 
 
@@ -149,6 +158,10 @@ XCompcapMain::XCompcapMain(obs_data_t settings, obs_source_t source)
 {
 	p = new XCompcapMain_private;
 	p->source = source;
+
+	obs_enter_graphics();
+	p->cursor = xcursor_init(xdisp);
+	obs_leave_graphics();
 
 	updateSettings(settings);
 }
@@ -165,6 +178,11 @@ XCompcapMain::~XCompcapMain()
 	}
 
 	xcc_cleanup(p);
+
+	if (p->cursor) {
+		xcursor_destroy(p->cursor);
+		p->cursor = nullptr;
+	}
 
 	delete p;
 }
@@ -256,6 +274,7 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 		p->cut_bot = obs_data_get_int(settings, "cut_bot");
 		p->lockX = obs_data_get_bool(settings, "lock_x");
 		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
+		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
 	} else {
 		p->win = prevWin;
 	}
@@ -279,6 +298,15 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 		p->width = 0;
 		p->height = 0;
 		return;
+	}
+
+	if (p->cursor && p->show_cursor) {
+		Window child;
+		int x, y;
+
+		XTranslateCoordinates(xdisp, p->win, attr.root, 0, 0, &x, &y,
+				&child);
+		xcursor_offset(p->cursor, x - attr.x, y - attr.y);
 	}
 
 	gs_color_format cf = GS_RGBA;
@@ -424,6 +452,16 @@ void XCompcapMain::tick(float seconds)
 	gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
 			p->cur_cut_top, width(), height());
 
+	if (p->cursor && p->show_cursor) {
+		xcursor_tick(p->cursor);
+
+		p->cursor_outside =
+			p->cursor->x < p->cur_cut_left                   ||
+			p->cursor->y < p->cur_cut_top                    ||
+			p->cursor->x > int(p->width  - p->cur_cut_right) ||
+			p->cursor->y > int(p->height - p->cur_cut_bot);
+	}
+
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
 
@@ -442,6 +480,9 @@ void XCompcapMain::render(gs_effect_t effect)
 
 	gs_enable_blending(false);
 	gs_draw_sprite(p->tex, 0, 0, 0);
+
+	if (p->cursor && p->gltex && p->show_cursor && !p->cursor_outside)
+		xcursor_render(p->cursor);
 
 	gs_reset_blend_state();
 }
