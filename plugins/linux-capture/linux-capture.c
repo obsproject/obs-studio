@@ -21,8 +21,17 @@ OBS_MODULE_USE_DEFAULT_LOCALE("linux-xshm", "en-US")
 
 extern struct obs_source_info xshm_input;
 
+extern void xcomposite_load(void);
+extern void xcomposite_unload(void);
+
 bool obs_module_load(void)
 {
 	obs_register_source(&xshm_input);
+	xcomposite_load();
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	xcomposite_unload();
 }

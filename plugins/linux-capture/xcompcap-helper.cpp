@@ -8,7 +8,7 @@
 
 #include <obs-module.h>
 
-#include "xcompcap-helper.h"
+#include "xcompcap-helper.hpp"
 
 namespace XCompcap
 {

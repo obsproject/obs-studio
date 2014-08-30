@@ -1,6 +1,6 @@
 #include <obs-module.h>
 
-#include "xcompcap-main.h"
+#include "xcompcap-main.hpp"
 
 static void* xcompcap_create(obs_data_t settings, obs_source_t source)
 {
@@ -53,18 +53,15 @@ void xcompcap_update(void *data, obs_data_t settings)
 	cc->updateSettings(settings);
 }
 
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("linux-xcomposite", "en-US")
-
 static const char* xcompcap_getname(void)
 {
 	return obs_module_text("XCCapture");
 }
 
-bool obs_module_load(void)
+extern "C" void xcomposite_load(void)
 {
 	if (!XCompcapMain::init())
-		return false;
+		return;
 
 	obs_source_info sinfo;
 	memset(&sinfo, 0, sizeof(obs_source_info));
@@ -84,15 +81,9 @@ bool obs_module_load(void)
 	sinfo.get_height     = xcompcap_getheight;
 
 	obs_register_source(&sinfo);
-
-	blog(LOG_INFO, "Xcomposite capture plugin loaded");
-
-	return true;
 }
 
-void obs_module_unload()
+extern "C" void xcomposite_unload(void)
 {
 	XCompcapMain::deinit();
-
-	blog(LOG_INFO, "Xcomposite capture plugin unloaded");
 }

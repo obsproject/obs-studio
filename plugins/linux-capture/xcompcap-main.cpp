@@ -10,8 +10,8 @@
 #include <graphics/vec4.h>
 #include <util/platform.h>
 
-#include "xcompcap-main.h"
-#include "xcompcap-helper.h"
+#include "xcompcap-main.hpp"
+#include "xcompcap-helper.hpp"
 
 #define xdisp (XCompcap::disp())
 #define WIN_STRING_DIV "\r\n"
