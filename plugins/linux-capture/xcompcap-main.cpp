@@ -306,7 +306,7 @@ void XCompcapMain::updateSettings(obs_data_t settings)
 
 		XTranslateCoordinates(xdisp, p->win, attr.root, 0, 0, &x, &y,
 				&child);
-		xcursor_offset(p->cursor, x - attr.x, y - attr.y);
+		xcursor_offset(p->cursor, x, y);
 	}
 
 	gs_color_format cf = GS_RGBA;
