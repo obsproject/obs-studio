@@ -519,9 +519,6 @@ static inline uint64_t conv_frames_to_time(size_t frames)
 #define MAX_TS_VAR          5000000000ULL
 /* maximum time that timestamp can jump in nanoseconds */
 #define MAX_TIMESTAMP_JUMP  2000000000ULL
-/* time threshold in nanoseconds to ensure audio timing is as seamless as
- * possible */
-#define TS_SMOOTHING_THRESHOLD 70000000ULL
 
 static inline void reset_audio_timing(obs_source_t source, uint64_t timetamp)
 {
