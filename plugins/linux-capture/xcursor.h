@@ -25,8 +25,8 @@ extern "C" {
 
 typedef struct {
 	Display *dpy;
-	float pos_x;
-	float pos_y;
+	float render_x;
+	float render_y;
 	unsigned long last_serial;
 	uint_fast32_t last_width;
 	uint_fast32_t last_height;

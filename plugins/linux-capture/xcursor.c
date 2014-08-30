@@ -85,8 +85,8 @@ void xcursor_tick(xcursor_t *data) {
 
 	if (!data->tex || data->last_serial != xc->cursor_serial)
 		xcursor_create(data, xc);
-	data->pos_x = xc->x - xc->xhot - data->x_org;
-	data->pos_y = xc->y - xc->yhot - data->y_org;
+	data->render_x = xc->x - xc->xhot - data->x_org;
+	data->render_y = xc->y - xc->yhot - data->y_org;
 
 	XFree(xc);
 }
@@ -97,7 +97,7 @@ void xcursor_render(xcursor_t *data) {
 	gs_effect_set_texture(image, data->tex);
 
 	gs_matrix_push();
-	gs_matrix_translate3f(data->pos_x, data->pos_y, 0.0f);
+	gs_matrix_translate3f(data->render_x, data->render_y, 0.0f);
 
 	gs_enable_blending(True);
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
