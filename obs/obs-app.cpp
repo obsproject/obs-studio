@@ -25,6 +25,7 @@
 #include <obs.hpp>
 
 #include <QProxyStyle>
+#include <QDir>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -536,9 +537,10 @@ static void create_log_file(fstream &logFile)
 static int run_program(fstream &logFile, int argc, char *argv[])
 {
 	int ret = -1;
-	QCoreApplication::addLibraryPath(".");
 
 	OBSApp program(argc, argv);
+	QDir::setCurrent(program.applicationDirPath());
+
 	try {
 		program.AppInit();
 
