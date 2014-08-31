@@ -193,13 +193,8 @@ static char *make_data_directory(const char *module_name, const char *data_dir)
 
 	found = os_file_exists(parsed_data_dir.array);
 
-	if (!found && astrcmpi_n(module_name, "lib", 3) == 0) {
+	if (!found && astrcmpi_n(module_name, "lib", 3) == 0)
 		make_data_dir(&parsed_data_dir, data_dir, module_name + 3);
-		found = os_file_exists(parsed_data_dir.array);
-	}
-
-	if (!found)
-		dstr_free(&parsed_data_dir);
 
 	return parsed_data_dir.array;
 }
