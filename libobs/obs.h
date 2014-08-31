@@ -301,6 +301,12 @@ EXPORT const char *obs_get_module_author(obs_module_t module);
 /** Returns the module description */
 EXPORT const char *obs_get_module_description(obs_module_t module);
 
+/** Returns the module binary path */
+EXPORT const char *obs_get_module_binary_path(obs_module_t module);
+
+/** Returns the module data path */
+EXPORT const char *obs_get_module_data_path(obs_module_t module);
+
 /**
  * Adds a module search path to be used with obs_find_modules.  If the search
  * path strings contain %module%, that text will be replaced with the module

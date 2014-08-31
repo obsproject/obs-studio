@@ -126,6 +126,16 @@ const char *obs_get_module_description(obs_module_t module)
 	return (module && module->description) ? module->description() : NULL;
 }
 
+const char *obs_get_module_binary_path(obs_module_t module)
+{
+	return module ? module->bin_path : NULL;
+}
+
+const char *obs_get_module_data_path(obs_module_t module)
+{
+	return module ? module->data_path : NULL;
+}
+
 char *obs_find_module_file(obs_module_t module, const char *file)
 {
 	struct dstr output = {0};
