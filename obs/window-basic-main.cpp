@@ -60,7 +60,9 @@ Q_DECLARE_METATYPE(obs_order_movement);
 
 static void AddExtraModulePaths()
 {
-	BPtr<char> base_module_dir = os_get_config_path("plugins/%module%");
+	BPtr<char> base_module_dir =
+		os_get_config_path("obs-studio/plugins/%module%");
+
 	if (!base_module_dir)
 		return;
 
