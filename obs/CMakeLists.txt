@@ -152,8 +152,13 @@ target_link_libraries(obs
 install_obs_core(obs)
 install_obs_data(obs data obs-studio)
 
-if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
-	install(FILES dist/obs.desktop DESTINATION share/applications)
+if(NOT UNIX_STRUCTURE)
+	install_obs_bin(obs INSTALL_ONLY "dist/qt.conf")
+endif()
+
+if(UNIX AND UNIX_STRUCTURE AND NOT APPLE)
+	install(FILES dist/obs.desktop
+		DESTINATION share/applications)
 	install(FILES forms/images/obs.png
 		DESTINATION share/icons/hicolor/256x256/apps)
 endif()
