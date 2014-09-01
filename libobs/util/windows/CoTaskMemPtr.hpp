@@ -27,6 +27,7 @@ public:
 	inline ~CoTaskMemPtr()                   {Clear();}
 
 	inline operator T*() const               {return ptr;}
+	inline T *operator->() const             {return ptr;}
 
 	inline CoTaskMemPtr& operator=(T* val)
 	{
