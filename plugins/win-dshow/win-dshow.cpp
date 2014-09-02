@@ -757,7 +757,6 @@ static const VideoFormatName videoFormatNames[] = {
 	{VideoFormat::HDYC,  "HDYC"},
 
 	/* encoded formats */
-	{VideoFormat::MPEG2, "MPEG2"},
 	{VideoFormat::MJPEG, "MJPEG"},
 	{VideoFormat::H264,  "H264"}
 };
