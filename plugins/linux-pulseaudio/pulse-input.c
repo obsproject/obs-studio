@@ -41,6 +41,7 @@ struct pulse_data {
 	/* statistics */
 	uint_fast32_t packets;
 	uint_fast64_t frames;
+	double latency;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -150,6 +151,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 
 	data->packets++;
 	data->frames += out.frames;
+	data->latency += latency;
 
 	pa_stream_drop(data->stream);
 exit:
@@ -278,11 +280,16 @@ static void pulse_stop_recording(struct pulse_data *data)
 		pulse_unlock();
 	}
 
+	data->latency /= (double) data->packets * 1000.0;
+
 	blog(LOG_INFO, "Stopped recording from '%s'", data->device);
 	blog(LOG_INFO, "Got %"PRIuFAST32" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
+	blog(LOG_INFO, "Average latency: %.2f msec", data->latency);
+
 	data->packets = 0;
 	data->frames = 0;
+	data->latency = 0.0;
 }
 
 /**
