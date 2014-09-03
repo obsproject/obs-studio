@@ -205,7 +205,7 @@ static void ft2_video_tick(void *data, float seconds)
 {
 	struct ft2_source *srcdata = data;
 	if (srcdata == NULL) return;
-	if (!srcdata->from_file) return;
+	if (!srcdata->from_file || !srcdata->text_file) return;
 
 	if (os_gettime_ns() - srcdata->last_checked >= 1000000000) {
 		time_t t = get_modified_timestamp(srcdata->text_file);
