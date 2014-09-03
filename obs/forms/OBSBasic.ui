@@ -457,6 +457,7 @@
     <addaction name="action_Open"/>
     <addaction name="separator"/>
     <addaction name="actionShow_Recordings"/>
+    <addaction name="actionRemux"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
     <addaction name="separator"/>
@@ -649,6 +650,11 @@
   <action name="actionShow_Recordings">
    <property name="text">
     <string>Basic.MainMenu.File.ShowRecordings</string>
+   </property>
+  </action>
+  <action name="actionRemux">
+   <property name="text">
+    <string>Basic.MainMenu.File.Remux</string>
    </property>
   </action>
   <action name="action_Settings">

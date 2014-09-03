@@ -38,6 +38,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-properties.hpp"
 #include "window-log-reply.hpp"
+#include "window-remux.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
@@ -1472,6 +1473,14 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 	const char *path = config_get_string(basicConfig,
 			"SimpleOutput", "FilePath");
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void OBSBasic::on_actionRemux_triggered()
+{
+	const char *path = config_get_string(basicConfig,
+			"SimpleOutput", "FilePath");
+	OBSRemux remux(path, this);
+	remux.exec();
 }
 
 void OBSBasic::on_action_Settings_triggered()

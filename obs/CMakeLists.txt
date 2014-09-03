@@ -97,6 +97,7 @@ set(obs_SOURCES
 	window-basic-preview.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
+	window-remux.cpp
 	properties-view.cpp
 	volume-control.cpp
 	qt-wrappers.cpp)
@@ -116,6 +117,7 @@ set(obs_HEADERS
 	window-basic-preview.hpp
 	window-namedialog.hpp
 	window-log-reply.hpp
+	window-remux.hpp
 	properties-view.hpp
 	display-helpers.hpp
 	volume-control.hpp
@@ -131,7 +133,8 @@ set(obs_UI
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
-	forms/OBSBasicProperties.ui)
+	forms/OBSBasicProperties.ui
+	forms/OBSRemux.ui)
 
 set(obs_QRC
 	forms/obs.qrc)
