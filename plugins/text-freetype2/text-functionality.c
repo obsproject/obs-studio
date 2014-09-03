@@ -34,6 +34,10 @@ void draw_outlines(struct ft2_source *srcdata)
 	uint32_t *tmp;
 
 	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
+
+	if (!srcdata->text)
+		return;
+
 	tmp = vdata->colors;
 	vdata->colors = srcdata->colorbuf;
 
@@ -57,6 +61,10 @@ void draw_drop_shadow(struct ft2_source *srcdata)
 	uint32_t *tmp;
 
 	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
+
+	if (!srcdata->text)
+		return;
+
 	tmp = vdata->colors;
 	vdata->colors = srcdata->colorbuf;
 
@@ -74,6 +82,9 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 {
 	FT_UInt glyph_index = 0;
 	uint32_t x = 0, space_pos = 0, word_width = 0;
+
+	if (!srcdata->text)
+		return;
 
 	if (srcdata->custom_width >= 100)
 		srcdata->cx = srcdata->custom_width;
@@ -128,7 +139,8 @@ skip_word_wrap:;
 void fill_vertex_buffer(struct ft2_source *srcdata)
 {
 	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
-	if (vdata == NULL) return;
+	if (vdata == NULL || !srcdata->text) return;
+
 	struct vec2 *tvarray = (struct vec2 *)vdata->tvarray[0].array;
 	uint32_t *col = (uint32_t *)vdata->colors;
 
@@ -453,6 +465,9 @@ uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 	FT_GlyphSlot slot = srcdata->font_face->glyph;
 	FT_UInt glyph_index = 0;
 	uint32_t w = 0, max_w = 0;
+
+	if (!text)
+		return 0;
 
 	for (uint32_t i = 0; i < (uint32_t)wcslen(text); i++) {
 		glyph_index = FT_Get_Char_Index(srcdata->font_face, text[i]);
