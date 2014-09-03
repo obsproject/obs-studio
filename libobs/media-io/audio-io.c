@@ -695,11 +695,19 @@ static void audio_line_place_data(struct audio_line *line,
 	audio_line_place_data_pos(line, data, pos);
 }
 
+#define MAX_DELAY_NS 6000000000ULL
+
+/* prevent insertation of data too far away from expected audio timing */
+static inline bool valid_timestamp_range(struct audio_line *line, uint64_t ts)
+{
+	uint64_t buffer_ns = 1000000ULL * line->audio->info.buffer_ms;
+	uint64_t max_ts    = line->base_timestamp + buffer_ns + MAX_DELAY_NS;
+
+	return ts >= line->base_timestamp && ts < max_ts;
+}
+
 void audio_line_output(audio_line_t line, const struct audio_data *data)
 {
-	/* TODO: prevent insertation of data too far away from expected
-	 * audio timing */
-
 	if (!line || !data) return;
 
 	pthread_mutex_lock(&line->mutex);
@@ -709,7 +717,7 @@ void audio_line_output(audio_line_t line, const struct audio_data *data)
 		                       line->audio->info.buffer_ms * 1000000;
 		audio_line_place_data(line, data);
 
-	} else if (line->base_timestamp <= data->timestamp) {
+	} else if (valid_timestamp_range(line, data->timestamp)) {
 		audio_line_place_data(line, data);
 
 	} else {
