@@ -534,9 +534,7 @@ static inline void handle_ts_jump(obs_source_t source, uint64_t expected,
 	                source->context.name, diff, expected, ts);
 
 	/* if has video, ignore audio data until reset */
-	if (source->info.output_flags & OBS_SOURCE_ASYNC)
-		os_atomic_dec_long(&source->av_sync_ref);
-	else
+	if (!(source->info.output_flags & OBS_SOURCE_ASYNC))
 		reset_audio_timing(source, ts);
 }
 
@@ -653,9 +651,6 @@ static void source_output_audio_line(obs_source_t source,
 
 	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(in.frames);
-
-	if (source->av_sync_ref != 0)
-		return;
 
 	in.timestamp += source->timing_adjust + source->sync_offset;
 	in.volume = source->user_volume * source->present_volume *
@@ -1514,7 +1509,6 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 	/* account for timestamp invalidation */
 	if (frame_out_of_bounds(source, frame_time)) {
 		source->last_frame_ts = next_frame->timestamp;
-		os_atomic_inc_long(&source->av_sync_ref);
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
 		source->last_frame_ts += frame_offset;
@@ -1534,7 +1528,6 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
 			source->last_frame_ts =
 				next_frame->timestamp - frame_offset;
-			os_atomic_inc_long(&source->av_sync_ref);
 		}
 
 		frame_time   = next_frame->timestamp;
