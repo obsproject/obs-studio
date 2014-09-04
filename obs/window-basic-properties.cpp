@@ -145,10 +145,11 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
-	// remove draw callback in case our drawable surfaces go away before
-	// the destructor gets called
+	// remove draw callback and release display in case our drawable
+	// surfaces go away before the destructor gets called
 	obs_display_remove_draw_callback(display,
 			OBSBasicProperties::DrawPreview, this);
+	display = nullptr;
 
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
 			width());
