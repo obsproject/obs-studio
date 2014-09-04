@@ -136,9 +136,9 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 	case VideoFormat::XRGB:  return VIDEO_FORMAT_BGRX;
 	case VideoFormat::I420:  return VIDEO_FORMAT_I420;
 	case VideoFormat::NV12:  return VIDEO_FORMAT_NV12;
-	case VideoFormat::YVYU:  return VIDEO_FORMAT_UYVY;
+	case VideoFormat::YVYU:  return VIDEO_FORMAT_YVYU;
 	case VideoFormat::YUY2:  return VIDEO_FORMAT_YUY2;
-	case VideoFormat::UYVY:  return VIDEO_FORMAT_YVYU;
+	case VideoFormat::UYVY:  return VIDEO_FORMAT_UYVY;
 	case VideoFormat::HDYC:  return VIDEO_FORMAT_UYVY;
 	case VideoFormat::MJPEG: return VIDEO_FORMAT_YUY2;
 	default:                 return VIDEO_FORMAT_NONE;
