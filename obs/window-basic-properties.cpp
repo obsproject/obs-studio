@@ -162,7 +162,6 @@ void OBSBasicProperties::Init()
 	gs_init_data init_data = {};
 
 	show();
-	App()->processEvents();
 
 	QSize previewSize = GetPixelSize(ui->preview);
 	init_data.cx      = uint32_t(previewSize.width());
