@@ -1,12 +1,17 @@
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+project(linux-v4l2)
 
-find_package(Libv4l2)
-if(NOT LIBV4L2_FOUND)
-	message(STATUS "libv4l2 not found, disabling v4l2 plugin")
+if(DISABLE_V4L2)
+	message(STATUS "v4l2 plugin disabled")
 	return()
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+find_package(Libv4l2)
+if(NOT LIBV4L2_FOUND AND ENABLE_V4L2)
+	message(FATAL_ERROR "libv4l2 not found bit plugin set as enabled")
+elseif(NOT LIBV4L2_FOUND)
+	message(STATUS "libv4l2 not found, disabling v4l2 plugin")
+	return()
+endif()
 
 set(linux-v4l2_SOURCES
 	linux-v4l2.c
