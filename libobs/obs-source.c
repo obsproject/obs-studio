@@ -1501,8 +1501,13 @@ void obs_source_output_audio(obs_source_t source,
 
 static inline bool frame_out_of_bounds(obs_source_t source, uint64_t ts)
 {
-	return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
+	if (ts < source->last_frame_ts)
+		return ((source->last_frame_ts - ts) > MAX_TIMESTAMP_JUMP);
+	else
+		return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
 }
+
+/* #define DEBUG_ASYNC_FRAMES 1 */
 
 static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 {
@@ -1512,26 +1517,60 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
+#if DEBUG_ASYNC_FRAMES
+	blog(LOG_DEBUG, "source->last_frame_ts: %llu, frame_time: %llu, "
+			"sys_offset: %llu, frame_offset: %llu, "
+			"number of frames: %lu",
+			source->last_frame_ts, frame_time, sys_offset,
+			frame_time - source->last_frame_ts,
+			(unsigned long)source->video_frames.num);
+#endif
+
 	/* account for timestamp invalidation */
 	if (frame_out_of_bounds(source, frame_time)) {
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "timing jump");
+#endif
 		source->last_frame_ts = next_frame->timestamp;
+		return true;
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
-		source->last_frame_ts += frame_offset;
+		source->last_frame_ts += sys_offset;
 	}
 
-	while (frame_offset <= sys_offset) {
+	while (source->last_frame_ts > next_frame->timestamp) {
+
+		/* this tries to reduce the needless frame duplication, also
+		 * helps smooth out async rendering to frame boundaries.  In
+		 * other words, tries to keep the framerate as smooth as
+		 * possible */
+		if ((source->last_frame_ts - next_frame->timestamp) < 1000000)
+			break;
+
+		if (frame)
+			da_erase(source->video_frames, 0);
+
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "new frame, "
+				"source->last_frame_ts: %llu, "
+				"next_frame->timestamp: %llu",
+				source->last_frame_ts,
+				next_frame->timestamp);
+#endif
+
 		obs_source_frame_destroy(frame);
 
 		if (source->video_frames.num == 1)
 			return true;
 
 		frame = next_frame;
-		da_erase(source->video_frames, 0);
-		next_frame = source->video_frames.array[0];
+		next_frame = source->video_frames.array[1];
 
 		/* more timestamp checking and compensating */
 		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
+#if DEBUG_ASYNC_FRAMES
+			blog(LOG_DEBUG, "timing jump");
+#endif
 			source->last_frame_ts =
 				next_frame->timestamp - frame_offset;
 		}
@@ -1540,7 +1579,10 @@ static bool ready_async_frame(obs_source_t source, uint64_t sys_time)
 		frame_offset = frame_time - source->last_frame_ts;
 	}
 
-	obs_source_frame_destroy(frame);
+#if DEBUG_ASYNC_FRAMES
+	if (!frame)
+		blog(LOG_DEBUG, "no frame!");
+#endif
 
 	return frame != NULL;
 }
@@ -1573,10 +1615,10 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t source)
 
 	pthread_mutex_lock(&source->video_mutex);
 
+	sys_time = os_gettime_ns();
+
 	if (!source->video_frames.num)
 		goto unlock;
-
-	sys_time = os_gettime_ns();
 
 	if (!source->last_frame_ts) {
 		frame = source->video_frames.array[0];
@@ -1589,13 +1631,16 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t source)
 
 	/* reset timing to current system time */
 	if (frame) {
+		uint64_t min_expected_sys_ts =
+			frame->timestamp + source->timing_adjust;
+
 		source->timing_adjust = sys_time - frame->timestamp;
 		source->timing_set = true;
 	}
 
+unlock:
 	source->last_sys_timestamp = sys_time;
 
-unlock:
 	pthread_mutex_unlock(&source->video_mutex);
 
 	if (frame)
