@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pulse-wrapper.h"
 
 #define PULSE_DATA(voidptr) struct pulse_data *data = voidptr;
+#define blog(level, msg, ...) blog(level, "pulse-input: " msg, ##__VA_ARGS__)
 
 struct pulse_data {
 	obs_source_t source;
@@ -40,6 +41,7 @@ struct pulse_data {
 	/* statistics */
 	uint_fast32_t packets;
 	uint_fast64_t frames;
+	double latency;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -51,16 +53,11 @@ static enum audio_format pulse_to_obs_audio_format(
 	pa_sample_format_t format)
 {
 	switch (format) {
-		case PA_SAMPLE_U8:
-			return AUDIO_FORMAT_U8BIT;
-		case PA_SAMPLE_S16LE:
-			return AUDIO_FORMAT_16BIT;
-		case PA_SAMPLE_S24_32LE:
-			return AUDIO_FORMAT_32BIT;
-		case PA_SAMPLE_FLOAT32LE:
-			return AUDIO_FORMAT_FLOAT;
-		default:
-			return AUDIO_FORMAT_UNKNOWN;
+	case PA_SAMPLE_U8:        return AUDIO_FORMAT_U8BIT;
+	case PA_SAMPLE_S16LE:     return AUDIO_FORMAT_16BIT;
+	case PA_SAMPLE_S24_32LE:  return AUDIO_FORMAT_32BIT;
+	case PA_SAMPLE_FLOAT32LE: return AUDIO_FORMAT_FLOAT;
+	default:                  return AUDIO_FORMAT_UNKNOWN;
 	}
 
 	return AUDIO_FORMAT_UNKNOWN;
@@ -80,13 +77,13 @@ static enum speaker_layout pulse_channels_to_obs_speakers(
 	uint_fast32_t channels)
 {
 	switch(channels) {
-		case 1: return SPEAKERS_MONO;
-		case 2: return SPEAKERS_STEREO;
-		case 3: return SPEAKERS_2POINT1;
-		case 4: return SPEAKERS_SURROUND;
-		case 5: return SPEAKERS_4POINT1;
-		case 6: return SPEAKERS_5POINT1;
-		case 8: return SPEAKERS_7POINT1;
+	case 1: return SPEAKERS_MONO;
+	case 2: return SPEAKERS_STEREO;
+	case 3: return SPEAKERS_2POINT1;
+	case 4: return SPEAKERS_SURROUND;
+	case 5: return SPEAKERS_4POINT1;
+	case 6: return SPEAKERS_5POINT1;
+	case 8: return SPEAKERS_7POINT1;
 	}
 
 	return SPEAKERS_UNKNOWN;
@@ -131,14 +128,14 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 
 	if (!frames) {
-		blog(LOG_ERROR, "pulse-input: Got audio hole of %u bytes",
+		blog(LOG_ERROR, "Got audio hole of %u bytes",
 			(unsigned int) bytes);
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
 
 	if (pulse_get_stream_latency(data->stream, &latency) < 0) {
-		blog(LOG_ERROR, "pulse-input: Failed to get timing info !");
+		blog(LOG_ERROR, "Failed to get timing info !");
 		pa_stream_drop(data->stream);
 		goto exit;
 	}
@@ -154,6 +151,7 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 
 	data->packets++;
 	data->frames += out.frames;
+	data->latency += latency;
 
 	pa_stream_drop(data->stream);
 exit:
@@ -167,21 +165,36 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	PULSE_DATA(userdata);
+	UNUSED_PARAMETER(userdata);
 
-	blog(LOG_INFO, "pulse-input: Server name: '%s %s'",
+	blog(LOG_INFO, "Server name: '%s %s'",
 		i->server_name, i->server_version);
+
+	pulse_signal(0);
+}
+
+/**
+ * Source info callback
+ */
+static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
+	void *userdata)
+{
+	UNUSED_PARAMETER(c);
+	PULSE_DATA(userdata);
+	if (eol != 0)
+		goto skip;
 
 	data->format          = i->sample_spec.format;
 	data->samples_per_sec = i->sample_spec.rate;
 	data->channels        = i->sample_spec.channels;
 
-	blog(LOG_INFO, "pulse-input: "
-		"Audio format: %s, %u Hz, %u channels",
-		pa_sample_format_to_string(i->sample_spec.format),
-		i->sample_spec.rate,
-		i->sample_spec.channels);
+	blog(LOG_INFO, "Audio format: %s, %"PRIuFAST32" Hz"
+		", %"PRIuFAST8" channels",
+		pa_sample_format_to_string(data->format),
+		data->samples_per_sec,
+		data->channels);
 
+skip:
 	pulse_signal(0);
 }
 
@@ -196,7 +209,13 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
 	if (pulse_get_server_info(pulse_server_info, (void *) data) < 0) {
-		blog(LOG_ERROR, "pulse-input: Unable to get server info !");
+		blog(LOG_ERROR, "Unable to get server info !");
+		return -1;
+	}
+
+	if (pulse_get_source_info(pulse_source_info, data->device,
+			(void *) data) < 0) {
+		blog(LOG_ERROR, "Unable to get source info !");
 		return -1;
 	}
 
@@ -206,7 +225,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	spec.channels = data->channels;
 
 	if (!pa_sample_spec_valid(&spec)) {
-		blog(LOG_ERROR, "pulse-input: Sample spec is not valid");
+		blog(LOG_ERROR, "Sample spec is not valid");
 		return -1;
 	}
 
@@ -216,7 +235,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	data->stream = pulse_stream_new(obs_source_get_name(data->source),
 		&spec, NULL);
 	if (!data->stream) {
-		blog(LOG_ERROR, "pulse-input: Unable to create stream");
+		blog(LOG_ERROR, "Unable to create stream");
 		return -1;
 	}
 
@@ -240,12 +259,11 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pulse_unlock();
 	if (ret < 0) {
 		pulse_stop_recording(data);
-		blog(LOG_ERROR, "pulse-input: Unable to connect to stream");
+		blog(LOG_ERROR, "Unable to connect to stream");
 		return -1;
 	}
 
-	blog(LOG_INFO, "pulse-input: Started recording from '%s'",
-		data->device);
+	blog(LOG_INFO, "Started recording from '%s'", data->device);
 	return 0;
 }
 
@@ -262,13 +280,16 @@ static void pulse_stop_recording(struct pulse_data *data)
 		pulse_unlock();
 	}
 
-	blog(LOG_INFO, "pulse-input: Stopped recording from '%s'",
-		data->device);
-	blog(LOG_INFO, "pulse-input: Got %"PRIuFAST32
-		" packets with %"PRIuFAST64" frames",
+	data->latency /= (double) data->packets * 1000.0;
+
+	blog(LOG_INFO, "Stopped recording from '%s'", data->device);
+	blog(LOG_INFO, "Got %"PRIuFAST32" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
+	blog(LOG_INFO, "Average latency: %.2f msec", data->latency);
+
 	data->packets = 0;
 	data->frames = 0;
+	data->latency = 0.0;
 }
 
 /**
@@ -344,8 +365,7 @@ static void pulse_input_device(pa_context *c, const pa_server_info *i,
 
 	obs_data_set_default_string(settings, "device_id",
 		i->default_source_name);
-	blog(LOG_DEBUG, "pulse-input: Default input device: '%s'",
-	     i->default_source_name);
+	blog(LOG_DEBUG, "Default input device: '%s'", i->default_source_name);
 
 	pulse_signal(0);
 }
@@ -361,7 +381,7 @@ static void pulse_output_device(pa_context *c, const pa_server_info *i,
 	strcat(monitor, ".monitor");
 
 	obs_data_set_default_string(settings, "device_id", monitor);
-	blog(LOG_DEBUG, "pulse-input: Default output device: '%s'", monitor);
+	blog(LOG_DEBUG, "Default output device: '%s'", monitor);
 	bfree(monitor);
 
 	pulse_signal(0);
