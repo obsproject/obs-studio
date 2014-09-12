@@ -234,10 +234,17 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 		OnEncodedVideoData(AV_CODEC_ID_H264, data, size, startTime);
 		return;
 	}
-	const int cx = videoConfig.cx;
-	const int cy = videoConfig.cy;
 
-	frame.timestamp = (uint64_t)startTime * 100;
+	const int cx = config.cx;
+	const int cy = config.cy;
+
+	frame.timestamp  = (uint64_t)startTime * 100;
+	frame.width      = config.cx;
+	frame.height     = config.cy;
+	frame.format     = ConvertVideoFormat(config.format);
+	frame.full_range = false;
+	frame.flip       = (config.format == VideoFormat::XRGB ||
+	                    config.format == VideoFormat::ARGB);
 
 	if (videoConfig.format == VideoFormat::XRGB ||
 	    videoConfig.format == VideoFormat::ARGB) {
@@ -299,6 +306,8 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		unsigned char *data, size_t size,
 		long long startTime, long long endTime)
 {
+	size_t block_size;
+
 	if (config.format == AudioFormat::AAC) {
 		OnEncodedAudioData(AV_CODEC_ID_AAC, data, size, startTime);
 		return;
@@ -310,12 +319,16 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		return;
 	}
 
-	size_t block_size = get_audio_bytes_per_channel(audio.format) *
+	audio.speakers        = (enum speaker_layout)config.channels;
+	audio.format          = ConvertAudioFormat(config.format);
+	audio.samples_per_sec = (uint32_t)config.sampleRate;
+	audio.data[0]         = data;
+
+	block_size = get_audio_bytes_per_channel(audio.format) *
 		get_audio_channels(audio.speakers);
 
-	audio.data[0]   = data;
-	audio.frames    = (uint32_t)(size / block_size);
-	audio.timestamp = (uint64_t)startTime * 100;
+	audio.frames          = (uint32_t)(size / block_size);
+	audio.timestamp       = (uint64_t)startTime * 100;
 
 	if (audio.format != AUDIO_FORMAT_UNKNOWN)
 		obs_source_output_audio(source, &audio);
@@ -650,17 +663,6 @@ void DShowInput::Update(obs_data_t settings)
 
 	if (device.Start() != Result::Success)
 		return;
-
-	frame.width      = videoConfig.cx;
-	frame.height     = videoConfig.cy;
-	frame.format     = ConvertVideoFormat(videoConfig.format);
-	frame.full_range = false;
-	frame.flip       = (videoConfig.format == VideoFormat::XRGB ||
-	                    videoConfig.format == VideoFormat::ARGB);
-
-	audio.speakers        = (enum speaker_layout)audioConfig.channels;
-	audio.format          = ConvertAudioFormat(audioConfig.format);
-	audio.samples_per_sec = (uint32_t)audioConfig.sampleRate;
 
 	enum video_colorspace cs = (videoConfig.format == VideoFormat::HDYC) ?
 		VIDEO_CS_709 : VIDEO_CS_601;
