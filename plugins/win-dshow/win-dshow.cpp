@@ -672,7 +672,7 @@ void DShowInput::Update(obs_data_t settings)
 			frame.color_range_min,
 			frame.color_range_max)) {
 		blog(LOG_ERROR, "Failed to get video format parameters for " \
-		                "video format %u", VIDEO_CS_601);
+		                "video format %u", cs);
 	}
 }
 
