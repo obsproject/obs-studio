@@ -44,8 +44,6 @@ public:
 
 	inline HANDLE* operator&()
 	{
-		Clear();
-		handle = NULL;
 		return &handle;
 	}
 
