@@ -584,16 +584,6 @@ static void DestroyDShowInput(void *data)
 	delete reinterpret_cast<DShowInput*>(data);
 }
 
-static uint32_t GetDShowWidth(void *data)
-{
-	return reinterpret_cast<DShowInput*>(data)->videoConfig.cx;
-}
-
-static uint32_t GetDShowHeight(void *data)
-{
-	return reinterpret_cast<DShowInput*>(data)->videoConfig.cy;
-}
-
 static void UpdateDShowInput(void *data, obs_data_t settings)
 {
 	reinterpret_cast<DShowInput*>(data)->Update(settings);
@@ -1347,8 +1337,6 @@ bool obs_module_load(void)
 	info.create          = CreateDShowInput;
 	info.destroy         = DestroyDShowInput;
 	info.update          = UpdateDShowInput;
-	info.get_width       = GetDShowWidth;
-	info.get_height      = GetDShowHeight;
 	info.get_defaults    = GetDShowDefaults;
 	info.get_properties  = GetDShowProperties;
 	obs_register_source(&info);
