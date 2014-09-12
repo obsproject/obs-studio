@@ -503,6 +503,8 @@ void obs_source_video_tick(obs_source_t source, float seconds)
 
 	if (source->context.data && source->info.video_tick)
 		source->info.video_tick(source->context.data, seconds);
+
+	source->async_rendered = false;
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
@@ -1031,18 +1033,22 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 
 static void obs_source_render_async_video(obs_source_t source)
 {
-	struct obs_source_frame *frame = obs_source_get_frame(source);
-	if (frame) {
-		if (!set_async_texture_size(source, frame))
-			return;
-		if (!update_async_texture(source, frame))
-			return;
+	if (!source->async_rendered) {
+		struct obs_source_frame *frame = obs_source_get_frame(source);
+
+		source->async_rendered = true;
+		if (frame) {
+			if (!set_async_texture_size(source, frame))
+				return;
+			if (!update_async_texture(source, frame))
+				return;
+		}
+
+		obs_source_release_frame(source, frame);
 	}
 
 	if (source->async_texture)
 		obs_source_draw_async_texture(source);
-
-	obs_source_release_frame(source, frame);
 }
 
 static inline void obs_source_render_filters(obs_source_t source)

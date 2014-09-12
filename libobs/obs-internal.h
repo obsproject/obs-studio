@@ -293,6 +293,7 @@ struct obs_source {
 	uint64_t                        next_audio_ts_min;
 	uint64_t                        last_frame_ts;
 	uint64_t                        last_sys_timestamp;
+	bool                            async_rendered;
 
 	/* audio */
 	bool                            audio_failed;
