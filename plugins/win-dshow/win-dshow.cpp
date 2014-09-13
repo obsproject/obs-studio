@@ -93,6 +93,9 @@ struct DShowInput {
 	bool         comInitialized;
 	bool         deviceHasAudio;
 
+	Decoder      audio_decoder;
+	Decoder      video_decoder;
+
 	VideoConfig  videoConfig;
 	AudioConfig  audioConfig;
 
@@ -111,10 +114,16 @@ struct DShowInput {
 		av_log_set_callback(ffmpeg_log);
 	}
 
+	void OnEncodedVideoData(enum AVCodecID id,
+			unsigned char *data, size_t size, long long ts);
+	void OnEncodedAudioData(enum AVCodecID id,
+			unsigned char *data, size_t size, long long ts);
 
-	void OnVideoData(unsigned char *data, size_t size,
+	void OnVideoData(const VideoConfig &config,
+			unsigned char *data, size_t size,
 			long long startTime, long long endTime);
-	void OnAudioData(unsigned char *data, size_t size,
+	void OnAudioData(const AudioConfig &config,
+			unsigned char *data, size_t size,
 			long long startTime, long long endTime);
 
 	bool UpdateVideoConfig(obs_data_t settings);
@@ -192,9 +201,39 @@ static inline audio_format ConvertAudioFormat(AudioFormat format)
 	}
 }
 
-void DShowInput::OnVideoData(unsigned char *data, size_t size,
+void DShowInput::OnEncodedVideoData(enum AVCodecID id,
+		unsigned char *data, size_t size, long long ts)
+{
+	if (!ffmpeg_decode_valid(video_decoder)) {
+		if (ffmpeg_decode_init(video_decoder, id) < 0) {
+			blog(LOG_WARNING, "Could not initialize video decoder");
+			return;
+		}
+	}
+
+	bool got_output;
+	int len = ffmpeg_decode_video(video_decoder, data, size, &ts,
+			&frame, &got_output);
+	if (len < 0) {
+		blog(LOG_WARNING, "Error decoding video");
+		return;
+	}
+
+	if (got_output) {
+		frame.timestamp = (uint64_t)ts * 100;
+		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
+		obs_source_output_video(source, &frame);
+	}
+}
+
+void DShowInput::OnVideoData(const VideoConfig &config,
+		unsigned char *data, size_t size,
 		long long startTime, long long endTime)
 {
+	if (videoConfig.format == VideoFormat::H264) {
+		OnEncodedVideoData(AV_CODEC_ID_H264, data, size, startTime);
+		return;
+	}
 	const int cx = videoConfig.cx;
 	const int cy = videoConfig.cy;
 
@@ -231,11 +270,45 @@ void DShowInput::OnVideoData(unsigned char *data, size_t size,
 	UNUSED_PARAMETER(size);
 }
 
-void DShowInput::OnAudioData(unsigned char *data, size_t size,
+void DShowInput::OnEncodedAudioData(enum AVCodecID id,
+		unsigned char *data, size_t size, long long ts)
+{
+	if (!ffmpeg_decode_valid(audio_decoder)) {
+		if (ffmpeg_decode_init(audio_decoder, id) < 0) {
+			blog(LOG_WARNING, "Could not initialize audio decoder");
+			return;
+		}
+	}
+
+	bool got_output;
+	int len = ffmpeg_decode_audio(audio_decoder, data, size,
+			&audio, &got_output);
+	if (len < 0) {
+		blog(LOG_WARNING, "Error decoding audio");
+		return;
+	}
+
+	if (got_output) {
+		audio.timestamp = (uint64_t)ts * 100;
+		//blog(LOG_DEBUG, "audio ts: %llu", audio.timestamp);
+		obs_source_output_audio(source, &audio);
+	}
+}
+
+void DShowInput::OnAudioData(const AudioConfig &config,
+		unsigned char *data, size_t size,
 		long long startTime, long long endTime)
 {
-	if (audio.format == AUDIO_FORMAT_UNKNOWN)
+	if (config.format == AudioFormat::AAC) {
+		OnEncodedAudioData(AV_CODEC_ID_AAC, data, size, startTime);
 		return;
+	} else if (config.format == AudioFormat::AC3) {
+		OnEncodedAudioData(AV_CODEC_ID_AC3, data, size, startTime);
+		return;
+	} else if (config.format == AudioFormat::MPGA) {
+		OnEncodedAudioData(AV_CODEC_ID_MP1, data, size, startTime);
+		return;
+	}
 
 	size_t block_size = get_audio_bytes_per_channel(audio.format) *
 		get_audio_channels(audio.speakers);
@@ -244,10 +317,10 @@ void DShowInput::OnAudioData(unsigned char *data, size_t size,
 	audio.frames    = (uint32_t)(size / block_size);
 	audio.timestamp = (uint64_t)startTime * 100;
 
-	obs_source_output_audio(source, &audio);
+	if (audio.format != AUDIO_FORMAT_UNKNOWN)
+		obs_source_output_audio(source, &audio);
 
 	UNUSED_PARAMETER(endTime);
-	UNUSED_PARAMETER(size);
 }
 
 static bool DecodeDeviceId(DStr &name, DStr &path, const char *device_id)
@@ -507,7 +580,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t settings)
 
 	videoConfig.callback = std::bind(&DShowInput::OnVideoData, this,
 			placeholders::_1, placeholders::_2,
-			placeholders::_3, placeholders::_4);
+			placeholders::_3, placeholders::_4,
+			placeholders::_5);
 
 	if (videoConfig.internalFormat != VideoFormat::MJPEG)
 		videoConfig.format = videoConfig.internalFormat;
@@ -545,7 +619,8 @@ bool DShowInput::UpdateAudioConfig(obs_data_t settings)
 
 	audioConfig.callback = std::bind(&DShowInput::OnAudioData, this,
 			placeholders::_1, placeholders::_2,
-			placeholders::_3, placeholders::_4);
+			placeholders::_3, placeholders::_4,
+			placeholders::_5);
 
 	return device.SetAudioConfig(&audioConfig);
 }

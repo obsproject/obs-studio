@@ -23,11 +23,8 @@ set(libdshowcapture_SOURCES
 	libdshowcapture/source/dshow-demux.cpp
 	libdshowcapture/source/dshow-enum.cpp
 	libdshowcapture/source/dshow-formats.cpp
-	libdshowcapture/source/dshow-hd-pvr1.cpp
-	libdshowcapture/source/dshow-hd-pvr2.cpp
-	libdshowcapture/source/dshow-hd-pvr-rocket.cpp
 	libdshowcapture/source/dshow-media-type.cpp
-	libdshowcapture/source/dshow-roxio.cpp
+	libdshowcapture/source/dshow-encoded-device.cpp
 	libdshowcapture/source/log.cpp)
 
 set(libdshowcapture_HEADERS
