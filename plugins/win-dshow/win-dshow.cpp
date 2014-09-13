@@ -104,6 +104,9 @@ struct DShowInput {
 		  device         (InitGraph::False),
 		  comInitialized (false)
 	{
+		memset(&audio, 0, sizeof(audio));
+		memset(&frame, 0, sizeof(frame));
+
 		av_log_set_level(AV_LOG_WARNING);
 		av_log_set_callback(ffmpeg_log);
 	}
