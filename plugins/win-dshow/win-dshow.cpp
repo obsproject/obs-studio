@@ -6,6 +6,7 @@
 #include <util/util.hpp>
 #include <util/platform.h>
 #include "libdshowcapture/dshowcapture.hpp"
+#include "ffmpeg-decode.h"
 
 #include <algorithm>
 #include <limits>
@@ -56,6 +57,36 @@ enum ResType {
 	ResType_Custom
 };
 
+void ffmpeg_log(void *bla, int level, const char *msg, va_list args)
+{
+	DStr str;
+	if (level == AV_LOG_WARNING)
+		dstr_copy(str, "warning: ");
+	else if (level == AV_LOG_ERROR)
+		dstr_copy(str, "error:   ");
+	else if (level < AV_LOG_ERROR)
+		dstr_copy(str, "fatal:   ");
+	else
+		return;
+
+	dstr_cat(str, msg);
+	if (dstr_end(str) == '\n')
+		dstr_resize(str, str->len - 1);
+
+	blogva(LOG_WARNING, str, args);
+	av_log_default_callback(bla, level, msg, args);
+}
+
+class Decoder {
+	struct ffmpeg_decode decode;
+
+public:
+	inline Decoder()  {memset(&decode, 0, sizeof(decode));}
+	inline ~Decoder() {ffmpeg_decode_free(&decode);}
+
+	inline operator ffmpeg_decode*() {return &decode;}
+};
+
 struct DShowInput {
 	obs_source_t source;
 	Device       device;
@@ -72,7 +103,11 @@ struct DShowInput {
 		: source         (source_),
 		  device         (InitGraph::False),
 		  comInitialized (false)
-	{}
+	{
+		av_log_set_level(AV_LOG_WARNING);
+		av_log_set_callback(ffmpeg_log);
+	}
+
 
 	void OnVideoData(unsigned char *data, size_t size,
 			long long startTime, long long endTime);
