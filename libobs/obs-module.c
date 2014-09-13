@@ -355,7 +355,9 @@ void free_module(struct obs_module *mod)
 		if (mod->loaded && mod->unload)
 			mod->unload();
 
-		os_dlclose(mod->module);
+		/* there is no real reason to close the dynamic libraries,
+		 * and sometimes this can cause issues. */
+		/* os_dlclose(mod->module); */
 	}
 
 	bfree(mod->bin_path);
