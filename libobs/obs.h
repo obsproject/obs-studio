@@ -33,6 +33,7 @@
 #include "obs-data.h"
 #include "obs-ui.h"
 #include "obs-properties.h"
+#include "obs-interaction.h"
 
 struct matrix4;
 
@@ -750,6 +751,27 @@ EXPORT void obs_source_add_child(obs_source_t parent, obs_source_t child);
  * deactivated if the parent is active.
  */
 EXPORT void obs_source_remove_child(obs_source_t parent, obs_source_t child);
+
+/** Sends a mouse down/up event to a source */
+EXPORT void obs_source_send_mouse_click(obs_source_t source,
+		const struct obs_mouse_event *event,
+		int32_t type, bool mouse_up,
+		uint32_t click_count);
+
+/** Sends a mouse move event to a source. */
+EXPORT void obs_source_send_mouse_move(obs_source_t source,
+		const struct obs_mouse_event *event, bool mouse_leave);
+
+/** Sends a mouse wheel event to a source */
+EXPORT void obs_source_send_mouse_wheel(obs_source_t source,
+		const struct obs_mouse_event *event, int x_delta, int y_delta);
+
+/** Sends a got-focus or lost-focus event to a source */
+EXPORT void obs_source_send_focus(obs_source_t source, bool focus);
+
+/** Sends a key up/down event to a source */
+EXPORT void obs_source_send_key_click(obs_source_t source,
+		const struct obs_key_event *event, bool key_up);
 
 /** Begins transition frame.  Sets all transitioning volume values to 0.0f. */
 EXPORT void obs_transition_begin_frame(obs_source_t transition);
