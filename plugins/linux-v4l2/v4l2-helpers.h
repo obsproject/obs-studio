@@ -235,6 +235,18 @@ int_fast32_t v4l2_set_input(int_fast32_t dev, int *input);
 int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
 		int *pixelformat, int *bytesperline);
 
+/**
+ * Set the framerate on the device.
+ *
+ * If the action succeeds framerate is set to the used value.
+ *
+ * @param dev handle to the v4l2 device
+ * @param framerate packed value of the framerate or -1 to leave as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate);
+
 #ifdef __cplusplus
 }
 #endif

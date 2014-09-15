@@ -64,7 +64,7 @@ struct v4l2_data {
 	int set_input;
 	int set_pixfmt;
 	int set_res;
-	int_fast32_t set_fps;
+	int set_fps;
 
 	/* data used within the capture thread */
 	int_fast32_t dev;
@@ -582,7 +582,6 @@ static void v4l2_destroy(void *vptr)
  */
 static void v4l2_init(struct v4l2_data *data)
 {
-	struct v4l2_streamparm par;
 	struct dstr fps;
 	int fps_num, fps_denom;
 
@@ -614,18 +613,13 @@ static void v4l2_init(struct v4l2_data *data)
 	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
-	v4l2_unpack_tuple(&fps_num, &fps_denom, data->set_fps);
-	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	par.parm.capture.timeperframe.numerator = fps_num;
-	par.parm.capture.timeperframe.denominator = fps_denom;
-	if (v4l2_ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
+	if (v4l2_set_framerate(data->dev, &data->set_fps) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
 	}
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->set_fps);
 	dstr_init(&fps);
-	dstr_printf(&fps, "%.2f",
-		(float) par.parm.capture.timeperframe.denominator
-		/ par.parm.capture.timeperframe.numerator);
+	dstr_printf(&fps, "%.2f", (float) fps_denom / fps_num);
 	blog(LOG_INFO, "Framerate: %s fps", fps.array);
 	dstr_free(&fps);
 

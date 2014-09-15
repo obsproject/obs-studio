@@ -169,3 +169,33 @@ int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
 	*bytesperline = fmt.fmt.pix.bytesperline;
 	return 0;
 }
+
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate)
+{
+	bool set = false;
+	int num, denom;
+	struct v4l2_streamparm par;
+
+	if (!dev || !framerate)
+		return -1;
+
+	/* We need to set the type in order to query the stream settings */
+	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	if (v4l2_ioctl(dev, VIDIOC_G_PARM, &par) < 0)
+		return -1;
+
+	if (*framerate != -1) {
+		v4l2_unpack_tuple(&num, &denom, *framerate);
+		par.parm.capture.timeperframe.numerator   = num;
+		par.parm.capture.timeperframe.denominator = denom;
+		set = true;
+	}
+
+	if (set && (v4l2_ioctl(dev, VIDIOC_S_PARM, &par) < 0))
+		return -1;
+
+	*framerate = v4l2_pack_tuple(par.parm.capture.timeperframe.numerator,
+			par.parm.capture.timeperframe.denominator);
+	return 0;
+}
