@@ -1,11 +1,13 @@
 project(obs)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(_lib_suffix 64)
+option(ENABLE_UI "Enables the OBS user interfaces" ON)
+if(DISABLE_UI)
+	message(STATUS "UI disabled")
+	return()
+elseif(ENABLE_UI)
+	set(FIND_MODE REQUIRED)
 else()
-	set(_lib_suffix 32)
+	set(FIND_MODE QUIET)
 endif()
 
 if(DEFINED ENV{QTDIR${_lib_suffix}})
@@ -17,8 +19,25 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Network REQUIRED)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(_lib_suffix 64)
+else()
+	set(_lib_suffix 32)
+endif()
+
+find_package(Qt5Widgets ${FIND_MODE})
+find_package(Qt5Network ${FIND_MODE})
+
+if(NOT Qt5Widgets_FOUND OR NOT Qt5Network_FOUND)
+	if (ENABLE_UI)
+		message(FATAL_ERROR "Failed to find Qt5")
+	else()
+		message(STATUS "Qt5 not found - UI disabled")
+		return()
+	endif()
+endif()
+
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(WIN32)
 	set(obs_PLATFORM_SOURCES
@@ -28,7 +47,7 @@ elseif(APPLE)
 		platform-osx.mm)
 
 	find_package(AppKit REQUIRED)
-	set(obs_PLATFORM_LIBRARIES ${AppKit_LIBRARIES})
+	set(obs_PLATFORM_LIBRARIES ${APPKIT_LIBRARIES})
 
 	add_definitions(-fobjc-arc)
 elseif(UNIX)
