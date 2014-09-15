@@ -231,10 +231,11 @@ static void v4l2_defaults(obs_data_t settings)
  */
 static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	DIR *dirp;
 	struct dirent *dp;
 	struct dstr device;
-	bool first = true;
 
 	dirp = opendir("/sys/class/video4linux");
 	if (!dirp)
@@ -280,13 +281,6 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 
 		obs_property_list_add_string(prop, (char *) video_cap.card,
 				device.array);
-
-		if (first) {
-			obs_data_set_string(settings, "device_id",
-					device.array);
-			first = false;
-		}
-
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
 				device.array);
 
@@ -679,11 +673,6 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 	const char *new_device;
 
 	new_device = obs_data_get_string(settings, "device_id");
-	if (strlen(new_device) == 0) {
-		v4l2_device_list(NULL, settings);
-		new_device = obs_data_get_string(settings, "device_id");
-	}
-
 	if (!data->set_device || strcmp(data->set_device, new_device) != 0) {
 		if (data->set_device)
 			bfree(data->set_device);
