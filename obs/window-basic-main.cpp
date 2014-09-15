@@ -624,10 +624,14 @@ OBSScene OBSBasic::GetCurrentScene()
 	return item ? item->data(Qt::UserRole).value<OBSScene>() : nullptr;
 }
 
+OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
+{
+	return item ? item->data(Qt::UserRole).value<OBSSceneItem>() : nullptr;
+}
+
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
-	QListWidgetItem *item = ui->sources->currentItem();
-	return item ? item->data(Qt::UserRole).value<OBSSceneItem>() : nullptr;
+	return GetSceneItem(ui->sources->currentItem());
 }
 
 void OBSBasic::UpdateSources(OBSScene scene)

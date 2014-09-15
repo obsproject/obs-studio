@@ -120,6 +120,7 @@ private:
 
 	void          InitPrimitives();
 
+	OBSSceneItem  GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem  GetCurrentSceneItem();
 
 	bool          QueryRemoveSource(obs_source_t source);
