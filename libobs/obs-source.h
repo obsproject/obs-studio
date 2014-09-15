@@ -88,6 +88,14 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_COLOR_MATRIX (1<<4)
 
+/**
+ * Source supports interaction.
+ * 
+ * When this is used, the source will receive interaction events
+ * if they provide the necessary callbacks in the source definition structure.
+ */
+#define OBS_SOURCE_INTERACTION (1<<5)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t parent, obs_source_t child,
@@ -283,6 +291,60 @@ struct obs_source_info {
 	 * @param  settings  Settings
 	 */
 	void (*load)(void *data, obs_data_t settings);
+
+	/**
+	 * Called when interacting with a source and a mouse-down or mouse-up
+	 * occurs.
+	 * 
+	 * @param data         Source data
+	 * @param event        Mouse event properties
+	 * @param type         Mouse button pushed
+	 * @param mouse_up     Mouse event type (true if mouse-up)
+	 * @param click_count  Mouse click count (1 for single click, etc.)
+	 */
+	void (*mouse_click)(void *data,
+			const struct obs_mouse_event *event,
+			int32_t type, bool mouse_up, uint32_t click_count);
+	/**
+	 * Called when interacting with a source and a mouse-move occurs.
+	 *
+	 * @param data         Source data
+	 * @param event        Mouse event properties
+	 * @param mouse_leave  Mouse leave state (true if mouse left source)
+	 */
+	void (*mouse_move)(void *data,
+			const struct obs_mouse_event *event, bool mouse_leave);
+
+	/**
+	 * Called when interacting with a source and a mouse-wheel occurs.
+	 *
+	 * @param data         Source data
+	 * @param event        Mouse event properties
+	 * @param x_delta      Movement delta in the horizontal direction
+	 * @param y_delta      Movement delta in the vertical direction
+	 */
+	void (*mouse_wheel)(void *data,
+			const struct obs_mouse_event *event, int x_delta,
+			int y_delta);
+	/**
+	 * Called when interacting with a source and gain focus/lost focus event
+	 * occurs.
+	 *
+	 * @param data         Source data
+	 * @param focus        Focus state (true if focus gained)
+	 */
+	void (*focus)(void *data, bool focus);
+
+	/**
+	 * Called when interacting with a source and a key-up or key-down
+	 * occurs.
+	 *
+	 * @param data         Source data
+	 * @param event        Key event properties
+	 * @param focus        Key event type (true if mouse-up)
+	 */
+	void (*key_click)(void *data, const struct obs_key_event *event,
+			bool key_up);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

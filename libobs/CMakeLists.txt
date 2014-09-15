@@ -222,6 +222,7 @@ set(libobs_libobs_HEADERS
 	obs-ui.h
 	obs-properties.h
 	obs-data.h
+	obs-interaction.h
 	obs-module.h
 	obs-scene.h
 	obs-source.h

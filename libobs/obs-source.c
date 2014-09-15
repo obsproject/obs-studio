@@ -389,6 +389,76 @@ void obs_source_update(obs_source_t source, obs_data_t settings)
 	}
 }
 
+void obs_source_send_mouse_click(obs_source_t source,
+		const struct obs_mouse_event *event,
+		int32_t type, bool mouse_up,
+		uint32_t click_count)
+{
+	if (!source)
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.mouse_click) {
+			source->info.mouse_click(source->context.data,
+					event, type, mouse_up, click_count);
+		}
+	}
+}
+
+void obs_source_send_mouse_move(obs_source_t source,
+		const struct obs_mouse_event *event, bool mouse_leave)
+{
+	if (!source)
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.mouse_move) {
+			source->info.mouse_move(source->context.data,
+					event, mouse_leave);
+		}
+	}
+}
+
+void obs_source_send_mouse_wheel(obs_source_t source,
+		const struct obs_mouse_event *event, int x_delta, int y_delta)
+{
+	if (!source)
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.mouse_wheel) {
+			source->info.mouse_wheel(source->context.data,
+					event, x_delta, y_delta);
+		}
+	}
+}
+
+void obs_source_send_focus(obs_source_t source, bool focus)
+{
+	if (!source)
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.focus) {
+			source->info.focus(source->context.data, focus);
+		}
+	}
+}
+
+void obs_source_send_key_click(obs_source_t source,
+		const struct obs_key_event *event, bool key_up)
+{
+	if (!source)
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.key_click) {
+			source->info.key_click(source->context.data, event,
+					key_up);
+		}
+	}
+}
+
 static void activate_source(obs_source_t source)
 {
 	if (source->context.data && source->info.activate)
