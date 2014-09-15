@@ -55,6 +55,7 @@ set(obs_SOURCES
 	obs-app.cpp
 	window-basic-main.cpp
 	window-basic-settings.cpp
+	window-basic-interaction.cpp
 	window-basic-properties.cpp
 	window-basic-source-select.cpp
 	window-license-agreement.cpp
@@ -73,6 +74,7 @@ set(obs_HEADERS
 	window-main.hpp
 	window-basic-main.hpp
 	window-basic-settings.hpp
+	window-basic-interaction.hpp
 	window-basic-properties.hpp
 	window-basic-source-select.hpp
 	window-license-agreement.hpp
@@ -95,6 +97,7 @@ set(obs_UI
 	forms/OBSBasicTransform.ui
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
+	forms/OBSBasicInteraction.ui
 	forms/OBSBasicProperties.ui)
 
 set(obs_QRC

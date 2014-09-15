@@ -596,6 +596,9 @@ OBSBasic::~OBSBasic()
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
 
+	if (interaction)
+		delete interaction;
+
 	if (properties)
 		delete properties;
 
@@ -665,6 +668,16 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t item)
 	/* if the source was just created, open properties dialog */
 	if (sourceSceneRefs[source] == 0 && loaded)
 		CreatePropertiesWindow(source);
+}
+
+void OBSBasic::CreateInteractionWindow(obs_source_t source)
+{
+	if (interaction)
+		interaction->close();
+
+	interaction = new OBSBasicInteraction(this, source);
+	interaction->Init();
+	interaction->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 void OBSBasic::CreatePropertiesWindow(obs_source_t source)
@@ -1610,6 +1623,10 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 		if (addSourceMenu)
 			popup.addSeparator();
 
+		OBSSceneItem sceneItem = GetSceneItem(item);
+		obs_source_t source = obs_sceneitem_get_source(sceneItem);
+		QAction *action;
+
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
@@ -1619,6 +1636,13 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
 		popup.addSeparator();
+
+		action = popup.addAction(QTStr("Interact"), this,
+				SLOT(on_actionInteract_triggered()));
+
+		action->setEnabled(obs_source_get_output_flags(source) &
+				OBS_SOURCE_INTERACTION);
+
 		popup.addAction(QTStr("Properties"), this,
 				SLOT(on_actionSourceProperties_triggered()));
 	}
@@ -1701,6 +1725,15 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 	if (source && QueryRemoveSource(source))
 		obs_sceneitem_remove(item);
+}
+
+void OBSBasic::on_actionInteract_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	if (source)
+		CreateInteractionWindow(source);
 }
 
 void OBSBasic::on_actionSourceProperties_triggered()
