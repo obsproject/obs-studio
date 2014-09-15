@@ -123,3 +123,14 @@ int_fast32_t v4l2_destroy_mmap(struct v4l2_buffer_data *buf)
 	return 0;
 }
 
+int_fast32_t v4l2_set_input(int_fast32_t dev, int *input)
+{
+	if (!dev || !input)
+		return -1;
+
+	return (*input == -1)
+		? v4l2_ioctl(dev, VIDIOC_G_INPUT, input)
+		: v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
+}
+
+

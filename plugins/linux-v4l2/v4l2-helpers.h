@@ -175,6 +175,18 @@ int_fast32_t v4l2_create_mmap(int_fast32_t dev, struct v4l2_buffer_data *buf);
  */
 int_fast32_t v4l2_destroy_mmap(struct v4l2_buffer_data *buf);
 
+/**
+ * Set the video input on the device.
+ *
+ * If the action succeeds input is set to the currently selected input.
+ *
+ * @param dev handle for the v4l2 device
+ * @param input index of the input or -1 to leave it as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_input(int_fast32_t dev, int *input);
+
 #ifdef __cplusplus
 }
 #endif

@@ -61,7 +61,7 @@ struct v4l2_data {
 	os_event_t event;
 
 	char *set_device;
-	int_fast32_t set_input;
+	int set_input;
 	int_fast32_t set_pixfmt;
 	int_fast32_t set_res;
 	int_fast32_t set_fps;
@@ -305,7 +305,8 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
 		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
 			obs_property_list_add_int(prop, (char *) in.name,
 					in.index);
-			blog(LOG_INFO, "Found input '%s'", in.name);
+			blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
+					in.index);
 		}
 		in.index++;
 	}
@@ -609,10 +610,12 @@ static void v4l2_init(struct v4l2_data *data)
 	}
 
 	/* set input */
-	if (v4l2_ioctl(data->dev, VIDIOC_S_INPUT, &data->set_input) < 0) {
-		blog(LOG_ERROR, "Unable to set input");
+	if (v4l2_set_input(data->dev, &data->set_input) < 0) {
+		blog(LOG_ERROR, "Unable to set input %d",
+				data->set_input);
 		goto fail;
 	}
+	blog(LOG_INFO, "Input: %d", data->set_input);
 
 	/* set pixel format and resolution */
 	unpack_tuple(&width, &height, data->set_res);
