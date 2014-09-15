@@ -233,8 +233,6 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 {
 	DIR *dirp;
 	struct dirent *dp;
-	int fd;
-	struct v4l2_capability video_cap;
 	struct dstr device;
 	bool first = true;
 
@@ -247,6 +245,10 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 	dstr_init_copy(&device, "/dev/");
 
 	while ((dp = readdir(dirp)) != NULL) {
+		int fd;
+		uint32_t caps;
+		struct v4l2_capability video_cap;
+
 		if (dp->d_type == DT_DIR)
 			continue;
 
@@ -261,22 +263,32 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
 			blog(LOG_INFO, "Failed to query capabilities for %s",
 			     device.array);
-		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
-			obs_property_list_add_string(prop,
-					(char *) video_cap.card,
-					device.array);
-			if (first) {
-				obs_data_set_string(settings,
-					"device_id", device.array);
-				first = false;
-			}
-			blog(LOG_INFO, "Found device '%s' at %s",
-			     video_cap.card, device.array);
+			close(fd);
+			continue;
 		}
-		else {
+
+		caps = (video_cap.capabilities & V4L2_CAP_DEVICE_CAPS)
+			? video_cap.device_caps
+			: video_cap.capabilities;
+
+		if (!(caps & V4L2_CAP_VIDEO_CAPTURE)) {
 			blog(LOG_INFO, "%s seems to not support video capture",
 			     device.array);
+			close(fd);
+			continue;
 		}
+
+		obs_property_list_add_string(prop, (char *) video_cap.card,
+				device.array);
+
+		if (first) {
+			obs_data_set_string(settings, "device_id",
+					device.array);
+			first = false;
+		}
+
+		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
+				device.array);
 
 		close(fd);
 	}
