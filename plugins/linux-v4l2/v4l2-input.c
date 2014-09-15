@@ -62,35 +62,21 @@ struct v4l2_data {
 
 	char *set_device;
 	int set_input;
-	int_fast32_t set_pixfmt;
-	int_fast32_t set_res;
+	int set_pixfmt;
+	int set_res;
 	int_fast32_t set_fps;
 
 	/* data used within the capture thread */
 	int_fast32_t dev;
 
 	uint64_t frames;
-	int_fast32_t width;
-	int_fast32_t height;
+	int width;
+	int height;
 	int_fast32_t pixfmt;
-	uint_fast32_t linesize;
+	int linesize;
 
 	struct v4l2_buffer_data buffers;
 };
-
-/*
- * used to store framerate and resolution values
- */
-static int pack_tuple(int a, int b)
-{
-	return (a << 16) | (b & 0xffff);
-}
-
-static void unpack_tuple(int *a, int *b, int packed)
-{
-	*a = packed >> 16;
-	*b = packed & 0xffff;
-}
 
 /**
  * Prepare the output frame structure for obs and compute plane offsets
@@ -368,7 +354,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
 					frmsize.discrete.height);
 			obs_property_list_add_int(prop, buffer.array,
-					pack_tuple(frmsize.discrete.width,
+					v4l2_pack_tuple(frmsize.discrete.width,
 					frmsize.discrete.height));
 			frmsize.index++;
 		}
@@ -380,7 +366,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		for (const int *packed = v4l2_framesizes; *packed; ++packed) {
 			int width;
 			int height;
-			unpack_tuple(&width, &height, *packed);
+			v4l2_unpack_tuple(&width, &height, *packed);
 			dstr_printf(&buffer, "%dx%d", width, height);
 			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
@@ -414,7 +400,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 				&frmival) == 0) {
 			float fps = (float) frmival.discrete.denominator /
 				frmival.discrete.numerator;
-			int pack = pack_tuple(frmival.discrete.numerator,
+			int pack = v4l2_pack_tuple(frmival.discrete.numerator,
 					frmival.discrete.denominator);
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, pack);
@@ -428,7 +414,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		for (const int *packed = v4l2_framerates; *packed; ++packed) {
 			int num;
 			int denom;
-			unpack_tuple(&num, &denom, *packed);
+			v4l2_unpack_tuple(&num, &denom, *packed);
 			float fps = (float) denom / num;
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, *packed);
@@ -511,7 +497,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 		return false;
 
 	obs_property_t prop = obs_properties_get(props, "framerate");
-	unpack_tuple(&width, &height, obs_data_get_int(settings,
+	v4l2_unpack_tuple(&width, &height, obs_data_get_int(settings,
 				"resolution"));
 	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
 			width, height, prop);
@@ -596,10 +582,8 @@ static void v4l2_destroy(void *vptr)
  */
 static void v4l2_init(struct v4l2_data *data)
 {
-	struct v4l2_format fmt;
 	struct v4l2_streamparm par;
 	struct dstr fps;
-	int width, height;
 	int fps_num, fps_denom;
 
 	blog(LOG_INFO, "Start capture from %s", data->set_device);
@@ -618,26 +602,19 @@ static void v4l2_init(struct v4l2_data *data)
 	blog(LOG_INFO, "Input: %d", data->set_input);
 
 	/* set pixel format and resolution */
-	unpack_tuple(&width, &height, data->set_res);
-	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = width;
-	fmt.fmt.pix.height = height;
-	fmt.fmt.pix.pixelformat = data->set_pixfmt;
-	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-	if (v4l2_ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
+	if (v4l2_set_format(data->dev, &data->set_res, &data->set_pixfmt,
+			&data->linesize) < 0) {
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	data->width = fmt.fmt.pix.width;
-	data->height = fmt.fmt.pix.height;
-	data->pixfmt = fmt.fmt.pix.pixelformat;
-	data->linesize = fmt.fmt.pix.bytesperline;
-	blog(LOG_INFO, "Resolution: %"PRIuFAST32"x%"PRIuFAST32,
-	     data->width, data->height);
-	blog(LOG_INFO, "Linesize: %"PRIuFAST32" Bytes", data->linesize);
+	v4l2_unpack_tuple(&data->width, &data->height, data->set_res);
+	data->pixfmt = data->set_pixfmt;
+	blog(LOG_INFO, "Resolution: %dx%d", data->width, data->height);
+	blog(LOG_INFO, "Pixelformat: %d", data->set_pixfmt);
+	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
-	unpack_tuple(&fps_num, &fps_denom, data->set_fps);
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->set_fps);
 	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	par.parm.capture.timeperframe.numerator = fps_num;
 	par.parm.capture.timeperframe.denominator = fps_denom;

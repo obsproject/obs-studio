@@ -133,4 +133,39 @@ int_fast32_t v4l2_set_input(int_fast32_t dev, int *input)
 		: v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
 }
 
+int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
+		int *pixelformat, int *bytesperline)
+{
+	bool set = false;
+	int width, height;
+	struct v4l2_format fmt;
 
+	if (!dev || !resolution || !pixelformat || !bytesperline)
+		return -1;
+
+	/* We need to set the type in order to query the settings */
+	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	if (v4l2_ioctl(dev, VIDIOC_G_FMT, &fmt) < 0)
+		return -1;
+
+	if (*resolution != -1) {
+		v4l2_unpack_tuple(&width, &height, *resolution);
+		fmt.fmt.pix.width  = width;
+		fmt.fmt.pix.height = height;
+		set = true;
+	}
+
+	if (*pixelformat != -1) {
+		fmt.fmt.pix.pixelformat = *pixelformat;
+		set = true;
+	}
+
+	if (set && (v4l2_ioctl(dev, VIDIOC_S_FMT, &fmt) < 0))
+		return -1;
+
+	*resolution   = v4l2_pack_tuple(fmt.fmt.pix.width, fmt.fmt.pix.height);
+	*pixelformat  = fmt.fmt.pix.pixelformat;
+	*bytesperline = fmt.fmt.pix.bytesperline;
+	return 0;
+}
