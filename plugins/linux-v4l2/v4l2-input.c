@@ -205,11 +205,10 @@ static const char* v4l2_getname(void)
 
 static void v4l2_defaults(obs_data_t settings)
 {
-	obs_data_set_default_int(settings, "input", 0);
-	obs_data_set_default_int(settings, "pixelformat", V4L2_PIX_FMT_YUYV);
-	obs_data_set_default_int(settings, "resolution",
-			pack_tuple(640, 480));
-	obs_data_set_default_int(settings, "framerate", pack_tuple(1, 30));
+	obs_data_set_default_int(settings, "input", -1);
+	obs_data_set_default_int(settings, "pixelformat", -1);
+	obs_data_set_default_int(settings, "resolution", -1);
+	obs_data_set_default_int(settings, "framerate", -1);
 }
 
 /*
@@ -287,6 +286,8 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
 
 	obs_property_list_clear(prop);
 
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
+
 	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
 		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
 			obs_property_list_add_int(prop, (char *) in.name,
@@ -310,6 +311,8 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
+
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
 		dstr_copy(&buffer, (char *) fmt.description);
@@ -345,6 +348,8 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
+
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
 
@@ -391,6 +396,8 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
+
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
 
