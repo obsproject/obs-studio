@@ -34,14 +34,20 @@ private:
 class FFmpegSource {
 public:
 	FFmpegSource(obs_data_t settings, obs_source_t source);
+    ~FFmpegSource();
 	void update(obs_data_t settings);
+    obs_source_t m_source;
 protected:
-	obs_source_t m_source;
-	void decodeLoop(AVStream *videoStream);
+	void decodeLoop();
 private:
+    bool isValid();
 	AVStream *findVideoStream();
 	std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)> m_formatContext;
 	std::unique_ptr<FFmpegCodecContext> m_codecContext;
+    std::mutex m_mutex;
+    std::condition_variable m_updateCondition;
+    bool m_alive;
+    std::thread m_thread;
 };
 
 class FFmpegPacket: public AVPacket {

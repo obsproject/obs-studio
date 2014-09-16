@@ -12,76 +12,113 @@
 
 FFmpegSource::FFmpegSource(obs_data_t settings, obs_source_t source)
 	:m_source(source),
-	m_formatContext(avformat_alloc_context(), &avformat_free_context)
+	m_formatContext(avformat_alloc_context(), &avformat_free_context),
+    m_alive(true),
+    m_thread(&FFmpegSource::decodeLoop, this)
 {
 	update(settings);
 }
 
-void FFmpegSource::update(obs_data_t settings)
+FFmpegSource::~FFmpegSource()
 {
-    AVInputFormat *iFormat = nullptr;
-    if (strlen(obs_data_get_string(settings, "format")) > 0) {
-        iFormat = av_find_input_format(obs_data_get_string(settings, "format"));
-        if (iFormat == nullptr) {
-            std::cerr << "Failed to find desired input format '"  << obs_data_get_string(settings, "format") << "'" << std::endl;
-        }
+    {
+        std::unique_lock<std::mutex> lck(m_mutex);
+        m_alive = false;
     }
-	// Ownership of the format context is temporarily transferred
-	// to avformat_open_input because it is freed in the case
-	// of failure
-	AVFormatContext *fmt = nullptr;
-	if (avformat_open_input(&fmt,
-				obs_data_get_string(settings, "filename"),
-				iFormat,
-				nullptr) != 0) {
-		std::cerr << "Couldn't open ffmpeg input" << std::endl;
-		return;
-	} else {
-		m_formatContext = std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)>(fmt, [](AVFormatContext *c) { avformat_close_input(&c); });
-	}
-
-	// Find stream info
-	if (avformat_find_stream_info(this->m_formatContext.get(), nullptr) != 0) {
-		std::cerr << "Couldn't find ffmpeg stream info" << std::endl;
-		return;
-	}
-
-	auto videoStream = findVideoStream();
-	if (videoStream == nullptr) {
-		std::cerr << "FFmpeg input didn't have video stream" << std::endl;
-		return;
-	}
-
-	const auto videoCodec = avcodec_find_decoder(videoStream->codec->codec_id);
-	if(videoCodec == nullptr) {
-		std::cerr << "Couldn't find decoder for FFmpeg video stream" << std::endl;
-		return;
-	}
-
-	m_codecContext.reset(new FFmpegCodecContext(videoStream, videoCodec));
-	if (*m_codecContext == nullptr) {
-		std::cerr << "Couldn't create FFmpeg codec context" << std::endl;
-		return;
-	}
-    
-    av_dump_format(m_formatContext.get(), 0, m_formatContext->filename, 0);
-    
-	std::thread t(&FFmpegSource::decodeLoop, this, videoStream);
-	t.detach();
+    m_updateCondition.notify_all();
+    m_thread.join();
 }
 
-void FFmpegSource::decodeLoop(AVStream *vstream)
+void FFmpegSource::update(obs_data_t settings)
+{
+    {
+        std::unique_lock<std::mutex> lck(m_mutex);
+        
+        // Reset the source to a newly-initialized state
+        // Create a new format context
+        m_formatContext.reset(avformat_alloc_context());
+        // Delete any existing AVCodecContexts
+        m_codecContext.reset(nullptr);
+        
+        AVInputFormat *iFormat = nullptr;
+        if (strlen(obs_data_get_string(settings, "format")) > 0) {
+            iFormat = av_find_input_format(obs_data_get_string(settings, "format"));
+            if (iFormat == nullptr) {
+                std::cerr << "Failed to find desired input format '"  << obs_data_get_string(settings, "format") << "'" << std::endl;
+            }
+        }
+        // Ownership of the format context is temporarily transferred
+        // to avformat_open_input because it is freed in the case
+        // of failure
+        AVFormatContext *fmt = nullptr;
+        if (avformat_open_input(&fmt,
+                                obs_data_get_string(settings, "filename"),
+                                iFormat,
+                                nullptr) != 0) {
+            std::cerr << "Couldn't open ffmpeg input" << std::endl;
+            return;
+        } else {
+            m_formatContext = std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)>(fmt, [](AVFormatContext *c) { avformat_close_input(&c); });
+        }
+        
+        // Find stream info
+        if (avformat_find_stream_info(this->m_formatContext.get(), nullptr) != 0) {
+            std::cerr << "Couldn't find ffmpeg stream info" << std::endl;
+            return;
+        }
+        
+        auto videoStream = findVideoStream();
+        if (videoStream == nullptr) {
+            std::cerr << "FFmpeg input didn't have video stream" << std::endl;
+            return;
+        }
+        
+        const auto videoCodec = avcodec_find_decoder(videoStream->codec->codec_id);
+        if(videoCodec == nullptr) {
+            std::cerr << "Couldn't find decoder for FFmpeg video stream" << std::endl;
+            return;
+        }
+        
+        m_codecContext.reset(new FFmpegCodecContext(videoStream, videoCodec));
+        if (*m_codecContext == nullptr) {
+            std::cerr << "Couldn't create FFmpeg codec context" << std::endl;
+            return;
+        }
+        
+        av_dump_format(m_formatContext.get(), 0, m_formatContext->filename, 0);
+    }
+    m_updateCondition.notify_all();
+}
+
+bool FFmpegSource::isValid()
+{
+    return (m_codecContext != nullptr);
+}
+
+void FFmpegSource::decodeLoop()
 {
 	struct obs_source_frame frame;
 
 	FFmpegPacket pkt;
     // For some reason we have to local cache these.
     // It probably has something to do with how detached threads work
-    AVStream *videoStream = vstream;
     FFmpegSource *ctx = this;
     int64_t baseTime = os_gettime_ns();
     
-	while (pkt.readFrame(ctx->m_formatContext.get()) >= 0) {
+	while (ctx->m_alive) {
+        std::unique_lock<std::mutex> lck(ctx->m_mutex);
+        
+        if (!ctx->isValid()) {
+            ctx->m_updateCondition.wait(lck);
+            continue;
+        }
+        
+        auto videoStream = ctx->findVideoStream();
+        if (pkt.readFrame(ctx->m_formatContext.get()) < 0) {
+            // If we've finished this input, then wait for an update
+            ctx->m_updateCondition.wait(lck);
+            continue;
+        }
 		// If it's not a video stream packet, skip it
 		if (pkt.stream_index != videoStream->index) {
 			continue;
@@ -94,7 +131,7 @@ void FFmpegSource::decodeLoop(AVStream *vstream)
 			int framesAvailable = 0;
 			const auto ret = avcodec_decode_video2(ctx->m_codecContext->get(), avFrame.get(), &framesAvailable, &decodePacket);
 			if (ret < 0) {
-				return;
+                return;
 			}
 
 			if (framesAvailable) {
@@ -113,7 +150,6 @@ void FFmpegSource::decodeLoop(AVStream *vstream)
 				assert(sizeof(frame.data) >= sizeof(avFrame->data));
 				std::copy_n(pic.data, sizeof(avFrame->data), frame.data);
 				frame.timestamp = av_rescale_q(avFrame->pts, videoStream->time_base, kNSTimeBase);
-                os_sleepto_ns(frame.timestamp + baseTime);
                 frame.format = ffmpeg_to_obs_video_format(AV_PIX_FMT_RGBA);
                 assert(frame.format != VIDEO_FORMAT_NONE);
                 frame.width = avFrame->width;
@@ -126,8 +162,9 @@ void FFmpegSource::decodeLoop(AVStream *vstream)
 			offset += ret;
 		}
 	}
-    int64_t elapsed = os_gettime_ns() - baseTime;
-    std::cout << "Finished FFmpeg source decoding: " << av_rescale_q(elapsed, kNSTimeBase, AVRational{1, 1}) << std::endl;
+#if DEBUG
+    std::cout << "Finished FFmpeg source decoding" << std::endl;
+#endif /* DEBUG */
 }
 
 AVStream *FFmpegSource::findVideoStream()
