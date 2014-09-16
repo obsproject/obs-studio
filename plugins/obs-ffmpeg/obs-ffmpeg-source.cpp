@@ -11,10 +11,10 @@
 #include <util/platform.h>
 
 FFmpegSource::FFmpegSource(obs_data_t settings, obs_source_t source)
-	:m_source(source),
-	m_formatContext(avformat_alloc_context(), &avformat_free_context),
-    m_alive(true),
-    m_thread(&FFmpegSource::decodeLoop, this)
+:m_source(source),
+m_formatContext(avformat_alloc_context(), &avformat_free_context),
+m_alive(true),
+m_thread(&FFmpegSource::decodeLoop, this)
 {
 	update(settings);
 }
@@ -98,7 +98,7 @@ bool FFmpegSource::isValid()
 void FFmpegSource::decodeLoop()
 {
 	struct obs_source_frame frame;
-
+	
 	FFmpegPacket pkt;
     // For some reason we have to local cache these.
     // It probably has something to do with how detached threads work
@@ -122,7 +122,7 @@ void FFmpegSource::decodeLoop()
 		if (pkt.stream_index != videoStream->index) {
 			continue;
 		}
-
+		
 		int offset = 0;
 		std::unique_ptr<AVFrame, void(*)(void *)> avFrame(av_frame_alloc(), &av_free);
 		while (offset < pkt.size) {
@@ -132,7 +132,7 @@ void FFmpegSource::decodeLoop()
 			if (ret < 0) {
                 return;
 			}
-
+			
 			if (framesAvailable) {
                 if (avFrame->pts == AV_NOPTS_VALUE) {
                     avFrame->pts = avFrame->pkt_pts;
@@ -158,7 +158,7 @@ void FFmpegSource::decodeLoop()
                 sws_freeContext(swctx);
                 avpicture_free(&pic);
 			}
-
+			
 			offset += ret;
 		}
 	}
@@ -178,8 +178,8 @@ AVStream *FFmpegSource::findVideoStream()
 }
 
 FFmpegCodecContext::FFmpegCodecContext(AVStream *stream, AVCodec *codec)
-	:std::unique_ptr<AVCodecContext, void(*)(AVCodecContext *)>(avcodec_alloc_context3(codec), [](AVCodecContext* c) { avcodec_close(c); av_free(c); }),
-	m_extradata(stream->codec->extradata, stream->codec->extradata + stream->codec->extradata_size)
+:std::unique_ptr<AVCodecContext, void(*)(AVCodecContext *)>(avcodec_alloc_context3(codec), [](AVCodecContext* c) { avcodec_close(c); av_free(c); }),
+m_extradata(stream->codec->extradata, stream->codec->extradata + stream->codec->extradata_size)
 {
 	(*this)->extradata = m_extradata.data();
 	(*this)->extradata_size = m_extradata.size();
@@ -192,7 +192,7 @@ FFmpegCodecContext::FFmpegCodecContext(AVStream *stream, AVCodec *codec)
         (*this)->width = stream->codec->width;
         (*this)->height = stream->codec->height;
     }
-
+	
 	if (avcodec_open2(this->get(), codec, nullptr) != 0) {
 		this->reset(nullptr);
 		std::cerr << "Couldn't open FFmpeg codec" << std::endl;
@@ -205,7 +205,7 @@ FFmpegPacket::FFmpegPacket() {
 }
 
 FFmpegPacket::FFmpegPacket(FFmpegPacket&& other)
-	:AVPacket(std::move(other))
+:AVPacket(std::move(other))
 {
 	other.data = nullptr;
 }

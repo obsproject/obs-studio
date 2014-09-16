@@ -53,14 +53,14 @@ private:
 class FFmpegPacket: public AVPacket {
 public:
 	FFmpegPacket();
-
+	
 	// no copy semantics
 	FFmpegPacket(const FFmpegPacket&) = delete;
 	FFmpegPacket& operator=(const FFmpegPacket&) = delete;
-
+	
 	FFmpegPacket(FFmpegPacket&& other);
 	~FFmpegPacket();
-
+	
 	int readFrame(AVFormatContext *ctx);
 	void updateFrame(struct obs_source_frame *frame);
 	AVPacket getOffsetPacket(int offset);
