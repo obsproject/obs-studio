@@ -1,31 +1,19 @@
 project(libobs)
 
-find_package(Libswscale REQUIRED)
-include_directories(${LIBSWSCALE_INCLUDE_DIRS})
-add_definitions(${LIBSWSCALE_DEFINITIONS})
+find_package(FFmpeg REQUIRED
+	COMPONENTS swscale swresample avutil avformat
+	OPTIONAL_COMPONENTS avcodec)
+include_directories(${FFmpeg_INCLUDE_DIRS})
 
-find_package(Libswresample REQUIRED)
-include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
-add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
-
-find_package(Libavutil REQUIRED)
-include_directories(${LIBAVUTIL_INCLUDE_DIRS})
-add_definitions(${LIBAVUTIL_DEFINITIONS})
-
-find_package(Libavformat REQUIRED)
-include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
-add_definitions(${LIBAVFORMAT_DEFINITIONS})
-
-find_package(Libavcodec QUIET)
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
 
-if(NOT ImageMagick_MagickCore_FOUND AND NOT LIBAVCODEC_FOUND)
+if(NOT ImageMagick_MagickCore_FOUND AND NOT FFmpeg_avcodec_FOUND)
 	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
 endif()
 
 option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
 
-if(NOT LIBAVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
+if(NOT FFmpeg_avcodec_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
 
 	set(libobs_image_loading_SOURCES
@@ -41,9 +29,9 @@ else()
 	set(libobs_image_loading_SOURCES
 		graphics/graphics-ffmpeg.c)
 	set(libobs_image_loading_LIBRARIES
-		${LIBAVCODEC_LIBRARIES})
+		${FFmpeg_avcodec_LIBRARIES})
 
-	include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+	include_directories(${FFmpeg_avcodec_INCLUDE_DIRS})
 endif()
 
 add_definitions(-DLIBOBS_EXPORTS)
@@ -279,10 +267,7 @@ target_link_libraries(libobs
 		${libobs_PLATFORM_DEPS}
 		${libobs_image_loading_LIBRARIES}
 		${OBS_JANSSON_IMPORT}
-		${LIBSWSCALE_LIBRARIES}
-		${LIBSWRESAMPLE_LIBRARIES}
-		${LIBAVFORMAT_LIBRARIES}
-		${LIBAVUTIL_LIBRARIES})
+		${FFmpeg_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)

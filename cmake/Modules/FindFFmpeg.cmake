@@ -6,6 +6,8 @@
 #   FFmpeg_INCLUDE_FILES
 # Author: Matt Coffin <mcoffin13@gmail.com>
 
+include(FindPackageHandleStandardArgs)
+
 if (NOT FFmpeg_FIND_COMPONENTS)
 	set(FFmpeg_FIND_COMPONENTS avcodec avdevice avfilter avformat avutil swscale)
 endif(NOT FFmpeg_FIND_COMPONENTS)
@@ -27,8 +29,10 @@ foreach(comp ${FFmpeg_FIND_COMPONENTS})
 	find_library(FFmpeg_${comp}_LIBRARY
 		NAMES ${comp}
 		PATH_SUFFIXES ${comp} lib${comp}
-		DOC "FFmpeg ${comp} library"
-	)
+		DOC "FFmpeg ${comp} library")
+	find_package_handle_standard_args(FFmpeg_${comp}
+		FOUND_VAR FFmpeg_${comp}_FOUND
+		REQUIRED_VARS FFmpeg_${comp}_LIBRARY)
 	list(APPEND FFmpeg_LIBRARIES ${FFmpeg_${comp}_LIBRARY})
 endforeach(comp)
 
@@ -36,7 +40,6 @@ endforeach(comp)
 set(FFmpeg_INCLUDE_DIRS ${FFmpeg_INCLUDE_DIR})
 
 # Run checks via find_package_handle_standard_args
-include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(FFmpeg
 	FOUND_VAR FFmpeg_FOUND
 	REQUIRED_VARS ${required} FFmpeg_INCLUDE_DIRS

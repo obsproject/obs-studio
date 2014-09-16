@@ -5,10 +5,11 @@ if(WIN32)
 		w32-pthreads)
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_CONSTANT_MACROS")
+
+# By default, will find ALL ffmpeg components
 find_package(FFmpeg REQUIRED)
 include_directories(${FFmpeg_INCLUDE_DIRS})
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_CONSTANT_MACROS")
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
