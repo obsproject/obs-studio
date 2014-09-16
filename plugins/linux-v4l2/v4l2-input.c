@@ -45,37 +45,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * Data structure for the v4l2 source
- *
- * The data is divided into two sections, data being used inside and outside
- * the capture thread. Data used by the capture thread must not be modified
- * from the outside while the thread is running.
- *
- * Data members prefixed with "set_" are settings from the source properties
- * and may be used from outside the capture thread.
  */
 struct v4l2_data {
-	/* data used outside of the capture thread */
-	obs_source_t source;
+	/* settings */
+	char *device_id;
+	int input;
+	int pixfmt;
+	int resolution;
+	int framerate;
 
+	/* internal data */
+	obs_source_t source;
 	pthread_t thread;
 	os_event_t event;
 
-	char *set_device;
-	int set_input;
-	int set_pixfmt;
-	int set_res;
-	int set_fps;
-
-	/* data used within the capture thread */
 	int_fast32_t dev;
-
-	uint64_t frames;
 	int width;
 	int height;
-	int_fast32_t pixfmt;
 	int linesize;
-
 	struct v4l2_buffer_data buffers;
+
+	/* statistics */
+	uint64_t frames;
 };
 
 /**
@@ -572,8 +563,8 @@ static void v4l2_destroy(void *vptr)
 
 	v4l2_terminate(data);
 
-	if (data->set_device)
-		bfree(data->set_device);
+	if (data->device_id)
+		bfree(data->device_id);
 	bfree(data);
 }
 
@@ -591,39 +582,37 @@ static void v4l2_init(struct v4l2_data *data)
 {
 	int fps_num, fps_denom;
 
-	blog(LOG_INFO, "Start capture from %s", data->set_device);
-	data->dev = v4l2_open(data->set_device, O_RDWR | O_NONBLOCK);
+	blog(LOG_INFO, "Start capture from %s", data->device_id);
+	data->dev = v4l2_open(data->device_id, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
 		blog(LOG_ERROR, "Unable to open device");
 		goto fail;
 	}
 
 	/* set input */
-	if (v4l2_set_input(data->dev, &data->set_input) < 0) {
-		blog(LOG_ERROR, "Unable to set input %d",
-				data->set_input);
+	if (v4l2_set_input(data->dev, &data->input) < 0) {
+		blog(LOG_ERROR, "Unable to set input %d", data->input);
 		goto fail;
 	}
-	blog(LOG_INFO, "Input: %d", data->set_input);
+	blog(LOG_INFO, "Input: %d", data->input);
 
 	/* set pixel format and resolution */
-	if (v4l2_set_format(data->dev, &data->set_res, &data->set_pixfmt,
+	if (v4l2_set_format(data->dev, &data->resolution, &data->pixfmt,
 			&data->linesize) < 0) {
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	v4l2_unpack_tuple(&data->width, &data->height, data->set_res);
-	data->pixfmt = data->set_pixfmt;
+	v4l2_unpack_tuple(&data->width, &data->height, data->resolution);
 	blog(LOG_INFO, "Resolution: %dx%d", data->width, data->height);
-	blog(LOG_INFO, "Pixelformat: %d", data->set_pixfmt);
+	blog(LOG_INFO, "Pixelformat: %d", data->pixfmt);
 	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
-	if (v4l2_set_framerate(data->dev, &data->set_fps) < 0) {
+	if (v4l2_set_framerate(data->dev, &data->framerate) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
 	}
-	v4l2_unpack_tuple(&fps_num, &fps_denom, data->set_fps);
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
 	blog(LOG_INFO, "Framerate: %.2f fps", (float) fps_denom / fps_num);
 
 	/* map buffers */
@@ -657,14 +646,14 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 
 	v4l2_terminate(data);
 
-	if (data->set_device)
-		bfree(data->set_device);
+	if (data->device_id)
+		bfree(data->device_id);
 
-	data->set_device = bstrdup(obs_data_get_string(settings, "device_id"));
-	data->set_input  = obs_data_get_int(settings, "input");
-	data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
-	data->set_res    = obs_data_get_int(settings, "resolution");
-	data->set_fps    = obs_data_get_int(settings, "framerate");
+	data->device_id  = bstrdup(obs_data_get_string(settings, "device_id"));
+	data->input      = obs_data_get_int(settings, "input");
+	data->pixfmt     = obs_data_get_int(settings, "pixelformat");
+	data->resolution = obs_data_get_int(settings, "resolution");
+	data->framerate  = obs_data_get_int(settings, "framerate");
 
 	v4l2_init(data);
 }
