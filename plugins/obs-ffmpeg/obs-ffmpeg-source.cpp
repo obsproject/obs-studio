@@ -103,7 +103,6 @@ void FFmpegSource::decodeLoop()
     // For some reason we have to local cache these.
     // It probably has something to do with how detached threads work
     FFmpegSource *ctx = this;
-    int64_t baseTime = os_gettime_ns();
     
 	while (ctx->m_alive) {
         std::unique_lock<std::mutex> lck(ctx->m_mutex);
@@ -156,6 +155,7 @@ void FFmpegSource::decodeLoop()
                 frame.height = avFrame->height;
                 
 				obs_source_output_video(ctx->m_source, &frame);
+                sws_freeContext(swctx);
                 avpicture_free(&pic);
 			}
 
