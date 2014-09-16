@@ -23,6 +23,8 @@ extern "C" {
 #include <memory>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class FFmpegCodecContext: public std::unique_ptr<AVCodecContext, void(*)(AVCodecContext *)> {
 	public:
