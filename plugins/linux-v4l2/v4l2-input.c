@@ -643,44 +643,30 @@ fail:
 	v4l2_terminate(data);
 }
 
+/**
+ * Update the settings for the v4l2 source
+ *
+ * Since there are very few settings that can be changed without restarting the
+ * stream we don't bother to even try. Whenever this is called the currently
+ * active stream (if exists) is stopped, the settings are updated and finally
+ * the new stream is started.
+ */
 static void v4l2_update(void *vptr, obs_data_t settings)
 {
 	V4L2_DATA(vptr);
-	bool restart = false;
-	const char *new_device;
 
-	new_device = obs_data_get_string(settings, "device_id");
-	if (!data->set_device || strcmp(data->set_device, new_device) != 0) {
-		if (data->set_device)
-			bfree(data->set_device);
-		data->set_device = bstrdup(new_device);
-		restart = true;
-	}
+	v4l2_terminate(data);
 
-	if (data->set_input != obs_data_get_int(settings, "input")) {
-		data->set_input = obs_data_get_int(settings, "input");
-		restart = true;
-	}
+	if (data->set_device)
+		bfree(data->set_device);
 
-	if (data->set_pixfmt != obs_data_get_int(settings, "pixelformat")) {
-		data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
-		restart = true;
-	}
+	data->set_device = bstrdup(obs_data_get_string(settings, "device_id"));
+	data->set_input  = obs_data_get_int(settings, "input");
+	data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
+	data->set_res    = obs_data_get_int(settings, "resolution");
+	data->set_fps    = obs_data_get_int(settings, "framerate");
 
-	if (data->set_res != obs_data_get_int(settings, "resolution")) {
-		data->set_res = obs_data_get_int(settings, "resolution");
-		restart = true;
-	}
-
-	if (data->set_fps != obs_data_get_int(settings, "framerate")) {
-		data->set_fps = obs_data_get_int(settings, "framerate");
-		restart = true;
-	}
-
-	if (restart) {
-		v4l2_terminate(data);
-		v4l2_init(data);
-	}
+	v4l2_init(data);
 }
 
 static void *v4l2_create(obs_data_t settings, obs_source_t source)
