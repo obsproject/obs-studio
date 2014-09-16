@@ -25,45 +25,45 @@ extern "C" {
 #include <thread>
 
 class FFmpegCodecContext: public std::unique_ptr<AVCodecContext, void(*)(AVCodecContext *)> {
-public:
-	FFmpegCodecContext(AVStream *stream, AVCodec *codec);
-private:
-	std::vector<uint8_t> m_extradata;
+	public:
+		FFmpegCodecContext(AVStream *stream, AVCodec *codec);
+	private:
+		std::vector<uint8_t> m_extradata;
 };
 
 class FFmpegSource {
-public:
-	FFmpegSource(obs_data_t settings, obs_source_t source);
-    ~FFmpegSource();
-	void update(obs_data_t settings);
-    obs_source_t m_source;
-protected:
-	void decodeLoop();
-private:
-    bool isValid();
-	AVStream *findVideoStream();
-	std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)> m_formatContext;
-	std::unique_ptr<FFmpegCodecContext> m_codecContext;
-    std::mutex m_mutex;
-    std::condition_variable m_updateCondition;
-    bool m_alive;
-    std::thread m_thread;
+	public:
+		FFmpegSource(obs_data_t settings, obs_source_t source);
+		~FFmpegSource();
+		void update(obs_data_t settings);
+		obs_source_t m_source;
+	protected:
+		void decodeLoop();
+	private:
+		bool isValid();
+		AVStream *findVideoStream();
+		std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)> m_formatContext;
+		std::unique_ptr<FFmpegCodecContext> m_codecContext;
+		std::mutex m_mutex;
+		std::condition_variable m_updateCondition;
+		bool m_alive;
+		std::thread m_thread;
 };
 
 class FFmpegPacket: public AVPacket {
-public:
-	FFmpegPacket();
-	
-	// no copy semantics
-	FFmpegPacket(const FFmpegPacket&) = delete;
-	FFmpegPacket& operator=(const FFmpegPacket&) = delete;
-	
-	FFmpegPacket(FFmpegPacket&& other);
-	~FFmpegPacket();
-	
-	int readFrame(AVFormatContext *ctx);
-	void updateFrame(struct obs_source_frame *frame);
-	AVPacket getOffsetPacket(int offset);
+	public:
+		FFmpegPacket();
+
+		// no copy semantics
+		FFmpegPacket(const FFmpegPacket&) = delete;
+		FFmpegPacket& operator=(const FFmpegPacket&) = delete;
+
+		FFmpegPacket(FFmpegPacket&& other);
+		~FFmpegPacket();
+
+		int readFrame(AVFormatContext *ctx);
+		void updateFrame(struct obs_source_frame *frame);
+		AVPacket getOffsetPacket(int offset);
 };
 
 const AVRational kNSTimeBase = {
