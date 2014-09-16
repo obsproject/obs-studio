@@ -25,6 +25,7 @@
 #include <vector>
 #include <memory>
 #include "window-main.hpp"
+#include "window-basic-interaction.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 
@@ -57,6 +58,7 @@ private:
 
 	bool loaded = false;
 
+	QPointer<OBSBasicInteraction> interaction;
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
 
@@ -120,6 +122,7 @@ private:
 
 	void          InitPrimitives();
 
+	OBSSceneItem  GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem  GetCurrentSceneItem();
 
 	bool          QueryRemoveSource(obs_source_t source);
@@ -140,6 +143,7 @@ private:
 	void TempStreamOutput(const char *url, const char *key,
 			int vBitrate, int aBitrate);
 
+	void CreateInteractionWindow(obs_source_t source);
 	void CreatePropertiesWindow(obs_source_t source);
 
 public slots:
@@ -259,6 +263,7 @@ private slots:
 	void on_sources_customContextMenuRequested(const QPoint &pos);
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();
+	void on_actionInteract_triggered();
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();

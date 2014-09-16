@@ -1,7 +1,14 @@
 project(linux-pulseaudio)
 
+if(DISABLE_PULSEAUDIO)
+	message(STATUS "PulseAudio support disabled")
+	return()
+endif()
+
 find_package(PulseAudio)
-if(NOT PulseAudio_FOUND)
+if(NOT PULSEAUDIO_FOUND AND ENABLE_PULSEAUDIO)
+	message(FATAL_ERROR "PulseAudio not found but set as enabled")
+elseif(NOT PULSEAUDIO_FOUND)
 	message(STATUS "PulseAudio not found, disabling PulseAudio plugin")
 	return()
 endif()

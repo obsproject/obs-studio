@@ -1,7 +1,14 @@
 project(obs-libfdk)
 
+if(DISABLE_LIBFDK)
+	message(STATUS "Libfdk support disabled")
+	return()
+endif()
+
 find_package(Libfdk QUIET)
-if(NOT LIBFDK_FOUND)
+if(NOT LIBFDK_FOUND AND ENABLE_LIBFDK)
+	message(FATAL_ERROR "Libfdk not found but set as enabled")
+elseif(NOT LIBFDK_FOUND)
 	message(STATUS "Libfdk not found - obs-libfdk plugin disabled")
 	return()
 endif()

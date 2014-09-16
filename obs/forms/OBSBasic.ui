@@ -791,6 +791,11 @@
     <string>Basic.MainMenu.Help.CheckForUpdates</string>
    </property>
   </action>
+  <action name="actionInteract">
+   <property name="text">
+    <string>Interact</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
