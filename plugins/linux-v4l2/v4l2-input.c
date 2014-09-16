@@ -602,6 +602,10 @@ static void v4l2_init(struct v4l2_data *data)
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
+	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE) {
+		blog(LOG_ERROR, "Selected video format not supported");
+		goto fail;
+	}
 	v4l2_unpack_tuple(&data->width, &data->height, data->resolution);
 	blog(LOG_INFO, "Resolution: %dx%d", data->width, data->height);
 	blog(LOG_INFO, "Pixelformat: %d", data->pixfmt);
