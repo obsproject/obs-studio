@@ -1,12 +1,8 @@
 project(win-dshow)
 
-find_package(Libavutil REQUIRED)
-include_directories(${LIBAVUTIL_INCLUDE_DIRS})
-add_definitions(${LIBAVUTIL_DEFINITIONS})
-
-find_package(Libavcodec REQUIRED)
-include_directories(${LIBAVCODEC_INCLUDE_DIRS})
-add_definitions(${LIBAVCODEC_DEFINITIONS})
+find_package(FFmpeg REQUIRED
+	COMPONENTS avutil avcodec)
+include_directories(${FFmpeg_INCLUDE_DIRS})
 
 set(win-dshow_HEADERS
 	ffmpeg-decode.h)
@@ -48,7 +44,6 @@ add_library(win-dshow MODULE
 target_link_libraries(win-dshow
 	libobs
 	strmiids.lib
-	${LIBAVUTIL_LIBRARIES}
-	${LIBAVCODEC_LIBRARIES})
+	${FFmpeg_LIBRARIES})
 
 install_obs_plugin_with_data(win-dshow data)
