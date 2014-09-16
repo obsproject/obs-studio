@@ -589,7 +589,6 @@ static void v4l2_destroy(void *vptr)
  */
 static void v4l2_init(struct v4l2_data *data)
 {
-	struct dstr fps;
 	int fps_num, fps_denom;
 
 	blog(LOG_INFO, "Start capture from %s", data->set_device);
@@ -625,10 +624,7 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	}
 	v4l2_unpack_tuple(&fps_num, &fps_denom, data->set_fps);
-	dstr_init(&fps);
-	dstr_printf(&fps, "%.2f", (float) fps_denom / fps_num);
-	blog(LOG_INFO, "Framerate: %s fps", fps.array);
-	dstr_free(&fps);
+	blog(LOG_INFO, "Framerate: %.2f fps", (float) fps_denom / fps_num);
 
 	/* map buffers */
 	if (v4l2_create_mmap(data->dev, &data->buffers) < 0) {
