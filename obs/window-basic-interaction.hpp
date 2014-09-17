@@ -42,6 +42,7 @@ private:
 	OBSSource  source;
 	OBSDisplay display;
 	OBSSignal  removedSignal;
+	OBSEventFilter *eventFilter;
 
 	static void SourceRemoved(void *data, calldata_t params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
@@ -61,6 +62,7 @@ private slots:
 
 public:
 	OBSBasicInteraction(QWidget *parent, OBSSource source_);
+	~OBSBasicInteraction();
 
 	void Init();
 

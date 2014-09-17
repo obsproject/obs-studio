@@ -45,7 +45,8 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 
 	ui->preview->setMouseTracking(true);
 	ui->preview->setFocusPolicy(Qt::StrongFocus);
-	ui->preview->installEventFilter(BuildEventFilter());
+	eventFilter = BuildEventFilter();
+	ui->preview->installEventFilter(eventFilter);
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
@@ -61,6 +62,14 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
+}
+
+OBSBasicInteraction::~OBSBasicInteraction()
+{
+	// since QT fakes a mouse movement while destructing a widget
+	// remove our event filter
+	ui->preview->removeEventFilter(eventFilter);
+	delete eventFilter;
 }
 
 OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
