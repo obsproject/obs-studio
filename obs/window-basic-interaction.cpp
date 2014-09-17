@@ -199,7 +199,7 @@ static int TranslateQtKeyboardEventModifiers(QInputEvent *event, bool mouseEvent
 		obsModifiers |= INTERACT_SHIFT_KEY;
 	if (event->modifiers().testFlag(Qt::AltModifier))
 		obsModifiers |= INTERACT_ALT_KEY;
-#ifdef APPLE
+#ifdef __APPLE__
 	// Mac: Meta = Control, Control = Command
 	if (event->modifiers().testFlag(Qt::ControlModifier))
 		obsModifiers |= INTERACT_COMMAND_KEY;
