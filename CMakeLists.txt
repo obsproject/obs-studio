@@ -4,6 +4,9 @@ project(obs-studio)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/additional_install_files/include")
+list(APPEND CMAKE_INCLUDE_PATH "$ENV{obsAdditionalInstallFiles}/include")
+
 include(ObsHelpers)
 include(ObsCpack)
 
