@@ -347,7 +347,10 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 			yDelta = event->delta();
 	}
 
-	obs_source_send_mouse_wheel(source, &mouseEvent, xDelta, yDelta);
+	if (GetSourceRelativeXY(event->x(), event->y(), mouseEvent.x,
+			mouseEvent.y))
+		obs_source_send_mouse_wheel(source, &mouseEvent, xDelta,
+				yDelta);
 
 	return true;
 }
