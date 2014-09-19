@@ -617,7 +617,7 @@ static void gl_rename_attributes(struct gl_shader_parser *glsp)
 			val    = output_idx++;
 		}
 
-		dstr_printf(&new_name, "%s%u", prefix, val);
+		dstr_printf(&new_name, "%s%u", prefix, (unsigned int)val);
 		dstr_replace(&glsp->gl_string, attrib->name.array,
 				new_name.array);
 		dstr_move(&attrib->name, &new_name);

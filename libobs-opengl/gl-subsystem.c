@@ -124,12 +124,6 @@ static bool gl_init_extensions(struct gs_device* device)
 		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-	if (!GLAD_GL_VERSION_4_1 && !GLAD_GL_ARB_separate_shader_objects) {
-		blog(LOG_ERROR, "OpenGL extension ARB_separate_shader_objects "
-		                "is required.");
-		return false;
-	}
-
 	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
 	else if (GLAD_GL_NV_copy_image)
@@ -213,14 +207,6 @@ int device_create(gs_device_t *p_device, struct gs_init_data *info)
 	
 	gl_enable(GL_CULL_FACE);
 	
-	glGenProgramPipelines(1, &device->pipeline);
-	if (!gl_success("glGenProgramPipelines"))
-		goto fail;
-
-	glBindProgramPipeline(device->pipeline);
-	if (!gl_success("glBindProgramPipeline"))
-		goto fail;
-
 	device_leave_context(device);
 	device->cur_swap = gl_platform_getswap(device->plat);
 
@@ -239,11 +225,12 @@ void device_destroy(gs_device_t device)
 {
 	if (device) {
 		size_t i;
+
 		for (i = 0; i < device->fbos.num; i++)
 			fbo_info_destroy(device->fbos.array[i]);
 
-		if (device->pipeline)
-			glDeleteProgramPipelines(1, &device->pipeline);
+		while (device->first_program)
+			gs_program_destroy(device->first_program);
 
 		da_free(device->proj_stack);
 		da_free(device->fbos);
@@ -511,37 +498,17 @@ void device_load_samplerstate(gs_device_t device, gs_samplerstate_t ss,
 void device_load_vertexshader(gs_device_t device, gs_shader_t vertshader)
 {
 	GLuint program = 0;
-	gs_vertbuffer_t cur_vb = device->cur_vertex_buffer;
 
 	if (device->cur_vertex_shader == vertshader)
 		return;
 
 	if (vertshader && vertshader->type != GS_SHADER_VERTEX) {
 		blog(LOG_ERROR, "Specified shader is not a vertex shader");
-		goto fail;
+		blog(LOG_ERROR, "device_load_vertexshader (GL) failed");
+		return;
 	}
 
-	/* unload and reload the vertex buffer to sync the buffers up with
-	 * the specific shader */
-	if (cur_vb && !vertexbuffer_load(device, NULL))
-		goto fail;
-
 	device->cur_vertex_shader = vertshader;
-
-	if (vertshader)
-		program = vertshader->program;
-
-	glUseProgramStages(device->pipeline, GL_VERTEX_SHADER_BIT, program);
-	if (!gl_success("glUseProgramStages"))
-		goto fail;
-
-	if (cur_vb && !vertexbuffer_load(device, cur_vb))
-		goto fail;
-
-	return;
-
-fail:
-	blog(LOG_ERROR, "device_load_vertexshader (GL) failed");
 }
 
 static void load_default_pixelshader_samplers(struct gs_device *device,
@@ -562,7 +529,6 @@ static void load_default_pixelshader_samplers(struct gs_device *device,
 
 void device_load_pixelshader(gs_device_t device, gs_shader_t pixelshader)
 {
-	GLuint program = 0;
 	if (device->cur_pixel_shader == pixelshader)
 		return;
 
@@ -572,13 +538,6 @@ void device_load_pixelshader(gs_device_t device, gs_shader_t pixelshader)
 	}
 
 	device->cur_pixel_shader = pixelshader;
-
-	if (pixelshader)
-		program = pixelshader->program;
-
-	glUseProgramStages(device->pipeline, GL_FRAGMENT_SHADER_BIT, program);
-	if (!gl_success("glUseProgramStages"))
-		goto fail;
 
 	clear_textures(device);
 
@@ -916,22 +875,29 @@ static void update_viewproj_matrix(struct gs_device *device)
 		gs_shader_set_matrix4(vs->viewproj, &device->cur_viewproj);
 }
 
-static inline bool check_shader_pipeline_validity(gs_device_t device)
+static inline struct gs_program *find_program(struct gs_device *device)
 {
-	int valid = false;
+	struct gs_program *program = device->first_program;
 
-	glValidateProgramPipeline(device->pipeline);
-	if (!gl_success("glValidateProgramPipeline"))
-		return false;
+	while (program) {
+		if (program->vertex_shader == device->cur_vertex_shader &&
+		    program->pixel_shader  == device->cur_pixel_shader)
+			return program;
 
-	glGetProgramPipelineiv(device->pipeline, GL_VALIDATE_STATUS, &valid);
-	if (!gl_success("glGetProgramPipelineiv"))
-		return false;
+		program = program->next;
+	}
 
-	if (!valid)
-		blog(LOG_ERROR, "Shader pipeline appears to be invalid");
+	return NULL;
+}
 
-	return valid != 0;
+static inline struct gs_program *get_shader_program(struct gs_device *device)
+{
+	struct gs_program *program = find_program(device);
+
+	if (!program)
+		program = gs_program_create(device);
+
+	return program;
 }
 
 void device_draw(gs_device_t device, enum gs_draw_mode draw_mode,
@@ -940,6 +906,7 @@ void device_draw(gs_device_t device, enum gs_draw_mode draw_mode,
 	struct gs_index_buffer *ib = device->cur_index_buffer;
 	GLenum  topology = convert_gs_topology(draw_mode);
 	gs_effect_t effect = gs_get_effect();
+	struct gs_program *program;
 
 	if (!can_render(device))
 		goto fail;
@@ -947,15 +914,28 @@ void device_draw(gs_device_t device, enum gs_draw_mode draw_mode,
 	if (effect)
 		gs_effect_update_params(effect);
 
-	shader_update_textures(device->cur_pixel_shader);
+	program = get_shader_program(device);
+	if (!program)
+		goto fail;
+
+	load_vb_buffers(program, device->cur_vertex_buffer);
+
+	if (program != device->cur_program && device->cur_program) {
+		glUseProgram(0);
+		gl_success("glUseProgram (zero)");
+	}
+
+	if (program != device->cur_program) {
+		device->cur_program = program;
+
+		glUseProgram(program->obj);
+		if (!gl_success("glUseProgram"))
+			goto fail;
+	}
 
 	update_viewproj_matrix(device);
 
-
-#ifdef _DEBUG
-	if (!check_shader_pipeline_validity(device))
-		goto fail;
-#endif
+	program_update_params(program);
 
 	if (ib) {
 		if (num_verts == 0)

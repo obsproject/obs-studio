@@ -203,7 +203,7 @@ static inline GLuint get_vb_buffer(struct gs_vertex_buffer *vb,
 }
 
 static bool load_vb_buffer(struct shader_attrib *attrib,
-		struct gs_vertex_buffer *vb)
+		struct gs_vertex_buffer *vb, GLint id)
 {
 	GLenum type;
 	GLint width;
@@ -220,11 +220,11 @@ static bool load_vb_buffer(struct shader_attrib *attrib,
 	if (!gl_bind_buffer(GL_ARRAY_BUFFER, buffer))
 		return false;
 
-	glVertexAttribPointer(attrib->attrib, width, type, GL_TRUE, 0, 0);
+	glVertexAttribPointer(id, width, type, GL_TRUE, 0, 0);
 	if (!gl_success("glVertexAttribPointer"))
 		success = false;
 
-	glEnableVertexAttribArray(attrib->attrib);
+	glEnableVertexAttribArray(id);
 	if (!gl_success("glEnableVertexAttribArray"))
 		success = false;
 
@@ -234,9 +234,9 @@ static bool load_vb_buffer(struct shader_attrib *attrib,
 	return success;
 }
 
-static inline bool load_vb_buffers(struct gs_shader *shader,
-		struct gs_vertex_buffer *vb)
+bool load_vb_buffers(struct gs_program *program, struct gs_vertex_buffer *vb)
 {
+	struct gs_shader *shader = program->vertex_shader;
 	size_t i;
 
 	if (!gl_bind_vertex_array(vb->vao))
@@ -244,32 +244,14 @@ static inline bool load_vb_buffers(struct gs_shader *shader,
 
 	for (i = 0; i < shader->attribs.num; i++) {
 		struct shader_attrib *attrib = shader->attribs.array+i;
-		if (!load_vb_buffer(attrib, vb))
+		if (!load_vb_buffer(attrib, vb, program->attribs.array[i]))
 			return false;
 	}
 
 	return true;
 }
 
-bool vertexbuffer_load(gs_device_t device, gs_vertbuffer_t vb)
-{
-	if (device->cur_vertex_buffer == vb)
-		return true;
-
-	device->cur_vertex_buffer = vb;
-	if (!device->cur_vertex_shader || !vb) {
-		gl_bind_vertex_array(0);
-		return true;
-	}
-
-	if (!load_vb_buffers(device->cur_vertex_shader, vb))
-		return false;
-
-	return true;
-}
-
 void device_load_vertexbuffer(gs_device_t device, gs_vertbuffer_t vb)
 {
-	if (!vertexbuffer_load(device, vb))
-		blog(LOG_ERROR, "device_load_vertexbuffer (GL) failed");
+	device->cur_vertex_buffer = vb;
 }

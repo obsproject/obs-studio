@@ -300,7 +300,6 @@ struct gs_shader_param {
 
 	char                 *name;
 	gs_shader_t          shader;
-	GLint                param;
 	GLint                texture_id;
 	size_t               sampler_id;
 	int                  array_count;
@@ -322,7 +321,7 @@ enum attrib_type {
 };
 
 struct shader_attrib {
-	GLint                attrib;
+	char                 *name;
 	size_t               index;
 	enum attrib_type     type;
 };
@@ -330,17 +329,37 @@ struct shader_attrib {
 struct gs_shader {
 	gs_device_t          device;
 	enum gs_shader_type  type;
-	GLuint               program;
+	GLuint               obj;
 
 	struct gs_shader_param  *viewproj;
 	struct gs_shader_param  *world;
 
-	DARRAY(struct shader_attrib)    attribs;
-	DARRAY(struct gs_shader_param)  params;
-	DARRAY(gs_samplerstate_t)       samplers;
+	DARRAY(struct shader_attrib)   attribs;
+	DARRAY(struct gs_shader_param) params;
+	DARRAY(gs_samplerstate_t)      samplers;
 };
 
-extern void shader_update_textures(struct gs_shader *shader);
+struct program_param {
+	GLint                  obj;
+	struct gs_shader_param *param;
+};
+
+struct gs_program {
+	gs_device_t                  device;
+	GLuint                       obj;
+	struct gs_shader             *vertex_shader;
+	struct gs_shader             *pixel_shader;
+
+	DARRAY(struct program_param) params;
+	DARRAY(GLint)                attribs;
+
+	struct gs_program            **prev_next;
+	struct gs_program            *next;
+};
+
+extern struct gs_program *gs_program_create(struct gs_device *device);
+extern void gs_program_destroy(struct gs_program *program);
+extern void program_update_params(struct gs_program *shader);
 
 struct gs_vertex_buffer {
 	GLuint               vao;
@@ -357,7 +376,8 @@ struct gs_vertex_buffer {
 	struct gs_vb_data    *data;
 };
 
-extern bool vertexbuffer_load(gs_device_t device, gs_vertbuffer_t vb);
+extern bool load_vb_buffers(struct gs_program *program,
+		struct gs_vertex_buffer *vb);
 
 struct gs_index_buffer {
 	GLuint               buffer;
@@ -455,7 +475,6 @@ static inline void fbo_info_destroy(struct fbo_info *fbo)
 
 struct gs_device {
 	struct gl_platform   *plat;
-	GLuint               pipeline;
 	enum copy_type       copy_type;
 
 	gs_texture_t         cur_render_target;
@@ -468,6 +487,9 @@ struct gs_device {
 	gs_shader_t          cur_vertex_shader;
 	gs_shader_t          cur_pixel_shader;
 	gs_swapchain_t       cur_swap;
+	struct gs_program    *cur_program;
+
+	struct gs_program    *first_program;
 
 	enum gs_cull_mode    cur_cull_mode;
 	struct gs_rect       cur_viewport;
