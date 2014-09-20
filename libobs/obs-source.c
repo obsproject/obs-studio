@@ -1701,9 +1701,6 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t source)
 
 	/* reset timing to current system time */
 	if (frame) {
-		uint64_t min_expected_sys_ts =
-			frame->timestamp + source->timing_adjust;
-
 		source->timing_adjust = sys_time - frame->timestamp;
 		source->timing_set = true;
 	}

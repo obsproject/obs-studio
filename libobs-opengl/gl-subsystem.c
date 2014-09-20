@@ -497,8 +497,6 @@ void device_load_samplerstate(gs_device_t device, gs_samplerstate_t ss,
 
 void device_load_vertexshader(gs_device_t device, gs_shader_t vertshader)
 {
-	GLuint program = 0;
-
 	if (device->cur_vertex_shader == vertshader)
 		return;
 
