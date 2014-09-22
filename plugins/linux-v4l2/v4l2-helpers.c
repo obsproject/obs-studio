@@ -123,3 +123,79 @@ int_fast32_t v4l2_destroy_mmap(struct v4l2_buffer_data *buf)
 	return 0;
 }
 
+int_fast32_t v4l2_set_input(int_fast32_t dev, int *input)
+{
+	if (!dev || !input)
+		return -1;
+
+	return (*input == -1)
+		? v4l2_ioctl(dev, VIDIOC_G_INPUT, input)
+		: v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
+}
+
+int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
+		int *pixelformat, int *bytesperline)
+{
+	bool set = false;
+	int width, height;
+	struct v4l2_format fmt;
+
+	if (!dev || !resolution || !pixelformat || !bytesperline)
+		return -1;
+
+	/* We need to set the type in order to query the settings */
+	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	if (v4l2_ioctl(dev, VIDIOC_G_FMT, &fmt) < 0)
+		return -1;
+
+	if (*resolution != -1) {
+		v4l2_unpack_tuple(&width, &height, *resolution);
+		fmt.fmt.pix.width  = width;
+		fmt.fmt.pix.height = height;
+		set = true;
+	}
+
+	if (*pixelformat != -1) {
+		fmt.fmt.pix.pixelformat = *pixelformat;
+		set = true;
+	}
+
+	if (set && (v4l2_ioctl(dev, VIDIOC_S_FMT, &fmt) < 0))
+		return -1;
+
+	*resolution   = v4l2_pack_tuple(fmt.fmt.pix.width, fmt.fmt.pix.height);
+	*pixelformat  = fmt.fmt.pix.pixelformat;
+	*bytesperline = fmt.fmt.pix.bytesperline;
+	return 0;
+}
+
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate)
+{
+	bool set = false;
+	int num, denom;
+	struct v4l2_streamparm par;
+
+	if (!dev || !framerate)
+		return -1;
+
+	/* We need to set the type in order to query the stream settings */
+	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	if (v4l2_ioctl(dev, VIDIOC_G_PARM, &par) < 0)
+		return -1;
+
+	if (*framerate != -1) {
+		v4l2_unpack_tuple(&num, &denom, *framerate);
+		par.parm.capture.timeperframe.numerator   = num;
+		par.parm.capture.timeperframe.denominator = denom;
+		set = true;
+	}
+
+	if (set && (v4l2_ioctl(dev, VIDIOC_S_PARM, &par) < 0))
+		return -1;
+
+	*framerate = v4l2_pack_tuple(par.parm.capture.timeperframe.numerator,
+			par.parm.capture.timeperframe.denominator);
+	return 0;
+}

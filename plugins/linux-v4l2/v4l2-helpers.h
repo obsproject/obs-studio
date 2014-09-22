@@ -132,6 +132,38 @@ static const int v4l2_framerates[] =
 };
 
 /**
+ * Pack two integer values into one
+ *
+ * Obviously the input integers have to be truncated in order to fit into
+ * one. The effective 16bits left are still enough to handle resolutions and
+ * framerates just fine.
+ *
+ * @param a integer one
+ * @param b integer two
+ *
+ * @return the packed integer
+ */
+static inline int v4l2_pack_tuple(int a, int b)
+{
+	return (a << 16) | (b & 0xffff);
+}
+
+/**
+ * Unpack two integer values from one
+ *
+ * @see v4l2_pack_tuple
+ *
+ * @param a pointer to integer a
+ * @param b pointer to integer b
+ * @param packed the packed integer
+ */
+static void v4l2_unpack_tuple(int *a, int *b, int packed)
+{
+	*a = packed >> 16;
+	*b = packed & 0xffff;
+}
+
+/**
  * Start the video capture on the device.
  *
  * This enqueues the memory mapped buffers and instructs the device to start
@@ -174,6 +206,46 @@ int_fast32_t v4l2_create_mmap(int_fast32_t dev, struct v4l2_buffer_data *buf);
  * @return negative on failure
  */
 int_fast32_t v4l2_destroy_mmap(struct v4l2_buffer_data *buf);
+
+/**
+ * Set the video input on the device.
+ *
+ * If the action succeeds input is set to the currently selected input.
+ *
+ * @param dev handle for the v4l2 device
+ * @param input index of the input or -1 to leave it as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_input(int_fast32_t dev, int *input);
+
+/**
+ * Set the video format on the device.
+ *
+ * If the action succeeds resolution, pixelformat and bytesperline are set
+ * to the used values.
+ *
+ * @param dev handle for the v4l2 device
+ * @param resolution packed value of the resolution or -1 to leave as is
+ * @param pixelformat index of the pixelformat or -1 to leave as is
+ * @param bytesperline this will be set accordingly on success
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
+		int *pixelformat, int *bytesperline);
+
+/**
+ * Set the framerate on the device.
+ *
+ * If the action succeeds framerate is set to the used value.
+ *
+ * @param dev handle to the v4l2 device
+ * @param framerate packed value of the framerate or -1 to leave as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate);
 
 #ifdef __cplusplus
 }

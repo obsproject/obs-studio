@@ -45,52 +45,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * Data structure for the v4l2 source
- *
- * The data is divided into two sections, data being used inside and outside
- * the capture thread. Data used by the capture thread must not be modified
- * from the outside while the thread is running.
- *
- * Data members prefixed with "set_" are settings from the source properties
- * and may be used from outside the capture thread.
  */
 struct v4l2_data {
-	/* data used outside of the capture thread */
-	obs_source_t source;
+	/* settings */
+	char *device_id;
+	int input;
+	int pixfmt;
+	int resolution;
+	int framerate;
 
+	/* internal data */
+	obs_source_t source;
 	pthread_t thread;
 	os_event_t event;
 
-	char *set_device;
-	int_fast32_t set_input;
-	int_fast32_t set_pixfmt;
-	int_fast32_t set_res;
-	int_fast32_t set_fps;
-
-	/* data used within the capture thread */
 	int_fast32_t dev;
-
-	uint64_t frames;
-	int_fast32_t width;
-	int_fast32_t height;
-	int_fast32_t pixfmt;
-	uint_fast32_t linesize;
-
+	int width;
+	int height;
+	int linesize;
 	struct v4l2_buffer_data buffers;
+
+	/* statistics */
+	uint64_t frames;
 };
-
-/*
- * used to store framerate and resolution values
- */
-static int pack_tuple(int a, int b)
-{
-	return (a << 16) | (b & 0xffff);
-}
-
-static void unpack_tuple(int *a, int *b, int packed)
-{
-	*a = packed >> 16;
-	*b = packed & 0xffff;
-}
 
 /**
  * Prepare the output frame structure for obs and compute plane offsets
@@ -219,11 +196,10 @@ static const char* v4l2_getname(void)
 
 static void v4l2_defaults(obs_data_t settings)
 {
-	obs_data_set_default_int(settings, "input", 0);
-	obs_data_set_default_int(settings, "pixelformat", V4L2_PIX_FMT_YUYV);
-	obs_data_set_default_int(settings, "resolution",
-			pack_tuple(640, 480));
-	obs_data_set_default_int(settings, "framerate", pack_tuple(1, 30));
+	obs_data_set_default_int(settings, "input", -1);
+	obs_data_set_default_int(settings, "pixelformat", -1);
+	obs_data_set_default_int(settings, "resolution", -1);
+	obs_data_set_default_int(settings, "framerate", -1);
 }
 
 /*
@@ -231,12 +207,11 @@ static void v4l2_defaults(obs_data_t settings)
  */
 static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	DIR *dirp;
 	struct dirent *dp;
-	int fd;
-	struct v4l2_capability video_cap;
 	struct dstr device;
-	bool first = true;
 
 	dirp = opendir("/sys/class/video4linux");
 	if (!dirp)
@@ -247,6 +222,10 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 	dstr_init_copy(&device, "/dev/");
 
 	while ((dp = readdir(dirp)) != NULL) {
+		int fd;
+		uint32_t caps;
+		struct v4l2_capability video_cap;
+
 		if (dp->d_type == DT_DIR)
 			continue;
 
@@ -261,22 +240,25 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
 			blog(LOG_INFO, "Failed to query capabilities for %s",
 			     device.array);
-		} else if (video_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
-			obs_property_list_add_string(prop,
-					(char *) video_cap.card,
-					device.array);
-			if (first) {
-				obs_data_set_string(settings,
-					"device_id", device.array);
-				first = false;
-			}
-			blog(LOG_INFO, "Found device '%s' at %s",
-			     video_cap.card, device.array);
+			close(fd);
+			continue;
 		}
-		else {
+
+		caps = (video_cap.capabilities & V4L2_CAP_DEVICE_CAPS)
+			? video_cap.device_caps
+			: video_cap.capabilities;
+
+		if (!(caps & V4L2_CAP_VIDEO_CAPTURE)) {
 			blog(LOG_INFO, "%s seems to not support video capture",
 			     device.array);
+			close(fd);
+			continue;
 		}
+
+		obs_property_list_add_string(prop, (char *) video_cap.card,
+				device.array);
+		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
+				device.array);
 
 		close(fd);
 	}
@@ -295,11 +277,14 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
 
 	obs_property_list_clear(prop);
 
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
+
 	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
 		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
 			obs_property_list_add_int(prop, (char *) in.name,
 					in.index);
-			blog(LOG_INFO, "Found input '%s'", in.name);
+			blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
+					in.index);
 		}
 		in.index++;
 	}
@@ -317,6 +302,8 @@ static void v4l2_format_list(int dev, obs_property_t prop)
 	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
+
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
 		dstr_copy(&buffer, (char *) fmt.description);
@@ -353,6 +340,8 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
+
 	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize);
 
 	switch(frmsize.type) {
@@ -361,7 +350,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
 					frmsize.discrete.height);
 			obs_property_list_add_int(prop, buffer.array,
-					pack_tuple(frmsize.discrete.width,
+					v4l2_pack_tuple(frmsize.discrete.width,
 					frmsize.discrete.height));
 			frmsize.index++;
 		}
@@ -373,7 +362,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		for (const int *packed = v4l2_framesizes; *packed; ++packed) {
 			int width;
 			int height;
-			unpack_tuple(&width, &height, *packed);
+			v4l2_unpack_tuple(&width, &height, *packed);
 			dstr_printf(&buffer, "%dx%d", width, height);
 			obs_property_list_add_int(prop, buffer.array, *packed);
 		}
@@ -399,6 +388,8 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 
 	obs_property_list_clear(prop);
 
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
+
 	v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival);
 
 	switch(frmival.type) {
@@ -407,7 +398,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 				&frmival) == 0) {
 			float fps = (float) frmival.discrete.denominator /
 				frmival.discrete.numerator;
-			int pack = pack_tuple(frmival.discrete.numerator,
+			int pack = v4l2_pack_tuple(frmival.discrete.numerator,
 					frmival.discrete.denominator);
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, pack);
@@ -421,7 +412,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		for (const int *packed = v4l2_framerates; *packed; ++packed) {
 			int num;
 			int denom;
-			unpack_tuple(&num, &denom, *packed);
+			v4l2_unpack_tuple(&num, &denom, *packed);
 			float fps = (float) denom / num;
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, *packed);
@@ -504,7 +495,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 		return false;
 
 	obs_property_t prop = obs_properties_get(props, "framerate");
-	unpack_tuple(&width, &height, obs_data_get_int(settings,
+	v4l2_unpack_tuple(&width, &height, obs_data_get_int(settings,
 				"resolution"));
 	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
 			width, height, prop);
@@ -572,8 +563,8 @@ static void v4l2_destroy(void *vptr)
 
 	v4l2_terminate(data);
 
-	if (data->set_device)
-		bfree(data->set_device);
+	if (data->device_id)
+		bfree(data->device_id);
 	bfree(data);
 }
 
@@ -589,59 +580,44 @@ static void v4l2_destroy(void *vptr)
  */
 static void v4l2_init(struct v4l2_data *data)
 {
-	struct v4l2_format fmt;
-	struct v4l2_streamparm par;
-	struct dstr fps;
-	int width, height;
 	int fps_num, fps_denom;
 
-	blog(LOG_INFO, "Start capture from %s", data->set_device);
-	data->dev = v4l2_open(data->set_device, O_RDWR | O_NONBLOCK);
+	blog(LOG_INFO, "Start capture from %s", data->device_id);
+	data->dev = v4l2_open(data->device_id, O_RDWR | O_NONBLOCK);
 	if (data->dev == -1) {
 		blog(LOG_ERROR, "Unable to open device");
 		goto fail;
 	}
 
 	/* set input */
-	if (v4l2_ioctl(data->dev, VIDIOC_S_INPUT, &data->set_input) < 0) {
-		blog(LOG_ERROR, "Unable to set input");
+	if (v4l2_set_input(data->dev, &data->input) < 0) {
+		blog(LOG_ERROR, "Unable to set input %d", data->input);
 		goto fail;
 	}
+	blog(LOG_INFO, "Input: %d", data->input);
 
 	/* set pixel format and resolution */
-	unpack_tuple(&width, &height, data->set_res);
-	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = width;
-	fmt.fmt.pix.height = height;
-	fmt.fmt.pix.pixelformat = data->set_pixfmt;
-	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-	if (v4l2_ioctl(data->dev, VIDIOC_S_FMT, &fmt) < 0) {
+	if (v4l2_set_format(data->dev, &data->resolution, &data->pixfmt,
+			&data->linesize) < 0) {
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	data->width = fmt.fmt.pix.width;
-	data->height = fmt.fmt.pix.height;
-	data->pixfmt = fmt.fmt.pix.pixelformat;
-	data->linesize = fmt.fmt.pix.bytesperline;
-	blog(LOG_INFO, "Resolution: %"PRIuFAST32"x%"PRIuFAST32,
-	     data->width, data->height);
-	blog(LOG_INFO, "Linesize: %"PRIuFAST32" Bytes", data->linesize);
+	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE) {
+		blog(LOG_ERROR, "Selected video format not supported");
+		goto fail;
+	}
+	v4l2_unpack_tuple(&data->width, &data->height, data->resolution);
+	blog(LOG_INFO, "Resolution: %dx%d", data->width, data->height);
+	blog(LOG_INFO, "Pixelformat: %d", data->pixfmt);
+	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
-	unpack_tuple(&fps_num, &fps_denom, data->set_fps);
-	par.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	par.parm.capture.timeperframe.numerator = fps_num;
-	par.parm.capture.timeperframe.denominator = fps_denom;
-	if (v4l2_ioctl(data->dev, VIDIOC_S_PARM, &par) < 0) {
+	if (v4l2_set_framerate(data->dev, &data->framerate) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
 	}
-	dstr_init(&fps);
-	dstr_printf(&fps, "%.2f",
-		(float) par.parm.capture.timeperframe.denominator
-		/ par.parm.capture.timeperframe.numerator);
-	blog(LOG_INFO, "Framerate: %s fps", fps.array);
-	dstr_free(&fps);
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
+	blog(LOG_INFO, "Framerate: %.2f fps", (float) fps_denom / fps_num);
 
 	/* map buffers */
 	if (v4l2_create_mmap(data->dev, &data->buffers) < 0) {
@@ -660,49 +636,30 @@ fail:
 	v4l2_terminate(data);
 }
 
+/**
+ * Update the settings for the v4l2 source
+ *
+ * Since there are very few settings that can be changed without restarting the
+ * stream we don't bother to even try. Whenever this is called the currently
+ * active stream (if exists) is stopped, the settings are updated and finally
+ * the new stream is started.
+ */
 static void v4l2_update(void *vptr, obs_data_t settings)
 {
 	V4L2_DATA(vptr);
-	bool restart = false;
-	const char *new_device;
 
-	new_device = obs_data_get_string(settings, "device_id");
-	if (strlen(new_device) == 0) {
-		v4l2_device_list(NULL, settings);
-		new_device = obs_data_get_string(settings, "device_id");
-	}
+	v4l2_terminate(data);
 
-	if (!data->set_device || strcmp(data->set_device, new_device) != 0) {
-		if (data->set_device)
-			bfree(data->set_device);
-		data->set_device = bstrdup(new_device);
-		restart = true;
-	}
+	if (data->device_id)
+		bfree(data->device_id);
 
-	if (data->set_input != obs_data_get_int(settings, "input")) {
-		data->set_input = obs_data_get_int(settings, "input");
-		restart = true;
-	}
+	data->device_id  = bstrdup(obs_data_get_string(settings, "device_id"));
+	data->input      = obs_data_get_int(settings, "input");
+	data->pixfmt     = obs_data_get_int(settings, "pixelformat");
+	data->resolution = obs_data_get_int(settings, "resolution");
+	data->framerate  = obs_data_get_int(settings, "framerate");
 
-	if (data->set_pixfmt != obs_data_get_int(settings, "pixelformat")) {
-		data->set_pixfmt = obs_data_get_int(settings, "pixelformat");
-		restart = true;
-	}
-
-	if (data->set_res != obs_data_get_int(settings, "resolution")) {
-		data->set_res = obs_data_get_int(settings, "resolution");
-		restart = true;
-	}
-
-	if (data->set_fps != obs_data_get_int(settings, "framerate")) {
-		data->set_fps = obs_data_get_int(settings, "framerate");
-		restart = true;
-	}
-
-	if (restart) {
-		v4l2_terminate(data);
-		v4l2_init(data);
-	}
+	v4l2_init(data);
 }
 
 static void *v4l2_create(obs_data_t settings, obs_source_t source)
