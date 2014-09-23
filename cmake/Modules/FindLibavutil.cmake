@@ -15,7 +15,7 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-find_path(FFMPEG_INCLUDE_DIR
+find_path(AVUTIL_INCLUDE_DIR
 	NAMES libavutil/avutil.h
 	HINTS
 		ENV FFmpegPath${_lib_suffix}
@@ -39,10 +39,10 @@ find_library(AVUTIL_LIB
 		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libavutil DEFAULT_MSG AVUTIL_LIB FFMPEG_INCLUDE_DIR)
-mark_as_advanced(FFMPEG_INCLUDE_DIR AVUTIL_LIB)
+find_package_handle_standard_args(Libavutil DEFAULT_MSG AVUTIL_LIB AVUTIL_INCLUDE_DIR)
+mark_as_advanced(AVUTIL_INCLUDE_DIR AVUTIL_LIB)
 
 if(LIBAVUTIL_FOUND)
-	set(LIBAVUTIL_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
+	set(LIBAVUTIL_INCLUDE_DIRS ${AVUTIL_INCLUDE_DIR})
 	set(LIBAVUTIL_LIBRARIES ${AVUTIL_LIB})
 endif()

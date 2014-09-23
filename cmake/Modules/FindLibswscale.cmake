@@ -15,7 +15,7 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-find_path(FFMPEG_INCLUDE_DIR
+find_path(SWSCALE_INCLUDE_DIR
 	NAMES libswscale/swscale.h
 	HINTS
 		ENV FFmpegPath${_lib_suffix}
@@ -39,10 +39,10 @@ find_library(SWSCALE_LIB
 		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libswscale DEFAULT_MSG SWSCALE_LIB FFMPEG_INCLUDE_DIR)
-mark_as_advanced(FFMPEG_INCLUDE_DIR SWSCALE_LIB)
+find_package_handle_standard_args(Libswscale DEFAULT_MSG SWSCALE_LIB SWSCALE_INCLUDE_DIR)
+mark_as_advanced(SWSCALE_INCLUDE_DIR SWSCALE_LIB)
 
 if(LIBSWSCALE_FOUND)
-	set(LIBSWSCALE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
+	set(LIBSWSCALE_INCLUDE_DIRS ${SWSCALE_INCLUDE_DIR})
 	set(LIBSWSCALE_LIBRARIES ${SWSCALE_LIB})
 endif()

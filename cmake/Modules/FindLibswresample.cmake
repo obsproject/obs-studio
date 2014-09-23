@@ -15,7 +15,7 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-find_path(FFMPEG_INCLUDE_DIR
+find_path(SWRESAMPLE_INCLUDE_DIR
 	NAMES libswresample/swresample.h
 	HINTS
 		ENV FFmpegPath${_lib_suffix}
@@ -39,10 +39,10 @@ find_library(SWRESAMPLE_LIB
 		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libswresample DEFAULT_MSG SWRESAMPLE_LIB FFMPEG_INCLUDE_DIR)
-mark_as_advanced(FFMPEG_INCLUDE_DIR SWRESAMPLE_LIB)
+find_package_handle_standard_args(Libswresample DEFAULT_MSG SWRESAMPLE_LIB SWRESAMPLE_INCLUDE_DIR)
+mark_as_advanced(SWRESAMPLE_INCLUDE_DIR SWRESAMPLE_LIB)
 
 if(LIBSWRESAMPLE_FOUND)
-	set(LIBSWRESAMPLE_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
+	set(LIBSWRESAMPLE_INCLUDE_DIRS ${SWRESAMPLE_INCLUDE_DIR})
 	set(LIBSWRESAMPLE_LIBRARIES ${SWRESAMPLE_LIB})
 endif()
