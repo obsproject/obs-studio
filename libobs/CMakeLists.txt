@@ -1,5 +1,7 @@
 project(libobs)
 
+find_package(Threads REQUIRED)
+
 find_package(Libswscale REQUIRED)
 include_directories(${LIBSWSCALE_INCLUDE_DIRS})
 add_definitions(${LIBSWSCALE_DEFINITIONS})
@@ -263,18 +265,26 @@ set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")
-target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
+target_compile_definitions(libobs
+	PUBLIC
+		HAVE_OBSCONFIG_H)
 
 if(NOT MSVC)
-	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
+	target_compile_options(libobs
+		PUBLIC
+			-mmmx
+			-msse
+			-msse2)
 endif()
 
+
+target_compile_options(libobs
+	PUBLIC
+		"${THREADS_DEFINITIONS}")
 target_include_directories(libobs PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 	"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
 	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
-
-
 target_link_libraries(libobs
 	PRIVATE
 		${libobs_PLATFORM_DEPS}
@@ -283,7 +293,9 @@ target_link_libraries(libobs
 		${LIBSWSCALE_LIBRARIES}
 		${LIBSWRESAMPLE_LIBRARIES}
 		${LIBAVFORMAT_LIBRARIES}
-		${LIBAVUTIL_LIBRARIES})
+		${LIBAVUTIL_LIBRARIES}
+	PUBLIC
+		${THREADS_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)
