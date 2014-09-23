@@ -19,37 +19,30 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-set(X264_PATH_ARCH x264Path${_lib_suffix})
-set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
-
 find_path(X264_INCLUDE_DIR
 	NAMES x264.h
 	HINTS
-		${_X264_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
+		ENV x264Path${_lib_suffix}
 		ENV x264Path
-		ENV FFmpegPath
-		ENV ${X264_PATH_ARCH}
-		ENV ${FFMPEG_PATH_ARCH}
+		${_X264_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include)
 
 find_library(X264_LIB
 	NAMES ${_X264_LIBRARIES} x264 libx264
 	HINTS
+		ENV x264Path${_lib_suffix}
+		ENV x264Path
 		${_X264_LIBRARY_DIRS}
-		"${X264_INCLUDE_DIR}/../lib"
-		"${X264_INCLUDE_DIR}/../lib${_lib_suffix}"
-		"${X264_INCLUDE_DIR}/../libs${_lib_suffix}"
-		"${X264_INCLUDE_DIR}/lib"
-		"${X264_INCLUDE_DIR}/lib${_lib_suffix}"
-		"${X264_INCLUDE_DIR}/bin"
-		"${X264_INCLUDE_DIR}/bin${_lib_suffix}"
-		"${X264_INCLUDE_DIR}/../bin"
-		"${X264_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+	PATH_SUFFIXES
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin
+		../lib${_lib_suffix} ../lib
+		../libs${_lib_suffix} ../libs
+		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libx264 DEFAULT_MSG X264_LIB X264_INCLUDE_DIR)

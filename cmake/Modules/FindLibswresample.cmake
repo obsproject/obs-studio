@@ -15,16 +15,12 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
-
 find_path(FFMPEG_INCLUDE_DIR
 	NAMES libswresample/swresample.h
 	HINTS
-		${_SWRESAMPLE_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
+		ENV FFmpegPath${_lib_suffix}
 		ENV FFmpegPath
-		ENV ${FFMPEG_PATH_ARCH}
+		${_SWRESAMPLE_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES ffmpeg libav)
@@ -32,18 +28,15 @@ find_path(FFMPEG_INCLUDE_DIR
 find_library(SWRESAMPLE_LIB
 	NAMES ${_SWRESAMPLE_LIBRARIES} swresample-ffmpeg swresample
 	HINTS
+		ENV FFmpegPath${_lib_suffix}
+		ENV FFmpegPath
 		${_SWRESAMPLE_LIBRARY_DIRS}
-		"${FFMPEG_INCLUDE_DIR}/../lib"
-		"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/lib"
-		"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/bin"
-		"${FFMPEG_INCLUDE_DIR}/bin${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/../bin"
-		"${FFMPEG_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+	PATH_SUFFIXES
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libswresample DEFAULT_MSG SWRESAMPLE_LIB FFMPEG_INCLUDE_DIR)

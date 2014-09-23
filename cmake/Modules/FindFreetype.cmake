@@ -19,12 +19,10 @@ find_path(FREETYPE_INCLUDE_DIR_ft2build
 	NAMES
 		ft2build.h
 	HINTS
-		${_FREETYPE_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
 		ENV FreetypePath${_lib_suffix}
 		ENV FreetypePath
 		ENV FREETYPE_DIR
+		${_FREETYPE_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES
@@ -35,12 +33,10 @@ find_path(FREETYPE_INCLUDE_DIR_freetype2
 		freetype/config/ftheader.h
 		config/ftheader.h
 	HINTS
-		${_FREETYPE_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
 		ENV FreetypePath${_lib_suffix}
 		ENV FreetypePath
 		ENV FREETYPE_DIR
+		${_FREETYPE_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES
@@ -49,24 +45,19 @@ find_path(FREETYPE_INCLUDE_DIR_freetype2
 find_library(FREETYPE_LIB
 	NAMES ${_FREETYPE_LIBRARIES} freetype libfreetype
 	HINTS
-		${_FREETYPE_LIBRARY_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/lib${_lib_suffix}"
-		"$ENV{obsAdditionalInstallFiles}/lib${_lib_suffix}"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../../lib${_lib_suffix}"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../../lib"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../lib${_lib_suffix}"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../lib"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/lib${_lib_suffix}"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/lib"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/bin"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/bin${_lib_suffix}"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../bin"
-		"${FREETYPE_INCLUDE_DIR_ft2build}/../bin${_lib_suffix}"
+		ENV FreetypePath${_lib_suffix}
+		ENV FreetypePath
 		ENV FREETYPE_DIR
+		${_FREETYPE_LIBRARY_DIRS}
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
 	PATH_SUFFIXES
-		lib${_lib_suffix} lib)
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin
+		../lib${_lib_suffix} ../lib
+		../libs${_lib_suffix} ../libs
+		../bin${_lib_suffix} ../bin)
 
 if(FREETYPE_INCLUDE_DIR_ft2build AND FREETYPE_INCLUDE_DIR_freetype2)
 	set(FREETYPE_INCLUDE_DIR "${FREETYPE_INCLUDE_DIR_ft2build};${FREETYPE_INCLUDE_DIR_freetype2}")

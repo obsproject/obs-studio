@@ -15,16 +15,12 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-set(FFMPEG_PATH_ARCH FFmpegPath${_lib_suffix})
-
 find_path(FFMPEG_INCLUDE_DIR
 	NAMES libavutil/avutil.h
 	HINTS
-		${_AVUTIL_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
+		ENV FFmpegPath${_lib_suffix}
 		ENV FFmpegPath
-		ENV ${FFMPEG_PATH_ARCH}
+		${_AVUTIL_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES ffmpeg libav)
@@ -32,18 +28,15 @@ find_path(FFMPEG_INCLUDE_DIR
 find_library(AVUTIL_LIB
 	NAMES ${_AVUTIL_LIBRARIES} avutil-ffmpeg avutil
 	HINTS
+		ENV FFmpegPath${_lib_suffix}
+		ENV FFmpegPath
 		${_AVUTIL_LIBRARY_DIRS}
-		"${FFMPEG_INCLUDE_DIR}/../lib"
-		"${FFMPEG_INCLUDE_DIR}/../lib${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/lib"
-		"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/bin"
-		"${FFMPEG_INCLUDE_DIR}/bin${_lib_suffix}"
-		"${FFMPEG_INCLUDE_DIR}/../bin"
-		"${FFMPEG_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+	PATH_SUFFIXES
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libavutil DEFAULT_MSG AVUTIL_LIB FFMPEG_INCLUDE_DIR)

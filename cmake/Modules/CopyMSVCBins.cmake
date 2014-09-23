@@ -8,11 +8,6 @@ if(COPIED_DEPENDENCIES)
 	return()
 endif()
 
-# Do not attempt to copy if an external intall files dir is in use
-if(DEFINED ENV{obsAdditionalInstallFiles})
-	return()
-endif()
-
 option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" OFF)
 if(NOT COPY_DEPENDENCIES)
 	return()
