@@ -28,7 +28,21 @@ endif()
 
 if(DEFINED ENV{obsAdditionalInstallFiles})
 	file(TO_CMAKE_PATH "$ENV{obsAdditionalInstallFiles}" ENV{obsAdditionalInstallFiles})
+else()
+	set(ENV{obsAdditionalInstallFiles} "${CMAKE_SOURCE_DIR}/additional_install_files")
 endif()
+
+list(APPEND CMAKE_INCLUDE_PATH
+	"$ENV{obsAdditionalInstallFiles}/include${_lib_suffix}"
+	"$ENV{obsAdditionalInstallFiles}/include")
+
+list(APPEND CMAKE_LIBRARY_PATH
+	"$ENV{obsAdditionalInstallFiles}/lib${_lib_suffix}"
+	"$ENV{obsAdditionalInstallFiles}/lib"
+	"$ENV{obsAdditionalInstallFiles}/libs${_lib_suffix}"
+	"$ENV{obsAdditionalInstallFiles}/libs"
+	"$ENV{obsAdditionalInstallFiles}/bin${_lib_suffix}"
+	"$ENV{obsAdditionalInstallFiles}/bin")
 
 if(NOT UNIX_STRUCTURE)
 	set(OBS_DATA_DESTINATION "data")
