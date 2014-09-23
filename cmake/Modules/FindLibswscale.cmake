@@ -38,6 +38,10 @@ find_library(SWSCALE_LIB
 		"${FFMPEG_INCLUDE_DIR}/../libs${_lib_suffix}"
 		"${FFMPEG_INCLUDE_DIR}/lib"
 		"${FFMPEG_INCLUDE_DIR}/lib${_lib_suffix}"
+		"${FFMPEG_INCLUDE_DIR}/bin"
+		"${FFMPEG_INCLUDE_DIR}/bin${_lib_suffix}"
+		"${FFMPEG_INCLUDE_DIR}/../bin"
+		"${FFMPEG_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 

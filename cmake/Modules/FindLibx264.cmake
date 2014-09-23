@@ -44,6 +44,10 @@ find_library(X264_LIB
 		"${X264_INCLUDE_DIR}/../libs${_lib_suffix}"
 		"${X264_INCLUDE_DIR}/lib"
 		"${X264_INCLUDE_DIR}/lib${_lib_suffix}"
+		"${X264_INCLUDE_DIR}/bin"
+		"${X264_INCLUDE_DIR}/bin${_lib_suffix}"
+		"${X264_INCLUDE_DIR}/../bin"
+		"${X264_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 

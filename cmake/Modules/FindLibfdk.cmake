@@ -44,6 +44,10 @@ find_library(Libfdk_LIB
 		"${Libfdk_INCLUDE_DIR}/../libs${_lib_suffix}"
 		"${Libfdk_INCLUDE_DIR}/lib"
 		"${Libfdk_INCLUDE_DIR}/lib${_lib_suffix}"
+		"${Libfdk_INCLUDE_DIR}/bin"
+		"${Libfdk_INCLUDE_DIR}/bin${_lib_suffix}"
+		"${Libfdk_INCLUDE_DIR}/../bin"
+		"${Libfdk_INCLUDE_DIR}/../bin${_lib_suffix}"
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 

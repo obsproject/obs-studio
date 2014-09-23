@@ -58,6 +58,10 @@ find_library(FREETYPE_LIB
 		"${FREETYPE_INCLUDE_DIR_ft2build}/../lib"
 		"${FREETYPE_INCLUDE_DIR_ft2build}/lib${_lib_suffix}"
 		"${FREETYPE_INCLUDE_DIR_ft2build}/lib"
+		"${FREETYPE_INCLUDE_DIR_ft2build}/bin"
+		"${FREETYPE_INCLUDE_DIR_ft2build}/bin${_lib_suffix}"
+		"${FREETYPE_INCLUDE_DIR_ft2build}/../bin"
+		"${FREETYPE_INCLUDE_DIR_ft2build}/../bin${_lib_suffix}"
 		ENV FREETYPE_DIR
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
