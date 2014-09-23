@@ -475,7 +475,7 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		OnEncodedAudioData(AV_CODEC_ID_AC3, data, size, startTime);
 		return;
 	} else if (config.format == AudioFormat::MPGA) {
-		OnEncodedAudioData(AV_CODEC_ID_MP1, data, size, startTime);
+		OnEncodedAudioData(AV_CODEC_ID_MP2, data, size, startTime);
 		return;
 	}
 
