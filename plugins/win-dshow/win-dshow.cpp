@@ -354,6 +354,9 @@ static inline audio_format ConvertAudioFormat(AudioFormat format)
 	}
 }
 
+//#define LOG_ENCODED_VIDEO_TS 1
+//#define LOG_ENCODED_AUDIO_TS 1
+
 void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 		unsigned char *data, size_t size, long long ts)
 {
@@ -374,7 +377,9 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 
 	if (got_output) {
 		frame.timestamp = (uint64_t)ts * 100;
+#if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
+#endif
 		obs_source_output_video(source, &frame);
 	}
 }
@@ -450,7 +455,9 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id,
 
 	if (got_output) {
 		audio.timestamp = (uint64_t)ts * 100;
-		//blog(LOG_DEBUG, "audio ts: %llu", audio.timestamp);
+#if LOG_ENCODED_AUDIO_TS
+		blog(LOG_DEBUG, "audio ts: %llu", audio.timestamp);
+#endif
 		obs_source_output_audio(source, &audio);
 	}
 }
