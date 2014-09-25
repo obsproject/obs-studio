@@ -146,6 +146,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRetryDelay,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMaxRetries,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutUseCBR,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutCustomX264,  EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
@@ -437,6 +438,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"MaxRetries");
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
+	bool useCBR = config_get_bool(main->Config(), "SimpleOutput",
+			"UseCBR");
 	const char *preset = config_get_string(main->Config(), "SimpleOutput",
 			"Preset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
@@ -452,6 +455,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutRetryDelay->setValue(retryDelay);
 	ui->simpleOutMaxRetries->setValue(maxRetries);
 	ui->simpleOutAdvanced->setChecked(advanced);
+	ui->simpleOutUseCBR->setChecked(useCBR);
 	ui->simpleOutPreset->setCurrentText(preset);
 	ui->simpleOutCustomX264->setText(custom);
 }
@@ -627,6 +631,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->simpleOutRetryDelay, "SimpleOutput", "RetryDelay");
 	SaveSpinBox(ui->simpleOutMaxRetries, "SimpleOutput", "MaxRetries");
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
+	SaveCheckBox(ui->simpleOutUseCBR, "SimpleOutput", "UseCBR");
 	SaveCombo(ui->simpleOutPreset, "SimpleOutput", "Preset");
 	SaveEdit(ui->simpleOutCustomX264, "SimpleOutput", "x264Settings");
 }

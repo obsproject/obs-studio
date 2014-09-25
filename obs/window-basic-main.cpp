@@ -442,6 +442,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 			20);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseAdvanced",
 			false);
+	config_set_default_bool  (basicConfig, "SimpleOutput", "UseCBR", true);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
 
@@ -2025,6 +2026,8 @@ void OBSBasic::SetupEncoders()
 				"ABitrate");
 		bool advanced = config_get_bool(basicConfig, "SimpleOutput",
 				"UseAdvanced");
+		bool useCBR = config_get_bool(basicConfig, "SimpleOutput",
+				"UseCBR");
 		const char *preset = config_get_string(basicConfig,
 				"SimpleOutput", "Preset");
 		const char *custom = config_get_string(basicConfig,
@@ -2032,11 +2035,13 @@ void OBSBasic::SetupEncoders()
 
 		obs_data_set_int(x264Settings, "bitrate", videoBitrate);
 		obs_data_set_int(x264Settings, "buffer_size", videoBitrate);
-		obs_data_set_bool(x264Settings, "cbr", true);
 
 		if (advanced) {
 			obs_data_set_string(x264Settings, "preset", preset);
 			obs_data_set_string(x264Settings, "x264opts", custom);
+			obs_data_set_bool(x264Settings, "cbr", useCBR);
+		} else {
+			obs_data_set_bool(x264Settings, "cbr", true);
 		}
 
 		obs_data_set_int(aacSettings, "bitrate", audioBitrate);
