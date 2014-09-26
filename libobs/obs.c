@@ -1326,7 +1326,8 @@ void obs_context_data_remove(struct obs_context_data *context)
 {
 	if (context && context->mutex) {
 		pthread_mutex_lock(context->mutex);
-		*context->prev_next = context->next;
+		if (context->prev_next)
+			*context->prev_next = context->next;
 		if (context->next)
 			context->next->prev_next = context->prev_next;
 		pthread_mutex_unlock(context->mutex);
