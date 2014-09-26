@@ -673,7 +673,8 @@ void gs_program_destroy(struct gs_program *program)
 
 	if (program->next)
 		program->next->prev_next = program->prev_next;
-	*program->prev_next = program->next;
+	if (program->prev_next)
+		*program->prev_next = program->next;
 
 	glDeleteProgram(program->obj);
 	gl_success("glDeleteProgram");

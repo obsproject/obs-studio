@@ -86,7 +86,8 @@ void obs_display_destroy(obs_display_t *display)
 {
 	if (display) {
 		pthread_mutex_lock(&obs->data.displays_mutex);
-		*display->prev_next = display->next;
+		if (display->prev_next)
+			*display->prev_next = display->next;
 		if (display->next)
 			display->next->prev_next = display->prev_next;
 		pthread_mutex_unlock(&obs->data.displays_mutex);

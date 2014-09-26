@@ -99,7 +99,8 @@ static inline void audio_output_removeline(struct audio_output *audio,
 		struct audio_line *line)
 {
 	pthread_mutex_lock(&audio->line_mutex);
-	*line->prev_next = line->next;
+	if (line->prev_next)
+		*line->prev_next = line->next;
 	if (line->next)
 		line->next->prev_next = line->prev_next;
 	pthread_mutex_unlock(&audio->line_mutex);
