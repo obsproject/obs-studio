@@ -17,8 +17,8 @@ private:
 	QLabel *cpuUsage;
 	QLabel *kbps;
 
-	obs_output_t streamOutput = nullptr;
-	obs_output_t recordOutput = nullptr;
+	obs_output_t *streamOutput = nullptr;
+	obs_output_t *recordOutput = nullptr;
 
 	int retries = 0;
 	int activeRefs = 0;
@@ -33,14 +33,14 @@ private:
 	void DecRef();
 	void IncRef();
 
-	obs_output_t GetOutput();
+	obs_output_t *GetOutput();
 
 	void UpdateBandwidth();
 	void UpdateSessionTime();
 	void UpdateDroppedFrames();
 
-	static void OBSOutputReconnect(void *data, calldata_t params);
-	static void OBSOutputReconnectSuccess(void *data, calldata_t params);
+	static void OBSOutputReconnect(void *data, calldata_t *params);
+	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
 
 private slots:
 	void Reconnect();
@@ -51,8 +51,8 @@ private slots:
 public:
 	OBSBasicStatusBar(QWidget *parent);
 
-	void StreamStarted(obs_output_t output);
+	void StreamStarted(obs_output_t *output);
 	void StreamStopped();
-	void RecordingStarted(obs_output_t output);
+	void RecordingStarted(obs_output_t *output);
 	void RecordingStopped();
 };

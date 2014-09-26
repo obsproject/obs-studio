@@ -26,7 +26,7 @@ extern "C" {
 /* Base video output component.  Use this to create a video output track. */
 
 struct video_output;
-typedef struct video_output *video_t;
+typedef struct video_output video_t;
 
 enum video_format {
 	VIDEO_FORMAT_NONE,
@@ -119,33 +119,33 @@ EXPORT bool video_format_get_parameters(enum video_colorspace color_space,
 #define VIDEO_OUTPUT_INVALIDPARAM -1
 #define VIDEO_OUTPUT_FAIL         -2
 
-EXPORT int video_output_open(video_t *video, struct video_output_info *info);
-EXPORT void video_output_close(video_t video);
+EXPORT int video_output_open(video_t **video, struct video_output_info *info);
+EXPORT void video_output_close(video_t *video);
 
-EXPORT bool video_output_connect(video_t video,
+EXPORT bool video_output_connect(video_t *video,
 		const struct video_scale_info *conversion,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param);
-EXPORT void video_output_disconnect(video_t video,
+EXPORT void video_output_disconnect(video_t *video,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param);
 
-EXPORT bool video_output_active(video_t video);
+EXPORT bool video_output_active(video_t *video);
 
-EXPORT const struct video_output_info *video_output_get_info(video_t video);
-EXPORT void video_output_swap_frame(video_t video, struct video_data *frame);
-EXPORT bool video_output_wait(video_t video);
-EXPORT uint64_t video_output_get_frame_time(video_t video);
-EXPORT uint64_t video_output_get_time(video_t video);
-EXPORT void video_output_stop(video_t video);
+EXPORT const struct video_output_info *video_output_get_info(video_t *video);
+EXPORT void video_output_swap_frame(video_t *video, struct video_data *frame);
+EXPORT bool video_output_wait(video_t *video);
+EXPORT uint64_t video_output_get_frame_time(video_t *video);
+EXPORT uint64_t video_output_get_time(video_t *video);
+EXPORT void video_output_stop(video_t *video);
 
-EXPORT enum video_format video_output_get_format(video_t video);
-EXPORT uint32_t video_output_get_width(video_t video);
-EXPORT uint32_t video_output_get_height(video_t video);
-EXPORT double video_output_get_frame_rate(video_t video);
+EXPORT enum video_format video_output_get_format(video_t *video);
+EXPORT uint32_t video_output_get_width(video_t *video);
+EXPORT uint32_t video_output_get_height(video_t *video);
+EXPORT double video_output_get_frame_rate(video_t *video);
 
-EXPORT uint32_t video_output_get_skipped_frames(video_t video);
-EXPORT uint32_t video_output_get_total_frames(video_t video);
+EXPORT uint32_t video_output_get_skipped_frames(video_t *video);
+EXPORT uint32_t video_output_get_total_frames(video_t *video);
 
 
 #ifdef __cplusplus

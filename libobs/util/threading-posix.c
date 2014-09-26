@@ -33,7 +33,7 @@ struct os_event_data {
 	bool            manual;
 };
 
-int os_event_init(os_event_t *event, enum os_event_type type)
+int os_event_init(os_event_t **event, enum os_event_type type)
 {
 	int code = 0;
 
@@ -57,7 +57,7 @@ int os_event_init(os_event_t *event, enum os_event_type type)
 	return 0;
 }
 
-void os_event_destroy(os_event_t event)
+void os_event_destroy(os_event_t *event)
 {
 	if (event) {
 		pthread_mutex_destroy(&event->mutex);
@@ -66,7 +66,7 @@ void os_event_destroy(os_event_t event)
 	}
 }
 
-int os_event_wait(os_event_t event)
+int os_event_wait(os_event_t *event)
 {
 	int code = 0;
 	pthread_mutex_lock(&event->mutex);
@@ -93,7 +93,7 @@ static inline void add_ms_to_ts(struct timespec *ts,
 	}
 }
 
-int os_event_timedwait(os_event_t event, unsigned long milliseconds)
+int os_event_timedwait(os_event_t *event, unsigned long milliseconds)
 {
 	int code = 0;
 	pthread_mutex_lock(&event->mutex);
@@ -121,7 +121,7 @@ int os_event_timedwait(os_event_t event, unsigned long milliseconds)
 	return code;
 }
 
-int os_event_try(os_event_t event)
+int os_event_try(os_event_t *event)
 {
 	int ret = EAGAIN;
 
@@ -136,7 +136,7 @@ int os_event_try(os_event_t event)
 	return ret;
 }
 
-int os_event_signal(os_event_t event)
+int os_event_signal(os_event_t *event)
 {
 	int code = 0;
 
@@ -148,7 +148,7 @@ int os_event_signal(os_event_t event)
 	return code;
 }
 
-void os_event_reset(os_event_t event)
+void os_event_reset(os_event_t *event)
 {
 	pthread_mutex_lock(&event->mutex);
 	event->signalled = false;
@@ -162,7 +162,7 @@ struct os_sem_data {
 	task_t      task;
 };
 
-int  os_sem_init(os_sem_t *sem, int value)
+int  os_sem_init(os_sem_t **sem, int value)
 {
 	semaphore_t new_sem;
 	task_t      task = mach_task_self();
@@ -179,7 +179,7 @@ int  os_sem_init(os_sem_t *sem, int value)
 	return 0;
 }
 
-void os_sem_destroy(os_sem_t sem)
+void os_sem_destroy(os_sem_t *sem)
 {
 	if (sem) {
 		semaphore_destroy(sem->task, sem->sem);
@@ -187,13 +187,13 @@ void os_sem_destroy(os_sem_t sem)
 	}
 }
 
-int  os_sem_post(os_sem_t sem)
+int  os_sem_post(os_sem_t *sem)
 {
 	if (!sem) return -1;
 	return (semaphore_signal(sem->sem) == KERN_SUCCESS) ? 0 : -1;
 }
 
-int  os_sem_wait(os_sem_t sem)
+int  os_sem_wait(os_sem_t *sem)
 {
 	if (!sem) return -1;
 	return (semaphore_wait(sem->sem) == KERN_SUCCESS) ? 0 : -1;
@@ -205,7 +205,7 @@ struct os_sem_data {
 	sem_t sem;
 };
 
-int  os_sem_init(os_sem_t *sem, int value)
+int  os_sem_init(os_sem_t **sem, int value)
 {
 	sem_t new_sem;
 	int ret = sem_init(&new_sem, 0, value);
@@ -217,7 +217,7 @@ int  os_sem_init(os_sem_t *sem, int value)
 	return 0;
 }
 
-void os_sem_destroy(os_sem_t sem)
+void os_sem_destroy(os_sem_t *sem)
 {
 	if (sem) {
 		sem_destroy(&sem->sem);
@@ -225,13 +225,13 @@ void os_sem_destroy(os_sem_t sem)
 	}
 }
 
-int  os_sem_post(os_sem_t sem)
+int  os_sem_post(os_sem_t *sem)
 {
 	if (!sem) return -1;
 	return sem_post(&sem->sem);
 }
 
-int  os_sem_wait(os_sem_t sem)
+int  os_sem_wait(os_sem_t *sem)
 {
 	if (!sem) return -1;
 	return sem_wait(&sem->sem);

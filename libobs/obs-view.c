@@ -32,7 +32,7 @@ bool obs_view_init(struct obs_view *view)
 	return true;
 }
 
-obs_view_t obs_view_create(void)
+obs_view_t *obs_view_create(void)
 {
 	struct obs_view *view = bzalloc(sizeof(struct obs_view));
 
@@ -55,7 +55,7 @@ void obs_view_free(struct obs_view *view)
 	pthread_mutex_destroy(&view->channels_mutex);
 }
 
-void obs_view_destroy(obs_view_t view)
+void obs_view_destroy(obs_view_t *view)
 {
 	if (view) {
 		obs_view_free(view);
@@ -63,9 +63,9 @@ void obs_view_destroy(obs_view_t view)
 	}
 }
 
-obs_source_t obs_view_get_source(obs_view_t view, uint32_t channel)
+obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel)
 {
-	obs_source_t source;
+	obs_source_t *source;
 	assert(channel < MAX_CHANNELS);
 
 	if (!view) return NULL;
@@ -82,8 +82,8 @@ obs_source_t obs_view_get_source(obs_view_t view, uint32_t channel)
 	return source;
 }
 
-void obs_view_set_source(obs_view_t view, uint32_t channel,
-		obs_source_t source)
+void obs_view_set_source(obs_view_t *view, uint32_t channel,
+		obs_source_t *source)
 {
 	struct obs_source *prev_source;
 
@@ -110,7 +110,7 @@ void obs_view_set_source(obs_view_t view, uint32_t channel,
 	}
 }
 
-void obs_view_render(obs_view_t view)
+void obs_view_render(obs_view_t *view)
 {
 	if (!view) return;
 

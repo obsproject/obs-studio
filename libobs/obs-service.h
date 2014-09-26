@@ -22,18 +22,18 @@ struct obs_service_info {
 	const char *id;
 
 	const char *(*get_name)(void);
-	void *(*create)(obs_data_t settings, obs_service_t service);
+	void *(*create)(obs_data_t *settings, obs_service_t *service);
 	void (*destroy)(void *data);
 
 	/* optional */
-	void (*activate)(void *data, obs_data_t settings);
+	void (*activate)(void *data, obs_data_t *settings);
 	void (*deactivate)(void *data);
 
-	void (*update)(void *data, obs_data_t settings);
+	void (*update)(void *data, obs_data_t *settings);
 
-	void (*get_defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t *settings);
 
-	obs_properties_t (*get_properties)(void);
+	obs_properties_t *(*get_properties)(void);
 
 	/**
 	 * Called when getting ready to start up an output, before the encoders
@@ -44,7 +44,7 @@ struct obs_service_info {
 	 * @eturn          true to allow the output to start up,
 	 *                 false to prevent output from starting up
 	 */
-	bool (*initialize)(void *data, obs_output_t output);
+	bool (*initialize)(void *data, obs_output_t *output);
 
 	const char *(*get_url)(void *data);
 	const char *(*get_key)(void *data);

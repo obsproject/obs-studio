@@ -38,7 +38,7 @@
 /* ------------------------------------------------------------------------- */
 
 struct obs_x264 {
-	obs_encoder_t          encoder;
+	obs_encoder_t          *encoder;
 
 	x264_param_t           params;
 	x264_t                 *context;
@@ -51,7 +51,7 @@ struct obs_x264 {
 	size_t                 extra_data_size;
 	size_t                 sei_size;
 
-	os_performance_token_t performance_token;
+	os_performance_token_t *performance_token;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -88,7 +88,7 @@ static void obs_x264_destroy(void *data)
 	}
 }
 
-static void obs_x264_defaults(obs_data_t settings)
+static void obs_x264_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int   (settings, "bitrate",     1000);
 	obs_data_set_default_int   (settings, "buffer_size", 1000);
@@ -102,7 +102,7 @@ static void obs_x264_defaults(obs_data_t settings)
 	obs_data_set_default_string(settings, "x264opts",    "");
 }
 
-static inline void add_strings(obs_property_t list, const char *const *strings)
+static inline void add_strings(obs_property_t *list, const char *const *strings)
 {
 	while (*strings) {
 		obs_property_list_add_string(list, *strings, *strings);
@@ -118,10 +118,10 @@ static inline void add_strings(obs_property_t list, const char *const *strings)
 #define TEXT_TUNE       obs_module_text("Tune")
 #define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
 
-static obs_properties_t obs_x264_props(void)
+static obs_properties_t *obs_x264_props(void)
 {
-	obs_properties_t props = obs_properties_create();
-	obs_property_t list;
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *list;
 
 	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 100000, 1);
 	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50, 100000,
@@ -285,10 +285,10 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	UNUSED_PARAMETER(level);
 }
 
-static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
+static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		char **params)
 {
-	video_t video = obs_encoder_video(obsx264->encoder);
+	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
 	int bitrate      = (int)obs_data_get_int(settings, "bitrate");
@@ -358,7 +358,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t settings,
 	     cbr ? "on" : "off");
 }
 
-static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
+static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings)
 {
 	char *preset     = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile    = bstrdup(obs_data_get_string(settings, "profile"));
@@ -400,7 +400,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t settings)
 	return success;
 }
 
-static bool obs_x264_update(void *data, obs_data_t settings)
+static bool obs_x264_update(void *data, obs_data_t *settings)
 {
 	struct obs_x264 *obsx264 = data;
 	bool success = update_settings(obsx264, settings);
@@ -444,7 +444,7 @@ static void load_headers(struct obs_x264 *obsx264)
 	obsx264->sei_size        = sei.num;
 }
 
-static void *obs_x264_create(obs_data_t settings, obs_encoder_t encoder)
+static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct obs_x264 *obsx264 = bzalloc(sizeof(struct obs_x264));
 	obsx264->encoder = encoder;
@@ -567,7 +567,7 @@ static bool obs_x264_sei(void *data, uint8_t **sei, size_t *size)
 static bool obs_x264_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_x264 *obsx264 = data;
-	video_t video = obs_encoder_video(obsx264->encoder);
+	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *vid_info = video_output_get_info(video);
 
 	if (vid_info->format == VIDEO_FORMAT_I420 ||

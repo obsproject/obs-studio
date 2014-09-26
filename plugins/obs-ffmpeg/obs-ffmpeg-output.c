@@ -70,7 +70,7 @@ struct ffmpeg_data {
 };
 
 struct ffmpeg_output {
-	obs_output_t       output;
+	obs_output_t       *output;
 	volatile bool      active;
 	struct ffmpeg_data ff_data;
 
@@ -80,8 +80,8 @@ struct ffmpeg_output {
 	bool               write_thread_active;
 	pthread_mutex_t    write_mutex;
 	pthread_t          write_thread;
-	os_sem_t           write_sem;
-	os_event_t         stop_event;
+	os_sem_t           *write_sem;
+	os_event_t         *stop_event;
 
 	DARRAY(AVPacket)   packets;
 };
@@ -415,7 +415,7 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 	UNUSED_PARAMETER(param);
 }
 
-static void *ffmpeg_output_create(obs_data_t settings, obs_output_t output)
+static void *ffmpeg_output_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_output *data = bzalloc(sizeof(struct ffmpeg_output));
 	pthread_mutex_init_value(&data->write_mutex);
@@ -714,7 +714,7 @@ static void *write_thread(void *data)
 static bool try_connect(struct ffmpeg_output *output)
 {
 	const char *filename_test;
-	obs_data_t settings;
+	obs_data_t *settings;
 	int audio_bitrate, video_bitrate;
 	int width, height;
 	int ret;

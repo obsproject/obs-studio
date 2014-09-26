@@ -31,8 +31,8 @@ extern "C" {
 
 struct audio_output;
 struct audio_line;
-typedef struct audio_output *audio_t;
-typedef struct audio_line   *audio_line_t;
+typedef struct audio_output audio_t;
+typedef struct audio_line   audio_line_t;
 
 enum audio_format {
 	AUDIO_FORMAT_UNKNOWN,
@@ -169,28 +169,28 @@ static inline size_t get_audio_size(enum audio_format format,
 #define AUDIO_OUTPUT_INVALIDPARAM -1
 #define AUDIO_OUTPUT_FAIL         -2
 
-EXPORT int audio_output_open(audio_t *audio, struct audio_output_info *info);
-EXPORT void audio_output_close(audio_t audio);
+EXPORT int audio_output_open(audio_t **audio, struct audio_output_info *info);
+EXPORT void audio_output_close(audio_t *audio);
 
-EXPORT bool audio_output_connect(audio_t video,
+EXPORT bool audio_output_connect(audio_t *video,
 		const struct audio_convert_info *conversion,
 		void (*callback)(void *param, struct audio_data *data),
 		void *param);
-EXPORT void audio_output_disconnect(audio_t video,
+EXPORT void audio_output_disconnect(audio_t *video,
 		void (*callback)(void *param, struct audio_data *data),
 		void *param);
 
-EXPORT bool audio_output_active(audio_t audio);
+EXPORT bool audio_output_active(audio_t *audio);
 
-EXPORT size_t audio_output_get_block_size(audio_t audio);
-EXPORT size_t audio_output_get_planes(audio_t audio);
-EXPORT size_t audio_output_get_channels(audio_t audio);
-EXPORT uint32_t audio_output_get_sample_rate(audio_t audio);
-EXPORT const struct audio_output_info *audio_output_get_info(audio_t audio);
+EXPORT size_t audio_output_get_block_size(audio_t *audio);
+EXPORT size_t audio_output_get_planes(audio_t *audio);
+EXPORT size_t audio_output_get_channels(audio_t *audio);
+EXPORT uint32_t audio_output_get_sample_rate(audio_t *audio);
+EXPORT const struct audio_output_info *audio_output_get_info(audio_t *audio);
 
-EXPORT audio_line_t audio_output_create_line(audio_t audio, const char *name);
-EXPORT void audio_line_destroy(audio_line_t line);
-EXPORT void audio_line_output(audio_line_t line, const struct audio_data *data);
+EXPORT audio_line_t *audio_output_create_line(audio_t *audio, const char *name);
+EXPORT void audio_line_destroy(audio_line_t *line);
+EXPORT void audio_line_output(audio_line_t *line, const struct audio_data *data);
 
 
 #ifdef __cplusplus

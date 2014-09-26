@@ -182,7 +182,7 @@ struct gs_vertex_buffer {
 	ComPtr<ID3D11Buffer>         tangentBuffer;
 	vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
-	gs_device_t       device;
+	gs_device_t       *device;
 	bool           dynamic;
 	VBDataPtr      vbd;
 	size_t         numVerts;
@@ -199,7 +199,7 @@ struct gs_vertex_buffer {
 			const size_t numVerts, void *array,
 			ID3D11Buffer **buffer);
 
-	gs_vertex_buffer(gs_device_t device, struct gs_vb_data *data,
+	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 			uint32_t flags);
 };
 
@@ -213,7 +213,7 @@ struct DataPtr {
 
 struct gs_index_buffer {
 	ComPtr<ID3D11Buffer> indexBuffer;
-	gs_device_t          device;
+	gs_device_t          *device;
 	bool                 dynamic;
 	gs_index_type        type;
 	size_t               indexSize;
@@ -222,7 +222,7 @@ struct gs_index_buffer {
 
 	void InitBuffer();
 
-	gs_index_buffer(gs_device_t device, enum gs_index_type type,
+	gs_index_buffer(gs_device_t *device, enum gs_index_type type,
 			void *indices, size_t num, uint32_t flags);
 };
 
@@ -279,7 +279,7 @@ struct gs_texture_2d : gs_texture {
 	{
 	}
 
-	gs_texture_2d(gs_device_t device, uint32_t width, uint32_t height,
+	gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
 			gs_texture_type type, bool gdiCompatible, bool shared);
@@ -304,7 +304,7 @@ struct gs_zstencil_buffer {
 	{
 	}
 
-	gs_zstencil_buffer(gs_device_t device, uint32_t width, uint32_t height,
+	gs_zstencil_buffer(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_zstencil_format format);
 };
 
@@ -316,16 +316,16 @@ struct gs_stage_surface {
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 
-	gs_stage_surface(gs_device_t device, uint32_t width, uint32_t height,
+	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat);
 };
 
 struct gs_sampler_state {
 	ComPtr<ID3D11SamplerState> state;
-	gs_device_t                device;
+	gs_device_t                *device;
 	gs_sampler_info            info;
 
-	gs_sampler_state(gs_device_t device, gs_sampler_info *info);
+	gs_sampler_state(gs_device_t *device, gs_sampler_info *info);
 };
 
 struct gs_shader_param {
@@ -357,7 +357,7 @@ struct ShaderError {
 };
 
 struct gs_shader {
-	gs_device_t             device;
+	gs_device_t             *device;
 	gs_shader_type          type;
 	vector<gs_shader_param> params;
 	ComPtr<ID3D11Buffer> constants;
@@ -371,7 +371,7 @@ struct gs_shader {
 	void Compile(const char *shaderStr, const char *file,
 			const char *target, ID3D10Blob **shader);
 
-	inline gs_shader(gs_device_t device, gs_shader_type type)
+	inline gs_shader(gs_device_t *device, gs_shader_type type)
 		: device       (device),
 		  type         (type),
 		  constantSize (0)
@@ -385,7 +385,7 @@ struct ShaderSampler {
 	string           name;
 	gs_sampler_state sampler;
 
-	inline ShaderSampler(const char *name, gs_device_t device,
+	inline ShaderSampler(const char *name, gs_device_t *device,
 			gs_sampler_info *info)
 		: name    (name),
 		  sampler (device, info)
@@ -416,7 +416,7 @@ struct gs_vertex_shader : gs_shader {
 
 	void GetBuffersExpected(const vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
 
-	gs_vertex_shader(gs_device_t device, const char *file,
+	gs_vertex_shader(gs_device_t *device, const char *file,
 			const char *shaderString);
 };
 
@@ -433,7 +433,7 @@ struct gs_pixel_shader : gs_shader {
 			states[i] = NULL;
 	}
 
-	gs_pixel_shader(gs_device_t device, const char *file,
+	gs_pixel_shader(gs_device_t *device, const char *file,
 			const char *shaderString);
 };
 
@@ -623,9 +623,10 @@ struct gs_device {
 	void UpdateRasterState();
 	void UpdateBlendState();
 
-	inline void CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y,
-		gs_texture_t src, uint32_t src_x, uint32_t src_y,
-		uint32_t src_w, uint32_t src_h);
+	inline void CopyTex(ID3D11Texture2D *dst,
+			uint32_t dst_x, uint32_t dst_y,
+			gs_texture_t *src, uint32_t src_x, uint32_t src_y,
+			uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
 

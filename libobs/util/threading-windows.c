@@ -28,7 +28,7 @@ struct os_sem_data {
 	HANDLE handle;
 };
 
-int os_event_init(os_event_t *event, enum os_event_type type)
+int os_event_init(os_event_t **event, enum os_event_type type)
 {
 	HANDLE handle;
 	struct os_event_data *data;
@@ -44,7 +44,7 @@ int os_event_init(os_event_t *event, enum os_event_type type)
 	return 0;
 }
 
-void os_event_destroy(os_event_t event)
+void os_event_destroy(os_event_t *event)
 {
 	if (event) {
 		CloseHandle(event->handle);
@@ -52,7 +52,7 @@ void os_event_destroy(os_event_t event)
 	}
 }
 
-int os_event_wait(os_event_t event)
+int os_event_wait(os_event_t *event)
 {
 	DWORD code;
 
@@ -66,7 +66,7 @@ int os_event_wait(os_event_t event)
 	return 0;
 }
 
-int os_event_timedwait(os_event_t event, unsigned long milliseconds)
+int os_event_timedwait(os_event_t *event, unsigned long milliseconds)
 {
 	DWORD code;
 
@@ -82,7 +82,7 @@ int os_event_timedwait(os_event_t event, unsigned long milliseconds)
 	return 0;
 }
 
-int os_event_try(os_event_t event)
+int os_event_try(os_event_t *event)
 {
 	DWORD code;
 
@@ -98,7 +98,7 @@ int os_event_try(os_event_t event)
 	return 0;
 }
 
-int os_event_signal(os_event_t event)
+int os_event_signal(os_event_t *event)
 {
 	if (!event)
 		return EINVAL;
@@ -109,7 +109,7 @@ int os_event_signal(os_event_t event)
 	return 0;
 }
 
-void os_event_reset(os_event_t event)
+void os_event_reset(os_event_t *event)
 {
 	if (!event)
 		return;
@@ -117,7 +117,7 @@ void os_event_reset(os_event_t event)
 	ResetEvent(event->handle);
 }
 
-int  os_sem_init(os_sem_t *sem, int value)
+int  os_sem_init(os_sem_t **sem, int value)
 {
 	HANDLE handle = CreateSemaphore(NULL, (LONG)value, 0x7FFFFFFF, NULL);
 	if (!handle)
@@ -128,7 +128,7 @@ int  os_sem_init(os_sem_t *sem, int value)
 	return 0;
 }
 
-void os_sem_destroy(os_sem_t sem)
+void os_sem_destroy(os_sem_t *sem)
 {
 	if (sem) {
 		CloseHandle(sem->handle);
@@ -136,13 +136,13 @@ void os_sem_destroy(os_sem_t sem)
 	}
 }
 
-int  os_sem_post(os_sem_t sem)
+int  os_sem_post(os_sem_t *sem)
 {
 	if (!sem) return -1;
 	return ReleaseSemaphore(sem->handle, 1, NULL) ? 0 : -1;
 }
 
-int  os_sem_wait(os_sem_t sem)
+int  os_sem_wait(os_sem_t *sem)
 {
 	DWORD ret;
 

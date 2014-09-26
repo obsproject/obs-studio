@@ -12,7 +12,7 @@ using namespace std;
 #define OPT_DEVICE_ID         "device_id"
 #define OPT_USE_DEVICE_TIMING "use_device_timing"
 
-static void GetWASAPIDefaults(obs_data_t settings);
+static void GetWASAPIDefaults(obs_data_t *settings);
 
 #define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
 #define KSAUDIO_SPEAKER_2POINT1 (KSAUDIO_SPEAKER_STEREO|SPEAKER_LOW_FREQUENCY)
@@ -22,7 +22,7 @@ class WASAPISource {
 	ComPtr<IAudioClient>        client;
 	ComPtr<IAudioCaptureClient> capture;
 
-	obs_source_t                source;
+	obs_source_t                *source;
 	string                      device_id;
 	string                      device_name;
 	bool                        isInputDevice;
@@ -60,16 +60,16 @@ class WASAPISource {
 
 	bool TryInitialize();
 
-	void UpdateSettings(obs_data_t settings);
+	void UpdateSettings(obs_data_t *settings);
 
 public:
-	WASAPISource(obs_data_t settings, obs_source_t source_, bool input);
+	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
 	inline ~WASAPISource();
 
-	void Update(obs_data_t settings);
+	void Update(obs_data_t *settings);
 };
 
-WASAPISource::WASAPISource(obs_data_t settings, obs_source_t source_,
+WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 		bool input)
 	: reconnecting    (false),
 	  active          (false),
@@ -122,14 +122,14 @@ inline WASAPISource::~WASAPISource()
 	Stop();
 }
 
-void WASAPISource::UpdateSettings(obs_data_t settings)
+void WASAPISource::UpdateSettings(obs_data_t *settings)
 {
 	device_id       = obs_data_get_string(settings, OPT_DEVICE_ID);
 	useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
 }
 
-void WASAPISource::Update(obs_data_t settings)
+void WASAPISource::Update(obs_data_t *settings)
 {
 	string newDevice = obs_data_get_string(settings, OPT_DEVICE_ID);
 	bool restart = newDevice.compare(device_id) != 0;
@@ -429,13 +429,13 @@ static const char *GetWASAPIOutputName(void)
 	return obs_module_text("AudioOutput");
 }
 
-static void GetWASAPIDefaults(obs_data_t settings)
+static void GetWASAPIDefaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
 }
 
-static void *CreateWASAPISource(obs_data_t settings, obs_source_t source,
+static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 		bool input)
 {
 	try {
@@ -447,12 +447,12 @@ static void *CreateWASAPISource(obs_data_t settings, obs_source_t source,
 	return nullptr;
 }
 
-static void *CreateWASAPIInput(obs_data_t settings, obs_source_t source)
+static void *CreateWASAPIInput(obs_data_t *settings, obs_source_t *source)
 {
 	return CreateWASAPISource(settings, source, true);
 }
 
-static void *CreateWASAPIOutput(obs_data_t settings, obs_source_t source)
+static void *CreateWASAPIOutput(obs_data_t *settings, obs_source_t *source)
 {
 	return CreateWASAPISource(settings, source, false);
 }
@@ -462,18 +462,18 @@ static void DestroyWASAPISource(void *obj)
 	delete static_cast<WASAPISource*>(obj);
 }
 
-static void UpdateWASAPISource(void *obj, obs_data_t settings)
+static void UpdateWASAPISource(void *obj, obs_data_t *settings)
 {
 	static_cast<WASAPISource*>(obj)->Update(settings);
 }
 
-static obs_properties_t GetWASAPIProperties(bool input)
+static obs_properties_t *GetWASAPIProperties(bool input)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
 
 	/* TODO: translate */
-	obs_property_t device_prop = obs_properties_add_list(props,
+	obs_property_t *device_prop = obs_properties_add_list(props,
 			OPT_DEVICE_ID, obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
@@ -489,19 +489,19 @@ static obs_properties_t GetWASAPIProperties(bool input)
 				device.name.c_str(), device.id.c_str());
 	}
 
-	obs_property_t prop;
+	obs_property_t *prop;
 	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 			obs_module_text("UseDeviceTiming"));
 
 	return props;
 }
 
-static obs_properties_t GetWASAPIPropertiesInput(void)
+static obs_properties_t *GetWASAPIPropertiesInput(void)
 {
 	return GetWASAPIProperties(true);
 }
 
-static obs_properties_t GetWASAPIPropertiesOutput(void)
+static obs_properties_t *GetWASAPIPropertiesOutput(void)
 {
 	return GetWASAPIProperties(false);
 }

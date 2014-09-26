@@ -33,7 +33,7 @@ struct obs_output_info {
 
 	const char *(*get_name)(void);
 
-	void *(*create)(obs_data_t settings, obs_output_t output);
+	void *(*create)(obs_data_t *settings, obs_output_t *output);
 	void (*destroy)(void *data);
 
 	bool (*start)(void *data);
@@ -45,11 +45,11 @@ struct obs_output_info {
 	void (*encoded_packet)(void *data, struct encoder_packet *packet);
 
 	/* optional */
-	void (*update)(void *data, obs_data_t settings);
+	void (*update)(void *data, obs_data_t *settings);
 
-	void (*get_defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t *settings);
 
-	obs_properties_t (*get_properties)(void);
+	obs_properties_t *(*get_properties)(void);
 
 	void (*pause)(void *data);
 

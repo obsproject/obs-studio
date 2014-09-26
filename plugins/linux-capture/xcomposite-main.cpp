@@ -2,7 +2,7 @@
 
 #include "xcompcap-main.hpp"
 
-static void* xcompcap_create(obs_data_t settings, obs_source_t source)
+static void* xcompcap_create(obs_data_t *settings, obs_source_t *source)
 {
 	return new XCompcapMain(settings, source);
 }
@@ -19,7 +19,7 @@ static void xcompcap_video_tick(void* data, float seconds)
 	cc->tick(seconds);
 }
 
-static void xcompcap_video_render(void* data, gs_effect_t effect)
+static void xcompcap_video_render(void* data, gs_effect_t *effect)
 {
 	XCompcapMain* cc = (XCompcapMain*)data;
 	cc->render(effect);
@@ -37,17 +37,17 @@ static uint32_t xcompcap_getheight(void* data)
 	return cc->height();
 }
 
-static obs_properties_t xcompcap_props(void)
+static obs_properties_t *xcompcap_props(void)
 {
 	return XCompcapMain::properties();
 }
 
-void xcompcap_defaults(obs_data_t settings)
+void xcompcap_defaults(obs_data_t *settings)
 {
 	XCompcapMain::defaults(settings);
 }
 
-void xcompcap_update(void *data, obs_data_t settings)
+void xcompcap_update(void *data, obs_data_t *settings)
 {
 	XCompcapMain* cc = (XCompcapMain*)data;
 	cc->updateSettings(settings);

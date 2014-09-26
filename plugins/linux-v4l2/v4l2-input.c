@@ -55,9 +55,9 @@ struct v4l2_data {
 	int framerate;
 
 	/* internal data */
-	obs_source_t source;
+	obs_source_t *source;
 	pthread_t thread;
-	os_event_t event;
+	os_event_t *event;
 
 	int_fast32_t dev;
 	int width;
@@ -194,7 +194,7 @@ static const char* v4l2_getname(void)
 	return obs_module_text("V4L2Input");
 }
 
-static void v4l2_defaults(obs_data_t settings)
+static void v4l2_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "input", -1);
 	obs_data_set_default_int(settings, "pixelformat", -1);
@@ -205,7 +205,7 @@ static void v4l2_defaults(obs_data_t settings)
 /*
  * List available devices
  */
-static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
+static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(settings);
 
@@ -270,7 +270,7 @@ static void v4l2_device_list(obs_property_t prop, obs_data_t settings)
 /*
  * List inputs for device
  */
-static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
+static void v4l2_input_list(int_fast32_t dev, obs_property_t *prop)
 {
 	struct v4l2_input in;
 	memset(&in, 0, sizeof(in));
@@ -293,7 +293,7 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t prop)
 /*
  * List formats for device
  */
-static void v4l2_format_list(int dev, obs_property_t prop)
+static void v4l2_format_list(int dev, obs_property_t *prop)
 {
 	struct v4l2_fmtdesc fmt;
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -330,7 +330,7 @@ static void v4l2_format_list(int dev, obs_property_t prop)
  * List resolutions for device and format
  */
 static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
-		obs_property_t prop)
+		obs_property_t *prop)
 {
 	struct v4l2_frmsizeenum frmsize;
 	frmsize.pixel_format = pixelformat;
@@ -376,7 +376,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
  * List framerates for device and resolution
  */
 static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
-		uint_fast32_t width, uint_fast32_t height, obs_property_t prop)
+		uint_fast32_t width, uint_fast32_t height, obs_property_t *prop)
 {
 	struct v4l2_frmivalenum frmival;
 	frmival.pixel_format = pixelformat;
@@ -426,8 +426,8 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 /*
  * Device selected callback
  */
-static bool device_selected(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool device_selected(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
@@ -435,7 +435,7 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 	if (dev == -1)
 		return false;
 
-	obs_property_t prop = obs_properties_get(props, "input");
+	obs_property_t *prop = obs_properties_get(props, "input");
 	v4l2_input_list(dev, prop);
 	obs_property_modified(prop, settings);
 	v4l2_close(dev);
@@ -445,8 +445,8 @@ static bool device_selected(obs_properties_t props, obs_property_t p,
 /*
  * Input selected callback
  */
-static bool input_selected(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool input_selected(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
@@ -454,7 +454,7 @@ static bool input_selected(obs_properties_t props, obs_property_t p,
 	if (dev == -1)
 		return false;
 
-	obs_property_t prop = obs_properties_get(props, "pixelformat");
+	obs_property_t *prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
 	obs_property_modified(prop, settings);
 	v4l2_close(dev);
@@ -464,8 +464,8 @@ static bool input_selected(obs_properties_t props, obs_property_t p,
 /*
  * Format selected callback
  */
-static bool format_selected(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool format_selected(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
@@ -473,7 +473,7 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 	if (dev == -1)
 		return false;
 
-	obs_property_t prop = obs_properties_get(props, "resolution");
+	obs_property_t *prop = obs_properties_get(props, "resolution");
 	v4l2_resolution_list(dev, obs_data_get_int(settings, "pixelformat"),
 			prop);
 	obs_property_modified(prop, settings);
@@ -484,8 +484,8 @@ static bool format_selected(obs_properties_t props, obs_property_t p,
 /*
  * Resolution selected callback
  */
-static bool resolution_selected(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	int width, height;
@@ -494,7 +494,7 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	if (dev == -1)
 		return false;
 
-	obs_property_t prop = obs_properties_get(props, "framerate");
+	obs_property_t *prop = obs_properties_get(props, "framerate");
 	v4l2_unpack_tuple(&width, &height, obs_data_get_int(settings,
 				"resolution"));
 	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
@@ -504,23 +504,23 @@ static bool resolution_selected(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t v4l2_properties(void)
+static obs_properties_t *v4l2_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t device_list = obs_properties_add_list(props,
+	obs_property_t *device_list = obs_properties_add_list(props,
 			"device_id", obs_module_text("Device"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	obs_property_t input_list = obs_properties_add_list(props,
+	obs_property_t *input_list = obs_properties_add_list(props,
 			"input", obs_module_text("Input"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t format_list = obs_properties_add_list(props,
+	obs_property_t *format_list = obs_properties_add_list(props,
 			"pixelformat", obs_module_text("VideoFormat"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t resolution_list = obs_properties_add_list(props,
+	obs_property_t *resolution_list = obs_properties_add_list(props,
 			"resolution", obs_module_text("Resolution"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
@@ -644,7 +644,7 @@ fail:
  * active stream (if exists) is stopped, the settings are updated and finally
  * the new stream is started.
  */
-static void v4l2_update(void *vptr, obs_data_t settings)
+static void v4l2_update(void *vptr, obs_data_t *settings)
 {
 	V4L2_DATA(vptr);
 
@@ -662,7 +662,7 @@ static void v4l2_update(void *vptr, obs_data_t settings)
 	v4l2_init(data);
 }
 
-static void *v4l2_create(obs_data_t settings, obs_source_t source)
+static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;

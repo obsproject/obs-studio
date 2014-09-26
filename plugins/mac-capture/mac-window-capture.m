@@ -9,7 +9,7 @@
 #include "window-utils.h"
 
 struct window_capture {
-	obs_source_t source;
+	obs_source_t *source;
 
 	struct cocoa_window window;
 
@@ -22,8 +22,8 @@ struct window_capture {
 	DARRAY(uint8_t) buffer;
 
 	pthread_t  capture_thread;
-	os_event_t capture_event;
-	os_event_t stop_event;
+	os_event_t *capture_event;
+	os_event_t *stop_event;
 };
 
 static CGImageRef get_image(struct window_capture *wc)
@@ -98,8 +98,8 @@ static void *capture_thread(void *data)
 	return NULL;
 }
 
-static inline void *window_capture_create_internal(obs_data_t settings,
-		obs_source_t source)
+static inline void *window_capture_create_internal(obs_data_t *settings,
+		obs_source_t *source)
 {
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
 
@@ -122,7 +122,7 @@ static inline void *window_capture_create_internal(obs_data_t settings,
 	return wc;
 }
 
-static void *window_capture_create(obs_data_t settings, obs_source_t source)
+static void *window_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	@autoreleasepool {
 		return window_capture_create_internal(settings, source);
@@ -150,15 +150,15 @@ static void window_capture_destroy(void *data)
 	bfree(cap);
 }
 
-static void window_capture_defaults(obs_data_t settings)
+static void window_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "show_shadow", false);
 	window_defaults(settings);
 }
 
-static obs_properties_t window_capture_properties(void)
+static obs_properties_t *window_capture_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	add_window_properties(props);
 
@@ -169,7 +169,7 @@ static obs_properties_t window_capture_properties(void)
 }
 
 static inline void window_capture_update_internal(struct window_capture *wc,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	wc->image_option = obs_data_get_bool(settings, "show_shadow") ?
 		kCGWindowImageDefault : kCGWindowImageBoundsIgnoreFraming;
@@ -177,7 +177,7 @@ static inline void window_capture_update_internal(struct window_capture *wc,
 	update_window(&wc->window, settings);
 }
 
-static void window_capture_update(void *data, obs_data_t settings)
+static void window_capture_update(void *data, obs_data_t *settings)
 {
 	@autoreleasepool {
 		return window_capture_update_internal(data, settings);

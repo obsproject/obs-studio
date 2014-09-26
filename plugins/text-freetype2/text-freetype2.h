@@ -47,28 +47,28 @@ struct ft2_source {
 
 	int32_t cur_scroll, scroll_speed;
 
-	gs_texture_t tex;
+	gs_texture_t *tex;
 
 	struct glyph_info *cacheglyphs[num_cache_slots];
 
 	FT_Face	font_face;
 
 	uint32_t *texbuf;
-	gs_vertbuffer_t vbuf;
+	gs_vertbuffer_t *vbuf;
 
-	gs_effect_t draw_effect;
+	gs_effect_t *draw_effect;
 	bool outline_text, drop_shadow;
 	bool log_mode, word_wrap;
 
-	obs_source_t src;
+	obs_source_t *src;
 };
 
 extern FT_Library ft2_lib;
 
-static void *ft2_source_create(obs_data_t settings, obs_source_t source);
+static void *ft2_source_create(obs_data_t *settings, obs_source_t *source);
 static void ft2_source_destroy(void *data);
-static void ft2_source_update(void *data, obs_data_t settings);
-static void ft2_source_render(void *data, gs_effect_t effect);
+static void ft2_source_update(void *data, obs_data_t *settings);
+static void ft2_source_render(void *data, gs_effect_t *effect);
 static void ft2_video_tick(void *data, float seconds);
 
 void draw_outlines(struct ft2_source *srcdata);
@@ -77,7 +77,7 @@ void draw_drop_shadow(struct ft2_source *srcdata);
 static uint32_t ft2_source_get_width(void *data);
 static uint32_t ft2_source_get_height(void *data);
 
-static obs_properties_t ft2_source_properties(void);
+static obs_properties_t *ft2_source_properties(void);
 
 static const char *ft2_source_get_name(void);
 

@@ -9,7 +9,7 @@ class QFormLayout;
 class OBSPropertiesView;
 class QLabel;
 
-typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t settings);
+typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
 
@@ -18,7 +18,7 @@ class WidgetInfo : public QObject {
 
 private:
 	OBSPropertiesView *view;
-	obs_property_t    property;
+	obs_property_t    *property;
 	QWidget           *widget;
 
 	void BoolChanged(const char *setting);
@@ -32,7 +32,7 @@ private:
 	void ButtonClicked();
 
 public:
-	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t prop,
+	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
 			QWidget *widget_)
 		: view(view_), property(prop), widget(widget_)
 	{}
@@ -50,7 +50,7 @@ class OBSPropertiesView : public QScrollArea {
 
 private:
 	QWidget                                  *widget;
-	obs_properties_t                         properties;
+	obs_properties_t                         *properties;
 	OBSData                                  settings;
 	void                                     *obj;
 	PropertiesUpdateCallback                 callback;
@@ -59,20 +59,20 @@ private:
 	std::string                              lastFocused;
 	QWidget                                  *lastWidget;
 
-	QWidget *NewWidget(obs_property_t prop, QWidget *widget,
+	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
 			const char *signal);
 
-	QWidget *AddCheckbox(obs_property_t prop);
-	QWidget *AddText(obs_property_t prop);
-	void AddPath(obs_property_t prop, QFormLayout *layout, QLabel **label);
-	QWidget *AddInt(obs_property_t prop);
-	QWidget *AddFloat(obs_property_t prop);
-	QWidget *AddList(obs_property_t prop, bool &warning);
-	QWidget *AddButton(obs_property_t prop);
-	void AddColor(obs_property_t prop, QFormLayout *layout, QLabel *&label);
-	void AddFont(obs_property_t prop, QFormLayout *layout, QLabel *&label);
+	QWidget *AddCheckbox(obs_property_t *prop);
+	QWidget *AddText(obs_property_t *prop);
+	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
+	QWidget *AddInt(obs_property_t *prop);
+	QWidget *AddFloat(obs_property_t *prop);
+	QWidget *AddList(obs_property_t *prop, bool &warning);
+	QWidget *AddButton(obs_property_t *prop);
+	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
+	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 
-	void AddProperty(obs_property_t property, QFormLayout *layout);
+	void AddProperty(obs_property_t *property, QFormLayout *layout);
 
 	void resizeEvent(QResizeEvent *event) override;
 
@@ -84,7 +84,7 @@ signals:
 
 public:
 	OBSPropertiesView(OBSData settings,
-			obs_properties_t properties,
+			obs_properties_t *properties,
 			void *obj, PropertiesUpdateCallback callback,
 			int minSize = 0);
 

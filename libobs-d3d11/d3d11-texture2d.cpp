@@ -141,8 +141,8 @@ void gs_texture_2d::InitRenderTargets()
 	}
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t device, uint32_t width, uint32_t height,
-		gs_color_format colorFormat, uint32_t levels,
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
+		uint32_t height, gs_color_format colorFormat, uint32_t levels,
 		const uint8_t **data, uint32_t flags, gs_texture_type type,
 		bool gdiCompatible, bool shared)
 	: gs_texture      (device, type, levels, colorFormat),

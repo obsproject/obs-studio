@@ -21,10 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <graphics/vec4.h>
 #include "obs-convenience.h"
 
-gs_vertbuffer_t create_uv_vbuffer(uint32_t num_verts, bool add_color) {
+gs_vertbuffer_t *create_uv_vbuffer(uint32_t num_verts, bool add_color) {
 	obs_enter_graphics();
 
-	gs_vertbuffer_t tmp = NULL;
+	gs_vertbuffer_t *tmp = NULL;
 	struct gs_vb_data *vrect = NULL;
 
 	vrect = gs_vbdata_create();
@@ -55,11 +55,12 @@ gs_vertbuffer_t create_uv_vbuffer(uint32_t num_verts, bool add_color) {
 	return tmp;
 }
 
-void draw_uv_vbuffer(gs_vertbuffer_t vbuf, gs_texture_t tex, gs_effect_t effect,
-	uint32_t num_verts) {
-	gs_texture_t   texture = tex;
-	gs_technique_t tech = gs_effect_get_technique(effect, "Draw");
-	gs_eparam_t    image = gs_effect_get_param_by_name(effect, "image");
+void draw_uv_vbuffer(gs_vertbuffer_t *vbuf, gs_texture_t *tex,
+		gs_effect_t *effect, uint32_t num_verts)
+{
+	gs_texture_t   *texture = tex;
+	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
+	gs_eparam_t    *image = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes;
 
 	if (vbuf == NULL || tex == NULL) return;

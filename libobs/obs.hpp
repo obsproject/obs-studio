@@ -62,12 +62,12 @@ public:
 	inline bool operator!=(T p) const {return val != p;}
 };
 
-using OBSSource = OBSRef<obs_source_t, obs_source_addref, obs_source_release>;
-using OBSScene = OBSRef<obs_scene_t,  obs_scene_addref,  obs_scene_release>;
-using OBSSceneItem = OBSRef<obs_sceneitem_t, obs_sceneitem_addref,
+using OBSSource = OBSRef<obs_source_t*, obs_source_addref, obs_source_release>;
+using OBSScene = OBSRef<obs_scene_t*,  obs_scene_addref,  obs_scene_release>;
+using OBSSceneItem = OBSRef<obs_sceneitem_t*, obs_sceneitem_addref,
 						obs_sceneitem_release>;
-using OBSData = OBSRef<obs_data_t, obs_data_addref, obs_data_release>;
-using OBSDataArray = OBSRef<obs_data_array_t, obs_data_array_addref,
+using OBSData = OBSRef<obs_data_t*, obs_data_addref, obs_data_release>;
+using OBSDataArray = OBSRef<obs_data_array_t*, obs_data_array_addref,
 						obs_data_array_release>;
 
 /* objects that are not meant to be instanced */
@@ -94,14 +94,14 @@ public:
 	inline bool operator!=(T p) const {return obj != p;}
 };
 
-using OBSDisplay = OBSObj<obs_display_t, obs_display_destroy>;
-using OBSEncoder = OBSObj<obs_encoder_t, obs_encoder_destroy>;
-using OBSView    = OBSObj<obs_view_t,    obs_view_destroy>;
-using OBSOutput  = OBSObj<obs_output_t,  obs_output_destroy>;
+using OBSDisplay = OBSObj<obs_display_t*, obs_display_destroy>;
+using OBSEncoder = OBSObj<obs_encoder_t*, obs_encoder_destroy>;
+using OBSView    = OBSObj<obs_view_t*,    obs_view_destroy>;
+using OBSOutput  = OBSObj<obs_output_t*,  obs_output_destroy>;
 
 /* signal handler connection */
 class OBSSignal {
-	signal_handler_t  handler;
+	signal_handler_t  *handler;
 	const char        *signal;
 	signal_callback_t callback;
 	void              *param;
@@ -114,7 +114,7 @@ public:
 		  param    (nullptr)
 	{}
 
-	inline OBSSignal(signal_handler_t handler_,
+	inline OBSSignal(signal_handler_t *handler_,
 			const char        *signal_,
 			signal_callback_t callback_,
 			void              *param_)
@@ -137,7 +137,7 @@ public:
 
 	inline ~OBSSignal() {Disconnect();}
 
-	inline void Connect(signal_handler_t handler_,
+	inline void Connect(signal_handler_t *handler_,
 			const char *signal_,
 			signal_callback_t callback_,
 			void *param_)

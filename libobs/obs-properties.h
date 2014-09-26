@@ -68,28 +68,28 @@ enum obs_text_type {
 
 struct obs_properties;
 struct obs_property;
-typedef struct obs_properties *obs_properties_t;
-typedef struct obs_property   *obs_property_t;
+typedef struct obs_properties obs_properties_t;
+typedef struct obs_property   obs_property_t;
 
 /* ------------------------------------------------------------------------- */
 
-EXPORT obs_properties_t obs_properties_create(void);
-EXPORT obs_properties_t obs_properties_create_param(void *param,
+EXPORT obs_properties_t *obs_properties_create(void);
+EXPORT obs_properties_t *obs_properties_create_param(void *param,
 		void (*destroy)(void *param));
-EXPORT void obs_properties_destroy(obs_properties_t props);
+EXPORT void obs_properties_destroy(obs_properties_t *props);
 
-EXPORT void obs_properties_set_param(obs_properties_t props,
+EXPORT void obs_properties_set_param(obs_properties_t *props,
 		void *param, void (*destroy)(void *param));
-EXPORT void *obs_properties_get_param(obs_properties_t props);
+EXPORT void *obs_properties_get_param(obs_properties_t *props);
 
-EXPORT obs_property_t obs_properties_first(obs_properties_t props);
+EXPORT obs_property_t *obs_properties_first(obs_properties_t *props);
 
-EXPORT obs_property_t obs_properties_get(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_get(obs_properties_t *props,
 		const char *property);
 
 /* used internally by libobs */
-extern void obs_properties_apply_settings(obs_properties_t props,
-		obs_data_t settings);
+extern void obs_properties_apply_settings(obs_properties_t *props,
+		obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
 
@@ -98,21 +98,21 @@ extern void obs_properties_apply_settings(obs_properties_t props,
  * need to be refreshed due to changes to the property layout, return true,
  * otherwise return false.
  */
-typedef bool (*obs_property_clicked_t)(obs_properties_t props,
-		obs_property_t property, void *data);
+typedef bool (*obs_property_clicked_t)(obs_properties_t *props,
+		obs_property_t *property, void *data);
 
-EXPORT obs_property_t obs_properties_add_bool(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_bool(obs_properties_t *props,
 		const char *name, const char *description);
 
-EXPORT obs_property_t obs_properties_add_int(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_int(obs_properties_t *props,
 		const char *name, const char *description,
 		int min, int max, int step);
 
-EXPORT obs_property_t obs_properties_add_float(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_float(obs_properties_t *props,
 		const char *name, const char *description,
 		double min, double max, double step);
 
-EXPORT obs_property_t obs_properties_add_text(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_text(obs_properties_t *props,
 		const char *name, const char *description,
 		enum obs_text_type type);
 
@@ -132,19 +132,19 @@ EXPORT obs_property_t obs_properties_add_text(obs_properties_t props,
  *                      double semi-colens.  If multiple file types in a
  *                      filter, separate with space.
  */
-EXPORT obs_property_t obs_properties_add_path(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_path(obs_properties_t *props,
 		const char *name, const char *description,
 		enum obs_path_type type, const char *filter,
 		const char *default_path);
 
-EXPORT obs_property_t obs_properties_add_list(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_list(obs_properties_t *props,
 		const char *name, const char *description,
 		enum obs_combo_type type, enum obs_combo_format format);
 
-EXPORT obs_property_t obs_properties_add_color(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_color(obs_properties_t *props,
 		const char *name, const char *description);
 
-EXPORT obs_property_t obs_properties_add_button(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_button(obs_properties_t *props,
 		const char *name, const char *text,
 		obs_property_clicked_t callback);
 
@@ -157,7 +157,7 @@ EXPORT obs_property_t obs_properties_add_button(obs_properties_t props,
  *   size:   size integer
  *   flags:  font flags integer (OBS_FONT_* defined above)
  */
-EXPORT obs_property_t obs_properties_add_font(obs_properties_t props,
+EXPORT obs_property_t *obs_properties_add_font(obs_properties_t *props,
 		const char *name, const char *description);
 
 /* ------------------------------------------------------------------------- */
@@ -167,59 +167,59 @@ EXPORT obs_property_t obs_properties_add_font(obs_properties_t props,
  * need to be refreshed due to changes to the property layout, return true,
  * otherwise return false.
  */
-typedef bool (*obs_property_modified_t)(obs_properties_t props,
-		obs_property_t property, obs_data_t settings);
+typedef bool (*obs_property_modified_t)(obs_properties_t *props,
+		obs_property_t *property, obs_data_t *settings);
 
-EXPORT void obs_property_set_modified_callback(obs_property_t p,
+EXPORT void obs_property_set_modified_callback(obs_property_t *p,
 		obs_property_modified_t modified);
 
-EXPORT bool obs_property_modified(obs_property_t p, obs_data_t settings);
-EXPORT bool obs_property_button_clicked(obs_property_t p, void *obj);
+EXPORT bool obs_property_modified(obs_property_t *p, obs_data_t *settings);
+EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj);
 
-EXPORT void obs_property_set_visible(obs_property_t p, bool visible);
-EXPORT void obs_property_set_enabled(obs_property_t p, bool enabled);
+EXPORT void obs_property_set_visible(obs_property_t *p, bool visible);
+EXPORT void obs_property_set_enabled(obs_property_t *p, bool enabled);
 
-EXPORT const char *           obs_property_name(obs_property_t p);
-EXPORT const char *           obs_property_description(obs_property_t p);
-EXPORT enum obs_property_type obs_property_get_type(obs_property_t p);
-EXPORT bool                   obs_property_enabled(obs_property_t p);
-EXPORT bool                   obs_property_visible(obs_property_t p);
+EXPORT const char *           obs_property_name(obs_property_t *p);
+EXPORT const char *           obs_property_description(obs_property_t *p);
+EXPORT enum obs_property_type obs_property_get_type(obs_property_t *p);
+EXPORT bool                   obs_property_enabled(obs_property_t *p);
+EXPORT bool                   obs_property_visible(obs_property_t *p);
 
-EXPORT bool                   obs_property_next(obs_property_t *p);
+EXPORT bool                   obs_property_next(obs_property_t **p);
 
-EXPORT int                    obs_property_int_min(obs_property_t p);
-EXPORT int                    obs_property_int_max(obs_property_t p);
-EXPORT int                    obs_property_int_step(obs_property_t p);
-EXPORT double                 obs_property_float_min(obs_property_t p);
-EXPORT double                 obs_property_float_max(obs_property_t p);
-EXPORT double                 obs_property_float_step(obs_property_t p);
-EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t p);
-EXPORT enum obs_path_type     obs_property_path_type(obs_property_t p);
-EXPORT const char *           obs_property_path_filter(obs_property_t p);
-EXPORT const char *           obs_property_path_default_path(obs_property_t p);
-EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t p);
-EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t p);
+EXPORT int                    obs_property_int_min(obs_property_t *p);
+EXPORT int                    obs_property_int_max(obs_property_t *p);
+EXPORT int                    obs_property_int_step(obs_property_t *p);
+EXPORT double                 obs_property_float_min(obs_property_t *p);
+EXPORT double                 obs_property_float_max(obs_property_t *p);
+EXPORT double                 obs_property_float_step(obs_property_t *p);
+EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t *p);
+EXPORT enum obs_path_type     obs_property_path_type(obs_property_t *p);
+EXPORT const char *           obs_property_path_filter(obs_property_t *p);
+EXPORT const char *           obs_property_path_default_path(obs_property_t *p);
+EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t *p);
+EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t *p);
 
-EXPORT void obs_property_list_clear(obs_property_t p);
+EXPORT void obs_property_list_clear(obs_property_t *p);
 
-EXPORT size_t obs_property_list_add_string(obs_property_t p,
+EXPORT size_t obs_property_list_add_string(obs_property_t *p,
 		const char *name, const char *val);
-EXPORT size_t obs_property_list_add_int(obs_property_t p,
+EXPORT size_t obs_property_list_add_int(obs_property_t *p,
 		const char *name, long long val);
-EXPORT size_t obs_property_list_add_float(obs_property_t p,
+EXPORT size_t obs_property_list_add_float(obs_property_t *p,
 		const char *name, double val);
 
-EXPORT void obs_property_list_item_disable(obs_property_t p, size_t idx,
+EXPORT void obs_property_list_item_disable(obs_property_t *p, size_t idx,
 								bool disabled);
-EXPORT bool obs_property_list_item_disabled(obs_property_t p, size_t idx);
+EXPORT bool obs_property_list_item_disabled(obs_property_t *p, size_t idx);
 
-EXPORT void obs_property_list_item_remove(obs_property_t p, size_t idx);
+EXPORT void obs_property_list_item_remove(obs_property_t *p, size_t idx);
 
-EXPORT size_t      obs_property_list_item_count(obs_property_t p);
-EXPORT const char *obs_property_list_item_name(obs_property_t p, size_t idx);
-EXPORT const char *obs_property_list_item_string(obs_property_t p, size_t idx);
-EXPORT long long   obs_property_list_item_int(obs_property_t p, size_t idx);
-EXPORT double      obs_property_list_item_float(obs_property_t p, size_t idx);
+EXPORT size_t      obs_property_list_item_count(obs_property_t *p);
+EXPORT const char *obs_property_list_item_name(obs_property_t *p, size_t idx);
+EXPORT const char *obs_property_list_item_string(obs_property_t *p, size_t idx);
+EXPORT long long   obs_property_list_item_int(obs_property_t *p, size_t idx);
+EXPORT double      obs_property_list_item_float(obs_property_t *p, size_t idx);
 
 #ifdef __cplusplus
 }

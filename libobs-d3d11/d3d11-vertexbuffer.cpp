@@ -93,7 +93,7 @@ inline void gs_vertex_buffer::InitBuffer(const size_t elementSize,
 		throw HRError("Failed to create buffer", hr);
 }
 
-gs_vertex_buffer::gs_vertex_buffer(gs_device_t device, struct gs_vb_data *data,
+gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 		uint32_t flags)
 	: device   (device),
 	  vbd      (data),

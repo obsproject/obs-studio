@@ -114,7 +114,7 @@ struct obs_encoder_info {
 	 * @return           Data associated with this encoder context, or
 	 *                   NULL if initialization failed.
 	 */
-	void *(*create)(obs_data_t settings, obs_encoder_t encoder);
+	void *(*create)(obs_data_t *settings, obs_encoder_t *encoder);
 
 	/**
 	 * Destroys the encoder data
@@ -149,14 +149,14 @@ struct obs_encoder_info {
 	 *
 	 * @param[out]  settings  Data to assign default settings to
 	 */
-	void (*get_defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t *settings);
 
 	/** 
 	 * Gets the property information of this encoder
 	 *
 	 * @return         The properties data
 	 */
-	obs_properties_t (*get_properties)(void);
+	obs_properties_t *(*get_properties)(void);
 
 	/**
 	 * Updates the settings for this encoder (usually used for things like
@@ -166,7 +166,7 @@ struct obs_encoder_info {
 	 * @param  settings  New settings for this encoder
 	 * @return           true if successful, false otherwise
 	 */
-	bool (*update)(void *data, obs_data_t settings);
+	bool (*update)(void *data, obs_data_t *settings);
 
 	/**
 	 * Returns extra data associated with this encoder (usually header)

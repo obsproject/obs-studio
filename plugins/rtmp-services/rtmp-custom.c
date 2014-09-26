@@ -9,7 +9,7 @@ static const char *rtmp_custom_name(void)
 	return obs_module_text("CustomStreamingServer");
 }
 
-static void rtmp_custom_update(void *data, obs_data_t settings)
+static void rtmp_custom_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_custom *service = data;
 
@@ -29,7 +29,7 @@ static void rtmp_custom_destroy(void *data)
 	bfree(service);
 }
 
-static void *rtmp_custom_create(obs_data_t settings, obs_service_t service)
+static void *rtmp_custom_create(obs_data_t *settings, obs_service_t *service)
 {
 	struct rtmp_custom *data = bzalloc(sizeof(struct rtmp_custom));
 	rtmp_custom_update(data, settings);
@@ -38,9 +38,9 @@ static void *rtmp_custom_create(obs_data_t settings, obs_service_t service)
 	return data;
 }
 
-static obs_properties_t rtmp_custom_properties(void)
+static obs_properties_t *rtmp_custom_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create();
+	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);
 

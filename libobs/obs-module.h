@@ -35,13 +35,13 @@
 
 /** Required: Declares a libobs module. */
 #define OBS_DECLARE_MODULE() \
-	static obs_module_t obs_module_pointer; \
-	MODULE_EXPORT void obs_module_set_pointer(obs_module_t module); \
-	void obs_module_set_pointer(obs_module_t module) \
+	static obs_module_t *obs_module_pointer; \
+	MODULE_EXPORT void obs_module_set_pointer(obs_module_t *module); \
+	void obs_module_set_pointer(obs_module_t *module) \
 	{ \
 		obs_module_pointer = module; \
 	} \
-	obs_module_t obs_current_module(void) {return obs_module_pointer;} \
+	obs_module_t *obs_current_module(void) {return obs_module_pointer;} \
 	MODULE_EXPORT uint32_t obs_module_ver(void); \
 	uint32_t obs_module_ver(void) {return LIBOBS_API_VER;}
 
@@ -66,7 +66,7 @@ MODULE_EXPORT void obs_module_free_locale(void);
 
 /** Optional: Use this macro in a module to use default locale handling. */
 #define OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale) \
-	lookup_t obs_module_lookup = NULL; \
+	lookup_t *obs_module_lookup = NULL; \
 	const char *obs_module_text(const char *val) \
 	{ \
 		const char *out = val; \
@@ -89,7 +89,7 @@ MODULE_EXPORT void obs_module_free_locale(void);
 MODULE_EXTERN const char *obs_module_text(const char *lookup_string);
 
 /** Helper function that returns the current module */
-MODULE_EXTERN obs_module_t obs_current_module(void);
+MODULE_EXTERN obs_module_t *obs_current_module(void);
 
 /**
  * Returns the location to a module data file associated with the current

@@ -5,9 +5,9 @@
 			obs_source_get_name(context->source), ##__VA_ARGS__)
 
 struct image_source {
-	obs_source_t source;
+	obs_source_t *source;
 
-	gs_texture_t tex;
+	gs_texture_t *tex;
 	uint32_t     cx;
 	uint32_t     cy;
 };
@@ -17,7 +17,7 @@ static const char *image_source_get_name(void)
 	return obs_module_text("ImageInput");
 }
 
-static void image_source_update(void *data, obs_data_t settings)
+static void image_source_update(void *data, obs_data_t *settings)
 {
 	struct image_source *context = data;
 	const char *file = obs_data_get_string(settings, "file");
@@ -44,7 +44,7 @@ static void image_source_update(void *data, obs_data_t settings)
 	obs_leave_graphics();
 }
 
-static void *image_source_create(obs_data_t settings, obs_source_t source)
+static void *image_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct image_source *context = bzalloc(sizeof(struct image_source));
 	context->source = source;
@@ -76,7 +76,7 @@ static uint32_t image_source_getheight(void *data)
 	return context->cy;
 }
 
-static void image_source_render(void *data, gs_effect_t effect)
+static void image_source_render(void *data, gs_effect_t *effect)
 {
 	struct image_source *context = data;
 	if (!context->tex)
@@ -96,9 +96,9 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif)";
 
-static obs_properties_t image_source_properties(void)
+static obs_properties_t *image_source_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_path(props,
 			"file", obs_module_text("File"),

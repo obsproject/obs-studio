@@ -13,7 +13,7 @@ static const char *rtmp_common_getname(void)
 	return obs_module_text("StreamingServices");
 }
 
-static void rtmp_common_update(void *data, obs_data_t settings)
+static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
 
@@ -36,7 +36,7 @@ static void rtmp_common_destroy(void *data)
 	bfree(service);
 }
 
-static void *rtmp_common_create(obs_data_t settings, obs_service_t service)
+static void *rtmp_common_create(obs_data_t *settings, obs_service_t *service)
 {
 	struct rtmp_common *data = bzalloc(sizeof(struct rtmp_common));
 	rtmp_common_update(data, settings);
@@ -54,7 +54,7 @@ static inline const char *get_string_val(json_t *service, const char *key)
 	return json_string_value(str_val);
 }
 
-static void add_service(obs_property_t list, json_t *service)
+static void add_service(obs_property_t *list, json_t *service)
 {
 	json_t *servers;
 	const char *name;
@@ -82,7 +82,7 @@ static void add_service(obs_property_t list, json_t *service)
 	obs_property_list_add_string(list, name, name);
 }
 
-static void add_services(obs_property_t list, const char *file, json_t *root)
+static void add_services(obs_property_t *list, const char *file, json_t *root)
 {
 	json_t *service;
 	size_t index;
@@ -120,7 +120,7 @@ static json_t *open_json_file(const char *file)
 	return root;
 }
 
-static json_t *build_service_list(obs_property_t list, const char *file)
+static json_t *build_service_list(obs_property_t *list, const char *file)
 {
 	json_t *root = open_json_file(file);
 	add_services(list, file, root);
@@ -134,7 +134,7 @@ static void properties_data_destroy(void *data)
 		json_decref(root);
 }
 
-static void fill_servers(obs_property_t servers_prop, json_t *service,
+static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		const char *name)
 {
 	json_t *servers, *server;
@@ -177,8 +177,8 @@ static inline json_t *find_service(json_t *root, const char *name)
 	return NULL;
 }
 
-static bool service_selected(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool service_selected(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	const char *name = obs_data_get_string(settings, "service");
 	json_t *root     = obs_properties_get_param(props);
@@ -197,10 +197,10 @@ static bool service_selected(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t rtmp_common_properties(void)
+static obs_properties_t *rtmp_common_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create();
-	obs_property_t   list;
+	obs_properties_t *ppts = obs_properties_create();
+	obs_property_t   *list;
 	char             *file;
 
 	list = obs_properties_add_list(ppts, "service",
@@ -223,10 +223,10 @@ static obs_properties_t rtmp_common_properties(void)
 	return ppts;
 }
 
-static void apply_video_encoder_settings(obs_encoder_t encoder,
+static void apply_video_encoder_settings(obs_encoder_t *encoder,
 		json_t *recommended)
 {
-	obs_data_t settings = obs_encoder_get_settings(encoder);
+	obs_data_t *settings = obs_encoder_get_settings(encoder);
 
 	json_t *item = json_object_get(recommended, "keyint");
 	if (item && json_is_integer(item)) {
@@ -259,10 +259,10 @@ static void apply_video_encoder_settings(obs_encoder_t encoder,
 	obs_data_release(settings);
 }
 
-static void apply_audio_encoder_settings(obs_encoder_t encoder,
+static void apply_audio_encoder_settings(obs_encoder_t *encoder,
 		json_t *recommended)
 {
-	obs_data_t settings = obs_encoder_get_settings(encoder);
+	obs_data_t *settings = obs_encoder_get_settings(encoder);
 
 	json_t *item = json_object_get(recommended, "max audio bitrate");
 	if (item && json_is_integer(item)) {
@@ -275,11 +275,11 @@ static void apply_audio_encoder_settings(obs_encoder_t encoder,
 	obs_data_release(settings);
 }
 
-static void initialize_output(struct rtmp_common *service, obs_output_t output,
+static void initialize_output(struct rtmp_common *service, obs_output_t *output,
 		json_t *root)
 {
-	obs_encoder_t video_encoder = obs_output_get_video_encoder(output);
-	obs_encoder_t audio_encoder = obs_output_get_audio_encoder(output);
+	obs_encoder_t *video_encoder = obs_output_get_video_encoder(output);
+	obs_encoder_t *audio_encoder = obs_output_get_audio_encoder(output);
 	json_t        *json_service = find_service(root, service->service);
 	json_t        *recommended;
 
@@ -300,7 +300,7 @@ static void initialize_output(struct rtmp_common *service, obs_output_t output,
 		apply_audio_encoder_settings(audio_encoder, recommended);
 }
 
-static bool rtmp_common_initialize(void *data, obs_output_t output)
+static bool rtmp_common_initialize(void *data, obs_output_t *output)
 {
 	struct rtmp_common *service = data;
 	char               *file;

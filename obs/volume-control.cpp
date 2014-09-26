@@ -37,7 +37,7 @@ static inline float DBToLinear(float db_full)
 	return (DBToLog(db) - VOL_MIN_LOG) / (VOL_MAX_LOG - VOL_MIN_LOG);
 }
 
-void VolControl::OBSVolumeChanged(void *data, calldata_t calldata)
+void VolControl::OBSVolumeChanged(void *data, calldata_t *calldata)
 {
 	VolControl *volControl = static_cast<VolControl*>(data);
 	int vol = (int)(calldata_float(calldata, "volume") * 100.0f + 0.5f);
@@ -45,7 +45,7 @@ void VolControl::OBSVolumeChanged(void *data, calldata_t calldata)
 	QMetaObject::invokeMethod(volControl, "VolumeChanged", Q_ARG(int, vol));
 }
 
-void VolControl::OBSVolumeLevel(void *data, calldata_t calldata)
+void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
 {
 	VolControl *volControl = static_cast<VolControl*>(data);
 	float peak      = calldata_float(calldata, "level");

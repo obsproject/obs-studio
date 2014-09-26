@@ -49,14 +49,15 @@ struct SceneFindData {
 	{}
 };
 
-static bool SceneItemHasVideo(obs_sceneitem_t item)
+static bool SceneItemHasVideo(obs_sceneitem_t *item)
 {
-	obs_source_t source = obs_sceneitem_get_source(item);
+	obs_source_t *source = obs_sceneitem_get_source(item);
 	uint32_t flags = obs_source_get_output_flags(source);
 	return (flags & OBS_SOURCE_VIDEO) != 0;
 }
 
-static bool FindItemAtPos(obs_scene_t scene, obs_sceneitem_t item, void *param)
+static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
+		void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
 	matrix4       transform;
@@ -159,7 +160,7 @@ OBSSceneItem OBSBasicPreview::GetItemAtPos(const vec2 &pos, bool selectBelow)
 	return data.item;
 }
 
-static bool CheckItemSelected(obs_scene_t scene, obs_sceneitem_t item,
+static bool CheckItemSelected(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
@@ -220,7 +221,7 @@ struct HandleFindData {
 	{}
 };
 
-static bool FindHandleAtPos(obs_scene_t scene, obs_sceneitem_t item,
+static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
 	if (!obs_sceneitem_selected(item))
@@ -263,7 +264,7 @@ static bool FindHandleAtPos(obs_scene_t scene, obs_sceneitem_t item,
 	return true;
 }
 
-static vec2 GetItemSize(obs_sceneitem_t item)
+static vec2 GetItemSize(obs_sceneitem_t *item)
 {
 	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(item);
 	vec2 size;
@@ -271,7 +272,7 @@ static vec2 GetItemSize(obs_sceneitem_t item)
 	if (boundsType != OBS_BOUNDS_NONE) {
 		obs_sceneitem_get_bounds(item, &size);
 	} else {
-		obs_source_t source = obs_sceneitem_get_source(item);
+		obs_source_t *source = obs_sceneitem_get_source(item);
 		vec2 scale;
 
 		obs_sceneitem_get_scale(item, &scale);
@@ -345,9 +346,10 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_zero(&lastMoveOffset);
 }
 
-static bool select_one(obs_scene_t scene, obs_sceneitem_t item, void *param)
+static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 {
-	obs_sceneitem_t selectedItem = reinterpret_cast<obs_sceneitem_t>(param);
+	obs_sceneitem_t *selectedItem =
+		reinterpret_cast<obs_sceneitem_t*>(param);
 	obs_sceneitem_select(item, (selectedItem == item));
 
 	UNUSED_PARAMETER(scene);
@@ -361,7 +363,7 @@ void OBSBasicPreview::DoSelect(const vec2 &pos)
 	OBSScene     scene = main->GetCurrentScene();
 	OBSSceneItem item  = GetItemAtPos(pos, true);
 
-	obs_scene_enum_items(scene, select_one, (obs_sceneitem_t)item);
+	obs_scene_enum_items(scene, select_one, (obs_sceneitem_t*)item);
 }
 
 void OBSBasicPreview::DoCtrlSelect(const vec2 &pos)
@@ -403,7 +405,7 @@ struct SelectedItemBounds {
 	vec3 tl, br;
 };
 
-static bool AddItemBounds(obs_scene_t scene, obs_sceneitem_t item,
+static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
 	SelectedItemBounds *data = reinterpret_cast<SelectedItemBounds*>(param);
@@ -454,7 +456,7 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 	offset.y += snapOffset.y;
 }
 
-static bool move_items(obs_scene_t scene, obs_sceneitem_t item, void *param)
+static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 {
 	vec2 *offset = reinterpret_cast<vec2*>(param);
 
@@ -613,7 +615,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	if (!(modifiers & Qt::ControlModifier))
 		SnapStretchingToScreen(tl, br);
 
-	obs_source_t source = obs_sceneitem_get_source(stretchItem);
+	obs_source_t *source = obs_sceneitem_get_source(stretchItem);
 
 	vec2 baseSize;
 	vec2_set(&baseSize,
@@ -687,8 +689,8 @@ static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
 	gs_matrix_pop();
 }
 
-bool OBSBasicPreview::DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
-		void *param)
+bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
+		obs_sceneitem_t *item, void *param)
 {
 	if (!obs_sceneitem_selected(item))
 		return true;
@@ -727,8 +729,8 @@ void OBSBasicPreview::DrawSceneEditing()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
-	gs_effect_t    solid = obs_get_solid_effect();
-	gs_technique_t tech  = gs_effect_get_technique(solid, "Solid");
+	gs_effect_t    *solid = obs_get_solid_effect();
+	gs_technique_t *tech  = gs_effect_get_technique(solid, "Solid");
 
 	vec4 color;
 	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);

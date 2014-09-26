@@ -7,8 +7,8 @@
 struct sinewave_data {
 	bool         initialized_thread;
 	pthread_t    thread;
-	os_event_t   event;
-	obs_source_t source;
+	os_event_t   *event;
+	obs_source_t *source;
 };
 
 /* middle C */
@@ -79,8 +79,8 @@ static void sinewave_destroy(void *data)
 	}
 }
 
-static void *sinewave_create(obs_data_t settings,
-		obs_source_t source)
+static void *sinewave_create(obs_data_t *settings,
+		obs_source_t *source)
 {
 	struct sinewave_data *swd = bzalloc(sizeof(struct sinewave_data));
 	swd->source = source;

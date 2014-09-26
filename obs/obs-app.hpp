@@ -71,14 +71,14 @@ public:
 
 	inline QMainWindow *GetMainWindow() const {return mainWindow.data();}
 
-	inline config_t GlobalConfig() const {return globalConfig;}
+	inline config_t *GlobalConfig() const {return globalConfig;}
 
 	inline const char *GetLocale() const
 	{
 		return locale.c_str();
 	}
 
-	inline lookup_t GetTextLookup() const {return textLookup;}
+	inline lookup_t *GetTextLookup() const {return textLookup;}
 
 	inline const char *GetString(const char *lookupVal) const
 	{
@@ -98,7 +98,7 @@ public:
 
 inline OBSApp *App() {return static_cast<OBSApp*>(qApp);}
 
-inline config_t GetGlobalConfig() {return App()->GlobalConfig();}
+inline config_t *GetGlobalConfig() {return App()->GlobalConfig();}
 
 std::vector<std::pair<std::string, std::string>> GetLocaleNames();
 inline const char *Str(const char *lookup) {return App()->GetString(lookup);}

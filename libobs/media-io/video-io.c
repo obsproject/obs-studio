@@ -30,7 +30,7 @@
 
 struct video_input {
 	struct video_scale_info   conversion;
-	video_scaler_t            scaler;
+	video_scaler_t            *scaler;
 	struct video_frame        frame[MAX_CONVERT_BUFFERS];
 	int                       cur_frame;
 
@@ -50,13 +50,13 @@ struct video_output {
 
 	pthread_t                  thread;
 	pthread_mutex_t            data_mutex;
-	os_event_t                 stop_event;
+	os_event_t                 *stop_event;
 
 	struct video_data          cur_frame;
 	struct video_data          next_frame;
 	bool                       new_frame;
 
-	os_event_t                 update_event;
+	os_event_t                 *update_event;
 	uint64_t                   frame_time;
 	volatile uint64_t          cur_video_time;
 	uint32_t                   skipped_frames;
@@ -181,7 +181,7 @@ static inline bool valid_video_params(struct video_output_info *info)
 	       info->fps_num != 0;
 }
 
-int video_output_open(video_t *video, struct video_output_info *info)
+int video_output_open(video_t **video, struct video_output_info *info)
 {
 	struct video_output *out;
 
@@ -217,7 +217,7 @@ fail:
 	return VIDEO_OUTPUT_FAIL;
 }
 
-void video_output_close(video_t video)
+void video_output_close(video_t *video)
 {
 	if (!video)
 		return;
@@ -235,7 +235,7 @@ void video_output_close(video_t video)
 	bfree(video);
 }
 
-static size_t video_get_input_idx(video_t video,
+static size_t video_get_input_idx(video_t *video,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
@@ -284,7 +284,7 @@ static inline bool video_input_init(struct video_input *input,
 	return true;
 }
 
-bool video_output_connect(video_t video,
+bool video_output_connect(video_t *video,
 		const struct video_scale_info *conversion,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
@@ -326,7 +326,7 @@ bool video_output_connect(video_t video,
 	return success;
 }
 
-void video_output_disconnect(video_t video,
+void video_output_disconnect(video_t *video,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
@@ -344,18 +344,18 @@ void video_output_disconnect(video_t video,
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
-bool video_output_active(video_t video)
+bool video_output_active(video_t *video)
 {
 	if (!video) return false;
 	return video->inputs.num != 0;
 }
 
-const struct video_output_info *video_output_get_info(video_t video)
+const struct video_output_info *video_output_get_info(video_t *video)
 {
 	return video ? &video->info : NULL;
 }
 
-void video_output_swap_frame(video_t video, struct video_data *frame)
+void video_output_swap_frame(video_t *video, struct video_data *frame)
 {
 	if (!video) return;
 
@@ -365,7 +365,7 @@ void video_output_swap_frame(video_t video, struct video_data *frame)
 	pthread_mutex_unlock(&video->data_mutex);
 }
 
-bool video_output_wait(video_t video)
+bool video_output_wait(video_t *video)
 {
 	if (!video) return false;
 
@@ -373,17 +373,17 @@ bool video_output_wait(video_t video)
 	return os_event_try(video->stop_event) == EAGAIN;
 }
 
-uint64_t video_output_get_frame_time(video_t video)
+uint64_t video_output_get_frame_time(video_t *video)
 {
 	return video ? video->frame_time : 0;
 }
 
-uint64_t video_output_get_time(video_t video)
+uint64_t video_output_get_time(video_t *video)
 {
 	return video ? video->cur_video_time : 0;
 }
 
-void video_output_stop(video_t video)
+void video_output_stop(video_t *video)
 {
 	void *thread_ret;
 
@@ -398,22 +398,22 @@ void video_output_stop(video_t video)
 	}
 }
 
-enum video_format video_output_get_format(video_t video)
+enum video_format video_output_get_format(video_t *video)
 {
 	return video ? video->info.format : VIDEO_FORMAT_NONE;
 }
 
-uint32_t video_output_get_width(video_t video)
+uint32_t video_output_get_width(video_t *video)
 {
 	return video ? video->info.width : 0;
 }
 
-uint32_t video_output_get_height(video_t video)
+uint32_t video_output_get_height(video_t *video)
 {
 	return video ? video->info.height : 0;
 }
 
-double video_output_get_frame_rate(video_t video)
+double video_output_get_frame_rate(video_t *video)
 {
 	if (!video)
 		return 0.0;
@@ -421,12 +421,12 @@ double video_output_get_frame_rate(video_t video)
 	return (double)video->info.fps_num / (double)video->info.fps_den;
 }
 
-uint32_t video_output_get_skipped_frames(video_t video)
+uint32_t video_output_get_skipped_frames(video_t *video)
 {
 	return video->skipped_frames;
 }
 
-uint32_t video_output_get_total_frames(video_t video)
+uint32_t video_output_get_total_frames(video_t *video)
 {
 	return video->total_frames;
 }

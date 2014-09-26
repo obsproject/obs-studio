@@ -26,7 +26,7 @@
 #include "obs-ffmpeg-compat.h"
 
 struct aac_encoder {
-	obs_encoder_t    encoder;
+	obs_encoder_t    *encoder;
 
 	AVCodec          *aac;
 	AVCodecContext   *context;
@@ -109,7 +109,7 @@ static bool initialize_codec(struct aac_encoder *enc)
 	return true;
 }
 
-static void init_sizes(struct aac_encoder *enc, audio_t audio)
+static void init_sizes(struct aac_encoder *enc, audio_t *audio)
 {
 	const struct audio_output_info *aoi;
 	enum audio_format format;
@@ -121,11 +121,11 @@ static void init_sizes(struct aac_encoder *enc, audio_t audio)
 	enc->audio_size   = get_audio_size(format, aoi->speakers, 1);
 }
 
-static void *aac_create(obs_data_t settings, obs_encoder_t encoder)
+static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct aac_encoder *enc;
 	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
-	audio_t            audio   = obs_encoder_audio(encoder);
+	audio_t            *audio   = obs_encoder_audio(encoder);
 
 	if (!bitrate) {
 		aac_warn("aac_create", "Invalid bitrate specified");
@@ -235,14 +235,14 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	return do_aac_encode(enc, packet, received_packet);
 }
 
-static void aac_defaults(obs_data_t settings)
+static void aac_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
-static obs_properties_t aac_properties(void)
+static obs_properties_t *aac_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 32, 320, 32);

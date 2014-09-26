@@ -97,7 +97,7 @@ private:
 	void LoadSimpleOutputSettings();
 
 	/* audio */
-	void LoadListValues(QComboBox *widget, obs_property_t prop,
+	void LoadListValues(QComboBox *widget, obs_property_t *prop,
 		const char *configName);
 	void LoadAudioDevices();
 

@@ -47,11 +47,11 @@ void XCompcapMain::deinit()
 	XCompcap::cleanupDisplay();
 }
 
-obs_properties_t XCompcapMain::properties()
+obs_properties_t *XCompcapMain::properties()
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t wins = obs_properties_add_list(props, "capture_window",
+	obs_property_t *wins = obs_properties_add_list(props, "capture_window",
 			obs_module_text("Window"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
@@ -86,7 +86,7 @@ obs_properties_t XCompcapMain::properties()
 	return props;
 }
 
-void XCompcapMain::defaults(obs_data_t settings)
+void XCompcapMain::defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "capture_window", "");
 	obs_data_set_default_int(settings, "cut_top", 0);
@@ -126,7 +126,7 @@ struct XCompcapMain_private
 		pthread_mutexattr_destroy(&lockattr);
 	}
 
-	obs_source_t source;
+	obs_source_t *source;
 
 	Window win;
 	int cut_top, cur_cut_top;
@@ -142,8 +142,8 @@ struct XCompcapMain_private
 
 	Pixmap pixmap;
 	GLXPixmap glxpixmap;
-	gs_texture_t tex;
-	gs_texture_t gltex;
+	gs_texture_t *tex;
+	gs_texture_t *gltex;
 
 	pthread_mutex_t lock;
 	pthread_mutexattr_t lockattr;
@@ -154,7 +154,7 @@ struct XCompcapMain_private
 };
 
 
-XCompcapMain::XCompcapMain(obs_data_t settings, obs_source_t source)
+XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
 {
 	p = new XCompcapMain_private;
 	p->source = source;
@@ -250,7 +250,7 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	}
 }
 
-void XCompcapMain::updateSettings(obs_data_t settings)
+void XCompcapMain::updateSettings(obs_data_t *settings)
 {
 	PLock lock(&p->lock);
 	XErrorLock xlock;
@@ -468,14 +468,14 @@ void XCompcapMain::tick(float seconds)
 	obs_leave_graphics();
 }
 
-void XCompcapMain::render(gs_effect_t effect)
+void XCompcapMain::render(gs_effect_t *effect)
 {
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked() || !p->tex)
 		return;
 
-	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, p->tex);
 
 	gs_enable_blending(false);

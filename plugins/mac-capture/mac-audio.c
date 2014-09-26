@@ -48,11 +48,11 @@ struct coreaudio_data {
 	enum speaker_layout speakers;
 
 	pthread_t           reconnect_thread;
-	os_event_t          exit_event;
+	os_event_t          *exit_event;
 	volatile bool       reconnecting;
 	unsigned long       retry_time;
 
-	obs_source_t        source;
+	obs_source_t        *source;
 };
 
 static bool get_default_output_device(struct coreaudio_data *ca)
@@ -665,12 +665,12 @@ static void coreaudio_destroy(void *data)
 	}
 }
 
-static void coreaudio_defaults(obs_data_t settings)
+static void coreaudio_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "device_id", "default");
 }
 
-static void *coreaudio_create(obs_data_t settings, obs_source_t source,
+static void *coreaudio_create(obs_data_t *settings, obs_source_t *source,
 		bool input)
 {
 	struct coreaudio_data *ca = bzalloc(sizeof(struct coreaudio_data));
@@ -693,22 +693,22 @@ static void *coreaudio_create(obs_data_t settings, obs_source_t source,
 	return ca;
 }
 
-static void *coreaudio_create_input_capture(obs_data_t settings,
-		obs_source_t source)
+static void *coreaudio_create_input_capture(obs_data_t *settings,
+		obs_source_t *source)
 {
 	return coreaudio_create(settings, source, true);
 }
 
-static void *coreaudio_create_output_capture(obs_data_t settings,
-		obs_source_t source)
+static void *coreaudio_create_output_capture(obs_data_t *settings,
+		obs_source_t *source)
 {
 	return coreaudio_create(settings, source, false);
 }
 
-static obs_properties_t coreaudio_properties(bool input)
+static obs_properties_t *coreaudio_properties(bool input)
 {
-	obs_properties_t   props = obs_properties_create();
-	obs_property_t     property;
+	obs_properties_t   *props = obs_properties_create();
+	obs_property_t     *property;
 	struct device_list devices;
 
 	memset(&devices, 0, sizeof(struct device_list));
@@ -732,12 +732,12 @@ static obs_properties_t coreaudio_properties(bool input)
 	return props;
 }
 
-static obs_properties_t coreaudio_input_properties(void)
+static obs_properties_t *coreaudio_input_properties(void)
 {
 	return coreaudio_properties(true);
 }
 
-static obs_properties_t coreaudio_output_properties(void)
+static obs_properties_t *coreaudio_output_properties(void)
 {
 	return coreaudio_properties(false);
 }

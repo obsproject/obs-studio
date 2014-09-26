@@ -21,7 +21,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
-bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t source)
+bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
 	const char *name = obs_source_get_name(source);
@@ -33,19 +33,19 @@ bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t source)
 	return true;
 }
 
-void OBSBasicSourceSelect::OBSSourceAdded(void *data, calldata_t calldata)
+void OBSBasicSourceSelect::OBSSourceAdded(void *data, calldata_t *calldata)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
-	obs_source_t source = (obs_source_t)calldata_ptr(calldata, "source");
+	obs_source_t *source = (obs_source_t*)calldata_ptr(calldata, "source");
 
 	QMetaObject::invokeMethod(window, "SourceAdded",
 			Q_ARG(OBSSource, source));
 }
 
-void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t calldata)
+void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t *calldata)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
-	obs_source_t source = (obs_source_t)calldata_ptr(calldata, "source");
+	obs_source_t *source = (obs_source_t*)calldata_ptr(calldata, "source");
 
 	QMetaObject::invokeMethod(window, "SourceRemoved",
 			Q_ARG(OBSSource, source));
@@ -81,8 +81,8 @@ void OBSBasicSourceSelect::SourceRemoved(OBSSource source)
 
 static void AddExisting(const char *name)
 {
-	obs_source_t source = obs_get_output_source(0);
-	obs_scene_t  scene  = obs_scene_from_source(source);
+	obs_source_t *source = obs_get_output_source(0);
+	obs_scene_t  *scene  = obs_scene_from_source(source);
 	if (!scene)
 		return;
 
@@ -97,8 +97,8 @@ static void AddExisting(const char *name)
 
 bool AddNew(QWidget *parent, const char *id, const char *name)
 {
-	obs_source_t source  = obs_get_output_source(0);
-	obs_scene_t  scene   = obs_scene_from_source(source);
+	obs_source_t *source  = obs_get_output_source(0);
+	obs_scene_t  *scene   = obs_scene_from_source(source);
 	bool         success = false;
 	if (!source)
 		return false;
@@ -169,7 +169,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 
 	QString text{placeHolderText};
 	int i = 1;
-	obs_source_t source = nullptr;
+	obs_source_t *source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
 		obs_source_release(source);
 		text = QString("%1 %2").arg(placeHolderText).arg(i++);

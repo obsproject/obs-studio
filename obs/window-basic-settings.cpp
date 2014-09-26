@@ -237,9 +237,9 @@ void OBSBasicSettings::LoadServiceTypes()
 void OBSBasicSettings::LoadServiceInfo()
 {
 	QLayout          *layout    = ui->streamContainer->layout();
-	obs_service_t    service    = main->GetService();
-	obs_data_t       settings   = obs_service_get_settings(service);
-	obs_properties_t properties = obs_service_properties(service);
+	obs_service_t    *service    = main->GetService();
+	obs_data_t       *settings   = obs_service_get_settings(service);
+	obs_properties_t *properties = obs_service_properties(service);
 
 	delete streamProperties;
 	streamProperties = new OBSPropertiesView(
@@ -475,7 +475,7 @@ static inline void LoadListValue(QComboBox *widget, const char *text,
 	widget->addItem(QT_UTF8(text), QT_UTF8(val));
 }
 
-void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t prop,
+void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 		const char *configName)
 {
 	size_t count = obs_property_list_item_count(prop);
@@ -506,13 +506,13 @@ void OBSBasicSettings::LoadAudioDevices()
 	const char *input_id  = App()->InputAudioSource();
 	const char *output_id = App()->OutputAudioSource();
 
-	obs_properties_t input_props = obs_get_source_properties(
+	obs_properties_t *input_props = obs_get_source_properties(
 			OBS_SOURCE_TYPE_INPUT, input_id);
-	obs_properties_t output_props = obs_get_source_properties(
+	obs_properties_t *output_props = obs_get_source_properties(
 			OBS_SOURCE_TYPE_INPUT, output_id);
 
 	if (input_props) {
-		obs_property_t inputs  = obs_properties_get(input_props,
+		obs_property_t *inputs  = obs_properties_get(input_props,
 				"device_id");
 		LoadListValues(ui->auxAudioDevice1, inputs, "AuxDevice1");
 		LoadListValues(ui->auxAudioDevice2, inputs, "AuxDevice2");
@@ -521,7 +521,7 @@ void OBSBasicSettings::LoadAudioDevices()
 	}
 
 	if (output_props) {
-		obs_property_t outputs = obs_properties_get(output_props,
+		obs_property_t *outputs = obs_properties_get(output_props,
 				"device_id");
 		LoadListValues(ui->desktopAudioDevice1, outputs,
 				"DesktopDevice1");
@@ -738,7 +738,7 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 void OBSBasicSettings::on_streamType_currentIndexChanged(int idx)
 {
 	QString val = ui->streamType->itemData(idx).toString();
-	obs_service_t newService;
+	obs_service_t *newService;
 
 	if (loading)
 		return;

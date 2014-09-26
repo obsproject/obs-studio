@@ -143,9 +143,9 @@ extern "C" {
 
 /* wrapped opaque data types */
 struct input_subsystem;
-typedef struct input_subsystem* input_t;
+typedef struct input_subsystem input_t;
 
-EXPORT int input_getbuttonstate(input_t input, uint32_t button);
+EXPORT int input_getbuttonstate(input_t *input, uint32_t button);
 
 #ifdef __cplusplus
 }

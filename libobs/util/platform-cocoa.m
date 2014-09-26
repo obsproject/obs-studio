@@ -146,7 +146,7 @@ static bool get_time_info(int64_t *cpu_time, int64_t *sys_time)
 	return true;
 }
 
-os_cpu_usage_info_t os_cpu_usage_info_start(void)
+os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 {
 	struct os_cpu_usage_info *info = bmalloc(sizeof(*info));
 
@@ -159,7 +159,7 @@ os_cpu_usage_info_t os_cpu_usage_info_start(void)
 	return info;
 }
 
-double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 {
 	int64_t sys_time,       cpu_time;
 	int64_t sys_time_delta, cpu_time_delta;
@@ -180,13 +180,13 @@ double os_cpu_usage_info_query(os_cpu_usage_info_t info)
 		(double)info->core_count;
 }
 
-void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 {
 	if (info)
 		bfree(info);
 }
 
-os_performance_token_t os_request_high_performance(const char *reason)
+os_performance_token_t *os_request_high_performance(const char *reason)
 {
 	@autoreleasepool {
 		NSProcessInfo *pi = [NSProcessInfo processInfo];
@@ -202,7 +202,7 @@ os_performance_token_t os_request_high_performance(const char *reason)
 	}
 }
 
-void os_end_high_performance(os_performance_token_t token)
+void os_end_high_performance(os_performance_token_t *token)
 {
 	@autoreleasepool {
 		NSProcessInfo *pi = [NSProcessInfo processInfo];

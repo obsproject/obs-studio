@@ -358,7 +358,7 @@ static inline bool lookup_getstring(const char *lookup_val,
 
 /* ------------------------------------------------------------------------- */
 
-lookup_t text_lookup_create(const char *path)
+lookup_t *text_lookup_create(const char *path)
 {
 	struct text_lookup *lookup = bzalloc(sizeof(struct text_lookup));
 
@@ -370,7 +370,7 @@ lookup_t text_lookup_create(const char *path)
 	return lookup;
 }
 
-bool text_lookup_add(lookup_t lookup, const char *path)
+bool text_lookup_add(lookup_t *lookup, const char *path)
 {
 	struct dstr file_str;
 	char *temp = NULL;
@@ -397,7 +397,7 @@ bool text_lookup_add(lookup_t lookup, const char *path)
 	return true;
 }
 
-void text_lookup_destroy(lookup_t lookup)
+void text_lookup_destroy(lookup_t *lookup)
 {
 	if (lookup) {
 		dstr_free(&lookup->language);
@@ -407,7 +407,7 @@ void text_lookup_destroy(lookup_t lookup)
 	}
 }
 
-bool text_lookup_getstr(lookup_t lookup, const char *lookup_val,
+bool text_lookup_getstr(lookup_t *lookup, const char *lookup_val,
 		const char **out)
 {
 	if (lookup)

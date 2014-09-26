@@ -127,7 +127,7 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	droppedFrames->setMinimumWidth(droppedFrames->width());
 }
 
-void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t params)
+void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 {
 	OBSBasicStatusBar *statusBar =
 		reinterpret_cast<OBSBasicStatusBar*>(data);
@@ -136,7 +136,7 @@ void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t params)
 	UNUSED_PARAMETER(params);
 }
 
-void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t params)
+void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *params)
 {
 	OBSBasicStatusBar *statusBar =
 		reinterpret_cast<OBSBasicStatusBar*>(data);
@@ -169,7 +169,7 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	UpdateDroppedFrames();
 }
 
-void OBSBasicStatusBar::StreamStarted(obs_output_t output)
+void OBSBasicStatusBar::StreamStarted(obs_output_t *output)
 {
 	streamOutput = output;
 
@@ -201,7 +201,7 @@ void OBSBasicStatusBar::StreamStopped()
 	}
 }
 
-void OBSBasicStatusBar::RecordingStarted(obs_output_t output)
+void OBSBasicStatusBar::RecordingStarted(obs_output_t *output)
 {
 	recordOutput = output;
 	IncRef();

@@ -41,7 +41,7 @@ private:
 	OBSSignal  removedSignal;
 	OBSPropertiesView *view;
 
-	static void SourceRemoved(void *data, calldata_t params);
+	static void SourceRemoved(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
 private slots:

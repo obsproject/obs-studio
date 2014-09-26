@@ -31,9 +31,9 @@
 
 #define VIDEO_HEADER_SIZE 5
 
-static inline double encoder_bitrate(obs_encoder_t encoder)
+static inline double encoder_bitrate(obs_encoder_t *encoder)
 {
-	obs_data_t settings = obs_encoder_get_settings(encoder);
+	obs_data_t *settings = obs_encoder_get_settings(encoder);
 	double bitrate = obs_data_get_double(settings, "bitrate");
 
 	obs_data_release(settings);
@@ -56,13 +56,13 @@ void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 	fwrite(buf, 1, enc - buf, file);
 }
 
-static void build_flv_meta_data(obs_output_t context,
+static void build_flv_meta_data(obs_output_t *context,
 		uint8_t **output, size_t *size)
 {
-	obs_encoder_t vencoder = obs_output_get_video_encoder(context);
-	obs_encoder_t aencoder = obs_output_get_audio_encoder(context);
-	video_t       video    = obs_encoder_video(vencoder);
-	audio_t       audio    = obs_encoder_audio(aencoder);
+	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
+	video_t       *video    = obs_encoder_video(vencoder);
+	audio_t       *audio    = obs_encoder_audio(aencoder);
 	char buf[4096];
 	char *enc = buf;
 	char *end = enc+sizeof(buf);
@@ -121,7 +121,7 @@ static void build_flv_meta_data(obs_output_t context,
 	*output = bmemdup(buf, *size);
 }
 
-void flv_meta_data(obs_output_t context, uint8_t **output, size_t *size,
+void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 		bool write_header)
 {
 	struct array_output_data data;

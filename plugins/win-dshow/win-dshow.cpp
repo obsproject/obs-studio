@@ -129,7 +129,7 @@ enum class Action {
 static DWORD CALLBACK DShowThread(LPVOID ptr);
 
 struct DShowInput {
-	obs_source_t source;
+	obs_source_t *source;
 	Device       device;
 	bool         deviceHasAudio;
 
@@ -154,7 +154,7 @@ struct DShowInput {
 		ReleaseSemaphore(semaphore, 1, nullptr);
 	}
 
-	inline DShowInput(obs_source_t source_)
+	inline DShowInput(obs_source_t *source_)
 		: source         (source_),
 		  device         (InitGraph::False)
 	{
@@ -201,9 +201,9 @@ struct DShowInput {
 			unsigned char *data, size_t size,
 			long long startTime, long long endTime);
 
-	bool UpdateVideoConfig(obs_data_t settings);
-	bool UpdateAudioConfig(obs_data_t settings);
-	void Update(obs_data_t settings);
+	bool UpdateVideoConfig(obs_data_t *settings);
+	bool UpdateAudioConfig(obs_data_t *settings);
+	void Update(obs_data_t *settings);
 
 	void DShowLoop();
 };
@@ -252,7 +252,7 @@ void DShowInput::DShowLoop()
 		switch (action) {
 		case Action::Update:
 			{
-				obs_data_t settings;
+				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
 				Update(settings);
 				obs_data_release(settings);
@@ -669,7 +669,7 @@ static bool ResolutionAvailable(const VideoDevice &dev, int cx, int cy)
 	return CapsMatch(dev, ResolutionMatcher(cx, cy));
 }
 
-static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
+static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings,
 		VideoDevice dev)
 {
 	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
@@ -691,7 +691,7 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t settings,
 
 static long long GetOBSFPS();
 
-bool DShowInput::UpdateVideoConfig(obs_data_t settings)
+bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 {
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
 
@@ -771,7 +771,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t settings)
 	return true;
 }
 
-bool DShowInput::UpdateAudioConfig(obs_data_t settings)
+bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 {
 	string audio_device_id = obs_data_get_string(settings, AUDIO_DEVICE_ID);
 	bool   useCustomAudio  = obs_data_get_bool(settings, USE_CUSTOM_AUDIO);
@@ -798,7 +798,7 @@ bool DShowInput::UpdateAudioConfig(obs_data_t settings)
 	return device.SetAudioConfig(&audioConfig);
 }
 
-void DShowInput::Update(obs_data_t settings)
+void DShowInput::Update(obs_data_t *settings)
 {
 	if (!device.ResetGraph())
 		return;
@@ -838,7 +838,7 @@ static const char *GetDShowInputName(void)
 	return TEXT_INPUT_NAME;
 }
 
-static void *CreateDShowInput(obs_data_t settings, obs_source_t source)
+static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 {
 	DShowInput *dshow = nullptr;
 
@@ -858,13 +858,13 @@ static void DestroyDShowInput(void *data)
 	delete reinterpret_cast<DShowInput*>(data);
 }
 
-static void UpdateDShowInput(void *data, obs_data_t settings)
+static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(settings);
 	reinterpret_cast<DShowInput*>(data)->QueueAction(Action::Update);
 }
 
-static void GetDShowDefaults(obs_data_t settings)
+static void GetDShowDefaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
@@ -944,8 +944,8 @@ static const FPSFormat validFPSFormats[] = {
 	{"1",          MAKE_DSHOW_FPS(1)},
 };
 
-static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings);
+static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings);
 
 static bool TryResolution(VideoDevice &dev, string res)
 {
@@ -956,7 +956,7 @@ static bool TryResolution(VideoDevice &dev, string res)
 	return ResolutionAvailable(dev, cx, cy);
 }
 
-static bool SetResolution(obs_properties_t props, obs_data_t settings,
+static bool SetResolution(obs_properties_t *props, obs_data_t *settings,
 		string res, bool autoselect=false)
 {
 	if (autoselect)
@@ -973,8 +973,8 @@ static bool SetResolution(obs_properties_t props, obs_data_t settings,
 	return true;
 }
 
-static bool DeviceResolutionChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool DeviceResolutionChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 
@@ -1026,10 +1026,10 @@ static const VideoFormatName videoFormatNames[] = {
 	{VideoFormat::H264,  "H264"}
 };
 
-static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings);
+static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings);
 
-static size_t AddDevice(obs_property_t device_list, const string &id)
+static size_t AddDevice(obs_property_t *device_list, const string &id)
 {
 	DStr name, path;
 	if (!DecodeDeviceId(name, path, id.c_str()))
@@ -1038,7 +1038,7 @@ static size_t AddDevice(obs_property_t device_list, const string &id)
 	return obs_property_list_add_string(device_list, name, id.c_str());
 }
 
-static bool UpdateDeviceList(obs_property_t list, const string &id)
+static bool UpdateDeviceList(obs_property_t *list, const string &id)
 {
 	size_t size = obs_property_list_item_count(list);
 	bool found = false;
@@ -1073,8 +1073,8 @@ static bool UpdateDeviceList(obs_property_t list, const string &id)
 	return true;
 }
 
-static bool DeviceSelectionChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
 	VideoDevice device;
@@ -1115,7 +1115,7 @@ static bool DeviceSelectionChanged(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static bool VideoConfigClicked(obs_properties_t props, obs_property_t p,
+static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -1126,7 +1126,7 @@ static bool VideoConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }
 
-/*static bool AudioConfigClicked(obs_properties_t props, obs_property_t p,
+/*static bool AudioConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -1137,7 +1137,7 @@ static bool VideoConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }*/
 
-static bool CrossbarConfigClicked(obs_properties_t props, obs_property_t p,
+static bool CrossbarConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -1148,7 +1148,7 @@ static bool CrossbarConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }
 
-/*static bool Crossbar2ConfigClicked(obs_properties_t props, obs_property_t p,
+/*static bool Crossbar2ConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
@@ -1159,7 +1159,7 @@ static bool CrossbarConfigClicked(obs_properties_t props, obs_property_t p,
 	return false;
 }*/
 
-static bool AddDevice(obs_property_t device_list, const VideoDevice &device)
+static bool AddDevice(obs_property_t *device_list, const VideoDevice &device)
 {
 	DStr name, path, device_id;
 
@@ -1178,7 +1178,7 @@ static bool AddDevice(obs_property_t device_list, const VideoDevice &device)
 	return true;
 }
 
-static bool AddAudioDevice(obs_property_t device_list,
+static bool AddAudioDevice(obs_property_t *device_list,
 		const AudioDevice &device)
 {
 	DStr name, path, device_id;
@@ -1203,8 +1203,8 @@ static void PropertiesDataDestroy(void *data)
 	delete reinterpret_cast<PropertiesData*>(data);
 }
 
-static bool ResTypeChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	int  val     = (int)obs_data_get_int(settings, RES_TYPE);
 	bool enabled = (val != ResType_Preferred);
@@ -1255,9 +1255,9 @@ static DStr GetFPSName(long long interval)
 }
 
 static void UpdateFPS(VideoDevice &device, VideoFormat format,
-		long long interval, int cx, int cy, obs_properties_t props)
+		long long interval, int cx, int cy, obs_properties_t *props)
 {
-	obs_property_t list = obs_properties_get(props, FRAME_INTERVAL);
+	obs_property_t *list = obs_properties_get(props, FRAME_INTERVAL);
 
 	obs_property_list_clear(list);
 
@@ -1310,7 +1310,7 @@ static DStr GetVideoFormatName(VideoFormat format)
 }
 
 static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
-		int cx, int cy, long long interval, obs_properties_t props)
+		int cx, int cy, long long interval, obs_properties_t *props)
 {
 	set<VideoFormat> formats = { VideoFormat::Any };
 	auto format_gatherer = [&formats](const VideoInfo &info) mutable -> bool
@@ -1324,7 +1324,7 @@ static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
 			FrameRateMatcher(interval),
 			format_gatherer);
 
-	obs_property_t list = obs_properties_get(props, VIDEO_FORMAT);
+	obs_property_t *list = obs_properties_get(props, VIDEO_FORMAT);
 	obs_property_list_clear(list);
 
 	bool format_added = false;
@@ -1351,7 +1351,7 @@ static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
 	obs_property_list_item_disable(list, idx, true);
 }
 
-static bool UpdateFPS(long long interval, obs_property_t list)
+static bool UpdateFPS(long long interval, obs_property_t *list)
 {
 	size_t size = obs_property_list_item_count(list);
 	bool fps_found = false;
@@ -1381,8 +1381,8 @@ static bool UpdateFPS(long long interval, obs_property_t list)
 	return true;
 }
 
-static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	long long val = obs_data_get_int(settings, FRAME_INTERVAL);
 
@@ -1445,7 +1445,7 @@ static bool DeviceIntervalChanged(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static bool UpdateVideoFormats(VideoFormat format, obs_property_t list)
+static bool UpdateVideoFormats(VideoFormat format, obs_property_t *list)
 {
 	size_t size = obs_property_list_item_count(list);
 	DStr name;
@@ -1472,8 +1472,8 @@ static bool UpdateVideoFormats(VideoFormat format, obs_property_t list)
 	return true;
 }
 
-static bool VideoFormatChanged(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool VideoFormatChanged(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	PropertiesData *data = (PropertiesData*)obs_properties_get_param(props);
 	const char *id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
@@ -1499,8 +1499,8 @@ static bool VideoFormatChanged(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static bool CustomAudioClicked(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	bool useCustomAudio = obs_data_get_bool(settings, USE_CUSTOM_AUDIO);
 	p = obs_properties_get(props, AUDIO_DEVICE_ID);
@@ -1508,14 +1508,14 @@ static bool CustomAudioClicked(obs_properties_t props, obs_property_t p,
 	return true;
 }
 
-static obs_properties_t GetDShowProperties(void)
+static obs_properties_t *GetDShowProperties(void)
 {
-	obs_properties_t ppts = obs_properties_create();
+	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;
 
 	obs_properties_set_param(ppts, data, PropertiesDataDestroy);
 
-	obs_property_t p = obs_properties_add_list(ppts,
+	obs_property_t *p = obs_properties_add_list(ppts,
 			VIDEO_DEVICE_ID, TEXT_DEVICE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 

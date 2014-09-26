@@ -24,8 +24,8 @@
 #include "graphics.h"
 
 struct gs_texture_render {
-	gs_texture_t  target, prev_target;
-	gs_zstencil_t zs, prev_zs;
+	gs_texture_t  *target, *prev_target;
+	gs_zstencil_t *zs, *prev_zs;
 
 	uint32_t cx, cy;
 
@@ -35,7 +35,7 @@ struct gs_texture_render {
 	bool rendered;
 };
 
-gs_texrender_t gs_texrender_create(enum gs_color_format format,
+gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 		enum gs_zstencil_format zsformat)
 {
 	struct gs_texture_render *texrender;
@@ -46,7 +46,7 @@ gs_texrender_t gs_texrender_create(enum gs_color_format format,
 	return texrender;
 }
 
-void gs_texrender_destroy(gs_texrender_t texrender)
+void gs_texrender_destroy(gs_texrender_t *texrender)
 {
 	if (texrender) {
 		gs_texture_destroy(texrender->target);
@@ -55,7 +55,7 @@ void gs_texrender_destroy(gs_texrender_t texrender)
 	}
 }
 
-static bool texrender_resetbuffer(gs_texrender_t texrender, uint32_t cx,
+static bool texrender_resetbuffer(gs_texrender_t *texrender, uint32_t cx,
 		uint32_t cy)
 {
 	if (!texrender)
@@ -87,7 +87,7 @@ static bool texrender_resetbuffer(gs_texrender_t texrender, uint32_t cx,
 	return true;
 }
 
-bool gs_texrender_begin(gs_texrender_t texrender, uint32_t cx, uint32_t cy)
+bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 {
 	if (!texrender || texrender->rendered)
 		return false;
@@ -119,7 +119,7 @@ bool gs_texrender_begin(gs_texrender_t texrender, uint32_t cx, uint32_t cy)
 	return true;
 }
 
-void gs_texrender_end(gs_texrender_t texrender)
+void gs_texrender_end(gs_texrender_t *texrender)
 {
 	if (!texrender)
 		return;
@@ -133,13 +133,13 @@ void gs_texrender_end(gs_texrender_t texrender)
 	texrender->rendered = true;
 }
 
-void gs_texrender_reset(gs_texrender_t texrender)
+void gs_texrender_reset(gs_texrender_t *texrender)
 {
 	if (texrender)
 		texrender->rendered = false;
 }
 
-gs_texture_t gs_texrender_get_texture(gs_texrender_t texrender)
+gs_texture_t *gs_texrender_get_texture(gs_texrender_t *texrender)
 {
 	return texrender ? texrender->target : NULL;
 }

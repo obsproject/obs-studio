@@ -15,23 +15,23 @@ static const int cy = 600;
 /* --------------------------------------------------- */
 
 class SourceContext {
-	obs_source_t source;
+	obs_source_t *source;
 
 public:
-	inline SourceContext(obs_source_t source) : source(source) {}
+	inline SourceContext(obs_source_t *source) : source(source) {}
 	inline ~SourceContext() {obs_source_release(source);}
-	inline operator obs_source_t() {return source;}
+	inline operator obs_source_t*() {return source;}
 };
 
 /* --------------------------------------------------- */
 
 class SceneContext {
-	obs_scene_t scene;
+	obs_scene_t *scene;
 
 public:
-	inline SceneContext(obs_scene_t scene) : scene(scene) {}
+	inline SceneContext(obs_scene_t *scene) : scene(scene) {}
 	inline ~SceneContext() {obs_scene_release(scene);}
-	inline operator obs_scene_t() {return scene;}
+	inline operator obs_scene_t*() {return scene;}
 };
 
 /* --------------------------------------------------- */
@@ -92,9 +92,9 @@ static void CreateOBS(HWND hwnd)
 		throw "Couldn't initialize video";
 }
 
-static void AddTestItems(obs_scene_t scene, obs_source_t source)
+static void AddTestItems(obs_scene_t *scene, obs_source_t *source)
 {
-	obs_sceneitem_t item = NULL;
+	obs_sceneitem_t *item = NULL;
 	struct vec2 scale;
 
 	vec2_set(&scale, 20.0f, 20.0f);

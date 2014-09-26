@@ -58,7 +58,7 @@ struct config_data {
 	struct darray defaults; /* struct config_section */
 };
 
-config_t config_create(const char *file)
+config_t *config_create(const char *file)
 {
 	struct config_data *config;
 	FILE *f;
@@ -224,7 +224,7 @@ complete:
 	return CONFIG_SUCCESS;
 }
 
-int config_open(config_t *config, const char *file,
+int config_open(config_t **config, const char *file,
 		enum config_open_type open_type)
 {
 	int errorcode;
@@ -249,7 +249,7 @@ int config_open(config_t *config, const char *file,
 	return errorcode;
 }
 
-int config_open_defaults(config_t config, const char *file)
+int config_open_defaults(config_t *config, const char *file)
 {
 	if (!config)
 		return CONFIG_ERROR;
@@ -257,7 +257,7 @@ int config_open_defaults(config_t config, const char *file)
 	return config_parse(&config->defaults, file, false);
 }
 
-int config_save(config_t config)
+int config_save(config_t *config)
 {
 	FILE *f;
 	struct dstr str;
@@ -306,7 +306,7 @@ int config_save(config_t config)
 	return CONFIG_SUCCESS;
 }
 
-void config_close(config_t config)
+void config_close(config_t *config)
 {
 	struct config_section *defaults, *sections;
 	size_t i;
@@ -327,12 +327,12 @@ void config_close(config_t config)
 	bfree(config);
 }
 
-size_t config_num_sections(config_t config)
+size_t config_num_sections(config_t *config)
 {
 	return config->sections.num;
 }
 
-const char *config_get_section(config_t config, size_t idx)
+const char *config_get_section(config_t *config, size_t idx)
 {
 	struct config_section *section;
 
@@ -408,7 +408,7 @@ static void config_set_item(struct darray *sections, const char *section,
 	item->value = value;
 }
 
-void config_set_string(config_t config, const char *section,
+void config_set_string(config_t *config, const char *section,
 		const char *name, const char *value)
 {
 	if (!value)
@@ -416,7 +416,7 @@ void config_set_string(config_t config, const char *section,
 	config_set_item(&config->sections, section, name, bstrdup(value));
 }
 
-void config_set_int(config_t config, const char *section,
+void config_set_int(config_t *config, const char *section,
 		const char *name, int64_t value)
 {
 	struct dstr str;
@@ -425,7 +425,7 @@ void config_set_int(config_t config, const char *section,
 	config_set_item(&config->sections, section, name, str.array);
 }
 
-void config_set_uint(config_t config, const char *section,
+void config_set_uint(config_t *config, const char *section,
 		const char *name, uint64_t value)
 {
 	struct dstr str;
@@ -434,14 +434,14 @@ void config_set_uint(config_t config, const char *section,
 	config_set_item(&config->sections, section, name, str.array);
 }
 
-void config_set_bool(config_t config, const char *section,
+void config_set_bool(config_t *config, const char *section,
 		const char *name, bool value)
 {
 	char *str = bstrdup(value ? "true" : "false");
 	config_set_item(&config->sections, section, name, str);
 }
 
-void config_set_double(config_t config, const char *section,
+void config_set_double(config_t *config, const char *section,
 		const char *name, double value)
 {
 	struct dstr str;
@@ -450,7 +450,7 @@ void config_set_double(config_t config, const char *section,
 	config_set_item(&config->sections, section, name, str.array);
 }
 
-void config_set_default_string(config_t config, const char *section,
+void config_set_default_string(config_t *config, const char *section,
 		const char *name, const char *value)
 {
 	if (!value)
@@ -458,7 +458,7 @@ void config_set_default_string(config_t config, const char *section,
 	config_set_item(&config->defaults, section, name, bstrdup(value));
 }
 
-void config_set_default_int(config_t config, const char *section,
+void config_set_default_int(config_t *config, const char *section,
 		const char *name, int64_t value)
 {
 	struct dstr str;
@@ -467,7 +467,7 @@ void config_set_default_int(config_t config, const char *section,
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
-void config_set_default_uint(config_t config, const char *section,
+void config_set_default_uint(config_t *config, const char *section,
 		const char *name, uint64_t value)
 {
 	struct dstr str;
@@ -476,14 +476,14 @@ void config_set_default_uint(config_t config, const char *section,
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
-void config_set_default_bool(config_t config, const char *section,
+void config_set_default_bool(config_t *config, const char *section,
 		const char *name, bool value)
 {
 	char *str = bstrdup(value ? "true" : "false");
 	config_set_item(&config->defaults, section, name, str);
 }
 
-void config_set_default_double(config_t config, const char *section,
+void config_set_default_double(config_t *config, const char *section,
 		const char *name, double value)
 {
 	struct dstr str;
@@ -492,7 +492,7 @@ void config_set_default_double(config_t config, const char *section,
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
-const char *config_get_string(config_t config, const char *section,
+const char *config_get_string(config_t *config, const char *section,
 		const char *name)
 {
 	struct config_item *item = config_find_item(&config->sections,
@@ -505,7 +505,7 @@ const char *config_get_string(config_t config, const char *section,
 	return item->value;
 }
 
-int64_t config_get_int(config_t config, const char *section,
+int64_t config_get_int(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_string(config, section, name);
@@ -515,7 +515,7 @@ int64_t config_get_int(config_t config, const char *section,
 	return 0;
 }
 
-uint64_t config_get_uint(config_t config, const char *section,
+uint64_t config_get_uint(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_string(config, section, name);
@@ -525,7 +525,7 @@ uint64_t config_get_uint(config_t config, const char *section,
 	return 0;
 }
 
-bool config_get_bool(config_t config, const char *section,
+bool config_get_bool(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_string(config, section, name);
@@ -536,7 +536,7 @@ bool config_get_bool(config_t config, const char *section,
 	return false;
 }
 
-double config_get_double(config_t config, const char *section,
+double config_get_double(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_string(config, section, name);
@@ -546,7 +546,7 @@ double config_get_double(config_t config, const char *section,
 	return 0.0;
 }
 
-const char *config_get_default_string(config_t config, const char *section,
+const char *config_get_default_string(config_t *config, const char *section,
 		const char *name)
 {
 	struct config_item *item;
@@ -558,7 +558,7 @@ const char *config_get_default_string(config_t config, const char *section,
 	return item->value;
 }
 
-int64_t config_get_default_int(config_t config, const char *section,
+int64_t config_get_default_int(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_default_string(config, section, name);
@@ -568,7 +568,7 @@ int64_t config_get_default_int(config_t config, const char *section,
 	return 0;
 }
 
-uint64_t config_get_default_uint(config_t config, const char *section,
+uint64_t config_get_default_uint(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_default_string(config, section, name);
@@ -578,7 +578,7 @@ uint64_t config_get_default_uint(config_t config, const char *section,
 	return 0;
 }
 
-bool config_get_default_bool(config_t config, const char *section,
+bool config_get_default_bool(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_default_string(config, section, name);
@@ -589,7 +589,7 @@ bool config_get_default_bool(config_t config, const char *section,
 	return false;
 }
 
-double config_get_default_double(config_t config, const char *section,
+double config_get_default_double(config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_default_string(config, section, name);
@@ -599,13 +599,13 @@ double config_get_default_double(config_t config, const char *section,
 	return 0.0;
 }
 
-bool config_has_user_value(config_t config, const char *section,
+bool config_has_user_value(config_t *config, const char *section,
 		const char *name)
 {
 	return config_find_item(&config->sections, section, name) != NULL;
 }
 
-bool config_has_default_value(config_t config, const char *section,
+bool config_has_default_value(config_t *config, const char *section,
 		const char *name)
 {
 	return config_find_item(&config->defaults, section, name) != NULL;

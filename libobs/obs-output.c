@@ -47,7 +47,7 @@ static const char *output_signals[] = {
 };
 
 static bool init_output_handlers(struct obs_output *output, const char *name,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	if (!obs_context_data_init(&output->context, settings, name))
 		return false;
@@ -56,8 +56,8 @@ static bool init_output_handlers(struct obs_output *output, const char *name,
 	return true;
 }
 
-obs_output_t obs_output_create(const char *id, const char *name,
-		obs_data_t settings)
+obs_output_t *obs_output_create(const char *id, const char *name,
+		obs_data_t *settings)
 {
 	const struct obs_output_info *info = find_output(id);
 	struct obs_output *output;
@@ -114,7 +114,7 @@ static inline void free_packets(struct obs_output *output)
 	da_free(output->interleaved_packets);
 }
 
-void obs_output_destroy(obs_output_t output)
+void obs_output_destroy(obs_output_t *output)
 {
 	if (output) {
 		obs_context_data_remove(&output->context);
@@ -147,12 +147,12 @@ void obs_output_destroy(obs_output_t output)
 	}
 }
 
-const char *obs_output_get_name(obs_output_t output)
+const char *obs_output_get_name(obs_output_t *output)
 {
 	return output ? output->context.name : NULL;
 }
 
-bool obs_output_start(obs_output_t output)
+bool obs_output_start(obs_output_t *output)
 {
 	bool success;
 
@@ -192,7 +192,7 @@ static void log_frame_info(struct obs_output *output)
 				skipped, percentage_skipped);
 }
 
-void obs_output_stop(obs_output_t output)
+void obs_output_stop(obs_output_t *output)
 {
 	if (output) {
 		os_event_signal(output->reconnect_stop_event);
@@ -207,32 +207,32 @@ void obs_output_stop(obs_output_t output)
 	}
 }
 
-bool obs_output_active(obs_output_t output)
+bool obs_output_active(obs_output_t *output)
 {
 	return (output != NULL) ?
 		(output->active || output->reconnecting) : false;
 }
 
-static inline obs_data_t get_defaults(const struct obs_output_info *info)
+static inline obs_data_t *get_defaults(const struct obs_output_info *info)
 {
-	obs_data_t settings = obs_data_create();
+	obs_data_t *settings = obs_data_create();
 	if (info->get_defaults)
 		info->get_defaults(settings);
 	return settings;
 }
 
-obs_data_t obs_output_defaults(const char *id)
+obs_data_t *obs_output_defaults(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_properties_t obs_get_output_properties(const char *id)
+obs_properties_t *obs_get_output_properties(const char *id)
 {
 	const struct obs_output_info *info = find_output(id);
 	if (info && info->get_properties) {
-		obs_data_t       defaults = get_defaults(info);
-		obs_properties_t properties;
+		obs_data_t       *defaults = get_defaults(info);
+		obs_properties_t *properties;
 
 		properties = info->get_properties();
 		obs_properties_apply_settings(properties, defaults);
@@ -242,10 +242,10 @@ obs_properties_t obs_get_output_properties(const char *id)
 	return NULL;
 }
 
-obs_properties_t obs_output_properties(obs_output_t output)
+obs_properties_t *obs_output_properties(obs_output_t *output)
 {
 	if (output && output->info.get_properties) {
-		obs_properties_t props;
+		obs_properties_t *props;
 		props = output->info.get_properties();
 		obs_properties_apply_settings(props, output->context.settings);
 		return props;
@@ -254,7 +254,7 @@ obs_properties_t obs_output_properties(obs_output_t output)
 	return NULL;
 }
 
-void obs_output_update(obs_output_t output, obs_data_t settings)
+void obs_output_update(obs_output_t *output, obs_data_t *settings)
 {
 	if (!output) return;
 
@@ -265,7 +265,7 @@ void obs_output_update(obs_output_t output, obs_data_t settings)
 				output->context.settings);
 }
 
-obs_data_t obs_output_get_settings(obs_output_t output)
+obs_data_t *obs_output_get_settings(obs_output_t *output)
 {
 	if (!output)
 		return NULL;
@@ -274,28 +274,28 @@ obs_data_t obs_output_get_settings(obs_output_t output)
 	return output->context.settings;
 }
 
-bool obs_output_canpause(obs_output_t output)
+bool obs_output_canpause(obs_output_t *output)
 {
 	return output ? (output->info.pause != NULL) : false;
 }
 
-void obs_output_pause(obs_output_t output)
+void obs_output_pause(obs_output_t *output)
 {
 	if (output && output->info.pause)
 		output->info.pause(output->context.data);
 }
 
-signal_handler_t obs_output_get_signal_handler(obs_output_t output)
+signal_handler_t *obs_output_get_signal_handler(obs_output_t *output)
 {
 	return output ? output->context.signals : NULL;
 }
 
-proc_handler_t obs_output_get_proc_handler(obs_output_t output)
+proc_handler_t *obs_output_get_proc_handler(obs_output_t *output)
 {
 	return output ? output->context.procs : NULL;
 }
 
-void obs_output_set_media(obs_output_t output, video_t video, audio_t audio)
+void obs_output_set_media(obs_output_t *output, video_t *video, audio_t *audio)
 {
 	if (!output)
 		return;
@@ -304,12 +304,12 @@ void obs_output_set_media(obs_output_t output, video_t video, audio_t audio)
 	output->audio = audio;
 }
 
-video_t obs_output_video(obs_output_t output)
+video_t *obs_output_video(obs_output_t *output)
 {
 	return output ? output->video : NULL;
 }
 
-audio_t obs_output_audio(obs_output_t output)
+audio_t *obs_output_audio(obs_output_t *output)
 {
 	return output ? output->audio : NULL;
 }
@@ -325,7 +325,7 @@ void obs_output_remove_encoder(struct obs_output *output,
 		output->audio_encoder = NULL;
 }
 
-void obs_output_set_video_encoder(obs_output_t output, obs_encoder_t encoder)
+void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
 {
 	if (!output) return;
 	if (output->video_encoder == encoder) return;
@@ -341,7 +341,7 @@ void obs_output_set_video_encoder(obs_output_t output, obs_encoder_t encoder)
 				output->scaled_width, output->scaled_height);
 }
 
-void obs_output_set_audio_encoder(obs_output_t output, obs_encoder_t encoder)
+void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder)
 {
 	if (!output) return;
 	if (output->audio_encoder == encoder) return;
@@ -352,17 +352,17 @@ void obs_output_set_audio_encoder(obs_output_t output, obs_encoder_t encoder)
 	output->audio_encoder = encoder;
 }
 
-obs_encoder_t obs_output_get_video_encoder(obs_output_t output)
+obs_encoder_t *obs_output_get_video_encoder(obs_output_t *output)
 {
 	return output ? output->video_encoder : NULL;
 }
 
-obs_encoder_t obs_output_get_audio_encoder(obs_output_t output)
+obs_encoder_t *obs_output_get_audio_encoder(obs_output_t *output)
 {
 	return output ? output->audio_encoder : NULL;
 }
 
-void obs_output_set_service(obs_output_t output, obs_service_t service)
+void obs_output_set_service(obs_output_t *output, obs_service_t *service)
 {
 	if (!output || output->active || !service || service->active) return;
 
@@ -373,12 +373,12 @@ void obs_output_set_service(obs_output_t output, obs_service_t service)
 	service->output = output;
 }
 
-obs_service_t obs_output_get_service(obs_output_t output)
+obs_service_t *obs_output_get_service(obs_output_t *output)
 {
 	return output ? output->service : NULL;
 }
 
-void obs_output_set_reconnect_settings(obs_output_t output,
+void obs_output_set_reconnect_settings(obs_output_t *output,
 		int retry_count, int retry_sec)
 {
 	if (!output) return;
@@ -387,7 +387,7 @@ void obs_output_set_reconnect_settings(obs_output_t output,
 	output->reconnect_retry_sec = retry_sec;
 }
 
-uint64_t obs_output_get_total_bytes(obs_output_t output)
+uint64_t obs_output_get_total_bytes(obs_output_t *output)
 {
 	if (!output || !output->info.get_total_bytes)
 		return 0;
@@ -395,7 +395,7 @@ uint64_t obs_output_get_total_bytes(obs_output_t output)
 	return output->info.get_total_bytes(output->context.data);
 }
 
-int obs_output_get_frames_dropped(obs_output_t output)
+int obs_output_get_frames_dropped(obs_output_t *output)
 {
 	if (!output || !output->info.get_dropped_frames)
 		return 0;
@@ -403,12 +403,12 @@ int obs_output_get_frames_dropped(obs_output_t output)
 	return output->info.get_dropped_frames(output->context.data);
 }
 
-int obs_output_get_total_frames(obs_output_t output)
+int obs_output_get_total_frames(obs_output_t *output)
 {
 	return output ? output->total_frames : 0;
 }
 
-void obs_output_set_preferred_size(obs_output_t output, uint32_t width,
+void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
 		uint32_t height)
 {
 	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
@@ -431,7 +431,7 @@ void obs_output_set_preferred_size(obs_output_t output, uint32_t width,
 	}
 }
 
-uint32_t obs_output_get_width(obs_output_t output)
+uint32_t obs_output_get_width(obs_output_t *output)
 {
 	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
 		return 0;
@@ -444,7 +444,7 @@ uint32_t obs_output_get_width(obs_output_t output)
 			video_output_get_width(output->video);
 }
 
-uint32_t obs_output_get_height(obs_output_t output)
+uint32_t obs_output_get_height(obs_output_t *output)
 {
 	if (!output || (output->info.flags & OBS_OUTPUT_VIDEO) == 0)
 		return 0;
@@ -457,7 +457,7 @@ uint32_t obs_output_get_height(obs_output_t output)
 			video_output_get_height(output->video);
 }
 
-void obs_output_set_video_conversion(obs_output_t output,
+void obs_output_set_video_conversion(obs_output_t *output,
 		const struct video_scale_info *conversion)
 {
 	if (!output || !conversion) return;
@@ -466,7 +466,7 @@ void obs_output_set_video_conversion(obs_output_t output,
 	output->video_conversion_set = true;
 }
 
-void obs_output_set_audio_conversion(obs_output_t output,
+void obs_output_set_audio_conversion(obs_output_t *output,
 		const struct audio_convert_info *conversion)
 {
 	if (!output || !conversion) return;
@@ -760,7 +760,7 @@ static inline void convert_flags(struct obs_output *output, uint32_t flags,
 	*has_service = (flags & OBS_OUTPUT_SERVICE) != 0;
 }
 
-bool obs_output_can_begin_data_capture(obs_output_t output, uint32_t flags)
+bool obs_output_can_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
 
@@ -774,7 +774,7 @@ bool obs_output_can_begin_data_capture(obs_output_t output, uint32_t flags)
 			has_service);
 }
 
-bool obs_output_initialize_encoders(obs_output_t output, uint32_t flags)
+bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
 
@@ -803,7 +803,7 @@ bool obs_output_initialize_encoders(obs_output_t output, uint32_t flags)
 	return true;
 }
 
-bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
+bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
 
@@ -836,7 +836,7 @@ bool obs_output_begin_data_capture(obs_output_t output, uint32_t flags)
 	return true;
 }
 
-void obs_output_end_data_capture(obs_output_t output)
+void obs_output_end_data_capture(obs_output_t *output)
 {
 	bool encoded, has_video, has_audio, has_service;
 	void (*encoded_callback)(void *data, struct encoder_packet *packet);
@@ -925,7 +925,7 @@ static void output_reconnect(struct obs_output *output)
 	}
 }
 
-void obs_output_signal_stop(obs_output_t output, int code)
+void obs_output_signal_stop(obs_output_t *output, int code)
 {
 	if (!output)
 		return;

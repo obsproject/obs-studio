@@ -35,14 +35,14 @@ struct proc_handler {
 	DARRAY(struct proc_info) procs;
 };
 
-proc_handler_t proc_handler_create(void)
+proc_handler_t *proc_handler_create(void)
 {
 	struct proc_handler *handler = bmalloc(sizeof(struct proc_handler));
 	da_init(handler->procs);
 	return handler;
 }
 
-void proc_handler_destroy(proc_handler_t handler)
+void proc_handler_destroy(proc_handler_t *handler)
 {
 	if (handler) {
 		for (size_t i = 0; i < handler->procs.num; i++)
@@ -52,7 +52,7 @@ void proc_handler_destroy(proc_handler_t handler)
 	}
 }
 
-void proc_handler_add(proc_handler_t handler, const char *decl_string,
+void proc_handler_add(proc_handler_t *handler, const char *decl_string,
 		proc_handler_proc_t proc, void *data)
 {
 	if (!handler) return;
@@ -72,8 +72,8 @@ void proc_handler_add(proc_handler_t handler, const char *decl_string,
 	da_push_back(handler->procs, &pi);
 }
 
-bool proc_handler_call(proc_handler_t handler, const char *name,
-		calldata_t params)
+bool proc_handler_call(proc_handler_t *handler, const char *name,
+		calldata_t *params)
 {
 	if (!handler) return false;
 

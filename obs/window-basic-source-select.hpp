@@ -31,10 +31,10 @@ private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
 	const char *id;
 
-	static bool EnumSources(void *data, obs_source_t source);
+	static bool EnumSources(void *data, obs_source_t *source);
 
-	static void OBSSourceRemoved(void *data, calldata_t calldata);
-	static void OBSSourceAdded(void *data, calldata_t calldata);
+	static void OBSSourceRemoved(void *data, calldata_t *calldata);
+	static void OBSSourceAdded(void *data, calldata_t *calldata);
 
 private slots:
 	void on_buttonBox_accepted();

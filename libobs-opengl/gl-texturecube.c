@@ -58,7 +58,7 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex,
 	return success;
 }
 
-gs_texture_t device_cubetexture_create(gs_device_t device, uint32_t size,
+gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
 		enum gs_color_format color_format, uint32_t levels,
 		const uint8_t **data, uint32_t flags)
 {
@@ -79,15 +79,15 @@ gs_texture_t device_cubetexture_create(gs_device_t device, uint32_t size,
 	if (!upload_texture_cube(tex, data))
 		goto fail;
 
-	return (gs_texture_t)tex;
+	return (gs_texture_t*)tex;
 
 fail:
-	gs_cubetexture_destroy((gs_texture_t)tex);
+	gs_cubetexture_destroy((gs_texture_t*)tex);
 	blog(LOG_ERROR, "device_cubetexture_create (GL) failed");
 	return NULL;
 }
 
-void gs_cubetexture_destroy(gs_texture_t tex)
+void gs_cubetexture_destroy(gs_texture_t *tex)
 {
 	if (!tex)
 		return;
@@ -100,7 +100,7 @@ void gs_cubetexture_destroy(gs_texture_t tex)
 	bfree(tex);
 }
 
-static inline bool is_texture_cube(gs_texture_t tex, const char *func)
+static inline bool is_texture_cube(gs_texture_t *tex, const char *func)
 {
 	bool is_texcube = tex->type == GS_TEXTURE_CUBE;
 	if (!is_texcube)
@@ -108,7 +108,7 @@ static inline bool is_texture_cube(gs_texture_t tex, const char *func)
 	return is_texcube;
 }
 
-uint32_t gs_cubetexture_get_size(gs_texture_t cubetex)
+uint32_t gs_cubetexture_get_size(gs_texture_t *cubetex)
 {
 	struct gs_texture_cube *cube = (struct gs_texture_cube*)cubetex;
 	if (!is_texture_cube(cubetex, "gs_cubetexture_get_size"))
@@ -117,7 +117,7 @@ uint32_t gs_cubetexture_get_size(gs_texture_t cubetex)
 	return cube->size;
 }
 
-enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t *cubetex)
 {
 	return cubetex->format;
 }

@@ -243,7 +243,7 @@ static inline void ep_func_free(struct ep_func *epf)
 /* ------------------------------------------------------------------------- */
 
 struct effect_parser {
-	gs_effect_t effect;
+	gs_effect_t *effect;
 
 	DARRAY(struct ep_param)     params;
 	DARRAY(struct ep_struct)    structs;
@@ -275,7 +275,7 @@ static inline void ep_init(struct effect_parser *ep)
 
 extern void ep_free(struct effect_parser *ep);
 
-extern bool ep_parse(struct effect_parser *ep, gs_effect_t effect,
+extern bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
                      const char *effect_string, const char *file);
 
 #ifdef __cplusplus

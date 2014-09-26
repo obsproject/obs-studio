@@ -54,21 +54,21 @@ enum os_event_type {
 
 struct os_event_data;
 struct os_sem_data;
-typedef struct os_event_data *os_event_t;
-typedef struct os_sem_data   *os_sem_t;
+typedef struct os_event_data os_event_t;
+typedef struct os_sem_data   os_sem_t;
 
-EXPORT int  os_event_init(os_event_t *event, enum os_event_type type);
-EXPORT void os_event_destroy(os_event_t event);
-EXPORT int  os_event_wait(os_event_t event);
-EXPORT int  os_event_timedwait(os_event_t event, unsigned long milliseconds);
-EXPORT int  os_event_try(os_event_t event);
-EXPORT int  os_event_signal(os_event_t event);
-EXPORT void os_event_reset(os_event_t event);
+EXPORT int  os_event_init(os_event_t **event, enum os_event_type type);
+EXPORT void os_event_destroy(os_event_t *event);
+EXPORT int  os_event_wait(os_event_t *event);
+EXPORT int  os_event_timedwait(os_event_t *event, unsigned long milliseconds);
+EXPORT int  os_event_try(os_event_t *event);
+EXPORT int  os_event_signal(os_event_t *event);
+EXPORT void os_event_reset(os_event_t *event);
 
-EXPORT int  os_sem_init(os_sem_t *sem, int value);
-EXPORT void os_sem_destroy(os_sem_t sem);
-EXPORT int  os_sem_post(os_sem_t sem);
-EXPORT int  os_sem_wait(os_sem_t sem);
+EXPORT int  os_sem_init(os_sem_t **sem, int value);
+EXPORT void os_sem_destroy(os_sem_t *sem);
+EXPORT int  os_sem_post(os_sem_t *sem);
+EXPORT int  os_sem_wait(os_sem_t *sem);
 
 EXPORT long os_atomic_inc_long(volatile long *val);
 EXPORT long os_atomic_dec_long(volatile long *val);

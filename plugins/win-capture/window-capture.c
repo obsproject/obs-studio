@@ -19,7 +19,7 @@ enum window_priority {
 };
 
 struct window_capture {
-	obs_source_t         source;
+	obs_source_t         *source;
 
 	char                 *title;
 	char                 *class;
@@ -33,7 +33,7 @@ struct window_capture {
 
 	float                resize_timer;
 
-	gs_effect_t          opaque_effect;
+	gs_effect_t          *opaque_effect;
 
 	HWND                 window;
 	RECT                 last_rect;
@@ -54,7 +54,7 @@ char *decode_str(const char *src)
 	return str.array;
 }
 
-static void update_settings(struct window_capture *wc, obs_data_t s)
+static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
 	const char *window     = obs_data_get_string(s, "window");
 	int        priority    = (int)obs_data_get_int(s, "priority");
@@ -144,7 +144,7 @@ static void get_window_class(struct dstr *class, HWND hwnd)
 	dstr_from_wcs(class, temp);
 }
 
-static void add_window(obs_property_t p, HWND hwnd,
+static void add_window(obs_property_t *p, HWND hwnd,
 		struct dstr *title,
 		struct dstr *class,
 		struct dstr *executable)
@@ -229,7 +229,7 @@ static inline HWND first_window(
 	return window;
 }
 
-static void fill_window_list(obs_property_t p)
+static void fill_window_list(obs_property_t *p)
 {
 	struct dstr title      = {0};
 	struct dstr class      = {0};
@@ -308,10 +308,10 @@ static const char *wc_getname(void)
 	return TEXT_WINDOW_CAPTURE;
 }
 
-static void *wc_create(obs_data_t settings, obs_source_t source)
+static void *wc_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct window_capture *wc;
-	gs_effect_t opaque_effect = create_opaque_effect();
+	gs_effect_t *opaque_effect = create_opaque_effect();
 	if (!opaque_effect)
 		return NULL;
 
@@ -342,7 +342,7 @@ static void wc_destroy(void *data)
 	}
 }
 
-static void wc_update(void *data, obs_data_t settings)
+static void wc_update(void *data, obs_data_t *settings)
 {
 	struct window_capture *wc = data;
 	update_settings(wc, settings);
@@ -363,16 +363,16 @@ static uint32_t wc_height(void *data)
 	return wc->capture.height;
 }
 
-static void wc_defaults(obs_data_t defaults)
+static void wc_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_bool(defaults, "cursor", true);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 }
 
-static obs_properties_t wc_properties(void)
+static obs_properties_t *wc_properties(void)
 {
-	obs_properties_t ppts = obs_properties_create();
-	obs_property_t p;
+	obs_properties_t *ppts = obs_properties_create();
+	obs_property_t *p;
 
 	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -441,7 +441,7 @@ static void wc_tick(void *data, float seconds)
 	obs_leave_graphics();
 }
 
-static void wc_render(void *data, gs_effect_t effect)
+static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
 	dc_capture_render(&wc->capture, wc->opaque_effect);

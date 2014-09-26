@@ -29,12 +29,12 @@ private:
 	void SetScene(OBSScene scene);
 	void SetItem(OBSSceneItem newItem);
 
-	static void OBSChannelChanged(void *param, calldata_t data);
+	static void OBSChannelChanged(void *param, calldata_t *data);
 
-	static void OBSSceneItemTransform(void *param, calldata_t data);
-	static void OBSSceneItemRemoved(void *param, calldata_t data);
-	static void OBSSceneItemSelect(void *param, calldata_t data);
-	static void OBSSceneItemDeselect(void *param, calldata_t data);
+	static void OBSSceneItemTransform(void *param, calldata_t *data);
+	static void OBSSceneItemRemoved(void *param, calldata_t *data);
+	static void OBSSceneItemSelect(void *param, calldata_t *data);
+	static void OBSSceneItemDeselect(void *param, calldata_t *data);
 
 private slots:
 	void RefreshControls();

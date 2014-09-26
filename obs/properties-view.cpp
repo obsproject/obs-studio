@@ -58,7 +58,7 @@ void OBSPropertiesView::RefreshProperties()
 	layout->setSizeConstraint(QLayout::SetMaximumSize);
 	layout->setLabelAlignment(Qt::AlignRight);
 
-	obs_property_t property = obs_properties_first(properties);
+	obs_property_t *property = obs_properties_first(properties);
 
 	while (property) {
 		AddProperty(property, layout);
@@ -77,7 +77,7 @@ void OBSPropertiesView::RefreshProperties()
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_,
-		obs_properties_t properties_, void *obj_,
+		obs_properties_t *properties_, void *obj_,
 		PropertiesUpdateCallback callback_, int minSize_)
 	: QScrollArea (nullptr),
 	  widget      (nullptr),
@@ -98,7 +98,7 @@ void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 	UNUSED_PARAMETER(event);
 }
 
-QWidget *OBSPropertiesView::NewWidget(obs_property_t prop, QWidget *widget,
+QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, QWidget *widget,
 		const char *signal)
 {
 	WidgetInfo *info = new WidgetInfo(this, prop, widget);
@@ -107,7 +107,7 @@ QWidget *OBSPropertiesView::NewWidget(obs_property_t prop, QWidget *widget,
 	return widget;
 }
 
-QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
+QWidget *OBSPropertiesView::AddCheckbox(obs_property_t *prop)
 {
 	const char *name = obs_property_name(prop);
 	const char *desc = obs_property_description(prop);
@@ -118,7 +118,7 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t prop)
 	return NewWidget(prop, checkbox, SIGNAL(stateChanged(int)));
 }
 
-QWidget *OBSPropertiesView::AddText(obs_property_t prop)
+QWidget *OBSPropertiesView::AddText(obs_property_t *prop)
 {
 	const char    *name = obs_property_name(prop);
 	const char    *val  = obs_data_get_string(settings, name);
@@ -139,7 +139,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t prop)
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
-void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
+void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 		QLabel **label)
 {
 	const char  *name      = obs_property_name(prop);
@@ -162,7 +162,7 @@ void OBSPropertiesView::AddPath(obs_property_t prop, QFormLayout *layout,
 	layout->addRow(*label, subLayout);
 }
 
-QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
+QWidget *OBSPropertiesView::AddInt(obs_property_t *prop)
 {
 	const char *name = obs_property_name(prop);
 	int        val   = (int)obs_data_get_int(settings, name);
@@ -176,7 +176,7 @@ QWidget *OBSPropertiesView::AddInt(obs_property_t prop)
 	return NewWidget(prop, spin, SIGNAL(valueChanged(int)));
 }
 
-QWidget *OBSPropertiesView::AddFloat(obs_property_t prop)
+QWidget *OBSPropertiesView::AddFloat(obs_property_t *prop)
 {
 	const char     *name = obs_property_name(prop);
 	double         val   = obs_data_get_double(settings, name);
@@ -190,7 +190,7 @@ QWidget *OBSPropertiesView::AddFloat(obs_property_t prop)
 	return NewWidget(prop, spin, SIGNAL(valueChanged(double)));
 }
 
-static void AddComboItem(QComboBox *combo, obs_property_t prop,
+static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 		obs_combo_format format, size_t idx)
 {
 	const char *name = obs_property_list_item_name(prop, idx);
@@ -226,10 +226,10 @@ static void AddComboItem(QComboBox *combo, obs_property_t prop,
 	item->setFlags(Qt::NoItemFlags);
 }
 
-template <long long get_int(obs_data_t, const char*),
-	 double get_double(obs_data_t, const char*),
-	 const char *get_string(obs_data_t, const char*)>
-static string from_obs_data(obs_data_t data, const char *name,
+template <long long get_int(obs_data_t*, const char*),
+	 double get_double(obs_data_t*, const char*),
+	 const char *get_string(obs_data_t*, const char*)>
+static string from_obs_data(obs_data_t *data, const char *name,
 		obs_combo_format format)
 {
 	switch (format) {
@@ -244,14 +244,14 @@ static string from_obs_data(obs_data_t data, const char *name,
 	}
 }
 
-static string from_obs_data(obs_data_t data, const char *name,
+static string from_obs_data(obs_data_t *data, const char *name,
 		obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
 	       obs_data_get_string>(data, name, format);
 }
 
-static string from_obs_data_autoselect(obs_data_t data, const char *name,
+static string from_obs_data_autoselect(obs_data_t *data, const char *name,
 		obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_autoselect_int,
@@ -259,7 +259,7 @@ static string from_obs_data_autoselect(obs_data_t data, const char *name,
 	       obs_data_get_autoselect_string>(data, name, format);
 }
 
-QWidget *OBSPropertiesView::AddList(obs_property_t prop, bool &warning)
+QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 {
 	const char       *name  = obs_property_name(prop);
 	QComboBox        *combo = new QComboBox();
@@ -321,7 +321,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t prop, bool &warning)
 	return combo;
 }
 
-QWidget *OBSPropertiesView::AddButton(obs_property_t prop)
+QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 {
 	const char *desc = obs_property_description(prop);
 
@@ -330,7 +330,7 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t prop)
 	return NewWidget(prop, button, SIGNAL(clicked()));
 }
 
-void OBSPropertiesView::AddColor(obs_property_t prop, QFormLayout *layout,
+void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 		QLabel *&label)
 {
 	QPushButton *button     = new QPushButton;
@@ -361,7 +361,7 @@ void OBSPropertiesView::AddColor(obs_property_t prop, QFormLayout *layout,
 	layout->addRow(label, subLayout);
 }
 
-static void MakeQFont(obs_data_t font_obj, QFont &font)
+static void MakeQFont(obs_data_t *font_obj, QFont &font)
 {
 	const char *face  = obs_data_get_string(font_obj, "face");
 	const char *style = obs_data_get_string(font_obj, "style");
@@ -382,11 +382,11 @@ static void MakeQFont(obs_data_t font_obj, QFont &font)
 	if (flags & OBS_FONT_STRIKEOUT) font.setStrikeOut(true);
 }
 
-void OBSPropertiesView::AddFont(obs_property_t prop, QFormLayout *layout,
+void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 		QLabel *&label)
 {
 	const char  *name      = obs_property_name(prop);
-	obs_data_t  font_obj   = obs_data_get_obj(settings, name);
+	obs_data_t  *font_obj   = obs_data_get_obj(settings, name);
 	const char  *face      = obs_data_get_string(font_obj, "face");
 	const char  *style     = obs_data_get_string(font_obj, "style");
 	QPushButton *button    = new QPushButton;
@@ -419,7 +419,7 @@ void OBSPropertiesView::AddFont(obs_property_t prop, QFormLayout *layout,
 	obs_data_release(font_obj);
 }
 
-void OBSPropertiesView::AddProperty(obs_property_t property,
+void OBSPropertiesView::AddProperty(obs_property_t *property,
 		QFormLayout *layout)
 {
 	const char        *name = obs_property_name(property);
@@ -619,7 +619,7 @@ bool WidgetInfo::ColorChanged(const char *setting)
 
 bool WidgetInfo::FontChanged(const char *setting)
 {
-	obs_data_t font_obj = obs_data_get_obj(view->settings, setting);
+	obs_data_t *font_obj = obs_data_get_obj(view->settings, setting);
 	bool       success;
 	uint32_t   flags;
 	QFont      font;

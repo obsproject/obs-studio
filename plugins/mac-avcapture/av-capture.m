@@ -69,7 +69,7 @@ struct av_capture {
 	enum video_colorspace colorspace;
 	enum video_range_type video_range;
 
-	obs_source_t source;
+	obs_source_t *source;
 
 	struct obs_source_frame frame;
 };
@@ -281,7 +281,7 @@ static void av_capture_destroy(void *data)
 	bfree(capture);
 }
 
-static NSString *get_string(obs_data_t data, char const *name)
+static NSString *get_string(obs_data_t *data, char const *name)
 {
 	return @(obs_data_get_string(data, name));
 }
@@ -405,7 +405,7 @@ static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
 }
 
 static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	capture->device = dev;
 
@@ -475,7 +475,7 @@ static inline void handle_disconnect(struct av_capture* capture,
 }
 
 static inline void handle_connect(struct av_capture *capture,
-		AVCaptureDevice *dev, obs_data_t settings)
+		AVCaptureDevice *dev, obs_data_t *settings)
 {
 	if (!dev)
 		return;
@@ -495,7 +495,7 @@ static inline void handle_connect(struct av_capture *capture,
 	capture_device(capture, [dev retain], settings);
 }
 
-static void av_capture_init(struct av_capture *capture, obs_data_t settings)
+static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
 {
 	if (!init_session(capture))
 		return;
@@ -539,7 +539,7 @@ static void av_capture_init(struct av_capture *capture, obs_data_t settings)
 	capture_device(capture, dev, settings);
 }
 
-static void *av_capture_create(obs_data_t settings, obs_source_t source)
+static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(source);
 
@@ -594,14 +594,14 @@ static NSString *preset_names(NSString *preset)
 }
 
 
-static void av_capture_defaults(obs_data_t settings)
+static void av_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "use_preset", true);
 	obs_data_set_default_string(settings, "preset",
 			AVCaptureSessionPreset1280x720.UTF8String);
 }
 
-static bool update_device_list(obs_property_t list,
+static bool update_device_list(obs_property_t *list,
 		NSString *uid, NSString *name, bool disconnected)
 {
 	bool dev_found     = false;
@@ -641,7 +641,7 @@ static bool update_device_list(obs_property_t list,
 	return true;
 }
 
-static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
+static void fill_presets(AVCaptureDevice *dev, obs_property_t *list,
 		NSString *current_preset)
 {
 	obs_property_list_clear(list);
@@ -674,7 +674,7 @@ static void fill_presets(AVCaptureDevice *dev, obs_property_t list,
 }
 
 static bool check_preset(AVCaptureDevice *dev,
-		obs_property_t list, obs_data_t settings)
+		obs_property_t *list, obs_data_t *settings)
 {
 	NSString *current_preset = get_string(settings, "preset");
 
@@ -703,7 +703,7 @@ static bool check_preset(AVCaptureDevice *dev,
 	return true;
 }
 
-static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t settings)
+static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t *settings)
 {
 	NSString *preset = get_string(settings, "preset");
 	if (!dev || [dev supportsAVCaptureSessionPreset:preset]) {
@@ -726,8 +726,8 @@ static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t settings)
 	return false;
 }
 
-static bool properties_device_changed(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool properties_device_changed(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	NSString *uid = get_string(settings, "device");
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
@@ -742,8 +742,8 @@ static bool properties_device_changed(obs_properties_t props, obs_property_t p,
 	return preset_list_changed || autoselect_changed || dev_list_updated;
 }
 
-static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool properties_preset_changed(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(props);
 
@@ -756,11 +756,11 @@ static bool properties_preset_changed(obs_properties_t props, obs_property_t p,
 	return preset_list_changed || autoselect_changed;
 }
 
-static obs_properties_t av_capture_properties(void)
+static obs_properties_t *av_capture_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t dev_list = obs_properties_add_list(props, "device",
+	obs_property_t *dev_list = obs_properties_add_list(props, "device",
 			TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 	for (AVCaptureDevice *dev in [AVCaptureDevice
@@ -773,12 +773,12 @@ static obs_properties_t av_capture_properties(void)
 	obs_property_set_modified_callback(dev_list,
 			properties_device_changed);
 
-	obs_property_t use_preset = obs_properties_add_bool(props,
+	obs_property_t *use_preset = obs_properties_add_bool(props,
 			"use_preset", TEXT_USE_PRESET);
 	// TODO: implement manual configuration
 	obs_property_set_enabled(use_preset, false);
 
-	obs_property_t preset_list = obs_properties_add_list(props, "preset",
+	obs_property_t *preset_list = obs_properties_add_list(props, "preset",
 			TEXT_PRESET, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 	for (NSString *preset in presets())
@@ -793,7 +793,7 @@ static obs_properties_t av_capture_properties(void)
 }
 
 static void switch_device(struct av_capture *capture, NSString *uid,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	if (!uid)
 		return;
@@ -814,7 +814,7 @@ static void switch_device(struct av_capture *capture, NSString *uid,
 	capture_device(capture, [dev retain], settings);
 }
 
-static void av_capture_update(void *data, obs_data_t settings)
+static void av_capture_update(void *data, obs_data_t *settings)
 {
 	struct av_capture *capture = data;
 

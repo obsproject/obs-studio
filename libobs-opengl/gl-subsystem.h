@@ -273,7 +273,7 @@ extern void convert_sampler_info(struct gs_sampler_state *sampler,
 		struct gs_sampler_info *info);
 
 struct gs_sampler_state {
-	gs_device_t          device;
+	gs_device_t          *device;
 	volatile long        ref;
 
 	GLint                min_filter;
@@ -284,12 +284,12 @@ struct gs_sampler_state {
 	GLint                max_anisotropy;
 };
 
-static inline void samplerstate_addref(gs_samplerstate_t ss)
+static inline void samplerstate_addref(gs_samplerstate_t *ss)
 {
 	os_atomic_inc_long(&ss->ref);
 }
 
-static inline void samplerstate_release(gs_samplerstate_t ss)
+static inline void samplerstate_release(gs_samplerstate_t *ss)
 {
 	if (os_atomic_dec_long(&ss->ref) == 0)
 		bfree(ss);
@@ -299,7 +299,7 @@ struct gs_shader_param {
 	enum gs_shader_param_type type;
 
 	char                 *name;
-	gs_shader_t          shader;
+	gs_shader_t          *shader;
 	GLint                texture_id;
 	size_t               sampler_id;
 	int                  array_count;
@@ -327,7 +327,7 @@ struct shader_attrib {
 };
 
 struct gs_shader {
-	gs_device_t          device;
+	gs_device_t          *device;
 	enum gs_shader_type  type;
 	GLuint               obj;
 
@@ -336,7 +336,7 @@ struct gs_shader {
 
 	DARRAY(struct shader_attrib)   attribs;
 	DARRAY(struct gs_shader_param) params;
-	DARRAY(gs_samplerstate_t)      samplers;
+	DARRAY(gs_samplerstate_t*)      samplers;
 };
 
 struct program_param {
@@ -345,7 +345,7 @@ struct program_param {
 };
 
 struct gs_program {
-	gs_device_t                  device;
+	gs_device_t                  *device;
 	GLuint                       obj;
 	struct gs_shader             *vertex_shader;
 	struct gs_shader             *pixel_shader;
@@ -370,7 +370,7 @@ struct gs_vertex_buffer {
 	DARRAY(GLuint)       uv_buffers;
 	DARRAY(size_t)       uv_sizes;
 
-	gs_device_t          device;
+	gs_device_t          *device;
 	size_t               num;
 	bool                 dynamic;
 	struct gs_vb_data    *data;
@@ -384,7 +384,7 @@ struct gs_index_buffer {
 	enum gs_index_type   type;
 	GLuint               gl_type;
 
-	gs_device_t          device;
+	gs_device_t          *device;
 	void                 *data;
 	size_t               num;
 	size_t               width;
@@ -393,7 +393,7 @@ struct gs_index_buffer {
 };
 
 struct gs_texture {
-	gs_device_t          device;
+	gs_device_t          *device;
 	enum gs_texture_type type;
 	enum gs_color_format format;
 	GLenum               gl_format;
@@ -407,7 +407,7 @@ struct gs_texture {
 	bool                 is_dummy;
 	bool                 gen_mipmaps;
 
-	gs_samplerstate_t    cur_sampler;
+	gs_samplerstate_t    *cur_sampler;
 };
 
 struct gs_texture_2d {
@@ -426,7 +426,7 @@ struct gs_texture_cube {
 };
 
 struct gs_stage_surface {
-	gs_device_t          device;
+	gs_device_t          *device;
 
 	enum gs_color_format format;
 	uint32_t             width;
@@ -440,14 +440,14 @@ struct gs_stage_surface {
 };
 
 struct gs_zstencil_buffer {
-	gs_device_t          device;
+	gs_device_t          *device;
 	GLuint               buffer;
 	GLuint               attachment;
 	GLenum               format;
 };
 
 struct gs_swap_chain {
-	gs_device_t             device;
+	gs_device_t             *device;
 	struct gl_windowinfo *wi;
 	struct gs_init_data  info;
 };
@@ -458,9 +458,9 @@ struct fbo_info {
 	uint32_t             height;
 	enum gs_color_format format;
 
-	gs_texture_t         cur_render_target;
+	gs_texture_t         *cur_render_target;
 	int                  cur_render_side;
-	gs_zstencil_t        cur_zstencil_buffer;
+	gs_zstencil_t        *cur_zstencil_buffer;
 };
 
 static inline void fbo_info_destroy(struct fbo_info *fbo)
@@ -477,16 +477,16 @@ struct gs_device {
 	struct gl_platform   *plat;
 	enum copy_type       copy_type;
 
-	gs_texture_t         cur_render_target;
-	gs_zstencil_t        cur_zstencil_buffer;
+	gs_texture_t         *cur_render_target;
+	gs_zstencil_t        *cur_zstencil_buffer;
 	int                  cur_render_side;
-	gs_texture_t         cur_textures[GS_MAX_TEXTURES];
-	gs_samplerstate_t    cur_samplers[GS_MAX_TEXTURES];
-	gs_vertbuffer_t      cur_vertex_buffer;
-	gs_indexbuffer_t     cur_index_buffer;
-	gs_shader_t          cur_vertex_shader;
-	gs_shader_t          cur_pixel_shader;
-	gs_swapchain_t       cur_swap;
+	gs_texture_t         *cur_textures[GS_MAX_TEXTURES];
+	gs_samplerstate_t    *cur_samplers[GS_MAX_TEXTURES];
+	gs_vertbuffer_t      *cur_vertex_buffer;
+	gs_indexbuffer_t     *cur_index_buffer;
+	gs_shader_t          *cur_vertex_shader;
+	gs_shader_t          *cur_pixel_shader;
+	gs_swapchain_t       *cur_swap;
 	struct gs_program    *cur_program;
 
 	struct gs_program    *first_program;
@@ -507,9 +507,9 @@ struct gs_device {
 extern struct fbo_info *get_fbo(struct gs_device *device,
 		uint32_t width, uint32_t height, enum gs_color_format format);
 
-extern void                  gl_update(gs_device_t device);
+extern void                  gl_update(gs_device_t *device);
 
-extern struct gl_platform   *gl_platform_create(gs_device_t device,
+extern struct gl_platform   *gl_platform_create(gs_device_t *device,
                                                 struct gs_init_data *info);
 extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
 extern void                  gl_platform_destroy(struct gl_platform *platform);

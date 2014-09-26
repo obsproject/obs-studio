@@ -39,7 +39,7 @@
 //#define TEST_FRAMEDROPS
 
 struct rtmp_stream {
-	obs_output_t     output;
+	obs_output_t     *output;
 
 	pthread_mutex_t  packets_mutex;
 	struct circlebuf packets;
@@ -50,8 +50,8 @@ struct rtmp_stream {
 	bool             active;
 	pthread_t        send_thread;
 
-	os_sem_t         send_sem;
-	os_event_t       stop_event;
+	os_sem_t         *send_sem;
+	os_event_t       *stop_event;
 
 	struct dstr      path, key;
 	struct dstr      username, password;
@@ -114,7 +114,7 @@ static void rtmp_stream_destroy(void *data)
 	}
 }
 
-static void *rtmp_stream_create(obs_data_t settings, obs_output_t output)
+static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct rtmp_stream *stream = bzalloc(sizeof(struct rtmp_stream));
 	stream->output = output;
@@ -267,8 +267,8 @@ static void send_meta_data(struct rtmp_stream *stream)
 
 static void send_audio_header(struct rtmp_stream *stream)
 {
-	obs_output_t  context  = stream->output;
-	obs_encoder_t aencoder = obs_output_get_audio_encoder(context);
+	obs_output_t  *context  = stream->output;
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
 	uint8_t       *header;
 
 	struct encoder_packet packet   = {
@@ -283,8 +283,8 @@ static void send_audio_header(struct rtmp_stream *stream)
 
 static void send_video_header(struct rtmp_stream *stream)
 {
-	obs_output_t  context  = stream->output;
-	obs_encoder_t vencoder = obs_output_get_video_encoder(context);
+	obs_output_t  *context  = stream->output;
+	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
 	uint8_t       *header;
 	size_t        size;
 
@@ -417,8 +417,8 @@ static void *connect_thread(void *data)
 static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
-	obs_service_t service = obs_output_get_service(stream->output);
-	obs_data_t settings;
+	obs_service_t *service = obs_output_get_service(stream->output);
+	obs_data_t *settings;
 
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
@@ -560,14 +560,14 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 		obs_free_encoder_packet(&new_packet);
 }
 
-static void rtmp_stream_defaults(obs_data_t defaults)
+static void rtmp_stream_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
 }
 
-static obs_properties_t rtmp_stream_properties(void)
+static obs_properties_t *rtmp_stream_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
 			obs_module_text("RTMPStream.DropThreshold"),
