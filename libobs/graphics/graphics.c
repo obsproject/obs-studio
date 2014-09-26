@@ -959,11 +959,16 @@ const char *gs_preprocessor_name(void)
 
 gs_swapchain_t *gs_swapchain_create(struct gs_init_data *data)
 {
+	struct gs_init_data new_data = *data;
+
 	graphics_t *graphics = thread_graphics;
 	if (!graphics) return NULL;
 
+	if (new_data.num_backbuffers == 0)
+		new_data.num_backbuffers = 1;
+
 	return graphics->exports.device_swapchain_create(graphics->device,
-			data);
+			&new_data);
 }
 
 void gs_resize(uint32_t x, uint32_t y)
