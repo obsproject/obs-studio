@@ -268,7 +268,7 @@ function(obs_install_additional maintarget)
 		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
 endfunction()
 
-macro(export_obs_core target exportname)
+function(export_obs_core target exportname)
 	install(TARGETS ${target}
 		EXPORT "${exportname}Target"
 		LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
@@ -302,9 +302,9 @@ macro(export_obs_core target exportname)
 
 	install(EXPORT "${exportname}Target"
 		DESTINATION "${OBS_CMAKE_DESTINATION}/${exportname}")
-endmacro()
+endfunction()
 
-macro(install_obs_headers)
+function(install_obs_headers)
 	foreach(hdr ${ARGN})
 		if(IS_ABSOLUTE "${hdr}")
 			set(subdir)
@@ -316,7 +316,7 @@ macro(install_obs_headers)
 		endif()
 		install(FILES "${hdr}" DESTINATION "${OBS_INCLUDE_DESTINATION}${subdir}")
 	endforeach()
-endmacro()
+endfunction()
 
 function(obs_debug_copy_helper target dest)
 	add_custom_command(TARGET ${target} POST_BUILD
@@ -365,7 +365,7 @@ function(install_obs_pdb ttype target)
 	endif()
 endfunction()
 
-macro(install_obs_core target)
+function(install_obs_core target)
 	if(APPLE)
 		set(_bit_suffix "")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -404,9 +404,46 @@ macro(install_obs_core target)
 	endif()
 
 	install_obs_pdb(CORE ${target})
-endmacro()
+endfunction()
 
-macro(install_obs_plugin target)
+function(install_obs_bin target mode)
+	foreach(bin ${ARGN})
+		if(APPLE)
+			set(_bit_suffix "")
+		elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(_bit_suffix "64bit/")
+		else()
+			set(_bit_suffix "32bit/")
+		endif()
+
+		if(NOT IS_ABSOLUTE "${bin}")
+			set(bin "${CMAKE_CURRENT_SOURCE_DIR}/${bin}")
+		endif()
+
+		get_filename_component(fname "${bin}" NAME)
+
+		if(NOT "${mode}" MATCHES "INSTALL_ONLY")
+			add_custom_command(TARGET ${target} POST_BUILD
+				COMMAND "${CMAKE_COMMAND}" -E copy
+					"${bin}"
+					"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}${fname}"
+				VERBATIM)
+		endif()
+
+		install(FILES "${bin}"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			add_custom_command(TARGET ${target} POST_BUILD
+				COMMAND "${CMAKE_COMMAND}" -E copy
+					"${bin}"
+					"$ENV{obsInstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}/${fname}"
+				VERBATIM)
+		endif()
+	endforeach()
+endfunction()
+
+function(install_obs_plugin target)
 	if(APPLE)
 		set(_bit_suffix "")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -435,9 +472,9 @@ macro(install_obs_plugin target)
 	endif()
 
 	install_obs_pdb(PLUGIN ${target})
-endmacro()
+endfunction()
 
-macro(install_obs_data target datadir datadest)
+function(install_obs_data target datadir datadest)
 	install(DIRECTORY ${datadir}/
 		DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
 		USE_SOURCE_PERMISSIONS)
@@ -452,9 +489,9 @@ macro(install_obs_data target datadir datadest)
 				"${CMAKE_CURRENT_SOURCE_DIR}/${datadir}" "$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}"
 			VERBATIM)
 	endif()
-endmacro()
+endfunction()
 
-macro(install_obs_datatarget target datadest)
+function(install_obs_datatarget target datadest)
 	install(TARGETS ${target}
 		LIBRARY DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
 		RUNTIME DESTINATION "${OBS_DATA_DESTINATION}/${datadest}")
@@ -471,9 +508,9 @@ macro(install_obs_datatarget target datadest)
 				"$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
-endmacro()
+endfunction()
 
-macro(install_obs_plugin_with_data target datadir)
+function(install_obs_plugin_with_data target datadir)
 	install_obs_plugin(${target})
 	install_obs_data(${target} "${datadir}" "obs-plugins/${target}")
-endmacro()
+endfunction()
