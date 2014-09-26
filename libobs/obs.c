@@ -28,7 +28,7 @@ extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
 static inline void make_gs_init_data(struct gs_init_data *gid,
-		struct obs_video_info *ovi)
+		const struct obs_video_info *ovi)
 {
 	memcpy(&gid->window, &ovi->window, sizeof(struct gs_window));
 	gid->cx              = ovi->window_width;

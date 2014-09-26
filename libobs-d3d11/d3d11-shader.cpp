@@ -255,7 +255,7 @@ void gs_shader_destroy(gs_shader_t *shader)
 	delete shader;
 }
 
-int gs_shader_get_num_params(gs_shader_t *shader)
+int gs_shader_get_num_params(const gs_shader_t *shader)
 {
 	return (int)shader->params.size();
 }
@@ -276,23 +276,23 @@ gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 	return NULL;
 }
 
-gs_sparam_t *gs_shader_get_viewproj_matrix(gs_shader_t *shader)
+gs_sparam_t *gs_shader_get_viewproj_matrix(const gs_shader_t *shader)
 {
 	if (shader->type != GS_SHADER_VERTEX)
 		return NULL;
 
-	return static_cast<gs_vertex_shader*>(shader)->viewProj;
+	return static_cast<const gs_vertex_shader*>(shader)->viewProj;
 }
 
-gs_sparam_t *gs_shader_get_world_matrix(gs_shader_t *shader)
+gs_sparam_t *gs_shader_get_world_matrix(const gs_shader_t *shader)
 {
 	if (shader->type != GS_SHADER_VERTEX)
 		return NULL;
 
-	return static_cast<gs_vertex_shader*>(shader)->world;
+	return static_cast<const gs_vertex_shader*>(shader)->world;
 }
 
-void gs_shader_get_param_info(gs_sparam_t *param,
+void gs_shader_get_param_info(const gs_sparam_t *param,
 		struct gs_shader_param_info *info)
 {
 	if (!param)

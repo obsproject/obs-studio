@@ -29,7 +29,7 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-static inline bool source_valid(struct obs_source *source)
+static inline bool source_valid(const struct obs_source *source)
 {
 	return source && source->context.data;
 }
@@ -313,7 +313,7 @@ void obs_source_remove(obs_source_t *source)
 	obs_source_release(source);
 }
 
-bool obs_source_removed(obs_source_t *source)
+bool obs_source_removed(const obs_source_t *source)
 {
 	return source ? source->removed : true;
 }
@@ -348,7 +348,7 @@ obs_properties_t *obs_get_source_properties(enum obs_source_type type,
 	return NULL;
 }
 
-obs_properties_t *obs_source_properties(obs_source_t *source)
+obs_properties_t *obs_source_properties(const obs_source_t *source)
 {
 	if (source_valid(source) && source->info.get_properties) {
 		obs_properties_t *props;
@@ -360,7 +360,7 @@ obs_properties_t *obs_source_properties(obs_source_t *source)
 	return NULL;
 }
 
-uint32_t obs_source_get_output_flags(obs_source_t *source)
+uint32_t obs_source_get_output_flags(const obs_source_t *source)
 {
 	return source ? source->info.output_flags : 0;
 }
@@ -1180,7 +1180,7 @@ void obs_source_video_render(obs_source_t *source)
 		obs_source_render_async_video(source);
 }
 
-uint32_t obs_source_get_width(obs_source_t *source)
+uint32_t obs_source_get_width(const obs_source_t *source)
 {
 	if (!source_valid(source)) return 0;
 
@@ -1189,7 +1189,7 @@ uint32_t obs_source_get_width(obs_source_t *source)
 	return source->async_width;
 }
 
-uint32_t obs_source_get_height(obs_source_t *source)
+uint32_t obs_source_get_height(const obs_source_t *source)
 {
 	if (!source_valid(source)) return 0;
 
@@ -1198,12 +1198,12 @@ uint32_t obs_source_get_height(obs_source_t *source)
 	return source->async_height;
 }
 
-obs_source_t *obs_filter_get_parent(obs_source_t *filter)
+obs_source_t *obs_filter_get_parent(const obs_source_t *filter)
 {
 	return filter ? filter->filter_parent : NULL;
 }
 
-obs_source_t *obs_filter_get_target(obs_source_t *filter)
+obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 {
 	return filter ? filter->filter_target : NULL;
 }
@@ -1301,7 +1301,7 @@ void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
 	}
 }
 
-obs_data_t *obs_source_get_settings(obs_source_t *source)
+obs_data_t *obs_source_get_settings(const obs_source_t *source)
 {
 	if (!source) return NULL;
 
@@ -1570,7 +1570,7 @@ void obs_source_output_audio(obs_source_t *source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
-static inline bool frame_out_of_bounds(obs_source_t *source, uint64_t ts)
+static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 {
 	if (ts < source->last_frame_ts)
 		return ((source->last_frame_ts - ts) > MAX_TIMESTAMP_JUMP);
@@ -1726,7 +1726,7 @@ void obs_source_release_frame(obs_source_t *source,
 	}
 }
 
-const char *obs_source_get_name(obs_source_t *source)
+const char *obs_source_get_name(const obs_source_t *source)
 {
 	return source ? source->context.name : NULL;
 }
@@ -1751,12 +1751,12 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 	}
 }
 
-enum obs_source_type obs_source_get_type(obs_source_t *source)
+enum obs_source_type obs_source_get_type(const obs_source_t *source)
 {
 	return source ? source->info.type : OBS_SOURCE_TYPE_INPUT;
 }
 
-const char *obs_source_get_id(obs_source_t *source)
+const char *obs_source_get_id(const obs_source_t *source)
 {
 	return source ? source->info.id : NULL;
 }
@@ -1845,12 +1845,12 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 			effect, width, height, use_matrix);
 }
 
-signal_handler_t *obs_source_get_signal_handler(obs_source_t *source)
+signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
 {
 	return source ? source->context.signals : NULL;
 }
 
-proc_handler_t *obs_source_get_proc_handler(obs_source_t *source)
+proc_handler_t *obs_source_get_proc_handler(const obs_source_t *source)
 {
 	return source ? source->context.procs : NULL;
 }
@@ -1895,12 +1895,12 @@ void obs_source_set_present_volume(obs_source_t *source, float volume)
 	}
 }
 
-float obs_source_get_volume(obs_source_t *source)
+float obs_source_get_volume(const obs_source_t *source)
 {
 	return source ? source->user_volume : 0.0f;
 }
 
-float obs_source_get_present_volume(obs_source_t *source)
+float obs_source_get_present_volume(const obs_source_t *source)
 {
 	return source ? source->present_volume : 0.0f;
 }
@@ -1911,7 +1911,7 @@ void obs_source_set_sync_offset(obs_source_t *source, int64_t offset)
 		source->sync_offset = offset;
 }
 
-int64_t obs_source_get_sync_offset(obs_source_t *source)
+int64_t obs_source_get_sync_offset(const obs_source_t *source)
 {
 	return source ? source->sync_offset : 0;
 }

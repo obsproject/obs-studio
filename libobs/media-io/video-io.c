@@ -175,7 +175,7 @@ static void *video_thread(void *param)
 
 /* ------------------------------------------------------------------------- */
 
-static inline bool valid_video_params(struct video_output_info *info)
+static inline bool valid_video_params(const struct video_output_info *info)
 {
 	return info->height != 0 && info->width != 0 && info->fps_den != 0 &&
 	       info->fps_num != 0;
@@ -235,7 +235,7 @@ void video_output_close(video_t *video)
 	bfree(video);
 }
 
-static size_t video_get_input_idx(video_t *video,
+static size_t video_get_input_idx(const video_t *video,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
@@ -344,13 +344,13 @@ void video_output_disconnect(video_t *video,
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
-bool video_output_active(video_t *video)
+bool video_output_active(const video_t *video)
 {
 	if (!video) return false;
 	return video->inputs.num != 0;
 }
 
-const struct video_output_info *video_output_get_info(video_t *video)
+const struct video_output_info *video_output_get_info(const video_t *video)
 {
 	return video ? &video->info : NULL;
 }
@@ -373,12 +373,12 @@ bool video_output_wait(video_t *video)
 	return os_event_try(video->stop_event) == EAGAIN;
 }
 
-uint64_t video_output_get_frame_time(video_t *video)
+uint64_t video_output_get_frame_time(const video_t *video)
 {
 	return video ? video->frame_time : 0;
 }
 
-uint64_t video_output_get_time(video_t *video)
+uint64_t video_output_get_time(const video_t *video)
 {
 	return video ? video->cur_video_time : 0;
 }
@@ -398,22 +398,22 @@ void video_output_stop(video_t *video)
 	}
 }
 
-enum video_format video_output_get_format(video_t *video)
+enum video_format video_output_get_format(const video_t *video)
 {
 	return video ? video->info.format : VIDEO_FORMAT_NONE;
 }
 
-uint32_t video_output_get_width(video_t *video)
+uint32_t video_output_get_width(const video_t *video)
 {
 	return video ? video->info.width : 0;
 }
 
-uint32_t video_output_get_height(video_t *video)
+uint32_t video_output_get_height(const video_t *video)
 {
 	return video ? video->info.height : 0;
 }
 
-double video_output_get_frame_rate(video_t *video)
+double video_output_get_frame_rate(const video_t *video)
 {
 	if (!video)
 		return 0.0;
@@ -421,12 +421,12 @@ double video_output_get_frame_rate(video_t *video)
 	return (double)video->info.fps_num / (double)video->info.fps_den;
 }
 
-uint32_t video_output_get_skipped_frames(video_t *video)
+uint32_t video_output_get_skipped_frames(const video_t *video)
 {
 	return video->skipped_frames;
 }
 
-uint32_t video_output_get_total_frames(video_t *video)
+uint32_t video_output_get_total_frames(const video_t *video)
 {
 	return video->total_frames;
 }

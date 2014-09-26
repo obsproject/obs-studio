@@ -186,17 +186,18 @@ failed:
 
 #endif
 
-uint32_t gs_stagesurface_get_width(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_width(const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->width;
 }
 
-uint32_t gs_stagesurface_get_height(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_height(const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->height;
 }
 
-enum gs_color_format gs_stagesurface_get_color_format(gs_stagesurf_t *stagesurf)
+enum gs_color_format gs_stagesurface_get_color_format(
+		const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->format;
 }

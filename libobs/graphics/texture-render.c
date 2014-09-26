@@ -139,7 +139,7 @@ void gs_texrender_reset(gs_texrender_t *texrender)
 		texrender->rendered = false;
 }
 
-gs_texture_t *gs_texrender_get_texture(gs_texrender_t *texrender)
+gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender)
 {
 	return texrender ? texrender->target : NULL;
 }

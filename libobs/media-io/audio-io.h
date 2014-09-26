@@ -180,13 +180,14 @@ EXPORT void audio_output_disconnect(audio_t *video,
 		void (*callback)(void *param, struct audio_data *data),
 		void *param);
 
-EXPORT bool audio_output_active(audio_t *audio);
+EXPORT bool audio_output_active(const audio_t *audio);
 
-EXPORT size_t audio_output_get_block_size(audio_t *audio);
-EXPORT size_t audio_output_get_planes(audio_t *audio);
-EXPORT size_t audio_output_get_channels(audio_t *audio);
-EXPORT uint32_t audio_output_get_sample_rate(audio_t *audio);
-EXPORT const struct audio_output_info *audio_output_get_info(audio_t *audio);
+EXPORT size_t audio_output_get_block_size(const audio_t *audio);
+EXPORT size_t audio_output_get_planes(const audio_t *audio);
+EXPORT size_t audio_output_get_channels(const audio_t *audio);
+EXPORT uint32_t audio_output_get_sample_rate(const audio_t *audio);
+EXPORT const struct audio_output_info *audio_output_get_info(
+		const audio_t *audio);
 
 EXPORT audio_line_t *audio_output_create_line(audio_t *audio, const char *name);
 EXPORT void audio_line_destroy(audio_line_t *line);

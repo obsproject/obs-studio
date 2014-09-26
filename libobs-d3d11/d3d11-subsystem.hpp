@@ -325,7 +325,7 @@ struct gs_sampler_state {
 	gs_device_t                *device;
 	gs_sampler_info            info;
 
-	gs_sampler_state(gs_device_t *device, gs_sampler_info *info);
+	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
 };
 
 struct gs_shader_param {
@@ -449,7 +449,7 @@ struct gs_swap_chain {
 	void InitTarget(uint32_t cx, uint32_t cy);
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
 	void Resize(uint32_t cx, uint32_t cy);
-	void Init(gs_init_data *data);
+	void Init(const gs_init_data *data);
 
 	inline gs_swap_chain()
 		: device     (NULL),
@@ -458,7 +458,7 @@ struct gs_swap_chain {
 	{
 	}
 
-	gs_swap_chain(gs_device *device, gs_init_data *data);
+	gs_swap_chain(gs_device *device, const gs_init_data *data);
 };
 
 struct BlendState {
@@ -614,7 +614,7 @@ struct gs_device {
 	matrix4                     curViewProjMatrix;
 
 	void InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **adapter);
-	void InitDevice(gs_init_data *data, IDXGIAdapter *adapter);
+	void InitDevice(const gs_init_data *data, IDXGIAdapter *adapter);
 
 	ID3D11DepthStencilState *AddZStencilState();
 	ID3D11RasterizerState   *AddRasterState();
@@ -630,5 +630,5 @@ struct gs_device {
 
 	void UpdateViewProjMatrix();
 
-	gs_device(gs_init_data *data);
+	gs_device(const gs_init_data *data);
 };

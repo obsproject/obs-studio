@@ -100,7 +100,7 @@ void gs_cubetexture_destroy(gs_texture_t *tex)
 	bfree(tex);
 }
 
-static inline bool is_texture_cube(gs_texture_t *tex, const char *func)
+static inline bool is_texture_cube(const gs_texture_t *tex, const char *func)
 {
 	bool is_texcube = tex->type == GS_TEXTURE_CUBE;
 	if (!is_texcube)
@@ -108,16 +108,19 @@ static inline bool is_texture_cube(gs_texture_t *tex, const char *func)
 	return is_texcube;
 }
 
-uint32_t gs_cubetexture_get_size(gs_texture_t *cubetex)
+uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 {
-	struct gs_texture_cube *cube = (struct gs_texture_cube*)cubetex;
+	const struct gs_texture_cube *cube =
+		(const struct gs_texture_cube*)cubetex;
+
 	if (!is_texture_cube(cubetex, "gs_cubetexture_get_size"))
 		return 0;
 
 	return cube->size;
 }
 
-enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t *cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(
+		const gs_texture_t *cubetex)
 {
 	return cubetex->format;
 }

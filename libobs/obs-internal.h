@@ -122,7 +122,7 @@ struct obs_display {
 };
 
 extern bool obs_display_init(struct obs_display *display,
-		struct gs_init_data *graphics_data);
+		const struct gs_init_data *graphics_data);
 extern void obs_display_free(struct obs_display *display);
 
 

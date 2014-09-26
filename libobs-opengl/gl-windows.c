@@ -267,7 +267,7 @@ static inline void add_attrib(struct darray *list, int attrib, int val)
 }
 
 /* Creates the real pixel format for the target window */
-static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
+static int gl_choose_pixel_format(HDC hdc, const struct gs_init_data *info)
 {
 	struct darray attribs;
 	int color_bits   = get_color_format_bits(info->format);
@@ -307,7 +307,7 @@ static int gl_choose_pixel_format(HDC hdc, struct gs_init_data *info)
 	return format;
 }
 
-static inline bool gl_getpixelformat(HDC hdc, struct gs_init_data *info,
+static inline bool gl_getpixelformat(HDC hdc, const struct gs_init_data *info,
 		int *format, PIXELFORMATDESCRIPTOR *pfd)
 {
 	if (!format)
@@ -335,7 +335,7 @@ static inline bool gl_setpixelformat(HDC hdc, int format,
 	return true;
 }
 
-static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
+static struct gl_windowinfo *gl_windowinfo_bare(const struct gs_init_data *info)
 {
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 	wi->hwnd = info->window.hwnd;
@@ -352,7 +352,7 @@ static struct gl_windowinfo *gl_windowinfo_bare(struct gs_init_data *info)
 
 static bool init_default_swap(struct gl_platform *plat, gs_device_t *device,
 		int pixel_format, PIXELFORMATDESCRIPTOR *pfd,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	plat->swap.device = device;
 	plat->swap.info   = *info;
@@ -373,7 +373,7 @@ void gl_update(gs_device_t *device)
 }
 
 struct gl_platform *gl_platform_create(gs_device_t *device,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	struct dummy_context dummy;
@@ -444,7 +444,7 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	UNUSED_PARAMETER(swap);
 }
 
-struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
+struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 {
 	struct gl_windowinfo *wi = gl_windowinfo_bare(info);
 	PIXELFORMATDESCRIPTOR pfd;
@@ -519,7 +519,7 @@ void device_present(gs_device_t *device)
 	}
 }
 
-extern void gl_getclientsize(struct gs_swap_chain *swap,
+extern void gl_getclientsize(const struct gs_swap_chain *swap,
 		uint32_t *width, uint32_t *height)
 {
 	RECT rc;

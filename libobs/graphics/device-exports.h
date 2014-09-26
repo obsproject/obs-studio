@@ -26,16 +26,16 @@ extern "C" {
 EXPORT const char *device_get_name(void);
 EXPORT int device_get_type(void);
 EXPORT const char *device_preprocessor_name(void);
-EXPORT int device_create(gs_device_t **device, struct gs_init_data *data);
+EXPORT int device_create(gs_device_t **device, const struct gs_init_data *data);
 EXPORT void device_destroy(gs_device_t *device);
 EXPORT void device_enter_context(gs_device_t *device);
 EXPORT void device_leave_context(gs_device_t *device);
 EXPORT gs_swapchain_t *device_swapchain_create(gs_device_t *device,
-		struct gs_init_data *data);
+		const struct gs_init_data *data);
 EXPORT void device_resize(gs_device_t *device, uint32_t x, uint32_t y);
-EXPORT void device_get_size(gs_device_t *device, uint32_t *x, uint32_t *y);
-EXPORT uint32_t device_get_width(gs_device_t *device);
-EXPORT uint32_t device_get_height(gs_device_t *device);
+EXPORT void device_get_size(const gs_device_t *device, uint32_t *x, uint32_t *y);
+EXPORT uint32_t device_get_width(const gs_device_t *device);
+EXPORT uint32_t device_get_height(const gs_device_t *device);
 EXPORT gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
 		uint32_t levels, const uint8_t **data, uint32_t flags);
@@ -53,7 +53,7 @@ EXPORT gs_stagesurf_t *device_stagesurface_create(gs_device_t *device,
 		uint32_t width, uint32_t height,
 		enum gs_color_format color_format);
 EXPORT gs_samplerstate_t *device_samplerstate_create(gs_device_t *device,
-		struct gs_sampler_info *info);
+		const struct gs_sampler_info *info);
 EXPORT gs_shader_t *device_vertexshader_create(gs_device_t *device,
 		const char *shader, const char *file,
 		char **error_string);
@@ -65,7 +65,8 @@ EXPORT gs_vertbuffer_t *device_vertexbuffer_create(gs_device_t *device,
 EXPORT gs_indexbuffer_t *device_indexbuffer_create(gs_device_t *device,
 		enum gs_index_type type, void *indices, size_t num,
 		uint32_t flags);
-EXPORT enum gs_texture_type device_get_texture_type(gs_texture_t *texture);
+EXPORT enum gs_texture_type device_get_texture_type(
+		const gs_texture_t *texture);
 EXPORT void device_load_vertexbuffer(gs_device_t *device,
 		gs_vertbuffer_t *vertbuffer);
 EXPORT void device_load_indexbuffer(gs_device_t *device,
@@ -80,10 +81,10 @@ EXPORT void device_load_pixelshader(gs_device_t *device,
 		gs_shader_t *pixelshader);
 EXPORT void device_load_default_samplerstate(gs_device_t *device, bool b_3d,
 		int unit);
-EXPORT gs_shader_t *device_get_vertex_shader(gs_device_t *device);
-EXPORT gs_shader_t *device_get_pixel_shader(gs_device_t *device);
-EXPORT gs_texture_t *device_get_render_target(gs_device_t *device);
-EXPORT gs_zstencil_t *device_get_zstencil_target(gs_device_t *device);
+EXPORT gs_shader_t *device_get_vertex_shader(const gs_device_t *device);
+EXPORT gs_shader_t *device_get_pixel_shader(const gs_device_t *device);
+EXPORT gs_texture_t *device_get_render_target(const gs_device_t *device);
+EXPORT gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device);
 EXPORT void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		gs_zstencil_t *zstencil);
 EXPORT void device_set_cube_render_target(gs_device_t *device,
@@ -104,11 +105,11 @@ EXPORT void device_end_scene(gs_device_t *device);
 EXPORT void device_load_swapchain(gs_device_t *device,
 		gs_swapchain_t *swapchain);
 EXPORT void device_clear(gs_device_t *device, uint32_t clear_flags,
-		struct vec4 *color, float depth, uint8_t stencil);
+		const struct vec4 *color, float depth, uint8_t stencil);
 EXPORT void device_present(gs_device_t *device);
 EXPORT void device_flush(gs_device_t *device);
 EXPORT void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode);
-EXPORT enum gs_cull_mode device_get_cull_mode(gs_device_t *device);
+EXPORT enum gs_cull_mode device_get_cull_mode(const gs_device_t *device);
 EXPORT void device_enable_blending(gs_device_t *device, bool enable);
 EXPORT void device_enable_depth_test(gs_device_t *device, bool enable);
 EXPORT void device_enable_stencil_test(gs_device_t *device, bool enable);
@@ -123,18 +124,12 @@ EXPORT void device_stencil_function(gs_device_t *device,
 EXPORT void device_stencil_op(gs_device_t *device, enum gs_stencil_side side,
 		enum gs_stencil_op_type fail, enum gs_stencil_op_type zfail,
 		enum gs_stencil_op_type zpass);
-EXPORT void device_enable_fullscreen(gs_device_t *device, bool enable);
-EXPORT int device_fullscreen_enabled(gs_device_t *device);
-EXPORT void device_setdisplaymode(gs_device_t *device,
-		const struct gs_display_mode *mode);
-EXPORT void device_getdisplaymode(gs_device_t *device,
-		struct gs_display_mode *mode);
-EXPORT void device_setcolorramp(gs_device_t *device, float gamma,
-		float brightness, float contrast);
 EXPORT void device_set_viewport(gs_device_t *device, int x, int y, int width,
 		int height);
-EXPORT void device_get_viewport(gs_device_t *device, struct gs_rect *rect);
-EXPORT void device_set_scissor_rect(gs_device_t *device, struct gs_rect *rect);
+EXPORT void device_get_viewport(const gs_device_t *device,
+		struct gs_rect *rect);
+EXPORT void device_set_scissor_rect(gs_device_t *device,
+		const struct gs_rect *rect);
 EXPORT void device_ortho(gs_device_t *device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_frustum(gs_device_t *device, float left, float right,

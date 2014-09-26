@@ -61,7 +61,8 @@ extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
 	return &platform->swap;
 }
 
-extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
+extern struct gl_windowinfo *gl_windowinfo_create(
+		const struct gs_init_data *info)
 {
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
 	wi->id = info->window.id;
@@ -75,7 +76,7 @@ extern void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	bfree(wi);
 }
 
-extern void gl_getclientsize(struct gs_swap_chain *swap,
+extern void gl_getclientsize(const struct gs_swap_chain *swap,
 			     uint32_t *width, uint32_t *height)
 {
 	XWindowAttributes info = { 0 };
@@ -86,7 +87,7 @@ extern void gl_getclientsize(struct gs_swap_chain *swap,
 	*width = info.width;
 }
 
-static void print_info_stuff(struct gs_init_data *info)
+static void print_info_stuff(const struct gs_init_data *info)
 {
 	blog(	LOG_INFO,
 		"X and Y: %i %i\n"
@@ -136,7 +137,7 @@ static bool handle_x_error(Display *disp, const char *error_string)
 }
 
 struct gl_platform *gl_platform_create(gs_device_t *device,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	int num_configs = 0;
 	int error_base = 0, event_base = 0;

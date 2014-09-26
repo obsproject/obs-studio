@@ -34,7 +34,7 @@ struct gl_platform {
 	struct gs_swap_chain swap;
 };
 
-static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
+static NSOpenGLContext *gl_context_create(const struct gs_init_data *info)
 {
 	unsigned attrib_count = 0;
 
@@ -97,7 +97,7 @@ static NSOpenGLContext *gl_context_create(struct gs_init_data *info)
 }
 
 static bool gl_init_default_swap(struct gl_platform *plat, gs_device_t *dev,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	if(!(plat->context = gl_context_create(info)))
 		return false;
@@ -110,7 +110,7 @@ static bool gl_init_default_swap(struct gl_platform *plat, gs_device_t *dev,
 }
 
 struct gl_platform *gl_platform_create(gs_device_t *device,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 
@@ -161,7 +161,7 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	UNUSED_PARAMETER(swap);
 }
 
-struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info)
+struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 {
 	if(!info)
 		return NULL;
@@ -220,7 +220,7 @@ void device_present(gs_device_t *device)
 	[device->plat->context flushBuffer];
 }
 
-void gl_getclientsize(struct gs_swap_chain *swap, uint32_t *width,
+void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 		uint32_t *height)
 {
 	if(width) *width = swap->info.cx;

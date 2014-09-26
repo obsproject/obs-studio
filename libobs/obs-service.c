@@ -96,7 +96,7 @@ void obs_service_destroy(obs_service_t *service)
 	}
 }
 
-const char *obs_service_get_name(obs_service_t *service)
+const char *obs_service_get_name(const obs_service_t *service)
 {
 	return service ? service->context.name : NULL;
 }
@@ -130,7 +130,7 @@ obs_properties_t *obs_get_service_properties(const char *id)
 	return NULL;
 }
 
-obs_properties_t *obs_service_properties(obs_service_t *service)
+obs_properties_t *obs_service_properties(const obs_service_t *service)
 {
 	if (service && service->info.get_properties) {
 		obs_properties_t *props;
@@ -142,7 +142,7 @@ obs_properties_t *obs_service_properties(obs_service_t *service)
 	return NULL;
 }
 
-const char *obs_service_gettype(obs_service_t *service)
+const char *obs_service_gettype(const obs_service_t *service)
 {
 	return service ? service->info.id : NULL;
 }
@@ -158,7 +158,7 @@ void obs_service_update(obs_service_t *service, obs_data_t *settings)
 				service->context.settings);
 }
 
-obs_data_t *obs_service_get_settings(obs_service_t *service)
+obs_data_t *obs_service_get_settings(const obs_service_t *service)
 {
 	if (!service)
 		return NULL;
@@ -167,35 +167,35 @@ obs_data_t *obs_service_get_settings(obs_service_t *service)
 	return service->context.settings;
 }
 
-signal_handler_t *obs_service_get_signal_handler(obs_service_t *service)
+signal_handler_t *obs_service_get_signal_handler(const obs_service_t *service)
 {
 	return service ? service->context.signals : NULL;
 }
 
-proc_handler_t *obs_service_get_proc_handler(obs_service_t *service)
+proc_handler_t *obs_service_get_proc_handler(const obs_service_t *service)
 {
 	return service ? service->context.procs : NULL;
 }
 
-const char *obs_service_get_url(obs_service_t *service)
+const char *obs_service_get_url(const obs_service_t *service)
 {
 	if (!service || !service->info.get_url) return NULL;
 	return service->info.get_url(service->context.data);
 }
 
-const char *obs_service_get_key(obs_service_t *service)
+const char *obs_service_get_key(const obs_service_t *service)
 {
 	if (!service || !service->info.get_key) return NULL;
 	return service->info.get_key(service->context.data);
 }
 
-const char *obs_service_get_username(obs_service_t *service)
+const char *obs_service_get_username(const obs_service_t *service)
 {
 	if (!service || !service->info.get_username) return NULL;
 	return service->info.get_username(service->context.data);
 }
 
-const char *obs_service_get_password(obs_service_t *service)
+const char *obs_service_get_password(const obs_service_t *service)
 {
 	if (!service || !service->info.get_password) return NULL;
 	return service->info.get_password(service->context.data);

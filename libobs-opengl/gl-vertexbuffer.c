@@ -170,7 +170,7 @@ failed:
 	blog(LOG_ERROR, "gs_vertexbuffer_flush (GL) failed");
 }
 
-struct gs_vb_data *gs_vertexbuffer_get_data(gs_vertbuffer_t *vb)
+struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vb)
 {
 	return vb->data;
 }

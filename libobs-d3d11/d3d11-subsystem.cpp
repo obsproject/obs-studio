@@ -36,7 +36,7 @@ static const IID dxgiFactory2 =
 {0x50c83a1c, 0xe072, 0x4c48, {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6, 0xd0}};
 
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
-		gs_init_data *data)
+		const gs_init_data *data)
 {
 	memset(&desc, 0, sizeof(desc));
 	desc.BufferCount       = data->num_backbuffers;
@@ -104,7 +104,7 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	InitZStencilBuffer(cx, cy);
 }
 
-void gs_swap_chain::Init(gs_init_data *data)
+void gs_swap_chain::Init(const gs_init_data *data)
 {
 	target.device         = device;
 	target.isRenderTarget = true;
@@ -118,7 +118,7 @@ void gs_swap_chain::Init(gs_init_data *data)
 	InitZStencilBuffer(data->cx, data->cy);
 }
 
-gs_swap_chain::gs_swap_chain(gs_device *device, gs_init_data *data)
+gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	: device     (device),
 	  numBuffers (data->num_backbuffers),
 	  hwnd       ((HWND)data->window.hwnd)
@@ -158,7 +158,7 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-void gs_device::InitDevice(gs_init_data *data, IDXGIAdapter *adapter)
+void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 {
 	wstring adapterName;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
@@ -393,7 +393,7 @@ void gs_device::UpdateViewProjMatrix()
 				&curViewProjMatrix);
 }
 
-gs_device::gs_device(gs_init_data *data)
+gs_device::gs_device(const gs_init_data *data)
 	: curRenderTarget      (NULL),
 	  curZStencilBuffer    (NULL),
 	  curRenderSide        (0),
@@ -443,7 +443,7 @@ const char *device_preprocessor_name(void)
 	return "_D3D11";
 }
 
-int device_create(gs_device_t **p_device, gs_init_data *data)
+int device_create(gs_device_t **p_device, const gs_init_data *data)
 {
 	gs_device *device = NULL;
 	int errorcode = GS_SUCCESS;
@@ -484,7 +484,7 @@ void device_leave_context(gs_device_t *device)
 }
 
 gs_swapchain_t *device_swapchain_create(gs_device_t *device,
-		struct gs_init_data *data)
+		const struct gs_init_data *data)
 {
 	gs_swap_chain *swap = NULL;
 
@@ -520,18 +520,18 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	}
 }
 
-void device_get_size(gs_device_t *device, uint32_t *cx, uint32_t *cy)
+void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
 {
 	*cx = device->curSwapChain->target.width;
 	*cy = device->curSwapChain->target.height;
 }
 
-uint32_t device_get_width(gs_device_t *device)
+uint32_t device_get_width(const gs_device_t *device)
 {
 	return device->curSwapChain->target.width;
 }
 
-uint32_t device_get_height(gs_device_t *device)
+uint32_t device_get_height(const gs_device_t *device)
 {
 	return device->curSwapChain->target.height;
 }
@@ -625,7 +625,7 @@ gs_stagesurf_t *device_stagesurface_create(gs_device_t *device, uint32_t width,
 }
 
 gs_samplerstate_t *device_samplerstate_create(gs_device_t *device,
-		struct gs_sampler_info *info)
+		const struct gs_sampler_info *info)
 {
 	gs_sampler_state *ss = NULL;
 	try {
@@ -730,7 +730,7 @@ gs_indexbuffer_t *device_indexbuffer_create(gs_device_t *device,
 	return buffer;
 }
 
-enum gs_texture_type device_get_texture_type(gs_texture_t *texture)
+enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 {
 	return texture->type;
 }
@@ -910,17 +910,17 @@ void device_load_default_samplerstate(gs_device_t *device, bool b_3d, int unit)
 	UNUSED_PARAMETER(unit);
 }
 
-gs_shader_t *device_get_vertex_shader(gs_device_t *device)
+gs_shader_t *device_get_vertex_shader(const gs_device_t *device)
 {
 	return device->curVertexShader;
 }
 
-gs_shader_t *device_get_pixel_shader(gs_device_t *device)
+gs_shader_t *device_get_pixel_shader(const gs_device_t *device)
 {
 	return device->curPixelShader;
 }
 
-gs_texture_t *device_get_render_target(gs_device_t *device)
+gs_texture_t *device_get_render_target(const gs_device_t *device)
 {
 	if (device->curRenderTarget == &device->curSwapChain->target)
 		return NULL;
@@ -928,7 +928,7 @@ gs_texture_t *device_get_render_target(gs_device_t *device)
 	return device->curRenderTarget;
 }
 
-gs_zstencil_t *device_get_zstencil_target(gs_device_t *device)
+gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device)
 {
 	if (device->curZStencilBuffer == &device->curSwapChain->zs)
 		return NULL;
@@ -1209,8 +1209,8 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
 		device_set_render_target(device, target, zs);
 }
 
-void device_clear(gs_device_t *device, uint32_t clear_flags, struct vec4 *color,
-		float depth, uint8_t stencil)
+void device_clear(gs_device_t *device, uint32_t clear_flags,
+		const struct vec4 *color, float depth, uint8_t stencil)
 {
 	int side = device->curRenderSide;
 	if ((clear_flags & GS_CLEAR_COLOR) != 0 && device->curRenderTarget)
@@ -1251,7 +1251,7 @@ void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
 	device->rasterStateChanged = true;
 }
 
-enum gs_cull_mode device_get_cull_mode(gs_device_t *device)
+enum gs_cull_mode device_get_cull_mode(const gs_device_t *device)
 {
 	return device->rasterState.cullMode;
 }
@@ -1399,12 +1399,12 @@ void device_set_viewport(gs_device_t *device, int x, int y, int width,
 	device->viewport.cy = height;
 }
 
-void device_get_viewport(gs_device_t *device, struct gs_rect *rect)
+void device_get_viewport(const gs_device_t *device, struct gs_rect *rect)
 {
 	memcpy(rect, &device->viewport, sizeof(gs_rect));
 }
 
-void device_set_scissor_rect(gs_device_t *device, struct gs_rect *rect)
+void device_set_scissor_rect(gs_device_t *device, const struct gs_rect *rect)
 {
 	D3D11_RECT d3drect;
 
@@ -1511,28 +1511,28 @@ void gs_texture_destroy(gs_texture_t *tex)
 	delete tex;
 }
 
-uint32_t gs_texture_get_width(gs_texture_t *tex)
+uint32_t gs_texture_get_width(const gs_texture_t *tex)
 {
 	if (tex->type != GS_TEXTURE_2D)
 		return 0;
 
-	return static_cast<gs_texture_2d*>(tex)->width;
+	return static_cast<const gs_texture_2d*>(tex)->width;
 }
 
-uint32_t gs_texture_get_height(gs_texture_t *tex)
+uint32_t gs_texture_get_height(const gs_texture_t *tex)
 {
 	if (tex->type != GS_TEXTURE_2D)
 		return 0;
 
-	return static_cast<gs_texture_2d*>(tex)->height;
+	return static_cast<const gs_texture_2d*>(tex)->height;
 }
 
-enum gs_color_format gs_texture_get_color_format(gs_texture_t *tex)
+enum gs_color_format gs_texture_get_color_format(const gs_texture_t *tex)
 {
 	if (tex->type != GS_TEXTURE_2D)
 		return GS_UNKNOWN;
 
-	return static_cast<gs_texture_2d*>(tex)->format;
+	return static_cast<const gs_texture_2d*>(tex)->format;
 }
 
 bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
@@ -1579,21 +1579,22 @@ void gs_cubetexture_destroy(gs_texture_t *cubetex)
 	delete cubetex;
 }
 
-uint32_t gs_cubetexture_get_size(gs_texture_t *cubetex)
+uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 {
 	if (cubetex->type != GS_TEXTURE_CUBE)
 		return 0;
 
-	gs_texture_2d *tex = static_cast<gs_texture_2d*>(cubetex);
+	const gs_texture_2d *tex = static_cast<const gs_texture_2d*>(cubetex);
 	return tex->width;
 }
 
-enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t *cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(
+		const gs_texture_t *cubetex)
 {
 	if (cubetex->type != GS_TEXTURE_CUBE)
 		return GS_UNKNOWN;
 
-	gs_texture_2d *tex = static_cast<gs_texture_2d*>(cubetex);
+	const gs_texture_2d *tex = static_cast<const gs_texture_2d*>(cubetex);
 	return tex->format;
 }
 
@@ -1603,28 +1604,28 @@ void gs_voltexture_destroy(gs_texture_t *voltex)
 	delete voltex;
 }
 
-uint32_t gs_voltexture_get_width(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-uint32_t gs_voltexture_get_height(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-uint32_t gs_voltexture_getdepth(gs_texture_t *voltex)
+uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-enum gs_color_format gs_voltexture_get_color_format(gs_texture_t *voltex)
+enum gs_color_format gs_voltexture_get_color_format(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
@@ -1637,17 +1638,18 @@ void gs_stagesurface_destroy(gs_stagesurf_t *stagesurf)
 	delete stagesurf;
 }
 
-uint32_t gs_stagesurface_get_width(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_width(const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->width;
 }
 
-uint32_t gs_stagesurface_get_height(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_height(const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->height;
 }
 
-enum gs_color_format gs_stagesurface_get_color_format(gs_stagesurf_t *stagesurf)
+enum gs_color_format gs_stagesurface_get_color_format(
+		const gs_stagesurf_t *stagesurf)
 {
 	return stagesurf->format;
 }
@@ -1727,7 +1729,7 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 	}
 }
 
-struct gs_vb_data *gs_vertexbuffer_get_data(gs_vertbuffer_t *vertbuffer)
+struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
 {
 	return vertbuffer->vbd.data;
 }
@@ -1757,17 +1759,17 @@ void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 	indexbuffer->device->context->Unmap(indexbuffer->indexBuffer, 0);
 }
 
-void *gs_indexbuffer_get_data(gs_indexbuffer_t *indexbuffer)
+void *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
 {
 	return indexbuffer->indices.data;
 }
 
-size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t *indexbuffer)
+size_t gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer)
 {
 	return indexbuffer->num;
 }
 
-enum gs_index_type gs_indexbuffer_get_type(gs_indexbuffer_t *indexbuffer)
+enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 {
 	return indexbuffer->type;
 }

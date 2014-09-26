@@ -147,7 +147,7 @@ static void clear_textures(struct gs_device *device)
 }
 
 void convert_sampler_info(struct gs_sampler_state *sampler,
-		struct gs_sampler_info *info)
+		const struct gs_sampler_info *info)
 {
 	GLint max_anisotropy_max;
 	convert_filter(info->filter, &sampler->min_filter,
@@ -191,7 +191,7 @@ const char *device_preprocessor_name(void)
 	return "_OPENGL";
 }
 
-int device_create(gs_device_t **p_device, struct gs_init_data *info)
+int device_create(gs_device_t **p_device, const struct gs_init_data *info)
 {
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));
 	int errorcode = GS_ERROR_FAIL;
@@ -240,7 +240,7 @@ void device_destroy(gs_device_t *device)
 }
 
 gs_swapchain_t *device_swapchain_create(gs_device_t *device,
-		struct gs_init_data *info)
+		const struct gs_init_data *info)
 {
 	struct gs_swap_chain *swap = bzalloc(sizeof(struct gs_swap_chain));
 
@@ -271,18 +271,18 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	gl_update(device);
 }
 
-void device_get_size(gs_device_t *device, uint32_t *cx, uint32_t *cy)
+void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
 {
 	*cx = device->cur_swap->info.cx;
 	*cy = device->cur_swap->info.cy;
 }
 
-uint32_t device_get_width(gs_device_t *device)
+uint32_t device_get_width(const gs_device_t *device)
 {
 	return device->cur_swap->info.cx;
 }
 
-uint32_t device_get_height(gs_device_t *device)
+uint32_t device_get_height(const gs_device_t *device)
 {
 	return device->cur_swap->info.cy;
 }
@@ -305,7 +305,7 @@ gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
 }
 
 gs_samplerstate_t *device_samplerstate_create(gs_device_t *device,
-		struct gs_sampler_info *info)
+		const struct gs_sampler_info *info)
 {
 	struct gs_sampler_state *sampler;
 
@@ -317,7 +317,7 @@ gs_samplerstate_t *device_samplerstate_create(gs_device_t *device,
 	return sampler;
 }
 
-enum gs_texture_type device_get_texture_type(gs_texture_t *texture)
+enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 {
 	return texture->type;
 }
@@ -555,22 +555,22 @@ void device_load_default_samplerstate(gs_device_t *device, bool b_3d, int unit)
 	UNUSED_PARAMETER(unit);
 }
 
-gs_shader_t *device_get_vertex_shader(gs_device_t *device)
+gs_shader_t *device_get_vertex_shader(const gs_device_t *device)
 {
 	return device->cur_vertex_shader;
 }
 
-gs_shader_t *device_get_pixel_shader(gs_device_t *device)
+gs_shader_t *device_get_pixel_shader(const gs_device_t *device)
 {
 	return device->cur_pixel_shader;
 }
 
-gs_texture_t *device_get_render_target(gs_device_t *device)
+gs_texture_t *device_get_render_target(const gs_device_t *device)
 {
 	return device->cur_render_target;
 }
 
-gs_zstencil_t *device_get_zstencil_target(gs_device_t *device)
+gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device)
 {
 	return device->cur_zstencil_buffer;
 }
@@ -843,7 +843,7 @@ void device_begin_scene(gs_device_t *device)
 	clear_textures(device);
 }
 
-static inline bool can_render(gs_device_t *device)
+static inline bool can_render(const gs_device_t *device)
 {
 	if (!device->cur_vertex_shader) {
 		blog(LOG_ERROR, "No vertex shader specified");
@@ -876,7 +876,7 @@ static void update_viewproj_matrix(struct gs_device *device)
 		gs_shader_set_matrix4(vs->viewproj, &device->cur_viewproj);
 }
 
-static inline struct gs_program *find_program(struct gs_device *device)
+static inline struct gs_program *find_program(const struct gs_device *device)
 {
 	struct gs_program *program = device->first_program;
 
@@ -967,7 +967,7 @@ void device_end_scene(gs_device_t *device)
 }
 
 void device_clear(gs_device_t *device, uint32_t clear_flags,
-		struct vec4 *color, float depth, uint8_t stencil)
+		const struct vec4 *color, float depth, uint8_t stencil)
 {
 	GLbitfield gl_flags = 0;
 
@@ -1018,7 +1018,7 @@ void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
 		gl_disable(GL_CULL_FACE);
 }
 
-enum gs_cull_mode device_get_cull_mode(gs_device_t *device)
+enum gs_cull_mode device_get_cull_mode(const gs_device_t *device)
 {
 	return device->cur_cull_mode;
 }
@@ -1124,7 +1124,7 @@ void device_stencil_op(gs_device_t *device, enum gs_stencil_side side,
 	UNUSED_PARAMETER(device);
 }
 
-static inline uint32_t get_target_height(struct gs_device *device)
+static inline uint32_t get_target_height(const struct gs_device *device)
 {
 	if (!device->cur_render_target)
 		return device_get_height(device);
@@ -1158,12 +1158,12 @@ void device_set_viewport(gs_device_t *device, int x, int y, int width,
 	device->cur_viewport.cy = height;
 }
 
-void device_get_viewport(gs_device_t *device, struct gs_rect *rect)
+void device_get_viewport(const gs_device_t *device, struct gs_rect *rect)
 {
 	*rect = device->cur_viewport;
 }
 
-void device_set_scissor_rect(gs_device_t *device, struct gs_rect *rect)
+void device_set_scissor_rect(gs_device_t *device, const struct gs_rect *rect)
 {
 	UNUSED_PARAMETER(device);
 
@@ -1268,28 +1268,28 @@ void gs_voltexture_destroy(gs_texture_t *voltex)
 	UNUSED_PARAMETER(voltex);
 }
 
-uint32_t gs_voltexture_get_width(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-uint32_t gs_voltexture_get_height(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-uint32_t gs_voltexture_getdepth(gs_texture_t *voltex)
+uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
 	return 0;
 }
 
-enum gs_color_format gs_voltexture_get_color_format(gs_texture_t *voltex)
+enum gs_color_format gs_voltexture_get_color_format(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);

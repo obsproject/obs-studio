@@ -473,12 +473,12 @@ void obs_scene_release(obs_scene_t *scene)
 		obs_source_release(scene->source);
 }
 
-obs_source_t *obs_scene_get_source(obs_scene_t *scene)
+obs_source_t *obs_scene_get_source(const obs_scene_t *scene)
 {
 	return scene ? scene->source : NULL;
 }
 
-obs_scene_t *obs_scene_from_source(obs_source_t *source)
+obs_scene_t *obs_scene_from_source(const obs_source_t *source)
 {
 	if (!source || source->info.id != scene_info.id)
 		return NULL;
@@ -645,12 +645,12 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 	obs_sceneitem_release(item);
 }
 
-obs_scene_t *obs_sceneitem_get_scene(obs_sceneitem_t *item)
+obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item)
 {
 	return item ? item->parent : NULL;
 }
 
-obs_source_t *obs_sceneitem_get_source(obs_sceneitem_t *item)
+obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item)
 {
 	return item ? item->source : NULL;
 }
@@ -673,7 +673,7 @@ void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
 	calldata_free(&params);
 }
 
-bool obs_sceneitem_selected(obs_sceneitem_t *item)
+bool obs_sceneitem_selected(const obs_sceneitem_t *item)
 {
 	return item ? item->selected : false;
 }
@@ -801,45 +801,45 @@ void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 	}
 }
 
-void obs_sceneitem_get_pos(obs_sceneitem_t *item, struct vec2 *pos)
+void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 {
 	if (item)
 		vec2_copy(pos, &item->pos);
 }
 
-float obs_sceneitem_get_rot(obs_sceneitem_t *item)
+float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
 {
 	return item ? item->rot : 0.0f;
 }
 
-void obs_sceneitem_get_scale(obs_sceneitem_t *item, struct vec2 *scale)
+void obs_sceneitem_get_scale(const obs_sceneitem_t *item, struct vec2 *scale)
 {
 	if (item)
 		vec2_copy(scale, &item->scale);
 }
 
-uint32_t obs_sceneitem_get_alignment(obs_sceneitem_t *item)
+uint32_t obs_sceneitem_get_alignment(const obs_sceneitem_t *item)
 {
 	return item ? item->align : 0;
 }
 
-enum obs_bounds_type obs_sceneitem_get_bounds_type(obs_sceneitem_t *item)
+enum obs_bounds_type obs_sceneitem_get_bounds_type(const obs_sceneitem_t *item)
 {
 	return item ? item->bounds_type : OBS_BOUNDS_NONE;
 }
 
-uint32_t obs_sceneitem_get_bounds_alignment(obs_sceneitem_t *item)
+uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item)
 {
 	return item ? item->bounds_align : 0;
 }
 
-void obs_sceneitem_get_bounds(obs_sceneitem_t *item, struct vec2 *bounds)
+void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
 {
 	if (item)
 		*bounds = item->bounds;
 }
 
-void obs_sceneitem_get_info(obs_sceneitem_t *item,
+void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 		struct obs_transform_info *info)
 {
 	if (item && info) {
@@ -868,14 +868,14 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 	}
 }
 
-void obs_sceneitem_get_draw_transform(obs_sceneitem_t *item,
+void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item,
 		struct matrix4 *transform)
 {
 	if (item)
 		matrix4_copy(transform, &item->draw_transform);
 }
 
-void obs_sceneitem_get_box_transform(obs_sceneitem_t *item,
+void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 		struct matrix4 *transform)
 {
 	if (item)

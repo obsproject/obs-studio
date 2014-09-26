@@ -86,17 +86,17 @@ fail:
 	blog(LOG_ERROR, "gs_indexbuffer_flush (GL) failed");
 }
 
-void *gs_indexbuffer_get_data(gs_indexbuffer_t *ib)
+void *gs_indexbuffer_get_data(const gs_indexbuffer_t *ib)
 {
 	return ib->data;
 }
 
-size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t *ib)
+size_t gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *ib)
 {
 	return ib->num;
 }
 
-enum gs_index_type gs_indexbuffer_get_type(gs_indexbuffer_t *ib)
+enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *ib)
 {
 	return ib->type;
 }

@@ -113,7 +113,7 @@ static inline void audio_output_removeline(struct audio_output *audio,
  * timestamps.  this will actually work accurately as long as you handle the
  * values correctly */
 
-static inline double ts_to_frames(audio_t *audio, uint64_t ts)
+static inline double ts_to_frames(const audio_t *audio, uint64_t ts)
 {
 	double audio_offset_d = (double)ts;
 	audio_offset_d /= 1000000000.0;
@@ -127,19 +127,20 @@ static inline double positive_round(double val)
 	return floor(val+0.5);
 }
 
-static size_t ts_diff_frames(audio_t *audio, uint64_t ts1, uint64_t ts2)
+static size_t ts_diff_frames(const audio_t *audio, uint64_t ts1, uint64_t ts2)
 {
 	double diff = ts_to_frames(audio, ts1) - ts_to_frames(audio, ts2);
 	return (size_t)positive_round(diff);
 }
 
-static size_t ts_diff_bytes(audio_t *audio, uint64_t ts1, uint64_t ts2)
+static size_t ts_diff_bytes(const audio_t *audio, uint64_t ts1, uint64_t ts2)
 {
 	return ts_diff_frames(audio, ts1, ts2) * audio->block_size;
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
-static inline uint64_t conv_frames_to_time(audio_t *audio, uint32_t frames)
+static inline uint64_t conv_frames_to_time(const audio_t *audio,
+		uint32_t frames)
 {
 	return (uint64_t)frames * 1000000000ULL /
 		(uint64_t)audio->info.samples_per_sec;
@@ -370,7 +371,7 @@ static void *audio_thread(void *param)
 
 /* ------------------------------------------------------------------------- */
 
-static size_t audio_get_input_idx(audio_t *video,
+static size_t audio_get_input_idx(const audio_t *video,
 		void (*callback)(void *param, struct audio_data *data),
 		void *param)
 {
@@ -474,7 +475,7 @@ void audio_output_disconnect(audio_t *audio,
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
-static inline bool valid_audio_params(struct audio_output_info *info)
+static inline bool valid_audio_params(const struct audio_output_info *info)
 {
 	return info->format && info->name && info->samples_per_sec > 0 &&
 	       info->speakers > 0;
@@ -585,7 +586,7 @@ audio_line_t *audio_output_create_line(audio_t *audio, const char *name)
 	return line;
 }
 
-const struct audio_output_info *audio_output_get_info(audio_t *audio)
+const struct audio_output_info *audio_output_get_info(const audio_t *audio)
 {
 	return audio ? &audio->info : NULL;
 }
@@ -600,28 +601,28 @@ void audio_line_destroy(struct audio_line *line)
 	}
 }
 
-bool audio_output_active(audio_t *audio)
+bool audio_output_active(const audio_t *audio)
 {
 	if (!audio) return false;
 	return audio->inputs.num != 0;
 }
 
-size_t audio_output_get_block_size(audio_t *audio)
+size_t audio_output_get_block_size(const audio_t *audio)
 {
 	return audio ? audio->block_size : 0;
 }
 
-size_t audio_output_get_planes(audio_t *audio)
+size_t audio_output_get_planes(const audio_t *audio)
 {
 	return audio ? audio->planes : 0;
 }
 
-size_t audio_output_get_channels(audio_t *audio)
+size_t audio_output_get_channels(const audio_t *audio)
 {
 	return audio ? audio->channels : 0;
 }
 
-uint32_t audio_output_get_sample_rate(audio_t *audio)
+uint32_t audio_output_get_sample_rate(const audio_t *audio)
 {
 	return audio ? audio->info.samples_per_sec : 0;
 }

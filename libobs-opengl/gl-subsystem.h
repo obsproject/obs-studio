@@ -270,7 +270,7 @@ static inline GLenum convert_gs_topology(enum gs_draw_mode mode)
 }
 
 extern void convert_sampler_info(struct gs_sampler_state *sampler,
-		struct gs_sampler_info *info);
+		const struct gs_sampler_info *info);
 
 struct gs_sampler_state {
 	gs_device_t          *device;
@@ -510,16 +510,17 @@ extern struct fbo_info *get_fbo(struct gs_device *device,
 extern void                  gl_update(gs_device_t *device);
 
 extern struct gl_platform   *gl_platform_create(gs_device_t *device,
-                                                struct gs_init_data *info);
+		const struct gs_init_data *info);
 extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
 extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap);
 extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap);
 
-extern struct gl_windowinfo *gl_windowinfo_create(struct gs_init_data *info);
+extern struct gl_windowinfo *gl_windowinfo_create(
+		const struct gs_init_data *info);
 extern void                  gl_windowinfo_destroy(struct gl_windowinfo *wi);
 
-extern void                  gl_getclientsize(struct gs_swap_chain *swap,
+extern void                  gl_getclientsize(const struct gs_swap_chain *swap,
                                               uint32_t *width,
                                               uint32_t *height);

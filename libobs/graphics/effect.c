@@ -29,7 +29,8 @@ void gs_effect_destroy(gs_effect_t *effect)
 	}
 }
 
-gs_technique_t *gs_effect_get_technique(gs_effect_t *effect, const char *name)
+gs_technique_t *gs_effect_get_technique(const gs_effect_t *effect,
+		const char *name)
 {
 	if (!effect) return NULL;
 
@@ -194,12 +195,12 @@ void gs_technique_end_pass(gs_technique_t *tech)
 	tech->effect->cur_pass = NULL;
 }
 
-size_t gs_effect_get_num_params(gs_effect_t *effect)
+size_t gs_effect_get_num_params(const gs_effect_t *effect)
 {
 	return effect ? effect->params.num : 0;
 }
 
-gs_eparam_t *gs_effect_get_param_by_idx(gs_effect_t *effect, size_t param)
+gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect, size_t param)
 {
 	if (!effect) return NULL;
 
@@ -210,7 +211,8 @@ gs_eparam_t *gs_effect_get_param_by_idx(gs_effect_t *effect, size_t param)
 	return params+param;
 }
 
-gs_eparam_t *gs_effect_get_param_by_name(gs_effect_t *effect, const char *name)
+gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
+		const char *name)
 {
 	if (!effect) return NULL;
 
@@ -226,17 +228,17 @@ gs_eparam_t *gs_effect_get_param_by_name(gs_effect_t *effect, const char *name)
 	return NULL;
 }
 
-gs_eparam_t *gs_effect_get_viewproj_matrix(gs_effect_t *effect)
+gs_eparam_t *gs_effect_get_viewproj_matrix(const gs_effect_t *effect)
 {
 	return effect ? effect->view_proj : NULL;
 }
 
-gs_eparam_t *gs_effect_get_world_matrix(gs_effect_t *effect)
+gs_eparam_t *gs_effect_get_world_matrix(const gs_effect_t *effect)
 {
 	return effect ? effect->world : NULL;
 }
 
-void gs_effect_get_param_info(gs_eparam_t *param,
+void gs_effect_get_param_info(const gs_eparam_t *param,
 		struct gs_effect_param_info *info)
 {
 	if (!param)

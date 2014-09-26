@@ -112,7 +112,7 @@ fail:
 	return NULL;
 }
 
-static inline bool is_texture_2d(gs_texture_t *tex, const char *func)
+static inline bool is_texture_2d(const gs_texture_t *tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;
 	if (!is_tex2d)
@@ -141,25 +141,25 @@ void gs_texture_destroy(gs_texture_t *tex)
 	bfree(tex);
 }
 
-uint32_t gs_texture_get_width(gs_texture_t *tex)
+uint32_t gs_texture_get_width(const gs_texture_t *tex)
 {
-	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_get_width"))
 		return 0;
 
 	return tex2d->width;
 }
 
-uint32_t gs_texture_get_height(gs_texture_t *tex)
+uint32_t gs_texture_get_height(const gs_texture_t *tex)
 {
-	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_get_height"))
 		return 0;
 
 	return tex2d->height;
 }
 
-enum gs_color_format gs_texture_get_color_format(gs_texture_t *tex)
+enum gs_color_format gs_texture_get_color_format(const gs_texture_t *tex)
 {
 	return tex->format;
 }
@@ -226,9 +226,9 @@ failed:
 	blog(LOG_ERROR, "gs_texture_unmap (GL) failed");
 }
 
-bool gs_texture_is_rect(gs_texture_t *tex)
+bool gs_texture_is_rect(const gs_texture_t *tex)
 {
-	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
+	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_unmap")) {
 		blog(LOG_ERROR, "gs_texture_is_rect (GL) failed");
 		return false;

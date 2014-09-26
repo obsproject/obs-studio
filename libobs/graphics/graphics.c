@@ -117,7 +117,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 }
 
 int gs_create(graphics_t **pgraphics, const char *module,
-		struct gs_init_data *data)
+		const struct gs_init_data *data)
 {
 	struct gs_init_data new_data = *data;
 	int errcode = GS_ERROR_FAIL;
@@ -958,7 +958,7 @@ const char *gs_preprocessor_name(void)
 	return graphics->exports.device_preprocessor_name();
 }
 
-gs_swapchain_t *gs_swapchain_create(struct gs_init_data *data)
+gs_swapchain_t *gs_swapchain_create(const struct gs_init_data *data)
 {
 	struct gs_init_data new_data = *data;
 
@@ -1106,7 +1106,7 @@ gs_stagesurf_t *gs_stagesurface_create(uint32_t width, uint32_t height,
 			width, height, color_format);
 }
 
-gs_samplerstate_t *gs_samplerstate_create(struct gs_sampler_info *info)
+gs_samplerstate_t *gs_samplerstate_create(const struct gs_sampler_info *info)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics) return NULL;
@@ -1155,7 +1155,7 @@ gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type,
 			type, indices, num, flags);
 }
 
-enum gs_texture_type gs_get_texture_type(gs_texture_t *texture)
+enum gs_texture_type gs_get_texture_type(const gs_texture_t *texture)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics) return GS_TEXTURE_2D;
@@ -1338,7 +1338,7 @@ void gs_load_swapchain(gs_swapchain_t *swapchain)
 	graphics->exports.device_load_swapchain(graphics->device, swapchain);
 }
 
-void gs_clear(uint32_t clear_flags, struct vec4 *color, float depth,
+void gs_clear(uint32_t clear_flags, const struct vec4 *color, float depth,
 		uint8_t stencil)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1473,7 +1473,7 @@ void gs_get_viewport(struct gs_rect *rect)
 	graphics->exports.device_get_viewport(graphics->device, rect);
 }
 
-void gs_set_scissor_rect(struct gs_rect *rect)
+void gs_set_scissor_rect(const struct gs_rect *rect)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics) return;
@@ -1533,7 +1533,7 @@ void gs_shader_destroy(gs_shader_t *shader)
 	graphics->exports.gs_shader_destroy(shader);
 }
 
-int gs_shader_get_num_params(gs_shader_t *shader)
+int gs_shader_get_num_params(const gs_shader_t *shader)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !shader) return 0;
@@ -1557,7 +1557,7 @@ gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 	return graphics->exports.gs_shader_get_param_by_name(shader, name);
 }
 
-gs_sparam_t *gs_shader_get_viewproj_matrix(gs_shader_t *shader)
+gs_sparam_t *gs_shader_get_viewproj_matrix(const gs_shader_t *shader)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
@@ -1565,7 +1565,7 @@ gs_sparam_t *gs_shader_get_viewproj_matrix(gs_shader_t *shader)
 	return graphics->exports.gs_shader_get_viewproj_matrix(shader);
 }
 
-gs_sparam_t *gs_shader_get_world_matrix(gs_shader_t *shader)
+gs_sparam_t *gs_shader_get_world_matrix(const gs_shader_t *shader)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !shader) return NULL;
@@ -1573,7 +1573,7 @@ gs_sparam_t *gs_shader_get_world_matrix(gs_shader_t *shader)
 	return graphics->exports.gs_shader_get_world_matrix(shader);
 }
 
-void gs_shader_get_param_info(gs_sparam_t *param,
+void gs_shader_get_param_info(const gs_sparam_t *param,
 		struct gs_shader_param_info *info)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1678,7 +1678,7 @@ void gs_texture_destroy(gs_texture_t *tex)
 	graphics->exports.gs_texture_destroy(tex);
 }
 
-uint32_t gs_texture_get_width(gs_texture_t *tex)
+uint32_t gs_texture_get_width(const gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !tex) return 0;
@@ -1686,7 +1686,7 @@ uint32_t gs_texture_get_width(gs_texture_t *tex)
 	return graphics->exports.gs_texture_get_width(tex);
 }
 
-uint32_t gs_texture_get_height(gs_texture_t *tex)
+uint32_t gs_texture_get_height(const gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !tex) return 0;
@@ -1694,7 +1694,7 @@ uint32_t gs_texture_get_height(gs_texture_t *tex)
 	return graphics->exports.gs_texture_get_height(tex);
 }
 
-enum gs_color_format gs_texture_get_color_format(gs_texture_t *tex)
+enum gs_color_format gs_texture_get_color_format(const gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !tex) return GS_UNKNOWN;
@@ -1718,7 +1718,7 @@ void gs_texture_unmap(gs_texture_t *tex)
 	graphics->exports.gs_texture_unmap(tex);
 }
 
-bool gs_texture_is_rect(gs_texture_t *tex)
+bool gs_texture_is_rect(const gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !tex) return false;
@@ -1745,7 +1745,7 @@ void gs_cubetexture_destroy(gs_texture_t *cubetex)
 	graphics->exports.gs_cubetexture_destroy(cubetex);
 }
 
-uint32_t gs_cubetexture_get_size(gs_texture_t *cubetex)
+uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !cubetex) return 0;
@@ -1753,7 +1753,8 @@ uint32_t gs_cubetexture_get_size(gs_texture_t *cubetex)
 	return graphics->exports.gs_cubetexture_get_size(cubetex);
 }
 
-enum gs_color_format gs_cubetexture_get_color_format(gs_texture_t *cubetex)
+enum gs_color_format gs_cubetexture_get_color_format(
+		const gs_texture_t *cubetex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !cubetex) return GS_UNKNOWN;
@@ -1769,7 +1770,7 @@ void gs_voltexture_destroy(gs_texture_t *voltex)
 	graphics->exports.gs_voltexture_destroy(voltex);
 }
 
-uint32_t gs_voltexture_get_width(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
@@ -1777,7 +1778,7 @@ uint32_t gs_voltexture_get_width(gs_texture_t *voltex)
 	return graphics->exports.gs_voltexture_get_width(voltex);
 }
 
-uint32_t gs_voltexture_get_height(gs_texture_t *voltex)
+uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
@@ -1785,7 +1786,7 @@ uint32_t gs_voltexture_get_height(gs_texture_t *voltex)
 	return graphics->exports.gs_voltexture_get_height(voltex);
 }
 
-uint32_t gs_voltexture_getdepth(gs_texture_t *voltex)
+uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !voltex) return 0;
@@ -1793,7 +1794,7 @@ uint32_t gs_voltexture_getdepth(gs_texture_t *voltex)
 	return graphics->exports.gs_voltexture_getdepth(voltex);
 }
 
-enum gs_color_format gs_voltexture_get_color_format(gs_texture_t *voltex)
+enum gs_color_format gs_voltexture_get_color_format(const gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !voltex) return GS_UNKNOWN;
@@ -1809,7 +1810,7 @@ void gs_stagesurface_destroy(gs_stagesurf_t *stagesurf)
 	graphics->exports.gs_stagesurface_destroy(stagesurf);
 }
 
-uint32_t gs_stagesurface_get_width(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_width(const gs_stagesurf_t *stagesurf)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !stagesurf) return 0;
@@ -1817,7 +1818,7 @@ uint32_t gs_stagesurface_get_width(gs_stagesurf_t *stagesurf)
 	return graphics->exports.gs_stagesurface_get_width(stagesurf);
 }
 
-uint32_t gs_stagesurface_get_height(gs_stagesurf_t *stagesurf)
+uint32_t gs_stagesurface_get_height(const gs_stagesurf_t *stagesurf)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !stagesurf) return 0;
@@ -1825,7 +1826,8 @@ uint32_t gs_stagesurface_get_height(gs_stagesurf_t *stagesurf)
 	return graphics->exports.gs_stagesurface_get_height(stagesurf);
 }
 
-enum gs_color_format gs_stagesurface_get_color_format(gs_stagesurf_t *stagesurf)
+enum gs_color_format gs_stagesurface_get_color_format(
+		const gs_stagesurf_t *stagesurf)
 {
 	graphics_t *graphics = thread_graphics;
 	if (!graphics || !stagesurf) return GS_UNKNOWN;
@@ -1879,7 +1881,7 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 	thread_graphics->exports.gs_vertexbuffer_flush(vertbuffer);
 }
 
-struct gs_vb_data *gs_vertexbuffer_get_data(gs_vertbuffer_t *vertbuffer)
+struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
 {
 	if (!thread_graphics || !vertbuffer) return NULL;
 
@@ -1901,14 +1903,14 @@ void   gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 	thread_graphics->exports.gs_indexbuffer_flush(indexbuffer);
 }
 
-void  *gs_indexbuffer_get_data(gs_indexbuffer_t *indexbuffer)
+void  *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return NULL;
 
 	return thread_graphics->exports.gs_indexbuffer_get_data(indexbuffer);
 }
 
-size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t *indexbuffer)
+size_t gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return 0;
 
@@ -1916,7 +1918,7 @@ size_t gs_indexbuffer_get_num_indices(gs_indexbuffer_t *indexbuffer)
 			indexbuffer);
 }
 
-enum gs_index_type gs_indexbuffer_get_type(gs_indexbuffer_t *indexbuffer)
+enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 {
 	if (!thread_graphics || !indexbuffer) return (enum gs_index_type)0;
 

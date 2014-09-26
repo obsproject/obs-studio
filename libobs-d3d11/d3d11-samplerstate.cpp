@@ -59,7 +59,8 @@ static inline D3D11_FILTER ConvertGSFilter( gs_sample_filter filter)
 	return D3D11_FILTER_MIN_MAG_MIP_POINT;
 }
 
-gs_sampler_state::gs_sampler_state(gs_device_t *device, gs_sampler_info *info)
+gs_sampler_state::gs_sampler_state(gs_device_t *device,
+		const gs_sampler_info *info)
 	: device (device),
 	  info   (*info)
 {

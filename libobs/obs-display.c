@@ -20,7 +20,7 @@
 #include "obs-internal.h"
 
 bool obs_display_init(struct obs_display *display,
-		struct gs_init_data *graphics_data)
+		const struct gs_init_data *graphics_data)
 {
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
 
@@ -44,14 +44,11 @@ bool obs_display_init(struct obs_display *display,
 	return true;
 }
 
-obs_display_t *obs_display_create(struct gs_init_data *graphics_data)
+obs_display_t *obs_display_create(const struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
 	gs_enter_context(obs->video.graphics);
-
-	if (!graphics_data->num_backbuffers)
-		graphics_data->num_backbuffers = 1;
 
 	if (!obs_display_init(display, graphics_data)) {
 		obs_display_destroy(display);
