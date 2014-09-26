@@ -91,7 +91,7 @@ struct signal_handler {
 	pthread_mutex_t    mutex;
 };
 
-static struct signal_info *getsignal(signal_handler_t handler,
+static struct signal_info *getsignal(signal_handler_t *handler,
 		const char *name, struct signal_info **p_last)
 {
 	struct signal_info *signal, *last= NULL;
@@ -112,7 +112,7 @@ static struct signal_info *getsignal(signal_handler_t handler,
 
 /* ------------------------------------------------------------------------- */
 
-signal_handler_t signal_handler_create(void)
+signal_handler_t *signal_handler_create(void)
 {
 	struct signal_handler *handler = bmalloc(sizeof(struct signal_handler));
 	handler->first = NULL;
@@ -126,7 +126,7 @@ signal_handler_t signal_handler_create(void)
 	return handler;
 }
 
-void signal_handler_destroy(signal_handler_t handler)
+void signal_handler_destroy(signal_handler_t *handler)
 {
 	if (handler) {
 		struct signal_info *sig = handler->first;
@@ -141,7 +141,7 @@ void signal_handler_destroy(signal_handler_t handler)
 	}
 }
 
-bool signal_handler_add(signal_handler_t handler, const char *signal_decl)
+bool signal_handler_add(signal_handler_t *handler, const char *signal_decl)
 {
 	struct decl_info func = {0};
 	struct signal_info *sig, *last;
@@ -172,7 +172,7 @@ bool signal_handler_add(signal_handler_t handler, const char *signal_decl)
 	return success;
 }
 
-void signal_handler_connect(signal_handler_t handler, const char *signal,
+void signal_handler_connect(signal_handler_t *handler, const char *signal,
 		signal_callback_t callback, void *data)
 {
 	struct signal_info *sig, *last;
@@ -203,7 +203,7 @@ void signal_handler_connect(signal_handler_t handler, const char *signal,
 	pthread_mutex_unlock(&sig->mutex);
 }
 
-static inline struct signal_info *getsignal_locked(signal_handler_t handler,
+static inline struct signal_info *getsignal_locked(signal_handler_t *handler,
 		const char *name)
 {
 	struct signal_info *sig;
@@ -218,7 +218,7 @@ static inline struct signal_info *getsignal_locked(signal_handler_t handler,
 	return sig;
 }
 
-void signal_handler_disconnect(signal_handler_t handler, const char *signal,
+void signal_handler_disconnect(signal_handler_t *handler, const char *signal,
 		signal_callback_t callback, void *data)
 {
 	struct signal_info *sig = getsignal_locked(handler, signal);
@@ -240,8 +240,8 @@ void signal_handler_disconnect(signal_handler_t handler, const char *signal,
 	pthread_mutex_unlock(&sig->mutex);
 }
 
-void signal_handler_signal(signal_handler_t handler, const char *signal,
-		calldata_t params)
+void signal_handler_signal(signal_handler_t *handler, const char *signal,
+		calldata_t *params)
 {
 	struct signal_info *sig = getsignal_locked(handler, signal);
 

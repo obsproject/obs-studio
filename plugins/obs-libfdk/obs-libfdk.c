@@ -44,7 +44,7 @@ static const char *libfdk_get_error(AACENC_ERROR err)
 
 
 typedef struct libfdk_encoder {
-	obs_encoder_t encoder;
+	obs_encoder_t *encoder;
 
 	int channels, sample_rate;
 
@@ -64,9 +64,9 @@ static const char *libfdk_getname(void)
 	return obs_module_text("LibFDK");
 }
 
-static obs_properties_t libfdk_properties(void)
+static obs_properties_t *libfdk_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 32, 256, 32);
@@ -76,7 +76,7 @@ static obs_properties_t libfdk_properties(void)
 	return props;
 }
 
-static void libfdk_defaults(obs_data_t settings)
+static void libfdk_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 128);
 	obs_data_set_default_bool(settings, "afterburner", true);
@@ -88,13 +88,13 @@ static void libfdk_defaults(obs_data_t settings)
 		goto fail; \
 	}
 
-static void *libfdk_create(obs_data_t settings, obs_encoder_t encoder)
+static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	bool hasFdkHandle = false;
 	libfdk_encoder_t *enc = 0;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate") * 1000;
 	int afterburner = obs_data_get_bool(settings, "afterburner") ? 1 : 0;
-	audio_t audio = obs_encoder_audio(encoder);
+	audio_t *audio = obs_encoder_audio(encoder);
 	int mode = 0;
 	AACENC_ERROR err;
 

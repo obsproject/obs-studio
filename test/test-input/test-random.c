@@ -4,8 +4,8 @@
 #include <obs.h>
 
 struct random_tex {
-	obs_source_t source;
-	os_event_t   stop_signal;
+	obs_source_t *source;
+	os_event_t   *stop_signal;
 	pthread_t    thread;
 	bool         initialized;
 };
@@ -74,7 +74,7 @@ static void *video_thread(void *data)
 	return NULL;
 }
 
-static void *random_create(obs_data_t settings, obs_source_t source)
+static void *random_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct random_tex *rt = bzalloc(sizeof(struct random_tex));
 	rt->source = source;

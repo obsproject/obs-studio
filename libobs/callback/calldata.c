@@ -63,7 +63,7 @@ static inline const char *cd_serialize_string(uint8_t **pos)
 	return (size != 0) ? str : NULL;
 }
 
-static bool cd_getparam(calldata_t data, const char *name,
+static bool cd_getparam(calldata_t *data, const char *name,
 		uint8_t **pos)
 {
 	size_t name_size;
@@ -114,7 +114,7 @@ static inline void cd_copy_data(uint8_t **pos, const void *in, size_t size)
 	}
 }
 
-static inline void cd_set_first_param(calldata_t data, const char *name,
+static inline void cd_set_first_param(calldata_t *data, const char *name,
 		const void *in, size_t size)
 {
 	uint8_t *pos;
@@ -136,7 +136,7 @@ static inline void cd_set_first_param(calldata_t data, const char *name,
 	*(size_t*)pos = 0;
 }
 
-static inline void cd_ensure_capacity(calldata_t data, uint8_t **pos,
+static inline void cd_ensure_capacity(calldata_t *data, uint8_t **pos,
 		size_t new_size)
 {
 	size_t offset;
@@ -159,7 +159,7 @@ static inline void cd_ensure_capacity(calldata_t data, uint8_t **pos,
 
 /* ------------------------------------------------------------------------- */
 
-bool calldata_get_data(calldata_t data, const char *name, void *out,
+bool calldata_get_data(calldata_t *data, const char *name, void *out,
 		size_t size)
 {
 	uint8_t *pos;
@@ -179,7 +179,7 @@ bool calldata_get_data(calldata_t data, const char *name, void *out,
 	return true;
 }
 
-void calldata_set_data(calldata_t data, const char *name, const void *in,
+void calldata_set_data(calldata_t *data, const char *name, const void *in,
 		size_t size)
 {
 	uint8_t *pos = NULL;
@@ -225,7 +225,7 @@ void calldata_set_data(calldata_t data, const char *name, const void *in,
 	}
 }
 
-bool calldata_get_string(calldata_t data, const char *name, const char **str)
+bool calldata_get_string(calldata_t *data, const char *name, const char **str)
 {
 	uint8_t *pos;
 	if (!data || !name || !*name)

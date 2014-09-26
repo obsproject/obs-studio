@@ -70,7 +70,7 @@ struct os_cpu_usage_info {
 	int core_count;
 };
 
-os_cpu_usage_info_t os_cpu_usage_info_start(void)
+os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 {
 	struct os_cpu_usage_info *info = bmalloc(sizeof(*info));
 	struct tms               time_sample;
@@ -82,7 +82,7 @@ os_cpu_usage_info_t os_cpu_usage_info_start(void)
 	return info;
 }
 
-double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 {
 	struct tms time_sample;
 	clock_t    cur_cpu_time;
@@ -109,7 +109,7 @@ double os_cpu_usage_info_query(os_cpu_usage_info_t info)
 	return percent * 100.0;
 }
 
-void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 {
 	if (info)
 		bfree(info);
@@ -181,7 +181,7 @@ struct os_dir {
 	struct os_dirent out;
 };
 
-os_dir_t os_opendir(const char *path)
+os_dir_t *os_opendir(const char *path)
 {
 	struct os_dir *dir;
 	DIR           *dir_val;
@@ -206,7 +206,7 @@ static inline bool is_dir(const char *path)
 	return false;
 }
 
-struct os_dirent *os_readdir(os_dir_t dir)
+struct os_dirent *os_readdir(os_dir_t *dir)
 {
 	struct dstr file_path = {0};
 
@@ -229,7 +229,7 @@ struct os_dirent *os_readdir(os_dir_t dir)
 	return &dir->out;
 }
 
-void os_closedir(os_dir_t dir)
+void os_closedir(os_dir_t *dir)
 {
 	if (dir) {
 		closedir(dir->dir);
@@ -242,7 +242,7 @@ struct posix_glob_info {
 	glob_t gl;
 };
 
-int os_glob(const char *pattern, int flags, os_glob_t *pglob)
+int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 {
 	struct posix_glob_info pgi;
 	int ret = glob(pattern, 0, NULL, &pgi.gl);
@@ -271,7 +271,7 @@ int os_glob(const char *pattern, int flags, os_glob_t *pglob)
 	return ret;
 }
 
-void os_globfree(os_glob_t pglob)
+void os_globfree(os_glob_t *pglob)
 {
 	if (pglob) {
 		struct posix_glob_info *pgi = (struct posix_glob_info*)pglob;
@@ -296,13 +296,13 @@ int os_mkdir(const char *path)
 }
 
 #if !defined(__APPLE__)
-os_performance_token_t os_request_high_performance(const char *reason)
+os_performance_token_t *os_request_high_performance(const char *reason)
 {
 	UNUSED_PARAMETER(reason);
 	return NULL;
 }
 
-void os_end_high_performance(os_performance_token_t token)
+void os_end_high_performance(os_performance_token_t *token)
 {
 	UNUSED_PARAMETER(token);
 }

@@ -1,8 +1,8 @@
 #include <obs-module.h>
 
 struct test_filter {
-	obs_source_t source;
-	gs_effect_t whatever;
+	obs_source_t *source;
+	gs_effect_t *whatever;
 };
 
 static const char *filter_getname(void)
@@ -24,7 +24,7 @@ static void filter_destroy(void *data)
 	}
 }
 
-static void *filter_create(obs_data_t settings, obs_source_t source)
+static void *filter_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct test_filter *tf = bzalloc(sizeof(struct test_filter));
 	char *effect_file;
@@ -47,7 +47,7 @@ static void *filter_create(obs_data_t settings, obs_source_t source)
 	return tf;
 }
 
-static void filter_render(void *data, gs_effect_t effect)
+static void filter_render(void *data, gs_effect_t *effect)
 {
 	struct test_filter *tf = data;
 	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,

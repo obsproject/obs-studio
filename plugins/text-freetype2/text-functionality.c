@@ -94,7 +94,7 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 
 	obs_enter_graphics();
 	if (srcdata->vbuf != NULL) {
-		gs_vertbuffer_t tmpvbuf = srcdata->vbuf;
+		gs_vertbuffer_t *tmpvbuf = srcdata->vbuf;
 		srcdata->vbuf = NULL;
 		gs_vertexbuffer_destroy(tmpvbuf);
 	}
@@ -298,7 +298,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		obs_enter_graphics();
 
 		if (srcdata->tex != NULL) {
-			gs_texture_t tmp_texture = NULL;
+			gs_texture_t *tmp_texture = NULL;
 			tmp_texture = srcdata->tex;
 			srcdata->tex = NULL;
 			gs_texture_destroy(tmp_texture);

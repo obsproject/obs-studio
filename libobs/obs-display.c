@@ -44,7 +44,7 @@ bool obs_display_init(struct obs_display *display,
 	return true;
 }
 
-obs_display_t obs_display_create(struct gs_init_data *graphics_data)
+obs_display_t *obs_display_create(struct gs_init_data *graphics_data)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
@@ -71,7 +71,7 @@ obs_display_t obs_display_create(struct gs_init_data *graphics_data)
 	return display;
 }
 
-void obs_display_free(obs_display_t display)
+void obs_display_free(obs_display_t *display)
 {
 	pthread_mutex_destroy(&display->draw_callbacks_mutex);
 	da_free(display->draw_callbacks);
@@ -82,7 +82,7 @@ void obs_display_free(obs_display_t display)
 	}
 }
 
-void obs_display_destroy(obs_display_t display)
+void obs_display_destroy(obs_display_t *display)
 {
 	if (display) {
 		pthread_mutex_lock(&obs->data.displays_mutex);
@@ -99,7 +99,7 @@ void obs_display_destroy(obs_display_t display)
 	}
 }
 
-void obs_display_resize(obs_display_t display, uint32_t cx, uint32_t cy)
+void obs_display_resize(obs_display_t *display, uint32_t cx, uint32_t cy)
 {
 	if (!display) return;
 
@@ -112,7 +112,7 @@ void obs_display_resize(obs_display_t display, uint32_t cx, uint32_t cy)
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 }
 
-void obs_display_add_draw_callback(obs_display_t display,
+void obs_display_add_draw_callback(obs_display_t *display,
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param)
 {
@@ -125,7 +125,7 @@ void obs_display_add_draw_callback(obs_display_t display,
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 }
 
-void obs_display_remove_draw_callback(obs_display_t display,
+void obs_display_remove_draw_callback(obs_display_t *display,
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param)
 {

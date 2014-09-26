@@ -43,7 +43,7 @@ private:
 	bool         mouseOverItems = false;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
-	static bool DrawSelectedItem(obs_scene_t scene, obs_sceneitem_t item,
+	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param);
 
 	static OBSSceneItem GetItemAtPos(const vec2 &pos, bool selectBelow);

@@ -95,8 +95,8 @@ void xcursor_tick(xcursor_t *data) {
 }
 
 void xcursor_render(xcursor_t *data) {
-	gs_effect_t effect  = gs_get_effect();
-	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_t *effect  = gs_get_effect();
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, data->tex);
 
 	gs_matrix_push();

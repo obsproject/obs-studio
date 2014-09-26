@@ -32,7 +32,7 @@
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 
 struct flv_output {
-	obs_output_t output;
+	obs_output_t *output;
 	struct dstr  path;
 	FILE         *file;
 	bool         active;
@@ -57,7 +57,7 @@ static void flv_output_destroy(void *data)
 	bfree(stream);
 }
 
-static void *flv_output_create(obs_data_t settings, obs_output_t output)
+static void *flv_output_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct flv_output *stream = bzalloc(sizeof(struct flv_output));
 	stream->output = output;
@@ -112,8 +112,8 @@ static void write_meta_data(struct flv_output *stream)
 
 static void write_audio_header(struct flv_output *stream)
 {
-	obs_output_t  context  = stream->output;
-	obs_encoder_t aencoder = obs_output_get_audio_encoder(context);
+	obs_output_t  *context  = stream->output;
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
 	uint8_t       *header;
 
 	struct encoder_packet packet   = {
@@ -128,8 +128,8 @@ static void write_audio_header(struct flv_output *stream)
 
 static void write_video_header(struct flv_output *stream)
 {
-	obs_output_t  context  = stream->output;
-	obs_encoder_t vencoder = obs_output_get_video_encoder(context);
+	obs_output_t  *context  = stream->output;
+	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
 	uint8_t       *header;
 	size_t        size;
 
@@ -154,7 +154,7 @@ static void write_headers(struct flv_output *stream)
 static bool flv_output_start(void *data)
 {
 	struct flv_output *stream = data;
-	obs_data_t settings;
+	obs_data_t *settings;
 	const char *path;
 
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
@@ -197,9 +197,9 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 }
 
-static obs_properties_t flv_output_properties(void)
+static obs_properties_t *flv_output_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_text(props, "path",
 			obs_module_text("FLVOutput.FilePath"),

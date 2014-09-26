@@ -97,7 +97,7 @@ struct os_cpu_usage_info {
 	DWORD core_count;
 };
 
-os_cpu_usage_info_t os_cpu_usage_info_start(void)
+os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 {
 	struct os_cpu_usage_info *info = bzalloc(sizeof(*info));
 	SYSTEM_INFO           si;
@@ -112,7 +112,7 @@ os_cpu_usage_info_t os_cpu_usage_info_start(void)
 	return info;
 }
 
-double os_cpu_usage_info_query(os_cpu_usage_info_t info)
+double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 {
 	union time_data cur_time, cur_sys_time, cur_user_time;
 	FILETIME        dummy;
@@ -137,7 +137,7 @@ double os_cpu_usage_info_query(os_cpu_usage_info_t info)
 	return percent * 100.0;
 }
 
-void os_cpu_usage_info_destroy(os_cpu_usage_info_t info)
+void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 {
 	if (info)
 		bfree(info);
@@ -231,7 +231,7 @@ struct os_dir {
 	struct os_dirent out;
 };
 
-os_dir_t os_opendir(const char *path)
+os_dir_t *os_opendir(const char *path)
 {
 	struct dstr     path_str = {0};
 	struct os_dir   *dir     = NULL;
@@ -264,7 +264,7 @@ static inline bool is_dir(WIN32_FIND_DATA *wfd)
 	return !!(wfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-struct os_dirent *os_readdir(os_dir_t dir)
+struct os_dirent *os_readdir(os_dir_t *dir)
 {
 	if (!dir)
 		return NULL;
@@ -284,7 +284,7 @@ struct os_dirent *os_readdir(os_dir_t dir)
 	return &dir->out;
 }
 
-void os_closedir(os_dir_t dir)
+void os_closedir(os_dir_t *dir)
 {
 	if (dir) {
 		FindClose(dir->handle);
@@ -314,13 +314,13 @@ static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
 	dstr_free(&name);
 }
 
-int os_glob(const char *pattern, int flags, os_glob_t *pglob)
+int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 {
 	DARRAY(struct os_globent) files;
 	HANDLE                    handle;
 	WIN32_FIND_DATA           wfd;
 	int                       ret = -1;
-	os_glob_t                 out = NULL;
+	os_glob_t                 *out = NULL;
 	wchar_t                   *w_path;
 
 	da_init(files);
@@ -353,7 +353,7 @@ int os_glob(const char *pattern, int flags, os_glob_t *pglob)
 	return ret;
 }
 
-void os_globfree(os_glob_t pglob)
+void os_globfree(os_glob_t *pglob)
 {
 	if (pglob) {
 		for (size_t i = 0; i < pglob->gl_pathc; i++)
@@ -433,13 +433,13 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 	return true;
 }
 
-os_performance_token_t os_request_high_performance(const char *reason)
+os_performance_token_t *os_request_high_performance(const char *reason)
 {
 	UNUSED_PARAMETER(reason);
 	return NULL;
 }
 
-void os_end_high_performance(os_performance_token_t token)
+void os_end_high_performance(os_performance_token_t *token)
 {
 	UNUSED_PARAMETER(token);
 }

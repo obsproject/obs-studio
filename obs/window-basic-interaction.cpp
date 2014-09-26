@@ -107,7 +107,7 @@ OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 	});
 }
 
-void OBSBasicInteraction::SourceRemoved(void *data, calldata_t params)
+void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *params)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicInteraction*>(data),
 			"close");

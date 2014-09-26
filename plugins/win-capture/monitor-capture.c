@@ -2,7 +2,7 @@
 #include "dc-capture.h"
 
 struct monitor_capture {
-	obs_source_t      source;
+	obs_source_t      *source;
 
 	int               monitor;
 	bool              capture_cursor;
@@ -10,7 +10,7 @@ struct monitor_capture {
 
 	struct dc_capture data;
 
-	gs_effect_t       opaque_effect;
+	gs_effect_t       *opaque_effect;
 };
 
 struct monitor_info {
@@ -53,7 +53,7 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 }
 
 static void update_monitor(struct monitor_capture *capture,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	struct monitor_info monitor = {0};
 	uint32_t width, height;
@@ -72,7 +72,7 @@ static void update_monitor(struct monitor_capture *capture,
 }
 
 static inline void update_settings(struct monitor_capture *capture,
-		obs_data_t settings)
+		obs_data_t *settings)
 {
 	capture->capture_cursor = obs_data_get_bool(settings, "capture_cursor");
 	capture->compatibility  = obs_data_get_bool(settings, "compatibility");
@@ -102,17 +102,17 @@ static void monitor_capture_destroy(void *data)
 	bfree(capture);
 }
 
-static void monitor_capture_defaults(obs_data_t settings)
+static void monitor_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "monitor", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 	obs_data_set_default_bool(settings, "compatibility", false);
 }
 
-static void *monitor_capture_create(obs_data_t settings, obs_source_t source)
+static void *monitor_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct monitor_capture *capture;
-	gs_effect_t opaque_effect = create_opaque_effect();
+	gs_effect_t *opaque_effect = create_opaque_effect();
 
 	if (!opaque_effect)
 		return NULL;
@@ -137,7 +137,7 @@ static void monitor_capture_tick(void *data, float seconds)
 	UNUSED_PARAMETER(seconds);
 }
 
-static void monitor_capture_render(void *data, gs_effect_t effect)
+static void monitor_capture_render(void *data, gs_effect_t *effect)
 {
 	struct monitor_capture *capture = data;
 	dc_capture_render(&capture->data, capture->opaque_effect);

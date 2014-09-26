@@ -87,10 +87,10 @@ static uint32_t ft2_source_get_height(void *data)
 	return srcdata->cy;
 }
 
-static obs_properties_t ft2_source_properties(void)
+static obs_properties_t *ft2_source_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
-	//obs_property_t prop;
+	obs_properties_t *props = obs_properties_create();
+	//obs_property_t *prop;
 
 	// TODO:
 	//	Scrolling. Can't think of a way to do it with the render
@@ -184,7 +184,7 @@ static void ft2_source_destroy(void *data)
 	bfree(srcdata);
 }
 
-static void ft2_source_render(void *data, gs_effect_t effect)
+static void ft2_source_render(void *data, gs_effect_t *effect)
 {
 	struct ft2_source *srcdata = data;
 	if (srcdata == NULL) return;
@@ -240,10 +240,10 @@ static bool init_font(struct ft2_source *srcdata)
 	return FT_New_Face(ft2_lib, path, index, &srcdata->font_face) == 0;
 }
 
-static void ft2_source_update(void *data, obs_data_t settings)
+static void ft2_source_update(void *data, obs_data_t *settings)
 {
 	struct ft2_source *srcdata = data;
-	obs_data_t font_obj = obs_data_get_obj(settings, "font");
+	obs_data_t *font_obj = obs_data_get_obj(settings, "font");
 	bool vbuf_needs_update = false;
 	bool word_wrap = false;
 	uint32_t color[2];
@@ -410,10 +410,10 @@ error:
 #define DEFAULT_FACE "Sans Serif"
 #endif
 
-static void *ft2_source_create(obs_data_t settings, obs_source_t source)
+static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct ft2_source *srcdata = bzalloc(sizeof(struct ft2_source));
-	obs_data_t font_obj = obs_data_create();
+	obs_data_t *font_obj = obs_data_create();
 	srcdata->src = source;
 
 	srcdata->font_size = 32;

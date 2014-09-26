@@ -56,7 +56,7 @@ struct gs_effect_param {
 	DARRAY(uint8_t) cur_val;
 	DARRAY(uint8_t) default_val;
 
-	gs_effect_t effect;
+	gs_effect_t *effect;
 
 	/*char *full_name;
 	float scroller_min, scroller_max, scroller_inc, scroller_mul;*/
@@ -75,22 +75,22 @@ static inline void effect_param_free(struct gs_effect_param *param)
 	da_free(param->default_val);
 }
 
-EXPORT void effect_param_parse_property(gs_eparam_t param,
+EXPORT void effect_param_parse_property(gs_eparam_t *param,
 		const char *property);
 
 /* ------------------------------------------------------------------------- */
 
 struct pass_shaderparam {
 	struct gs_effect_param *eparam;
-	gs_sparam_t sparam;
+	gs_sparam_t *sparam;
 };
 
 struct gs_effect_pass {
 	char *name;
 	enum effect_section section;
 
-	gs_shader_t vertshader;
-	gs_shader_t pixelshader;
+	gs_shader_t *vertshader;
+	gs_shader_t *pixelshader;
 	DARRAY(struct pass_shaderparam) vertshader_params;
 	DARRAY(struct pass_shaderparam) pixelshader_params;
 };
@@ -145,16 +145,16 @@ struct gs_effect {
 	struct gs_effect_technique *cur_technique;
 	struct gs_effect_pass *cur_pass;
 
-	gs_eparam_t view_proj, world, scale;
-	graphics_t graphics;
+	gs_eparam_t *view_proj, *world, *scale;
+	graphics_t *graphics;
 };
 
-static inline void effect_init(gs_effect_t effect)
+static inline void effect_init(gs_effect_t *effect)
 {
 	memset(effect, 0, sizeof(struct gs_effect));
 }
 
-static inline void effect_free(gs_effect_t effect)
+static inline void effect_free(gs_effect_t *effect)
 {
 	size_t i;
 	for (i = 0; i < effect->params.num; i++)
@@ -171,9 +171,10 @@ static inline void effect_free(gs_effect_t effect)
 	effect->effect_dir = NULL;
 }
 
-EXPORT void effect_upload_params(gs_effect_t effect, bool changed_only);
-EXPORT void effect_upload_shader_params(gs_effect_t effect, gs_shader_t shader,
-		struct darray *pass_params, bool changed_only);
+EXPORT void effect_upload_params(gs_effect_t *effect, bool changed_only);
+EXPORT void effect_upload_shader_params(gs_effect_t *effect,
+		gs_shader_t *shader, struct darray *pass_params,
+		bool changed_only);
 
 #ifdef __cplusplus
 }

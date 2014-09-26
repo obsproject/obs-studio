@@ -175,11 +175,12 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 	capture->textures_written[capture->cur_tex] = true;
 }
 
-static void draw_texture(struct dc_capture *capture, int id, gs_effect_t effect)
+static void draw_texture(struct dc_capture *capture, int id,
+		gs_effect_t *effect)
 {
-	gs_texture_t   texture = capture->textures[id];
-	gs_technique_t tech    = gs_effect_get_technique(effect, "Draw");
-	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
+	gs_texture_t   *texture = capture->textures[id];
+	gs_technique_t *tech    = gs_effect_get_technique(effect, "Draw");
+	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes;
 
 	gs_effect_set_texture(image, texture);
@@ -198,7 +199,7 @@ static void draw_texture(struct dc_capture *capture, int id, gs_effect_t effect)
 	gs_technique_end(tech);
 }
 
-void dc_capture_render(struct dc_capture *capture, gs_effect_t effect)
+void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect)
 {
 	int last_tex = (capture->cur_tex > 0) ?
 		capture->cur_tex-1 : capture->num_textures-1;
@@ -210,9 +211,9 @@ void dc_capture_render(struct dc_capture *capture, gs_effect_t effect)
 		draw_texture(capture, last_tex, effect);
 }
 
-gs_effect_t create_opaque_effect(void)
+gs_effect_t *create_opaque_effect(void)
 {
-	gs_effect_t opaque_effect;
+	gs_effect_t *opaque_effect;
 	char *effect_file;
 	char *error_string = NULL;
 

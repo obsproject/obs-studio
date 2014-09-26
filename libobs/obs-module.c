@@ -56,7 +56,7 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 	return MODULE_SUCCESS;
 }
 
-int obs_open_module(obs_module_t *module, const char *path,
+int obs_open_module(obs_module_t **module, const char *path,
 		const char *data_path)
 {
 	struct obs_module mod = {0};
@@ -91,7 +91,7 @@ int obs_open_module(obs_module_t *module, const char *path,
 	return MODULE_SUCCESS;
 }
 
-bool obs_init_module(obs_module_t module)
+bool obs_init_module(obs_module_t *module)
 {
 	if (!module || !obs)
 		return false;
@@ -106,37 +106,37 @@ bool obs_init_module(obs_module_t module)
 	return module->loaded;
 }
 
-const char *obs_get_module_file_name(obs_module_t module)
+const char *obs_get_module_file_name(obs_module_t *module)
 {
 	return module ? module->file : NULL;
 }
 
-const char *obs_get_module_name(obs_module_t module)
+const char *obs_get_module_name(obs_module_t *module)
 {
 	return (module && module->name) ? module->name() : NULL;
 }
 
-const char *obs_get_module_author(obs_module_t module)
+const char *obs_get_module_author(obs_module_t *module)
 {
 	return (module && module->author) ? module->author() : NULL;
 }
 
-const char *obs_get_module_description(obs_module_t module)
+const char *obs_get_module_description(obs_module_t *module)
 {
 	return (module && module->description) ? module->description() : NULL;
 }
 
-const char *obs_get_module_binary_path(obs_module_t module)
+const char *obs_get_module_binary_path(obs_module_t *module)
 {
 	return module ? module->bin_path : NULL;
 }
 
-const char *obs_get_module_data_path(obs_module_t module)
+const char *obs_get_module_data_path(obs_module_t *module)
 {
 	return module ? module->data_path : NULL;
 }
 
-char *obs_find_module_file(obs_module_t module, const char *file)
+char *obs_find_module_file(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
 
@@ -166,7 +166,7 @@ void obs_add_module_path(const char *bin, const char *data)
 
 static void load_all_callback(void *param, const struct obs_module_info *info)
 {
-	obs_module_t module;
+	obs_module_t *module;
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	if (code != MODULE_SUCCESS) {
@@ -287,7 +287,7 @@ static void find_modules_in_path(struct obs_module_path *omp,
 	struct dstr search_path = {0};
 	char *module_start;
 	bool search_directories = false;
-	os_glob_t gi;
+	os_glob_t *gi;
 
 	dstr_copy(&search_path, omp->bin);
 
@@ -365,11 +365,11 @@ void free_module(struct obs_module *mod)
 	bfree(mod);
 }
 
-lookup_t obs_module_load_locale(obs_module_t module, const char *default_locale,
-		const char *locale)
+lookup_t *obs_module_load_locale(obs_module_t *module,
+		const char *default_locale, const char *locale)
 {
 	struct dstr str    = {0};
-	lookup_t    lookup = NULL;
+	lookup_t    *lookup = NULL;
 
 	if (!module || !default_locale || !locale) {
 		blog(LOG_WARNING, "obs_module_load_locale: Invalid parameters");

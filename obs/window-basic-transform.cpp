@@ -5,7 +5,7 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 static OBSSceneItem FindASelectedItem(OBSScene scene)
 {
-	auto func = [] (obs_scene_t scene, obs_sceneitem_t item, void *param)
+	auto func = [] (obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 	{
 		OBSSceneItem &dst = *reinterpret_cast<OBSSceneItem*>(param);
 
@@ -67,7 +67,7 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
-		signal_handler_t signal = obs_source_get_signal_handler(source);
+		signal_handler_t *signal = obs_source_get_signal_handler(source);
 
 		transformSignal.Connect(signal, "item_transform",
 				OBSSceneItemTransform, this);
@@ -95,11 +95,11 @@ void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 	setEnabled(!!item);
 }
 
-void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t data)
+void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform*>(param);
 	uint32_t channel = (uint32_t)calldata_int(data, "channel");
-	OBSSource source = (obs_source_t)calldata_ptr(data, "source");
+	OBSSource source = (obs_source_t*)calldata_ptr(data, "source");
 
 	if (channel == 0) {
 		OBSScene scene = obs_scene_from_source(source);
@@ -112,39 +112,39 @@ void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t data)
 	}
 }
 
-void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t data)
+void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform*>(param);
-	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(data, "item");
+	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(data, "item");
 
 	if (item == window->item && !window->ignoreTransformSignal)
 		QMetaObject::invokeMethod(window, "RefreshControls");
 }
 
-void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t data)
+void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform*>(param);
-	OBSScene     scene = (obs_scene_t)calldata_ptr(data, "scene");
-	OBSSceneItem item = (obs_sceneitem_t)calldata_ptr(data, "item");
+	OBSScene     scene = (obs_scene_t*)calldata_ptr(data, "scene");
+	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(data, "item");
 
 	if (item == window->item)
 		window->SetItem(FindASelectedItem(scene));
 }
 
-void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t data)
+void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform*>(param);
-	OBSSceneItem item  = (obs_sceneitem_t)calldata_ptr(data, "item");
+	OBSSceneItem item  = (obs_sceneitem_t*)calldata_ptr(data, "item");
 
 	if (item != window->item)
 		window->SetItem(item);
 }
 
-void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t data)
+void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform*>(param);
-	OBSScene     scene = (obs_scene_t)calldata_ptr(data, "scene");
-	OBSSceneItem item  = (obs_sceneitem_t)calldata_ptr(data, "item");
+	OBSScene     scene = (obs_scene_t*)calldata_ptr(data, "scene");
+	OBSSceneItem item  = (obs_sceneitem_t*)calldata_ptr(data, "item");
 
 	if (item == window->item)
 		window->SetItem(FindASelectedItem(scene));
@@ -183,7 +183,7 @@ void OBSBasicTransform::RefreshControls()
 	obs_transform_info osi;
 	obs_sceneitem_get_info(item, &osi);
 
-	obs_source_t source = obs_sceneitem_get_source(item);
+	obs_source_t *source = obs_sceneitem_get_source(item);
 	float width  = float(obs_source_get_width(source));
 	float height = float(obs_source_get_height(source));
 
@@ -237,7 +237,7 @@ void OBSBasicTransform::OnControlChanged()
 	if (ignoreItemChange)
 		return;
 
-	obs_source_t source = obs_sceneitem_get_source(item);
+	obs_source_t *source = obs_sceneitem_get_source(item);
 	double width  = double(obs_source_get_width(source));
 	double height = double(obs_source_get_height(source));
 

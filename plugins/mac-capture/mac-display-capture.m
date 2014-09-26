@@ -22,12 +22,12 @@ static inline bool requires_window(enum crop_mode mode)
 }
 
 struct display_capture {
-	obs_source_t source;
+	obs_source_t *source;
 
-	gs_samplerstate_t sampler;
-	gs_effect_t draw_effect;
-	gs_texture_t tex;
-	gs_vertbuffer_t vertbuf;
+	gs_samplerstate_t *sampler;
+	gs_effect_t *draw_effect;
+	gs_texture_t *tex;
+	gs_vertbuffer_t *vertbuf;
 
 	NSScreen *screen;
 	unsigned display;
@@ -42,7 +42,7 @@ struct display_capture {
 	bool on_screen;
 	bool hide_when_minimized;
 
-	os_event_t disp_finished;
+	os_event_t *disp_finished;
 	CGDisplayStreamRef disp;
 	IOSurfaceRef current, prev;
 
@@ -249,10 +249,10 @@ bool init_vertbuf(struct display_capture *dc)
 	return dc->vertbuf != NULL;
 }
 
-void load_crop(struct display_capture *dc, obs_data_t settings);
+void load_crop(struct display_capture *dc, obs_data_t *settings);
 
-static void *display_capture_create(obs_data_t settings,
-		obs_source_t source)
+static void *display_capture_create(obs_data_t *settings,
+		obs_source_t *source)
 {
 	UNUSED_PARAMETER(source);
 	UNUSED_PARAMETER(settings);
@@ -395,7 +395,7 @@ cleanup:
 	}
 }
 
-static void display_capture_video_render(void *data, gs_effect_t effect)
+static void display_capture_video_render(void *data, gs_effect_t *effect)
 {
 	UNUSED_PARAMETER(effect);
 
@@ -408,7 +408,7 @@ static void display_capture_video_render(void *data, gs_effect_t effect)
 	gs_load_vertexbuffer(dc->vertbuf);
 	gs_load_indexbuffer(NULL);
 	gs_load_samplerstate(dc->sampler, 0);
-	gs_technique_t tech = gs_effect_get_technique(dc->draw_effect,
+	gs_technique_t *tech = gs_effect_get_technique(dc->draw_effect,
 			"Default");
 	gs_effect_set_texture(gs_effect_get_param_by_idx(dc->draw_effect, 1),
 			dc->tex);
@@ -478,7 +478,7 @@ static uint32_t display_capture_getheight(void *data)
 	return 0;
 }
 
-static void display_capture_defaults(obs_data_t settings)
+static void display_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "display", 0);
 	obs_data_set_default_bool(settings, "show_cursor", true);
@@ -487,14 +487,14 @@ static void display_capture_defaults(obs_data_t settings)
 	window_defaults(settings);
 }
 
-void load_crop_mode(enum crop_mode *mode, obs_data_t settings)
+void load_crop_mode(enum crop_mode *mode, obs_data_t *settings)
 {
 	*mode = obs_data_get_int(settings, "crop_mode");
 	if (!crop_mode_valid(*mode))
 		*mode = CROP_NONE;
 }
 
-void load_crop(struct display_capture *dc, obs_data_t settings)
+void load_crop(struct display_capture *dc, obs_data_t *settings)
 {
 	load_crop_mode(&dc->crop, settings);
 
@@ -525,7 +525,7 @@ void load_crop(struct display_capture *dc, obs_data_t settings)
 #undef LOAD_CROP_VAR
 }
 
-static void display_capture_update(void *data, obs_data_t settings)
+static void display_capture_update(void *data, obs_data_t *settings)
 {
 	struct display_capture *dc = data;
 
@@ -549,8 +549,8 @@ static void display_capture_update(void *data, obs_data_t settings)
 	obs_leave_graphics();
 }
 
-static bool switch_crop_mode(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool switch_crop_mode(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 
@@ -590,11 +590,11 @@ static const char *crop_names[] = {
 #ifndef COUNTOF
 #define COUNTOF(x) (sizeof(x)/sizeof(x[0]))
 #endif
-static obs_properties_t display_capture_properties(void)
+static obs_properties_t *display_capture_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t list = obs_properties_add_list(props,
+	obs_property_t *list = obs_properties_add_list(props,
 			"display", obs_module_text("DisplayCapture.Display"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
@@ -607,7 +607,7 @@ static obs_properties_t display_capture_properties(void)
 	obs_properties_add_bool(props, "show_cursor",
 			obs_module_text("DisplayCapture.ShowCursor"));
 
-	obs_property_t crop = obs_properties_add_list(props, "crop_mode",
+	obs_property_t *crop = obs_properties_add_list(props, "crop_mode",
 			obs_module_text("CropMode"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_modified_callback(crop, switch_crop_mode);
@@ -620,7 +620,7 @@ static obs_properties_t display_capture_properties(void)
 	add_window_properties(props);
 	show_window_properties(props, false);
 
-	obs_property_t p;
+	obs_property_t *p;
 	const char *name;
 	float min;
 #define LOAD_CROP_VAR(var, mode) \

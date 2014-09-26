@@ -25,7 +25,7 @@ struct ShaderParser : shader_parser {
 };
 
 struct ShaderProcessor {
-	gs_device_t device;
+	gs_device_t *device;
 	ShaderParser parser;
 
 	void BuildInputLayout(vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
@@ -34,7 +34,7 @@ struct ShaderProcessor {
 	void BuildString(string &outputString);
 	void Process(const char *shader_string, const char *file);
 
-	inline ShaderProcessor(gs_device_t device) : device(device)
+	inline ShaderProcessor(gs_device_t *device) : device(device)
 	{
 	}
 };

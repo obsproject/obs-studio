@@ -180,7 +180,7 @@ void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)
 		AddParam(parser.params.array[i], params, texCounter);
 }
 
-static inline void AddSampler(gs_device_t device, shader_sampler &sampler,
+static inline void AddSampler(gs_device_t *device, shader_sampler &sampler,
 		vector<ShaderSampler> &samplers)
 {
 	gs_sampler_info si;

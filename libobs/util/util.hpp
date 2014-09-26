@@ -49,7 +49,7 @@ public:
 };
 
 class ConfigFile {
-	config_t config;
+	config_t *config;
 
 	ConfigFile(ConfigFile const&) = delete;
 	ConfigFile &operator=(ConfigFile const&) = delete;
@@ -89,32 +89,32 @@ public:
 		config = NULL;
 	}
 
-	inline operator config_t() const {return config;}
+	inline operator config_t*() const {return config;}
 };
 
 class TextLookup {
-	lookup_t lookup;
+	lookup_t *lookup;
 
 	TextLookup(TextLookup const&) = delete;
 
 	TextLookup &operator=(TextLookup const&) = delete;
 
 public:
-	inline TextLookup(lookup_t lookup=nullptr) : lookup(lookup) {}
+	inline TextLookup(lookup_t *lookup=nullptr) : lookup(lookup) {}
 	inline TextLookup(TextLookup &&other) : lookup(other.lookup)
 	{
 		other.lookup = nullptr;
 	}
 	inline ~TextLookup() {text_lookup_destroy(lookup);}
 
-	inline TextLookup& operator=(lookup_t val)
+	inline TextLookup& operator=(lookup_t *val)
 	{
 		text_lookup_destroy(lookup);
 		lookup = val;
 		return *this;
 	}
 
-	inline operator lookup_t() const {return lookup;}
+	inline operator lookup_t*() const {return lookup;}
 
 	inline const char *GetString(const char *lookupVal) const
 	{

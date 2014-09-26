@@ -30,7 +30,7 @@ typedef struct {
 	unsigned long last_serial;
 	uint_fast32_t last_width;
 	uint_fast32_t last_height;
-	gs_texture_t tex;
+	gs_texture_t *tex;
 
 	int_fast32_t x, y;
 	int_fast32_t x_org;

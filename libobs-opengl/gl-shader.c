@@ -108,7 +108,7 @@ static inline bool gl_add_params(struct gs_shader *shader,
 static inline void gl_add_sampler(struct gs_shader *shader,
 		struct shader_sampler *sampler)
 {
-	gs_samplerstate_t new_sampler;
+	gs_samplerstate_t *new_sampler;
 	struct gs_sampler_info info;
 
 	shader_sampler_convert(sampler, &info);
@@ -236,7 +236,7 @@ static bool gl_shader_init(struct gs_shader *shader,
 	return success;
 }
 
-static struct gs_shader *shader_create(gs_device_t device,
+static struct gs_shader *shader_create(gs_device_t *device,
 		enum gs_shader_type type, const char *shader_str,
 		const char *file, char **error_string)
 {
@@ -262,7 +262,7 @@ static struct gs_shader *shader_create(gs_device_t device,
 	return shader;
 }
 
-gs_shader_t device_vertexshader_create(gs_device_t device,
+gs_shader_t *device_vertexshader_create(gs_device_t *device,
 		const char *shader, const char *file,
 		char **error_string)
 {
@@ -274,7 +274,7 @@ gs_shader_t device_vertexshader_create(gs_device_t device,
 	return ptr;
 }
 
-gs_shader_t device_pixelshader_create(gs_device_t device,
+gs_shader_t *device_pixelshader_create(gs_device_t *device,
 		const char *shader, const char *file,
 		char **error_string)
 {
@@ -309,7 +309,7 @@ static void remove_program_references(struct gs_shader *shader)
 	}
 }
 
-void gs_shader_destroy(gs_shader_t shader)
+void gs_shader_destroy(gs_shader_t *shader)
 {
 	size_t i;
 
@@ -338,18 +338,18 @@ void gs_shader_destroy(gs_shader_t shader)
 	bfree(shader);
 }
 
-int gs_shader_get_num_params(gs_shader_t shader)
+int gs_shader_get_num_params(gs_shader_t *shader)
 {
 	return (int)shader->params.num;
 }
 
-gs_sparam_t gs_shader_get_param_by_idx(gs_shader_t shader, uint32_t param)
+gs_sparam_t *gs_shader_get_param_by_idx(gs_shader_t *shader, uint32_t param)
 {
 	assert(param < shader->params.num);
 	return shader->params.array+param;
 }
 
-gs_sparam_t gs_shader_get_param_by_name(gs_shader_t shader, const char *name)
+gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 {
 	size_t i;
 	for (i = 0; i < shader->params.num; i++) {
@@ -362,40 +362,40 @@ gs_sparam_t gs_shader_get_param_by_name(gs_shader_t shader, const char *name)
 	return NULL;
 }
 
-gs_sparam_t gs_shader_get_viewproj_matrix(gs_shader_t shader)
+gs_sparam_t *gs_shader_get_viewproj_matrix(gs_shader_t *shader)
 {
 	return shader->viewproj;
 }
 
-gs_sparam_t gs_shader_get_world_matrix(gs_shader_t shader)
+gs_sparam_t *gs_shader_get_world_matrix(gs_shader_t *shader)
 {
 	return shader->world;
 }
 
-void gs_shader_get_param_info(gs_sparam_t param,
+void gs_shader_get_param_info(gs_sparam_t *param,
 		struct gs_shader_param_info *info)
 {
 	info->type = param->type;
 	info->name = param->name;
 }
 
-void gs_shader_set_bool(gs_sparam_t param, bool val)
+void gs_shader_set_bool(gs_sparam_t *param, bool val)
 {
 	int int_val = val;
 	da_copy_array(param->cur_value, &int_val, sizeof(int_val));
 }
 
-void gs_shader_set_float(gs_sparam_t param, float val)
+void gs_shader_set_float(gs_sparam_t *param, float val)
 {
 	da_copy_array(param->cur_value, &val, sizeof(val));
 }
 
-void gs_shader_set_int(gs_sparam_t param, int val)
+void gs_shader_set_int(gs_sparam_t *param, int val)
 {
 	da_copy_array(param->cur_value, &val, sizeof(val));
 }
 
-void gs_shader_setmatrix3(gs_sparam_t param, const struct matrix3 *val)
+void gs_shader_setmatrix3(gs_sparam_t *param, const struct matrix3 *val)
 {
 	struct matrix4 mat;
 	matrix4_from_matrix3(&mat, val);
@@ -403,27 +403,27 @@ void gs_shader_setmatrix3(gs_sparam_t param, const struct matrix3 *val)
 	da_copy_array(param->cur_value, &mat, sizeof(mat));
 }
 
-void gs_shader_set_matrix4(gs_sparam_t param, const struct matrix4 *val)
+void gs_shader_set_matrix4(gs_sparam_t *param, const struct matrix4 *val)
 {
 	da_copy_array(param->cur_value, val, sizeof(*val));
 }
 
-void gs_shader_set_vec2(gs_sparam_t param, const struct vec2 *val)
+void gs_shader_set_vec2(gs_sparam_t *param, const struct vec2 *val)
 {
 	da_copy_array(param->cur_value, val->ptr, sizeof(*val));
 }
 
-void gs_shader_set_vec3(gs_sparam_t param, const struct vec3 *val)
+void gs_shader_set_vec3(gs_sparam_t *param, const struct vec3 *val)
 {
 	da_copy_array(param->cur_value, val->ptr, sizeof(*val));
 }
 
-void gs_shader_set_vec4(gs_sparam_t param, const struct vec4 *val)
+void gs_shader_set_vec4(gs_sparam_t *param, const struct vec4 *val)
 {
 	da_copy_array(param->cur_value, val->ptr, sizeof(*val));
 }
 
-void gs_shader_set_texture(gs_sparam_t param, gs_texture_t val)
+void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val)
 {
 	param->texture = val;
 }
@@ -681,7 +681,7 @@ void gs_program_destroy(struct gs_program *program)
 	bfree(program);
 }
 
-void gs_shader_set_val(gs_sparam_t param, const void *val, size_t size)
+void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 {
 	int count = param->array_count;
 	size_t expected_size = 0;
@@ -711,12 +711,12 @@ void gs_shader_set_val(gs_sparam_t param, const void *val, size_t size)
 	}
 
 	if (param->type == GS_SHADER_PARAM_TEXTURE)
-		gs_shader_set_texture(param, *(gs_texture_t*)val);
+		gs_shader_set_texture(param, *(gs_texture_t**)val);
 	else
 		da_copy_array(param->cur_value, val, size);
 }
 
-void gs_shader_set_default(gs_sparam_t param)
+void gs_shader_set_default(gs_sparam_t *param)
 {
 	gs_shader_set_val(param, param->def_value.array, param->def_value.num);
 }

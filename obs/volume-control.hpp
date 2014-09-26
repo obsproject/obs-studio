@@ -37,8 +37,8 @@ private:
 	float           levelTotal;
 	float           levelCount;
 
-	static void OBSVolumeChanged(void *param, calldata_t calldata);
-	static void OBSVolumeLevel(void *data, calldata_t calldata);
+	static void OBSVolumeChanged(void *param, calldata_t *calldata);
+	static void OBSVolumeLevel(void *data, calldata_t *calldata);
 
 private slots:
 	void VolumeChanged(int vol);
@@ -49,7 +49,7 @@ public:
 	VolControl(OBSSource source);
 	~VolControl();
 
-	inline obs_source_t GetSource() const {return source;}
+	inline obs_source_t *GetSource() const {return source;}
 
 	QString GetName() const;
 	void SetName(const QString &newName);

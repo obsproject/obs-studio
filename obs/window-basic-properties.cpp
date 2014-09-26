@@ -71,7 +71,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 }
 
-void OBSBasicProperties::SourceRemoved(void *data, calldata_t params)
+void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data),
 			"close");

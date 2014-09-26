@@ -39,7 +39,7 @@ NSArray *enumerate_windows(void)
 #define WAIT_TIME_US WAIT_TIME_MS * 1000
 #define WAIT_TIME_NS WAIT_TIME_US * 1000
 
-bool find_window(cocoa_window_t cw, obs_data_t settings, bool force)
+bool find_window(cocoa_window_t cw, obs_data_t *settings, bool force)
 {
 	if (!force && cw->next_search_time > os_gettime_ns())
 		return false;
@@ -72,7 +72,7 @@ invalid_name:
 	return false;
 }
 
-void init_window(cocoa_window_t cw, obs_data_t settings)
+void init_window(cocoa_window_t cw, obs_data_t *settings)
 {
 	pthread_mutex_init(&cw->name_lock, NULL);
 
@@ -90,7 +90,7 @@ void destroy_window(cocoa_window_t cw)
 	[cw->window_name release];
 }
 
-void update_window(cocoa_window_t cw, obs_data_t settings)
+void update_window(cocoa_window_t cw, obs_data_t *settings)
 {
 	pthread_mutex_lock(&cw->name_lock);
 	[cw->owner_name  release];
@@ -124,8 +124,8 @@ static inline NSDictionary *find_window_dict(NSArray *arr, int window_id)
 	return nil;
 }
 
-static inline bool window_changed_internal(obs_property_t p,
-		obs_data_t settings)
+static inline bool window_changed_internal(obs_property_t *p,
+		obs_data_t *settings)
 {
 	int       window_id    = obs_data_get_int(settings, "window");
 	NSString *window_owner = @(obs_data_get_string(settings, "owner_name"));
@@ -187,8 +187,8 @@ static inline bool window_changed_internal(obs_property_t p,
 	return true;
 }
 
-static bool window_changed(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool window_changed(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(props);
 
@@ -197,8 +197,8 @@ static bool window_changed(obs_properties_t props, obs_property_t p,
 	}
 }
 
-static bool toggle_empty_names(obs_properties_t props, obs_property_t p,
-		obs_data_t settings)
+static bool toggle_empty_names(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 
@@ -206,26 +206,26 @@ static bool toggle_empty_names(obs_properties_t props, obs_property_t p,
 			settings);
 }
 
-void window_defaults(obs_data_t settings)
+void window_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "window", kCGNullWindowID);
 	obs_data_set_default_bool(settings, "show_empty_names", false);
 }
 
-void add_window_properties(obs_properties_t props)
+void add_window_properties(obs_properties_t *props)
 {
-	obs_property_t window_list = obs_properties_add_list(props,
+	obs_property_t *window_list = obs_properties_add_list(props,
 			"window", obs_module_text("WindowUtils.Window"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_modified_callback(window_list, window_changed);
 
-	obs_property_t empty = obs_properties_add_bool(props,
+	obs_property_t *empty = obs_properties_add_bool(props,
 			"show_empty_names",
 			obs_module_text("WindowUtils.ShowEmptyNames"));
 	obs_property_set_modified_callback(empty, toggle_empty_names);
 }
 
-void show_window_properties(obs_properties_t props, bool show)
+void show_window_properties(obs_properties_t *props, bool show)
 {
 	obs_property_set_visible(obs_properties_get(props, "window"), show);
 	obs_property_set_visible(

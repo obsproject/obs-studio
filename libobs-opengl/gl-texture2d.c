@@ -74,7 +74,7 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 	return success;
 }
 
-gs_texture_t device_texture_create(gs_device_t device, uint32_t width,
+gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 		uint32_t height, enum gs_color_format color_format,
 		uint32_t levels, const uint8_t **data, uint32_t flags)
 {
@@ -104,15 +104,15 @@ gs_texture_t device_texture_create(gs_device_t device, uint32_t width,
 			goto fail;
 	}
 
-	return (gs_texture_t)tex;
+	return (gs_texture_t*)tex;
 
 fail:
-	gs_texture_destroy((gs_texture_t)tex);
+	gs_texture_destroy((gs_texture_t*)tex);
 	blog(LOG_ERROR, "device_texture_create (GL) failed");
 	return NULL;
 }
 
-static inline bool is_texture_2d(gs_texture_t tex, const char *func)
+static inline bool is_texture_2d(gs_texture_t *tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;
 	if (!is_tex2d)
@@ -120,7 +120,7 @@ static inline bool is_texture_2d(gs_texture_t tex, const char *func)
 	return is_tex2d;
 }
 
-void gs_texture_destroy(gs_texture_t tex)
+void gs_texture_destroy(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!tex)
@@ -141,7 +141,7 @@ void gs_texture_destroy(gs_texture_t tex)
 	bfree(tex);
 }
 
-uint32_t gs_texture_get_width(gs_texture_t tex)
+uint32_t gs_texture_get_width(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_get_width"))
@@ -150,7 +150,7 @@ uint32_t gs_texture_get_width(gs_texture_t tex)
 	return tex2d->width;
 }
 
-uint32_t gs_texture_get_height(gs_texture_t tex)
+uint32_t gs_texture_get_height(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_get_height"))
@@ -159,12 +159,12 @@ uint32_t gs_texture_get_height(gs_texture_t tex)
 	return tex2d->height;
 }
 
-enum gs_color_format gs_texture_get_color_format(gs_texture_t tex)
+enum gs_color_format gs_texture_get_color_format(gs_texture_t *tex)
 {
 	return tex->format;
 }
 
-bool gs_texture_map(gs_texture_t tex, uint8_t **ptr, uint32_t *linesize)
+bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 
@@ -194,7 +194,7 @@ fail:
 	return false;
 }
 
-void gs_texture_unmap(gs_texture_t tex)
+void gs_texture_unmap(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_unmap"))
@@ -226,7 +226,7 @@ failed:
 	blog(LOG_ERROR, "gs_texture_unmap (GL) failed");
 }
 
-bool gs_texture_is_rect(gs_texture_t tex)
+bool gs_texture_is_rect(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_unmap")) {
@@ -237,7 +237,7 @@ bool gs_texture_is_rect(gs_texture_t tex)
 	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
 }
 
-void *gs_texture_get_obj(gs_texture_t tex)
+void *gs_texture_get_obj(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d*)tex;
 	if (!is_texture_2d(tex, "gs_texture_unmap")) {

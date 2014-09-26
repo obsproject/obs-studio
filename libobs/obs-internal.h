@@ -62,7 +62,7 @@ struct obs_module {
 	void        (*set_locale)(const char *locale);
 	void        (*free_locale)(void);
 	uint32_t    (*ver)(void);
-	void        (*set_pointer)(obs_module_t module);
+	void        (*set_pointer)(obs_module_t *module);
 	const char *(*name)(void);
 	const char *(*description)(void);
 	const char *(*author)(void);
@@ -100,7 +100,7 @@ static inline bool check_path(const char *data, const char *path,
 
 struct obs_view {
 	pthread_mutex_t                 channels_mutex;
-	obs_source_t                    channels[MAX_CHANNELS];
+	obs_source_t                    *channels[MAX_CHANNELS];
 };
 
 extern bool obs_view_init(struct obs_view *view);
@@ -113,7 +113,7 @@ extern void obs_view_free(struct obs_view *view);
 struct obs_display {
 	bool                            size_changed;
 	uint32_t                        cx, cy;
-	gs_swapchain_t                  swap;
+	gs_swapchain_t                  *swap;
 	pthread_mutex_t                 draw_callbacks_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
 
@@ -130,23 +130,23 @@ extern void obs_display_free(struct obs_display *display);
 /* core */
 
 struct obs_core_video {
-	graphics_t                      graphics;
-	gs_stagesurf_t                  copy_surfaces[NUM_TEXTURES];
-	gs_texture_t                    render_textures[NUM_TEXTURES];
-	gs_texture_t                    output_textures[NUM_TEXTURES];
-	gs_texture_t                    convert_textures[NUM_TEXTURES];
+	graphics_t                      *graphics;
+	gs_stagesurf_t                  *copy_surfaces[NUM_TEXTURES];
+	gs_texture_t                    *render_textures[NUM_TEXTURES];
+	gs_texture_t                    *output_textures[NUM_TEXTURES];
+	gs_texture_t                    *convert_textures[NUM_TEXTURES];
 	bool                            textures_rendered[NUM_TEXTURES];
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
 	struct obs_source_frame         convert_frames[NUM_TEXTURES];
-	gs_effect_t                     default_effect;
-	gs_effect_t                     solid_effect;
-	gs_effect_t                     conversion_effect;
-	gs_stagesurf_t                  mapped_surface;
+	gs_effect_t                     *default_effect;
+	gs_effect_t                     *solid_effect;
+	gs_effect_t                     *conversion_effect;
+	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 
-	video_t                         video;
+	video_t                         *video;
 	pthread_t                       video_thread;
 	bool                            thread_initialized;
 
@@ -167,7 +167,7 @@ struct obs_core_video {
 
 struct obs_core_audio {
 	/* TODO: sound output subsystem */
-	audio_t                         audio;
+	audio_t                         *audio;
 
 	float                           user_volume;
 	float                           present_volume;
@@ -210,8 +210,8 @@ struct obs_core {
 	DARRAY(struct obs_modal_ui)     modal_ui_callbacks;
 	DARRAY(struct obs_modeless_ui)  modeless_ui_callbacks;
 
-	signal_handler_t                signals;
-	proc_handler_t                  procs;
+	signal_handler_t                *signals;
+	proc_handler_t                  *procs;
 
 	char                            *locale;
 
@@ -233,9 +233,9 @@ extern void *obs_video_thread(void *param);
 struct obs_context_data {
 	char                            *name;
 	void                            *data;
-	obs_data_t                      settings;
-	signal_handler_t                signals;
-	proc_handler_t                  procs;
+	obs_data_t                      *settings;
+	signal_handler_t                *signals;
+	proc_handler_t                  *procs;
 
 	DARRAY(char*)                   rename_cache;
 	pthread_mutex_t                 rename_cache_mutex;
@@ -247,7 +247,7 @@ struct obs_context_data {
 
 extern bool obs_context_data_init(
 		struct obs_context_data *context,
-		obs_data_t              settings,
+		obs_data_t              *settings,
 		const char              *name);
 extern void obs_context_data_free(struct obs_context_data *context);
 
@@ -298,8 +298,8 @@ struct obs_source {
 	/* audio */
 	bool                            audio_failed;
 	struct resample_info            sample_info;
-	audio_resampler_t               resampler;
-	audio_line_t                    audio_line;
+	audio_resampler_t               *resampler;
+	audio_line_t                    *audio_line;
 	pthread_mutex_t                 audio_mutex;
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
@@ -321,8 +321,8 @@ struct obs_source {
 	float                           transition_volume;
 
 	/* async video data */
-	gs_texture_t                    async_texture;
-	gs_texrender_t                  async_convert_texrender;
+	gs_texture_t                    *async_texture;
+	gs_texrender_t                  *async_convert_texrender;
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
 	enum gs_color_format            async_texture_format;
@@ -344,14 +344,14 @@ struct obs_source {
 	struct obs_source               *filter_target;
 	DARRAY(struct obs_source*)      filters;
 	pthread_mutex_t                 filter_mutex;
-	gs_texrender_t                  filter_texrender;
+	gs_texrender_t                  *filter_texrender;
 	bool                            rendering_filter;
 };
 
 extern const struct obs_source_info *find_source(struct darray *list,
 		const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
-		obs_data_t settings, const char *name);
+		obs_data_t *settings, const char *name);
 extern bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info);
 
@@ -362,9 +362,9 @@ enum view_type {
 	AUX_VIEW
 };
 
-extern void obs_source_activate(obs_source_t source, enum view_type type);
-extern void obs_source_deactivate(obs_source_t source, enum view_type type);
-extern void obs_source_video_tick(obs_source_t source, float seconds);
+extern void obs_source_activate(obs_source_t *source, enum view_type type);
+extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
+extern void obs_source_video_tick(obs_source_t *source, float seconds);
 
 
 /* ------------------------------------------------------------------------- */
@@ -389,7 +389,7 @@ struct obs_output {
 	int                             reconnect_retries;
 	bool                            reconnecting;
 	pthread_t                       reconnect_thread;
-	os_event_t                      reconnect_stop_event;
+	os_event_t                      *reconnect_stop_event;
 	volatile bool                   reconnect_thread_active;
 
 	uint32_t                        starting_frame_count;
@@ -398,11 +398,11 @@ struct obs_output {
 	int                             total_frames;
 
 	bool                            active;
-	video_t                         video;
-	audio_t                         audio;
-	obs_encoder_t                   video_encoder;
-	obs_encoder_t                   audio_encoder;
-	obs_service_t                   service;
+	video_t                         *video;
+	audio_t                         *audio;
+	obs_encoder_t                   *video_encoder;
+	obs_encoder_t                   *audio_encoder;
+	obs_service_t                   *service;
 
 	uint32_t                        scaled_width;
 	uint32_t                        scaled_height;
@@ -462,11 +462,11 @@ struct obs_encoder {
 	uint64_t                        start_ts;
 
 	pthread_mutex_t                 outputs_mutex;
-	DARRAY(obs_output_t)            outputs;
+	DARRAY(obs_output_t*)            outputs;
 
 	bool                            destroy_on_stop;
 
-	/* stores the video/audio media output pointer.  video_t or audio_t */
+	/* stores the video/audio media output pointer.  video_t *or audio_t **/
 	void                            *media;
 
 	pthread_mutex_t                 callbacks_mutex;
@@ -475,12 +475,12 @@ struct obs_encoder {
 
 extern struct obs_encoder_info *find_encoder(const char *id);
 
-extern bool obs_encoder_initialize(obs_encoder_t encoder);
+extern bool obs_encoder_initialize(obs_encoder_t *encoder);
 
-extern void obs_encoder_start(obs_encoder_t encoder,
+extern void obs_encoder_start(obs_encoder_t *encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
-extern void obs_encoder_stop(obs_encoder_t encoder,
+extern void obs_encoder_stop(obs_encoder_t *encoder,
 		void (*new_packet)(void *param, struct encoder_packet *packet),
 		void *param);
 

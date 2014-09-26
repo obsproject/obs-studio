@@ -70,15 +70,15 @@ EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);
 
 struct os_cpu_usage_info;
-typedef struct os_cpu_usage_info *os_cpu_usage_info_t;
+typedef struct os_cpu_usage_info os_cpu_usage_info_t;
 
-EXPORT os_cpu_usage_info_t os_cpu_usage_info_start(void);
-EXPORT double              os_cpu_usage_info_query(os_cpu_usage_info_t info);
-EXPORT void                os_cpu_usage_info_destroy(os_cpu_usage_info_t info);
+EXPORT os_cpu_usage_info_t *os_cpu_usage_info_start(void);
+EXPORT double              os_cpu_usage_info_query(os_cpu_usage_info_t *info);
+EXPORT void                os_cpu_usage_info_destroy(os_cpu_usage_info_t *info);
 
-typedef const void *os_performance_token_t;
-EXPORT os_performance_token_t os_request_high_performance(const char *reason);
-EXPORT void                   os_end_high_performance(os_performance_token_t);
+typedef const void os_performance_token_t;
+EXPORT os_performance_token_t *os_request_high_performance(const char *reason);
+EXPORT void                   os_end_high_performance(os_performance_token_t *);
 
 /**
  * Sleeps to a specific time (in nanoseconds).  Doesn't have to be super
@@ -95,16 +95,16 @@ EXPORT char *os_get_config_path(const char *name);
 EXPORT bool os_file_exists(const char *path);
 
 struct os_dir;
-typedef struct os_dir *os_dir_t;
+typedef struct os_dir os_dir_t;
 
 struct os_dirent {
 	char d_name[256];
 	bool directory;
 };
 
-EXPORT os_dir_t os_opendir(const char *path);
-EXPORT struct os_dirent *os_readdir(os_dir_t dir);
-EXPORT void os_closedir(os_dir_t dir);
+EXPORT os_dir_t *os_opendir(const char *path);
+EXPORT struct os_dirent *os_readdir(os_dir_t *dir);
+EXPORT void os_closedir(os_dir_t *dir);
 
 struct os_globent {
 	char *path;
@@ -116,12 +116,12 @@ struct os_glob_info {
 	struct os_globent *gl_pathv;
 };
 
-typedef struct os_glob_info *os_glob_t;
+typedef struct os_glob_info os_glob_t;
 
 /* currently no flags available */
 
-EXPORT int os_glob(const char *pattern, int flags, os_glob_t *pglob);
-EXPORT void os_globfree(os_glob_t pglob);
+EXPORT int os_glob(const char *pattern, int flags, os_glob_t **pglob);
+EXPORT void os_globfree(os_glob_t *pglob);
 
 EXPORT int os_unlink(const char *path);
 

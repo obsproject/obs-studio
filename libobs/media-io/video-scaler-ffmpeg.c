@@ -80,7 +80,7 @@ static inline int get_ffmpeg_range_type(enum video_range_type type)
 
 #define FIXED_1_0 (1<<16)
 
-int video_scaler_create(video_scaler_t *scaler_out,
+int video_scaler_create(video_scaler_t **scaler_out,
 		const struct video_scale_info *dst,
 		const struct video_scale_info *src,
 		enum video_scale_type type)
@@ -132,7 +132,7 @@ fail:
 	return VIDEO_SCALER_FAILED;
 }
 
-void video_scaler_destroy(video_scaler_t scaler)
+void video_scaler_destroy(video_scaler_t *scaler)
 {
 	if (scaler) {
 		sws_freeContext(scaler->swscale);
@@ -140,7 +140,7 @@ void video_scaler_destroy(video_scaler_t scaler)
 	}
 }
 
-bool video_scaler_scale(video_scaler_t scaler,
+bool video_scaler_scale(video_scaler_t *scaler,
 		uint8_t *output[], const uint32_t out_linesize[],
 		const uint8_t *const input[], const uint32_t in_linesize[])
 {

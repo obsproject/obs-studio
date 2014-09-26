@@ -919,7 +919,7 @@ static bool ep_compile(struct effect_parser *ep);
 
 extern const char *gs_preprocessor_name(void);
 
-bool ep_parse(struct effect_parser *ep, gs_effect_t effect,
+bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
               const char *effect_string, const char *file)
 {
 	bool success;
@@ -1320,7 +1320,7 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 
 static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 		struct darray *pass_params, struct darray *used_params,
-		gs_shader_t shader)
+		gs_shader_t *shader)
 {
 	size_t i;
 	darray_resize(sizeof(struct pass_shaderparam), pass_params,
@@ -1357,7 +1357,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	struct dstr location;
 	struct darray used_params; /* struct dstr */
 	struct darray *pass_params = NULL; /* struct pass_shaderparam */
-	gs_shader_t shader = NULL;
+	gs_shader_t *shader = NULL;
 	bool success = true;
 
 	dstr_init(&shader_str);

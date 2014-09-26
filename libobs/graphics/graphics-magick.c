@@ -14,9 +14,9 @@ void gs_free_image_deps()
 	MagickCoreTerminus();
 }
 
-gs_texture_t gs_texture_create_from_file(const char *file)
+gs_texture_t *gs_texture_create_from_file(const char *file)
 {
-	gs_texture_t  tex = NULL;
+	gs_texture_t  *tex = NULL;
 	ImageInfo     *info;
 	ExceptionInfo *exception;
 	Image         *image;

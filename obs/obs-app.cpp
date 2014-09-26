@@ -415,7 +415,7 @@ static void delete_oldest_log(void)
 	unsigned int maxLogs = (unsigned int)config_get_uint(
 			App()->GlobalConfig(), "General", "MaxLogs");
 
-	os_dir_t dir = os_opendir(logDir);
+	os_dir_t *dir = os_opendir(logDir);
 	if (dir) {
 		unsigned int count = 0;
 
@@ -450,7 +450,7 @@ static void get_last_log(void)
 {
 	BPtr<char>       logDir(os_get_config_path("obs-studio/logs"));
 	struct os_dirent *entry;
-	os_dir_t         dir        = os_opendir(logDir);
+	os_dir_t         *dir        = os_opendir(logDir);
 	uint64_t         highest_ts = 0;
 
 	if (dir) {

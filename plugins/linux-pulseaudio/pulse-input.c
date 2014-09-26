@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define blog(level, msg, ...) blog(level, "pulse-input: " msg, ##__VA_ARGS__)
 
 struct pulse_data {
-	obs_source_t source;
+	obs_source_t *source;
 	pa_stream *stream;
 
 	/* user settings */
@@ -302,7 +302,7 @@ static void pulse_input_info(pa_context *c, const pa_source_info *i, int eol,
 	if (eol != 0 || i->monitor_of_sink != PA_INVALID_INDEX)
 		goto skip;
 
-	obs_property_list_add_string((obs_property_t) userdata,
+	obs_property_list_add_string((obs_property_t*) userdata,
 		i->description, i->name);
 
 skip:
@@ -319,7 +319,7 @@ static void pulse_output_info(pa_context *c, const pa_source_info *i, int eol,
 	if (eol != 0 || i->monitor_of_sink == PA_INVALID_INDEX)
 		goto skip;
 
-	obs_property_list_add_string((obs_property_t) userdata,
+	obs_property_list_add_string((obs_property_t*) userdata,
 		i->description, i->name);
 
 skip:
@@ -329,10 +329,10 @@ skip:
 /**
  * Get plugin properties
  */
-static obs_properties_t pulse_properties(bool input)
+static obs_properties_t *pulse_properties(bool input)
 {
-	obs_properties_t props = obs_properties_create();
-	obs_property_t devices = obs_properties_add_list(props, "device_id",
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *devices = obs_properties_add_list(props, "device_id",
 		obs_module_text("Device"), OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_STRING);
 
@@ -344,12 +344,12 @@ static obs_properties_t pulse_properties(bool input)
 	return props;
 }
 
-static obs_properties_t pulse_input_properties(void)
+static obs_properties_t *pulse_input_properties(void)
 {
 	return pulse_properties(true);
 }
 
-static obs_properties_t pulse_output_properties(void)
+static obs_properties_t *pulse_output_properties(void)
 {
 	return pulse_properties(false);
 }
@@ -361,7 +361,7 @@ static void pulse_input_device(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	obs_data_t settings = (obs_data_t) userdata;
+	obs_data_t *settings = (obs_data_t*) userdata;
 
 	obs_data_set_default_string(settings, "device_id",
 		i->default_source_name);
@@ -374,7 +374,7 @@ static void pulse_output_device(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	obs_data_t settings = (obs_data_t) userdata;
+	obs_data_t *settings = (obs_data_t*) userdata;
 
 	char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
 	strcat(monitor, i->default_sink_name);
@@ -390,7 +390,7 @@ static void pulse_output_device(pa_context *c, const pa_server_info *i,
 /**
  * Get plugin defaults
  */
-static void pulse_defaults(obs_data_t settings, bool input)
+static void pulse_defaults(obs_data_t *settings, bool input)
 {
 	pulse_init();
 
@@ -401,12 +401,12 @@ static void pulse_defaults(obs_data_t settings, bool input)
 	pulse_unref();
 }
 
-static void pulse_input_defaults(obs_data_t settings)
+static void pulse_input_defaults(obs_data_t *settings)
 {
 	return pulse_defaults(settings, true);
 }
 
-static void pulse_output_defaults(obs_data_t settings)
+static void pulse_output_defaults(obs_data_t *settings)
 {
 	return pulse_defaults(settings, false);
 }
@@ -446,7 +446,7 @@ static void pulse_destroy(void *vptr)
 /**
  * Update the input settings
  */
-static void pulse_update(void *vptr, obs_data_t settings)
+static void pulse_update(void *vptr, obs_data_t *settings)
 {
 	PULSE_DATA(vptr);
 	bool restart = false;
@@ -471,7 +471,7 @@ static void pulse_update(void *vptr, obs_data_t settings)
 /**
  * Create the plugin object
  */
-static void *pulse_create(obs_data_t settings, obs_source_t source)
+static void *pulse_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct pulse_data *data = bzalloc(sizeof(struct pulse_data));
 

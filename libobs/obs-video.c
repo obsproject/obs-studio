@@ -113,16 +113,16 @@ static inline void render_main_texture(struct obs_core_video *video,
 static inline void render_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	gs_texture_t texture = video->render_textures[prev_texture];
-	gs_texture_t target  = video->output_textures[cur_texture];
+	gs_texture_t *texture = video->render_textures[prev_texture];
+	gs_texture_t *target  = video->output_textures[cur_texture];
 	uint32_t     width   = gs_texture_get_width(target);
 	uint32_t     height  = gs_texture_get_height(target);
 
 	/* TODO: replace with actual downscalers or unpackers */
-	gs_effect_t    effect  = video->default_effect;
-	gs_technique_t tech    = gs_effect_get_technique(effect, "DrawMatrix");
-	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
-	gs_eparam_t    matrix  = gs_effect_get_param_by_name(effect,
+	gs_effect_t    *effect  = video->default_effect;
+	gs_technique_t *tech    = gs_effect_get_technique(effect, "DrawMatrix");
+	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
+	gs_eparam_t    *matrix  = gs_effect_get_param_by_name(effect,
 			"color_matrix");
 	size_t      passes, i;
 
@@ -155,24 +155,24 @@ static inline void render_output_texture(struct obs_core_video *video,
 	video->textures_output[cur_texture] = true;
 }
 
-static inline void set_eparam(gs_effect_t effect, const char *name, float val)
+static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 {
-	gs_eparam_t param = gs_effect_get_param_by_name(effect, name);
+	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
 	gs_effect_set_float(param, val);
 }
 
 static void render_convert_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	gs_texture_t texture = video->output_textures[prev_texture];
-	gs_texture_t target  = video->convert_textures[cur_texture];
+	gs_texture_t *texture = video->output_textures[prev_texture];
+	gs_texture_t *target  = video->convert_textures[cur_texture];
 	float        fwidth  = (float)video->output_width;
 	float        fheight = (float)video->output_height;
 	size_t       passes, i;
 
-	gs_effect_t    effect  = video->conversion_effect;
-	gs_eparam_t    image   = gs_effect_get_param_by_name(effect, "image");
-	gs_technique_t tech    = gs_effect_get_technique(effect,
+	gs_effect_t    *effect  = video->conversion_effect;
+	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
+	gs_technique_t *tech    = gs_effect_get_technique(effect,
 			video->conversion_tech);
 
 	if (!video->textures_output[prev_texture])
@@ -210,9 +210,9 @@ static void render_convert_texture(struct obs_core_video *video,
 static inline void stage_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
-	gs_texture_t   texture;
+	gs_texture_t   *texture;
 	bool        texture_ready;
-	gs_stagesurf_t copy = video->copy_surfaces[cur_texture];
+	gs_stagesurf_t *copy = video->copy_surfaces[cur_texture];
 
 	if (video->gpu_conversion) {
 		texture = video->convert_textures[prev_texture];
@@ -256,7 +256,7 @@ static inline void render_video(struct obs_core_video *video, int cur_texture,
 static inline bool download_frame(struct obs_core_video *video,
 		int prev_texture, struct video_data *frame)
 {
-	gs_stagesurf_t surface = video->copy_surfaces[prev_texture];
+	gs_stagesurf_t *surface = video->copy_surfaces[prev_texture];
 
 	if (!video->textures_copied[prev_texture])
 		return false;

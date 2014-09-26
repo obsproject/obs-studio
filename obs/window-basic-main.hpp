@@ -52,7 +52,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 
 private:
-	std::unordered_map<obs_source_t, int> sourceSceneRefs;
+	std::unordered_map<obs_source_t*, int> sourceSceneRefs;
 
 	std::vector<VolControl*> volumes;
 
@@ -65,7 +65,7 @@ private:
 	QNetworkAccessManager networkManager;
 
 	QPointer<QTimer>    cpuUsageTimer;
-	os_cpu_usage_info_t cpuUsageInfo = nullptr;
+	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
 	QBuffer       logUploadPostData;
 	QNetworkReply *logUploadReply = nullptr;
@@ -75,14 +75,14 @@ private:
 	QNetworkReply *updateReply = nullptr;
 	QByteArray    updateReturnData;
 
-	obs_output_t  fileOutput = nullptr;
-	obs_output_t  streamOutput = nullptr;
-	obs_service_t service = nullptr;
-	obs_encoder_t aac = nullptr;
-	obs_encoder_t x264 = nullptr;
+	obs_output_t  *fileOutput = nullptr;
+	obs_output_t  *streamOutput = nullptr;
+	obs_service_t *service = nullptr;
+	obs_encoder_t *aac = nullptr;
+	obs_encoder_t *x264 = nullptr;
 
-	gs_vertbuffer_t box = nullptr;
-	gs_vertbuffer_t circle = nullptr;
+	gs_vertbuffer_t *box = nullptr;
+	gs_vertbuffer_t *circle = nullptr;
 
 	bool          sceneChanging = false;
 
@@ -125,7 +125,7 @@ private:
 	OBSSceneItem  GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem  GetCurrentSceneItem();
 
-	bool          QueryRemoveSource(obs_source_t source);
+	bool          QueryRemoveSource(obs_source_t *source);
 
 	void          TimedCheckForUpdates();
 	void          CheckForUpdates();
@@ -137,14 +137,14 @@ private:
 	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
 
 	void UpdateSources(OBSScene scene);
-	void InsertSceneItem(obs_sceneitem_t item);
+	void InsertSceneItem(obs_sceneitem_t *item);
 
 	void TempFileOutput(const char *path, int vBitrate, int aBitrate);
 	void TempStreamOutput(const char *url, const char *key,
 			int vBitrate, int aBitrate);
 
-	void CreateInteractionWindow(obs_source_t source);
-	void CreatePropertiesWindow(obs_source_t source);
+	void CreateInteractionWindow(obs_source_t *source);
+	void CreatePropertiesWindow(obs_source_t *source);
 
 public slots:
 	void StreamingStart();
@@ -171,20 +171,20 @@ private slots:
 
 private:
 	/* OBS Callbacks */
-	static void SceneItemAdded(void *data, calldata_t params);
-	static void SceneItemRemoved(void *data, calldata_t params);
-	static void SourceAdded(void *data, calldata_t params);
-	static void SourceRemoved(void *data, calldata_t params);
-	static void SourceActivated(void *data, calldata_t params);
-	static void SourceDeactivated(void *data, calldata_t params);
-	static void SourceRenamed(void *data, calldata_t params);
-	static void ChannelChanged(void *data, calldata_t params);
+	static void SceneItemAdded(void *data, calldata_t *params);
+	static void SceneItemRemoved(void *data, calldata_t *params);
+	static void SourceAdded(void *data, calldata_t *params);
+	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceActivated(void *data, calldata_t *params);
+	static void SourceDeactivated(void *data, calldata_t *params);
+	static void SourceRenamed(void *data, calldata_t *params);
+	static void ChannelChanged(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
-	static void SceneItemMoveUp(void *data, calldata_t params);
-	static void SceneItemMoveDown(void *data, calldata_t params);
-	static void SceneItemMoveTop(void *data, calldata_t params);
-	static void SceneItemMoveBottom(void *data, calldata_t params);
+	static void SceneItemMoveUp(void *data, calldata_t *params);
+	static void SceneItemMoveDown(void *data, calldata_t *params);
+	static void SceneItemMoveTop(void *data, calldata_t *params);
+	static void SceneItemMoveBottom(void *data, calldata_t *params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
@@ -195,8 +195,8 @@ private:
 public:
 	OBSScene      GetCurrentScene();
 
-	obs_service_t GetService();
-	void          SetService(obs_service_t service);
+	obs_service_t *GetService();
+	void          SetService(obs_service_t *service);
 
 	int  ResetVideo();
 	bool ResetAudio();
@@ -299,7 +299,7 @@ public:
 
 	virtual void OBSInit() override;
 
-	virtual config_t Config() const override;
+	virtual config_t *Config() const override;
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

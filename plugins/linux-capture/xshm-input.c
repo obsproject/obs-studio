@@ -35,7 +35,7 @@ struct xshm_data {
 	int_fast32_t width, height;
 
 	xshm_t *xshm;
-	gs_texture_t texture;
+	gs_texture_t *texture;
 
 	bool show_cursor;
 	xcursor_t *cursor;
@@ -66,7 +66,7 @@ static void xshm_resize_texture(struct xshm_data *data)
  * @return < 0 on error, 0 when size is unchanged, > 1 on size change
  */
 static int_fast32_t xshm_update_geometry(struct xshm_data *data,
-	obs_data_t settings)
+	obs_data_t *settings)
 {
 	int_fast32_t old_width = data->width;
 	int_fast32_t old_height = data->height;
@@ -116,7 +116,7 @@ static const char* xshm_getname(void)
 /**
  * Update the capture with changed settings
  */
-static void xshm_update(void *vptr, obs_data_t settings)
+static void xshm_update(void *vptr, obs_data_t *settings)
 {
 	XSHM_DATA(vptr);
 
@@ -144,7 +144,7 @@ static void xshm_update(void *vptr, obs_data_t settings)
 /**
  * Get the default settings for the capture
  */
-static void xshm_defaults(obs_data_t defaults)
+static void xshm_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, "screen", 0);
 	obs_data_set_default_bool(defaults, "show_cursor", true);
@@ -153,9 +153,9 @@ static void xshm_defaults(obs_data_t defaults)
 /**
  * Get the properties for the capture
  */
-static obs_properties_t xshm_properties(void)
+static obs_properties_t *xshm_properties(void)
 {
-	obs_properties_t props = obs_properties_create();
+	obs_properties_t *props = obs_properties_create();
 	int_fast32_t screen_max;
 
 	Display *dpy = XOpenDisplay(NULL);
@@ -203,7 +203,7 @@ static void xshm_destroy(void *vptr)
 /**
  * Create the capture
  */
-static void *xshm_create(obs_data_t settings, obs_source_t source)
+static void *xshm_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(source);
 
@@ -260,14 +260,14 @@ static void xshm_video_tick(void *vptr, float seconds)
 /**
  * Render the capture data
  */
-static void xshm_video_render(void *vptr, gs_effect_t effect)
+static void xshm_video_render(void *vptr, gs_effect_t *effect)
 {
 	XSHM_DATA(vptr);
 
 	if (!data->xshm)
 		return;
 
-	gs_eparam_t image = gs_effect_get_param_by_name(effect, "image");
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, data->texture);
 
 	gs_enable_blending(false);

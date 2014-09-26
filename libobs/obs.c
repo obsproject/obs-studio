@@ -805,12 +805,12 @@ void obs_leave_graphics(void)
 		gs_leave_context();
 }
 
-audio_t obs_get_audio(void)
+audio_t *obs_get_audio(void)
 {
 	return (obs != NULL) ? obs->audio.audio : NULL;
 }
 
-video_t obs_get_video(void)
+video_t *obs_get_video(void)
 {
 	return (obs != NULL) ? obs->video.video : NULL;
 }
@@ -875,7 +875,7 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 	return callback ? callback->create(data, ui_data) : NULL;
 }
 
-bool obs_add_source(obs_source_t source)
+bool obs_add_source(obs_source_t *source)
 {
 	struct calldata params = {0};
 
@@ -894,13 +894,13 @@ bool obs_add_source(obs_source_t source)
 	return true;
 }
 
-obs_source_t obs_get_output_source(uint32_t channel)
+obs_source_t *obs_get_output_source(uint32_t channel)
 {
 	if (!obs) return NULL;
 	return obs_view_get_source(&obs->data.main_view, channel);
 }
 
-void obs_set_output_source(uint32_t channel, obs_source_t source)
+void obs_set_output_source(uint32_t channel, obs_source_t *source)
 {
 	assert(channel < MAX_CHANNELS);
 
@@ -937,7 +937,7 @@ void obs_set_output_source(uint32_t channel, obs_source_t source)
 	}
 }
 
-void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t), void *param)
+void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*), void *param)
 {
 	if (!obs) return;
 
@@ -975,28 +975,28 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	pthread_mutex_unlock(mutex);
 }
 
-void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t), void *param)
+void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t*), void *param)
 {
 	if (!obs) return;
 	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex,
 			enum_proc, param);
 }
 
-void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t), void *param)
+void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t*), void *param)
 {
 	if (!obs) return;
 	obs_enum(&obs->data.first_encoder, &obs->data.encoders_mutex,
 			enum_proc, param);
 }
 
-void obs_enum_services(bool (*enum_proc)(void*, obs_service_t), void *param)
+void obs_enum_services(bool (*enum_proc)(void*, obs_service_t*), void *param)
 {
 	if (!obs) return;
 	obs_enum(&obs->data.first_service, &obs->data.services_mutex,
 			enum_proc, param);
 }
 
-obs_source_t obs_get_source_by_name(const char *name)
+obs_source_t *obs_get_source_by_name(const char *name)
 {
 	struct obs_core_data *data = &obs->data;
 	struct obs_source *source = NULL;
@@ -1038,46 +1038,46 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
-obs_output_t obs_get_output_by_name(const char *name)
+obs_output_t *obs_get_output_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_output, name,
 			&obs->data.outputs_mutex);
 }
 
-obs_encoder_t obs_get_encoder_by_name(const char *name)
+obs_encoder_t *obs_get_encoder_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_encoder, name,
 			&obs->data.encoders_mutex);
 }
 
-obs_service_t obs_get_service_by_name(const char *name)
+obs_service_t *obs_get_service_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_service, name,
 			&obs->data.services_mutex);
 }
 
-gs_effect_t obs_get_default_effect(void)
+gs_effect_t *obs_get_default_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.default_effect;
 }
 
-gs_effect_t obs_get_solid_effect(void)
+gs_effect_t *obs_get_solid_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.solid_effect;
 }
 
-signal_handler_t obs_get_signal_handler(void)
+signal_handler_t *obs_get_signal_handler(void)
 {
 	if (!obs) return NULL;
 	return obs->signals;
 }
 
-proc_handler_t obs_get_proc_handler(void)
+proc_handler_t *obs_get_proc_handler(void)
 {
 	if (!obs) return NULL;
 	return obs->procs;
@@ -1143,12 +1143,12 @@ float obs_get_present_volume(void)
 	return obs ? obs->audio.present_volume : 0.0f;
 }
 
-obs_source_t obs_load_source(obs_data_t source_data)
+obs_source_t *obs_load_source(obs_data_t *source_data)
 {
-	obs_source_t source;
+	obs_source_t *source;
 	const char   *name    = obs_data_get_string(source_data, "name");
 	const char   *id      = obs_data_get_string(source_data, "id");
-	obs_data_t   settings = obs_data_get_obj(source_data, "settings");
+	obs_data_t   *settings = obs_data_get_obj(source_data, "settings");
 	double       volume;
 
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
@@ -1162,7 +1162,7 @@ obs_source_t obs_load_source(obs_data_t source_data)
 	return source;
 }
 
-void obs_load_sources(obs_data_array_t array)
+void obs_load_sources(obs_data_array_t *array)
 {
 	size_t count;
 	size_t i;
@@ -1174,8 +1174,8 @@ void obs_load_sources(obs_data_array_t array)
 	pthread_mutex_lock(&obs->data.user_sources_mutex);
 
 	for (i = 0; i < count; i++) {
-		obs_data_t   source_data = obs_data_array_item(array, i);
-		obs_source_t source      = obs_load_source(source_data);
+		obs_data_t   *source_data = obs_data_array_item(array, i);
+		obs_source_t *source      = obs_load_source(source_data);
 
 		obs_add_source(source);
 
@@ -1190,10 +1190,10 @@ void obs_load_sources(obs_data_array_t array)
 	pthread_mutex_unlock(&obs->data.user_sources_mutex);
 }
 
-obs_data_t obs_save_source(obs_source_t source)
+obs_data_t *obs_save_source(obs_source_t *source)
 {
-	obs_data_t source_data = obs_data_create();
-	obs_data_t settings    = obs_source_get_settings(source);
+	obs_data_t *source_data = obs_data_create();
+	obs_data_t *settings    = obs_source_get_settings(source);
 	float      volume      = obs_source_get_volume(source);
 	const char *name       = obs_source_get_name(source);
 	const char *id         = obs_source_get_id(source);
@@ -1210,9 +1210,9 @@ obs_data_t obs_save_source(obs_source_t source)
 	return source_data;
 }
 
-obs_data_array_t obs_save_sources(void)
+obs_data_array_t *obs_save_sources(void)
 {
-	obs_data_array_t array;
+	obs_data_array_t *array;
 	size_t i;
 
 	if (!obs) return NULL;
@@ -1222,8 +1222,8 @@ obs_data_array_t obs_save_sources(void)
 	pthread_mutex_lock(&obs->data.user_sources_mutex);
 
 	for (i = 0; i < obs->data.user_sources.num; i++) {
-		obs_source_t source      = obs->data.user_sources.array[i];
-		obs_data_t   source_data = obs_save_source(source);
+		obs_source_t *source      = obs->data.user_sources.array[i];
+		obs_data_t   *source_data = obs_save_source(source);
 
 		obs_data_array_push_back(array, source_data);
 		obs_data_release(source_data);
@@ -1250,7 +1250,7 @@ static inline char *dup_name(const char *name)
 
 static inline bool obs_context_data_init_wrap(
 		struct obs_context_data *context,
-		obs_data_t              settings,
+		obs_data_t              *settings,
 		const char              *name)
 {
 	assert(context);
@@ -1275,7 +1275,7 @@ static inline bool obs_context_data_init_wrap(
 
 bool obs_context_data_init(
 		struct obs_context_data *context,
-		obs_data_t              settings,
+		obs_data_t              *settings,
 		const char              *name)
 {
 	if (obs_context_data_init_wrap(context, settings, name)) {

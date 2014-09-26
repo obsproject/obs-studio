@@ -98,8 +98,8 @@ enum obs_source_type {
 
 /** @} */
 
-typedef void (*obs_source_enum_proc_t)(obs_source_t parent, obs_source_t child,
-		void *param);
+typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
+		obs_source_t *child, void *param);
 
 /**
  * Source definition structure
@@ -137,7 +137,7 @@ struct obs_source_info {
 	 * @param  source    Source that this data is assoicated with
 	 * @return           The data associated with this source
 	 */
-	void *(*create)(obs_data_t settings, obs_source_t source);
+	void *(*create)(obs_data_t *settings, obs_source_t *source);
 
 	/**
 	 * Destroys the private data for the source
@@ -163,14 +163,14 @@ struct obs_source_info {
 	 *
 	 * @param[out]  settings  Data to assign default settings to
 	 */
-	void (*get_defaults)(obs_data_t settings);
+	void (*get_defaults)(obs_data_t *settings);
 
 	/** 
 	 * Gets the property information of this source
 	 *
 	 * @return         The properties data
 	 */
-	obs_properties_t (*get_properties)(void);
+	obs_properties_t *(*get_properties)(void);
 
 	/**
 	 * Updates the settings for this source
@@ -178,7 +178,7 @@ struct obs_source_info {
 	 * @param data      Source data
 	 * @param settings  New settings for this source
 	 */
-	void (*update)(void *data, obs_data_t settings);
+	void (*update)(void *data, obs_data_t *settings);
 
 	/** Called when the source has been activated in the main view */
 	void (*activate)(void *data);
@@ -230,7 +230,7 @@ struct obs_source_info {
 	 *                be NULL, and the source is expected to process with
 	 *                an effect manually.
 	 */
-	void (*video_render)(void *data, gs_effect_t effect);
+	void (*video_render)(void *data, gs_effect_t *effect);
 
 	/**
 	 * Called to filter raw async video data.
@@ -280,7 +280,7 @@ struct obs_source_info {
 	 * @param  data      Source data
 	 * @param  settings  Settings
 	 */
-	void (*save)(void *data, obs_data_t settings);
+	void (*save)(void *data, obs_data_t *settings);
 
 	/**
 	 * Called when loading a source from saved data.  This should be called
@@ -290,7 +290,7 @@ struct obs_source_info {
 	 * @param  data      Source data
 	 * @param  settings  Settings
 	 */
-	void (*load)(void *data, obs_data_t settings);
+	void (*load)(void *data, obs_data_t *settings);
 
 	/**
 	 * Called when interacting with a source and a mouse-down or mouse-up
