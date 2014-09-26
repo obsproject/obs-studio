@@ -119,13 +119,14 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 int gs_create(graphics_t **pgraphics, const char *module,
 		struct gs_init_data *data)
 {
+	struct gs_init_data new_data = *data;
 	int errcode = GS_ERROR_FAIL;
 
 	graphics_t *graphics = bzalloc(sizeof(struct graphics_subsystem));
 	pthread_mutex_init_value(&graphics->mutex);
 
-	if (!data->num_backbuffers)
-		data->num_backbuffers = 1;
+	if (!new_data.num_backbuffers)
+		new_data.num_backbuffers = 1;
 
 	graphics->module = os_dlopen(module);
 	if (!graphics->module) {
@@ -137,7 +138,7 @@ int gs_create(graphics_t **pgraphics, const char *module,
 	                           module))
 		goto error;
 
-	errcode = graphics->exports.device_create(&graphics->device, data);
+	errcode = graphics->exports.device_create(&graphics->device, &new_data);
 	if (errcode != GS_SUCCESS)
 		goto error;
 
