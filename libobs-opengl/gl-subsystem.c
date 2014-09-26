@@ -810,8 +810,10 @@ void device_copy_texture_region(gs_device_t *device,
 		goto fail;
 	}
 
-	uint32_t nw = (uint32_t)src_w ? (uint32_t)src_w : (src2d->width - src_x);
-	uint32_t nh = (uint32_t)src_h ? (uint32_t)src_h : (src2d->height - src_y);
+	uint32_t nw = (uint32_t)src_w ?
+		(uint32_t)src_w : (src2d->width - src_x);
+	uint32_t nh = (uint32_t)src_h ?
+		(uint32_t)src_h : (src2d->height - src_y);
 
 	if (dst2d->width - dst_x < nw || dst2d->height - dst_y < nh) {
 		blog(LOG_ERROR, "Destination texture region is not big "
