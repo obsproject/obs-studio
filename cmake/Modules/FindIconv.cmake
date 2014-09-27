@@ -15,16 +15,12 @@ else()
 	set(_lib_suffix 32)
 endif()
 
-set(ICONV_PATH_ARCH IconvPath${_lib_suffix})
-
 find_path(ICONV_INCLUDE_DIR
 	NAMES iconv.h
 	HINTS
-		${_ICONV_INCLUDE_DIRS}
-		"${CMAKE_SOURCE_DIR}/additional_install_files/include"
-		"$ENV{obsAdditionalInstallFiles}/include"
+		ENV IconvPath${_lib_suffix}
 		ENV IconvPath
-		ENV ${ICONV_PATH_ARCH}
+		${_ICONV_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include)
 
@@ -32,13 +28,12 @@ find_library(ICONV_LIB
 	NAMES ${_ICONV_LIBRARIES} iconv libiconv
 	HINTS
 		${_ICONV_LIBRARY_DIRS}
-		"${ICONV_INCLUDE_DIR}/../lib${_lib_suffix}"
-		"${ICONV_INCLUDE_DIR}/../lib"
-		"${ICONV_INCLUDE_DIR}/../libs${_lib_suffix}"
-		"${ICONV_INCLUDE_DIR}/lib"
-		"${ICONV_INCLUDE_DIR}/lib${_lib_suffix}"
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib)
+		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+	PATH_SUFFIXES
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Iconv DEFAULT_MSG ICONV_LIB ICONV_INCLUDE_DIR)

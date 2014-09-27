@@ -1,31 +1,23 @@
 project(libobs)
 
-find_package(Libswscale REQUIRED)
-include_directories(${LIBSWSCALE_INCLUDE_DIRS})
-add_definitions(${LIBSWSCALE_DEFINITIONS})
+find_package(Threads REQUIRED)
 
-find_package(Libswresample REQUIRED)
-include_directories(${LIBSWRESAMPLE_INCLUDE_DIRS})
-add_definitions(${LIBSWRESAMPLE_DEFINITIONS})
+find_package(FFMpeg REQUIRED
+	COMPONENTS avformat avutil swscale swresample
+	OPTIONAL_COMPONENTS avcodec)
+include_directories(${FFMPEG_INCLUDE_DIRS})
 
-find_package(Libavutil REQUIRED)
-include_directories(${LIBAVUTIL_INCLUDE_DIRS})
-add_definitions(${LIBAVUTIL_DEFINITIONS})
+list(REMOVE_ITEM FFMPEG_LIBRARIES ${FFMPEG_AVCODEC_LIBRARIES})
 
-find_package(Libavformat REQUIRED)
-include_directories(${LIBAVFORMAT_INCLUDE_DIRS})
-add_definitions(${LIBAVFORMAT_DEFINITIONS})
-
-find_package(Libavcodec QUIET)
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
 
-if(NOT ImageMagick_MagickCore_FOUND AND NOT LIBAVCODEC_FOUND)
+if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
 	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
 endif()
 
 option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
 
-if(NOT LIBAVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
+if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
 
 	set(libobs_image_loading_SOURCES
@@ -33,17 +25,14 @@ if(NOT LIBAVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGE
 	set(libobs_image_loading_LIBRARIES
 		${ImageMagick_LIBRARIES})
 
-	include_directories(
-		${ImageMagick_INCLUDE_DIRS})
+	include_directories(${ImageMagick_INCLUDE_DIRS})
 else()
 	message(STATUS "Using libavcodec for image loading in libobs")
 
 	set(libobs_image_loading_SOURCES
 		graphics/graphics-ffmpeg.c)
 	set(libobs_image_loading_LIBRARIES
-		${LIBAVCODEC_LIBRARIES})
-
-	include_directories(${LIBAVCODEC_INCLUDE_DIRS})
+		${FFMPEG_AVCODEC_LIBRARIES})
 endif()
 
 add_definitions(-DLIBOBS_EXPORTS)
@@ -263,27 +252,35 @@ set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")
-target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
+target_compile_definitions(libobs
+	PUBLIC
+		HAVE_OBSCONFIG_H)
 
 if(NOT MSVC)
-	target_compile_options(libobs PUBLIC "-mmmx" "-msse" "-msse2")
+	target_compile_options(libobs
+		PUBLIC
+			-mmmx
+			-msse
+			-msse2)
 endif()
 
-target_include_directories(libobs PUBLIC
-	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-	"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
-	"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
 
-
+target_compile_options(libobs
+	PUBLIC
+		"${THREADS_DEFINITIONS}")
+target_include_directories(libobs
+	PUBLIC
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
+		"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
 target_link_libraries(libobs
 	PRIVATE
 		${libobs_PLATFORM_DEPS}
 		${libobs_image_loading_LIBRARIES}
 		${OBS_JANSSON_IMPORT}
-		${LIBSWSCALE_LIBRARIES}
-		${LIBSWRESAMPLE_LIBRARIES}
-		${LIBAVFORMAT_LIBRARIES}
-		${LIBAVUTIL_LIBRARIES})
+		${FFMPEG_LIBRARIES}
+	PUBLIC
+		${THREADS_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)
