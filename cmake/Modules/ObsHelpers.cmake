@@ -406,6 +406,43 @@ function(install_obs_core target)
 	install_obs_pdb(CORE ${target})
 endfunction()
 
+function(install_obs_bin target mode)
+	foreach(bin ${ARGN})
+		if(APPLE)
+			set(_bit_suffix "")
+		elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(_bit_suffix "64bit/")
+		else()
+			set(_bit_suffix "32bit/")
+		endif()
+
+		if(NOT IS_ABSOLUTE "${bin}")
+			set(bin "${CMAKE_CURRENT_SOURCE_DIR}/${bin}")
+		endif()
+
+		get_filename_component(fname "${bin}" NAME)
+
+		if(NOT "${mode}" MATCHES "INSTALL_ONLY")
+			add_custom_command(TARGET ${target} POST_BUILD
+				COMMAND "${CMAKE_COMMAND}" -E copy
+					"${bin}"
+					"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}${fname}"
+				VERBATIM)
+		endif()
+
+		install(FILES "${bin}"
+			DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
+
+		if(DEFINED ENV{obsInstallerTempDir})
+			add_custom_command(TARGET ${target} POST_BUILD
+				COMMAND "${CMAKE_COMMAND}" -E copy
+					"${bin}"
+					"$ENV{obsInstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}/${fname}"
+				VERBATIM)
+		endif()
+	endforeach()
+endfunction()
+
 function(install_obs_plugin target)
 	if(APPLE)
 		set(_bit_suffix "")
