@@ -709,10 +709,31 @@ static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 	if ((!item || (item && !*item)) && data) {
 		new_item = obs_data_item_create(name, ptr, size, type,
 				default_data, autoselect_data);
-		new_item->next = data->first_item;
-		new_item->parent = data;
 
-		data->first_item = new_item;
+		obs_data_item_t *prev = obs_data_first(data);
+		obs_data_item_t *next = obs_data_first(data);
+		obs_data_item_next(&next);
+		for (; prev && next; obs_data_item_next(&prev),
+				obs_data_item_next(&next)) {
+			if (strcmp(get_item_name(next), name) > 0)
+				break;
+		}
+
+		new_item->parent = data;
+		if (prev && strcmp(get_item_name(prev), name) < 0) {
+			prev->next     = new_item;
+			new_item->next = next;
+
+		} else {
+			data->first_item = new_item;
+			new_item->next   = prev;
+		}
+
+		if (!prev)
+			data->first_item = new_item;
+
+		obs_data_item_release(&prev);
+		obs_data_item_release(&next);
 
 	} else if (default_data) {
 		obs_data_item_set_default_data(item, ptr, size, type);
