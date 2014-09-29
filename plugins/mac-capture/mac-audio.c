@@ -732,13 +732,17 @@ static obs_properties_t *coreaudio_properties(bool input)
 	return props;
 }
 
-static obs_properties_t *coreaudio_input_properties(void)
+static obs_properties_t *coreaudio_input_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	return coreaudio_properties(true);
 }
 
-static obs_properties_t *coreaudio_output_properties(void)
+static obs_properties_t *coreaudio_output_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	return coreaudio_properties(false);
 }
 

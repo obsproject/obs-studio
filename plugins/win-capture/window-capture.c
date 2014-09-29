@@ -369,8 +369,10 @@ static void wc_defaults(obs_data_t *defaults)
 	obs_data_set_default_bool(defaults, "compatibility", false);
 }
 
-static obs_properties_t *wc_properties(void)
+static obs_properties_t *wc_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 

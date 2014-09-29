@@ -64,8 +64,10 @@ static const char *libfdk_getname(void)
 	return obs_module_text("LibFDK");
 }
 
-static obs_properties_t *libfdk_properties(void)
+static obs_properties_t *libfdk_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",

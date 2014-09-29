@@ -590,8 +590,10 @@ static const char *crop_names[] = {
 #ifndef COUNTOF
 #define COUNTOF(x) (sizeof(x)/sizeof(x[0]))
 #endif
-static obs_properties_t *display_capture_properties(void)
+static obs_properties_t *display_capture_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *list = obs_properties_add_list(props,

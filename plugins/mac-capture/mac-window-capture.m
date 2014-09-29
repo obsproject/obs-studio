@@ -156,8 +156,10 @@ static void window_capture_defaults(obs_data_t *settings)
 	window_defaults(settings);
 }
 
-static obs_properties_t *window_capture_properties(void)
+static obs_properties_t *window_capture_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	add_window_properties(props);

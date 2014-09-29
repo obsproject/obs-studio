@@ -87,8 +87,10 @@ static uint32_t ft2_source_get_height(void *data)
 	return srcdata->cy;
 }
 
-static obs_properties_t *ft2_source_properties(void)
+static obs_properties_t *ft2_source_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 	//obs_property_t *prop;
 

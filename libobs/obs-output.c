@@ -234,7 +234,7 @@ obs_properties_t *obs_get_output_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties();
+		properties = info->get_properties(NULL);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -246,7 +246,7 @@ obs_properties_t *obs_output_properties(const obs_output_t *output)
 {
 	if (output && output->info.get_properties) {
 		obs_properties_t *props;
-		props = output->info.get_properties();
+		props = output->info.get_properties(output->context.data);
 		obs_properties_apply_settings(props, output->context.settings);
 		return props;
 	}

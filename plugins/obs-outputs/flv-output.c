@@ -197,8 +197,10 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 }
 
-static obs_properties_t *flv_output_properties(void)
+static obs_properties_t *flv_output_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_text(props, "path",

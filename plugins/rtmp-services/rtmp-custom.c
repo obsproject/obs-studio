@@ -38,8 +38,10 @@ static void *rtmp_custom_create(obs_data_t *settings, obs_service_t *service)
 	return data;
 }
 
-static obs_properties_t *rtmp_custom_properties(void)
+static obs_properties_t *rtmp_custom_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);

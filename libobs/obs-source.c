@@ -340,7 +340,7 @@ obs_properties_t *obs_get_source_properties(enum obs_source_type type,
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties();
+		properties = info->get_properties(NULL);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -352,7 +352,7 @@ obs_properties_t *obs_source_properties(const obs_source_t *source)
 {
 	if (source_valid(source) && source->info.get_properties) {
 		obs_properties_t *props;
-		props = source->info.get_properties();
+		props = source->info.get_properties(source->context.data);
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}

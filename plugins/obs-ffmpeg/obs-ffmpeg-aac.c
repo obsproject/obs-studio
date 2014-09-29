@@ -240,8 +240,10 @@ static void aac_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
-static obs_properties_t *aac_properties(void)
+static obs_properties_t *aac_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",

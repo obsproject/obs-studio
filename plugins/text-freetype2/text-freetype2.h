@@ -77,7 +77,7 @@ void draw_drop_shadow(struct ft2_source *srcdata);
 static uint32_t ft2_source_get_width(void *data);
 static uint32_t ft2_source_get_height(void *data);
 
-static obs_properties_t *ft2_source_properties(void);
+static obs_properties_t *ft2_source_properties(void *unused);
 
 static const char *ft2_source_get_name(void);
 

@@ -504,8 +504,10 @@ static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *v4l2_properties(void)
+static obs_properties_t *v4l2_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *device_list = obs_properties_add_list(props,

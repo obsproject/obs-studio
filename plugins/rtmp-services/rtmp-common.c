@@ -197,8 +197,10 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *rtmp_common_properties(void)
+static obs_properties_t *rtmp_common_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t   *list;
 	char             *file;

@@ -565,8 +565,10 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
 }
 
-static obs_properties_t *rtmp_stream_properties(void)
+static obs_properties_t *rtmp_stream_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, OPT_DROP_THRESHOLD,

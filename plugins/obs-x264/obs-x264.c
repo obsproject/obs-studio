@@ -118,8 +118,10 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_TUNE       obs_module_text("Tune")
 #define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
 
-static obs_properties_t *obs_x264_props(void)
+static obs_properties_t *obs_x264_props(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list;
 

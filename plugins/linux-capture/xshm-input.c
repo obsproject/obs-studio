@@ -153,8 +153,10 @@ static void xshm_defaults(obs_data_t *defaults)
 /**
  * Get the properties for the capture
  */
-static obs_properties_t *xshm_properties(void)
+static obs_properties_t *xshm_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 	int_fast32_t screen_max;
 

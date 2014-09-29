@@ -1508,7 +1508,7 @@ static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *GetDShowProperties(void)
+static obs_properties_t *GetDShowProperties(void *)
 {
 	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;

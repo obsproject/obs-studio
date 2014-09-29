@@ -170,7 +170,7 @@ struct obs_source_info {
 	 *
 	 * @return         The properties data
 	 */
-	obs_properties_t *(*get_properties)(void);
+	obs_properties_t *(*get_properties)(void *data);
 
 	/**
 	 * Updates the settings for this source

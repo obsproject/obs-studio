@@ -756,8 +756,10 @@ static bool properties_preset_changed(obs_properties_t *props, obs_property_t *p
 	return preset_list_changed || autoselect_changed;
 }
 
-static obs_properties_t *av_capture_properties(void)
+static obs_properties_t *av_capture_properties(void *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *dev_list = obs_properties_add_list(props, "device",

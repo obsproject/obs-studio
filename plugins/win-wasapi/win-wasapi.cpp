@@ -496,12 +496,12 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 	return props;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void)
+static obs_properties_t *GetWASAPIPropertiesInput(void *)
 {
 	return GetWASAPIProperties(true);
 }
 
-static obs_properties_t *GetWASAPIPropertiesOutput(void)
+static obs_properties_t *GetWASAPIPropertiesOutput(void *)
 {
 	return GetWASAPIProperties(false);
 }
