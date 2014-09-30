@@ -28,13 +28,19 @@
 using namespace std;
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
-	: QDialog       (parent),
-	  main          (qobject_cast<OBSBasic*>(parent)),
-	  resizeTimer   (0),
-	  ui            (new Ui::OBSBasicProperties),
-	  source        (source_),
-	  removedSignal (obs_source_get_signal_handler(source), "remove",
-	                 OBSBasicProperties::SourceRemoved, this)
+	: QDialog                (parent),
+	  main                   (qobject_cast<OBSBasic*>(parent)),
+	  resizeTimer            (0),
+	  ui                     (new Ui::OBSBasicProperties),
+	  source                 (source_),
+	  removedSignal          (obs_source_get_signal_handler(source),
+	                          "remove", OBSBasicProperties::SourceRemoved,
+	                          this),
+	  updatePropertiesSignal (obs_source_get_signal_handler(source),
+	                          "update_properties",
+	                          OBSBasicProperties::UpdateProperties,
+	                          this)
+
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cx");
@@ -77,6 +83,12 @@ void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
 			"close");
 
 	UNUSED_PARAMETER(params);
+}
+
+void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data)->view,
+			"ReloadProperties");
 }
 
 void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
