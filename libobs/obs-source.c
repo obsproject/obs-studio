@@ -82,6 +82,7 @@ static const char *source_signals[] = {
 	"void volume(ptr source, in out float volume)",
 	"void volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
+	"void update_properties(ptr source)",
 	NULL
 };
 
@@ -387,6 +388,21 @@ void obs_source_update(obs_source_t *source, obs_data_t *settings)
 		source->info.update(source->context.data,
 				source->context.settings);
 	}
+}
+
+void obs_source_update_properties(obs_source_t *source)
+{
+	calldata_t calldata;
+
+	if (!source) return;
+
+	calldata_init(&calldata);
+	calldata_set_ptr(&calldata, "source", source);
+
+	signal_handler_signal(obs_source_get_signal_handler(source),
+			"update_properties", &calldata);
+
+	calldata_free(&calldata);
 }
 
 void obs_source_send_mouse_click(obs_source_t *source,
