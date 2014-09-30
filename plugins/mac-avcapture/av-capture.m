@@ -453,12 +453,9 @@ error_input:
 	AVFREE(capture->device);
 }
 
-static inline void handle_disconnect(struct av_capture* capture,
+static inline void handle_disconnect_capture(struct av_capture *capture,
 		AVCaptureDevice *dev)
 {
-	if (!dev)
-		return;
-
 	if (![dev.uniqueID isEqualTo:capture->uid])
 		return;
 
@@ -474,12 +471,19 @@ static inline void handle_disconnect(struct av_capture* capture,
 	remove_device(capture);
 }
 
-static inline void handle_connect(struct av_capture *capture,
-		AVCaptureDevice *dev, obs_data_t *settings)
+static inline void handle_disconnect(struct av_capture *capture,
+		AVCaptureDevice *dev)
 {
 	if (!dev)
 		return;
 
+	handle_disconnect_capture(capture, dev);
+	obs_source_update_properties(capture->source);
+}
+
+static inline void handle_connect_capture(struct av_capture *capture,
+		AVCaptureDevice *dev, obs_data_t *settings)
+{
 	if (![dev.uniqueID isEqualTo:capture->uid])
 		return;
 
@@ -493,6 +497,16 @@ static inline void handle_connect(struct av_capture *capture,
 			"resuming capture", dev.uniqueID.UTF8String);
 
 	capture_device(capture, [dev retain], settings);
+}
+
+static inline void handle_connect(struct av_capture *capture,
+		AVCaptureDevice *dev, obs_data_t *settings)
+{
+	if (!dev)
+		return;
+
+	handle_connect_capture(capture, dev, settings);
+	obs_source_update_properties(capture->source);
 }
 
 static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
