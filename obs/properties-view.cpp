@@ -40,6 +40,12 @@ static inline long long color_to_int(QColor color)
 		shift(color.alpha(), 24);
 }
 
+void OBSPropertiesView::ReloadProperties()
+{
+	properties.reset(reloadCallback(obj));
+	RefreshProperties();
+}
+
 void OBSPropertiesView::RefreshProperties()
 {
 	children.clear();
@@ -76,20 +82,21 @@ void OBSPropertiesView::RefreshProperties()
 	}
 }
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_,
-		obs_properties_t *properties_, void *obj_,
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
+		PropertiesReloadCallback reloadCallback,
 		PropertiesUpdateCallback callback_, int minSize_)
-	: QScrollArea (nullptr),
-	  widget      (nullptr),
-	  properties  (properties_, obs_properties_destroy),
-	  settings    (settings_),
-	  obj         (obj_),
-	  callback    (callback_),
-	  minSize     (minSize_),
-	  lastWidget  (nullptr)
+	: QScrollArea    (nullptr),
+	  widget         (nullptr),
+	  properties     (nullptr, obs_properties_destroy),
+	  settings       (settings_),
+	  obj            (obj_),
+	  reloadCallback (reloadCallback),
+	  callback       (callback_),
+	  minSize        (minSize_),
+	  lastWidget     (nullptr)
 {
 	setFrameShape(QFrame::NoFrame);
-	RefreshProperties();
+	ReloadProperties();
 }
 
 void OBSPropertiesView::resizeEvent(QResizeEvent *event)

@@ -49,8 +49,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	OBSData settings = obs_source_get_settings(source);
 	obs_data_release(settings);
 
-	view = new OBSPropertiesView(settings,
-			obs_source_properties(source), source,
+	view = new OBSPropertiesView(settings, source,
+			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
 
 	layout()->addWidget(view);

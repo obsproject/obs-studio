@@ -239,13 +239,10 @@ void OBSBasicSettings::LoadServiceInfo()
 	QLayout          *layout    = ui->streamContainer->layout();
 	obs_service_t    *service    = main->GetService();
 	obs_data_t       *settings   = obs_service_get_settings(service);
-	obs_properties_t *properties = obs_service_properties(service);
 
 	delete streamProperties;
-	streamProperties = new OBSPropertiesView(
-			settings,
-			properties,
-			service,
+	streamProperties = new OBSPropertiesView(settings, service,
+			(PropertiesReloadCallback)obs_service_properties,
 			(PropertiesUpdateCallback)obs_service_update,
 			170);
 

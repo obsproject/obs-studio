@@ -9,7 +9,9 @@ class QFormLayout;
 class OBSPropertiesView;
 class QLabel;
 
-typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *settings);
+typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
+typedef void              (*PropertiesUpdateCallback)(void *obj,
+							obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
 
@@ -57,6 +59,7 @@ private:
 	properties_t                             properties;
 	OBSData                                  settings;
 	void                                     *obj;
+	PropertiesReloadCallback                 reloadCallback;
 	PropertiesUpdateCallback                 callback;
 	int                                      minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
@@ -81,14 +84,15 @@ private:
 	void resizeEvent(QResizeEvent *event) override;
 
 public slots:
+	void ReloadProperties();
 	void RefreshProperties();
 
 signals:
 	void PropertiesResized();
 
 public:
-	OBSPropertiesView(OBSData settings,
-			obs_properties_t *properties,
-			void *obj, PropertiesUpdateCallback callback,
+	OBSPropertiesView(OBSData settings, void *obj,
+			PropertiesReloadCallback reloadCallback,
+			PropertiesUpdateCallback callback,
 			int minSize = 0);
 };
