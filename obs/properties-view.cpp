@@ -58,7 +58,7 @@ void OBSPropertiesView::RefreshProperties()
 	layout->setSizeConstraint(QLayout::SetMaximumSize);
 	layout->setLabelAlignment(Qt::AlignRight);
 
-	obs_property_t *property = obs_properties_first(properties);
+	obs_property_t *property = obs_properties_first(properties.get());
 
 	while (property) {
 		AddProperty(property, layout);
@@ -81,7 +81,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_,
 		PropertiesUpdateCallback callback_, int minSize_)
 	: QScrollArea (nullptr),
 	  widget      (nullptr),
-	  properties  (properties_),
+	  properties  (properties_, obs_properties_destroy),
 	  settings    (settings_),
 	  obj         (obj_),
 	  callback    (callback_),

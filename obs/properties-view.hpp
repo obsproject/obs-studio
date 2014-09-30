@@ -48,9 +48,13 @@ class OBSPropertiesView : public QScrollArea {
 
 	friend class WidgetInfo;
 
+	using properties_delete_t = decltype(&obs_properties_destroy);
+	using properties_t =
+		std::unique_ptr<obs_properties_t, properties_delete_t>;
+
 private:
 	QWidget                                  *widget;
-	obs_properties_t                         *properties;
+	properties_t                             properties;
 	OBSData                                  settings;
 	void                                     *obj;
 	PropertiesUpdateCallback                 callback;
@@ -87,9 +91,4 @@ public:
 			obs_properties_t *properties,
 			void *obj, PropertiesUpdateCallback callback,
 			int minSize = 0);
-
-	inline ~OBSPropertiesView()
-	{
-		obs_properties_destroy(properties);
-	}
 };
