@@ -25,7 +25,7 @@ struct display_capture {
 	obs_source_t *source;
 
 	gs_samplerstate_t *sampler;
-	gs_effect_t *draw_effect;
+	gs_effect_t *effect;
 	gs_texture_t *tex;
 	gs_vertbuffer_t *vertbuf;
 
@@ -104,8 +104,8 @@ static void display_capture_destroy(void *data)
 
 	if (dc->sampler)
 		gs_samplerstate_destroy(dc->sampler);
-	if (dc->draw_effect)
-		gs_effect_destroy(dc->draw_effect);
+	if (dc->effect)
+		gs_effect_destroy(dc->effect);
 	if (dc->vertbuf)
 		gs_vertexbuffer_destroy(dc->vertbuf);
 
@@ -275,9 +275,9 @@ static void *display_capture_create(obs_data_t *settings,
 		goto fail;
 
 	char *effect_file = obs_module_file("draw_rect.effect");
-	dc->draw_effect = gs_effect_create_from_file(effect_file, NULL);
+	dc->effect = gs_effect_create_from_file(effect_file, NULL);
 	bfree(effect_file);
-	if (!dc->draw_effect)
+	if (!dc->effect)
 		goto fail;
 
 	if (!init_vertbuf(dc))
@@ -408,9 +408,8 @@ static void display_capture_video_render(void *data, gs_effect_t *effect)
 	gs_load_vertexbuffer(dc->vertbuf);
 	gs_load_indexbuffer(NULL);
 	gs_load_samplerstate(dc->sampler, 0);
-	gs_technique_t *tech = gs_effect_get_technique(dc->draw_effect,
-			"Default");
-	gs_effect_set_texture(gs_effect_get_param_by_idx(dc->draw_effect, 1),
+	gs_technique_t *tech = gs_effect_get_technique(dc->effect, "Default");
+	gs_effect_set_texture(gs_effect_get_param_by_idx(dc->effect, 1),
 			dc->tex);
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
