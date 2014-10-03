@@ -180,8 +180,8 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 	if (!shaderString)
 		throw "No shader string specified";
 
-	hr = D3DCompile(shaderString, strlen(shaderString), file, NULL, NULL,
-			"main", target,
+	hr = device->d3dCompile(shaderString, strlen(shaderString), file, NULL,
+			NULL, "main", target,
 			D3D10_SHADER_OPTIMIZATION_LEVEL1, 0,
 			shader, errorsBlob.Assign());
 	if (FAILED(hr)) {

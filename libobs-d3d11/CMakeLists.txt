@@ -29,7 +29,6 @@ set_target_properties(libobs-d3d11
 target_link_libraries(libobs-d3d11
 	libobs
 	d3d11
-	dxgi
-	d3dcompiler)
+	dxgi)
 
 install_obs_core(libobs-d3d11)

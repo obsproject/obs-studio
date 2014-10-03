@@ -605,6 +605,8 @@ struct gs_device {
 	ID3D11BlendState            *curBlendState;
 	D3D11_PRIMITIVE_TOPOLOGY    curToplogy;
 
+	pD3DCompile                 d3dCompile;
+
 	gs_rect                     viewport;
 
 	vector<mat4float>           projStack;
@@ -613,6 +615,7 @@ struct gs_device {
 	matrix4                     curViewMatrix;
 	matrix4                     curViewProjMatrix;
 
+	void InitCompiler();
 	void InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **adapter);
 	void InitDevice(const gs_init_data *data, IDXGIAdapter *adapter);
 

@@ -135,6 +135,31 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	Init(data);
 }
 
+void gs_device::InitCompiler()
+{
+	char d3dcompiler[40] = {};
+	int ver = 49;
+
+	while (ver > 30) {
+		sprintf_s(d3dcompiler, 40, "D3DCompiler_%02d.dll", ver);
+
+		HMODULE module = LoadLibraryA(d3dcompiler);
+		if (module) {
+			d3dCompile = (pD3DCompile)GetProcAddress(module,
+					"D3DCompile");
+			if (d3dCompile) {
+				return;
+			}
+
+			FreeLibrary(module);
+		}
+
+		ver--;
+	}
+
+	throw "Could not find any D3DCompiler libraries";
+}
+
 void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
 {
 	HRESULT hr;
@@ -423,6 +448,7 @@ gs_device::gs_device(const gs_init_data *data)
 		curSamplers[i] = NULL;
 	}
 
+	InitCompiler();
 	InitFactory(data->adapter, adapter.Assign());
 	InitDevice(data, adapter);
 	device_set_render_target(this, NULL, NULL);
