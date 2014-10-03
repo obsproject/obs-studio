@@ -141,6 +141,7 @@ struct obs_core_video {
 	bool                            textures_converted[NUM_TEXTURES];
 	struct obs_source_frame         convert_frames[NUM_TEXTURES];
 	gs_effect_t                     *default_effect;
+	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *solid_effect;
 	gs_effect_t                     *conversion_effect;
 	gs_stagesurf_t                  *mapped_surface;

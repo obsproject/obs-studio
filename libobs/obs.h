@@ -459,6 +459,9 @@ EXPORT obs_service_t *obs_get_service_by_name(const char *name);
 /** Returns the default effect for generic RGB/YUV drawing */
 EXPORT gs_effect_t *obs_get_default_effect(void);
 
+/** Returns the default effect for generic RGB/YUV drawing using texture_rect */
+EXPORT gs_effect_t *obs_get_default_rect_effect(void);
+
 /** Returns the solid effect for drawing solid colors */
 EXPORT gs_effect_t *obs_get_solid_effect(void);
 

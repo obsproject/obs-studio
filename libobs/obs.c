@@ -224,6 +224,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = find_libobs_data_file("default_rect.effect");
+	video->default_rect_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	filename = find_libobs_data_file("solid.effect");
 	video->solid_effect = gs_effect_create_from_file(filename,
 			NULL);
@@ -235,6 +240,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	bfree(filename);
 
 	if (!video->default_effect)
+		success = false;
+	if (!video->default_rect_effect)
 		success = false;
 	if (!video->solid_effect)
 		success = false;
@@ -356,6 +363,7 @@ static void obs_free_graphics(void)
 		gs_enter_context(video->graphics);
 
 		gs_effect_destroy(video->default_effect);
+		gs_effect_destroy(video->default_rect_effect);
 		gs_effect_destroy(video->solid_effect);
 		gs_effect_destroy(video->conversion_effect);
 		video->default_effect = NULL;
@@ -1063,6 +1071,12 @@ gs_effect_t *obs_get_default_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.default_effect;
+}
+
+gs_effect_t *obs_get_default_rect_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.default_rect_effect;
 }
 
 gs_effect_t *obs_get_solid_effect(void)
