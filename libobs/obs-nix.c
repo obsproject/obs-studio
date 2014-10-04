@@ -128,8 +128,8 @@ static void log_memory_info(void)
 	if (sysinfo(&info) < 0)
 		return;
 
-	blog(LOG_INFO, "Physical Memory: %luMB Total",
-		info.totalram / 1024 / 1024);
+	blog(LOG_INFO, "Physical Memory: %lluMB Total",
+		((unsigned long long) info.totalram) * info.mem_unit / 1024 / 1024);
 }
 
 static void log_kernel_version(void)
