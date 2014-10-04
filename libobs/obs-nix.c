@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
+#include <inttypes.h>
 #include "util/dstr.h"
 #include "obs-internal.h"
 
@@ -128,8 +129,8 @@ static void log_memory_info(void)
 	if (sysinfo(&info) < 0)
 		return;
 
-	blog(LOG_INFO, "Physical Memory: %luMB Total",
-		info.totalram / 1024 / 1024);
+	blog(LOG_INFO, "Physical Memory: %"PRIu64"MB Total",
+			(uint64_t)info.totalram * info.mem_unit / 1024 / 1024);
 }
 
 static void log_kernel_version(void)
