@@ -244,7 +244,7 @@ size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 
 	out_len = dst ? (dst_size - 1) : mbstowcs(NULL, str, len);
 
-	if (len && dst) {
+	if (dst) {
 		if (!dst_size)
 			return 0;
 
@@ -269,7 +269,7 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 	in_len = len ? len : strlen(str);
 	out_len = dst ? (dst_size - 1) : utf8_to_wchar(str, in_len, NULL, 0, 0);
 
-	if (out_len && dst) {
+	if (dst) {
 		if (!dst_size)
 			return 0;
 
@@ -292,7 +292,7 @@ size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 
 	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, len);
 
-	if (len && dst) {
+	if (dst) {
 		if (!dst_size)
 			return 0;
 
@@ -317,7 +317,7 @@ size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
 	in_len = (len != 0) ? len : wcslen(str);
 	out_len = dst ? (dst_size - 1) : wchar_to_utf8(str, in_len, NULL, 0, 0);
 
-	if (out_len && dst) {
+	if (dst) {
 		if (!dst_size)
 			return 0;
 
