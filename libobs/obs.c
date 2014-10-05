@@ -714,6 +714,8 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 		return false;
 
 	info = video_output_get_info(video->video);
+	if (!info)
+		return false;
 
 	memset(ovi, 0, sizeof(struct obs_video_info));
 	ovi->base_width    = video->base_width;
