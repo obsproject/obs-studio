@@ -890,8 +890,17 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 
 #define UPDATE_CHECK_INTERVAL (60*60*24*4) /* 4 days */
 
+#ifdef UPDATE_SPARKLE
+void init_sparkle_updater(bool update_to_undeployed);
+void trigger_sparkle_update();
+#endif
+
 void OBSBasic::TimedCheckForUpdates()
 {
+#ifdef UPDATE_SPARKLE
+	init_sparkle_updater(config_get_bool(App()->GlobalConfig(), "General",
+				"UpdateToUndeployed"));
+#else
 	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
 			"LastUpdateCheck");
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
@@ -908,10 +917,14 @@ void OBSBasic::TimedCheckForUpdates()
 
 	if (secs > UPDATE_CHECK_INTERVAL)
 		CheckForUpdates();
+#endif
 }
 
 void OBSBasic::CheckForUpdates()
 {
+#ifdef UPDATE_SPARKLE
+	trigger_sparkle_update();
+#else
 	ui->actionCheckForUpdates->setEnabled(false);
 
 	string versionString("obs-basic ");
@@ -926,6 +939,7 @@ void OBSBasic::CheckForUpdates()
 			this, SLOT(updateFileFinished()));
 	connect(updateReply, SIGNAL(readyRead()),
 			this, SLOT(updateFileRead()));
+#endif
 }
 
 void OBSBasic::updateFileRead()
