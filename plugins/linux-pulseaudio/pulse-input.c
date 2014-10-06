@@ -21,6 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "pulse-wrapper.h"
 
+#define NSEC_PER_SEC  1000000000LL
+#define NSEC_PER_MSEC 1000000L
+
 #define PULSE_DATA(voidptr) struct pulse_data *data = voidptr;
 #define blog(level, msg, ...) blog(level, "pulse-input: " msg, ##__VA_ARGS__)
 
@@ -37,11 +40,11 @@ struct pulse_data {
 	uint_fast32_t samples_per_sec;
 	uint_fast32_t bytes_per_frame;
 	uint_fast8_t channels;
+	uint64_t first_ts;
 
 	/* statistics */
 	uint_fast32_t packets;
 	uint_fast64_t frames;
-	double latency;
 };
 
 static void pulse_stop_recording(struct pulse_data *data);
@@ -89,19 +92,17 @@ static enum speaker_layout pulse_channels_to_obs_speakers(
 	return SPEAKERS_UNKNOWN;
 }
 
-/**
- * Get latency for a pulse audio stream
- */
-static inline int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
+static inline uint64_t samples_to_ns(size_t frames, uint_fast32_t rate)
 {
-	int ret;
-	int sign;
-	pa_usec_t abs;
-
-	ret = pa_stream_get_latency(stream, &abs, &sign);
-	*latency = (sign) ? -(int64_t) abs : (int64_t) abs;
-	return ret;
+	return frames * NSEC_PER_SEC / rate;
 }
+
+static inline uint64_t get_sample_time(size_t frames, uint_fast32_t rate)
+{
+	return os_gettime_ns() - samples_to_ns(frames, rate);
+}
+
+#define STARTUP_TIMEOUT_NS (500 * NSEC_PER_MSEC)
 
 /**
  * Callback for pulse which gets executed when new audio data is available
@@ -116,7 +117,6 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 
 	const void *frames;
 	size_t bytes;
-	int64_t latency;
 
 	if (!data->stream)
 		goto exit;
@@ -134,24 +134,23 @@ static void pulse_stream_read(pa_stream *p, size_t nbytes, void *userdata)
 		goto exit;
 	}
 
-	if (pulse_get_stream_latency(data->stream, &latency) < 0) {
-		blog(LOG_ERROR, "Failed to get timing info !");
-		pa_stream_drop(data->stream);
-		goto exit;
-	}
-
 	struct obs_source_audio out;
 	out.speakers        = data->speakers;
 	out.samples_per_sec = data->samples_per_sec;
 	out.format          = pulse_to_obs_audio_format(data->format);
 	out.data[0]         = (uint8_t *) frames;
 	out.frames          = bytes / data->bytes_per_frame;
-	out.timestamp       = os_gettime_ns() - (latency * 1000ULL);
-	obs_source_output_audio(data->source, &out);
+	out.timestamp       = get_sample_time(out.frames,
+	                                      out.samples_per_sec);
+
+	if (!data->first_ts)
+		data->first_ts = out.timestamp + STARTUP_TIMEOUT_NS;
+
+	if (out.timestamp > data->first_ts)
+		obs_source_output_audio(data->source, &out);
 
 	data->packets++;
 	data->frames += out.frames;
-	data->latency += latency;
 
 	pa_stream_drop(data->stream);
 exit:
@@ -203,8 +202,6 @@ skip:
  *
  * We request the default format used by pulse here because the data will be
  * converted and possibly re-sampled by obs anyway.
- *
- * The targeted latency for recording is 25ms.
  */
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
@@ -248,10 +245,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	attr.fragsize  = 25000;
 	attr.maxlength = (uint32_t) -1;
 
-	pa_stream_flags_t flags =
-		PA_STREAM_INTERPOLATE_TIMING
-		| PA_STREAM_AUTO_TIMING_UPDATE
-		| PA_STREAM_ADJUST_LATENCY;
+	pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY;
 
 	pulse_lock();
 	int_fast32_t ret = pa_stream_connect_record(data->stream, data->device,
@@ -280,16 +274,13 @@ static void pulse_stop_recording(struct pulse_data *data)
 		pulse_unlock();
 	}
 
-	data->latency /= (double) data->packets * 1000.0;
-
 	blog(LOG_INFO, "Stopped recording from '%s'", data->device);
 	blog(LOG_INFO, "Got %"PRIuFAST32" packets with %"PRIuFAST64" frames",
 		data->packets, data->frames);
-	blog(LOG_INFO, "Average latency: %.2f msec", data->latency);
 
+	data->first_ts = 0;
 	data->packets = 0;
 	data->frames = 0;
-	data->latency = 0.0;
 }
 
 /**
