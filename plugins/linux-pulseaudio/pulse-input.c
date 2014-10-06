@@ -211,6 +211,10 @@ skip:
  *
  * We request the default format used by pulse here because the data will be
  * converted and possibly re-sampled by obs anyway.
+ *
+ * For now we request a buffer length of 25ms although pulse seems to ignore
+ * this setting for monitor streams. For "real" input streams this should work
+ * fine though.
  */
 static int_fast32_t pulse_start_recording(struct pulse_data *data)
 {
@@ -251,7 +255,7 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pulse_unlock();
 
 	pa_buffer_attr attr;
-	attr.fragsize  = 25000;
+	attr.fragsize  = pa_usec_to_bytes(25000, &spec);
 	attr.maxlength = (uint32_t) -1;
 
 	pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY;
