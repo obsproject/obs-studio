@@ -92,7 +92,7 @@ static enum speaker_layout pulse_channels_to_obs_speakers(
 /**
  * Get latency for a pulse audio stream
  */
-static int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
+static inline int pulse_get_stream_latency(pa_stream *stream, int64_t *latency)
 {
 	int ret;
 	int sign;
