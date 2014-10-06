@@ -673,6 +673,12 @@ static inline uint64_t smooth_ts(struct audio_line *line, uint64_t timestamp)
 		(line->next_ts_min - timestamp) :
 		(timestamp - line->next_ts_min);
 
+#ifdef DEBUG_AUDIO
+	if (diff >= TS_SMOOTHING_THRESHOLD)
+		blog(LOG_DEBUG, "above TS smoothing threshold by %"PRIu64,
+				diff);
+#endif
+
 	return (diff < TS_SMOOTHING_THRESHOLD) ? line->next_ts_min : timestamp;
 }
 
