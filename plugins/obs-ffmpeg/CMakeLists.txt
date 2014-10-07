@@ -6,15 +6,18 @@ if(WIN32)
 endif()
 
 find_package(FFMpeg REQUIRED
-	COMPONENTS avcodec avutil swscale avformat swresample)
+	COMPONENTS avcodec avutil avdevice swscale avformat swresample)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
+	obs-ffmpeg-source.h
 	obs-ffmpeg-compat.h)
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-aac.c
+	obs-ffmpeg-source-info.c
+	obs-ffmpeg-source.cpp
 	obs-ffmpeg-output.c)
 	
 add_library(obs-ffmpeg MODULE
