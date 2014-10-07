@@ -33,6 +33,7 @@ struct pulse_data {
 
 	/* user settings */
 	char *device;
+	char *app;
 
 	/* server info */
 	enum speaker_layout speakers;
@@ -245,6 +246,13 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 		return -1;
 	}
 
+	if(data->app) {
+		if (pulse_sinksource_set(data->stream, data->device, data->app) < 0) {
+			blog(LOG_ERROR, "Unable to set app source");
+			return -1;
+		}
+	}
+
 	pulse_lock();
 	pa_stream_set_read_callback(data->stream, pulse_stream_read,
 		(void *) data);
@@ -326,9 +334,33 @@ skip:
 	pulse_signal(0);
 }
 
-/**
- * Get plugin properties
- */
+static bool pulse_output_capture_app_toggle(obs_properties_t *props,
+	obs_property_t *property,
+	obs_data_t *settings)
+{
+	UNUSED_PARAMETER(property);
+
+	bool selected = obs_data_get_bool(settings, "capture_app");
+
+	obs_property_t *sinksource_prop =
+		obs_properties_get(props, "captured_sinksource");
+
+	if (!sinksource_prop)
+		return false;
+
+	if (selected) {
+		obs_property_set_visible(sinksource_prop, true);
+
+		const char *sname = obs_data_get_string(settings, "device_id");
+
+		pulse_sinksource_list_fill(sinksource_prop, sname);
+	} else {
+		obs_property_set_visible(sinksource_prop, false);
+	}
+
+	return true;
+}
+
 static obs_properties_t *pulse_properties(bool input)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -340,6 +372,10 @@ static obs_properties_t *pulse_properties(bool input)
 	pa_source_info_cb_t cb = (input) ? pulse_input_info : pulse_output_info;
 	pulse_get_source_info_list(cb, (void *) devices);
 	pulse_unref();
+
+	if (!input)
+		obs_property_set_modified_callback(devices,
+			pulse_output_capture_app_toggle);
 
 	return props;
 }
@@ -355,7 +391,24 @@ static obs_properties_t *pulse_output_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
-	return pulse_properties(false);
+	obs_properties_t *props = pulse_properties(false);
+
+	obs_property_t *capture_app = obs_properties_add_bool(props, "capture_app",
+		obs_module_text("CaptureApp"));
+
+	obs_property_set_modified_callback(capture_app,
+		pulse_output_capture_app_toggle);
+
+	obs_property_t *sinksources_list =
+	        obs_properties_add_list(props,
+	                                "captured_sinksource",
+	                                obs_module_text("CapturedApp"),
+	                                OBS_COMBO_TYPE_LIST,
+	                                OBS_COMBO_FORMAT_STRING);
+
+	obs_property_set_visible(sinksources_list, false);
+
+	return props;
 }
 
 /**
@@ -412,6 +465,8 @@ static void pulse_input_defaults(obs_data_t *settings)
 
 static void pulse_output_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_bool(settings, "capture_app", false);
+
 	return pulse_defaults(settings, false);
 }
 
@@ -444,6 +499,8 @@ static void pulse_destroy(void *vptr)
 
 	if (data->device)
 		bfree(data->device);
+	if (data->app)
+		bfree(data->app);
 	bfree(data);
 }
 
@@ -455,6 +512,7 @@ static void pulse_update(void *vptr, obs_data_t *settings)
 	PULSE_DATA(vptr);
 	bool restart = false;
 	const char *new_device;
+	const char *new_app;
 
 	new_device = obs_data_get_string(settings, "device_id");
 	if (!data->device || strcmp(data->device, new_device) != 0) {
@@ -462,6 +520,22 @@ static void pulse_update(void *vptr, obs_data_t *settings)
 			bfree(data->device);
 		data->device = bstrdup(new_device);
 		restart = true;
+	}
+
+	if (obs_data_get_bool(settings, "capture_app")) {
+		new_app = obs_data_get_string(settings, "captured_sinksource");
+		if(!data->app || strcmp(data->app, new_app) != 0) {
+			if (data->app)
+				bfree(data->app);
+			data->app = bstrdup(new_app);
+			restart = true;
+		}
+	} else {
+		if(data->app) {
+			bfree(data->app);
+			data->app = NULL;
+			restart = true;
+		}
 	}
 
 	if (!restart)

@@ -135,3 +135,16 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata);
  */
 pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
 	const pa_channel_map *map);
+
+/**
+ * Fill obs_property_t list with sink sources for a monitor source
+ */
+void pulse_sinksource_list_fill(obs_property_t *list, const char *sourcename);
+
+/**
+ * Set sinksource for stream to app app_name on source src_name
+ *
+ * @return negative on error
+ */
+int_fast32_t pulse_sinksource_set(pa_stream *stream, const char *src_name,
+	const char *app_name);

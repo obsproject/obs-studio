@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <pulse/thread-mainloop.h>
 
 #include <util/base.h>
+#include <util/dstr.h>
 #include <obs.h>
 
 #include "pulse-wrapper.h"
@@ -234,3 +235,156 @@ pa_stream* pulse_stream_new(const char* name, const pa_sample_spec* ss,
 	return s;
 }
 
+static void pulse_get_sink_input_info_list(pa_sink_input_info_cb_t cb,
+	void *userdata)
+{
+	pulse_lock();
+
+	pa_operation *op = pa_context_get_sink_input_info_list(pulse_context,
+		cb, userdata);
+
+	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+		pulse_wait();
+
+	pa_operation_unref(op);
+
+	pulse_unlock();
+}
+
+struct pulse_sinksource_cb_data
+{
+	uint32_t sink;
+	obs_property_t *list;
+	uint32_t sink_source;
+	const char *app_name;
+};
+
+static void pulse_get_sink_inp_name(const pa_sink_input_info *info,
+	struct dstr *str)
+{
+	const char *name = pa_proplist_gets(info->proplist, "application.name");
+
+	if (name) {
+		dstr_cat(str, name);
+		dstr_cat(str, ": ");
+	}
+
+	dstr_cat(str, info->name);
+}
+
+static void pulse_sinksource_enum_cb(pa_context *ctx,
+	const pa_sink_input_info *info, int eol, void *data)
+{
+	UNUSED_PARAMETER(ctx);
+	UNUSED_PARAMETER(eol);
+
+	struct pulse_sinksource_cb_data *p = data;
+
+	if (!info) {
+		pulse_signal(0);
+		return;
+	}
+
+	if (info->sink != p->sink)
+		return;
+
+	struct dstr str;
+	dstr_init(&str);
+
+	pulse_get_sink_inp_name(info, &str);
+
+	obs_property_list_add_string(p->list, str.array, str.array);
+
+	dstr_free(&str);
+}
+
+static void pulse_siso_source_info(pa_context *ctx, const pa_source_info *info,
+	int eol, void *data)
+{
+	UNUSED_PARAMETER(ctx);
+
+	if (eol) {
+		pulse_signal(0);
+		return;
+	}
+
+	struct pulse_sinksource_cb_data *p = data;
+
+	p->sink = info->monitor_of_sink;
+}
+
+void pulse_sinksource_list_fill(obs_property_t *list, const char *sourcename)
+{
+	obs_property_list_clear(list);
+
+	if (pulse_context_ready() < 0)
+		return;
+
+	struct pulse_sinksource_cb_data data;
+	data.sink = PA_INVALID_INDEX;
+	data.list = list;
+
+	if (pulse_get_source_info(pulse_siso_source_info, sourcename, &data) < 0)
+		return;
+
+	pulse_get_sink_input_info_list(pulse_sinksource_enum_cb, &data);
+}
+
+static void pulse_sinksource_find_cb(pa_context *ctx,
+	const pa_sink_input_info *info, int eol, void *data)
+{
+	UNUSED_PARAMETER(ctx);
+	UNUSED_PARAMETER(eol);
+
+	struct pulse_sinksource_cb_data *p = data;
+
+	if (!info) {
+		pulse_signal(0);
+		return;
+	}
+
+	if (info->sink != p->sink || p->sink_source != PA_INVALID_INDEX)
+		return;
+
+	struct dstr str;
+	dstr_init(&str);
+
+	pulse_get_sink_inp_name(info, &str);
+
+	if (dstr_cmp(&str, p->app_name) != 0)
+		goto fail;
+
+	p->sink_source = info->index;
+
+fail:
+	dstr_free(&str);
+}
+
+int_fast32_t pulse_sinksource_set(pa_stream *stream, const char *src_name,
+	const char *app_name)
+{
+	if (pulse_context_ready() < 0)
+		return -1;
+
+	struct pulse_sinksource_cb_data data;
+	data.sink = PA_INVALID_INDEX;
+	data.sink_source = PA_INVALID_INDEX;
+	data.app_name = app_name;
+
+	if (pulse_get_source_info(pulse_siso_source_info, src_name, &data) < 0)
+		return -1;
+
+	pulse_get_sink_input_info_list(pulse_sinksource_find_cb, &data);
+
+	if (data.sink_source == PA_INVALID_INDEX) {
+		blog(LOG_ERROR, "Failed finding sink source index");
+		return -1;
+	}
+
+	int res = pa_stream_set_monitor_stream(stream, data.sink_source);
+
+	blog(LOG_INFO, "pulse-input: Set sink %d (%s) to sink_source %d (%s)",
+		data.sink, src_name, data.sink_source, app_name);
+
+	return res;
+}
