@@ -58,7 +58,7 @@ static enum audio_format pulse_to_obs_audio_format(
 	switch (format) {
 	case PA_SAMPLE_U8:        return AUDIO_FORMAT_U8BIT;
 	case PA_SAMPLE_S16LE:     return AUDIO_FORMAT_16BIT;
-	case PA_SAMPLE_S24_32LE:  return AUDIO_FORMAT_32BIT;
+	case PA_SAMPLE_S32LE:     return AUDIO_FORMAT_32BIT;
 	case PA_SAMPLE_FLOAT32LE: return AUDIO_FORMAT_FLOAT;
 	default:                  return AUDIO_FORMAT_UNKNOWN;
 	}
