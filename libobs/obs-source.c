@@ -730,11 +730,11 @@ static void source_output_audio_line(obs_source_t *source,
 			(source->next_audio_ts_min - in.timestamp) :
 			(in.timestamp - source->next_audio_ts_min);
 
-		/* smooth audio if lower or within threshold */
+		/* smooth audio if within threshold */
 		if (diff > MAX_TIMESTAMP_JUMP)
 			handle_ts_jump(source, source->next_audio_ts_min,
 					in.timestamp, diff);
-		else if (ts_under || diff < TS_SMOOTHING_THRESHOLD)
+		else if (diff < TS_SMOOTHING_THRESHOLD)
 			in.timestamp = source->next_audio_ts_min;
 	}
 
