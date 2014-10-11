@@ -58,7 +58,7 @@ static enum audio_format pulse_to_obs_audio_format(
 	switch (format) {
 	case PA_SAMPLE_U8:        return AUDIO_FORMAT_U8BIT;
 	case PA_SAMPLE_S16LE:     return AUDIO_FORMAT_16BIT;
-	case PA_SAMPLE_S24_32LE:  return AUDIO_FORMAT_32BIT;
+	case PA_SAMPLE_S32LE:     return AUDIO_FORMAT_32BIT;
 	case PA_SAMPLE_FLOAT32LE: return AUDIO_FORMAT_FLOAT;
 	default:                  return AUDIO_FORMAT_UNKNOWN;
 	}
@@ -183,15 +183,24 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	if (eol != 0)
 		goto skip;
 
-	data->format          = i->sample_spec.format;
+	blog(LOG_INFO, "Audio format: %s, %"PRIu32" Hz"
+		", %"PRIu8" channels",
+		pa_sample_format_to_string(i->sample_spec.format),
+		i->sample_spec.rate,
+		i->sample_spec.channels);
+
+	pa_sample_format_t format = i->sample_spec.format;
+	if (pulse_to_obs_audio_format(format) == AUDIO_FORMAT_UNKNOWN) {
+		format = PA_SAMPLE_S16LE;
+
+		blog(LOG_INFO, "Sample format %s not supported by OBS, using %s instead for recording",
+			pa_sample_format_to_string(i->sample_spec.format),
+			pa_sample_format_to_string(format));
+	}
+
+	data->format          = format;
 	data->samples_per_sec = i->sample_spec.rate;
 	data->channels        = i->sample_spec.channels;
-
-	blog(LOG_INFO, "Audio format: %s, %"PRIuFAST32" Hz"
-		", %"PRIuFAST8" channels",
-		pa_sample_format_to_string(data->format),
-		data->samples_per_sec,
-		data->channels);
 
 skip:
 	pulse_signal(0);
