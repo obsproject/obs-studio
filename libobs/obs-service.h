@@ -17,6 +17,13 @@
 
 #pragma once
 
+/**
+ * @file
+ * @brief header for modules implementing services.
+ *
+ * Services are modules that implement provider specific settings for outputs.
+ */
+
 struct obs_service_info {
 	/* required */
 	const char *id;
