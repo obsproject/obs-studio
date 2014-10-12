@@ -50,6 +50,20 @@ elseif(APPLE)
 	set(obs_PLATFORM_LIBRARIES ${APPKIT_LIBRARIES})
 
 	add_definitions(-fobjc-arc)
+
+	option(ENABLE_SPARKLE_UPDATER "Enables updates via the Sparkle framework (don't forget to update the Info.plist for your .app)" OFF)
+	if(ENABLE_SPARKLE_UPDATER)
+		find_library(SPARKLE Sparkle)
+		include_directories(${SPARKLE})
+		set(obs_PLATFORM_SOURCES
+			${obs_PLATFORM_SOURCES}
+			sparkle-updater.mm)
+		set(obs_PLATFORM_LIBRARIES
+			${obs_PLATFORM_LIBRARIES}
+			${SPARKLE})
+		add_definitions(-DUPDATE_SPARKLE=1)
+	endif()
+
 elseif(UNIX)
         find_package(Qt5X11Extras REQUIRED)
 
