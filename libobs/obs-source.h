@@ -19,6 +19,13 @@
 
 #include "obs.h"
 
+/**
+ * @file
+ * @brief header for modules implementing sources.
+ *
+ * Sources are modules that either feed data to libobs or modify it.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,7 +97,7 @@ enum obs_source_type {
 
 /**
  * Source supports interaction.
- * 
+ *
  * When this is used, the source will receive interaction events
  * if they provide the necessary callbacks in the source definition structure.
  */
@@ -165,7 +172,7 @@ struct obs_source_info {
 	 */
 	void (*get_defaults)(obs_data_t *settings);
 
-	/** 
+	/**
 	 * Gets the property information of this source
 	 *
 	 * @return         The properties data
@@ -295,7 +302,7 @@ struct obs_source_info {
 	/**
 	 * Called when interacting with a source and a mouse-down or mouse-up
 	 * occurs.
-	 * 
+	 *
 	 * @param data         Source data
 	 * @param event        Mouse event properties
 	 * @param type         Mouse button pushed
