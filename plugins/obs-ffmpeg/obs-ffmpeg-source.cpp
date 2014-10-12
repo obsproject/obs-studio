@@ -18,9 +18,11 @@ FFmpegCodecContext::FFmpegCodecContext():
 }
 
 FFmpegCodecContext::FFmpegCodecContext(AVStream *stream, const AVCodec *codec):
-	std::unique_ptr<AVCodecContext, void(*)(AVCodecContext*)>(avcodec_alloc_context3(codec),
-			[](AVCodecContext *c) { avcodec_close(c); av_free(c); }),
-	m_extradata(stream->codec->extradata, stream->codec->extradata + stream->codec->extradata_size)
+	std::unique_ptr<AVCodecContext,
+			void(*)(AVCodecContext*)>(avcodec_alloc_context3(codec),
+				[](AVCodecContext *c) { avcodec_close(c); av_free(c); }),
+	m_extradata(stream->codec->extradata,
+			stream->codec->extradata + stream->codec->extradata_size)
 {
 	(*this)->extradata = m_extradata.data();
 	(*this)->extradata_size = m_extradata.size();
@@ -120,7 +122,10 @@ void FFmpegSource::Update(obs_data_t *settings)
 		throw std::runtime_error("Cannot open FFmpeg input");
 	}
 	assert(fmt != nullptr);
-	m_formatContext = std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)>(fmt, [](AVFormatContext *c) { avformat_close_input(&c); });
+	m_formatContext = std::unique_ptr<AVFormatContext,
+					void(*)(AVFormatContext*)>(fmt, [](AVFormatContext *c) {
+						avformat_close_input(&c);
+					});
 
 	// Find stream info
 	if (avformat_find_stream_info(m_formatContext.get(), nullptr) != 0) {
@@ -187,11 +192,18 @@ void FFmpegSource::OutputFrame(AVFrame *avFrame)
 
 	AVPicture pic;
 	avpicture_alloc(&pic, AV_PIX_FMT_RGBA, avFrame->width, avFrame->height);
-	auto swCtx = sws_getContext(avFrame->width, avFrame->height, static_cast<PixelFormat>(avFrame->format),
+	auto swCtx = sws_getContext(avFrame->width, avFrame->height,
+			static_cast<PixelFormat>(avFrame->format),
 			avFrame->width, avFrame->height, AV_PIX_FMT_RGBA,
 			SWS_BILINEAR, nullptr, nullptr, nullptr);
 	assert(swCtx != nullptr);
-	sws_scale(swCtx, avFrame->data, avFrame->linesize, 0, avFrame->height, pic.data, pic.linesize);	
+	sws_scale(swCtx,
+			avFrame->data,
+			avFrame->linesize,
+			0,
+			avFrame->height,
+			pic.data,
+			pic.linesize);	
 	assert(sizeof(frame.linesize) >= sizeof(pic.linesize));
 	std::copy(pic.linesize, pic.linesize + sizeof(pic.linesize), frame.linesize);
 	assert(sizeof(frame.data) >= sizeof(pic.data));
@@ -213,7 +225,10 @@ void FFmpegSource::ProcessFrame(FFmpegPacket& pkt) {
 	while (offset < pkt.size) {
 		AVPacket packetToDecode = pkt.GetOffsetPacket(offset);
 		int framesAvailable = 0;
-		const int ret = avcodec_decode_video2(m_codecContext.get(), frame.get(), &framesAvailable, &packetToDecode);
+		const int ret = avcodec_decode_video2(m_codecContext.get(),
+				frame.get(),
+				&framesAvailable,
+				&packetToDecode);
 		if (ret < 0) {
 			return;
 		}
@@ -222,7 +237,9 @@ void FFmpegSource::ProcessFrame(FFmpegPacket& pkt) {
 				frame->pts = frame->pkt_pts;
 			}
 
-			frame->pts = av_rescale_q(frame->pts, FindVideoStream()->time_base, kNSTimeBase);
+			frame->pts = av_rescale_q(frame->pts,
+					FindVideoStream()->time_base,
+					kNSTimeBase);
 
 			OutputFrame(frame.get());
 		}
@@ -254,7 +271,11 @@ static std::once_flag initAVFlag;
 void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	// TODO: figure out how this might conflict with other FFmpeg modules
-	std::call_once(initAVFlag, []() { av_register_all(); avdevice_register_all(); });
+	std::call_once(initAVFlag,
+			[]() {
+				av_register_all();
+				avdevice_register_all();
+			});
 	FFmpegSource *src = new FFmpegSource(source);
 	assert(src != nullptr);
 	TryUpdate(*src, settings);
