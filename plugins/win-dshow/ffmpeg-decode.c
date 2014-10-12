@@ -122,7 +122,7 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 
 	av_init_packet(&packet);
 	packet.data = decode->packet_buffer;
-	packet.size = size;
+	packet.size = (int)size;
 
 	if (!decode->frame) {
 		decode->frame = avcodec_alloc_frame();
@@ -198,7 +198,7 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 
 	av_init_packet(&packet);
 	packet.data     = decode->packet_buffer;
-	packet.size     = size;
+	packet.size     = (int)size;
 	packet.pts      = *ts;
 
 	if (decode->codec->id == AV_CODEC_ID_H264 && avc_keyframe(data, size))
