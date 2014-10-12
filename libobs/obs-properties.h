@@ -20,6 +20,20 @@
 #include "util/c99defs.h"
 #include "obs-data.h"
 
+/**
+ * @file
+ * @brief libobs header for the properties system used in libobs
+ *
+ * @page properties Properties
+ * @brief Platform and Toolkit independent settings implementation
+ *
+ * @section prop_overview_sec Overview
+ *
+ * libobs uses a property system which lets for example sources specify
+ * settings that can be displayed to the user by the UI.
+ *
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
