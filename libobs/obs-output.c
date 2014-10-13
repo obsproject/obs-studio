@@ -179,6 +179,8 @@ static void log_frame_info(struct obs_output *output)
 	uint32_t total   = video_frames  - output->starting_frame_count;
 	uint32_t skipped = video_skipped - output->starting_skipped_frame_count;
 
+	int dropped = obs_output_get_frames_dropped(output);
+
 	double percentage_skipped = (double)skipped / (double)total * 100.0;
 
 	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
@@ -190,6 +192,16 @@ static void log_frame_info(struct obs_output *output)
 				"%"PRIu32" (%g%%)",
 				output->context.name,
 				skipped, percentage_skipped);
+
+	if (dropped) {
+		double percentage_dropped;
+		percentage_dropped = (double)dropped / (double)total * 100.0;
+
+		blog(LOG_INFO, "Output '%s': Number of dropped frames: "
+				"%d (%g%%)",
+				output->context.name,
+				dropped, percentage_dropped);
+	}
 }
 
 void obs_output_stop(obs_output_t *output)
