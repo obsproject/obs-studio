@@ -7,11 +7,11 @@ include_directories(${COCOA})
 
 add_definitions(-fobjc-arc)
 
-set(osx-text_SOURCES
+set(osx-test_SOURCES
 	test.mm)
 
-add_executable(test
-	${osx-text_SOURCES})
-target_link_libraries(test
+add_executable(osx_test
+	${osx-test_SOURCES})
+target_link_libraries(osx_test
 	libobs
 	${COCOA})
