@@ -56,13 +56,20 @@ static bool SceneItemHasVideo(obs_sceneitem_t *item)
 	return (flags & OBS_SOURCE_VIDEO) != 0;
 }
 
+static bool CloseFloat(float a, float b, float epsilon=0.01)
+{
+	return abs(a-b) <= epsilon;
+}
+
 static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
 	SceneFindData *data = reinterpret_cast<SceneFindData*>(param);
 	matrix4       transform;
+	matrix4       invTransform;
 	vec3          transformedPos;
 	vec3          pos3;
+	vec3          pos3_;
 
 	if (!SceneItemHasVideo(item))
 		return true;
@@ -71,10 +78,12 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
-	matrix4_inv(&transform, &transform);
-	vec3_transform(&transformedPos, &pos3, &transform);
+	matrix4_inv(&invTransform, &transform);
+	vec3_transform(&transformedPos, &pos3, &invTransform);
+	vec3_transform(&pos3_, &transformedPos, &transform);
 
-	if (transformedPos.x >= 0.0f && transformedPos.x <= 1.0f &&
+	if (CloseFloat(pos3.x, pos3_.x) && CloseFloat(pos3.y, pos3_.y) &&
+	    transformedPos.x >= 0.0f && transformedPos.x <= 1.0f &&
 	    transformedPos.y >= 0.0f && transformedPos.y <= 1.0f) {
 		if (data->selectBelow && obs_sceneitem_selected(item)) {
 			if (data->item)
