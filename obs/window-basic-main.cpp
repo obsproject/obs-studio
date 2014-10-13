@@ -709,6 +709,10 @@ void OBSBasic::AddScene(OBSSource source)
 			OBSBasic::SceneItemAdded, this);
 	signal_handler_connect(handler, "item_remove",
 			OBSBasic::SceneItemRemoved, this);
+	signal_handler_connect(handler, "item_select",
+			OBSBasic::SceneItemSelected, this);
+	signal_handler_connect(handler, "item_deselect",
+			OBSBasic::SceneItemDeselected, this);	
 	signal_handler_connect(handler, "item_move_up",
 			OBSBasic::SceneItemMoveUp, this);
 	signal_handler_connect(handler, "item_move_down",
@@ -812,6 +816,36 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 	for (size_t i = 0; i < volumes.size(); i++) {
 		if (volumes[i]->GetName().compare(prevName) == 0)
 			volumes[i]->SetName(newName);
+	}
+}
+
+void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
+{
+	if (scene != GetCurrentScene())
+		return;
+
+	for (int i = 0; i < ui->sources->count(); i++) {
+		QListWidgetItem *witem = ui->sources->item(i);
+		QVariant data = witem->data(Qt::UserRole);
+		if (!data.canConvert<OBSSceneItem>())
+			continue;
+
+		if (item != data.value<OBSSceneItem>())
+			continue;
+
+		if (select && witem->isSelected())
+			break;
+
+		if (!select && !witem->isSelected())
+			break;
+
+		QItemSelectionModel::SelectionFlags model = select ?
+				QItemSelectionModel::Select :
+				QItemSelectionModel::Deselect;
+		model |= QItemSelectionModel::Current;
+
+		ui->sources->setCurrentItem(witem, model);
+		break;
 	}
 }
 
@@ -1055,6 +1089,30 @@ void OBSBasic::SceneItemRemoved(void *data, calldata_t *params)
 
 	QMetaObject::invokeMethod(window, "RemoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
+}
+
+void OBSBasic::SceneItemSelected(void *data, calldata_t *params)
+{
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+
+	obs_scene_t     *scene = (obs_scene_t*)calldata_ptr(params, "scene");
+	obs_sceneitem_t *item  = (obs_sceneitem_t*)calldata_ptr(params, "item");
+
+	QMetaObject::invokeMethod(window, "SelectSceneItem",
+			Q_ARG(OBSScene, scene), Q_ARG(OBSSceneItem, item),
+			Q_ARG(bool, true));
+}
+
+void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
+{
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+
+	obs_scene_t     *scene = (obs_scene_t*)calldata_ptr(params, "scene");
+	obs_sceneitem_t *item  = (obs_sceneitem_t*)calldata_ptr(params, "item");
+
+	QMetaObject::invokeMethod(window, "SelectSceneItem",
+			Q_ARG(OBSScene, scene), Q_ARG(OBSSceneItem, item),
+			Q_ARG(bool, false));
 }
 
 void OBSBasic::SourceAdded(void *data, calldata_t *params)

@@ -161,6 +161,7 @@ private slots:
 	void UpdateSceneSelection(OBSSource source);
 	void RenameSources(QString newName, QString prevName);
 
+	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
 	void MoveSceneItem(OBSSceneItem item, obs_order_movement movement);
 
 	void ActivateAudioSource(OBSSource source);
@@ -173,6 +174,8 @@ private:
 	/* OBS Callbacks */
 	static void SceneItemAdded(void *data, calldata_t *params);
 	static void SceneItemRemoved(void *data, calldata_t *params);
+	static void SceneItemSelected(void *data, calldata_t *params);
+	static void SceneItemDeselected(void *data, calldata_t *params);
 	static void SourceAdded(void *data, calldata_t *params);
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
