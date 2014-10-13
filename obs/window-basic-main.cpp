@@ -1922,14 +1922,17 @@ void OBSBasic::logUploadFinished()
 static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		obs_source_t *source, const string &name)
 {
-	const char      *prevName   = obs_source_get_name(source);
-	obs_source_t    *foundSource = obs_get_source_by_name(name.c_str());
-	QListWidgetItem *listItem   = listWidget->currentItem();
+	const char *prevName = obs_source_get_name(source);
+	if (name == prevName)
+		return;
 
-	if (foundSource || name.compare(prevName) == 0 || name.empty()) {
+	obs_source_t    *foundSource = obs_get_source_by_name(name.c_str());
+	QListWidgetItem *listItem    = listWidget->currentItem();
+
+	if (foundSource || name.empty()) {
 		listItem->setText(QT_UTF8(prevName));
 
-		if (foundSource || name.compare(prevName) == 0) {
+		if (foundSource) {
 			QMessageBox::information(parent,
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
