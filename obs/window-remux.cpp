@@ -58,6 +58,7 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent)
 			this, &OBSRemux::inputChanged);
 
 	worker->moveToThread(&remuxer);
+	remuxer.start();
 
 	//gcc-4.8 can't use QPointer<RemuxWorker> below
 	RemuxWorker *worker_ = worker;
@@ -157,8 +158,6 @@ void OBSRemux::Remux()
 	ui->progressBar->setVisible(true);
 	ui->remux->setEnabled(false);
 
-	if (!remuxer.isRunning())
-		remuxer.start();
 	emit remux();
 }
 
