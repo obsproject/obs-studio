@@ -1370,6 +1370,11 @@ int OBSBasic::ResetVideo()
 	if (IS_WIN32 && ret != OBS_VIDEO_SUCCESS) {
 		/* Try OpenGL if DirectX fails on windows */
 		if (astrcmpi(ovi.graphics_module, "libobs-opengl") != 0) {
+			blog(LOG_WARNING, "Failed to initialize obs video (%d) "
+					  "with graphics_module='%s', retrying "
+					  "with graphics_module='%s'",
+					  ret, ovi.graphics_module,
+					  "libobs-opengl");
 			ovi.graphics_module = "libobs-opengl";
 			ret = AttemptToResetVideo(&ovi);
 		}
