@@ -80,7 +80,6 @@ static inline void render_displays(void)
 static inline void set_render_size(uint32_t width, uint32_t height)
 {
 	gs_enable_depth_test(false);
-	gs_enable_blending(false);
 	gs_set_cull_mode(GS_NEITHER);
 
 	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
@@ -144,6 +143,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 	gs_effect_set_val(matrix, mat_val, sizeof(mat_val));
 	gs_effect_set_texture(image, texture);
 
+	gs_enable_blending(false);
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
@@ -151,6 +151,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
+	gs_enable_blending(true);
 
 	video->textures_output[cur_texture] = true;
 }
@@ -195,6 +196,7 @@ static void render_convert_texture(struct obs_core_video *video,
 	gs_set_render_target(target, NULL);
 	set_render_size(video->output_width, video->conversion_height);
 
+	gs_enable_blending(false);
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
@@ -203,6 +205,7 @@ static void render_convert_texture(struct obs_core_video *video,
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
+	gs_enable_blending(true);
 
 	video->textures_converted[cur_texture] = true;
 }
