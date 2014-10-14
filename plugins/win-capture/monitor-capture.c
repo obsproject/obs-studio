@@ -5,6 +5,7 @@
 #define TEXT_CAPTURE_CURSOR  obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY   obs_module_text("Compatibility")
 #define TEXT_MONITOR         obs_module_text("Monitor")
+#define TEXT_PRIMARY_MONITOR obs_module_text("PrimaryMonitor")
 
 struct monitor_capture {
 	obs_source_t      *source;
@@ -169,6 +170,48 @@ static uint32_t monitor_capture_height(void *data)
 	return capture->data.height;
 }
 
+static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
+	LPARAM param)
+{
+	UNUSED_PARAMETER(hdc);
+	UNUSED_PARAMETER(rect);
+
+	obs_property_t *monitor_list = (obs_property_t*)param;
+	MONITORINFO mi;
+	size_t monitor_id = 0;
+	struct dstr monitor_desc = { 0 };
+	struct dstr resolution = { 0 };
+	struct dstr format_string = { 0 };
+
+	monitor_id = obs_property_list_item_count(monitor_list);
+
+	mi.cbSize = sizeof(mi);
+	GetMonitorInfo(handle, &mi);
+
+	dstr_catf(&resolution,
+		"%dx%d @ %d,%d",
+		mi.rcMonitor.right - mi.rcMonitor.left,
+		mi.rcMonitor.bottom - mi.rcMonitor.top,
+		mi.rcMonitor.left,
+		mi.rcMonitor.top);
+
+	dstr_copy(&format_string, "%s %d: %s");
+	if (mi.dwFlags == MONITORINFOF_PRIMARY) {
+		dstr_catf(&format_string, " (%s)", TEXT_PRIMARY_MONITOR);
+	}
+
+	dstr_catf(&monitor_desc,
+		format_string.array,
+		TEXT_MONITOR,
+		monitor_id,
+		resolution.array);
+
+	obs_property_list_add_int(monitor_list,
+		monitor_desc.array, (int)monitor_id);
+
+	return TRUE;
+}
+
 static obs_properties_t *monitor_capture_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -184,6 +227,8 @@ static obs_properties_t *monitor_capture_properties(void *unused)
 
 	obs_property_t *capture_cursor = obs_properties_add_bool(props,
 		"capture_cursor", TEXT_CAPTURE_CURSOR);
+
+	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 
 	return props;
 }
