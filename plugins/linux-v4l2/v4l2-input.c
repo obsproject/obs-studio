@@ -249,7 +249,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
 			blog(LOG_INFO, "Failed to query capabilities for %s",
 			     device.array);
-			close(fd);
+			v4l2_close(fd);
 			continue;
 		}
 
@@ -260,7 +260,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		if (!(caps & V4L2_CAP_VIDEO_CAPTURE)) {
 			blog(LOG_INFO, "%s seems to not support video capture",
 			     device.array);
-			close(fd);
+			v4l2_close(fd);
 			continue;
 		}
 
@@ -269,7 +269,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
 				device.array);
 
-		close(fd);
+		v4l2_close(fd);
 	}
 
 	closedir(dirp);
