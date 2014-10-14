@@ -36,6 +36,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "v4l2-helpers.h"
 
+#if HAVE_UDEV
+#include "v4l2-udev.h"
+#endif
+
 #define V4L2_DATA(voidptr) struct v4l2_data *data = voidptr;
 
 #define timeval2ns(tv) \
@@ -58,6 +62,7 @@ struct v4l2_data {
 	obs_source_t *source;
 	pthread_t thread;
 	os_event_t *event;
+	void *udev;
 
 	int_fast32_t dev;
 	int width;
@@ -68,6 +73,10 @@ struct v4l2_data {
 	/* statistics */
 	uint64_t frames;
 };
+
+/* forward declarations */
+static void v4l2_init(struct v4l2_data *data);
+static void v4l2_terminate(struct v4l2_data *data);
 
 /**
  * Prepare the output frame structure for obs and compute plane offsets
@@ -504,6 +513,43 @@ static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
+#if HAVE_UDEV
+/**
+ * Device added callback
+ *
+ * If everything went fine we can start capturing again when the device is
+ * reconnected
+ */
+static void device_added(const char *dev, void *vptr)
+{
+	V4L2_DATA(vptr);
+
+	if (strcmp(data->device_id, dev))
+		return;
+
+	blog(LOG_INFO, "Device %s reconnected", dev);
+
+	v4l2_init(data);
+}
+/**
+ * Device removed callback
+ *
+ * We stop recording here so we don't block the device node
+ */
+static void device_removed(const char *dev, void *vptr)
+{
+	V4L2_DATA(vptr);
+
+	if (strcmp(data->device_id, dev))
+		return;
+
+	blog(LOG_INFO, "Device %s disconnected", dev);
+
+	v4l2_terminate(data);
+}
+
+#endif
+
 static obs_properties_t *v4l2_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -567,6 +613,11 @@ static void v4l2_destroy(void *vptr)
 
 	if (data->device_id)
 		bfree(data->device_id);
+
+#if HAVE_UDEV
+	v4l2_unref_udev(data->udev);
+#endif
+
 	bfree(data);
 }
 
@@ -671,6 +722,12 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	data->source = source;
 
 	v4l2_update(data, settings);
+
+#if HAVE_UDEV
+	data->udev = v4l2_init_udev();
+	v4l2_set_device_added_callback(data->udev, &device_added, data);
+	v4l2_set_device_removed_callback(data->udev, &device_removed, data);
+#endif
 
 	return data;
 }
