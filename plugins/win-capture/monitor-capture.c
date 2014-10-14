@@ -50,7 +50,7 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 
 	UNUSED_PARAMETER(hdc);
 	UNUSED_PARAMETER(handle);
-	return (monitor->desired_id < monitor->cur_id++);
+	return (monitor->desired_id > monitor->cur_id++);
 }
 
 static void update_monitor(struct monitor_capture *capture,
