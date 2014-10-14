@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QMouseEvent>
 
+#include <algorithm>
 #include <cmath>
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
@@ -706,10 +707,31 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
-	gs_load_vertexbuffer(main->circle);
-
 	matrix4 boxTransform;
+	matrix4 invBoxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
+	matrix4_inv(&invBoxTransform, &boxTransform);
+
+	vec3 bounds[] = {
+		{{{0.f, 0.f, 0.f}}},
+		{{{1.f, 0.f, 0.f}}},
+		{{{0.f, 1.f, 0.f}}},
+		{{{1.f, 1.f, 0.f}}},
+	};
+
+	bool visible = std::all_of(std::begin(bounds), std::end(bounds),
+			[&](const vec3 &b)
+	{
+		vec3 pos;
+		vec3_transform(&pos, &b, &boxTransform);
+		vec3_transform(&pos, &pos, &invBoxTransform);
+		return CloseFloat(pos.x, b.x) && CloseFloat(pos.y, b.y);
+	});
+
+	if (!visible)
+		return true;
+
+	gs_load_vertexbuffer(main->circle);
 
 	DrawCircleAtPos(0.0f, 0.0f, boxTransform, main->previewScale);
 	DrawCircleAtPos(0.0f, 1.0f, boxTransform, main->previewScale);
