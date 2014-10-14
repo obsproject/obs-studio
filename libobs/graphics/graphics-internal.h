@@ -230,11 +230,16 @@ struct gs_exports {
 
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);
+	bool (*device_shared_texture_available)(void);
+
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device,
 			uint32_t width, uint32_t height);
 
 	void *(*gs_texture_get_dc)(gs_texture_t *gdi_tex);
 	void (*gs_texture_release_dc)(gs_texture_t *gdi_tex);
+
+	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
+				uint32_t handle);
 #endif
 };
 

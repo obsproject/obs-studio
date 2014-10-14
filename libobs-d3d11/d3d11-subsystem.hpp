@@ -234,6 +234,8 @@ struct gs_texture {
 
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
 
+	inline gs_texture() {}
+
 	inline gs_texture(gs_device *device, gs_texture_type type,
 			uint32_t levels, gs_color_format format)
 		: device (device),
@@ -258,7 +260,7 @@ struct gs_texture_2d : gs_texture {
 	bool            isDynamic;
 	bool            isShared;
 	bool            genMipmaps;
-	HANDLE          sharedHandle;
+	uint32_t        sharedHandle;
 
 	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const uint8_t **data);
 	void InitTexture(const uint8_t **data);
@@ -283,6 +285,8 @@ struct gs_texture_2d : gs_texture {
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
 			gs_texture_type type, bool gdiCompatible, bool shared);
+
+	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
 
 struct gs_zstencil_buffer {

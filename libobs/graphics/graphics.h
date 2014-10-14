@@ -702,6 +702,7 @@ EXPORT bool     gs_texture_rebind_iosurface(gs_texture_t *texture,
 #elif _WIN32
 
 EXPORT bool gs_gdi_texture_available(void);
+EXPORT bool gs_shared_texture_available(void);
 
 /** creates a windows GDI-lockable texture */
 EXPORT gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height);
@@ -709,6 +710,8 @@ EXPORT gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height);
 EXPORT void *gs_texture_get_dc(gs_texture_t *gdi_tex);
 EXPORT void gs_texture_release_dc(gs_texture_t *gdi_tex);
 
+/** creates a windows shared texture from a texture handle */
+EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
 #endif
 
 /* inline functions used by modules */

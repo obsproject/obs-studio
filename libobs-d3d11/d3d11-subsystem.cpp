@@ -1805,6 +1805,11 @@ extern "C" EXPORT bool device_gdi_texture_available(void)
 	return true;
 }
 
+extern "C" EXPORT bool device_shared_texture_available(void)
+{
+	return true;
+}
+
 extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,
 		uint32_t width, uint32_t height)
 {
@@ -1859,4 +1864,20 @@ extern "C" EXPORT void gs_texture_release_dc(gs_texture_t *tex)
 		return;
 
 	tex2d->gdiSurface->ReleaseDC(nullptr);
+}
+
+extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
+		uint32_t handle)
+{
+	gs_texture *texture = nullptr;
+	try {
+		texture = new gs_texture_2d(device, handle);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "gs_texture_open_shared (D3D11): %s (%08lX)",
+				error.str, error.hr);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_open_shared (D3D11): %s", error);
+	}
+
+	return texture;
 }

@@ -25,7 +25,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
 	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = levels;
-	
+
 	if (!actual_levels)
 		actual_levels = gs_get_total_levels(width, height);
 
@@ -38,7 +38,7 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 		for (uint32_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
 			newSRD.pSysMem          = *data;
-			newSRD.SysMemPitch      = newRowSize; 
+			newSRD.SysMemPitch      = newRowSize;
 			newSRD.SysMemSlicePitch = newTexSize;
 			srd.push_back(newSRD);
 
@@ -160,4 +160,66 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 
 	if (isRenderTarget)
 		InitRenderTargets();
+}
+
+static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
+{
+	switch (format) {
+	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
+	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
+	case DXGI_FORMAT_B8G8R8X8_UNORM:     return GS_BGRX;
+	case DXGI_FORMAT_B8G8R8A8_UNORM:     return GS_BGRA;
+	case DXGI_FORMAT_R10G10B10A2_UNORM:  return GS_R10G10B10A2;
+	case DXGI_FORMAT_R16G16B16A16_UNORM: return GS_RGBA16;
+	case DXGI_FORMAT_R16_UNORM:          return GS_R16;
+	case DXGI_FORMAT_R16G16B16A16_FLOAT: return GS_RGBA16F;
+	case DXGI_FORMAT_R32G32B32A32_FLOAT: return GS_RGBA32F;
+	case DXGI_FORMAT_R16G16_FLOAT:       return GS_RG16F;
+	case DXGI_FORMAT_R32G32_FLOAT:       return GS_RG32F;
+	case DXGI_FORMAT_R16_FLOAT:          return GS_R16F;
+	case DXGI_FORMAT_R32_FLOAT:          return GS_R32F;
+	case DXGI_FORMAT_BC1_UNORM:          return GS_DXT1;
+	case DXGI_FORMAT_BC2_UNORM:          return GS_DXT3;
+	case DXGI_FORMAT_BC3_UNORM:          return GS_DXT5;
+	}
+
+	return GS_UNKNOWN;
+}
+
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
+	: isRenderTarget  (false),
+	  isGDICompatible (false),
+	  isDynamic       (false),
+	  isShared        (true),
+	  genMipmaps      (false),
+	  sharedHandle    (handle)
+{
+	HRESULT hr;
+	hr = device->device->OpenSharedResource((HANDLE)handle,
+			__uuidof(ID3D11Texture2D), (void**)texture.Assign());
+	if (FAILED(hr))
+		throw HRError("Failed to open resource", hr);
+
+	D3D11_TEXTURE2D_DESC desc;
+	texture->GetDesc(&desc);
+
+	this->type       = GS_TEXTURE_2D;
+	this->format     = ConvertDXGITextureFormat(desc.Format);
+	this->levels     = 1;
+	this->device     = device;
+
+	this->width      = desc.Width;
+	this->height     = desc.Height;
+	this->dxgiFormat = desc.Format;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
+	resourceDesc.Format              = desc.Format;
+	resourceDesc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
+	resourceDesc.Texture2D.MipLevels = 1;
+
+	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
+			shaderRes.Assign());
+	if (FAILED(hr))
+		throw HRError("Failed to create shader resource view", hr);
 }

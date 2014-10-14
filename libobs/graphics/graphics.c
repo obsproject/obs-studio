@@ -1959,6 +1959,14 @@ bool gs_gdi_texture_available(void)
 	return thread_graphics->exports.device_gdi_texture_available();
 }
 
+bool gs_shared_texture_available(void)
+{
+	if (!thread_graphics)
+		return false;
+
+	return thread_graphics->exports.device_shared_texture_available();
+}
+
 /** creates a windows GDI-lockable texture */
 gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height)
 {
@@ -1988,6 +1996,18 @@ void gs_texture_release_dc(gs_texture_t *gdi_tex)
 
 	if (thread_graphics->exports.gs_texture_release_dc)
 		thread_graphics->exports.gs_texture_release_dc(gdi_tex);
+}
+
+gs_texture_t *gs_texture_open_shared(uint32_t handle)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!graphics)
+		return NULL;
+
+	if (graphics->exports.device_texture_open_shared)
+		return graphics->exports.device_texture_open_shared(
+				graphics->device, handle);
+	return NULL;
 }
 
 #endif
