@@ -224,10 +224,12 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+#ifdef __APPLE__
 	filename = find_libobs_data_file("default_rect.effect");
 	video->default_rect_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
+#endif
 
 	filename = find_libobs_data_file("solid.effect");
 	video->solid_effect = gs_effect_create_from_file(filename,
@@ -241,8 +243,10 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 
 	if (!video->default_effect)
 		success = false;
+#ifdef __APPLE__
 	if (!video->default_rect_effect)
 		success = false;
+#endif
 	if (!video->solid_effect)
 		success = false;
 	if (!video->conversion_effect)
