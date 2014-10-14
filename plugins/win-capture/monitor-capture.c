@@ -1,6 +1,8 @@
 #include <util/dstr.h>
 #include "dc-capture.h"
 
+#define TEXT_MONITOR_CAPTURE obs_module_text("MonitorCapture")
+
 struct monitor_capture {
 	obs_source_t      *source;
 
@@ -85,7 +87,7 @@ static inline void update_settings(struct monitor_capture *capture,
 
 static const char *monitor_capture_getname(void)
 {
-	return obs_module_text("MonitorCapture");
+	return TEXT_MONITOR_CAPTURE;
 }
 
 static void monitor_capture_destroy(void *data)
