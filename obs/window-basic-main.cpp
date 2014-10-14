@@ -821,7 +821,7 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 
 void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 {
-	if (scene != GetCurrentScene())
+	if (!select || scene != GetCurrentScene())
 		return;
 
 	for (int i = 0; i < ui->sources->count(); i++) {
@@ -833,18 +833,7 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 		if (item != data.value<OBSSceneItem>())
 			continue;
 
-		if (select && witem->isSelected())
-			break;
-
-		if (!select && !witem->isSelected())
-			break;
-
-		QItemSelectionModel::SelectionFlags model = select ?
-				QItemSelectionModel::Select :
-				QItemSelectionModel::Deselect;
-		model |= QItemSelectionModel::Current;
-
-		ui->sources->setCurrentItem(witem, model);
+		ui->sources->setCurrentItem(witem);
 		break;
 	}
 }
