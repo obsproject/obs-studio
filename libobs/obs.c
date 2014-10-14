@@ -671,8 +671,10 @@ int obs_reset_video(struct obs_video_info *ovi)
 
 	if (!video->graphics) {
 		int errorcode = obs_init_graphics(ovi);
-		if (errorcode != OBS_VIDEO_SUCCESS)
+		if (errorcode != OBS_VIDEO_SUCCESS) {
+			obs_free_graphics();
 			return errorcode;
+		}
 	}
 
 	blog(LOG_INFO, "video settings reset:\n"
