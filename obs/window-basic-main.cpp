@@ -1581,10 +1581,14 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	popup.addAction(QTStr("Add"),
 			this, SLOT(on_actionAddScene_triggered()));
 
-	if (item)
+	if (item) {
+		popup.addSeparator();
+		popup.addAction(QTStr("Rename"),
+				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
+	}
 
 	popup.exec(QCursor::pos());
 }
