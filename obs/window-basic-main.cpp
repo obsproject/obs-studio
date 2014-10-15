@@ -1585,7 +1585,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 	if (item)
 		popup.addAction(QTStr("Remove"),
-				this, SLOT(RemoveSelectedScene()));
+				this, SLOT(RemoveSelectedScene()),
+				DeleteKeys.front());
 
 	popup.exec(QCursor::pos());
 }
