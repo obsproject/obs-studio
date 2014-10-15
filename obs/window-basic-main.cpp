@@ -71,6 +71,8 @@ static void AddExtraModulePaths()
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
 }
 
+static QList<QKeySequence> DeleteKeys;
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -109,6 +111,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(cpuUsageTimer, SIGNAL(timeout()),
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
+
+	DeleteKeys =
+#ifdef __APPLE__
+		QList<QKeySequence>{{Qt::Key_Backspace}} <<
+#endif
+		QKeySequence::keyBindings(QKeySequence::Delete);
 
 #ifdef __APPLE__
 	QList<QKeySequence> keys;
@@ -1707,7 +1715,7 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()),
-				QKeySequence::Delete);
+				DeleteKeys.front());
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
