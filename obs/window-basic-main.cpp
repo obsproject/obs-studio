@@ -119,10 +119,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		QKeySequence::keyBindings(QKeySequence::Delete);
 
 #ifdef __APPLE__
-	QList<QKeySequence> keys;
-	keys.append(QKeySequence::Delete);
-	keys.append(QKeySequence(Qt::Key_Backspace));
-	ui->actionRemoveSource->setShortcuts(keys);
+	ui->actionRemoveSource->setShortcuts(DeleteKeys);
+	ui->actionRemoveScene->setShortcuts(DeleteKeys);
 
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);

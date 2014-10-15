@@ -46,6 +46,10 @@
         <height>32</height>
        </size>
       </property>
+      <property name="focusPolicy">
+       <enum>Qt::ClickFocus</enum>
+      </property>
+      <addaction name="actionRemoveSource"/>
      </widget>
     </item>
     <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
@@ -165,6 +169,7 @@
                <property name="frameShadow">
                 <enum>QFrame::Plain</enum>
                </property>
+               <addaction name="actionRemoveScene"/>
               </widget>
              </item>
              <item>
@@ -270,6 +275,7 @@
                <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
                </property>
+               <addaction name="actionRemoveSource"/>
               </widget>
              </item>
              <item>
@@ -547,6 +553,12 @@
    <property name="text">
     <string>Remove</string>
    </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
   </action>
   <action name="actionRemoveSource">
    <property name="icon">
@@ -558,6 +570,9 @@
    </property>
    <property name="shortcut">
     <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
   </action>
   <action name="actionSceneProperties">
