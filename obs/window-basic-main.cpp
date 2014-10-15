@@ -1745,6 +1745,18 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 	popup.exec(QCursor::pos());
 }
 
+void OBSBasic::on_sources_itemDoubleClicked(QListWidgetItem *witem)
+{
+	if (!witem)
+		return;
+
+	OBSSceneItem item = GetSceneItem(witem);
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	if (source)
+		CreatePropertiesWindow(source);
+}
+
 void OBSBasic::AddSource(const char *id)
 {
 	if (id && *id) {

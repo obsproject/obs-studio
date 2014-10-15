@@ -265,6 +265,7 @@ private slots:
 	void on_sources_currentItemChanged(QListWidgetItem *current,
 			QListWidgetItem *prev);
 	void on_sources_customContextMenuRequested(const QPoint &pos);
+	void on_sources_itemDoubleClicked(QListWidgetItem *item);
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();
 	void on_actionInteract_triggered();
