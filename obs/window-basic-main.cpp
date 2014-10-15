@@ -666,7 +666,6 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t *item)
 	const char   *name  = obs_source_get_name(source);
 
 	QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
-	listItem->setFlags(listItem->flags() | Qt::ItemIsEditable);
 	listItem->setData(Qt::UserRole,
 			QVariant::fromValue(OBSSceneItem(item)));
 
@@ -706,7 +705,6 @@ void OBSBasic::AddScene(OBSSource source)
 	obs_scene_t *scene = obs_scene_from_source(source);
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
-	item->setFlags(item->flags() | Qt::ItemIsEditable);
 	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
 	ui->scenes->addItem(item);
 
@@ -1570,7 +1568,12 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 void OBSBasic::EditSceneName()
 {
-	ui->scenes->editItem(ui->scenes->currentItem());
+	QListWidgetItem *item = ui->scenes->currentItem();
+	Qt::ItemFlags flags   = item->flags();
+
+	item->setFlags(flags | Qt::ItemIsEditable);
+	ui->scenes->editItem(item);
+	item->setFlags(flags);
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
@@ -1694,7 +1697,12 @@ void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 
 void OBSBasic::EditSceneItemName()
 {
-	ui->sources->editItem(ui->sources->currentItem());
+	QListWidgetItem *item = ui->sources->currentItem();
+	Qt::ItemFlags flags   = item->flags();
+
+	item->setFlags(flags | Qt::ItemIsEditable);
+	ui->sources->editItem(item);
+	item->setFlags(flags);
 }
 
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
