@@ -1,10 +1,12 @@
 project(win-capture)
 
 set(win-capture_HEADERS
+	window-helpers.h
 	dc-capture.h)
 
 set(win-capture_SOURCES
 	dc-capture.c
+	window-helpers.c
 	monitor-capture.c
 	window-capture.c
 	plugin-main.c)

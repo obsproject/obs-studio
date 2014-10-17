@@ -1,0 +1,258 @@
+#include <obs.h>
+#include <util/dstr.h>
+
+#include <windows.h>
+#include <psapi.h>
+#include "window-helpers.h"
+
+#define inline __inline
+
+static inline void encode_dstr(struct dstr *str)
+{
+	dstr_replace(str, "#", "#22");
+	dstr_replace(str, ":", "#3A");
+}
+
+static inline char *decode_str(const char *src)
+{
+	struct dstr str = {0};
+	dstr_copy(&str, src);
+	dstr_replace(&str, "#3A", ":");
+	dstr_replace(&str, "#22", "#");
+	return str.array;
+}
+
+extern void build_window_strings(const char *str,
+		char **class,
+		char **title,
+		char **exe)
+{
+	char **strlist;
+
+	if (!str) {
+		*class = NULL;
+		*title = NULL;
+		*exe   = NULL;
+		return;
+	}
+
+	strlist = strlist_split(str, ':', true);
+
+	if (strlist && strlist[0] && strlist[1] && strlist[2]) {
+		*title = decode_str(strlist[0]);
+		*class = decode_str(strlist[1]);
+		*exe   = decode_str(strlist[2]);
+	}
+
+	strlist_free(strlist);
+}
+
+static bool get_window_exe(struct dstr *name, HWND window)
+{
+	wchar_t     wname[MAX_PATH];
+	struct dstr temp    = {0};
+	bool        success = false;
+	HANDLE      process = NULL;
+	char        *slash;
+	DWORD       id;
+
+	GetWindowThreadProcessId(window, &id);
+	if (id == GetCurrentProcessId())
+		return false;
+
+	process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, id);
+	if (!process)
+		goto fail;
+
+	if (!GetProcessImageFileNameW(process, wname, MAX_PATH))
+		goto fail;
+
+	dstr_from_wcs(&temp, wname);
+	slash = strrchr(temp.array, '\\');
+	if (!slash)
+		goto fail;
+
+	dstr_copy(name, slash+1);
+	success = true;
+
+fail:
+	if (!success)
+		dstr_copy(name, "unknown");
+
+	dstr_free(&temp);
+	CloseHandle(process);
+	return true;
+}
+
+static void get_window_title(struct dstr *name, HWND hwnd)
+{
+	wchar_t *temp;
+	int len;
+
+	len = GetWindowTextLengthW(hwnd);
+	if (!len)
+		return;
+
+	temp = malloc(sizeof(wchar_t) * (len+1));
+	GetWindowTextW(hwnd, temp, len+1);
+	dstr_from_wcs(name, temp);
+	free(temp);
+}
+
+static void get_window_class(struct dstr *class, HWND hwnd)
+{
+	wchar_t temp[256];
+
+	temp[0] = 0;
+	GetClassNameW(hwnd, temp, sizeof(temp));
+	dstr_from_wcs(class, temp);
+}
+
+static void add_window(obs_property_t *p, HWND hwnd)
+{
+	struct dstr class   = {0};
+	struct dstr title   = {0};
+	struct dstr exe     = {0};
+	struct dstr encoded = {0};
+	struct dstr desc    = {0};
+
+	if (!get_window_exe(&exe, hwnd))
+		return;
+	get_window_title(&title, hwnd);
+	get_window_class(&class, hwnd);
+
+	dstr_printf(&desc, "[%s]: %s", exe.array, title.array);
+
+	encode_dstr(&title);
+	encode_dstr(&class);
+	encode_dstr(&exe);
+
+	dstr_cat_dstr(&encoded, &title);
+	dstr_cat(&encoded, ":");
+	dstr_cat_dstr(&encoded, &class);
+	dstr_cat(&encoded, ":");
+	dstr_cat_dstr(&encoded, &exe);
+
+	obs_property_list_add_string(p, desc.array, encoded.array);
+
+	dstr_free(&encoded);
+	dstr_free(&desc);
+	dstr_free(&class);
+	dstr_free(&title);
+	dstr_free(&exe);
+}
+
+static bool check_window_valid(HWND window, enum window_search_mode mode)
+{
+	DWORD styles, ex_styles;
+	RECT  rect;
+
+	if (!IsWindowVisible(window) ||
+	    (mode == EXCLUDE_MINIMIZED && IsIconic(window)))
+		return false;
+
+	GetClientRect(window, &rect);
+	styles    = (DWORD)GetWindowLongPtr(window, GWL_STYLE);
+	ex_styles = (DWORD)GetWindowLongPtr(window, GWL_EXSTYLE);
+
+	if (ex_styles & WS_EX_TOOLWINDOW)
+		return false;
+	if (styles & WS_CHILD)
+		return false;
+	if (rect.bottom == 0 || rect.right == 0)
+		return false;
+
+	return true;
+}
+
+static inline HWND next_window(HWND window, enum window_search_mode mode)
+{
+	while (true) {
+		window = GetNextWindow(window, GW_HWNDNEXT);
+		if (!window || check_window_valid(window, mode))
+			break;
+	}
+
+	return window;
+}
+
+static inline HWND first_window(enum window_search_mode mode)
+{
+	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
+	if (!check_window_valid(window, mode))
+		window = next_window(window, mode);
+	return window;
+}
+
+void fill_window_list(obs_property_t *p, enum window_search_mode mode)
+{
+	HWND window = first_window(mode);
+
+	while (window) {
+		add_window(p, window);
+		window = next_window(window, mode);
+	}
+}
+
+static int window_rating(HWND window,
+		enum window_priority priority,
+		const char *class,
+		const char *title,
+		const char *exe)
+{
+	struct dstr cur_class = {0};
+	struct dstr cur_title = {0};
+	struct dstr cur_exe   = {0};
+	int         class_val = 1;
+	int         title_val = 1;
+	int         exe_val   = 0;
+	int         total     = 0;
+
+	if (!get_window_exe(&cur_exe, window))
+		return 0;
+	get_window_title(&cur_title, window);
+	get_window_class(&cur_class, window);
+
+	if (priority == WINDOW_PRIORITY_CLASS)
+		class_val += 3;
+	else if (priority == WINDOW_PRIORITY_TITLE)
+		title_val += 3;
+	else
+		exe_val += 3;
+
+	if (dstr_cmpi(&cur_class, class) == 0)
+		total += class_val;
+	if (dstr_cmpi(&cur_title, title) == 0)
+		total += title_val;
+	if (dstr_cmpi(&cur_exe, exe) == 0)
+		total += exe_val;
+
+	dstr_free(&cur_class);
+	dstr_free(&cur_title);
+	dstr_free(&cur_exe);
+
+	return total;
+}
+
+HWND find_window(enum window_search_mode mode,
+		enum window_priority priority,
+		const char *class,
+		const char *title,
+		const char *exe)
+{
+	HWND window      = first_window(mode);
+	HWND best_window = NULL;
+	int  best_rating = 0;
+
+	while (window) {
+		int rating = window_rating(window, priority, class, title, exe);
+		if (rating > best_rating) {
+			best_rating = rating;
+			best_window = window;
+		}
+
+		window = next_window(window, mode);
+	}
+
+	return best_window;
+}
