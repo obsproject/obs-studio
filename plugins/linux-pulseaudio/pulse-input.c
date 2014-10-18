@@ -257,6 +257,9 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	pa_buffer_attr attr;
 	attr.fragsize  = pa_usec_to_bytes(25000, &spec);
 	attr.maxlength = (uint32_t) -1;
+	attr.minreq    = (uint32_t) -1;
+	attr.prebuf    = (uint32_t) -1;
+	attr.tlength   = (uint32_t) -1;
 
 	pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY;
 
