@@ -174,6 +174,9 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 
 /**
  * Source info callback
+ *
+ * We use the default stream settings for recording here unless pulse is
+ * configured to something obs can't deal with.
  */
 static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	void *userdata)
@@ -193,14 +196,25 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 	if (pulse_to_obs_audio_format(format) == AUDIO_FORMAT_UNKNOWN) {
 		format = PA_SAMPLE_S16LE;
 
-		blog(LOG_INFO, "Sample format %s not supported by OBS, using %s instead for recording",
+		blog(LOG_INFO, "Sample format %s not supported by OBS,"
+			"using %s instead for recording",
 			pa_sample_format_to_string(i->sample_spec.format),
 			pa_sample_format_to_string(format));
 	}
 
+	uint8_t channels = i->sample_spec.channels;
+	if (pulse_channels_to_obs_speakers(channels) == SPEAKERS_UNKNOWN) {
+		channels = 2;
+
+		blog(LOG_INFO, "%c channels not supported by OBS,"
+			"using %c instead for recording",
+			i->sample_spec.channels,
+			channels);
+	}
+
 	data->format          = format;
 	data->samples_per_sec = i->sample_spec.rate;
-	data->channels        = i->sample_spec.channels;
+	data->channels        = channels;
 
 skip:
 	pulse_signal(0);
