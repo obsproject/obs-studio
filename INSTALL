@@ -116,7 +116,7 @@ Linux
 
   - There is also a ppa available in case you do not want to compile
     yourself(Ubuntu 14.04 only):
-      https://launchpad.net/~btbn/+archive/ubuntu/obs-studio
+      https://launchpad.net/~obsproject/+archive/ubuntu/obs-studio
 
   - Build dependencies on Ubuntu 14.04 with ffmpeg ppa from above:
     cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
