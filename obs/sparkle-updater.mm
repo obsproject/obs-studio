@@ -56,7 +56,13 @@ static inline bool equali(NSString *a, NSString *b)
 	NSString *url = dict[@"sparkle:releaseNotesLink"];
 	dict[@"sparkle:releaseNotesLink"] = [url stringByAppendingFormat:@"#%@",
 		build];
-	return selected = [[SUAppcastItem alloc] initWithDictionary:dict];
+	selected = [[SUAppcastItem alloc] initWithDictionary:dict];
+
+	SUAppcastItem *deltaUpdate = [selected deltaUpdates][build];
+	if (deltaUpdate)
+		selected = deltaUpdate;
+
+	return selected;
 }
 
 - (NSString *)feedURLStringForUpdater:(SUUpdater *)updater
