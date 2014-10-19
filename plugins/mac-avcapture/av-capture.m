@@ -232,6 +232,7 @@ static inline bool update_frame(struct av_capture *capture,
 	CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
 			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
+	frame->flags = 0;
 
 	if (!update_frame(capture, frame, sampleBuffer))
 		return;

@@ -377,6 +377,7 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 
 	if (got_output) {
 		frame.timestamp = (uint64_t)ts * 100;
+		frame.flags = 0;
 #if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
 #endif
@@ -397,6 +398,7 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 	const int cy = config.cy;
 
 	frame.timestamp  = (uint64_t)startTime * 100;
+	frame.flags      = 0;
 	frame.width      = config.cx;
 	frame.height     = config.cy;
 	frame.format     = ConvertVideoFormat(config.format);

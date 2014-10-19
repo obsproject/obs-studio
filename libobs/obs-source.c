@@ -1604,6 +1604,17 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
+	while ((next_frame->flags & OBS_VIDEO_UNBUFFERED) != 0 &&
+		source->video_frames.num > 1) {
+
+		da_erase(source->video_frames, 0);
+		obs_source_frame_destroy(next_frame);
+		next_frame = source->video_frames.array[0];
+	}
+
+	if ((next_frame->flags & OBS_VIDEO_UNBUFFERED) != 0)
+		return true;
+
 #if DEBUG_ASYNC_FRAMES
 	blog(LOG_DEBUG, "source->last_frame_ts: %llu, frame_time: %llu, "
 			"sys_offset: %llu, frame_offset: %llu, "

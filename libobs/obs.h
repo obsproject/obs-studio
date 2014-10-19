@@ -174,6 +174,9 @@ struct obs_source_audio {
 	uint64_t            timestamp;
 };
 
+/** Specifies that the video frame should be played as soon as possible */
+#define OBS_VIDEO_UNBUFFERED (1<<0)
+
 /**
  * Source asynchronous video output structure.  Used with
  * obs_source_output_video to output asynchronous video.  Video is buffered as
@@ -189,6 +192,7 @@ struct obs_source_frame {
 	uint32_t            width;
 	uint32_t            height;
 	uint64_t            timestamp;
+	uint32_t            flags;
 
 	enum video_format   format;
 	float               color_matrix[16];
