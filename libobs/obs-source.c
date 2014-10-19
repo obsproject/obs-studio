@@ -609,10 +609,10 @@ static inline uint64_t conv_frames_to_time(size_t frames)
 /* maximum time that timestamp can jump in nanoseconds */
 #define MAX_TIMESTAMP_JUMP  2000000000ULL
 
-static inline void reset_audio_timing(obs_source_t *source, uint64_t timetamp)
+static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp)
 {
 	source->timing_set    = true;
-	source->timing_adjust = os_gettime_ns() - timetamp;
+	source->timing_adjust = os_gettime_ns() - timestamp;
 }
 
 static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
