@@ -604,10 +604,8 @@ static inline uint64_t conv_frames_to_time(size_t frames)
 		(uint64_t)info->samples_per_sec;
 }
 
-/* maximum "direct" timestamp variance in nanoseconds */
-#define MAX_TS_VAR          5000000000ULL
-/* maximum time that timestamp can jump in nanoseconds */
-#define MAX_TIMESTAMP_JUMP  2000000000ULL
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR          2000000000ULL
 
 static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp)
 {
@@ -731,7 +729,7 @@ static void source_output_audio_line(obs_source_t *source,
 			(in.timestamp - source->next_audio_ts_min);
 
 		/* smooth audio if within threshold */
-		if (diff > MAX_TIMESTAMP_JUMP)
+		if (diff > MAX_TS_VAR)
 			handle_ts_jump(source, source->next_audio_ts_min,
 					in.timestamp, diff);
 		else if (diff < TS_SMOOTHING_THRESHOLD)
@@ -1589,9 +1587,9 @@ void obs_source_output_audio(obs_source_t *source,
 static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 {
 	if (ts < source->last_frame_ts)
-		return ((source->last_frame_ts - ts) > MAX_TIMESTAMP_JUMP);
+		return ((source->last_frame_ts - ts) > MAX_TS_VAR);
 	else
-		return ((ts - source->last_frame_ts) > MAX_TIMESTAMP_JUMP);
+		return ((ts - source->last_frame_ts) > MAX_TS_VAR);
 }
 
 /* #define DEBUG_ASYNC_FRAMES 1 */
@@ -1665,7 +1663,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 		next_frame = source->video_frames.array[1];
 
 		/* more timestamp checking and compensating */
-		if ((next_frame->timestamp - frame_time) > MAX_TIMESTAMP_JUMP) {
+		if ((next_frame->timestamp - frame_time) > MAX_TS_VAR) {
 #if DEBUG_ASYNC_FRAMES
 			blog(LOG_DEBUG, "timing jump");
 #endif
