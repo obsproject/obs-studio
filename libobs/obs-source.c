@@ -607,14 +607,15 @@ static inline uint64_t conv_frames_to_time(size_t frames)
 /* maximum timestamp variance in nanoseconds */
 #define MAX_TS_VAR          2000000000ULL
 
-static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp)
+static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp,
+		uint64_t os_time)
 {
 	source->timing_set    = true;
-	source->timing_adjust = os_gettime_ns() - timestamp;
+	source->timing_adjust = os_time - timestamp;
 }
 
 static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
-		uint64_t ts, uint64_t diff)
+		uint64_t ts, uint64_t diff, uint64_t os_time)
 {
 	blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '%"PRIu64"', "
 	                "expected value %"PRIu64", input value %"PRIu64,
@@ -622,7 +623,7 @@ static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
 
 	/* if has video, ignore audio data until reset */
 	if (!(source->info.output_flags & OBS_SOURCE_ASYNC))
-		reset_audio_timing(source, ts);
+		reset_audio_timing(source, ts, os_time);
 }
 
 #define VOL_MIN -96.0f
@@ -707,31 +708,34 @@ static void obs_source_update_volume_level(obs_source_t *source,
 	}
 }
 
+static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
+{
+	return (ts1 < ts2) ?  (ts2 - ts1) : (ts1 - ts2);
+}
+
 static void source_output_audio_line(obs_source_t *source,
 		const struct audio_data *data)
 {
 	struct audio_data in = *data;
 	uint64_t diff;
+	uint64_t os_time = os_gettime_ns();
 
-	if (!source->timing_set) {
-		reset_audio_timing(source, in.timestamp);
+	/* detects 'directly' set timestamps as long as they're within
+	 * a certain threshold */
+	if (uint64_diff(in.timestamp, os_time) < MAX_TS_VAR) {
+		source->timing_adjust = 0;
+		source->timing_set = true;
 
-		/* detects 'directly' set timestamps as long as they're within
-		 * a certain threshold */
-		if ((source->timing_adjust + MAX_TS_VAR) < MAX_TS_VAR * 2)
-			source->timing_adjust = 0;
+	} else if (!source->timing_set) {
+		reset_audio_timing(source, in.timestamp, os_time);
 
 	} else if (source->next_audio_ts_min != 0) {
-		bool ts_under = (in.timestamp < source->next_audio_ts_min);
-
-		diff = ts_under ?
-			(source->next_audio_ts_min - in.timestamp) :
-			(in.timestamp - source->next_audio_ts_min);
+		diff = uint64_diff(source->next_audio_ts_min, in.timestamp);
 
 		/* smooth audio if within threshold */
 		if (diff > MAX_TS_VAR)
 			handle_ts_jump(source, source->next_audio_ts_min,
-					in.timestamp, diff);
+					in.timestamp, diff, os_time);
 		else if (diff < TS_SMOOTHING_THRESHOLD)
 			in.timestamp = source->next_audio_ts_min;
 	}
