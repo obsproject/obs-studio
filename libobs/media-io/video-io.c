@@ -61,6 +61,7 @@ struct video_output {
 	volatile uint64_t          cur_video_time;
 	uint32_t                   skipped_frames;
 	uint32_t                   total_frames;
+	uint64_t                   last_ts;
 
 	bool                       initialized;
 
@@ -120,8 +121,15 @@ static inline void video_output_cur_frame(struct video_output *video)
 		struct video_input *input = video->inputs.array+i;
 		struct video_data frame = video->cur_frame;
 
-		if (scale_video_output(input, &frame))
+		if (scale_video_output(input, &frame)) {
+			if (frame.timestamp <= video->last_ts)
+				video->last_ts += video->frame_time;
+			else
+				video->last_ts = frame.timestamp;
+
+			frame.timestamp = video->last_ts;
 			input->callback(input->param, &frame);
+		}
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
