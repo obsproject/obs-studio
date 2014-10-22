@@ -561,8 +561,8 @@ static inline struct audio_convert_info *get_audio_conversion(
 	return output->audio_conversion_set ? &output->audio_conversion : NULL;
 }
 
-static bool prepare_interleaved_packet(struct obs_output *output,
-		struct encoder_packet *out, struct encoder_packet *in)
+static void apply_interleaved_packet_offset(struct obs_output *output,
+		struct encoder_packet *out)
 {
 	int64_t offset;
 
@@ -570,29 +570,18 @@ static bool prepare_interleaved_packet(struct obs_output *output,
 	 * may not currently be at 0 when we get data.  so, we store the
 	 * current dts as offset and subtract that value from the dts/pts
 	 * of the output packet. */
-	if (in->type == OBS_ENCODER_VIDEO) {
-		if (!output->received_video) {
-			output->first_video_ts = in->dts_usec;
-			output->video_offset   = in->dts;
+	if (out->type == OBS_ENCODER_VIDEO) {
+		if (!output->received_video)
 			output->received_video = true;
-		}
 
 		offset = output->video_offset;
-	} else{
-		/* don't accept audio that's before the first video timestamp */
-		if (!output->received_video ||
-		    in->dts_usec < output->first_video_ts)
-			return false;
-
-		if (!output->received_audio) {
-			output->audio_offset   = in->dts;
+	} else {
+		if (!output->received_audio)
 			output->received_audio = true;
-		}
 
 		offset = output->audio_offset;
 	}
 
-	obs_duplicate_encoder_packet(out, in);
 	out->dts -= offset;
 	out->pts -= offset;
 
@@ -603,7 +592,6 @@ static bool prepare_interleaved_packet(struct obs_output *output,
 	 * nothing we can really do about that), but it will always at least be
 	 * within a 23ish millisecond threshold (at least for AAC) */
 	out->dts_usec = packet_dts_usec(out);
-	return true;
 }
 
 static inline bool has_higher_opposing_ts(struct obs_output *output,
@@ -645,30 +633,142 @@ static inline void set_higher_ts(struct obs_output *output,
 	}
 }
 
+static bool can_prune_interleaved_packet(struct obs_output *output, size_t idx)
+{
+	struct encoder_packet *packet;
+	struct encoder_packet *next;
+
+	if (idx >= (output->interleaved_packets.num - 1))
+		return false;
+
+	packet = &output->interleaved_packets.array[idx];
+
+	/* audio packets will almost always come before video packets,
+	 * so it should only ever be necessary to prune audio packets */
+	if (packet->type != OBS_ENCODER_AUDIO)
+		return false;
+
+	next = &output->interleaved_packets.array[idx + 1];
+
+	if (next->type == OBS_ENCODER_VIDEO &&
+	    next->dts_usec == packet->dts_usec)
+		return false;
+
+	return true;
+}
+
+static void prune_interleaved_packets(struct obs_output *output)
+{
+	size_t start_idx = 0;
+
+	while (can_prune_interleaved_packet(output, start_idx))
+		start_idx++;
+
+	if (start_idx) {
+		for (size_t i = 0; i < start_idx; i++) {
+			struct encoder_packet *packet =
+				&output->interleaved_packets.array[i];
+			obs_free_encoder_packet(packet);
+		}
+
+		da_erase_range(output->interleaved_packets, 0, start_idx);
+	}
+}
+
+static struct encoder_packet *find_first_packet_type(struct obs_output *output,
+		enum obs_encoder_type type)
+{
+	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
+		struct encoder_packet *packet =
+			&output->interleaved_packets.array[i];
+
+		if (packet->type == type)
+			return packet;
+	}
+
+	/* should never get here for this particular function */
+	assert(0);
+	return NULL;
+}
+
+static void initialize_interleaved_packets(struct obs_output *output)
+{
+	struct encoder_packet *video;
+	struct encoder_packet *audio;
+
+	video = find_first_packet_type(output, OBS_ENCODER_VIDEO);
+	audio = find_first_packet_type(output, OBS_ENCODER_AUDIO);
+
+	/* get new offsets */
+	output->video_offset = video->dts;
+	output->audio_offset = audio->dts;
+
+	/* subtract offsets from highest TS offset variables */
+	output->highest_audio_ts -= audio->dts_usec;
+	output->highest_video_ts -= video->dts_usec;
+
+	/* apply new offsets to all existing packet DTS/PTS values */
+	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
+		struct encoder_packet *packet =
+			&output->interleaved_packets.array[i];
+		apply_interleaved_packet_offset(output, packet);
+	}
+}
+
+static inline void insert_interleaved_packet(struct obs_output *output,
+		struct encoder_packet *out)
+{
+	size_t idx;
+	for (idx = 0; idx < output->interleaved_packets.num; idx++) {
+		struct encoder_packet *cur_packet;
+		cur_packet = output->interleaved_packets.array + idx;
+
+		if (out->dts_usec < cur_packet->dts_usec)
+			break;
+	}
+
+	da_insert(output->interleaved_packets, idx, out);
+}
+
+static void resort_interleaved_packets(struct obs_output *output)
+{
+	DARRAY(struct encoder_packet) old_array;
+
+	old_array.da = output->interleaved_packets.da;
+	memset(&output->interleaved_packets, 0,
+			sizeof(output->interleaved_packets));
+
+	for (size_t i = 0; i < old_array.num; i++)
+		insert_interleaved_packet(output, &old_array.array[i]);
+
+	da_free(old_array);
+}
+
 static void interleave_packets(void *data, struct encoder_packet *packet)
 {
 	struct obs_output     *output = data;
 	struct encoder_packet out;
-	size_t                idx;
+	bool                  was_started;
 
 	pthread_mutex_lock(&output->interleaved_mutex);
 
-	if (prepare_interleaved_packet(output, &out, packet)) {
-		for (idx = 0; idx < output->interleaved_packets.num; idx++) {
-			struct encoder_packet *cur_packet;
-			cur_packet = output->interleaved_packets.array + idx;
+	was_started = output->received_audio && output->received_video;
 
-			if (out.dts_usec < cur_packet->dts_usec)
-				break;
+	obs_duplicate_encoder_packet(&out, packet);
+	apply_interleaved_packet_offset(output, &out);
+	insert_interleaved_packet(output, &out);
+	set_higher_ts(output, &out);
+
+	/* when both video and audio have been received, we're ready
+	 * to start sending out packets (one at a time) */
+	if (output->received_audio && output->received_video) {
+		if (!was_started) {
+			prune_interleaved_packets(output);
+			initialize_interleaved_packets(output);
+			resort_interleaved_packets(output);
 		}
 
-		da_insert(output->interleaved_packets, idx, &out);
-		set_higher_ts(output, &out);
-
-		/* when both video and audio have been received, we're ready
-		 * to start sending out packets (one at a time) */
-		if (output->received_audio && output->received_video)
-			send_interleaved(output);
+		send_interleaved(output);
 	}
 
 	pthread_mutex_unlock(&output->interleaved_mutex);
@@ -700,6 +800,8 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 		output->received_video   = false;
 		output->highest_audio_ts = 0;
 		output->highest_video_ts = 0;
+		output->video_offset     = 0;
+		output->audio_offset     = 0;
 		free_packets(output);
 
 		encoded_callback = (has_video && has_audio) ?
