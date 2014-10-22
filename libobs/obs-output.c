@@ -696,7 +696,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 	void (*encoded_callback)(void *data, struct encoder_packet *packet);
 
 	if (encoded) {
-		output->received_video   = false;
+		output->received_audio   = false;
 		output->received_video   = false;
 		output->highest_audio_ts = 0;
 		output->highest_video_ts = 0;
