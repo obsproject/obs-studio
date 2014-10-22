@@ -236,12 +236,15 @@ static inline void stage_output_texture(struct obs_core_video *video,
 }
 
 static inline void render_video(struct obs_core_video *video, int cur_texture,
-		int prev_texture)
+		int prev_texture, uint64_t timestamp)
 {
 	gs_begin_scene();
 
 	gs_enable_depth_test(false);
 	gs_set_cull_mode(GS_NEITHER);
+
+	circlebuf_push_back(&video->timestamp_buffer, &timestamp,
+			sizeof(timestamp));
 
 	render_main_texture(video, cur_texture);
 	render_output_texture(video, cur_texture, prev_texture);
@@ -415,17 +418,20 @@ static inline void output_frame(uint64_t timestamp)
 	bool frame_ready;
 
 	memset(&frame, 0, sizeof(struct video_data));
-	frame.timestamp = timestamp;
 
 	gs_enter_context(video->graphics);
 
-	render_video(video, cur_texture, prev_texture);
+	render_video(video, cur_texture, prev_texture, timestamp);
 	frame_ready = download_frame(video, prev_texture, &frame);
 
 	gs_leave_context();
 
-	if (frame_ready)
+	if (frame_ready) {
+		circlebuf_pop_front(&video->timestamp_buffer, &frame.timestamp,
+				sizeof(frame.timestamp));
+
 		output_video_data(video, &frame, cur_texture);
+	}
 
 	if (++video->cur_texture == NUM_TEXTURES)
 		video->cur_texture = 0;

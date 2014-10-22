@@ -355,6 +355,8 @@ static void obs_free_video(void)
 
 		gs_leave_context();
 
+		circlebuf_free(&video->timestamp_buffer);
+
 		video->cur_texture = 0;
 	}
 }

@@ -140,6 +140,7 @@ struct obs_core_video {
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
 	struct obs_source_frame         convert_frames[NUM_TEXTURES];
+	struct circlebuf                timestamp_buffer;
 	gs_effect_t                     *default_effect;
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *solid_effect;
