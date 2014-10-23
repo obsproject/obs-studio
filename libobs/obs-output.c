@@ -343,7 +343,7 @@ void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
 	if (output->video_encoder == encoder) return;
 	if (encoder && encoder->info.type != OBS_ENCODER_VIDEO) return;
 
-	obs_encoder_remove_output(encoder, output);
+	obs_encoder_remove_output(output->video_encoder, output);
 	obs_encoder_add_output(encoder, output);
 	output->video_encoder = encoder;
 
@@ -359,7 +359,7 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder)
 	if (output->audio_encoder == encoder) return;
 	if (encoder && encoder->info.type != OBS_ENCODER_AUDIO) return;
 
-	obs_encoder_remove_output(encoder, output);
+	obs_encoder_remove_output(output->audio_encoder, output);
 	obs_encoder_add_output(encoder, output);
 	output->audio_encoder = encoder;
 }
