@@ -119,8 +119,14 @@ static void config_add_item(struct darray *items, struct strref *name,
 		struct strref *value)
 {
 	struct config_item item;
+	struct dstr item_value;
+	dstr_init_copy_strref(&item_value, value);
+	dstr_replace(&item_value, "\\n", "\n");
+	dstr_replace(&item_value, "\\r", "\r");
+	dstr_replace(&item_value, "\\\\", "\\");
+
 	item.name  = bstrdup_n(name->array,  name->len);
-	item.value = bstrdup_n(value->array, value->len);
+	item.value = item_value.array;
 	darray_push_back(sizeof(struct config_item), items, &item);
 }
 
@@ -286,7 +292,7 @@ int config_open_defaults(config_t *config, const char *file)
 int config_save(config_t *config)
 {
 	FILE *f;
-	struct dstr str;
+	struct dstr str, tmp;
 	size_t i, j;
 
 	if (!config)
@@ -295,6 +301,7 @@ int config_save(config_t *config)
 		return CONFIG_ERROR;
 
 	dstr_init(&str);
+	dstr_init(&tmp);
 
 	f = os_fopen(config->file, "wb");
 	if (!f)
@@ -316,9 +323,14 @@ int config_save(config_t *config)
 					sizeof(struct config_item),
 					&section->items, j);
 
+			dstr_copy(&tmp, item->value ? item->value : "");
+			dstr_replace(&tmp, "\\", "\\\\");
+			dstr_replace(&tmp, "\r", "\\r");
+			dstr_replace(&tmp, "\n", "\\n");
+
 			dstr_cat(&str, item->name);
 			dstr_cat(&str, "=");
-			dstr_cat(&str, item->value);
+			dstr_cat(&str, tmp.array);
 			dstr_cat(&str, "\n");
 		}
 	}
@@ -329,6 +341,7 @@ int config_save(config_t *config)
 	fwrite(str.array, 1, str.len, f);
 	fclose(f);
 
+	dstr_free(&tmp);
 	dstr_free(&str);
 
 	return CONFIG_SUCCESS;
