@@ -83,6 +83,7 @@ static const char *source_signals[] = {
 	"void volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
 	"void update_properties(ptr source)",
+	"void update_flags(ptr source, int flags)",
 	NULL
 };
 
@@ -1606,6 +1607,16 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
+	if ((source->flags & OBS_SOURCE_UNBUFFERED) != 0) {
+		while (source->video_frames.num > 1) {
+			da_erase(source->video_frames, 0);
+			obs_source_frame_destroy(next_frame);
+			next_frame = source->video_frames.array[0];
+		}
+
+		return true;
+	}
+
 #if DEBUG_ASYNC_FRAMES
 	blog(LOG_DEBUG, "source->last_frame_ts: %llu, frame_time: %llu, "
 			"sys_offset: %llu, frame_offset: %llu, "
@@ -2076,4 +2087,31 @@ void obs_source_load(obs_source_t *source)
 {
 	if (!source_valid(source) || !source->info.load) return;
 	source->info.load(source->context.data, source->context.settings);
+}
+
+static inline void signal_flags_updated(obs_source_t *source)
+{
+	struct calldata data = {0};
+
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_int(&data, "flags", source->flags);
+
+	signal_handler_signal(source->context.signals, "update_flags", &data);
+
+	calldata_free(&data);
+}
+
+void obs_source_set_flags(obs_source_t *source, uint32_t flags)
+{
+	if (!source) return;
+
+	if (flags != source->flags) {
+		source->flags = flags;
+		signal_flags_updated(source);
+	}
+}
+
+uint32_t obs_source_get_flags(const obs_source_t *source)
+{
+	return source ? source->flags : 0;
 }

@@ -269,6 +269,9 @@ struct obs_source {
 	struct obs_source_info          info;
 	volatile long                   refs;
 
+	/* general exposed flags that can be set for the source */
+	uint32_t                        flags;
+
 	/* indicates ownership of the info.id buffer */
 	bool                            owns_info_id;
 
