@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/threading.h>
 #include <util/bmem.h>
 #include <util/dstr.h>
+#include <util/platform.h>
 #include <obs-module.h>
 
 #include "v4l2-helpers.h"
@@ -57,6 +58,7 @@ struct v4l2_data {
 	int pixfmt;
 	int resolution;
 	int framerate;
+	bool sys_timing;
 
 	/* internal data */
 	obs_source_t *source;
@@ -177,7 +179,9 @@ static void *v4l2_thread(void *vptr)
 			break;
 		}
 
-		out.timestamp = timeval2ns(buf.timestamp);
+		out.timestamp = data->sys_timing ?
+			os_gettime_ns() : timeval2ns(buf.timestamp);
+
 		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 			out.data[i] = start + plane_offsets[i];
@@ -209,6 +213,7 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "pixelformat", -1);
 	obs_data_set_default_int(settings, "resolution", -1);
 	obs_data_set_default_int(settings, "framerate", -1);
+	obs_data_set_default_bool(settings, "system_timing", false);
 }
 
 /*
@@ -576,6 +581,9 @@ static obs_properties_t *v4l2_properties(void *unused)
 			"framerate", obs_module_text("FrameRate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
+	obs_properties_add_bool(props,
+			"system_timing", obs_module_text("UseSystemTiming"));
+
 	v4l2_device_list(device_list, NULL);
 	obs_property_set_modified_callback(device_list, device_selected);
 	obs_property_set_modified_callback(input_list, input_selected);
@@ -711,6 +719,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->pixfmt     = obs_data_get_int(settings, "pixelformat");
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate  = obs_data_get_int(settings, "framerate");
+	data->sys_timing = obs_data_get_bool(settings, "system_timing");
 
 	v4l2_init(data);
 }
