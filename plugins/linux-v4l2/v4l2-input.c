@@ -178,7 +178,6 @@ static void *v4l2_thread(void *vptr)
 		}
 
 		out.timestamp = timeval2ns(buf.timestamp);
-		out.flags = 0;
 		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 			out.data[i] = start + plane_offsets[i];

@@ -75,7 +75,7 @@ static inline void capture_frame(struct window_capture *wc)
 		.height      = height,
 		.data[0]     = data,
 		.linesize[0] = width * 4,
-		.timestamp   = ts
+		.timestamp   = ts,
 	};
 
 	obs_source_output_video(wc->source, &frame);
