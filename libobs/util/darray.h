@@ -337,7 +337,7 @@ static inline void darray_erase_range(const size_t element_size,
 	if (move_count)
 		memmove(darray_item(element_size, dst, start),
 				darray_item(element_size, dst, end),
-				move_count);
+				move_count * element_size);
 
 	dst->num -= count;
 }
