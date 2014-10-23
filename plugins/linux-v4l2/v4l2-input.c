@@ -59,6 +59,8 @@ struct v4l2_data {
 	int resolution;
 	int framerate;
 	bool sys_timing;
+	bool started;
+	uint64_t start_ts;
 
 	/* internal data */
 	obs_source_t *source;
@@ -181,6 +183,12 @@ static void *v4l2_thread(void *vptr)
 
 		out.timestamp = data->sys_timing ?
 			os_gettime_ns() : timeval2ns(buf.timestamp);
+
+		if (!data->started) {
+			data->start_ts = out.timestamp;
+			data->started = true;
+		}
+		out.timestamp -= data->start_ts;
 
 		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
@@ -642,6 +650,8 @@ static void v4l2_destroy(void *vptr)
 static void v4l2_init(struct v4l2_data *data)
 {
 	int fps_num, fps_denom;
+
+	data->started = false;
 
 	blog(LOG_INFO, "Start capture from %s", data->device_id);
 	data->dev = v4l2_open(data->device_id, O_RDWR | O_NONBLOCK);
