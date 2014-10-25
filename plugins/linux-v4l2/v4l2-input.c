@@ -59,8 +59,6 @@ struct v4l2_data {
 	int resolution;
 	int framerate;
 	bool sys_timing;
-	bool started;
-	uint64_t start_ts;
 
 	/* internal data */
 	obs_source_t *source;
@@ -141,6 +139,7 @@ static void *v4l2_thread(void *vptr)
 	int r;
 	fd_set fds;
 	uint8_t *start;
+	uint64_t first_ts;
 	struct timeval tv;
 	struct v4l2_buffer buf;
 	struct obs_source_frame out;
@@ -149,8 +148,8 @@ static void *v4l2_thread(void *vptr)
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
 
+	first_ts     = 0;
 	data->frames = 0;
-
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
 	while (os_event_try(data->event) == EAGAIN) {
@@ -183,11 +182,10 @@ static void *v4l2_thread(void *vptr)
 		out.timestamp = data->sys_timing ?
 			os_gettime_ns() : timeval2ns(buf.timestamp);
 
-		if (!data->started) {
-			data->start_ts = out.timestamp;
-			data->started = true;
-		}
-		out.timestamp -= data->start_ts;
+		if (!data->frames)
+			first_ts = out.timestamp;
+
+		out.timestamp -= first_ts;
 
 		start = (uint8_t *) data->buffers.info[buf.index].start;
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
@@ -649,8 +647,6 @@ static void v4l2_destroy(void *vptr)
 static void v4l2_init(struct v4l2_data *data)
 {
 	int fps_num, fps_denom;
-
-	data->started = false;
 
 	blog(LOG_INFO, "Start capture from %s", data->device_id);
 	data->dev = v4l2_open(data->device_id, O_RDWR | O_NONBLOCK);
