@@ -2578,6 +2578,22 @@ void OBSBasic::StreamingStop(int code)
 				QT_UTF8(errorMessage));
 }
 
+void OBSBasic::StartRecording()
+{
+	SaveProject();
+
+	if (!outputHandler->RecordingActive())
+		outputHandler->StartRecording();
+}
+
+void OBSBasic::StopRecording()
+{
+	SaveProject();
+
+	if (outputHandler->RecordingActive())
+		outputHandler->StopRecording();
+}
+
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
@@ -2607,13 +2623,10 @@ void OBSBasic::on_streamButton_clicked()
 
 void OBSBasic::on_recordButton_clicked()
 {
-	SaveProject();
-
-	if (outputHandler->RecordingActive()) {
-		outputHandler->StopRecording();
-	} else {
-		outputHandler->StartRecording();
-	}
+	if (outputHandler->RecordingActive())
+		StopRecording();
+	else
+		StartRecording();
 }
 
 void OBSBasic::on_settingsButton_clicked()
