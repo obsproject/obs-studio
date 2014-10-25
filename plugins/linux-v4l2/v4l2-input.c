@@ -573,6 +573,8 @@ static void device_added(const char *dev, void *vptr)
 {
 	V4L2_DATA(vptr);
 
+	obs_source_update_properties(data->source);
+
 	if (strcmp(data->device_id, dev))
 		return;
 
@@ -588,6 +590,8 @@ static void device_added(const char *dev, void *vptr)
 static void device_removed(const char *dev, void *vptr)
 {
 	V4L2_DATA(vptr);
+
+	obs_source_update_properties(data->source);
 
 	if (strcmp(data->device_id, dev))
 		return;
