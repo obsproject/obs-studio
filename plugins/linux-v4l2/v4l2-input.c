@@ -219,6 +219,30 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "system_timing", false);
 }
 
+/**
+ * Enable/Disable all properties for the source.
+ *
+ * @note A property that should be ignored can be specified
+ *
+ * @param props the source properties
+ * @param ignore ignore this property
+ * @param enable enable/disable all properties
+ */
+static void v4l2_props_set_enabled(obs_properties_t *props,
+		obs_property_t *ignore, bool enable)
+{
+	if (!props)
+		return;
+
+	for (obs_property_t *prop = obs_properties_first(props); prop != NULL;
+			obs_property_next(&prop)) {
+		if (prop == ignore)
+			continue;
+
+		obs_property_set_enabled(prop, enable);
+	}
+}
+
 /*
  * List available devices
  */
@@ -461,9 +485,11 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 static bool device_selected(obs_properties_t *props, obs_property_t *p,
 		obs_data_t *settings)
 {
-	UNUSED_PARAMETER(p);
 	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
+
+	v4l2_props_set_enabled(props, p, (dev == -1) ? false : true);
+
 	if (dev == -1)
 		return false;
 
