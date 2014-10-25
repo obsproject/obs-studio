@@ -71,9 +71,6 @@ struct v4l2_data {
 	int height;
 	int linesize;
 	struct v4l2_buffer_data buffers;
-
-	/* statistics */
-	uint64_t frames;
 };
 
 /* forward declarations */
@@ -139,6 +136,7 @@ static void *v4l2_thread(void *vptr)
 	int r;
 	fd_set fds;
 	uint8_t *start;
+	uint64_t frames;
 	uint64_t first_ts;
 	struct timeval tv;
 	struct v4l2_buffer buf;
@@ -148,8 +146,8 @@ static void *v4l2_thread(void *vptr)
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
 
-	first_ts     = 0;
-	data->frames = 0;
+	frames   = 0;
+	first_ts = 0;
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
 	while (os_event_try(data->event) == EAGAIN) {
@@ -182,7 +180,7 @@ static void *v4l2_thread(void *vptr)
 		out.timestamp = data->sys_timing ?
 			os_gettime_ns() : timeval2ns(buf.timestamp);
 
-		if (!data->frames)
+		if (!frames)
 			first_ts = out.timestamp;
 
 		out.timestamp -= first_ts;
@@ -197,10 +195,10 @@ static void *v4l2_thread(void *vptr)
 			break;
 		}
 
-		data->frames++;
+		frames++;
 	}
 
-	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", data->frames);
+	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", frames);
 
 exit:
 	v4l2_stop_capture(data->dev);
