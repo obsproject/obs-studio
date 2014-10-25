@@ -151,12 +151,11 @@ static void *v4l2_thread(void *vptr)
 
 	data->frames = 0;
 
-	FD_ZERO(&fds);
-	FD_SET(data->dev, &fds);
-
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
 	while (os_event_try(data->event) == EAGAIN) {
+		FD_ZERO(&fds);
+		FD_SET(data->dev, &fds);
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 
