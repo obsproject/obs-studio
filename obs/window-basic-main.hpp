@@ -152,6 +152,9 @@ private:
 	void OpenProjector(obs_source_t *source, int monitor);
 
 public slots:
+	void StartStreaming();
+	void StopStreaming();
+
 	void StreamingStart();
 	void StreamingStop(int errorcode);
 

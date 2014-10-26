@@ -2532,6 +2532,27 @@ void OBSBasic::OpenSceneFilters()
 	CreateFiltersWindow(source);
 }
 
+void OBSBasic::StartStreaming()
+{
+	SaveProject();
+
+	if (outputHandler->StreamingActive())
+		return;
+
+	if (outputHandler->StartStreaming(service)) {
+		ui->streamButton->setEnabled(false);
+		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	}
+}
+
+void OBSBasic::StopStreaming()
+{
+	SaveProject();
+
+	if (outputHandler->StreamingActive())
+		outputHandler->StopStreaming();
+}
+
 void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
@@ -2608,16 +2629,10 @@ void OBSBasic::RecordingStop()
 
 void OBSBasic::on_streamButton_clicked()
 {
-	SaveProject();
-
 	if (outputHandler->StreamingActive()) {
-		outputHandler->StopStreaming();
+		StopStreaming();
 	} else {
-		if (outputHandler->StartStreaming(service)) {
-			ui->streamButton->setEnabled(false);
-			ui->streamButton->setText(
-					QTStr("Basic.Main.Connecting"));
-		}
+		StartStreaming();
 	}
 }
 
