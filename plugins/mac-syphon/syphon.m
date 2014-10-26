@@ -17,6 +17,7 @@ struct syphon {
 	uint32_t          width, height;
 	bool              crop;
 	CGRect            crop_rect;
+	bool              allow_transparency;
 
 	obs_source_t *source;
 
@@ -465,6 +466,9 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 
 	load_crop(s, settings);
 
+	s->allow_transparency = obs_data_get_bool(settings,
+			"allow_transparency");
+
 	return s;
 
 fail:
@@ -836,6 +840,9 @@ static inline obs_properties_t *syphon_properties_internal(syphon_t s)
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_set_modified_callback(list, servers_changed);
 
+	obs_properties_add_bool(props, "allow_transparency",
+			obs_module_text("AllowTransparency"));
+
 	obs_property_t *launch = obs_properties_add_button(props,
 			"launch inject", obs_module_text("LaunchSyphonInject"),
 			launch_syphon_inject);
@@ -954,6 +961,12 @@ static void syphon_video_render(void *data, gs_effect_t *effect)
 	if (!s->tex)
 		return;
 
+	bool disable_blending = !s->allow_transparency;
+	if (disable_blending) {
+		gs_enable_blending(false);
+		gs_enable_color(true, true, true, false);
+	}
+
 	gs_vertexbuffer_flush(s->vertbuffer);
 	gs_load_vertexbuffer(s->vertbuffer);
 	gs_load_indexbuffer(NULL);
@@ -968,6 +981,11 @@ static void syphon_video_render(void *data, gs_effect_t *effect)
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	if (disable_blending) {
+		gs_enable_color(true, true, true, true);
+		gs_enable_blending(true);
+	}
 }
 
 static uint32_t syphon_get_width(void *data)
@@ -1094,6 +1112,9 @@ static inline bool update_syphon(syphon_t s, obs_data_t *settings)
 
 static void syphon_update_internal(syphon_t s, obs_data_t *settings)
 {
+	s->allow_transparency = obs_data_get_bool(settings,
+			"allow_transparency");
+
 	load_crop(s, settings);
 	update_inject(s, settings);
 	if (update_syphon(s, settings))
