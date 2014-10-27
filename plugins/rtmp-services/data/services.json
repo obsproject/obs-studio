@@ -51,10 +51,6 @@
                 "url": "rtmp://live-jfk.twitch.tv/app"
             },
             {
-                "name": "US Midwest: Chicago, IL",
-                "url": "rtmp://live-ord.twitch.tv/app"
-            },
-            {
                 "name": "US West: Los Angeles, CA",
                 "url": "rtmp://live-lax.twitch.tv/app"
             }
