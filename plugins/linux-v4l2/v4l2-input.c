@@ -454,8 +454,10 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p,
 
 	obs_property_t *prop = obs_properties_get(props, "input");
 	v4l2_input_list(dev, prop);
-	obs_property_modified(prop, settings);
 	v4l2_close(dev);
+
+	obs_property_modified(prop, settings);
+
 	return true;
 }
 
@@ -473,8 +475,10 @@ static bool input_selected(obs_properties_t *props, obs_property_t *p,
 
 	obs_property_t *prop = obs_properties_get(props, "pixelformat");
 	v4l2_format_list(dev, prop);
-	obs_property_modified(prop, settings);
 	v4l2_close(dev);
+
+	obs_property_modified(prop, settings);
+
 	return true;
 }
 
@@ -493,8 +497,10 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 	obs_property_t *prop = obs_properties_get(props, "resolution");
 	v4l2_resolution_list(dev, obs_data_get_int(settings, "pixelformat"),
 			prop);
-	obs_property_modified(prop, settings);
 	v4l2_close(dev);
+
+	obs_property_modified(prop, settings);
+
 	return true;
 }
 
@@ -516,8 +522,10 @@ static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
 				"resolution"));
 	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
 			width, height, prop);
-	obs_property_modified(prop, settings);
 	v4l2_close(dev);
+
+	obs_property_modified(prop, settings);
+
 	return true;
 }
 
