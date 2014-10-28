@@ -1285,7 +1285,7 @@ static inline bool obs_context_data_init_wrap(
 		return false;
 
 	context->signals = signal_handler_create();
-	if (!context)
+	if (!context->signals)
 		return false;
 
 	context->procs = proc_handler_create();
