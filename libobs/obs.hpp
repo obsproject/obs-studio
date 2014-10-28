@@ -150,4 +150,35 @@ public:
 		param    = param_;
 		signal_handler_connect(handler, signal, callback, param);
 	}
+
+	OBSSignal(const OBSSignal&) = delete;
+	OBSSignal(OBSSignal &&other)
+		: handler (other.handler),
+		  signal  (other.signal),
+		  callback(other.callback),
+		  param   (other.param)
+	{
+		other.handler  = nullptr;
+		other.signal   = nullptr;
+		other.callback = nullptr;
+		other.param    = nullptr;
+	}
+
+	OBSSignal &operator=(const OBSSignal &) = delete;
+	OBSSignal &operator=(OBSSignal &&other)
+	{
+		Disconnect();
+
+		handler  = other.handler;
+		signal   = other.signal;
+		callback = other.callback;
+		param    = other.param;
+
+		other.handler  = nullptr;
+		other.signal   = nullptr;
+		other.callback = nullptr;
+		other.param    = nullptr;
+
+		return *this;
+	}
 };
