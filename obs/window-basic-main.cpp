@@ -80,6 +80,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	qRegisterMetaType<OBSScene>    ("OBSScene");
+	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
+	qRegisterMetaType<OBSSource>   ("OBSSource");
+
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
 		struct obs_video_info ovi;
 
