@@ -410,19 +410,6 @@ QString OBSTranslator::translate(const char *context, const char *sourceText,
 	return QT_UTF8(out);
 }
 
-struct NoFocusFrameStyle : QProxyStyle
-{
-	void drawControl(ControlElement element, const QStyleOption *option,
-			QPainter *painter, const QWidget *widget=nullptr)
-		const override
-	{
-		if (element == CE_FocusFrame)
-			return;
-
-		QProxyStyle::drawControl(element, option, painter, widget);
-	}
-};
-
 static bool get_token(lexer *lex, string &str, base_token_type type)
 {
 	base_token token;
@@ -611,7 +598,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		create_log_file(logFile);
 
 		program.installTranslator(&translator);
-		program.setStyle(new NoFocusFrameStyle);
 
 		ret = program.OBSInit() ? program.exec() : 0;
 

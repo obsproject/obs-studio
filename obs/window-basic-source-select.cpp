@@ -164,6 +164,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 {
 	ui->setupUi(this);
 
+	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
+
 	QString placeHolderText{QT_UTF8(obs_source_get_display_name(
 				OBS_SOURCE_TYPE_INPUT, id))};
 

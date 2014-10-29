@@ -119,6 +119,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>   ("OBSSource");
 
+	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
+	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
+
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
 		struct obs_video_info ovi;
 
