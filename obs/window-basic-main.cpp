@@ -57,6 +57,7 @@ using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
+Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 
 static void AddExtraModulePaths()
