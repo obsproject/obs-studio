@@ -77,6 +77,8 @@ template<typename T, void destroy(T)> class OBSObj {
 public:
 	inline OBSObj() : obj(nullptr)    {}
 	inline OBSObj(T obj_) : obj(obj_) {}
+	inline OBSObj(const OBSObj&) = delete;
+	inline OBSObj(OBSObj &&other) : obj(other.obj) { other.obj = nullptr; }
 
 	inline ~OBSObj()                  {destroy(obj);}
 
@@ -85,6 +87,15 @@ public:
 		if (obj_ != obj)
 			destroy(obj);
 		obj = obj_;
+		return *this;
+	}
+	inline OBSObj &operator=(const OBSObj&) = delete;
+	inline OBSObj &operator=(OBSObj &&other)
+	{
+		if (obj)
+			destroy(obj);
+		obj       = other.obj;
+		other.obj = nullptr;
 		return *this;
 	}
 
