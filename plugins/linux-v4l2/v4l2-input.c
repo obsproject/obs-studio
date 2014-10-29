@@ -219,20 +219,48 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "system_timing", false);
 }
 
+/**
+ * Enable/Disable all properties for the source.
+ *
+ * @note A property that should be ignored can be specified
+ *
+ * @param props the source properties
+ * @param ignore ignore this property
+ * @param enable enable/disable all properties
+ */
+static void v4l2_props_set_enabled(obs_properties_t *props,
+		obs_property_t *ignore, bool enable)
+{
+	if (!props)
+		return;
+
+	for (obs_property_t *prop = obs_properties_first(props); prop != NULL;
+			obs_property_next(&prop)) {
+		if (prop == ignore)
+			continue;
+
+		obs_property_set_enabled(prop, enable);
+	}
+}
+
 /*
  * List available devices
  */
 static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 {
-	UNUSED_PARAMETER(settings);
-
 	DIR *dirp;
 	struct dirent *dp;
 	struct dstr device;
+	bool cur_device_found;
+	size_t cur_device_index;
+	const char *cur_device_name;
 
 	dirp = opendir("/sys/class/video4linux");
 	if (!dirp)
 		return;
+
+	cur_device_found = false;
+	cur_device_name  = obs_data_get_string(settings, "device_id");
 
 	obs_property_list_clear(prop);
 
@@ -277,7 +305,18 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
 				device.array);
 
+		/* check if this is the currently used device */
+		if (cur_device_name && !strcmp(cur_device_name, device.array))
+			cur_device_found = true;
+
 		v4l2_close(fd);
+	}
+
+	/* add currently selected device if not present, but disable it ... */
+	if (!cur_device_found && cur_device_name && strlen(cur_device_name)) {
+		cur_device_index = obs_property_list_add_string(prop,
+				cur_device_name, cur_device_name);
+		obs_property_list_item_disable(prop, cur_device_index, true);
 	}
 
 	closedir(dirp);
@@ -446,9 +485,11 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 static bool device_selected(obs_properties_t *props, obs_property_t *p,
 		obs_data_t *settings)
 {
-	UNUSED_PARAMETER(p);
 	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
 			O_RDWR | O_NONBLOCK);
+
+	v4l2_props_set_enabled(props, p, (dev == -1) ? false : true);
+
 	if (dev == -1)
 		return false;
 
@@ -540,6 +581,8 @@ static void device_added(const char *dev, void *vptr)
 {
 	V4L2_DATA(vptr);
 
+	obs_source_update_properties(data->source);
+
 	if (strcmp(data->device_id, dev))
 		return;
 
@@ -556,6 +599,8 @@ static void device_removed(const char *dev, void *vptr)
 {
 	V4L2_DATA(vptr);
 
+	obs_source_update_properties(data->source);
+
 	if (strcmp(data->device_id, dev))
 		return;
 
@@ -566,9 +611,9 @@ static void device_removed(const char *dev, void *vptr)
 
 #endif
 
-static obs_properties_t *v4l2_properties(void *unused)
+static obs_properties_t *v4l2_properties(void *vptr)
 {
-	UNUSED_PARAMETER(unused);
+	V4L2_DATA(vptr);
 
 	obs_properties_t *props = obs_properties_create();
 
@@ -595,12 +640,16 @@ static obs_properties_t *v4l2_properties(void *unused)
 	obs_properties_add_bool(props,
 			"system_timing", obs_module_text("UseSystemTiming"));
 
-	v4l2_device_list(device_list, NULL);
+	obs_data_t *settings = obs_source_get_settings(data->source);
+	v4l2_device_list(device_list, settings);
+	obs_data_release(settings);
+
 	obs_property_set_modified_callback(device_list, device_selected);
 	obs_property_set_modified_callback(input_list, input_selected);
 	obs_property_set_modified_callback(format_list, format_selected);
 	obs_property_set_modified_callback(resolution_list,
 			resolution_selected);
+
 	return props;
 }
 
