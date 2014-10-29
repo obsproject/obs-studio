@@ -49,6 +49,7 @@ public:
 	inline OBSRef &operator=(OBSRef &&ref)
 	{
 		if (this != &ref) {
+			release(val);
 			val = ref.val;
 			ref.val = nullptr;
 		}
