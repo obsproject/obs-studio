@@ -17,10 +17,18 @@
 
 #pragma once
 
+/**
+ * @file
+ * @brief header for modules implementing encoders.
+ *
+ * Encoders are modules that implement some codec that can be used by libobs
+ * to process output data.
+ */
+
 /** Specifies the encoder type */
 enum obs_encoder_type {
-	OBS_ENCODER_AUDIO,
-	OBS_ENCODER_VIDEO
+	OBS_ENCODER_AUDIO, /**< The encoder provides an audio codec */
+	OBS_ENCODER_VIDEO  /**< The encoder provides a video codec */
 };
 
 /** Encoder output packet */
@@ -151,7 +159,7 @@ struct obs_encoder_info {
 	 */
 	void (*get_defaults)(obs_data_t *settings);
 
-	/** 
+	/**
 	 * Gets the property information of this encoder
 	 *
 	 * @return         The properties data

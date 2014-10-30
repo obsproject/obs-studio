@@ -63,10 +63,17 @@ typedef struct obs_module     obs_module_t;
 #include "obs-output.h"
 #include "obs-service.h"
 
-/*
+/**
  * @file
+ * @brief Main libobs header used by applications.
  *
- * Main libobs header used by applications.
+ * @mainpage
+ *
+ * @section intro_sec Introduction
+ *
+ * This document describes the api for libobs to be used by applications as well
+ * as @ref modules_page implementing some kind of functionality.
+ *
  */
 
 #ifdef __cplusplus

@@ -29,8 +29,47 @@
 
 /**
  * @file
+ * @brief This file is used by modules for module declaration and module
+ *        exports.
  *
- * This file is used by modules for module declaration and module exports.
+ * @page modules_page Modules
+ * @brief Modules or plugins are libraries that can be loaded by libobs and
+ *        subsequently interact with it.
+ *
+ * @section modules_overview_sec Overview
+ *
+ * Modules can provide a wide range of functionality to libobs, they for example
+ * can feed captured audio or video to libobs, or interface with an encoder to
+ * provide some codec to libobs.
+ *
+ * @section modules_basic_sec Creating a basic module
+ *
+ * In order to create a module for libobs you will need to build a shared
+ * library that implements a basic interface for libobs to interact with.
+ * The following code would create a simple source plugin without localization:
+ *
+@code
+#include <obs-module.h>
+
+OBS_DECLARE_MODULE()
+
+extern struct obs_source_info my_source;
+
+bool obs_module_load(void)
+{
+	obs_register_source(&my_source);
+	return true;
+}
+@endcode
+ *
+ * If you want to enable localization, you will need to also use the
+ * @ref OBS_MODULE_USE_DEFAULT_LOCALE() macro.
+ *
+ * Other module types:
+ * - @ref obs_register_encoder()
+ * - @ref obs_register_service()
+ * - @ref obs_register_output()
+ *
  */
 
 /** Required: Declares a libobs module. */
