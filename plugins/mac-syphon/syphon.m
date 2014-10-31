@@ -673,13 +673,13 @@ static int describes_app(obs_data_t *info, NSRunningApplication *app)
 {
 	int score = 0;
 	if ([app.localizedName    isEqual:get_string(info, "name")])
-		score += 1;
+		score += 2;
 
 	if ([app.bundleIdentifier isEqual:get_string(info, "bundle")])
-		score += 1;
+		score += 2;
 
 	if ([app.executableURL    isEqual:get_string(info, "executable")])
-		score += 1;
+		score += 2;
 
 	if (score && app.processIdentifier == obs_data_get_int(info, "pid"))
 		score += 1;
@@ -721,7 +721,7 @@ static void update_inject_list_internal(obs_properties_t *props,
 				obs_data_get_json(app_data));
 
 		int score = describes_app(current, app);
-		if (score) {
+		if (score >= 4) {
 			[candidates setObject:@(score) forKey:app];
 			current_found = true;
 		}
@@ -747,9 +747,12 @@ static void update_inject_list_internal(obs_properties_t *props,
 			}
 		}
 
-		app_to_data(best_match, current);
-		obs_data_set_string(settings, "application",
-				obs_data_get_json(current));
+		// Update settings in case of PID/executable updates
+		if (best_match_score.intValue >= 4) {
+			app_to_data(best_match, current);
+			obs_data_set_string(settings, "application",
+					obs_data_get_json(current));
+		}
 	}
 
 	obs_data_release(current);
