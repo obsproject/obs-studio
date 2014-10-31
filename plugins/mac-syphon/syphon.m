@@ -697,30 +697,67 @@ static inline void app_to_data(NSRunningApplication *app, obs_data_t *app_data)
 	obs_data_set_int(app_data, "pid", app.processIdentifier);
 }
 
+static inline NSDictionary *get_duplicate_names(NSArray *apps)
+{
+	NSMutableDictionary *result =
+		[NSMutableDictionary dictionaryWithCapacity:apps.count];
+	for (NSRunningApplication *app in apps) {
+		if (result[app.localizedName])
+			result[app.localizedName] = @(true);
+		else
+			result[app.localizedName] = @(false);
+	}
+	return result;
+}
+
+static inline size_t add_app(obs_property_t *prop, NSDictionary *duplicates,
+		NSString *name, const char *bundle, const char *json_data,
+		bool is_duplicate, pid_t pid)
+{
+	if (!is_duplicate) {
+		NSNumber *val = duplicates[name];
+		is_duplicate = val && val.boolValue;
+	}
+
+	if (is_duplicate)
+		name = [NSString stringWithFormat:@"%@ (%s: %d)",
+				name, bundle, pid];
+
+	return obs_property_list_add_string(prop, name.UTF8String, json_data);
+}
+
 static void update_inject_list_internal(obs_properties_t *props,
 		obs_property_t *prop, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(props);
 
-	const char *current_str = obs_data_get_string(settings, "application");
-	obs_data_t *current     = obs_data_create_from_json(current_str);
+	const char *current_str  = obs_data_get_string(settings, "application");
+	obs_data_t *current      = obs_data_create_from_json(current_str);
+	NSString   *current_name = @(obs_data_get_string(current, "name"));
 
 	bool current_found = !obs_data_has_user_value(current, "name");
 
 	obs_property_list_clear(prop);
 	obs_property_list_add_string(prop, "", "");
 
-	NSMapTable *candidates = [NSMapTable weakToStrongObjectsMapTable];
+	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+	NSArray   *apps = ws.runningApplications;
+
+	NSDictionary *duplicates = get_duplicate_names(apps);
+	NSMapTable   *candidates = [NSMapTable weakToStrongObjectsMapTable];
 
 	obs_data_t *app_data = obs_data_create();
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	for (NSRunningApplication *app in ws.runningApplications) {
+	for (NSRunningApplication *app in apps) {
 		app_to_data(app, app_data);
-
-		obs_property_list_add_string(prop, app.localizedName.UTF8String,
-				obs_data_get_json(app_data));
-
 		int score = describes_app(current, app);
+
+		NSString *name = app.localizedName;
+		add_app(prop, duplicates, name,
+				app.bundleIdentifier.UTF8String,
+				obs_data_get_json(app_data),
+				[name isEqual:current_name] && score < 4,
+				app.processIdentifier);
+
 		if (score >= 4) {
 			[candidates setObject:@(score) forKey:app];
 			current_found = true;
@@ -729,9 +766,11 @@ static void update_inject_list_internal(obs_properties_t *props,
 	obs_data_release(app_data);
 
 	if (!current_found) {
-		size_t idx = obs_property_list_add_string(prop,
-				obs_data_get_string(current, "name"),
-				current_str);
+		size_t idx = add_app(prop, duplicates, current_name,
+				obs_data_get_string(current, "bundle"),
+				current_str,
+				duplicates[current_name] != nil,
+				obs_data_get_int(current, "pid"));
 		obs_property_list_item_disable(prop, idx, true);
 
 	} else if (candidates.count > 0) {
