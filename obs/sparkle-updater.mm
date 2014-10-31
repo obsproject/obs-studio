@@ -19,10 +19,9 @@ static inline bool equali(NSString *a, NSString *b)
 
 @synthesize updateToUndeployed;
 
-- (SUAppcastItem *)bestValidUpdateInAppcast:(SUAppcast *)appcast
-				 forUpdater:(SUUpdater *)updater
+- (SUAppcastItem *)bestValidUpdateWithDeltasInAppcast:(SUAppcast *)appcast
+					   forUpdater:(SUUpdater *)updater
 {
-	static SUAppcastItem *selected;
 	SUAppcastItem *item = appcast.items.firstObject;
 	if (!appcast.items.firstObject)
 		return nil;
@@ -56,11 +55,22 @@ static inline bool equali(NSString *a, NSString *b)
 	NSString *url = dict[@"sparkle:releaseNotesLink"];
 	dict[@"sparkle:releaseNotesLink"] = [url stringByAppendingFormat:@"#%@",
 		build];
-	selected = [[SUAppcastItem alloc] initWithDictionary:dict];
 
+	return [[SUAppcastItem alloc] initWithDictionary:dict];
+}
+
+- (SUAppcastItem *)bestValidUpdateInAppcast:(SUAppcast *)appcast
+				 forUpdater:(SUUpdater *)updater
+{
+	SUAppcastItem *selected =
+			[self bestValidUpdateWithDeltasInAppcast:appcast
+						      forUpdater:updater];
+
+	NSBundle *host = updater.hostBundle;
+	NSString *build = [host objectForInfoDictionaryKey:@"CFBundleVersion"];
 	SUAppcastItem *deltaUpdate = [selected deltaUpdates][build];
 	if (deltaUpdate)
-		selected = deltaUpdate;
+		return deltaUpdate;
 
 	return selected;
 }
