@@ -1045,10 +1045,24 @@ static inline void inject_app(syphon_t s, NSRunningApplication *app)
 
 static inline void find_and_inject_target(syphon_t s, NSArray *arr)
 {
+	NSMutableArray *best_matches = [NSMutableArray arrayWithCapacity:1];
+	int best_score = 0;
 	for (NSRunningApplication *app in arr) {
-		if (describes_app(s->inject_info, app))
-			inject_app(s, app);
+		int score = describes_app(s->inject_info, app);
+		if (!score)
+			continue;
+
+		if (score > best_score) {
+			best_score = score;
+			[best_matches removeAllObjects];
+		}
+
+		if (score >= best_score)
+			[best_matches addObject:app];
 	}
+
+	for (NSRunningApplication *app in best_matches)
+		inject_app(s, app);
 }
 
 static inline bool inject_info_equal(obs_data_t *prev, obs_data_t *new)
