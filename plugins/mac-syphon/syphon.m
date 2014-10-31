@@ -31,8 +31,12 @@ struct syphon {
 	NSString *uuid;
 
 	obs_data_t *inject_info;
+	NSString   *inject_app;
+	NSString   *inject_uuid;
 	bool       inject_active;
 	id         launch_listener;
+	bool       inject_server_found;
+	float      inject_wait_time;
 };
 typedef struct syphon *syphon_t;
 
@@ -47,7 +51,7 @@ static inline void update_properties(syphon_t s)
 	obs_source_update_properties(s->source);
 }
 
-static inline void find_and_inject_target(syphon_t s, NSArray *arr);
+static inline void find_and_inject_target(syphon_t s, NSArray *arr, bool retry);
 
 @interface OBSSyphonKVObserver : NSObject
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -64,7 +68,7 @@ static inline void handle_application_launch(syphon_t s, NSArray *new)
 	if (!new)
 		return;
 
-	find_and_inject_target(s, new);
+	find_and_inject_target(s, new, false);
 }
 
 @implementation OBSSyphonKVObserver
@@ -298,12 +302,47 @@ static inline void update_from_announce(syphon_t s, NSDictionary *info)
 	create_client(s);
 }
 
+static inline void update_inject_state(syphon_t s, NSDictionary *info,
+		bool announce)
+{
+	if (!info)
+		return;
+
+	NSString *app_name = info[SyphonServerDescriptionAppNameKey];
+	NSString *name     = info[SyphonServerDescriptionNameKey];
+	NSString *uuid     = info[SyphonServerDescriptionUUIDKey];
+
+	if (![uuid isEqual:s->inject_uuid] &&
+		(![app_name isEqual:s->inject_app]
+		  || ![name isEqual:@"InjectedSyphon"]))
+		return;
+
+	if (!(s->inject_server_found = announce)) {
+		s->inject_wait_time = 0.f;
+
+		objc_release(&s->inject_uuid);
+		LOG(LOG_INFO, "Injected server retired: "
+				"[%s] InjectedSyphon (%s)",
+				s->inject_app.UTF8String, uuid.UTF8String);
+		return;
+	}
+
+	if (s->inject_uuid) //TODO: track multiple injected instances?
+		return;
+
+	s->inject_uuid = [uuid retain];
+	LOG(LOG_INFO, "Injected server found: [%s] %s (%s)",
+			app_name.UTF8String, name.UTF8String,
+			uuid.UTF8String);
+}
+
 static inline void handle_announce(syphon_t s, NSNotification *note)
 {
 	if (!note)
 		return;
 
 	update_from_announce(s, note.object);
+	update_inject_state(s, note.object, true);
 	update_properties(s);
 }
 
@@ -328,6 +367,7 @@ static inline void handle_retire(syphon_t s, NSNotification *note)
 		return;
 
 	update_from_retire(s, note.object);
+	update_inject_state(s, note.object, false);
 	update_properties(s);
 }
 
@@ -456,6 +496,10 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 	const char *inject_info = obs_data_get_string(settings, "application");
 	s->inject_info          = obs_data_create_from_json(inject_info);
 	s->inject_active        = obs_data_get_bool(settings, "inject");
+	s->inject_app           = @(obs_data_get_string(s->inject_info, "name"));
+
+	if (s->inject_app)
+		[s->inject_app retain];
 
 	if (!create_syphon_listeners(s))
 		goto fail;
@@ -465,7 +509,7 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 		goto fail;
 
 	if (s->inject_active)
-		find_and_inject_target(s, ws.runningApplications);
+		find_and_inject_target(s, ws.runningApplications, false);
 
 	create_client(s);
 
@@ -506,6 +550,9 @@ static inline void syphon_destroy_internal(syphon_t s)
 	[ws removeObserver:s->launch_listener
 		forKeyPath:NSStringFromSelector(@selector(runningApplications))];
 	objc_release(&s->launch_listener);
+
+	objc_release(&s->inject_app);
+	objc_release(&s->inject_uuid);
 
 	obs_data_release(s->inject_info);
 
@@ -977,11 +1024,27 @@ static inline void build_sprite_rect(struct gs_vb_data *data,
 			origin_y, end_y);
 }
 
+static inline void tick_inject_state(syphon_t s, float seconds)
+{
+	s->inject_wait_time -= seconds;
+
+	if (s->inject_wait_time > 0.f)
+		return;
+
+	s->inject_wait_time = 1.f;
+	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+	find_and_inject_target(s, ws.runningApplications, true);
+}
+
 static void syphon_video_tick(void *data, float seconds)
 {
 	UNUSED_PARAMETER(seconds);
 
 	syphon_t s = data;
+
+	if (s->inject_active && !s->inject_server_found)
+		tick_inject_state(s, seconds);
+
 	if (!s->tex)
 		return;
 
@@ -1057,7 +1120,7 @@ static uint32_t syphon_get_height(void *data)
 	return MAX(0, height);
 }
 
-static inline void inject_app(syphon_t s, NSRunningApplication *app)
+static inline void inject_app(syphon_t s, NSRunningApplication *app, bool retry)
 {
 	SBApplication *sbapp = nil;
 	if (app.processIdentifier != -1)
@@ -1077,12 +1140,15 @@ static inline void inject_app(syphon_t s, NSRunningApplication *app)
 	sbapp.sendMode = kAENoReply;
 	[sbapp sendEvent:'SASI' id:'injc' parameters:0];
 
+	if (retry)
+		return;
+
 	LOG(LOG_INFO, "Injected '%s' (%d, '%s')",
 			app.localizedName.UTF8String,
 			app.processIdentifier, app.bundleIdentifier.UTF8String);
 }
 
-static inline void find_and_inject_target(syphon_t s, NSArray *arr)
+static inline void find_and_inject_target(syphon_t s, NSArray *arr, bool retry)
 {
 	NSMutableArray *best_matches = [NSMutableArray arrayWithCapacity:1];
 	int best_score = 0;
@@ -1101,7 +1167,7 @@ static inline void find_and_inject_target(syphon_t s, NSArray *arr)
 	}
 
 	for (NSRunningApplication *app in best_matches)
-		inject_app(s, app);
+		inject_app(s, app, retry);
 }
 
 static inline bool inject_info_equal(obs_data_t *prev, obs_data_t *new)
@@ -1135,16 +1201,31 @@ static inline void update_inject(syphon_t s, obs_data_t *settings)
 
 	obs_data_t *prev = s->inject_info;
 	s->inject_info = obs_data_create_from_json(inject_str);
+	
+	NSString *prev_app = s->inject_app;
+	s->inject_app = [@(obs_data_get_string(s->inject_info, "name")) retain];
+	[prev_app release];
+
+	objc_release(&s->inject_uuid);
+
+	SyphonServerDirectory *ssd = [SyphonServerDirectory sharedDirectory];
+	NSArray *servers = [ssd serversMatchingName:@"InjectedSyphon"
+					    appName:s->inject_app];
+	s->inject_server_found = false;
+	for (NSDictionary *server in servers)
+		update_inject_state(s, server, true);
+	
 	if (!try_injecting)
 		try_injecting = s->inject_active &&
 			!inject_info_equal(prev, s->inject_info);
+
 	obs_data_release(prev);
 
 	if (!try_injecting)
 		return;
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	find_and_inject_target(s, ws.runningApplications);
+	find_and_inject_target(s, ws.runningApplications, false);
 }
 
 static inline bool update_syphon(syphon_t s, obs_data_t *settings)
