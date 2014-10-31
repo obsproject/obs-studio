@@ -36,6 +36,12 @@ struct syphon {
 };
 typedef struct syphon *syphon_t;
 
+static inline void objc_release(NSObject **obj)
+{
+	[*obj release];
+	*obj = nil;
+}
+
 static inline void update_properties(syphon_t s)
 {
 	obs_source_update_properties(s->source);
@@ -91,8 +97,7 @@ static void stop_client(syphon_t s)
 	if (s->client) {
 		@autoreleasepool {
 			[s->client stop];
-			[s->client release];
-			s->client = nil;
+			objc_release(&s->client);
 		}
 	}
 
@@ -500,7 +505,7 @@ static inline void syphon_destroy_internal(syphon_t s)
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 	[ws removeObserver:s->launch_listener
 		forKeyPath:NSStringFromSelector(@selector(runningApplications))];
-	[s->launch_listener release];
+	objc_release(&s->launch_listener);
 
 	obs_data_release(s->inject_info);
 
