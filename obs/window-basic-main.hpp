@@ -113,6 +113,7 @@ private:
 	void          Load(const char *file);
 
 	void          InitHotkeys();
+	void          CreateHotkeys();
 
 	bool          InitService();
 
@@ -150,6 +151,8 @@ private:
 
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor);
+
+	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
 
 public slots:
 	void StartStreaming();
