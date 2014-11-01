@@ -35,6 +35,9 @@ static void add_font_path(FT_Face face,
 	struct dstr face_and_style = {0};
 	struct font_path_info info;
 
+	if (!family_in || !path)
+		return;
+
 	dstr_copy(&face_and_style, family_in);
 	if (face->style_name) {
 		struct dstr style = {0};
