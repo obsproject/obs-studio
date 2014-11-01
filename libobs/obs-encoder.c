@@ -42,7 +42,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
 	pthread_mutex_init_value(&encoder->outputs_mutex);
 
-	if (!obs_context_data_init(&encoder->context, settings, name))
+	if (!obs_context_data_init(&encoder->context, settings, name, NULL))
 		return false;
 	if (pthread_mutex_init(&encoder->callbacks_mutex, NULL) != 0)
 		return false;

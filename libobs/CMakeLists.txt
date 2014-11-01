@@ -216,6 +216,8 @@ set(libobs_libobs_SOURCES
 	obs.c
 	obs-properties.c
 	obs-data.c
+	obs-hotkey.c
+	obs-hotkey-name-map.c
 	obs-module.c
 	obs-display.c
 	obs-view.c
@@ -233,6 +235,8 @@ set(libobs_libobs_HEADERS
 	obs-properties.h
 	obs-data.h
 	obs-interaction.h
+	obs-hotkey.h
+	obs-hotkeys.h
 	obs-module.h
 	obs-scene.h
 	obs-source.h

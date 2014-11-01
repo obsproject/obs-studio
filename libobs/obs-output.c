@@ -49,7 +49,7 @@ static const char *output_signals[] = {
 static bool init_output_handlers(struct obs_output *output, const char *name,
 		obs_data_t *settings)
 {
-	if (!obs_context_data_init(&output->context, settings, name))
+	if (!obs_context_data_init(&output->context, settings, name, NULL))
 		return false;
 
 	signal_handler_add_array(output->context.signals, output_signals);

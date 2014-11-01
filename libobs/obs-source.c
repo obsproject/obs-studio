@@ -96,7 +96,7 @@ static const char *source_signals[] = {
 bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name)
 {
-	if (!obs_context_data_init(&source->context, settings, name))
+	if (!obs_context_data_init(&source->context, settings, name, NULL))
 		return false;
 
 	return signal_handler_add_array(source->context.signals,

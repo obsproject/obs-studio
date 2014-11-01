@@ -194,3 +194,55 @@ void log_system_info(void)
 	log_available_memory();
 	log_windows_version();
 }
+
+
+struct obs_hotkeys_platform {
+	bool blank;
+};
+
+bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
+{
+	UNUSED_PARAMETER(hotkeys);
+
+	return true;
+}
+
+void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
+{
+	UNUSED_PARAMETER(hotkeys);
+}
+
+bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
+		obs_key_t key)
+{
+	UNUSED_PARAMETER(context);
+	UNUSED_PARAMETER(key);
+
+	return false;
+}
+
+void obs_key_to_str(obs_key_t key, struct dstr *str)
+{
+	UNUSED_PARAMETER(key);
+	UNUSED_PARAMETER(str);
+}
+
+void obs_key_combination_to_str(obs_key_combination_t key, struct dstr *str)
+{
+	UNUSED_PARAMETER(key);
+	UNUSED_PARAMETER(str);
+}
+
+obs_key_t obs_key_from_virtual_key(int code)
+{
+	UNUSED_PARAMETER(code);
+
+	return OBS_KEY_NONE;
+}
+
+int obs_key_to_virtual_key(obs_key_t key)
+{
+	UNUSED_PARAMETER(key);
+
+	return 0;
+}

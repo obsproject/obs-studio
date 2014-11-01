@@ -72,6 +72,7 @@ typedef struct obs_weak_service obs_weak_service_t;
 #include "obs-output.h"
 #include "obs-service.h"
 #include "obs-audio-controls.h"
+#include "obs-hotkey.h"
 
 /**
  * @file
