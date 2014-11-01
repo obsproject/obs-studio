@@ -28,7 +28,10 @@
 #include <QVariant>
 #include <QTreeView>
 #include <QStandardItemModel>
+#include <QSpacerItem>
 
+#include "hotkey-edit.hpp"
+#include "source-label.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"
 #include "properties-view.hpp"
@@ -313,6 +316,26 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadEncoderTypes();
 	LoadColorRanges();
 	LoadFormats();
+
+	auto ReloadHotkeys = [](void *data, calldata_t*)
+	{
+		auto settings = static_cast<OBSBasicSettings*>(data);
+		QMetaObject::invokeMethod(settings, "ReloadHotkeys");
+	};
+	hotkeyRegistered.Connect(obs_get_signal_handler(), "hotkey_register",
+			ReloadHotkeys, this);
+
+	auto ReloadHotkeysIgnore = [](void *data, calldata_t *param)
+	{
+		auto settings = static_cast<OBSBasicSettings*>(data);
+		auto key      = static_cast<obs_hotkey_t*>(
+					calldata_ptr(param,"key"));
+		QMetaObject::invokeMethod(settings, "ReloadHotkeys",
+				Q_ARG(obs_hotkey_id, obs_hotkey_get_id(key)));
+	};
+	hotkeyUnregistered.Connect(obs_get_signal_handler(),
+			"hotkey_unregister", ReloadHotkeysIgnore, this);
+
 	LoadSettings(false);
 }
 
@@ -1278,6 +1301,290 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	loading = false;
 }
 
+template <typename Func>
+static inline void LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
+		const map<obs_hotkey_id, vector<obs_key_combination_t>> &keys)
+{
+	auto *label = new OBSHotkeyLabel;
+	label->setText(obs_hotkey_get_description(key));
+
+	OBSHotkeyWidget *hw = nullptr;
+
+	auto combos = keys.find(id);
+	if (combos == std::end(keys))
+		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key));
+	else
+		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key),
+				combos->second);
+
+	hw->label = label;
+	label->widget = hw;
+
+	fun(key, label, hw);
+}
+
+template <typename Func, typename T>
+static QLabel *makeLabel(T &t, Func &&getName)
+{
+	return new QLabel(getName(t));
+}
+
+template <typename Func>
+static QLabel *makeLabel(const OBSSource &source, Func &&)
+{
+	return new OBSSourceLabel(source);
+}
+
+template <typename Func, typename T>
+static inline void AddHotkeys(QFormLayout &layout,
+		Func &&getName, std::vector<
+			std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>
+		> &hotkeys)
+{
+	if (hotkeys.empty())
+		return;
+
+	auto line = new QFrame();
+	line->setFrameShape(QFrame::HLine);
+	line->setFrameShadow(QFrame::Sunken);
+
+	layout.setItem(layout.rowCount(), QFormLayout::SpanningRole,
+			new QSpacerItem(0, 10));
+	layout.addRow(line);
+
+	using tuple_type =
+		std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>;
+
+	stable_sort(begin(hotkeys), end(hotkeys),
+			[&](const tuple_type &a, const tuple_type &b)
+	{
+		const auto &o_a = get<0>(a);
+		const auto &o_b = get<0>(b);
+		return o_a != o_b &&
+			string(getName(o_a)) <
+				getName(o_b);
+	});
+
+	string prevName;
+	for (const auto &hotkey : hotkeys) {
+		const auto &o = get<0>(hotkey);
+		const char *name = getName(o);
+		if (prevName != name) {
+			prevName = name;
+			layout.setItem(layout.rowCount(),
+					QFormLayout::SpanningRole,
+					new QSpacerItem(0, 10));
+			layout.addRow(makeLabel(o, getName));
+		}
+
+		auto hlabel = get<1>(hotkey);
+		auto widget = get<2>(hotkey);
+		layout.addRow(hlabel, widget);
+	}
+}
+
+void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
+{
+	hotkeys.clear();
+	ui->hotkeyPage->takeWidget()->deleteLater();
+
+	using keys_t = map<obs_hotkey_id, vector<obs_key_combination_t>>;
+	keys_t keys;
+	obs_enum_hotkey_bindings([](void *data,
+				size_t, obs_hotkey_binding_t *binding)
+	{
+		auto &keys = *static_cast<keys_t*>(data);
+
+		keys[obs_hotkey_binding_get_hotkey_id(binding)].emplace_back(
+			obs_hotkey_binding_get_key_combination(binding));
+
+		return true;
+	}, &keys);
+
+	auto layout = new QFormLayout();
+	layout->setVerticalSpacing(0);
+	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+	layout->setLabelAlignment(
+			Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+	auto widget = new QWidget();
+	widget->setLayout(layout);
+	ui->hotkeyPage->setWidget(widget);
+
+	using namespace std;
+	using encoders_elem_t =
+		tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
+	using outputs_elem_t =
+		tuple<OBSOutput, QPointer<QLabel>, QPointer<QWidget>>;
+	using services_elem_t =
+		tuple<OBSService, QPointer<QLabel>, QPointer<QWidget>>;
+	using sources_elem_t =
+		tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
+	vector<encoders_elem_t> encoders;
+	vector<outputs_elem_t>  outputs;
+	vector<services_elem_t> services;
+	vector<sources_elem_t>  scenes;
+	vector<sources_elem_t>  sources;
+
+	vector<obs_hotkey_id> pairIds;
+	map<obs_hotkey_id, pair<obs_hotkey_id, OBSHotkeyLabel*>> pairLabels;
+
+	using std::move;
+
+	auto HandleEncoder = [&](void *registerer, OBSHotkeyLabel *label,
+			OBSHotkeyWidget *hw)
+	{
+		auto weak_encoder =
+			static_cast<obs_weak_encoder_t*>(registerer);
+		auto encoder = OBSGetStrongRef(weak_encoder);
+
+		if (!encoder)
+			return true;
+
+		encoders.emplace_back(move(encoder), label, hw);
+		return false;
+	};
+
+	auto HandleOutput = [&](void *registerer, OBSHotkeyLabel *label,
+			OBSHotkeyWidget *hw)
+	{
+		auto weak_output = static_cast<obs_weak_output_t*>(registerer);
+		auto output = OBSGetStrongRef(weak_output);
+
+		if (!output)
+			return true;
+
+		outputs.emplace_back(move(output), label, hw);
+		return false;
+	};
+
+	auto HandleService = [&](void *registerer, OBSHotkeyLabel *label,
+			OBSHotkeyWidget *hw)
+	{
+		auto weak_service =
+			static_cast<obs_weak_service_t*>(registerer);
+		auto service = OBSGetStrongRef(weak_service);
+
+		if (!service)
+			return true;
+
+		services.emplace_back(move(service), label, hw);
+		return false;
+	};
+
+	auto HandleSource = [&](void *registerer, OBSHotkeyLabel *label,
+			OBSHotkeyWidget *hw)
+	{
+		auto weak_source = static_cast<obs_weak_source_t*>(registerer);
+		auto source = OBSGetStrongRef(weak_source);
+
+		if (!source)
+			return true;
+
+		if (obs_scene_from_source(source))
+			scenes.emplace_back(source, label, hw);
+		else
+			sources.emplace_back(source, label, hw);
+
+		return false;
+	};
+
+	auto RegisterHotkey = [&](obs_hotkey_t *key, OBSHotkeyLabel *label,
+			OBSHotkeyWidget *hw)
+	{
+		auto registerer_type = obs_hotkey_get_registerer_type(key);
+		void *registerer     = obs_hotkey_get_registerer(key);
+
+		obs_hotkey_id partner = obs_hotkey_get_pair_partner_id(key);
+		if (partner != OBS_INVALID_HOTKEY_ID) {
+			pairLabels.emplace(obs_hotkey_get_id(key),
+					make_pair(partner, label));
+			pairIds.push_back(obs_hotkey_get_id(key));
+		}
+
+		using std::move;
+
+		switch (registerer_type) {
+		case OBS_HOTKEY_REGISTERER_FRONTEND:
+			layout->addRow(label, hw);
+			break;
+
+		case OBS_HOTKEY_REGISTERER_ENCODER:
+			if (HandleEncoder(registerer, label, hw))
+				return;
+			break;
+
+		case OBS_HOTKEY_REGISTERER_OUTPUT:
+			if (HandleOutput(registerer, label, hw))
+				return;
+			break;
+
+		case OBS_HOTKEY_REGISTERER_SERVICE:
+			if (HandleService(registerer, label, hw))
+				return;
+			break;
+
+		case OBS_HOTKEY_REGISTERER_SOURCE:
+			if (HandleSource(registerer, label, hw))
+				return;
+			break;
+		}
+
+		hotkeys.emplace_back(registerer_type ==
+				OBS_HOTKEY_REGISTERER_FRONTEND, hw);
+		connect(hw, &OBSHotkeyWidget::KeyChanged,
+				this, &OBSBasicSettings::HotkeysChanged);
+	};
+
+	auto data = make_tuple(RegisterHotkey, std::move(keys), ignoreKey);
+	using data_t = decltype(data);
+	obs_enum_hotkeys([](void *data, obs_hotkey_id id, obs_hotkey_t *key)
+	{
+		data_t &d = *static_cast<data_t*>(data);
+		if (id != get<2>(d))
+			LayoutHotkey(id, key, get<0>(d), get<1>(d));
+		return true;
+	}, &data);
+
+	for (auto keyId : pairIds) {
+		auto data1 = pairLabels.find(keyId);
+		if (data1 == end(pairLabels))
+			continue;
+
+		auto &label1 = data1->second.second;
+		if (label1->pairPartner)
+			continue;
+
+		auto data2 = pairLabels.find(data1->second.first);
+		if (data2 == end(pairLabels))
+			continue;
+
+		auto &label2 = data2->second.second;
+		if (label2->pairPartner)
+			continue;
+
+		QString tt = QTStr("Basic.Settings.Hotkeys.Pair");
+		auto name1 = label1->text();
+		auto name2 = label2->text();
+
+		auto Update = [&](OBSHotkeyLabel *label, const QString &name,
+				OBSHotkeyLabel *other, const QString &otherName)
+		{
+			label->setToolTip(tt.arg(otherName));
+			label->setText(name + " ✳");
+			label->pairPartner = other;
+		};
+		Update(label1, name1, label2, name2);
+		Update(label2, name2, label1, name1);
+	}
+
+	AddHotkeys(*layout, obs_output_get_name, outputs);
+	AddHotkeys(*layout, obs_source_get_name, scenes);
+	AddHotkeys(*layout, obs_source_get_name, sources);
+	AddHotkeys(*layout, obs_encoder_get_name, encoders);
+	AddHotkeys(*layout, obs_service_get_name, services);
+}
+
 void OBSBasicSettings::LoadSettings(bool changedOnly)
 {
 	if (!changedOnly || generalChanged)
@@ -1290,6 +1597,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
+	if (!changedOnly || hotkeysChanged)
+		LoadHotkeySettings();
 	if (!changedOnly || advancedChanged)
 		LoadAdvancedSettings();
 }
@@ -1560,6 +1869,33 @@ void OBSBasicSettings::SaveAudioSettings()
 	main->ResetAudioDevices();
 }
 
+void OBSBasicSettings::SaveHotkeySettings()
+{
+	const auto &config = main->Config();
+
+	using namespace std;
+
+	std::vector<obs_key_combination> combinations;
+	for (auto &hotkey : hotkeys) {
+		auto &hw = *hotkey.second;
+		if (!hw.Changed())
+			continue;
+
+		hw.Save(combinations);
+
+		if (!hotkey.first)
+			continue;
+
+		obs_data_array_t *array = obs_hotkey_save(hw.id);
+		obs_data_t *data = obs_data_create();
+		obs_data_set_array(data, "bindings", array);
+		const char *json = obs_data_get_json(data);
+		config_set_string(config, "Hotkeys", hw.name.c_str(), json);
+		obs_data_release(data);
+		obs_data_array_release(array);
+	}
+}
+
 void OBSBasicSettings::SaveSettings()
 {
 	if (generalChanged)
@@ -1572,6 +1908,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveAudioSettings();
 	if (videoChanged)
 		SaveVideoSettings();
+	if (hotkeysChanged)
+		SaveHotkeySettings();
 	if (advancedChanged)
 		SaveAdvancedSettings();
 
@@ -1935,6 +2273,28 @@ void OBSBasicSettings::VideoChanged()
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
+}
+
+void OBSBasicSettings::HotkeysChanged()
+{
+	using namespace std;
+	if (loading)
+		return;
+
+	hotkeysChanged = any_of(begin(hotkeys), end(hotkeys),
+			[](const pair<bool, QPointer<OBSHotkeyWidget>> &hotkey)
+	{
+		const auto &hw = *hotkey.second;
+		return hw.Changed();
+	});
+
+	if (hotkeysChanged)
+		EnableApplyButton(true);
+}
+
+void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
+{
+	LoadHotkeySettings(ignoreKey);
 }
 
 void OBSBasicSettings::AdvancedChanged()

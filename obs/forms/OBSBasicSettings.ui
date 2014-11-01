@@ -89,6 +89,15 @@
        </item>
        <item>
         <property name="text">
+         <string>Basic.Settings.Hotkeys</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</iconset>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>Basic.Settings.Advanced</string>
         </property>
         <property name="icon">
@@ -2329,6 +2338,24 @@
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QScrollArea" name="hotkeyPage">
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="hotkeyWidget">
+         <layout class="QFormLayout" name="hotkeyLayout">
+          <property name="verticalSpacing">
+           <number>0</number>
+          </property>
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <property name="labelAlignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </layout>
+        </widget>
        </widget>
        <widget class="QWidget" name="advancedPage">
         <layout class="QHBoxLayout" name="horizontalLayout_11">
