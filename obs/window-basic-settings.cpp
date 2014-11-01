@@ -307,6 +307,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	// Initialize libff library
 	ff_init();
 
+	installEventFilter(CreateShortcutFilter());
+
 	LoadServiceTypes();
 	LoadEncoderTypes();
 	LoadColorRanges();

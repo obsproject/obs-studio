@@ -17,6 +17,7 @@
 
 #include "window-namedialog.hpp"
 #include "ui_NameDialog.h"
+#include "obs-app.hpp"
 
 using namespace std;
 
@@ -25,6 +26,8 @@ NameDialog::NameDialog(QWidget *parent)
 	  ui      (new Ui::NameDialog)
 {
 	ui->setupUi(this);
+
+	installEventFilter(CreateShortcutFilter());
 }
 
 bool NameDialog::AskForName(QWidget *parent, const QString &title,

@@ -66,6 +66,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
 
+	installEventFilter(CreateShortcutFilter());
+
 	connect(ui->preview, SIGNAL(DisplayResized()),
 			this, SLOT(OnPreviewResized()));
 

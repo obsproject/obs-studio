@@ -78,6 +78,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	view->setMinimumHeight(150);
 	view->show();
 
+	installEventFilter(CreateShortcutFilter());
+
 	connect(view, SIGNAL(PropertiesResized()),
 			this, SLOT(OnPropertiesResized()));
 

@@ -181,5 +181,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	ui->sourceName->setFocus();	//Fixes deselect of text.
 	ui->sourceName->selectAll();
 
+	installEventFilter(CreateShortcutFilter());
+
 	obs_enum_sources(EnumSources, this);
 }

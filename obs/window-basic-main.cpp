@@ -118,6 +118,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSScene>    ("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>   ("OBSSource");
+	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -131,6 +132,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	stringstream name;
 	name << "OBS " << App()->GetVersionString();
+
+	installEventFilter(CreateShortcutFilter());
 
 	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
@@ -653,6 +656,7 @@ void OBSBasic::OBSInit()
 	}
 
 	InitOBSCallbacks();
+	InitHotkeys();
 
 	AddExtraModulePaths();
 	obs_load_all_modules();
@@ -681,6 +685,71 @@ void OBSBasic::OBSInit()
 				Qt::QueuedConnection);
 }
 
+void OBSBasic::InitHotkeys()
+{
+	struct obs_hotkeys_translations t = {};
+	t.insert                       = Str("Hotkeys.Insert");
+	t.del                          = Str("Hotkeys.Delete");
+	t.home                         = Str("Hotkeys.Home");
+	t.end                          = Str("Hotkeys.End");
+	t.page_up                      = Str("Hotkeys.PageUp");
+	t.page_down                    = Str("Hotkeys.PageDown");
+	t.num_lock                     = Str("Hotkeys.NumLock");
+	t.scroll_lock                  = Str("Hotkeys.ScrollLock");
+	t.caps_lock                    = Str("Hotkeys.CapsLock");
+	t.backspace                    = Str("Hotkeys.Backspace");
+	t.tab                          = Str("Hotkeys.Tab");
+	t.print                        = Str("Hotkeys.Print");
+	t.pause                        = Str("Hotkeys.Pause");
+	t.left                         = Str("Hotkeys.Left");
+	t.right                        = Str("Hotkeys.Right");
+	t.up                           = Str("Hotkeys.Up");
+	t.down                         = Str("Hotkeys.Down");
+#ifdef _WIN32
+	t.meta                         = Str("Hotkeys.Windows");
+#else
+	t.meta                         = Str("Hotkeys.Super");
+#endif
+	t.menu                         = Str("Hotkeys.Menu");
+	t.space                        = Str("Hotkeys.Space");
+	t.numpad_num                   = Str("Hotkeys.NumpadNum");
+	t.numpad_multiply              = Str("Hotkeys.NumpadMultiply");
+	t.numpad_divide                = Str("Hotkeys.NumpadDivide");
+	t.numpad_plus                  = Str("Hotkeys.NumpadAdd");
+	t.numpad_minus                 = Str("Hotkeys.NumpadSubtract");
+	t.numpad_decimal               = Str("Hotkeys.NumpadDecimal");
+	t.apple_keypad_num             = Str("Hotkeys.AppleKeypadNum");
+	t.apple_keypad_multiply        = Str("Hotkeys.AppleKeypadMultiply");
+	t.apple_keypad_divide          = Str("Hotkeys.AppleKeypadDivide");
+	t.apple_keypad_plus            = Str("Hotkeys.AppleKeypadAdd");
+	t.apple_keypad_minus           = Str("Hotkeys.AppleKeypadSubtract");
+	t.apple_keypad_decimal         = Str("Hotkeys.AppleKeypadDecimal");
+	t.apple_keypad_equal           = Str("Hotkeys.AppleKeypadEqual");
+	t.mouse_num                    = Str("Hotkeys.MouseButton");
+	obs_hotkeys_set_translations(&t);
+
+	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"),
+			Str("Push-to-talk"), Str("Push-to-mute"));
+
+	obs_hotkeys_set_sceneitem_hotkeys_translations(
+			Str("SceneItemShow"), Str("SceneItemHide"));
+
+	obs_hotkey_enable_callback_rerouting(true);
+	obs_hotkey_set_callback_routing_func(OBSBasic::HotkeyTriggered, this);
+}
+
+void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
+{
+	obs_hotkey_trigger_routed_callback(id, pressed);
+}
+
+void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
+{
+	OBSBasic &basic = *static_cast<OBSBasic*>(data);
+	QMetaObject::invokeMethod(&basic, "ProcessHotkey",
+			Q_ARG(obs_hotkey_id, id), Q_ARG(bool, pressed));
+}
+
 OBSBasic::~OBSBasic()
 {
 	bool previewEnabled = obs_preview_enabled();
@@ -693,6 +762,8 @@ OBSBasic::~OBSBasic()
 	 * libobs. */
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
+
+	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
 
 	service = nullptr;
 	outputHandler.reset();

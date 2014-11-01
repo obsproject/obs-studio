@@ -63,6 +63,8 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	vlayout->addWidget(scrollArea);
 	setLayout(vlayout);
 
+	installEventFilter(CreateShortcutFilter());
+
 	/* get global audio sources */
 	for (uint32_t i = 1; i <= 10; i++) {
 		obs_source_t *source = obs_get_output_source(i);

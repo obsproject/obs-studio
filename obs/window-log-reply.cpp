@@ -17,6 +17,7 @@
 
 #include <QClipboard>
 #include "window-log-reply.hpp"
+#include "obs-app.hpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
 	: QDialog (parent),
@@ -24,6 +25,8 @@ OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
 {
 	ui->setupUi(this);
 	ui->urlEdit->setText(url);
+
+	installEventFilter(CreateShortcutFilter());
 }
 
 void OBSLogReply::on_copyURL_clicked()
