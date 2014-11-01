@@ -34,7 +34,7 @@ const char *obs_service_get_display_name(const char *id)
 }
 
 obs_service_t *obs_service_create(const char *id, const char *name,
-		obs_data_t *settings)
+		obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	const struct obs_service_info *info = find_service(id);
 	struct obs_service *service;
@@ -46,7 +46,8 @@ obs_service_t *obs_service_create(const char *id, const char *name,
 
 	service = bzalloc(sizeof(struct obs_service));
 
-	if (!obs_context_data_init(&service->context, settings, name, NULL)) {
+	if (!obs_context_data_init(&service->context, settings, name,
+				hotkey_data)) {
 		bfree(service);
 		return NULL;
 	}

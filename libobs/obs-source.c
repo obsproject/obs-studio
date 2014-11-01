@@ -94,9 +94,10 @@ static const char *source_signals[] = {
 };
 
 bool obs_source_init_context(struct obs_source *source,
-		obs_data_t *settings, const char *name)
+		obs_data_t *settings, const char *name, obs_data_t *hotkey_data)
 {
-	if (!obs_context_data_init(&source->context, settings, name, NULL))
+	if (!obs_context_data_init(&source->context, settings, name,
+				hotkey_data))
 		return false;
 
 	return signal_handler_add_array(source->context.signals,
@@ -170,7 +171,7 @@ static inline void obs_source_dosignal(struct obs_source *source,
 }
 
 obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
-		const char *name, obs_data_t *settings)
+		const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
@@ -185,7 +186,7 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 		source->info = *info;
 	}
 
-	if (!obs_source_init_context(source, settings, name))
+	if (!obs_source_init_context(source, settings, name, hotkey_data))
 		goto fail;
 
 	if (info && info->get_defaults)

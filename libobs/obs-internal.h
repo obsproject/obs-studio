@@ -517,7 +517,8 @@ struct obs_source {
 extern const struct obs_source_info *find_source(struct darray *list,
 		const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
-		obs_data_t *settings, const char *name);
+		obs_data_t *settings, const char *name,
+		obs_data_t *hotkey_data);
 extern bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info);
 

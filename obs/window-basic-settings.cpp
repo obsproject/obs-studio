@@ -1318,7 +1318,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	QString streamType = GetComboData(ui->streamType);
 
 	obs_service_t *newService = obs_service_create(QT_TO_UTF8(streamType),
-			"default_service", streamProperties->GetSettings());
+			"default_service", streamProperties->GetSettings(),
+			nullptr);
 	if (!newService)
 		return;
 

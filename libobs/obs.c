@@ -1425,11 +1425,9 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	uint32_t     flags;
 	uint32_t     mixers;
 
-	source = obs_source_create(type, id, name, settings);
+	source = obs_source_create(type, id, name, settings, hotkeys);
 
-	obs_data_release(source->context.hotkey_data);
-	source->context.hotkey_data = hotkeys;
-	obs_hotkeys_load_source(source, hotkeys);
+	obs_data_release(hotkeys);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_get_double(source_data, "volume");

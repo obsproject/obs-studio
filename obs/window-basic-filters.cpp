@@ -367,7 +367,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		}
 
 		obs_source_t *filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				id, name.c_str(), nullptr);
+				id, name.c_str(), nullptr, nullptr);
 		if (filter) {
 			obs_source_filter_add(source, filter);
 			obs_source_release(filter);
