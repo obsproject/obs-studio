@@ -100,183 +100,31 @@ Mac OSX
     This will create a .dmg file with an app bundle inside.
 
 
-
 Linux
-	Install from PPA (Ubuntu 14.04 only)
-		- If you are unsure about compiling the software from source yourself, and
-			you happen to be using Ubuntu 14.04, then you can install OBS Studio via
-			the PPA repository by entering the following commands:
+  - You need a fairly recent Linux distribution.
+    Ubuntu 14.04 or a similar recent Linux distribution works fine, but
+    anything that's up-to-date should work.
+    Ubuntu 13.10 or older will _not_ work because of the ancient
+    version of libav they use.
 
-			sudo add-apt-repository ppa:obsproject/obs-studio
-			sudo apt-get update && sudo apt-get install obs-studio
+  - Because Ubuntu and Debian come with libav instead of ffmpeg, you have
+    to get the original ffmpeg. Recommended:
+    For Ubuntu 14.04:
+      https://launchpad.net/~jon-severinsson/+archive/ubuntu/ffmpeg
+    For Debian:
+      http://www.deb-multimedia.org/
 
-		- There is still one thing that needs to be addressed, Ubuntu uses libav
-			instead of ffmpeg, so you need to install ffmpeg, this can also be done
-			via a PPA repository by entering the following commands:
-			
-			sudo add-apt-repository ppa:jon-severinsson/ffmpeg
-			sudo apt-get update && sudo apt-get install ffmpeg
+  - There is also a ppa available in case you do not want to compile
+    yourself(Ubuntu 14.04 only):
+      https://launchpad.net/~obsproject/+archive/ubuntu/obs-studio
 
+  - Build dependencies on Ubuntu 14.04 with ffmpeg ppa from above:
+    cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
+    libavformat-dev libswscale-dev libx264-dev libswresample-dev
+    libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
 
-  Compile From Source
-    - To start, you are going to need a fairly recent Linux distribution. Right
-			now, for Ubuntu at least, only Ubuntu 14.04 or 14.10 will work. The
-			reason for this is that older versions of Ubuntu use a version of libav
-			that is so old, it just simply doesn't work.
-
-		- In the event that you do not want to build ffmpeg yourself, you can use
-			the PPA listed above for ffmpeg, and then using that PPA, build the
-			needed dependencies:
-			cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
-    	libavformat-dev libswscale-dev libx264-dev libswresample-dev
-    	libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
-
-		- If you are building ffmpeg from source, than you will need to install a
-			few packages.
-			
-			Debian/Ubuntu:
-			autoconf build-essential checkinstall git
-
-sudo apt-get -y install autoconf build-essential checkinstall git libass-dev libfaac-dev \
-  libgpac-dev libjack-jackd2-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev \
-  librtmp-dev libsdl1.2-dev libtheora-dev libtool libva-dev libvdpau-dev libvorbis-dev \
-  libx11-dev libxext-dev libxfixes-dev pkg-config texi2html zlib1g-dev libpulse-dev qtbase5-dev \
-  libqt5x11extras5-dev libxinerama-dev libxcomposite-dev libxrandr-dev cmake libv4l-dev libudev-dev
-
-## Building the software
-Now that we have all of the neccessary packages installed, we can continue with the build
-process. First, we need to compile some prerequisites for FFMPEG.
-
-You are more than welcome to complete your builds wherever you feel comfortable. Personally, I
-like to create a directory on the root of my filesystem exclusively for building packages, I
-call this directory build, and I create it as such
-```
-sudo mkdir /build
-sudo chown {{USER}} /build
-chmod -R 0777 /build
-cd /build
-```
-
-Now that we are in our build directory, we need to retrieve and build our first package, YASM.
-It should be noted that when installing packages, we are using checkinstall and NOT make install,
-we do this so that our package manager can handle updates and package removal. Anytime the make
-command is used, you can substitute `make -j#`, where # is 2 times the number of THREADS your
-processor has, so for most modern Intel processors, this will be 4 times the number of cores your
-processor has. For example, an Intel Core i5-3230M (my processor) is a dual core processor, but it
-is hyper-threaded, so it has 4 threads, thus my j# is 8, making my command `make -j8`. Unfortunately,
-for AMD processors, this will usually simply be 2 times the number of cores your processor has. If in
-doubt, consult `cat /proc/cpuinfo`
-
-### YASM
-In your build directory, simple execute the following commands.
-```
-wget http://www.tortall.net/projects/yasm/releases/yasm-1.2.0.tar.gz
-tar xzvf yasm-1.2.0.tar.gz
-cd yasm-1.2.0
-./configure
-make
-sudo checkinstall --pkgname=yasm --pkgversion="1.2.0" --backup=no \
-  --deldoc=yes --fstrans=no --default
-```
-
-### x264
-```
-cd /build
-git clone --depth 1 git://git.videolan.org/x264
-cd x264
-./configure --enable-shared
-make
-sudo checkinstall --pkgname=x264 --pkgversion="3:$(./version.sh | \
-  awk -F'[" ]' '/POINT/{print $4"+git"$5}')" --backup=no --deldoc=yes \
-  --fstrans=no --default
-```
-
-
-### FDK-AAC
-```
-cd /build
-git clone --depth 1 git://github.com/mstorsjo/fdk-aac.git
-cd fdk-aac
-autoreconf -fiv
-./configure --enable-shared
-make
-sudo checkinstall --pkgname=fdk-aac --pkgversion="$(date +%Y%m%d%H%M)-git" --backup=no \
-  --deldoc=yes --fstrans=no --default
-```
-
-### libvpx
-```
-cd /build
-git clone http://git.chromium.org/webm/libvpx.git
-cd libvpx
-./configure --disable-examples --disable-unit-tests --enable-shared
-make
-sudo checkinstall --pkgname=libvpx --pkgversion="1:$(date +%Y%m%d%H%M)-git" --backup=no \
-  --deldoc=yes --fstrans=no --default
-```
-
-### libopus
-This library is technically optional, but it's always helpful to have in case you should need it for something.
-```
-cd /build
-git clone --depth 1 git://git.xiph.org/opus.git
-cd opus
-./autogen.sh
-./configure --enable-shared
-make
-sudo checkinstall --pkgname=libopus --pkgversion="$(date +%Y%m%d%H%M)-git" --backup=no \
-  --deldoc=yes --fstrans=no --default
-```
-
-### FFMPEG
-Now, it's time for the big kahuna, FFMPEG itself, however, it's just as simple as all of the others.
-```
-cd /build
-git clone --depth 1 git://source.ffmpeg.org/ffmpeg
-cd ffmpeg
-./configure --enable-gpl --enable-libass --enable-libfaac --enable-libfdk-aac --enable-libmp3lame \
-  --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-librtmp --enable-libtheora \
-  --enable-libvorbis --enable-libvpx --enable-x11grab --enable-libx264 --enable-nonfree --enable-version3 \
-  --enable-libopus --enable-shared --disable-static
-make
-sudo checkinstall --pkgname=ffmpeg --pkgversion="7:$(date +%Y%m%d%H%M)-git" --backup=no \
-  --deldoc=yes --fstrans=no --default
-hash -r
-```
-
-### OBS Studio
-```
-cd /build
-git clone https://github.com/jp9000/obs-studio.git
-cd obs-studio
-mkdir build && cd build
-cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
-make
-sudo checkinstall --pkgname=obs-studio --pkgversion="$(date +%Y%m%d%H%M)-git" --backup=no \
-  --deldoc=yes --fstrans=no --default
-```
-
-## Handling libraries
-There is one major flaw with this guide. All of the libraries we built earlier are in the wrong spot.
-OBS Studio is going to look in the `/usr/lib` directory for all of the libraries on launch, but all
-of our libraries are located in the `/usr/local/lib` directory. The code snippet below will fix this
-issue, BUT IT IS A VERY, VERY DIRTY FIX. This will symlink EVERY library in the `/usr/local/lib`
-directory to the `/usr/lib` directory. USE WITH CAUTION.
-```
-cd /usr/local/lib
-sudo su
-for a in *;
-do ln -s /usr/local/lib/$a /usr/lib/$a;
-done
-```
-
-## Done
-That's it, you're done. The configuration above is setup so that any feature coded into 
-OBS Studio (which at the moment isn't too terribly much) is included in your configuration.
-This includes support for capture cards, read capture cards when they are supported and decide to work.
-
-## EXTRA: Build OBS in portable mode
-To build in portable mode(assuming you are in a terminal in the obs-studio base dir):
+  - Building in portable mode(assuming you are in a terminal in the
+    obs-studio base dir):
     
     mkdir build && cd build
     cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
@@ -284,3 +132,14 @@ To build in portable mode(assuming you are in a terminal in the obs-studio base 
 
   - After that you should have a portable install in ~/obs-studio-portable
     Change to bin/64bit or bin/32bit and run ./obs to run it.
+
+  - If you want to install obs-studio into your system, it's recommended
+    to use checkinstall instead of a plain make install. It allows for a
+    clean uninstall and allows the package manager to keep track of the
+    installed files:
+
+    sudo apt-get install checkinstall
+    mkdir build && cd build
+    cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+    make -j4
+    sudo checkinstall
