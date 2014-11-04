@@ -100,19 +100,43 @@ Mac OSX
     This will create a .dmg file with an app bundle inside.
 
 
-# How to compile OBS Studio from source
 
-## Prerequisites
-The first and most important thing we need to do is remove any precompiled packages installed on the
-system. This is done via your package manager, the code snippet below is for Ubuntu/Debian based systems.
-```
-sudo apt-get remove ffmpeg x264 libav-tools libvpx-dev libx264-dev yasm
-```
+Linux
+	Install from PPA (Ubuntu 14.04 only)
+		- If you are unsure about compiling the software from source yourself, and
+			you happen to be using Ubuntu 14.04, then you can install OBS Studio via
+			the PPA repository by entering the following commands:
 
-Next, we need to install a few packages. You may need to consult your package managers repo for a
-specific list of packages, again the command below is for Ubuntu.
-```
-sudo apt-get update
+			sudo add-apt-repository ppa:obsproject/obs-studio
+			sudo apt-get update && sudo apt-get install obs-studio
+
+		- There is still one thing that needs to be addressed, Ubuntu uses libav
+			instead of ffmpeg, so you need to install ffmpeg, this can also be done
+			via a PPA repository by entering the following commands:
+			
+			sudo add-apt-repository ppa:jon-severinsson/ffmpeg
+			sudo apt-get update && sudo apt-get install ffmpeg
+
+
+  Compile From Source
+    - To start, you are going to need a fairly recent Linux distribution. Right
+			now, for Ubuntu at least, only Ubuntu 14.04 or 14.10 will work. The
+			reason for this is that older versions of Ubuntu use a version of libav
+			that is so old, it just simply doesn't work.
+
+		- In the event that you do not want to build ffmpeg yourself, you can use
+			the PPA listed above for ffmpeg, and then using that PPA, build the
+			needed dependencies:
+			cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
+    	libavformat-dev libswscale-dev libx264-dev libswresample-dev
+    	libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
+
+		- If you are building ffmpeg from source, than you will need to install a
+			few packages.
+			
+			Debian/Ubuntu:
+			autoconf build-essential checkinstall git
+
 sudo apt-get -y install autoconf build-essential checkinstall git libass-dev libfaac-dev \
   libgpac-dev libjack-jackd2-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev \
   librtmp-dev libsdl1.2-dev libtheora-dev libtool libva-dev libvdpau-dev libvorbis-dev \
