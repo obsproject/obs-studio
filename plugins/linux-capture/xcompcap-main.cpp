@@ -83,6 +83,9 @@ obs_properties_t *XCompcapMain::properties()
 	obs_properties_add_bool(props, "show_cursor",
 			obs_module_text("CaptureCursor"));
 
+	obs_properties_add_bool(props, "include_border",
+			obs_module_text("IncludeXBorder"));
+
 	return props;
 }
 
@@ -96,6 +99,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "swap_redblue", false);
 	obs_data_set_default_bool(settings, "lock_x", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
+	obs_data_set_default_bool(settings, "include_border", false);
 }
 
 
@@ -136,9 +140,11 @@ struct XCompcapMain_private
 	bool inverted;
 	bool swapRedBlue;
 	bool lockX;
+	bool include_border;
 
 	uint32_t width;
 	uint32_t height;
+	uint32_t border;
 
 	Pixmap pixmap;
 	GLXPixmap glxpixmap;
@@ -275,6 +281,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->lockX = obs_data_get_bool(settings, "lock_x");
 		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
+		p->include_border = obs_data_get_bool(settings, "include_border");
 	} else {
 		p->win = prevWin;
 	}
@@ -311,8 +318,15 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 	gs_color_format cf = GS_RGBA;
 
-	p->width = attr.width;
-	p->height = attr.height;
+	p->border = attr.border_width;
+
+	if (p->include_border) {
+		p->width = attr.width + p->border * 2;
+		p->height = attr.height + p->border * 2;
+	} else {
+		p->width = attr.width;
+		p->height = attr.height;
+	}
 
 	if (p->cut_top + p->cut_bot < (int)p->height) {
 		p->cur_cut_top = p->cut_top;
@@ -449,8 +463,21 @@ void XCompcapMain::tick(float seconds)
 		XSync(xdisp, 0);
 	}
 
-	gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
-			p->cur_cut_top, width(), height());
+	if (p->include_border) {
+		gs_copy_texture_region(
+				p->tex, 0, 0,
+				p->gltex,
+				p->cur_cut_left,
+				p->cur_cut_top,
+				width(), height());
+	} else {
+		gs_copy_texture_region(
+				p->tex, 0, 0,
+				p->gltex,
+				p->cur_cut_left + p->border,
+				p->cur_cut_top + p->border,
+				width(), height());
+	}
 
 	if (p->cursor && p->show_cursor) {
 		xcursor_tick(p->cursor);
