@@ -121,6 +121,10 @@ static void init_sizes(struct aac_encoder *enc, audio_t *audio)
 	enc->audio_size   = get_audio_size(format, aoi->speakers, 1);
 }
 
+#ifndef MIN
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#endif
+
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct aac_encoder *enc;
@@ -155,6 +159,19 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
 	enc->context->sample_fmt  = enc->aac->sample_fmts ?
 		enc->aac->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+
+	/* if using FFmpeg's AAC encoder, at least set a cutoff value
+	 * (recommended by konverter) */
+	if (strcmp(enc->aac->name, "aac") == 0) {
+		int cutoff1 = 4000 + enc->context->bit_rate / 8;
+		int cutoff2 = 12000 + enc->context->bit_rate / 8;
+		int cutoff3 = enc->context->sample_rate / 2;
+		int cutoff;
+
+		cutoff = MIN(cutoff1, cutoff2);
+		cutoff = MIN(cutoff, cutoff3);
+		enc->context->cutoff = cutoff;
+	}
 
 	blog(LOG_INFO, "FFmpeg AAC: bitrate: %d, channels: %d",
 			enc->context->bit_rate / 1000, enc->context->channels);
