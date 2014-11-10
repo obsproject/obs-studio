@@ -533,12 +533,34 @@ const char *config_get_string(const config_t *config, const char *section,
 	return item->value;
 }
 
+static inline int64_t str_to_int64(const char *str)
+{
+	if (!str || !*str)
+		return 0;
+
+	if (str[0] == '0' && str[1] == 'x')
+		return strtoll(str + 2, NULL, 16);
+	else
+		return strtoll(str, NULL, 10);
+}
+
+static inline uint64_t str_to_uint64(const char *str)
+{
+	if (!str || !*str)
+		return 0;
+
+	if (str[0] == '0' && str[1] == 'x')
+		return strtoull(str + 2, NULL, 16);
+	else
+		return strtoull(str, NULL, 10);
+}
+
 int64_t config_get_int(const config_t *config, const char *section,
 		const char *name)
 {
 	const char *value = config_get_string(config, section, name);
 	if (value)
-		return strtoll(value, NULL, 10);
+		return str_to_int64(value);
 
 	return 0;
 }
@@ -548,7 +570,7 @@ uint64_t config_get_uint(const config_t *config, const char *section,
 {
 	const char *value = config_get_string(config, section, name);
 	if (value)
-		return strtoul(value, NULL, 10);
+		return str_to_uint64(value);
 
 	return 0;
 }
@@ -559,7 +581,7 @@ bool config_get_bool(const config_t *config, const char *section,
 	const char *value = config_get_string(config, section, name);
 	if (value)
 		return astrcmpi(value, "true") == 0 ||
-		       strtoul(value, NULL, 10);
+		       !!str_to_uint64(value);
 
 	return false;
 }
@@ -591,7 +613,7 @@ int64_t config_get_default_int(const config_t *config, const char *section,
 {
 	const char *value = config_get_default_string(config, section, name);
 	if (value)
-		return strtoll(value, NULL, 10);
+		return str_to_int64(value);
 
 	return 0;
 }
@@ -601,7 +623,7 @@ uint64_t config_get_default_uint(const config_t *config, const char *section,
 {
 	const char *value = config_get_default_string(config, section, name);
 	if (value)
-		return strtoul(value, NULL, 10);
+		return str_to_uint64(value);
 
 	return 0;
 }
@@ -612,7 +634,7 @@ bool config_get_default_bool(const config_t *config, const char *section,
 	const char *value = config_get_default_string(config, section, name);
 	if (value)
 		return astrcmpi(value, "true") == 0 ||
-		       strtoul(value, NULL, 10);
+		       !!str_to_uint64(value);
 
 	return false;
 }
