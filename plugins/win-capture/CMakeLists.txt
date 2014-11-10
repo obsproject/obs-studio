@@ -1,11 +1,13 @@
 project(win-capture)
 
 set(win-capture_HEADERS
+	obfuscate.h
 	window-helpers.h
 	dc-capture.h)
 
 set(win-capture_SOURCES
 	dc-capture.c
+	obfuscate.c
 	window-helpers.c
 	monitor-capture.c
 	window-capture.c
