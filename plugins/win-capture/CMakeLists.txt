@@ -2,6 +2,7 @@ project(win-capture)
 
 set(win-capture_HEADERS
 	obfuscate.h
+	hook-helpers.h
 	window-helpers.h
 	dc-capture.h)
 
