@@ -235,7 +235,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	FT_GlyphSlot slot;
 	FT_UInt glyph_index = 0;
 
-	if (!srcdata->font_face)
+	if (!srcdata->font_face || !cache_glyphs)
 		return;
 
 	slot = srcdata->font_face->glyph;
