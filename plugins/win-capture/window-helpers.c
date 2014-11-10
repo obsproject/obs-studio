@@ -180,7 +180,7 @@ static bool check_window_valid(HWND window, enum window_search_mode mode)
 		return false;
 	if (styles & WS_CHILD)
 		return false;
-	if (rect.bottom == 0 || rect.right == 0)
+	if (mode == EXCLUDE_MINIMIZED && (rect.bottom == 0 || rect.right == 0))
 		return false;
 
 	return true;
