@@ -23,3 +23,5 @@ target_link_libraries(win-capture
 	psapi.lib)
 
 install_obs_plugin_with_data(win-capture data)
+
+add_subdirectory(get-graphics-offsets)
