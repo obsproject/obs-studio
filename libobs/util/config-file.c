@@ -163,13 +163,49 @@ static void config_parse_section(struct config_section *section,
 	}
 }
 
-static int config_parse(struct darray *sections, const char *file,
+static void parse_config_data(struct darray *sections, struct lexer *lex)
+{
+	struct strref section_name;
+	struct base_token token;
+
+	base_token_clear(&token);
+
+	while (lexer_getbasetoken(lex, &token, PARSE_WHITESPACE)) {
+		struct config_section *section;
+
+		while (token.type == BASETOKEN_WHITESPACE) {
+			if (!lexer_getbasetoken(lex, &token, PARSE_WHITESPACE))
+				return;
+		}
+
+		if (*token.text.array != '[') {
+			while (!is_newline(*token.text.array)) {
+				if (!lexer_getbasetoken(lex, &token,
+							PARSE_WHITESPACE))
+					return;
+			}
+
+			continue;
+		}
+
+		strref_clear(&section_name);
+		config_parse_string(lex, &section_name, ']');
+		if (!section_name.len)
+			return;
+
+		section = darray_push_back_new(sizeof(struct config_section),
+				sections);
+		section->name = bstrdup_n(section_name.array,
+				section_name.len);
+		config_parse_section(section, lex);
+	}
+}
+
+static int config_parse_file(struct darray *sections, const char *file,
 		bool always_open)
 {
 	char *file_data;
 	struct lexer lex;
-	struct base_token token;
-	struct strref section_name;
 	FILE *f;
 
 	f = os_fopen(file, "rb");
@@ -187,39 +223,8 @@ static int config_parse(struct darray *sections, const char *file,
 	lexer_init(&lex);
 	lexer_start_move(&lex, file_data);
 
-	base_token_clear(&token);
+	parse_config_data(sections, &lex);
 
-	while (lexer_getbasetoken(&lex, &token, PARSE_WHITESPACE)) {
-		struct config_section *section;
-
-		while (token.type == BASETOKEN_WHITESPACE) {
-			if (!lexer_getbasetoken(&lex, &token, PARSE_WHITESPACE))
-				goto complete;
-		}
-
-		if (*token.text.array != '[') {
-			while (!is_newline(*token.text.array)) {
-				if (!lexer_getbasetoken(&lex, &token,
-							PARSE_WHITESPACE))
-					goto complete;
-			}
-
-			continue;
-		}
-
-		strref_clear(&section_name);
-		config_parse_string(&lex, &section_name, ']');
-		if (!section_name.len)
-			break;
-
-		section = darray_push_back_new(sizeof(struct config_section),
-				sections);
-		section->name = bstrdup_n(section_name.array,
-				section_name.len);
-		config_parse_section(section, &lex);
-	}
-
-complete:
 	lexer_free(&lex);
 	return CONFIG_SUCCESS;
 }
@@ -239,7 +244,7 @@ int config_open(config_t **config, const char *file,
 
 	(*config)->file = bstrdup(file);
 
-	errorcode = config_parse(&(*config)->sections, file, always_open);
+	errorcode = config_parse_file(&(*config)->sections, file, always_open);
 
 	if (errorcode != CONFIG_SUCCESS) {
 		config_close(*config);
@@ -249,12 +254,33 @@ int config_open(config_t **config, const char *file,
 	return errorcode;
 }
 
+int config_open_string(config_t **config, const char *str)
+{
+	struct lexer lex;
+
+	if (!config)
+		return CONFIG_ERROR;
+
+	*config = bzalloc(sizeof(struct config_data));
+	if (!*config)
+		return CONFIG_ERROR;
+
+	(*config)->file = NULL;
+
+	lexer_init(&lex);
+	lexer_start(&lex, str);
+	parse_config_data(&(*config)->sections, &lex);
+	lexer_free(&lex);
+
+	return CONFIG_SUCCESS;
+}
+
 int config_open_defaults(config_t *config, const char *file)
 {
 	if (!config)
 		return CONFIG_ERROR;
 
-	return config_parse(&config->defaults, file, false);
+	return config_parse_file(&config->defaults, file, false);
 }
 
 int config_save(config_t *config)
@@ -264,6 +290,8 @@ int config_save(config_t *config)
 	size_t i, j;
 
 	if (!config)
+		return CONFIG_ERROR;
+	if (!config->file)
 		return CONFIG_ERROR;
 
 	dstr_init(&str);
