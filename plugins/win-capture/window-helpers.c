@@ -29,10 +29,11 @@ extern void build_window_strings(const char *str,
 {
 	char **strlist;
 
+	*class = NULL;
+	*title = NULL;
+	*exe   = NULL;
+
 	if (!str) {
-		*class = NULL;
-		*title = NULL;
-		*exe   = NULL;
 		return;
 	}
 
