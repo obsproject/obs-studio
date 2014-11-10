@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <psapi.h>
 #include "window-helpers.h"
+#include "obfuscate.h"
 
 #define inline __inline
 
@@ -48,6 +49,25 @@ extern void build_window_strings(const char *str,
 	strlist_free(strlist);
 }
 
+static HMODULE kernel32(void)
+{
+	static HMODULE kernel32_handle = NULL;
+	if (!kernel32_handle)
+		kernel32_handle = GetModuleHandleA("kernel32");
+	return kernel32_handle;
+}
+
+static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
+		DWORD process_id)
+{
+	static HANDLE (WINAPI *open_process_proc)(DWORD, BOOL, DWORD) = NULL;
+	if (!open_process_proc)
+		open_process_proc = get_obfuscated_func(kernel32(),
+				"B}caZyah`~q", 0x2D5BEBAF6DDULL);
+
+	return open_process_proc(desired_access, inherit_handle, process_id);
+}
+
 static bool get_window_exe(struct dstr *name, HWND window)
 {
 	wchar_t     wname[MAX_PATH];
@@ -61,7 +81,7 @@ static bool get_window_exe(struct dstr *name, HWND window)
 	if (id == GetCurrentProcessId())
 		return false;
 
-	process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, id);
+	process = open_process(PROCESS_QUERY_LIMITED_INFORMATION, false, id);
 	if (!process)
 		goto fail;
 
