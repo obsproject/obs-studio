@@ -2115,3 +2115,88 @@ uint32_t obs_source_get_flags(const obs_source_t *source)
 {
 	return source ? source->flags : 0;
 }
+
+static inline void render_custom(gs_texture_t *texture, gs_effect_t *effect,
+		const char *tech_name, uint32_t cx, uint32_t cy, bool flip)
+{
+	gs_technique_t *tech;
+	size_t passes;
+
+	tech = gs_effect_get_technique(effect, tech_name);
+	passes = gs_technique_begin(tech);
+	for (size_t i = 0; i < passes; i++) {
+		if (gs_technique_begin_pass(tech, i)) {
+			gs_draw_sprite(texture, flip ? GS_FLIP_V : 0, cx, cy);
+			gs_technique_end_pass(tech);
+		}
+	}
+	gs_technique_end(tech);
+}
+
+static inline void render_chained(gs_texture_t *texture, gs_effect_t *effect,
+		const char *tech_name, uint32_t cx, uint32_t cy, bool flip)
+{
+	gs_draw_sprite(texture, flip ? GS_FLIP_V : 0, cx, cy);
+}
+
+void obs_source_draw(obs_source_t *source, gs_effect_t *effect,
+		gs_texture_t *texture, uint32_t cx, uint32_t cy, bool flip,
+		const struct matrix4 *color_matrix,
+		const struct vec3 *color_range_min,
+		const struct vec3 *color_range_max)
+{
+	uint32_t flags = source->info.output_flags;
+	bool use_custom = (flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
+	bool use_matrix = (flags & OBS_SOURCE_COLOR_MATRIX) != 0;
+	const char *tech_name = use_matrix ? "DrawMatrix" : "Draw";
+	gs_eparam_t *image;
+
+	if (!effect) {
+		blog(LOG_WARNING, "obs_source_draw_texture: NULL effect");
+		return;
+	}
+
+	if (!texture) {
+		blog(LOG_WARNING, "obs_source_draw_texture: NULL texture");
+		return;
+	}
+
+	if (use_matrix && !color_matrix) {
+		blog(LOG_WARNING, "obs_source_draw_texture: NULL color_matrix");
+		return;
+	}
+
+	if (use_matrix && !color_range_min) {
+		blog(LOG_WARNING, "obs_source_draw_texture: NULL "
+				"color_range_min");
+		return;
+	}
+
+	if (use_matrix && !color_range_max) {
+		blog(LOG_WARNING, "obs_source_draw_texture: NULL "
+				"color_range_max");
+		return;
+	}
+
+	image = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(image, texture);
+
+	if (use_matrix) {
+		gs_eparam_t *matrix = gs_effect_get_param_by_name(effect,
+				"color_matrix");
+		gs_eparam_t *range_min = gs_effect_get_param_by_name(effect,
+				"color_range_min");
+		gs_eparam_t *range_max = gs_effect_get_param_by_name(effect,
+				"color_range_max");
+
+		gs_effect_set_matrix4(matrix, color_matrix);
+		gs_effect_set_val(range_min, color_range_min, sizeof(float)*3);
+		gs_effect_set_val(range_max, color_range_max, sizeof(float)*3);
+	}
+
+	if (use_custom) {
+		render_custom(texture, effect, tech_name, cx, cy, flip);
+	} else {
+		render_chained(texture, effect, tech_name, cx, cy, flip);
+	}
+}
