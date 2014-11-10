@@ -68,7 +68,7 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }
 
-static bool get_window_exe(struct dstr *name, HWND window)
+bool get_window_exe(struct dstr *name, HWND window)
 {
 	wchar_t     wname[MAX_PATH];
 	struct dstr temp    = {0};

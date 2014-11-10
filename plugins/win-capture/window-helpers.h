@@ -1,5 +1,7 @@
 #pragma once
 
+#include <util/dstr.h>
+
 enum window_priority {
 	WINDOW_PRIORITY_CLASS,
 	WINDOW_PRIORITY_TITLE,
@@ -10,6 +12,8 @@ enum window_search_mode {
 	INCLUDE_MINIMIZED,
 	EXCLUDE_MINIMIZED
 };
+
+extern bool get_window_exe(struct dstr *name, HWND window);
 
 extern void fill_window_list(obs_property_t *p, enum window_search_mode mode);
 
