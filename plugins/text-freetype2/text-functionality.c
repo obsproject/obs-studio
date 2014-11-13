@@ -321,7 +321,9 @@ time_t get_modified_timestamp(char *filename)
 
 	return stats.st_mtime;
 }
-
+typedef int(*Pred)(wchar_t);
+int commasFree(wchar_t c);
+wchar_t* copyIf(wchar_t* dest, const wchar_t* src, Pred p);
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
@@ -371,10 +373,13 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
+	wchar_t* tmptext = bzalloc((strlen(tmp_read) + 1)*sizeof(wchar_t));
 	srcdata->text = bzalloc((strlen(tmp_read) + 1)*sizeof(wchar_t));
 	os_utf8_to_wcs(tmp_read, strlen(tmp_read),
-		srcdata->text, (strlen(tmp_read) + 1));
+		tmptext, (strlen(tmp_read) + 1));
+	copyIf(srcdata->text, tmptext, commasFree);
 	bfree(tmp_read);
+	bfree(tmptext);
 }
 
 void read_from_end(struct ft2_source *srcdata, const char *filename)
@@ -482,3 +487,23 @@ uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 
 	return max_w;
 }
+
+
+
+int commasFree(wchar_t c)
+{
+	return c != '\r';
+}
+
+wchar_t* copyIf(wchar_t* dest, const wchar_t* src, Pred p)
+{
+	while (*src)
+	{
+		if (p(*src))
+			*dest++ = *src;
+		++src;
+	}
+	*dest = L'\0';
+	return dest;
+}
+

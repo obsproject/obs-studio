@@ -55,6 +55,7 @@ struct rtmp_stream {
 
 	struct dstr      path, key;
 	struct dstr      username, password;
+	struct dstr		 service_type;
 
 	/* frame drop variables */
 	int64_t          drop_threshold_usec;
@@ -364,7 +365,7 @@ static int try_connect(struct rtmp_stream *stream)
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
-	if (dstr_is_empty(&stream->key)) {
+	if (dstr_cmp(&stream->service_type, "rtmp_custom") && dstr_is_empty(&stream->key)) {
 		warn("Stream key is empty");
 		return OBS_OUTPUT_BAD_PATH;
 	}
@@ -433,6 +434,7 @@ static bool rtmp_stream_start(void *data)
 	dstr_copy(&stream->key,      obs_service_get_key(service));
 	dstr_copy(&stream->username, obs_service_get_username(service));
 	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_copy(&stream->service_type, obs_service_gettype(service));
 	stream->drop_threshold_usec =
 		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
 	obs_data_release(settings);
