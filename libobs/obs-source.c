@@ -655,7 +655,7 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 		float val_pow2 = val * val;
 
 		sum_val += val_pow2;
-		max_val  = fmaxf(max_val, val_pow2);
+		max_val  = (max_val > val_pow2) ? max_val : val_pow2;
 	}
 
 	/*
