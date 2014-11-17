@@ -686,18 +686,24 @@ static struct encoder_packet *find_first_packet_type(struct obs_output *output,
 			return packet;
 	}
 
-	/* should never get here for this particular function */
-	assert(0);
 	return NULL;
 }
 
-static void initialize_interleaved_packets(struct obs_output *output)
+static bool initialize_interleaved_packets(struct obs_output *output)
 {
 	struct encoder_packet *video;
 	struct encoder_packet *audio;
 
 	video = find_first_packet_type(output, OBS_ENCODER_VIDEO);
 	audio = find_first_packet_type(output, OBS_ENCODER_AUDIO);
+
+	if (!audio)
+		output->received_audio = false;
+	if (!video)
+		output->received_video = false;
+	if (!audio || !video) {
+		return false;
+	}
 
 	/* get new offsets */
 	output->video_offset = video->dts;
@@ -713,6 +719,8 @@ static void initialize_interleaved_packets(struct obs_output *output)
 			&output->interleaved_packets.array[i];
 		apply_interleaved_packet_offset(output, packet);
 	}
+
+	return true;
 }
 
 static inline void insert_interleaved_packet(struct obs_output *output,
@@ -764,11 +772,13 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	if (output->received_audio && output->received_video) {
 		if (!was_started) {
 			prune_interleaved_packets(output);
-			initialize_interleaved_packets(output);
-			resort_interleaved_packets(output);
+			if (initialize_interleaved_packets(output)) {
+				resort_interleaved_packets(output);
+				send_interleaved(output);
+			}
+		} else {
+			send_interleaved(output);
 		}
-
-		send_interleaved(output);
 	}
 
 	pthread_mutex_unlock(&output->interleaved_mutex);

@@ -82,6 +82,7 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 {
 	FT_UInt glyph_index = 0;
 	uint32_t x = 0, space_pos = 0, word_width = 0;
+	size_t len;
 
 	if (!srcdata->text)
 		return;
@@ -104,7 +105,9 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	if (srcdata->custom_width <= 100) goto skip_word_wrap;
 	if (!srcdata->word_wrap) goto skip_word_wrap;
 
-	for (uint32_t i = 0; i <= wcslen(srcdata->text); i++) {
+	len = wcslen(srcdata->text);
+
+	for (uint32_t i = 0; i <= len; i++) {
 		if (i == wcslen(srcdata->text)) goto eos_check;
 
 		if (srcdata->text[i] != L' ' && srcdata->text[i] != L'\n')
@@ -148,17 +151,18 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 	uint32_t dx = 0, dy = srcdata->max_h, max_y = dy;
 	uint32_t cur_glyph = 0;
+	size_t len = wcslen(srcdata->text);
 
 	if (srcdata->colorbuf != NULL) {
 		bfree(srcdata->colorbuf);
 		srcdata->colorbuf = NULL;
 	}
 	srcdata->colorbuf = bzalloc(sizeof(uint32_t)*wcslen(srcdata->text) * 6);
-	for (uint32_t i = 0; i < wcslen(srcdata->text) * 6; i++) {
+	for (size_t i = 0; i < len * 6; i++) {
 		srcdata->colorbuf[i] = 0xFF000000;
 	}
 
-	for (uint32_t i = 0; i < wcslen(srcdata->text); i++) {
+	for (size_t i = 0; i < len; i++) {
 	add_linebreak:;
 		if (srcdata->text[i] != L'\n') goto draw_glyph;
 		dx = 0; i++;
@@ -231,7 +235,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	FT_GlyphSlot slot;
 	FT_UInt glyph_index = 0;
 
-	if (!srcdata->font_face)
+	if (!srcdata->font_face || !cache_glyphs)
 		return;
 
 	slot = srcdata->font_face->glyph;
@@ -240,8 +244,9 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	uint8_t alpha;
 
 	int32_t cached_glyphs = 0;
+	size_t len = wcslen(cache_glyphs);
 
-	for (uint32_t i = 0; i < wcslen(cache_glyphs); i++) {
+	for (size_t i = 0; i < len; i++) {
 		glyph_index = FT_Get_Char_Index(srcdata->font_face,
 			cache_glyphs[i]);
 
@@ -465,11 +470,13 @@ uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 	FT_GlyphSlot slot = srcdata->font_face->glyph;
 	FT_UInt glyph_index = 0;
 	uint32_t w = 0, max_w = 0;
+	size_t len;
 
 	if (!text)
 		return 0;
 
-	for (uint32_t i = 0; i < (uint32_t)wcslen(text); i++) {
+	len = wcslen(text);
+	for (size_t i = 0; i < len; i++) {
 		glyph_index = FT_Get_Char_Index(srcdata->font_face, text[i]);
 		FT_Load_Glyph(srcdata->font_face, glyph_index, FT_LOAD_DEFAULT);
 

@@ -742,6 +742,13 @@ EXPORT uint32_t obs_source_get_flags(const obs_source_t *source);
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
+/** Helper function to draw a texture for a source (synchronous video) */
+EXPORT void obs_source_draw(obs_source_t *source, gs_effect_t *effect,
+		gs_texture_t *texture, uint32_t cx, uint32_t cy, bool flip,
+		const struct matrix4 *color_matrix,
+		const struct vec3 *color_range_min,
+		const struct vec3 *color_range_max);
+
 /** Outputs asynchronous video data */
 EXPORT void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame);

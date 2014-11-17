@@ -44,6 +44,7 @@ enum config_open_type {
 EXPORT config_t *config_create(const char *file);
 EXPORT int config_open(config_t **config, const char *file,
 		enum config_open_type open_type);
+EXPORT int config_open_string(config_t **config, const char *str);
 EXPORT int config_save(config_t *config);
 EXPORT void config_close(config_t *config);
 

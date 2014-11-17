@@ -891,7 +891,7 @@ void gs_texture_set_image(gs_texture_t *tex, const uint8_t *data,
 	if (flip) {
 		for (y = height-1; y >= 0; y--)
 			memcpy(ptr  + (uint32_t)y * linesize_out,
-			       data + (uint32_t)y * linesize,
+			       data + (uint32_t)(height - y - 1) * linesize,
 			       row_copy);
 
 	} else if (linesize == linesize_out) {
