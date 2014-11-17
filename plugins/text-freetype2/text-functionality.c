@@ -327,6 +327,17 @@ time_t get_modified_timestamp(char *filename)
 	return stats.st_mtime;
 }
 
+static void remove_cr(wchar_t* source)
+{
+	int j = 0;
+	for (int i = 0; source[i] != '\0'; ++i) {
+		if (source[i] != L'\r') {
+			source[j++] = source[i];
+		}
+	}
+	source[j] = '\0';
+}
+
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
@@ -379,6 +390,8 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	srcdata->text = bzalloc((strlen(tmp_read) + 1)*sizeof(wchar_t));
 	os_utf8_to_wcs(tmp_read, strlen(tmp_read),
 		srcdata->text, (strlen(tmp_read) + 1));
+
+	remove_cr(srcdata->text);
 	bfree(tmp_read);
 }
 
@@ -441,6 +454,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		bytes_read = fread(srcdata->text, (filesize - cur_pos), 1,
 				tmp_file);
 
+		remove_cr(srcdata->text);
 		srcdata->m_timestamp =
 			get_modified_timestamp(srcdata->text_file);
 		bfree(tmp_read);
@@ -461,6 +475,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	os_utf8_to_wcs(tmp_read, strlen(tmp_read),
 		srcdata->text, (strlen(tmp_read) + 1));
 
+	remove_cr(srcdata->text);
 	srcdata->m_timestamp = get_modified_timestamp(srcdata->text_file);
 	bfree(tmp_read);
 }
