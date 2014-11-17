@@ -133,23 +133,23 @@ Linux
     - If you are building ffmpeg from source, than you will need to install a
 			few packages.
 			
-          Aptitiude-based Distros (Debian, Ubuntu, etc):
-            apt-get install autoconf build-essential checkinstall git
-            libass-dev libtheora-dev libtool libva-dev libvdpau-dev
-            libvorbis-dev libx11-dev libxext-dev libxfixes-dev pkg-config
-            texi2html zlib1g-dev libpulse-dev libv4l-dev libudev-dev
+        Aptitiude-based Distros (Debian, Ubuntu, etc):
+          apt-get install autoconf build-essential checkinstall git
+          libass-dev libtheora-dev libtool libva-dev libvdpau-dev
+          libvorbis-dev libx11-dev libxext-dev libxfixes-dev pkg-config
+          texi2html zlib1g-dev libpulse-dev libv4l-dev libudev-dev
         
-          RPM-based distros (RHEL, Fedora, OpenSUSE, etc):
-            yum groupinstall "Development Tools" "Development Libraries"
-            yum install git libass-devel libtheora-devel libtool-ltdl-devel
-            libva-devel libvdpau-devel libvorbis-devel libX11-devel
-            libXext-devel libXfixes-devel pkgconfig texi2html zlib-devel
-            pulseaudio-libs-devel libv4l-devel libudev-devel
+        RPM-based distros (RHEL, Fedora, OpenSUSE, etc):
+          yum groupinstall "Development Tools" "Development Libraries"
+          yum install git libass-devel libtheora-devel libtool-ltdl-devel
+          libva-devel libvdpau-devel libvorbis-devel libX11-devel
+          libXext-devel libXfixes-devel pkgconfig texi2html zlib-devel
+          pulseaudio-libs-devel libv4l-devel libudev-devel
             
-            Checkinstall is not available for RPM-based distros, so you can
-            compile it from source, or you can substitute all checkinstall
-            commands with:
-              sudo make install
+          Checkinstall is not available for RPM-based distros, so you can
+          compile it from source, or you can substitute all checkinstall
+          commands with:
+            sudo make install
 
 
     - Building the software
