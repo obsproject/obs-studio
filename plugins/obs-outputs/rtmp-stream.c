@@ -364,11 +364,6 @@ static int try_connect(struct rtmp_stream *stream)
 		return OBS_OUTPUT_BAD_PATH;
 	}
 
-	if (dstr_is_empty(&stream->key)) {
-		warn("Stream key is empty");
-		return OBS_OUTPUT_BAD_PATH;
-	}
-
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
 	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
