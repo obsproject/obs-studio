@@ -27,6 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
 
+#define blog(level, msg, ...) blog(level, "xshm-input: " msg, ##__VA_ARGS__)
+
 struct xshm_data {
 	/** Xlib display object */
 	Display *dpy;
@@ -96,11 +98,11 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
 	}
 
 	if (!data->width || !data->height) {
-		blog(LOG_ERROR, "xshm-input: Failed to get geometry");
+		blog(LOG_ERROR, "Failed to get geometry");
 		return -1;
 	}
 
-	blog(LOG_INFO, "xshm-input: Geometry %"PRIdFAST32"x%"PRIdFAST32
+	blog(LOG_INFO, "Geometry %"PRIdFAST32"x%"PRIdFAST32
 		" @ %"PRIdFAST32",%"PRIdFAST32,
 		data->width, data->height, data->x_org, data->y_org);
 
@@ -131,7 +133,7 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 		xshm_detach(data->xshm);
 
 	if (xshm_update_geometry(data, settings) < 0) {
-		blog(LOG_ERROR, "xshm-input: failed to update geometry !");
+		blog(LOG_ERROR, "failed to update geometry !");
 		return;
 	}
 
@@ -141,7 +143,7 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 	data->xshm = xshm_attach(data->dpy, data->screen,
 		data->width, data->height);
 	if (!data->xshm) {
-		blog(LOG_ERROR, "xshm-input: failed to attach shm !");
+		blog(LOG_ERROR, "failed to attach shm !");
 		return;
 	}
 }
@@ -218,12 +220,12 @@ static void *xshm_create(obs_data_t *settings, obs_source_t *source)
 
 	data->dpy = XOpenDisplay(NULL);
 	if (!data->dpy) {
-		blog(LOG_ERROR, "xshm-input: Unable to open X display !");
+		blog(LOG_ERROR, "Unable to open X display !");
 		goto fail;
 	}
 
 	if (!XShmQueryExtension(data->dpy)) {
-		blog(LOG_ERROR, "xshm-input: XShm extension not found !");
+		blog(LOG_ERROR, "XShm extension not found !");
 		goto fail;
 	}
 
