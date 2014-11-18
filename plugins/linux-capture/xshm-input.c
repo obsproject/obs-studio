@@ -56,17 +56,15 @@ struct xshm_data {
  * Resize the texture
  *
  * This will automatically create the texture if it does not exist
+ *
+ * @note requires to be called within the obs graphics context
  */
-static void xshm_resize_texture(struct xshm_data *data)
+static inline void xshm_resize_texture(struct xshm_data *data)
 {
-	obs_enter_graphics();
-
 	if (data->texture)
 		gs_texture_destroy(data->texture);
 	data->texture = gs_texture_create(data->width, data->height,
 		GS_BGRA, 1, NULL, GS_DYNAMIC);
-
-	obs_leave_graphics();
 }
 
 /**
@@ -138,7 +136,9 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 		return;
 	}
 
+	obs_enter_graphics();
 	xshm_resize_texture(data);
+	obs_leave_graphics();
 	xcursor_offset(data->cursor, data->x_org, data->y_org);
 
 	data->xshm = xshm_attach(data->dpy, data->screen,
