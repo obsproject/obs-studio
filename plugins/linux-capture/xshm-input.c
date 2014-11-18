@@ -34,6 +34,8 @@ struct xshm_data {
 	Display *dpy;
 	/** Xlib screen object */
 	Screen *screen;
+	/** user setting - the id of the screen that should be captured */
+	uint_fast32_t screen_id;
 	/** root coordinates for the capture */
 	int_fast32_t x_org, y_org;
 	/** size for the capture */
@@ -72,15 +74,13 @@ static void xshm_resize_texture(struct xshm_data *data)
  *
  * @return < 0 on error, 0 when size is unchanged, > 1 on size change
  */
-static int_fast32_t xshm_update_geometry(struct xshm_data *data,
-	obs_data_t *settings)
+static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 {
 	int_fast32_t old_width = data->width;
 	int_fast32_t old_height = data->height;
-	int_fast32_t screen = obs_data_get_int(settings, "screen");
 
 	if (data->use_xinerama) {
-		if (xinerama_screen_geo(data->dpy, screen,
+		if (xinerama_screen_geo(data->dpy, data->screen_id,
 			&data->x_org, &data->y_org,
 			&data->width, &data->height) < 0) {
 			return -1;
@@ -90,11 +90,11 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data,
 	else {
 		data->x_org = 0;
 		data->y_org = 0;
-		if (x11_screen_geo(data->dpy, screen,
+		if (x11_screen_geo(data->dpy, data->screen_id,
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen = XScreenOfDisplay(data->dpy, screen);
+		data->screen = XScreenOfDisplay(data->dpy, data->screen_id);
 	}
 
 	if (!data->width || !data->height) {
@@ -127,12 +127,13 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 {
 	XSHM_DATA(vptr);
 
+	data->screen_id   = obs_data_get_int(settings, "screen");
 	data->show_cursor = obs_data_get_bool(settings, "show_cursor");
 
 	if (data->xshm)
 		xshm_detach(data->xshm);
 
-	if (xshm_update_geometry(data, settings) < 0) {
+	if (xshm_update_geometry(data) < 0) {
 		blog(LOG_ERROR, "failed to update geometry !");
 		return;
 	}
