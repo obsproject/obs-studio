@@ -119,34 +119,91 @@ static const char* xshm_getname(void)
 }
 
 /**
+ * Stop the capture
+ */
+static void xshm_capture_stop(struct xshm_data *data)
+{
+	obs_enter_graphics();
+
+	if (data->texture) {
+		gs_texture_destroy(data->texture);
+		data->texture = NULL;
+	}
+	if (data->cursor) {
+		xcursor_destroy(data->cursor);
+		data->cursor = NULL;
+	}
+
+	obs_leave_graphics();
+
+	if (data->xshm) {
+		xshm_detach(data->xshm);
+		data->xshm = NULL;
+	}
+
+	if (data->dpy) {
+		XSync(data->dpy, true);
+		XCloseDisplay(data->dpy);
+		data->dpy = NULL;
+	}
+}
+
+/**
+ * Start the capture
+ */
+static void xshm_capture_start(struct xshm_data *data)
+{
+	data->dpy = XOpenDisplay(NULL);
+	if (!data->dpy) {
+		blog(LOG_ERROR, "Unable to open X display !");
+		goto fail;
+	}
+
+	if (!XShmQueryExtension(data->dpy)) {
+		blog(LOG_ERROR, "XShm extension not found !");
+		goto fail;
+	}
+
+	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
+
+	if (xshm_update_geometry(data) < 0) {
+		blog(LOG_ERROR, "failed to update geometry !");
+		goto fail;
+	}
+
+	data->xshm = xshm_attach(data->dpy, data->screen,
+		data->width, data->height);
+	if (!data->xshm) {
+		blog(LOG_ERROR, "failed to attach shm !");
+		goto fail;
+	}
+
+	obs_enter_graphics();
+
+	data->cursor = xcursor_init(data->dpy);
+	xcursor_offset(data->cursor, data->x_org, data->y_org);
+	xshm_resize_texture(data);
+
+	obs_leave_graphics();
+
+	return;
+fail:
+	xshm_capture_stop(data);
+}
+
+/**
  * Update the capture with changed settings
  */
 static void xshm_update(void *vptr, obs_data_t *settings)
 {
 	XSHM_DATA(vptr);
 
+	xshm_capture_stop(data);
+
 	data->screen_id   = obs_data_get_int(settings, "screen");
 	data->show_cursor = obs_data_get_bool(settings, "show_cursor");
 
-	if (data->xshm)
-		xshm_detach(data->xshm);
-
-	if (xshm_update_geometry(data) < 0) {
-		blog(LOG_ERROR, "failed to update geometry !");
-		return;
-	}
-
-	obs_enter_graphics();
-	xshm_resize_texture(data);
-	obs_leave_graphics();
-	xcursor_offset(data->cursor, data->x_org, data->y_org);
-
-	data->xshm = xshm_attach(data->dpy, data->screen,
-		data->width, data->height);
-	if (!data->xshm) {
-		blog(LOG_ERROR, "failed to attach shm !");
-		return;
-	}
+	xshm_capture_start(data);
 }
 
 /**
@@ -193,19 +250,7 @@ static void xshm_destroy(void *vptr)
 	if (!data)
 		return;
 
-	obs_enter_graphics();
-
-	if (data->texture)
-		gs_texture_destroy(data->texture);
-	if (data->cursor)
-		xcursor_destroy(data->cursor);
-
-	obs_leave_graphics();
-
-	if (data->xshm)
-		xshm_detach(data->xshm);
-	if (data->dpy)
-		XCloseDisplay(data->dpy);
+	xshm_capture_stop(data);
 
 	bfree(data);
 }
@@ -219,29 +264,9 @@ static void *xshm_create(obs_data_t *settings, obs_source_t *source)
 
 	struct xshm_data *data = bzalloc(sizeof(struct xshm_data));
 
-	data->dpy = XOpenDisplay(NULL);
-	if (!data->dpy) {
-		blog(LOG_ERROR, "Unable to open X display !");
-		goto fail;
-	}
-
-	if (!XShmQueryExtension(data->dpy)) {
-		blog(LOG_ERROR, "XShm extension not found !");
-		goto fail;
-	}
-
-	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
-
-	obs_enter_graphics();
-	data->cursor = xcursor_init(data->dpy);
-	obs_leave_graphics();
-
 	xshm_update(data, settings);
 
 	return data;
-fail:
-	xshm_destroy(data);
-	return NULL;
 }
 
 /**
@@ -252,7 +277,7 @@ static void xshm_video_tick(void *vptr, float seconds)
 	UNUSED_PARAMETER(seconds);
 	XSHM_DATA(vptr);
 
-	if (!data->xshm)
+	if (!data->texture)
 		return;
 
 	obs_enter_graphics();
@@ -274,7 +299,7 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 {
 	XSHM_DATA(vptr);
 
-	if (!data->xshm)
+	if (!data->texture)
 		return;
 
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
