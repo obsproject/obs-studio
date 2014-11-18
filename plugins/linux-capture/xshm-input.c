@@ -28,18 +28,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
 
 struct xshm_data {
+	/** Xlib display object */
 	Display *dpy;
+	/** Xlib screen object */
 	Screen *screen;
-
+	/** root coordinates for the capture */
 	int_fast32_t x_org, y_org;
+	/** size for the capture */
 	int_fast32_t width, height;
-
+	/** shared memory management object */
 	xshm_t *xshm;
+	/** the texture used to display the capture */
 	gs_texture_t *texture;
-
-	bool show_cursor;
+	/** cursor object for displaying the server */
 	xcursor_t *cursor;
-
+	/** user setting - if cursor should be displayed  */
+	bool show_cursor;
+	/** set if xinerama is available and active on the screen */
 	bool use_xinerama;
 };
 
