@@ -260,6 +260,7 @@ static bool xshm_server_changed(obs_properties_t *props,
 	UNUSED_PARAMETER(p);
 
 	bool advanced           = obs_data_get_bool(settings, "advanced");
+	int_fast32_t old_screen = obs_data_get_int(settings, "screen");
 	const char *server      = obs_data_get_string(settings, "server");
 	obs_property_t *screens = obs_properties_get(props, "screen");
 
@@ -294,6 +295,16 @@ static bool xshm_server_changed(obs_properties_t *props,
 				",%"PRIuFAST32")", i, w, h, x, y);
 
 		obs_property_list_add_int(screens, screen_info.array, i);
+	}
+
+	/* handle missing screen */
+	if (old_screen + 1 > count) {
+		dstr_printf(&screen_info, "Screen %"PRIuFAST32" (not found)",
+				old_screen);
+		size_t index = obs_property_list_add_int(screens,
+				screen_info.array, old_screen);
+		obs_property_list_item_disable(screens, index, true);
+
 	}
 
 	dstr_free(&screen_info);
