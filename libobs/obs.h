@@ -47,6 +47,7 @@ struct obs_output;
 struct obs_encoder;
 struct obs_service;
 struct obs_module;
+struct obs_fader;
 
 typedef struct obs_display    obs_display_t;
 typedef struct obs_view       obs_view_t;
@@ -57,11 +58,13 @@ typedef struct obs_output     obs_output_t;
 typedef struct obs_encoder    obs_encoder_t;
 typedef struct obs_service    obs_service_t;
 typedef struct obs_module     obs_module_t;
+typedef struct obs_fader      obs_fader_t;
 
 #include "obs-source.h"
 #include "obs-encoder.h"
 #include "obs-output.h"
 #include "obs-service.h"
+#include "obs-audio-controls.h"
 
 /**
  * @file
