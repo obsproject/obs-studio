@@ -39,10 +39,10 @@ static inline float DBToLinear(float db_full)
 
 void VolControl::OBSVolumeChanged(void *data, calldata_t *calldata)
 {
+	Q_UNUSED(calldata);
 	VolControl *volControl = static_cast<VolControl*>(data);
-	int vol = (int)(calldata_float(calldata, "volume") * 100.0f + 0.5f);
 
-	QMetaObject::invokeMethod(volControl, "VolumeChanged", Q_ARG(int, vol));
+	QMetaObject::invokeMethod(volControl, "VolumeChanged");
 }
 
 void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
@@ -58,11 +58,9 @@ void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
 		Q_ARG(float, peakHold));
 }
 
-void VolControl::VolumeChanged(int vol)
+void VolControl::VolumeChanged()
 {
-	signalChanged = false;
-	slider->setValue(vol);
-	signalChanged = true;
+	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
 }
 
 void VolControl::VolumeLevel(float mag, float peak, float peakHold)
@@ -85,17 +83,9 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 
 void VolControl::SliderChanged(int vol)
 {
-	if (signalChanged) {
-		signal_handler_disconnect(obs_source_get_signal_handler(source),
-				"volume", OBSVolumeChanged, this);
-
-		obs_source_set_volume(source, float(vol)*0.01f);
-
-		signal_handler_connect(obs_source_get_signal_handler(source),
-				"volume", OBSVolumeChanged, this);
-	}
-
-	volLabel->setText(QString::number(vol));
+	obs_fader_set_deflection(obs_fader, float(vol) * 0.01f);
+	volLabel->setText(QString::number(obs_fader_get_db(obs_fader), 'f', 1)
+			.append(" dB"));
 }
 
 QString VolControl::GetName() const
@@ -110,14 +100,13 @@ void VolControl::SetName(const QString &newName)
 
 VolControl::VolControl(OBSSource source_)
 	: source        (source_),
-	  signalChanged (true),
 	  lastMeterTime (0),
 	  levelTotal    (0.0f),
-	  levelCount    (0.0f)
+	  levelCount    (0.0f),
+	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC))
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
-	int         vol         = int(obs_source_get_volume(source) * 100.0f);
 
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
@@ -129,11 +118,10 @@ VolControl::VolControl(OBSSource source_)
 
 	nameLabel->setText(obs_source_get_name(source));
 	nameLabel->setFont(font);
-	volLabel->setText(QString::number(vol));
 	volLabel->setFont(font);
 	slider->setMinimum(0);
 	slider->setMaximum(100);
-	slider->setValue(vol);
+
 //	slider->setMaximumHeight(13);
 
 	textLayout->setContentsMargins(0, 0, 0, 0);
@@ -150,23 +138,29 @@ VolControl::VolControl(OBSSource source_)
 
 	setLayout(mainLayout);
 
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			"volume", OBSVolumeChanged, this);
+	signal_handler_connect(obs_fader_get_signal_handler(obs_fader),
+			"volume_changed", OBSVolumeChanged, this);
 
 	signal_handler_connect(obs_source_get_signal_handler(source),
 		"volume_level", OBSVolumeLevel, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
 			this, SLOT(SliderChanged(int)));
+
+	obs_fader_attach_source(obs_fader, source);
+	/* Call volume changed once to init the slider position and label */
+	VolumeChanged();
 }
 
 VolControl::~VolControl()
 {
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-			"volume", OBSVolumeChanged, this);
+	signal_handler_disconnect(obs_fader_get_signal_handler(obs_fader),
+			"volume_changed", OBSVolumeChanged, this);
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source),
 		"volume_level", OBSVolumeLevel, this);
+
+	obs_fader_destroy(obs_fader);
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent)
