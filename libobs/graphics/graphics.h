@@ -358,6 +358,11 @@ EXPORT gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect,
 EXPORT gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
 		const char *name);
 
+/** Helper function to simplify effect usage.  Use with a while loop that
+ * contains drawing functions.  Automatically handles techniques, passes, and
+ * unloading. */
+EXPORT bool gs_effect_loop(gs_effect_t *effect, const char *name);
+
 /** used internally */
 EXPORT void gs_effect_update_params(gs_effect_t *effect);
 

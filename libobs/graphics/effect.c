@@ -50,6 +50,46 @@ gs_technique_t *gs_effect_get_current_technique(const gs_effect_t *effect)
 	return effect->cur_technique;
 }
 
+bool gs_effect_loop(gs_effect_t *effect, const char *name)
+{
+	if (!effect) {
+		return false;
+	}
+
+	if (!effect->looping) {
+		gs_technique_t *tech;
+
+		if (!!gs_get_effect()) {
+			blog(LOG_WARNING, "gs_effect_loop: An effect is "
+			                  "already active");
+			return false;
+		}
+
+		tech = gs_effect_get_technique(effect, name);
+		if (!tech) {
+			blog(LOG_WARNING, "gs_effect_loop: Technique '%s' "
+			                  "not found.", name);
+			return false;
+		}
+
+		gs_technique_begin(tech);
+
+		effect->looping = true;
+	} else {
+		gs_technique_end_pass(effect->cur_technique);
+	}
+
+	if (!gs_technique_begin_pass(effect->cur_technique,
+				effect->loop_pass++)) {
+		gs_technique_end(effect->cur_technique);
+		effect->looping = false;
+		effect->loop_pass = 0;
+		return false;
+	}
+
+	return true;
+}
+
 size_t gs_technique_begin(gs_technique_t *tech)
 {
 	if (!tech) return 0;

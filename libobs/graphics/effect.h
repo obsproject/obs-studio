@@ -147,6 +147,9 @@ struct gs_effect {
 
 	gs_eparam_t *view_proj, *world, *scale;
 	graphics_t *graphics;
+
+	size_t loop_pass;
+	bool looping;
 };
 
 static inline void effect_init(gs_effect_t *effect)
