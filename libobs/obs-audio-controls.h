@@ -137,6 +137,53 @@ EXPORT void obs_fader_detach_source(obs_fader_t *fader);
  */
 EXPORT signal_handler_t *obs_fader_get_signal_handler(obs_fader_t *fader);
 
+/**
+ * @brief Create a volume meter
+ * @param type the mapping type to use for the volume meter
+ * @return pointer to the volume meter object
+ *
+ * A volume meter object is used to prepare the sound levels reported by audio
+ * sources for display in a GUI.
+ * It will automatically take source volume into account and map the levels
+ * to a range [0.0f, 1.0f].
+ */
+EXPORT obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type);
+
+/**
+ * @brief Destroy a volume meter
+ * @param volmeter pointer to the volmeter object
+ *
+ * Destroy the volume meter and free all related data
+ */
+EXPORT void obs_volmeter_destroy(obs_volmeter_t *volmeter);
+
+/**
+ * @brief Attach the volume meter to a source
+ * @param volmeter pointer to the volume meter object
+ * @param source pointer to the source object
+ * @return true on success
+ *
+ * When the volume meter is attached to a source it will start to listen to
+ * volume updates on the source and after preparing the data emit its own
+ * signal.
+ */
+EXPORT bool obs_volmeter_attach_source(obs_volmeter_t *volmeter,
+		obs_source_t *source);
+
+/**
+ * @brief Detach the volume meter from the currently attached source
+ * @param volmeter pointer to the volume meter object
+ */
+EXPORT void obs_volmeter_detach_source(obs_volmeter_t *volmeter);
+
+/**
+ * @brief Get signal handler for the volume meter object
+ * @param volmeter pointer to the volume meter object
+ * @return signal handler
+ */
+EXPORT signal_handler_t *obs_volmeter_get_signal_handler(
+		obs_volmeter_t *volmeter);
+
 #ifdef __cplusplus
 }
 #endif
