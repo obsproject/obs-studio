@@ -342,6 +342,9 @@ EXPORT void gs_effect_destroy(gs_effect_t *effect);
 EXPORT gs_technique_t *gs_effect_get_technique(const gs_effect_t *effect,
 		const char *name);
 
+EXPORT gs_technique_t *gs_effect_get_current_technique(
+		const gs_effect_t *effect);
+
 EXPORT size_t gs_technique_begin(gs_technique_t *technique);
 EXPORT void gs_technique_end(gs_technique_t *technique);
 EXPORT bool gs_technique_begin_pass(gs_technique_t *technique, size_t pass);

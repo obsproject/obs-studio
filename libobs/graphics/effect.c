@@ -43,6 +43,13 @@ gs_technique_t *gs_effect_get_technique(const gs_effect_t *effect,
 	return NULL;
 }
 
+gs_technique_t *gs_effect_get_current_technique(const gs_effect_t *effect)
+{
+	if (!effect) return NULL;
+
+	return effect->cur_technique;
+}
+
 size_t gs_technique_begin(gs_technique_t *tech)
 {
 	if (!tech) return 0;
