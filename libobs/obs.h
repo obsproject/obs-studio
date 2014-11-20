@@ -742,6 +742,37 @@ EXPORT uint32_t obs_source_get_flags(const obs_source_t *source);
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
+/**
+ * Helper function to set the color matrix information when drawing the source.
+ *
+ * @param  color_matrix     The color matrix.  Assigns to the 'color_matrix'
+ *                          effect variable.
+ * @param  color_range_min  The minimum color range.  Assigns to the
+ *                          'color_range_min' effect variable.  If NULL,
+ *                          {0.0f, 0.0f, 0.0f} is used.
+ * @param  color_range_max  The maximum color range.  Assigns to the
+ *                          'color_range_max' effect variable.  If NULL,
+ *                          {1.0f, 1.0f, 1.0f} is used.
+ */
+EXPORT void obs_source_draw_set_color_matrix(
+		const struct matrix4 *color_matrix,
+		const struct vec3 *color_range_min,
+		const struct vec3 *color_range_max);
+
+/**
+ * Helper function to draw sprites for a source (synchronous video).
+ *
+ * @param  image   The sprite texture to draw.  Assigns to the 'image' variable
+ *                 of the current effect.
+ * @param  x       X position of the sprite.
+ * @param  y       Y position of the sprite.
+ * @param  cx      Width of the sprite.  If 0, uses the texture width.
+ * @param  cy      Height of the sprite.  If 0, uses the texture height.
+ * @param  flip    Specifies whether to flip the image vertically.
+ */
+EXPORT void obs_source_draw(gs_texture_t *image, int x, int y,
+		uint32_t cx, uint32_t cy, bool flip);
+
 /** Outputs asynchronous video data */
 EXPORT void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame);
