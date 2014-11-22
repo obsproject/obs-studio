@@ -100,46 +100,106 @@ Mac OSX
     This will create a .dmg file with an app bundle inside.
 
 
-Linux
-  - You need a fairly recent Linux distribution.
-    Ubuntu 14.04 or a similar recent Linux distribution works fine, but
-    anything that's up-to-date should work.
-    Ubuntu 13.10 or older will _not_ work because of the ancient
-    version of libav they use.
+Linux (Ubuntu 14.04 installation)
+  - FFmpeg is required.  If you do not have the FFmpeg installed (if you're not
+    sure, then you probably don't have it), you can get it with the following
+    commands:
 
-  - Because Ubuntu and Debian come with libav instead of ffmpeg, you have
-    to get the original ffmpeg. Recommended:
-    For Ubuntu 14.04:
-      https://launchpad.net/~jon-severinsson/+archive/ubuntu/ffmpeg
-    For Debian:
-      http://www.deb-multimedia.org/
+        sudo add-apt-repository ppa:jon-severinsson/ffmpeg
+        sudo apt-get update && sudo apt-get install ffmpeg
 
-  - There is also a ppa available in case you do not want to compile
-    yourself(Ubuntu 14.04 only):
-      https://launchpad.net/~obsproject/+archive/ubuntu/obs-studio
+  - Then you can install OBS with the following commands:
 
-  - Build dependencies on Ubuntu 14.04 with ffmpeg ppa from above:
-    cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
-    libavformat-dev libswscale-dev libx264-dev libswresample-dev
-    libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
+        sudo add-apt-repository ppa:obsproject/obs-studio
+        sudo apt-get update && sudo apt-get install obs-studio
 
-  - Building in portable mode(assuming you are in a terminal in the
-    obs-studio base dir):
-    
-    mkdir build && cd build
-    cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
-    make -j4 && make install
 
-  - After that you should have a portable install in ~/obs-studio-portable
-    Change to bin/64bit or bin/32bit and run ./obs to run it.
+Linux (Arch Linux installation, unofficial)
+  - Link:  https://aur.archlinux.org/packages/obs-studio-git
 
-  - If you want to install obs-studio into your system, it's recommended
-    to use checkinstall instead of a plain make install. It allows for a
-    clean uninstall and allows the package manager to keep track of the
-    installed files:
 
-    sudo apt-get install checkinstall
-    mkdir build && cd build
-    cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
-    make -j4
-    sudo checkinstall
+Linux (OpenSUSE installation, unofficial)
+  - Link:  http://packman.links2linux.org/package/obs-studio
+
+
+Linux (Gentoo installation, unofficial)
+  - Link:  https://github.com/saintdev/obs-studio-overlay
+
+
+Linux (Manually compiling on Redhat-based distros such as Fedora)
+  - Get RPM fusion at http://rpmfusion.org/Configuration/
+
+  - Set up a build environment:
+
+        sudo yum install gcc gcc-c++ gcc-objc cmake git
+
+  - If you don't care much about FFmpeg features, just get it from RPM fusion:
+
+        sudo yum install ffmpeg-devel
+
+  - Get the required packages:
+
+	sudo yum install libX11-devel libGL-devel ffmpeg-devel libv4l-devel \
+                pulseaudio-libs-devel x264-devel freetype-devel \
+                fontconfig-devel libXcomposite-devel libXinerama-devel \
+                qt5-qtbase-devel qt5-qtx11extras-devel
+
+  - Building and installing OBS:
+
+        git clone https://github.com/jp9000/obs-studio.git
+        cd obs-studio
+        mkdir build && cd build
+        cmake -DUNIX_STRUCTURE=1 ..
+        make -j4
+        sudo make install
+
+
+Linux (Manually compiling on Debian-based distros)
+  - Set up a build environment:
+
+        sudo apt-get install build-essential pkg-config cmake git checkinstall
+
+  - FFmpeg is required, and not commonly available on debian-based distros.
+    If you want a custom compilation with FDK AAC encoder and such, see:
+
+        https://trac.ffmpeg.org/wiki/CompilationGuide
+
+  - Otherwise, I will only give easy and brief instructions for a very minimal
+    FFmpeg installation:
+
+        sudo apt-get install zlib1g-dev yasm
+        git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
+        cd ffmpeg
+        ./configure --enable-shared --prefix=/usr
+        make -j4
+        sudo checkinstall --pkgname=FFmpeg --fstrans=no --backup=no \
+                --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
+
+  - Get the required packages:
+
+        sudo apt-get libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
+                libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
+                libfontconfig-dev qtbase5-dev libqt5x11extras5-dev
+
+  - Building and installing OBS:
+
+        git clone https://github.com/jp9000/obs-studio.git
+        cd obs-studio
+        mkdir build && cd build
+        cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+        make -j4
+        sudo checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
+               --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
+
+
+Linux portable mode
+  - You can also build in portable mode on Linux, which installs all the
+    files to an isolated directory:
+
+        mkdir build && cd build
+        cmake -DUNIX_STRUCTURE=0 \
+                -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
+        make -j4 && make install
+
+    After that you should have a portable install in ~/obs-studio-portable
+    Change to bin/64bit or bin/32bit and then simply run:  ./obs
