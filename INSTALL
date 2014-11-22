@@ -100,46 +100,90 @@ Mac OSX
     This will create a .dmg file with an app bundle inside.
 
 
+
 Linux
-  - You need a fairly recent Linux distribution.
-    Ubuntu 14.04 or a similar recent Linux distribution works fine, but
-    anything that's up-to-date should work.
-    Ubuntu 13.10 or older will _not_ work because of the ancient
-    version of libav they use.
+  Ubuntu 14.04 Installation
+    - FFmpeg is required.  If you do not have the FFmpeg installed (if you
+      don't know, then you probably don't have it), you can get it with the
+      following commands:
 
-  - Because Ubuntu and Debian come with libav instead of ffmpeg, you have
-    to get the original ffmpeg. Recommended:
-    For Ubuntu 14.04:
-      https://launchpad.net/~jon-severinsson/+archive/ubuntu/ffmpeg
-    For Debian:
-      http://www.deb-multimedia.org/
+      sudo add-apt-repository ppa:jon-severinsson/ffmpeg
+      sudo apt-get update && sudo apt-get install ffmpeg
 
-  - There is also a ppa available in case you do not want to compile
-    yourself(Ubuntu 14.04 only):
-      https://launchpad.net/~obsproject/+archive/ubuntu/obs-studio
+    - Then you can install OBS with the following commands:
 
-  - Build dependencies on Ubuntu 14.04 with ffmpeg ppa from above:
-    cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
-    libavformat-dev libswscale-dev libx264-dev libswresample-dev
-    libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
+      sudo add-apt-repository ppa:obsproject/obs-studio
+      sudo apt-get update && sudo apt-get install obs-studio
 
-  - Building in portable mode(assuming you are in a terminal in the
-    obs-studio base dir):
+
+  Compile From Source
+    - To start, you are going to need a fairly recent Linux distribution. Right
+      now, for Ubuntu at least, only Ubuntu 14.04 or 14.10 will work. The
+      reason for this is that older versions of Ubuntu use a version of libav
+      that is so old, it just simply doesn't work.
+
+    - In the event that you do not want to build ffmpeg yourself, you can use
+      the PPA listed above for ffmpeg, and then install the needed
+      dependencies:
+        cmake libpulse-dev qtbase5-dev libqt5x11extras5-dev libavcodec-dev
+        libavformat-dev libswscale-dev libx264-dev libswresample-dev
+        libfdk-aac-dev libxinerama-dev libxcomposite-dev libxrandr-dev
+
+    - If you are building ffmpeg from source, than you will need to install a
+      few packages.
+      
+        APT-based Distros (Debian, Ubuntu, etc):
+          apt-get install autoconf build-essential checkinstall git
+          libass-dev libtheora-dev libtool libva-dev libvdpau-dev
+          libvorbis-dev libx11-dev libxext-dev libxfixes-dev pkg-config
+          texi2html zlib1g-dev libpulse-dev libv4l-dev libudev-dev
+        
+        RPM-based distros (RHEL, Fedora, OpenSUSE, etc):
+          yum groupinstall "Development Tools" "Development Libraries"
+          yum install git libass-devel libtheora-devel libtool-ltdl-devel
+          libva-devel libvdpau-devel libvorbis-devel libX11-devel
+          libXext-devel libXfixes-devel pkgconfig texi2html zlib-devel
+          pulseaudio-libs-devel libv4l-devel libudev-devel
+            
+          Checkinstall is not available for RPM-based distros, so you can
+          compile it from source, or you can substitute all checkinstall
+          commands with:
+            sudo make install
+
+
+    - Building the software
+      
+        In order to build OBS Studio, you need to have ffmpeg installed, you can
+        do this using the PPA listed above or by compiling it from source. For
+        information on how to compile ffmpeg from source , you can go to the
+        link below:
+          https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+
+
+      OBS Studio
+        
+        To build OBS studio, from somewhere on your system, preferably in your
+        home folder, execute the following commands:
     
-    mkdir build && cd build
-    cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
-    make -j4 && make install
+          git clone https://github.com/jp9000/obs-studio.git
+          cd obs-studio
+          mkdir build && cd build
+          cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+          make
+          sudo checkinstall --pkgname=obs-studio \
+            --pkgversion="$(date +%Y%m%d)-git" --backup=no --deldoc=yes \
+            --fstrans=no --default
 
-  - After that you should have a portable install in ~/obs-studio-portable
-    Change to bin/64bit or bin/32bit and run ./obs to run it.
-
-  - If you want to install obs-studio into your system, it's recommended
-    to use checkinstall instead of a plain make install. It allows for a
-    clean uninstall and allows the package manager to keep track of the
-    installed files:
-
-    sudo apt-get install checkinstall
-    mkdir build && cd build
-    cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
-    make -j4
-    sudo checkinstall
+      OBS Studio in portable mode
+      
+        In the event that you want to build OBS as a portable application, you
+        can execute the following commands in place of the ones executed
+        earlier:
+    
+          mkdir build && cd build
+          cmake -DUNIX_STRUCTURE=0 \
+            -DCMAKE_INSTALL_PREFIX="${HOME}/obs-studio-portable" ..
+          make -j4 && make install
+      
+        After that you should have a portable install in ~/obs-studio-portable
+        Change to bin/64bit or bin/32bit and run ./obs to run it.
