@@ -12,30 +12,7 @@
 
 using namespace std;
 
-#define VOL_MIN -96.0f
-#define VOL_MAX  0.0f
-
-/* 
-	VOL_MIN_LOG = DBToLog(VOL_MIN)
-	VOL_MAX_LOG = DBToLog(VOL_MAX)
-	... just in case someone wants to use a smaller scale
- */
-
-#define VOL_MIN_LOG -2.0086001717619175
-#define VOL_MAX_LOG -0.77815125038364363
-
 #define UPDATE_INTERVAL_MS 50
-
-static inline float DBToLog(float db)
-{
-	return -log10f(0.0f - (db - 6.0f));
-}
-
-static inline float DBToLinear(float db_full)
-{
-	float db = fmaxf(fminf(db_full, VOL_MAX), VOL_MIN);
-	return (DBToLog(db) - VOL_MIN_LOG) / (VOL_MAX_LOG - VOL_MIN_LOG);
-}
 
 void VolControl::OBSVolumeChanged(void *data, calldata_t *calldata)
 {
@@ -73,11 +50,8 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 
 	/* only update after a certain amount of time */
 	if ((curMeterTime - lastMeterTime) > UPDATE_INTERVAL_MS) {
-		float vol = (float)slider->value() * 0.01f;
 		lastMeterTime = curMeterTime;
-		volMeter->setLevels(DBToLinear(mag) * vol,
-				    DBToLinear(peak) * vol,
-				    DBToLinear(peakHold) * vol);
+		volMeter->setLevels(mag, peak, peakHold);
 	}
 }
 
@@ -103,7 +77,8 @@ VolControl::VolControl(OBSSource source_)
 	  lastMeterTime (0),
 	  levelTotal    (0.0f),
 	  levelCount    (0.0f),
-	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC))
+	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC)),
+	  obs_volmeter  (obs_volmeter_create(OBS_FADER_LOG))
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
@@ -141,13 +116,15 @@ VolControl::VolControl(OBSSource source_)
 	signal_handler_connect(obs_fader_get_signal_handler(obs_fader),
 			"volume_changed", OBSVolumeChanged, this);
 
-	signal_handler_connect(obs_source_get_signal_handler(source),
-		"volume_level", OBSVolumeLevel, this);
+	signal_handler_connect(obs_volmeter_get_signal_handler(obs_volmeter),
+			"levels_updated", OBSVolumeLevel, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
 			this, SLOT(SliderChanged(int)));
 
 	obs_fader_attach_source(obs_fader, source);
+	obs_volmeter_attach_source(obs_volmeter, source);
+
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
 }
@@ -157,10 +134,11 @@ VolControl::~VolControl()
 	signal_handler_disconnect(obs_fader_get_signal_handler(obs_fader),
 			"volume_changed", OBSVolumeChanged, this);
 
-	signal_handler_disconnect(obs_source_get_signal_handler(source),
-		"volume_level", OBSVolumeLevel, this);
+	signal_handler_disconnect(obs_volmeter_get_signal_handler(obs_volmeter),
+			"levels_updated", OBSVolumeLevel, this);
 
 	obs_fader_destroy(obs_fader);
+	obs_volmeter_destroy(obs_volmeter);
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent)

@@ -627,15 +627,6 @@ static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
 		reset_audio_timing(source, ts, os_time);
 }
 
-#define VOL_MIN -96.0f
-#define VOL_MAX  0.0f
-
-static inline float to_db(float val)
-{
-	float db = 20.0f * log10f(val);
-	return isfinite(db) ? db : VOL_MIN;
-}
-
 static void calc_volume_levels(struct obs_source *source, float *array,
 		size_t frames, float volume)
 {
@@ -665,8 +656,8 @@ static void calc_volume_levels(struct obs_source *source, float *array,
 
 	UNUSED_PARAMETER(volume);
 
-	rms_val = to_db(sqrtf(sum_val / (float)count));
-	max_val = to_db(sqrtf(max_val));
+	rms_val = sqrtf(sum_val / (float)count);
+	max_val = sqrtf(max_val);
 
 	if (max_val > source->vol_max)
 		source->vol_max = max_val;
