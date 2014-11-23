@@ -41,7 +41,27 @@ enum obs_fader_type {
 	 * results while being quite performant.
 	 * The input value is mapped to mul values with the simple formula x^3.
 	 */
-	OBS_FADER_CUBIC
+	OBS_FADER_CUBIC,
+	/**
+	 * @brief A fader compliant to IEC 60-268-18
+	 *
+	 * This type of fader has several segments with different slopes that
+	 * map deflection linearly to dB values. The segments are defined as
+	 * in the following table:
+	 *
+	@code
+	Deflection           | Volume
+	------------------------------------------
+	[ 100   %, 75   % ]  | [   0 dB,   -9 dB ]
+	[  75   %, 50   % ]  | [  -9 dB,  -20 dB ]
+	[  50   %, 30   % ]  | [ -20 dB,  -30 dB ]
+	[  30   %, 15   % ]  | [ -30 dB,  -40 dB ]
+	[  15   %,  7.5 % ]  | [ -40 dB,  -50 dB ]
+	[   7.5 %,  2.5 % ]  | [ -50 dB,  -60 dB ]
+	[   2.5 %,  0   % ]  | [ -60 dB, -inf dB ]
+	@endcode
+	 */
+	OBS_FADER_IEC
 };
 
 /**
