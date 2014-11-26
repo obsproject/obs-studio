@@ -1,124 +1,46 @@
-Important things to consider if you want to contribute to the project (or any
-project in general, programming language and programming style aside)
+Bug Tracker: https://obsproject.com/mantis/
 
-On authors, maintainers, and contributing:
+Forum accounts are linked to mantis bug tracker.
 
- - If you want to write in a nice new contribution/feature, that's awesome, and
-   I fully encourage it.  However, unless what you make is very easy to
-   maintain, do not submit a feature or module for distribution with the main
-   project if you don't plan on supporting it or maintaining it yourself.  This
-   is *especially* important if it's big.  Smaller features and contributions
-   that are simple to understand/maintain can get away with this, but
-   generally, other people do not want to have to fix your code if something
-   breaks.
+Contributing:
 
-   I completely understand that you may have a busy life outside of the
-   project, but if what you submit can go wrong, it will go wrong.  If you
-   don't have time to fix major problems, then you probably shouldn't be
-   contributing to the project (or any project) in the first place.
+ - Code and commits will be reviewed.  Reviews will be blunt and honest, and
+   your change probably won't go through the first time, or may be outright
+   rejected.  It may require many revisions before changes are finally
+   accepted.
 
- - Be prepared to work with other contributors.  If you are venturing in to
-   someone else's code (to improve/expand upon it, or to change it for the
-   better), be prepared to talk and work with that person, whomever it may be.
-   Do *not* go rewriting someone elses code from scratch just because you feel
-   you can do it better.  Instead, examine what they did, talk with the person
-   (constructively) and if possible work with them to try to improve their
-   existing code.
+ - If you want to avoid doing a lot of work only to have it rejected, discuss
+   what you want to change it in the main channels/forums/mailing lists before
+   actually working on it.  Open source requires thick skin.  Please don't be
+   discouraged if your changes don't go through, learn from it and get better.
 
-   This may require you to have some level of people skills.  That *doesn't*
-   mean you should have to take someone else's bullshit if they're being an
-   asshole or being completely unreasonable, but it does mean that you should
-   be somewhat civil and try to work together.
+ - If you don't quite know what to work on and just want to help, the bug
+   tracker has a list of things that need to be worked on.
 
- - Be prepared to work with testers/users, sometimes you *have* to talk to
-   users and go over the problem and find the solution.  Users don't always
-   know what they're doing, but I've found that most are more than willing to
-   be patient and follow your instructions to help you debug the problem for
-   mutual benefit.  They will sing praises of you for fixing their problems,
-   and you will have one less problem to deal with.  You'll find that the
-   community is awesome and filled with some amazing people.  Work with them,
-   cherish them, because they are truly what make the wheels of your project
-   spin.  For that reason, do *not* treat users badly, ever.
+ - Try to respect the wishes of the author(s)/maintainer(s).  A good maintainer
+   will always listen, and will often ask others on the project for their
+   opinions, but don't expect things to be completely democratic.
 
- - The author(s)/maintainer(s) often get the last say on big/important
-   decisions for the project as a whole.  A good maintainer will always listen,
-   and will often ask others on the project for their opinions.  At the same
-   time, don't always expect everything to be democratic.  Each individual
-   project has its own rules, but more often than not it's probably more like a
-   benevolent dictatorship.  If that is the case and you have an opinion about
-   a particular upcoming change/decision, simply talk with the maintainers
-   about your opinion, and unless it ventures too far outside of whatever
-   'project vision' they have, they usually are (and should be) more than
-   willing to take your personal opinions in to account for the sake of the
-   project as a whole.
-
-   Just keep in mind that there are always many subjective topics, and that
-   like anything that's subjective, there often will be differing opinions that
-   may not always become resolved.
-
- - However, that being said, do try to avoid taking up too much of the
-   maintainer's time on any given discussion.  Try to be to be as concise as
-   possible, as they're often pretty busy, especially if they are doing most of
-   the work on the project (which is almost always the case).
-
-Styles, formatting, and guidelines for code
-
- - You may use C, C++. or Objective-C (for apple) to create your modules,
-   though please try to use C unless an API you're using requires C++ or
-   Objective-C (such as windows COM classes, or apple Objetive-C APIs).  Some
-   maintainers may be lax with this (such as myself), but unless you plan on
-   always being there to maintain the code, it's generally best to use C so
-   everybody has common ground to work with.  Language is a very personal thing
-   and not everyone will agree, but it's something that is ultimately the
-   decision of the author(s)/maintainer(s).  Arguing about language in this
-   instance will only seek to annoy them.
-
- - Coding style is mostly KNF (linux-style).  We're using KNF because it's an
-   established, well known style with the purpose of reducing bugs and
-   improving readability in a variety of circumstances.  This means K&R, 80
-   columns max, preferable maximum function length of 42 lines, 8 character
-   width tabs, lower_case_names, etc.  I chose this for the sake of the
-   project, don't argue about it, don't talk to me about it, just do it.  If
-   you can't deal with it, then you probably shouldn't be contributing to any
-   projects period, because every good project has coding guidelines.
+ - Coding style is Linux-style KNF (kernel normal form).  This means K&R, 80
+   columns max, preferable maximum function length of approximately 42 lines, 8
+   character width tabs, lower_case_names, etc.  I chose this for the sake of
+   the project.  Don't argue about it, just do it.  It takes no time to do.
 
    See https://www.kernel.org/doc/Documentation/CodingStyle for a general
    guideline (though not necessarily a rulebook, for example we allow the use
    of boolean return values instead of ints for failure).
 
- - C++ is an exception to the lower_case_only rule, CamelCase is encouraged
-   (though not required) to distinguish it from C code.  Just a personal and
-   subjective stylistic thing on my part.
+   NOTE: C++ is an exception to the lower_case_only rule, CamelCase is
+   encouraged (though not required) to distinguish it from C code.  Just a
+   personal and subjective stylistic thing on my part.
 
- - Do not use dependencies for the sake of convenience.  Use them only if you
-   actually have a real need to depend on them.  Just because the user
-   interface code depends on some toolkit doesn't mean it's okay for your
-   module to use that toolkit just so you can use some class or template they
-   have that you enjoy using.  Use the standard language libraries and use
-   what's available in the core.
+ - Core code is C only (unless there's an operating system specific thing that
+   absolutely requires another language).
 
- - Core is C only (unless there's an operating specific thing that requires
-   another language).  I will especially not accept any code in the core that
-   does not abide by these rules.  I will be particularly uptight about the
-   core.
+ - Modules and UI may use C, C++, or Objective-C (for apple), though please try
+   to use C unless an API you're using requires C++ or Objective-C (such as
+   windows COM classes, or apple Objective-C APIs).
 
-About these guidelines
-
- - These guidelines, the coding style, the format are for the sake of the
-   project and everyone who contributes and helps maintain the project.  They
-   are not done so much for the sake of myself as the maintainer, but for the
-   sake of everyone.  These guidelines help ensure better code, better
-   contribution, better cooperation, and code that (hopefully) everyone can
-   contribute to on some measure of even ground.  Everyone has their own
-   personal style but sometimes there just has to be common ground for the sake
-   of the project as a whole.
-
-Bug Tracker: https://obsproject.com/mantis/
-
-   We are no longer using github issues!  Please use mantis, and only report
-   bugs and major issues.  Do NOT use mantis to ask questions or request
-   features, please keep that to the forums.
-
-   Forum accounts are now linked to mantis bug tracker.  To use the bug
-   tracker, simply log in to the forums and then go to the bug tracker link
-   above.
+ - Do not use dependencies for the sake of convenience.  There's enough
+   dependencies as it is.  Use them only if you absolutely have to depend on
+   them.
