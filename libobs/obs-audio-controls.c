@@ -109,7 +109,7 @@ static void fader_source_volume_changed(void *vptr, calldata_t *calldata)
 	}
 
 	signal_handler_t *sh = fader->signals;
-	const float mul      = calldata_float(calldata, "volume");
+	const float mul      = (float)calldata_float(calldata, "volume");
 	const float db       = mul_to_db(mul);
 	fader->cur_db        = db;
 
