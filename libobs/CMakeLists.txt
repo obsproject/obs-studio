@@ -43,6 +43,7 @@ if(WIN32)
 	set(libobs_PLATFORM_SOURCES
 		obs-windows.c
 		util/threading-windows.c
+		util/pipe-windows.c
 		util/platform-windows.c)
 	set(libobs_PLATFORM_DEPS
 		w32-pthreads
@@ -51,6 +52,7 @@ elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
 		obs-cocoa.c
 		util/threading-posix.c
+		util/pipe-posix.c
 		util/platform-nix.c
 		util/platform-cocoa.m)
 
@@ -69,6 +71,7 @@ elseif(UNIX)
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
 		util/threading-posix.c
+		util/pipe-posix.c
 		util/platform-nix.c)
 endif()
 
@@ -179,6 +182,7 @@ set(libobs_util_HEADERS
 	util/c99defs.h
 	util/cf-parser.h
 	util/threading.h
+	util/pipe.h
 	util/cf-lexer.h
 	util/darray.h
 	util/circlebuf.h
