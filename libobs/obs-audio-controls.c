@@ -257,6 +257,8 @@ float obs_fader_get_mul(obs_fader_t *fader)
 
 bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 {
+	signal_handler_t *sh;
+
 	if (!fader || !source)
 		return false;
 
@@ -264,7 +266,7 @@ bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 
 	pthread_mutex_lock(&fader->mutex);
 
-	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	sh = obs_source_get_signal_handler(source);
 	signal_handler_connect(sh, "volume",
 			fader_source_volume_changed, fader);
 	signal_handler_connect(sh, "destroy",
@@ -280,6 +282,8 @@ bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 
 void obs_fader_detach_source(obs_fader_t *fader)
 {
+	signal_handler_t *sh;
+
 	if (!fader)
 		return;
 
@@ -288,7 +292,7 @@ void obs_fader_detach_source(obs_fader_t *fader)
 	if (!fader->source)
 		goto exit;
 
-	signal_handler_t *sh = obs_source_get_signal_handler(fader->source);
+	sh = obs_source_get_signal_handler(fader->source);
 	signal_handler_disconnect(sh, "volume",
 			fader_source_volume_changed, fader);
 	signal_handler_disconnect(sh, "destroy",
