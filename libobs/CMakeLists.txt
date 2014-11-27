@@ -190,6 +190,7 @@ set(libobs_util_HEADERS
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
+	obs-audio-controls.c
 	obs-avc.c
 	obs-encoder.c
 	obs-service.c
@@ -204,6 +205,7 @@ set(libobs_libobs_SOURCES
 	obs-scene.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
+	obs-audio-controls.h
 	obs-defs.h
 	obs-avc.h
 	obs-encoder.h

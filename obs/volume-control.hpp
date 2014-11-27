@@ -32,16 +32,16 @@ private:
 	QLabel          *volLabel;
 	VolumeMeter     *volMeter;
 	QSlider         *slider;
-	bool            signalChanged;
 	uint64_t        lastMeterTime;
 	float           levelTotal;
 	float           levelCount;
+	obs_fader_t     *obs_fader;
 
 	static void OBSVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSVolumeLevel(void *data, calldata_t *calldata);
 
 private slots:
-	void VolumeChanged(int vol);
+	void VolumeChanged();
 	void VolumeLevel(float mag, float peak, float peakHold);
 	void SliderChanged(int vol);
 
