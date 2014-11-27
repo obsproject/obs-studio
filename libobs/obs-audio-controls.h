@@ -61,7 +61,11 @@ enum obs_fader_type {
 	[   2.5 %,  0   % ]  | [ -60 dB, -inf dB ]
 	@endcode
 	 */
-	OBS_FADER_IEC
+	OBS_FADER_IEC,
+	/**
+	 * @brief Logarithmic fader
+	 */
+	OBS_FADER_LOG
 };
 
 /**

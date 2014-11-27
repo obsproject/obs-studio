@@ -155,6 +155,36 @@ static float iec_db_to_def(const float db)
 	return def;
 }
 
+#define LOG_OFFSET_DB  6.0f
+#define LOG_RANGE_DB   96.0f
+/* equals -log10f(LOG_OFFSET_DB) */
+#define LOG_OFFSET_VAL -0.77815125038364363f
+/* equals -log10f(-LOG_RANGE_DB + LOG_OFFSET_DB) */
+#define LOG_RANGE_VAL  -2.00860017176191756f
+
+static float log_def_to_db(const float def)
+{
+	if (def >= 1.0f)
+		return 0.0f;
+	else if (def <= 0.0f)
+		return -INFINITY;
+
+	return -(LOG_RANGE_DB + LOG_OFFSET_DB) * powf(
+			(LOG_RANGE_DB + LOG_OFFSET_DB) / LOG_OFFSET_DB, -def)
+			+ LOG_OFFSET_DB;
+}
+
+static float log_db_to_def(const float db)
+{
+	if (db >= 0.0f)
+		return 1.0f;
+	else if (db <= -96.0f)
+		return 0.0f;
+
+	return (-log10f(-db + LOG_OFFSET_DB) - LOG_RANGE_VAL)
+			/ (LOG_OFFSET_VAL - LOG_RANGE_VAL);
+}
+
 static void signal_volume_changed(signal_handler_t *sh,
 		struct obs_fader *fader, const float db)
 {
@@ -288,6 +318,12 @@ obs_fader_t *obs_fader_create(enum obs_fader_type type)
 		fader->db_to_def = iec_db_to_def;
 		fader->max_db    = 0.0f;
 		fader->min_db    = -INFINITY;
+		break;
+	case OBS_FADER_LOG:
+		fader->def_to_db = log_def_to_db;
+		fader->db_to_def = log_db_to_def;
+		fader->max_db    = 0.0f;
+		fader->min_db    = -96.0f;
 		break;
 	default:
 		goto fail;
@@ -474,6 +510,10 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 	case OBS_FADER_IEC:
 		volmeter->pos_to_db = iec_def_to_db;
 		volmeter->db_to_pos = iec_db_to_def;
+		break;
+	case OBS_FADER_LOG:
+		volmeter->pos_to_db = log_def_to_db;
+		volmeter->db_to_pos = log_db_to_def;
 		break;
 	default:
 		goto fail;
