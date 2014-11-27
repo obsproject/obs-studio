@@ -2120,8 +2120,12 @@ void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix,
 		const struct vec3 *color_range_min,
 		const struct vec3 *color_range_max)
 {
-	static const struct vec3 color_range_min_def = {0.0f, 0.0f, 0.0f};
-	static const struct vec3 color_range_max_def = {1.0f, 1.0f, 1.0f};
+	struct vec3 color_range_min_def;
+	struct vec3 color_range_max_def;
+
+	vec3_set(&color_range_min_def, 0.0f, 0.0f, 0.0f);
+	vec3_set(&color_range_max_def, 1.0f, 1.0f, 1.0f);
+
 	gs_effect_t *effect = gs_get_effect();
 	gs_eparam_t *matrix;
 	gs_eparam_t *range_min;
