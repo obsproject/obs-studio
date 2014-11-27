@@ -24,6 +24,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "obs-audio-controls.h"
 
+/* These are pointless warnings generated not by our code, but by a standard
+ * library macro, INFINITY */
+#ifdef _MSC_VER
+#pragma warning(disable : 4056)
+#pragma warning(disable : 4756)
+#endif
+
 typedef float (*obs_fader_conversion_t)(const float val);
 
 struct obs_fader {
