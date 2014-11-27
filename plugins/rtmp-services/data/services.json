@@ -221,5 +221,14 @@
                 "url": "rtmp://de.live.cashplay.tv/live"
             }
         ]
+    },
+	{
+        "name": "mylive.in.th",
+        "servers": [
+            {
+                "name": "Thai (Primary)",
+                "url": "rtmp://stream.mylive.in.th/live"
+            }
+        ]
     }
 ]
