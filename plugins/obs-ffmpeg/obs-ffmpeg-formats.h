@@ -1,10 +1,12 @@
 #pragma once
 
+#include <libswscale/swscale.h>
+
 static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
 		AVRational new_base)
 {
 	return av_rescale_q_rnd(val, context->time_base, new_base,
-			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+			(enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
 }
 
 static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
@@ -23,6 +25,20 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 	}
 
 	return AV_PIX_FMT_NONE;
+}
+
+static inline enum video_format ffmpeg_to_obs_video_format(
+		enum AVPixelFormat format)
+{
+	switch (format) {
+	case AV_PIX_FMT_YUV420P: return VIDEO_FORMAT_I420;
+	case AV_PIX_FMT_NV12: return VIDEO_FORMAT_NV12;
+	case AV_PIX_FMT_YUYV422: return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_UYVY422: return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_RGBA: return VIDEO_FORMAT_RGBA;
+	case AV_PIX_FMT_BGRA: return VIDEO_FORMAT_BGRA;
+	default: return VIDEO_FORMAT_NONE;
+	}
 }
 
 static inline enum audio_format convert_ffmpeg_sample_format(
