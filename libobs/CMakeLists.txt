@@ -16,6 +16,7 @@ if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
 endif()
 
 option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
+option(LIBOBS_PREFER_STBI "Prefer stb_image over ffmpeg for image loading" OFF)
 
 if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
@@ -27,12 +28,18 @@ if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_I
 
 	include_directories(${ImageMagick_INCLUDE_DIRS})
 else()
-	message(STATUS "Using libavcodec for image loading in libobs")
+	if(NOT FFMPEG_AVCODEC_FOUND OR LIBOBS_PREFER_STBI)
+		message(STATUS "Using stb_image for image loading in libobs")
+		set(libobs_image_loading_SOURCES
+			graphics/graphics-stbi.c)
+	else()
+		message(STATUS "Using libavcodec for image loading in libobs")
 
-	set(libobs_image_loading_SOURCES
-		graphics/graphics-ffmpeg.c)
-	set(libobs_image_loading_LIBRARIES
-		${FFMPEG_AVCODEC_LIBRARIES})
+		set(libobs_image_loading_SOURCES
+			graphics/graphics-ffmpeg.c)
+		set(libobs_image_loading_LIBRARIES
+			${FFMPEG_AVCODEC_LIBRARIES})
+	endif()
 endif()
 
 add_definitions(-DLIBOBS_EXPORTS)
