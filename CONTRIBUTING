@@ -1,8 +1,15 @@
-Bug Tracker: https://obsproject.com/mantis/
+Contributing Information:
 
-Forum accounts are linked to mantis bug tracker.
+ - Our bug tracker is located at (currently linked to forum accounts):
+       https://obsproject.com/mantis/
 
-Contributing:
+ - Development forums are currently located at:
+       https://obsproject.com/forum/list/general-development.21/
+
+ - Development IRC channel is primarily #obs-dev on QuakeNet
+
+
+Contributing Guidelines:
 
  - Code and commits will be reviewed.  Reviews will be blunt and honest, and
    your change probably won't go through the first time, or may be outright
