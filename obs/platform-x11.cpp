@@ -23,8 +23,9 @@
 #include <obs-config.h>
 #include "obs-app.hpp"
 
-#include <X11/Xlib.h>
-#include <X11/extensions/Xinerama.h>
+#include <xcb/xcb.h>
+#include <xcb/xinerama.h> 
+#include <xcb/randr.h> 
 #include <unistd.h>
 #include <sstream>
 #include <locale.h>
@@ -64,41 +65,54 @@ bool GetDataFilePath(const char *data, string &output)
 
 void GetMonitors(vector<MonitorInfo> &monitors)
 {
-	int num_screens;
-	XineramaScreenInfo *screens;
-	int event_code = 0, error_code = 0;
-	Display* display = XOpenDisplay(NULL);
-
-	if (!XineramaQueryExtension(display, &event_code, &error_code)) {
-		printf("Xinerama extension unavailable. We don't handle this "
-		       "yet.\n");
-		return;
-	}
-
-	/* Do I need to make a call to XineramaQueryVersion...? */
-
-	screens = XineramaQueryScreens(display, &num_screens);
-
-	if (num_screens == 0 || !screens) {
-		printf("Xinerama isn't active on this screen.\n");
-		return;
-	}
+	xcb_connection_t* xcb_conn;
 
 	monitors.clear();
+	xcb_conn = xcb_connect(NULL, NULL);
 
-	do {
-		--num_screens;
+	if (xcb_get_extension_data(xcb_conn, &xcb_xinerama_id)->present) {
+		xcb_xinerama_is_active_cookie_t xinerama_cookie;
+		xcb_xinerama_is_active_reply_t* xinerama_reply = NULL;
+		xcb_xinerama_query_screens_cookie_t screens_cookie;
+		xcb_xinerama_query_screens_reply_t* screens_reply = NULL;
+		xcb_xinerama_screen_info_iterator_t iter;
 
-		monitors.emplace_back(
-			screens[num_screens].x_org,
-			screens[num_screens].y_org,
-			screens[num_screens].width,
-			screens[num_screens].height
-                );
-	} while (num_screens > 0);
+		xinerama_cookie = xcb_xinerama_is_active(xcb_conn);
+		xinerama_reply = xcb_xinerama_is_active_reply(xcb_conn,
+						        xinerama_cookie, NULL);
 
-	XFree(screens);
-	XCloseDisplay(display);
+		if (xinerama_reply == NULL || xinerama_reply->state == 0) {
+			free(xinerama_reply);
+			goto err;
+		}
+
+		screens_cookie = xcb_xinerama_query_screens(xcb_conn);
+		screens_reply = xcb_xinerama_query_screens_reply(xcb_conn,
+							screens_cookie, NULL);
+		iter = xcb_xinerama_query_screens_screen_info_iterator(
+								screens_reply);
+
+		for(; iter.rem; xcb_xinerama_screen_info_next(&iter)) {
+			monitors.emplace_back(iter.data->x_org,
+					      iter.data->y_org,
+					      iter.data->width,
+					      iter.data->height);
+		}
+		free(xinerama_reply);
+		free(screens_reply);
+	} else {
+		// no xinerama so fall back to basic x11 calls
+		xcb_screen_iterator_t iter;
+
+		iter = xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
+		for(; iter.rem; xcb_screen_next(&iter)) {
+			monitors.emplace_back(0,0,iter.data->width_in_pixels,
+					          iter.data->height_in_pixels);
+		}
+	}
+
+err:
+	xcb_disconnect(xcb_conn);
 }
 
 bool InitApplicationBundle()
