@@ -424,6 +424,8 @@ static inline void output_frame(uint64_t timestamp)
 	render_video(video, cur_texture, prev_texture, timestamp);
 	frame_ready = download_frame(video, prev_texture, &frame);
 
+	gs_flush();
+
 	gs_leave_context();
 
 	if (frame_ready) {
