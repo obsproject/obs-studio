@@ -15,7 +15,7 @@ if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
 	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
 endif()
 
-option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" ON)
+option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" OFF)
 
 if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
