@@ -1,6 +1,7 @@
 
 add_subdirectory(w32-pthreads)
 add_subdirectory(glad)
+add_subdirectory(ipc-util)
 
 find_package(Jansson 2.5 QUIET)
 
