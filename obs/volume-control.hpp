@@ -36,6 +36,7 @@ private:
 	float           levelTotal;
 	float           levelCount;
 	obs_fader_t     *obs_fader;
+	obs_volmeter_t  *obs_volmeter;
 
 	static void OBSVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSVolumeLevel(void *data, calldata_t *calldata);
