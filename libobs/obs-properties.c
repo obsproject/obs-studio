@@ -581,6 +581,22 @@ static size_t add_item(struct list_data *data, const char *name,
 	return da_push_back(data->items, &item);
 }
 
+static void insert_item(struct list_data *data, size_t idx, const char *name,
+		const void *val)
+{
+	struct list_item item = { NULL };
+	item.name  = bstrdup(name);
+
+	if (data->format == OBS_COMBO_FORMAT_INT)
+		item.ll  = *(const long long*)val;
+	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
+		item.d   = *(const double*)val;
+	else
+		item.str = bstrdup(val);
+
+	da_insert(data->items, idx, &item);
+}
+
 size_t obs_property_list_add_string(obs_property_t *p,
 		const char *name, const char *val)
 {
@@ -606,6 +622,30 @@ size_t obs_property_list_add_float(obs_property_t *p,
 	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
 		return add_item(data, name, &val);
 	return 0;
+}
+
+void obs_property_list_insert_string(obs_property_t *p, size_t idx,
+		const char *name, const char *val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_STRING)
+		insert_item(data, idx, name, val);
+}
+
+void obs_property_list_insert_int(obs_property_t *p, size_t idx,
+		const char *name, long long val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_INT)
+		insert_item(data, idx, name, &val);
+}
+
+void obs_property_list_insert_float(obs_property_t *p, size_t idx,
+		const char *name, double val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
+		insert_item(data, idx, name, &val);
 }
 
 void obs_property_list_item_remove(obs_property_t *p, size_t idx)

@@ -223,6 +223,13 @@ EXPORT size_t obs_property_list_add_int(obs_property_t *p,
 EXPORT size_t obs_property_list_add_float(obs_property_t *p,
 		const char *name, double val);
 
+EXPORT void obs_property_list_insert_string(obs_property_t *p, size_t idx,
+		const char *name, const char *val);
+EXPORT void obs_property_list_insert_int(obs_property_t *p, size_t idx,
+		const char *name, long long val);
+EXPORT void obs_property_list_insert_float(obs_property_t *p, size_t idx,
+		const char *name, double val);
+
 EXPORT void obs_property_list_item_disable(obs_property_t *p, size_t idx,
 								bool disabled);
 EXPORT bool obs_property_list_item_disabled(obs_property_t *p, size_t idx);
