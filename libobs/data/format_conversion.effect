@@ -59,7 +59,7 @@ VertInOut VSDefault(VertInOut vert_in)
 }
 
 /* used to prevent internal GPU precision issues width fmod in particular */
-#define PRECISION_OFFSET 0.1
+#define PRECISION_OFFSET 0.2
 
 float4 PSNV12(VertInOut vert_in) : TARGET
 {
