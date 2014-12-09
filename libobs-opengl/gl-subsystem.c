@@ -23,6 +23,8 @@
 #undef far
 #undef near
 
+/* #define SHOW_ALL_GL_MESSAGES */
+
 #ifdef _DEBUG
 
 static void APIENTRY gl_debug_proc(
@@ -33,6 +35,15 @@ static void APIENTRY gl_debug_proc(
 	UNUSED_PARAMETER(data);
 
 	char *source_str, *type_str, *severity_str;
+
+/* frames can get a bit too much spam with irrelevant/insignificant opengl
+ * debug messages */
+#ifndef SHOW_ALL_GL_MESSAGES
+	if (type > GL_DEBUG_TYPE_PORTABILITY &&
+	    severity != GL_DEBUG_SEVERITY_HIGH) {
+		return;
+	}
+#endif
 
 	switch(source) {
 	case GL_DEBUG_SOURCE_API:
