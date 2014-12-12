@@ -52,6 +52,9 @@ struct obs_x264 {
 	size_t                 sei_size;
 
 	os_performance_token_t *performance_token;
+
+	enum video_colorspace  colorspace;
+	enum video_range_type  range;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -287,6 +290,31 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	UNUSED_PARAMETER(level);
 }
 
+static inline const char *get_x264_colorspace_name(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+		return "undef";
+	case VIDEO_CS_709:;
+	}
+
+	return "bt709";
+}
+
+static inline int get_x264_cs_val(enum video_colorspace cs,
+		const char *const names[])
+{
+	const char *name = get_x264_colorspace_name(cs);
+	int idx = 0;
+	do {
+		if (strcmp(names[idx], name) == 0)
+			return idx;
+	} while (!!names[++idx]);
+
+	return 0;
+}
+
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		char **params)
 {
@@ -316,6 +344,15 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.pf_log               = log_x264;
 	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
+
+	obsx264->params.vui.i_transfer =
+		get_x264_cs_val(obsx264->colorspace, x264_transfer_names);
+	obsx264->params.vui.i_colmatrix =
+		get_x264_cs_val(obsx264->colorspace, x264_colmatrix_names);
+	obsx264->params.vui.i_colorprim =
+		get_x264_cs_val(obsx264->colorspace, x264_colorprim_names);
+	obsx264->params.vui.b_fullrange =
+		obsx264->range == VIDEO_RANGE_FULL;
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
@@ -572,6 +609,9 @@ static bool obs_x264_video_info(void *data, struct video_scale_info *info)
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *vid_info = video_output_get_info(video);
 
+	obsx264->colorspace = vid_info->colorspace;
+	obsx264->range = vid_info->range;
+
 	if (vid_info->format == VIDEO_FORMAT_I420 ||
 	    vid_info->format == VIDEO_FORMAT_NV12)
 		return false;
@@ -579,8 +619,11 @@ static bool obs_x264_video_info(void *data, struct video_scale_info *info)
 	info->format     = VIDEO_FORMAT_NV12;
 	info->width      = vid_info->width;
 	info->height     = vid_info->height;
-	info->range      = VIDEO_RANGE_DEFAULT;
-	info->colorspace = VIDEO_CS_DEFAULT;
+	info->range      = VIDEO_RANGE_PARTIAL;
+	info->colorspace = VIDEO_CS_709;
+
+	obsx264->colorspace = info->colorspace;
+	obsx264->range = info->range;
 	return true;
 }
 
