@@ -1352,6 +1352,8 @@ int OBSBasic::ResetVideo()
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
 	ovi.output_format  = VIDEO_FORMAT_NV12;
+	ovi.colorspace     = VIDEO_CS_709;
+	ovi.range          = VIDEO_RANGE_FULL;
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
 

@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 
+#include "graphics/matrix4.h"
 #include "callback/calldata.h"
 
 #include "obs.h"
@@ -48,6 +49,8 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->fps_den = ovi->fps_den;
 	vi->width   = ovi->output_width;
 	vi->height  = ovi->output_height;
+	vi->range   = ovi->range;
+	vi->colorspace = ovi->colorspace;
 }
 
 #define PIXEL_SIZE 4
@@ -256,6 +259,28 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
+static inline void set_video_matrix(struct obs_core_video *video,
+		struct obs_video_info *ovi)
+{
+	struct matrix4 mat;
+	struct vec4 r_row;
+
+	if (format_is_yuv(ovi->output_format)) {
+		video_format_get_parameters(ovi->colorspace, ovi->range,
+				(float*)&mat, NULL, NULL);
+		matrix4_inv(&mat, &mat);
+
+		/* swap R and G */
+		r_row = mat.x;
+		mat.x = mat.y;
+		mat.y = r_row;
+	} else {
+		matrix4_identity(&mat);
+	}
+
+	memcpy(video->color_matrix, &mat, sizeof(float) * 16);
+}
+
 static int obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
@@ -268,6 +293,8 @@ static int obs_init_video(struct obs_video_info *ovi)
 	video->output_width   = ovi->output_width;
 	video->output_height  = ovi->output_height;
 	video->gpu_conversion = ovi->gpu_conversion;
+
+	set_video_matrix(video, ovi);
 
 	errorcode = video_output_open(&video->video, &vi);
 
@@ -728,6 +755,9 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	memset(ovi, 0, sizeof(struct obs_video_info));
 	ovi->base_width    = video->base_width;
 	ovi->base_height   = video->base_height;
+	ovi->gpu_conversion= video->gpu_conversion;
+	ovi->colorspace    = info->colorspace;
+	ovi->range         = info->range;
 	ovi->output_width  = info->width;
 	ovi->output_height = info->height;
 	ovi->output_format = info->format;

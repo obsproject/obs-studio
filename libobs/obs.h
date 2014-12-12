@@ -159,6 +159,9 @@ struct obs_video_info {
 
 	/** Use shaders to convert to different color formats */
 	bool                gpu_conversion;
+
+	enum video_colorspace colorspace;  /**< YUV type (if YUV) */
+	enum video_range_type range;       /**< YUV range (if YUV) */
 };
 
 /**

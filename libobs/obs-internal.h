@@ -163,6 +163,7 @@ struct obs_core_video {
 	uint32_t                        output_height;
 	uint32_t                        base_width;
 	uint32_t                        base_height;
+	float                           color_matrix[16];
 
 	struct obs_display              main_display;
 };

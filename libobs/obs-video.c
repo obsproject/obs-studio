@@ -131,16 +131,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
 
-	/* TODO: replace with programmable code */
-	const float mat_val[16] =
-	{
-		-0.100644f, -0.338572f,  0.439216f,  0.501961f,
-		 0.182586f,  0.614231f,  0.062007f,  0.062745f,
-		 0.439216f, -0.398942f, -0.040274f,  0.501961f,
-		 0.000000f,  0.000000f,  0.000000f,  1.000000f
-	};
-
-	gs_effect_set_val(matrix, mat_val, sizeof(mat_val));
+	gs_effect_set_val(matrix, video->color_matrix, sizeof(float) * 16);
 	gs_effect_set_texture(image, texture);
 
 	gs_enable_blending(false);
