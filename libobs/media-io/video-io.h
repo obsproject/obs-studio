@@ -46,6 +46,18 @@ enum video_format {
 	VIDEO_FORMAT_BGRX,
 };
 
+enum video_colorspace {
+	VIDEO_CS_DEFAULT,
+	VIDEO_CS_601,
+	VIDEO_CS_709,
+};
+
+enum video_range_type {
+	VIDEO_RANGE_DEFAULT,
+	VIDEO_RANGE_PARTIAL,
+	VIDEO_RANGE_FULL
+};
+
 struct video_data {
 	uint8_t           *data[MAX_AV_PLANES];
 	uint32_t          linesize[MAX_AV_PLANES];
@@ -60,6 +72,9 @@ struct video_output_info {
 	uint32_t          fps_den;
 	uint32_t          width;
 	uint32_t          height;
+
+	enum video_colorspace colorspace;
+	enum video_range_type range;
 };
 
 static inline bool format_is_yuv(enum video_format format)
@@ -87,18 +102,6 @@ enum video_scale_type {
 	VIDEO_SCALE_FAST_BILINEAR,
 	VIDEO_SCALE_BILINEAR,
 	VIDEO_SCALE_BICUBIC,
-};
-
-enum video_colorspace {
-	VIDEO_CS_DEFAULT,
-	VIDEO_CS_601,
-	VIDEO_CS_709,
-};
-
-enum video_range_type {
-	VIDEO_RANGE_DEFAULT,
-	VIDEO_RANGE_PARTIAL,
-	VIDEO_RANGE_FULL
 };
 
 struct video_scale_info {
