@@ -236,6 +236,21 @@ EXPORT void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
  */
 EXPORT unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter);
 
+/**
+ * @brief Set the peak hold time for the volume meter
+ * @param volmeter pointer to the volume meter object
+ * @param ms peak hold time in ms
+ */
+EXPORT void obs_volmeter_set_peak_hold(obs_volmeter_t *volmeter,
+		const unsigned int ms);
+
+/**
+ * @brief Get the peak hold time for the volume meter
+ * @param volmeter pointer to the volume meter object
+ * @return the peak hold time in ms
+ */
+EXPORT unsigned int obs_volmeter_get_peak_hold(obs_volmeter_t *volmeter);
+
 #ifdef __cplusplus
 }
 #endif

@@ -58,6 +58,8 @@ struct obs_volmeter {
 	unsigned int           channels;
 	unsigned int           update_ms;
 	unsigned int           update_frames;
+	unsigned int           peakhold_ms;
+	unsigned int           peakhold_frames;
 };
 
 static const char *fader_signals[] = {
@@ -302,6 +304,7 @@ static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
 
 	volmeter->channels        = audio_output_get_channels(audio);
 	volmeter->update_frames   = volmeter->update_ms * sr / 1000;
+	volmeter->peakhold_frames = volmeter->peakhold_ms * sr / 1000;
 }
 
 obs_fader_t *obs_fader_create(enum obs_fader_type type)
@@ -535,6 +538,7 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 	volmeter->type = type;
 
 	obs_volmeter_set_update_interval(volmeter, 50);
+	obs_volmeter_set_peak_hold(volmeter, 1500);
 
 	return volmeter;
 fail:
@@ -634,4 +638,27 @@ unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter)
 	pthread_mutex_unlock(&volmeter->mutex);
 
 	return interval;
+}
+
+void obs_volmeter_set_peak_hold(obs_volmeter_t *volmeter, const unsigned int ms)
+{
+	if (!volmeter)
+		return;
+
+	pthread_mutex_lock(&volmeter->mutex);
+	volmeter->peakhold_ms = ms;
+	volmeter_update_audio_settings(volmeter);
+	pthread_mutex_unlock(&volmeter->mutex);
+}
+
+unsigned int obs_volmeter_get_peak_hold(obs_volmeter_t *volmeter)
+{
+	if (!volmeter)
+		return 0;
+
+	pthread_mutex_lock(&volmeter->mutex);
+	const unsigned int peakhold = volmeter->peakhold_ms;
+	pthread_mutex_unlock(&volmeter->mutex);
+
+	return peakhold;
 }
