@@ -84,6 +84,7 @@ static const char *source_signals[] = {
 		"float peak)",
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
+	"void audio_data(ptr source, ptr data)",
 	NULL
 };
 
@@ -261,7 +262,7 @@ void obs_source_destroy(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->video_mutex);
 	obs_context_data_free(&source->context);
-	
+
 	if (source->owns_info_id)
 		bfree((void*)source->info.id);
 
@@ -700,6 +701,21 @@ static void obs_source_update_volume_level(obs_source_t *source,
 	}
 }
 
+static void source_signal_audio_data(obs_source_t *source,
+		struct audio_data *in)
+{
+	struct calldata data;
+
+	calldata_init(&data);
+
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_ptr(&data, "data",   in);
+
+	signal_handler_signal(source->context.signals, "audio_data", &data);
+
+	calldata_free(&data);
+}
+
 static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 {
 	return (ts1 < ts2) ?  (ts2 - ts1) : (ts1 - ts2);
@@ -740,6 +756,7 @@ static void source_output_audio_line(obs_source_t *source,
 		obs->audio.user_volume * obs->audio.present_volume;
 
 	audio_line_output(source->audio_line, &in);
+	source_signal_audio_data(source, &in);
 	obs_source_update_volume_level(source, &in);
 }
 
