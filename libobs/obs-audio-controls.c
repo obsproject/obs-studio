@@ -54,6 +54,10 @@ struct obs_volmeter {
 	obs_source_t           *source;
 	enum obs_fader_type    type;
 	float                  cur_db;
+
+	unsigned int           channels;
+	unsigned int           update_ms;
+	unsigned int           update_frames;
 };
 
 static const char *fader_signals[] = {
@@ -291,6 +295,15 @@ static void volmeter_source_destroyed(void *vptr, calldata_t *calldata)
 	obs_volmeter_detach_source(volmeter);
 }
 
+static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
+{
+	audio_t *audio            = obs_get_audio();
+	const unsigned int sr     = audio_output_get_sample_rate(audio);
+
+	volmeter->channels        = audio_output_get_channels(audio);
+	volmeter->update_frames   = volmeter->update_ms * sr / 1000;
+}
+
 obs_fader_t *obs_fader_create(enum obs_fader_type type)
 {
 	struct obs_fader *fader = bzalloc(sizeof(struct obs_fader));
@@ -521,6 +534,8 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 	}
 	volmeter->type = type;
 
+	obs_volmeter_set_update_interval(volmeter, 50);
+
 	return volmeter;
 fail:
 	obs_volmeter_destroy(volmeter);
@@ -597,3 +612,26 @@ signal_handler_t *obs_volmeter_get_signal_handler(obs_volmeter_t *volmeter)
 	return (volmeter) ? volmeter->signals : NULL;
 }
 
+void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
+		const unsigned int ms)
+{
+	if (!volmeter || !ms)
+		return;
+
+	pthread_mutex_lock(&volmeter->mutex);
+	volmeter->update_ms = ms;
+	volmeter_update_audio_settings(volmeter);
+	pthread_mutex_unlock(&volmeter->mutex);
+}
+
+unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter)
+{
+	if (!volmeter)
+		return 0;
+
+	pthread_mutex_lock(&volmeter->mutex);
+	const unsigned int interval = volmeter->update_ms;
+	pthread_mutex_unlock(&volmeter->mutex);
+
+	return interval;
+}
