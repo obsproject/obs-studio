@@ -275,29 +275,6 @@ static void fader_source_destroyed(void *vptr, calldata_t *calldata)
 	obs_fader_detach_source(fader);
 }
 
-static void volmeter_source_volume_levels(void *vptr, calldata_t *calldata)
-{
-	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
-
-	pthread_mutex_lock(&volmeter->mutex);
-
-	float mul = db_to_mul(volmeter->cur_db);
-
-	float level     = (float) calldata_float(calldata, "level");
-	float magnitude = (float) calldata_float(calldata, "magnitude");
-	float peak      = (float) calldata_float(calldata, "peak");
-
-	level     = volmeter->db_to_pos(mul_to_db(level     * mul));
-	magnitude = volmeter->db_to_pos(mul_to_db(magnitude * mul));
-	peak      = volmeter->db_to_pos(mul_to_db(peak      * mul));
-
-	signal_handler_t *sh = volmeter->signals;
-
-	pthread_mutex_unlock(&volmeter->mutex);
-
-	signal_levels_updated(sh, volmeter, level, magnitude, peak);
-}
-
 static void volmeter_source_destroyed(void *vptr, calldata_t *calldata)
 {
 	UNUSED_PARAMETER(calldata);
@@ -681,8 +658,6 @@ bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 	sh = obs_source_get_signal_handler(source);
 	signal_handler_connect(sh, "volume",
 			volmeter_source_volume_changed, volmeter);
-	signal_handler_connect(sh, "volume_level",
-			volmeter_source_volume_levels, volmeter);
 	signal_handler_connect(sh, "audio_data",
 			volmeter_source_data_received, volmeter);
 	signal_handler_connect(sh, "destroy",
@@ -711,8 +686,6 @@ void obs_volmeter_detach_source(obs_volmeter_t *volmeter)
 	sh = obs_source_get_signal_handler(volmeter->source);
 	signal_handler_disconnect(sh, "volume",
 			volmeter_source_volume_changed, volmeter);
-	signal_handler_disconnect(sh, "volume_level",
-			volmeter_source_volume_levels, volmeter);
 	signal_handler_disconnect(sh, "audio_data",
 			volmeter_source_data_received, volmeter);
 	signal_handler_disconnect(sh, "destroy",
