@@ -60,6 +60,15 @@ struct obs_volmeter {
 	unsigned int           update_frames;
 	unsigned int           peakhold_ms;
 	unsigned int           peakhold_frames;
+
+	unsigned int           peakhold_count;
+	unsigned int           ival_frames;
+	float                  ival_sum;
+	float                  ival_max;
+
+	float                  vol_peak;
+	float                  vol_mag;
+	float                  vol_max;
 };
 
 static const char *fader_signals[] = {
@@ -295,6 +304,106 @@ static void volmeter_source_destroyed(void *vptr, calldata_t *calldata)
 	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
 
 	obs_volmeter_detach_source(volmeter);
+}
+
+static void volmeter_sum_and_max(float *data, size_t frames,
+		float *sum, float *max)
+{
+	float s  = *sum;
+	float m  = *max;
+
+	for (float *c = data; c < data + frames; ++c) {
+		const float pow = *c * *c;
+		s += pow;
+		m  = (m > pow) ? m : pow;
+	}
+
+	*sum = s;
+	*max = m;
+}
+
+/**
+ * @todo The IIR low pass filter has a different behavior depending on the
+ *       update interval and sample rate, it should be replaced with something
+ *       that is independent from both.
+ */
+static void volmeter_calc_ival_levels(obs_volmeter_t *volmeter)
+{
+	const float alpha    = 0.15f;
+	const float frames   = (float) volmeter->ival_frames;
+	const float samples  = frames * (float) volmeter->channels;
+	const float ival_max = sqrtf(volmeter->ival_max);
+	const float ival_rms = sqrtf(volmeter->ival_sum / samples);
+
+	if (ival_max > volmeter->vol_max) {
+		volmeter->vol_max = ival_max;
+	} else {
+		volmeter->vol_max = alpha * volmeter->vol_max +
+				(1.0f - alpha) * ival_max;
+	}
+
+	if (volmeter->vol_max > volmeter->vol_peak ||
+			volmeter->peakhold_count > volmeter->peakhold_frames) {
+		volmeter->vol_peak       = volmeter->vol_max;
+		volmeter->peakhold_count = 0;
+	} else {
+		volmeter->peakhold_count += frames;
+	}
+
+	volmeter->vol_mag = alpha * ival_rms +
+			volmeter->vol_mag * (1.0f - alpha);
+
+	/* reset interval data */
+	volmeter->ival_frames = 0;
+	volmeter->ival_sum    = 0.0f;
+	volmeter->ival_max    = 0.0f;
+}
+
+static bool volmeter_process_audio_data(obs_volmeter_t *volmeter,
+		struct audio_data *data)
+{
+	bool updated   = false;
+	size_t frames  = 0;
+	size_t samples = 0;
+	size_t left    = data->frames;
+	float *adata   = (float *) data->data[0];
+
+	while (left) {
+		frames  = (volmeter->ival_frames + left >
+				volmeter->update_frames)
+			? volmeter->update_frames - volmeter->ival_frames
+			: left;
+		samples = frames * volmeter->channels;
+
+		volmeter_sum_and_max(adata, samples, &volmeter->ival_sum,
+				&volmeter->ival_max);
+
+		volmeter->ival_frames += frames;
+		left                  -= frames;
+		adata                 += samples;
+
+		/* break if we did not reach the end of the interval */
+		if (volmeter->ival_frames != volmeter->update_frames)
+			break;
+
+		volmeter_calc_ival_levels(volmeter);
+		updated = true;
+	}
+
+	return updated;
+}
+
+static void volmeter_source_data_received(void *vptr, calldata_t *calldata)
+{
+	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
+	bool updated = false;
+
+	pthread_mutex_lock(&volmeter->mutex);
+
+	struct audio_data *data = calldata_ptr(calldata, "data");
+	updated = volmeter_process_audio_data(volmeter, data);
+
+	pthread_mutex_unlock(&volmeter->mutex);
 }
 
 static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
@@ -574,6 +683,8 @@ bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 			volmeter_source_volume_changed, volmeter);
 	signal_handler_connect(sh, "volume_level",
 			volmeter_source_volume_levels, volmeter);
+	signal_handler_connect(sh, "audio_data",
+			volmeter_source_data_received, volmeter);
 	signal_handler_connect(sh, "destroy",
 			volmeter_source_destroyed, volmeter);
 
@@ -602,6 +713,8 @@ void obs_volmeter_detach_source(obs_volmeter_t *volmeter)
 			volmeter_source_volume_changed, volmeter);
 	signal_handler_disconnect(sh, "volume_level",
 			volmeter_source_volume_levels, volmeter);
+	signal_handler_disconnect(sh, "audio_data",
+			volmeter_source_data_received, volmeter);
 	signal_handler_disconnect(sh, "destroy",
 			volmeter_source_destroyed, volmeter);
 
