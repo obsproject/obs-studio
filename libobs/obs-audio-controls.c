@@ -374,13 +374,28 @@ static void volmeter_source_data_received(void *vptr, calldata_t *calldata)
 {
 	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
 	bool updated = false;
+	float mul, level, mag, peak;
+	signal_handler_t *sh;
 
 	pthread_mutex_lock(&volmeter->mutex);
 
 	struct audio_data *data = calldata_ptr(calldata, "data");
 	updated = volmeter_process_audio_data(volmeter, data);
 
+	if (updated) {
+		mul   = db_to_mul(volmeter->cur_db);
+
+		level = volmeter->db_to_pos(mul_to_db(volmeter->vol_max * mul));
+		mag   = volmeter->db_to_pos(mul_to_db(volmeter->vol_mag * mul));
+		peak  = volmeter->db_to_pos(
+				mul_to_db(volmeter->vol_peak * mul));
+		sh    = volmeter->signals;
+	}
+
 	pthread_mutex_unlock(&volmeter->mutex);
+
+	if (updated)
+		signal_levels_updated(sh, volmeter, level, mag, peak);
 }
 
 static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
