@@ -80,8 +80,6 @@ static const char *source_signals[] = {
 	"void hide(ptr source)",
 	"void rename(ptr source, string new_name, string prev_name)",
 	"void volume(ptr source, in out float volume)",
-	"void volume_level(ptr source, float level, float magnitude, "
-		"float peak)",
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
 	"void audio_data(ptr source, ptr data)",
@@ -628,79 +626,6 @@ static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
 		reset_audio_timing(source, ts, os_time);
 }
 
-static void calc_volume_levels(struct obs_source *source, float *array,
-		size_t frames, float volume)
-{
-	float sum_val = 0.0f;
-	float max_val = 0.0f;
-	float rms_val = 0.0f;
-
-	audio_t        *audio          = obs_get_audio();
-	const uint32_t sample_rate    = audio_output_get_sample_rate(audio);
-	const size_t   channels       = audio_output_get_channels(audio);
-	const size_t   count          = frames * channels;
-	const size_t   vol_peak_delay = sample_rate * 3;
-	const float    alpha          = 0.15f;
-
-	for (size_t i = 0; i < count; i++) {
-		float val      = array[i];
-		float val_pow2 = val * val;
-
-		sum_val += val_pow2;
-		max_val  = (max_val > val_pow2) ? max_val : val_pow2;
-	}
-
-	/*
-	  We want the volume meters scale linearly in respect to current
-	  volume, so, no need to apply volume here.
-	*/
-
-	UNUSED_PARAMETER(volume);
-
-	rms_val = sqrtf(sum_val / (float)count);
-	max_val = sqrtf(max_val);
-
-	if (max_val > source->vol_max)
-		source->vol_max = max_val;
-	else
-		source->vol_max = alpha * source->vol_max +
-			(1.0f - alpha) * max_val;
-
-	if (source->vol_max > source->vol_peak ||
-	    source->vol_update_count > vol_peak_delay) {
-		source->vol_peak         = source->vol_max;
-		source->vol_update_count = 0;
-	} else {
-		source->vol_update_count += count;
-	}
-
-	source->vol_mag = alpha * rms_val + source->vol_mag * (1.0f - alpha);
-}
-
-/* TODO update peak/etc later */
-static void obs_source_update_volume_level(obs_source_t *source,
-		struct audio_data *in)
-{
-	if (source && in) {
-		struct calldata data = {0};
-
-		calc_volume_levels(source, (float*)in->data[0], in->frames,
-				in->volume);
-
-		calldata_set_ptr  (&data, "source",    source);
-		calldata_set_float(&data, "level",     source->vol_max);
-		calldata_set_float(&data, "magnitude", source->vol_mag);
-		calldata_set_float(&data, "peak",      source->vol_peak);
-
-		signal_handler_signal(source->context.signals, "volume_level",
-				&data);
-		signal_handler_signal(obs->signals, "source_volume_level",
-				&data);
-
-		calldata_free(&data);
-	}
-}
-
 static void source_signal_audio_data(obs_source_t *source,
 		struct audio_data *in)
 {
@@ -757,7 +682,6 @@ static void source_output_audio_line(obs_source_t *source,
 
 	audio_line_output(source->audio_line, &in);
 	source_signal_audio_data(source, &in);
-	obs_source_update_volume_level(source, &in);
 }
 
 enum convert_type {
