@@ -12,8 +12,6 @@
 
 using namespace std;
 
-#define UPDATE_INTERVAL_MS 50
-
 void VolControl::OBSVolumeChanged(void *data, calldata_t *calldata)
 {
 	Q_UNUSED(calldata);
@@ -42,17 +40,7 @@ void VolControl::VolumeChanged()
 
 void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 {
-	uint64_t curMeterTime = os_gettime_ns() / 1000000;
-
-	/*
-	   Add again peak averaging?
-	*/
-
-	/* only update after a certain amount of time */
-	if ((curMeterTime - lastMeterTime) > UPDATE_INTERVAL_MS) {
-		lastMeterTime = curMeterTime;
-		volMeter->setLevels(mag, peak, peakHold);
-	}
+	volMeter->setLevels(mag, peak, peakHold);
 }
 
 void VolControl::SliderChanged(int vol)
@@ -74,7 +62,6 @@ void VolControl::SetName(const QString &newName)
 
 VolControl::VolControl(OBSSource source_)
 	: source        (source_),
-	  lastMeterTime (0),
 	  levelTotal    (0.0f),
 	  levelCount    (0.0f),
 	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC)),
