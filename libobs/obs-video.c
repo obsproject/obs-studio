@@ -109,6 +109,44 @@ static inline void render_main_texture(struct obs_core_video *video,
 	video->textures_rendered[cur_texture] = true;
 }
 
+static inline gs_effect_t *get_scale_effect_internal(
+		struct obs_core_video *video)
+{
+	switch (video->scale_type) {
+	case OBS_SCALE_BILINEAR: return video->default_effect;
+	case OBS_SCALE_LANCZOS:  return video->lanczos_effect;
+	case OBS_SCALE_BICUBIC:;
+	}
+
+	return video->bicubic_effect;
+}
+
+static inline bool resolution_close(struct obs_core_video *video,
+		uint32_t width, uint32_t height)
+{
+	long width_cmp  = (long)video->base_width  - (long)width;
+	long height_cmp = (long)video->base_height - (long)height;
+
+	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
+}
+
+static inline gs_effect_t *get_scale_effect(struct obs_core_video *video,
+		uint32_t width, uint32_t height)
+{
+	if (resolution_close(video, width, height)) {
+		return video->default_effect;
+	} else {
+		/* if the scale method couldn't be loaded, use either bicubic
+		 * or bilinear by default */
+		gs_effect_t *effect = get_scale_effect_internal(video);
+		if (!effect)
+			effect = !!video->bicubic_effect ?
+				video->bicubic_effect :
+				video->default_effect;
+		return effect;
+	}
+}
+
 static inline void render_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
 {
@@ -116,13 +154,19 @@ static inline void render_output_texture(struct obs_core_video *video,
 	gs_texture_t *target  = video->output_textures[cur_texture];
 	uint32_t     width   = gs_texture_get_width(target);
 	uint32_t     height  = gs_texture_get_height(target);
+	struct vec2  base_i;
 
-	/* TODO: replace with actual downscalers or unpackers */
-	gs_effect_t    *effect  = video->default_effect;
+	vec2_set(&base_i,
+		1.0f / (float)video->base_width,
+		1.0f / (float)video->base_height);
+
+	gs_effect_t    *effect  = get_scale_effect(video, width, height);
 	gs_technique_t *tech    = gs_effect_get_technique(effect, "DrawMatrix");
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t    *matrix  = gs_effect_get_param_by_name(effect,
 			"color_matrix");
+	gs_eparam_t    *bres_i  = gs_effect_get_param_by_name(effect,
+			"base_dimension_i");
 	size_t      passes, i;
 
 	if (!video->textures_rendered[prev_texture])
@@ -130,6 +174,9 @@ static inline void render_output_texture(struct obs_core_video *video,
 
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
+
+	if (bres_i)
+		gs_effect_set_vec2(bres_i, &base_i);
 
 	gs_effect_set_val(matrix, video->color_matrix, sizeof(float) * 16);
 	gs_effect_set_texture(image, texture);

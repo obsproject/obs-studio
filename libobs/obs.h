@@ -104,6 +104,12 @@ enum obs_allow_direct_render {
 	OBS_ALLOW_DIRECT_RENDERING,
 };
 
+enum obs_scale_type {
+	OBS_SCALE_BICUBIC,
+	OBS_SCALE_BILINEAR,
+	OBS_SCALE_LANCZOS
+};
+
 /**
  * Used with scene items to indicate the type of bounds to use for scene items.
  * Mostly determines how the image will be scaled within those bounds, or
@@ -162,6 +168,8 @@ struct obs_video_info {
 
 	enum video_colorspace colorspace;  /**< YUV type (if YUV) */
 	enum video_range_type range;       /**< YUV range (if YUV) */
+
+	enum obs_scale_type scale_type;    /**< How to scale if scaling */
 };
 
 /**
@@ -479,6 +487,12 @@ EXPORT gs_effect_t *obs_get_default_rect_effect(void);
 
 /** Returns the solid effect for drawing solid colors */
 EXPORT gs_effect_t *obs_get_solid_effect(void);
+
+/** Returns the bicubic scaling effect */
+EXPORT gs_effect_t *obs_get_bicubic_effect(void);
+
+/** Returns the lanczos scaling effect */
+EXPORT gs_effect_t *obs_get_lanczos_effect(void);
 
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);

@@ -244,6 +244,16 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = find_libobs_data_file("bicubic_scale.effect");
+	video->bicubic_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
+	filename = find_libobs_data_file("lanczos_scale.effect");
+	video->lanczos_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	if (!video->default_effect)
 		success = false;
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
@@ -293,6 +303,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 	video->output_width   = ovi->output_width;
 	video->output_height  = ovi->output_height;
 	video->gpu_conversion = ovi->gpu_conversion;
+	video->scale_type     = ovi->scale_type;
 
 	set_video_matrix(video, ovi);
 
@@ -399,6 +410,8 @@ static void obs_free_graphics(void)
 		gs_effect_destroy(video->default_rect_effect);
 		gs_effect_destroy(video->solid_effect);
 		gs_effect_destroy(video->conversion_effect);
+		gs_effect_destroy(video->bicubic_effect);
+		gs_effect_destroy(video->lanczos_effect);
 		video->default_effect = NULL;
 
 		gs_leave_context();
@@ -756,6 +769,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	ovi->base_width    = video->base_width;
 	ovi->base_height   = video->base_height;
 	ovi->gpu_conversion= video->gpu_conversion;
+	ovi->scale_type    = video->scale_type;
 	ovi->colorspace    = info->colorspace;
 	ovi->range         = info->range;
 	ovi->output_width  = info->width;

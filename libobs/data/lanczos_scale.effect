@@ -1,0 +1,139 @@
+/*
+ * lanczos sharper
+ * note - this shader is adapted from the GPL bsnes shader, very good stuff
+ * there.
+ */
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+uniform float2 base_dimension_i;
+
+sampler_state textureSampler
+{
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	Filter    = Linear;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData input)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(input.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = input.uv;
+	return vert_out;
+}
+
+float sinc(float x)
+{
+	const float PIval = 3.1415926535897932384626433832795;
+	return sin(x * PIval) / (x * PIval);
+}
+
+float weight(float x, float radius)
+{
+	float ax = abs(x);
+	if (x == 0.0)
+		return 1.0;
+	else if (ax < radius)
+		return sinc(x) * sinc(x / radius);
+	else
+		return 0.0;
+}
+
+float3 weight3(float x)
+{
+	return float3(
+		weight(x * 2.0 + 0.0 * 2.0 - 3.0, 3.0),
+		weight(x * 2.0 + 1.0 * 2.0 - 3.0, 3.0),
+		weight(x * 2.0 + 2.0 * 2.0 - 3.0, 3.0));
+}
+
+float4 pixel(float xpos, float ypos)
+{
+	return image.Sample(textureSampler, float2(xpos, ypos));
+}
+
+float4 get_line(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
+		float3 rowtap2)
+{
+	return
+		pixel(xpos1.r, ypos) * rowtap1.r +
+		pixel(xpos1.g, ypos) * rowtap2.r +
+		pixel(xpos1.b, ypos) * rowtap1.g +
+		pixel(xpos2.r, ypos) * rowtap2.g +
+		pixel(xpos2.g, ypos) * rowtap1.b +
+		pixel(xpos2.b, ypos) * rowtap2.b;
+}
+
+float4 DrawLanczos(VertData input)
+{
+	float2 stepxy = base_dimension_i;
+	float2 pos = input.uv + stepxy * 0.5;
+	float2 f = frac(pos / stepxy);
+
+	float3 rowtap1 = weight3((1.0 - f.x) / 2.0);
+	float3 rowtap2 = weight3((1.0 - f.x) / 2.0 + 0.5);
+	float3 coltap1 = weight3((1.0 - f.y) / 2.0);
+	float3 coltap2 = weight3((1.0 - f.y) / 2.0 + 0.5);
+
+	/* make sure all taps added together is exactly 1.0, otherwise some
+         * (very small) distortion can occur */
+	float suml = rowtap1.r + rowtap1.g + rowtap1.b + rowtap2.r + rowtap2.g + rowtap2.b;
+	float sumc = coltap1.r + coltap1.g + coltap1.b + coltap2.r + coltap2.g + coltap2.b;
+	rowtap1 /= suml;
+	rowtap2 /= suml;
+	coltap1 /= sumc;
+	coltap2 /= sumc;
+
+	float2 xystart = (-2.5 - f) * stepxy + pos;
+	float3 xpos1 = float3(xystart.x                 , xystart.x + stepxy.x      , xystart.x + stepxy.x * 2.0);
+	float3 xpos2 = float3(xystart.x + stepxy.x * 3.0, xystart.x + stepxy.x * 4.0, xystart.x + stepxy.x * 5.0);
+
+	return
+		get_line(xystart.y                 , xpos1, xpos2, rowtap1, rowtap2) * coltap1.r +
+		get_line(xystart.y + stepxy.y      , xpos1, xpos2, rowtap1, rowtap2) * coltap2.r +
+		get_line(xystart.y + stepxy.y * 2.0, xpos1, xpos2, rowtap1, rowtap2) * coltap1.g +
+		get_line(xystart.y + stepxy.y * 3.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.g +
+		get_line(xystart.y + stepxy.y * 4.0, xpos1, xpos2, rowtap1, rowtap2) * coltap1.b +
+		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.b;
+}
+
+float4 PSDrawLanczosRGBA(VertData input) : TARGET
+{
+	return DrawLanczos(input);
+}
+
+float4 PSDrawLanczosMatrix(VertData input) : TARGET
+{
+	float4 rgba = DrawLanczos(input);
+	float4 yuv;
+
+	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(input);
+		pixel_shader  = PSDrawLanczosRGBA(input);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(input);
+		pixel_shader  = PSDrawLanczosMatrix(input);
+	}
+}

@@ -145,6 +145,8 @@ struct obs_core_video {
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *solid_effect;
 	gs_effect_t                     *conversion_effect;
+	gs_effect_t                     *bicubic_effect;
+	gs_effect_t                     *lanczos_effect;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 
@@ -164,6 +166,7 @@ struct obs_core_video {
 	uint32_t                        base_width;
 	uint32_t                        base_height;
 	float                           color_matrix[16];
+	enum obs_scale_type             scale_type;
 
 	struct obs_display              main_display;
 };
