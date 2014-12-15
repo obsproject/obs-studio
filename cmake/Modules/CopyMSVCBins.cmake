@@ -88,35 +88,11 @@ endif()
 file(GLOB QT_ICU_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/icu*.dll")
 
-if(MSVC12)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(D3D_COMPILER_PATH
-			"$ENV{VS120COMNTOOLS}/../../VC/bin/amd64/D3DCompiler_*.dll"
-			"$ENV{WindowsSdkDir}/bin/x64/d3dcompiler_*.dll"
-			"C:/Program Files (x86)/Windows Kits/8.1/bin/x64/d3dcompiler_*.dll"
-			"C:/Program Files/Windows Kits/8.1/bin/x64/d3dcompiler_*.dll")
-	else()
-		set(D3D_COMPILER_PATH
-			"$ENV{VS120COMNTOOLS}/../../VC/bin/D3DCompiler_*.dll"
-			"$ENV{WindowsSdkDir}/bin/x86/d3dcompiler_*.dll"
-			"C:/Program Files (x86)/Windows Kits/8.1/bin/x86/d3dcompiler_*.dll"
-			"C:/Program Files/Windows Kits/8.1/bin/x86/d3dcompiler_*.dll"
-			"C:/Program Files/Windows Kits/8.1/bin/d3dcompiler_*.dll")
-	endif()
-endif()
-
-file(TO_CMAKE_PATH "${D3D_COMPILER_PATH}" D3D_COMPILER_PATH)
-string(REGEX REPLACE "//" "/" D3D_COMPILER_PATH "${D3D_COMPILER_PATH}")
-
-file(GLOB D3D_COMPILER_BIN
-	${D3D_COMPILER_PATH})
-
 set(ALL_BASE_BIN_FILES
 	${FFMPEG_BIN_FILES}
 	${X264_BIN_FILES}
 	${LIBFDK_BIN_FILES}
-	${QT_ICU_BIN_FILES}
-	${D3D_COMPILER_BIN})
+	${QT_ICU_BIN_FILES})
 
 set(ALL_REL_BIN_FILES
 	${QT_BIN_FILES})
@@ -148,7 +124,6 @@ message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
 message(STATUS "QT Release files: ${QT_BIN_FILES}")
 message(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
 message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
-message(STATUS "D3D Compiler: ${D3D_COMPILER_BIN}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
 	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}")
