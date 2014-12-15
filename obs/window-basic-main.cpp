@@ -471,6 +471,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "FPSInt", 30);
 	config_set_default_uint  (basicConfig, "Video", "FPSNum", 30);
 	config_set_default_uint  (basicConfig, "Video", "FPSDen", 1);
+	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
 
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
@@ -1335,6 +1336,19 @@ static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 	return ret;
 }
 
+static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
+{
+	const char *scaleTypeStr = config_get_string(basicConfig,
+			"Video", "ScaleType");
+
+	if (astrcmpi(scaleTypeStr, "bilinear") == 0)
+		return OBS_SCALE_BILINEAR;
+	else if (astrcmpi(scaleTypeStr, "lanczos") == 0)
+		return OBS_SCALE_LANCZOS;
+	else
+		return OBS_SCALE_BICUBIC;
+}
+
 int OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
@@ -1356,6 +1370,7 @@ int OBSBasic::ResetVideo()
 	ovi.range          = VIDEO_RANGE_FULL;
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
+	ovi.scale_type     = GetScaleType(basicConfig);
 
 	QTToGSWindow(ui->preview->winId(), ovi.window);
 

@@ -866,7 +866,7 @@
          <item row="4" column="1">
           <widget class="QComboBox" name="downscaleFilter">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>

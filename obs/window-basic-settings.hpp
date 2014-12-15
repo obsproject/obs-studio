@@ -104,6 +104,7 @@ private:
 	/* video */
 	void LoadRendererList();
 	void ResetDownscales(uint32_t cx, uint32_t cy);
+	void LoadDownscaleFilters();
 	void LoadResolutionLists();
 	void LoadFPSData();
 

@@ -338,6 +338,29 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 	ui->outputResolution->lineEdit()->setText(ResString(cx, cy).c_str());
 }
 
+void OBSBasicSettings::LoadDownscaleFilters()
+{
+	ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Bilinear"),
+			QT_UTF8("bilinear"));
+	ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Bicubic"),
+			QT_UTF8("bicubic"));
+	ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Lanczos"),
+			QT_UTF8("lanczos"));
+
+	const char *scaleType = config_get_string(main->Config(),
+			"Video", "ScaleType");
+
+	if (astrcmpi(scaleType, "bilinear") == 0)
+		ui->downscaleFilter->setCurrentIndex(0);
+	else if (astrcmpi(scaleType, "lanczos") == 0)
+		ui->downscaleFilter->setCurrentIndex(2);
+	else
+		ui->downscaleFilter->setCurrentIndex(1);
+}
+
 void OBSBasicSettings::LoadResolutionLists()
 {
 	uint32_t cx = config_get_uint(main->Config(), "Video", "BaseCX");
@@ -415,6 +438,7 @@ void OBSBasicSettings::LoadVideoSettings()
 	LoadRendererList();
 	LoadResolutionLists();
 	LoadFPSData();
+	LoadDownscaleFilters();
 
 	loading = false;
 }
@@ -614,6 +638,7 @@ void OBSBasicSettings::SaveVideoSettings()
 	SaveSpinBox(ui->fpsInteger, "Video", "FPSInt");
 	SaveSpinBox(ui->fpsNumerator, "Video", "FPSNum");
 	SaveSpinBox(ui->fpsDenominator, "Video", "FPSDen");
+	SaveComboData(ui->downscaleFilter, "Video", "ScaleType");
 
 	main->ResetVideo();
 }
