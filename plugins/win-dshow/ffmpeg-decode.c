@@ -154,34 +154,6 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 	return len;
 }
 
-#define NAL_SLICE     1
-#define NAL_SLICE_IDR 5
-
-static bool avc_keyframe(const uint8_t *data, size_t size)
-{
-	const uint8_t *nal_start, *nal_end;
-	const uint8_t *end = data + size;
-	int type;
-
-	nal_start = obs_avc_find_startcode(data, end);
-	while (true) {
-		while (nal_start < end && !*(nal_start++));
-
-		if (nal_start == end)
-			break;
-
-		type = nal_start[0] & 0x1F;
-
-		if (type == NAL_SLICE_IDR || type == NAL_SLICE)
-			return (type == NAL_SLICE_IDR);
-
-		nal_end = obs_avc_find_startcode(nal_start, end);
-		nal_start = nal_end;
-	}
-
-	return false;
-}
-
 int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size, long long *ts,
 		struct obs_source_frame *frame,
@@ -201,7 +173,8 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	packet.size     = (int)size;
 	packet.pts      = *ts;
 
-	if (decode->codec->id == AV_CODEC_ID_H264 && avc_keyframe(data, size))
+	if (decode->codec->id == AV_CODEC_ID_H264 &&
+			obs_avc_keyframe(data, size))
 		packet.flags |= AV_PKT_FLAG_KEY;
 
 	if (!decode->frame) {
