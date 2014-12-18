@@ -43,6 +43,7 @@ struct rtmp_stream {
 
 	pthread_mutex_t  packets_mutex;
 	struct circlebuf packets;
+	bool             sent_headers;
 
 	bool             connecting;
 	pthread_t        connect_thread;
@@ -155,6 +156,8 @@ static void rtmp_stream_stop(void *data)
 	}
 
 	os_event_reset(stream->stop_event);
+
+	stream->sent_headers = false;
 }
 
 static inline void set_rtmp_str(AVal *val, const char *str)
@@ -207,9 +210,14 @@ static int send_packet(struct rtmp_stream *stream,
 	return ret;
 }
 
+static inline void send_headers(struct rtmp_stream *stream);
+
 static bool send_remaining_packets(struct rtmp_stream *stream)
 {
 	struct encoder_packet packet;
+
+	if (!stream->sent_headers)
+		send_headers(stream);
 
 	while (get_next_packet(stream, &packet))
 		if (send_packet(stream, &packet, false) < 0)
@@ -230,6 +238,10 @@ static void *send_thread(void *data)
 			break;
 		if (!get_next_packet(stream, &packet))
 			continue;
+
+		if (!stream->sent_headers)
+			send_headers(stream);
+
 		if (send_packet(stream, &packet, false) < 0) {
 			disconnected = true;
 			break;
@@ -299,9 +311,9 @@ static void send_video_header(struct rtmp_stream *stream)
 	send_packet(stream, &packet, true);
 }
 
-static void send_headers(struct rtmp_stream *stream)
+static inline void send_headers(struct rtmp_stream *stream)
 {
-	send_meta_data(stream);
+	stream->sent_headers = true;
 	send_audio_header(stream);
 	send_video_header(stream);
 }
@@ -351,7 +363,7 @@ static int init_send(struct rtmp_stream *stream)
 	}
 
 	stream->active = true;
-	send_headers(stream);
+	send_meta_data(stream);
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;

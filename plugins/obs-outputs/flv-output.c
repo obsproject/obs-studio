@@ -36,6 +36,7 @@ struct flv_output {
 	struct dstr  path;
 	FILE         *file;
 	bool         active;
+	bool         sent_headers;
 	int64_t      last_packet_ts;
 };
 
@@ -176,7 +177,6 @@ static bool flv_output_start(void *data)
 
 	/* write headers and start capture */
 	stream->active = true;
-	write_headers(stream);
 	obs_output_begin_data_capture(stream->output, 0);
 
 	info("Writing FLV file '%s'...", stream->path.array);
@@ -187,6 +187,11 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 {
 	struct flv_output     *stream = data;
 	struct encoder_packet parsed_packet;
+
+	if (!stream->sent_headers) {
+		write_headers(stream);
+		stream->sent_headers = true;
+	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		obs_parse_avc_packet(&parsed_packet, packet);
