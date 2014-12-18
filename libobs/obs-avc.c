@@ -19,26 +19,6 @@
 #include "obs-avc.h"
 #include "util/array-serializer.h"
 
-enum {
-	NAL_UNKNOWN   = 0,
-	NAL_SLICE     = 1,
-	NAL_SLICE_DPA = 2,
-	NAL_SLICE_DPB = 3,
-	NAL_SLICE_DPC = 4,
-	NAL_SLICE_IDR = 5,
-	NAL_SEI       = 6,
-	NAL_SPS       = 7,
-	NAL_PPS       = 8,
-	NAL_AUD       = 9,
-	NAL_FILLER    = 12,
-};
-
-enum {
-	NAL_PRIORITY_DISPOSABLE = 0,
-	NAL_PRIORITY_LOW        = 1,
-	NAL_PRIORITY_HIGH       = 2,
-	NAL_PRIORITY_HIGHEST    = 3,
-};
 
 /* NOTE: I noticed that FFmpeg does some unusual special handling of certain
  * scenarios that I was unaware of, so instead of just searching for {0, 0, 1}
@@ -91,11 +71,11 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 static inline int get_drop_priority(int priority)
 {
 	switch (priority) {
-	case NAL_PRIORITY_DISPOSABLE: return NAL_PRIORITY_DISPOSABLE;
-	case NAL_PRIORITY_LOW:        return NAL_PRIORITY_LOW;
+	case OBS_NAL_PRIORITY_DISPOSABLE: return OBS_NAL_PRIORITY_DISPOSABLE;
+	case OBS_NAL_PRIORITY_LOW:        return OBS_NAL_PRIORITY_LOW;
 	}
 
-	return NAL_PRIORITY_HIGHEST;
+	return OBS_NAL_PRIORITY_HIGHEST;
 }
 
 static void serialize_avc_data(struct serializer *s, const uint8_t *data,
@@ -114,9 +94,9 @@ static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 
 		type = nal_start[0] & 0x1F;
 
-		if (type == NAL_SLICE_IDR || type == NAL_SLICE) {
+		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
 			if (is_keyframe)
-				*is_keyframe = (type == NAL_SLICE_IDR);
+				*is_keyframe = (type == OBS_NAL_SLICE_IDR);
 			if (priority)
 				*priority = nal_start[0] >> 5;
 		}
@@ -171,10 +151,10 @@ static void get_sps_pps(const uint8_t *data, size_t size,
 		nal_end = obs_avc_find_startcode(nal_start, end);
 
 		type = nal_start[0] & 0x1F;
-		if (type == NAL_SPS) {
+		if (type == OBS_NAL_SPS) {
 			*sps = nal_start;
 			*sps_size = nal_end - nal_start;
-		} else if (type == NAL_PPS) {
+		} else if (type == OBS_NAL_PPS) {
 			*pps = nal_start;
 			*pps_size = nal_end - nal_start;
 		}
