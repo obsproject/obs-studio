@@ -3,11 +3,11 @@
 #include <obs-module.h>
 #include <obs.hpp>
 #include <util/dstr.hpp>
-#include <util/util.hpp>
 #include <util/platform.h>
 #include <util/windows/WinHandle.hpp>
 #include "libdshowcapture/dshowcapture.hpp"
 #include "ffmpeg-decode.h"
+#include "encode-dstr.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -317,18 +317,6 @@ static long long FrameRateInterval(const VideoInfo &cap,
 		min(desired_interval, cap.maxInterval);
 }
 
-static inline void encode_dstr(struct dstr *str)
-{
-	dstr_replace(str, "#", "#22");
-	dstr_replace(str, ":", "#3A");
-}
-
-static inline void decode_dstr(struct dstr *str)
-{
-	dstr_replace(str, "#3A", ":");
-	dstr_replace(str, "#22", "#");
-}
-
 static inline video_format ConvertVideoFormat(VideoFormat format)
 {
 	switch (format) {
@@ -494,48 +482,6 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		obs_source_output_audio(source, &audio);
 
 	UNUSED_PARAMETER(endTime);
-}
-
-static bool DecodeDeviceId(DStr &name, DStr &path, const char *device_id)
-{
-	const char *path_str;
-
-	if (!device_id || !*device_id)
-		return false;
-
-	path_str = strchr(device_id, ':');
-	if (!path_str)
-		return false;
-
-	dstr_copy(path, path_str+1);
-	dstr_copy(name, device_id);
-
-	size_t len = path_str - device_id;
-	name->array[len] = 0;
-	name->len        = len;
-
-	decode_dstr(name);
-	decode_dstr(path);
-
-	return true;
-}
-
-static bool DecodeDeviceId(DeviceId &out, const char *device_id)
-{
-	DStr name, path;
-
-	if (!DecodeDeviceId(name, path, device_id))
-		return false;
-
-	BPtr<wchar_t> wname = dstr_to_wcs(name);
-	out.name = wname;
-
-	if (!dstr_is_empty(path)) {
-		BPtr<wchar_t> wpath = dstr_to_wcs(path);
-		out.path = wpath;
-	}
-
-	return true;
 }
 
 struct PropertiesData {
@@ -1032,7 +978,7 @@ static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p,
 static size_t AddDevice(obs_property_t *device_list, const string &id)
 {
 	DStr name, path;
-	if (!DecodeDeviceId(name, path, id.c_str()))
+	if (!DecodeDeviceDStr(name, path, id.c_str()))
 		return numeric_limits<size_t>::max();
 
 	return obs_property_list_add_string(device_list, name, id.c_str());

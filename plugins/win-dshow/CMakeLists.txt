@@ -4,6 +4,7 @@ find_package(FFMpeg REQUIRED COMPONENTS avcodec avutil)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
 set(win-dshow_HEADERS
+	encode-dstr.hpp
 	ffmpeg-decode.h)
 
 set(win-dshow_SOURCES
