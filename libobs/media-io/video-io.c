@@ -192,6 +192,7 @@ static inline bool valid_video_params(const struct video_output_info *info)
 int video_output_open(video_t **video, struct video_output_info *info)
 {
 	struct video_output *out;
+	pthread_mutexattr_t attr;
 
 	if (!valid_video_params(info))
 		return VIDEO_OUTPUT_INVALIDPARAM;
@@ -205,9 +206,13 @@ int video_output_open(video_t **video, struct video_output_info *info)
 		(double)info->fps_num);
 	out->initialized = false;
 
-	if (pthread_mutex_init(&out->data_mutex, NULL) != 0)
+	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
-	if (pthread_mutex_init(&out->input_mutex, NULL) != 0)
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		goto fail;
+	if (pthread_mutex_init(&out->data_mutex, &attr) != 0)
+		goto fail;
+	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
 		goto fail;
 	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
