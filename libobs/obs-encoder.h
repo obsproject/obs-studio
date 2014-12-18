@@ -25,6 +25,10 @@
  * to process output data.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Specifies the encoder type */
 enum obs_encoder_type {
 	OBS_ENCODER_AUDIO, /**< The encoder provides an audio codec */
@@ -230,3 +234,7 @@ EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
  */
 #define obs_register_encoder(info) \
 	obs_register_encoder_s(info, sizeof(struct obs_encoder_info))
+
+#ifdef __cplusplus
+}
+#endif

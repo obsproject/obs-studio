@@ -17,6 +17,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define OBS_OUTPUT_VIDEO       (1<<0)
 #define OBS_OUTPUT_AUDIO       (1<<1)
 #define OBS_OUTPUT_AV          (OBS_OUTPUT_VIDEO | OBS_OUTPUT_AUDIO)
@@ -63,3 +67,7 @@ EXPORT void obs_register_output_s(const struct obs_output_info *info,
 
 #define obs_register_output(info) \
 	obs_register_output_s(info, sizeof(struct obs_output_info))
+
+#ifdef __cplusplus
+}
+#endif

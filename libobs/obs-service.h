@@ -24,6 +24,10 @@
  * Services are modules that implement provider specific settings for outputs.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct obs_service_info {
 	/* required */
 	const char *id;
@@ -67,3 +71,7 @@ EXPORT void obs_register_service_s(const struct obs_service_info *info,
 
 #define obs_register_service(info) \
 	obs_register_service_s(info, sizeof(struct obs_service_info))
+
+#ifdef __cplusplus
+}
+#endif
