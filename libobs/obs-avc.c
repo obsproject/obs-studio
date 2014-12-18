@@ -19,6 +19,30 @@
 #include "obs-avc.h"
 #include "util/array-serializer.h"
 
+bool obs_avc_keyframe(const uint8_t *data, size_t size)
+{
+	const uint8_t *nal_start, *nal_end;
+	const uint8_t *end = data + size;
+	int type;
+
+	nal_start = obs_avc_find_startcode(data, end);
+	while (true) {
+		while (nal_start < end && !*(nal_start++));
+
+		if (nal_start == end)
+			break;
+
+		type = nal_start[0] & 0x1F;
+
+		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE)
+			return (type == OBS_NAL_SLICE_IDR);
+
+		nal_end = obs_avc_find_startcode(nal_start, end);
+		nal_start = nal_end;
+	}
+
+	return false;
+}
 
 /* NOTE: I noticed that FFmpeg does some unusual special handling of certain
  * scenarios that I was unaware of, so instead of just searching for {0, 0, 1}

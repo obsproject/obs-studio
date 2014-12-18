@@ -48,6 +48,7 @@ enum {
 
 /* Helpers for parsing AVC NAL units.  */
 
+EXPORT bool obs_avc_keyframe(const uint8_t *data, size_t size);
 EXPORT const uint8_t *obs_avc_find_startcode(const uint8_t *p,
 		const uint8_t *end);
 EXPORT void obs_parse_avc_packet(struct encoder_packet *avc_packet,
