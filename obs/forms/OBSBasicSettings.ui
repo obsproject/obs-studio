@@ -412,7 +412,7 @@
                       <number>200</number>
                      </property>
                      <property name="maximum">
-                      <number>16000</number>
+                      <number>1000000</number>
                      </property>
                      <property name="value">
                       <number>2000</number>
