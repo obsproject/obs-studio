@@ -799,6 +799,19 @@ static inline bool set_planar420_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_nv12_sizes(struct obs_source *source,
+		struct obs_source_frame *frame)
+{
+	uint32_t size = frame->width * frame->height;
+	size += size/2;
+
+	source->async_convert_width   = frame->width;
+	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_texture_format  = GS_R8;
+	source->async_plane_offset[0] = frame->width * frame->height;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 		struct obs_source_frame *frame)
 {
@@ -811,8 +824,7 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 			return set_planar420_sizes(source, frame);
 
 		case CONVERT_NV12:
-			assert(false && "NV12 not yet implemented");
-			/* TODO: implement conversion */
+			return set_nv12_sizes(source, frame);
 			break;
 
 		case CONVERT_NONE:
@@ -897,7 +909,8 @@ static void upload_raw_frame(gs_texture_t *tex,
 			break;
 
 		case CONVERT_NV12:
-			assert(false && "Conversion not yet implemented");
+			gs_texture_set_image(tex, frame->data[0],
+					frame->width, false);
 			break;
 
 		case CONVERT_NONE:
@@ -922,7 +935,7 @@ static const char *select_conversion_technique(enum video_format format)
 			return "I420_Reverse";
 
 		case VIDEO_FORMAT_NV12:
-			assert(false && "Conversion not yet implemented");
+			return "NV12_Reverse";
 			break;
 
 		case VIDEO_FORMAT_BGRA:

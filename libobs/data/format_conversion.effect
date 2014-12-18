@@ -254,6 +254,31 @@ float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
 	);
 }
 
+float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
+{
+	float x = vert_in.uv.x;
+	float y = vert_in.uv.y;
+#ifdef _OPENGL
+	y = 1. - y;
+#endif
+	float x_offset   = floor(x * width  + PRECISION_OFFSET);
+	float y_offset   = floor(y * height + PRECISION_OFFSET);
+
+	float lum_offset = y_offset * width + x_offset + PRECISION_OFFSET;
+	lum_offset       = floor(lum_offset);
+
+	float ch_offset  = floor(y_offset * 0.5 + PRECISION_OFFSET) * width_d2 +
+		(x_offset * 0.5);
+	ch_offset        = floor(ch_offset * 2.0 + PRECISION_OFFSET);
+
+	return float4(
+		GetOffsetColor(lum_offset),
+		GetOffsetColor(u_plane_offset + ch_offset),
+		GetOffsetColor(u_plane_offset + ch_offset + 1.0),
+		1.0
+	);
+}
+
 technique Planar420
 {
 	pass
@@ -305,5 +330,14 @@ technique I420_Reverse
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSPlanar420_Reverse(vert_in);
+	}
+}
+
+technique NV12_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSNV12_Reverse(vert_in);
 	}
 }
