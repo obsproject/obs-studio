@@ -13,8 +13,11 @@ set(win-dshow_SOURCES
 
 set(libdshowcapture_SOURCES
 	libdshowcapture/source/capture-filter.cpp
+	libdshowcapture/source/output-filter.cpp
 	libdshowcapture/source/dshowcapture.cpp
+	libdshowcapture/source/dshowencode.cpp
 	libdshowcapture/source/device.cpp
+	libdshowcapture/source/encoder.cpp
 	libdshowcapture/source/dshow-base.cpp
 	libdshowcapture/source/dshow-demux.cpp
 	libdshowcapture/source/dshow-enum.cpp
@@ -27,7 +30,9 @@ set(libdshowcapture_HEADERS
 	libdshowcapture/dshowcapture.hpp
 	libdshowcapture/source/IVideoCaptureFilter.h
 	libdshowcapture/source/capture-filter.hpp
+	libdshowcapture/source/output-filter.hpp
 	libdshowcapture/source/device.hpp
+	libdshowcapture/source/encoder.hpp
 	libdshowcapture/source/dshow-base.hpp
 	libdshowcapture/source/dshow-demux.hpp
 	libdshowcapture/source/dshow-device-defs.hpp

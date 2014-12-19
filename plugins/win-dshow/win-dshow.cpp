@@ -323,6 +323,7 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 	case VideoFormat::ARGB:  return VIDEO_FORMAT_BGRA;
 	case VideoFormat::XRGB:  return VIDEO_FORMAT_BGRX;
 	case VideoFormat::I420:  return VIDEO_FORMAT_I420;
+	case VideoFormat::YV12:  return VIDEO_FORMAT_I420;
 	case VideoFormat::NV12:  return VIDEO_FORMAT_NV12;
 	case VideoFormat::YVYU:  return VIDEO_FORMAT_YVYU;
 	case VideoFormat::YUY2:  return VIDEO_FORMAT_YUY2;
@@ -411,6 +412,20 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 		frame.linesize[0] = cx;
 		frame.linesize[1] = cx / 2;
 		frame.linesize[2] = cx / 2;
+
+	} else if (videoConfig.format == VideoFormat::YV12) {
+		frame.data[0] = data;
+		frame.data[2] = frame.data[0] + (cx * cy);
+		frame.data[1] = frame.data[2] + (cx * cy / 4);
+		frame.linesize[0] = cx;
+		frame.linesize[1] = cx / 2;
+		frame.linesize[2] = cx / 2;
+
+	} else if (videoConfig.format == VideoFormat::NV12) {
+		frame.data[0] = data;
+		frame.data[1] = frame.data[0] + (cx * cy);
+		frame.linesize[0] = cx;
+		frame.linesize[1] = cx;
 
 	} else {
 		/* TODO: other formats */
@@ -960,6 +975,7 @@ static const VideoFormatName videoFormatNames[] = {
 	/* planar YUV formats */
 	{VideoFormat::I420,  "I420"},
 	{VideoFormat::NV12,  "NV12"},
+	{VideoFormat::YV12,  "YV12"},
 
 	/* packed YUV formats */
 	{VideoFormat::YVYU,  "YVYU"},
