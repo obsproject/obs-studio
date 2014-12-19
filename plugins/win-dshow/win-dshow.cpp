@@ -1538,9 +1538,6 @@ static obs_properties_t *GetDShowProperties(void *)
 	return ppts;
 }
 
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("win-dshow", "en-US")
-
 void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 {
 	int obs_type = LOG_DEBUG;
@@ -1560,7 +1557,7 @@ void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 	UNUSED_PARAMETER(param);
 }
 
-bool obs_module_load(void)
+void RegisterDShowSource()
 {
 	SetLogCallback(DShowModuleLogCallback, nullptr);
 
@@ -1577,6 +1574,4 @@ bool obs_module_load(void)
 	info.get_defaults    = GetDShowDefaults;
 	info.get_properties  = GetDShowProperties;
 	obs_register_source(&info);
-
-	return true;
 }

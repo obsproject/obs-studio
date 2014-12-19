@@ -9,6 +9,7 @@ set(win-dshow_HEADERS
 
 set(win-dshow_SOURCES
 	win-dshow.cpp
+	dshow-plugin.cpp
 	ffmpeg-decode.c)
 
 set(libdshowcapture_SOURCES
