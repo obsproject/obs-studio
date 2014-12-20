@@ -53,7 +53,8 @@ set(knownComponents XCB
                     UTIL
                     XFIXES
                     XTEST
-                    XV)
+                    XV
+                    XINERAMA)
 
 unset(unknownComponents)
 
@@ -111,6 +112,8 @@ foreach(comp ${comps})
             list(APPEND pkgConfigModules "xcb-xtest")
         elseif("${comp}" STREQUAL "XV")
             list(APPEND pkgConfigModules "xcb-xv")
+        elseif("${comp}" STREQUAL "XINERAMA")
+            list(APPEND pkgConfigModules "xcb-xinerama")
         endif()
     endif()
 endforeach()
@@ -187,6 +190,9 @@ macro(_XCB_HANDLE_COMPONENT _comp)
     elseif("${_comp}" STREQUAL "XV")
         set(_header "xcb/xv.h")
         set(_lib "xcb-xv")
+    elseif("${_comp}" STREQUAL "XINERAMA")
+        set(_header "xcb/xinerama.h")
+        set(_lib "xcb-xinerama")
     endif()
 
     find_path(XCB_${_comp}_INCLUDE_DIR NAMES ${_header} HINTS ${PKG_XCB_INCLUDE_DIRS})

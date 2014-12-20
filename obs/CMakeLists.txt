@@ -70,16 +70,19 @@ elseif(UNIX)
 	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
 
-	find_package(X11)
-	include_directories(${X11_INCLUDE_DIRS} ${X11_Xinerama_INCLUDE_PATH})
-
-	if(NOT X11_Xinerama_FOUND)
-		message(FATAL_ERROR "Xinerama not found!")
-	endif()
+	find_package(XCB COMPONENTS XCB REQUIRED RANDR REQUIRED XINERAMA REQUIRED)
+	
+	include_directories(
+		${XCB_INCLUDE_DIRS}
+		${X11_XCB_INCLUDE_DIRS})
+		
+	add_definitions(
+		${XCB_DEFINITIONS}
+		${X11_XCB_DEFINITIONS})
 
 	set(obs_PLATFORM_LIBRARIES
-		${X11_LIBRARIES}
-		${X11_Xinerama_LIB}
+		${XCB_LIBRARIES}
+		${X11_XCB_LIBRARIES}
                 Qt5::X11Extras)
 endif()
 
