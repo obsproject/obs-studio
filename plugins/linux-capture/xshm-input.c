@@ -42,6 +42,7 @@ struct xshm_data {
 	Screen *screen;
 
 	xcb_connection_t *xcb;
+	xcb_screen_t     *xcb_screen;
 
 	/** user setting - the server name to capture from */
 	char *server;
@@ -114,7 +115,8 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen = XDefaultScreenOfDisplay(data->dpy);
+		data->screen     = XDefaultScreenOfDisplay(data->dpy);
+		data->xcb_screen = xcb_get_screen(data->xcb, 0);
 	}
 	else {
 		data->x_org = 0;
@@ -123,7 +125,8 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen = XScreenOfDisplay(data->dpy, data->screen_id);
+		data->screen     = XScreenOfDisplay(data->dpy, data->screen_id);
+		data->xcb_screen = xcb_get_screen(data->xcb, data->screen_id);
 	}
 
 	if (!data->width || !data->height) {
