@@ -91,64 +91,6 @@ fail:
 	return -1;
 }
 
-xshm_t *xshm_attach(Display *dpy, Screen *screen,
-	int_fast32_t w, int_fast32_t h)
-{
-	if (!dpy || !screen)
-		return NULL;
-
-	xshm_t *xshm = bzalloc(sizeof(xshm_t));
-
-	xshm->dpy = dpy;
-	xshm->image = XShmCreateImage(xshm->dpy, DefaultVisualOfScreen(screen),
-		DefaultDepthOfScreen(screen), ZPixmap, NULL, &xshm->info,
-		w, h);
-	if (!xshm->image)
-		goto fail;
-
-	xshm->info.shmid = shmget(IPC_PRIVATE,
-		xshm->image->bytes_per_line * xshm->image->height,
-		IPC_CREAT | 0700);
-	if (xshm->info.shmid < 0)
-		goto fail;
-
-	xshm->info.shmaddr
-		= xshm->image->data
-		= (char *) shmat(xshm->info.shmid, 0, 0);
-	if (xshm->info.shmaddr == (char *) -1)
-		goto fail;
-	xshm->info.readOnly = false;
-
-	if (!XShmAttach(xshm->dpy, &xshm->info))
-		goto fail;
-
-	xshm->attached = true;
-	return xshm;
-fail:
-	xshm_detach(xshm);
-	return NULL;
-}
-
-void xshm_detach(xshm_t *xshm)
-{
-	if (!xshm)
-		return;
-
-	if (xshm->attached)
-		XShmDetach(xshm->dpy, &xshm->info);
-
-	if (xshm->info.shmaddr != (char *) -1)
-		shmdt(xshm->info.shmaddr);
-
-	if (xshm->info.shmid != -1)
-		shmctl(xshm->info.shmid, IPC_RMID, NULL);
-
-	if (xshm->image)
-		XDestroyImage(xshm->image);
-
-	bfree(xshm);
-}
-
 xcb_shm_t* xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h)
 {
 	if (!xcb)

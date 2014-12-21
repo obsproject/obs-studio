@@ -22,17 +22,9 @@ extern "C" {
 #endif
 
 #include <X11/Xlib.h>
-#include <X11/extensions/XShm.h>
 #include <xcb/shm.h>
 #include <xcb/xproto.h>
 #include <obs.h>
-
-typedef struct {
-	XShmSegmentInfo info;
-	XImage *image;
-	Display *dpy;
-	bool attached;
-} xshm_t;
 
 typedef struct {
 	xcb_connection_t *xcb;
@@ -86,24 +78,6 @@ int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
  */
 int_fast32_t x11_screen_geo(Display *dpy, const int_fast32_t screen,
 	int_fast32_t *w, int_fast32_t *h);
-
-/**
- * Attach a shared memory segment to the X-Server
- *
- * @param dpy X11 Display
- * @param screen X11 Screen
- * @param w width for the shared memory segment
- * @param h height for the shared memory segment
- *
- * @return NULL on error
- */
-xshm_t *xshm_attach(Display *dpy, Screen *screen,
-	int_fast32_t w, int_fast32_t h);
-
-/**
- * Detach a shared memory segment
- */
-void xshm_detach(xshm_t *xshm);
 
 /**
  * Attach a shared memory segment to the X-Server

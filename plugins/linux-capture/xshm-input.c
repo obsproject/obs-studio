@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+//#include <X11/Xlib.h>
+//#include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <xcb/shm.h>
 #include <xcb/xfixes.h>
