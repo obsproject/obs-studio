@@ -24,6 +24,7 @@ extern "C" {
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
 #include <xcb/shm.h>
+#include <xcb/xproto.h>
 #include <obs.h>
 
 typedef struct {
@@ -119,6 +120,15 @@ xcb_shm_t *xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h);
  * Detach a shared memory segment
  */
 void xshm_xcb_detach(xcb_shm_t *shm);
+
+/**
+ * Get screen by id for a xcb connection
+ *
+ * @param xcb xcb connection
+ * @param screen id of the screen
+ * @return screen info structure
+ */
+xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen);
 
 #ifdef __cplusplus
 }

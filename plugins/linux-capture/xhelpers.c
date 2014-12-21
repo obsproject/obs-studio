@@ -188,3 +188,15 @@ void xshm_xcb_detach(xcb_shm_t *shm)
 	bfree(shm);
 }
 
+xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen)
+{
+	xcb_screen_iterator_t iter;
+
+	iter = xcb_setup_roots_iterator(xcb_get_setup(xcb));
+	for (; iter.rem; --screen, xcb_screen_next(&iter)) {
+		if (screen == 0)
+			return iter.data;
+	}
+
+	return NULL;
+}
