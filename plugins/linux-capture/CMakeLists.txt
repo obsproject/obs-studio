@@ -13,7 +13,6 @@ include_directories(SYSTEM
 	"${CMAKE_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
-	${X11_XCB_INCLUDE_DIR}
 	${XCB_INCLUDE_DIRS}
 )
 
@@ -43,12 +42,9 @@ target_link_libraries(linux-capture
 	libobs
 	glad
 	${X11_LIBRARIES}
-	${X11_XShm_LIB}
 	${X11_Xfixes_LIB}
-	${X11_Xinerama_LIB}
 	${X11_X11_LIB}
 	${X11_Xcomposite_LIB}
-	${X11_XCB_LIBRARIES}
 	${XCB_LIBRARIES}
 )
 
