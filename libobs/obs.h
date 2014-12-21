@@ -1132,7 +1132,7 @@ EXPORT void obs_output_signal_stop(obs_output_t *output, int code);
 /* ------------------------------------------------------------------------- */
 /* Encoders */
 
-EXPORT const char *obs_encoder_getdisplayname(const char *id);
+EXPORT const char *obs_encoder_get_display_name(const char *id);
 
 /**
  * Creates a video encoder context
