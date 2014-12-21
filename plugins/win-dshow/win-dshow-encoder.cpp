@@ -42,9 +42,14 @@ struct DShowEncoder {
 			struct encoder_packet *packet, bool *received_packet);
 };
 
-static const char *GetDShowEncoderName(void)
+static const char *GetC985EncoderName(void)
 {
-	return "DShow Encoder (temp)";
+	return obs_module_text("Encoder.C985");
+}
+
+static const char *GetC353EncoderName(void)
+{
+	return obs_module_text("Encoder.C353");
 }
 
 static inline void FindDevice(DeviceId &id, const wchar_t *name)
@@ -331,7 +336,6 @@ void RegisterDShowEncoders()
 	obs_encoder_info info  = {};
 	info.type              = OBS_ENCODER_VIDEO;
 	info.codec             = "h264";
-	info.get_name          = GetDShowEncoderName;
 	info.destroy           = DestroyDShowEncoder;
 	info.encode            = DShowEncode;
 	info.update            = UpdateDShowEncoder;
@@ -348,12 +352,14 @@ void RegisterDShowEncoders()
 	for (const DeviceId &device : devices) {
 		if (!foundC985 && device.name.find(L"C985") != string::npos) {
 			info.id = "dshow_c985_h264";
+			info.get_name = GetC985EncoderName;
 			info.create = CreateC985Encoder;
 			obs_register_encoder(&info);
 			foundC985 = true;
 
 		} else if (device.name.find(L"C353") != string::npos) {
 			info.id = "dshow_c353_h264";
+			info.get_name = GetC353EncoderName;
 			info.create = CreateC353Encoder;
 			obs_register_encoder(&info);
 		}
