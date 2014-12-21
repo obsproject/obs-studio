@@ -205,10 +205,8 @@ static void xshm_capture_start(struct xshm_data *data)
 	XSetEventQueueOwner(data->dpy, XCBOwnsEventQueue);
 	data->xcb = XGetXCBConnection(data->dpy);
 
-	if (!XShmQueryExtension(data->dpy)) {
-		blog(LOG_ERROR, "XShm extension not found !");
+	if (!xshm_check_extensions(data->xcb))
 		goto fail;
-	}
 
 	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
 
