@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include <X11/Xlib-xcb.h>
 #include <xcb/shm.h>
 #include <xcb/xfixes.h>
 #include <xcb/xinerama.h>
@@ -35,10 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 struct xshm_data {
 	/** The source object */
 	obs_source_t *source;
-	/** Xlib display object */
-	Display *dpy;
-	/** Xlib screen object */
-	Screen *screen;
 
 	xcb_connection_t *xcb;
 	xcb_screen_t     *xcb_screen;
@@ -114,7 +109,6 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen     = XDefaultScreenOfDisplay(data->dpy);
 		data->xcb_screen = xcb_get_screen(data->xcb, 0);
 	}
 	else {
@@ -124,7 +118,6 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen     = XScreenOfDisplay(data->dpy, data->screen_id);
 		data->xcb_screen = xcb_get_screen(data->xcb, data->screen_id);
 	}
 
@@ -174,10 +167,9 @@ static void xshm_capture_stop(struct xshm_data *data)
 		data->xshm = NULL;
 	}
 
-	if (data->dpy) {
-		XSync(data->dpy, true);
-		XCloseDisplay(data->dpy);
-		data->dpy = NULL;
+	if (data->xcb) {
+		xcb_disconnect(data->xcb);
+		data->xcb = NULL;
 	}
 
 	if (data->server) {
@@ -194,14 +186,11 @@ static void xshm_capture_start(struct xshm_data *data)
 	const char *server = (data->advanced && *data->server)
 			? data->server : NULL;
 
-	data->dpy = XOpenDisplay(server);
-	if (!data->dpy) {
+	data->xcb = xcb_connect(server, NULL);
+	if (!data->xcb || xcb_connection_has_error(data->xcb)) {
 		blog(LOG_ERROR, "Unable to open X display !");
 		goto fail;
 	}
-
-	XSetEventQueueOwner(data->dpy, XCBOwnsEventQueue);
-	data->xcb = XGetXCBConnection(data->dpy);
 
 	if (!xshm_check_extensions(data->xcb))
 		goto fail;
@@ -296,20 +285,18 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	obs_property_list_clear(screens);
 
-	Display *dpy = XOpenDisplay(server);
-	if (!dpy) {
+	xcb_connection_t *xcb = xcb_connect(server, NULL);
+	if (!xcb || xcb_connection_has_error(xcb)) {
 		obs_property_set_enabled(screens, false);
 		return true;
 	}
-
-	XSetEventQueueOwner(dpy, XCBOwnsEventQueue);
-	xcb_connection_t *xcb = XGetXCBConnection(dpy);
 
 	struct dstr screen_info;
 	dstr_init(&screen_info);
 	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count = (xinerama) ?
-			xinerama_screen_count(xcb) : XScreenCount(dpy);
+			xinerama_screen_count(xcb) :
+			xcb_setup_roots_length(xcb_get_setup(xcb));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		int_fast32_t x, y, w, h;
@@ -339,7 +326,7 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	dstr_free(&screen_info);
 
-	XCloseDisplay(dpy);
+	xcb_disconnect(xcb);
 	obs_property_set_enabled(screens, true);
 
 	return true;
