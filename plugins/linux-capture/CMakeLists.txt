@@ -6,11 +6,16 @@ if(NOT X11_Xcomposite_FOUND)
 	return()
 endif()
 
+find_package(XCB COMPONENTS XCB SHM XFIXES XINERAMA REQUIRED)
+find_package(X11_XCB REQUIRED)
+
 include_directories(SYSTEM
 	"${CMAKE_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
-) 
+	${X11_XCB_INCLUDE_DIR}
+	${XCB_INCLUDE_DIRS}
+)
 
 set(linux-capture_SOURCES
 	linux-capture.c
@@ -41,6 +46,8 @@ target_link_libraries(linux-capture
 	${X11_Xinerama_LIB}
 	${X11_X11_LIB}
 	${X11_Xcomposite_LIB}
+	${X11_XCB_LIBRARIES}
+	${XCB_LIBRARIES}
 )
 
 install_obs_plugin_with_data(linux-capture data)
