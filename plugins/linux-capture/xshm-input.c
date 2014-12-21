@@ -53,7 +53,7 @@ struct xshm_data {
 	/** size for the capture */
 	int_fast32_t width, height;
 	/** shared memory management object */
-	xshm_t *xshm;
+	xcb_shm_t *xshm;
 	/** the texture used to display the capture */
 	gs_texture_t *texture;
 	/** cursor object for displaying the server */
@@ -171,7 +171,7 @@ static void xshm_capture_stop(struct xshm_data *data)
 	obs_leave_graphics();
 
 	if (data->xshm) {
-		xshm_detach(data->xshm);
+		xshm_xcb_detach(data->xshm);
 		data->xshm = NULL;
 	}
 
@@ -216,8 +216,7 @@ static void xshm_capture_start(struct xshm_data *data)
 		goto fail;
 	}
 
-	data->xshm = xshm_attach(data->dpy, data->screen,
-		data->width, data->height);
+	data->xshm = xshm_xcb_attach(data->xcb, data->width, data->height);
 	if (!data->xshm) {
 		blog(LOG_ERROR, "failed to attach shm !");
 		goto fail;
@@ -416,16 +415,27 @@ static void xshm_video_tick(void *vptr, float seconds)
 	if (!data->texture)
 		return;
 
+	xcb_shm_get_image_cookie_t img_c;
+	xcb_shm_get_image_reply_t  *img_r;
+
+	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
+			data->x_org, data->y_org, data->width, data->height,
+			~0, XCB_IMAGE_FORMAT_Z_PIXMAP, data->xshm->seg, 0);
+	img_r  = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
+
+	if (!img_r)
+		return;
+
 	obs_enter_graphics();
 
-	XShmGetImage(data->dpy, XRootWindowOfScreen(data->screen),
-		data->xshm->image, data->x_org, data->y_org, AllPlanes);
-	gs_texture_set_image(data->texture, (void *) data->xshm->image->data,
+	gs_texture_set_image(data->texture, (void *) data->xshm->data,
 		data->width * 4, false);
 
 	xcursor_tick(data->cursor);
 
 	obs_leave_graphics();
+
+	free(img_r);
 }
 
 /**
