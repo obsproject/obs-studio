@@ -32,32 +32,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define blog(level, msg, ...) blog(level, "xshm-input: " msg, ##__VA_ARGS__)
 
 struct xshm_data {
-	/** The source object */
-	obs_source_t *source;
+	obs_source_t     *source;
 
 	xcb_connection_t *xcb;
 	xcb_screen_t     *xcb_screen;
+	xcb_shm_t        *xshm;
+	xcb_xcursor_t    *cursor;
 
-	/** user setting - the server name to capture from */
-	char *server;
-	/** user setting - the id of the screen that should be captured */
-	uint_fast32_t screen_id;
-	/** root coordinates for the capture */
-	int_fast32_t x_org, y_org;
-	/** size for the capture */
-	int_fast32_t width, height;
-	/** shared memory management object */
-	xcb_shm_t *xshm;
-	/** the texture used to display the capture */
-	gs_texture_t *texture;
-	/** cursor object for displaying the server */
-	xcb_xcursor_t *cursor;
-	/** user setting - if cursor should be displayed  */
-	bool show_cursor;
-	/** set if xinerama is available and active on the screen */
-	bool use_xinerama;
-	/** user setting - if advanced settings should be displayed */
-	bool advanced;
+	char             *server;
+	uint_fast32_t    screen_id;
+	int_fast32_t     x_org;
+	int_fast32_t     y_org;
+	int_fast32_t     width;
+	int_fast32_t     height;
+
+	gs_texture_t     *texture;
+
+	bool             show_cursor;
+	bool             use_xinerama;
+	bool             advanced;
 };
 
 /**
