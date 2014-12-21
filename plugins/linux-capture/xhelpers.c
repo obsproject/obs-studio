@@ -148,3 +148,43 @@ void xshm_detach(xshm_t *xshm)
 
 	bfree(xshm);
 }
+
+xcb_shm_t* xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h)
+{
+	if (!xcb)
+		return NULL;
+
+	xcb_shm_t *shm = bzalloc(sizeof(xcb_shm_t));
+	shm->xcb       = xcb;
+	shm->seg       = xcb_generate_id(shm->xcb);
+
+	shm->shmid = shmget(IPC_PRIVATE, w * h * 4, IPC_CREAT | 0777);
+	if (shm->shmid == -1)
+		goto fail;
+
+	xcb_shm_attach(shm->xcb, shm->seg, shm->shmid, false);
+
+	shm->data = shmat(shm->shmid, NULL, 0);
+
+	return shm;
+fail:
+	xshm_xcb_detach(shm);
+	return NULL;
+}
+
+void xshm_xcb_detach(xcb_shm_t *shm)
+{
+	if (!shm)
+		return;
+
+	xcb_shm_detach(shm->xcb, shm->seg);
+
+	if ((char *) shm->data != (char *) -1)
+		shmdt(shm->data);
+
+	if (shm->shmid != -1)
+		shmctl(shm->shmid, IPC_RMID, NULL);
+
+	bfree(shm);
+}
+

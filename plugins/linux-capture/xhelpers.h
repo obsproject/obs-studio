@@ -23,6 +23,7 @@ extern "C" {
 
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
+#include <xcb/shm.h>
 #include <obs.h>
 
 typedef struct {
@@ -31,6 +32,13 @@ typedef struct {
 	Display *dpy;
 	bool attached;
 } xshm_t;
+
+typedef struct {
+	xcb_connection_t *xcb;
+	xcb_shm_seg_t    seg;
+	int              shmid;
+	uint8_t          *data;
+} xcb_shm_t;
 
 /**
  * Check for Xinerama extension
@@ -95,6 +103,22 @@ xshm_t *xshm_attach(Display *dpy, Screen *screen,
  * Detach a shared memory segment
  */
 void xshm_detach(xshm_t *xshm);
+
+/**
+ * Attach a shared memory segment to the X-Server
+ *
+ * @param xcb xcb connection
+ * @param w width of the captured screen
+ * @param h height of the captured screen
+ *
+ * @return NULL on error
+ */
+xcb_shm_t *xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h);
+
+/**
+ * Detach a shared memory segment
+ */
+void xshm_xcb_detach(xcb_shm_t *shm);
 
 #ifdef __cplusplus
 }
