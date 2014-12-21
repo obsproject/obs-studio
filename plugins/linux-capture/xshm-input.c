@@ -20,6 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xlib-xcb.h>
+#include <xcb/shm.h>
+#include <xcb/xinerama.h>
 
 #include <obs-module.h>
 #include <util/dstr.h>
@@ -72,6 +75,24 @@ static inline void xshm_resize_texture(struct xshm_data *data)
 		gs_texture_destroy(data->texture);
 	data->texture = gs_texture_create(data->width, data->height,
 		GS_BGRA, 1, NULL, GS_DYNAMIC);
+}
+
+/**
+ * Check if the xserver supports all the extensions we need
+ */
+static bool xshm_check_extensions(xcb_connection_t *xcb)
+{
+	bool ok = true;
+
+	if (!xcb_get_extension_data(xcb, &xcb_shm_id)->present) {
+		blog(LOG_ERROR, "Missing SHM extension !");
+		ok = false;
+	}
+
+	if (!xcb_get_extension_data(xcb, &xcb_xinerama_id)->present)
+		blog(LOG_INFO, "Missing Xinerama extension !");
+
+	return ok;
 }
 
 /**
