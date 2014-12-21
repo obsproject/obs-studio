@@ -32,7 +32,6 @@ private:
 	QLabel          *volLabel;
 	VolumeMeter     *volMeter;
 	QSlider         *slider;
-	uint64_t        lastMeterTime;
 	float           levelTotal;
 	float           levelCount;
 	obs_fader_t     *obs_fader;
