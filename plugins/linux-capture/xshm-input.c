@@ -22,11 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <xcb/shm.h>
+#include <xcb/xfixes.h>
 #include <xcb/xinerama.h>
 
 #include <obs-module.h>
 #include <util/dstr.h>
-#include "xcursor.h"
+#include "xcursor-xcb.h"
 #include "xhelpers.h"
 
 #define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
@@ -57,7 +58,7 @@ struct xshm_data {
 	/** the texture used to display the capture */
 	gs_texture_t *texture;
 	/** cursor object for displaying the server */
-	xcursor_t *cursor;
+	xcb_xcursor_t *cursor;
 	/** user setting - if cursor should be displayed  */
 	bool show_cursor;
 	/** set if xinerama is available and active on the screen */
@@ -164,7 +165,7 @@ static void xshm_capture_stop(struct xshm_data *data)
 		data->texture = NULL;
 	}
 	if (data->cursor) {
-		xcursor_destroy(data->cursor);
+		xcb_xcursor_destroy(data->cursor);
 		data->cursor = NULL;
 	}
 
@@ -222,10 +223,11 @@ static void xshm_capture_start(struct xshm_data *data)
 		goto fail;
 	}
 
+	data->cursor = xcb_xcursor_init(data->xcb);
+	xcb_xcursor_offset(data->cursor, data->x_org, data->y_org);
+
 	obs_enter_graphics();
 
-	data->cursor = xcursor_init(data->dpy);
-	xcursor_offset(data->cursor, data->x_org, data->y_org);
 	xshm_resize_texture(data);
 
 	obs_leave_graphics();
@@ -415,27 +417,33 @@ static void xshm_video_tick(void *vptr, float seconds)
 	if (!data->texture)
 		return;
 
-	xcb_shm_get_image_cookie_t img_c;
-	xcb_shm_get_image_reply_t  *img_r;
+	xcb_shm_get_image_cookie_t           img_c;
+	xcb_shm_get_image_reply_t            *img_r;
+	xcb_xfixes_get_cursor_image_cookie_t cur_c;
+	xcb_xfixes_get_cursor_image_reply_t  *cur_r;
 
 	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
 			data->x_org, data->y_org, data->width, data->height,
 			~0, XCB_IMAGE_FORMAT_Z_PIXMAP, data->xshm->seg, 0);
-	img_r  = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
+	cur_c = xcb_xfixes_get_cursor_image_unchecked(data->xcb);
+
+	img_r = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
+	cur_r = xcb_xfixes_get_cursor_image_reply(data->xcb, cur_c, NULL);
 
 	if (!img_r)
-		return;
+		goto exit;
 
 	obs_enter_graphics();
 
 	gs_texture_set_image(data->texture, (void *) data->xshm->data,
 		data->width * 4, false);
-
-	xcursor_tick(data->cursor);
+	xcb_xcursor_update(data->cursor, cur_r);
 
 	obs_leave_graphics();
 
+exit:
 	free(img_r);
+	free(cur_r);
 }
 
 /**
@@ -455,7 +463,7 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 	gs_draw_sprite(data->texture, 0, 0, 0);
 
 	if (data->show_cursor)
-		xcursor_render(data->cursor);
+		xcb_xcursor_render(data->cursor);
 
 	gs_reset_blend_state();
 }
