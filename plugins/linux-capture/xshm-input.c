@@ -40,6 +40,9 @@ struct xshm_data {
 	Display *dpy;
 	/** Xlib screen object */
 	Screen *screen;
+
+	xcb_connection_t *xcb;
+
 	/** user setting - the server name to capture from */
 	char *server;
 	/** user setting - the id of the screen that should be captured */
@@ -195,6 +198,9 @@ static void xshm_capture_start(struct xshm_data *data)
 		goto fail;
 	}
 
+	XSetEventQueueOwner(data->dpy, XCBOwnsEventQueue);
+	data->xcb = XGetXCBConnection(data->dpy);
+
 	if (!XShmQueryExtension(data->dpy)) {
 		blog(LOG_ERROR, "XShm extension not found !");
 		goto fail;
@@ -295,6 +301,9 @@ static bool xshm_server_changed(obs_properties_t *props,
 		obs_property_set_enabled(screens, false);
 		return true;
 	}
+
+	XSetEventQueueOwner(dpy, XCBOwnsEventQueue);
+	xcb_connection_t *xcb = XGetXCBConnection(dpy);
 
 	struct dstr screen_info;
 	dstr_init(&screen_info);
