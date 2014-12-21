@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <X11/Xlib.h>
 #include <xcb/shm.h>
 #include <xcb/xproto.h>
 #include <obs.h>
@@ -36,16 +35,16 @@ typedef struct {
 /**
  * Check for Xinerama extension
  *
- * @return > 0 if Xinerama is available and active
+ * @return true if xinerama is available and active
  */
-int_fast32_t xinerama_is_active(Display *dpy);
+bool xinerama_is_active(xcb_connection_t *xcb);
 
 /**
  * Get the number of Xinerama screens
  *
  * @return number of screens
  */
-int_fast32_t xinerama_screen_count(Display *dpy);
+int xinerama_screen_count(xcb_connection_t *xcb);
 
 /**
  * Get screen geometry for a Xinerama screen
@@ -61,8 +60,9 @@ int_fast32_t xinerama_screen_count(Display *dpy);
  *
  * @return < 0 on error
  */
-int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *x, int_fast32_t *y, int_fast32_t *w, int_fast32_t *h);
+int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *x, int_fast32_t *y,
+		int_fast32_t *w, int_fast32_t *h);
 
 /**
  * Get screen geometry for a X11 screen
@@ -76,8 +76,8 @@ int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
  *
  * @return < 0 on error
  */
-int_fast32_t x11_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *w, int_fast32_t *h);
+int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *w, int_fast32_t *h);
 
 /**
  * Attach a shared memory segment to the X-Server

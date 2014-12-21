@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-//#include <X11/Xlib.h>
-//#include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <xcb/shm.h>
 #include <xcb/xfixes.h>
@@ -111,7 +109,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	int_fast32_t old_height = data->height;
 
 	if (data->use_xinerama) {
-		if (xinerama_screen_geo(data->dpy, data->screen_id,
+		if (xinerama_screen_geo(data->xcb, data->screen_id,
 			&data->x_org, &data->y_org,
 			&data->width, &data->height) < 0) {
 			return -1;
@@ -122,7 +120,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	else {
 		data->x_org = 0;
 		data->y_org = 0;
-		if (x11_screen_geo(data->dpy, data->screen_id,
+		if (x11_screen_geo(data->xcb, data->screen_id,
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
@@ -208,7 +206,7 @@ static void xshm_capture_start(struct xshm_data *data)
 	if (!xshm_check_extensions(data->xcb))
 		goto fail;
 
-	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
+	data->use_xinerama = xinerama_is_active(data->xcb) ? true : false;
 
 	if (xshm_update_geometry(data) < 0) {
 		blog(LOG_ERROR, "failed to update geometry !");
@@ -309,18 +307,18 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	struct dstr screen_info;
 	dstr_init(&screen_info);
-	bool xinerama = xinerama_is_active(dpy);
+	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count = (xinerama) ?
-			xinerama_screen_count(dpy) : XScreenCount(dpy);
+			xinerama_screen_count(xcb) : XScreenCount(dpy);
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
 		if (xinerama)
-			xinerama_screen_geo(dpy, i, &x, &y, &w, &h);
+			xinerama_screen_geo(xcb, i, &x, &y, &w, &h);
 		else
-			x11_screen_geo(dpy, i, &w, &h);
+			x11_screen_geo(xcb, i, &w, &h);
 
 		dstr_printf(&screen_info, "Screen %"PRIuFAST32" (%"PRIuFAST32
 				"x%"PRIuFAST32" @ %"PRIuFAST32
