@@ -20,6 +20,7 @@ include_directories(SYSTEM
 set(linux-capture_SOURCES
 	linux-capture.c
 	xcursor.c
+	xcursor-xcb.c
 	xhelpers.c
 	xshm-input.c
 	xcomposite-main.cpp
@@ -28,6 +29,7 @@ set(linux-capture_SOURCES
 )
 set(linux-capture_HEADERS
 	xcursor.h
+	xcursor-xcb.h
 	xhelpers.h
 	xcompcap-main.hpp
 	xcompcap-helper.hpp
