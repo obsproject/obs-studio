@@ -70,21 +70,24 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	monitors.clear();
 	xcb_conn = xcb_connect(NULL, NULL);
 
+	bool use_xinerama = false;
 	if (xcb_get_extension_data(xcb_conn, &xcb_xinerama_id)->present) {
 		xcb_xinerama_is_active_cookie_t xinerama_cookie;
 		xcb_xinerama_is_active_reply_t* xinerama_reply = NULL;
-		xcb_xinerama_query_screens_cookie_t screens_cookie;
-		xcb_xinerama_query_screens_reply_t* screens_reply = NULL;
-		xcb_xinerama_screen_info_iterator_t iter;
 
 		xinerama_cookie = xcb_xinerama_is_active(xcb_conn);
 		xinerama_reply = xcb_xinerama_is_active_reply(xcb_conn,
 						        xinerama_cookie, NULL);
 
-		if (xinerama_reply == NULL || xinerama_reply->state == 0) {
-			free(xinerama_reply);
-			goto err;
-		}
+		if (xinerama_reply && xinerama_reply->state != 0)
+			use_xinerama = true;
+		free(xinerama_reply);
+	}
+
+	if (use_xinerama) {
+		xcb_xinerama_query_screens_cookie_t screens_cookie;
+		xcb_xinerama_query_screens_reply_t* screens_reply = NULL;
+		xcb_xinerama_screen_info_iterator_t iter;
 
 		screens_cookie = xcb_xinerama_query_screens(xcb_conn);
 		screens_reply = xcb_xinerama_query_screens_reply(xcb_conn,
@@ -98,7 +101,6 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 					      iter.data->width,
 					      iter.data->height);
 		}
-		free(xinerama_reply);
 		free(screens_reply);
 	} else {
 		// no xinerama so fall back to basic x11 calls
@@ -111,7 +113,6 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 		}
 	}
 
-err:
 	xcb_disconnect(xcb_conn);
 }
 
