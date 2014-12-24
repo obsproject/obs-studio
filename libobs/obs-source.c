@@ -2034,6 +2034,11 @@ void obs_source_load(obs_source_t *source)
 	source->info.load(source->context.data, source->context.settings);
 }
 
+bool obs_source_active(const obs_source_t *source)
+{
+	return source->activate_refs != 0;
+}
+
 static inline void signal_flags_updated(obs_source_t *source)
 {
 	struct calldata data = {0};
