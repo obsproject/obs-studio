@@ -296,7 +296,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		return;
 	}
 
-	XSelectInput(xdisp, p->win, StructureNotifyMask);
+	XSelectInput(xdisp, p->win, StructureNotifyMask | ExposureMask);
 	XSync(xdisp, 0);
 
 	XWindowAttributes attr;
