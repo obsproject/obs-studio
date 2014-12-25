@@ -229,8 +229,10 @@ OBSApp::OBSApp(int &argc, char **argv)
 
 void OBSApp::AppInit()
 {
+	#ifdef OBS_OSX_BUNDLE
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
+	#endif
 	if (!MakeUserDirs())
 		throw "Failed to created required user directories";
 	if (!InitGlobalConfig())
