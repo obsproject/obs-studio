@@ -229,7 +229,7 @@ OBSApp::OBSApp(int &argc, char **argv)
 
 void OBSApp::AppInit()
 {
-	#ifdef OBS_OSX_BUNDLE
+	#ifdef __APPLE__
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
 	#endif
