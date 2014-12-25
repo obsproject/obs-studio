@@ -36,7 +36,7 @@ struct MonitorInfo {
 bool GetDataFilePath(const char *data, std::string &path);
 void GetMonitors(std::vector<MonitorInfo> &monitors);
 
-#ifdef OBS_OSX_BUNDLE
+#ifdef __APPLE__
 /* Updates the working directory for OSX application bundles */
 bool InitApplicationBundle();
 #endif
