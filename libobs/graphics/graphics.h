@@ -491,6 +491,7 @@ EXPORT gs_shader_t *gs_pixelshader_create_from_file(const char *file,
 		char **error_string);
 
 EXPORT gs_texture_t *gs_texture_create_from_file(const char *file);
+EXPORT gs_texture_t **gs_texture_create_from_file_gif(const char *file, uint32_t *stream_size_ret, float *fps_gif_return);
 
 #define GS_FLIP_U (1<<0)
 #define GS_FLIP_V (1<<1)
