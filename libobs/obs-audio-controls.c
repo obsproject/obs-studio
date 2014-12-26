@@ -306,11 +306,10 @@ static void volmeter_sum_and_max(float *data, size_t frames,
  */
 static void volmeter_calc_ival_levels(obs_volmeter_t *volmeter)
 {
+	const unsigned int samples = volmeter->ival_frames * volmeter->channels;
 	const float alpha    = 0.15f;
-	const float frames   = (float) volmeter->ival_frames;
-	const float samples  = frames * (float) volmeter->channels;
 	const float ival_max = sqrtf(volmeter->ival_max);
-	const float ival_rms = sqrtf(volmeter->ival_sum / samples);
+	const float ival_rms = sqrtf(volmeter->ival_sum / (float)samples);
 
 	if (ival_max > volmeter->vol_max) {
 		volmeter->vol_max = ival_max;
@@ -324,7 +323,7 @@ static void volmeter_calc_ival_levels(obs_volmeter_t *volmeter)
 		volmeter->vol_peak       = volmeter->vol_max;
 		volmeter->peakhold_count = 0;
 	} else {
-		volmeter->peakhold_count += frames;
+		volmeter->peakhold_count += volmeter->ival_frames;
 	}
 
 	volmeter->vol_mag = alpha * ival_rms +
@@ -355,7 +354,7 @@ static bool volmeter_process_audio_data(obs_volmeter_t *volmeter,
 		volmeter_sum_and_max(adata, samples, &volmeter->ival_sum,
 				&volmeter->ival_max);
 
-		volmeter->ival_frames += frames;
+		volmeter->ival_frames += (unsigned int)frames;
 		left                  -= frames;
 		adata                 += samples;
 
@@ -403,7 +402,7 @@ static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
 	audio_t *audio            = obs_get_audio();
 	const unsigned int sr     = audio_output_get_sample_rate(audio);
 
-	volmeter->channels        = audio_output_get_channels(audio);
+	volmeter->channels        = (uint32_t)audio_output_get_channels(audio);
 	volmeter->update_frames   = volmeter->update_ms * sr / 1000;
 	volmeter->peakhold_frames = volmeter->peakhold_ms * sr / 1000;
 }
