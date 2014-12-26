@@ -71,10 +71,6 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	EnumDisplayMonitors(NULL, NULL, OBSMonitorEnumProc, (LPARAM)&monitors);
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
 
 string GetDefaultVideoSavePath()
 {

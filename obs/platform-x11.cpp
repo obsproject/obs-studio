@@ -116,11 +116,6 @@ void GetMonitors(vector<MonitorInfo> &monitors)
 	xcb_disconnect(xcb_conn);
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 string GetDefaultVideoSavePath()
 {
 	return string(getenv("HOME"));
