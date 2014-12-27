@@ -66,10 +66,14 @@ static void image_source_update(void *data, obs_data_t *settings)
         if(!context->animate_gif)
             context->tex = gs_texture_create_from_file(context->file_name);
         else {
-            if(!obs_data_get_bool(settings, "auto_fps_gif"))
+            if(!obs_data_get_bool(settings, "auto_fps_gif")){
                 context->tex_gif = gs_texture_create_from_file_gif(context->file_name, &context->size_tex_gif, NULL);
-            else
+                context->tex=context->tex_gif[0];
+            }
+            else {
                 context->tex_gif = gs_texture_create_from_file_gif(context->file_name, &context->size_tex_gif, &context->fps_gif);
+                context->tex=context->tex_gif[0];
+            }
         }
 
         if (context->tex) {
