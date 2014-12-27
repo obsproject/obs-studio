@@ -968,17 +968,10 @@ void OBSBasic::CheckForUpdates()
 	request.setUrl(QUrl("https://obsproject.com/obs2_update/basic.json"));
 	request.setRawHeader("User-Agent", versionString.c_str());
 
-	updateReply = networkManager.get(request);
-	connect(updateReply, SIGNAL(finished()),
+	QNetworkReply *reply = networkManager.get(request);
+	connect(reply, SIGNAL(finished()),
 			this, SLOT(updateFileFinished()));
-	connect(updateReply, SIGNAL(readyRead()),
-			this, SLOT(updateFileRead()));
 #endif
-}
-
-void OBSBasic::updateFileRead()
-{
-	updateReturnData.push_back(updateReply->readAll());
 }
 
 #ifdef __APPLE__
@@ -993,18 +986,19 @@ void OBSBasic::updateFileFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
 
-	if (updateReply->error()) {
+	QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+	if (!reply || reply->error()) {
 		blog(LOG_WARNING, "Update check failed: %s",
-				QT_TO_UTF8(updateReply->errorString()));
+				QT_TO_UTF8(reply->errorString()));
 		return;
 	}
 
-	const char *jsonReply = updateReturnData.constData();
-	if (!jsonReply || !*jsonReply)
+	QByteArray raw = reply->readAll();
+	if (!raw.length())
 		return;
 
-	obs_data_t *returnData   = obs_data_create_from_json(jsonReply);
-	obs_data_t *versionData  = obs_data_get_obj(returnData, VERSION_ENTRY);
+	obs_data_t *returnData  = obs_data_create_from_json(raw.constData());
+	obs_data_t *versionData = obs_data_get_obj(returnData, VERSION_ENTRY);
 	const char *description = obs_data_get_string(returnData,
 			"description");
 	const char *download    = obs_data_get_string(versionData, "download");
@@ -1045,7 +1039,7 @@ void OBSBasic::updateFileFinished()
 	obs_data_release(versionData);
 	obs_data_release(returnData);
 
-	updateReturnData.clear();
+	reply->deleteLater();
 }
 
 void OBSBasic::RemoveSelectedScene()
@@ -1961,15 +1955,20 @@ void OBSBasic::UploadLog(const char *file)
 		return;
 	}
 
-	logUploadPostData.setData(json, (int)strlen(json));
+	QBuffer *postData = new QBuffer();
+	postData->setData(json, (int) strlen(json));
 
-	QUrl url("https://api.github.com/gists");
-	logUploadReply = networkManager.post(QNetworkRequest(url),
-			&logUploadPostData);
-	connect(logUploadReply, SIGNAL(finished()),
+	QNetworkRequest postReq(QUrl("https://api.github.com/gists"));
+	postReq.setHeader(QNetworkRequest::ContentTypeHeader,
+			"application/json");
+
+	QNetworkReply *reply = networkManager.post(postReq, postData);
+
+	/* set the reply as parent, so the buffer is deleted with the reply */
+	postData->setParent(reply);
+
+	connect(reply, SIGNAL(finished()),
 			this, SLOT(logUploadFinished()));
-	connect(logUploadReply, SIGNAL(readyRead()),
-			this, SLOT(logUploadRead()));
 }
 
 void OBSBasic::on_actionShowLogs_triggered()
@@ -1994,34 +1993,30 @@ void OBSBasic::on_actionCheckForUpdates_triggered()
 	CheckForUpdates();
 }
 
-void OBSBasic::logUploadRead()
-{
-	logUploadReturnData.push_back(logUploadReply->readAll());
-}
-
 void OBSBasic::logUploadFinished()
 {
 	ui->menuLogFiles->setEnabled(true);
 
-	if (logUploadReply->error()) {
+	QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+	if (!reply || reply->error()) {
 		QMessageBox::information(this,
 				QTStr("LogReturnDialog.ErrorUploadingLog"),
-				logUploadReply->errorString());
+				reply->errorString());
 		return;
 	}
 
-	const char *jsonReply = logUploadReturnData.constData();
-	if (!jsonReply || !*jsonReply)
+	QByteArray raw = reply->readAll();
+	if (!raw.length())
 		return;
 
-	obs_data_t *returnData = obs_data_create_from_json(jsonReply);
-	QString logURL = obs_data_get_string(returnData, "html_url");
+	obs_data_t *returnData = obs_data_create_from_json(raw.constData());
+	QString logURL         = obs_data_get_string(returnData, "html_url");
 	obs_data_release(returnData);
 
 	OBSLogReply logDialog(this, logURL);
 	logDialog.exec();
 
-	logUploadReturnData.clear();
+	reply->deleteLater();
 }
 
 static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
