@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/platform.h>
 
 #define warn(format, ...) \
 	blog(LOG_WARNING, "[image_source: '%s'] " format, \
@@ -7,9 +8,14 @@
 struct image_source {
 	obs_source_t *source;
 
-	gs_texture_t *tex;
+    char* file_name;
+
+    gs_texture_t *tex, **tex_gif;
 	uint32_t     cx;
-	uint32_t     cy;
+    uint32_t     cy;
+
+    uint32_t     cur_frame_gif, size_tex_gif; float fps_gif, timestamp;
+    bool         animate_gif;
 };
 
 static const char *image_source_get_name(void)
@@ -17,31 +23,71 @@ static const char *image_source_get_name(void)
 	return obs_module_text("ImageInput");
 }
 
+static void image_source_update_gif(void *data)
+{
+    struct image_source *context = data;
+    if( ( (os_gettime_ns()/1000) - context->timestamp ) > (1.0f/context->fps_gif)*1000000 )
+    {
+        context->timestamp=os_gettime_ns()/1000;
+        obs_enter_graphics();
+
+        context->tex=context->tex_gif[context->cur_frame_gif];
+
+        context->cur_frame_gif++;
+        if(context->cur_frame_gif==context->size_tex_gif)
+             context->cur_frame_gif=0;
+
+        obs_leave_graphics();
+    }
+}
+
 static void image_source_update(void *data, obs_data_t *settings)
 {
-	struct image_source *context = data;
-	const char *file = obs_data_get_string(settings, "file");
+    struct image_source *context = data;
+    context->file_name = obs_data_get_string(settings, "file");
+    context->animate_gif = obs_data_get_bool(settings, "animate_gif");
+    context->fps_gif=obs_data_get_double(settings,"custom_fps_gif");
 
-	obs_enter_graphics();
+    context->size_tex_gif=0;
+    context->cur_frame_gif=0;
+    context->timestamp=os_gettime_ns()/1000; //cut to microseconds
 
-	if (context->tex) {
-		gs_texture_destroy(context->tex);
-		context->tex = NULL;
-	}
 
-	if (file && *file) {
-		context->tex = gs_texture_create_from_file(file);
-		if (context->tex) {
-			context->cx = gs_texture_get_width(context->tex);
-			context->cy = gs_texture_get_height(context->tex);
-		} else {
-			warn("failed to load texture '%s'", file);
-			context->cx = 0;
-			context->cy = 0;
-		}
-	}
+    obs_enter_graphics();
 
-	obs_leave_graphics();
+
+    if (context->tex) {
+        gs_texture_destroy(context->tex);
+        context->tex = NULL;
+    }
+
+    if (context->file_name && *(context->file_name)) {
+
+        if(!context->animate_gif)
+            context->tex = gs_texture_create_from_file(context->file_name);
+        else {
+            if(!obs_data_get_bool(settings, "auto_fps_gif")){
+                context->tex_gif = gs_texture_create_from_file_gif(context->file_name, &context->size_tex_gif, NULL);
+                context->tex=context->tex_gif[0];
+            }
+            else {
+                context->tex_gif = gs_texture_create_from_file_gif(context->file_name, &context->size_tex_gif, &context->fps_gif);
+                context->tex=context->tex_gif[0];
+            }
+        }
+
+        if (context->tex) {
+            context->cx = gs_texture_get_width(context->tex);
+            context->cy = gs_texture_get_height(context->tex);
+        } else {
+            warn("failed to load texture '%s'", context->file_name);
+            context->cx = 0;
+            context->cy = 0;
+        }
+    }
+
+    obs_leave_graphics();
+
 }
 
 static void *image_source_create(obs_data_t *settings, obs_source_t *source)
@@ -78,13 +124,17 @@ static uint32_t image_source_getheight(void *data)
 
 static void image_source_render(void *data, gs_effect_t *effect)
 {
-	struct image_source *context = data;
-	if (!context->tex)
-		return;
 
-	gs_reset_blend_state();
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			context->tex);
+    struct image_source *context = data;
+    if(context->animate_gif)
+    {
+        image_source_update_gif(context);
+    }
+    if (!context->tex)
+        return;
+    gs_reset_blend_state();
+    gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
+            context->tex);
 	gs_draw_sprite(context->tex, 0, context->cx, context->cy);
 }
 
@@ -105,7 +155,9 @@ static obs_properties_t *image_source_properties(void *unused)
 	obs_properties_add_path(props,
 			"file", obs_module_text("File"),
 			OBS_PATH_FILE, image_filter, NULL);
-
+    obs_properties_add_bool(props,"animate_gif", obs_module_text("Animate Gifs"));
+    obs_properties_add_bool(props,"auto_fps_gif", obs_module_text("Automatic gif frame rate"));
+    obs_properties_add_float(props,"custom_fps_gif",  obs_module_text("Custom gif frame rate"),1,1000,0.01);
 	return props;
 }
 
