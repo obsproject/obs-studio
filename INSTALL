@@ -179,7 +179,8 @@ Linux (Manually compiling on Debian-based distros)
 
         sudo apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
                 libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
-                libfontconfig-dev qtbase5-dev libqt5x11extras5-dev
+                libfontconfig-dev qtbase5-dev libqt5x11extras5-dev libx264-dev \
+                libxcb-xinerama0-dev
 
   - Building and installing OBS:
 
