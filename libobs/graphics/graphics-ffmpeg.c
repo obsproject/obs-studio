@@ -181,6 +181,65 @@ fail:
 	return success;
 }
 
+
+static bool ffmpeg_image_decode_gif(struct ffmpeg_image *info, uint8_t ***out,
+        int linesize, uint32_t *stream_size)
+{
+    AVPacket          packet    = {0};
+    bool              success   = true;
+    AVFrame           *frame;
+    int               got_frame = 0;
+    int               ret;
+    bool              stream_end=false;
+
+
+    while(!stream_end) {
+
+    got_frame=0;
+    frame = av_frame_alloc();
+
+    if (!frame) {
+        blog(LOG_WARNING, "Failed to create frame data for '%s'",
+                info->file);
+        return false;
+    }
+
+
+    ret = av_read_frame(info->fmt_ctx, &packet);
+    if (ret < 0) {
+        stream_end=true;
+        goto fail;
+    }
+    (*stream_size)++;
+    void **temp_ptr=(*out);
+    (*out)=malloc(sizeof(void*)*(*stream_size));
+    for(int realloc=0; realloc!=(*stream_size-1); realloc++)
+        (*out)[realloc]=temp_ptr[realloc];
+    (*out)[*stream_size-1]=malloc(info->cx * info->cy * 4);
+
+
+    while (!got_frame) {
+        ret = avcodec_decode_video2(info->decoder_ctx, frame,
+                &got_frame, &packet);
+        if (ret < 0) {
+            blog(LOG_WARNING, "Failed to decode frame for '%s': %s",
+                    info->file, av_err2str(ret));
+            goto fail;
+        }
+    }
+
+
+    if(!ffmpeg_image_reformat_frame(info, frame, (*out)[*stream_size-1], linesize))
+        success=false;
+    }
+
+    fail:
+    av_free_packet(&packet);
+    av_frame_free(&frame);
+    return success;
+}
+
+
 void gs_init_image_deps(void)
 {
 	av_register_all();
@@ -217,5 +276,34 @@ gs_texture_t *gs_texture_create_from_file(const char *file)
 		ffmpeg_image_free(&image);
 		free(data);
 	}
-	return tex;
+    return tex;
 }
+
+gs_texture_t **gs_texture_create_from_file_gif(const char *file, uint32_t *stream_size_ret, float *fps_gif_return )
+{
+    struct ffmpeg_image image;
+    gs_texture_t        **tex_gif = NULL;
+    uint32_t            stream_size=0; float fps_gif=0;
+    if (ffmpeg_image_init(&image, file)) {
+
+        uint8_t **data;
+
+        if (ffmpeg_image_decode_gif(&image, &data, image.cx * 4, &stream_size)) {
+            tex_gif = malloc(sizeof(void*)*stream_size);
+            for(int texture_it=0; texture_it!=stream_size; texture_it++) {
+            tex_gif[texture_it] = gs_texture_create(image.cx, image.cy,
+                    convert_format(image.format),
+                    1, (const uint8_t**)&data[texture_it], 0);
+            }
+        }
+        fps_gif=(image.fmt_ctx->streams[0]->avg_frame_rate.num/image.fmt_ctx->streams[0]->avg_frame_rate.den);
+        ffmpeg_image_free(&image);
+        free(data);
+    }
+
+    if(fps_gif_return)
+       *fps_gif_return=fps_gif;
+    *stream_size_ret=stream_size;
+    return tex_gif;
+}
+
