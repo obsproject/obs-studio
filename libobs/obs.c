@@ -1218,12 +1218,20 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	const char   *id      = obs_data_get_string(source_data, "id");
 	obs_data_t   *settings = obs_data_get_obj(source_data, "settings");
 	double       volume;
+	int64_t      sync;
+	uint32_t     flags;
 
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_get_double(source_data, "volume");
 	obs_source_set_volume(source, (float)volume);
+
+	sync = obs_data_get_int(source_data, "sync");
+	obs_source_set_sync_offset(source, sync);
+
+	flags = (uint32_t)obs_data_get_int(source_data, "flags");
+	obs_source_set_flags(source, flags);
 
 	obs_data_release(settings);
 
@@ -1263,6 +1271,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_t *source_data = obs_data_create();
 	obs_data_t *settings    = obs_source_get_settings(source);
 	float      volume      = obs_source_get_volume(source);
+	int64_t    sync        = obs_source_get_sync_offset(source);
+	uint32_t   flags       = obs_source_get_flags(source);
 	const char *name       = obs_source_get_name(source);
 	const char *id         = obs_source_get_id(source);
 
@@ -1271,6 +1281,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_string(source_data, "name",     name);
 	obs_data_set_string(source_data, "id",       id);
 	obs_data_set_obj   (source_data, "settings", settings);
+	obs_data_set_int   (source_data, "sync",     sync);
+	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);
 
 	obs_data_release(settings);
