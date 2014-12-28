@@ -1474,11 +1474,11 @@ static void copy_audio_data(obs_source_t *source,
 /* TODO: SSE optimization */
 static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 {
-	uint32_t channels = get_audio_channels(source->sample_info.speakers);
+	size_t channels = audio_output_get_channels(obs->audio.audio);
 	const float channels_i = 1.0f / (float)channels;
 	float **data = (float**)source->audio_data.data;
 
-	for (uint32_t channel = 1; channel < channels; channel++) {
+	for (size_t channel = 1; channel < channels; channel++) {
 		for (uint32_t frame = 0; frame < frames; frame++)
 			data[0][frame] += data[channel][frame];
 	}
@@ -1486,7 +1486,7 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	for (uint32_t frame = 0; frame < frames; frame++)
 		data[0][frame] *= channels_i;
 
-	for (uint32_t channel = 1; channel < channels; channel++) {
+	for (size_t channel = 1; channel < channels; channel++) {
 		for (uint32_t frame = 0; frame < frames; frame++)
 			data[channel][frame] = data[0][frame];
 	}
@@ -1495,14 +1495,14 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 static void downmix_to_mono_interleaved(struct obs_source *source,
 		uint32_t frames)
 {
-	uint32_t channels = get_audio_channels(source->sample_info.speakers);
+	size_t channels = audio_output_get_channels(obs->audio.audio);
 	const float channels_i = 1.0f / (float)channels;
 	float *data = (float*)source->audio_data.data[0];
 
 	for (uint32_t frame = 0; frame < frames; frame++) {
-		uint32_t pos = frame * channels;
+		size_t pos = frame * channels;
 
-		for (uint32_t channel = 1; channel < channels; channel++)
+		for (size_t channel = 1; channel < channels; channel++)
 			data[pos] += data[pos + channel];
 	}
 
@@ -1510,9 +1510,9 @@ static void downmix_to_mono_interleaved(struct obs_source *source,
 		data[frame * channels] *= channels_i;
 
 	for (uint32_t frame = 0; frame < frames; frame++) {
-		uint32_t pos = frame * channels;
+		size_t pos = frame * channels;
 
-		for (uint32_t channel = 1; channel < channels; channel++)
+		for (size_t channel = 1; channel < channels; channel++)
 			data[pos + channel] = data[pos];
 	}
 }
