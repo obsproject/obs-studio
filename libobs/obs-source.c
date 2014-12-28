@@ -1858,16 +1858,8 @@ static void set_tree_preset_vol(obs_source_t *parent, obs_source_t *child,
 
 void obs_source_set_present_volume(obs_source_t *source, float volume)
 {
-	if (source) {
+	if (source)
 		source->present_volume = volume;
-
-		/* don't set the presentation volume of the tree if a
-		 * transition source, let the transition handle presentation
-		 * volume for the child sources itself. */
-		if (source->info.type != OBS_SOURCE_TYPE_TRANSITION)
-			obs_source_enum_tree(source, set_tree_preset_vol,
-					&volume);
-	}
 }
 
 float obs_source_get_volume(const obs_source_t *source)
