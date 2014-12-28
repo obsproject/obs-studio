@@ -752,7 +752,7 @@ EXPORT void obs_source_save(obs_source_t *source);
 EXPORT void obs_source_load(obs_source_t *source);
 
 /** Specifies that async video frames should be played as soon as possible */
-#define OBS_SOURCE_UNBUFFERED (1<<0)
+#define OBS_SOURCE_FLAG_UNBUFFERED             (1<<0)
 
 /** Sets source flags.  Note that these are different from the main output
  * flags. */
