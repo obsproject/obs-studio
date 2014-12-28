@@ -189,6 +189,9 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 
 	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
+
+	if (info->type == OBS_SOURCE_TYPE_TRANSITION)
+		os_atomic_inc_long(&obs->data.active_transitions);
 	return source;
 
 fail:
@@ -222,6 +225,9 @@ void obs_source_destroy(struct obs_source *source)
 
 	if (!source)
 		return;
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		os_atomic_dec_long(&obs->data.active_transitions);
 
 	obs_context_data_remove(&source->context);
 
