@@ -82,6 +82,7 @@ static const char *source_signals[] = {
 	"void volume(ptr source, in out float volume)",
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
+	"void audio_sync(ptr source, int out int offset)",
 	"void audio_data(ptr source, ptr data)",
 	NULL
 };
@@ -1881,8 +1882,18 @@ float obs_source_get_present_volume(const obs_source_t *source)
 
 void obs_source_set_sync_offset(obs_source_t *source, int64_t offset)
 {
-	if (source)
-		source->sync_offset = offset;
+	if (source) {
+		struct calldata data = {0};
+
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_int(&data, "offset", offset);
+
+		signal_handler_signal(source->context.signals, "audio_sync",
+				&data);
+
+		source->sync_offset = calldata_int(&data, "offset");
+		calldata_free(&data);
+	}
 }
 
 int64_t obs_source_get_sync_offset(const obs_source_t *source)
