@@ -753,6 +753,8 @@ EXPORT void obs_source_load(obs_source_t *source);
 
 /** Specifies that async video frames should be played as soon as possible */
 #define OBS_SOURCE_FLAG_UNBUFFERED             (1<<0)
+/** Specifies to force audio to mono */
+#define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
 
 /** Sets source flags.  Note that these are different from the main output
  * flags. */

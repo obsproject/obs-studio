@@ -1471,10 +1471,58 @@ static inline void copy_audio_data(obs_source_t *source,
 		source->audio_storage_size = size;
 }
 
+/* TODO: SSE optimization */
+static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
+{
+	uint32_t channels = get_audio_channels(source->sample_info.speakers);
+	const float channels_i = 1.0f / (float)channels;
+	float **data = (float**)source->audio_data.data;
+
+	for (uint32_t channel = 1; channel < channels; channel++) {
+		for (uint32_t frame = 0; frame < frames; frame++)
+			data[0][frame] += data[channel][frame];
+	}
+
+	for (uint32_t frame = 0; frame < frames; frame++)
+		data[0][frame] *= channels_i;
+
+	for (uint32_t channel = 1; channel < channels; channel++) {
+		for (uint32_t frame = 0; frame < frames; frame++)
+			data[channel][frame] = data[0][frame];
+	}
+}
+
+static void downmix_to_mono_interleaved(struct obs_source *source,
+		uint32_t frames)
+{
+	uint32_t channels = get_audio_channels(source->sample_info.speakers);
+	const float channels_i = 1.0f / (float)channels;
+	float *data = (float*)source->audio_data.data[0];
+
+	for (uint32_t frame = 0; frame < frames; frame++) {
+		uint32_t pos = frame * channels;
+
+		for (uint32_t channel = 1; channel < channels; channel++)
+			data[pos] += data[pos + channel];
+	}
+
+	for (uint32_t frame = 0; frame < frames; frame++)
+		data[frame * channels] *= channels_i;
+
+	for (uint32_t frame = 0; frame < frames; frame++) {
+		uint32_t pos = frame * channels;
+
+		for (uint32_t channel = 1; channel < channels; channel++)
+			data[pos + channel] = data[pos];
+	}
+}
+
 /* resamples/remixes new audio to the designated main audio output format */
 static void process_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
 {
+	uint32_t frames = audio->frames;
+
 	if (source->sample_info.samples_per_sec != audio->samples_per_sec ||
 	    source->sample_info.format          != audio->format          ||
 	    source->sample_info.speakers        != audio->speakers)
@@ -1485,7 +1533,6 @@ static void process_audio(obs_source_t *source,
 
 	if (source->resampler) {
 		uint8_t  *output[MAX_AV_PLANES];
-		uint32_t frames;
 		uint64_t offset;
 
 		memset(output, 0, sizeof(output));
@@ -1499,6 +1546,13 @@ static void process_audio(obs_source_t *source,
 	} else {
 		copy_audio_data(source, audio->data, audio->frames,
 				audio->timestamp);
+	}
+
+	if ((source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0) {
+		if (is_audio_planar(source->sample_info.format))
+			downmix_to_mono_planar(source, frames);
+		else
+			downmix_to_mono_interleaved(source, frames);
 	}
 }
 
