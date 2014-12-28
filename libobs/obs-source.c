@@ -1446,7 +1446,7 @@ static inline void reset_resampler(obs_source_t *source,
 		blog(LOG_ERROR, "creation of resampler failed");
 }
 
-static inline void copy_audio_data(obs_source_t *source,
+static void copy_audio_data(obs_source_t *source,
 		const uint8_t *const data[], uint32_t frames, uint64_t ts)
 {
 	size_t planes    = audio_output_get_planes(obs->audio.audio);
