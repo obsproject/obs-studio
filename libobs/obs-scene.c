@@ -552,6 +552,12 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		return NULL;
 	}
 
+	if (!obs_source_add_child(scene->source, source)) {
+		blog(LOG_WARNING, "Failed to add source to scene due to "
+		                  "infinite source recursion");
+		return NULL;
+	}
+
 	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source  = source;
 	item->visible = true;
@@ -563,7 +569,6 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	matrix4_identity(&item->box_transform);
 
 	obs_source_addref(source);
-	obs_source_add_child(scene->source, source);
 
 	pthread_mutex_lock(&scene->mutex);
 

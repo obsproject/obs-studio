@@ -822,8 +822,10 @@ EXPORT void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
  * Adds a child source.  Must be called by parent sources on child sources
  * when the child is added.  This ensures that the source is properly activated
  * if the parent is active.
+ *
+ * @returns true if source can be added, false if it causes recursion
  */
-EXPORT void obs_source_add_child(obs_source_t *parent, obs_source_t *child);
+EXPORT bool obs_source_add_child(obs_source_t *parent, obs_source_t *child);
 
 /**
  * Removes a child source.  Must be called by parent sources on child sources

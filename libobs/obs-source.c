@@ -1900,14 +1900,11 @@ static void enum_source_tree_callback(obs_source_t *parent, obs_source_t *child,
 {
 	struct source_enum_data *data = param;
 
-	if (child->info.enum_sources && !child->enum_refs) {
-		os_atomic_inc_long(&child->enum_refs);
-
-		if (child->context.data)
+	if (child->info.enum_sources) {
+		if (child->context.data) {
 			child->info.enum_sources(child->context.data,
 					enum_source_tree_callback, data);
-
-		os_atomic_dec_long(&child->enum_refs);
+		}
 	}
 
 	data->enum_callback(parent, child, data->param);
@@ -1917,16 +1914,12 @@ void obs_source_enum_sources(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
-	if (!source_valid(source)      ||
-	    !source->info.enum_sources ||
-	    source->enum_refs)
+	if (!source_valid(source) || !source->info.enum_sources)
 		return;
 
 	obs_source_addref(source);
 
-	os_atomic_inc_long(&source->enum_refs);
 	source->info.enum_sources(source->context.data, enum_callback, param);
-	os_atomic_dec_long(&source->enum_refs);
 
 	obs_source_release(source);
 }
@@ -1937,31 +1930,47 @@ void obs_source_enum_tree(obs_source_t *source,
 {
 	struct source_enum_data data = {enum_callback, param};
 
-	if (!source_valid(source)      ||
-	    !source->info.enum_sources ||
-	    source->enum_refs)
+	if (!source_valid(source) || !source->info.enum_sources)
 		return;
 
 	obs_source_addref(source);
 
-	os_atomic_inc_long(&source->enum_refs);
 	source->info.enum_sources(source->context.data,
 			enum_source_tree_callback,
 			&data);
-	os_atomic_dec_long(&source->enum_refs);
 
 	obs_source_release(source);
 }
 
-void obs_source_add_child(obs_source_t *parent, obs_source_t *child)
+struct descendant_info {
+	bool exists;
+	obs_source_t *target;
+};
+
+static void check_descendant(obs_source_t *parent, obs_source_t *child,
+		void *param)
 {
-	if (!parent || !child) return;
+	struct descendant_info *info = param;
+	if (child == info->target || parent == info->target)
+		info->exists = true;
+}
+
+bool obs_source_add_child(obs_source_t *parent, obs_source_t *child)
+{
+	struct descendant_info info = {false, child};
+	if (!parent || !child) return false;
+
+	obs_source_enum_tree(parent, check_descendant, &info);
+	if (info.exists)
+		return false;
 
 	for (int i = 0; i < parent->show_refs; i++) {
 		enum view_type type;
 		type = (i < parent->activate_refs) ? MAIN_VIEW : AUX_VIEW;
 		obs_source_activate(child, type);
 	}
+
+	return true;
 }
 
 void obs_source_remove_child(obs_source_t *parent, obs_source_t *child)

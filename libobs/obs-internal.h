@@ -288,9 +288,6 @@ struct obs_source {
 	/* ensures activate/deactivate are only called once */
 	volatile long                   activate_refs;
 
-	/* prevents infinite recursion when enumerating sources */
-	volatile long                   enum_refs;
-
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer
 	 * to handle things but it's the best option) */
