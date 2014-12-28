@@ -20,9 +20,39 @@
 #include "graphics/vec4.h"
 #include "media-io/format-conversion.h"
 
+static inline void calculate_base_volume(struct obs_core_data *data,
+		struct obs_view *view, obs_source_t *target)
+{
+	if (!target->activate_refs) {
+		target->base_volume = 0.0f;
+
+	/* only walk the tree if there are transitions active */
+	} else if (data->active_transitions) {
+		float best_vol = 0.0f;
+
+		for (size_t i = 0; i < MAX_CHANNELS; i++) {
+			struct obs_source *source = view->channels[i];
+			float vol = 0.0f;
+
+			if (!source)
+				continue;
+
+			vol = obs_source_get_target_volume(source, target);
+			if (best_vol < vol)
+				best_vol = vol;
+		}
+
+		target->base_volume = best_vol;
+
+	} else {
+		target->base_volume = 1.0f;
+	}
+}
+
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	struct obs_core_data *data = &obs->data;
+	struct obs_view      *view = &data->main_view;
 	struct obs_source    *source;
 	uint64_t             delta_time;
 	float                seconds;
@@ -36,12 +66,25 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	pthread_mutex_lock(&data->sources_mutex);
 
+	/* call the tick function of each source */
 	source = data->first_source;
 	while (source) {
 		if (source->refs)
 			obs_source_video_tick(source, seconds);
 		source = (struct obs_source*)source->context.next;
 	}
+
+	/* calculate source volumes */
+	pthread_mutex_lock(&view->channels_mutex);
+
+	source = data->first_source;
+	while (source) {
+		if (source->refs)
+			calculate_base_volume(data, view, source);
+		source = (struct obs_source*)source->context.next;
+	}
+
+	pthread_mutex_unlock(&view->channels_mutex);
 
 	pthread_mutex_unlock(&data->sources_mutex);
 

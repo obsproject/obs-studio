@@ -352,6 +352,15 @@ struct obs_source_info {
 	 */
 	void (*key_click)(void *data, const struct obs_key_event *event,
 			bool key_up);
+
+	/**
+	 * Called to transition sources get the volume of a transitioning
+	 * sub-source.
+	 *
+	 * @param data         Source data
+	 * @param source       Transitioning sub-source to get the volume of
+	 */
+	float (*get_transition_volume)(void *data, obs_source_t *source);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

@@ -311,16 +311,10 @@ struct obs_source {
 	pthread_mutex_t                 audio_mutex;
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
+	float                           base_volume;
 	float                           user_volume;
 	float                           present_volume;
 	int64_t                         sync_offset;
-
-	/* transition volume is meant to store the sum of transitioning volumes
-	 * of a source, i.e. if a source is within both the "to" and "from"
-	 * targets of a transition, it would add both volumes to this variable,
-	 * and then when the transition frame is complete, is applies the value
-	 * to the presentation volume. */
-	float                           transition_volume;
 
 	/* async video data */
 	gs_texture_t                    *async_texture;
@@ -367,6 +361,8 @@ enum view_type {
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
 extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t *source, float seconds);
+extern float obs_source_get_target_volume(obs_source_t *source,
+		obs_source_t *target);
 
 
 /* ------------------------------------------------------------------------- */

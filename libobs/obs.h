@@ -855,18 +855,6 @@ EXPORT void obs_source_send_focus(obs_source_t *source, bool focus);
 EXPORT void obs_source_send_key_click(obs_source_t *source,
 		const struct obs_key_event *event, bool key_up);
 
-/** Begins transition frame.  Sets all transitioning volume values to 0.0f. */
-EXPORT void obs_transition_begin_frame(obs_source_t *transition);
-
-/**
- * Adds a transitioning volume value to a source that's being transitioned.
- * This value is applied to all the sources within the the source.
- */
-EXPORT void obs_source_set_transition_vol(obs_source_t *source, float vol);
-
-/** Ends transition frame and applies new presentation volumes to all sources */
-EXPORT void obs_transition_end_frame(obs_source_t *transition);
-
 
 /* ------------------------------------------------------------------------- */
 /* Scenes */
