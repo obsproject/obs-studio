@@ -28,6 +28,7 @@
 #include "window-basic-interaction.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
+#include "window-basic-adv-audio.hpp"
 
 #include <util/platform.h>
 #include <util/util.hpp>
@@ -61,6 +62,7 @@ private:
 	QPointer<OBSBasicInteraction> interaction;
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
+	QPointer<OBSBasicAdvAudio> advAudioWindow;
 
 	QNetworkAccessManager networkManager;
 
@@ -230,6 +232,7 @@ private slots:
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
+	void on_actionAdvAudioProperties_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();

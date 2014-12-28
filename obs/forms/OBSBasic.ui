@@ -28,7 +28,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="obs.qrc">
-   <normaloff>:/res/images/obs.png</normaloff>:/res/images/obs.png</iconset>
+    <normaloff>:/res/images/obs.png</normaloff>:/res/images/obs.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -338,7 +338,7 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>233</width>
+               <width>216</width>
                <height>16</height>
               </rect>
              </property>
@@ -452,7 +452,7 @@
      <x>0</x>
      <y>0</y>
      <width>927</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -521,6 +521,8 @@
     <addaction name="separator"/>
     <addaction name="transformMenu"/>
     <addaction name="orderMenu"/>
+    <addaction name="separator"/>
+    <addaction name="actionAdvAudioProperties"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -815,6 +817,11 @@
   <action name="actionInteract">
    <property name="text">
     <string>Interact</string>
+   </property>
+  </action>
+  <action name="actionAdvAudioProperties">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.AdvAudio</string>
    </property>
   </action>
  </widget>

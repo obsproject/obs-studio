@@ -96,6 +96,7 @@ set(obs_SOURCES
 	window-basic-source-select.cpp
 	window-license-agreement.cpp
 	window-basic-status-bar.cpp
+	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
 	window-basic-preview.cpp
 	window-namedialog.cpp
@@ -103,6 +104,7 @@ set(obs_SOURCES
 	window-remux.cpp
 	properties-view.cpp
 	volume-control.cpp
+	adv-audio-control.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -116,6 +118,7 @@ set(obs_HEADERS
 	window-basic-source-select.hpp
 	window-license-agreement.hpp
 	window-basic-status-bar.hpp
+	window-basic-adv-audio.hpp
 	window-basic-transform.hpp
 	window-basic-preview.hpp
 	window-namedialog.hpp
@@ -124,6 +127,7 @@ set(obs_HEADERS
 	properties-view.hpp
 	display-helpers.hpp
 	volume-control.hpp
+	adv-audio-control.hpp
 	qt-display.hpp
 	qt-wrappers.hpp)
 
