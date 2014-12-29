@@ -1967,6 +1967,60 @@ bool gs_shared_texture_available(void)
 	return thread_graphics->exports.device_shared_texture_available();
 }
 
+bool gs_get_duplicator_monitor_info(int monitor_idx,
+		struct gs_monitor_info *monitor_info)
+{
+	if (!thread_graphics)
+		return false;
+	if (!thread_graphics->exports.device_get_duplicator_monitor_info)
+		return false;
+
+	return thread_graphics->exports.device_get_duplicator_monitor_info(
+				thread_graphics->device, monitor_idx,
+				monitor_info);
+}
+
+gs_duplicator_t *gs_duplicator_create(int monitor_idx)
+{
+	if (!thread_graphics)
+		return NULL;
+	if (!thread_graphics->exports.device_duplicator_create)
+		return NULL;
+
+	return thread_graphics->exports.device_duplicator_create(
+			thread_graphics->device, monitor_idx);
+}
+
+void gs_duplicator_destroy(gs_duplicator_t *duplicator)
+{
+	if (!thread_graphics)
+		return;
+	if (!thread_graphics->exports.gs_duplicator_destroy)
+		return;
+
+	thread_graphics->exports.gs_duplicator_destroy(duplicator);
+}
+
+bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
+{
+	if (!thread_graphics)
+		return true;
+	if (!thread_graphics->exports.gs_duplicator_get_texture)
+		return true;
+
+	return thread_graphics->exports.gs_duplicator_update_frame(duplicator);
+}
+
+gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
+{
+	if (!thread_graphics)
+		return NULL;
+	if (!thread_graphics->exports.gs_duplicator_get_texture)
+		return NULL;
+
+	return thread_graphics->exports.gs_duplicator_get_texture(duplicator);
+}
+
 /** creates a windows GDI-lockable texture */
 gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height)
 {

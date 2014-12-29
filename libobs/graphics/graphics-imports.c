@@ -175,6 +175,11 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 #elif _WIN32
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
+	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_update_frame);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_texture);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);

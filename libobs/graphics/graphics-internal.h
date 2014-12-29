@@ -232,6 +232,16 @@ struct gs_exports {
 	bool (*device_gdi_texture_available)(void);
 	bool (*device_shared_texture_available)(void);
 
+	bool (*device_get_duplicator_monitor_info)(gs_device_t *device,
+			int monitor_idx, struct gs_monitor_info *monitor_info);
+
+	gs_duplicator_t *(*device_duplicator_create)(gs_device_t *device,
+			int monitor_idx);
+	void (*gs_duplicator_destroy)(gs_duplicator_t *duplicator);
+
+	bool (*gs_duplicator_update_frame)(gs_duplicator_t *duplicator);
+	gs_texture_t *(*gs_duplicator_get_texture)(gs_duplicator_t *duplicator);
+
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device,
 			uint32_t width, uint32_t height);
 

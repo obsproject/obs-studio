@@ -24,6 +24,7 @@
 
 #include <windows.h>
 #include <dxgi.h>
+#include <dxgi1_2.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
@@ -447,6 +448,15 @@ struct gs_vertex_shader : gs_shader {
 
 	gs_vertex_shader(gs_device_t *device, const char *file,
 			const char *shaderString);
+};
+
+struct gs_duplicator {
+	ComPtr<IDXGIOutputDuplication> duplicator;
+	gs_texture_2d *texture;
+	gs_device_t *device;
+
+	gs_duplicator(gs_device_t *device, int monitor_idx);
+	~gs_duplicator();
 };
 
 struct gs_pixel_shader : gs_shader {

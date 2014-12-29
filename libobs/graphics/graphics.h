@@ -168,6 +168,14 @@ enum gs_texture_type {
 	GS_TEXTURE_CUBE
 };
 
+struct gs_monitor_info {
+	int rotation_degrees;
+	long x;
+	long y;
+	long cx;
+	long cy;
+};
+
 struct gs_tvertarray {
 	size_t width;
 	void *array;
@@ -711,6 +719,23 @@ EXPORT bool     gs_texture_rebind_iosurface(gs_texture_t *texture,
 
 EXPORT bool gs_gdi_texture_available(void);
 EXPORT bool gs_shared_texture_available(void);
+
+struct gs_duplicator;
+typedef struct gs_duplicator gs_duplicator_t;
+
+/**
+ * Gets information about the monitor at the specific index, returns false
+ * when there is no monitor at the specified index
+ */
+EXPORT bool gs_get_duplicator_monitor_info(int monitor_idx,
+		struct gs_monitor_info *monitor_info);
+
+/** creates a windows 8+ output duplicator (monitor capture) */
+EXPORT gs_duplicator_t *gs_duplicator_create(int monitor_idx);
+EXPORT void gs_duplicator_destroy(gs_duplicator_t *duplicator);
+
+EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *duplicator);
+EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator);
 
 /** creates a windows GDI-lockable texture */
 EXPORT gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height);
