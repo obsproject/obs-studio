@@ -21,30 +21,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <X11/Xlib.h>
-#include <X11/extensions/XShm.h>
+#include <xcb/shm.h>
+#include <xcb/xproto.h>
 #include <obs.h>
 
 typedef struct {
-	XShmSegmentInfo info;
-	XImage *image;
-	Display *dpy;
-	bool attached;
-} xshm_t;
+	xcb_connection_t *xcb;
+	xcb_shm_seg_t    seg;
+	int              shmid;
+	uint8_t          *data;
+} xcb_shm_t;
 
 /**
  * Check for Xinerama extension
  *
- * @return > 0 if Xinerama is available and active
+ * @return true if xinerama is available and active
  */
-int_fast32_t xinerama_is_active(Display *dpy);
+bool xinerama_is_active(xcb_connection_t *xcb);
 
 /**
  * Get the number of Xinerama screens
  *
  * @return number of screens
  */
-int_fast32_t xinerama_screen_count(Display *dpy);
+int xinerama_screen_count(xcb_connection_t *xcb);
 
 /**
  * Get screen geometry for a Xinerama screen
@@ -60,8 +60,9 @@ int_fast32_t xinerama_screen_count(Display *dpy);
  *
  * @return < 0 on error
  */
-int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *x, int_fast32_t *y, int_fast32_t *w, int_fast32_t *h);
+int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *x, int_fast32_t *y,
+		int_fast32_t *w, int_fast32_t *h);
 
 /**
  * Get screen geometry for a X11 screen
@@ -75,26 +76,33 @@ int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
  *
  * @return < 0 on error
  */
-int_fast32_t x11_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *w, int_fast32_t *h);
+int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *w, int_fast32_t *h);
 
 /**
  * Attach a shared memory segment to the X-Server
  *
- * @param dpy X11 Display
- * @param screen X11 Screen
- * @param w width for the shared memory segment
- * @param h height for the shared memory segment
+ * @param xcb xcb connection
+ * @param w width of the captured screen
+ * @param h height of the captured screen
  *
  * @return NULL on error
  */
-xshm_t *xshm_attach(Display *dpy, Screen *screen,
-	int_fast32_t w, int_fast32_t h);
+xcb_shm_t *xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h);
 
 /**
  * Detach a shared memory segment
  */
-void xshm_detach(xshm_t *xshm);
+void xshm_xcb_detach(xcb_shm_t *shm);
+
+/**
+ * Get screen by id for a xcb connection
+ *
+ * @param xcb xcb connection
+ * @param screen id of the screen
+ * @return screen info structure
+ */
+xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen);
 
 #ifdef __cplusplus
 }

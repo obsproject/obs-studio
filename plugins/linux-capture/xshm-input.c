@@ -18,12 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include <xcb/shm.h>
+#include <xcb/xfixes.h>
+#include <xcb/xinerama.h>
 
 #include <obs-module.h>
 #include <util/dstr.h>
-#include "xcursor.h"
+#include "xcursor-xcb.h"
 #include "xhelpers.h"
 
 #define XSHM_DATA(voidptr) struct xshm_data *data = voidptr;
@@ -31,32 +32,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define blog(level, msg, ...) blog(level, "xshm-input: " msg, ##__VA_ARGS__)
 
 struct xshm_data {
-	/** The source object */
-	obs_source_t *source;
-	/** Xlib display object */
-	Display *dpy;
-	/** Xlib screen object */
-	Screen *screen;
-	/** user setting - the server name to capture from */
-	char *server;
-	/** user setting - the id of the screen that should be captured */
-	uint_fast32_t screen_id;
-	/** root coordinates for the capture */
-	int_fast32_t x_org, y_org;
-	/** size for the capture */
-	int_fast32_t width, height;
-	/** shared memory management object */
-	xshm_t *xshm;
-	/** the texture used to display the capture */
-	gs_texture_t *texture;
-	/** cursor object for displaying the server */
-	xcursor_t *cursor;
-	/** user setting - if cursor should be displayed  */
-	bool show_cursor;
-	/** set if xinerama is available and active on the screen */
-	bool use_xinerama;
-	/** user setting - if advanced settings should be displayed */
-	bool advanced;
+	obs_source_t     *source;
+
+	xcb_connection_t *xcb;
+	xcb_screen_t     *xcb_screen;
+	xcb_shm_t        *xshm;
+	xcb_xcursor_t    *cursor;
+
+	char             *server;
+	uint_fast32_t    screen_id;
+	int_fast32_t     x_org;
+	int_fast32_t     y_org;
+	int_fast32_t     width;
+	int_fast32_t     height;
+
+	gs_texture_t     *texture;
+
+	bool             show_cursor;
+	bool             use_xinerama;
+	bool             advanced;
 };
 
 /**
@@ -75,6 +69,24 @@ static inline void xshm_resize_texture(struct xshm_data *data)
 }
 
 /**
+ * Check if the xserver supports all the extensions we need
+ */
+static bool xshm_check_extensions(xcb_connection_t *xcb)
+{
+	bool ok = true;
+
+	if (!xcb_get_extension_data(xcb, &xcb_shm_id)->present) {
+		blog(LOG_ERROR, "Missing SHM extension !");
+		ok = false;
+	}
+
+	if (!xcb_get_extension_data(xcb, &xcb_xinerama_id)->present)
+		blog(LOG_INFO, "Missing Xinerama extension !");
+
+	return ok;
+}
+
+/**
  * Update the capture
  *
  * @return < 0 on error, 0 when size is unchanged, > 1 on size change
@@ -85,21 +97,21 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	int_fast32_t old_height = data->height;
 
 	if (data->use_xinerama) {
-		if (xinerama_screen_geo(data->dpy, data->screen_id,
+		if (xinerama_screen_geo(data->xcb, data->screen_id,
 			&data->x_org, &data->y_org,
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen = XDefaultScreenOfDisplay(data->dpy);
+		data->xcb_screen = xcb_get_screen(data->xcb, 0);
 	}
 	else {
 		data->x_org = 0;
 		data->y_org = 0;
-		if (x11_screen_geo(data->dpy, data->screen_id,
+		if (x11_screen_geo(data->xcb, data->screen_id,
 			&data->width, &data->height) < 0) {
 			return -1;
 		}
-		data->screen = XScreenOfDisplay(data->dpy, data->screen_id);
+		data->xcb_screen = xcb_get_screen(data->xcb, data->screen_id);
 	}
 
 	if (!data->width || !data->height) {
@@ -137,21 +149,20 @@ static void xshm_capture_stop(struct xshm_data *data)
 		data->texture = NULL;
 	}
 	if (data->cursor) {
-		xcursor_destroy(data->cursor);
+		xcb_xcursor_destroy(data->cursor);
 		data->cursor = NULL;
 	}
 
 	obs_leave_graphics();
 
 	if (data->xshm) {
-		xshm_detach(data->xshm);
+		xshm_xcb_detach(data->xshm);
 		data->xshm = NULL;
 	}
 
-	if (data->dpy) {
-		XSync(data->dpy, true);
-		XCloseDisplay(data->dpy);
-		data->dpy = NULL;
+	if (data->xcb) {
+		xcb_disconnect(data->xcb);
+		data->xcb = NULL;
 	}
 
 	if (data->server) {
@@ -168,35 +179,33 @@ static void xshm_capture_start(struct xshm_data *data)
 	const char *server = (data->advanced && *data->server)
 			? data->server : NULL;
 
-	data->dpy = XOpenDisplay(server);
-	if (!data->dpy) {
+	data->xcb = xcb_connect(server, NULL);
+	if (!data->xcb || xcb_connection_has_error(data->xcb)) {
 		blog(LOG_ERROR, "Unable to open X display !");
 		goto fail;
 	}
 
-	if (!XShmQueryExtension(data->dpy)) {
-		blog(LOG_ERROR, "XShm extension not found !");
+	if (!xshm_check_extensions(data->xcb))
 		goto fail;
-	}
 
-	data->use_xinerama = xinerama_is_active(data->dpy) ? true : false;
+	data->use_xinerama = xinerama_is_active(data->xcb) ? true : false;
 
 	if (xshm_update_geometry(data) < 0) {
 		blog(LOG_ERROR, "failed to update geometry !");
 		goto fail;
 	}
 
-	data->xshm = xshm_attach(data->dpy, data->screen,
-		data->width, data->height);
+	data->xshm = xshm_xcb_attach(data->xcb, data->width, data->height);
 	if (!data->xshm) {
 		blog(LOG_ERROR, "failed to attach shm !");
 		goto fail;
 	}
 
+	data->cursor = xcb_xcursor_init(data->xcb);
+	xcb_xcursor_offset(data->cursor, data->x_org, data->y_org);
+
 	obs_enter_graphics();
 
-	data->cursor = xcursor_init(data->dpy);
-	xcursor_offset(data->cursor, data->x_org, data->y_org);
 	xshm_resize_texture(data);
 
 	obs_leave_graphics();
@@ -269,26 +278,27 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	obs_property_list_clear(screens);
 
-	Display *dpy = XOpenDisplay(server);
-	if (!dpy) {
+	xcb_connection_t *xcb = xcb_connect(server, NULL);
+	if (!xcb || xcb_connection_has_error(xcb)) {
 		obs_property_set_enabled(screens, false);
 		return true;
 	}
 
 	struct dstr screen_info;
 	dstr_init(&screen_info);
-	bool xinerama = xinerama_is_active(dpy);
+	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count = (xinerama) ?
-			xinerama_screen_count(dpy) : XScreenCount(dpy);
+			xinerama_screen_count(xcb) :
+			xcb_setup_roots_length(xcb_get_setup(xcb));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
 		if (xinerama)
-			xinerama_screen_geo(dpy, i, &x, &y, &w, &h);
+			xinerama_screen_geo(xcb, i, &x, &y, &w, &h);
 		else
-			x11_screen_geo(dpy, i, &w, &h);
+			x11_screen_geo(xcb, i, &w, &h);
 
 		dstr_printf(&screen_info, "Screen %"PRIuFAST32" (%"PRIuFAST32
 				"x%"PRIuFAST32" @ %"PRIuFAST32
@@ -309,7 +319,7 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	dstr_free(&screen_info);
 
-	XCloseDisplay(dpy);
+	xcb_disconnect(xcb);
 	obs_property_set_enabled(screens, true);
 
 	return true;
@@ -383,16 +393,33 @@ static void xshm_video_tick(void *vptr, float seconds)
 	if (!data->texture)
 		return;
 
+	xcb_shm_get_image_cookie_t           img_c;
+	xcb_shm_get_image_reply_t            *img_r;
+	xcb_xfixes_get_cursor_image_cookie_t cur_c;
+	xcb_xfixes_get_cursor_image_reply_t  *cur_r;
+
+	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
+			data->x_org, data->y_org, data->width, data->height,
+			~0, XCB_IMAGE_FORMAT_Z_PIXMAP, data->xshm->seg, 0);
+	cur_c = xcb_xfixes_get_cursor_image_unchecked(data->xcb);
+
+	img_r = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
+	cur_r = xcb_xfixes_get_cursor_image_reply(data->xcb, cur_c, NULL);
+
+	if (!img_r)
+		goto exit;
+
 	obs_enter_graphics();
 
-	XShmGetImage(data->dpy, XRootWindowOfScreen(data->screen),
-		data->xshm->image, data->x_org, data->y_org, AllPlanes);
-	gs_texture_set_image(data->texture, (void *) data->xshm->image->data,
+	gs_texture_set_image(data->texture, (void *) data->xshm->data,
 		data->width * 4, false);
-
-	xcursor_tick(data->cursor);
+	xcb_xcursor_update(data->cursor, cur_r);
 
 	obs_leave_graphics();
+
+exit:
+	free(img_r);
+	free(cur_r);
 }
 
 /**
@@ -412,7 +439,7 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 	gs_draw_sprite(data->texture, 0, 0, 0);
 
 	if (data->show_cursor)
-		xcursor_render(data->cursor);
+		xcb_xcursor_render(data->cursor);
 
 	gs_reset_blend_state();
 }

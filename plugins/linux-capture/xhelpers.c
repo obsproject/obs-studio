@@ -17,134 +17,158 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 #include <sys/shm.h>
-#include <X11/Xutil.h>
-#include <X11/extensions/Xinerama.h>
+#include <xcb/xcb.h>
+#include <xcb/xinerama.h>
 
 #include "xhelpers.h"
 
-int_fast32_t xinerama_is_active(Display *dpy)
+bool xinerama_is_active(xcb_connection_t *xcb)
 {
-	int minor, major;
-	if (!dpy)
-		return 0;
-	if (!XineramaQueryVersion(dpy, &minor, &major))
-		return 0;
-	if (!XineramaIsActive(dpy))
-		return 0;
-	return 1;
+	if (!xcb || !xcb_get_extension_data(xcb, &xcb_xinerama_id)->present)
+		return false;
+
+	bool active = true;
+	xcb_xinerama_is_active_cookie_t xnr_c;
+	xcb_xinerama_is_active_reply_t  *xnr_r;
+
+	xnr_c = xcb_xinerama_is_active_unchecked(xcb);
+	xnr_r = xcb_xinerama_is_active_reply(xcb, xnr_c, NULL);
+	if (!xnr_r || xnr_r->state == 0)
+		active = false;
+	free(xnr_r);
+
+	return active;
 }
 
-int_fast32_t xinerama_screen_count(Display *dpy)
+int xinerama_screen_count(xcb_connection_t *xcb)
 {
-	int screens;
-	if (!dpy)
+	if (!xcb)
 		return 0;
-	XFree(XineramaQueryScreens(dpy, &screens));
+
+	int screens = 0;
+	xcb_xinerama_query_screens_cookie_t scr_c;
+	xcb_xinerama_query_screens_reply_t  *scr_r;
+
+	scr_c = xcb_xinerama_query_screens_unchecked(xcb);
+	scr_r = xcb_xinerama_query_screens_reply(xcb, scr_c, NULL);
+	if (scr_r)
+		screens = scr_r->number;
+	free(scr_r);
+
 	return screens;
 }
 
-int_fast32_t xinerama_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *x, int_fast32_t *y, int_fast32_t *w, int_fast32_t *h)
+int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *x, int_fast32_t *y,
+		int_fast32_t *w, int_fast32_t *h)
 {
-	int screens;
-	XineramaScreenInfo *info = NULL;
-
-	if (!dpy)
-		goto fail;
-	info = XineramaQueryScreens(dpy, &screens);
-	if (screen < 0 || screen >= screens)
+	if (!xcb)
 		goto fail;
 
-	*x = info[screen].x_org;
-	*y = info[screen].y_org;
-	*w = info[screen].width;
-	*h = info[screen].height;
+	bool success = false;
+	xcb_xinerama_query_screens_cookie_t scr_c;
+	xcb_xinerama_query_screens_reply_t  *scr_r;
+	xcb_xinerama_screen_info_iterator_t iter;
 
-	XFree(info);
-	return 0;
+	scr_c = xcb_xinerama_query_screens_unchecked(xcb);
+	scr_r = xcb_xinerama_query_screens_reply(xcb, scr_c, NULL);
+	if (!scr_r)
+		goto fail;
+
+	iter = xcb_xinerama_query_screens_screen_info_iterator(scr_r);
+	for (; iter.rem; --screen, xcb_xinerama_screen_info_next(&iter)) {
+		if (!screen) {
+			*x = iter.data->x_org;
+			*y = iter.data->y_org;
+			*w = iter.data->width;
+			*h = iter.data->height;
+			success = true;
+		}
+	}
+	free(scr_r);
+
+	if (success)
+		return 0;
+
 fail:
-	if (info)
-		XFree(info);
-	
 	*x = *y = *w = *h = 0;
 	return -1;
 }
 
-int_fast32_t x11_screen_geo(Display *dpy, const int_fast32_t screen,
-	int_fast32_t *w, int_fast32_t *h)
+int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *w, int_fast32_t *h)
 {
-	Screen *scr;
-
-	if (!dpy || screen < 0 || screen >= XScreenCount(dpy))
+	if (!xcb)
 		goto fail;
 
-	scr = XScreenOfDisplay(dpy, screen);
-	if (!scr)
-		goto fail;
+	bool success = false;
+	xcb_screen_iterator_t iter;
 
-	*w = XWidthOfScreen(scr);
-	*h = XHeightOfScreen(scr);
+	iter = xcb_setup_roots_iterator(xcb_get_setup(xcb));
+	for (; iter.rem; --screen, xcb_screen_next(&iter)) {
+		if (!screen) {
+			*w = iter.data->width_in_pixels;
+			*h = iter.data->height_in_pixels;
+			success = true;
+		}
+	}
 
-	return 0;
+	if (success)
+		return 0;
+
 fail:
 	*w = *h = 0;
 	return -1;
 }
 
-xshm_t *xshm_attach(Display *dpy, Screen *screen,
-	int_fast32_t w, int_fast32_t h)
+xcb_shm_t* xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h)
 {
-	if (!dpy || !screen)
+	if (!xcb)
 		return NULL;
 
-	xshm_t *xshm = bzalloc(sizeof(xshm_t));
+	xcb_shm_t *shm = bzalloc(sizeof(xcb_shm_t));
+	shm->xcb       = xcb;
+	shm->seg       = xcb_generate_id(shm->xcb);
 
-	xshm->dpy = dpy;
-	xshm->image = XShmCreateImage(xshm->dpy, DefaultVisualOfScreen(screen),
-		DefaultDepthOfScreen(screen), ZPixmap, NULL, &xshm->info,
-		w, h);
-	if (!xshm->image)
+	shm->shmid = shmget(IPC_PRIVATE, w * h * 4, IPC_CREAT | 0777);
+	if (shm->shmid == -1)
 		goto fail;
 
-	xshm->info.shmid = shmget(IPC_PRIVATE,
-		xshm->image->bytes_per_line * xshm->image->height,
-		IPC_CREAT | 0700);
-	if (xshm->info.shmid < 0)
-		goto fail;
+	xcb_shm_attach(shm->xcb, shm->seg, shm->shmid, false);
 
-	xshm->info.shmaddr
-		= xshm->image->data
-		= (char *) shmat(xshm->info.shmid, 0, 0);
-	if (xshm->info.shmaddr == (char *) -1)
-		goto fail;
-	xshm->info.readOnly = false;
+	shm->data = shmat(shm->shmid, NULL, 0);
 
-	if (!XShmAttach(xshm->dpy, &xshm->info))
-		goto fail;
-
-	xshm->attached = true;
-	return xshm;
+	return shm;
 fail:
-	xshm_detach(xshm);
+	xshm_xcb_detach(shm);
 	return NULL;
 }
 
-void xshm_detach(xshm_t *xshm)
+void xshm_xcb_detach(xcb_shm_t *shm)
 {
-	if (!xshm)
+	if (!shm)
 		return;
 
-	if (xshm->attached)
-		XShmDetach(xshm->dpy, &xshm->info);
+	xcb_shm_detach(shm->xcb, shm->seg);
 
-	if (xshm->info.shmaddr != (char *) -1)
-		shmdt(xshm->info.shmaddr);
+	if ((char *) shm->data != (char *) -1)
+		shmdt(shm->data);
 
-	if (xshm->info.shmid != -1)
-		shmctl(xshm->info.shmid, IPC_RMID, NULL);
+	if (shm->shmid != -1)
+		shmctl(shm->shmid, IPC_RMID, NULL);
 
-	if (xshm->image)
-		XDestroyImage(xshm->image);
+	bfree(shm);
+}
 
-	bfree(xshm);
+xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen)
+{
+	xcb_screen_iterator_t iter;
+
+	iter = xcb_setup_roots_iterator(xcb_get_setup(xcb));
+	for (; iter.rem; --screen, xcb_screen_next(&iter)) {
+		if (screen == 0)
+			return iter.data;
+	}
+
+	return NULL;
 }
