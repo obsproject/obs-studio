@@ -162,31 +162,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		InitRenderTargets();
 }
 
-static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
-{
-	switch (format) {
-	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
-	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
-	case DXGI_FORMAT_B8G8R8X8_UNORM:     return GS_BGRX;
-	case DXGI_FORMAT_B8G8R8A8_UNORM:     return GS_BGRA;
-	case DXGI_FORMAT_R10G10B10A2_UNORM:  return GS_R10G10B10A2;
-	case DXGI_FORMAT_R16G16B16A16_UNORM: return GS_RGBA16;
-	case DXGI_FORMAT_R16_UNORM:          return GS_R16;
-	case DXGI_FORMAT_R16G16B16A16_FLOAT: return GS_RGBA16F;
-	case DXGI_FORMAT_R32G32B32A32_FLOAT: return GS_RGBA32F;
-	case DXGI_FORMAT_R16G16_FLOAT:       return GS_RG16F;
-	case DXGI_FORMAT_R32G32_FLOAT:       return GS_RG32F;
-	case DXGI_FORMAT_R16_FLOAT:          return GS_R16F;
-	case DXGI_FORMAT_R32_FLOAT:          return GS_R32F;
-	case DXGI_FORMAT_BC1_UNORM:          return GS_DXT1;
-	case DXGI_FORMAT_BC2_UNORM:          return GS_DXT3;
-	case DXGI_FORMAT_BC3_UNORM:          return GS_DXT5;
-	}
-
-	return GS_UNKNOWN;
-}
-
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 	: isRenderTarget  (false),
 	  isGDICompatible (false),
