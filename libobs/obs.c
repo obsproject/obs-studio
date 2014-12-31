@@ -395,6 +395,15 @@ static void obs_free_video(void)
 
 		circlebuf_free(&video->timestamp_buffer);
 
+		memset(&video->textures_rendered, 0,
+				sizeof(video->textures_rendered));
+		memset(&video->textures_output, 0,
+				sizeof(video->textures_output));
+		memset(&video->textures_copied, 0,
+				sizeof(video->textures_copied));
+		memset(&video->textures_converted, 0,
+				sizeof(video->textures_converted));
+
 		video->cur_texture = 0;
 	}
 }
