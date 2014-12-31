@@ -53,3 +53,7 @@ static inline void video_frame_destroy(struct video_frame *frame)
 		bfree(frame);
 	}
 }
+
+EXPORT void video_frame_copy(struct video_frame *dst,
+		const struct video_frame *src, enum video_format format,
+		uint32_t height);
