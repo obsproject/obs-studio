@@ -51,6 +51,7 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->height  = ovi->output_height;
 	vi->range   = ovi->range;
 	vi->colorspace = ovi->colorspace;
+	vi->cache_size = 6;
 }
 
 #define PIXEL_SIZE 4
@@ -163,7 +164,6 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 static bool obs_init_textures(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
-	bool yuv = format_is_yuv(ovi->output_format);
 	uint32_t output_height = video->gpu_conversion ?
 		video->conversion_height : ovi->output_height;
 	size_t i;
@@ -188,11 +188,6 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 
 		if (!video->output_textures[i])
 			return false;
-
-		if (yuv)
-			obs_source_frame_init(&video->convert_frames[i],
-					ovi->output_format,
-					ovi->output_width,ovi->output_height);
 	}
 
 	return true;
@@ -383,7 +378,6 @@ static void obs_free_video(void)
 			gs_texture_destroy(video->render_textures[i]);
 			gs_texture_destroy(video->convert_textures[i]);
 			gs_texture_destroy(video->output_textures[i]);
-			obs_source_frame_free(&video->convert_frames[i]);
 
 			video->copy_surfaces[i]    = NULL;
 			video->render_textures[i]  = NULL;
@@ -393,7 +387,7 @@ static void obs_free_video(void)
 
 		gs_leave_context();
 
-		circlebuf_free(&video->timestamp_buffer);
+		circlebuf_free(&video->vframe_info_buffer);
 
 		memset(&video->textures_rendered, 0,
 				sizeof(video->textures_rendered));

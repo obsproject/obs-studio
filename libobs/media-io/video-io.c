@@ -27,6 +27,12 @@
 #include "video-scaler.h"
 
 #define MAX_CONVERT_BUFFERS 3
+#define MAX_CACHE_SIZE 16
+
+struct cached_frame_info {
+	struct video_data frame;
+	int count;
+};
 
 struct video_input {
 	struct video_scale_info   conversion;
@@ -50,34 +56,25 @@ struct video_output {
 
 	pthread_t                  thread;
 	pthread_mutex_t            data_mutex;
-	os_event_t                 *stop_event;
+	bool                       stop;
 
-	struct video_data          cur_frame;
-	struct video_data          next_frame;
-	bool                       new_frame;
-
-	os_event_t                 *update_event;
+	os_sem_t                   *update_semaphore;
 	uint64_t                   frame_time;
-	volatile uint64_t          cur_video_time;
 	uint32_t                   skipped_frames;
 	uint32_t                   total_frames;
-	uint64_t                   last_ts;
 
 	bool                       initialized;
 
 	pthread_mutex_t            input_mutex;
 	DARRAY(struct video_input) inputs;
+
+	size_t                     available_frames;
+	size_t                     first_added;
+	size_t                     last_added;
+	struct cached_frame_info   cache[MAX_CACHE_SIZE];
 };
 
 /* ------------------------------------------------------------------------- */
-
-static inline void video_swapframes(struct video_output *video)
-{
-	if (video->new_frame) {
-		video->cur_frame = video->next_frame;
-		video->new_frame = false;
-	}
-}
 
 static inline bool scale_video_output(struct video_input *input,
 		struct video_data *data)
@@ -110,70 +107,67 @@ static inline bool scale_video_output(struct video_input *input,
 	return success;
 }
 
-static inline void video_output_cur_frame(struct video_output *video)
+static inline bool video_output_cur_frame(struct video_output *video)
 {
-	if (!video->cur_frame.data[0])
-		return;
+	struct cached_frame_info *frame_info;
+	bool complete;
+
+	/* -------------------------------- */
+
+	pthread_mutex_lock(&video->data_mutex);
+
+	frame_info = &video->cache[video->first_added];
+
+	pthread_mutex_unlock(&video->data_mutex);
+
+	/* -------------------------------- */
 
 	pthread_mutex_lock(&video->input_mutex);
 
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array+i;
-		struct video_data frame = video->cur_frame;
+		struct video_data frame = frame_info->frame;
 
-		if (scale_video_output(input, &frame)) {
-			if (frame.timestamp <= video->last_ts)
-				video->last_ts += video->frame_time;
-			else
-				video->last_ts = frame.timestamp;
-
-			frame.timestamp = video->last_ts;
+		if (scale_video_output(input, &frame))
 			input->callback(input->param, &frame);
-		}
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
-}
 
-#define MAX_MISSED_TIMINGS 8
+	/* -------------------------------- */
 
-static inline bool safe_sleepto(uint64_t t, uint32_t *missed_timings)
-{
-	if (!os_sleepto_ns(t))
-		(*missed_timings)++;
-	else
-		*missed_timings = 0;
+	pthread_mutex_lock(&video->data_mutex);
 
-	return *missed_timings <= MAX_MISSED_TIMINGS;
+	frame_info->frame.timestamp += video->frame_time;
+	complete = --frame_info->count == 0;
+
+	if (complete) {
+		if (++video->first_added == video->info.cache_size)
+			video->first_added = 0;
+
+		if (++video->available_frames == video->info.cache_size)
+			video->last_added = video->first_added;
+	}
+
+	pthread_mutex_unlock(&video->data_mutex);
+
+	/* -------------------------------- */
+
+	return complete;
 }
 
 static void *video_thread(void *param)
 {
-	struct video_output *video         = param;
-	uint64_t            cur_time       = os_gettime_ns();
-	uint32_t            missed_timings = 0;
+	struct video_output *video = param;
 
-	while (os_event_try(video->stop_event) == EAGAIN) {
-		/* wait half a frame, update frame */
-		cur_time += (video->frame_time/2);
+	while (os_sem_wait(video->update_semaphore) == 0) {
+		if (video->stop)
+			break;
 
-		if (safe_sleepto(cur_time, &missed_timings)) {
-			video->cur_video_time = cur_time;
-			os_event_signal(video->update_event);
-		} else {
+		while (!video->stop && !video_output_cur_frame(video)) {
+			video->total_frames++;
 			video->skipped_frames++;
 		}
-
-		/* wait another half a frame, swap and output frames */
-		cur_time += (video->frame_time/2);
-		safe_sleepto(cur_time, &missed_timings);
-
-		pthread_mutex_lock(&video->data_mutex);
-
-		video_swapframes(video);
-		video_output_cur_frame(video);
-
-		pthread_mutex_unlock(&video->data_mutex);
 
 		video->total_frames++;
 	}
@@ -187,6 +181,22 @@ static inline bool valid_video_params(const struct video_output_info *info)
 {
 	return info->height != 0 && info->width != 0 && info->fps_den != 0 &&
 	       info->fps_num != 0;
+}
+
+static inline void init_cache(struct video_output *video)
+{
+	if (video->info.cache_size > MAX_CACHE_SIZE)
+		video->info.cache_size = MAX_CACHE_SIZE;
+
+	for (size_t i = 0; i < video->info.cache_size; i++) {
+		struct video_frame *frame;
+		frame = (struct video_frame*)&video->cache[i];
+
+		video_frame_init(frame, video->info.format,
+				video->info.width, video->info.height);
+	}
+
+	video->available_frames = video->info.cache_size;
 }
 
 int video_output_open(video_t **video, struct video_output_info *info)
@@ -214,12 +224,12 @@ int video_output_open(video_t **video, struct video_output_info *info)
 		goto fail;
 	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
 		goto fail;
-	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
-		goto fail;
-	if (os_event_init(&out->update_event, OS_EVENT_TYPE_AUTO) != 0)
+	if (os_sem_init(&out->update_semaphore, 0) != 0)
 		goto fail;
 	if (pthread_create(&out->thread, NULL, video_thread, out) != 0)
 		goto fail;
+
+	init_cache(out);
 
 	out->initialized = true;
 	*video = out;
@@ -241,8 +251,10 @@ void video_output_close(video_t *video)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
-	os_event_destroy(video->update_event);
-	os_event_destroy(video->stop_event);
+	for (size_t i = 0; i < video->info.cache_size; i++)
+		video_frame_free((struct video_frame*)&video->cache[i]);
+
+	os_sem_destroy(video->update_semaphore);
 	pthread_mutex_destroy(&video->data_mutex);
 	pthread_mutex_destroy(&video->input_mutex);
 	bfree(video);
@@ -368,32 +380,55 @@ const struct video_output_info *video_output_get_info(const video_t *video)
 	return video ? &video->info : NULL;
 }
 
-void video_output_swap_frame(video_t *video, struct video_data *frame)
+bool video_output_lock_frame(video_t *video, struct video_frame *frame,
+		int count, uint64_t timestamp)
+{
+	struct cached_frame_info *cfi;
+	bool locked;
+
+	if (!video) return false;
+
+	pthread_mutex_lock(&video->data_mutex);
+
+	if (video->available_frames == 0) {
+		video->cache[video->last_added].count += count;
+		locked = false;
+
+	} else {
+		if (video->available_frames != video->info.cache_size) {
+			if (++video->last_added == video->info.cache_size)
+				video->last_added = 0;
+		}
+
+		cfi = &video->cache[video->last_added];
+		cfi->frame.timestamp = timestamp;
+		cfi->count = count;
+
+		memcpy(frame, &cfi->frame, sizeof(*frame));
+
+		locked = true;
+	}
+
+	pthread_mutex_unlock(&video->data_mutex);
+
+	return locked;
+}
+
+void video_output_unlock_frame(video_t *video)
 {
 	if (!video) return;
 
 	pthread_mutex_lock(&video->data_mutex);
-	video->next_frame = *frame;
-	video->new_frame = true;
+
+	video->available_frames--;
+	os_sem_post(video->update_semaphore);
+
 	pthread_mutex_unlock(&video->data_mutex);
-}
-
-bool video_output_wait(video_t *video)
-{
-	if (!video) return false;
-
-	os_event_wait(video->update_event);
-	return os_event_try(video->stop_event) == EAGAIN;
 }
 
 uint64_t video_output_get_frame_time(const video_t *video)
 {
 	return video ? video->frame_time : 0;
-}
-
-uint64_t video_output_get_time(const video_t *video)
-{
-	return video ? video->cur_video_time : 0;
 }
 
 void video_output_stop(video_t *video)
@@ -405,10 +440,18 @@ void video_output_stop(video_t *video)
 
 	if (video->initialized) {
 		video->initialized = false;
-		os_event_signal(video->stop_event);
+		video->stop = true;
+		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
-		os_event_signal(video->update_event);
 	}
+}
+
+bool video_output_stopped(video_t *video)
+{
+	if (!video)
+		return true;
+
+	return video->stop;
 }
 
 enum video_format video_output_get_format(const video_t *video)

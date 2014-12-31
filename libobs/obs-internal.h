@@ -129,6 +129,11 @@ extern void obs_display_free(struct obs_display *display);
 /* ------------------------------------------------------------------------- */
 /* core */
 
+struct obs_vframe_info {
+	uint64_t timestamp;
+	int count;
+};
+
 struct obs_core_video {
 	graphics_t                      *graphics;
 	gs_stagesurf_t                  *copy_surfaces[NUM_TEXTURES];
@@ -139,8 +144,7 @@ struct obs_core_video {
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
-	struct obs_source_frame         convert_frames[NUM_TEXTURES];
-	struct circlebuf                timestamp_buffer;
+	struct circlebuf                vframe_info_buffer;
 	gs_effect_t                     *default_effect;
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *solid_effect;

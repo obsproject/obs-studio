@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+struct video_frame;
+
 /* Base video output component.  Use this to create a video output track. */
 
 struct video_output;
@@ -72,6 +74,7 @@ struct video_output_info {
 	uint32_t          fps_den;
 	uint32_t          width;
 	uint32_t          height;
+	size_t            cache_size;
 
 	enum video_colorspace colorspace;
 	enum video_range_type range;
@@ -137,11 +140,12 @@ EXPORT bool video_output_active(const video_t *video);
 
 EXPORT const struct video_output_info *video_output_get_info(
 		const video_t *video);
-EXPORT void video_output_swap_frame(video_t *video, struct video_data *frame);
-EXPORT bool video_output_wait(video_t *video);
+EXPORT bool video_output_lock_frame(video_t *video, struct video_frame *frame,
+		int count, uint64_t timestamp);
+EXPORT void video_output_unlock_frame(video_t *video);
 EXPORT uint64_t video_output_get_frame_time(const video_t *video);
-EXPORT uint64_t video_output_get_time(const video_t *video);
 EXPORT void video_output_stop(video_t *video);
+EXPORT bool video_output_stopped(video_t *video);
 
 EXPORT enum video_format video_output_get_format(const video_t *video);
 EXPORT uint32_t video_output_get_width(const video_t *video);

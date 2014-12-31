@@ -19,6 +19,7 @@
 #include "obs-internal.h"
 #include "graphics/vec4.h"
 #include "media-io/format-conversion.h"
+#include "media-io/video-frame.h"
 
 static inline void calculate_base_volume(struct obs_core_data *data,
 		struct obs_view *view, obs_source_t *target)
@@ -317,15 +318,12 @@ static inline void stage_output_texture(struct obs_core_video *video,
 }
 
 static inline void render_video(struct obs_core_video *video, int cur_texture,
-		int prev_texture, uint64_t timestamp)
+		int prev_texture)
 {
 	gs_begin_scene();
 
 	gs_enable_depth_test(false);
 	gs_set_cull_mode(GS_NEITHER);
-
-	circlebuf_push_back(&video->timestamp_buffer, &timestamp,
-			sizeof(timestamp));
 
 	render_main_texture(video, cur_texture);
 	render_output_texture(video, cur_texture, prev_texture);
@@ -393,12 +391,10 @@ static inline uint32_t make_aligned_linesize_offset(uint32_t offset,
 }
 
 static void fix_gpu_converted_alignment(struct obs_core_video *video,
-		struct video_data *frame, int cur_texture)
+		struct video_frame *output, const struct video_data *input)
 {
-	struct obs_source_frame *new_frame =
-		&video->convert_frames[cur_texture];
-	uint32_t src_linesize = frame->linesize[0];
-	uint32_t dst_linesize = video->output_width * 4;
+	uint32_t src_linesize = input->linesize[0];
+	uint32_t dst_linesize = output->linesize[0];
 	uint32_t src_pos      = 0;
 
 	for (size_t i = 0; i < 3; i++) {
@@ -408,89 +404,103 @@ static void fix_gpu_converted_alignment(struct obs_core_video *video,
 		src_pos = make_aligned_linesize_offset(video->plane_offsets[i],
 				dst_linesize, src_linesize);
 
-		copy_dealign(new_frame->data[i], 0, dst_linesize,
-				frame->data[0], src_pos, src_linesize,
+		copy_dealign(output->data[i], 0, dst_linesize,
+				input->data[0], src_pos, src_linesize,
 				video->plane_sizes[i]);
-	}
-
-	/* replace with cached frames */
-	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-		frame->data[i]     = new_frame->data[i];
-		frame->linesize[i] = new_frame->linesize[i];
 	}
 }
 
-static bool set_gpu_converted_data(struct obs_core_video *video,
-		struct video_data *frame, int cur_texture)
+static void set_gpu_converted_data(struct obs_core_video *video,
+		struct video_frame *output, const struct video_data *input,
+		const struct video_output_info *info)
 {
-	if (frame->linesize[0] == video->output_width*4) {
+	if (input->linesize[0] == video->output_width*4) {
+		struct video_frame frame;
+
 		for (size_t i = 0; i < 3; i++) {
 			if (video->plane_linewidth[i] == 0)
 				break;
 
-			frame->linesize[i] = video->plane_linewidth[i];
-			frame->data[i] =
-				frame->data[0] + video->plane_offsets[i];
+			frame.linesize[i] = video->plane_linewidth[i];
+			frame.data[i] =
+				input->data[0] + video->plane_offsets[i];
 		}
 
-	} else {
-		fix_gpu_converted_alignment(video, frame, cur_texture);
-	}
+		video_frame_copy(output, &frame, info->format, info->height);
 
-	return true;
+	} else {
+		fix_gpu_converted_alignment(video, output, input);
+	}
 }
 
-static bool convert_frame(struct obs_core_video *video,
-		struct video_data *frame,
-		const struct video_output_info *info, int cur_texture)
+static void convert_frame(
+		struct video_frame *output, const struct video_data *input,
+		const struct video_output_info *info)
 {
-	struct obs_source_frame *new_frame =
-		&video->convert_frames[cur_texture];
-
 	if (info->format == VIDEO_FORMAT_I420) {
 		compress_uyvx_to_i420(
-				frame->data[0], frame->linesize[0],
+				input->data[0], input->linesize[0],
 				0, info->height,
-				new_frame->data, new_frame->linesize);
+				output->data, output->linesize);
 
 	} else if (info->format == VIDEO_FORMAT_NV12) {
 		compress_uyvx_to_nv12(
-				frame->data[0], frame->linesize[0],
+				input->data[0], input->linesize[0],
 				0, info->height,
-				new_frame->data, new_frame->linesize);
+				output->data, output->linesize);
 
 	} else {
 		blog(LOG_ERROR, "convert_frame: unsupported texture format");
-		return false;
 	}
-
-	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-		frame->data[i]     = new_frame->data[i];
-		frame->linesize[i] = new_frame->linesize[i];
-	}
-
-	return true;
 }
 
 static inline void output_video_data(struct obs_core_video *video,
-		struct video_data *frame, int cur_texture)
+		struct video_data *input_frame, int count)
 {
 	const struct video_output_info *info;
+	struct video_frame output_frame;
+	bool locked;
+
 	info = video_output_get_info(video->video);
 
-	if (video->gpu_conversion) {
-		if (!set_gpu_converted_data(video, frame, cur_texture))
-			return;
+	locked = video_output_lock_frame(video->video, &output_frame, count,
+			input_frame->timestamp);
+	if (locked) {
+		if (video->gpu_conversion) {
+			set_gpu_converted_data(video, &output_frame,
+					input_frame, info);
 
-	} else if (format_is_yuv(info->format)) {
-		if (!convert_frame(video, frame, info, cur_texture))
-			return;
+		} else if (format_is_yuv(info->format)) {
+			convert_frame(&output_frame, input_frame, info);
+		}
+
+		video_output_unlock_frame(video->video);
 	}
-
-	video_output_swap_frame(video->video, frame);
 }
 
-static inline void output_frame(uint64_t timestamp)
+static inline void video_sleep(struct obs_core_video *video,
+		uint64_t *p_time, uint64_t interval_ns)
+{
+	struct obs_vframe_info vframe_info;
+	uint64_t cur_time = *p_time;
+	uint64_t t = cur_time + interval_ns;
+	int count;
+
+	if (!os_sleepto_ns(t)) {
+		*p_time = t;
+		count = 1;
+	} else {
+		count = (int)((os_gettime_ns() - cur_time) / interval_ns);
+		*p_time = cur_time + interval_ns * count;
+	}
+
+	vframe_info.timestamp = cur_time;
+	vframe_info.count = count;
+	circlebuf_push_back(&video->vframe_info_buffer, &vframe_info,
+			sizeof(vframe_info));
+}
+
+static inline void output_frame(uint64_t *cur_time, uint64_t interval)
 {
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
@@ -501,37 +511,38 @@ static inline void output_frame(uint64_t timestamp)
 	memset(&frame, 0, sizeof(struct video_data));
 
 	gs_enter_context(video->graphics);
-
-	render_video(video, cur_texture, prev_texture, timestamp);
+	render_video(video, cur_texture, prev_texture);
 	frame_ready = download_frame(video, prev_texture, &frame);
-
 	gs_flush();
-
 	gs_leave_context();
 
 	if (frame_ready) {
-		circlebuf_pop_front(&video->timestamp_buffer, &frame.timestamp,
-				sizeof(frame.timestamp));
+		struct obs_vframe_info vframe_info;
+		circlebuf_pop_front(&video->vframe_info_buffer, &vframe_info,
+				sizeof(vframe_info));
 
-		output_video_data(video, &frame, cur_texture);
+		frame.timestamp = vframe_info.timestamp;
+		output_video_data(video, &frame, vframe_info.count);
 	}
 
 	if (++video->cur_texture == NUM_TEXTURES)
 		video->cur_texture = 0;
+
+	video_sleep(video, cur_time, interval);
 }
 
 void *obs_video_thread(void *param)
 {
 	uint64_t last_time = 0;
+	uint64_t cur_time = os_gettime_ns();
+	uint64_t interval = video_output_get_frame_time(obs->video.video);
 
-	while (video_output_wait(obs->video.video)) {
-		uint64_t cur_time = video_output_get_time(obs->video.video);
-
+	while (!video_output_stopped(obs->video.video)) {
 		last_time = tick_sources(cur_time, last_time);
 
 		render_displays();
 
-		output_frame(cur_time);
+		output_frame(&cur_time, interval);
 	}
 
 	UNUSED_PARAMETER(param);
