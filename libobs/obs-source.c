@@ -2061,7 +2061,7 @@ void obs_source_load(obs_source_t *source)
 
 bool obs_source_active(const obs_source_t *source)
 {
-	return source->activate_refs != 0;
+	return source ? source->activate_refs != 0 : false;
 }
 
 static inline void signal_flags_updated(obs_source_t *source)
