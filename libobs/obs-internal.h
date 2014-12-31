@@ -395,6 +395,7 @@ struct obs_output {
 	int                             total_frames;
 
 	bool                            active;
+	volatile bool                   stopped;
 	video_t                         *video;
 	audio_t                         *audio;
 	obs_encoder_t                   *video_encoder;

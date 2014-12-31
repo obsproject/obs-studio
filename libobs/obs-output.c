@@ -159,6 +159,8 @@ bool obs_output_start(obs_output_t *output)
 	if (!output)
 		return false;
 
+	output->stopped = false;
+
 	success = output->info.start(output->context.data);
 
 	if (success && output->video) {
@@ -207,6 +209,8 @@ static void log_frame_info(struct obs_output *output)
 void obs_output_stop(obs_output_t *output)
 {
 	if (output) {
+		output->stopped = true;
+
 		os_event_signal(output->reconnect_stop_event);
 		if (output->reconnect_thread_active)
 			pthread_join(output->reconnect_thread, NULL);
@@ -617,7 +621,8 @@ static inline void send_interleaved(struct obs_output *output)
 		output->total_frames++;
 
 	da_erase(output->interleaved_packets, 0);
-	output->info.encoded_packet(output->context.data, &out);
+	if (!output->stopped)
+		output->info.encoded_packet(output->context.data, &out);
 	obs_free_encoder_packet(&out);
 }
 
@@ -787,7 +792,8 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 static void default_encoded_callback(void *param, struct encoder_packet *packet)
 {
 	struct obs_output *output = param;
-	output->info.encoded_packet(output->context.data, packet);
+	if (!output->stopped)
+		output->info.encoded_packet(output->context.data, packet);
 
 	if (packet->type == OBS_ENCODER_VIDEO)
 		output->total_frames++;
@@ -796,8 +802,16 @@ static void default_encoded_callback(void *param, struct encoder_packet *packet)
 static void default_raw_video_callback(void *param, struct video_data *frame)
 {
 	struct obs_output *output = param;
-	output->info.raw_video(output->context.data, frame);
+	if (!output->stopped)
+		output->info.raw_video(output->context.data, frame);
 	output->total_frames++;
+}
+
+static void default_raw_audio_callback(void *param, struct audio_data *frames)
+{
+	struct obs_output *output = param;
+	if (!output->stopped)
+		output->info.raw_audio(output->context.data, frames);
 }
 
 static void hook_data_capture(struct obs_output *output, bool encoded,
@@ -831,8 +845,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 		if (has_audio)
 			audio_output_connect(output->audio,
 					get_audio_conversion(output),
-					output->info.raw_audio,
-					output->context.data);
+					default_raw_audio_callback, output);
 	}
 }
 
