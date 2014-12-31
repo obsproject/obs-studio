@@ -191,7 +191,7 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
-	if (info->type == OBS_SOURCE_TYPE_TRANSITION)
+	if (info && info->type == OBS_SOURCE_TYPE_TRANSITION)
 		os_atomic_inc_long(&obs->data.active_transitions);
 	return source;
 
