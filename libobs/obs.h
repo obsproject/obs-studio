@@ -736,6 +736,11 @@ EXPORT void obs_source_enum_tree(obs_source_t *source,
 EXPORT bool obs_source_active(const obs_source_t *source);
 
 /**
+ * Returns true if currently displayed somewhere (active or not), false if not
+ */
+EXPORT bool obs_source_showing(const obs_source_t *source);
+
+/**
  * Sometimes sources need to be told when to save their settings so they
  * don't have to constantly update and keep track of their settings.  This will
  * call the source's 'save' callback if any, which will save its current

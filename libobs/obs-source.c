@@ -2064,6 +2064,11 @@ bool obs_source_active(const obs_source_t *source)
 	return source ? source->activate_refs != 0 : false;
 }
 
+bool obs_source_showing(const obs_source_t *source)
+{
+	return source ? source->show_refs != 0 : false;
+}
+
 static inline void signal_flags_updated(obs_source_t *source)
 {
 	struct calldata data = {0};
