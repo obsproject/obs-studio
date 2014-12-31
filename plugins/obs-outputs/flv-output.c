@@ -79,6 +79,7 @@ static void flv_output_stop(void *data)
 		fclose(stream->file);
 		obs_output_end_data_capture(stream->output);
 		stream->active = false;
+		stream->sent_headers = false;
 
 		info("FLV file output complete");
 	}
