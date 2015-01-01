@@ -35,6 +35,7 @@ using namespace DShow;
 #define VIDEO_FORMAT      "video_format"
 #define LAST_VIDEO_DEV_ID "last_video_device_id"
 #define LAST_RESOLUTION   "last_resolution"
+#define BUFFERING_VAL     "buffering"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
 #define AUDIO_DEVICE_ID   "audio_device_id"
 
@@ -50,12 +51,22 @@ using namespace DShow;
 #define TEXT_RESOLUTION     obs_module_text("Resolution")
 #define TEXT_VIDEO_FORMAT   obs_module_text("VideoFormat")
 #define TEXT_FORMAT_UNKNOWN obs_module_text("VideoFormat.Unknown")
+#define TEXT_BUFFERING      obs_module_text("Buffering")
+#define TEXT_BUFFERING_AUTO obs_module_text("Buffering.AutoDetect")
+#define TEXT_BUFFERING_ON   obs_module_text("Buffering.Enable")
+#define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_CUSTOM_AUDIO   obs_module_text("UseCustomAudioDevice")
 #define TEXT_AUDIO_DEVICE   obs_module_text("AudioDevice")
 
 enum ResType {
 	ResType_Preferred,
 	ResType_Custom
+};
+
+enum class BufferingType : int64_t {
+	Auto,
+	On,
+	Off
 };
 
 void ffmpeg_log(void *bla, int level, const char *msg, va_list args)
@@ -204,6 +215,8 @@ struct DShowInput {
 	bool UpdateVideoConfig(obs_data_t *settings);
 	bool UpdateAudioConfig(obs_data_t *settings);
 	void Update(obs_data_t *settings);
+
+	inline void SetupBuffering(obs_data_t *settings);
 
 	void DShowLoop();
 };
@@ -652,6 +665,34 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings,
 
 static long long GetOBSFPS();
 
+static inline bool IsEncoded(const VideoConfig &config)
+{
+	return config.format >= VideoFormat::MJPEG ||
+		wstrstri(config.name.c_str(), L"elgato") != NULL ||
+		wstrstri(config.name.c_str(), L"stream engine") != NULL;
+}
+
+inline void DShowInput::SetupBuffering(obs_data_t *settings)
+{
+	BufferingType bufType;
+	uint32_t flags = obs_source_get_flags(source);
+	bool useBuffering;
+
+	bufType = (BufferingType)obs_data_get_int(settings, BUFFERING_VAL);
+
+	if (bufType == BufferingType::Auto)
+		useBuffering = IsEncoded(videoConfig);
+	else
+		useBuffering = bufType == BufferingType::On;
+
+	if (useBuffering)
+		flags &= ~OBS_SOURCE_FLAG_UNBUFFERED;
+	else
+		flags |= OBS_SOURCE_FLAG_UNBUFFERED;
+
+	obs_source_set_flags(source, flags);
+}
+
 bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 {
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
@@ -728,6 +769,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 		if (!device.SetVideoConfig(&videoConfig))
 			return false;
 	}
+
+	SetupBuffering(settings);
 
 	return true;
 }
@@ -1517,6 +1560,15 @@ static obs_properties_t *GetDShowProperties(void *)
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(p, VideoFormatChanged);
+
+	p = obs_properties_add_list(ppts, BUFFERING_VAL, TEXT_BUFFERING,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, TEXT_BUFFERING_AUTO,
+			(int64_t)BufferingType::Auto);
+	obs_property_list_add_int(p, TEXT_BUFFERING_ON,
+			(int64_t)BufferingType::On);
+	obs_property_list_add_int(p, TEXT_BUFFERING_OFF,
+			(int64_t)BufferingType::Off);
 
 	/* ------------------------------------- */
 	/* audio settings */
