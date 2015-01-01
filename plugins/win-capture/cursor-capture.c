@@ -188,15 +188,20 @@ void cursor_capture(struct cursor_data *data)
 }
 
 void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
-		float x_scale, float y_scale)
+		float x_scale, float y_scale, long width, long height)
 {
-	long x = data->cursor_pos.x + x_offset - data->x_hotspot;
-	long y = data->cursor_pos.y + y_offset - data->y_hotspot;
+	long x = data->cursor_pos.x + x_offset;
+	long y = data->cursor_pos.y + y_offset;
+	long x_draw = x - data->x_hotspot;
+	long y_draw = y - data->y_hotspot;
+
+	if (x < 0 || x > width || y < 0 || y > height)
+		return;
 
 	if (data->visible && !!data->texture) {
 		gs_matrix_push();
 		gs_matrix_scale3f(x_scale, y_scale, 1.0f);
-		obs_source_draw(data->texture, x, y, 0, 0, false);
+		obs_source_draw(data->texture, x_draw, y_draw, 0, 0, false);
 		gs_matrix_pop();
 	}
 }

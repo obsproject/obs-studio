@@ -982,7 +982,9 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 	float y_scale = (float)gc->global_hook_info->cy /
 		(float)gc->global_hook_info->base_cy;
 
-	cursor_draw(&gc->cursor_data, -p.x, -p.y, x_scale, y_scale);
+	cursor_draw(&gc->cursor_data, -p.x, -p.y, x_scale, y_scale,
+			gc->global_hook_info->base_cx,
+			gc->global_hook_info->base_cy);
 }
 
 static void game_capture_render(void *data, gs_effect_t *effect)
