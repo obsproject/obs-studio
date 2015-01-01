@@ -156,10 +156,13 @@ static void add_connection(struct obs_encoder *encoder)
 			get_video_info(encoder, &video_info);
 
 		if (!info && has_scaling(encoder)) {
-			info = &video_info;
-			info->format = video_output_get_format(encoder->media);
-			info->colorspace = VIDEO_CS_DEFAULT;
-			info->range      = VIDEO_RANGE_DEFAULT;
+			const struct video_output_info *output_info;
+			output_info = video_output_get_info(encoder->media);
+
+			info             = &video_info;
+			info->format     = output_info->format;
+			info->colorspace = output_info->colorspace;
+			info->range      = output_info->range;
 		}
 
 		if (info && (!info->width || !info->height)) {
