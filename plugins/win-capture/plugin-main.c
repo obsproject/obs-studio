@@ -1,8 +1,10 @@
+#include <windows.h>
 #include <obs-module.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-capture", "en-US")
 
+extern struct obs_source_info duplicator_capture_info;
 extern struct obs_source_info monitor_capture_info;
 extern struct obs_source_info window_capture_info;
 extern struct obs_source_info game_capture_info;
@@ -19,7 +21,25 @@ extern bool load_graphics_offsets(bool is32bit);
 
 bool obs_module_load(void)
 {
-	obs_register_source(&monitor_capture_info);
+	OSVERSIONINFO osvi = {0};
+	bool win8_or_above = false;
+
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+
+	if (!!GetVersionEx(&osvi)) {
+		win8_or_above = osvi.dwMajorVersion > 6 ||
+			(osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 2);
+	}
+
+	obs_enter_graphics();
+
+	if (win8_or_above && gs_get_device_type() == GS_DEVICE_DIRECT3D_11)
+		obs_register_source(&duplicator_capture_info);
+	else
+		obs_register_source(&monitor_capture_info);
+
+	obs_leave_graphics();
+
 	obs_register_source(&window_capture_info);
 
 	if (load_graphics_offsets(IS32BIT)) {

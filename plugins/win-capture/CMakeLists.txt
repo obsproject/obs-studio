@@ -17,6 +17,7 @@ set(win-capture_SOURCES
 	monitor-capture.c
 	window-capture.c
 	load-graphics-offsets.c
+	duplicator-monitor-capture.c
 	plugin-main.c)
 
 add_library(win-capture MODULE
