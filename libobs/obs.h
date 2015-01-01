@@ -862,6 +862,9 @@ EXPORT void obs_source_send_focus(obs_source_t *source, bool focus);
 EXPORT void obs_source_send_key_click(obs_source_t *source,
 		const struct obs_key_event *event, bool key_up);
 
+/** Sets the default source flags. */
+EXPORT void obs_source_set_default_flags(obs_source_t *source, uint32_t flags);
+
 
 /* ------------------------------------------------------------------------- */
 /* Scenes */

@@ -281,6 +281,7 @@ struct obs_source {
 
 	/* general exposed flags that can be set for the source */
 	uint32_t                        flags;
+	uint32_t                        default_flags;
 
 	/* indicates ownership of the info.id buffer */
 	bool                            owns_info_id;

@@ -1233,6 +1233,7 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	sync = obs_data_get_int(source_data, "sync");
 	obs_source_set_sync_offset(source, sync);
 
+	obs_data_set_default_int(source_data, "flags", source->default_flags);
 	flags = (uint32_t)obs_data_get_int(source_data, "flags");
 	obs_source_set_flags(source, flags);
 

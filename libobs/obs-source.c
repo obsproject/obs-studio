@@ -191,6 +191,8 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
+	source->flags = source->default_flags;
+
 	if (info && info->type == OBS_SOURCE_TYPE_TRANSITION)
 		os_atomic_inc_long(&obs->data.active_transitions);
 	return source;
@@ -2089,6 +2091,13 @@ void obs_source_set_flags(obs_source_t *source, uint32_t flags)
 		source->flags = flags;
 		signal_flags_updated(source);
 	}
+}
+
+void obs_source_set_default_flags(obs_source_t *source, uint32_t flags)
+{
+	if (!source) return;
+
+	source->default_flags = flags;
 }
 
 uint32_t obs_source_get_flags(const obs_source_t *source)
