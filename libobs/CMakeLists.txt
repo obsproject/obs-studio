@@ -41,6 +41,7 @@ include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 if(WIN32)
 	set(libobs_PLATFORM_SOURCES
+		obs-win-crash-handler.c
 		obs-windows.c
 		util/threading-windows.c
 		util/pipe-windows.c

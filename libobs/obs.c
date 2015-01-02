@@ -587,6 +587,10 @@ static bool obs_init(const char *locale)
 	return true;
 }
 
+#ifdef _WIN32
+extern void initialize_crash_handler(void);
+#endif
+
 bool obs_startup(const char *locale)
 {
 	bool success;
@@ -595,6 +599,10 @@ bool obs_startup(const char *locale)
 		blog(LOG_WARNING, "Tried to call obs_startup more than once");
 		return false;
 	}
+
+#ifdef _WIN32
+	initialize_crash_handler();
+#endif
 
 	success = obs_init(locale);
 	if (!success)
