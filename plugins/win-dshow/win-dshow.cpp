@@ -5,6 +5,7 @@
 #include <util/dstr.hpp>
 #include <util/platform.h>
 #include <util/windows/WinHandle.hpp>
+#include <util/threading.h>
 #include "libdshowcapture/dshowcapture.hpp"
 #include "ffmpeg-decode.h"
 #include "encode-dstr.hpp"
@@ -224,6 +225,8 @@ struct DShowInput {
 static DWORD CALLBACK DShowThread(LPVOID ptr)
 {
 	DShowInput *dshowInput = (DShowInput*)ptr;
+
+	os_set_thread_name("win-dshow: DShowThread");
 
 	CoInitialize(nullptr);
 	dshowInput->DShowLoop();

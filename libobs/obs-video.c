@@ -537,6 +537,8 @@ void *obs_video_thread(void *param)
 	uint64_t cur_time = os_gettime_ns();
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
 
+	os_set_thread_name("libobs: graphics thread");
+
 	while (!video_output_stopped(obs->video.video)) {
 		last_time = tick_sources(cur_time, last_time);
 

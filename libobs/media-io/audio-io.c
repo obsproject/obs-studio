@@ -354,6 +354,8 @@ static void *audio_thread(void *param)
 	uint64_t prev_time = os_gettime_ns() - buffer_time;
 	uint64_t audio_time;
 
+	os_set_thread_name("audio-io: audio thread");
+
 	while (os_event_try(audio->stop_event) == EAGAIN) {
 		os_sleep_ms(AUDIO_WAIT_TIME);
 

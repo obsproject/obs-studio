@@ -6,6 +6,7 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/CoTaskMemPtr.hpp>
+#include <util/threading.h>
 
 using namespace std;
 
@@ -313,6 +314,8 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 {
 	WASAPISource *source = (WASAPISource*)param;
 
+	os_set_thread_name("win-wasapi: reconnect thread");
+
 	while (!WaitForSignal(source->stopSignal, RECONNECT_INTERVAL)) {
 		if (source->TryInitialize())
 			break;
@@ -395,6 +398,8 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 		source->receiveSignal,
 		source->stopSignal
 	};
+
+	os_set_thread_name("win-wasapi: capture thread");
 
 	while (WaitForCaptureSignal(2, sigs, dur)) {
 		if (!source->ProcessCaptureData()) {

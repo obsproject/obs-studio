@@ -160,6 +160,8 @@ static void *video_thread(void *param)
 {
 	struct video_output *video = param;
 
+	os_set_thread_name("video-io: video thread");
+
 	while (os_sem_wait(video->update_semaphore) == 0) {
 		if (video->stop)
 			break;
