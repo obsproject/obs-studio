@@ -160,3 +160,32 @@ long os_atomic_dec_long(volatile long *val)
 {
 	return InterlockedDecrement(val);
 }
+
+#define VC_EXCEPTION 0x406D1388
+
+#pragma pack(push,8)
+struct vs_threadname_info {
+	DWORD type; /* 0x1000 */
+	const char *name;
+	DWORD thread_id;
+	DWORD flags;
+};
+#pragma pack(pop)
+
+#define THREADNAME_INFO_SIZE \
+	(sizeof(struct vs_threadname_info) / sizeof(ULONG_PTR))
+
+void os_set_thread_name(const char *name)
+{
+	struct vs_threadname_info info;
+	info.type = 0x1000;
+	info.name = name;
+	info.thread_id = GetCurrentThreadId();
+	info.flags = 0;
+
+	__try {
+		RaiseException(VC_EXCEPTION, 0, THREADNAME_INFO_SIZE,
+				(ULONG_PTR*)&info);
+	} __except(EXCEPTION_EXECUTE_HANDLER) {
+	}
+}

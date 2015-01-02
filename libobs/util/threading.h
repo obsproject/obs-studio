@@ -73,6 +73,8 @@ EXPORT int  os_sem_wait(os_sem_t *sem);
 EXPORT long os_atomic_inc_long(volatile long *val);
 EXPORT long os_atomic_dec_long(volatile long *val);
 
+EXPORT void os_set_thread_name(const char *name);
+
 
 #ifdef __cplusplus
 }
