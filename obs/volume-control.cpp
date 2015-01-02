@@ -35,7 +35,10 @@ void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
 
 void VolControl::VolumeChanged()
 {
+	slider->blockSignals(true);
 	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
+	slider->blockSignals(false);
+	
 	updateText();
 }
 
