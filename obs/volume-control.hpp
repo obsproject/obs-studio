@@ -44,6 +44,7 @@ private slots:
 	void VolumeChanged();
 	void VolumeLevel(float mag, float peak, float peakHold);
 	void SliderChanged(int vol);
+	void updateText();
 
 public:
 	VolControl(OBSSource source);

@@ -35,7 +35,11 @@ void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
 
 void VolControl::VolumeChanged()
 {
+	slider->blockSignals(true);
 	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
+	slider->blockSignals(false);
+	
+	updateText();
 }
 
 void VolControl::VolumeLevel(float mag, float peak, float peakHold)
@@ -46,6 +50,11 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 void VolControl::SliderChanged(int vol)
 {
 	obs_fader_set_deflection(obs_fader, float(vol) * 0.01f);
+	updateText();
+}
+
+void VolControl::updateText()
+{
 	volLabel->setText(QString::number(obs_fader_get_db(obs_fader), 'f', 1)
 			.append(" dB"));
 }
