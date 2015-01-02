@@ -180,7 +180,9 @@ void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 {
+	volume->blockSignals(true);
 	volume->setValue(int(value * 100));
+	volume->blockSignals(false);
 }
 
 void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)
