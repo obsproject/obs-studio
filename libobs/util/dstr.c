@@ -162,7 +162,7 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	return 0;
 }
 
-char *astrstri(char *str, const char *find)
+char *astrstri(const char *str, const char *find)
 {
 	size_t len;
 
@@ -173,7 +173,7 @@ char *astrstri(char *str, const char *find)
 
 	do {
 		if (astrcmpi_n(str, find, len) == 0)
-			return str;
+			return (char*)str;
 	} while (*str++);
 
 	return NULL;
