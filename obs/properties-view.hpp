@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QScrollArea>
+#include "vertical-scroll-area.hpp"
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -45,7 +45,7 @@ public slots:
 
 /* ------------------------------------------------------------------------- */
 
-class OBSPropertiesView : public QScrollArea {
+class OBSPropertiesView : public VScrollArea {
 	Q_OBJECT
 
 	friend class WidgetInfo;

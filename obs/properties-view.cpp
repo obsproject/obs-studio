@@ -85,7 +85,7 @@ void OBSPropertiesView::RefreshProperties()
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 		PropertiesReloadCallback reloadCallback,
 		PropertiesUpdateCallback callback_, int minSize_)
-	: QScrollArea    (nullptr),
+	: VScrollArea    (nullptr),
 	  widget         (nullptr),
 	  properties     (nullptr, obs_properties_destroy),
 	  settings       (settings_),
