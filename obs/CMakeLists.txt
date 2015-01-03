@@ -105,6 +105,7 @@ set(obs_SOURCES
 	properties-view.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
+	crash-report.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -129,6 +130,7 @@ set(obs_HEADERS
 	volume-control.hpp
 	adv-audio-control.hpp
 	qt-display.hpp
+	crash-report.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI

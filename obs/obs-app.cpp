@@ -30,6 +30,7 @@
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-license-agreement.hpp"
+#include "crash-report.hpp"
 #include "platform.hpp"
 
 #include <fstream>
@@ -559,12 +560,28 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	return ret;
 }
 
+#define MAX_CRASH_REPORT_SIZE (50 * 1024)
+
+static void main_crash_handler(const char *format, va_list args, void *param)
+{
+	char *test = new char[MAX_CRASH_REPORT_SIZE];
+
+	vsnprintf(test, MAX_CRASH_REPORT_SIZE, format, args);
+
+	OBSCrashReport crashReport(nullptr, test);
+	crashReport.exec();
+	exit(-1);
+
+	UNUSED_PARAMETER(param);
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
+	base_set_crash_handler(main_crash_handler, nullptr);
 	base_get_log_handler(&def_log_handler, nullptr);
 
 	fstream logFile;
