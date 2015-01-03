@@ -326,9 +326,12 @@
            </widget>
           </item>
           <item>
-           <widget class="QScrollArea" name="scrollArea">
+           <widget class="VScrollArea" name="scrollArea">
             <property name="verticalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOn</enum>
+            </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
             </property>
             <property name="widgetResizable">
              <bool>true</bool>
@@ -836,6 +839,12 @@
    <class>OBSBasicStatusBar</class>
    <extends>QStatusBar</extends>
    <header>window-basic-status-bar.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>VScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>vertical-scroll-area.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
