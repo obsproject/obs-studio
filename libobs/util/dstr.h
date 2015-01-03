@@ -47,6 +47,7 @@ EXPORT int astrcmpi_n(const char *str1, const char *str2, size_t n);
 EXPORT int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n);
 
 EXPORT char *astrstri(const char *str, const char *find);
+EXPORT wchar_t *wstrstri(const wchar_t *str, const wchar_t *find);
 
 EXPORT char *strdepad(char *str);
 EXPORT wchar_t *wcsdepad(wchar_t *str);

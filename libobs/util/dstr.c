@@ -179,6 +179,23 @@ char *astrstri(const char *str, const char *find)
 	return NULL;
 }
 
+wchar_t *wstrstri(const wchar_t *str, const wchar_t *find)
+{
+	size_t len;
+
+	if (!str || !find)
+		return NULL;
+
+	len = wcslen(find);
+
+	do {
+		if (wstrcmpi_n(str, find, len) == 0)
+			return (wchar_t*)str;
+	} while (*str++);
+
+	return NULL;
+}
+
 char *strdepad(char *str)
 {
 	char *temp;
