@@ -461,6 +461,11 @@ void obs_property_set_enabled(obs_property_t *p, bool enabled)
 	if (p) p->enabled = enabled;
 }
 
+void obs_property_set_description(obs_property_t *p, const char *description)
+{
+	if (p) p->desc = description;
+}
+
 const char *obs_property_name(obs_property_t *p)
 {
 	return p ? p->name : NULL;
