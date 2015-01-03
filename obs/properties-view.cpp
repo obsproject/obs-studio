@@ -102,7 +102,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 {
 	emit PropertiesResized();
-	UNUSED_PARAMETER(event);
+	VScrollArea::resizeEvent(event);
 }
 
 QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, QWidget *widget,
