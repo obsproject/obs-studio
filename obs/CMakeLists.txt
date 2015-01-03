@@ -105,6 +105,7 @@ set(obs_SOURCES
 	properties-view.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
+	vertical-scroll-area.cpp
 	crash-report.cpp
 	qt-wrappers.cpp)
 
@@ -129,6 +130,7 @@ set(obs_HEADERS
 	display-helpers.hpp
 	volume-control.hpp
 	adv-audio-control.hpp
+	vertical-scroll-area.hpp
 	qt-display.hpp
 	crash-report.hpp
 	qt-wrappers.hpp)
