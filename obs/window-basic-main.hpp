@@ -147,6 +147,8 @@ public slots:
 	void RecordingStart();
 	void RecordingStop();
 
+	void SaveProject();
+
 private slots:
 	void AddSceneItem(OBSSceneItem item);
 	void RemoveSceneItem(OBSSceneItem item);
@@ -203,7 +205,6 @@ public:
 	void ResetAudioDevices();
 
 	void NewProject();
-	void SaveProject();
 	void LoadProject();
 
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)

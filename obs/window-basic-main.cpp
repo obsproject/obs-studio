@@ -593,6 +593,10 @@ void OBSBasic::OBSInit()
 
 	TimedCheckForUpdates();
 	loaded = true;
+
+	QTimer *timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(SaveProject()));
+	timer->start(20000);
 }
 
 OBSBasic::~OBSBasic()
@@ -2200,6 +2204,8 @@ void OBSBasic::SetupEncoders()
 
 void OBSBasic::on_streamButton_clicked()
 {
+	SaveProject();
+
 	if (obs_output_active(streamOutput)) {
 		obs_output_stop(streamOutput);
 	} else {
@@ -2235,6 +2241,8 @@ void OBSBasic::on_streamButton_clicked()
 
 void OBSBasic::on_recordButton_clicked()
 {
+	SaveProject();
+
 	if (obs_output_active(fileOutput)) {
 		obs_output_stop(fileOutput);
 	} else {
