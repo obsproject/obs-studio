@@ -58,6 +58,8 @@ using namespace DShow;
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_CUSTOM_AUDIO   obs_module_text("UseCustomAudioDevice")
 #define TEXT_AUDIO_DEVICE   obs_module_text("AudioDevice")
+#define TEXT_ACTIVATE       obs_module_text("Activate")
+#define TEXT_DEACTIVATE     obs_module_text("Deactivate")
 
 enum ResType {
 	ResType_Preferred,
@@ -130,7 +132,8 @@ public:
 
 enum class Action {
 	None,
-	Update,
+	Activate,
+	Deactivate,
 	Shutdown,
 	ConfigVideo,
 	ConfigAudio,
@@ -143,7 +146,8 @@ static DWORD CALLBACK DShowThread(LPVOID ptr);
 struct DShowInput {
 	obs_source_t *source;
 	Device       device;
-	bool         deviceHasAudio;
+	bool         deviceHasAudio = false;
+	bool         active = false;
 
 	Decoder      audio_decoder;
 	Decoder      video_decoder;
@@ -166,7 +170,7 @@ struct DShowInput {
 		ReleaseSemaphore(semaphore, 1, nullptr);
 	}
 
-	inline DShowInput(obs_source_t *source_)
+	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
 		: source         (source_),
 		  device         (InitGraph::False)
 	{
@@ -185,7 +189,10 @@ struct DShowInput {
 		if (!thread)
 			throw "Failed to create thread";
 
-		QueueAction(Action::Update);
+		if (obs_data_get_bool(settings, "active")) {
+			QueueAction(Action::Activate);
+			active = true;
+		}
 	}
 
 	inline ~DShowInput()
@@ -215,7 +222,9 @@ struct DShowInput {
 
 	bool UpdateVideoConfig(obs_data_t *settings);
 	bool UpdateAudioConfig(obs_data_t *settings);
-	void Update(obs_data_t *settings);
+	void SetActive(bool active);
+	inline void Activate(obs_data_t *settings);
+	inline void Deactivate();
 
 	inline void SetupBuffering(obs_data_t *settings);
 
@@ -266,14 +275,18 @@ void DShowInput::DShowLoop()
 		}
 
 		switch (action) {
-		case Action::Update:
+		case Action::Activate:
 			{
 				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
-				Update(settings);
+				Activate(settings);
 				obs_data_release(settings);
 				break;
 			}
+
+		case Action::Deactivate:
+			Deactivate();
+			break;
 
 		case Action::Shutdown:
 			device.ShutdownGraph();
@@ -516,6 +529,7 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 }
 
 struct PropertiesData {
+	DShowInput *input;
 	vector<VideoDevice> devices;
 	vector<AudioDevice> audioDevices;
 
@@ -805,7 +819,16 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 	return device.SetAudioConfig(&audioConfig);
 }
 
-void DShowInput::Update(obs_data_t *settings)
+void DShowInput::SetActive(bool active_)
+{
+	obs_data_t *settings = obs_source_get_settings(source);
+	QueueAction(active_ ? Action::Activate : Action::Deactivate);
+	obs_data_set_bool(settings, "active", active_);
+	active = active_;
+	obs_data_release(settings);
+}
+
+inline void DShowInput::Activate(obs_data_t *settings)
 {
 	if (!device.ResetGraph())
 		return;
@@ -838,6 +861,12 @@ void DShowInput::Update(obs_data_t *settings)
 	}
 }
 
+inline void DShowInput::Deactivate()
+{
+	device.ResetGraph();
+	obs_source_output_video(source, nullptr);
+}
+
 /* ------------------------------------------------------------------------- */
 
 static const char *GetDShowInputName(void)
@@ -850,13 +879,12 @@ static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 	DShowInput *dshow = nullptr;
 
 	try {
-		dshow = new DShowInput(source);
+		dshow = new DShowInput(source, settings);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "Could not create device '%s': %s",
 				obs_source_get_name(source), error);
 	}
 
-	UNUSED_PARAMETER(settings);
 	return dshow;
 }
 
@@ -867,8 +895,11 @@ static void DestroyDShowInput(void *data)
 
 static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
+	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+	if (input->active)
+		input->QueueAction(Action::Activate);
+
 	UNUSED_PARAMETER(settings);
-	reinterpret_cast<DShowInput*>(data)->QueueAction(Action::Update);
 }
 
 static void GetDShowDefaults(obs_data_t *settings)
@@ -1118,6 +1149,12 @@ static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p,
 		p = obs_properties_get(props, RES_TYPE);
 		ResTypeChanged(props, p, settings);
 		obs_data_set_string(settings, LAST_VIDEO_DEV_ID, id.c_str());
+
+		if (data->input) {
+			data->input->SetActive(false);
+			p = obs_properties_get(props, "activate");
+			obs_property_set_description(p, TEXT_ACTIVATE);
+		}
 	}
 
 	return true;
@@ -1516,10 +1553,29 @@ static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *GetDShowProperties(void *)
+static bool ActivateClicked(obs_properties_t *, obs_property_t *p,
+		void *data)
 {
+	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+
+	if (input->active) {
+		input->SetActive(false);
+		obs_property_set_description(p, TEXT_ACTIVATE);
+	} else {
+		input->SetActive(true);
+		obs_property_set_description(p, TEXT_DEACTIVATE);
+	}
+
+	return true;
+}
+
+static obs_properties_t *GetDShowProperties(void *obj)
+{
+	DShowInput *input = reinterpret_cast<DShowInput*>(obj);
 	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;
+
+	data->input = input;
 
 	obs_properties_set_param(ppts, data, PropertiesDataDestroy);
 
@@ -1533,6 +1589,14 @@ static obs_properties_t *GetDShowProperties(void *)
 	for (const VideoDevice &device : data->devices)
 		AddDevice(p, device);
 
+	const char *activateText = TEXT_ACTIVATE;
+	if (input) {
+		if (input->active)
+			activateText = TEXT_DEACTIVATE;
+	}
+
+	obs_properties_add_button(ppts, "activate", activateText,
+			ActivateClicked);
 	obs_properties_add_button(ppts, "video_config", TEXT_CONFIG_VIDEO,
 			VideoConfigClicked);
 	obs_properties_add_button(ppts, "xbar_config", TEXT_CONFIG_XBAR,
