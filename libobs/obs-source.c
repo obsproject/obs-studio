@@ -114,14 +114,14 @@ bool obs_source_init(struct obs_source *source,
 	source->base_volume = 0.0f;
 	source->sync_offset = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
-	pthread_mutex_init_value(&source->video_mutex);
+	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
 
 	if (pthread_mutex_init(&source->filter_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
 		return false;
-	if (pthread_mutex_init(&source->video_mutex, NULL) != 0)
+	if (pthread_mutex_init(&source->async_mutex, NULL) != 0)
 		return false;
 
 	if (info && info->output_flags & OBS_SOURCE_AUDIO) {
@@ -249,8 +249,8 @@ void obs_source_destroy(struct obs_source *source)
 	for (i = 0; i < source->filters.num; i++)
 		obs_source_release(source->filters.array[i]);
 
-	for (i = 0; i < source->video_frames.num; i++)
-		obs_source_frame_destroy(source->video_frames.array[i]);
+	for (i = 0; i < source->async_frames.num; i++)
+		obs_source_frame_destroy(source->async_frames.array[i]);
 
 	gs_enter_context(obs->video.graphics);
 	gs_texrender_destroy(source->async_convert_texrender);
@@ -264,11 +264,11 @@ void obs_source_destroy(struct obs_source *source)
 	audio_resampler_destroy(source->resampler);
 
 	gs_texrender_destroy(source->filter_texrender);
-	da_free(source->video_frames);
+	da_free(source->async_frames);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
-	pthread_mutex_destroy(&source->video_mutex);
+	pthread_mutex_destroy(&source->async_mutex);
 	obs_context_data_free(&source->context);
 
 	if (source->owns_info_id)
@@ -1374,7 +1374,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
 
 static inline void cycle_frames(struct obs_source *source)
 {
-	if (source->video_frames.num && !source->activate_refs)
+	if (source->async_frames.num && !source->activate_refs)
 		ready_async_frame(source, os_gettime_ns());
 }
 
@@ -1391,10 +1391,10 @@ void obs_source_output_video(obs_source_t *source,
 	pthread_mutex_unlock(&source->filter_mutex);
 
 	if (output) {
-		pthread_mutex_lock(&source->video_mutex);
+		pthread_mutex_lock(&source->async_mutex);
 		cycle_frames(source);
-		da_push_back(source->video_frames, &output);
-		pthread_mutex_unlock(&source->video_mutex);
+		da_push_back(source->async_frames, &output);
+		pthread_mutex_unlock(&source->async_mutex);
 		source->async_active = true;
 	} else {
 		source->async_active = false;
@@ -1614,17 +1614,17 @@ static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 
 static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 {
-	struct obs_source_frame *next_frame = source->video_frames.array[0];
+	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *frame      = NULL;
 	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
 	if ((source->flags & OBS_SOURCE_FLAG_UNBUFFERED) != 0) {
-		while (source->video_frames.num > 1) {
-			da_erase(source->video_frames, 0);
+		while (source->async_frames.num > 1) {
+			da_erase(source->async_frames, 0);
 			obs_source_frame_destroy(next_frame);
-			next_frame = source->video_frames.array[0];
+			next_frame = source->async_frames.array[0];
 		}
 
 		return true;
@@ -1636,7 +1636,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 			"number of frames: %lu",
 			source->last_frame_ts, frame_time, sys_offset,
 			frame_time - source->last_frame_ts,
-			(unsigned long)source->video_frames.num);
+			(unsigned long)source->async_frames.num);
 #endif
 
 	/* account for timestamp invalidation */
@@ -1661,7 +1661,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 			break;
 
 		if (frame)
-			da_erase(source->video_frames, 0);
+			da_erase(source->async_frames, 0);
 
 #if DEBUG_ASYNC_FRAMES
 		blog(LOG_DEBUG, "new frame, "
@@ -1673,11 +1673,11 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 
 		obs_source_frame_destroy(frame);
 
-		if (source->video_frames.num == 1)
+		if (source->async_frames.num == 1)
 			return true;
 
 		frame = next_frame;
-		next_frame = source->video_frames.array[1];
+		next_frame = source->async_frames.array[1];
 
 		/* more timestamp checking and compensating */
 		if ((next_frame->timestamp - frame_time) > MAX_TS_VAR) {
@@ -1704,8 +1704,8 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 		uint64_t sys_time)
 {
 	if (ready_async_frame(source, sys_time)) {
-		struct obs_source_frame *frame = source->video_frames.array[0];
-		da_erase(source->video_frames, 0);
+		struct obs_source_frame *frame = source->async_frames.array[0];
+		da_erase(source->async_frames, 0);
 		return frame;
 	}
 
@@ -1726,16 +1726,16 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 	if (!source)
 		return NULL;
 
-	pthread_mutex_lock(&source->video_mutex);
+	pthread_mutex_lock(&source->async_mutex);
 
 	sys_time = os_gettime_ns();
 
-	if (!source->video_frames.num)
+	if (!source->async_frames.num)
 		goto unlock;
 
 	if (!source->last_frame_ts) {
-		frame = source->video_frames.array[0];
-		da_erase(source->video_frames, 0);
+		frame = source->async_frames.array[0];
+		da_erase(source->async_frames, 0);
 
 		source->last_frame_ts = frame->timestamp;
 	} else {
@@ -1751,7 +1751,7 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 unlock:
 	source->last_sys_timestamp = sys_time;
 
-	pthread_mutex_unlock(&source->video_mutex);
+	pthread_mutex_unlock(&source->async_mutex);
 
 	if (frame)
 		obs_source_addref(source);

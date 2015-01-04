@@ -334,8 +334,8 @@ struct obs_source {
 	int                             async_plane_offset[2];
 	bool                            async_flip;
 	bool                            async_active;
-	DARRAY(struct obs_source_frame*)video_frames;
-	pthread_mutex_t                 video_mutex;
+	DARRAY(struct obs_source_frame*)async_frames;
+	pthread_mutex_t                 async_mutex;
 	uint32_t                        async_width;
 	uint32_t                        async_height;
 	uint32_t                        async_convert_width;
