@@ -154,6 +154,9 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 		data->texture = gs_texture_create(width, height, GS_BGRA,
 				1, &bitmap, 0);
 		bfree(bitmap);
+
+		data->x_hotspot = ii.xHotspot;
+		data->y_hotspot = ii.yHotspot;
 	}
 
 	DeleteObject(ii.hbmColor);
