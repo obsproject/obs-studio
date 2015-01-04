@@ -181,7 +181,7 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	else if (sampler->max_anisotropy > max_anisotropy_max)
 		sampler->max_anisotropy = max_anisotropy_max;
 
-	blog(LOG_INFO, "convert_sampler_info: 1 <= max_anisotropy <= "
+	blog(LOG_DEBUG, "convert_sampler_info: 1 <= max_anisotropy <= "
 	               "%d violated, selected: %d, set: %d",
 	               max_anisotropy_max,
 	               info->max_anisotropy, sampler->max_anisotropy);
