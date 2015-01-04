@@ -951,7 +951,7 @@ static void game_capture_tick(void *data, float seconds)
 	gc->check_interval += seconds;
 
 	if (!gc->active) {
-		if (!gc->error_aqcuiring && gc->check_interval > 3.0f) {
+		if (!gc->error_aqcuiring && gc->check_interval > 2.0f) {
 			if (gc->config.capture_any_fullscreen ||
 			    gc->activate_hook) {
 				try_hook(gc);
@@ -978,7 +978,7 @@ static void game_capture_tick(void *data, float seconds)
 			}
 
 			gc->fps_reset_interval += seconds;
-			if (gc->fps_reset_interval >= 3.0f) {
+			if (gc->fps_reset_interval >= 2.0f) {
 				reset_frame_interval(gc);
 				gc->fps_reset_interval = 0.0f;
 			}
