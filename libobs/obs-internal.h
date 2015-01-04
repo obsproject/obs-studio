@@ -274,6 +274,11 @@ extern void obs_context_data_setname(struct obs_context_data *context,
 /* ------------------------------------------------------------------------- */
 /* sources  */
 
+struct async_frame {
+	struct obs_source_frame *frame;
+	bool used;
+};
+
 struct obs_source {
 	struct obs_context_data         context;
 	struct obs_source_info          info;
@@ -334,6 +339,8 @@ struct obs_source {
 	int                             async_plane_offset[2];
 	bool                            async_flip;
 	bool                            async_active;
+	bool                            async_reset_texture;
+	DARRAY(struct async_frame)      async_cache;
 	DARRAY(struct obs_source_frame*)async_frames;
 	pthread_mutex_t                 async_mutex;
 	uint32_t                        async_width;
