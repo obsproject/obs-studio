@@ -333,6 +333,7 @@ struct obs_source {
 	float                           async_color_range_max[3];
 	int                             async_plane_offset[2];
 	bool                            async_flip;
+	bool                            async_active;
 	DARRAY(struct obs_source_frame*)video_frames;
 	pthread_mutex_t                 video_mutex;
 	uint32_t                        async_width;

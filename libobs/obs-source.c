@@ -1091,7 +1091,7 @@ static void obs_source_render_async_video(obs_source_t *source)
 		obs_source_release_frame(source, frame);
 	}
 
-	if (source->async_texture)
+	if (source->async_texture && source->async_active)
 		obs_source_draw_async_texture(source);
 }
 
@@ -1381,10 +1381,10 @@ static inline void cycle_frames(struct obs_source *source)
 void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame)
 {
-	if (!source || !frame)
+	if (!source)
 		return;
 
-	struct obs_source_frame *output = cache_video(frame);
+	struct obs_source_frame *output = !!frame ? cache_video(frame) : NULL;
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_video(source, output);
@@ -1395,6 +1395,11 @@ void obs_source_output_video(obs_source_t *source,
 		cycle_frames(source);
 		da_push_back(source->video_frames, &output);
 		pthread_mutex_unlock(&source->video_mutex);
+		source->async_active = true;
+	} else {
+		source->async_active = false;
+		source->async_width = 0;
+		source->async_height = 0;
 	}
 }
 

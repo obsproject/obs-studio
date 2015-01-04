@@ -802,7 +802,7 @@ EXPORT void obs_source_draw_set_color_matrix(
 EXPORT void obs_source_draw(gs_texture_t *image, int x, int y,
 		uint32_t cx, uint32_t cy, bool flip);
 
-/** Outputs asynchronous video data */
+/** Outputs asynchronous video data.  Set to NULL to deactivate the texture */
 EXPORT void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame);
 
