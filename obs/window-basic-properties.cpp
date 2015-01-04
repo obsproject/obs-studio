@@ -61,6 +61,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	layout()->addWidget(view);
 	layout()->setAlignment(view, Qt::AlignBottom);
+	view->setMaximumHeight(250);
 	view->setMinimumHeight(150);
 	view->show();
 
