@@ -730,7 +730,7 @@ void OBSBasic::AddScene(OBSSource source)
 	signal_handler_connect(handler, "item_select",
 			OBSBasic::SceneItemSelected, this);
 	signal_handler_connect(handler, "item_deselect",
-			OBSBasic::SceneItemDeselected, this);	
+			OBSBasic::SceneItemDeselected, this);
 	signal_handler_connect(handler, "item_move_up",
 			OBSBasic::SceneItemMoveUp, this);
 	signal_handler_connect(handler, "item_move_down",
