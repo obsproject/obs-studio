@@ -744,25 +744,34 @@ static inline bool init_events(struct game_capture *gc)
 		}
 	}
 
-	gc->hook_stop = get_event_plus_id(EVENT_CAPTURE_STOP, gc->process_id);
 	if (!gc->hook_stop) {
-		warn("init_events: failed to get hook_stop event: %lu",
-				GetLastError());
-		return false;
+		gc->hook_stop = get_event_plus_id(EVENT_CAPTURE_STOP,
+				gc->process_id);
+		if (!gc->hook_stop) {
+			warn("init_events: failed to get hook_stop event: %lu",
+					GetLastError());
+			return false;
+		}
 	}
 
-	gc->hook_ready = get_event_plus_id(EVENT_HOOK_READY, gc->process_id);
 	if (!gc->hook_ready) {
-		warn("init_events: failed to get hook_ready event: %lu",
-				GetLastError());
-		return false;
+		gc->hook_ready = get_event_plus_id(EVENT_HOOK_READY,
+				gc->process_id);
+		if (!gc->hook_ready) {
+			warn("init_events: failed to get hook_ready event: %lu",
+					GetLastError());
+			return false;
+		}
 	}
 
-	gc->hook_exit = get_event_plus_id(EVENT_HOOK_EXIT, gc->process_id);
 	if (!gc->hook_exit) {
-		warn("init_events: failed to get hook_exit event: %lu",
-				GetLastError());
-		return false;
+		gc->hook_exit = get_event_plus_id(EVENT_HOOK_EXIT,
+				gc->process_id);
+		if (!gc->hook_exit) {
+			warn("init_events: failed to get hook_exit event: %lu",
+					GetLastError());
+			return false;
+		}
 	}
 
 	return true;
@@ -776,6 +785,13 @@ static inline bool init_capture_data(struct game_capture *gc)
 	gc->cx = gc->global_hook_info->cx;
 	gc->cy = gc->global_hook_info->cy;
 	gc->pitch = gc->global_hook_info->pitch;
+
+	if (gc->data) {
+		UnmapViewOfFile(gc->data);
+		gc->data = NULL;
+	}
+
+	CloseHandle(gc->hook_data_map);
 
 	gc->hook_data_map = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, name);
 	if (!gc->hook_data_map) {
@@ -849,6 +865,7 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 		(uint8_t*)gc->data + gc->shmem_data->tex2_offset;
 
 	obs_enter_graphics();
+	gs_texture_destroy(gc->texture);
 	gc->texture = gs_texture_create(gc->cx, gc->cy,
 			convert_format(gc->global_hook_info->format),
 			1, NULL, GS_DYNAMIC);
@@ -866,6 +883,7 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
 	obs_enter_graphics();
+	gs_texture_destroy(gc->texture);
 	gc->texture = gs_texture_open_shared(gc->shtex_data->tex_handle);
 	obs_leave_graphics();
 
