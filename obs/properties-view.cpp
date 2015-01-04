@@ -664,7 +664,10 @@ bool WidgetInfo::FontChanged(const char *setting)
 
 void WidgetInfo::ButtonClicked()
 {
-	obs_property_button_clicked(property, view->obj);
+	if (obs_property_button_clicked(property, view->obj)) {
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+				Qt::QueuedConnection);
+	}
 }
 
 void WidgetInfo::ControlChanged()
