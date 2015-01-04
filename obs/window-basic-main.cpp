@@ -597,9 +597,7 @@ void OBSBasic::OBSInit()
 
 OBSBasic::~OBSBasic()
 {
-	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
-	SaveService();
-	Save(savePath);
+	SaveProject();
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
@@ -636,6 +634,13 @@ OBSBasic::~OBSBasic()
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
 	config_save(App()->GlobalConfig());
+}
+
+void OBSBasic::SaveProject()
+{
+	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
+	SaveService();
+	Save(savePath);
 }
 
 OBSScene OBSBasic::GetCurrentScene()
