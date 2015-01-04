@@ -262,7 +262,7 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QListWidget" name="sources">
+              <widget class="SourceListWidget" name="sources">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
                  <horstretch>0</horstretch>
@@ -845,6 +845,11 @@
    <extends>QScrollArea</extends>
    <header>vertical-scroll-area.hpp</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SourceListWidget</class>
+   <extends>QListWidget</extends>
+   <header>source-list-widget.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>
