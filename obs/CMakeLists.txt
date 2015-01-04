@@ -106,6 +106,7 @@ set(obs_SOURCES
 	volume-control.cpp
 	adv-audio-control.cpp
 	vertical-scroll-area.cpp
+	source-list-widget.cpp
 	crash-report.cpp
 	qt-wrappers.cpp)
 
@@ -131,6 +132,7 @@ set(obs_HEADERS
 	volume-control.hpp
 	adv-audio-control.hpp
 	vertical-scroll-area.hpp
+	source-list-widget.hpp
 	qt-display.hpp
 	crash-report.hpp
 	qt-wrappers.hpp)
