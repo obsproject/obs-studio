@@ -149,6 +149,9 @@ static void wc_tick(void *data, float seconds)
 	RECT rect;
 	bool reset_capture = false;
 
+	if (!obs_source_showing(wc->source))
+		return;
+
 	if (!wc->window || !IsWindow(wc->window)) {
 		if (!wc->title && !wc->class)
 			return;

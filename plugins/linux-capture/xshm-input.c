@@ -392,6 +392,8 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	if (!data->texture)
 		return;
+	if (!obs_source_showing(data->source))
+		return;
 
 	xcb_shm_get_image_cookie_t           img_c;
 	xcb_shm_get_image_reply_t            *img_r;

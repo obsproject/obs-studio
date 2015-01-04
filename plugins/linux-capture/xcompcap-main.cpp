@@ -443,6 +443,9 @@ void XCompcapMain::tick(float seconds)
 {
 	UNUSED_PARAMETER(seconds);
 
+	if (!obs_source_showing(p->source))
+		return;
+
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked())

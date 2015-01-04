@@ -200,6 +200,11 @@ static inline void window_capture_tick_internal(struct window_capture *wc,
 
 static void window_capture_tick(void *data, float seconds)
 {
+	struct window_capture *wc = data;
+
+	if (!obs_source_showing(wc->source))
+		return;
+
 	@autoreleasepool {
 		return window_capture_tick_internal(data, seconds);
 	}

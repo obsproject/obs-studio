@@ -143,6 +143,9 @@ static void monitor_capture_tick(void *data, float seconds)
 {
 	struct monitor_capture *capture = data;
 
+	if (!obs_source_showing(capture->source))
+		return;
+
 	obs_enter_graphics();
 	dc_capture_capture(&capture->data, NULL);
 	obs_leave_graphics();

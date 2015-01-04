@@ -328,6 +328,8 @@ static void display_capture_video_tick(void *data, float seconds)
 
 	if (!dc->current)
 		return;
+	if (!obs_source_showing(dc->source))
+		return;
 
 	IOSurfaceRef prev_prev = dc->prev;
 	if (pthread_mutex_lock(&dc->mutex))
