@@ -1,0 +1,36 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+# see EXAMPLES in dpkg-buildflags(1) and read /usr/share/dpkg/*
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# see ENVIRONMENT in dpkg-buildflags(1)
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+# main packaging script based on dh7 syntax
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-DOBS_MULTIARCH_SUFFIX=/$(DEB_HOST_MULTIARCH) \
+	-DUNIX_STRUCTURE=1
+
+override_dh_strip:
+	dh_strip --dbg-package=libobs0-dbg
+
+override_dh_install:
+	dh_install
+	rm -rf $(CURDIR)/debian/obs-studio/usr/share/obs/obs-studio/license
+
+.PHONY: override_dh_strip override_dh_auto_configure override_dh_install

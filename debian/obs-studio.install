@@ -1,0 +1,6 @@
+usr/bin/obs
+usr/share/obs/obs-studio/*
+
+usr/share/icons/hicolor/256x256/apps/obs.png
+
+usr/share/applications/obs.desktop

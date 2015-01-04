@@ -1,0 +1,86 @@
+Source: obs
+Section: video
+Priority: optional
+Maintainer: Carl Fürstenberg <azatoth@gmail.com>
+Build-Depends:
+ debhelper (>= 9),
+ cmake,
+ libavformat-ffmpeg-dev,
+ libavcodec-ffmpeg-dev,
+ libavutil-ffmpeg-dev,
+ libswresample-ffmpeg-dev,
+ libswscale-ffmpeg-dev,
+ libx11-dev,
+ libgl1-mesa-dev | libgl-dev,
+ libpulse-dev,
+ libxcomposite-dev,
+ libxinerama-dev,
+ libv4l-dev,
+ libudev-dev,
+ libfreetype6-dev,
+ libfontconfig-dev,
+ qtbase5-dev,
+ libqt5x11extras5-dev,
+ libx264-dev,
+ libxcb-xinerama0-dev,
+ libxcb-shm0-dev
+Standards-Version: 3.9.5
+Homepage: https://obsproject.com/
+#Vcs-Git: git://anonscm.debian.org/collab-maint/obs.git
+#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/obs.git;a=summary
+
+Package: obs-studio
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libobs0 (>= ${binary:Version}), obs-plugins (>= ${binary:Version})
+Description: OBS Studio
+ a rewrite of what was formerly known as "Open Broadcaster
+ Software", software originally designed for recording and streaming live
+ video content, efficiently.
+
+Package: obs-plugins
+Multi-Arch: same
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libobs0 (>= ${binary:Version})
+Pre-Depends: ${misc:Pre-Depends}
+Description: OBS Studio Plugins
+ a rewrite of what was formerly known as "Open Broadcaster
+ Software", software originally designed for recording and streaming live
+ video content, efficiently.
+ .
+ This package contains various default plugins for obs-studio.
+
+Package: libobs0
+Multi-Arch: same
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Description: OBS library
+ a rewrite of what was formerly known as "Open Broadcaster
+ Software", software originally designed for recording and streaming live
+ video content, efficiently.
+ .
+ this package contains the libraries needed for obs-studio.
+
+Package: libobs0-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: ${misc:Depends}, libobs0 (= ${binary:Version})
+Description: debugging symbols for OBS library
+ a rewrite of what was formerly known as "Open Broadcaster
+ Software", software originally designed for recording and streaming live
+ video content, efficiently.
+ .
+ This package contains the debugging symbols for libobs0.
+
+Package: libobs-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}, libobs0 (= ${binary:Version})
+Description: OBS library development files
+ a rewrite of what was formerly known as "Open Broadcaster
+ Software", software originally designed for recording and streaming live
+ video content, efficiently.
+ .
+ This package contains the development files for libobs0.

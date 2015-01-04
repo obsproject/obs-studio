@@ -1,0 +1,7 @@
+files
+*.debhelper
+*.substvars
+libobs-dev
+libobs
+obs-studio
+tmp
