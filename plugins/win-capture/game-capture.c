@@ -80,7 +80,7 @@ struct game_capture {
 	bool                          active : 1;
 	bool                          activate_hook : 1;
 	bool                          process_is_64bit : 1;
-	bool                          error_aqcuiring : 1;
+	bool                          error_acquiring : 1;
 	bool                          dwm_capture : 1;
 	bool                          initial_config : 1;
 
@@ -312,9 +312,9 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
 
 	if (cfg.force_scaling && (cfg.scale_cx == 0 || cfg.scale_cy == 0)) {
-		gc->error_aqcuiring = true;
+		gc->error_acquiring = true;
 	} else {
-		gc->error_aqcuiring = false;
+		gc->error_acquiring = false;
 	}
 
 	free_config(&gc->config);
@@ -720,7 +720,7 @@ static void try_hook(struct game_capture *gc)
 		if (!gc->thread_id || !gc->process_id) {
 			warn("failed to get window thread/process ids: %d",
 					GetLastError());
-			gc->error_aqcuiring = true;
+			gc->error_acquiring = true;
 			return;
 		}
 
@@ -937,21 +937,21 @@ static void game_capture_tick(void *data, float seconds)
 
 		if (exit_code != 0) {
 			warn("inject process failed: %d", exit_code);
-			gc->error_aqcuiring = true;
+			gc->error_acquiring = true;
 		}
 	}
 
 	if (gc->hook_ready && object_signalled(gc->hook_ready)) {
 		if (!start_capture(gc)) {
 			stop_capture(gc);
-			gc->error_aqcuiring = true;
+			gc->error_acquiring = true;
 		}
 	}
 
 	gc->check_interval += seconds;
 
 	if (!gc->active) {
-		if (!gc->error_aqcuiring && gc->check_interval > 2.0f) {
+		if (!gc->error_acquiring && gc->check_interval > 2.0f) {
 			if (gc->config.capture_any_fullscreen ||
 			    gc->activate_hook) {
 				try_hook(gc);
