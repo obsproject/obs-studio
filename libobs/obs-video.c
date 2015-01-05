@@ -486,7 +486,7 @@ static inline void video_sleep(struct obs_core_video *video,
 	uint64_t t = cur_time + interval_ns;
 	int count;
 
-	if (!os_sleepto_ns(t)) {
+	if (os_sleepto_ns(t)) {
 		*p_time = t;
 		count = 1;
 	} else {
