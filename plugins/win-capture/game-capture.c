@@ -75,8 +75,8 @@ struct game_capture {
 	DWORD                         thread_id;
 	HWND                          next_window;
 	HWND                          window;
-	float                         check_interval;
-	float                         fps_reset_interval;
+	float                         retry_time;
+	float                         fps_reset_time;
 	float                         retry_interval;
 	bool                          active : 1;
 	bool                          activate_hook : 1;
@@ -951,15 +951,15 @@ static void game_capture_tick(void *data, float seconds)
 		}
 	}
 
-	gc->check_interval += seconds;
+	gc->retry_time += seconds;
 
 	if (!gc->active) {
 		if (!gc->error_acquiring &&
-		    gc->check_interval > gc->retry_interval) {
+		    gc->retry_time > gc->retry_interval) {
 			if (gc->config.capture_any_fullscreen ||
 			    gc->activate_hook) {
 				try_hook(gc);
-				gc->check_interval = 0.0f;
+				gc->retry_time = 0.0f;
 			}
 		}
 	} else {
@@ -981,10 +981,10 @@ static void game_capture_tick(void *data, float seconds)
 				obs_leave_graphics();
 			}
 
-			gc->fps_reset_interval += seconds;
-			if (gc->fps_reset_interval >= gc->retry_interval) {
+			gc->fps_reset_time += seconds;
+			if (gc->fps_reset_time >= gc->retry_interval) {
 				reset_frame_interval(gc);
-				gc->fps_reset_interval = 0.0f;
+				gc->fps_reset_time = 0.0f;
 			}
 		}
 	}
