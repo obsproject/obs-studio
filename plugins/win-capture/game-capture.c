@@ -77,6 +77,7 @@ struct game_capture {
 	HWND                          window;
 	float                         check_interval;
 	float                         fps_reset_interval;
+	float                         retry_interval;
 	bool                          active : 1;
 	bool                          activate_hook : 1;
 	bool                          process_is_64bit : 1;
@@ -320,6 +321,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	free_config(&gc->config);
 	gc->config = cfg;
 	gc->activate_hook = obs_data_get_bool(settings, "activate_hook");
+	gc->retry_interval = 2.0f;
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
@@ -337,6 +339,7 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	struct game_capture *gc = bzalloc(sizeof(*gc));
 	gc->source = source;
 	gc->initial_config = true;
+	gc->retry_interval = 2.0f;
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -951,7 +954,8 @@ static void game_capture_tick(void *data, float seconds)
 	gc->check_interval += seconds;
 
 	if (!gc->active) {
-		if (!gc->error_acquiring && gc->check_interval > 2.0f) {
+		if (!gc->error_acquiring &&
+		    gc->check_interval > gc->retry_interval) {
 			if (gc->config.capture_any_fullscreen ||
 			    gc->activate_hook) {
 				try_hook(gc);
@@ -978,7 +982,7 @@ static void game_capture_tick(void *data, float seconds)
 			}
 
 			gc->fps_reset_interval += seconds;
-			if (gc->fps_reset_interval >= 2.0f) {
+			if (gc->fps_reset_interval >= gc->retry_interval) {
 				reset_frame_interval(gc);
 				gc->fps_reset_interval = 0.0f;
 			}
