@@ -79,6 +79,7 @@ struct game_capture {
 	float                         fps_reset_time;
 	float                         retry_interval;
 	bool                          active : 1;
+	bool                          capturing : 1;
 	bool                          activate_hook : 1;
 	bool                          process_is_64bit : 1;
 	bool                          error_acquiring : 1;
@@ -196,6 +197,7 @@ static void stop_capture(struct game_capture *gc)
 
 	gc->copy_texture = NULL;
 	gc->active = false;
+	gc->capturing = false;
 }
 
 static inline void free_config(struct game_capture_config *config)
@@ -941,13 +943,18 @@ static void game_capture_tick(void *data, float seconds)
 		if (exit_code != 0) {
 			warn("inject process failed: %d", exit_code);
 			gc->error_acquiring = true;
+
+		} else if (!gc->capturing) {
+			gc->retry_interval = 4.0f;
+			stop_capture(gc);
 		}
 	}
 
 	if (gc->hook_ready && object_signalled(gc->hook_ready)) {
-		if (!start_capture(gc)) {
+		gc->capturing = start_capture(gc);
+		if (!gc->capturing) {
+			gc->retry_interval = 4.0f;
 			stop_capture(gc);
-			gc->error_acquiring = true;
 		}
 	}
 
