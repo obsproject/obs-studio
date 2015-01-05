@@ -817,8 +817,15 @@ static inline bool init_capture_data(struct game_capture *gc)
 
 	gc->hook_data_map = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, name);
 	if (!gc->hook_data_map) {
-		warn("init_capture_data: failed to open file mapping: %lu",
-				GetLastError());
+		DWORD error = GetLastError();
+		if (error == 2) {
+			info("init_capture_data: file mapping not found, "
+			     "retrying.  (this is often normal, and may take "
+			     "a few tries)");
+		} else {
+			warn("init_capture_data: failed to open file "
+			     "mapping: %lu", error);
+		}
 		return false;
 	}
 
