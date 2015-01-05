@@ -61,7 +61,7 @@ void OBSPropertiesView::RefreshProperties()
 	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 	//widget->setSizePolicy(policy);
-	layout->setSizeConstraint(QLayout::SetMaximumSize);
+
 	layout->setLabelAlignment(Qt::AlignRight);
 
 	obs_property_t *property = obs_properties_first(properties.get());
