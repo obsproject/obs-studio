@@ -61,12 +61,10 @@ static int inject_library_safe(DWORD thread_id, const char *dll)
 		return -5;
 	}
 
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 8; i++) {
+		Sleep(500);
 		PostThreadMessage(thread_id, WM_USER + 432, 0, (LPARAM)hook);
-	Sleep(1000);
-	for (i = 0; i < 20; i++)
-		PostThreadMessage(thread_id, WM_USER + 432, 0, (LPARAM)hook);
-	Sleep(1000);
+	}
 	return 0;
 }
 
