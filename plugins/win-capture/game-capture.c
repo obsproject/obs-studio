@@ -78,6 +78,7 @@ struct game_capture {
 	float                         retry_time;
 	float                         fps_reset_time;
 	float                         retry_interval;
+	bool                          wait_for_target_startup : 1;
 	bool                          active : 1;
 	bool                          capturing : 1;
 	bool                          activate_hook : 1;
@@ -196,6 +197,7 @@ static void stop_capture(struct game_capture *gc)
 	}
 
 	gc->copy_texture = NULL;
+	gc->wait_for_target_startup = false;
 	gc->active = false;
 	gc->capturing = false;
 }
@@ -691,7 +693,20 @@ static void get_fullscreen_window(struct game_capture *gc)
 	    rect.right  == mi.rcMonitor.right  &&
 	    rect.bottom == mi.rcMonitor.bottom &&
 	    rect.top    == mi.rcMonitor.top) {
-		gc->next_window = window;
+
+		/* always wait a bit for the target process to start up before
+		 * starting the hook process; sometimes they have important
+		 * modules to load first or other hooks (such as steam) need a
+		 * little bit of time to load.  ultimately this helps prevent
+		 * crashes */
+		if (gc->wait_for_target_startup) {
+			gc->retry_interval = 3.0f;
+			gc->wait_for_target_startup = false;
+		} else {
+			gc->next_window = window;
+		}
+	} else {
+		gc->wait_for_target_startup = true;
 	}
 }
 
