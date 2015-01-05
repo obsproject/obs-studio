@@ -132,10 +132,10 @@ static void *monitor_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	capture = bzalloc(sizeof(struct monitor_capture));
 	capture->opaque_effect = opaque_effect;
+	capture->source = source;
 
 	update_settings(capture, settings);
 
-	UNUSED_PARAMETER(source);
 	return capture;
 }
 
