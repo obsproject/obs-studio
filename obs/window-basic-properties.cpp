@@ -138,7 +138,7 @@ void OBSBasicProperties::resizeEvent(QResizeEvent *event)
 		resizeTimer = startTimer(100);
 	}
 
-	UNUSED_PARAMETER(event);
+	QDialog::resizeEvent(event);
 }
 
 void OBSBasicProperties::timerEvent(QTimerEvent *event)
