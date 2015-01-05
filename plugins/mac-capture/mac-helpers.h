@@ -24,6 +24,9 @@ static inline bool cf_to_dstr(CFStringRef ref, struct dstr *str)
 	if (!ref) return false;
 
 	size = (size_t)CFStringGetLength(ref);
+	if (!size)
+		return false;
+
 	dstr_resize(str, size);
 
 	return (bool)CFStringGetCString(ref, str->array, size+1,
