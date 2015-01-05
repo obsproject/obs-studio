@@ -575,10 +575,40 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	UNUSED_PARAMETER(param);
 }
 
+#ifdef _WIN32
+static void load_debug_privilege(void)
+{
+	const DWORD flags = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY;
+	bool success = false;
+	TOKEN_PRIVILEGES tp;
+	HANDLE token;
+	LUID val;
+
+	if (!OpenProcessToken(GetCurrentProcess(), flags, &token)) {
+		return;
+	}
+
+	if (!!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &val)) {
+		tp.PrivilegeCount = 1;
+		tp.Privileges[0].Luid = val;
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+		success = !!AdjustTokenPrivileges(token, false, &tp,
+				sizeof(tp), NULL, NULL);
+	}
+
+	CloseHandle(token);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
+#endif
+
+#ifdef _WIN32
+	load_debug_privilege();
 #endif
 
 	base_set_crash_handler(main_crash_handler, nullptr);
