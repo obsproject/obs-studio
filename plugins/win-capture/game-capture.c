@@ -318,6 +318,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	if (cfg.force_scaling && (cfg.scale_cx == 0 || cfg.scale_cy == 0)) {
 		gc->error_acquiring = true;
+		warn("error acquiring, scale is bad");
 	} else {
 		gc->error_acquiring = false;
 	}
@@ -738,7 +739,8 @@ static void try_hook(struct game_capture *gc)
 				&gc->process_id);
 
 		if (!gc->thread_id || !gc->process_id) {
-			warn("failed to get window thread/process ids: %d",
+			warn("error acquiring, failed to get window "
+					"thread/process ids: %d",
 					GetLastError());
 			gc->error_acquiring = true;
 			return;
