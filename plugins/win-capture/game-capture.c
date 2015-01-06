@@ -44,6 +44,9 @@
 #define TEXT_LIMIT_FRAMERATE     obs_module_text("GameCapture.LimitFramerate")
 #define TEXT_CAPTURE_OVERLAYS    obs_module_text("GameCapture.CaptureOverlays")
 
+#define DEFAULT_RETRY_INTERVAL 2.0f
+#define ERROR_RETRY_INTERVAL 4.0f
+
 struct game_capture_config {
 	char                          *title;
 	char                          *class;
@@ -323,7 +326,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	free_config(&gc->config);
 	gc->config = cfg;
 	gc->activate_hook = !!window && !!*window;
-	gc->retry_interval = 2.0f;
+	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
@@ -339,7 +342,7 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	struct game_capture *gc = bzalloc(sizeof(*gc));
 	gc->source = source;
 	gc->initial_config = true;
-	gc->retry_interval = 2.0f;
+	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -964,7 +967,7 @@ static void game_capture_tick(void *data, float seconds)
 			gc->error_acquiring = true;
 
 		} else if (!gc->capturing) {
-			gc->retry_interval = 4.0f;
+			gc->retry_interval = ERROR_RETRY_INTERVAL;
 			stop_capture(gc);
 		}
 	}
@@ -972,7 +975,7 @@ static void game_capture_tick(void *data, float seconds)
 	if (gc->hook_ready && object_signalled(gc->hook_ready)) {
 		gc->capturing = start_capture(gc);
 		if (!gc->capturing) {
-			gc->retry_interval = 4.0f;
+			gc->retry_interval = ERROR_RETRY_INTERVAL;
 			stop_capture(gc);
 		}
 	}
