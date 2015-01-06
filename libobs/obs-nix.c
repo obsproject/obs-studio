@@ -38,7 +38,7 @@ const char *get_module_extension(void)
 
 static const char *module_bin[] = {
 	"../../obs-plugins/" BIT_STRING,
-	OBS_INSTALL_PREFIX "lib/obs-plugins",
+	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION
 };
 
 static const char *module_data[] = {
