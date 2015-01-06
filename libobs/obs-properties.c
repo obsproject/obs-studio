@@ -695,7 +695,7 @@ const char *obs_property_list_item_string(obs_property_t *p, size_t idx)
 {
 	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_STRING);
 	return (data && idx < data->items.num) ?
-		data->items.array[idx].str : "";
+		data->items.array[idx].str : NULL;
 }
 
 long long obs_property_list_item_int(obs_property_t *p, size_t idx)
