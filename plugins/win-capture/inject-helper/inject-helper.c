@@ -30,6 +30,10 @@ static void load_debug_privilege(void)
 
 typedef HHOOK (WINAPI *set_windows_hook_ex_t)(int, HOOKPROC, HINSTANCE, DWORD);
 
+#define RETRY_INTERVAL_MS      500
+#define TOTAL_RETRY_TIME_MS    4000
+#define RETRY_COUNT            (TOTAL_RETRY_TIME_MS / RETRY_INTERVAL_MS)
+
 static int inject_library_safe(DWORD thread_id, const char *dll)
 {
 	HMODULE user32 = GetModuleHandleW(L"USER32");
@@ -61,8 +65,15 @@ static int inject_library_safe(DWORD thread_id, const char *dll)
 		return -5;
 	}
 
-	for (i = 0; i < 8; i++) {
-		Sleep(500);
+	/* SetWindowsHookEx does not inject the library in to the target
+	 * process unless the event associated with it has occurred, so
+	 * repeatedly send the hook message to start the hook at small
+	 * intervals to signal to SetWindowsHookEx to process the message and
+	 * therefore inject the library in to the target process.  Repeating
+	 * this is mostly just a precaution. */
+
+	for (i = 0; i < RETRY_COUNT; i++) {
+		Sleep(RETRY_INTERVAL_MS);
 		PostThreadMessage(thread_id, WM_USER + 432, 0, (LPARAM)hook);
 	}
 	return 0;
