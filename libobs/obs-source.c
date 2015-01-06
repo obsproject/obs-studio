@@ -1392,6 +1392,7 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		if (!af->used) {
 			new_frame = af->frame;
 			af->used = true;
+			break;
 		}
 	}
 
