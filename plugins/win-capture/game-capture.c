@@ -21,7 +21,6 @@
 #define SETTING_CAPTURE_WINDOW   "window"
 #define SETTING_ACTIVE_WINDOW    "active_window"
 #define SETTING_WINDOW_PRIORITY  "priority"
-#define SETTING_ACTIVATE_HOOK    "activate_hook"
 #define SETTING_COMPATIBILITY    "sli_compatibility"
 #define SETTING_FORCE_SCALING    "force_scaling"
 #define SETTING_SCALE_RES        "scale_res"
@@ -32,8 +31,6 @@
 
 #define TEXT_GAME_CAPTURE        obs_module_text("GameCapture")
 #define TEXT_ANY_FULLSCREEN      obs_module_text("GameCapture.AnyFullscreen")
-#define TEXT_ACTIVATE_HOOK       obs_module_text("GameCapture.Activate")
-#define TEXT_REACTIVATE_HOOK     obs_module_text("GameCapture.Reactivate")
 #define TEXT_SLI_COMPATIBILITY   obs_module_text("Compatibility")
 #define TEXT_ALLOW_TRANSPARENCY  obs_module_text("AllowTransparency")
 #define TEXT_FORCE_SCALING       obs_module_text("GameCapture.ForceScaling")
@@ -224,12 +221,10 @@ static void game_capture_destroy(void *data)
 }
 
 static inline void get_config(struct game_capture_config *cfg,
-		obs_data_t *settings)
+		obs_data_t *settings, const char *window)
 {
 	int ret;
 	const char *scale_str;
-	const char *window = obs_data_get_string(settings,
-			SETTING_CAPTURE_WINDOW);
 
 	build_window_strings(window, &cfg->class, &cfg->title,
 			&cfg->executable);
@@ -312,8 +307,10 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	struct game_capture *gc = data;
 	struct game_capture_config cfg;
 	bool reset_capture = false;
+	const char *window = obs_data_get_string(settings,
+			SETTING_CAPTURE_WINDOW);
 
-	get_config(&cfg, settings);
+	get_config(&cfg, settings, window);
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
 
 	if (cfg.force_scaling && (cfg.scale_cx == 0 || cfg.scale_cy == 0)) {
@@ -325,13 +322,11 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	free_config(&gc->config);
 	gc->config = cfg;
-	gc->activate_hook = obs_data_get_bool(settings, "activate_hook");
+	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = 2.0f;
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
-			gc->activate_hook = false;
-			obs_data_set_bool(settings, "activate_hook", false);
 			stop_capture(gc);
 		}
 	} else {
@@ -1101,26 +1096,6 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_CAPTURE_OVERLAYS, false);
 }
 
-static bool activate_clicked(obs_properties_t *props, obs_property_t *property,
-		void *data)
-{
-	struct game_capture *gc = data;
-	obs_data_t *settings = obs_source_get_settings(gc->source);
-	const char *window = obs_data_get_string(settings,
-			SETTING_CAPTURE_WINDOW);
-
-	gc->activate_hook = true;
-	obs_data_set_bool(settings, "activate_hook", true);
-	obs_data_release(settings);
-
-	obs_property_set_description(property, TEXT_REACTIVATE_HOOK);
-
-	obs_data_set_string(settings, SETTING_ACTIVE_WINDOW, window);
-
-	UNUSED_PARAMETER(props);
-	return true;
-}
-
 static bool any_fullscreen_callback(obs_properties_t *ppts,
 		obs_property_t *p, obs_data_t *settings)
 {
@@ -1132,19 +1107,6 @@ static bool any_fullscreen_callback(obs_properties_t *ppts,
 
 	p = obs_properties_get(ppts, SETTING_WINDOW_PRIORITY);
 	obs_property_set_enabled(p, !any_fullscreen);
-
-	p = obs_properties_get(ppts, SETTING_ACTIVATE_HOOK);
-	obs_property_set_enabled(p, !any_fullscreen);
-
-	if (any_fullscreen) {
-		obs_data_set_string(settings, SETTING_ACTIVE_WINDOW, "");
-		obs_property_set_description(p, TEXT_ACTIVATE_HOOK);
-		obs_data_set_bool(settings, "activate_hook", false);
-	} else {
-		bool activate = obs_data_get_bool(settings, "activate_hook");
-		obs_property_set_description(p, activate ?
-				TEXT_REACTIVATE_HOOK : TEXT_ACTIVATE_HOOK);
-	}
 
 	return true;
 }
@@ -1169,8 +1131,8 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	build_window_strings(val, &class, &title, &executable);
 
 	dstr_printf(&desc, "[%s]: %s", executable, title);
-	obs_property_list_insert_string(p, 0, desc.array, val);
-	obs_property_list_item_disable(p, 0, true);
+	obs_property_list_insert_string(p, 1, desc.array, val);
+	obs_property_list_item_disable(p, 1, true);
 
 	dstr_free(&desc);
 	bfree(class);
@@ -1181,12 +1143,10 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
-	const char *first_val = obs_property_list_item_string(p, 0);
 	const char *active_window = obs_data_get_string(settings,
 			SETTING_ACTIVE_WINDOW);
 	const char *cur_val;
 	bool match = false;
-	bool rebuild_ui = false;
 	size_t i = 0;
 
 	cur_val = obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
@@ -1196,7 +1156,7 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 
 	for (;;) {
 		const char *val = obs_property_list_item_string(p, i++);
-		if (!val || !*val)
+		if (!val)
 			break;
 
 		if (strcmp(val, cur_val) == 0) {
@@ -1205,19 +1165,12 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 		}
 	}
 
-	if (cur_val && first_val && *cur_val && *first_val && !match) {
+	if (cur_val && *cur_val && !match) {
 		insert_preserved_val(p, cur_val);
-		rebuild_ui = true;
+		return true;
 	}
 
-	if (obs_property_enabled(p) && strcmp(active_window, cur_val) != 0) {
-		p = obs_properties_get(ppts, SETTING_ACTIVATE_HOOK);
-		obs_property_set_description(p, TEXT_REACTIVATE_HOOK);
-		obs_data_set_string(settings, SETTING_ACTIVE_WINDOW, "");
-		rebuild_ui = true;
-	}
-
-	return rebuild_ui;
+	return false;
 }
 
 static const double default_scale_vals[] = {
@@ -1269,6 +1222,7 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	p = obs_properties_add_list(ppts, SETTING_CAPTURE_WINDOW, TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, "", "");
 	fill_window_list(p, INCLUDE_MINIMIZED);
 
 	obs_property_set_modified_callback(p, window_changed_callback);
@@ -1279,12 +1233,6 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE,   WINDOW_PRIORITY_EXE);
-
-	p = obs_properties_add_button(ppts, SETTING_ACTIVATE_HOOK,
-			TEXT_ACTIVATE_HOOK, activate_clicked);
-	if (gc && gc->activate_hook) {
-		obs_property_set_description(p, TEXT_REACTIVATE_HOOK);
-	}
 
 	obs_properties_add_bool(ppts, SETTING_COMPATIBILITY,
 			TEXT_SLI_COMPATIBILITY);
