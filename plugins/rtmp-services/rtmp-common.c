@@ -245,7 +245,7 @@ static void apply_video_encoder_settings(obs_encoder_t *encoder,
 	item = json_object_get(recommended, "profile");
 	if (item && json_is_string(item)) {
 		const char *profile = json_string_value(item);
-		obs_data_set_bool(settings, "profile", profile);
+		obs_data_set_string(settings, "profile", profile);
 	}
 
 	item = json_object_get(recommended, "max video bitrate");
