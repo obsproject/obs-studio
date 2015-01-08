@@ -22,11 +22,11 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
-VertData VSDefault(VertData input)
+VertData VSDefault(VertData v_in)
 {
 	VertData vert_out;
-	vert_out.pos = mul(float4(input.pos.xyz, 1.0), ViewProj);
-	vert_out.uv  = input.uv;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
 	return vert_out;
 }
 
@@ -77,10 +77,10 @@ float4 get_line(float ypos, float4 xpos, float4 linetaps)
 		pixel(xpos.a, ypos) * linetaps.a;
 }
 
-float4 DrawBicubic(VertData input)
+float4 DrawBicubic(VertData v_in)
 {
 	float2 stepxy = base_dimension_i;
-	float2 pos = input.uv + stepxy * 0.5;
+	float2 pos = v_in.uv + stepxy * 0.5;
 	float2 f = frac(pos / stepxy);
 
 	float4 rowtaps = weight4(1.0 - f.x);
@@ -106,14 +106,14 @@ float4 DrawBicubic(VertData input)
 		get_line(xystart.y + stepxy.y * 3.0, xpos, rowtaps) * coltaps.a;
 }
 
-float4 PSDrawBicubicRGBA(VertData input) : TARGET
+float4 PSDrawBicubicRGBA(VertData v_in) : TARGET
 {
-	return DrawBicubic(input);
+	return DrawBicubic(v_in);
 }
 
-float4 PSDrawBicubicMatrix(VertData input) : TARGET
+float4 PSDrawBicubicMatrix(VertData v_in) : TARGET
 {
-	float4 rgba = DrawBicubic(input);
+	float4 rgba = DrawBicubic(v_in);
 	float4 yuv;
 
 	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
@@ -124,8 +124,8 @@ technique Draw
 {
 	pass
 	{
-		vertex_shader = VSDefault(input);
-		pixel_shader  = PSDrawBicubicRGBA(input);
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBA(v_in);
 	}
 }
 
@@ -133,7 +133,7 @@ technique DrawMatrix
 {
 	pass
 	{
-		vertex_shader = VSDefault(input);
-		pixel_shader  = PSDrawBicubicMatrix(input);
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicMatrix(v_in);
 	}
 }

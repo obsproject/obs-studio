@@ -23,11 +23,11 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
-VertData VSDefault(VertData input)
+VertData VSDefault(VertData v_in)
 {
 	VertData vert_out;
-	vert_out.pos = mul(float4(input.pos.xyz, 1.0), ViewProj);
-	vert_out.uv  = input.uv;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
 	return vert_out;
 }
 
@@ -73,10 +73,10 @@ float4 get_line(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
 		pixel(xpos2.b, ypos) * rowtap2.b;
 }
 
-float4 DrawLanczos(VertData input)
+float4 DrawLanczos(VertData v_in)
 {
 	float2 stepxy = base_dimension_i;
-	float2 pos = input.uv + stepxy * 0.5;
+	float2 pos = v_in.uv + stepxy * 0.5;
 	float2 f = frac(pos / stepxy);
 
 	float3 rowtap1 = weight3((1.0 - f.x) / 2.0);
@@ -106,14 +106,14 @@ float4 DrawLanczos(VertData input)
 		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.b;
 }
 
-float4 PSDrawLanczosRGBA(VertData input) : TARGET
+float4 PSDrawLanczosRGBA(VertData v_in) : TARGET
 {
-	return DrawLanczos(input);
+	return DrawLanczos(v_in);
 }
 
-float4 PSDrawLanczosMatrix(VertData input) : TARGET
+float4 PSDrawLanczosMatrix(VertData v_in) : TARGET
 {
-	float4 rgba = DrawLanczos(input);
+	float4 rgba = DrawLanczos(v_in);
 	float4 yuv;
 
 	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
@@ -124,8 +124,8 @@ technique Draw
 {
 	pass
 	{
-		vertex_shader = VSDefault(input);
-		pixel_shader  = PSDrawLanczosRGBA(input);
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLanczosRGBA(v_in);
 	}
 }
 
@@ -133,7 +133,7 @@ technique DrawMatrix
 {
 	pass
 	{
-		vertex_shader = VSDefault(input);
-		pixel_shader  = PSDrawLanczosMatrix(input);
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLanczosMatrix(v_in);
 	}
 }
