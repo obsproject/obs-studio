@@ -5,11 +5,12 @@
 #include "audio-device-enum.h"
 
 /* ugh, because mac has no means of capturing output, we have to basically
- * mark soundflower and wavtap as output devices. */
+ * mark soundflower, wavtap and sound siphon as output devices. */
 static inline bool device_is_input(char *device)
 {
 	return astrstri(device, "soundflower") == NULL &&
-	       astrstri(device, "wavtap")      == NULL;
+	       astrstri(device, "wavtap")      == NULL &&
+	       astrstri(device, "soundsiphon") == NULL;
 }
 
 static inline bool enum_success(OSStatus stat, const char *msg)
