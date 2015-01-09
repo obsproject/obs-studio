@@ -516,3 +516,19 @@ function(install_obs_plugin_with_data target datadir)
 	install_obs_plugin(${target})
 	install_obs_data(${target} "${datadir}" "obs-plugins/${target}")
 endfunction()
+
+function(define_graphic_modules target)
+	foreach(dl_lib opengl d3d9 d3d11)
+		if(TARGET libobs-${dl_lib})
+			target_compile_definitions(${target}
+				PRIVATE
+				$<UPPER_CASE:DL_${dl_lib}>="$<TARGET_FILE_NAME:libobs-${dl_lib}>"
+				)
+		else()
+			target_compile_definitions(${target}
+				PRIVATE
+				$<UPPER_CASE:DL_${dl_lib}>=""
+				)
+		endif()
+	endforeach()
+endfunction()

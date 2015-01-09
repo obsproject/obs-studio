@@ -72,7 +72,6 @@ endif()
 if(NOT INSTALLER_RUN)
 	add_subdirectory(deps)
 
-	add_subdirectory(libobs)
 
 	if(WIN32)
 		add_subdirectory(libobs-d3d11)
@@ -80,6 +79,7 @@ if(NOT INSTALLER_RUN)
 	endif()
 
 	add_subdirectory(libobs-opengl)
+	add_subdirectory(libobs)
 	add_subdirectory(obs)
 	add_subdirectory(plugins)
 	add_subdirectory(test)
