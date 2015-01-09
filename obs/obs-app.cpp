@@ -246,7 +246,7 @@ const char *OBSApp::GetRenderModule() const
 			"Renderer");
 
 	return (astrcmpi(renderer, "Direct3D 11") == 0) ?
-		"libobs-d3d11" : "libobs-opengl";
+		DL_D3D11 : DL_OPENGL;
 }
 
 bool OBSApp::OBSInit()

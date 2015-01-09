@@ -1,6 +1,5 @@
 project(libobs-opengl)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
@@ -73,8 +72,10 @@ add_library(libobs-opengl MODULE
 	${libobs-opengl_HEADERS})
 set_target_properties(libobs-opengl
 	PROPERTIES
-		OUTPUT_NAME libobs-opengl
-		PREFIX "")
+		OUTPUT_NAME obs-opengl
+		VERSION 0.0
+		SOVERSION 0
+		)
 target_link_libraries(libobs-opengl
 	libobs
 	glad

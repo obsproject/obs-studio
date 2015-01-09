@@ -15,3 +15,4 @@ add_executable(osx_test
 target_link_libraries(osx_test
 	libobs
 	${COCOA})
+define_graphic_modules(osx_test)

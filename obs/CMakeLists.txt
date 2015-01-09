@@ -179,6 +179,8 @@ target_link_libraries(obs
 	Qt5::Network
 	${obs_PLATFORM_LIBRARIES})
 
+define_graphic_modules(obs)
+
 install_obs_core(obs)
 install_obs_data(obs data obs-studio)
 
