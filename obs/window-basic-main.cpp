@@ -472,6 +472,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "FPSNum", 30);
 	config_set_default_uint  (basicConfig, "Video", "FPSDen", 1);
 	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
+	config_set_default_string(basicConfig, "Video", "ColorFormat", "NV12");
+	config_set_default_string(basicConfig, "Video", "ColorSpace", "709");
+	config_set_default_string(basicConfig, "Video", "ColorRange",
+			"Partial");
 
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
@@ -1355,12 +1359,37 @@ static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
 		return OBS_SCALE_BICUBIC;
 }
 
+static inline enum video_format GetVideoFormatFromName(const char *name)
+{
+	if (astrcmpi(name, "I420") == 0)
+		return VIDEO_FORMAT_I420;
+	else if (astrcmpi(name, "NV12") == 0)
+		return VIDEO_FORMAT_NV12;
+#if 0 //currently unsupported
+	else if (astrcmpi(name, "YVYU") == 0)
+		return VIDEO_FORMAT_YVYU;
+	else if (astrcmpi(name, "YUY2") == 0)
+		return VIDEO_FORMAT_YUY2;
+	else if (astrcmpi(name, "UYVY") == 0)
+		return VIDEO_FORMAT_UYVY;
+#endif
+	else
+		return VIDEO_FORMAT_BGRA;
+}
+
 int OBSBasic::ResetVideo()
 {
 	struct obs_video_info ovi;
 	int ret;
 
 	GetConfigFPS(ovi.fps_num, ovi.fps_den);
+
+	const char *colorFormat = config_get_string(basicConfig, "Video",
+			"ColorFormat");
+	const char *colorSpace = config_get_string(basicConfig, "Video",
+			"ColorSpace");
+	const char *colorRange = config_get_string(basicConfig, "Video",
+			"ColorRange");
 
 	ovi.graphics_module = App()->GetRenderModule();
 	ovi.base_width     = (uint32_t)config_get_uint(basicConfig,
@@ -1371,9 +1400,11 @@ int OBSBasic::ResetVideo()
 			"Video", "OutputCX");
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
-	ovi.output_format  = VIDEO_FORMAT_NV12;
-	ovi.colorspace     = VIDEO_CS_709;
-	ovi.range          = VIDEO_RANGE_FULL;
+	ovi.output_format  = GetVideoFormatFromName(colorFormat);
+	ovi.colorspace     = astrcmpi(colorSpace, "601") == 0 ?
+		VIDEO_CS_601 : VIDEO_CS_709;
+	ovi.range          = astrcmpi(colorRange, "Full") == 0 ?
+		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 	ovi.adapter        = 0;
 	ovi.gpu_conversion = true;
 	ovi.scale_type     = GetScaleType(basicConfig);
