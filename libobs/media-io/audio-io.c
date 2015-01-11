@@ -373,12 +373,12 @@ static void *audio_thread(void *param)
 
 /* ------------------------------------------------------------------------- */
 
-static size_t audio_get_input_idx(const audio_t *video,
+static size_t audio_get_input_idx(const audio_t *audio,
 		void (*callback)(void *param, struct audio_data *data),
 		void *param)
 {
-	for (size_t i = 0; i < video->inputs.num; i++) {
-		struct audio_input *input = video->inputs.array+i;
+	for (size_t i = 0; i < audio->inputs.num; i++) {
+		struct audio_input *input = audio->inputs.array+i;
 		if (input->callback == callback && input->param == param)
 			return i;
 	}
