@@ -39,7 +39,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  updatePropertiesSignal (obs_source_get_signal_handler(source),
 	                          "update_properties",
 	                          OBSBasicProperties::UpdateProperties,
-	                          this)
+	                          this),
+	  buttonBox              (new QDialogButtonBox(this)),
+	  oldSettings            (obs_data_create())
 
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
@@ -47,12 +49,17 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
 
+	buttonBox->setStandardButtons(QDialogButtonBox::Ok | 
+			QDialogButtonBox::Cancel);
+	buttonBox->setObjectName(QStringLiteral("buttonBox"));
+
 	ui->setupUi(this);
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
 
 	OBSData settings = obs_source_get_settings(source);
+	obs_data_apply(oldSettings, settings);
 	obs_data_release(settings);
 
 	view = new OBSPropertiesView(settings, source,
@@ -60,6 +67,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			(PropertiesUpdateCallback)obs_source_update);
 
 	layout()->addWidget(view);
+	layout()->addWidget(buttonBox);
+	layout()->setAlignment(buttonBox, Qt::AlignRight | Qt::AlignBottom);
 	layout()->setAlignment(view, Qt::AlignBottom);
 	view->setMaximumHeight(250);
 	view->setMinimumHeight(150);
@@ -90,6 +99,19 @@ void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data)->view,
 			"ReloadProperties");
+}
+
+void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
+{
+	QDialogButtonBox::ButtonRole val = buttonBox->buttonRole(button);
+
+	if (val == QDialogButtonBox::AcceptRole)
+		close();
+
+	if (val == QDialogButtonBox::RejectRole) {
+		obs_source_update(source, oldSettings);
+		close();
+	}
 }
 
 void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
@@ -158,6 +180,10 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
+	CheckSettings();
+	
+	obs_data_release(oldSettings);
+
 	// remove draw callback and release display in case our drawable
 	// surfaces go away before the destructor gets called
 	obs_display_remove_draw_callback(display,
@@ -187,4 +213,37 @@ void OBSBasicProperties::Init()
 	if (display)
 		obs_display_add_draw_callback(display,
 				OBSBasicProperties::DrawPreview, this);
+}
+
+void OBSBasicProperties::CheckSettings()
+{
+	OBSData currentSettings = obs_source_get_settings(source);
+	const char *oldSettingsJson = obs_data_get_json(oldSettings);
+	const char *currentSettingsJson = obs_data_get_json(currentSettings);
+
+	if (strcmp(currentSettingsJson, oldSettingsJson) != 0) {
+		QMessageBox msgBox;
+		msgBox.setText("Source Settings Changed.");
+		msgBox.setInformativeText("Do you want to save your settings?");
+		msgBox.setStandardButtons(QMessageBox::Save |
+			QMessageBox::Discard);
+		msgBox.setIcon(QMessageBox::Information);
+
+		int ret = msgBox.exec();
+
+		switch (ret) {
+		case QMessageBox::Save:
+			// Do nothing because the settings are already updated
+			break;
+		case QMessageBox::Discard:
+			obs_source_update(source, oldSettings);
+			break;
+		default:
+			/* If somehow the dialog fails to show, just default to
+			 * saving the settings.
+			 */
+			break;
+		}
+	}
+	obs_data_release(currentSettings);
 }

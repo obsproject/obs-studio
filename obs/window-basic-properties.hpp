@@ -18,6 +18,8 @@
 #pragma once
 
 #include <QDialog>
+#include <QDialogButtonBox>
+#include <QMessageBox>
 #include <memory>
 
 #include <obs.hpp>
@@ -40,14 +42,18 @@ private:
 	OBSDisplay display;
 	OBSSignal  removedSignal;
 	OBSSignal  updatePropertiesSignal;
+	OBSData    oldSettings;
 	OBSPropertiesView *view;
+	QDialogButtonBox *buttonBox;
 
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
+	void CheckSettings();
 
 private slots:
 	void OnPropertiesResized();
+	void on_buttonBox_clicked(QAbstractButton *button);
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);
