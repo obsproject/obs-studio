@@ -9,3 +9,4 @@ add_executable(win-test WIN32
 	${win-text_SOURCES})
 target_link_libraries(win-test
 	libobs)
+define_graphic_modules(win-test)

@@ -45,7 +45,7 @@ static void CreateOBS(NSView *view)
 	ovi.adapter         = 0;
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
-	ovi.graphics_module = "libobs-opengl";
+	ovi.graphics_module = DL_OPENGL;
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
 	ovi.base_width      = cx;
 	ovi.base_height     = cy;
