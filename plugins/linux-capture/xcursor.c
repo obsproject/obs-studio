@@ -44,6 +44,8 @@ static uint32_t *xcursor_pixels(XFixesCursorImage *xc) {
  */
 static void xcursor_create(xcursor_t *data, XFixesCursorImage *xc) {
 	uint32_t *pixels = xcursor_pixels(xc);
+	if (!pixels)
+		return;
 
 	if (data->tex
 	&& data->last_height == xc->width
@@ -82,6 +84,8 @@ void xcursor_destroy(xcursor_t *data) {
 
 void xcursor_tick(xcursor_t *data) {
 	XFixesCursorImage *xc = XFixesGetCursorImage(data->dpy);
+	if (!xc)
+		return;
 
 	if (!data->tex || data->last_serial != xc->cursor_serial)
 		xcursor_create(data, xc);
