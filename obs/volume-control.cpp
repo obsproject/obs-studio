@@ -137,53 +137,11 @@ VolControl::~VolControl()
 	obs_volmeter_destroy(obs_volmeter);
 }
 
-QColor VolumeMeter::getBkColor() const
-{
-	return bkColor;
-}
-
-void VolumeMeter::setBkColor(QColor c)
-{
-	bkColor = c;
-}
-
-QColor VolumeMeter::getMagColor() const
-{
-	return magColor;
-}
-
-void VolumeMeter::setMagColor(QColor c)
-{
-	magColor = c;
-}
-
-QColor VolumeMeter::getPeakColor() const
-{
-	return peakColor;
-}
-
-void VolumeMeter::setPeakColor(QColor c)
-{
-	peakColor = c;
-}
-
-QColor VolumeMeter::getPeakHoldColor() const
-{
-	return peakHoldColor;
-}
-
-void VolumeMeter::setPeakHoldColor(QColor c)
-{
-	peakHoldColor = c;
-}
-
-
 VolumeMeter::VolumeMeter(QWidget *parent)
 			: QWidget(parent)
 {
 	setMinimumSize(1, 3);
 
-	//Default meter color settings, they only show if there is no stylesheet, do not remove.
 	bkColor.setRgb(0xDD, 0xDD, 0xDD);
 	magColor.setRgb(0x20, 0x7D, 0x17);
 	peakColor.setRgb(0x3E, 0xF1, 0x2B);

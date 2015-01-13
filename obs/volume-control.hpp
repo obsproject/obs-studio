@@ -6,11 +6,6 @@
 class VolumeMeter : public QWidget
 {
 	Q_OBJECT
-	Q_PROPERTY(QColor bkColor READ getBkColor WRITE setBkColor DESIGNABLE true)
-	Q_PROPERTY(QColor magColor READ getMagColor WRITE setMagColor DESIGNABLE true)
-	Q_PROPERTY(QColor peakColor READ getPeakColor WRITE setPeakColor DESIGNABLE true)
-	Q_PROPERTY(QColor peakHoldColor READ getPeakHoldColor WRITE setPeakHoldColor DESIGNABLE true)
-
 private:
 	float mag, peak, peakHold;
 	QColor bkColor, magColor, peakColor, peakHoldColor;
@@ -19,15 +14,6 @@ private:
 public:
 	explicit VolumeMeter(QWidget *parent = 0);
 	void setLevels(float nmag, float npeak, float npeakHold);
-	QColor getBkColor() const;
-	void setBkColor(QColor c);
-	QColor getMagColor() const;
-	void setMagColor(QColor c);
-	QColor getPeakColor() const;
-	void setPeakColor(QColor c);
-	QColor getPeakHoldColor() const;
-	void setPeakHoldColor(QColor c);
-
 protected:
 	void paintEvent(QPaintEvent *event);
 private slots:
