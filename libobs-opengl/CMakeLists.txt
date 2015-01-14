@@ -70,12 +70,21 @@ set(libobs-opengl_HEADERS
 add_library(libobs-opengl MODULE
 	${libobs-opengl_SOURCES}
 	${libobs-opengl_HEADERS})
+
+if(WIN32 OR APPLE)
+set_target_properties(libobs-opengl
+	PROPERTIES
+		OUTPUT_NAME libobs-opengl
+		PREFIX "")
+else()
 set_target_properties(libobs-opengl
 	PROPERTIES
 		OUTPUT_NAME obs-opengl
 		VERSION 0.0
 		SOVERSION 0
 		)
+endif()
+
 target_link_libraries(libobs-opengl
 	libobs
 	glad
