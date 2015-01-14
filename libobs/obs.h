@@ -761,8 +761,11 @@ EXPORT void obs_source_load(obs_source_t *source);
 /** Specifies to force audio to mono */
 #define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
 
-/** Sets source flags.  Note that these are different from the main output
- * flags. */
+/**
+ * Sets source flags.  Note that these are different from the main output
+ * flags.  These are generally things that can be set by the source or user,
+ * while the output flags are more used to determine capabilities of a source.
+ */
 EXPORT void obs_source_set_flags(obs_source_t *source, uint32_t flags);
 
 /** Gets source flags. */
