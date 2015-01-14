@@ -1536,6 +1536,16 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
+	/* Check all child dialogs and ensure they run their proper closeEvent
+	 * methods before exiting the application.  Otherwise Qt doesn't send
+	 * the proper QCloseEvent messages. */
+	QList<QDialog*> childDialogs = this->findChildren<QDialog *>();
+	if (!childDialogs.isEmpty()) {
+		for (int i = 0; i < childDialogs.size(); ++i) {
+			childDialogs.at(i)->close();
+		}
+	}
+
 	// remove draw callback in case our drawable surfaces go away before
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
