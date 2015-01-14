@@ -388,7 +388,7 @@ struct obs_output {
 	bool                            received_video;
 	bool                            received_audio;
 	int64_t                         video_offset;
-	int64_t                         audio_offset;
+	int64_t                         audio_offsets[MAX_AUDIO_MIXES];
 	int64_t                         highest_audio_ts;
 	int64_t                         highest_video_ts;
 	pthread_mutex_t                 interleaved_mutex;
@@ -412,8 +412,9 @@ struct obs_output {
 	video_t                         *video;
 	audio_t                         *audio;
 	obs_encoder_t                   *video_encoder;
-	obs_encoder_t                   *audio_encoder;
+	obs_encoder_t                   *audio_encoders[MAX_AUDIO_MIXES];
 	obs_service_t                   *service;
+	size_t                          mixer_idx;
 
 	uint32_t                        scaled_width;
 	uint32_t                        scaled_height;
@@ -450,6 +451,8 @@ struct obs_encoder {
 	size_t                          blocksize;
 	size_t                          framesize;
 	size_t                          framesize_bytes;
+
+	size_t                          mixer_idx;
 
 	uint32_t                        scaled_width;
 	uint32_t                        scaled_height;

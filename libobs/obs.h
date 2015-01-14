@@ -771,6 +771,15 @@ EXPORT void obs_source_set_flags(obs_source_t *source, uint32_t flags);
 /** Gets source flags. */
 EXPORT uint32_t obs_source_get_flags(const obs_source_t *source);
 
+/**
+ * Sets audio mixer flags.  These flags are used to specify which mixers
+ * the source's audio should be applied to.
+ */
+EXPORT void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers);
+
+/** Gets audio mixer flags */
+EXPORT uint32_t obs_source_get_audio_mixers(const obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
@@ -1033,6 +1042,12 @@ EXPORT video_t *obs_output_video(const obs_output_t *output);
 /** Returns the audio media context associated with this output */
 EXPORT audio_t *obs_output_audio(const obs_output_t *output);
 
+/** Sets the current audio mixer for non-encoded outputs */
+EXPORT void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx);
+
+/** Gets the current audio mixer for non-encoded outputs */
+EXPORT size_t obs_output_get_mixer(const obs_output_t *output);
+
 /**
  * Sets the current video encoder associated with this output,
  * required for encoded outputs
@@ -1042,16 +1057,27 @@ EXPORT void obs_output_set_video_encoder(obs_output_t *output,
 
 /**
  * Sets the current audio encoder associated with this output,
- * required for encoded outputs
+ * required for encoded outputs.
+ *
+ * The idx parameter specifies the audio encoder index to set the encoder to.
+ * Only used with outputs that have multiple audio outputs (RTMP typically),
+ * otherwise the parameter is ignored.
  */
 EXPORT void obs_output_set_audio_encoder(obs_output_t *output,
-		obs_encoder_t *encoder);
+		obs_encoder_t *encoder, size_t idx);
 
 /** Returns the current video encoder associated with this output */
 EXPORT obs_encoder_t *obs_output_get_video_encoder(const obs_output_t *output);
 
-/** Returns the current audio encoder associated with this output */
-EXPORT obs_encoder_t *obs_output_get_audio_encoder(const obs_output_t *output);
+/**
+ * Returns the current audio encoder associated with this output
+ *
+ * The idx parameter specifies the audio encoder index.  Only used with
+ * outputs that have multiple audio outputs, otherwise the parameter is
+ * ignored.
+ */
+EXPORT obs_encoder_t *obs_output_get_audio_encoder(const obs_output_t *output,
+		size_t idx);
 
 /** Sets the current service associated with this output. */
 EXPORT void obs_output_set_service(obs_output_t *output,
@@ -1154,10 +1180,11 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
  * @param  id        Audio Encoder ID
  * @param  name      Name to assign to this context
  * @param  settings  Settings
+ * @param  mixer_idx Index of the mixer to use for this audio encoder
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t *settings);
+		obs_data_t *settings, size_t mixer_idx);
 
 /** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t *encoder);

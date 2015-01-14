@@ -281,7 +281,7 @@ static void initialize_output(struct rtmp_common *service, obs_output_t *output,
 		json_t *root)
 {
 	obs_encoder_t *video_encoder = obs_output_get_video_encoder(output);
-	obs_encoder_t *audio_encoder = obs_output_get_audio_encoder(output);
+	obs_encoder_t *audio_encoder = obs_output_get_audio_encoder(output, 0);
 	json_t        *json_service = find_service(root, service->service);
 	json_t        *recommended;
 

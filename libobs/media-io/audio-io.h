@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define MAX_AUDIO_MIXES 4
+
 /*
  * Base audio output component.  Use this to create an audio output track
  * for the media.
@@ -172,13 +174,14 @@ static inline size_t get_audio_size(enum audio_format format,
 EXPORT int audio_output_open(audio_t **audio, struct audio_output_info *info);
 EXPORT void audio_output_close(audio_t *audio);
 
-EXPORT bool audio_output_connect(audio_t *video,
+typedef void (*audio_output_callback_t)(void *param, size_t mix_idx,
+		struct audio_data *data);
+
+EXPORT bool audio_output_connect(audio_t *video, size_t mix_idx,
 		const struct audio_convert_info *conversion,
-		void (*callback)(void *param, struct audio_data *data),
-		void *param);
-EXPORT void audio_output_disconnect(audio_t *video,
-		void (*callback)(void *param, struct audio_data *data),
-		void *param);
+		audio_output_callback_t callback, void *param);
+EXPORT void audio_output_disconnect(audio_t *video, size_t mix_idx,
+		audio_output_callback_t callback, void *param);
 
 EXPORT bool audio_output_active(const audio_t *audio);
 
@@ -189,7 +192,10 @@ EXPORT uint32_t audio_output_get_sample_rate(const audio_t *audio);
 EXPORT const struct audio_output_info *audio_output_get_info(
 		const audio_t *audio);
 
-EXPORT audio_line_t *audio_output_create_line(audio_t *audio, const char *name);
+EXPORT audio_line_t *audio_output_create_line(audio_t *audio, const char *name,
+		uint32_t mixers);
+EXPORT void audio_line_set_mixers(audio_line_t *line, uint32_t mixers);
+EXPORT uint32_t audio_line_get_mixers(audio_line_t *line);
 EXPORT void audio_line_destroy(audio_line_t *line);
 EXPORT void audio_line_output(audio_line_t *line, const struct audio_data *data);
 

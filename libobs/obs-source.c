@@ -84,6 +84,7 @@ static const char *source_signals[] = {
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
 	"void audio_data(ptr source, ptr data)",
+	"void audio_mixers(ptr source, in out int mixers)",
 	NULL
 };
 
@@ -126,7 +127,7 @@ bool obs_source_init(struct obs_source *source,
 
 	if (info && info->output_flags & OBS_SOURCE_AUDIO) {
 		source->audio_line = audio_output_create_line(obs->audio.audio,
-				source->context.name);
+				source->context.name, 0xF);
 		if (!source->audio_line) {
 			blog(LOG_ERROR, "Failed to create audio line for "
 			                "source '%s'", source->context.name);
@@ -2165,6 +2166,37 @@ void obs_source_set_default_flags(obs_source_t *source, uint32_t flags)
 uint32_t obs_source_get_flags(const obs_source_t *source)
 {
 	return source ? source->flags : 0;
+}
+
+void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
+{
+	struct calldata data = {0};
+	uint32_t cur_mixers;
+
+	if (!source) return;
+	if ((source->info.output_flags & OBS_SOURCE_AUDIO) == 0) return;
+
+	cur_mixers = audio_line_get_mixers(source->audio_line);
+	if (cur_mixers == mixers)
+		return;
+
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_int(&data, "mixers", mixers);
+
+	signal_handler_signal(source->context.signals, "audio_mixers", &data);
+
+	mixers = (uint32_t)calldata_int(&data, "mixers");
+	calldata_free(&data);
+
+	audio_line_set_mixers(source->audio_line, mixers);
+}
+
+uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
+{
+	if (!source) return 0;
+	if ((source->info.output_flags & OBS_SOURCE_AUDIO) == 0) return 0;
+
+	return audio_line_get_mixers(source->audio_line);
 }
 
 void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix,

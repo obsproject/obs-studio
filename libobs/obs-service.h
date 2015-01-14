@@ -63,6 +63,7 @@ struct obs_service_info {
 	const char *(*get_username)(void *data);
 	const char *(*get_password)(void *data);
 
+	bool (*supports_multitrack)(void *data);
 	/* TODO: more stuff later */
 };
 

@@ -411,11 +411,11 @@ bool OBSBasic::InitEncoders()
 	if (!x264)
 		return false;
 
-	aac = obs_audio_encoder_create("libfdk_aac", "default_aac", nullptr);
+	aac = obs_audio_encoder_create("libfdk_aac", "default_aac", nullptr, 0);
 
 	if (!aac)
 		aac = obs_audio_encoder_create("ffmpeg_aac", "default_aac",
-				nullptr);
+				nullptr, 0);
 
 	if (!aac)
 		return false;
@@ -2291,7 +2291,7 @@ void OBSBasic::on_streamButton_clicked()
 		SetupEncoders();
 
 		obs_output_set_video_encoder(streamOutput, x264);
-		obs_output_set_audio_encoder(streamOutput, aac);
+		obs_output_set_audio_encoder(streamOutput, aac, 0);
 		obs_output_set_service(streamOutput, service);
 
 		bool reconnect = config_get_bool(basicConfig, "SimpleOutput",
@@ -2350,7 +2350,7 @@ void OBSBasic::on_recordButton_clicked()
 		SetupEncoders();
 
 		obs_output_set_video_encoder(fileOutput, x264);
-		obs_output_set_audio_encoder(fileOutput, aac);
+		obs_output_set_audio_encoder(fileOutput, aac, 0);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "path", strPath.c_str());

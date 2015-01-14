@@ -28,7 +28,7 @@ static uint32_t get_ms_time(struct encoder_packet *packet, int64_t val)
 
 extern void write_file_info(FILE *file, int64_t duration_ms, int64_t size);
 
-extern void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
-		bool write_header);
+extern bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
+		bool write_header, size_t audio_idx);
 extern void flv_packet_mux(struct encoder_packet *packet,
 		uint8_t **output, size_t *size, bool is_header);

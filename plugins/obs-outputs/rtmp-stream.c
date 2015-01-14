@@ -272,7 +272,7 @@ static void send_meta_data(struct rtmp_stream *stream)
 	uint8_t *meta_data;
 	size_t  meta_data_size;
 
-	flv_meta_data(stream->output, &meta_data, &meta_data_size, false);
+	flv_meta_data(stream->output, &meta_data, &meta_data_size, false, 0);
 	RTMP_Write(&stream->rtmp, (char*)meta_data, (int)meta_data_size);
 	bfree(meta_data);
 }
@@ -280,7 +280,7 @@ static void send_meta_data(struct rtmp_stream *stream)
 static void send_audio_header(struct rtmp_stream *stream)
 {
 	obs_output_t  *context  = stream->output;
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
 	uint8_t       *header;
 
 	struct encoder_packet packet   = {
