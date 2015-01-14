@@ -394,7 +394,7 @@ static void fix_gpu_converted_alignment(struct obs_core_video *video,
 		struct video_frame *output, const struct video_data *input)
 {
 	uint32_t src_linesize = input->linesize[0];
-	uint32_t dst_linesize = output->linesize[0];
+	uint32_t dst_linesize = output->linesize[0] * 4;
 	uint32_t src_pos      = 0;
 
 	for (size_t i = 0; i < 3; i++) {
