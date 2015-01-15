@@ -25,6 +25,9 @@ extern "C" {
 
 EXPORT const char *device_get_name(void);
 EXPORT int device_get_type(void);
+EXPORT bool device_enum_adapters(
+		bool (*callback)(void *param, const char *name, uint32_t id),
+		void *param);
 EXPORT const char *device_preprocessor_name(void);
 EXPORT int device_create(gs_device_t **device, const struct gs_init_data *data);
 EXPORT void device_destroy(gs_device_t *device);

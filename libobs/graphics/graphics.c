@@ -36,6 +36,24 @@ static __thread graphics_t *thread_graphics = NULL;
 
 #define IMMEDIATE_COUNT 512
 
+void gs_enum_adapters(
+		bool (*callback)(void *param, const char *name, uint32_t id),
+		void *param)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (graphics && graphics->exports.device_enum_adapters) {
+		if (graphics->exports.device_enum_adapters(callback, param)) {
+			return;
+		}
+	}
+
+	/* If the subsystem does not currently support device enumeration of
+	 * adapters or fails to enumerate adapters, just set it to one adapter
+	 * named "Default" */
+	callback(param, "Default", 0);
+}
+
 extern void gs_init_image_deps(void);
 extern void gs_free_image_deps(void);
 

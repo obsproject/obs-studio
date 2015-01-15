@@ -469,6 +469,56 @@ const char *device_preprocessor_name(void)
 	return "_D3D11";
 }
 
+static inline void EnumD3DAdapters(
+		bool (*callback)(void*, const char*, uint32_t),
+		void *param)
+{
+	ComPtr<IDXGIFactory1> factory;
+	ComPtr<IDXGIAdapter1> adapter;
+	HRESULT hr;
+	UINT i = 0;
+
+	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2 :
+		__uuidof(IDXGIFactory1);
+
+	hr = CreateDXGIFactory1(factoryIID, (void**)factory.Assign());
+	if (FAILED(hr))
+		throw HRError("Failed to create DXGIFactory", hr);
+
+	while (factory->EnumAdapters1(i++, adapter.Assign()) == S_OK) {
+		DXGI_ADAPTER_DESC desc;
+		char name[512] = "";
+
+		hr = adapter->GetDesc(&desc);
+		if (FAILED(hr))
+			continue;
+
+		/* ignore microsoft's 'basic' renderer' */
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+			continue;
+
+		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
+
+		if (!callback(param, name, i - 1))
+			break;
+	}
+}
+
+bool device_enum_adapters(
+		bool (*callback)(void *param, const char *name, uint32_t id),
+		void *param)
+{
+	try {
+		EnumD3DAdapters(callback, param);
+		return true;
+
+	} catch (HRError error) {
+		blog(LOG_WARNING, "Failed enumerating devices: %s (%08lX)",
+				error.str, error.hr);
+		return false;
+	}
+}
+
 int device_create(gs_device_t **p_device, const gs_init_data *data)
 {
 	gs_device *device = NULL;
