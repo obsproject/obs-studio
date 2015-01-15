@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <inttypes.h>
 #include <util/base.h>
 #include <util/platform.h>
 #include <graphics/matrix3.h>
@@ -203,7 +204,8 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 
 	char *adapterNameUTF8;
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
-	blog(LOG_INFO, "Loading up D3D11 on adapter %s", adapterNameUTF8);
+	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
+			adapterNameUTF8, data->adapter);
 	bfree(adapterNameUTF8);
 
 	hr = D3D11CreateDeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN,
