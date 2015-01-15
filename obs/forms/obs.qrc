@@ -1,20 +1,25 @@
 <RCC>
-  <qresource prefix="res">
-    <file>images/list_remove.png</file>
-    <file>images/add.png</file>
-    <file>images/down.png</file>
-    <file>images/editscene.png</file>
-    <file>images/live.png</file>
-    <file>images/properties.png</file>
-    <file>images/up.png</file>
-    <file>images/obs.png</file>
-  </qresource>
-  <qresource prefix="settings">
-    <file>images/settings/network.png</file>
-    <file>images/settings/video-display-3.png</file>
-    <file>images/settings/decibel_audio_player.png</file>
-    <file>images/settings/applications-system-2.png</file>
-    <file>images/settings/system-settings-3.png</file>
-    <file>images/settings/network-bluetooth.png</file>
-  </qresource>
+    <qresource prefix="/res">
+        <file>images/list_remove.png</file>
+        <file>images/add.png</file>
+        <file>images/down.png</file>
+        <file>images/editscene.png</file>
+        <file>images/live.png</file>
+        <file>images/properties.png</file>
+        <file>images/up.png</file>
+        <file>images/obs.png</file>
+        <file>images/down_disabled.png</file>
+        <file>images/up_disabled.png</file>
+        <file>images/list_remove_disabled.png</file>
+        <file>images/properties_disabled.png</file>
+        <file>images/add_disabled.png</file>
+    </qresource>
+    <qresource prefix="/settings">
+        <file>images/settings/network.png</file>
+        <file>images/settings/video-display-3.png</file>
+        <file>images/settings/decibel_audio_player.png</file>
+        <file>images/settings/applications-system-2.png</file>
+        <file>images/settings/system-settings-3.png</file>
+        <file>images/settings/network-bluetooth.png</file>
+    </qresource>
 </RCC>
