@@ -521,12 +521,24 @@ bool device_enum_adapters(
 	}
 }
 
+static bool LogAdapterCallback(void *param, const char *name, uint32_t id)
+{
+	blog(LOG_INFO, "\tAdapter %" PRIu32 ": %s", id, name);
+	UNUSED_PARAMETER(param);
+	return true;
+}
+
 int device_create(gs_device_t **p_device, const gs_init_data *data)
 {
 	gs_device *device = NULL;
 	int errorcode = GS_SUCCESS;
 
 	try {
+		blog(LOG_INFO, "---------------------------------");
+		blog(LOG_INFO, "Initializing D3D11..");
+		blog(LOG_INFO, "Available Video Adapters: ");
+		device_enum_adapters(LogAdapterCallback, nullptr);
+
 		device = new gs_device(data);
 
 	} catch (UnsupportedHWError error) {
