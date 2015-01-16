@@ -42,8 +42,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	                          "update_properties",
 	                          OBSBasicProperties::UpdateProperties,
 	                          this),
-	  buttonBox              (new QDialogButtonBox(this)),
-	  oldSettings            (obs_data_create())
+	  oldSettings            (obs_data_create()),
+	  buttonBox              (new QDialogButtonBox(this))
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cx");
