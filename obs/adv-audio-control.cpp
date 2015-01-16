@@ -170,12 +170,17 @@ void OBSAdvAudioCtrl::OBSSourceSyncChanged(void *param, calldata_t *calldata)
 /* ------------------------------------------------------------------------- */
 /* Qt event queue source callbacks */
 
+static inline void setCheckboxState(QCheckBox *checkbox, bool checked)
+{
+	checkbox->blockSignals(true);
+	checkbox->setChecked(checked);
+	checkbox->blockSignals(false);
+}
+
 void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 {
 	bool forceMonoVal = (flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0;
-
-	if (forceMono->isChecked() != forceMonoVal)
-		forceMono->setChecked(forceMonoVal);
+	setCheckboxState(forceMono, forceMonoVal);
 }
 
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
