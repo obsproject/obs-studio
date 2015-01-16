@@ -955,7 +955,7 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 	QString text = QTStr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(name));
 
-	QMessageBox remove_source;
+	QMessageBox remove_source(this);
 	remove_source.setText(text);
 	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"),
 			QMessageBox::YesRole);
@@ -1685,7 +1685,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
 
-	QMenu popup;
+	QMenu popup(this);
 	popup.addAction(QTStr("Add"),
 			this, SLOT(on_actionAddScene_triggered()));
 
@@ -1814,7 +1814,7 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->sources->itemAt(pos);
 
-	QMenu popup;
+	QMenu popup(this);
 	QPointer<QMenu> addSourceMenu = CreateAddSourcePopupMenu();
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
@@ -1876,7 +1876,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	bool foundValues = false;
 	size_t idx = 0;
 
-	QMenu *popup = new QMenu(QTStr("Add"));
+	QMenu *popup = new QMenu(QTStr("Add"), this);
 	while (obs_enum_input_types(idx++, &type)) {
 		const char *name = obs_source_get_display_name(
 				OBS_SOURCE_TYPE_INPUT, type);
