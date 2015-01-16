@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#pragma once
+
 #include "librtmp/rtmp.h"
 
 static inline AVal *flv_str(AVal *out, const char *str)
