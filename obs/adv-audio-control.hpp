@@ -18,10 +18,10 @@ private:
 	QCheckBox              *forceMono              = nullptr;
 	QSlider                *panning                = nullptr;
 	QSpinBox               *syncOffset             = nullptr;
-	QCheckBox              *mediaChannel1          = nullptr;
-	QCheckBox              *mediaChannel2          = nullptr;
-	QCheckBox              *mediaChannel3          = nullptr;
-	QCheckBox              *mediaChannel4          = nullptr;
+	QCheckBox              *mixer1                 = nullptr;
+	QCheckBox              *mixer2                 = nullptr;
+	QCheckBox              *mixer3                 = nullptr;
+	QCheckBox              *mixer4                 = nullptr;
 
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
@@ -45,8 +45,8 @@ public slots:
 	void downmixMonoChanged(bool checked);
 	void panningChanged(int val);
 	void syncOffsetChanged(int milliseconds);
-	void mediaChannel1Changed(bool checked);
-	void mediaChannel2Changed(bool checked);
-	void mediaChannel3Changed(bool checked);
-	void mediaChannel4Changed(bool checked);
+	void mixer1Changed(bool checked);
+	void mixer2Changed(bool checked);
+	void mixer3Changed(bool checked);
+	void mixer4Changed(bool checked);
 };
