@@ -11,6 +11,7 @@ elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	add_subdirectory(linux-capture)
 	add_subdirectory(linux-pulseaudio)
 	add_subdirectory(linux-v4l2)
+	add_subdirectory(linux-jack)
 endif()
 
 add_subdirectory(image-source)
