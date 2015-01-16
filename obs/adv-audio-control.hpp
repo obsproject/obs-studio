@@ -26,10 +26,12 @@ private:
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
 	OBSSignal              flagsSignal;
+	OBSSignal              mixersSignal;
 
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
+	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
 
 public:
 	OBSAdvAudioCtrl(obs_source_t *source_);
@@ -40,6 +42,7 @@ public slots:
 	void SourceFlagsChanged(uint32_t flags);
 	void SourceVolumeChanged(float volume);
 	void SourceSyncChanged(int64_t offset);
+	void SourceMixersChanged(uint32_t mixers);
 
 	void volumeChanged(int percentage);
 	void downmixMonoChanged(bool checked);

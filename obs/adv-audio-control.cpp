@@ -22,6 +22,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	const char *sourceName = obs_source_get_name(source);
 	float vol = obs_source_get_volume(source);
 	uint32_t flags = obs_source_get_flags(source);
+	uint32_t mixers = obs_source_get_audio_mixers(source);
 
 	forceMonoContainer             = new QWidget();
 	mixerContainer                 = new QWidget();
@@ -43,6 +44,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	syncOffsetSignal.Connect(handler, "audio_sync", OBSSourceSyncChanged,
 			this);
 	flagsSignal.Connect(handler, "update_flags", OBSSourceFlagsChanged,
+			this);
+	mixersSignal.Connect(handler, "audio_mixers", OBSSourceMixersChanged,
 			this);
 
 	hlayout = new QHBoxLayout();
@@ -90,15 +93,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	syncOffset->setMaximumWidth(130);
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
-	mixer1->setChecked(true);
 	mixer1->setText("1");
-	mixer1->setEnabled(false);
+	mixer1->setChecked(mixers & (1<<0));
 	mixer2->setText("2");
-	mixer2->setEnabled(false);
+	mixer2->setChecked(mixers & (1<<1));
 	mixer3->setText("3");
-	mixer3->setEnabled(false);
+	mixer3->setChecked(mixers & (1<<2));
 	mixer4->setText("4");
-	mixer4->setEnabled(false);
+	mixer4->setChecked(mixers & (1<<3));
 
 	panningContainer->setMinimumWidth(140);
 	panningContainer->setMaximumWidth(140);
@@ -167,6 +169,13 @@ void OBSAdvAudioCtrl::OBSSourceSyncChanged(void *param, calldata_t *calldata)
 			"SourceSyncChanged", Q_ARG(int64_t, offset));
 }
 
+void OBSAdvAudioCtrl::OBSSourceMixersChanged(void *param, calldata_t *calldata)
+{
+	uint32_t mixers = (uint32_t)calldata_int(calldata, "mixers");
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl*>(param),
+			"SourceMixersChanged", Q_ARG(uint32_t, mixers));
+}
+
 /* ------------------------------------------------------------------------- */
 /* Qt event queue source callbacks */
 
@@ -193,6 +202,14 @@ void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)
 {
 	syncOffset->setValue(offset / NSEC_PER_MSEC);
+}
+
+void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
+{
+	setCheckboxState(mixer1, mixers & (1<<0));
+	setCheckboxState(mixer2, mixers & (1<<1));
+	setCheckboxState(mixer3, mixers & (1<<2));
+	setCheckboxState(mixer4, mixers & (1<<3));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -235,26 +252,34 @@ void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 				int64_t(milliseconds) * NSEC_PER_MSEC);
 }
 
+static inline void setMixer(obs_source_t *source, const int mixerIdx,
+		const bool checked)
+{
+	uint32_t mixers = obs_source_get_audio_mixers(source);
+	uint32_t new_mixers = mixers;
+
+	if (checked) new_mixers |=  (1<<mixerIdx);
+	else         new_mixers &= ~(1<<mixerIdx);
+
+	obs_source_set_audio_mixers(source, new_mixers);
+}
+
 void OBSAdvAudioCtrl::mixer1Changed(bool checked)
 {
-	/* TODO */
-	UNUSED_PARAMETER(checked);
+	setMixer(source, 0, checked);
 }
 
 void OBSAdvAudioCtrl::mixer2Changed(bool checked)
 {
-	/* TODO */
-	UNUSED_PARAMETER(checked);
+	setMixer(source, 1, checked);
 }
 
 void OBSAdvAudioCtrl::mixer3Changed(bool checked)
 {
-	/* TODO */
-	UNUSED_PARAMETER(checked);
+	setMixer(source, 2, checked);
 }
 
 void OBSAdvAudioCtrl::mixer4Changed(bool checked)
 {
-	/* TODO */
-	UNUSED_PARAMETER(checked);
+	setMixer(source, 3, checked);
 }
