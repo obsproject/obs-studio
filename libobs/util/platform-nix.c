@@ -154,7 +154,16 @@ uint64_t os_gettime_ns(void)
 }
 
 /* should return $HOME/.[name] */
-char *os_get_config_path(const char *name)
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+}
+
+char *os_get_config_path_ptr(const char *name)
 {
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)

@@ -68,7 +68,20 @@ uint64_t os_gettime_ns(void)
 }
 
 /* gets the location ~/Library/Application Support/[name] */
-char *os_get_config_path(const char *name)
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(
+			NSApplicationSupportDirectory, NSUserDomainMask, YES);
+
+	if([paths count] == 0)
+		bcrash("Could not get home directory (platform-cocoa)");
+
+	NSString *application_support = paths[0];
+	const char *base_path = [application_support UTF8String];
+	return snprintf(dst, size, "%s/%s", base_path, name);
+}
+
+char *os_get_config_path_ptr(const char *name)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
 			NSApplicationSupportDirectory, NSUserDomainMask, YES);

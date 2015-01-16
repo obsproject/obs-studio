@@ -191,7 +191,25 @@ uint64_t os_gettime_ns(void)
 }
 
 /* returns %appdata%\[name] on windows */
-char *os_get_config_path(const char *name)
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	wchar_t path_utf16[MAX_PATH];
+
+	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+			path_utf16);
+
+	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
+		if (strcat_s(dst, size, "\\") == 0) {
+			if (strcat_s(dst, size, name) == 0) {
+				return (int)strlen(dst);
+			}
+		}
+	}
+
+	return -1;
+}
+
+char *os_get_config_path_ptr(const char *name)
 {
 	char *ptr;
 	wchar_t path_utf16[MAX_PATH];

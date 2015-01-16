@@ -62,10 +62,11 @@ Q_DECLARE_METATYPE(obs_order_movement);
 
 static void AddExtraModulePaths()
 {
-	BPtr<char> base_module_dir =
-		os_get_config_path("obs-studio/plugins/%module%");
+	char base_module_dir[512];
+	int ret = os_get_config_path(base_module_dir, sizeof(base_module_dir),
+			"obs-studio/plugins/%module%");
 
-	if (!base_module_dir)
+	if (ret <= 0)
 		return;
 
 	string path = (char*)base_module_dir;
@@ -319,8 +320,10 @@ void OBSBasic::SaveService()
 	if (!service)
 		return;
 
-	BPtr<char> serviceJsonPath(os_get_config_path(SERVICE_PATH));
-	if (!serviceJsonPath)
+	char serviceJsonPath[512];
+	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
+			SERVICE_PATH);
+	if (ret <= 0)
 		return;
 
 	obs_data_t *data     = obs_data_create();
@@ -341,8 +344,10 @@ bool OBSBasic::LoadService()
 {
 	const char *type;
 
-	BPtr<char> serviceJsonPath(os_get_config_path(SERVICE_PATH));
-	if (!serviceJsonPath)
+	char serviceJsonPath[512];
+	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
+			SERVICE_PATH);
+	if (ret <= 0)
 		return false;
 
 	BPtr<char> jsonText = os_quick_read_utf8_file(serviceJsonPath);
@@ -498,7 +503,13 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 bool OBSBasic::InitBasicConfig()
 {
-	BPtr<char> configPath(os_get_config_path("obs-studio/basic/basic.ini"));
+	char configPath[512];
+	int ret = os_get_config_path(configPath, sizeof(configPath),
+			"obs-studio/basic/basic.ini");
+	if (ret <= 0) {
+		OBSErrorBox(nullptr, "Failed to get base.ini path");
+		return false;
+	}
 
 	int code = basicConfig.Open(configPath, CONFIG_OPEN_ALWAYS);
 	if (code != CONFIG_SUCCESS) {
@@ -549,7 +560,11 @@ void OBSBasic::InitPrimitives()
 
 void OBSBasic::OBSInit()
 {
-	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
+	char savePath[512];
+	int ret = os_get_config_path(savePath, sizeof(savePath),
+			"obs-studio/basic/scenes.json");
+	if (ret <= 0)
+		throw "Failed to get scenes.json file path";
 
 	/* make sure it's fully displayed before doing any initialization */
 	show();
@@ -562,7 +577,7 @@ void OBSBasic::OBSInit()
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
 
-	int ret = ResetVideo();
+	ret = ResetVideo();
 
 	switch (ret) {
 	case OBS_VIDEO_MODULE_NOT_FOUND:
@@ -646,7 +661,12 @@ OBSBasic::~OBSBasic()
 
 void OBSBasic::SaveProject()
 {
-	BPtr<char> savePath(os_get_config_path("obs-studio/basic/scenes.json"));
+	char savePath[512];
+	int ret = os_get_config_path(savePath, sizeof(savePath),
+			"obs-studio/basic/scenes.json");
+	if (ret <= 0)
+		return;
+
 	SaveService();
 	Save(savePath);
 }
@@ -1966,7 +1986,9 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 
 static BPtr<char> ReadLogFile(const char *log)
 {
-	BPtr<char> logDir(os_get_config_path("obs-studio/logs"));
+	char logDir[512];
+	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+		return nullptr;
 
 	string path = (char*)logDir;
 	path += "/";
@@ -2033,7 +2055,10 @@ void OBSBasic::UploadLog(const char *file)
 
 void OBSBasic::on_actionShowLogs_triggered()
 {
-	BPtr<char> logDir(os_get_config_path("obs-studio/logs"));
+	char logDir[512];
+	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+		return;
+
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
 	QDesktopServices::openUrl(url);
 }
