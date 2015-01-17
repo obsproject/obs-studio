@@ -85,9 +85,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	int ret = os_get_config_path(styleSheetPath, sizeof(styleSheetPath),
 			"obs-studio/basic/stylesheet.qss");
 	if (ret > 0) {
-		QFile styleSheet(QT_UTF8(styleSheetPath));
-		if (styleSheet.open(QFile::ReadOnly))
-			setStyleSheet(styleSheet.readAll());
+		if (QFile::exists(styleSheetPath)) {
+			QString path = QString("file:///") +
+				QT_UTF8(styleSheetPath);
+			App()->setStyleSheet(path);
+		}
 	}
 
 	qRegisterMetaType<OBSScene>    ("OBSScene");
