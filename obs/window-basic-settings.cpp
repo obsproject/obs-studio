@@ -148,7 +148,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutUseCBR,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutCustomX264,  EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
@@ -478,7 +478,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutUseCBR->setChecked(useCBR);
 	ui->simpleOutPreset->setCurrentText(preset);
-	ui->simpleOutCustomX264->setText(custom);
+	ui->simpleOutCustom->setText(custom);
 }
 
 void OBSBasicSettings::LoadOutputSettings()
@@ -655,7 +655,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
 	SaveCheckBox(ui->simpleOutUseCBR, "SimpleOutput", "UseCBR");
 	SaveCombo(ui->simpleOutPreset, "SimpleOutput", "Preset");
-	SaveEdit(ui->simpleOutCustomX264, "SimpleOutput", "x264Settings");
+	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
 }
 
 void OBSBasicSettings::SaveAudioSettings()
