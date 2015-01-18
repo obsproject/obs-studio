@@ -114,10 +114,8 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	AVCodecContext *context = data->video->codec;
 	int ret;
 
-	if (data->vcodec->id == AV_CODEC_ID_H264) {
+	if (data->vcodec->id == AV_CODEC_ID_H264)
 		av_opt_set(context->priv_data, "preset", "veryfast", 0);
-		av_opt_set(context->priv_data, "x264-params", "nal-hrd=cbr", 0);
-	}
 
 	ret = avcodec_open2(context, data->vcodec, NULL);
 	if (ret < 0) {
