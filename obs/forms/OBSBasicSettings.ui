@@ -540,7 +540,7 @@
                       <bool>true</bool>
                      </property>
                      <property name="text">
-                      <string>Basic.Settings.Output.X264Preset</string>
+                      <string>Basic.Settings.Output.EncoderPreset</string>
                      </property>
                     </widget>
                    </item>
