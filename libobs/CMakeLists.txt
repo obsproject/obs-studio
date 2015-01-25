@@ -69,6 +69,13 @@ elseif(APPLE)
 	set(libobs_PLATFORM_DEPS
 		${COCOA})
 elseif(UNIX)
+	option(USE_XDG "Utilize XDG Base Directory Specification" ON)
+	if(USE_XDG)
+		find_package(XDG REQUIRED)
+		add_definitions(-DUSE_XDG)
+		include_directories(${XDG_BASEDIR_INCLUDE_DIRS})
+	endif()
+
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
 		util/threading-posix.c
@@ -288,6 +295,7 @@ target_link_libraries(libobs
 		${libobs_image_loading_LIBRARIES}
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
+		${XDG_BASEDIR_LIBRARIES}
 	PUBLIC
 		${THREADS_LIBRARIES})
 
