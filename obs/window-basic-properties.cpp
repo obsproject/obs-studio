@@ -112,7 +112,12 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 	}
 
 	if (val == QDialogButtonBox::RejectRole) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_data_clear(settings);
+		obs_data_release(settings);
+
 		obs_source_update(source, oldSettings);
+
 		close();
 	}
 }
