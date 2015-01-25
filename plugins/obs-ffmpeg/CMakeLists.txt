@@ -11,7 +11,8 @@ include_directories(${FFMPEG_INCLUDE_DIRS})
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
-	obs-ffmpeg-compat.h)
+	obs-ffmpeg-compat.h
+	closest-pixel-format.h)
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-aac.c
