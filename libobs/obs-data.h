@@ -70,6 +70,7 @@ EXPORT const char *obs_data_get_json(obs_data_t *data);
 EXPORT void obs_data_apply(obs_data_t *target, obs_data_t *apply_data);
 
 EXPORT void obs_data_erase(obs_data_t *data, const char *name);
+EXPORT void obs_data_clear(obs_data_t *data);
 
 /* Set functions */
 EXPORT void obs_data_set_string(obs_data_t *data, const char *name,

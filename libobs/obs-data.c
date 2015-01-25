@@ -882,6 +882,50 @@ void obs_data_erase(obs_data_t *data, const char *name)
 	}
 }
 
+static inline void clear_item(struct obs_data *data, struct obs_data_item *item)
+{
+	const char *name = get_item_name(item);
+	void *ptr = get_item_data(item);
+	size_t size;
+
+	if (item->data_len) {
+		if (item->type == OBS_DATA_OBJECT) {
+			obs_data_t **obj = item->data_size ? ptr : NULL;
+
+			if (obj && *obj)
+				obs_data_release(*obj);
+
+		} else if (item->type == OBS_DATA_ARRAY) {
+			obs_data_array_t **array = item->data_size ? ptr : NULL;
+
+			if (array && *array)
+				obs_data_array_release(*array);
+		}
+
+		size = item->default_len + item->autoselect_size;
+		if (size)
+			memmove(ptr, (uint8_t*)ptr + item->data_len, size);
+
+		item->data_size = 0;
+		item->data_len = 0;
+	}
+}
+
+void obs_data_clear(obs_data_t *target)
+{
+	struct obs_data_item *item;
+
+	if (!target)
+		return;
+
+	item = target->first_item;
+
+	while (item) {
+		clear_item(target, item);
+		item = item->next;
+	}
+}
+
 typedef void (*set_item_t)(obs_data_t*, obs_data_item_t**, const char*,
 		const void*, size_t, enum obs_data_type);
 
