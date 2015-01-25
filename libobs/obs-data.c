@@ -798,12 +798,63 @@ static inline void set_item_auto(struct obs_data *data, obs_data_item_t **item,
 	set_item_data(data, item, name, ptr, size, type, false, true);
 }
 
+static void copy_obj(struct obs_data *data, const char *name,
+		struct obs_data *obj,
+		void (*callback)(obs_data_t *, const char *, obs_data_t *))
+{
+	if (obj) {
+		obs_data_t *new_obj = obs_data_create();
+		obs_data_apply(new_obj, obj);
+		callback(data, name, new_obj);
+		obs_data_release(new_obj);
+	}
+}
+
+static void copy_array(struct obs_data *data, const char *name,
+		struct obs_data_array *array,
+		void (*callback)(obs_data_t*, const char*, obs_data_array_t*))
+{
+	if (array) {
+		obs_data_array_t *new_array = obs_data_array_create();
+		da_reserve(new_array->objects, array->objects.num);
+
+		for (size_t i = 0; i < array->objects.num; i++) {
+			obs_data_t *new_obj = obs_data_create();
+			obs_data_t *obj = array->objects.array[i];
+
+			obs_data_apply(new_obj, obj);
+			obs_data_array_push_back(new_array, new_obj);
+
+			obs_data_release(new_obj);
+		}
+
+		callback(data, name, new_array);
+		obs_data_array_release(new_array);
+	}
+}
+
 static inline void copy_item(struct obs_data *data, struct obs_data_item *item)
 {
 	const char *name = get_item_name(item);
 	void *ptr = get_item_data(item);
 
-	set_item(data, NULL, name, ptr, item->data_len, item->type);
+	if (item->type == OBS_DATA_OBJECT) {
+		obs_data_t **obj = item->data_size ? ptr : NULL;
+
+		if (obj)
+			copy_obj(data, name, *obj, obs_data_set_obj);
+
+	} else if (item->type == OBS_DATA_ARRAY) {
+		obs_data_array_t **array = item->data_size ? ptr : NULL;
+
+		if (array)
+			copy_array(data, name, *array, obs_data_set_array);
+
+	} else {
+		if (item->data_size)
+			set_item(data, NULL, name, ptr, item->data_size,
+					item->type);
+	}
 }
 
 void obs_data_apply(obs_data_t *target, obs_data_t *apply_data)
