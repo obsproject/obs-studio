@@ -25,3 +25,4 @@ struct BasicOutputHandler {
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);
+BasicOutputHandler *CreateAdvancedOutputHandler(OBSBasic *main);

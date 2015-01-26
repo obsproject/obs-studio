@@ -385,7 +385,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
 
-	/* TODO: temporary */
 	config_set_default_string(basicConfig, "Output", "Type", "Simple");
 
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
@@ -406,6 +405,39 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_int   (basicConfig, "SimpleOutput", "Bufsize", 2500);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
+
+	config_set_default_bool  (basicConfig, "AdvOut", "Reconnect", true);
+	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 2);
+	config_set_default_uint  (basicConfig, "AdvOut", "MaxRetries", 20);
+	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
+	config_set_default_bool  (basicConfig, "AdvOut", "Multitrack", false);
+	config_set_default_uint  (basicConfig, "AdvOut", "TrackIndex", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "TrackCount", 1);
+	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
+
+	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
+
+	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
+			GetDefaultVideoSavePath().c_str());
+	config_set_default_bool  (basicConfig, "AdvOut", "RecUseRescale",
+			false);
+	config_set_default_bool  (basicConfig, "AdvOut", "RecMultitrack",
+			false);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackIndex", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackCount", 1);
+	config_set_default_string(basicConfig, "AdvOut", "RecEncoder",
+			"none");
+
+	config_set_default_uint  (basicConfig, "AdvOut", "FFVBitrate", 2500);
+	config_set_default_bool  (basicConfig, "AdvOut", "FFUseRescale",
+			false);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFABitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioTrack", 1);
+
+	config_set_default_uint  (basicConfig, "AdvOut", "Track1Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track2Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track3Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track4Bitrate", 160);
 
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
@@ -504,9 +536,14 @@ void OBSBasic::InitPrimitives()
 
 void OBSBasic::ResetOutputs()
 {
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	bool advOut = astrcmpi(mode, "Advanced") == 0;
+
 	if (!outputHandler || !outputHandler->Active()) {
 		outputHandler.reset();
-		outputHandler.reset(CreateSimpleOutputHandler(this));
+		outputHandler.reset(advOut ?
+			CreateAdvancedOutputHandler(this) :
+			CreateSimpleOutputHandler(this));
 	} else {
 		outputHandler->Update();
 	}
