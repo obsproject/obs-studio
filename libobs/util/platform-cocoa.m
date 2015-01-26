@@ -107,6 +107,12 @@ char *os_get_config_path_ptr(const char *name)
 	return path.array;
 }
 
+#define os_get_data_path(dst, size, name) os_get_config_path(dst, size, name)
+#define os_get_data_path_ptr(name) os_get_config_path_ptr(name)
+
+#define os_get_cache_path(dst, size, name) os_get_config_path(dst, size, name)
+#define os_get_cache_path_ptr(name) os_get_config_path_ptr(name)
+
 struct os_cpu_usage_info {
 	int64_t last_cpu_time;
 	int64_t last_sys_time;

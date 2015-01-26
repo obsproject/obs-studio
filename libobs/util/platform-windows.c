@@ -225,6 +225,13 @@ char *os_get_config_path_ptr(const char *name)
 	return path.array;
 }
 
+#define os_get_data_path(dst, size, name) os_get_config_path(dst, size, name)
+#define os_get_data_path_ptr(name) os_get_config_path_ptr(name)
+
+#define os_get_cache_path(dst, size, name) os_get_config_path(dst, size, name)
+#define os_get_cache_path_ptr(name) os_get_config_path_ptr(name)
+
+
 bool os_file_exists(const char *path)
 {
 	WIN32_FIND_DATAW wfd;

@@ -33,6 +33,11 @@
 #include "dstr.h"
 #include "platform.h"
 
+#ifdef USE_XDG
+#include <basedir.h>
+#include <basedir_fs.h>
+#endif
+
 void *os_dlopen(const char *path)
 {
 	struct dstr dylib_name;
@@ -153,27 +158,123 @@ uint64_t os_gettime_ns(void)
 	return ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
 }
 
-/* should return $HOME/.[name] */
+/* should return $HOME/.[name], or when using XDG, should return $HOME/.config/[name] as default */
 int os_get_config_path(char *dst, size_t size, const char *name)
 {
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgConfigHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific configuration files\n");
+	return snprintf(dst, size, "%s/%s", path_ptr, name);
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
-
 	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+
 }
 
 char *os_get_config_path_ptr(const char *name)
 {
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgConfigHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific configuration files\n");
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/");
+	dstr_cat(&path, name);
+	return path.array;
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
-
 	struct dstr path;
 	dstr_init_copy(&path, path_ptr);
 	dstr_cat(&path, "/.");
 	dstr_cat(&path, name);
 	return path.array;
+#endif
+}
+
+/* should return $HOME/.[name], or when using XDG, should return $HOME/.local/share/[name] as default */
+int os_get_data_path(char *dst, size_t size, const char *name)
+{
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgDataHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific data\n");
+	return snprintf(dst, size, "%s/%s", path_ptr, name);
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+}
+
+char *os_get_data_path_ptr(const char *name)
+{
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgDataHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific data\n");
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/");
+	dstr_cat(&path, name);
+	return path.array;
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/.");
+	dstr_cat(&path, name);
+	return path.array;
+#endif
+}
+
+
+/* should return $HOME/.[name], or when using XDG, should return $HOME/.cache/[name] as default */
+int os_get_cache_path(char *dst, size_t size, const char *name)
+{
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgCacheHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific cache\n");
+	return snprintf(dst, size, "%s/%s", path_ptr, name);
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+}
+
+char *os_get_cache_path_ptr(const char *name)
+{
+#ifdef USE_XDG
+       char *path_ptr = (char*)xdgCacheHome(NULL);
+	if (path_ptr == NULL)
+		bcrash("Could not get base directory for user specific cache\n");
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/");
+	dstr_cat(&path, name);
+	return path.array;
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/.");
+	dstr_cat(&path, name);
+	return path.array;
+#endif
 }
 
 #endif
@@ -298,9 +399,13 @@ int os_unlink(const char *path)
 
 int os_mkdir(const char *path)
 {
+#ifdef USE_XDG
+       if(xdgMakePath(path, 0777) == 0)
+	       return MKDIR_SUCCESS;
+#else
 	if (mkdir(path, 0777) == 0)
 		return MKDIR_SUCCESS;
-
+#endif
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
 }
 
