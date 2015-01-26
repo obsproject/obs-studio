@@ -249,6 +249,14 @@ const char *obs_encoder_get_name(const obs_encoder_t *encoder)
 	return encoder ? encoder->context.name : NULL;
 }
 
+void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
+{
+	if (!encoder) return;
+
+	if (name && *name && strcmp(name, encoder->context.name) != 0)
+		obs_context_data_setname(&encoder->context, name);
+}
+
 static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t *settings = obs_data_create();

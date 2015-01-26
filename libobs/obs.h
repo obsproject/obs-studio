@@ -1189,6 +1189,7 @@ EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 /** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t *encoder);
 
+EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
 /** Returns the codec of the encoder */
