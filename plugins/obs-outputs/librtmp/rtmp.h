@@ -39,7 +39,8 @@
 #ifdef _WIN32
 #pragma warning(disable:4996) //depricated warnings
 #pragma warning(disable:4244) //64bit defensive mechanism, fixed the ones that mattered
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -253,7 +254,7 @@ extern "C"
 
     typedef struct RTMP_BINDINFO
     {
-        struct sockaddr_in addr;
+        struct sockaddr_storage addr;
         int addrLen;
     } RTMP_BINDINFO;
 
