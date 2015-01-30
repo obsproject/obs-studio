@@ -87,6 +87,12 @@ int os_get_data_path(char *dst, size_t size, const char *name)
 	return os_get_config_path(dst, size, name);
 }
 
+/* TODO implement if needed */
+int os_get_cache_path(char *dst, size_t size, const char *name)
+{
+	return os_get_config_path(dst, size, name);
+}
+
 char *os_get_config_path_ptr(const char *name)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
@@ -114,6 +120,10 @@ char *os_get_config_path_ptr(const char *name)
 }
 
 char *os_get_data_path_ptr(const char *name) {
+	return os_get_data_path_ptr(name);
+}
+
+char *os_get_cache_path_ptr(const char *name) {
 	return os_get_data_path_ptr(name);
 }
 

@@ -213,6 +213,10 @@ int os_get_data_path(char *dst, size_t size, const char *name) {
 	return os_get_config_path(dst, size, name);
 }
 
+int os_get_cache_path(char *dst, size_t size, const char *name) {
+	return os_get_config_path(dst, size, name);
+}
+
 char *os_get_config_path_ptr(const char *name)
 {
 	char *ptr;
@@ -230,6 +234,10 @@ char *os_get_config_path_ptr(const char *name)
 }
 
 char *os_get_data_path_ptr(const char *name) {
+	return os_get_data_path_ptr(name);
+}
+
+char *os_get_cache_path_ptr(const char *name) {
 	return os_get_data_path_ptr(name);
 }
 

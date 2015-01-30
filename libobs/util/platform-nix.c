@@ -203,6 +203,31 @@ int os_get_data_path(char *dst, size_t size, const char *name)
 	return snprintf(dst, size, "%s/.%s", path_ptr, name);
 #endif
 }
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.cache/[name] as default */
+int os_get_cache_path(char *dst, size_t size, const char *name)
+{
+#ifdef USE_XDG
+	char *xdg_ptr = getenv("XDG_CACHE_HOME");
+	/* If XDG_CACHE_HOME is unset,
+	 * we use the default $HOME/.cache/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		return snprintf(dst, size, "%s/.cache/%s", home_ptr, name);
+	} else {
+		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+	}
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+}
 
 /* should return $HOME/.[name], or when using XDG,
  * should return $HOME/.config/[name] as default */
@@ -255,6 +280,41 @@ char *os_get_data_path_ptr(const char *name)
 
 		dstr_init_copy(&path, home_ptr);
 		dstr_cat(&path, "/.local/share/");
+		dstr_cat(&path, name);
+	} else {
+		dstr_init_copy(&path, xdg_ptr);
+		dstr_cat(&path, "/");
+		dstr_cat(&path, name);
+	}
+	return path.array;
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/.");
+	dstr_cat(&path, name);
+	return path.array;
+#endif
+}
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.cache/[name] as default */
+char *os_get_cache_path_ptr(const char *name)
+{
+#ifdef USE_XDG
+	struct dstr path;
+	char *xdg_ptr = getenv("XDG_CACHE_HOME");
+	/* If XDG_CACHE_HOME is unset,
+	 * we use the default $HOME/.cache/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		dstr_init_copy(&path, home_ptr);
+		dstr_cat(&path, "/.cache/");
 		dstr_cat(&path, name);
 	} else {
 		dstr_init_copy(&path, xdg_ptr);
