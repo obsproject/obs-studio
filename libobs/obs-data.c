@@ -882,9 +882,8 @@ void obs_data_erase(obs_data_t *data, const char *name)
 	}
 }
 
-static inline void clear_item(struct obs_data *data, struct obs_data_item *item)
+static inline void clear_item(struct obs_data_item *item)
 {
-	const char *name = get_item_name(item);
 	void *ptr = get_item_data(item);
 	size_t size;
 
@@ -921,7 +920,7 @@ void obs_data_clear(obs_data_t *target)
 	item = target->first_item;
 
 	while (item) {
-		clear_item(target, item);
+		clear_item(item);
 		item = item->next;
 	}
 }
