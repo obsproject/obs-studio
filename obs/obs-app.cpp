@@ -117,7 +117,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 static bool do_mkdir(const char *path)
 {
-	if (os_mkdir(path) == MKDIR_ERROR) {
+	if (os_mkdirs(path, 0755) == MKDIR_ERROR) {
 		OBSErrorBox(NULL, "Failed to create directory %s", path);
 		return false;
 	}

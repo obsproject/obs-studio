@@ -304,6 +304,31 @@ int os_mkdir(const char *path)
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
 }
 
+int os_mkdirs(const char *path, int mode) {
+
+	char _path[FILENAME_MAX];
+	char *p = NULL;
+	size_t len;
+
+	snprintf(_path, sizeof(_path), "%s", path);
+	len = strlen(_path);
+	if (_path[len - 1] == '/') {
+		_path[len - 1] = 0;
+	}
+	for (p = _path + 1; *p; p++) {
+		if (*p == '/') {
+			*p = 0;
+			mkdir(_path, mode);
+			*p = '/';
+		}
+	}
+	if (0 == mkdir(_path, mode))
+		return MKDIR_SUCCESS;
+	else
+		return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
+
+}
+
 #if !defined(__APPLE__)
 os_performance_token_t *os_request_high_performance(const char *reason)
 {

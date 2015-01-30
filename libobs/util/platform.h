@@ -132,6 +132,8 @@ EXPORT int os_unlink(const char *path);
 
 EXPORT int os_mkdir(const char *path);
 
+EXPORT int os_mkdirs(const char *path, int mode);
+
 #ifdef _MSC_VER
 #define strtoll _strtoi64
 #endif

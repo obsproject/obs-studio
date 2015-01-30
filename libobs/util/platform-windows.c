@@ -396,6 +396,12 @@ int os_unlink(const char *path)
 	return success ? 0 : -1;
 }
 
+// TODO implement recursive mkdir
+int os_mkdirs(const char *path, int mode) {
+	UNUSED_PARAMETER(mode);
+	return os_mkdir(path);
+}
+
 int os_mkdir(const char *path)
 {
 	wchar_t *path_utf16;
