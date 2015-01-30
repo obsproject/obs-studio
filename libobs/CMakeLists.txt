@@ -69,6 +69,11 @@ elseif(APPLE)
 	set(libobs_PLATFORM_DEPS
 		${COCOA})
 elseif(UNIX)
+	option(USE_XDG "Utilize XDG Base Directory Specification" ON)
+	if(USE_XDG)
+		add_definitions(-DUSE_XDG)
+	endif()
+
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
 		util/threading-posix.c
