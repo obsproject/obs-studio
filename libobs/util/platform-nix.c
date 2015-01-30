@@ -153,18 +153,58 @@ uint64_t os_gettime_ns(void)
 	return ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
 }
 
-/* should return $HOME/.[name] */
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.config/[name] as default */
 int os_get_config_path(char *dst, size_t size, const char *name)
 {
+#ifdef USE_XDG
+	char *xdg_ptr = getenv("XDG_CONFIG_HOME");
+
+	// If XDG_CONFIG_HOME is unset,
+	// we use the default $HOME/.config/[name] instead
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		return snprintf(dst, size, "%s/.config/%s", home_ptr, name);
+	} else {
+		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+	}
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
 
 	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
 }
 
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.config/[name] as default */
 char *os_get_config_path_ptr(const char *name)
 {
+#ifdef USE_XDG
+	struct dstr path;
+	char *xdg_ptr = getenv("XDG_CONFIG_HOME");
+
+	/* If XDG_CONFIG_HOME is unset,
+	 * we use the default $HOME/.config/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		dstr_init_copy(&path, home_ptr);
+		dstr_cat(&path, "/.config/");
+		dstr_cat(&path, name);
+	} else {
+		dstr_init_copy(&path, xdg_ptr);
+		dstr_cat(&path, "/");
+		dstr_cat(&path, name);
+	}
+	return path.array;
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
@@ -174,6 +214,7 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "/.");
 	dstr_cat(&path, name);
 	return path.array;
+#endif
 }
 
 #endif

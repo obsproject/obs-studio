@@ -1058,6 +1058,32 @@ static inline bool arg_is(const char *arg,
 	       (short_form && strcmp(arg, short_form) == 0);
 }
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+#define IS_UNIX 1
+#endif
+
+/* if using XDG and was previously using an older build of OBS, move config
+ * files to XDG directory */
+#if defined(USE_XDG) && defined(IS_UNIX)
+static void move_to_xdg(void)
+{
+	char old_path[512];
+	char new_path[512];
+	char *home = getenv("HOME");
+	if (!home)
+		return;
+
+	if (snprintf(old_path, 512, "%s/.obs-studio", home) <= 0)
+		return;
+	if (GetConfigPath(new_path, 512, "obs-studio") <= 0)
+		return;
+
+	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
+		rename(old_path, new_path);
+	}
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -1070,6 +1096,10 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
+
+#if defined(USE_XDG) && defined(IS_UNIX)
+	move_to_xdg();
+#endif
 
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
