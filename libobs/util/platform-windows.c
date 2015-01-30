@@ -209,6 +209,10 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 	return -1;
 }
 
+int os_get_data_path(char *dst, size_t size, const char *name) {
+	return os_get_config_path(dst, size, name);
+}
+
 char *os_get_config_path_ptr(const char *name)
 {
 	char *ptr;
@@ -223,6 +227,10 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "\\");
 	dstr_cat(&path, name);
 	return path.array;
+}
+
+char *os_get_data_path_ptr(const char *name) {
+	return os_get_data_path_ptr(name);
 }
 
 bool os_file_exists(const char *path)

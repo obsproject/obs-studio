@@ -1998,7 +1998,7 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 static BPtr<char> ReadLogFile(const char *log)
 {
 	char logDir[512];
-	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (os_get_data_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return nullptr;
 
 	string path = (char*)logDir;
@@ -2067,7 +2067,7 @@ void OBSBasic::UploadLog(const char *file)
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (os_get_data_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));

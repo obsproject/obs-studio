@@ -92,6 +92,8 @@ EXPORT uint64_t os_gettime_ns(void);
 
 EXPORT int os_get_config_path(char *dst, size_t size, const char *name);
 EXPORT char *os_get_config_path_ptr(const char *name);
+EXPORT int os_get_data_path(char *dst, size_t size, const char *name);
+EXPORT char *os_get_data_path_ptr(const char *name);
 
 EXPORT bool os_file_exists(const char *path);
 

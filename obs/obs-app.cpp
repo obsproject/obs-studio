@@ -139,7 +139,7 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 
-	if (os_get_config_path(path, sizeof(path), "obs-studio/logs") <= 0)
+	if (os_get_data_path(path, sizeof(path), "obs-studio/logs") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
@@ -417,7 +417,7 @@ static uint64_t convert_log_name(const char *name)
 
 static void delete_oldest_log(void)
 {
-	BPtr<char>       logDir(os_get_config_path_ptr("obs-studio/logs"));
+	BPtr<char>       logDir(os_get_data_path_ptr("obs-studio/logs"));
 	string           oldestLog;
 	uint64_t         oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
@@ -458,7 +458,7 @@ static void delete_oldest_log(void)
 
 static void get_last_log(void)
 {
-	BPtr<char>       logDir(os_get_config_path_ptr("obs-studio/logs"));
+	BPtr<char>       logDir(os_get_data_path_ptr("obs-studio/logs"));
 	struct os_dirent *entry;
 	os_dir_t         *dir        = os_opendir(logDir);
 	uint64_t         highest_ts = 0;
@@ -531,7 +531,7 @@ static void create_log_file(fstream &logFile)
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
 
-	BPtr<char> path(os_get_config_path_ptr(dst.str().c_str()));
+	BPtr<char> path(os_get_data_path_ptr(dst.str().c_str()));
 	logFile.open(path,
 			ios_base::in | ios_base::out | ios_base::trunc);
 
