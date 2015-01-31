@@ -640,4 +640,4 @@ struct obs_output_info rtmp_output_info = {
 	.get_properties     = rtmp_stream_properties,
 	.get_total_bytes    = rtmp_stream_total_bytes_sent,
 	.get_dropped_frames = rtmp_stream_dropped_frames
-};         
+};
