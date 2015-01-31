@@ -7,8 +7,28 @@
                 "url": "rtmp://live.twitch.tv/app"
             },
             {
+                "name": "Asia: Seoul, South Korea",
+                "url": "rtmp://live-sel.twitch.tv/app"
+            },
+            {
+                "name": "Asia: Tokyo, Japan",
+                "url": "rtmp://live-tyo.twitch.tv/app"
+            },
+            {
+                "name": "Asia: Hong Kong",
+                "url": "rtmp://live-hkg.twitch.tv/app"
+            },
+            {
+                "name": "Asia: Taipei, Taiwan",
+                "url": "rtmp://live-tpe.twitch.tv/app"
+            },
+            {
                 "name": "Asia: Singapore",
                 "url": "rtmp://live-sin-backup.twitch.tv/app"
+            },
+            {
+                "name": "Australia: Sydney",
+                "url": "rtmp://live-syd.twitch.tv/app"
             },
             {
                 "name": "EU: Amsterdam, NL",
