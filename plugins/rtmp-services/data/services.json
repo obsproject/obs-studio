@@ -111,36 +111,56 @@
                 "url": "rtmp://live.hitbox.tv/push"
             },
             {
-                "name": "EU-East",
-                "url": "rtmp://live.vie.hitbox.tv/push"
-            },
-            {
-                "name": "EU-Central",
-                "url": "rtmp://live.nbg.hitbox.tv/push"
-            },
-            {
-                "name": "EU-West",
+                "name": "EU-West: Frankfurt, Germany",
                 "url": "rtmp://live.fra.hitbox.tv/push"
             },
             {
-                "name": "EU-North",
-                "url": "rtmp://live.ams.hitbox.tv/push"
+                "name": "EU-East: Vienna, Austria",
+                "url": "rtmp://live.vie.hitbox.tv/push"
             },
             {
-                "name": "US-East",
+                "name": "EU-North: London, United Kingdom",
+                "url": "rtmp://live.lhr.hitbox.tv/push"
+            },
+            {
+                "name": "EU-Central: Nurnberg, Germany",
+                "url": "rtmp://live.nbg.hitbox.tv/push"
+            },
+            {
+                "name": "Russia: Moscow",
+                "url": "rtmp://live.dme.hitbox.tv/push"
+            },
+            {
+                "name": "US-East: Washington",
                 "url": "rtmp://live.vgn.hitbox.tv/push"
             },
             {
-                "name": "US-West",
+                "name": "US-Central: Denver",
+                "url": "rtmp://live.den.hitbox.tv/push"
+            },
+            {
+                "name": "US-West: Los Angeles",
                 "url": "rtmp://live.lax.hitbox.tv/push"
             },
             {
-                "name": "South America",
+                "name": "South America: Sao Paulo, Brazil",
                 "url": "rtmp://live.gru.hitbox.tv/push"
             },
             {
-                "name": "Asia",
+                "name": "South Korea: Seoul",
+                "url": "rtmp://live.icn.hitbox.tv/push"
+            },
+            {
+                "name": "Asia: Singapore",
                 "url": "rtmp://live.lax.hitbox.tv/push"
+            },
+            {
+                "name": "China: Hong Kong",
+                "url": "rtmp://live.hkg.hitbox.tv/push"
+            },
+            {
+                "name": "Oceania: Sydney, Australia",
+                "url": "rtmp://live.syd.hitbox.tv/push"
             }
         ],
         "recommended": {
