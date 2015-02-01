@@ -140,7 +140,15 @@
             },
             {
                 "name": "Asia",
-                "url": "rtmp://live.lax.hitbox.tv/push"
+                "url": "rtmp://live.apac.hitbox.tv/push"
+            },
+            {
+                "name": "United Kingdom",
+                "url": "rtmp://live.lhr.hitbox.tv/push"
+            },
+            {
+                "name": "South Korea",
+                "url": "rtmp://live.icn.hitbox.tv/push"
             }
         ],
         "recommended": {
