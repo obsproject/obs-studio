@@ -148,12 +148,12 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_property_t *list;
 	obs_property_t *p;
 
-	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 100000, 1);
+	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000, 1);
 
 	p = obs_properties_add_bool(props, "use_bufsize", TEXT_CUSTOM_BUF);
 	obs_property_set_modified_callback(p, use_bufsize_modified);
-	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50, 100000,
-			1);
+	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50,
+			10000000, 1);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
 	p = obs_properties_add_bool(props, "cbr", TEXT_USE_CBR);
