@@ -127,8 +127,20 @@
                 "url": "rtmp://live.ams.hitbox.tv/push"
             },
             {
-                "name": "US-East",
+                "name": "United Kingdom",
+                "url": "rtmp://live.lhr.hitbox.tv/push"
+            },
+            {
+                "name": "US-East 1",
                 "url": "rtmp://live.vgn.hitbox.tv/push"
+            },
+            {
+                "name": "US-East 2",
+                "url": "rtmp://live.dca1.hitbox.tv/push"
+            },
+            {
+                "name": "US-Central",
+                "url": "rtmp://live.den.hitbox.tv/push"
             },
             {
                 "name": "US-West",
@@ -140,7 +152,11 @@
             },
             {
                 "name": "Asia",
-                "url": "rtmp://live.lax.hitbox.tv/push"
+                "url": "rtmp://live.apac.hitbox.tv/push"
+            },
+            {
+                "name": "South Korea",
+                "url": "rtmp://live.icn.hitbox.tv/push"
             }
         ],
         "recommended": {
