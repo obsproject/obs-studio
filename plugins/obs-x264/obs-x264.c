@@ -91,6 +91,7 @@ static void obs_x264_destroy(void *data)
 static void obs_x264_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int   (settings, "bitrate",     1000);
+	obs_data_set_default_bool  (settings, "use_bufsize", true);
 	obs_data_set_default_int   (settings, "buffer_size", 1000);
 	obs_data_set_default_int   (settings, "keyint_sec",  0);
 	obs_data_set_default_int   (settings, "crf",         23);
@@ -111,12 +112,33 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 }
 
 #define TEXT_BITRATE    obs_module_text("Bitrate")
+#define TEXT_CUSTOM_BUF obs_module_text("CustomBufsize")
 #define TEXT_BUF_SIZE   obs_module_text("BufferSize")
+#define TEXT_USE_CBR    obs_module_text("UseCBR")
+#define TEXT_CRF        obs_module_text("CRF")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_PRESET     obs_module_text("CPUPreset")
 #define TEXT_PROFILE    obs_module_text("Profile")
 #define TEXT_TUNE       obs_module_text("Tune")
 #define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
+
+static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
+		obs_data_t *settings)
+{
+	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
+	p = obs_properties_get(ppts, "buffer_size");
+	obs_property_set_visible(p, use_bufsize);
+	return true;
+}
+
+static bool use_cbr_modified(obs_properties_t *ppts, obs_property_t *p,
+		obs_data_t *settings)
+{
+	bool cbr = obs_data_get_bool(settings, "cbr");
+	p = obs_properties_get(ppts, "crf");
+	obs_property_set_visible(p, !cbr);
+	return true;
+}
 
 static obs_properties_t *obs_x264_props(void *unused)
 {
@@ -124,11 +146,20 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list;
+	obs_property_t *p;
 
 	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 100000, 1);
+
+	p = obs_properties_add_bool(props, "use_bufsize", TEXT_CUSTOM_BUF);
+	obs_property_set_modified_callback(p, use_bufsize_modified);
 	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 50, 100000,
 			1);
+
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	p = obs_properties_add_bool(props, "cbr", TEXT_USE_CBR);
+	obs_properties_add_int(props, "crf", TEXT_CRF, 0, 51, 1);
+
+	obs_property_set_modified_callback(p, use_cbr_modified);
 
 	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -324,11 +355,15 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	int crf          = (int)obs_data_get_int(settings, "crf");
 	int width        = (int)obs_encoder_get_width(obsx264->encoder);
 	int height       = (int)obs_encoder_get_height(obsx264->encoder);
+	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
 	bool cbr         = obs_data_get_bool(settings, "cbr");
 
 	if (keyint_sec)
 		obsx264->params.i_keyint_max =
 			keyint_sec * voi->fps_num / voi->fps_den;
+
+	if (!use_bufsize)
+		buffer_size = bitrate;
 
 	obsx264->params.b_vfr_input          = false;
 	obsx264->params.rc.i_vbv_max_bitrate = bitrate;
