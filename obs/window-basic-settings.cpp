@@ -124,14 +124,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog          (parent),
 	  main             (qobject_cast<OBSBasic*>(parent)),
-	  ui               (new Ui::OBSBasicSettings),
-	  generalChanged   (false),
-	  outputsChanged   (false),
-	  audioChanged     (false),
-	  videoChanged     (false),
-	  pageIndex        (0),
-	  loading          (true),
-	  streamProperties (nullptr)
+	  ui               (new Ui::OBSBasicSettings)
 {
 	string path;
 

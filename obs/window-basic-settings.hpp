@@ -37,14 +37,14 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
-	bool generalChanged;
-	bool outputsChanged;
-	bool audioChanged;
-	bool videoChanged;
-	int  pageIndex;
-	bool loading;
+	bool generalChanged = false;
+	bool outputsChanged = false;
+	bool audioChanged = false;
+	bool videoChanged = false;
+	int  pageIndex = 0;
+	bool loading = true;
 
-	OBSPropertiesView *streamProperties;
+	OBSPropertiesView *streamProperties = nullptr;
 
 	void SaveCombo(QComboBox *widget, const char *section,
 			const char *value);
