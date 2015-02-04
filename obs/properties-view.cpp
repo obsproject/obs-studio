@@ -1,4 +1,5 @@
 #include <QFormLayout>
+#include <QScrollBar>
 #include <QLabel>
 #include <QCheckBox>
 #include <QFont>
@@ -54,6 +55,9 @@ void OBSPropertiesView::ReloadProperties()
 
 void OBSPropertiesView::RefreshProperties()
 {
+	int h, v;
+	GetScrollPos(h, v);
+
 	children.clear();
 	if (widget)
 		widget->deleteLater();
@@ -79,6 +83,7 @@ void OBSPropertiesView::RefreshProperties()
 
 	setWidgetResizable(true);
 	setWidget(widget);
+	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
 
 	lastFocused.clear();
@@ -86,6 +91,30 @@ void OBSPropertiesView::RefreshProperties()
 		lastWidget->setFocus(Qt::OtherFocusReason);
 		lastWidget = nullptr;
 	}
+}
+
+void OBSPropertiesView::SetScrollPos(int h, int v)
+{
+	QScrollBar *scroll = horizontalScrollBar();
+	if (scroll)
+		scroll->setValue(h);
+
+	scroll = verticalScrollBar();
+	if (scroll)
+		scroll->setValue(v);
+}
+
+void OBSPropertiesView::GetScrollPos(int &h, int &v)
+{
+	h = v = 0;
+
+	QScrollBar *scroll = horizontalScrollBar();
+	if (scroll)
+		h = scroll->value();
+
+	scroll = verticalScrollBar();
+	if (scroll)
+		v = scroll->value();
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
