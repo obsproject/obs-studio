@@ -514,6 +514,11 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 			lastWidget = widget;
 }
 
+void OBSPropertiesView::SignalChanged()
+{
+	emit Changed();
+}
+
 void WidgetInfo::BoolChanged(const char *setting)
 {
 	QCheckBox *checkbox = static_cast<QCheckBox*>(widget);
@@ -715,6 +720,8 @@ void WidgetInfo::ControlChanged()
 
 	if (view->callback)
 		view->callback(view->obj, view->settings);
+
+	view->SignalChanged();
 
 	if (obs_property_modified(property, view->settings)) {
 		view->lastFocused = setting;

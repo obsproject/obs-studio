@@ -87,9 +87,11 @@ private:
 public slots:
 	void ReloadProperties();
 	void RefreshProperties();
+	void SignalChanged();
 
 signals:
 	void PropertiesResized();
+	void Changed();
 
 public:
 	OBSPropertiesView(OBSData settings, void *obj,
