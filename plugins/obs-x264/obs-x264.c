@@ -120,6 +120,7 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_PRESET     obs_module_text("CPUPreset")
 #define TEXT_PROFILE    obs_module_text("Profile")
 #define TEXT_TUNE       obs_module_text("Tune")
+#define TEXT_NONE       obs_module_text("None")
 #define TEXT_X264_OPTS  obs_module_text("EncoderOptions")
 
 static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -167,12 +168,14 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(list, TEXT_NONE, "");
 	obs_property_list_add_string(list, "baseline", "baseline");
 	obs_property_list_add_string(list, "main", "main");
 	obs_property_list_add_string(list, "high", "high");
 
 	list = obs_properties_add_list(props, "tune", TEXT_TUNE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(list, TEXT_NONE, "");
 	add_strings(list, x264_tune_names);
 
 	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS,
