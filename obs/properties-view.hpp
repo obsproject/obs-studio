@@ -101,4 +101,6 @@ public:
 	OBSPropertiesView(OBSData settings, const char *type,
 			PropertiesReloadCallback reloadCallback,
 			int minSize = 0);
+
+	inline obs_data_t *GetSettings() const {return settings;}
 };
