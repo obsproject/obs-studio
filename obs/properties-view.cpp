@@ -86,14 +86,12 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 		PropertiesReloadCallback reloadCallback,
 		PropertiesUpdateCallback callback_, int minSize_)
 	: VScrollArea    (nullptr),
-	  widget         (nullptr),
 	  properties     (nullptr, obs_properties_destroy),
 	  settings       (settings_),
 	  obj            (obj_),
 	  reloadCallback (reloadCallback),
 	  callback       (callback_),
-	  minSize        (minSize_),
-	  lastWidget     (nullptr)
+	  minSize        (minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
 	ReloadProperties();

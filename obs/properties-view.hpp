@@ -55,16 +55,16 @@ class OBSPropertiesView : public VScrollArea {
 		std::unique_ptr<obs_properties_t, properties_delete_t>;
 
 private:
-	QWidget                                  *widget;
+	QWidget                                  *widget = nullptr;
 	properties_t                             properties;
 	OBSData                                  settings;
-	void                                     *obj;
+	void                                     *obj = nullptr;
 	PropertiesReloadCallback                 reloadCallback;
-	PropertiesUpdateCallback                 callback;
+	PropertiesUpdateCallback                 callback = nullptr;
 	int                                      minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string                              lastFocused;
-	QWidget                                  *lastWidget;
+	QWidget                                  *lastWidget = nullptr;
 
 	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
 			const char *signal);
