@@ -452,6 +452,17 @@ const char *obs_get_encoder_codec(const char *id)
 	return info ? info->codec : NULL;
 }
 
+enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder)
+{
+	return encoder ? encoder->info.type : OBS_ENCODER_AUDIO;
+}
+
+enum obs_encoder_type obs_get_encoder_type(const char *id)
+{
+	struct obs_encoder_info *info = find_encoder(id);
+	return info ? info->type : OBS_ENCODER_AUDIO;
+}
+
 void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		uint32_t height)
 {

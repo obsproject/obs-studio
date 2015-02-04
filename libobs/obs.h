@@ -1195,8 +1195,14 @@ EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
 
+/** Returns the type of an encoder by the id */
+EXPORT enum obs_encoder_type obs_get_encoder_type(const char *id);
+
 /** Returns the codec of the encoder */
 EXPORT const char *obs_encoder_get_codec(const obs_encoder_t *encoder);
+
+/** Returns the type of an encoder */
+EXPORT enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder);
 
 /**
  * Sets the scaled resolution for a video encoder.  Set width and height to 0
