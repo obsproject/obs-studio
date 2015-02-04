@@ -90,12 +90,12 @@ static void obs_x264_destroy(void *data)
 
 static void obs_x264_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int   (settings, "bitrate",     1000);
-	obs_data_set_default_bool  (settings, "use_bufsize", true);
-	obs_data_set_default_int   (settings, "buffer_size", 1000);
+	obs_data_set_default_int   (settings, "bitrate",     2500);
+	obs_data_set_default_bool  (settings, "use_bufsize", false);
+	obs_data_set_default_int   (settings, "buffer_size", 2500);
 	obs_data_set_default_int   (settings, "keyint_sec",  0);
 	obs_data_set_default_int   (settings, "crf",         23);
-	obs_data_set_default_bool  (settings, "cbr",         false);
+	obs_data_set_default_bool  (settings, "cbr",         true);
 
 	obs_data_set_default_string(settings, "preset",      "veryfast");
 	obs_data_set_default_string(settings, "profile",     "");
