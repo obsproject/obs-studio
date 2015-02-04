@@ -59,6 +59,7 @@ private:
 	properties_t                             properties;
 	OBSData                                  settings;
 	void                                     *obj = nullptr;
+	std::string                              type;
 	PropertiesReloadCallback                 reloadCallback;
 	PropertiesUpdateCallback                 callback = nullptr;
 	int                                      minSize;
@@ -94,5 +95,8 @@ public:
 	OBSPropertiesView(OBSData settings, void *obj,
 			PropertiesReloadCallback reloadCallback,
 			PropertiesUpdateCallback callback,
+			int minSize = 0);
+	OBSPropertiesView(OBSData settings, const char *type,
+			PropertiesReloadCallback reloadCallback,
 			int minSize = 0);
 };

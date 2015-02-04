@@ -42,7 +42,13 @@ static inline long long color_to_int(QColor color)
 
 void OBSPropertiesView::ReloadProperties()
 {
-	properties.reset(reloadCallback(obj));
+	if (obj) {
+		properties.reset(reloadCallback(obj));
+	} else {
+		properties.reset(reloadCallback((void*)type.c_str()));
+		obs_properties_apply_settings(properties.get(), settings);
+	}
+
 	RefreshProperties();
 }
 
@@ -91,6 +97,19 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 	  obj            (obj_),
 	  reloadCallback (reloadCallback),
 	  callback       (callback_),
+	  minSize        (minSize_)
+{
+	setFrameShape(QFrame::NoFrame);
+	ReloadProperties();
+}
+
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
+		PropertiesReloadCallback reloadCallback_, int minSize_)
+	: VScrollArea    (nullptr),
+	  properties     (nullptr, obs_properties_destroy),
+	  settings       (settings_),
+	  type           (type_),
+	  reloadCallback (reloadCallback_),
 	  minSize        (minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
@@ -694,7 +713,9 @@ void WidgetInfo::ControlChanged()
 			return;
 	}
 
-	view->callback(view->obj, view->settings);
+	if (view->callback)
+		view->callback(view->obj, view->settings);
+
 	if (obs_property_modified(property, view->settings)) {
 		view->lastFocused = setting;
 		QMetaObject::invokeMethod(view, "RefreshProperties",
