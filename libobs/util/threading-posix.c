@@ -14,8 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__MINGW32__)
 #include <sys/time.h>
+#endif
+#ifdef __APPLE__
 #include <mach/semaphore.h>
 #include <mach/task.h>
 #include <mach/mach_init.h>
@@ -100,7 +102,7 @@ int os_event_timedwait(os_event_t *event, unsigned long milliseconds)
 	pthread_mutex_lock(&event->mutex);
 	if (!event->signalled) {
 		struct timespec ts;
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__MINGW32__)
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		ts.tv_sec  = tv.tv_sec;
@@ -252,9 +254,9 @@ long os_atomic_dec_long(volatile long *val)
 
 void os_set_thread_name(const char *name)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__)
 	pthread_setname_np(name);
-#else
+#elif !defined(__MINGW32__)
 	pthread_setname_np(pthread_self(), name);
 #endif
 }
