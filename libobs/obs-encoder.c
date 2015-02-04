@@ -446,6 +446,12 @@ const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
 	return encoder ? encoder->info.codec : NULL;
 }
 
+const char *obs_get_encoder_codec(const char *id)
+{
+	struct obs_encoder_info *info = find_encoder(id);
+	return info ? info->codec : NULL;
+}
+
 void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		uint32_t height)
 {

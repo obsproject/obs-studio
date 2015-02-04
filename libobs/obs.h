@@ -1192,6 +1192,9 @@ EXPORT void obs_encoder_destroy(obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
+/** Returns the codec of an encoder by the id */
+EXPORT const char *obs_get_encoder_codec(const char *id);
+
 /** Returns the codec of the encoder */
 EXPORT const char *obs_encoder_get_codec(const obs_encoder_t *encoder);
 
