@@ -101,8 +101,11 @@ EXPORT obs_property_t *obs_properties_first(obs_properties_t *props);
 EXPORT obs_property_t *obs_properties_get(obs_properties_t *props,
 		const char *property);
 
-/* used internally by libobs */
-extern void obs_properties_apply_settings(obs_properties_t *props,
+/**
+ * Applies settings to the properties by calling all the necessary
+ * modification callbacks
+ */
+EXPORT void obs_properties_apply_settings(obs_properties_t *props,
 		obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
