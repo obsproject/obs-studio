@@ -163,7 +163,7 @@ static void log_available_memory(void)
 	const char *note = " (NOTE: 4 gigs max is normal for 32bit programs)";
 #endif
 
-	blog(LOG_INFO, "Physical Memory: %ldMB Total, %ldMB Free%s",
+	blog(LOG_INFO, "Physical Memory: %IuMB Total, %IuMB Free%s",
 			ms.dwTotalPhys / 1048576,
 			ms.dwAvailPhys / 1048576,
 			note);
