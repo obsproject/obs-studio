@@ -24,7 +24,7 @@ add_library(graphics-hook MODULE
 	${graphics-hook_HEADERS})
 
 target_link_libraries(graphics-hook
-	ipc-util)
+	ipc-util psapi)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(_output_suffix "64")
