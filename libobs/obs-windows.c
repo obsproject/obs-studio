@@ -178,7 +178,7 @@ static void log_windows_version(void)
 	GetVersionExW(&osvi);
 
 	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
-	blog(LOG_INFO, "Windows Version: %u.%u Build %u %s",
+	blog(LOG_INFO, "Windows Version: %ld.%ld Build %ld %s",
 			osvi.dwMajorVersion,
 			osvi.dwMinorVersion,
 			osvi.dwBuildNumber,
