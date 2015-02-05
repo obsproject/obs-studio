@@ -55,7 +55,7 @@ struct d3d11_data {
 	};
 };
 
-struct d3d11_data data = {};
+static struct d3d11_data data = {};
 
 void d3d11_free(void)
 {
