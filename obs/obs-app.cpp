@@ -612,7 +612,7 @@ static void load_debug_privilege(void)
 
 int main(int argc, char *argv[])
 {
-#ifndef WIN32
+#ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
