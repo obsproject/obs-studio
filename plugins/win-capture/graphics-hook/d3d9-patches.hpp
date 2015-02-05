@@ -2,13 +2,41 @@
 
 #include <stdint.h>
 
+#ifdef __MINGW32__
+#include <excpt.h>
+#ifndef TRYLEVEL_NONE
+#ifndef __MINGW64__
+#define NO_SEH_MINGW
+#endif
+#ifndef __try
+#define __try
+#endif
+#ifndef __except
+#define __except(x) if (0)
+#endif
+#endif
+#endif
+
 static inline int safe_memcmp(const void *p1, const void *p2, size_t size)
 {
-	__try {
+
+#ifdef NO_SEH_MINGW
+	__try1(EXCEPTION_EXECUTE_HANDLER)
+#else
+	__try
+#endif
+	{
 		return memcmp(p1, p2, size);
-	} __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION) {
+	}
+#ifdef NO_SEH_MINGW
+	__except1
+#else
+	__except(EXCEPTION_EXECUTE_HANDLER)
+#endif
+	{
 		return -1;
 	}
+
 }
 
 struct patch_info {
