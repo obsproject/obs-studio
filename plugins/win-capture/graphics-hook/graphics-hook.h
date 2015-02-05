@@ -49,7 +49,7 @@ extern bool rehook_gl(void);
 
 extern bool capture_init_shtex(struct shtex_data **data, HWND window,
 		uint32_t base_cx, uint32_t base_cy, uint32_t cx, uint32_t cy,
-		uint32_t format, bool flip, uint32_t handle);
+		uint32_t format, bool flip, uintptr_t handle);
 extern bool capture_init_shmem(struct shmem_data **data, HWND window,
 		uint32_t base_cx, uint32_t base_cy, uint32_t cx, uint32_t cy,
 		uint32_t pitch, uint32_t format, bool flip);

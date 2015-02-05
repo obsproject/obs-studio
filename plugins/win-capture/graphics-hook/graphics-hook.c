@@ -581,7 +581,7 @@ static inline bool init_shared_info(size_t size)
 
 bool capture_init_shtex(struct shtex_data **data, HWND window,
 		uint32_t base_cx, uint32_t base_cy, uint32_t cx, uint32_t cy,
-		uint32_t format, bool flip, uint32_t handle)
+		uint32_t format, bool flip, uintptr_t handle)
 {
 	if (!init_shared_info(sizeof(struct shtex_data))) {
 		hlog("capture_init_shtex: Failed to initialize memory");
@@ -589,7 +589,7 @@ bool capture_init_shtex(struct shtex_data **data, HWND window,
 	}
 
 	*data = shmem_info;
-	(*data)->tex_handle = handle;
+	(*data)->tex_handle = (uint32_t)handle;
 
 	global_hook_info->window = (uint32_t)window;
 	global_hook_info->type = CAPTURE_TYPE_TEXTURE;
