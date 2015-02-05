@@ -97,7 +97,7 @@ static void log_processor_info(void)
 	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
 			&size);
 	if (status == ERROR_SUCCESS)
-		blog(LOG_INFO, "CPU Speed: %dMHz", speed);
+		blog(LOG_INFO, "CPU Speed: %ldMHz", speed);
 
 	RegCloseKey(key);
 }
