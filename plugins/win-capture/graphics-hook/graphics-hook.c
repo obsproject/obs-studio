@@ -311,7 +311,7 @@ static inline bool attempt_hook(void)
 		rehook_gl();*/
 	}
 
-	/*if (!d3d8_hooked) {
+	if (!d3d8_hooked) {
 		if (!d3d8_hookable()) {
 			d3d8_hooked = true;
 		} else {
@@ -322,6 +322,7 @@ static inline bool attempt_hook(void)
 		}
 	}
 
+	/*
 	if (!ddraw_hooked) {
 		if (!ddraw_hookable()) {
 			ddraw_hooked = true;
