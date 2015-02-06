@@ -274,7 +274,7 @@ static inline bool dxgi_hookable(void)
 static inline bool attempt_hook(void)
 {
 	//static bool ddraw_hooked = false;
-	//static bool d3d8_hooked  = false;
+	static bool d3d8_hooked  = false;
 	static bool d3d9_hooked  = false;
 	static bool dxgi_hooked  = false;
 	static bool gl_hooked    = false;
@@ -310,7 +310,7 @@ static inline bool attempt_hook(void)
 		rehook_gl();*/
 	}
 
-	/*if (!d3d8_hooked) {
+	if (!d3d8_hooked) {
 		if (!d3d8_hookable()) {
 			d3d8_hooked = true;
 		} else {
@@ -321,7 +321,7 @@ static inline bool attempt_hook(void)
 		}
 	}
 
-	if (!ddraw_hooked) {
+	/*if (!ddraw_hooked) {
 		if (!ddraw_hookable()) {
 			ddraw_hooked = true;
 		} else {

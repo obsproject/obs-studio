@@ -20,6 +20,11 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 		return false;
 	}
 
+	offsets->d3d8.present =
+		(uint32_t)config_get_uint(config, "d3d8", "present");
+	offsets->d3d8.reset =
+		(uint32_t)config_get_uint(config, "d3d8", "reset");
+
 	offsets->d3d9.present =
 		(uint32_t)config_get_uint(config, "d3d9", "present");
 	offsets->d3d9.present_ex =

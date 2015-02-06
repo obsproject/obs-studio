@@ -1,0 +1,302 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <dxgi.h>
+
+#include "../d3d8-api/d3d8.h"
+#include "graphics-hook.h"
+#include "../funchook.h"
+
+typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8*,
+		D3DPRESENT_PARAMETERS*);
+typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDirect3DDevice8*,
+		CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
+
+static struct func_hook present;
+static struct func_hook reset;
+
+struct d3d8_data {
+	HMODULE                        d3d8;
+	uint32_t                       cx;
+	uint32_t                       cy;
+	D3DFORMAT                      d3d8_format;
+	DXGI_FORMAT                    dxgi_format;
+
+	struct shmem_data              *shmem_info;
+	HWND                           window;
+	uint32_t                       pitch;
+	IDirect3DSurface8              *copy_surfaces[NUM_BUFFERS];
+	bool                           surface_locked[NUM_BUFFERS];
+	int                            cur_surface;
+	int                            copy_wait;
+};
+
+static d3d8_data data = {};
+
+static DXGI_FORMAT d3d8_to_dxgi_format(D3DFORMAT format)
+{
+	switch ((unsigned long)format) {
+	case D3DFMT_X1R5G5B5:
+	case D3DFMT_A1R5G5B5: return DXGI_FORMAT_B5G5R5A1_UNORM;
+	case D3DFMT_R5G6B5:   return DXGI_FORMAT_B5G6R5_UNORM;
+	case D3DFMT_A8R8G8B8: return DXGI_FORMAT_B8G8R8A8_UNORM;
+	case D3DFMT_X8R8G8B8: return DXGI_FORMAT_B8G8R8X8_UNORM;
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
+}
+
+static IDirect3DSurface8 *d3d8_get_backbuffer(IDirect3DDevice8 *device)
+{
+	IDirect3DSurface8 *backbuffer;
+	HRESULT hr;
+
+	hr = device->GetRenderTarget(&backbuffer);
+	if (FAILED(hr)) {
+		hlog_hr("d3d8_get_backbuffer: Failed to get backbuffer", hr);
+		backbuffer = nullptr;
+	}
+
+	return backbuffer;
+}
+
+static bool d3d8_get_window_handle(IDirect3DDevice8 *device)
+{
+	D3DDEVICE_CREATION_PARAMETERS parameters;
+	HRESULT hr;
+	hr = device->GetCreationParameters(&parameters);
+	if (FAILED(hr)) {
+		hlog_hr("d3d8_get_window_handle: Failed to get "
+				"device creation parameters", hr);
+		return false;
+	}
+
+	data.window = parameters.hFocusWindow;
+
+	return true;
+}
+
+static bool d3d8_init_format_backbuffer(IDirect3DDevice8 *device)
+{
+	IDirect3DSurface8 *backbuffer;
+	D3DSURFACE_DESC desc;
+	HRESULT hr;
+
+	if (!d3d8_get_window_handle(device))
+		return false;
+
+	backbuffer = d3d8_get_backbuffer(device);
+	if (!backbuffer)
+		return false;
+
+	hr = backbuffer->GetDesc(&desc);
+	backbuffer->Release();
+	if (FAILED(hr)) {
+		hlog_hr("d3d8_init_format_backbuffer: Failed to get "
+				"backbuffer descriptor", hr);
+		return false;
+	}
+
+	data.d3d8_format = desc.Format;
+	data.dxgi_format = d3d8_to_dxgi_format(desc.Format);
+	data.cx = desc.Width;
+	data.cy = desc.Height;
+
+	return true;
+}
+
+static bool d3d8_shmem_init_buffer(IDirect3DDevice8 *device, int idx)
+{
+	HRESULT hr;
+
+	hr = device->CreateImageSurface(data.cx, data.cy,
+			data.d3d8_format, &data.copy_surfaces[idx]);
+	if (FAILED(hr)) {
+		hlog_hr("d3d8_shmem_init_buffer: Failed to create surface", hr);
+		return false;
+	}
+
+	if (idx == 0) {
+		D3DLOCKED_RECT rect;
+		hr = data.copy_surfaces[0]->LockRect(&rect, nullptr,
+				D3DLOCK_READONLY);
+		if (FAILED(hr)) {
+			hlog_hr("d3d8_shmem_init_buffer: Failed to lock buffer", hr);
+			return false;
+		}
+
+		data.pitch = rect.Pitch;
+		data.copy_surfaces[0]->UnlockRect();
+	}
+
+	return true;
+}
+
+static bool d3d8_shmem_init(IDirect3DDevice8 *device)
+{
+	for (int i = 0; i < NUM_BUFFERS; i++) {
+		if (!d3d8_shmem_init_buffer(device, i)) {
+			return false;
+		}
+	}
+	if (!capture_init_shmem(&data.shmem_info, data.window, data.cx, data.cy,
+				data.cx, data.cy, data.pitch, data.dxgi_format,
+				false)) {
+		return false;
+	}
+
+	hlog("d3d8 memory capture successfull");
+	return true;
+}
+
+static void d3d8_free()
+{
+	capture_free();
+
+	for (size_t i = 0; i < NUM_BUFFERS; i++) {
+		if (data.copy_surfaces[i]) {
+			if (data.surface_locked[i])
+				data.copy_surfaces[i]->UnlockRect();
+			data.copy_surfaces[i]->Release();
+		}
+	}
+
+	memset(&data, 0, sizeof(data));
+
+	hlog("----------------- d3d8 capture freed -----------------");
+}
+
+static void d3d8_init(IDirect3DDevice8 *device)
+{
+	data.d3d8 = get_system_module("d3d8.dll");
+
+	if (!d3d8_init_format_backbuffer(device))
+		return;
+
+	if (!d3d8_shmem_init(device))
+		d3d8_free();
+}
+
+static void d3d8_shmem_capture_copy(int idx)
+{
+	IDirect3DSurface8 *target = data.copy_surfaces[idx];
+	D3DLOCKED_RECT rect;
+	HRESULT hr;
+
+	if (data.surface_locked[idx])
+		return;
+
+	hr = target->LockRect(&rect, nullptr, D3DLOCK_READONLY);
+	if (SUCCEEDED(hr)) {
+		shmem_copy_data(idx, rect.pBits);
+	}
+}
+
+static void d3d8_shmem_capture(IDirect3DDevice8 *device,
+		IDirect3DSurface8 *backbuffer)
+{
+	int cur_surface;
+	int next_surface;
+	HRESULT hr;
+
+	cur_surface = data.cur_surface;
+	next_surface = (cur_surface == NUM_BUFFERS - 1) ? 0 : cur_surface + 1;
+
+	if (data.copy_wait < NUM_BUFFERS - 1) {
+		data.copy_wait++;
+	} else {
+		IDirect3DSurface8 *src = backbuffer;
+		IDirect3DSurface8 *dst = data.copy_surfaces[cur_surface];
+
+		if (shmem_texture_data_lock(next_surface)) {
+			dst->UnlockRect();
+			data.surface_locked[next_surface] = false;
+			shmem_texture_data_unlock(next_surface);
+		}
+
+		hr = device->CopyRects(src, nullptr, 0, dst, nullptr);
+		if (SUCCEEDED(hr)) {
+			d3d8_shmem_capture_copy(cur_surface);
+		}
+	}
+
+	data.cur_surface = next_surface;
+}
+
+static void d3d8_capture(IDirect3DDevice8 *device,
+		IDirect3DSurface8 *backbuffer)
+{
+	if (capture_should_stop()) {
+		d3d8_free();
+	}
+	if (capture_should_init()) {
+		d3d8_init(device);
+	}
+	if (capture_ready()) {
+		d3d8_shmem_capture(device, backbuffer);
+	}
+}
+
+
+static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device,
+		D3DPRESENT_PARAMETERS *parameters)
+{
+	HRESULT hr;
+
+	if (capture_active())
+		d3d8_free();
+
+	unhook(&reset);
+	reset_t call = (reset_t)reset.call_addr;
+	hr = call(device, parameters);
+	rehook(&reset);
+
+	return hr;
+}
+
+static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
+		CONST RECT *src_rect, CONST RECT *dst_rect,
+		HWND override_window, CONST RGNDATA *dirty_region)
+{
+	IDirect3DSurface8 *backbuffer;
+	HRESULT hr;
+
+	backbuffer = d3d8_get_backbuffer(device);
+	if (backbuffer) {
+		d3d8_capture(device, backbuffer);
+		backbuffer->Release();
+	}
+
+	unhook(&present);
+	present_t call = (present_t)present.call_addr;
+	hr = call(device, src_rect, dst_rect, override_window, dirty_region);
+	rehook(&present);
+
+	return hr;
+}
+
+bool hook_d3d8(void)
+{
+	HMODULE d3d8_module = get_system_module("d3d8.dll");
+	void *present_addr;
+	void *reset_addr;
+
+	if (!d3d8_module) {
+		return false;
+	}
+
+	present_addr = get_offset_addr(d3d8_module,
+			global_hook_info->offsets.d3d8.present);
+	reset_addr = get_offset_addr(d3d8_module,
+			global_hook_info->offsets.d3d8.reset);
+
+	hook_init(&present, present_addr, (void*)hook_present,
+			"IDirect3DDevice8::Present");
+	hook_init(&reset, reset_addr, (void*)hook_reset,
+			"IDirect3DDevice8::Reset");
+
+	rehook(&present);
+	rehook(&reset);
+
+	hlog("Hooked D3D8");
+
+	return true;
+}

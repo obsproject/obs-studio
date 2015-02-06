@@ -86,6 +86,7 @@ struct game_capture {
 	bool                          error_acquiring : 1;
 	bool                          dwm_capture : 1;
 	bool                          initial_config : 1;
+	bool                          convert_16bit : 1;
 
 	struct game_capture_config    config;
 
@@ -838,6 +839,94 @@ static inline bool init_capture_data(struct game_capture *gc)
 	return true;
 }
 
+#define PIXEL_16BIT_SIZE 2
+#define PIXEL_32BIT_SIZE 4
+
+static inline uint32_t convert_5_to_8bit(uint16_t val)
+{
+	return (uint32_t)((double)(val & 0x1F) * (255.0/31.0));
+}
+
+static inline uint32_t convert_6_to_8bit(uint16_t val)
+{
+	return (uint32_t)((double)(val & 0x3F) * (255.0/63.0));
+}
+
+static void copy_b5g6r5_tex(struct game_capture *gc, int cur_texture,
+		uint8_t *data, uint32_t pitch)
+{
+	uint8_t *input = gc->texture_buffers[cur_texture];
+	uint32_t gc_cx = gc->cx;
+	uint32_t gc_cy = gc->cy;
+	uint32_t gc_pitch = gc->pitch;
+
+	for (uint32_t y = 0; y < gc_cy; y++) {
+		register uint8_t *in  = input + (gc_pitch * y);
+		register uint8_t *end = input + (gc_cx * PIXEL_16BIT_SIZE);
+		register uint8_t *out = data  + pitch;
+
+		while (in < end) {
+			register uint16_t in_pix = *(uint16_t*)in;
+			register uint32_t out_pix = 0xFF000000;
+
+			out_pix |= convert_5_to_8bit(in_pix);
+			in_pix >>= 5;
+			out_pix |= convert_6_to_8bit(in_pix) << 8;
+			in_pix >>= 6;
+			out_pix |= convert_5_to_8bit(in_pix) << 16;
+
+			*(uint32_t*)out = out_pix;
+
+			in  += PIXEL_16BIT_SIZE;
+			out += PIXEL_32BIT_SIZE;
+		}
+	}
+}
+
+static void copy_b5g5r5a1_tex(struct game_capture *gc, int cur_texture,
+		uint8_t *data, uint32_t pitch)
+{
+	uint8_t *input = gc->texture_buffers[cur_texture];
+	uint32_t gc_cx = gc->cx;
+	uint32_t gc_cy = gc->cy;
+	uint32_t gc_pitch = gc->pitch;
+
+	for (uint32_t y = 0; y < gc_cy; y++) {
+		register uint8_t *in  = input + (gc_pitch * y);
+		register uint8_t *end = input + (gc_cx * PIXEL_16BIT_SIZE);
+		register uint8_t *out = data  + pitch;
+
+		while (in < end) {
+			register uint16_t in_pix = *(uint16_t*)in;
+			register uint32_t out_pix = 0;
+
+			out_pix |= convert_5_to_8bit(in_pix);
+			in_pix >>= 5;
+			out_pix |= convert_5_to_8bit(in_pix) << 8;
+			in_pix >>= 5;
+			out_pix |= convert_5_to_8bit(in_pix) << 16;
+			in_pix >>= 5;
+			out_pix |= (in_pix * 255) << 24;
+
+			*(uint32_t*)out = out_pix;
+
+			in  += PIXEL_16BIT_SIZE;
+			out += PIXEL_32BIT_SIZE;
+		}
+	}
+}
+
+static inline void copy_16bit_tex(struct game_capture *gc, int cur_texture,
+		uint8_t *data, uint32_t pitch)
+{
+	if (gc->global_hook_info->format == DXGI_FORMAT_B5G5R5A1_UNORM) {
+		copy_b5g5r5a1_tex(gc, cur_texture, data, pitch);
+
+	} else if (gc->global_hook_info->format == DXGI_FORMAT_B5G6R5_UNORM) {
+		copy_b5g6r5_tex(gc, cur_texture, data, pitch);
+	}
+}
+
 static void copy_shmem_tex(struct game_capture *gc)
 {
 	int cur_texture = gc->shmem_data->last_tex;
@@ -863,7 +952,10 @@ static void copy_shmem_tex(struct game_capture *gc)
 	}
 
 	if (gs_texture_map(gc->texture, &data, &pitch)) {
-		if (pitch == gc->pitch) {
+		if (gc->convert_16bit) {
+			copy_16bit_tex(gc, cur_texture, data, pitch);
+
+		} else if (pitch == gc->pitch) {
 			memcpy(data, gc->texture_buffers[cur_texture],
 					pitch * gc->cy);
 		} else {
@@ -884,18 +976,29 @@ static void copy_shmem_tex(struct game_capture *gc)
 	ReleaseMutex(mutex);
 }
 
+static inline bool is_16bit_format(uint32_t format)
+{
+	return format == DXGI_FORMAT_B5G5R5A1_UNORM ||
+	       format == DXGI_FORMAT_B5G6R5_UNORM;
+}
+
 static inline bool init_shmem_capture(struct game_capture *gc)
 {
+	enum gs_color_format format;
+
 	gc->texture_buffers[0] =
 		(uint8_t*)gc->data + gc->shmem_data->tex1_offset;
 	gc->texture_buffers[1] =
 		(uint8_t*)gc->data + gc->shmem_data->tex2_offset;
 
+	gc->convert_16bit = is_16bit_format(gc->global_hook_info->format);
+	format = gc->convert_16bit ?
+		GS_BGRA : convert_format(gc->global_hook_info->format);
+
 	obs_enter_graphics();
 	gs_texture_destroy(gc->texture);
-	gc->texture = gs_texture_create(gc->cx, gc->cy,
-			convert_format(gc->global_hook_info->format),
-			1, NULL, GS_DYNAMIC);
+	gc->texture = gs_texture_create(gc->cx, gc->cy, format, 1, NULL,
+			GS_DYNAMIC);
 	obs_leave_graphics();
 
 	if (!gc->texture) {
