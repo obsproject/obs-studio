@@ -483,10 +483,24 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Basic.Settings.Output.RetryDelay</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="4" column="1">
                     <widget class="QSpinBox" name="simpleOutRetryDelay">
                      <property name="maximum">
                       <number>30</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QLabel" name="label_22">
+                     <property name="text">
+                      <string>Basic.Settings.Output.MaxRetries</string>
                      </property>
                     </widget>
                    </item>
@@ -500,20 +514,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="0">
-                    <widget class="QLabel" name="label_17">
-                     <property name="text">
-                      <string>Basic.Settings.Output.RetryDelay</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="5" column="0">
-                    <widget class="QLabel" name="label_22">
-                     <property name="text">
-                      <string>Basic.Settings.Output.MaxRetries</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="6" column="1">
                     <widget class="QCheckBox" name="simpleOutAdvanced">
                      <property name="text">
@@ -524,13 +524,13 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="9" column="1">
-                    <widget class="QLineEdit" name="simpleOutCustom"/>
-                   </item>
-                   <item row="9" column="0">
-                    <widget class="QLabel" name="label_23">
+                   <item row="7" column="1">
+                    <widget class="QCheckBox" name="simpleOutUseCBR">
                      <property name="text">
-                      <string>Basic.Settings.Output.CustomEncoderSettings</string>
+                      <string>Basic.Settings.Output.UseCBR</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -588,15 +588,47 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="7" column="1">
-                    <widget class="QCheckBox" name="simpleOutUseCBR">
-                     <property name="text">
-                      <string>Basic.Settings.Output.UseCBR</string>
+                   <item row="9" column="0">
+                    <widget class="QCheckBox" name="simpleOutUseBufsize">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
                      </property>
-                     <property name="checked">
-                      <bool>true</bool>
+                     <property name="layoutDirection">
+                      <enum>Qt::RightToLeft</enum>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Output.UseBufferSize</string>
                      </property>
                     </widget>
+                   </item>
+                   <item row="9" column="1">
+                    <widget class="QSpinBox" name="simpleOutVBufsize">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="minimum">
+                      <number>200</number>
+                     </property>
+                     <property name="maximum">
+                      <number>1000000</number>
+                     </property>
+                     <property name="value">
+                      <number>2000</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="10" column="0">
+                    <widget class="QLabel" name="label_23">
+                     <property name="text">
+                      <string>Basic.Settings.Output.CustomEncoderSettings</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="10" column="1">
+                    <widget class="QLineEdit" name="simpleOutCustom"/>
                    </item>
                   </layout>
                  </widget>
@@ -1264,6 +1296,54 @@
     <hint type="destinationlabel">
      <x>410</x>
      <y>261</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutUseBufsize</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutVBufsize</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>312</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>311</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutUseBufsize</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>456</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>315</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutVBufsize</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>525</x>
+     <y>238</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>519</x>
+     <y>317</y>
     </hint>
    </hints>
   </connection>

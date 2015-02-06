@@ -115,6 +115,9 @@ private:
 	void SaveSettings();
 
 private slots:
+	void on_simpleOutUseBufsize_toggled(bool checked);
+	void on_simpleOutputVBitrate_valueChanged(int val);
+
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
