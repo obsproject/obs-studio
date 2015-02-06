@@ -47,6 +47,8 @@ class QNetworkReply;
 #define AUX_AUDIO_2     Str("AuxAudioDevice2")
 #define AUX_AUDIO_3     Str("AuxAudioDevice3")
 
+struct BasicOutputHandler;
+
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
@@ -69,11 +71,8 @@ private:
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
-	obs_output_t  *fileOutput = nullptr;
-	obs_output_t  *streamOutput = nullptr;
 	obs_service_t *service = nullptr;
-	obs_encoder_t *aac = nullptr;
-	obs_encoder_t *x264 = nullptr;
+	std::unique_ptr<BasicOutputHandler> outputHandler;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
@@ -86,8 +85,6 @@ private:
 	int           resizeTimer = 0;
 
 	ConfigFile    basicConfig;
-
-	int           activeRefs = 0;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -105,8 +102,6 @@ private:
 	void          SaveService();
 	bool          LoadService();
 
-	bool          InitOutputs();
-	bool          InitEncoders();
 	bool          InitService();
 
 	bool          InitBasicConfigDefaults();
@@ -199,6 +194,8 @@ public:
 
 	int  ResetVideo();
 	bool ResetAudio();
+
+	void ResetOutputs();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceName,
 			const char *deviceDesc, int channel);
