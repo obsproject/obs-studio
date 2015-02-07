@@ -1271,6 +1271,8 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_properties_add_bool(ppts, SETTING_CAPTURE_OVERLAYS,
 			TEXT_CAPTURE_OVERLAYS);
 
+	obs_properties_add_bool(ppts, SETTING_CURSOR, TEXT_CAPTURE_CURSOR);
+
 	UNUSED_PARAMETER(data);
 	return ppts;
 }
