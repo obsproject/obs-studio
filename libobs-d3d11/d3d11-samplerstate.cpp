@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <graphics/vec4.h>
+#include <float.h>
 
 #include "d3d11-subsystem.hpp"
 
