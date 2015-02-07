@@ -198,6 +198,8 @@ void os_set_thread_name(const char *name)
 	info.thread_id = GetCurrentThreadId();
 	info.flags = 0;
 
+// Disabled exceptions on mingw-w64 as it is broken
+#ifndef __MINGW32__
 #ifdef NO_SEH_MINGW
 	__try1(EXCEPTION_EXECUTE_HANDLER)
 #else
@@ -213,4 +215,5 @@ void os_set_thread_name(const char *name)
 	__except(EXCEPTION_EXECUTE_HANDLER)
 #endif
 	{}
+#endif
 }
