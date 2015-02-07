@@ -1543,6 +1543,17 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	if (outputHandler && outputHandler->Active()) {
+		QMessageBox::StandardButton button = QMessageBox::question(
+				this, QTStr("ConfirmExit.Title"),
+				QTStr("ConfirmExit.Text"));
+
+		if (button == QMessageBox::No) {
+			event->ignore();
+			return;
+		}
+	}
+
 	QWidget::closeEvent(event);
 	if (!event->isAccepted())
 		return;
