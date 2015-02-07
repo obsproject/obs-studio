@@ -38,6 +38,7 @@ private:
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
 	bool generalChanged = false;
+	bool stream1Changed = false;
 	bool outputsChanged = false;
 	bool audioChanged = false;
 	bool videoChanged = false;
@@ -61,7 +62,7 @@ private:
 
 	inline bool Changed() const
 	{
-		return generalChanged || outputsChanged ||
+		return generalChanged || outputsChanged || stream1Changed ||
 			audioChanged || videoChanged;
 	}
 
@@ -73,6 +74,7 @@ private:
 	inline void ClearChanged()
 	{
 		generalChanged = false;
+		stream1Changed = false;
 		outputsChanged = false;
 		audioChanged   = false;
 		videoChanged   = false;
@@ -84,10 +86,10 @@ private:
 	bool QueryChanges();
 
 	void LoadServiceTypes();
-	void LoadServiceInfo();
 	void LoadEncoderTypes();
 
 	void LoadGeneralSettings();
+	void LoadStream1Settings();
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
@@ -121,6 +123,7 @@ private:
 	void LoadFPSData();
 
 	void SaveGeneralSettings();
+	void SaveStream1Settings();
 	void SaveOutputSettings();
 	void SaveAudioSettings();
 	void SaveVideoSettings();
@@ -146,6 +149,7 @@ private slots:
 	void AudioChanged();
 	void AudioChangedRestart();
 	void OutputsChanged();
+	void Stream1Changed();
 	void VideoChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();

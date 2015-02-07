@@ -99,9 +99,6 @@ private:
 	void          Save(const char *file);
 	void          Load(const char *file);
 
-	void          SaveService();
-	bool          LoadService();
-
 	bool          InitService();
 
 	bool          InitBasicConfigDefaults();
@@ -192,6 +189,8 @@ public:
 	obs_service_t *GetService();
 	void          SetService(obs_service_t *service);
 
+	bool StreamingActive();
+
 	int  ResetVideo();
 	bool ResetAudio();
 
@@ -216,6 +215,9 @@ public:
 	{
 		return os_cpu_usage_info_query(cpuUsageInfo);
 	}
+
+	void SaveService();
+	bool LoadService();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

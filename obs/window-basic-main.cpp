@@ -326,6 +326,11 @@ bool OBSBasic::LoadService()
 {
 	const char *type;
 
+	if (service) {
+		obs_service_destroy(service);
+		service = nullptr;
+	}
+
 	char serviceJsonPath[512];
 	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
@@ -658,7 +663,6 @@ void OBSBasic::SaveProject()
 	if (ret <= 0)
 		return;
 
-	SaveService();
 	Save(savePath);
 }
 
@@ -1328,6 +1332,13 @@ void OBSBasic::SetService(obs_service_t *newService)
 			obs_service_destroy(service);
 		service = newService;
 	}
+}
+
+bool OBSBasic::StreamingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->StreamingActive();
 }
 
 #ifdef _WIN32
@@ -2237,8 +2248,6 @@ void OBSBasic::on_streamButton_clicked()
 	if (outputHandler->StreamingActive()) {
 		outputHandler->StopStreaming();
 	} else {
-		SaveService();
-
 		if (outputHandler->StartStreaming(service)) {
 			ui->streamButton->setEnabled(false);
 			ui->streamButton->setText(
