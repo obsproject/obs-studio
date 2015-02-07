@@ -21,6 +21,10 @@
 #include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
+#ifdef __MINGW32__
+#define PRIu32 "u"
+#endif
+
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
 		: HRError(str, hr)
