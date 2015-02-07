@@ -231,6 +231,7 @@ private slots:
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
 	void on_actionAdvAudioProperties_triggered();
+	void on_advAudioProps_clicked();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();

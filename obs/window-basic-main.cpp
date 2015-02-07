@@ -1632,6 +1632,11 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+void OBSBasic::on_advAudioProps_clicked()
+{
+	on_actionAdvAudioProperties_triggered();
+}
+
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 		QListWidgetItem *prev)
 {

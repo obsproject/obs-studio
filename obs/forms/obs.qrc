@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="res">
+    <file>images/configuration21_16.png</file>
     <file>images/list_remove.png</file>
     <file>images/add.png</file>
     <file>images/down.png</file>
