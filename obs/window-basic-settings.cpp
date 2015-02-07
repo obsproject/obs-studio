@@ -270,7 +270,7 @@ void OBSBasicSettings::LoadServiceTypes()
 		ui->streamType->addItem(qName, qType);
 	}
 
-	type = obs_service_gettype(main->GetService());
+	type = obs_service_get_type(main->GetService());
 	SetComboByValue(ui->streamType, type);
 }
 
@@ -331,7 +331,7 @@ void OBSBasicSettings::LoadStream1Settings()
 {
 	QLayout *layout = ui->streamContainer->layout();
 	obs_service_t *service = main->GetService();
-	const char *type = obs_service_gettype(service);
+	const char *type = obs_service_get_type(service);
 
 	loading = true;
 

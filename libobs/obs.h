@@ -1295,7 +1295,7 @@ EXPORT obs_properties_t *obs_get_service_properties(const char *id);
 EXPORT obs_properties_t *obs_service_properties(const obs_service_t *service);
 
 /** Gets the service type */
-EXPORT const char *obs_service_gettype(const obs_service_t *service);
+EXPORT const char *obs_service_get_type(const obs_service_t *service);
 
 /** Updates the settings of the service context */
 EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);

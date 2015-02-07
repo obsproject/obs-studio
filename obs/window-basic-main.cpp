@@ -311,7 +311,7 @@ void OBSBasic::SaveService()
 	obs_data_t *data     = obs_data_create();
 	obs_data_t *settings = obs_service_get_settings(service);
 
-	obs_data_set_string(data, "type", obs_service_gettype(service));
+	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
 	const char *json = obs_data_get_json(data);
