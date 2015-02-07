@@ -1264,10 +1264,15 @@ void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 
 void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
+	QString filter;
+	filter += QTStr("Basic.Settings.Output.Adv.FFmpeg.SaveFilter.Common");
+	filter += " (*.avi *.mp4 *.flv *.ts *.mkv *.wav *.aac);;";
+	filter += QTStr("Basic.Settings.Output.Adv.FFmpeg.SaveFilter.All");
+	filter += " (*.*)";
+
 	QString file = QFileDialog::getSaveFileName(this,
 			QTStr("Basic.Settings.Output.SelectFile"),
-			ui->simpleOutputPath->text(),
-			QTStr("Basic.Settings.Output.Adv.FFmpeg.SaveFilter"));
+			ui->simpleOutputPath->text(), filter);
 	if (file.isEmpty())
 		return;
 
