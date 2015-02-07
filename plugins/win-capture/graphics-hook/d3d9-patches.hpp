@@ -20,14 +20,19 @@
 static inline int safe_memcmp(const void *p1, const void *p2, size_t size)
 {
 
+// Disabled exceptions on mingw-w64 as it is broken
+#ifndef __MINGW32__
 #ifdef NO_SEH_MINGW
 	__try1(EXCEPTION_EXECUTE_HANDLER)
 #else
 	__try
 #endif
+#endif
 	{
 		return memcmp(p1, p2, size);
 	}
+// Disabled exceptions on mingw-w64 as it is broken
+#ifndef __MINGW32__
 #ifdef NO_SEH_MINGW
 	__except1
 #else
@@ -36,7 +41,7 @@ static inline int safe_memcmp(const void *p1, const void *p2, size_t size)
 	{
 		return -1;
 	}
-
+#endif
 }
 
 struct patch_info {

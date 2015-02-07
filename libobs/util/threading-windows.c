@@ -192,6 +192,9 @@ struct vs_threadname_info {
 
 void os_set_thread_name(const char *name)
 {
+#ifdef __MINGW32__
+	UNUSED_PARAMETER(name);
+#else
 	struct vs_threadname_info info;
 	info.type = 0x1000;
 	info.name = name;
@@ -211,4 +214,5 @@ void os_set_thread_name(const char *name)
 	} __except(EXCEPTION_EXECUTE_HANDLER) {
 #endif
 	}
+#endif
 }
