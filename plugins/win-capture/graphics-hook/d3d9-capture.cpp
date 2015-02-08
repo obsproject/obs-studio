@@ -455,9 +455,9 @@ static void d3d9_init(IDirect3DDevice9 *device)
 {
 	IDirect3DDevice9Ex *d3d9ex = nullptr;
 	bool success;
-	uint32_t cx;
-	uint32_t cy;
-	HWND window;
+	uint32_t cx = 0;
+	uint32_t cy = 0;
+	HWND window = nullptr;
 	HRESULT hr;
 
 	data.d3d9 = get_system_module("d3d9.dll");
