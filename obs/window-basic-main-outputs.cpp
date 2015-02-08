@@ -402,7 +402,7 @@ inline void AdvancedOutput::SetupStreaming()
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
-	if (rescale && sscanf(rescaleRes, "%ux%u", &cx, &cy) != 3) {
+	if (rescale && sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 		cx = 0;
 		cy = 0;
 	}
