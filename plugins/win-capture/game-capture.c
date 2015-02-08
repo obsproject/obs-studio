@@ -352,14 +352,14 @@ static inline HANDLE create_event_id(bool manual_reset, bool initial_state,
 		const char *name, DWORD process_id)
 {
 	char new_name[128];
-	sprintf(new_name, "%s%d", name, process_id);
+	sprintf(new_name, "%s%lu", name, process_id);
 	return CreateEventA(NULL, manual_reset, initial_state, new_name);
 }
 
 static inline HANDLE open_event_id(const char *name, DWORD process_id)
 {
 	char new_name[128];
-	sprintf(new_name, "%s%d", name, process_id);
+	sprintf(new_name, "%s%lu", name, process_id);
 	return OpenEventA(EVENT_ALL_ACCESS, false, new_name);
 }
 
@@ -542,7 +542,7 @@ static void pipe_log(void *param, uint8_t *data, size_t size)
 static inline bool init_pipe(struct game_capture *gc)
 {
 	char name[64];
-	sprintf(name, "%s%d", PIPE_NAME, gc->process_id);
+	sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
 
 	if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc)) {
 		warn("init_pipe: failed to start pipe");
@@ -738,7 +738,7 @@ static void try_hook(struct game_capture *gc)
 
 		if (!gc->thread_id || !gc->process_id) {
 			warn("error acquiring, failed to get window "
-					"thread/process ids: %d",
+					"thread/process ids: %lu",
 					GetLastError());
 			gc->error_acquiring = true;
 			return;
@@ -963,7 +963,7 @@ static void game_capture_tick(void *data, float seconds)
 		close_handle(&gc->injector_process);
 
 		if (exit_code != 0) {
-			warn("inject process failed: %d", exit_code);
+			warn("inject process failed: %lu", exit_code);
 			gc->error_acquiring = true;
 
 		} else if (!gc->capturing) {

@@ -60,10 +60,10 @@ static inline void wait_for_dll_main_finish(HANDLE thread_handle)
 	}
 }
 
-static inline bool init_pipe(void)
+bool init_pipe(void)
 {
 	char new_name[64];
-	sprintf(new_name, "%s%d", PIPE_NAME, GetCurrentProcessId());
+	sprintf(new_name, "%s%lu", PIPE_NAME, GetCurrentProcessId());
 
 	if (!ipc_pipe_client_open(&pipe, new_name)) {
 		DbgOut("Failed to open pipe\n");
@@ -86,7 +86,7 @@ static HANDLE init_mutex(const char *name, DWORD pid)
 	char new_name[64];
 	HANDLE handle;
 
-	sprintf(new_name, "%s%d", name, pid);
+	sprintf(new_name, "%s%lu", name, pid);
 
 	handle = OpenMutexA(MUTEX_ALL_ACCESS, false, new_name);
 	if (!handle)
@@ -186,7 +186,7 @@ static inline bool init_hook(HANDLE thread_handle)
 {
 	wait_for_dll_main_finish(thread_handle);
 
-	sprintf(keepalive_name, "%s%d", EVENT_HOOK_KEEPALIVE,
+	sprintf(keepalive_name, "%s%lu", EVENT_HOOK_KEEPALIVE,
 			GetCurrentProcessId());
 
 	if (!init_pipe()) {

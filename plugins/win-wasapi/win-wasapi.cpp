@@ -299,7 +299,7 @@ void WASAPISource::Reconnect()
 
 	if (!reconnectThread.Valid())
 		blog(LOG_WARNING, "[WASAPISource::Reconnect] "
-		                "Failed to intiialize reconnect thread: %d",
+		                "Failed to intiialize reconnect thread: %lu",
 		                 GetLastError());
 }
 

@@ -132,7 +132,7 @@ static inline bool wgl_make_current(HDC hdc, HGLRC hglrc)
 	bool success = wglMakeCurrent(hdc, hglrc);
 	if (!success)
 		blog(LOG_ERROR, "wglMakeCurrent failed, GetLastError "
-		                "returned %u", GetLastError());
+		                "returned %lu", GetLastError());
 
 	return success;
 }
@@ -141,7 +141,7 @@ static inline HGLRC gl_init_basic_context(HDC hdc)
 {
 	HGLRC hglrc = wglCreateContext(hdc);
 	if (!hglrc) {
-		blog(LOG_ERROR, "wglCreateContext failed, %u", GetLastError());
+		blog(LOG_ERROR, "wglCreateContext failed, %lu", GetLastError());
 		return NULL;
 	}
 
@@ -168,8 +168,8 @@ static inline HGLRC gl_init_context(HDC hdc)
 	if (GLAD_WGL_ARB_create_context) {
 		HGLRC hglrc = wglCreateContextAttribsARB(hdc, 0, attribs);
 		if (!hglrc) {
-			blog(LOG_ERROR, "wglCreateContextAttribsARB failed, %u",
-					GetLastError());
+			blog(LOG_ERROR, "wglCreateContextAttribsARB failed, "
+					"%lu", GetLastError());
 			return NULL;
 		}
 
@@ -202,13 +202,13 @@ static bool gl_dummy_context_init(struct dummy_context *dummy)
 	init_dummy_pixel_format(&pfd);
 	format_index = ChoosePixelFormat(dummy->hdc, &pfd);
 	if (!format_index) {
-		blog(LOG_ERROR, "Dummy ChoosePixelFormat failed, %u",
+		blog(LOG_ERROR, "Dummy ChoosePixelFormat failed, %lu",
 				GetLastError());
 		return false;
 	}
 
 	if (!SetPixelFormat(dummy->hdc, format_index, &pfd)) {
-		blog(LOG_ERROR, "Dummy SetPixelFormat failed, %u",
+		blog(LOG_ERROR, "Dummy SetPixelFormat failed, %lu",
 				GetLastError());
 		return false;
 	}
@@ -297,7 +297,7 @@ static int gl_choose_pixel_format(HDC hdc, const struct gs_init_data *info)
 	success = wglChoosePixelFormatARB(hdc, attribs.array, NULL, 1, &format,
 				&num_formats);
 	if (!success || !num_formats) {
-		blog(LOG_ERROR, "wglChoosePixelFormatARB failed, %u",
+		blog(LOG_ERROR, "wglChoosePixelFormatARB failed, %lu",
 				GetLastError());
 		format = 0;
 	}
@@ -316,7 +316,7 @@ static inline bool gl_getpixelformat(HDC hdc, const struct gs_init_data *info,
 	*format = gl_choose_pixel_format(hdc, info);
 
 	if (!DescribePixelFormat(hdc, *format, sizeof(*pfd), pfd)) {
-		blog(LOG_ERROR, "DescribePixelFormat failed, %u",
+		blog(LOG_ERROR, "DescribePixelFormat failed, %lu",
 				GetLastError());
 		return false;
 	}
@@ -328,7 +328,7 @@ static inline bool gl_setpixelformat(HDC hdc, int format,
 		PIXELFORMATDESCRIPTOR *pfd)
 {
 	if (!SetPixelFormat(hdc, format, pfd)) {
-		blog(LOG_ERROR, "SetPixelFormat failed, %u", GetLastError());
+		blog(LOG_ERROR, "SetPixelFormat failed, %lu", GetLastError());
 		return false;
 	}
 
@@ -514,7 +514,7 @@ void device_present(gs_device_t *device)
 {
 	if (!SwapBuffers(device->cur_swap->wi->hdc)) {
 		blog(LOG_ERROR, "SwapBuffers failed, GetLastError "
-				"returned %u", GetLastError());
+				"returned %lu", GetLastError());
 		blog(LOG_ERROR, "device_present (GL) failed");
 	}
 }

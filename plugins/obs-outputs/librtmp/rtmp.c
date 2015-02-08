@@ -3536,7 +3536,7 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
     // int didAlloc = FALSE;
     int extendedTimestamp = 0;
 
-    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d", __FUNCTION__, r->m_sb.sb_socket);
+    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d", __FUNCTION__, (int)r->m_sb.sb_socket);
 
     if (ReadN(r, (char *)hbuf, 1) == 0)
     {
@@ -3860,7 +3860,7 @@ RTMP_SendChunk(RTMP *r, RTMPChunk *chunk)
     int wrote;
     char hbuf[RTMP_MAX_HEADER_SIZE];
 
-    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d, size=%d", __FUNCTION__, r->m_sb.sb_socket,
+    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d, size=%d", __FUNCTION__, (int)r->m_sb.sb_socket,
              chunk->c_chunkSize);
     RTMP_LogHexString(RTMP_LOGDEBUG2, (uint8_t *)chunk->c_header, chunk->c_headerSize);
     if (chunk->c_chunkSize)
@@ -4004,7 +4004,7 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
     buffer = packet->m_body;
     nChunkSize = r->m_outChunkSize;
 
-    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d, size=%d", __FUNCTION__, r->m_sb.sb_socket,
+    RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d, size=%d", __FUNCTION__, (int)r->m_sb.sb_socket,
              nSize);
     /* send all chunks in one HTTP request */
     if (r->Link.protocol & RTMP_FEATURE_HTTP)

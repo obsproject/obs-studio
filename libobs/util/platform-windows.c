@@ -67,7 +67,7 @@ void *os_dlopen(const char *path)
 	dstr_free(&dll_name);
 
 	if (!h_library)
-		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %u",
+		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld",
 				path, GetLastError());
 
 	return h_library;

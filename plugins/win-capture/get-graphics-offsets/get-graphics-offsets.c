@@ -26,17 +26,17 @@ int main(int argc, char *argv[])
 	get_dxgi_offsets(&dxgi);
 
 	printf("[d3d8]\n");
-	printf("present=0x%"PRIxPTR"\n", d3d8.present);
-	printf("reset=0x%"PRIxPTR"\n", d3d8.reset);
+	printf("present=0x%"PRIx32"\n", d3d8.present);
+	printf("reset=0x%"PRIx32"\n", d3d8.reset);
 	printf("[d3d9]\n");
-	printf("present=0x%"PRIxPTR"\n", d3d9.present);
-	printf("present_ex=0x%"PRIxPTR"\n", d3d9.present_ex);
-	printf("present_swap=0x%"PRIxPTR"\n", d3d9.present_swap);
-	printf("reset=0x%"PRIxPTR"\n", d3d9.reset);
-	printf("reset_ex=0x%"PRIxPTR"\n", d3d9.reset_ex);
+	printf("present=0x%"PRIx32"\n", d3d9.present);
+	printf("present_ex=0x%"PRIx32"\n", d3d9.present_ex);
+	printf("present_swap=0x%"PRIx32"\n", d3d9.present_swap);
+	printf("reset=0x%"PRIx32"\n", d3d9.reset);
+	printf("reset_ex=0x%"PRIx32"\n", d3d9.reset_ex);
 	printf("[dxgi]\n");
-	printf("present=0x%"PRIxPTR"\n", dxgi.present);
-	printf("resize=0x%"PRIxPTR"\n", dxgi.resize);
+	printf("present=0x%"PRIx32"\n", dxgi.present);
+	printf("resize=0x%"PRIx32"\n", dxgi.resize);
 
 	(void)argc;
 	(void)argv;
