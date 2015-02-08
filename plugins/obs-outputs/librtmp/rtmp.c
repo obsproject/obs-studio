@@ -400,7 +400,7 @@ RTMP_GetDuration(RTMP *r)
 int
 RTMP_IsConnected(RTMP *r)
 {
-    return r->m_sb.sb_socket != -1;
+    return r->m_sb.sb_socket != INVALID_SOCKET;
 }
 
 SOCKET
@@ -735,7 +735,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
     r->m_sb.sb_socket = socket(service->sa_family, SOCK_STREAM, IPPROTO_TCP);
 #endif
 
-    if (r->m_sb.sb_socket != -1)
+    if (r->m_sb.sb_socket != INVALID_SOCKET)
     {
         if(r->m_bindIP.addrLen)
         {
@@ -4328,7 +4328,7 @@ RTMPSockBuf_Close(RTMPSockBuf *sb)
         sb->sb_ssl = NULL;
     }
 #endif
-    if (sb->sb_socket != -1)
+    if (sb->sb_socket != INVALID_SOCKET)
         return closesocket(sb->sb_socket);
     return 0;
 }
