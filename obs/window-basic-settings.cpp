@@ -424,6 +424,11 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 		uint32_t outDownscaleCX = uint32_t(double(out_cx) / vals[idx]);
 		uint32_t outDownscaleCY = uint32_t(double(out_cy) / vals[idx]);
 
+		downscaleCX &= 0xFFFFFFFC;
+		downscaleCY &= 0xFFFFFFFE;
+		outDownscaleCX &= 0xFFFFFFFE;
+		outDownscaleCY &= 0xFFFFFFFE;
+
 		string res = ResString(downscaleCX, downscaleCY);
 		string outRes = ResString(outDownscaleCX, outDownscaleCY);
 		ui->outputResolution->addItem(res.c_str());
