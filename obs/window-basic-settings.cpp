@@ -402,7 +402,8 @@ static const double vals[] =
 
 static const size_t numVals = sizeof(vals)/sizeof(double);
 
-void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
+void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
+		uint32_t out_cx, uint32_t out_cy)
 {
 	QString advRescale;
 	QString advRecRescale;
@@ -420,12 +421,15 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 	for (size_t idx = 0; idx < numVals; idx++) {
 		uint32_t downscaleCX = uint32_t(double(cx) / vals[idx]);
 		uint32_t downscaleCY = uint32_t(double(cy) / vals[idx]);
+		uint32_t outDownscaleCX = uint32_t(double(out_cx) / vals[idx]);
+		uint32_t outDownscaleCY = uint32_t(double(out_cy) / vals[idx]);
 
 		string res = ResString(downscaleCX, downscaleCY);
+		string outRes = ResString(outDownscaleCX, outDownscaleCY);
 		ui->outputResolution->addItem(res.c_str());
-		ui->advOutRescale->addItem(res.c_str());
-		ui->advOutRecRescale->addItem(res.c_str());
-		ui->advOutFFRescale->addItem(res.c_str());
+		ui->advOutRescale->addItem(outRes.c_str());
+		ui->advOutRecRescale->addItem(outRes.c_str());
+		ui->advOutFFRescale->addItem(outRes.c_str());
 	}
 
 	string res = ResString(cx, cy);
@@ -471,6 +475,8 @@ void OBSBasicSettings::LoadResolutionLists()
 {
 	uint32_t cx = config_get_uint(main->Config(), "Video", "BaseCX");
 	uint32_t cy = config_get_uint(main->Config(), "Video", "BaseCY");
+	uint32_t out_cx = config_get_uint(main->Config(), "Video", "OutputCX");
+	uint32_t out_cy = config_get_uint(main->Config(), "Video", "OutputCY");
 	vector<MonitorInfo> monitors;
 
 	ui->baseResolution->clear();
@@ -482,14 +488,11 @@ void OBSBasicSettings::LoadResolutionLists()
 		ui->baseResolution->addItem(res.c_str());
 	}
 
-	ResetDownscales(cx, cy);
+	ResetDownscales(cx, cy, out_cx, out_cy);
 
 	ui->baseResolution->lineEdit()->setText(ResString(cx, cy).c_str());
-
-	cx = config_get_uint(main->Config(), "Video", "OutputCX");
-	cy = config_get_uint(main->Config(), "Video", "OutputCY");
-
-	ui->outputResolution->lineEdit()->setText(ResString(cx, cy).c_str());
+	ui->outputResolution->lineEdit()->setText(
+			ResString(out_cx, out_cy).c_str());
 }
 
 static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
@@ -1332,10 +1335,14 @@ void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get())) {
 		QString baseResolution = text;
-		uint32_t cx, cy;
+		uint32_t cx, cy, out_cx, out_cy;
 
 		ConvertResText(QT_TO_UTF8(baseResolution), cx, cy);
-		ResetDownscales(cx, cy);
+
+		QString outRes = ui->outputResolution->lineEdit()->text();
+		ConvertResText(QT_TO_UTF8(outRes), out_cx, out_cy);
+
+		ResetDownscales(cx, cy, out_cx, out_cy);
 	}
 }
 
