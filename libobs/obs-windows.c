@@ -48,8 +48,23 @@ static const int module_patterns_size =
 
 void add_default_module_paths(void)
 {
+	char bin[512];
+	char data[512];
+	int ret;
+
 	for (int i = 0; i < module_patterns_size; i++)
 		obs_add_module_path(module_bin[i], module_data[i]);
+
+	ret = os_get_config_path(bin, sizeof(bin), "obs-plugins/%module%");
+	if (ret <= 0)
+		return;
+
+	strcpy(data, bin);
+	strcat(data, "/data");
+
+	strcat(bin, "/bin/" BIT_STRING);
+
+	obs_add_module_path(bin, data);
 }
 
 /* on windows, points to [base directory]/data/libobs */
