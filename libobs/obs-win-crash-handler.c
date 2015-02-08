@@ -295,9 +295,6 @@ static inline bool walk_stack(struct exception_handler_data *data,
 			data->process, thread, &trace->frame, &trace->context,
 			NULL, data->sym_function_table_access64,
 			data->sym_get_module_base64, NULL);
-
-	int last_error = GetLastError();
-
 	if (!success)
 		return false;
 

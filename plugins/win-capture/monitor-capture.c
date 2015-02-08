@@ -229,11 +229,8 @@ static obs_properties_t *monitor_capture_properties(void *unused)
 		"monitor", TEXT_MONITOR,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *compatmode = obs_properties_add_bool(props,
-		"compatibility", TEXT_COMPATIBILITY);
-
-	obs_property_t *capture_cursor = obs_properties_add_bool(props,
-		"capture_cursor", TEXT_CAPTURE_CURSOR);
+	obs_properties_add_bool(props, "compatibility", TEXT_COMPATIBILITY);
+	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 
 	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 

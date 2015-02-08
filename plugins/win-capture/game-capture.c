@@ -1146,8 +1146,6 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
-	const char *active_window = obs_data_get_string(settings,
-			SETTING_ACTIVE_WINDOW);
 	const char *cur_val;
 	bool match = false;
 	size_t i = 0;
@@ -1196,7 +1194,6 @@ static BOOL CALLBACK EnumFirstMonitor(HMONITOR monitor, HDC hdc,
 
 static obs_properties_t *game_capture_properties(void *data)
 {
-	struct game_capture *gc = data;
 	HMONITOR monitor;
 	uint32_t cx = 1920;
 	uint32_t cy = 1080;

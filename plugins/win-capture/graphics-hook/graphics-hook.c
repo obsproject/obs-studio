@@ -274,8 +274,8 @@ static inline bool dxgi_hookable(void)
 
 static inline bool attempt_hook(void)
 {
-	static bool ddraw_hooked = false;
-	static bool d3d8_hooked  = false;
+	//static bool ddraw_hooked = false;
+	//static bool d3d8_hooked  = false;
 	static bool d3d9_hooked  = false;
 	static bool dxgi_hooked  = false;
 	static bool gl_hooked    = false;

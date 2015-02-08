@@ -1399,7 +1399,6 @@ static void UpdateVideoFormats(VideoDevice &device, VideoFormat format_,
 static bool UpdateFPS(long long interval, obs_property_t *list)
 {
 	size_t size = obs_property_list_item_count(list);
-	bool fps_found = false;
 	DStr name;
 
 	for (size_t i = 0; i < size; i++) {
@@ -1411,7 +1410,6 @@ static bool UpdateFPS(long long interval, obs_property_t *list)
 			return false;
 
 		dstr_cat(name, obs_property_list_item_name(list, i));
-		fps_found = true;
 		break;
 	}
 

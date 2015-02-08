@@ -494,8 +494,7 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 				device.name.c_str(), device.id.c_str());
 	}
 
-	obs_property_t *prop;
-	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
+	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 			obs_module_text("UseDeviceTiming"));
 
 	return props;

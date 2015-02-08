@@ -588,7 +588,6 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 static void load_debug_privilege(void)
 {
 	const DWORD flags = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY;
-	bool success = false;
 	TOKEN_PRIVILEGES tp;
 	HANDLE token;
 	LUID val;
@@ -602,7 +601,7 @@ static void load_debug_privilege(void)
 		tp.Privileges[0].Luid = val;
 		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-		success = !!AdjustTokenPrivileges(token, false, &tp,
+		AdjustTokenPrivileges(token, false, &tp,
 				sizeof(tp), NULL, NULL);
 	}
 

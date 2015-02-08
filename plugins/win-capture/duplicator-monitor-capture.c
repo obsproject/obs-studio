@@ -271,8 +271,7 @@ static obs_properties_t *duplicator_capture_properties(void *unused)
 		"monitor", TEXT_MONITOR,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *capture_cursor = obs_properties_add_bool(props,
-		"capture_cursor", TEXT_CAPTURE_CURSOR);
+	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 
 	obs_enter_graphics();
 

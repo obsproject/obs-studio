@@ -338,7 +338,6 @@ int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 	HANDLE                    handle;
 	WIN32_FIND_DATA           wfd;
 	int                       ret = -1;
-	os_glob_t                 *out = NULL;
 	wchar_t                   *w_path;
 
 	da_init(files);

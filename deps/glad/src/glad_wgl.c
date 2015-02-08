@@ -583,8 +583,8 @@ static void find_extensionsWGL(void) {
 }
 
 static void find_coreWGL(HDC hdc) {
-	int major = 9;
-	int minor = 9;
+	//int major = 9;
+	//int minor = 9;
 	GLADWGLhdc = hdc;
 }
 

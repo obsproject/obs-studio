@@ -697,7 +697,6 @@ static void gl_capture(HDC hdc)
 {
 	static bool functions_initialized = false;
 	static bool critical_failure = false;
-	static bool reacquireing = false;
 
 	if (critical_failure) {
 		return;

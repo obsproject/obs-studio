@@ -133,7 +133,6 @@ static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii,
 
 static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 {
-	bool success = false;
 	uint8_t *bitmap;
 	uint32_t height;
 	uint32_t width;
