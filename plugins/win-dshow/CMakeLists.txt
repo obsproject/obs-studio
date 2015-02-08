@@ -50,7 +50,9 @@ add_library(win-dshow MODULE
 	${libdshowcapture_HEADERS})
 target_link_libraries(win-dshow
 	libobs
-	strmiids.lib
+	strmiids
+	ksuser
+	wmcodecdspuuid
 	${FFMPEG_LIBRARIES})
 
 install_obs_plugin_with_data(win-dshow data)

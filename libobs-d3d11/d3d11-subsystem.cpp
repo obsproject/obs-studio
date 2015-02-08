@@ -21,6 +21,10 @@
 #include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
+#ifdef __MINGW32__
+#define PRIu32 "u"
+#endif
+
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
 		: HRError(str, hr)
@@ -142,7 +146,11 @@ void gs_device::InitCompiler()
 	int ver = 49;
 
 	while (ver > 30) {
+#ifndef __MINGW32__
 		sprintf_s(d3dcompiler, 40, "D3DCompiler_%02d.dll", ver);
+#else
+		sprintf(d3dcompiler, "D3DCompiler_%02d.dll\0", ver);
+#endif
 
 		HMODULE module = LoadLibraryA(d3dcompiler);
 		if (module) {

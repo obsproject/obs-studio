@@ -1,6 +1,6 @@
 project(obs-ffmpeg)
 
-if(WIN32)
+if(MSVC)
 	set(obs-ffmpeg_PLATFORM_DEPS
 		w32-pthreads)
 endif()

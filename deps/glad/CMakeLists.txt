@@ -35,7 +35,10 @@ target_compile_definitions(glad
 
 if(NOT MSVC)
 	target_compile_options(glad
-		PRIVATE -DPIC -fPIC -fvisibility=hidden)
+		PRIVATE -DPIC -fvisibility=hidden)
+		if(NOT MINGW)
+		  target_compile_options(glad -fPIC)
+		endif()
 endif()
 
 if(NOT WIN32 AND NOT APPLE)

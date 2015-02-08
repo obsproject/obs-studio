@@ -54,7 +54,7 @@ struct d3d10_data {
 	};
 };
 
-struct d3d10_data data = {};
+static struct d3d10_data data = {};
 
 void d3d10_free(void)
 {
@@ -510,7 +510,7 @@ static bool d3d10_shtex_init(HWND window)
 	}
 	if (!capture_init_shtex(&data.shtex_info, window,
 				data.base_cx, data.base_cy, data.cx, data.cy,
-				data.format, false, (uint32_t)data.handle)) {
+				data.format, false, (uintptr_t)data.handle)) {
 		return false;
 	}
 

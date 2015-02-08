@@ -112,7 +112,7 @@ static void log_processor_info(void)
 	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
 			&size);
 	if (status == ERROR_SUCCESS)
-		blog(LOG_INFO, "CPU Speed: %dMHz", speed);
+		blog(LOG_INFO, "CPU Speed: %ldMHz", speed);
 
 	RegCloseKey(key);
 }
@@ -178,7 +178,7 @@ static void log_available_memory(void)
 	const char *note = " (NOTE: 4 gigs max is normal for 32bit programs)";
 #endif
 
-	blog(LOG_INFO, "Physical Memory: %ldMB Total, %ldMB Free%s",
+	blog(LOG_INFO, "Physical Memory: %IuMB Total, %IuMB Free%s",
 			ms.dwTotalPhys / 1048576,
 			ms.dwAvailPhys / 1048576,
 			note);
@@ -193,7 +193,7 @@ static void log_windows_version(void)
 	GetVersionExW(&osvi);
 
 	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
-	blog(LOG_INFO, "Windows Version: %u.%u Build %u %s",
+	blog(LOG_INFO, "Windows Version: %ld.%ld Build %ld %s",
 			osvi.dwMajorVersion,
 			osvi.dwMinorVersion,
 			osvi.dwBuildNumber,

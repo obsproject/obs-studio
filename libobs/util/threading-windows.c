@@ -20,6 +20,21 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#ifdef __MINGW32__
+#include <excpt.h>
+#ifndef TRYLEVEL_NONE
+#ifndef __MINGW64__
+#define NO_SEH_MINGW
+#endif
+#ifndef __try
+#define __try
+#endif
+#ifndef __except
+#define __except(x) if (0)
+#endif
+#endif
+#endif
+
 struct os_event_data {
 	HANDLE handle;
 };
@@ -183,9 +198,22 @@ void os_set_thread_name(const char *name)
 	info.thread_id = GetCurrentThreadId();
 	info.flags = 0;
 
-	__try {
+// Disabled exceptions on mingw-w64 as it is broken
+#ifndef __MINGW32__
+#ifdef NO_SEH_MINGW
+	__try1(EXCEPTION_EXECUTE_HANDLER)
+#else
+	__try
+#endif
+	{
 		RaiseException(VC_EXCEPTION, 0, THREADNAME_INFO_SIZE,
 				(ULONG_PTR*)&info);
-	} __except(EXCEPTION_EXECUTE_HANDLER) {
 	}
+#ifdef NO_SEH_MINGW
+	__except1
+#else
+	__except(EXCEPTION_EXECUTE_HANDLER)
+#endif
+	{}
+#endif
 }
