@@ -1,7 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
 /* conversion from data/function pointer */
 #pragma warning(disable: 4152)
+#endif
 
 #include "../graphics-hook-info.h"
 
