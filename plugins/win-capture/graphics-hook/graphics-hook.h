@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-#ifndef inline
+#if defined(_MSC_VER) && !defined(inline)
 #define inline __inline
 #endif
 #endif
