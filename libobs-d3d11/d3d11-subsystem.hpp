@@ -84,7 +84,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 
 static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 {
-	switch (format) {
+	switch ((unsigned long)format) {
 	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
