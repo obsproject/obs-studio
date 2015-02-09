@@ -27,13 +27,13 @@ class WASAPISource {
 	string                      device_id;
 	string                      device_name;
 	bool                        isInputDevice;
-	bool                        useDeviceTiming;
-	bool                        isDefaultDevice;
+	bool                        useDeviceTiming = false;
+	bool                        isDefaultDevice = false;
 
-	bool                        reconnecting;
+	bool                        reconnecting = false;
 	WinHandle                   reconnectThread;
 
-	bool                        active;
+	bool                        active = false;
 	WinHandle                   captureThread;
 
 	WinHandle                   stopSignal;
@@ -72,11 +72,7 @@ public:
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 		bool input)
-	: reconnecting    (false),
-	  active          (false),
-	  reconnectThread (nullptr),
-	  captureThread   (nullptr),
-	  source          (source_),
+	: source          (source_),
 	  isInputDevice   (input)
 {
 	UpdateSettings(settings);
