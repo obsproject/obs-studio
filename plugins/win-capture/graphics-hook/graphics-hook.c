@@ -591,7 +591,7 @@ bool capture_init_shtex(struct shtex_data **data, HWND window,
 	*data = shmem_info;
 	(*data)->tex_handle = (uint32_t)handle;
 
-	global_hook_info->window = (uint32_t)window;
+	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_TEXTURE;
 	global_hook_info->format = format;
 	global_hook_info->flip = flip;
@@ -781,7 +781,7 @@ bool capture_init_shmem(struct shmem_data **data, HWND window,
 	(*data)->tex1_offset = (uint32_t)align_pos;
 	(*data)->tex2_offset = (*data)->tex1_offset + aligned_tex;
 
-	global_hook_info->window = (uint32_t)window;
+	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_MEMORY;
 	global_hook_info->format = format;
 	global_hook_info->flip = flip;

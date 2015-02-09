@@ -1035,7 +1035,7 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 	    !gc->global_hook_info->base_cy)
 		return;
 
-	ClientToScreen((HWND)gc->global_hook_info->window, &p);
+	ClientToScreen((HWND)(uintptr_t)gc->global_hook_info->window, &p);
 
 	float x_scale = (float)gc->global_hook_info->cx /
 		(float)gc->global_hook_info->base_cx;

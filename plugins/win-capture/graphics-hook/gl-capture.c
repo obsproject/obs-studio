@@ -430,7 +430,7 @@ static bool gl_shtex_init(HWND window)
 	}
 	if (!capture_init_shtex(&data.shtex_info, window,
 				data.base_cx, data.base_cy, data.cx, data.cy,
-				data.format, true, (uint32_t)data.handle)) {
+				data.format, true, (uintptr_t)data.handle)) {
 		return false;
 	}
 
