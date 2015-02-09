@@ -59,6 +59,7 @@ static inline uint32_t GetWinVer()
 static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 {
 	switch (format) {
+	case GS_UNKNOWN:     return DXGI_FORMAT_UNKNOWN;
 	case GS_A8:          return DXGI_FORMAT_A8_UNORM;
 	case GS_R8:          return DXGI_FORMAT_R8_UNORM;
 	case GS_RGBA:        return DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -109,6 +110,7 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 static inline DXGI_FORMAT ConvertGSZStencilFormat(gs_zstencil_format format)
 {
 	switch (format) {
+	case GS_ZS_NONE:     return DXGI_FORMAT_UNKNOWN;
 	case GS_Z16:         return DXGI_FORMAT_D16_UNORM;
 	case GS_Z24_S8:      return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	case GS_Z32F:        return DXGI_FORMAT_D32_FLOAT;
