@@ -1178,6 +1178,7 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 		return true;
 	}
 
+	UNUSED_PARAMETER(ppts);
 	return false;
 }
 
@@ -1196,6 +1197,9 @@ static BOOL CALLBACK EnumFirstMonitor(HMONITOR monitor, HDC hdc,
 		LPRECT rc, LPARAM data)
 {
 	*(HMONITOR*)data = monitor;
+
+	UNUSED_PARAMETER(hdc);
+	UNUSED_PARAMETER(rc);
 	return false;
 }
 
