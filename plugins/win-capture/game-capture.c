@@ -943,6 +943,14 @@ static bool start_capture(struct game_capture *gc)
 	return true;
 }
 
+static inline bool capture_valid(struct game_capture *gc)
+{
+	if (!gc->dwm_capture && !IsWindow(gc->window))
+	       return false;
+	
+	return !object_signalled(gc->target_process);
+}
+
 static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
@@ -992,8 +1000,7 @@ static void game_capture_tick(void *data, float seconds)
 			}
 		}
 	} else {
-		if (!IsWindow(gc->window) && !gc->dwm_capture ||
-		    object_signalled(gc->target_process)) {
+		if (!capture_valid(gc)) {
 			info("capture window no longer exists, "
 			     "terminating capture");
 			stop_capture(gc);
