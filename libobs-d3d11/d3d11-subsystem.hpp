@@ -210,7 +210,7 @@ struct gs_vertex_buffer {
 	ComPtr<ID3D11Buffer>         tangentBuffer;
 	vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
-	gs_device_t       *device;
+	gs_device_t    *device;
 	bool           dynamic;
 	VBDataPtr      vbd;
 	size_t         numVerts;
@@ -352,18 +352,18 @@ struct gs_sampler_state {
 };
 
 struct gs_shader_param {
-	string            name;
-	gs_shader_param_type type;
+	string                         name;
+	gs_shader_param_type           type;
 
-	uint32_t          textureID;
+	uint32_t                       textureID;
 
-	int               arrayCount;
+	int                            arrayCount;
 
-	size_t            pos;
+	size_t                         pos;
 
-	vector<uint8_t>   curValue;
-	vector<uint8_t>   defaultValue;
-	bool              changed;
+	vector<uint8_t>                curValue;
+	vector<uint8_t>                defaultValue;
+	bool                           changed;
 
 	gs_shader_param(shader_var &var, uint32_t &texCounter);
 };
@@ -383,8 +383,8 @@ struct gs_shader {
 	gs_device_t             *device;
 	gs_shader_type          type;
 	vector<gs_shader_param> params;
-	ComPtr<ID3D11Buffer> constants;
-	size_t               constantSize;
+	ComPtr<ID3D11Buffer>    constants;
+	size_t                  constantSize;
 
 	inline void UpdateParam(vector<uint8_t> &constData,
 			gs_shader_param &param, bool &upload);
