@@ -149,10 +149,10 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 	  width           (width),
 	  height          (height),
 	  dxgiFormat      (ConvertGSTextureFormat(format)),
-	  isGDICompatible (gdiCompatible),
-	  isShared        (shared),
-	  isDynamic       ((flags & GS_DYNAMIC) != 0),
 	  isRenderTarget  ((flags & GS_RENDER_TARGET) != 0),
+	  isGDICompatible (gdiCompatible),
+	  isDynamic       ((flags & GS_DYNAMIC) != 0),
+	  isShared        (shared),
 	  genMipmaps      ((flags & GS_BUILD_MIPMAPS) != 0)
 {
 	InitTexture(data);

@@ -96,9 +96,9 @@ inline void gs_vertex_buffer::InitBuffer(const size_t elementSize,
 gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 		uint32_t flags)
 	: device   (device),
+	  dynamic  ((flags & GS_DYNAMIC) != 0),
 	  vbd      (data),
-	  numVerts (data->num),
-	  dynamic  ((flags & GS_DYNAMIC) != 0)
+	  numVerts (data->num)
 {
 	if (!data->num)
 		throw "Cannot initialize vertex buffer with 0 vertices";

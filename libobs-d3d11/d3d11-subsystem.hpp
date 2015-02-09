@@ -264,8 +264,8 @@ struct gs_texture {
 
 	inline gs_texture(gs_device *device, gs_texture_type type,
 			uint32_t levels, gs_color_format format)
-		: device (device),
-		  type   (type),
+		: type   (type),
+		  device (device),
 		  levels (levels),
 		  format (format)
 	{
