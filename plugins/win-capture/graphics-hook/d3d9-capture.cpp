@@ -425,7 +425,7 @@ static bool d3d9_init_format_backbuffer(uint32_t &cx, uint32_t &cy,
 	return true;
 }
 
-static bool d3d9_init_format_swapchain(uint32_t cx, uint32_t cy, HWND window)
+static bool d3d9_init_format_swapchain(uint32_t &cx, uint32_t &cy, HWND &window)
 {
 	D3DPRESENT_PARAMETERS pp;
 
