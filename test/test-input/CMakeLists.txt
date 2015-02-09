@@ -2,7 +2,7 @@ project(test-input)
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
-if(WIN32)
+if(MSVC)
 	set(test-input_PLATFORM_DEPS
 		w32-pthreads)
 endif()

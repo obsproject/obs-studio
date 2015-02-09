@@ -198,7 +198,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 
 	obs_shutdown();
 
-	blog(LOG_INFO, "Number of memory leaks: %llu", bnum_allocs());
+	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	DestroyWindow(hwnd);
 
 	UNUSED_PARAMETER(prevInstance);

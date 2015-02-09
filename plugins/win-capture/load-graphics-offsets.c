@@ -66,7 +66,7 @@ bool load_graphics_offsets(bool is32bit)
 	}
 
 	for (;;) {
-		size_t len = os_process_pipe_read(pp, data, 128);
+		size_t len = os_process_pipe_read(pp, (uint8_t*)data, 128);
 		if (!len)
 			break;
 

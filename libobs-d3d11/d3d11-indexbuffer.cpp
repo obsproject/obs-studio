@@ -40,10 +40,10 @@ void gs_index_buffer::InitBuffer()
 gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type,
 		void *indices, size_t num, uint32_t flags)
 	: device  (device),
+	  dynamic ((flags & GS_DYNAMIC) != 0),
 	  type    (type),
-	  indices (indices),
 	  num     (num),
-	  dynamic ((flags & GS_DYNAMIC) != 0)
+	  indices (indices)
 {
 	switch (type) {
 	case GS_UNSIGNED_SHORT: indexSize = 2; break;

@@ -48,7 +48,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	label->setMaximumWidth(130);
 	label->setAlignment(Qt::AlignHCenter);
 	hlayout->addWidget(label);
-	label = new QLabel(QTStr("Basic.AdvAudio.MediaChannel"));
+	label = new QLabel(QTStr("Basic.AdvAudio.AudioTracks"));
 	label->setMinimumWidth(160);
 	label->setMaximumWidth(160);
 	label->setAlignment(Qt::AlignHCenter);

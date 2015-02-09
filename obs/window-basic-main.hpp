@@ -47,6 +47,8 @@ class QNetworkReply;
 #define AUX_AUDIO_2     Str("AuxAudioDevice2")
 #define AUX_AUDIO_3     Str("AuxAudioDevice3")
 
+struct BasicOutputHandler;
+
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
@@ -69,11 +71,8 @@ private:
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
-	obs_output_t  *fileOutput = nullptr;
-	obs_output_t  *streamOutput = nullptr;
 	obs_service_t *service = nullptr;
-	obs_encoder_t *aac = nullptr;
-	obs_encoder_t *x264 = nullptr;
+	std::unique_ptr<BasicOutputHandler> outputHandler;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
@@ -86,8 +85,6 @@ private:
 	int           resizeTimer = 0;
 
 	ConfigFile    basicConfig;
-
-	int           activeRefs = 0;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -102,11 +99,6 @@ private:
 	void          Save(const char *file);
 	void          Load(const char *file);
 
-	void          SaveService();
-	bool          LoadService();
-
-	bool          InitOutputs();
-	bool          InitEncoders();
 	bool          InitService();
 
 	bool          InitBasicConfigDefaults();
@@ -197,8 +189,12 @@ public:
 	obs_service_t *GetService();
 	void          SetService(obs_service_t *service);
 
+	bool StreamingActive();
+
 	int  ResetVideo();
 	bool ResetAudio();
+
+	void ResetOutputs();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceName,
 			const char *deviceDesc, int channel);
@@ -220,6 +216,9 @@ public:
 		return os_cpu_usage_info_query(cpuUsageInfo);
 	}
 
+	void SaveService();
+	bool LoadService();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -234,6 +233,7 @@ private slots:
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
 	void on_actionAdvAudioProperties_triggered();
+	void on_advAudioProps_clicked();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();

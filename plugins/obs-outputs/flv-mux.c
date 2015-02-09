@@ -56,11 +56,11 @@ void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 	fwrite(buf, 1, enc - buf, file);
 }
 
-static void build_flv_meta_data(obs_output_t *context,
-		uint8_t **output, size_t *size)
+static bool build_flv_meta_data(obs_output_t *context,
+		uint8_t **output, size_t *size, size_t a_idx)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, a_idx);
 	video_t       *video    = obs_encoder_video(vencoder);
 	audio_t       *audio    = obs_encoder_audio(aencoder);
 	char buf[4096];
@@ -68,22 +68,29 @@ static void build_flv_meta_data(obs_output_t *context,
 	char *end = enc+sizeof(buf);
 	struct dstr encoder_name = {0};
 
+	if (a_idx > 0 && !aencoder)
+		return false;
+
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
-	enc    = AMF_EncodeInt32(enc, end, 14);
+	enc    = AMF_EncodeInt32(enc, end, a_idx == 0 ? 14 : 9);
 
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	enc_num_val(&enc, end, "width",
-			(double)obs_encoder_get_width(vencoder));
-	enc_num_val(&enc, end, "height",
-			(double)obs_encoder_get_height(vencoder));
+	if (a_idx == 0) {
+		enc_num_val(&enc, end, "width",
+				(double)obs_encoder_get_width(vencoder));
+		enc_num_val(&enc, end, "height",
+				(double)obs_encoder_get_height(vencoder));
 
-	enc_str_val(&enc, end, "videocodecid", "avc1");
-	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
-	enc_num_val(&enc, end, "framerate", video_output_get_frame_rate(video));
+		enc_str_val(&enc, end, "videocodecid", "avc1");
+		enc_num_val(&enc, end, "videodatarate",
+				encoder_bitrate(vencoder));
+		enc_num_val(&enc, end, "framerate",
+				video_output_get_frame_rate(video));
+	}
 
 	enc_str_val(&enc, end, "audiocodecid", "mp4a");
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
@@ -119,20 +126,25 @@ static void build_flv_meta_data(obs_output_t *context,
 
 	*size   = enc-buf;
 	*output = bmemdup(buf, *size);
+	return true;
 }
 
-void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
-		bool write_header)
+bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
+		bool write_header, size_t audio_idx)
 {
 	struct array_output_data data;
 	struct serializer s;
-	uint8_t *meta_data;
+	uint8_t *meta_data = NULL;
 	size_t  meta_data_size;
 	uint32_t start_pos;
 
 	array_output_serializer_init(&s, &data);
 
-	build_flv_meta_data(context, &meta_data, &meta_data_size);
+	if (!build_flv_meta_data(context, &meta_data, &meta_data_size,
+				audio_idx)) {
+		bfree(meta_data);
+		return false;
+	}
 
 	if (write_header) {
 		s_write(&s, "FLV", 3);
@@ -158,6 +170,7 @@ void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 	*size   = data.bytes.num;
 
 	bfree(meta_data);
+	return true;
 }
 
 #ifdef DEBUG_TIMESTAMPS

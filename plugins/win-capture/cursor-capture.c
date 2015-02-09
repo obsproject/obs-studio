@@ -133,7 +133,6 @@ static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii,
 
 static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 {
-	bool success = false;
 	uint8_t *bitmap;
 	uint32_t height;
 	uint32_t width;
@@ -152,7 +151,7 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height);
 	if (bitmap) {
 		data->texture = gs_texture_create(width, height, GS_BGRA,
-				1, &bitmap, 0);
+				1, (const uint8_t**)&bitmap, 0);
 		bfree(bitmap);
 
 		data->x_hotspot = ii.xHotspot;

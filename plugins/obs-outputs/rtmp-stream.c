@@ -191,7 +191,7 @@ static inline bool get_next_packet(struct rtmp_stream *stream,
 }
 
 static int send_packet(struct rtmp_stream *stream,
-		struct encoder_packet *packet, bool is_header)
+		struct encoder_packet *packet, bool is_header, size_t idx)
 {
 	uint8_t *data;
 	size_t  size;
@@ -201,7 +201,7 @@ static int send_packet(struct rtmp_stream *stream,
 #ifdef TEST_FRAMEDROPS
 	os_sleep_ms(rand() % 40);
 #endif
-	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size);
+	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size, (int)idx);
 	bfree(data);
 
 	obs_free_encoder_packet(packet);
@@ -220,7 +220,7 @@ static bool send_remaining_packets(struct rtmp_stream *stream)
 		send_headers(stream);
 
 	while (get_next_packet(stream, &packet))
-		if (send_packet(stream, &packet, false) < 0)
+		if (send_packet(stream, &packet, false, packet.track_idx) < 0)
 			return false;
 
 	return true;
@@ -242,7 +242,7 @@ static void *send_thread(void *data)
 		if (!stream->sent_headers)
 			send_headers(stream);
 
-		if (send_packet(stream, &packet, false) < 0) {
+		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
 			disconnected = true;
 			break;
 		}
@@ -267,20 +267,26 @@ static void *send_thread(void *data)
 	return NULL;
 }
 
-static void send_meta_data(struct rtmp_stream *stream)
+static bool send_meta_data(struct rtmp_stream *stream, size_t idx)
 {
 	uint8_t *meta_data;
 	size_t  meta_data_size;
+	bool success = flv_meta_data(stream->output, &meta_data,
+			&meta_data_size, false, idx);
 
-	flv_meta_data(stream->output, &meta_data, &meta_data_size, false);
-	RTMP_Write(&stream->rtmp, (char*)meta_data, (int)meta_data_size);
-	bfree(meta_data);
+	if (success) {
+		RTMP_Write(&stream->rtmp, (char*)meta_data,
+				(int)meta_data_size, (int)idx);
+		bfree(meta_data);
+	}
+
+	return success;
 }
 
-static void send_audio_header(struct rtmp_stream *stream)
+static bool send_audio_header(struct rtmp_stream *stream, size_t idx)
 {
 	obs_output_t  *context  = stream->output;
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context);
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, idx);
 	uint8_t       *header;
 
 	struct encoder_packet packet   = {
@@ -288,9 +294,13 @@ static void send_audio_header(struct rtmp_stream *stream)
 		.timebase_den = 1
 	};
 
+	if (!aencoder)
+		return false;
+
 	obs_encoder_get_extra_data(aencoder, &header, &packet.size);
 	packet.data = bmemdup(header, packet.size);
-	send_packet(stream, &packet, true);
+	send_packet(stream, &packet, true, idx);
+	return true;
 }
 
 static void send_video_header(struct rtmp_stream *stream)
@@ -308,14 +318,18 @@ static void send_video_header(struct rtmp_stream *stream)
 
 	obs_encoder_get_extra_data(vencoder, &header, &size);
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
-	send_packet(stream, &packet, true);
+	send_packet(stream, &packet, true, 0);
 }
 
 static inline void send_headers(struct rtmp_stream *stream)
 {
 	stream->sent_headers = true;
-	send_audio_header(stream);
+	size_t i = 0;
+
+	send_audio_header(stream, i++);
 	send_video_header(stream);
+
+	while (send_audio_header(stream, i++));
 }
 
 static inline bool reset_semaphore(struct rtmp_stream *stream)
@@ -348,6 +362,7 @@ static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
 static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
+	size_t idx = 0;
 
 #if defined(_WIN32)
 	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
@@ -363,7 +378,7 @@ static int init_send(struct rtmp_stream *stream)
 	}
 
 	stream->active = true;
-	send_meta_data(stream);
+	while (send_meta_data(stream, idx++));
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
@@ -378,8 +393,7 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	if (!RTMP_SetupURL2(&stream->rtmp, stream->path.array,
-				stream->key.array))
+	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
 
 	RTMP_EnableWrite(&stream->rtmp);
@@ -389,6 +403,20 @@ static int try_connect(struct rtmp_stream *stream)
 	stream->rtmp.Link.swfUrl = stream->rtmp.Link.tcUrl;
 	set_rtmp_str(&stream->rtmp.Link.flashVer,
 			"FMLE/3.0 (compatible; FMSc/1.0)");
+
+	RTMP_AddStream(&stream->rtmp, stream->key.array);
+
+	for (size_t idx = 1;; idx++) {
+		obs_encoder_t *encoder = obs_output_get_audio_encoder(
+				stream->output, idx);
+		const char *encoder_name;
+
+		if (!encoder)
+			break;
+
+		encoder_name = obs_encoder_get_name(encoder);
+		RTMP_AddStream(&stream->rtmp, encoder_name);
+	}
 
 	stream->rtmp.m_outChunkSize       = 4096;
 	stream->rtmp.m_bSendChunkSizeInfo = true;
@@ -600,7 +628,8 @@ struct obs_output_info rtmp_output_info = {
 	.id                 = "rtmp_output",
 	.flags              = OBS_OUTPUT_AV |
 	                      OBS_OUTPUT_ENCODED |
-	                      OBS_OUTPUT_SERVICE,
+	                      OBS_OUTPUT_SERVICE |
+	                      OBS_OUTPUT_MULTI_TRACK,
 	.get_name           = rtmp_stream_getname,
 	.create             = rtmp_stream_create,
 	.destroy            = rtmp_stream_destroy,
@@ -611,4 +640,4 @@ struct obs_output_info rtmp_output_info = {
 	.get_properties     = rtmp_stream_properties,
 	.get_total_bytes    = rtmp_stream_total_bytes_sent,
 	.get_dropped_frames = rtmp_stream_dropped_frames
-};         
+};

@@ -59,6 +59,7 @@ static inline uint32_t GetWinVer()
 static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 {
 	switch (format) {
+	case GS_UNKNOWN:     return DXGI_FORMAT_UNKNOWN;
 	case GS_A8:          return DXGI_FORMAT_A8_UNORM;
 	case GS_R8:          return DXGI_FORMAT_R8_UNORM;
 	case GS_RGBA:        return DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -83,7 +84,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 
 static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 {
-	switch (format) {
+	switch ((unsigned long)format) {
 	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
@@ -109,6 +110,7 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 static inline DXGI_FORMAT ConvertGSZStencilFormat(gs_zstencil_format format)
 {
 	switch (format) {
+	case GS_ZS_NONE:     return DXGI_FORMAT_UNKNOWN;
 	case GS_Z16:         return DXGI_FORMAT_D16_UNORM;
 	case GS_Z24_S8:      return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	case GS_Z32F:        return DXGI_FORMAT_D32_FLOAT;
@@ -208,7 +210,7 @@ struct gs_vertex_buffer {
 	ComPtr<ID3D11Buffer>         tangentBuffer;
 	vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
-	gs_device_t       *device;
+	gs_device_t    *device;
 	bool           dynamic;
 	VBDataPtr      vbd;
 	size_t         numVerts;
@@ -264,8 +266,8 @@ struct gs_texture {
 
 	inline gs_texture(gs_device *device, gs_texture_type type,
 			uint32_t levels, gs_color_format format)
-		: device (device),
-		  type   (type),
+		: type   (type),
+		  device (device),
 		  levels (levels),
 		  format (format)
 	{
@@ -279,14 +281,14 @@ struct gs_texture_2d : gs_texture {
 	ComPtr<ID3D11RenderTargetView>   renderTarget[6];
 	ComPtr<IDXGISurface1>            gdiSurface;
 
-	uint32_t        width, height;
-	DXGI_FORMAT     dxgiFormat;
-	bool            isRenderTarget;
-	bool            isGDICompatible;
-	bool            isDynamic;
-	bool            isShared;
-	bool            genMipmaps;
-	uint32_t        sharedHandle;
+	uint32_t        width = 0, height = 0;
+	DXGI_FORMAT     dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	bool            isRenderTarget = false;
+	bool            isGDICompatible = false;
+	bool            isDynamic = false;
+	bool            isShared = false;
+	bool            genMipmaps = false;
+	uint32_t        sharedHandle = 0;
 
 	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const uint8_t **data);
 	void InitTexture(const uint8_t **data);
@@ -294,16 +296,7 @@ struct gs_texture_2d : gs_texture {
 	void InitRenderTargets();
 
 	inline gs_texture_2d()
-		: gs_texture      (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN),
-		  width           (0),
-		  height          (0),
-		  dxgiFormat      (DXGI_FORMAT_UNKNOWN),
-		  isRenderTarget  (false),
-		  isGDICompatible (false),
-		  isDynamic       (false),
-		  isShared        (false),
-		  genMipmaps      (false),
-		  sharedHandle    (NULL)
+		: gs_texture (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN)
 	{
 	}
 
@@ -359,18 +352,18 @@ struct gs_sampler_state {
 };
 
 struct gs_shader_param {
-	string            name;
-	gs_shader_param_type type;
+	string                         name;
+	gs_shader_param_type           type;
 
-	uint32_t          textureID;
+	uint32_t                       textureID;
 
-	int               arrayCount;
+	int                            arrayCount;
 
-	size_t            pos;
+	size_t                         pos;
 
-	vector<uint8_t>   curValue;
-	vector<uint8_t>   defaultValue;
-	bool              changed;
+	vector<uint8_t>                curValue;
+	vector<uint8_t>                defaultValue;
+	bool                           changed;
 
 	gs_shader_param(shader_var &var, uint32_t &texCounter);
 };
@@ -390,8 +383,8 @@ struct gs_shader {
 	gs_device_t             *device;
 	gs_shader_type          type;
 	vector<gs_shader_param> params;
-	ComPtr<ID3D11Buffer> constants;
-	size_t               constantSize;
+	ComPtr<ID3D11Buffer>    constants;
+	size_t                  constantSize;
 
 	inline void UpdateParam(vector<uint8_t> &constData,
 			gs_shader_param &param, bool &upload);
@@ -619,32 +612,32 @@ struct gs_device {
 	ComPtr<ID3D11DeviceContext> context;
 	gs_swap_chain               defaultSwap;
 
-	gs_texture_2d               *curRenderTarget;
-	gs_zstencil_buffer          *curZStencilBuffer;
-	int                         curRenderSide;
+	gs_texture_2d               *curRenderTarget = nullptr;
+	gs_zstencil_buffer          *curZStencilBuffer = nullptr;
+	int                         curRenderSide = 0;
 	gs_texture                  *curTextures[GS_MAX_TEXTURES];
 	gs_sampler_state            *curSamplers[GS_MAX_TEXTURES];
-	gs_vertex_buffer            *curVertexBuffer;
-	gs_index_buffer             *curIndexBuffer;
-	gs_vertex_shader            *curVertexShader;
-	gs_pixel_shader             *curPixelShader;
+	gs_vertex_buffer            *curVertexBuffer = nullptr;
+	gs_index_buffer             *curIndexBuffer = nullptr;
+	gs_vertex_shader            *curVertexShader = nullptr;
+	gs_pixel_shader             *curPixelShader = nullptr;
 	gs_swap_chain               *curSwapChain;
 
-	bool                        zstencilStateChanged;
-	bool                        rasterStateChanged;
-	bool                        blendStateChanged;
+	bool                        zstencilStateChanged = true;
+	bool                        rasterStateChanged = true;
+	bool                        blendStateChanged = true;
 	ZStencilState               zstencilState;
 	RasterState                 rasterState;
 	BlendState                  blendState;
 	vector<SavedZStencilState>  zstencilStates;
 	vector<SavedRasterState>    rasterStates;
 	vector<SavedBlendState>     blendStates;
-	ID3D11DepthStencilState     *curDepthStencilState;
-	ID3D11RasterizerState       *curRasterState;
-	ID3D11BlendState            *curBlendState;
+	ID3D11DepthStencilState     *curDepthStencilState = nullptr;
+	ID3D11RasterizerState       *curRasterState = nullptr;
+	ID3D11BlendState            *curBlendState = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY    curToplogy;
 
-	pD3DCompile                 d3dCompile;
+	pD3DCompile                 d3dCompile = nullptr;
 
 	gs_rect                     viewport;
 

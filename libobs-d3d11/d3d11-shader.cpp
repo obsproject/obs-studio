@@ -135,7 +135,13 @@ void gs_shader::BuildConstantBuffer()
 		case GS_SHADER_PARAM_VEC2:      size = sizeof(vec2);    break;
 		case GS_SHADER_PARAM_VEC3:      size = sizeof(float)*3; break;
 		case GS_SHADER_PARAM_VEC4:      size = sizeof(vec4);    break;
-		case GS_SHADER_PARAM_MATRIX4X4: size = sizeof(float)*4*4;
+		case GS_SHADER_PARAM_MATRIX4X4:
+			size = sizeof(float)*4*4;
+			break;
+		case GS_SHADER_PARAM_TEXTURE:
+		case GS_SHADER_PARAM_STRING:
+		case GS_SHADER_PARAM_UNKNOWN:
+			continue;
 		}
 
 		/* checks to see if this constant needs to start at a new

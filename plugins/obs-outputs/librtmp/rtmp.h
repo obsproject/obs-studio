@@ -37,9 +37,12 @@
 #include <stdint.h>
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4996) //depricated warnings
 #pragma warning(disable:4244) //64bit defensive mechanism, fixed the ones that mattered
-#include <winsock.h>
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -154,13 +157,22 @@ extern "C"
 
 #define RTMPPacket_IsReady(a)	((a)->m_nBytesRead == (a)->m_nBodySize)
 
+    typedef struct RTMP_Stream {
+        int id;
+        AVal playpath;
+    } RTMP_Stream;
+
     typedef struct RTMP_LNK
     {
+#define RTMP_MAX_STREAMS 8
+        RTMP_Stream streams[RTMP_MAX_STREAMS];
+        int nStreams;
+        int curStreamIdx;
+        int playingStreams;
+
         AVal hostname;
         AVal sockshost;
 
-        AVal playpath0;	/* parsed from URL */
-        AVal playpath;	/* passed in explicitly */
         AVal tcUrl;
         AVal swfUrl;
         AVal pageUrl;
@@ -253,7 +265,7 @@ extern "C"
 
     typedef struct RTMP_BINDINFO
     {
-        struct sockaddr_in addr;
+        struct sockaddr_storage addr;
         int addrLen;
     } RTMP_BINDINFO;
 
@@ -317,9 +329,6 @@ extern "C"
     } RTMP;
 
     int RTMP_ParseURL(const char *url, int *protocol, AVal *host,
-                      unsigned int *port, AVal *playpath, AVal *app);
-
-    int RTMP_ParseURL2(const char *url, int *protocol, AVal *host,
                       unsigned int *port, AVal *app);
 
     void RTMP_ParsePlaypath(AVal *in, AVal *out);
@@ -328,7 +337,7 @@ extern "C"
 
     int RTMP_SetOpt(RTMP *r, const AVal *opt, AVal *arg);
     int RTMP_SetupURL(RTMP *r, char *url);
-    int RTMP_SetupURL2(RTMP *r, char *url, char *playpath);
+    int RTMP_AddStream(RTMP *r, const char *playpath);
     void RTMP_SetupStream(RTMP *r, int protocol,
                           AVal *hostname,
                           unsigned int port,
@@ -364,8 +373,8 @@ extern "C"
     int RTMP_ToggleStream(RTMP *r);
 
     int RTMP_ConnectStream(RTMP *r, int seekTime);
-    int RTMP_ReconnectStream(RTMP *r, int seekTime);
-    void RTMP_DeleteStream(RTMP *r);
+    int RTMP_ReconnectStream(RTMP *r, int seekTime, int streamIdx);
+    void RTMP_DeleteStream(RTMP *r, int streamIdx);
     int RTMP_GetNextMediaPacket(RTMP *r, RTMPPacket *packet);
     int RTMP_ClientPacket(RTMP *r, RTMPPacket *packet);
 
@@ -403,7 +412,7 @@ extern "C"
     int RTMP_SendClientBW(RTMP *r);
     void RTMP_DropRequest(RTMP *r, int i, int freeit);
     int RTMP_Read(RTMP *r, char *buf, int size);
-    int RTMP_Write(RTMP *r, const char *buf, int size);
+    int RTMP_Write(RTMP *r, const char *buf, int size, int streamIdx);
 
     /* hashswf.c */
     int RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,

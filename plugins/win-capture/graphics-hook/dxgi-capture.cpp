@@ -217,9 +217,9 @@ bool hook_dxgi(void)
 	resize_addr = get_offset_addr(dxgi_module,
 			global_hook_info->offsets.dxgi.resize);
 
-	hook_init(&present, present_addr, hook_present,
+	hook_init(&present, present_addr, (void*)hook_present,
 			"IDXGISwapChain::Present");
-	hook_init(&resize_buffers, resize_addr, hook_resize_buffers,
+	hook_init(&resize_buffers, resize_addr, (void*)hook_resize_buffers,
 			"IDXGISwapChain::ResizeBuffers");
 
 	rehook(&resize_buffers);

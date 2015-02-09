@@ -106,7 +106,7 @@ static inline HANDLE get_hook_info(DWORD id)
 {
 	HANDLE handle;
 	char new_name[64];
-	sprintf(new_name, "%s%d", SHMEM_HOOK_INFO, id);
+	sprintf(new_name, "%s%lu", SHMEM_HOOK_INFO, id);
 
 	handle = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL,
 			PAGE_READWRITE, 0, sizeof(struct hook_info), new_name);

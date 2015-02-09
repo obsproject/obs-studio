@@ -36,6 +36,7 @@
 #include "window-namedialog.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-main-outputs.hpp"
 #include "window-basic-properties.hpp"
 #include "window-log-reply.hpp"
 #include "window-remux.hpp"
@@ -294,36 +295,6 @@ static inline bool HasAudioDevices(const char *source_id)
 	return count != 0;
 }
 
-static void OBSStartStreaming(void *data, calldata_t *params)
-{
-	UNUSED_PARAMETER(params);
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"StreamingStart");
-}
-
-static void OBSStopStreaming(void *data, calldata_t *params)
-{
-	int code = (int)calldata_int(params, "code");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"StreamingStop", Q_ARG(int, code));
-}
-
-static void OBSStartRecording(void *data, calldata_t *params)
-{
-	UNUSED_PARAMETER(params);
-
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"RecordingStart");
-}
-
-static void OBSStopRecording(void *data, calldata_t *params)
-{
-	UNUSED_PARAMETER(params);
-
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"RecordingStop");
-}
-
 #define SERVICE_PATH "obs-studio/basic/service.json"
 
 void OBSBasic::SaveService()
@@ -340,7 +311,7 @@ void OBSBasic::SaveService()
 	obs_data_t *data     = obs_data_create();
 	obs_data_t *settings = obs_service_get_settings(service);
 
-	obs_data_set_string(data, "type", obs_service_gettype(service));
+	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
 	const char *json = obs_data_get_json(data);
@@ -354,6 +325,11 @@ void OBSBasic::SaveService()
 bool OBSBasic::LoadService()
 {
 	const char *type;
+
+	if (service) {
+		obs_service_destroy(service);
+		service = nullptr;
+	}
 
 	char serviceJsonPath[512];
 	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
@@ -378,49 +354,6 @@ bool OBSBasic::LoadService()
 	obs_data_release(data);
 
 	return !!service;
-}
-
-bool OBSBasic::InitOutputs()
-{
-	fileOutput = obs_output_create("flv_output", "default_file_output",
-			nullptr);
-	if (!fileOutput)
-		return false;
-
-	streamOutput = obs_output_create("rtmp_output", "default_stream",
-			nullptr);
-	if (!streamOutput)
-		return false;
-
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
-			"start", OBSStartStreaming, this);
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
-			"stop", OBSStopStreaming, this);
-
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
-			"start", OBSStartRecording, this);
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
-			"stop", OBSStopRecording, this);
-
-	return true;
-}
-
-bool OBSBasic::InitEncoders()
-{
-	x264 = obs_video_encoder_create("obs_x264", "default_h264", nullptr);
-	if (!x264)
-		return false;
-
-	aac = obs_audio_encoder_create("libfdk_aac", "default_aac", nullptr);
-
-	if (!aac)
-		aac = obs_audio_encoder_create("ffmpeg_aac", "default_aac",
-				nullptr);
-
-	if (!aac)
-		return false;
-
-	return true;
 }
 
 bool OBSBasic::InitService()
@@ -457,7 +390,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
 
-	/* TODO: temporary */
+	config_set_default_string(basicConfig, "Output", "Type", "Simple");
+
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
@@ -471,8 +405,44 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseAdvanced",
 			false);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseCBR", true);
+	config_set_default_bool  (basicConfig, "SimpleOutput", "UseBufsize",
+			false);
+	config_set_default_int   (basicConfig, "SimpleOutput", "Bufsize", 2500);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
+
+	config_set_default_bool  (basicConfig, "AdvOut", "Reconnect", true);
+	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 2);
+	config_set_default_uint  (basicConfig, "AdvOut", "MaxRetries", 20);
+	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
+	config_set_default_bool  (basicConfig, "AdvOut", "Multitrack", false);
+	config_set_default_uint  (basicConfig, "AdvOut", "TrackIndex", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "TrackCount", 1);
+	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
+
+	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
+
+	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
+			GetDefaultVideoSavePath().c_str());
+	config_set_default_bool  (basicConfig, "AdvOut", "RecUseRescale",
+			false);
+	config_set_default_bool  (basicConfig, "AdvOut", "RecMultitrack",
+			false);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackIndex", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackCount", 1);
+	config_set_default_string(basicConfig, "AdvOut", "RecEncoder",
+			"none");
+
+	config_set_default_uint  (basicConfig, "AdvOut", "FFVBitrate", 2500);
+	config_set_default_bool  (basicConfig, "AdvOut", "FFUseRescale",
+			false);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFABitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioTrack", 1);
+
+	config_set_default_uint  (basicConfig, "AdvOut", "Track1Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track2Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track3Bitrate", 160);
+	config_set_default_uint  (basicConfig, "AdvOut", "Track4Bitrate", 160);
 
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
@@ -569,6 +539,21 @@ void OBSBasic::InitPrimitives()
 	obs_leave_graphics();
 }
 
+void OBSBasic::ResetOutputs()
+{
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	bool advOut = astrcmpi(mode, "Advanced") == 0;
+
+	if (!outputHandler || !outputHandler->Active()) {
+		outputHandler.reset();
+		outputHandler.reset(advOut ?
+			CreateAdvancedOutputHandler(this) :
+			CreateSimpleOutputHandler(this));
+	} else {
+		outputHandler->Update();
+	}
+}
+
 void OBSBasic::OBSInit()
 {
 	char savePath[512];
@@ -609,10 +594,8 @@ void OBSBasic::OBSInit()
 	AddExtraModulePaths();
 	obs_load_all_modules();
 
-	if (!InitOutputs())
-		throw "Failed to initialize outputs";
-	if (!InitEncoders())
-		throw "Failed to initialize encoders";
+	ResetOutputs();
+
 	if (!InitService())
 		throw "Failed to initialize service";
 
@@ -641,6 +624,8 @@ OBSBasic::~OBSBasic()
 	 * libobs. */
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
+
+	outputHandler.reset();
 
 	if (interaction)
 		delete interaction;
@@ -678,7 +663,6 @@ void OBSBasic::SaveProject()
 	if (ret <= 0)
 		return;
 
-	SaveService();
 	Save(savePath);
 }
 
@@ -1350,6 +1334,13 @@ void OBSBasic::SetService(obs_service_t *newService)
 	}
 }
 
+bool OBSBasic::StreamingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->StreamingActive();
+}
+
 #ifdef _WIN32
 #define IS_WIN32 1
 #else
@@ -1563,6 +1554,17 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	if (outputHandler && outputHandler->Active()) {
+		QMessageBox::StandardButton button = QMessageBox::question(
+				this, QTStr("ConfirmExit.Title"),
+				QTStr("ConfirmExit.Text"));
+
+		if (button == QMessageBox::No) {
+			event->ignore();
+			return;
+		}
+	}
+
 	QWidget::closeEvent(event);
 	if (!event->isAccepted())
 		return;
@@ -1650,6 +1652,11 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow = new OBSBasicAdvAudio(this);
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+}
+
+void OBSBasic::on_advAudioProps_clicked()
+{
+	on_actionAdvAudioProperties_triggered();
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
@@ -2181,7 +2188,7 @@ void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
-	ui->statusbar->StreamStarted(streamOutput);
+	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -2212,7 +2219,6 @@ void OBSBasic::StreamingStop(int code)
 		errorMessage = Str("Output.ConnectFail.Disconnected");
 	}
 
-	activeRefs--;
 	ui->statusbar->StreamStopped();
 
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
@@ -2226,89 +2232,23 @@ void OBSBasic::StreamingStop(int code)
 
 void OBSBasic::RecordingStart()
 {
-	ui->statusbar->RecordingStarted(fileOutput);
+	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 }
 
 void OBSBasic::RecordingStop()
 {
 	ui->statusbar->RecordingStopped();
-	activeRefs--;
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
-}
-
-void OBSBasic::SetupEncoders()
-{
-	if (activeRefs == 0) {
-		obs_data_t *x264Settings = obs_data_create();
-		obs_data_t *aacSettings  = obs_data_create();
-
-		int videoBitrate = config_get_uint(basicConfig, "SimpleOutput",
-				"VBitrate");
-		int audioBitrate = config_get_uint(basicConfig, "SimpleOutput",
-				"ABitrate");
-		bool advanced = config_get_bool(basicConfig, "SimpleOutput",
-				"UseAdvanced");
-		bool useCBR = config_get_bool(basicConfig, "SimpleOutput",
-				"UseCBR");
-		const char *preset = config_get_string(basicConfig,
-				"SimpleOutput", "Preset");
-		const char *custom = config_get_string(basicConfig,
-				"SimpleOutput", "x264Settings");
-
-		obs_data_set_int(x264Settings, "bitrate", videoBitrate);
-		obs_data_set_int(x264Settings, "buffer_size", videoBitrate);
-
-		if (advanced) {
-			obs_data_set_string(x264Settings, "preset", preset);
-			obs_data_set_string(x264Settings, "x264opts", custom);
-			obs_data_set_bool(x264Settings, "cbr", useCBR);
-		} else {
-			obs_data_set_bool(x264Settings, "cbr", true);
-		}
-
-		obs_data_set_int(aacSettings, "bitrate", audioBitrate);
-
-		obs_encoder_update(x264, x264Settings);
-		obs_encoder_update(aac,  aacSettings);
-
-		obs_data_release(x264Settings);
-		obs_data_release(aacSettings);
-
-		obs_encoder_set_video(x264, obs_get_video());
-		obs_encoder_set_audio(aac,  obs_get_audio());
-	}
 }
 
 void OBSBasic::on_streamButton_clicked()
 {
 	SaveProject();
 
-	if (obs_output_active(streamOutput)) {
-		obs_output_stop(streamOutput);
+	if (outputHandler->StreamingActive()) {
+		outputHandler->StopStreaming();
 	} else {
-
-		SaveService();
-		SetupEncoders();
-
-		obs_output_set_video_encoder(streamOutput, x264);
-		obs_output_set_audio_encoder(streamOutput, aac);
-		obs_output_set_service(streamOutput, service);
-
-		bool reconnect = config_get_bool(basicConfig, "SimpleOutput",
-				"Reconnect");
-		int retryDelay = config_get_uint(basicConfig, "SimpleOutput",
-				"RetryDelay");
-		int maxRetries = config_get_uint(basicConfig, "SimpleOutput",
-				"MaxRetries");
-		if (!reconnect)
-			maxRetries = 0;
-
-		obs_output_set_reconnect_settings(streamOutput, maxRetries,
-				retryDelay);
-
-		if (obs_output_start(streamOutput)) {
-			activeRefs++;
-
+		if (outputHandler->StartStreaming(service)) {
 			ui->streamButton->setEnabled(false);
 			ui->streamButton->setText(
 					QTStr("Basic.Main.Connecting"));
@@ -2320,48 +2260,11 @@ void OBSBasic::on_recordButton_clicked()
 {
 	SaveProject();
 
-	if (obs_output_active(fileOutput)) {
-		obs_output_stop(fileOutput);
+	if (outputHandler->RecordingActive()) {
+		outputHandler->StopRecording();
 	} else {
 
-		const char *path = config_get_string(basicConfig,
-				"SimpleOutput", "FilePath");
-
-		os_dir_t *dir = path ? os_opendir(path) : nullptr;
-
-		if (!dir) {
-			QMessageBox::information(this,
-					QTStr("Output.BadPath.Title"),
-					QTStr("Output.BadPath.Text"));
-			return;
-		}
-
-		os_closedir(dir);
-
-		string strPath;
-		strPath += path;
-
-		char lastChar = strPath.back();
-		if (lastChar != '/' && lastChar != '\\')
-			strPath += "/";
-
-		strPath += GenerateTimeDateFilename("flv");
-
-		SetupEncoders();
-
-		obs_output_set_video_encoder(fileOutput, x264);
-		obs_output_set_audio_encoder(fileOutput, aac);
-
-		obs_data_t *settings = obs_data_create();
-		obs_data_set_string(settings, "path", strPath.c_str());
-
-		obs_output_update(fileOutput, settings);
-
-		obs_data_release(settings);
-
-		if (obs_output_start(fileOutput)) {
-			activeRefs++;
-
+		if (outputHandler->StartRecording()) {
 			ui->recordButton->setText(
 					QTStr("Basic.Main.StopRecording"));
 		}

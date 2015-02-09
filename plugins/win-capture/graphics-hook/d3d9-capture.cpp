@@ -98,7 +98,7 @@ static void d3d9_free()
 
 static DXGI_FORMAT d3d9_to_dxgi_format(D3DFORMAT format)
 {
-	switch (format) {
+	switch ((unsigned long)format) {
 	case D3DFMT_A2B10G10R10: return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case D3DFMT_A8R8G8B8:    return DXGI_FORMAT_B8G8R8A8_UNORM;
 	case D3DFMT_X8R8G8B8:    return DXGI_FORMAT_B8G8R8X8_UNORM;
@@ -285,7 +285,7 @@ static bool d3d9_shtex_init(uint32_t cx, uint32_t cy, HWND window)
 	}
 	if (!capture_init_shtex(&data.shtex_info, window, cx, cy,
 				data.cx, data.cy, data.dxgi_format, false,
-				(uint32_t)data.handle)) {
+				(uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -425,7 +425,7 @@ static bool d3d9_init_format_backbuffer(uint32_t &cx, uint32_t &cy,
 	return true;
 }
 
-static bool d3d9_init_format_swapchain(uint32_t cx, uint32_t cy, HWND window)
+static bool d3d9_init_format_swapchain(uint32_t &cx, uint32_t &cy, HWND &window)
 {
 	D3DPRESENT_PARAMETERS pp;
 
@@ -455,9 +455,9 @@ static void d3d9_init(IDirect3DDevice9 *device)
 {
 	IDirect3DDevice9Ex *d3d9ex = nullptr;
 	bool success;
-	uint32_t cx;
-	uint32_t cy;
-	HWND window;
+	uint32_t cx = 0;
+	uint32_t cy = 0;
+	HWND window = nullptr;
 	HRESULT hr;
 
 	data.d3d9 = get_system_module("d3d9.dll");
@@ -773,15 +773,15 @@ bool hook_d3d9(void)
 	reset_ex_addr = get_offset_addr(d3d9_module,
 			global_hook_info->offsets.d3d9.reset_ex);
 
-	hook_init(&present, present_addr, hook_present,
+	hook_init(&present, present_addr, (void*)hook_present,
 			"IDirect3DDevice9::Present");
-	hook_init(&present_ex, present_ex_addr, hook_present_ex,
+	hook_init(&present_ex, present_ex_addr, (void*)hook_present_ex,
 			"IDirect3DDevice9Ex::PresentEx");
-	hook_init(&present_swap, present_swap_addr, hook_present_swap,
+	hook_init(&present_swap, present_swap_addr, (void*)hook_present_swap,
 			"IDirect3DSwapChain9::Present");
-	hook_init(&reset, reset_addr, hook_reset,
+	hook_init(&reset, reset_addr, (void*)hook_reset,
 			"IDirect3DDevice9::Reset");
-	hook_init(&reset_ex, reset_ex_addr, hook_reset_ex,
+	hook_init(&reset_ex, reset_ex_addr, (void*)hook_reset_ex,
 			"IDirect3DDevice9Ex::ResetEx");
 
 	rehook(&reset_ex);

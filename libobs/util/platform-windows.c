@@ -67,7 +67,7 @@ void *os_dlopen(const char *path)
 	dstr_free(&dll_name);
 
 	if (!h_library)
-		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %u",
+		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld",
 				path, GetLastError());
 
 	return h_library;
@@ -338,7 +338,6 @@ int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 	HANDLE                    handle;
 	WIN32_FIND_DATA           wfd;
 	int                       ret = -1;
-	os_glob_t                 *out = NULL;
 	wchar_t                   *w_path;
 
 	da_init(files);

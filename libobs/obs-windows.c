@@ -48,8 +48,23 @@ static const int module_patterns_size =
 
 void add_default_module_paths(void)
 {
+	char bin[512];
+	char data[512];
+	int ret;
+
 	for (int i = 0; i < module_patterns_size; i++)
 		obs_add_module_path(module_bin[i], module_data[i]);
+
+	ret = os_get_config_path(bin, sizeof(bin), "obs-plugins/%module%");
+	if (ret <= 0)
+		return;
+
+	strcpy(data, bin);
+	strcat(data, "/data");
+
+	strcat(bin, "/bin/" BIT_STRING);
+
+	obs_add_module_path(bin, data);
 }
 
 /* on windows, points to [base directory]/data/libobs */
@@ -97,7 +112,7 @@ static void log_processor_info(void)
 	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
 			&size);
 	if (status == ERROR_SUCCESS)
-		blog(LOG_INFO, "CPU Speed: %dMHz", speed);
+		blog(LOG_INFO, "CPU Speed: %ldMHz", speed);
 
 	RegCloseKey(key);
 }
@@ -163,9 +178,9 @@ static void log_available_memory(void)
 	const char *note = " (NOTE: 4 gigs max is normal for 32bit programs)";
 #endif
 
-	blog(LOG_INFO, "Physical Memory: %ldMB Total, %ldMB Free%s",
-			ms.dwTotalPhys / 1048576,
-			ms.dwAvailPhys / 1048576,
+	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s",
+			(DWORD)(ms.dwTotalPhys / 1048576),
+			(DWORD)(ms.dwAvailPhys / 1048576),
 			note);
 }
 
@@ -178,7 +193,7 @@ static void log_windows_version(void)
 	GetVersionExW(&osvi);
 
 	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
-	blog(LOG_INFO, "Windows Version: %u.%u Build %u %s",
+	blog(LOG_INFO, "Windows Version: %ld.%ld Build %ld %s",
 			osvi.dwMajorVersion,
 			osvi.dwMinorVersion,
 			osvi.dwBuildNumber,

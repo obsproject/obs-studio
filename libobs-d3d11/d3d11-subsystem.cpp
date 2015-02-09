@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <util/base.h>
 #include <util/platform.h>
 #include <graphics/matrix3.h>
@@ -142,7 +142,7 @@ void gs_device::InitCompiler()
 	int ver = 49;
 
 	while (ver > 30) {
-		sprintf_s(d3dcompiler, 40, "D3DCompiler_%02d.dll", ver);
+		sprintf(d3dcompiler, "D3DCompiler_%02d.dll", ver);
 
 		HMODULE module = LoadLibraryA(d3dcompiler);
 		if (module) {
@@ -189,8 +189,8 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 	wstring adapterName;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_ADAPTER_DESC desc;
-	D3D_FEATURE_LEVEL levelUsed;
-	HRESULT hr;
+	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
+	HRESULT hr = 0;
 
 	make_swap_desc(swapDesc, data);
 
@@ -219,7 +219,7 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 		                         "swap chain", hr);
 
 	blog(LOG_INFO, "D3D11 loaded sucessfully, feature level used: %u",
-			(uint32_t)levelUsed);
+			(unsigned int)levelUsed);
 
 	defaultSwap.device     = this;
 	defaultSwap.hwnd       = (HWND)data->window.hwnd;
@@ -421,20 +421,7 @@ void gs_device::UpdateViewProjMatrix()
 }
 
 gs_device::gs_device(const gs_init_data *data)
-	: curRenderTarget      (NULL),
-	  curZStencilBuffer    (NULL),
-	  curRenderSide        (0),
-	  curIndexBuffer       (NULL),
-	  curVertexBuffer      (NULL),
-	  curVertexShader      (NULL),
-	  curPixelShader       (NULL),
-	  curSwapChain         (&defaultSwap),
-	  zstencilStateChanged (true),
-	  rasterStateChanged   (true),
-	  blendStateChanged    (true),
-	  curDepthStencilState (NULL),
-	  curRasterState       (NULL),
-	  curBlendState        (NULL),
+	: curSwapChain         (&defaultSwap),
 	  curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 	ComPtr<IDXGIAdapter1> adapter;

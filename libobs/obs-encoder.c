@@ -57,7 +57,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 
 static struct obs_encoder *create_encoder(const char *id,
 		enum obs_encoder_type type, const char *name,
-		obs_data_t *settings)
+		obs_data_t *settings, size_t mixer_idx)
 {
 	struct obs_encoder *encoder;
 	struct obs_encoder_info *ei = find_encoder(id);
@@ -68,6 +68,7 @@ static struct obs_encoder *create_encoder(const char *id,
 
 	encoder = bzalloc(sizeof(struct obs_encoder));
 	encoder->info = *ei;
+	encoder->mixer_idx = mixer_idx;
 
 	success = init_encoder(encoder, name, settings);
 	if (!success) {
@@ -87,18 +88,18 @@ obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
 		obs_data_t *settings)
 {
 	if (!name || !id) return NULL;
-	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings);
+	return create_encoder(id, OBS_ENCODER_VIDEO, name, settings, 0);
 }
 
 obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t *settings)
+		obs_data_t *settings, size_t mixer_idx)
 {
 	if (!name || !id) return NULL;
-	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings);
+	return create_encoder(id, OBS_ENCODER_AUDIO, name, settings, mixer_idx);
 }
 
 static void receive_video(void *param, struct video_data *frame);
-static void receive_audio(void *param, struct audio_data *data);
+static void receive_audio(void *param, size_t mix_idx, struct audio_data *data);
 
 static inline struct audio_convert_info *get_audio_info(
 		const struct obs_encoder *encoder,
@@ -149,8 +150,8 @@ static void add_connection(struct obs_encoder *encoder)
 
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		get_audio_info(encoder, &audio_info);
-		audio_output_connect(encoder->media, &audio_info, receive_audio,
-				encoder);
+		audio_output_connect(encoder->media, encoder->mixer_idx,
+				&audio_info, receive_audio, encoder);
 	} else {
 		struct video_scale_info *info =
 			get_video_info(encoder, &video_info);
@@ -180,8 +181,8 @@ static void add_connection(struct obs_encoder *encoder)
 static void remove_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO)
-		audio_output_disconnect(encoder->media, receive_audio,
-				encoder);
+		audio_output_disconnect(encoder->media, encoder->mixer_idx,
+				receive_audio, encoder);
 	else
 		video_output_disconnect(encoder->media, receive_video,
 				encoder);
@@ -246,6 +247,14 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 const char *obs_encoder_get_name(const obs_encoder_t *encoder)
 {
 	return encoder ? encoder->context.name : NULL;
+}
+
+void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
+{
+	if (!encoder) return;
+
+	if (name && *name && strcmp(name, encoder->context.name) != 0)
+		obs_context_data_setname(&encoder->context, name);
 }
 
 static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
@@ -437,6 +446,23 @@ const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
 	return encoder ? encoder->info.codec : NULL;
 }
 
+const char *obs_get_encoder_codec(const char *id)
+{
+	struct obs_encoder_info *info = find_encoder(id);
+	return info ? info->codec : NULL;
+}
+
+enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder)
+{
+	return encoder ? encoder->info.type : OBS_ENCODER_AUDIO;
+}
+
+enum obs_encoder_type obs_get_encoder_type(const char *id)
+{
+	struct obs_encoder_info *info = find_encoder(id);
+	return info ? info->type : OBS_ENCODER_AUDIO;
+}
+
 void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		uint32_t height)
 {
@@ -588,6 +614,7 @@ static inline void do_encode(struct obs_encoder *encoder,
 
 	pkt.timebase_num = encoder->timebase_num;
 	pkt.timebase_den = encoder->timebase_den;
+	pkt.encoder = encoder;
 
 	success = encoder->info.encode(encoder->context.data, frame, &pkt,
 			&received);
@@ -702,7 +729,7 @@ static void send_audio_data(struct obs_encoder *encoder)
 	encoder->cur_pts += encoder->framesize;
 }
 
-static void receive_audio(void *param, struct audio_data *data)
+static void receive_audio(void *param, size_t mix_idx, struct audio_data *data)
 {
 	struct obs_encoder *encoder = param;
 
@@ -711,6 +738,8 @@ static void receive_audio(void *param, struct audio_data *data)
 
 	while (encoder->audio_input_buffer[0].size >= encoder->framesize_bytes)
 		send_audio_data(encoder);
+
+	UNUSED_PARAMETER(mix_idx);
 }
 
 void obs_encoder_add_output(struct obs_encoder *encoder,

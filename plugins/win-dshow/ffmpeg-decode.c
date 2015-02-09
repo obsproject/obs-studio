@@ -125,11 +125,9 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 	packet.size = (int)size;
 
 	if (!decode->frame) {
-		decode->frame = avcodec_alloc_frame();
+		decode->frame = av_frame_alloc();
 		if (!decode->frame)
 			return -1;
-	} else {
-		avcodec_get_frame_defaults(decode->frame);
 	}
 
 	len = avcodec_decode_audio4(decode->decoder, decode->frame, &got_frame,
@@ -178,7 +176,7 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		packet.flags |= AV_PKT_FLAG_KEY;
 
 	if (!decode->frame) {
-		decode->frame = avcodec_alloc_frame();
+		decode->frame = av_frame_alloc();
 		if (!decode->frame)
 			return -1;
 	}

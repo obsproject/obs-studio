@@ -142,7 +142,7 @@ obs_properties_t *obs_service_properties(const obs_service_t *service)
 	return NULL;
 }
 
-const char *obs_service_gettype(const obs_service_t *service)
+const char *obs_service_get_type(const obs_service_t *service)
 {
 	return service ? service->info.id : NULL;
 }

@@ -1,4 +1,5 @@
 #include <QFormLayout>
+#include <QScrollBar>
 #include <QLabel>
 #include <QCheckBox>
 #include <QFont>
@@ -42,12 +43,21 @@ static inline long long color_to_int(QColor color)
 
 void OBSPropertiesView::ReloadProperties()
 {
-	properties.reset(reloadCallback(obj));
+	if (obj) {
+		properties.reset(reloadCallback(obj));
+	} else {
+		properties.reset(reloadCallback((void*)type.c_str()));
+		obs_properties_apply_settings(properties.get(), settings);
+	}
+
 	RefreshProperties();
 }
 
 void OBSPropertiesView::RefreshProperties()
 {
+	int h, v;
+	GetScrollPos(h, v);
+
 	children.clear();
 	if (widget)
 		widget->deleteLater();
@@ -73,6 +83,7 @@ void OBSPropertiesView::RefreshProperties()
 
 	setWidgetResizable(true);
 	setWidget(widget);
+	SetScrollPos(h, v);
 	setSizePolicy(mainPolicy);
 
 	lastFocused.clear();
@@ -82,18 +93,53 @@ void OBSPropertiesView::RefreshProperties()
 	}
 }
 
+void OBSPropertiesView::SetScrollPos(int h, int v)
+{
+	QScrollBar *scroll = horizontalScrollBar();
+	if (scroll)
+		scroll->setValue(h);
+
+	scroll = verticalScrollBar();
+	if (scroll)
+		scroll->setValue(v);
+}
+
+void OBSPropertiesView::GetScrollPos(int &h, int &v)
+{
+	h = v = 0;
+
+	QScrollBar *scroll = horizontalScrollBar();
+	if (scroll)
+		h = scroll->value();
+
+	scroll = verticalScrollBar();
+	if (scroll)
+		v = scroll->value();
+}
+
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 		PropertiesReloadCallback reloadCallback,
 		PropertiesUpdateCallback callback_, int minSize_)
 	: VScrollArea    (nullptr),
-	  widget         (nullptr),
 	  properties     (nullptr, obs_properties_destroy),
 	  settings       (settings_),
 	  obj            (obj_),
 	  reloadCallback (reloadCallback),
 	  callback       (callback_),
-	  minSize        (minSize_),
-	  lastWidget     (nullptr)
+	  minSize        (minSize_)
+{
+	setFrameShape(QFrame::NoFrame);
+	ReloadProperties();
+}
+
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
+		PropertiesReloadCallback reloadCallback_, int minSize_)
+	: VScrollArea    (nullptr),
+	  properties     (nullptr, obs_properties_destroy),
+	  settings       (settings_),
+	  type           (type_),
+	  reloadCallback (reloadCallback_),
+	  minSize        (minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
 	ReloadProperties();
@@ -497,6 +543,11 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 			lastWidget = widget;
 }
 
+void OBSPropertiesView::SignalChanged()
+{
+	emit Changed();
+}
+
 void WidgetInfo::BoolChanged(const char *setting)
 {
 	QCheckBox *checkbox = static_cast<QCheckBox*>(widget);
@@ -696,7 +747,11 @@ void WidgetInfo::ControlChanged()
 			return;
 	}
 
-	view->callback(view->obj, view->settings);
+	if (view->callback)
+		view->callback(view->obj, view->settings);
+
+	view->SignalChanged();
+
 	if (obs_property_modified(property, view->settings)) {
 		view->lastFocused = setting;
 		QMetaObject::invokeMethod(view, "RefreshProperties",

@@ -172,11 +172,12 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 		return NULL;
 
 	utf16_len = MultiByteToWideChar(code_page, 0,
-			sfnt_name->string, sfnt_name->string_len, NULL, 0);
+			(char*)sfnt_name->string, sfnt_name->string_len,
+			NULL, 0);
 	if (utf16_len) {
 		utf16_str = malloc((utf16_len + 1) * sizeof(wchar_t));
 		utf16_len = MultiByteToWideChar(code_page, 0,
-				sfnt_name->string, sfnt_name->string_len,
+				(char*)sfnt_name->string, sfnt_name->string_len,
 				utf16_str, (int)utf16_len);
 
 		if (utf16_len) {

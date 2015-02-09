@@ -7,8 +7,6 @@
 #include "window-helpers.h"
 #include "obfuscate.h"
 
-#define inline __inline
-
 static inline void encode_dstr(struct dstr *str)
 {
 	dstr_replace(str, "#", "#22");

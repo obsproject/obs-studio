@@ -147,8 +147,8 @@ void ShaderProcessor::BuildInputLayout(
 }
 
 gs_shader_param::gs_shader_param(shader_var &var, uint32_t &texCounter)
-	: type       (get_shader_param_type(var.type)),
-	  name       (var.name),
+	: name       (var.name),
+	  type       (get_shader_param_type(var.type)),
 	  textureID  (texCounter),
 	  arrayCount (var.array_count),
 	  changed    (false)

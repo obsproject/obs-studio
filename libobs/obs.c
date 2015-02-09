@@ -1231,6 +1231,7 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	double       volume;
 	int64_t      sync;
 	uint32_t     flags;
+	uint32_t     mixers;
 
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
 
@@ -1240,6 +1241,10 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 
 	sync = obs_data_get_int(source_data, "sync");
 	obs_source_set_sync_offset(source, sync);
+
+	obs_data_set_default_int(source_data, "mixers", 0xF);
+	mixers = (uint32_t)obs_data_get_int(source_data, "mixers");
+	obs_source_set_audio_mixers(source, mixers);
 
 	obs_data_set_default_int(source_data, "flags", source->default_flags);
 	flags = (uint32_t)obs_data_get_int(source_data, "flags");
@@ -1283,6 +1288,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_t *source_data = obs_data_create();
 	obs_data_t *settings    = obs_source_get_settings(source);
 	float      volume      = obs_source_get_volume(source);
+	uint32_t   mixers      = obs_source_get_audio_mixers(source);
 	int64_t    sync        = obs_source_get_sync_offset(source);
 	uint32_t   flags       = obs_source_get_flags(source);
 	const char *name       = obs_source_get_name(source);
@@ -1293,6 +1299,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_string(source_data, "name",     name);
 	obs_data_set_string(source_data, "id",       id);
 	obs_data_set_obj   (source_data, "settings", settings);
+	obs_data_set_int   (source_data, "mixers",   mixers);
 	obs_data_set_int   (source_data, "sync",     sync);
 	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);

@@ -27,13 +27,13 @@ class WASAPISource {
 	string                      device_id;
 	string                      device_name;
 	bool                        isInputDevice;
-	bool                        useDeviceTiming;
-	bool                        isDefaultDevice;
+	bool                        useDeviceTiming = false;
+	bool                        isDefaultDevice = false;
 
-	bool                        reconnecting;
+	bool                        reconnecting = false;
 	WinHandle                   reconnectThread;
 
-	bool                        active;
+	bool                        active = false;
 	WinHandle                   captureThread;
 
 	WinHandle                   stopSignal;
@@ -72,11 +72,7 @@ public:
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 		bool input)
-	: reconnecting    (false),
-	  active          (false),
-	  reconnectThread (nullptr),
-	  captureThread   (nullptr),
-	  source          (source_),
+	: source          (source_),
 	  isInputDevice   (input)
 {
 	UpdateSettings(settings);
@@ -299,7 +295,7 @@ void WASAPISource::Reconnect()
 
 	if (!reconnectThread.Valid())
 		blog(LOG_WARNING, "[WASAPISource::Reconnect] "
-		                "Failed to intiialize reconnect thread: %d",
+		                "Failed to intiialize reconnect thread: %lu",
 		                 GetLastError());
 }
 
@@ -494,8 +490,7 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 				device.name.c_str(), device.id.c_str());
 	}
 
-	obs_property_t *prop;
-	prop = obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
+	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 			obs_module_text("UseDeviceTiming"));
 
 	return props;

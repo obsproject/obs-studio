@@ -17,6 +17,58 @@
 
 #include "utf8.h"
 
+#ifdef _WIN32
+
+#include <windows.h>
+#include "c99defs.h"
+
+static inline bool has_utf8_bom(const char *in_char)
+{
+	uint8_t *in = (uint8_t*)in_char;
+	return (in && in[0] == 0xef && in[1] == 0xbb && in[2] == 0xbf);
+}
+
+size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
+		size_t outsize, int flags)
+{
+	int i_insize = (int)insize;
+	int ret;
+
+	if (i_insize == 0)
+		i_insize = strlen(in);
+
+	/* prevent bom from being used in the string */
+	if (has_utf8_bom(in)) {
+		if (i_insize >= 3) {
+			in += 3;
+			insize -= 3;
+		}
+	}
+
+	ret = MultiByteToWideChar(CP_UTF8, 0, in, i_insize, out, (int)outsize);
+
+	UNUSED_PARAMETER(flags);
+	return (ret > 0) ? (size_t)ret : 0;
+}
+
+size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
+		size_t outsize, int flags)
+{
+	int i_insize = (int)insize;
+	int ret;
+
+	if (i_insize == 0)
+		i_insize = wcslen(in);
+
+	ret = WideCharToMultiByte(CP_UTF8, 0, in, i_insize, out, (int)outsize,
+			NULL, NULL);
+
+	UNUSED_PARAMETER(flags);
+	return (ret > 0) ? (size_t)ret : 0;
+}
+
+#else
+
 #define _NXT	0x80
 #define _SEQ2	0xc0
 #define _SEQ3	0xe0
@@ -318,3 +370,5 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 
 	return total;
 }
+
+#endif

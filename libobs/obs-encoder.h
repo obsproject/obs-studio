@@ -71,6 +71,12 @@ struct encoder_packet {
 	 * priority or higher to continue transmission.
 	 */
 	int                   drop_priority;
+
+	/** Audio track index (used with outputs) */
+	size_t                track_idx;
+
+	/** Encoder from which the track originated from */
+	obs_encoder_t         *encoder;
 };
 
 /** Encoder input frame */

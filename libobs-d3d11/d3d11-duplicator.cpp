@@ -45,7 +45,7 @@ static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 }
 
 gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
-	: device(device_), texture(nullptr)
+	: texture(nullptr), device(device_)
 {
 	ComPtr<IDXGIOutput1> output1;
 	ComPtr<IDXGIOutput> output;

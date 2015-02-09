@@ -37,21 +37,24 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
-	bool generalChanged;
-	bool outputsChanged;
-	bool audioChanged;
-	bool videoChanged;
-	int  pageIndex;
-	bool loading;
+	bool generalChanged = false;
+	bool stream1Changed = false;
+	bool outputsChanged = false;
+	bool audioChanged = false;
+	bool videoChanged = false;
+	int  pageIndex = 0;
+	bool loading = true;
 
-	OBSPropertiesView *streamProperties;
+	OBSPropertiesView *streamProperties = nullptr;
+	OBSPropertiesView *streamEncoderProps = nullptr;
+	OBSPropertiesView *recordEncoderProps = nullptr;
 
 	void SaveCombo(QComboBox *widget, const char *section,
 			const char *value);
 	void SaveComboData(QComboBox *widget, const char *section,
 			const char *value);
-	void SaveCheckBox(QCheckBox *widget, const char *section,
-			const char *value);
+	void SaveCheckBox(QAbstractButton *widget, const char *section,
+			const char *value, bool invert = false);
 	void SaveEdit(QLineEdit *widget, const char *section,
 			const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
@@ -59,7 +62,7 @@ private:
 
 	inline bool Changed() const
 	{
-		return generalChanged || outputsChanged ||
+		return generalChanged || outputsChanged || stream1Changed ||
 			audioChanged || videoChanged;
 	}
 
@@ -71,6 +74,7 @@ private:
 	inline void ClearChanged()
 	{
 		generalChanged = false;
+		stream1Changed = false;
 		outputsChanged = false;
 		audioChanged   = false;
 		videoChanged   = false;
@@ -82,19 +86,29 @@ private:
 	bool QueryChanges();
 
 	void LoadServiceTypes();
-	void LoadServiceInfo();
+	void LoadEncoderTypes();
 
 	void LoadGeneralSettings();
+	void LoadStream1Settings();
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
 	void LoadSettings(bool changedOnly);
+
+	OBSPropertiesView *CreateEncoderPropertyView(const char *encoder,
+			const char *path, bool changed = false);
 
 	/* general */
 	void LoadLanguageList();
 
 	/* output */
 	void LoadSimpleOutputSettings();
+	void LoadAdvOutputStreamingSettings();
+	void LoadAdvOutputStreamingEncoderProperties();
+	void LoadAdvOutputRecordingSettings();
+	void LoadAdvOutputRecordingEncoderProperties();
+	void LoadAdvOutputFFmpegSettings();
+	void LoadAdvOutputAudioSettings();
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop,
@@ -103,23 +117,32 @@ private:
 
 	/* video */
 	void LoadRendererList();
-	void ResetDownscales(uint32_t cx, uint32_t cy);
+	void ResetDownscales(uint32_t cx, uint32_t cy,
+			uint32_t out_cx, uint32_t out_cy);
 	void LoadDownscaleFilters();
 	void LoadResolutionLists();
 	void LoadFPSData();
 
 	void SaveGeneralSettings();
+	void SaveStream1Settings();
 	void SaveOutputSettings();
 	void SaveAudioSettings();
 	void SaveVideoSettings();
 	void SaveSettings();
 
 private slots:
+	void on_simpleOutUseBufsize_toggled(bool checked);
+	void on_simpleOutputVBitrate_valueChanged(int val);
+
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_streamType_currentIndexChanged(int idx);
 	void on_simpleOutputBrowse_clicked();
+	void on_advOutRecPathBrowse_clicked();
+	void on_advOutFFPathBrowse_clicked();
+	void on_advOutEncoder_currentIndexChanged(int idx);
+	void on_advOutRecEncoder_currentIndexChanged(int idx);
 
 	void on_baseResolution_editTextChanged(const QString &text);
 
@@ -127,6 +150,7 @@ private slots:
 	void AudioChanged();
 	void AudioChangedRestart();
 	void OutputsChanged();
+	void Stream1Changed();
 	void VideoChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();

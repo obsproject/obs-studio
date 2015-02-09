@@ -93,6 +93,7 @@ set(obs_SOURCES
 	window-basic-settings.cpp
 	window-basic-interaction.cpp
 	window-basic-properties.cpp
+	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
 	window-license-agreement.cpp
 	window-basic-status-bar.cpp
@@ -118,6 +119,7 @@ set(obs_HEADERS
 	window-basic-settings.hpp
 	window-basic-interaction.hpp
 	window-basic-properties.hpp
+	window-basic-main-outputs.hpp
 	window-basic-source-select.hpp
 	window-license-agreement.hpp
 	window-basic-status-bar.hpp

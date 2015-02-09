@@ -131,7 +131,7 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
     }
     sa.sin_port = htons(port);
     sb.sb_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sb.sb_socket == -1)
+    if (sb.sb_socket == INVALID_SOCKET)
         return HTTPRES_LOST_CONNECTION;
     i =
         sprintf(sb.sb_buf,

@@ -38,6 +38,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <Mstcpip.h>
 
 
 #ifdef _MSC_VER	/* MSVC */
@@ -72,6 +73,9 @@
 #define closesocket(s)	close(s)
 #define msleep(n)	usleep(n*1000)
 #define SET_RCVTIMEO(tv,s)	struct timeval tv = {s,0}
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET -1
+#endif
 #endif
 
 #include "rtmp.h"

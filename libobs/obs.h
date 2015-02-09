@@ -761,12 +761,24 @@ EXPORT void obs_source_load(obs_source_t *source);
 /** Specifies to force audio to mono */
 #define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
 
-/** Sets source flags.  Note that these are different from the main output
- * flags. */
+/**
+ * Sets source flags.  Note that these are different from the main output
+ * flags.  These are generally things that can be set by the source or user,
+ * while the output flags are more used to determine capabilities of a source.
+ */
 EXPORT void obs_source_set_flags(obs_source_t *source, uint32_t flags);
 
 /** Gets source flags. */
 EXPORT uint32_t obs_source_get_flags(const obs_source_t *source);
+
+/**
+ * Sets audio mixer flags.  These flags are used to specify which mixers
+ * the source's audio should be applied to.
+ */
+EXPORT void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers);
+
+/** Gets audio mixer flags */
+EXPORT uint32_t obs_source_get_audio_mixers(const obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
@@ -1030,6 +1042,12 @@ EXPORT video_t *obs_output_video(const obs_output_t *output);
 /** Returns the audio media context associated with this output */
 EXPORT audio_t *obs_output_audio(const obs_output_t *output);
 
+/** Sets the current audio mixer for non-encoded outputs */
+EXPORT void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx);
+
+/** Gets the current audio mixer for non-encoded outputs */
+EXPORT size_t obs_output_get_mixer(const obs_output_t *output);
+
 /**
  * Sets the current video encoder associated with this output,
  * required for encoded outputs
@@ -1039,16 +1057,27 @@ EXPORT void obs_output_set_video_encoder(obs_output_t *output,
 
 /**
  * Sets the current audio encoder associated with this output,
- * required for encoded outputs
+ * required for encoded outputs.
+ *
+ * The idx parameter specifies the audio encoder index to set the encoder to.
+ * Only used with outputs that have multiple audio outputs (RTMP typically),
+ * otherwise the parameter is ignored.
  */
 EXPORT void obs_output_set_audio_encoder(obs_output_t *output,
-		obs_encoder_t *encoder);
+		obs_encoder_t *encoder, size_t idx);
 
 /** Returns the current video encoder associated with this output */
 EXPORT obs_encoder_t *obs_output_get_video_encoder(const obs_output_t *output);
 
-/** Returns the current audio encoder associated with this output */
-EXPORT obs_encoder_t *obs_output_get_audio_encoder(const obs_output_t *output);
+/**
+ * Returns the current audio encoder associated with this output
+ *
+ * The idx parameter specifies the audio encoder index.  Only used with
+ * outputs that have multiple audio outputs, otherwise the parameter is
+ * ignored.
+ */
+EXPORT obs_encoder_t *obs_output_get_audio_encoder(const obs_output_t *output,
+		size_t idx);
 
 /** Sets the current service associated with this output. */
 EXPORT void obs_output_set_service(obs_output_t *output,
@@ -1151,18 +1180,29 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
  * @param  id        Audio Encoder ID
  * @param  name      Name to assign to this context
  * @param  settings  Settings
+ * @param  mixer_idx Index of the mixer to use for this audio encoder
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t *settings);
+		obs_data_t *settings, size_t mixer_idx);
 
 /** Destroys an encoder context */
 EXPORT void obs_encoder_destroy(obs_encoder_t *encoder);
 
+EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
+
+/** Returns the codec of an encoder by the id */
+EXPORT const char *obs_get_encoder_codec(const char *id);
+
+/** Returns the type of an encoder by the id */
+EXPORT enum obs_encoder_type obs_get_encoder_type(const char *id);
 
 /** Returns the codec of the encoder */
 EXPORT const char *obs_encoder_get_codec(const obs_encoder_t *encoder);
+
+/** Returns the type of an encoder */
+EXPORT enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder);
 
 /**
  * Sets the scaled resolution for a video encoder.  Set width and height to 0
@@ -1255,7 +1295,7 @@ EXPORT obs_properties_t *obs_get_service_properties(const char *id);
 EXPORT obs_properties_t *obs_service_properties(const obs_service_t *service);
 
 /** Gets the service type */
-EXPORT const char *obs_service_gettype(const obs_service_t *service);
+EXPORT const char *obs_service_get_type(const obs_service_t *service);
 
 /** Updates the settings of the service context */
 EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);

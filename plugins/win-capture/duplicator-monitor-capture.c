@@ -203,20 +203,18 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 		gs_enable_color(true, true, true, false);
 
 		if (rot != 0) {
-			float x;
-			float y;
+			float x = 0.0f;
+			float y = 0.0f;
 
 			switch (rot) {
 			case 90:
 				x = (float)capture->height;
-				y = 0.0f;
 				break;
 			case 180:
 				x = (float)capture->width;
 				y = (float)capture->height;
 				break;
 			case 270:
-				x = 0.0f;
 				y = (float)capture->width;
 				break;
 			}
@@ -271,8 +269,7 @@ static obs_properties_t *duplicator_capture_properties(void *unused)
 		"monitor", TEXT_MONITOR,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *capture_cursor = obs_properties_add_bool(props,
-		"capture_cursor", TEXT_CAPTURE_CURSOR);
+	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 
 	obs_enter_graphics();
 

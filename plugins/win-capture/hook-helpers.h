@@ -25,14 +25,14 @@ static inline HANDLE get_mutex(const char *name)
 static inline HANDLE get_event_plus_id(const char *name, DWORD id)
 {
 	char new_name[64];
-	sprintf(new_name, "%s%d", name, id);
+	sprintf(new_name, "%s%lu", name, id);
 	return get_event(new_name);
 }
 
 static inline HANDLE get_mutex_plus_id(const char *name, DWORD id)
 {
 	char new_name[64];
-	sprintf(new_name, "%s%d", name, id);
+	sprintf(new_name, "%s%lu", name, id);
 	return get_mutex(new_name);
 }
 

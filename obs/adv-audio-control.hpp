@@ -18,18 +18,20 @@ private:
 	QCheckBox              *forceMono              = nullptr;
 	QSlider                *panning                = nullptr;
 	QSpinBox               *syncOffset             = nullptr;
-	QCheckBox              *mediaChannel1          = nullptr;
-	QCheckBox              *mediaChannel2          = nullptr;
-	QCheckBox              *mediaChannel3          = nullptr;
-	QCheckBox              *mediaChannel4          = nullptr;
+	QCheckBox              *mixer1                 = nullptr;
+	QCheckBox              *mixer2                 = nullptr;
+	QCheckBox              *mixer3                 = nullptr;
+	QCheckBox              *mixer4                 = nullptr;
 
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
 	OBSSignal              flagsSignal;
+	OBSSignal              mixersSignal;
 
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
+	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
 
 public:
 	OBSAdvAudioCtrl(obs_source_t *source_);
@@ -40,13 +42,14 @@ public slots:
 	void SourceFlagsChanged(uint32_t flags);
 	void SourceVolumeChanged(float volume);
 	void SourceSyncChanged(int64_t offset);
+	void SourceMixersChanged(uint32_t mixers);
 
 	void volumeChanged(int percentage);
 	void downmixMonoChanged(bool checked);
 	void panningChanged(int val);
 	void syncOffsetChanged(int milliseconds);
-	void mediaChannel1Changed(bool checked);
-	void mediaChannel2Changed(bool checked);
-	void mediaChannel3Changed(bool checked);
-	void mediaChannel4Changed(bool checked);
+	void mixer1Changed(bool checked);
+	void mixer2Changed(bool checked);
+	void mixer3Changed(bool checked);
+	void mixer4Changed(bool checked);
 };

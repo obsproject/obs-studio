@@ -5,7 +5,7 @@
 #include "graphics-hook.h"
 #include "../funchook.h"
 
-typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8*, 
+typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8*,
 		D3DPRESENT_PARAMETERS*);
 typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDirect3DDevice8*,
 		CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
@@ -14,26 +14,26 @@ static struct func_hook present;
 static struct func_hook reset;
 
 struct d3d8_data {
-	HMODULE				d3d8;
-	uint32_t			cx;
-	uint32_t			cy;
-	D3DFORMAT			d3d8_format;
-	DXGI_FORMAT			dxgi_format;
+	HMODULE                        d3d8;
+	uint32_t                       cx;
+	uint32_t                       cy;
+	D3DFORMAT                      d3d8_format;
+	DXGI_FORMAT                    dxgi_format;
 
-	struct shmem_data	*shmem_info;
-	HWND				window;
-	uint32_t			pitch;
-	IDirect3DSurface8	*copy_surfaces[NUM_BUFFERS];
-	bool				surface_locked[NUM_BUFFERS];
-	int					cur_surface;
-	int					copy_wait;
+	struct shmem_data              *shmem_info;
+	HWND                           window;
+	uint32_t                       pitch;
+	IDirect3DSurface8              *copy_surfaces[NUM_BUFFERS];
+	bool                           surface_locked[NUM_BUFFERS];
+	int                            cur_surface;
+	int                            copy_wait;
 };
 
 static d3d8_data data = {};
 
 static DXGI_FORMAT d3d8_to_dxgi_format(D3DFORMAT format)
 {
-	switch (format) {
+	switch ((unsigned long)format) {
 	case D3DFMT_X1R5G5B5:
 	case D3DFMT_A1R5G5B5: return DXGI_FORMAT_B5G5R5A1_UNORM;
 	case D3DFMT_R5G6B5:   return DXGI_FORMAT_B5G6R5_UNORM;
@@ -86,7 +86,7 @@ static bool d3d8_init_format_backbuffer(IDirect3DDevice8 *device)
 	backbuffer = d3d8_get_backbuffer(device);
 	if (!backbuffer)
 		return false;
-	
+
 	hr = backbuffer->GetDesc(&desc);
 	backbuffer->Release();
 	if (FAILED(hr)) {
@@ -116,7 +116,7 @@ static bool d3d8_shmem_init_buffer(IDirect3DDevice8 *device, int idx)
 
 	if (idx == 0) {
 		D3DLOCKED_RECT rect;
-		hr = data.copy_surfaces[0]->LockRect(&rect, nullptr, 
+		hr = data.copy_surfaces[0]->LockRect(&rect, nullptr,
 				D3DLOCK_READONLY);
 		if (FAILED(hr)) {
 			hlog_hr("d3d8_shmem_init_buffer: Failed to lock buffer", hr);
@@ -190,7 +190,8 @@ static void d3d8_shmem_capture_copy(int idx)
 	}
 }
 
-static void d3d8_shmem_capture(IDirect3DDevice8 *device, IDirect3DSurface8 *backbuffer)
+static void d3d8_shmem_capture(IDirect3DDevice8 *device,
+		IDirect3DSurface8 *backbuffer)
 {
 	int cur_surface;
 	int next_surface;
@@ -252,7 +253,7 @@ static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device,
 }
 
 static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
-		CONST RECT *src_rect, CONST RECT *dst_rect, 
+		CONST RECT *src_rect, CONST RECT *dst_rect,
 		HWND override_window, CONST RGNDATA *dirty_region)
 {
 	IDirect3DSurface8 *backbuffer;
@@ -282,14 +283,14 @@ bool hook_d3d8(void)
 		return false;
 	}
 
-	present_addr = get_offset_addr(d3d8_module, 
+	present_addr = get_offset_addr(d3d8_module,
 			global_hook_info->offsets.d3d8.present);
 	reset_addr = get_offset_addr(d3d8_module,
 			global_hook_info->offsets.d3d8.reset);
 
-	hook_init(&present, present_addr, hook_present, 
+	hook_init(&present, present_addr, (void*)hook_present,
 			"IDirect3DDevice8::Present");
-	hook_init(&reset, reset_addr, hook_reset,
+	hook_init(&reset, reset_addr, (void*)hook_reset,
 			"IDirect3DDevice8::Reset");
 
 	rehook(&present);
