@@ -252,7 +252,7 @@ static inline bool gl_shtex_init_window(void)
 
 typedef HRESULT (WINAPI *create_dxgi_factory1_t)(REFIID, void **);
 
-const static D3D_FEATURE_LEVEL feature_levels[] =
+static const D3D_FEATURE_LEVEL feature_levels[] =
 {
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
