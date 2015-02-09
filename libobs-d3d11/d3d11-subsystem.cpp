@@ -189,8 +189,8 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 	wstring adapterName;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_ADAPTER_DESC desc;
-	D3D_FEATURE_LEVEL levelUsed;
-	HRESULT hr;
+	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
+	HRESULT hr = 0;
 
 	make_swap_desc(swapDesc, data);
 
