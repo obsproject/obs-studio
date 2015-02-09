@@ -421,20 +421,7 @@ void gs_device::UpdateViewProjMatrix()
 }
 
 gs_device::gs_device(const gs_init_data *data)
-	: curRenderTarget      (NULL),
-	  curZStencilBuffer    (NULL),
-	  curRenderSide        (0),
-	  curIndexBuffer       (NULL),
-	  curVertexBuffer      (NULL),
-	  curVertexShader      (NULL),
-	  curPixelShader       (NULL),
-	  curSwapChain         (&defaultSwap),
-	  zstencilStateChanged (true),
-	  rasterStateChanged   (true),
-	  blendStateChanged    (true),
-	  curDepthStencilState (NULL),
-	  curRasterState       (NULL),
-	  curBlendState        (NULL),
+	: curSwapChain         (&defaultSwap),
 	  curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 	ComPtr<IDXGIAdapter1> adapter;

@@ -163,11 +163,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
-	: isRenderTarget  (false),
-	  isGDICompatible (false),
-	  isDynamic       (false),
-	  isShared        (true),
-	  genMipmaps      (false),
+	: isShared        (true),
 	  sharedHandle    (handle)
 {
 	HRESULT hr;

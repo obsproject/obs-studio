@@ -279,14 +279,14 @@ struct gs_texture_2d : gs_texture {
 	ComPtr<ID3D11RenderTargetView>   renderTarget[6];
 	ComPtr<IDXGISurface1>            gdiSurface;
 
-	uint32_t        width, height;
-	DXGI_FORMAT     dxgiFormat;
-	bool            isRenderTarget;
-	bool            isGDICompatible;
-	bool            isDynamic;
-	bool            isShared;
-	bool            genMipmaps;
-	uint32_t        sharedHandle;
+	uint32_t        width = 0, height = 0;
+	DXGI_FORMAT     dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	bool            isRenderTarget = false;
+	bool            isGDICompatible = false;
+	bool            isDynamic = false;
+	bool            isShared = false;
+	bool            genMipmaps = false;
+	uint32_t        sharedHandle = 0;
 
 	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const uint8_t **data);
 	void InitTexture(const uint8_t **data);
@@ -294,16 +294,7 @@ struct gs_texture_2d : gs_texture {
 	void InitRenderTargets();
 
 	inline gs_texture_2d()
-		: gs_texture      (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN),
-		  width           (0),
-		  height          (0),
-		  dxgiFormat      (DXGI_FORMAT_UNKNOWN),
-		  isRenderTarget  (false),
-		  isGDICompatible (false),
-		  isDynamic       (false),
-		  isShared        (false),
-		  genMipmaps      (false),
-		  sharedHandle    (NULL)
+		: gs_texture (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN)
 	{
 	}
 
@@ -619,32 +610,32 @@ struct gs_device {
 	ComPtr<ID3D11DeviceContext> context;
 	gs_swap_chain               defaultSwap;
 
-	gs_texture_2d               *curRenderTarget;
-	gs_zstencil_buffer          *curZStencilBuffer;
-	int                         curRenderSide;
+	gs_texture_2d               *curRenderTarget = nullptr;
+	gs_zstencil_buffer          *curZStencilBuffer = nullptr;
+	int                         curRenderSide = 0;
 	gs_texture                  *curTextures[GS_MAX_TEXTURES];
 	gs_sampler_state            *curSamplers[GS_MAX_TEXTURES];
-	gs_vertex_buffer            *curVertexBuffer;
-	gs_index_buffer             *curIndexBuffer;
-	gs_vertex_shader            *curVertexShader;
-	gs_pixel_shader             *curPixelShader;
+	gs_vertex_buffer            *curVertexBuffer = nullptr;
+	gs_index_buffer             *curIndexBuffer = nullptr;
+	gs_vertex_shader            *curVertexShader = nullptr;
+	gs_pixel_shader             *curPixelShader = nullptr;
 	gs_swap_chain               *curSwapChain;
 
-	bool                        zstencilStateChanged;
-	bool                        rasterStateChanged;
-	bool                        blendStateChanged;
+	bool                        zstencilStateChanged = true;
+	bool                        rasterStateChanged = true;
+	bool                        blendStateChanged = true;
 	ZStencilState               zstencilState;
 	RasterState                 rasterState;
 	BlendState                  blendState;
 	vector<SavedZStencilState>  zstencilStates;
 	vector<SavedRasterState>    rasterStates;
 	vector<SavedBlendState>     blendStates;
-	ID3D11DepthStencilState     *curDepthStencilState;
-	ID3D11RasterizerState       *curRasterState;
-	ID3D11BlendState            *curBlendState;
+	ID3D11DepthStencilState     *curDepthStencilState = nullptr;
+	ID3D11RasterizerState       *curRasterState = nullptr;
+	ID3D11BlendState            *curBlendState = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY    curToplogy;
 
-	pD3DCompile                 d3dCompile;
+	pD3DCompile                 d3dCompile = nullptr;
 
 	gs_rect                     viewport;
 
