@@ -219,7 +219,7 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 		                         "swap chain", hr);
 
 	blog(LOG_INFO, "D3D11 loaded sucessfully, feature level used: %u",
-			(uint32_t)levelUsed);
+			(unsigned int)levelUsed);
 
 	defaultSwap.device     = this;
 	defaultSwap.hwnd       = (HWND)data->window.hwnd;
