@@ -167,7 +167,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 	  sharedHandle    (handle)
 {
 	HRESULT hr;
-	hr = device->device->OpenSharedResource((HANDLE)handle,
+	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
 			__uuidof(ID3D11Texture2D), (void**)texture.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to open resource", hr);
