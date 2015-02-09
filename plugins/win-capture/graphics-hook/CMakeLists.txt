@@ -14,6 +14,7 @@ set(graphics-hook_SOURCES
 	../funchook.c
 	../obfuscate.c
 	gl-capture.c
+	d3d8-capture.cpp
 	d3d9-capture.cpp
 	dxgi-capture.cpp
 	d3d10-capture.cpp
