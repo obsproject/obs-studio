@@ -46,6 +46,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define timeval2ns(tv) \
 	(((uint64_t) tv.tv_sec * 1000000000) + ((uint64_t) tv.tv_usec * 1000))
 
+#define V4L2_FOURCC_STR(code) \
+	(char[5]) { \
+		(code >> 24) & 0xFF, \
+		(code >> 16) & 0xFF, \
+		(code >>  8) & 0xFF, \
+		 code        & 0xFF, \
+		                  0  \
+	}
+
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
 
 /**
@@ -844,7 +853,7 @@ static void v4l2_init(struct v4l2_data *data)
 	}
 	v4l2_unpack_tuple(&data->width, &data->height, data->resolution);
 	blog(LOG_INFO, "Resolution: %dx%d", data->width, data->height);
-	blog(LOG_INFO, "Pixelformat: %d", data->pixfmt);
+	blog(LOG_INFO, "Pixelformat: %s", V4L2_FOURCC_STR(data->pixfmt));
 	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
