@@ -337,8 +337,6 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t *prop)
 
 	obs_property_list_clear(prop);
 
-	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
-
 	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
 		obs_property_list_add_int(prop, (char *) in.name, in.index);
 		blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
@@ -359,8 +357,6 @@ static void v4l2_format_list(int dev, obs_property_t *prop)
 	dstr_init(&buffer);
 
 	obs_property_list_clear(prop);
-
-	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUM_FMT, &fmt) == 0) {
 		dstr_copy(&buffer, (char *) fmt.description);
