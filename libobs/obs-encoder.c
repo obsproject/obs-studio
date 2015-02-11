@@ -671,7 +671,7 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 	size_t size = data->frames * encoder->blocksize;
 	size_t offset_size = 0;
 
-	if (encoder->paired_encoder && !encoder->start_ts) {
+	if (!encoder->start_ts && encoder->paired_encoder) {
 		uint64_t end_ts     = data->timestamp;
 		uint64_t v_start_ts = encoder->paired_encoder->start_ts;
 
@@ -693,6 +693,9 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 		}
 
 		encoder->start_ts = v_start_ts;
+
+	} else if (!encoder->start_ts && !encoder->paired_encoder) {
+		encoder->start_ts = data->timestamp;
 	}
 
 	size -= offset_size;

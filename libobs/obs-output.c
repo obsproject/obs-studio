@@ -677,7 +677,19 @@ static size_t get_track_index(const struct obs_output *output,
 	return 0;
 }
 
-static void apply_interleaved_packet_offset(struct obs_output *output,
+static inline void check_received(struct obs_output *output,
+		struct encoder_packet *out)
+{
+	if (out->type == OBS_ENCODER_VIDEO) {
+		if (!output->received_video)
+			output->received_video = true;
+	} else {
+		if (!output->received_audio)
+			output->received_audio = true;
+	}
+}
+
+static inline void apply_interleaved_packet_offset(struct obs_output *output,
 		struct encoder_packet *out)
 {
 	int64_t offset;
@@ -686,17 +698,8 @@ static void apply_interleaved_packet_offset(struct obs_output *output,
 	 * may not currently be at 0 when we get data.  so, we store the
 	 * current dts as offset and subtract that value from the dts/pts
 	 * of the output packet. */
-	if (out->type == OBS_ENCODER_VIDEO) {
-		if (!output->received_video)
-			output->received_video = true;
-
-		offset = output->video_offset;
-	} else {
-		if (!output->received_audio)
-			output->received_audio = true;
-
-		offset = output->audio_offsets[out->track_idx];
-	}
+	offset = (out->type == OBS_ENCODER_VIDEO) ?
+		output->video_offset : output->audio_offsets[out->track_idx];
 
 	out->dts -= offset;
 	out->pts -= offset;
@@ -896,7 +899,12 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	was_started = output->received_audio && output->received_video;
 
 	obs_duplicate_encoder_packet(&out, packet);
-	apply_interleaved_packet_offset(output, &out);
+
+	if (was_started)
+		apply_interleaved_packet_offset(output, &out);
+	else
+		check_received(output, packet);
+
 	insert_interleaved_packet(output, &out);
 	set_higher_ts(output, &out);
 
@@ -1078,7 +1086,9 @@ static inline bool pair_encoders(obs_output_t *output, size_t num_mixes)
 {
 	if (num_mixes == 1 &&
 	    !output->audio_encoders[0]->active &&
-	    !output->video_encoder->active) {
+	    !output->video_encoder->active &&
+	    !output->video_encoder->paired_encoder &&
+	    !output->audio_encoders[0]->paired_encoder) {
 
 		output->audio_encoders[0]->wait_for_video = true;
 		output->audio_encoders[0]->paired_encoder =
