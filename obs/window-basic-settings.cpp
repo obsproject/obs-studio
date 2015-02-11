@@ -157,6 +157,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack4,         CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutApplyService,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -617,10 +618,13 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 			"RescaleRes");
 	int trackIndex = config_get_int(main->Config(), "AdvOut",
 			"TrackIndex");
+	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
+			"ApplyServiceSettings");
 
 	ui->advOutReconnect->setChecked(reconnect);
 	ui->advOutRetryDelay->setValue(retryDelay);
 	ui->advOutMaxRetries->setValue(maxRetries);
+	ui->advOutApplyService->setChecked(applyServiceSettings);
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
@@ -1060,6 +1064,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutReconnect, "AdvOut", "Reconnect");
 	SaveSpinBox(ui->advOutRetryDelay, "AdvOut", "RetryDelay");
 	SaveSpinBox(ui->advOutMaxRetries, "AdvOut", "MaxRetries");
+	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");

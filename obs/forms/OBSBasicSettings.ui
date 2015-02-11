@@ -760,17 +760,17 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="4" column="0">
+                       <item row="5" column="0">
                         <widget class="QLabel" name="advOutEncLabel">
                          <property name="text">
                           <string>Basic.Settings.Output.Encoder</string>
                          </property>
                         </widget>
                        </item>
-                       <item row="4" column="1">
+                       <item row="5" column="1">
                         <widget class="QComboBox" name="advOutEncoder"/>
                        </item>
-                       <item row="5" column="0">
+                       <item row="7" column="0">
                         <widget class="QCheckBox" name="advOutUseRescale">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -786,7 +786,7 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="5" column="1">
+                       <item row="7" column="1">
                         <widget class="QComboBox" name="advOutRescale">
                          <property name="enabled">
                           <bool>false</bool>
@@ -796,14 +796,14 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="3" column="0">
+                       <item row="4" column="0">
                         <widget class="QLabel" name="label_28">
                          <property name="text">
                           <string>Basic.Settings.Output.Adv.AudioTrack</string>
                          </property>
                         </widget>
                        </item>
-                       <item row="3" column="1">
+                       <item row="4" column="1">
                         <widget class="QWidget" name="widget_8" native="true">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -856,6 +856,16 @@
                            </widget>
                           </item>
                          </layout>
+                        </widget>
+                       </item>
+                       <item row="6" column="1">
+                        <widget class="QCheckBox" name="advOutApplyService">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Adv.ApplyServiceSettings</string>
+                         </property>
+                         <property name="checked">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                       </layout>
