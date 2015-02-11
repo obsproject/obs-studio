@@ -4,6 +4,11 @@
 #  ICONV_INCLUDE_DIRS
 #  ICONV_LIBRARIES
 
+if(APPLE)
+	# Fix library and search path getting mixed up on OS X
+	unset(ICONV_LIB CACHE)
+endif()
+
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
 	pkg_check_modules(_ICONV QUIET iconv)
@@ -22,14 +27,15 @@ find_path(ICONV_INCLUDE_DIR
 		ENV IconvPath
 		${_ICONV_INCLUDE_DIRS}
 	PATHS
-		/usr/include /usr/local/include /opt/local/include /sw/include)
+		/opt/local/include /usr/include /usr/local/include /sw/include)
 
 find_library(ICONV_LIB
 	NAMES ${_ICONV_LIBRARIES} iconv libiconv
 	HINTS
 		${_ICONV_LIBRARY_DIRS}
+		NO_DEFAULT_PATH
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+		/opt/local/lib /usr/lib /usr/local/lib /sw/lib
 	PATH_SUFFIXES
 		lib${_lib_suffix} lib
 		libs${_lib_suffix} libs
