@@ -642,7 +642,7 @@ int RTMP_AddStream(RTMP *r, const char *playpath)
 }
 
 static int
-add_addr_info(struct sockaddr_storage *service, AVal *host, int port)
+add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, int port)
 {
     char *hostname;
     int ret = TRUE;
@@ -668,6 +668,7 @@ add_addr_info(struct sockaddr_storage *service, AVal *host, int port)
     hints.ai_protocol = IPPROTO_TCP;
 
     service->ss_family = AF_UNSPEC;
+    *addrlen = 0;
 
     char portStr[8];
 
@@ -691,13 +692,14 @@ add_addr_info(struct sockaddr_storage *service, AVal *host, int port)
         if (ptr->ai_family == AF_INET || ptr->ai_family == AF_INET6)
         {
             memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
+            *addrlen = (socklen_t)ptr->ai_addrlen;
             break;
         }
     }
 
     freeaddrinfo(result);
 
-    if (service->ss_family == AF_UNSPEC)
+    if (service->ss_family == AF_UNSPEC || *addrlen == 0)
     {
         RTMP_Log(RTMP_LOGERROR, "Could not resolve server '%s': no valid address found", hostname);
         ret = FALSE;
@@ -721,7 +723,7 @@ finish:
 #endif
 
 int
-RTMP_Connect0(RTMP *r, struct sockaddr * service)
+RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
 {
     int on = 1;
     r->m_sb.sb_timedout = FALSE;
@@ -749,7 +751,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
             }
         }
 
-        if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr_storage)) < 0)
+        if (connect(r->m_sb.sb_socket, service, addrlen) < 0)
         {
             int err = GetSockError();
             if (err == E_CONNREFUSED)
@@ -880,6 +882,7 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     HOSTENT *h;
 #endif
     struct sockaddr_storage service;
+    socklen_t addrlen = 0;
     if (!r->Link.hostname.av_len)
         return FALSE;
 
@@ -898,17 +901,17 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     if (r->Link.socksport)
     {
         /* Connect via SOCKS */
-        if (!add_addr_info(&service, &r->Link.sockshost, r->Link.socksport))
+        if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport))
             return FALSE;
     }
     else
     {
         /* Connect directly */
-        if (!add_addr_info(&service, &r->Link.hostname, r->Link.port))
+        if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port))
             return FALSE;
     }
 
-    if (!RTMP_Connect0(r, (struct sockaddr *)&service))
+    if (!RTMP_Connect0(r, (struct sockaddr *)&service, addrlen))
         return FALSE;
 
     r->m_bSendCounter = TRUE;
@@ -921,9 +924,10 @@ SocksNegotiate(RTMP *r)
 {
     unsigned long addr;
     struct sockaddr_storage service;
+    socklen_t addrlen = 0;
     memset(&service, 0, sizeof(service));
 
-    add_addr_info(&service, &r->Link.hostname, r->Link.port);
+    add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port);
 
     // not doing IPv6 socks
     if (service.ss_family == AF_INET6)

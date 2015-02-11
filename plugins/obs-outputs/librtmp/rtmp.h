@@ -358,7 +358,7 @@ extern "C"
 
     int RTMP_Connect(RTMP *r, RTMPPacket *cp);
     struct sockaddr;
-    int RTMP_Connect0(RTMP *r, struct sockaddr *svc);
+    int RTMP_Connect0(RTMP *r, struct sockaddr *svc, socklen_t addrlen);
     int RTMP_Connect1(RTMP *r, RTMPPacket *cp);
     int RTMP_Serve(RTMP *r);
     int RTMP_TLS_Accept(RTMP *r, void *ctx);
