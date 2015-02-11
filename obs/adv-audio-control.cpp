@@ -74,8 +74,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	forceMonoContainer->layout()->setAlignment(forceMono,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 
-	QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-
 	panning->setMinimum(0);
 	panning->setMaximum(100);
 	panning->setTickPosition(QSlider::TicksAbove);
