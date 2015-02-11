@@ -35,7 +35,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	int ret;
 
 	if (i_insize == 0)
-		i_insize = strlen(in);
+		i_insize = (int)strlen(in);
 
 	/* prevent bom from being used in the string */
 	if (has_utf8_bom(in)) {
@@ -58,7 +58,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 	int ret;
 
 	if (i_insize == 0)
-		i_insize = wcslen(in);
+		i_insize = (int)wcslen(in);
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, in, i_insize, out, (int)outsize,
 			NULL, NULL);
