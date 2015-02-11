@@ -146,6 +146,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutUseBufsize,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutVBufsize,    SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutReconnect,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRetryDelay,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMaxRetries,     SCROLL_CHANGED, OUTPUTS_CHANGED);
