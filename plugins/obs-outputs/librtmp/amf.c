@@ -483,6 +483,7 @@ AMF3ReadString(const char *data, AVal *str)
 
         return len + nSize;
     }
+    return len;
 }
 
 int
@@ -504,7 +505,7 @@ AMF3Prop_Decode(AMFObjectProperty *prop, const char *pBuffer, int nSize,
     /* decode name */
     if (bDecodeName)
     {
-        AVal name;
+        AVal name = AV_empty;
         int nRes = AMF3ReadString(pBuffer, &name);
 
         if (name.av_len <= 0)
@@ -863,7 +864,7 @@ AMFProp_Dump(AMFObjectProperty *prop)
 void
 AMFProp_Reset(AMFObjectProperty *prop)
 {
-    if (prop->p_type == AMF_OBJECT)
+    if (prop->p_type == AMF_OBJECT || prop->p_type == AMF_ECMA_ARRAY || prop->p_type == AMF_STRICT_ARRAY)
         AMF_Reset(&prop->p_vu.p_object);
     else
     {
@@ -1078,7 +1079,7 @@ AMF3_Decode(AMFObject *obj, const char *pBuffer, int nSize, int bAMFData)
 
             for (i = 0; i < cd.cd_num; i++)
             {
-                AVal memberName;
+                AVal memberName = AV_empty;
                 len = AMF3ReadString(pBuffer, &memberName);
                 RTMP_Log(RTMP_LOGDEBUG, "Member: %s", memberName.av_val);
                 AMF3CD_AddProp(&cd, &memberName);

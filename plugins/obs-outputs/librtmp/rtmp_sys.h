@@ -38,6 +38,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <Mstcpip.h>
 
 
 #ifdef _MSC_VER	/* MSVC */

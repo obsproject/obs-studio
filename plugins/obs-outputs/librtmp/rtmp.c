@@ -642,7 +642,7 @@ int RTMP_AddStream(RTMP *r, const char *playpath)
 }
 
 static int
-add_addr_info(struct sockaddr_in *service, AVal *host, int port)
+add_addr_info(struct sockaddr_storage *service, AVal *host, int port)
 {
     char *hostname;
     int ret = TRUE;
@@ -657,20 +657,53 @@ add_addr_info(struct sockaddr_in *service, AVal *host, int port)
         hostname = host->av_val;
     }
 
-    service->sin_addr.s_addr = inet_addr(hostname);
-    if (service->sin_addr.s_addr == INADDR_NONE)
+    struct addrinfo hints;
+    struct addrinfo *result = NULL;
+    struct addrinfo *ptr = NULL;
+
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    service->ss_family = AF_UNSPEC;
+
+    char portStr[8];
+
+    sprintf(portStr, "%d", port);
+
+    int err = getaddrinfo(hostname, portStr, &hints, &result);
+
+    if (err)
     {
-        struct hostent *host = gethostbyname(hostname);
-        if (host == NULL || host->h_addr == NULL)
-        {
-            RTMP_Log(RTMP_LOGERROR, "Problem accessing the DNS. (addr: %s, error: %d)", hostname, GetSockError());
-            ret = FALSE;
-            goto finish;
-        }
-        service->sin_addr = *(struct in_addr *)host->h_addr;
+#ifndef _WIN32
+#define gai_strerrorA gai_strerror
+#endif
+        RTMP_Log(RTMP_LOGERROR, "Could not resolve %s: %s (%d)", hostname, gai_strerrorA(GetSockError()), GetSockError());
+        ret = FALSE;
+        goto finish;
     }
 
-    service->sin_port = htons(port);
+    // they should come back in OS preferred order
+    for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+    {
+        if (ptr->ai_family == AF_INET || ptr->ai_family == AF_INET6)
+        {
+            memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
+            break;
+        }
+    }
+
+    freeaddrinfo(result);
+
+    if (service->ss_family == AF_UNSPEC)
+    {
+        RTMP_Log(RTMP_LOGERROR, "Could not resolve server '%s': no valid address found", hostname);
+        ret = FALSE;
+        goto finish;
+    }
+
 finish:
     if (hostname != host->av_val)
         free(hostname);
@@ -697,9 +730,9 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
 
     //best to be explicit, we need overlapped socket
 #ifdef _WIN32
-    r->m_sb.sb_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+    r->m_sb.sb_socket = WSASocket(service->sa_family, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 #else
-    r->m_sb.sb_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    r->m_sb.sb_socket = socket(service->sa_family, SOCK_STREAM, IPPROTO_TCP);
 #endif
 
     if (r->m_sb.sb_socket != INVALID_SOCKET)
@@ -716,7 +749,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
             }
         }
 
-        if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr)) < 0)
+        if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr_storage)) < 0)
         {
             int err = GetSockError();
             if (err == E_CONNREFUSED)
@@ -843,12 +876,24 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 int
 RTMP_Connect(RTMP *r, RTMPPacket *cp)
 {
-    struct sockaddr_in service;
+#ifdef _WIN32
+    HOSTENT *h;
+#endif
+    struct sockaddr_storage service;
     if (!r->Link.hostname.av_len)
         return FALSE;
 
-    memset(&service, 0, sizeof(struct sockaddr_in));
-    service.sin_family = AF_INET;
+#ifdef _WIN32
+    //COMODO security software sandbox blocks all DNS by returning "host not found"
+    h = gethostbyname("localhost");
+    if (!h && GetLastError() == WSAHOST_NOT_FOUND)
+    {
+        RTMP_Log(RTMP_LOGERROR, "RTMP_Connect: Connection test failed. This error is likely caused by Comodo Internet Security running OBS in sandbox mode. Please add OBS to the Comodo automatic sandbox exclusion list, restart OBS and try again (11001).");
+        return FALSE;
+    }
+#endif
+
+    memset(&service, 0, sizeof(service));
 
     if (r->Link.socksport)
     {
@@ -875,11 +920,16 @@ static int
 SocksNegotiate(RTMP *r)
 {
     unsigned long addr;
-    struct sockaddr_in service;
-    memset(&service, 0, sizeof(struct sockaddr_in));
+    struct sockaddr_storage service;
+    memset(&service, 0, sizeof(service));
 
     add_addr_info(&service, &r->Link.hostname, r->Link.port);
-    addr = htonl(service.sin_addr.s_addr);
+
+    // not doing IPv6 socks
+    if (service.ss_family == AF_INET6)
+        return FALSE;
+
+    addr = htonl((*(struct sockaddr_in *)&service).sin_addr.s_addr);
 
     {
         char packet[] =
@@ -1192,7 +1242,7 @@ RTMP_ClientPacket(RTMP *r, RTMPPacket *packet)
         RTMP_Log(RTMP_LOGDEBUG, "%s, unknown packet type received: 0x%02x", __FUNCTION__,
                  packet->m_packetType);
 #ifdef _DEBUG
-        RTMP_LogHex(RTMP_LOGDEBUG, (uint8_t*)packet->m_body, packet->m_nBodySize);
+        RTMP_LogHex(RTMP_LOGDEBUG, (const uint8_t*)packet->m_body, packet->m_nBodySize);
 #endif
     }
 
@@ -1742,9 +1792,6 @@ SendFCUnpublish(RTMP *r, int streamIdx)
 
 SAVC(publish);
 SAVC(live);
-#if 0
-SAVC(record);
-#endif
 
 static int
 SendPublish(RTMP *r, int streamIdx)
@@ -2367,6 +2414,17 @@ static void hexenc(unsigned char *inbuf, int len, char *dst)
     *ptr = '\0';
 }
 
+static char *AValChr(AVal *av, char c)
+{
+    int i;
+    for (i = 0; i < av->av_len; i++)
+    {
+        if (av->av_val[i] == c)
+            return &av->av_val[i];
+    }
+    return NULL;
+}
+
 static int
 PublisherAuth(RTMP *r, AVal *description)
 {
@@ -2416,8 +2474,9 @@ PublisherAuth(RTMP *r, AVal *description)
         {
             char *par, *val = NULL, *orig_ptr;
             AVal user, salt, opaque, challenge, *aptr = NULL;
-            opaque.av_len = 0;
-            challenge.av_len = 0;
+
+            opaque.av_len = challenge.av_len = salt.av_len = user.av_len = 0;
+            opaque.av_val = challenge.av_val = salt.av_val = user.av_val = NULL;
 
             ptr = orig_ptr = strdup(token_in);
             while (ptr)
@@ -2605,6 +2664,9 @@ PublisherAuth(RTMP *r, AVal *description)
             /* cnonce = hexenc(4 random bytes) (initialized on first connection) */
             char cnonce[9];
 
+            nonce.av_len = user.av_len = 0;
+            nonce.av_val = user.av_val = NULL;
+
             ptr = orig_ptr = strdup(token_in);
             /* Extract parameters (we need user and nonce) */
             while (ptr)
@@ -2660,7 +2722,7 @@ PublisherAuth(RTMP *r, AVal *description)
             /* hash2 = hexenc(md5(method + ":/" + app + "/" + appInstance)) */
             /* Extract appname + appinstance without query parameters */
             apptmp = r->Link.app;
-            ptr = strchr(apptmp.av_val, '?');
+            ptr = AValChr(&apptmp, '?');
             if (ptr)
                 apptmp.av_len = ptr - apptmp.av_val;
 
@@ -2668,6 +2730,8 @@ PublisherAuth(RTMP *r, AVal *description)
             MD5_Update(&md5ctx, (void *)method, sizeof(method)-1);
             MD5_Update(&md5ctx, ":/", 2);
             MD5_Update(&md5ctx, apptmp.av_val, apptmp.av_len);
+            if (!AValChr(&apptmp, '/'))
+                MD5_Update(&md5ctx, "/_definst_", sizeof("/_definst_") - 1);
             MD5_Final(md5sum_val, &md5ctx);
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:/%.*s) =>", __FUNCTION__,
                      method, apptmp.av_len, apptmp.av_val);
@@ -2789,10 +2853,6 @@ static const AVal av_NetStream_Play_UnpublishNotify =
 static const AVal av_NetStream_Publish_Start = AVC("NetStream.Publish.Start");
 static const AVal av_NetStream_Publish_Rejected = AVC("NetStream.Publish.Rejected");
 static const AVal av_NetStream_Publish_Denied = AVC("NetStream.Publish.Denied");
-#if 0
-static const AVal av_NetConnection_Connect_Rejected =
-    AVC("NetConnection.Connect.Rejected");
-#endif
 
 /* Returns 0 for OK/Failed/error, 1 for 'Stop or Complete' */
 static int
@@ -3474,6 +3534,7 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
     char *header = (char *)hbuf;
     int nSize, hSize, nToRead, nChunk;
     // int didAlloc = FALSE;
+    int extendedTimestamp = 0;
 
     RTMP_Log(RTMP_LOGDEBUG2, "%s: fd=%d", __FUNCTION__, (int)r->m_sb.sb_socket);
 
@@ -3578,7 +3639,10 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
                     packet->m_nInfoField2 = DecodeInt32LE(header + 7);
             }
         }
-        if (packet->m_nTimeStamp == 0xffffff)
+
+        extendedTimestamp = (packet->m_nTimeStamp == 0xffffff);
+
+        if (extendedTimestamp)
         {
             if (ReadN(r, header + nSize, 4) != 4)
             {
@@ -3633,6 +3697,8 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
     if (!r->m_vecChannelsIn[packet->m_nChannel])
         r->m_vecChannelsIn[packet->m_nChannel] = malloc(sizeof(RTMPPacket));
     memcpy(r->m_vecChannelsIn[packet->m_nChannel], packet, sizeof(RTMPPacket));
+    if (extendedTimestamp)
+        r->m_vecChannelsIn[packet->m_nChannel]->m_nTimeStamp = 0xffffff;
 
     if (RTMPPacket_IsReady(packet))
     {
@@ -4901,8 +4967,8 @@ stopKeyframeSearch:
 
     if (recopy)
     {
-        len = (unsigned int)(ret) > buflen ? buflen : (unsigned int)ret;
-	memcpy(buf, r->m_read.buf, len);
+        len = ret > (int)(buflen) ? buflen : (unsigned int)(ret);
+        memcpy(buf, r->m_read.buf, len);
         r->m_read.bufpos = r->m_read.buf + len;
         r->m_read.buflen = ret - len;
     }
@@ -4948,6 +5014,7 @@ fail:
             memcpy(mybuf, flvHeader, sizeof(flvHeader));
             r->m_read.buf += sizeof(flvHeader);
             r->m_read.buflen -= sizeof(flvHeader);
+            cnt += sizeof(flvHeader);
 
             while (r->m_read.timestamp == 0)
             {
@@ -4965,6 +5032,7 @@ fail:
                 {
                     mybuf = realloc(mybuf, cnt + nRead);
                     memcpy(mybuf+cnt, r->m_read.buf, nRead);
+                    free(r->m_read.buf);
                     r->m_read.buf = mybuf+cnt+nRead;
                     break;
                 }
