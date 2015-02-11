@@ -569,10 +569,13 @@ static inline bool ResolutionValid(string res, int &cx, int &cy)
 	return ConvertRes(cx, cy, res.c_str());
 }
 
+template <typename ... F>
+static bool CapsMatch(const VideoDevice &dev, F ... fs);
+
 template <typename F, typename ... Fs>
 static inline bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
 {
-	return f(info) && CapsMatch(info, f, fs ...);
+	return f(info) && CapsMatch(info, fs ...);
 }
 
 static inline bool CapsMatch(const VideoInfo&)
