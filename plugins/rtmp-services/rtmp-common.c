@@ -277,11 +277,9 @@ static void apply_audio_encoder_settings(obs_encoder_t *encoder,
 	obs_data_release(settings);
 }
 
-static void initialize_output(struct rtmp_common *service, obs_output_t *output,
-		json_t *root)
+static void initialize_output(struct rtmp_common *service, json_t *root,
+		obs_encoder_t *video_encoder, obs_encoder_t *audio_encoder)
 {
-	obs_encoder_t *video_encoder = obs_output_get_video_encoder(output);
-	obs_encoder_t *audio_encoder = obs_output_get_audio_encoder(output, 0);
 	json_t        *json_service = find_service(root, service->service);
 	json_t        *recommended;
 
@@ -302,7 +300,8 @@ static void initialize_output(struct rtmp_common *service, obs_output_t *output,
 		apply_audio_encoder_settings(audio_encoder, recommended);
 }
 
-static bool rtmp_common_initialize(void *data, obs_output_t *output)
+static void rtmp_common_apply_settings(void *data,
+		obs_encoder_t *video_encoder, obs_encoder_t *audio_encoder)
 {
 	struct rtmp_common *service = data;
 	char               *file;
@@ -311,13 +310,12 @@ static bool rtmp_common_initialize(void *data, obs_output_t *output)
 	if (file) {
 		json_t *root = open_json_file(file);
 		if (root) {
-			initialize_output(service, output, root);
+			initialize_output(service, root, video_encoder,
+					audio_encoder);
 			json_decref(root);
 		}
 		bfree(file);
 	}
-
-	return true;
 }
 
 static const char *rtmp_common_url(void *data)
@@ -338,8 +336,8 @@ struct obs_service_info rtmp_common_service = {
 	.create         = rtmp_common_create,
 	.destroy        = rtmp_common_destroy,
 	.update         = rtmp_common_update,
-	.initialize     = rtmp_common_initialize,
 	.get_properties = rtmp_common_properties,
 	.get_url        = rtmp_common_url,
-	.get_key        = rtmp_common_key
+	.get_key        = rtmp_common_key,
+	.apply_encoder_settings = rtmp_common_apply_settings,
 };
