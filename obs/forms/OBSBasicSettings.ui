@@ -2322,8 +2322,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>159</x>
-     <y>34</y>
+     <x>310</x>
+     <y>29</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
@@ -2349,7 +2349,7 @@
   </connection>
   <connection>
    <sender>simpleOutReconnect</sender>
-   <signal>clicked(bool)</signal>
+   <signal>toggled(bool)</signal>
    <receiver>simpleOutRetryDelay</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
@@ -2365,7 +2365,7 @@
   </connection>
   <connection>
    <sender>simpleOutReconnect</sender>
-   <signal>clicked(bool)</signal>
+   <signal>toggled(bool)</signal>
    <receiver>simpleOutMaxRetries</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
@@ -2514,12 +2514,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>737</x>
-     <y>113</y>
+     <x>259</x>
+     <y>101</y>
     </hint>
     <hint type="destinationlabel">
-     <x>528</x>
-     <y>426</y>
+     <x>243</x>
+     <y>106</y>
     </hint>
    </hints>
   </connection>
@@ -2530,12 +2530,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>238</x>
-     <y>186</y>
+     <x>259</x>
+     <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>495</x>
-     <y>186</y>
+     <x>230</x>
+     <y>125</y>
     </hint>
    </hints>
   </connection>
@@ -2546,12 +2546,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>467</x>
-     <y>103</y>
+     <x>468</x>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
-     <x>266</x>
-     <y>123</y>
+     <x>362</x>
+     <y>136</y>
     </hint>
    </hints>
   </connection>
@@ -2562,12 +2562,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>505</x>
-     <y>104</y>
+     <x>468</x>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
-     <x>473</x>
-     <y>134</y>
+     <x>468</x>
+     <y>136</y>
     </hint>
    </hints>
   </connection>
@@ -2578,12 +2578,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>536</x>
-     <y>105</y>
+     <x>468</x>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
-     <x>288</x>
-     <y>153</y>
+     <x>299</x>
+     <y>162</y>
     </hint>
    </hints>
   </connection>
@@ -2594,12 +2594,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>544</x>
-     <y>103</y>
+     <x>468</x>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
-     <x>463</x>
-     <y>154</y>
+     <x>468</x>
+     <y>162</y>
     </hint>
    </hints>
   </connection>
@@ -2610,12 +2610,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>409</x>
-     <y>253</y>
+     <x>270</x>
+     <y>237</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>263</y>
+     <x>437</x>
+     <y>237</y>
     </hint>
    </hints>
   </connection>
@@ -2626,12 +2626,44 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>399</x>
-     <y>247</y>
+     <x>259</x>
+     <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>469</x>
-     <y>248</y>
+     <x>230</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutReconnect</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_17</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>444</x>
+     <y>162</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>298</x>
+     <y>190</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutReconnect</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_22</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>475</x>
+     <y>161</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>350</x>
+     <y>218</y>
     </hint>
    </hints>
   </connection>
