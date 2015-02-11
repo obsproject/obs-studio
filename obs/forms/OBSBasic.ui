@@ -756,11 +756,17 @@
    </property>
   </action>
   <action name="action_Open">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Basic.MainMenu.File.Export</string>
    </property>
   </action>
   <action name="action_Save">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Basic.MainMenu.File.Import</string>
    </property>
