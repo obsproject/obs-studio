@@ -646,11 +646,12 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
 {
     char *hostname;
     int ret = TRUE;
-    if (host->av_val[host->av_len])
+    if (host->av_val[host->av_len] || host->av_val[0] == '[')
     {
-        hostname = malloc(host->av_len+1);
-        memcpy(hostname, host->av_val, host->av_len);
-        hostname[host->av_len] = '\0';
+        int v6 = host->av_val[0] == '[';
+        hostname = malloc(host->av_len+1 - v6 * 2);
+        memcpy(hostname, host->av_val + v6, host->av_len - v6 * 2);
+        hostname[host->av_len - v6 * 2] = '\0';
     }
     else
     {
