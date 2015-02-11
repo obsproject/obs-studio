@@ -42,6 +42,7 @@ private:
 	bool outputsChanged = false;
 	bool audioChanged = false;
 	bool videoChanged = false;
+	bool advancedChanged = false;
 	int  pageIndex = 0;
 	bool loading = true;
 
@@ -63,7 +64,7 @@ private:
 	inline bool Changed() const
 	{
 		return generalChanged || outputsChanged || stream1Changed ||
-			audioChanged || videoChanged;
+			audioChanged || videoChanged || advancedChanged;
 	}
 
 	inline void EnableApplyButton(bool en)
@@ -78,6 +79,7 @@ private:
 		outputsChanged = false;
 		audioChanged   = false;
 		videoChanged   = false;
+		advancedChanged= false;
 		EnableApplyButton(false);
 	}
 
@@ -87,12 +89,14 @@ private:
 
 	void LoadServiceTypes();
 	void LoadEncoderTypes();
+	void LoadColorRanges();
 
 	void LoadGeneralSettings();
 	void LoadStream1Settings();
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
+	void LoadAdvancedSettings();
 	void LoadSettings(bool changedOnly);
 
 	OBSPropertiesView *CreateEncoderPropertyView(const char *encoder,
@@ -128,6 +132,7 @@ private:
 	void SaveOutputSettings();
 	void SaveAudioSettings();
 	void SaveVideoSettings();
+	void SaveAdvancedSettings();
 	void SaveSettings();
 
 private slots:
@@ -154,6 +159,8 @@ private slots:
 	void VideoChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();
+	void AdvancedChanged();
+	void AdvancedChangedRestart();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
