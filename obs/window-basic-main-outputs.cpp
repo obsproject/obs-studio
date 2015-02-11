@@ -144,6 +144,8 @@ inline void SimpleOutput::SetupOutputs()
 	SimpleOutput::Update();
 	obs_encoder_set_video(h264, obs_get_video());
 	obs_encoder_set_audio(aac,  obs_get_audio());
+
+	obs_service_apply_encoder_settings(main->GetService(), h264, aac);
 }
 
 bool SimpleOutput::StartStreaming(obs_service_t *service)
