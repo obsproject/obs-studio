@@ -235,3 +235,19 @@ bool obs_service_initialize(struct obs_service *service,
 		return service->info.initialize(service->context.data, output);
 	return true;
 }
+
+void obs_service_apply_encoder_settings(obs_service_t *service,
+		obs_encoder_t *video_encoder, obs_encoder_t *audio_encoder)
+{
+	if (!service || !service->info.apply_encoder_settings)
+		return;
+
+	if (video_encoder && video_encoder->info.type != OBS_ENCODER_VIDEO)
+		video_encoder = NULL;
+	if (audio_encoder && audio_encoder->info.type != OBS_ENCODER_AUDIO)
+		audio_encoder = NULL;
+
+	if (video_encoder || audio_encoder)
+		service->info.apply_encoder_settings(service->context.data,
+				video_encoder, audio_encoder);
+}

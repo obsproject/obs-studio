@@ -1315,6 +1315,15 @@ EXPORT const char *obs_service_get_username(const obs_service_t *service);
 /** Returns the password (if any) for this service context */
 EXPORT const char *obs_service_get_password(const obs_service_t *service);
 
+/**
+ * Applies service-specific video encoder settings.
+ *
+ * @param  video_encoder  Video encoder to apply settings to.  Optional.
+ * @param  audio_encoder  Audio encoder to apply settings to.  Optional.
+ */
+EXPORT void obs_service_apply_encoder_settings(obs_service_t *service,
+		obs_encoder_t *video_encoder, obs_encoder_t *audio_encoder);
+
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

@@ -1,5 +1,5 @@
 #include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QScrollArea>
 #include <QLabel>
 #include "window-basic-adv-audio.hpp"
@@ -18,49 +18,32 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 {
 	QScrollArea *scrollArea;
 	QVBoxLayout *vlayout;
-	QHBoxLayout *hlayout;
 	QWidget *widget;
 	QLabel *label;
 
-	hlayout = new QHBoxLayout;
-	hlayout->setContentsMargins(0, 0, 0, 0);
+	mainLayout = new QGridLayout;
+	mainLayout->setContentsMargins(0, 0, 0, 0);
 	label = new QLabel(QTStr("Basic.AdvAudio.Name"));
-	label->setMinimumWidth(170);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
+	mainLayout->addWidget(label, 0, 0);
 	label = new QLabel(QTStr("Basic.AdvAudio.Volume"));
-	label->setMinimumWidth(130);
-	label->setMaximumWidth(130);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
+	mainLayout->addWidget(label, 0, 1);
 	label = new QLabel(QTStr("Basic.AdvAudio.Mono"));
-	label->setMinimumWidth(130);
-	label->setMaximumWidth(130);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
+	mainLayout->addWidget(label, 0, 2);
 	label = new QLabel(QTStr("Basic.AdvAudio.Panning"));
-	label->setMinimumWidth(140);
-	label->setMaximumWidth(140);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
+	mainLayout->addWidget(label, 0, 3);
 	label = new QLabel(QTStr("Basic.AdvAudio.SyncOffset"));
-	label->setMinimumWidth(130);
-	label->setMaximumWidth(130);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
+	mainLayout->addWidget(label, 0, 4);
 	label = new QLabel(QTStr("Basic.AdvAudio.AudioTracks"));
-	label->setMinimumWidth(160);
-	label->setMaximumWidth(160);
 	label->setAlignment(Qt::AlignHCenter);
-	hlayout->addWidget(label);
-	widget = new QWidget;
-	widget->setLayout(hlayout);
+	mainLayout->addWidget(label, 0, 5);
 
-	vlayout = new QVBoxLayout;
-	vlayout->setContentsMargins(0, 0, 0, 10);
-	vlayout->addWidget(widget);
 	controlArea = new QWidget;
-	controlArea->setLayout(vlayout);
+	controlArea->setLayout(mainLayout);
 	controlArea->setSizePolicy(QSizePolicy::Preferred,
 			QSizePolicy::Preferred);
 
@@ -128,8 +111,7 @@ void OBSBasicAdvAudio::OBSSourceRemoved(void *param, calldata_t *calldata)
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)
 {
-	OBSAdvAudioCtrl *control = new OBSAdvAudioCtrl(source);
-	controlArea->layout()->addWidget(control);
+	OBSAdvAudioCtrl *control = new OBSAdvAudioCtrl(mainLayout, source);
 	controls.push_back(control);
 }
 

@@ -1,4 +1,5 @@
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QSpinBox>
 #include <QCheckBox>
@@ -10,14 +11,10 @@
 #define NSEC_PER_MSEC 1000000
 #endif
 
-OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
+OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	: source(source_)
 {
-	QWidget *forceMonoContainer;
-	QWidget *mixerContainer;
-	QWidget *panningContainer;
 	QHBoxLayout *hlayout;
-	QLabel  *labelL, *labelR;
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
 	const char *sourceName = obs_source_get_name(source);
 	float vol = obs_source_get_volume(source);
@@ -57,6 +54,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	panningContainer->setLayout(hlayout);
+	panningContainer->setMinimumWidth(100);
 
 	labelL->setText("L");
 
@@ -68,14 +66,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 
 	volume->setMinimum(0);
 	volume->setMaximum(2000);
-	volume->setMinimumWidth(130);
-	volume->setMaximumWidth(130);
 	volume->setValue(int(vol * 100.0f));
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
-	forceMonoContainer->setMinimumWidth(130);
-	forceMonoContainer->setMaximumWidth(130);
 	forceMonoContainer->layout()->addWidget(forceMono);
 	forceMonoContainer->layout()->setAlignment(forceMono,
 			Qt::AlignHCenter | Qt::AlignVCenter);
@@ -89,8 +83,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	int64_t cur_sync = obs_source_get_sync_offset(source);
 	syncOffset->setMinimum(-20000);
 	syncOffset->setMaximum(20000);
-	syncOffset->setMinimumWidth(130);
-	syncOffset->setMaximumWidth(130);
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
 	mixer1->setText("1");
@@ -102,14 +94,11 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	mixer4->setText("4");
 	mixer4->setChecked(mixers & (1<<3));
 
-	panningContainer->setMinimumWidth(140);
-	panningContainer->setMaximumWidth(140);
 	panningContainer->layout()->addWidget(labelL);
 	panningContainer->layout()->addWidget(panning);
 	panningContainer->layout()->addWidget(labelR);
+	panningContainer->setMaximumWidth(170);
 
-	mixerContainer->setMinimumWidth(160);
-	mixerContainer->setMaximumWidth(160);
 	mixerContainer->layout()->addWidget(mixer1);
 	mixerContainer->layout()->addWidget(mixer2);
 	mixerContainer->layout()->addWidget(mixer3);
@@ -132,16 +121,26 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(obs_source_t *source_)
 	QWidget::connect(mixer4, SIGNAL(clicked(bool)),
 			this, SLOT(mixer4Changed(bool)));
 
-	hlayout = new QHBoxLayout;
-	hlayout->setContentsMargins(0, 0, 0, 0);
-	hlayout->addWidget(nameLabel);
-	hlayout->addWidget(volume);
-	hlayout->addWidget(forceMonoContainer);
-	hlayout->addWidget(panningContainer);
-	hlayout->addWidget(syncOffset);
-	hlayout->addWidget(mixerContainer);
-	setLayout(hlayout);
-	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+	int lastRow = layout->rowCount();
+
+	layout->addWidget(nameLabel, lastRow, 0);
+	layout->addWidget(volume, lastRow, 1);
+	layout->addWidget(forceMonoContainer, lastRow, 2);
+	layout->addWidget(panningContainer, lastRow, 3);
+	layout->addWidget(syncOffset, lastRow, 4);
+	layout->addWidget(mixerContainer, lastRow, 5);
+	layout->layout()->setAlignment(mixerContainer,
+			Qt::AlignHCenter | Qt::AlignVCenter);
+}
+
+OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
+{
+	nameLabel->deleteLater();
+	volume->deleteLater();
+	forceMonoContainer->deleteLater();
+	panningContainer->deleteLater();
+	syncOffset->deleteLater();
+	mixerContainer->deleteLater();
 }
 
 /* ------------------------------------------------------------------------- */

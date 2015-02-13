@@ -144,6 +144,8 @@ inline void SimpleOutput::SetupOutputs()
 	SimpleOutput::Update();
 	obs_encoder_set_video(h264, obs_get_video());
 	obs_encoder_set_audio(aac,  obs_get_audio());
+
+	obs_service_apply_encoder_settings(main->GetService(), h264, aac);
 }
 
 bool SimpleOutput::StartStreaming(obs_service_t *service)
@@ -399,6 +401,8 @@ inline void AdvancedOutput::SetupStreaming()
 			"TrackIndex");
 	int trackCount = config_get_int(main->Config(), "AdvOut",
 			"TrackCount");
+	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
+			"ApplyServiceSettings");
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
@@ -412,16 +416,33 @@ inline void AdvancedOutput::SetupStreaming()
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
 
+	if (applyServiceSettings) {
+		obs_service_apply_encoder_settings(main->GetService(),
+				h264Streaming, nullptr);
+	}
+
 	if (multitrack) {
 		int i = 0;
-		for (; i < trackCount; i++)
+		for (; i < trackCount; i++) {
 			obs_output_set_audio_encoder(streamOutput, aacTrack[i],
 					i);
+
+			if (applyServiceSettings)
+				obs_service_apply_encoder_settings(
+						main->GetService(), nullptr,
+						aacTrack[i]);
+		}
+
 		for (; i < 4; i++)
 			obs_output_set_audio_encoder(streamOutput, nullptr, i);
+
 	} else {
 		obs_output_set_audio_encoder(streamOutput,
 				aacTrack[trackIndex - 1], 0);
+
+		if (applyServiceSettings)
+			obs_service_apply_encoder_settings(main->GetService(),
+					nullptr, aacTrack[trackIndex - 1]);
 	}
 }
 

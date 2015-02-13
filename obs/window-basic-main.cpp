@@ -414,6 +414,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "AdvOut", "Reconnect", true);
 	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 2);
 	config_set_default_uint  (basicConfig, "AdvOut", "MaxRetries", 20);
+	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
+			true);
 	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
 	config_set_default_bool  (basicConfig, "AdvOut", "Multitrack", false);
 	config_set_default_uint  (basicConfig, "AdvOut", "TrackIndex", 1);

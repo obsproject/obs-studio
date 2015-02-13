@@ -2,26 +2,35 @@
 
 #include <obs.hpp>
 #include <QWidget>
+#include <QPointer>
 
+class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QCheckBox;
 class QSlider;
 
-class OBSAdvAudioCtrl : public QWidget {
+class OBSAdvAudioCtrl : public QObject {
 	Q_OBJECT
 
 private:
 	OBSSource              source;
-	QLabel                 *nameLabel              = nullptr;
-	QSpinBox               *volume                 = nullptr;
-	QCheckBox              *forceMono              = nullptr;
-	QSlider                *panning                = nullptr;
-	QSpinBox               *syncOffset             = nullptr;
-	QCheckBox              *mixer1                 = nullptr;
-	QCheckBox              *mixer2                 = nullptr;
-	QCheckBox              *mixer3                 = nullptr;
-	QCheckBox              *mixer4                 = nullptr;
+
+	QPointer<QWidget>      forceMonoContainer;
+	QPointer<QWidget>      mixerContainer;
+	QPointer<QWidget>      panningContainer;
+
+	QPointer<QLabel>       nameLabel;
+	QPointer<QSpinBox>     volume;
+	QPointer<QCheckBox>    forceMono;
+	QPointer<QSlider>      panning;
+	QPointer<QLabel>       labelL;
+	QPointer<QLabel>       labelR;
+	QPointer<QSpinBox>     syncOffset;
+	QPointer<QCheckBox>    mixer1;
+	QPointer<QCheckBox>    mixer2;
+	QPointer<QCheckBox>    mixer3;
+	QPointer<QCheckBox>    mixer4;
 
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
@@ -34,7 +43,8 @@ private:
 	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
 
 public:
-	OBSAdvAudioCtrl(obs_source_t *source_);
+	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
+	virtual ~OBSAdvAudioCtrl();
 
 	inline obs_source_t *GetSource() const {return source;}
 

@@ -11,6 +11,7 @@
     <file>images/obs.png</file>
   </qresource>
   <qresource prefix="settings">
+    <file>images/settings/advanced.png</file>
     <file>images/settings/network.png</file>
     <file>images/settings/video-display-3.png</file>
     <file>images/settings/decibel_audio_player.png</file>

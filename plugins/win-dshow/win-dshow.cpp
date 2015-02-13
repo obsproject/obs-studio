@@ -39,6 +39,8 @@ using namespace DShow;
 #define BUFFERING_VAL     "buffering"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
 #define AUDIO_DEVICE_ID   "audio_device_id"
+#define COLOR_SPACE       "color_space"
+#define COLOR_RANGE       "color_range"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -60,6 +62,11 @@ using namespace DShow;
 #define TEXT_AUDIO_DEVICE   obs_module_text("AudioDevice")
 #define TEXT_ACTIVATE       obs_module_text("Activate")
 #define TEXT_DEACTIVATE     obs_module_text("Deactivate")
+#define TEXT_COLOR_SPACE    obs_module_text("ColorSpace")
+#define TEXT_COLOR_DEFAULT  obs_module_text("ColorSpace.Default")
+#define TEXT_COLOR_RANGE    obs_module_text("ColorRange")
+#define TEXT_RANGE_PARTIAL  obs_module_text("ColorRange.Partial")
+#define TEXT_RANGE_FULL     obs_module_text("ColorRange.Full")
 
 enum ResType {
 	ResType_Preferred,
@@ -223,6 +230,8 @@ struct DShowInput {
 	bool UpdateVideoConfig(obs_data_t *settings);
 	bool UpdateAudioConfig(obs_data_t *settings);
 	void SetActive(bool active);
+	inline enum video_colorspace GetColorSpace(obs_data_t *settings) const;
+	inline enum video_range_type GetColorRange(obs_data_t *settings) const;
 	inline void Activate(obs_data_t *settings);
 	inline void Deactivate();
 
@@ -569,10 +578,13 @@ static inline bool ResolutionValid(string res, int &cx, int &cy)
 	return ConvertRes(cx, cy, res.c_str());
 }
 
+template <typename ... F>
+static bool CapsMatch(const VideoDevice &dev, F ... fs);
+
 template <typename F, typename ... Fs>
 static inline bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
 {
-	return f(info) && CapsMatch(info, f, fs ...);
+	return f(info) && CapsMatch(info, fs ...);
 }
 
 static inline bool CapsMatch(const VideoInfo&)
@@ -828,6 +840,29 @@ void DShowInput::SetActive(bool active_)
 	obs_data_release(settings);
 }
 
+inline enum video_colorspace DShowInput::GetColorSpace(
+		obs_data_t *settings) const
+{
+	const char *space = obs_data_get_string(settings, COLOR_SPACE);
+
+	if (astrcmpi(space, "709") == 0)
+		return VIDEO_CS_709;
+	else if (astrcmpi(space, "601") == 0)
+		return VIDEO_CS_601;
+	else
+		return (videoConfig.format == VideoFormat::HDYC) ?
+			VIDEO_CS_709 : VIDEO_CS_601;
+}
+
+inline enum video_range_type DShowInput::GetColorRange(
+		obs_data_t *settings) const
+{
+	const char *range = obs_data_get_string(settings, COLOR_RANGE);
+
+	return astrcmpi(range, "full") == 0 ?
+		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+}
+
 inline void DShowInput::Activate(obs_data_t *settings)
 {
 	if (!device.ResetGraph())
@@ -849,13 +884,14 @@ inline void DShowInput::Activate(obs_data_t *settings)
 	if (device.Start() != Result::Success)
 		return;
 
-	enum video_colorspace cs = (videoConfig.format == VideoFormat::HDYC) ?
-		VIDEO_CS_709 : VIDEO_CS_601;
+	enum video_colorspace cs = GetColorSpace(settings);
 
-	if (!video_format_get_parameters(cs, VIDEO_RANGE_PARTIAL,
+	bool success = video_format_get_parameters(
+			cs, GetColorRange(settings),
 			frame.color_matrix,
 			frame.color_range_min,
-			frame.color_range_max)) {
+			frame.color_range_max);
+	if (!success) {
 		blog(LOG_ERROR, "Failed to get video format parameters for " \
 		                "video format %u", cs);
 	}
@@ -907,6 +943,8 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
+	obs_data_set_default_string(settings, COLOR_SPACE, "default");
+	obs_data_set_default_string(settings, COLOR_RANGE, "partial");
 }
 
 struct Resolution {
@@ -1625,6 +1663,17 @@ static obs_properties_t *GetDShowProperties(void *obj)
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(p, VideoFormatChanged);
+
+	p = obs_properties_add_list(ppts, COLOR_SPACE, TEXT_COLOR_SPACE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, TEXT_COLOR_DEFAULT, "default");
+	obs_property_list_add_string(p, "709", "709");
+	obs_property_list_add_string(p, "601", "601");
+
+	p = obs_properties_add_list(ppts, COLOR_RANGE, TEXT_COLOR_RANGE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, TEXT_RANGE_PARTIAL, "partial");
+	obs_property_list_add_string(p, TEXT_RANGE_FULL, "full");
 
 	p = obs_properties_add_list(ppts, BUFFERING_VAL, TEXT_BUFFERING,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

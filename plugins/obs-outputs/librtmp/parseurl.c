@@ -27,7 +27,7 @@
 int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port,
                   AVal *app)
 {
-    char *p, *end, *col, /* *ques, */ *slash;
+    char *p, *end, *col, /* *ques, */ *slash, *v6;
 
     RTMP_Log(RTMP_LOGDEBUG, "Parsing...");
 
@@ -83,9 +83,10 @@ parsehost:
     }
 
     end   = p + strlen(p);
-    col   = strchr(p, ':');
+    v6    = strchr(p, ']');
     // ques  = strchr(p, '?');
     slash = strchr(p, '/');
+    col   = strchr((v6 && v6 < slash) ? v6 : p, ':');
 
     {
         int hostlen;

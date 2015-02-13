@@ -91,7 +91,7 @@ static inline void handle_application_launch(syphon_t s, NSArray *new)
 
 static const char *syphon_get_name()
 {
-	return "Syphon";
+	return obs_module_text("Syphon");
 }
 
 static void stop_client(syphon_t s)

@@ -64,6 +64,10 @@ struct obs_service_info {
 	const char *(*get_password)(void *data);
 
 	bool (*supports_multitrack)(void *data);
+
+	void (*apply_encoder_settings)(void *data, obs_encoder_t *video_encoder,
+			obs_encoder_t *audio_encoder);
+
 	/* TODO: more stuff later */
 };
 

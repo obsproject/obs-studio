@@ -121,6 +121,8 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_RESTART   SLOT(VideoChangedRestart())
 #define VIDEO_RES       SLOT(VideoChangedResolution())
 #define VIDEO_CHANGED   SLOT(VideoChanged())
+#define ADV_CHANGED     SLOT(AdvancedChanged())
+#define ADV_RESTART     SLOT(AdvancedChangedRestart())
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog          (parent),
@@ -146,6 +148,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutUseBufsize,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutVBufsize,    SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutReconnect,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRetryDelay,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMaxRetries,     SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -156,6 +159,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack4,         CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutApplyService,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -204,12 +208,17 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->audioBufferingTime,   SCROLL_CHANGED, ADV_RESTART);
+	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->colorSpace,           COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 
 	//Apply button disabled until change.
 	EnableApplyButton(false);
 
 	LoadServiceTypes();
 	LoadEncoderTypes();
+	LoadColorRanges();
 	LoadSettings(false);
 }
 
@@ -297,6 +306,15 @@ void OBSBasicSettings::LoadEncoderTypes()
 		ui->advOutEncoder->addItem(qName, qType);
 		ui->advOutRecEncoder->addItem(qName, qType);
 	}
+}
+
+#define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
+#define CS_FULL_STR    QTStr("Basic.Settings.Advanced.Video.ColorRange.Full")
+
+void OBSBasicSettings::LoadColorRanges()
+{
+	ui->colorRange->addItem(CS_PARTIAL_STR, "Partial");
+	ui->colorRange->addItem(CS_FULL_STR, "Full");
 }
 
 void OBSBasicSettings::LoadLanguageList()
@@ -616,10 +634,13 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 			"RescaleRes");
 	int trackIndex = config_get_int(main->Config(), "AdvOut",
 			"TrackIndex");
+	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
+			"ApplyServiceSettings");
 
 	ui->advOutReconnect->setChecked(reconnect);
 	ui->advOutRetryDelay->setValue(retryDelay);
 	ui->advOutMaxRetries->setValue(maxRetries);
+	ui->advOutApplyService->setChecked(applyServiceSettings);
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
@@ -912,6 +933,31 @@ void OBSBasicSettings::LoadAudioSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::LoadAdvancedSettings()
+{
+	uint32_t audioBufferingTime = config_get_uint(main->Config(),
+			"Audio", "BufferingTime");
+	const char *videoColorFormat = config_get_string(main->Config(),
+			"Video", "ColorFormat");
+	const char *videoColorSpace = config_get_string(main->Config(),
+			"Video", "ColorSpace");
+	const char *videoColorRange = config_get_string(main->Config(),
+			"Video", "ColorRange");
+
+	loading = true;
+
+	ui->audioBufferingTime->setValue(audioBufferingTime);
+	SetComboByName(ui->colorFormat, videoColorFormat);
+	SetComboByName(ui->colorSpace, videoColorSpace);
+	SetComboByValue(ui->colorRange, videoColorRange);
+
+	if (video_output_active(obs_get_video())) {
+		ui->advancedVideoContainer->setEnabled(false);
+	}
+
+	loading = false;
+}
+
 void OBSBasicSettings::LoadSettings(bool changedOnly)
 {
 	if (!changedOnly || generalChanged)
@@ -924,6 +970,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
+	if (!changedOnly || advancedChanged)
+		LoadAdvancedSettings();
 }
 
 void OBSBasicSettings::SaveGeneralSettings()
@@ -983,8 +1031,14 @@ void OBSBasicSettings::SaveVideoSettings()
 	SaveSpinBox(ui->fpsNumerator, "Video", "FPSNum");
 	SaveSpinBox(ui->fpsDenominator, "Video", "FPSDen");
 	SaveComboData(ui->downscaleFilter, "Video", "ScaleType");
+}
 
-	main->ResetVideo();
+void OBSBasicSettings::SaveAdvancedSettings()
+{
+	SaveSpinBox(ui->audioBufferingTime, "Audio", "BufferingTime");
+	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
+	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
+	SaveComboData(ui->colorRange, "Video", "ColorRange");
 }
 
 static inline const char *OutputModeFromIdx(int idx)
@@ -1059,6 +1113,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutReconnect, "AdvOut", "Reconnect");
 	SaveSpinBox(ui->advOutRetryDelay, "AdvOut", "RetryDelay");
 	SaveSpinBox(ui->advOutMaxRetries, "AdvOut", "MaxRetries");
+	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
@@ -1148,6 +1203,11 @@ void OBSBasicSettings::SaveSettings()
 		SaveAudioSettings();
 	if (videoChanged)
 		SaveVideoSettings();
+	if (advancedChanged)
+		SaveAdvancedSettings();
+
+	if (videoChanged || advancedChanged)
+		main->ResetVideo();
 
 	config_save(main->Config());
 	config_save(GetGlobalConfig());
@@ -1407,6 +1467,17 @@ void OBSBasicSettings::VideoChangedRestart()
 	}
 }
 
+void OBSBasicSettings::AdvancedChangedRestart()
+{
+	if (!loading) {
+		advancedChanged = true;
+		ui->advancedMsg->setText(
+				QTStr("Basic.Settings.ProgramRestart"));
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
 void OBSBasicSettings::VideoChangedResolution()
 {
 	if (!loading && ValidResolutions(ui.get())) {
@@ -1420,6 +1491,15 @@ void OBSBasicSettings::VideoChanged()
 {
 	if (!loading) {
 		videoChanged = true;
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::AdvancedChanged()
+{
+	if (!loading) {
+		advancedChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
