@@ -807,6 +807,7 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 	}
 
 	// Do not signal_move_dir because we dont want to re-move.
+	signal_move_dir(item, OBS_ORDER_MOVE_DOWN);
 
 	pthread_mutex_unlock(&scene->mutex);
 	obs_scene_release(scene);

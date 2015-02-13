@@ -259,6 +259,8 @@ private slots:
 	void on_actionSceneProperties_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
+	void on_actionSceneDragReorder(const QModelIndex &, int sourceStart,
+			int, const QModelIndex &, int destinationRow);
 	void on_sources_currentItemChanged(QListWidgetItem *current,
 			QListWidgetItem *prev);
 	void on_sources_customContextMenuRequested(const QPoint &pos);
@@ -269,6 +271,8 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
+	void on_actionSourceDragReorder(const QModelIndex &, int sourceStart,
+			int, const QModelIndex &,int destinationRow);
 
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
