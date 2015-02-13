@@ -197,6 +197,12 @@ void OBSBasic::Save(const char *file)
 	obs_data_t *saveData  = GenerateSaveData();
 	const char *jsonData = obs_data_get_json(saveData);
 
+	/* Fixes a crash when Xcode debugging */
+	if(jsonData == NULL) {
+		obs_data_release(saveData);
+		return;
+	}
+
 	/* TODO maybe a message box here? */
 	if (!os_quick_write_utf8_file(file, jsonData, strlen(jsonData), false))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
