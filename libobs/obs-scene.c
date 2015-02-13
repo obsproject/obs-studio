@@ -152,8 +152,10 @@ static inline void attach_sceneitem(struct obs_scene *parent,
 			prev->next->prev = item;
 		prev->next = item;
 	} else {
-		item->next = item->parent->first_item;
-		item->parent->first_item = item;
+		item->next = parent->first_item;
+		if (parent->first_item)
+			parent->first_item->prev = item;
+		parent->first_item = item;
 	}
 }
 
