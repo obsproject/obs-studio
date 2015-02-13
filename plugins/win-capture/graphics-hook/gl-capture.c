@@ -556,34 +556,34 @@ static void gl_init(HDC hdc)
 static void gl_copy_backbuffer(GLuint dst)
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, data.fbo);
-	if (gl_error("gl_shtex_capture_blit", "failed to bind FBO")) {
+	if (gl_error("gl_copy_backbuffer", "failed to bind FBO")) {
 		return;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, dst);
-	if (gl_error("gl_shtex_capture_blit", "failed to bind texture")) {
+	if (gl_error("gl_copy_backbuffer", "failed to bind texture")) {
 		return;
 	}
 
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			GL_TEXTURE_2D, dst, 0);
-	if (gl_error("gl_shtex_capture_blit", "failed to set frame buffer")) {
+	if (gl_error("gl_copy_backbuffer", "failed to set frame buffer")) {
 		return;
 	}
 
 	glReadBuffer(GL_BACK);
-	if (gl_error("gl_shtex_capture_blit", "failed to set read buffer")) {
+	if (gl_error("gl_copy_backbuffer", "failed to set read buffer")) {
 		return;
 	}
 
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	if (gl_error("gl_shtex_capture_blit", "failed to set draw buffer")) {
+	if (gl_error("gl_copy_backbuffer", "failed to set draw buffer")) {
 		return;
 	}
 
 	glBlitFramebuffer(0, 0, data.base_cx, data.base_cy,
 			0, 0, data.cx, data.cy, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	gl_error("gl_shtex_capture_blit", "failed to blit");
+	gl_error("gl_copy_backbuffer", "failed to blit");
 }
 
 static void gl_shtex_capture(void)
