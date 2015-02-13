@@ -82,6 +82,22 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	int width = config_get_int(App()->GlobalConfig(), "MainWindow", "cx");
+
+	// Check if no values are saved (new installation).
+	if (width != 0) {
+		int height = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"cy");
+		int posx = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"posx");
+		int posy = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"posy");
+
+		resize(width, height);
+		move(posx, posy);
+	}
+
+
 	char styleSheetPath[512];
 	int ret = os_get_config_path(styleSheetPath, sizeof(styleSheetPath),
 			"obs-studio/basic/stylesheet.qss");
@@ -659,6 +675,14 @@ OBSBasic::~OBSBasic()
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
+	config_set_int(App()->GlobalConfig(), "MainWindow", "cx",
+			this->width());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "cy",
+			this->height());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "posx",
+			this->pos().x());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "posy",
+			this->pos().y());
 	config_save(App()->GlobalConfig());
 }
 
