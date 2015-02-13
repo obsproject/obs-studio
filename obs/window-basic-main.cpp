@@ -197,9 +197,14 @@ void OBSBasic::Save(const char *file)
 	obs_data_t *saveData  = GenerateSaveData();
 	const char *jsonData = obs_data_get_json(saveData);
 
-	/* TODO maybe a message box here? */
-	if (!os_quick_write_utf8_file(file, jsonData, strlen(jsonData), false))
-		blog(LOG_ERROR, "Could not save scene data to %s", file);
+	if (!!jsonData) {
+		/* TODO: maybe a message box here? */
+		bool success = os_quick_write_utf8_file(file, jsonData,
+				strlen(jsonData), false);
+		if (!success)
+			blog(LOG_ERROR, "Could not save scene data to %s",
+					file);
+	}
 
 	obs_data_release(saveData);
 }
