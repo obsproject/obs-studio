@@ -781,6 +781,37 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 	obs_scene_release(scene);
 }
 
+void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
+		int position)
+{
+	if (!item) return;
+
+	struct obs_scene *scene = item->parent;
+
+	obs_scene_addref(scene);
+	pthread_mutex_lock(&scene->mutex);
+
+	detach_sceneitem(item);
+	struct obs_scene_item *next = scene->first_item;
+
+	if (position == 0) {
+		attach_sceneitem(scene, item, NULL);
+	} else {
+		for (int i = position; i > 1; --i) {
+			if (next->next == NULL)
+				break;
+			next = next->next;
+		}
+
+		attach_sceneitem(scene, item, next);
+	}
+
+	// Do not signal_move_dir because we dont want to re-move.
+
+	pthread_mutex_unlock(&scene->mutex);
+	obs_scene_release(scene);
+}
+
 void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 		enum obs_bounds_type type)
 {
