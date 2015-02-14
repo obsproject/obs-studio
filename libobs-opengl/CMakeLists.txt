@@ -67,9 +67,15 @@ set(libobs-opengl_HEADERS
 	gl-shaderparser.h
 	gl-subsystem.h)
 
-add_library(libobs-opengl MODULE
-	${libobs-opengl_SOURCES}
-	${libobs-opengl_HEADERS})
+if(WIN32 OR APPLE)
+	add_library(libobs-opengl MODULE
+		${libobs-opengl_SOURCES}
+		${libobs-opengl_HEADERS})
+else()
+	add_library(libobs-opengl SHARED
+		${libobs-opengl_SOURCES}
+		${libobs-opengl_HEADERS})
+endif()
 
 if(WIN32 OR APPLE)
 set_target_properties(libobs-opengl
