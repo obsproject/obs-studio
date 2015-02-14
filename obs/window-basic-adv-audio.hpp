@@ -33,4 +33,5 @@ public slots:
 
 public:
 	OBSBasicAdvAudio(QWidget *parent);
+	~OBSBasicAdvAudio();
 };

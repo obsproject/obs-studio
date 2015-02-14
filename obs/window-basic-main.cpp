@@ -1651,14 +1651,27 @@ void OBSBasic::on_action_Settings_triggered()
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
 {
+	if (advAudioWindow != nullptr) {
+		advAudioWindow->raise();
+		return;
+	}
+
 	advAudioWindow = new OBSBasicAdvAudio(this);
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+
+	connect(advAudioWindow, SIGNAL(destroyed()),
+		this, SLOT(on_advAudioProps_destroyed()));
 }
 
 void OBSBasic::on_advAudioProps_clicked()
 {
 	on_actionAdvAudioProperties_triggered();
+}
+
+void OBSBasic::on_advAudioProps_destroyed()
+{
+	advAudioWindow = nullptr;
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,

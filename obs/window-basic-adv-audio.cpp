@@ -82,6 +82,12 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+OBSBasicAdvAudio::~OBSBasicAdvAudio()
+{
+	for (size_t i = 0; i < controls.size(); ++i)
+		delete controls[i];
+}
+
 bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 {
 	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio*>(param);
