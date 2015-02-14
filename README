@@ -107,7 +107,7 @@ What was wrong with the original OBS?
       you wanted slightly different functionality that required more than just
       changing shader constants.
 
-    - Oriantation of sources was fixed, and required special code for each
+    - Orientation of sources was fixed, and required special code for each
       source to do any custom modification of rotation/position/scale/etc.
       This is one of those fundamental flaws that I look back on and regret, as
       it was a stupid idea from the beginning.  I originally thought I could
