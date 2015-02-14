@@ -1,15 +1,14 @@
 Compilation instructions!  Temporary quick compilation instructions!
 Will give better instructions later when things are in a more complete state.
 
+
 Windows:
+  - Load git submodules (required):
+      git submodule init && git submodule update
+
   - NOTE: OBS on windows currently requires VS2013, as obs-studio uses C99 and
     C++11.  Express might not be supported at this time (though I'll fix it at
     some point).
-
-  - Clone the repo.  After cloning, run the following git commands:
-        git submodule init
-        git submodule update
-    which will download submodules.
 
   - Download (or build) development packages of FFmpeg, x264, Qt5.
 
@@ -72,6 +71,9 @@ Windows:
 
 
 Mac OSX
+  - Load git submodules (required):
+      git submodule init && git submodule update
+
   - Use macports or homebrew and install FFmpeg, x264, Qt5, and cmake.
 
     NOTE: Qt5 can also be downloaded/installed via the Qt website, though keep
