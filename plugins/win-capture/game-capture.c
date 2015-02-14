@@ -862,8 +862,8 @@ static void copy_b5g6r5_tex(struct game_capture *gc, int cur_texture,
 
 	for (uint32_t y = 0; y < gc_cy; y++) {
 		register uint8_t *in  = input + (gc_pitch * y);
-		register uint8_t *end = input + (gc_cx * PIXEL_16BIT_SIZE);
-		register uint8_t *out = data  + pitch;
+		register uint8_t *end = in + (gc_cx * PIXEL_16BIT_SIZE);
+		register uint8_t *out = data  + (pitch * y);
 
 		while (in < end) {
 			register uint16_t in_pix = *(uint16_t*)in;
@@ -893,8 +893,8 @@ static void copy_b5g5r5a1_tex(struct game_capture *gc, int cur_texture,
 
 	for (uint32_t y = 0; y < gc_cy; y++) {
 		register uint8_t *in  = input + (gc_pitch * y);
-		register uint8_t *end = input + (gc_cx * PIXEL_16BIT_SIZE);
-		register uint8_t *out = data  + pitch;
+		register uint8_t *end = in + (gc_cx * PIXEL_16BIT_SIZE);
+		register uint8_t *out = data  + (pitch * y);
 
 		while (in < end) {
 			register uint16_t in_pix = *(uint16_t*)in;
