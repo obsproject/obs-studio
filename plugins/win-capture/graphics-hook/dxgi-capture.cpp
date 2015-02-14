@@ -8,9 +8,9 @@
 #include "graphics-hook.h"
 #include "../funchook.h"
 
-typedef HRESULT (WINAPI *resize_buffers_t)(IDXGISwapChain*, UINT, UINT, UINT,
-		DXGI_FORMAT, UINT);
-typedef HRESULT (WINAPI *present_t)(IDXGISwapChain*, UINT, UINT);
+typedef HRESULT (STDMETHODCALLTYPE *resize_buffers_t)(IDXGISwapChain*, UINT,
+		UINT, UINT, DXGI_FORMAT, UINT);
+typedef HRESULT (STDMETHODCALLTYPE *present_t)(IDXGISwapChain*, UINT, UINT);
 
 static struct func_hook resize_buffers;
 static struct func_hook present;
