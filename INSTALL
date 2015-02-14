@@ -1,15 +1,15 @@
 Compilation instructions!  Temporary quick compilation instructions!
 Will give better instructions later when things are in a more complete state.
 
+- Clone the repo.  After cloning, run the following git commands:
+      git submodule init
+      git submodule update
+  which will download submodules.
+
 Windows:
   - NOTE: OBS on windows currently requires VS2013, as obs-studio uses C99 and
     C++11.  Express might not be supported at this time (though I'll fix it at
     some point).
-
-  - Clone the repo.  After cloning, run the following git commands:
-        git submodule init
-        git submodule update
-    which will download submodules.
 
   - Download (or build) development packages of FFmpeg, x264, Qt5.
 
