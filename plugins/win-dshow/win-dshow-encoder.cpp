@@ -140,7 +140,12 @@ inline bool DShowEncoder::Update(obs_data_t *settings)
 
 static bool UpdateDShowEncoder(void *data, obs_data_t *settings)
 {
-	return reinterpret_cast<DShowEncoder*>(data)->Update(settings);
+	DShowEncoder *encoder = reinterpret_cast<DShowEncoder*>(data);
+
+	if (!obs_encoder_active(encoder->context))
+		return encoder->Update(settings);
+
+	return true;
 }
 
 static inline void *CreateDShowEncoder(obs_data_t *settings,
