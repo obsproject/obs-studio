@@ -67,7 +67,7 @@ set(libobs-opengl_HEADERS
 	gl-shaderparser.h
 	gl-subsystem.h)
 
-add_library(libobs-opengl MODULE
+add_library(libobs-opengl SHARED
 	${libobs-opengl_SOURCES}
 	${libobs-opengl_HEADERS})
 

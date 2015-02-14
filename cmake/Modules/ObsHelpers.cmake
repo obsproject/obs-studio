@@ -523,7 +523,7 @@ function(define_graphic_modules target)
 		if(TARGET libobs-${dl_lib})
 			target_compile_definitions(${target}
 				PRIVATE
-				DL_${dl_lib_upper}="$<TARGET_FILE_NAME:libobs-${dl_lib}>"
+				DL_${dl_lib_upper}="$<TARGET_SONAME_FILE:libobs-${dl_lib}>"
 				)
 		else()
 			target_compile_definitions(${target}
