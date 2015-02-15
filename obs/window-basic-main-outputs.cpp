@@ -609,7 +609,11 @@ void AdvancedOutput::SetupOutputs()
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
 {
-	AdvancedOutput::Update();
+	if (!useStreamEncoder ||
+	    (!ffmpegRecording && !obs_output_active(fileOutput))) {
+		UpdateStreamSettings();
+	}
+
 	if (!Active())
 		SetupOutputs();
 
@@ -634,7 +638,14 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 bool AdvancedOutput::StartRecording()
 {
-	AdvancedOutput::Update();
+	if (!useStreamEncoder) {
+		if (!ffmpegRecording) {
+			UpdateRecordingSettings();
+		}
+	} else if (!obs_output_active(streamOutput)) {
+		UpdateStreamSettings();
+	}
+
 	if (!Active())
 		SetupOutputs();
 
