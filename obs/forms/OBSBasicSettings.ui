@@ -1278,19 +1278,50 @@
                       </widget>
                      </item>
                      <item row="5" column="1">
-                      <widget class="QSpinBox" name="advOutFFABitrate">
-                       <property name="minimum">
-                        <number>32</number>
+                      <widget class="QComboBox" name="advOutFFABitrate">
+                       <property name="currentIndex">
+                        <number>4</number>
                        </property>
-                       <property name="maximum">
-                        <number>4096</number>
-                       </property>
-                       <property name="singleStep">
-                        <number>16</number>
-                       </property>
-                       <property name="value">
-                        <number>128</number>
-                       </property>
+                       <item>
+                        <property name="text">
+                         <string>32</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>64</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>96</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>128</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>160</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>192</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>256</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>320</string>
+                        </property>
+                       </item>
                       </widget>
                      </item>
                      <item row="6" column="0">
