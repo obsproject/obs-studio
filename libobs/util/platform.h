@@ -48,6 +48,9 @@ EXPORT char *os_quick_read_mbs_file(const char *path);
 EXPORT bool os_quick_write_mbs_file(const char *path, const char *str,
 		size_t len);
 
+EXPORT uint64_t os_file_size_bytes(const char *path);
+EXPORT uint64_t os_remaining_disk_space_bytes(const char *disk);
+
 EXPORT size_t os_mbs_to_wcs(const char *str, size_t str_len, wchar_t *dst,
 		size_t dst_size);
 EXPORT size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
