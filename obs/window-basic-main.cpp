@@ -24,6 +24,7 @@
 #include <QFileDialog>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QDataStream>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -113,6 +114,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>   ("OBSSource");
 
+	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
+	qMetaTypeId<OBSSceneItem>();
+
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
 		struct obs_video_info ovi;
 
@@ -171,6 +175,18 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #endif
+}
+
+QDataStream &operator<<(QDataStream &out, const OBSSceneItem &myObj)
+{
+	/* TODO: Actually serialise data. */
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in, const OBSSceneItem &myObj)
+{
+	/* TODO: Actually serialise data. */
+	return in;
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent)
