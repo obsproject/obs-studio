@@ -220,6 +220,17 @@ int_fast32_t v4l2_destroy_mmap(struct v4l2_buffer_data *buf);
 int_fast32_t v4l2_set_input(int_fast32_t dev, int *input);
 
 /**
+ * Get capabilities for an input.
+ *
+ * @param dev handle for the v4l2 device
+ * @param input index of the input or -1 to use the currently selected
+ * @param caps capabilities for the input
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps);
+
+/**
  * Set the video format on the device.
  *
  * If the action succeeds resolution, pixelformat and bytesperline are set
