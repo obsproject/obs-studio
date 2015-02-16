@@ -26,6 +26,7 @@ static const char *obs_scene_signals[] = {
 	"void item_move_down(ptr scene, ptr item)",
 	"void item_move_top(ptr scene, ptr item)",
 	"void item_move_bottom(ptr scene, ptr item)",
+	"void item_move_reorder(ptr scene, ptr item)",
 	"void item_select(ptr scene, ptr item)",
 	"void item_deselect(ptr scene, ptr item)",
 	"void item_transform(ptr scene, ptr item)",
@@ -727,6 +728,7 @@ static inline void signal_move_dir(struct obs_scene_item *item,
 	case OBS_ORDER_MOVE_DOWN:   command = "item_move_down";   break;
 	case OBS_ORDER_MOVE_TOP:    command = "item_move_top";    break;
 	case OBS_ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
+	case OBS_ORDER_MOVE_REORDER:command = "item_move_reorder";break;
 	}
 
 	calldata_set_ptr(&params, "scene", item->parent);
@@ -806,8 +808,7 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 		attach_sceneitem(scene, item, next);
 	}
 
-	// Do not signal_move_dir because we dont want to re-move.
-	signal_move_dir(item, OBS_ORDER_MOVE_DOWN);
+	signal_move_dir(item, OBS_ORDER_MOVE_REORDER);
 
 	pthread_mutex_unlock(&scene->mutex);
 	obs_scene_release(scene);
