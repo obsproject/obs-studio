@@ -310,6 +310,28 @@ void os_closedir(os_dir_t *dir)
 	}
 }
 
+uint64_t os_remaining_disk_space_bytes(const char *disk)
+{
+	ULARGE_INTEGER  remainingSpace = { 0 };
+	struct dstr     path_str = { 0 };
+	wchar_t         *w_path;
+
+	dstr_copy(&path_str, disk);
+
+	if (os_utf8_to_wcs_ptr(path_str.array, 3, &w_path) > 0) {
+		GetDiskFreeSpaceEx(
+			w_path,
+			(PULARGE_INTEGER)&remainingSpace,
+			NULL,
+			NULL);
+		bfree(w_path);
+	}
+
+	dstr_free(&path_str);
+
+	return remainingSpace.QuadPart;
+}
+
 static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
 		const char *pattern)
 {
