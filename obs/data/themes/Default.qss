@@ -1,0 +1,46 @@
+/* Intentionnally left blank */
+/* Themes are created using Qt CSS, you can visit */
+/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
+/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
+
+/* OBS will use the theme filename for the settings. */
+/* You can ship images using relative paths in qss. */
+/* Dark Theme is a good place to start if you need */
+/* a template. */
+
+
+/* We need to set back the icons, or the preview wont stick. */
+
+* [themeID="addIconSmall"] {
+    qproperty-icon: url(:/res/images/add.png);
+}
+
+* [themeID="removeIconSmall"] {
+    qproperty-icon: url(:/res/images/list_remove.png);
+}
+
+* [themeID="propertiesIconSmall"] {
+    qproperty-icon: url(:/res/images/properties.png);
+}
+
+* [themeID="configIconSmall"] {
+    qproperty-icon: url(:/res/images/configuration21_16.png);
+}
+
+* [themeID="upArrowIconSmall"] {
+    qproperty-icon: url(:/res/images/up.png);
+}
+
+* [themeID="downArrowIconSmall"] {
+    qproperty-icon: url(:/res/images/down.png);
+}
+
+
+/* Volume Control */
+
+VolumeMeter {
+    qproperty-bkColor: rgb(221, 221, 221);
+    qproperty-magColor: rgb(32, 125, 23);
+    qproperty-peakColor: rgb(62, 241, 43);
+    qproperty-peakHoldColor: rgb(0, 0, 0);
+}
