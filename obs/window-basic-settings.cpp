@@ -175,7 +175,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutFFRescale,      CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVEncoder,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVCfg,         EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->advOutFFABitrate,     SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFABitrate,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFTrack1,       CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFTrack2,       CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFTrack3,       CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -766,7 +766,10 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	ui->advOutFFRescale->setCurrentText(rescaleRes);
 	ui->advOutFFVEncoder->setText(vEncoder);
 	ui->advOutFFVCfg->setText(vEncCustom);
-	ui->advOutFFABitrate->setValue(audioBitrate);
+
+	SetComboByName(ui->advOutFFABitrate,
+		std::to_string(audioBitrate).c_str());
+
 	ui->advOutFFAEncoder->setText(aEncoder);
 	ui->advOutFFACfg->setText(aEncCustom);
 
@@ -1138,7 +1141,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->advOutFFRescale, "AdvOut", "FFRescaleRes");
 	SaveEdit(ui->advOutFFVEncoder, "AdvOut", "FFVEncoder");
 	SaveEdit(ui->advOutFFVCfg, "AdvOut", "FFVCustom");
-	SaveSpinBox(ui->advOutFFABitrate, "AdvOut", "FFABitrate");
+	SaveCombo(ui->advOutFFABitrate, "AdvOut", "FFABitrate");
 	SaveEdit(ui->advOutFFAEncoder, "AdvOut", "FFAEncoder");
 	SaveEdit(ui->advOutFFACfg, "AdvOut", "FFACustom");
 	SaveTrackIndex(main->Config(), "AdvOut", "FFAudioTrack",
