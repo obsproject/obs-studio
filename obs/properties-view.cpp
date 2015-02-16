@@ -53,6 +53,8 @@ void OBSPropertiesView::ReloadProperties()
 	RefreshProperties();
 }
 
+#define NO_PROPERTIES_STRING QTStr("Basic.PropertiesWindow.NoProperties")
+
 void OBSPropertiesView::RefreshProperties()
 {
 	int h, v;
@@ -75,6 +77,7 @@ void OBSPropertiesView::RefreshProperties()
 	layout->setLabelAlignment(Qt::AlignRight);
 
 	obs_property_t *property = obs_properties_first(properties.get());
+	bool hasNoProperties = !property;
 
 	while (property) {
 		AddProperty(property, layout);
@@ -90,6 +93,11 @@ void OBSPropertiesView::RefreshProperties()
 	if (lastWidget) {
 		lastWidget->setFocus(Qt::OtherFocusReason);
 		lastWidget = nullptr;
+	}
+
+	if (hasNoProperties) {
+		QLabel *noPropertiesLabel = new QLabel(NO_PROPERTIES_STRING);
+		layout->addWidget(noPropertiesLabel);
 	}
 }
 
