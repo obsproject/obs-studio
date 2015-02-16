@@ -385,7 +385,7 @@ inline void AdvancedOutput::UpdateRecordingSettings()
 void AdvancedOutput::Update()
 {
 	UpdateStreamSettings();
-	if (useStreamEncoder && !ffmpegRecording)
+	if (!useStreamEncoder && !ffmpegRecording)
 		UpdateRecordingSettings();
 }
 
