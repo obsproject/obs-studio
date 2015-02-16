@@ -336,12 +336,9 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t *prop)
 	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
-		if (in.type & V4L2_INPUT_TYPE_CAMERA) {
-			obs_property_list_add_int(prop, (char *) in.name,
-					in.index);
-			blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
-					in.index);
-		}
+		obs_property_list_add_int(prop, (char *) in.name, in.index);
+		blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
+				in.index);
 		in.index++;
 	}
 }
