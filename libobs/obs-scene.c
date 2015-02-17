@@ -344,6 +344,14 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	}
 
 	item = obs_scene_add(scene, source);
+	if (!item) {
+		blog(LOG_WARNING, "[scene_load_item] Could not add source '%s' "
+		                  "to scene '%s'!",
+		                  name, obs_source_get_name(scene->source));
+		
+		obs_source_release(source);
+		return;
+	}
 
 	obs_data_set_default_int(item_data, "align",
 			OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
