@@ -194,7 +194,7 @@ void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 {
 	volume->blockSignals(true);
-	volume->setValue(int(value * 100));
+	volume->setValue(int(round(value * 100.0f)));
 	volume->blockSignals(false);
 }
 
@@ -217,8 +217,7 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 void OBSAdvAudioCtrl::volumeChanged(int percentage)
 {
 	float val = float(percentage) / 100.0f;
-	if (!close_float(val, obs_source_get_volume(source), 0.01f))
-		obs_source_set_volume(source, val);
+	obs_source_set_volume(source, val);
 }
 
 void OBSAdvAudioCtrl::downmixMonoChanged(bool checked)
