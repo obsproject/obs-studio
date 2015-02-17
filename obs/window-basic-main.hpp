@@ -172,11 +172,6 @@ private:
 	static void ChannelChanged(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
-	static void SceneItemMoveUp(void *data, calldata_t *params);
-	static void SceneItemMoveDown(void *data, calldata_t *params);
-	static void SceneItemMoveTop(void *data, calldata_t *params);
-	static void SceneItemMoveBottom(void *data, calldata_t *params);
-
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(const char *id);
