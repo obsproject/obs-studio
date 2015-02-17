@@ -1,5 +1,6 @@
 /******************************************************************************
     Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+                          Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
 #include <util/util.hpp>
 #include <QDialog>
 #include <memory>
+#include <string>
 
 #include <obs.h>
 
@@ -45,6 +47,7 @@ private:
 	bool advancedChanged = false;
 	int  pageIndex = 0;
 	bool loading = true;
+	std::string savedTheme;
 
 	OBSPropertiesView *streamProperties = nullptr;
 	OBSPropertiesView *streamEncoderProps = nullptr;
@@ -104,6 +107,7 @@ private:
 
 	/* general */
 	void LoadLanguageList();
+	void LoadThemeList();
 
 	/* output */
 	void LoadSimpleOutputSettings();
@@ -136,6 +140,8 @@ private:
 	void SaveSettings();
 
 private slots:
+	void on_theme_activated(int idx);
+
 	void on_simpleOutUseBufsize_toggled(bool checked);
 	void on_simpleOutputVBitrate_valueChanged(int val);
 

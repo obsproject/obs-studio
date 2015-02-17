@@ -1,5 +1,6 @@
 /******************************************************************************
     Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+                               Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QFileDialog>
+#include <QDirIterator>
 
 #include "obs-app.hpp"
 #include "platform.hpp"
@@ -134,6 +136,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->setupUi(this);
 
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -336,11 +339,52 @@ void OBSBasicSettings::LoadLanguageList()
 	ui->language->model()->sort(0);
 }
 
+void OBSBasicSettings::LoadThemeList()
+{
+	/* Save theme if user presses Cancel */
+	savedTheme = string(App()->GetTheme());
+
+	ui->theme->clear();
+	QSet<QString> uniqueSet;
+	string themeDir;
+	char userThemeDir[512];
+	int ret = os_get_config_path(userThemeDir, sizeof(userThemeDir),
+			"obs-studio/themes/");
+	GetDataFilePath("themes/", themeDir);
+
+	/* Check user dir first. */
+	if (ret > 0) {
+		QDirIterator it(QString(userThemeDir), QStringList() << "*.qss",
+				QDir::Files);
+		while (it.hasNext()) {
+			it.next();
+			QString name = it.fileName().section(".",0,0);
+			ui->theme->addItem(name);
+			uniqueSet.insert(name);
+		}
+	}
+
+	/* Check shipped themes. */
+	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
+			QDir::Files);
+	while (uIt.hasNext()) {
+		uIt.next();
+		QString name = uIt.fileName().section(".",0,0);
+		if (!uniqueSet.contains(name))
+			ui->theme->addItem(name);
+	}
+
+	int idx = ui->theme->findText(App()->GetTheme());
+	if (idx != -1)
+		ui->theme->setCurrentIndex(idx);
+}
+
 void OBSBasicSettings::LoadGeneralSettings()
 {
 	loading = true;
 
 	LoadLanguageList();
+	LoadThemeList();
 
 	loading = false;
 }
@@ -984,6 +1028,16 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->language))
 		config_set_string(GetGlobalConfig(), "General", "Language",
 				language.c_str());
+
+	int themeIndex = ui->theme->currentIndex();
+	QString themeData = ui->theme->itemText(themeIndex);
+	string theme = themeData.toStdString();
+
+	if (WidgetChanged(ui->theme)) {
+		config_set_string(GetGlobalConfig(), "General", "Theme",
+				  theme.c_str());
+		App()->SetTheme(theme);
+	}
 }
 
 void OBSBasicSettings::SaveStream1Settings()
@@ -1241,6 +1295,12 @@ void OBSBasicSettings::closeEvent(QCloseEvent *event)
 		event->ignore();
 }
 
+void OBSBasicSettings::on_theme_activated(int idx)
+{
+	string currT = ui->theme->itemText(idx).toStdString();
+	App()->SetTheme(currT);
+}
+
 void OBSBasicSettings::on_simpleOutUseBufsize_toggled(bool checked)
 {
 	if (!checked)
@@ -1276,6 +1336,8 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 
 	if (val == QDialogButtonBox::AcceptRole ||
 	    val == QDialogButtonBox::RejectRole) {
+		if (val == QDialogButtonBox::RejectRole)
+			App()->SetTheme(savedTheme);
 		ClearChanged();
 		close();
 	}

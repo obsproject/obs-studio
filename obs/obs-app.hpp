@@ -55,6 +55,7 @@ class OBSApp : public QApplication {
 
 private:
 	std::string                    locale;
+	std::string		       theme;
 	ConfigFile                     globalConfig;
 	TextLookup                     textLookup;
 	QPointer<OBSMainWindow>        mainWindow;
@@ -62,6 +63,7 @@ private:
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitLocale();
+	bool InitTheme();
 
 public:
 	OBSApp(int &argc, char **argv);
@@ -77,6 +79,9 @@ public:
 	{
 		return locale.c_str();
 	}
+
+	inline const char *GetTheme() const {return theme.c_str();}
+	bool SetTheme(std::string name, std::string path = "");
 
 	inline lookup_t *GetTextLookup() const {return textLookup;}
 

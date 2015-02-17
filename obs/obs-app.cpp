@@ -29,6 +29,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-settings.hpp"
 #include "window-license-agreement.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
@@ -233,6 +234,44 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
+bool OBSApp::SetTheme(std::string name, std::string path)
+{
+	theme = name;
+
+	/* Check user dir first, then preinstalled themes. */
+	if (path == "") {
+		char userDir[512];
+		name = "themes/" + name + ".qss";
+		string temp = "obs-studio/" + name;
+		int ret = os_get_config_path(userDir, sizeof(userDir),
+				temp.c_str());
+
+		if (ret > 0 && QFile::exists(userDir)) {
+			path = string(userDir);
+		} else if (!GetDataFilePath(name.c_str(), path)) {
+			OBSErrorBox(NULL, "Failed to find %s.", name.c_str());
+			return false;
+		}
+	}
+
+	QString mpath = QString("file:///") + path.c_str();
+	setStyleSheet(mpath);
+	return true;
+}
+
+bool OBSApp::InitTheme()
+{
+	const char *themeName = config_get_string(globalConfig, "General",
+			"Theme");
+
+	if (!themeName)
+		themeName = "Default";
+
+	stringstream t;
+	t << themeName;
+	return SetTheme(t.str());
+}
+
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {}
@@ -247,6 +286,8 @@ void OBSApp::AppInit()
 		throw "Failed to initialize global config";
 	if (!InitLocale())
 		throw "Failed to load locale";
+	if (!InitTheme())
+		throw "Failed to load theme";
 }
 
 const char *OBSApp::GetRenderModule() const

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>770</width>
+    <width>895</width>
     <height>602</height>
    </rect>
   </property>
@@ -142,6 +142,16 @@
          </item>
          <item row="1" column="1">
           <widget class="QComboBox" name="language"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_42">
+           <property name="text">
+            <string>Basic.Settings.General.Theme</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="theme"/>
          </item>
         </layout>
        </widget>
@@ -2326,8 +2336,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>609</width>
-              <height>553</height>
+              <width>724</width>
+              <height>536</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -2362,7 +2372,7 @@
                     <widget class="QLabel" name="label_35">
                      <property name="minimumSize">
                       <size>
-                       <width>170</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2409,7 +2419,7 @@
                      </property>
                      <property name="minimumSize">
                       <size>
-                       <width>170</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>

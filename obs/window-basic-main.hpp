@@ -180,6 +180,7 @@ private:
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
+	void copyActionsDynamicProperties();
 
 public:
 	OBSScene      GetCurrentScene();
