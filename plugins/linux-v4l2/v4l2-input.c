@@ -551,12 +551,34 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 	if (dev == -1)
 		return false;
 
-	obs_property_t *prop = obs_properties_get(props, "resolution");
-	v4l2_resolution_list(dev, obs_data_get_int(settings, "pixelformat"),
-			prop);
+	int input     = (int) obs_data_get_int(settings, "input");
+	uint32_t caps = 0;
+	if (v4l2_get_input_caps(dev, input, &caps) < 0)
+		return false;
+	caps &= V4L2_IN_CAP_STD;
+
+	obs_property_t *resolution = obs_properties_get(props, "resolution");
+	obs_property_t *framerate  = obs_properties_get(props, "framerate");
+	obs_property_t *standard   = obs_properties_get(props, "standard");
+
+	obs_property_set_visible(resolution, (!caps) ? true : false);
+	obs_property_set_visible(framerate,  (!caps) ? true : false);
+	obs_property_set_visible(standard,
+			(caps & V4L2_IN_CAP_STD) ? true : false);
+
+	if (!caps) {
+		v4l2_resolution_list(dev, obs_data_get_int(
+				settings, "pixelformat"), resolution);
+	}
+	if (caps & V4L2_IN_CAP_STD)
+		v4l2_standard_list(dev, standard);
+
 	v4l2_close(dev);
 
-	obs_property_modified(prop, settings);
+	if (!caps)
+		obs_property_modified(resolution, settings);
+	if (caps & V4L2_IN_CAP_STD)
+		obs_property_modified(standard, settings);
 
 	return true;
 }
