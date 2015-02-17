@@ -3046,7 +3046,18 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
                 AMFProp_GetString(AMF_GetProp(&obj2, &av_description, -1), &description);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, error description: %s", __FUNCTION__, description.av_val);
                 /* if PublisherAuth returns 1, then reconnect */
-                PublisherAuth(r, &description);
+                if (PublisherAuth(r, &description) == 1)
+                {
+                    RTMP_Close(r);
+                    if (r->Link.pFlags & RTMP_PUB_CLATE)
+                    {
+                        r->Link.pFlags |= RTMP_PUB_CLEAN;
+                    }
+                    if (!RTMP_Connect(r, NULL) || !RTMP_ConnectStream(r, 0))
+                    {
+                        goto leave;
+                    }
+                }
             }
         }
         else
