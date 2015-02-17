@@ -1,0 +1,9 @@
+/* Intentionnally left blank */
+/* Themes are created using Qt CSS, you can visit */
+/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
+/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
+
+/* OBS will use the theme filename for the settings. */
+/* You can ship images using relative paths in qss. */
+/* Dark Theme is a good place to start if you need */
+/* a template. */

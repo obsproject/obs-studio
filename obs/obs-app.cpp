@@ -25,6 +25,7 @@
 #include <obs.hpp>
 
 #include <QProxyStyle>
+#include <QFile>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -233,6 +234,36 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
+bool OBSApp::SetTheme(std::string t)
+{
+	string path;
+
+	if (t.find(".qss") == string::npos) {
+		theme = t;
+		t = "themes/" + t + ".qss";
+		if (!GetDataFilePath(t.c_str(), path)) {
+			OBSErrorBox(NULL, "Failed to find %s.", path.c_str());
+			return false;
+		}
+	}
+	QString mpath = QString("file:///") + path.c_str();
+	setStyleSheet(mpath);
+	return true;
+}
+
+bool OBSApp::InitTheme()
+{
+	const char *themeName = config_get_string(globalConfig, "General",
+			"Theme");
+
+	if (!themeName)
+		themeName = "Default";
+
+	stringstream t;
+	t << themeName;
+	return SetTheme(t.str());
+}
+
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {}
@@ -247,6 +278,8 @@ void OBSApp::AppInit()
 		throw "Failed to initialize global config";
 	if (!InitLocale())
 		throw "Failed to load locale";
+	if (!InitTheme())
+		throw "Failed to load theme";
 }
 
 const char *OBSApp::GetRenderModule() const

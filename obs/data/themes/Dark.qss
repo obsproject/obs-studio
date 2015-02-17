@@ -1,3 +1,21 @@
+/******************************************************************************/
+/*   Copyright (C) 2014-2015 by Philippe Groarke <philippe.groarke@gmail.com> */
+/*                                                                            */
+/*                                                                            */
+/*   This program is free software: you can redistribute it and/or modify     */
+/*   it under the terms of the GNU General Public License as published by     */
+/*   the Free Software Foundation, either version 2 of the License, or        */
+/*   (at your option) any later version.                                      */
+/*                                                                            */
+/*   This program is distributed in the hope that it will be useful,          */
+/*   but WITHOUT ANY WARRANTY; without even the implied warranty of           */
+/*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            */
+/*   GNU General Public License for more details.                             */
+/*                                                                            */
+/*   You should have received a copy of the GNU General Public License        */
+/*   along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
+/******************************************************************************/
+
 /* Colors */
 
 /* rgb(225,224,225); /* veryLight */
@@ -33,7 +51,7 @@ QScrollBar:vertical {
 QScrollBar::handle:vertical {
     background: rgb(88,87,88); /* kindaDark */
     min-height: 20px;
-    border-radius: 3px;
+    border-radius: 5px;
     border-width: 1px;
     border: 1px solid rgb(31,30,31); /* veryDark */
 }
@@ -85,6 +103,11 @@ QAbstractItemView {
 QToolTip {
     background-color: rgb(31,30,31); /* veryDark */
     color: rgb(205,205,205);
+}
+
+QMenuBar::item {
+    background-color: rgb(58,57,58); /* dark */
+    border: none;
 }
 
 QToolBar {
@@ -202,7 +225,6 @@ QPushButton {
     padding: 4px;
     padding-left: 8px;
     padding-right: 8px;
-    box-shadow: 0px 2px 4px #000000;
 }
 
 QPushButton:hover {
