@@ -1,5 +1,6 @@
 /******************************************************************************
     Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    			  Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,11 +23,7 @@
 static const char *obs_scene_signals[] = {
 	"void item_add(ptr scene, ptr item)",
 	"void item_remove(ptr scene, ptr item)",
-	"void item_move_up(ptr scene, ptr item)",
-	"void item_move_down(ptr scene, ptr item)",
-	"void item_move_top(ptr scene, ptr item)",
-	"void item_move_bottom(ptr scene, ptr item)",
-	"void item_move_reorder(ptr scene, ptr item)",
+	"void reorder(ptr scene)",
 	"void item_select(ptr scene, ptr item)",
 	"void item_deselect(ptr scene, ptr item)",
 	"void item_transform(ptr scene, ptr item)",
@@ -717,22 +714,14 @@ void obs_sceneitem_set_alignment(obs_sceneitem_t *item, uint32_t alignment)
 	}
 }
 
-static inline void signal_move_dir(struct obs_scene_item *item,
-		enum obs_order_movement movement)
+static inline void signal_reorder(struct obs_scene_item *item)
 {
 	const char *command = NULL;
 	struct calldata params = {0};
 
-	switch (movement) {
-	case OBS_ORDER_MOVE_UP:     command = "item_move_up";     break;
-	case OBS_ORDER_MOVE_DOWN:   command = "item_move_down";   break;
-	case OBS_ORDER_MOVE_TOP:    command = "item_move_top";    break;
-	case OBS_ORDER_MOVE_BOTTOM: command = "item_move_bottom"; break;
-	case OBS_ORDER_MOVE_REORDER:command = "item_move_reorder";break;
-	}
+	command = "item_reorder";
 
 	calldata_set_ptr(&params, "scene", item->parent);
-	calldata_set_ptr(&params, "item",  item);
 
 	signal_handler_signal(item->parent->source->context.signals,
 			command, &params);
@@ -777,7 +766,7 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 		attach_sceneitem(scene, item, NULL);
 	}
 
-	signal_move_dir(item, movement);
+	signal_reorder(item);
 
 	pthread_mutex_unlock(&scene->mutex);
 	obs_scene_release(scene);
@@ -808,7 +797,7 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 		attach_sceneitem(scene, item, next);
 	}
 
-	signal_move_dir(item, OBS_ORDER_MOVE_REORDER);
+	signal_reorder(item);
 
 	pthread_mutex_unlock(&scene->mutex);
 	obs_scene_release(scene);
