@@ -2085,10 +2085,10 @@ static void check_descendant(obs_source_t *parent, obs_source_t *child,
 
 bool obs_source_add_child(obs_source_t *parent, obs_source_t *child)
 {
-	struct descendant_info info = {false, child};
-	if (!parent || !child) return false;
+	struct descendant_info info = {false, parent};
+	if (!parent || !child || parent == child) return false;
 
-	obs_source_enum_tree(parent, check_descendant, &info);
+	obs_source_enum_tree(child, check_descendant, &info);
 	if (info.exists)
 		return false;
 
