@@ -875,6 +875,7 @@ void OBSBasicSettings::LoadOutputSettings()
 
 	if (video_output_active(obs_get_video())) {
 		ui->outputMode->setEnabled(false);
+		ui->outputModeLabel->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
 		ui->advOutRecTopContainer->setEnabled(false);
 		ui->advOutRecTypeContainer->setEnabled(false);

@@ -9,9 +9,6 @@
         <file>images/properties.png</file>
         <file>images/up.png</file>
         <file>images/obs.png</file>
-        <file>images/updown.png</file>
-        <file>images/down_arrow.png</file>
-        <file>images/up_arrow.png</file>
     </qresource>
     <qresource prefix="/settings">
         <file>images/settings/advanced.png</file>
