@@ -380,6 +380,24 @@ static void v4l2_format_list(int dev, obs_property_t *prop)
 }
 
 /*
+ * List video standards for the device
+ */
+static void v4l2_standard_list(int dev, obs_property_t *prop)
+{
+	struct v4l2_standard std;
+	std.index = 0;
+
+	obs_property_list_clear(prop);
+
+	obs_property_list_add_int(prop, obs_module_text("LeaveUnchanged"), -1);
+
+	while (v4l2_ioctl(dev, VIDIOC_ENUMSTD, &std) == 0) {
+		obs_property_list_add_int(prop, (char *) std.name, std.id);
+		std.index++;
+	}
+}
+
+/*
  * List resolutions for device and format
  */
 static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
