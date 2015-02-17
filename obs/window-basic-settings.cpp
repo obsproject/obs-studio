@@ -345,20 +345,38 @@ void OBSBasicSettings::LoadThemeList()
 	savedTheme = string(App()->GetTheme());
 
 	ui->theme->clear();
+	QSet<QString> uniqueSet;
 	string themeDir;
+	char userThemeDir[512];
+	int ret = os_get_config_path(userThemeDir, sizeof(userThemeDir),
+			"obs-studio/themes/");
 	GetDataFilePath("themes/", themeDir);
-	QDirIterator it(QString(themeDir.c_str()), QStringList() << "*.qss",
-			QDir::Files);
 
-	while (it.hasNext()) {
-		it.next();
-		ui->theme->addItem(it.fileName().section(".",0,0));
+	/* Check user dir first. */
+	if (ret > 0) {
+		QDirIterator it(QString(userThemeDir), QStringList() << "*.qss",
+				QDir::Files);
+		while (it.hasNext()) {
+			it.next();
+			QString name = it.fileName().section(".",0,0);
+			ui->theme->addItem(name);
+			uniqueSet.insert(name);
+		}
+	}
+
+	/* Check shipped themes. */
+	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
+			QDir::Files);
+	while (uIt.hasNext()) {
+		uIt.next();
+		QString name = uIt.fileName().section(".",0,0);
+		if (!uniqueSet.contains(name))
+			ui->theme->addItem(name);
 	}
 
 	int idx = ui->theme->findText(App()->GetTheme());
 	if (idx != -1)
 		ui->theme->setCurrentIndex(idx);
-
 }
 
 void OBSBasicSettings::LoadGeneralSettings()

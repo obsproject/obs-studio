@@ -234,18 +234,26 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
-bool OBSApp::SetTheme(std::string t)
+bool OBSApp::SetTheme(std::string name, std::string path)
 {
-	string path;
+	theme = name;
 
-	if (t.find(".qss") == string::npos) {
-		theme = t;
-		t = "themes/" + t + ".qss";
-		if (!GetDataFilePath(t.c_str(), path)) {
-			OBSErrorBox(NULL, "Failed to find %s.", path.c_str());
+	/* Check user dir first, then preinstalled themes. */
+	if (path == "") {
+		char userDir[512];
+		name = "themes/" + name + ".qss";
+		string temp = "obs-studio/" + name;
+		int ret = os_get_config_path(userDir, sizeof(userDir),
+				temp.c_str());
+
+		if (ret > 0 && QFile::exists(userDir)) {
+			path = string(userDir);
+		} else if (!GetDataFilePath(name.c_str(), path)) {
+			OBSErrorBox(NULL, "Failed to find %s.", name.c_str());
 			return false;
 		}
 	}
+
 	QString mpath = QString("file:///") + path.c_str();
 	setStyleSheet(mpath);
 	return true;

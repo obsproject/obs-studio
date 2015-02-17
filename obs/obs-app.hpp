@@ -81,7 +81,7 @@ public:
 	}
 
 	inline const char *GetTheme() const { return theme.c_str();}
-	bool SetTheme(std::string t);
+	bool SetTheme(std::string name, std::string path = "");
 
 	inline lookup_t *GetTextLookup() const {return textLookup;}
 
