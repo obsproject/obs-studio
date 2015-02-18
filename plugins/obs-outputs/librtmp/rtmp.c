@@ -4252,6 +4252,7 @@ RTMP_Close(RTMP *r)
         r->Link.streams[idx].playpath.av_val = NULL;
     }
 
+    r->Link.curStreamIdx = 0;
     r->Link.nStreams = 0;
 #endif
 }
