@@ -3,7 +3,9 @@
 #if defined(_WIN32)
 // TODO: Windows support
 #elif defined(__APPLE__)
-// TODO: Mac support
+#include "mac/decklink-sdk/DeckLinkAPI.h"
+#include <CoreFoundation/CoreFoundation.h>
+typedef CFStringRef decklink_string_t;
 #elif defined(__linux__)
 // TODO: Linux support
 #endif
