@@ -1,6 +1,7 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2015 by Hugh Bailey <obs.jim@gmail.com>
                                Zachary Lund <admin@computerquip.com>
+                               Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -761,14 +762,8 @@ void OBSBasic::AddScene(OBSSource source)
 			OBSBasic::SceneItemSelected, this);
 	signal_handler_connect(handler, "item_deselect",
 			OBSBasic::SceneItemDeselected, this);
-	signal_handler_connect(handler, "item_move_up",
-			OBSBasic::SceneItemMoveUp, this);
-	signal_handler_connect(handler, "item_move_down",
-			OBSBasic::SceneItemMoveDown, this);
-	signal_handler_connect(handler, "item_move_top",
-			OBSBasic::SceneItemMoveTop, this);
-	signal_handler_connect(handler, "item_move_bottom",
-			OBSBasic::SceneItemMoveBottom, this);
+	signal_handler_connect(handler, "reorder",
+			OBSBasic::SceneReordered, this);
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -1100,7 +1095,72 @@ void OBSBasic::RemoveSelectedSceneItem()
 	}
 }
 
+struct ReorderInfo {
+	int idx = 0;
+	OBSBasic *window;
+
+	inline ReorderInfo(OBSBasic *window_) : window(window_) {}
+};
+
+void OBSBasic::ReorderSceneItem(obs_sceneitem_t *item, size_t idx)
+{
+	int count = ui->sources->count();
+	int idx_inv = count - (int)idx - 1;
+
+	for (int i = 0; i < count; i++) {
+		QListWidgetItem *listItem = ui->sources->item(i);
+		QVariant v = listItem->data(Qt::UserRole);
+		OBSSceneItem sceneItem = v.value<OBSSceneItem>();
+
+		if (sceneItem == item) {
+			if ((int)idx_inv != i) {
+				bool sel = (ui->sources->currentRow() == i);
+
+				listItem = ui->sources->takeItem(i);
+				if (listItem)  {
+					ui->sources->insertItem(idx_inv,
+							listItem);
+					if (sel)
+						ui->sources->setCurrentRow(
+								idx_inv);
+				}
+			}
+
+			break;
+		}
+	}
+}
+
+void OBSBasic::ReorderSources(OBSScene scene)
+{
+	ReorderInfo info(this);
+
+	if (scene != GetCurrentScene())
+		return;
+
+	obs_scene_enum_items(scene,
+			[] (obs_scene_t*, obs_sceneitem_t *item, void *p)
+			{
+				ReorderInfo *info =
+					reinterpret_cast<ReorderInfo*>(p);
+
+				info->window->ReorderSceneItem(item,
+					info->idx++);
+				return true;
+			}, &info);
+}
+
 /* OBS Callbacks */
+
+void OBSBasic::SceneReordered(void *data, calldata_t *params)
+{
+	OBSBasic *window = static_cast<OBSBasic*>(data);
+
+	obs_scene_t *scene = (obs_scene_t*)calldata_ptr(params, "scene");
+
+	QMetaObject::invokeMethod(window, "ReorderSources",
+			Q_ARG(OBSScene, OBSScene(scene)));
+}
 
 void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 {
@@ -1285,42 +1345,6 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
-}
-
-void OBSBasic::SceneItemMoveUp(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_UP));
-}
-
-void OBSBasic::SceneItemMoveDown(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_DOWN));
-}
-
-void OBSBasic::SceneItemMoveTop(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_TOP));
-}
-
-void OBSBasic::SceneItemMoveBottom(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_BOTTOM));
 }
 
 /* Main class functions */

@@ -158,8 +158,11 @@ private slots:
 	void RemoveSelectedScene();
 	void RemoveSelectedSceneItem();
 
+	void ReorderSources(OBSScene scene);
+
 private:
 	/* OBS Callbacks */
+	static void SceneReordered(void *data, calldata_t *params);
 	static void SceneItemAdded(void *data, calldata_t *params);
 	static void SceneItemRemoved(void *data, calldata_t *params);
 	static void SceneItemSelected(void *data, calldata_t *params);
@@ -171,11 +174,6 @@ private:
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void ChannelChanged(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
-
-	static void SceneItemMoveUp(void *data, calldata_t *params);
-	static void SceneItemMoveDown(void *data, calldata_t *params);
-	static void SceneItemMoveTop(void *data, calldata_t *params);
-	static void SceneItemMoveBottom(void *data, calldata_t *params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
@@ -218,6 +216,8 @@ public:
 
 	void SaveService();
 	bool LoadService();
+
+	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
