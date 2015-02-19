@@ -72,6 +72,7 @@ private:
 
 	QNetworkAccessManager networkManager;
 
+	QPointer<QTimer>    diskUsageTimer;
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
@@ -224,6 +225,10 @@ public:
 	bool LoadService();
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
+
+	double GetRecordingFileSize() const;
+
+	double GetRemainingDiskSpace() const;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

@@ -8,24 +8,31 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  droppedFrames (new QLabel),
 	  sessionTime   (new QLabel),
 	  cpuUsage      (new QLabel),
-	  kbps          (new QLabel)
+	  kbps          (new QLabel),
+	  diskUsage     (new QLabel)
 {
 	sessionTime->setText(QString("00:00:00"));
 	cpuUsage->setText(QString("CPU: 0.0%"));
+	diskUsage->setText(QString("0.0MB / 0.0MB"));
 
 	droppedFrames->setAlignment(Qt::AlignRight);
 	sessionTime->setAlignment(Qt::AlignRight);
 	cpuUsage->setAlignment(Qt::AlignRight);
 	kbps->setAlignment(Qt::AlignRight);
+	diskUsage->setAlignment(Qt::AlignRight);
 
 	droppedFrames->setIndent(20);
 	sessionTime->setIndent(20);
 	cpuUsage->setIndent(20);
 	kbps->setIndent(10);
+	diskUsage->setIndent(20);
 
 	addPermanentWidget(droppedFrames);
 	addPermanentWidget(sessionTime);
 	addPermanentWidget(cpuUsage);
+#ifdef _WIN32
+	addPermanentWidget(diskUsage);
+#endif
 	addPermanentWidget(kbps);
 }
 
@@ -91,6 +98,38 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%");
 	cpuUsage->setText(text);
 	cpuUsage->setMinimumWidth(cpuUsage->width());
+}
+
+static QString FormatSize(double size)
+{
+	const double gb = size / (1024 * 1024 * 1024);
+	const double mb = size / (1024 * 1024);
+	const double kb = size / (1024);
+	QString sizeStr;
+	if (gb > 1) {
+		sizeStr = QString::number(gb, 'f', 1) + QString(" GB");
+	} else if (mb > 1) {
+		sizeStr = QString::number(mb, 'f', 1) + QString(" MB");
+	} else if (kb > 1) {
+		sizeStr = QString::number(kb, 'f', 1) + QString(" KB");
+	} else {
+		sizeStr = QString::number(size, 'f', 1) + QString(" B");
+	}
+	return sizeStr;
+}
+
+void OBSBasicStatusBar::UpdateDiskUsage()
+{
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+	if (!main)
+		return;
+
+	QString text;
+	text += FormatSize(main->GetRecordingFileSize())
+		+ QString(" / ")
+		+ FormatSize(main->GetRemainingDiskSpace());
+	diskUsage->setText(text);
+	diskUsage->setMinimumWidth(diskUsage->width());
 }
 
 void OBSBasicStatusBar::UpdateSessionTime()

@@ -16,6 +16,7 @@ private:
 	QLabel *sessionTime;
 	QLabel *cpuUsage;
 	QLabel *kbps;
+	QLabel *diskUsage;
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
@@ -47,6 +48,7 @@ private slots:
 	void ReconnectSuccess();
 	void UpdateStatusBar();
 	void UpdateCPUUsage();
+	void UpdateDiskUsage();
 
 public:
 	OBSBasicStatusBar(QWidget *parent);
