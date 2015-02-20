@@ -282,6 +282,18 @@ cleanup:
 	return success;
 }
 
+int64_t os_get_file_size(const char *path)
+{
+	FILE* f = os_fopen(path, "rb");
+	if (!f)
+		return -1;
+
+	int64_t sz = os_fgetsize(f);
+	fclose(f);
+
+	return sz;
+}
+
 size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
 	size_t out_len;
