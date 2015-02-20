@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -331,6 +332,17 @@ void os_closedir(os_dir_t *dir)
 		closedir(dir->dir);
 		bfree(dir);
 	}
+}
+
+int64_t os_get_free_space(const char *path)
+{
+	struct statvfs info;
+	int64_t ret = (int64_t)statvfs(path, &info);
+
+	if (ret == 0)
+		ret = (int64_t)info.f_bsize * (int64_t)info.f_bfree;
+
+	return ret;
 }
 
 struct posix_glob_info {
