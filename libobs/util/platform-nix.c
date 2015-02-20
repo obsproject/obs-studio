@@ -246,6 +246,11 @@ void os_closedir(os_dir_t *dir)
 	}
 }
 
+uint64_t os_remaining_disk_space_bytes(const char *disk)
+{
+	return 0;
+}
+
 struct posix_glob_info {
 	struct os_glob_info base;
 	glob_t gl;
