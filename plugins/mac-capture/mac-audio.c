@@ -643,20 +643,26 @@ static const char *coreaudio_output_getname(void)
 	return TEXT_AUDIO_OUTPUT;
 }
 
+static void coreaudio_shutdown(struct coreaudio_data *ca)
+{
+	if (ca->reconnecting) {
+		os_event_signal(ca->exit_event);
+		pthread_join(ca->reconnect_thread, NULL);
+		os_event_reset(ca->exit_event);
+	}
+
+	coreaudio_uninit(ca);
+
+	if (ca->unit)
+		AudioComponentInstanceDispose(ca->unit);
+}
+
 static void coreaudio_destroy(void *data)
 {
 	struct coreaudio_data *ca = data;
 
 	if (ca) {
-		if (ca->reconnecting) {
-			os_event_signal(ca->exit_event);
-			pthread_join(ca->reconnect_thread, NULL);
-		}
-
-		coreaudio_uninit(ca);
-
-		if (ca->unit)
-			AudioComponentInstanceDispose(ca->unit);
+		coreaudio_shutdown(ca);
 
 		os_event_destroy(ca->exit_event);
 		bfree(ca->device_name);
