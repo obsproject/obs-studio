@@ -1,8 +1,12 @@
 #include <obs-module.h>
 
-#define warn(format, ...) \
-	blog(LOG_WARNING, "[image_source: '%s'] " format, \
+#define log(log_level, format, ...) \
+	blog(log_level, "[image_source: '%s'] " format, \
 			obs_source_get_name(context->source), ##__VA_ARGS__)
+#define info(format, ...) \
+	log(LOG_INFO, format, ##__VA_ARGS__)
+#define warn(format, ...) \
+	log(LOG_WARNING, format, ##__VA_ARGS__)
 
 struct image_source {
 	obs_source_t *source;
