@@ -261,5 +261,38 @@
                 "url": "rtmp://de.live.cashplay.tv/live"
             }
         ]
+    },
+    {
+        "name": "Beam.pro",
+        "servers": [
+            {
+                "name": "Dallas",
+                "url": "rtmp://ingest.dal07.beam.pro:1935/beam"
+            },
+            {
+                "name": "Washington DC",
+                "url": "rtmp://ingest.wdc01.beam.pro:1935/beam"
+            },
+            {
+                "name": "Toronto",
+                "url": "rtmp://ingest.tor01.beam.pro:1935/beam"
+            },
+            {
+                "name": "London",
+                "url": "rtmp://ingest.lon02.beam.pro:1935/beam"
+            },
+            {
+                "name": "Amsterdam",
+                "url": "rtmp://ingest.ams01.beam.pro:1935/beam"
+            },
+            {
+                "name": "Melbourne",
+                "url": "rtmp://ingest.mel01.beam.pro:1935/beam"
+            },
+            {
+                "name": "San Jose",
+                "url": "rtmp://ingest.sjc01.beam.pro:1935/beam"
+            }
+        ]
     }
 ]
