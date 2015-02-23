@@ -133,6 +133,27 @@ int_fast32_t v4l2_set_input(int_fast32_t dev, int *input)
 		: v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
 }
 
+int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps)
+{
+	if (!dev || !caps)
+		return -1;
+
+	if (input == -1) {
+		if (v4l2_ioctl(dev, VIDIOC_G_INPUT, &input) < 0)
+			return -1;
+	}
+
+	struct v4l2_input in;
+	memset(&in, 0, sizeof(in));
+	in.index = input;
+
+	if (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) < 0)
+		return -1;
+
+	*caps = in.capabilities;
+	return 0;
+}
+
 int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
 		int *pixelformat, int *bytesperline)
 {
@@ -197,5 +218,21 @@ int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate)
 
 	*framerate = v4l2_pack_tuple(par.parm.capture.timeperframe.numerator,
 			par.parm.capture.timeperframe.denominator);
+	return 0;
+}
+
+int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard)
+{
+	if (!dev || !standard)
+		return -1;
+
+	if (*standard == -1) {
+		if (v4l2_ioctl(dev, VIDIOC_G_STD, standard) < 0)
+			return -1;
+	} else {
+		if (v4l2_ioctl(dev, VIDIOC_S_STD, standard) < 0)
+			return -1;
+	}
+
 	return 0;
 }
