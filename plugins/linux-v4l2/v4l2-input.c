@@ -56,6 +56,7 @@ struct v4l2_data {
 	char *device_id;
 	int input;
 	int pixfmt;
+	int standard;
 	int resolution;
 	int framerate;
 	bool sys_timing;
@@ -744,6 +745,7 @@ static void v4l2_destroy(void *vptr)
  */
 static void v4l2_init(struct v4l2_data *data)
 {
+	uint32_t input_caps;
 	int fps_num, fps_denom;
 
 	blog(LOG_INFO, "Start capture from %s", data->device_id);
@@ -759,6 +761,20 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	}
 	blog(LOG_INFO, "Input: %d", data->input);
+	if (v4l2_get_input_caps(data->dev, -1, &input_caps) < 0) {
+		blog(LOG_ERROR, "Unable to get input capabilities");
+		goto fail;
+	}
+
+	/* set video standard if supported */
+	if (input_caps & V4L2_IN_CAP_STD) {
+		if (v4l2_set_standard(data->dev, &data->standard) < 0) {
+			blog(LOG_ERROR, "Unable to set video standard");
+			goto fail;
+		}
+		data->resolution = -1;
+		data->framerate  = -1;
+	}
 
 	/* set pixel format and resolution */
 	if (v4l2_set_format(data->dev, &data->resolution, &data->pixfmt,
@@ -820,6 +836,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->device_id  = bstrdup(obs_data_get_string(settings, "device_id"));
 	data->input      = obs_data_get_int(settings, "input");
 	data->pixfmt     = obs_data_get_int(settings, "pixelformat");
+	data->standard   = obs_data_get_int(settings, "standard");
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate  = obs_data_get_int(settings, "framerate");
 	data->sys_timing = obs_data_get_bool(settings, "system_timing");
