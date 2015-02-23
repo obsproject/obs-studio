@@ -258,6 +258,18 @@ int_fast32_t v4l2_set_format(int_fast32_t dev, int *resolution,
  */
 int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate);
 
+/**
+ * Set a video standard on the device.
+ *
+ * If the action succeeds standard is set to the used video standard id.
+ *
+ * @param dev handle to the v4l2 device
+ * @param standard id of the standard to use or -1 to leave as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard);
+
 #ifdef __cplusplus
 }
 #endif

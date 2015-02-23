@@ -220,3 +220,19 @@ int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate)
 			par.parm.capture.timeperframe.denominator);
 	return 0;
 }
+
+int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard)
+{
+	if (!dev || !standard)
+		return -1;
+
+	if (*standard == -1) {
+		if (v4l2_ioctl(dev, VIDIOC_G_STD, standard) < 0)
+			return -1;
+	} else {
+		if (v4l2_ioctl(dev, VIDIOC_S_STD, standard) < 0)
+			return -1;
+	}
+
+	return 0;
+}
