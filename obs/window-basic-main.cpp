@@ -2111,6 +2111,22 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 	UploadLog(App()->GetLastLog());
 }
 
+void OBSBasic::on_actionViewCurrentLog_triggered()
+{
+	char logDir[512];
+	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+		return;
+
+	const char* log = App()->GetCurrentLog();
+
+	string path = (char*)logDir;
+	path += "/";
+	path += log;
+
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_actionCheckForUpdates_triggered()
 {
 	CheckForUpdates();
