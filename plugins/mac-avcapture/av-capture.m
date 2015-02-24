@@ -243,6 +243,18 @@ static inline bool update_frame(struct av_capture *capture,
 }
 @end
 
+static void av_capture_enable_buffering(struct av_capture *capture,
+		bool enabled)
+{
+	obs_source_t *source = capture->source;
+	uint32_t flags = obs_source_get_flags(source);
+	if (enabled)
+		flags &= ~OBS_SOURCE_FLAG_UNBUFFERED;
+	else
+		flags |= OBS_SOURCE_FLAG_UNBUFFERED;
+	obs_source_set_flags(source, flags);
+}
+
 static const char *av_capture_getname(void)
 {
 	return TEXT_AVCAPTURE;
@@ -569,6 +581,9 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 		capture = NULL;
 	}
 
+	av_capture_enable_buffering(capture,
+			obs_data_get_bool(settings, "buffering"));
+
 	return capture;
 }
 
@@ -805,6 +820,9 @@ static obs_properties_t *av_capture_properties(void *unused)
 	obs_property_set_modified_callback(preset_list,
 			properties_preset_changed);
 
+	obs_properties_add_bool(props, "buffering",
+			obs_module_text("Buffering"));
+
 	return props;
 }
 
@@ -847,6 +865,9 @@ static void av_capture_update(void *data, obs_data_t *settings)
 
 	capture->session.sessionPreset = preset;
 	AVLOG(LOG_INFO, "Selected preset %s", preset.UTF8String);
+
+	av_capture_enable_buffering(capture,
+			obs_data_get_bool(settings, "buffering"));
 }
 
 struct obs_source_info av_capture_info = {
