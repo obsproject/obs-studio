@@ -581,6 +581,7 @@
      <addaction name="actionShowLogs"/>
      <addaction name="actionUploadCurrentLog"/>
      <addaction name="actionUploadLastLog"/>
+     <addaction name="actionViewCurrentLog"/>
     </widget>
     <addaction name="menuLogFiles"/>
     <addaction name="actionCheckForUpdates"/>
@@ -804,6 +805,11 @@
   <action name="actionUploadCurrentLog">
    <property name="text">
     <string>Basic.MainMenu.Help.Logs.UploadCurrentLog</string>
+   </property>
+  </action>
+  <action name="actionViewCurrentLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Logs.ViewCurrentLog</string>
    </property>
   </action>
   <action name="actionUndo">
