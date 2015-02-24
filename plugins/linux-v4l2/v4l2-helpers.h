@@ -281,6 +281,17 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard);
  */
 int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
 		int index);
+/**
+ * Set a dv timing on the device
+ *
+ * Currently standard will not be changed on success or error.
+ *
+ * @param dev handle to the v4l2 device
+ * @param timing index of the timing to use or -1 to leave as is
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_set_dv_timing(int_fast32_t dev, int *timing);
 
 #ifdef __cplusplus
 }
