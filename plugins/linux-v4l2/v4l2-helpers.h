@@ -270,6 +270,18 @@ int_fast32_t v4l2_set_framerate(int_fast32_t dev, int *framerate);
  */
 int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard);
 
+/**
+ * Get the dv timing for an input with a specified index
+ *
+ * @param dev handle to the v4l2 device
+ * @param timing pointer to the timing structure to fill
+ * @param index index of the dv timing to fetch
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
+		int index);
+
 #ifdef __cplusplus
 }
 #endif

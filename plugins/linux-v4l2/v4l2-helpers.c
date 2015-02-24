@@ -236,3 +236,21 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard)
 
 	return 0;
 }
+
+int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
+		int index)
+{
+	if (!dev || !dvt)
+		return -1;
+
+	struct v4l2_enum_dv_timings iter;
+	memset(&iter, 0, sizeof(iter));
+	iter.index   = index;
+
+	if (v4l2_ioctl(dev, VIDIOC_ENUM_DV_TIMINGS, &iter) < 0)
+		return -1;
+
+	memcpy(dvt, &iter.timings, sizeof(struct v4l2_dv_timings));
+
+	return 0;
+}
