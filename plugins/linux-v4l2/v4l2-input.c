@@ -594,16 +594,19 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 	uint32_t caps = 0;
 	if (v4l2_get_input_caps(dev, input, &caps) < 0)
 		return false;
-	caps &= V4L2_IN_CAP_STD;
+	caps &= V4L2_IN_CAP_STD | V4L2_IN_CAP_DV_TIMINGS;
 
 	obs_property_t *resolution = obs_properties_get(props, "resolution");
 	obs_property_t *framerate  = obs_properties_get(props, "framerate");
 	obs_property_t *standard   = obs_properties_get(props, "standard");
+	obs_property_t *dv_timing  = obs_properties_get(props, "dv_timing");
 
 	obs_property_set_visible(resolution, (!caps) ? true : false);
 	obs_property_set_visible(framerate,  (!caps) ? true : false);
 	obs_property_set_visible(standard,
 			(caps & V4L2_IN_CAP_STD) ? true : false);
+	obs_property_set_visible(dv_timing,
+			(caps & V4L2_IN_CAP_DV_TIMINGS) ? true : false);
 
 	if (!caps) {
 		v4l2_resolution_list(dev, obs_data_get_int(
@@ -611,6 +614,8 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 	}
 	if (caps & V4L2_IN_CAP_STD)
 		v4l2_standard_list(dev, standard);
+	if (caps & V4L2_IN_CAP_DV_TIMINGS)
+		v4l2_dv_timing_list(dev, dv_timing);
 
 	v4l2_close(dev);
 
@@ -618,6 +623,8 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 		obs_property_modified(resolution, settings);
 	if (caps & V4L2_IN_CAP_STD)
 		obs_property_modified(standard, settings);
+	if (caps & V4L2_IN_CAP_DV_TIMINGS)
+		obs_property_modified(dv_timing, settings);
 
 	return true;
 }
