@@ -216,6 +216,7 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "input", -1);
 	obs_data_set_default_int(settings, "pixelformat", -1);
 	obs_data_set_default_int(settings, "standard", -1);
+	obs_data_set_default_int(settings, "dv_timing", -1);
 	obs_data_set_default_int(settings, "resolution", -1);
 	obs_data_set_default_int(settings, "framerate", -1);
 	obs_data_set_default_bool(settings, "system_timing", false);
@@ -709,6 +710,11 @@ static obs_properties_t *v4l2_properties(void *vptr)
 			"standard", obs_module_text("VideoStandard"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_visible(standard_list, false);
+
+	obs_property_t *dv_timing_list = obs_properties_add_list(props,
+			"dv_timing", obs_module_text("DVTiming"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_visible(dv_timing_list, false);
 
 	obs_property_t *resolution_list = obs_properties_add_list(props,
 			"resolution", obs_module_text("Resolution"),
