@@ -1,6 +1,7 @@
 /******************************************************************************
     Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
                                Zachary Lund <admin@computerquip.com>
+			       Philippe Groarke <philippe.groarke@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@
 #include <QFileDialog>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QDataStream>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -82,6 +84,22 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	int width = config_get_int(App()->GlobalConfig(), "MainWindow", "cx");
+
+	// Check if no values are saved (new installation).
+	if (width != 0) {
+		int height = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"cy");
+		int posx = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"posx");
+		int posy = config_get_int(App()->GlobalConfig(), "MainWindow",
+				"posy");
+
+		resize(width, height);
+		move(posx, posy);
+	}
+
+
 	char styleSheetPath[512];
 	int ret = os_get_config_path(styleSheetPath, sizeof(styleSheetPath),
 			"obs-studio/basic/stylesheet.qss");
@@ -96,6 +114,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSScene>    ("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>   ("OBSSource");
+
+	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
+	qMetaTypeId<OBSSceneItem>();
 
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
 		struct obs_video_info ovi;
@@ -124,6 +145,18 @@ OBSBasic::OBSBasic(QWidget *parent)
 			SLOT(SceneItemNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
 
+	connect(ui->scenes->model(), SIGNAL(
+			rowsMoved(QModelIndex, int, int, QModelIndex, int)),
+			this,
+			SLOT(on_actionSceneDragReorder(QModelIndex, int, int,
+			QModelIndex, int)));
+
+	connect(ui->sources->model(), SIGNAL(
+			rowsMoved(QModelIndex, int, int, QModelIndex, int)),
+			this,
+			SLOT(on_actionSourceDragReorder(QModelIndex, int, int,
+			QModelIndex, int)));
+
 	cpuUsageInfo = os_cpu_usage_info_start();
 	cpuUsageTimer = new QTimer(this);
 	connect(cpuUsageTimer, SIGNAL(timeout()),
@@ -143,6 +176,18 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #endif
+}
+
+QDataStream &operator<<(QDataStream &out, const OBSSceneItem &myObj)
+{
+	/* TODO: Actually serialise data. */
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in, const OBSSceneItem &myObj)
+{
+	/* TODO: Actually serialise data. */
+	return in;
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent)
@@ -659,6 +704,14 @@ OBSBasic::~OBSBasic()
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
+	config_set_int(App()->GlobalConfig(), "MainWindow", "cx",
+			this->width());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "cy",
+			this->height());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "posx",
+			this->pos().x());
+	config_set_int(App()->GlobalConfig(), "MainWindow", "posy",
+			this->pos().y());
 	config_save(App()->GlobalConfig());
 }
 
@@ -761,14 +814,6 @@ void OBSBasic::AddScene(OBSSource source)
 			OBSBasic::SceneItemSelected, this);
 	signal_handler_connect(handler, "item_deselect",
 			OBSBasic::SceneItemDeselected, this);
-	signal_handler_connect(handler, "item_move_up",
-			OBSBasic::SceneItemMoveUp, this);
-	signal_handler_connect(handler, "item_move_down",
-			OBSBasic::SceneItemMoveDown, this);
-	signal_handler_connect(handler, "item_move_top",
-			OBSBasic::SceneItemMoveTop, this);
-	signal_handler_connect(handler, "item_move_bottom",
-			OBSBasic::SceneItemMoveBottom, this);
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -900,20 +945,26 @@ void OBSBasic::MoveSceneItem(OBSSceneItem item, obs_order_movement movement)
 
 	switch (movement) {
 	case OBS_ORDER_MOVE_UP:
-		if (curRow > 0)
+		if (curRow > 0) {
+			obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
 			curRow--;
+		}
 		break;
 
 	case OBS_ORDER_MOVE_DOWN:
-		if (curRow < ui->sources->count())
+		if (curRow < ui->sources->count()) {
+			obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
 			curRow++;
+		}
 		break;
 
 	case OBS_ORDER_MOVE_TOP:
+		obs_sceneitem_set_order(item, OBS_ORDER_MOVE_TOP);
 		curRow = 0;
 		break;
 
 	case OBS_ORDER_MOVE_BOTTOM:
+		obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
 		curRow = ui->sources->count();
 		break;
 	}
@@ -1285,42 +1336,6 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
-}
-
-void OBSBasic::SceneItemMoveUp(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_UP));
-}
-
-void OBSBasic::SceneItemMoveDown(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_DOWN));
-}
-
-void OBSBasic::SceneItemMoveTop(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_TOP));
-}
-
-void OBSBasic::SceneItemMoveBottom(void *data, calldata_t *params)
-{
-	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"MoveSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)),
-			Q_ARG(obs_order_movement, OBS_ORDER_MOVE_BOTTOM));
 }
 
 /* Main class functions */
@@ -1802,6 +1817,12 @@ void OBSBasic::on_actionSceneDown_triggered()
 	/* TODO */
 }
 
+void OBSBasic::on_actionSceneDragReorder(const QModelIndex &, int, int,
+		const QModelIndex &, int)
+{
+	/* TODO */
+}
+
 void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 		QListWidgetItem *prev)
 {
@@ -1989,37 +2010,54 @@ void OBSBasic::on_actionSourceProperties_triggered()
 void OBSBasic::on_actionSourceUp_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
+	MoveSceneItem(item, OBS_ORDER_MOVE_UP);
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
+	MoveSceneItem(item, OBS_ORDER_MOVE_DOWN);
+}
+
+void OBSBasic::on_actionSourceDragReorder(const QModelIndex &, int sourceStart,
+		int, const QModelIndex &, int destinationRow)
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	// Check if dragged up or down, dragging up is 1 off.
+	int moveCount = destinationRow - sourceStart;
+
+	if (moveCount >= 0) {
+		obs_sceneitem_set_order_position(item, ui->sources->count() -
+				destinationRow);
+	} else {
+		obs_sceneitem_set_order_position(item, ui->sources->count() -
+				destinationRow - 1);
+	}
 }
 
 void OBSBasic::on_actionMoveUp_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
+	MoveSceneItem(item, OBS_ORDER_MOVE_UP);
 }
 
 void OBSBasic::on_actionMoveDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
+	MoveSceneItem(item, OBS_ORDER_MOVE_DOWN);
 }
 
 void OBSBasic::on_actionMoveToTop_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_TOP);
+	MoveSceneItem(item, OBS_ORDER_MOVE_TOP);
 }
 
 void OBSBasic::on_actionMoveToBottom_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
+	MoveSceneItem(item, OBS_ORDER_MOVE_BOTTOM);
 }
 
 static BPtr<char> ReadLogFile(const char *log)
