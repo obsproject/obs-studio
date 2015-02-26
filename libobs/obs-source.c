@@ -249,8 +249,8 @@ void obs_source_destroy(struct obs_source *source)
 	if (source->filter_parent)
 		obs_source_filter_remove(source->filter_parent, source);
 
-	for (i = 0; i < source->filters.num; i++)
-		obs_source_release(source->filters.array[i]);
+	while (source->filters.num)
+		obs_source_filter_remove(source, source->filters.array[0]);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_destroy(source->async_cache.array[i].frame);
