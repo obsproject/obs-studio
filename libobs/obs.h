@@ -798,6 +798,10 @@ EXPORT void obs_source_dec_showing(obs_source_t *source);
 EXPORT void obs_source_enum_filters(obs_source_t *source,
 		obs_source_enum_proc_t callback, void *param);
 
+/** Gets a filter of a source by its display name. */
+EXPORT obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
+		const char *name);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 

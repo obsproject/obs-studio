@@ -2451,3 +2451,27 @@ void obs_source_enum_filters(obs_source_t *source,
 
 	pthread_mutex_unlock(&source->filter_mutex);
 }
+
+obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
+		const char *name)
+{
+	obs_source_t *filter = NULL;
+
+	if (!source || !name)
+		return NULL;
+
+	pthread_mutex_lock(&source->filter_mutex);
+
+	for (size_t i = 0; i < source->filters.num; i++) {
+		struct obs_source *cur_filter = source->filters.array[i];
+		if (strcmp(cur_filter->context.name, name) == 0) {
+			filter = cur_filter;
+			obs_source_addref(filter);
+			break;
+		}
+	}
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	return filter;
+}
