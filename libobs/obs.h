@@ -794,6 +794,10 @@ EXPORT void obs_source_inc_showing(obs_source_t *source);
  */
 EXPORT void obs_source_dec_showing(obs_source_t *source);
 
+/** Enumerates filters assigned to the source */
+EXPORT void obs_source_enum_filters(obs_source_t *source,
+		obs_source_enum_proc_t callback, void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
