@@ -29,6 +29,7 @@
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
+#include "window-basic-filters.hpp"
 
 #include <util/platform.h>
 #include <util/util.hpp>
@@ -67,6 +68,7 @@ private:
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
+	QPointer<OBSBasicFilters> filters;
 
 	QNetworkAccessManager networkManager;
 
@@ -133,6 +135,7 @@ private:
 
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
+	void CreateFiltersWindow(obs_source_t *source);
 
 public slots:
 	void StreamingStart();
@@ -296,6 +299,8 @@ private slots:
 			QAbstractItemDelegate::EndEditHint endHint);
 	void SceneItemNameEdited(QWidget *editor,
 			QAbstractItemDelegate::EndEditHint endHint);
+
+	void OpenFilters();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

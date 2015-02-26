@@ -90,6 +90,7 @@ set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	obs-app.cpp
 	window-basic-main.cpp
+	window-basic-filters.cpp
 	window-basic-settings.cpp
 	window-basic-interaction.cpp
 	window-basic-properties.cpp
@@ -120,6 +121,7 @@ set(obs_HEADERS
 	platform.hpp
 	window-main.hpp
 	window-basic-main.hpp
+	window-basic-filters.hpp
 	window-basic-settings.hpp
 	window-basic-interaction.hpp
 	window-basic-properties.hpp
@@ -154,6 +156,7 @@ set(obs_UI
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
 	forms/OBSBasicTransform.ui
+	forms/OBSBasicFilters.ui
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
