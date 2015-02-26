@@ -258,6 +258,7 @@ void obs_source_destroy(struct obs_source *source)
 	gs_enter_context(obs->video.graphics);
 	gs_texrender_destroy(source->async_convert_texrender);
 	gs_texture_destroy(source->async_texture);
+	gs_texrender_destroy(source->filter_texrender);
 	gs_leave_context();
 
 	for (i = 0; i < MAX_AV_PLANES; i++)
@@ -266,7 +267,6 @@ void obs_source_destroy(struct obs_source *source)
 	audio_line_destroy(source->audio_line);
 	audio_resampler_destroy(source->resampler);
 
-	gs_texrender_destroy(source->filter_texrender);
 	da_free(source->async_cache);
 	da_free(source->async_frames);
 	da_free(source->filters);
