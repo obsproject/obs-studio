@@ -1165,22 +1165,76 @@ void obs_source_video_render(obs_source_t *source)
 		obs_source_render_async_video(source);
 }
 
-uint32_t obs_source_get_width(const obs_source_t *source)
+static uint32_t get_base_width(const obs_source_t *source)
 {
-	if (!source_valid(source)) return 0;
-
-	if (source->info.get_width)
+	if (source->info.get_width) {
 		return source->info.get_width(source->context.data);
+
+	} else if (source->info.type == OBS_SOURCE_TYPE_FILTER) {
+		return get_base_width(source->filter_target);
+	}
+
 	return source->async_width;
 }
 
-uint32_t obs_source_get_height(const obs_source_t *source)
+static uint32_t get_base_height(const obs_source_t *source)
+{
+	if (source->info.get_height) {
+		return source->info.get_height(source->context.data);
+
+	} else if (source->info.type == OBS_SOURCE_TYPE_FILTER) {
+		return get_base_height(source->filter_target);
+	}
+
+	return source->async_height;
+}
+
+static uint32_t get_recurse_width(obs_source_t *source)
+{
+	uint32_t width;
+
+	pthread_mutex_lock(&source->filter_mutex);
+
+	width = (source->filters.num) ?
+		get_base_width(source->filters.array[0]) :
+		get_base_width(source);
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	return width;
+}
+
+static uint32_t get_recurse_height(obs_source_t *source)
+{
+	uint32_t height;
+
+	pthread_mutex_lock(&source->filter_mutex);
+
+	height = (source->filters.num) ?
+		get_base_height(source->filters.array[0]) :
+		get_base_height(source);
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	return height;
+}
+
+uint32_t obs_source_get_width(obs_source_t *source)
 {
 	if (!source_valid(source)) return 0;
 
-	if (source->info.get_height)
-		return source->info.get_height(source->context.data);
-	return source->async_height;
+	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
+		get_recurse_width(source) :
+	        get_base_width(source);
+}
+
+uint32_t obs_source_get_height(obs_source_t *source)
+{
+	if (!source_valid(source)) return 0;
+
+	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
+		get_recurse_height(source) :
+		get_base_height(source);
 }
 
 obs_source_t *obs_filter_get_parent(const obs_source_t *filter)

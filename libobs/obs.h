@@ -660,10 +660,10 @@ EXPORT void obs_source_update(obs_source_t *source, obs_data_t *settings);
 EXPORT void obs_source_video_render(obs_source_t *source);
 
 /** Gets the width of a source (if it has video) */
-EXPORT uint32_t obs_source_get_width(const obs_source_t *source);
+EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 
 /** Gets the height of a source (if it has video) */
-EXPORT uint32_t obs_source_get_height(const obs_source_t *source);
+EXPORT uint32_t obs_source_get_height(obs_source_t *source);
 
 /** If the source is a filter, returns the parent source of the filter */
 EXPORT obs_source_t *obs_filter_get_parent(const obs_source_t *filter);
