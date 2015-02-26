@@ -38,7 +38,7 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 	bfree(effect_file);
 	if (!tf->whatever) {
 		filter_destroy(tf);
-		return NULL;
+		tf = NULL;
 	}
 
 	obs_leave_graphics();
