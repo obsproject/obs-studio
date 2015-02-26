@@ -1233,8 +1233,10 @@ float obs_get_present_volume(void)
 	return obs ? obs->audio.present_volume : 0.0f;
 }
 
-obs_source_t *obs_load_source(obs_data_t *source_data)
+static obs_source_t *obs_load_source_type(obs_data_t *source_data,
+		enum obs_source_type type)
 {
+	obs_data_array_t *filters = obs_data_get_array(source_data, "filters");
 	obs_source_t *source;
 	const char   *name    = obs_data_get_string(source_data, "name");
 	const char   *id      = obs_data_get_string(source_data, "id");
@@ -1244,7 +1246,7 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	uint32_t     flags;
 	uint32_t     mixers;
 
-	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, id, name, settings);
+	source = obs_source_create(type, id, name, settings);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_get_double(source_data, "volume");
@@ -1261,9 +1263,34 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	flags = (uint32_t)obs_data_get_int(source_data, "flags");
 	obs_source_set_flags(source, flags);
 
+	if (filters) {
+		size_t count = obs_data_array_count(filters);
+
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *filter_data =
+				obs_data_array_item(filters, i);
+
+			obs_source_t *filter = obs_load_source_type(
+					filter_data, OBS_SOURCE_TYPE_FILTER);
+			if (filter) {
+				obs_source_filter_add(source, filter);
+				obs_source_release(filter);
+			}
+
+			obs_data_release(filter_data);
+		}
+
+		obs_data_array_release(filters);
+	}
+
 	obs_data_release(settings);
 
 	return source;
+}
+
+obs_source_t *obs_load_source(obs_data_t *source_data)
+{
+	return obs_load_source_type(source_data, OBS_SOURCE_TYPE_INPUT);
 }
 
 void obs_load_sources(obs_data_array_t *array)
@@ -1296,6 +1323,7 @@ void obs_load_sources(obs_data_array_t *array)
 
 obs_data_t *obs_save_source(obs_source_t *source)
 {
+	obs_data_array_t *filters = obs_data_array_create();
 	obs_data_t *source_data = obs_data_create();
 	obs_data_t *settings    = obs_source_get_settings(source);
 	float      volume      = obs_source_get_volume(source);
@@ -1315,7 +1343,23 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);
 
+	pthread_mutex_lock(&source->filter_mutex);
+
+	if (source->filters.num) {
+		for (size_t i = 0; i < source->filters.num; i++) {
+			obs_source_t *filter = source->filters.array[i];
+			obs_data_t *filter_data = obs_save_source(filter);
+			obs_data_array_push_back(filters, filter_data);
+			obs_data_release(filter_data);
+		}
+
+		obs_data_set_array(source_data, "filters", filters);
+	}
+
+	pthread_mutex_unlock(&source->filter_mutex);
+
 	obs_data_release(settings);
+	obs_data_array_release(filters);
 
 	return source_data;
 }
