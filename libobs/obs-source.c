@@ -1269,12 +1269,13 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 		(*back)->filter_target = filter;
 	}
 
+	filter->filter_parent = source;
+	filter->filter_target = source;
+
 	da_push_back(source->filters, &filter);
 
 	pthread_mutex_unlock(&source->filter_mutex);
 
-	filter->filter_parent = source;
-	filter->filter_target = source;
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
 
