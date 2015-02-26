@@ -1262,6 +1262,8 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 		return;
 	}
 
+	obs_source_addref(filter);
+
 	if (source->filters.num) {
 		obs_source_t **back = da_end(source->filters);
 		(*back)->filter_target = filter;
@@ -1313,6 +1315,8 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 
 	filter->filter_parent = NULL;
 	filter->filter_target = NULL;
+
+	obs_source_release(filter);
 }
 
 void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
