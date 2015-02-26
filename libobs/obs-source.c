@@ -1115,8 +1115,7 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	source->rendering_filter = false;
 }
 
-static inline void obs_source_default_render(obs_source_t *source,
-		bool color_matrix)
+static void obs_source_default_render(obs_source_t *source, bool color_matrix)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
 	const char     *tech_name = color_matrix ? "DrawMatrix" : "Draw";
