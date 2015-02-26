@@ -85,6 +85,8 @@ static const char *source_signals[] = {
 	"void audio_sync(ptr source, int out int offset)",
 	"void audio_data(ptr source, ptr data)",
 	"void audio_mixers(ptr source, in out int mixers)",
+	"void filter_add(ptr source, ptr filter)",
+	"void filter_remove(ptr source, ptr filter)",
 	NULL
 };
 
@@ -1194,6 +1196,8 @@ obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 
 void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 {
+	struct calldata cd = {0};
+
 	if (!source || !filter)
 		return;
 
@@ -1216,10 +1220,17 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 
 	filter->filter_parent = source;
 	filter->filter_target = source;
+	calldata_set_ptr(&cd, "source", source);
+	calldata_set_ptr(&cd, "filter", filter);
+
+	signal_handler_signal(source->context.signals, "filter_add", &cd);
+
+	calldata_free(&cd);
 }
 
 void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 {
+	struct calldata cd = {0};
 	size_t idx;
 
 	if (!source || !filter)
@@ -1239,6 +1250,13 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 	da_erase(source->filters, idx);
 
 	pthread_mutex_unlock(&source->filter_mutex);
+
+	calldata_set_ptr(&cd, "source", source);
+	calldata_set_ptr(&cd, "filter", filter);
+
+	signal_handler_signal(source->context.signals, "filter_remove", &cd);
+
+	calldata_free(&cd);
 
 	filter->filter_parent = NULL;
 	filter->filter_target = NULL;
