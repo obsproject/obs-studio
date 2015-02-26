@@ -1,7 +1,7 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform float4 color = {0.0, 1.0, 0.0, 1.0};
+uniform float4 color = {0.5, 1.0, 0.5, 1.0};
 
 sampler_state texSampler {
 	AddressU  = Clamp;
