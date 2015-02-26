@@ -2026,10 +2026,7 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
-		if (expects_def && parent == target)
-			obs_source_default_render(parent, use_matrix);
-		else
-			obs_source_video_render(target);
+		obs_source_video_render(target);
 		gs_texrender_end(filter->filter_texrender);
 	}
 
