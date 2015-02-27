@@ -877,10 +877,25 @@ static inline bool can_render(const gs_device_t *device)
 static void update_viewproj_matrix(struct gs_device *device)
 {
 	struct gs_shader *vs = device->cur_vertex_shader;
-	gs_matrix_get(&device->cur_view);
+	struct matrix4 cur_proj;
 
-	matrix4_mul(&device->cur_viewproj, &device->cur_view,
-			&device->cur_proj);
+	gs_matrix_get(&device->cur_view);
+	matrix4_copy(&cur_proj, &device->cur_proj);
+
+	if (device->cur_fbo) {
+		cur_proj.x.y = -cur_proj.x.y;
+		cur_proj.y.y = -cur_proj.y.y;
+		cur_proj.z.y = -cur_proj.z.y;
+		cur_proj.t.y = -cur_proj.t.y;
+
+		glFrontFace(GL_CW);
+	} else {
+		glFrontFace(GL_CCW);
+	}
+
+	gl_success("glFrontFace");
+
+	matrix4_mul(&device->cur_viewproj, &device->cur_view, &cur_proj);
 	matrix4_transpose(&device->cur_viewproj, &device->cur_viewproj);
 
 	if (vs->viewproj)

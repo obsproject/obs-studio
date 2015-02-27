@@ -63,11 +63,7 @@ VertInOut VSDefault(VertInOut vert_in)
 
 float4 PSNV12(VertInOut vert_in) : TARGET
 {
-#ifdef _OPENGL
-	float v_mul = floor((1.0 - vert_in.uv.y) * input_height);
-#else
 	float v_mul = floor(vert_in.uv.y * input_height);
-#endif
 
 	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
 	byte_offset += PRECISION_OFFSET;
@@ -127,11 +123,7 @@ float4 PSNV12(VertInOut vert_in) : TARGET
 
 float4 PSPlanar420(VertInOut vert_in) : TARGET
 {
-#ifdef _OPENGL
-	float v_mul = floor((1.0 - vert_in.uv.y) * input_height);
-#else
 	float v_mul = floor(vert_in.uv.y * input_height);
-#endif
 
 	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
 	byte_offset += PRECISION_OFFSET;
@@ -202,9 +194,6 @@ float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 		int y0_pos, int y1_pos) : TARGET
 {
 	float y = vert_in.uv.y;
-#ifdef _OPENGL
-	y = 1. - y;
-#endif
 	float odd = floor(fmod(width * vert_in.uv.x + PRECISION_OFFSET, 2.0));
 	float x = floor(width_d2 * vert_in.uv.x + PRECISION_OFFSET) *
 			width_d2_i;
@@ -233,9 +222,6 @@ float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
 {
 	float x = vert_in.uv.x;
 	float y = vert_in.uv.y;
-#ifdef _OPENGL
-	y = 1. - y;
-#endif
 	float x_offset   = floor(x * width  + PRECISION_OFFSET);
 	float y_offset   = floor(y * height + PRECISION_OFFSET);
 
@@ -258,9 +244,6 @@ float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
 {
 	float x = vert_in.uv.x;
 	float y = vert_in.uv.y;
-#ifdef _OPENGL
-	y = 1. - y;
-#endif
 	float x_offset   = floor(x * width  + PRECISION_OFFSET);
 	float y_offset   = floor(y * height + PRECISION_OFFSET);
 
