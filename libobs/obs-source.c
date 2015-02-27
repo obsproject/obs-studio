@@ -2005,6 +2005,16 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 	gs_technique_end(tech);
 }
 
+static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
+		uint32_t parent_flags,
+		enum obs_allow_direct_render allow_direct)
+{
+	return (target == parent) &&
+		(allow_direct == OBS_ALLOW_DIRECT_RENDERING) &&
+		((parent_flags & OBS_SOURCE_CUSTOM_DRAW) == 0) &&
+		((parent_flags & OBS_SOURCE_ASYNC) == 0);
+}
+
 void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct)
@@ -2012,7 +2022,7 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 	obs_source_t *target, *parent;
 	uint32_t     target_flags, parent_flags;
 	int          cx, cy;
-	bool         use_matrix, expects_def, can_directly;
+	bool         use_matrix;
 
 	if (!filter) return;
 
@@ -2023,14 +2033,12 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 	cx           = get_base_width(target);
 	cy           = get_base_height(target);
 	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
-	expects_def  = !(parent_flags & OBS_SOURCE_CUSTOM_DRAW);
-	can_directly = allow_direct == OBS_ALLOW_DIRECT_RENDERING;
 
 	/* if the parent does not use any custom effects, and this is the last
 	 * filter in the chain for the parent, then render the parent directly
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
-	if (can_directly && expects_def && target == parent) {
+	if (can_bypass(target, parent, parent_flags, allow_direct)) {
 		render_filter_bypass(target, effect, use_matrix);
 		return;
 	}
