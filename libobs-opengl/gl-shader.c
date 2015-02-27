@@ -487,6 +487,7 @@ static void program_set_param_data(struct gs_program *program,
 		}
 
 	} else if (pp->param->type == GS_SHADER_PARAM_TEXTURE) {
+		glUniform1i(pp->obj, pp->param->texture_id);
 		device_load_texture(program->device, pp->param->texture,
 				pp->param->texture_id);
 	}
