@@ -2048,8 +2048,14 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 				GS_ZS_NONE);
 
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
+		struct vec4 clear_color;
+
+		vec4_zero(&clear_color);
+		gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+
 		obs_source_video_render(target);
+
 		gs_texrender_end(filter->filter_texrender);
 	}
 
