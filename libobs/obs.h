@@ -882,6 +882,9 @@ EXPORT void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 		uint32_t width, uint32_t height, enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct);
 
+/** Skips the filter if the filter is invalid and cannot be rendered */
+EXPORT void obs_source_skip_video_filter(obs_source_t *filter);
+
 /**
  * Adds a child source.  Must be called by parent sources on child sources
  * when the child is added.  This ensures that the source is properly activated

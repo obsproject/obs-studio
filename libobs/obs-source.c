@@ -2065,6 +2065,32 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 			effect, width, height, use_matrix);
 }
 
+void obs_source_skip_video_filter(obs_source_t *filter)
+{
+	obs_source_t *target, *parent;
+	bool custom_draw, async;
+	uint32_t parent_flags;
+	bool use_matrix;
+
+	if (!filter) return;
+
+	target = obs_filter_get_target(filter);
+	parent = obs_filter_get_parent(filter);
+	parent_flags = parent->info.output_flags;
+	custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
+	async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
+	use_matrix = !!(parent_flags & OBS_SOURCE_COLOR_MATRIX);
+
+	if (target == parent && !custom_draw && !async)
+		obs_source_default_render(target, use_matrix);
+	else if (target->info.video_render)
+		obs_source_main_render(target);
+	else if (target->filter_target)
+		obs_source_video_render(target->filter_target);
+	else
+		obs_source_render_async_video(target);
+}
+
 signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
 {
 	return source ? source->context.signals : NULL;
