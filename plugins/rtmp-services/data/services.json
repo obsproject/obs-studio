@@ -261,5 +261,22 @@
                 "url": "rtmp://de.live.cashplay.tv/live"
             }
         ]
+    },
+    {
+        "name": "GamingLive.tv",
+        "servers": [
+            {
+                "name": "Europe",
+                "url": "rtmp://broadcastEU.gaminglive.tv/push"
+            },
+            {
+                "name": "North America",
+                "url": "rtmp://broadcastNA.gaminglive.tv/push"
+            },
+            {
+                "name": "Asia",
+                "url": "rtmp://broadcastAS.gaminglive.tv/push"
+            }
+        ]
     }
 ]
