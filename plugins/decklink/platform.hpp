@@ -1,7 +1,12 @@
 #pragma once
 
 #if defined(_WIN32)
-// TODO: Windows support
+#include <DeckLinkAPI.h>
+typedef BSTR decklink_string_t;
+IDeckLinkDiscovery *CreateDeckLinkDiscoveryInstance(void);
+#define IUnknownUUID IID_IUnknown
+typedef REFIID CFUUIDBytes;
+#define CFUUIDGetUUIDBytes(x) x
 #elif defined(__APPLE__)
 #include "mac/decklink-sdk/DeckLinkAPI.h"
 #include <CoreFoundation/CoreFoundation.h>
