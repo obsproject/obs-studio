@@ -360,28 +360,36 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 
 	if (srcdata->font_face)
 		cache_standard_glyphs(srcdata);
-skip_font_load:;
+
+skip_font_load:
 	if (from_file) {
 		const char *tmp = obs_data_get_string(settings, "text_file");
-		if (!tmp || !*tmp) {
+		if (!tmp || !*tmp || !os_file_exists(tmp)) {	
+			if (srcdata->text != NULL) {
+				bfree(srcdata->text);
+				srcdata->text = NULL;
+			}
+			const char *emptystr = " ";
+			os_utf8_to_wcs_ptr(emptystr, strlen(emptystr), &srcdata->text);
+
 			blog(LOG_WARNING,
 				"FT2-text: Failed to open %s for reading", tmp);
-			goto error;
 		}
+		else {
+			if (srcdata->text_file != NULL &&
+				strcmp(srcdata->text_file, tmp) == 0 &&
+				!vbuf_needs_update)
+				goto error;
 
-		if (srcdata->text_file != NULL &&
-		    strcmp(srcdata->text_file, tmp) == 0 &&
-		    !vbuf_needs_update)
-			goto error;
+			bfree(srcdata->text_file);
 
-		bfree(srcdata->text_file);
-
-		srcdata->text_file = bstrdup(tmp);
-		if (chat_log_mode)
-			read_from_end(srcdata, tmp);
-		else
-			load_text_from_file(srcdata, tmp);
-		srcdata->last_checked = os_gettime_ns();
+			srcdata->text_file = bstrdup(tmp);
+			if (chat_log_mode)
+				read_from_end(srcdata, tmp);
+			else
+				load_text_from_file(srcdata, tmp);
+			srcdata->last_checked = os_gettime_ns();
+		}
 	}
 	else {
 		const char *tmp = obs_data_get_string(settings, "text");
