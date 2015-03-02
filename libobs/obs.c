@@ -489,6 +489,17 @@ fail:
 	return data->valid;
 }
 
+void obs_main_view_free(struct obs_view *view)
+{
+	if (!view) return;
+
+	for (size_t i = 0; i < MAX_CHANNELS; i++)
+		obs_source_release(view->channels[i]);
+
+	memset(view->channels, 0, sizeof(view->channels));
+	pthread_mutex_destroy(&view->channels_mutex);
+}
+
 #define FREE_OBS_LINKED_LIST(type) \
 	do { \
 		int unfreed = 0; \
@@ -507,7 +518,7 @@ static void obs_free_data(void)
 
 	data->valid = false;
 
-	obs_view_free(&data->main_view);
+	obs_main_view_free(&data->main_view);
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
