@@ -57,6 +57,7 @@ private slots:
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);
+	~OBSBasicProperties();
 
 	void Init();
 

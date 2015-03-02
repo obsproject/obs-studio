@@ -86,6 +86,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
+
+	obs_source_inc_showing(source);
+}
+
+OBSBasicProperties::~OBSBasicProperties()
+{
+	obs_source_dec_showing(source);
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
