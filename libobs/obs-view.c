@@ -48,8 +48,13 @@ void obs_view_free(struct obs_view *view)
 {
 	if (!view) return;
 
-	for (size_t i = 0; i < MAX_CHANNELS; i++)
-		obs_source_release(view->channels[i]);
+	for (size_t i = 0; i < MAX_CHANNELS; i++) {
+		struct obs_source *source = view->channels[i];
+		if (source) {
+			obs_source_deactivate(source, AUX_VIEW);
+			obs_source_release(source);
+		}
+	}
 
 	memset(view->channels, 0, sizeof(view->channels));
 	pthread_mutex_destroy(&view->channels_mutex);
