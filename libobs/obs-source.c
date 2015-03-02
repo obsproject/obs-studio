@@ -2334,3 +2334,13 @@ float obs_source_get_target_volume(obs_source_t *source, obs_source_t *target)
 
 	return info.vol;
 }
+
+void obs_source_inc_showing(obs_source_t *source)
+{
+	obs_source_activate(source, AUX_VIEW);
+}
+
+void obs_source_dec_showing(obs_source_t *source)
+{
+	obs_source_deactivate(source, AUX_VIEW);
+}

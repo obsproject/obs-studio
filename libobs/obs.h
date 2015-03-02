@@ -780,6 +780,20 @@ EXPORT void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers);
 /** Gets audio mixer flags */
 EXPORT uint32_t obs_source_get_audio_mixers(const obs_source_t *source);
 
+/**
+ * Increments the 'showing' reference counter to indicate that the source is
+ * being shown somewhere.  If the reference counter was 0, will call the 'show'
+ * callback.
+ */
+EXPORT void obs_source_inc_showing(obs_source_t *source);
+
+/**
+ * Decrements the 'showing' reference counter to indicate that the source is
+ * no longer being shown somewhere.  If the reference counter is set to 0,
+ * will call the 'hide' callback
+ */
+EXPORT void obs_source_dec_showing(obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
