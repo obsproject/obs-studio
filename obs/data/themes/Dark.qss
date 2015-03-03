@@ -25,6 +25,7 @@
 /* rgb(31,30,31); /* veryDark */
 /* rgb(42,130,218); /* blue */
 
+
 /* General style, we override only what is needed. */
 QWidget {
     background-color: rgb(58,57,58); /* dark */
@@ -117,6 +118,9 @@ QMenuBar::item {
     background-color: rgb(58,57,58); /* dark */
 }
 
+
+/* Scenes and Sources toolbar */
+
 QToolBar {
     background-color: rgb(58,57,58); /* dark */
     border: none;
@@ -124,6 +128,26 @@ QToolBar {
 
 QToolButton:hover {
     border: 1px solid rgb(42,130,218); /* blue */
+}
+
+QToolButton[text="Add"] {
+    qproperty-icon: url(./Dark/plus.png);
+}
+
+QToolButton[text="Remove"] {
+    qproperty-icon: url(./Dark/minus.png);
+}
+
+QToolButton[text="Properties"] {
+    qproperty-icon: url(./Dark/cogwheel.png);
+}
+
+QToolButton[text="Basic.Main.MoveUp"], QToolButton[text="Move Up"] {
+    qproperty-icon: url(./Dark/up_arrow.png);
+}
+
+QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
+    qproperty-icon: url(./Dark/down_arrow.png);
 }
 
 
@@ -186,6 +210,7 @@ QComboBox:on {
     background-color: rgb(31,30,31); /* veryDark */
 }
 
+
 /* Textedits etc */
 
 QLineEdit, QTextEdit, QPlainTextEdit {
@@ -193,6 +218,9 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     border: none;
     padding-left: 2px;
 }
+
+
+/* Spinbox and doubleSpinbox */
 
 QSpinBox, QDoubleSpinBox {
     background-color: rgb(31,30,31); /* veryDark */

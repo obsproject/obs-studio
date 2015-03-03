@@ -7,3 +7,26 @@
 /* You can ship images using relative paths in qss. */
 /* Dark Theme is a good place to start if you need */
 /* a template. */
+
+
+/* We need to set back the icons, or the preview wont stick. */
+
+QToolButton[text="Add"] {
+    qproperty-icon: url(:/res/images/add.png);
+}
+
+QToolButton[text="Remove"] {
+    qproperty-icon: url(:/res/images/list_remove.png);
+}
+
+QToolButton[text="Properties"] {
+    qproperty-icon: url(:/res/images/properties.png);
+}
+
+QToolButton[text="Basic.Main.MoveUp"], QToolButton[text="Move Up"] {
+    qproperty-icon: url(:/res/images/up.png);
+}
+
+QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
+    qproperty-icon: url(:/res/images/down.png);
+}
