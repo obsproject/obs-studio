@@ -115,6 +115,10 @@
                 "url": "rtmp://live.fra.hitbox.tv/push"
             },
             {
+                "name": "EU-West (Paris)",
+                "url": "rtmp://live.cdg.hitbox.tv/push"
+            },
+            {
                 "name": "EU-East: Vienna, Austria",
                 "url": "rtmp://live.vie.hitbox.tv/push"
             },
@@ -133,6 +137,10 @@
             {
                 "name": "US-East: Washington",
                 "url": "rtmp://live.vgn.hitbox.tv/push"
+            },
+            {
+                "name": "US-East (New York)",
+                "url": "rtmp://live.jfk.hitbox.tv/push"
             },
             {
                 "name": "US-Central: Denver",
