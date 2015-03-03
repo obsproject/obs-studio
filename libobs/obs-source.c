@@ -518,8 +518,7 @@ static void hide_source(obs_source_t *source)
 static void activate_tree(obs_source_t *parent, obs_source_t *child,
 		void *param)
 {
-	if (os_atomic_inc_long(&child->activate_refs) == 1)
-		activate_source(child);
+	os_atomic_inc_long(&child->activate_refs);
 
 	UNUSED_PARAMETER(parent);
 	UNUSED_PARAMETER(param);
@@ -528,8 +527,7 @@ static void activate_tree(obs_source_t *parent, obs_source_t *child,
 static void deactivate_tree(obs_source_t *parent, obs_source_t *child,
 		void *param)
 {
-	if (os_atomic_dec_long(&child->activate_refs) == 0)
-		deactivate_source(child);
+	os_atomic_dec_long(&child->activate_refs);
 
 	UNUSED_PARAMETER(parent);
 	UNUSED_PARAMETER(param);
@@ -537,8 +535,7 @@ static void deactivate_tree(obs_source_t *parent, obs_source_t *child,
 
 static void show_tree(obs_source_t *parent, obs_source_t *child, void *param)
 {
-	if (os_atomic_inc_long(&child->show_refs) == 1)
-		show_source(child);
+	os_atomic_inc_long(&child->show_refs);
 
 	UNUSED_PARAMETER(parent);
 	UNUSED_PARAMETER(param);
@@ -546,8 +543,7 @@ static void show_tree(obs_source_t *parent, obs_source_t *child, void *param)
 
 static void hide_tree(obs_source_t *parent, obs_source_t *child, void *param)
 {
-	if (os_atomic_dec_long(&child->show_refs) == 0)
-		hide_source(child);
+	os_atomic_dec_long(&child->show_refs);
 
 	UNUSED_PARAMETER(parent);
 	UNUSED_PARAMETER(param);
@@ -558,13 +554,11 @@ void obs_source_activate(obs_source_t *source, enum view_type type)
 	if (!source) return;
 
 	if (os_atomic_inc_long(&source->show_refs) == 1) {
-		show_source(source);
 		obs_source_enum_tree(source, show_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
 		if (os_atomic_inc_long(&source->activate_refs) == 1) {
-			activate_source(source);
 			obs_source_enum_tree(source, activate_tree, NULL);
 		}
 	}
@@ -575,13 +569,11 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 	if (!source) return;
 
 	if (os_atomic_dec_long(&source->show_refs) == 0) {
-		hide_source(source);
 		obs_source_enum_tree(source, hide_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
 		if (os_atomic_dec_long(&source->activate_refs) == 0) {
-			deactivate_source(source);
 			obs_source_enum_tree(source, deactivate_tree, NULL);
 		}
 	}
@@ -589,6 +581,8 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
 {
+	bool now_showing, now_active;
+
 	if (!source) return;
 
 	if (source->defer_update)
@@ -597,6 +591,30 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 	/* reset the filter render texture information once every frame */
 	if (source->filter_texrender)
 		gs_texrender_reset(source->filter_texrender);
+
+	/* call show/hide if the reference changed */
+	now_showing = !!source->show_refs;
+	if (now_showing != source->showing) {
+		if (now_showing) {
+			show_source(source);
+		} else {
+			hide_source(source);
+		}
+
+		source->showing = now_showing;
+	}
+
+	/* call activate/deactivate if the reference changed */
+	now_active = !!source->activate_refs;
+	if (now_active != source->active) {
+		if (now_active) {
+			activate_source(source);
+		} else {
+			deactivate_source(source);
+		}
+
+		source->active = now_active;
+	}
 
 	if (source->context.data && source->info.video_tick)
 		source->info.video_tick(source->context.data, seconds);

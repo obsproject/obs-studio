@@ -305,6 +305,9 @@ struct obs_source {
 	 * to handle things but it's the best option) */
 	bool                            removed;
 
+	bool                            active;
+	bool                            showing;
+
 	/* timing (if video is present, is based upon video) */
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;
