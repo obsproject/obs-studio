@@ -69,7 +69,6 @@ struct v4l2_data {
 	int dv_timing;
 	int resolution;
 	int framerate;
-	bool sys_timing;
 
 	/* internal data */
 	obs_source_t *source;
@@ -188,12 +187,9 @@ static void *v4l2_thread(void *vptr)
 			break;
 		}
 
-		out.timestamp = data->sys_timing ?
-			os_gettime_ns() : timeval2ns(buf.timestamp);
-
+		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
 			first_ts = out.timestamp;
-
 		out.timestamp -= first_ts;
 
 		start = (uint8_t *) data->buffers.info[buf.index].start;
@@ -229,7 +225,6 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "dv_timing", -1);
 	obs_data_set_default_int(settings, "resolution", -1);
 	obs_data_set_default_int(settings, "framerate", -1);
-	obs_data_set_default_bool(settings, "system_timing", false);
 }
 
 /**
@@ -737,9 +732,6 @@ static obs_properties_t *v4l2_properties(void *vptr)
 			"framerate", obs_module_text("FrameRate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_properties_add_bool(props,
-			"system_timing", obs_module_text("UseSystemTiming"));
-
 	obs_data_t *settings = obs_source_get_settings(data->source);
 	v4l2_device_list(device_list, settings);
 	obs_data_release(settings);
@@ -905,7 +897,6 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->dv_timing  = obs_data_get_int(settings, "dv_timing");
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate  = obs_data_get_int(settings, "framerate");
-	data->sys_timing = obs_data_get_bool(settings, "system_timing");
 
 	v4l2_init(data);
 }
