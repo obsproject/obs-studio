@@ -38,10 +38,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  removedSignal          (obs_source_get_signal_handler(source),
 	                          "remove", OBSBasicProperties::SourceRemoved,
 	                          this),
-	  updatePropertiesSignal (obs_source_get_signal_handler(source),
-	                          "update_properties",
-	                          OBSBasicProperties::UpdateProperties,
-	                          this),
 	  oldSettings            (obs_data_create()),
 	  buttonBox              (new QDialogButtonBox(this))
 {
@@ -88,6 +84,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 
 	obs_source_inc_showing(source);
+
+	updatePropertiesSignal.Connect(obs_source_get_signal_handler(source),
+			"update_properties",
+			OBSBasicProperties::UpdateProperties,
+			this);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
