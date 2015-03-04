@@ -101,7 +101,7 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>0</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QFormLayout" name="formLayout_2">
@@ -2336,8 +2336,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>322</width>
-              <height>210</height>
+              <width>724</width>
+              <height>536</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -2372,7 +2372,7 @@
                     <widget class="QLabel" name="label_35">
                      <property name="minimumSize">
                       <size>
-                       <width>170</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2419,7 +2419,7 @@
                      </property>
                      <property name="minimumSize">
                       <size>
-                       <width>170</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>
