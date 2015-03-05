@@ -30,3 +30,12 @@ QToolButton[text="Basic.Main.MoveUp"], QToolButton[text="Move Up"] {
 QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
     qproperty-icon: url(:/res/images/down.png);
 }
+
+/* Volume Control */
+
+VolumeMeter {
+    qproperty-bkColor: rgb(221, 221, 221);
+    qproperty-magColor: rgb(32, 125, 23);
+    qproperty-peakColor: rgb(62, 241, 43);
+    qproperty-peakHoldColor: rgb(0, 0, 0);
+}
