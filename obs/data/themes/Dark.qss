@@ -133,23 +133,23 @@ QToolButton:hover {
     border: 1px solid rgb(42,130,218); /* blue */
 }
 
-QToolButton[text="Add"] {
+* [themeID="actionAddScene"], * [themeID="actionAddSource"] {
     qproperty-icon: url(./Dark/plus.png);
 }
 
-QToolButton[text="Remove"] {
+* [themeID="actionRemoveScene"], * [themeID="actionRemoveSource"] {
     qproperty-icon: url(./Dark/minus.png);
 }
 
-QToolButton[text="Properties"] {
+* [themeID="actionSceneProperties"], * [themeID="actionSourceProperties"] {
     qproperty-icon: url(./Dark/cogwheel.png);
 }
 
-QToolButton[text="Basic.Main.MoveUp"], QToolButton[text="Move Up"] {
+* [themeID="actionSceneUp"], * [themeID="actionSourceUp"] {
     qproperty-icon: url(./Dark/up_arrow.png);
 }
 
-QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
+* [themeID="actionSceneDown"], * [themeID="actionSourceDown"] {
     qproperty-icon: url(./Dark/down_arrow.png);
 }
 
