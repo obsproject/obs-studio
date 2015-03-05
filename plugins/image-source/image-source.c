@@ -1,11 +1,20 @@
 #include <obs-module.h>
 
-#define warn(format, ...) \
-	blog(LOG_WARNING, "[image_source: '%s'] " format, \
+#define log(log_level, format, ...) \
+	blog(log_level, "[image_source: '%s'] " format, \
 			obs_source_get_name(context->source), ##__VA_ARGS__)
+#define info(format, ...) \
+	log(LOG_INFO, format, ##__VA_ARGS__)
+#define warn(format, ...) \
+	log(LOG_WARNING, format, ##__VA_ARGS__)
 
 struct image_source {
 	obs_source_t *source;
+
+	char         *file;
+	bool         unload;
+
+	void         (*video_tick)(void *data, float seconds);
 
 	gs_texture_t *tex;
 	uint32_t     cx;
@@ -17,19 +26,16 @@ static const char *image_source_get_name(void)
 	return obs_module_text("ImageInput");
 }
 
-static void image_source_update(void *data, obs_data_t *settings)
+static void image_source_load(void *data, float seconds)
 {
 	struct image_source *context = data;
-	const char *file = obs_data_get_string(settings, "file");
+	char *file = context->file;
 
 	obs_enter_graphics();
 
-	if (context->tex) {
-		gs_texture_destroy(context->tex);
-		context->tex = NULL;
-	}
-
 	if (file && *file) {
+		info("loading texture '%s'", file);
+
 		context->tex = gs_texture_create_from_file(file);
 		if (context->tex) {
 			context->cx = gs_texture_get_width(context->tex);
@@ -42,6 +48,59 @@ static void image_source_update(void *data, obs_data_t *settings)
 	}
 
 	obs_leave_graphics();
+
+	UNUSED_PARAMETER(seconds);
+}
+
+static void image_source_unload(void *data, float seconds)
+{
+	struct image_source *context = data;
+
+	obs_enter_graphics();
+
+	if (context->tex)
+		gs_texture_destroy(context->tex);
+	context->tex = NULL;
+
+	obs_leave_graphics();
+
+	UNUSED_PARAMETER(seconds);
+}
+
+static void image_source_get_defaults(obs_data_t *settings) {
+	obs_data_set_default_bool(settings, "unload", true);
+}
+
+static void image_source_update(void *data, obs_data_t *settings)
+{
+	struct image_source *context = data;
+	const char *file = obs_data_get_string(settings, "file");
+	const bool unload = obs_data_get_bool(settings, "unload");
+
+	if (context->file)
+		bfree(context->file);
+	context->file = bstrdup(file);
+	context->unload = unload;
+
+	/* Load the image, if the source is persistent or showing */
+	if (!unload || obs_source_showing(context->source)) {
+		image_source_unload(data, 0);
+		image_source_load(data, 0);
+	}
+}
+
+static void image_source_show(void *data) {
+	struct image_source *context = data;
+
+	if (context->unload)
+		context->video_tick = image_source_load;
+}
+
+static void image_source_hide(void *data) {
+	struct image_source *context = data;
+
+	if (context->unload)
+		context->video_tick = image_source_unload;
 }
 
 static void *image_source_create(obs_data_t *settings, obs_source_t *source)
@@ -57,10 +116,10 @@ static void image_source_destroy(void *data)
 {
 	struct image_source *context = data;
 
-	obs_enter_graphics();
-	gs_texture_destroy(context->tex);
-	obs_leave_graphics();
+	image_source_unload(data, 0);
 
+	if (context->file)
+		bfree(context->file);
 	bfree(context);
 }
 
@@ -74,6 +133,15 @@ static uint32_t image_source_getheight(void *data)
 {
 	struct image_source *context = data;
 	return context->cy;
+}
+
+static void image_source_tick(void *data, float seconds) {
+	struct image_source *context = data;
+
+	if (!context->video_tick)
+		return;
+	context->video_tick(context, seconds);
+	context->video_tick = NULL;
 }
 
 static void image_source_render(void *data, gs_effect_t *effect)
@@ -105,6 +173,8 @@ static obs_properties_t *image_source_properties(void *unused)
 	obs_properties_add_path(props,
 			"file", obs_module_text("File"),
 			OBS_PATH_FILE, image_filter, NULL);
+	obs_properties_add_bool(props,
+			"unload", obs_module_text("Unload"));
 
 	return props;
 }
@@ -116,9 +186,13 @@ static struct obs_source_info image_source_info = {
 	.get_name       = image_source_get_name,
 	.create         = image_source_create,
 	.destroy        = image_source_destroy,
+	.get_defaults   = image_source_get_defaults,
 	.update         = image_source_update,
+	.show           = image_source_show,
+	.hide           = image_source_hide,
 	.get_width      = image_source_getwidth,
 	.get_height     = image_source_getheight,
+	.video_tick     = image_source_tick,
 	.video_render   = image_source_render,
 	.get_properties = image_source_properties
 };
