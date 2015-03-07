@@ -111,6 +111,8 @@ const char *obs_source_get_display_name(enum obs_source_type type,
 bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info)
 {
+	pthread_mutexattr_t attr;
+
 	source->refs = 1;
 	source->user_volume = 1.0f;
 	source->present_volume = 1.0f;
@@ -120,7 +122,11 @@ bool obs_source_init(struct obs_source *source,
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
 
-	if (pthread_mutex_init(&source->filter_mutex, NULL) != 0)
+	if (pthread_mutexattr_init(&attr) != 0)
+		return false;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		return false;
+	if (pthread_mutex_init(&source->filter_mutex, &attr) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
 		return false;
