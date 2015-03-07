@@ -1539,10 +1539,7 @@ int OBSBasic::ResetVideo()
 
 bool OBSBasic::ResetAudio()
 {
-	struct audio_output_info ai;
-	ai.name = "Main Audio Track";
-	ai.format = AUDIO_FORMAT_FLOAT;
-
+	struct obs_audio_info ai;
 	ai.samples_per_sec = config_get_uint(basicConfig, "Audio",
 			"SampleRate");
 

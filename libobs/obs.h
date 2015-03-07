@@ -173,6 +173,15 @@ struct obs_video_info {
 };
 
 /**
+ * Audio initialization structure
+ */
+struct obs_audio_info {
+	uint32_t            samples_per_sec;
+	enum speaker_layout speakers;
+	uint64_t            buffer_ms;
+};
+
+/**
  * Sent to source filters via the filter_audio callback to allow filtering of
  * audio data
  */
@@ -274,13 +283,13 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  *
  * @note Cannot reset base audio if an output is currently active.
  */
-EXPORT bool obs_reset_audio(struct audio_output_info *ai);
+EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 
 /** Gets the current audio settings, returns false if no audio */
-EXPORT bool obs_get_audio_info(struct audio_output_info *ai);
+EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
 
 /**
  * Opens a plugin module directly from a specific path.

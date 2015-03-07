@@ -287,7 +287,7 @@ static bool open_audio_codec(struct ffmpeg_data *data)
 static bool create_audio_stream(struct ffmpeg_data *data)
 {
 	AVCodecContext *context;
-	struct audio_output_info aoi;
+	struct obs_audio_info aoi;
 
 	if (!obs_get_audio_info(&aoi)) {
 		blog(LOG_WARNING, "No active audio");

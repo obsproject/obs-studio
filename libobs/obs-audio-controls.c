@@ -283,16 +283,22 @@ static void volmeter_source_destroyed(void *vptr, calldata_t *calldata)
 	obs_volmeter_detach_source(volmeter);
 }
 
-static void volmeter_sum_and_max(float *data, size_t frames,
+/* TODO: Separate for individual channels */
+static void volmeter_sum_and_max(float *data[MAX_AV_PLANES], size_t frames,
 		float *sum, float *max)
 {
 	float s  = *sum;
 	float m  = *max;
 
-	for (float *c = data; c < data + frames; ++c) {
-		const float pow = *c * *c;
-		s += pow;
-		m  = (m > pow) ? m : pow;
+	for (size_t plane = 0; plane < MAX_AV_PLANES; plane++) {
+		if (!data[plane])
+			break;
+
+		for (float *c = data[plane]; c < data[plane] + frames; ++c) {
+			const float pow = *c * *c;
+			s += pow;
+			m  = (m > pow) ? m : pow;
+		}
 	}
 
 	*sum = s;
@@ -340,23 +346,29 @@ static bool volmeter_process_audio_data(obs_volmeter_t *volmeter,
 {
 	bool updated   = false;
 	size_t frames  = 0;
-	size_t samples = 0;
 	size_t left    = data->frames;
-	float *adata   = (float *) data->data[0];
+	float *adata[MAX_AV_PLANES];
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
+		adata[i] = (float*)data->data[i];
 
 	while (left) {
 		frames  = (volmeter->ival_frames + left >
 				volmeter->update_frames)
 			? volmeter->update_frames - volmeter->ival_frames
 			: left;
-		samples = frames * volmeter->channels;
 
-		volmeter_sum_and_max(adata, samples, &volmeter->ival_sum,
+		volmeter_sum_and_max(adata, frames, &volmeter->ival_sum,
 				&volmeter->ival_max);
 
 		volmeter->ival_frames += (unsigned int)frames;
 		left                  -= frames;
-		adata                 += samples;
+
+		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+			if (!adata[i])
+				break;
+			adata[i] += frames;
+		}
 
 		/* break if we did not reach the end of the interval */
 		if (volmeter->ival_frames != volmeter->update_frames)

@@ -1637,36 +1637,12 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	}
 }
 
-static void downmix_to_mono_interleaved(struct obs_source *source,
-		uint32_t frames)
-{
-	size_t channels = audio_output_get_channels(obs->audio.audio);
-	const float channels_i = 1.0f / (float)channels;
-	float *data = (float*)source->audio_data.data[0];
-
-	for (uint32_t frame = 0; frame < frames; frame++) {
-		size_t pos = frame * channels;
-
-		for (size_t channel = 1; channel < channels; channel++)
-			data[pos] += data[pos + channel];
-	}
-
-	for (uint32_t frame = 0; frame < frames; frame++)
-		data[frame * channels] *= channels_i;
-
-	for (uint32_t frame = 0; frame < frames; frame++) {
-		size_t pos = frame * channels;
-
-		for (size_t channel = 1; channel < channels; channel++)
-			data[pos + channel] = data[pos];
-	}
-}
-
 /* resamples/remixes new audio to the designated main audio output format */
 static void process_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
 {
 	uint32_t frames = audio->frames;
+	bool mono_output;
 
 	if (source->sample_info.samples_per_sec != audio->samples_per_sec ||
 	    source->sample_info.format          != audio->format          ||
@@ -1693,12 +1669,10 @@ static void process_audio(obs_source_t *source,
 				audio->timestamp);
 	}
 
-	if ((source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0) {
-		if (is_audio_planar(source->sample_info.format))
-			downmix_to_mono_planar(source, frames);
-		else
-			downmix_to_mono_interleaved(source, frames);
-	}
+	mono_output = audio_output_get_channels(obs->audio.audio) == 1;
+
+	if (!mono_output && (source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0)
+		downmix_to_mono_planar(source, frames);
 }
 
 void obs_source_output_audio(obs_source_t *source,

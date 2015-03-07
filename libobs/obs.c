@@ -752,8 +752,10 @@ int obs_reset_video(struct obs_video_info *ovi)
 	return obs_init_video(ovi);
 }
 
-bool obs_reset_audio(struct audio_output_info *ai)
+bool obs_reset_audio(const struct obs_audio_info *oai)
 {
+	struct audio_output_info ai;
+
 	if (!obs) return false;
 
 	/* don't allow changing of audio settings if active. */
@@ -761,18 +763,24 @@ bool obs_reset_audio(struct audio_output_info *ai)
 		return false;
 
 	obs_free_audio();
-	if(!ai)
+	if (!oai)
 		return true;
+
+	ai.name = "Audio";
+	ai.samples_per_sec = oai->samples_per_sec;
+	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
+	ai.speakers = oai->speakers;
+	ai.buffer_ms = oai->buffer_ms;
 
 	blog(LOG_INFO, "audio settings reset:\n"
 	               "\tsamples per sec: %d\n"
 	               "\tspeakers:        %d\n"
 	               "\tbuffering (ms):  %d\n",
-	               (int)ai->samples_per_sec,
-	               (int)ai->speakers,
-	               (int)ai->buffer_ms);
+	               (int)ai.samples_per_sec,
+	               (int)ai.speakers,
+	               (int)ai.buffer_ms);
 
-	return obs_init_audio(ai);
+	return obs_init_audio(&ai);
 }
 
 bool obs_get_video_info(struct obs_video_info *ovi)
@@ -803,17 +811,19 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	return true;
 }
 
-bool obs_get_audio_info(struct audio_output_info *aoi)
+bool obs_get_audio_info(struct obs_audio_info *oai)
 {
 	struct obs_core_audio *audio = &obs->audio;
 	const struct audio_output_info *info;
 
-	if (!obs || !audio->audio)
+	if (!obs || !oai || !audio->audio)
 		return false;
 
 	info = audio_output_get_info(audio->audio);
-	memcpy(aoi, info, sizeof(struct audio_output_info));
 
+	oai->samples_per_sec = info->samples_per_sec;
+	oai->speakers = info->speakers;
+	oai->buffer_ms = info->buffer_ms;
 	return true;
 }
 
