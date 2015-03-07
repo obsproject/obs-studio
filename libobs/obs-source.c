@@ -1182,7 +1182,7 @@ static uint32_t get_base_width(const obs_source_t *source)
 		return get_base_width(source->filter_target);
 	}
 
-	return source->async_width;
+	return source->async_active ? source->async_width : 0;
 }
 
 static uint32_t get_base_height(const obs_source_t *source)
@@ -1194,7 +1194,7 @@ static uint32_t get_base_height(const obs_source_t *source)
 		return get_base_height(source->filter_target);
 	}
 
-	return source->async_height;
+	return source->async_active ? source->async_height : 0;
 }
 
 static uint32_t get_recurse_width(obs_source_t *source)
@@ -1561,8 +1561,6 @@ void obs_source_output_video(obs_source_t *source,
 		source->async_active = true;
 	} else {
 		source->async_active = false;
-		source->async_width = 0;
-		source->async_height = 0;
 	}
 }
 
