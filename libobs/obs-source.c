@@ -228,6 +228,12 @@ void obs_source_frame_init(struct obs_source_frame *frame,
 	}
 }
 
+static inline void obs_source_frame_decref(struct obs_source_frame *frame)
+{
+	if (os_atomic_dec_long(&frame->refs) == 0)
+		obs_source_frame_destroy(frame);
+}
+
 void obs_source_destroy(struct obs_source *source)
 {
 	size_t i;
@@ -256,7 +262,7 @@ void obs_source_destroy(struct obs_source *source)
 		obs_source_filter_remove(source, source->filters.array[0]);
 
 	for (i = 0; i < source->async_cache.num; i++)
-		obs_source_frame_destroy(source->async_cache.array[i].frame);
+		obs_source_frame_decref(source->async_cache.array[i].frame);
 
 	gs_enter_context(obs->video.graphics);
 	gs_texrender_destroy(source->async_convert_texrender);
@@ -1463,7 +1469,7 @@ static inline bool async_texture_changed(struct obs_source *source,
 static inline void free_async_cache(struct obs_source *source)
 {
 	for (size_t i = 0; i < source->async_cache.num; i++)
-		obs_source_frame_destroy(source->async_cache.array[i].frame);
+		obs_source_frame_decref(source->async_cache.array[i].frame);
 
 	da_resize(source->async_cache, 0);
 	da_resize(source->async_frames, 0);
@@ -1503,6 +1509,7 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 				frame->width, frame->height);
 		new_af.frame = new_frame;
 		new_af.used = true;
+		new_frame->refs = 1;
 
 		da_push_back(source->async_cache, &new_af);
 	}
@@ -1531,8 +1538,20 @@ void obs_source_output_video(obs_source_t *source,
 		cache_video(source, frame) : NULL;
 
 	pthread_mutex_lock(&source->filter_mutex);
+
+	if (output)
+		os_atomic_inc_long(&output->refs);
+
 	output = filter_async_video(source, output);
+
+	if (output && os_atomic_dec_long(&output->refs) == 0) {
+		obs_source_frame_destroy(output);
+		output = NULL;
+	}
+
 	pthread_mutex_unlock(&source->filter_mutex);
+
+	/* ------------------------------------------- */
 
 	if (output) {
 		pthread_mutex_lock(&source->async_mutex);
@@ -1872,6 +1891,8 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 	if (frame) {
 		source->timing_adjust = sys_time - frame->timestamp;
 		source->timing_set = true;
+
+		os_atomic_inc_long(&frame->refs);
 	}
 
 unlock:
@@ -1879,18 +1900,26 @@ unlock:
 
 	pthread_mutex_unlock(&source->async_mutex);
 
-	if (frame)
-		obs_source_addref(source);
-
 	return frame;
 }
 
 void obs_source_release_frame(obs_source_t *source,
 		struct obs_source_frame *frame)
 {
-	if (source && frame) {
-		remove_async_frame(source, frame);
-		obs_source_release(source);
+	if (!frame)
+		return;
+
+	if (!source) {
+		obs_source_frame_destroy(frame);
+	} else {
+		pthread_mutex_lock(&source->async_mutex);
+
+		if (os_atomic_dec_long(&frame->refs) == 0)
+			obs_source_frame_destroy(frame);
+		else
+			remove_async_frame(source, frame);
+
+		pthread_mutex_unlock(&source->async_mutex);
 	}
 }
 
