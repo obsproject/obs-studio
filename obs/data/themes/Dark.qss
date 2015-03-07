@@ -214,7 +214,12 @@ QTabBar::tab:pressed {
 /* ComboBox */
 
 QComboBox {
-    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #565656, stop: 0.1 #525252, stop: 0.5 #4e4e4e, stop: 0.9 #4a4a4a, stop: 1 #464646);
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(86,85,86),
+        stop: 0.1 rgb(82,81,82),
+        stop: 0.5 rgb(78,77,78),
+        stop: 0.9 rgb(74,73,74),
+        stop: 1 rgb(70,69,70));
     border-style: solid;
     border: 1px;
     border-radius: 3px;
@@ -237,6 +242,22 @@ QComboBox::down-arrow {
 
 QComboBox:on {
     background-color: rgb(31,30,31); /* veryDark */
+}
+
+QComboBox:editable {
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+}
+
+QComboBox::drop-down:editable {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow:editable {
+    qproperty-alignment: AlignTop;
+    image: url(./Dark/down_arrow.png);
+    width: 8%;
 }
 
 
