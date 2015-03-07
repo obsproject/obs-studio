@@ -250,7 +250,7 @@ struct obs_source_info {
 	 *                be drawn later if time is needed for processing
 	 */
 	struct obs_source_frame *(*filter_video)(void *data,
-			const struct obs_source_frame *frame);
+			struct obs_source_frame *frame);
 
 	/**
 	 * Called to filter raw audio data.
