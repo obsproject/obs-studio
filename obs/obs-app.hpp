@@ -81,6 +81,7 @@ public:
 	}
 
 	inline const char *GetTheme() const { return theme.c_str();}
+	void setThemeSettingsIcons(QString filepath);
 	bool SetTheme(std::string name, std::string path = "");
 
 	inline lookup_t *GetTextLookup() const {return textLookup;}

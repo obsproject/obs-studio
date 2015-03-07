@@ -37,6 +37,15 @@
 
 using namespace std;
 
+std::vector<QIcon> OBSBasicSettings::settingIcons = []()->std::vector<QIcon> {
+	std::vector<QIcon> v;
+	v.reserve(6);
+	for (int i = 0; i < 6; ++i) {
+		v.push_back(QIcon());
+	}
+	return v;
+}();
+
 /* parses "[width]x[height]", string, i.e. 1024x768 */
 static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {
@@ -134,6 +143,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	string path;
 
 	ui->setupUi(this);
+	setIcons();
 
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
@@ -223,6 +233,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadEncoderTypes();
 	LoadColorRanges();
 	LoadSettings(false);
+}
+
+void OBSBasicSettings::setIcons()
+{
+	for (size_t i = 0; i < settingIcons.size(); ++i) {
+		if (!settingIcons[i].isNull())
+			ui->listWidget->item(i)->setIcon(settingIcons[i]);
+	}
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -1037,6 +1055,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_string(GetGlobalConfig(), "General", "Theme",
 				  theme.c_str());
 		App()->SetTheme(theme);
+		setIcons(); // Called after setTheme.
 	}
 }
 
@@ -1299,6 +1318,7 @@ void OBSBasicSettings::on_theme_activated(int idx)
 {
 	string currT = ui->theme->itemText(idx).toStdString();
 	App()->SetTheme(currT);
+	setIcons(); // Called after setTheme.
 }
 
 void OBSBasicSettings::on_simpleOutUseBufsize_toggled(bool checked)

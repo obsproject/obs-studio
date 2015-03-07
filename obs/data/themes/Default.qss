@@ -31,6 +31,37 @@ QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
     qproperty-icon: url(:/res/images/down.png);
 }
 
+
+/* Settings Icons */
+/* This EXACT style and layout has to be used, since this section isn't part of Qt css. */
+/* Of course the url is arbitrary. Copy paste this and ONLY change the url. */
+/* Path is relative to .qss file. */
+
+#GeneralIcon {
+    icon: url(:/settings/images/settings/system-settings-3.png);
+}
+
+#StreamIcon {
+    icon: url(:/settings/images/settings/network.png);
+}
+
+#OutputIcon {
+    icon: url(:/settings/images/settings/network-bluetooth.png);
+}
+
+#AudioIcon {
+    icon: url(:/settings/images/settings/decibel_audio_player.png);
+}
+
+#VideoIcon {
+    icon: url(:/settings/images/settings/video-display-3.png);
+}
+
+#AdvancedIcon {
+    icon: url(:/settings/images/settings/advanced.png);
+}
+
+
 /* Volume Control */
 
 VolumeMeter {

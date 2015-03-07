@@ -422,6 +422,36 @@ QSlider::handle:disabled {
 }
 
 
+/* Settings Icons */
+/* This EXACT style and layout has to be used, since this section isn't part of Qt css. */
+/* Of course the url is arbitrary. Copy paste this and ONLY change the url. */
+/* Path is relative to .qss file. */
+
+#GeneralIcon {
+    icon: url(./Dark/settings/general.png);
+}
+
+#StreamIcon {
+    icon: url(./Dark/settings/stream.png);
+}
+
+#OutputIcon {
+    icon: url(./Dark/settings/output.png);
+}
+
+#AudioIcon {
+    icon: url(./Dark/settings/audio.png);
+}
+
+#VideoIcon {
+    icon: url(./Dark/settings/video.png);
+}
+
+#AdvancedIcon {
+    icon: url(./Dark/settings/advanced.png);
+}
+
+
 /* Volume Control */
 
 VolumeMeter {

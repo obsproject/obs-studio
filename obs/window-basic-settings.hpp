@@ -22,6 +22,7 @@
 #include <QDialog>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <obs.h>
 
@@ -48,6 +49,9 @@ private:
 	int  pageIndex = 0;
 	bool loading = true;
 	std::string savedTheme = "";
+
+	static std::vector<QIcon> settingIcons;
+	void setIcons();
 
 	OBSPropertiesView *streamProperties = nullptr;
 	OBSPropertiesView *streamEncoderProps = nullptr;
@@ -173,4 +177,10 @@ protected:
 
 public:
 	OBSBasicSettings(QWidget *parent);
+
+	static void setSettingsIcons(int row, QString path) {
+		QIcon icon;
+		icon.addFile(path, QSize(), QIcon::Normal, QIcon::Off);
+		settingIcons[row] = icon;
+	}
 };
