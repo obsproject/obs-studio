@@ -1342,6 +1342,10 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 
 	calldata_free(&cd);
 
+	if (filter->info.filter_remove)
+		filter->info.filter_remove(filter->context.data,
+				filter->filter_parent);
+
 	filter->filter_parent = NULL;
 	filter->filter_target = NULL;
 

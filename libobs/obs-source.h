@@ -364,6 +364,14 @@ struct obs_source_info {
 	 * @param source       Transitioning sub-source to get the volume of
 	 */
 	float (*get_transition_volume)(void *data, obs_source_t *source);
+
+	/**
+	 * Called when the filter is removed from a source
+	 *
+	 * @param  data    Filter data
+	 * @param  source  Source that the filter being removed from
+	 */
+	void (*filter_remove)(void *data, obs_source_t *source);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
