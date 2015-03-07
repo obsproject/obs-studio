@@ -421,7 +421,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 128);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "Reconnect",
 			true);
-	config_set_default_uint  (basicConfig, "SimpleOutput", "RetryDelay", 2);
+	config_set_default_uint  (basicConfig, "SimpleOutput", "RetryDelay",
+			10);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "MaxRetries",
 			20);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseAdvanced",
@@ -434,7 +435,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 			"veryfast");
 
 	config_set_default_bool  (basicConfig, "AdvOut", "Reconnect", true);
-	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 2);
+	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 10);
 	config_set_default_uint  (basicConfig, "AdvOut", "MaxRetries", 20);
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
