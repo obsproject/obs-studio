@@ -264,6 +264,7 @@ static void *send_thread(void *data)
 	}
 
 	stream->active = false;
+	stream->sent_headers = false;
 	return NULL;
 }
 
