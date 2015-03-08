@@ -1952,7 +1952,7 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
-		gs_draw_sprite(tex, width, height, 0);
+		gs_draw_sprite(tex, 0, width, height);
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
