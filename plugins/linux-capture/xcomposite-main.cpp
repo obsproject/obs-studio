@@ -69,7 +69,8 @@ extern "C" void xcomposite_load(void)
 	memset(&sinfo, 0, sizeof(obs_source_info));
 
 	sinfo.id = "xcomposite_input";
-	sinfo.output_flags = OBS_SOURCE_VIDEO;
+	sinfo.output_flags = OBS_SOURCE_VIDEO |
+	                     OBS_SOURCE_CUSTOM_DRAW;
 
 	sinfo.get_name       = xcompcap_getname;
 	sinfo.create         = xcompcap_create;

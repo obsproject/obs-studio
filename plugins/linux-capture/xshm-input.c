@@ -467,7 +467,8 @@ static uint32_t xshm_getheight(void *vptr)
 struct obs_source_info xshm_input = {
 	.id             = "xshm_input",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO,
+	.output_flags   = OBS_SOURCE_VIDEO |
+	                  OBS_SOURCE_CUSTOM_DRAW,
 	.get_name       = xshm_getname,
 	.create         = xshm_create,
 	.destroy        = xshm_destroy,
