@@ -2025,8 +2025,8 @@ static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
 		((parent_flags & OBS_SOURCE_ASYNC) == 0);
 }
 
-void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
-		uint32_t width, uint32_t height, enum gs_color_format format,
+void obs_source_process_filter_begin(obs_source_t *filter,
+		enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct)
 {
 	obs_source_t *target, *parent;
@@ -2044,12 +2044,13 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 	cy           = get_base_height(target);
 	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 
+	filter->allow_direct = allow_direct;
+
 	/* if the parent does not use any custom effects, and this is the last
 	 * filter in the chain for the parent, then render the parent directly
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
 	if (can_bypass(target, parent, parent_flags, allow_direct)) {
-		render_filter_bypass(target, effect, use_matrix);
 		return;
 	}
 
@@ -2073,11 +2074,30 @@ void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
 
 		gs_texrender_end(filter->filter_texrender);
 	}
+}
 
-	/* --------------------------- */
+void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
+		uint32_t width, uint32_t height)
+{
+	obs_source_t *target, *parent;
+	gs_texture_t *texture;
+	uint32_t     target_flags, parent_flags;
+	bool         use_matrix;
 
-	render_filter_tex(gs_texrender_get_texture(filter->filter_texrender),
-			effect, width, height, use_matrix);
+	if (!filter) return;
+
+	target       = obs_filter_get_target(filter);
+	parent       = obs_filter_get_parent(filter);
+	target_flags = target->info.output_flags;
+	parent_flags = parent->info.output_flags;
+	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
+
+	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
+		render_filter_bypass(target, effect, use_matrix);
+	} else {
+		texture = gs_texrender_get_texture(filter->filter_texrender);
+		render_filter_tex(texture, effect, width, height, use_matrix);
+	}
 }
 
 void obs_source_skip_video_filter(obs_source_t *filter)

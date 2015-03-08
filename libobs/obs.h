@@ -877,10 +877,27 @@ EXPORT struct obs_source_frame *obs_source_get_frame(obs_source_t *source);
 EXPORT void obs_source_release_frame(obs_source_t *source,
 		struct obs_source_frame *frame);
 
-/** Default RGB filter handler for generic effect filters */
-EXPORT void obs_source_process_filter(obs_source_t *filter, gs_effect_t *effect,
-		uint32_t width, uint32_t height, enum gs_color_format format,
+/**
+ * Default RGB filter handler for generic effect filters.  Processes the
+ * filter chain and renders them to texture if needed, then the filter is
+ * drawn with
+ *
+ * After calling this, set your parameters for the effect, then call
+ * obs_source_process_filter_end to draw the filter.
+ */
+EXPORT void obs_source_process_filter_begin(obs_source_t *filter,
+		enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct);
+
+/**
+ * Draws the filter.
+ *
+ * Before calling this function, first call obs_source_process_filter_begin and
+ * then set the effect parameters, and then call this function to finalize the
+ * filter.
+ */
+EXPORT void obs_source_process_filter_end(obs_source_t *filter,
+		gs_effect_t *effect, uint32_t width, uint32_t height);
 
 /** Skips the filter if the filter is invalid and cannot be rendered */
 EXPORT void obs_source_skip_video_filter(obs_source_t *filter);

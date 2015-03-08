@@ -358,6 +358,7 @@ struct obs_source {
 	DARRAY(struct obs_source*)      filters;
 	pthread_mutex_t                 filter_mutex;
 	gs_texrender_t                  *filter_texrender;
+	enum obs_allow_direct_render    allow_direct;
 	bool                            rendering_filter;
 };
 

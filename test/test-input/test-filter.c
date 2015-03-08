@@ -50,8 +50,10 @@ static void *filter_create(obs_data_t *settings, obs_source_t *source)
 static void filter_render(void *data, gs_effect_t *effect)
 {
 	struct test_filter *tf = data;
-	obs_source_process_filter(tf->source, tf->whatever, 0, 0, GS_RGBA,
+
+	obs_source_process_filter_begin(tf->source, GS_RGBA,
 			OBS_ALLOW_DIRECT_RENDERING);
+	obs_source_process_filter_end(tf->source, tf->whatever, 0, 0);
 
 	UNUSED_PARAMETER(effect);
 }
