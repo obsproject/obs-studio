@@ -132,6 +132,9 @@ void SimpleOutput::Update()
 
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
+	obs_service_apply_encoder_settings(main->GetService(),
+			h264Settings, aacSettings);
+
 	obs_encoder_update(h264, h264Settings);
 	obs_encoder_update(aac,  aacSettings);
 
@@ -144,8 +147,6 @@ inline void SimpleOutput::SetupOutputs()
 	SimpleOutput::Update();
 	obs_encoder_set_video(h264, obs_get_video());
 	obs_encoder_set_audio(aac,  obs_get_audio());
-
-	obs_service_apply_encoder_settings(main->GetService(), h264, aac);
 }
 
 bool SimpleOutput::StartStreaming(obs_service_t *service)
@@ -259,12 +260,12 @@ struct AdvancedOutput : BasicOutputHandler {
 
 	inline void UpdateStreamSettings();
 	inline void UpdateRecordingSettings();
+	inline void UpdateAudioSettings();
 	virtual void Update() override;
 
 	inline void SetupStreaming();
 	inline void SetupRecording();
 	inline void SetupFFmpeg();
-	inline void SetupAudio();
 	void SetupOutputs();
 
 	virtual bool StartStreaming(obs_service_t *service) override;
@@ -370,8 +371,16 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 void AdvancedOutput::UpdateStreamSettings()
 {
+	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
+			"ApplyServiceSettings");
+
 	OBSData settings = GetDataFromJsonFile(
 			"obs-studio/basic/streamEncoder.json");
+
+	if (applyServiceSettings)
+		obs_service_apply_encoder_settings(main->GetService(),
+				settings, nullptr);
+
 	obs_encoder_update(h264Streaming, settings);
 }
 
@@ -387,6 +396,7 @@ void AdvancedOutput::Update()
 	UpdateStreamSettings();
 	if (!useStreamEncoder && !ffmpegRecording)
 		UpdateRecordingSettings();
+	UpdateAudioSettings();
 }
 
 inline void AdvancedOutput::SetupStreaming()
@@ -401,8 +411,6 @@ inline void AdvancedOutput::SetupStreaming()
 			"TrackIndex");
 	int trackCount = config_get_int(main->Config(), "AdvOut",
 			"TrackCount");
-	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
-			"ApplyServiceSettings");
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
@@ -416,33 +424,17 @@ inline void AdvancedOutput::SetupStreaming()
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
 
-	if (applyServiceSettings) {
-		obs_service_apply_encoder_settings(main->GetService(),
-				h264Streaming, nullptr);
-	}
-
 	if (multitrack) {
 		int i = 0;
-		for (; i < trackCount; i++) {
+		for (; i < trackCount; i++)
 			obs_output_set_audio_encoder(streamOutput, aacTrack[i],
 					i);
-
-			if (applyServiceSettings)
-				obs_service_apply_encoder_settings(
-						main->GetService(), nullptr,
-						aacTrack[i]);
-		}
-
 		for (; i < 4; i++)
 			obs_output_set_audio_encoder(streamOutput, nullptr, i);
 
 	} else {
 		obs_output_set_audio_encoder(streamOutput,
 				aacTrack[trackIndex - 1], 0);
-
-		if (applyServiceSettings)
-			obs_service_apply_encoder_settings(main->GetService(),
-					nullptr, aacTrack[trackIndex - 1]);
 	}
 }
 
@@ -549,7 +541,7 @@ static inline void SetEncoderName(obs_encoder_t *encoder, const char *name,
 	obs_encoder_set_name(encoder, (name && *name) ? name : defaultName);
 }
 
-inline void AdvancedOutput::SetupAudio()
+inline void AdvancedOutput::UpdateAudioSettings()
 {
 	int track1Bitrate = config_get_uint(main->Config(), "AdvOut",
 			"Track1Bitrate");
@@ -567,6 +559,8 @@ inline void AdvancedOutput::SetupAudio()
 			"Track3Name");
 	const char *name4 = config_get_string(main->Config(), "AdvOut",
 			"Track4Name");
+	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
+			"ApplyServiceSettings");
 	obs_data_t *settings[4];
 
 	for (size_t i = 0; i < 4; i++)
@@ -583,6 +577,10 @@ inline void AdvancedOutput::SetupAudio()
 	SetEncoderName(aacTrack[3], name4, "Track4");
 
 	for (size_t i = 0; i < 4; i++) {
+		if (applyServiceSettings)
+			obs_service_apply_encoder_settings(main->GetService(),
+					nullptr, settings[i]);
+
 		obs_encoder_update(aacTrack[i], settings[i]);
 		obs_data_release(settings[i]);
 	}
@@ -599,7 +597,6 @@ void AdvancedOutput::SetupOutputs()
 	obs_encoder_set_audio(aacTrack[3], obs_get_audio());
 
 	SetupStreaming();
-	SetupAudio();
 
 	if (ffmpegRecording)
 		SetupFFmpeg();
@@ -613,6 +610,8 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	    (!ffmpegRecording && !obs_output_active(fileOutput))) {
 		UpdateStreamSettings();
 	}
+
+	UpdateAudioSettings();
 
 	if (!Active())
 		SetupOutputs();
@@ -645,6 +644,8 @@ bool AdvancedOutput::StartRecording()
 	} else if (!obs_output_active(streamOutput)) {
 		UpdateStreamSettings();
 	}
+
+	UpdateAudioSettings();
 
 	if (!Active())
 		SetupOutputs();

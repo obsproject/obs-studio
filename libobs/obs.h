@@ -1341,11 +1341,12 @@ EXPORT const char *obs_service_get_password(const obs_service_t *service);
 /**
  * Applies service-specific video encoder settings.
  *
- * @param  video_encoder  Video encoder to apply settings to.  Optional.
- * @param  audio_encoder  Audio encoder to apply settings to.  Optional.
+ * @param  video_encoder_settings  Video encoder settings.  Optional.
+ * @param  audio_encoder_settings  Audio encoder settings.  Optional.
  */
 EXPORT void obs_service_apply_encoder_settings(obs_service_t *service,
-		obs_encoder_t *video_encoder, obs_encoder_t *audio_encoder);
+		obs_data_t *video_encoder_settings,
+		obs_data_t *audio_encoder_settings);
 
 
 /* ------------------------------------------------------------------------- */
