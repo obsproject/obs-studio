@@ -115,11 +115,16 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_enter_context(graphics->device);
 
+	pthread_mutex_init_value(&graphics->mutex);
+	pthread_mutex_init_value(&graphics->effect_mutex);
+
 	if (!graphics_init_immediate_vb(graphics))
 		return false;
 	if (!graphics_init_sprite_vb(graphics))
 		return false;
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&graphics->effect_mutex, NULL) != 0)
 		return false;
 
 	graphics->exports.device_blend_function(graphics->device,
@@ -173,6 +178,8 @@ error:
 	return errcode;
 }
 
+extern void gs_effect_actually_destroy(gs_effect_t *effect);
+
 void gs_destroy(graphics_t *graphics)
 {
 	if (!graphics)
@@ -182,15 +189,28 @@ void gs_destroy(graphics_t *graphics)
 		gs_leave_context();
 
 	if (graphics->device) {
+		struct gs_effect *effect = graphics->first_effect;
+
+		thread_graphics = graphics;
 		graphics->exports.device_enter_context(graphics->device);
+
+		while (effect) {
+			struct gs_effect *next = effect->next;
+			gs_effect_actually_destroy(effect);
+			effect = next;
+		}
+
 		graphics->exports.gs_vertexbuffer_destroy(
 				graphics->sprite_buffer);
 		graphics->exports.gs_vertexbuffer_destroy(
 				graphics->immediate_vertbuffer);
 		graphics->exports.device_destroy(graphics->device);
+
+		thread_graphics = NULL;
 	}
 
 	pthread_mutex_destroy(&graphics->mutex);
+	pthread_mutex_destroy(&graphics->effect_mutex);
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
 	if (graphics->module)
@@ -644,6 +664,19 @@ gs_effect_t *gs_get_effect(void)
 	return thread_graphics ? thread_graphics->cur_effect : NULL;
 }
 
+static inline struct gs_effect *find_cached_effect(const char *filename)
+{
+	struct gs_effect *effect = thread_graphics->first_effect;
+
+	while (effect) {
+		if (strcmp(effect->effect_path, filename) == 0)
+			break;
+		effect = effect->next;
+	}
+
+	return effect;
+}
+
 gs_effect_t *gs_effect_create_from_file(const char *file, char **error_string)
 {
 	char *file_string;
@@ -651,6 +684,10 @@ gs_effect_t *gs_effect_create_from_file(const char *file, char **error_string)
 
 	if (!thread_graphics || !file)
 		return NULL;
+
+	effect = find_cached_effect(file);
+	if (effect)
+		return effect;
 
 	file_string = os_quick_read_utf8_file(file);
 	if (!file_string) {
@@ -675,6 +712,7 @@ gs_effect_t *gs_effect_create(const char *effect_string, const char *filename,
 	bool success;
 
 	effect->graphics = thread_graphics;
+	effect->effect_path = bstrdup(filename);
 
 	ep_init(&parser);
 	success = ep_parse(&parser, effect, effect_string, filename);
@@ -684,6 +722,17 @@ gs_effect_t *gs_effect_create(const char *effect_string, const char *filename,
 					&parser.cfp.error_list);
 		gs_effect_destroy(effect);
 		effect = NULL;
+	}
+
+	if (effect) {
+		pthread_mutex_lock(&thread_graphics->effect_mutex);
+
+		if (effect->effect_path) {
+			effect->next = thread_graphics->first_effect;
+			thread_graphics->first_effect = effect;
+		}
+
+		pthread_mutex_unlock(&thread_graphics->effect_mutex);
 	}
 
 	ep_free(&parser);

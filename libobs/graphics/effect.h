@@ -148,6 +148,8 @@ struct gs_effect {
 	gs_eparam_t *view_proj, *world, *scale;
 	graphics_t *graphics;
 
+	struct gs_effect *next;
+
 	size_t loop_pass;
 	bool looping;
 };

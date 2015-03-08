@@ -21,11 +21,17 @@
 #include "vec3.h"
 #include "vec4.h"
 
+void gs_effect_actually_destroy(gs_effect_t *effect)
+{
+	effect_free(effect);
+	bfree(effect);
+}
+
 void gs_effect_destroy(gs_effect_t *effect)
 {
 	if (effect) {
-		effect_free(effect);
-		bfree(effect);
+		if (!effect->effect_path)
+			gs_effect_actually_destroy(effect);
 	}
 }
 

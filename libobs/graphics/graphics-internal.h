@@ -285,6 +285,9 @@ struct graphics_subsystem {
 	DARRAY(uint32_t)       colors;
 	DARRAY(struct vec2)    texverts[16];
 
+	pthread_mutex_t        effect_mutex;
+	struct gs_effect       *first_effect;
+
 	pthread_mutex_t        mutex;
 	volatile long          ref;
 
