@@ -1245,6 +1245,20 @@ uint32_t obs_source_get_height(obs_source_t *source)
 		get_base_height(source);
 }
 
+uint32_t obs_source_get_base_width(obs_source_t *source)
+{
+	if (!source_valid(source)) return 0;
+
+	return get_base_width(source);
+}
+
+uint32_t obs_source_get_base_height(obs_source_t *source)
+{
+	if (!source_valid(source)) return 0;
+
+	return get_base_height(source);
+}
+
 obs_source_t *obs_filter_get_parent(const obs_source_t *filter)
 {
 	return filter ? filter->filter_parent : NULL;

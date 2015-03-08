@@ -922,6 +922,12 @@ EXPORT void obs_source_send_key_click(obs_source_t *source,
 /** Sets the default source flags. */
 EXPORT void obs_source_set_default_flags(obs_source_t *source, uint32_t flags);
 
+/** Gets the base width for a source (not taking in to account filtering) */
+EXPORT uint32_t obs_source_get_base_width(obs_source_t *source);
+
+/** Gets the base height for a source (not taking in to account filtering) */
+EXPORT uint32_t obs_source_get_base_height(obs_source_t *source);
+
 
 /* ------------------------------------------------------------------------- */
 /* Scenes */
