@@ -560,9 +560,7 @@ static bool assign_program_param(struct gs_program *program,
 		return false;
 
 	if (info.obj == -1) {
-		blog(LOG_ERROR, "Program parameter '%s' not found",
-				param->name);
-		return false;
+		return true;
 	}
 
 	info.param = param;
