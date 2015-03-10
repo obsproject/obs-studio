@@ -400,9 +400,8 @@ static void ffmpeg_source_destroy(void *data)
 
 	ff_demuxer_free(s->demuxer);
 
-	if (s->sws_ctx != NULL) {
+	if (s->sws_ctx != NULL)
 		sws_freeContext(s->sws_ctx);
-	}
 
 	bfree(s);
 }
