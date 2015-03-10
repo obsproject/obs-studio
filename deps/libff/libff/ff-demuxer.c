@@ -311,26 +311,19 @@ static bool open_input(struct ff_demuxer *demuxer,
 {
 	AVInputFormat *input_format = NULL;
 
+	AVIOInterruptCB interrupted_callback;
+	interrupted_callback.callback = demuxer_interrupted_callback;
+	interrupted_callback.opaque = demuxer;
+
+	*format_context = avformat_alloc_context();
+	(*format_context)->interrupt_callback = interrupted_callback;
+
 	if (demuxer->input_format != NULL) {
 		input_format = av_find_input_format(demuxer->input_format);
 		if (input_format == NULL)
 			av_log(NULL, AV_LOG_WARNING, "unable to find input "
                                                      "format %s",
                                                      demuxer->input_format);
-	} else {
-		AVIOInterruptCB interrupted_callback;
-		AVDictionary *io_dictionary = NULL;
-
-		interrupted_callback.callback = demuxer_interrupted_callback;
-		interrupted_callback.opaque = demuxer;
-
-		if (avio_open2(&demuxer->io_context, demuxer->input, 0,
-				&interrupted_callback, &io_dictionary) != 0) {
-			av_log(NULL, AV_LOG_ERROR,
-					"unable to open location %s\n",
-					demuxer->input);
-			return false;
-		}
 	}
 
 	if (avformat_open_input(format_context, demuxer->input,
