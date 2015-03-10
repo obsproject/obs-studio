@@ -104,12 +104,31 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 	return true;
 }
 
+bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
+{
+	source->sws_ctx = sws_getCachedContext(
+			source->sws_ctx,
+			frame->width,
+			frame->height,
+			frame->format,
+			frame->width,
+			frame->height,
+			AV_PIX_FMT_BGRA,
+			SWS_BILINEAR,
+			NULL, NULL, NULL);
+
+	return source->sws_ctx != NULL;
+}
+
 static bool video_frame_scale(struct ff_frame *frame,
 		struct ffmpeg_source *s, struct obs_source_frame *obs_frame)
 {
 	int linesize = frame->frame->width * 4;
 	uint8_t *picture_data =
 			malloc(linesize * frame->frame->height);
+
+	update_sws_context(s, frame->frame);
+
 	sws_scale(
 		s->sws_ctx,
 		(uint8_t const *const *)frame->frame->data,
@@ -176,7 +195,10 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 	obs_frame.width = frame->frame->width;
 	obs_frame.height = frame->frame->height;
 
-	if (s->sws_ctx != NULL)
+	enum video_format format =
+			ffmpeg_to_obs_video_format(frame->frame->format);
+
+	if (s->is_forcing_scale || format == VIDEO_FORMAT_NONE)
 		return video_frame_scale(frame, s, &obs_frame);
 	else if (s->is_hw_decoding)
 		return video_frame_hwaccel(frame, s->source, &obs_frame);
@@ -207,33 +229,6 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 	audio_data.speakers = channels;
 
 	obs_source_output_audio(s->source, &audio_data);
-
-	return true;
-}
-
-static bool video_format(AVCodecContext *codec_context, void *opaque)
-{
-	struct ffmpeg_source *s = opaque;
-	if (s->sws_ctx)
-		sws_freeContext(s->sws_ctx);
-
-	enum video_format obs_video_format =
-			ffmpeg_to_obs_video_format(codec_context->pix_fmt);
-
-	if (obs_video_format == VIDEO_FORMAT_NONE || s->is_forcing_scale) {
-		s->sws_ctx = sws_getContext(
-			codec_context->width,
-			codec_context->height,
-			codec_context->pix_fmt,
-			codec_context->width,
-			codec_context->height,
-			AV_PIX_FMT_BGRA,
-			SWS_BILINEAR,
-			NULL,
-			NULL,
-			NULL
-		);
-	}
 
 	return true;
 }
@@ -347,11 +342,6 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	if (s->demuxer != NULL)
 		ff_demuxer_free(s->demuxer);
 
-	if (s->sws_ctx != NULL) {
-		sws_freeContext(s->sws_ctx);
-		s->sws_ctx = NULL;
-	}
-
 	s->demuxer = ff_demuxer_init();
 	s->demuxer->options.is_hw_decoding = s->is_hw_decoding;
 	s->demuxer->options.is_looping = is_looping;
@@ -376,7 +366,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	}
 
 	ff_demuxer_set_callbacks(&s->demuxer->video_callbacks,
-			video_frame, video_format,
+			video_frame, NULL,
 			NULL, NULL, NULL, s);
 
 	ff_demuxer_set_callbacks(&s->demuxer->audio_callbacks,
@@ -408,6 +398,11 @@ static void ffmpeg_source_destroy(void *data)
 	struct ffmpeg_source *s = data;
 
 	ff_demuxer_free(s->demuxer);
+
+	if (s->sws_ctx != NULL) {
+		sws_freeContext(s->sws_ctx);
+	}
+
 	bfree(s);
 }
 
