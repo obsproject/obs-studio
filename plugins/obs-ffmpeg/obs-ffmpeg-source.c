@@ -127,7 +127,8 @@ static bool video_frame_scale(struct ff_frame *frame,
 	uint8_t *picture_data =
 			malloc(linesize * frame->frame->height);
 
-	update_sws_context(s, frame->frame);
+	if (!update_sws_context(s, frame->frame))
+		return false;
 
 	sws_scale(
 		s->sws_ctx,
