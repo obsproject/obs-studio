@@ -246,6 +246,10 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 	// > 1
 	codec_context->refcounted_frames = 1;
 
+	// png decoder has serious issues with multiple threads
+	if (codec_context->codec_id == AV_CODEC_ID_PNG)
+		codec_context->thread_count = 1;
+
 	if (demuxer->options.is_hw_decoding) {
 		AVHWAccel *hwaccel = find_hwaccel_codec(codec_context);
 
