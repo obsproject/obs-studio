@@ -331,18 +331,18 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	char *input_format;
 
 	if (is_local_file) {
-		input = (char *)obs_data_get_string(data, "local_file");
+		input = (char *)obs_data_get_string(settings, "local_file");
 		input_format = NULL;
-		is_looping = obs_data_get_bool(data, "looping");
+		is_looping = obs_data_get_bool(settings, "looping");
 	} else {
-		input = (char *)obs_data_get_string(data, "input");
-		input_format = (char *)obs_data_get_string(data,
+		input = (char *)obs_data_get_string(settings, "input");
+		input_format = (char *)obs_data_get_string(settings,
 				"input_format");
 		is_looping = false;
 	}
 
-	s->is_forcing_scale = obs_data_get_bool(data, "force_scale");
-	s->is_hw_decoding = obs_data_get_bool(data, "hw_decode");
+	s->is_forcing_scale = obs_data_get_bool(settings, "force_scale");
+	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
 
 	if (s->demuxer != NULL)
 		ff_demuxer_free(s->demuxer);
