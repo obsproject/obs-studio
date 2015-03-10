@@ -62,6 +62,8 @@ void initialize_ffmpeg_source()
 struct ffmpeg_source {
 	struct ff_demuxer *demuxer;
 	struct SwsContext *sws_ctx;
+	uint8_t *sws_data;
+	int sws_linesize;
 	obs_source_t *source;
 	enum AVPixelFormat format;
 	bool is_forcing_scale;
@@ -106,7 +108,7 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 
 bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 {
-	source->sws_ctx = sws_getCachedContext(
+	struct SwsContext *sws_ctx = sws_getCachedContext(
 			source->sws_ctx,
 			frame->width,
 			frame->height,
@@ -117,16 +119,21 @@ bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 			SWS_BILINEAR,
 			NULL, NULL, NULL);
 
+	if (sws_ctx != NULL && sws_ctx != source->sws_ctx) {
+		if (source->sws_data != NULL)
+			bfree(source->sws_data);
+		source->sws_data = bzalloc(frame->width * frame->height * 4);
+	}
+
+	source->sws_ctx = sws_ctx;
+	source->sws_linesize = frame->width * 4;
+
 	return source->sws_ctx != NULL;
 }
 
 static bool video_frame_scale(struct ff_frame *frame,
 		struct ffmpeg_source *s, struct obs_source_frame *obs_frame)
 {
-	int linesize = frame->frame->width * 4;
-	uint8_t *picture_data =
-			malloc(linesize * frame->frame->height);
-
 	if (!update_sws_context(s, frame->frame))
 		return false;
 
@@ -136,17 +143,15 @@ static bool video_frame_scale(struct ff_frame *frame,
 		frame->frame->linesize,
 		0,
 		frame->frame->height,
-		&picture_data,
-		&linesize
+		&s->sws_data,
+		&s->sws_linesize
 	);
 
-	obs_frame->data[0]     = picture_data;
-	obs_frame->linesize[0] = linesize;
+	obs_frame->data[0]     = s->sws_data;
+	obs_frame->linesize[0] = s->sws_linesize;
 	obs_frame->format      = VIDEO_FORMAT_BGRA;
 
 	obs_source_output_video(s->source, obs_frame);
-
-	free(picture_data);
 
 	return true;
 }
@@ -402,6 +407,8 @@ static void ffmpeg_source_destroy(void *data)
 
 	if (s->sws_ctx != NULL)
 		sws_freeContext(s->sws_ctx);
+	if (s->sws_data != NULL)
+		bfree(s->sws_data);
 
 	bfree(s);
 }
