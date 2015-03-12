@@ -248,7 +248,6 @@ void ff_decoder_refresh(void *opaque)
 			delay_until_next_wake = decoder->timer_next_wake -
 					(av_gettime() / 1000000.0L);
 			if (delay_until_next_wake < 0.010L) {
-				// accellerate next wake up
 				delay_until_next_wake = 0.010L;
 			}
 
