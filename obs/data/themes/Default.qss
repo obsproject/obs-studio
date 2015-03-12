@@ -1,0 +1,72 @@
+/* Intentionnally left blank */
+/* Themes are created using Qt CSS, you can visit */
+/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
+/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
+
+/* OBS will use the theme filename for the settings. */
+/* You can ship images using relative paths in qss. */
+/* Dark Theme is a good place to start if you need */
+/* a template. */
+
+
+/* We need to set back the icons, or the preview wont stick. */
+
+QToolButton[text="Add"] {
+    qproperty-icon: url(:/res/images/add.png);
+}
+
+QToolButton[text="Remove"] {
+    qproperty-icon: url(:/res/images/list_remove.png);
+}
+
+QToolButton[text="Properties"] {
+    qproperty-icon: url(:/res/images/properties.png);
+}
+
+QToolButton[text="Basic.Main.MoveUp"], QToolButton[text="Move Up"] {
+    qproperty-icon: url(:/res/images/up.png);
+}
+
+QToolButton[text="Basic.Main.MoveDown"], QToolButton[text="Move Down"] {
+    qproperty-icon: url(:/res/images/down.png);
+}
+
+
+/* Settings Icons */
+/* This EXACT style and layout has to be used, since this section isn't part of Qt css. */
+/* Of course the url is arbitrary. Copy paste this and ONLY change the url. */
+/* Path is relative to .qss file. */
+
+#GeneralIcon {
+    icon: url(:/settings/images/settings/system-settings-3.png);
+}
+
+#StreamIcon {
+    icon: url(:/settings/images/settings/network.png);
+}
+
+#OutputIcon {
+    icon: url(:/settings/images/settings/network-bluetooth.png);
+}
+
+#AudioIcon {
+    icon: url(:/settings/images/settings/decibel_audio_player.png);
+}
+
+#VideoIcon {
+    icon: url(:/settings/images/settings/video-display-3.png);
+}
+
+#AdvancedIcon {
+    icon: url(:/settings/images/settings/advanced.png);
+}
+
+
+/* Volume Control */
+
+VolumeMeter {
+    qproperty-bkColor: rgb(221, 221, 221);
+    qproperty-magColor: rgb(32, 125, 23);
+    qproperty-peakColor: rgb(62, 241, 43);
+    qproperty-peakHoldColor: rgb(0, 0, 0);
+}

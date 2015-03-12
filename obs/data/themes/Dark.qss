@@ -1,0 +1,483 @@
+/******************************************************************************/
+/*   Copyright (C) 2014-2015 by Philippe Groarke <philippe.groarke@gmail.com> */
+/*                                                                            */
+/*                                                                            */
+/*   This program is free software: you can redistribute it and/or modify     */
+/*   it under the terms of the GNU General Public License as published by     */
+/*   the Free Software Foundation, either version 2 of the License, or        */
+/*   (at your option) any later version.                                      */
+/*                                                                            */
+/*   This program is distributed in the hope that it will be useful,          */
+/*   but WITHOUT ANY WARRANTY; without even the implied warranty of           */
+/*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            */
+/*   GNU General Public License for more details.                             */
+/*                                                                            */
+/*   You should have received a copy of the GNU General Public License        */
+/*   along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
+/******************************************************************************/
+
+/* Colors */
+
+/* rgb(225,224,225); /* veryLight */
+/* rgb(200,199,200); /* lighter */
+/* rgb(122,121,122); /* light */
+/* rgb(88,87,88); /* kindaDark */
+/* rgb(58,57,58); /* dark */
+/* rgb(31,30,31); /* veryDark */
+/* rgb(11,10,11); /* veryVeryDark */
+/* rgb(42,130,218); /* blue */
+
+
+/* General style, we override only what is needed. */
+QWidget {
+    background-color: rgb(58,57,58); /* dark */
+    alternate-background-color: rgb(31,30,31); /* veryDark */
+    color: rgb(225,224,225); /* veryLight */
+    selection-background-color: rgb(42,130,218); /* blue */
+    selection-color: black;
+}
+
+
+/* Misc */
+
+QWidget::disabled {
+    color: 2px solid rgb(200,199,200); /* lighter */
+}
+
+QAbstractItemView {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+QToolTip {
+    background-color: rgb(31,30,31); /* veryDark */
+    color: rgb(205,205,205);
+}
+
+QMenuBar::item {
+    background-color: rgb(58,57,58); /* dark */
+}
+
+
+/* Group Box */
+
+QGroupBox {
+    border: 1px solid rgb(31,30,31); /* veryDark */;
+    border-radius: 5px;
+    padding-top: 16px;
+}
+
+
+/* ScrollBars */
+
+::corner {
+    background-color: rgb(58,57,58); /* dark */
+    border: none;
+}
+
+QScrollBar:vertical {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(54, 53, 54),
+        stop: 1 rgb(58,57,58)); /* dark */
+    width: 14px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 rgb(122,121,122), /* light */
+        stop: 0.25 rgb(100, 99, 100),
+        stop: 1 rgb(88,87,88)); /* kindaDark */
+    min-height: 20px;
+    margin: 2px;
+    border-radius: 5px;
+    border-width: 1px;
+    border: 1px solid rgb(31,30,31); /* veryDark */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    border: none;
+    background: none;
+    color: none;
+}
+
+QScrollBar:horizontal {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(54, 53, 54),
+        stop: 1 rgb(58,57,58)); /* dark */
+    height: 14px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(122,121,122), /* light */
+        stop: 0.25 rgb(100, 99, 100),
+        stop: 1 rgb(88,87,88)); /* kindaDark */
+    min-width: 20px;
+    margin: 2px;
+    border-radius: 5px;
+    border-width: 1px;
+    border: 1px solid rgb(31,30,31); /* veryDark */
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+}
+
+QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    border: none;
+    background: none;
+    color: none;
+}
+
+
+/* Scenes and Sources toolbar */
+
+QToolBar {
+    background-color: rgb(58,57,58); /* dark */
+    border: none;
+}
+
+QToolButton:hover {
+    background-color: rgb(122,121,122); /* light */
+    border-radius: none;
+}
+
+QToolButton:pressed {
+    background-color: rgb(31,30,31); /* veryDark */
+    border-radius: none;
+}
+
+* [themeID="actionAddScene"], * [themeID="actionAddSource"] {
+    qproperty-icon: url(./Dark/plus.png);
+}
+
+* [themeID="actionRemoveScene"], * [themeID="actionRemoveSource"] {
+    qproperty-icon: url(./Dark/minus.png);
+}
+
+* [themeID="actionSceneProperties"], * [themeID="actionSourceProperties"] {
+    qproperty-icon: url(./Dark/cogwheel.png);
+}
+
+* [themeID="actionSceneUp"], * [themeID="actionSourceUp"] {
+    qproperty-icon: url(./Dark/up_arrow.png);
+}
+
+* [themeID="actionSceneDown"], * [themeID="actionSourceDown"] {
+    qproperty-icon: url(./Dark/down_arrow.png);
+}
+
+
+/* Tab Widget */
+
+QTabWidget::pane { /* The tab widget frame */
+    border-top: 1px solid rgb(31,30,31); /* veryDark */
+}
+
+QTabWidget::tab-bar {
+    alignment: center;
+}
+
+QTabBar::tab {
+    background-color: rgb(88,87,88); /* kindaDark */
+    border: none;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    min-width: 8ex;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 1px;
+}
+
+QTabBar::tab:selected {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+QTabBar::tab:hover {
+    background-color: rgb(122,121,122); /* light */
+}
+
+QTabBar::tab:pressed {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+
+/* ComboBox */
+
+QComboBox {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(86,85,86),
+        stop: 0.1 rgb(82,81,82),
+        stop: 0.5 rgb(78,77,78),
+        stop: 0.9 rgb(74,73,74),
+        stop: 1 rgb(70,69,70));
+    border-style: solid;
+    border: 1px;
+    border-radius: 3px;
+    border-color: rgb(31,30,31); /* veryDark */
+    padding: 2px;
+    padding-left: 10px;
+}
+
+QComboBox::drop-down {
+    border:none;
+    border-left: 1px solid rgba(31,30,31,155); /* veryDark */
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    qproperty-alignment: AlignTop;
+    image: url(./Dark/updown.png);
+    width: 100%;
+}
+
+QComboBox:on {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+QComboBox:editable {
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+}
+
+QComboBox::drop-down:editable {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow:editable {
+    qproperty-alignment: AlignTop;
+    image: url(./Dark/down_arrow.png);
+    width: 8%;
+}
+
+
+/* Textedits etc */
+
+QLineEdit, QTextEdit, QPlainTextEdit {
+    background-color: rgb(31,30,31); /* veryDark */
+    border: none;
+    padding-left: 2px;
+}
+
+
+/* Spinbox and doubleSpinbox */
+
+QSpinBox, QDoubleSpinBox {
+    background-color: rgb(31,30,31); /* veryDark */
+    border: none;
+    padding-left: 2px;
+    padding-right: 15px;
+    margin-right: 10px;
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: margin;
+    subcontrol-position: top right; /* position at the top right corner */
+
+    background-color: rgb(88,87,88); /* kindaDark */
+    border: 1px solid rgb(31,30,31); /* veryDark */
+    border-radius: 3px;
+    border-width: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-width: 0;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: margin;
+    subcontrol-position: bottom right; /* position at the top right corner */
+    background-color: rgb(88,87,88); /* kindaDark */
+    border: 1px solid rgb(31,30,31); /* veryDark */
+    border-radius: 3px;
+    border-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top-width: 0;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover, QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+    background-color: rgb(122,121,122); /* light */
+}
+
+QSpinBox::up-button:pressed, QSpinBox::down-button:pressed, QDoubleSpinBox::up-button:pressed, QDoubleSpinBox::down-button:pressed {
+    background-color: rgb(58,57,58); /* dark */
+}
+
+QSpinBox::up-button:disabled, QSpinBox::up-button:off, QSpinBox::down-button:disabled, QSpinBox::down-button:off {
+    background-color: rgb(58,57,58); /* dark */
+}
+
+QDoubleSpinBox::up-button:disabled, QDoubleSpinBox::up-button:off, QDoubleSpinBox::down-button:disabled, QDoubleSpinBox::down-button:off {
+    background-color: rgb(58,57,58); /* dark */
+}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(./Dark/up_arrow.png);
+    width: 100%;
+}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(./Dark/down_arrow.png);
+    width: 100%;
+}
+
+
+/* Buttons */
+
+QPushButton {
+    color: rgb(225,224,225); /* veryLight */
+    background-color: rgb(88,87,88); /* kindaDark */
+    border: none;
+    border-radius: 3px;
+    padding: 4px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+QPushButton::flat {
+    background-color: rgb(58,57,58); /* dark */
+}
+
+QPushButton:hover {
+    background-color: rgb(122,121,122); /* light */
+}
+
+QPushButton:pressed {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+
+/* Sliders */
+
+QSlider::groove:horizontal {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(50, 49, 50));
+    height: 4px;
+    border: none;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(240,239,240), /* lighter */
+        stop: 0.25 rgb(200,199,200),
+        stop: 1 rgb(162,161,162)); /* light */
+    border: 1px solid rgb(58,57,58); /* dark */
+    border-radius: 3px;
+    height: 10px;
+    width: 18px;
+    margin: -3px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+}
+
+QSlider::handle:horizontal:pressed {
+    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
+        stop: 0 rgb(240,239,240), /* lighter */
+        stop: 0.25 rgb(200,199,200),
+        stop: 1 rgb(162,161,162)); /* light */
+}
+
+QSlider::sub-page:horizontal:disabled {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(50, 49, 50));
+    border-radius: 2px;
+}
+
+QSlider::groove:vertical {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(50, 49, 50));
+    width: 4px;
+    border: none;
+    border-radius: 2px;
+}
+
+QSlider::handle:vertical {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 rgb(240,239,240), /* lighter */
+        stop: 0.25 rgb(200,199,200),
+        stop: 1 rgb(162,161,162)); /* light */
+    border: 1px solid rgb(58,57,58); /* dark */
+    border-radius: 4px;
+    width: 10px;
+    height: 18px;
+    margin: -3px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+}
+
+QSlider::handle:vertical:pressed {
+    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+        stop: 0 rgb(240,239,240), /* lighter */
+        stop: 0.25 rgb(200,199,200),
+        stop: 1 rgb(162,161,162)); /* light */
+}
+
+QSlider::sub-page:vertical:disabled {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 rgb(31,30,31), /* veryDark */
+        stop: 0.75 rgb(50, 49, 50));
+    border-radius: 2px;
+}
+
+QSlider::handle:hover {
+    background-color: rgb(200,199,200); /* veryLight */
+}
+
+QSlider::sub-page {
+    background-color: rgb(42,130,218); /* blue */
+    border-radius: 2px;
+}
+
+QSlider::handle:disabled {
+    background-color: rgb(122,121,122); /* light */
+}
+
+
+/* Settings Icons */
+/* This EXACT style and layout has to be used, since this section isn't part of Qt css. */
+/* Of course the url is arbitrary. Copy paste this and ONLY change the url. */
+/* Path is relative to .qss file. */
+
+#GeneralIcon {
+    icon: url(./Dark/settings/general.png);
+}
+
+#StreamIcon {
+    icon: url(./Dark/settings/stream.png);
+}
+
+#OutputIcon {
+    icon: url(./Dark/settings/output.png);
+}
+
+#AudioIcon {
+    icon: url(./Dark/settings/audio.png);
+}
+
+#VideoIcon {
+    icon: url(./Dark/settings/video.png);
+}
+
+#AdvancedIcon {
+    icon: url(./Dark/settings/advanced.png);
+}
+
+
+/* Volume Control */
+
+VolumeMeter {
+    qproperty-bkColor: rgb(31,30,31); /* veryDark */
+    qproperty-magColor:;
+    qproperty-peakColor:;
+    qproperty-peakHoldColor: rgb(225,224,225); /* veryLight */
+}

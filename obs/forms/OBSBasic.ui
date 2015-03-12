@@ -594,6 +594,9 @@
    <property name="text">
     <string>Add</string>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionAddScene</string>
+   </property>
   </action>
   <action name="actionAddSource">
    <property name="icon">
@@ -602,6 +605,9 @@
    </property>
    <property name="text">
     <string>Add</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionAddSource</string>
    </property>
   </action>
   <action name="actionRemoveScene">
@@ -618,6 +624,9 @@
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionRemoveScene</string>
+   </property>
   </action>
   <action name="actionRemoveSource">
    <property name="icon">
@@ -633,6 +642,9 @@
    <property name="shortcutContext">
     <enum>Qt::WidgetWithChildrenShortcut</enum>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionRemoveSource</string>
+   </property>
   </action>
   <action name="actionSceneProperties">
    <property name="enabled">
@@ -644,6 +656,9 @@
    </property>
    <property name="text">
     <string>Properties</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSceneProperties</string>
    </property>
   </action>
   <action name="actionSourceProperties">
@@ -657,6 +672,9 @@
    <property name="text">
     <string>Properties</string>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSourceProperties</string>
+   </property>
   </action>
   <action name="actionSceneUp">
    <property name="enabled">
@@ -668,6 +686,9 @@
    </property>
    <property name="text">
     <string>Basic.Main.MoveUp</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSceneUp</string>
    </property>
   </action>
   <action name="actionSourceUp">
@@ -681,6 +702,9 @@
    <property name="text">
     <string>MoveUp</string>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSourceUp</string>
+   </property>
   </action>
   <action name="actionSceneDown">
    <property name="enabled">
@@ -693,6 +717,9 @@
    <property name="text">
     <string>Basic.Main.MoveDown</string>
    </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSceneDown</string>
+   </property>
   </action>
   <action name="actionSourceDown">
    <property name="enabled">
@@ -704,6 +731,9 @@
    </property>
    <property name="text">
     <string>MoveDown</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">actionSourceDown</string>
    </property>
   </action>
   <action name="action_New">

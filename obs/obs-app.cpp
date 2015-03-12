@@ -25,10 +25,16 @@
 #include <obs.hpp>
 
 #include <QProxyStyle>
+#include <QFile>
+#include <QFileInfo>
+#include <QString>
+#include <QRegExp>
+#include <QTextStream>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-settings.hpp"
 #include "window-license-agreement.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
@@ -233,6 +239,106 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
+void OBSApp::setThemeSettingsIcons(QString filepath)
+{
+	// This method relies on the fact the settings order will not change.
+	QStringList icons = { "#GeneralIcon", "#StreamIcon", "#OutputIcon",
+			"#AudioIcon", "#VideoIcon", "#AdvancedIcon"};
+
+	QFile file(filepath);
+	if(!file.open(QIODevice::ReadOnly)) {
+		blog(LOG_ERROR, "File error %s, %s",
+				file.errorString().toStdString().c_str(),
+				filepath.toStdString().c_str());
+		return;
+	}
+	QFileInfo info(file);
+	filepath = info.canonicalPath() + "/";
+	QTextStream in(&file);
+
+	while(!in.atEnd()) {
+		QString line = in.readLine();
+
+		// Minimize the number of lines we check.
+		if (!line.startsWith("#"))
+			continue;
+
+		int row = 0;
+		for (auto x : icons) {
+			// Find an icon.
+			if (!line.startsWith(x)) {
+				row++;
+				continue;
+			}
+
+			// Find the url line.
+			while (!line.contains("icon") && !line.contains("url")){
+				line = in.readLine();
+			}
+
+			// Find the path.
+			QRegExp exp("\\((.*)\\)");
+			if(exp.indexIn(line) < 0) {
+				row++;
+				continue;
+			}
+
+			// If its in the resource file, don't modify path.
+			QString path = filepath;
+			if (exp.cap(1).startsWith(":/")) {
+				path = exp.cap(1);
+			} else {
+				path += exp.cap(1);
+			}
+
+			// Store the icons in the settings pane.
+			OBSBasicSettings::setSettingsIcons(row, path);
+			break;
+		}
+	}
+
+	file.close();
+}
+
+bool OBSApp::SetTheme(std::string name, std::string path)
+{
+	theme = name;
+
+	/* Check user dir first, then preinstalled themes. */
+	if (path == "") {
+		char userDir[512];
+		name = "themes/" + name + ".qss";
+		string temp = "obs-studio/" + name;
+		int ret = os_get_config_path(userDir, sizeof(userDir),
+				temp.c_str());
+
+		if (ret > 0 && QFile::exists(userDir)) {
+			path = string(userDir);
+		} else if (!GetDataFilePath(name.c_str(), path)) {
+			OBSErrorBox(NULL, "Failed to find %s.", name.c_str());
+			return false;
+		}
+	}
+
+	QString mpath = QString("file:///") + path.c_str();
+	setStyleSheet(mpath);
+	setThemeSettingsIcons(QString::fromStdString(path));
+	return true;
+}
+
+bool OBSApp::InitTheme()
+{
+	const char *themeName = config_get_string(globalConfig, "General",
+			"Theme");
+
+	if (!themeName)
+		themeName = "Default";
+
+	stringstream t;
+	t << themeName;
+	return SetTheme(t.str());
+}
+
 OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {}
@@ -247,6 +353,8 @@ void OBSApp::AppInit()
 		throw "Failed to initialize global config";
 	if (!InitLocale())
 		throw "Failed to load locale";
+	if (!InitTheme())
+		throw "Failed to load theme";
 }
 
 const char *OBSApp::GetRenderModule() const
