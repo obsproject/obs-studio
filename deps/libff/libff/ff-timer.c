@@ -27,6 +27,7 @@ static void *timer_thread(void *opaque)
 	int ret;
 
 	while (true) {
+		bool callback = false;
 		pthread_mutex_lock(&timer->mutex);
 
 		if (timer->abort) {
@@ -60,11 +61,14 @@ static void *timer_thread(void *opaque)
 		// we woke up for some reason
 		current_time = av_gettime();
 		if (timer->next_wake <= current_time || timer->needs_wake) {
-			timer->callback(timer->opaque);
+			callback = true;
 			timer->needs_wake = false;
 		}
 
 		pthread_mutex_unlock(&timer->mutex);
+
+		if (callback)
+			timer->callback(timer->opaque);
 	}
 
 	return NULL;
