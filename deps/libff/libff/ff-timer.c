@@ -44,7 +44,7 @@ static void *timer_thread(void *opaque)
 
 			ret = pthread_cond_timedwait(&timer->cond,
 					&timer->mutex, &sleep_time);
-			if (ret != 0) {
+			if (ret != ETIMEDOUT) {
 				// failed to wait, just sleep
 				av_usleep((unsigned)(timer->next_wake
 						- current_time));
