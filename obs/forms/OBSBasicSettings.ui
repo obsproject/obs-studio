@@ -271,7 +271,7 @@
              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
             </property>
             <item row="0" column="0">
-             <widget class="QLabel" name="label_16">
+             <widget class="QLabel" name="outputModeLabel">
               <property name="minimumSize">
                <size>
                 <width>170</width>
