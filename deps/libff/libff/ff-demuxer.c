@@ -40,7 +40,8 @@ struct ff_demuxer *ff_demuxer_init()
 	av_register_all();
 	avdevice_register_all();
 	avfilter_register_all();
-
+	avformat_network_init();
+	
 	demuxer = av_mallocz(sizeof(struct ff_demuxer));
 	if (demuxer == NULL)
 		return NULL;
