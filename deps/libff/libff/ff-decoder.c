@@ -178,7 +178,9 @@ void ff_decoder_refresh(void *opaque)
 	if (decoder && decoder->stream) {
 		if (decoder->frame_queue.size == 0) {
 			if (!decoder->eof) {
-				// We expected a frame, but there were none available
+				// We expected a frame, but there were none
+				// available
+				
 				// Schedule another call as soon as possible
 				ff_decoder_schedule_refresh(decoder, 1);
 			} else {
