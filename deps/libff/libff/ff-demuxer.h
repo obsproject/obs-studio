@@ -35,6 +35,7 @@ struct ff_demuxer_options
 	int video_frame_queue_size;
 	bool is_hw_decoding;
 	bool is_looping;
+	enum AVDiscard frame_drop;
 };
 
 typedef struct ff_demuxer_options ff_demuxer_options_t;

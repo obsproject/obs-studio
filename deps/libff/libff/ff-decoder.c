@@ -320,3 +320,30 @@ double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 
 	return d_pts;
 }
+
+bool ff_decoder_set_frame_drop_state(struct ff_decoder *decoder,
+		int64_t start_time, int64_t pts)
+{
+	if (pts != AV_NOPTS_VALUE) {
+		int64_t rescaled_pts = av_rescale_q(pts,
+				decoder->stream->time_base, AV_TIME_BASE_Q);
+		int64_t master_clock = av_gettime() -
+				start_time;
+
+		int64_t diff = master_clock - rescaled_pts;
+
+		if (diff > (AV_TIME_BASE / 2)) {
+			decoder->codec->skip_frame = decoder->frame_drop;
+			decoder->codec->skip_idct = decoder->frame_drop;
+			decoder->codec->skip_loop_filter = decoder->frame_drop;
+			return true;
+		} else {
+			decoder->codec->skip_frame = AVDISCARD_DEFAULT;
+			decoder->codec->skip_idct = AVDISCARD_DEFAULT;
+			decoder->codec->skip_loop_filter = AVDISCARD_DEFAULT;
+			return false;
+		}
+	}
+
+	return false;
+}

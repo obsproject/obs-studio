@@ -194,6 +194,8 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.audio_frame_queue_size);
 
 		demuxer->audio_decoder->hwaccel_decoder = hwaccel_decoder;
+		demuxer->audio_decoder->frame_drop =
+				demuxer->options.frame_drop;
 		demuxer->audio_decoder->natural_sync_clock =
 				AV_SYNC_AUDIO_MASTER;
 		demuxer->audio_decoder->callbacks = &demuxer->audio_callbacks;
@@ -215,6 +217,8 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.video_frame_queue_size);
 
 		demuxer->video_decoder->hwaccel_decoder = hwaccel_decoder;
+		demuxer->video_decoder->frame_drop =
+				demuxer->options.frame_drop;
 		demuxer->video_decoder->natural_sync_clock =
 				AV_SYNC_VIDEO_MASTER;
 		demuxer->video_decoder->callbacks = &demuxer->video_callbacks;

@@ -55,6 +55,17 @@ static bool handle_reset_packet(struct ff_decoder *decoder,
 	return true;
 }
 
+static void drop_late_packets(struct ff_decoder *decoder,
+		struct ff_packet *packet)
+{
+	int64_t start_time = ff_clock_start_time(decoder->clock);
+	if (start_time != AV_NOPTS_VALUE) {
+		if (ff_decoder_set_frame_drop_state(decoder, start_time,
+				packet->base.pts))
+			shrink_packet(packet, packet->base.size);
+	}
+}
+
 static int decode_frame(struct ff_decoder *decoder,
 	struct ff_packet *packet, AVFrame *frame, bool *frame_complete)
 {
@@ -64,6 +75,8 @@ static int decode_frame(struct ff_decoder *decoder,
 	while (true) {
 		while (packet->base.size > 0) {
 			int complete;
+
+			drop_late_packets(decoder, packet);
 
 			packet_length = avcodec_decode_audio4(decoder->codec,
 				frame, &complete,

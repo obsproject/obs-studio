@@ -73,6 +73,7 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 	int complete;
 	AVFrame *frame = av_frame_alloc();
 	int ret;
+	bool key_frame;
 
 	while (!decoder->abort) {
 		ret = packet_queue_get(&decoder->packet_queue, &packet, 1);
@@ -94,6 +95,20 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			av_free_packet(&packet.base);
 			continue;
 		}
+
+		int64_t start_time = ff_clock_start_time(decoder->clock);
+		key_frame = packet.base.flags & AV_PKT_FLAG_KEY;
+
+		// We can only make decisions on keyframes for
+		// hw decoders (maybe just OSX?)
+		// For now, always make drop decisions on keyframes
+		bool frame_drop_check = key_frame;
+		// Must have a proper packet pts to drop frames here
+		frame_drop_check &= start_time != AV_NOPTS_VALUE;
+
+		if (frame_drop_check)
+			ff_decoder_set_frame_drop_state(decoder,
+					start_time, packet.base.pts);
 
 		avcodec_decode_video2(decoder->codec, frame,
 				&complete, &packet.base);
