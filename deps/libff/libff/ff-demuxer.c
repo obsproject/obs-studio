@@ -360,6 +360,19 @@ static bool find_and_initialize_stream_decoders(struct ff_demuxer *demuxer)
 			audio_stream = format_context->streams[i];
 	}
 
+	int default_stream_index = av_find_default_stream_index(
+			demuxer->format_context);
+
+	if (default_stream_index >= 0) {
+		AVStream *stream =
+				format_context->streams[default_stream_index];
+
+		if (stream->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+			demuxer->clock.sync_type = AV_SYNC_AUDIO_MASTER;
+		else if (stream->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+			demuxer->clock.sync_type = AV_SYNC_VIDEO_MASTER;
+	}
+
 	if (video_stream != NULL)
 		find_decoder(demuxer, video_stream);
 
