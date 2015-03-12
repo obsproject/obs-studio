@@ -19,6 +19,9 @@
 #define AV_SYNC_THRESHOLD 0.01
 #define AV_NOSYNC_THRESHOLD 10.0
 
+#include <stdbool.h>
+#include <pthread.h>
+
 enum ff_av_sync_type {
 	AV_SYNC_AUDIO_MASTER,
 	AV_SYNC_VIDEO_MASTER,
@@ -30,9 +33,18 @@ typedef double (*ff_sync_clock)(void *opaque);
 struct ff_clock {
 	ff_sync_clock sync_clock;
 	enum ff_av_sync_type sync_type;
+
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	volatile long retain;
+
 	void *opaque;
 };
 
 typedef struct ff_clock ff_clock_t;
 
+struct ff_clock * ff_clock_init();
 double ff_get_sync_clock(struct ff_clock *clock);
+struct ff_clock *ff_clock_retain(struct ff_clock *clock);
+struct ff_clock *ff_clock_move(struct ff_clock **clock);
+void ff_clock_release(struct ff_clock **clock);
