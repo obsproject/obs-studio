@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="res">
+  <qresource prefix="/res">
     <file>images/configuration21_16.png</file>
     <file>images/list_remove.png</file>
     <file>images/add.png</file>
@@ -10,7 +10,7 @@
     <file>images/up.png</file>
     <file>images/obs.png</file>
   </qresource>
-  <qresource prefix="settings">
+  <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>
     <file>images/settings/network.png</file>
     <file>images/settings/video-display-3.png</file>

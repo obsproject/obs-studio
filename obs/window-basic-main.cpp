@@ -82,6 +82,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	  ui             (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
+	copyActionsDynamicProperties();
 
 	int width = config_get_int(App()->GlobalConfig(), "MainWindow", "cx");
 
@@ -195,6 +196,26 @@ static obs_data_t *GenerateSaveData()
 	obs_source_release(currentScene);
 
 	return saveData;
+}
+
+void OBSBasic::copyActionsDynamicProperties()
+{
+	// Themes need the QAction dynamic properties
+	for (QAction *x : ui->scenesToolbar->actions()) {
+		QWidget* temp = ui->scenesToolbar->widgetForAction(x);
+
+		for (QByteArray &y : x->dynamicPropertyNames()) {
+			temp->setProperty(y, x->property(y));
+		}
+	}
+
+	for (QAction *x : ui->sourcesToolbar->actions()) {
+		QWidget* temp = ui->sourcesToolbar->widgetForAction(x);
+
+		for (QByteArray &y : x->dynamicPropertyNames()) {
+			temp->setProperty(y, x->property(y));
+		}
+	}
 }
 
 void OBSBasic::ClearVolumeControls()
