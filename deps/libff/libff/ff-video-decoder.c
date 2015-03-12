@@ -117,7 +117,6 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 		// there is a picture to show for some codecs, but we still want
 		// to adjust our various internal clocks for the next frame
 		if (complete) {
-
 			// If we don't have a good PTS, try to guess based
 			// on last received PTS provided plus prediction
 			// This function returns a pts scaled to stream
