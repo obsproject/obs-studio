@@ -99,7 +99,11 @@ void ff_timer_free(struct ff_timer *timer)
 
 	assert(timer != NULL);
 
-	pthread_cancel(timer->timer_thread);
+	pthread_mutex_lock(&timer->mutex);
+	timer->abort = true;
+	pthread_cond_signal(&timer->cond);
+	pthread_mutex_unlock(&timer->mutex);
+
 	pthread_join(timer->timer_thread, &thread_result);
 
 	pthread_mutex_destroy(&timer->mutex);
