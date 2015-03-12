@@ -84,7 +84,7 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 	default:
 		blog(LOG_WARNING, "frame using an unsupported colorspace %d",
 				frame_cs);
-		return false;
+		obs_cs = VIDEO_CS_DEFAULT;
 	}
 
 	enum video_range_type range;
