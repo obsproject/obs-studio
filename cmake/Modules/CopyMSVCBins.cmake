@@ -25,39 +25,72 @@ find_package(Libfdk QUIET)
 find_package(Qt5Core QUIET)
 
 file(GLOB FFMPEG_BIN_FILES
-	"${FFMPEG_avutil_INCLUDE_DIR}/../bin${_bin_suffix}/avutil-*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/avcodec-*.dll"
-	"${FFMPEG_avformat_INCLUDE_DIR}/../bin${_bin_suffix}/avformat-*.dll"
-	"${FFMPEG_swscale_INCLUDE_DIR}/../bin${_bin_suffix}/swscale-*.dll"
-	"${FFMPEG_swresample_INCLUDE_DIR}/../bin${_bin_suffix}/swresample-*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
-	"${FFMPEG_avutil_INCLUDE_DIR}/../bin/avutil-*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/avcodec-*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/avcodec-*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/avcodec-*.dll"
+
 	"${FFMPEG_avformat_INCLUDE_DIR}/../bin/avformat-*.dll"
+	"${FFMPEG_avformat_INCLUDE_DIR}/../bin${_bin_suffix}/avformat-*.dll"
+	"${FFMPEG_avformat_INCLUDE_DIR}/bin${_bin_suffix}/avformat-*.dll"
+
+	"${FFMPEG_avutil_INCLUDE_DIR}/../bin/avutil-*.dll"
+	"${FFMPEG_avutil_INCLUDE_DIR}/../bin${_bin_suffix}/avutil-*.dll"
+	"${FFMPEG_avutil_INCLUDE_DIR}/bin${_bin_suffix}/avutil-*.dll"
+
+	"${FFMPEG_avdevice_INCLUDE_DIR}/../bin/avdevice-*.dll"
+	"${FFMPEG_avdevice_INCLUDE_DIR}/../bin${_bin_suffix}/avdevice-*.dll"
+	"${FFMPEG_avdevice_INCLUDE_DIR}/bin${_bin_suffix}/avdevice-*.dll"
+
+	"${FFMPEG_avfilter_INCLUDE_DIR}/../bin/avfilter-*.dll"
+	"${FFMPEG_avfilter_INCLUDE_DIR}/../bin${_bin_suffix}/avfilter-*.dll"
+	"${FFMPEG_avfilter_INCLUDE_DIR}/bin${_bin_suffix}/avfilter-*.dll"
+
+	"${FFMPEG_postproc_INCLUDE_DIR}/../bin/postproc-*.dll"
+	"${FFMPEG_postproc_INCLUDE_DIR}/../bin${_bin_suffix}/postproc-*.dll"
+	"${FFMPEG_postproc_INCLUDE_DIR}/bin${_bin_suffix}/postproc-*.dll"
+
 	"${FFMPEG_swscale_INCLUDE_DIR}/../bin/swscale-*.dll"
+	"${FFMPEG_swscale_INCLUDE_DIR}/bin${_bin_suffix}/swscale-*.dll"
+	"${FFMPEG_swscale_INCLUDE_DIR}/../bin${_bin_suffix}/swscale-*.dll"
+
 	"${FFMPEG_swresample_INCLUDE_DIR}/../bin/swresample-*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libbz2*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/zlib*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libbz2*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/zlib*.dll"
+	"${FFMPEG_swresample_INCLUDE_DIR}/../bin${_bin_suffix}/swresample-*.dll"
+	"${FFMPEG_swresample_INCLUDE_DIR}/bin${_bin_suffix}/swresample-*.dll"
+
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/opus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/opus*.dll"
-	"${FFMPEG_avutil_INCLUDE_DIR}/bin${_bin_suffix}/avutil-*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/avcodec-*.dll"
-	"${FFMPEG_avformat_INCLUDE_DIR}/bin${_bin_suffix}/avformat-*.dll"
-	"${FFMPEG_swscale_INCLUDE_DIR}/bin${_bin_suffix}/swscale-*.dll"
-	"${FFMPEG_swresample_INCLUDE_DIR}/bin${_bin_suffix}/swresample-*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libopus*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/opus*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libopus*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/opus*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libbz2*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/zlib*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libbz2*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/zlib*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libbz2*.dll"
-	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll")
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll"
+	)
 
 file(GLOB X264_BIN_FILES
 	"${X264_INCLUDE_DIR}/../bin${_bin_suffix}/libx264-*.dll"
 	"${X264_INCLUDE_DIR}/../bin/libx264-*.dll"
 	"${X264_INCLUDE_DIR}/bin/libx264-*.dll"
 	"${X264_INCLUDE_DIR}/bin${_bin_suffix}/libx264-*.dll")
+
+file(GLOB FREETYPE_BIN_FILES
+	"${FREETYPE_INCLUDE_DIR_ft2build}/../../bin${_bin_suffix}/libfreetype*-*.dll"
+	"${FREETYPE_INCLUDE_DIR_ft2build}/../../bin/libfreetype*-*.dll"
+	"${FREETYPE_INCLUDE_DIR_ft2build}/../bin${_bin_suffix}/libfreetype*-*.dll"
+	"${FREETYPE_INCLUDE_DIR_ft2build}/../bin/libfreetype*-*.dll"
+	"${FREETYPE_INCLUDE_DIR_ft2build}/bin/libfreetype*-*.dll"
+	"${FREETYPE_INCLUDE_DIR_ft2build}/bin${_bin_suffix}/libfreetype*-*.dll")
 
 file(GLOB LIBFDK_BIN_FILES
 	"${Libfdk_INCLUDE_DIR}/../bin${_bin_suffix}/libfdk*-*.dll"
@@ -96,6 +129,7 @@ set(ALL_BASE_BIN_FILES
 	${FFMPEG_BIN_FILES}
 	${X264_BIN_FILES}
 	${LIBFDK_BIN_FILES}
+	${FREETYPE_BIN_FILES}
 	${QT_ICU_BIN_FILES})
 
 set(ALL_REL_BIN_FILES
@@ -123,6 +157,7 @@ endforeach()
 message(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
 message(STATUS "x264 files: ${X264_BIN_FILES}")
 message(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")
+message(STATUS "Freetype files: ${FREETYPE_BIN_FILES}")
 message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
 message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
 message(STATUS "QT Release files: ${QT_BIN_FILES}")
