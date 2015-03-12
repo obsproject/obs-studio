@@ -183,7 +183,8 @@ enum AVPixelFormat get_hwaccel_format(struct AVCodecContext *s,
 }
 
 static bool initialize_decoder(struct ff_demuxer *demuxer,
-		AVCodecContext *codec_context, AVStream *stream)
+		AVCodecContext *codec_context, AVStream *stream,
+		bool hwaccel_decoder)
 {
 	switch (codec_context->codec_type) {
 	case AVMEDIA_TYPE_AUDIO:
@@ -192,6 +193,7 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.audio_packet_queue_size,
 				demuxer->options.audio_frame_queue_size);
 
+		demuxer->audio_decoder->hwaccel_decoder = hwaccel_decoder;
 		demuxer->audio_decoder->natural_sync_clock =
 				AV_SYNC_AUDIO_MASTER;
 		demuxer->audio_decoder->clock = &demuxer->clock;
@@ -214,6 +216,7 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.video_packet_queue_size,
 				demuxer->options.video_frame_queue_size);
 
+		demuxer->video_decoder->hwaccel_decoder = hwaccel_decoder;
 		demuxer->video_decoder->natural_sync_clock =
 				AV_SYNC_VIDEO_MASTER;
 		demuxer->video_decoder->clock = &demuxer->clock;
@@ -240,6 +243,7 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 	AVDictionary *options_dict = NULL;
 	int ret;
 
+	bool hwaccel_decoder = false;
 	codec_context = stream->codec;
 
 	// enable reference counted frames since we may have a buffer size
@@ -269,6 +273,7 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
                                                 codec_context->codec_id);
 				} else {
 					codec = codec_vda;
+					hwaccel_decoder = true;
 				}
 			}
 		}
@@ -290,7 +295,8 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 		}
 	}
 
-	return initialize_decoder(demuxer, codec_context, stream);
+	return initialize_decoder(demuxer, codec_context, stream,
+			hwaccel_decoder);
 }
 
 void ff_demuxer_flush(struct ff_demuxer *demuxer)

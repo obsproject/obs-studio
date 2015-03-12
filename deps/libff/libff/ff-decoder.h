@@ -43,6 +43,7 @@ struct ff_decoder {
 	double current_pts;        // pts of the most recently dispatched frame
 	int64_t current_pts_time;  // clock time when current_pts was set
 
+	bool hwaccel_decoder;
 	struct ff_clock *clock;
 	enum ff_av_sync_type natural_sync_clock;
 
