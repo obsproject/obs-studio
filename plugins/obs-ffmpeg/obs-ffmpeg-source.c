@@ -78,6 +78,7 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 
 	switch(frame_cs) {
 	case AVCOL_SPC_BT709:       obs_cs = VIDEO_CS_709; break;
+	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_BT470BG:     obs_cs = VIDEO_CS_601; break;
 	case AVCOL_SPC_UNSPECIFIED: obs_cs = VIDEO_CS_DEFAULT; break;
 	default:
