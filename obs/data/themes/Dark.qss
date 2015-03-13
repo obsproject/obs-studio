@@ -37,7 +37,7 @@ QWidget {
     selection-color: black;
 }
 
-* [frameShape="1"], * [frameShape="2"], * [frameShape="3"], * [frameShape="4"], * [frameShape="5"], * [frameShape="5"] {
+* [frameShape="1"], * [frameShape="2"], * [frameShape="3"], * [frameShape="4"], * [frameShape="5"], * [frameShape="6"] {
     border: 1px solid rgb(31,30,31);
 }
 
