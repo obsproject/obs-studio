@@ -1691,23 +1691,16 @@ void obs_source_output_audio(obs_source_t *source,
 	output = filter_async_audio(source, &source->audio_data);
 
 	if (output) {
-		bool async = (flags & OBS_SOURCE_ASYNC) != 0;
+		struct audio_data data;
+
+		for (int i = 0; i < MAX_AV_PLANES; i++)
+			data.data[i] = output->data[i];
+
+		data.frames    = output->frames;
+		data.timestamp = output->timestamp;
 
 		pthread_mutex_lock(&source->audio_mutex);
-
-		/* wait for video to start before outputting any audio so we
-		 * have a base for sync */
-		if (source->timing_set || !async) {
-			struct audio_data data;
-
-			for (int i = 0; i < MAX_AV_PLANES; i++)
-				data.data[i] = output->data[i];
-
-			data.frames    = output->frames;
-			data.timestamp = output->timestamp;
-			source_output_audio_line(source, &data);
-		}
-
+		source_output_audio_line(source, &data);
 		pthread_mutex_unlock(&source->audio_mutex);
 	}
 
