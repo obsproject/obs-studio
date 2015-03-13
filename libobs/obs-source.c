@@ -1575,6 +1575,9 @@ static inline void reset_resampler(obs_source_t *source,
 	source->sample_info.samples_per_sec = audio->samples_per_sec;
 	source->sample_info.speakers        = audio->speakers;
 
+	audio_resampler_destroy(source->resampler);
+	source->resampler = NULL;
+
 	if (source->sample_info.samples_per_sec == obs_info->samples_per_sec &&
 	    source->sample_info.format          == obs_info->format          &&
 	    source->sample_info.speakers        == obs_info->speakers) {
@@ -1582,7 +1585,6 @@ static inline void reset_resampler(obs_source_t *source,
 		return;
 	}
 
-	audio_resampler_destroy(source->resampler);
 	source->resampler = audio_resampler_create(&output_info,
 			&source->sample_info);
 
