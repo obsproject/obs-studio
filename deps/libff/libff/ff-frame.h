@@ -16,11 +16,13 @@
 
 #pragma once
 
+#include "ff-clock.h"
+
 #include <libavcodec/avcodec.h>
 
 struct ff_frame {
 	AVFrame *frame;
-	void *opaque;
+	struct ff_clock *clock;
 	double pts;
 	int64_t duration;
 };

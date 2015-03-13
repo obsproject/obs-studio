@@ -117,10 +117,13 @@ void ff_decoder_free(struct ff_decoder *decoder)
 
 		ff_callbacks_frame_free(frame, decoder->callbacks);
 
-		if (frame != NULL && frame->frame != NULL)
-			av_frame_unref(frame->frame);
-		if (frame != NULL)
+		if (frame != NULL) {
+			if (frame->frame != NULL)
+				av_frame_unref(frame->frame);
+			if (frame->clock != NULL)
+				ff_clock_release(&frame->clock);
 			av_free(frame);
+		}
 	}
 
 	packet_queue_free(&decoder->packet_queue);
@@ -143,11 +146,11 @@ double ff_decoder_clock(void *opaque)
 	return decoder->current_pts + delta;
 }
 
-static double get_sync_adjusted_pts_diff(struct ff_decoder *decoder,
+static double get_sync_adjusted_pts_diff(struct ff_clock *clock,
 		double pts, double pts_diff)
 {
 	double new_pts_diff = pts_diff;
-	double sync_time = ff_get_sync_clock(decoder->clock);
+	double sync_time = ff_get_sync_clock(clock);
 	double diff = pts - sync_time;
 	double sync_threshold;
 
@@ -191,6 +194,29 @@ void ff_decoder_refresh(void *opaque)
 			frame = ff_circular_queue_peek_read(
 					&decoder->frame_queue);
 
+			// Get frame clock and start it if needed
+			ff_clock_t *clock = ff_clock_move(&frame->clock);
+			if (!ff_clock_start(clock, decoder->natural_sync_clock,
+					&decoder->refresh_timer.abort)) {
+				ff_clock_release(&clock);
+
+				// Our clock was never started and deleted or
+				// aborted
+
+				// Drop this frame? The only way this can happen
+				// is if one stream finishes before another and
+				// the input is looping or canceled.  Until we
+				// get another clock we will unable to continue
+
+				ff_decoder_schedule_refresh(decoder, 100);
+
+				// Drop this frame as we have no way of timing
+				// it
+				ff_circular_queue_advance_read(
+						&decoder->frame_queue);
+				return;
+			}
+
 			decoder->current_pts = frame->pts;
 			decoder->current_pts_time = av_gettime();
 
@@ -208,9 +234,9 @@ void ff_decoder_refresh(void *opaque)
 			decoder->previous_pts = frame->pts;
 
 			// if not synced against natural clock
-			if (decoder->clock->sync_type
+			if (clock->sync_type
 					!= decoder->natural_sync_clock) {
-				pts_diff = get_sync_adjusted_pts_diff(decoder,
+				pts_diff = get_sync_adjusted_pts_diff(clock,
 						frame->pts, pts_diff);
 			}
 
@@ -224,6 +250,10 @@ void ff_decoder_refresh(void *opaque)
 				delay_until_next_wake = 0.010L;
 			}
 
+			if (delay_until_next_wake > pts_diff)
+				delay_until_next_wake = pts_diff;
+
+			ff_clock_release(&clock);
 			ff_callbacks_frame(decoder->callbacks, frame);
 
 			ff_decoder_schedule_refresh(decoder,

@@ -53,6 +53,7 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		av_frame_free(&queue_frame->frame);
 
 	queue_frame->frame = av_frame_clone(frame);
+	queue_frame->clock = ff_clock_retain(decoder->clock);
 
 	if (call_initialize)
 		ff_callbacks_frame_initialize(queue_frame, decoder->callbacks);
@@ -85,6 +86,15 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			continue;
 		}
 
+		// We received a reset packet with a new clock
+		if (packet.clock != NULL) {
+			if (decoder->clock != NULL)
+				ff_clock_release(&decoder->clock);
+			decoder->clock = ff_clock_move(&packet.clock);
+			av_free_packet(&packet.base);
+			continue;
+		}
+
 		avcodec_decode_video2(decoder->codec, frame,
 				&complete, &packet.base);
 
@@ -106,6 +116,9 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 
 		av_free_packet(&packet.base);
 	}
+
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
 	return NULL;

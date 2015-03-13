@@ -196,8 +196,6 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 		demuxer->audio_decoder->hwaccel_decoder = hwaccel_decoder;
 		demuxer->audio_decoder->natural_sync_clock =
 				AV_SYNC_AUDIO_MASTER;
-		demuxer->audio_decoder->clock = &demuxer->clock;
-
 		demuxer->audio_decoder->callbacks = &demuxer->audio_callbacks;
 
 		if (!ff_callbacks_format(&demuxer->audio_callbacks,
@@ -219,8 +217,6 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 		demuxer->video_decoder->hwaccel_decoder = hwaccel_decoder;
 		demuxer->video_decoder->natural_sync_clock =
 				AV_SYNC_VIDEO_MASTER;
-		demuxer->video_decoder->clock = &demuxer->clock;
-
 		demuxer->video_decoder->callbacks = &demuxer->video_callbacks;
 
 		if (!ff_callbacks_format(&demuxer->video_callbacks,
@@ -313,6 +309,27 @@ void ff_demuxer_flush(struct ff_demuxer *demuxer)
 		packet_queue_flush(&demuxer->audio_decoder->packet_queue);
 		packet_queue_put_flush_packet(
 				&demuxer->audio_decoder->packet_queue);
+	}
+}
+
+void ff_demuxer_reset(struct ff_demuxer *demuxer)
+{
+	struct ff_packet *packet = av_mallocz(sizeof(struct ff_packet));
+	struct ff_clock *clock = ff_clock_init();
+	clock->sync_type = demuxer->clock.sync_type;
+	clock->sync_clock = demuxer->clock.sync_clock;
+	clock->opaque = demuxer->clock.opaque;
+
+	packet->clock = clock;
+
+	if (demuxer->audio_decoder != NULL) {
+		packet_queue_put(&demuxer->audio_decoder->packet_queue, packet);
+		ff_clock_retain(clock);
+	}
+
+	if (demuxer->video_decoder != NULL) {
+		packet_queue_put(&demuxer->video_decoder->packet_queue, packet);
+		ff_clock_retain(clock);
 	}
 }
 
@@ -446,6 +463,7 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 		} else {
 			if (demuxer->seek_flush)
 				ff_demuxer_flush(demuxer);
+			ff_demuxer_reset(demuxer);
 		}
 
 		demuxer->seek_request = false;
@@ -476,6 +494,8 @@ static void *demux_thread(void *opaque)
 
 	if (!find_and_initialize_stream_decoders(demuxer))
 		goto fail;
+
+	ff_demuxer_reset(demuxer);
 
 	while (!demuxer->abort) {
 		// failed to seek (looping?)

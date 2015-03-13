@@ -147,6 +147,8 @@ void packet_queue_flush(struct ff_packet_queue *q)
 			packet = q->first_packet) {
 		q->first_packet = packet->next;
 		av_free_packet(&packet->packet.base);
+		if (packet->packet.clock != NULL)
+			ff_clock_release(&packet->packet.clock);
 		av_freep(&packet);
 	}
 

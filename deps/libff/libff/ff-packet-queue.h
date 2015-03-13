@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "ff-clock.h"
+
 #include <libavformat/avformat.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -26,6 +28,7 @@
 
 struct ff_packet {
 	AVPacket base;
+	ff_clock_t *clock;
 };
 
 struct ff_packet_list {

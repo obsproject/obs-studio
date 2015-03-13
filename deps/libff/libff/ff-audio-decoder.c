@@ -39,6 +39,22 @@ static inline void shrink_packet(struct ff_packet *packet, int packet_length)
 	}
 }
 
+static bool handle_reset_packet(struct ff_decoder *decoder,
+		struct ff_packet *packet)
+{
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
+	decoder->clock = packet->clock;
+	av_free_packet(&packet->base);
+
+	// not a real packet, so try to get another packet
+	if (packet_queue_get(&decoder->packet_queue, packet, 1)
+			== FF_PACKET_FAIL)
+		return false;
+
+	return true;
+}
+
 static int decode_frame(struct ff_decoder *decoder,
 	struct ff_packet *packet, AVFrame *frame, bool *frame_complete)
 {
@@ -86,6 +102,11 @@ static int decode_frame(struct ff_decoder *decoder,
 				return -1;
 			}
 		}
+
+		// Packet has a new clock (reset packet)
+		if (packet->clock != NULL)
+			if (!handle_reset_packet(decoder, packet))
+				return -1;
 	}
 }
 
@@ -113,6 +134,7 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		av_frame_free(&queue_frame->frame);
 
 	queue_frame->frame = av_frame_clone(frame);
+	queue_frame->clock = ff_clock_retain(decoder->clock);
 
 	if (call_initialize)
 		ff_callbacks_frame_initialize(queue_frame, decoder->callbacks);
@@ -153,6 +175,9 @@ void *ff_audio_decoder_thread(void *opaque_audio_decoder)
 
 		av_free_packet(&packet.base);
 	}
+
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
 	return NULL;
