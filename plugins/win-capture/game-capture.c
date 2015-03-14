@@ -1156,23 +1156,22 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 	if (!gc->texture)
 		return;
 
-	effect = obs_get_default_effect();
+	effect = gc->config.allow_transparency ?
+		obs_get_default_effect() : obs_get_opaque_effect();
 
 	while (gs_effect_loop(effect, "Draw")) {
-		if (!gc->config.allow_transparency) {
-			gs_enable_blending(false);
-			gs_enable_color(true, true, true, false);
-		}
-
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
 				gc->global_hook_info->flip);
 
-		if (!gc->config.allow_transparency) {
-			gs_enable_blending(true);
-			gs_enable_color(true, true, true, true);
+		if (gc->config.allow_transparency && gc->config.cursor) {
+			game_capture_render_cursor(gc);
 		}
+	}
 
-		if (gc->config.cursor) {
+	if (!gc->config.allow_transparency && gc->config.cursor) {
+		effect = obs_get_default_effect();
+
+		while (gs_effect_loop(effect, "Draw")) {
 			game_capture_render_cursor(gc);
 		}
 	}

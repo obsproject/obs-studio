@@ -15,8 +15,6 @@ struct monitor_capture {
 	bool              compatibility;
 
 	struct dc_capture data;
-
-	gs_effect_t       *opaque_effect;
 };
 
 struct monitor_info {
@@ -100,10 +98,7 @@ static void monitor_capture_destroy(void *data)
 	struct monitor_capture *capture = data;
 
 	obs_enter_graphics();
-
 	dc_capture_free(&capture->data);
-	gs_effect_destroy(capture->opaque_effect);
-
 	obs_leave_graphics();
 
 	bfree(capture);
@@ -125,13 +120,8 @@ static void monitor_capture_update(void *data, obs_data_t *settings)
 static void *monitor_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct monitor_capture *capture;
-	gs_effect_t *opaque_effect = create_opaque_effect();
-
-	if (!opaque_effect)
-		return NULL;
 
 	capture = bzalloc(sizeof(struct monitor_capture));
-	capture->opaque_effect = opaque_effect;
 	capture->source = source;
 
 	update_settings(capture, settings);
@@ -156,7 +146,7 @@ static void monitor_capture_tick(void *data, float seconds)
 static void monitor_capture_render(void *data, gs_effect_t *effect)
 {
 	struct monitor_capture *capture = data;
-	dc_capture_render(&capture->data, capture->opaque_effect);
+	dc_capture_render(&capture->data, obs_get_opaque_effect());
 
 	UNUSED_PARAMETER(effect);
 }

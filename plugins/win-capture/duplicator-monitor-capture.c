@@ -194,14 +194,11 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 	if (!texture)
 		return;
 
-	effect = obs_get_default_effect();
+	effect = obs_get_opaque_effect();
 
 	rot = capture->rot;
 
 	while (gs_effect_loop(effect, "Draw")) {
-		gs_enable_blending(false);
-		gs_enable_color(true, true, true, false);
-
 		if (rot != 0) {
 			float x = 0.0f;
 			float y = 0.0f;
@@ -228,12 +225,14 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 
 		if (rot != 0)
 			gs_matrix_pop();
+	}
 
-		gs_enable_blending(true);
-		gs_enable_color(true, true, true, true);
+	if (capture->capture_cursor) {
+		effect = obs_get_default_effect();
 
-		if (capture->capture_cursor)
+		while (gs_effect_loop(effect, "Draw")) {
 			draw_cursor(capture);
+		}
 	}
 }
 

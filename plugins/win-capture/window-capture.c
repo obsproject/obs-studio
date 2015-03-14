@@ -27,8 +27,6 @@ struct window_capture {
 
 	float                resize_timer;
 
-	gs_effect_t          *opaque_effect;
-
 	HWND                 window;
 	RECT                 last_rect;
 };
@@ -58,14 +56,8 @@ static const char *wc_getname(void)
 
 static void *wc_create(obs_data_t *settings, obs_source_t *source)
 {
-	struct window_capture *wc;
-	gs_effect_t *opaque_effect = create_opaque_effect();
-	if (!opaque_effect)
-		return NULL;
-
-	wc                = bzalloc(sizeof(struct window_capture));
-	wc->source        = source;
-	wc->opaque_effect = opaque_effect;
+	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
+	wc->source = source;
 
 	update_settings(wc, settings);
 	return wc;
@@ -76,15 +68,13 @@ static void wc_destroy(void *data)
 	struct window_capture *wc = data;
 
 	if (wc) {
+		obs_enter_graphics();
 		dc_capture_free(&wc->capture);
+		obs_leave_graphics();
 
 		bfree(wc->title);
 		bfree(wc->class);
 		bfree(wc->executable);
-
-		obs_enter_graphics();
-		gs_effect_destroy(wc->opaque_effect);
-		obs_leave_graphics();
 
 		bfree(wc);
 	}
@@ -198,7 +188,7 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
-	dc_capture_render(&wc->capture, wc->opaque_effect);
+	dc_capture_render(&wc->capture, obs_get_opaque_effect());
 
 	UNUSED_PARAMETER(effect);
 }

@@ -106,14 +106,17 @@ void xcursor_render(xcursor_t *data) {
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, data->tex);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	gs_enable_color(true, true, true, false);
+
 	gs_matrix_push();
 	gs_matrix_translate3f(data->render_x, data->render_y, 0.0f);
-
-	gs_enable_blending(True);
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	gs_draw_sprite(data->tex, 0, 0, 0);
-
 	gs_matrix_pop();
+
+	gs_enable_color(true, true, true, true);
+	gs_blend_state_pop();
 }
 
 void xcursor_offset(xcursor_t* data, int_fast32_t x_org, int_fast32_t y_org)
