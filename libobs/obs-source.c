@@ -2551,8 +2551,8 @@ void obs_source_enum_filters(obs_source_t *source,
 
 	pthread_mutex_lock(&source->filter_mutex);
 
-	for (size_t i = 0; i < source->filters.num; i++) {
-		struct obs_source *filter = source->filters.array[i];
+	for (size_t i = source->filters.num; i > 0; i--) {
+		struct obs_source *filter = source->filters.array[i - 1];
 		callback(source, filter, param);
 	}
 

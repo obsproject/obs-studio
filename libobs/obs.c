@@ -1370,8 +1370,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	pthread_mutex_lock(&source->filter_mutex);
 
 	if (source->filters.num) {
-		for (size_t i = 0; i < source->filters.num; i++) {
-			obs_source_t *filter = source->filters.array[i];
+		for (size_t i = source->filters.num; i > 0; i--) {
+			obs_source_t *filter = source->filters.array[i - 1];
 			obs_data_t *filter_data = obs_save_source(filter);
 			obs_data_array_push_back(filters, filter_data);
 			obs_data_release(filter_data);
