@@ -87,6 +87,7 @@ static const char *source_signals[] = {
 	"void audio_mixers(ptr source, in out int mixers)",
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
+	"void reorder_filters(ptr source)",
 	NULL
 };
 
@@ -1388,6 +1389,8 @@ void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
 
 		source->filters.array[i]->filter_target = next_filter;
 	}
+
+	obs_source_dosignal(source, NULL, "reorder_filters");
 }
 
 obs_data_t *obs_source_get_settings(const obs_source_t *source)
