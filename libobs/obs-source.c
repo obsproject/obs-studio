@@ -1384,7 +1384,8 @@ void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
 	/* reorder filter targets, not the nicest way of dealing with things */
 	for (i = 0; i < source->filters.num; i++) {
 		obs_source_t *next_filter = (i == source->filters.num-1) ?
-			source : source->filters.array[idx+1];
+			source : source->filters.array[i + 1];
+
 		source->filters.array[i]->filter_target = next_filter;
 	}
 }
