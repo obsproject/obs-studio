@@ -229,6 +229,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		bfree(filename);
 	}
 
+	filename = find_libobs_data_file("opaque.effect");
+	video->opaque_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	filename = find_libobs_data_file("solid.effect");
 	video->solid_effect = gs_effect_create_from_file(filename,
 			NULL);
@@ -255,6 +260,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 		if (!video->default_rect_effect)
 			success = false;
 	}
+	if (!video->opaque_effect)
+		success = false;
 	if (!video->solid_effect)
 		success = false;
 	if (!video->conversion_effect)
@@ -411,6 +418,7 @@ static void obs_free_graphics(void)
 
 		gs_effect_destroy(video->default_effect);
 		gs_effect_destroy(video->default_rect_effect);
+		gs_effect_destroy(video->opaque_effect);
 		gs_effect_destroy(video->solid_effect);
 		gs_effect_destroy(video->conversion_effect);
 		gs_effect_destroy(video->bicubic_effect);
@@ -1163,6 +1171,12 @@ gs_effect_t *obs_get_default_rect_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.default_rect_effect;
+}
+
+gs_effect_t *obs_get_opaque_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.opaque_effect;
 }
 
 gs_effect_t *obs_get_solid_effect(void)
