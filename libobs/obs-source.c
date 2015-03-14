@@ -1349,48 +1349,60 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 	obs_source_release(filter);
 }
 
-void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
-		enum obs_order_movement movement)
+static bool move_filter_dir(obs_source_t *source,
+		obs_source_t *filter, enum obs_order_movement movement)
 {
-	size_t idx, i;
-
-	if (!source || !filter)
-		return;
+	size_t idx;
 
 	idx = da_find(source->filters, &filter, 0);
 	if (idx == DARRAY_INVALID)
-		return;
+		return false;
 
 	if (movement == OBS_ORDER_MOVE_UP) {
 		if (idx == source->filters.num-1)
-			return;
+			return false;
 		da_move_item(source->filters, idx, idx+1);
 
 	} else if (movement == OBS_ORDER_MOVE_DOWN) {
 		if (idx == 0)
-			return;
+			return false;
 		da_move_item(source->filters, idx, idx-1);
 
 	} else if (movement == OBS_ORDER_MOVE_TOP) {
 		if (idx == source->filters.num-1)
-			return;
+			return false;
 		da_move_item(source->filters, idx, source->filters.num-1);
 
 	} else if (movement == OBS_ORDER_MOVE_BOTTOM) {
 		if (idx == 0)
-			return;
+			return false;
 		da_move_item(source->filters, idx, 0);
 	}
 
 	/* reorder filter targets, not the nicest way of dealing with things */
-	for (i = 0; i < source->filters.num; i++) {
+	for (size_t i = 0; i < source->filters.num; i++) {
 		obs_source_t *next_filter = (i == source->filters.num-1) ?
 			source : source->filters.array[i + 1];
 
 		source->filters.array[i]->filter_target = next_filter;
 	}
 
-	obs_source_dosignal(source, NULL, "reorder_filters");
+	return true;
+}
+
+void obs_source_filter_set_order(obs_source_t *source, obs_source_t *filter,
+		enum obs_order_movement movement)
+{
+	bool success;
+	if (!source || !filter)
+		return;
+
+	pthread_mutex_lock(&source->filter_mutex);
+	success = move_filter_dir(source, filter, movement);
+	pthread_mutex_unlock(&source->filter_mutex);
+
+	if (success)
+		obs_source_dosignal(source, NULL, "reorder_filters");
 }
 
 obs_data_t *obs_source_get_settings(const obs_source_t *source)
