@@ -1292,15 +1292,11 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 
 	obs_source_addref(filter);
 
-	if (source->filters.num) {
-		obs_source_t **back = da_end(source->filters);
-		(*back)->filter_target = filter;
-	}
-
 	filter->filter_parent = source;
-	filter->filter_target = source;
+	filter->filter_target = !source->filters.num ?
+		source : source->filters.array[0];
 
-	da_push_back(source->filters, &filter);
+	da_insert(source->filters, 0, &filter);
 
 	pthread_mutex_unlock(&source->filter_mutex);
 
