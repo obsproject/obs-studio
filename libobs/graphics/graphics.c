@@ -213,6 +213,7 @@ void gs_destroy(graphics_t *graphics)
 	pthread_mutex_destroy(&graphics->effect_mutex);
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
+	da_free(graphics->blend_state_stack);
 	if (graphics->module)
 		os_dlclose(graphics->module);
 	bfree(graphics);
@@ -1000,6 +1001,31 @@ void gs_perspective(float angle, float aspect, float near, float far)
 
 	graphics->exports.device_frustum(graphics->device, xmin, xmax,
 			ymin, ymax, near, far);
+}
+
+void gs_blend_state_push(void)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!graphics) return;
+
+	da_push_back(graphics->blend_state_stack, &graphics->cur_blend_state);
+}
+
+void gs_blend_state_pop(void)
+{
+	graphics_t *graphics = thread_graphics;
+	struct blend_state *state;
+
+	if (!graphics) return;
+
+	state = da_end(graphics->blend_state_stack);
+	if (!state)
+		return;
+
+	gs_enable_blending(state->enabled);
+	gs_blend_function(state->src, state->dest);
+
+	da_pop_back(graphics->blend_state_stack);
 }
 
 void gs_reset_blend_state(void)

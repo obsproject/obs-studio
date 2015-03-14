@@ -292,4 +292,5 @@ struct graphics_subsystem {
 	volatile long          ref;
 
 	struct blend_state     cur_blend_state;
+	DARRAY(struct blend_state) blend_state_stack;
 };
