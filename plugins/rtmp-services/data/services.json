@@ -227,16 +227,8 @@
         "name": "GoodGame.ru",
         "servers": [
             {
-                "name": "Moscow M9",
-                "url": "rtmp://stream.goodgame.ru:1940/live"
-            },
-            {
-                "name": "Moscow M10",
-                "url": "rtmp://stream2.goodgame.ru:1940/live"
-            },
-            {
-                "name": "Saint-Petersburg",
-                "url": "rtmp://spb1.goodgame.ru:1940/live"
+                "name": "Моscow",
+                "url": "rtmp://msk.goodgame.ru:1940/live"
             }
         ]
     },
