@@ -244,6 +244,9 @@ static inline void obs_source_frame_decref(struct obs_source_frame *frame)
 		obs_source_frame_destroy(frame);
 }
 
+static bool obs_source_filter_remove_refless(obs_source_t *source,
+		obs_source_t *filter);
+
 void obs_source_destroy(struct obs_source *source)
 {
 	size_t i;
@@ -253,6 +256,12 @@ void obs_source_destroy(struct obs_source *source)
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		os_atomic_dec_long(&obs->data.active_transitions);
+
+	if (source->filter_parent)
+		obs_source_filter_remove_refless(source->filter_parent, source);
+
+	while (source->filters.num)
+		obs_source_filter_remove(source, source->filters.array[0]);
 
 	obs_context_data_remove(&source->context);
 
@@ -264,12 +273,6 @@ void obs_source_destroy(struct obs_source *source)
 		source->info.destroy(source->context.data);
 		source->context.data = NULL;
 	}
-
-	if (source->filter_parent)
-		obs_source_filter_remove(source->filter_parent, source);
-
-	while (source->filters.num)
-		obs_source_filter_remove(source, source->filters.array[0]);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
@@ -1327,19 +1330,20 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_free(&cd);
 }
 
-void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
+static bool obs_source_filter_remove_refless(obs_source_t *source,
+		obs_source_t *filter)
 {
 	struct calldata cd = {0};
 	size_t idx;
 
 	if (!source || !filter)
-		return;
+		return false;
 
 	pthread_mutex_lock(&source->filter_mutex);
 
 	idx = da_find(source->filters, &filter, 0);
 	if (idx == DARRAY_INVALID)
-		return;
+		return false;
 
 	if (idx > 0) {
 		obs_source_t *prev = source->filters.array[idx-1];
@@ -1363,8 +1367,13 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 
 	filter->filter_parent = NULL;
 	filter->filter_target = NULL;
+	return true;
+}
 
-	obs_source_release(filter);
+void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
+{
+	if (obs_source_filter_remove_refless(source, filter))
+		obs_source_release(filter);
 }
 
 static bool move_filter_dir(obs_source_t *source,
