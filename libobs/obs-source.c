@@ -78,6 +78,7 @@ static const char *source_signals[] = {
 	"void deactivate(ptr source)",
 	"void show(ptr source)",
 	"void hide(ptr source)",
+	"void enable(ptr source, bool enabled)",
 	"void rename(ptr source, string new_name, string prev_name)",
 	"void volume(ptr source, in out float volume)",
 	"void update_properties(ptr source)",
@@ -202,6 +203,7 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	obs_source_dosignal(source, "source_create", NULL);
 
 	source->flags = source->default_flags;
+	source->enabled = true;
 
 	/* prevents the source from clearing the cache on the first frame */
 	source->async_reset_texture = true;
@@ -727,6 +729,9 @@ static void source_output_audio_line(obs_source_t *source,
 		source->present_volume * obs->audio.user_volume *
 		obs->audio.present_volume;
 
+	if (!source->enabled)
+		in.volume = 0.0f;
+
 	audio_line_output(source->audio_line, &in);
 	source_signal_audio_data(source, &in);
 }
@@ -1163,9 +1168,17 @@ static inline void obs_source_main_render(obs_source_t *source)
 				custom_draw ? NULL : gs_get_effect());
 }
 
+static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
+
 void obs_source_video_render(obs_source_t *source)
 {
 	if (!source_valid(source)) return;
+
+	if (!source->enabled) {
+		if (source->filter_parent)
+			obs_source_skip_video_filter(source);
+		return;
+	}
 
 	if (source->filters.num && !source->rendering_filter)
 		obs_source_render_filters(source);
@@ -1182,7 +1195,9 @@ void obs_source_video_render(obs_source_t *source)
 
 static uint32_t get_base_width(const obs_source_t *source)
 {
-	if (source->info.get_width) {
+	bool is_filter = (source->info.type == OBS_SOURCE_TYPE_FILTER);
+
+	if (source->info.get_width && (!is_filter || source->enabled)) {
 		return source->info.get_width(source->context.data);
 
 	} else if (source->info.type == OBS_SOURCE_TYPE_FILTER) {
@@ -1194,10 +1209,12 @@ static uint32_t get_base_width(const obs_source_t *source)
 
 static uint32_t get_base_height(const obs_source_t *source)
 {
-	if (source->info.get_height) {
+	bool is_filter = (source->info.type == OBS_SOURCE_TYPE_FILTER);
+
+	if (source->info.get_height && (!is_filter || source->enabled)) {
 		return source->info.get_height(source->context.data);
 
-	} else if (source->info.type == OBS_SOURCE_TYPE_FILTER) {
+	} else if (is_filter) {
 		return get_base_height(source->filter_target);
 	}
 
@@ -1420,6 +1437,9 @@ static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
 
+		if (!filter->enabled)
+			continue;
+
 		if (filter->context.data && filter->info.filter_video) {
 			in = filter->info.filter_video(filter->context.data,
 					in);
@@ -1556,11 +1576,11 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 	return new_frame;
 }
 
-static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
-
 static inline void cycle_frames(struct obs_source *source)
 {
-	if (source->async_frames.num && !source->activate_refs)
+	bool not_currently_visible = !source->show_refs || !source->enabled;
+
+	if (source->async_frames.num && not_currently_visible)
 		ready_async_frame(source, os_gettime_ns());
 }
 
@@ -1606,6 +1626,9 @@ static inline struct obs_audio_data *filter_async_audio(obs_source_t *source,
 	size_t i;
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
+
+		if (!filter->enabled)
+			continue;
 
 		if (filter->context.data && filter->info.filter_audio) {
 			in = filter->info.filter_audio(filter->context.data,
@@ -2581,4 +2604,26 @@ obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 	pthread_mutex_unlock(&source->filter_mutex);
 
 	return filter;
+}
+
+bool obs_source_enabled(const obs_source_t *source)
+{
+	return source ? source->enabled : false;
+}
+
+void obs_source_set_enabled(obs_source_t *source, bool enabled)
+{
+	struct calldata data = {0};
+
+	if (!source)
+		return;
+
+	source->enabled = enabled;
+
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_bool(&data, "enabled", enabled);
+
+	signal_handler_signal(source->context.signals, "enable", &data);
+
+	calldata_free(&data);
 }

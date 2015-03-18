@@ -309,6 +309,9 @@ struct obs_source {
 	bool                            active;
 	bool                            showing;
 
+	/* used to temporarily disable sources if needed */
+	bool                            enabled;
+
 	/* timing (if video is present, is based upon video) */
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;

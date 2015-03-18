@@ -1287,6 +1287,10 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	flags = (uint32_t)obs_data_get_int(source_data, "flags");
 	obs_source_set_flags(source, flags);
 
+	obs_data_set_default_bool(source_data, "enabled", true);
+	obs_source_set_enabled(source,
+			obs_data_get_bool(source_data, "enabled"));
+
 	if (filters) {
 		size_t count = obs_data_array_count(filters);
 
@@ -1356,6 +1360,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	uint32_t   flags       = obs_source_get_flags(source);
 	const char *name       = obs_source_get_name(source);
 	const char *id         = obs_source_get_id(source);
+	bool       enabled     = obs_source_enabled(source);
 
 	obs_source_save(source);
 
@@ -1366,6 +1371,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int   (source_data, "sync",     sync);
 	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);
+	obs_data_set_bool  (source_data, "enabled",  enabled);
 
 	pthread_mutex_lock(&source->filter_mutex);
 
