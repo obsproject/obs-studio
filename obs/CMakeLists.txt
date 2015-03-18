@@ -104,6 +104,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-remux.cpp
 	properties-view.cpp
+	double-slider.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
 	vertical-scroll-area.cpp
@@ -131,6 +132,7 @@ set(obs_HEADERS
 	window-remux.hpp
 	properties-view.hpp
 	display-helpers.hpp
+	double-slider.hpp
 	volume-control.hpp
 	adv-audio-control.hpp
 	vertical-scroll-area.hpp
