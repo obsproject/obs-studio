@@ -692,6 +692,15 @@ OBSBasic::~OBSBasic()
 	gs_vertexbuffer_destroy(circle);
 	obs_leave_graphics();
 
+	/* When shutting down, sometimes source references can get in to the
+	 * event queue, and if we don't forcibly process those events they
+	 * won't get processed until after obs_shutdown has been called.  I
+	 * really wish there were a more elegant way to deal with this via C++,
+	 * but Qt doesn't use C++ in a normal way, so you can't really rely on
+	 * normal C++ behavior for your data to be freed in the order that you
+	 * expect or want it to. */
+	QApplication::sendPostedEvents(this);
+
 	obs_shutdown();
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
