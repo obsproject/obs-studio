@@ -109,6 +109,7 @@ set(obs_SOURCES
 	adv-audio-control.cpp
 	visibility-checkbox.cpp
 	vertical-scroll-area.cpp
+	visibility-item-widget.cpp
 	source-list-widget.cpp
 	crash-report.cpp
 	qt-wrappers.cpp)
@@ -139,6 +140,7 @@ set(obs_HEADERS
 	adv-audio-control.hpp
 	visibility-checkbox.hpp
 	vertical-scroll-area.hpp
+	visibility-item-widget.hpp
 	source-list-widget.hpp
 	qt-display.hpp
 	crash-report.hpp
