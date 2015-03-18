@@ -61,6 +61,11 @@ QMenuBar::item {
     background-color: rgb(58,57,58); /* dark */
 }
 
+QListWidget::item:selected:!active {
+    color: rgb(255, 255, 255);
+    background-color: rgb(48,47,48);
+}
+
 
 /* Group Box */
 
