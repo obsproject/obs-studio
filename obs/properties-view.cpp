@@ -6,6 +6,7 @@
 #include <QFontDialog>
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QSlider>
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QPushButton>
@@ -13,6 +14,7 @@
 #include <QFileDialog>
 #include <QColorDialog>
 #include <QPlainTextEdit>
+#include "double-slider.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "obs-app.hpp"
@@ -226,32 +228,92 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 	layout->addRow(*label, subLayout);
 }
 
-QWidget *OBSPropertiesView::AddInt(obs_property_t *prop)
+void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
+		QLabel **label)
 {
+	obs_number_type type = obs_property_int_type(prop);
+	QLayout *subLayout = new QHBoxLayout();
+
 	const char *name = obs_property_name(prop);
 	int        val   = (int)obs_data_get_int(settings, name);
 	QSpinBox   *spin = new QSpinBox();
 
-	spin->setMinimum(obs_property_int_min(prop));
-	spin->setMaximum(obs_property_int_max(prop));
-	spin->setSingleStep(obs_property_int_step(prop));
+	int minVal = obs_property_int_min(prop);
+	int maxVal = obs_property_int_max(prop);
+	int stepVal = obs_property_int_step(prop);
+
+	spin->setMinimum(minVal);
+	spin->setMaximum(maxVal);
+	spin->setSingleStep(stepVal);
 	spin->setValue(val);
 
-	return NewWidget(prop, spin, SIGNAL(valueChanged(int)));
+	WidgetInfo *info = new WidgetInfo(this, prop, spin);
+	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+
+	if (type == OBS_NUMBER_SLIDER) {
+		QSlider *slider = new QSlider();
+		slider->setMinimum(minVal);
+		slider->setMaximum(maxVal);
+		slider->setPageStep(stepVal);
+		slider->setValue(val);
+		slider->setOrientation(Qt::Horizontal);
+		subLayout->addWidget(slider);
+
+		connect(slider, SIGNAL(valueChanged(int)),
+				spin, SLOT(setValue(int)));
+		connect(spin, SIGNAL(valueChanged(int)),
+				slider, SLOT(setValue(int)));
+	}
+
+	connect(spin, SIGNAL(valueChanged(int)), info, SLOT(ControlChanged()));
+
+	subLayout->addWidget(spin);
+
+	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(*label, subLayout);
 }
 
-QWidget *OBSPropertiesView::AddFloat(obs_property_t *prop)
+void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
+		QLabel **label)
 {
+	obs_number_type type = obs_property_float_type(prop);
+	QLayout *subLayout = new QHBoxLayout();
+
 	const char     *name = obs_property_name(prop);
 	double         val   = obs_data_get_double(settings, name);
 	QDoubleSpinBox *spin = new QDoubleSpinBox();
 
-	spin->setMinimum(obs_property_float_min(prop));
-	spin->setMaximum(obs_property_float_max(prop));
-	spin->setSingleStep(obs_property_float_step(prop));
+	double minVal = obs_property_float_min(prop);
+	double maxVal = obs_property_float_max(prop);
+	double stepVal = obs_property_float_step(prop);
+
+	spin->setMinimum(minVal);
+	spin->setMaximum(maxVal);
+	spin->setSingleStep(stepVal);
 	spin->setValue(val);
 
-	return NewWidget(prop, spin, SIGNAL(valueChanged(double)));
+	WidgetInfo *info = new WidgetInfo(this, prop, spin);
+	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+
+	if (type == OBS_NUMBER_SLIDER) {
+		DoubleSlider *slider = new DoubleSlider();
+		slider->setDoubleConstraints(minVal, maxVal, stepVal, val);
+		slider->setOrientation(Qt::Horizontal);
+		subLayout->addWidget(slider);
+
+		connect(slider, SIGNAL(doubleValChanged(double)),
+				spin, SLOT(setValue(double)));
+		connect(spin, SIGNAL(valueChanged(double)),
+				slider, SLOT(setDoubleVal(double)));
+	}
+
+	connect(spin, SIGNAL(valueChanged(double)), info,
+			SLOT(ControlChanged()));
+
+	subLayout->addWidget(spin);
+
+	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(*label, subLayout);
 }
 
 static void AddComboItem(QComboBox *combo, obs_property_t *prop,
@@ -503,10 +565,10 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		widget = AddCheckbox(property);
 		break;
 	case OBS_PROPERTY_INT:
-		widget = AddInt(property);
+		AddInt(property, layout, &label);
 		break;
 	case OBS_PROPERTY_FLOAT:
-		widget = AddFloat(property);
+		AddFloat(property, layout, &label);
 		break;
 	case OBS_PROPERTY_TEXT:
 		widget = AddText(property);
