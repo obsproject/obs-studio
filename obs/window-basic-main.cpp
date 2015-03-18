@@ -653,15 +653,13 @@ void OBSBasic::OBSInit()
 	TimedCheckForUpdates();
 	loaded = true;
 
-	QTimer *timer = new QTimer(this);
-	connect(timer, SIGNAL(timeout()), this, SLOT(SaveProject()));
-	timer->start(20000);
+	saveTimer = new QTimer(this);
+	connect(saveTimer, SIGNAL(timeout()), this, SLOT(SaveProject()));
+	saveTimer->start(20000);
 }
 
 OBSBasic::~OBSBasic()
 {
-	SaveProject();
-
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
 	 * delicate nature of obs_shutdown needing to be freed before the UI
@@ -1659,6 +1657,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	// remove draw callback in case our drawable surfaces go away before
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
+
+	/* Delete the save timer so it doesn't trigger after this point while
+	 * the program data is being freed */
+	delete saveTimer;
+	SaveProject();
 }
 
 void OBSBasic::changeEvent(QEvent *event)

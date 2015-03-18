@@ -61,6 +61,8 @@ private:
 
 	bool loaded = false;
 
+	QPointer<QTimer> saveTimer;
+
 	QPointer<OBSBasicInteraction> interaction;
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
