@@ -683,10 +683,6 @@ OBSBasic::~OBSBasic()
 	if (advAudioWindow)
 		delete advAudioWindow;
 
-	ClearVolumeControls();
-	ui->sources->clear();
-	ui->scenes->clear();
-
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
 	gs_vertexbuffer_destroy(circle);
@@ -1671,6 +1667,13 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	 * the program data is being freed */
 	delete saveTimer;
 	SaveProject();
+
+	/* Clear the list boxes in ::closeEvent to ensure that we can process
+	 * any ->deleteLater events in this window created by Qt in relation to
+	 * their internal data */
+	ClearVolumeControls();
+	ui->sources->clear();
+	ui->scenes->clear();
 }
 
 void OBSBasic::changeEvent(QEvent *event)
