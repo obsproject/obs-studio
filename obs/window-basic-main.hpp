@@ -300,6 +300,7 @@ private slots:
 	void SceneItemNameEdited(QWidget *editor,
 			QAbstractItemDelegate::EndEditHint endHint);
 
+	void OpenSceneFilters();
 	void OpenFilters();
 
 public:

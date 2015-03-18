@@ -1823,6 +1823,9 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
+		popup.addSeparator();
+		popup.addAction(QTStr("Filters"), this,
+				SLOT(OpenSceneFilters()));
 	}
 
 	popup.exec(QCursor::pos());
@@ -2324,6 +2327,14 @@ void OBSBasic::OpenFilters()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_source(item);
+
+	CreateFiltersWindow(source);
+}
+
+void OBSBasic::OpenSceneFilters()
+{
+	OBSScene scene = GetCurrentScene();
+	OBSSource source = obs_scene_get_source(scene);
 
 	CreateFiltersWindow(source);
 }
