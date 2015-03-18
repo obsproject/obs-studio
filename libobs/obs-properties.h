@@ -78,6 +78,11 @@ enum obs_text_type {
 	OBS_TEXT_MULTILINE,
 };
 
+enum obs_number_type {
+	OBS_NUMBER_SCROLLER,
+	OBS_NUMBER_SLIDER
+};
+
 #define OBS_FONT_BOLD      (1<<0)
 #define OBS_FONT_ITALIC    (1<<1)
 #define OBS_FONT_UNDERLINE (1<<2)
@@ -132,6 +137,14 @@ EXPORT obs_property_t *obs_properties_add_int(obs_properties_t *props,
 		int min, int max, int step);
 
 EXPORT obs_property_t *obs_properties_add_float(obs_properties_t *props,
+		const char *name, const char *description,
+		double min, double max, double step);
+
+EXPORT obs_property_t *obs_properties_add_int_slider(obs_properties_t *props,
+		const char *name, const char *description,
+		int min, int max, int step);
+
+EXPORT obs_property_t *obs_properties_add_float_slider(obs_properties_t *props,
 		const char *name, const char *description,
 		double min, double max, double step);
 
@@ -216,9 +229,11 @@ EXPORT bool                   obs_property_next(obs_property_t **p);
 EXPORT int                    obs_property_int_min(obs_property_t *p);
 EXPORT int                    obs_property_int_max(obs_property_t *p);
 EXPORT int                    obs_property_int_step(obs_property_t *p);
+EXPORT enum obs_number_type   obs_property_int_type(obs_property_t *p);
 EXPORT double                 obs_property_float_min(obs_property_t *p);
 EXPORT double                 obs_property_float_max(obs_property_t *p);
 EXPORT double                 obs_property_float_step(obs_property_t *p);
+EXPORT enum obs_number_type   obs_property_float_type(obs_property_t *p);
 EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t *p);
 EXPORT enum obs_path_type     obs_property_path_type(obs_property_t *p);
 EXPORT const char *           obs_property_path_filter(obs_property_t *p);
