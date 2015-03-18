@@ -123,6 +123,10 @@
                 "url": "rtmp://live.lhr.hitbox.tv/push"
             },
             {
+                "name": "EU-South: Milan, Italia",
+                "url": "rtmp://live.mxp.hitbox.tv/push"
+            },
+            {
                 "name": "EU-Central: Nurnberg, Germany",
                 "url": "rtmp://live.nbg.hitbox.tv/push"
             },
