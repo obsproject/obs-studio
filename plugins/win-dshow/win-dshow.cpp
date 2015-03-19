@@ -943,6 +943,7 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
+	obs_data_set_default_bool(settings, "active", true);
 	obs_data_set_default_string(settings, COLOR_SPACE, "default");
 	obs_data_set_default_string(settings, COLOR_RANGE, "partial");
 }
@@ -1187,12 +1188,6 @@ static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p,
 		p = obs_properties_get(props, RES_TYPE);
 		ResTypeChanged(props, p, settings);
 		obs_data_set_string(settings, LAST_VIDEO_DEV_ID, id.c_str());
-
-		if (data->input) {
-			data->input->SetActive(false);
-			p = obs_properties_get(props, "activate");
-			obs_property_set_description(p, TEXT_ACTIVATE);
-		}
 	}
 
 	return true;
