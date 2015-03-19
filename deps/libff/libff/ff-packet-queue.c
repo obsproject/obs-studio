@@ -27,7 +27,7 @@ bool packet_queue_init(struct ff_packet_queue *q)
 		goto fail1;
 
 	av_init_packet(&q->flush_packet);
-	q->flush_packet.data = (unsigned char *) "FLUSH";
+	q->flush_packet.data = (uint8_t *)"FLUSH";
 
 	return true;
 
