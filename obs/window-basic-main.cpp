@@ -698,14 +698,17 @@ OBSBasic::~OBSBasic()
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
+
+	QRect lastGeom = normalGeometry();
+
 	config_set_int(App()->GlobalConfig(), "MainWindow", "cx",
-			this->width());
+			lastGeom.width());
 	config_set_int(App()->GlobalConfig(), "MainWindow", "cy",
-			this->height());
+			lastGeom.height());
 	config_set_int(App()->GlobalConfig(), "MainWindow", "posx",
-			this->pos().x());
+			lastGeom.x());
 	config_set_int(App()->GlobalConfig(), "MainWindow", "posy",
-			this->pos().y());
+			lastGeom.y());
 	config_save(App()->GlobalConfig());
 }
 
