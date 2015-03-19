@@ -50,6 +50,9 @@ void OBSPropertiesView::ReloadProperties()
 		obs_properties_apply_settings(properties.get(), settings);
 	}
 
+	uint32_t flags = obs_properties_get_flags(properties.get());
+	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
+
 	RefreshProperties();
 }
 
@@ -755,7 +758,7 @@ void WidgetInfo::ControlChanged()
 			return;
 	}
 
-	if (view->callback)
+	if (view->callback && !view->deferUpdate)
 		view->callback(view->obj, view->settings);
 
 	view->SignalChanged();

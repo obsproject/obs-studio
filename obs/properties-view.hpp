@@ -66,6 +66,7 @@ private:
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string                              lastFocused;
 	QWidget                                  *lastWidget = nullptr;
+	bool                                     deferUpdate;
 
 	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
 			const char *signal);
@@ -106,4 +107,7 @@ public:
 			int minSize = 0);
 
 	inline obs_data_t *GetSettings() const {return settings;}
+
+	inline void UpdateSettings() {callback(obj, settings);}
+	inline bool DeferUpdate() const {return deferUpdate;}
 };
