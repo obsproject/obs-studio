@@ -203,6 +203,16 @@ static bool coreaudio_init_format(struct coreaudio_data *ca)
 	if (!ca_success(stat, ca, "coreaudio_init_format", "get input format"))
 		return false;
 
+	/* Certain types of devices have no limit on channel count, and
+	 * there's no way to know the actual number of channels it's using,
+	 * so if we encounter this situation just force to stereo */
+        if (desc.mChannelsPerFrame > 8) {
+                desc.mChannelsPerFrame = 2;
+                desc.mBytesPerFrame = 2 * desc.mBitsPerChannel / 8;
+                desc.mBytesPerPacket =
+                        desc.mFramesPerPacket * desc.mBytesPerFrame;
+        }
+
 	stat = set_property(ca->unit, kAudioUnitProperty_StreamFormat,
 			SCOPE_OUTPUT, BUS_INPUT, &desc, size);
 	if (!ca_success(stat, ca, "coreaudio_init_format", "set output format"))
