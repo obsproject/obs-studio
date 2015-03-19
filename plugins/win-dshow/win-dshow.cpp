@@ -232,7 +232,7 @@ struct DShowInput {
 	void SetActive(bool active);
 	inline enum video_colorspace GetColorSpace(obs_data_t *settings) const;
 	inline enum video_range_type GetColorRange(obs_data_t *settings) const;
-	inline void Activate(obs_data_t *settings);
+	inline bool Activate(obs_data_t *settings);
 	inline void Deactivate();
 
 	inline void SetupBuffering(obs_data_t *settings);
@@ -288,7 +288,10 @@ void DShowInput::DShowLoop()
 			{
 				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
-				Activate(settings);
+				if (!Activate(settings)) {
+					obs_source_output_video(source,
+							nullptr);
+				}
 				obs_data_release(settings);
 				break;
 			}
@@ -863,15 +866,15 @@ inline enum video_range_type DShowInput::GetColorRange(
 		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 }
 
-inline void DShowInput::Activate(obs_data_t *settings)
+inline bool DShowInput::Activate(obs_data_t *settings)
 {
 	if (!device.ResetGraph())
-		return;
+		return false;
 
 	if (!UpdateVideoConfig(settings)) {
 		blog(LOG_WARNING, "%s: Video configuration failed",
 				obs_source_get_name(source));
-		return;
+		return false;
 	}
 
 	if (!UpdateAudioConfig(settings))
@@ -879,10 +882,10 @@ inline void DShowInput::Activate(obs_data_t *settings)
 		                  "audio", obs_source_get_name(source));
 
 	if (!device.ConnectFilters())
-		return;
+		return false;
 
 	if (device.Start() != Result::Success)
-		return;
+		return false;
 
 	enum video_colorspace cs = GetColorSpace(settings);
 
@@ -895,6 +898,8 @@ inline void DShowInput::Activate(obs_data_t *settings)
 		blog(LOG_ERROR, "Failed to get video format parameters for " \
 		                "video format %u", cs);
 	}
+
+	return true;
 }
 
 inline void DShowInput::Deactivate()
