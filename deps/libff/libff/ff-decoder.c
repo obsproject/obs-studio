@@ -245,9 +245,9 @@ bool ff_decoder_full(struct ff_decoder *decoder)
 	return (decoder->packet_queue.total_size > decoder->packet_queue_size);
 }
 
-bool ff_decoder_accept(struct ff_decoder *decoder, AVPacket *packet)
+bool ff_decoder_accept(struct ff_decoder *decoder, struct ff_packet *packet)
 {
-	if (decoder && packet->stream_index == decoder->stream->index) {
+	if (decoder && packet->base.stream_index == decoder->stream->index) {
 		packet_queue_put(&decoder->packet_queue, packet);
 		return true;
 	}

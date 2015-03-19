@@ -59,7 +59,7 @@ bool ff_decoder_start(struct ff_decoder *decoder);
 void ff_decoder_free(struct ff_decoder *decoder);
 
 bool ff_decoder_full(struct ff_decoder *decoder);
-bool ff_decoder_accept(struct ff_decoder *decoder, AVPacket *packet);
+bool ff_decoder_accept(struct ff_decoder *decoder, struct ff_packet *packet);
 
 double ff_decoder_clock(void *opaque);
 

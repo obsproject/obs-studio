@@ -68,7 +68,7 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 {
 	struct ff_decoder *decoder = (struct ff_decoder*)opaque_video_decoder;
 
-	AVPacket packet = {0};
+	struct ff_packet packet = {0};
 	int complete;
 	AVFrame *frame = av_frame_alloc();
 	int ret;
@@ -80,13 +80,13 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			break;
 		}
 
-		if (packet.data == decoder->packet_queue.flush_packet.data) {
+		if (packet.base.data == decoder->packet_queue.flush_packet.base.data) {
 			avcodec_flush_buffers(decoder->codec);
 			continue;
 		}
 
 		avcodec_decode_video2(decoder->codec, frame,
-				&complete, &packet);
+				&complete, &packet.base);
 
 		// Did we get an entire video frame?  This doesn't guarantee
 		// there is a picture to show for some codecs, but we still want
@@ -104,7 +104,7 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			av_frame_unref(frame);
 		}
 
-		av_free_packet(&packet);
+		av_free_packet(&packet.base);
 	}
 
 	av_frame_free(&frame);

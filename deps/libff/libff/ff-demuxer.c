@@ -448,7 +448,7 @@ static void *demux_thread(void *opaque)
 	struct ff_demuxer *demuxer = (struct ff_demuxer *) opaque;
 	int result;
 
-	AVPacket packet;
+	struct ff_packet packet = {0};
 
 	if (!open_input(demuxer, &demuxer->format_context))
 		goto fail;
@@ -469,7 +469,7 @@ static void *demux_thread(void *opaque)
 			continue;
 		}
 
-		result = av_read_frame(demuxer->format_context, &packet);
+		result = av_read_frame(demuxer->format_context, &packet.base);
 		if (result < 0) {
 			bool eof = false;
 			if (result == AVERROR_EOF) {
@@ -506,7 +506,7 @@ static void *demux_thread(void *opaque)
 		else if (ff_decoder_accept(demuxer->audio_decoder, &packet))
 			continue;
 		else
-			av_free_packet(&packet);
+			av_free_packet(&packet.base);
 	}
 	if (demuxer->audio_decoder != NULL)
 		demuxer->audio_decoder->eof = true;
