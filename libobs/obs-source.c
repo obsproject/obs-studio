@@ -1173,9 +1173,9 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
 
 void obs_source_video_render(obs_source_t *source)
 {
-	if (!source_valid(source)) return;
+	if (!source) return;
 
-	if (!source->enabled) {
+	if (!source->context.data || !source->enabled) {
 		if (source->filter_parent)
 			obs_source_skip_video_filter(source);
 		return;
