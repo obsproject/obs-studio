@@ -147,6 +147,10 @@
                 "url": "rtmp://live.den.hitbox.tv/push"
             },
             {
+                "name": "US-West: San Francisco",
+                "url": "rtmp://live.sfo.hitbox.tv/push"
+            },
+            {
                 "name": "US-West: Los Angeles",
                 "url": "rtmp://live.lax.hitbox.tv/push"
             },
