@@ -38,6 +38,9 @@
 extern "C" {
 #endif
 
+/** Only update when the user presses OK or Apply */
+#define OBS_PROPERTIES_DEFER_UPDATE            (1<<0)
+
 enum obs_property_type {
 	OBS_PROPERTY_INVALID,
 	OBS_PROPERTY_BOOL,
@@ -91,6 +94,9 @@ EXPORT obs_properties_t *obs_properties_create(void);
 EXPORT obs_properties_t *obs_properties_create_param(void *param,
 		void (*destroy)(void *param));
 EXPORT void obs_properties_destroy(obs_properties_t *props);
+
+EXPORT void obs_properties_set_flags(obs_properties_t *props, uint32_t flags);
+EXPORT uint32_t obs_properties_get_flags(obs_properties_t *props);
 
 EXPORT void obs_properties_set_param(obs_properties_t *props,
 		void *param, void (*destroy)(void *param));
