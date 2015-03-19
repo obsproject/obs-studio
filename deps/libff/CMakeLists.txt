@@ -17,6 +17,7 @@ set(libff_HEADERS
 	libff/ff-clock.h
 	libff/ff-frame.h
 	libff/ff-packet-queue.h
+	libff/ff-threading.h
 	libff/ff-timer.h
 	#
 	libff/ff-demuxer.h
@@ -35,6 +36,14 @@ set(libff_SOURCES
 	libff/ff-decoder.c
 	libff/ff-audio-decoder.c
 	libff/ff-video-decoder.c)
+
+if (WIN32)
+	list(APPEND libff_SOURCES
+		libff/ff-threading-windows.c)
+else(WIN32)
+	list(APPEND libff_SOURCES
+		libff/ff-threading-posix.c)
+endif(WIN32)
 
 add_library (libff STATIC
 	${libff_HEADERS}

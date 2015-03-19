@@ -78,12 +78,13 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 
 	switch(frame_cs) {
 	case AVCOL_SPC_BT709:       obs_cs = VIDEO_CS_709; break;
+	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_BT470BG:     obs_cs = VIDEO_CS_601; break;
 	case AVCOL_SPC_UNSPECIFIED: obs_cs = VIDEO_CS_DEFAULT; break;
 	default:
 		blog(LOG_WARNING, "frame using an unsupported colorspace %d",
 				frame_cs);
-		return false;
+		obs_cs = VIDEO_CS_DEFAULT;
 	}
 
 	enum video_range_type range;
@@ -266,8 +267,10 @@ static bool is_advanced_modified(obs_properties_t *props,
 	bool enabled = obs_data_get_bool(settings, "advanced");
 	obs_property_t *abuf = obs_properties_get(props, "audio_buffer_size");
 	obs_property_t *vbuf = obs_properties_get(props, "video_buffer_size");
+	obs_property_t *frame_drop = obs_properties_get(props, "frame_drop");
 	obs_property_set_visible(abuf, enabled);
 	obs_property_set_visible(vbuf, enabled);
+	obs_property_set_visible(frame_drop, enabled);
 
 	return true;
 }
@@ -277,6 +280,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
+
+	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
+
 	obs_property_t *prop;
 	// use this when obs allows non-readonly paths
 	prop = obs_properties_add_bool(props, "is_local_file",
@@ -314,6 +320,27 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	prop = obs_properties_add_int(props, "video_buffer_size",
 			obs_module_text("VideoBufferSize"), 1, 9999, 1);
+
+	obs_property_set_visible(prop, false);
+
+	prop = obs_properties_add_list(props, "frame_drop",
+			obs_module_text("FrameDropping"), OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_INT);
+
+	obs_property_list_add_int(prop, obs_module_text("DiscardNone"),
+			AVDISCARD_NONE);
+	obs_property_list_add_int(prop, obs_module_text("DiscardDefault"),
+			AVDISCARD_DEFAULT);
+	obs_property_list_add_int(prop, obs_module_text("DiscardNonRef"),
+			AVDISCARD_NONREF);
+	obs_property_list_add_int(prop, obs_module_text("DiscardBiDir"),
+			AVDISCARD_BIDIR);
+	obs_property_list_add_int(prop, obs_module_text("DiscardNonIntra"),
+			AVDISCARD_NONINTRA);
+	obs_property_list_add_int(prop, obs_module_text("DiscardNonKey"),
+			AVDISCARD_NONKEY);
+	obs_property_list_add_int(prop, obs_module_text("DiscardAll"),
+			AVDISCARD_ALL);
 
 	obs_property_set_visible(prop, false);
 
@@ -357,6 +384,10 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 				"audio_buffer_size");
 		int video_buffer_size = (int)obs_data_get_int(settings,
 				"video_buffer_size");
+		enum AVDiscard frame_drop =
+				(enum AVDiscard)obs_data_get_int(settings,
+					"frame_drop");
+
 		if (audio_buffer_size < 1) {
 			audio_buffer_size = 1;
 			blog(LOG_WARNING, "invalid audio_buffer_size %d",
@@ -369,6 +400,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		}
 		s->demuxer->options.audio_frame_queue_size = audio_buffer_size;
 		s->demuxer->options.video_frame_queue_size = video_buffer_size;
+
+		if (frame_drop < AVDISCARD_NONE || frame_drop > AVDISCARD_ALL) {
+			frame_drop = AVDISCARD_NONE;
+			blog(LOG_WARNING, "invalid frame_drop %d", frame_drop);
+		}
+		s->demuxer->options.frame_drop = frame_drop;
 	}
 
 	ff_demuxer_set_callbacks(&s->demuxer->video_callbacks,

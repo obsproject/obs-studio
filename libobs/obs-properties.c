@@ -105,6 +105,7 @@ struct obs_property {
 struct obs_properties {
 	void                    *param;
 	void                    (*destroy)(void *param);
+	uint32_t                flags;
 
 	struct obs_property     *first_property;
 	struct obs_property     **last;
@@ -129,6 +130,17 @@ void obs_properties_set_param(obs_properties_t *props,
 
 	props->param   = param;
 	props->destroy = destroy;
+}
+
+void obs_properties_set_flags(obs_properties_t *props, uint32_t flags)
+{
+	if (props)
+		props->flags = flags;
+}
+
+uint32_t obs_properties_get_flags(obs_properties_t *props)
+{
+	return props ? props->flags : 0;
 }
 
 void *obs_properties_get_param(obs_properties_t *props)

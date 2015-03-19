@@ -53,6 +53,7 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		av_frame_free(&queue_frame->frame);
 
 	queue_frame->frame = av_frame_clone(frame);
+	queue_frame->clock = ff_clock_retain(decoder->clock);
 
 	if (call_initialize)
 		ff_callbacks_frame_initialize(queue_frame, decoder->callbacks);
@@ -68,10 +69,11 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 {
 	struct ff_decoder *decoder = (struct ff_decoder*)opaque_video_decoder;
 
-	AVPacket packet = {0};
+	struct ff_packet packet = {0};
 	int complete;
 	AVFrame *frame = av_frame_alloc();
 	int ret;
+	bool key_frame;
 
 	while (!decoder->abort) {
 		ret = packet_queue_get(&decoder->packet_queue, &packet, 1);
@@ -80,19 +82,41 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			break;
 		}
 
-		if (packet.data == decoder->packet_queue.flush_packet.data) {
+		if (packet.base.data == decoder->packet_queue.flush_packet.base.data) {
 			avcodec_flush_buffers(decoder->codec);
 			continue;
 		}
 
+		// We received a reset packet with a new clock
+		if (packet.clock != NULL) {
+			if (decoder->clock != NULL)
+				ff_clock_release(&decoder->clock);
+			decoder->clock = ff_clock_move(&packet.clock);
+			av_free_packet(&packet.base);
+			continue;
+		}
+
+		int64_t start_time = ff_clock_start_time(decoder->clock);
+		key_frame = packet.base.flags & AV_PKT_FLAG_KEY;
+
+		// We can only make decisions on keyframes for
+		// hw decoders (maybe just OSX?)
+		// For now, always make drop decisions on keyframes
+		bool frame_drop_check = key_frame;
+		// Must have a proper packet pts to drop frames here
+		frame_drop_check &= start_time != AV_NOPTS_VALUE;
+
+		if (frame_drop_check)
+			ff_decoder_set_frame_drop_state(decoder,
+					start_time, packet.base.pts);
+
 		avcodec_decode_video2(decoder->codec, frame,
-				&complete, &packet);
+				&complete, &packet.base);
 
 		// Did we get an entire video frame?  This doesn't guarantee
 		// there is a picture to show for some codecs, but we still want
 		// to adjust our various internal clocks for the next frame
 		if (complete) {
-
 			// If we don't have a good PTS, try to guess based
 			// on last received PTS provided plus prediction
 			// This function returns a pts scaled to stream
@@ -104,8 +128,11 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 			av_frame_unref(frame);
 		}
 
-		av_free_packet(&packet);
+		av_free_packet(&packet.base);
 	}
+
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
 	return NULL;

@@ -27,6 +27,7 @@ static void *timer_thread(void *opaque)
 	int ret;
 
 	while (true) {
+		bool callback = false;
 		pthread_mutex_lock(&timer->mutex);
 
 		if (timer->abort) {
@@ -36,20 +37,18 @@ static void *timer_thread(void *opaque)
 
 		uint64_t current_time = av_gettime();
 		if (current_time < timer->next_wake) {
-			int64_t sleep_time_us = timer->next_wake - current_time;
-
-			struct timespec sleep_time;
-			sleep_time.tv_sec =
-					(long)sleep_time_us / AV_TIME_BASE;
-			sleep_time.tv_nsec =
-					(long)(sleep_time_us % AV_TIME_BASE)
-							* 1000;
+			struct timespec sleep_time = {
+				.tv_sec = timer->next_wake / AV_TIME_BASE,
+				.tv_nsec = (timer->next_wake % AV_TIME_BASE)
+						* 1000
+			};
 
 			ret = pthread_cond_timedwait(&timer->cond,
 					&timer->mutex, &sleep_time);
-			if (ret != 0) {
+			if (ret != ETIMEDOUT) {
 				// failed to wait, just sleep
-				av_usleep((unsigned)sleep_time_us);
+				av_usleep((unsigned)(timer->next_wake
+						- current_time));
 			}
 
 			// we can be woken up merely to set a sooner wake time
@@ -62,11 +61,14 @@ static void *timer_thread(void *opaque)
 		// we woke up for some reason
 		current_time = av_gettime();
 		if (timer->next_wake <= current_time || timer->needs_wake) {
-			timer->callback(timer->opaque);
+			callback = true;
 			timer->needs_wake = false;
 		}
 
 		pthread_mutex_unlock(&timer->mutex);
+
+		if (callback)
+			timer->callback(timer->opaque);
 	}
 
 	return NULL;
@@ -97,7 +99,11 @@ void ff_timer_free(struct ff_timer *timer)
 
 	assert(timer != NULL);
 
-	pthread_cancel(timer->timer_thread);
+	pthread_mutex_lock(&timer->mutex);
+	timer->abort = true;
+	pthread_cond_signal(&timer->cond);
+	pthread_mutex_unlock(&timer->mutex);
+
 	pthread_join(timer->timer_thread, &thread_result);
 
 	pthread_mutex_destroy(&timer->mutex);

@@ -40,7 +40,8 @@ struct ff_demuxer *ff_demuxer_init()
 	av_register_all();
 	avdevice_register_all();
 	avfilter_register_all();
-
+	avformat_network_init();
+	
 	demuxer = av_mallocz(sizeof(struct ff_demuxer));
 	if (demuxer == NULL)
 		return NULL;
@@ -183,7 +184,8 @@ enum AVPixelFormat get_hwaccel_format(struct AVCodecContext *s,
 }
 
 static bool initialize_decoder(struct ff_demuxer *demuxer,
-		AVCodecContext *codec_context, AVStream *stream)
+		AVCodecContext *codec_context, AVStream *stream,
+		bool hwaccel_decoder)
 {
 	switch (codec_context->codec_type) {
 	case AVMEDIA_TYPE_AUDIO:
@@ -192,10 +194,11 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.audio_packet_queue_size,
 				demuxer->options.audio_frame_queue_size);
 
+		demuxer->audio_decoder->hwaccel_decoder = hwaccel_decoder;
+		demuxer->audio_decoder->frame_drop =
+				demuxer->options.frame_drop;
 		demuxer->audio_decoder->natural_sync_clock =
 				AV_SYNC_AUDIO_MASTER;
-		demuxer->audio_decoder->clock = &demuxer->clock;
-
 		demuxer->audio_decoder->callbacks = &demuxer->audio_callbacks;
 
 		if (!ff_callbacks_format(&demuxer->audio_callbacks,
@@ -214,10 +217,11 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 				demuxer->options.video_packet_queue_size,
 				demuxer->options.video_frame_queue_size);
 
+		demuxer->video_decoder->hwaccel_decoder = hwaccel_decoder;
+		demuxer->video_decoder->frame_drop =
+				demuxer->options.frame_drop;
 		demuxer->video_decoder->natural_sync_clock =
 				AV_SYNC_VIDEO_MASTER;
-		demuxer->video_decoder->clock = &demuxer->clock;
-
 		demuxer->video_decoder->callbacks = &demuxer->video_callbacks;
 
 		if (!ff_callbacks_format(&demuxer->video_callbacks,
@@ -240,6 +244,7 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 	AVDictionary *options_dict = NULL;
 	int ret;
 
+	bool hwaccel_decoder = false;
 	codec_context = stream->codec;
 
 	// enable reference counted frames since we may have a buffer size
@@ -269,6 +274,7 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
                                                 codec_context->codec_id);
 				} else {
 					codec = codec_vda;
+					hwaccel_decoder = true;
 				}
 			}
 		}
@@ -290,7 +296,8 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 		}
 	}
 
-	return initialize_decoder(demuxer, codec_context, stream);
+	return initialize_decoder(demuxer, codec_context, stream,
+			hwaccel_decoder);
 }
 
 void ff_demuxer_flush(struct ff_demuxer *demuxer)
@@ -307,6 +314,27 @@ void ff_demuxer_flush(struct ff_demuxer *demuxer)
 		packet_queue_flush(&demuxer->audio_decoder->packet_queue);
 		packet_queue_put_flush_packet(
 				&demuxer->audio_decoder->packet_queue);
+	}
+}
+
+void ff_demuxer_reset(struct ff_demuxer *demuxer)
+{
+	struct ff_packet *packet = av_mallocz(sizeof(struct ff_packet));
+	struct ff_clock *clock = ff_clock_init();
+	clock->sync_type = demuxer->clock.sync_type;
+	clock->sync_clock = demuxer->clock.sync_clock;
+	clock->opaque = demuxer->clock.opaque;
+
+	packet->clock = clock;
+
+	if (demuxer->audio_decoder != NULL) {
+		packet_queue_put(&demuxer->audio_decoder->packet_queue, packet);
+		ff_clock_retain(clock);
+	}
+
+	if (demuxer->video_decoder != NULL) {
+		packet_queue_put(&demuxer->video_decoder->packet_queue, packet);
+		ff_clock_retain(clock);
 	}
 }
 
@@ -352,6 +380,19 @@ static bool find_and_initialize_stream_decoders(struct ff_demuxer *demuxer)
 
 		if (codec->codec_type == AVMEDIA_TYPE_AUDIO && !audio_stream)
 			audio_stream = format_context->streams[i];
+	}
+
+	int default_stream_index = av_find_default_stream_index(
+			demuxer->format_context);
+
+	if (default_stream_index >= 0) {
+		AVStream *stream =
+				format_context->streams[default_stream_index];
+
+		if (stream->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+			demuxer->clock.sync_type = AV_SYNC_AUDIO_MASTER;
+		else if (stream->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+			demuxer->clock.sync_type = AV_SYNC_VIDEO_MASTER;
 	}
 
 	if (video_stream != NULL)
@@ -427,6 +468,7 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 		} else {
 			if (demuxer->seek_flush)
 				ff_demuxer_flush(demuxer);
+			ff_demuxer_reset(demuxer);
 		}
 
 		demuxer->seek_request = false;
@@ -448,7 +490,7 @@ static void *demux_thread(void *opaque)
 	struct ff_demuxer *demuxer = (struct ff_demuxer *) opaque;
 	int result;
 
-	AVPacket packet;
+	struct ff_packet packet = {0};
 
 	if (!open_input(demuxer, &demuxer->format_context))
 		goto fail;
@@ -457,6 +499,8 @@ static void *demux_thread(void *opaque)
 
 	if (!find_and_initialize_stream_decoders(demuxer))
 		goto fail;
+
+	ff_demuxer_reset(demuxer);
 
 	while (!demuxer->abort) {
 		// failed to seek (looping?)
@@ -469,7 +513,7 @@ static void *demux_thread(void *opaque)
 			continue;
 		}
 
-		result = av_read_frame(demuxer->format_context, &packet);
+		result = av_read_frame(demuxer->format_context, &packet.base);
 		if (result < 0) {
 			bool eof = false;
 			if (result == AVERROR_EOF) {
@@ -506,7 +550,7 @@ static void *demux_thread(void *opaque)
 		else if (ff_decoder_accept(demuxer->audio_decoder, &packet))
 			continue;
 		else
-			av_free_packet(&packet);
+			av_free_packet(&packet.base);
 	}
 	if (demuxer->audio_decoder != NULL)
 		demuxer->audio_decoder->eof = true;

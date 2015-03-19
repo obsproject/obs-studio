@@ -43,6 +43,8 @@ struct ff_decoder {
 	double current_pts;        // pts of the most recently dispatched frame
 	int64_t current_pts_time;  // clock time when current_pts was set
 
+	bool hwaccel_decoder;
+	enum AVDiscard frame_drop;
 	struct ff_clock *clock;
 	enum ff_av_sync_type natural_sync_clock;
 
@@ -59,7 +61,7 @@ bool ff_decoder_start(struct ff_decoder *decoder);
 void ff_decoder_free(struct ff_decoder *decoder);
 
 bool ff_decoder_full(struct ff_decoder *decoder);
-bool ff_decoder_accept(struct ff_decoder *decoder, AVPacket *packet);
+bool ff_decoder_accept(struct ff_decoder *decoder, struct ff_packet *packet);
 
 double ff_decoder_clock(void *opaque);
 
@@ -68,3 +70,6 @@ void ff_decoder_refresh(void *opaque);
 
 double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 		AVFrame *frame);
+
+bool ff_decoder_set_frame_drop_state(struct ff_decoder *decoder,
+		int64_t start_time, int64_t pts);

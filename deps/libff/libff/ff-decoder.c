@@ -117,10 +117,13 @@ void ff_decoder_free(struct ff_decoder *decoder)
 
 		ff_callbacks_frame_free(frame, decoder->callbacks);
 
-		if (frame != NULL && frame->frame != NULL)
-			av_frame_unref(frame->frame);
-		if (frame != NULL)
+		if (frame != NULL) {
+			if (frame->frame != NULL)
+				av_frame_unref(frame->frame);
+			if (frame->clock != NULL)
+				ff_clock_release(&frame->clock);
 			av_free(frame);
+		}
 	}
 
 	packet_queue_free(&decoder->packet_queue);
@@ -143,11 +146,11 @@ double ff_decoder_clock(void *opaque)
 	return decoder->current_pts + delta;
 }
 
-static double get_sync_adjusted_pts_diff(struct ff_decoder *decoder,
+static double get_sync_adjusted_pts_diff(struct ff_clock *clock,
 		double pts, double pts_diff)
 {
 	double new_pts_diff = pts_diff;
-	double sync_time = ff_get_sync_clock(decoder->clock);
+	double sync_time = ff_get_sync_clock(clock);
 	double diff = pts - sync_time;
 	double sync_threshold;
 
@@ -175,7 +178,9 @@ void ff_decoder_refresh(void *opaque)
 	if (decoder && decoder->stream) {
 		if (decoder->frame_queue.size == 0) {
 			if (!decoder->eof) {
-				// We expected a frame, but there were none available
+				// We expected a frame, but there were none
+				// available
+				
 				// Schedule another call as soon as possible
 				ff_decoder_schedule_refresh(decoder, 1);
 			} else {
@@ -190,6 +195,29 @@ void ff_decoder_refresh(void *opaque)
 			double delay_until_next_wake;
 			frame = ff_circular_queue_peek_read(
 					&decoder->frame_queue);
+
+			// Get frame clock and start it if needed
+			ff_clock_t *clock = ff_clock_move(&frame->clock);
+			if (!ff_clock_start(clock, decoder->natural_sync_clock,
+					&decoder->refresh_timer.abort)) {
+				ff_clock_release(&clock);
+
+				// Our clock was never started and deleted or
+				// aborted
+
+				// Drop this frame? The only way this can happen
+				// is if one stream finishes before another and
+				// the input is looping or canceled.  Until we
+				// get another clock we will unable to continue
+
+				ff_decoder_schedule_refresh(decoder, 100);
+
+				// Drop this frame as we have no way of timing
+				// it
+				ff_circular_queue_advance_read(
+						&decoder->frame_queue);
+				return;
+			}
 
 			decoder->current_pts = frame->pts;
 			decoder->current_pts_time = av_gettime();
@@ -208,9 +236,9 @@ void ff_decoder_refresh(void *opaque)
 			decoder->previous_pts = frame->pts;
 
 			// if not synced against natural clock
-			if (decoder->clock->sync_type
+			if (clock->sync_type
 					!= decoder->natural_sync_clock) {
-				pts_diff = get_sync_adjusted_pts_diff(decoder,
+				pts_diff = get_sync_adjusted_pts_diff(clock,
 						frame->pts, pts_diff);
 			}
 
@@ -220,10 +248,13 @@ void ff_decoder_refresh(void *opaque)
 			delay_until_next_wake = decoder->timer_next_wake -
 					(av_gettime() / 1000000.0L);
 			if (delay_until_next_wake < 0.010L) {
-				// accellerate next wake up
 				delay_until_next_wake = 0.010L;
 			}
 
+			if (delay_until_next_wake > pts_diff)
+				delay_until_next_wake = pts_diff;
+
+			ff_clock_release(&clock);
 			ff_callbacks_frame(decoder->callbacks, frame);
 
 			ff_decoder_schedule_refresh(decoder,
@@ -245,9 +276,9 @@ bool ff_decoder_full(struct ff_decoder *decoder)
 	return (decoder->packet_queue.total_size > decoder->packet_queue_size);
 }
 
-bool ff_decoder_accept(struct ff_decoder *decoder, AVPacket *packet)
+bool ff_decoder_accept(struct ff_decoder *decoder, struct ff_packet *packet)
 {
-	if (decoder && packet->stream_index == decoder->stream->index) {
+	if (decoder && packet->base.stream_index == decoder->stream->index) {
 		packet_queue_put(&decoder->packet_queue, packet);
 		return true;
 	}
@@ -289,4 +320,31 @@ double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 	decoder->predicted_pts += estimated_frame_delay;
 
 	return d_pts;
+}
+
+bool ff_decoder_set_frame_drop_state(struct ff_decoder *decoder,
+		int64_t start_time, int64_t pts)
+{
+	if (pts != AV_NOPTS_VALUE) {
+		int64_t rescaled_pts = av_rescale_q(pts,
+				decoder->stream->time_base, AV_TIME_BASE_Q);
+		int64_t master_clock = av_gettime() -
+				start_time;
+
+		int64_t diff = master_clock - rescaled_pts;
+
+		if (diff > (AV_TIME_BASE / 2)) {
+			decoder->codec->skip_frame = decoder->frame_drop;
+			decoder->codec->skip_idct = decoder->frame_drop;
+			decoder->codec->skip_loop_filter = decoder->frame_drop;
+			return true;
+		} else {
+			decoder->codec->skip_frame = AVDISCARD_DEFAULT;
+			decoder->codec->skip_idct = AVDISCARD_DEFAULT;
+			decoder->codec->skip_loop_filter = AVDISCARD_DEFAULT;
+			return false;
+		}
+	}
+
+	return false;
 }

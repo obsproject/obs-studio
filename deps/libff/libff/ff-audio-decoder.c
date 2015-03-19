@@ -28,29 +28,59 @@
 
 #include <assert.h>
 
-static inline void shrink_packet(AVPacket *packet, int packet_length)
+static inline void shrink_packet(struct ff_packet *packet, int packet_length)
 {
-	if (packet_length <= packet->size) {
-		int remaining = packet->size - packet_length;
+	if (packet_length <= packet->base.size) {
+		int remaining = packet->base.size - packet_length;
 
-		memmove(packet->data, &packet->data[packet_length], remaining);
-		av_shrink_packet(packet, remaining);
+		memmove(packet->base.data, &packet->base.data[packet_length],
+				remaining);
+		av_shrink_packet(&packet->base, remaining);
+	}
+}
+
+static bool handle_reset_packet(struct ff_decoder *decoder,
+		struct ff_packet *packet)
+{
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
+	decoder->clock = packet->clock;
+	av_free_packet(&packet->base);
+
+	// not a real packet, so try to get another packet
+	if (packet_queue_get(&decoder->packet_queue, packet, 1)
+			== FF_PACKET_FAIL)
+		return false;
+
+	return true;
+}
+
+static void drop_late_packets(struct ff_decoder *decoder,
+		struct ff_packet *packet)
+{
+	int64_t start_time = ff_clock_start_time(decoder->clock);
+	if (start_time != AV_NOPTS_VALUE) {
+		if (ff_decoder_set_frame_drop_state(decoder, start_time,
+				packet->base.pts))
+			shrink_packet(packet, packet->base.size);
 	}
 }
 
 static int decode_frame(struct ff_decoder *decoder,
-	AVPacket *packet, AVFrame *frame, bool *frame_complete)
+	struct ff_packet *packet, AVFrame *frame, bool *frame_complete)
 {
 	int packet_length;
 	int ret;
 
 	while (true) {
-		while (packet->size > 0) {
+		while (packet->base.size > 0) {
 			int complete;
+
+			drop_late_packets(decoder, packet);
 
 			packet_length = avcodec_decode_audio4(decoder->codec,
 				frame, &complete,
-				packet);
+				&packet->base);
 
 			if (packet_length < 0)
 				break;
@@ -66,15 +96,16 @@ static int decode_frame(struct ff_decoder *decoder,
 			       av_get_bytes_per_sample(frame->format);
 		}
 
-		if (packet->data != NULL)
-			av_packet_unref(packet);
+		if (packet->base.data != NULL)
+			av_packet_unref(&packet->base);
 
 		ret = packet_queue_get(&decoder->packet_queue, packet, 1);
 		if (ret == FF_PACKET_FAIL) {
 			return -1;
 		}
 
-		if (packet->data == decoder->packet_queue.flush_packet.data) {
+		if (packet->base.data ==
+				decoder->packet_queue.flush_packet.base.data) {
 			avcodec_flush_buffers(decoder->codec);
 
 			// we were flushed, so try to get another packet
@@ -84,6 +115,11 @@ static int decode_frame(struct ff_decoder *decoder,
 				return -1;
 			}
 		}
+
+		// Packet has a new clock (reset packet)
+		if (packet->clock != NULL)
+			if (!handle_reset_packet(decoder, packet))
+				return -1;
 	}
 }
 
@@ -111,6 +147,7 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		av_frame_free(&queue_frame->frame);
 
 	queue_frame->frame = av_frame_clone(frame);
+	queue_frame->clock = ff_clock_retain(decoder->clock);
 
 	if (call_initialize)
 		ff_callbacks_frame_initialize(queue_frame, decoder->callbacks);
@@ -126,13 +163,14 @@ void *ff_audio_decoder_thread(void *opaque_audio_decoder)
 {
 	struct ff_decoder *decoder = opaque_audio_decoder;
 
-	AVPacket packet = {0};
+	struct ff_packet packet = {0};
 	bool frame_complete;
 	AVFrame *frame = av_frame_alloc();
 
 	while (!decoder->abort) {
-		if (decode_frame(decoder, &packet, frame, &frame_complete) < 0) {
-			av_free_packet(&packet);
+		if (decode_frame(decoder, &packet, frame, &frame_complete)
+				< 0) {
+			av_free_packet(&packet.base);
 			continue;
 		}
 
@@ -148,8 +186,11 @@ void *ff_audio_decoder_thread(void *opaque_audio_decoder)
 			av_frame_unref(frame);
 		}
 
-		av_free_packet(&packet);
+		av_free_packet(&packet.base);
 	}
+
+	if (decoder->clock != NULL)
+		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
 	return NULL;

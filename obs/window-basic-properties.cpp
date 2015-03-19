@@ -117,6 +117,9 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 	if (val == QDialogButtonBox::AcceptRole) {
 		acceptClicked = true;
 		close();
+
+		if (view->DeferUpdate())
+			view->UpdateSettings();
 	}
 
 	if (val == QDialogButtonBox::RejectRole) {
@@ -260,6 +263,8 @@ bool OBSBasicProperties::ConfirmQuit()
 
 	switch (button) {
 	case QMessageBox::Save:
+		if (view->DeferUpdate())
+			view->UpdateSettings();
 		// Do nothing because the settings are already updated
 		break;
 	case QMessageBox::Discard:

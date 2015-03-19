@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 John R. Bradley <jrb@turrettech.com>
+ * Copyright (c) 2014 Hugh Bailey <obs.jim@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,17 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#include "ff-threading.h"
 
-#include "ff-clock.h"
+long ff_atomic_inc_long(volatile long *val)
+{
+	return __sync_add_and_fetch(val, 1);
+}
 
-#include <libavcodec/avcodec.h>
-
-struct ff_frame {
-	AVFrame *frame;
-	struct ff_clock *clock;
-	double pts;
-	int64_t duration;
-};
-
-typedef struct ff_frame ff_frame_t;
+long ff_atomic_dec_long(volatile long *val)
+{
+	return __sync_sub_and_fetch(val, 1);
+}

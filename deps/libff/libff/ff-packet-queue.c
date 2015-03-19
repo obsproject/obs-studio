@@ -26,8 +26,8 @@ bool packet_queue_init(struct ff_packet_queue *q)
 	if (pthread_cond_init(&q->cond, NULL) != 0)
 		goto fail1;
 
-	av_init_packet(&q->flush_packet);
-	q->flush_packet.data = (unsigned char *) "FLUSH";
+	av_init_packet(&q->flush_packet.base);
+	q->flush_packet.base.data = (uint8_t *)"FLUSH";
 
 	return true;
 
@@ -53,22 +53,23 @@ void packet_queue_free(struct ff_packet_queue *q)
 	pthread_mutex_destroy(&q->mutex);
 	pthread_cond_destroy(&q->cond);
 
-	av_free_packet(&q->flush_packet);
+	av_free_packet(&q->flush_packet.base);
 }
 
-int packet_queue_put(struct ff_packet_queue *q, AVPacket *packet)
+int packet_queue_put(struct ff_packet_queue *q, struct ff_packet *packet)
 {
-	AVPacketList *new_packet;
+	struct ff_packet_list *new_packet;
 
-	if (packet != &q->flush_packet && av_dup_packet(packet) < 0)
+	if (packet != &q->flush_packet
+			&& av_dup_packet(&packet->base) < 0)
 		return FF_PACKET_FAIL;
 
-	new_packet = av_malloc(sizeof(AVPacketList));
+	new_packet = av_malloc(sizeof(struct ff_packet_list));
 
 	if (new_packet == NULL)
 		return FF_PACKET_FAIL;
 
-	new_packet->pkt = *packet;
+	new_packet->packet = *packet;
 	new_packet->next = NULL;
 
 	pthread_mutex_lock(&q->mutex);
@@ -81,7 +82,7 @@ int packet_queue_put(struct ff_packet_queue *q, AVPacket *packet)
 	q->last_packet = new_packet;
 
 	q->count++;
-	q->total_size += new_packet->pkt.size;
+	q->total_size += new_packet->packet.base.size;
 
 	pthread_cond_signal(&q->cond);
 	pthread_mutex_unlock(&q->mutex);
@@ -94,9 +95,10 @@ int packet_queue_put_flush_packet(struct ff_packet_queue *q)
 	return packet_queue_put(q, &q->flush_packet);
 }
 
-int packet_queue_get(struct ff_packet_queue *q, AVPacket *packet, bool block)
+int packet_queue_get(struct ff_packet_queue *q, struct ff_packet *packet,
+		bool block)
 {
-	AVPacketList *potential_packet;
+	struct ff_packet_list *potential_packet;
 	int return_status;
 
 	pthread_mutex_lock(&q->mutex);
@@ -111,8 +113,8 @@ int packet_queue_get(struct ff_packet_queue *q, AVPacket *packet, bool block)
 				q->last_packet = NULL;
 
 			q->count--;
-			q->total_size -= potential_packet->pkt.size;
-			*packet = potential_packet->pkt;
+			q->total_size -= potential_packet->packet.base.size;
+			*packet = potential_packet->packet;
 			av_free(potential_packet);
 			return_status = FF_PACKET_SUCCESS;
 			break;
@@ -137,14 +139,16 @@ int packet_queue_get(struct ff_packet_queue *q, AVPacket *packet, bool block)
 
 void packet_queue_flush(struct ff_packet_queue *q)
 {
-	AVPacketList *packet;
+	struct ff_packet_list *packet;
 
 	pthread_mutex_lock(&q->mutex);
 
 	for (packet = q->first_packet; packet != NULL;
 			packet = q->first_packet) {
 		q->first_packet = packet->next;
-		av_free_packet(&packet->pkt);
+		av_free_packet(&packet->packet.base);
+		if (packet->packet.clock != NULL)
+			ff_clock_release(&packet->packet.clock);
 		av_freep(&packet);
 	}
 

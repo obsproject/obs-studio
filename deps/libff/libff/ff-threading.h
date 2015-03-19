@@ -16,15 +16,5 @@
 
 #pragma once
 
-#include "ff-clock.h"
-
-#include <libavcodec/avcodec.h>
-
-struct ff_frame {
-	AVFrame *frame;
-	struct ff_clock *clock;
-	double pts;
-	int64_t duration;
-};
-
-typedef struct ff_frame ff_frame_t;
+long ff_atomic_inc_long(volatile long *val);
+long ff_atomic_dec_long(volatile long *val);
