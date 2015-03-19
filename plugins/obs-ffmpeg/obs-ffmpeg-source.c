@@ -280,6 +280,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
+
+	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
+
 	obs_property_t *prop;
 	// use this when obs allows non-readonly paths
 	prop = obs_properties_add_bool(props, "is_local_file",
