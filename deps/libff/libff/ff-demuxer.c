@@ -319,21 +319,23 @@ void ff_demuxer_flush(struct ff_demuxer *demuxer)
 
 void ff_demuxer_reset(struct ff_demuxer *demuxer)
 {
-	struct ff_packet *packet = av_mallocz(sizeof(struct ff_packet));
+	struct ff_packet packet = {0};
 	struct ff_clock *clock = ff_clock_init();
 	clock->sync_type = demuxer->clock.sync_type;
 	clock->sync_clock = demuxer->clock.sync_clock;
 	clock->opaque = demuxer->clock.opaque;
 
-	packet->clock = clock;
+	packet.clock = clock;
 
 	if (demuxer->audio_decoder != NULL) {
-		packet_queue_put(&demuxer->audio_decoder->packet_queue, packet);
+		packet_queue_put(&demuxer->audio_decoder->packet_queue,
+				&packet);
 		ff_clock_retain(clock);
 	}
 
 	if (demuxer->video_decoder != NULL) {
-		packet_queue_put(&demuxer->video_decoder->packet_queue, packet);
+		packet_queue_put(&demuxer->video_decoder->packet_queue,
+				&packet);
 		ff_clock_retain(clock);
 	}
 }
