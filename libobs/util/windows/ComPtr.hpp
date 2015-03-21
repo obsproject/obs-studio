@@ -118,6 +118,8 @@ public:
 	inline bool operator!() const      {return !ptr;}
 };
 
+#ifdef _WIN32
+
 template<class T> class ComQIPtr : public ComPtr<T> {
 
 public:
@@ -134,3 +136,5 @@ public:
 		return *this;
 	}
 };
+
+#endif
