@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include "../util/platform.h"
 #include "effect-parser.h"
 #include "effect.h"
 
@@ -735,7 +736,7 @@ static inline int ep_parse_param_assign_intfloat(struct effect_parser *ep,
 		return code;
 
 	if (is_float) {
-		float f = (float)strtod(ep->cfp.cur_token->str.array, NULL);
+		float f = (float)os_strtod(ep->cfp.cur_token->str.array);
 		if (is_negative) f = -f;
 		da_push_back_array(param->default_val, &f, sizeof(float));
 	} else {

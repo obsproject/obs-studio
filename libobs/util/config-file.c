@@ -472,10 +472,9 @@ void config_set_bool(config_t *config, const char *section,
 void config_set_double(config_t *config, const char *section,
 		const char *name, double value)
 {
-	struct dstr str;
-	dstr_init(&str);
-	dstr_printf(&str, "%g", value);
-	config_set_item(&config->sections, section, name, str.array);
+	char *str = bzalloc(64);
+	os_dtostr(value, str, 64);
+	config_set_item(&config->sections, section, name, str);
 }
 
 void config_set_default_string(config_t *config, const char *section,
@@ -591,7 +590,7 @@ double config_get_double(const config_t *config, const char *section,
 {
 	const char *value = config_get_string(config, section, name);
 	if (value)
-		return strtod(value, NULL);
+		return os_strtod(value);
 
 	return 0.0;
 }
@@ -644,7 +643,7 @@ double config_get_default_double(const config_t *config, const char *section,
 {
 	const char *value = config_get_default_string(config, section, name);
 	if (value)
-		return strtod(value, NULL);
+		return os_strtod(value);
 
 	return 0.0;
 }

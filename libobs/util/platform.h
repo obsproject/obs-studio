@@ -65,6 +65,9 @@ EXPORT size_t os_wcs_to_utf8_ptr(const wchar_t *str, size_t len, char **pstr);
 EXPORT size_t os_utf8_to_mbs_ptr(const char *str, size_t len, char **pstr);
 EXPORT size_t os_mbs_to_utf8_ptr(const char *str, size_t len, char **pstr);
 
+EXPORT double os_strtod(const char *str);
+EXPORT int os_dtostr(double value, char *dst, size_t size);
+
 EXPORT void *os_dlopen(const char *path);
 EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);

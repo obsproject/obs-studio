@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <locale.h>
 #include "c99defs.h"
 #include "platform.h"
 #include "bmem.h"
@@ -413,4 +414,101 @@ size_t os_mbs_to_utf8_ptr(const char *str, size_t len, char **pstr)
 
 	*pstr = dst;
 	return out_len;
+}
+
+/* locale independent double conversion from jansson, credit goes to them */
+
+static inline void to_locale(char *str)
+{
+	const char *point;
+	char *pos;
+
+	point = localeconv()->decimal_point;
+	if(*point == '.') {
+		/* No conversion needed */
+		return;
+	}
+
+	pos = strchr(str, '.');
+	if(pos)
+		*pos = *point;
+}
+
+static inline void from_locale(char *buffer)
+{
+	const char *point;
+	char *pos;
+
+	point = localeconv()->decimal_point;
+	if(*point == '.') {
+		/* No conversion needed */
+		return;
+	}
+
+	pos = strchr(buffer, *point);
+	if(pos)
+		*pos = '.';
+}
+
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
+
+double os_strtod(const char *str)
+{
+	char buf[64];
+	snprintf(buf, 64, "%s", str);
+	to_locale(buf);
+	return strtod(buf, NULL);
+}
+
+int os_dtostr(double value, char *dst, size_t size)
+{
+	int ret;
+	char *start, *end;
+	size_t length;
+
+	ret = snprintf(dst, size, "%.17g", value);
+	if(ret < 0)
+		return -1;
+
+	length = (size_t)ret;
+	if(length >= size)
+		return -1;
+
+	from_locale(dst);
+
+	/* Make sure there's a dot or 'e' in the output. Otherwise
+	   a real is converted to an integer when decoding */
+	if(strchr(dst, '.') == NULL && strchr(dst, 'e') == NULL) {
+		if(length + 3 >= size) {
+			/* No space to append ".0" */
+			return -1;
+		}
+		dst[length] = '.';
+		dst[length + 1] = '0';
+		dst[length + 2] = '\0';
+		length += 2;
+	}
+
+	/* Remove leading '+' from positive exponent. Also remove leading
+	   zeros from exponents (added by some printf() implementations) */
+	start = strchr(dst, 'e');
+	if(start) {
+		start++;
+		end = start + 1;
+
+		if(*start == '-')
+			start++;
+
+		while(*end == '0')
+			end++;
+
+		if(end != start) {
+			memmove(start, end, length - (size_t)(end - dst));
+			length -= (size_t)(end - start);
+		}
+	}
+
+	return (int)length;
 }
