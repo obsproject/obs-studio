@@ -306,6 +306,9 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	item = scene->first_item;
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+
 	while (item) {
 		if (obs_source_removed(item->source)) {
 			struct obs_scene_item *del_item = item;
@@ -325,6 +328,8 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 		item = item->next;
 	}
+
+	gs_blend_state_pop();
 
 	pthread_mutex_unlock(&scene->mutex);
 
