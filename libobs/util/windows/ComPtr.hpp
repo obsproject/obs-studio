@@ -40,17 +40,17 @@ protected:
 	}
 
 public:
-	inline ComPtr() : ptr(NULL)                    {}
+	inline ComPtr() : ptr(nullptr)                 {}
 	inline ComPtr(T *p) : ptr(p)                   {if (ptr) ptr->AddRef();}
 	inline ComPtr(const ComPtr<T> &c) : ptr(c.ptr) {if (ptr) ptr->AddRef();}
-	inline ComPtr(ComPtr<T> &&c) : ptr(c.ptr)      {c.ptr = NULL;}
+	inline ComPtr(ComPtr<T> &&c) : ptr(c.ptr)      {c.ptr = nullptr;}
 	inline ~ComPtr()                               {Kill();}
 
 	inline void Clear()
 	{
 		if (ptr) {
 			ptr->Release();
-			ptr = NULL;
+			ptr = nullptr;
 		}
 	}
 
@@ -71,7 +71,7 @@ public:
 		if (this != &c) {
 			Kill();
 			ptr = c.ptr;
-			c.ptr = NULL;
+			c.ptr = nullptr;
 		}
 
 		return *this;
