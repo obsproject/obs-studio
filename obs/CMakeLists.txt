@@ -134,6 +134,7 @@ set(obs_HEADERS
 	properties-view.hpp
 	display-helpers.hpp
 	double-slider.hpp
+	mute-checkbox.hpp
 	volume-control.hpp
 	adv-audio-control.hpp
 	visibility-checkbox.hpp

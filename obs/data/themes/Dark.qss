@@ -471,3 +471,18 @@ VolumeMeter {
 QStatusBar::item {
     border: none;
 }
+
+
+/* Mute CheckBox */
+
+MuteCheckBox {
+    outline: none;
+}
+
+MuteCheckBox::indicator:checked {
+    image: url(./Dark/mute.png);
+}
+
+MuteCheckBox::indicator:unchecked {
+    image: url(./Dark/unmute.png);
+}

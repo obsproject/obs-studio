@@ -35,6 +35,18 @@
     qproperty-icon: url(:/res/images/down.png);
 }
 
+MuteCheckBox {
+    outline: none;
+}
+
+MuteCheckBox::indicator:checked {
+    image: url(:/res/images/mute.png);
+}
+
+MuteCheckBox::indicator:unchecked {
+    image: url(:/res/images/unmute.png);
+}
+
 
 /* Volume Control */
 
