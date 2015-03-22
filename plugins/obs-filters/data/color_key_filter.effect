@@ -1,0 +1,92 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4x4 color_matrix = {1.0, 0.0, 0.0, 0.0,
+                                 0.0, 1.0, 0.0, 0.0,
+                                 0.0, 0.0, 1.0, 0.0,
+                                 0.0, 0.0, 0.0, 1.0};
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+
+uniform float4 color;
+uniform float contrast;
+uniform float brightness;
+uniform float gamma;
+
+uniform float4 key_color;
+uniform float similarity;
+uniform float smoothness;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 CalcColor(float4 rgba)
+{
+	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
+}
+
+float GetColorDist(float3 rgb)
+{
+	return distance(key_color.rgb, rgb);
+}
+
+float4 SampleYUVToRGB(float2 uv)
+{
+	float4 yuv = image.Sample(textureSampler, uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+}
+
+float4 ProcessColorKey(float4 rgba, VertData v_in)
+{
+	float colorDist = GetColorDist(rgba.rgb);
+	float baseMask = colorDist - similarity;
+	rgba.a *= saturate(max(colorDist - similarity, 0.0) / smoothness);
+
+	return CalcColor(rgba);
+}
+
+float4 PSColorKeyRGBA(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	return ProcessColorKey(rgba, v_in);
+}
+
+float4 PSColorKeyMatrix(VertData v_in) : TARGET
+{
+	float4 rgba = SampleYUVToRGB(v_in.uv) * color;
+	return ProcessColorKey(rgba, v_in);
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSColorKeyRGBA(v_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSColorKeyMatrix(v_in);
+	}
+}
