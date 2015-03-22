@@ -237,6 +237,9 @@ static bool initialize_decoder(struct ff_demuxer *demuxer,
 	}
 }
 
+typedef enum AVPixelFormat (*AVGetFormatCb)(
+		struct AVCodecContext *s, const enum AVPixelFormat * fmt);
+
 static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 {
 	AVCodecContext *codec_context = NULL;
@@ -262,12 +265,16 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 		AVHWAccel *hwaccel = find_hwaccel_codec(codec_context);
 
 		if (hwaccel) {
-			codec_context->opaque = hwaccel;
-			codec_context->get_format = get_hwaccel_format;
 			AVCodec *codec_vda =
 				avcodec_find_decoder_by_name(hwaccel->name);
 
 			if (codec_vda != NULL) {
+				AVGetFormatCb original_get_format =
+					codec_context->get_format;
+
+				codec_context->get_format = get_hwaccel_format;
+				codec_context->opaque = hwaccel;
+
 				ret = avcodec_open2(codec_context, codec_vda,
 						&options_dict);
 				if (ret < 0) {
@@ -275,6 +282,9 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
                                                 "no hardware decoder found for"
                                                 " codec with id %d",
                                                 codec_context->codec_id);
+					codec_context->get_format =
+							original_get_format;
+					codec_context->opaque = NULL;
 				} else {
 					codec = codec_vda;
 					hwaccel_decoder = true;
