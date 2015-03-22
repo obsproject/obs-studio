@@ -55,6 +55,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
 
+	/* The OBSData constructor increments the reference once */
+	obs_data_release(oldSettings);
+
 	OBSData settings = obs_source_get_settings(source);
 	obs_data_apply(oldSettings, settings);
 	obs_data_release(settings);
@@ -193,6 +196,32 @@ void OBSBasicProperties::timerEvent(QTimerEvent *event)
 	}
 }
 
+void OBSBasicProperties::Cleanup()
+{
+	// remove draw callback and release display in case our drawable
+	// surfaces go away before the destructor gets called
+	obs_display_remove_draw_callback(display,
+			OBSBasicProperties::DrawPreview, this);
+	display = nullptr;
+
+	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
+			width());
+	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
+			height());
+}
+
+void OBSBasicProperties::reject()
+{
+	if (!acceptClicked && (CheckSettings() != 0)) {
+		if (!ConfirmQuit()) {
+			return;
+		}
+	}
+
+	Cleanup();
+	done(0);
+}
+
 void OBSBasicProperties::closeEvent(QCloseEvent *event)
 {
 	if (!acceptClicked && (CheckSettings() != 0)) {
@@ -206,18 +235,7 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
-	obs_data_release(oldSettings);
-
-	// remove draw callback and release display in case our drawable
-	// surfaces go away before the destructor gets called
-	obs_display_remove_draw_callback(display,
-			OBSBasicProperties::DrawPreview, this);
-	display = nullptr;
-
-	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
-			width());
-	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
-			height());
+	Cleanup();
 }
 
 void OBSBasicProperties::Init()

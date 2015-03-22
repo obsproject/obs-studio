@@ -50,6 +50,7 @@ private:
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 	bool ConfirmQuit();
 	int  CheckSettings();
+	void Cleanup();
 
 private slots:
 	void OnPropertiesResized();
@@ -65,4 +66,5 @@ protected:
 	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void timerEvent(QTimerEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;
+	virtual void reject() override;
 };
