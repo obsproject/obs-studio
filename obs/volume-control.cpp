@@ -1,5 +1,6 @@
 #include "volume-control.hpp"
 #include "qt-wrappers.hpp"
+#include "mute-checkbox.hpp"
 #include <util/platform.h>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -33,6 +34,15 @@ void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
 		Q_ARG(float, peakHold));
 }
 
+void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
+{
+	VolControl *volControl = static_cast<VolControl*>(data);
+	bool muted = calldata_bool(calldata, "muted");
+
+	QMetaObject::invokeMethod(volControl, "VolumeMuted",
+			Q_ARG(bool, muted));
+}
+
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
@@ -44,7 +54,24 @@ void VolControl::VolumeChanged()
 
 void VolControl::VolumeLevel(float mag, float peak, float peakHold)
 {
+	if (obs_source_muted(source) || !obs_source_enabled(source)) {
+		mag = 0.0f;
+		peak = 0.0f;
+		peakHold = 0.0f;
+	}
+
 	volMeter->setLevels(mag, peak, peakHold);
+}
+
+void VolControl::VolumeMuted(bool muted)
+{
+	if (mute->isChecked() != muted)
+		mute->setChecked(muted);
+}
+
+void VolControl::SetMuted(bool checked)
+{
+	obs_source_set_muted(source, checked);
 }
 
 void VolControl::SliderChanged(int vol)
@@ -76,12 +103,14 @@ VolControl::VolControl(OBSSource source_)
 	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC)),
 	  obs_volmeter  (obs_volmeter_create(OBS_FADER_LOG))
 {
+	QHBoxLayout *volLayout  = new QHBoxLayout();
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
 
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
 	volMeter  = new VolumeMeter();
+	mute      = new MuteCheckBox();
 	slider    = new QSlider(Qt::Horizontal);
 
 	QFont font = nameLabel->font();
@@ -101,11 +130,17 @@ VolControl::VolControl(OBSSource source_)
 	textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 	textLayout->setAlignment(volLabel,  Qt::AlignRight);
 
+	mute->setChecked(obs_source_muted(source));
+
+	volLayout->addWidget(slider);
+	volLayout->addWidget(mute);
+	volLayout->setSpacing(5);
+
 	mainLayout->setContentsMargins(4, 4, 4, 4);
 	mainLayout->setSpacing(2);
 	mainLayout->addItem(textLayout);
 	mainLayout->addWidget(volMeter);
-	mainLayout->addWidget(slider);
+	mainLayout->addItem(volLayout);
 
 	setLayout(mainLayout);
 
@@ -115,8 +150,13 @@ VolControl::VolControl(OBSSource source_)
 	signal_handler_connect(obs_volmeter_get_signal_handler(obs_volmeter),
 			"levels_updated", OBSVolumeLevel, this);
 
+	signal_handler_connect(obs_source_get_signal_handler(source),
+			"mute", OBSVolumeMuted, this);
+
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
 			this, SLOT(SliderChanged(int)));
+	QWidget::connect(mute, SIGNAL(clicked(bool)),
+			this, SLOT(SetMuted(bool)));
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
@@ -132,6 +172,9 @@ VolControl::~VolControl()
 
 	signal_handler_disconnect(obs_volmeter_get_signal_handler(obs_volmeter),
 			"levels_updated", OBSVolumeLevel, this);
+
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+			"mute", OBSVolumeMuted, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);

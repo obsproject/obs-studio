@@ -15,7 +15,7 @@ private:
 	float mag, peak, peakHold;
 	QColor bkColor, magColor, peakColor, peakHoldColor;
 	QTimer *resetTimer;
-	
+
 public:
 	explicit VolumeMeter(QWidget *parent = 0);
 	void setLevels(float nmag, float npeak, float npeakHold);
@@ -36,6 +36,7 @@ private slots:
 
 class QLabel;
 class QSlider;
+class MuteCheckBox;
 
 class VolControl : public QWidget {
 	Q_OBJECT
@@ -46,6 +47,7 @@ private:
 	QLabel          *volLabel;
 	VolumeMeter     *volMeter;
 	QSlider         *slider;
+	MuteCheckBox    *mute;
 	float           levelTotal;
 	float           levelCount;
 	obs_fader_t     *obs_fader;
@@ -53,10 +55,14 @@ private:
 
 	static void OBSVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSVolumeLevel(void *data, calldata_t *calldata);
+	static void OBSVolumeMuted(void *data, calldata_t *calldata);
 
 private slots:
 	void VolumeChanged();
+	void VolumeMuted(bool muted);
 	void VolumeLevel(float mag, float peak, float peakHold);
+
+	void SetMuted(bool checked);
 	void SliderChanged(int vol);
 	void updateText();
 
