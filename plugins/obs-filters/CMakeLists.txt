@@ -3,6 +3,7 @@ project(obs-filters)
 set(obs-filters_SOURCES
 	obs-filters.c
 	async-delay-filter.c
+	crop-filter.c
 	mask-filter.c)
 
 add_library(obs-filters MODULE
