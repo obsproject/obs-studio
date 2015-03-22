@@ -322,6 +322,7 @@ struct obs_source {
 
 	/* audio */
 	bool                            audio_failed;
+	bool                            muted;
 	struct resample_info            sample_info;
 	audio_resampler_t               *resampler;
 	audio_line_t                    *audio_line;

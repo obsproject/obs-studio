@@ -78,6 +78,7 @@ static const char *source_signals[] = {
 	"void deactivate(ptr source)",
 	"void show(ptr source)",
 	"void hide(ptr source)",
+	"void mute(ptr source, bool muted)",
 	"void enable(ptr source, bool enabled)",
 	"void rename(ptr source, string new_name, string prev_name)",
 	"void volume(ptr source, in out float volume)",
@@ -729,7 +730,7 @@ static void source_output_audio_line(obs_source_t *source,
 		source->present_volume * obs->audio.user_volume *
 		obs->audio.present_volume;
 
-	if (!source->enabled)
+	if (!source->enabled || source->muted)
 		in.volume = 0.0f;
 
 	audio_line_output(source->audio_line, &in);
@@ -2624,6 +2625,28 @@ void obs_source_set_enabled(obs_source_t *source, bool enabled)
 	calldata_set_bool(&data, "enabled", enabled);
 
 	signal_handler_signal(source->context.signals, "enable", &data);
+
+	calldata_free(&data);
+}
+
+bool obs_source_muted(const obs_source_t *source)
+{
+	return source ? source->muted : false;
+}
+
+void obs_source_set_muted(obs_source_t *source, bool muted)
+{
+	struct calldata data = {0};
+
+	if (!source)
+		return;
+
+	source->muted = muted;
+
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_bool(&data, "muted", muted);
+
+	signal_handler_signal(source->context.signals, "mute", &data);
 
 	calldata_free(&data);
 }
