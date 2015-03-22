@@ -2,6 +2,7 @@ project(obs-filters)
 
 set(obs-filters_SOURCES
 	obs-filters.c
+	color-filter.c
 	async-delay-filter.c
 	crop-filter.c
 	mask-filter.c)

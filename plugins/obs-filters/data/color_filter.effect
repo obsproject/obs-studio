@@ -1,0 +1,67 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+
+uniform float4 color;
+uniform float contrast;
+uniform float brightness;
+uniform float gamma;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 CalcColor(float4 rgba)
+{
+	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
+}
+
+float4 PSColorFilterRGBA(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	return CalcColor(rgba);
+}
+
+float4 PSColorFilterMatrix(VertData v_in) : TARGET
+{
+	float4 yuv = image.Sample(textureSampler, v_in.uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	float4 rgba = saturate(mul(float4(yuv.xyz, 1.0), color_matrix)) * color;
+
+	return CalcColor(rgba);
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSColorFilterRGBA(v_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSColorFilterMatrix(v_in);
+	}
+}
