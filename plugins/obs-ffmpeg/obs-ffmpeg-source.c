@@ -62,10 +62,12 @@ void initialize_ffmpeg_source()
 struct ffmpeg_source {
 	struct ff_demuxer *demuxer;
 	struct SwsContext *sws_ctx;
+	int sws_width;
+	int sws_height;
+	enum AVPixelFormat sws_format;
 	uint8_t *sws_data;
 	int sws_linesize;
 	obs_source_t *source;
-	enum AVPixelFormat format;
 	bool is_forcing_scale;
 	bool is_hw_decoding;
 };
@@ -109,8 +111,21 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 
 bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 {
-	struct SwsContext *sws_ctx = sws_getCachedContext(
-			source->sws_ctx,
+	if (frame->width != source->sws_width
+			|| frame->height != source->sws_height
+			|| frame->format != source->sws_format) {
+		if (source->sws_ctx != NULL)
+			sws_freeContext(source->sws_ctx);
+
+		if (frame->width <= 0 || frame->height <= 0) {
+			av_log(NULL, AV_LOG_ERROR, "unable to create a sws "
+					"context that has a width(%d) or "
+					"height(%d) of zero.", frame->width,
+					frame->height);
+			goto fail;
+		}
+
+		source->sws_ctx = sws_getContext(
 			frame->width,
 			frame->height,
 			frame->format,
@@ -120,16 +135,50 @@ bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 			SWS_BILINEAR,
 			NULL, NULL, NULL);
 
-	if (sws_ctx != NULL && sws_ctx != source->sws_ctx) {
+		if (source->sws_ctx == NULL) {
+			av_log(NULL, AV_LOG_ERROR, "unable to create sws "
+					"context with src{w:%d,h:%d,f:%d}->"
+					"dst{w:%d,h:%d,f:%d}",
+					frame->width, frame->height,
+					frame->format, frame->width,
+					frame->height, AV_PIX_FMT_BGRA);
+			goto fail;
+
+		}
+
 		if (source->sws_data != NULL)
 			bfree(source->sws_data);
 		source->sws_data = bzalloc(frame->width * frame->height * 4);
+		if (source->sws_data == NULL) {
+			av_log(NULL, AV_LOG_ERROR, "unable to allocate sws "
+					"pixel data with size %d",
+					frame->width * frame->height * 4);
+			goto fail;
+		}
+
+		source->sws_linesize = frame->width * 4;
+		source->sws_width = frame->width;
+		source->sws_height = frame->height;
+		source->sws_format = frame->format;
 	}
 
-	source->sws_ctx = sws_ctx;
-	source->sws_linesize = frame->width * 4;
+	return true;
 
-	return source->sws_ctx != NULL;
+fail:
+	if (source->sws_ctx != NULL)
+		sws_freeContext(source->sws_ctx);
+	source->sws_ctx = NULL;
+
+	if (source->sws_data)
+		bfree(source->sws_data);
+	source->sws_data = NULL;
+
+	source->sws_linesize = 0;
+	source->sws_width = 0;
+	source->sws_height = 0;
+	source->sws_format = 0;
+
+	return false;
 }
 
 static bool video_frame_scale(struct ff_frame *frame,
