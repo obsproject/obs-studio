@@ -649,9 +649,7 @@ EXPORT void obs_source_remove(obs_source_t *source);
 /** Returns true if the source should be released */
 EXPORT bool obs_source_removed(const obs_source_t *source);
 
-/**
- * Retrieves flags that specify what type of data the source presents/modifies.
- */
+/** Returns capability flags of a source */
 EXPORT uint32_t obs_source_get_output_flags(const obs_source_t *source);
 
 /** Returns capability flags of a source type */
