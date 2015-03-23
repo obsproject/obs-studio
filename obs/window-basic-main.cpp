@@ -33,6 +33,7 @@
 
 #include "obs-app.hpp"
 #include "platform.hpp"
+#include "visibility-item-widget.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-source-select.hpp"
@@ -83,6 +84,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	ui->setupUi(this);
 	copyActionsDynamicProperties();
+
+	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 
 	int width = config_get_int(App()->GlobalConfig(), "MainWindow", "cx");
 
@@ -763,14 +766,15 @@ void OBSBasic::UpdateSources(OBSScene scene)
 void OBSBasic::InsertSceneItem(obs_sceneitem_t *item)
 {
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	const char   *name  = obs_source_get_name(source);
 
-	QListWidgetItem *listItem = new QListWidgetItem(QT_UTF8(name));
+	QListWidgetItem *listItem = new QListWidgetItem();
 	listItem->setData(Qt::UserRole,
 			QVariant::fromValue(OBSSceneItem(item)));
 
 	ui->sources->insertItem(0, listItem);
 	ui->sources->setCurrentRow(0);
+
+	SetupVisibilityItem(ui->sources, listItem, item);
 
 	/* if the source was just created, open properties dialog */
 	if (sourceSceneRefs[source] == 0 && loaded)
@@ -919,7 +923,6 @@ static void RenameListValues(QListWidget *listWidget, const QString &newName,
 void OBSBasic::RenameSources(QString newName, QString prevName)
 {
 	RenameListValues(ui->scenes,  newName, prevName);
-	RenameListValues(ui->sources, newName, prevName);
 
 	for (size_t i = 0; i < volumes.size(); i++) {
 		if (volumes[i]->GetName().compare(prevName) == 0)
@@ -1185,6 +1188,9 @@ void OBSBasic::ReorderSceneItem(obs_sceneitem_t *item, size_t idx)
 				if (listItem)  {
 					ui->sources->insertItem(idx_inv,
 							listItem);
+					SetupVisibilityItem(ui->sources,
+							listItem, item);
+
 					if (sel)
 						ui->sources->setCurrentRow(
 								idx_inv);
@@ -1934,8 +1940,13 @@ void OBSBasic::EditSceneItemName()
 {
 	QListWidgetItem *item = ui->sources->currentItem();
 	Qt::ItemFlags flags   = item->flags();
+	OBSSceneItem sceneItem= item->data(Qt::UserRole).value<OBSSceneItem>();
+	obs_source_t *source  = obs_sceneitem_get_source(sceneItem);
+	const char *name      = obs_source_get_name(source);
 
+	item->setText(QT_UTF8(name));
 	item->setFlags(flags | Qt::ItemIsEditable);
+	ui->sources->removeItemWidget(item);
 	ui->sources->editItem(item);
 	item->setFlags(flags);
 }
@@ -2319,6 +2330,10 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	RenameListItem(this, ui->sources, source, text);
+
+	QListWidgetItem *listItem = ui->sources->currentItem();
+	listItem->setText(QString());
+	SetupVisibilityItem(ui->sources, listItem, item);
 
 	UNUSED_PARAMETER(endHint);
 }
