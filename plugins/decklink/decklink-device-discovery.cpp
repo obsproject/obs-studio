@@ -31,7 +31,7 @@ bool DeckLinkDeviceDiscovery::Init(void)
 		result = discovery->InstallDeviceNotifications(this);
 
 	initialized = result == S_OK;
-	if (initialized)
+	if (!initialized)
 		blog(LOG_INFO, "Failed to start search for DeckLink devices");
 
 	return initialized;
