@@ -24,6 +24,7 @@ static const char *obs_scene_signals[] = {
 	"void item_add(ptr scene, ptr item)",
 	"void item_remove(ptr scene, ptr item)",
 	"void reorder(ptr scene)",
+	"void item_visible(ptr scene, ptr item, bool visible)",
 	"void item_select(ptr scene, ptr item)",
 	"void item_deselect(ptr scene, ptr item)",
 	"void item_transform(ptr scene, ptr item)",
@@ -321,10 +322,12 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 		if (source_size_changed(item))
 			update_item_transform(item);
 
-		gs_matrix_push();
-		gs_matrix_mul(&item->draw_transform);
-		obs_source_video_render(item->source);
-		gs_matrix_pop();
+		if (item->visible) {
+			gs_matrix_push();
+			gs_matrix_mul(&item->draw_transform);
+			obs_source_video_render(item->source);
+			gs_matrix_pop();
+		}
 
 		item = item->next;
 	}
@@ -923,4 +926,31 @@ void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 {
 	if (item)
 		matrix4_copy(transform, &item->box_transform);
+}
+
+bool obs_sceneitem_visible(const obs_sceneitem_t *item)
+{
+	return item ? item->visible : false;
+}
+
+void obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
+{
+	struct calldata cd = {0};
+
+	if (!item)
+		return;
+
+	item->visible = visible;
+
+	if (!item->parent)
+		return;
+
+	calldata_set_ptr(&cd, "scene", item->parent);
+	calldata_set_ptr(&cd, "item", item);
+	calldata_set_bool(&cd, "visible", visible);
+
+	signal_handler_signal(item->parent->source->context.signals,
+			"item_visible", &cd);
+
+	calldata_free(&cd);
 }
