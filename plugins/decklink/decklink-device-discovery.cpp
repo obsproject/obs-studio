@@ -7,7 +7,7 @@ DeckLinkDeviceDiscovery::DeckLinkDeviceDiscovery()
 {
 	discovery = CreateDeckLinkDiscoveryInstance();
 	if (discovery == nullptr)
-		blog(LOG_ERROR, "Failed to create IDeckLinkDiscovery");
+		blog(LOG_INFO, "No blackmagic support");
 }
 
 DeckLinkDeviceDiscovery::~DeckLinkDeviceDiscovery(void)
