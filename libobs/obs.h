@@ -654,6 +654,10 @@ EXPORT bool obs_source_removed(const obs_source_t *source);
  */
 EXPORT uint32_t obs_source_get_output_flags(const obs_source_t *source);
 
+/** Returns capability flags of a source type */
+EXPORT uint32_t obs_get_source_output_flags(enum obs_source_type type,
+		const char *id);
+
 /** Gets the default settings for a source type */
 EXPORT obs_data_t *obs_get_source_defaults(enum obs_source_type type,
 		const char *id);

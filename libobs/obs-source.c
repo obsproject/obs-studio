@@ -409,6 +409,12 @@ uint32_t obs_source_get_output_flags(const obs_source_t *source)
 	return source ? source->info.output_flags : 0;
 }
 
+uint32_t obs_get_source_output_flags(enum obs_source_type type, const char *id)
+{
+	const struct obs_source_info *info = get_source_info(type, id);
+	return info ? info->output_flags : 0;
+}
+
 static void obs_source_deferred_update(obs_source_t *source)
 {
 	if (source->context.data && source->info.update)
