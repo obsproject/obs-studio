@@ -369,6 +369,13 @@ obs_data_t *obs_source_settings(enum obs_source_type type, const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
+obs_data_t *obs_get_source_defaults(enum obs_source_type type,
+		const char *id)
+{
+	const struct obs_source_info *info = get_source_info(type, id);
+	return info ? get_defaults(info) : NULL;
+}
+
 obs_properties_t *obs_get_source_properties(enum obs_source_type type,
 		const char *id)
 {
