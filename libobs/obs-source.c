@@ -1125,13 +1125,23 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	}
 }
 
+static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
+		struct obs_source_frame *in);
+
 static void obs_source_render_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
 		struct obs_source_frame *frame = obs_source_get_frame(source);
 
+		if (frame)
+			frame = filter_async_video(source, frame);
+
 		source->async_rendered = true;
 		if (frame) {
+			source->timing_adjust =
+				os_gettime_ns() - frame->timestamp;
+			source->timing_set = true;
+
 			if (!set_async_texture_size(source, frame))
 				return;
 			if (!update_async_texture(source, frame))
@@ -1457,6 +1467,9 @@ static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
 		struct obs_source_frame *in)
 {
 	size_t i;
+
+	pthread_mutex_lock(&source->filter_mutex);
+
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
 
@@ -1467,9 +1480,11 @@ static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
 			in = filter->info.filter_video(filter->context.data,
 					in);
 			if (!in)
-				return NULL;
+				break;
 		}
 	}
+
+	pthread_mutex_unlock(&source->filter_mutex);
 
 	return in;
 }
@@ -1615,20 +1630,6 @@ void obs_source_output_video(obs_source_t *source,
 
 	struct obs_source_frame *output = !!frame ?
 		cache_video(source, frame) : NULL;
-
-	pthread_mutex_lock(&source->filter_mutex);
-
-	if (output)
-		os_atomic_inc_long(&output->refs);
-
-	output = filter_async_video(source, output);
-
-	if (output && os_atomic_dec_long(&output->refs) == 0) {
-		obs_source_frame_destroy(output);
-		output = NULL;
-	}
-
-	pthread_mutex_unlock(&source->filter_mutex);
 
 	/* ------------------------------------------- */
 
@@ -1969,9 +1970,6 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 
 	/* reset timing to current system time */
 	if (frame) {
-		source->timing_adjust = sys_time - frame->timestamp;
-		source->timing_set = true;
-
 		os_atomic_inc_long(&frame->refs);
 	}
 
