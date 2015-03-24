@@ -70,6 +70,7 @@ struct ffmpeg_source {
 	obs_source_t *source;
 	bool is_forcing_scale;
 	bool is_hw_decoding;
+	bool is_clear_on_media_end;
 };
 
 static bool set_obs_frame_colorprops(struct ff_frame *frame,
@@ -247,7 +248,10 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 	double d_pts;
 	uint64_t pts;
 
+	// Media ended
 	if (frame == NULL) {
+		if (s->is_clear_on_media_end)
+			obs_source_output_video(s->source, NULL);
 		return true;
 	}
 
@@ -278,6 +282,7 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 	double d_pts;
 	uint64_t pts;
 
+	// Media ended
 	if (frame == NULL)
 		return true;
 
@@ -370,6 +375,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
 
+	obs_properties_add_bool(props, "clear_on_media_end",
+			obs_module_text("ClearOnMediaEnd"));
+
 	prop = obs_properties_add_bool(props, "advanced",
 			obs_module_text("Advanced"));
 
@@ -433,6 +441,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	s->is_forcing_scale = obs_data_get_bool(settings, "force_scale");
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+	s->is_clear_on_media_end = obs_data_get_bool(settings,
+			"clear_on_media_end");
 
 	if (s->demuxer != NULL)
 		ff_demuxer_free(s->demuxer);
