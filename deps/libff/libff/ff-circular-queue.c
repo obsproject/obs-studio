@@ -116,7 +116,7 @@ void *ff_circular_queue_peek_write(struct ff_circular_queue *cq)
 void ff_circular_queue_advance_write(struct ff_circular_queue *cq, void *item)
 {
 	cq->slots[cq->write_index] = item;
-	cq->write_index = ++cq->write_index % cq->capacity;
+	cq->write_index = (cq->write_index + 1) % cq->capacity;
 
 	queue_lock(cq);
 	++cq->size;
@@ -130,7 +130,7 @@ void *ff_circular_queue_peek_read(struct ff_circular_queue *cq)
 
 void ff_circular_queue_advance_read(struct ff_circular_queue *cq)
 {
-	cq->read_index = ++cq->read_index % cq->capacity;
+	cq->read_index = (cq->read_index + 1) % cq->capacity;
 	queue_lock(cq);
 	--cq->size;
 	queue_signal(cq);
