@@ -104,6 +104,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-remux.cpp
 	properties-view.cpp
+	focus-list.cpp
 	double-slider.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
@@ -135,6 +136,7 @@ set(obs_HEADERS
 	properties-view.hpp
 	display-helpers.hpp
 	double-slider.hpp
+	focus-list.hpp
 	mute-checkbox.hpp
 	volume-control.hpp
 	adv-audio-control.hpp
