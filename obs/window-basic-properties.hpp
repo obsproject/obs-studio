@@ -22,8 +22,7 @@
 #include <memory>
 #include <obs.hpp>
 
-#include "properties-view.hpp"
-
+class OBSPropertiesView;
 class OBSBasic;
 
 #include "ui_OBSBasicProperties.h"

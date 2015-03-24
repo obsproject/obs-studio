@@ -20,6 +20,7 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
+#include "properties-view.hpp"
 
 #include <QCloseEvent>
 #include <QScreen>
