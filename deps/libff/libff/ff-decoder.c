@@ -205,6 +205,12 @@ void ff_decoder_refresh(void *opaque)
 				// Our clock was never started and deleted or
 				// aborted
 
+				if (decoder->refresh_timer.abort) {
+					av_log(NULL, AV_LOG_INFO,
+						"refresh timer aborted");
+					return;
+				}
+
 				// Drop this frame? The only way this can happen
 				// is if one stream finishes before another and
 				// the input is looping or canceled.  Until we
