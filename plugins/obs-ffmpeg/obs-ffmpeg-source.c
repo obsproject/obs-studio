@@ -247,6 +247,10 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 	double d_pts;
 	uint64_t pts;
 
+	if (frame == NULL) {
+		return true;
+	}
+
 	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
 	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
 
@@ -273,6 +277,9 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 
 	double d_pts;
 	uint64_t pts;
+
+	if (frame == NULL)
+		return true;
 
 	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
 	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
