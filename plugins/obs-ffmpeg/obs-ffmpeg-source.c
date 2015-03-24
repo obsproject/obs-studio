@@ -244,8 +244,11 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 	struct ffmpeg_source *s = opaque;
 	struct obs_source_frame obs_frame = {0};
 
-	double d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
-	uint64_t pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
+	double d_pts;
+	uint64_t pts;
+
+	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
+	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
 
 	obs_frame.timestamp = pts;
 	obs_frame.width = frame->frame->width;
@@ -268,8 +271,11 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 
 	struct obs_source_audio audio_data = {0};
 
-	double d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
-	uint64_t pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
+	double d_pts;
+	uint64_t pts;
+
+	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
+	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
 
 	int channels = av_get_channel_layout_nb_channels(
 				av_frame_get_channel_layout(frame->frame));
