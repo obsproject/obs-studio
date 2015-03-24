@@ -1399,6 +1399,45 @@ void obs_source_filter_remove(obs_source_t *source, obs_source_t *filter)
 		obs_source_release(filter);
 }
 
+static size_t find_next_filter(obs_source_t *source, obs_source_t *filter,
+		size_t cur_idx)
+{
+	bool curAsync = (filter->info.output_flags & OBS_SOURCE_ASYNC) != 0;
+	bool nextAsync;
+	obs_source_t *next;
+
+	if (cur_idx == source->filters.num-1)
+		return DARRAY_INVALID;
+
+	next = source->filters.array[cur_idx+1];
+	nextAsync = (next->info.output_flags & OBS_SOURCE_ASYNC);
+
+	if (nextAsync == curAsync)
+		return cur_idx+1;
+	else
+		return find_next_filter(source, filter, cur_idx+1);
+}
+
+static size_t find_prev_filter(obs_source_t *source, obs_source_t *filter,
+		size_t cur_idx)
+{
+	bool curAsync = (filter->info.output_flags & OBS_SOURCE_ASYNC) != 0;
+	bool prevAsync;
+	obs_source_t *prev;
+
+	if (cur_idx == 0)
+		return DARRAY_INVALID;
+
+	prev = source->filters.array[cur_idx-1];
+	prevAsync = (prev->info.output_flags & OBS_SOURCE_ASYNC);
+
+	if (prevAsync == curAsync)
+		return cur_idx-1;
+	else
+		return find_prev_filter(source, filter, cur_idx-1);
+}
+
+/* moves filters above/below matching filter types */
 static bool move_filter_dir(obs_source_t *source,
 		obs_source_t *filter, enum obs_order_movement movement)
 {
@@ -1409,14 +1448,16 @@ static bool move_filter_dir(obs_source_t *source,
 		return false;
 
 	if (movement == OBS_ORDER_MOVE_UP) {
-		if (idx == source->filters.num-1)
+		size_t next_id = find_next_filter(source, filter, idx);
+		if (next_id == DARRAY_INVALID)
 			return false;
-		da_move_item(source->filters, idx, idx+1);
+		da_move_item(source->filters, idx, next_id);
 
 	} else if (movement == OBS_ORDER_MOVE_DOWN) {
-		if (idx == 0)
+		size_t prev_id = find_prev_filter(source, filter, idx);
+		if (prev_id == DARRAY_INVALID)
 			return false;
-		da_move_item(source->filters, idx, idx-1);
+		da_move_item(source->filters, idx, prev_id);
 
 	} else if (movement == OBS_ORDER_MOVE_TOP) {
 		if (idx == source->filters.num-1)
