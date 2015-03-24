@@ -184,6 +184,7 @@ void ff_decoder_refresh(void *opaque)
 				// Schedule another call as soon as possible
 				ff_decoder_schedule_refresh(decoder, 1);
 			} else {
+				ff_callbacks_frame(decoder->callbacks, NULL);
 				decoder->refresh_timer.abort = true;
 				// no more refreshes, we are at the eof
 				av_log(NULL, AV_LOG_INFO,
