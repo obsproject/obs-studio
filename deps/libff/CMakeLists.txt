@@ -6,10 +6,10 @@ find_package(FFMpeg REQUIRED
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
-if(WIN32)
+if(WIN32 AND NOT MINGW)
 	include_directories(../w32-pthreads)
 	add_definitions(-Dinline=__inline)
-endif(WIN32)
+endif(WIN32 AND NOT MINGW)
 
 set(libff_HEADERS
 	libff/ff-callbacks.h
