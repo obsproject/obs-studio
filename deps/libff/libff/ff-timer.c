@@ -77,20 +77,34 @@ static void *timer_thread(void *opaque)
 bool ff_timer_init(struct ff_timer *timer, ff_timer_callback callback,
 		void *opaque)
 {
-	int ret;
-
 	memset(timer, 0, sizeof(struct ff_timer));
 	timer->abort = false;
 	timer->callback = callback;
 	timer->opaque = opaque;
 
-	pthread_mutexattr_init(&timer->mutexattr);
-	pthread_mutexattr_settype(&timer->mutexattr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&timer->mutex, &timer->mutexattr);
-	pthread_cond_init(&timer->cond, NULL);
+	if (pthread_mutexattr_init(&timer->mutexattr) != 0)
+		goto fail;
+	if (pthread_mutexattr_settype(&timer->mutexattr,
+			PTHREAD_MUTEX_RECURSIVE))
+		goto fail1;
+	if (pthread_mutex_init(&timer->mutex, &timer->mutexattr) != 0)
+		goto fail1;
+	if (pthread_cond_init(&timer->cond, NULL) != 0)
+		goto fail2;
 
-	ret = pthread_create(&timer->timer_thread, NULL, timer_thread, timer);
-	return ret == 0;
+	if (pthread_create(&timer->timer_thread, NULL, timer_thread, timer) != 0)
+		goto fail3;
+
+	return true;
+
+fail3:
+	pthread_cond_destroy(&timer->cond);
+fail2:
+	pthread_mutex_destroy(&timer->mutex);
+fail1:
+	pthread_mutexattr_destroy(&timer->mutexattr);
+fail:
+	return false;
 }
 
 void ff_timer_free(struct ff_timer *timer)
