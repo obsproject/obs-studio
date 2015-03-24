@@ -42,9 +42,11 @@ private:
 	OBSSource  source;
 	OBSDisplay display;
 	OBSSignal  removedSignal;
+	OBSSignal  renamedSignal;
 	std::unique_ptr<OBSEventFilter> eventFilter;
 
 	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceRenamed(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
 	bool GetSourceRelativeXY(int mouseX, int mouseY, int &x, int &y);

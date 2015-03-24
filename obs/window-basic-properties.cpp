@@ -38,6 +38,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	  removedSignal          (obs_source_get_signal_handler(source),
 	                          "remove", OBSBasicProperties::SourceRemoved,
 	                          this),
+	  renamedSignal          (obs_source_get_signal_handler(source),
+	                          "rename", OBSBasicProperties::SourceRenamed,
+	                          this),
 	  oldSettings            (obs_data_create()),
 	  buttonBox              (new QDialogButtonBox(this))
 {
@@ -105,6 +108,15 @@ void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
 			"close");
 
 	UNUSED_PARAMETER(params);
+}
+
+void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
+{
+	const char *name = calldata_string(params, "new_name");
+	QString title = QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name));
+
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data),
+	                "setWindowTitle", Q_ARG(QString, title));
 }
 
 void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)

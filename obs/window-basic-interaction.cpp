@@ -35,6 +35,8 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	  source        (source_),
 	  removedSignal (obs_source_get_signal_handler(source), "remove",
 	                 OBSBasicInteraction::SourceRemoved, this),
+	  renamedSignal (obs_source_get_signal_handler(source), "rename",
+	                 OBSBasicInteraction::SourceRenamed, this),
 	  eventFilter   (BuildEventFilter())
 {
 	int cx = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
@@ -113,6 +115,15 @@ void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *params)
 			"close");
 
 	UNUSED_PARAMETER(params);
+}
+
+void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
+{
+	const char *name = calldata_string(params, "new_name");
+	QString title = QTStr("Basic.InteractionWindow").arg(QT_UTF8(name));
+
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data),
+	                "setWindowTitle", Q_ARG(QString, title));
 }
 
 void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)

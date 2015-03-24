@@ -40,12 +40,14 @@ private:
 	OBSSource  source;
 	OBSDisplay display;
 	OBSSignal  removedSignal;
+	OBSSignal  renamedSignal;
 	OBSSignal  updatePropertiesSignal;
 	OBSData    oldSettings;
 	OBSPropertiesView *view;
 	QDialogButtonBox *buttonBox;
 
 	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceRenamed(void *data, calldata_t *params);
 	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 	bool ConfirmQuit();
