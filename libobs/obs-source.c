@@ -1827,13 +1827,11 @@ static void process_audio(obs_source_t *source,
 void obs_source_output_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
 {
-	uint32_t flags;
 	struct obs_audio_data *output;
 
 	if (!source || !audio)
 		return;
 
-	flags = source->info.output_flags;
 	process_audio(source, audio);
 
 	pthread_mutex_lock(&source->filter_mutex);
