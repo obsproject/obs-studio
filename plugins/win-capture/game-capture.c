@@ -798,7 +798,13 @@ static inline bool init_events(struct game_capture *gc)
 	return true;
 }
 
-static inline bool init_capture_data(struct game_capture *gc)
+enum capture_result {
+	CAPTURE_FAIL,
+	CAPTURE_RETRY,
+	CAPTURE_SUCCESS
+};
+
+static inline enum capture_result init_capture_data(struct game_capture *gc)
 {
 	char name[64];
 	sprintf(name, "%s%u", SHMEM_TEXTURE, gc->global_hook_info->map_id);
@@ -818,14 +824,12 @@ static inline bool init_capture_data(struct game_capture *gc)
 	if (!gc->hook_data_map) {
 		DWORD error = GetLastError();
 		if (error == 2) {
-			info("init_capture_data: file mapping not found, "
-			     "retrying.  (this is often normal, and may take "
-			     "a few tries)");
+			return CAPTURE_RETRY;
 		} else {
 			warn("init_capture_data: failed to open file "
 			     "mapping: %lu", error);
 		}
-		return false;
+		return CAPTURE_FAIL;
 	}
 
 	gc->data = MapViewOfFile(gc->hook_data_map, FILE_MAP_ALL_ACCESS, 0, 0,
@@ -833,10 +837,10 @@ static inline bool init_capture_data(struct game_capture *gc)
 	if (!gc->data) {
 		warn("init_capture_data: failed to map data view: %lu",
 				GetLastError());
-		return false;
+		return CAPTURE_FAIL;
 	}
 
-	return true;
+	return CAPTURE_SUCCESS;
 }
 
 #define PIXEL_16BIT_SIZE 2
@@ -1030,9 +1034,6 @@ static bool start_capture(struct game_capture *gc)
 	if (!init_events(gc)) {
 		return false;
 	}
-	if (!init_capture_data(gc)) {
-		return false;
-	}
 	if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
 		if (!init_shmem_capture(gc)) {
 			return false;
@@ -1084,8 +1085,12 @@ static void game_capture_tick(void *data, float seconds)
 	}
 
 	if (gc->hook_ready && object_signalled(gc->hook_ready)) {
-		gc->capturing = start_capture(gc);
-		if (!gc->capturing) {
+		enum capture_result result = init_capture_data(gc);
+
+		if (result == CAPTURE_SUCCESS)
+			gc->capturing = start_capture(gc);
+
+		if (result != CAPTURE_RETRY && !gc->capturing) {
 			gc->retry_interval = ERROR_RETRY_INTERVAL;
 			stop_capture(gc);
 		}
