@@ -143,7 +143,10 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		obs_data_clear(settings);
 		obs_data_release(settings);
 
-		obs_source_update(source, oldSettings);
+		if (view->DeferUpdate())
+			obs_data_apply(settings, oldSettings);
+		else
+			obs_source_update(source, oldSettings);
 
 		close();
 	}
