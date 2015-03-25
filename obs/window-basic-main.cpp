@@ -98,8 +98,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		int posy = config_get_int(App()->GlobalConfig(), "MainWindow",
 				"posy");
 
-		resize(width, height);
-		move(posx, posy);
+		setGeometry(posx, posy, width, height);
 	}
 
 
