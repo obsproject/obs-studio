@@ -277,6 +277,7 @@ extern void obs_context_data_setname(struct obs_context_data *context,
 
 struct async_frame {
 	struct obs_source_frame *frame;
+	long unused_count;
 	bool used;
 };
 

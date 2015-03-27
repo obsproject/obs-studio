@@ -1629,6 +1629,23 @@ static inline void free_async_cache(struct obs_source *source)
 	da_resize(source->async_frames, 0);
 }
 
+#define MAX_UNUSED_FRAME_DURATION 5
+
+/* frees frame allocations if they haven't been used for a specific period
+ * of time */
+static void clean_cache(obs_source_t *source)
+{
+	for (size_t i = source->async_cache.num; i > 0; i--) {
+		struct async_frame *af = &source->async_cache.array[i - 1];
+		if (!af->used) {
+			if (++af->unused_count == MAX_UNUSED_FRAME_DURATION) {
+				obs_source_frame_destroy(af->frame);
+				da_erase(source->async_cache, i - 1);
+			}
+		}
+	}
+}
+
 static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -1652,9 +1669,12 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		if (!af->used) {
 			new_frame = af->frame;
 			af->used = true;
+			af->unused_count = 0;
 			break;
 		}
 	}
+
+	clean_cache(source);
 
 	if (!new_frame) {
 		struct async_frame new_af;
@@ -1663,6 +1683,7 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 				frame->width, frame->height);
 		new_af.frame = new_frame;
 		new_af.used = true;
+		new_af.unused_count = 0;
 		new_frame->refs = 1;
 
 		da_push_back(source->async_cache, &new_af);
