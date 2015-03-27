@@ -308,7 +308,7 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	item = scene->first_item;
 
 	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	gs_reset_blend_state();
 
 	while (item) {
 		if (obs_source_removed(item->source)) {
