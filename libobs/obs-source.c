@@ -1629,8 +1629,6 @@ static inline void free_async_cache(struct obs_source *source)
 	da_resize(source->async_frames, 0);
 }
 
-#define CACHE_LIMIT 30
-
 static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -1659,12 +1657,6 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 	}
 
 	if (!new_frame) {
-		/* ignore frames if cache limit reached */
-		if (source->async_cache.num == CACHE_LIMIT) {
-			pthread_mutex_unlock(&source->async_mutex);
-			return NULL;
-		}
-
 		struct async_frame new_af;
 
 		new_frame = obs_source_frame_create(frame->format,
