@@ -579,7 +579,7 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	SetEncoderName(aacTrack[3], name4, "Track4");
 
 	for (size_t i = 0; i < 4; i++) {
-		if (applyServiceSettings && (int)i == streamTrackIndex)
+		if (applyServiceSettings && (int)(i + 1) == streamTrackIndex)
 			obs_service_apply_encoder_settings(main->GetService(),
 					nullptr, settings[i]);
 
