@@ -127,11 +127,14 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	if (pthread_mutex_init(&graphics->effect_mutex, NULL) != 0)
 		return false;
 
-	graphics->exports.device_blend_function(graphics->device,
-			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	graphics->exports.device_blend_function_separate(graphics->device,
+			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
+			GS_BLEND_ONE, GS_BLEND_ONE);
 	graphics->cur_blend_state.enabled = true;
-	graphics->cur_blend_state.src     = GS_BLEND_SRCALPHA;
-	graphics->cur_blend_state.dest    = GS_BLEND_INVSRCALPHA;
+	graphics->cur_blend_state.src_c   = GS_BLEND_SRCALPHA;
+	graphics->cur_blend_state.dest_c  = GS_BLEND_INVSRCALPHA;
+	graphics->cur_blend_state.src_a   = GS_BLEND_ONE;
+	graphics->cur_blend_state.dest_a  = GS_BLEND_ONE;
 
 	graphics->exports.device_leave_context(graphics->device);
 
@@ -1023,7 +1026,8 @@ void gs_blend_state_pop(void)
 		return;
 
 	gs_enable_blending(state->enabled);
-	gs_blend_function(state->src, state->dest);
+	gs_blend_function_separate(state->src_c, state->dest_c,
+			state->src_a, state->dest_a);
 
 	da_pop_back(graphics->blend_state_stack);
 }
@@ -1036,9 +1040,13 @@ void gs_reset_blend_state(void)
 	if (!graphics->cur_blend_state.enabled)
 		gs_enable_blending(true);
 
-	if (graphics->cur_blend_state.src  != GS_BLEND_SRCALPHA ||
-	    graphics->cur_blend_state.dest != GS_BLEND_INVSRCALPHA)
-		gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	if (graphics->cur_blend_state.src_c  != GS_BLEND_SRCALPHA ||
+	    graphics->cur_blend_state.dest_c != GS_BLEND_INVSRCALPHA ||
+	    graphics->cur_blend_state.src_a  != GS_BLEND_ONE ||
+	    graphics->cur_blend_state.dest_a != GS_BLEND_ONE)
+		gs_blend_function_separate(
+				GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
+				GS_BLEND_ONE, GS_BLEND_ONE);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1518,9 +1526,26 @@ void gs_blend_function(enum gs_blend_type src, enum gs_blend_type dest)
 	graphics_t *graphics = thread_graphics;
 	if (!graphics) return;
 
-	graphics->cur_blend_state.src  = src;
-	graphics->cur_blend_state.dest = dest;
+	graphics->cur_blend_state.src_c  = src;
+	graphics->cur_blend_state.dest_c = dest;
+	graphics->cur_blend_state.src_a  = src;
+	graphics->cur_blend_state.dest_a = dest;
 	graphics->exports.device_blend_function(graphics->device, src, dest);
+}
+
+void gs_blend_function_separate(
+		enum gs_blend_type src_c, enum gs_blend_type dest_c,
+		enum gs_blend_type src_a, enum gs_blend_type dest_a)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!graphics) return;
+
+	graphics->cur_blend_state.src_c  = src_c;
+	graphics->cur_blend_state.dest_c = dest_c;
+	graphics->cur_blend_state.src_a  = src_a;
+	graphics->cur_blend_state.dest_a = dest_a;
+	graphics->exports.device_blend_function_separate(graphics->device,
+			src_c, dest_c, src_a, dest_a);
 }
 
 void gs_depth_function(enum gs_depth_test test)

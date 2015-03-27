@@ -495,8 +495,10 @@ struct gs_swap_chain {
 
 struct BlendState {
 	bool          blendEnabled;
-	gs_blend_type srcFactor;
-	gs_blend_type destFactor;
+	gs_blend_type srcFactorC;
+	gs_blend_type destFactorC;
+	gs_blend_type srcFactorA;
+	gs_blend_type destFactorA;
 
 	bool          redEnabled;
 	bool          greenEnabled;
@@ -505,8 +507,10 @@ struct BlendState {
 
 	inline BlendState()
 		: blendEnabled (true),
-		  srcFactor    (GS_BLEND_SRCALPHA),
-		  destFactor   (GS_BLEND_INVSRCALPHA),
+		  srcFactorC   (GS_BLEND_SRCALPHA),
+		  destFactorC  (GS_BLEND_INVSRCALPHA),
+		  srcFactorA   (GS_BLEND_ONE),
+		  destFactorA  (GS_BLEND_ONE),
 		  redEnabled   (true),
 		  greenEnabled (true),
 		  blueEnabled  (true),

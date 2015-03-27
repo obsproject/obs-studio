@@ -125,6 +125,9 @@ struct gs_exports {
 			bool blue, bool alpha);
 	void (*device_blend_function)(gs_device_t *device,
 			enum gs_blend_type src, enum gs_blend_type dest);
+	void (*device_blend_function_separate)(gs_device_t *device,
+			enum gs_blend_type src_c, enum gs_blend_type dest_c,
+			enum gs_blend_type src_a, enum gs_blend_type dest_a);
 	void (*device_depth_function)(gs_device_t *device,
 			enum gs_depth_test test);
 	void (*device_stencil_function)(gs_device_t *device,
@@ -258,8 +261,10 @@ struct gs_exports {
 
 struct blend_state {
 	bool               enabled;
-	enum gs_blend_type src;
-	enum gs_blend_type dest;
+	enum gs_blend_type src_c;
+	enum gs_blend_type dest_c;
+	enum gs_blend_type src_a;
+	enum gs_blend_type dest_a;
 };
 
 struct graphics_subsystem {

@@ -1115,6 +1115,22 @@ void device_blend_function(gs_device_t *device, enum gs_blend_type src,
 	UNUSED_PARAMETER(device);
 }
 
+void device_blend_function_separate(gs_device_t *device,
+		enum gs_blend_type src_c, enum gs_blend_type dest_c,
+		enum gs_blend_type src_a, enum gs_blend_type dest_a)
+{
+	GLenum gl_src_c = convert_gs_blend_type(src_c);
+	GLenum gl_dst_c = convert_gs_blend_type(dest_c);
+	GLenum gl_src_a = convert_gs_blend_type(src_a);
+	GLenum gl_dst_a = convert_gs_blend_type(dest_a);
+
+	glBlendFuncSeparate(gl_src_c, gl_dst_c, gl_src_a, gl_dst_a);
+	if (!gl_success("glBlendFuncSeparate"))
+		blog(LOG_ERROR, "device_blend_function_separate (GL) failed");
+
+	UNUSED_PARAMETER(device);
+}
+
 void device_depth_function(gs_device_t *device, enum gs_depth_test test)
 {
 	GLenum gl_test = convert_gs_depth_test(test);

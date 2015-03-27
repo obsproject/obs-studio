@@ -95,6 +95,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_enable_stencil_write);
 	GRAPHICS_IMPORT(device_enable_color);
 	GRAPHICS_IMPORT(device_blend_function);
+	GRAPHICS_IMPORT(device_blend_function_separate);
 	GRAPHICS_IMPORT(device_depth_function);
 	GRAPHICS_IMPORT(device_stencil_function);
 	GRAPHICS_IMPORT(device_stencil_op);

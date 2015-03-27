@@ -633,6 +633,9 @@ EXPORT void gs_enable_stencil_write(bool enable);
 EXPORT void gs_enable_color(bool red, bool green, bool blue, bool alpha);
 
 EXPORT void gs_blend_function(enum gs_blend_type src, enum gs_blend_type dest);
+EXPORT void gs_blend_function_separate(
+		enum gs_blend_type src_c, enum gs_blend_type dest_c,
+		enum gs_blend_type src_a, enum gs_blend_type dest_a);
 EXPORT void gs_depth_function(enum gs_depth_test test);
 
 EXPORT void gs_stencil_function(enum gs_stencil_side side,

@@ -302,13 +302,13 @@ ID3D11BlendState *gs_device::AddBlendState()
 		bd.RenderTarget[i].BlendOp        = D3D11_BLEND_OP_ADD;
 		bd.RenderTarget[i].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 		bd.RenderTarget[i].SrcBlend =
-			ConvertGSBlendType(blendState.srcFactor);
+			ConvertGSBlendType(blendState.srcFactorC);
 		bd.RenderTarget[i].DestBlend =
-			ConvertGSBlendType(blendState.destFactor);
+			ConvertGSBlendType(blendState.destFactorC);
 		bd.RenderTarget[i].SrcBlendAlpha =
-			bd.RenderTarget[i].SrcBlend;
+			ConvertGSBlendType(blendState.srcFactorA);
 		bd.RenderTarget[i].DestBlendAlpha =
-			bd.RenderTarget[i].DestBlend;
+			ConvertGSBlendType(blendState.destFactorA);
 		bd.RenderTarget[i].RenderTargetWriteMask =
 			D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
@@ -1388,13 +1388,34 @@ void device_enable_color(gs_device_t *device, bool red, bool green,
 void device_blend_function(gs_device_t *device, enum gs_blend_type src,
 		enum gs_blend_type dest)
 {
-	if (device->blendState.srcFactor  == src &&
-	    device->blendState.destFactor == dest)
+	if (device->blendState.srcFactorC  == src &&
+	    device->blendState.destFactorC == dest &&
+	    device->blendState.srcFactorA  == src &&
+	    device->blendState.destFactorA == dest)
 		return;
 
-	device->blendState.srcFactor  = src;
-	device->blendState.destFactor = dest;
+	device->blendState.srcFactorC = src;
+	device->blendState.destFactorC= dest;
+	device->blendState.srcFactorA = src;
+	device->blendState.destFactorA= dest;
 	device->blendStateChanged     = true;
+}
+
+void device_blend_function_separate(gs_device_t *device,
+		enum gs_blend_type src_c, enum gs_blend_type dest_c,
+		enum gs_blend_type src_a, enum gs_blend_type dest_a)
+{
+	if (device->blendState.srcFactorC  == src_c &&
+	    device->blendState.destFactorC == dest_c &&
+	    device->blendState.srcFactorA  == src_a &&
+	    device->blendState.destFactorA == dest_a)
+		return;
+
+	device->blendState.srcFactorC  = src_c;
+	device->blendState.destFactorC = dest_c;
+	device->blendState.srcFactorA  = src_a;
+	device->blendState.destFactorA = dest_a;
+	device->blendStateChanged      = true;
 }
 
 void device_depth_function(gs_device_t *device, enum gs_depth_test test)
