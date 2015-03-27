@@ -153,18 +153,106 @@ uint64_t os_gettime_ns(void)
 	return ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
 }
 
-/* should return $HOME/.[name] */
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.config/[name] as default */
 int os_get_config_path(char *dst, size_t size, const char *name)
 {
+#ifdef USE_XDG
+	char *xdg_ptr = getenv("XDG_CONFIG_HOME");
+	// If XDG_CONFIG_HOME is unset,
+	// we use the default $HOME/.config/[name] instead
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		return snprintf(dst, size, "%s/.config/%s", home_ptr, name);
+	} else {
+		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+	}
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
 
 	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+}
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.local/share/[name] as default */
+int os_get_data_path(char *dst, size_t size, const char *name)
+{
+#ifdef USE_XDG
+	char *xdg_ptr = getenv("XDG_DATA_HOME");
+	// If XDG_DATA_HOME is unset,
+	// we use the default $HOME/.local/share/[name] instead
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		return snprintf(dst, size, "%s/.local/share/%s", home_ptr, name);
+	} else {
+		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+	}
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
+}
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.cache/[name] as default */
+int os_get_cache_path(char *dst, size_t size, const char *name)
+{
+#ifdef USE_XDG
+	char *xdg_ptr = getenv("XDG_CACHE_HOME");
+	/* If XDG_CACHE_HOME is unset,
+	 * we use the default $HOME/.cache/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		return snprintf(dst, size, "%s/.cache/%s", home_ptr, name);
+	} else {
+		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+	}
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+#endif
 }
 
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.config/[name] as default */
 char *os_get_config_path_ptr(const char *name)
 {
+#ifdef USE_XDG
+	struct dstr path;
+	char *xdg_ptr = getenv("XDG_CONFIG_HOME");
+	/* If XDG_CONFIG_HOME is unset,
+	 * we use the default $HOME/.config/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		dstr_init_copy(&path, home_ptr);
+		dstr_cat(&path, "/.config/");
+		dstr_cat(&path, name);
+	} else {
+		dstr_init_copy(&path, xdg_ptr);
+		dstr_cat(&path, "/");
+		dstr_cat(&path, name);
+	}
+	return path.array;
+#else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
@@ -174,6 +262,77 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "/.");
 	dstr_cat(&path, name);
 	return path.array;
+#endif
+}
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.local/share/[name] as default */
+char *os_get_data_path_ptr(const char *name)
+{
+#ifdef USE_XDG
+	struct dstr path;
+	char *xdg_ptr = getenv("XDG_DATA_HOME");
+	/* If XDG_DATA_HOME is unset,
+	 * we use the default $HOME/.local/share/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		dstr_init_copy(&path, home_ptr);
+		dstr_cat(&path, "/.local/share/");
+		dstr_cat(&path, name);
+	} else {
+		dstr_init_copy(&path, xdg_ptr);
+		dstr_cat(&path, "/");
+		dstr_cat(&path, name);
+	}
+	return path.array;
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/.");
+	dstr_cat(&path, name);
+	return path.array;
+#endif
+}
+/* should return $HOME/.[name], or when using XDG,
+ * should return $HOME/.cache/[name] as default */
+char *os_get_cache_path_ptr(const char *name)
+{
+#ifdef USE_XDG
+	struct dstr path;
+	char *xdg_ptr = getenv("XDG_CACHE_HOME");
+	/* If XDG_CACHE_HOME is unset,
+	 * we use the default $HOME/.cache/[name] instead */
+	if (xdg_ptr == NULL) {
+		char *home_ptr = getenv("HOME");
+		if (home_ptr == NULL)
+			bcrash("Could not get $HOME\n");
+
+		dstr_init_copy(&path, home_ptr);
+		dstr_cat(&path, "/.cache/");
+		dstr_cat(&path, name);
+	} else {
+		dstr_init_copy(&path, xdg_ptr);
+		dstr_cat(&path, "/");
+		dstr_cat(&path, name);
+	}
+	return path.array;
+#else
+	char *path_ptr = getenv("HOME");
+	if (path_ptr == NULL)
+		bcrash("Could not get $HOME\n");
+
+	struct dstr path;
+	dstr_init_copy(&path, path_ptr);
+	dstr_cat(&path, "/.");
+	dstr_cat(&path, name);
+	return path.array;
+#endif
 }
 
 #endif
@@ -298,10 +457,35 @@ int os_unlink(const char *path)
 
 int os_mkdir(const char *path)
 {
-	if (mkdir(path, 0777) == 0)
+	if (mkdir(path, 0755) == 0)
 		return MKDIR_SUCCESS;
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
+}
+
+int os_mkdirs(const char *path, int mode) {
+
+	char _path[FILENAME_MAX];
+	char *p = NULL;
+	size_t len;
+
+	snprintf(_path, sizeof(_path), "%s", path);
+	len = strlen(_path);
+	if (_path[len - 1] == '/') {
+		_path[len - 1] = 0;
+	}
+	for (p = _path + 1; *p; p++) {
+		if (*p == '/') {
+			*p = 0;
+			mkdir(_path, mode);
+			*p = '/';
+		}
+	}
+	if (0 == mkdir(_path, mode))
+		return MKDIR_SUCCESS;
+	else
+		return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
+
 }
 
 #if !defined(__APPLE__)

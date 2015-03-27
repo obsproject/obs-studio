@@ -95,6 +95,10 @@ EXPORT uint64_t os_gettime_ns(void);
 
 EXPORT int os_get_config_path(char *dst, size_t size, const char *name);
 EXPORT char *os_get_config_path_ptr(const char *name);
+EXPORT int os_get_data_path(char *dst, size_t size, const char *name);
+EXPORT char *os_get_data_path_ptr(const char *name);
+EXPORT int os_get_cache_path(char *dst, size_t size, const char *name);
+EXPORT char *os_get_cache_path_ptr(const char *name);
 
 EXPORT bool os_file_exists(const char *path);
 
@@ -134,6 +138,8 @@ EXPORT int os_unlink(const char *path);
 #define MKDIR_ERROR   -1
 
 EXPORT int os_mkdir(const char *path);
+
+EXPORT int os_mkdirs(const char *path, int mode);
 
 #ifdef _MSC_VER
 #define strtoll _strtoi64
