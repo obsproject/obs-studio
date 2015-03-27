@@ -561,6 +561,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 			"Track4Name");
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 			"ApplyServiceSettings");
+	int streamTrackIndex = config_get_int(main->Config(), "AdvOut",
+			"TrackIndex");
 	obs_data_t *settings[4];
 
 	for (size_t i = 0; i < 4; i++)
@@ -577,7 +579,7 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	SetEncoderName(aacTrack[3], name4, "Track4");
 
 	for (size_t i = 0; i < 4; i++) {
-		if (applyServiceSettings)
+		if (applyServiceSettings && (int)i == streamTrackIndex)
 			obs_service_apply_encoder_settings(main->GetService(),
 					nullptr, settings[i]);
 
