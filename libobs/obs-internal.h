@@ -337,6 +337,7 @@ struct obs_source {
 	/* async video data */
 	gs_texture_t                    *async_texture;
 	gs_texrender_t                  *async_convert_texrender;
+	struct obs_source_frame         *cur_async_frame;
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
 	enum gs_color_format            async_texture_format;

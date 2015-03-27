@@ -616,11 +616,30 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 	}
 }
 
+static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
+		uint64_t sys_time);
+static void remove_async_frame(obs_source_t *source,
+		struct obs_source_frame *frame);
+
 void obs_source_video_tick(obs_source_t *source, float seconds)
 {
 	bool now_showing, now_active;
 
 	if (!source) return;
+
+	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0) {
+		uint64_t sys_time = os_gettime_ns();
+
+		pthread_mutex_lock(&source->async_mutex);
+		if (source->cur_async_frame) {
+			remove_async_frame(source, source->cur_async_frame);
+			source->cur_async_frame = NULL;
+		}
+
+		source->cur_async_frame = get_closest_frame(source, sys_time);
+		source->last_sys_timestamp = sys_time;
+		pthread_mutex_unlock(&source->async_mutex);
+	}
 
 	if (source->defer_update)
 		obs_source_deferred_update(source);
@@ -1655,19 +1674,16 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 	return new_frame;
 }
 
-static inline void cycle_frames(struct obs_source *source)
-{
-	bool not_currently_visible = !source->show_refs || !source->enabled;
-
-	if (source->async_frames.num && not_currently_visible)
-		ready_async_frame(source, os_gettime_ns());
-}
-
 void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame)
 {
 	if (!source)
 		return;
+
+	if (!frame) {
+		source->async_active = false;
+		return;
+	}
 
 	struct obs_source_frame *output = !!frame ?
 		cache_video(source, frame) : NULL;
@@ -1676,12 +1692,9 @@ void obs_source_output_video(obs_source_t *source,
 
 	if (output) {
 		pthread_mutex_lock(&source->async_mutex);
-		cycle_frames(source);
 		da_push_back(source->async_frames, &output);
 		pthread_mutex_unlock(&source->async_mutex);
 		source->async_active = true;
-	} else {
-		source->async_active = false;
 	}
 }
 
@@ -1968,9 +1981,16 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 		uint64_t sys_time)
 {
-	if (ready_async_frame(source, sys_time)) {
+	if (!source->async_frames.num)
+		return NULL;
+
+	if (!source->last_frame_ts || ready_async_frame(source, sys_time)) {
 		struct obs_source_frame *frame = source->async_frames.array[0];
 		da_erase(source->async_frames, 0);
+
+		if (!source->last_frame_ts)
+			source->last_frame_ts = frame->timestamp;
+
 		return frame;
 	}
 
@@ -1986,34 +2006,19 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 {
 	struct obs_source_frame *frame = NULL;
-	uint64_t sys_time;
 
 	if (!source)
 		return NULL;
 
 	pthread_mutex_lock(&source->async_mutex);
 
-	sys_time = os_gettime_ns();
-
-	if (!source->async_frames.num)
-		goto unlock;
-
-	if (!source->last_frame_ts) {
-		frame = source->async_frames.array[0];
-		da_erase(source->async_frames, 0);
-
-		source->last_frame_ts = frame->timestamp;
-	} else {
-		frame = get_closest_frame(source, sys_time);
-	}
+	frame = source->cur_async_frame;
+	source->cur_async_frame = NULL;
 
 	/* reset timing to current system time */
 	if (frame) {
 		os_atomic_inc_long(&frame->refs);
 	}
-
-unlock:
-	source->last_sys_timestamp = sys_time;
 
 	pthread_mutex_unlock(&source->async_mutex);
 
