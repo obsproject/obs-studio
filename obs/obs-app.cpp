@@ -145,6 +145,13 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 
+#ifdef _WIN32
+	if (os_get_config_path(path, sizeof(path), "obs-studio/crashes") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
+#endif
+
 	return true;
 }
 
@@ -456,9 +463,9 @@ static uint64_t convert_log_name(const char *name)
 	return std::stoull(timestring.str());
 }
 
-static void delete_oldest_log(void)
+static void delete_oldest_file(const char *location)
 {
-	BPtr<char>       logDir(os_get_config_path_ptr("obs-studio/logs"));
+	BPtr<char>       logDir(os_get_config_path_ptr(location));
 	string           oldestLog;
 	uint64_t         oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
@@ -577,7 +584,7 @@ static void create_log_file(fstream &logFile)
 			ios_base::in | ios_base::out | ios_base::trunc);
 
 	if (logFile.is_open()) {
-		delete_oldest_log();
+		delete_oldest_file("obs-studio/logs");
 		base_set_log_handler(do_log, &logFile);
 	} else {
 		blog(LOG_ERROR, "Failed to open log file");
@@ -612,20 +619,52 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #define MAX_CRASH_REPORT_SIZE (50 * 1024)
 
+#ifdef _WIN32
+
+#define CRASH_MESSAGE \
+	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
+	"to the clipboard?  (Crash logs will still be saved to the " \
+	"%appdata%\\obs-studio\\crashes directory)"
+
 static void main_crash_handler(const char *format, va_list args, void *param)
 {
-	char *test = new char[MAX_CRASH_REPORT_SIZE];
+	char *text = new char[MAX_CRASH_REPORT_SIZE];
 
-	vsnprintf(test, MAX_CRASH_REPORT_SIZE, format, args);
+	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 
-	OBSCrashReport crashReport(nullptr, test);
-	crashReport.exec();
+	delete_oldest_file("obs-studio/crashes");
+
+	string name = "obs-studio/crashes/Crash ";
+	name += GenerateTimeDateFilename("txt");
+
+	BPtr<char> path(os_get_config_path_ptr(name.c_str()));
+
+	fstream file;
+	file.open(path, ios_base::in | ios_base::out | ios_base::trunc);
+	file << text;
+	file.close();
+
+	int ret = MessageBoxA(NULL, CRASH_MESSAGE, "OBS has crashed!",
+			MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
+
+	if (ret == IDYES) {
+		size_t len = strlen(text);
+
+		HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, len);
+		memcpy(GlobalLock(mem), text, len);
+		GlobalUnlock(mem);
+
+		OpenClipboard(0);
+		EmptyClipboard();
+		SetClipboardData(CF_TEXT, mem);
+		CloseClipboard();
+	}
+
 	exit(-1);
 
 	UNUSED_PARAMETER(param);
 }
 
-#ifdef _WIN32
 static void load_debug_privilege(void)
 {
 	const DWORD flags = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY;
@@ -658,9 +697,9 @@ int main(int argc, char *argv[])
 
 #ifdef _WIN32
 	load_debug_privilege();
+	base_set_crash_handler(main_crash_handler, nullptr);
 #endif
 
-	base_set_crash_handler(main_crash_handler, nullptr);
 	base_get_log_handler(&def_log_handler, nullptr);
 
 	fstream logFile;
