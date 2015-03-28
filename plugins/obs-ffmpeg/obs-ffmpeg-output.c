@@ -526,6 +526,11 @@ static void receive_video(void *param, struct video_data *frame)
 {
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data   *data   = &output->ff_data;
+
+	// codec doesn't support video or none configured
+	if (!data->video)
+		return;
+
 	AVCodecContext *context = data->video->codec;
 	AVPacket packet = {0};
 	int ret = 0, got_packet;
@@ -670,6 +675,10 @@ static void receive_audio(void *param, struct audio_data *frame)
 	struct ffmpeg_data   *data   = &output->ff_data;
 	size_t frame_size_bytes;
 	struct audio_data in;
+
+	// codec doesn't support audio or none configured
+	if (!data->audio)
+		return;
 
 	AVCodecContext *context = data->audio->codec;
 
