@@ -361,6 +361,13 @@ static void close_video(struct ffmpeg_data *data)
 {
 	avcodec_close(data->video->codec);
 	avpicture_free(&data->dst_picture);
+
+	// This format for some reason derefs video frame
+	// too many times
+	if (data->vcodec->id == AV_CODEC_ID_A64_MULTI ||
+	    data->vcodec->id == AV_CODEC_ID_A64_MULTI5)
+		return;
+
 	av_frame_free(&data->vframe);
 }
 
