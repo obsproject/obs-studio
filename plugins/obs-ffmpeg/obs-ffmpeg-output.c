@@ -32,10 +32,14 @@
 
 struct ffmpeg_cfg {
 	const char         *url;
+	const char         *format_name;
+	const char         *format_mime_type;
 	int                video_bitrate;
 	int                audio_bitrate;
 	const char         *video_encoder;
+	int                video_encoder_id;
 	const char         *audio_encoder;
+	int                audio_encoder_id;
 	const char         *video_settings;
 	const char         *audio_settings;
 	enum AVPixelFormat format;
@@ -401,6 +405,14 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
+static inline const char *safe_str(const char *s)
+{
+	if (s == NULL)
+		return "(NULL)";
+	else
+		return s;
+}
+
 static bool ffmpeg_data_init(struct ffmpeg_data *data,
 		struct ffmpeg_cfg *config)
 {
@@ -417,11 +429,33 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 
 	is_rtmp = (astrcmpi_n(config->url, "rtmp://", 7) == 0);
 
-	avformat_alloc_output_context2(&data->output, NULL,
-			is_rtmp ? "flv" : NULL, data->config.url);
+	AVOutputFormat *output_format = av_guess_format(
+			is_rtmp ? "flv" : data->config.format_name,
+			data->config.url,
+			is_rtmp ? NULL : data->config.format_mime_type);
+
+	if (output_format == NULL) {
+		blog(LOG_WARNING, "Couldn't find matching output format with "
+				" parameters: name=%s, url=%s, mime=%s",
+				safe_str(is_rtmp ?
+					"flv" :	data->config.format_name),
+				safe_str(data->config.url),
+				safe_str(is_rtmp ?
+					NULL : data->config.format_mime_type));
+		goto fail;
+	}
+
+	avformat_alloc_output_context2(&data->output, output_format,
+			NULL, NULL);
+
 	if (is_rtmp) {
 		data->output->oformat->video_codec = AV_CODEC_ID_H264;
 		data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
+	} else {
+		data->output->oformat->video_codec =
+				data->config.video_encoder_id;
+		data->output->oformat->audio_codec =
+				data->config.audio_encoder_id;
 	}
 
 	if (!data->output) {
@@ -764,6 +798,15 @@ static void *write_thread(void *data)
 	return NULL;
 }
 
+static inline const char *get_string_or_null(obs_data_t *settings,
+		const char *name)
+{
+	const char *value = obs_data_get_string(settings, name);
+	if (!value || !strlen(value))
+		return NULL;
+	return value;
+}
+
 static bool try_connect(struct ffmpeg_output *output)
 {
 	video_t *video = obs_output_video(output->output);
@@ -774,10 +817,17 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	settings = obs_output_get_settings(output->output);
 	config.url = obs_data_get_string(settings, "url");
+	config.format_name = get_string_or_null(settings, "format_name");
+	config.format_mime_type = get_string_or_null(settings,
+			"format_mime_type");
 	config.video_bitrate = (int)obs_data_get_int(settings, "video_bitrate");
 	config.audio_bitrate = (int)obs_data_get_int(settings, "audio_bitrate");
-	config.video_encoder = obs_data_get_string(settings, "video_encoder");
-	config.audio_encoder = obs_data_get_string(settings, "audio_encoder");
+	config.video_encoder = get_string_or_null(settings, "video_encoder");
+	config.video_encoder_id = (int)obs_data_get_int(settings,
+			"video_encoder_id");
+	config.audio_encoder = get_string_or_null(settings, "audio_encoder");
+	config.audio_encoder_id = (int)obs_data_get_int(settings,
+			"audio_encoder_id");
 	config.video_settings = obs_data_get_string(settings, "video_settings");
 	config.audio_settings = obs_data_get_string(settings, "audio_settings");
 	config.scale_width = (int)obs_data_get_int(settings, "scale_width");
