@@ -58,4 +58,5 @@ if(NOT MSVC)
         endif()
 endif()
 
-target_link_libraries (libff)
+target_link_libraries (libff
+	${FFMPEG_LIBRARIES})
