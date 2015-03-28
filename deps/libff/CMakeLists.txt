@@ -19,6 +19,7 @@ set(libff_HEADERS
 	libff/ff-packet-queue.h
 	libff/ff-threading.h
 	libff/ff-timer.h
+	libff/ff-util.h
 	#
 	libff/ff-demuxer.h
 	#
@@ -30,6 +31,7 @@ set(libff_SOURCES
 	libff/ff-clock.c
 	libff/ff-packet-queue.c
 	libff/ff-timer.c
+	libff/ff-util.c
 	#
 	libff/ff-demuxer.c
 	#
