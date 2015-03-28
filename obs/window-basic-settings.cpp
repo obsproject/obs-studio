@@ -686,6 +686,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutMaxRetries->setValue(maxRetries);
 	ui->advOutApplyService->setChecked(applyServiceSettings);
 	ui->advOutUseRescale->setChecked(rescale);
+	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
 	switch (trackIndex) {
@@ -807,6 +808,7 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	ui->advOutFFURL->setText(url);
 	ui->advOutFFVBitrate->setValue(videoBitrate);
 	ui->advOutFFUseRescale->setChecked(rescale);
+	ui->advOutFFRescale->setEnabled(rescale);
 	ui->advOutFFRescale->setCurrentText(rescaleRes);
 	ui->advOutFFVEncoder->setText(vEncoder);
 	ui->advOutFFVCfg->setText(vEncCustom);
