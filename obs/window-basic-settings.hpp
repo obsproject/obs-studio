@@ -23,6 +23,8 @@
 #include <memory>
 #include <string>
 
+#include <libff/ff-util.h>
+
 #include <obs.h>
 
 class OBSBasic;
@@ -31,6 +33,23 @@ class QComboBox;
 class OBSPropertiesView;
 
 #include "ui_OBSBasicSettings.h"
+
+class OBSFFDeleter
+{
+public:
+	void operator()(const ff_format_desc *format)
+	{
+		ff_format_desc_free(format);
+	}
+	void operator()(const ff_codec_desc *codec)
+	{
+		ff_codec_desc_free(codec);
+	}
+};
+using OBSFFCodecDesc = std::unique_ptr<const ff_codec_desc,
+		OBSFFDeleter>;
+using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc,
+		OBSFFDeleter>;
 
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
@@ -49,6 +68,8 @@ private:
 	bool loading = true;
 	std::string savedTheme;
 
+	OBSFFFormatDesc formats;
+
 	OBSPropertiesView *streamProperties = nullptr;
 	OBSPropertiesView *streamEncoderProps = nullptr;
 	OBSPropertiesView *recordEncoderProps = nullptr;
@@ -62,6 +83,9 @@ private:
 	void SaveEdit(QLineEdit *widget, const char *section,
 			const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
+			const char *value);
+	void SaveFormat(QComboBox *combo);
+	void SaveEncoder(QComboBox *combo, const char *section,
 			const char *value);
 
 	inline bool Changed() const
@@ -93,6 +117,8 @@ private:
 	void LoadServiceTypes();
 	void LoadEncoderTypes();
 	void LoadColorRanges();
+	void LoadFormats();
+	void ReloadCodecs(const ff_format_desc *formatDesc);
 
 	void LoadGeneralSettings();
 	void LoadStream1Settings();
@@ -117,6 +143,9 @@ private:
 	void LoadAdvOutputRecordingEncoderProperties();
 	void LoadAdvOutputFFmpegSettings();
 	void LoadAdvOutputAudioSettings();
+	void SetAdvOutputFFmpegEnablement(
+		ff_codec_type encoderType, bool enabled,
+		bool enableEncode = false);
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop,
@@ -154,6 +183,9 @@ private slots:
 	void on_advOutFFPathBrowse_clicked();
 	void on_advOutEncoder_currentIndexChanged(int idx);
 	void on_advOutRecEncoder_currentIndexChanged(int idx);
+	void on_advOutFFFormat_currentIndexChanged(int idx);
+	void on_advOutFFAEncoder_currentIndexChanged(int idx);
+	void on_advOutFFVEncoder_currentIndexChanged(int idx);
 
 	void on_baseResolution_editTextChanged(const QString &text);
 

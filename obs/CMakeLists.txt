@@ -189,6 +189,7 @@ endif()
 
 target_link_libraries(obs
 	libobs
+	libff
 	Qt5::Widgets
 	Qt5::Network
 	${obs_PLATFORM_LIBRARIES})
