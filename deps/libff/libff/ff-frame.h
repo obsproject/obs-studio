@@ -20,6 +20,10 @@
 
 #include <libavcodec/avcodec.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ff_frame {
 	AVFrame *frame;
 	struct ff_clock *clock;
@@ -28,3 +32,7 @@ struct ff_frame {
 };
 
 typedef struct ff_frame ff_frame_t;
+
+#ifdef __cplusplus
+}
+#endif

@@ -20,6 +20,10 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*ff_timer_callback)(void *opaque);
 
 struct ff_timer {
@@ -43,3 +47,7 @@ bool ff_timer_init(struct ff_timer *timer,
 		ff_timer_callback callback, void *opaque);
 void ff_timer_free(struct ff_timer *timer);
 void ff_timer_schedule(struct ff_timer *timer, uint64_t microseconds);
+
+#ifdef __cplusplus
+}
+#endif

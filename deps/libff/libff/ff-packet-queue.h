@@ -26,6 +26,10 @@
 #define FF_PACKET_EMPTY 0
 #define FF_PACKET_SUCCESS 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ff_packet {
 	AVPacket base;
 	ff_clock_t *clock;
@@ -58,3 +62,7 @@ int packet_queue_get(struct ff_packet_queue *q, struct ff_packet *packet,
 		bool block);
 
 void packet_queue_flush(struct ff_packet_queue *q);
+
+#ifdef __cplusplus
+}
+#endif

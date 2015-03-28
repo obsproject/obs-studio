@@ -16,6 +16,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pthread.h>
 #include <libavutil/mem.h>
 #include <stdbool.h>
@@ -48,3 +52,7 @@ void *ff_circular_queue_peek_write(struct ff_circular_queue *cq);
 void ff_circular_queue_advance_write(struct ff_circular_queue *cq, void *item);
 void *ff_circular_queue_peek_read(struct ff_circular_queue *cq);
 void ff_circular_queue_advance_read(struct ff_circular_queue *cq);
+
+#ifdef __cplusplus
+}
+#endif
