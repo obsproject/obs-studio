@@ -309,6 +309,8 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	context->time_base   = (AVRational){ 1, aoi.samples_per_sec };
 	context->channels    = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
+	context->channel_layout =
+			av_get_default_channel_layout(context->channels);
 	context->sample_fmt  = data->acodec->sample_fmts ?
 		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
