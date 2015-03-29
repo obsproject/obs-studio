@@ -102,13 +102,17 @@ Mac OSX
     This will create a .dmg file with an app bundle inside.
 
 
-Linux (Ubuntu 14.04/14.10 installation)
+Linux (Ubuntu 14.04/14.10/15.04 installation)
   - FFmpeg is required.  If you do not have the FFmpeg installed (if you're not
     sure, then you probably don't have it), you can get it with the following
     commands:
-
+    
+    *For Ubuntu 14.04/14.10:
         sudo add-apt-repository ppa:kirillshkrogalev/ffmpeg-next
         sudo apt-get update && sudo apt-get install ffmpeg
+        
+    *For Ubuntu 15.04:
+    	sudo apt-get install ffmpeg
 
   - Then you can install OBS with the following commands:
 
@@ -182,7 +186,7 @@ Linux (Manually compiling on Debian-based distros)
         sudo apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
                 libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
                 libfontconfig-dev qtbase5-dev libqt5x11extras5-dev libx264-dev \
-                libxcb-xinerama0-dev libxcb-shm0-dev
+                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev
 
   - Building and installing OBS:
 
