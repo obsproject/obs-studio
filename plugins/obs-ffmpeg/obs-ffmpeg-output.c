@@ -227,10 +227,11 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->bit_rate       = data->config.video_bitrate * 1000;
 	context->width          = data->config.scale_width;
 	context->height         = data->config.scale_height;
-	context->time_base.num  = ovi.fps_den;
-	context->time_base.den  = ovi.fps_num;
+	context->time_base      = (AVRational){ ovi.fps_den, ovi.fps_num };
 	context->gop_size       = 120;
 	context->pix_fmt        = closest_format;
+
+	data->video->time_base = context->time_base;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -305,10 +306,13 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 
 	context              = data->audio->codec;
 	context->bit_rate    = data->config.audio_bitrate * 1000;
+	context->time_base   = (AVRational){ 1, aoi.samples_per_sec };
 	context->channels    = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
 	context->sample_fmt  = data->acodec->sample_fmts ?
 		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+
+	data->audio->time_base = context->time_base;
 
 	data->audio_samplerate = aoi.samples_per_sec;
 	data->audio_format = convert_ffmpeg_sample_format(context->sample_fmt);
