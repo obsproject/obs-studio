@@ -24,6 +24,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ff_decoder {
 	AVCodecContext *codec;
 	AVStream *stream;
@@ -73,3 +77,7 @@ double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 
 bool ff_decoder_set_frame_drop_state(struct ff_decoder *decoder,
 		int64_t start_time, int64_t pts);
+
+#ifdef __cplusplus
+}
+#endif

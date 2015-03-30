@@ -23,6 +23,10 @@
 #include <stdint.h>
 #include <pthread.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ff_av_sync_type {
 	AV_SYNC_AUDIO_MASTER,
 	AV_SYNC_VIDEO_MASTER,
@@ -55,3 +59,7 @@ void ff_clock_release(struct ff_clock **clock);
 int64_t ff_clock_start_time(struct ff_clock *clock);
 bool ff_clock_start(struct ff_clock *clock, enum ff_av_sync_type sync_type,
 		const bool *abort);
+
+#ifdef __cplusplus
+}
+#endif

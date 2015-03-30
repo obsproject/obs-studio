@@ -21,6 +21,10 @@
 #include <libavcodec/avcodec.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef bool (*ff_callback_frame)(struct ff_frame *frame, void *opaque);
 typedef bool (*ff_callback_format)(AVCodecContext *codec_context, void *opaque);
 typedef bool (*ff_callback_initialize)(void *opaque);
@@ -44,3 +48,7 @@ bool ff_callbacks_frame_initialize(struct ff_frame *frame,
 		struct ff_callbacks *callbacks);
 bool ff_callbacks_frame_free(struct ff_frame *frame,
 		struct ff_callbacks *callbacks);
+
+#ifdef __cplusplus
+}
+#endif

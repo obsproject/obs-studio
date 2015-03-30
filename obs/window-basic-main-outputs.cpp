@@ -495,8 +495,14 @@ inline void AdvancedOutput::SetupFFmpeg()
 			"FFRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"FFRescaleRes");
+	const char *formatName = config_get_string(main->Config(), "AdvOut",
+			"FFFormat");
+	const char *mimeType = config_get_string(main->Config(), "AdvOut",
+			"FFFormatMimeType");
 	const char *vEncoder = config_get_string(main->Config(), "AdvOut",
 			"FFVEncoder");
+	int vEncoderId = config_get_int(main->Config(), "AdvOut",
+			"FFVEncoderId");
 	const char *vEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFVCustom");
 	int aBitrate = config_get_int(main->Config(), "AdvOut",
@@ -505,16 +511,22 @@ inline void AdvancedOutput::SetupFFmpeg()
 			"FFAudioTrack");
 	const char *aEncoder = config_get_string(main->Config(), "AdvOut",
 			"FFAEncoder");
+	int aEncoderId = config_get_int(main->Config(), "AdvOut",
+			"FFAEncoderId");
 	const char *aEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFACustom");
 	obs_data_t *settings = obs_data_create();
 
 	obs_data_set_string(settings, "url", url);
+	obs_data_set_string(settings, "format_name", formatName);
+	obs_data_set_string(settings, "format_mime_type", mimeType);
 	obs_data_set_int(settings, "video_bitrate", vBitrate);
 	obs_data_set_string(settings, "video_encoder", vEncoder);
+	obs_data_set_int(settings, "video_encoder_id", vEncoderId);
 	obs_data_set_string(settings, "video_settings", vEncCustom);
 	obs_data_set_int(settings, "audio_bitrate", aBitrate);
 	obs_data_set_string(settings, "audio_encoder", aEncoder);
+	obs_data_set_int(settings, "audio_encoder_id", aEncoderId);
 	obs_data_set_string(settings, "audio_settings", aEncCustom);
 
 	if (rescale && rescaleRes && *rescaleRes) {

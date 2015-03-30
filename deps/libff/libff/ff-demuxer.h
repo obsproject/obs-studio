@@ -27,6 +27,10 @@
 
 #include "ff-callbacks.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ff_demuxer_options
 {
 	int audio_packet_queue_size;
@@ -82,3 +86,7 @@ void ff_demuxer_set_callbacks(struct ff_callbacks *callbacks,
 		void *opaque);
 
 void ff_demuxer_flush(struct ff_demuxer *demuxer);
+
+#ifdef __cplusplus
+}
+#endif
