@@ -289,8 +289,7 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
 	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
 
-	int channels = av_get_channel_layout_nb_channels(
-				av_frame_get_channel_layout(frame->frame));
+	int channels = av_frame_get_channels(frame->frame);
 
 	for(int i = 0; i < channels; i++)
 		audio_data.data[i] = frame->frame->data[i];
