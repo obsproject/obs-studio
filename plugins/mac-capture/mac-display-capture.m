@@ -198,11 +198,14 @@ static bool init_display_stream(struct display_capture *dc)
 					dc->screen.frame.size.width,
 					dc->screen.frame.size.height)));
 
+	CFBooleanRef show_cursor_cf =
+		dc->hide_cursor ? kCFBooleanFalse : kCFBooleanTrue;
+
 	NSDictionary *dict = @{
 		(__bridge NSString*)kCGDisplayStreamSourceRect: rect_dict,
 		(__bridge NSString*)kCGDisplayStreamQueueDepth: @5,
 		(__bridge NSString*)kCGDisplayStreamShowCursor:
-			@(!dc->hide_cursor),
+			(id)show_cursor_cf,
 	};
 
 	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
