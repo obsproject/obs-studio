@@ -414,9 +414,11 @@ inline void AdvancedOutput::SetupStreaming()
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
-	if (rescale && sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
-		cx = 0;
-		cy = 0;
+	if (rescale && rescaleRes && *rescaleRes) {
+		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
+			cx = 0;
+			cy = 0;
+		}
 	}
 
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
@@ -459,9 +461,11 @@ inline void AdvancedOutput::SetupRecording()
 	if (useStreamEncoder) {
 		obs_output_set_video_encoder(fileOutput, h264Streaming);
 	} else {
-		if (rescale && sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
-			cx = 0;
-			cy = 0;
+		if (rescale && rescaleRes && *rescaleRes) {
+			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
+				cx = 0;
+				cy = 0;
+			}
 		}
 
 		obs_encoder_set_scaled_size(h264Recording, cx, cy);
