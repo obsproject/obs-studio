@@ -261,6 +261,7 @@ static void *display_capture_create(obs_data_t *settings,
 	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
 
 	dc->source = source;
+	dc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
 
 	dc->effect = obs_get_default_rect_effect();
 	if (!dc->effect)
