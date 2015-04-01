@@ -688,7 +688,7 @@
      <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
    </property>
    <property name="text">
-    <string>Basic.Main.MoveUp</string>
+    <string>MoveUp</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">upArrowIconSmall</string>
@@ -718,7 +718,7 @@
      <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
    </property>
    <property name="text">
-    <string>Basic.Main.MoveDown</string>
+    <string>MoveDown</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">downArrowIconSmall</string>
