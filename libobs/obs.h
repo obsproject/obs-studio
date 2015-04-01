@@ -555,6 +555,9 @@ EXPORT void obs_load_sources(obs_data_array_t *array);
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);
 
+EXPORT void obs_preview_set_enabled(bool enable);
+EXPORT bool obs_preview_enabled(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */

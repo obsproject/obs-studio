@@ -1536,3 +1536,14 @@ void obs_context_data_setname(struct obs_context_data *context,
 
 	pthread_mutex_unlock(&context->rename_cache_mutex);
 }
+
+void obs_preview_set_enabled(bool enable)
+{
+	if (obs)
+		obs->video.main_display.enabled = enable;
+}
+
+bool obs_preview_enabled(void)
+{
+	return obs ? obs->video.main_display.enabled : false;
+}
