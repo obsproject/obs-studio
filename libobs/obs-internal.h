@@ -112,6 +112,7 @@ extern void obs_view_free(struct obs_view *view);
 
 struct obs_display {
 	bool                            size_changed;
+	bool                            enabled;
 	uint32_t                        cx, cy;
 	gs_swapchain_t                  *swap;
 	pthread_mutex_t                 draw_callbacks_mutex;

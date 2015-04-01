@@ -619,6 +619,9 @@ EXPORT void obs_display_remove_draw_callback(obs_display_t *display,
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param);
 
+EXPORT void obs_display_set_enabled(obs_display_t *display, bool enable);
+EXPORT bool obs_display_enabled(obs_display_t *display);
+
 
 /* ------------------------------------------------------------------------- */
 /* Sources */
