@@ -417,11 +417,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
 	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
 
-	config_set_default_int(basicConfig, "Window", "PosX",  -1);
-	config_set_default_int(basicConfig, "Window", "PosY",  -1);
-	config_set_default_int(basicConfig, "Window", "SizeX", -1);
-	config_set_default_int(basicConfig, "Window", "SizeY", -1);
-
 	vector<MonitorInfo> monitors;
 	GetMonitors(monitors);
 
