@@ -55,6 +55,13 @@ class OBSBasic : public OBSMainWindow {
 
 	friend class OBSBasicPreview;
 
+	enum class MoveDir {
+		Up,
+		Down,
+		Left,
+		Right
+	};
+
 private:
 	std::unordered_map<obs_source_t*, int> sourceSceneRefs;
 
@@ -136,6 +143,8 @@ private:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	void Nudge(int dist, MoveDir dir);
 
 public slots:
 	void StreamingStart();
@@ -310,6 +319,11 @@ private slots:
 	void OpenFilters();
 
 	void TogglePreview();
+
+	void NudgeUp();
+	void NudgeDown();
+	void NudgeLeft();
+	void NudgeRight();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

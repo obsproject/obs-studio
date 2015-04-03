@@ -164,6 +164,20 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #endif
+
+	auto addNudge = [this](const QKeySequence &seq, const char *s)
+	{
+		QAction *nudge = new QAction(ui->preview);
+		nudge->setShortcut(seq);
+		nudge->setShortcutContext(Qt::WidgetShortcut);
+		ui->preview->addAction(nudge);
+		connect(nudge, SIGNAL(triggered()), this, s);
+	};
+
+	addNudge(Qt::Key_Up, SLOT(NudgeUp()));
+	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
+	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
+	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent)
@@ -2800,3 +2814,40 @@ void OBSBasic::TogglePreview()
 	ui->preview->setVisible(enabled);
 	ui->previewDisabledLabel->setVisible(!enabled);
 }
+
+void OBSBasic::Nudge(int dist, MoveDir dir)
+{
+	struct MoveInfo {
+		float dist;
+		MoveDir dir;
+	} info = {(float)dist, dir};
+
+	auto func = [] (obs_scene_t*, obs_sceneitem_t *item, void *param)
+	{
+		MoveInfo *info = reinterpret_cast<MoveInfo*>(param);
+		struct vec2 dir = {0.0f, 0.0f};
+		struct vec2 pos;
+
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		switch (info->dir) {
+		case MoveDir::Up:    dir.y = -info->dist; break;
+		case MoveDir::Down:  dir.y =  info->dist; break;
+		case MoveDir::Left:  dir.x = -info->dist; break;
+		case MoveDir::Right: dir.x =  info->dist; break;
+		}
+
+		obs_sceneitem_get_pos(item, &pos);
+		vec2_add(&pos, &pos, &dir);
+		obs_sceneitem_set_pos(item, &pos);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, &info);
+}
+
+void OBSBasic::NudgeUp()       {Nudge(1,  MoveDir::Up);}
+void OBSBasic::NudgeDown()     {Nudge(1,  MoveDir::Down);}
+void OBSBasic::NudgeLeft()     {Nudge(1,  MoveDir::Left);}
+void OBSBasic::NudgeRight()    {Nudge(1,  MoveDir::Right);}
