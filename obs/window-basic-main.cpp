@@ -83,6 +83,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	  ui             (new Ui::OBSBasic)
 {
 	ui->setupUi(this);
+	ui->previewDisabledLabel->setVisible(false);
+
 	copyActionsDynamicProperties();
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
@@ -652,10 +654,18 @@ void OBSBasic::OBSInit()
 	saveTimer = new QTimer(this);
 	connect(saveTimer, SIGNAL(timeout()), this, SLOT(SaveProject()));
 	saveTimer->start(20000);
+
+	bool previewEnabled = config_get_bool(App()->GlobalConfig(),
+			"BasicWindow", "PreviewEnabled");
+	if (!previewEnabled)
+		QMetaObject::invokeMethod(this, "TogglePreview",
+				Qt::QueuedConnection);
 }
 
 OBSBasic::~OBSBasic()
 {
+	bool previewEnabled = obs_preview_enabled();
+
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
 	 * delicate nature of obs_shutdown needing to be freed before the UI
@@ -711,6 +721,8 @@ OBSBasic::~OBSBasic()
 			lastGeom.x());
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "posy",
 			lastGeom.y());
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
+			previewEnabled);
 	config_save(App()->GlobalConfig());
 }
 
@@ -1949,11 +1961,20 @@ void OBSBasic::EditSceneItemName()
 	item->setFlags(flags);
 }
 
-void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
+void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 {
-	QListWidgetItem *item = ui->sources->itemAt(pos);
-
 	QMenu popup(this);
+
+	if (preview) {
+		QAction *action = popup.addAction(
+				QTStr("Basic.Main.PreviewConextMenu.Enable"),
+				this, SLOT(TogglePreview()));
+		action->setCheckable(true);
+		action->setChecked(obs_preview_enabled());
+
+		popup.addSeparator();
+	}
+
 	QPointer<QMenu> addSourceMenu = CreateAddSourcePopupMenu();
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
@@ -1989,6 +2010,11 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 	}
 
 	popup.exec(QCursor::pos());
+}
+
+void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
+{
+	CreateSourcePopupMenu(ui->sources->itemAt(pos), false);
 }
 
 void OBSBasic::on_sources_itemDoubleClicked(QListWidgetItem *witem)
@@ -2445,6 +2471,29 @@ void OBSBasic::on_settingsButton_clicked()
 	settings.exec();
 }
 
+void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
+{
+	CreateSourcePopupMenu(ui->sources->currentItem(), true);
+
+	UNUSED_PARAMETER(pos);
+}
+
+void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
+		const QPoint &pos)
+{
+	QMenu popup(this);
+
+	QAction *action = popup.addAction(
+			QTStr("Basic.Main.PreviewConextMenu.Enable"),
+			this, SLOT(TogglePreview()));
+	action->setCheckable(true);
+	action->setChecked(obs_preview_enabled());
+
+	popup.exec(QCursor::pos());
+
+	UNUSED_PARAMETER(pos);
+}
+
 void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 {
 	const char *val = config_get_string(basicConfig, "Video", "FPSCommon");
@@ -2742,4 +2791,12 @@ void OBSBasic::on_actionCenterToScreen_triggered()
 	};
 
 	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+}
+
+void OBSBasic::TogglePreview()
+{
+	bool enabled = !obs_preview_enabled();
+	obs_preview_set_enabled(enabled);
+	ui->preview->setVisible(enabled);
+	ui->previewDisabledLabel->setVisible(!enabled);
 }

@@ -225,6 +225,8 @@ public:
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
+	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -286,6 +288,10 @@ private slots:
 	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
+	void on_preview_customContextMenuRequested(const QPoint &pos);
+	void on_previewDisabledLabel_customContextMenuRequested(
+			const QPoint &pos);
+
 	void logUploadFinished();
 
 	void updateFileFinished();
@@ -302,6 +308,8 @@ private slots:
 
 	void OpenSceneFilters();
 	void OpenFilters();
+
+	void TogglePreview();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

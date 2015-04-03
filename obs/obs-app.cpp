@@ -113,6 +113,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_string(globalConfig, "Video", "Renderer", "OpenGL");
 #endif
 
+	config_set_default_bool(globalConfig, "BasicWindow", "PreviewEnabled",
+			true);
 	return true;
 }
 
