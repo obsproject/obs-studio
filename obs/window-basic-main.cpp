@@ -87,20 +87,19 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 
-	int width = config_get_int(App()->GlobalConfig(), "MainWindow", "cx");
+	int width = config_get_int(App()->GlobalConfig(), "BasicWindow", "cx");
 
 	// Check if no values are saved (new installation).
 	if (width != 0) {
-		int height = config_get_int(App()->GlobalConfig(), "MainWindow",
-				"cy");
-		int posx = config_get_int(App()->GlobalConfig(), "MainWindow",
+		int height = config_get_int(App()->GlobalConfig(),
+				"BasicWindow", "cy");
+		int posx = config_get_int(App()->GlobalConfig(), "BasicWindow",
 				"posx");
-		int posy = config_get_int(App()->GlobalConfig(), "MainWindow",
+		int posy = config_get_int(App()->GlobalConfig(), "BasicWindow",
 				"posy");
 
 		setGeometry(posx, posy, width, height);
 	}
-
 
 	char styleSheetPath[512];
 	int ret = os_get_config_path(styleSheetPath, sizeof(styleSheetPath),
@@ -709,13 +708,13 @@ OBSBasic::~OBSBasic()
 
 	QRect lastGeom = normalGeometry();
 
-	config_set_int(App()->GlobalConfig(), "MainWindow", "cx",
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "cx",
 			lastGeom.width());
-	config_set_int(App()->GlobalConfig(), "MainWindow", "cy",
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "cy",
 			lastGeom.height());
-	config_set_int(App()->GlobalConfig(), "MainWindow", "posx",
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "posx",
 			lastGeom.x());
-	config_set_int(App()->GlobalConfig(), "MainWindow", "posy",
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "posy",
 			lastGeom.y());
 	config_save(App()->GlobalConfig());
 }
