@@ -104,7 +104,7 @@ void SimpleOutput::Update()
 	int videoBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"VBitrate");
 	int videoBufsize = config_get_uint(main->Config(), "SimpleOutput",
-			"Bufsize");
+			"VBufsize");
 	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"ABitrate");
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
