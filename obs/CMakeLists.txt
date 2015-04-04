@@ -41,7 +41,8 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 if(WIN32)
 	set(obs_PLATFORM_SOURCES
-		platform-windows.cpp)
+		platform-windows.cpp
+		obs.rc)
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
