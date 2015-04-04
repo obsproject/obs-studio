@@ -1317,9 +1317,14 @@ void OBSBasicSettings::SaveStream1Settings()
 {
 	QString streamType = GetComboData(ui->streamType);
 
+	obs_service_t *oldService = main->GetService();
+	obs_data_t *hotkeyData = obs_hotkeys_save_service(oldService);
+
 	obs_service_t *newService = obs_service_create(QT_TO_UTF8(streamType),
 			"default_service", streamProperties->GetSettings(),
-			nullptr);
+			hotkeyData);
+
+	obs_data_release(hotkeyData);
 	if (!newService)
 		return;
 
