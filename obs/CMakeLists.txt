@@ -114,6 +114,7 @@ set(obs_SOURCES
 	visibility-checkbox.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
+	slider-absoluteset-style.cpp
 	source-list-widget.cpp
 	crash-report.cpp
 	qt-wrappers.cpp)
@@ -148,6 +149,7 @@ set(obs_HEADERS
 	visibility-checkbox.hpp
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
+	slider-absoluteset-style.hpp
 	source-list-widget.hpp
 	qt-display.hpp
 	crash-report.hpp
