@@ -2493,6 +2493,7 @@ void OBSBasic::StreamingStop(int code)
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
+	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 }
 
 void OBSBasic::RecordingStop()
@@ -2523,11 +2524,7 @@ void OBSBasic::on_recordButton_clicked()
 	if (outputHandler->RecordingActive()) {
 		outputHandler->StopRecording();
 	} else {
-
-		if (outputHandler->StartRecording()) {
-			ui->recordButton->setText(
-					QTStr("Basic.Main.StopRecording"));
-		}
+		outputHandler->StartRecording();
 	}
 }
 
