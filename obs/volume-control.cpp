@@ -1,6 +1,7 @@
 #include "volume-control.hpp"
 #include "qt-wrappers.hpp"
 #include "mute-checkbox.hpp"
+#include "slider-absoluteset-style.hpp"
 #include <util/platform.h>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -160,6 +161,8 @@ VolControl::VolControl(OBSSource source_)
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
+
+	slider->setStyle(new SliderAbsoluteSetStyle(slider->style()));
 
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
