@@ -114,6 +114,7 @@ struct obs_display {
 	bool                            size_changed;
 	bool                            enabled;
 	uint32_t                        cx, cy;
+	uint32_t                        background_color;
 	gs_swapchain_t                  *swap;
 	pthread_mutex_t                 draw_callbacks_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
