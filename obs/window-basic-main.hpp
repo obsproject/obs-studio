@@ -97,6 +97,8 @@ private:
 
 	ConfigFile    basicConfig;
 
+	QPointer<QWidget> projectors[10];
+
 	void          DrawBackdrop(float cx, float cy);
 
 	void          SetupEncoders();
@@ -145,6 +147,7 @@ private:
 	void CreateFiltersWindow(obs_source_t *source);
 
 	void Nudge(int dist, MoveDir dir);
+	void OpenProjector(obs_source_t *source, int monitor);
 
 public slots:
 	void StreamingStart();
@@ -324,6 +327,10 @@ private slots:
 	void NudgeDown();
 	void NudgeLeft();
 	void NudgeRight();
+
+	void OpenPreviewProjector();
+	void OpenSourceProjector();
+	void OpenSceneProjector();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

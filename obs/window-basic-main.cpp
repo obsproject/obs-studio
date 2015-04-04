@@ -41,6 +41,7 @@
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-properties.hpp"
 #include "window-log-reply.hpp"
+#include "window-projector.hpp"
 #include "window-remux.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
@@ -1702,6 +1703,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		}
 	}
 
+	for (QPointer<QWidget> &projector : projectors) {
+		delete projector;
+		projector.clear();
+	}
+
 	// remove draw callback in case our drawable surfaces go away before
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
@@ -1838,9 +1844,33 @@ void OBSBasic::EditSceneName()
 	item->setFlags(flags);
 }
 
+static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
+		const char *slot)
+{
+	QAction *action;
+	std::vector<MonitorInfo> monitors;
+	GetMonitors(monitors);
+
+	for (int i = 0; (size_t)i < monitors.size(); i++) {
+		const MonitorInfo &monitor = monitors[i];
+
+		QString str = QString("%1 %2: %3x%4 @ %5,%6").
+			arg(QTStr("Display"),
+			    QString::number(i),
+			    QString::number((int)monitor.cx),
+			    QString::number((int)monitor.cy),
+			    QString::number((int)monitor.x),
+			    QString::number((int)monitor.y));
+
+		action = parent->addAction(str, target, slot);
+		action->setProperty("monitor", i);
+	}
+}
+
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
+	QPointer<QMenu> sceneProjectorMenu;
 
 	QMenu popup(this);
 	popup.addAction(QTStr("Add"),
@@ -1853,6 +1883,11 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
+		popup.addSeparator();
+		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
+		AddProjectorMenuMonitors(sceneProjectorMenu, this,
+				SLOT(OpenSceneProjector()));
+		popup.addMenu(sceneProjectorMenu);
 		popup.addSeparator();
 		popup.addAction(QTStr("Filters"), this,
 				SLOT(OpenSceneFilters()));
@@ -1978,6 +2013,8 @@ void OBSBasic::EditSceneItemName()
 void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 {
 	QMenu popup(this);
+	QPointer<QMenu> previewProjector;
+	QPointer<QMenu> sourceProjector;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -1985,6 +2022,12 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				this, SLOT(TogglePreview()));
 		action->setCheckable(true);
 		action->setChecked(obs_preview_enabled());
+
+		previewProjector = new QMenu(QTStr("PreviewProjector"));
+		AddProjectorMenuMonitors(previewProjector, this,
+				SLOT(OpenPreviewProjector()));
+
+		popup.addMenu(previewProjector);
 
 		popup.addSeparator();
 	}
@@ -2009,6 +2052,13 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
+
+		sourceProjector = new QMenu(QTStr("SourceProjector"));
+		AddProjectorMenuMonitors(sourceProjector, this,
+				SLOT(OpenSourceProjector()));
+
+		popup.addSeparator();
+		popup.addMenu(sourceProjector);
 		popup.addSeparator();
 
 		action = popup.addAction(QTStr("Interact"), this,
@@ -2496,6 +2546,7 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 		const QPoint &pos)
 {
 	QMenu popup(this);
+	QPointer<QMenu> previewProjector;
 
 	QAction *action = popup.addAction(
 			QTStr("Basic.Main.PreviewConextMenu.Enable"),
@@ -2503,6 +2554,11 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 	action->setCheckable(true);
 	action->setChecked(obs_preview_enabled());
 
+	previewProjector = new QMenu(QTStr("PreviewProjector"));
+	AddProjectorMenuMonitors(previewProjector, this,
+			SLOT(OpenPreviewProjector()));
+
+	popup.addMenu(previewProjector);
 	popup.exec(QCursor::pos());
 
 	UNUSED_PARAMETER(pos);
@@ -2851,3 +2907,44 @@ void OBSBasic::NudgeUp()       {Nudge(1,  MoveDir::Up);}
 void OBSBasic::NudgeDown()     {Nudge(1,  MoveDir::Down);}
 void OBSBasic::NudgeLeft()     {Nudge(1,  MoveDir::Left);}
 void OBSBasic::NudgeRight()    {Nudge(1,  MoveDir::Right);}
+
+void OBSBasic::OpenProjector(obs_source_t *source, int monitor)
+{
+	/* seriously?  10 monitors? */
+	if (monitor > 9)
+		return;
+
+	delete projectors[monitor];
+	projectors[monitor].clear();
+
+	OBSProjector *projector = new OBSProjector(this, source);
+	projector->Init(monitor);
+
+	projectors[monitor] = projector;
+}
+
+void OBSBasic::OpenPreviewProjector()
+{
+	int monitor = sender()->property("monitor").toInt();
+	OpenProjector(nullptr, monitor);
+}
+
+void OBSBasic::OpenSourceProjector()
+{
+	int monitor = sender()->property("monitor").toInt();
+	OBSSceneItem item = GetCurrentSceneItem();
+	if (!item)
+		return;
+
+	OpenProjector(obs_sceneitem_get_source(item), monitor);
+}
+
+void OBSBasic::OpenSceneProjector()
+{
+	int monitor = sender()->property("monitor").toInt();
+	OBSScene scene = GetCurrentScene();
+	if (!scene)
+		return;
+
+	OpenProjector(obs_scene_get_source(scene), monitor);
+}
