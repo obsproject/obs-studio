@@ -103,6 +103,7 @@ set(obs_SOURCES
 	window-basic-preview.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
+	window-projector.cpp
 	window-remux.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -134,6 +135,7 @@ set(obs_HEADERS
 	window-basic-preview.hpp
 	window-namedialog.hpp
 	window-log-reply.hpp
+	window-projector.hpp
 	window-remux.hpp
 	properties-view.hpp
 	display-helpers.hpp
