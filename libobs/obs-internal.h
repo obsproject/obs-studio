@@ -154,6 +154,7 @@ struct obs_core_video {
 	gs_effect_t                     *conversion_effect;
 	gs_effect_t                     *bicubic_effect;
 	gs_effect_t                     *lanczos_effect;
+	gs_effect_t                     *bilinear_lowres_effect;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 

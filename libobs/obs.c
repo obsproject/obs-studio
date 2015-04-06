@@ -254,6 +254,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = find_libobs_data_file("bilinear_lowres_scale.effect");
+	video->bilinear_lowres_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	if (!video->default_effect)
 		success = false;
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
@@ -423,6 +428,7 @@ static void obs_free_graphics(void)
 		gs_effect_destroy(video->conversion_effect);
 		gs_effect_destroy(video->bicubic_effect);
 		gs_effect_destroy(video->lanczos_effect);
+		gs_effect_destroy(video->bilinear_lowres_effect);
 		video->default_effect = NULL;
 
 		gs_leave_context();
@@ -1195,6 +1201,12 @@ gs_effect_t *obs_get_lanczos_effect(void)
 {
 	if (!obs) return NULL;
 	return obs->video.lanczos_effect;
+}
+
+gs_effect_t *obs_get_bilinear_lowres_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.bilinear_lowres_effect;
 }
 
 signal_handler_t *obs_get_signal_handler(void)

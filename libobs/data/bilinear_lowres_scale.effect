@@ -1,0 +1,84 @@
+/*
+ * bilinear low res scaling, samples 9 pixels of a larger image to scale to a
+ * low resolution image below half size
+ */
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+uniform float2 base_dimension_i;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 pixel(float2 uv)
+{
+	return image.Sample(textureSampler, uv);
+}
+
+float4 DrawLowresBilinear(VertData v_in)
+{
+	float2 stepxy = base_dimension_i;
+	float4 output;
+
+	output  = pixel(v_in.uv);
+	output += pixel(v_in.uv + float2(-stepxy.x, -stepxy.y));
+	output += pixel(v_in.uv + float2(-stepxy.x,       0.0));
+	output += pixel(v_in.uv + float2(-stepxy.x,  stepxy.y));
+	output += pixel(v_in.uv + float2(      0.0, -stepxy.y));
+	output += pixel(v_in.uv + float2(      0.0,  stepxy.y));
+	output += pixel(v_in.uv + float2( stepxy.x, -stepxy.y));
+	output += pixel(v_in.uv + float2( stepxy.x,       0.0));
+	output += pixel(v_in.uv + float2( stepxy.x,  stepxy.y));
+	return output / float4(9.0, 9.0, 9.0, 9.0);
+}
+
+float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
+{
+	return DrawLowresBilinear(v_in);
+}
+
+float4 PSDrawLowresBilinearMatrix(VertData v_in) : TARGET
+{
+	float4 yuv = DrawLowresBilinear(v_in);
+
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBA(v_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearMatrix(v_in);
+	}
+}
+

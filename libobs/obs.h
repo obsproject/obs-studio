@@ -509,6 +509,9 @@ EXPORT gs_effect_t *obs_get_bicubic_effect(void);
 /** Returns the lanczos scaling effect */
 EXPORT gs_effect_t *obs_get_lanczos_effect(void);
 
+/** Returns the bilinear lowres scaling effect */
+EXPORT gs_effect_t *obs_get_bilinear_lowres_effect(void);
+
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);
 
