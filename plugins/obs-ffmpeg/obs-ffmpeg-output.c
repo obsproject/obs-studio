@@ -150,7 +150,7 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	char **opts = strlist_split(data->config.video_settings, ' ', false);
 	int ret;
 
-	if (data->vcodec->id == AV_CODEC_ID_H264)
+	if (strcmp(data->vcodec->name, "libx264") == 0)
 		av_opt_set(context->priv_data, "preset", "veryfast", 0);
 
 	if (opts) {
