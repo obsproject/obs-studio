@@ -481,6 +481,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder",
 			"none");
 
+	config_set_default_string(basicConfig, "AdvOut", "FFURL",
+			(GetDefaultVideoSavePath() + "/out.mkv").c_str());
 	config_set_default_uint  (basicConfig, "AdvOut", "FFVBitrate", 2500);
 	config_set_default_bool  (basicConfig, "AdvOut", "FFUseRescale",
 			false);
