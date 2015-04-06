@@ -273,7 +273,7 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard);
  * Get the dv timing for an input with a specified index
  *
  * @param dev handle to the v4l2 device
- * @param timing pointer to the timing structure to fill
+ * @param dvt pointer to the timing structure to fill
  * @param index index of the dv timing to fetch
  *
  * @return negative on failure
