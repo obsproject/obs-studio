@@ -132,6 +132,16 @@ Linux (Gentoo installation, unofficial)
   - Link:  https://github.com/saintdev/obs-studio-overlay
 
 
+Linux (NixOS installation)
+  - Get the latest Nix packages:
+
+    git clone https://github.com/nixos/nixpkgs ~/nixpkgs
+
+  - Install:
+
+    nix-env -f ~/nixpkgs -Q -i obs-studio
+
+
 Linux (Manually compiling on Redhat-based distros such as Fedora)
   - Get RPM fusion at http://rpmfusion.org/Configuration/
 
