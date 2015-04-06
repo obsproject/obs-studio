@@ -200,7 +200,6 @@ int_fast32_t v4l2_create_mmap(int_fast32_t dev, struct v4l2_buffer_data *buf);
 /**
  * Destroy the memory mapping for buffers
  *
- * @param dev handle for the v4l2 device
  * @param buf buffer data
  *
  * @return negative on failure
