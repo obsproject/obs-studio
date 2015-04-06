@@ -1185,6 +1185,18 @@ gs_effect_t *obs_get_solid_effect(void)
 	return obs->video.solid_effect;
 }
 
+gs_effect_t *obs_get_bicubic_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.bicubic_effect;
+}
+
+gs_effect_t *obs_get_lanczos_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.lanczos_effect;
+}
+
 signal_handler_t *obs_get_signal_handler(void)
 {
 	if (!obs) return NULL;
