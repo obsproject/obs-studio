@@ -404,8 +404,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 			AVDISCARD_NONREF);
 	obs_property_list_add_int(prop, obs_module_text("DiscardBiDir"),
 			AVDISCARD_BIDIR);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55, 67, 100)
 	obs_property_list_add_int(prop, obs_module_text("DiscardNonIntra"),
 			AVDISCARD_NONINTRA);
+#endif
 	obs_property_list_add_int(prop, obs_module_text("DiscardNonKey"),
 			AVDISCARD_NONKEY);
 	obs_property_list_add_int(prop, obs_module_text("DiscardAll"),
