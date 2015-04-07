@@ -59,7 +59,7 @@ static bool SceneItemHasVideo(obs_sceneitem_t *item)
 
 static bool CloseFloat(float a, float b, float epsilon=0.01)
 {
-	return abs(a-b) <= epsilon;
+	return std::abs(a-b) <= epsilon;
 }
 
 static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
