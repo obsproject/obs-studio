@@ -508,7 +508,9 @@ static void drop_frames(struct rtmp_stream *stream)
 
 		last_drop_dts_usec = packet.dts_usec;
 
-		if (packet.type == OBS_ENCODER_AUDIO) {
+		/* do not drop audio data or video keyframes */
+		if (packet.type          == OBS_ENCODER_AUDIO ||
+		    packet.drop_priority == OBS_NAL_PRIORITY_HIGHEST) {
 			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
 
 		} else {
