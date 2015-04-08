@@ -2243,14 +2243,17 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 	async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
 	use_matrix = !!(parent_flags & OBS_SOURCE_COLOR_MATRIX);
 
-	if (target == parent && !custom_draw && !async)
-		obs_source_default_render(target, use_matrix);
-	else if (target->info.video_render)
-		obs_source_main_render(target);
-	else if (target->filter_target)
-		obs_source_video_render(target->filter_target);
-	else
-		obs_source_render_async_video(target);
+	if (target == parent) {
+		if (!custom_draw && !async)
+			obs_source_default_render(target, use_matrix);
+		else if (target->info.video_render)
+			obs_source_main_render(target);
+		else
+			obs_source_render_async_video(target);
+
+	} else {
+		obs_source_video_render(target);
+	}
 }
 
 signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
