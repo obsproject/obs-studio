@@ -150,6 +150,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
 
+#ifdef _WIN32
+	diskUsageTimer = new QTimer(this);
+	connect(diskUsageTimer, SIGNAL(timeout()),
+		ui->statusbar, SLOT(UpdateDiskUsage()));
+	diskUsageTimer->start(3000);
+#endif
+
 	DeleteKeys =
 #ifdef __APPLE__
 		QList<QKeySequence>{{Qt::Key_Backspace}} <<
@@ -668,6 +675,7 @@ OBSBasic::~OBSBasic()
 	 * can be freed, and we have no control over the destruction order of
 	 * the Qt UI stuff, so we have to manually clear any references to
 	 * libobs. */
+	delete diskUsageTimer;
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
 
@@ -1627,6 +1635,40 @@ void OBSBasic::ResetAudioDevices()
 			Str("Basic.AuxDevice2"), 4);
 	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice3",
 			Str("Basic.AuxDevice3"), 5);
+}
+
+double OBSBasic::GetRecordingFileSize() const
+{
+	obs_data_t *settings;
+	const char *path;
+	double size;
+
+	/* get path */
+	settings = obs_output_get_settings(outputHandler->fileOutput);
+	path = obs_data_get_string(settings, "path");
+
+	size = os_file_size_bytes(path);
+
+	obs_data_release(settings);
+
+	return size;
+}
+
+double OBSBasic::GetRemainingDiskSpace() const
+{
+	obs_data_t *settings;
+	const char *path;
+	double size;
+
+	/* get path */
+	settings = obs_output_get_settings(outputHandler->fileOutput);
+	path = obs_data_get_string(settings, "path");
+
+	size = os_remaining_disk_space_bytes(path);
+
+	obs_data_release(settings);
+
+	return size;
 }
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)

@@ -236,6 +236,18 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 	return true;
 }
 
+int64_t os_file_size_bytes(const char *path)
+{
+	FILE* f = os_fopen(path, "rb");
+	if (!f)
+		return 0;
+
+	int64_t sz = os_fgetsize(f);
+	fclose(f);
+
+	return sz;
+}
+
 size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
 	size_t out_len;
