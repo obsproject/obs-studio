@@ -174,6 +174,9 @@ static void initialize_matrices()
 static bool matrices_initialized = false;
 #endif
 
+static const float full_min[3] = {0.0f, 0.0f, 0.0f};
+static const float full_max[3] = {1.0f, 1.0f, 1.0f};
+
 bool video_format_get_parameters(enum video_colorspace color_space,
 		enum video_range_type range, float matrix[16],
 		float range_min[3], float range_max[3])
@@ -195,8 +198,13 @@ bool video_format_get_parameters(enum video_colorspace color_space,
 		memcpy(matrix, format_info[i].matrix[full_range],
 				sizeof(float) * 16);
 
-		if (range == VIDEO_RANGE_FULL)
+		if (range == VIDEO_RANGE_FULL) {
+			if (range_min)
+				memcpy(range_min, full_min, sizeof(float) * 3);
+			if (range_max)
+				memcpy(range_max, full_max, sizeof(float) * 3);
 			return true;
+		}
 
 		if (range_min)
 			memcpy(range_min, format_info[i].float_range_min,
