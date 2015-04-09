@@ -31,6 +31,7 @@ class WASAPISource {
 	bool                        isDefaultDevice = false;
 
 	bool                        reconnecting = false;
+	bool                        previouslyFailed = false;
 	WinHandle                   reconnectThread;
 
 	bool                        active = false;
@@ -271,18 +272,25 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 
 	} catch (HRError error) {
+		if (previouslyFailed)
+			return active;
+
 		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s: %lX",
 				device_name.empty() ?
 					device_id.c_str() : device_name.c_str(),
 				error.str, error.hr);
 
 	} catch (const char *error) {
+		if (previouslyFailed)
+			return active;
+
 		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s",
 				device_name.empty() ?
 					device_id.c_str() : device_name.c_str(),
 				error);
 	}
 
+	previouslyFailed = !active;
 	return active;
 }
 
