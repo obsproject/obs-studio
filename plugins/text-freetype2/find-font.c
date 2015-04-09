@@ -156,14 +156,16 @@ const char *get_font_path(const char *family, uint16_t size, const char *style,
 	bool        bold           = !!(flags & OBS_FONT_BOLD);
 	bool        italic         = !!(flags & OBS_FONT_ITALIC);
 
-	if (!family)
+	if (!family || !*family)
 		return NULL;
 
-	dstr_copy(&style_str, style);
-	dstr_replace(&style_str, "Bold", "");
-	dstr_replace(&style_str, "Italic", "");
-	dstr_replace(&style_str, "  ", " ");
-	dstr_depad(&style_str);
+	if (style) {
+		dstr_copy(&style_str, style);
+		dstr_replace(&style_str, "Bold", "");
+		dstr_replace(&style_str, "Italic", "");
+		dstr_replace(&style_str, "  ", " ");
+		dstr_depad(&style_str);
+	}
 
 	dstr_copy(&face_and_style, family);
 	if (!dstr_is_empty(&style_str)) {
