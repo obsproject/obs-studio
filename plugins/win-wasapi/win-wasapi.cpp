@@ -309,7 +309,7 @@ void WASAPISource::Reconnect()
 
 static inline bool WaitForSignal(HANDLE handle, DWORD time)
 {
-	return WaitForSingleObject(handle, time) == WAIT_TIMEOUT;
+	return WaitForSingleObject(handle, time) != WAIT_TIMEOUT;
 }
 
 #define RECONNECT_INTERVAL 3000
