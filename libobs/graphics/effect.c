@@ -30,7 +30,7 @@ void gs_effect_actually_destroy(gs_effect_t *effect)
 void gs_effect_destroy(gs_effect_t *effect)
 {
 	if (effect) {
-		if (!effect->effect_path)
+		if (!effect->cached)
 			gs_effect_actually_destroy(effect);
 	}
 }

@@ -732,6 +732,7 @@ gs_effect_t *gs_effect_create(const char *effect_string, const char *filename,
 		pthread_mutex_lock(&thread_graphics->effect_mutex);
 
 		if (effect->effect_path) {
+			effect->cached = true;
 			effect->next = thread_graphics->first_effect;
 			thread_graphics->first_effect = effect;
 		}

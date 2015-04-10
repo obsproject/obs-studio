@@ -137,6 +137,7 @@ static inline void effect_technique_free(struct gs_effect_technique *t)
 
 struct gs_effect {
 	bool processing;
+	bool cached;
 	char *effect_path, *effect_dir;
 
 	DARRAY(struct gs_effect_param) params;
