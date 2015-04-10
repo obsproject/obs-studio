@@ -37,18 +37,18 @@ float4 pixel(float2 uv)
 float4 DrawLowresBilinear(VertData v_in)
 {
 	float2 stepxy = base_dimension_i;
-	float4 output;
+	float4 out_color;
 
-	output  = pixel(v_in.uv);
-	output += pixel(v_in.uv + float2(-stepxy.x, -stepxy.y));
-	output += pixel(v_in.uv + float2(-stepxy.x,       0.0));
-	output += pixel(v_in.uv + float2(-stepxy.x,  stepxy.y));
-	output += pixel(v_in.uv + float2(      0.0, -stepxy.y));
-	output += pixel(v_in.uv + float2(      0.0,  stepxy.y));
-	output += pixel(v_in.uv + float2( stepxy.x, -stepxy.y));
-	output += pixel(v_in.uv + float2( stepxy.x,       0.0));
-	output += pixel(v_in.uv + float2( stepxy.x,  stepxy.y));
-	return output / float4(9.0, 9.0, 9.0, 9.0);
+	out_color  = pixel(v_in.uv);
+	out_color += pixel(v_in.uv + float2(-stepxy.x, -stepxy.y));
+	out_color += pixel(v_in.uv + float2(-stepxy.x,       0.0));
+	out_color += pixel(v_in.uv + float2(-stepxy.x,  stepxy.y));
+	out_color += pixel(v_in.uv + float2(      0.0, -stepxy.y));
+	out_color += pixel(v_in.uv + float2(      0.0,  stepxy.y));
+	out_color += pixel(v_in.uv + float2( stepxy.x, -stepxy.y));
+	out_color += pixel(v_in.uv + float2( stepxy.x,       0.0));
+	out_color += pixel(v_in.uv + float2( stepxy.x,  stepxy.y));
+	return out_color / float4(9.0, 9.0, 9.0, 9.0);
 }
 
 float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
