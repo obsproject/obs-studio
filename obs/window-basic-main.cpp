@@ -2881,8 +2881,10 @@ void OBSBasic::Nudge(int dist, MoveDir dir)
 	auto func = [] (obs_scene_t*, obs_sceneitem_t *item, void *param)
 	{
 		MoveInfo *info = reinterpret_cast<MoveInfo*>(param);
-		struct vec2 dir = {0.0f, 0.0f};
+		struct vec2 dir;
 		struct vec2 pos;
+
+		vec2_set(&dir, 0.0f, 0.0f);
 
 		if (!obs_sceneitem_selected(item))
 			return true;
