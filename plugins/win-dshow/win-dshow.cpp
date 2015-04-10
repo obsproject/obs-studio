@@ -1511,9 +1511,11 @@ static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
 			}
 		}
 
-		if (listed_val != val)
+		if (listed_val != val) {
 			obs_data_set_autoselect_int(settings, FRAME_INTERVAL,
 					listed_val);
+			val = listed_val;
+		}
 
 	} else {
 		obs_data_unset_autoselect_value(settings, FRAME_INTERVAL);
