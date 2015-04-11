@@ -117,7 +117,8 @@ set(obs_SOURCES
 	slider-absoluteset-style.cpp
 	source-list-widget.cpp
 	crash-report.cpp
-	qt-wrappers.cpp)
+	qt-wrappers.cpp
+	slider-absoluteset-style.cpp)
 
 set(obs_HEADERS
 	obs-app.hpp
@@ -153,7 +154,8 @@ set(obs_HEADERS
 	source-list-widget.hpp
 	qt-display.hpp
 	crash-report.hpp
-	qt-wrappers.hpp)
+	qt-wrappers.hpp
+	slider-absoluteset-style.hpp)
 
 set(obs_UI
 	forms/NameDialog.ui
