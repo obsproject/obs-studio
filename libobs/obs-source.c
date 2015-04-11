@@ -206,9 +206,6 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	source->flags = source->default_flags;
 	source->enabled = true;
 
-	/* prevents the source from clearing the cache on the first frame */
-	source->async_reset_texture = true;
-
 	if (info && info->type == OBS_SOURCE_TYPE_TRANSITION)
 		os_atomic_inc_long(&obs->data.active_transitions);
 	return source;
@@ -879,10 +876,14 @@ static inline bool set_async_texture_size(struct obs_source *source,
 {
 	enum convert_type cur = get_convert_type(frame->format);
 
-	if (!source->async_reset_texture)
+	if (source->async_width  == frame->width  &&
+	    source->async_height == frame->height &&
+	    source->async_format == frame->format)
 		return true;
 
-	source->async_reset_texture = false;
+	source->async_width  = frame->width;
+	source->async_height = frame->height;
+	source->async_format = frame->format;
 
 	gs_texture_destroy(source->async_texture);
 	gs_texrender_destroy(source->async_convert_texrender);
@@ -1612,11 +1613,11 @@ static inline bool async_texture_changed(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
 	enum convert_type prev, cur;
-	prev = get_convert_type(source->async_format);
+	prev = get_convert_type(source->async_cache_format);
 	cur  = get_convert_type(frame->format);
 
-	return source->async_width  != frame->width ||
-	       source->async_height != frame->height ||
+	return source->async_cache_width  != frame->width ||
+	       source->async_cache_height != frame->height ||
 	       prev != cur;
 }
 
@@ -1655,14 +1656,10 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 	pthread_mutex_lock(&source->async_mutex);
 
 	if (async_texture_changed(source, frame)) {
-		/* prevents the cache from being freed on the first frame */
-		if (!source->async_reset_texture)
-			free_async_cache(source);
-
-		source->async_width         = frame->width;
-		source->async_height        = frame->height;
-		source->async_format        = frame->format;
-		source->async_reset_texture = true;
+		free_async_cache(source);
+		source->async_cache_width  = frame->width;
+		source->async_cache_height = frame->height;
+		source->async_cache_format = frame->format;
 	}
 
 	for (size_t i = 0; i < source->async_cache.num; i++) {

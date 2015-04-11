@@ -344,6 +344,7 @@ struct obs_source {
 	struct obs_source_frame         *cur_async_frame;
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
+	enum video_format               async_cache_format;
 	enum gs_color_format            async_texture_format;
 	float                           async_color_matrix[16];
 	bool                            async_full_range;
@@ -352,12 +353,13 @@ struct obs_source {
 	int                             async_plane_offset[2];
 	bool                            async_flip;
 	bool                            async_active;
-	bool                            async_reset_texture;
 	DARRAY(struct async_frame)      async_cache;
 	DARRAY(struct obs_source_frame*)async_frames;
 	pthread_mutex_t                 async_mutex;
 	uint32_t                        async_width;
 	uint32_t                        async_height;
+	uint32_t                        async_cache_width;
+	uint32_t                        async_cache_height;
 	uint32_t                        async_convert_width;
 	uint32_t                        async_convert_height;
 
