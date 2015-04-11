@@ -1687,9 +1687,17 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		da_push_back(source->async_cache, &new_af);
 	}
 
+	os_atomic_inc_long(&new_frame->refs);
+
 	pthread_mutex_unlock(&source->async_mutex);
 
 	copy_frame_data(new_frame, frame);
+
+	if (os_atomic_dec_long(&new_frame->refs) == 0) {
+		obs_source_frame_destroy(new_frame);
+		new_frame = NULL;
+	}
+
 	return new_frame;
 }
 
