@@ -51,7 +51,7 @@ int xinerama_screen_count(xcb_connection_t *xcb);
  *
  * @note On error the passed coordinates/sizes will be set to 0.
  *
- * @param dpy X11 display
+ * @param xcb xcb connection
  * @param screen screen number to get geometry for
  * @param x x-coordinate of the screen
  * @param y y-coordinate of the screen
@@ -69,7 +69,7 @@ int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
  *
  * @note On error the passed sizes will be set to 0.
  *
- * @param dpy X11 display
+ * @param xcb xcb connection
  * @param screen screen number to get geometry for
  * @param w width of the screen
  * @param h height of the screen
