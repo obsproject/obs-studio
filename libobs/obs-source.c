@@ -2037,7 +2037,6 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 	frame = source->cur_async_frame;
 	source->cur_async_frame = NULL;
 
-	/* reset timing to current system time */
 	if (frame) {
 		os_atomic_inc_long(&frame->refs);
 	}
