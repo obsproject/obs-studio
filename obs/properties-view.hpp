@@ -33,6 +33,7 @@ private:
 	void ListChanged(const char *setting);
 	bool ColorChanged(const char *setting);
 	bool FontChanged(const char *setting);
+	void EditableListChanged();
 	void ButtonClicked();
 
 	void TogglePasswordText(bool checked);
@@ -46,6 +47,15 @@ public:
 public slots:
 
 	void ControlChanged();
+
+	/* editable list */
+	void EditListAdd();
+	void EditListAddText();
+	void EditListAddFiles();
+	void EditListRemove();
+	void EditListEdit();
+	void EditListUp();
+	void EditListDown();
 };
 
 /* ------------------------------------------------------------------------- */
@@ -84,6 +94,8 @@ private:
 	void AddFloat(obs_property_t *prop, QFormLayout *layout,
 			QLabel**label);
 	QWidget *AddList(obs_property_t *prop, bool &warning);
+	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
+			QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
 	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);

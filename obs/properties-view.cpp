@@ -9,11 +9,14 @@
 #include <QSlider>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QListWidget>
 #include <QPushButton>
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
 #include <QPlainTextEdit>
+#include <QDialogButtonBox>
+#include <QMenu>
 #include "double-slider.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
@@ -470,6 +473,65 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	return combo;
 }
 
+static void NewButton(QLayout *layout, WidgetInfo *info,
+		const char *themeIcon,
+		void (WidgetInfo::*method)())
+{
+	QPushButton *button = new QPushButton();
+	button->setProperty("themeID", themeIcon);
+	button->setFlat(true);
+	button->setMaximumSize(22, 22);
+	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+	QObject::connect(button, &QPushButton::clicked, info, method);
+
+	layout->addWidget(button);
+}
+
+void OBSPropertiesView::AddEditableList(obs_property_t *prop,
+		QFormLayout *layout, QLabel *&label)
+{
+	const char       *name  = obs_property_name(prop);
+	obs_data_array_t *array = obs_data_get_array(settings, name);
+	QListWidget      *list  = new QListWidget();
+	size_t           count  = obs_data_array_count(array);
+
+	list->setSortingEnabled(false);
+	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *item = obs_data_array_item(array, i);
+		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
+		obs_data_release(item);
+	}
+
+	WidgetInfo *info = new WidgetInfo(this, prop, list);
+
+	QVBoxLayout *sideLayout = new QVBoxLayout();
+	NewButton(sideLayout, info, "addIconSmall",
+			&WidgetInfo::EditListAdd);
+	NewButton(sideLayout, info, "removeIconSmall",
+			&WidgetInfo::EditListRemove);
+	NewButton(sideLayout, info, "configIconSmall",
+			&WidgetInfo::EditListEdit);
+	NewButton(sideLayout, info, "upArrowIconSmall",
+			&WidgetInfo::EditListUp);
+	NewButton(sideLayout, info, "downArrowIconSmall",
+			&WidgetInfo::EditListDown);
+	sideLayout->addStretch(0);
+
+	QHBoxLayout *subLayout = new QHBoxLayout();
+	subLayout->addWidget(list);
+	subLayout->addLayout(sideLayout);
+
+	children.emplace_back(info);
+
+	label = new QLabel(QT_UTF8(obs_property_description(prop)));
+	layout->addRow(label, subLayout);
+
+	obs_data_array_release(array);
+}
+
 QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 {
 	const char *desc = obs_property_description(prop);
@@ -610,6 +672,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_BUTTON:
 		widget = AddButton(property);
+		break;
+	case OBS_PROPERTY_EDITABLE_LIST:
+		AddEditableList(property, layout, label);
 		break;
 	}
 
@@ -809,6 +874,26 @@ bool WidgetInfo::FontChanged(const char *setting)
 	return true;
 }
 
+void WidgetInfo::EditableListChanged()
+{
+	const char *setting = obs_property_name(property);
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	obs_data_array *array = obs_data_array_create();
+
+	for (int i = 0; i < list->count(); i++) {
+		QListWidgetItem *item = list->item(i);
+		obs_data_t *arrayItem = obs_data_create();
+		obs_data_set_string(arrayItem, "value",
+				QT_TO_UTF8(item->text()));
+
+		obs_data_array_push_back(array, arrayItem);
+		obs_data_release(arrayItem);
+	}
+
+	obs_data_set_array(view->settings, setting, array);
+	obs_data_array_release(array);
+}
+
 void WidgetInfo::ButtonClicked()
 {
 	if (obs_property_button_clicked(property, view->obj)) {
@@ -847,6 +932,7 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_PATH:
 		if (!PathChanged(setting))
 			return;
+	case OBS_PROPERTY_EDITABLE_LIST: return;
 	}
 
 	if (view->callback && !view->deferUpdate)
@@ -859,4 +945,226 @@ void WidgetInfo::ControlChanged()
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 				Qt::QueuedConnection);
 	}
+}
+
+class EditableItemDialog : public QDialog {
+	QLineEdit *edit;
+	QString filter;
+	QString default_path;
+
+	void BrowseClicked()
+	{
+		QString curPath = QFileInfo(edit->text()).absoluteDir().path();
+
+		if (curPath.isEmpty())
+			curPath = default_path;
+
+		QString path = QFileDialog::getOpenFileName(
+				App()->GetMainWindow(), QTStr("Browse"),
+				curPath, filter);
+		if (path.isEmpty())
+			return;
+
+		edit->setText(path);
+	}
+
+public:
+	EditableItemDialog(QWidget *parent, const QString &text,
+			bool browse, const char *filter_ = nullptr,
+			const char *default_path_ = nullptr)
+		: QDialog              (parent),
+		  filter               (QT_UTF8(filter_)),
+		  default_path         (QT_UTF8(default_path_))
+	{
+		QHBoxLayout *topLayout = new QHBoxLayout();
+		QVBoxLayout *mainLayout = new QVBoxLayout();
+
+		edit = new QLineEdit();
+		edit->setText(text);
+		topLayout->addWidget(edit);
+		topLayout->setAlignment(edit, Qt::AlignVCenter);
+
+		if (browse) {
+			QPushButton *browseButton =
+				new QPushButton(QTStr("Browse"));
+			topLayout->addWidget(browseButton);
+			topLayout->setAlignment(browseButton, Qt::AlignVCenter);
+
+			connect(browseButton, &QPushButton::clicked, this,
+					&EditableItemDialog::BrowseClicked);
+		}
+
+		QDialogButtonBox::StandardButtons buttons =
+			QDialogButtonBox::Ok |
+			QDialogButtonBox::Cancel;
+
+		QDialogButtonBox *buttonBox = new QDialogButtonBox(buttons);
+		buttonBox->setCenterButtons(true);
+
+		mainLayout->addLayout(topLayout);
+		mainLayout->addWidget(buttonBox);
+
+		setLayout(mainLayout);
+		resize(QSize(400, 80));
+
+		connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+		connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+	}
+
+	inline QString GetText() const {return edit->text();}
+};
+
+void WidgetInfo::EditListAdd()
+{
+	bool allow_files = obs_property_editable_list_allow_files(property);
+	if (!allow_files) {
+		EditListAddText();
+		return;
+	}
+
+	QMenu popup(view->window());
+
+	QAction *action;
+
+	action = new QAction(QTStr("Basic.PropertiesWindow.AddFiles"), this);
+	connect(action, &QAction::triggered,
+			this, &WidgetInfo::EditListAddFiles);
+	popup.addAction(action);
+
+	action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"), this);
+	connect(action, &QAction::triggered,
+			this, &WidgetInfo::EditListAddText);
+	popup.addAction(action);
+
+	popup.exec(QCursor::pos());
+}
+
+void WidgetInfo::EditListAddText()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	const char *desc = obs_property_description(property);
+
+	EditableItemDialog dialog(widget->window(), QString(), false);
+	auto title = QTStr("Basic.PropertiesWindow.AddEditableListEntry").arg(
+			QT_UTF8(desc));
+	dialog.setWindowTitle(title);
+	if (dialog.exec() == QDialog::Rejected)
+		return;
+
+	QString text = dialog.GetText();
+	if (text.isEmpty())
+		return;
+
+	list->addItem(text);
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListAddFiles()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	const char *desc = obs_property_description(property);
+	const char *filter = obs_property_editable_list_filter(property);
+	const char *default_path =
+		obs_property_editable_list_default_path(property);
+
+	QString title = QTStr("Basic.PropertiesWindow.AddEditableListFiles")
+		.arg(QT_UTF8(desc));
+
+	QStringList files = QFileDialog::getOpenFileNames(
+			App()->GetMainWindow(), title, QT_UTF8(default_path),
+			QT_UTF8(filter));
+
+	if (files.count() == 0)
+		return;
+
+	list->addItems(files);
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListRemove()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	QList<QListWidgetItem*> items = list->selectedItems();
+
+	for (QListWidgetItem *item : items)
+		delete item;
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListEdit()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	bool allow_files = obs_property_editable_list_allow_files(property);
+	const char *desc = obs_property_description(property);
+	const char *filter = obs_property_editable_list_filter(property);
+	QList<QListWidgetItem*> selectedItems = list->selectedItems();
+
+	if (!selectedItems.count())
+		return;
+
+	QListWidgetItem *item = selectedItems[0];
+	EditableItemDialog dialog(widget->window(), item->text(), allow_files,
+			filter);
+	auto title = QTStr("Basic.PropertiesWindow.EditEditableListEntry").arg(
+			QT_UTF8(desc));
+	dialog.setWindowTitle(title);
+	if (dialog.exec() == QDialog::Rejected)
+		return;
+
+	QString text = dialog.GetText();
+	if (text.isEmpty())
+		return;
+
+	item->setText(text);
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListUp()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	int lastItemRow = -1;
+
+	for (int i = 0; i < list->count(); i++) {
+		QListWidgetItem *item = list->item(i);
+		if (!item->isSelected())
+			continue;
+
+		int row = list->row(item);
+
+		if ((row - 1) != lastItemRow) {
+			lastItemRow = row - 1;
+			list->takeItem(row);
+			list->insertItem(lastItemRow, item);
+			item->setSelected(true);
+		} else {
+			lastItemRow = row;
+		}
+	}
+
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListDown()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	int lastItemRow = list->count();
+
+	for (int i = list->count() - 1; i >= 0; i--) {
+		QListWidgetItem *item = list->item(i);
+		if (!item->isSelected())
+			continue;
+
+		int row = list->row(item);
+
+		if ((row + 1) != lastItemRow) {
+			lastItemRow = row + 1;
+			list->takeItem(row);
+			list->insertItem(lastItemRow, item);
+			item->setSelected(true);
+		} else {
+			lastItemRow = row;
+		}
+	}
+
+	EditableListChanged();
 }
