@@ -1,8 +1,11 @@
 #include <QAction>
+#include <QMouseEvent>
+#include <QMenu>
 #include "window-projector.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
+#include "obs-app.hpp"
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 	: OBSQTDisplay                 (widget,
@@ -95,6 +98,17 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 	window->deleteLater();
 
 	UNUSED_PARAMETER(params);
+}
+
+void OBSProjector::mousePressEvent(QMouseEvent *event)
+{
+	OBSQTDisplay::mousePressEvent(event);
+
+	if (event->button() == Qt::RightButton) {
+		QMenu popup(this);
+		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
+		popup.exec(QCursor::pos());
+	}
 }
 
 void OBSProjector::EscapeTriggered()
