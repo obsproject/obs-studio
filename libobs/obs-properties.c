@@ -61,6 +61,12 @@ struct list_data {
 	enum obs_combo_format    format;
 };
 
+struct editable_list_data {
+	bool                        allow_files;
+	char                        *filter;
+	char                        *default_path;
+};
+
 struct button_data {
 	obs_property_clicked_t callback;
 };
@@ -70,6 +76,12 @@ static inline void path_data_free(struct path_data *data)
 	bfree(data->default_path);
 	if (data->type == OBS_PATH_FILE)
 		bfree(data->filter);
+}
+
+static inline void editable_list_data_free(struct editable_list_data *data)
+{
+	bfree(data->default_path);
+	bfree(data->filter);
 }
 
 static inline void list_item_free(struct list_data *data,
@@ -164,6 +176,8 @@ static void obs_property_destroy(struct obs_property *property)
 		list_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_PATH)
 		path_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_EDITABLE_LIST)
+		editable_list_data_free(get_property_data(property));
 
 	bfree(property);
 }
@@ -242,6 +256,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_COLOR:     return 0;
 	case OBS_PROPERTY_BUTTON:    return sizeof(struct button_data);
 	case OBS_PROPERTY_FONT:      return 0;
+	case OBS_PROPERTY_EDITABLE_LIST:
+		return sizeof(struct editable_list_data);
 	}
 
 	return 0;
@@ -437,6 +453,24 @@ obs_property_t *obs_properties_add_font(obs_properties_t *props,
 	if (!props || has_prop(props, name)) return NULL;
 	return new_prop(props, name, desc, OBS_PROPERTY_FONT);
 }
+
+obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
+		const char *name, const char *desc,
+		bool allow_files, const char *filter,
+		const char *default_path)
+{
+	if (!props || has_prop(props, name)) return NULL;
+	struct obs_property *p = new_prop(props, name, desc,
+			OBS_PROPERTY_EDITABLE_LIST);
+
+	struct editable_list_data *data = get_property_data(p);
+	data->allow_files = allow_files;
+	data->filter = bstrdup(filter);
+	data->default_path = bstrdup(default_path);
+	return p;
+}
+
+/* ------------------------------------------------------------------------- */
 
 static inline bool is_combo(struct obs_property *p)
 {
@@ -766,4 +800,25 @@ double obs_property_list_item_float(obs_property_t *p, size_t idx)
 	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_FLOAT);
 	return (data && idx < data->items.num) ?
 		data->items.array[idx].d : 0.0;
+}
+
+bool obs_property_editable_list_allow_files(obs_property_t *p)
+{
+	struct editable_list_data *data = get_type_data(p,
+			OBS_PROPERTY_EDITABLE_LIST);
+	return data ? data->allow_files : false;
+}
+
+const char *obs_property_editable_list_filter(obs_property_t *p)
+{
+	struct editable_list_data *data = get_type_data(p,
+			OBS_PROPERTY_EDITABLE_LIST);
+	return data ? data->filter : NULL;
+}
+
+const char *obs_property_editable_list_default_path(obs_property_t *p)
+{
+	struct editable_list_data *data = get_type_data(p,
+			OBS_PROPERTY_EDITABLE_LIST);
+	return data ? data->default_path : NULL;
 }

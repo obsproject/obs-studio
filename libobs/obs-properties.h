@@ -52,6 +52,7 @@ enum obs_property_type {
 	OBS_PROPERTY_COLOR,
 	OBS_PROPERTY_BUTTON,
 	OBS_PROPERTY_FONT,
+	OBS_PROPERTY_EDITABLE_LIST,
 };
 
 enum obs_combo_format {
@@ -196,6 +197,11 @@ EXPORT obs_property_t *obs_properties_add_button(obs_properties_t *props,
 EXPORT obs_property_t *obs_properties_add_font(obs_properties_t *props,
 		const char *name, const char *description);
 
+EXPORT obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
+		const char *name, const char *description,
+		bool allow_files, const char *filter,
+		const char *default_path);
+
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -268,6 +274,10 @@ EXPORT const char *obs_property_list_item_name(obs_property_t *p, size_t idx);
 EXPORT const char *obs_property_list_item_string(obs_property_t *p, size_t idx);
 EXPORT long long   obs_property_list_item_int(obs_property_t *p, size_t idx);
 EXPORT double      obs_property_list_item_float(obs_property_t *p, size_t idx);
+
+EXPORT bool        obs_property_editable_list_allow_files(obs_property_t *p);
+EXPORT const char *obs_property_editable_list_filter(obs_property_t *p);
+EXPORT const char *obs_property_editable_list_default_path(obs_property_t *p);
 
 #ifdef __cplusplus
 }
