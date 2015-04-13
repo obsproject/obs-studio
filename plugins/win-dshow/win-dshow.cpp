@@ -37,6 +37,7 @@ using namespace DShow;
 #define LAST_VIDEO_DEV_ID "last_video_device_id"
 #define LAST_RESOLUTION   "last_resolution"
 #define BUFFERING_VAL     "buffering"
+#define FLIP_IMAGE        "flip_vertically"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
 #define AUDIO_DEVICE_ID   "audio_device_id"
 #define COLOR_SPACE       "color_space"
@@ -58,6 +59,7 @@ using namespace DShow;
 #define TEXT_BUFFERING_AUTO obs_module_text("Buffering.AutoDetect")
 #define TEXT_BUFFERING_ON   obs_module_text("Buffering.Enable")
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
+#define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
 #define TEXT_CUSTOM_AUDIO   obs_module_text("UseCustomAudioDevice")
 #define TEXT_AUDIO_DEVICE   obs_module_text("AudioDevice")
 #define TEXT_ACTIVATE       obs_module_text("Activate")
@@ -154,6 +156,7 @@ struct DShowInput {
 	obs_source_t *source;
 	Device       device;
 	bool         deviceHasAudio = false;
+	bool         flip = false;
 	bool         active = false;
 
 	Decoder      audio_decoder;
@@ -407,6 +410,8 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 
 	if (got_output) {
 		frame.timestamp = (uint64_t)ts * 100;
+		if (flip)
+			frame.flip = !frame.flip;
 #if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
 #endif
@@ -433,6 +438,9 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 	frame.full_range = false;
 	frame.flip       = (config.format == VideoFormat::XRGB ||
 	                    config.format == VideoFormat::ARGB);
+
+	if (flip)
+		frame.flip = !frame.flip;
 
 	if (videoConfig.format == VideoFormat::XRGB ||
 	    videoConfig.format == VideoFormat::ARGB) {
@@ -728,6 +736,7 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 {
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
+	flip = obs_data_get_bool(settings, FLIP_IMAGE);
 
 	DeviceId id;
 	if (!DecodeDeviceId(id, video_device_id.c_str()))
@@ -1685,6 +1694,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 			(int64_t)BufferingType::On);
 	obs_property_list_add_int(p, TEXT_BUFFERING_OFF,
 			(int64_t)BufferingType::Off);
+
+	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 
 	/* ------------------------------------- */
 	/* audio settings */
