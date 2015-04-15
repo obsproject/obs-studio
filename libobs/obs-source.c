@@ -189,6 +189,9 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	if (info && info->get_defaults)
 		info->get_defaults(source->context.settings);
 
+	if (!obs_source_init(source, info))
+		goto fail;
+
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
 	if (info)
@@ -196,9 +199,6 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 				source);
 	if (!source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
-
-	if (!obs_source_init(source, info))
-		goto fail;
 
 	blog(LOG_INFO, "source '%s' (%s) created", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
