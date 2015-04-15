@@ -22,6 +22,7 @@ class WASAPISource {
 	ComPtr<IMMDevice>           device;
 	ComPtr<IAudioClient>        client;
 	ComPtr<IAudioCaptureClient> capture;
+	ComPtr<IAudioRenderClient>  render;
 
 	obs_source_t                *source;
 	string                      device_id;
@@ -56,6 +57,7 @@ class WASAPISource {
 	bool InitDevice(IMMDeviceEnumerator *enumerator);
 	void InitName();
 	void InitClient();
+	void InitRender();
 	void InitFormat(WAVEFORMATEX *wfex);
 	void InitCapture();
 	void Initialize();
@@ -191,6 +193,51 @@ void WASAPISource::InitClient()
 		throw HRError("Failed to get initialize audio client", res);
 }
 
+void WASAPISource::InitRender()
+{
+	CoTaskMemPtr<WAVEFORMATEX> wfex;
+	HRESULT                    res;
+	LPBYTE                     buffer;
+	UINT32                     frames;
+	ComPtr<IAudioClient>       client;
+
+	res = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL,
+			nullptr, (void**)client.Assign());
+	if (FAILED(res))
+		throw HRError("Failed to activate client context", res);
+
+	res = client->GetMixFormat(&wfex);
+	if (FAILED(res))
+		throw HRError("Failed to get mix format", res);
+
+	res = client->Initialize(
+			AUDCLNT_SHAREMODE_SHARED, 0,
+			BUFFER_TIME_100NS, 0, wfex, nullptr);
+	if (FAILED(res))
+		throw HRError("Failed to get initialize audio client", res);
+
+	/* Silent loopback fix. Prevents audio stream from stopping and */
+	/* messing up timestamps and other weird glitches during silence */
+	/* by playing a silent sample all over again. */
+
+	res = client->GetBufferSize(&frames);
+	if (FAILED(res))
+		throw HRError("Failed to get buffer size", res);
+
+	res = client->GetService(__uuidof(IAudioRenderClient),
+		(void**)render.Assign());
+	if (FAILED(res))
+		throw HRError("Failed to get render client", res);
+
+	res = render->GetBuffer(frames, &buffer);
+	if (FAILED(res))
+		throw HRError("Failed to get buffer", res);
+
+	memset(buffer, 0, frames*wfex->nBlockAlign);
+
+	render->ReleaseBuffer(frames, 0);
+}
+
 static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 {
 	switch (layout) {
@@ -263,6 +310,7 @@ void WASAPISource::Initialize()
 	device_name = GetDeviceName(device);
 
 	InitClient();
+	if (!isInputDevice) InitRender();
 	InitCapture();
 }
 
