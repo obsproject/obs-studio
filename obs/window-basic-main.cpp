@@ -1523,7 +1523,7 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 		return VIDEO_FORMAT_UYVY;
 #endif
 	else
-		return VIDEO_FORMAT_BGRA;
+		return VIDEO_FORMAT_RGBA;
 }
 
 int OBSBasic::ResetVideo()
