@@ -462,6 +462,20 @@ static void convert_frame(
 	}
 }
 
+static inline void copy_rgbx_frame(
+		struct video_frame *output, const struct video_data *input,
+		const struct video_output_info *info)
+{
+	uint8_t *in_ptr = input->data[0];
+	uint8_t *out_ptr = output->data[0];
+
+	for (size_t y = 0; y < info->height; y++) {
+		memcpy(out_ptr, in_ptr, info->width * 4);
+		in_ptr += input->linesize[0];
+		out_ptr += output->linesize[0];
+	}
+}
+
 static inline void output_video_data(struct obs_core_video *video,
 		struct video_data *input_frame, int count)
 {
@@ -480,6 +494,8 @@ static inline void output_video_data(struct obs_core_video *video,
 
 		} else if (format_is_yuv(info->format)) {
 			convert_frame(&output_frame, input_frame, info);
+		} else {
+			copy_rgbx_frame(&output_frame, input_frame, info);
 		}
 
 		video_output_unlock_frame(video->video);
