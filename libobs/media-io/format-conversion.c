@@ -25,11 +25,11 @@
 #define get_m128_32_0(val) (*((uint32_t*)&val))
 #define get_m128_32_1(val) (*(((uint32_t*)&val)+1))
 
-#define pack_lum(lum_plane, lum_pos0, lum_pos1, line1, line2, lum_mask)       \
+#define pack_shift(lum_plane, lum_pos0, lum_pos1, line1, line2, mask, sh)     \
 do {                                                                          \
 	__m128i pack_val = _mm_packs_epi32(                                   \
-			_mm_srli_si128(_mm_and_si128(line1, lum_mask), 1),    \
-			_mm_srli_si128(_mm_and_si128(line2, lum_mask), 1));   \
+			_mm_srli_si128(_mm_and_si128(line1, mask), sh),       \
+			_mm_srli_si128(_mm_and_si128(line2, mask), sh));      \
 	pack_val = _mm_packus_epi16(pack_val, pack_val);                      \
                                                                               \
 	*(uint32_t*)(lum_plane+lum_pos0) = get_m128_32_0(pack_val);           \
@@ -107,8 +107,8 @@ void compress_uyvx_to_i420(
 			__m128i line2 = _mm_load_si128(
 					(const __m128i*)(img + in_linesize));
 
-			pack_lum(lum_plane, lum_pos0, lum_pos1,
-					line1, line2, lum_mask);
+			pack_shift(lum_plane, lum_pos0, lum_pos1,
+					line1, line2, lum_mask, 1);
 			pack_ch_2plane(u_plane, v_plane,
 					chroma_y_pos + (x>>1),
 					line1, line2, uv_mask);
@@ -144,8 +144,8 @@ void compress_uyvx_to_nv12(
 			__m128i line2 = _mm_load_si128(
 					(const __m128i*)(img + in_linesize));
 
-			pack_lum(lum_plane, lum_pos0, lum_pos1,
-					line1, line2, lum_mask);
+			pack_shift(lum_plane, lum_pos0, lum_pos1,
+					line1, line2, lum_mask, 1);
 			pack_ch_1plane(chroma_plane, chroma_y_pos + x,
 					line1, line2, uv_mask);
 		}
