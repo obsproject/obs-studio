@@ -277,13 +277,10 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static bool aac_audio_info(void *data, struct audio_convert_info *info)
+static void aac_audio_info(void *data, struct audio_convert_info *info)
 {
 	struct aac_encoder *enc = data;
-
-	memset(info, 0, sizeof(struct audio_convert_info));
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
-	return true;
 }
 
 static size_t aac_frame_size(void *data)

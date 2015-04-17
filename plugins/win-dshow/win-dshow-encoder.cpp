@@ -289,21 +289,18 @@ static inline bool ValidResolution(uint32_t width, uint32_t height)
 		(width == 1024 && height == 768);
 }
 
-static bool GetDShowVideoInfo(void *data, struct video_scale_info *info)
+static void GetDShowVideoInfo(void *data, struct video_scale_info *info)
 {
 	DShowEncoder *encoder = reinterpret_cast<DShowEncoder*>(data);
-	video_t *video = obs_encoder_video(encoder->context);
-	const struct video_output_info *vid_info = video_output_get_info(video);
-
 	encoder->format = VIDEO_FORMAT_I420;
 
-	if (vid_info->format == VIDEO_FORMAT_I420 &&
-	    ValidResolution(vid_info->width, vid_info->height))
-		return false;
+	if (info->format == VIDEO_FORMAT_I420 &&
+	    ValidResolution(info->width, info->height))
+		return;
 
 	info->format     = VIDEO_FORMAT_I420;
-	info->width      = vid_info->width;
-	info->height     = vid_info->height;
+	info->width      = info->width;
+	info->height     = info->height;
 	info->range      = VIDEO_RANGE_DEFAULT;
 	info->colorspace = VIDEO_CS_DEFAULT;
 
@@ -316,8 +313,6 @@ static bool GetDShowVideoInfo(void *data, struct video_scale_info *info)
 		info->width = 1280;
 		info->height = 720;
 	}
-
-	return true;
 }
 
 static void GetDShowEncoderDefauts(obs_data_t *settings)

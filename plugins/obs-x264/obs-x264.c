@@ -638,23 +638,25 @@ static bool obs_x264_sei(void *data, uint8_t **sei, size_t *size)
 	return true;
 }
 
-static bool obs_x264_video_info(void *data, struct video_scale_info *info)
+static inline bool valid_format(enum video_format format)
+{
+	return format == VIDEO_FORMAT_I420 ||
+	       format == VIDEO_FORMAT_NV12;
+}
+
+static void obs_x264_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_x264 *obsx264 = data;
-	video_t *video = obs_encoder_video(obsx264->encoder);
-	const struct video_output_info *vid_info = video_output_get_info(video);
+	enum video_format pref_format;
 
-	if (vid_info->format == VIDEO_FORMAT_I420 ||
-	    vid_info->format == VIDEO_FORMAT_NV12)
-		return false;
+	pref_format = obs_encoder_get_preferred_video_format(obsx264->encoder);
 
-	info->format     = VIDEO_FORMAT_NV12;
-	info->width      = vid_info->width;
-	info->height     = vid_info->height;
-	info->range      = vid_info->range;
-	info->colorspace = vid_info->colorspace;
+	if (!valid_format(pref_format)) {
+		pref_format = valid_format(info->format) ?
+			info->format : VIDEO_FORMAT_NV12;
+	}
 
-	return true;
+	info->format = pref_format;
 }
 
 struct obs_encoder_info obs_x264_encoder = {

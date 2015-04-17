@@ -211,22 +211,18 @@ struct obs_encoder_info {
 	/**
 	 * Returns desired audio format and sample information
 	 *
-	 * @param       data  Data associated with this encoder context
-	 * @param[out]  info  Audio format information
-	 * @return            true if specific format is desired, false
-	 *                    otherwise
+	 * @param          data  Data associated with this encoder context
+	 * @param[in/out]  info  Audio format information
 	 */
-	bool (*get_audio_info)(void *data, struct audio_convert_info *info);
+	void (*get_audio_info)(void *data, struct audio_convert_info *info);
 
 	/**
 	 * Returns desired video format information
 	 *
-	 * @param       data  Data associated with this encoder context
-	 * @param[out]  info  Video format information
-	 * @return            true if specific format is desired, false
-	 *                    otherwise
+	 * @param          data  Data associated with this encoder context
+	 * @param[in/out]  info  Video format information
 	 */
-	bool (*get_video_info)(void *data, struct video_scale_info *info);
+	void (*get_video_info)(void *data, struct video_scale_info *info);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
