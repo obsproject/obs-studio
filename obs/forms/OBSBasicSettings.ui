@@ -2466,6 +2466,11 @@
                      </item>
                      <item>
                       <property name="text">
+                       <string>I444</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
                        <string notr="true">RGB</string>
                       </property>
                      </item>
