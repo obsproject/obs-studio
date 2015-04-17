@@ -190,6 +190,51 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 		return out_val[2];
 }
 
+float4 PSPlanar444(VertInOut vert_in) : TARGET
+{
+	float v_mul = floor(vert_in.uv.y * input_height);
+
+	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
+	byte_offset += PRECISION_OFFSET;
+
+	float new_byte_offset = byte_offset;
+
+	if (byte_offset >= v_plane_offset)
+		new_byte_offset -= v_plane_offset;
+	else if (byte_offset >= u_plane_offset)
+		new_byte_offset -= u_plane_offset;
+
+	float2 sample_pos[4];
+
+	float u_val = floor(fmod(new_byte_offset, width)) * width_i;
+	float v_val = floor(new_byte_offset * width_i)    * height_i;
+
+	/* move to texel centers to sample the 4 pixels properly */
+	u_val += width_i  * 0.5;
+	v_val += height_i * 0.5;
+
+	sample_pos[0] = float2(u_val,            v_val);
+	sample_pos[1] = float2(u_val += width_i, v_val);
+	sample_pos[2] = float2(u_val += width_i, v_val);
+	sample_pos[3] = float2(u_val +  width_i, v_val);
+
+	float4x4 out_val = float4x4(
+		image.Sample(def_sampler, sample_pos[0]),
+		image.Sample(def_sampler, sample_pos[1]),
+		image.Sample(def_sampler, sample_pos[2]),
+		image.Sample(def_sampler, sample_pos[3])
+	);
+
+	out_val = transpose(out_val);
+
+	if (byte_offset < u_plane_offset)
+		return out_val[1];
+	else if (byte_offset < v_plane_offset)
+		return out_val[0];
+	else
+		return out_val[2];
+}
+
 float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 		int y0_pos, int y1_pos) : TARGET
 {
@@ -268,6 +313,15 @@ technique Planar420
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSPlanar420(vert_in);
+	}
+}
+
+technique Planar444
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPlanar444(vert_in);
 	}
 }
 
