@@ -409,6 +409,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		obsx264->params.i_csp = X264_CSP_NV12;
 	else if (voi->format == VIDEO_FORMAT_I420)
 		obsx264->params.i_csp = X264_CSP_I420;
+	else if (voi->format == VIDEO_FORMAT_I444)
+		obsx264->params.i_csp = X264_CSP_I444;
 	else
 		obsx264->params.i_csp = X264_CSP_NV12;
 
@@ -579,6 +581,8 @@ static inline void init_pic_data(struct obs_x264 *obsx264, x264_picture_t *pic,
 		pic->img.i_plane = 2;
 	else if (obsx264->params.i_csp == X264_CSP_I420)
 		pic->img.i_plane = 3;
+	else if (obsx264->params.i_csp == X264_CSP_I444)
+		pic->img.i_plane = 3;
 
 	for (int i = 0; i < pic->img.i_plane; i++) {
 		pic->img.i_stride[i] = (int)frame->linesize[i];
@@ -641,7 +645,8 @@ static bool obs_x264_sei(void *data, uint8_t **sei, size_t *size)
 static inline bool valid_format(enum video_format format)
 {
 	return format == VIDEO_FORMAT_I420 ||
-	       format == VIDEO_FORMAT_NV12;
+	       format == VIDEO_FORMAT_NV12 ||
+	       format == VIDEO_FORMAT_I444;
 }
 
 static void obs_x264_video_info(void *data, struct video_scale_info *info)
