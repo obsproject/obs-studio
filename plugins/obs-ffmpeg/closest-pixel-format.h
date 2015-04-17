@@ -7,6 +7,7 @@ static const enum AVPixelFormat i420_formats[] = {
 	AV_PIX_FMT_YUYV422,
 	AV_PIX_FMT_UYVY422,
 	AV_PIX_FMT_YUV422P,
+	AV_PIX_FMT_YUV444P,
 	AV_PIX_FMT_NONE
 };
 
@@ -16,6 +17,18 @@ static const enum AVPixelFormat nv12_formats[] = {
 	AV_PIX_FMT_YUV420P,
 	AV_PIX_FMT_YUYV422,
 	AV_PIX_FMT_UYVY422,
+	AV_PIX_FMT_YUV444P,
+	AV_PIX_FMT_NONE
+};
+
+static const enum AVPixelFormat i444_formats[] = {
+	AV_PIX_FMT_YUV444P,
+	AV_PIX_FMT_RGBA,
+	AV_PIX_FMT_BGRA,
+	AV_PIX_FMT_YUYV422,
+	AV_PIX_FMT_UYVY422,
+	AV_PIX_FMT_NV12,
+	AV_PIX_FMT_NV21,
 	AV_PIX_FMT_NONE
 };
 
@@ -25,6 +38,7 @@ static const enum AVPixelFormat yuy2_formats[] = {
 	AV_PIX_FMT_NV12,
 	AV_PIX_FMT_NV21,
 	AV_PIX_FMT_YUV420P,
+	AV_PIX_FMT_YUV444P,
 	AV_PIX_FMT_NONE
 };
 
@@ -34,12 +48,14 @@ static const enum AVPixelFormat uyvy_formats[] = {
 	AV_PIX_FMT_NV12,
 	AV_PIX_FMT_NV21,
 	AV_PIX_FMT_YUV420P,
+	AV_PIX_FMT_YUV444P,
 	AV_PIX_FMT_NONE
 };
 
 static const enum AVPixelFormat rgba_formats[] = {
 	AV_PIX_FMT_RGBA,
 	AV_PIX_FMT_BGRA,
+	AV_PIX_FMT_YUV444P,
 	AV_PIX_FMT_YUYV422,
 	AV_PIX_FMT_UYVY422,
 	AV_PIX_FMT_NV12,
@@ -50,6 +66,7 @@ static const enum AVPixelFormat rgba_formats[] = {
 static const enum AVPixelFormat bgra_formats[] = {
 	AV_PIX_FMT_BGRA,
 	AV_PIX_FMT_RGBA,
+	AV_PIX_FMT_YUV444P,
 	AV_PIX_FMT_YUYV422,
 	AV_PIX_FMT_UYVY422,
 	AV_PIX_FMT_NV12,
@@ -91,6 +108,9 @@ static inline enum AVPixelFormat get_closest_format(
 
 	switch ((int)format) {
 
+	case AV_PIX_FMT_YUV444P:
+		best_format = get_best_format(i444_formats, formats);
+		break;
 	case AV_PIX_FMT_YUV420P:
 		best_format = get_best_format(i420_formats, formats);
 		break;
