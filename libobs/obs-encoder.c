@@ -101,16 +101,11 @@ obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 static void receive_video(void *param, struct video_data *frame);
 static void receive_audio(void *param, size_t mix_idx, struct audio_data *data);
 
-static inline struct audio_convert_info *get_audio_info(
-		const struct obs_encoder *encoder,
+static inline void get_audio_info(const struct obs_encoder *encoder,
 		struct audio_convert_info *info)
 {
 	const struct audio_output_info *aoi;
 	aoi = audio_output_get_info(encoder->media);
-	memset(info, 0, sizeof(struct audio_convert_info));
-
-	if (encoder->info.get_audio_info)
-		encoder->info.get_audio_info(encoder->context.data, info);
 
 	if (info->format == AUDIO_FORMAT_UNKNOWN)
 		info->format = aoi->format;
@@ -119,18 +114,27 @@ static inline struct audio_convert_info *get_audio_info(
 	if (info->speakers == SPEAKERS_UNKNOWN)
 		info->speakers = aoi->speakers;
 
-	return info;
+	if (encoder->info.get_audio_info)
+		encoder->info.get_audio_info(encoder->context.data, info);
 }
 
-static inline struct video_scale_info *get_video_info(
-		const struct obs_encoder *encoder,
+static inline void get_video_info(struct obs_encoder *encoder,
 		struct video_scale_info *info)
 {
-	if (encoder->info.get_video_info)
-		if (encoder->info.get_video_info(encoder->context.data, info))
-			return info;
+	const struct video_output_info *voi;
+	voi = video_output_get_info(encoder->media);
 
-	return NULL;
+	info->format     = voi->format;
+	info->colorspace = voi->colorspace;
+	info->range      = voi->range;
+	info->width      = obs_encoder_get_width(encoder);
+	info->height     = obs_encoder_get_height(encoder);
+
+	if (encoder->info.get_video_info)
+		encoder->info.get_video_info(encoder->context.data, info);
+
+	if (info->width != voi->width || info->height != voi->height)
+		obs_encoder_set_scaled_size(encoder, info->width, info->height);
 }
 
 static inline bool has_scaling(const struct obs_encoder *encoder)
@@ -145,33 +149,17 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 
 static void add_connection(struct obs_encoder *encoder)
 {
-	struct audio_convert_info audio_info = {0};
-	struct video_scale_info   video_info = {0};
-
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
+		struct audio_convert_info audio_info = {0};
 		get_audio_info(encoder, &audio_info);
+
 		audio_output_connect(encoder->media, encoder->mixer_idx,
 				&audio_info, receive_audio, encoder);
 	} else {
-		struct video_scale_info *info =
-			get_video_info(encoder, &video_info);
+		struct video_scale_info info = {0};
+		get_video_info(encoder, &info);
 
-		if (!info && has_scaling(encoder)) {
-			const struct video_output_info *output_info;
-			output_info = video_output_get_info(encoder->media);
-
-			info             = &video_info;
-			info->format     = output_info->format;
-			info->colorspace = output_info->colorspace;
-			info->range      = output_info->range;
-		}
-
-		if (info && (!info->width || !info->height)) {
-			info->width  = obs_encoder_get_width(encoder);
-			info->height = obs_encoder_get_height(encoder);
-		}
-
-		video_output_connect(encoder->media, info, receive_video,
+		video_output_connect(encoder->media, &info, receive_video,
 			encoder);
 	}
 
@@ -337,7 +325,7 @@ static inline void reset_audio_buffers(struct obs_encoder *encoder)
 
 static void intitialize_audio_encoder(struct obs_encoder *encoder)
 {
-	struct audio_convert_info info;
+	struct audio_convert_info info = {0};
 	get_audio_info(encoder, &info);
 
 	encoder->samplerate = info.samples_per_sec;
