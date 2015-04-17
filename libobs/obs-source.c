@@ -791,6 +791,7 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	case VIDEO_FORMAT_UYVY:
 		return CONVERT_422_U;
 
+	case VIDEO_FORMAT_I444:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
@@ -963,6 +964,7 @@ static const char *select_conversion_technique(enum video_format format)
 		case VIDEO_FORMAT_BGRX:
 		case VIDEO_FORMAT_RGBA:
 		case VIDEO_FORMAT_NONE:
+		case VIDEO_FORMAT_I444:
 			assert(false && "No conversion requested");
 			break;
 	}
@@ -1596,6 +1598,12 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_NV12:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height/2);
+		break;
+
+	case VIDEO_FORMAT_I444:
+		copy_frame_data_plane(dst, src, 0, dst->height);
+		copy_frame_data_plane(dst, src, 1, dst->height);
+		copy_frame_data_plane(dst, src, 2, dst->height);
 		break;
 
 	case VIDEO_FORMAT_YVYU:

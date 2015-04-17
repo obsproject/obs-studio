@@ -457,6 +457,12 @@ static void convert_frame(
 				0, info->height,
 				output->data, output->linesize);
 
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		convert_uyvx_to_i444(
+				input->data[0], input->linesize[0],
+				0, info->height,
+				output->data, output->linesize);
+
 	} else {
 		blog(LOG_ERROR, "convert_frame: unsupported texture format");
 	}

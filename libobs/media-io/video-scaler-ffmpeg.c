@@ -38,6 +38,7 @@ static inline enum AVPixelFormat get_ffmpeg_video_format(
 	case VIDEO_FORMAT_RGBA: return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA: return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_BGRX: return AV_PIX_FMT_BGRA;
+	case VIDEO_FORMAT_I444: return AV_PIX_FMT_YUV444P;
 	}
 
 	return AV_PIX_FMT_NONE;

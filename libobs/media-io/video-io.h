@@ -46,6 +46,9 @@ enum video_format {
 	VIDEO_FORMAT_RGBA,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,
+
+	/* planar 4:4:4 */
+	VIDEO_FORMAT_I444,
 };
 
 enum video_colorspace {
@@ -88,6 +91,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_I444:
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
