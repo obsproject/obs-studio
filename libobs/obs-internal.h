@@ -472,6 +472,7 @@ struct obs_encoder {
 
 	uint32_t                        scaled_width;
 	uint32_t                        scaled_height;
+	enum video_format               preferred_format;
 
 	bool                            active;
 

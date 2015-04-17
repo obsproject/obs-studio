@@ -1313,6 +1313,19 @@ EXPORT uint32_t obs_encoder_get_width(const obs_encoder_t *encoder);
 /** For video encoders, returns the height of the encoded image */
 EXPORT uint32_t obs_encoder_get_height(const obs_encoder_t *encoder);
 
+/**
+ * Sets the preferred video format for a video encoder.  If the encoder can use
+ * the format specified, it will force a conversion to that format if the
+ * obs output format does not match the preferred format.
+ *
+ * If the format is set to VIDEO_FORMAT_NONE, will revert to the default
+ * functionality of converting only when absolutely necessary.
+ */
+EXPORT void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder,
+		enum video_format format);
+EXPORT enum video_format obs_encoder_get_preferred_video_format(
+		const obs_encoder_t *encoder);
+
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t *obs_encoder_defaults(const char *id);
 

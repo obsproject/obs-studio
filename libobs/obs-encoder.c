@@ -777,3 +777,21 @@ void obs_free_encoder_packet(struct encoder_packet *packet)
 	bfree(packet->data);
 	memset(packet, 0, sizeof(struct encoder_packet));
 }
+
+void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder,
+		enum video_format format)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	encoder->preferred_format = format;
+}
+
+enum video_format obs_encoder_get_preferred_video_format(
+		const obs_encoder_t *encoder)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return VIDEO_FORMAT_NONE;
+
+	return encoder->preferred_format;
+}
