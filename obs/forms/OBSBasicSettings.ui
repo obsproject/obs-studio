@@ -2518,6 +2518,22 @@
                   <property name="text">
                    <string notr="true"/>
                   </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="advancedMsg2">
+                  <property name="styleSheet">
+                   <string notr="true">color: rgb(255, 0, 4);</string>
+                  </property>
+                  <property name="text">
+                   <string notr="true"/>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
                  </widget>
                 </item>
                </layout>

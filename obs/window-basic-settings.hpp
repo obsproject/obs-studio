@@ -187,6 +187,8 @@ private slots:
 	void on_advOutFFAEncoder_currentIndexChanged(int idx);
 	void on_advOutFFVEncoder_currentIndexChanged(int idx);
 
+	void on_colorFormat_currentIndexChanged(const QString &text);
+
 	void on_baseResolution_editTextChanged(const QString &text);
 
 	void GeneralChanged();

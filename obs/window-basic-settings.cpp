@@ -1793,6 +1793,17 @@ void OBSBasicSettings::on_advOutFFVEncoder_currentIndexChanged(int idx)
 	}
 }
 
+void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &text)
+{
+	bool usingNV12 = text == "NV12";
+
+	if (usingNV12)
+		ui->advancedMsg2->setText(QString());
+	else
+		ui->advancedMsg2->setText(
+				QTStr("Basic.Settings.Advanced.FormatWarning"));
+}
+
 #define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"
 
 static bool ValidResolutions(Ui::OBSBasicSettings *ui)
