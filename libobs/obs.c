@@ -792,10 +792,12 @@ int obs_reset_video(struct obs_video_info *ovi)
 	blog(LOG_INFO, "video settings reset:\n"
 	               "\tbase resolution:   %dx%d\n"
 	               "\toutput resolution: %dx%d\n"
-	               "\tfps:               %d/%d",
+	               "\tfps:               %d/%d\n"
+	               "\tformat:            %s",
 	               ovi->base_width, ovi->base_height,
 	               ovi->output_width, ovi->output_height,
-	               ovi->fps_num, ovi->fps_den);
+	               ovi->fps_num, ovi->fps_den,
+		       get_video_format_name(ovi->output_format));
 
 	return obs_init_video(ovi);
 }
