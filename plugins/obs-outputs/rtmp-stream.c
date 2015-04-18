@@ -463,6 +463,8 @@ static bool rtmp_stream_start(void *data)
 
 	stream->total_bytes_sent = 0;
 	stream->dropped_frames   = 0;
+	stream->min_drop_dts_usec= 0;
+	stream->min_priority     = 0;
 
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,     obs_service_get_url(service));
