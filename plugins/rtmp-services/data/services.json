@@ -258,6 +258,27 @@
         ]
     },
     {
+        "name": "Restream.IO",
+        "servers": [
+            {
+                "name": "EU Primary",
+                "url": "rtmp://eu.restream.io/live"
+            },
+            {
+                "name": "EU Secondary",
+                "url": "rtmp://eu-secondary.restream.io/live"
+            },
+            {
+                "name": "US East",
+                "url": "rtmp://us-east.restream.io/live"
+            },
+            {
+                "name": "US West",
+                "url": "rtmp://us-west.restream.io/live"
+            }
+        ]
+    },
+    {
         "name": "CashPlay.tv",
         "servers": [
             {
