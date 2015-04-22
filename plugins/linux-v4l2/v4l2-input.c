@@ -298,9 +298,14 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 			continue;
 		}
 
+#ifndef V4L2_CAP_DEVICE_CAPS
+		caps = video_cap.capabilities;
+#else
+		/* ... since Linux 3.3 */
 		caps = (video_cap.capabilities & V4L2_CAP_DEVICE_CAPS)
 			? video_cap.device_caps
 			: video_cap.capabilities;
+#endif
 
 		if (!(caps & V4L2_CAP_VIDEO_CAPTURE)) {
 			blog(LOG_INFO, "%s seems to not support video capture",
@@ -923,6 +928,11 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;
 	data->source = source;
+
+	/* Bitch about build problems ... */
+#ifndef V4L2_CAP_DEVICE_CAPS
+	blog(LOG_WARNING, "Plugin built without device caps support!");
+#endif
 
 	v4l2_update(data, settings);
 
