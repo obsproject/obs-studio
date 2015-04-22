@@ -41,6 +41,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "v4l2-udev.h"
 #endif
 
+/* The new dv timing api was introduced in Linux 3.4
+ * Currently we simply disable dv timings when this is not defined */
+#ifndef VIDIOC_ENUM_DV_TIMINGS
+#define V4L2_IN_CAP_DV_TIMINGS 0
+#endif
+
 #define V4L2_DATA(voidptr) struct v4l2_data *data = voidptr;
 
 #define timeval2ns(tv) \
@@ -932,6 +938,9 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	/* Bitch about build problems ... */
 #ifndef V4L2_CAP_DEVICE_CAPS
 	blog(LOG_WARNING, "Plugin built without device caps support!");
+#endif
+#ifndef VIDIOC_ENUM_DV_TIMINGS
+	blog(LOG_WARNING, "Plugin built without dv-timing support!");
 #endif
 
 	v4l2_update(data, settings);
