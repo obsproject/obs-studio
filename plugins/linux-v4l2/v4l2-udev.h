@@ -19,61 +19,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <inttypes.h>
 
+#include <callback/signal.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
  * Initialize udev system to watch for device events
- *
- * @return monitor object, or NULL on error
  */
-void *v4l2_init_udev(void);
+void v4l2_init_udev(void);
 
 /**
  * Unref the udev system
- *
- * This will also remove any registered callbacks if there are any
- *
- * @param monitor monitor object
  */
-void v4l2_unref_udev(void *monitor);
+void v4l2_unref_udev(void);
 
 /**
- * Callback when a device was added.
+ * Get signal handler
  *
- * @param dev device node of the device that was added
- * @param userdata pointer to userdata specified when registered
+ * @return signal handler for udev events
  */
-typedef void (*v4l2_device_added_cb)(const char *dev, void *userdata);
-
-/**
- * Callback when a device was removed.
- *
- * @param dev device node of the device that was removed
- * @param userdata pointer to userdata specified when registered
- */
-typedef void (*v4l2_device_removed_cb)(const char *dev, void *userdata);
-
-/**
- * Register the device added callback
- *
- * @param monitor monitor object
- * @param cb the function that should be called
- * @param userdata pointer to userdata that should be passed to the callback
- */
-void v4l2_set_device_added_callback(void *monitor, v4l2_device_added_cb cb,
-		void *userdata);
-
-/**
- * Register the device remove callback
- *
- * @param monitor monitor object
- * @param cb the function that should be called
- * @param userdata pointer to userdata that should be passed to the callback
- */
-void v4l2_set_device_removed_callback(void *monitor, v4l2_device_removed_cb cb,
-		void *userdata);
+signal_handler_t *v4l2_get_udev_signalhandler(void);
 
 #ifdef __cplusplus
 }

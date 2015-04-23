@@ -23,9 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "v4l2-udev.h"
 
-#define UDEV_DATA(voidptr) struct v4l2_udev_mon_t *m \
-		= (struct v4l2_udev_mon_t *) voidptr;
-
 /** udev action enum */
 enum udev_action {
 	UDEV_ACTION_ADDED,
@@ -33,14 +30,10 @@ enum udev_action {
 	UDEV_ACTION_UNKNOWN
 };
 
-/** monitor object holding the callbacks */
-struct v4l2_udev_mon_t {
-	/* data for the device added callback */
-	void *dev_added_userdata;
-	v4l2_device_added_cb dev_added_cb;
-	/* data for the device removed callback */
-	void *dev_removed_userdata;
-	v4l2_device_removed_cb dev_removed_cb;
+static const char *udev_signals[] = {
+	"void device_added(string device)",
+	"void device_removed(string device)",
+	NULL
 };
 
 /* global data */
@@ -50,7 +43,7 @@ static pthread_mutex_t udev_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t udev_thread;
 static os_event_t *udev_event;
 
-static DARRAY(struct v4l2_udev_mon_t) udev_clients;
+static signal_handler_t *udev_signalhandler = NULL;
 
 /**
  * udev gives us the device action as string, so we convert it here ...
@@ -76,34 +69,35 @@ static enum udev_action udev_action_to_enum(const char *action)
  *
  * @param dev udev device that had an event occuring
  */
-static inline void udev_call_callbacks(struct udev_device *dev)
+static inline void udev_signal_event(struct udev_device *dev)
 {
 	const char *node;
 	enum udev_action action;
+	struct calldata data;
 
 	pthread_mutex_lock(&udev_mutex);
 
 	node   = udev_device_get_devnode(dev);
 	action = udev_action_to_enum(udev_device_get_action(dev));
 
-	for (size_t idx = 0; idx < udev_clients.num; idx++) {
-		struct v4l2_udev_mon_t *c = &udev_clients.array[idx];
+	calldata_init(&data);
 
-		switch (action) {
-		case UDEV_ACTION_ADDED:
-			if (!c->dev_added_cb)
-				continue;
-			c->dev_added_cb(node, c->dev_added_userdata);
-			break;
-		case UDEV_ACTION_REMOVED:
-			if (!c->dev_removed_cb)
-				continue;
-			c->dev_removed_cb(node, c->dev_removed_userdata);
-			break;
-		default:
-			break;
-		}
+	calldata_set_string(&data, "device", node);
+
+	switch (action) {
+	case UDEV_ACTION_ADDED:
+		signal_handler_signal(udev_signalhandler,
+				"device_added", &data);
+		break;
+	case UDEV_ACTION_REMOVED:
+		signal_handler_signal(udev_signalhandler,
+				"device_removed", &data);
+		break;
+	default:
+		break;
 	}
+
+	calldata_free(&data);
 
 	pthread_mutex_unlock(&udev_mutex);
 }
@@ -146,7 +140,7 @@ static void *udev_event_thread(void *vptr)
 		if (!dev)
 			continue;
 
-		udev_call_callbacks(dev);
+		udev_signal_event(dev);
 
 		udev_device_unref(dev);
 	}
@@ -157,10 +151,8 @@ static void *udev_event_thread(void *vptr)
 	return NULL;
 }
 
-void *v4l2_init_udev(void)
+void v4l2_init_udev(void)
 {
-	struct v4l2_udev_mon_t *ret = NULL;
-
 	pthread_mutex_lock(&udev_mutex);
 
 	/* set up udev */
@@ -170,55 +162,38 @@ void *v4l2_init_udev(void)
 		if (pthread_create(&udev_thread, NULL, udev_event_thread,
 				NULL) != 0)
 			goto fail;
-		da_init(udev_clients);
+
+		udev_signalhandler = signal_handler_create();
+		if (!udev_signalhandler)
+			goto fail;
+		signal_handler_add_array(udev_signalhandler, udev_signals);
+
 	}
 	udev_refs++;
 
-	/* create monitor object */
-	ret = da_push_back_new(udev_clients);
 fail:
 	pthread_mutex_unlock(&udev_mutex);
-	return ret;
 }
 
-void v4l2_unref_udev(void *monitor)
+void v4l2_unref_udev(void)
 {
-	UDEV_DATA(monitor);
 	pthread_mutex_lock(&udev_mutex);
 
-	/* clean up monitor object */
-	da_erase_item(udev_clients, m);
-
 	/* unref udev monitor */
-	udev_refs--;
-	if (udev_refs == 0) {
+	if (udev_refs && --udev_refs == 0) {
 		os_event_signal(udev_event);
 		pthread_join(udev_thread, NULL);
 		os_event_destroy(udev_event);
-		da_free(udev_clients);
+
+		if (udev_signalhandler)
+			signal_handler_destroy(udev_signalhandler);
+		udev_signalhandler = NULL;
 	}
 
 	pthread_mutex_unlock(&udev_mutex);
 }
 
-void v4l2_set_device_added_callback(void *monitor, v4l2_device_added_cb cb,
-		void *userdata)
+signal_handler_t *v4l2_get_udev_signalhandler(void)
 {
-	UDEV_DATA(monitor);
-	if (!m)
-		return;
-
-	m->dev_added_cb = cb;
-	m->dev_added_userdata = userdata;
-}
-
-void v4l2_set_device_removed_callback(void *monitor, v4l2_device_removed_cb cb,
-		void *userdata)
-{
-	UDEV_DATA(monitor);
-	if (!m)
-		return;
-
-	m->dev_removed_cb = cb;
-	m->dev_removed_userdata = userdata;
+	return udev_signalhandler;
 }
