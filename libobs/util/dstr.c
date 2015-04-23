@@ -22,6 +22,7 @@
 #include <ctype.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <limits.h>
 
 #include "c99defs.h"
 #include "dstr.h"
@@ -504,15 +505,23 @@ void dstr_catf(struct dstr *dst, const char *format, ...)
 
 void dstr_vprintf(struct dstr *dst, const char *format, va_list args)
 {
-	dstr_ensure_capacity(dst, 4096);
-	vsnprintf(dst->array, 4095, format, args);
+	va_list args_cp;
+	va_copy(args_cp, args);
+
+	int len = vsnprintf(NULL, 0, format, args_cp);
+	va_end(args_cp);
+
+	if (len < 0) len = 4095;
+
+	dstr_ensure_capacity(dst, ((size_t)len) + 1);
+	len = vsnprintf(dst->array, ((size_t)len) + 1, format, args);
 
 	if (!*dst->array) {
 		dstr_free(dst);
 		return;
 	}
 
-	dst->len = strlen(dst->array);
+	dst->len = len < 0 ? strlen(dst->array) : (size_t)len;
 }
 
 void dstr_vcatf(struct dstr *dst, const char *format, va_list args)
