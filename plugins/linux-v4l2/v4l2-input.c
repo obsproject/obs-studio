@@ -80,7 +80,6 @@ struct v4l2_data {
 	obs_source_t *source;
 	pthread_t thread;
 	os_event_t *event;
-	void *udev;
 
 	int_fast32_t dev;
 	int width;
@@ -674,11 +673,14 @@ static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
  * If everything went fine we can start capturing again when the device is
  * reconnected
  */
-static void device_added(const char *dev, void *vptr)
+static void device_added(void *vptr, calldata_t *calldata)
 {
 	V4L2_DATA(vptr);
 
 	obs_source_update_properties(data->source);
+
+	const char *dev;
+	calldata_get_string(calldata, "device", &dev);
 
 	if (strcmp(data->device_id, dev))
 		return;
@@ -692,11 +694,14 @@ static void device_added(const char *dev, void *vptr)
  *
  * We stop recording here so we don't block the device node
  */
-static void device_removed(const char *dev, void *vptr)
+static void device_removed(void *vptr, calldata_t *calldata)
 {
 	V4L2_DATA(vptr);
 
 	obs_source_update_properties(data->source);
+
+	const char *dev;
+	calldata_get_string(calldata, "device", &dev);
 
 	if (strcmp(data->device_id, dev))
 		return;
@@ -790,7 +795,12 @@ static void v4l2_destroy(void *vptr)
 		bfree(data->device_id);
 
 #if HAVE_UDEV
-	v4l2_unref_udev(data->udev);
+	signal_handler_t *sh = v4l2_get_udev_signalhandler();
+
+	signal_handler_disconnect(sh, "device_added", device_added, data);
+	signal_handler_disconnect(sh, "device_removed", device_removed, data);
+
+	v4l2_unref_udev();
 #endif
 
 	bfree(data);
@@ -946,9 +956,11 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	v4l2_update(data, settings);
 
 #if HAVE_UDEV
-	data->udev = v4l2_init_udev();
-	v4l2_set_device_added_callback(data->udev, &device_added, data);
-	v4l2_set_device_removed_callback(data->udev, &device_removed, data);
+	v4l2_init_udev();
+	signal_handler_t *sh = v4l2_get_udev_signalhandler();
+
+	signal_handler_connect(sh, "device_added", &device_added, data);
+	signal_handler_connect(sh, "device_removed", &device_removed, data);
 #endif
 
 	return data;
