@@ -691,3 +691,49 @@ void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr)
 		dstr_free(dst);
 	}
 }
+
+void dstr_to_upper(struct dstr *str)
+{
+	wchar_t *wstr;
+	wchar_t *temp;
+
+	if (dstr_is_empty(str))
+		return;
+
+	wstr = dstr_to_wcs(str);
+	temp = wstr;
+
+	if (!wstr)
+		return;
+
+	while (*temp) {
+		*temp = (wchar_t)towupper(*temp);
+		temp++;
+	}
+
+	dstr_from_wcs(str, wstr);
+	bfree(wstr);
+}
+
+void dstr_to_lower(struct dstr *str)
+{
+	wchar_t *wstr;
+	wchar_t *temp;
+
+	if (dstr_is_empty(str))
+		return;
+
+	wstr = dstr_to_wcs(str);
+	temp = wstr;
+
+	if (!wstr)
+		return;
+
+	while (*temp) {
+		*temp = (wchar_t)towlower(*temp);
+		temp++;
+	}
+
+	dstr_from_wcs(str, wstr);
+	bfree(wstr);
+}

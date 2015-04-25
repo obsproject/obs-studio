@@ -143,6 +143,9 @@ EXPORT char *dstr_to_mbs(const struct dstr *str);
 EXPORT void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr);
 EXPORT wchar_t *dstr_to_wcs(const struct dstr *str);
 
+EXPORT void dstr_to_upper(struct dstr *str);
+EXPORT void dstr_to_lower(struct dstr *str);
+
 /* ------------------------------------------------------------------------- */
 
 static inline void dstr_init(struct dstr *dst)
