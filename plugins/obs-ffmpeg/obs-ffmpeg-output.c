@@ -458,10 +458,12 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 		data->output->oformat->video_codec = AV_CODEC_ID_H264;
 		data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
 	} else {
-		data->output->oformat->video_codec =
-				data->config.video_encoder_id;
-		data->output->oformat->audio_codec =
-				data->config.audio_encoder_id;
+		if (data->config.format_name) {
+			data->output->oformat->video_codec =
+					data->config.video_encoder_id;
+			data->output->oformat->audio_codec =
+					data->config.audio_encoder_id;
+		}
 	}
 
 	if (!data->output) {
