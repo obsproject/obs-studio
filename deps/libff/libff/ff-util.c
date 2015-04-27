@@ -27,6 +27,7 @@ struct ff_format_desc {
 	const char *name;
 	const char *long_name;
 	const char *mime_type;
+	const char *extensions;
 	enum AVCodecID audio_codec;
 	enum AVCodecID video_codec;
 	const struct AVCodecTag * const *codec_tags;
@@ -283,6 +284,7 @@ const struct ff_format_desc *ff_format_supported()
 		d->name = output_format->name;
 		d->long_name = output_format->long_name;
 		d->mime_type = output_format->mime_type;
+		d->extensions = output_format->extensions;
 		d->codec_tags = output_format->codec_tag;
 
 		if (current != NULL) {
@@ -316,6 +318,14 @@ const char *ff_format_desc_mime_type(const struct ff_format_desc *format_desc)
 {
 	if (format_desc != NULL)
 		return format_desc->mime_type;
+	else
+		return NULL;
+}
+
+const char *ff_format_desc_extensions(const struct ff_format_desc *format_desc)
+{
+	if (format_desc != NULL)
+		return format_desc->extensions;
 	else
 		return NULL;
 }

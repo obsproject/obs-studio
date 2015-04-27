@@ -54,6 +54,7 @@ void ff_format_desc_free(const struct ff_format_desc *format_desc);
 const char *ff_format_desc_name(const struct ff_format_desc *format_desc);
 const char *ff_format_desc_long_name(const struct ff_format_desc *format_desc);
 const char *ff_format_desc_mime_type(const struct ff_format_desc *format_desc);
+const char *ff_format_desc_extensions(const struct ff_format_desc *format_desc);
 bool ff_format_desc_has_audio(const struct ff_format_desc *format_desc);
 bool ff_format_desc_has_video(const struct ff_format_desc *format_desc);
 int ff_format_desc_audio(const struct ff_format_desc *format_desc);
