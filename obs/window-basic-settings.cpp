@@ -416,6 +416,8 @@ void OBSBasicSettings::LoadColorRanges()
 
 void OBSBasicSettings::LoadFormats()
 {
+	ui->advOutFFFormat->blockSignals(true);
+
 	formats.reset(ff_format_supported());
 	const ff_format_desc *format = formats.get();
 
@@ -441,6 +443,8 @@ void OBSBasicSettings::LoadFormats()
 	ui->advOutFFFormat->model()->sort(0);
 
 	ui->advOutFFFormat->insertItem(0, AV_FORMAT_DEFAULT_STR);
+
+	ui->advOutFFFormat->blockSignals(false);
 }
 
 static void AddCodec(QComboBox *combo, const ff_codec_desc *codec_desc)
