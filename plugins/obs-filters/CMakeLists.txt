@@ -7,6 +7,7 @@ set(obs-filters_SOURCES
 	crop-filter.c
 	chroma-key-filter.c
 	color-key-filter.c
+	sharpness-filter.c
 	mask-filter.c)
 
 add_library(obs-filters MODULE
