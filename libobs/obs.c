@@ -642,6 +642,10 @@ static inline bool obs_init_hotkeys(void)
 	da_init(hotkeys->hotkeys);
 	hotkeys->signals = obs->signals;
 	hotkeys->name_map_init_token = obs_pthread_once_init_token;
+	hotkeys->mute = bstrdup("Mute");
+	hotkeys->unmute = bstrdup("Unmute");
+	hotkeys->push_to_mute = bstrdup("Push-to-mute");
+	hotkeys->push_to_talk = bstrdup("Push-to-talk");
 
 	if (!obs_hotkeys_platform_init(hotkeys))
 		return false;
@@ -686,6 +690,11 @@ static inline void stop_hotkeys(void)
 static inline void obs_free_hotkeys(void)
 {
 	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
+
+	bfree(hotkeys->mute);
+	bfree(hotkeys->unmute);
+	bfree(hotkeys->push_to_mute);
+	bfree(hotkeys->push_to_talk);
 
 	obs_hotkey_name_map_free();
 
@@ -1451,6 +1460,14 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	obs_data_set_default_bool(source_data, "muted", false);
 	obs_source_set_muted(source, obs_data_get_bool(source_data, "muted"));
 
+	obs_data_set_default_bool(source_data, "push-to-talk", false);
+	obs_source_enable_push_to_talk(source,
+			obs_data_get_bool(source_data, "push-to-talk"));
+
+	obs_data_set_default_int(source_data, "push-to-talk-delay", 0);
+	obs_source_set_push_to_talk_delay(source,
+			obs_data_get_int(source_data, "push-to-talk-delay"));
+
 	if (filters) {
 		size_t count = obs_data_array_count(filters);
 
@@ -1524,6 +1541,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	const char *id         = obs_source_get_id(source);
 	bool       enabled     = obs_source_enabled(source);
 	bool       muted       = obs_source_muted(source);
+	bool       push_to_talk= obs_source_push_to_talk_enabled(source);
+	uint64_t   ptt_delay   = obs_source_get_push_to_talk_delay(source);
 
 	obs_source_save(source);
 	hotkeys = obs_hotkeys_save_source(source);
@@ -1543,6 +1562,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_double(source_data, "volume",   volume);
 	obs_data_set_bool  (source_data, "enabled",  enabled);
 	obs_data_set_bool  (source_data, "muted",    muted);
+	obs_data_set_bool  (source_data, "push-to-talk", push_to_talk);
+	obs_data_set_int   (source_data, "push-to-talk-delay", ptt_delay);
 	obs_data_set_obj   (source_data, "hotkeys",  hotkey_data);
 
 	pthread_mutex_lock(&source->filter_mutex);

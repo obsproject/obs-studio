@@ -120,6 +120,9 @@ EXPORT void obs_hotkeys_set_translations_s(
 	obs_hotkeys_set_translations_s(translations, \
 			sizeof(struct obs_hotkeys_translations))
 
+EXPORT void obs_hotkeys_set_audio_hotkeys_translations(
+		const char *mute, const char *unmute,
+		const char *push_to_mute, const char *push_to_talk);
 
 /* registering hotkeys (giving hotkeys a name and a function) */
 

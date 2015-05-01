@@ -865,6 +865,20 @@ EXPORT void obs_source_set_enabled(obs_source_t *source, bool enabled);
 EXPORT bool obs_source_muted(const obs_source_t *source);
 EXPORT void obs_source_set_muted(obs_source_t *source, bool muted);
 
+EXPORT bool obs_source_push_to_mute_enabled(obs_source_t *source);
+EXPORT void obs_source_enable_push_to_mute(obs_source_t *source, bool enabled);
+
+EXPORT uint64_t obs_source_get_push_to_mute_delay(obs_source_t *source);
+EXPORT void obs_source_set_push_to_mute_delay(obs_source_t *source,
+		uint64_t delay);
+
+EXPORT bool obs_source_push_to_talk_enabled(obs_source_t *source);
+EXPORT void obs_source_enable_push_to_talk(obs_source_t *source, bool enabled);
+
+EXPORT uint64_t obs_source_get_push_to_talk_delay(obs_source_t *source);
+EXPORT void obs_source_set_push_to_talk_delay(obs_source_t *source,
+		uint64_t delay);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
