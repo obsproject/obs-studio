@@ -317,6 +317,23 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadColorRanges();
 	LoadFormats();
 
+	auto ReloadAudioSources = [](void *data, calldata_t *param)
+	{
+		auto settings = static_cast<OBSBasicSettings*>(data);
+		auto source   = static_cast<obs_source_t*>(calldata_ptr(param,
+					"source"));
+
+		if (!(obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO))
+			return;
+
+		QMetaObject::invokeMethod(settings, "ReloadAudioSources",
+				Qt::QueuedConnection);
+	};
+	sourceCreated.Connect(obs_get_signal_handler(), "source_create",
+			ReloadAudioSources, this);
+	channelChanged.Connect(obs_get_signal_handler(), "channel_change",
+			ReloadAudioSources, this);
+
 	auto ReloadHotkeys = [](void *data, calldata_t*)
 	{
 		auto settings = static_cast<OBSBasicSettings*>(data);
@@ -1245,6 +1262,135 @@ void OBSBasicSettings::LoadAudioDevices()
 	}
 }
 
+void OBSBasicSettings::LoadAudioSources()
+{
+	auto layout = new QFormLayout();
+	layout->setVerticalSpacing(15);
+	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+	ui->audioSourceScrollArea->takeWidget()->deleteLater();
+	audioSourceSignals.clear();
+	audioSources.clear();
+
+	auto widget = new QWidget();
+	widget->setLayout(layout);
+	ui->audioSourceScrollArea->setWidget(widget);
+
+	const char *enablePtm = Str("Basic.Settings.Audio.EnablePushToMute");
+	const char *ptmDelay  = Str("Basic.Settings.Audio.PushToMuteDelay");
+	const char *enablePtt = Str("Basic.Settings.Audio.EnablePushToTalk");
+	const char *pttDelay  = Str("Basic.Settings.Audio.PushToTalkDelay");
+	auto AddSource = [&](obs_source_t *source)
+	{
+		if (!(obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO))
+			return true;
+
+		auto form = new QFormLayout();
+		form->setVerticalSpacing(0);
+		form->setHorizontalSpacing(5);
+		form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+		auto ptmCB = new SilentUpdateCheckBox();
+		ptmCB->setText(enablePtm);
+		ptmCB->setChecked(obs_source_push_to_mute_enabled(source));
+		form->addRow(ptmCB);
+
+		auto ptmSB = new SilentUpdateSpinBox();
+		ptmSB->setSuffix(" ms");
+		ptmSB->setRange(0, INT_MAX);
+		ptmSB->setValue(obs_source_get_push_to_mute_delay(source));
+		form->addRow(ptmDelay, ptmSB);
+
+		auto pttCB = new SilentUpdateCheckBox();
+		pttCB->setText(enablePtt);
+		pttCB->setChecked(obs_source_push_to_talk_enabled(source));
+		form->addRow(pttCB);
+
+		auto pttSB = new SilentUpdateSpinBox();
+		pttSB->setSuffix(" ms");
+		pttSB->setRange(0, INT_MAX);
+		pttSB->setValue(obs_source_get_push_to_talk_delay(source));
+		form->addRow(pttDelay, pttSB);
+
+		HookWidget(ptmCB, CHECK_CHANGED,  AUDIO_CHANGED);
+		HookWidget(ptmSB, SCROLL_CHANGED, AUDIO_CHANGED);
+		HookWidget(pttCB, CHECK_CHANGED,  AUDIO_CHANGED);
+		HookWidget(pttSB, SCROLL_CHANGED, AUDIO_CHANGED);
+
+		audioSourceSignals.reserve(audioSourceSignals.size() + 4);
+
+		auto handler = obs_source_get_signal_handler(source);
+		audioSourceSignals.emplace_back(handler, "push_to_mute_changed",
+				[](void *data, calldata_t *param)
+		{
+			QMetaObject::invokeMethod(static_cast<QObject*>(data),
+				"setCheckedSilently",
+				Q_ARG(bool, calldata_bool(param, "enabled")));
+		}, ptmCB);
+		audioSourceSignals.emplace_back(handler, "push_to_mute_delay",
+				[](void *data, calldata_t *param)
+		{
+			QMetaObject::invokeMethod(static_cast<QObject*>(data),
+				"setValueSilently",
+				Q_ARG(int, calldata_int(param, "delay")));
+		}, ptmSB);
+		audioSourceSignals.emplace_back(handler, "push_to_talk_changed",
+				[](void *data, calldata_t *param)
+		{
+			QMetaObject::invokeMethod(static_cast<QObject*>(data),
+				"setCheckedSilently",
+				Q_ARG(bool, calldata_bool(param, "enabled")));
+		}, pttCB);
+		audioSourceSignals.emplace_back(handler, "push_to_talk_delay",
+				[](void *data, calldata_t *param)
+		{
+			QMetaObject::invokeMethod(static_cast<QObject*>(data),
+				"setValueSilently",
+				Q_ARG(int, calldata_int(param, "delay")));
+		}, pttSB);
+
+		audioSources.emplace_back(OBSGetWeakRef(source),
+				ptmCB, pttSB, pttCB, pttSB);
+
+		auto label = new OBSSourceLabel(source);
+		connect(label, &OBSSourceLabel::Removed,
+				[=]()
+				{
+					LoadAudioSources();
+				});
+		connect(label, &OBSSourceLabel::Destroyed,
+				[=]()
+				{
+					LoadAudioSources();
+				});
+
+		layout->addRow(label, form);
+		return true;
+	};
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		obs_source_t *source = obs_get_output_source(i);
+		if (!source) continue;
+
+		AddSource(source);
+		obs_source_release(source);
+	}
+
+	using AddSource_t = decltype(AddSource);
+	obs_enum_sources([](void *data, obs_source_t *source)
+	{
+		auto &AddSource = *static_cast<AddSource_t*>(data);
+		AddSource(source);
+		return true;
+	}, static_cast<void*>(&AddSource));
+
+
+	if (layout->rowCount() == 0)
+		ui->audioSourceScrollArea->hide();
+	else
+		ui->audioSourceScrollArea->show();
+}
+
 void OBSBasicSettings::LoadAudioSettings()
 {
 	uint32_t sampleRate = config_get_uint(main->Config(), "Audio",
@@ -1272,6 +1418,7 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(1);
 
 	LoadAudioDevices();
+	LoadAudioSources();
 
 	loading = false;
 }
@@ -1866,6 +2013,23 @@ void OBSBasicSettings::SaveAudioSettings()
 	SaveComboData(ui->auxAudioDevice2, "Audio", "AuxDevice2");
 	SaveComboData(ui->auxAudioDevice3, "Audio", "AuxDevice3");
 
+	for (auto &audioSource : audioSources) {
+		auto source  = OBSGetStrongRef(get<0>(audioSource));
+		if (!source)
+			continue;
+
+		auto &ptmCB  = get<1>(audioSource);
+		auto &ptmSB  = get<2>(audioSource);
+		auto &pttCB  = get<3>(audioSource);
+		auto &pttSB  = get<4>(audioSource);
+
+		obs_source_enable_push_to_mute(source, ptmCB->isChecked());
+		obs_source_set_push_to_mute_delay(source, ptmSB->value());
+
+		obs_source_enable_push_to_talk(source, pttCB->isChecked());
+		obs_source_set_push_to_talk_delay(source, pttSB->value());
+	}
+
 	main->ResetAudioDevices();
 }
 
@@ -2234,6 +2398,11 @@ void OBSBasicSettings::AudioChangedRestart()
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
+}
+
+void OBSBasicSettings::ReloadAudioSources()
+{
+	LoadAudioSources();
 }
 
 void OBSBasicSettings::VideoChangedRestart()
