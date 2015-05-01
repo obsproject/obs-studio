@@ -355,6 +355,8 @@ string OBSApp::GetVersionString() const
 	ver << "windows)";
 #elif __APPLE__
 	ver << "mac)";
+#elif __FreeBSD__
+	ver << "freebsd)";
 #else /* assume linux for the time being */
 	ver << "linux)";
 #endif
