@@ -45,6 +45,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->priority      = (enum window_priority)priority;
 	wc->cursor        = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
+	wc->compatibility = obs_data_get_bool(s, "compatibility");
 }
 
 /* ------------------------------------------------------------------------- */
