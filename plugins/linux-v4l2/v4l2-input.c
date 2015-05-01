@@ -269,7 +269,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 	size_t cur_device_index;
 	const char *cur_device_name;
 
+#ifdef __FreeBSD__
+	dirp = opendir("/dev");
+#else
 	dirp = opendir("/sys/class/video4linux");
+#endif
 	if (!dirp)
 		return;
 
@@ -284,6 +288,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		int fd;
 		uint32_t caps;
 		struct v4l2_capability video_cap;
+
+#ifdef __FreeBSD__
+		if (strstr(dp->d_name, "video") == NULL)
+			continue;
+#endif
 
 		if (dp->d_type == DT_DIR)
 			continue;
