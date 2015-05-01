@@ -26,7 +26,9 @@
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
+#if !defined(__FreeBSD__)
 #include <sys/vtimes.h>
+#endif
 #endif
 
 #include "darray.h"

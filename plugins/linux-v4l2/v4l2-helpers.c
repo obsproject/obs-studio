@@ -249,6 +249,9 @@ int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
 	if (!dev || !dvt)
 		return -1;
 
+#ifdef __FreeBSD__
+	return 0;
+#else
 	struct v4l2_enum_dv_timings iter;
 	memset(&iter, 0, sizeof(iter));
 	iter.index   = index;
@@ -257,6 +260,8 @@ int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
 		return -1;
 
 	memcpy(dvt, &iter.timings, sizeof(struct v4l2_dv_timings));
+#endif
+
 
 	return 0;
 #endif
