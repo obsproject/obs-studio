@@ -220,8 +220,12 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 	bool active = option.state.testFlag(QStyle::State_Active);
 
 	QPalette palette = list->palette();
+#if defined(_WIN32) || defined(__APPLE__)
 	QPalette::ColorGroup group = active ?
 		QPalette::Active : QPalette::Inactive;
+#else
+	QPalette::ColorGroup group = QPalette::Active;
+#endif
 
 #ifdef _WIN32
 	QPalette::ColorRole highlightRole = QPalette::WindowText;
