@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* The new dv timing api was introduced in Linux 3.4
  * Currently we simply disable dv timings when this is not defined */
-#ifndef VIDIOC_ENUM_DV_TIMINGS
+#if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 #define V4L2_IN_CAP_DV_TIMINGS 0
 #endif
 
@@ -949,7 +949,7 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 #ifndef V4L2_CAP_DEVICE_CAPS
 	blog(LOG_WARNING, "Plugin built without device caps support!");
 #endif
-#ifndef VIDIOC_ENUM_DV_TIMINGS
+#if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 	blog(LOG_WARNING, "Plugin built without dv-timing support!");
 #endif
 

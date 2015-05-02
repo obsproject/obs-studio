@@ -240,7 +240,7 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard)
 int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
 		int index)
 {
-#ifndef VIDIOC_ENUM_DV_TIMINGS
+#if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 	UNUSED_PARAMETER(dev);
 	UNUSED_PARAMETER(dvt);
 	UNUSED_PARAMETER(index);
