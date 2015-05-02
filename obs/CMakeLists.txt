@@ -118,6 +118,7 @@ set(obs_SOURCES
 	source-list-widget.cpp
 	crash-report.cpp
 	hotkey-edit.cpp
+	source-label.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -155,6 +156,7 @@ set(obs_HEADERS
 	qt-display.hpp
 	crash-report.hpp
 	hotkey-edit.hpp
+	source-label.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI
