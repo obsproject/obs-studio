@@ -276,6 +276,48 @@ extern void obs_context_data_setname(struct obs_context_data *context,
 
 
 /* ------------------------------------------------------------------------- */
+/* ref-counting  */
+
+struct obs_weak_ref {
+	volatile long refs;
+	volatile long weak_refs;
+};
+
+static inline void obs_ref_addref(struct obs_weak_ref *ref)
+{
+	os_atomic_inc_long(&ref->refs);
+}
+
+static inline bool obs_ref_release(struct obs_weak_ref *ref)
+{
+	return os_atomic_dec_long(&ref->refs) == -1;
+}
+
+static inline void obs_weak_ref_addref(struct obs_weak_ref *ref)
+{
+	os_atomic_inc_long(&ref->weak_refs);
+}
+
+static inline bool obs_weak_ref_release(struct obs_weak_ref *ref)
+{
+	return os_atomic_dec_long(&ref->weak_refs) == -1;
+}
+
+static inline bool obs_weak_ref_get_ref(struct obs_weak_ref *ref)
+{
+	long owners = ref->refs;
+	while (owners > -1) {
+		if (os_atomic_compare_swap_long(&ref->refs, owners, owners + 1))
+			return true;
+
+		owners = ref->refs;
+	}
+
+	return false;
+}
+
+
+/* ------------------------------------------------------------------------- */
 /* sources  */
 
 struct async_frame {

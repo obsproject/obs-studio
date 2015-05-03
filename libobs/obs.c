@@ -1164,7 +1164,7 @@ obs_source_t *obs_get_source_by_name(const char *name)
 }
 
 static inline void *get_context_by_name(void *vfirst, const char *name,
-		pthread_mutex_t *mutex)
+		pthread_mutex_t *mutex, void *(*addref)(void*))
 {
 	struct obs_context_data **first = vfirst;
 	struct obs_context_data *context;
@@ -1173,8 +1173,10 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 
 	context = *first;
 	while (context) {
-		if (strcmp(context->name, name) == 0)
+		if (strcmp(context->name, name) == 0) {
+			context = addref(context);
 			break;
+		}
 		context = context->next;
 	}
 
@@ -1182,25 +1184,30 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
+static inline void *obs_id_(void *data)
+{
+	return data;
+}
+
 obs_output_t *obs_get_output_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_output, name,
-			&obs->data.outputs_mutex);
+			&obs->data.outputs_mutex, obs_id_);
 }
 
 obs_encoder_t *obs_get_encoder_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_encoder, name,
-			&obs->data.encoders_mutex);
+			&obs->data.encoders_mutex, obs_id_);
 }
 
 obs_service_t *obs_get_service_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_service, name,
-			&obs->data.services_mutex);
+			&obs->data.services_mutex, obs_id_);
 }
 
 gs_effect_t *obs_get_default_effect(void)
