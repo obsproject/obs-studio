@@ -33,9 +33,12 @@ using OBSSceneItem = OBSRef<obs_sceneitem_t*, obs_sceneitem_addref,
 using OBSData = OBSRef<obs_data_t*, obs_data_addref, obs_data_release>;
 using OBSDataArray = OBSRef<obs_data_array_t*, obs_data_array_addref,
 						obs_data_array_release>;
+using OBSOutput = OBSRef<obs_output_t*, obs_output_addref, obs_output_release>;
 
 using OBSWeakSource = OBSRef<obs_weak_source_t*, obs_weak_source_addref,
 						obs_weak_source_release>;
+using OBSWeakOutput = OBSRef<obs_weak_output_t*, obs_weak_output_addref,
+						obs_weak_output_release>;
 
 template<typename T, void addref(T), void release(T)>
 class OBSRef {
@@ -81,6 +84,9 @@ public:
 
 	friend OBSSource OBSGetStrongRef(obs_weak_source_t *weak);
 	friend OBSWeakSource OBSGetWeakRef(obs_source_t *source);
+
+	friend OBSOutput OBSGetStrongRef(obs_weak_output_t *weak);
+	friend OBSWeakOutput OBSGetWeakRef(obs_output_t *output);
 };
 
 inline OBSSource OBSGetStrongRef(obs_weak_source_t *weak)
@@ -92,6 +98,17 @@ inline OBSWeakSource OBSGetWeakRef(obs_source_t *source)
 {
 	return {obs_source_get_weak_source(source),
 		OBSWeakSource::TakeOwnership()};
+}
+
+inline OBSOutput OBSGetStrongRef(obs_weak_output_t *weak)
+{
+	return {obs_weak_output_get_output(weak), OBSOutput::TakeOwnership()};
+}
+
+inline OBSWeakOutput OBSGetWeakRef(obs_output_t *output)
+{
+	return {obs_output_get_weak_output(output),
+		OBSWeakOutput::TakeOwnership()};
 }
 
 /* objects that are not meant to be instanced */
@@ -132,7 +149,6 @@ public:
 using OBSDisplay = OBSObj<obs_display_t*, obs_display_destroy>;
 using OBSEncoder = OBSObj<obs_encoder_t*, obs_encoder_destroy>;
 using OBSView    = OBSObj<obs_view_t*,    obs_view_destroy>;
-using OBSOutput  = OBSObj<obs_output_t*,  obs_output_destroy>;
 
 /* signal handler connection */
 class OBSSignal {

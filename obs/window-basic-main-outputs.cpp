@@ -68,11 +68,13 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			nullptr);
 	if (!streamOutput)
 		throw "Failed to create stream output (simple output)";
+	obs_output_release(streamOutput);
 
 	fileOutput = obs_output_create("flv_output", "simple_file_output",
 			nullptr);
 	if (!fileOutput)
 		throw "Failed to create recording output (simple output)";
+	obs_output_release(fileOutput);
 
 	h264 = obs_video_encoder_create("obs_x264", "simple_h264", nullptr);
 	if (!h264)
@@ -321,6 +323,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			nullptr);
 	if (!streamOutput)
 		throw "Failed to create stream output (advanced output)";
+	obs_output_release(streamOutput);
 
 	if (ffmpegRecording) {
 		fileOutput = obs_output_create("ffmpeg_output",
@@ -328,12 +331,14 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		if (!fileOutput)
 			throw "Failed to create recording FFmpeg output "
 			      "(advanced output)";
+		obs_output_release(fileOutput);
 	} else {
 		fileOutput = obs_output_create("flv_output", "adv_file_output",
 				nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(advanced output)";
+		obs_output_release(fileOutput);
 
 		if (!useStreamEncoder) {
 			h264Recording = obs_video_encoder_create(recordEncoder,

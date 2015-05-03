@@ -444,9 +444,15 @@ extern float obs_source_get_target_volume(obs_source_t *source,
 /* ------------------------------------------------------------------------- */
 /* outputs  */
 
+struct obs_weak_output {
+	struct obs_weak_ref ref;
+	struct obs_output *output;
+};
+
 struct obs_output {
 	struct obs_context_data         context;
 	struct obs_output_info          info;
+	struct obs_weak_output          *control;
 
 	bool                            received_video;
 	bool                            received_audio;
@@ -494,6 +500,8 @@ extern const struct obs_output_info *find_output(const char *id);
 
 extern void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder);
+
+void obs_output_destroy(obs_output_t *output);
 
 
 /* ------------------------------------------------------------------------- */

@@ -63,6 +63,7 @@ typedef struct obs_fader      obs_fader_t;
 typedef struct obs_volmeter   obs_volmeter_t;
 
 typedef struct obs_weak_source  obs_weak_source_t;
+typedef struct obs_weak_output  obs_weak_output_t;
 
 #include "obs-source.h"
 #include "obs-encoder.h"
@@ -1089,7 +1090,23 @@ EXPORT const char *obs_output_get_display_name(const char *id);
  */
 EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
 		obs_data_t *settings);
-EXPORT void obs_output_destroy(obs_output_t *output);
+
+/**
+ * Adds/releases a reference to an output.  When the last reference is
+ * released, the output is destroyed.
+ */
+EXPORT void obs_output_addref(obs_output_t *output);
+EXPORT void obs_output_release(obs_output_t *output);
+
+EXPORT void obs_weak_output_addref(obs_weak_output_t *weak);
+EXPORT void obs_weak_output_release(obs_weak_output_t *weak);
+
+EXPORT obs_output_t *obs_output_get_ref(obs_output_t *output);
+EXPORT obs_weak_output_t *obs_output_get_weak_output(obs_output_t *output);
+EXPORT obs_output_t *obs_weak_output_get_output(obs_weak_output_t *weak);
+
+EXPORT bool obs_weak_output_references_output(obs_weak_output_t *weak,
+		obs_output_t *output);
 
 EXPORT const char *obs_output_get_name(const obs_output_t *output);
 

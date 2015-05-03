@@ -1184,6 +1184,11 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
+static inline void *obs_output_addref_safe_(void *ref)
+{
+	return obs_output_get_ref(ref);
+}
+
 static inline void *obs_id_(void *data)
 {
 	return data;
@@ -1193,7 +1198,7 @@ obs_output_t *obs_get_output_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_output, name,
-			&obs->data.outputs_mutex, obs_id_);
+			&obs->data.outputs_mutex, obs_output_addref_safe_);
 }
 
 obs_encoder_t *obs_get_encoder_by_name(const char *name)
