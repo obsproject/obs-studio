@@ -24,6 +24,11 @@ else()
 	add_definitions(-DHAVE_UDEV)
 endif()
 
+include_directories(
+	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	${LIBV4L2_INCLUDE_DIRS}
+)
+
 set(linux-v4l2_SOURCES
 	linux-v4l2.c
 	v4l2-input.c
