@@ -176,6 +176,11 @@ long os_atomic_dec_long(volatile long *val)
 	return InterlockedDecrement(val);
 }
 
+bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
+{
+	return InterlockedCompareExchange(val, new_val, old_val) == old_val;
+}
+
 #define VC_EXCEPTION 0x406D1388
 
 #pragma pack(push,8)
