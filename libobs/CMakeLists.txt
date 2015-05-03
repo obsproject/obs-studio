@@ -77,6 +77,15 @@ elseif(UNIX)
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
+
+	if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+		# use the sysinfo compatibility library on bsd
+		find_package(Libsysinfo REQUIRED)
+		include_directories(${SYSINFO_INCLUDE_DIRS})
+		set(libobs_PLATFORM_DEPS
+			${libobs_PLATFORM_DEPS}
+			${SYSINFO_LIBRARIES})
+	endif()
 endif()
 
 if(MSVC)
