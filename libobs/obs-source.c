@@ -116,7 +116,6 @@ bool obs_source_init(struct obs_source *source,
 {
 	pthread_mutexattr_t attr;
 
-	source->refs = 1;
 	source->user_volume = 1.0f;
 	source->present_volume = 1.0f;
 	source->base_volume = 0.0f;
@@ -145,6 +144,9 @@ bool obs_source_init(struct obs_source *source,
 			return false;
 		}
 	}
+
+	source->control = bzalloc(sizeof(obs_weak_source_t));
+	source->control->source = source;
 
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
@@ -302,8 +304,10 @@ void obs_source_destroy(struct obs_source *source)
 
 void obs_source_addref(obs_source_t *source)
 {
-	if (source)
-		os_atomic_inc_long(&source->refs);
+	if (!source)
+		return;
+
+	obs_ref_addref(&source->control->ref);
 }
 
 void obs_source_release(obs_source_t *source)
@@ -317,8 +321,63 @@ void obs_source_release(obs_source_t *source)
 	if (!source)
 		return;
 
-	if (os_atomic_dec_long(&source->refs) == 0)
+	obs_weak_source_t *control = source->control;
+	if (obs_ref_release(&control->ref)) {
 		obs_source_destroy(source);
+		obs_weak_source_release(control);
+	}
+}
+
+void obs_weak_source_addref(obs_weak_source_t *weak)
+{
+	if (!weak)
+		return;
+
+	obs_weak_ref_addref(&weak->ref);
+}
+
+void obs_weak_source_release(obs_weak_source_t *weak)
+{
+	if (!weak)
+		return;
+
+	if (obs_weak_ref_release(&weak->ref))
+		bfree(weak);
+}
+
+obs_source_t *obs_source_get_ref(obs_source_t *source)
+{
+	if (!source)
+		return NULL;
+
+	return obs_weak_source_get_source(source->control);
+}
+
+obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
+{
+	if (!source)
+		return NULL;
+
+	obs_weak_source_t *weak = source->control;
+	obs_weak_source_addref(weak);
+	return weak;
+}
+
+obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak)
+{
+	if (!weak)
+		return NULL;
+
+	if (obs_weak_ref_get_ref(&weak->ref))
+		return weak->source;
+
+	return NULL;
+}
+
+bool obs_weak_source_references_source(obs_weak_source_t *weak,
+		obs_source_t *source)
+{
+	return weak && source && weak->source == source;
 }
 
 void obs_source_remove(obs_source_t *source)

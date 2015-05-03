@@ -62,6 +62,8 @@ typedef struct obs_module     obs_module_t;
 typedef struct obs_fader      obs_fader_t;
 typedef struct obs_volmeter   obs_volmeter_t;
 
+typedef struct obs_weak_source  obs_weak_source_t;
+
 #include "obs-source.h"
 #include "obs-encoder.h"
 #include "obs-output.h"
@@ -458,6 +460,9 @@ EXPORT obs_source_t *obs_get_output_source(uint32_t channel);
  *
  *   Callback function returns true to continue enumeration, or false to end
  * enumeration.
+ *
+ *   Use obs_source_get_ref or obs_source_get_weak_source if you want to retain
+ * a reference after obs_enum_sources finishes
  */
 EXPORT void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*),
 		void *param);
@@ -654,6 +659,16 @@ EXPORT obs_source_t *obs_source_create(enum obs_source_type type,
  */
 EXPORT void obs_source_addref(obs_source_t *source);
 EXPORT void obs_source_release(obs_source_t *source);
+
+EXPORT void obs_weak_source_addref(obs_weak_source_t *weak);
+EXPORT void obs_weak_source_release(obs_weak_source_t *weak);
+
+EXPORT obs_source_t *obs_source_get_ref(obs_source_t *source);
+EXPORT obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source);
+EXPORT obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak);
+
+EXPORT bool obs_weak_source_references_source(obs_weak_source_t *weak,
+		obs_source_t *source);
 
 /** Notifies all references that the source should be released */
 EXPORT void obs_source_remove(obs_source_t *source);

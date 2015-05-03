@@ -326,10 +326,15 @@ struct async_frame {
 	bool used;
 };
 
+struct obs_weak_source {
+	struct obs_weak_ref ref;
+	struct obs_source *source;
+};
+
 struct obs_source {
 	struct obs_context_data         context;
 	struct obs_source_info          info;
-	volatile long                   refs;
+	struct obs_weak_source          *control;
 
 	/* general exposed flags that can be set for the source */
 	uint32_t                        flags;

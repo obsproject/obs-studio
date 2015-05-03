@@ -24,6 +24,20 @@
 /* RAII wrappers */
 
 template<typename T, void addref(T), void release(T)>
+class OBSRef;
+
+using OBSSource = OBSRef<obs_source_t*, obs_source_addref, obs_source_release>;
+using OBSScene = OBSRef<obs_scene_t*,  obs_scene_addref,  obs_scene_release>;
+using OBSSceneItem = OBSRef<obs_sceneitem_t*, obs_sceneitem_addref,
+						obs_sceneitem_release>;
+using OBSData = OBSRef<obs_data_t*, obs_data_addref, obs_data_release>;
+using OBSDataArray = OBSRef<obs_data_array_t*, obs_data_array_addref,
+						obs_data_array_release>;
+
+using OBSWeakSource = OBSRef<obs_weak_source_t*, obs_weak_source_addref,
+						obs_weak_source_release>;
+
+template<typename T, void addref(T), void release(T)>
 class OBSRef {
 	T val;
 
@@ -34,6 +48,9 @@ class OBSRef {
 		val = valIn;
 		return *this;
 	}
+
+	struct TakeOwnership {};
+	inline OBSRef(T val, TakeOwnership) : val(val)           {}
 
 public:
 	inline OBSRef() : val(nullptr)                  {}
@@ -61,15 +78,21 @@ public:
 
 	inline bool operator==(T p) const {return val == p;}
 	inline bool operator!=(T p) const {return val != p;}
+
+	friend OBSSource OBSGetStrongRef(obs_weak_source_t *weak);
+	friend OBSWeakSource OBSGetWeakRef(obs_source_t *source);
 };
 
-using OBSSource = OBSRef<obs_source_t*, obs_source_addref, obs_source_release>;
-using OBSScene = OBSRef<obs_scene_t*,  obs_scene_addref,  obs_scene_release>;
-using OBSSceneItem = OBSRef<obs_sceneitem_t*, obs_sceneitem_addref,
-						obs_sceneitem_release>;
-using OBSData = OBSRef<obs_data_t*, obs_data_addref, obs_data_release>;
-using OBSDataArray = OBSRef<obs_data_array_t*, obs_data_array_addref,
-						obs_data_array_release>;
+inline OBSSource OBSGetStrongRef(obs_weak_source_t *weak)
+{
+	return {obs_weak_source_get_source(weak), OBSSource::TakeOwnership()};
+}
+
+inline OBSWeakSource OBSGetWeakRef(obs_source_t *source)
+{
+	return {obs_source_get_weak_source(source),
+		OBSWeakSource::TakeOwnership()};
+}
 
 /* objects that are not meant to be instanced */
 template<typename T, void destroy(T)> class OBSObj {

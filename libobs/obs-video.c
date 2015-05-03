@@ -70,8 +70,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	/* call the tick function of each source */
 	source = data->first_source;
 	while (source) {
-		if (source->refs)
-			obs_source_video_tick(source, seconds);
+		obs_source_video_tick(source, seconds);
 		source = (struct obs_source*)source->context.next;
 	}
 
@@ -80,8 +79,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	source = data->first_source;
 	while (source) {
-		if (source->refs)
-			calculate_base_volume(data, view, source);
+		calculate_base_volume(data, view, source);
 		source = (struct obs_source*)source->context.next;
 	}
 
