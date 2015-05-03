@@ -43,8 +43,13 @@ endif()
 
 if(NOT WIN32 AND NOT APPLE)
 	set(glad_PLATFORM_DEPS
-		-ldl
 		${X11_X11_LIB})
+	# only link to libdl on linux
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		set(glad_PLATFORM_DEPS
+			${glad_PLATFORM_DEPS}
+			-ldl)
+	endif()
 endif()
 
 target_link_libraries(glad
