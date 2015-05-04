@@ -76,6 +76,9 @@ static struct obs_encoder *create_encoder(const char *id,
 		encoder = NULL;
 	}
 
+	encoder->control = bzalloc(sizeof(obs_weak_encoder_t));
+	encoder->control->encoder = encoder;
+
 	obs_context_data_insert(&encoder->context,
 			&obs->data.encoders_mutex,
 			&obs->data.first_encoder);
@@ -782,4 +785,79 @@ enum video_format obs_encoder_get_preferred_video_format(
 		return VIDEO_FORMAT_NONE;
 
 	return encoder->preferred_format;
+}
+
+void obs_encoder_addref(obs_encoder_t *encoder)
+{
+	if (!encoder)
+		return;
+
+	obs_ref_addref(&encoder->control->ref);
+}
+
+void obs_encoder_release(obs_encoder_t *encoder)
+{
+	if (!encoder)
+		return;
+
+	obs_weak_encoder_t *control = encoder->control;
+	if (obs_ref_release(&control->ref)) {
+		// The order of operations is important here since
+		// get_context_by_name in obs.c relies on weak refs
+		// being alive while the context is listed
+		obs_encoder_destroy(encoder);
+		obs_weak_encoder_release(control);
+	}
+}
+
+void obs_weak_encoder_addref(obs_weak_encoder_t *weak)
+{
+	if (!weak)
+		return;
+
+	obs_weak_ref_addref(&weak->ref);
+}
+
+void obs_weak_encoder_release(obs_weak_encoder_t *weak)
+{
+	if (!weak)
+		return;
+
+	if (obs_weak_ref_release(&weak->ref))
+		bfree(weak);
+}
+
+obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
+{
+	if (!encoder)
+		return NULL;
+
+	return obs_weak_encoder_get_encoder(encoder->control);
+}
+
+obs_weak_encoder_t *obs_encoder_get_weak_encoder(obs_encoder_t *encoder)
+{
+	if (!encoder)
+		return NULL;
+
+	obs_weak_encoder_t *weak = encoder->control;
+	obs_weak_encoder_addref(weak);
+	return weak;
+}
+
+obs_encoder_t *obs_weak_encoder_get_encoder(obs_weak_encoder_t *weak)
+{
+	if (!weak)
+		return NULL;
+
+	if (obs_weak_ref_get_ref(&weak->ref))
+		return weak->encoder;
+
+	return NULL;
+}
+
+bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
+		obs_encoder_t *encoder)
+{
+	return weak && encoder && weak->encoder == encoder;
 }

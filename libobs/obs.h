@@ -64,6 +64,7 @@ typedef struct obs_volmeter   obs_volmeter_t;
 
 typedef struct obs_weak_source  obs_weak_source_t;
 typedef struct obs_weak_output  obs_weak_output_t;
+typedef struct obs_weak_encoder obs_weak_encoder_t;
 
 #include "obs-source.h"
 #include "obs-encoder.h"
@@ -1313,8 +1314,22 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
 EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 		obs_data_t *settings, size_t mixer_idx);
 
-/** Destroys an encoder context */
-EXPORT void obs_encoder_destroy(obs_encoder_t *encoder);
+/**
+ * Adds/releases a reference to an encoder.  When the last reference is
+ * released, the encoder is destroyed.
+ */
+EXPORT void obs_encoder_addref(obs_encoder_t *encoder);
+EXPORT void obs_encoder_release(obs_encoder_t *encoder);
+
+EXPORT void obs_weak_encoder_addref(obs_weak_encoder_t *weak);
+EXPORT void obs_weak_encoder_release(obs_weak_encoder_t *weak);
+
+EXPORT obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder);
+EXPORT obs_weak_encoder_t *obs_encoder_get_weak_encoder(obs_encoder_t *encoder);
+EXPORT obs_encoder_t *obs_weak_encoder_get_encoder(obs_weak_encoder_t *weak);
+
+EXPORT bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
+		obs_encoder_t *encoder);
 
 EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);

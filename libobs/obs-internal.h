@@ -507,6 +507,11 @@ void obs_output_destroy(obs_output_t *output);
 /* ------------------------------------------------------------------------- */
 /* encoders  */
 
+struct obs_weak_encoder {
+	struct obs_weak_ref ref;
+	struct obs_encoder *encoder;
+};
+
 struct encoder_callback {
 	bool sent_first_packet;
 	void (*new_packet)(void *param, struct encoder_packet *packet);
@@ -516,6 +521,7 @@ struct encoder_callback {
 struct obs_encoder {
 	struct obs_context_data         context;
 	struct obs_encoder_info         info;
+	struct obs_weak_encoder         *control;
 
 	uint32_t                        samplerate;
 	size_t                          planes;
@@ -574,6 +580,8 @@ extern void obs_encoder_add_output(struct obs_encoder *encoder,
 		struct obs_output *output);
 extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 		struct obs_output *output);
+
+void obs_encoder_destroy(obs_encoder_t *encoder);
 
 /* ------------------------------------------------------------------------- */
 /* services */

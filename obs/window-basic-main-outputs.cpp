@@ -79,6 +79,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	h264 = obs_video_encoder_create("obs_x264", "simple_h264", nullptr);
 	if (!h264)
 		throw "Failed to create h264 encoder (simple output)";
+	obs_encoder_release(h264);
 
 	aac = obs_audio_encoder_create("libfdk_aac", "simple_aac", nullptr, 0);
 	if (!aac)
@@ -86,6 +87,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 				nullptr, 0);
 	if (!aac)
 		throw "Failed to create audio encoder (simple output)";
+	obs_encoder_release(aac);
 
 	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
@@ -346,6 +348,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			if (!h264Recording)
 				throw "Failed to create recording h264 "
 				      "encoder (advanced output)";
+			obs_encoder_release(h264Recording);
 		}
 	}
 
@@ -354,6 +357,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!h264Streaming)
 		throw "Failed to create streaming h264 encoder "
 		      "(advanced output)";
+	obs_encoder_release(h264Streaming);
 
 	for (int i = 0; i < 4; i++) {
 		char name[9];
@@ -367,6 +371,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		if (!aacTrack[i])
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
+		obs_encoder_release(aacTrack[i]);
 	}
 
 	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
