@@ -387,11 +387,6 @@ bool OBSBasic::LoadService()
 {
 	const char *type;
 
-	if (service) {
-		obs_service_destroy(service);
-		service = nullptr;
-	}
-
 	char serviceJsonPath[512];
 	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
@@ -410,6 +405,7 @@ bool OBSBasic::LoadService()
 	obs_data_t *settings = obs_data_get_obj(data, "settings");
 
 	service = obs_service_create(type, "default_service", settings);
+	obs_service_release(service);
 
 	obs_data_release(settings);
 	obs_data_release(data);
@@ -425,6 +421,7 @@ bool OBSBasic::InitService()
 	service = obs_service_create("rtmp_common", "default_service", nullptr);
 	if (!service)
 		return false;
+	obs_service_release(service);
 
 	return true;
 }
@@ -690,6 +687,7 @@ OBSBasic::~OBSBasic()
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
 
+	service = nullptr;
 	outputHandler.reset();
 
 	if (interaction)
@@ -1447,18 +1445,17 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 obs_service_t *OBSBasic::GetService()
 {
-	if (!service)
+	if (!service) {
 		service = obs_service_create("rtmp_common", NULL, NULL);
+		obs_service_release(service);
+	}
 	return service;
 }
 
 void OBSBasic::SetService(obs_service_t *newService)
 {
-	if (newService) {
-		if (service)
-			obs_service_destroy(service);
+	if (newService)
 		service = newService;
-	}
 }
 
 bool OBSBasic::StreamingActive()

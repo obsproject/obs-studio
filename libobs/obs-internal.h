@@ -586,9 +586,15 @@ void obs_encoder_destroy(obs_encoder_t *encoder);
 /* ------------------------------------------------------------------------- */
 /* services */
 
+struct obs_weak_service {
+	struct obs_weak_ref ref;
+	struct obs_service *service;
+};
+
 struct obs_service {
 	struct obs_context_data         context;
 	struct obs_service_info         info;
+	struct obs_weak_service         *control;
 
 	bool                            active;
 	bool                            destroy;
@@ -601,3 +607,6 @@ extern void obs_service_activate(struct obs_service *service);
 extern void obs_service_deactivate(struct obs_service *service, bool remove);
 extern bool obs_service_initialize(struct obs_service *service,
 		struct obs_output *output);
+
+void obs_service_destroy(obs_service_t *service);
+

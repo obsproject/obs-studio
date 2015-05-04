@@ -65,6 +65,7 @@ typedef struct obs_volmeter   obs_volmeter_t;
 typedef struct obs_weak_source  obs_weak_source_t;
 typedef struct obs_weak_output  obs_weak_output_t;
 typedef struct obs_weak_encoder obs_weak_encoder_t;
+typedef struct obs_weak_service obs_weak_service_t;
 
 #include "obs-source.h"
 #include "obs-encoder.h"
@@ -1433,7 +1434,23 @@ EXPORT const char *obs_service_get_display_name(const char *id);
 
 EXPORT obs_service_t *obs_service_create(const char *id, const char *name,
 		obs_data_t *settings);
-EXPORT void obs_service_destroy(obs_service_t *service);
+
+/**
+ * Adds/releases a reference to a service.  When the last reference is
+ * released, the service is destroyed.
+ */
+EXPORT void obs_service_addref(obs_service_t *service);
+EXPORT void obs_service_release(obs_service_t *service);
+
+EXPORT void obs_weak_service_addref(obs_weak_service_t *weak);
+EXPORT void obs_weak_service_release(obs_weak_service_t *weak);
+
+EXPORT obs_service_t *obs_service_get_ref(obs_service_t *service);
+EXPORT obs_weak_service_t *obs_service_get_weak_service(obs_service_t *service);
+EXPORT obs_service_t *obs_weak_service_get_service(obs_weak_service_t *weak);
+
+EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
+		obs_service_t *service);
 
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
 

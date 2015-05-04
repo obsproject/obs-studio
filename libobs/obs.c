@@ -1194,6 +1194,11 @@ static inline void *obs_encoder_addref_safe_(void *ref)
 	return obs_encoder_get_ref(ref);
 }
 
+static inline void *obs_service_addref_safe_(void *ref)
+{
+	return obs_service_get_ref(ref);
+}
+
 static inline void *obs_id_(void *data)
 {
 	return data;
@@ -1217,7 +1222,7 @@ obs_service_t *obs_get_service_by_name(const char *name)
 {
 	if (!obs) return NULL;
 	return get_context_by_name(&obs->data.first_service, name,
-			&obs->data.services_mutex, obs_id_);
+			&obs->data.services_mutex, obs_service_addref_safe_);
 }
 
 gs_effect_t *obs_get_default_effect(void)
