@@ -137,6 +137,9 @@ EXPORT int os_mkdir(const char *path);
 
 #ifdef _MSC_VER
 #define strtoll _strtoi64
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
 #endif
 
 #ifdef __cplusplus
