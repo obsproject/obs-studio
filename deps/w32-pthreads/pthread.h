@@ -205,6 +205,10 @@
 typedef unsigned long DWORD_PTR;
 typedef unsigned long ULONG_PTR;
 #endif
+
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#define HAVE_STRUCT_TIMESPEC
+#endif
 /*
  * -----------------
  * autoconf switches
