@@ -13,7 +13,10 @@ elseif(NOT PULSEAUDIO_FOUND)
 	return()
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(
+	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	${PULSEAUDIO_INCLUDE_DIR}
+)
 
 set(linux-pulseaudio_SOURCES
 	linux-pulseaudio.c

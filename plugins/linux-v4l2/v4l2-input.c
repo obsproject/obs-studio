@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* The new dv timing api was introduced in Linux 3.4
  * Currently we simply disable dv timings when this is not defined */
-#ifndef VIDIOC_ENUM_DV_TIMINGS
+#if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 #define V4L2_IN_CAP_DV_TIMINGS 0
 #endif
 
@@ -269,7 +269,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 	size_t cur_device_index;
 	const char *cur_device_name;
 
+#ifdef __FreeBSD__
+	dirp = opendir("/dev");
+#else
 	dirp = opendir("/sys/class/video4linux");
+#endif
 	if (!dirp)
 		return;
 
@@ -284,6 +288,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		int fd;
 		uint32_t caps;
 		struct v4l2_capability video_cap;
+
+#ifdef __FreeBSD__
+		if (strstr(dp->d_name, "video") == NULL)
+			continue;
+#endif
 
 		if (dp->d_type == DT_DIR)
 			continue;
@@ -949,7 +958,7 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 #ifndef V4L2_CAP_DEVICE_CAPS
 	blog(LOG_WARNING, "Plugin built without device caps support!");
 #endif
-#ifndef VIDIOC_ENUM_DV_TIMINGS
+#if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 	blog(LOG_WARNING, "Plugin built without dv-timing support!");
 #endif
 

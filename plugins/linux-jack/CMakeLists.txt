@@ -13,7 +13,10 @@ elseif(NOT JACK_FOUND)
 	return()
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(
+	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	${JACK_INCLUDE_DIR}
+)
 
 set(linux-jack_SOURCES
 	linux-jack.c

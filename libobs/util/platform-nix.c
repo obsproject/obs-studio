@@ -26,7 +26,6 @@
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
-#include <sys/vtimes.h>
 #endif
 
 #include "darray.h"
