@@ -80,6 +80,7 @@ include (CheckFunctionExists)
 include (CheckFunctionKeywords)
 include (CheckIncludeFiles)
 include (CheckTypeSize)
+include (CheckSymbolExists)
 
 
 if (MSVC)
@@ -221,8 +222,8 @@ else (HAVE_INLINE)
 endif (HAVE_INLINE)
 
 # Find our snprintf
-check_function_exists (snprintf HAVE_SNPRINTF)
-check_function_exists (_snprintf HAVE__SNPRINTF)
+check_symbol_exists(snprintf "stdio.h" HAVE_SNPRINTF)
+check_symbol_exists(_snprintf "stdio.h" HAVE__SNPRINTF)
 
 if (HAVE_SNPRINTF)
    set (JSON_SNPRINTF snprintf)

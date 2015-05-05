@@ -450,10 +450,6 @@ static inline void from_locale(char *buffer)
 		*pos = '.';
 }
 
-#ifdef _WIN32
-#define snprintf _snprintf
-#endif
-
 double os_strtod(const char *str)
 {
 	char buf[64];
