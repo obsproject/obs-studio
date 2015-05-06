@@ -81,6 +81,12 @@ char *find_libobs_data_file(const char *file)
 	return NULL;
 }
 
+static void log_processor_cores(void)
+{
+	blog(LOG_INFO, "Processor: %lu logical cores",
+	     sysconf(_SC_NPROCESSORS_ONLN));
+}
+
 static void log_processor_info(void)
 {
 	FILE *fp;
@@ -89,9 +95,6 @@ static void log_processor_info(void)
 	char *line = NULL;
 	size_t linecap = 0;
 	struct dstr processor;
-
-	blog(LOG_INFO, "Processor: %lu logical cores",
-	     sysconf(_SC_NPROCESSORS_ONLN));
 
 	fp = fopen("/proc/cpuinfo", "r");
 	if (!fp)
@@ -191,6 +194,7 @@ static void log_distribution_info(void)
 
 void log_system_info(void)
 {
+	log_processor_cores();
 	log_processor_info();
 	log_memory_info();
 	log_kernel_version();
