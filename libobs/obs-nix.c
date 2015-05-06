@@ -23,6 +23,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#if defined(__FreeBSD__)
+#include <sys/sysctl.h>
+#endif
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <inttypes.h>
@@ -87,6 +90,7 @@ static void log_processor_cores(void)
 	     sysconf(_SC_NPROCESSORS_ONLN));
 }
 
+#if defined(__linux__)
 static void log_processor_info(void)
 {
 	FILE *fp;
@@ -129,6 +133,27 @@ static void log_processor_info(void)
 	dstr_free(&processor);
 	free(line);
 }
+#elif defined(__FreeBSD__)
+static void log_processor_info(void)
+{
+	int mib[2];
+	size_t len;
+	char *proc;
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_MODEL;
+
+	sysctl(mib, 2, NULL, &len, NULL, 0);
+	proc = bmalloc(len);
+	if (!proc)
+		return;
+
+	sysctl(mib, 2, proc, &len, NULL, 0);
+	blog(LOG_INFO, "Processor: %s", proc);
+
+	bfree(proc);
+}
+#endif
 
 static void log_memory_info(void)
 {
@@ -195,7 +220,9 @@ static void log_distribution_info(void)
 void log_system_info(void)
 {
 	log_processor_cores();
+#if defined(__linux__) || defined(__FreeBSD__)
 	log_processor_info();
+#endif
 	log_memory_info();
 	log_kernel_version();
 	log_distribution_info();
