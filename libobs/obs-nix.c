@@ -174,6 +174,7 @@ static void log_kernel_version(void)
 	blog(LOG_INFO, "Kernel Version: %s %s", info.sysname, info.release);
 }
 
+#if defined(__linux__)
 static void log_distribution_info(void)
 {
 	FILE *fp;
@@ -216,6 +217,7 @@ static void log_distribution_info(void)
 	dstr_free(&distro);
 	free(line);
 }
+#endif
 
 void log_system_info(void)
 {
@@ -225,5 +227,7 @@ void log_system_info(void)
 #endif
 	log_memory_info();
 	log_kernel_version();
+#if defined(__linux__)
 	log_distribution_info();
+#endif
 }
