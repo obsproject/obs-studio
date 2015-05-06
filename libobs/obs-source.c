@@ -85,7 +85,7 @@ static const char *source_signals[] = {
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
-	"void audio_data(ptr source, ptr data)",
+	"void audio_data(ptr source, ptr data, bool muted)",
 	"void audio_mixers(ptr source, in out int mixers)",
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
@@ -773,7 +773,7 @@ static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
 }
 
 static void source_signal_audio_data(obs_source_t *source,
-		struct audio_data *in)
+		struct audio_data *in, bool muted)
 {
 	struct calldata data;
 
@@ -781,6 +781,7 @@ static void source_signal_audio_data(obs_source_t *source,
 
 	calldata_set_ptr(&data, "source", source);
 	calldata_set_ptr(&data, "data",   in);
+	calldata_set_bool(&data, "muted", muted);
 
 	signal_handler_signal(source->context.signals, "audio_data", &data);
 
@@ -827,11 +828,13 @@ static void source_output_audio_line(obs_source_t *source,
 		source->present_volume * obs->audio.user_volume *
 		obs->audio.present_volume;
 
-	if (!source->enabled || source->muted)
+	bool muted = !source->enabled || source->muted;
+
+	if (muted)
 		in.volume = 0.0f;
 
 	audio_line_output(source->audio_line, &in);
-	source_signal_audio_data(source, &in);
+	source_signal_audio_data(source, &in, muted);
 }
 
 enum convert_type {
