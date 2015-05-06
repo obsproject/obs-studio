@@ -16,10 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifdef __FreeBSD__
-#define _WITH_GETLINE
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
