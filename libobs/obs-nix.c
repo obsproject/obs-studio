@@ -16,13 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifdef __FreeBSD__
-#define _WITH_GETLINE
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#if defined(__FreeBSD__)
+#include <sys/sysctl.h>
+#endif
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <inttypes.h>
@@ -81,6 +80,13 @@ char *find_libobs_data_file(const char *file)
 	return NULL;
 }
 
+static void log_processor_cores(void)
+{
+	blog(LOG_INFO, "Processor: %lu logical cores",
+	     sysconf(_SC_NPROCESSORS_ONLN));
+}
+
+#if defined(__linux__)
 static void log_processor_info(void)
 {
 	FILE *fp;
@@ -89,9 +95,6 @@ static void log_processor_info(void)
 	char *line = NULL;
 	size_t linecap = 0;
 	struct dstr processor;
-
-	blog(LOG_INFO, "Processor: %lu logical cores",
-	     sysconf(_SC_NPROCESSORS_ONLN));
 
 	fp = fopen("/proc/cpuinfo", "r");
 	if (!fp)
@@ -126,6 +129,27 @@ static void log_processor_info(void)
 	dstr_free(&processor);
 	free(line);
 }
+#elif defined(__FreeBSD__)
+static void log_processor_info(void)
+{
+	int mib[2];
+	size_t len;
+	char *proc;
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_MODEL;
+
+	sysctl(mib, 2, NULL, &len, NULL, 0);
+	proc = bmalloc(len);
+	if (!proc)
+		return;
+
+	sysctl(mib, 2, proc, &len, NULL, 0);
+	blog(LOG_INFO, "Processor: %s", proc);
+
+	bfree(proc);
+}
+#endif
 
 static void log_memory_info(void)
 {
@@ -146,6 +170,7 @@ static void log_kernel_version(void)
 	blog(LOG_INFO, "Kernel Version: %s %s", info.sysname, info.release);
 }
 
+#if defined(__linux__)
 static void log_distribution_info(void)
 {
 	FILE *fp;
@@ -188,11 +213,17 @@ static void log_distribution_info(void)
 	dstr_free(&distro);
 	free(line);
 }
+#endif
 
 void log_system_info(void)
 {
+	log_processor_cores();
+#if defined(__linux__) || defined(__FreeBSD__)
 	log_processor_info();
+#endif
 	log_memory_info();
 	log_kernel_version();
+#if defined(__linux__)
 	log_distribution_info();
+#endif
 }
