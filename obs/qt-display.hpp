@@ -5,7 +5,7 @@
 class OBSQTDisplay : public QWidget {
 	Q_OBJECT
 
-	virtual void resizeEvent(QResizeEvent *event)
+	virtual void resizeEvent(QResizeEvent *event) override
 	{
 		emit DisplayResized();
 		QWidget::resizeEvent(event);
