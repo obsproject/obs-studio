@@ -169,7 +169,7 @@ QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, QWidget *widget,
 {
 	WidgetInfo *info = new WidgetInfo(this, prop, widget);
 	connect(widget, signal, info, SLOT(ControlChanged()));
-	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+	children.emplace_back(info);
 	return widget;
 }
 
@@ -222,7 +222,7 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 
 	WidgetInfo *info = new WidgetInfo(this, prop, edit);
 	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
-	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+	children.emplace_back(info);
 
 	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
 	layout->addRow(*label, subLayout);
@@ -248,7 +248,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	spin->setValue(val);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
-	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+	children.emplace_back(info);
 
 	if (type == OBS_NUMBER_SLIDER) {
 		QSlider *slider = new QSlider();
@@ -293,7 +293,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	spin->setValue(val);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
-	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+	children.emplace_back(info);
 
 	if (type == OBS_NUMBER_SLIDER) {
 		DoubleSlider *slider = new DoubleSlider();
@@ -438,7 +438,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	WidgetInfo *info = new WidgetInfo(this, prop, combo);
 	connect(combo, SIGNAL(currentIndexChanged(int)), info,
 				SLOT(ControlChanged()));
-	children.push_back(std::move(unique_ptr<WidgetInfo>(info)));
+	children.emplace_back(info);
 
 	/* trigger a settings update if the index was not found */
 	if (idx == -1)
