@@ -1507,3 +1507,13 @@ void obs_hotkeys_set_audio_hotkeys_translations(
 	SET_T(push_to_talk);
 #undef SET_T
 }
+
+void obs_hotkeys_set_sceneitem_hotkeys_translations(
+		const char *show, const char *hide)
+{
+#define SET_T(n) bfree(obs->hotkeys.sceneitem_##n); \
+	obs->hotkeys.sceneitem_##n = bstrdup(n)
+	SET_T(show);
+	SET_T(hide);
+#undef SET_T
+}

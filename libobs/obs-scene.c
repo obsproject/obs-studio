@@ -555,6 +555,82 @@ void obs_scene_enum_items(obs_scene_t *scene,
 	pthread_mutex_unlock(&scene->mutex);
 }
 
+static obs_sceneitem_t *sceneitem_get_ref(obs_sceneitem_t *si)
+{
+	long owners = si->ref;
+	while (owners > 0) {
+		if (os_atomic_compare_swap_long(&si->ref, owners, owners + 1))
+			return si;
+
+		owners = si->ref;
+	}
+	return NULL;
+}
+
+static bool hotkey_show_sceneitem(void *data, obs_hotkey_pair_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	obs_sceneitem_t *si = sceneitem_get_ref(data);
+	if (pressed && si && !si->visible) {
+		obs_sceneitem_set_visible(si, true);
+		obs_sceneitem_release(si);
+		return true;
+	}
+
+	obs_sceneitem_release(si);
+	return false;
+}
+
+static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	obs_sceneitem_t *si = sceneitem_get_ref(data);
+	if (pressed && si && si->visible) {
+		obs_sceneitem_set_visible(si, false);
+		obs_sceneitem_release(si);
+		return true;
+	}
+
+	obs_sceneitem_release(si);
+	return false;
+}
+
+static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
+		const char *name)
+{
+	struct dstr show = {0};
+	struct dstr hide = {0};
+	struct dstr show_desc = {0};
+	struct dstr hide_desc = {0};
+
+	dstr_copy(&show, "libobs.show_scene_item.%1");
+	dstr_replace(&show, "%1", name);
+	dstr_copy(&hide, "libobs.hide_scene_item.%1");
+	dstr_replace(&hide, "%1", name);
+
+	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
+	dstr_replace(&show_desc, "%1", name);
+	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
+	dstr_replace(&hide_desc, "%1", name);
+
+	item->toggle_visibility = obs_hotkey_pair_register_source(scene->source,
+			show.array, show_desc.array,
+			hide.array, hide_desc.array,
+			hotkey_show_sceneitem, hotkey_hide_sceneitem,
+			item, item);
+
+	dstr_free(&show);
+	dstr_free(&hide);
+	dstr_free(&show_desc);
+	dstr_free(&hide_desc);
+}
+
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
 	struct obs_scene_item *last;
@@ -602,6 +678,8 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
 	pthread_mutex_unlock(&scene->mutex);
 
+	init_hotkeys(scene, item, obs_source_get_name(source));
+
 	calldata_set_ptr(&params, "scene", scene);
 	calldata_set_ptr(&params, "item", item);
 	signal_handler_signal(scene->source->context.signals, "item_add",
@@ -614,6 +692,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 {
 	if (item) {
+		obs_hotkey_pair_unregister(item->toggle_visibility);
 		if (item->source)
 			obs_source_release(item->source);
 		bfree(item);

@@ -303,6 +303,8 @@ struct obs_core_hotkeys {
 	char                            *unmute;
 	char                            *push_to_mute;
 	char                            *push_to_talk;
+	char                            *sceneitem_show;
+	char                            *sceneitem_hide;
 };
 
 struct obs_core {

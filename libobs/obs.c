@@ -646,6 +646,8 @@ static inline bool obs_init_hotkeys(void)
 	hotkeys->unmute = bstrdup("Unmute");
 	hotkeys->push_to_mute = bstrdup("Push-to-mute");
 	hotkeys->push_to_talk = bstrdup("Push-to-talk");
+	hotkeys->sceneitem_show = bstrdup("Show '%1'");
+	hotkeys->sceneitem_hide = bstrdup("Hide '%1'");
 
 	if (!obs_hotkeys_platform_init(hotkeys))
 		return false;
@@ -695,6 +697,8 @@ static inline void obs_free_hotkeys(void)
 	bfree(hotkeys->unmute);
 	bfree(hotkeys->push_to_mute);
 	bfree(hotkeys->push_to_talk);
+	bfree(hotkeys->sceneitem_show);
+	bfree(hotkeys->sceneitem_hide);
 
 	obs_hotkey_name_map_free();
 
