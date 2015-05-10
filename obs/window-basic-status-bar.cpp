@@ -106,6 +106,17 @@ void OBSBasicStatusBar::UpdateSessionTime()
 	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	sessionTime->setText(text);
 	sessionTime->setMinimumWidth(sessionTime->width());
+
+	if (reconnectTimeout > 0) {
+		QString msg = QTStr("Basic.StatusBar.Reconnecting");
+		showMessage(msg.arg(QString::number(retries),
+					QString::number(reconnectTimeout)));
+		reconnectTimeout--;
+
+	} else if (retries > 0) {
+		QString msg = QTStr("Basic.StatusBar.AttemptingReconnect");
+		showMessage(msg.arg(QString::number(retries)));
+	}
 }
 
 void OBSBasicStatusBar::UpdateDroppedFrames()
@@ -132,7 +143,8 @@ void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 	OBSBasicStatusBar *statusBar =
 		reinterpret_cast<OBSBasicStatusBar*>(data);
 
-	QMetaObject::invokeMethod(statusBar, "Reconnect");
+	int seconds = (int)calldata_int(params, "timeout_sec");
+	QMetaObject::invokeMethod(statusBar, "Reconnect", Q_ARG(int, seconds));
 	UNUSED_PARAMETER(params);
 }
 
@@ -145,18 +157,17 @@ void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *params
 	UNUSED_PARAMETER(params);
 }
 
-void OBSBasicStatusBar::Reconnect()
+void OBSBasicStatusBar::Reconnect(int seconds)
 {
 	retries++;
-
-	QString reconnectMsg = QTStr("Basic.StatusBar.Reconnecting");
-	showMessage(reconnectMsg.arg(QString::number(retries)));
+	reconnectTimeout = seconds;
 }
 
 void OBSBasicStatusBar::ReconnectSuccess()
 {
 	showMessage(QTStr("Basic.StatusBar.ReconnectSuccessful"), 4000);
 	retries              = 0;
+	reconnectTimeout     = 0;
 	bitrateUpdateSeconds = -1;
 	lastBytesSent        = 0;
 	lastBytesSentTime    = os_gettime_ns();

@@ -24,6 +24,8 @@ private:
 	int activeRefs = 0;
 	int totalSeconds = 0;
 
+	int reconnectTimeout = 0;
+
 	int      bitrateUpdateSeconds = 0;
 	uint64_t lastBytesSent = 0;
 	uint64_t lastBytesSentTime = 0;
@@ -43,7 +45,7 @@ private:
 	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
 
 private slots:
-	void Reconnect();
+	void Reconnect(int seconds);
 	void ReconnectSuccess();
 	void UpdateStatusBar();
 	void UpdateCPUUsage();
