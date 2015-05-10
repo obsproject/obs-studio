@@ -1026,7 +1026,12 @@ static inline void signal_start(struct obs_output *output)
 
 static inline void signal_reconnect(struct obs_output *output)
 {
-	do_output_signal(output, "reconnect");
+	struct calldata params = {0};
+	calldata_set_int(&params, "timeout_sec",
+			output->reconnect_retry_sec);
+	calldata_set_ptr(&params, "output", output);
+	signal_handler_signal(output->context.signals, "reconnect", &params);
+	calldata_free(&params);
 }
 
 static inline void signal_reconnect_success(struct obs_output *output)
