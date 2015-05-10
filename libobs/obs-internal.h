@@ -466,6 +466,7 @@ struct obs_output {
 	int                             reconnect_retry_sec;
 	int                             reconnect_retry_max;
 	int                             reconnect_retries;
+	int                             reconnect_retry_cur_sec;
 	bool                            reconnecting;
 	pthread_t                       reconnect_thread;
 	os_event_t                      *reconnect_stop_event;

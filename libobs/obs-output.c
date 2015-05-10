@@ -1028,7 +1028,7 @@ static inline void signal_reconnect(struct obs_output *output)
 {
 	struct calldata params = {0};
 	calldata_set_int(&params, "timeout_sec",
-			output->reconnect_retry_sec);
+			output->reconnect_retry_cur_sec);
 	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "reconnect", &params);
 	calldata_free(&params);
@@ -1220,7 +1220,7 @@ void obs_output_end_data_capture(obs_output_t *output)
 static void *reconnect_thread(void *param)
 {
 	struct obs_output *output = param;
-	unsigned long ms = output->reconnect_retry_sec * 1000;
+	unsigned long ms = output->reconnect_retry_cur_sec * 1000;
 
 	output->reconnect_thread_active = true;
 
@@ -1238,8 +1238,10 @@ static void output_reconnect(struct obs_output *output)
 {
 	int ret;
 
-	if (!output->reconnecting)
+	if (!output->reconnecting) {
+		output->reconnect_retry_cur_sec = output->reconnect_retry_sec;
 		output->reconnect_retries = 0;
+	}
 
 	if (output->reconnect_retries >= output->reconnect_retry_max) {
 		output->reconnecting = false;
@@ -1250,6 +1252,10 @@ static void output_reconnect(struct obs_output *output)
 	if (!output->reconnecting) {
 		output->reconnecting = true;
 		os_event_reset(output->reconnect_stop_event);
+	}
+
+	if (output->reconnect_retries) {
+		output->reconnect_retry_cur_sec *= 2;
 	}
 
 	output->reconnect_retries++;
