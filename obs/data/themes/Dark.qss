@@ -55,6 +55,7 @@ QAbstractItemView {
 QToolTip {
     background-color: rgb(31,30,31); /* veryDark */
     color: rgb(205,205,205);
+    border: none;
 }
 
 QMenuBar::item {
