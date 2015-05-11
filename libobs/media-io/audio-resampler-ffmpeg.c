@@ -121,7 +121,7 @@ void audio_resampler_destroy(audio_resampler_t *rs)
 	if (rs) {
 		if (rs->context)
 			swr_free(&rs->context);
-		if (rs->output_buffer)
+		if (rs->output_buffer[0])
 			av_freep(&rs->output_buffer[0]);
 
 		bfree(rs);
