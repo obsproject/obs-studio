@@ -118,6 +118,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSScene>    ("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>   ("OBSSource");
+	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -131,6 +132,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	stringstream name;
 	name << "OBS " << App()->GetVersionString();
+
+	installEventFilter(CreateShortcutFilter());
 
 	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
@@ -292,7 +295,7 @@ void OBSBasic::CreateDefaultScene()
 
 #ifdef __APPLE__
 	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, "display_capture",
-			Str("Basic.DisplayCapture"), NULL);
+			Str("Basic.DisplayCapture"), NULL, nullptr);
 
 	if (source) {
 		obs_scene_add(scene, source);
@@ -406,10 +409,13 @@ bool OBSBasic::LoadService()
 	type = obs_data_get_string(data, "type");
 
 	obs_data_t *settings = obs_data_get_obj(data, "settings");
+	obs_data_t *hotkey_data = obs_data_get_obj(data, "hotkeys");
 
-	service = obs_service_create(type, "default_service", settings);
+	service = obs_service_create(type, "default_service", settings,
+			hotkey_data);
 	obs_service_release(service);
 
+	obs_data_release(hotkey_data);
 	obs_data_release(settings);
 	obs_data_release(data);
 
@@ -421,7 +427,8 @@ bool OBSBasic::InitService()
 	if (LoadService())
 		return true;
 
-	service = obs_service_create("rtmp_common", "default_service", nullptr);
+	service = obs_service_create("rtmp_common", "default_service", nullptr,
+			nullptr);
 	if (!service)
 		return false;
 	obs_service_release(service);
@@ -649,11 +656,13 @@ void OBSBasic::OBSInit()
 	}
 
 	InitOBSCallbacks();
+	InitHotkeys();
 
 	AddExtraModulePaths();
 	obs_load_all_modules();
 
 	ResetOutputs();
+	CreateHotkeys();
 
 	if (!InitService())
 		throw "Failed to initialize service";
@@ -677,6 +686,142 @@ void OBSBasic::OBSInit()
 				Qt::QueuedConnection);
 }
 
+void OBSBasic::InitHotkeys()
+{
+	struct obs_hotkeys_translations t = {};
+	t.insert                       = Str("Hotkeys.Insert");
+	t.del                          = Str("Hotkeys.Delete");
+	t.home                         = Str("Hotkeys.Home");
+	t.end                          = Str("Hotkeys.End");
+	t.page_up                      = Str("Hotkeys.PageUp");
+	t.page_down                    = Str("Hotkeys.PageDown");
+	t.num_lock                     = Str("Hotkeys.NumLock");
+	t.scroll_lock                  = Str("Hotkeys.ScrollLock");
+	t.caps_lock                    = Str("Hotkeys.CapsLock");
+	t.backspace                    = Str("Hotkeys.Backspace");
+	t.tab                          = Str("Hotkeys.Tab");
+	t.print                        = Str("Hotkeys.Print");
+	t.pause                        = Str("Hotkeys.Pause");
+	t.left                         = Str("Hotkeys.Left");
+	t.right                        = Str("Hotkeys.Right");
+	t.up                           = Str("Hotkeys.Up");
+	t.down                         = Str("Hotkeys.Down");
+#ifdef _WIN32
+	t.meta                         = Str("Hotkeys.Windows");
+#else
+	t.meta                         = Str("Hotkeys.Super");
+#endif
+	t.menu                         = Str("Hotkeys.Menu");
+	t.space                        = Str("Hotkeys.Space");
+	t.numpad_num                   = Str("Hotkeys.NumpadNum");
+	t.numpad_multiply              = Str("Hotkeys.NumpadMultiply");
+	t.numpad_divide                = Str("Hotkeys.NumpadDivide");
+	t.numpad_plus                  = Str("Hotkeys.NumpadAdd");
+	t.numpad_minus                 = Str("Hotkeys.NumpadSubtract");
+	t.numpad_decimal               = Str("Hotkeys.NumpadDecimal");
+	t.apple_keypad_num             = Str("Hotkeys.AppleKeypadNum");
+	t.apple_keypad_multiply        = Str("Hotkeys.AppleKeypadMultiply");
+	t.apple_keypad_divide          = Str("Hotkeys.AppleKeypadDivide");
+	t.apple_keypad_plus            = Str("Hotkeys.AppleKeypadAdd");
+	t.apple_keypad_minus           = Str("Hotkeys.AppleKeypadSubtract");
+	t.apple_keypad_decimal         = Str("Hotkeys.AppleKeypadDecimal");
+	t.apple_keypad_equal           = Str("Hotkeys.AppleKeypadEqual");
+	t.mouse_num                    = Str("Hotkeys.MouseButton");
+	obs_hotkeys_set_translations(&t);
+
+	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"),
+			Str("Push-to-talk"), Str("Push-to-mute"));
+
+	obs_hotkeys_set_sceneitem_hotkeys_translations(
+			Str("SceneItemShow"), Str("SceneItemHide"));
+
+	obs_hotkey_enable_callback_rerouting(true);
+	obs_hotkey_set_callback_routing_func(OBSBasic::HotkeyTriggered, this);
+}
+
+void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
+{
+	obs_hotkey_trigger_routed_callback(id, pressed);
+}
+
+void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
+{
+	OBSBasic &basic = *static_cast<OBSBasic*>(data);
+	QMetaObject::invokeMethod(&basic, "ProcessHotkey",
+			Q_ARG(obs_hotkey_id, id), Q_ARG(bool, pressed));
+}
+
+void OBSBasic::CreateHotkeys()
+{
+	auto LoadHotkeyData = [&](const char *name) -> OBSData
+	{
+		const char *info = config_get_string(basicConfig,
+				"Hotkeys", name);
+		if (!info)
+			return {};
+
+		obs_data_t *data = obs_data_create_from_json(info);
+		if (!data)
+			return {};
+
+		OBSData res = data;
+		obs_data_release(data);
+		return res;
+	};
+
+	auto LoadHotkeyPair = [&](obs_hotkey_pair_id id, const char *name0,
+			const char *name1)
+	{
+		obs_data_array_t *array0 =
+			obs_data_get_array(LoadHotkeyData(name0), "bindings");
+		obs_data_array_t *array1 =
+			obs_data_get_array(LoadHotkeyData(name1), "bindings");
+
+		obs_hotkey_pair_load(id, array0, array1);
+		obs_data_array_release(array0);
+		obs_data_array_release(array1);
+	};
+
+#define MAKE_CALLBACK(pred, method) \
+	[](void *data, obs_hotkey_pair_id, obs_hotkey_t*, bool pressed) \
+	{ \
+		OBSBasic &basic = *static_cast<OBSBasic*>(data); \
+		if (pred && pressed) { \
+			method(); \
+			return true; \
+		} \
+		return false; \
+	}
+
+	streamingHotkeys = obs_hotkey_pair_register_frontend(
+			"OBSBasic.StartStreaming",
+			Str("Basic.Hotkeys.StartStreaming"),
+			"OBSBasic.StopStreaming",
+			Str("Basic.Hotkeys.StopStreaming"),
+			MAKE_CALLBACK(!basic.outputHandler->StreamingActive(),
+				basic.StartStreaming),
+			MAKE_CALLBACK(basic.outputHandler->StreamingActive(),
+				basic.StopStreaming),
+			this, this);
+	LoadHotkeyPair(streamingHotkeys,
+			"OBSBasic.StartStreaming", "OBSBasic.StopStreaming");
+
+	recordingHotkeys = obs_hotkey_pair_register_frontend(
+			"OBSBasic.StartRecording",
+			Str("Basic.Hotkeys.StartRecording"),
+			"OBSBasic.StopRecording",
+			Str("Basic.Hotkeys.StopRecording"),
+			MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
+				basic.StartRecording),
+			MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
+				basic.StopRecording),
+			this, this);
+	LoadHotkeyPair(recordingHotkeys,
+			"OBSBasic.StartRecording", "OBSBasic.StopRecording");
+
+#undef MAKE_CALLBACK
+}
+
 OBSBasic::~OBSBasic()
 {
 	bool previewEnabled = obs_preview_enabled();
@@ -689,6 +834,10 @@ OBSBasic::~OBSBasic()
 	 * libobs. */
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
+
+	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
+	obs_hotkey_pair_unregister(streamingHotkeys);
+	obs_hotkey_pair_unregister(recordingHotkeys);
 
 	service = nullptr;
 	outputHandler.reset();
@@ -842,6 +991,18 @@ void OBSBasic::AddScene(OBSSource source)
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
 	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
 	ui->scenes->addItem(item);
+
+	obs_hotkey_register_source(source, "OBSBasic.SelectScene",
+			Str("Basic.Hotkeys.SelectScene"),
+			[](void *data,
+				obs_hotkey_id, obs_hotkey_t*, bool pressed)
+	{
+		auto potential_source = static_cast<obs_source_t*>(data);
+		auto source = obs_source_get_ref(potential_source);
+		if (source && pressed)
+			obs_set_output_source(0, source);
+		obs_source_release(source);
+	}, static_cast<obs_source_t*>(source));
 
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
 	signal_handler_connect(handler, "item_add",
@@ -1449,7 +1610,8 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 obs_service_t *OBSBasic::GetService()
 {
 	if (!service) {
-		service = obs_service_create("rtmp_common", NULL, NULL);
+		service = obs_service_create("rtmp_common", NULL, NULL,
+				nullptr);
 		obs_service_release(service);
 	}
 	return service;
@@ -1635,7 +1797,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
 		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				sourceId, deviceDesc, settings);
+				sourceId, deviceDesc, settings, nullptr);
 		obs_data_release(settings);
 
 		obs_set_output_source(channel, source);
@@ -2444,6 +2606,27 @@ void OBSBasic::OpenSceneFilters()
 	CreateFiltersWindow(source);
 }
 
+void OBSBasic::StartStreaming()
+{
+	SaveProject();
+
+	if (outputHandler->StreamingActive())
+		return;
+
+	if (outputHandler->StartStreaming(service)) {
+		ui->streamButton->setEnabled(false);
+		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	}
+}
+
+void OBSBasic::StopStreaming()
+{
+	SaveProject();
+
+	if (outputHandler->StreamingActive())
+		outputHandler->StopStreaming();
+}
+
 void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
@@ -2490,6 +2673,22 @@ void OBSBasic::StreamingStop(int code)
 				QT_UTF8(errorMessage));
 }
 
+void OBSBasic::StartRecording()
+{
+	SaveProject();
+
+	if (!outputHandler->RecordingActive())
+		outputHandler->StartRecording();
+}
+
+void OBSBasic::StopRecording()
+{
+	SaveProject();
+
+	if (outputHandler->RecordingActive())
+		outputHandler->StopRecording();
+}
+
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
@@ -2504,28 +2703,19 @@ void OBSBasic::RecordingStop()
 
 void OBSBasic::on_streamButton_clicked()
 {
-	SaveProject();
-
 	if (outputHandler->StreamingActive()) {
-		outputHandler->StopStreaming();
+		StopStreaming();
 	} else {
-		if (outputHandler->StartStreaming(service)) {
-			ui->streamButton->setEnabled(false);
-			ui->streamButton->setText(
-					QTStr("Basic.Main.Connecting"));
-		}
+		StartStreaming();
 	}
 }
 
 void OBSBasic::on_recordButton_clicked()
 {
-	SaveProject();
-
-	if (outputHandler->RecordingActive()) {
-		outputHandler->StopRecording();
-	} else {
-		outputHandler->StartRecording();
-	}
+	if (outputHandler->RecordingActive())
+		StopRecording();
+	else
+		StartRecording();
 }
 
 void OBSBasic::on_settingsButton_clicked()

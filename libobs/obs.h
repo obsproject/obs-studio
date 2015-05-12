@@ -72,6 +72,7 @@ typedef struct obs_weak_service obs_weak_service_t;
 #include "obs-output.h"
 #include "obs-service.h"
 #include "obs-audio-controls.h"
+#include "obs-hotkey.h"
 
 /**
  * @file
@@ -654,7 +655,8 @@ EXPORT const char *obs_source_get_display_name(enum obs_source_type type,
  * or modifying video/audio.  Use obs_source_release to release it.
  */
 EXPORT obs_source_t *obs_source_create(enum obs_source_type type,
-		const char *id, const char *name, obs_data_t *settings);
+		const char *id, const char *name, obs_data_t *settings,
+		obs_data_t *hotkey_data);
 
 /**
  * Adds/releases a reference to a source.  When the last reference is
@@ -862,6 +864,20 @@ EXPORT void obs_source_set_enabled(obs_source_t *source, bool enabled);
 
 EXPORT bool obs_source_muted(const obs_source_t *source);
 EXPORT void obs_source_set_muted(obs_source_t *source, bool muted);
+
+EXPORT bool obs_source_push_to_mute_enabled(obs_source_t *source);
+EXPORT void obs_source_enable_push_to_mute(obs_source_t *source, bool enabled);
+
+EXPORT uint64_t obs_source_get_push_to_mute_delay(obs_source_t *source);
+EXPORT void obs_source_set_push_to_mute_delay(obs_source_t *source,
+		uint64_t delay);
+
+EXPORT bool obs_source_push_to_talk_enabled(obs_source_t *source);
+EXPORT void obs_source_enable_push_to_talk(obs_source_t *source, bool enabled);
+
+EXPORT uint64_t obs_source_get_push_to_talk_delay(obs_source_t *source);
+EXPORT void obs_source_set_push_to_talk_delay(obs_source_t *source,
+		uint64_t delay);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
@@ -1091,7 +1107,7 @@ EXPORT const char *obs_output_get_display_name(const char *id);
  * directshow, or other custom outputs.
  */
 EXPORT obs_output_t *obs_output_create(const char *id, const char *name,
-		obs_data_t *settings);
+		obs_data_t *settings, obs_data_t *hotkey_data);
 
 /**
  * Adds/releases a reference to an output.  When the last reference is
@@ -1301,7 +1317,7 @@ EXPORT const char *obs_encoder_get_display_name(const char *id);
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
-		obs_data_t *settings);
+		obs_data_t *settings, obs_data_t *hotkey_data);
 
 /**
  * Creates an audio encoder context
@@ -1313,7 +1329,8 @@ EXPORT obs_encoder_t *obs_video_encoder_create(const char *id, const char *name,
  * @return           The video encoder context, or NULL if failed or not found.
  */
 EXPORT obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
-		obs_data_t *settings, size_t mixer_idx);
+		obs_data_t *settings, size_t mixer_idx,
+		obs_data_t *hotkey_data);
 
 /**
  * Adds/releases a reference to an encoder.  When the last reference is
@@ -1433,7 +1450,7 @@ EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 EXPORT const char *obs_service_get_display_name(const char *id);
 
 EXPORT obs_service_t *obs_service_create(const char *id, const char *name,
-		obs_data_t *settings);
+		obs_data_t *settings, obs_data_t *hotkey_data);
 
 /**
  * Adds/releases a reference to a service.  When the last reference is

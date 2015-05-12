@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2015 by Ruwen Hahn <palana@stunned.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,19 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "source-label.hpp"
 
-#include <QWidget>
-#include <obs.h>
+void OBSSourceLabel::SourceRenamed(void *data, calldata_t *params)
+{
+	auto &label = *static_cast<OBSSourceLabel*>(data);
 
-#define QT_UTF8(str) QString::fromUtf8(str)
-#define QT_TO_UTF8(str) str.toUtf8().constData()
+	const char *name = calldata_string(params, "new_name");
+	label.setText(name);
 
-class QWidget;
-struct gs_window;
+	emit label.Renamed(name);
+}
 
-void OBSErrorBox(QWidget *parent, const char *msg, ...);
+void OBSSourceLabel::SourceRemoved(void *data, calldata_t *)
+{
+	auto &label = *static_cast<OBSSourceLabel*>(data);
+	emit label.Removed();
+}
 
-void QTToGSWindow(WId windowId, gs_window &gswindow);
+void OBSSourceLabel::SourceDestroyed(void *data, calldata_t *)
+{
+	auto &label = *static_cast<OBSSourceLabel*>(data);
+	emit label.Destroyed();
 
-uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
+	label.destroyedSignal.Disconnect();
+	label.removedSignal.Disconnect();
+	label.renamedSignal.Disconnect();
+}

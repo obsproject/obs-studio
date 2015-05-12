@@ -47,7 +47,9 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent)
 	ui->progressBar->setMinimum(0);
 	ui->progressBar->setMaximum(1000);
 	ui->progressBar->setValue(0);
-	
+
+	installEventFilter(CreateShortcutFilter());
+
 	connect(ui->browseSource, &QPushButton::clicked,
 			[&]() { BrowseInput(); });
 	connect(ui->browseTarget, &QPushButton::clicked,

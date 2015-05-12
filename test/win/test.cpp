@@ -158,14 +158,15 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		/* ------------------------------------------------------ */
 		/* create source */
 		SourceContext source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				"random", "some randon source", NULL);
+				"random", "some randon source", NULL, nullptr);
 		if (!source)
 			throw "Couldn't create random test source";
 
 		/* ------------------------------------------------------ */
 		/* create filter */
 		SourceContext filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				"test_filter", "a nice green filter", NULL);
+				"test_filter", "a nice green filter", NULL,
+				nullptr);
 		if (!filter)
 			throw "Couldn't create test filter";
 		obs_source_filter_add(source, filter);

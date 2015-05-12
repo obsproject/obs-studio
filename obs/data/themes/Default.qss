@@ -47,6 +47,10 @@ MuteCheckBox::indicator:unchecked {
     image: url(:/res/images/unmute.png);
 }
 
+OBSHotkeyLabel[hotkeyPairHover=true] {
+    color: red;
+}
+
 
 /* Volume Control */
 

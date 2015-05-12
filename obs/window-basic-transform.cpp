@@ -50,6 +50,8 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->boundsWidth,  DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->boundsHeight, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 
+	installEventFilter(CreateShortcutFilter());
+
 	OBSScene curScene = main->GetCurrentScene();
 	SetScene(curScene);
 	SetItem(FindASelectedItem(curScene));

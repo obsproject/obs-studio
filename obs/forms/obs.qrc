@@ -22,5 +22,6 @@
     <file>images/settings/applications-system-2.png</file>
     <file>images/settings/system-settings-3.png</file>
     <file>images/settings/network-bluetooth.png</file>
+    <file>images/settings/preferences-desktop-keyboard-shortcuts.png</file>
   </qresource>
 </RCC>

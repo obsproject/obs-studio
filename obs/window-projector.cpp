@@ -15,6 +15,8 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 	                                "removed", OBSSourceRemoved, this)
 {
 	setAttribute(Qt::WA_DeleteOnClose, true);
+
+	installEventFilter(CreateShortcutFilter());
 }
 
 OBSProjector::~OBSProjector()

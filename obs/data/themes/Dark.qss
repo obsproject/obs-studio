@@ -487,3 +487,7 @@ MuteCheckBox::indicator:checked {
 MuteCheckBox::indicator:unchecked {
     image: url(./Dark/unmute.png);
 }
+
+OBSHotkeyLabel[hotkeyPairHover=true] {
+    color: red;
+}

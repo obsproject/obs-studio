@@ -31,6 +31,7 @@
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
 std::string GenerateTimeDateFilename(const char *extension);
+QObject *CreateShortcutFilter();
 
 struct BaseLexer {
 	lexer lex;

@@ -66,6 +66,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
 
+	installEventFilter(CreateShortcutFilter());
+
 	connect(ui->preview, SIGNAL(DisplayResized()),
 			this, SLOT(OnPreviewResized()));
 
@@ -367,7 +369,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		}
 
 		obs_source_t *filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				id, name.c_str(), nullptr);
+				id, name.c_str(), nullptr, nullptr);
 		if (filter) {
 			obs_source_filter_add(source, filter);
 			obs_source_release(filter);

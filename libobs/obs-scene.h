@@ -49,6 +49,8 @@ struct obs_scene_item {
 	uint32_t              bounds_align;
 	struct vec2           bounds;
 
+	obs_hotkey_pair_id    toggle_visibility;
+
 	/* would do **prev_next, but not really great for reordering */
 	struct obs_scene_item *prev;
 	struct obs_scene_item *next;
