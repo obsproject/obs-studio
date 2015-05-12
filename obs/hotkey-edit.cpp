@@ -288,10 +288,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 
 	auto add = new QPushButton;
 	add->setText("+");
+	add->setMinimumWidth(50);
 
 	auto remove = new QPushButton;
 	remove->setText("-");
 	remove->setEnabled(removeButtons.size() > 0);
+	remove->setMinimumWidth(50);
 
 	auto CurrentIndex = [&, remove]
 	{
