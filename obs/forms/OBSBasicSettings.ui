@@ -42,6 +42,9 @@
          <height>48</height>
         </size>
        </property>
+       <property name="currentRow">
+        <number>0</number>
+       </property>
        <item>
         <property name="text">
          <string>Basic.Settings.General</string>
