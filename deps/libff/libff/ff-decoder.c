@@ -233,7 +233,7 @@ void ff_decoder_refresh(void *opaque)
 			// frame
 			pts_diff = frame->pts - decoder->previous_pts;
 
-			if (pts_diff <= 0 || pts_diff >= 1.0) {
+			if (pts_diff <= 0) {
 				// if diff is invalid, use previous
 				pts_diff = decoder->previous_pts_diff;
 			}
