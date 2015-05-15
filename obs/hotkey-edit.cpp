@@ -142,7 +142,7 @@ void OBSHotkeyEdit::mousePressEvent(QMouseEvent *event)
 
 void OBSHotkeyEdit::HandleNewKey(obs_key_combination_t new_key)
 {
-	if (new_key == key)
+	if (new_key == key || obs_key_combination_is_empty(new_key))
 		return;
 
 	key = new_key;
