@@ -115,9 +115,6 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_enter_context(graphics->device);
 
-	pthread_mutex_init_value(&graphics->mutex);
-	pthread_mutex_init_value(&graphics->effect_mutex);
-
 	if (!graphics_init_immediate_vb(graphics))
 		return false;
 	if (!graphics_init_sprite_vb(graphics))
@@ -150,6 +147,7 @@ int gs_create(graphics_t **pgraphics, const char *module,
 
 	graphics_t *graphics = bzalloc(sizeof(struct graphics_subsystem));
 	pthread_mutex_init_value(&graphics->mutex);
+	pthread_mutex_init_value(&graphics->effect_mutex);
 
 	if (!new_data.num_backbuffers)
 		new_data.num_backbuffers = 1;
