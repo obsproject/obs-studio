@@ -682,7 +682,7 @@ static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context,
 
 	iter = xcb_setup_roots_iterator(xcb_get_setup(connection));
 	while (iter.rem) {
-		if (--def_screen_idx == 0) {
+		if (def_screen_idx-- == 0) {
 			return iter.data;
 			break;
 		}
