@@ -74,6 +74,9 @@ elseif(UNIX AND NOT UNIX_STRUCTURE)
 	list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
 
+option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)
+mark_as_advanced(BUILD_TESTS)
+
 if(NOT INSTALLER_RUN)
 	add_subdirectory(deps)
 
