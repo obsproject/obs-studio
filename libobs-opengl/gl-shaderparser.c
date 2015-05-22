@@ -63,6 +63,12 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, "vec3");
 	else if (cmp_type(type, len, "float4", 6) == 0)
 		dstr_cat(&glsp->gl_string, "vec4");
+	else if (cmp_type(type, len, "int2", 4) == 0)
+		dstr_cat(&glsp->gl_string, "ivec2");
+	else if (cmp_type(type, len, "int3", 4) == 0)
+		dstr_cat(&glsp->gl_string, "ivec3");
+	else if (cmp_type(type, len, "int4", 4) == 0)
+		dstr_cat(&glsp->gl_string, "ivec4");
 	else if (cmp_type(type, len, "float3x3", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat3x3");
 	else if (cmp_type(type, len, "float3x4", 8) == 0)
