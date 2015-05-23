@@ -470,7 +470,11 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 	if (!tex)
 		return;
 
-	sampler = device->cur_samplers[param->sampler_id];
+	// texelFetch doesn't need a sampler
+	if (param->sampler_id == -1)
+		sampler = device->cur_samplers[param->sampler_id];
+	else
+		sampler = NULL;
 
 	if (!gl_bind_texture(tex->gl_target, tex->texture))
 		goto fail;
