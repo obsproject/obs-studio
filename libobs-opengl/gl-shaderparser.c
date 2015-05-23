@@ -336,6 +336,8 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	if (!cf_token_is(cfp, ".")) return false;
 	if (!cf_next_token(cfp))    return false;
 
+	const char *function_end = ")";
+
 	if (cf_token_is(cfp, "Sample"))
 		written = gl_write_texture_call(glsp, var, "texture", true);
 	else if (cf_token_is(cfp, "SampleBias"))
@@ -344,6 +346,11 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 		written = gl_write_texture_call(glsp, var, "textureGrad", true);
 	else if (cf_token_is(cfp, "SampleLevel"))
 		written = gl_write_texture_call(glsp, var, "textureLod", true);
+	else if (cf_token_is(cfp, "Load")) {
+		written = gl_write_texture_call(glsp, var, "texelFetch", false);
+		dstr_cat(&glsp->gl_string, "(");
+		function_end = ").xy, 0)";
+	}
 
 	if (!written)
 		return false;
@@ -351,7 +358,7 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	if (!cf_next_token(cfp)) return false;
 
 	gl_write_function_contents(glsp, &cfp->cur_token, ")");
-	dstr_cat(&glsp->gl_string, ")");
+	dstr_cat(&glsp->gl_string, function_end);
 
 	*p_token = cfp->cur_token;
 	return true;
