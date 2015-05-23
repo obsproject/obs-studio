@@ -300,22 +300,22 @@ static bool gl_write_saturate(struct gl_shader_parser *glsp,
 }
 
 static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
-		struct shader_var *var, const char *call)
+		struct shader_var *var, const char *call, bool sampler)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	size_t sampler_id = (size_t)-1;
 
 	if (!cf_next_token(cfp))    return false;
 	if (!cf_token_is(cfp, "(")) return false;
-	if (!cf_next_token(cfp))    return false;
 
-	sampler_id = sp_getsampler(glsp, cfp->cur_token);
-	if (sampler_id == (size_t)-1) return false;
-
-	if (!cf_next_token(cfp))    return false;
-	if (!cf_token_is(cfp, ",")) return false;
-
-	var->gl_sampler_id = sampler_id;
+	if (sampler) {
+		if (!cf_next_token(cfp))    return false;
+		sampler_id = sp_getsampler(glsp, cfp->cur_token);
+		if (sampler_id == (size_t) -1) return false;
+		var->gl_sampler_id = sampler_id;
+		if (!cf_next_token(cfp))    return false;
+		if (!cf_token_is(cfp, ",")) return false;
+	}
 
 	dstr_cat(&glsp->gl_string, call);
 	dstr_cat(&glsp->gl_string, "(");
@@ -337,13 +337,13 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	if (!cf_next_token(cfp))    return false;
 
 	if (cf_token_is(cfp, "Sample"))
-		written = gl_write_texture_call(glsp, var, "texture");
+		written = gl_write_texture_call(glsp, var, "texture", true);
 	else if (cf_token_is(cfp, "SampleBias"))
-		written = gl_write_texture_call(glsp, var, "texture");
+		written = gl_write_texture_call(glsp, var, "texture", true);
 	else if (cf_token_is(cfp, "SampleGrad"))
-		written = gl_write_texture_call(glsp, var, "textureGrad");
+		written = gl_write_texture_call(glsp, var, "textureGrad", true);
 	else if (cf_token_is(cfp, "SampleLevel"))
-		written = gl_write_texture_call(glsp, var, "textureLod");
+		written = gl_write_texture_call(glsp, var, "textureLod", true);
 
 	if (!written)
 		return false;
