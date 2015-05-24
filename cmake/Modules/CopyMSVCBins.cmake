@@ -98,6 +98,18 @@ file(GLOB LIBFDK_BIN_FILES
 	"${Libfdk_INCLUDE_DIR}/bin/libfdk*-*.dll"
 	"${Libfdk_INCLUDE_DIR}/bin${_bin_suffix}/libfdk*-*.dll")
 
+file(GLOB CURL_BIN_FILES
+	"${CURL_INCLUDE_DIR}/../build/Win${_bin_suffix}/VC12/DLL Release - DLL Windows SSPI/libcurl.dll"
+	"${CURL_INCLUDE_DIR}/../bin${_bin_suffix}/libcurl*.dll"
+	"${CURL_INCLUDE_DIR}/../bin${_bin_suffix}/curl*.dll"
+	"${CURL_INCLUDE_DIR}/../bin/libcurl*.dll"
+	"${CURL_INCLUDE_DIR}/../bin/curl*.dll"
+	"${CURL_INCLUDE_DIR}/bin${_bin_suffix}/libcurl*.dll"
+	"${CURL_INCLUDE_DIR}/bin${_bin_suffix}/curl*.dll"
+	"${CURL_INCLUDE_DIR}/bin/libcurl*.dll"
+	"${CURL_INCLUDE_DIR}/bin/curl*.dll"
+	)
+
 if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
 	file(GLOB QT_DEBUG_BIN_FILES
 		"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
@@ -128,6 +140,7 @@ file(GLOB QT_ICU_BIN_FILES
 set(ALL_BASE_BIN_FILES
 	${FFMPEG_BIN_FILES}
 	${X264_BIN_FILES}
+	${CURL_BIN_FILES}
 	${LIBFDK_BIN_FILES}
 	${FREETYPE_BIN_FILES}
 	${QT_ICU_BIN_FILES})
@@ -158,6 +171,7 @@ message(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
 message(STATUS "x264 files: ${X264_BIN_FILES}")
 message(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")
 message(STATUS "Freetype files: ${FREETYPE_BIN_FILES}")
+message(STATUS "curl files: ${CURL_BIN_FILES}")
 message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
 message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
 message(STATUS "QT Release files: ${QT_BIN_FILES}")
