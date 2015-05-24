@@ -23,8 +23,6 @@
 #include <QShowEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -46,6 +44,7 @@
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
+#include "remote-text.hpp"
 
 #include "ui_OBSBasic.h"
 
@@ -1249,16 +1248,17 @@ void OBSBasic::CheckForUpdates()
 #else
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	string versionString("obs-basic ");
-	versionString += App()->GetVersionString();
+	if (updateCheckThread) {
+		updateCheckThread->wait();
+		delete updateCheckThread;
+	}
 
-	QNetworkRequest request;
-	request.setUrl(QUrl("https://obsproject.com/obs2_update/basic.json"));
-	request.setRawHeader("User-Agent", versionString.c_str());
-
-	QNetworkReply *reply = networkManager.get(request);
-	connect(reply, SIGNAL(finished()),
-			this, SLOT(updateFileFinished()));
+	RemoteTextThread *thread = new RemoteTextThread(
+			"https://obsproject.com/obs2_update/basic.json");
+	updateCheckThread = thread;
+	connect(thread, &RemoteTextThread::Result,
+			this, &OBSBasic::updateFileFinished);
+	updateCheckThread->start();
 #endif
 }
 
@@ -1270,22 +1270,16 @@ void OBSBasic::CheckForUpdates()
 #define VERSION_ENTRY "other"
 #endif
 
-void OBSBasic::updateFileFinished()
+void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 {
 	ui->actionCheckForUpdates->setEnabled(true);
 
-	QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-	if (!reply || reply->error()) {
-		blog(LOG_WARNING, "Update check failed: %s",
-				QT_TO_UTF8(reply->errorString()));
+	if (text.isEmpty()) {
+		blog(LOG_WARNING, "Update check failed: %s", QT_TO_UTF8(error));
 		return;
 	}
 
-	QByteArray raw = reply->readAll();
-	if (!raw.length())
-		return;
-
-	obs_data_t *returnData  = obs_data_create_from_json(raw.constData());
+	obs_data_t *returnData  = obs_data_create_from_json(QT_TO_UTF8(text));
 	obs_data_t *versionData = obs_data_get_obj(returnData, VERSION_ENTRY);
 	const char *description = obs_data_get_string(returnData,
 			"description");
@@ -1326,8 +1320,6 @@ void OBSBasic::updateFileFinished()
 
 	obs_data_release(versionData);
 	obs_data_release(returnData);
-
-	reply->deleteLater();
 }
 
 void OBSBasic::RemoveSelectedScene()
@@ -1856,6 +1848,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	QWidget::closeEvent(event);
 	if (!event->isAccepted())
 		return;
+
+	if (updateCheckThread)
+		updateCheckThread->wait();
+	if (logUploadThread)
+		logUploadThread->wait();
 
 	/* Check all child dialogs and ensure they run their proper closeEvent
 	 * methods before exiting the application.  Otherwise Qt doesn't send
@@ -2444,17 +2441,18 @@ void OBSBasic::UploadLog(const char *file)
 	QBuffer *postData = new QBuffer();
 	postData->setData(json, (int) strlen(json));
 
-	QNetworkRequest postReq(QUrl("https://api.github.com/gists"));
-	postReq.setHeader(QNetworkRequest::ContentTypeHeader,
-			"application/json");
+	if (logUploadThread) {
+		logUploadThread->wait();
+		delete logUploadThread;
+	}
 
-	QNetworkReply *reply = networkManager.post(postReq, postData);
-
-	/* set the reply as parent, so the buffer is deleted with the reply */
-	postData->setParent(reply);
-
-	connect(reply, SIGNAL(finished()),
-			this, SLOT(logUploadFinished()));
+	RemoteTextThread *thread = new RemoteTextThread(
+			"https://api.github.com/gists",
+			"application/json", json);
+	logUploadThread = thread;
+	connect(thread, &RemoteTextThread::Result,
+			this, &OBSBasic::logUploadFinished);
+	logUploadThread->start();
 }
 
 void OBSBasic::on_actionShowLogs_triggered()
@@ -2498,30 +2496,23 @@ void OBSBasic::on_actionCheckForUpdates_triggered()
 	CheckForUpdates();
 }
 
-void OBSBasic::logUploadFinished()
+void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 {
 	ui->menuLogFiles->setEnabled(true);
 
-	QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-	if (!reply || reply->error()) {
+	if (text.isEmpty()) {
 		QMessageBox::information(this,
 				QTStr("LogReturnDialog.ErrorUploadingLog"),
-				reply->errorString());
+				error);
 		return;
 	}
 
-	QByteArray raw = reply->readAll();
-	if (!raw.length())
-		return;
-
-	obs_data_t *returnData = obs_data_create_from_json(raw.constData());
+	obs_data_t *returnData = obs_data_create_from_json(QT_TO_UTF8(text));
 	QString logURL         = obs_data_get_string(returnData, "html_url");
 	obs_data_release(returnData);
 
 	OBSLogReply logDialog(this, logURL);
 	logDialog.exec();
-
-	reply->deleteLater();
 }
 
 static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,

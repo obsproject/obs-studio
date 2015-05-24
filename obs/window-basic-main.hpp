@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <QNetworkAccessManager>
 #include <QBuffer>
 #include <QAction>
 #include <obs.hpp>
@@ -71,13 +70,14 @@ private:
 
 	QPointer<QTimer> saveTimer;
 
+	QPointer<QThread> updateCheckThread;
+	QPointer<QThread> logUploadThread;
+
 	QPointer<OBSBasicInteraction> interaction;
 	QPointer<OBSBasicProperties> properties;
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
-
-	QNetworkAccessManager networkManager;
 
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
@@ -319,9 +319,9 @@ private slots:
 	void on_previewDisabledLabel_customContextMenuRequested(
 			const QPoint &pos);
 
-	void logUploadFinished();
+	void logUploadFinished(const QString &text, const QString &error);
 
-	void updateFileFinished();
+	void updateFileFinished(const QString &text, const QString &error);
 
 	void AddSourceFromAction();
 
