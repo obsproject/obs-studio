@@ -26,9 +26,8 @@ else()
 endif()
 
 find_package(Qt5Widgets ${FIND_MODE})
-find_package(Qt5Network ${FIND_MODE})
 
-if(NOT Qt5Widgets_FOUND OR NOT Qt5Network_FOUND)
+if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
 		message(FATAL_ERROR "Failed to find Qt5")
 	else()
@@ -206,7 +205,6 @@ target_link_libraries(obs
 	libobs
 	libff
 	Qt5::Widgets
-	Qt5::Network
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
