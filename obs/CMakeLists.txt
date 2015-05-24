@@ -39,6 +39,10 @@ endif()
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
+find_package(Libcurl REQUIRED)
+include_directories(${LIBCURL_INCLUDE_DIRS})
+add_definitions(${LIBCURL_DEFINITIONS})
+
 if(WIN32)
 	set(obs_PLATFORM_SOURCES
 		platform-windows.cpp
@@ -119,6 +123,7 @@ set(obs_SOURCES
 	crash-report.cpp
 	hotkey-edit.cpp
 	source-label.cpp
+	remote-text.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -157,6 +162,7 @@ set(obs_HEADERS
 	crash-report.hpp
 	hotkey-edit.hpp
 	source-label.hpp
+	remote-text.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI
@@ -201,6 +207,7 @@ target_link_libraries(obs
 	libff
 	Qt5::Widgets
 	Qt5::Network
+	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
 define_graphic_modules(obs)
