@@ -10,7 +10,7 @@
 
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
-	pkg_check_modules(_CURL QUIET curl)
+	pkg_check_modules(_CURL QUIET curl libcurl)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
