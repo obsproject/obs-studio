@@ -683,6 +683,15 @@ void OBSBasic::OBSInit()
 	if (!previewEnabled)
 		QMetaObject::invokeMethod(this, "TogglePreview",
 				Qt::QueuedConnection);
+
+#ifdef _WIN32
+	uint32_t winVer = GetWindowsVersion();
+	if (winVer > 0 && winVer < 0x602) {
+		bool disableAero = config_get_bool(basicConfig, "Video",
+				"DisableAero");
+		SetAeroEnabled(!disableAero);
+	}
+#endif
 }
 
 void OBSBasic::InitHotkeys()
@@ -888,6 +897,17 @@ OBSBasic::~OBSBasic()
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
 	config_save(App()->GlobalConfig());
+
+#ifdef _WIN32
+	uint32_t winVer = GetWindowsVersion();
+	if (winVer > 0 && winVer < 0x602) {
+		bool disableAero = config_get_bool(basicConfig, "Video",
+				"DisableAero");
+		if (disableAero) {
+			SetAeroEnabled(true);
+		}
+	}
+#endif
 }
 
 void OBSBasic::SaveProject()
