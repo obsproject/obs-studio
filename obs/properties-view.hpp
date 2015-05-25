@@ -18,6 +18,8 @@ typedef void              (*PropertiesUpdateCallback)(void *obj,
 class WidgetInfo : public QObject {
 	Q_OBJECT
 
+	friend class OBSPropertiesView;
+
 private:
 	OBSPropertiesView *view;
 	obs_property_t    *property;
@@ -33,6 +35,8 @@ private:
 	bool FontChanged(const char *setting);
 	void ButtonClicked();
 
+	void TogglePasswordText(bool checked);
+
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
 			QWidget *widget_)
@@ -40,6 +44,7 @@ public:
 	{}
 
 public slots:
+
 	void ControlChanged();
 };
 
@@ -72,7 +77,8 @@ private:
 			const char *signal);
 
 	QWidget *AddCheckbox(obs_property_t *prop);
-	QWidget *AddText(obs_property_t *prop);
+	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
+			QLabel *&label);
 	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	void AddFloat(obs_property_t *prop, QFormLayout *layout,

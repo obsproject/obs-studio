@@ -184,7 +184,8 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t *prop)
 	return NewWidget(prop, checkbox, SIGNAL(stateChanged(int)));
 }
 
-QWidget *OBSPropertiesView::AddText(obs_property_t *prop)
+QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
+		QLabel *&label)
 {
 	const char    *name = obs_property_name(prop);
 	const char    *val  = obs_data_get_string(settings, name);
@@ -193,12 +194,31 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop)
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
 		return NewWidget(prop, edit, SIGNAL(textChanged()));
+
+	} else if (type == OBS_TEXT_PASSWORD) {
+		QLayout *subLayout = new QHBoxLayout();
+		QLineEdit *edit = new QLineEdit();
+		QPushButton *show = new QPushButton();
+
+		show->setText(QTStr("Show"));
+		show->setCheckable(true);
+		edit->setText(QT_UTF8(val));
+		edit->setEchoMode(QLineEdit::Password);
+
+		subLayout->addWidget(edit);
+		subLayout->addWidget(show);
+
+		WidgetInfo *info = new WidgetInfo(this, prop, edit);
+		connect(show, &QAbstractButton::toggled,
+				info, &WidgetInfo::TogglePasswordText);
+		children.emplace_back(info);
+
+		label = new QLabel(QT_UTF8(obs_property_description(prop)));
+		layout->addRow(label, subLayout);
+		return nullptr;
 	}
 
 	QLineEdit *edit = new QLineEdit();
-
-	if (type == OBS_TEXT_PASSWORD)
-		edit->setEchoMode(QLineEdit::Password);
 
 	edit->setText(QT_UTF8(val));
 
@@ -571,7 +591,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		AddFloat(property, layout, &label);
 		break;
 	case OBS_PROPERTY_TEXT:
-		widget = AddText(property);
+		widget = AddText(property, layout, label);
 		break;
 	case OBS_PROPERTY_PATH:
 		AddPath(property, layout, &label);
@@ -792,6 +812,12 @@ void WidgetInfo::ButtonClicked()
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 				Qt::QueuedConnection);
 	}
+}
+
+void WidgetInfo::TogglePasswordText(bool show)
+{
+	reinterpret_cast<QLineEdit*>(widget)->setEchoMode(
+			show ? QLineEdit::Normal : QLineEdit::Password);
 }
 
 void WidgetInfo::ControlChanged()
