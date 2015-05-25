@@ -28,6 +28,7 @@ using namespace std;
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <Dwmapi.h>
 
 static inline bool check_path(const char* data, const char *path,
 		string &output)
@@ -158,4 +159,47 @@ vector<string> GetPreferredLocales()
 	}
 
 	return result;
+}
+
+uint32_t GetWindowsVersion()
+{
+	static uint32_t ver = 0;
+
+	if (ver == 0) {
+		OSVERSIONINFOW osvi = {};
+		osvi.dwOSVersionInfoSize = sizeof(osvi);
+
+		if (GetVersionExW(&osvi)) {
+			ver = osvi.dwMajorVersion << 8 | osvi.dwMinorVersion;
+		}
+	}
+
+	return ver;
+}
+
+void SetAeroEnabled(bool enable)
+{
+	static HRESULT (WINAPI *func)(UINT) = nullptr;
+	static bool failed = false;
+
+	if (!func) {
+		if (failed) {
+			return;
+		}
+
+		HMODULE dwm = LoadLibraryW(L"dwmapi");
+		if (!dwm) {
+			failed = true;
+			return;
+		}
+
+		func = reinterpret_cast<decltype(func)>(GetProcAddress(dwm,
+						"DwmEnableComposition"));
+		if (!func) {
+			failed = true;
+			return;
+		}
+	}
+
+	func(enable ? DWM_EC_ENABLECOMPOSITION : DWM_EC_DISABLECOMPOSITION);
 }

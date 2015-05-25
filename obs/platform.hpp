@@ -42,3 +42,8 @@ bool InitApplicationBundle();
 std::string GetDefaultVideoSavePath();
 
 std::vector<std::string> GetPreferredLocales();
+
+#ifdef _WIN32
+uint32_t GetWindowsVersion();
+void SetAeroEnabled(bool enable);
+#endif
