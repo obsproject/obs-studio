@@ -63,7 +63,7 @@ size_t os_process_pipe_read(os_process_pipe_t *pp, uint8_t *data, size_t len)
 		return 0;
 	}
 
-	return fread(data, len, 1, pp->file);
+	return fread(data, 1, len, pp->file);
 }
 
 size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
@@ -76,5 +76,5 @@ size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
 		return 0;
 	}
 
-	return fwrite(data, len, 1, pp->file);
+	return fwrite(data, 1, len, pp->file);
 }
