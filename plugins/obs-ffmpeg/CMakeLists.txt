@@ -29,3 +29,5 @@ target_link_libraries(obs-ffmpeg
 	${FFMPEG_LIBRARIES})
 
 install_obs_plugin_with_data(obs-ffmpeg data)
+
+add_subdirectory(ffmpeg-mux)
