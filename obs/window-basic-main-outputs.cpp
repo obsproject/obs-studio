@@ -94,7 +94,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create stream output (simple output)";
 	obs_output_release(streamOutput);
 
-	fileOutput = obs_output_create("flv_output", "simple_file_output",
+	fileOutput = obs_output_create("ffmpeg_muxer", "simple_file_output",
 			nullptr, nullptr);
 	if (!fileOutput)
 		throw "Failed to create recording output (simple output)";
@@ -356,8 +356,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			      "(advanced output)";
 		obs_output_release(fileOutput);
 	} else {
-		fileOutput = obs_output_create("flv_output", "adv_file_output",
-				nullptr, nullptr);
+		fileOutput = obs_output_create("ffmpeg_muxer",
+				"adv_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(advanced output)";
