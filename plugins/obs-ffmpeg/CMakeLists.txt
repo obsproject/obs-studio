@@ -17,6 +17,7 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-aac.c
 	obs-ffmpeg-output.c
+	obs-ffmpeg-mux.c
 	obs-ffmpeg-source.c)
 
 add_library(obs-ffmpeg MODULE
