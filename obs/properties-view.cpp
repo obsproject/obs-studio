@@ -215,6 +215,9 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 
 		label = new QLabel(QT_UTF8(obs_property_description(prop)));
 		layout->addRow(label, subLayout);
+
+		connect(edit, SIGNAL(textEdited(const QString &)),
+				info, SLOT(ControlChanged()));
 		return nullptr;
 	}
 
