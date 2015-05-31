@@ -281,7 +281,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 			for (uint32_t x = 0; x < g_w; x++) {
 				alpha = slot->bitmap.buffer[glyph_pos];
 				srcdata->texbuf[buf_pos] =
-					0x00FFFFFF ^ (alpha << 24);
+					0x00FFFFFF ^ ((uint32_t)alpha << 24);
 			}
 		}
 
