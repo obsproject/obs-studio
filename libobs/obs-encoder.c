@@ -73,8 +73,9 @@ static struct obs_encoder *create_encoder(const char *id,
 
 	success = init_encoder(encoder, name, settings, hotkey_data);
 	if (!success) {
+		blog(LOG_ERROR, "creating encoder '%s' (%s) failed", name, id);
 		obs_encoder_destroy(encoder);
-		encoder = NULL;
+		return NULL;
 	}
 
 	encoder->control = bzalloc(sizeof(obs_weak_encoder_t));
