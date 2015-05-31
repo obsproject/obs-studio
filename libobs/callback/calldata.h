@@ -70,7 +70,7 @@ static inline void calldata_clear(struct calldata *data)
 {
 	if (data->stack) {
 		data->size = sizeof(size_t);
-		*(size_t*)data->stack = 0;
+		memset(data->stack, 0, sizeof(size_t));
 	}
 }
 
