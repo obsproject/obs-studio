@@ -639,7 +639,7 @@ static bool update_device_list(obs_property_t *list,
 	size_t size = obs_property_list_item_count(list);
 	for (size_t i = 0; i < size;) {
 		const char *uid_ = obs_property_list_item_string(list, i);
-		bool found       = [uid isEqualToString:@(uid_)];
+		bool found       = [uid isEqualToString:@(uid_ ? uid_ : "")];
 		bool disabled    = obs_property_list_item_disabled(list, i);
 		if (!found && !disabled) {
 			i += 1;
