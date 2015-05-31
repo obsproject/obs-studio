@@ -490,15 +490,11 @@ inline void AdvancedOutput::SetupRecording()
 			"RecRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RecRescaleRes");
-	bool multitrack = config_get_bool(main->Config(), "AdvOut",
-			"RecMultitrack");
-	int trackIndex = config_get_int(main->Config(), "AdvOut",
-			"RecTrackIndex");
-	int trackCount = config_get_int(main->Config(), "AdvOut",
-			"RecTrackCount");
+	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
 	obs_data_t *settings = obs_data_create();
 	unsigned int cx = 0;
 	unsigned int cy = 0;
+	int idx = 0;
 
 	if (useStreamEncoder) {
 		obs_output_set_video_encoder(fileOutput, h264Streaming);
@@ -515,16 +511,11 @@ inline void AdvancedOutput::SetupRecording()
 		obs_output_set_video_encoder(fileOutput, h264Recording);
 	}
 
-	if (multitrack) {
-		int i = 0;
-		for (; i < trackCount; i++)
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if ((tracks & (1<<i)) != 0) {
 			obs_output_set_audio_encoder(fileOutput, aacTrack[i],
-					i);
-		for (; i < 4; i++)
-			obs_output_set_audio_encoder(fileOutput, nullptr, i);
-	} else {
-		obs_output_set_audio_encoder(fileOutput,
-				aacTrack[trackIndex - 1], 0);
+					idx++);
+		}
 	}
 
 	obs_data_set_string(settings, "path", path);

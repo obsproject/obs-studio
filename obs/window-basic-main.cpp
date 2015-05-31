@@ -496,8 +496,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 			false);
 	config_set_default_bool  (basicConfig, "AdvOut", "RecMultitrack",
 			false);
-	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackIndex", 1);
-	config_set_default_uint  (basicConfig, "AdvOut", "RecTrackCount", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecTracks", (1<<0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder",
 			"none");
 

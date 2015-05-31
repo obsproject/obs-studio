@@ -1042,8 +1042,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RecRescaleRes");
-	int trackIndex = config_get_int(main->Config(), "AdvOut",
-			"RecTrackIndex");
+	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
 
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
 	ui->advOutRecType->setCurrentIndex(typeIndex);
@@ -1054,12 +1053,10 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	int idx = ui->advOutRecFormat->findText(format);
 	ui->advOutRecFormat->setCurrentIndex(idx);
 
-	switch (trackIndex) {
-	case 1: ui->advOutRecTrack1->setChecked(true); break;
-	case 2: ui->advOutRecTrack2->setChecked(true); break;
-	case 3: ui->advOutRecTrack3->setChecked(true); break;
-	case 4: ui->advOutRecTrack4->setChecked(true); break;
-	}
+	ui->advOutRecTrack1->setChecked(tracks & (1<<0));
+	ui->advOutRecTrack2->setChecked(tracks & (1<<1));
+	ui->advOutRecTrack3->setChecked(tracks & (1<<2));
+	ui->advOutRecTrack4->setChecked(tracks & (1<<3));
 }
 
 void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
@@ -2006,9 +2003,12 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
-	SaveTrackIndex(main->Config(), "AdvOut", "RecTrackIndex",
-			ui->advOutRecTrack1, ui->advOutRecTrack2,
-			ui->advOutRecTrack3, ui->advOutRecTrack4);
+
+	config_set_int(main->Config(), "AdvOut", "RecTracks",
+			(ui->advOutRecTrack1->isChecked() ? (1<<0) : 0) |
+			(ui->advOutRecTrack2->isChecked() ? (1<<1) : 0) |
+			(ui->advOutRecTrack3->isChecked() ? (1<<2) : 0) |
+			(ui->advOutRecTrack4->isChecked() ? (1<<3) : 0));
 
 	SaveEdit(ui->advOutFFURL, "AdvOut", "FFURL");
 	SaveFormat(ui->advOutFFFormat);

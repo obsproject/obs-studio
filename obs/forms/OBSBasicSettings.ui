@@ -1175,31 +1175,28 @@
                                <number>0</number>
                               </property>
                               <item>
-                               <widget class="QRadioButton" name="advOutRecTrack1">
+                               <widget class="QCheckBox" name="advOutRecTrack1">
                                 <property name="text">
                                  <string notr="true">1</string>
-                                </property>
-                                <property name="checked">
-                                 <bool>true</bool>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutRecTrack2">
+                               <widget class="QCheckBox" name="advOutRecTrack2">
                                 <property name="text">
                                  <string notr="true">2</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutRecTrack3">
+                               <widget class="QCheckBox" name="advOutRecTrack3">
                                 <property name="text">
                                  <string notr="true">3</string>
                                 </property>
                                </widget>
                               </item>
                               <item>
-                               <widget class="QRadioButton" name="advOutRecTrack4">
+                               <widget class="QCheckBox" name="advOutRecTrack4">
                                 <property name="text">
                                  <string notr="true">4</string>
                                 </property>
@@ -2487,8 +2484,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>734</width>
-              <height>553</height>
+              <width>325</width>
+              <height>229</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
