@@ -102,6 +102,9 @@ public:
 	const char *GetRenderModule() const;
 };
 
+int GetConfigPath(char *path, size_t size, const char *name);
+char *GetConfigPathPtr(const char *name);
+
 inline OBSApp *App() {return static_cast<OBSApp*>(qApp);}
 
 inline config_t *GetGlobalConfig() {return App()->GlobalConfig();}

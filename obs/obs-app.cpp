@@ -52,6 +52,8 @@ static log_handler_t def_log_handler;
 static string currentLogFile;
 static string lastLogFile;
 
+static bool portable_mode = false;
+
 QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *, QEvent *event)
@@ -795,6 +797,53 @@ static void load_debug_privilege(void)
 }
 #endif
 
+#ifdef __APPLE__
+#define BASE_PATH ".."
+#else
+#define BASE_PATH "../.."
+#endif
+
+#define CONFIG_PATH BASE_PATH "/config"
+
+#ifndef OBS_UNIX_STRUCTURE
+#define OBS_UNIX_STRUCTURE 0
+#endif
+
+int GetConfigPath(char *path, size_t size, const char *name)
+{
+	if (!OBS_UNIX_STRUCTURE && portable_mode) {
+		if (name && *name) {
+			return snprintf(path, size, CONFIG_PATH "/%s", name);
+		} else {
+			return snprintf(path, size, CONFIG_PATH);
+		}
+	} else {
+		return os_get_config_path(path, size, name);
+	}
+}
+
+char *GetConfigPathPtr(const char *name)
+{
+	if (!OBS_UNIX_STRUCTURE && portable_mode) {
+		char path[512];
+
+		if (snprintf(path, sizeof(path), CONFIG_PATH "/%s", name) > 0) {
+			return bstrdup(path);
+		} else {
+			return NULL;
+		}
+	} else {
+		return os_get_config_path_ptr(name);
+	}
+}
+
+static inline bool arg_is(const char *arg,
+		const char *long_form, const char *short_form)
+{
+	return (long_form  && strcmp(arg, long_form)  == 0) ||
+	       (short_form && strcmp(arg, short_form) == 0);
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -807,6 +856,22 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
+
+	for (int i = 1; i < argc; i++) {
+		if (arg_is(argv[i], "--portable", "-p")) {
+			portable_mode = true;
+		}
+	}
+
+#if !OBS_UNIX_STRUCTURE
+	if (!portable_mode) {
+		portable_mode =
+			os_file_exists(BASE_PATH "/portable_mode") ||
+			os_file_exists(BASE_PATH "/obs_portable_mode") ||
+			os_file_exists(BASE_PATH "/portable_mode.txt") ||
+			os_file_exists(BASE_PATH "/obs_portable_mode.txt");
+	}
+#endif
 
 	fstream logFile;
 
