@@ -242,23 +242,34 @@ static bool MakeUserDirs()
 {
 	char path[512];
 
-	if (os_get_config_path(path, sizeof(path), "obs-studio") <= 0)
+	if (portable_mode) {
+		if (GetConfigPath(path, sizeof(path), "") <= 0)
+			return false;
+		if (!do_mkdir(path))
+			return false;
+	}
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
 
-	if (os_get_config_path(path, sizeof(path), "obs-studio/basic") <= 0)
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
 
-	if (os_get_config_path(path, sizeof(path), "obs-studio/logs") <= 0)
+	if (GetConfigPath(path, sizeof(path), "obs-studio/logs") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
 
+	if (GetConfigPath(path, sizeof(path), "obs-studio/logs") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
 #ifdef _WIN32
-	if (os_get_config_path(path, sizeof(path), "obs-studio/crashes") <= 0)
+	if (GetConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
@@ -271,7 +282,7 @@ bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
 
-	int len = os_get_config_path(path, sizeof(path),
+	int len = GetConfigPath(path, sizeof(path),
 			"obs-studio/global.ini");
 	if (len <= 0) {
 		return false;
@@ -362,7 +373,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 		char userDir[512];
 		name = "themes/" + name + ".qss";
 		string temp = "obs-studio/" + name;
-		int ret = os_get_config_path(userDir, sizeof(userDir),
+		int ret = GetConfigPath(userDir, sizeof(userDir),
 				temp.c_str());
 
 		if (ret > 0 && QFile::exists(userDir)) {
@@ -574,7 +585,7 @@ static uint64_t convert_log_name(const char *name)
 
 static void delete_oldest_file(const char *location)
 {
-	BPtr<char>       logDir(os_get_config_path_ptr(location));
+	BPtr<char>       logDir(GetConfigPathPtr(location));
 	string           oldestLog;
 	uint64_t         oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
@@ -615,7 +626,7 @@ static void delete_oldest_file(const char *location)
 
 static void get_last_log(void)
 {
-	BPtr<char>       logDir(os_get_config_path_ptr("obs-studio/logs"));
+	BPtr<char>       logDir(GetConfigPathPtr("obs-studio/logs"));
 	struct os_dirent *entry;
 	os_dir_t         *dir        = os_opendir(logDir);
 	uint64_t         highest_ts = 0;
@@ -688,7 +699,7 @@ static void create_log_file(fstream &logFile)
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
 
-	BPtr<char> path(os_get_config_path_ptr(dst.str().c_str()));
+	BPtr<char> path(GetConfigPathPtr(dst.str().c_str()));
 	logFile.open(path,
 			ios_base::in | ios_base::out | ios_base::trunc);
 
@@ -745,7 +756,7 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	string name = "obs-studio/crashes/Crash ";
 	name += GenerateTimeDateFilename("txt");
 
-	BPtr<char> path(os_get_config_path_ptr(name.c_str()));
+	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
 	fstream file;
 	file.open(path, ios_base::in | ios_base::out | ios_base::trunc);

@@ -603,7 +603,7 @@ void OBSBasicSettings::LoadThemeList()
 	QSet<QString> uniqueSet;
 	string themeDir;
 	char userThemeDir[512];
-	int ret = os_get_config_path(userThemeDir, sizeof(userThemeDir),
+	int ret = GetConfigPath(userThemeDir, sizeof(userThemeDir),
 			"obs-studio/themes/");
 	GetDataFilePath("themes/", themeDir);
 
@@ -959,7 +959,7 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	OBSPropertiesView *view;
 
 	char encoderJsonPath[512];
-	int ret = os_get_config_path(encoderJsonPath, sizeof(encoderJsonPath),
+	int ret = GetConfigPath(encoderJsonPath, sizeof(encoderJsonPath),
 			path);
 	if (ret > 0) {
 		BPtr<char> jsonData = os_quick_read_utf8_file(encoderJsonPath);
@@ -1860,7 +1860,7 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 	if (!view || !WidgetChanged(view))
 		return;
 
-	int ret = os_get_config_path(full_path, sizeof(full_path), path);
+	int ret = GetConfigPath(full_path, sizeof(full_path), path);
 	if (ret > 0) {
 		obs_data_t *settings = view->GetSettings();
 		if (settings) {

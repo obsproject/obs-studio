@@ -292,7 +292,7 @@ static OBSData GetDataFromJsonFile(const char *jsonFile)
 {
 	char fullPath[512];
 
-	int ret = os_get_config_path(fullPath, sizeof(fullPath), jsonFile);
+	int ret = GetConfigPath(fullPath, sizeof(fullPath), jsonFile);
 	if (ret > 0) {
 		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
 		if (!!jsonData) {

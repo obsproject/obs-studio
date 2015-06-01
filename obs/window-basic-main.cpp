@@ -66,7 +66,7 @@ Q_DECLARE_METATYPE(obs_order_movement);
 static void AddExtraModulePaths()
 {
 	char base_module_dir[512];
-	int ret = os_get_config_path(base_module_dir, sizeof(base_module_dir),
+	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
 			"obs-studio/plugins/%module%");
 
 	if (ret <= 0)
@@ -104,7 +104,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	}
 
 	char styleSheetPath[512];
-	int ret = os_get_config_path(styleSheetPath, sizeof(styleSheetPath),
+	int ret = GetConfigPath(styleSheetPath, sizeof(styleSheetPath),
 			"obs-studio/basic/stylesheet.qss");
 	if (ret > 0) {
 		if (QFile::exists(styleSheetPath)) {
@@ -369,7 +369,7 @@ void OBSBasic::SaveService()
 		return;
 
 	char serviceJsonPath[512];
-	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
+	int ret = GetConfigPath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return;
@@ -393,7 +393,7 @@ bool OBSBasic::LoadService()
 	const char *type;
 
 	char serviceJsonPath[512];
-	int ret = os_get_config_path(serviceJsonPath, sizeof(serviceJsonPath),
+	int ret = GetConfigPath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return false;
@@ -550,7 +550,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 bool OBSBasic::InitBasicConfig()
 {
 	char configPath[512];
-	int ret = os_get_config_path(configPath, sizeof(configPath),
+	int ret = GetConfigPath(configPath, sizeof(configPath),
 			"obs-studio/basic/basic.ini");
 	if (ret <= 0) {
 		OBSErrorBox(nullptr, "Failed to get base.ini path");
@@ -622,7 +622,7 @@ void OBSBasic::ResetOutputs()
 void OBSBasic::OBSInit()
 {
 	char savePath[512];
-	int ret = os_get_config_path(savePath, sizeof(savePath),
+	int ret = GetConfigPath(savePath, sizeof(savePath),
 			"obs-studio/basic/scenes.json");
 	if (ret <= 0)
 		throw "Failed to get scenes.json file path";
@@ -893,7 +893,7 @@ OBSBasic::~OBSBasic()
 void OBSBasic::SaveProject()
 {
 	char savePath[512];
-	int ret = os_get_config_path(savePath, sizeof(savePath),
+	int ret = GetConfigPath(savePath, sizeof(savePath),
 			"obs-studio/basic/scenes.json");
 	if (ret <= 0)
 		return;
@@ -2388,7 +2388,7 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 static BPtr<char> ReadLogFile(const char *log)
 {
 	char logDir[512];
-	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return nullptr;
 
 	string path = (char*)logDir;
@@ -2458,7 +2458,7 @@ void OBSBasic::UploadLog(const char *file)
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return;
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
@@ -2478,7 +2478,7 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
 	char logDir[512];
-	if (os_get_config_path(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
 		return;
 
 	const char* log = App()->GetCurrentLog();
