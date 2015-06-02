@@ -170,6 +170,38 @@ Linux (Manually compiling on Redhat-based distros such as Fedora)
         sudo make install
 
 
+Linux (Manually compiling on openSUSE)
+  - See openSUSE install instructions for details on adding Packman repository.
+
+  - Install build dependencies:
+
+        sudo zypper in cmake \
+          fontconfig-devel \
+          freetype2-devel \
+          gcc \
+          gcc-c++ \
+          libcurl-devel \
+          libffmpeg-devel \
+          libjansson-devel \
+          libpulse-devel \
+          libqt5-qtbase-devel \
+          libqt5-qtx11extras-devel \
+          libudev-devel \
+          libv4l-devel \
+          libXcomposite-devel \
+          libXinerama-devel \
+          libXrandr-devel
+
+  - Building and installing OBS:
+
+        git clone https://github.com/jp9000/obs-studio.git
+        cd obs-studio
+        mkdir build && cd build
+        cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+        make -j4
+        sudo make install
+
+
 Linux (Manually compiling on Debian-based distros)
   - Set up a build environment:
 
