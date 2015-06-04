@@ -1831,12 +1831,21 @@ static void clean_cache(obs_source_t *source)
 	}
 }
 
+#define MAX_ASYNC_FRAMES 30
+
 static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
 	struct obs_source_frame *new_frame = NULL;
 
 	pthread_mutex_lock(&source->async_mutex);
+
+	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
+		free_async_cache(source);
+		source->last_frame_ts = 0;
+		pthread_mutex_unlock(&source->async_mutex);
+		return NULL;
+	}
 
 	if (async_texture_changed(source, frame)) {
 		free_async_cache(source);
