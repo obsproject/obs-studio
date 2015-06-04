@@ -217,6 +217,7 @@ struct obs_core_video {
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 
+	uint64_t                        video_time;
 	video_t                         *video;
 	pthread_t                       video_thread;
 	bool                            thread_initialized;

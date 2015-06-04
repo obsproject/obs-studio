@@ -562,17 +562,18 @@ static inline void output_frame(uint64_t *cur_time, uint64_t interval)
 void *obs_video_thread(void *param)
 {
 	uint64_t last_time = 0;
-	uint64_t cur_time = os_gettime_ns();
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
+
+	obs->video.video_time = os_gettime_ns();
 
 	os_set_thread_name("libobs: graphics thread");
 
 	while (!video_output_stopped(obs->video.video)) {
-		last_time = tick_sources(cur_time, last_time);
+		last_time = tick_sources(obs->video.video_time, last_time);
 
 		render_displays();
 
-		output_frame(&cur_time, interval);
+		output_frame(&obs->video.video_time, interval);
 	}
 
 	UNUSED_PARAMETER(param);
