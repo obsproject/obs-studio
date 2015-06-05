@@ -47,6 +47,7 @@ static void OBSStopRecording(void *data, calldata_t *params)
 static OBSEncoder CreateAACEncoder(const char *name, size_t idx)
 {
 	static const char *encoders[] = {
+		"CoreAudio_AAC",
 		"libfdk_aac",
 		"ffmpeg_aac"
 	};
