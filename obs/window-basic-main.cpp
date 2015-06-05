@@ -259,13 +259,9 @@ void OBSBasic::Save(const char *file)
 	const char *jsonData = obs_data_get_json(saveData);
 
 	if (!!jsonData) {
-		bool shouldWrite = true;
 		const char *oldJsonData = os_quick_read_utf8_file(file);
-		if (oldJsonData && strcmp(jsonData, oldJsonData) == 0) {
-			shouldWrite = false;
-		}
 
-		if (shouldWrite) {
+		if (!oldJsonData || strcmp(jsonData, oldJsonData) != 0) {
 			/* TODO: maybe a message box here? */
 			bool success = os_quick_write_utf8_file(file, jsonData,
 				strlen(jsonData), false);
