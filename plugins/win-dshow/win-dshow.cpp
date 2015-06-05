@@ -38,6 +38,7 @@ using namespace DShow;
 #define LAST_RESOLUTION   "last_resolution"
 #define BUFFERING_VAL     "buffering"
 #define FLIP_IMAGE        "flip_vertically"
+#define AUDIO_OUTPUT_MODE "audio_output_mode"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
 #define AUDIO_DEVICE_ID   "audio_device_id"
 #define COLOR_SPACE       "color_space"
@@ -60,6 +61,10 @@ using namespace DShow;
 #define TEXT_BUFFERING_ON   obs_module_text("Buffering.Enable")
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
+#define TEXT_AUDIO_MODE     obs_module_text("AudioOutputMode")
+#define TEXT_MODE_CAPTURE   obs_module_text("AudioOutputMode.Capture")
+#define TEXT_MODE_DSOUND    obs_module_text("AudioOutputMode.DirectSound")
+#define TEXT_MODE_WAVEOUT   obs_module_text("AudioOutputMode.WaveOut")
 #define TEXT_CUSTOM_AUDIO   obs_module_text("UseCustomAudioDevice")
 #define TEXT_AUDIO_DEVICE   obs_module_text("AudioDevice")
 #define TEXT_ACTIVATE       obs_module_text("Activate")
@@ -840,6 +845,9 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 			placeholders::_3, placeholders::_4,
 			placeholders::_5);
 
+	audioConfig.mode =
+		(AudioMode)obs_data_get_int(settings, AUDIO_OUTPUT_MODE);
+
 	return device.SetAudioConfig(&audioConfig);
 }
 
@@ -960,6 +968,8 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "active", true);
 	obs_data_set_default_string(settings, COLOR_SPACE, "default");
 	obs_data_set_default_string(settings, COLOR_RANGE, "partial");
+	obs_data_set_default_int(settings, AUDIO_OUTPUT_MODE,
+			(int)AudioMode::Capture);
 }
 
 struct Resolution {
@@ -1703,6 +1713,15 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	Device::EnumAudioDevices(data->audioDevices);
 	if (!data->audioDevices.size())
 		return ppts;
+
+	p = obs_properties_add_list(ppts, AUDIO_OUTPUT_MODE, TEXT_AUDIO_MODE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, TEXT_MODE_CAPTURE,
+			(int64_t)AudioMode::Capture);
+	obs_property_list_add_int(p, TEXT_MODE_DSOUND,
+			(int64_t)AudioMode::DirectSound);
+	obs_property_list_add_int(p, TEXT_MODE_WAVEOUT,
+			(int64_t)AudioMode::WaveOut);
 
 	p = obs_properties_add_bool(ppts, USE_CUSTOM_AUDIO, TEXT_CUSTOM_AUDIO);
 
