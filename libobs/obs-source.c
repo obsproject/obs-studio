@@ -782,7 +782,7 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 	if (!source) return;
 
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0) {
-		uint64_t sys_time = os_gettime_ns();
+		uint64_t sys_time = obs->video.video_time;
 
 		pthread_mutex_lock(&source->async_mutex);
 		if (source->cur_async_frame) {
