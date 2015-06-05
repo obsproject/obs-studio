@@ -1,5 +1,9 @@
 
 if(WIN32)
+	option(BUILD_CA_ENCODER "Build CoreAudio encoder module" ON)
+	if (BUILD_CA_ENCODER)
+		add_subdirectory(coreaudio-encoder)
+	endif()
 	add_subdirectory(win-wasapi)
 	add_subdirectory(win-dshow)
 	add_subdirectory(win-capture)

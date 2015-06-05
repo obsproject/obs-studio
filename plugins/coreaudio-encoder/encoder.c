@@ -2,7 +2,9 @@
 #include <util/dstr.h>
 #include <obs-module.h>
 
+#ifndef _WIN32
 #include <AudioToolbox/AudioToolbox.h>
+#endif
 
 #define CA_LOG(level, format, ...) \
 	blog(level, "[CoreAudio encoder]: " format, ##__VA_ARGS__)
@@ -13,6 +15,10 @@
 #define CA_BLOG(level, format, ...) \
 	CA_LOG_ENCODER(ca->format_name, ca->encoder, level, format, \
 			##__VA_ARGS__)
+
+#ifdef _WIN32
+#include "windows-imports.h"
+#endif
 
 struct ca_encoder {
 	obs_encoder_t     *encoder;
@@ -80,6 +86,7 @@ static const char *code_to_str(OSStatus code)
 
 static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
 {
+#ifndef _WIN32
 	CFErrorRef err  = CFErrorCreate(kCFAllocatorDefault,
 			kCFErrorDomainOSStatus, code, NULL);
 	CFStringRef str = CFErrorCopyDescription(err);
@@ -95,6 +102,7 @@ static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
 		else
 			CA_LOG(LOG_ERROR, "Error in %s: %s", context, c_str);
 	} else {
+#endif
 		const char *code_str = code_to_str(code);
 		if (ca)
 			CA_BLOG(LOG_ERROR, "Error in %s: %s%s%d%s", context,
@@ -108,11 +116,13 @@ static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
 					code_str ? " (" : "",
 					(int)code,
 					code_str ? ")" : "");
+#ifndef _WIN32
 	}
 	free(c_str);
 
 	CFRelease(str);
 	CFRelease(err);
+#endif
 }
 
 static void aac_destroy(void *data)
@@ -755,6 +765,22 @@ OBS_MODULE_USE_DEFAULT_LOCALE("coreaudio-encoder", "en-US")
 
 bool obs_module_load(void)
 {
+#ifdef _WIN32
+	if (!load_core_audio()) {
+		CA_LOG(LOG_WARNING, "Couldn't load CoreAudio AAC encoder");
+		return true;
+	}
+
+	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
+#endif
+
 	obs_register_encoder(&aac_info);
 	return true;
 }
+
+#ifdef _WIN32
+void obs_module_unload(void)
+{
+	unload_core_audio();
+}
+#endif
