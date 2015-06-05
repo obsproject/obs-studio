@@ -44,6 +44,29 @@ static void OBSStopRecording(void *data, calldata_t *params)
 
 /* ------------------------------------------------------------------------ */
 
+static OBSEncoder CreateAACEncoder(const char *name, size_t idx)
+{
+	static const char *encoders[] = {
+		"libfdk_aac",
+		"ffmpeg_aac"
+	};
+
+	OBSEncoder result;
+
+	for (const char *encoder : encoders) {
+		result =  obs_audio_encoder_create(encoder, name, nullptr, idx,
+				nullptr);
+		if (result) {
+			obs_encoder_release(result);
+			break;
+		}
+	}
+
+	return result;
+}
+
+/* ------------------------------------------------------------------------ */
+
 struct SimpleOutput : BasicOutputHandler {
 	OBSEncoder             aac;
 	OBSEncoder             h264;
@@ -82,14 +105,9 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create h264 encoder (simple output)";
 	obs_encoder_release(h264);
 
-	aac = obs_audio_encoder_create("libfdk_aac", "simple_aac", nullptr, 0,
-			nullptr);
-	if (!aac)
-		aac = obs_audio_encoder_create("ffmpeg_aac", "simple_aac",
-				nullptr, 0, nullptr);
+	aac = CreateAACEncoder("simple_aac", 0);
 	if (!aac)
 		throw "Failed to create audio encoder (simple output)";
-	obs_encoder_release(aac);
 
 	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
@@ -366,15 +384,10 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		char name[9];
 		sprintf(name, "adv_aac%d", i);
 
-		aacTrack[i] = obs_audio_encoder_create("libfdk_aac",
-				name, nullptr, i, nullptr);
-		if (!aacTrack[i])
-			aacTrack[i] = obs_audio_encoder_create("ffmpeg_aac",
-					name, nullptr, i, nullptr);
+		aacTrack[i] = CreateAACEncoder(name, i);
 		if (!aacTrack[i])
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
-		obs_encoder_release(aacTrack[i]);
 	}
 
 	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
