@@ -458,7 +458,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
-	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 128);
+	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 160);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "Reconnect",
 			true);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "RetryDelay",
