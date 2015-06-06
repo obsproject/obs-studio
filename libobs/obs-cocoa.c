@@ -1208,6 +1208,14 @@ static void input_method_changed(CFNotificationCenterRef nc, void *observer,
 
 		pthread_mutex_lock(&hotkeys->mutex);
 		plat = hotkeys->platform_context;
+
+		if (new_plat && plat &&
+				new_plat->layout_data == plat->layout_data) {
+			pthread_mutex_unlock(&hotkeys->mutex);
+			hotkeys_release(new_plat);
+			return;
+		}
+
 		hotkeys->platform_context = new_plat;
 		if (new_plat)
 			log_layout_name(new_plat->tis);
