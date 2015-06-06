@@ -204,6 +204,7 @@ static bool dstr_from_cfstring(struct dstr *str, CFStringRef ref)
 
 struct obs_hotkeys_platform {
 	volatile long           refs;
+	TISInputSourceRef       tis;
 	CFDataRef               layout_data;
 	UCKeyboardLayout        *layout;
 	IOHIDManagerRef         manager;
@@ -1096,6 +1097,11 @@ static inline void free_hotkeys_platform(obs_hotkeys_platform_t *plat)
 	if (!plat)
 		return;
 
+	if (plat->tis) {
+		CFRelease(plat->tis);
+		plat->tis = NULL;
+	}
+
 	if (plat->layout_data) {
 		CFRelease(plat->layout_data);
 		plat->layout_data = NULL;
@@ -1154,16 +1160,14 @@ static bool init_hotkeys_platform(obs_hotkeys_platform_t **plat_)
 		return false;
 	}
 
-	TISInputSourceRef tis = TISCopyCurrentKeyboardLayoutInputSource();
-	plat->layout_data     = (CFDataRef)TISGetInputSourceProperty(tis,
+	plat->tis         = TISCopyCurrentKeyboardLayoutInputSource();
+	plat->layout_data = (CFDataRef)TISGetInputSourceProperty(plat->tis,
 					kTISPropertyUnicodeKeyLayoutData);
 
 	if (!plat->layout_data) {
 		blog(LOG_ERROR, "hotkeys-cocoa: Failed getting LayoutData");
 		goto fail;
 	}
-
-	log_layout_name(tis);
 
 	CFRetain(plat->layout_data);
 	plat->layout = (UCKeyboardLayout*)CFDataGetBytePtr(plat->layout_data);
@@ -1180,11 +1184,9 @@ static bool init_hotkeys_platform(obs_hotkeys_platform_t **plat_)
 
 	init_keyboard(plat);
 
-	CFRelease(tis);
 	return true;
 
 fail:
-	CFRelease(tis);
 	hotkeys_release(plat);
 	*plat_ = NULL;
 	return false;
@@ -1207,6 +1209,8 @@ static void input_method_changed(CFNotificationCenterRef nc, void *observer,
 		pthread_mutex_lock(&hotkeys->mutex);
 		plat = hotkeys->platform_context;
 		hotkeys->platform_context = new_plat;
+		if (new_plat)
+			log_layout_name(new_plat->tis);
 		pthread_mutex_unlock(&hotkeys->mutex);
 
 		calldata_t params = {0};
