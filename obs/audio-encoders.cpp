@@ -13,6 +13,7 @@ using namespace std;
 
 static const string encoders[] = {
 	"ffmpeg_aac",
+	"mf_aac",
 	"libfdk_aac",
 	"CoreAudio_AAC",
 };
