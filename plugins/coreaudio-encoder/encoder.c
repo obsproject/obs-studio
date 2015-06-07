@@ -366,8 +366,10 @@ static OSStatus complex_input_data_proc(AudioConverterRef inAudioConverter,
 
 	ca_encoder *ca = inUserData;
 
-	if (ca->bytes_read)
+	if (ca->bytes_read) {
 		da_erase_range(ca->input_buffer, 0, ca->bytes_read);
+		ca->bytes_read = 0;
+	}
 
 	if (ca->input_buffer.num < ca->in_bytes_required) {
 		*ioNumberDataPackets = 0;
