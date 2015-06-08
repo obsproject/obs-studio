@@ -290,8 +290,8 @@ static inline void do_audio_output(struct audio_output *audio,
 
 	pthread_mutex_lock(&audio->input_mutex);
 
-	for (size_t i = 0; i < mix->inputs.num; i++) {
-		struct audio_input *input = mix->inputs.array+i;
+	for (size_t i = mix->inputs.num; i > 0; i--) {
+		struct audio_input *input = mix->inputs.array+(i-1);
 
 		if (resample_audio_output(input, &data))
 			input->callback(input->param, mix_idx, &data);
@@ -557,7 +557,7 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 		goto fail;
 	if (pthread_mutex_init(&out->line_mutex, &attr) != 0)
 		goto fail;
-	if (pthread_mutex_init(&out->input_mutex, NULL) != 0)
+	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
 		goto fail;
 	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
