@@ -39,13 +39,19 @@ const char *obs_encoder_get_display_name(const char *id)
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		obs_data_t *settings, obs_data_t *hotkey_data)
 {
+	pthread_mutexattr_t attr;
+
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
 	pthread_mutex_init_value(&encoder->outputs_mutex);
 
+	if (pthread_mutexattr_init(&attr) != 0)
+		return false;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		return false;
 	if (!obs_context_data_init(&encoder->context, settings, name,
 				hotkey_data))
 		return false;
-	if (pthread_mutex_init(&encoder->callbacks_mutex, NULL) != 0)
+	if (pthread_mutex_init(&encoder->callbacks_mutex, &attr) != 0)
 		return false;
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
@@ -627,9 +633,9 @@ static inline void do_encode(struct obs_encoder *encoder,
 
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 
-		for (size_t i = 0; i < encoder->callbacks.num; i++) {
+		for (size_t i = encoder->callbacks.num; i > 0; i--) {
 			struct encoder_callback *cb;
-			cb = encoder->callbacks.array+i;
+			cb = encoder->callbacks.array+(i-1);
 			send_packet(encoder, cb, &pkt);
 		}
 
