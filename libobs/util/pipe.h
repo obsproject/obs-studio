@@ -23,7 +23,7 @@ typedef struct os_process_pipe os_process_pipe_t;
 
 EXPORT os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 		const char *type);
-EXPORT void os_process_pipe_destroy(os_process_pipe_t *pp);
+EXPORT int os_process_pipe_destroy(os_process_pipe_t *pp);
 
 EXPORT size_t os_process_pipe_read(os_process_pipe_t *pp, uint8_t *data,
 		size_t len);

@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <sys/wait.h>
 
 #include "bmem.h"
 #include "pipe.h"
@@ -46,12 +47,18 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 	return out;
 }
 
-void os_process_pipe_destroy(os_process_pipe_t *pp)
+int os_process_pipe_destroy(os_process_pipe_t *pp)
 {
+	int ret = 0;
+
 	if (pp) {
-		pclose(pp->file);
+		int status = pclose(pp->file);
+		if (WIFEXITED(status))
+			ret = (int)(char)WEXITSTATUS(status);
 		bfree(pp);
 	}
+
+	return ret;
 }
 
 size_t os_process_pipe_read(os_process_pipe_t *pp, uint8_t *data, size_t len)

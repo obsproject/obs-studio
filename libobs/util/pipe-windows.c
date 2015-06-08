@@ -24,6 +24,7 @@
 struct os_process_pipe {
 	bool read_pipe;
 	HANDLE handle;
+	HANDLE process;
 };
 
 static bool create_pipe(HANDLE *input, HANDLE *output)
@@ -41,7 +42,7 @@ static bool create_pipe(HANDLE *input, HANDLE *output)
 }
 
 static inline bool create_proccess(const char *cmd_line, HANDLE stdin_handle,
-		HANDLE stdout_handle)
+		HANDLE stdout_handle, HANDLE *process)
 {
 	PROCESS_INFORMATION pi = {0};
 	wchar_t *cmd_line_w = NULL;
@@ -59,7 +60,7 @@ static inline bool create_proccess(const char *cmd_line, HANDLE stdin_handle,
 				CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 		if (success) {
-			CloseHandle(pi.hProcess);
+			*process = pi.hProcess;
 			CloseHandle(pi.hThread);
 		}
 
@@ -74,6 +75,7 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 {
 	os_process_pipe_t *pp = NULL;
 	bool read_pipe;
+	HANDLE process;
 	HANDLE output;
 	HANDLE input;
 	bool success;
@@ -97,7 +99,7 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 	}
 
 	success = create_proccess(cmd_line, read_pipe ? NULL : input,
-			read_pipe ? output : NULL);
+			read_pipe ? output : NULL, &process);
 	if (!success) {
 		goto error;
 	}
@@ -105,6 +107,7 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 	pp = bmalloc(sizeof(*pp));
 	pp->handle = read_pipe ? input : output;
 	pp->read_pipe = read_pipe;
+	pp->process = process;
 
 	CloseHandle(read_pipe ? output : input);
 	return pp;
@@ -115,12 +118,24 @@ error:
 	return NULL;
 }
 
-void os_process_pipe_destroy(os_process_pipe_t *pp)
+int os_process_pipe_destroy(os_process_pipe_t *pp)
 {
+	int ret = 0;
+
 	if (pp) {
+		DWORD code;
+
 		CloseHandle(pp->handle);
+
+		WaitForSingleObject(pp->process, INFINITE);
+		if (GetExitCodeProcess(pp->process, &code))
+			ret = (int)code;
+
+		CloseHandle(pp->process);
 		bfree(pp);
 	}
+
+	return ret;
 }
 
 size_t os_process_pipe_read(os_process_pipe_t *pp, uint8_t *data, size_t len)
