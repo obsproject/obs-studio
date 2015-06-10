@@ -35,8 +35,10 @@ static void OBSStartRecording(void *data, calldata_t *params)
 static void OBSStopRecording(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	int code = (int)calldata_int(params, "code");
 
-	QMetaObject::invokeMethod(output->main, "RecordingStop");
+	QMetaObject::invokeMethod(output->main,
+			"RecordingStop", Q_ARG(int, code));
 	output->activeRefs--;
 
 	UNUSED_PARAMETER(params);

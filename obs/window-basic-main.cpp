@@ -2712,10 +2712,15 @@ void OBSBasic::RecordingStart()
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 }
 
-void OBSBasic::RecordingStop()
+void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+
+	if (code == OBS_OUTPUT_UNSUPPORTED)
+		QMessageBox::information(this,
+				QTStr("Output.RecordFail.Title"),
+				QTStr("Output.RecordFail.Unsupported"));
 }
 
 void OBSBasic::on_streamButton_clicked()

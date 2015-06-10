@@ -165,7 +165,7 @@ public slots:
 	void StopRecording();
 
 	void RecordingStart();
-	void RecordingStop();
+	void RecordingStop(int code);
 
 	void SaveProject();
 
