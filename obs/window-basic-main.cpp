@@ -1950,15 +1950,19 @@ void OBSBasic::on_action_Save_triggered()
 
 void OBSBasic::on_actionShow_Recordings_triggered()
 {
-	const char *path = config_get_string(basicConfig,
-			"SimpleOutput", "FilePath");
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *path = strcmp(mode, "Advanced") ?
+		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
+		config_get_string(basicConfig, "AdvOut", "RecFilePath");
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void OBSBasic::on_actionRemux_triggered()
 {
-	const char *path = config_get_string(basicConfig,
-			"SimpleOutput", "FilePath");
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *path = strcmp(mode, "Advanced") ?
+		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
+		config_get_string(basicConfig, "AdvOut", "RecFilePath");
 	OBSRemux remux(path, this);
 	remux.exec();
 }
