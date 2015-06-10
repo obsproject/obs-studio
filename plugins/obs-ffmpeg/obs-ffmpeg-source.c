@@ -244,8 +244,6 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 {
 	struct ffmpeg_source *s = opaque;
 	struct obs_source_frame obs_frame = {0};
-
-	double d_pts;
 	uint64_t pts;
 
 	// Media ended
@@ -255,8 +253,7 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 		return true;
 	}
 
-	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
-	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
+	pts = (uint64_t)(frame->pts * 1000000000.0L);
 
 	obs_frame.timestamp = pts;
 	obs_frame.width = frame->frame->width;
@@ -279,15 +276,13 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 
 	struct obs_source_audio audio_data = {0};
 
-	double d_pts;
 	uint64_t pts;
 
 	// Media ended
 	if (frame == NULL)
 		return true;
 
-	d_pts = ff_get_sync_clock(&s->demuxer->clock) - frame->pts;
-	pts = os_gettime_ns() - (uint64_t)(d_pts * 1000000000.0L);
+	pts = (uint64_t)(frame->pts * 1000000000.0L);
 
 	int channels = av_frame_get_channels(frame->frame);
 
