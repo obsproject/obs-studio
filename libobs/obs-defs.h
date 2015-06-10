@@ -38,6 +38,7 @@
 #define OBS_OUTPUT_INVALID_STREAM -3
 #define OBS_OUTPUT_ERROR          -4
 #define OBS_OUTPUT_DISCONNECTED   -5
+#define OBS_OUTPUT_UNSUPPORTED    -6
 
 #define OBS_VIDEO_SUCCESS           0
 #define OBS_VIDEO_FAIL             -1
