@@ -73,6 +73,14 @@
             {
                 "name": "US West: Los Angeles, CA",
                 "url": "rtmp://live-lax.twitch.tv/app"
+            },
+            {
+                "name": "US West: San Jose, CA",
+                "url": "rtmp://live-sjc.twitch.tv/app"
+            },
+            {
+                "name": "US West: Seattle, WA",
+                "url": "rtmp://live-sea.twitch.tv/app"
             }
         ],
         "recommended": {
