@@ -45,6 +45,10 @@ using namespace std;
 
 // Used for QVariant in codec comboboxes
 namespace {
+static bool StringEquals(QString left, QString right)
+{
+	return left == right;
+}
 struct FormatDesc {
 	const char *name = nullptr;
 	const char *mimeType = nullptr;
@@ -57,15 +61,9 @@ struct FormatDesc {
 
 	bool operator==(const FormatDesc &f) const
 	{
-		if ((name == nullptr) ^ (f.name == nullptr))
+		if (!StringEquals(name, f.name))
 			return false;
-		if (name != nullptr && strcmp(name, f.name) != 0)
-			return false;
-		if ((mimeType == nullptr) ^ (f.mimeType == nullptr))
-			return false;
-		if (mimeType != nullptr && strcmp(mimeType, f.mimeType) != 0)
-			return false;
-		return true;
+		return StringEquals(mimeType, f.mimeType);
 	}
 };
 struct CodecDesc {
@@ -77,11 +75,9 @@ struct CodecDesc {
 
 	bool operator==(const CodecDesc &codecDesc) const
 	{
-		if ((name == nullptr) ^ (codecDesc.name == nullptr))
-			return false;
 		if (id != codecDesc.id)
 			return false;
-		return name == nullptr || strcmp(name, codecDesc.name) == 0;
+		return StringEquals(name, codecDesc.name);
 	}
 };
 }
