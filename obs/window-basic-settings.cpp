@@ -379,6 +379,17 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			"hotkey_unregister", ReloadHotkeysIgnore, this);
 
 	LoadSettings(false);
+
+	// Add warning checks to advanced output recording section controls
+	connect(ui->advOutRecTrack1, SIGNAL(clicked()),
+			this, SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecTrack2, SIGNAL(clicked()),
+			this, SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecTrack3, SIGNAL(clicked()),
+			this, SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecTrack4, SIGNAL(clicked()),
+			this, SLOT(AdvOutRecCheckWarnings()));
+	AdvOutRecCheckWarnings();
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -2531,5 +2542,42 @@ void OBSBasicSettings::AdvancedChanged()
 		advancedChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::AdvOutRecCheckWarnings()
+{
+	auto Checked = [](QCheckBox *box)
+	{
+		return box->isChecked() ? 1 : 0;
+	};
+
+	QString msg;
+	uint32_t tracks =
+		Checked(ui->advOutRecTrack1) +
+		Checked(ui->advOutRecTrack2) +
+		Checked(ui->advOutRecTrack3) +
+		Checked(ui->advOutRecTrack4);
+	const char *objectName = nullptr;
+
+	if (tracks == 0) {
+		msg = QTStr("OutputWarnings.NoTracksSelected");
+		objectName = "errorLabel";
+
+	} else if (tracks > 1) {
+		msg = QTStr("OutputWarnings.MultiTrackRecording");
+		objectName = "warningLabel";
+	}
+
+	delete advOutRecWarning;
+
+	if (!msg.isEmpty()) {
+		advOutRecWarning = new QLabel(msg, this);
+		advOutRecWarning->setObjectName(objectName);
+
+		QFormLayout *formLayout = reinterpret_cast<QFormLayout*>(
+				ui->advOutRecTopContainer->layout());
+
+		formLayout->addRow(nullptr, advOutRecWarning);
 	}
 }

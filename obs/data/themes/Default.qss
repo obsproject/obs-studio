@@ -60,3 +60,16 @@ VolumeMeter {
     qproperty-peakColor: rgb(62, 241, 43);
     qproperty-peakHoldColor: rgb(0, 0, 0);
 }
+
+
+/* Label warning/error */
+
+QLabel#warningLabel {
+    color: rgb(192, 128, 0);
+    font-weight: bold;
+}
+
+QLabel#errorLabel {
+    color: rgb(192, 0, 0);
+    font-weight: bold;
+}

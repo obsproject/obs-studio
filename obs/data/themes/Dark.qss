@@ -495,3 +495,16 @@ MuteCheckBox::indicator:unchecked {
 OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
 }
+
+
+/* Label warning/error */
+
+QLabel#warningLabel {
+    color: rgb(192, 128, 0);
+    font-weight: bold;
+}
+
+QLabel#errorLabel {
+    color: rgb(192, 0, 0);
+    font-weight: bold;
+}
