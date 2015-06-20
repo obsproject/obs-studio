@@ -1398,6 +1398,9 @@ void obs_source_video_render(obs_source_t *source)
 {
 	if (!source) return;
 
+	if ((source->info.output_flags & OBS_SOURCE_VIDEO) == 0)
+		return;
+
 	if (!source->context.data || !source->enabled) {
 		if (source->filter_parent)
 			obs_source_skip_video_filter(source);
