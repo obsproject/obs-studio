@@ -84,3 +84,5 @@ tags
 .DS_Store
 */.DS_Store
 */**/.DS_Store
+docs/html/
+docs/doxygen_sqlite3.db
