@@ -932,6 +932,7 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_PATH:
 		if (!PathChanged(setting))
 			return;
+		break;
 	case OBS_PROPERTY_EDITABLE_LIST: return;
 	}
 
