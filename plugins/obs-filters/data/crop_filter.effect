@@ -6,8 +6,8 @@ uniform float2 add_val;
 
 sampler_state textureSampler {
 	Filter    = Linear;
-	AddressU  = Clamp;
-	AddressV  = Clamp;
+	AddressU  = Wrap;
+	AddressV  = Wrap;
 };
 
 struct VertData {
