@@ -3,6 +3,8 @@
 #include <obs.hpp>
 #include <QWidget>
 
+class QPushButton;
+
 class VolumeMeter : public QWidget
 {
 	Q_OBJECT
@@ -48,6 +50,7 @@ private:
 	VolumeMeter     *volMeter;
 	QSlider         *slider;
 	MuteCheckBox    *mute;
+	QPushButton     *config = nullptr;
 	float           levelTotal;
 	float           levelCount;
 	obs_fader_t     *obs_fader;
@@ -56,6 +59,8 @@ private:
 	static void OBSVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSVolumeLevel(void *data, calldata_t *calldata);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
+
+	void EmitConfigClicked();
 
 private slots:
 	void VolumeChanged();
@@ -66,8 +71,11 @@ private slots:
 	void SliderChanged(int vol);
 	void updateText();
 
+signals:
+	void ConfigClicked();
+
 public:
-	VolControl(OBSSource source);
+	VolControl(OBSSource source, bool showConfig = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const {return source;}

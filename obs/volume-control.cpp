@@ -5,6 +5,8 @@
 #include <util/platform.h>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QPushButton>
+#include <QVariant>
 #include <QSlider>
 #include <QLabel>
 #include <QPainter>
@@ -99,7 +101,12 @@ void VolControl::SetName(const QString &newName)
 	nameLabel->setText(newName);
 }
 
-VolControl::VolControl(OBSSource source_)
+void VolControl::EmitConfigClicked()
+{
+	emit ConfigClicked();
+}
+
+VolControl::VolControl(OBSSource source_, bool showConfig)
 	: source        (source_),
 	  levelTotal    (0.0f),
 	  levelCount    (0.0f),
@@ -109,6 +116,7 @@ VolControl::VolControl(OBSSource source_)
 	QHBoxLayout *volLayout  = new QHBoxLayout();
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
+	QHBoxLayout *botLayout  = new QHBoxLayout();
 
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
@@ -139,11 +147,30 @@ VolControl::VolControl(OBSSource source_)
 	volLayout->addWidget(mute);
 	volLayout->setSpacing(5);
 
+	botLayout->setContentsMargins(0, 0, 0, 0);
+	botLayout->setSpacing(0);
+	botLayout->addLayout(volLayout);
+
+	if (showConfig) {
+		config = new QPushButton(this);
+		config->setProperty("themeID", "configIconSmall");
+		config->setFlat(true);
+		config->setSizePolicy(QSizePolicy::Maximum,
+				QSizePolicy::Maximum);
+		config->setMaximumSize(22, 22);
+		config->setAutoDefault(false);
+
+		connect(config, &QAbstractButton::clicked,
+				this, &VolControl::EmitConfigClicked);
+
+		botLayout->addWidget(config);
+	}
+
 	mainLayout->setContentsMargins(4, 4, 4, 4);
 	mainLayout->setSpacing(2);
 	mainLayout->addItem(textLayout);
 	mainLayout->addWidget(volMeter);
-	mainLayout->addItem(volLayout);
+	mainLayout->addItem(botLayout);
 
 	setLayout(mainLayout);
 
