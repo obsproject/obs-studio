@@ -303,7 +303,7 @@ int os_rmdir(const char *path)
 
 int os_mkdir(const char *path)
 {
-	if (mkdir(path, 0777) == 0)
+	if (mkdir(path, 0755) == 0)
 		return MKDIR_SUCCESS;
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
