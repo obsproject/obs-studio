@@ -156,6 +156,10 @@ private:
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor);
 
+	void GetAudioSourceFilters();
+	void GetAudioSourceProperties();
+	void VolControlContextMenu();
+
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
 
 public slots:

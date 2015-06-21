@@ -1245,9 +1245,55 @@ void OBSBasic::MoveSceneItem(OBSSceneItem item, obs_order_movement movement)
 	ui->sources->setCurrentRow(curRow);
 }
 
+void OBSBasic::GetAudioSourceFilters()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *source = vol->GetSource();
+
+	CreateFiltersWindow(source);
+}
+
+void OBSBasic::GetAudioSourceProperties()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *source = vol->GetSource();
+
+	CreatePropertiesWindow(source);
+}
+
+void OBSBasic::VolControlContextMenu()
+{
+	VolControl *vol = reinterpret_cast<VolControl*>(sender());
+
+	QAction filtersAction(QTStr("Filters"), this);
+	QAction propertiesAction(QTStr("Properties"), this);
+
+	connect(&filtersAction, &QAction::triggered,
+			this, &OBSBasic::GetAudioSourceFilters,
+			Qt::DirectConnection);
+	connect(&propertiesAction, &QAction::triggered,
+			this, &OBSBasic::GetAudioSourceProperties,
+			Qt::DirectConnection);
+
+	filtersAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+	propertiesAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+
+	QMenu popup(this);
+	popup.addAction(&filtersAction);
+	popup.addAction(&propertiesAction);
+	popup.exec(QCursor::pos());
+}
+
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
-	VolControl *vol = new VolControl(source);
+	VolControl *vol = new VolControl(source, true);
+
+	connect(vol, &VolControl::ConfigClicked,
+			this, &OBSBasic::VolControlContextMenu);
 
 	volumes.push_back(vol);
 	ui->volumeWidgets->layout()->addWidget(vol);
