@@ -511,31 +511,41 @@ void OBSBasic::Load(const char *file)
 
 #define SERVICE_PATH "service.json"
 
-void OBSBasic::SaveService()
+void OBSBasic::SaveServices()
 {
-	if (!service)
-		return;
-
 	char serviceJsonPath[512];
 	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return;
 
-	obs_data_t *data     = obs_data_create();
-	obs_data_t *settings = obs_service_get_settings(service);
+	obs_data_t *data = obs_data_create();
+	obs_data_array_t *serviceSettings = obs_data_array_create();
 
-	obs_data_set_string(data, "type", obs_service_get_type(service));
-	obs_data_set_obj(data, "settings", settings);
+	for (size_t i = 0; i < services.size(); ++i) {
+		obs_data_t *temp = obs_data_create();
+		obs_data_t *settings = obs_service_get_settings(services[i]);
+
+		obs_data_set_string(temp, "type",
+				    obs_service_get_type(services[i]));
+		obs_data_set_obj(temp, "settings", settings);
+
+		obs_data_array_push_back(serviceSettings, temp);
+
+		obs_data_release(settings);
+		obs_data_release(temp);
+	}
+
+	obs_data_set_array(data, "services", serviceSettings);
 
 	if (!obs_data_save_json_safe(data, serviceJsonPath, "tmp", "bak"))
 		blog(LOG_WARNING, "Failed to save service");
 
-	obs_data_release(settings);
+	obs_data_array_release(serviceSettings);
 	obs_data_release(data);
 }
 
-bool OBSBasic::LoadService()
+bool OBSBasic::LoadServices()
 {
 	const char *type;
 
@@ -547,36 +557,59 @@ bool OBSBasic::LoadService()
 
 	obs_data_t *data = obs_data_create_from_json_file_safe(serviceJsonPath,
 			"bak");
+	obs_data_array_t *serviceSettings = obs_data_get_array(data,
+							       "services");
 
-	obs_data_set_default_string(data, "type", "rtmp_common");
-	type = obs_data_get_string(data, "type");
+	services.clear(); // avoid double loading
+	size_t len = obs_data_array_count(serviceSettings);
+	bool rc = false;
+	for (size_t i = 0; i < len; ++i) {
+		obs_data_t *temp = obs_data_array_item(serviceSettings, i);
+		obs_data_set_default_string(temp, "type", "rtmp_common");
+		type = obs_data_get_string(temp, "type");
 
-	obs_data_t *settings = obs_data_get_obj(data, "settings");
-	obs_data_t *hotkey_data = obs_data_get_obj(data, "hotkeys");
+		obs_data_t *settings = obs_data_get_obj(temp, "settings");
+		obs_data_t *hotkey_data = obs_data_get_obj(temp, "hotkeys");
 
-	service = obs_service_create(type, "default_service", settings,
-			hotkey_data);
-	obs_service_release(service);
+		services.push_back(obs_service_create(type, "default_service",
+						      settings, hotkey_data));
+		obs_service_release(services[i]);
 
-	obs_data_release(hotkey_data);
-	obs_data_release(settings);
+		obs_data_release(hotkey_data);
+		obs_data_release(settings);
+		obs_data_release(temp);
+
+		rc = !!services[i];
+
+		if (!rc)
+			break;
+	}
+
+	obs_data_array_release(serviceSettings);
 	obs_data_release(data);
 
-	return !!service;
+	return rc;
 }
 
-bool OBSBasic::InitService()
+bool OBSBasic::InitServices()
 {
 	ProfileScope("OBSBasic::InitService");
 
-	if (LoadService())
+	if (LoadServices()) {
 		return true;
-
-	service = obs_service_create("rtmp_common", "default_service", nullptr,
-			nullptr);
-	if (!service)
+	} else if (services.size()) {
+		size_t len = services.size();
+		for (size_t i = 0; i < len; ++i)
+			obs_service_release(services[i]);
+		services.clear();
 		return false;
-	obs_service_release(service);
+	}
+
+	services.push_back(obs_service_create("rtmp_common", "default_service",
+					      nullptr, nullptr));
+	if (!services[0])
+		return false;
+	obs_service_release(services[0]);
 
 	return true;
 }
@@ -880,7 +913,7 @@ void OBSBasic::OBSInit()
 	ResetOutputs();
 	CreateHotkeys();
 
-	if (!InitService())
+	if (!InitServices())
 		throw "Failed to initialize service";
 
 	InitPrimitives();
@@ -1091,7 +1124,7 @@ OBSBasic::~OBSBasic()
 	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
 	ClearHotkeys();
 
-	service = nullptr;
+	services.clear();
 	outputHandler.reset();
 
 	if (interaction)
@@ -2020,20 +2053,31 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 /* Main class functions */
 
-obs_service_t *OBSBasic::GetService()
+std::vector<OBSService> OBSBasic::GetServices()
 {
-	if (!service) {
-		service = obs_service_create("rtmp_common", NULL, NULL,
-				nullptr);
-		obs_service_release(service);
+	if (!services.size()) {
+		services.push_back(obs_service_create("rtmp_common", NULL,
+						      NULL, nullptr));
+		obs_service_release(services[0]);
 	}
-	return service;
+
+	return services;
 }
 
-void OBSBasic::SetService(obs_service_t *newService)
+void OBSBasic::AddService(obs_service_t *newService)
 {
 	if (newService)
-		service = newService;
+		services.push_back(newService);
+}
+
+void OBSBasic::RemoveService(size_t i)
+{
+	services.erase(services.begin() + i);
+}
+
+void OBSBasic::ClearServices()
+{
+	services.clear();
 }
 
 bool OBSBasic::StreamingActive()
@@ -3050,9 +3094,12 @@ void OBSBasic::StartStreaming()
 	if (outputHandler->StreamingActive())
 		return;
 
-	if (outputHandler->StartStreaming(service)) {
-		ui->streamButton->setEnabled(false);
-		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	size_t len = services.size();
+	for (size_t i = 0; i < len; ++i) {
+		if (outputHandler->StartStreaming(services[i])) {
+			ui->streamButton->setEnabled(false);
+			ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+		}
 	}
 }
 

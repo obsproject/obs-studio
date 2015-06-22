@@ -171,7 +171,7 @@ void SimpleOutput::Update()
 
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
-	obs_service_apply_encoder_settings(main->GetService(),
+	obs_service_apply_encoder_settings(main->GetServices()[0],
 			h264Settings, aacSettings);
 
 	video_t *video = obs_get_video();
@@ -428,7 +428,7 @@ void AdvancedOutput::UpdateStreamSettings()
 	OBSData settings = GetDataFromJsonFile("streamEncoder.json");
 
 	if (applyServiceSettings)
-		obs_service_apply_encoder_settings(main->GetService(),
+		obs_service_apply_encoder_settings(main->GetServices()[0],
 				settings, nullptr);
 
 	video_t *video = obs_get_video();
@@ -632,7 +632,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 
 	for (size_t i = 0; i < 4; i++) {
 		if (applyServiceSettings && (int)(i + 1) == streamTrackIndex)
-			obs_service_apply_encoder_settings(main->GetService(),
+			obs_service_apply_encoder_settings(
+					main->GetServices()[0],
 					nullptr, settings[i]);
 
 		obs_encoder_update(aacTrack[i], settings[i]);
