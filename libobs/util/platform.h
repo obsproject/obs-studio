@@ -134,6 +134,7 @@ EXPORT int os_unlink(const char *path);
 #define MKDIR_ERROR   -1
 
 EXPORT int os_mkdir(const char *path);
+EXPORT int os_rename(const char *old_path, const char *new_path);
 
 #ifdef _MSC_VER
 #define strtoll _strtoi64

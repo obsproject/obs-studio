@@ -413,6 +413,26 @@ int os_mkdir(const char *path)
 	return MKDIR_SUCCESS;
 }
 
+int os_rename(const char *old_path, const char *new_path)
+{
+	wchar_t *old_path_utf16 = NULL;
+	wchar_t *new_path_utf16 = NULL;
+	int code = -1;
+
+	if (!os_utf8_to_wcs_ptr(old_path, 0, &old_path_utf16)) {
+		return -1;
+	}
+	if (!os_utf8_to_wcs_ptr(new_path, 0, &new_path_utf16)) {
+		goto error;
+	}
+
+	code = MoveFileW(old_path_utf16, new_path_utf16) ? 0 : -1;
+
+error:
+	bfree(old_path_utf16);
+	bfree(new_path_utf16);
+	return code;
+}
 
 BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
 {

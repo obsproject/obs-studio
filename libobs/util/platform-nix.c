@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -301,6 +302,11 @@ int os_mkdir(const char *path)
 		return MKDIR_SUCCESS;
 
 	return (errno == EEXIST) ? MKDIR_EXISTS : MKDIR_ERROR;
+}
+
+int os_rename(const char *old_path, const char *new_path)
+{
+	return rename(old_path, new_path);
 }
 
 #if !defined(__APPLE__)
