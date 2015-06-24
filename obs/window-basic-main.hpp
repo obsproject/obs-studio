@@ -243,9 +243,8 @@ public:
 
 	void ResetOutputs();
 
-	void ResetAudioDevice(const char *sourceId, const char *deviceName,
+	void ResetAudioDevice(const char *sourceId, const char *deviceId,
 			const char *deviceDesc, int channel);
-	void ResetAudioDevices();
 
 	void NewProject();
 	void LoadProject();

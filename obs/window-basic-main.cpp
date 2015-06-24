@@ -323,8 +323,30 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 	obs_data_release(data);
 }
 
+static inline bool HasAudioDevices(const char *source_id)
+{
+	const char *output_id = source_id;
+	obs_properties_t *props = obs_get_source_properties(
+			OBS_SOURCE_TYPE_INPUT, output_id);
+	size_t count = 0;
+
+	if (!props)
+		return false;
+
+	obs_property_t *devices = obs_properties_get(props, "device_id");
+	if (devices)
+		count = obs_property_list_item_count(devices);
+
+	obs_properties_destroy(props);
+
+	return count != 0;
+}
+
 void OBSBasic::CreateDefaultScene()
 {
+	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
+	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
+
 	obs_scene_t  *scene  = obs_scene_create(Str("Basic.Scene"));
 	obs_source_t *source = obs_scene_get_source(scene);
 
@@ -343,6 +365,13 @@ void OBSBasic::CreateDefaultScene()
 
 	obs_set_output_source(0, obs_scene_get_source(scene));
 	obs_scene_release(scene);
+
+	if (hasDesktopAudio)
+		ResetAudioDevice(App()->OutputAudioSource(), "default",
+				Str("Basic.DesktopDevice1"), 1);
+	if (hasInputAudio)
+		ResetAudioDevice(App()->InputAudioSource(), "default",
+				Str("Basic.AuxDevice1"), 3);
 }
 
 static void ReorderItemByName(QListWidget *lw, const char *name, int newIndex)
@@ -412,25 +441,6 @@ void OBSBasic::Load(const char *file)
 	obs_data_array_release(sources);
 	obs_data_array_release(sceneOrder);
 	obs_data_release(data);
-}
-
-static inline bool HasAudioDevices(const char *source_id)
-{
-	const char *output_id = source_id;
-	obs_properties_t *props = obs_get_source_properties(
-			OBS_SOURCE_TYPE_INPUT, output_id);
-	size_t count = 0;
-
-	if (!props)
-		return false;
-
-	obs_property_t *devices = obs_properties_get(props, "device_id");
-	if (devices)
-		count = obs_property_list_item_count(devices);
-
-	obs_properties_destroy(props);
-
-	return count != 0;
 }
 
 #define SERVICE_PATH "obs-studio/basic/service.json"
@@ -509,9 +519,6 @@ bool OBSBasic::InitService()
 
 bool OBSBasic::InitBasicConfigDefaults()
 {
-	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
-	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
-
 	vector<MonitorInfo> monitors;
 	GetMonitors(monitors);
 
@@ -606,17 +613,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 			"Stereo");
 	config_set_default_uint  (basicConfig, "Audio", "BufferingTime", 1000);
-
-	config_set_default_string(basicConfig, "Audio", "DesktopDevice1",
-			hasDesktopAudio ? "default" : "disabled");
-	config_set_default_string(basicConfig, "Audio", "DesktopDevice2",
-			"disabled");
-	config_set_default_string(basicConfig, "Audio", "AuxDevice1",
-			hasInputAudio ? "default" : "disabled");
-	config_set_default_string(basicConfig, "Audio", "AuxDevice2",
-			"disabled");
-	config_set_default_string(basicConfig, "Audio", "AuxDevice3",
-			"disabled");
 
 	return true;
 }
@@ -744,7 +740,6 @@ void OBSBasic::OBSInit()
 	InitPrimitives();
 
 	Load(savePath);
-	ResetAudioDevices();
 
 	TimedCheckForUpdates();
 	loaded = true;
@@ -1905,11 +1900,9 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio(&ai);
 }
 
-void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
+void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		const char *deviceDesc, int channel)
 {
-	const char *deviceId = config_get_string(basicConfig, "Audio",
-			deviceName);
 	obs_source_t *source;
 	obs_data_t *settings;
 	bool same = false;
@@ -1938,20 +1931,6 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceName,
 		obs_set_output_source(channel, source);
 		obs_source_release(source);
 	}
-}
-
-void OBSBasic::ResetAudioDevices()
-{
-	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice1",
-			Str("Basic.DesktopDevice1"), 1);
-	ResetAudioDevice(App()->OutputAudioSource(), "DesktopDevice2",
-			Str("Basic.DesktopDevice2"), 2);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice1",
-			Str("Basic.AuxDevice1"), 3);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice2",
-			Str("Basic.AuxDevice2"), 4);
-	ResetAudioDevice(App()->InputAudioSource(),  "AuxDevice3",
-			Str("Basic.AuxDevice3"), 5);
 }
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)

@@ -1260,11 +1260,14 @@ static inline void LoadListValue(QComboBox *widget, const char *text,
 }
 
 void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
-		const char *configName)
+		int index)
 {
 	size_t count = obs_property_list_item_count(prop);
-	const char *deviceId = config_get_string(main->Config(), "Audio",
-			configName);
+
+	obs_source_t *source = obs_get_output_source(index);
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	const char *deviceId = obs_data_get_string(settings, "device_id");
 
 	widget->addItem(QTStr("Disabled"), "disabled");
 
@@ -1275,14 +1278,11 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 	}
 
 	int idx = widget->findData(QVariant(QT_UTF8(deviceId)));
-	if (idx == -1) {
-		deviceId = config_get_default_string(main->Config(), "Audio",
-				configName);
-		idx = widget->findData(QVariant(QT_UTF8(deviceId)));
-	}
-
 	if (idx != -1)
 		widget->setCurrentIndex(idx);
+
+	obs_source_release(source);
+	obs_data_release(settings);
 }
 
 void OBSBasicSettings::LoadAudioDevices()
@@ -1298,19 +1298,17 @@ void OBSBasicSettings::LoadAudioDevices()
 	if (input_props) {
 		obs_property_t *inputs  = obs_properties_get(input_props,
 				"device_id");
-		LoadListValues(ui->auxAudioDevice1, inputs, "AuxDevice1");
-		LoadListValues(ui->auxAudioDevice2, inputs, "AuxDevice2");
-		LoadListValues(ui->auxAudioDevice3, inputs, "AuxDevice3");
+		LoadListValues(ui->auxAudioDevice1, inputs, 3);
+		LoadListValues(ui->auxAudioDevice2, inputs, 4);
+		LoadListValues(ui->auxAudioDevice3, inputs, 5);
 		obs_properties_destroy(input_props);
 	}
 
 	if (output_props) {
 		obs_property_t *outputs = obs_properties_get(output_props,
 				"device_id");
-		LoadListValues(ui->desktopAudioDevice1, outputs,
-				"DesktopDevice1");
-		LoadListValues(ui->desktopAudioDevice2, outputs,
-				"DesktopDevice2");
+		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
+		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
 		obs_properties_destroy(output_props);
 	}
 }
@@ -2072,12 +2070,6 @@ void OBSBasicSettings::SaveAudioSettings()
 		config_set_string(main->Config(), "Audio", "ChannelSetup",
 				channelSetup);
 
-	SaveComboData(ui->desktopAudioDevice1, "Audio", "DesktopDevice1");
-	SaveComboData(ui->desktopAudioDevice2, "Audio", "DesktopDevice2");
-	SaveComboData(ui->auxAudioDevice1, "Audio", "AuxDevice1");
-	SaveComboData(ui->auxAudioDevice2, "Audio", "AuxDevice2");
-	SaveComboData(ui->auxAudioDevice3, "Audio", "AuxDevice3");
-
 	for (auto &audioSource : audioSources) {
 		auto source  = OBSGetStrongRef(get<0>(audioSource));
 		if (!source)
@@ -2095,7 +2087,27 @@ void OBSBasicSettings::SaveAudioSettings()
 		obs_source_set_push_to_talk_delay(source, pttSB->value());
 	}
 
-	main->ResetAudioDevices();
+	auto UpdateAudioDevice = [this](bool input, QComboBox *combo,
+			const char *name, int index)
+	{
+		main->ResetAudioDevice(
+				input ? App()->InputAudioSource()
+				      : App()->OutputAudioSource(),
+				QT_TO_UTF8(GetComboData(combo)),
+				Str(name), index);
+	};
+
+	UpdateAudioDevice(false, ui->desktopAudioDevice1,
+			"Basic.DesktopDevice1", 1);
+	UpdateAudioDevice(false, ui->desktopAudioDevice2,
+			"Basic.DesktopDevice2", 2);
+	UpdateAudioDevice(true, ui->auxAudioDevice1,
+			"Basic.AuxDevice1", 3);
+	UpdateAudioDevice(true, ui->auxAudioDevice2,
+			"Basic.AuxDevice2", 4);
+	UpdateAudioDevice(true, ui->auxAudioDevice3,
+			"Basic.AuxDevice3", 5);
+	main->SaveProject();
 }
 
 void OBSBasicSettings::SaveHotkeySettings()

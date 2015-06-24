@@ -201,8 +201,7 @@ private:
 		bool enableEncode = false);
 
 	/* audio */
-	void LoadListValues(QComboBox *widget, obs_property_t *prop,
-		const char *configName);
+	void LoadListValues(QComboBox *widget, obs_property_t *prop, int index);
 	void LoadAudioDevices();
 	void LoadAudioSources();
 
