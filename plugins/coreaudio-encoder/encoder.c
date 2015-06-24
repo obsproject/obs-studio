@@ -213,8 +213,59 @@ static bool bitrate_valid(ca_encoder *ca, AudioConverterRef converter,
 	return helper.valid;
 }
 
+static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
+		AudioStreamBasicDescription *out,
+		UInt32 format_id, UInt32 bitrate, UInt32 rate_control)
+{
+#define STATUS_CHECK(c) \
+	code = c; \
+	if (code) { \
+		log_osstatus(ca, #c, code); \
+		return false; \
+	}
+
+	AudioStreamBasicDescription out_ = {
+		.mSampleRate = (Float64)ca->samples_per_second,
+		.mChannelsPerFrame = (UInt32)ca->channels,
+		.mBytesPerFrame = 0,
+		.mFramesPerPacket = 0,
+		.mBitsPerChannel = 0,
+		.mFormatID = format_id,
+		.mFormatFlags = 0
+	};
+
+	UInt32 size = sizeof(*out);
+	OSStatus code;
+	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
+			0, NULL, &size, &out_));
+
+	*out = out_;
+
+	STATUS_CHECK(AudioConverterNew(in, out, &ca->converter))
+
+	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
+			kAudioCodecPropertyBitRateControlMode,
+			sizeof(rate_control), &rate_control));
+
+	if (!bitrate_valid(ca, NULL, bitrate)) {
+		CA_BLOG(LOG_ERROR, "Encoder does not support bitrate %u",
+				(uint32_t)bitrate);
+		return false;
+	}
+
+	return true;
+#undef STATUS_CHECK
+}
+
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+#define STATUS_CHECK(c) \
+	code = c; \
+	if (code) { \
+		log_osstatus(ca, #c, code); \
+		goto free; \
+	}
+
 	UInt32 bitrate = (UInt32)obs_data_get_int(settings, "bitrate") * 1000;
 	if (!bitrate) {
 		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR,
@@ -257,51 +308,24 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			0
 	};
 
-	AudioStreamBasicDescription out = {
-		.mSampleRate = (Float64)ca->samples_per_second,
-		.mChannelsPerFrame = (UInt32)ca->channels,
-		.mBytesPerFrame = 0,
-		.mFramesPerPacket = 0,
-		.mBitsPerChannel = 0,
-		.mFormatID = kAudioFormatMPEG4AAC,
-		.mFormatFlags = 0
-	};
+	AudioStreamBasicDescription out;
 
-#define STATUS_CHECK(c) \
-	code = c; \
-	if (code) { \
-		log_osstatus(ca, #c, code); \
-		goto free; \
-	}
+	UInt32 rate_control = kAudioCodecBitRateControlMode_Constant;
+	if (!create_encoder(ca, &in, &out, kAudioFormatMPEG4AAC, bitrate,
+				rate_control))
+		goto free;
 
-	UInt32 size = sizeof(out);
 	OSStatus code;
-	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
-			0, NULL, &size, &out));
-
-	STATUS_CHECK(AudioConverterNew(&in, &out, &ca->converter))
-
 	UInt32 converter_quality = kAudioConverterQuality_Max;
 	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
 			kAudioConverterCodecQuality,
 			sizeof(converter_quality), &converter_quality));
 
-	UInt32 rate_control = kAudioCodecBitRateControlMode_Constant;
-	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
-			kAudioCodecPropertyBitRateControlMode,
-			sizeof(rate_control), &rate_control));
-
-	if (!bitrate_valid(ca, NULL, bitrate)) {
-		CA_BLOG(LOG_ERROR, "Encoder does not support bitrate %u",
-				(uint32_t)bitrate);
-		goto free;
-	}
-
 	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
 			kAudioConverterEncodeBitRate,
 			sizeof(bitrate), &bitrate));
 
-	size = sizeof(in);
+	UInt32 size = sizeof(in);
 	STATUS_CHECK(AudioConverterGetProperty(ca->converter,
 			kAudioConverterCurrentInputStreamDescription,
 			&size, &in));
