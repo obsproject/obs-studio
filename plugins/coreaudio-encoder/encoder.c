@@ -23,6 +23,10 @@
 struct ca_encoder {
 	obs_encoder_t     *encoder;
 	const char        *format_name;
+	UInt32            format_id;
+
+	const UInt32      *allowed_formats;
+	size_t            num_allowed_formats;
 
 	AudioConverterRef converter;
 
@@ -292,14 +296,28 @@ static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
 			sizeof(rate_control), &rate_control));
 
 	if (!bitrate_valid(ca, NULL, bitrate)) {
-		CA_BLOG(LOG_ERROR, "Encoder does not support bitrate %u",
-				(uint32_t)bitrate);
+		CA_BLOG(LOG_ERROR, "Encoder does not support bitrate %u for "
+				"format %s (0x%x)",
+				(uint32_t)bitrate, format_id_to_str(format_id),
+				(uint32_t)format_id);
 		return false;
 	}
+
+	ca->format_id = format_id;
 
 	return true;
 #undef STATUS_CHECK
 }
+
+static const UInt32 aac_formats[] = {
+	kAudioFormatMPEG4AAC_HE_V2,
+	kAudioFormatMPEG4AAC_HE,
+	kAudioFormatMPEG4AAC,
+};
+
+static const UInt32 aac_lc_formats[] = {
+	kAudioFormatMPEG4AAC,
+};
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
@@ -355,9 +373,41 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	AudioStreamBasicDescription out;
 
 	UInt32 rate_control = kAudioCodecBitRateControlMode_Constant;
-	if (!create_encoder(ca, &in, &out, kAudioFormatMPEG4AAC, bitrate,
-				rate_control))
+
+#define USE_FORMATS(x) { \
+		ca->allowed_formats = x; \
+		ca->num_allowed_formats = sizeof(x)/sizeof(x[0]); \
+	}
+
+	if (obs_data_get_bool(settings, "allow he-aac")) {
+		USE_FORMATS(aac_formats);
+	} else {
+		USE_FORMATS(aac_lc_formats);
+	}
+
+#undef USE_FORMATS
+
+	bool encoder_created = false;
+	for (size_t i = 0; i < ca->num_allowed_formats; i++) {
+		UInt32 format_id = ca->allowed_formats[i];
+		CA_BLOG(LOG_INFO, "Trying format %s (0x%x)",
+				format_id_to_str(format_id),
+				(uint32_t)format_id);
+
+		if (!create_encoder(ca, &in, &out, format_id, bitrate,
+					rate_control))
+			continue;
+
+		encoder_created = true;
+		break;
+	}
+
+	if (!encoder_created) {
+		CA_BLOG(LOG_ERROR, "Could not create encoder for "
+				"selected format%s",
+				ca->num_allowed_formats == 1 ? "" : "s");
 		goto free;
+	}
 
 	OSStatus code;
 	UInt32 converter_quality = kAudioConverterQuality_Max;
@@ -407,12 +457,16 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	ca->output_buffer = bmalloc(ca->output_buffer_size);
 
+	const char *format_name =
+		out.mFormatID == kAudioFormatMPEG4AAC_HE_V2 ? "HE-AAC v2" :
+		out.mFormatID == kAudioFormatMPEG4AAC_HE    ? "HE-AAC" : "AAC";
 	CA_BLOG(LOG_INFO, "settings:\n"
+			"\tmode:          %s\n"
 			"\tbitrate:       %u\n"
 			"\tsample rate:   %llu\n"
 			"\tcbr:           %s\n"
 			"\toutput buffer: %lu",
-			bitrate / 1000, ca->samples_per_second,
+			format_name, bitrate / 1000, ca->samples_per_second,
 			rate_control == kAudioCodecBitRateControlMode_Constant ?
 			"on" : "off",
 			(unsigned long)ca->output_buffer_size);
@@ -640,7 +694,7 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static AudioConverterRef aac_default_converter(void)
+static AudioConverterRef get_default_converter(UInt32 format_id)
 {
 	UInt32 bytes_per_frame = 8;
 	UInt32 channels = 2;
@@ -666,7 +720,7 @@ static AudioConverterRef aac_default_converter(void)
 		.mBytesPerFrame = 0,
 		.mFramesPerPacket = 0,
 		.mBitsPerChannel = 0,
-		.mFormatID = kAudioFormatMPEG4AAC,
+		.mFormatID = format_id,
 		.mFormatFlags = 0
 	};
 
@@ -686,6 +740,16 @@ static AudioConverterRef aac_default_converter(void)
 	}
 
 	return converter;
+}
+
+static AudioConverterRef aac_default_converter(void)
+{
+	return get_default_converter(kAudioFormatMPEG4AAC);
+}
+
+static AudioConverterRef he_aac_default_converter(void)
+{
+	return get_default_converter(kAudioFormatMPEG4AAC_HE);
 }
 
 struct find_matching_bitrate_helper {
@@ -752,6 +816,7 @@ static void aac_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate",
 			find_matching_bitrate(128));
+	obs_data_set_default_bool(settings, "allow he-aac", true);
 }
 
 struct add_bitrates_helper {
@@ -781,8 +846,16 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
 {
 	add_bitrates_helper helper = { 0 };
 
-	if (!enumerate_bitrates(ca, ca ? NULL : aac_default_converter(),
-			add_bitrates_func, &helper))
+	const size_t num_formats = ca ?
+		ca->num_allowed_formats :
+		sizeof(aac_formats)/sizeof(aac_formats[0]);
+	const UInt32 *allowed_formats = ca ? ca->allowed_formats : aac_formats;
+	for (size_t i = 0; i < num_formats; i++)
+		enumerate_bitrates(ca,
+				get_default_converter(allowed_formats[i]),
+				add_bitrates_func, &helper);
+
+	if (!helper.bitrates.num)
 		return;
 
 	qsort(helper.bitrates.array, helper.bitrates.num, sizeof(UInt32),
@@ -808,6 +881,9 @@ static obs_properties_t *aac_properties(void *data)
 			obs_module_text("Bitrate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	add_bitrates(p, ca);
+
+	obs_properties_add_bool(props, "allow he-aac",
+			obs_module_text("AllowHEAAC"));
 
 	return props;
 }
