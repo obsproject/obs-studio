@@ -125,6 +125,50 @@ static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
 #endif
 }
 
+static const char *format_id_to_str(UInt32 format_id)
+{
+#define FORMAT_TO_STR(x) case x: return #x
+	switch (format_id) {
+	FORMAT_TO_STR(kAudioFormatLinearPCM);
+	FORMAT_TO_STR(kAudioFormatAC3);
+	FORMAT_TO_STR(kAudioFormat60958AC3);
+	FORMAT_TO_STR(kAudioFormatAppleIMA4);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC);
+	FORMAT_TO_STR(kAudioFormatMPEG4CELP);
+	FORMAT_TO_STR(kAudioFormatMPEG4HVXC);
+	FORMAT_TO_STR(kAudioFormatMPEG4TwinVQ);
+	FORMAT_TO_STR(kAudioFormatMACE3);
+	FORMAT_TO_STR(kAudioFormatMACE6);
+	FORMAT_TO_STR(kAudioFormatULaw);
+	FORMAT_TO_STR(kAudioFormatALaw);
+	FORMAT_TO_STR(kAudioFormatQDesign);
+	FORMAT_TO_STR(kAudioFormatQDesign2);
+	FORMAT_TO_STR(kAudioFormatQUALCOMM);
+	FORMAT_TO_STR(kAudioFormatMPEGLayer1);
+	FORMAT_TO_STR(kAudioFormatMPEGLayer2);
+	FORMAT_TO_STR(kAudioFormatMPEGLayer3);
+	FORMAT_TO_STR(kAudioFormatTimeCode);
+	FORMAT_TO_STR(kAudioFormatMIDIStream);
+	FORMAT_TO_STR(kAudioFormatParameterValueStream);
+	FORMAT_TO_STR(kAudioFormatAppleLossless);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_HE);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_LD);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_ELD);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_ELD_SBR);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_HE_V2);
+	FORMAT_TO_STR(kAudioFormatMPEG4AAC_Spatial);
+	FORMAT_TO_STR(kAudioFormatAMR);
+	FORMAT_TO_STR(kAudioFormatAudible);
+	FORMAT_TO_STR(kAudioFormatiLBC);
+	FORMAT_TO_STR(kAudioFormatDVIIntelIMA);
+	FORMAT_TO_STR(kAudioFormatMicrosoftGSM);
+	FORMAT_TO_STR(kAudioFormatAES3);
+	}
+#undef FORMAT_TO_STR
+
+	return "Unknown format";
+}
+
 static void aac_destroy(void *data)
 {
 	ca_encoder *ca = data;
