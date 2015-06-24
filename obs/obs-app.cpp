@@ -263,11 +263,6 @@ static bool MakeUserDirs()
 		return false;
 	if (!do_mkdir(path))
 		return false;
-
-	if (GetConfigPath(path, sizeof(path), "obs-studio/logs") <= 0)
-		return false;
-	if (!do_mkdir(path))
-		return false;
 #ifdef _WIN32
 	if (GetConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0)
 		return false;
