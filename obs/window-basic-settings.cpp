@@ -1006,7 +1006,7 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	OBSPropertiesView *view;
 
 	char encoderJsonPath[512];
-	int ret = GetConfigPath(encoderJsonPath, sizeof(encoderJsonPath),
+	int ret = GetProfilePath(encoderJsonPath, sizeof(encoderJsonPath),
 			path);
 	if (ret > 0) {
 		BPtr<char> jsonData = os_quick_read_utf8_file(encoderJsonPath);
@@ -1035,7 +1035,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 
 	delete streamEncoderProps;
 	streamEncoderProps = CreateEncoderPropertyView(encoder,
-			"obs-studio/basic/streamEncoder.json");
+			"streamEncoder.json");
 	ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
 
 	SetComboByValue(ui->advOutEncoder, encoder);
@@ -1080,7 +1080,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 
 	if (astrcmpi(encoder, "none") != 0) {
 		recordEncoderProps = CreateEncoderPropertyView(encoder,
-				"obs-studio/basic/recordEncoder.json");
+				"recordEncoder.json");
 		ui->advOutRecStandard->layout()->addWidget(recordEncoderProps);
 	}
 
@@ -1914,7 +1914,7 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 	if (!view || !WidgetChanged(view))
 		return;
 
-	int ret = GetConfigPath(full_path, sizeof(full_path), path);
+	int ret = GetProfilePath(full_path, sizeof(full_path), path);
 	if (ret > 0) {
 		obs_data_t *settings = view->GetSettings();
 		if (settings) {
@@ -2042,10 +2042,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutTrack3Name, "AdvOut", "Track3Name");
 	SaveEdit(ui->advOutTrack4Name, "AdvOut", "Track4Name");
 
-	WriteJsonData(streamEncoderProps,
-			"obs-studio/basic/streamEncoder.json");
-	WriteJsonData(recordEncoderProps,
-			"obs-studio/basic/recordEncoder.json");
+	WriteJsonData(streamEncoderProps, "streamEncoder.json");
+	WriteJsonData(recordEncoderProps, "recordEncoder.json");
 	main->ResetOutputs();
 }
 
@@ -2315,7 +2313,7 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 
 	delete streamEncoderProps;
 	streamEncoderProps = CreateEncoderPropertyView(QT_TO_UTF8(encoder),
-			"obs-studio/basic/streamEncoder.json", true);
+			"streamEncoder.json", true);
 	ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
 
 	UNUSED_PARAMETER(idx);
@@ -2334,7 +2332,7 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 
 		recordEncoderProps = CreateEncoderPropertyView(
 				QT_TO_UTF8(encoder),
-				"obs-studio/basic/recordEncoder.json", true);
+				"recordEncoder.json", true);
 		ui->advOutRecStandard->layout()->addWidget(recordEncoderProps);
 	}
 }

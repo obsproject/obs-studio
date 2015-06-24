@@ -315,7 +315,7 @@ static OBSData GetDataFromJsonFile(const char *jsonFile)
 {
 	char fullPath[512];
 
-	int ret = GetConfigPath(fullPath, sizeof(fullPath), jsonFile);
+	int ret = GetProfilePath(fullPath, sizeof(fullPath), jsonFile);
 	if (ret > 0) {
 		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
 		if (!!jsonData) {
@@ -341,10 +341,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	ffmpegRecording = astrcmpi(recType, "FFmpeg") == 0;
 	useStreamEncoder = astrcmpi(recordEncoder, "none") == 0;
 
-	OBSData streamEncSettings = GetDataFromJsonFile(
-			"obs-studio/basic/streamEncoder.json");
-	OBSData recordEncSettings = GetDataFromJsonFile(
-			"obs-studio/basic/recordEncoder.json");
+	OBSData streamEncSettings = GetDataFromJsonFile("streamEncoder.json");
+	OBSData recordEncSettings = GetDataFromJsonFile("recordEncoder.json");
 
 	streamOutput = obs_output_create("rtmp_output", "adv_stream",
 			nullptr, nullptr);
@@ -411,8 +409,7 @@ void AdvancedOutput::UpdateStreamSettings()
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 			"ApplyServiceSettings");
 
-	OBSData settings = GetDataFromJsonFile(
-			"obs-studio/basic/streamEncoder.json");
+	OBSData settings = GetDataFromJsonFile("streamEncoder.json");
 
 	if (applyServiceSettings)
 		obs_service_apply_encoder_settings(main->GetService(),
@@ -430,8 +427,7 @@ void AdvancedOutput::UpdateStreamSettings()
 
 inline void AdvancedOutput::UpdateRecordingSettings()
 {
-	OBSData settings = GetDataFromJsonFile(
-			"obs-studio/basic/recordEncoder.json");
+	OBSData settings = GetDataFromJsonFile("recordEncoder.json");
 	obs_encoder_update(h264Recording, settings);
 }
 

@@ -174,6 +174,14 @@ private:
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
 
+	void LoadProfile();
+	void ResetProfileData();
+	bool AddProfile(bool create_new, const char *title, const char *text,
+			const char *init_text = nullptr);
+	void DeleteProfile(const char *profile_name, const char *profile_dir);
+	void RefreshProfiles();
+	void ChangeProfile();
+
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
 
 public slots:
@@ -343,6 +351,11 @@ private slots:
 	void on_actionRenameSceneCollection_triggered();
 	void on_actionRemoveSceneCollection_triggered();
 
+	void on_actionNewProfile_triggered();
+	void on_actionDupProfile_triggered();
+	void on_actionRenameProfile_triggered();
+	void on_actionRemoveProfile_triggered();
+
 	void logUploadFinished(const QString &text, const QString &error);
 
 	void updateFileFinished(const QString &text, const QString &error);
@@ -381,6 +394,9 @@ public:
 	virtual void OBSInit() override;
 
 	virtual config_t *Config() const override;
+
+	virtual int GetProfilePath(char *path, size_t size, const char *file)
+		const;
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

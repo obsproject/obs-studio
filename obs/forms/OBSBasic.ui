@@ -628,6 +628,16 @@
     <addaction name="separator"/>
     <addaction name="actionAdvAudioProperties"/>
    </widget>
+   <widget class="QMenu" name="profileMenu">
+    <property name="title">
+     <string>Basic.MainMenu.Profile</string>
+    </property>
+    <addaction name="actionNewProfile"/>
+    <addaction name="actionDupProfile"/>
+    <addaction name="actionRenameProfile"/>
+    <addaction name="actionRemoveProfile"/>
+    <addaction name="separator"/>
+   </widget>
    <widget class="QMenu" name="sceneCollectionMenu">
     <property name="title">
      <string>Basic.MainMenu.SceneCollection</string>
@@ -640,6 +650,7 @@
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
+   <addaction name="profileMenu"/>
    <addaction name="sceneCollectionMenu"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
@@ -959,6 +970,26 @@
    </property>
   </action>
   <action name="actionRemoveSceneCollection">
+   <property name="text">
+    <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionNewProfile">
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionDupProfile">
+   <property name="text">
+    <string>Duplicate</string>
+   </property>
+  </action>
+  <action name="actionRenameProfile">
+   <property name="text">
+    <string>Rename</string>
+   </property>
+  </action>
+  <action name="actionRemoveProfile">
    <property name="text">
     <string>Remove</string>
    </property>

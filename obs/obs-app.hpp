@@ -115,3 +115,10 @@ inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
+
+static inline int GetProfilePath(char *path, size_t size, const char *file)
+{
+	OBSMainWindow *window = reinterpret_cast<OBSMainWindow*>(
+			App()->GetMainWindow());
+	return window->GetProfilePath(path, size, file);
+}

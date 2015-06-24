@@ -119,8 +119,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	}
 
 	char styleSheetPath[512];
-	int ret = GetConfigPath(styleSheetPath, sizeof(styleSheetPath),
-			"obs-studio/basic/stylesheet.qss");
+	int ret = GetProfilePath(styleSheetPath, sizeof(styleSheetPath),
+			"stylesheet.qss");
 	if (ret > 0) {
 		if (QFile::exists(styleSheetPath)) {
 			QString path = QString("file:///") +
@@ -476,7 +476,7 @@ void OBSBasic::Load(const char *file)
 	disableSaving--;
 }
 
-#define SERVICE_PATH "obs-studio/basic/service.json"
+#define SERVICE_PATH "service.json"
 
 void OBSBasic::SaveService()
 {
@@ -484,7 +484,7 @@ void OBSBasic::SaveService()
 		return;
 
 	char serviceJsonPath[512];
-	int ret = GetConfigPath(serviceJsonPath, sizeof(serviceJsonPath),
+	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return;
@@ -508,7 +508,7 @@ bool OBSBasic::LoadService()
 	const char *type;
 
 	char serviceJsonPath[512];
-	int ret = GetConfigPath(serviceJsonPath, sizeof(serviceJsonPath),
+	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return false;
@@ -690,8 +690,19 @@ bool OBSBasic::InitBasicConfigDefaults()
 bool OBSBasic::InitBasicConfig()
 {
 	char configPath[512];
-	int ret = GetConfigPath(configPath, sizeof(configPath),
-			"obs-studio/basic/basic.ini");
+
+	int ret = GetProfilePath(configPath, sizeof(configPath), "");
+	if (ret <= 0) {
+		OBSErrorBox(nullptr, "Failed to get profile path");
+		return false;
+	}
+
+	if (os_mkdir(configPath) == MKDIR_ERROR) {
+		OBSErrorBox(nullptr, "Failed to create profile path");
+		return false;
+	}
+
+	ret = GetProfilePath(configPath, sizeof(configPath), "basic.ini");
 	if (ret <= 0) {
 		OBSErrorBox(nullptr, "Failed to get base.ini path");
 		return false;
@@ -701,6 +712,14 @@ bool OBSBasic::InitBasicConfig()
 	if (code != CONFIG_SUCCESS) {
 		OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
 		return false;
+	}
+
+	if (config_get_string(basicConfig, "General", "Name") == nullptr) {
+		const char *curName = config_get_string(App()->GlobalConfig(),
+				"Basic", "Profile");
+
+		config_set_string(basicConfig, "General", "Name", curName);
+		basicConfig.Save();
 	}
 
 	return InitBasicConfigDefaults();
@@ -844,6 +863,7 @@ void OBSBasic::OBSInit()
 #endif
 
 	RefreshSceneCollections();
+	RefreshProfiles();
 	disableSaving--;
 }
 
@@ -2887,6 +2907,7 @@ void OBSBasic::StopStreaming()
 		outputHandler->StopStreaming();
 
 	if (!outputHandler->Active()) {
+		ui->profileMenu->setEnabled(true);
 		blog(LOG_INFO, STREAMING_STOP);
 	}
 }
@@ -2896,6 +2917,7 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	ui->profileMenu->setEnabled(false);
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -2932,6 +2954,7 @@ void OBSBasic::StreamingStop(int code)
 	ui->streamButton->setEnabled(true);
 
 	if (!outputHandler->Active()) {
+		ui->profileMenu->setEnabled(true);
 		blog(LOG_INFO, STREAMING_STOP);
 	}
 
@@ -2960,6 +2983,7 @@ void OBSBasic::StopRecording()
 		outputHandler->StopRecording();
 
 	if (!outputHandler->Active()) {
+		ui->profileMenu->setEnabled(true);
 		blog(LOG_INFO, RECORDING_STOP);
 	}
 }
@@ -2968,6 +2992,7 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	ui->profileMenu->setEnabled(false);
 }
 
 void OBSBasic::RecordingStop(int code)
@@ -2981,6 +3006,7 @@ void OBSBasic::RecordingStop(int code)
 				QTStr("Output.RecordFail.Unsupported"));
 
 	if (!outputHandler->Active()) {
+		ui->profileMenu->setEnabled(true);
 		blog(LOG_INFO, RECORDING_STOP);
 	}
 }
@@ -3434,12 +3460,39 @@ void OBSBasic::UpdateTitleBar()
 {
 	stringstream name;
 
+	const char *profile = config_get_string(App()->GlobalConfig(),
+			"Basic", "Profile");
 	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
 			"Basic", "SceneCollection");
 
 	name << "OBS " << App()->GetVersionString();
+	name << " - " << Str("TitleBar.Profile") << ": " << profile;
 	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
 
 	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
+}
+
+int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
+{
+	char profiles_path[512];
+	const char *profile = config_get_string(App()->GlobalConfig(),
+			"Basic", "ProfileDir");
+	int ret;
+
+	if (!profile)
+		return -1;
+	if (!path)
+		return -1;
+	if (!file)
+		file = "";
+
+	ret = GetConfigPath(profiles_path, 512, "obs-studio/basic/profiles");
+	if (ret <= 0)
+		return ret;
+
+	if (!*file)
+		return snprintf(path, size, "%s/%s", profiles_path, profile);
+
+	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }

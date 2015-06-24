@@ -282,6 +282,11 @@ static bool MakeUserProfileDirs()
 {
 	char path[512];
 
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
+
 	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes") <= 0)
 		return false;
 	if (!do_mkdir(path))
@@ -418,6 +423,61 @@ OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {}
 
+static void move_basic_to_profiles(void)
+{
+	char path[512];
+	char new_path[512];
+	os_glob_t *glob;
+
+	/* if not first time use */
+	if (GetConfigPath(path, 512, "obs-studio/basic") <= 0)
+		return;
+	if (!os_file_exists(path))
+		return;
+
+	/* if the profiles directory doesn't already exist */
+	if (GetConfigPath(new_path, 512, "obs-studio/basic/profiles") <= 0)
+		return;
+	if (os_file_exists(new_path))
+		return;
+
+	if (os_mkdir(new_path) == MKDIR_ERROR)
+		return;
+
+	strcat(new_path, "/");
+	strcat(new_path, Str("Untitled"));
+	if (os_mkdir(new_path) == MKDIR_ERROR)
+		return;
+
+	strcat(path, "/*.*");
+	if (os_glob(path, 0, &glob) != 0)
+		return;
+
+	strcpy(path, new_path);
+
+	for (size_t i = 0; i < glob->gl_pathc; i++) {
+		struct os_globent ent = glob->gl_pathv[i];
+		char *file;
+
+		if (ent.directory)
+			continue;
+
+		file = strrchr(ent.path, '/');
+		if (!file++)
+			continue;
+
+		if (astrcmpi(file, "scenes.json") == 0)
+			continue;
+
+		strcpy(new_path, path);
+		strcat(new_path, "/");
+		strcat(new_path, file);
+		os_rename(ent.path, new_path);
+	}
+
+	os_globfree(glob);
+}
+
 static void move_basic_to_scene_collections(void)
 {
 	char path[512];
@@ -456,11 +516,17 @@ void OBSApp::AppInit()
 		throw "Failed to load locale";
 	if (!InitTheme())
 		throw "Failed to load theme";
+
+	config_set_default_string(globalConfig, "Basic", "Profile",
+			Str("Untitled"));
+	config_set_default_string(globalConfig, "Basic", "ProfileDir",
+			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollection",
 			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
 
+	move_basic_to_profiles();
 	move_basic_to_scene_collections();
 
 	if (!MakeUserProfileDirs())
