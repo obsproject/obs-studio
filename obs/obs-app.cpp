@@ -411,7 +411,7 @@ void OBSApp::AppInit()
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
 	if (!MakeUserDirs())
-		throw "Failed to created required user directories";
+		throw "Failed to create required user directories";
 	if (!InitGlobalConfig())
 		throw "Failed to initialize global config";
 	if (!InitLocale())
