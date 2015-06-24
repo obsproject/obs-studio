@@ -278,6 +278,18 @@ static bool MakeUserDirs()
 	return true;
 }
 
+static bool MakeUserProfileDirs()
+{
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
+
+	return true;
+}
+
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -406,6 +418,32 @@ OBSApp::OBSApp(int &argc, char **argv)
 	: QApplication(argc, argv)
 {}
 
+static void move_basic_to_scene_collections(void)
+{
+	char path[512];
+	char new_path[512];
+
+	if (GetConfigPath(path, 512, "obs-studio/basic") <= 0)
+		return;
+	if (!os_file_exists(path))
+		return;
+
+	if (GetConfigPath(new_path, 512, "obs-studio/basic/scenes") <= 0)
+		return;
+	if (os_file_exists(new_path))
+		return;
+
+	if (os_mkdir(new_path) == MKDIR_ERROR)
+		return;
+
+	strcat(path, "/scenes.json");
+	strcat(new_path, "/");
+	strcat(new_path, Str("Untitled"));
+	strcat(new_path, ".json");
+
+	os_rename(path, new_path);
+}
+
 void OBSApp::AppInit()
 {
 	if (!InitApplicationBundle())
@@ -418,6 +456,15 @@ void OBSApp::AppInit()
 		throw "Failed to load locale";
 	if (!InitTheme())
 		throw "Failed to load theme";
+	config_set_default_string(globalConfig, "Basic", "SceneCollection",
+			Str("Untitled"));
+	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
+			Str("Untitled"));
+
+	move_basic_to_scene_collections();
+
+	if (!MakeUserProfileDirs())
+		throw "Failed to create profile directories";
 }
 
 const char *OBSApp::GetRenderModule() const

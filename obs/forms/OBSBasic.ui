@@ -628,8 +628,19 @@
     <addaction name="separator"/>
     <addaction name="actionAdvAudioProperties"/>
    </widget>
+   <widget class="QMenu" name="sceneCollectionMenu">
+    <property name="title">
+     <string>Basic.MainMenu.SceneCollection</string>
+    </property>
+    <addaction name="actionNewSceneCollection"/>
+    <addaction name="actionDupSceneCollection"/>
+    <addaction name="actionRenameSceneCollection"/>
+    <addaction name="actionRemoveSceneCollection"/>
+    <addaction name="separator"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
+   <addaction name="sceneCollectionMenu"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
@@ -930,6 +941,26 @@
   <action name="actionWebsite">
    <property name="text">
     <string>Basic.MainMenu.Help.Website</string>
+   </property>
+  </action>
+  <action name="actionNewSceneCollection">
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionDupSceneCollection">
+   <property name="text">
+    <string>Duplicate</string>
+   </property>
+  </action>
+  <action name="actionRenameSceneCollection">
+   <property name="text">
+    <string>Rename</string>
+   </property>
+  </action>
+  <action name="actionRemoveSceneCollection">
+   <property name="text">
+    <string>Remove</string>
    </property>
   </action>
  </widget>

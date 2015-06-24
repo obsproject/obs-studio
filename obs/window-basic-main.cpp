@@ -224,6 +224,9 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder)
 	obs_source_t     *currentScene = obs_get_output_source(0);
 	const char       *sceneName   = obs_source_get_name(currentScene);
 
+	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
+			"Basic", "SceneCollection");
+
 	SaveAudioDevice(DESKTOP_AUDIO_1, 1, saveData);
 	SaveAudioDevice(DESKTOP_AUDIO_2, 2, saveData);
 	SaveAudioDevice(AUX_AUDIO_1,     3, saveData);
@@ -232,6 +235,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder)
 
 	obs_data_set_string(saveData, "current_scene", sceneName);
 	obs_data_set_array(saveData, "scene_order", sceneOrder);
+	obs_data_set_string(saveData, "name", sceneCollection);
 	obs_data_set_array(saveData, "sources", sourcesArray);
 	obs_data_array_release(sourcesArray);
 	obs_source_release(currentScene);
@@ -429,7 +433,17 @@ void OBSBasic::Load(const char *file)
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
 	const char       *sceneName = obs_data_get_string(data,
 			"current_scene");
+
+	const char *curSceneCollection = config_get_string(
+			App()->GlobalConfig(), "Basic", "SceneCollection");
+
+	obs_data_set_default_string(data, "name", curSceneCollection);
+
+	const char       *name = obs_data_get_string(data, "name");
 	obs_source_t     *curScene;
+
+	if (!name || !*name)
+		name = curSceneCollection;
 
 	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data);
 	LoadAudioDevice(DESKTOP_AUDIO_2, 2, data);
@@ -448,6 +462,15 @@ void OBSBasic::Load(const char *file)
 
 	obs_data_array_release(sources);
 	obs_data_array_release(sceneOrder);
+
+	std::string file_base = strrchr(file, '/') + 1;
+	file_base.erase(file_base.size() - 5, 5);
+
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
+			name);
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
+			file_base.c_str());
+
 	obs_data_release(data);
 
 	disableSaving--;
@@ -739,11 +762,23 @@ void OBSBasic::ResetOutputs()
 
 void OBSBasic::OBSInit()
 {
+	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
+			"Basic", "SceneCollectionFile");
 	char savePath[512];
-	int ret = GetConfigPath(savePath, sizeof(savePath),
-			"obs-studio/basic/scenes.json");
+	char fileName[512];
+	int ret;
+
+	if (!sceneCollection)
+		throw "Failed to get scene collection name";
+
+	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
+			sceneCollection);
 	if (ret <= 0)
-		throw "Failed to get scenes.json file path";
+		throw "Failed to create scene collection file name";
+
+	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
+	if (ret <= 0)
+		throw "Failed to get scene collection json file path";
 
 	/* make sure it's fully displayed before doing any initialization */
 	show();
@@ -808,6 +843,7 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+	RefreshSceneCollections();
 	disableSaving--;
 }
 
@@ -1037,9 +1073,21 @@ void OBSBasic::SaveProject()
 	if (disableSaving)
 		return;
 
+	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
+			"Basic", "SceneCollectionFile");
 	char savePath[512];
-	int ret = GetConfigPath(savePath, sizeof(savePath),
-			"obs-studio/basic/scenes.json");
+	char fileName[512];
+	int ret;
+
+	if (!sceneCollection)
+		return;
+
+	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
+			sceneCollection);
+	if (ret <= 0)
+		return;
+
+	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
 	if (ret <= 0)
 		return;
 
@@ -3386,7 +3434,11 @@ void OBSBasic::UpdateTitleBar()
 {
 	stringstream name;
 
+	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
+			"Basic", "SceneCollection");
+
 	name << "OBS " << App()->GetVersionString();
+	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
 
 	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
