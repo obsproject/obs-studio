@@ -311,6 +311,8 @@ private slots:
 	void on_recordButton_clicked();
 	void on_settingsButton_clicked();
 
+	void on_actionWebsite_triggered();
+
 	void on_preview_customContextMenuRequested(const QPoint &pos);
 	void on_previewDisabledLabel_customContextMenuRequested(
 			const QPoint &pos);

@@ -559,6 +559,8 @@
      <addaction name="actionUploadLastLog"/>
      <addaction name="actionViewCurrentLog"/>
     </widget>
+    <addaction name="actionWebsite"/>
+    <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
     <addaction name="actionCheckForUpdates"/>
    </widget>
@@ -902,6 +904,11 @@
   <action name="actionAdvAudioProperties">
    <property name="text">
     <string>Basic.MainMenu.Edit.AdvAudio</string>
+   </property>
+  </action>
+  <action name="actionWebsite">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Website</string>
    </property>
   </action>
  </widget>

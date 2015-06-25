@@ -2726,6 +2726,12 @@ void OBSBasic::on_settingsButton_clicked()
 	settings.exec();
 }
 
+void OBSBasic::on_actionWebsite_triggered()
+{
+	QUrl url = QUrl("https://obsproject.com", QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 {
 	CreateSourcePopupMenu(ui->sources->currentItem(), true);
