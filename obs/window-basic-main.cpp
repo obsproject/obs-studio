@@ -452,7 +452,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
 
-	config_set_default_string(basicConfig, "Output", "Type", "Simple");
+	config_set_default_string(basicConfig, "Output", "Mode", "Simple");
 
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 			GetDefaultVideoSavePath().c_str());
