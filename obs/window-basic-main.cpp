@@ -200,7 +200,7 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent)
 	obs_source_release(source);
 }
 
-static obs_data_t *GenerateSaveData()
+static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder)
 {
 	obs_data_t       *saveData     = obs_data_create();
 	obs_data_array_t *sourcesArray = obs_save_sources();
@@ -214,6 +214,7 @@ static obs_data_t *GenerateSaveData()
 	SaveAudioDevice(AUX_AUDIO_3,     5, saveData);
 
 	obs_data_set_string(saveData, "current_scene", sceneName);
+	obs_data_set_array(saveData, "scene_order", sceneOrder);
 	obs_data_set_array(saveData, "sources", sourcesArray);
 	obs_data_array_release(sourcesArray);
 	obs_source_release(currentScene);
@@ -253,9 +254,25 @@ void OBSBasic::ClearVolumeControls()
 	volumes.clear();
 }
 
+obs_data_array_t *OBSBasic::SaveSceneListOrder()
+{
+	obs_data_array_t *sceneOrder = obs_data_array_create();
+
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		obs_data_t *data = obs_data_create();
+		obs_data_set_string(data, "name",
+				QT_TO_UTF8(ui->scenes->item(i)->text()));
+		obs_data_array_push_back(sceneOrder, data);
+		obs_data_release(data);
+	}
+
+	return sceneOrder;
+}
+
 void OBSBasic::Save(const char *file)
 {
-	obs_data_t *saveData  = GenerateSaveData();
+	obs_data_array_t *sceneOrder = SaveSceneListOrder();
+	obs_data_t *saveData  = GenerateSaveData(sceneOrder);
 	const char *jsonData = obs_data_get_json(saveData);
 
 	if (!!jsonData) {
@@ -268,6 +285,7 @@ void OBSBasic::Save(const char *file)
 	}
 
 	obs_data_release(saveData);
+	obs_data_array_release(sceneOrder);
 }
 
 static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
@@ -307,6 +325,35 @@ void OBSBasic::CreateDefaultScene()
 	obs_scene_release(scene);
 }
 
+static void ReorderItemByName(QListWidget *lw, const char *name, int newIndex)
+{
+	for (int i = 0; i < lw->count(); i++) {
+		QListWidgetItem *item = lw->item(i);
+
+		if (strcmp(name, QT_TO_UTF8(item->text())) == 0) {
+			if (newIndex != i) {
+				item = lw->takeItem(i);
+				lw->insertItem(newIndex, item);
+			}
+			break;
+		}
+	}
+}
+
+void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
+{
+	size_t num = obs_data_array_count(array);
+
+	for (size_t i = 0; i < num; i++) {
+		obs_data_t *data = obs_data_array_item(array, i);
+		const char *name = obs_data_get_string(data, "name");
+
+		ReorderItemByName(ui->scenes, name, (int)i);
+
+		obs_data_release(data);
+	}
+}
+
 void OBSBasic::Load(const char *file)
 {
 	if (!file) {
@@ -321,6 +368,7 @@ void OBSBasic::Load(const char *file)
 	}
 
 	obs_data_t       *data       = obs_data_create_from_json(jsonData);
+	obs_data_array_t *sceneOrder = obs_data_get_array(data, "scene_order");
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
 	const char       *sceneName = obs_data_get_string(data,
 			"current_scene");
@@ -334,11 +382,15 @@ void OBSBasic::Load(const char *file)
 
 	obs_load_sources(sources);
 
+	if (sceneOrder)
+		LoadSceneListOrder(sceneOrder);
+
 	curScene = obs_get_source_by_name(sceneName);
 	obs_set_output_source(0, curScene);
 	obs_source_release(curScene);
 
 	obs_data_array_release(sources);
+	obs_data_array_release(sceneOrder);
 	obs_data_release(data);
 }
 
@@ -2045,6 +2097,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	QPointer<QMenu> sceneProjectorMenu;
 
 	QMenu popup(this);
+	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
 	popup.addAction(QTStr("Add"),
 			this, SLOT(on_actionAddScene_triggered()));
 
@@ -2055,6 +2108,19 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
+		popup.addSeparator();
+
+		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
+				this, SLOT(on_actionSceneUp_triggered()));
+		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"),
+				this, SLOT(on_actionSceneDown_triggered()));
+		order.addSeparator();
+		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"),
+				this, SLOT(MoveSceneToTop()));
+		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"),
+				this, SLOT(MoveSceneToBottom()));
+		popup.addMenu(&order);
+
 		popup.addSeparator();
 		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
@@ -2125,14 +2191,45 @@ void OBSBasic::on_actionRemoveScene_triggered()
 		obs_source_remove(source);
 }
 
+void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
+{
+	int idx = ui->scenes->currentRow();
+	if (idx == -1 || idx == invalidIdx)
+		return;
+
+	sceneChanging = true;
+
+	QListWidgetItem *item = ui->scenes->takeItem(idx);
+
+	if (!relative)
+		idx = 0;
+
+	ui->scenes->insertItem(idx + offset, item);
+	ui->scenes->setCurrentRow(idx + offset);
+	item->setSelected(true);
+
+	sceneChanging = false;
+}
+
 void OBSBasic::on_actionSceneUp_triggered()
 {
-	/* TODO */
+	ChangeSceneIndex(true, -1, 0);
 }
 
 void OBSBasic::on_actionSceneDown_triggered()
 {
-	/* TODO */
+	ChangeSceneIndex(true, 1, ui->scenes->count() - 1);
+}
+
+void OBSBasic::MoveSceneToTop()
+{
+	ChangeSceneIndex(false, 0, 0);
+}
+
+void OBSBasic::MoveSceneToBottom()
+{
+	ChangeSceneIndex(false, ui->scenes->count() - 1,
+			ui->scenes->count() - 1);
 }
 
 void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,

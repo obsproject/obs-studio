@@ -141,6 +141,10 @@ private:
 	void UpdateSources(OBSScene scene);
 	void InsertSceneItem(obs_sceneitem_t *item);
 
+	void LoadSceneListOrder(obs_data_array_t *array);
+	obs_data_array_t *SaveSceneListOrder();
+	void ChangeSceneIndex(bool relative, int idx, int invalidIdx);
+
 	void TempFileOutput(const char *path, int vBitrate, int aBitrate);
 	void TempStreamOutput(const char *url, const char *key,
 			int vBitrate, int aBitrate);
@@ -322,6 +326,9 @@ private slots:
 	void updateFileFinished(const QString &text, const QString &error);
 
 	void AddSourceFromAction();
+
+	void MoveSceneToTop();
+	void MoveSceneToBottom();
 
 	void EditSceneName();
 	void EditSceneItemName();

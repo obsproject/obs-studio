@@ -682,9 +682,6 @@
    </property>
   </action>
   <action name="actionSceneUp">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
@@ -712,9 +709,6 @@
    </property>
   </action>
   <action name="actionSceneDown">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
