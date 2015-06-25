@@ -1935,21 +1935,6 @@ void OBSBasic::timerEvent(QTimerEvent *event)
 	}
 }
 
-void OBSBasic::on_action_New_triggered()
-{
-	/* TODO */
-}
-
-void OBSBasic::on_action_Open_triggered()
-{
-	/* TODO */
-}
-
-void OBSBasic::on_action_Save_triggered()
-{
-	/* TODO */
-}
-
 void OBSBasic::on_actionShow_Recordings_triggered()
 {
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
@@ -2138,11 +2123,6 @@ void OBSBasic::on_actionRemoveScene_triggered()
 
 	if (source && QueryRemoveSource(source))
 		obs_source_remove(source);
-}
-
-void OBSBasic::on_actionSceneProperties_triggered()
-{
-	/* TODO */
 }
 
 void OBSBasic::on_actionSceneUp_triggered()

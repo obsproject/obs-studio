@@ -261,9 +261,6 @@ protected:
 	virtual void timerEvent(QTimerEvent *event) override;
 
 private slots:
-	void on_action_New_triggered();
-	void on_action_Open_triggered();
-	void on_action_Save_triggered();
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
@@ -292,7 +289,6 @@ private slots:
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
 	void on_actionAddScene_triggered();
 	void on_actionRemoveScene_triggered();
-	void on_actionSceneProperties_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
 	void on_sources_currentItemChanged(QListWidgetItem *current,
