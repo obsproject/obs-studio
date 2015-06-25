@@ -151,9 +151,17 @@ enum {
 	kAudioFormatAppleLossless           = 'alac',
 	kAudioFormatMPEG4AAC_HE             = 'aach',
 	kAudioFormatMPEG4AAC_LD             = 'aacl',
+	kAudioFormatMPEG4AAC_ELD            = 'aace',
+	kAudioFormatMPEG4AAC_ELD_SBR        = 'aacf',
+	kAudioFormatMPEG4AAC_ELD_V2         = 'aacg',    
 	kAudioFormatMPEG4AAC_HE_V2          = 'aacp',
 	kAudioFormatMPEG4AAC_Spatial        = 'aacs',
-	kAudioFormatAMR                     = 'samr'
+	kAudioFormatAMR                     = 'samr',
+	kAudioFormatAudible                 = 'AUDB',
+	kAudioFormatiLBC                    = 'ilbc',
+	kAudioFormatDVIIntelIMA             = 0x6D730011,
+	kAudioFormatMicrosoftGSM            = 0x6D730031,
+	kAudioFormatAES3                    = 'aes3'
 };
 
 enum {
