@@ -397,9 +397,8 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 
 	da_push_back_array(ca->input_buffer, frame->data[0],
 			frame->linesize[0]);
-	ca->bytes_read = 0;
 
-	if (ca->input_buffer.num < ca->in_bytes_required)
+	if ((ca->input_buffer.num - ca->bytes_read) < ca->in_bytes_required)
 		return true;
 
 	UInt32 packets = 1;
@@ -422,9 +421,6 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 		log_osstatus(ca, "AudioConverterFillComplexBuffer", code);
 		return false;
 	}
-
-	if (ca->bytes_read)
-		da_erase_range(ca->input_buffer, 0, ca->bytes_read);
 
 	if (!(*received_packet = packets > 0))
 		return true;
