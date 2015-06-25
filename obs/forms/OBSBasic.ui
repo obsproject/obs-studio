@@ -495,7 +495,6 @@
               </property>
               <addaction name="actionAddScene"/>
               <addaction name="actionRemoveScene"/>
-              <addaction name="actionSceneProperties"/>
               <addaction name="separator"/>
               <addaction name="actionSceneUp"/>
               <addaction name="actionSceneDown"/>
@@ -540,9 +539,6 @@
     <property name="title">
      <string>Basic.MainMenu.File</string>
     </property>
-    <addaction name="action_Save"/>
-    <addaction name="action_Open"/>
-    <addaction name="separator"/>
     <addaction name="actionShow_Recordings"/>
     <addaction name="actionRemux"/>
     <addaction name="separator"/>
@@ -598,9 +594,6 @@
      <addaction name="actionMoveToTop"/>
      <addaction name="actionMoveToBottom"/>
     </widget>
-    <addaction name="actionUndo"/>
-    <addaction name="actionRedo"/>
-    <addaction name="separator"/>
     <addaction name="transformMenu"/>
     <addaction name="orderMenu"/>
     <addaction name="separator"/>
@@ -669,21 +662,6 @@
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">removeIconSmall</string>
-   </property>
-  </action>
-  <action name="actionSceneProperties">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/properties.png</normaloff>:/res/images/properties.png</iconset>
-   </property>
-   <property name="text">
-    <string>Properties</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string notr="true">propertiesIconSmall</string>
    </property>
   </action>
   <action name="actionSourceProperties">
@@ -759,27 +737,6 @@
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">downArrowIconSmall</string>
-   </property>
-  </action>
-  <action name="action_New">
-   <property name="text">
-    <string>Basic.MainMenu.SwitchMode</string>
-   </property>
-  </action>
-  <action name="action_Open">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Basic.MainMenu.File.Export</string>
-   </property>
-  </action>
-  <action name="action_Save">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Basic.MainMenu.File.Import</string>
    </property>
   </action>
   <action name="actionShow_Recordings">
