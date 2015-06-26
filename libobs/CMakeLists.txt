@@ -180,6 +180,7 @@ set(libobs_mediaio_HEADERS
 	media-io/media-io-defs.h
 	media-io/video-io.h
 	media-io/audio-io.h
+	media-io/audio-math.h
 	media-io/video-frame.h
 	media-io/format-conversion.h
 	media-io/audio-resampler.h
