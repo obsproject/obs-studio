@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util/threading.h"
 #include "util/bmem.h"
+#include "media-io/audio-math.h"
 #include "obs.h"
 #include "obs-internal.h"
 
@@ -81,16 +82,6 @@ static const char *volmeter_signals[] = {
 			"float magnitude, float peak, bool muted)",
 	NULL
 };
-
-static inline float mul_to_db(const float mul)
-{
-	return (mul == 0.0f) ? -INFINITY : 20.0f * log10f(mul);
-}
-
-static inline float db_to_mul(const float db)
-{
-	return (db == -INFINITY) ? 0.0f : powf(10.0f, db / 20.0f);
-}
 
 static float cubic_def_to_db(const float def)
 {
