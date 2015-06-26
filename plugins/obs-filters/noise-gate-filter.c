@@ -8,16 +8,6 @@
 #define finite _finite
 #endif
 
-static inline float fmaxf(float a, float b)
-{
-	return a > b ? a : b;
-}
-
-static inline float fminf(float a, float b)
-{
-	return a < b ? a : b;
-}
-
 #endif
 
 #define do_log(level, format, ...) \
