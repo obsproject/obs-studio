@@ -1,14 +1,6 @@
+#include <media-io/audio-math.h>
 #include <obs-module.h>
 #include <math.h>
-
-#ifdef _MSC_VER
-#include <float.h>
-
-#ifndef finite
-#define finite _finite
-#endif
-
-#endif
 
 #define do_log(level, format, ...) \
 	blog(level, "[noise gate: '%s'] " format, \
@@ -52,17 +44,6 @@ struct noise_gate_data {
 #define VOL_MIN -96.0f
 #define VOL_MAX 0.0f
 
-static inline float rms_to_db(float rms)
-{
-	float db = 20.0f * log10f(rms);
-	return finite(db) ? db : VOL_MIN;
-}
-
-static inline float db_to_rms(float db)
-{
-	return powf(10.0f, db / 20.0f);
-}
-
 static const char *noise_gate_name(void)
 {
 	return obs_module_text("NoiseGate");
@@ -98,8 +79,8 @@ static void noise_gate_update(void *data, obs_data_t *s)
 
 	ng->sample_rate_i = 1.0f / sample_rate;
 	ng->channels = audio_output_get_channels(obs_get_audio());
-	ng->open_threshold = db_to_rms(open_threshold_db);
-	ng->close_threshold = db_to_rms(close_threshold_db);
+	ng->open_threshold = db_to_mul(open_threshold_db);
+	ng->close_threshold = db_to_mul(close_threshold_db);
 	ng->attack_rate = 1.0f / (ms_to_secf(attack_time_ms) * sample_rate);
 	ng->release_rate = 1.0f / (ms_to_secf(release_time_ms) * sample_rate);
 
