@@ -62,6 +62,7 @@ Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
+Q_DECLARE_METATYPE(std::vector<std::shared_ptr<OBSSignal>>);
 
 template <typename T>
 static T GetOBSRef(QListWidgetItem *item)
@@ -1091,16 +1092,22 @@ void OBSBasic::AddScene(OBSSource source)
 	}, static_cast<obs_source_t*>(source));
 
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
-	signal_handler_connect(handler, "item_add",
-			OBSBasic::SceneItemAdded, this);
-	signal_handler_connect(handler, "item_remove",
-			OBSBasic::SceneItemRemoved, this);
-	signal_handler_connect(handler, "item_select",
-			OBSBasic::SceneItemSelected, this);
-	signal_handler_connect(handler, "item_deselect",
-			OBSBasic::SceneItemDeselected, this);
-	signal_handler_connect(handler, "reorder",
-			OBSBasic::SceneReordered, this);
+
+	std::vector<std::shared_ptr<OBSSignal>> handlers{
+		std::make_shared<OBSSignal>(handler, "item_add",
+					OBSBasic::SceneItemAdded, this),
+		std::make_shared<OBSSignal>(handler, "item_remove",
+					OBSBasic::SceneItemRemoved, this),
+		std::make_shared<OBSSignal>(handler, "item_select",
+					OBSBasic::SceneItemSelected, this),
+		std::make_shared<OBSSignal>(handler, "item_deselect",
+					OBSBasic::SceneItemDeselected, this),
+		std::make_shared<OBSSignal>(handler, "reorder",
+					OBSBasic::SceneReordered, this),
+	};
+
+	item->setData(static_cast<int>(QtDataRole::OBSSignals),
+			QVariant::fromValue(handlers));
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -2017,7 +2024,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	 * their internal data */
 	ClearVolumeControls();
 	ui->sources->clear();
-	ui->scenes->clear();
+
+	QListWidgetItem *item = nullptr;
+	while ((item = ui->scenes->takeItem(0)))
+		delete item;
 }
 
 void OBSBasic::changeEvent(QEvent *event)
