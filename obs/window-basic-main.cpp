@@ -622,17 +622,18 @@ bool OBSBasic::InitBasicConfig()
 
 void OBSBasic::InitOBSCallbacks()
 {
-	signal_handler_connect(obs_get_signal_handler(), "source_add",
+	signalHandlers.reserve(signalHandlers.size() + 6);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_add",
 			OBSBasic::SourceAdded, this);
-	signal_handler_connect(obs_get_signal_handler(), "source_remove",
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
 			OBSBasic::SourceRemoved, this);
-	signal_handler_connect(obs_get_signal_handler(), "channel_change",
+	signalHandlers.emplace_back(obs_get_signal_handler(), "channel_change",
 			OBSBasic::ChannelChanged, this);
-	signal_handler_connect(obs_get_signal_handler(), "source_activate",
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate",
 			OBSBasic::SourceActivated, this);
-	signal_handler_connect(obs_get_signal_handler(), "source_deactivate",
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_deactivate",
 			OBSBasic::SourceDeactivated, this);
-	signal_handler_connect(obs_get_signal_handler(), "source_rename",
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 			OBSBasic::SourceRenamed, this);
 }
 
@@ -1973,6 +1974,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		updateCheckThread->wait();
 	if (logUploadThread)
 		logUploadThread->wait();
+
+	signalHandlers.clear();
 
 	/* Check all child dialogs and ensure they run their proper closeEvent
 	 * methods before exiting the application.  Otherwise Qt doesn't send

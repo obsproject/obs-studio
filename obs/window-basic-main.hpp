@@ -66,6 +66,8 @@ private:
 
 	std::vector<VolControl*> volumes;
 
+	std::vector<OBSSignal> signalHandlers;
+
 	bool loaded = false;
 
 	QPointer<QTimer> saveTimer;
