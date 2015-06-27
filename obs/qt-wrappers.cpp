@@ -19,6 +19,7 @@
 #include <graphics/graphics.h>
 #include <QWidget>
 #include <QMessageBox>
+#include <QDataStream>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <QX11Info>
@@ -76,4 +77,21 @@ uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)
 #endif
 
 	return obsModifiers;
+}
+
+QDataStream &operator<<(QDataStream &out, const OBSScene &scene)
+{
+	return out << QString(obs_source_get_name(obs_scene_get_source(scene)));
+}
+
+QDataStream &operator>>(QDataStream &in, OBSScene &scene)
+{
+	QString sceneName;
+
+	in >> sceneName;
+
+	obs_source_t *source = obs_get_source_by_name(QT_TO_UTF8(sceneName));
+	scene = obs_scene_from_source(source);
+
+	return in;
 }
