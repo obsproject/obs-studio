@@ -133,6 +133,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSource>   ("OBSSource");
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 
+	qRegisterMetaTypeStreamOperators<
+		std::vector<std::shared_ptr<OBSSignal>>>(
+				"std::vector<std::shared_ptr<OBSSignal>>");
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
 	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
 

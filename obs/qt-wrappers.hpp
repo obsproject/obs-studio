@@ -20,6 +20,9 @@
 #include <QWidget>
 #include <obs.hpp>
 
+#include <memory>
+#include <vector>
+
 #define QT_UTF8(str) QString::fromUtf8(str)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 
@@ -33,6 +36,10 @@ void QTToGSWindow(WId windowId, gs_window &gswindow);
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 
+QDataStream &operator<<(QDataStream &out,
+		const std::vector<std::shared_ptr<OBSSignal>> &signal_vec);
+QDataStream &operator>>(QDataStream &in,
+		std::vector<std::shared_ptr<OBSSignal>> &signal_vec);
 QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
 QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);

@@ -79,6 +79,18 @@ uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)
 	return obsModifiers;
 }
 
+QDataStream &operator<<(QDataStream &out,
+		const std::vector<std::shared_ptr<OBSSignal>> &)
+{
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in,
+		std::vector<std::shared_ptr<OBSSignal>> &)
+{
+	return in;
+}
+
 QDataStream &operator<<(QDataStream &out, const OBSScene &scene)
 {
 	return out << QString(obs_source_get_name(obs_scene_get_source(scene)));
