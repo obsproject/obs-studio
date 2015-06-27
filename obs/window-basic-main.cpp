@@ -1528,7 +1528,7 @@ void OBSBasic::ReorderSources(OBSScene scene)
 {
 	ReorderInfo info(this);
 
-	if (scene != GetCurrentScene())
+	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
 		return;
 
 	obs_scene_enum_items(scene,
