@@ -1034,3 +1034,16 @@ void obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 
 	calldata_free(&cd);
 }
+
+void obs_scene_atomic_update(obs_scene_t *scene,
+		obs_scene_atomic_update_func func, void *data)
+{
+	if (!scene)
+		return;
+
+	obs_scene_addref(scene);
+	pthread_mutex_lock(&scene->mutex);
+	func(data, scene);
+	pthread_mutex_unlock(&scene->mutex);
+	obs_scene_release(scene);
+}

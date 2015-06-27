@@ -1035,6 +1035,10 @@ EXPORT void obs_scene_enum_items(obs_scene_t *scene,
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
 
+typedef void (*obs_scene_atomic_update_func)(void *, obs_scene_t *scene);
+EXPORT void obs_scene_atomic_update(obs_scene_t *scene,
+		obs_scene_atomic_update_func func, void *data);
+
 EXPORT void obs_sceneitem_addref(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_release(obs_sceneitem_t *item);
 
