@@ -1219,11 +1219,9 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 		if (item != data.value<OBSSceneItem>())
 			continue;
 
-		if (select) {
-			ui->sources->setCurrentItem(witem);
-		} else if (ui->sources->currentItem() == witem) {
-			ui->sources->setCurrentItem(nullptr);
-		}
+		if (select)
+			ui->sources->setCurrentItem(witem,
+					QItemSelectionModel::ClearAndSelect);
 
 		break;
 	}
