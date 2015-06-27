@@ -1035,6 +1035,72 @@ void obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 	calldata_free(&cd);
 }
 
+static bool sceneitems_match(obs_scene_t *scene, obs_sceneitem_t * const *items,
+		size_t size, bool *order_matches)
+{
+	obs_sceneitem_t *item = scene->first_item;
+
+	size_t count = 0;
+	while (item) {
+		bool found = false;
+		for (size_t i = 0; i < size; i++) {
+			if (items[i] != item)
+				continue;
+
+			if (count != i)
+				*order_matches = false;
+
+			found = true;
+			break;
+		}
+
+		if (!found)
+			return false;
+
+		item = item->next;
+		count += 1;
+	}
+
+	return count == size;
+}
+
+bool obs_scene_reorder_items(obs_scene_t *scene,
+		obs_sceneitem_t * const *item_order, size_t item_order_size)
+{
+	if (!scene || !item_order_size)
+		return false;
+
+	obs_scene_addref(scene);
+	pthread_mutex_lock(&scene->mutex);
+
+	bool order_matches = true;
+	if (!sceneitems_match(scene, item_order, item_order_size,
+				&order_matches) || order_matches) {
+		pthread_mutex_unlock(&scene->mutex);
+		obs_scene_release(scene);
+		return false;
+	}
+
+	scene->first_item = item_order[0];
+
+	obs_sceneitem_t *prev = NULL;
+	for (size_t i = 0; i < item_order_size; i++) {
+		item_order[i]->prev = prev;
+		item_order[i]->next = NULL;
+
+		if (prev)
+			prev->next = item_order[i];
+
+		prev = item_order[i];
+	}
+
+	signal_reorder(scene->first_item);
+
+	pthread_mutex_unlock(&scene->mutex);
+	obs_scene_release(scene);
+	return true;
+}
+
 void obs_scene_atomic_update(obs_scene_t *scene,
 		obs_scene_atomic_update_func func, void *data)
 {

@@ -1032,6 +1032,9 @@ EXPORT void obs_scene_enum_items(obs_scene_t *scene,
 		bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*),
 		void *param);
 
+EXPORT bool obs_scene_reorder_items(obs_scene_t *scene,
+		obs_sceneitem_t * const *item_order, size_t item_order_size);
+
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
 
