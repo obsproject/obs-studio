@@ -1206,7 +1206,7 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 
 void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 {
-	if (scene != GetCurrentScene())
+	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
 		return;
 
 	for (int i = 0; i < ui->sources->count(); i++) {
@@ -2326,7 +2326,19 @@ void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 	if ((obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO) == 0)
 		return;
 
-	obs_scene_enum_items(GetCurrentScene(), select_one, &item);
+	auto IgnoreSelfUpdate = [&](obs_scene_t *scene)
+	{
+		ignoreSelectionUpdate = true;
+		obs_scene_enum_items(scene, select_one, &item);
+		ignoreSelectionUpdate = false;
+	};
+	using IgnoreSelfUpdate_t = decltype(IgnoreSelfUpdate);
+
+	obs_scene_atomic_update(GetCurrentScene(),
+			[](void *data, obs_scene_t *scene)
+	{
+		(*static_cast<IgnoreSelfUpdate_t*>(data))(scene);
+	}, static_cast<void*>(&IgnoreSelfUpdate));
 
 	UNUSED_PARAMETER(prev);
 }

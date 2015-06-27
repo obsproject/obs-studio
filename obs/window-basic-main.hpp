@@ -96,6 +96,7 @@ private:
 	gs_vertbuffer_t *circle = nullptr;
 
 	bool          sceneChanging = false;
+	bool          ignoreSelectionUpdate = false;
 
 	int           previewX = 0,  previewY = 0;
 	int           previewCX = 0, previewCY = 0;
