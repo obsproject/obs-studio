@@ -134,6 +134,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
+	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);

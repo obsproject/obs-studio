@@ -35,3 +35,5 @@ uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 
 QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
+QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);
+QDataStream &operator>>(QDataStream &in, OBSSceneItem &si);
