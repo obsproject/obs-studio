@@ -1029,7 +1029,7 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t *item)
 	SetOBSRef(listItem, OBSSceneItem(item));
 
 	ui->sources->insertItem(0, listItem);
-	ui->sources->setCurrentRow(0);
+	ui->sources->setCurrentRow(0, QItemSelectionModel::ClearAndSelect);
 
 	SetupVisibilityItem(ui->sources, listItem, item);
 
