@@ -1228,42 +1228,6 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 	}
 }
 
-void OBSBasic::MoveSceneItem(OBSSceneItem item, obs_order_movement movement)
-{
-	OBSScene scene = obs_sceneitem_get_scene(item);
-	if (scene != GetCurrentScene())
-		return;
-
-	int curRow = ui->sources->currentRow();
-	if (curRow == -1)
-		return;
-
-	QListWidgetItem *listItem = ui->sources->takeItem(curRow);
-
-	switch (movement) {
-	case OBS_ORDER_MOVE_UP:
-		if (curRow > 0)
-			curRow--;
-		break;
-
-	case OBS_ORDER_MOVE_DOWN:
-		if (curRow < ui->sources->count())
-			curRow++;
-		break;
-
-	case OBS_ORDER_MOVE_TOP:
-		curRow = 0;
-		break;
-
-	case OBS_ORDER_MOVE_BOTTOM:
-		curRow = ui->sources->count();
-		break;
-	}
-
-	ui->sources->insertItem(curRow, listItem);
-	ui->sources->setCurrentRow(curRow);
-}
-
 void OBSBasic::GetAudioSourceFilters()
 {
 	QAction *action = reinterpret_cast<QAction*>(sender());
