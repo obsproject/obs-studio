@@ -1174,8 +1174,17 @@ void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*), void *param)
 
 	for (size_t i = 0; i < obs->data.user_sources.num; i++) {
 		struct obs_source *source = obs->data.user_sources.array[i];
+		size_t prev_size = obs->data.user_sources.num;
+
 		if (!enum_proc(param, source))
 			break;
+
+		/* To ensure the save data is always consistent, we always want
+		 * to traverse this list forward.  Because of that, we have to
+		 * manually check to see if the source was removed in the
+		 * enumeration proc and adjust it accordingly */
+		if (obs->data.user_sources.num < prev_size)
+			i--;
 	}
 
 	pthread_mutex_unlock(&obs->data.user_sources_mutex);
