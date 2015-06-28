@@ -382,7 +382,7 @@
                 <enum>QAbstractItemView::ExtendedSelection</enum>
                </property>
                <property name="defaultDropAction">
-                <enum>Qt::IgnoreAction</enum>
+                <enum>Qt::TargetMoveAction</enum>
                </property>
               <addaction name="actionRemoveSource"/>
              </widget>
@@ -498,7 +498,7 @@
                <enum>QAbstractItemView::InternalMove</enum>
               </property>
               <property name="defaultDropAction">
-               <enum>Qt::IgnoreAction</enum>
+               <enum>Qt::TargetMoveAction</enum>
               </property>
               <addaction name="actionRemoveScene"/>
              </widget>
