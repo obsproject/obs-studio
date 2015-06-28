@@ -63,6 +63,19 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 
+template <typename T>
+static T GetOBSRef(QListWidgetItem *item)
+{
+	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
+}
+
+template <typename T>
+static void SetOBSRef(QListWidgetItem *item, T &&val)
+{
+	item->setData(static_cast<int>(QtDataRole::OBSRef),
+			QVariant::fromValue(val));
+}
+
 static void AddExtraModulePaths()
 {
 	char base_module_dir[512];
@@ -979,12 +992,12 @@ void OBSBasic::SaveProject()
 OBSScene OBSBasic::GetCurrentScene()
 {
 	QListWidgetItem *item = ui->scenes->currentItem();
-	return item ? item->data(Qt::UserRole).value<OBSScene>() : nullptr;
+	return item ? GetOBSRef<OBSScene>(item) : nullptr;
 }
 
 OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 {
-	return item ? item->data(Qt::UserRole).value<OBSSceneItem>() : nullptr;
+	return item ? GetOBSRef<OBSSceneItem>(item) : nullptr;
 }
 
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
@@ -1012,8 +1025,7 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t *item)
 	obs_source_t *source = obs_sceneitem_get_source(item);
 
 	QListWidgetItem *listItem = new QListWidgetItem();
-	listItem->setData(Qt::UserRole,
-			QVariant::fromValue(OBSSceneItem(item)));
+	SetOBSRef(listItem, OBSSceneItem(item));
 
 	ui->sources->insertItem(0, listItem);
 	ui->sources->setCurrentRow(0);
@@ -1063,7 +1075,7 @@ void OBSBasic::AddScene(OBSSource source)
 	obs_scene_t *scene = obs_scene_from_source(source);
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
-	item->setData(Qt::UserRole, QVariant::fromValue(OBSScene(scene)));
+	SetOBSRef(item, OBSScene(scene));
 	ui->scenes->addItem(item);
 
 	obs_hotkey_register_source(source, "OBSBasic.SelectScene",
@@ -1124,9 +1136,8 @@ void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 	if (GetCurrentScene() == scene) {
 		for (int i = 0; i < ui->sources->count(); i++) {
 			QListWidgetItem *listItem = ui->sources->item(i);
-			QVariant userData = listItem->data(Qt::UserRole);
 
-			if (userData.value<OBSSceneItem>() == item) {
+			if (GetOBSRef<OBSSceneItem>(listItem) == item) {
 				delete listItem;
 				break;
 			}
@@ -1193,7 +1204,8 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 
 	for (int i = 0; i < ui->sources->count(); i++) {
 		QListWidgetItem *witem = ui->sources->item(i);
-		QVariant data = witem->data(Qt::UserRole);
+		QVariant data =
+			witem->data(static_cast<int>(QtDataRole::OBSRef));
 		if (!data.canConvert<OBSSceneItem>())
 			continue;
 
@@ -1477,8 +1489,7 @@ void OBSBasic::ReorderSceneItem(obs_sceneitem_t *item, size_t idx)
 
 	for (int i = 0; i < count; i++) {
 		QListWidgetItem *listItem = ui->sources->item(i);
-		QVariant v = listItem->data(Qt::UserRole);
-		OBSSceneItem sceneItem = v.value<OBSSceneItem>();
+		OBSSceneItem sceneItem = GetOBSRef<OBSSceneItem>(listItem);
 
 		if (sceneItem == item) {
 			if ((int)idx_inv != i) {
@@ -2097,7 +2108,7 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 	if (current) {
 		obs_scene_t *scene;
 
-		scene = current->data(Qt::UserRole).value<OBSScene>();
+		scene = GetOBSRef<OBSScene>(current);
 		source = obs_scene_get_source(scene);
 	}
 
@@ -2298,7 +2309,7 @@ void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
 	if (!current)
 		return;
 
-	OBSSceneItem item = current->data(Qt::UserRole).value<OBSSceneItem>();
+	OBSSceneItem item = GetOBSRef<OBSSceneItem>(current);
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	if ((obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO) == 0)
 		return;
@@ -2312,7 +2323,7 @@ void OBSBasic::EditSceneItemName()
 {
 	QListWidgetItem *item = ui->sources->currentItem();
 	Qt::ItemFlags flags   = item->flags();
-	OBSSceneItem sceneItem= item->data(Qt::UserRole).value<OBSSceneItem>();
+	OBSSceneItem sceneItem= GetOBSRef<OBSSceneItem>(item);
 	obs_source_t *source  = obs_sceneitem_get_source(sceneItem);
 	const char *name      = obs_source_get_name(source);
 

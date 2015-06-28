@@ -49,6 +49,11 @@ class QNetworkReply;
 
 struct BasicOutputHandler;
 
+enum class QtDataRole {
+	OBSRef = Qt::UserRole,
+	OBSSignals,
+};
+
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
