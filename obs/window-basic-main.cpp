@@ -2023,10 +2023,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	 * any ->deleteLater events in this window created by Qt in relation to
 	 * their internal data */
 	ClearVolumeControls();
-	ui->sources->clear();
 
 	QListWidgetItem *item = nullptr;
 	while ((item = ui->scenes->takeItem(0)))
+		delete item;
+
+	while ((item = ui->sources->takeItem(0)))
 		delete item;
 }
 
