@@ -20,6 +20,7 @@
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
 #include "visibility-item-widget.hpp"
+#include "item-widget-helpers.hpp"
 #include "obs-app.hpp"
 
 #include <QMessageBox>
@@ -105,9 +106,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 OBSBasicFilters::~OBSBasicFilters()
 {
-	ui->asyncFilters->clear();
-	ui->effectFilters->clear();
-	QApplication::sendPostedEvents(this);
+	ClearListItems(ui->asyncFilters);
+	ClearListItems(ui->effectFilters);
 }
 
 void OBSBasicFilters::Init()
@@ -195,7 +195,7 @@ void OBSBasicFilters::RemoveFilter(OBSSource filter)
 		OBSSource curFilter = v.value<OBSSource>();
 
 		if (filter == curFilter) {
-			delete item;
+			DeleteListItem(list, item);
 			break;
 		}
 	}
@@ -223,7 +223,7 @@ void OBSBasicFilters::ReorderFilter(QListWidget *list,
 			if ((int)idx != i) {
 				bool sel = (list->currentRow() == i);
 
-				listItem = list->takeItem(i);
+				listItem = TakeListItem(list, i);
 				if (listItem)  {
 					list->insertItem((int)idx, listItem);
 					SetupVisibilityItem(list,
@@ -271,8 +271,8 @@ void OBSBasicFilters::UpdateFilters()
 	if (!source)
 		return;
 
-	ui->effectFilters->clear();
-	ui->asyncFilters->clear();
+	ClearListItems(ui->effectFilters);
+	ClearListItems(ui->asyncFilters);
 
 	obs_source_enum_filters(source,
 			[] (obs_source_t*, obs_source_t *filter, void *p)

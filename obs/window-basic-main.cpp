@@ -32,6 +32,7 @@
 #include "obs-app.hpp"
 #include "platform.hpp"
 #include "visibility-item-widget.hpp"
+#include "item-widget-helpers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-source-select.hpp"
@@ -1009,7 +1010,7 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 
 void OBSBasic::UpdateSources(OBSScene scene)
 {
-	ui->sources->clear();
+	ClearListItems(ui->sources);
 
 	obs_scene_enum_items(scene,
 			[] (obs_scene_t *scene, obs_sceneitem_t *item, void *p)
@@ -1121,7 +1122,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 
 	if (sel != nullptr) {
 		if (items.contains(sel))
-			ui->sources->clear();
+			ClearListItems(ui->sources);
 		delete sel;
 	}
 }
@@ -1146,7 +1147,7 @@ void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 			QListWidgetItem *listItem = ui->sources->item(i);
 
 			if (GetOBSRef<OBSSceneItem>(listItem) == item) {
-				delete listItem;
+				DeleteListItem(ui->sources, listItem);
 				break;
 			}
 		}
@@ -1465,7 +1466,7 @@ void OBSBasic::ReorderSceneItem(obs_sceneitem_t *item, size_t idx)
 			if ((int)idx_inv != i) {
 				bool sel = (ui->sources->currentRow() == i);
 
-				listItem = ui->sources->takeItem(i);
+				listItem = TakeListItem(ui->sources, i);
 				if (listItem)  {
 					ui->sources->insertItem(idx_inv,
 							listItem);
@@ -1975,8 +1976,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	while ((item = ui->scenes->takeItem(0)))
 		delete item;
 
-	while ((item = ui->sources->takeItem(0)))
-		delete item;
+	ClearListItems(ui->sources);
 }
 
 void OBSBasic::changeEvent(QEvent *event)
