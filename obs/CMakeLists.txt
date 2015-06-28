@@ -114,6 +114,7 @@ set(obs_SOURCES
 	double-slider.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
+	item-widget-helpers.cpp
 	visibility-checkbox.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
@@ -152,6 +153,7 @@ set(obs_HEADERS
 	mute-checkbox.hpp
 	volume-control.hpp
 	adv-audio-control.hpp
+	item-widget-helpers.hpp
 	visibility-checkbox.hpp
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
