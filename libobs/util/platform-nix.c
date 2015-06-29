@@ -296,6 +296,11 @@ int os_unlink(const char *path)
 	return unlink(path);
 }
 
+int os_rmdir(const char *path)
+{
+	return rmdir(path);
+}
+
 int os_mkdir(const char *path)
 {
 	if (mkdir(path, 0777) == 0)

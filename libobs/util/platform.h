@@ -128,6 +128,7 @@ EXPORT int os_glob(const char *pattern, int flags, os_glob_t **pglob);
 EXPORT void os_globfree(os_glob_t *pglob);
 
 EXPORT int os_unlink(const char *path);
+EXPORT int os_rmdir(const char *path);
 
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
