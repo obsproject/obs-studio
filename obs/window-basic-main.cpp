@@ -906,6 +906,12 @@ void OBSBasic::CreateHotkeys()
 #undef MAKE_CALLBACK
 }
 
+void OBSBasic::ClearHotkeys()
+{
+	obs_hotkey_pair_unregister(streamingHotkeys);
+	obs_hotkey_pair_unregister(recordingHotkeys);
+}
+
 OBSBasic::~OBSBasic()
 {
 	bool previewEnabled = obs_preview_enabled();
@@ -920,8 +926,7 @@ OBSBasic::~OBSBasic()
 	os_cpu_usage_info_destroy(cpuUsageInfo);
 
 	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
-	obs_hotkey_pair_unregister(streamingHotkeys);
-	obs_hotkey_pair_unregister(recordingHotkeys);
+	ClearHotkeys();
 
 	service = nullptr;
 	outputHandler.reset();

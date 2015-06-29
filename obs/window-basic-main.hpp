@@ -122,6 +122,7 @@ private:
 
 	void          InitHotkeys();
 	void          CreateHotkeys();
+	void          ClearHotkeys();
 
 	bool          InitService();
 
