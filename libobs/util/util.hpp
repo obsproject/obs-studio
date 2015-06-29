@@ -72,6 +72,13 @@ public:
 		return config != NULL;
 	}
 
+	inline void Swap(ConfigFile &other)
+	{
+		config_t *newConfig = other.config;
+		other.config = config;
+		config = newConfig;
+	}
+
 	inline int Open(const char *file, config_open_type openType)
 	{
 		Close();
