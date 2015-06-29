@@ -21,6 +21,7 @@
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 
+#include <QKeyEvent>
 #include <QCloseEvent>
 #include <QScreen>
 #include <QWindow>

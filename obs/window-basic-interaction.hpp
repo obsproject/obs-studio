@@ -89,6 +89,7 @@ protected:
 	{
 		return filter(obj, event);
 	}
+
 private:
 	EventFilterFunc filter;
 };

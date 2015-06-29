@@ -53,7 +53,7 @@ static bool portable_mode = false;
 
 QObject *CreateShortcutFilter()
 {
-	return new OBSEventFilter([](QObject *, QEvent *event)
+	return new OBSEventFilter([](QObject *obj, QEvent *event)
 	{
 		auto mouse_event = [](QMouseEvent &event)
 		{
@@ -108,8 +108,10 @@ QObject *CreateShortcutFilter()
 			return true;
 		};
 
-		auto key_event = [](QKeyEvent *event)
+		auto key_event = [&](QKeyEvent *event)
 		{
+			QDialog *dialog = qobject_cast<QDialog*>(obj);
+
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event->type() == QEvent::KeyPress;
 
@@ -128,6 +130,11 @@ QObject *CreateShortcutFilter()
 				break;
 #endif
 
+			case Qt::Key_Enter:
+			case Qt::Key_Escape:
+			case Qt::Key_Return:
+				if (dialog && pressed)
+					return false;
 			default:
 				hotkey.key = obs_key_from_virtual_key(
 					event->nativeVirtualKey());
@@ -137,6 +144,7 @@ QObject *CreateShortcutFilter()
 							event->modifiers());
 
 			obs_hotkey_inject_event(hotkey, pressed);
+			return true;
 		};
 
 		switch (event->type()) {
@@ -148,8 +156,7 @@ QObject *CreateShortcutFilter()
 		case QEvent::Wheel:*/
 		case QEvent::KeyPress:
 		case QEvent::KeyRelease:
-			key_event(static_cast<QKeyEvent*>(event));
-			return true;
+			return key_event(static_cast<QKeyEvent*>(event));
 
 		default:
 			return false;
