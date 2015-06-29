@@ -30,6 +30,11 @@ NameDialog::NameDialog(QWidget *parent)
 	installEventFilter(CreateShortcutFilter());
 }
 
+static bool IsWhitespace(char ch)
+{
+	return ch == ' ' || ch == '\t';
+}
+
 bool NameDialog::AskForName(QWidget *parent, const QString &title,
 		const QString &text, string &str, const QString &placeHolder)
 {
@@ -40,8 +45,14 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 	dialog.ui->userText->selectAll();
 
 	bool accepted = (dialog.exec() == DialogCode::Accepted);
-	if (accepted)
+	if (accepted) {
 		str = dialog.ui->userText->text().toStdString();
+
+		while (str.size() && IsWhitespace(str.back()))
+			str.erase(str.end() - 1);
+		while (str.size() && IsWhitespace(str.front()))
+			str.erase(str.begin());
+	}
 
 	return accepted;
 }
