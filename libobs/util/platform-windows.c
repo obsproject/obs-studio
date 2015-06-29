@@ -496,3 +496,23 @@ void os_end_high_performance(os_performance_token_t *token)
 	UNUSED_PARAMETER(token);
 }
 
+int os_copyfile(const char *file_in, const char *file_out)
+{
+	wchar_t *file_in_utf16 = NULL;
+	wchar_t *file_out_utf16 = NULL;
+	int code = -1;
+
+	if (!os_utf8_to_wcs_ptr(file_in, 0, &file_in_utf16)) {
+		return -1;
+	}
+	if (!os_utf8_to_wcs_ptr(file_out, 0, &file_out_utf16)) {
+		goto error;
+	}
+
+	code = CopyFileW(file_in_utf16, file_out_utf16, true) ? 0 : -1;
+
+error:
+	bfree(file_in_utf16);
+	bfree(file_out_utf16);
+	return code;
+}

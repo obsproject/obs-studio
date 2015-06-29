@@ -136,6 +136,7 @@ EXPORT int os_rmdir(const char *path);
 
 EXPORT int os_mkdir(const char *path);
 EXPORT int os_rename(const char *old_path, const char *new_path);
+EXPORT int os_copyfile(const char *file_in, const char *file_out);
 
 #ifdef _MSC_VER
 #define strtoll _strtoi64
