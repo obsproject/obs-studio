@@ -75,8 +75,6 @@ private:
 
 	bool loaded = false;
 
-	QPointer<QTimer> saveTimer;
-
 	QPointer<QThread> updateCheckThread;
 	QPointer<QThread> logUploadThread;
 
