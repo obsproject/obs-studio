@@ -24,6 +24,12 @@ find_path(X264_INCLUDE_DIR
 	HINTS
 		ENV x264Path${_lib_suffix}
 		ENV x264Path
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${x264Path${lib_suffix}}
+		${x264Path}
+		${DepsPath${lib_suffix}}
+		${DepsPath}
 		${_X264_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include)

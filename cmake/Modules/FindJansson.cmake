@@ -21,6 +21,12 @@ find_path(Jansson_INCLUDE_DIR
 	HINTS
 		ENV JanssonPath${_lib_suffix}
 		ENV JanssonPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${JanssonPath${lib_suffix}}
+		${JanssonPath}
+		${DepsPath${lib_suffix}}
+		${DepsPath}
 		${_JANSSON_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include)

@@ -24,6 +24,12 @@ find_path(CURL_INCLUDE_DIR
 	HINTS
 		ENV curlPath${_lib_suffix}
 		ENV curlPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${curlPath${lib_suffix}}
+		${curlPath}
+		${DepsPath${lib_suffix}}
+		${DepsPath}
 		${_CURL_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include

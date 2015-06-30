@@ -22,6 +22,12 @@ find_path(FREETYPE_INCLUDE_DIR_ft2build
 		ENV FreetypePath${_lib_suffix}
 		ENV FreetypePath
 		ENV FREETYPE_DIR
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${FreetypePath${lib_suffix}}
+		${FreetypePath}
+		${DepsPath${lib_suffix}}
+		${DepsPath}
 		${_FREETYPE_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
