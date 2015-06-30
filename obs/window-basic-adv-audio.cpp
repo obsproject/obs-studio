@@ -3,6 +3,7 @@
 #include <QScrollArea>
 #include <QLabel>
 #include "window-basic-adv-audio.hpp"
+#include "window-basic-main.hpp"
 #include "adv-audio-control.hpp"
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
@@ -86,8 +87,12 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()
 {
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(parent());
+
 	for (size_t i = 0; i < controls.size(); ++i)
 		delete controls[i];
+
+	main->SaveProject();
 }
 
 bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)

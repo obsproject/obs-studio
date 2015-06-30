@@ -74,6 +74,7 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 
 	bool loaded = false;
+	long disableSaving = 1;
 
 	QPointer<QThread> updateCheckThread;
 	QPointer<QThread> logUploadThread;

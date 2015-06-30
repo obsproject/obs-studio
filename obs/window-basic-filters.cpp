@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "window-namedialog.hpp"
+#include "window-basic-main.hpp"
 #include "window-basic-filters.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
@@ -56,6 +57,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	                                "rename",
 	                                OBSBasicFilters::SourceRenamed, this)
 {
+	main = reinterpret_cast<OBSBasic*>(parent);
+
 	ui->setupUi(this);
 	UpdateFilters();
 
@@ -199,6 +202,8 @@ void OBSBasicFilters::RemoveFilter(OBSSource filter)
 			break;
 		}
 	}
+
+	main->SaveProject();
 }
 
 struct FilterOrderInfo {
@@ -282,6 +287,8 @@ void OBSBasicFilters::UpdateFilters()
 
 				window->AddFilter(filter);
 			}, this);
+
+	main->SaveProject();
 }
 
 static bool filter_compatible(bool async, uint32_t sourceFlags,
@@ -404,6 +411,8 @@ void OBSBasicFilters::closeEvent(QCloseEvent *event)
 	obs_display_remove_draw_callback(display,
 			OBSBasicFilters::DrawPreview, this);
 	display = nullptr;
+
+	main->SaveProject();
 }
 
 void OBSBasicFilters::timerEvent(QTimerEvent *event)

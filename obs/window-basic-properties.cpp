@@ -103,6 +103,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 OBSBasicProperties::~OBSBasicProperties()
 {
 	obs_source_dec_showing(source);
+	main->SaveProject();
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)

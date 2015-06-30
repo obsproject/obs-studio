@@ -2159,6 +2159,7 @@ void OBSBasicSettings::SaveSettings()
 
 	config_save(main->Config());
 	config_save(GetGlobalConfig());
+	main->SaveProject();
 }
 
 bool OBSBasicSettings::QueryChanges()
