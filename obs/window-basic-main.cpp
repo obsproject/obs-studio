@@ -2785,9 +2785,21 @@ void OBSBasic::OpenSceneFilters()
 	CreateFiltersWindow(source);
 }
 
+#define RECORDING_START \
+	"==== Recording Start ==============================================="
+#define RECORDING_STOP \
+	"==== Recording Stop ================================================"
+#define STREAMING_START \
+	"==== Streaming Start ==============================================="
+#define STREAMING_STOP \
+	"==== Streaming Stop ================================================"
+
 void OBSBasic::StartStreaming()
 {
 	SaveProject();
+
+	if (!outputHandler->Active())
+		blog(LOG_INFO, STREAMING_START);
 
 	if (outputHandler->StreamingActive())
 		return;
@@ -2804,6 +2816,10 @@ void OBSBasic::StopStreaming()
 
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming();
+
+	if (!outputHandler->Active()) {
+		blog(LOG_INFO, STREAMING_STOP);
+	}
 }
 
 void OBSBasic::StreamingStart()
@@ -2846,6 +2862,10 @@ void OBSBasic::StreamingStop(int code)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
+	if (!outputHandler->Active()) {
+		blog(LOG_INFO, STREAMING_STOP);
+	}
+
 	if (code != OBS_OUTPUT_SUCCESS)
 		QMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
@@ -2855,6 +2875,9 @@ void OBSBasic::StreamingStop(int code)
 void OBSBasic::StartRecording()
 {
 	SaveProject();
+
+	if (!outputHandler->Active())
+		blog(LOG_INFO, RECORDING_START);
 
 	if (!outputHandler->RecordingActive())
 		outputHandler->StartRecording();
@@ -2866,6 +2889,10 @@ void OBSBasic::StopRecording()
 
 	if (outputHandler->RecordingActive())
 		outputHandler->StopRecording();
+
+	if (!outputHandler->Active()) {
+		blog(LOG_INFO, RECORDING_STOP);
+	}
 }
 
 void OBSBasic::RecordingStart()
@@ -2883,6 +2910,10 @@ void OBSBasic::RecordingStop(int code)
 		QMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
+
+	if (!outputHandler->Active()) {
+		blog(LOG_INFO, RECORDING_STOP);
+	}
 }
 
 void OBSBasic::on_streamButton_clicked()
