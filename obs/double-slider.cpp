@@ -1,5 +1,7 @@
 #include "double-slider.hpp"
 
+#include <cmath>
+
 DoubleSlider::DoubleSlider(QWidget *parent) : QSlider(parent)
 {
 	connect(this, SIGNAL(valueChanged(int)),
@@ -24,10 +26,10 @@ void DoubleSlider::setDoubleConstraints(double newMin, double newMax,
 
 void DoubleSlider::intValChanged(int val)
 {
-	emit doubleValChanged(double(val) * minStep + minVal);
+	emit doubleValChanged((minVal/minStep + val) * minStep);
 }
 
 void DoubleSlider::setDoubleVal(double val)
 {
-	setValue(int((val - minVal) / minStep));
+	setValue(lround((val - minVal) / minStep));
 }
