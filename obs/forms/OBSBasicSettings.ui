@@ -460,11 +460,16 @@
                    <item row="3" column="1">
                     <widget class="QComboBox" name="simpleOutputABitrate">
                      <property name="currentIndex">
-                      <number>4</number>
+                      <number>8</number>
                      </property>
                      <item>
                       <property name="text">
                        <string>32</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>48</string>
                       </property>
                      </item>
                      <item>
@@ -474,7 +479,17 @@
                      </item>
                      <item>
                       <property name="text">
+                       <string>80</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
                        <string>96</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>112</string>
                       </property>
                      </item>
                      <item>
@@ -1569,11 +1584,16 @@
                        <item row="0" column="1">
                         <widget class="QComboBox" name="advOutTrack1Bitrate">
                          <property name="currentIndex">
-                          <number>4</number>
+                          <number>8</number>
                          </property>
                          <item>
                           <property name="text">
                            <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
                           </property>
                          </item>
                          <item>
@@ -1583,7 +1603,17 @@
                          </item>
                          <item>
                           <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
                            <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
                           </property>
                          </item>
                          <item>
@@ -1679,11 +1709,16 @@
                        <item row="0" column="1">
                         <widget class="QComboBox" name="advOutTrack2Bitrate">
                          <property name="currentIndex">
-                          <number>4</number>
+                          <number>8</number>
                          </property>
                          <item>
                           <property name="text">
                            <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
                           </property>
                          </item>
                          <item>
@@ -1693,7 +1728,17 @@
                          </item>
                          <item>
                           <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
                            <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
                           </property>
                          </item>
                          <item>
@@ -1773,11 +1818,16 @@
                        <item row="0" column="1">
                         <widget class="QComboBox" name="advOutTrack3Bitrate">
                          <property name="currentIndex">
-                          <number>4</number>
+                          <number>8</number>
                          </property>
                          <item>
                           <property name="text">
                            <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
                           </property>
                          </item>
                          <item>
@@ -1787,7 +1837,17 @@
                          </item>
                          <item>
                           <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
                            <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
                           </property>
                          </item>
                          <item>
@@ -1867,11 +1927,16 @@
                        <item row="0" column="1">
                         <widget class="QComboBox" name="advOutTrack4Bitrate">
                          <property name="currentIndex">
-                          <number>4</number>
+                          <number>8</number>
                          </property>
                          <item>
                           <property name="text">
                            <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
                           </property>
                          </item>
                          <item>
@@ -1881,7 +1946,17 @@
                          </item>
                          <item>
                           <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
                            <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
                           </property>
                          </item>
                          <item>
