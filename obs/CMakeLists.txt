@@ -126,6 +126,7 @@ set(obs_SOURCES
 	hotkey-edit.cpp
 	source-label.cpp
 	remote-text.cpp
+	audio-encoders.cpp
 	qt-wrappers.cpp)
 
 set(obs_HEADERS
@@ -166,6 +167,7 @@ set(obs_HEADERS
 	hotkey-edit.hpp
 	source-label.hpp
 	remote-text.hpp
+	audio-encoders.hpp
 	qt-wrappers.hpp)
 
 set(obs_UI
