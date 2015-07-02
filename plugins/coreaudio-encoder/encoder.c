@@ -901,6 +901,7 @@ static struct obs_encoder_info aac_info = {
 	.get_audio_info = aac_audio_info,
 	.get_extra_data = aac_extra_data,
 	.get_defaults = aac_defaults,
+	.get_properties = aac_properties,
 };
 
 OBS_DECLARE_MODULE()
