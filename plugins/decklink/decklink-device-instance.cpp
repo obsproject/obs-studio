@@ -126,14 +126,23 @@ bool DeckLinkDeviceInstance::StopCapture(void)
 	return true;
 }
 
+#define TIME_BASE 1000000000
+
 HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFrameArrived(
 		IDeckLinkVideoInputFrame *videoFrame,
 		IDeckLinkAudioInputPacket *audioPacket)
 {
-	const uint64_t timestamp = os_gettime_ns();
+	BMDTimeValue videoTS = 0;
+	BMDTimeValue videoDur = 0;
+	BMDTimeValue audioTS = 0;
 
-	HandleVideoFrame(videoFrame, timestamp);
-	HandleAudioPacket(audioPacket, timestamp);
+	videoFrame->GetStreamTime(&videoTS, &videoDur, TIME_BASE);
+	audioPacket->GetPacketTime(&audioTS, TIME_BASE);
+
+	if (videoTS >= 0)
+		HandleVideoFrame(videoFrame, (uint64_t)videoTS);
+	if (audioTS >= 0)
+		HandleAudioPacket(audioPacket, (uint64_t)audioTS);
 
 	return S_OK;
 }
