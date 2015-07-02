@@ -1919,6 +1919,48 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	}
 }
 
+void OBSBasic::CloseDialogs()
+{
+	QList<QDialog*> childDialogs = this->findChildren<QDialog *>();
+	if (!childDialogs.isEmpty()) {
+		for (int i = 0; i < childDialogs.size(); ++i) {
+			childDialogs.at(i)->close();
+		}
+	}
+
+	for (QPointer<QWidget> &projector : projectors) {
+		delete projector;
+		projector.clear();
+	}
+}
+
+void OBSBasic::ClearSceneData()
+{
+	CloseDialogs();
+
+	ClearVolumeControls();
+	ClearListItems(ui->scenes);
+	ClearListItems(ui->sources);
+
+	obs_set_output_source(0, nullptr);
+	obs_set_output_source(1, nullptr);
+	obs_set_output_source(2, nullptr);
+	obs_set_output_source(3, nullptr);
+	obs_set_output_source(4, nullptr);
+	obs_set_output_source(5, nullptr);
+
+	auto cb = [](void *unused, obs_source_t *source)
+	{
+		obs_source_remove(source);
+		UNUSED_PARAMETER(unused);
+		return true;
+	};
+
+	obs_enum_sources(cb, nullptr);
+
+	sourceSceneRefs.clear();
+}
+
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
 	if (outputHandler && outputHandler->Active()) {
@@ -1943,21 +1985,6 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
-	/* Check all child dialogs and ensure they run their proper closeEvent
-	 * methods before exiting the application.  Otherwise Qt doesn't send
-	 * the proper QCloseEvent messages. */
-	QList<QDialog*> childDialogs = this->findChildren<QDialog *>();
-	if (!childDialogs.isEmpty()) {
-		for (int i = 0; i < childDialogs.size(); ++i) {
-			childDialogs.at(i)->close();
-		}
-	}
-
-	for (QPointer<QWidget> &projector : projectors) {
-		delete projector;
-		projector.clear();
-	}
-
 	// remove draw callback in case our drawable surfaces go away before
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
@@ -1967,16 +1994,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	delete saveTimer;
 	SaveProject();
 
-	/* Clear the list boxes in ::closeEvent to ensure that we can process
-	 * any ->deleteLater events in this window created by Qt in relation to
-	 * their internal data */
-	ClearVolumeControls();
-
-	QListWidgetItem *item = nullptr;
-	while ((item = ui->scenes->takeItem(0)))
-		delete item;
-
-	ClearListItems(ui->sources);
+	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
+	 * sources, etc) so that all references are released before shutdown */
+	ClearSceneData();
 }
 
 void OBSBasic::changeEvent(QEvent *event)

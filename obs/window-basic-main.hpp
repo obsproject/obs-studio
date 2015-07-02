@@ -161,6 +161,9 @@ private:
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
 
+	void CloseDialogs();
+	void ClearSceneData();
+
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor);
 
