@@ -1,5 +1,6 @@
 #include <string>
 #include <QMessageBox>
+#include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 
@@ -46,26 +47,28 @@ static void OBSStopRecording(void *data, calldata_t *params)
 
 /* ------------------------------------------------------------------------ */
 
-static OBSEncoder CreateAACEncoder(const char *name, size_t idx)
+static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
+		const char *name, size_t idx)
 {
-	static const char *encoders[] = {
-		"CoreAudio_AAC",
-		"libfdk_aac",
-		"ffmpeg_aac"
-	};
-
-	OBSEncoder result;
-
-	for (const char *encoder : encoders) {
-		result =  obs_audio_encoder_create(encoder, name, nullptr, idx,
-				nullptr);
-		if (result) {
-			obs_encoder_release(result);
-			break;
-		}
+	const char *id_ = GetAACEncoderForBitrate(bitrate);
+	if (!id_) {
+		id.clear();
+		res = nullptr;
+		return false;
 	}
 
-	return result;
+	if (id == id_)
+		return true;
+
+	id = id_;
+	res = obs_audio_encoder_create(id_, name, nullptr, idx, nullptr);
+
+	if (res) {
+		obs_encoder_release(res);
+		return true;
+	}
+
+	return false;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -73,6 +76,8 @@ static OBSEncoder CreateAACEncoder(const char *name, size_t idx)
 struct SimpleOutput : BasicOutputHandler {
 	OBSEncoder             aac;
 	OBSEncoder             h264;
+
+	string                 aacEncoderID;
 
 	SimpleOutput(OBSBasic *main_);
 
@@ -109,8 +114,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create h264 encoder (simple output)";
 	obs_encoder_release(h264);
 
-	aac = CreateAACEncoder("simple_aac", 0);
-	if (!aac)
+	if (!CreateAACEncoder(aac, aacEncoderID, GetAudioBitrate(),
+				"simple_aac", 0))
 		throw "Failed to create audio encoder (simple output)";
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
@@ -296,6 +301,8 @@ struct AdvancedOutput : BasicOutputHandler {
 	bool                   ffmpegRecording;
 	bool                   useStreamEncoder;
 
+	string                 aacEncoderID[4];
+
 	AdvancedOutput(OBSBasic *main_);
 
 	inline void UpdateStreamSettings();
@@ -393,8 +400,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		char name[9];
 		sprintf(name, "adv_aac%d", i);
 
-		aacTrack[i] = CreateAACEncoder(name, i);
-		if (!aacTrack[i])
+		if (!CreateAACEncoder(aacTrack[i], aacEncoderID[i],
+					GetAudioBitrate(i), name, i))
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
 	}
