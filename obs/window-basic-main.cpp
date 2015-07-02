@@ -348,6 +348,8 @@ void OBSBasic::CreateDefaultScene()
 	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
 	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
 
+	ClearSceneData();
+
 	obs_scene_t  *scene  = obs_scene_create(Str("Basic.Scene"));
 	obs_source_t *source = obs_scene_get_source(scene);
 
@@ -417,6 +419,8 @@ void OBSBasic::Load(const char *file)
 		SaveProject();
 		return;
 	}
+
+	ClearSceneData();
 
 	obs_data_t       *data       = obs_data_create_from_json(jsonData);
 	obs_data_array_t *sceneOrder = obs_data_get_array(data, "scene_order");
