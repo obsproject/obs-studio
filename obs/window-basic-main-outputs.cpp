@@ -79,6 +79,7 @@ struct SimpleOutput : BasicOutputHandler {
 	virtual void Update() override;
 
 	void SetupOutputs();
+	int GetAudioBitrate() const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
@@ -123,6 +124,11 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"stop", OBSStopRecording, this);
 }
 
+int SimpleOutput::GetAudioBitrate() const
+{
+	return config_get_uint(main->Config(), "SimpleOutput", "ABitrate");
+}
+
 void SimpleOutput::Update()
 {
 	obs_data_t *h264Settings = obs_data_create();
@@ -132,8 +138,7 @@ void SimpleOutput::Update()
 			"VBitrate");
 	int videoBufsize = config_get_uint(main->Config(), "SimpleOutput",
 			"VBufsize");
-	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
-			"ABitrate");
+	int audioBitrate = GetAudioBitrate();
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
 	bool useCBR = config_get_bool(main->Config(), "SimpleOutput",
@@ -302,6 +307,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void SetupRecording();
 	inline void SetupFFmpeg();
 	void SetupOutputs();
+	int GetAudioBitrate(size_t i) const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
@@ -590,14 +596,6 @@ static inline void SetEncoderName(obs_encoder_t *encoder, const char *name,
 
 inline void AdvancedOutput::UpdateAudioSettings()
 {
-	int track1Bitrate = config_get_uint(main->Config(), "AdvOut",
-			"Track1Bitrate");
-	int track2Bitrate = config_get_uint(main->Config(), "AdvOut",
-			"Track2Bitrate");
-	int track3Bitrate = config_get_uint(main->Config(), "AdvOut",
-			"Track3Bitrate");
-	int track4Bitrate = config_get_uint(main->Config(), "AdvOut",
-			"Track4Bitrate");
 	const char *name1 = config_get_string(main->Config(), "AdvOut",
 			"Track1Name");
 	const char *name2 = config_get_string(main->Config(), "AdvOut",
@@ -612,13 +610,10 @@ inline void AdvancedOutput::UpdateAudioSettings()
 			"TrackIndex");
 	obs_data_t *settings[4];
 
-	for (size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < 4; i++) {
 		settings[i] = obs_data_create();
-
-	obs_data_set_int(settings[0], "bitrate", track1Bitrate);
-	obs_data_set_int(settings[1], "bitrate", track2Bitrate);
-	obs_data_set_int(settings[2], "bitrate", track3Bitrate);
-	obs_data_set_int(settings[3], "bitrate", track4Bitrate);
+		obs_data_set_int(settings[i], "bitrate", GetAudioBitrate(i));
+	}
 
 	SetEncoderName(aacTrack[0], name1, "Track1");
 	SetEncoderName(aacTrack[1], name2, "Track2");
@@ -651,6 +646,15 @@ void AdvancedOutput::SetupOutputs()
 		SetupFFmpeg();
 	else
 		SetupRecording();
+}
+
+int AdvancedOutput::GetAudioBitrate(size_t i) const
+{
+	const char *names[] = {
+		"Track1Bitrate", "Track2Bitrate",
+		"Track3Bitrate", "Track4Bitrate",
+	};
+	return config_get_uint(main->Config(), "AdvOut", names[i]);
 }
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
