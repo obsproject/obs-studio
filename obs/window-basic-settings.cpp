@@ -19,6 +19,7 @@
 #include <obs.hpp>
 #include <util/util.hpp>
 #include <util/lexer.h>
+#include <initializer_list>
 #include <sstream>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -30,6 +31,7 @@
 #include <QStandardItemModel>
 #include <QSpacerItem>
 
+#include "audio-encoders.hpp"
 #include "hotkey-edit.hpp"
 #include "source-label.hpp"
 #include "obs-app.hpp"
@@ -190,6 +192,31 @@ void OBSBasicSettings::ToggleDisableAero(bool checked)
 }
 #endif
 
+static void PopulateAACBitrates(initializer_list<QComboBox*> boxes)
+{
+	auto &bitrateMap = GetAACEncoderBitrateMap();
+	if (bitrateMap.empty())
+		return;
+
+	vector<pair<QString, QString>> pairs;
+	for (auto &entry : bitrateMap)
+		pairs.emplace_back(QString::number(entry.first),
+				obs_encoder_get_display_name(entry.second));
+
+	for (auto box : boxes) {
+		QString currentText = box->currentText();
+		box->clear();
+
+		for (auto &pair : pairs) {
+			box->addItem(pair.first);
+			box->setItemData(box->count() - 1, pair.second,
+					Qt::ToolTipRole);
+		}
+
+		box->setCurrentText(currentText);
+	}
+}
+
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 		const char *slot)
 {
@@ -222,6 +249,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	string path;
 
 	ui->setupUi(this);
+
+	PopulateAACBitrates({ui->simpleOutputABitrate,
+			ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+			ui->advOutTrack3Bitrate, ui->advOutTrack3Bitrate});
 
 	ui->listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 
