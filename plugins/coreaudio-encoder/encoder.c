@@ -869,6 +869,7 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
 				helper.bitrates.array[i]/1000);
 	}
 	dstr_free(&str);
+	da_free(helper.bitrates);
 }
 
 static obs_properties_t *aac_properties(void *data)
