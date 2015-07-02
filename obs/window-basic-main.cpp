@@ -414,6 +414,7 @@ void OBSBasic::Load(const char *file)
 	BPtr<char> jsonData = os_quick_read_utf8_file(file);
 	if (!jsonData) {
 		CreateDefaultScene();
+		SaveProject();
 		return;
 	}
 
