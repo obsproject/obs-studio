@@ -165,7 +165,8 @@ static void config_parse_section(struct config_section *section,
 		strref_clear(&value);
 		config_parse_string(lex, &value, 0);
 
-		config_add_item(&section->items, &name, &value);
+		if (!strref_is_empty(&value))
+			config_add_item(&section->items, &name, &value);
 	}
 }
 
