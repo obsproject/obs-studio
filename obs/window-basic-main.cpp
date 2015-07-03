@@ -545,6 +545,21 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = monitors[0].cx;
 	uint32_t cy = monitors[0].cy;
 
+	/* ----------------------------------------------------- */
+	/* move over mixer values in advanced if older config */
+	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "RecTracks")) {
+
+		uint64_t track = config_get_uint(basicConfig, "AdvOut",
+				"RecTrackIndex");
+		track = 1ULL << (track - 1);
+		config_set_uint(basicConfig, "AdvOut", "RecTracks", track);
+		config_remove_value(basicConfig, "AdvOut", "RecTrackIndex");
+		config_save(basicConfig);
+	}
+
+	/* ----------------------------------------------------- */
+
 	config_set_default_string(basicConfig, "Output", "Mode", "Simple");
 
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
