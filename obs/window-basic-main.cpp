@@ -531,6 +531,22 @@ bool OBSBasic::InitService()
 	return true;
 }
 
+static const double scaled_vals[] =
+{
+	1.0,
+	1.25,
+	(1.0/0.75),
+	1.5,
+	(1.0/0.6),
+	1.75,
+	2.0,
+	2.25,
+	2.5,
+	2.75,
+	3.0,
+	0.0
+};
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
 	vector<MonitorInfo> monitors;
@@ -618,10 +634,20 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
 
-	cx = cx * 10 / 15;
-	cy = cy * 10 / 15;
-	config_set_default_uint  (basicConfig, "Video", "OutputCX", cx);
-	config_set_default_uint  (basicConfig, "Video", "OutputCY", cy);
+	int i = 0;
+	uint32_t scale_cx = cx;
+	uint32_t scale_cy = cy;
+
+	/* use a default scaled resolution that has a pixel count no higher
+	 * than 1280x720 */
+	while (((scale_cx * scale_cy) > (1280 * 720)) && scaled_vals[i] > 0.0) {
+		double scale = scaled_vals[i++];
+		scale_cx = uint32_t(double(cx) / scale);
+		scale_cy = uint32_t(double(cy) / scale);
+	}
+
+	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
+	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
 
 	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
 	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
