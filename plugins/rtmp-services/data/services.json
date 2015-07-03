@@ -200,6 +200,15 @@
         }
     },
     {
+        "name": "Livecoding.tv",
+        "servers": [
+            {
+                "name": "Primary",
+                "url": "rtmp://usmedia3.livecoding.tv/livecodingtv"
+            }
+        ]
+    },
+    {
         "name": "Vaughn Live / iNSTAGIB.tv",
         "servers": [
             {
@@ -230,6 +239,56 @@
             {
                 "name": "Primary",
                 "url": "rtmp://publish.dailymotion.com/publish-dm"
+            }
+        ]
+    },
+    {
+        "name": "Gaminglive.tv",
+        "servers": [
+            {
+                "name": "North America",
+                "url": "rtmp://broadcastNA.gaminglive.tv/push"
+            },
+            {
+                "name": "Europe",
+                "url": "rtmp://broadcastEU.gaminglive.tv/push"
+            },
+            {
+                "name": "Asia",
+                "url": "rtmp://broadcastAS.gaminglive.tv/push"
+            }
+        ]
+    },
+    {
+        "name": "Beam.pro",
+        "servers": [
+            {
+                "name": "US: Dallas, TX",
+                "url": "rtmp://ingest.dal07.beam.pro/beam"
+            },
+            {
+                "name": "US: San Jose, CA",
+                "url": "rtmp://ingest.sjc01.beam.pro/beam"
+            },
+            {
+                "name": "US: Washington DC",
+                "url": "rtmp://ingest.wdc01.beam.pro/beam"
+            },
+            {
+                "name": "Canada: Toronto",
+                "url": "rtmp://ingest.tor01.beam.pro/beam"
+            },
+            {
+                "name": "EU: London",
+                "url": "rtmp://ingest.lon02.beam.pro/beam"
+            },
+            {
+                "name": "EU: Amsterdam",
+                "url": "rtmp://ingest.ams01.beam.pro/beam"
+            },
+            {
+                "name": "Australia: Melbourne",
+                "url": "rtmp://ingest.mel01.beam.pro/beam"
             }
         ]
     },
