@@ -356,6 +356,9 @@ private slots:
 	void on_actionRenameProfile_triggered();
 	void on_actionRemoveProfile_triggered();
 
+	void on_actionShowSettingsFolder_triggered();
+	void on_actionShowProfileFolder_triggered();
+
 	void logUploadFinished(const QString &text, const QString &error);
 
 	void updateFileFinished(const QString &text, const QString &error);

@@ -570,6 +570,8 @@
     <addaction name="actionRemux"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
+    <addaction name="actionShowSettingsFolder"/>
+    <addaction name="actionShowProfileFolder"/>
     <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
@@ -992,6 +994,16 @@
   <action name="actionRemoveProfile">
    <property name="text">
     <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionShowSettingsFolder">
+   <property name="text">
+    <string>Basic.MainMenu.File.ShowSettingsFolder</string>
+   </property>
+  </action>
+  <action name="actionShowProfileFolder">
+   <property name="text">
+    <string>Basic.MainMenu.File.ShowProfileFolder</string>
    </property>
   </action>
  </widget>

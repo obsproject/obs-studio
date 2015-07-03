@@ -3040,6 +3040,26 @@ void OBSBasic::on_actionWebsite_triggered()
 	QDesktopServices::openUrl(url);
 }
 
+void OBSBasic::on_actionShowSettingsFolder_triggered()
+{
+	char path[512];
+	int ret = GetConfigPath(path, 512, "obs-studio");
+	if (ret <= 0)
+		return;
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void OBSBasic::on_actionShowProfileFolder_triggered()
+{
+	char path[512];
+	int ret = GetProfilePath(path, 512, "");
+	if (ret <= 0)
+		return;
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 {
 	CreateSourcePopupMenu(ui->sources->currentItem(), true);
