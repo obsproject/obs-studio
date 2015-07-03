@@ -215,7 +215,8 @@ static void obs_source_hotkey_push_to_talk(void *data,
 
 static void obs_source_init_audio_hotkeys(struct obs_source *source)
 {
-	if (!(source->info.output_flags & OBS_SOURCE_AUDIO)) {
+	if (!(source->info.output_flags & OBS_SOURCE_AUDIO) ||
+	    source->info.type != OBS_SOURCE_TYPE_INPUT) {
 		source->mute_unmute_key  = OBS_INVALID_HOTKEY_ID;
 		source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 		return;
