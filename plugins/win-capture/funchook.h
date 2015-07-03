@@ -22,11 +22,13 @@ struct func_hook {
 
 	uintptr_t              func_addr;       /* function being hooked to */
 	uintptr_t              hook_addr;       /* hook function itself */
+	void                   *bounce_addr;
 	const char             *name;
 	enum hook_type         type;
 	bool                   is_64bit_jump;
 	bool                   hooked;
 	bool                   started;
+	bool                   attempted_bounce;
 	uint8_t                unhook_data[14];
 	uint8_t                rehook_data[14];
 };
