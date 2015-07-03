@@ -590,9 +590,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
 	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
-	config_set_default_bool  (basicConfig, "AdvOut", "Multitrack", false);
 	config_set_default_uint  (basicConfig, "AdvOut", "TrackIndex", 1);
-	config_set_default_uint  (basicConfig, "AdvOut", "TrackCount", 1);
 	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
 
 	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
@@ -601,8 +599,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "flv");
 	config_set_default_bool  (basicConfig, "AdvOut", "RecUseRescale",
-			false);
-	config_set_default_bool  (basicConfig, "AdvOut", "RecMultitrack",
 			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "RecTracks", (1<<0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder",
