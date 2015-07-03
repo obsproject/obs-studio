@@ -40,7 +40,5 @@ void ClearListItems(QListWidget *widget)
 	for (int i = 0; i < widget->count(); i++)
 		delete widget->itemWidget(widget->item(i));
 
-	QListWidgetItem *item = nullptr;
-	while ((item = widget->takeItem(0)))
-		delete item;
+	widget->clear();
 }
