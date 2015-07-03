@@ -609,6 +609,35 @@ double config_get_double(const config_t *config, const char *section,
 	return 0.0;
 }
 
+bool config_remove_value(config_t *config, const char *section,
+		const char *name)
+{
+	struct darray *sections = &config->sections;
+
+	for (size_t i = 0; i < sections->num; i++) {
+		struct config_section *sec = darray_item(
+				sizeof(struct config_section), sections, i);
+
+		if (astrcmpi(sec->name, section) != 0)
+			continue;
+
+		for (size_t j = 0; j < sec->items.num; j++) {
+			struct config_item *item = darray_item(
+					sizeof(struct config_item),
+					&sec->items, j);
+
+			if (astrcmpi(item->name, name) == 0) {
+				config_item_free(item);
+				darray_erase(sizeof(struct config_item),
+						&sec->items, j);
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 const char *config_get_default_string(const config_t *config,
 		const char *section, const char *name)
 {
