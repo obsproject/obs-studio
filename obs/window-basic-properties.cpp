@@ -32,7 +32,6 @@ using namespace std;
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog                (parent),
 	  main                   (qobject_cast<OBSBasic*>(parent)),
-	  resizeTimer            (0),
 	  acceptClicked          (false),
 	  ui                     (new Ui::OBSBasicProperties),
 	  source                 (source_),
@@ -84,9 +83,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			this, SLOT(OnPropertiesResized()));
 
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
-		if (resizeTimer)
-			killTimer(resizeTimer);
-		resizeTimer = startTimer(100);
+		QSize size = GetPixelSize(ui->preview);
+		obs_display_resize(display, size.width(), size.height());
 	});
 
 	const char *name = obs_source_get_name(source);
@@ -188,31 +186,18 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 void OBSBasicProperties::OnPropertiesResized()
 {
-	if (resizeTimer)
-		killTimer(resizeTimer);
-	resizeTimer = startTimer(100);
+	QSize size = GetPixelSize(ui->preview);
+	obs_display_resize(display, size.width(), size.height());
 }
 
 void OBSBasicProperties::resizeEvent(QResizeEvent *event)
 {
 	if (isVisible()) {
-		if (resizeTimer)
-			killTimer(resizeTimer);
-		resizeTimer = startTimer(100);
-	}
-
-	QDialog::resizeEvent(event);
-}
-
-void OBSBasicProperties::timerEvent(QTimerEvent *event)
-{
-	if (event->timerId() == resizeTimer) {
-		killTimer(resizeTimer);
-		resizeTimer = 0;
-
 		QSize size = GetPixelSize(ui->preview);
 		obs_display_resize(display, size.width(), size.height());
 	}
+
+	QDialog::resizeEvent(event);
 }
 
 void OBSBasicProperties::Cleanup()

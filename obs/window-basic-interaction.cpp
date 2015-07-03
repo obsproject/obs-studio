@@ -31,7 +31,6 @@ using namespace std;
 OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	: QDialog       (parent),
 	  main          (qobject_cast<OBSBasic*>(parent)),
-	  resizeTimer   (0),
 	  ui            (new Ui::OBSBasicInteraction),
 	  source        (source_),
 	  removedSignal (obs_source_get_signal_handler(source), "remove",
@@ -58,9 +57,8 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	obs_data_release(settings);
 
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
-		if (resizeTimer)
-			killTimer(resizeTimer);
-		resizeTimer = startTimer(100);
+		QSize size = GetPixelSize(ui->preview);
+		obs_display_resize(display, size.width(), size.height());
 	});
 
 	const char *name = obs_source_get_name(source);
@@ -159,31 +157,18 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 void OBSBasicInteraction::OnInteractionResized()
 {
-	if (resizeTimer)
-		killTimer(resizeTimer);
-	resizeTimer = startTimer(100);
+	QSize size = GetPixelSize(ui->preview);
+	obs_display_resize(display, size.width(), size.height());
 }
 
 void OBSBasicInteraction::resizeEvent(QResizeEvent *event)
 {
 	if (isVisible()) {
-		if (resizeTimer)
-			killTimer(resizeTimer);
-		resizeTimer = startTimer(100);
-	}
-
-	UNUSED_PARAMETER(event);
-}
-
-void OBSBasicInteraction::timerEvent(QTimerEvent *event)
-{
-	if (event->timerId() == resizeTimer) {
-		killTimer(resizeTimer);
-		resizeTimer = 0;
-
 		QSize size = GetPixelSize(ui->preview);
 		obs_display_resize(display, size.width(), size.height());
 	}
+
+	QDialog::resizeEvent(event);
 }
 
 void OBSBasicInteraction::closeEvent(QCloseEvent *event)

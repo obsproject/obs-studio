@@ -395,9 +395,8 @@ void OBSBasicFilters::AddFilterFromAction()
 
 void OBSBasicFilters::OnPreviewResized()
 {
-	if (resizeTimer)
-		killTimer(resizeTimer);
-	resizeTimer = startTimer(100);
+	QSize size = GetPixelSize(ui->preview);
+	obs_display_resize(display, size.width(), size.height());
 }
 
 void OBSBasicFilters::closeEvent(QCloseEvent *event)
@@ -413,17 +412,6 @@ void OBSBasicFilters::closeEvent(QCloseEvent *event)
 	display = nullptr;
 
 	main->SaveProject();
-}
-
-void OBSBasicFilters::timerEvent(QTimerEvent *event)
-{
-	if (event->timerId() == resizeTimer) {
-		killTimer(resizeTimer);
-		resizeTimer = 0;
-
-		QSize size = GetPixelSize(ui->preview);
-		obs_display_resize(display, size.width(), size.height());
-	}
 }
 
 /* OBS Signals */

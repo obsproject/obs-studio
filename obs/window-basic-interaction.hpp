@@ -36,7 +36,6 @@ class OBSBasicInteraction : public QDialog {
 
 private:
 	OBSBasic   *main;
-	int        resizeTimer;
 
 	std::unique_ptr<Ui::OBSBasicInteraction> ui;
 	OBSSource  source;
@@ -70,7 +69,6 @@ public:
 
 protected:
 	virtual void resizeEvent(QResizeEvent *event) override;
-	virtual void timerEvent(QTimerEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;
 };
 

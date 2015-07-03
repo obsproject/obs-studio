@@ -1956,9 +1956,8 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	previewY += float(PREVIEW_EDGE_SIZE);
 
 	if (isVisible()) {
-		if (resizeTimer)
-			killTimer(resizeTimer);
-		resizeTimer = startTimer(100);
+		QSize size = GetPixelSize(ui->preview);
+		obs_resize(size.width(), size.height());
 	}
 }
 
@@ -2057,18 +2056,7 @@ void OBSBasic::resizeEvent(QResizeEvent *event)
 	if (obs_get_video_info(&ovi))
 		ResizePreview(ovi.base_width, ovi.base_height);
 
-	UNUSED_PARAMETER(event);
-}
-
-void OBSBasic::timerEvent(QTimerEvent *event)
-{
-	if (event->timerId() == resizeTimer) {
-		killTimer(resizeTimer);
-		resizeTimer = 0;
-
-		QSize size = GetPixelSize(ui->preview);
-		obs_resize(size.width(), size.height());
-	}
+	OBSMainWindow::resizeEvent(event);
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()

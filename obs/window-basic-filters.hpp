@@ -36,7 +36,6 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicFilters> ui;
-	int resizeTimer = 0;
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
 
@@ -110,5 +109,4 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-	virtual void timerEvent(QTimerEvent *event) override;
 };

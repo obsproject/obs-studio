@@ -100,7 +100,6 @@ private:
 	int           previewX = 0,  previewY = 0;
 	int           previewCX = 0, previewCY = 0;
 	float         previewScale = 0.0f;
-	int           resizeTimer = 0;
 
 	ConfigFile    basicConfig;
 
@@ -275,7 +274,6 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
-	virtual void timerEvent(QTimerEvent *event) override;
 
 private slots:
 	void on_actionShow_Recordings_triggered();
