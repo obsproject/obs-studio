@@ -33,7 +33,7 @@ struct aac_encoder {
 
 	uint8_t          *samples[MAX_AV_PLANES];
 	AVFrame          *aframe;
-	int              total_samples;
+	int64_t          total_samples;
 
 	DARRAY(uint8_t)  packet_buffer;
 

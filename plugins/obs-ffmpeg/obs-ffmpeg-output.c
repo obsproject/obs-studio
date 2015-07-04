@@ -57,13 +57,14 @@ struct ffmpeg_data {
 	AVFormatContext    *output;
 	struct SwsContext  *swscale;
 
+	int64_t            total_frames;
 	AVPicture          dst_picture;
 	AVFrame            *vframe;
 	int                frame_size;
-	int                total_frames;
 
 	uint64_t           start_timestamp;
 
+	int64_t            total_samples;
 	uint32_t           audio_samplerate;
 	enum audio_format  audio_format;
 	size_t             audio_planes;
@@ -71,7 +72,6 @@ struct ffmpeg_data {
 	struct circlebuf   excess_frames[MAX_AV_PLANES];
 	uint8_t            *samples[MAX_AV_PLANES];
 	AVFrame            *aframe;
-	int                total_samples;
 
 	struct ffmpeg_cfg  config;
 
