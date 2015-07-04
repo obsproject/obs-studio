@@ -112,14 +112,14 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!aac)
 		throw "Failed to create audio encoder (simple output)";
 
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
+	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
+	stopStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"stop", OBSStopStreaming, this);
 
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
+	startRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"start", OBSStartRecording, this);
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
+	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
 }
 
@@ -393,14 +393,14 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			      "(advanced output)";
 	}
 
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
+	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
-	signal_handler_connect(obs_output_get_signal_handler(streamOutput),
+	stopStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"stop", OBSStopStreaming, this);
 
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
+	startRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"start", OBSStartRecording, this);
-	signal_handler_connect(obs_output_get_signal_handler(fileOutput),
+	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
 }
 

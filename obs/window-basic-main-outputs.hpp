@@ -8,6 +8,11 @@ struct BasicOutputHandler {
 	int                    activeRefs = 0;
 	OBSBasic               *main;
 
+	OBSSignal              startRecording;
+	OBSSignal              stopRecording;
+	OBSSignal              startStreaming;
+	OBSSignal              stopStreaming;
+
 	inline BasicOutputHandler(OBSBasic *main_) : main(main_) {}
 
 	virtual ~BasicOutputHandler() {};
