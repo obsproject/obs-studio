@@ -270,6 +270,8 @@ public:
 
 	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
 
+	void UpdateTitleBar();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;

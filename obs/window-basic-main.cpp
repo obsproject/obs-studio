@@ -150,13 +150,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ResizePreview(ovi.base_width, ovi.base_height);
 	});
 
-	stringstream name;
-	name << "OBS " << App()->GetVersionString();
-
 	installEventFilter(CreateShortcutFilter());
 
-	blog(LOG_INFO, "%s", name.str().c_str());
-	setWindowTitle(QT_UTF8(name.str().c_str()));
+	UpdateTitleBar();
 
 	connect(ui->scenes->itemDelegate(),
 			SIGNAL(closeEditor(QWidget*,
@@ -3384,4 +3380,14 @@ void OBSBasic::OpenSceneProjector()
 		return;
 
 	OpenProjector(obs_scene_get_source(scene), monitor);
+}
+
+void OBSBasic::UpdateTitleBar()
+{
+	stringstream name;
+
+	name << "OBS " << App()->GetVersionString();
+
+	blog(LOG_INFO, "%s", name.str().c_str());
+	setWindowTitle(QT_UTF8(name.str().c_str()));
 }
