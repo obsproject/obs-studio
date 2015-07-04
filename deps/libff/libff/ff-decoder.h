@@ -46,6 +46,7 @@ struct ff_decoder {
 	double predicted_pts;      // predicted pts of next frame
 	double current_pts;        // pts of the most recently dispatched frame
 	int64_t current_pts_time;  // clock time when current_pts was set
+	int64_t start_pts;
 
 	bool hwaccel_decoder;
 	enum AVDiscard frame_drop;

@@ -380,12 +380,21 @@ static bool open_input(struct ff_demuxer *demuxer,
 	return avformat_find_stream_info(*format_context, NULL) >= 0;
 }
 
+static inline void set_decoder_start_time(struct ff_decoder *decoder,
+		int64_t start_time)
+{
+	if (decoder)
+		decoder->start_pts = av_rescale_q(start_time, AV_TIME_BASE_Q,
+				decoder->stream->time_base);
+}
+
 static bool find_and_initialize_stream_decoders(struct ff_demuxer *demuxer)
 {
 	AVFormatContext *format_context = demuxer->format_context;
 	unsigned int i;
 	AVStream *audio_stream = NULL;
 	AVStream *video_stream = NULL;
+	int64_t start_time = INT64_MAX;
 
 	for (i = 0; i < format_context->nb_streams; i++) {
 		AVCodecContext *codec = format_context->streams[i]->codec;
@@ -422,6 +431,32 @@ static bool find_and_initialize_stream_decoders(struct ff_demuxer *demuxer)
 
 	if (!set_clock_sync_type(demuxer)) {
 		return false;
+	}
+
+	for (i = 0; i < format_context->nb_streams; i++) {
+		AVStream *st = format_context->streams[i];
+		int64_t st_start_time;
+
+		if (st->discard == AVDISCARD_ALL ||
+		    st->start_time == AV_NOPTS_VALUE) {
+			continue;
+		}
+
+		st_start_time = av_rescale_q(st->start_time, st->time_base,
+				AV_TIME_BASE_Q);
+		start_time = FFMIN(start_time, st_start_time);
+	}
+
+	if (format_context->start_time != AV_NOPTS_VALUE) {
+		if (start_time > format_context->start_time ||
+		    start_time == INT64_MAX) {
+			start_time = format_context->start_time;
+		}
+	}
+
+	if (start_time != INT64_MAX) {
+		set_decoder_start_time(demuxer->video_decoder, start_time);
+		set_decoder_start_time(demuxer->audio_decoder, start_time);
 	}
 
 	if (demuxer->audio_decoder != NULL) {

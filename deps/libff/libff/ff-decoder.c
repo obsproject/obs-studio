@@ -50,6 +50,7 @@ struct ff_decoder *ff_decoder_init(AVCodecContext *codec_context,
 	decoder->timer_next_wake = (double)av_gettime() / 1000000.0;
 	decoder->previous_pts_diff = 40e-3;
 	decoder->current_pts_time = av_gettime();
+	decoder->start_pts = 0;
 	decoder->predicted_pts = 0;
 
 	success = ff_timer_init(&decoder->refresh_timer, ff_decoder_refresh,
@@ -308,6 +309,8 @@ double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 	best_effort_pts = av_frame_get_best_effort_timestamp(frame);
 
 	if (best_effort_pts != AV_NOPTS_VALUE) {
+		best_effort_pts -= decoder->start_pts;
+
 		// Since the best effort pts came from the stream we use his
 		// time base
 		d_pts = best_effort_pts * av_q2d(decoder->stream->time_base);
