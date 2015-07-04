@@ -206,7 +206,10 @@
                 "name": "Primary",
                 "url": "rtmp://usmedia3.livecoding.tv/livecodingtv"
             }
-        ]
+        ],
+        "recommended": {
+            "max video bitrate": 1300
+        }
     },
     {
         "name": "Vaughn Live / iNSTAGIB.tv",
