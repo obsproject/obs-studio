@@ -290,7 +290,10 @@
                 "name": "Australia: Melbourne",
                 "url": "rtmp://ingest.mel01.beam.pro/beam"
             }
-        ]
+        ],
+        "recommended": {
+            "max video bitrate": 3500
+        }
     },
     {
         "name": "connectcast.tv",
