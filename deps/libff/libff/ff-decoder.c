@@ -52,6 +52,7 @@ struct ff_decoder *ff_decoder_init(AVCodecContext *codec_context,
 	decoder->current_pts_time = av_gettime();
 	decoder->start_pts = 0;
 	decoder->predicted_pts = 0;
+	decoder->first_frame = true;
 
 	success = ff_timer_init(&decoder->refresh_timer, ff_decoder_refresh,
 			decoder);
@@ -195,6 +196,8 @@ void ff_decoder_refresh(void *opaque)
 		} else {
 			double pts_diff;
 			double delay_until_next_wake;
+			bool late_first_frame = false;
+
 			frame = ff_circular_queue_peek_read(
 					&decoder->frame_queue);
 
@@ -234,7 +237,15 @@ void ff_decoder_refresh(void *opaque)
 			// frame
 			pts_diff = frame->pts - decoder->previous_pts;
 
-			if (pts_diff <= 0) {
+			// if the first frame is a very large value, we've most
+			// likely started mid-stream, and the initial diff
+			// should be ignored.
+			if (decoder->first_frame) {
+				late_first_frame = pts_diff >= 1.0;
+				decoder->first_frame = false;
+			}
+
+			if (pts_diff <= 0 || late_first_frame) {
 				// if diff is invalid, use previous
 				pts_diff = decoder->previous_pts_diff;
 			}

@@ -53,6 +53,7 @@ struct ff_decoder {
 	struct ff_clock *clock;
 	enum ff_av_sync_type natural_sync_clock;
 
+	bool first_frame;
 	bool eof;
 	bool abort;
 };
