@@ -88,7 +88,8 @@ static const char *code_to_str(OSStatus code)
 	return NULL;
 }
 
-static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
+static void log_osstatus(int log_level, ca_encoder *ca, const char *context,
+		OSStatus code)
 {
 #ifndef _WIN32
 	CFErrorRef err  = CFErrorCreate(kCFAllocatorDefault,
@@ -102,20 +103,20 @@ static void log_osstatus(ca_encoder *ca, const char *context, OSStatus code)
 	char *c_str = malloc(max_size);
 	if (CFStringGetCString(str, c_str, max_size, kCFStringEncodingUTF8)) {
 		if (ca)
-			CA_BLOG(LOG_ERROR, "Error in %s: %s", context, c_str);
+			CA_BLOG(log_level, "Error in %s: %s", context, c_str);
 		else
-			CA_LOG(LOG_ERROR, "Error in %s: %s", context, c_str);
+			CA_LOG(log_level, "Error in %s: %s", context, c_str);
 	} else {
 #endif
 		const char *code_str = code_to_str(code);
 		if (ca)
-			CA_BLOG(LOG_ERROR, "Error in %s: %s%s%d%s", context,
+			CA_BLOG(log_level, "Error in %s: %s%s%d%s", context,
 					code_str ? code_str : "",
 					code_str ? " (" : "",
 					(int)code,
 					code_str ? ")" : "");
 		else
-			CA_LOG(LOG_ERROR, "Error in %s: %s%s%d%s", context,
+			CA_LOG(log_level, "Error in %s: %s%s%d%s", context,
 					code_str ? code_str : "",
 					code_str ? " (" : "",
 					(int)code,
@@ -199,7 +200,8 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 			kAudioConverterApplicableEncodeBitRates,
 			&size, NULL);
 	if (code) {
-		log_osstatus(ca, "AudioConverterGetPropertyInfo(bitrates)",
+		log_osstatus(LOG_ERROR, ca,
+				"AudioConverterGetPropertyInfo(bitrates)",
 				code);
 		return false;
 	}
@@ -220,7 +222,8 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 			kAudioConverterApplicableEncodeBitRates,
 			&size, bitrates);
 	if (code) {
-		log_osstatus(ca, "AudioConverterGetProperty(bitrates)", code);
+		log_osstatus(LOG_ERROR, ca,
+				"AudioConverterGetProperty(bitrates)", code);
 		return false;
 	}
 
@@ -268,7 +271,7 @@ static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
 #define STATUS_CHECK(c) \
 	code = c; \
 	if (code) { \
-		log_osstatus(ca, #c, code); \
+		log_osstatus(LOG_ERROR, ca, #c, code); \
 		return false; \
 	}
 
@@ -324,7 +327,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 #define STATUS_CHECK(c) \
 	code = c; \
 	if (code) { \
-		log_osstatus(ca, #c, code); \
+		log_osstatus(LOG_ERROR, ca, #c, code); \
 		goto free; \
 	}
 
@@ -447,7 +450,8 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 				kAudioConverterPropertyMaximumOutputPacketSize,
 				&size, &max_packet_size);
 		if (code) {
-			log_osstatus(ca, "AudioConverterGetProperty(PacketSz)",
+			log_osstatus(LOG_ERROR, ca,
+					"AudioConverterGetProperty(PacketSz)",
 					code);
 			ca->output_buffer_size = 32768;
 		} else {
@@ -540,7 +544,8 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 			complex_input_data_proc, ca, &packets,
 			&buffer_list, &out_desc);
 	if (code && code != 1) {
-		log_osstatus(ca, "AudioConverterFillComplexBuffer", code);
+		log_osstatus(LOG_ERROR, ca, "AudioConverterFillComplexBuffer",
+				code);
 		return false;
 	}
 
@@ -646,7 +651,8 @@ static void query_extra_data(ca_encoder *ca)
 			kAudioConverterCompressionMagicCookie,
 			&size, NULL);
 	if (code) {
-		log_osstatus(ca, "AudioConverterGetPropertyInfo(magic_cookie)",
+		log_osstatus(LOG_ERROR, ca,
+				"AudioConverterGetPropertyInfo(magic_cookie)",
 				code);
 		return;
 	}
@@ -662,7 +668,8 @@ static void query_extra_data(ca_encoder *ca)
 			kAudioConverterCompressionMagicCookie,
 			&size, extra_data);
 	if (code) {
-		log_osstatus(ca, "AudioConverterGetProperty(magic_cookie)",
+		log_osstatus(LOG_ERROR, ca,
+				"AudioConverterGetProperty(magic_cookie)",
 				code);
 		goto free;
 	}
@@ -728,14 +735,15 @@ static AudioConverterRef get_default_converter(UInt32 format_id)
 	OSStatus code = AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
 			0, NULL, &size, &out);
 	if (code) {
-		log_osstatus(NULL, "AudioFormatGetProperty(format_info)", code);
+		log_osstatus(LOG_ERROR, NULL,
+				"AudioFormatGetProperty(format_info)", code);
 		return NULL;
 	}
 
 	AudioConverterRef converter;
 	code = AudioConverterNew(&in, &out, &converter);
 	if (code) {
-		log_osstatus(NULL, "AudioConverterNew", code);
+		log_osstatus(LOG_ERROR, NULL, "AudioConverterNew", code);
 		return NULL;
 	}
 
