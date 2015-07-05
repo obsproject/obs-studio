@@ -1,9 +1,11 @@
 project(inject-helper)
 
 set(inject-helper_HEADERS
+	../inject-library.h
 	../obfuscate.h)
 
 set(inject-helper_SOURCES
+	../inject-library.c
 	../obfuscate.c
 	inject-helper.c)
 

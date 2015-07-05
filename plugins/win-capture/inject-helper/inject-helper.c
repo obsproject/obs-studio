@@ -1,8 +1,17 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
 #include <windows.h>
 #include <shellapi.h>
 #include <stdbool.h>
 #include "../obfuscate.h"
+#include "../inject-library.h"
+
+#if defined(_MSC_VER) && !defined(inline)
+#define inline __inline
+#endif
 
 static void load_debug_privilege(void)
 {
@@ -27,71 +36,88 @@ static void load_debug_privilege(void)
 	CloseHandle(token);
 }
 
-typedef HHOOK (WINAPI *set_windows_hook_ex_t)(int, HOOKPROC, HINSTANCE, DWORD);
-
-#define RETRY_INTERVAL_MS      500
-#define TOTAL_RETRY_TIME_MS    4000
-#define RETRY_COUNT            (TOTAL_RETRY_TIME_MS / RETRY_INTERVAL_MS)
-
-static int inject_library_safe(DWORD thread_id, const char *dll)
+static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
+		DWORD process_id)
 {
-	HMODULE user32 = GetModuleHandleW(L"USER32");
-	set_windows_hook_ex_t set_windows_hook_ex;
-	HMODULE lib = LoadLibraryA(dll);
-	LPVOID proc;
-	HHOOK hook;
-	size_t i;
+	HANDLE (WINAPI *open_process_proc)(DWORD, BOOL, DWORD);
+	open_process_proc = get_obfuscated_func(GetModuleHandleW(L"KERNEL32"),
+			"HxjcQrmkb|~", 0xc82efdf78201df87);
 
-	if (!lib || !user32) {
-		return -3;
-	}
-
-#ifdef _WIN64
-	proc = GetProcAddress(lib, "dummy_debug_proc");
-#else
-	proc = GetProcAddress(lib, "_dummy_debug_proc@12");
-#endif
-
-	if (!proc) {
-		return -4;
-	}
-
-	set_windows_hook_ex = get_obfuscated_func(user32, "[bs^fbkmwuKfmfOvI",
-			0xEAD293602FCF9778ULL);
-
-	hook = set_windows_hook_ex(WH_GETMESSAGE, proc, lib, thread_id);
-	if (!hook) {
-		return -5;
-	}
-
-	/* SetWindowsHookEx does not inject the library in to the target
-	 * process unless the event associated with it has occurred, so
-	 * repeatedly send the hook message to start the hook at small
-	 * intervals to signal to SetWindowsHookEx to process the message and
-	 * therefore inject the library in to the target process.  Repeating
-	 * this is mostly just a precaution. */
-
-	for (i = 0; i < RETRY_COUNT; i++) {
-		Sleep(RETRY_INTERVAL_MS);
-		PostThreadMessage(thread_id, WM_USER + 432, 0, (LPARAM)hook);
-	}
-	return 0;
+	return open_process_proc(desired_access, inherit_handle, process_id);
 }
 
-int main(int argc, char *argv[])
+static inline int inject_library(HANDLE process, const wchar_t *dll)
 {
-	DWORD thread_id;
+	return inject_library_obf(process, dll,
+			"E}mo|d[cefubWk~bgk", 0x7c3371986918e8f6,
+			"Rqbr`T{cnor{Bnlgwz", 0x81bf81adc9456b35,
+			"]`~wrl`KeghiCt", 0xadc6a7b9acd73c9b,
+			"Zh}{}agHzfd@{", 0x57135138eb08ff1c,
+			"DnafGhj}l~sX", 0x350bfacdf81b2018);
+}
+
+static inline int inject_library_safe(DWORD thread_id, const wchar_t *dll)
+{
+	return inject_library_safe_obf(thread_id, dll,
+			"[bs^fbkmwuKfmfOvI", 0xEAD293602FCF9778ULL);
+}
+
+static inline int inject_library_full(DWORD process_id, const wchar_t *dll)
+{
+	HANDLE process = open_process(PROCESS_ALL_ACCESS, false, process_id);
+	int ret;
+
+	if (process) {
+		ret = inject_library(process, dll);
+		CloseHandle(process);
+	} else {
+		ret = INJECT_ERROR_OPEN_PROCESS_FAIL;
+	}
+
+	return ret;
+}
+
+static int inject_helper(wchar_t *argv[], const wchar_t *dll)
+{
+	DWORD id;
+	DWORD use_safe_inject;
+
+	use_safe_inject = wcstol(argv[2], NULL, 10);
+
+	id = wcstol(argv[3], NULL, 10);
+	if (id == 0) {
+		return INJECT_ERROR_INVALID_PARAMS;
+	}
+
+	return use_safe_inject
+		? inject_library_safe(id, dll)
+		: inject_library_full(id, dll);
+}
+
+int main(int argc, char *argv_ansi[])
+{
+	wchar_t dll_path[MAX_PATH];
+	LPWSTR pCommandLineW;
+	LPWSTR *argv;
+	int ret = INJECT_ERROR_INVALID_PARAMS;
 
 	load_debug_privilege();
 
-	if (argc < 3) {
-		return -1;
+	pCommandLineW = GetCommandLineW();
+	argv = CommandLineToArgvW(pCommandLineW, &argc);
+	if (argv && argc == 4) {
+		DWORD size = GetModuleFileNameW(NULL,
+				dll_path, MAX_PATH);
+		if (size) {
+			wchar_t *name_start = wcsrchr(dll_path, '\\');
+			if (name_start) {
+				*(++name_start) = 0;
+				wcscpy(name_start, argv[1]);
+				ret = inject_helper(argv, dll_path);
+			}
+		}
 	}
+	LocalFree(argv);
 
-	thread_id = strtol(argv[2], NULL, 10);
-	if (thread_id == 0) {
-		return -2;
-	}
-
-	return inject_library_safe(thread_id, argv[1]);
+	return ret;
 }
