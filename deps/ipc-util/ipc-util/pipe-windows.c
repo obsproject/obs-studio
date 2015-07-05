@@ -24,10 +24,34 @@ static inline bool ipc_pipe_internal_create_events(ipc_pipe_server_t *pipe)
 	return !!pipe->ready_event;
 }
 
+static inline void *create_full_access_security_descriptor()
+{
+	void *sd = malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	if (!sd) {
+		return NULL;
+	}
+
+	if (!InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION)) {
+		goto error;
+	}
+
+	if (!SetSecurityDescriptorDacl(sd, true, NULL, false)) {
+		goto error;
+	}
+
+	return sd;
+
+error:
+	free(sd);
+	return NULL;
+}
+
 static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe,
 		const char *name)
 {
+	SECURITY_ATTRIBUTES sa;
 	char new_name[512];
+	void *sd;
 	const DWORD access = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
 	const DWORD flags = PIPE_TYPE_MESSAGE     |
 	                    PIPE_READMODE_MESSAGE |
@@ -36,8 +60,18 @@ static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe,
 	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
 	strcat_s(new_name, sizeof(new_name), name);
 
+	sd = create_full_access_security_descriptor();
+	if (!sd) {
+		return false;
+	}
+
+	sa.nLength = sizeof(sa);
+	sa.lpSecurityDescriptor = sd;
+	sa.bInheritHandle = false;
+
 	pipe->handle = CreateNamedPipeA(new_name, access, flags, 1,
-			IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0, NULL);
+			IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0, &sa);
+	free(sd);
 
 	return pipe->handle != INVALID_HANDLE_VALUE;
 }
