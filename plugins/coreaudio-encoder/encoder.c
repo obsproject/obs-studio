@@ -200,7 +200,7 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 			kAudioConverterApplicableEncodeBitRates,
 			&size, NULL);
 	if (code) {
-		log_osstatus(LOG_ERROR, ca,
+		log_osstatus(LOG_WARNING, ca,
 				"AudioConverterGetPropertyInfo(bitrates)",
 				code);
 		return false;
@@ -208,10 +208,10 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 
 	if (!size) {
 		if (ca)
-			CA_BLOG(LOG_ERROR, "Query for applicable bitrates "
+			CA_BLOG(LOG_WARNING, "Query for applicable bitrates "
 					"returned 0 size");
 		else
-			CA_LOG(LOG_ERROR, "Query for applicable bitrates "
+			CA_LOG(LOG_WARNING, "Query for applicable bitrates "
 					"returned 0 size");
 		return false;
 	}
@@ -222,7 +222,7 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 			kAudioConverterApplicableEncodeBitRates,
 			&size, bitrates);
 	if (code) {
-		log_osstatus(LOG_ERROR, ca,
+		log_osstatus(LOG_WARNING, ca,
 				"AudioConverterGetProperty(bitrates)", code);
 		return false;
 	}
@@ -271,7 +271,7 @@ static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
 #define STATUS_CHECK(c) \
 	code = c; \
 	if (code) { \
-		log_osstatus(LOG_ERROR, ca, #c, code); \
+		log_osstatus(LOG_WARNING, ca, #c, code); \
 		return false; \
 	}
 
@@ -299,7 +299,7 @@ static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
 			sizeof(rate_control), &rate_control));
 
 	if (!bitrate_valid(ca, NULL, bitrate)) {
-		CA_BLOG(LOG_ERROR, "Encoder does not support bitrate %u for "
+		CA_BLOG(LOG_WARNING, "Encoder does not support bitrate %u for "
 				"format %s (0x%x)",
 				(uint32_t)bitrate, format_id_to_str(format_id),
 				(uint32_t)format_id);
@@ -450,7 +450,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 				kAudioConverterPropertyMaximumOutputPacketSize,
 				&size, &max_packet_size);
 		if (code) {
-			log_osstatus(LOG_ERROR, ca,
+			log_osstatus(LOG_WARNING, ca,
 					"AudioConverterGetProperty(PacketSz)",
 					code);
 			ca->output_buffer_size = 32768;
@@ -735,7 +735,7 @@ static AudioConverterRef get_default_converter(UInt32 format_id)
 	OSStatus code = AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
 			0, NULL, &size, &out);
 	if (code) {
-		log_osstatus(LOG_ERROR, NULL,
+		log_osstatus(LOG_WARNING, NULL,
 				"AudioFormatGetProperty(format_info)", code);
 		return NULL;
 	}
@@ -743,7 +743,7 @@ static AudioConverterRef get_default_converter(UInt32 format_id)
 	AudioConverterRef converter;
 	code = AudioConverterNew(&in, &out, &converter);
 	if (code) {
-		log_osstatus(LOG_ERROR, NULL, "AudioConverterNew", code);
+		log_osstatus(LOG_WARNING, NULL, "AudioConverterNew", code);
 		return NULL;
 	}
 
@@ -863,8 +863,10 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
 				get_default_converter(allowed_formats[i]),
 				add_bitrates_func, &helper);
 
-	if (!helper.bitrates.num)
-		return;
+    if (!helper.bitrates.num) {
+        CA_BLOG(LOG_ERROR, "Enumeration found no available bitrates");
+        return;
+    }
 
 	qsort(helper.bitrates.array, helper.bitrates.num, sizeof(UInt32),
 			bitrate_compare);
