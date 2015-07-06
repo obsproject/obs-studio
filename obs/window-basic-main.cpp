@@ -1555,7 +1555,8 @@ void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 		long patch   = obs_data_get_int(versionData, "patch");
 		long version = MAKE_SEMANTIC_VERSION(major, minor, patch);
 
-		blog(LOG_INFO, "Update check: latest version is: %ld.%ld.%ld",
+		blog(LOG_INFO, "Update check: last known remote version "
+				"is %ld.%ld.%ld",
 				major, minor, patch);
 
 		if (version > LIBOBS_API_VER) {
