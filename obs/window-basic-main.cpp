@@ -2920,9 +2920,6 @@ void OBSBasic::StartStreaming()
 {
 	SaveProject();
 
-	if (!outputHandler->Active())
-		blog(LOG_INFO, STREAMING_START);
-
 	if (outputHandler->StreamingActive())
 		return;
 
@@ -2951,6 +2948,7 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 	ui->profileMenu->setEnabled(false);
+	blog(LOG_INFO, STREAMING_START);
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -2986,10 +2984,10 @@ void OBSBasic::StreamingStop(int code)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
-	if (!outputHandler->Active()) {
+	if (!outputHandler->Active())
 		ui->profileMenu->setEnabled(true);
-		blog(LOG_INFO, STREAMING_STOP);
-	}
+
+	blog(LOG_INFO, STREAMING_STOP);
 
 	if (code != OBS_OUTPUT_SUCCESS)
 		QMessageBox::information(this,
@@ -3000,9 +2998,6 @@ void OBSBasic::StreamingStop(int code)
 void OBSBasic::StartRecording()
 {
 	SaveProject();
-
-	if (!outputHandler->Active())
-		blog(LOG_INFO, RECORDING_START);
 
 	if (!outputHandler->RecordingActive())
 		outputHandler->StartRecording();
@@ -3017,7 +3012,6 @@ void OBSBasic::StopRecording()
 
 	if (!outputHandler->Active()) {
 		ui->profileMenu->setEnabled(true);
-		blog(LOG_INFO, RECORDING_STOP);
 	}
 }
 
@@ -3026,12 +3020,14 @@ void OBSBasic::RecordingStart()
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 	ui->profileMenu->setEnabled(false);
+	blog(LOG_INFO, RECORDING_START);
 }
 
 void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED)
 		QMessageBox::information(this,
@@ -3040,7 +3036,6 @@ void OBSBasic::RecordingStop(int code)
 
 	if (!outputHandler->Active()) {
 		ui->profileMenu->setEnabled(true);
-		blog(LOG_INFO, RECORDING_STOP);
 	}
 }
 
