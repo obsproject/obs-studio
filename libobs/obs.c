@@ -874,6 +874,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 		}
 	}
 
+	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "video settings reset:\n"
 	               "\tbase resolution:   %dx%d\n"
 	               "\toutput resolution: %dx%d\n"
@@ -907,6 +908,7 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	ai.speakers = oai->speakers;
 	ai.buffer_ms = oai->buffer_ms;
 
+	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "audio settings reset:\n"
 	               "\tsamples per sec: %d\n"
 	               "\tspeakers:        %d\n"
