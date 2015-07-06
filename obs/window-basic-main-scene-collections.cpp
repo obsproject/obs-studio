@@ -173,10 +173,10 @@ void OBSBasic::AddSceneCollection(bool create_new)
 	SaveProject();
 	RefreshSceneCollections();
 
-	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Added scene collection '%s' (%s, %s.json)",
 			name.c_str(), create_new ? "clean" : "duplicate",
 			file.c_str());
+	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
 }
@@ -262,6 +262,7 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Renamed scene collection to '%s' (%s.json)",
 			name.c_str(), file.c_str());
+	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
 	RefreshSceneCollections();
@@ -319,11 +320,11 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 	const char *newFile = config_get_string(App()->GlobalConfig(),
 			"Basic", "SceneCollectionFile");
 
-	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Removed scene collection '%s' (%s.json), "
 			"switched to '%s' (%s.json)",
 			oldName.c_str(), oldFile.c_str(),
 			newName.c_str(), newFile);
+	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
 }
@@ -357,9 +358,9 @@ void OBSBasic::ChangeSceneCollection()
 	const char *newFile = config_get_string(App()->GlobalConfig(),
 			"Basic", "SceneCollectionFile");
 
-	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Switched to scene collection '%s' (%s.json)",
 			newName, newFile);
+	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
 }

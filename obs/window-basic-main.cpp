@@ -2114,6 +2114,9 @@ void OBSBasic::ClearSceneData()
 	sourceSceneRefs.clear();
 
 	disableSaving--;
+
+	blog(LOG_INFO, "All scene data cleared");
+	blog(LOG_INFO, "------------------------------------------------");
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)
