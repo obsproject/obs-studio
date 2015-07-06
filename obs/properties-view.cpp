@@ -214,6 +214,10 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		WidgetInfo *info = new WidgetInfo(this, prop, edit);
 		connect(show, &QAbstractButton::toggled,
 				info, &WidgetInfo::TogglePasswordText);
+		connect(show, &QAbstractButton::toggled, [=](bool hide)
+		{
+			show->setText(hide ? QTStr("Hide") : QTStr("Show"));
+		});
 		children.emplace_back(info);
 
 		label = new QLabel(QT_UTF8(obs_property_description(prop)));
