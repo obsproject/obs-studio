@@ -784,6 +784,9 @@ void OBSBasic::ResetOutputs()
 	}
 }
 
+#define MAIN_SEPARATOR \
+	"====================================================================="
+
 void OBSBasic::OBSInit()
 {
 	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
@@ -836,6 +839,8 @@ void OBSBasic::OBSInit()
 
 	AddExtraModulePaths();
 	obs_load_all_modules();
+
+	blog(LOG_INFO, MAIN_SEPARATOR);
 
 	ResetOutputs();
 	CreateHotkeys();
