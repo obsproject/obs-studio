@@ -1870,6 +1870,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	main->SetService(newService);
 	main->SaveService();
+	obs_service_release(newService);
 }
 
 void OBSBasicSettings::SaveVideoSettings()
