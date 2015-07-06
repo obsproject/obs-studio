@@ -738,6 +738,8 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 	obs_source_set_flags(source, flags);
 }
 
+static DStr GetVideoFormatName(VideoFormat format);
+
 bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 {
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
@@ -785,8 +787,6 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 			return false;
 
 		interval = best_interval;
-		blog(LOG_INFO, "%s: Using interval %lld",
-				obs_source_get_name(source), interval);
 	}
 
 	videoConfig.name             = id.name.c_str();
@@ -815,6 +815,33 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 		if (!device.SetVideoConfig(&videoConfig))
 			return false;
 	}
+
+	DStr formatName = GetVideoFormatName(videoConfig.internalFormat);
+
+	double fps = 0.0;
+
+	if (videoConfig.frameInterval)
+		fps = 10000000.0 / double(videoConfig.frameInterval);
+
+	BPtr<char> name_utf8;
+	BPtr<char> path_utf8;
+	os_wcs_to_utf8_ptr(videoConfig.name.c_str(), videoConfig.name.size(),
+			&name_utf8);
+	os_wcs_to_utf8_ptr(videoConfig.path.c_str(), videoConfig.path.size(),
+			&path_utf8);
+
+	blog(LOG_INFO, "---------------------------------");
+	blog(LOG_INFO, "[DShow Device: '%s'] settings updated: \n"
+			"\tvideo device: %s\n"
+			"\tvideo path: %s\n"
+			"\tresolution: %dx%d\n"
+			"\tfps: %0.2f (interval: %lld)\n"
+			"\tformat: %s",
+			obs_source_get_name(source),
+			name_utf8, path_utf8,
+			videoConfig.cx, videoConfig.cy,
+			fps, videoConfig.frameInterval,
+			formatName->array);
 
 	SetupBuffering(settings);
 
@@ -848,7 +875,35 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 	audioConfig.mode =
 		(AudioMode)obs_data_get_int(settings, AUDIO_OUTPUT_MODE);
 
-	return device.SetAudioConfig(&audioConfig);
+	bool success = device.SetAudioConfig(&audioConfig);
+	if (!success)
+		return false;
+
+	BPtr<char> name_utf8;
+	os_wcs_to_utf8_ptr(audioConfig.name.c_str(), audioConfig.name.size(),
+			&name_utf8);
+
+	blog(LOG_INFO, "\tusing video device audio: %s",
+			audioConfig.useVideoDevice ? "yes" : "no");
+
+	if (!audioConfig.useVideoDevice)
+		blog(LOG_INFO, "\taudio device: %s", name_utf8);
+
+	const char *mode = "";
+
+	switch (audioConfig.mode) {
+		case AudioMode::Capture:     mode = "Capture"; break;
+		case AudioMode::DirectSound: mode = "DirectSound"; break;
+		case AudioMode::WaveOut:     mode = "WaveOut"; break;
+	}
+
+	blog(LOG_INFO, "\tsample rate: %d\n"
+			"\tchannels: %d\n"
+			"\taudio type: %s",
+			audioConfig.sampleRate,
+			audioConfig.channels,
+			mode);
+	return true;
 }
 
 void DShowInput::SetActive(bool active_)
