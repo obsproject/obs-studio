@@ -75,6 +75,7 @@ private:
 
 	bool loaded = false;
 	long disableSaving = 1;
+	bool projectChanged = false;
 
 	QPointer<QThread> updateCheckThread;
 	QPointer<QThread> logUploadThread;
@@ -197,6 +198,7 @@ public slots:
 	void RecordingStart();
 	void RecordingStop(int code);
 
+	void SaveProjectDeferred();
 	void SaveProject();
 
 private slots:

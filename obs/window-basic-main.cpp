@@ -1103,6 +1103,21 @@ void OBSBasic::SaveProject()
 	if (disableSaving)
 		return;
 
+	projectChanged = true;
+	QMetaObject::invokeMethod(this, "SaveProjectDeferred",
+			Qt::QueuedConnection);
+}
+
+void OBSBasic::SaveProjectDeferred()
+{
+	if (disableSaving)
+		return;
+
+	if (!projectChanged)
+		return;
+
+	projectChanged = false;
+
 	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
 			"Basic", "SceneCollectionFile");
 	char savePath[512];
