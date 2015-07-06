@@ -22,6 +22,9 @@
 
 #include <windows.h>
 
+static OSVERSIONINFOW osvi = {0};
+static uint32_t win_ver = 0;
+
 const char *get_module_extension(void)
 {
 	return ".dll";
@@ -171,11 +174,7 @@ static void log_available_memory(void)
 
 static void log_windows_version(void)
 {
-	OSVERSIONINFOW osvi;
 	char           *build = NULL;
-
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	GetVersionExW(&osvi);
 
 	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
 	blog(LOG_INFO, "Windows Version: %ld.%ld Build %ld %s",
@@ -187,12 +186,44 @@ static void log_windows_version(void)
 	bfree(build);
 }
 
+typedef HRESULT (WINAPI *dwm_is_composition_enabled_t)(BOOL*);
+
+static void log_aero(void)
+{
+	dwm_is_composition_enabled_t composition_enabled = NULL;
+
+	const char *aeroMessage = win_ver >= 0x602 ?
+		" (Aero is always on for windows 8 and above)" : "";
+
+	HMODULE dwm = LoadLibraryW(L"dwmapi");
+	BOOL bComposition = true;
+
+	if (!dwm) {
+		return;
+	}
+
+	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(dwm,
+			"DwmIsCompositionEnabled");
+	if (!composition_enabled) {
+		return;
+	}
+
+	composition_enabled(&bComposition);
+	blog(LOG_INFO, "Aero is %s%s", bComposition ? "Enabled" : "Disabled",
+			aeroMessage);
+}
+
 void log_system_info(void)
 {
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	GetVersionExW(&osvi);
+	win_ver = (osvi.dwMajorVersion << 16) | osvi.dwMinorVersion;
+
 	log_processor_info();
 	log_processor_cores();
 	log_available_memory();
 	log_windows_version();
+	log_aero();
 }
 
 
