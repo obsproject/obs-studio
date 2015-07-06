@@ -2167,6 +2167,16 @@ void OBSBasicSettings::SaveHotkeySettings()
 	}
 }
 
+#define MINOR_SEPARATOR \
+	"------------------------------------------------"
+
+static void AddChangedVal(std::string &changed, const char *str)
+{
+	if (changed.size())
+		changed += ", ";
+	changed += str;
+}
+
 void OBSBasicSettings::SaveSettings()
 {
 	if (generalChanged)
@@ -2190,6 +2200,27 @@ void OBSBasicSettings::SaveSettings()
 	config_save(main->Config());
 	config_save(GetGlobalConfig());
 	main->SaveProject();
+
+	if (Changed()) {
+		std::string changed;
+		if (generalChanged)
+			AddChangedVal(changed, "general");
+		if (stream1Changed)
+			AddChangedVal(changed, "stream 1");
+		if (outputsChanged)
+			AddChangedVal(changed, "outputs");
+		if (audioChanged)
+			AddChangedVal(changed, "audio");
+		if (videoChanged)
+			AddChangedVal(changed, "video");
+		if (hotkeysChanged)
+			AddChangedVal(changed, "hotkeys");
+		if (advancedChanged)
+			AddChangedVal(changed, "advanced");
+
+		blog(LOG_INFO, "Settings changed (%s)", changed.c_str());
+		blog(LOG_INFO, MINOR_SEPARATOR);
+	}
 }
 
 bool OBSBasicSettings::QueryChanges()
