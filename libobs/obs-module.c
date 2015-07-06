@@ -81,6 +81,11 @@ int obs_open_module(obs_module_t **module, const char *path,
 	mod.data_path = bstrdup(data_path);
 	mod.next      = obs->first_module;
 
+	if (mod.file) {
+		blog(LOG_INFO, "---------------------------------\n"
+				"Loading module: %s", mod.file);
+	}
+
 	*module = bmemdup(&mod, sizeof(mod));
 	obs->first_module = (*module);
 	mod.set_pointer(*module);
