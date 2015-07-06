@@ -152,6 +152,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	installEventFilter(CreateShortcutFilter());
 
+	stringstream name;
+	name << "OBS " << App()->GetVersionString();	
+	blog(LOG_INFO, "%s", name.str().c_str());
+	blog(LOG_INFO, "---------------------------------");
+
 	UpdateTitleBar();
 
 	connect(ui->scenes->itemDelegate(),
@@ -3511,7 +3516,6 @@ void OBSBasic::UpdateTitleBar()
 	name << " - " << Str("TitleBar.Profile") << ": " << profile;
 	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
 
-	blog(LOG_INFO, "%s", name.str().c_str());
 	setWindowTitle(QT_UTF8(name.str().c_str()));
 }
 
