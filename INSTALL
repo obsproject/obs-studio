@@ -121,7 +121,8 @@ Linux (Ubuntu 14.04/14.10/15.04 installation)
 
 
 Linux (Arch Linux installation, unofficial)
-  - Link:  https://aur.archlinux.org/packages/obs-studio-git
+  - Link for the "Git" version:  https://aur4.archlinux.org/packages/obs-studio-git
+  - Link for the "release" version:  https://aur4.archlinux.org/packages/obs-studio
 
 
 Linux (OpenSUSE installation, unofficial)
