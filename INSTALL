@@ -165,9 +165,10 @@ Linux (Manually compiling on Redhat-based distros such as Fedora)
         git clone https://github.com/jp9000/obs-studio.git
         cd obs-studio
         mkdir build && cd build
-        cmake -DUNIX_STRUCTURE=1 ..
+        cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
         make -j4
         sudo make install
+        sudo ldconfig
 
 
 Linux (Manually compiling on Debian-based distros)
