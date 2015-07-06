@@ -912,7 +912,7 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	blog(LOG_INFO, "audio settings reset:\n"
 	               "\tsamples per sec: %d\n"
 	               "\tspeakers:        %d\n"
-	               "\tbuffering (ms):  %d\n",
+	               "\tbuffering (ms):  %d",
 	               (int)ai.samples_per_sec,
 	               (int)ai.speakers,
 	               (int)ai.buffer_ms);
