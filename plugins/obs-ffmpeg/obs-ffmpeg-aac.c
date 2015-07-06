@@ -25,6 +25,14 @@
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
 
+#define do_log(level, format, ...) \
+	blog(level, "[FFmpeg aac encoder: '%s'] " format, \
+			obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
 struct aac_encoder {
 	obs_encoder_t    *encoder;
 
@@ -49,17 +57,6 @@ static const char *aac_getname(void)
 	return obs_module_text("FFmpegAAC");
 }
 
-static void aac_warn(const char *func, const char *format, ...)
-{
-	va_list args;
-	char msg[1024];
-
-	va_start(args, format);
-	vsnprintf(msg, sizeof(msg), format, args);
-	blog(LOG_WARNING, "[%s]: %s", func, msg);
-	va_end(args);
-}
-
 static void aac_destroy(void *data)
 {
 	struct aac_encoder *enc = data;
@@ -81,14 +78,13 @@ static bool initialize_codec(struct aac_encoder *enc)
 
 	enc->aframe  = av_frame_alloc();
 	if (!enc->aframe) {
-		aac_warn("initialize_codec", "Failed to allocate audio frame");
+		warn("Failed to allocate audio frame");
 		return false;
 	}
 
 	ret = avcodec_open2(enc->context, enc->aac, NULL);
 	if (ret < 0) {
-		aac_warn("initialize_codec", "Failed to open AAC codec: %s",
-				av_err2str(ret));
+		warn("Failed to open AAC codec: %s", av_err2str(ret));
 		return false;
 	}
 
@@ -101,8 +97,7 @@ static bool initialize_codec(struct aac_encoder *enc)
 	ret = av_samples_alloc(enc->samples, NULL, enc->context->channels,
 			enc->frame_size, enc->context->sample_fmt, 0);
 	if (ret < 0) {
-		aac_warn("initialize_codec", "Failed to create audio buffer: "
-		                             "%s", av_err2str(ret));
+		warn("Failed to create audio buffer: %s", av_err2str(ret));
 		return false;
 	}
 
@@ -131,26 +126,27 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t            *audio   = obs_encoder_audio(encoder);
 
-	if (!bitrate) {
-		aac_warn("aac_create", "Invalid bitrate specified");
-		return NULL;
-	}
-
 	avcodec_register_all();
 
 	enc          = bzalloc(sizeof(struct aac_encoder));
 	enc->encoder = encoder;
 	enc->aac     = avcodec_find_encoder(AV_CODEC_ID_AAC);
+
+	blog(LOG_INFO, "---------------------------------");
+
 	if (!enc->aac) {
-		aac_warn("aac_create", "Couldn't find encoder");
+		warn("Couldn't find encoder");
 		goto fail;
 	}
 
-	blog(LOG_INFO, "Using ffmpeg \"%s\" aac encoder", enc->aac->name);
+	if (!bitrate) {
+		warn("Invalid bitrate specified");
+		return NULL;
+	}
 
 	enc->context = avcodec_alloc_context3(enc->aac);
 	if (!enc->context) {
-		aac_warn("aac_create", "Failed to create codec context");
+		warn("Failed to create codec context");
 		goto fail;
 	}
 
@@ -173,7 +169,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		enc->context->cutoff = cutoff;
 	}
 
-	blog(LOG_INFO, "FFmpeg AAC: bitrate: %d, channels: %d",
+	info("bitrate: %d, channels: %d",
 			enc->context->bit_rate / 1000, enc->context->channels);
 
 	init_sizes(enc, audio);
@@ -208,8 +204,7 @@ static bool do_aac_encode(struct aac_encoder *enc,
 			enc->context->sample_fmt, enc->samples[0],
 			enc->frame_size_bytes * enc->context->channels, 1);
 	if (ret < 0) {
-		aac_warn("do_aac_encode", "avcodec_fill_audio_frame failed: %s",
-				av_err2str(ret));
+		warn("avcodec_fill_audio_frame failed: %s", av_err2str(ret));
 		return false;
 	}
 
@@ -218,8 +213,7 @@ static bool do_aac_encode(struct aac_encoder *enc,
 	ret = avcodec_encode_audio2(enc->context, &avpacket, enc->aframe,
 			&got_packet);
 	if (ret < 0) {
-		aac_warn("do_aac_encode", "avcodec_encode_audio2 failed: %s",
-				av_err2str(ret));
+		warn("avcodec_encode_audio2 failed: %s", av_err2str(ret));
 		return false;
 	}
 
