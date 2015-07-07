@@ -1250,6 +1250,25 @@ void OBSBasic::RemoveScene(OBSSource source)
 		delete sel;
 	}
 
+	auto DeleteSceneRefs = [&](obs_sceneitem_t *si)
+	{
+		obs_source_t *source = obs_sceneitem_get_source(si);
+		sourceSceneRefs[source] -= 1;
+
+		if (!sourceSceneRefs[source]) {
+			obs_source_remove(source);
+			sourceSceneRefs.erase(source);
+		}
+	};
+	using DeleteSceneRefs_t = decltype(DeleteSceneRefs);
+
+	obs_scene_enum_items(obs_scene_from_source(source),
+			[](obs_scene_t *, obs_sceneitem_t *si, void *data)
+	{
+		(*static_cast<DeleteSceneRefs_t*>(data))(si);
+		return true;
+	}, static_cast<void*>(&DeleteSceneRefs));
+
 	SaveProject();
 }
 
