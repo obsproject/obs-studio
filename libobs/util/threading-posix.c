@@ -267,7 +267,7 @@ void os_set_thread_name(const char *name)
 	pthread_setname_np(name);
 #elif defined(__FreeBSD__)
 	pthread_set_name_np(pthread_self(), name);
-#elif !defined(__MINGW32__)
+#elif defined(__GLIBC__)
 	pthread_setname_np(pthread_self(), name);
 #endif
 }
