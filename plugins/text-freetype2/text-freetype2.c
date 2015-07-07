@@ -70,7 +70,7 @@ void obs_module_unload(void)
 
 static const char *ft2_source_get_name(void)
 {
-	return obs_module_text("Text (FreeType 2)");
+	return obs_module_text("TextFreetype2");
 }
 
 static uint32_t ft2_source_get_width(void *data)
