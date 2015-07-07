@@ -2199,7 +2199,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
 
-	SaveProject();
+	projectChanged = true;
+	SaveProjectDeferred();
 	disableSaving++;
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
