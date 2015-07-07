@@ -112,11 +112,11 @@
             }
         ],
         "recommended": {
-            "keyint": 2,
+            "keyint": 4,
             "cbr": true,
             "profile": "main",
-            "max video bitrate": 3500,
-            "max audio bitrate": 160
+            "max video bitrate": 9000,
+            "max audio bitrate": 128
         }
     },
     {
