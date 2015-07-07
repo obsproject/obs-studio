@@ -50,7 +50,7 @@ struct ff_clock {
 
 typedef struct ff_clock ff_clock_t;
 
-struct ff_clock * ff_clock_init();
+struct ff_clock * ff_clock_init(void);
 double ff_get_sync_clock(struct ff_clock *clock);
 struct ff_clock *ff_clock_retain(struct ff_clock *clock);
 struct ff_clock *ff_clock_move(struct ff_clock **clock);
