@@ -163,6 +163,7 @@ private:
 
 	void CloseDialogs();
 	void ClearSceneData();
+	void CleanupUnusedSources();
 
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor);

@@ -415,6 +415,30 @@ void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
 	}
 }
 
+void OBSBasic::CleanupUnusedSources()
+{
+	auto removeUnusedSources = [&](obs_source_t *source)
+	{
+		obs_scene_t *scene = obs_scene_from_source(source);
+		if (scene)
+			return;
+
+		if (sourceSceneRefs[source] == 0) {
+			sourceSceneRefs.erase(source);
+			obs_source_remove(source);
+		}
+	};
+	using func_type = decltype(removeUnusedSources);
+
+	obs_enum_sources(
+			[](void *f, obs_source_t *source)
+			{
+				(*static_cast<func_type*>(f))(source);
+				return true;
+			},
+			static_cast<void*>(&removeUnusedSources));
+}
+
 void OBSBasic::Load(const char *file)
 {
 	if (!file) {
@@ -477,6 +501,8 @@ void OBSBasic::Load(const char *file)
 			file_base.c_str());
 
 	obs_data_release(data);
+
+	CleanupUnusedSources();
 
 	disableSaving--;
 }
