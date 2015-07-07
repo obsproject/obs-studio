@@ -90,9 +90,9 @@ bool ff_clock_start(struct ff_clock *clock, enum ff_av_sync_type sync_type,
 	return !release && !aborted;
 }
 
-struct ff_clock *ff_clock_init(struct ff_clock *clock)
+struct ff_clock *ff_clock_init()
 {
-	clock = av_mallocz(sizeof(struct ff_clock));
+	struct ff_clock *clock = av_mallocz(sizeof(struct ff_clock));
 
 	if (clock == NULL)
 		return NULL;
