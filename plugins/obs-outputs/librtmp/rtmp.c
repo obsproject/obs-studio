@@ -23,6 +23,12 @@
  *  http://www.gnu.org/copyleft/lgpl.html
  */
 
+#ifndef NO_AUTH
+#ifndef CRYPTO
+#define USE_ONLY_MD5
+#endif
+#endif
+
 #include "rtmp_sys.h"
 #include "log.h"
 
@@ -2614,7 +2620,7 @@ PublisherAuth(RTMP *r, AVal *description)
         RTMP_Log(RTMP_LOGDEBUG, "%s, new app: %.*s tcUrl: %.*s playpath: %s", __FUNCTION__,
                  r->Link.app.av_len, r->Link.app.av_val,
                  r->Link.tcUrl.av_len, r->Link.tcUrl.av_val,
-                 r->Link.playpath.av_val);
+                 r->Link.streams[r->Link.curStreamIdx].playpath.av_val);
     }
     else if (strstr(description->av_val, av_authmod_llnw.av_val) != NULL)
     {
@@ -2817,7 +2823,7 @@ PublisherAuth(RTMP *r, AVal *description)
         RTMP_Log(RTMP_LOGDEBUG, "%s, new app: %.*s tcUrl: %.*s playpath: %s", __FUNCTION__,
                  r->Link.app.av_len, r->Link.app.av_val,
                  r->Link.tcUrl.av_len, r->Link.tcUrl.av_val,
-                 r->Link.playpath.av_val);
+                 r->Link.streams[r->Link.curStreamIdx].playpath.av_val);
     }
     else
     {
@@ -4215,11 +4221,15 @@ RTMP_Close(RTMP *r)
     }
 
 #if defined(CRYPTO) || defined(USE_ONLY_MD5)
-    if (!(r->Link.protocol & RTMP_FEATURE_WRITE) || (r->Link.pFlags & RTMP_PUB_CLEAN))
+    for (int idx = 0; idx < r->Link.nStreams; idx++)
     {
-        free(r->Link.playpath0.av_val);
-        r->Link.playpath0.av_val = NULL;
+        free(r->Link.streams[idx].playpath.av_val);
+        r->Link.streams[idx].playpath.av_val = NULL;
     }
+
+    r->Link.curStreamIdx = 0;
+    r->Link.nStreams = 0;
+
     if ((r->Link.protocol & RTMP_FEATURE_WRITE) &&
             (r->Link.pFlags & RTMP_PUB_CLEAN) &&
             (r->Link.pFlags & RTMP_PUB_ALLOC))
