@@ -98,7 +98,7 @@ static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stream->active)
+	if (stream->connecting || stream->active)
 		rtmp_stream_stop(data);
 
 	if (stream) {
