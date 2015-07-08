@@ -78,7 +78,11 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 
 	NSString *application_support = paths[0];
 	const char *base_path = [application_support UTF8String];
-	return snprintf(dst, size, "%s/%s", base_path, name);
+
+	if (!name || !*name)
+		return snprintf(dst, size, "%s", base_path);
+	else
+		return snprintf(dst, size, "%s/%s", base_path, name);
 }
 
 char *os_get_config_path_ptr(const char *name)

@@ -199,6 +199,10 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 			path_utf16);
 
 	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
+		if (!name || !*name) {
+			return (int)strlen(dst);
+		}
+
 		if (strcat_s(dst, size, "\\") == 0) {
 			if (strcat_s(dst, size, name) == 0) {
 				return (int)strlen(dst);

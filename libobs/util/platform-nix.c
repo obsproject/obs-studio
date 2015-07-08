@@ -167,16 +167,27 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 		if (home_ptr == NULL)
 			bcrash("Could not get $HOME\n");
 
-		return snprintf(dst, size, "%s/.config/%s", home_ptr, name);
+		if (!name || !*name) {
+			return snprintf(dst, size, "%s/.config", home_ptr);
+		} else {
+			return snprintf(dst, size, "%s/.config/%s", home_ptr,
+					name);
+		}
 	} else {
-		return snprintf(dst, size, "%s/%s", xdg_ptr, name);
+		if (!name || !*name)
+			return snprintf(dst, size, "%s", xdg_ptr);
+		else
+			return snprintf(dst, size, "%s/%s", xdg_ptr, name);
 	}
 #else
 	char *path_ptr = getenv("HOME");
 	if (path_ptr == NULL)
 		bcrash("Could not get $HOME\n");
 
-	return snprintf(dst, size, "%s/.%s", path_ptr, name);
+	if (!name || !*name)
+		return snprintf(dst, size, "%s", path_ptr);
+	else
+		return snprintf(dst, size, "%s/.%s", path_ptr, name);
 #endif
 }
 
