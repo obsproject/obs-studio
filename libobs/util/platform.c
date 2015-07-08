@@ -508,3 +508,39 @@ int os_dtostr(double value, char *dst, size_t size)
 
 	return (int)length;
 }
+
+static int recursive_mkdir(char *path)
+{
+	char *last_slash;
+	int ret;
+
+	ret = os_mkdir(path);
+	if (ret != MKDIR_ERROR)
+		return ret;
+
+	last_slash = strrchr(path, '/');
+	if (!last_slash)
+		return MKDIR_ERROR;
+
+	*last_slash = 0;
+	ret = recursive_mkdir(path);
+	*last_slash = '/';
+
+	if (ret == MKDIR_ERROR)
+		return MKDIR_ERROR;
+
+	ret = os_mkdir(path);
+	return ret;
+}
+
+int os_mkdirs(const char *dir)
+{
+	struct dstr dir_str;
+	int ret;
+
+	dstr_init_copy(&dir_str, dir);
+	dstr_replace(&dir_str, "\\", "/");
+	ret = recursive_mkdir(dir_str.array);
+	dstr_free(&dir_str);
+	return ret;
+}
