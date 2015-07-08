@@ -266,7 +266,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 static bool do_mkdir(const char *path)
 {
-	if (os_mkdir(path) == MKDIR_ERROR) {
+	if (os_mkdirs(path) == MKDIR_ERROR) {
 		OBSErrorBox(NULL, "Failed to create directory %s", path);
 		return false;
 	}
@@ -277,18 +277,6 @@ static bool do_mkdir(const char *path)
 static bool MakeUserDirs()
 {
 	char path[512];
-
-	if (portable_mode) {
-		if (GetConfigPath(path, sizeof(path), "") <= 0)
-			return false;
-		if (!do_mkdir(path))
-			return false;
-	}
-
-	if (GetConfigPath(path, sizeof(path), "obs-studio") <= 0)
-		return false;
-	if (!do_mkdir(path))
-		return false;
 
 	if (GetConfigPath(path, sizeof(path), "obs-studio/basic") <= 0)
 		return false;
