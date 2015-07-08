@@ -1075,6 +1075,13 @@ static void move_to_xdg(void)
 
 	if (snprintf(old_path, 512, "%s/.obs-studio", home) <= 0)
 		return;
+
+	/* make base xdg path if it doesn't already exist */
+	if (GetConfigPath(new_path, 512, "") <= 0)
+		return;
+	if (os_mkdirs(new_path) == MKDIR_ERROR)
+		return;
+
 	if (GetConfigPath(new_path, 512, "obs-studio") <= 0)
 		return;
 
