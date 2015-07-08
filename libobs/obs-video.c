@@ -530,7 +530,7 @@ static inline void video_sleep(struct obs_core_video *video,
 			sizeof(vframe_info));
 }
 
-static inline void output_frame(uint64_t *cur_time, uint64_t interval)
+static inline void output_frame(void)
 {
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
@@ -557,8 +557,6 @@ static inline void output_frame(uint64_t *cur_time, uint64_t interval)
 
 	if (++video->cur_texture == NUM_TEXTURES)
 		video->cur_texture = 0;
-
-	video_sleep(video, cur_time, interval);
 }
 
 void *obs_video_thread(void *param)
@@ -575,7 +573,9 @@ void *obs_video_thread(void *param)
 
 		render_displays();
 
-		output_frame(&obs->video.video_time, interval);
+		output_frame();
+
+		video_sleep(&obs->video, &obs->video.video_time, interval);
 	}
 
 	UNUSED_PARAMETER(param);
