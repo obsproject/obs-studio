@@ -160,7 +160,7 @@ bool os_sleepto_ns(uint64_t time_target)
 		if (t >= time_target)
 			return true;
 
-#if 1
+#if 0
 		Sleep(1);
 #else
 		Sleep(0);
