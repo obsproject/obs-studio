@@ -161,7 +161,7 @@ void OBSBasic::AddSceneCollection(bool create_new)
 	if (!GetSceneCollectionName(this, name, file))
 		return;
 
-	SaveProject();
+	SaveProjectNow();
 
 	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
 			name.c_str());
@@ -170,7 +170,7 @@ void OBSBasic::AddSceneCollection(bool create_new)
 	if (create_new) {
 		CreateDefaultScene();
 	}
-	SaveProject();
+	SaveProjectNow();
 	RefreshSceneCollections();
 
 	blog(LOG_INFO, "Added scene collection '%s' (%s, %s.json)",
@@ -246,7 +246,7 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 			name.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
 			file.c_str());
-	SaveProject();
+	SaveProjectNow();
 
 	char path[512];
 	int ret = GetConfigPath(path, 512, "obs-studio/basic/scenes/");
@@ -348,7 +348,7 @@ void OBSBasic::ChangeSceneCollection()
 		return;
 	}
 
-	SaveProject();
+	SaveProjectNow();
 
 	Load(fileName.c_str());
 	RefreshSceneCollections();
