@@ -130,7 +130,7 @@ void MFAAC::Encoder::InitializeExtraData()
 	*extraData16 = profile << 11;
 	// Sample Index (3=48, 4=44.1)
 	// .... .XXX X... ....
-	*extraData16 |= sampleRate == 48000 ? 3 : 4 << 7;
+	*extraData16 |= (sampleRate == 48000 ? 3 : 4) << 7;
 	// Channels
 	// .... .... .XXX X...
 	*extraData16 |= channels << 3;
