@@ -503,6 +503,17 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 		video_output_get_height(encoder->media);
 }
 
+uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
+{
+	if (!encoder || !encoder->media ||
+	    encoder->info.type != OBS_ENCODER_AUDIO)
+		return 0;
+
+	return encoder->samplerate != 0 ?
+		encoder->samplerate :
+		audio_output_get_sample_rate(encoder->media);
+}
+
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
 	const struct video_output_info *voi;
