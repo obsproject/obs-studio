@@ -1124,6 +1124,15 @@ OBSBasic::~OBSBasic()
 #endif
 }
 
+void OBSBasic::SaveProjectNow()
+{
+	if (disableSaving)
+		return;
+
+	projectChanged = true;
+	SaveProjectDeferred();
+}
+
 void OBSBasic::SaveProject()
 {
 	if (disableSaving)
@@ -2199,8 +2208,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	// the destructor gets called
 	obs_remove_draw_callback(OBSBasic::RenderMain, this);
 
-	projectChanged = true;
-	SaveProjectDeferred();
+	SaveProjectNow();
 	disableSaving++;
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,

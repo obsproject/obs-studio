@@ -184,6 +184,8 @@ private:
 	void RefreshProfiles();
 	void ChangeProfile();
 
+	void SaveProjectNow();
+
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
 
 public slots:
