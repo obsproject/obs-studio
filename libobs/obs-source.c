@@ -1399,7 +1399,8 @@ void obs_source_video_render(obs_source_t *source)
 {
 	if (!source) return;
 
-	if ((source->info.output_flags & OBS_SOURCE_VIDEO) == 0)
+	if (source->info.type != OBS_SOURCE_TYPE_FILTER &&
+	    (source->info.output_flags & OBS_SOURCE_VIDEO) == 0)
 		return;
 
 	if (!source->context.data || !source->enabled) {
