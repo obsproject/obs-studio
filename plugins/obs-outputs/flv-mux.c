@@ -95,7 +95,7 @@ static bool build_flv_meta_data(obs_output_t *context,
 	enc_str_val(&enc, end, "audiocodecid", "mp4a");
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
 	enc_num_val(&enc, end, "audiosamplerate",
-			(double)audio_output_get_sample_rate(audio));
+			(double)obs_encoder_get_sample_rate(aencoder));
 	enc_num_val(&enc, end, "audiosamplesize", 16.0);
 	enc_num_val(&enc, end, "audiochannels",
 			(double)audio_output_get_channels(audio));
