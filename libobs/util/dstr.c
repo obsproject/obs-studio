@@ -526,11 +526,23 @@ void dstr_vprintf(struct dstr *dst, const char *format, va_list args)
 
 void dstr_vcatf(struct dstr *dst, const char *format, va_list args)
 {
-	struct dstr temp;
-	dstr_init(&temp);
-	dstr_vprintf(&temp, format, args);
-	dstr_cat_dstr(dst, &temp);
-	dstr_free(&temp);
+	va_list args_cp;
+	va_copy(args_cp, args);
+
+	int len = vsnprintf(NULL, 0, format, args_cp);
+	va_end(args_cp);
+
+	if (len < 0) len = 4095;
+	
+	dstr_ensure_capacity(dst, dst->len + ((size_t)len) + 1);
+	len = vsnprintf(dst->array + dst->len, ((size_t)len) + 1, format, args);
+
+	if (!*dst->array) {
+		dstr_free(dst);
+		return;
+	}
+
+	dst->len += len < 0 ? strlen(dst->array + dst->len) : (size_t)len;
 }
 
 void dstr_safe_printf(struct dstr *dst, const char *format,
