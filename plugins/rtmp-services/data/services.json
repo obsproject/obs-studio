@@ -263,7 +263,7 @@
         ]
     },
     {
-        "name": "Beam.pro",
+        "name": "beam.pro",
         "servers": [
             {
                 "name": "US: Dallas, TX",
@@ -295,7 +295,10 @@
             }
         ],
         "recommended": {
-            "max video bitrate": 3500
+            "keyint": 2,
+            "max audio bitrate": 160,
+            "max video bitrate": 3500,
+            "profile": "main"
         }
     },
     {
