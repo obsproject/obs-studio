@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include <limits.h>
 #include "../util/platform.h"
 #include "effect-parser.h"
 #include "effect.h"
@@ -1383,8 +1384,9 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	/*else if (type == SHADER_GEOMETRY)
 		dstr_cat(&location, " (Geometry ");*/
 
+	assert(pass_idx <= UINT_MAX);
 	dstr_catf(&location, "shader, technique %s, pass %u)", tech->name,
-			pass_idx);
+			(unsigned)pass_idx);
 
 	if (type == GS_SHADER_VERTEX) {
 		ep_makeshaderstring(ep, &shader_str,
