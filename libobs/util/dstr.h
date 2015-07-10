@@ -39,6 +39,12 @@ struct dstr {
 	size_t capacity;
 };
 
+#ifndef _MSC_VER
+#define PRINTFATTR(f, a) __attribute__((__format__(__printf__, f, a)))
+#else
+#define PRINTFATTR(f, a)
+#endif
+
 EXPORT int astrcmpi(const char *str1, const char *str2);
 EXPORT int wstrcmpi(const wchar_t *str1, const wchar_t *str2);
 EXPORT int astrcmp_n(const char *str1, const char *str2, size_t n);
@@ -102,7 +108,9 @@ EXPORT void dstr_insert_ch(struct dstr *dst, const size_t idx,
 
 EXPORT void dstr_remove(struct dstr *dst, const size_t idx, const size_t count);
 
+PRINTFATTR(2, 3)
 EXPORT void dstr_printf(struct dstr *dst, const char *format, ...);
+PRINTFATTR(2, 3)
 EXPORT void dstr_catf(struct dstr *dst, const char *format, ...);
 
 EXPORT void dstr_vprintf(struct dstr *dst, const char *format, va_list args);
@@ -145,6 +153,8 @@ EXPORT wchar_t *dstr_to_wcs(const struct dstr *str);
 
 EXPORT void dstr_to_upper(struct dstr *str);
 EXPORT void dstr_to_lower(struct dstr *str);
+
+#undef PRINTFATTR
 
 /* ------------------------------------------------------------------------- */
 
