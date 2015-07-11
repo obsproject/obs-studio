@@ -838,7 +838,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 			"\tfps: %0.2f (interval: %lld)\n"
 			"\tformat: %s",
 			obs_source_get_name(source),
-			name_utf8, path_utf8,
+			(const char*)name_utf8,
+			(const char*)path_utf8,
 			videoConfig.cx, videoConfig.cy,
 			fps, videoConfig.frameInterval,
 			formatName->array);
@@ -887,7 +888,7 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 			audioConfig.useVideoDevice ? "yes" : "no");
 
 	if (!audioConfig.useVideoDevice)
-		blog(LOG_INFO, "\taudio device: %s", name_utf8);
+		blog(LOG_INFO, "\taudio device: %s", (const char*)name_utf8);
 
 	const char *mode = "";
 
