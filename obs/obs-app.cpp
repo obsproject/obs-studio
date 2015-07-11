@@ -877,7 +877,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		program.installTranslator(&translator);
 
-		ret = program.OBSInit() ? program.exec() : 0;
+		if (!program.OBSInit())
+			return 0;
+
+		return program.exec();
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "%s", error);
