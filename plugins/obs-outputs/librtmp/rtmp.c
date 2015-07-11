@@ -633,16 +633,13 @@ int RTMP_SetupURL(RTMP *r, char *url)
 int RTMP_AddStream(RTMP *r, const char *playpath)
 {
     int idx = -1;
+    AVal pp = { (char*)playpath, playpath?(int)strlen(playpath):0 };
 
-    if (playpath && *playpath)
-    {
-        AVal pp = {(char*)playpath, (int)strlen(playpath)};
-        RTMP_ParsePlaypath(&pp, &r->Link.streams[r->Link.nStreams].playpath);
-        r->Link.streams[r->Link.nStreams].id = -1;
+    RTMP_ParsePlaypath(&pp, &r->Link.streams[r->Link.nStreams].playpath);
+    r->Link.streams[r->Link.nStreams].id = -1;
 
-        idx = r->Link.nStreams;
-        r->Link.nStreams++;
-    }
+    idx = r->Link.nStreams;
+    r->Link.nStreams++;
 
     return idx;
 }
