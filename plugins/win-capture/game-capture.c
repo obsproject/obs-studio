@@ -560,7 +560,7 @@ static inline bool init_pipe(struct game_capture *gc)
 	return true;
 }
 
-static inline bool inject_library(HANDLE process, const wchar_t *dll)
+static inline int inject_library(HANDLE process, const wchar_t *dll)
 {
 	return inject_library_obf(process, dll,
 			"D|hkqkW`kl{k\\osofj", 0xa178ef3655e5ade7,
