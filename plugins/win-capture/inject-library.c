@@ -23,7 +23,7 @@ int inject_library_obf(HANDLE process, const wchar_t *dll,
 	bool success = false;
 	size_t written_size;
 	DWORD thread_id;
-	HANDLE thread;
+	HANDLE thread = NULL;
 	size_t size;
 	void *mem;
 

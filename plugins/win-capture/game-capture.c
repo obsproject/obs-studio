@@ -604,7 +604,7 @@ static inline bool hook_direct(struct game_capture *gc,
 	CloseHandle(process);
 
 	if (ret != 0) {
-		warn("hook_direct: inject failed: %ld", ret);
+		warn("hook_direct: inject failed: %d", ret);
 		return false;
 	}
 

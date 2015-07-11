@@ -94,6 +94,8 @@ static int inject_helper(wchar_t *argv[], const wchar_t *dll)
 		: inject_library_full(id, dll);
 }
 
+#define UNUSED_PARAMETER(x) ((void)(x))
+
 int main(int argc, char *argv_ansi[])
 {
 	wchar_t dll_path[MAX_PATH];
@@ -119,5 +121,6 @@ int main(int argc, char *argv_ansi[])
 	}
 	LocalFree(argv);
 
+	UNUSED_PARAMETER(argv_ansi);
 	return ret;
 }
