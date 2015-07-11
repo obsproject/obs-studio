@@ -22,6 +22,7 @@
 #include <QPointer>
 #include <obs.hpp>
 #include <util/lexer.h>
+#include <util/profiler.h>
 #include <util/util.hpp>
 #include <string>
 #include <memory>
@@ -62,6 +63,7 @@ private:
 	TextLookup                     textLookup;
 	OBSContext                     obsContext;
 	QPointer<OBSMainWindow>        mainWindow;
+	profiler_name_store_t          *profilerNameStore = nullptr;
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
@@ -69,7 +71,7 @@ private:
 	bool InitTheme();
 
 public:
-	OBSApp(int &argc, char **argv);
+	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 
 	void AppInit();
 	bool OBSInit();
@@ -91,6 +93,11 @@ public:
 	inline const char *GetString(const char *lookupVal) const
 	{
 		return textLookup.GetString(lookupVal);
+	}
+
+	profiler_name_store_t *GetProfilerNameStore() const
+	{
+		return profilerNameStore;
 	}
 
 	const char *GetLastLog() const;

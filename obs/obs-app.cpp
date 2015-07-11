@@ -24,6 +24,7 @@
 #include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/platform.h>
+#include <util/profiler.h>
 #include <obs-config.h>
 #include <obs.hpp>
 
@@ -456,8 +457,9 @@ bool OBSApp::InitTheme()
 	return SetTheme(t.str());
 }
 
-OBSApp::OBSApp(int &argc, char **argv)
-	: QApplication(argc, argv)
+OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
+	: QApplication(argc, argv),
+	  profilerNameStore(store)
 {}
 
 static void move_basic_to_profiles(void)
@@ -862,12 +864,61 @@ static void create_log_file(fstream &logFile)
 	}
 }
 
+static auto ProfilerNameStoreRelease = [](profiler_name_store_t *store)
+{
+	profiler_name_store_free(store);
+};
+
+using ProfilerNameStore =
+	std::unique_ptr<profiler_name_store_t,
+			decltype(ProfilerNameStoreRelease)>;
+
+ProfilerNameStore CreateNameStore()
+{
+	return ProfilerNameStore{profiler_name_store_create(),
+					ProfilerNameStoreRelease};
+}
+
+static auto SnapshotRelease = [](profiler_snapshot_t *snap)
+{
+	profile_snapshot_free(snap);
+};
+
+using ProfilerSnapshot = 
+	std::unique_ptr<profiler_snapshot_t, decltype(SnapshotRelease)>;
+
+ProfilerSnapshot GetSnapshot()
+{
+	return ProfilerSnapshot{profile_snapshot_create(), SnapshotRelease};
+}
+
+static auto ProfilerFree = [](void *)
+{
+	profiler_stop();
+
+	auto snap = GetSnapshot();
+
+	profiler_print(snap.get());
+	profiler_print_time_between_calls(snap.get());
+
+	profiler_free();
+};
+
 static int run_program(fstream &logFile, int argc, char *argv[])
 {
 	int ret = -1;
+
+	auto profilerNameStore = CreateNameStore();
+
+	std::unique_ptr<void, decltype(ProfilerFree)>
+		prof_release(static_cast<void*>(&ProfilerFree),
+				ProfilerFree);
+
+	profiler_start();
+
 	QCoreApplication::addLibraryPath(".");
 
-	OBSApp program(argc, argv);
+	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		program.AppInit();
 
