@@ -63,9 +63,6 @@ static void *MFAAC_Create(obs_data_t *settings, obs_encoder_t *encoder)
 	std::unique_ptr<Encoder> enc(new Encoder(encoder,
 			bitrate, channels, sampleRate, bitsPerSample));
 
-	audio_convert_info aci;
-	aci.samples_per_sec = sampleRate;
-
 	if (!enc->Initialize())
 		return nullptr;
 
