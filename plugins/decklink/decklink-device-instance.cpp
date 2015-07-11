@@ -19,6 +19,10 @@ DeckLinkDeviceInstance::DeckLinkDeviceInstance(DeckLink *decklink_,
 	currentPacket.format          = AUDIO_FORMAT_16BIT;
 }
 
+DeckLinkDeviceInstance::~DeckLinkDeviceInstance()
+{
+}
+
 void DeckLinkDeviceInstance::HandleAudioPacket(
 		IDeckLinkAudioInputPacket *audioPacket,
 		const uint64_t timestamp)

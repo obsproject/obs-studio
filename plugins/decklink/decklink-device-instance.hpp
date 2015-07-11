@@ -19,6 +19,7 @@ protected:
 
 public:
 	DeckLinkDeviceInstance(DeckLink *decklink, DeckLinkDevice *device);
+	virtual ~DeckLinkDeviceInstance();
 
 	inline DeckLinkDevice *GetDevice() const {return device;}
 	inline long long GetActiveModeId() const
