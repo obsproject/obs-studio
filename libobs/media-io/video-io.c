@@ -18,6 +18,7 @@
 #include <assert.h>
 #include "../util/bmem.h"
 #include "../util/platform.h"
+#include "../util/profiler.h"
 #include "../util/threading.h"
 #include "../util/darray.h"
 
@@ -25,6 +26,8 @@
 #include "video-io.h"
 #include "video-frame.h"
 #include "video-scaler.h"
+
+extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
 #define MAX_CONVERT_BUFFERS 3
 #define MAX_CACHE_SIZE 16
@@ -162,16 +165,24 @@ static void *video_thread(void *param)
 
 	os_set_thread_name("video-io: video thread");
 
+	const char *video_thread_name =
+		profile_store_name(obs_get_profiler_name_store(),
+				"video_thread(%s)", video->info.name);
+
 	while (os_sem_wait(video->update_semaphore) == 0) {
 		if (video->stop)
 			break;
 
+		profile_start(video_thread_name);
 		while (!video->stop && !video_output_cur_frame(video)) {
 			video->total_frames++;
 			video->skipped_frames++;
 		}
 
 		video->total_frames++;
+		profile_end(video_thread_name);
+
+		profile_reenable_thread();
 	}
 
 	return NULL;
