@@ -295,6 +295,7 @@
             }
         ],
         "recommended": {
+            "cbr": true,
             "keyint": 2,
             "max audio bitrate": 160,
             "max video bitrate": 3500,
