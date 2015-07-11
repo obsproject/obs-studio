@@ -617,9 +617,16 @@ static void full_stop(struct obs_encoder *encoder)
 	}
 }
 
+static const char *do_encode_name = "do_encode";
 static inline void do_encode(struct obs_encoder *encoder,
 		struct encoder_frame *frame)
 {
+	profile_start(do_encode_name);
+	if (!encoder->profile_encoder_encode_name)
+		encoder->profile_encoder_encode_name =
+			profile_store_name(obs_get_profiler_name_store(),
+					"encode(%s)", encoder->context.name);
+
 	struct encoder_packet pkt = {0};
 	bool received = false;
 	bool success;
@@ -628,8 +635,10 @@ static inline void do_encode(struct obs_encoder *encoder,
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 
+	profile_start(encoder->profile_encoder_encode_name);
 	success = encoder->info.encode(encoder->context.data, frame, &pkt,
 			&received);
+	profile_end(encoder->profile_encoder_encode_name);
 	if (!success) {
 		full_stop(encoder);
 		blog(LOG_ERROR, "Error encoding with encoder '%s'",
@@ -652,10 +661,15 @@ static inline void do_encode(struct obs_encoder *encoder,
 
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
 	}
+
+	profile_end(do_encode_name);
 }
 
+static const char *receive_video_name = "receive_video";
 static void receive_video(void *param, struct video_data *frame)
 {
+	profile_start(receive_video_name);
+
 	struct obs_encoder    *encoder  = param;
 	struct encoder_frame  enc_frame;
 
@@ -675,10 +689,15 @@ static void receive_video(void *param, struct video_data *frame)
 	do_encode(encoder, &enc_frame);
 
 	encoder->cur_pts += encoder->timebase_num;
+
+	profile_end(receive_video_name);
 }
 
+static const char *buffer_audio_name = "buffer_audio";
 static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 {
+	profile_start(buffer_audio_name);
+
 	size_t samplerate = encoder->samplerate;
 	size_t size = data->frames * encoder->blocksize;
 	size_t offset_size = 0;
@@ -689,13 +708,13 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 
 		/* no video yet, so don't start audio */
 		if (!v_start_ts)
-			return false;
+			goto fail;
 
 		/* audio starting point still not synced with video starting
 		 * point, so don't start audio */
 		end_ts += (uint64_t)data->frames * 1000000000ULL / samplerate;
 		if (end_ts <= v_start_ts)
-			return false;
+			goto fail;
 
 		/* ready to start audio, truncate if necessary */
 		if (data->timestamp < v_start_ts) {
@@ -718,7 +737,12 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 			circlebuf_push_back(&encoder->audio_input_buffer[i],
 					data->data[i] + offset_size, size);
 
+	profile_end(buffer_audio_name);
 	return true;
+
+fail:
+	profile_end(buffer_audio_name);
+	return false;
 }
 
 static void send_audio_data(struct obs_encoder *encoder)
@@ -744,17 +768,23 @@ static void send_audio_data(struct obs_encoder *encoder)
 	encoder->cur_pts += encoder->framesize;
 }
 
+static const char *receive_audio_name = "receive_audio";
 static void receive_audio(void *param, size_t mix_idx, struct audio_data *data)
 {
+	profile_start(receive_audio_name);
+
 	struct obs_encoder *encoder = param;
 
 	if (!buffer_audio(encoder, data))
-		return;
+		goto end;
 
 	while (encoder->audio_input_buffer[0].size >= encoder->framesize_bytes)
 		send_audio_data(encoder);
 
 	UNUSED_PARAMETER(mix_idx);
+
+end:
+	profile_end(receive_audio_name);
 }
 
 void obs_encoder_add_output(struct obs_encoder *encoder,

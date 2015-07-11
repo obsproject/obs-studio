@@ -1291,12 +1291,23 @@ static inline void query_hotkeys()
 void *obs_hotkey_thread(void *arg)
 {
 	UNUSED_PARAMETER(arg);
+
+	const char *hotkey_thread_name =
+		profile_store_name(obs_get_profiler_name_store(),
+				"obs_hotkey_thread(%g ms)", 25.);
+	profile_register_root(hotkey_thread_name, (uint64_t)25000000);
+
 	while (os_event_timedwait(obs->hotkeys.stop_event, 25) == ETIMEDOUT) {
 		if (!lock())
 			continue;
 
+		profile_start(hotkey_thread_name);
 		query_hotkeys();
+		profile_end(hotkey_thread_name);
+
 		unlock();
+
+		profile_reenable_thread();
 	}
 	return NULL;
 }

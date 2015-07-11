@@ -717,9 +717,12 @@ static bool obs_init(const char *locale, profiler_name_store_t *store)
 extern void initialize_crash_handler(void);
 #endif
 
+static const char *obs_startup_name = "obs_startup";
 bool obs_startup(const char *locale, profiler_name_store_t *store)
 {
 	bool success;
+
+	profile_start(obs_startup_name);
 
 	if (obs) {
 		blog(LOG_WARNING, "Tried to call obs_startup more than once");
@@ -731,6 +734,7 @@ bool obs_startup(const char *locale, profiler_name_store_t *store)
 #endif
 
 	success = obs_init(locale, store);
+	profile_end(obs_startup_name);
 	if (!success)
 		obs_shutdown();
 

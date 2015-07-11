@@ -23,6 +23,7 @@
 #include "util/dstr.h"
 #include "util/threading.h"
 #include "util/platform.h"
+#include "util/profiler.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -679,6 +680,8 @@ struct obs_encoder {
 
 	pthread_mutex_t                 callbacks_mutex;
 	DARRAY(struct encoder_callback) callbacks;
+
+	const char                      *profile_encoder_encode_name;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);
