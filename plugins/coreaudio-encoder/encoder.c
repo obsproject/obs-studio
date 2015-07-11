@@ -470,7 +470,8 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			"\tsample rate:   %llu\n"
 			"\tcbr:           %s\n"
 			"\toutput buffer: %lu",
-			format_name, bitrate / 1000, ca->samples_per_second,
+			format_name, (unsigned int)bitrate / 1000,
+			ca->samples_per_second,
 			rate_control == kAudioCodecBitRateControlMode_Constant ?
 			"on" : "off",
 			(unsigned long)ca->output_buffer_size);
