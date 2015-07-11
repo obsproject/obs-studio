@@ -24,7 +24,7 @@
 #include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/platform.h>
-#include <util/profiler.h>
+#include <util/profiler.hpp>
 #include <obs-config.h>
 #include <obs.hpp>
 
@@ -354,6 +354,7 @@ bool OBSApp::InitGlobalConfig()
 
 bool OBSApp::InitLocale()
 {
+	ProfileScope("OBSApp::InitLocale");
 	const char *lang = config_get_string(globalConfig, "General",
 			"Language");
 
@@ -545,6 +546,8 @@ static void move_basic_to_scene_collections(void)
 
 void OBSApp::AppInit()
 {
+	ProfileScope("OBSApp::AppInit");
+
 	if (!InitApplicationBundle())
 		throw "Failed to initialize application bundle";
 	if (!MakeUserDirs())
@@ -583,6 +586,8 @@ const char *OBSApp::GetRenderModule() const
 
 bool OBSApp::OBSInit()
 {
+	ProfileScope("OBSApp::OBSInit");
+
 	bool licenseAccepted = config_get_bool(globalConfig, "General",
 			"LicenseAccepted");
 	OBSLicenseAgreement agreement(nullptr);
@@ -904,6 +909,7 @@ static auto ProfilerFree = [](void *)
 	profiler_free();
 };
 
+static const char *run_program_init = "run_program_init";
 static int run_program(fstream &logFile, int argc, char *argv[])
 {
 	int ret = -1;
@@ -915,6 +921,23 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				ProfilerFree);
 
 	profiler_start();
+	profile_register_root(run_program_init, 0);
+
+	auto PrintInitProfile = [&]()
+	{
+		auto snap = GetSnapshot();
+
+		profiler_snapshot_filter_roots(snap.get(), [](void *data,
+					const char *name, bool *remove)
+		{
+			*remove = (*static_cast<const char**>(data)) != name;
+			return true;
+		}, static_cast<void*>(&run_program_init));
+
+		profiler_print(snap.get());
+	};
+
+	ScopeProfiler prof{run_program_init};
 
 	QCoreApplication::addLibraryPath(".");
 
@@ -930,6 +953,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		if (!program.OBSInit())
 			return 0;
+
+		prof.Stop();
+		PrintInitProfile();
 
 		return program.exec();
 
