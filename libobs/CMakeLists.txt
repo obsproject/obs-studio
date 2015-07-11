@@ -204,7 +204,8 @@ set(libobs_util_SOURCES
 	util/dstr.c
 	util/utf8.c
 	util/text-lookup.c
-	util/cf-parser.c)
+	util/cf-parser.c
+	util/profiler.c)
 set(libobs_util_HEADERS
 	util/array-serializer.h
 	util/utf8.h
@@ -225,7 +226,9 @@ set(libobs_util_HEADERS
 	util/serializer.h
 	util/config-file.h
 	util/lexer.h
-	util/platform.h)
+	util/platform.h
+	util/profiler.h
+	util/profiler.hpp)
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
