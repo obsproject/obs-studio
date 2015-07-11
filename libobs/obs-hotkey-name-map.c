@@ -301,7 +301,7 @@ static void show_node(obs_hotkey_name_map_node_t *node, int in)
 	printf("\n");
 	for (int i = 0; i < in; i += 2)
 		printf("| ");
-	printf("%zu:\n", node->children.num);
+	printf("%lu:\n", (unsigned long)node->children.num);
 
 	for (size_t i = 0; i < node->children.num; i++) {
 		for (int i = 0; i < in; i += 2)
