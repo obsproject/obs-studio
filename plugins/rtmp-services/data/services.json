@@ -71,6 +71,10 @@
                 "url": "rtmp://live-iad.twitch.tv/app"
             },
             {
+                "name": "US East: Chicago",
+                "url": "rtmp://live-ord.twitch.tv/app"
+            },
+            {
                 "name": "US East: Miami, FL",
                 "url": "rtmp://live-mia.twitch.tv/app"
             },
