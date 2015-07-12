@@ -2365,11 +2365,19 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
         return 0;
     }
 #elif defined(USE_ONLY_MD5)
-    base64_encodestate state;
+    if ((((length + 2) / 3) * 4) <= maxsize)
+    {
+        base64_encodestate state;
 
-    base64_init_encodestate(&state);
-    output += base64_encode_block((const char *)input, length, output, &state);
-    base64_encode_blockend(output, &state);
+        base64_init_encodestate(&state);
+        output += base64_encode_block((const char *)input, length, output, &state);
+        base64_encode_blockend(output, &state);
+    }
+    else
+    {
+        RTMP_Log(RTMP_LOGDEBUG, "%s, error", __FUNCTION__);
+        return 0;
+    }
 
 #else   /* USE_OPENSSL */
     BIO *bmem, *b64;
