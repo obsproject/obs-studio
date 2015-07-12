@@ -394,6 +394,7 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
+	memset(&stream->rtmp.Link, 0, sizeof(stream->rtmp.Link));
 	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
 

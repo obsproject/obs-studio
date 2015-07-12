@@ -633,16 +633,13 @@ int RTMP_SetupURL(RTMP *r, char *url)
 int RTMP_AddStream(RTMP *r, const char *playpath)
 {
     int idx = -1;
+    AVal pp = { (char*)playpath, playpath?(int)strlen(playpath):0 };
 
-    if (playpath && *playpath)
-    {
-        AVal pp = {(char*)playpath, (int)strlen(playpath)};
-        RTMP_ParsePlaypath(&pp, &r->Link.streams[r->Link.nStreams].playpath);
-        r->Link.streams[r->Link.nStreams].id = -1;
+    RTMP_ParsePlaypath(&pp, &r->Link.streams[r->Link.nStreams].playpath);
+    r->Link.streams[r->Link.nStreams].id = -1;
 
-        idx = r->Link.nStreams;
-        r->Link.nStreams++;
-    }
+    idx = r->Link.nStreams;
+    r->Link.nStreams++;
 
     return idx;
 }
@@ -2368,11 +2365,19 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
         return 0;
     }
 #elif defined(USE_ONLY_MD5)
-    base64_encodestate state;
+    if ((((length + 2) / 3) * 4) <= maxsize)
+    {
+        base64_encodestate state;
 
-    base64_init_encodestate(&state);
-    output += base64_encode_block((const char *)input, length, output, &state);
-    base64_encode_blockend(output, &state);
+        base64_init_encodestate(&state);
+        output += base64_encode_block((const char *)input, length, output, &state);
+        base64_encode_blockend(output, &state);
+    }
+    else
+    {
+        RTMP_Log(RTMP_LOGDEBUG, "%s, error", __FUNCTION__);
+        return 0;
+    }
 
 #else   /* USE_OPENSSL */
     BIO *bmem, *b64;
@@ -4221,14 +4226,17 @@ RTMP_Close(RTMP *r)
     }
 
 #if defined(CRYPTO) || defined(USE_ONLY_MD5)
-    for (int idx = 0; idx < r->Link.nStreams; idx++)
+    if (!(r->Link.protocol & RTMP_FEATURE_WRITE) || (r->Link.pFlags & RTMP_PUB_CLEAN))
     {
-        free(r->Link.streams[idx].playpath.av_val);
-        r->Link.streams[idx].playpath.av_val = NULL;
-    }
+        for (int idx = 0; idx < r->Link.nStreams; idx++)
+        {
+            free(r->Link.streams[idx].playpath.av_val);
+            r->Link.streams[idx].playpath.av_val = NULL;
+        }
 
-    r->Link.curStreamIdx = 0;
-    r->Link.nStreams = 0;
+        r->Link.curStreamIdx = 0;
+        r->Link.nStreams = 0;
+    }
 
     if ((r->Link.protocol & RTMP_FEATURE_WRITE) &&
             (r->Link.pFlags & RTMP_PUB_CLEAN) &&

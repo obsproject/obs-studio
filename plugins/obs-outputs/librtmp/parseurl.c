@@ -177,6 +177,9 @@ void RTMP_ParsePlaypath(AVal *in, AVal *out)
     out->av_val = NULL;
     out->av_len = 0;
 
+    if (!playpath)
+        return;
+
     if ((*ppstart == '?') &&
             (temp=strstr(ppstart, "slist=")) != 0)
     {
