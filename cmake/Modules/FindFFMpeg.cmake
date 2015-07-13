@@ -44,9 +44,9 @@ function(find_ffmpeg_library component header)
 			ENV FFmpegPath
 			ENV DepsPath${_lib_suffix}
 			ENV DepsPath
-			${FFmpegPath${lib_suffix}}
+			${FFmpegPath${_lib_suffix}}
 			${FFmpegPath}
-			${DepsPath${lib_suffix}}
+			${DepsPath${_lib_suffix}}
 			${DepsPath}
 			${PC_FFMPEG_${component}_INCLUDE_DIRS}
 		PATH_SUFFIXES ffmpeg libav)
@@ -57,6 +57,12 @@ function(find_ffmpeg_library component header)
 		HINTS
 			ENV FFmpegPath${_lib_suffix}
 			ENV FFmpegPath
+			ENV DepsPath${_lib_suffix}
+			ENV DepsPath
+			${FFmpegPath${_lib_suffix}}
+			${FFmpegPath}
+			${DepsPath${_lib_suffix}}
+			${DepsPath}
 			${PC_FFMPEG_${component}_LIBRARY_DIRS}
 		PATH_SUFFIXES
 			lib${_lib_suffix} lib

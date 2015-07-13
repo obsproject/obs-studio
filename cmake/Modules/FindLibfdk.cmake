@@ -24,6 +24,12 @@ find_path(Libfdk_INCLUDE_DIR
 	HINTS
 		ENV LibfdkPath${_lib_suffix}
 		ENV LibfdkPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${LibfdkPath${_lib_suffix}}
+		${LibfdkPath}
+		${DepsPath${_lib_suffix}}
+		${DepsPath}
 		${_LIBFDK_INCLUDE_DIRS}
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include)
@@ -33,6 +39,12 @@ find_library(Libfdk_LIB
 	HINTS
 		ENV LibfdkPath${_lib_suffix}
 		ENV LibfdkPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${LibfdkPath${_lib_suffix}}
+		${LibfdkPath}
+		${DepsPath${_lib_suffix}}
+		${DepsPath}
 		${_LIBFDK_LIBRARY_DIRS}
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib

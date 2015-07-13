@@ -23,9 +23,9 @@ find_path(Jansson_INCLUDE_DIR
 		ENV JanssonPath
 		ENV DepsPath${_lib_suffix}
 		ENV DepsPath
-		${JanssonPath${lib_suffix}}
+		${JanssonPath${_lib_suffix}}
 		${JanssonPath}
-		${DepsPath${lib_suffix}}
+		${DepsPath${_lib_suffix}}
 		${DepsPath}
 		${_JANSSON_INCLUDE_DIRS}
 	PATHS
@@ -36,6 +36,12 @@ find_library(Jansson_LIB
 	HINTS
 		ENV JanssonPath${_lib_suffix}
 		ENV JanssonPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${JanssonPath${_lib_suffix}}
+		${JanssonPath}
+		${DepsPath${_lib_suffix}}
+		${DepsPath}
 		${_JANSSON_LIBRARY_DIRS}
 	PATHS
 		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
