@@ -23,6 +23,10 @@
                 "url": "rtmp://live-tpe.twitch.tv/app"
             },
             {
+                "name": "Asia: Tokyo (2), Japan",
+                "url": "rtmp://live-tyo-2.twitch.tv/app"
+            },
+            {
                 "name": "Asia: Tokyo, Japan",
                 "url": "rtmp://live-tyo.twitch.tv/app"
             },
