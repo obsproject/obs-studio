@@ -88,7 +88,15 @@ static void AddExtraModulePaths()
 		return;
 
 	string path = (char*)base_module_dir;
+#if defined(__APPLE__)
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
+#elif ARCH_BITS == 64
+	obs_add_module_path((path + "/bin/64bit").c_str(),
+			(path + "/data").c_str());
+#else
+	obs_add_module_path((path + "/bin/32bit").c_str(),
+			(path + "/data").c_str());
+#endif
 }
 
 static QList<QKeySequence> DeleteKeys;
