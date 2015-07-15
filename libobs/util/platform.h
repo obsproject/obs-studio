@@ -146,6 +146,24 @@ EXPORT int os_copyfile(const char *file_in, const char *file_out);
 #endif
 #endif
 
+#ifdef __APPLE__
+# define ARCH_BITS 64
+#else
+# ifdef _WIN32
+#  ifdef _WIN64
+#   define ARCH_BITS 64
+#  else
+#   define ARCH_BITS 32
+#  endif
+# else
+#  ifdef __LP64__
+#   define ARCH_BITS 64
+#  else
+#   define ARCH_BITS 32
+#  endif
+# endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif
