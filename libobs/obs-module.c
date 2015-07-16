@@ -258,11 +258,11 @@ static void process_found_module(struct obs_module_path *omp,
 	char                   *parsed_data_dir;
 	bool                   bin_found = true;
 
-	if (strcmp(path, ".") == 0 || strcmp(path, "..") == 0)
-		return;
-
 	file = strrchr(path, '/');
 	file = file ? (file + 1) : path;
+
+	if (strcmp(file, ".") == 0 || strcmp(file, "..") == 0)
+		return;
 
 	dstr_copy(&name, file);
 	if (!directory) {
