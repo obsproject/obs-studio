@@ -2,6 +2,21 @@
 
 set(EXTERNAL_PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/rundir")
 
+# Fix XCode includes to ignore warnings on system includes
+function(target_include_directories_system _target)
+  if(XCODE)
+    foreach(_arg ${ARGN})
+      if("${_arg}" STREQUAL "PRIVATE" OR "${_arg}" STREQUAL "PUBLIC" OR "${_arg}" STREQUAL "INTERFACE")
+        set(_scope ${_arg})
+      else()
+        target_compile_options(${_target} ${_scope} -isystem${_arg})
+      endif()
+    endforeach()
+  else()
+    target_include_directories(${_target} SYSTEM ${_scope} ${ARGN})
+  endif()
+endfunction()
+
 function(install_external_plugin_data_internal target source_dir target_dir)
 	install(DIRECTORY ${source_dir}/
 		DESTINATION "${target}/${target_dir}"
