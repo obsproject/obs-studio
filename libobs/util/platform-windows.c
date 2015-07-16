@@ -52,19 +52,35 @@ void *os_dlopen(const char *path)
 {
 	struct dstr dll_name;
 	wchar_t *wpath;
+	wchar_t *wpath_slash;
 	HMODULE h_library = NULL;
 
 	if (!path)
 		return NULL;
 
 	dstr_init_copy(&dll_name, path);
+	dstr_replace(&dll_name, "\\", "/");
 	if (!dstr_find(&dll_name, ".dll"))
 		dstr_cat(&dll_name, ".dll");
 
 	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
+
+	/* to make module dependency issues easier to deal with, allow
+	 * dynamically loaded libraries on windows to search for dependent
+	 * libraries that are within the library's own directory */
+	wpath_slash = wcsrchr(wpath, L'/');
+	if (wpath_slash) {
+		*wpath_slash = 0;
+		SetDllDirectoryW(wpath);
+		*wpath_slash = L'/';
+	}
+
 	h_library = LoadLibraryW(wpath);
 	bfree(wpath);
 	dstr_free(&dll_name);
+
+	if (wpath_slash)
+		SetDllDirectoryW(NULL);
 
 	if (!h_library)
 		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld",
