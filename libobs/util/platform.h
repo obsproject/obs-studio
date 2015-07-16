@@ -130,6 +130,9 @@ EXPORT void os_globfree(os_glob_t *pglob);
 EXPORT int os_unlink(const char *path);
 EXPORT int os_rmdir(const char *path);
 
+EXPORT char *os_getcwd(char *path, size_t size);
+EXPORT int os_chdir(const char *path);
+
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
 #define MKDIR_ERROR   -1

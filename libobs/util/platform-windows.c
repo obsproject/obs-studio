@@ -520,3 +520,36 @@ error:
 	bfree(file_out_utf16);
 	return code;
 }
+
+char *os_getcwd(char *path, size_t size)
+{
+	wchar_t *path_w;
+	DWORD len;
+
+	len = GetCurrentDirectoryW(0, NULL);
+	if (!len)
+		return NULL;
+
+	path_w = bmalloc((len + 1) * sizeof(wchar_t));
+	GetCurrentDirectoryW(len + 1, path_w);
+	os_wcs_to_utf8(path_w, (size_t)len, path, size);
+	bfree(path_w);
+
+	return path;
+}
+
+int os_chdir(const char *path)
+{
+	wchar_t *path_w = NULL;
+	size_t size;
+	int ret;
+
+	size = os_utf8_to_wcs_ptr(path, 0, &path_w);
+	if (!path_w)
+		return -1;
+
+	ret = SetCurrentDirectoryW(path_w) ? 0 : -1;
+	bfree(path_w);
+
+	return ret;
+}

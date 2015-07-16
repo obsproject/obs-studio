@@ -412,3 +412,13 @@ error:
 	fclose(file_in);
 	return ret;
 }
+
+char *os_getcwd(char *path, size_t size)
+{
+	return getcwd(path, size);
+}
+
+int os_chdir(const char *path)
+{
+	return chdir(path);
+}
