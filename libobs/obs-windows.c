@@ -217,7 +217,7 @@ void log_system_info(void)
 {
 	osvi.dwOSVersionInfoSize = sizeof(osvi);
 	GetVersionExW(&osvi);
-	win_ver = (osvi.dwMajorVersion << 16) | osvi.dwMinorVersion;
+	win_ver = (osvi.dwMajorVersion << 8) | osvi.dwMinorVersion;
 
 	log_processor_info();
 	log_processor_cores();
