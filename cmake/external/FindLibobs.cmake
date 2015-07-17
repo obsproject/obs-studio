@@ -5,14 +5,10 @@
 #  LIBOBS_FOUND
 #  LIBOBS_INCLUDE_DIRS
 #  LIBOBS_LIBRARIES
-#
-# For use in OBS:
-#
-#  OBS_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
-	pkg_check_modules(_OBS QUIET obs)
+	pkg_check_modules(_OBS QUIET obs libobs)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -29,7 +25,7 @@ if(DEFINED CMAKE_BUILD_TYPE)
 	endif()
 endif()
 
-find_path(OBS_INCLUDE_DIR
+find_path(LIBOBS_INCLUDE_DIR
 	NAMES obs.h
 	HINTS
 		ENV obsPath${_lib_suffix}
@@ -78,15 +74,15 @@ function(find_obs_lib base_name repo_build_path lib_name)
 		)
 endfunction()
 
-find_obs_lib(OBS libobs obs)
+find_obs_lib(LIBOBS libobs obs)
 
 if(MSVC)
 	find_obs_lib(W32_PTHREADS deps/w32-pthreads w32-pthreads)
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Libobs DEFAULT_MSG OBS_LIB OBS_INCLUDE_DIR)
-mark_as_advanced(OBS_INCLUDE_DIR OBS_LIB)
+find_package_handle_standard_args(Libobs DEFAULT_MSG LIBOBS_LIB LIBOBS_INCLUDE_DIR)
+mark_as_advanced(LIBOBS_INCLUDE_DIR LIBOBS_LIB)
 
 if(LIBOBS_FOUND)
 	if(MSVC)
@@ -94,12 +90,12 @@ if(LIBOBS_FOUND)
 			message(FATAL_ERROR "Could not find the w32-pthreads library" )
 		endif()
 
-		set(W32_PTHREADS_INCLUDE_DIR ${OBS_INCLUDE_DIR}/../deps/w32-pthreads)
+		set(W32_PTHREADS_INCLUDE_DIR ${LIBOBS_INCLUDE_DIR}/../deps/w32-pthreads)
 	endif()
 
-	set(LIBOBS_INCLUDE_DIRS ${OBS_INCLUDE_DIR} ${W32_PTHREADS_INCLUDE_DIR})
-	set(LIBOBS_LIBRARIES ${OBS_LIB} ${W32_PTHREADS_LIB})
-	include(${OBS_INCLUDE_DIR}/../cmake/external/ObsPluginHelpers.cmake)
+	set(LIBOBS_INCLUDE_DIRS ${LIBOBS_INCLUDE_DIR} ${W32_PTHREADS_INCLUDE_DIR})
+	set(LIBOBS_LIBRARIES ${LIBOBS_LIB} ${W32_PTHREADS_LIB})
+	include(${LIBOBS_INCLUDE_DIR}/../cmake/external/ObsPluginHelpers.cmake)
 else()
 	message(FATAL_ERROR "Could not find the libobs library" )
 endif()
