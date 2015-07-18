@@ -30,7 +30,7 @@ endif()
 function(find_ffmpeg_library component header)
 	string(TOUPPER "${component}" component_u)
 	set(FFMPEG_${component_u}_FOUND FALSE PARENT_SCOPE)
-	set(FFMpeg_${component}_FOUND FALSE PARENT_SCOPE)
+	set(FFmpeg_${component}_FOUND FALSE PARENT_SCOPE)
 
 	if(PKG_CONFIG_FOUND)
 		pkg_check_modules(PC_FFMPEG_${component} QUIET lib${component})
@@ -79,7 +79,7 @@ function(find_ffmpeg_library component header)
 
 	if(FFMPEG_${component}_INCLUDE_DIR AND FFMPEG_${component}_LIBRARY)
 		set(FFMPEG_${component_u}_FOUND TRUE PARENT_SCOPE)
-		set(FFMpeg_${component}_FOUND TRUE PARENT_SCOPE)
+		set(FFmpeg_${component}_FOUND TRUE PARENT_SCOPE)
 
 		list(APPEND FFMPEG_INCLUDE_DIRS ${FFMPEG_${component}_INCLUDE_DIR})
 		list(REMOVE_DUPLICATES FFMPEG_INCLUDE_DIRS)
@@ -104,7 +104,7 @@ function(find_ffmpeg_library component header)
 
 			set(FFMPEG_${component_u}_VERSION_STRING "${_major}.${_minor}.${_micro}" PARENT_SCOPE)
 		else()
-			message(STATUS "Failed parsing FFMpeg ${component} version")
+			message(STATUS "Failed parsing FFmpeg ${component} version")
 		endif()
 	endif()
 endfunction()
@@ -112,14 +112,14 @@ endfunction()
 set(FFMPEG_INCLUDE_DIRS)
 set(FFMPEG_LIBRARIES)
 
-if(NOT FFMpeg_FIND_COMPONENTS)
-	message(FATAL_ERROR "No FFMpeg components requested")
+if(NOT FFmpeg_FIND_COMPONENTS)
+	message(FATAL_ERROR "No FFmpeg components requested")
 endif()
 
-list(GET FFMpeg_FIND_COMPONENTS 0 _first_comp)
+list(GET FFmpeg_FIND_COMPONENTS 0 _first_comp)
 string(TOUPPER "${_first_comp}" _first_comp)
 
-foreach(component ${FFMpeg_FIND_COMPONENTS})
+foreach(component ${FFmpeg_FIND_COMPONENTS})
 	if(component STREQUAL "avcodec")
 		find_ffmpeg_library("${component}" "avcodec.h")
 	elseif(component STREQUAL "avdevice")
@@ -139,12 +139,12 @@ foreach(component ${FFMpeg_FIND_COMPONENTS})
 	elseif(component STREQUAL "swscale")
 		find_ffmpeg_library("${component}" "swscale.h")
 	else()
-		message(FATAL_ERROR "Unknown FFMpeg component requested: ${component}")
+		message(FATAL_ERROR "Unknown FFmpeg component requested: ${component}")
 	endif()
 endforeach()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(FFMpeg
+find_package_handle_standard_args(FFmpeg
 	FOUND_VAR FFMPEG_FOUND
 	REQUIRED_VARS FFMPEG_${_first_comp}_LIBRARIES FFMPEG_${_first_comp}_INCLUDE_DIRS
 	VERSION_VAR FFMPEG_${_first_comp}_VERSION_STRING

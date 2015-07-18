@@ -1,6 +1,6 @@
 project(win-dshow)
 
-find_package(FFMpeg REQUIRED COMPONENTS avcodec avutil)
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
 set(win-dshow_HEADERS

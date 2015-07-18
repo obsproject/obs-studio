@@ -2,7 +2,7 @@ project(libobs)
 
 find_package(Threads REQUIRED)
 
-find_package(FFMpeg REQUIRED
+find_package(FFmpeg REQUIRED
 	COMPONENTS avformat avutil swscale swresample
 	OPTIONAL_COMPONENTS avcodec)
 include_directories(${FFMPEG_INCLUDE_DIRS})

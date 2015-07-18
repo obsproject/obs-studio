@@ -1,6 +1,6 @@
 project(ffmpeg-mux)
 
-find_package(FFMpeg REQUIRED
+find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avutil avformat)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
