@@ -29,14 +29,14 @@ endfunction()
 
 # Installs data
 # 'target' is the destination target project being installed to
-# 'data_loc' specifies the directory of the source of the data
+# 'data_loc' specifies the directory of the data
 function(install_external_plugin_data target data_loc)
 	install_external_plugin_data_internal(${target} ${data_loc} "data")
 endfunction()
 
 # Installs data in an architecture-specific data directory on windows/linux (data/32bit or data/64bit).  Does not apply for mac.
 # 'target' is the destination target project being installed to
-# 'data_loc' specifies the directory of the source of the data being installed
+# 'data_loc' specifies the directory of the data being installed
 function(install_external_plugin_arch_data target data_loc)
 	if(APPLE)
 		set(_bit_suffix "")
@@ -51,7 +51,7 @@ endfunction()
 
 # Installs data in the target's bin directory
 # 'target' is the destination target project being installed to
-# 'data_loc' specifies the directory of the source of the data being installed
+# 'data_loc' specifies the directory of the data being installed
 function(install_external_plugin_data_to_bin target data_loc)
 	if(APPLE)
 		set(_bit_suffix "")
