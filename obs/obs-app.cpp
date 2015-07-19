@@ -18,6 +18,8 @@
 #include <time.h>
 #include <stdio.h>
 #include <wchar.h>
+#include <chrono>
+#include <ratio>
 #include <sstream>
 #include <util/bmem.h>
 #include <util/dstr.h>
@@ -167,11 +169,27 @@ QObject *CreateShortcutFilter()
 
 string CurrentTimeString()
 {
-	time_t     now = time(0);
+	using namespace std::chrono;
+
 	struct tm  tstruct;
 	char       buf[80];
+
+	auto tp = system_clock::now();
+	auto now = system_clock::to_time_t(tp);
 	tstruct = *localtime(&now);
-	strftime(buf, sizeof(buf), "%X", &tstruct);
+
+	size_t written = strftime(buf, sizeof(buf), "%X", &tstruct);
+	if (ratio_less<system_clock::period, seconds::period>::value &&
+			written && (sizeof(buf) - written) > 5) {
+		auto tp_secs =
+			time_point_cast<seconds>(tp);
+		auto millis  =
+			duration_cast<milliseconds>(tp - tp_secs).count();
+
+		snprintf(buf + written, sizeof(buf) - written, ".%03u",
+				static_cast<unsigned>(millis));
+	}
+
 	return buf;
 }
 
