@@ -212,6 +212,15 @@
         }
     },
     {
+        "name": "WatchPeopleCode.com",
+        "servers": [
+            {
+                "name": "Primary",
+                "url": "rtmp://streaming.watchpeoplecode.com/live"
+            }
+        ]
+    },
+    {
         "name": "Livecoding.tv",
         "servers": [
             {
