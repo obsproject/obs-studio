@@ -31,9 +31,9 @@ using namespace std;
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog                (parent),
+	  preview                (new OBSQTDisplay(this)),
 	  main                   (qobject_cast<OBSBasic*>(parent)),
 	  acceptClicked          (false),
-	  ui                     (new Ui::OBSBasicProperties),
 	  source                 (source_),
 	  removedSignal          (obs_source_get_signal_handler(source),
 	                          "remove", OBSBasicProperties::SourceRemoved,
@@ -53,10 +53,10 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			QDialogButtonBox::Cancel);
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
 
-	ui->setupUi(this);
-
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
+
+	QMetaObject::connectSlotsByName(this);
 
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
@@ -69,6 +69,12 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
 
+	preview->setMinimumSize(20, 20);
+	preview->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
+				QSizePolicy::Expanding));
+
+	setLayout(new QVBoxLayout(this));
+	layout()->addWidget(preview);
 	layout()->addWidget(view);
 	layout()->addWidget(buttonBox);
 	layout()->setAlignment(buttonBox, Qt::AlignRight | Qt::AlignBottom);
@@ -83,7 +89,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			this, SLOT(OnPropertiesResized()));
 
 	connect(windowHandle(), &QWindow::screenChanged, [this]() {
-		QSize size = GetPixelSize(ui->preview);
+		QSize size = GetPixelSize(preview);
 		obs_display_resize(display, size.width(), size.height());
 	});
 
@@ -186,14 +192,14 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 void OBSBasicProperties::OnPropertiesResized()
 {
-	QSize size = GetPixelSize(ui->preview);
+	QSize size = GetPixelSize(preview);
 	obs_display_resize(display, size.width(), size.height());
 }
 
 void OBSBasicProperties::resizeEvent(QResizeEvent *event)
 {
 	if (isVisible()) {
-		QSize size = GetPixelSize(ui->preview);
+		QSize size = GetPixelSize(preview);
 		obs_display_resize(display, size.width(), size.height());
 	}
 
@@ -248,11 +254,11 @@ void OBSBasicProperties::Init()
 
 	show();
 
-	QSize previewSize = GetPixelSize(ui->preview);
+	QSize previewSize = GetPixelSize(preview);
 	init_data.cx      = uint32_t(previewSize.width());
 	init_data.cy      = uint32_t(previewSize.height());
 	init_data.format  = GS_RGBA;
-	QTToGSWindow(ui->preview->winId(), init_data.window);
+	QTToGSWindow(preview->winId(), init_data.window);
 
 	display = obs_display_create(&init_data);
 

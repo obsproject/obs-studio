@@ -19,22 +19,22 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <memory>
+#include <QPointer>
+#include "qt-display.hpp"
 #include <obs.hpp>
 
 class OBSPropertiesView;
 class OBSBasic;
 
-#include "ui_OBSBasicProperties.h"
-
 class OBSBasicProperties : public QDialog {
 	Q_OBJECT
 
 private:
+	QPointer<OBSQTDisplay> preview;
+
 	OBSBasic   *main;
 	bool       acceptClicked;
 
-	std::unique_ptr<Ui::OBSBasicProperties> ui;
 	OBSSource  source;
 	OBSDisplay display;
 	OBSSignal  removedSignal;

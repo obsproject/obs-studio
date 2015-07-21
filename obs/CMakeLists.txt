@@ -184,7 +184,6 @@ set(obs_UI
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
-	forms/OBSBasicProperties.ui
 	forms/OBSRemux.ui)
 
 set(obs_QRC
