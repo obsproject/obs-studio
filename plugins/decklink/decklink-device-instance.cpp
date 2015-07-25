@@ -140,12 +140,14 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFrameArrived(
 	BMDTimeValue videoDur = 0;
 	BMDTimeValue audioTS = 0;
 
-	videoFrame->GetStreamTime(&videoTS, &videoDur, TIME_BASE);
-	audioPacket->GetPacketTime(&audioTS, TIME_BASE);
+	if (videoFrame)
+		videoFrame->GetStreamTime(&videoTS, &videoDur, TIME_BASE);
+	if (audioPacket)
+		audioPacket->GetPacketTime(&audioTS, TIME_BASE);
 
-	if (videoTS >= 0)
+	if (videoFrame && videoTS >= 0)
 		HandleVideoFrame(videoFrame, (uint64_t)videoTS);
-	if (audioTS >= 0)
+	if (audioPacket && audioTS >= 0)
 		HandleAudioPacket(audioPacket, (uint64_t)audioTS);
 
 	return S_OK;
