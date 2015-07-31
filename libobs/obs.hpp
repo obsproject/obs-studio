@@ -270,3 +270,17 @@ public:
 		return *this;
 	}
 };
+
+class OBSContext {
+public:
+	inline OBSContext() {}
+	inline OBSContext(const char *locale)
+	{
+		obs_startup(locale);
+	}
+
+	inline ~OBSContext()
+	{
+		obs_shutdown();
+	}
+};
