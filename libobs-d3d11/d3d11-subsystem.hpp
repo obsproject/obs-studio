@@ -625,7 +625,7 @@ struct gs_device {
 	gs_index_buffer             *curIndexBuffer = nullptr;
 	gs_vertex_shader            *curVertexShader = nullptr;
 	gs_pixel_shader             *curPixelShader = nullptr;
-	gs_swap_chain               *curSwapChain;
+	gs_swap_chain               *curSwapChain = nullptr;
 
 	bool                        zstencilStateChanged = true;
 	bool                        rasterStateChanged = true;

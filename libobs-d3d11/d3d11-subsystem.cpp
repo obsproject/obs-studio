@@ -577,6 +577,11 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 
 void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 {
+	if (!device->curSwapChain) {
+		blog(LOG_WARNING, "device_resize (D3D11): No active swap");
+		return;
+	}
+
 	try {
 		ID3D11RenderTargetView *renderView = NULL;
 		ID3D11DepthStencilView *depthView  = NULL;
@@ -599,18 +604,34 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 
 void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
 {
-	*cx = device->curSwapChain->target.width;
-	*cy = device->curSwapChain->target.height;
+	if (device->curSwapChain) {
+		*cx = device->curSwapChain->target.width;
+		*cy = device->curSwapChain->target.height;
+	} else {
+		blog(LOG_ERROR, "device_get_size (D3D11): no active swap");
+		*cx = 0;
+		*cy = 0;
+	}
 }
 
 uint32_t device_get_width(const gs_device_t *device)
 {
-	return device->curSwapChain->target.width;
+	if (device->curSwapChain) {
+		return device->curSwapChain->target.width;
+	} else {
+		blog(LOG_ERROR, "device_get_size (D3D11): no active swap");
+		return 0;
+	}
 }
 
 uint32_t device_get_height(const gs_device_t *device)
 {
-	return device->curSwapChain->target.height;
+	if (device->curSwapChain) {
+		return device->curSwapChain->target.height;
+	} else {
+		blog(LOG_ERROR, "device_get_size (D3D11): no active swap");
+		return 0;
+	}
 }
 
 gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
@@ -1016,10 +1037,12 @@ gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device)
 void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		gs_zstencil_t *zstencil)
 {
-	if (!tex)
-		tex = &device->curSwapChain->target;
-	if (!zstencil)
-		zstencil = &device->curSwapChain->zs;
+	if (device->curSwapChain) {
+		if (!tex)
+			tex = &device->curSwapChain->target;
+		if (!zstencil)
+			zstencil = &device->curSwapChain->zs;
+	}
 
 	if (device->curRenderTarget   == tex &&
 	    device->curZStencilBuffer == zstencil)
@@ -1049,13 +1072,15 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 void device_set_cube_render_target(gs_device_t *device, gs_texture_t *tex,
 		int side, gs_zstencil_t *zstencil)
 {
-	if (!tex) {
-		tex = &device->curSwapChain->target;
-		side = 0;
-	}
+	if (device->curSwapChain) {
+		if (!tex) {
+			tex = &device->curSwapChain->target;
+			side = 0;
+		}
 
-	if (!zstencil)
-		zstencil = &device->curSwapChain->zs;
+		if (!zstencil)
+			zstencil = &device->curSwapChain->zs;
+	}
 
 	if (device->curRenderTarget   == tex  &&
 	    device->curRenderSide     == side &&
@@ -1219,6 +1244,9 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 		if (!device->curVertexBuffer)
 			throw "No vertex buffer specified";
 
+		if (!device->curSwapChain && !device->curRenderTarget)
+			throw "No render target or swap chain to render to";
+
 		gs_effect_t *effect = gs_get_effect();
 		if (effect)
 			gs_effect_update_params(effect);
@@ -1311,7 +1339,11 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 
 void device_present(gs_device_t *device)
 {
-	device->curSwapChain->swap->Present(0, 0);
+	if (device->curSwapChain) {
+		device->curSwapChain->swap->Present(0, 0);
+	} else {
+		blog(LOG_WARNING, "device_present (D3D11): No active swap");
+	}
 }
 
 void device_flush(gs_device_t *device)
