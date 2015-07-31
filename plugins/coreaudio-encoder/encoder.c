@@ -224,6 +224,9 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 	if (code) {
 		log_osstatus(LOG_WARNING, ca,
 				"AudioConverterGetProperty(bitrates)", code);
+
+		free(bitrates);
+
 		return false;
 	}
 
