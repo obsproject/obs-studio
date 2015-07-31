@@ -1051,7 +1051,12 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 
 void device_flush(gs_device_t *device)
 {
+#ifdef __APPLE__
+	if (!device->cur_swap)
+		glFlush();
+#else
 	glFlush();
+#endif
 
 	UNUSED_PARAMETER(device);
 }
