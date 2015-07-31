@@ -87,7 +87,7 @@ set_target_properties(libobs-opengl
 	PROPERTIES
 		OUTPUT_NAME obs-opengl
 		VERSION 0.0
-		SOVERSION 0
+		SOVERSION 0.0
 		)
 endif()
 
