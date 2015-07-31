@@ -263,6 +263,15 @@ extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
 	bfree(info);
 }
 
+static int x_error_handler(Display *display, XErrorEvent *error)
+{
+	char str[512];
+	XGetErrorText(display, error->error_code, str, sizeof(str));
+
+	blog(LOG_ERROR, "X Error: %s", str);
+	return 0;
+}
+
 extern struct gl_platform *gl_platform_create(gs_device_t *device,
 		const struct gs_init_data *info)
 {
@@ -287,6 +296,7 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 	}
 
 	XSetEventQueueOwner(display, XCBOwnsEventQueue);
+	XSetErrorHandler(x_error_handler);
 
 	/* We assume later that cur_swap is already set. */
 	device->cur_swap = &plat->swap;
