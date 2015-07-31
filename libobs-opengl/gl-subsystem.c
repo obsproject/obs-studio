@@ -276,26 +276,46 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 {
 	/* GL automatically resizes the device, so it doesn't do much */
-	device->cur_swap->info.cx = cx;
-	device->cur_swap->info.cy = cy;
+	if (device->cur_swap) {
+		device->cur_swap->info.cx = cx;
+		device->cur_swap->info.cy = cy;
+	} else {
+		blog(LOG_WARNING, "device_resize (GL): No active swap");
+	}
 
 	gl_update(device);
 }
 
 void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
 {
-	*cx = device->cur_swap->info.cx;
-	*cy = device->cur_swap->info.cy;
+	if (device->cur_swap) {
+		*cx = device->cur_swap->info.cx;
+		*cy = device->cur_swap->info.cy;
+	} else {
+		blog(LOG_WARNING, "device_get_size (GL): No active swap");
+		*cx = 0;
+		*cy = 0;
+	}
 }
 
 uint32_t device_get_width(const gs_device_t *device)
 {
-	return device->cur_swap->info.cx;
+	if (device->cur_swap) {
+		return device->cur_swap->info.cx;
+	} else {
+		blog(LOG_WARNING, "device_get_width (GL): No active swap");
+		return 0;
+	}
 }
 
 uint32_t device_get_height(const gs_device_t *device)
 {
-	return device->cur_swap->info.cy;
+	if (device->cur_swap) {
+		return device->cur_swap->info.cy;
+	} else {
+		blog(LOG_WARNING, "device_get_height (GL): No active swap");
+		return 0;
+	}
 }
 
 gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
@@ -873,6 +893,11 @@ static inline bool can_render(const gs_device_t *device)
 
 	if (!device->cur_vertex_buffer) {
 		blog(LOG_ERROR, "No vertex buffer specified");
+		return false;
+	}
+
+	if (!device->cur_swap && !device->cur_render_target) {
+		blog(LOG_ERROR, "No active swap chain or render target");
 		return false;
 	}
 
