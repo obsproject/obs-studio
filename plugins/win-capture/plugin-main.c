@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <obs-module.h>
+#include <util/windows/win-version.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-capture", "en-US")
@@ -21,15 +22,12 @@ extern bool load_graphics_offsets(bool is32bit);
 
 bool obs_module_load(void)
 {
-	OSVERSIONINFO osvi = {0};
+	struct win_version_info ver;
 	bool win8_or_above = false;
 
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	get_win_ver(&ver);
 
-	if (!!GetVersionEx(&osvi)) {
-		win8_or_above = osvi.dwMajorVersion > 6 ||
-			(osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 2);
-	}
+	win8_or_above = ver.major > 6 || (ver.major == 6 && ver.minor >= 2);
 
 	obs_enter_graphics();
 
