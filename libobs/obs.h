@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #pragma once
+#error "libobs is not compilable in this commit (windowless context)"
 
 #include "util/c99defs.h"
 #include "util/bmem.h"
