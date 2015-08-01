@@ -60,6 +60,7 @@ elseif(APPLE)
 		util/platform-nix.c
 		util/platform-cocoa.m)
 	set(libobs_PLATFORM_HEADERS
+		util/windows/win-version.h
 		util/windows/ComPtr.hpp
 		util/windows/CoTaskMemPtr.hpp
 		util/windows/HRError.hpp

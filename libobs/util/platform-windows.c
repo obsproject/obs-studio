@@ -23,6 +23,7 @@
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
+#include "windows/win-version.h"
 
 #include "../../deps/w32-pthreads/pthread.h"
 
@@ -568,4 +569,100 @@ int os_chdir(const char *path)
 	bfree(path_w);
 
 	return ret;
+}
+
+typedef DWORD (WINAPI *get_file_version_info_size_w_t)(
+		LPCWSTR module,
+		LPDWORD unused);
+typedef BOOL (WINAPI *get_file_version_info_w_t)(
+		LPCWSTR module,
+		DWORD unused,
+		DWORD len,
+		LPVOID data);
+typedef BOOL (WINAPI *ver_query_value_w_t)(
+		LPVOID data,
+		LPCWSTR subblock,
+		LPVOID *buf,
+		PUINT sizeout);
+
+static void actually_get_win_ver(struct win_version_info *ver_info)
+{
+	HMODULE ver = GetModuleHandleW(L"version");
+	VS_FIXEDFILEINFO *info = NULL;
+	UINT len = 0;
+	BOOL success;
+	LPVOID data;
+	DWORD size;
+
+	get_file_version_info_size_w_t get_file_version_info_size;
+	get_file_version_info_w_t get_file_version_info;
+	ver_query_value_w_t ver_query_value;
+
+	if (!ver) {
+		ver = LoadLibraryW(L"version");
+		if (!ver) {
+			blog(LOG_ERROR, "Failed to load windows version "
+			                "library");
+			return;
+		}
+	}
+
+	get_file_version_info_size = (get_file_version_info_size_w_t)
+		GetProcAddress(ver, "GetFileVersionInfoSizeW");
+	get_file_version_info = (get_file_version_info_w_t)
+		GetProcAddress(ver, "GetFileVersionInfoW");
+	ver_query_value = (ver_query_value_w_t)
+		GetProcAddress(ver, "VerQueryValueW");
+
+	if (!get_file_version_info_size ||
+	    !get_file_version_info ||
+	    !ver_query_value) {
+			blog(LOG_ERROR, "Failed to load windows version "
+			                "functions");
+		return;
+	}
+
+	size = get_file_version_info_size(L"kernel32", NULL);
+	if (!size) {
+		blog(LOG_ERROR, "Failed to get windows version info size");
+		return;
+	}
+
+	data = bmalloc(size);
+	if (!get_file_version_info(L"kernel32", 0, size, data)) {
+		blog(LOG_ERROR, "Failed to get windows version info");
+		bfree(data);
+		return;
+	}
+
+	success = ver_query_value(data, L"\\", (LPVOID*)&info, &len);
+	if (!success || !info || !len) {
+		blog(LOG_ERROR, "Failed to get windows version info value");
+		bfree(data);
+		return;
+	}
+
+	ver_info->major = (int)HIWORD(info->dwFileVersionMS);
+	ver_info->minor = (int)LOWORD(info->dwFileVersionMS);
+	ver_info->build = (int)HIWORD(info->dwFileVersionLS);
+	ver_info->revis = (int)LOWORD(info->dwFileVersionLS);
+
+	bfree(data);
+	return;
+}
+
+void get_win_ver(struct win_version_info *info)
+{
+	static struct win_version_info ver = {0};
+	static bool got_version = false;
+
+	if (!info)
+		return;
+
+	if (!got_version) {
+		actually_get_win_ver(&ver);
+		got_version = true;
+	}
+
+	*info = ver;
 }
