@@ -18,6 +18,7 @@
 #pragma once
 
 #include <util/AlignedNew.hpp>
+#include <util/windows/win-version.h>
 
 #include <vector>
 #include <string>
@@ -49,11 +50,10 @@ using namespace std;
 
 static inline uint32_t GetWinVer()
 {
-	OSVERSIONINFO ovi;
-	ovi.dwOSVersionInfoSize = sizeof(ovi);
-	GetVersionEx(&ovi);
+	struct win_version_info ver;
+	get_win_ver(&ver);
 
-	return (ovi.dwMajorVersion << 8) | (ovi.dwMinorVersion);
+	return (ver.major << 8) | ver.minor;
 }
 
 static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
