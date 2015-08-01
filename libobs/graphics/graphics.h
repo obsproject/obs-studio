@@ -452,7 +452,7 @@ EXPORT void gs_enum_adapters(
 		void *param);
 
 EXPORT int gs_create(graphics_t **graphics, const char *module,
-		const struct gs_init_data *data);
+		uint32_t adapter);
 EXPORT void gs_destroy(graphics_t *graphics);
 
 EXPORT void gs_enter_context(graphics_t *graphics);
