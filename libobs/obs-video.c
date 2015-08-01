@@ -113,9 +113,6 @@ static inline void render_displays(void)
 
 	pthread_mutex_unlock(&obs->data.displays_mutex);
 
-	/* render main display */
-	render_display(&obs->video.main_display);
-
 	gs_leave_context();
 }
 
