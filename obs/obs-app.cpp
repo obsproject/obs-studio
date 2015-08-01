@@ -306,6 +306,12 @@ static bool MakeUserDirs()
 		return false;
 	if (!do_mkdir(path))
 		return false;
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
+
 #ifdef _WIN32
 	if (GetConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0)
 		return false;
@@ -897,6 +903,28 @@ ProfilerSnapshot GetSnapshot()
 	return ProfilerSnapshot{profile_snapshot_create(), SnapshotRelease};
 }
 
+static void SaveProfilerData(const ProfilerSnapshot &snap)
+{
+	if (currentLogFile.empty())
+		return;
+
+	auto pos = currentLogFile.rfind('.');
+	if (pos == currentLogFile.npos)
+		return;
+
+#define LITERAL_SIZE(x) x, (sizeof(x) - 1)
+	ostringstream dst;
+	dst.write(LITERAL_SIZE("obs-studio/profiler_data/"));
+	dst.write(currentLogFile.c_str(), pos);
+	dst.write(LITERAL_SIZE(".csv.gz"));
+#undef LITERAL_SIZE
+
+	BPtr<char> path = GetConfigPathPtr(dst.str().c_str());
+	if (!profiler_snapshot_dump_csv_gz(snap.get(), path))
+		blog(LOG_WARNING, "Could not save profiler data to '%s'",
+				static_cast<const char*>(path));
+}
+
 static auto ProfilerFree = [](void *)
 {
 	profiler_stop();
@@ -905,6 +933,8 @@ static auto ProfilerFree = [](void *)
 
 	profiler_print(snap.get());
 	profiler_print_time_between_calls(snap.get());
+
+	SaveProfilerData(snap);
 
 	profiler_free();
 };
@@ -948,6 +978,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		OBSTranslator translator;
 
 		create_log_file(logFile);
+		delete_oldest_file("obs-studio/profiler_data");
 
 		program.installTranslator(&translator);
 
