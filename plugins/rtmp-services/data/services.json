@@ -19,6 +19,10 @@
                 "url": "rtmp://live-sel.twitch.tv/app"
             },
             {
+                "name": "Asia: Seoul, South Korea (2)",
+                "url": "rtmp://live-sel-2.twitch.tv/app"
+            },
+            {
                 "name": "Asia: Singapore",
                 "url": "rtmp://live-sin.twitch.tv/app"
             },
