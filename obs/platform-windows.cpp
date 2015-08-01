@@ -22,6 +22,7 @@
 #include "platform.hpp"
 using namespace std;
 
+#include <util/windows/win-version.h>
 #include <util/platform.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -166,12 +167,10 @@ uint32_t GetWindowsVersion()
 	static uint32_t ver = 0;
 
 	if (ver == 0) {
-		OSVERSIONINFOW osvi = {};
-		osvi.dwOSVersionInfoSize = sizeof(osvi);
+		struct win_version_info ver_info;
 
-		if (GetVersionExW(&osvi)) {
-			ver = osvi.dwMajorVersion << 8 | osvi.dwMinorVersion;
-		}
+		get_win_ver(&ver_info);
+		ver = (ver_info.major << 8) | ver_info.minor;
 	}
 
 	return ver;
