@@ -7,6 +7,8 @@
 
 #include <math.h>
 
+#include <zlib.h>
+
 //#define TRACK_OVERHEAD
 
 struct profiler_snapshot {
@@ -1019,6 +1021,28 @@ bool profiler_snapshot_dump_csv(const profiler_snapshot_t *snap,
 	profiler_snapshot_dump(snap, dump_csv_fwrite, f);
 
 	fclose(f);
+	return true;
+}
+
+static void dump_csv_gzwrite(void *data, struct dstr *buffer)
+{
+	gzwrite(data, buffer->array, (unsigned)buffer->len);
+}
+
+bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
+		const char *filename)
+{
+	FILE *f = os_fopen(filename, "wb");
+	if (!f)
+		return false;
+
+	gzFile gz = gzdopen(fileno(f), "wb");
+	if (!gz)
+		return false;
+
+	profiler_snapshot_dump(snap, dump_csv_gzwrite, gz);
+
+	gzclose_w(gz);
 	return true;
 }
 

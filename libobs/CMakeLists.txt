@@ -35,6 +35,10 @@ else()
 		${FFMPEG_AVCODEC_LIBRARIES})
 endif()
 
+find_package(ZLIB REQUIRED)
+
+include_directories(SYSTEM ${ZLIB_INCLUDE_DIR})
+
 add_definitions(-DLIBOBS_EXPORTS)
 
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
@@ -330,6 +334,7 @@ target_link_libraries(libobs
 		${libobs_image_loading_LIBRARIES}
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
+		${ZLIB_LIBRARIES}
 	PUBLIC
 		${THREADS_LIBRARIES})
 

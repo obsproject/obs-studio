@@ -71,6 +71,8 @@ EXPORT void profile_snapshot_free(profiler_snapshot_t *snap);
 
 EXPORT bool profiler_snapshot_dump_csv(const profiler_snapshot_t *snap,
 		const char *filename);
+EXPORT bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
+		const char *filename);
 
 EXPORT size_t profiler_snapshot_num_roots(profiler_snapshot_t *snap);
 EXPORT void profiler_snapshot_enumerate_roots(profiler_snapshot_t *snap,
