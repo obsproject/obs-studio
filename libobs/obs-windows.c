@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/windows/win-version.h"
 #include "util/platform.h"
 #include "util/dstr.h"
 #include "obs.h"
@@ -22,7 +23,6 @@
 
 #include <windows.h>
 
-static OSVERSIONINFOW osvi = {0};
 static uint32_t win_ver = 0;
 
 const char *get_module_extension(void)
@@ -174,16 +174,11 @@ static void log_available_memory(void)
 
 static void log_windows_version(void)
 {
-	char           *build = NULL;
+	struct win_version_info ver;
+	get_win_ver(&ver);
 
-	os_wcs_to_utf8_ptr(osvi.szCSDVersion, 0, &build);
-	blog(LOG_INFO, "Windows Version: %ld.%ld Build %ld %s",
-			osvi.dwMajorVersion,
-			osvi.dwMinorVersion,
-			osvi.dwBuildNumber,
-			build);
-
-	bfree(build);
+	blog(LOG_INFO, "Windows Version: %d.%d Build %d (revision: %d)",
+			ver.major, ver.minor, ver.build, ver.revis);
 }
 
 typedef HRESULT (WINAPI *dwm_is_composition_enabled_t)(BOOL*);
@@ -215,9 +210,10 @@ static void log_aero(void)
 
 void log_system_info(void)
 {
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	GetVersionExW(&osvi);
-	win_ver = (osvi.dwMajorVersion << 8) | osvi.dwMinorVersion;
+	struct win_version_info ver;
+	get_win_ver(&ver);
+
+	win_ver = (ver.major << 8) | ver.minor;
 
 	log_processor_info();
 	log_processor_cores();

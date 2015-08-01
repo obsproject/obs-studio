@@ -24,6 +24,7 @@
 #include "obs-config.h"
 #include "util/dstr.h"
 #include "util/platform.h"
+#include "util/windows/win-version.h"
 
 typedef BOOL (WINAPI *ENUMERATELOADEDMODULES64)(HANDLE process,
 		PENUMLOADED_MODULES_CALLBACK64 enum_loaded_modules_callback,
@@ -84,7 +85,7 @@ struct exception_handler_data {
 	HMODULE                               dbghelp;
 	SYMBOL_INFOW                          *sym_info;
 	PEXCEPTION_POINTERS                   exception;
-	OSVERSIONINFOEX                       osvi;
+	struct win_version_info               win_version;
 	SYSTEMTIME                            time_info;
 	HANDLE                                process;
 
@@ -178,12 +179,7 @@ static inline void init_sym_info(struct exception_handler_data *data)
 
 static inline void init_version_info(struct exception_handler_data *data)
 {
-	data->osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-
-	if (!GetVersionEx((OSVERSIONINFO*)&data->osvi)) {
-		data->osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		GetVersionEx((OSVERSIONINFO*)&data->osvi);
-	}
+	get_win_ver(&data->win_version);
 }
 
 #define PROCESSOR_REG_KEY L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"
@@ -247,13 +243,13 @@ static inline void write_header(struct exception_handler_data *data)
 	dstr_catf(&data->str, "Unhandled exception: %x\n"
 			"Fault address: %"PRIX64" (%s)\n"
 			"libobs version: "OBS_VERSION"\n"
-			"Windows version: %d.%d (build %d) %s\n"
+			"Windows version: %d.%d build %d (revision %d)\n"
 			"CPU: %s\n\n",
 			data->exception->ExceptionRecord->ExceptionCode,
 			data->main_trace.instruction_ptr,
 			data->module_name.array,
-			data->osvi.dwMajorVersion, data->osvi.dwMinorVersion,
-			data->osvi.dwBuildNumber, data->osvi.szCSDVersion,
+			data->win_version.major, data->win_version.minor,
+			data->win_version.build, data->win_version.revis,
 			data->cpu_info.array);
 }
 
