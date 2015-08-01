@@ -184,15 +184,12 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
+void gs_device::InitDevice(uint32_t adapterIdx, IDXGIAdapter *adapter)
 {
 	wstring adapterName;
-	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
 	HRESULT hr = 0;
-
-	make_swap_desc(swapDesc, data);
 
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -205,26 +202,19 @@ void gs_device::InitDevice(const gs_init_data *data, IDXGIAdapter *adapter)
 	char *adapterNameUTF8;
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
-			adapterNameUTF8, data->adapter);
+			adapterNameUTF8, adapterIdx);
 	bfree(adapterNameUTF8);
 
-	hr = D3D11CreateDeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN,
+	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, createFlags, featureLevels,
 			sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL),
-			D3D11_SDK_VERSION, &swapDesc,
-			defaultSwap.swap.Assign(), device.Assign(),
+			D3D11_SDK_VERSION, device.Assign(),
 			&levelUsed, context.Assign());
 	if (FAILED(hr))
-		throw UnsupportedHWError("Failed to create device and "
-		                         "swap chain", hr);
+		throw UnsupportedHWError("Failed to create device", hr);
 
 	blog(LOG_INFO, "D3D11 loaded sucessfully, feature level used: %u",
 			(unsigned int)levelUsed);
-
-	defaultSwap.device     = this;
-	defaultSwap.hwnd       = (HWND)data->window.hwnd;
-	defaultSwap.numBuffers = data->num_backbuffers;
-	defaultSwap.Init(data);
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,
@@ -420,9 +410,8 @@ void gs_device::UpdateViewProjMatrix()
 				&curViewProjMatrix);
 }
 
-gs_device::gs_device(const gs_init_data *data)
-	: curSwapChain         (&defaultSwap),
-	  curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
+gs_device::gs_device(uint32_t adapterIdx)
+	: curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
 	ComPtr<IDXGIAdapter1> adapter;
 
@@ -438,8 +427,8 @@ gs_device::gs_device(const gs_init_data *data)
 	}
 
 	InitCompiler();
-	InitFactory(data->adapter, adapter.Assign());
-	InitDevice(data, adapter);
+	InitFactory(adapterIdx, adapter.Assign());
+	InitDevice(adapterIdx, adapter);
 	device_set_render_target(this, NULL, NULL);
 }
 
@@ -515,7 +504,7 @@ static bool LogAdapterCallback(void *param, const char *name, uint32_t id)
 	return true;
 }
 
-int device_create(gs_device_t **p_device, const gs_init_data *data)
+int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	gs_device *device = NULL;
 	int errorcode = GS_SUCCESS;
@@ -526,7 +515,7 @@ int device_create(gs_device_t **p_device, const gs_init_data *data)
 		blog(LOG_INFO, "Available Video Adapters: ");
 		device_enum_adapters(LogAdapterCallback, nullptr);
 
-		device = new gs_device(data);
+		device = new gs_device(adapter);
 
 	} catch (UnsupportedHWError error) {
 		blog(LOG_ERROR, "device_create (D3D11): %s (%08lX)", error.str,
@@ -1048,25 +1037,26 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 	    device->curZStencilBuffer == zstencil)
 		return;
 
-	if (tex->type != GS_TEXTURE_2D) {
+	if (tex && tex->type != GS_TEXTURE_2D) {
 		blog(LOG_ERROR, "device_set_render_target (D3D11): "
 		                "texture is not a 2D texture");
 		return;
 	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
-	if (!tex2d->renderTarget[0]) {
+	if (tex2d && !tex2d->renderTarget[0]) {
 		blog(LOG_ERROR, "device_set_render_target (D3D11): "
 		                "texture is not a render target");
 		return;
 	}
 
-	ID3D11RenderTargetView *rt = tex2d->renderTarget[0];
+	ID3D11RenderTargetView *rt = tex2d ? tex2d->renderTarget[0] : nullptr;
 
 	device->curRenderTarget   = tex2d;
 	device->curRenderSide     = 0;
 	device->curZStencilBuffer = zstencil;
-	device->context->OMSetRenderTargets(1, &rt, zstencil->view);
+	device->context->OMSetRenderTargets(1, &rt,
+			zstencil ? zstencil->view : nullptr);
 }
 
 void device_set_cube_render_target(gs_device_t *device, gs_texture_t *tex,
@@ -1295,15 +1285,15 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
 {
 	gs_texture_t  *target = device->curRenderTarget;
 	gs_zstencil_t *zs     = device->curZStencilBuffer;
-	bool is_cube = device->curRenderTarget->type == GS_TEXTURE_CUBE;
+	bool is_cube = device->curRenderTarget ?
+		(device->curRenderTarget->type == GS_TEXTURE_CUBE) : false;
 
-	if (target == &device->curSwapChain->target)
-		target = NULL;
-	if (zs == &device->curSwapChain->zs)
-		zs = NULL;
-
-	if (swapchain == NULL)
-		swapchain = &device->defaultSwap;
+	if (device->curSwapChain) {
+		if (target == &device->curSwapChain->target)
+			target = NULL;
+		if (zs == &device->curSwapChain->zs)
+			zs = NULL;
+	}
 
 	device->curSwapChain = swapchain;
 
@@ -1626,12 +1616,8 @@ void device_projection_pop(gs_device_t *device)
 
 void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 {
-	if (!swapchain)
-		return;
-
-	gs_device *device = swapchain->device;
-	if (device->curSwapChain == swapchain)
-		device->curSwapChain = &device->defaultSwap;
+	if (swapchain->device->curSwapChain == swapchain)
+		device_load_swapchain(swapchain->device, nullptr);
 
 	delete swapchain;
 }

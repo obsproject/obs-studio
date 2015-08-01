@@ -615,7 +615,6 @@ struct gs_device {
 	ComPtr<IDXGIFactory1>       factory;
 	ComPtr<ID3D11Device>        device;
 	ComPtr<ID3D11DeviceContext> context;
-	gs_swap_chain               defaultSwap;
 
 	gs_texture_2d               *curRenderTarget = nullptr;
 	gs_zstencil_buffer          *curZStencilBuffer = nullptr;
@@ -654,7 +653,7 @@ struct gs_device {
 
 	void InitCompiler();
 	void InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **adapter);
-	void InitDevice(const gs_init_data *data, IDXGIAdapter *adapter);
+	void InitDevice(uint32_t adapterIdx, IDXGIAdapter *adapter);
 
 	ID3D11DepthStencilState *AddZStencilState();
 	ID3D11RasterizerState   *AddRasterState();
@@ -670,5 +669,5 @@ struct gs_device {
 
 	void UpdateViewProjMatrix();
 
-	gs_device(const gs_init_data *data);
+	gs_device(uint32_t adapterIdx);
 };
