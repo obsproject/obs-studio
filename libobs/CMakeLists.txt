@@ -59,6 +59,11 @@ elseif(APPLE)
 		util/pipe-posix.c
 		util/platform-nix.c
 		util/platform-cocoa.m)
+	set(libobs_PLATFORM_HEADERS
+		util/windows/ComPtr.hpp
+		util/windows/CoTaskMemPtr.hpp
+		util/windows/HRError.hpp
+		util/windows/WinHandle.hpp)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}
 		PROPERTIES
@@ -240,6 +245,7 @@ set(libobs_libobs_SOURCES
 	obs-scene.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
+	${libobs_PLATFORM_HEADERS}
 	obs-audio-controls.h
 	obs-defs.h
 	obs-avc.h
