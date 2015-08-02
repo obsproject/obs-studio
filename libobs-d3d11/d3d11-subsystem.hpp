@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #pragma once
-#error "libobs-d3d11 is not compilable in this commit (windowless context)"
 
 #include <util/AlignedNew.hpp>
 #include <util/windows/win-version.h>
