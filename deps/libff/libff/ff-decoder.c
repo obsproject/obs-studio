@@ -320,6 +320,18 @@ double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 	best_effort_pts = av_frame_get_best_effort_timestamp(frame);
 
 	if (best_effort_pts != AV_NOPTS_VALUE) {
+		// Fix the first pts if less than start_pts
+		if (best_effort_pts < decoder->start_pts) {
+			if (decoder->first_frame) {
+				best_effort_pts = decoder->start_pts;
+			} else {
+				av_log(NULL, AV_LOG_WARNING, "multiple pts < "
+						"start_pts; setting start pts "
+						"to 0");
+				decoder->start_pts = 0;
+			}
+		}
+
 		best_effort_pts -= decoder->start_pts;
 
 		// Since the best effort pts came from the stream we use his
