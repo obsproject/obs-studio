@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #pragma once
-#error "The UI is not compilable in this commit (windowless context)"
 
 #include <QApplication>
 #include <QTranslator>
