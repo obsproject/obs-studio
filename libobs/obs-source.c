@@ -860,9 +860,7 @@ static inline void handle_ts_jump(obs_source_t *source, uint64_t expected,
 	                "expected value %"PRIu64", input value %"PRIu64,
 	                source->context.name, diff, expected, ts);
 
-	/* if has video, ignore audio data until reset */
-	if (!(source->info.output_flags & OBS_SOURCE_ASYNC))
-		reset_audio_timing(source, ts, os_time);
+	reset_audio_timing(source, ts, os_time);
 }
 
 static void source_signal_audio_data(obs_source_t *source,
