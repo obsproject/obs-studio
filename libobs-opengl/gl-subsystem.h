@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #pragma once
+#error "libobs-opengl is not compilable in this commit (windowless context)"
 
 #include <util/darray.h>
 #include <util/threading.h>
