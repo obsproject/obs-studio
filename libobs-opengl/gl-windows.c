@@ -33,7 +33,7 @@ struct gl_windowinfo {
  * default. */
 struct gl_platform {
 	HGLRC hrc;
-	struct gs_swap_chain swap;
+	struct gl_windowinfo window;
 };
 
 /* For now, only support basic 32bit formats for graphics output. */
@@ -350,17 +350,56 @@ static struct gl_windowinfo *gl_windowinfo_bare(const struct gs_init_data *info)
 	return wi;
 }
 
-static bool init_default_swap(struct gl_platform *plat, gs_device_t *device,
-		int pixel_format, PIXELFORMATDESCRIPTOR *pfd,
-		const struct gs_init_data *info)
-{
-	plat->swap.device = device;
-	plat->swap.info   = *info;
-	plat->swap.wi     = gl_windowinfo_bare(info);
-	if (!plat->swap.wi)
-		return false;
+#define DUMMY_WNDCLASS "Dummy GL Window Class"
 
-	if (!gl_setpixelformat(plat->swap.wi->hdc, pixel_format, pfd))
+static bool register_dummy_class(void)
+{
+	static bool created = false;
+
+	WNDCLASSA wc     = {0};
+	wc.style         = CS_OWNDC;
+	wc.hInstance     = GetModuleHandleW(NULL);
+	wc.lpfnWndProc   = (WNDPROC)DefWindowProcA;
+	wc.lpszClassName = DUMMY_WNDCLASS;
+
+	if (created)
+		return true;
+
+	if (!RegisterClassA(&wc)) {
+		blog(LOG_ERROR, "Failed to register dummy GL window class, %lu",
+				GetLastError());
+		return false;
+	}
+
+	created = true;
+	return true;
+}
+
+static bool create_dummy_window(struct gl_platform *plat)
+{
+	plat->window.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS,
+			"OpenGL Dummy Window", WS_POPUP, 0, 0, 1, 1,
+			NULL, NULL, GetModuleHandleW(NULL), NULL);
+	if (!plat->window.hwnd) {
+		blog(LOG_ERROR, "Failed to create dummy GL window, %lu",
+				GetLastError());
+		return false;
+	}
+
+	plat->window.hdc = GetDC(plat->window.hwnd);
+	if (!plat->window.hdc) {
+		blog(LOG_ERROR, "Failed to get dummy GL window DC (%lu)",
+				GetLastError());
+		return false;
+	}
+
+	return true;
+}
+
+static bool init_default_swap(struct gl_platform *plat, gs_device_t *device,
+		int pixel_format, PIXELFORMATDESCRIPTOR *pfd)
+{
+	if (!gl_setpixelformat(plat->window.hdc, pixel_format, pfd))
 		return false;
 
 	return true;
@@ -372,32 +411,43 @@ void gl_update(gs_device_t *device)
 	UNUSED_PARAMETER(device);
 }
 
-struct gl_platform *gl_platform_create(gs_device_t *device,
-		const struct gs_init_data *info)
+static void init_dummy_swap_info(struct gs_init_data *info)
+{
+	info->format = GS_RGBA;
+	info->zsformat = GS_ZS_NONE;
+}
+
+struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	struct dummy_context dummy;
+	struct gs_init_data info = {0};
 	int pixel_format;
 	PIXELFORMATDESCRIPTOR pfd;
 
 	memset(&dummy, 0, sizeof(struct dummy_context));
+	init_dummy_swap_info(&info);
 
 	if (!gl_dummy_context_init(&dummy))
 		goto fail;
 	if (!gl_init_extensions(dummy.hdc))
 		goto fail;
+	if (!register_dummy_class())
+		return false;
+	if (!create_dummy_window(plat))
+		return false;
 
 	/* you have to have a dummy context open before you can actually
 	 * use wglChoosePixelFormatARB */
-	if (!gl_getpixelformat(dummy.hdc, info, &pixel_format, &pfd))
+	if (!gl_getpixelformat(dummy.hdc, &info, &pixel_format, &pfd))
 		goto fail;
 
 	gl_dummy_context_free(&dummy);
 
-	if (!init_default_swap(plat, device, pixel_format, &pfd, info))
+	if (!init_default_swap(plat, device, pixel_format, &pfd))
 		goto fail;
 
-	plat->hrc = gl_init_context(plat->swap.wi->hdc);
+	plat->hrc = gl_init_context(plat->window.hdc);
 	if (!plat->hrc)
 		goto fail;
 
@@ -406,6 +456,7 @@ struct gl_platform *gl_platform_create(gs_device_t *device,
 		goto fail;
 	}
 
+	UNUSED_PARAMETER(adapter);
 	return plat;
 
 fail:
@@ -413,11 +464,6 @@ fail:
 	gl_platform_destroy(plat);
 	gl_dummy_context_free(&dummy);
 	return NULL;
-}
-
-struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
-{
-	return &platform->swap;
 }
 
 void gl_platform_destroy(struct gl_platform *plat)
@@ -428,7 +474,11 @@ void gl_platform_destroy(struct gl_platform *plat)
 			wglDeleteContext(plat->hrc);
 		}
 
-		gl_windowinfo_destroy(plat->swap.wi);
+		if (plat->window.hdc)
+			ReleaseDC(plat->window.hwnd, plat->window.hdc);
+		if (plat->window.hwnd)
+			DestroyWindow(plat->window.hwnd);
+
 		bfree(plat);
 	}
 }
@@ -477,7 +527,7 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 
 void device_enter_context(gs_device_t *device)
 {
-	HDC hdc = device->plat->swap.wi->hdc;
+	HDC hdc = device->plat->window.hdc;
 	if (device->cur_swap)
 		hdc = device->cur_swap->wi->hdc;
 
@@ -493,18 +543,16 @@ void device_leave_context(gs_device_t *device)
 
 void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
-	HDC hdc;
-	if (!swap)
-		swap = &device->plat->swap;
-
+	HDC hdc = device->plat->window.hdc;
 	if (device->cur_swap == swap)
 		return;
 
 	device->cur_swap = swap;
 
-	if (swap) {
+	if (swap)
 		hdc = swap->wi->hdc;
 
+	if (hdc) {
 		if (!wgl_make_current(hdc, device->plat->hrc))
 			blog(LOG_ERROR, "device_load_swapchain (GL) failed");
 	}
@@ -523,9 +571,14 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap,
 		uint32_t *width, uint32_t *height)
 {
 	RECT rc;
-	GetClientRect(swap->wi->hwnd, &rc);
-	*width  = rc.right;
-	*height = rc.bottom;
+	if (swap) {
+		GetClientRect(swap->wi->hwnd, &rc);
+		*width  = rc.right;
+		*height = rc.bottom;
+	} else {
+		*width = 0;
+		*height = 0;
+	}
 }
 
 EXPORT bool device_gdi_texture_available(void)
