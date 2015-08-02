@@ -841,8 +841,6 @@ void OBSBasic::OBSInit()
 	if (ret <= 0)
 		throw "Failed to get scene collection json file path";
 
-	if (!obs_startup(App()->GetLocale()))
-		throw "Failed to initialize libobs";
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";
 	if (!ResetAudio())
@@ -1113,8 +1111,6 @@ OBSBasic::~OBSBasic()
 	 * normal C++ behavior for your data to be freed in the order that you
 	 * expect or want it to. */
 	QApplication::sendPostedEvents(this);
-
-	obs_shutdown();
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
