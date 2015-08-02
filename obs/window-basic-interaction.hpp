@@ -39,7 +39,6 @@ private:
 
 	std::unique_ptr<Ui::OBSBasicInteraction> ui;
 	OBSSource  source;
-	OBSDisplay display;
 	OBSSignal  removedSignal;
 	OBSSignal  renamedSignal;
 	std::unique_ptr<OBSEventFilter> eventFilter;
@@ -58,9 +57,6 @@ private:
 
 	OBSEventFilter *BuildEventFilter();
 
-private slots:
-	void OnInteractionResized();
-
 public:
 	OBSBasicInteraction(QWidget *parent, OBSSource source_);
 	~OBSBasicInteraction();
@@ -68,7 +64,6 @@ public:
 	void Init();
 
 protected:
-	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;
 };
 

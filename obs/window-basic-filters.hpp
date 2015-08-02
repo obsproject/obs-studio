@@ -39,7 +39,6 @@ private:
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
 
-	OBSDisplay display;
 	OBSSignal addSignal;
 	OBSSignal removeSignal;
 	OBSSignal reorderSignal;
@@ -77,8 +76,6 @@ private slots:
 	void RenameEffectFilter();
 
 	void AddFilterFromAction();
-
-	void OnPreviewResized();
 
 	void on_addAsyncFilter_clicked();
 	void on_removeAsyncFilter_clicked();

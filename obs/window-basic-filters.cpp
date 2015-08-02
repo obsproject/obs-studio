@@ -72,9 +72,6 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(ui->preview, SIGNAL(DisplayResized()),
-			this, SLOT(OnPreviewResized()));
-
 	connect(ui->asyncFilters->itemDelegate(),
 			SIGNAL(closeEditor(QWidget*,
 					QAbstractItemDelegate::EndEditHint)),
@@ -105,6 +102,14 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	if (audioOnly || (audio && !async))
 		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
+
+	auto addDrawCallback = [this] ()
+	{
+		obs_display_add_draw_callback(ui->preview->GetDisplay(),
+				OBSBasicFilters::DrawPreview, this);
+	};
+
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
 }
 
 OBSBasicFilters::~OBSBasicFilters()
@@ -115,21 +120,7 @@ OBSBasicFilters::~OBSBasicFilters()
 
 void OBSBasicFilters::Init()
 {
-	gs_init_data init_data = {};
-
 	show();
-
-	QSize previewSize = GetPixelSize(ui->preview);
-	init_data.cx      = uint32_t(previewSize.width());
-	init_data.cy      = uint32_t(previewSize.height());
-	init_data.format  = GS_RGBA;
-	QTToGSWindow(ui->preview->winId(), init_data.window);
-
-	display = obs_display_create(&init_data);
-
-	if (display)
-		obs_display_add_draw_callback(display,
-				OBSBasicFilters::DrawPreview, this);
 }
 
 inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
@@ -393,23 +384,11 @@ void OBSBasicFilters::AddFilterFromAction()
 	AddNewFilter(QT_TO_UTF8(action->data().toString()));
 }
 
-void OBSBasicFilters::OnPreviewResized()
-{
-	QSize size = GetPixelSize(ui->preview);
-	obs_display_resize(display, size.width(), size.height());
-}
-
 void OBSBasicFilters::closeEvent(QCloseEvent *event)
 {
 	QDialog::closeEvent(event);
 	if (!event->isAccepted())
 		return;
-
-	// remove draw callback and release display in case our drawable
-	// surfaces go away before the destructor gets called
-	obs_display_remove_draw_callback(display,
-			OBSBasicFilters::DrawPreview, this);
-	display = nullptr;
 
 	main->SaveProject();
 }
