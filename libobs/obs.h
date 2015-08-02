@@ -19,6 +19,7 @@
 
 #include "util/c99defs.h"
 #include "util/bmem.h"
+#include "util/profiler.h"
 #include "util/text-lookup.h"
 #include "graphics/graphics.h"
 #include "graphics/vec2.h"
@@ -241,8 +242,9 @@ struct obs_source_frame {
  * Initializes OBS
  *
  * @param  locale  The locale to use for modules
+ * @param  store   The profiler name store for OBS to use or NULL
  */
-EXPORT bool obs_startup(const char *locale);
+EXPORT bool obs_startup(const char *locale, profiler_name_store_t *store);
 
 /** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);
@@ -263,6 +265,13 @@ EXPORT void obs_set_locale(const char *locale);
 
 /** @return the current locale */
 EXPORT const char *obs_get_locale(void);
+
+/**
+ * Returns the profiler name store (see util/profiler.h) used by OBS, which is
+ * either a name store passed to obs_startup, an internal name store, or NULL
+ * in case obs_initialized() returns false.
+ */
+EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
 
 /**
  * Sets base video ouput base resolution/fps/format.

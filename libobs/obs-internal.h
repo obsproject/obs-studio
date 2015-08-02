@@ -323,6 +323,8 @@ struct obs_core {
 	proc_handler_t                  *procs;
 
 	char                            *locale;
+	bool                            name_store_owned;
+	profiler_name_store_t           *name_store;
 
 	/* segmented into multiple sub-structures to keep things a bit more
 	 * clean and organized */

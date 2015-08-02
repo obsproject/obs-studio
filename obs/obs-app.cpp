@@ -599,7 +599,7 @@ bool OBSApp::OBSInit()
 			config_save(globalConfig);
 		}
 
-		obs_startup(locale.c_str());
+		obs_startup(locale.c_str(), GetProfilerNameStore());
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);

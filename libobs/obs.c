@@ -687,9 +687,16 @@ extern const struct obs_source_info scene_info;
 
 extern void log_system_info(void);
 
-static bool obs_init(const char *locale)
+static bool obs_init(const char *locale, profiler_name_store_t *store)
 {
 	obs = bzalloc(sizeof(struct obs_core));
+
+	obs->name_store_owned = !store;
+	obs->name_store = store ? store : profiler_name_store_create();
+	if (!obs->name_store) {
+		blog(LOG_ERROR, "Couldn't create profiler name store");
+		return false;
+	}
 
 	log_system_info();
 
@@ -710,7 +717,7 @@ static bool obs_init(const char *locale)
 extern void initialize_crash_handler(void);
 #endif
 
-bool obs_startup(const char *locale)
+bool obs_startup(const char *locale, profiler_name_store_t *store)
 {
 	bool success;
 
@@ -723,7 +730,7 @@ bool obs_startup(const char *locale)
 	initialize_crash_handler();
 #endif
 
-	success = obs_init(locale);
+	success = obs_init(locale, store);
 	if (!success)
 		obs_shutdown();
 
@@ -768,6 +775,9 @@ void obs_shutdown(void)
 	for (size_t i = 0; i < obs->module_paths.num; i++)
 		free_module_path(obs->module_paths.array+i);
 	da_free(obs->module_paths);
+
+	if (obs->name_store_owned)
+		profiler_name_store_free(obs->name_store);
 
 	bfree(obs->locale);
 	bfree(obs);
@@ -1707,4 +1717,12 @@ void obs_context_data_setname(struct obs_context_data *context,
 	context->name = dup_name(name);
 
 	pthread_mutex_unlock(&context->rename_cache_mutex);
+}
+
+profiler_name_store_t *obs_get_profiler_name_store(void)
+{
+	if (!obs)
+		return NULL;
+
+	return obs->name_store;
 }
