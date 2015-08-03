@@ -113,7 +113,9 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 		success = coreaudio_get_device_id(cf_uid, &ca->device_id);
 	}
 
-	CFRelease(cf_uid);
+	if (cf_uid)
+		CFRelease(cf_uid);
+
 	return success;
 }
 
@@ -502,7 +504,9 @@ static bool coreaudio_get_device_name(struct coreaudio_data *ca)
 	bfree(ca->device_name);
 	ca->device_name = bstrdup(name);
 
-	CFRelease(cf_name);
+	if (cf_name)
+		CFRelease(cf_name);
+
 	return true;
 }
 

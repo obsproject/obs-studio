@@ -62,8 +62,10 @@ static bool coreaudio_enum_device(enum_device_proc_t proc, void *param,
 	enum_next = proc(param, cf_name, cf_uid, id);
 
 fail:
-	CFRelease(cf_name);
-	CFRelease(cf_uid);
+	if (cf_name)
+		CFRelease(cf_name);
+	if (cf_uid)
+		CFRelease(cf_uid);
 	return enum_next;
 }
 
