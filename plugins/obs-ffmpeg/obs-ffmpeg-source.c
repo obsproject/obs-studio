@@ -30,9 +30,16 @@ static bool video_format(AVCodecContext *codec_context, void *opaque);
 static void ffmpeg_log_callback(void* context, int level, const char* format,
 	va_list args)
 {
-	UNUSED_PARAMETER(context);
-	int obs_level;
+	if (format == NULL)
+		return;
 
+	static char str[4096] = {0};
+	static int print_prefix = 1;
+
+	av_log_format_line(context, level, format, args, str + strlen(str),
+			sizeof(str) - strlen(str), &print_prefix);
+
+	int obs_level;
 	switch (level) {
 	case AV_LOG_PANIC:
 	case AV_LOG_FATAL:
@@ -51,7 +58,21 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 		obs_level = LOG_DEBUG;
 	}
 
-	blogva(obs_level, format, args);
+	if (!print_prefix)
+		return;
+
+	char *str_end = str + strlen(str) - 1;
+	while(str < str_end) {
+		if (*str_end != '\n')
+			break;
+		*str_end-- = '\0';
+	}
+
+	if (str_end <= str)
+		return;
+
+	blog(obs_level, "[ffmpeg] %s", str);
+	str[0] = 0;
 }
 
 void initialize_ffmpeg_source()
