@@ -131,13 +131,13 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 	return true;
 }
 
-bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
+bool update_sws_context(struct ffmpeg_source *s, AVFrame *frame)
 {
-	if (frame->width != source->sws_width
-			|| frame->height != source->sws_height
-			|| frame->format != source->sws_format) {
-		if (source->sws_ctx != NULL)
-			sws_freeContext(source->sws_ctx);
+	if (frame->width != s->sws_width
+			|| frame->height != s->sws_height
+			|| frame->format != s->sws_format) {
+		if (s->sws_ctx != NULL)
+			sws_freeContext(s->sws_ctx);
 
 		if (frame->width <= 0 || frame->height <= 0) {
 			av_log(NULL, AV_LOG_ERROR, "unable to create a sws "
@@ -147,7 +147,7 @@ bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 			goto fail;
 		}
 
-		source->sws_ctx = sws_getContext(
+		s->sws_ctx = sws_getContext(
 			frame->width,
 			frame->height,
 			frame->format,
@@ -157,7 +157,7 @@ bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 			SWS_BILINEAR,
 			NULL, NULL, NULL);
 
-		if (source->sws_ctx == NULL) {
+		if (s->sws_ctx == NULL) {
 			av_log(NULL, AV_LOG_ERROR, "unable to create sws "
 					"context with src{w:%d,h:%d,f:%d}->"
 					"dst{w:%d,h:%d,f:%d}",
@@ -168,37 +168,37 @@ bool update_sws_context(struct ffmpeg_source *source, AVFrame *frame)
 
 		}
 
-		if (source->sws_data != NULL)
-			bfree(source->sws_data);
-		source->sws_data = bzalloc(frame->width * frame->height * 4);
-		if (source->sws_data == NULL) {
+		if (s->sws_data != NULL)
+			bfree(s->sws_data);
+		s->sws_data = bzalloc(frame->width * frame->height * 4);
+		if (s->sws_data == NULL) {
 			av_log(NULL, AV_LOG_ERROR, "unable to allocate sws "
 					"pixel data with size %d",
 					frame->width * frame->height * 4);
 			goto fail;
 		}
 
-		source->sws_linesize = frame->width * 4;
-		source->sws_width = frame->width;
-		source->sws_height = frame->height;
-		source->sws_format = frame->format;
+		s->sws_linesize = frame->width * 4;
+		s->sws_width = frame->width;
+		s->sws_height = frame->height;
+		s->sws_format = frame->format;
 	}
 
 	return true;
 
 fail:
-	if (source->sws_ctx != NULL)
-		sws_freeContext(source->sws_ctx);
-	source->sws_ctx = NULL;
+	if (s->sws_ctx != NULL)
+		sws_freeContext(s->sws_ctx);
+	s->sws_ctx = NULL;
 
-	if (source->sws_data)
-		bfree(source->sws_data);
-	source->sws_data = NULL;
+	if (s->sws_data)
+		bfree(s->sws_data);
+	s->sws_data = NULL;
 
-	source->sws_linesize = 0;
-	source->sws_width = 0;
-	source->sws_height = 0;
-	source->sws_format = 0;
+	s->sws_linesize = 0;
+	s->sws_width = 0;
+	s->sws_height = 0;
+	s->sws_format = 0;
 
 	return false;
 }
