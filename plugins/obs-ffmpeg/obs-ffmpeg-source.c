@@ -229,7 +229,7 @@ static bool video_frame_scale(struct ff_frame *frame,
 }
 
 static bool video_frame_hwaccel(struct ff_frame *frame,
-		obs_source_t *source, struct obs_source_frame *obs_frame)
+		struct ffmpeg_source *s, struct obs_source_frame *obs_frame)
 {
 	// 4th plane is pixelbuf reference for mac
 	for (int i = 0; i < 3; i++) {
@@ -240,7 +240,7 @@ static bool video_frame_hwaccel(struct ff_frame *frame,
 	if (!set_obs_frame_colorprops(frame, obs_frame))
 		return false;
 
-	obs_source_output_video(source, obs_frame);
+	obs_source_output_video(s->source, obs_frame);
 	return true;
 }
 
@@ -286,7 +286,7 @@ static bool video_frame(struct ff_frame *frame, void *opaque)
 	if (s->is_forcing_scale || format == VIDEO_FORMAT_NONE)
 		return video_frame_scale(frame, s, &obs_frame);
 	else if (s->is_hw_decoding)
-		return video_frame_hwaccel(frame, s->source, &obs_frame);
+		return video_frame_hwaccel(frame, s, &obs_frame);
 	else
 		return video_frame_direct(frame, s, &obs_frame);
 }
