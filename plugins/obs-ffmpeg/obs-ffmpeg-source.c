@@ -442,6 +442,54 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	return props;
 }
 
+static const char *frame_drop_to_str(enum AVDiscard discard)
+{
+#define DISCARD_CASE(x) case AVDISCARD_ ## x: return "AVDISCARD_" #x
+	switch (discard)
+	{
+	DISCARD_CASE(NONE);
+	DISCARD_CASE(DEFAULT);
+	DISCARD_CASE(NONREF);
+	DISCARD_CASE(BIDIR);
+	DISCARD_CASE(NONINTRA);
+	DISCARD_CASE(NONKEY);
+	DISCARD_CASE(ALL);
+	default: return "(Unknown)";
+	};
+#undef DISCARD_CASE
+}
+
+static void dump_source_info(struct ffmpeg_source *s, const char *input,
+		const char *input_format, bool is_advanced)
+{
+	FF_BLOG(LOG_INFO,
+			"settings:\n"
+			"\tinput:                   %s\n"
+			"\tinput_format:            %s\n"
+			"\tis_looping:              %s\n"
+			"\tis_forcing_scale:        %s\n"
+			"\tis_hw_decoding:          %s\n"
+			"\tis_clear_on_media_end:   %s",
+			input ? input : "(null)",
+			input_format ? input_format : "(null)",
+			s->demuxer->options.is_looping ? "yes" : "no",
+			s->is_forcing_scale ? "yes" : "no",
+			s->is_hw_decoding ? "yes" : "no",
+			s->is_clear_on_media_end ? "yes" : "no");
+
+	if (!is_advanced)
+		return;
+
+	FF_BLOG(LOG_INFO,
+			"advanced settings:\n"
+			"\taudio_buffer_size:       %d\n"
+			"\tvideo_buffer_size:       %d\n"
+			"\tframe_drop:              %s",
+			s->demuxer->options.audio_frame_queue_size,
+			s->demuxer->options.video_frame_queue_size,
+			frame_drop_to_str(s->demuxer->options.frame_drop));
+}
+
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
@@ -513,6 +561,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	ff_demuxer_set_callbacks(&s->demuxer->audio_callbacks,
 			audio_frame, NULL,
 			NULL, NULL, NULL, s);
+
+	dump_source_info(s, input, input_format, is_advanced);
 
 	ff_demuxer_open(s->demuxer, input, input_format);
 }
