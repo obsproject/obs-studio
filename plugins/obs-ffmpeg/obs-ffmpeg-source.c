@@ -24,6 +24,14 @@
 
 #include <libswscale/swscale.h>
 
+#define FF_LOG(level, format, ...) \
+	blog(level, "[Media Source]: " format, ##__VA_ARGS__)
+#define FF_LOG_S(source, level, format, ...) \
+	blog(level, "[Media Source '%s']: " format, \
+			obs_source_get_name(source), ##__VA_ARGS__)
+#define FF_BLOG(level, format, ...) \
+	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
+
 static bool video_frame(struct ff_frame *frame, void *opaque);
 static bool video_format(AVCodecContext *codec_context, void *opaque);
 
@@ -95,7 +103,7 @@ struct ffmpeg_source {
 };
 
 static bool set_obs_frame_colorprops(struct ff_frame *frame,
-		struct obs_source_frame *obs_frame)
+		struct ffmpeg_source *s, struct obs_source_frame *obs_frame)
 {
 	enum AVColorSpace frame_cs = av_frame_get_colorspace(frame->frame);
 	enum video_colorspace obs_cs;
@@ -106,7 +114,7 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 	case AVCOL_SPC_BT470BG:     obs_cs = VIDEO_CS_601; break;
 	case AVCOL_SPC_UNSPECIFIED: obs_cs = VIDEO_CS_DEFAULT; break;
 	default:
-		blog(LOG_WARNING, "frame using an unsupported colorspace %d",
+		FF_BLOG(LOG_WARNING, "frame using an unsupported colorspace %d",
 				frame_cs);
 		obs_cs = VIDEO_CS_DEFAULT;
 	}
@@ -122,7 +130,7 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 			range, obs_frame->color_matrix,
 			obs_frame->color_range_min,
 			obs_frame->color_range_max)) {
-		blog(LOG_ERROR, "Failed to get video format "
+		FF_BLOG(LOG_ERROR, "Failed to get video format "
                                 "parameters for video format %u",
                                 obs_cs);
 		return false;
@@ -140,7 +148,7 @@ bool update_sws_context(struct ffmpeg_source *s, AVFrame *frame)
 			sws_freeContext(s->sws_ctx);
 
 		if (frame->width <= 0 || frame->height <= 0) {
-			av_log(NULL, AV_LOG_ERROR, "unable to create a sws "
+			FF_BLOG(LOG_ERROR, "unable to create a sws "
 					"context that has a width(%d) or "
 					"height(%d) of zero.", frame->width,
 					frame->height);
@@ -158,7 +166,7 @@ bool update_sws_context(struct ffmpeg_source *s, AVFrame *frame)
 			NULL, NULL, NULL);
 
 		if (s->sws_ctx == NULL) {
-			av_log(NULL, AV_LOG_ERROR, "unable to create sws "
+			FF_BLOG(LOG_ERROR, "unable to create sws "
 					"context with src{w:%d,h:%d,f:%d}->"
 					"dst{w:%d,h:%d,f:%d}",
 					frame->width, frame->height,
@@ -172,7 +180,7 @@ bool update_sws_context(struct ffmpeg_source *s, AVFrame *frame)
 			bfree(s->sws_data);
 		s->sws_data = bzalloc(frame->width * frame->height * 4);
 		if (s->sws_data == NULL) {
-			av_log(NULL, AV_LOG_ERROR, "unable to allocate sws "
+			FF_BLOG(LOG_ERROR, "unable to allocate sws "
 					"pixel data with size %d",
 					frame->width * frame->height * 4);
 			goto fail;
@@ -237,7 +245,7 @@ static bool video_frame_hwaccel(struct ff_frame *frame,
 		obs_frame->linesize[i] = frame->frame->linesize[i];
 	}
 
-	if (!set_obs_frame_colorprops(frame, obs_frame))
+	if (!set_obs_frame_colorprops(frame, s, obs_frame))
 		return false;
 
 	obs_source_output_video(s->source, obs_frame);
@@ -254,7 +262,7 @@ static bool video_frame_direct(struct ff_frame *frame,
 		obs_frame->linesize[i] = frame->frame->linesize[i];
 	}
 
-	if (!set_obs_frame_colorprops(frame, obs_frame))
+	if (!set_obs_frame_colorprops(frame, s, obs_frame))
 		return false;
 
 	obs_source_output_video(s->source, obs_frame);
@@ -479,12 +487,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 		if (audio_buffer_size < 1) {
 			audio_buffer_size = 1;
-			blog(LOG_WARNING, "invalid audio_buffer_size %d",
+			FF_BLOG(LOG_WARNING, "invalid audio_buffer_size %d",
 					audio_buffer_size);
 		}
 		if (video_buffer_size < 1) {
 			video_buffer_size = 1;
-			blog(LOG_WARNING, "invalid audio_buffer_size %d",
+			FF_BLOG(LOG_WARNING, "invalid audio_buffer_size %d",
 					audio_buffer_size);
 		}
 		s->demuxer->options.audio_frame_queue_size = audio_buffer_size;
@@ -492,7 +500,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 		if (frame_drop < AVDISCARD_NONE || frame_drop > AVDISCARD_ALL) {
 			frame_drop = AVDISCARD_NONE;
-			blog(LOG_WARNING, "invalid frame_drop %d", frame_drop);
+			FF_BLOG(LOG_WARNING, "invalid frame_drop %d",
+					frame_drop);
 		}
 		s->demuxer->options.frame_drop = frame_drop;
 	}
