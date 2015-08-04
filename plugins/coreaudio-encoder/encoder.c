@@ -693,7 +693,7 @@ free:
 static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	ca_encoder *ca = data;
-	
+
 	if (!ca->extra_data)
 		query_extra_data(ca);
 
@@ -867,10 +867,10 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
 				get_default_converter(allowed_formats[i]),
 				add_bitrates_func, &helper);
 
-    if (!helper.bitrates.num) {
-        CA_BLOG(LOG_ERROR, "Enumeration found no available bitrates");
-        return;
-    }
+	if (!helper.bitrates.num) {
+		CA_BLOG(LOG_ERROR, "Enumeration found no available bitrates");
+		return;
+	}
 
 	qsort(helper.bitrates.array, helper.bitrates.num, sizeof(UInt32),
 			bitrate_compare);
