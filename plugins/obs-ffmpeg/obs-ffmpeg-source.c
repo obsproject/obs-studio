@@ -35,59 +35,6 @@
 static bool video_frame(struct ff_frame *frame, void *opaque);
 static bool video_format(AVCodecContext *codec_context, void *opaque);
 
-static void ffmpeg_log_callback(void* context, int level, const char* format,
-	va_list args)
-{
-	if (format == NULL)
-		return;
-
-	static char str[4096] = {0};
-	static int print_prefix = 1;
-
-	av_log_format_line(context, level, format, args, str + strlen(str),
-			sizeof(str) - strlen(str), &print_prefix);
-
-	int obs_level;
-	switch (level) {
-	case AV_LOG_PANIC:
-	case AV_LOG_FATAL:
-		obs_level = LOG_ERROR;
-		break;
-	case AV_LOG_ERROR:
-	case AV_LOG_WARNING:
-		obs_level = LOG_WARNING;
-		break;
-	case AV_LOG_INFO:
-	case AV_LOG_VERBOSE:
-		obs_level = LOG_INFO;
-		break;
-	case AV_LOG_DEBUG:
-	default:
-		obs_level = LOG_DEBUG;
-	}
-
-	if (!print_prefix)
-		return;
-
-	char *str_end = str + strlen(str) - 1;
-	while(str < str_end) {
-		if (*str_end != '\n')
-			break;
-		*str_end-- = '\0';
-	}
-
-	if (str_end <= str)
-		return;
-
-	blog(obs_level, "[ffmpeg] %s", str);
-	str[0] = 0;
-}
-
-void initialize_ffmpeg_source()
-{
-	av_log_set_callback(ffmpeg_log_callback);
-}
-
 struct ffmpeg_source {
 	struct ff_demuxer *demuxer;
 	struct SwsContext *sws_ctx;
