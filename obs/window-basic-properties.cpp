@@ -85,14 +85,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(view, SIGNAL(PropertiesResized()),
-			this, SLOT(OnPropertiesResized()));
-
-	connect(windowHandle(), &QWindow::screenChanged, [this]() {
-		QSize size = GetPixelSize(preview);
-		obs_display_resize(display, size.width(), size.height());
-	});
-
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 
@@ -102,6 +94,14 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			"update_properties",
 			OBSBasicProperties::UpdateProperties,
 			this);
+
+	auto addDrawCallback = [this] ()
+	{
+		obs_display_add_draw_callback(preview->GetDisplay(),
+				OBSBasicProperties::DrawPreview, this);
+	};
+
+	connect(preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -190,30 +190,8 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_pop();
 }
 
-void OBSBasicProperties::OnPropertiesResized()
-{
-	QSize size = GetPixelSize(preview);
-	obs_display_resize(display, size.width(), size.height());
-}
-
-void OBSBasicProperties::resizeEvent(QResizeEvent *event)
-{
-	if (isVisible()) {
-		QSize size = GetPixelSize(preview);
-		obs_display_resize(display, size.width(), size.height());
-	}
-
-	QDialog::resizeEvent(event);
-}
-
 void OBSBasicProperties::Cleanup()
 {
-	// remove draw callback and release display in case our drawable
-	// surfaces go away before the destructor gets called
-	obs_display_remove_draw_callback(display,
-			OBSBasicProperties::DrawPreview, this);
-	display = nullptr;
-
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
 			width());
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
@@ -250,21 +228,7 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 
 void OBSBasicProperties::Init()
 {
-	gs_init_data init_data = {};
-
 	show();
-
-	QSize previewSize = GetPixelSize(preview);
-	init_data.cx      = uint32_t(previewSize.width());
-	init_data.cy      = uint32_t(previewSize.height());
-	init_data.format  = GS_RGBA;
-	QTToGSWindow(preview->winId(), init_data.window);
-
-	display = obs_display_create(&init_data);
-
-	if (display)
-		obs_display_add_draw_callback(display,
-				OBSBasicProperties::DrawPreview, this);
 }
 
 int OBSBasicProperties::CheckSettings()

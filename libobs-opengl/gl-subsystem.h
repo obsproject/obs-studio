@@ -510,8 +510,7 @@ extern struct fbo_info *get_fbo(struct gs_device *device,
 extern void                  gl_update(gs_device_t *device);
 
 extern struct gl_platform   *gl_platform_create(gs_device_t *device,
-		const struct gs_init_data *info);
-extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform);
+		uint32_t adapter);
 extern void                  gl_platform_destroy(struct gl_platform *platform);
 
 extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap);

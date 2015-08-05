@@ -126,6 +126,7 @@ set(obs_SOURCES
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
 	source-list-widget.cpp
+	qt-display.cpp
 	crash-report.cpp
 	hotkey-edit.cpp
 	source-label.cpp

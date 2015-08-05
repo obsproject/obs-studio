@@ -154,9 +154,6 @@ struct obs_video_info {
 	uint32_t            fps_num;       /**< Output FPS numerator */
 	uint32_t            fps_den;       /**< Output FPS denominator */
 
-	uint32_t            window_width;  /**< Window width */
-	uint32_t            window_height; /**< Window height */
-
 	uint32_t            base_width;    /**< Base compositing width */
 	uint32_t            base_height;   /**< Base compositing height */
 
@@ -166,8 +163,6 @@ struct obs_video_info {
 
 	/** Video adapter index to use (NOTE: avoid for optimus laptops) */
 	uint32_t            adapter;
-
-	struct gs_window    window;        /**< Window to render to */
 
 	/** Use shaders to convert to different color formats */
 	bool                gpu_conversion;
@@ -527,19 +522,6 @@ EXPORT signal_handler_t *obs_get_signal_handler(void);
 /** Returns the primary obs procedure handler */
 EXPORT proc_handler_t *obs_get_proc_handler(void);
 
-/** Adds a draw callback to the main render context */
-EXPORT void obs_add_draw_callback(
-		void (*draw)(void *param, uint32_t cx, uint32_t cy),
-		void *param);
-
-/** Removes a draw callback to the main render context */
-EXPORT void obs_remove_draw_callback(
-		void (*draw)(void *param, uint32_t cx, uint32_t cy),
-		void *param);
-
-/** Changes the size of the main view */
-EXPORT void obs_resize(uint32_t cx, uint32_t cy);
-
 /** Renders the main view */
 EXPORT void obs_render_main_view(void);
 
@@ -566,9 +548,6 @@ EXPORT void obs_load_sources(obs_data_array_t *array);
 
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);
-
-EXPORT void obs_preview_set_enabled(bool enable);
-EXPORT bool obs_preview_enabled(void);
 
 
 /* ------------------------------------------------------------------------- */

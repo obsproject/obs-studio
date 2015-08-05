@@ -36,7 +36,6 @@ private:
 	bool       acceptClicked;
 
 	OBSSource  source;
-	OBSDisplay display;
 	OBSSignal  removedSignal;
 	OBSSignal  renamedSignal;
 	OBSSignal  updatePropertiesSignal;
@@ -53,7 +52,6 @@ private:
 	void Cleanup();
 
 private slots:
-	void OnPropertiesResized();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 public:
@@ -63,7 +61,6 @@ public:
 	void Init();
 
 protected:
-	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void reject() override;
 };

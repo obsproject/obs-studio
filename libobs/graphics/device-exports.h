@@ -29,7 +29,7 @@ EXPORT bool device_enum_adapters(
 		bool (*callback)(void *param, const char *name, uint32_t id),
 		void *param);
 EXPORT const char *device_preprocessor_name(void);
-EXPORT int device_create(gs_device_t **device, const struct gs_init_data *data);
+EXPORT int device_create(gs_device_t **device, uint32_t adapter);
 EXPORT void device_destroy(gs_device_t *device);
 EXPORT void device_enter_context(gs_device_t *device);
 EXPORT void device_leave_context(gs_device_t *device);

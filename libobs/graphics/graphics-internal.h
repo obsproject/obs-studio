@@ -30,8 +30,7 @@ struct gs_exports {
 			bool (*callback)(void*, const char*, uint32_t),
 			void*);
 	const char *(*device_preprocessor_name)(void);
-	int (*device_create)(gs_device_t **device,
-			const struct gs_init_data *data);
+	int (*device_create)(gs_device_t **device, uint32_t adapter);
 	void (*device_destroy)(gs_device_t *device);
 	void (*device_enter_context)(gs_device_t *device);
 	void (*device_leave_context)(gs_device_t *device);

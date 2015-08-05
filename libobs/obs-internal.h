@@ -235,8 +235,6 @@ struct obs_core_video {
 	uint32_t                        base_height;
 	float                           color_matrix[16];
 	enum obs_scale_type             scale_type;
-
-	struct obs_display              main_display;
 };
 
 struct obs_core_audio {

@@ -841,12 +841,6 @@ void OBSBasic::OBSInit()
 	if (ret <= 0)
 		throw "Failed to get scene collection json file path";
 
-	/* make sure it's fully displayed before doing any initialization */
-	show();
-	App()->processEvents();
-
-	if (!obs_startup(App()->GetLocale()))
-		throw "Failed to initialize libobs";
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";
 	if (!ResetAudio())
@@ -909,6 +903,20 @@ void OBSBasic::OBSInit()
 	RefreshSceneCollections();
 	RefreshProfiles();
 	disableSaving--;
+
+	auto addDisplay = [this] (OBSQTDisplay *window)
+	{
+		obs_display_add_draw_callback(window->GetDisplay(),
+				OBSBasic::RenderMain, this);
+
+		struct obs_video_info ovi;
+		if (obs_get_video_info(&ovi))
+			ResizePreview(ovi.base_width, ovi.base_height);
+	};
+
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
+
+	show();
 }
 
 void OBSBasic::InitHotkeys()
@@ -1055,7 +1063,7 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
-	bool previewEnabled = obs_preview_enabled();
+	bool previewEnabled = obs_display_enabled(ui->preview->GetDisplay());
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
@@ -1087,6 +1095,9 @@ OBSBasic::~OBSBasic()
 	if (advAudioWindow)
 		delete advAudioWindow;
 
+	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
+			OBSBasic::RenderMain, this);
+
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
 	gs_vertexbuffer_destroy(circle);
@@ -1100,8 +1111,6 @@ OBSBasic::~OBSBasic()
 	 * normal C++ behavior for your data to be freed in the order that you
 	 * expect or want it to. */
 	QApplication::sendPostedEvents(this);
-
-	obs_shutdown();
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
@@ -1954,23 +1963,7 @@ bool OBSBasic::StreamingActive()
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 {
-	int ret = obs_reset_video(ovi);
-	if (ret == OBS_VIDEO_INVALID_PARAM) {
-		struct obs_video_info new_params = *ovi;
-
-		if (new_params.window_width == 0)
-			new_params.window_width = 512;
-		if (new_params.window_height == 0)
-			new_params.window_height = 512;
-
-		new_params.output_width  = new_params.window_width;
-		new_params.output_height = new_params.window_height;
-		new_params.base_width    = new_params.window_width;
-		new_params.base_height   = new_params.window_height;
-		ret = obs_reset_video(&new_params);
-	}
-
-	return ret;
+	return obs_reset_video(ovi);
 }
 
 static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
@@ -2038,15 +2031,6 @@ int OBSBasic::ResetVideo()
 	ovi.gpu_conversion = true;
 	ovi.scale_type     = GetScaleType(basicConfig);
 
-	QTToGSWindow(ui->preview->winId(), ovi.window);
-
-	//required to make opengl display stuff on osx(?)
-	ResizePreview(ovi.base_width, ovi.base_height);
-
-	QSize size = GetPixelSize(ui->preview);
-	ovi.window_width  = size.width();
-	ovi.window_height = size.height();
-
 	ret = AttemptToResetVideo(&ovi);
 	if (IS_WIN32 && ret != OBS_VIDEO_SUCCESS) {
 		/* Try OpenGL if DirectX fails on windows */
@@ -2060,9 +2044,6 @@ int OBSBasic::ResetVideo()
 			ret = AttemptToResetVideo(&ovi);
 		}
 	}
-
-	if (ret == OBS_VIDEO_SUCCESS)
-		obs_add_draw_callback(OBSBasic::RenderMain, this);
 
 	return ret;
 }
@@ -2132,11 +2113,6 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 
 	previewX += float(PREVIEW_EDGE_SIZE);
 	previewY += float(PREVIEW_EDGE_SIZE);
-
-	if (isVisible()) {
-		QSize size = GetPixelSize(ui->preview);
-		obs_resize(size.width(), size.height());
-	}
 }
 
 void OBSBasic::CloseDialogs()
@@ -2211,10 +2187,6 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		logUploadThread->wait();
 
 	signalHandlers.clear();
-
-	// remove draw callback in case our drawable surfaces go away before
-	// the destructor gets called
-	obs_remove_draw_callback(OBSBasic::RenderMain, this);
 
 	SaveProjectNow();
 	disableSaving++;
@@ -2550,7 +2522,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				QTStr("Basic.Main.PreviewConextMenu.Enable"),
 				this, SLOT(TogglePreview()));
 		action->setCheckable(true);
-		action->setChecked(obs_preview_enabled());
+		action->setChecked(
+				obs_display_enabled(ui->preview->GetDisplay()));
 
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
@@ -3163,7 +3136,7 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 			QTStr("Basic.Main.PreviewConextMenu.Enable"),
 			this, SLOT(TogglePreview()));
 	action->setCheckable(true);
-	action->setChecked(obs_preview_enabled());
+	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
 	previewProjector = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
@@ -3476,8 +3449,8 @@ void OBSBasic::on_actionCenterToScreen_triggered()
 
 void OBSBasic::TogglePreview()
 {
-	bool enabled = !obs_preview_enabled();
-	obs_preview_set_enabled(enabled);
+	bool enabled = !obs_display_enabled(ui->preview->GetDisplay());
+	obs_display_set_enabled(ui->preview->GetDisplay(), enabled);
 	ui->preview->setVisible(enabled);
 	ui->previewDisabledLabel->setVisible(!enabled);
 }

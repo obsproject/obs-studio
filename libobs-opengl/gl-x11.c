@@ -49,6 +49,20 @@ static const int ctx_attribs[] = {
 	None,
 };
 
+static int ctx_pbuffer_attribs[] = {
+	GLX_PBUFFER_WIDTH, 2,
+	GLX_PBUFFER_HEIGHT, 2,
+	None
+};
+
+static int ctx_visual_attribs[] = {
+	GLX_STENCIL_SIZE, 0,
+	GLX_DEPTH_SIZE, 0,
+	GLX_BUFFER_SIZE, 32,
+	GLX_DOUBLEBUFFER, true,
+	GLX_X_RENDERABLE, true,
+};
+
 struct gl_windowinfo {
 	/* We store this value since we can fetch a lot
 	 * of information not only concerning the config
@@ -70,13 +84,8 @@ struct gl_windowinfo {
 struct gl_platform {
 	Display *display;
 	GLXContext context;
-	struct gs_swap_chain swap;
+	GLXPbuffer pbuffer;
 };
-
-extern struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
-{
-	return &platform->swap;
-}
 
 static void print_info_stuff(const struct gs_init_data *info)
 {
@@ -202,51 +211,53 @@ static xcb_get_geometry_reply_t* get_window_geometry(
 static bool gl_context_create(struct gl_platform *plat)
 {
 	Display *display = plat->display;
-	GLXFBConfig config = plat->swap.wi->config;
-	int major, minor;
+	int frame_buf_config_count = 0;
+	GLXFBConfig *config = NULL;
 	GLXContext context;
-
-	{
-		int error_base;
-		int event_base;
-
-		if (!glXQueryExtension(display, &error_base, &event_base)) {
-			blog(LOG_ERROR, "GLX not supported.");
-			return 0;
-		}
-	}
-
-	/* We require glX version 1.3 */
-	glXQueryVersion(display, &major, &minor);
-	if (major < 1 || (major == 1 && minor < 3)) {
-		blog(LOG_ERROR, "GLX version found: %i.%i\nRequired: "
-				"1.3", major, minor);
-		return false;
-	}
+	bool success = false;
 
 	if (!GLAD_GLX_ARB_create_context) {
 		blog(LOG_ERROR, "ARB_GLX_create_context not supported!");
 		return false;
 	}
 
-	context = glXCreateContextAttribsARB(display, config, NULL,
+	config = glXChooseFBConfig(display, DefaultScreen(display),
+			ctx_visual_attribs, &frame_buf_config_count);
+	if (!config) {
+		blog(LOG_ERROR, "Failed to create OpenGL frame buffer config");
+		return false;
+	}
+
+	context = glXCreateContextAttribsARB(display, config[0], NULL,
 			true, ctx_attribs);
 	if (!context) {
 		blog(LOG_ERROR, "Failed to create OpenGL context.");
-		return false;
+		goto error;
 	}
 
 	plat->context = context;
 	plat->display = display;
 
-	return true;
+	plat->pbuffer = glXCreatePbuffer(display, config[0],
+			ctx_pbuffer_attribs);
+	if (!plat->pbuffer) {
+		blog(LOG_ERROR, "Failed to create OpenGL pbuffer");
+		goto error;
+	}
+
+	success = true;
+
+error:
+	XFree(config);
+	XSync(display, false);
+	return success;
 }
 
 static void gl_context_destroy(struct gl_platform *plat)
 {
 	Display *display = plat->display;
 
-	glXMakeCurrent(display, None, 0);
+	glXMakeContextCurrent(display, None, None, NULL);
 	glXDestroyContext(display, plat->context);
 	bfree(plat);
 }
@@ -263,6 +274,51 @@ extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
 	bfree(info);
 }
 
+static Display *open_windowless_display(void)
+{
+	Display *display = XOpenDisplay(NULL);
+	xcb_connection_t *xcb_conn;
+	xcb_screen_iterator_t screen_iterator;
+	xcb_screen_t *screen;
+	int screen_num;
+
+	if (!display) {
+		blog(LOG_ERROR, "Unable to open new X connection!");
+		return NULL;
+	}
+
+	xcb_conn = XGetXCBConnection(display);
+	if (!xcb_conn) {
+		blog(LOG_ERROR, "Unable to get XCB connection to main display");
+		goto error;
+	}
+
+	screen_iterator = xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
+	screen = screen_iterator.data;
+	if (!screen) {
+		blog(LOG_ERROR, "Unable to get screen root");
+		goto error;
+	}
+
+	screen_num = get_screen_num_from_root(xcb_conn, screen->root);
+	if (screen_num == -1) {
+		blog(LOG_ERROR, "Unable to get screen number from root");
+		goto error;
+	}
+
+	if (!gladLoadGLX(display, screen_num)) {
+		blog(LOG_ERROR, "Unable to load GLX entry functions.");
+		goto error;
+	}
+
+	return display;
+
+error:
+	if (display)
+		XCloseDisplay(display);
+	return NULL;
+}
+
 static int x_error_handler(Display *display, XErrorEvent *error)
 {
 	char str[512];
@@ -273,25 +329,15 @@ static int x_error_handler(Display *display, XErrorEvent *error)
 }
 
 extern struct gl_platform *gl_platform_create(gs_device_t *device,
-		const struct gs_init_data *info)
+		uint32_t adapter)
 {
 	/* There's some trickery here... we're mixing libX11, xcb, and GLX
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
 	   Essentially, GLX requires Xlib. Everything else we use xcb. */
-	struct gl_windowinfo *wi = gl_windowinfo_create(info);
 	struct gl_platform * plat = bmalloc(sizeof(struct gl_platform));
-	Display * display;
+	Display * display = open_windowless_display();
 
-	print_info_stuff(info);
-
-	if (!wi) {
-		blog(LOG_ERROR, "Failed to create window info!");
-		goto fail_wi_create;
-	}
-
-	display = XOpenDisplay(XDisplayString(info->window.display));
 	if (!display) {
-		blog(LOG_ERROR, "Unable to open new X connection!");
 		goto fail_display_open;
 	}
 
@@ -299,25 +345,17 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 	XSetErrorHandler(x_error_handler);
 
 	/* We assume later that cur_swap is already set. */
-	device->cur_swap = &plat->swap;
 	device->plat = plat;
 
 	plat->display = display;
-	plat->swap.device = device;
-	plat->swap.info = *info;
-	plat->swap.wi = wi;
-
-	if (!gl_platform_init_swapchain(&plat->swap)) {
-		blog(LOG_ERROR, "Failed to initialize swap chain!");
-		goto fail_init_swapchain;
-	}
 
 	if (!gl_context_create(plat)) {
 		blog(LOG_ERROR, "Failed to create context!");
 		goto fail_context_create;
 	}
 
-	if (!glXMakeCurrent(plat->display, wi->window, plat->context)) {
+	if (!glXMakeContextCurrent(plat->display, plat->pbuffer, plat->pbuffer,
+				plat->context)) {
 		blog(LOG_ERROR, "Failed to make context current.");
 		goto fail_make_current;
 	}
@@ -335,14 +373,12 @@ fail_make_current:
 	gl_context_destroy(plat);
 fail_context_create:
 fail_load_gl:
-fail_init_swapchain:
 	XCloseDisplay(display);
 fail_display_open:
-fail_wi_create:
-	gl_windowinfo_destroy(wi);
 	free(plat);
 	plat = NULL;
 success:
+	UNUSED_PARAMETER(adapter);
 	return plat;
 }
 
@@ -351,16 +387,12 @@ extern void gl_platform_destroy(struct gl_platform *plat)
 	if (!plat) /* In what case would platform be invalid here? */
 		return;
 
-	struct gl_windowinfo *wi = plat->swap.wi;
-
 	gl_context_destroy(plat);
-	gl_windowinfo_destroy(wi);
 }
 
 extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 {
 	Display *display = swap->device->plat->display;
-	struct gs_init_data *info = &swap->info;
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
 	xcb_window_t wid = xcb_generate_id(xcb_conn);
 	xcb_window_t parent = swap->info.window.id;
@@ -379,37 +411,11 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 		goto fail_screen;
 	}
 
-	/* NOTE:
-	 * So GLX is odd. You can have different extensions per screen,
-	 * not just per video card or visual.
-	 *
-	 * Because of this, it makes sense to call LoadGLX everytime
-	 * we open a frackin' window. In Windows, entry points can change
-	 * so it makes more sense there. Here, despite it virtually never
-	 * having the possibility of changing unless the user is intentionally
-	 * being an asshole to cause this behavior, we still have to give it
-	 * the correct screen num just out of good practice. *sigh*
-	 */
-	if (!gladLoadGLX(display, screen_num)) {
-		blog(LOG_ERROR, "Unable to load GLX entry functions.");
-		goto fail_load_glx;
-	}
-
-	/* Define our FBConfig hints for GLX... */
-	const int fb_attribs[] = {
-		GLX_STENCIL_SIZE, get_stencil_format_bits(info->zsformat),
-		GLX_DEPTH_SIZE, get_depth_format_bits(info->zsformat),
-		GLX_BUFFER_SIZE, get_color_format_bits(info->format),
-		GLX_DOUBLEBUFFER, true,
-		GLX_X_RENDERABLE, true,
-		None
-	};
-
 	/* ...fetch the best match... */
 	{
 		int num_configs;
 		fb_config = glXChooseFBConfig(display, screen_num,
-			                      fb_attribs, &num_configs);
+			                      ctx_visual_attribs, &num_configs);
 
 		if (!fb_config || !num_configs) {
 			blog(LOG_ERROR, "Failed to find FBConfig!");
@@ -461,7 +467,6 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 fail_visual_id:
 	XFree(fb_config);
 fail_fb_config:
-fail_load_glx:
 fail_screen:
 fail_geometry_request:
 success:
@@ -478,11 +483,18 @@ extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 extern void device_enter_context(gs_device_t *device)
 {
 	GLXContext context = device->plat->context;
-	XID window = device->cur_swap->wi->window;
 	Display *display = device->plat->display;
 
-	if (!glXMakeCurrent(display, window, context)) {
-		blog(LOG_ERROR, "Failed to make context current.");
+	if (device->cur_swap) {
+		XID window = device->cur_swap->wi->window;
+		if (!glXMakeContextCurrent(display, window, window, context)) {
+			blog(LOG_ERROR, "Failed to make context current.");
+		}
+	} else {
+		GLXPbuffer pbuf = device->plat->pbuffer;
+		if (!glXMakeContextCurrent(display, pbuf, pbuf, context)) {
+			blog(LOG_ERROR, "Failed to make context current.");
+		}
 	}
 }
 
@@ -490,7 +502,7 @@ extern void device_leave_context(gs_device_t *device)
 {
 	Display *display = device->plat->display;
 
-	if (!glXMakeCurrent(display, None, NULL)) {
+	if (!glXMakeContextCurrent(display, None, None, NULL)) {
 		blog(LOG_ERROR, "Failed to reset current context.");
 	}
 }
@@ -527,20 +539,24 @@ extern void gl_update(gs_device_t *device)
 
 extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
-	if (!swap)
-		swap = &device->plat->swap;
-
 	if (device->cur_swap == swap)
 		return;
 
 	Display *dpy = device->plat->display;
-	XID window = swap->wi->window;
 	GLXContext ctx = device->plat->context;
 
 	device->cur_swap = swap;
 
-	if (!glXMakeCurrent(dpy, window, ctx)) {
-		blog(LOG_ERROR, "Failed to make context current.");
+	if (swap) {
+		XID window = swap->wi->window;
+		if (!glXMakeContextCurrent(dpy, window, window, ctx)) {
+			blog(LOG_ERROR, "Failed to make context current.");
+		}
+	} else {
+		GLXPbuffer pbuf = device->plat->pbuffer;
+		if (!glXMakeContextCurrent(dpy, pbuf, pbuf, ctx)) {
+			blog(LOG_ERROR, "Failed to make context current.");
+		}
 	}
 }
 

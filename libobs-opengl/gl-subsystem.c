@@ -202,12 +202,12 @@ const char *device_preprocessor_name(void)
 	return "_OPENGL";
 }
 
-int device_create(gs_device_t **p_device, const struct gs_init_data *info)
+int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));
 	int errorcode = GS_ERROR_FAIL;
 
-	device->plat = gl_platform_create(device, info);
+	device->plat = gl_platform_create(device, adapter);
 	if (!device->plat)
 		goto fail;
 
@@ -219,7 +219,7 @@ int device_create(gs_device_t **p_device, const struct gs_init_data *info)
 	gl_enable(GL_CULL_FACE);
 	
 	device_leave_context(device);
-	device->cur_swap = gl_platform_getswap(device->plat);
+	device->cur_swap = NULL;
 
 	*p_device = device;
 	return GS_SUCCESS;

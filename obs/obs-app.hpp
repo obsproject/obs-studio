@@ -20,6 +20,7 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
+#include <obs.hpp>
 #include <util/lexer.h>
 #include <util/util.hpp>
 #include <string>
@@ -59,6 +60,7 @@ private:
 	std::string		       theme;
 	ConfigFile                     globalConfig;
 	TextLookup                     textLookup;
+	OBSContext                     obsContext;
 	QPointer<OBSMainWindow>        mainWindow;
 
 	bool InitGlobalConfig();

@@ -28,18 +28,6 @@ struct obs_core *obs = NULL;
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
-static inline void make_gs_init_data(struct gs_init_data *gid,
-		const struct obs_video_info *ovi)
-{
-	memcpy(&gid->window, &ovi->window, sizeof(struct gs_window));
-	gid->cx              = ovi->window_width;
-	gid->cy              = ovi->window_height;
-	gid->num_backbuffers = 2;
-	gid->format          = GS_RGBA;
-	gid->zsformat        = GS_ZS_NONE;
-	gid->adapter         = ovi->adapter;
-}
-
 static inline void make_video_info(struct video_output_info *vi,
 		struct obs_video_info *ovi)
 {
@@ -230,14 +218,11 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
-	struct gs_init_data graphics_data;
 	bool success = true;
 	int errorcode;
 
-	make_gs_init_data(&graphics_data, ovi);
-
 	errorcode = gs_create(&video->graphics, ovi->graphics_module,
-			&graphics_data);
+			ovi->adapter);
 	if (errorcode != GS_SUCCESS) {
 		switch (errorcode) {
 		case GS_ERROR_MODULE_NOT_FOUND:
@@ -360,12 +345,6 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 	}
 
-	if (!obs_display_init(&video->main_display, NULL))
-		return OBS_VIDEO_FAIL;
-
-	video->main_display.cx = ovi->window_width;
-	video->main_display.cy = ovi->window_height;
-
 	gs_enter_context(video->graphics);
 
 	if (ovi->gpu_conversion && !obs_init_gpu_conversion(ovi))
@@ -404,8 +383,6 @@ static void obs_free_video(void)
 	struct obs_core_video *video = &obs->video;
 
 	if (video->video) {
-		obs_display_free(&video->main_display);
-
 		video_output_close(video->video);
 		video->video = NULL;
 
@@ -1375,30 +1352,6 @@ proc_handler_t *obs_get_proc_handler(void)
 	return obs->procs;
 }
 
-void obs_add_draw_callback(
-		void (*draw)(void *param, uint32_t cx, uint32_t cy),
-		void *param)
-{
-	if (!obs) return;
-
-	obs_display_add_draw_callback(&obs->video.main_display, draw, param);
-}
-
-void obs_remove_draw_callback(
-		void (*draw)(void *param, uint32_t cx, uint32_t cy),
-		void *param)
-{
-	if (!obs) return;
-
-	obs_display_remove_draw_callback(&obs->video.main_display, draw, param);
-}
-
-void obs_resize(uint32_t cx, uint32_t cy)
-{
-	if (!obs || !obs->video.video || !obs->video.graphics) return;
-	obs_display_resize(&obs->video.main_display, cx, cy);
-}
-
 void obs_render_main_view(void)
 {
 	if (!obs) return;
@@ -1754,15 +1707,4 @@ void obs_context_data_setname(struct obs_context_data *context,
 	context->name = dup_name(name);
 
 	pthread_mutex_unlock(&context->rename_cache_mutex);
-}
-
-void obs_preview_set_enabled(bool enable)
-{
-	if (obs)
-		obs->video.main_display.enabled = enable;
-}
-
-bool obs_preview_enabled(void)
-{
-	return obs ? obs->video.main_display.enabled : false;
 }

@@ -9,7 +9,6 @@ class OBSProjector : public OBSQTDisplay {
 	Q_OBJECT
 
 private:
-	OBSDisplay display;
 	OBSSource source;
 	OBSSignal removedSignal;
 

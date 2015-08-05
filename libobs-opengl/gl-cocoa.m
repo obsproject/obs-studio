@@ -31,10 +31,9 @@ struct gl_windowinfo {
 
 struct gl_platform {
 	NSOpenGLContext *context;
-	struct gs_swap_chain swap;
 };
 
-static NSOpenGLContext *gl_context_create(const struct gs_init_data *info)
+static NSOpenGLContext *gl_context_create(void)
 {
 	unsigned attrib_count = 0;
 
@@ -44,33 +43,8 @@ static NSOpenGLContext *gl_context_create(const struct gs_init_data *info)
 
 	NSOpenGLPixelFormatAttribute attributes[40];
 
-	switch(info->num_backbuffers) {
-		case 0:
-			break;
-		case 1:
-			ADD_ATTR(NSOpenGLPFADoubleBuffer);
-			break;
-		case 2:
-			ADD_ATTR(NSOpenGLPFATripleBuffer);
-			break;
-		default:
-			blog(LOG_ERROR, "Requested backbuffers (%d) not "
-			                "supported", info->num_backbuffers);
-	}
-
-	ADD_ATTR(NSOpenGLPFAClosestPolicy);
+	ADD_ATTR(NSOpenGLPFADoubleBuffer);
 	ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
-
-	int color_bits = 0;//get_color_format_bits(info->format);
-	if(color_bits == 0) color_bits = 24;
-	else if(color_bits < 15) color_bits = 15;
-
-	ADD_ATTR2(NSOpenGLPFAColorSize, color_bits);
-
-	ADD_ATTR2(NSOpenGLPFAAlphaSize, 8);
-
-	ADD_ATTR2(NSOpenGLPFADepthSize, 16);
-
 	ADD_ATTR(0);
 
 #undef ADD_ATTR2
@@ -91,30 +65,17 @@ static NSOpenGLContext *gl_context_create(const struct gs_init_data *info)
 		return NULL;
 	}
 
-	[context setView:info->window.view];
+	[context clearDrawable];
 
 	return context;
 }
 
-static bool gl_init_default_swap(struct gl_platform *plat, gs_device_t *dev,
-		const struct gs_init_data *info)
-{
-	if(!(plat->context = gl_context_create(info)))
-		return false;
-
-	plat->swap.device = dev;
-	plat->swap.info	  = *info;
-	plat->swap.wi     = gl_windowinfo_create(info);
-
-	return plat->swap.wi != NULL;
-}
-
-struct gl_platform *gl_platform_create(gs_device_t *device,
-		const struct gs_init_data *info)
+struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 
-	if(!gl_init_default_swap(plat, device, info))
+	plat->context = gl_context_create();
+	if (!plat->context)
 		goto fail;
 
 	[plat->context makeCurrentContext];
@@ -127,13 +88,9 @@ struct gl_platform *gl_platform_create(gs_device_t *device,
 fail:
 	blog(LOG_ERROR, "gl_platform_create failed");
 	gl_platform_destroy(plat);
-	return NULL;
-}
 
-struct gs_swap_chain *gl_platform_getswap(struct gl_platform *platform)
-{
-	if(platform)
-		return &platform->swap;
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(adapter);
 	return NULL;
 }
 
@@ -144,7 +101,6 @@ void gl_platform_destroy(struct gl_platform *platform)
 
 	[platform->context release];
 	platform->context = nil;
-	gl_windowinfo_destroy(platform->swap.wi);
 
 	bfree(platform);
 }
@@ -205,14 +161,15 @@ void device_leave_context(gs_device_t *device)
 
 void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
-	if(!swap)
-		swap = &device->plat->swap;
-
 	if(device->cur_swap == swap)
 		return;
 
 	device->cur_swap = swap;
-	[device->plat->context setView:swap->wi->view];
+	if (swap) {
+		[device->plat->context setView:swap->wi->view];
+	} else {
+		[device->plat->context clearDrawable];
+	}
 }
 
 void device_present(gs_device_t *device)

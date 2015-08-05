@@ -56,13 +56,16 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	OBSData settings = obs_source_get_settings(source);
 	obs_data_release(settings);
 
-	connect(windowHandle(), &QWindow::screenChanged, [this]() {
-		QSize size = GetPixelSize(ui->preview);
-		obs_display_resize(display, size.width(), size.height());
-	});
-
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
+
+	auto addDrawCallback = [this] ()
+	{
+		obs_display_add_draw_callback(ui->preview->GetDisplay(),
+				OBSBasicInteraction::DrawPreview, this);
+	};
+
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
 }
 
 OBSBasicInteraction::~OBSBasicInteraction()
@@ -155,33 +158,11 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_pop();
 }
 
-void OBSBasicInteraction::OnInteractionResized()
-{
-	QSize size = GetPixelSize(ui->preview);
-	obs_display_resize(display, size.width(), size.height());
-}
-
-void OBSBasicInteraction::resizeEvent(QResizeEvent *event)
-{
-	if (isVisible()) {
-		QSize size = GetPixelSize(ui->preview);
-		obs_display_resize(display, size.width(), size.height());
-	}
-
-	QDialog::resizeEvent(event);
-}
-
 void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 {
 	QDialog::closeEvent(event);
 	if (!event->isAccepted())
 		return;
-
-	// remove draw callback and release display in case our drawable
-	// surfaces go away before the destructor gets called
-	obs_display_remove_draw_callback(display,
-			OBSBasicInteraction::DrawPreview, this);
-	display = nullptr;
 
 	config_set_int(App()->GlobalConfig(), "InteractionWindow", "cx",
 			width());
@@ -381,19 +362,5 @@ bool OBSBasicInteraction::HandleKeyEvent(QKeyEvent *event)
 
 void OBSBasicInteraction::Init()
 {
-	gs_init_data init_data = {};
-
 	show();
-
-	QSize previewSize = GetPixelSize(ui->preview);
-	init_data.cx      = uint32_t(previewSize.width());
-	init_data.cy      = uint32_t(previewSize.height());
-	init_data.format  = GS_RGBA;
-	QTToGSWindow(ui->preview->winId(), init_data.window);
-
-	display = obs_display_create(&init_data);
-
-	if (display)
-		obs_display_add_draw_callback(display,
-				OBSBasicInteraction::DrawPreview, this);
 }
