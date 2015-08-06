@@ -1,7 +1,7 @@
 project(coreaudio-encoder)
 
 set(coreaudio-encoder_SOURCES
-	encoder.c)
+	encoder.cpp)
 
 if (WIN32)
 	set(coreaudio-encoder_HEADERS windows-imports.h)

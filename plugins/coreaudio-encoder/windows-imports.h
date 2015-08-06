@@ -387,7 +387,7 @@ static void release_lib(void)
 static bool load_lib(void)
 {
 	PWSTR common_path;
-	if (SHGetKnownFolderPath(&FOLDERID_ProgramFilesCommon, 0, NULL,
+	if (SHGetKnownFolderPath(FOLDERID_ProgramFilesCommon, 0, NULL,
 				&common_path) != S_OK) {
 		CA_LOG(LOG_WARNING, "Could not retrieve common files path");
 		return false;
@@ -433,6 +433,10 @@ static void unload_core_audio(void)
 	release_lib();
 }
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4706)
+#endif
 static bool load_core_audio(void)
 {
 	if (!load_lib())
@@ -465,3 +469,6 @@ unload_everything:
 
 	return false;
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
