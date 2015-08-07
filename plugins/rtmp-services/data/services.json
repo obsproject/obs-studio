@@ -116,14 +116,14 @@
         }
     },
     {
-        "name": "Youtube",
+        "name": "YouTube",
         "servers": [
             {
-                "name": "Primary Youtube ingest server",
+                "name": "Primary YouTube ingest server",
                 "url": "rtmp://a.rtmp.youtube.com/live2"
             },
             {
-                "name": "Backup Youtube ingest server",
+                "name": "Backup YouTube ingest server",
                 "url": "rtmp://b.rtmp.youtube.com/live2?backup=1"
             }
         ],
