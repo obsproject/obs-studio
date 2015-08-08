@@ -2043,6 +2043,8 @@ int OBSBasic::ResetVideo()
 			ovi.graphics_module = DL_OPENGL;
 			ret = AttemptToResetVideo(&ovi);
 		}
+	} else if (ret == OBS_VIDEO_SUCCESS) {
+		ResizePreview(ovi.base_width, ovi.base_height);
 	}
 
 	return ret;
