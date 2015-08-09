@@ -1,5 +1,5 @@
 #include <util/darray.h>
-#include <util/dstr.h>
+#include <util/dstr.hpp>
 #include <obs-module.h>
 
 #include <initializer_list>
@@ -19,6 +19,13 @@
 #define CA_BLOG(level, format, ...) \
 	CA_LOG_ENCODER(ca->format_name, ca->encoder, level, format, \
 			##__VA_ARGS__)
+#define CA_CO_LOG(level, format, ...) \
+	do { \
+		if (ca) \
+			CA_BLOG(level, format, ##__VA_ARGS__); \
+		else \
+			CA_LOG(level, format, ##__VA_ARGS__); \
+	} while (false)
 
 #ifdef _WIN32
 #include "windows-imports.h"
@@ -145,6 +152,59 @@ template <typename T>
 using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
 #endif
 
+#ifndef _MSC_VER
+__attribute__((__format__(__printf__, 3, 4)))
+#endif
+static void log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
+{
+	dstr prev_str = *static_cast<dstr*>(str);
+
+	va_list args;
+	va_start(args, fmt);
+	dstr_vcatf(str, fmt, args);
+	va_end(args);
+
+	if (str->array)
+		return;
+
+	char array[4096];
+	va_start(args, fmt);
+	vsnprintf(array, 4096, fmt, args);
+	va_end(args);
+
+	array[4095] = 0;
+
+	if (!prev_str.array && !prev_str.len)
+		CA_CO_LOG(LOG_ERROR, "Could not allocate buffer for logging:"
+				"\n'%s'", array);
+	else
+		CA_CO_LOG(LOG_ERROR, "Could not allocate buffer for logging:"
+				"\n'%s'\nPrevious log entries:\n%s",
+				array, prev_str.array);
+
+	bfree(prev_str.array);
+}
+
+static const char *flush_log(DStr &log)
+{
+	if (!log->array || !log->len)
+		return "";
+
+	if (log->array[log->len - 1] == '\n') {
+		log->array[log->len - 1] = 0; //Get rid of last newline
+		log->len -= 1;
+	}
+
+	return log->array;
+}
+
+#define CA_CO_DLOG_(level, format) \
+	CA_CO_LOG(level, format "%s%s", \
+			log->array ? ":\n" : "", flush_log(log))
+#define CA_CO_DLOG(level, format, ...) \
+	CA_CO_LOG(level, format "%s%s", ##__VA_ARGS__, \
+			log->array ? ":\n" : "", flush_log(log))
+
 static const char *aac_get_name(void)
 {
 	return obs_module_text("CoreAudioAAC");
@@ -180,9 +240,10 @@ static const char *code_to_str(OSStatus code)
 	return NULL;
 }
 
-static void log_osstatus(int log_level, ca_encoder *ca, const char *context,
-		OSStatus code)
+static DStr osstatus_to_dstr(OSStatus code)
 {
+	DStr result;
+
 #ifndef _WIN32
 	cf_ptr<CFErrorRef> err{CFErrorCreate(kCFAllocatorDefault,
 			kCFErrorDomainOSStatus, code, NULL)};
@@ -192,40 +253,32 @@ static void log_osstatus(int log_level, ca_encoder *ca, const char *context,
 	CFIndex max_size = CFStringGetMaximumSizeForEncoding(length,
 			kCFStringEncodingUTF8);
 
-	vector<char> c_str;
+	dstr_ensure_capacity(result, max_size);
 
-	try {
-		c_str.resize(max_size);
-	} catch (...) {
-		// skip conversion
-	}
-
-	if (c_str.size() && CFStringGetCString(str.get(), c_str.data(),
+	if (result->array && CFStringGetCString(str.get(), result->array,
 				max_size, kCFStringEncodingUTF8)) {
-		if (ca)
-			CA_BLOG(log_level, "Error in %s: %s", context,
-					c_str.data());
-		else
-			CA_LOG(log_level, "Error in %s: %s", context,
-					c_str.data());
-
-		return;
+		dstr_resize(result, strlen(result->array));
+		return result;
 	}
 #endif
 
 	const char *code_str = code_to_str(code);
+	dstr_printf(result, "%s%s%d%s",
+			code_str ? code_str : "",
+			code_str ? " (" : "",
+			static_cast<int>(code),
+			code_str ? ")" : "");
+	return result;
+}
+
+static void log_osstatus(int log_level, ca_encoder *ca, const char *context,
+		OSStatus code)
+{
+	DStr str = osstatus_to_dstr(code);
 	if (ca)
-		CA_BLOG(log_level, "Error in %s: %s%s%d%s", context,
-				code_str ? code_str : "",
-				code_str ? " (" : "",
-				(int)code,
-				code_str ? ")" : "");
+		CA_BLOG(log_level, "Error in %s: %s", context, str->array);
 	else
-		CA_LOG(log_level, "Error in %s: %s%s%d%s", context,
-				code_str ? code_str : "",
-				code_str ? " (" : "",
-				(int)code,
-				code_str ? ")" : "");
+		CA_LOG(log_level, "Error in %s: %s", context, str->array);
 }
 
 static const char *format_id_to_str(UInt32 format_id)
