@@ -332,6 +332,71 @@ static void aac_destroy(void *data)
 	delete ca;
 }
 
+template <typename Func>
+static bool query_converter_property_raw(DStr &log, ca_encoder *ca,
+		AudioFormatPropertyID property,
+		const char *get_property_info, const char *get_property,
+		AudioConverterRef converter, Func &&func)
+{
+	UInt32 size = 0;
+	OSStatus code = AudioConverterGetPropertyInfo(converter, property,
+			&size, nullptr);
+	if (code) {
+		log_to_dstr(log, ca, "%s: %s\n", get_property_info,
+				osstatus_to_dstr(code)->array);
+		return false;
+	}
+
+	if (!size) {
+		log_to_dstr(log, ca, "%s returned 0 size\n", get_property_info);
+		return false;
+	}
+
+	vector<uint8_t> buffer;
+	
+	try {
+		buffer.resize(size);
+	} catch (...) {
+		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n",
+				static_cast<uint32_t>(size), get_property);
+		return false;
+	}
+
+	code = AudioConverterGetProperty(converter, property, &size,
+			buffer.data());
+	if (code) {
+		log_to_dstr(log, ca, "%s: %s\n", get_property,
+				osstatus_to_dstr(code)->array);
+		return false;
+	}
+
+	func(size, static_cast<void*>(buffer.data()));
+
+	return true;
+}
+
+#define EXPAND_CONVERTER_NAMES(x) x, \
+	"AudioConverterGetPropertyInfo(" #x ")", \
+	"AudioConverterGetProperty(" #x ")"
+
+template <typename Func>
+static bool enumerate_bitrates(DStr &log, ca_encoder *ca,
+		AudioConverterRef converter, Func &&func)
+{
+	auto helper = [&](UInt32 size, void *data)
+	{
+		auto range = static_cast<AudioValueRange*>(data);
+		size_t num_ranges = size / sizeof(AudioValueRange);
+		for (size_t i = 0; i < num_ranges; i++)
+			func(static_cast<UInt32>(range[i].mMinimum),
+					static_cast<UInt32>(range[i].mMaximum));
+	};
+
+	return query_converter_property_raw(log, ca, EXPAND_CONVERTER_NAMES(
+			kAudioConverterApplicableEncodeBitRates),
+			converter, helper);
+}
+
 typedef void (*bitrate_enumeration_func)(void *data, UInt32 min, UInt32 max);
 
 static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
