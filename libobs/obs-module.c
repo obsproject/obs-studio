@@ -56,6 +56,21 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 	return MODULE_SUCCESS;
 }
 
+static inline char *get_module_name(const char *file)
+{
+	static int ext_len = 0;
+	struct dstr name = {0};
+
+	if (ext_len == 0) {
+		const char *ext = get_module_extension();
+		ext_len = strlen(ext);
+	}
+
+	dstr_copy(&name, file);
+	dstr_resize(&name, name.len - ext_len);
+	return name.array;
+}
+
 int obs_open_module(obs_module_t **module, const char *path,
 		const char *data_path)
 {
@@ -78,6 +93,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 	mod.bin_path  = bstrdup(path);
 	mod.file      = strrchr(mod.bin_path, '/');
 	mod.file      = (!mod.file) ? mod.bin_path : (mod.file + 1);
+	mod.mod_name  = get_module_name(mod.file);
 	mod.data_path = bstrdup(data_path);
 	mod.next      = obs->first_module;
 
@@ -164,6 +180,20 @@ char *obs_find_module_file(obs_module_t *module, const char *file)
 
 	if (!os_file_exists(output.array))
 		dstr_free(&output);
+	return output.array;
+}
+
+char *obs_module_get_config_path(obs_module_t *module, const char *file)
+{
+	struct dstr output = {0};
+
+	dstr_copy(&output, obs->module_config_path);
+	if (!dstr_is_empty(&output) && dstr_end(&output) != '/')
+		dstr_cat_ch(&output, '/');
+	dstr_cat(&output, module->mod_name);
+	dstr_cat_ch(&output, '/');
+	dstr_cat(&output, file);
+
 	return output.array;
 }
 
@@ -380,6 +410,7 @@ void free_module(struct obs_module *mod)
 		/* os_dlclose(mod->module); */
 	}
 
+	bfree(mod->mod_name);
 	bfree(mod->bin_path);
 	bfree(mod->data_path);
 	bfree(mod);

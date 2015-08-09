@@ -403,6 +403,19 @@ EXPORT lookup_t *obs_module_load_locale(obs_module_t *module,
 EXPORT char *obs_find_module_file(obs_module_t *module, const char *file);
 
 /**
+ * Returns the path of a plugin module config file (whether it exists or not)
+ *
+ * @note   Modules should use obs_module_config_path function defined in
+ *         obs-module.h as a more elegant means of getting their files without
+ *         having to specify the module parameter.
+ *
+ * @param  module  The module associated with the path
+ * @param  file    The file to get a path to
+ * @return         Path string, or NULL if not found.  Use bfree to free string.
+ */
+EXPORT char *obs_module_get_config_path(obs_module_t *module, const char *file);
+
+/**
  * Enumerates all available inputs source types.
  *
  *   Inputs are general source inputs (such as capture sources, device sources,

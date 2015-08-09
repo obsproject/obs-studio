@@ -52,6 +52,7 @@ struct draw_callback {
 /* modules */
 
 struct obs_module {
+	char *mod_name;
 	const char *file;
 	char *bin_path;
 	char *data_path;
