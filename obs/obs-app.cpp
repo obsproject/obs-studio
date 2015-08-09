@@ -320,6 +320,10 @@ static bool MakeUserDirs()
 	if (!do_mkdir(path))
 		return false;
 #endif
+	if (GetConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
 
 	return true;
 }
@@ -592,6 +596,16 @@ const char *OBSApp::GetRenderModule() const
 		DL_D3D11 : DL_OPENGL;
 }
 
+static bool StartupOBS(const char *locale, profiler_name_store_t *store)
+{
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
+		return false;
+
+	return obs_startup(locale, path, store);
+}
+
 bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
@@ -607,7 +621,9 @@ bool OBSApp::OBSInit()
 			config_save(globalConfig);
 		}
 
-		obs_startup(locale.c_str(), GetProfilerNameStore());
+		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
+			return false;
+
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);

@@ -275,9 +275,10 @@ class OBSContext {
 public:
 	inline OBSContext() {}
 	inline OBSContext(const char *locale,
+			const char *module_config_path=nullptr,
 			profiler_name_store *store=nullptr)
 	{
-		obs_startup(locale, store);
+		obs_startup(locale, module_config_path, store);
 	}
 
 	inline ~OBSContext()

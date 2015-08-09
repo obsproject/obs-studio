@@ -241,10 +241,13 @@ struct obs_source_frame {
 /**
  * Initializes OBS
  *
- * @param  locale  The locale to use for modules
- * @param  store   The profiler name store for OBS to use or NULL
+ * @param  locale              The locale to use for modules
+ * @param  module_config_path  Path to module config storage directory
+ *                             (or NULL if none)
+ * @param  store               The profiler name store for OBS to use or NULL
  */
-EXPORT bool obs_startup(const char *locale, profiler_name_store_t *store);
+EXPORT bool obs_startup(const char *locale, const char *module_config_path,
+		profiler_name_store_t *store);
 
 /** Releases all data associated with OBS and terminates the OBS context */
 EXPORT void obs_shutdown(void);

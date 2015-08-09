@@ -324,6 +324,7 @@ struct obs_core {
 	proc_handler_t                  *procs;
 
 	char                            *locale;
+	char                            *module_config_path;
 	bool                            name_store_owned;
 	profiler_name_store_t           *name_store;
 

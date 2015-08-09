@@ -687,7 +687,8 @@ extern const struct obs_source_info scene_info;
 
 extern void log_system_info(void);
 
-static bool obs_init(const char *locale, profiler_name_store_t *store)
+static bool obs_init(const char *locale, const char *module_config_path,
+		profiler_name_store_t *store)
 {
 	obs = bzalloc(sizeof(struct obs_core));
 
@@ -707,6 +708,8 @@ static bool obs_init(const char *locale, profiler_name_store_t *store)
 	if (!obs_init_hotkeys())
 		return false;
 
+	if (module_config_path)
+		obs->module_config_path = bstrdup(module_config_path);
 	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
 	add_default_module_paths();
@@ -718,7 +721,8 @@ extern void initialize_crash_handler(void);
 #endif
 
 static const char *obs_startup_name = "obs_startup";
-bool obs_startup(const char *locale, profiler_name_store_t *store)
+bool obs_startup(const char *locale, const char *module_config_path,
+		profiler_name_store_t *store)
 {
 	bool success;
 
@@ -733,7 +737,7 @@ bool obs_startup(const char *locale, profiler_name_store_t *store)
 	initialize_crash_handler();
 #endif
 
-	success = obs_init(locale, store);
+	success = obs_init(locale, module_config_path, store);
 	profile_end(obs_startup_name);
 	if (!success)
 		obs_shutdown();
@@ -783,6 +787,7 @@ void obs_shutdown(void)
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
 
+	bfree(obs->module_config_path);
 	bfree(obs->locale);
 	bfree(obs);
 	obs = NULL;
