@@ -55,6 +55,9 @@ static void HandleListProperty(obs_property_t *prop, const char *id)
 
 	const size_t count = obs_property_list_item_count(prop);
 	for (size_t i = 0; i < count; i++) {
+		if (obs_property_list_item_disabled(prop, i))
+			continue;
+
 		int bitrate = static_cast<int>(
 				obs_property_list_item_int(prop, i));
 		bitrateMap[bitrate] = id;
