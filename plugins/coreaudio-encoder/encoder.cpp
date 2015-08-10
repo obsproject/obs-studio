@@ -3,8 +3,10 @@
 #include <obs-module.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <initializer_list>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #ifndef _WIN32
@@ -1027,64 +1029,95 @@ static AudioConverterRef he_aac_default_converter(void)
 	return get_default_converter(kAudioFormatMPEG4AAC_HE);
 }
 
-struct find_matching_bitrate_helper {
-	UInt32 bitrate;
-	UInt32 best_match;
-	int diff;
-};
-typedef struct find_matching_bitrate_helper find_matching_bitrate_helper;
-
-static void find_matching_bitrate_func(void *data, UInt32 min, UInt32 max)
+static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
+		UInt32 &best_match)
 {
-	find_matching_bitrate_helper *helper =
-		static_cast<find_matching_bitrate_helper*>(data);
+	UInt32 actual_bitrate = bitrate * 1000;
+	bool found_match = false;
 
-	int min_diff = abs((int)helper->bitrate - (int)min);
-	int max_diff = abs((int)helper->bitrate - (int)max);
+	auto handle_bitrate = [&](UInt32 candidate)
+	{
+		if (abs(static_cast<intmax_t>(actual_bitrate - candidate)) <
+		    abs(static_cast<intmax_t>(actual_bitrate - best_match))) {
+			log_to_dstr(log, ca, "Found new best match %u\n",
+					static_cast<uint32_t>(candidate));
 
-	if (min_diff < helper->diff) {
-		helper->best_match = min;
-		helper->diff = min_diff;
+			found_match = true;
+			best_match = candidate;
+		}
+	};
+
+	auto helper = [&](UInt32 min_, UInt32 max_)
+	{
+		handle_bitrate(min_);
+
+		if (min_ == max_)
+			return;
+
+		log_to_dstr(log, ca, "Got actual bit rate range: %u<->%u\n",
+				static_cast<uint32_t>(min_),
+				static_cast<uint32_t>(max_));
+
+		handle_bitrate(max_);
+	};
+
+	for (UInt32 format_id : aac_formats) {
+		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
+				format_id_to_str(format_id), format_id);
+
+		auto out = get_default_out_asbd_builder()
+			.format_id(format_id)
+			.asbd;
+
+		auto converter = get_converter(log, ca, out);
+
+		if (converter)
+			enumerate_bitrates(log, ca, converter.get(),
+					helper);
+		else
+			log_to_dstr(log, ca, "Could not get converter\n");
 	}
 
-	if (max_diff < helper->diff) {
-		helper->best_match = max;
-		helper->diff = max_diff;
-	}
+	best_match /= 1000;
+
+	return found_match;
 }
 
 static UInt32 find_matching_bitrate(UInt32 bitrate)
 {
-	find_matching_bitrate_helper helper;
-	helper.bitrate = bitrate * 1000;
-	helper.best_match = 0;
-	helper.diff = INT_MAX;
+	static UInt32 match = bitrate;
 
-	AudioConverterRef converter = aac_default_converter();
-	if (!converter) {
-		CA_LOG(LOG_ERROR, "Could not get converter to match "
-				"default bitrate");
-		return bitrate;
-	}
+	static once_flag once;
 
-	bool has_bitrates = enumerate_bitrates(NULL, converter,
-			find_matching_bitrate_func, &helper);
-	AudioConverterDispose(converter);
+	call_once(once, [&]()
+	{
+		DStr log;
+		ca_encoder *ca = nullptr;
 
-	if (!has_bitrates) {
-		CA_LOG(LOG_ERROR, "No bitrates found while matching "
-				"default bitrate");
-		AudioConverterDispose(converter);
-		return bitrate;
-	}
+		if (!find_best_match(log, ca, bitrate, match)) {
+			CA_CO_DLOG(LOG_ERROR, "No matching bitrates found for "
+				"target bitrate %u",
+				static_cast<uint32_t>(bitrate));
 
-	if (helper.best_match != helper.bitrate)
-		CA_LOG(LOG_INFO, "Returning closest matching bitrate %u "
-				"instead of requested bitrate %u",
-				(uint32_t)helper.best_match / 1000,
-				(uint32_t)bitrate);
+			match = bitrate;
+			return;
+		}
 
-	return helper.best_match / 1000;
+		if (match != bitrate) {
+			CA_CO_DLOG(LOG_INFO, "Default bitrate (%u) isn't "
+				"supported, returning %u as closest match",
+				static_cast<uint32_t>(bitrate),
+				static_cast<uint32_t>(match));
+			return;
+		}
+
+		if (log->len)
+			CA_CO_DLOG(LOG_DEBUG, "Default bitrate matching log "
+					"for bitrate %u",
+					static_cast<uint32_t>(bitrate));
+	});
+
+	return match;
 }
 
 static void aac_defaults(obs_data_t *settings)
