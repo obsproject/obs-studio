@@ -2,6 +2,7 @@
 #include <util/dstr.hpp>
 #include <obs-module.h>
 
+#include <algorithm>
 #include <initializer_list>
 #include <memory>
 #include <vector>
@@ -1093,56 +1094,76 @@ static void aac_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "allow he-aac", true);
 }
 
-struct add_bitrates_helper {
-	DARRAY(UInt32) bitrates;
-};
-typedef struct add_bitrates_helper add_bitrates_helper;
-
-static void add_bitrates_func(void *data, UInt32 min, UInt32 max)
+static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca)
 {
-	add_bitrates_helper *helper =
-		static_cast<add_bitrates_helper*>(data);
+	vector<UInt32> bitrates;
 
-	if (da_find(helper->bitrates, &min, 0) == DARRAY_INVALID)
-		da_push_back(helper->bitrates, &min);
-	if (da_find(helper->bitrates, &max, 0) == DARRAY_INVALID)
-		da_push_back(helper->bitrates, &max);
-}
+	auto handle_bitrate = [&](UInt32 bitrate)
+	{
+		if (find(begin(bitrates), end(bitrates), bitrate) ==
+				end(bitrates)) {
+			log_to_dstr(log, ca, "Adding bitrate %u\n",
+					static_cast<uint32_t>(bitrate));
+			bitrates.push_back(bitrate);
+		} else {
+			log_to_dstr(log, ca, "Bitrate %u already added\n",
+					static_cast<uint32_t>(bitrate));
+		}
+	};
 
-static int bitrate_compare(const void *data1, const void *data2)
-{
-	const UInt32 *bitrate1 = static_cast<const UInt32*>(data1);
-	const UInt32 *bitrate2 = static_cast<const UInt32*>(data2);
+	auto helper = [&](UInt32 min_, UInt32 max_)
+	{
+		handle_bitrate(min_);
 
-	return (int)*bitrate1 - (int)*bitrate2;
+		if (min_ == max_)
+			return;
+
+		log_to_dstr(log, ca, "Got actual bitrate range: %u<->%u\n",
+				static_cast<uint32_t>(min_),
+				static_cast<uint32_t>(max_));
+
+		handle_bitrate(max_);
+	};
+
+	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
+		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
+				format_id_to_str(format_id),
+				static_cast<uint32_t>(format_id));
+
+		auto out = get_default_out_asbd_builder()
+			.format_id(format_id)
+			.asbd;
+
+		auto converter = get_converter(log, ca, out);
+
+		if (converter)
+			enumerate_bitrates(log, ca, converter.get(), helper);
+	}
+
+	return bitrates;
 }
 
 static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
 {
-	add_bitrates_helper helper = { { {0} } };
+	DStr log;
 
-	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats))
-		enumerate_bitrates(ca,
-				get_default_converter(format_id),
-				add_bitrates_func, &helper);
+	auto bitrates = get_bitrates(log, ca);
 
-	if (!helper.bitrates.num) {
-		CA_BLOG(LOG_ERROR, "Enumeration found no available bitrates");
+	if (!bitrates.size()) {
+		CA_CO_DLOG_(LOG_ERROR, "Couldn't find available bitrates");
 		return;
 	}
 
-	qsort(helper.bitrates.array, helper.bitrates.num, sizeof(UInt32),
-			bitrate_compare);
+	if (log->len)
+		CA_CO_DLOG_(LOG_DEBUG, "Bitrate enumeration log");
 
-	struct dstr str = { 0 };
-	for (size_t i = 0; i < helper.bitrates.num; i++) {
-		dstr_printf(&str, "%u",
-				(uint32_t)helper.bitrates.array[i]/1000);
-		obs_property_list_add_int(prop, str.array,
-				helper.bitrates.array[i]/1000);
+	sort(begin(bitrates), end(bitrates));
+
+	DStr buffer;
+	for (UInt32 bitrate : bitrates) {
+		dstr_printf(buffer, "%u", (uint32_t)bitrate / 1000);
+		obs_property_list_add_int(prop, buffer->array, bitrate / 1000);
 	}
-	dstr_free(&str);
-	da_free(helper.bitrates);
 }
 
 static obs_properties_t *aac_properties(void *data)
