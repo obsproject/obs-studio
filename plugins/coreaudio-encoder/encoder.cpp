@@ -1036,7 +1036,8 @@ static void aac_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "allow he-aac", true);
 }
 
-static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca)
+static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
+		Float64 samplerate)
 {
 	vector<UInt32> bitrates;
 
@@ -1068,12 +1069,14 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca)
 	};
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
-		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
+		log_to_dstr(log, ca, "Trying %s (0x%x) at %g hz\n",
 				format_id_to_str(format_id),
-				static_cast<uint32_t>(format_id));
+				static_cast<uint32_t>(format_id),
+				samplerate);
 
 		auto out = get_default_out_asbd_builder()
 			.format_id(format_id)
+			.sample_rate(samplerate)
 			.asbd;
 
 		auto converter = get_converter(log, ca, out);
@@ -1085,11 +1088,12 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca)
 	return bitrates;
 }
 
-static void add_bitrates(obs_property_t *prop, ca_encoder *ca)
+static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
+		Float64 samplerate=44100.)
 {
 	DStr log;
 
-	auto bitrates = get_bitrates(log, ca);
+	auto bitrates = get_bitrates(log, ca, samplerate);
 
 	if (!bitrates.size()) {
 		CA_CO_DLOG_(LOG_ERROR, "Couldn't find available bitrates");
