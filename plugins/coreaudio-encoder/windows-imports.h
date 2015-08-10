@@ -362,6 +362,13 @@ typedef OSStatus (*AudioFormatGetProperty_t) (
 	void                  *outPropertyData
 );
 
+typedef OSStatus (*AudioFormatGetPropertyInfo_t) (
+	AudioFormatPropertyID inPropertyID,
+	UInt32                inSpecifierSize,
+	const void            *inSpecifier,
+	UInt32                *outPropertyDataSize
+);
+
 static AudioConverterNew_t AudioConverterNew = NULL;
 static AudioConverterDispose_t AudioConverterDispose = NULL;
 static AudioConverterReset_t AudioConverterReset = NULL;
@@ -370,6 +377,7 @@ static AudioConverterGetPropertyInfo_t AudioConverterGetPropertyInfo = NULL;
 static AudioConverterSetProperty_t AudioConverterSetProperty = NULL;
 static AudioConverterFillComplexBuffer_t AudioConverterFillComplexBuffer = NULL;
 static AudioFormatGetProperty_t AudioFormatGetProperty = NULL;
+static AudioFormatGetPropertyInfo_t AudioFormatGetPropertyInfo = NULL;
 
 static HMODULE audio_toolbox = NULL;
 
@@ -429,6 +437,7 @@ static void unload_core_audio(void)
 	AudioConverterSetProperty = NULL;
 	AudioConverterFillComplexBuffer = NULL;
 	AudioFormatGetProperty = NULL;
+	AudioFormatGetPropertyInfo = NULL;
 
 	release_lib();
 }
@@ -460,6 +469,7 @@ static bool load_core_audio(void)
 	LOAD_SYM(AudioConverterSetProperty);
 	LOAD_SYM(AudioConverterFillComplexBuffer);
 	LOAD_SYM(AudioFormatGetProperty);
+	LOAD_SYM(AudioFormatGetPropertyInfo);
 #undef LOAD_SYM
 
 	return true;

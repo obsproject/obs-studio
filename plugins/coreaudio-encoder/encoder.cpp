@@ -1036,6 +1036,93 @@ static void aac_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "allow he-aac", true);
 }
 
+template <typename Func>
+static bool query_property_raw(DStr &log, ca_encoder *ca,
+		AudioFormatPropertyID property,
+		const char *get_property_info, const char *get_property,
+		AudioStreamBasicDescription &desc, Func &&func)
+{
+	UInt32 size = 0;
+	OSStatus code = AudioFormatGetPropertyInfo(property,
+			sizeof(AudioStreamBasicDescription), &desc, &size);
+	if (code) {
+		log_to_dstr(log, ca, "%s: %s\n", get_property_info,
+				osstatus_to_dstr(code)->array);
+		return false;
+	}
+
+	if (!size) {
+		log_to_dstr(log, ca, "%s returned 0 size\n", get_property_info);
+		return false;
+	}
+
+	vector<uint8_t> buffer;
+	
+	try {
+		buffer.resize(size);
+	} catch (...) {
+		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n",
+				static_cast<uint32_t>(size), get_property);
+		return false;
+	}
+
+	code = AudioFormatGetProperty(property,
+			sizeof(AudioStreamBasicDescription), &desc, &size,
+			buffer.data());
+	if (code) {
+		log_to_dstr(log, ca, "%s: %s\n", get_property,
+				osstatus_to_dstr(code)->array);
+		return false;
+	}
+
+	func(size, static_cast<void*>(buffer.data()));
+
+	return true;
+}
+
+#define EXPAND_PROPERTY_NAMES(x) x, \
+	"AudioFormatGetPropertyInfo(" #x ")", \
+	"AudioFormatGetProperty(" #x ")"
+
+template <typename Func>
+static bool enumerate_samplerates(DStr &log, ca_encoder *ca,
+		AudioStreamBasicDescription &desc, Func &&func)
+{
+	auto helper = [&](UInt32 size, void *data)
+	{
+		auto range = static_cast<AudioValueRange*>(data);
+		size_t num_ranges = size / sizeof(AudioValueRange);
+		for (size_t i = 0; i < num_ranges; i++)
+			func(range[i]);
+	};
+
+	return query_property_raw(log, ca, EXPAND_PROPERTY_NAMES(
+			kAudioFormatProperty_AvailableEncodeSampleRates),
+			desc, helper);
+}
+
+#if 0
+// Unused because it returns bitrates that aren't actually usable, i.e.
+// Available bitrates vs Applicable bitrates
+
+template <typename Func>
+static bool enumerate_bitrates(DStr &log, ca_encoder *ca,
+		AudioStreamBasicDescription &desc, Func &&func)
+{
+	auto helper = [&](UInt32 size, void *data)
+	{
+		auto range = static_cast<AudioValueRange*>(data);
+		size_t num_ranges = size / sizeof(AudioValueRange);
+		for (size_t i = 0; i < num_ranges; i++)
+			func(range[i]);
+	};
+
+	return query_property_raw(log, ca, EXPAND_PROPERTY_NAMES(
+			kAudioFormatProperty_AvailableEncodeBitRates),
+			desc, helper);
+}
+#endif
+
 static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		Float64 samplerate)
 {
