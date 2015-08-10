@@ -427,7 +427,8 @@ static bool bitrate_valid(DStr &log, ca_encoder *ca,
 static bool create_encoder(DStr &log, ca_encoder *ca,
 		AudioStreamBasicDescription *in,
 		AudioStreamBasicDescription *out,
-		UInt32 format_id, UInt32 bitrate, UInt32 rate_control)
+		UInt32 format_id, UInt32 bitrate, UInt32 samplerate,
+		UInt32 rate_control)
 {
 #define STATUS_CHECK(c) \
 	code = c; \
@@ -437,8 +438,12 @@ static bool create_encoder(DStr &log, ca_encoder *ca,
 		return false; \
 	}
 
+	Float64 srate = samplerate ?
+		(Float64)samplerate :
+		(Float64)ca->samples_per_second;
+
 	auto out_ = asbd_builder()
-		.sample_rate((Float64)ca->samples_per_second)
+		.sample_rate(srate)
 		.channels_per_frame((UInt32)ca->channels)
 		.format_id(format_id)
 		.asbd;
@@ -550,6 +555,9 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		ca->allowed_formats = &aac_lc_formats;
 	}
 
+	auto samplerate =
+		static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
+
 	DStr log;
 
 	bool encoder_created = false;
@@ -559,7 +567,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 				(uint32_t)format_id);
 
 		if (!create_encoder(log, ca.get(), &in, &out, format_id,
-					bitrate, rate_control))
+					bitrate, samplerate, rate_control))
 			continue;
 
 		encoder_created = true;
@@ -1031,6 +1039,7 @@ static UInt32 find_matching_bitrate(UInt32 bitrate)
 
 static void aac_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_int(settings, "samplerate", 0); //match input
 	obs_data_set_default_int(settings, "bitrate",
 			find_matching_bitrate(128));
 	obs_data_set_default_bool(settings, "allow he-aac", true);
@@ -1123,6 +1132,81 @@ static bool enumerate_bitrates(DStr &log, ca_encoder *ca,
 }
 #endif
 
+static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
+{
+	vector<UInt32> samplerates;
+
+	auto handle_samplerate = [&](UInt32 rate)
+	{
+		if (find(begin(samplerates), end(samplerates), rate) ==
+				end(samplerates)) {
+			log_to_dstr(log, ca, "Adding sample rate %u\n",
+					static_cast<uint32_t>(rate));
+			samplerates.push_back(rate);
+		} else {
+			log_to_dstr(log, ca, "Sample rate %u already added\n",
+					static_cast<uint32_t>(rate));
+		}
+	};
+
+	auto helper = [&](const AudioValueRange &range)
+	{
+		auto min_ = static_cast<UInt32>(range.mMinimum);
+		auto max_ = static_cast<UInt32>(range.mMaximum);
+
+		handle_samplerate(min_);
+
+		if (min_ == max_)
+			return;
+
+		log_to_dstr(log, ca, "Got actual sample rate range: %u<->%u\n",
+				static_cast<uint32_t>(min_),
+				static_cast<uint32_t>(max_));
+
+		handle_samplerate(max_);
+	};
+
+	for (UInt32 format : (ca ? *ca->allowed_formats : aac_formats)) {
+		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
+				format_id_to_str(format),
+				static_cast<uint32_t>(format));
+
+		auto asbd = asbd_builder()
+			.format_id(format)
+			.asbd;
+
+		enumerate_samplerates(log, ca, asbd, helper);
+	}
+
+	return samplerates;
+}
+
+static void add_samplerates(obs_property_t *prop, ca_encoder *ca)
+{
+	obs_property_list_add_int(prop,
+			obs_module_text("UseInputSampleRate"), 0);
+
+	DStr log;
+
+	auto samplerates = get_samplerates(log, ca);
+
+	if (!samplerates.size()) {
+		CA_CO_DLOG_(LOG_ERROR, "Couldn't find available sample rates");
+		return;
+	}
+
+	if (log->len)
+		CA_CO_DLOG_(LOG_DEBUG, "Sample rate enumeration log");
+
+	sort(begin(samplerates), end(samplerates));
+
+	DStr buffer;
+	for (UInt32 samplerate : samplerates) {
+		dstr_printf(buffer, "%d", static_cast<uint32_t>(samplerate));
+		obs_property_list_add_int(prop, buffer->array, samplerate);
+	}
+}
+
 static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		Float64 samplerate)
 {
@@ -1205,7 +1289,12 @@ static obs_properties_t *aac_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_list(props, "bitrate",
+	obs_property_t *p = obs_properties_add_list(props, "samplerate",
+			obs_module_text("OutputSamplerate"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	add_samplerates(p, ca);
+
+	p = obs_properties_add_list(props, "bitrate",
 			obs_module_text("Bitrate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	add_bitrates(p, ca);
