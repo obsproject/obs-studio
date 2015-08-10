@@ -1260,8 +1260,10 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 }
 
 static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
-		Float64 samplerate=44100.)
+		Float64 samplerate=44100., UInt32 *selected=nullptr)
 {
+	obs_property_list_clear(prop);
+
 	DStr log;
 
 	auto bitrates = get_bitrates(log, ca, samplerate);
@@ -1274,13 +1276,49 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
 	if (log->len)
 		CA_CO_DLOG_(LOG_DEBUG, "Bitrate enumeration log");
 
+	bool selected_in_range = true;
+	if (selected) {
+		selected_in_range = find(begin(bitrates), end(bitrates),
+				*selected * 1000) != end(bitrates);
+
+		if (!selected_in_range)
+			bitrates.push_back(*selected * 1000);
+	}
+
 	sort(begin(bitrates), end(bitrates));
 
 	DStr buffer;
 	for (UInt32 bitrate : bitrates) {
 		dstr_printf(buffer, "%u", (uint32_t)bitrate / 1000);
-		obs_property_list_add_int(prop, buffer->array, bitrate / 1000);
+		size_t idx = obs_property_list_add_int(prop, buffer->array,
+				bitrate / 1000);
+
+		if (selected_in_range || bitrate / 1000 != *selected)
+			continue;
+
+		obs_property_list_item_disable(prop, idx, true);
 	}
+}
+
+static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop,
+		obs_data_t *settings)
+{
+	auto samplerate =
+		static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
+	if (!samplerate)
+		samplerate = 44100;
+
+	prop = obs_properties_get(props, "bitrate");
+	if (prop) {
+		auto bitrate = static_cast<UInt32>(
+				obs_data_get_int(settings, "bitrate"));
+
+		add_bitrates(prop, nullptr, samplerate, &bitrate);
+
+		return true;
+	}
+
+	return false;
 }
 
 static obs_properties_t *aac_properties(void *data)
@@ -1293,6 +1331,7 @@ static obs_properties_t *aac_properties(void *data)
 			obs_module_text("OutputSamplerate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	add_samplerates(p, ca);
+	obs_property_set_modified_callback(p, samplerate_updated);
 
 	p = obs_properties_add_list(props, "bitrate",
 			obs_module_text("Bitrate"),
