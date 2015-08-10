@@ -646,6 +646,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			(unsigned long)ca->output_buffer_size);
 
 	return ca.release();
+#undef STATUS_CHECK
 }
 
 static OSStatus complex_input_data_proc(AudioConverterRef inAudioConverter,
