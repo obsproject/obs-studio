@@ -459,41 +459,32 @@ static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
 	return num_bitrates > 0;
 }
 
-struct validate_bitrate_helper {
-	UInt32 bitrate;
-	bool valid;
-};
-typedef struct validate_bitrate_helper validate_bitrate_helper;
-
-static void validate_bitrate_func(void *data, UInt32 min, UInt32 max)
+static bool bitrate_valid(DStr &log, ca_encoder *ca,
+		AudioConverterRef converter, UInt32 bitrate)
 {
-	validate_bitrate_helper *valid =
-		static_cast<validate_bitrate_helper*>(data);
+	bool valid = false;
 
-	if (valid->bitrate >= min && valid->bitrate <= max)
-		valid->valid = true;
+	auto helper = [&](UInt32 min_, UInt32 max_)
+	{
+		if (min_ == bitrate || max_ == bitrate)
+			valid = true;
+	};
+
+	enumerate_bitrates(log, ca, converter, helper);
+
+	return valid;
 }
 
-static bool bitrate_valid(ca_encoder *ca, AudioConverterRef converter,
-		UInt32 bitrate)
-{
-	validate_bitrate_helper helper;
-	helper.bitrate = bitrate,
-	helper.valid = false,
-
-	enumerate_bitrates(ca, converter, validate_bitrate_func, &helper);
-
-	return helper.valid;
-}
-
-static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
+static bool create_encoder(DStr &log, ca_encoder *ca,
+		AudioStreamBasicDescription *in,
 		AudioStreamBasicDescription *out,
 		UInt32 format_id, UInt32 bitrate, UInt32 rate_control)
 {
 #define STATUS_CHECK(c) \
 	code = c; \
 	if (code) { \
-		log_osstatus(LOG_WARNING, ca, #c, code); \
+		log_to_dstr(log, ca, #c " returned %s", \
+				osstatus_to_dstr(code)->array); \
 		return false; \
 	}
 
@@ -516,9 +507,9 @@ static bool create_encoder(ca_encoder *ca, AudioStreamBasicDescription *in,
 			kAudioCodecPropertyBitRateControlMode,
 			sizeof(rate_control), &rate_control));
 
-	if (!bitrate_valid(ca, NULL, bitrate)) {
-		CA_BLOG(LOG_WARNING, "Encoder does not support bitrate %u for "
-				"format %s (0x%x)",
+	if (!bitrate_valid(log, ca, ca->converter, bitrate)) {
+		log_to_dstr(log, ca, "Encoder does not support bitrate %u "
+				"for format %s (0x%x)\n",
 				(uint32_t)bitrate, format_id_to_str(format_id),
 				(uint32_t)format_id);
 		return false;
@@ -610,14 +601,16 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		ca->allowed_formats = &aac_lc_formats;
 	}
 
+	DStr log;
+
 	bool encoder_created = false;
 	for (UInt32 format_id : *ca->allowed_formats) {
-		CA_BLOG(LOG_INFO, "Trying format %s (0x%x)",
+		log_to_dstr(log, ca.get(), "Trying format %s (0x%x)\n",
 				format_id_to_str(format_id),
 				(uint32_t)format_id);
 
-		if (!create_encoder(ca.get(), &in, &out, format_id, bitrate,
-					rate_control))
+		if (!create_encoder(log, ca.get(), &in, &out, format_id,
+					bitrate, rate_control))
 			continue;
 
 		encoder_created = true;
@@ -625,11 +618,14 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 
 	if (!encoder_created) {
-		CA_BLOG(LOG_ERROR, "Could not create encoder for "
+		CA_CO_DLOG(LOG_ERROR, "Could not create encoder for "
 				"selected format%s",
 				ca->allowed_formats->size() == 1 ? "" : "s");
 		return nullptr;
 	}
+
+	if (log->len)
+		CA_CO_DLOG_(LOG_DEBUG, "Encoder created");
 
 	OSStatus code;
 	UInt32 converter_quality = kAudioConverterQuality_Max;
