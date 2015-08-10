@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "audio-encoders.hpp"
+#include "obs-app.hpp"
+#include "window-main.hpp"
 
 using namespace std;
 
@@ -64,6 +66,38 @@ static void HandleListProperty(obs_property_t *prop, const char *id)
 	}
 }
 
+static void HandleSampleRate(obs_property_t* prop, const char *id)
+{
+	auto ReleaseData = [](obs_data_t *data)
+	{
+		obs_data_release(data);
+	};
+	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{
+			obs_encoder_defaults(id),
+			ReleaseData};
+
+	if (!data) {
+		blog(LOG_ERROR, "Failed to get defaults for encoder '%s' (%s) "
+				"while populating bitrate map",
+				EncoderName(id), id);
+		return;
+	}
+
+	auto main = reinterpret_cast<OBSMainWindow*>(App()->GetMainWindow());
+	if (!main) {
+		blog(LOG_ERROR, "Failed to get main window while populating "
+				"bitrate map");
+		return;
+	}
+
+	uint32_t sampleRate = config_get_uint(main->Config(), "Audio",
+			"SampleRate");
+
+	obs_data_set_int(data.get(), "samplerate", sampleRate);
+
+	obs_property_modified(prop, data.get());
+}
+
 static void HandleEncoderProperties(const char *id)
 {
 	auto DestroyProperties = [](obs_properties_t *props)
@@ -80,6 +114,11 @@ static void HandleEncoderProperties(const char *id)
 				EncoderName(id), id);
 		return;
 	}
+
+	obs_property_t *samplerate = obs_properties_get(props.get(),
+			"samplerate");
+	if (samplerate)
+		HandleSampleRate(samplerate, id);
 
 	obs_property_t *bitrate = obs_properties_get(props.get(), "bitrate");
 
