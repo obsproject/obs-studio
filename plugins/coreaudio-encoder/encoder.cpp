@@ -408,68 +408,6 @@ static bool enumerate_bitrates(DStr &log, ca_encoder *ca,
 			converter, helper);
 }
 
-typedef void (*bitrate_enumeration_func)(void *data, UInt32 min, UInt32 max);
-
-static bool enumerate_bitrates(ca_encoder *ca, AudioConverterRef converter,
-		bitrate_enumeration_func enum_func, void *data)
-{
-	if (!converter && ca)
-		converter = ca->converter;
-
-	UInt32 size;
-	OSStatus code = AudioConverterGetPropertyInfo(converter,
-			kAudioConverterApplicableEncodeBitRates,
-			&size, NULL);
-	if (code) {
-		log_osstatus(LOG_WARNING, ca,
-				"AudioConverterGetPropertyInfo(bitrates)",
-				code);
-		return false;
-	}
-
-	if (!size) {
-		if (ca)
-			CA_BLOG(LOG_WARNING, "Query for applicable bitrates "
-					"returned 0 size");
-		else
-			CA_LOG(LOG_WARNING, "Query for applicable bitrates "
-					"returned 0 size");
-		return false;
-	}
-
-	size_t num_bitrates = (size + sizeof(AudioValueRange) - 1) /
-		sizeof(AudioValueRange);
-	vector<AudioValueRange> bitrates;
-	
-	try {
-		bitrates.resize(num_bitrates);
-	} catch (...) {
-		if (ca)
-			CA_BLOG(LOG_WARNING, "Could not allocate buffer while "
-					"enumerating bitrates");
-		else
-			CA_LOG(LOG_WARNING, "Could not allocate buffer while "
-					"enumerating bitrates");
-		return false;
-	}
-
-	code = AudioConverterGetProperty(converter,
-			kAudioConverterApplicableEncodeBitRates,
-			&size, bitrates.data());
-	if (code) {
-		log_osstatus(LOG_WARNING, ca,
-				"AudioConverterGetProperty(bitrates)", code);
-
-		return false;
-	}
-
-	for (size_t i = 0; i < num_bitrates; i++)
-		enum_func(data, (UInt32)bitrates[i].mMinimum,
-				(UInt32)bitrates[i].mMaximum);
-
-	return num_bitrates > 0;
-}
-
 static bool bitrate_valid(DStr &log, ca_encoder *ca,
 		AudioConverterRef converter, UInt32 bitrate)
 {
@@ -997,36 +935,6 @@ static cf_ptr<AudioConverterRef> get_converter(DStr &log, ca_encoder *ca,
 
 	return cf_ptr<AudioConverterRef>{converter};
 #undef STATUS_CHECK
-}
-
-static AudioConverterRef get_default_converter(UInt32 format_id)
-{
-	auto out = get_default_out_asbd_builder()
-		.format_id(format_id)
-		.asbd;
-
-	DStr log;
-	auto converter = get_converter(log, nullptr, out);
-	if (!converter) {
-		CA_LOG(LOG_ERROR, "Couldn't get default converter for format "
-				"%s (0x%x):\n%s",
-				format_id_to_str(format_id),
-				static_cast<uint32_t>(format_id),
-				flush_log(log));
-		return nullptr;
-	}
-
-	return converter.release();
-}
-
-static AudioConverterRef aac_default_converter(void)
-{
-	return get_default_converter(kAudioFormatMPEG4AAC);
-}
-
-static AudioConverterRef he_aac_default_converter(void)
-{
-	return get_default_converter(kAudioFormatMPEG4AAC_HE);
 }
 
 static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
