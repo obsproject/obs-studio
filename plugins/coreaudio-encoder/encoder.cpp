@@ -127,9 +127,9 @@ typedef struct ca_encoder ca_encoder;
 
 }
 
-#ifndef _WIN32
 namespace std {
 
+#ifndef _WIN32
 template <>
 struct default_delete<remove_pointer<CFErrorRef>::type> {
 	void operator()(remove_pointer<CFErrorRef>::type *err)
@@ -145,12 +145,20 @@ struct default_delete<remove_pointer<CFStringRef>::type> {
 		CFRelease(str);
 	}
 };
+#endif
+
+template <>
+struct default_delete<remove_pointer<AudioConverterRef>::type> {
+	void operator()(AudioConverterRef converter)
+	{
+		AudioConverterDispose(converter);
+	}
+};
 
 }
 
 template <typename T>
 using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
-#endif
 
 #ifndef _MSC_VER
 __attribute__((__format__(__printf__, 3, 4)))
@@ -925,49 +933,87 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static AudioConverterRef get_default_converter(UInt32 format_id)
+static asbd_builder fill_common_asbd_fields(asbd_builder builder,
+		bool in=false)
 {
 	UInt32 bytes_per_frame = 8;
 	UInt32 channels = 2;
 	UInt32 bits_per_channel = bytes_per_frame / channels * 8;
 
-	auto in = asbd_builder()
+	builder.channels_per_frame(channels);
+
+	if (in) {
+		builder
+			.bytes_per_frame(bytes_per_frame)
+			.frames_per_packet(1)
+			.bytes_per_packet(1 * bytes_per_frame)
+			.bits_per_channel(bits_per_channel);
+	}
+
+	return builder;
+}
+
+static AudioStreamBasicDescription get_default_in_asbd()
+{
+	return fill_common_asbd_fields(asbd_builder(), true)
 		.sample_rate(44100)
-		.channels_per_frame(channels)
-		.bytes_per_frame(bytes_per_frame)
-		.frames_per_packet(1)
-		.bytes_per_packet(1 * bytes_per_frame)
-		.bits_per_channel(bits_per_channel)
 		.format_id(kAudioFormatLinearPCM)
 		.format_flags(kAudioFormatFlagsNativeEndian |
 			kAudioFormatFlagIsPacked |
 			kAudioFormatFlagIsFloat |
 			0)
 		.asbd;
+}
 
-	auto out = asbd_builder()
-		.sample_rate(44100)
-		.channels_per_frame(channels)
+static asbd_builder get_default_out_asbd_builder()
+{
+	return fill_common_asbd_fields(asbd_builder())
+		.sample_rate(44100);
+}
+
+static cf_ptr<AudioConverterRef> get_converter(DStr &log, ca_encoder *ca,
+		AudioStreamBasicDescription out,
+		AudioStreamBasicDescription in = get_default_in_asbd())
+{
+	UInt32 size = sizeof(out);
+	OSStatus code;
+
+#define STATUS_CHECK(x) \
+	code = x; \
+	if (code) { \
+		log_to_dstr(log, ca, "%s: %s\n", #x, \
+				osstatus_to_dstr(code)->array); \
+		return nullptr; \
+	}
+
+	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
+			0, NULL, &size, &out));
+
+	AudioConverterRef converter;
+	STATUS_CHECK(AudioConverterNew(&in, &out, &converter));
+
+	return cf_ptr<AudioConverterRef>{converter};
+#undef STATUS_CHECK
+}
+
+static AudioConverterRef get_default_converter(UInt32 format_id)
+{
+	auto out = get_default_out_asbd_builder()
 		.format_id(format_id)
 		.asbd;
 
-	UInt32 size = sizeof(out);
-	OSStatus code = AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
-			0, NULL, &size, &out);
-	if (code) {
-		log_osstatus(LOG_WARNING, NULL,
-				"AudioFormatGetProperty(format_info)", code);
-		return NULL;
+	DStr log;
+	auto converter = get_converter(log, nullptr, out);
+	if (!converter) {
+		CA_LOG(LOG_ERROR, "Couldn't get default converter for format "
+				"%s (0x%x):\n%s",
+				format_id_to_str(format_id),
+				static_cast<uint32_t>(format_id),
+				flush_log(log));
+		return nullptr;
 	}
 
-	AudioConverterRef converter;
-	code = AudioConverterNew(&in, &out, &converter);
-	if (code) {
-		log_osstatus(LOG_WARNING, NULL, "AudioConverterNew", code);
-		return NULL;
-	}
-
-	return converter;
+	return converter.release();
 }
 
 static AudioConverterRef aac_default_converter(void)
