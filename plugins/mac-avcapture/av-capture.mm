@@ -6,6 +6,10 @@
 #include <obs-module.h>
 #include <media-io/video-io.h>
 
+#include <memory>
+
+using namespace std;
+
 #define TEXT_AVCAPTURE  obs_module_text("AVCapture")
 #define TEXT_DEVICE     obs_module_text("Device")
 #define TEXT_USE_PRESET obs_module_text("UsePreset")
@@ -17,11 +21,11 @@
 
 #define AV_FOURCC_STR(code) \
 	(char[5]) { \
-		(code >> 24) & 0xFF, \
-		(code >> 16) & 0xFF, \
-		(code >>  8) & 0xFF, \
-		 code        & 0xFF, \
-		                  0  \
+		static_cast<char>((code >> 24) & 0xFF), \
+		static_cast<char>((code >> 16) & 0xFF), \
+		static_cast<char>((code >>  8) & 0xFF), \
+		static_cast<char>( code        & 0xFF), \
+		                                    0  \
 	}
 
 struct av_capture;
@@ -29,8 +33,6 @@ struct av_capture;
 #define AVLOG(level, format, ...) \
 	blog(level, "%s: " format, \
 			obs_source_get_name(capture->source), ##__VA_ARGS__)
-
-#define AVFREE(x) {[x release]; x = nil;}
 
 @interface OBSAVCaptureDelegate :
 	NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
@@ -46,31 +48,51 @@ struct av_capture;
         fromConnection:(AVCaptureConnection *)connection;
 @end
 
-struct av_capture {
-	AVCaptureSession         *session;
-	AVCaptureDevice          *device;
-	AVCaptureDeviceInput     *device_input;
-	AVCaptureVideoDataOutput *out;
+namespace {
+
+static auto remove_observer = [](id observer)
+{
+	[[NSNotificationCenter defaultCenter] removeObserver:observer];
+};
+
+struct observer_handle :
+	unique_ptr<remove_pointer<id>::type, decltype(remove_observer)> {
 	
+	using base = unique_ptr<remove_pointer<id>::type,
+				decltype(remove_observer)>;
+
+	explicit observer_handle(id observer = nullptr)
+		: base(observer, remove_observer)
+	{}
+};
+
+}
+
+struct av_capture {
 	OBSAVCaptureDelegate *delegate;
 	dispatch_queue_t queue;
 	bool has_clock;
 
+	AVCaptureVideoDataOutput *out;
+	AVCaptureDevice          *device;
+	AVCaptureDeviceInput     *device_input;
+	AVCaptureSession         *session;
+	
 	NSString *uid;
-	id connect_observer;
-	id disconnect_observer;
+	observer_handle connect_observer;
+	observer_handle disconnect_observer;
 
 	FourCharCode fourcc;
-	enum video_format video_format;
-	enum video_colorspace colorspace;
-	enum video_range_type video_range;
+	video_format video_format;
+	video_colorspace colorspace;
+	video_range_type video_range;
 
 	obs_source_t *source;
 
-	struct obs_source_frame frame;
+	obs_source_frame frame;
 };
 
-static inline enum video_format format_from_subtype(FourCharCode subtype)
+static inline video_format format_from_subtype(FourCharCode subtype)
 {
 	//TODO: uncomment VIDEO_FORMAT_NV12 and VIDEO_FORMAT_ARGB once libobs
 	//      gains matching GPU conversions or a CPU fallback is implemented
@@ -104,7 +126,7 @@ static inline bool is_fullrange_yuv(FourCharCode pixel_format)
 	}
 }
 
-static inline enum video_colorspace get_colorspace(CMFormatDescriptionRef desc)
+static inline video_colorspace get_colorspace(CMFormatDescriptionRef desc)
 {
 	CFPropertyListRef matrix = CMFormatDescriptionGetExtension(desc,
 			kCMFormatDescriptionExtension_YCbCrMatrix);
@@ -112,19 +134,20 @@ static inline enum video_colorspace get_colorspace(CMFormatDescriptionRef desc)
 	if (!matrix)
 		return VIDEO_CS_DEFAULT;
 
-	if (CFStringCompare(matrix, kCVImageBufferYCbCrMatrix_ITU_R_709_2, 0)
+	if (CFStringCompare(static_cast<CFStringRef>(matrix),
+				kCVImageBufferYCbCrMatrix_ITU_R_709_2, 0)
 			== kCFCompareEqualTo)
 		return VIDEO_CS_709;
 
 	return VIDEO_CS_601;
 }
 
-static inline bool update_colorspace(struct av_capture *capture,
-		struct obs_source_frame *frame, CMFormatDescriptionRef desc,
+static inline bool update_colorspace(av_capture *capture,
+		obs_source_frame *frame, CMFormatDescriptionRef desc,
 		bool full_range)
 {
-	enum video_colorspace colorspace = get_colorspace(desc);
-	enum video_range_type range      = full_range ?
+	video_colorspace colorspace = get_colorspace(desc);
+	video_range_type range      = full_range ?
 		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 	if (colorspace == capture->colorspace && range == capture->video_range)
 		return true;
@@ -146,15 +169,15 @@ static inline bool update_colorspace(struct av_capture *capture,
 	return true;
 }
 
-static inline bool update_frame(struct av_capture *capture,
-		struct obs_source_frame *frame, CMSampleBufferRef sample_buffer)
+static inline bool update_frame(av_capture *capture,
+		obs_source_frame *frame, CMSampleBufferRef sample_buffer)
 {
 	CMFormatDescriptionRef desc =
 		CMSampleBufferGetFormatDescription(sample_buffer);
 
-	FourCharCode      fourcc = CMFormatDescriptionGetMediaSubType(desc);
-	enum video_format format = format_from_subtype(fourcc);
-	CMVideoDimensions   dims = CMVideoFormatDescriptionGetDimensions(desc);
+	FourCharCode    fourcc = CMFormatDescriptionGetMediaSubType(desc);
+	video_format    format = format_from_subtype(fourcc);
+	CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(desc);
 
 	CVImageBufferRef     img = CMSampleBufferGetImageBuffer(sample_buffer);
 
@@ -188,14 +211,16 @@ static inline bool update_frame(struct av_capture *capture,
 
 	if (!CVPixelBufferIsPlanar(img)) {
 		frame->linesize[0] = CVPixelBufferGetBytesPerRow(img);
-		frame->data[0]     = CVPixelBufferGetBaseAddress(img);
+		frame->data[0]     = static_cast<uint8_t*>(
+				CVPixelBufferGetBaseAddress(img));
 		return true;
 	}
 
 	size_t count = CVPixelBufferGetPlaneCount(img);
 	for (size_t i = 0; i < count; i++) {
 		frame->linesize[i] = CVPixelBufferGetBytesPerRowOfPlane(img, i);
-		frame->data[i]     = CVPixelBufferGetBaseAddressOfPlane(img, i);
+		frame->data[i]     = static_cast<uint8_t*>(
+				CVPixelBufferGetBaseAddressOfPlane(img, i));
 	}
 	return true;
 }
@@ -221,7 +246,7 @@ static inline bool update_frame(struct av_capture *capture,
 	if (count < 1 || !capture)
 		return;
 
-	struct obs_source_frame *frame = &capture->frame;
+	obs_source_frame *frame = &capture->frame;
 
 	CMTime target_pts =
 		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
@@ -239,8 +264,7 @@ static inline bool update_frame(struct av_capture *capture,
 }
 @end
 
-static void av_capture_enable_buffering(struct av_capture *capture,
-		bool enabled)
+static void av_capture_enable_buffering(av_capture *capture, bool enabled)
 {
 	obs_source_t *source = capture->source;
 	uint32_t flags = obs_source_get_flags(source);
@@ -251,43 +275,25 @@ static void av_capture_enable_buffering(struct av_capture *capture,
 	obs_source_set_flags(source, flags);
 }
 
-static const char *av_capture_getname(void *unused)
+static const char *av_capture_getname(void*)
 {
-	UNUSED_PARAMETER(unused);
 	return TEXT_AVCAPTURE;
 }
 
-static void remove_device(struct av_capture *capture)
+static void remove_device(av_capture *capture)
 {
 	[capture->session stopRunning];
 	[capture->session removeInput:capture->device_input];
 
-	AVFREE(capture->device_input);
-	AVFREE(capture->device);
+	capture->device_input = nullptr;
+	capture->device = nullptr;
 }
 
 static void av_capture_destroy(void *data)
 {
-	struct av_capture *capture = data;
-	if (!capture)
-		return;
+	auto capture = static_cast<av_capture*>(data);
 
-	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	[nc removeObserver:capture->connect_observer];
-	[nc removeObserver:capture->disconnect_observer];
-
-	remove_device(capture);
-	AVFREE(capture->out);
-
-	if (capture->queue)
-		dispatch_release(capture->queue);
-
-	AVFREE(capture->delegate);
-	AVFREE(capture->session);
-
-	AVFREE(capture->uid);
-
-	bfree(capture);
+	delete capture;
 }
 
 static NSString *get_string(obs_data_t *data, char const *name)
@@ -295,33 +301,38 @@ static NSString *get_string(obs_data_t *data, char const *name)
 	return @(obs_data_get_string(data, name));
 }
 
-static bool init_session(struct av_capture *capture)
+static bool init_session(av_capture *capture)
 {
-	capture->session = [[AVCaptureSession alloc] init];
-	if (!capture->session) {
+	auto session = [[AVCaptureSession alloc] init];
+	if (!session) {
 		AVLOG(LOG_ERROR, "Could not create AVCaptureSession");
-		goto error;
+		return false;
 	}
 
-	capture->delegate = [[OBSAVCaptureDelegate alloc] init];
-	if (!capture->delegate) {
+	auto delegate = [[OBSAVCaptureDelegate alloc] init];
+	if (!delegate) {
 		AVLOG(LOG_ERROR, "Could not create OBSAVCaptureDelegate");
-		goto error;
+		return false;
 	}
 
-	capture->delegate->capture = capture;
+	delegate->capture = capture;
 
-	capture->out = [[AVCaptureVideoDataOutput alloc] init];
-	if (!capture->out) {
+	auto out = [[AVCaptureVideoDataOutput alloc] init];
+	if (!out) {
 		AVLOG(LOG_ERROR, "Could not create AVCaptureVideoDataOutput");
-		goto error;
+		return false;
 	}
 
-	capture->queue = dispatch_queue_create(NULL, NULL);
-	if (!capture->queue) {
+	auto queue = dispatch_queue_create(NULL, NULL);
+	if (!queue) {
 		AVLOG(LOG_ERROR, "Could not create dispatch queue");
-		goto error;
+		return false;
 	}
+
+	capture->session = session;
+	capture->delegate = delegate;
+	capture->out = out;
+	capture->queue = queue;
 
 	[capture->session addOutput:capture->out];
 	[capture->out
@@ -329,26 +340,29 @@ static bool init_session(struct av_capture *capture)
 				  queue:capture->queue];
 
 	return true;
-
-error:
-	AVFREE(capture->session);
-	AVFREE(capture->delegate);
-	AVFREE(capture->out);
-	return false;
 }
 
-static bool init_device_input(struct av_capture *capture)
+static bool init_format(av_capture *capture, AVCaptureDevice *dev);
+
+static bool init_device_input(av_capture *capture, AVCaptureDevice *dev)
 {
 	NSError *err = nil;
-	capture->device_input = [[AVCaptureDeviceInput
-		deviceInputWithDevice:capture->device error:&err] retain];
-	if (!capture->device_input) {
+	AVCaptureDeviceInput *device_input = [AVCaptureDeviceInput
+		deviceInputWithDevice:dev error:&err];
+	if (!device_input) {
 		AVLOG(LOG_ERROR, "Error while initializing device input: %s",
 				err.localizedFailureReason.UTF8String);
 		return false;
 	}
 
-	[capture->session addInput:capture->device_input];
+	[capture->session addInput:device_input];
+
+	if (!init_format(capture, dev)) {
+		[capture->session removeInput:device_input];
+		return false;
+	}
+
+	capture->device_input = device_input;
 
 	return true;
 }
@@ -358,9 +372,9 @@ static uint32_t uint_from_dict(NSDictionary *dict, CFStringRef key)
 	return ((NSNumber*)dict[(__bridge NSString*)key]).unsignedIntValue;
 }
 
-static bool init_format(struct av_capture *capture)
+static bool init_format(av_capture *capture, AVCaptureDevice *dev)
 {
-	AVCaptureDeviceFormat *format = capture->device.activeFormat;
+	AVCaptureDeviceFormat *format = dev.activeFormat;
 
 	CMMediaType mtype = CMFormatDescriptionGetMediaType(
 			format.formatDescription);
@@ -413,15 +427,12 @@ static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
 	return new_preset;
 }
 
-static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
+static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t *settings)
 {
-	capture->device = dev;
-
-	const char *name = capture->device.localizedName.UTF8String;
+	const char *name = dev.localizedName.UTF8String;
 	obs_data_set_string(settings, "device_name", name);
-	obs_data_set_string(settings, "device",
-			capture->device.uniqueID.UTF8String);
+	obs_data_set_string(settings, "device", dev.uniqueID.UTF8String);
 	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
 	if (obs_data_get_bool(settings, "use_preset")) {
@@ -443,26 +454,18 @@ static void capture_device(struct av_capture *capture, AVCaptureDevice *dev,
 				preset_names(preset).UTF8String);
 	}
 
-	if (!init_device_input(capture))
-		goto error_input;
+	if (!init_device_input(capture, dev))
+		return;
 
 	AVCaptureInputPort *port = capture->device_input.ports[0];
 	capture->has_clock = [port respondsToSelector:@selector(clock)];
 
-	if (!init_format(capture))
-		goto error;
-
+	capture->device = dev;
 	[capture->session startRunning];
 	return;
-
-error:
-	[capture->session removeInput:capture->device_input];
-	AVFREE(capture->device_input);
-error_input:
-	AVFREE(capture->device);
 }
 
-static inline void handle_disconnect_capture(struct av_capture *capture,
+static inline void handle_disconnect_capture(av_capture *capture,
 		AVCaptureDevice *dev)
 {
 	if (![dev.uniqueID isEqualTo:capture->uid])
@@ -480,7 +483,7 @@ static inline void handle_disconnect_capture(struct av_capture *capture,
 	remove_device(capture);
 }
 
-static inline void handle_disconnect(struct av_capture *capture,
+static inline void handle_disconnect(av_capture *capture,
 		AVCaptureDevice *dev)
 {
 	if (!dev)
@@ -490,7 +493,7 @@ static inline void handle_disconnect(struct av_capture *capture,
 	obs_source_update_properties(capture->source);
 }
 
-static inline void handle_connect_capture(struct av_capture *capture,
+static inline void handle_connect_capture(av_capture *capture,
 		AVCaptureDevice *dev, obs_data_t *settings)
 {
 	if (![dev.uniqueID isEqualTo:capture->uid])
@@ -505,10 +508,10 @@ static inline void handle_connect_capture(struct av_capture *capture,
 	AVLOG(LOG_INFO, "Device with unique ID '%s' connected, "
 			"resuming capture", dev.uniqueID.UTF8String);
 
-	capture_device(capture, [dev retain], settings);
+	capture_device(capture, dev, settings);
 }
 
-static inline void handle_connect(struct av_capture *capture,
+static inline void handle_connect(av_capture *capture,
 		AVCaptureDevice *dev, obs_data_t *settings)
 {
 	if (!dev)
@@ -518,15 +521,15 @@ static inline void handle_connect(struct av_capture *capture,
 	obs_source_update_properties(capture->source);
 }
 
-static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
+static bool av_capture_init(av_capture *capture, obs_data_t *settings)
 {
 	if (!init_session(capture))
-		return;
+		return false;
 
-	capture->uid = [get_string(settings, "device") retain];
+	capture->uid = get_string(settings, "device");
 
 	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	capture->disconnect_observer = [nc
+	capture->disconnect_observer.reset([nc
 		addObserverForName:AVCaptureDeviceWasDisconnectedNotification
 			    object:nil
 			     queue:[NSOperationQueue mainQueue]
@@ -534,9 +537,9 @@ static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
 			{
 				handle_disconnect(capture, note.object);
 			}
-	];
+	]);
 
-	capture->connect_observer = [nc
+	capture->connect_observer.reset([nc
 		addObserverForName:AVCaptureDeviceWasConnectedNotification
 			    object:nil
 			     queue:[NSOperationQueue mainQueue]
@@ -544,10 +547,10 @@ static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
 			{
 				handle_connect(capture, note.object, settings);
 			}
-	];
+	]);
 
 	AVCaptureDevice *dev =
-		[[AVCaptureDevice deviceWithUniqueID:capture->uid] retain];
+		[AVCaptureDevice deviceWithUniqueID:capture->uid];
 
 	if (!dev) {
 		if (capture->uid.length < 1)
@@ -556,32 +559,37 @@ static void av_capture_init(struct av_capture *capture, obs_data_t *settings)
 			AVLOG(LOG_ERROR, "Could not initialize device " \
 					"with unique ID '%s'",
 					capture->uid.UTF8String);
-		return;
+		return true;
 	}
 
 	capture_device(capture, dev, settings);
+
+	return true;
 }
 
 static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(source);
 
-	struct av_capture *capture = bzalloc(sizeof(struct av_capture));
-	capture->source = source;
+	unique_ptr<av_capture> capture;
 
-	av_capture_init(capture, settings);
-
-	if (!capture->session) {
-		AVLOG(LOG_ERROR, "No valid session, returning NULL context");
-		av_capture_destroy(capture);
-		bfree(capture);
-		capture = NULL;
+	try {
+		capture.reset(new av_capture());
+	} catch (...) {
+		return capture.release();
 	}
 
-	av_capture_enable_buffering(capture,
+	capture->source = source;
+
+	if (!av_capture_init(capture.get(), settings)) {
+		AVLOG(LOG_ERROR, "av_capture_init failed");
+		return nullptr;
+	}
+
+	av_capture_enable_buffering(capture.get(),
 			obs_data_get_bool(settings, "buffering"));
 
-	return capture;
+	return capture.release();
 }
 
 static NSArray *presets(void)
@@ -768,11 +776,9 @@ static bool properties_device_changed(obs_properties_t *props, obs_property_t *p
 	return preset_list_changed || autoselect_changed || dev_list_updated;
 }
 
-static bool properties_preset_changed(obs_properties_t *props, obs_property_t *p,
+static bool properties_preset_changed(obs_properties_t *, obs_property_t *p,
 		obs_data_t *settings)
 {
-	UNUSED_PARAMETER(props);
-
 	NSString *uid = get_string(settings, "device");
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 
@@ -782,10 +788,8 @@ static bool properties_preset_changed(obs_properties_t *props, obs_property_t *p
 	return preset_list_changed || autoselect_changed;
 }
 
-static obs_properties_t *av_capture_properties(void *unused)
+static obs_properties_t *av_capture_properties(void*)
 {
-	UNUSED_PARAMETER(unused);
-
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *dev_list = obs_properties_add_list(props, "device",
@@ -823,7 +827,7 @@ static obs_properties_t *av_capture_properties(void *unused)
 	return props;
 }
 
-static void switch_device(struct av_capture *capture, NSString *uid,
+static void switch_device(av_capture *capture, NSString *uid,
 		obs_data_t *settings)
 {
 	if (!uid)
@@ -832,8 +836,7 @@ static void switch_device(struct av_capture *capture, NSString *uid,
 	if (capture->device)
 		remove_device(capture);
 
-	AVFREE(capture->uid);
-	capture->uid = [uid retain];
+	capture->uid = uid;
 
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 	if (!dev) {
@@ -842,12 +845,12 @@ static void switch_device(struct av_capture *capture, NSString *uid,
 		return;
 	}
 
-	capture_device(capture, [dev retain], settings);
+	capture_device(capture, dev, settings);
 }
 
 static void av_capture_update(void *data, obs_data_t *settings)
 {
-	struct av_capture *capture = data;
+	auto capture = static_cast<av_capture*>(data);
 
 	NSString *uid = get_string(settings, "device");
 
@@ -870,11 +873,9 @@ static void av_capture_update(void *data, obs_data_t *settings)
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-avcapture", "en-US")
 
-struct obs_source_info av_capture_info;
-
 bool obs_module_load(void)
 {
-	struct obs_source_info av_capture_info = {
+	obs_source_info av_capture_info = {
 		.id             = "av_capture_input",
 		.type           = OBS_SOURCE_TYPE_INPUT,
 		.output_flags   = OBS_SOURCE_ASYNC_VIDEO,

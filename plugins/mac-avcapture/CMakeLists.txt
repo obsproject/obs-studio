@@ -18,10 +18,10 @@ set(mac-avcapture_HEADERS
 	)
 
 set(mac-avcapture_SOURCES
-	av-capture.m)
+	av-capture.mm)
 
-set_source_files_properties(av-capture.m
-	PROPERTIES LANGUAGE C)
+set_source_files_properties(av-capture.mm
+	PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 	
 add_library(mac-avcapture MODULE
 	${mac-avcapture_SOURCES}
