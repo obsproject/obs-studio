@@ -18,8 +18,7 @@ set(mac-avcapture_HEADERS
 	)
 
 set(mac-avcapture_SOURCES
-	av-capture.m
-	plugin-main.c)
+	av-capture.m)
 
 set_source_files_properties(av-capture.m
 	PROPERTIES LANGUAGE C)

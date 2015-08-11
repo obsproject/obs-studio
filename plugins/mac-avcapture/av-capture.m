@@ -867,15 +867,25 @@ static void av_capture_update(void *data, obs_data_t *settings)
 			obs_data_get_bool(settings, "buffering"));
 }
 
-struct obs_source_info av_capture_info = {
-	.id             = "av_capture_input",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_ASYNC_VIDEO,
-	.get_name       = av_capture_getname,
-	.create         = av_capture_create,
-	.destroy        = av_capture_destroy,
-	.get_defaults   = av_capture_defaults,
-	.get_properties = av_capture_properties,
-	.update         = av_capture_update,
-};
+OBS_DECLARE_MODULE()
+OBS_MODULE_USE_DEFAULT_LOCALE("mac-avcapture", "en-US")
 
+struct obs_source_info av_capture_info;
+
+bool obs_module_load(void)
+{
+	struct obs_source_info av_capture_info = {
+		.id             = "av_capture_input",
+		.type           = OBS_SOURCE_TYPE_INPUT,
+		.output_flags   = OBS_SOURCE_ASYNC_VIDEO,
+		.get_name       = av_capture_getname,
+		.create         = av_capture_create,
+		.destroy        = av_capture_destroy,
+		.get_defaults   = av_capture_defaults,
+		.get_properties = av_capture_properties,
+		.update         = av_capture_update,
+	};
+
+	obs_register_source(&av_capture_info);
+	return true;
+}
