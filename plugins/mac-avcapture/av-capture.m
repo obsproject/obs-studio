@@ -3,12 +3,8 @@
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
 
-#include <arpa/inet.h>
-
 #include <obs-module.h>
 #include <media-io/video-io.h>
-
-#import "AVCaptureInputPort+PreMavericksCompat.h"
 
 #define TEXT_AVCAPTURE  obs_module_text("AVCapture")
 #define TEXT_DEVICE     obs_module_text("Device")

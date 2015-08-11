@@ -15,7 +15,7 @@ include_directories(${AVFOUNDATION}
 		    ${COCOA})
 
 set(mac-avcapture_HEADERS
-	AVCaptureInputPort+PreMavericksCompat.h)
+	)
 
 set(mac-avcapture_SOURCES
 	av-capture.m
