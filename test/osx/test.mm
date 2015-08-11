@@ -32,11 +32,14 @@ using SourceContext = OBSUniqueHandle<obs_source,
 using SceneContext = OBSUniqueHandle<obs_scene,
       DECLARE_DELETER(obs_scene_release)>;
 
+using DisplayContext = OBSUniqueHandle<obs_display,
+      DECLARE_DELETER(obs_display_destroy)>;
+
 #undef DECLARE_DELETER
 
 /* --------------------------------------------------- */
 
-static void CreateOBS(NSView *view)
+static void CreateOBS()
 {
 	if (!obs_startup("en"))
 		throw "Couldn't create OBS";
@@ -51,12 +54,21 @@ static void CreateOBS(NSView *view)
 	ovi.base_height     = cy;
 	ovi.output_width    = cx;
 	ovi.output_height   = cy;
-	ovi.window_width    = cx;
-	ovi.window_height   = cy;
-	ovi.window.view     = view;
 
 	if (obs_reset_video(&ovi) != 0)
 		throw "Couldn't initialize video";
+}
+
+static DisplayContext CreateDisplay(NSView *view)
+{
+	gs_init_data info      = {};
+	info.cx                = cx;
+	info.cy                = cy;
+	info.format            = GS_RGBA;
+	info.zsformat          = GS_ZS_NONE;
+	info.window.view       = view;
+
+	return DisplayContext{obs_display_create(&info)};
 }
 
 static SceneContext SetupScene()
@@ -91,6 +103,7 @@ static SceneContext SetupScene()
 {
 	NSWindow *win;
 	NSView *view;
+	DisplayContext display;
 	SceneContext scene;
 }
 - (void)applicationDidFinishLaunching:(NSNotification*)notification;
@@ -117,6 +130,8 @@ static SceneContext SetupScene()
 		if (!view)
 			throw "Could not create view";
 
+		CreateOBS();
+
 		win.title = @"foo";
 		win.delegate = self;
 		win.contentView = view;
@@ -125,11 +140,11 @@ static SceneContext SetupScene()
 		[win center];
 		[win makeMainWindow];
 
-		CreateOBS(view);
+		display = CreateDisplay(view);
 
 		scene = SetupScene();
 
-		obs_add_draw_callback(
+		obs_display_add_draw_callback(display.get(),
 				[](void *, uint32_t, uint32_t) {
 					obs_render_main_view();
 				}, nullptr);
@@ -154,6 +169,7 @@ static SceneContext SetupScene()
 
 	obs_set_output_source(0, nullptr);
 	scene.reset();
+	display.reset();
 
 	obs_shutdown();
 	NSLog(@"Number of memory leaks: %lu", bnum_allocs());
