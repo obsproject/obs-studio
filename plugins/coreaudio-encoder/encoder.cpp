@@ -1,4 +1,3 @@
-#include <util/darray.h>
 #include <util/dstr.hpp>
 #include <obs-module.h>
 
@@ -108,8 +107,8 @@ struct ca_encoder {
 	size_t            in_frame_size;
 	size_t            in_bytes_required;
 
-	DARRAY(uint8_t)   input_buffer;
-	size_t            bytes_read;
+	vector<uint8_t>   input_buffer;
+	vector<uint8_t>   encode_buffer;
 
 	uint64_t          total_samples;
 	uint64_t          samples_per_second;
@@ -122,8 +121,6 @@ struct ca_encoder {
 	{
 		if (converter)
 			AudioConverterDispose(converter);
-
-		da_free(input_buffer);
 	}
 };
 typedef struct ca_encoder ca_encoder;
@@ -610,8 +607,6 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	ca->out_frames_per_packet = out.mFramesPerPacket;
 
-	da_init(ca->input_buffer);
-
 	ca->output_buffer_size = out.mBytesPerPacket;
 
 	if (out.mBytesPerPacket == 0) {
@@ -667,26 +662,24 @@ static OSStatus complex_input_data_proc(AudioConverterRef inAudioConverter,
 
 	ca_encoder *ca = static_cast<ca_encoder*>(inUserData);
 
-	if (ca->bytes_read) {
-		da_erase_range(ca->input_buffer, 0, ca->bytes_read);
-		ca->bytes_read = 0;
-	}
-
-	if (ca->input_buffer.num < ca->in_bytes_required) {
+	if (ca->input_buffer.size() < ca->in_bytes_required) {
 		*ioNumberDataPackets = 0;
 		ioData->mBuffers[0].mData = NULL;
 		return 1;
 	}
 
+	auto start = begin(ca->input_buffer);
+	auto stop  = begin(ca->input_buffer) + ca->in_bytes_required;
+	ca->encode_buffer.assign(start, stop);
+	ca->input_buffer.erase(start, stop);
+
 	*ioNumberDataPackets =
 		(UInt32)(ca->in_bytes_required / ca->in_frame_size);
 	ioData->mNumberBuffers = 1;
 
-	ioData->mBuffers[0].mData = ca->input_buffer.array;
+	ioData->mBuffers[0].mData = ca->encode_buffer.data();
 	ioData->mBuffers[0].mNumberChannels = (UInt32)ca->channels;
 	ioData->mBuffers[0].mDataByteSize = (UInt32)ca->in_bytes_required;
-
-	ca->bytes_read += ca->in_packets * ca->in_frame_size;
 
 	return 0;
 }
@@ -702,10 +695,10 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 {
 	ca_encoder *ca = static_cast<ca_encoder*>(data);
 
-	da_push_back_array(ca->input_buffer, frame->data[0],
-			frame->linesize[0]);
+	ca->input_buffer.insert(end(ca->input_buffer),
+			frame->data[0], frame->data[0] + frame->linesize[0]);
 
-	if ((ca->input_buffer.num - ca->bytes_read) < ca->in_bytes_required)
+	if (ca->input_buffer.size() < ca->in_bytes_required)
 		return true;
 
 	UInt32 packets = 1;
@@ -739,7 +732,7 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	packet->data =
 		(uint8_t*)buffer_list.mBuffers[0].mData + out_desc.mStartOffset;
 
-	ca->total_samples += ca->bytes_read / ca->in_frame_size;
+	ca->total_samples += ca->in_bytes_required / ca->in_frame_size;
 
 	return true;
 }
