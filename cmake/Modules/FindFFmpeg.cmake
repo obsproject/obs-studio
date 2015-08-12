@@ -49,7 +49,7 @@ function(find_ffmpeg_library component header)
 			${DepsPath${_lib_suffix}}
 			${DepsPath}
 			${PC_FFMPEG_${component}_INCLUDE_DIRS}
-		PATH_SUFFIXES ffmpeg libav)
+		PATH_SUFFIXES ffmpeg libav include)
 
 	find_library(FFMPEG_${component}_LIBRARY
 		NAMES
