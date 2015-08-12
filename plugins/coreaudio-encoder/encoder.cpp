@@ -90,32 +90,32 @@ struct asbd_builder {
 };
 
 struct ca_encoder {
-	obs_encoder_t     *encoder;
-	const char        *format_name;
-	UInt32            format_id;
+	obs_encoder_t     *encoder = nullptr;
+	const char        *format_name = nullptr;
+	UInt32            format_id = 0;
 
-	const initializer_list<UInt32> *allowed_formats;
+	const initializer_list<UInt32> *allowed_formats = nullptr;
 
-	AudioConverterRef converter;
+	AudioConverterRef converter = nullptr;
 
-	size_t            output_buffer_size;
+	size_t            output_buffer_size = 0;
 	vector<uint8_t>   output_buffer;
 
-	size_t            out_frames_per_packet;
+	size_t            out_frames_per_packet = 0;
 
-	size_t            in_packets;
-	size_t            in_frame_size;
-	size_t            in_bytes_required;
+	size_t            in_packets = 0;
+	size_t            in_frame_size = 0;
+	size_t            in_bytes_required = 0;
 
 	vector<uint8_t>   input_buffer;
 	vector<uint8_t>   encode_buffer;
 
-	uint64_t          total_samples;
-	uint64_t          samples_per_second;
+	uint64_t          total_samples = 0;
+	uint64_t          samples_per_second = 0;
 
 	vector<uint8_t>   extra_data;
 
-	size_t            channels;
+	size_t            channels = 0;
 
 	~ca_encoder()
 	{
