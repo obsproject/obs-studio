@@ -404,7 +404,7 @@ static int try_connect(struct rtmp_stream *stream)
 	set_rtmp_dstr(&stream->rtmp.Link.pubPasswd, &stream->password);
 	stream->rtmp.Link.swfUrl = stream->rtmp.Link.tcUrl;
 	set_rtmp_str(&stream->rtmp.Link.flashVer,
-			"FMLE/3.0 (compatible; FMSc/1.0)");
+			"FMLE/3.0 (compatible; OBS Studio; FMSc/1.0)");
 
 	RTMP_AddStream(&stream->rtmp, stream->key.array);
 
