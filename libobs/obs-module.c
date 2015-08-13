@@ -441,9 +441,10 @@ cleanup:
 		da_push_back(dest, &data);                                \
 	} while (false)
 
-#define CHECK_REQUIRED_VAL(info, val, func) \
+#define CHECK_REQUIRED_VAL(type, info, val, func) \
 	do { \
-		if (!info->val) {\
+		if ((offsetof(type, val) + sizeof(info->val) > size) || \
+				!info->val) { \
 			blog(LOG_ERROR, "Required value '" #val "' for " \
 			                "'%s' not found.  " #func \
 			                " failed.", info->id); \
@@ -474,16 +475,19 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		return;
 	}
 
-	CHECK_REQUIRED_VAL(info, get_name, obs_register_source);
-	CHECK_REQUIRED_VAL(info, create,   obs_register_source);
-	CHECK_REQUIRED_VAL(info, destroy,  obs_register_source);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_source_info, info, val, func)
+	CHECK_REQUIRED_VAL_(info, get_name, obs_register_source);
+	CHECK_REQUIRED_VAL_(info, create,   obs_register_source);
+	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_source);
 
 	if (info->type == OBS_SOURCE_TYPE_INPUT          &&
 	    (info->output_flags & OBS_SOURCE_VIDEO) != 0 &&
 	    (info->output_flags & OBS_SOURCE_ASYNC) == 0) {
-		CHECK_REQUIRED_VAL(info, get_width,  obs_register_source);
-		CHECK_REQUIRED_VAL(info, get_height, obs_register_source);
+		CHECK_REQUIRED_VAL_(info, get_width,  obs_register_source);
+		CHECK_REQUIRED_VAL_(info, get_height, obs_register_source);
 	}
+#undef CHECK_REQUIRED_VAL_
 
 	memcpy(&data, info, size);
 
@@ -504,23 +508,26 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 		return;
 	}
 
-	CHECK_REQUIRED_VAL(info, get_name, obs_register_output);
-	CHECK_REQUIRED_VAL(info, create,   obs_register_output);
-	CHECK_REQUIRED_VAL(info, destroy,  obs_register_output);
-	CHECK_REQUIRED_VAL(info, start,    obs_register_output);
-	CHECK_REQUIRED_VAL(info, stop,     obs_register_output);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_output_info, info, val, func)
+	CHECK_REQUIRED_VAL_(info, get_name, obs_register_output);
+	CHECK_REQUIRED_VAL_(info, create,   obs_register_output);
+	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_output);
+	CHECK_REQUIRED_VAL_(info, start,    obs_register_output);
+	CHECK_REQUIRED_VAL_(info, stop,     obs_register_output);
 
 	if (info->flags & OBS_OUTPUT_ENCODED) {
-		CHECK_REQUIRED_VAL(info, encoded_packet, obs_register_output);
+		CHECK_REQUIRED_VAL_(info, encoded_packet, obs_register_output);
 	} else {
 		if (info->flags & OBS_OUTPUT_VIDEO)
-			CHECK_REQUIRED_VAL(info, raw_video,
+			CHECK_REQUIRED_VAL_(info, raw_video,
 					obs_register_output);
 
 		if (info->flags & OBS_OUTPUT_AUDIO)
-			CHECK_REQUIRED_VAL(info, raw_audio,
+			CHECK_REQUIRED_VAL_(info, raw_audio,
 					obs_register_output);
 	}
+#undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_output_info, obs->output_types, info);
 }
@@ -533,13 +540,16 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 		return;
 	}
 
-	CHECK_REQUIRED_VAL(info, get_name, obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, create,   obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, destroy,  obs_register_encoder);
-	CHECK_REQUIRED_VAL(info, encode,   obs_register_encoder);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_encoder_info, info, val, func)
+	CHECK_REQUIRED_VAL_(info, get_name, obs_register_encoder);
+	CHECK_REQUIRED_VAL_(info, create,   obs_register_encoder);
+	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_encoder);
+	CHECK_REQUIRED_VAL_(info, encode,   obs_register_encoder);
 
 	if (info->type == OBS_ENCODER_AUDIO)
-		CHECK_REQUIRED_VAL(info, get_frame_size, obs_register_encoder);
+		CHECK_REQUIRED_VAL_(info, get_frame_size, obs_register_encoder);
+#undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_encoder_info, obs->encoder_types, info);
 }
@@ -552,27 +562,36 @@ void obs_register_service_s(const struct obs_service_info *info, size_t size)
 		return;
 	}
 
-	CHECK_REQUIRED_VAL(info, get_name, obs_register_service);
-	CHECK_REQUIRED_VAL(info, create,   obs_register_service);
-	CHECK_REQUIRED_VAL(info, destroy,  obs_register_service);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_service_info, info, val, func)
+	CHECK_REQUIRED_VAL_(info, get_name, obs_register_service);
+	CHECK_REQUIRED_VAL_(info, create,   obs_register_service);
+	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_service);
+#undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_service_info, obs->service_types, info);
 }
 
 void obs_regsiter_modal_ui_s(const struct obs_modal_ui *info, size_t size)
 {
-	CHECK_REQUIRED_VAL(info, task,   obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL(info, target, obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL(info, exec,   obs_regsiter_modal_ui);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_modal_ui, info, val, func)
+	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL_(info, exec,   obs_regsiter_modal_ui);
+#undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modal_ui, obs->modal_ui_callbacks, info);
 }
 
 void obs_regsiter_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
 {
-	CHECK_REQUIRED_VAL(info, task,   obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL(info, target, obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL(info, create, obs_regsiter_modeless_ui);
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_modeless_ui, info, val, func)
+	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, create, obs_regsiter_modeless_ui);
+#undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modeless_ui, obs->modeless_ui_callbacks,
 			info);
