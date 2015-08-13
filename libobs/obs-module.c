@@ -444,7 +444,7 @@ cleanup:
 #define CHECK_REQUIRED_VAL(info, val, func) \
 	do { \
 		if (!info->val) {\
-			blog(LOG_ERROR, "Required value '" #val " for" \
+			blog(LOG_ERROR, "Required value '" #val "' for " \
 			                "'%s' not found.  " #func \
 			                " failed.", info->id); \
 			return; \
