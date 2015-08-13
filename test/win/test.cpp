@@ -36,6 +36,17 @@ public:
 
 /* --------------------------------------------------- */
 
+class DisplayContext {
+	obs_display_t *display;
+
+public:
+	inline DisplayContext(obs_display_t *display) : display(display) {}
+	inline ~DisplayContext() {obs_display_destroy(display);}
+	inline operator obs_display_t*() {return display;}
+};
+
+/* --------------------------------------------------- */
+
 static LRESULT CALLBACK sceneProc(HWND hwnd, UINT message, WPARAM wParam,
 		LPARAM lParam)
 {
@@ -60,7 +71,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	OutputDebugStringA(bla);
 	OutputDebugStringA("\n");
 
-	if (log_level <= LOG_WARNING)
+	if (log_level < LOG_WARNING)
 		__debugbreak();
 
 	UNUSED_PARAMETER(param);
@@ -81,15 +92,27 @@ static void CreateOBS(HWND hwnd)
 	ovi.fps_num         = 30000;
 	ovi.fps_den         = 1001;
 	ovi.graphics_module = DL_OPENGL;
-	ovi.window_width    = rc.right;
-	ovi.window_height   = rc.bottom;
 	ovi.output_format   = VIDEO_FORMAT_RGBA;
 	ovi.output_width    = rc.right;
 	ovi.output_height   = rc.bottom;
-	ovi.window.hwnd     = hwnd;
 
 	if (obs_reset_video(&ovi) != 0)
 		throw "Couldn't initialize video";
+}
+
+static DisplayContext CreateDisplay(HWND hwnd)
+{
+	RECT rc;
+	GetClientRect(hwnd, &rc);
+
+	gs_init_data info = {};
+	info.cx = rc.right;
+	info.cy = rc.bottom;
+	info.format = GS_RGBA;
+	info.zsformat = GS_ZS_NONE;
+	info.window.hwnd = hwnd;
+
+	return obs_display_create(&info);
 }
 
 static void AddTestItems(obs_scene_t *scene, obs_source_t *source)
@@ -184,8 +207,9 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine,
 		obs_set_output_source(0, obs_scene_get_source(scene));
 
 		/* ------------------------------------------------------ */
-		/* set the main output render callback */
-		obs_add_draw_callback(RenderWindow, nullptr);
+		/* create display for output and set the output render callback */
+		DisplayContext display = CreateDisplay(hwnd);
+		obs_display_add_draw_callback(display, RenderWindow, nullptr);
 
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0)) {
