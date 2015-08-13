@@ -1,5 +1,7 @@
 #include <obs-module.h>
+#include <util/darray.h>
 #include <libavutil/log.h>
+#include <pthread.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ffmpeg", "en-US")
@@ -9,17 +11,66 @@ extern struct obs_output_info  ffmpeg_output;
 extern struct obs_output_info  ffmpeg_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 
+static DARRAY(struct log_context {
+	void *context;
+	char str[4096];
+	int print_prefix;
+} *) active_log_contexts;
+static DARRAY(struct log_context *) cached_log_contexts;
+pthread_mutex_t log_contexts_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static struct log_context *create_or_fetch_log_context(void *context)
+{
+	pthread_mutex_lock(&log_contexts_mutex);
+	for (size_t i = 0; i < active_log_contexts.num; i++) {
+		if (context == active_log_contexts.array[i]->context) {
+			pthread_mutex_unlock(&log_contexts_mutex);
+			return active_log_contexts.array[i];
+		}
+	}
+
+	struct log_context *new_log_context = NULL;
+
+	size_t cnt = cached_log_contexts.num;
+	if (!!cnt) {
+		new_log_context = cached_log_contexts.array[cnt - 1];
+		da_pop_back(cached_log_contexts);
+	}
+	pthread_mutex_unlock(&log_contexts_mutex);
+
+	if (!new_log_context)
+		new_log_context = bzalloc(sizeof(struct log_context));
+
+	new_log_context->context = context;
+	new_log_context->str[0] = '\0';
+	new_log_context->print_prefix = 1;
+
+	da_push_back(active_log_contexts, &new_log_context);
+
+	return new_log_context;
+}
+
+static void destroy_log_context(struct log_context *log_context)
+{
+	pthread_mutex_lock(&log_contexts_mutex);
+	da_erase_item(active_log_contexts, &log_context);
+	da_push_back(cached_log_contexts, &log_context);
+	pthread_mutex_unlock(&log_contexts_mutex);
+}
+
 static void ffmpeg_log_callback(void* context, int level, const char* format,
 	va_list args)
 {
 	if (format == NULL)
 		return;
 
-	static char str[4096] = {0};
-	static int print_prefix = 1;
+	struct log_context *log_context = create_or_fetch_log_context(context);
+
+	char *str = log_context->str;
 
 	av_log_format_line(context, level, format, args, str + strlen(str),
-			sizeof(str) - strlen(str), &print_prefix);
+			(int)(sizeof(log_context->str) - strlen(str)),
+			&log_context->print_prefix);
 
 	int obs_level;
 	switch (level) {
@@ -40,7 +91,7 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 		obs_level = LOG_DEBUG;
 	}
 
-	if (!print_prefix)
+	if (!log_context->print_prefix)
 		return;
 
 	char *str_end = str + strlen(str) - 1;
@@ -51,14 +102,19 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 	}
 
 	if (str_end <= str)
-		return;
+		goto cleanup;
 
 	blog(obs_level, "[ffmpeg] %s", str);
-	str[0] = 0;
+
+cleanup:
+	destroy_log_context(log_context);
 }
 
 bool obs_module_load(void)
 {
+	da_init(active_log_contexts);
+	da_init(cached_log_contexts);
+
 	av_log_set_callback(ffmpeg_log_callback);
 
 	obs_register_source(&ffmpeg_source);
@@ -66,4 +122,23 @@ bool obs_module_load(void)
 	obs_register_output(&ffmpeg_muxer);
 	obs_register_encoder(&aac_encoder_info);
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	av_log_set_callback(av_log_default_callback);
+
+#ifdef _WIN32
+	pthread_mutex_destroy(&log_contexts_mutex);
+#endif
+
+	for (size_t i = 0; i < active_log_contexts.num; i++) {
+		bfree(active_log_contexts.array[i]);
+	}
+	for (size_t i = 0; i < cached_log_contexts.num; i++) {
+		bfree(cached_log_contexts.array[i]);
+	}
+
+	da_free(active_log_contexts);
+	da_free(cached_log_contexts);
 }
