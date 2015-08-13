@@ -437,6 +437,16 @@ cleanup:
 			return;                                           \
 		}                                                         \
                                                                           \
+		if (size_var > sizeof(data)) {                            \
+			blog(LOG_ERROR, "Tried to register " #structure   \
+					" with size %llu which is more "  \
+					"than libobs currently supports " \
+					"(%llu)",                         \
+					(long long unsigned)size_var,     \
+					(long long unsigned)sizeof(data));\
+			return;                                           \
+		}                                                         \
+                                                                          \
 		memcpy(&data, info, size_var);                            \
 		da_push_back(dest, &data);                                \
 	} while (false)
@@ -488,6 +498,14 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		CHECK_REQUIRED_VAL_(info, get_height, obs_register_source);
 	}
 #undef CHECK_REQUIRED_VAL_
+
+	if (size > sizeof(data)) {
+		blog(LOG_ERROR, "Tried to register obs_source_info with size "
+				"%llu which is more than libobs currently "
+				"supports (%llu)", (long long unsigned)size,
+				(long long unsigned)sizeof(data));
+		return;
+	}
 
 	memcpy(&data, info, size);
 
