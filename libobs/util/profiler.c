@@ -965,20 +965,23 @@ void profile_snapshot_free(profiler_snapshot_t *snap)
 
 typedef void (*dump_csv_func)(void *data, struct dstr *buffer);
 static void entry_dump_csv(struct dstr *buffer,
-		const char *parent, const profiler_snapshot_entry_t *entry,
+		const profiler_snapshot_entry_t *parent,
+		const profiler_snapshot_entry_t *entry,
 		dump_csv_func func, void *data)
 {
+	const char *parent_name = parent ? parent->name : NULL;
+
 	for (size_t i = 0; i < entry->times.num; i++) {
-		dstr_printf(buffer, "%p,%p,%s,0,%llu,%llu\n", entry->name,
-				parent, entry->name,
+		dstr_printf(buffer, "%p,%p,%p,%p,%s,0,%llu,%llu\n", entry,
+				parent, entry->name, parent_name, entry->name,
 				entry->times.array[i].time_delta,
 				entry->times.array[i].count);
 		func(data, buffer);
 	}
 
 	for (size_t i = 0; i < entry->times_between_calls.num; i++) {
-		dstr_printf(buffer, "%p,%p,%s,%llu,%llu,%llu\n", entry->name,
-				parent, entry->name,
+		dstr_printf(buffer, "%p,%p,%p,%p,%s,%llu,%llu,%llu\n", entry,
+				parent, entry->name, parent_name, entry->name,
 				entry->expected_time_between_calls,
 				entry->times_between_calls.array[i].time_delta,
 				entry->times_between_calls.array[i].count);
@@ -986,7 +989,7 @@ static void entry_dump_csv(struct dstr *buffer,
 	}
 
 	for (size_t i = 0; i < entry->children.num; i++)
-		entry_dump_csv(buffer, entry->name, &entry->children.array[i],
+		entry_dump_csv(buffer, entry, &entry->children.array[i],
 				func, data);
 }
 
@@ -995,8 +998,8 @@ static void profiler_snapshot_dump(const profiler_snapshot_t *snap,
 {
 	struct dstr buffer = {0};
 
-	dstr_init_copy(&buffer, "id,parent_id,name,time_between_calls,"
-			"time_delta_µs,count\n");
+	dstr_init_copy(&buffer, "id,parent_id,name_id,parent_name_id,name,"
+			"time_between_calls,time_delta_µs,count\n");
 	func(data, &buffer);
 
 	for (size_t i = 0; i < snap->roots.num; i++)
