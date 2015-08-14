@@ -438,7 +438,7 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 	if (obs_data_get_bool(settings, "use_preset")) {
 		NSString *preset = get_string(settings, "preset");
 		if (![dev supportsAVCaptureSessionPreset:preset]) {
-			AVLOG(LOG_ERROR, "Preset %s not available",
+			AVLOG(LOG_WARNING, "Preset %s not available",
 					preset_names(preset).UTF8String);
 			preset = select_preset(dev, preset);
 		}
@@ -472,12 +472,12 @@ static inline void handle_disconnect_capture(av_capture *capture,
 		return;
 
 	if (!capture->device) {
-		AVLOG(LOG_ERROR, "Received disconnect for unused device '%s'",
+		AVLOG(LOG_INFO, "Received disconnect for inactive device '%s'",
 				capture->uid.UTF8String);
 		return;
 	}
 
-	AVLOG(LOG_ERROR, "Device with unique ID '%s' disconnected",
+	AVLOG(LOG_WARNING, "Device with unique ID '%s' disconnected",
 			dev.uniqueID.UTF8String);
 
 	remove_device(capture);
@@ -554,9 +554,9 @@ static bool av_capture_init(av_capture *capture, obs_data_t *settings)
 
 	if (!dev) {
 		if (capture->uid.length < 1)
-			AVLOG(LOG_ERROR, "No device selected");
+			AVLOG(LOG_INFO, "No device selected");
 		else
-			AVLOG(LOG_ERROR, "Could not initialize device " \
+			AVLOG(LOG_WARNING, "Could not initialize device " \
 					"with unique ID '%s'",
 					capture->uid.UTF8String);
 		return true;
@@ -838,9 +838,14 @@ static void switch_device(av_capture *capture, NSString *uid,
 
 	capture->uid = uid;
 
+	if (!uid.length) {
+		AVLOG(LOG_INFO, "No device selected, stopping capture");
+		return;
+	}
+
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 	if (!dev) {
-		AVLOG(LOG_ERROR, "Device with unique id '%s' not found",
+		AVLOG(LOG_WARNING, "Device with unique id '%s' not found",
 				uid.UTF8String);
 		return;
 	}
@@ -859,7 +864,8 @@ static void av_capture_update(void *data, obs_data_t *settings)
 
 	NSString *preset = get_string(settings, "preset");
 	if (![capture->device supportsAVCaptureSessionPreset:preset]) {
-		AVLOG(LOG_ERROR, "Preset %s not available", preset.UTF8String);
+		AVLOG(LOG_WARNING, "Preset %s not available",
+				preset.UTF8String);
 		preset = select_preset(capture->device, preset);
 	}
 
