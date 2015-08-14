@@ -287,6 +287,8 @@ static void remove_device(av_capture *capture)
 
 	capture->device_input = nullptr;
 	capture->device = nullptr;
+
+	obs_source_output_video(capture->source, nullptr);
 }
 
 static void av_capture_destroy(void *data)
