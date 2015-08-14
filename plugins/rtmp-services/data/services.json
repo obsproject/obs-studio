@@ -1,6 +1,7 @@
 [
     {
         "name": "Twitch",
+        "common": true,
         "servers": [
             {
                 "name": "US West: San Francisco, CA",
@@ -116,6 +117,7 @@
     },
     {
         "name": "YouTube",
+        "common": true,
         "servers": [
             {
                 "name": "Primary YouTube ingest server",
@@ -135,6 +137,7 @@
     },
     {
         "name": "hitbox.tv",
+        "common": true,
         "servers": [
             {
                 "name": "Default",
@@ -214,6 +217,7 @@
     },
     {
         "name": "Livecoding.tv",
+        "common": true,
         "servers": [
             {
                 "name": "Primary",
@@ -251,6 +255,7 @@
     },
     {
         "name": "DailyMotion",
+        "common": true,
         "servers": [
             {
                 "name": "Primary",
@@ -277,6 +282,7 @@
     },
     {
         "name": "beam.pro",
+        "common": true,
         "servers": [
             {
                 "name": "US: Dallas, TX",
