@@ -632,6 +632,7 @@ static NSString *preset_names(NSString *preset)
 
 static void av_capture_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_string(settings, "uid", "");
 	obs_data_set_default_bool(settings, "use_preset", true);
 	obs_data_set_default_string(settings, "preset",
 			AVCaptureSessionPreset1280x720.UTF8String);
@@ -769,7 +770,8 @@ static bool properties_device_changed(obs_properties_t *props, obs_property_t *p
 	AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 
 	NSString *name = get_string(settings, "device_name");
-	bool dev_list_updated = update_device_list(p, uid, name, !dev);
+	bool dev_list_updated = update_device_list(p, uid, name,
+			!dev && uid.length);
 
 	p = obs_properties_get(props, "preset");
 	bool preset_list_changed = check_preset(dev, p, settings);
@@ -797,6 +799,7 @@ static obs_properties_t *av_capture_properties(void*)
 	obs_property_t *dev_list = obs_properties_add_list(props, "device",
 			TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(dev_list, "", "");
 	for (AVCaptureDevice *dev in [AVCaptureDevice
 			devicesWithMediaType:AVMediaTypeVideo]) {
 		obs_property_list_add_string(dev_list,
