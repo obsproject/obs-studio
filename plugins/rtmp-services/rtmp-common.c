@@ -234,11 +234,7 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 		obs_data_set_int(settings, "keyint_sec", keyint);
 	}
 
-	item = json_object_get(recommended, "cbr");
-	if (item && json_is_boolean(item)) {
-		bool cbr = json_is_true(item);
-		obs_data_set_bool(settings, "cbr", cbr);
-	}
+	obs_data_set_bool(settings, "cbr", true);
 
 	item = json_object_get(recommended, "profile");
 	if (item && json_is_string(item)) {
