@@ -356,6 +356,23 @@
         ]
     },
     {
+        "name": "Streamup",
+        "servers": [
+            {
+                "name": "US East: Tampa, FL (1)",
+                "url": "rtmp://origin03.tpa.streamup.com/app"
+            },
+            {
+                "name": "US East: Tampa, FL (2)",
+                "url": "rtmp://origin02.tpa.streamup.com/app"
+            },
+            {
+                "name": "US East: Tampa, FL (3)",
+                "url": "rtmp://origin01.tpa.streamup.com/app"
+            }
+        ]
+    },
+    {
         "name": "connectcast.tv",
         "servers": [
             {
