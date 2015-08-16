@@ -264,23 +264,6 @@
         ]
     },
     {
-        "name": "Gaminglive.tv",
-        "servers": [
-            {
-                "name": "North America",
-                "url": "rtmp://broadcastNA.gaminglive.tv/push"
-            },
-            {
-                "name": "Europe",
-                "url": "rtmp://broadcastEU.gaminglive.tv/push"
-            },
-            {
-                "name": "Asia",
-                "url": "rtmp://broadcastAS.gaminglive.tv/push"
-            }
-        ]
-    },
-    {
         "name": "beam.pro",
         "common": true,
         "servers": [
