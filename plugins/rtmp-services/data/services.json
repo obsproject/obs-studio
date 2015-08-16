@@ -216,54 +216,6 @@
         }
     },
     {
-        "name": "Livecoding.tv",
-        "common": true,
-        "servers": [
-            {
-                "name": "Primary",
-                "url": "rtmp://usmedia3.livecoding.tv/livecodingtv"
-            }
-        ],
-        "recommended": {
-            "max video bitrate": 1300
-        }
-    },
-    {
-        "name": "Vaughn Live / iNSTAGIB.tv",
-        "servers": [
-            {
-                "name": "US: Primary",
-                "url": "rtmp://live.vaughnsoft.net:443/live"
-            },
-            {
-                "name": "US: San Jose, CA",
-                "url": "rtmp://live-sjc.vaughnsoft.net:443/live"
-            },
-            {
-                "name": "US: New York, NY",
-                "url": "rtmp://live-nyc.vaughnsoft.net:443/live"
-            },
-            {
-                "name": "US: New York 2, NY",
-                "url": "rtmp://live-nyc2.vaughnsoft.net:443/live"
-            },
-            {
-                "name": "EU: Amsterdam, NL",
-                "url": "rtmp://live-nl.vaughnsoft.net:443/live"
-            }
-        ]
-    },
-    {
-        "name": "DailyMotion",
-        "common": true,
-        "servers": [
-            {
-                "name": "Primary",
-                "url": "rtmp://publish.dailymotion.com/publish-dm"
-            }
-        ]
-    },
-    {
         "name": "beam.pro",
         "common": true,
         "servers": [
@@ -304,6 +256,76 @@
         }
     },
     {
+        "name": "DailyMotion",
+        "common": true,
+        "servers": [
+            {
+                "name": "Primary",
+                "url": "rtmp://publish.dailymotion.com/publish-dm"
+            }
+        ]
+    },
+    {
+        "name": "Livecoding.tv",
+        "common": true,
+        "servers": [
+            {
+                "name": "United States",
+                "url": "rtmp://usmedia3.livecoding.tv/livecodingtv"
+            },
+            {
+                "name": "EU",
+                "url": "rtmp://eumedia1.livecoding.tv/livecodingtv"
+            }
+        ],
+        "recommended": {
+            "max video bitrate": 1300
+        }
+    },
+    {
+        "name": "GoodGame.ru",
+        "servers": [
+            {
+                "name": "Моscow",
+                "url": "rtmp://msk.goodgame.ru:1940/live"
+            }
+        ]
+    },
+    {
+        "name": "GamePlank",
+        "servers": [
+            {
+                "name": "Primary",
+                "url": "rtmp://www.gameplank.tv/live"
+            }
+        ]
+    },
+    {
+        "name": "Vaughn Live / iNSTAGIB.tv",
+        "servers": [
+            {
+                "name": "US: Primary",
+                "url": "rtmp://live.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "US: San Jose, CA",
+                "url": "rtmp://live-sjc.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "US: New York, NY",
+                "url": "rtmp://live-nyc.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "US: New York 2, NY",
+                "url": "rtmp://live-nyc2.vaughnsoft.net:443/live"
+            },
+            {
+                "name": "EU: Amsterdam, NL",
+                "url": "rtmp://live-nl.vaughnsoft.net:443/live"
+            }
+        ]
+    },
+    {
         "name": "connectcast.tv",
         "servers": [
             {
@@ -318,15 +340,6 @@
             {
                 "name": "US Chicago (Primary)",
                 "url": "rtmp://live.instagib.tv:443/live"
-            }
-        ]
-    },
-    {
-        "name": "GoodGame.ru",
-        "servers": [
-            {
-                "name": "Моscow",
-                "url": "rtmp://msk.goodgame.ru:1940/live"
             }
         ]
     },
