@@ -151,11 +151,14 @@ char *obs_find_module_file(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
 
+	if (!file)
+		file = "";
+
 	if (!module)
 		return NULL;
 
 	dstr_copy(&output, module->data_path);
-	if (!dstr_is_empty(&output) && dstr_end(&output) != '/')
+	if (!dstr_is_empty(&output) && dstr_end(&output) != '/' && *file)
 		dstr_cat_ch(&output, '/');
 	dstr_cat(&output, file);
 
