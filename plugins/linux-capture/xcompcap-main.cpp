@@ -274,7 +274,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		const char *windowName = obs_data_get_string(settings,
 				"capture_window");
 
-        p->windowName = windowName;
+		p->windowName = windowName;
 		p->win = getWindowFromString(windowName);
 
 		p->cut_top = obs_data_get_int(settings, "cut_top");
