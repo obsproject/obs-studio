@@ -132,6 +132,7 @@ struct XCompcapMain_private
 
 	obs_source_t *source;
 
+	std::string windowName;
 	Window win;
 	int cut_top, cur_cut_top;
 	int cut_left, cur_cut_left;
@@ -272,6 +273,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		const char *windowName = obs_data_get_string(settings,
 				"capture_window");
 
+		p->windowName = windowName;
 		p->win = getWindowFromString(windowName);
 
 		p->cut_top = obs_data_get_int(settings, "cut_top");
@@ -455,6 +457,20 @@ void XCompcapMain::tick(float seconds)
 
 	if (XCompcap::windowWasReconfigured(p->win))
 		updateSettings(0);
+
+	XErrorLock xlock;
+	xlock.resetError();
+	XWindowAttributes attr;
+
+	if (!XGetWindowAttributes(xdisp, p->win, &attr)) {
+		Window newWin = getWindowFromString(p->windowName);
+
+		if (XGetWindowAttributes(xdisp, newWin, &attr)) {
+			p->win = newWin;
+			updateSettings(0);
+		}
+		return;
+	}
 
 	if (!p->tex || !p->gltex)
 		return;
