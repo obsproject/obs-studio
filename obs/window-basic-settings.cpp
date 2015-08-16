@@ -19,6 +19,7 @@
 #include <obs.hpp>
 #include <util/util.hpp>
 #include <util/lexer.h>
+#include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
 #include <QLineEdit>
@@ -788,15 +789,24 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 	QString advRescale;
 	QString advRecRescale;
 	QString advFFRescale;
+	QString oldOutputRes;
+	string bestScale;
+	int bestPixelDiff = 0x7FFFFFFF;
 
 	advRescale = ui->advOutRescale->lineEdit()->text();
 	advRecRescale = ui->advOutRecRescale->lineEdit()->text();
 	advFFRescale = ui->advOutFFRescale->lineEdit()->text();
+	oldOutputRes = ui->outputResolution->lineEdit()->text();
 
 	ui->outputResolution->clear();
 	ui->advOutRescale->clear();
 	ui->advOutRecRescale->clear();
 	ui->advOutFFRescale->clear();
+
+	if (!out_cx || !out_cy) {
+		out_cx = cx;
+		out_cy = cy;
+	}
 
 	for (size_t idx = 0; idx < numVals; idx++) {
 		uint32_t downscaleCX = uint32_t(double(cx) / vals[idx]);
@@ -815,11 +825,28 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 		ui->advOutRescale->addItem(outRes.c_str());
 		ui->advOutRecRescale->addItem(outRes.c_str());
 		ui->advOutFFRescale->addItem(outRes.c_str());
+
+		/* always try to find the closest output resolution to the
+		 * previously set output resolution */
+		int newPixelCount = int(downscaleCX * downscaleCY);
+		int oldPixelCount = int(out_cx * out_cy);
+		int diff = abs(newPixelCount - oldPixelCount);
+
+		if (diff < bestPixelDiff) {
+			bestScale = res;
+			bestPixelDiff = diff;
+		}
 	}
 
 	string res = ResString(cx, cy);
 
-	ui->outputResolution->lineEdit()->setText(res.c_str());
+	float baseAspect   = float(cx) / float(cy);
+	float outputAspect = float(out_cx) / float(out_cy);
+
+	if (close_float(baseAspect, outputAspect, 0.01f))
+		ui->outputResolution->lineEdit()->setText(oldOutputRes);
+	else
+		ui->outputResolution->lineEdit()->setText(bestScale.c_str());
 
 	if (advRescale.isEmpty())
 		advRescale = res.c_str();
