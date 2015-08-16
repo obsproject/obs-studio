@@ -58,7 +58,7 @@ static inline bool get_bool_val(json_t *service, const char *key)
 {
 	json_t *bool_val = json_object_get(service, key);
 	if (!bool_val || !json_is_boolean(bool_val))
-		return NULL;
+		return false;
 
 	return json_is_true(bool_val);
 }
