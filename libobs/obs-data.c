@@ -18,6 +18,7 @@
 #include "util/bmem.h"
 #include "util/threading.h"
 #include "util/darray.h"
+#include "util/platform.h"
 #include "graphics/vec2.h"
 #include "graphics/vec3.h"
 #include "graphics/vec4.h"
@@ -634,6 +635,19 @@ obs_data_t *obs_data_create_from_json(const char *json_string)
 		blog(LOG_ERROR, "obs-data.c: [obs_data_create_from_json] "
 		                "Failed reading json string (%d): %s",
 		                error.line, error.text);
+	}
+
+	return data;
+}
+
+obs_data_t *obs_data_create_from_json_file(const char *json_file)
+{
+	char *file_data = os_quick_read_utf8_file(json_file);
+	obs_data_t *data = NULL;
+
+	if (file_data) {
+		data = obs_data_create_from_json(file_data);
+		bfree(file_data);
 	}
 
 	return data;
