@@ -212,7 +212,8 @@ set(libobs_mediaio_HEADERS
 	media-io/format-conversion.h
 	media-io/audio-resampler.h
 	media-io/video-scaler.h
-	media-io/media-remux.h)
+	media-io/media-remux.h
+	media-io/frame-rate.h)
 
 set(libobs_util_SOURCES
 	util/array-serializer.c
