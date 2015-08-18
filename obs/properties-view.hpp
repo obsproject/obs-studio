@@ -99,6 +99,8 @@ private:
 	QWidget *AddButton(obs_property_t *prop);
 	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
+	void AddFrameRate(obs_property_t *prop, bool &warning,
+			QFormLayout *layout, QLabel *&label);
 
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
 
