@@ -92,6 +92,17 @@ struct av_capture {
 	obs_source_frame frame;
 };
 
+static NSString *get_string(obs_data_t *data, char const *name)
+{
+	return @(obs_data_get_string(data, name));
+}
+
+static AVCaptureDevice *get_device(obs_data_t *settings)
+{
+	auto uid = get_string(settings, "device");
+	return [AVCaptureDevice deviceWithUniqueID:uid];
+}
+
 static inline video_format format_from_subtype(FourCharCode subtype)
 {
 	//TODO: uncomment VIDEO_FORMAT_NV12 and VIDEO_FORMAT_ARGB once libobs
@@ -280,15 +291,28 @@ static const char *av_capture_getname(void*)
 	return TEXT_AVCAPTURE;
 }
 
+static void start_capture(av_capture *capture)
+{
+	if (capture->session && !capture->session.running)
+		[capture->session startRunning];
+}
+
+static void clear_capture(av_capture *capture)
+{
+	if (capture->session && capture->session.running)
+		[capture->session stopRunning];
+
+	obs_source_output_video(capture->source, nullptr);
+}
+
 static void remove_device(av_capture *capture)
 {
-	[capture->session stopRunning];
+	clear_capture(capture);
+
 	[capture->session removeInput:capture->device_input];
 
 	capture->device_input = nullptr;
 	capture->device = nullptr;
-
-	obs_source_output_video(capture->source, nullptr);
 }
 
 static void av_capture_destroy(void *data)
@@ -296,11 +320,6 @@ static void av_capture_destroy(void *data)
 	auto capture = static_cast<av_capture*>(data);
 
 	delete capture;
-}
-
-static NSString *get_string(obs_data_t *data, char const *name)
-{
-	return @(obs_data_get_string(data, name));
 }
 
 static bool init_session(av_capture *capture)
@@ -429,6 +448,31 @@ static NSString *select_preset(AVCaptureDevice *dev, NSString *cur_preset)
 	return new_preset;
 }
 
+static bool init_preset(av_capture *capture, AVCaptureDevice *dev,
+		obs_data_t *settings)
+{
+	clear_capture(capture);
+
+	NSString *preset = get_string(settings, "preset");
+	if (![dev supportsAVCaptureSessionPreset:preset]) {
+		AVLOG(LOG_WARNING, "Preset %s not available",
+				preset_names(preset).UTF8String);
+		preset = select_preset(dev, preset);
+	}
+
+	if (!preset) {
+		AVLOG(LOG_WARNING, "Could not select a preset, "
+				"initialization failed");
+		return false;
+	}
+
+	capture->session.sessionPreset = preset;
+	AVLOG(LOG_INFO, "Using preset %s",
+				preset_names(preset).UTF8String);
+
+	return true;
+}
+
 static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t *settings)
 {
@@ -438,22 +482,8 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
 	if (obs_data_get_bool(settings, "use_preset")) {
-		NSString *preset = get_string(settings, "preset");
-		if (![dev supportsAVCaptureSessionPreset:preset]) {
-			AVLOG(LOG_WARNING, "Preset %s not available",
-					preset_names(preset).UTF8String);
-			preset = select_preset(dev, preset);
-		}
-
-		if (!preset) {
-			AVLOG(LOG_ERROR, "Could not select a preset, "
-					"initialization failed");
+		if (!init_preset(capture, dev, settings))
 			return;
-		}
-
-		capture->session.sessionPreset = preset;
-		AVLOG(LOG_INFO, "Using preset %s",
-				preset_names(preset).UTF8String);
 	}
 
 	if (!init_device_input(capture, dev))
@@ -463,7 +493,7 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 	capture->has_clock = [port respondsToSelector:@selector(clock)];
 
 	capture->device = dev;
-	[capture->session startRunning];
+	start_capture(capture);
 	return;
 }
 
@@ -861,15 +891,8 @@ static void switch_device(av_capture *capture, NSString *uid,
 	capture_device(capture, dev, settings);
 }
 
-static void av_capture_update(void *data, obs_data_t *settings)
+static void update_preset(av_capture *capture, obs_data_t *settings)
 {
-	auto capture = static_cast<av_capture*>(data);
-
-	NSString *uid = get_string(settings, "device");
-
-	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
-		return switch_device(capture, uid, settings);
-
 	NSString *preset = get_string(settings, "preset");
 	if (![capture->device supportsAVCaptureSessionPreset:preset]) {
 		AVLOG(LOG_WARNING, "Preset %s not available",
@@ -879,6 +902,21 @@ static void av_capture_update(void *data, obs_data_t *settings)
 
 	capture->session.sessionPreset = preset;
 	AVLOG(LOG_INFO, "Selected preset %s", preset.UTF8String);
+
+	start_capture(capture);
+}
+
+static void av_capture_update(void *data, obs_data_t *settings)
+{
+	auto capture = static_cast<av_capture*>(data);
+
+	NSString *uid = get_string(settings, "device");
+
+	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
+		return switch_device(capture, uid, settings);
+
+	if (obs_data_get_bool(settings, "use_preset"))
+		update_preset(capture, settings);
 
 	av_capture_enable_buffering(capture,
 			obs_data_get_bool(settings, "buffering"));
