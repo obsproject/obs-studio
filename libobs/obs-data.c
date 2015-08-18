@@ -131,7 +131,11 @@ static inline obs_data_t *get_item_obj(struct obs_data_item *item)
 	if (!item)
 		return NULL;
 
-	return *(obs_data_t**)get_item_data(item);
+	obs_data_t **data = get_item_data(item);
+	if (!data)
+		return NULL;
+
+	return *data;
 }
 
 static inline obs_data_t *get_item_default_obj(struct obs_data_item *item)
