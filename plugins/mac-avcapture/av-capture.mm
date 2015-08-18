@@ -6,14 +6,52 @@
 #include <obs-module.h>
 #include <media-io/video-io.h>
 
+#include <util/dstr.hpp>
+
+#include <algorithm>
+#include <initializer_list>
+#include <cinttypes>
+#include <limits>
 #include <memory>
+#include <vector>
+
+#include "scope-guard.hpp"
+
+#define NBSP "\xC2\xA0"
 
 using namespace std;
+
+namespace std {
+
+template <>
+struct default_delete<obs_data_t> {
+	void operator()(obs_data_t *data)
+	{
+		obs_data_release(data);
+	}
+};
+
+template <>
+struct default_delete<obs_data_item_t> {
+	void operator()(obs_data_item_t *item)
+	{
+		obs_data_item_release(&item);
+	}
+};
+
+}
 
 #define TEXT_AVCAPTURE  obs_module_text("AVCapture")
 #define TEXT_DEVICE     obs_module_text("Device")
 #define TEXT_USE_PRESET obs_module_text("UsePreset")
 #define TEXT_PRESET     obs_module_text("Preset")
+#define TEXT_RESOLUTION obs_module_text("Resolution")
+#define TEXT_FRAME_RATE obs_module_text("FrameRate")
+#define TEXT_MATCH_OBS  obs_module_text("MatchOBS")
+#define TEXT_INPUT_FORMAT obs_module_text("InputFormat")
+#define TEXT_AUTO       obs_module_text("Auto")
+
+static const FourCharCode INPUT_FORMAT_AUTO = -1;
 
 #define MILLI_TIMESCALE 1000
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
@@ -73,6 +111,8 @@ struct av_capture {
 	dispatch_queue_t queue;
 	bool has_clock;
 
+	bool device_locked;
+
 	AVCaptureVideoDataOutput *out;
 	AVCaptureDevice          *device;
 	AVCaptureDeviceInput     *device_input;
@@ -103,6 +143,115 @@ static AVCaptureDevice *get_device(obs_data_t *settings)
 	return [AVCaptureDevice deviceWithUniqueID:uid];
 }
 
+template <typename T, typename U>
+static void clamp(T& store, U val, T low = numeric_limits<T>::min(),
+		T high = numeric_limits<T>::max())
+{
+	store = static_cast<intmax_t>(val) < static_cast<intmax_t>(low) ? low :
+		(static_cast<intmax_t>(val) > static_cast<intmax_t>(high) ?
+		 high : static_cast<T>(val));
+}
+
+static bool get_resolution(obs_data_t *settings, CMVideoDimensions &dims)
+{
+	using item_ptr = unique_ptr<obs_data_item_t>;
+	item_ptr item{obs_data_item_byname(settings, "resolution")};
+	if (!item)
+		return false;
+
+	auto res_str = obs_data_item_get_string(item.get());
+	unique_ptr<obs_data_t> res{obs_data_create_from_json(res_str)};
+	if (!res)
+		return false;
+
+	item_ptr width{obs_data_item_byname(res.get(), "width")};
+	item_ptr height{obs_data_item_byname(res.get(), "height")};
+
+	if (!width || !height)
+		return false;
+
+	clamp(dims.width, obs_data_item_get_int(width.get()), 0);
+	clamp(dims.height, obs_data_item_get_int(height.get()), 0);
+
+	if (!dims.width || !dims.height)
+		return false;
+
+	return true;
+}
+
+static bool get_input_format(obs_data_t *settings, FourCharCode &fourcc)
+{
+	auto item = unique_ptr<obs_data_item_t>{
+		obs_data_item_byname(settings, "input_format")};
+	if (!item)
+		return false;
+
+	fourcc = obs_data_item_get_int(item.get());
+	return true;
+}
+
+namespace {
+
+struct config_helper {
+	obs_data_t *settings = nullptr;
+
+	AVCaptureDevice *dev_ = nullptr;
+
+	bool dims_valid : 1;
+	bool fr_valid   : 1;
+	bool fps_valid  : 1;
+	bool if_valid   : 1;
+
+	CMVideoDimensions dims_{};
+
+	const char *frame_rate_ = nullptr;
+	media_frames_per_second fps_{};
+
+	FourCharCode input_format_ = INPUT_FORMAT_AUTO;
+
+	explicit config_helper(obs_data_t *settings)
+		: settings(settings)
+	{
+		dev_ = get_device(settings);
+
+		dims_valid = get_resolution(settings, dims_);
+
+		fr_valid  = obs_data_get_frames_per_second(settings,
+				"frame_rate", nullptr, &frame_rate_);
+		fps_valid = obs_data_get_frames_per_second(settings,
+				"frame_rate", &fps_, nullptr);
+
+		if_valid = get_input_format(settings, input_format_);
+	}
+
+	AVCaptureDevice *dev() const
+	{
+		return dev_;
+	}
+
+	const CMVideoDimensions *dims() const
+	{
+		return dims_valid ? &dims_ : nullptr;
+	}
+
+	const char *frame_rate() const
+	{
+		return fr_valid ? frame_rate_ : nullptr;
+	}
+
+	const media_frames_per_second *fps() const
+	{
+		return fps_valid ? &fps_ : nullptr;
+	}
+
+	const FourCharCode *input_format() const
+	{
+		return if_valid ? &input_format_ : nullptr;
+	}
+};
+
+}
+
 static inline video_format format_from_subtype(FourCharCode subtype)
 {
 	//TODO: uncomment VIDEO_FORMAT_NV12 and VIDEO_FORMAT_ARGB once libobs
@@ -121,6 +270,85 @@ static inline video_format format_from_subtype(FourCharCode subtype)
 		return VIDEO_FORMAT_BGRA;
 	default:
 		return VIDEO_FORMAT_NONE;
+	}
+}
+
+static const char *fourcc_subtype_name(FourCharCode fourcc);
+
+static const char *format_description_subtype_name(CMFormatDescriptionRef desc,
+		FourCharCode *fourcc_=nullptr)
+{
+	FourCharCode fourcc = CMFormatDescriptionGetMediaSubType(desc);
+	if (fourcc_)
+		*fourcc_ = fourcc;
+
+	return fourcc_subtype_name(fourcc);
+}
+
+static const char *fourcc_subtype_name(FourCharCode fourcc)
+{
+	switch (fourcc) {
+	case kCVPixelFormatType_422YpCbCr8:
+		return "UYVY - 422YpCbCr8"; //VIDEO_FORMAT_UYVY;
+	case kCVPixelFormatType_422YpCbCr8_yuvs:
+		return "YUY2 - 422YpCbCr8_yuvs"; //VIDEO_FORMAT_YUY2;
+	case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+	case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+		return "NV12 - 420YpCbCr8BiPlanar"; //VIDEO_FORMAT_NV12;
+	case kCVPixelFormatType_32ARGB:
+		return "ARGB - 32ARGB"; //VIDEO_FORMAT_ARGB;*/
+	case kCVPixelFormatType_32BGRA:
+		return "BGRA - 32BGRA"; //VIDEO_FORMAT_BGRA;
+
+	case kCMVideoCodecType_Animation: return "Apple Animation";
+	case kCMVideoCodecType_Cinepak: return "Cinepak";
+	case kCMVideoCodecType_JPEG: return "JPEG";
+	case kCMVideoCodecType_JPEG_OpenDML: return "MJPEG - JPEG OpenDML";
+	case kCMVideoCodecType_SorensonVideo: return "Sorenson Video";
+	case kCMVideoCodecType_SorensonVideo3: return "Sorenson Video 3";
+	case kCMVideoCodecType_H263: return "H.263";
+	case kCMVideoCodecType_H264: return "H.264";
+	case kCMVideoCodecType_MPEG4Video: return "MPEG-4";
+	case kCMVideoCodecType_MPEG2Video: return "MPEG-2";
+	case kCMVideoCodecType_MPEG1Video: return "MPEG-1";
+
+	case kCMVideoCodecType_DVCNTSC:
+		return "DV NTSC";
+	case kCMVideoCodecType_DVCPAL:
+		return "DV PAL";
+	case kCMVideoCodecType_DVCProPAL:
+		return "Panasonic DVCPro PAL";
+	case kCMVideoCodecType_DVCPro50NTSC:
+		return "Panasonic DVCPro-50 NTSC";
+	case kCMVideoCodecType_DVCPro50PAL:
+		return "Panasonic DVCPro-50 PAL";
+	case kCMVideoCodecType_DVCPROHD720p60:
+		return "Panasonic DVCPro-HD 720p60";
+	case kCMVideoCodecType_DVCPROHD720p50:
+		return "Panasonic DVCPro-HD 720p50";
+	case kCMVideoCodecType_DVCPROHD1080i60:
+		return "Panasonic DVCPro-HD 1080i60";
+	case kCMVideoCodecType_DVCPROHD1080i50:
+		return "Panasonic DVCPro-HD 1080i50";
+	case kCMVideoCodecType_DVCPROHD1080p30:
+		return "Panasonic DVCPro-HD 1080p30";
+	case kCMVideoCodecType_DVCPROHD1080p25:
+		return "Panasonic DVCPro-HD 1080p25";
+
+	case kCMVideoCodecType_AppleProRes4444:
+		return "Apple ProRes 4444";
+	case kCMVideoCodecType_AppleProRes422HQ:
+		return "Apple ProRes 422 HQ";
+	case kCMVideoCodecType_AppleProRes422:
+		return "Apple ProRes 422";
+	case kCMVideoCodecType_AppleProRes422LT:
+		return "Apple ProRes 422 LT";
+	case kCMVideoCodecType_AppleProRes422Proxy:
+		return "Apple ProRes 422 Proxy";
+
+	default:
+		blog(LOG_INFO, "Unknown format %s", AV_FOURCC_STR(fourcc));
+		return "unknown";
 	}
 }
 
@@ -291,6 +519,17 @@ static const char *av_capture_getname(void*)
 	return TEXT_AVCAPTURE;
 }
 
+static void unlock_device(av_capture *capture, AVCaptureDevice *dev=nullptr)
+{
+	if (!dev)
+		dev = capture->device;
+
+	if (dev && capture->device_locked)
+		[dev unlockForConfiguration];
+
+	capture->device_locked = false;
+}
+
 static void start_capture(av_capture *capture)
 {
 	if (capture->session && !capture->session.running)
@@ -310,6 +549,8 @@ static void remove_device(av_capture *capture)
 	clear_capture(capture);
 
 	[capture->session removeInput:capture->device_input];
+
+	unlock_device(capture);
 
 	capture->device_input = nullptr;
 	capture->device = nullptr;
@@ -453,6 +694,8 @@ static bool init_preset(av_capture *capture, AVCaptureDevice *dev,
 {
 	clear_capture(capture);
 
+	unlock_device(capture, dev);
+
 	NSString *preset = get_string(settings, "preset");
 	if (![dev supportsAVCaptureSessionPreset:preset]) {
 		AVLOG(LOG_WARNING, "Preset %s not available",
@@ -473,6 +716,158 @@ static bool init_preset(av_capture *capture, AVCaptureDevice *dev,
 	return true;
 }
 
+static bool operator==(const CMVideoDimensions &a, const CMVideoDimensions &b);
+static CMVideoDimensions get_dimensions(AVCaptureDeviceFormat *format);
+
+static AVCaptureDeviceFormat *find_format(AVCaptureDevice *dev,
+		CMVideoDimensions dims)
+{
+	for (AVCaptureDeviceFormat *format in dev.formats) {
+		if (get_dimensions(format) == dims)
+			return format;
+	}
+
+	return nullptr;
+}
+
+static CMTime convert(media_frames_per_second fps)
+{
+	CMTime time{};
+	time.value = fps.denominator;
+	time.timescale = fps.numerator;
+	time.flags = 1;
+	return time;
+}
+
+static bool lock_device(av_capture *capture, AVCaptureDevice *dev)
+{
+	if (!dev)
+		dev = capture->device;
+
+	NSError *err;
+	if (![dev lockForConfiguration:&err]) {
+		AVLOG(LOG_WARNING, "Could not lock device for configuration: "
+				"%s", err.localizedDescription.UTF8String);
+		return false;
+	}
+
+	capture->device_locked = true;
+	return true;
+}
+
+template <typename Func>
+static void find_formats(media_frames_per_second fps, AVCaptureDevice *dev,
+		const CMVideoDimensions *dims, Func &&f)
+{
+	auto time = convert(fps);
+
+	for (AVCaptureDeviceFormat *format in dev.formats) {
+		if (!(get_dimensions(format) == *dims))
+			continue;
+
+		for (AVFrameRateRange *range in
+				format.videoSupportedFrameRateRanges) {
+			if (CMTimeCompare(range.maxFrameDuration, time) >= 0 &&
+					CMTimeCompare(range.minFrameDuration,
+						time) <= 0)
+				if (f(format))
+					return;
+		}
+	}
+}
+
+static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
+		obs_data_t *settings)
+{
+	clear_capture(capture);
+
+	auto input_format = obs_data_get_int(settings, "input_format");
+	FourCharCode actual_format = input_format;
+
+	SCOPE_EXIT
+	{
+		bool refresh = false;
+		if (input_format != actual_format) {
+			refresh = obs_data_get_autoselect_int(settings,
+					"input_format") != actual_format;
+			obs_data_set_autoselect_int(settings, "input_format",
+					actual_format);
+		} else {
+			refresh = obs_data_has_autoselect_value(settings,
+						"input_format");
+			obs_data_unset_autoselect_value(settings,
+					"input_format");
+		}
+
+		if (refresh)
+			obs_source_update_properties(capture->source);
+	};
+	
+	CMVideoDimensions dims{};
+	if (!get_resolution(settings, dims)) {
+		AVLOG(LOG_WARNING, "Could not load resolution");
+		return false;
+	}
+
+	media_frames_per_second fps{};
+	if (!obs_data_get_frames_per_second(settings, "frame_rate", &fps,
+				nullptr)) {
+		AVLOG(LOG_WARNING, "Could not load frame rate");
+		return false;
+	}
+
+	AVCaptureDeviceFormat *format = nullptr;
+	find_formats(fps, dev, &dims, [&](AVCaptureDeviceFormat *format_)
+	{
+		auto desc = format_.formatDescription;
+		auto fourcc = CMFormatDescriptionGetMediaSubType(desc);
+		if (input_format != INPUT_FORMAT_AUTO && fourcc != input_format)
+			return false;
+
+		actual_format = fourcc;
+		format = format_;
+		return true;
+	});
+
+	if (!format) {
+		AVLOG(LOG_WARNING, "Frame rate is not supported: %g FPS "
+				"(%u/%u)",
+				media_frames_per_second_to_fps(fps),
+				fps.numerator, fps.denominator);
+		return false;
+	}
+
+	if (!lock_device(capture, dev))
+		return false;
+
+	const char *if_name = input_format == INPUT_FORMAT_AUTO ?
+		"Auto" : fourcc_subtype_name(input_format);
+
+#define IF_AUTO(x) (input_format != INPUT_FORMAT_AUTO ? "" : x)
+	AVLOG(LOG_INFO, "Capturing '%s' (%s):\n"
+			"	Resolution: %ux%u\n"
+			"	FPS: %g (%" PRIu32 "/%" PRIu32 ")\n"
+			"	Frame interval: %g" NBSP "s\n"
+			"	Input format: %s%s%s (%s)%s\n"
+			"	Using format: %s",
+			dev.localizedName.UTF8String, dev.uniqueID.UTF8String,
+			dims.width, dims.height,
+			media_frames_per_second_to_fps(fps),
+			fps.numerator, fps.denominator,
+			media_frames_per_second_to_frame_interval(fps),
+			if_name, IF_AUTO(" (actual: "),
+			IF_AUTO(fourcc_subtype_name(actual_format)),
+			AV_FOURCC_STR(actual_format), IF_AUTO(")"),
+			format.description.UTF8String);
+#undef IF_AUTO
+
+	dev.activeFormat = format;
+	dev.activeVideoMinFrameDuration = convert(fps);
+	dev.activeVideoMaxFrameDuration = convert(fps);
+
+	return true;
+}
+
 static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t *settings)
 {
@@ -483,6 +878,10 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 
 	if (obs_data_get_bool(settings, "use_preset")) {
 		if (!init_preset(capture, dev, settings))
+			return;
+
+	} else {
+		if (!init_manual(capture, dev, settings))
 			return;
 	}
 
@@ -662,8 +1061,11 @@ static void av_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "uid", "");
 	obs_data_set_default_bool(settings, "use_preset", true);
+
 	obs_data_set_default_string(settings, "preset",
 			AVCaptureSessionPreset1280x720.UTF8String);
+
+	obs_data_set_default_int(settings, "input_format", INPUT_FORMAT_AUTO);
 }
 
 static bool update_device_list(obs_property_t *list,
@@ -791,6 +1193,356 @@ static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t *settings)
 	return false;
 }
 
+static CMVideoDimensions get_dimensions(AVCaptureDeviceFormat *format)
+{
+	auto desc = format.formatDescription;
+	return CMVideoFormatDescriptionGetDimensions(desc);
+}
+
+using resolutions_t = vector<CMVideoDimensions>;
+
+static resolutions_t enumerate_resolutions(AVCaptureDevice *dev)
+{
+	resolutions_t res;
+
+	if (!dev)
+		return res;
+
+	res.reserve(dev.formats.count + 1);
+
+	for (AVCaptureDeviceFormat *format in dev.formats) {
+		auto dims = get_dimensions(format);
+
+		if (find(begin(res), end(res), dims) == end(res))
+			res.push_back(dims);
+	}
+
+	return res;
+}
+
+static void sort_resolutions(vector<CMVideoDimensions> &resolutions)
+{
+	auto cmp = [](const CMVideoDimensions &a, const CMVideoDimensions &b)
+	{
+		return a.width * a.height > b.width * b.height;
+	};
+
+	sort(begin(resolutions), end(resolutions), cmp);
+}
+
+static void data_set_resolution(obs_data_t *data, const CMVideoDimensions &dims)
+{
+	obs_data_set_int(data, "width",  dims.width);
+	obs_data_set_int(data, "height", dims.height);
+}
+
+static void data_set_resolution(const unique_ptr<obs_data_t> &data,
+		const CMVideoDimensions &dims)
+{
+	data_set_resolution(data.get(), dims);
+}
+
+static bool add_resolution_to_list(vector<CMVideoDimensions> &res,
+		const CMVideoDimensions &dims)
+{
+	if (find(begin(res), end(res), dims) != end(res))
+		return false;
+
+	res.push_back(dims);
+	return true;
+}
+
+static const char *obs_data_get_json(const unique_ptr<obs_data_t> &data)
+{
+	return obs_data_get_json(data.get());
+}
+
+static bool operator==(const CMVideoDimensions &a, const CMVideoDimensions &b)
+{
+	return a.width == b.width && a.height == b.height;
+}
+
+static bool resolution_property_needs_update(obs_property_t *p,
+		const resolutions_t &resolutions)
+{
+	vector<bool> res_found(resolutions.size());
+
+	auto num = obs_property_list_item_count(p);
+	for (size_t i = 1; i < num; i++) { // skip empty entry
+		const char *json = obs_property_list_item_string(p, i);
+		unique_ptr<obs_data_t> buffer{obs_data_create_from_json(json)};
+
+		CMVideoDimensions dims{};
+		if (!get_resolution(buffer.get(), dims))
+			return true;
+
+		auto pos = find(begin(resolutions), end(resolutions), dims);
+		if (pos == end(resolutions))
+			return true;
+
+		res_found[pos - begin(resolutions)] = true;
+	}
+
+	return any_of(begin(res_found), end(res_found),
+			[](bool b) { return !b; });
+}
+
+static bool update_resolution_property(obs_properties_t *props,
+		const config_helper &conf, obs_property_t *p=nullptr)
+{
+	if (!p)
+		p = obs_properties_get(props, "resolution");
+
+	if (!p)
+		return false;
+
+	auto valid_dims = conf.dims();
+	auto resolutions = enumerate_resolutions(conf.dev());
+
+	bool unsupported = true;
+	if (valid_dims)
+		unsupported = add_resolution_to_list(resolutions, *valid_dims);
+
+	bool was_enabled = obs_property_enabled(p);
+	obs_property_set_enabled(p, !!conf.dev());
+
+	if (!resolution_property_needs_update(p, resolutions))
+		return was_enabled != obs_property_enabled(p);
+
+	sort_resolutions(resolutions);
+
+	obs_property_list_clear(p);
+	obs_property_list_add_string(p, "", "{}");
+
+	DStr name;
+	unique_ptr<obs_data_t> buffer{obs_data_create()};
+	for (const CMVideoDimensions &dims : resolutions) {
+		data_set_resolution(buffer, dims);
+		auto json = obs_data_get_json(buffer);
+		dstr_printf(name, "%dx%d", dims.width, dims.height);
+		size_t idx = obs_property_list_add_string(p, name->array, json);
+
+		if (unsupported && valid_dims && dims == *valid_dims)
+			obs_property_list_item_disable(p, idx, true);
+	}
+
+	return true;
+}
+
+static media_frames_per_second convert(CMTime time_)
+{
+	media_frames_per_second res{};
+	clamp(res.numerator,   time_.timescale);
+	clamp(res.denominator, time_.value);
+	return res;
+}
+
+using frame_rates_t = vector<pair<media_frames_per_second,
+				  media_frames_per_second>>;
+static frame_rates_t enumerate_frame_rates(AVCaptureDevice *dev,
+		const CMVideoDimensions *dims = nullptr)
+{
+	frame_rates_t res;
+
+	if (!dev || !dims)
+		return res;
+
+	auto add_unique_frame_rate_range = [&](AVFrameRateRange *range)
+	{
+		auto min = convert(range.maxFrameDuration);
+		auto max = convert(range.minFrameDuration);
+
+		auto pair = make_pair(min, max);
+
+		if (find(begin(res), end(res), pair) != end(res))
+			return;
+
+		res.push_back(pair);
+	};
+
+	for (AVCaptureDeviceFormat *format in dev.formats) {
+		if (!(get_dimensions(format) == *dims))
+			continue;
+
+		for (AVFrameRateRange *range in
+				format.videoSupportedFrameRateRanges) {
+			add_unique_frame_rate_range(range);
+
+			//FIXME remove debug true
+			if (true || CMTimeCompare(range.minFrameDuration,
+						range.maxFrameDuration) != 0) {
+				blog(LOG_WARNING, "Got actual frame rate range:"
+						" %g - %g "
+						"({%lld, %d} - {%lld, %d})",
+						range.minFrameRate,
+						range.maxFrameRate,
+						range.maxFrameDuration.value,
+						range.maxFrameDuration.timescale,
+						range.minFrameDuration.value,
+						range.minFrameDuration.timescale
+						);
+			}
+		}
+	}
+
+	return res;
+}
+
+static bool operator==(const media_frames_per_second &a,
+		const media_frames_per_second &b)
+{
+	return a.numerator == b.numerator && a.denominator == b.denominator;
+}
+
+static bool operator!=(const media_frames_per_second &a,
+		const media_frames_per_second &b)
+{
+	return !(a == b);
+}
+
+static bool frame_rate_property_needs_update(obs_property_t *p,
+		const frame_rates_t &frame_rates)
+{
+	auto fps_num = frame_rates.size();
+	auto num = obs_property_frame_rate_fps_ranges_count(p);
+	if (fps_num != num)
+		return true;
+
+	vector<bool> fps_found(fps_num);
+	for (size_t i = 0; i < num; i++) {
+		auto min_ = obs_property_frame_rate_fps_range_min(p, i);
+		auto max_ = obs_property_frame_rate_fps_range_max(p, i);
+
+		auto it = find(begin(frame_rates), end(frame_rates),
+				make_pair(min_, max_));
+		if (it == end(frame_rates))
+			return true;
+
+		fps_found[it - begin(frame_rates)] = true;
+	}
+
+	return any_of(begin(fps_found), end(fps_found),
+			[](bool b) { return !b; });
+}
+
+static bool update_frame_rate_property(obs_properties_t *props,
+		const config_helper &conf, obs_property_t *p=nullptr)
+{
+	if (!p)
+		p = obs_properties_get(props, "frame_rate");
+
+	if (!p)
+		return false;
+
+	auto valid_dims = conf.dims();
+	auto frame_rates = enumerate_frame_rates(conf.dev(), valid_dims);
+
+	bool was_enabled = obs_property_enabled(p);
+	obs_property_set_enabled(p, !frame_rates.empty());
+
+	if (!frame_rate_property_needs_update(p, frame_rates))
+		return was_enabled != obs_property_enabled(p);
+
+	obs_property_frame_rate_fps_ranges_clear(p);
+	for (auto &pair : frame_rates)
+		obs_property_frame_rate_fps_range_add(p,
+				pair.first, pair.second);
+
+	return true;
+}
+
+static vector<AVCaptureDeviceFormat*> enumerate_formats(AVCaptureDevice *dev,
+		const CMVideoDimensions &dims,
+		const media_frames_per_second &fps)
+{
+	vector<AVCaptureDeviceFormat*> result;
+
+	find_formats(fps, dev, &dims, [&](AVCaptureDeviceFormat *format)
+	{
+		result.push_back(format);
+		return false;
+	});
+
+	return result;
+}
+
+static bool input_format_property_needs_update(obs_property_t *p,
+		const vector<AVCaptureDeviceFormat*> &formats,
+		const FourCharCode *fourcc_)
+{
+	bool fourcc_found = !fourcc_;
+	vector<bool> if_found(formats.size());
+
+	auto num = obs_property_list_item_count(p);
+	for (size_t i = 1; i < num; i++) { // skip auto entry
+		FourCharCode fourcc = obs_property_list_item_int(p, i);
+		fourcc_found = fourcc_found || fourcc == *fourcc_;
+
+		auto pos = find_if(begin(formats), end(formats),
+				[&](AVCaptureDeviceFormat *format)
+		{
+			FourCharCode fourcc_ = 0;
+			format_description_subtype_name(
+				format.formatDescription, &fourcc_);
+			return fourcc_ == fourcc;
+		});
+		if (pos == end(formats))
+			return true;
+
+		if_found[pos - begin(formats)] = true;
+	}
+
+	return fourcc_found || any_of(begin(if_found), end(if_found),
+			[](bool b) { return !b; });
+}
+
+static bool update_input_format_property(obs_properties_t *props,
+		const config_helper &conf, obs_property_t *p=nullptr)
+{
+	if (!p)
+		p = obs_properties_get(props, "input_format");
+
+	if (!p)
+		return false;
+
+	auto update_enabled = [&](bool enabled)
+	{
+		bool was_enabled = obs_property_enabled(p);
+		obs_property_set_enabled(p, enabled);
+		return was_enabled != enabled;
+	};
+
+	auto valid_dims = conf.dims();
+	auto valid_fps  = conf.fps();
+	auto valid_if   = conf.input_format();
+
+	if (!valid_dims || !valid_fps)
+		return update_enabled(false);
+
+	auto formats = enumerate_formats(conf.dev(), *valid_dims, *valid_fps);
+	if (!input_format_property_needs_update(p, formats, valid_if))
+		return update_enabled(!formats.empty());
+
+	while (obs_property_list_item_count(p) > 1)
+		obs_property_list_item_remove(p, 1);
+
+	bool fourcc_found = !valid_if || *valid_if == INPUT_FORMAT_AUTO;
+	for (auto &format : formats) {
+		FourCharCode fourcc = 0;
+		const char *name = format_description_subtype_name(
+				format.formatDescription, &fourcc);
+		obs_property_list_add_int(p, name, fourcc);
+		fourcc_found = fourcc_found || fourcc == *valid_if;
+	}
+
+	if (!fourcc_found) {
+		const char *name = fourcc_subtype_name(*valid_if);
+		obs_property_list_add_int(p, name, *valid_if);
+	}
+
+	return update_enabled(!formats.empty());
+}
+
 static bool properties_device_changed(obs_properties_t *props, obs_property_t *p,
 		obs_data_t *settings)
 {
@@ -805,7 +1557,45 @@ static bool properties_device_changed(obs_properties_t *props, obs_property_t *p
 	bool preset_list_changed = check_preset(dev, p, settings);
 	bool autoselect_changed  = autoselect_preset(dev, settings);
 
-	return preset_list_changed || autoselect_changed || dev_list_updated;
+	config_helper conf{settings};
+	bool res_changed = update_resolution_property(props, conf);
+	bool fps_changed = update_frame_rate_property(props, conf);
+	bool if_changed  = update_input_format_property(props, conf);
+
+	return preset_list_changed || autoselect_changed || dev_list_updated
+		|| res_changed || fps_changed || if_changed;
+}
+
+static bool properties_use_preset_changed(obs_properties_t *props,
+		obs_property_t *, obs_data_t *settings)
+{
+	auto use_preset = obs_data_get_bool(settings, "use_preset");
+
+	config_helper conf{settings};
+
+	bool updated = false;
+	bool visible = false;
+	obs_property_t *p = nullptr;
+
+	auto noop = [](obs_properties_t *, const config_helper&,
+			obs_property_t *)
+	{
+		return false;
+	};
+
+#define UPDATE_PROPERTY(prop, uses_preset, func) \
+	p = obs_properties_get(props, prop); \
+	visible = use_preset == uses_preset; \
+	updated = obs_property_visible(p) != visible || updated; \
+	obs_property_set_visible(p, visible);\
+	updated = func(props, conf, p) || updated;
+
+	UPDATE_PROPERTY("preset",       true,  noop);
+	UPDATE_PROPERTY("resolution",   false, update_resolution_property);
+	UPDATE_PROPERTY("frame_rate",   false, update_frame_rate_property);
+	UPDATE_PROPERTY("input_format", false, update_input_format_property);
+
+	return updated;
 }
 
 static bool properties_preset_changed(obs_properties_t *, obs_property_t *p,
@@ -820,6 +1610,37 @@ static bool properties_preset_changed(obs_properties_t *, obs_property_t *p,
 	return preset_list_changed || autoselect_changed;
 }
 
+static bool properties_resolution_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	config_helper conf{settings};
+
+	bool res_updated = update_resolution_property(props, conf, p);
+	bool fps_updated = update_frame_rate_property(props, conf);
+	bool if_updated  = update_input_format_property(props, conf);
+
+	return res_updated || fps_updated || if_updated;
+}
+
+static bool properties_frame_rate_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	config_helper conf{settings};
+
+	bool fps_updated = update_frame_rate_property(props, conf, p);
+	bool if_updated  = update_input_format_property(props, conf);
+
+	return fps_updated || if_updated;
+}
+
+static bool properties_input_format_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	config_helper conf{settings};
+
+	return update_input_format_property(props, conf, p);
+}
+
 static void add_preset_properties(obs_properties_t *props)
 {
 	obs_property_t *preset_list = obs_properties_add_list(props, "preset",
@@ -832,6 +1653,33 @@ static void add_preset_properties(obs_properties_t *props)
 
 	obs_property_set_modified_callback(preset_list,
 			properties_preset_changed);
+}
+
+static void add_manual_properties(obs_properties_t *props)
+{
+	obs_property_t *resolutions = obs_properties_add_list(props,
+			"resolution", TEXT_RESOLUTION, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+	obs_property_set_enabled(resolutions, false);
+	obs_property_set_modified_callback(resolutions,
+			properties_resolution_changed);
+
+	obs_property_t *frame_rates = obs_properties_add_frame_rate(props,
+			"frame_rate", TEXT_FRAME_RATE);
+	/*obs_property_frame_rate_option_add(frame_rates, "match obs",
+			TEXT_MATCH_OBS);*/
+	obs_property_set_enabled(frame_rates, false);
+	obs_property_set_modified_callback(frame_rates,
+			properties_frame_rate_changed);
+
+	obs_property_t *input_format = obs_properties_add_list(props,
+			"input_format", TEXT_INPUT_FORMAT,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(input_format, TEXT_AUTO,
+			INPUT_FORMAT_AUTO);
+	obs_property_set_enabled(input_format, false);
+	obs_property_set_modified_callback(input_format,
+			properties_input_format_changed);
 }
 
 static obs_properties_t *av_capture_properties(void*)
@@ -854,10 +1702,12 @@ static obs_properties_t *av_capture_properties(void*)
 
 	obs_property_t *use_preset = obs_properties_add_bool(props,
 			"use_preset", TEXT_USE_PRESET);
-	// TODO: implement manual configuration
-	obs_property_set_enabled(use_preset, false);
+	obs_property_set_modified_callback(use_preset,
+			properties_use_preset_changed);
 
 	add_preset_properties(props);
+
+	add_manual_properties(props);
 
 	obs_properties_add_bool(props, "buffering",
 			obs_module_text("Buffering"));
@@ -893,6 +1743,8 @@ static void switch_device(av_capture *capture, NSString *uid,
 
 static void update_preset(av_capture *capture, obs_data_t *settings)
 {
+	unlock_device(capture);
+
 	NSString *preset = get_string(settings, "preset");
 	if (![capture->device supportsAVCaptureSessionPreset:preset]) {
 		AVLOG(LOG_WARNING, "Preset %s not available",
@@ -906,6 +1758,12 @@ static void update_preset(av_capture *capture, obs_data_t *settings)
 	start_capture(capture);
 }
 
+static void update_manual(av_capture *capture, obs_data_t *settings)
+{
+	if (init_manual(capture, capture->device, settings))
+		start_capture(capture);
+}
+
 static void av_capture_update(void *data, obs_data_t *settings)
 {
 	auto capture = static_cast<av_capture*>(data);
@@ -915,8 +1773,11 @@ static void av_capture_update(void *data, obs_data_t *settings)
 	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
 		return switch_device(capture, uid, settings);
 
-	if (obs_data_get_bool(settings, "use_preset"))
+	if (obs_data_get_bool(settings, "use_preset")) {
 		update_preset(capture, settings);
+	} else {
+		update_manual(capture, settings);
+	}
 
 	av_capture_enable_buffering(capture,
 			obs_data_get_bool(settings, "buffering"));
