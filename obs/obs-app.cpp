@@ -1211,6 +1211,83 @@ static void move_to_xdg(void)
 }
 #endif
 
+static void update_ffmpeg_output(const char *path)
+{
+	ConfigFile config;
+
+	if (config.Open(path, CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS)
+		return;
+
+	if (config_has_user_value(config, "AdvOut", "FFOutputToFile"))
+		return;
+
+	const char *url = config_get_string(config, "AdvOut", "FFURL");
+	if (!url)
+		return;
+
+	bool isActualURL = strstr(url, "://") != nullptr;
+	if (isActualURL)
+		return;
+
+	string urlStr = url;
+	string extension;
+
+	for (size_t i = urlStr.length(); i > 0; i--) {
+		size_t idx = i - 1;
+
+		if (urlStr[idx] == '.') {
+			extension = &urlStr[i];
+		}
+
+		if (urlStr[idx] == '\\' || urlStr[idx] == '/') {
+			urlStr[idx] = 0;
+			break;
+		}
+	}
+
+	if (urlStr.empty() || extension.empty())
+		return;
+
+	config_remove_value(config, "AdvOut", "FFURL");
+	config_set_string(config, "AdvOut", "FFFilePath", urlStr.c_str());
+	config_set_string(config, "AdvOut", "FFExtension", extension.c_str());
+	config_set_bool(config, "AdvOut", "FFOutputToFile", true);
+	config_save(config);
+}
+
+static void update_ffmpeg_outputs(void)
+{
+	char path[512];
+	int pathlen = GetConfigPath(path, 512, "obs-studio/basic/profiles");
+
+	if (pathlen <= 0)
+		return;
+	if (!os_file_exists(path))
+		return;
+
+	os_dir_t *dir = os_opendir(path);
+	if (!dir)
+		return;
+
+	struct os_dirent *ent = os_readdir(dir);
+
+	while (ent) {
+		if (ent->directory) {
+			strcat(path, "/");
+			strcat(path, ent->d_name);
+			strcat(path, "/basic.ini");
+
+			update_ffmpeg_output(path);
+
+			path[pathlen] = 0;
+		}
+
+		ent = os_readdir(dir);
+	}
+
+	os_closedir(dir);
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
@@ -1243,6 +1320,8 @@ int main(int argc, char *argv[])
 			os_file_exists(BASE_PATH "/obs_portable_mode.txt");
 	}
 #endif
+
+	update_ffmpeg_outputs();
 
 	fstream logFile;
 
