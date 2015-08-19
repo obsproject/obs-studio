@@ -300,6 +300,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecTrack2,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack3,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack4,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFType,         COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFURL,          EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFFormat,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVBitrate,     SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -1172,6 +1174,10 @@ static void SelectEncoder(QComboBox *combo, const char *name, int id)
 
 void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 {
+	bool saveFile = config_get_bool(main->Config(), "AdvOut",
+			"FFOutputToFile");
+	const char *path = config_get_string(main->Config(), "AdvOut",
+			"FFFilePath");
 	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
 	const char *format = config_get_string(main->Config(), "AdvOut",
 			"FFFormat");
@@ -1200,7 +1206,9 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	const char *aEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFACustom");
 
-	ui->advOutFFURL->setText(url);
+	ui->advOutFFType->setCurrentIndex(saveFile ? 0 : 1);
+	ui->advOutFFRecPath->setText(QT_UTF8(path));
+	ui->advOutFFURL->setText(QT_UTF8(url));
 	SelectFormat(ui->advOutFFFormat, format, mimeType);
 	ui->advOutFFVBitrate->setValue(videoBitrate);
 	ui->advOutFFUseRescale->setChecked(rescale);
@@ -2008,11 +2016,23 @@ void OBSBasicSettings::SaveFormat(QComboBox *combo)
 				desc.name);
 		config_set_string(main->Config(), "AdvOut", "FFFormatMimeType",
 				desc.mimeType);
+
+		const char *ext = ff_format_desc_extensions(desc.desc);
+		string extStr = ext;
+
+		char *comma = strchr(&extStr[0], ',');
+		if (comma)
+			comma = 0;
+
+		config_set_string(main->Config(), "AdvOut", "FFExtension",
+				extStr.c_str());
 	} else {
 		config_set_string(main->Config(), "AdvOut", "FFFormat",
 				nullptr);
 		config_set_string(main->Config(), "AdvOut", "FFFormatMimeType",
 				nullptr);
+
+		config_remove_value(main->Config(), "AdvOut", "FFExtension");
 	}
 }
 
@@ -2078,6 +2098,9 @@ void OBSBasicSettings::SaveOutputSettings()
 			(ui->advOutRecTrack3->isChecked() ? (1<<2) : 0) |
 			(ui->advOutRecTrack4->isChecked() ? (1<<3) : 0));
 
+	config_set_bool(main->Config(), "AdvOut", "FFOutputToFile",
+			ui->advOutFFType->currentIndex() == 0 ? true : false);
+	SaveEdit(ui->advOutFFRecPath, "AdvOut", "FFFilePath");
 	SaveEdit(ui->advOutFFURL, "AdvOut", "FFURL");
 	SaveFormat(ui->advOutFFFormat);
 	SaveSpinBox(ui->advOutFFVBitrate, "AdvOut", "FFVBitrate");
@@ -2387,19 +2410,15 @@ void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 
 void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
-	QString filter;
-	filter += QTStr("Basic.Settings.Output.Adv.FFmpeg.SaveFilter.Common");
-	filter += " (*.avi *.mp4 *.flv *.ts *.mkv *.wav *.aac);;";
-	filter += QTStr("Basic.Settings.Output.Adv.FFmpeg.SaveFilter.All");
-	filter += " (*.*)";
-
-	QString file = QFileDialog::getSaveFileName(this,
-			QTStr("Basic.Settings.Output.SelectFile"),
-			ui->simpleOutputPath->text(), filter);
-	if (file.isEmpty())
+	QString dir = QFileDialog::getExistingDirectory(this,
+			QTStr("Basic.Settings.Output.SelectDirectory"),
+			ui->advOutRecPath->text(),
+			QFileDialog::ShowDirsOnly |
+			QFileDialog::DontResolveSymlinks);
+	if (dir.isEmpty())
 		return;
 
-	ui->advOutFFURL->setText(file);
+	ui->advOutFFRecPath->setText(dir);
 }
 
 void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)

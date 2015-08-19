@@ -298,6 +298,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	OBSEncoder             h264Streaming;
 	OBSEncoder             h264Recording;
 
+	bool                   ffmpegOutput;
 	bool                   ffmpegRecording;
 	bool                   useStreamEncoder;
 
@@ -351,7 +352,9 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	const char *recordEncoder = config_get_string(main->Config(), "AdvOut",
 			"RecEncoder");
 
-	ffmpegRecording = astrcmpi(recType, "FFmpeg") == 0;
+	ffmpegOutput = astrcmpi(recType, "FFmpeg") == 0;
+	ffmpegRecording = ffmpegOutput &&
+		config_get_bool(main->Config(), "AdvOut", "FFOutputToFile");
 	useStreamEncoder = astrcmpi(recordEncoder, "none") == 0;
 
 	OBSData streamEncSettings = GetDataFromJsonFile("streamEncoder.json");
@@ -363,7 +366,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create stream output (advanced output)";
 	obs_output_release(streamOutput);
 
-	if (ffmpegRecording) {
+	if (ffmpegOutput) {
 		fileOutput = obs_output_create("ffmpeg_output",
 				"adv_ffmpeg_output", nullptr, nullptr);
 		if (!fileOutput)
@@ -447,7 +450,7 @@ inline void AdvancedOutput::UpdateRecordingSettings()
 void AdvancedOutput::Update()
 {
 	UpdateStreamSettings();
-	if (!useStreamEncoder && !ffmpegRecording)
+	if (!useStreamEncoder && !ffmpegOutput)
 		UpdateRecordingSettings();
 	UpdateAudioSettings();
 }
@@ -649,7 +652,7 @@ void AdvancedOutput::SetupOutputs()
 
 	SetupStreaming();
 
-	if (ffmpegRecording)
+	if (ffmpegOutput)
 		SetupFFmpeg();
 	else
 		SetupRecording();
@@ -667,7 +670,7 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
 {
 	if (!useStreamEncoder ||
-	    (!ffmpegRecording && !obs_output_active(fileOutput))) {
+	    (!ffmpegOutput && !obs_output_active(fileOutput))) {
 		UpdateStreamSettings();
 	}
 
@@ -697,8 +700,11 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 bool AdvancedOutput::StartRecording()
 {
+	const char *path;
+	const char *format;
+
 	if (!useStreamEncoder) {
-		if (!ffmpegRecording) {
+		if (!ffmpegOutput) {
 			UpdateRecordingSettings();
 		}
 	} else if (!obs_output_active(streamOutput)) {
@@ -710,11 +716,11 @@ bool AdvancedOutput::StartRecording()
 	if (!Active())
 		SetupOutputs();
 
-	if (!ffmpegRecording) {
-		const char *path = config_get_string(main->Config(),
-				"AdvOut", "RecFilePath");
-		const char *format = config_get_string(main->Config(),
-				"AdvOut", "RecFormat");
+	if (!ffmpegOutput || ffmpegRecording) {
+		path = config_get_string(main->Config(), "AdvOut",
+				ffmpegRecording ? "FFFilePath" : "RecFilePath");
+		format = config_get_string(main->Config(), "AdvOut",
+				ffmpegRecording ? "FFExtension" : "RecFormat");
 
 		os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -737,7 +743,9 @@ bool AdvancedOutput::StartRecording()
 		strPath += GenerateTimeDateFilename(format);
 
 		obs_data_t *settings = obs_data_create();
-		obs_data_set_string(settings, "path", strPath.c_str());
+		obs_data_set_string(settings,
+				ffmpegRecording ? "url" : "path",
+				strPath.c_str());
 
 		obs_output_update(fileOutput, settings);
 
