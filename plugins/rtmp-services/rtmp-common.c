@@ -2,6 +2,8 @@
 #include <obs-module.h>
 #include <jansson.h>
 
+#include "rtmp-format-ver.h"
+
 struct rtmp_common {
 	char *service;
 	char *server;
@@ -129,6 +131,8 @@ static json_t *open_json_file(const char *file)
 	char         *file_data = os_quick_read_utf8_file(file);
 	json_error_t error;
 	json_t       *root;
+	json_t       *list;
+	int          format_ver;
 
 	if (!file_data)
 		return NULL;
@@ -143,7 +147,28 @@ static json_t *open_json_file(const char *file)
 		return NULL;
 	}
 
-	return root;
+	format_ver = get_int_val(root, "format_version");
+
+	if (format_ver != RTMP_SERVICES_FORMAT_VERSION) {
+		blog(LOG_WARNING, "rtmp-common.c: [open_json_file] "
+		                  "Wrong format version (%d), expected %d",
+				  format_ver, RTMP_SERVICES_FORMAT_VERSION);
+		json_decref(root);
+		return NULL;
+	}
+
+	list = json_object_get(root, "services");
+	if (list)
+		json_incref(list);
+	json_decref(root);
+
+	if (!list) {
+		blog(LOG_WARNING, "rtmp-common.c: [open_json_file] "
+		                  "No services list");
+		return NULL;
+	}
+
+	return list;
 }
 
 static void build_service_list(obs_property_t *list, json_t *root,

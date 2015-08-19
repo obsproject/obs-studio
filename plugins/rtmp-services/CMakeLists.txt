@@ -7,6 +7,9 @@ set(rtmp-services_SOURCES
 	rtmp-custom.c
 	rtmp-services-main.c)
 
+set(rtmp-services_HEADERS
+	rtmp-format-ver.h)
+
 set(RTMP_SERVICES_URL
 	"https://obsproject.com/obs2_update/rtmp-services"
 	CACHE STRING "Default services package URL")
@@ -20,6 +23,7 @@ set(rtmp-services_config_HEADERS
 
 add_library(rtmp-services MODULE
 	${rtmp-services_SOURCES}
+	${rtmp-services_HEADERS}
 	${rtmp-services_config_HEADERS})
 target_link_libraries(rtmp-services
 	libobs
