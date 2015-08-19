@@ -6,6 +6,7 @@ endif()
 add_subdirectory(glad)
 add_subdirectory(ipc-util)
 add_subdirectory(libff)
+add_subdirectory(file-updater)
 
 find_package(Jansson 2.5 QUIET)
 
