@@ -27,6 +27,7 @@ add_library(rtmp-services MODULE
 	${rtmp-services_config_HEADERS})
 target_link_libraries(rtmp-services
 	libobs
+	file-updater
 	${OBS_JANSSON_IMPORT})
 
 target_include_directories(rtmp-services
