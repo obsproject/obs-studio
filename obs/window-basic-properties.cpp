@@ -101,7 +101,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 				OBSBasicProperties::DrawPreview, this);
 	};
 
-	connect(preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	connect(preview.data(), &OBSQTDisplay::DisplayCreated, addDrawCallback);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
