@@ -487,6 +487,11 @@ typedef void (*profile_entry_print_func)(profiler_snapshot_entry_t *entry,
 		struct dstr *indent_buffer, struct dstr *output_buffer,
 		unsigned indent, uint64_t active, uint64_t parent_calls);
 
+/* UTF-8 characters */
+#define VPIPE_RIGHT " \xe2\x94\xa3"
+#define VPIPE       " \xe2\x95\x83"
+#define DOWN_RIGHT  " \xe2\x94\x97"
+
 static void make_indent_string(struct dstr *indent_buffer, unsigned indent,
 		uint64_t active)
 {
@@ -501,9 +506,9 @@ static void make_indent_string(struct dstr *indent_buffer, unsigned indent,
 		const char *fragment = "";
 		bool last = i + 1 == indent;
 		if (active & ((uint64_t)1 << i))
-			fragment = last ? " ┣" : " ┃";
+			fragment = last ? VPIPE_RIGHT : VPIPE;
 		else
-			fragment = last ? " ┗" : "  ";
+			fragment = last ? DOWN_RIGHT : "  ";
 		
 		dstr_cat(indent_buffer, fragment);
 	}
