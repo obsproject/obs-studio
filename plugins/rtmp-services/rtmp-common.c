@@ -171,6 +171,28 @@ static json_t *open_json_file(const char *file)
 	return list;
 }
 
+static json_t *open_services_file(void)
+{
+	char *file;
+	json_t *root = NULL;
+
+	file = obs_module_config_path("services.json");
+	if (file) {
+		root = open_json_file(file);
+		bfree(file);
+	}
+
+	if (!root) {
+		file = obs_module_file("services.json");
+		if (file) {
+			root = open_json_file(file);
+			bfree(file);
+		}
+	}
+
+	return root;
+}
+
 static void build_service_list(obs_property_t *list, json_t *root,
 		bool show_all, const char *cur_service)
 {
@@ -271,14 +293,11 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t   *p;
-	char             *file;
+	json_t           *root;
 
-	file = obs_module_file("services.json");
-	if (file) {
-		json_t *root = open_json_file(file);
+	root = open_services_file();
+	if (root)
 		obs_properties_set_param(ppts, root, properties_data_destroy);
-		bfree(file);
-	}
 
 	p = obs_properties_add_list(ppts, "service",
 			obs_module_text("Service"),
@@ -364,17 +383,12 @@ static void rtmp_common_apply_settings(void *data,
 		obs_data_t *video_settings, obs_data_t *audio_settings)
 {
 	struct rtmp_common *service = data;
-	char               *file;
+	json_t             *root = open_services_file();
 
-	file = obs_module_file("services.json");
-	if (file) {
-		json_t *root = open_json_file(file);
-		if (root) {
-			initialize_output(service, root, video_settings,
-					audio_settings);
-			json_decref(root);
-		}
-		bfree(file);
+	if (root) {
+		initialize_output(service, root, video_settings,
+				audio_settings);
+		json_decref(root);
 	}
 }
 
