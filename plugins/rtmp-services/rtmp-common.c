@@ -54,6 +54,15 @@ static inline const char *get_string_val(json_t *service, const char *key)
 	return json_string_value(str_val);
 }
 
+static inline int get_int_val(json_t *service, const char *key)
+{
+	json_t *integer_val = json_object_get(service, key);
+	if (!integer_val || !json_is_integer(integer_val))
+		return 0;
+
+	return (int)json_integer_value(integer_val);
+}
+
 static inline bool get_bool_val(json_t *service, const char *key)
 {
 	json_t *bool_val = json_object_get(service, key);
