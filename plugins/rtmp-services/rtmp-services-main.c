@@ -25,11 +25,11 @@ static bool confirm_service_file(void *param, struct file_download_data *file)
 		obs_data_t *data;
 		int format_version;
 
-		data = obs_data_create_from_json(file->buffer.array);
+		data = obs_data_create_from_json((char*)file->buffer.array);
 		if (!data)
 			return false;
 
-		format_version = obs_data_get_int(data, "format_version");
+		format_version = (int)obs_data_get_int(data, "format_version");
 		obs_data_release(data);
 
 		if (format_version != RTMP_SERVICES_FORMAT_VERSION)
