@@ -44,6 +44,9 @@ EXPORT size_t os_fread_utf8(FILE *file, char **pstr);
 EXPORT char *os_quick_read_utf8_file(const char *path);
 EXPORT bool os_quick_write_utf8_file(const char *path, const char *str,
 		size_t len, bool marker);
+EXPORT bool os_quick_write_utf8_file_safe(const char *path, const char *str,
+		size_t len, bool marker, const char *temp_ext,
+		const char *backup_ext);
 EXPORT char *os_quick_read_mbs_file(const char *path);
 EXPORT bool os_quick_write_mbs_file(const char *path, const char *str,
 		size_t len);
