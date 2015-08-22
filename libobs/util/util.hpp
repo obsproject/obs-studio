@@ -90,6 +90,12 @@ public:
 		return config_save(config);
 	}
 
+	inline int SaveSafe(const char *temp_ext,
+			const char *backup_ext = nullptr)
+	{
+		return config_save_safe(config, temp_ext, backup_ext);
+	}
+
 	inline void Close()
 	{
 		config_close(config);

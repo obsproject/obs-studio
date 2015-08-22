@@ -348,6 +348,53 @@ int config_save(config_t *config)
 	return CONFIG_SUCCESS;
 }
 
+int config_save_safe(config_t *config, const char *temp_ext,
+		const char *backup_ext)
+{
+	struct dstr temp_file = {0};
+	struct dstr backup_file = {0};
+	char *file = config->file;
+	int ret;
+
+	if (!temp_ext || !*temp_ext) {
+		blog(LOG_ERROR, "config_save_safe: invalid "
+		                "temporary extension specified");
+		return CONFIG_ERROR;
+	}
+
+	dstr_copy(&temp_file, config->file);
+	if (*temp_ext != '.')
+		dstr_cat(&temp_file, ".");
+	dstr_cat(&temp_file, temp_ext);
+
+	config->file = temp_file.array;
+	ret = config_save(config);
+	config->file = file;
+
+	if (ret != CONFIG_SUCCESS) {
+		goto cleanup;
+	}
+
+	if (backup_ext && *backup_ext) {
+		dstr_copy(&backup_file, config->file);
+		if (*backup_ext != '.')
+			dstr_cat(&backup_file, ".");
+		dstr_cat(&backup_file, backup_ext);
+
+		os_unlink(backup_file.array);
+		os_rename(file, backup_file.array);
+	} else {
+		os_unlink(file);
+	}
+
+	os_rename(temp_file.array, file);
+
+cleanup:
+	dstr_free(&temp_file);
+	dstr_free(&backup_file);
+	return ret;
+}
+
 void config_close(config_t *config)
 {
 	struct config_section *defaults, *sections;
