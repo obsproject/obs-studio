@@ -332,7 +332,8 @@ static void update_remote_version(struct update_info *info, int cur_version)
 		return;
 	}
 
-	info->remote_package = obs_data_create_from_json(info->file_data.array);
+	info->remote_package = obs_data_create_from_json(
+			(char*)info->file_data.array);
 	if (!info->remote_package) {
 		warn("Failed to initialize remote package json");
 		return;
