@@ -1069,12 +1069,10 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	int ret = GetProfilePath(encoderJsonPath, sizeof(encoderJsonPath),
 			path);
 	if (ret > 0) {
-		BPtr<char> jsonData = os_quick_read_utf8_file(encoderJsonPath);
-		if (!!jsonData) {
-			obs_data_t *data = obs_data_create_from_json(jsonData);
-			obs_data_apply(settings, data);
-			obs_data_release(data);
-		}
+		obs_data_t *data = obs_data_create_from_json_file_safe(
+				encoderJsonPath, "bak");
+		obs_data_apply(settings, data);
+		obs_data_release(data);
 	}
 
 	view = new OBSPropertiesView(settings, encoder,
@@ -1985,11 +1983,8 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 	if (ret > 0) {
 		obs_data_t *settings = view->GetSettings();
 		if (settings) {
-			const char *json = obs_data_get_json(settings);
-			if (json && *json) {
-				os_quick_write_utf8_file(full_path, json,
-						strlen(json), false);
-			}
+			obs_data_save_json_safe(settings, full_path,
+					"tmp", "bak");
 		}
 	}
 }
@@ -2247,8 +2242,8 @@ void OBSBasicSettings::SaveSettings()
 	if (videoChanged || advancedChanged)
 		main->ResetVideo();
 
-	config_save(main->Config());
-	config_save(GetGlobalConfig());
+	config_save_safe(main->Config(), "tmp", nullptr);
+	config_save_safe(GetGlobalConfig(), "tmp", nullptr);
 	main->SaveProject();
 
 	if (Changed()) {

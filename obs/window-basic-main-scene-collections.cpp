@@ -48,11 +48,8 @@ template <typename Func> static void EnumSceneCollections(Func &&cb)
 		if (glob->gl_pathv[i].directory)
 			continue;
 
-		BPtr<char> fileData = os_quick_read_utf8_file(filePath);
-		if (!fileData)
-			continue;
-
-		obs_data_t *data = obs_data_create_from_json(fileData);
+		obs_data_t *data = obs_data_create_from_json_file_safe(filePath,
+				"bak");
 		std::string name = obs_data_get_string(data, "name");
 
 		/* if no name found, use the file name as the name

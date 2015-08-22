@@ -308,16 +308,9 @@ void OBSBasic::Save(const char *file)
 {
 	obs_data_array_t *sceneOrder = SaveSceneListOrder();
 	obs_data_t *saveData  = GenerateSaveData(sceneOrder);
-	const char *jsonData = obs_data_get_json(saveData);
 
-	if (!!jsonData) {
-		/* TODO: maybe a message box here? */
-		bool success = os_quick_write_utf8_file(file, jsonData,
-				strlen(jsonData), false);
-		if (!success)
-			blog(LOG_ERROR, "Could not save scene data to %s",
-					file);
-	}
+	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+		blog(LOG_ERROR, "Could not save scene data to %s", file);
 
 	obs_data_release(saveData);
 	obs_data_array_release(sceneOrder);
@@ -450,23 +443,23 @@ void OBSBasic::CleanupUnusedSources()
 
 void OBSBasic::Load(const char *file)
 {
-	if (!file) {
+	if (!file || !os_file_exists(file)) {
 		blog(LOG_ERROR, "Could not find file %s", file);
-		return;
-	}
-
-	BPtr<char> jsonData = os_quick_read_utf8_file(file);
-	if (!jsonData) {
-		CreateDefaultScene();
-		SaveProject();
 		return;
 	}
 
 	disableSaving++;
 
+	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	if (!data) {
+		disableSaving--;
+		CreateDefaultScene();
+		SaveProject();
+		return;
+	}
+
 	ClearSceneData();
 
-	obs_data_t       *data       = obs_data_create_from_json(jsonData);
 	obs_data_array_t *sceneOrder = obs_data_get_array(data, "scene_order");
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
 	const char       *sceneName = obs_data_get_string(data,
@@ -535,9 +528,8 @@ void OBSBasic::SaveService()
 	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
-	const char *json = obs_data_get_json(data);
-
-	os_quick_write_utf8_file(serviceJsonPath, json, strlen(json), false);
+	if (!obs_data_save_json_safe(data, serviceJsonPath, "tmp", "bak"))
+		blog(LOG_WARNING, "Failed to save service");
 
 	obs_data_release(settings);
 	obs_data_release(data);
@@ -553,11 +545,8 @@ bool OBSBasic::LoadService()
 	if (ret <= 0)
 		return false;
 
-	BPtr<char> jsonText = os_quick_read_utf8_file(serviceJsonPath);
-	if (!jsonText)
-		return false;
-
-	obs_data_t *data = obs_data_create_from_json(jsonText);
+	obs_data_t *data = obs_data_create_from_json_file_safe(serviceJsonPath,
+			"bak");
 
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
@@ -632,7 +621,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 		track = 1ULL << (track - 1);
 		config_set_uint(basicConfig, "AdvOut", "RecTracks", track);
 		config_remove_value(basicConfig, "AdvOut", "RecTrackIndex");
-		config_save(basicConfig);
+		config_save_safe(basicConfig, "tmp", nullptr);
 	}
 
 	/* ----------------------------------------------------- */
@@ -768,7 +757,7 @@ bool OBSBasic::InitBasicConfig()
 				"Basic", "Profile");
 
 		config_set_string(basicConfig, "General", "Name", curName);
-		basicConfig.Save();
+		basicConfig.SaveSafe("tmp");
 	}
 
 	return InitBasicConfigDefaults();
@@ -1152,7 +1141,7 @@ OBSBasic::~OBSBasic()
 			lastGeom.y());
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
-	config_save(App()->GlobalConfig());
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -1669,7 +1658,7 @@ void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 			long long t = (long long)time(nullptr);
 			config_set_int(App()->GlobalConfig(), "General",
 					"LastUpdateCheck", t);
-			config_save(App()->GlobalConfig());
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 		}
 	} else {
 		blog(LOG_WARNING, "Bad JSON file received from server");

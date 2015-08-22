@@ -225,7 +225,7 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			newDir.c_str());
 
 	config_set_string(config, "General", "Name", newName.c_str());
-	config.Save();
+	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	RefreshProfiles();
@@ -237,7 +237,7 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			create_new ? "clean" : "duplicate", newDir.c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 
-	config_save(App()->GlobalConfig());
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 	return true;
 }
@@ -424,7 +424,7 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	ResetProfileData();
 	DeleteProfile(oldName.c_str(), oldDir.c_str());
 	RefreshProfiles();
-	config_save(App()->GlobalConfig());
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 	blog(LOG_INFO, "Switched to profile '%s' (%s)",
 			newName.c_str(), newDir);
@@ -475,7 +475,7 @@ void OBSBasic::ChangeProfile()
 	InitBasicConfigDefaults();
 	ResetProfileData();
 	RefreshProfiles();
-	config_save(App()->GlobalConfig());
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 
 	blog(LOG_INFO, "Switched to profile '%s' (%s)",
