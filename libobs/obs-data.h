@@ -63,11 +63,15 @@ enum obs_data_number_type {
 EXPORT obs_data_t *obs_data_create();
 EXPORT obs_data_t *obs_data_create_from_json(const char *json_string);
 EXPORT obs_data_t *obs_data_create_from_json_file(const char *json_file);
+EXPORT obs_data_t *obs_data_create_from_json_file_safe(const char *json_file,
+		const char *backup_ext);
 EXPORT void obs_data_addref(obs_data_t *data);
 EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
 EXPORT bool obs_data_save_json(obs_data_t *data, const char *file);
+EXPORT bool obs_data_save_json_safe(obs_data_t *data, const char *file,
+		const char *temp_ext, const char *backup_ext);
 
 EXPORT void obs_data_apply(obs_data_t *target, obs_data_t *apply_data);
 

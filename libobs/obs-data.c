@@ -17,6 +17,7 @@
 
 #include "util/bmem.h"
 #include "util/threading.h"
+#include "util/dstr.h"
 #include "util/darray.h"
 #include "util/platform.h"
 #include "graphics/vec2.h"
@@ -655,6 +656,37 @@ obs_data_t *obs_data_create_from_json_file(const char *json_file)
 	return data;
 }
 
+obs_data_t *obs_data_create_from_json_file_safe(const char *json_file,
+		const char *backup_ext)
+{
+	obs_data_t *file_data = obs_data_create_from_json_file(json_file);
+	if (!file_data && backup_ext && *backup_ext) {
+		struct dstr backup_file = {0};
+
+		dstr_copy(&backup_file, json_file);
+		if (*backup_ext != '.')
+			dstr_cat(&backup_file, ".");
+		dstr_cat(&backup_file, backup_ext);
+
+		if (os_file_exists(backup_file.array)) {
+			blog(LOG_WARNING, "obs-data.c: "
+					"[obs_data_create_from_json_file_safe] "
+					"attempting backup file");
+
+			/* delete current file if corrupt to prevent it from
+			 * being backed up again */
+			os_unlink(json_file);
+			os_rename(backup_file.array, json_file);
+
+			file_data = obs_data_create_from_json_file(json_file);
+		}
+
+		dstr_free(&backup_file);
+	}
+
+	return file_data;
+}
+
 void obs_data_addref(obs_data_t *data)
 {
 	if (data)
@@ -706,6 +738,19 @@ bool obs_data_save_json(obs_data_t *data, const char *file)
 	if (json && *json) {
 		return os_quick_write_utf8_file(file, json, strlen(json),
 				false);
+	}
+
+	return false;
+}
+
+bool obs_data_save_json_safe(obs_data_t *data, const char *file,
+		const char *temp_ext, const char *backup_ext)
+{
+	const char *json = obs_data_get_json(data);
+
+	if (json && *json) {
+		return os_quick_write_utf8_file_safe(file, json, strlen(json),
+				false, temp_ext, backup_ext);
 	}
 
 	return false;
