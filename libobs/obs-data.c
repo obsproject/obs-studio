@@ -699,6 +699,18 @@ const char *obs_data_get_json(obs_data_t *data)
 	return data->json;
 }
 
+bool obs_data_save_json(obs_data_t *data, const char *file)
+{
+	const char *json = obs_data_get_json(data);
+
+	if (json && *json) {
+		return os_quick_write_utf8_file(file, json, strlen(json),
+				false);
+	}
+
+	return false;
+}
+
 static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 {
 	if (!data) return NULL;

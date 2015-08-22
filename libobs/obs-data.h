@@ -67,6 +67,7 @@ EXPORT void obs_data_addref(obs_data_t *data);
 EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
+EXPORT bool obs_data_save_json(obs_data_t *data, const char *file);
 
 EXPORT void obs_data_apply(obs_data_t *target, obs_data_t *apply_data);
 
