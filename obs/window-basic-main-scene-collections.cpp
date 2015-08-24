@@ -310,6 +310,8 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 	oldFile.insert(0, path);
 	oldFile += ".json";
 	os_unlink(oldFile.c_str());
+	oldFile += ".bak";
+	os_unlink(oldFile.c_str());
 
 	Load(newPath.c_str());
 	RefreshSceneCollections();
