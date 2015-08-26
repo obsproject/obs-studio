@@ -93,6 +93,8 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 				adata[c][i] = lower_threshold + multiplier * under;
 		}
 	}
+	
+	bfree(adata);
 
 	return audio;
 }
