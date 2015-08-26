@@ -105,8 +105,8 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_UPPER_THRESHOLD, 0.5f);
-	obs_data_set_default_double(s, S_LOWER_THRESHOLD, 0.0f);
+	obs_data_set_default_double(s, S_UPPER_THRESHOLD, VOL_MAX);
+	obs_data_set_default_double(s, S_LOWER_THRESHOLD, VOL_MIN);
 	obs_data_set_default_double(s, S_MULTIPLIER, 1.0f);
 }
 
