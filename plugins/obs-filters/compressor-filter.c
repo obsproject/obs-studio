@@ -55,8 +55,8 @@ static void compressor_update(void *data, obs_data_t *s)
 	multiplier = (float)obs_data_get_double(s, S_MULTIPLIER);
 
 	cd->channels = audio_output_get_channels(obs_get_audio());
-	cd->upper_threshold = upper_threshold;
-	cd->lower_threshold = lower_threshold;
+	cd->upper_threshold = db_to_mul(upper_threshold);
+	cd->lower_threshold = db_to_mul(lower_threshold);
 	cd->multiplier = multiplier;
 }
 
@@ -96,9 +96,9 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_UPPER_THRESHOLD, -7.0f);
-	obs_data_set_default_double(s, S_LOWER_THRESHOLD, -10.0f);
-	obs_data_set_default_double(s, S_MULTIPLIER, 0.25f);
+	obs_data_set_default_double(s, S_UPPER_THRESHOLD, VOL_MAX);
+	obs_data_set_default_double(s, S_LOWER_THRESHOLD, VOL_MIN);
+	obs_data_set_default_double(s, S_MULTIPLIER, 1.0f);
 }
 
 static obs_properties_t *compressor_properties(void *data)
