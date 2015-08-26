@@ -78,23 +78,18 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 	const float lower_threshold = cd->lower_threshold;
 	const float multiplier = cd->multiplier;
 	
-	float **adata = bzalloc(channels * sizeof(float*));
+	const size_t frame_count = audio->frames;
 	for (size_t c = 0; c < channels; ++c) {
-		adata[c] = (float*)audio->data[c];
-	}
-
-	for (size_t i = 0; i < audio->frames; i++) {
-		for (size_t c = 0; c < channels; ++c) {
-			float over = adata[c][i] - upper_threshold;
-			float under = adata[c][i] - lower_threshold;
+		float *adata = (float*)audio->data[c];
+		for (size_t i = 0; i < frame_count; i++) {
+			float over = adata[i] - upper_threshold;
+			float under = adata[i] - lower_threshold;
 			if (over > 0.0f)
-				adata[c][i] = upper_threshold + multiplier * over;
+				adata[i] = upper_threshold + multiplier * over;
 			if (under < 0.0f)
-				adata[c][i] = lower_threshold + multiplier * under;
+				adata[i] = lower_threshold + multiplier * under;
 		}
 	}
-	
-	bfree(adata);
 
 	return audio;
 }
