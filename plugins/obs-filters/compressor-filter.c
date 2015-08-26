@@ -82,12 +82,21 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 	for (size_t c = 0; c < channels; ++c) {
 		float *adata = (float*)audio->data[c];
 		for (size_t i = 0; i < frame_count; i++) {
-			float over = adata[i] - upper_threshold;
-			float under = adata[i] - lower_threshold;
-			if (over > 0.0f)
-				adata[i] = upper_threshold + multiplier * over;
-			if (under < 0.0f)
-				adata[i] = lower_threshold + multiplier * under;
+			float level = 0.5f * fabsf(adata[i]);
+			float over = level - upper_threshold;
+			if (over > 0.0f) {
+				adata[i] = (adata[i] < 0.0f) ?
+					-upper_threshold - (multiplier * over) :
+					upper_threshold + (multiplier * over);
+				adata[i] *= 2.0f;
+			}
+			float under = level - lower_threshold;
+			if (under < 0.0f) {
+				adata[i] = (adata[i] < 0.0f) ?
+					-lower_threshold + (multiplier * under) :
+					lower_threshold - (multiplier * under);
+				adata[i] * 2.0f;
+			}
 		}
 	}
 
@@ -96,8 +105,8 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_UPPER_THRESHOLD, VOL_MAX);
-	obs_data_set_default_double(s, S_LOWER_THRESHOLD, VOL_MIN);
+	obs_data_set_default_double(s, S_UPPER_THRESHOLD, 0.5f);
+	obs_data_set_default_double(s, S_LOWER_THRESHOLD, 0.0f);
 	obs_data_set_default_double(s, S_MULTIPLIER, 1.0f);
 }
 
