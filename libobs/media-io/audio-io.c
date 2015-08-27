@@ -65,6 +65,13 @@ struct audio_line {
 	 * buffer is depleted, it's destroyed */
 	bool                       alive;
 
+	/* gets set when audio is getting cut off in the front of the buffer */
+	bool                       audio_getting_cut_off;
+
+	/* gets set when audio data is being inserted way outside of bounds of
+	 * the circular buffer */
+	bool                       audio_data_out_of_bounds;
+
 	struct audio_line          **prev_next;
 	struct audio_line          *next;
 };
@@ -171,6 +178,15 @@ static inline void clear_excess_audio_data(struct audio_line *line,
 	                "prev_time: %"PRIu64", line->base_timestamp: %"PRIu64,
 	                line->name, (uint32_t)size,
 	                prev_time, line->base_timestamp);*/
+
+	if (!line->audio_getting_cut_off) {
+		blog(LOG_WARNING, "Audio line '%s' audio data currently "
+		                  "getting cut off.  This could be due to a "
+		                  "negative sync offset that's larger than "
+		                  "the current audio buffering time.",
+		                  line->name);
+		line->audio_getting_cut_off = true;
+	}
 
 	for (size_t i = 0; i < line->audio->planes; i++) {
 		size_t clear_size = (size < line->buffers[i].size) ?
@@ -373,6 +389,12 @@ static uint64_t mix_and_output(struct audio_output *audio, uint64_t audio_time,
 		if (line->buffers[0].size && line->base_timestamp < prev_time) {
 			clear_excess_audio_data(line, prev_time);
 			line->base_timestamp = prev_time;
+
+		} else if (line->audio_getting_cut_off) {
+			line->audio_getting_cut_off = false;
+			blog(LOG_WARNING, "Audio line '%s' audio data no "
+			                  "longer getting cut off.",
+			                  line->name);
 		}
 
 		if (mix_audio_line(audio, line, bytes, prev_time))
@@ -814,12 +836,26 @@ void audio_line_output(audio_line_t *line, const struct audio_data *data)
 	}
 
 	if (!inserted_audio) {
-		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
+		if (!line->audio_data_out_of_bounds) {
+			blog(LOG_WARNING, "Audio line '%s' currently "
+			                  "receiving out of bounds audio "
+			                  "data.  This can sometimes happen "
+			                  "if there's a pause in the thread.",
+			                  line->name);
+			line->audio_data_out_of_bounds = true;
+		}
+
+		/*blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
 		                "data->timestamp: %"PRIu64", "
 		                "line->base_timestamp: %"PRIu64".  This can "
 		                "sometimes happen when there's a pause in "
 		                "the threads.", line->name, data->timestamp,
-		                line->base_timestamp);
+		                line->base_timestamp);*/
+
+	} else if (line->audio_data_out_of_bounds) {
+		blog(LOG_WARNING, "Audio line '%s' no longer receiving "
+		                  "out of bounds audio data.", line->name);
+		line->audio_data_out_of_bounds = false;
 	}
 
 	pthread_mutex_unlock(&line->mutex);
