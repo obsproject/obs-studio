@@ -137,15 +137,15 @@ static inline double positive_round(double val)
 	return floor(val+0.5);
 }
 
-static size_t ts_diff_frames(const audio_t *audio, uint64_t ts1, uint64_t ts2)
+static int64_t ts_diff_frames(const audio_t *audio, uint64_t ts1, uint64_t ts2)
 {
 	double diff = ts_to_frames(audio, ts1) - ts_to_frames(audio, ts2);
-	return (size_t)positive_round(diff);
+	return (int64_t)positive_round(diff);
 }
 
-static size_t ts_diff_bytes(const audio_t *audio, uint64_t ts1, uint64_t ts2)
+static int64_t ts_diff_bytes(const audio_t *audio, uint64_t ts1, uint64_t ts2)
 {
-	return ts_diff_frames(audio, ts1, ts2) * audio->block_size;
+	return ts_diff_frames(audio, ts1, ts2) * (int64_t)audio->block_size;
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
@@ -163,7 +163,7 @@ static inline uint64_t conv_frames_to_time(const audio_t *audio,
 static inline void clear_excess_audio_data(struct audio_line *line,
 		uint64_t prev_time)
 {
-	size_t size = ts_diff_bytes(line->audio, prev_time,
+	size_t size = (size_t)ts_diff_bytes(line->audio, prev_time,
 			line->base_timestamp);
 
 	/*blog(LOG_DEBUG, "Excess audio data for audio line '%s', somehow "
@@ -232,7 +232,7 @@ static void mix_float(struct audio_output *audio, struct audio_line *line,
 static inline bool mix_audio_line(struct audio_output *audio,
 		struct audio_line *line, size_t size, uint64_t timestamp)
 {
-	size_t time_offset = ts_diff_bytes(audio,
+	size_t time_offset = (size_t)ts_diff_bytes(audio,
 			line->base_timestamp, timestamp);
 	if (time_offset > size)
 		return false;
@@ -758,13 +758,18 @@ static inline uint64_t smooth_ts(struct audio_line *line, uint64_t timestamp)
 	return (diff < TS_SMOOTHING_THRESHOLD) ? line->next_ts_min : timestamp;
 }
 
-static void audio_line_place_data(struct audio_line *line,
+static bool audio_line_place_data(struct audio_line *line,
 		const struct audio_data *data)
 {
-	size_t pos;
+	int64_t pos;
 	uint64_t timestamp = smooth_ts(line, data->timestamp);
 
 	pos = ts_diff_bytes(line->audio, timestamp, line->base_timestamp);
+
+	if (pos < 0) {
+		return false;
+	}
+
 	line->next_ts_min =
 		timestamp + conv_frames_to_time(line->audio, data->frames);
 
@@ -776,7 +781,8 @@ static void audio_line_place_data(struct audio_line *line,
 			line->buffers[0].size);
 #endif
 
-	audio_line_place_data_pos(line, data, pos);
+	audio_line_place_data_pos(line, data, (size_t)pos);
+	return true;
 }
 
 #define MAX_DELAY_NS 6000000000ULL
@@ -792,6 +798,8 @@ static inline bool valid_timestamp_range(struct audio_line *line, uint64_t ts)
 
 void audio_line_output(audio_line_t *line, const struct audio_data *data)
 {
+	bool inserted_audio = false;
+
 	if (!line || !data) return;
 
 	pthread_mutex_lock(&line->mutex);
@@ -799,12 +807,13 @@ void audio_line_output(audio_line_t *line, const struct audio_data *data)
 	if (!line->buffers[0].size) {
 		line->base_timestamp = data->timestamp -
 		                       line->audio->info.buffer_ms * 1000000;
-		audio_line_place_data(line, data);
+		inserted_audio = audio_line_place_data(line, data);
 
 	} else if (valid_timestamp_range(line, data->timestamp)) {
-		audio_line_place_data(line, data);
+		inserted_audio = audio_line_place_data(line, data);
+	}
 
-	} else {
+	if (!inserted_audio) {
 		blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
 		                "data->timestamp: %"PRIu64", "
 		                "line->base_timestamp: %"PRIu64".  This can "
