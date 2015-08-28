@@ -58,7 +58,7 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 
 static inline char *get_module_name(const char *file)
 {
-	static int ext_len = 0;
+	static size_t ext_len = 0;
 	struct dstr name = {0};
 
 	if (ext_len == 0) {
