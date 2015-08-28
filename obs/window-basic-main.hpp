@@ -217,6 +217,7 @@ private slots:
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
+	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
 	void RemoveSelectedSceneItem();
 

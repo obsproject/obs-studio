@@ -1324,6 +1324,23 @@ void OBSBasic::AddScene(OBSSource source)
 	item->setData(static_cast<int>(QtDataRole::OBSSignals),
 			QVariant::fromValue(handlers));
 
+	/* if the scene already has items (a duplicated scene) add them */
+	auto addSceneItem = [this] (obs_sceneitem_t *item)
+	{
+		AddSceneItem(item);
+	};
+
+	using addSceneItem_t = decltype(addSceneItem);
+
+	obs_scene_enum_items(scene,
+			[] (obs_scene_t*, obs_sceneitem_t *item, void *param)
+			{
+				addSceneItem_t *func;
+				func = reinterpret_cast<addSceneItem_t*>(param);
+				(*func)(item);
+				return true;
+			}, &addSceneItem);
+
 	SaveProject();
 }
 
@@ -1666,6 +1683,63 @@ void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 
 	obs_data_release(versionData);
 	obs_data_release(returnData);
+}
+
+void OBSBasic::DuplicateSelectedScene()
+{
+	OBSScene curScene = GetCurrentScene();
+
+	if (!curScene)
+		return;
+
+	OBSSource curSceneSource = obs_scene_get_source(curScene);
+	QString format{obs_source_get_name(curSceneSource)};
+	format += " %1";
+
+	int i = 2;
+	QString placeHolderText = format.arg(i);
+	obs_source_t *source = nullptr;
+	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
+		obs_source_release(source);
+		placeHolderText = format.arg(++i);
+	}
+
+	for (;;) {
+		string name;
+		bool accepted = NameDialog::AskForName(this,
+				QTStr("Basic.Main.AddSceneDlg.Title"),
+				QTStr("Basic.Main.AddSceneDlg.Text"),
+				name,
+				placeHolderText);
+		if (!accepted)
+			return;
+
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		if (source) {
+			QMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+
+			obs_source_release(source);
+			continue;
+		}
+
+		obs_scene_t *scene = obs_scene_duplicate(curScene,
+				name.c_str());
+		source = obs_scene_get_source(scene);
+		obs_add_source(source);
+		obs_scene_release(scene);
+
+		obs_set_output_source(0, source);
+		return;
+	}
 }
 
 void OBSBasic::RemoveSelectedScene()
@@ -2348,6 +2422,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 	if (item) {
 		popup.addSeparator();
+		popup.addAction(QTStr("Duplicate"),
+				this, SLOT(DuplicateSelectedScene()));
 		popup.addAction(QTStr("Rename"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
