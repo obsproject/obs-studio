@@ -1018,6 +1018,14 @@ EXPORT uint32_t obs_source_get_base_height(obs_source_t *source);
  */
 EXPORT obs_scene_t *obs_scene_create(const char *name);
 
+/**
+ * Duplicates a scene.
+ *
+ *   Sources in a scene will not be recreated; it will contain references to
+ * the same sources as the originating scene.
+ */
+EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name);
+
 EXPORT void        obs_scene_addref(obs_scene_t *scene);
 EXPORT void        obs_scene_release(obs_scene_t *scene);
 

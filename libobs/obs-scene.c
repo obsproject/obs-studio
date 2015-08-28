@@ -478,6 +478,42 @@ obs_scene_t *obs_scene_create(const char *name)
 	return source->context.data;
 }
 
+obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
+{
+	struct obs_scene *new_scene = obs_scene_create(name);
+	struct obs_scene_item *item = scene->first_item;
+
+	pthread_mutex_lock(&scene->mutex);
+
+	while (item) {
+		struct obs_source *source = item->source;
+
+		if (source) {
+			struct obs_scene_item *new_item =
+				obs_scene_add(new_scene, source);
+
+			new_item->visible = item->visible;
+			new_item->selected = item->selected;
+			new_item->pos = item->pos;
+			new_item->scale = item->scale;
+			new_item->align = item->align;
+			new_item->last_width = item->last_width;
+			new_item->last_height = item->last_height;
+			new_item->box_transform = item->box_transform;
+			new_item->draw_transform = item->draw_transform;
+			new_item->bounds_type = item->bounds_type;
+			new_item->bounds_align = item->bounds_align;
+			new_item->bounds = item->bounds;
+		}
+
+		item = item->next;
+	}
+
+	pthread_mutex_unlock(&scene->mutex);
+
+	return new_scene;
+}
+
 void obs_scene_addref(obs_scene_t *scene)
 {
 	if (scene)
