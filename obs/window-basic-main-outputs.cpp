@@ -10,6 +10,7 @@ static void OBSStartStreaming(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	QMetaObject::invokeMethod(output->main, "StreamingStart");
+	output->activeRefs++;
 
 	UNUSED_PARAMETER(params);
 }
@@ -29,6 +30,7 @@ static void OBSStartRecording(void *data, calldata_t *params)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 
 	QMetaObject::invokeMethod(output->main, "RecordingStart");
+	output->activeRefs++;
 
 	UNUSED_PARAMETER(params);
 }
@@ -214,7 +216,6 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			retryDelay);
 
 	if (obs_output_start(streamOutput)) {
-		activeRefs++;
 		return true;
 	}
 
@@ -264,7 +265,6 @@ bool SimpleOutput::StartRecording()
 	obs_data_release(settings);
 
 	if (obs_output_start(fileOutput)) {
-		activeRefs++;
 		return true;
 	}
 
@@ -691,7 +691,6 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			retryDelay);
 
 	if (obs_output_start(streamOutput)) {
-		activeRefs++;
 		return true;
 	}
 
@@ -753,7 +752,6 @@ bool AdvancedOutput::StartRecording()
 	}
 
 	if (obs_output_start(fileOutput)) {
-		activeRefs++;
 		return true;
 	}
 
