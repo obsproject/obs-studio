@@ -105,7 +105,7 @@ static inline HMODULE get_system_module(const char *module)
 	strcpy(base_path, system_path);
 	strcat(base_path, "\\");
 	strcat(base_path, module);
-	return GetModuleHandleA(module);
+	return GetModuleHandleA(base_path);
 }
 
 static inline HMODULE load_system_library(const char *name)
