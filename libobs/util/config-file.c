@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>
 #include "config-file.h"
@@ -510,7 +511,7 @@ void config_set_int(config_t *config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%lld", value);
+	dstr_printf(&str, "%"PRId64, value);
 	config_set_item(&config->sections, section, name, str.array);
 }
 
@@ -519,7 +520,7 @@ void config_set_uint(config_t *config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%llu", value);
+	dstr_printf(&str, "%"PRIu64, value);
 	config_set_item(&config->sections, section, name, str.array);
 }
 
@@ -551,7 +552,7 @@ void config_set_default_int(config_t *config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%lld", value);
+	dstr_printf(&str, "%"PRId64, value);
 	config_set_item(&config->defaults, section, name, str.array);
 }
 
@@ -560,7 +561,7 @@ void config_set_default_uint(config_t *config, const char *section,
 {
 	struct dstr str;
 	dstr_init(&str);
-	dstr_printf(&str, "%llu", value);
+	dstr_printf(&str, "%"PRIu64, value);
 	config_set_item(&config->defaults, section, name, str.array);
 }
 

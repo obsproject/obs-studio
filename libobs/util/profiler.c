@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "profiler.h"
 
 #include "darray.h"
@@ -977,7 +978,8 @@ static void entry_dump_csv(struct dstr *buffer,
 	const char *parent_name = parent ? parent->name : NULL;
 
 	for (size_t i = 0; i < entry->times.num; i++) {
-		dstr_printf(buffer, "%p,%p,%p,%p,%s,0,%llu,%llu\n", entry,
+		dstr_printf(buffer, "%p,%p,%p,%p,%s,0,"
+				"%"PRIu64",%"PRIu64"\n", entry,
 				parent, entry->name, parent_name, entry->name,
 				entry->times.array[i].time_delta,
 				entry->times.array[i].count);
@@ -985,7 +987,8 @@ static void entry_dump_csv(struct dstr *buffer,
 	}
 
 	for (size_t i = 0; i < entry->times_between_calls.num; i++) {
-		dstr_printf(buffer, "%p,%p,%p,%p,%s,%llu,%llu,%llu\n", entry,
+		dstr_printf(buffer,"%p,%p,%p,%p,%s,"
+				"%"PRIu64",%"PRIu64",%"PRIu64"\n", entry,
 				parent, entry->name, parent_name, entry->name,
 				entry->expected_time_between_calls,
 				entry->times_between_calls.array[i].time_delta,

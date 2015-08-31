@@ -1615,7 +1615,7 @@ static inline char *dup_name(const char *name)
 {
 	if (!name || !*name) {
 		struct dstr unnamed = {0};
-		dstr_printf(&unnamed, "__unnamed%004lld",
+		dstr_printf(&unnamed, "__unnamed%04lld",
 				obs->data.unnamed_index++);
 
 		return unnamed.array;
