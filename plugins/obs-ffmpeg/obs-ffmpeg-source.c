@@ -398,7 +398,9 @@ static const char *frame_drop_to_str(enum AVDiscard discard)
 	DISCARD_CASE(DEFAULT);
 	DISCARD_CASE(NONREF);
 	DISCARD_CASE(BIDIR);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55, 67, 100)
 	DISCARD_CASE(NONINTRA);
+#endif
 	DISCARD_CASE(NONKEY);
 	DISCARD_CASE(ALL);
 	default: return "(Unknown)";
