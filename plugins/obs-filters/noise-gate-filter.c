@@ -108,7 +108,6 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 {
 	struct noise_gate_data *ng = data;
 
-	float *adata[2] = {(float*)audio->data[0], (float*)audio->data[1]};
 	const float close_threshold = ng->close_threshold;
 	const float open_threshold = ng->open_threshold;
 	const float sample_rate_i = ng->sample_rate_i;
@@ -117,6 +116,10 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 	const float decay_rate = ng->decay_rate;
 	const float hold_time = ng->hold_time;
 	const size_t channels = ng->channels;
+	
+	float *adata[channels];
+	for (size_t c = 0; c < channels; ++c)
+		adata[channels] = (float*)audio->data[c];
 
 	for (size_t i = 0; i < audio->frames; i++) {
 		float cur_level = (channels == 2)
