@@ -119,7 +119,7 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 	
 	float *adata[channels];
 	for (size_t c = 0; c < channels; ++c)
-		adata[channels] = (float*)audio->data[c];
+		adata[c] = (float*)audio->data[c];
 
 	for (size_t i = 0; i < audio->frames; i++) {
 		float cur_level = (channels == 2)
