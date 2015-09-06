@@ -3071,7 +3071,6 @@ void OBSBasic::StopStreaming()
 
 	if (!outputHandler->Active()) {
 		ui->profileMenu->setEnabled(true);
-		blog(LOG_INFO, STREAMING_STOP);
 	}
 }
 
