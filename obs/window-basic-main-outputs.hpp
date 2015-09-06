@@ -5,7 +5,8 @@ class OBSBasic;
 struct BasicOutputHandler {
 	OBSOutput              fileOutput;
 	OBSOutput              streamOutput;
-	int                    activeRefs = 0;
+	bool                   streamingActive = false;
+	bool                   recordingActive = false;
 	OBSBasic               *main;
 
 	OBSSignal              startRecording;
@@ -26,7 +27,10 @@ struct BasicOutputHandler {
 
 	virtual void Update() = 0;
 
-	inline bool Active() const {return !!activeRefs;}
+	inline bool Active() const
+	{
+		return streamingActive || recordingActive;
+	}
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);

@@ -9,8 +9,8 @@ using namespace std;
 static void OBSStartStreaming(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	output->streamingActive = true;
 	QMetaObject::invokeMethod(output->main, "StreamingStart");
-	output->activeRefs++;
 
 	UNUSED_PARAMETER(params);
 }
@@ -20,17 +20,17 @@ static void OBSStopStreaming(void *data, calldata_t *params)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	int code = (int)calldata_int(params, "code");
 
+	output->streamingActive = false;
 	QMetaObject::invokeMethod(output->main,
 			"StreamingStop", Q_ARG(int, code));
-	output->activeRefs--;
 }
 
 static void OBSStartRecording(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 
+	output->recordingActive = true;
 	QMetaObject::invokeMethod(output->main, "RecordingStart");
-	output->activeRefs++;
 
 	UNUSED_PARAMETER(params);
 }
@@ -40,9 +40,9 @@ static void OBSStopRecording(void *data, calldata_t *params)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	int code = (int)calldata_int(params, "code");
 
+	output->recordingActive = false;
 	QMetaObject::invokeMethod(output->main,
 			"RecordingStop", Q_ARG(int, code));
-	output->activeRefs--;
 
 	UNUSED_PARAMETER(params);
 }
