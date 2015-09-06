@@ -961,8 +961,6 @@ static void default_raw_audio_callback(void *param, size_t mix_idx,
 	UNUSED_PARAMETER(mix_idx);
 }
 
-typedef void (*encoded_callback_t)(void *data, struct encoder_packet *packet);
-
 static inline void start_audio_encoders(struct obs_output *output,
 		encoded_callback_t encoded_callback)
 {

@@ -596,6 +596,8 @@ extern float obs_source_get_target_volume(obs_source_t *source,
 /* ------------------------------------------------------------------------- */
 /* outputs  */
 
+typedef void (*encoded_callback_t)(void *data, struct encoder_packet *packet);
+
 struct obs_weak_output {
 	struct obs_weak_ref ref;
 	struct obs_output *output;
