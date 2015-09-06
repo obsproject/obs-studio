@@ -689,6 +689,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
 
+	config_set_default_bool  (basicConfig, "Output", "DelayEnable", false);
+	config_set_default_uint  (basicConfig, "Output", "DelaySec", 20);
+	config_set_default_bool  (basicConfig, "Output", "DelayPreserve", true);
+
 	int i = 0;
 	uint32_t scale_cx = cx;
 	uint32_t scale_cy = cy;

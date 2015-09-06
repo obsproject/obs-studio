@@ -222,6 +222,9 @@ private:
 	void SaveAdvancedSettings();
 	void SaveSettings();
 
+	void UpdateSimpleOutStreamDelayEstimate();
+	void UpdateAdvOutStreamDelayEstimate();
+
 private slots:
 	void on_theme_activated(int idx);
 
@@ -258,6 +261,8 @@ private slots:
 	void ReloadHotkeys(obs_hotkey_id ignoreKey=OBS_INVALID_HOTKEY_ID);
 	void AdvancedChanged();
 	void AdvancedChangedRestart();
+
+	void UpdateStreamDelayEstimate();
 
 	void AdvOutRecCheckWarnings();
 

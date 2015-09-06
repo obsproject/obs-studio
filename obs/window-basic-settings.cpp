@@ -346,6 +346,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorSpace,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
+	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -362,6 +365,23 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 				this, &OBSBasicSettings::ToggleDisableAero);
 	}
 #endif
+
+	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->outputMode, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->advOutTrack1Bitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->advOutTrack2Bitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->advOutTrack3Bitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->advOutTrack4Bitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(UpdateStreamDelayEstimate()));
 
 	//Apply button disabled until change.
 	EnableApplyButton(false);
@@ -1096,7 +1116,12 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 			"streamEncoder.json");
 	ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
 
+	connect(streamEncoderProps, SIGNAL(Changed()),
+			this, SLOT(UpdateStreamDelayEstimate()));
+
 	SetComboByValue(ui->advOutEncoder, encoder);
+
+	UpdateStreamDelayEstimate();
 }
 
 void OBSBasicSettings::LoadAdvOutputRecordingSettings()
@@ -1548,8 +1573,18 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"Video", "ColorSpace");
 	const char *videoColorRange = config_get_string(main->Config(),
 			"Video", "ColorRange");
+	bool enableDelay = config_get_bool(main->Config(), "Output",
+			"DelayEnable");
+	int delaySec = config_get_int(main->Config(), "Output",
+			"DelaySec");
+	bool preserveDelay = config_get_bool(main->Config(), "Output",
+			"DelayPreserve");
 
 	loading = true;
+
+	ui->streamDelaySec->setValue(delaySec);
+	ui->streamDelayPreserve->setChecked(preserveDelay);
+	ui->streamDelayEnable->setChecked(enableDelay);
 
 	ui->audioBufferingTime->setValue(audioBufferingTime);
 	SetComboByName(ui->colorFormat, videoColorFormat);
@@ -1954,6 +1989,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
+	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
+	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
+	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
 }
 
 static inline const char *OutputModeFromIdx(int idx)
@@ -2700,4 +2738,56 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 
 		formLayout->addRow(nullptr, advOutRecWarning);
 	}
+}
+
+static inline QString MakeMemorySizeString(int bitrate, int seconds)
+{
+	QString str = QTStr("Basic.Settings.Advanced.StreamDelay.MemoryUsage");
+	int megabytes = bitrate * seconds / 1000 / 8;
+
+	return str.arg(QString::number(megabytes));
+}
+
+void OBSBasicSettings::UpdateSimpleOutStreamDelayEstimate()
+{
+	int seconds = ui->streamDelaySec->value();
+	int vBitrate = ui->simpleOutputVBitrate->value();
+	int aBitrate = ui->simpleOutputABitrate->currentText().toInt();
+
+	QString msg = MakeMemorySizeString(vBitrate + aBitrate, seconds);
+
+	ui->streamDelayInfo->setText(msg);
+}
+
+void OBSBasicSettings::UpdateAdvOutStreamDelayEstimate()
+{
+	if (!streamEncoderProps)
+		return;
+
+	OBSData settings = streamEncoderProps->GetSettings();
+	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	QString aBitrateText;
+
+	switch (trackIndex) {
+	case 1: aBitrateText = ui->advOutTrack1Bitrate->currentText(); break;
+	case 2: aBitrateText = ui->advOutTrack2Bitrate->currentText(); break;
+	case 3: aBitrateText = ui->advOutTrack3Bitrate->currentText(); break;
+	case 4: aBitrateText = ui->advOutTrack4Bitrate->currentText(); break;
+	}
+
+	int seconds = ui->streamDelaySec->value();
+	int vBitrate = (int)obs_data_get_int(settings, "bitrate");
+	int aBitrate = aBitrateText.toInt();
+
+	QString msg = MakeMemorySizeString(vBitrate + aBitrate, seconds);
+
+	ui->streamDelayInfo->setText(msg);
+}
+
+void OBSBasicSettings::UpdateStreamDelayEstimate()
+{
+	if (ui->outputMode->currentIndex() == 0)
+		UpdateSimpleOutStreamDelayEstimate();
+	else
+		UpdateAdvOutStreamDelayEstimate();
 }
