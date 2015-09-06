@@ -12,6 +12,7 @@ class OBSBasicStatusBar : public QStatusBar {
 	Q_OBJECT
 
 private:
+	QLabel *delayInfo;
 	QLabel *droppedFrames;
 	QLabel *sessionTime;
 	QLabel *cpuUsage;
@@ -19,12 +20,16 @@ private:
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
+	bool active = false;
 
 	int retries = 0;
-	int activeRefs = 0;
 	int totalSeconds = 0;
 
 	int reconnectTimeout = 0;
+
+	int delaySecTotal = 0;
+	int delaySecStarting = 0;
+	int delaySecStopping = 0;
 
 	int      bitrateUpdateSeconds = 0;
 	uint64_t lastBytesSent = 0;
@@ -32,11 +37,12 @@ private:
 
 	QPointer<QTimer> refreshTimer;
 
-	void DecRef();
-	void IncRef();
-
 	obs_output_t *GetOutput();
 
+	void Activate();
+	void Deactivate();
+
+	void UpdateDelayMsg();
 	void UpdateBandwidth();
 	void UpdateSessionTime();
 	void UpdateDroppedFrames();
@@ -53,6 +59,8 @@ private slots:
 public:
 	OBSBasicStatusBar(QWidget *parent);
 
+	void StreamDelayStarting(int sec);
+	void StreamDelayStopping(int sec);
 	void StreamStarted(obs_output_t *output);
 	void StreamStopped();
 	void RecordingStarted(obs_output_t *output);

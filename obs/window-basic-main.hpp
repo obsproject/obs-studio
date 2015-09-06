@@ -58,6 +58,7 @@ class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 
 	friend class OBSBasicPreview;
+	friend class OBSBasicStatusBar;
 
 	enum class MoveDir {
 		Up,
@@ -105,6 +106,8 @@ private:
 	ConfigFile    basicConfig;
 
 	QPointer<QWidget> projectors[10];
+
+	QPointer<QMenu> startStreamMenu;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -187,10 +190,15 @@ private:
 	void SaveProjectNow();
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
+	obs_hotkey_id forceStreamingStopHotkey;
 
 public slots:
 	void StartStreaming();
 	void StopStreaming();
+	void ForceStopStreaming();
+
+	void StreamDelayStarting(int sec);
+	void StreamDelayStopping(int sec);
 
 	void StreamingStart();
 	void StreamingStop(int errorcode);

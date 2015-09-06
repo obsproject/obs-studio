@@ -1020,6 +1020,15 @@ void OBSBasic::CreateHotkeys()
 		return res;
 	};
 
+	auto LoadHotkey = [&](obs_hotkey_id id, const char *name)
+	{
+		obs_data_array_t *array =
+			obs_data_get_array(LoadHotkeyData(name), "bindings");
+
+		obs_hotkey_load(id, array);
+		obs_data_array_release(array);
+	};
+
 	auto LoadHotkeyPair = [&](obs_hotkey_pair_id id, const char *name0,
 			const char *name1)
 	{
@@ -1057,6 +1066,21 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkeyPair(streamingHotkeys,
 			"OBSBasic.StartStreaming", "OBSBasic.StopStreaming");
 
+	auto cb = [] (void *data, obs_hotkey_id, obs_hotkey_t*, bool pressed)
+	{
+		OBSBasic &basic = *static_cast<OBSBasic*>(data);
+		if (basic.outputHandler->StreamingActive() && pressed) {
+			basic.ForceStopStreaming();
+		}
+	};
+
+	forceStreamingStopHotkey = obs_hotkey_register_frontend(
+			"OBSBasic.ForceStopStreaming",
+			Str("Basic.Main.ForceStopStreaming"),
+			cb, this);
+	LoadHotkey(forceStreamingStopHotkey,
+			"OBSBasic.ForceStopStreaming");
+
 	recordingHotkeys = obs_hotkey_pair_register_frontend(
 			"OBSBasic.StartRecording",
 			Str("Basic.Hotkeys.StartRecording"),
@@ -1077,6 +1101,7 @@ void OBSBasic::ClearHotkeys()
 {
 	obs_hotkey_pair_unregister(streamingHotkeys);
 	obs_hotkey_pair_unregister(recordingHotkeys);
+	obs_hotkey_unregister(forceStreamingStopHotkey);
 }
 
 OBSBasic::~OBSBasic()
@@ -3051,12 +3076,12 @@ void OBSBasic::StartStreaming()
 {
 	SaveProject();
 
-	if (outputHandler->StreamingActive())
-		return;
+	ui->streamButton->setEnabled(false);
+	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
 
-	if (outputHandler->StartStreaming(service)) {
-		ui->streamButton->setEnabled(false);
-		ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	if (!outputHandler->StartStreaming(service)) {
+		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+		ui->streamButton->setEnabled(true);
 	}
 }
 
@@ -3070,6 +3095,54 @@ void OBSBasic::StopStreaming()
 	if (!outputHandler->Active()) {
 		ui->profileMenu->setEnabled(true);
 	}
+}
+
+void OBSBasic::ForceStopStreaming()
+{
+	SaveProject();
+
+	if (outputHandler->StreamingActive())
+		outputHandler->ForceStopStreaming();
+
+	if (!outputHandler->Active()) {
+		ui->profileMenu->setEnabled(true);
+	}
+}
+
+void OBSBasic::StreamDelayStarting(int sec)
+{
+	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
+	ui->streamButton->setEnabled(true);
+
+	if (!startStreamMenu.isNull())
+		startStreamMenu->deleteLater();
+
+	startStreamMenu = new QMenu();
+	startStreamMenu->addAction(QTStr("Basic.Main.StopStreaming"),
+			this, SLOT(StopStreaming()));
+	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"),
+			this, SLOT(ForceStopStreaming()));
+	ui->streamButton->setMenu(startStreamMenu);
+
+	ui->statusbar->StreamDelayStarting(sec);
+}
+
+void OBSBasic::StreamDelayStopping(int sec)
+{
+	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+	ui->streamButton->setEnabled(true);
+
+	if (!startStreamMenu.isNull())
+		startStreamMenu->deleteLater();
+
+	startStreamMenu = new QMenu();
+	startStreamMenu->addAction(QTStr("Basic.Main.StartStreaming"),
+			this, SLOT(StartStreaming()));
+	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"),
+			this, SLOT(ForceStopStreaming()));
+	ui->streamButton->setMenu(startStreamMenu);
+
+	ui->statusbar->StreamDelayStopping(sec);
 }
 
 void OBSBasic::StreamingStart()
@@ -3123,6 +3196,12 @@ void OBSBasic::StreamingStop(int code)
 		QMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
 				QT_UTF8(errorMessage));
+
+	if (!startStreamMenu.isNull()) {
+		ui->streamButton->setMenu(nullptr);
+		startStreamMenu->deleteLater();
+		startStreamMenu = nullptr;
+	}
 }
 
 void OBSBasic::StartRecording()

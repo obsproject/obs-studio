@@ -7,12 +7,15 @@ struct BasicOutputHandler {
 	OBSOutput              streamOutput;
 	bool                   streamingActive = false;
 	bool                   recordingActive = false;
+	bool                   delayActive = false;
 	OBSBasic               *main;
 
 	OBSSignal              startRecording;
 	OBSSignal              stopRecording;
 	OBSSignal              startStreaming;
 	OBSSignal              stopStreaming;
+	OBSSignal              streamDelayStarting;
+	OBSSignal              streamDelayStopping;
 
 	inline BasicOutputHandler(OBSBasic *main_) : main(main_) {}
 
@@ -21,6 +24,7 @@ struct BasicOutputHandler {
 	virtual bool StartStreaming(obs_service_t *service) = 0;
 	virtual bool StartRecording() = 0;
 	virtual void StopStreaming() = 0;
+	virtual void ForceStopStreaming() = 0;
 	virtual void StopRecording() = 0;
 	virtual bool StreamingActive() const = 0;
 	virtual bool RecordingActive() const = 0;
@@ -29,7 +33,7 @@ struct BasicOutputHandler {
 
 	inline bool Active() const
 	{
-		return streamingActive || recordingActive;
+		return streamingActive || recordingActive || delayActive;
 	}
 };
 

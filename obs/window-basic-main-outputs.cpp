@@ -6,6 +6,33 @@
 
 using namespace std;
 
+static void OBSStreamStarting(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	obs_output_t *obj = (obs_output_t*)calldata_ptr(params, "output");
+
+	int sec = (int)obs_output_get_active_delay(obj);
+	if (sec == 0)
+		return;
+
+	output->delayActive = true;
+	QMetaObject::invokeMethod(output->main,
+			"StreamDelayStarting", Q_ARG(int, sec));
+}
+
+static void OBSStreamStopping(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	obs_output_t *obj = (obs_output_t*)calldata_ptr(params, "output");
+
+	int sec = (int)obs_output_get_active_delay(obj);
+	if (sec == 0)
+		return;
+
+	QMetaObject::invokeMethod(output->main,
+			"StreamDelayStopping", Q_ARG(int, sec));
+}
+
 static void OBSStartStreaming(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
@@ -21,6 +48,7 @@ static void OBSStopStreaming(void *data, calldata_t *params)
 	int code = (int)calldata_int(params, "code");
 
 	output->streamingActive = false;
+	output->delayActive = false;
 	QMetaObject::invokeMethod(output->main,
 			"StreamingStop", Q_ARG(int, code));
 }
@@ -91,6 +119,7 @@ struct SimpleOutput : BasicOutputHandler {
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
 	virtual void StopStreaming() override;
+	virtual void ForceStopStreaming() override;
 	virtual void StopRecording() override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
@@ -119,6 +148,11 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!CreateAACEncoder(aac, aacEncoderID, GetAudioBitrate(),
 				"simple_aac", 0))
 		throw "Failed to create audio encoder (simple output)";
+
+	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
+			"starting", OBSStreamStarting, this);
+	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
@@ -209,8 +243,17 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			"RetryDelay");
 	int maxRetries = config_get_uint(main->Config(), "SimpleOutput",
 			"MaxRetries");
+	bool useDelay = config_get_bool(main->Config(), "Output",
+			"DelayEnable");
+	int delaySec = config_get_int(main->Config(), "Output",
+			"DelaySec");
+	bool preserveDelay = config_get_bool(main->Config(), "Output",
+			"DelayPreserve");
 	if (!reconnect)
 		maxRetries = 0;
+
+	obs_output_set_delay(streamOutput, useDelay ? delaySec : 0,
+			preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries,
 			retryDelay);
@@ -276,6 +319,11 @@ void SimpleOutput::StopStreaming()
 	obs_output_stop(streamOutput);
 }
 
+void SimpleOutput::ForceStopStreaming()
+{
+	obs_output_force_stop(streamOutput);
+}
+
 void SimpleOutput::StopRecording()
 {
 	obs_output_stop(fileOutput);
@@ -320,6 +368,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
 	virtual void StopStreaming() override;
+	virtual void ForceStopStreaming() override;
 	virtual void StopRecording() override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
@@ -408,6 +457,11 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
 	}
+
+	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
+			"starting", OBSStreamStarting, this);
+	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
 			"start", OBSStartStreaming, this);
@@ -684,8 +738,17 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	bool reconnect = config_get_bool(main->Config(), "AdvOut", "Reconnect");
 	int retryDelay = config_get_int(main->Config(), "AdvOut", "RetryDelay");
 	int maxRetries = config_get_int(main->Config(), "AdvOut", "MaxRetries");
+	bool useDelay = config_get_bool(main->Config(), "Output",
+			"DelayEnable");
+	int delaySec = config_get_int(main->Config(), "Output",
+			"DelaySec");
+	bool preserveDelay = config_get_bool(main->Config(), "Output",
+			"DelayPreserve");
 	if (!reconnect)
 		maxRetries = 0;
+
+	obs_output_set_delay(streamOutput, useDelay ? delaySec : 0,
+			preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries,
 			retryDelay);
@@ -761,6 +824,11 @@ bool AdvancedOutput::StartRecording()
 void AdvancedOutput::StopStreaming()
 {
 	obs_output_stop(streamOutput);
+}
+
+void AdvancedOutput::ForceStopStreaming()
+{
+	obs_output_force_stop(streamOutput);
 }
 
 void AdvancedOutput::StopRecording()
