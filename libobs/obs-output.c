@@ -41,6 +41,8 @@ const char *obs_output_get_display_name(const char *id)
 static const char *output_signals[] = {
 	"void start(ptr output)",
 	"void stop(ptr output, int code)",
+	"void starting(ptr output)",
+	"void stopping(ptr output)",
 	"void activate(ptr output)",
 	"void deactivate(ptr output)",
 	"void reconnect(ptr output)",
@@ -73,8 +75,11 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 
 	output = bzalloc(sizeof(struct obs_output));
 	pthread_mutex_init_value(&output->interleaved_mutex);
+	pthread_mutex_init_value(&output->delay_mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
 		goto fail;
 	if (!init_output_handlers(output, name, settings, hotkey_data))
 		goto fail;
@@ -128,7 +133,7 @@ void obs_output_destroy(obs_output_t *output)
 		blog(LOG_INFO, "output '%s' destroyed", output->context.name);
 
 		if (output->valid && output->active)
-			obs_output_stop(output);
+			obs_output_actual_stop(output, true);
 		if (output->service)
 			output->service->output = NULL;
 
@@ -151,8 +156,10 @@ void obs_output_destroy(obs_output_t *output)
 		}
 
 		pthread_mutex_destroy(&output->interleaved_mutex);
+		pthread_mutex_destroy(&output->delay_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
+		circlebuf_free(&output->delay_data);
 		bfree(output);
 	}
 }
@@ -162,12 +169,9 @@ const char *obs_output_get_name(const obs_output_t *output)
 	return output ? output->context.name : NULL;
 }
 
-bool obs_output_start(obs_output_t *output)
+bool obs_output_actual_start(obs_output_t *output)
 {
 	bool success;
-
-	if (!output)
-		return false;
 
 	output->stopped = false;
 
@@ -180,7 +184,30 @@ bool obs_output_start(obs_output_t *output)
 			video_output_get_skipped_frames(output->video);
 	}
 
+	if (output->delay_restart_refs)
+		os_atomic_dec_long(&output->delay_restart_refs);
+
 	return success;
+}
+
+bool obs_output_start(obs_output_t *output)
+{
+	bool encoded;
+	if (!obs_output_valid(output, "obs_output_start"))
+		return false;
+
+	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
+
+	if (encoded && output->delay_sec) {
+		return obs_output_delay_start(output);
+	} else {
+		if (obs_output_actual_start(output)) {
+			do_output_signal(output, "starting");
+			return true;
+		}
+
+		return false;
+	}
 }
 
 static void log_frame_info(struct obs_output *output)
@@ -216,21 +243,47 @@ static void log_frame_info(struct obs_output *output)
 	}
 }
 
+void obs_output_actual_stop(obs_output_t *output, bool force)
+{
+	output->stopped = true;
+
+	os_event_signal(output->reconnect_stop_event);
+	if (output->reconnect_thread_active)
+		pthread_join(output->reconnect_thread, NULL);
+
+	output->info.stop(output->context.data);
+
+	if (output->video)
+		log_frame_info(output);
+
+	if (output->delay_active && (force || !output->delay_restart_refs)) {
+		output->delay_active = false;
+		obs_output_end_data_capture(output);
+	}
+
+	if (force || !output->delay_active)
+		signal_stop(output, OBS_OUTPUT_SUCCESS);
+}
+
 void obs_output_stop(obs_output_t *output)
 {
-	if (output) {
-		output->stopped = true;
+	bool encoded;
+	if (!obs_output_valid(output, "obs_output_stop"))
+		return;
 
-		os_event_signal(output->reconnect_stop_event);
-		if (output->reconnect_thread_active)
-			pthread_join(output->reconnect_thread, NULL);
+	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
 
-		output->info.stop(output->context.data);
-		signal_stop(output, OBS_OUTPUT_SUCCESS);
-
-		if (output->video)
-			log_frame_info(output);
+	if (encoded && output->active_delay_ns) {
+		obs_output_delay_stop(output);
+	} else {
+		obs_output_actual_stop(output, false);
+		do_output_signal(output, "stopping");
 	}
+}
+
+void obs_output_force_stop(obs_output_t *output)
+{
+	obs_output_actual_stop(output, true);
 }
 
 bool obs_output_active(const obs_output_t *output)
@@ -459,6 +512,9 @@ void obs_output_set_reconnect_settings(obs_output_t *output,
 uint64_t obs_output_get_total_bytes(const obs_output_t *output)
 {
 	if (!output || !output->info.get_total_bytes)
+		return 0;
+
+	if (output->delay_active && !output->delay_capturing)
 		return 0;
 
 	return output->info.get_total_bytes(output->context.data);
@@ -904,7 +960,10 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 
 	was_started = output->received_audio && output->received_video;
 
-	obs_duplicate_encoder_packet(&out, packet);
+	if (output->active_delay_ns)
+		out = *packet;
+	else
+		obs_duplicate_encoder_packet(&out, packet);
 
 	if (was_started)
 		apply_interleaved_packet_offset(output, &out);
@@ -940,6 +999,8 @@ static void default_encoded_callback(void *param, struct encoder_packet *packet)
 
 	if (!output->stopped)
 		output->info.encoded_packet(output->context.data, packet);
+	if (output->active_delay_ns)
+		obs_free_encoder_packet(packet);
 
 	if (packet->type == OBS_ENCODER_VIDEO)
 		output->total_frames++;
@@ -974,25 +1035,52 @@ static inline void start_audio_encoders(struct obs_output *output,
 	}
 }
 
+static void reset_packet_data(obs_output_t *output)
+{
+	output->received_audio   = false;
+	output->received_video   = false;
+	output->highest_audio_ts = 0;
+	output->highest_video_ts = 0;
+	output->video_offset     = 0;
+
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
+		output->audio_offsets[0] = 0;
+
+	free_packets(output);
+}
+
+static inline bool preserve_active(struct obs_output *output)
+{
+	return (output->delay_flags & OBS_OUTPUT_DELAY_PRESERVE) != 0;
+}
+
 static void hook_data_capture(struct obs_output *output, bool encoded,
 		bool has_video, bool has_audio)
 {
 	encoded_callback_t encoded_callback;
 
 	if (encoded) {
-		output->received_audio   = false;
-		output->received_video   = false;
-		output->highest_audio_ts = 0;
-		output->highest_video_ts = 0;
-		output->video_offset     = 0;
-
-		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
-			output->audio_offsets[0] = 0;
-
-		free_packets(output);
+		pthread_mutex_lock(&output->interleaved_mutex);
+		reset_packet_data(output);
+		pthread_mutex_unlock(&output->interleaved_mutex);
 
 		encoded_callback = (has_video && has_audio) ?
 			interleave_packets : default_encoded_callback;
+
+		if (output->delay_sec) {
+			output->active_delay_ns =
+				(uint64_t)output->delay_sec * 1000000000ULL;
+			output->delay_cur_flags = output->delay_flags;
+			output->delay_callback = encoded_callback;
+			encoded_callback = process_delay;
+			output->delay_active = true;
+
+			blog(LOG_INFO, "Output '%s': %"PRIu32" second delay "
+			               "active, preserve on disconnect is %s",
+			               output->context.name,
+			               output->delay_sec,
+			               preserve_active(output) ? "on" : "off");
+		}
 
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
@@ -1009,15 +1097,6 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 					get_audio_conversion(output),
 					default_raw_audio_callback, output);
 	}
-}
-
-static inline void do_output_signal(struct obs_output *output,
-		const char *signal)
-{
-	struct calldata params = {0};
-	calldata_set_ptr(&params, "output", output);
-	signal_handler_signal(output->context.signals, signal, &params);
-	calldata_free(&params);
 }
 
 static inline void signal_start(struct obs_output *output)
@@ -1070,6 +1149,7 @@ bool obs_output_can_begin_data_capture(const obs_output_t *output,
 	bool encoded, has_video, has_audio, has_service;
 
 	if (!output) return false;
+	if (output->delay_active) return true;
 	if (output->active) return false;
 
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
@@ -1115,7 +1195,7 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	size_t num_mixes = num_audio_mixes(output);
 
 	if (!output) return false;
-	if (output->active) return false;
+	if (output->active) return output->delay_active;
 
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
 			&has_service);
@@ -1138,11 +1218,32 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	return true;
 }
 
+static bool begin_delayed_capture(obs_output_t *output)
+{
+	if (output->delay_capturing)
+		return false;
+
+	pthread_mutex_lock(&output->interleaved_mutex);
+	reset_packet_data(output);
+	output->delay_capturing = true;
+	pthread_mutex_unlock(&output->interleaved_mutex);
+
+	if (output->reconnecting) {
+		signal_reconnect_success(output);
+		output->reconnecting = false;
+	} else {
+		signal_start(output);
+	}
+
+	return true;
+}
+
 bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
 
 	if (!output) return false;
+	if (output->delay_active) return begin_delayed_capture(output);
 	if (output->active) return false;
 
 	output->total_frames   = 0;
@@ -1165,6 +1266,10 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	if (output->reconnecting) {
 		signal_reconnect_success(output);
 		output->reconnecting = false;
+
+	} else if (output->delay_active) {
+		do_output_signal(output, "starting");
+
 	} else {
 		signal_start(output);
 	}
@@ -1189,14 +1294,23 @@ void obs_output_end_data_capture(obs_output_t *output)
 	encoded_callback_t encoded_callback;
 
 	if (!output) return;
+
+	if (output->delay_active) {
+		output->delay_capturing = false;
+		return;
+	}
+
 	if (!output->active) return;
 
 	convert_flags(output, 0, &encoded, &has_video, &has_audio,
 			&has_service);
 
 	if (encoded) {
-		encoded_callback = (has_video && has_audio) ?
-			interleave_packets : default_encoded_callback;
+		if (output->active_delay_ns)
+			encoded_callback = process_delay;
+		else
+			encoded_callback = (has_video && has_audio) ?
+				interleave_packets : default_encoded_callback;
 
 		if (has_video)
 			obs_encoder_stop(output->video_encoder,
@@ -1216,6 +1330,9 @@ void obs_output_end_data_capture(obs_output_t *output)
 	if (has_service)
 		obs_service_deactivate(output->service, false);
 
+	if (output->active_delay_ns)
+		obs_output_cleanup_delay(output);
+
 	do_output_signal(output, "deactivate");
 	output->active = false;
 }
@@ -1228,7 +1345,7 @@ static void *reconnect_thread(void *param)
 	output->reconnect_thread_active = true;
 
 	if (os_event_timedwait(output->reconnect_stop_event, ms) == ETIMEDOUT)
-		obs_output_start(output);
+		obs_output_actual_start(output);
 
 	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
 		pthread_detach(output->reconnect_thread);
@@ -1248,6 +1365,10 @@ static void output_reconnect(struct obs_output *output)
 
 	if (output->reconnect_retries >= output->reconnect_retry_max) {
 		output->reconnecting = false;
+		if (output->delay_active) {
+			output->delay_active = false;
+			obs_output_end_data_capture(output);
+		}
 		signal_stop(output, OBS_OUTPUT_DISCONNECTED);
 		return;
 	}
@@ -1284,11 +1405,17 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 		return;
 
 	obs_output_end_data_capture(output);
+
 	if ((output->reconnecting && code != OBS_OUTPUT_SUCCESS) ||
-	    code == OBS_OUTPUT_DISCONNECTED)
+	    code == OBS_OUTPUT_DISCONNECTED) {
 		output_reconnect(output);
-	else
+	} else {
+		if (output->delay_active) {
+			output->delay_active = false;
+			obs_output_end_data_capture(output);
+		}
 		signal_stop(output, code);
+	}
 }
 
 void obs_output_addref(obs_output_t *output)

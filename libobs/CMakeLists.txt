@@ -242,6 +242,7 @@ set(libobs_libobs_SOURCES
 	obs-service.c
 	obs-source.c
 	obs-output.c
+	obs-output-delay.c
 	obs.c
 	obs-properties.c
 	obs-data.c

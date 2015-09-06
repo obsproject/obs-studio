@@ -1153,6 +1153,32 @@ EXPORT bool obs_output_start(obs_output_t *output);
 /** Stops the output. */
 EXPORT void obs_output_stop(obs_output_t *output);
 
+/**
+ * On reconnection, start where it left of on reconnection.  Note however that
+ * this option will consume extra memory to continually increase delay while
+ * waiting to reconnect.
+ */
+#define OBS_OUTPUT_DELAY_PRESERVE (1<<0)
+
+/**
+ * Sets the current output delay, in seconds (if the output supports delay).
+ *
+ * If delay is currently active, it will set the delay value, but will not
+ * affect the current delay, it will only affect the next time the output is
+ * activated.
+ */
+EXPORT void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec,
+		uint32_t flags);
+
+/** Gets the currently set delay value, in seconds. */
+EXPORT uint32_t obs_output_get_delay(const obs_output_t *output);
+
+/** If delay is active, gets the currently active delay value, in seconds. */
+EXPORT uint32_t obs_output_get_active_delay(const obs_output_t *output);
+
+/** Forces the output to stop.  Usually only used with delay. */
+EXPORT void obs_output_force_stop(obs_output_t *output);
+
 /** Returns whether the output is active */
 EXPORT bool obs_output_active(const obs_output_t *output);
 
