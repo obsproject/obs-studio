@@ -3058,6 +3058,12 @@ void OBSBasic::StartStreaming()
 
 void OBSBasic::StopStreaming()
 {
+	QMessageBox::StandardButton button = QMessageBox::question(this,
+			QTStr("Basic.Main.StopStreaming.Title"),
+			QTStr("Basic.Main.StopStreaming.Text"));
+	if (button == QMessageBox::No)
+		return;
+
 	SaveProject();
 
 	if (outputHandler->StreamingActive())
