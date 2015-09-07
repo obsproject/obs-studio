@@ -375,7 +375,7 @@ fail_context_create:
 fail_load_gl:
 	XCloseDisplay(display);
 fail_display_open:
-	free(plat);
+	bfree(plat);
 	plat = NULL;
 success:
 	UNUSED_PARAMETER(adapter);
