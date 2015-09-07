@@ -21,6 +21,7 @@
 #include <chrono>
 #include <ratio>
 #include <sstream>
+#include <mutex>
 #include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/platform.h>
@@ -237,6 +238,53 @@ static inline void LogStringChunk(fstream &logFile, char *str)
 	LogString(logFile, timeString.c_str(), str);
 }
 
+#define MAX_REPEATED_LINES 30
+#define MAX_CHAR_VARIATION (255 * 3)
+
+static inline int sum_chars(const char *str)
+{
+	int val = 0;
+	for (; *str != 0; str++)
+		val += *str;
+
+	return val;
+}
+
+static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
+		const char *output_str)
+{
+	static mutex log_mutex;
+	static const char *last_msg_ptr = nullptr;
+	static int last_char_sum = 0;
+	static char cmp_str[4096];
+	static int rep_count = 0;
+
+	int new_sum = sum_chars(output_str);
+
+	lock_guard<mutex> guard(log_mutex);
+
+	if (last_msg_ptr == msg) {
+		int diff = std::abs(new_sum - last_char_sum);
+		if (diff < MAX_CHAR_VARIATION) {
+			return (rep_count++ >= MAX_REPEATED_LINES);
+		}
+	}
+
+	if (rep_count > MAX_REPEATED_LINES) {
+		logFile << CurrentTimeString() <<
+			": Last log entry repeated for " <<
+			to_string(rep_count - MAX_REPEATED_LINES) <<
+			" more lines" << endl;
+	}
+
+	last_msg_ptr = msg;
+	strcpy(cmp_str, output_str);
+	last_char_sum = new_sum;
+	rep_count = 0;
+
+	return false;
+}
+
 static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream*>(param);
@@ -255,6 +303,9 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
+
+	if (too_many_repeated_entries(logFile, msg, str))
+		return;
 
 	if (log_level <= LOG_INFO)
 		LogStringChunk(logFile, str);
