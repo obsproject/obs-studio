@@ -490,7 +490,7 @@ typedef void (*profile_entry_print_func)(profiler_snapshot_entry_t *entry,
 
 /* UTF-8 characters */
 #define VPIPE_RIGHT " \xe2\x94\xa3"
-#define VPIPE       " \xe2\x95\x83"
+#define VPIPE       " \xe2\x94\x83"
 #define DOWN_RIGHT  " \xe2\x94\x97"
 
 static void make_indent_string(struct dstr *indent_buffer, unsigned indent,
