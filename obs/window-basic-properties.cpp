@@ -55,6 +55,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
+	else
+		resize(720, 580);
 
 	QMetaObject::connectSlotsByName(this);
 
