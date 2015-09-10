@@ -41,6 +41,8 @@ const char *obs_output_get_display_name(const char *id)
 static const char *output_signals[] = {
 	"void start(ptr output)",
 	"void stop(ptr output, int code)",
+	"void activate(ptr output)",
+	"void deactivate(ptr output)",
 	"void reconnect(ptr output)",
 	"void reconnect_success(ptr output)",
 	NULL
@@ -1157,6 +1159,7 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	if (has_service)
 		obs_service_activate(output->service);
 
+	do_output_signal(output, "activate");
 	output->active = true;
 
 	if (output->reconnecting) {
@@ -1213,6 +1216,7 @@ void obs_output_end_data_capture(obs_output_t *output)
 	if (has_service)
 		obs_service_deactivate(output->service, false);
 
+	do_output_signal(output, "deactivate");
 	output->active = false;
 }
 
