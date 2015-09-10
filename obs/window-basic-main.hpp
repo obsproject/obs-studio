@@ -89,7 +89,7 @@ private:
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
-	OBSService service;
+	std::vector<OBSService> services;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 
 	gs_vertbuffer_t *box = nullptr;
@@ -123,7 +123,7 @@ private:
 	void          CreateHotkeys();
 	void          ClearHotkeys();
 
-	bool          InitService();
+	bool          InitServices();
 
 	bool          InitBasicConfigDefaults();
 	bool          InitBasicConfig();
@@ -252,8 +252,10 @@ private:
 public:
 	OBSScene      GetCurrentScene();
 
-	obs_service_t *GetService();
-	void          SetService(obs_service_t *service);
+	std::vector<OBSService> GetServices();
+	void                    AddService(obs_service_t *service);
+	void                    RemoveService(size_t i);
+	void                    ClearServices();
 
 	bool StreamingActive();
 
@@ -281,8 +283,8 @@ public:
 		return os_cpu_usage_info_query(cpuUsageInfo);
 	}
 
-	void SaveService();
-	bool LoadService();
+	void SaveServices();
+	bool LoadServices();
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 

@@ -483,7 +483,7 @@ void OBSBasicSettings::LoadServiceTypes()
 		ui->streamType->addItem(qName, qType);
 	}
 
-	type = obs_service_get_type(main->GetService());
+	type = obs_service_get_type(main->GetServices()[0]);
 	SetComboByValue(ui->streamType, type);
 }
 
@@ -713,7 +713,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 void OBSBasicSettings::LoadStream1Settings()
 {
 	QLayout *layout = ui->streamContainer->layout();
-	obs_service_t *service = main->GetService();
+	obs_service_t *service = main->GetServices()[0];
 	const char *type = obs_service_get_type(service);
 
 	loading = true;
@@ -1890,7 +1890,7 @@ void OBSBasicSettings::SaveStream1Settings()
 {
 	QString streamType = GetComboData(ui->streamType);
 
-	obs_service_t *oldService = main->GetService();
+	obs_service_t *oldService = main->GetServices()[0];
 	obs_data_t *hotkeyData = obs_hotkeys_save_service(oldService);
 
 	obs_service_t *newService = obs_service_create(QT_TO_UTF8(streamType),
@@ -1901,8 +1901,9 @@ void OBSBasicSettings::SaveStream1Settings()
 	if (!newService)
 		return;
 
-	main->SetService(newService);
-	main->SaveService();
+	main->ClearServices();
+	main->AddService(newService);
+	main->SaveServices();
 	obs_service_release(newService);
 }
 
