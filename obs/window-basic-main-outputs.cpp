@@ -177,32 +177,22 @@ void SimpleOutput::Update()
 
 	int videoBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"VBitrate");
-	int videoBufsize = config_get_uint(main->Config(), "SimpleOutput",
-			"VBufsize");
 	int audioBitrate = GetAudioBitrate();
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
-	bool useCBR = config_get_bool(main->Config(), "SimpleOutput",
-			"UseCBR");
-	bool useBufsize = config_get_bool(main->Config(), "SimpleOutput",
-			"UseBufsize");
 	const char *preset = config_get_string(main->Config(),
 			"SimpleOutput", "Preset");
 	const char *custom = config_get_string(main->Config(),
 			"SimpleOutput", "x264Settings");
 
 	obs_data_set_int(h264Settings, "bitrate", videoBitrate);
-	obs_data_set_bool(h264Settings, "use_bufsize", useBufsize);
-	obs_data_set_int(h264Settings, "buffer_size", videoBufsize);
 
 	if (advanced) {
 		obs_data_set_string(h264Settings, "preset", preset);
 		obs_data_set_string(h264Settings, "x264opts", custom);
-		obs_data_set_bool(h264Settings, "cbr", useCBR);
-	} else {
-		obs_data_set_bool(h264Settings, "cbr", true);
 	}
 
+	obs_data_set_bool(aacSettings, "cbr", true);
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
 	obs_service_apply_encoder_settings(main->GetService(),

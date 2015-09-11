@@ -270,11 +270,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputABitrate, COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutUseCBR,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutUseBufsize,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutVBufsize,    SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -1001,16 +998,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"RecFormat");
 	int videoBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"VBitrate");
-	int videoBufsize = config_get_uint(main->Config(), "SimpleOutput",
-			"VBufsize");
 	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"ABitrate");
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
-	bool useCBR = config_get_bool(main->Config(), "SimpleOutput",
-			"UseCBR");
-	bool useBufsize = config_get_bool(main->Config(), "SimpleOutput",
-			"UseBufsize");
 	const char *preset = config_get_string(main->Config(), "SimpleOutput",
 			"Preset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
@@ -1018,9 +1009,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
-	ui->simpleOutUseBufsize->setChecked(useBufsize);
-	ui->simpleOutVBufsize->setValue(
-			useBufsize ? videoBufsize : videoBitrate);
 
 	int idx = ui->simpleOutRecFormat->findText(format);
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
@@ -1029,7 +1017,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			std::to_string(audioBitrate).c_str());
 
 	ui->simpleOutAdvanced->setChecked(advanced);
-	ui->simpleOutUseCBR->setChecked(useCBR);
 	ui->simpleOutPreset->setCurrentText(preset);
 	ui->simpleOutCustom->setText(custom);
 }
@@ -2086,13 +2073,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCombo(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
-	SaveCheckBox(ui->simpleOutUseCBR, "SimpleOutput", "UseCBR");
-	SaveCheckBox(ui->simpleOutUseBufsize, "SimpleOutput", "UseBufsize");
 	SaveCombo(ui->simpleOutPreset, "SimpleOutput", "Preset");
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
-
-	if (ui->simpleOutUseBufsize->isChecked())
-		SaveSpinBox(ui->simpleOutVBufsize, "SimpleOutput", "VBufsize");
 
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
@@ -2328,19 +2310,6 @@ void OBSBasicSettings::on_theme_activated(int idx)
 {
 	string currT = ui->theme->itemText(idx).toStdString();
 	App()->SetTheme(currT);
-}
-
-void OBSBasicSettings::on_simpleOutUseBufsize_toggled(bool checked)
-{
-	if (!checked)
-		ui->simpleOutVBufsize->setValue(
-				ui->simpleOutputVBitrate->value());
-}
-
-void OBSBasicSettings::on_simpleOutputVBitrate_valueChanged(int val)
-{
-	if (!ui->simpleOutUseBufsize->isChecked())
-		ui->simpleOutVBufsize->setValue(val);
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()

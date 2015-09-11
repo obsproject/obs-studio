@@ -228,9 +228,6 @@ private:
 private slots:
 	void on_theme_activated(int idx);
 
-	void on_simpleOutUseBufsize_toggled(bool checked);
-	void on_simpleOutputVBitrate_valueChanged(int val);
-
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
