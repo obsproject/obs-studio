@@ -1278,23 +1278,18 @@ static void move_to_xdg(void)
 }
 #endif
 
-static void update_ffmpeg_output(const char *path)
+static bool update_ffmpeg_output(ConfigFile &config)
 {
-	ConfigFile config;
-
-	if (config.Open(path, CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS)
-		return;
-
 	if (config_has_user_value(config, "AdvOut", "FFOutputToFile"))
-		return;
+		return false;
 
 	const char *url = config_get_string(config, "AdvOut", "FFURL");
 	if (!url)
-		return;
+		return false;
 
 	bool isActualURL = strstr(url, "://") != nullptr;
 	if (isActualURL)
-		return;
+		return false;
 
 	string urlStr = url;
 	string extension;
@@ -1313,13 +1308,13 @@ static void update_ffmpeg_output(const char *path)
 	}
 
 	if (urlStr.empty() || extension.empty())
-		return;
+		return false;
 
 	config_remove_value(config, "AdvOut", "FFURL");
 	config_set_string(config, "AdvOut", "FFFilePath", urlStr.c_str());
 	config_set_string(config, "AdvOut", "FFExtension", extension.c_str());
 	config_set_bool(config, "AdvOut", "FFOutputToFile", true);
-	config_save(config);
+	return true;
 }
 
 static void upgrade_settings(void)
@@ -1344,7 +1339,16 @@ static void upgrade_settings(void)
 			strcat(path, ent->d_name);
 			strcat(path, "/basic.ini");
 
-			update_ffmpeg_output(path);
+			ConfigFile config;
+			int ret;
+
+			ret = config.Open(path, CONFIG_OPEN_EXISTING);
+			if (ret == CONFIG_SUCCESS) {
+				if (update_ffmpeg_output(config)) {
+					config_save_safe(config, "tmp",
+							nullptr);
+				}
+			}
 
 			path[pathlen] = 0;
 		}
