@@ -1349,6 +1349,8 @@ static void *reconnect_thread(void *param)
 
 	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
 		pthread_detach(output->reconnect_thread);
+	else
+		output->reconnecting = false;
 
 	output->reconnect_thread_active = false;
 	return NULL;
