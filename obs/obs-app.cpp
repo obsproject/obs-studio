@@ -1322,7 +1322,7 @@ static void update_ffmpeg_output(const char *path)
 	config_save(config);
 }
 
-static void update_ffmpeg_outputs(void)
+static void upgrade_settings(void)
 {
 	char path[512];
 	int pathlen = GetConfigPath(path, 512, "obs-studio/basic/profiles");
@@ -1388,7 +1388,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	update_ffmpeg_outputs();
+	upgrade_settings();
 
 	fstream logFile;
 
