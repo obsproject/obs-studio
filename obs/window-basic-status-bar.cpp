@@ -63,6 +63,7 @@ void OBSBasicStatusBar::Deactivate()
 		delaySecTotal = 0;
 		delaySecStarting = 0;
 		delaySecStopping = 0;
+		reconnectTimeout = 0;
 		active = false;
 	}
 }
