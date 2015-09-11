@@ -269,9 +269,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecFormat,   COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputABitrate, COMBO_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutReconnect,   CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutRetryDelay,  SCROLL_CHANGED, OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutMaxRetries,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutUseCBR,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -279,9 +276,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutVBufsize,    SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->advOutReconnect,      CHECK_CHANGED,  OUTPUTS_CHANGED);
-	HookWidget(ui->advOutRetryDelay,     SCROLL_CHANGED, OUTPUTS_CHANGED);
-	HookWidget(ui->advOutMaxRetries,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -349,6 +343,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->reconnectEnable,      CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->reconnectRetryDelay,  SCROLL_CHANGED, ADV_CHANGED);
+	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -1008,12 +1005,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"VBufsize");
 	int audioBitrate = config_get_uint(main->Config(), "SimpleOutput",
 			"ABitrate");
-	bool reconnect = config_get_bool(main->Config(), "SimpleOutput",
-			"Reconnect");
-	int retryDelay = config_get_uint(main->Config(), "SimpleOutput",
-			"RetryDelay");
-	int maxRetries = config_get_uint(main->Config(), "SimpleOutput",
-			"MaxRetries");
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
 	bool useCBR = config_get_bool(main->Config(), "SimpleOutput",
@@ -1037,9 +1028,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	SetComboByName(ui->simpleOutputABitrate,
 			std::to_string(audioBitrate).c_str());
 
-	ui->simpleOutReconnect->setChecked(reconnect);
-	ui->simpleOutRetryDelay->setValue(retryDelay);
-	ui->simpleOutMaxRetries->setValue(maxRetries);
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutUseCBR->setChecked(useCBR);
 	ui->simpleOutPreset->setCurrentText(preset);
@@ -1048,12 +1036,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
-	bool reconnect = config_get_bool(main->Config(), "AdvOut",
-			"Reconnect");
-	int retryDelay = config_get_int(main->Config(), "AdvOut",
-			"RetryDelay");
-	int maxRetries = config_get_int(main->Config(), "AdvOut",
-			"MaxRetries");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
@@ -1063,9 +1045,6 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 			"ApplyServiceSettings");
 
-	ui->advOutReconnect->setChecked(reconnect);
-	ui->advOutRetryDelay->setValue(retryDelay);
-	ui->advOutMaxRetries->setValue(maxRetries);
 	ui->advOutApplyService->setChecked(applyServiceSettings);
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
@@ -1579,8 +1558,18 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"DelaySec");
 	bool preserveDelay = config_get_bool(main->Config(), "Output",
 			"DelayPreserve");
+	bool reconnect = config_get_bool(main->Config(), "Output",
+			"Reconnect");
+	int retryDelay = config_get_int(main->Config(), "Output",
+			"RetryDelay");
+	int maxRetries = config_get_int(main->Config(), "Output",
+			"MaxRetries");
 
 	loading = true;
+
+	ui->reconnectEnable->setChecked(reconnect);
+	ui->reconnectRetryDelay->setValue(retryDelay);
+	ui->reconnectMaxRetries->setValue(maxRetries);
 
 	ui->streamDelaySec->setValue(delaySec);
 	ui->streamDelayPreserve->setChecked(preserveDelay);
@@ -1992,6 +1981,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
 	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
+	SaveCheckBox(ui->reconnectEnable, "Output", "Reconnect");
+	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
+	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 }
 
 static inline const char *OutputModeFromIdx(int idx)
@@ -2093,9 +2085,6 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCombo(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");
-	SaveCheckBox(ui->simpleOutReconnect, "SimpleOutput", "Reconnect");
-	SaveSpinBox(ui->simpleOutRetryDelay, "SimpleOutput", "RetryDelay");
-	SaveSpinBox(ui->simpleOutMaxRetries, "SimpleOutput", "MaxRetries");
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
 	SaveCheckBox(ui->simpleOutUseCBR, "SimpleOutput", "UseCBR");
 	SaveCheckBox(ui->simpleOutUseBufsize, "SimpleOutput", "UseBufsize");
@@ -2105,9 +2094,6 @@ void OBSBasicSettings::SaveOutputSettings()
 	if (ui->simpleOutUseBufsize->isChecked())
 		SaveSpinBox(ui->simpleOutVBufsize, "SimpleOutput", "VBufsize");
 
-	SaveCheckBox(ui->advOutReconnect, "AdvOut", "Reconnect");
-	SaveSpinBox(ui->advOutRetryDelay, "AdvOut", "RetryDelay");
-	SaveSpinBox(ui->advOutMaxRetries, "AdvOut", "MaxRetries");
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");

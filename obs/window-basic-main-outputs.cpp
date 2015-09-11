@@ -237,11 +237,11 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	obs_output_set_audio_encoder(streamOutput, aac, 0);
 	obs_output_set_service(streamOutput, service);
 
-	bool reconnect = config_get_bool(main->Config(), "SimpleOutput",
+	bool reconnect = config_get_bool(main->Config(), "Output",
 			"Reconnect");
-	int retryDelay = config_get_uint(main->Config(), "SimpleOutput",
+	int retryDelay = config_get_uint(main->Config(), "Output",
 			"RetryDelay");
-	int maxRetries = config_get_uint(main->Config(), "SimpleOutput",
+	int maxRetries = config_get_uint(main->Config(), "Output",
 			"MaxRetries");
 	bool useDelay = config_get_bool(main->Config(), "Output",
 			"DelayEnable");
@@ -735,9 +735,9 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	obs_output_set_service(streamOutput, service);
 
-	bool reconnect = config_get_bool(main->Config(), "AdvOut", "Reconnect");
-	int retryDelay = config_get_int(main->Config(), "AdvOut", "RetryDelay");
-	int maxRetries = config_get_int(main->Config(), "AdvOut", "MaxRetries");
+	bool reconnect = config_get_bool(main->Config(), "Output", "Reconnect");
+	int retryDelay = config_get_int(main->Config(), "Output", "RetryDelay");
+	int maxRetries = config_get_int(main->Config(), "Output", "MaxRetries");
 	bool useDelay = config_get_bool(main->Config(), "Output",
 			"DelayEnable");
 	int delaySec = config_get_int(main->Config(), "Output",

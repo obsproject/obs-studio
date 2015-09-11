@@ -430,6 +430,42 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_45">
+                     <property name="text">
+                      <string>Basic.Settings.Output.Format</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="simpleOutRecFormat">
+                     <item>
+                      <property name="text">
+                       <string notr="true">flv</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">mp4</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">mov</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">mkv</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">ts</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
                    <item row="2" column="0">
                     <widget class="QLabel" name="label_19">
                      <property name="text">
@@ -520,47 +556,6 @@
                     </widget>
                    </item>
                    <item row="4" column="1">
-                    <widget class="QCheckBox" name="simpleOutReconnect">
-                     <property name="text">
-                      <string>Basic.Settings.Output.Reconnect</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="5" column="0">
-                    <widget class="QLabel" name="label_17">
-                     <property name="text">
-                      <string>Basic.Settings.Output.RetryDelay</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="5" column="1">
-                    <widget class="QSpinBox" name="simpleOutRetryDelay">
-                     <property name="maximum">
-                      <number>30</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="6" column="0">
-                    <widget class="QLabel" name="label_22">
-                     <property name="text">
-                      <string>Basic.Settings.Output.MaxRetries</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="6" column="1">
-                    <widget class="QSpinBox" name="simpleOutMaxRetries">
-                     <property name="minimum">
-                      <number>1</number>
-                     </property>
-                     <property name="maximum">
-                      <number>10000</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="7" column="1">
                     <widget class="QCheckBox" name="simpleOutAdvanced">
                      <property name="text">
                       <string>Basic.Settings.Output.Advanced</string>
@@ -570,7 +565,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="8" column="1">
+                   <item row="5" column="1">
                     <widget class="QCheckBox" name="simpleOutUseCBR">
                      <property name="text">
                       <string>Basic.Settings.Output.UseCBR</string>
@@ -580,7 +575,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="9" column="0">
+                   <item row="6" column="0">
                     <widget class="QLabel" name="label_24">
                      <property name="enabled">
                       <bool>true</bool>
@@ -590,7 +585,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="9" column="1">
+                   <item row="6" column="1">
                     <widget class="QComboBox" name="simpleOutPreset">
                      <item>
                       <property name="text">
@@ -634,7 +629,7 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="10" column="0">
+                   <item row="7" column="0">
                     <widget class="QCheckBox" name="simpleOutUseBufsize">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -650,7 +645,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="10" column="1">
+                   <item row="7" column="1">
                     <widget class="QSpinBox" name="simpleOutVBufsize">
                      <property name="enabled">
                       <bool>false</bool>
@@ -666,51 +661,15 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="11" column="0">
+                   <item row="8" column="0">
                     <widget class="QLabel" name="label_23">
                      <property name="text">
                       <string>Basic.Settings.Output.CustomEncoderSettings</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="11" column="1">
+                   <item row="8" column="1">
                     <widget class="QLineEdit" name="simpleOutCustom"/>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_45">
-                     <property name="text">
-                      <string>Basic.Settings.Output.Format</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QComboBox" name="simpleOutRecFormat">
-                     <item>
-                      <property name="text">
-                       <string notr="true">flv</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">mp4</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">mov</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">mkv</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">ts</string>
-                      </property>
-                     </item>
-                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -792,18 +751,8 @@
                        <property name="labelAlignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
-                       <item row="0" column="1">
-                        <widget class="QCheckBox" name="advOutReconnect">
-                         <property name="text">
-                          <string>Basic.Settings.Output.Reconnect</string>
-                         </property>
-                         <property name="checked">
-                          <bool>true</bool>
-                         </property>
-                        </widget>
-                       </item>
                        <item row="1" column="0">
-                        <widget class="QLabel" name="label_27">
+                        <widget class="QLabel" name="label_28">
                          <property name="minimumSize">
                           <size>
                            <width>170</width>
@@ -811,7 +760,7 @@
                           </size>
                          </property>
                          <property name="text">
-                          <string>Basic.Settings.Output.RetryDelay</string>
+                          <string>Basic.Settings.Output.Adv.AudioTrack</string>
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -819,73 +768,6 @@
                         </widget>
                        </item>
                        <item row="1" column="1">
-                        <widget class="QSpinBox" name="advOutRetryDelay">
-                         <property name="maximum">
-                          <number>30</number>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="0">
-                        <widget class="QLabel" name="label_26">
-                         <property name="text">
-                          <string>Basic.Settings.Output.MaxRetries</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="2" column="1">
-                        <widget class="QSpinBox" name="advOutMaxRetries">
-                         <property name="minimum">
-                          <number>1</number>
-                         </property>
-                         <property name="maximum">
-                          <number>10000</number>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="5" column="0">
-                        <widget class="QLabel" name="advOutEncLabel">
-                         <property name="text">
-                          <string>Basic.Settings.Output.Encoder</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="5" column="1">
-                        <widget class="QComboBox" name="advOutEncoder"/>
-                       </item>
-                       <item row="7" column="0">
-                        <widget class="QCheckBox" name="advOutUseRescale">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="layoutDirection">
-                          <enum>Qt::RightToLeft</enum>
-                         </property>
-                         <property name="text">
-                          <string>Basic.Settings.Output.Adv.Rescale</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="7" column="1">
-                        <widget class="QComboBox" name="advOutRescale">
-                         <property name="enabled">
-                          <bool>false</bool>
-                         </property>
-                         <property name="editable">
-                          <bool>true</bool>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="4" column="0">
-                        <widget class="QLabel" name="label_28">
-                         <property name="text">
-                          <string>Basic.Settings.Output.Adv.AudioTrack</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="4" column="1">
                         <widget class="QWidget" name="widget_8" native="true">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -940,12 +822,48 @@
                          </layout>
                         </widget>
                        </item>
-                       <item row="6" column="1">
+                       <item row="2" column="0">
+                        <widget class="QLabel" name="advOutEncLabel">
+                         <property name="text">
+                          <string>Basic.Settings.Output.Encoder</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="2" column="1">
+                        <widget class="QComboBox" name="advOutEncoder"/>
+                       </item>
+                       <item row="3" column="1">
                         <widget class="QCheckBox" name="advOutApplyService">
                          <property name="text">
                           <string>Basic.Settings.Output.Adv.ApplyServiceSettings</string>
                          </property>
                          <property name="checked">
+                          <bool>true</bool>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="0">
+                        <widget class="QCheckBox" name="advOutUseRescale">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="layoutDirection">
+                          <enum>Qt::RightToLeft</enum>
+                         </property>
+                         <property name="text">
+                          <string>Basic.Settings.Output.Adv.Rescale</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="1">
+                        <widget class="QComboBox" name="advOutRescale">
+                         <property name="enabled">
+                          <bool>false</bool>
+                         </property>
+                         <property name="editable">
                           <bool>true</bool>
                          </property>
                         </widget>
@@ -2883,6 +2801,59 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="groupBox_7">
+                  <property name="title">
+                   <string>Basic.Settings.Output.Reconnect</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_19">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Basic.Settings.Output.RetryDelay</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="reconnectEnable">
+                     <property name="text">
+                      <string>Enable</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QSpinBox" name="reconnectRetryDelay">
+                     <property name="maximum">
+                      <number>30</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_22">
+                     <property name="text">
+                      <string>Basic.Settings.Output.MaxRetries</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QSpinBox" name="reconnectMaxRetries">
+                     <property name="minimum">
+                      <number>1</number>
+                     </property>
+                     <property name="maximum">
+                      <number>10000</number>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="advancedMsg">
                   <property name="styleSheet">
                    <string notr="true">color: rgb(255, 0, 4);</string>
@@ -2982,40 +2953,8 @@
      <y>38</y>
     </hint>
     <hint type="destinationlabel">
-     <x>401</x>
-     <y>79</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>simpleOutRetryDelay</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>875</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>875</x>
-     <y>291</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>simpleOutMaxRetries</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>875</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>875</x>
-     <y>328</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3180,73 +3119,73 @@
    </hints>
   </connection>
   <connection>
-   <sender>advOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_27</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>427</x>
-     <y>178</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRetryDelay</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>864</x>
-     <y>178</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_26</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>427</x>
-     <y>215</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutReconnect</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutMaxRetries</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>864</x>
-     <y>215</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>advOutUseRescale</sender>
    <signal>toggled(bool)</signal>
    <receiver>advOutRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>864</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>427</x>
+     <y>178</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutRecUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutRecRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>864</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>864</x>
+     <y>178</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutFFType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>stackedWidget_2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>864</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>427</x>
+     <y>215</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_56</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>864</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>864</x>
+     <y>215</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamDelayPreserve</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -3260,9 +3199,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>advOutRecUseRescale</sender>
+   <sender>streamDelayEnable</sender>
    <signal>toggled(bool)</signal>
-   <receiver>advOutRecRescale</receiver>
+   <receiver>widget_12</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -3276,7 +3215,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>simpleOutReconnect</sender>
+   <sender>reconnectEnable</sender>
    <signal>toggled(bool)</signal>
    <receiver>label_17</receiver>
    <slot>setEnabled(bool)</slot>
@@ -3292,30 +3231,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>simpleOutReconnect</sender>
+   <sender>reconnectEnable</sender>
    <signal>toggled(bool)</signal>
-   <receiver>label_22</receiver>
+   <receiver>reconnectRetryDelay</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>466</x>
-     <y>328</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutFFType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget_2</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>89</y>
+     <x>516</x>
+     <y>411</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
@@ -3324,9 +3247,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>streamDelayEnable</sender>
+   <sender>reconnectEnable</sender>
    <signal>toggled(bool)</signal>
-   <receiver>label_56</receiver>
+   <receiver>label_22</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -3340,25 +3263,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>streamDelayEnable</sender>
+   <sender>reconnectEnable</sender>
    <signal>toggled(bool)</signal>
-   <receiver>streamDelayPreserve</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>578</x>
-     <y>275</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>593</x>
-     <y>339</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>widget_12</receiver>
+   <receiver>reconnectMaxRetries</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">

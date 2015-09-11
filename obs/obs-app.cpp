@@ -1317,6 +1317,54 @@ static bool update_ffmpeg_output(ConfigFile &config)
 	return true;
 }
 
+static bool move_reconnect_settings(ConfigFile &config, const char *sec)
+{
+	bool changed = false;
+
+	if (config_has_user_value(config, sec, "Reconnect")) {
+		bool reconnect = config_get_bool(config, sec, "Reconnect");
+		config_set_bool(config, "Output", "Reconnect", reconnect);
+		changed = true;
+	}
+	if (config_has_user_value(config, sec, "RetryDelay")) {
+		int delay = (int)config_get_uint(config, sec, "RetryDelay");
+		config_set_uint(config, "Output", "RetryDelay", delay);
+		changed = true;
+	}
+	if (config_has_user_value(config, sec, "MaxRetries")) {
+		int retries = (int)config_get_uint(config, sec, "MaxRetries");
+		config_set_uint(config, "Output", "MaxRetries", retries);
+		changed = true;
+	}
+
+	return changed;
+}
+
+static bool update_reconnect(ConfigFile &config)
+{
+	if (!config_has_user_value(config, "Output", "Mode"))
+		return false;
+
+	const char *mode = config_get_string(config, "Output", "Mode");
+	if (!mode)
+		return false;
+
+	const char *section = (strcmp(mode, "Advanced") == 0) ?
+		"AdvOut" : "SimpleOutput";
+
+	if (move_reconnect_settings(config, section)) {
+		config_remove_value(config, "SimpleOutput", "Reconnect");
+		config_remove_value(config, "SimpleOutput", "RetryDelay");
+		config_remove_value(config, "SimpleOutput", "MaxRetries");
+		config_remove_value(config, "AdvOut", "Reconnect");
+		config_remove_value(config, "AdvOut", "RetryDelay");
+		config_remove_value(config, "AdvOut", "MaxRetries");
+		return true;
+	}
+
+	return false;
+}
+
 static void upgrade_settings(void)
 {
 	char path[512];
@@ -1344,7 +1392,8 @@ static void upgrade_settings(void)
 
 			ret = config.Open(path, CONFIG_OPEN_EXISTING);
 			if (ret == CONFIG_SUCCESS) {
-				if (update_ffmpeg_output(config)) {
+				if (update_ffmpeg_output(config) ||
+				    update_reconnect(config)) {
 					config_save_safe(config, "tmp",
 							nullptr);
 				}

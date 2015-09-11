@@ -635,12 +635,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 160);
-	config_set_default_bool  (basicConfig, "SimpleOutput", "Reconnect",
-			true);
-	config_set_default_uint  (basicConfig, "SimpleOutput", "RetryDelay",
-			10);
-	config_set_default_uint  (basicConfig, "SimpleOutput", "MaxRetries",
-			20);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseAdvanced",
 			false);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseCBR", true);
@@ -650,9 +644,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
 
-	config_set_default_bool  (basicConfig, "AdvOut", "Reconnect", true);
-	config_set_default_uint  (basicConfig, "AdvOut", "RetryDelay", 10);
-	config_set_default_uint  (basicConfig, "AdvOut", "MaxRetries", 20);
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
 	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
@@ -692,6 +683,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "Output", "DelayEnable", false);
 	config_set_default_uint  (basicConfig, "Output", "DelaySec", 20);
 	config_set_default_bool  (basicConfig, "Output", "DelayPreserve", true);
+
+	config_set_default_bool  (basicConfig, "Output", "Reconnect", true);
+	config_set_default_uint  (basicConfig, "Output", "RetryDelay", 10);
+	config_set_default_uint  (basicConfig, "Output", "MaxRetries", 20);
 
 	int i = 0;
 	uint32_t scale_cx = cx;
