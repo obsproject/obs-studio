@@ -444,7 +444,9 @@ void OBSBasic::CleanupUnusedSources()
 void OBSBasic::Load(const char *file)
 {
 	if (!file || !os_file_exists(file)) {
-		blog(LOG_ERROR, "Could not find file %s", file);
+		blog(LOG_INFO, "No scene file found, creating default scene");
+		CreateDefaultScene();
+		SaveProject();
 		return;
 	}
 
