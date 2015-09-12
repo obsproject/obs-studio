@@ -455,6 +455,8 @@ void OBSBasic::Load(const char *file)
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
+		blog(LOG_ERROR, "Failed to load '%s', creating default scene",
+				file);
 		CreateDefaultScene();
 		SaveProject();
 		return;
