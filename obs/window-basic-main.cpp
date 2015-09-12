@@ -350,12 +350,43 @@ static inline bool HasAudioDevices(const char *source_id)
 	return count != 0;
 }
 
+void OBSBasic::CreateFirstRunSources(obs_scene_t *scene)
+{
+	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
+	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
+	const char *displayCaptureType = nullptr;
+	obs_source_t *source = nullptr;
+
+#ifdef __APPLE__
+	displayCaptureType = "display_capture";
+#elif _WIN32
+	if (GetWindowsVersion() >= 0x602)
+		displayCaptureType = "monitor_capture";
+#else //X11
+	displayCaptureType = "xshm_input";
+#endif
+	if (displayCaptureType) {
+		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
+				displayCaptureType, Str("Basic.DisplayCapture"),
+				NULL, nullptr);
+	}
+	if (source) {
+		obs_scene_add(scene, source);
+		obs_add_source(source);
+		obs_source_release(source);
+	}
+
+	if (hasDesktopAudio)
+		ResetAudioDevice(App()->OutputAudioSource(), "default",
+				Str("Basic.DesktopDevice1"), 1);
+	if (hasInputAudio)
+		ResetAudioDevice(App()->InputAudioSource(), "default",
+				Str("Basic.AuxDevice1"), 3);
+}
+
 void OBSBasic::CreateDefaultScene()
 {
 	disableSaving++;
-
-	bool hasDesktopAudio = HasAudioDevices(App()->OutputAudioSource());
-	bool hasInputAudio   = HasAudioDevices(App()->InputAudioSource());
 
 	ClearSceneData();
 
@@ -364,26 +395,10 @@ void OBSBasic::CreateDefaultScene()
 
 	obs_add_source(source);
 
-#ifdef __APPLE__
-	source = obs_source_create(OBS_SOURCE_TYPE_INPUT, "display_capture",
-			Str("Basic.DisplayCapture"), NULL, nullptr);
-
-	if (source) {
-		obs_scene_add(scene, source);
-		obs_add_source(source);
-		obs_source_release(source);
-	}
-#endif
+	CreateFirstRunSources(scene);
 
 	obs_set_output_source(0, obs_scene_get_source(scene));
 	obs_scene_release(scene);
-
-	if (hasDesktopAudio)
-		ResetAudioDevice(App()->OutputAudioSource(), "default",
-				Str("Basic.DesktopDevice1"), 1);
-	if (hasInputAudio)
-		ResetAudioDevice(App()->InputAudioSource(), "default",
-				Str("Basic.AuxDevice1"), 3);
 
 	disableSaving--;
 }
