@@ -114,7 +114,7 @@ private:
 	void          SetupEncoders();
 
 	void          CreateFirstRunSources(obs_scene_t *scene);
-	void          CreateDefaultScene();
+	void          CreateDefaultScene(bool firstStart);
 
 	void          ClearVolumeControls();
 

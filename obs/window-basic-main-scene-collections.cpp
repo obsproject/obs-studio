@@ -165,7 +165,7 @@ void OBSBasic::AddSceneCollection(bool create_new)
 	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
 			file.c_str());
 	if (create_new) {
-		CreateDefaultScene();
+		CreateDefaultScene(false);
 	}
 	SaveProjectNow();
 	RefreshSceneCollections();

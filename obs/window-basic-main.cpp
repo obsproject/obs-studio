@@ -384,7 +384,7 @@ void OBSBasic::CreateFirstRunSources(obs_scene_t *scene)
 				Str("Basic.AuxDevice1"), 3);
 }
 
-void OBSBasic::CreateDefaultScene()
+void OBSBasic::CreateDefaultScene(bool firstStart)
 {
 	disableSaving++;
 
@@ -395,7 +395,8 @@ void OBSBasic::CreateDefaultScene()
 
 	obs_add_source(source);
 
-	CreateFirstRunSources(scene);
+	if (firstStart)
+		CreateFirstRunSources(scene);
 
 	obs_set_output_source(0, obs_scene_get_source(scene));
 	obs_scene_release(scene);
@@ -460,7 +461,7 @@ void OBSBasic::Load(const char *file)
 {
 	if (!file || !os_file_exists(file)) {
 		blog(LOG_INFO, "No scene file found, creating default scene");
-		CreateDefaultScene();
+		CreateDefaultScene(true);
 		SaveProject();
 		return;
 	}
@@ -472,7 +473,7 @@ void OBSBasic::Load(const char *file)
 		disableSaving--;
 		blog(LOG_ERROR, "Failed to load '%s', creating default scene",
 				file);
-		CreateDefaultScene();
+		CreateDefaultScene(true);
 		SaveProject();
 		return;
 	}
