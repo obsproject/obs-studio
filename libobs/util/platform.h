@@ -145,6 +145,13 @@ EXPORT int os_mkdirs(const char *path);
 EXPORT int os_rename(const char *old_path, const char *new_path);
 EXPORT int os_copyfile(const char *file_in, const char *file_out);
 
+struct os_inhibit_info;
+typedef struct os_inhibit_info os_inhibit_t;
+
+EXPORT os_inhibit_t *os_inhibit_sleep_create(const char *reason);
+EXPORT bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active);
+EXPORT void os_inhibit_sleep_destroy(os_inhibit_t *info);
+
 #ifdef _MSC_VER
 #define strtoll _strtoi64
 #if _MSC_VER < 1900

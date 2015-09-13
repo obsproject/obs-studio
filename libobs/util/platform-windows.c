@@ -666,3 +666,49 @@ void get_win_ver(struct win_version_info *info)
 
 	*info = ver;
 }
+
+struct os_inhibit_info {
+	BOOL was_active;
+	bool active;
+};
+
+os_inhibit_t *os_inhibit_sleep_create(const char *reason)
+{
+	UNUSED_PARAMETER(reason);
+	return bzalloc(sizeof(struct os_inhibit_info));
+}
+
+bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
+{
+	if (!info)
+		return false;
+	if (info->active == active)
+		return false;
+
+	if (active) {
+		SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0,
+				&info->was_active, 0);
+		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, false,
+				NULL, 0);
+		SetThreadExecutionState(
+				ES_CONTINUOUS |
+				ES_SYSTEM_REQUIRED |
+				ES_AWAYMODE_REQUIRED |
+				ES_DISPLAY_REQUIRED);
+	} else {
+		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, info->was_active,
+				NULL, 0);
+		SetThreadExecutionState(ES_CONTINUOUS);
+	}
+
+	info->active = active;
+	return true;
+}
+
+void os_inhibit_sleep_destroy(os_inhibit_t *info)
+{
+	if (info) {
+		os_inhibit_sleep_set_active(info, false);
+		bfree(info);
+	}
+}

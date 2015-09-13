@@ -9,6 +9,12 @@ include_directories(${FFMPEG_INCLUDE_DIRS})
 
 list(REMOVE_ITEM FFMPEG_LIBRARIES ${FFMPEG_AVCODEC_LIBRARIES})
 
+if(UNIX)
+	find_package(DBus QUIET)
+else()
+	set(HAVE_DBUS "0")
+endif()
+
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
 
 if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
@@ -102,6 +108,15 @@ elseif(UNIX)
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
+
+	if(DBUS_FOUND)
+		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
+			util/platform-nix-dbus.c)
+		include_directories(${DBUS_INCLUDE_DIRS})
+		set(libobs_PLATFORM_DEPS
+			${libobs_PLATFORM_DEPS}
+			${DBUS_LIBRARIES})
+	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 		# use the sysinfo compatibility library on bsd

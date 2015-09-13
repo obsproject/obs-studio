@@ -27,6 +27,8 @@
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 
+#include <IOKit/pwr_mgt/IOPMLib.h>
+
 #import <Cocoa/Cocoa.h>
 
 /* clock function selection taken from libc++ */
@@ -231,3 +233,60 @@ void os_end_high_performance(os_performance_token_t *token)
 	}
 }
 
+struct os_inhibit_info {
+	CFStringRef reason;
+	IOPMAssertionID sleep_id;
+	IOPMAssertionID user_id;
+	bool active;
+};
+
+os_inhibit_t *os_inhibit_sleep_create(const char *reason)
+{
+	struct os_inhibit_info *info = bzalloc(sizeof(*info));
+	if (!reason)
+		info->reason = CFStringCreateWithCString(kCFAllocatorDefault,
+				reason, kCFStringEncodingUTF8);
+	else
+		info->reason = CFStringCreateCopy(kCFAllocatorDefault,
+				CFSTR(""));
+
+	return info;
+}
+
+bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
+{
+	IOReturn success;
+
+	if (!info)
+		return false;
+	if (info->active == active)
+		return false;
+
+	if (active) {
+		IOPMAssertionDeclareUserActivity(info->reason,
+				kIOPMUserActiveLocal, &info->user_id);
+		success = IOPMAssertionCreateWithName(
+				kIOPMAssertionTypeNoDisplaySleep,
+				kIOPMAssertionLevelOn, info->reason,
+				&info->sleep_id);
+
+		if (success != kIOReturnSuccess) {
+			blog(LOG_WARNING, "Failed to disable sleep");
+			return false;
+		}
+	} else {
+		IOPMAssertionRelease(info->sleep_id);
+	}
+
+	info->active = active;
+	return true;
+}
+
+void os_inhibit_sleep_destroy(os_inhibit_t *info)
+{
+	if (info) {
+		os_inhibit_sleep_set_active(info, false);
+		CFRelease(info->reason);
+		bfree(info);
+	}
+}

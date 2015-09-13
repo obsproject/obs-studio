@@ -25,13 +25,19 @@
 #include <glob.h>
 #include <time.h>
 
+#include "obsconfig.h"
+
 #if !defined(__APPLE__)
 #include <sys/times.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <spawn.h>
 #endif
 
 #include "darray.h"
 #include "dstr.h"
 #include "platform.h"
+#include "threading.h"
 
 void *os_dlopen(const char *path)
 {
@@ -422,3 +428,125 @@ int os_chdir(const char *path)
 {
 	return chdir(path);
 }
+
+#if !defined(__APPLE__)
+
+#if HAVE_DBUS
+struct dbus_sleep_info;
+
+extern struct dbus_sleep_info *dbus_sleep_info_create(void);
+extern void dbus_inhibit_sleep(struct dbus_sleep_info *dbus, const char *sleep,
+		bool active);
+extern void dbus_sleep_info_destroy(struct dbus_sleep_info *dbus);
+#endif
+
+struct os_inhibit_info {
+#if HAVE_DBUS
+	struct dbus_sleep_info *dbus;
+#endif
+	pthread_t screensaver_thread;
+	os_event_t *stop_event;
+	char *reason;
+	posix_spawnattr_t attr;
+	bool active;
+};
+
+os_inhibit_t *os_inhibit_sleep_create(const char *reason)
+{
+	struct os_inhibit_info *info = bzalloc(sizeof(*info));
+	sigset_t set;
+
+#if HAVE_DBUS
+	info->dbus = dbus_sleep_info_create();
+#endif
+
+	os_event_init(&info->stop_event, OS_EVENT_TYPE_AUTO);
+	posix_spawnattr_init(&info->attr);
+
+	sigemptyset(&set);
+	posix_spawnattr_setsigmask(&info->attr, &set);
+	sigaddset(&set, SIGPIPE);
+	posix_spawnattr_setsigdefault(&info->attr, &set);
+	posix_spawnattr_setflags(&info->attr,
+			POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK);
+
+	info->reason = bstrdup(reason);
+	return info;
+}
+
+extern char **environ;
+
+static void reset_screensaver(os_inhibit_t *info)
+{
+	char *argv[3] = {(char*)"xdg-screensaver", (char*)"reset", NULL};
+	pid_t pid;
+
+	int err = posix_spawnp(&pid, "xdg-screensaver", NULL, &info->attr,
+			argv, environ);
+	if (err == 0) {
+		int status;
+		while (waitpid(pid, &status, 0) == -1);
+	} else {
+		blog(LOG_WARNING, "Failed to create xdg-screensaver: %d", err);
+	}
+}
+
+static void *screensaver_thread(void *param)
+{
+	os_inhibit_t *info = param;
+
+	while (os_event_timedwait(info->stop_event, 30000) == ETIMEDOUT)
+		reset_screensaver(info);
+
+	return NULL;
+}
+
+bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
+{
+	int ret;
+
+	if (!info)
+		return false;
+	if (info->active == active)
+		return false;
+
+#if HAVE_DBUS
+	if (info->dbus)
+		dbus_inhibit_sleep(info->dbus, info->reason, active);
+#endif
+
+	if (!info->stop_event)
+		return true;
+
+	if (active) {
+		ret = pthread_create(&info->screensaver_thread, NULL,
+				&screensaver_thread, info);
+		if (ret < 0) {
+			blog(LOG_ERROR, "Failed to create screensaver "
+			                "inhibitor thread");
+			return false;
+		}
+	} else {
+		os_event_signal(info->stop_event);
+		pthread_join(info->screensaver_thread, NULL);
+	}
+
+	info->active = active;
+	return true;
+}
+
+void os_inhibit_sleep_destroy(os_inhibit_t *info)
+{
+	if (info) {
+		os_inhibit_sleep_set_active(info, false);
+#if HAVE_DBUS
+		dbus_sleep_info_destroy(info->dbus);
+#endif
+		os_event_destroy(info->stop_event);
+		posix_spawnattr_destroy(&info->attr);
+		bfree(info->reason);
+		bfree(info);
+	}
+}
+
+#endif
