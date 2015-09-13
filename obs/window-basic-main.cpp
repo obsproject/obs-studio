@@ -941,6 +941,8 @@ void OBSBasic::OBSInit()
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
+	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
+	os_inhibit_sleep_set_active(sleepInhibitor, true);
 	show();
 }
 
@@ -1193,6 +1195,9 @@ OBSBasic::~OBSBasic()
 		}
 	}
 #endif
+
+	os_inhibit_sleep_set_active(sleepInhibitor, false);
+	os_inhibit_sleep_destroy(sleepInhibitor);
 }
 
 void OBSBasic::SaveProjectNow()

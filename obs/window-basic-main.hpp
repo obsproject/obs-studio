@@ -89,6 +89,7 @@ private:
 
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
+	os_inhibit_t        *sleepInhibitor = nullptr;
 
 	OBSService service;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
