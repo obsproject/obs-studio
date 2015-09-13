@@ -197,6 +197,7 @@ static void remove_connection(struct obs_encoder *encoder)
 		video_output_disconnect(encoder->media, receive_video,
 				encoder);
 
+	obs_encoder_shutdown(encoder);
 	encoder->active = false;
 }
 
@@ -368,9 +369,8 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 
 	if (encoder->active)
 		return true;
-
 	if (encoder->context.data)
-		encoder->info.destroy(encoder->context.data);
+		return false;
 
 	if (encoder->info.create)
 		encoder->context.data = encoder->info.create(
@@ -385,6 +385,14 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 		intitialize_audio_encoder(encoder);
 
 	return true;
+}
+
+void obs_encoder_shutdown(obs_encoder_t *encoder)
+{
+	if (encoder->context.data) {
+		encoder->info.destroy(encoder->context.data);
+		encoder->context.data = NULL;
+	}
 }
 
 static inline size_t get_callback_idx(
