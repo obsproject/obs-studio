@@ -70,12 +70,21 @@ static struct obs_encoder *create_encoder(const char *id,
 	struct obs_encoder_info *ei = find_encoder(id);
 	bool success;
 
-	if (!ei || ei->type != type)
+	if (ei && ei->type != type)
 		return NULL;
 
 	encoder = bzalloc(sizeof(struct obs_encoder));
-	encoder->info = *ei;
 	encoder->mixer_idx = mixer_idx;
+
+	if (!ei) {
+		blog(LOG_ERROR, "Encoder ID '%s' not found", id);
+
+		encoder->info.id      = bstrdup(id);
+		encoder->info.type    = type;
+		encoder->owns_info_id = true;
+	} else {
+		encoder->info = *ei;
+	}
 
 	success = init_encoder(encoder, name, settings, hotkey_data);
 	if (!success) {
@@ -221,6 +230,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		pthread_mutex_destroy(&encoder->callbacks_mutex);
 		pthread_mutex_destroy(&encoder->outputs_mutex);
 		obs_context_data_free(&encoder->context);
+		if (encoder->owns_info_id)
+			bfree((void*)encoder->info.id);
 		bfree(encoder);
 	}
 }
@@ -361,8 +372,9 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 	if (encoder->context.data)
 		encoder->info.destroy(encoder->context.data);
 
-	encoder->context.data = encoder->info.create(encoder->context.settings,
-			encoder);
+	if (encoder->info.create)
+		encoder->context.data = encoder->info.create(
+				encoder->context.settings, encoder);
 	if (!encoder->context.data)
 		return false;
 

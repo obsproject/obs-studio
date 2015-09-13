@@ -52,14 +52,20 @@ obs_service_t *obs_service_create(const char *id, const char *name,
 		return NULL;
 	}
 
-	service->info = *info;
+	if (!info) {
+		blog(LOG_ERROR, "Service ID '%s' not found", id);
 
-	service->context.data = service->info.create(service->context.settings,
-			service);
-	if (!service->context.data) {
-		obs_service_destroy(service);
-		return NULL;
+		service->info.id      = bstrdup(id);
+		service->owns_info_id = true;
+	} else {
+		service->info = *info;
 	}
+
+	if (info)
+		service->context.data = service->info.create(
+				service->context.settings, service);
+	if (!service->context.data)
+		blog(LOG_ERROR, "Failed to create service '%s'!", name);
 
 	service->control = bzalloc(sizeof(obs_weak_service_t));
 	service->control->service = service;
@@ -83,6 +89,8 @@ static void actually_destroy_service(struct obs_service *service)
 	blog(LOG_INFO, "service '%s' destroyed", service->context.name);
 
 	obs_context_data_free(&service->context);
+	if (service->owns_info_id)
+		bfree((void*)service->info.id);
 	bfree(service);
 }
 

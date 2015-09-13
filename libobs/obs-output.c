@@ -68,11 +68,6 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	struct obs_output *output;
 	int ret;
 
-	if (!info) {
-		blog(LOG_ERROR, "Output '%s' not found", id);
-		return NULL;
-	}
-
 	output = bzalloc(sizeof(struct obs_output));
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
@@ -84,7 +79,14 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	if (!init_output_handlers(output, name, settings, hotkey_data))
 		goto fail;
 
-	output->info     = *info;
+	if (!info) {
+		blog(LOG_ERROR, "Output ID '%s' not found", id);
+
+		output->info.id      = bstrdup(id);
+		output->owns_info_id = true;
+	} else {
+		output->info = *info;
+	}
 	output->video    = obs_get_video();
 	output->audio    = obs_get_audio();
 	if (output->info.get_defaults)
@@ -95,9 +97,11 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	if (ret < 0)
 		goto fail;
 
-	output->context.data = info->create(output->context.settings, output);
+	if (info)
+		output->context.data = info->create(output->context.settings,
+				output);
 	if (!output->context.data)
-		goto fail;
+		blog(LOG_ERROR, "Failed to create output '%s'!", name);
 
 	output->reconnect_retry_sec = 2;
 	output->reconnect_retry_max = 20;
@@ -160,6 +164,8 @@ void obs_output_destroy(obs_output_t *output)
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		circlebuf_free(&output->delay_data);
+		if (output->owns_info_id)
+			bfree((void*)output->info.id);
 		bfree(output);
 	}
 }
@@ -171,11 +177,12 @@ const char *obs_output_get_name(const obs_output_t *output)
 
 bool obs_output_actual_start(obs_output_t *output)
 {
-	bool success;
+	bool success = false;
 
 	output->stopped = false;
 
-	success = output->info.start(output->context.data);
+	if (output->context.data)
+		success = output->info.start(output->context.data);
 
 	if (success && output->video) {
 		output->starting_frame_count =
@@ -194,6 +201,8 @@ bool obs_output_start(obs_output_t *output)
 {
 	bool encoded;
 	if (!obs_output_valid(output, "obs_output_start"))
+		return false;
+	if (!output->context.data)
 		return false;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
@@ -251,7 +260,8 @@ void obs_output_actual_stop(obs_output_t *output, bool force)
 	if (output->reconnect_thread_active)
 		pthread_join(output->reconnect_thread, NULL);
 
-	output->info.stop(output->context.data);
+	if (output->context.data)
+		output->info.stop(output->context.data);
 
 	if (output->video)
 		log_frame_info(output);
@@ -269,6 +279,8 @@ void obs_output_stop(obs_output_t *output)
 {
 	bool encoded;
 	if (!obs_output_valid(output, "obs_output_stop"))
+		return;
+	if (!output->context.data)
 		return;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;

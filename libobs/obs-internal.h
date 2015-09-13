@@ -620,6 +620,9 @@ struct obs_output {
 	struct obs_output_info          info;
 	struct obs_weak_output          *control;
 
+	/* indicates ownership of the info.id buffer */
+	bool                            owns_info_id;
+
 	bool                            received_video;
 	bool                            received_audio;
 	int64_t                         video_offset;
@@ -731,6 +734,9 @@ struct obs_encoder {
 
 	bool                            active;
 
+	/* indicates ownership of the info.id buffer */
+	bool                            owns_info_id;
+
 	uint32_t                        timebase_num;
 	uint32_t                        timebase_den;
 
@@ -791,6 +797,9 @@ struct obs_service {
 	struct obs_context_data         context;
 	struct obs_service_info         info;
 	struct obs_weak_service         *control;
+
+	/* indicates ownership of the info.id buffer */
+	bool                            owns_info_id;
 
 	bool                            active;
 	bool                            destroy;
