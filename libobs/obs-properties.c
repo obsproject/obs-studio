@@ -225,8 +225,12 @@ obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 
 void obs_properties_apply_settings(obs_properties_t *props, obs_data_t *settings)
 {
-	struct obs_property *p = props->first_property;
+	struct obs_property *p;
 
+	if (!props)
+		return;
+	
+	p = props->first_property;
 	while (p) {
 		if (p->modified)
 			p->modified(props, p, settings);
