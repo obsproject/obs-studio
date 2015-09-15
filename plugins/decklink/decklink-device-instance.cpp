@@ -12,7 +12,16 @@ DeckLinkDeviceInstance::DeckLinkDeviceInstance(DeckLink *decklink_,
 		DeckLinkDevice *device_) :
 	currentFrame(), currentPacket(), decklink(decklink_), device(device_)
 {
-	currentFrame.format = VIDEO_FORMAT_UYVY;
+	// use BGRA mode if the device is a BMI intensity pro 4K... wish there
+	// was a better way to check the device model, but older cards don't
+	// implement BMDDeckLinkPersistentID
+	if (std::string("Intensity Pro 4K").compare(device_->GetName()) == 0) {
+		currentFrame.format = VIDEO_FORMAT_BGRX;
+		doRgb = true;
+	} else {
+		currentFrame.format = VIDEO_FORMAT_UYVY;
+		doRgb = false;
+	}
 
 	currentPacket.samples_per_sec = 48000;
 	currentPacket.speakers        = SPEAKERS_STEREO;
@@ -82,9 +91,16 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	input->SetCallback(this);
 
+	BMDPixelFormat pixelFormat;
 	const BMDDisplayMode displayMode = mode_->GetDisplayMode();
+
+	if (doRgb)
+		pixelFormat = bmdFormat8BitBGRA;
+	else
+		pixelFormat = bmdFormat8BitYUV;
+
 	const HRESULT videoResult = input->EnableVideoInput(displayMode,
-			bmdFormat8BitYUV, bmdVideoInputFlagDefault);
+			pixelFormat, bmdVideoInputFlagDefault);
 
 	if (videoResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable video input");

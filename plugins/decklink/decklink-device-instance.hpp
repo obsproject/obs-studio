@@ -8,6 +8,7 @@ protected:
 	struct obs_source_audio currentPacket;
 	DeckLink                *decklink = nullptr;
 	DeckLinkDevice          *device = nullptr;
+	bool                    doRgb = false;
 	DeckLinkDeviceMode      *mode = nullptr;
 	ComPtr<IDeckLinkInput>  input;
 	volatile long           refCount = 1;
