@@ -17,10 +17,10 @@ DeckLinkDeviceInstance::DeckLinkDeviceInstance(DeckLink *decklink_,
 	// implement BMDDeckLinkPersistentID
 	if (std::string("Intensity Pro 4K").compare(device_->GetName()) == 0) {
 		currentFrame.format = VIDEO_FORMAT_BGRX;
-		doRgb = true;
+		pixelFormat = bmdFormat8BitBGRA;
 	} else {
 		currentFrame.format = VIDEO_FORMAT_UYVY;
-		doRgb = false;
+		pixelFormat = bmdFormat8BitYUV;
 	}
 
 	currentPacket.samples_per_sec = 48000;
@@ -91,13 +91,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	input->SetCallback(this);
 
-	BMDPixelFormat pixelFormat;
 	const BMDDisplayMode displayMode = mode_->GetDisplayMode();
-
-	if (doRgb)
-		pixelFormat = bmdFormat8BitBGRA;
-	else
-		pixelFormat = bmdFormat8BitYUV;
 
 	const HRESULT videoResult = input->EnableVideoInput(displayMode,
 			pixelFormat, bmdVideoInputFlagDefault);
