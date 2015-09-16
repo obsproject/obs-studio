@@ -18,8 +18,9 @@ struct scroll_filter_data {
 	struct vec2                    offset;
 };
 
-static const char *scroll_filter_get_name(void)
+static const char *scroll_filter_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("ScrollFilter");
 }
 

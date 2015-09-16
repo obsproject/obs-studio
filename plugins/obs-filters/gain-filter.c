@@ -19,8 +19,9 @@ struct gain_data {
 	float multiple;
 };
 
-static const char *gain_name(void)
+static const char *gain_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("Gain");
 }
 

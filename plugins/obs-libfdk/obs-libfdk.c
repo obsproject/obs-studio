@@ -59,8 +59,9 @@ typedef struct libfdk_encoder {
 	int packet_buffer_size;
 } libfdk_encoder_t;
 
-static const char *libfdk_getname(void)
+static const char *libfdk_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("LibFDK");
 }
 

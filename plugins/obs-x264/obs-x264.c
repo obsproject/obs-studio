@@ -56,8 +56,9 @@ struct obs_x264 {
 
 /* ------------------------------------------------------------------------- */
 
-static const char *obs_x264_getname(void)
+static const char *obs_x264_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return "x264";
 }
 

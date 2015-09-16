@@ -37,8 +37,9 @@ struct ffmpeg_muxer {
 	bool              capturing;
 };
 
-static const char *ffmpeg_mux_getname(void)
+static const char *ffmpeg_mux_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFmpegMuxer");
 }
 

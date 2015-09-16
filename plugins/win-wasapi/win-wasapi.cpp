@@ -476,12 +476,12 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *GetWASAPIInputName(void)
+static const char *GetWASAPIInputName(void*)
 {
 	return obs_module_text("AudioInput");
 }
 
-static const char *GetWASAPIOutputName(void)
+static const char *GetWASAPIOutputName(void*)
 {
 	return obs_module_text("AudioOutput");
 }

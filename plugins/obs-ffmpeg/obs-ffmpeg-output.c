@@ -518,8 +518,9 @@ fail:
 
 /* ------------------------------------------------------------------------- */
 
-static const char *ffmpeg_output_getname(void)
+static const char *ffmpeg_output_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFmpegOutput");
 }
 

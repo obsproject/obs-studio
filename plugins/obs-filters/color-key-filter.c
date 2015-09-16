@@ -45,8 +45,9 @@ struct color_key_filter_data {
 	float                          smoothness;
 };
 
-static const char *color_key_name(void)
+static const char *color_key_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("ColorKeyFilter");
 }
 

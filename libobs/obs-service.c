@@ -30,7 +30,7 @@ const struct obs_service_info *find_service(const char *id)
 const char *obs_service_get_display_name(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
-	return (info != NULL) ? info->get_name() : NULL;
+	return (info != NULL) ? info->get_name(info->type_data) : NULL;
 }
 
 obs_service_t *obs_service_create(const char *id, const char *name,

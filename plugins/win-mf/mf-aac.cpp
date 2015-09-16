@@ -8,7 +8,7 @@
 
 using namespace MFAAC;
 
-static const char *MFAAC_GetName()
+static const char *MFAAC_GetName(void*)
 {
 	return obs_module_text("MFAACEnc");
 }

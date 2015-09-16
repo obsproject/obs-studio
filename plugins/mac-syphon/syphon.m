@@ -89,8 +89,9 @@ static inline void handle_application_launch(syphon_t s, NSArray *new)
 }
 @end
 
-static const char *syphon_get_name()
+static const char *syphon_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("Syphon");
 }
 

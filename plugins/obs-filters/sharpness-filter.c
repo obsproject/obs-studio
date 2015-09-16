@@ -14,8 +14,9 @@ struct sharpness_data {
 	float                          texwidth, texheight;
 };
 
-static const char *sharpness_getname(void)
+static const char *sharpness_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("SharpnessFilter");
 }
 

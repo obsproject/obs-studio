@@ -44,8 +44,9 @@ struct noise_gate_data {
 #define VOL_MIN -96.0f
 #define VOL_MAX 0.0f
 
-static const char *noise_gate_name(void)
+static const char *noise_gate_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("NoiseGate");
 }
 

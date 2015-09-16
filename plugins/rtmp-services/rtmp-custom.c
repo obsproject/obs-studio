@@ -6,8 +6,9 @@ struct rtmp_custom {
 	char *username, *password;
 };
 
-static const char *rtmp_custom_name(void)
+static const char *rtmp_custom_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("CustomStreamingServer");
 }
 

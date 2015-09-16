@@ -50,8 +50,9 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *wc_getname(void)
+static const char *wc_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_WINDOW_CAPTURE;
 }
 

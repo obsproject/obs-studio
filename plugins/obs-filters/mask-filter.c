@@ -22,8 +22,9 @@ struct mask_filter_data {
 	struct vec4                    color;
 };
 
-static const char *mask_filter_get_name(void)
+static const char *mask_filter_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("MaskFilter");
 }
 

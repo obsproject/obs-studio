@@ -36,7 +36,7 @@ struct obs_output_info {
 
 	uint32_t flags;
 
-	const char *(*get_name)(void);
+	const char *(*get_name)(void *type_data);
 
 	void *(*create)(obs_data_t *settings, obs_output_t *output);
 	void (*destroy)(void *data);

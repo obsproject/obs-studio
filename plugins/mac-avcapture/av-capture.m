@@ -255,8 +255,9 @@ static void av_capture_enable_buffering(struct av_capture *capture,
 	obs_source_set_flags(source, flags);
 }
 
-static const char *av_capture_getname(void)
+static const char *av_capture_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_AVCAPTURE;
 }
 

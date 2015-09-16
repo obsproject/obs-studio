@@ -34,8 +34,9 @@ struct color_filter_data {
 	float                          gamma;
 };
 
-static const char *color_filter_name(void)
+static const char *color_filter_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("ColorFilter");
 }
 

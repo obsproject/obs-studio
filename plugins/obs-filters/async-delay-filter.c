@@ -33,8 +33,9 @@ struct async_delay_data {
 	bool                           reset_audio;
 };
 
-static const char *async_delay_filter_name(void)
+static const char *async_delay_filter_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("AsyncDelayFilter");
 }
 

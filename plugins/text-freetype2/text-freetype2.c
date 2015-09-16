@@ -68,8 +68,9 @@ void obs_module_unload(void)
 	FT_Done_FreeType(ft2_lib);
 }
 
-static const char *ft2_source_get_name(void)
+static const char *ft2_source_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("TextFreetype2");
 }
 

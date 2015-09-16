@@ -60,8 +60,9 @@ static inline void update_settings(struct duplicator_capture *capture,
 
 /* ------------------------------------------------------------------------- */
 
-static const char *duplicator_capture_getname(void)
+static const char *duplicator_capture_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_MONITOR_CAPTURE;
 }
 

@@ -57,7 +57,7 @@ static void decklink_get_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "buffering", true);
 }
 
-static const char *decklink_get_name()
+static const char *decklink_get_name(void*)
 {
 	return obs_module_text("BlackmagicDevice");
 }

@@ -439,13 +439,15 @@ static void pulse_output_defaults(obs_data_t *settings)
 /**
  * Returns the name of the plugin
  */
-static const char *pulse_input_getname(void)
+static const char *pulse_input_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("PulseInput");
 }
 
-static const char *pulse_output_getname(void)
+static const char *pulse_output_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("PulseOutput");
 }
 

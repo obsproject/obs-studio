@@ -22,8 +22,9 @@ struct image_source {
 	uint32_t     cy;
 };
 
-static const char *image_source_get_name(void)
+static const char *image_source_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("ImageInput");
 }
 

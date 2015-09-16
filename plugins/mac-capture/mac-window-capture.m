@@ -186,8 +186,9 @@ static void window_capture_update(void *data, obs_data_t *settings)
 	}
 }
 
-static const char *window_capture_getname(void)
+static const char *window_capture_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("WindowCapture");
 }
 

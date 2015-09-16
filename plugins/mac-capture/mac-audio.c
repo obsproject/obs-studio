@@ -647,13 +647,15 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *coreaudio_input_getname(void)
+static const char *coreaudio_input_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_AUDIO_INPUT;
 }
 
-static const char *coreaudio_output_getname(void)
+static const char *coreaudio_output_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_AUDIO_OUTPUT;
 }
 

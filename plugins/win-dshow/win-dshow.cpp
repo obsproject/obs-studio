@@ -983,7 +983,7 @@ inline void DShowInput::Deactivate()
 
 /* ------------------------------------------------------------------------- */
 
-static const char *GetDShowInputName(void)
+static const char *GetDShowInputName(void*)
 {
 	return TEXT_INPUT_NAME;
 }

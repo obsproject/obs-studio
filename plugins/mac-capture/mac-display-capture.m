@@ -422,8 +422,9 @@ static void display_capture_video_render(void *data, gs_effect_t *effect)
 	gs_technique_end(tech);
 }
 
-static const char *display_capture_getname(void)
+static const char *display_capture_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("DisplayCapture");
 }
 

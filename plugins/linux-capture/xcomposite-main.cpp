@@ -55,7 +55,7 @@ void xcompcap_update(void *data, obs_data_t *settings)
 	cc->updateSettings(settings);
 }
 
-static const char* xcompcap_getname(void)
+static const char* xcompcap_getname(void*)
 {
 	return obs_module_text("XCCapture");
 }

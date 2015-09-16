@@ -22,8 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
  * Returns the name of the plugin
  */
-static const char *jack_input_getname(void)
+static const char *jack_input_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("JACKInput");
 }
 

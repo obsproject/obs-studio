@@ -213,7 +213,7 @@ static const char *flush_log(DStr &log)
 	CA_CO_LOG(level, format "%s%s", ##__VA_ARGS__, \
 			log->array ? ":\n" : "", flush_log(log))
 
-static const char *aac_get_name(void)
+static const char *aac_get_name(void*)
 {
 	return obs_module_text("CoreAudioAAC");
 }

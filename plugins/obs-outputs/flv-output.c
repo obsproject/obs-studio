@@ -40,8 +40,9 @@ struct flv_output {
 	int64_t      last_packet_ts;
 };
 
-static const char *flv_output_getname(void)
+static const char *flv_output_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("FLVOutput");
 }
 

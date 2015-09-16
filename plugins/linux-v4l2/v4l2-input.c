@@ -217,8 +217,9 @@ exit:
 	return NULL;
 }
 
-static const char* v4l2_getname(void)
+static const char* v4l2_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("V4L2Input");
 }
 

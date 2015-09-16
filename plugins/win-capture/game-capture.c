@@ -1369,8 +1369,9 @@ static uint32_t game_capture_height(void *data)
 	return gc->active ? gc->global_hook_info->cy : 0;
 }
 
-static const char *game_capture_name(void)
+static const char *game_capture_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return TEXT_GAME_CAPTURE;
 }
 

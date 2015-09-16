@@ -42,12 +42,12 @@ struct DShowEncoder {
 			struct encoder_packet *packet, bool *received_packet);
 };
 
-static const char *GetC985EncoderName(void)
+static const char *GetC985EncoderName(void*)
 {
 	return obs_module_text("Encoder.C985");
 }
 
-static const char *GetC353EncoderName(void)
+static const char *GetC353EncoderName(void*)
 {
 	return obs_module_text("Encoder.C353");
 }

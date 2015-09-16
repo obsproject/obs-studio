@@ -71,8 +71,9 @@ struct rtmp_stream {
 	RTMP             rtmp;
 };
 
-static const char *rtmp_stream_getname(void)
+static const char *rtmp_stream_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("RTMPStream");
 }
 

@@ -10,8 +10,9 @@ struct rtmp_common {
 	char *key;
 };
 
-static const char *rtmp_common_getname(void)
+static const char *rtmp_common_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("StreamingServices");
 }
 

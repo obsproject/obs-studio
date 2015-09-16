@@ -52,8 +52,9 @@ struct aac_encoder {
 	int              frame_size_bytes;
 };
 
-static const char *aac_getname(void)
+static const char *aac_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFmpegAAC");
 }
 

@@ -132,8 +132,9 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 /**
  * Returns the name of the plugin
  */
-static const char* xshm_getname(void)
+static const char* xshm_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("X11SharedMemoryScreenInput");
 }
 

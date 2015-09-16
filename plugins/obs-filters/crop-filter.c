@@ -19,8 +19,9 @@ struct crop_filter_data {
 	bool                           absolute;
 };
 
-static const char *crop_filter_get_name(void)
+static const char *crop_filter_get_name(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("CropFilter");
 }
 

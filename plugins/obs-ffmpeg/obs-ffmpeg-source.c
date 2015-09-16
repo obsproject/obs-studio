@@ -517,8 +517,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 }
 
 
-static const char *ffmpeg_source_getname(void)
+static const char *ffmpeg_source_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return obs_module_text("FFMpegSource");
 }
 
