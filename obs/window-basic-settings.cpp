@@ -295,6 +295,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFURL,          EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFFormat,       COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFMCfg,         EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVBitrate,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFUseRescale,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFRescale,      CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -1172,6 +1173,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 			"FFFormat");
 	const char *mimeType = config_get_string(main->Config(), "AdvOut",
 			"FFFormatMimeType");
+	const char *muxCustom = config_get_string(main->Config(), "AdvOut",
+			"FFMCustom");
 	int videoBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFVBitrate");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
@@ -1199,6 +1202,7 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	ui->advOutFFRecPath->setText(QT_UTF8(path));
 	ui->advOutFFURL->setText(QT_UTF8(url));
 	SelectFormat(ui->advOutFFFormat, format, mimeType);
+	ui->advOutFFMCfg->setText(muxCustom);
 	ui->advOutFFVBitrate->setValue(videoBitrate);
 	ui->advOutFFUseRescale->setChecked(rescale);
 	ui->advOutFFRescale->setEnabled(rescale);
@@ -2104,6 +2108,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutFFRecPath, "AdvOut", "FFFilePath");
 	SaveEdit(ui->advOutFFURL, "AdvOut", "FFURL");
 	SaveFormat(ui->advOutFFFormat);
+	SaveEdit(ui->advOutFFMCfg, "AdvOut", "FFMCustom");
 	SaveSpinBox(ui->advOutFFVBitrate, "AdvOut", "FFVBitrate");
 	SaveCheckBox(ui->advOutFFUseRescale, "AdvOut", "FFRescale");
 	SaveCombo(ui->advOutFFRescale, "AdvOut", "FFRescaleRes");

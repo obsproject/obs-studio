@@ -594,6 +594,8 @@ inline void AdvancedOutput::SetupFFmpeg()
 			"FFFormat");
 	const char *mimeType = config_get_string(main->Config(), "AdvOut",
 			"FFFormatMimeType");
+	const char *muxCustom = config_get_string(main->Config(), "AdvOut",
+			"FFMCustom");
 	const char *vEncoder = config_get_string(main->Config(), "AdvOut",
 			"FFVEncoder");
 	int vEncoderId = config_get_int(main->Config(), "AdvOut",
@@ -615,6 +617,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	obs_data_set_string(settings, "url", url);
 	obs_data_set_string(settings, "format_name", formatName);
 	obs_data_set_string(settings, "format_mime_type", mimeType);
+	obs_data_set_string(settings, "muxer_settings", muxCustom);
 	obs_data_set_int(settings, "video_bitrate", vBitrate);
 	obs_data_set_string(settings, "video_encoder", vEncoder);
 	obs_data_set_int(settings, "video_encoder_id", vEncoderId);
