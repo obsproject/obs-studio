@@ -357,6 +357,10 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 		}
 	}
 
+	strncpy(data->output->filename, data->config.url,
+			sizeof(data->output->filename));
+	data->output->filename[sizeof(data->output->filename) - 1] = 0;
+
 	ret = avformat_write_header(data->output, NULL);
 	if (ret < 0) {
 		blog(LOG_WARNING, "Error opening '%s': %s",
