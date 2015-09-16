@@ -2034,7 +2034,7 @@ void OBSBasicSettings::SaveFormat(QComboBox *combo)
 				desc.mimeType);
 
 		const char *ext = ff_format_desc_extensions(desc.desc);
-		string extStr = ext;
+		string extStr = ext ? ext : "";
 
 		char *comma = strchr(&extStr[0], ',');
 		if (comma)
