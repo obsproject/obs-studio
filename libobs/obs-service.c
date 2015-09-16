@@ -334,3 +334,9 @@ bool obs_weak_service_references_service(obs_weak_service_t *weak,
 {
 	return weak && service && weak->service == service;
 }
+
+void *obs_service_get_type_data(obs_service_t *service)
+{
+	return obs_service_valid(service, "obs_service_get_type_data")
+		? service->info.type_data : NULL;
+}

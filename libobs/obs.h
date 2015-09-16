@@ -886,6 +886,8 @@ EXPORT void obs_source_set_push_to_talk_delay(obs_source_t *source,
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
+EXPORT void *obs_source_get_type_data(obs_source_t *source);
+
 /**
  * Helper function to set the color matrix information when drawing the source.
  *
@@ -1306,6 +1308,8 @@ EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
+EXPORT void *obs_output_get_type_data(obs_output_t *output);
+
 /** Optionally sets the video conversion info.  Used only for raw output */
 EXPORT void obs_output_set_video_conversion(obs_output_t *output,
 		const struct video_scale_info *conversion);
@@ -1485,6 +1489,8 @@ EXPORT audio_t *obs_encoder_audio(const obs_encoder_t *encoder);
 /** Returns true if encoder is active, false otherwise */
 EXPORT bool obs_encoder_active(const obs_encoder_t *encoder);
 
+EXPORT void *obs_encoder_get_type_data(obs_encoder_t *encoder);
+
 /** Duplicates an encoder packet */
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src);
@@ -1561,6 +1567,8 @@ EXPORT const char *obs_service_get_password(const obs_service_t *service);
 EXPORT void obs_service_apply_encoder_settings(obs_service_t *service,
 		obs_data_t *video_encoder_settings,
 		obs_data_t *audio_encoder_settings);
+
+EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 
 /* ------------------------------------------------------------------------- */

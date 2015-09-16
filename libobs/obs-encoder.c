@@ -932,3 +932,9 @@ bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
 {
 	return weak && encoder && weak->encoder == encoder;
 }
+
+void *obs_encoder_get_type_data(obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_type_data")
+		? encoder->info.type_data : NULL;
+}

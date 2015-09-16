@@ -1506,3 +1506,9 @@ bool obs_weak_output_references_output(obs_weak_output_t *weak,
 {
 	return weak && output && weak->output == output;
 }
+
+void *obs_output_get_type_data(obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_type_data")
+		? output->info.type_data : NULL;
+}
