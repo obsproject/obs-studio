@@ -372,6 +372,16 @@ struct obs_source_info {
 	 * @param  source  Source that the filter being removed from
 	 */
 	void (*filter_remove)(void *data, obs_source_t *source);
+
+	/**
+	 * Private data associated with this entry
+	 */
+	void *type_data;
+
+	/**
+	 * If defined, called to free private data on shutdown
+	 */
+	void (*free_type_data)(void *type_data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

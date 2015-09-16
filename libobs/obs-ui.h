@@ -65,6 +65,9 @@ struct obs_modal_ui {
 	 *                  @b false if user cancelled the task.
 	 */
 	bool (*exec)(void *object, void *ui_data);
+
+	void *type_data;
+	void (*free_type_data)(void *type_data);
 };
 
 /**
@@ -101,6 +104,9 @@ struct obs_modeless_ui {
 	 *                  the specific target.
 	 */
 	void *(*create)(void *object, void *ui_data);
+
+	void *type_data;
+	void (*free_type_data)(void *type_data);
 };
 
 /**

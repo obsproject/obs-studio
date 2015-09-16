@@ -752,14 +752,26 @@ void obs_shutdown(void)
 	if (!obs)
 		return;
 
-	da_free(obs->input_types);
-	da_free(obs->filter_types);
-	da_free(obs->encoder_types);
-	da_free(obs->transition_types);
-	da_free(obs->output_types);
-	da_free(obs->service_types);
-	da_free(obs->modal_ui_callbacks);
-	da_free(obs->modeless_ui_callbacks);
+#define FREE_REGISTERED_TYPES(structure, list) \
+	do { \
+		for (size_t i = 0; i < list.num; i++) { \
+			struct structure *item = &list.array[i]; \
+			if (item->type_data && item->free_type_data) \
+				item->free_type_data(item->type_data); \
+		} \
+		da_free(list); \
+	} while (false)
+
+	FREE_REGISTERED_TYPES(obs_source_info, obs->input_types);
+	FREE_REGISTERED_TYPES(obs_source_info, obs->filter_types);
+	FREE_REGISTERED_TYPES(obs_source_info, obs->transition_types);
+	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
+	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
+	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
+	FREE_REGISTERED_TYPES(obs_modal_ui, obs->modal_ui_callbacks);
+	FREE_REGISTERED_TYPES(obs_modeless_ui, obs->modeless_ui_callbacks);
+
+#undef FREE_REGISTERED_TYPES
 
 	stop_video();
 	stop_hotkeys();

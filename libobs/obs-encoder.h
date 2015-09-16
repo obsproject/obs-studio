@@ -223,6 +223,9 @@ struct obs_encoder_info {
 	 * @param[in/out]  info  Video format information
 	 */
 	void (*get_video_info)(void *data, struct video_scale_info *info);
+
+	void *type_data;
+	void (*free_type_data)(void *type_data);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

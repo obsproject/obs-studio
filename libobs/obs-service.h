@@ -69,6 +69,9 @@ struct obs_service_info {
 			obs_data_t *video_encoder_settings,
 			obs_data_t *audio_encoder_settings);
 
+	void *type_data;
+	void (*free_type_data)(void *type_data);
+
 	/* TODO: more stuff later */
 };
 

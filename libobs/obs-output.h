@@ -61,6 +61,9 @@ struct obs_output_info {
 	uint64_t (*get_total_bytes)(void *data);
 
 	int (*get_dropped_frames)(void *data);
+
+	void *type_data;
+	void (*free_type_data)(void *type_data);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,
