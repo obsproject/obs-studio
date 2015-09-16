@@ -34,6 +34,7 @@ struct ffmpeg_cfg {
 	const char         *url;
 	const char         *format_name;
 	const char         *format_mime_type;
+	const char         *muxer_settings;
 	int                video_bitrate;
 	int                audio_bitrate;
 	const char         *video_encoder;
@@ -361,12 +362,36 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 			sizeof(data->output->filename));
 	data->output->filename[sizeof(data->output->filename) - 1] = 0;
 
-	ret = avformat_write_header(data->output, NULL);
+	AVDictionary *dict = NULL;
+	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings,
+				"=", " ", 0))) {
+		blog(LOG_WARNING, "Failed to parse muxer settings: %s\n%s",
+				av_err2str(ret), data->config.muxer_settings);
+
+		av_dict_free(&dict);
+		return false;
+	}
+
+	if (av_dict_count(dict) > 0) {
+		struct dstr str = {0};
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+						AV_DICT_IGNORE_SUFFIX)))
+			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
+
+		blog(LOG_INFO, "Using muxer settings:%s", str.array);
+		dstr_free(&str);
+	}
+
+	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
 		blog(LOG_WARNING, "Error opening '%s': %s",
 				data->config.url, av_err2str(ret));
 		return false;
 	}
+
+	av_dict_free(&dict);
 
 	return true;
 }
@@ -832,6 +857,7 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.format_name = get_string_or_null(settings, "format_name");
 	config.format_mime_type = get_string_or_null(settings,
 			"format_mime_type");
+	config.muxer_settings = obs_data_get_string(settings, "muxer_settings");
 	config.video_bitrate = (int)obs_data_get_int(settings, "video_bitrate");
 	config.audio_bitrate = (int)obs_data_get_int(settings, "audio_bitrate");
 	config.video_encoder = get_string_or_null(settings, "video_encoder");
