@@ -369,8 +369,8 @@ bool obs_encoder_initialize(obs_encoder_t *encoder)
 
 	if (encoder->active)
 		return true;
-	if (encoder->context.data)
-		return false;
+
+	obs_encoder_shutdown(encoder);
 
 	if (encoder->info.create)
 		encoder->context.data = encoder->info.create(
