@@ -152,9 +152,9 @@ static void rtmp_stream_stop(void *data)
 		pthread_join(stream->connect_thread, &ret);
 
 	if (stream->active) {
-		obs_output_end_data_capture(stream->output);
 		os_sem_post(stream->send_sem);
 		pthread_join(stream->send_thread, &ret);
+		obs_output_end_data_capture(stream->output);
 		RTMP_Close(&stream->rtmp);
 	}
 
