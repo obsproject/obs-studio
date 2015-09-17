@@ -504,6 +504,16 @@ static bool MFH264_Update(void *data, obs_data_t *settings)
 	return true;
 }
 
+static bool CanSpawnEncoder(std::shared_ptr<EncoderDescriptor> descriptor)
+{
+	HRESULT hr;
+	ComPtr<IMFTransform> transform;
+
+	hr = CoCreateInstance(descriptor->Guid(), nullptr,
+			CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&transform));
+	return hr == S_OK;
+}
+
 void RegisterMFH264Encoders()
 {
 	obs_encoder_info info = { 0 };
@@ -525,6 +535,11 @@ void RegisterMFH264Encoders()
 		/* ignore the software encoder due to the fact that we already
 		 * have an objectively superior software encoder available */
 		if (e->Type() == EncoderType::H264_SOFTWARE)
+			continue;
+
+		/* certain encoders such as quicksync will be "available" but
+		 * not usable with certain processors */
+		if (!CanSpawnEncoder(e))
 			continue;
 
 		info.id = e->Id();
