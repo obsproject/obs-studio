@@ -71,10 +71,26 @@ H264Encoder::H264Encoder(const obs_encoder_t *encoder,
 
 H264Encoder::~H264Encoder()
 {
-	// Make sure all events have finished before releasing.
+	HRESULT hr;
+
+	if (!descriptor->Async() || !eventGenerator || !pendingRequests)
+		return;
+
+	// Make sure all events have finished before releasing, and drain
+	// all output requests until it makes an input request.
 	// If you do not do this, you risk it releasing while there's still
 	// encoder activity, which can cause a crash with certain interfaces.
-	DrainEvent(true);
+	while (inputRequests == 0) {
+		hr = ProcessOutput();
+		if (hr != MF_E_TRANSFORM_NEED_MORE_INPUT && FAILED(hr)) {
+			MF_LOG_COM(LOG_ERROR, "H264Encoder::~H264Encoder: "
+					"ProcessOutput()", hr);
+			break;
+		}
+
+		if (inputRequests == 0)
+			Sleep(1);
+	}
 }
 
 HRESULT H264Encoder::CreateMediaTypes(ComPtr<IMFMediaType> &i,
@@ -603,6 +619,8 @@ bool H264Encoder::ProcessInput(UINT8 **data, UINT32 *linesize, UINT64 pts,
 
 	HRC(ProcessInput(sample));
 
+	pendingRequests++;
+
 	*status = SUCCESS;
 	return true;
 
@@ -745,6 +763,8 @@ bool H264Encoder::ProcessOutput(UINT8 **data, UINT32 *dataLength,
 	*dts = activeFrame.get()->Dts();
 	*keyframe = activeFrame.get()->Keyframe();
 	*status = SUCCESS;
+
+	pendingRequests--;
 
 	return true;
 }

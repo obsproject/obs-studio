@@ -170,6 +170,6 @@ namespace MF {
 		ComPtr<IMFMediaEventGenerator> eventGenerator;
 		std::atomic<UINT32> inputRequests = 0;
 		std::atomic<UINT32> outputRequests = 0;
-
+		std::atomic<UINT32> pendingRequests = 0;
 	};
 }
