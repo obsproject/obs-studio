@@ -70,7 +70,12 @@ H264Encoder::H264Encoder(const obs_encoder_t *encoder,
 {}
 
 H264Encoder::~H264Encoder()
-{}
+{
+	// Make sure all events have finished before releasing.
+	// If you do not do this, you risk it releasing while there's still
+	// encoder activity, which can cause a crash with certain interfaces.
+	DrainEvent(true);
+}
 
 HRESULT H264Encoder::CreateMediaTypes(ComPtr<IMFMediaType> &i,
 		ComPtr<IMFMediaType> &o)
