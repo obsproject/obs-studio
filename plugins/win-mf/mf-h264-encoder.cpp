@@ -440,11 +440,14 @@ bool H264Encoder::Initialize(std::function<bool(void)> func)
 		goto fail;
 	}
 
-	MF_LOG(LOG_INFO, "Setting output type to transform");
+	MF_LOG(LOG_INFO, "Activating encoder: %s",
+			typeNames[(int)descriptor->Type()]);
+
+	MF_LOG(LOG_INFO, "  Setting output type to transform:");
 	LogMediaType(outputType.Get());
 	HRC(transform->SetOutputType(0, outputType.Get(), 0));
 
-	MF_LOG(LOG_INFO, "Setting input type to transform");
+	MF_LOG(LOG_INFO, "  Setting input type to transform:");
 	LogMediaType(inputType.Get());
 	HRC(transform->SetInputType(0, inputType.Get(), 0));
 

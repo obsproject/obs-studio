@@ -21,6 +21,13 @@ enum class EncoderType {
 	H264_VCE,
 };
 
+static const char *typeNames[] = {
+	"Software",
+	"Quicksync",
+	"NVENC",
+	"AMD VCE",
+};
+
 class EncoderDescriptor {
 public:
 	static std::vector<std::shared_ptr<EncoderDescriptor>> EncoderDescriptor::Enumerate();

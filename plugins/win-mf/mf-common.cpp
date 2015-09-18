@@ -6,6 +6,10 @@
 #include <strsafe.h>
 #include <wrl/client.h>
 
+#include <string>
+
+using namespace std;
+
 static void DBGMSG(PCWSTR format, ...)
 {
 	va_list args;
@@ -181,7 +185,7 @@ static float OffsetToFloat(const MFOffset& offset)
 	return offset.value + (static_cast<float>(offset.fract) / 65536.0f);
 }
 
-static HRESULT LogVideoArea(const PROPVARIANT& var)
+static HRESULT LogVideoArea(wstring &str, const PROPVARIANT& var)
 {
 	if (var.caub.cElems < sizeof(MFVideoArea)) {
 		return MF_E_BUFFERTOOSMALL;
@@ -189,8 +193,15 @@ static HRESULT LogVideoArea(const PROPVARIANT& var)
 
 	MFVideoArea *pArea = (MFVideoArea*)var.caub.pElems;
 
-	DBGMSG(L"(%f,%f) (%d,%d)", OffsetToFloat(pArea->OffsetX), OffsetToFloat(pArea->OffsetY),
-		pArea->Area.cx, pArea->Area.cy);
+	str += L"(";
+	str += to_wstring(OffsetToFloat(pArea->OffsetX));
+	str += L",";
+	str += to_wstring(OffsetToFloat(pArea->OffsetY));
+	str += L") (";
+	str += to_wstring(pArea->Area.cx);
+	str += L",";
+	str += to_wstring(pArea->Area.cy);
+	str += L")";
 	return S_OK;
 }
 
@@ -234,30 +245,33 @@ done:
 	return hr;
 }
 
-static void LogUINT32AsUINT64(const PROPVARIANT& var)
+static void LogUINT32AsUINT64(wstring &str, const PROPVARIANT& var)
 {
 	UINT32 uHigh = 0, uLow = 0;
 	Unpack2UINT32AsUINT64(var.uhVal.QuadPart, &uHigh, &uLow);
-	DBGMSG(L"%d x %d", uHigh, uLow);
+	str += to_wstring(uHigh);
+	str += L" x ";
+	str += to_wstring(uLow);
 }
 
 
 // Handle certain known special cases.
-static HRESULT SpecialCaseAttributeValue(GUID guid, const PROPVARIANT& var)
+static HRESULT SpecialCaseAttributeValue(wstring &str, GUID guid,
+		const PROPVARIANT& var)
 {
 	if ((guid == MF_MT_FRAME_RATE) || (guid == MF_MT_FRAME_RATE_RANGE_MAX) ||
 		(guid == MF_MT_FRAME_RATE_RANGE_MIN) || (guid == MF_MT_FRAME_SIZE) ||
 		(guid == MF_MT_PIXEL_ASPECT_RATIO)) {
 
 		// Attributes that contain two packed 32-bit values.
-		LogUINT32AsUINT64(var);
+		LogUINT32AsUINT64(str, var);
 
 	} else if ((guid == MF_MT_GEOMETRIC_APERTURE) ||
 		(guid == MF_MT_MINIMUM_DISPLAY_APERTURE) ||
 		(guid == MF_MT_PAN_SCAN_APERTURE)) {
 
 		// Attributes that an MFVideoArea structure.
-		return LogVideoArea(var);
+		return LogVideoArea(str, var);
 
 	} else {
 		return S_FALSE;
@@ -267,6 +281,8 @@ static HRESULT SpecialCaseAttributeValue(GUID guid, const PROPVARIANT& var)
 
 static HRESULT LogAttributeValueByIndex(IMFAttributes *pAttr, DWORD index)
 {
+	wstring str;
+
 	WCHAR *pGuidName = NULL;
 	WCHAR *pGuidValName = NULL;
 
@@ -285,51 +301,57 @@ static HRESULT LogAttributeValueByIndex(IMFAttributes *pAttr, DWORD index)
 		goto done;
 	}
 
-	DBGMSG(L"%s", pGuidName);
+	str += L"    ";
+	str += pGuidName;
+	str += L": ";
 
-	hr = SpecialCaseAttributeValue(guid, var);
+	hr = SpecialCaseAttributeValue(str, guid, var);
 	if (FAILED(hr)) {
 		goto done;
 	}
 	if (hr == S_FALSE) {
 		switch (var.vt) {
 		case VT_UI4:
-			DBGMSG(L"%d", var.ulVal);
+			str += to_wstring(var.ulVal);
 			break;
 
 		case VT_UI8:
-			DBGMSG(L"%I64d", var.uhVal);
+			str += to_wstring(var.uhVal.QuadPart);
 			break;
 
 		case VT_R8:
-			DBGMSG(L"%f", var.dblVal);
+			str += to_wstring(var.dblVal);
 			break;
 
 		case VT_CLSID:
 			hr = GetGUIDName(*var.puuid, &pGuidValName);
 			if (SUCCEEDED(hr))
 			{
-				DBGMSG(pGuidValName);
+				str += pGuidValName;
 			}
 			break;
 
 		case VT_LPWSTR:
-			DBGMSG(var.pwszVal);
+			str += var.pwszVal;
 			break;
 
 		case VT_VECTOR | VT_UI1:
-			DBGMSG(L"<<byte array>>");
+			str += L"<<byte array>>";
 			break;
 
 		case VT_UNKNOWN:
-			DBGMSG(L"IUnknown");
+			str += L"IUnknown";
 			break;
 
 		default:
-			DBGMSG(L"Unexpected attribute type (vt = %d)", var.vt);
+			str += L"Unexpected attribute type (vt = ";
+			str += to_wstring(var.vt);
+			str += L")";
 			break;
 		}
 	}
+
+	DBGMSG(L"%s", str.c_str());
 
 done:
 	CoTaskMemFree(pGuidName);
