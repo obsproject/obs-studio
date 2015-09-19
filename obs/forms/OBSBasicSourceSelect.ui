@@ -49,6 +49,16 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QCheckBox" name="sourceVisible">
+       <property name="text">
+        <string>Basic.SourceSelect.AddVisible</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

@@ -21,6 +21,11 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
+struct AddSourceData {
+	obs_source_t *source;
+	bool visible;
+};
+
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
@@ -79,7 +84,16 @@ void OBSBasicSourceSelect::SourceRemoved(OBSSource source)
 	delete items[0];
 }
 
-static void AddExisting(const char *name)
+static void AddSource(void *_data, obs_scene_t *scene)
+{
+	AddSourceData *data = (AddSourceData *)_data;
+	obs_sceneitem_t *sceneitem;
+
+	sceneitem = obs_scene_add(scene, data->source);
+	obs_sceneitem_set_visible(sceneitem, data->visible);
+}
+
+static void AddExisting(const char *name, const bool visible)
 {
 	obs_source_t *source = obs_get_output_source(0);
 	obs_scene_t  *scene  = obs_scene_from_source(source);
@@ -88,14 +102,19 @@ static void AddExisting(const char *name)
 
 	source = obs_get_source_by_name(name);
 	if (source) {
-		obs_scene_add(scene, source);
+		AddSourceData data;
+		data.source = source;
+		data.visible = visible;
+		obs_scene_atomic_update(scene, AddSource, &data);
+
 		obs_source_release(source);
 	}
 
 	obs_scene_release(scene);
 }
 
-bool AddNew(QWidget *parent, const char *id, const char *name)
+bool AddNew(QWidget *parent, const char *id, const char *name,
+		const bool visible)
 {
 	obs_source_t *source  = obs_get_output_source(0);
 	obs_scene_t  *scene   = obs_scene_from_source(source);
@@ -115,7 +134,11 @@ bool AddNew(QWidget *parent, const char *id, const char *name)
 
 		if (source) {
 			obs_add_source(source);
-			obs_scene_add(scene, source);
+
+			AddSourceData data;
+			data.source = source;
+			data.visible = visible;
+			obs_scene_atomic_update(scene, AddSource, &data);
 
 			success = true;
 		}
@@ -130,13 +153,14 @@ bool AddNew(QWidget *parent, const char *id, const char *name)
 void OBSBasicSourceSelect::on_buttonBox_accepted()
 {
 	bool useExisting = ui->selectExisting->isChecked();
+	bool visible = ui->sourceVisible->isChecked();
 
 	if (useExisting) {
 		QListWidgetItem *item = ui->sourceList->currentItem();
 		if (!item)
 			return;
 
-		AddExisting(QT_TO_UTF8(item->text()));
+		AddExisting(QT_TO_UTF8(item->text()), visible);
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			QMessageBox::information(this,
@@ -145,7 +169,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			return;
 		}
 
-		if (!AddNew(this, id, QT_TO_UTF8(ui->sourceName->text())))
+		if (!AddNew(this, id, QT_TO_UTF8(ui->sourceName->text()),
+					visible))
 			return;
 	}
 
