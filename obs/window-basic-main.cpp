@@ -3254,10 +3254,21 @@ void OBSBasic::RecordingStop(int code)
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 	blog(LOG_INFO, RECORDING_STOP);
 
-	if (code == OBS_OUTPUT_UNSUPPORTED)
+	if (code == OBS_OUTPUT_UNSUPPORTED) {
 		QMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
+
+	} else if (code == OBS_OUTPUT_NO_SPACE) {
+		QMessageBox::information(this,
+				QTStr("Output.RecordNoSpace.Title"),
+				QTStr("Output.RecordNoSpace.Msg"));
+
+	} else if (code != OBS_OUTPUT_SUCCESS) {
+		QMessageBox::information(this,
+				QTStr("Output.RecordError.Title"),
+				QTStr("Output.RecordError.Msg"));
+	}
 
 	if (!outputHandler->Active()) {
 		ui->profileMenu->setEnabled(true);
