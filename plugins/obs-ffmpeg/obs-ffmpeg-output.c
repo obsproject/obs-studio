@@ -583,6 +583,7 @@ fail:
 }
 
 static void ffmpeg_output_stop(void *data);
+static void ffmpeg_deactivate(struct ffmpeg_output *output);
 
 static void ffmpeg_output_destroy(void *data)
 {
@@ -805,7 +806,7 @@ static void receive_audio(void *param, struct audio_data *frame)
 	}
 }
 
-static bool process_packet(struct ffmpeg_output *output)
+static int process_packet(struct ffmpeg_output *output)
 {
 	AVPacket packet;
 	bool new_packet = false;
@@ -820,7 +821,7 @@ static bool process_packet(struct ffmpeg_output *output)
 	pthread_mutex_unlock(&output->write_mutex);
 
 	if (!new_packet)
-		return true;
+		return 0;
 
 	/*blog(LOG_DEBUG, "size = %d, flags = %lX, stream = %d, "
 			"packets queued: %lu",
@@ -832,10 +833,10 @@ static bool process_packet(struct ffmpeg_output *output)
 		av_free_packet(&packet);
 		blog(LOG_WARNING, "receive_audio: Error writing packet: %s",
 				av_err2str(ret));
-		return false;
+		return ret;
 	}
 
-	return true;
+	return 0;
 }
 
 static void *write_thread(void *data)
@@ -847,11 +848,18 @@ static void *write_thread(void *data)
 		if (os_event_try(output->stop_event) == 0)
 			break;
 
-		if (!process_packet(output)) {
+		int ret = process_packet(output);
+		if (ret != 0) {
+			int code = OBS_OUTPUT_ERROR;
+
 			pthread_detach(output->write_thread);
 			output->write_thread_active = false;
 
-			ffmpeg_output_stop(output);
+			if (ret == -ENOSPC)
+				code = OBS_OUTPUT_NO_SPACE;
+
+			obs_output_signal_stop(output->output, code);
+			ffmpeg_deactivate(output);
 			break;
 		}
 	}
@@ -970,24 +978,28 @@ static void ffmpeg_output_stop(void *data)
 
 	if (output->active) {
 		obs_output_end_data_capture(output->output);
-
-		if (output->write_thread_active) {
-			os_event_signal(output->stop_event);
-			os_sem_post(output->write_sem);
-			pthread_join(output->write_thread, NULL);
-			output->write_thread_active = false;
-		}
-
-		pthread_mutex_lock(&output->write_mutex);
-
-		for (size_t i = 0; i < output->packets.num; i++)
-			av_free_packet(output->packets.array+i);
-		da_free(output->packets);
-
-		pthread_mutex_unlock(&output->write_mutex);
-
-		ffmpeg_data_free(&output->ff_data);
+		ffmpeg_deactivate(output);
 	}
+}
+
+static void ffmpeg_deactivate(struct ffmpeg_output *output)
+{
+	if (output->write_thread_active) {
+		os_event_signal(output->stop_event);
+		os_sem_post(output->write_sem);
+		pthread_join(output->write_thread, NULL);
+		output->write_thread_active = false;
+	}
+
+	pthread_mutex_lock(&output->write_mutex);
+
+	for (size_t i = 0; i < output->packets.num; i++)
+		av_free_packet(output->packets.array+i);
+	da_free(output->packets);
+
+	pthread_mutex_unlock(&output->write_mutex);
+
+	ffmpeg_data_free(&output->ff_data);
 }
 
 struct obs_output_info ffmpeg_output = {
