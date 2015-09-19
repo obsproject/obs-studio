@@ -44,6 +44,8 @@ struct ffmpeg_cfg {
 	const char         *video_settings;
 	const char         *audio_settings;
 	enum AVPixelFormat format;
+	enum AVColorRange  color_range;
+	enum AVColorSpace  color_space;
 	int                scale_width;
 	int                scale_height;
 	int                width;
@@ -175,6 +177,8 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	data->vframe->format = context->pix_fmt;
 	data->vframe->width  = context->width;
 	data->vframe->height = context->height;
+	data->vframe->colorspace = data->config.color_space;
+	data->vframe->color_range = data->config.color_range;
 
 	ret = avpicture_alloc(&data->dst_picture, context->pix_fmt,
 			context->width, context->height);
@@ -231,6 +235,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->time_base      = (AVRational){ ovi.fps_den, ovi.fps_num };
 	context->gop_size       = 120;
 	context->pix_fmt        = closest_format;
+	context->colorspace     = data->config.color_space;
+	context->color_range    = data->config.color_range;
 
 	data->video->time_base = context->time_base;
 
@@ -880,6 +886,7 @@ static inline const char *get_string_or_null(obs_data_t *settings,
 static bool try_connect(struct ffmpeg_output *output)
 {
 	video_t *video = obs_output_video(output->output);
+	const struct video_output_info *voi = video_output_get_info(video);
 	struct ffmpeg_cfg config;
 	obs_data_t *settings;
 	bool success;
@@ -907,6 +914,16 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.height = (int)obs_output_get_height(output->output);
 	config.format = obs_to_ffmpeg_video_format(
 			video_output_get_format(video));
+
+	if (format_is_yuv(voi->format)) {
+		config.color_range = voi->range == VIDEO_RANGE_FULL ?
+			AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+		config.color_space = voi->colorspace == VIDEO_CS_709 ?
+			AVCOL_SPC_BT709 : AVCOL_SPC_BT470BG;
+	} else {
+		config.color_range = AVCOL_RANGE_UNSPECIFIED;
+		config.color_space = AVCOL_SPC_RGB;
+	}
 
 	if (config.format == AV_PIX_FMT_NONE) {
 		blog(LOG_DEBUG, "invalid pixel format used for FFmpeg output");
