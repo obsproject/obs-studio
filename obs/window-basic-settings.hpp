@@ -97,6 +97,8 @@ private:
 	bool loading = true;
 	std::string savedTheme;
 
+	int lastSimpleRecQualityIdx = 0;
+
 	OBSFFFormatDesc formats;
 
 	OBSPropertiesView *streamProperties = nullptr;
@@ -104,6 +106,7 @@ private:
 	OBSPropertiesView *recordEncoderProps = nullptr;
 
 	QPointer<QLabel> advOutRecWarning;
+	QPointer<QLabel> simpleOutRecWarning;
 
 	using AudioSource_t =
 		std::tuple<OBSWeakSource,
@@ -225,6 +228,8 @@ private:
 	void UpdateSimpleOutStreamDelayEstimate();
 	void UpdateAdvOutStreamDelayEstimate();
 
+	void FillSimpleRecordingValues();
+
 private slots:
 	void on_theme_activated(int idx);
 
@@ -262,6 +267,10 @@ private slots:
 	void UpdateStreamDelayEstimate();
 
 	void AdvOutRecCheckWarnings();
+
+	void SimpleRecordingQualityChanged();
+	void SimpleRecordingEncoderChanged();
+	void SimpleRecordingQualityLosslessWarning(int idx);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);

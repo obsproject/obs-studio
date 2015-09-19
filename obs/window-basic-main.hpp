@@ -47,6 +47,9 @@ class QNetworkReply;
 #define AUX_AUDIO_2     Str("AuxAudioDevice2")
 #define AUX_AUDIO_3     Str("AuxAudioDevice3")
 
+#define SIMPLE_ENCODER_X264                    "x264"
+#define SIMPLE_ENCODER_X264_LOWCPU             "x264_lowcpu"
+
 struct BasicOutputHandler;
 
 enum class QtDataRole {

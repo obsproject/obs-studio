@@ -272,6 +272,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -426,6 +428,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	hotkeyUnregistered.Connect(obs_get_signal_handler(),
 			"hotkey_unregister", ReloadHotkeysIgnore, this);
 
+	FillSimpleRecordingValues();
+	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingQualityChanged()));
+	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingQualityLosslessWarning(int)));
+	connect(ui->simpleOutRecEncoder, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
+
 	LoadSettings(false);
 
 	// Add warning checks to advanced output recording section controls
@@ -438,6 +448,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutRecTrack4, SIGNAL(clicked()),
 			this, SLOT(AdvOutRecCheckWarnings()));
 	AdvOutRecCheckWarnings();
+
+	SimpleRecordingQualityChanged();
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -1006,6 +1018,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"Preset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 			"x264Settings");
+	const char *recQual = config_get_string(main->Config(), "SimpleOutput",
+			"RecQuality");
+	const char *recEnc = config_get_string(main->Config(), "SimpleOutput",
+			"RecEncoder");
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
@@ -1019,6 +1035,14 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutPreset->setCurrentText(preset);
 	ui->simpleOutCustom->setText(custom);
+
+	idx = ui->simpleOutRecQuality->findData(QString(recQual));
+	if (idx == -1) idx = 0;
+	ui->simpleOutRecQuality->setCurrentIndex(idx);
+
+	idx = ui->simpleOutRecEncoder->findData(QString(recEnc));
+	if (idx == -1) idx = 0;
+	ui->simpleOutRecEncoder->setCurrentIndex(idx);
 }
 
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
@@ -2078,6 +2102,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->simpleOutAdvanced, "SimpleOutput", "UseAdvanced");
 	SaveCombo(ui->simpleOutPreset, "SimpleOutput", "Preset");
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
+	SaveComboData(ui->simpleOutRecQuality, "SimpleOutput", "RecQuality");
+	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
 
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
@@ -2749,4 +2775,112 @@ void OBSBasicSettings::UpdateStreamDelayEstimate()
 		UpdateSimpleOutStreamDelayEstimate();
 	else
 		UpdateAdvOutStreamDelayEstimate();
+}
+
+void OBSBasicSettings::FillSimpleRecordingValues()
+{
+#define ADD_QUALITY(str) \
+	ui->simpleOutRecQuality->addItem( \
+			QTStr("Basic.Settings.Output.Simple.RecordingQuality." \
+				str), \
+			QString(str));
+#define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
+
+	ADD_QUALITY("Stream");
+	ADD_QUALITY("Small");
+	ADD_QUALITY("HQ");
+	ADD_QUALITY("Lossless");
+
+	ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Software"),
+			QString(SIMPLE_ENCODER_X264));
+	ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("SoftwareLowCPU"),
+			QString(SIMPLE_ENCODER_X264_LOWCPU));
+#undef ADD_QUALITY
+#undef ENCODER_STR
+}
+
+void OBSBasicSettings::SimpleRecordingQualityChanged()
+{
+	QString qual = ui->simpleOutRecQuality->currentData().toString();
+	bool streamQuality = qual == "Stream";
+	bool losslessQuality = !streamQuality && qual == "Lossless";
+
+	bool showEncoder = !streamQuality && !losslessQuality;
+	ui->simpleOutRecEncoder->setVisible(showEncoder);
+	ui->simpleOutRecEncoderLabel->setVisible(showEncoder);
+	ui->simpleOutRecFormat->setVisible(!losslessQuality);
+	ui->simpleOutRecFormatLabel->setVisible(!losslessQuality);
+
+	SimpleRecordingEncoderChanged();
+}
+
+#define SIMPLE_OUTPUT_WARNING(str) \
+	QTStr("Basic.Settings.Output.Simple.Warn." str)
+
+void OBSBasicSettings::SimpleRecordingEncoderChanged()
+{
+	QString qual = ui->simpleOutRecQuality->currentData().toString();
+	QString warning;
+
+	delete simpleOutRecWarning;
+
+	if (qual == "Stream") {
+		return;
+
+	} else if (qual == "Lossless") {
+		warning  = SIMPLE_OUTPUT_WARNING("Lossless");
+		warning += "\n\n";
+		warning += SIMPLE_OUTPUT_WARNING("Encoder");
+
+	} else {
+		QString enc = ui->simpleOutRecEncoder->currentData().toString();
+		if (enc != SIMPLE_ENCODER_X264 &&
+		    enc != SIMPLE_ENCODER_X264_LOWCPU)
+			return;
+
+		warning = SIMPLE_OUTPUT_WARNING("Encoder");
+	}
+
+	simpleOutRecWarning = new QLabel(warning, this);
+	simpleOutRecWarning->setObjectName("warningLabel");
+	simpleOutRecWarning->setWordWrap(true);
+	ui->simpleOutInfoLayout->addWidget(simpleOutRecWarning);
+}
+
+void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
+{
+	if (idx == lastSimpleRecQualityIdx || idx == -1)
+		return;
+
+	QString qual = ui->simpleOutRecQuality->itemData(idx).toString();
+
+	if (loading) {
+		lastSimpleRecQualityIdx = idx;
+		return;
+	}
+
+	if (qual == "Lossless") {
+		QMessageBox::StandardButton button;
+
+		QString warningString =
+			SIMPLE_OUTPUT_WARNING("Lossless") +
+			QString("\n\n") +
+			SIMPLE_OUTPUT_WARNING("Lossless.Msg");
+
+		button = QMessageBox::question(this,
+				SIMPLE_OUTPUT_WARNING("Lossless.Title"),
+				warningString,
+				QMessageBox::Yes | QMessageBox::No);
+
+		if (button == QMessageBox::No) {
+			QMetaObject::invokeMethod(ui->simpleOutRecQuality,
+					"setCurrentIndex", Qt::QueuedConnection,
+					Q_ARG(int, lastSimpleRecQualityIdx));
+			return;
+		}
+	}
+
+	lastSimpleRecQualityIdx = idx;
 }
