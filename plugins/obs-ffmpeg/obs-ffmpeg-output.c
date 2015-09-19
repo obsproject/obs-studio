@@ -448,6 +448,34 @@ static inline const char *safe_str(const char *s)
 		return s;
 }
 
+static enum AVCodecID get_codec_id(const char *name, int id)
+{
+	AVCodec *codec;
+
+	if (id != 0)
+		return (enum AVCodecID)id;
+
+	if (!name || !*name)
+		return AV_CODEC_ID_NONE;
+
+	codec = avcodec_find_encoder_by_name(name);
+	if (!codec)
+		return AV_CODEC_ID_NONE;
+
+	return codec->id;
+}
+
+static void set_encoder_ids(struct ffmpeg_data *data)
+{
+	data->output->oformat->video_codec = get_codec_id(
+			data->config.video_encoder,
+			data->config.video_encoder_id);
+
+	data->output->oformat->audio_codec = get_codec_id(
+			data->config.audio_encoder,
+			data->config.audio_encoder_id);
+}
+
 static bool ffmpeg_data_init(struct ffmpeg_data *data,
 		struct ffmpeg_cfg *config)
 {
@@ -487,12 +515,8 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 		data->output->oformat->video_codec = AV_CODEC_ID_H264;
 		data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
 	} else {
-		if (data->config.format_name) {
-			data->output->oformat->video_codec =
-					data->config.video_encoder_id;
-			data->output->oformat->audio_codec =
-					data->config.audio_encoder_id;
-		}
+		if (data->config.format_name)
+			set_encoder_ids(data);
 	}
 
 	if (!data->output) {
