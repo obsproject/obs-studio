@@ -1043,11 +1043,19 @@ static void dump_csv_gzwrite(void *data, struct dstr *buffer)
 bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
 		const char *filename)
 {
-	FILE *f = os_fopen(filename, "wb");
-	if (!f)
+	gzFile gz;
+#ifdef _WIN32
+	wchar_t *filename_w = NULL;
+
+	os_utf8_to_wcs_ptr(filename, 0, &filename_w);
+	if (!filename_w)
 		return false;
 
-	gzFile gz = gzdopen(fileno(f), "wb");
+	gz = gzopen_w(filename_w, "wb");
+	bfree(filename_w);
+#else
+	gz = gzopen(filename, "wb");
+#endif
 	if (!gz)
 		return false;
 
