@@ -62,11 +62,15 @@ file(GLOB FFMPEG_BIN_FILES
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/opus*.dll"
 
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libogg*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libvorbis*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libogg*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libvorbis*.dll"
+
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/opus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/opus*.dll"
-
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/zlib*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libbz2*.dll"
