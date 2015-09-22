@@ -1282,6 +1282,11 @@ static void game_capture_tick(void *data, float seconds)
 	gc->retry_time += seconds;
 
 	if (!gc->active) {
+		if (!obs_source_showing(gc->source)) {
+			gc->retry_time = 0.0f;
+			return;
+		}
+
 		if (!gc->error_acquiring &&
 		    gc->retry_time > gc->retry_interval) {
 			if (gc->config.capture_any_fullscreen ||
