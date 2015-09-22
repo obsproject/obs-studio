@@ -71,6 +71,10 @@ static inline char *get_module_name(const char *file)
 	return name.array;
 }
 
+#ifdef _WIN32
+extern void reset_win32_symbol_paths(void);
+#endif
+
 int obs_open_module(obs_module_t **module, const char *path,
 		const char *data_path)
 {
@@ -110,6 +114,9 @@ int obs_open_module(obs_module_t **module, const char *path,
 	if (mod.set_locale)
 		mod.set_locale(obs->locale);
 
+#ifdef _WIN32
+	reset_win32_symbol_paths();
+#endif
 	return MODULE_SUCCESS;
 }
 

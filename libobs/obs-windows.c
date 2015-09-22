@@ -507,3 +507,123 @@ void obs_key_combination_to_str(obs_key_combination_t combination,
 		add_combo_key(combination.key, str);
 	}
 }
+
+static char *get_abs_path(const char *path)
+{
+	wchar_t wpath[512];
+	wchar_t wabspath[512];
+	char *abspath = NULL;
+	size_t len;
+
+	len = os_utf8_to_wcs(path, 0, wpath, 512);
+	if (!len)
+		return NULL;
+
+	if (_wfullpath(wabspath, wpath, 512) != NULL)
+		os_wcs_to_utf8_ptr(wabspath, 0, &abspath);
+	return abspath;
+}
+
+void reset_win32_symbol_paths(void)
+{
+	static BOOL (WINAPI *sym_initialize_w)(HANDLE, const wchar_t*, BOOL);
+	static BOOL (WINAPI *sym_set_search_path_w)(HANDLE, const wchar_t*);
+	static BOOL (WINAPI *sym_refresh_module_list)(HANDLE);
+	static bool funcs_initialized = false;
+	static bool initialize_success = false;
+
+	struct obs_module *module = obs->first_module;
+	struct dstr path_str = {0};
+	DARRAY(char*) paths;
+	wchar_t *path_str_w = NULL;
+	char *abspath;
+
+	da_init(paths);
+
+	if (!funcs_initialized) {
+		HMODULE mod;
+		funcs_initialized = true;
+
+		mod = LoadLibraryW(L"DbgHelp");
+		if (!mod)
+			return;
+
+		sym_initialize_w = (void*)GetProcAddress(mod, "SymInitializeW");
+		sym_set_search_path_w = (void*)GetProcAddress(mod,
+				"SymSetSearchPathW");
+		sym_refresh_module_list = (void*)GetProcAddress(mod,
+				"SymRefreshModuleList");
+		if (!sym_initialize_w || !sym_set_search_path_w ||
+				!sym_refresh_module_list)
+			return;
+
+		sym_initialize_w(GetCurrentProcess(), NULL, false);
+		initialize_success = true;
+	}
+
+	if (!initialize_success)
+		return;
+
+	abspath = get_abs_path(".");
+	if (abspath)
+		da_push_back(paths, &abspath);
+
+	while (module) {
+		bool found = false;
+		struct dstr path = {0};
+		char *path_end;
+
+		dstr_copy(&path, module->bin_path);
+		dstr_replace(&path, "/", "\\");
+
+		path_end = strrchr(path.array, '\\');
+		if (!path_end) {
+			module = module->next;
+			dstr_free(&path);
+			continue;
+		}
+
+		*path_end = 0;
+
+		for (size_t i = 0; i < paths.num; i++) {
+			const char *existing_path = paths.array[i];
+			if (astrcmpi(path.array, existing_path) == 0) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			abspath = get_abs_path(path.array);
+			if (abspath)
+				da_push_back(paths, &abspath);
+		}
+
+		dstr_free(&path);
+
+		module = module->next;
+	}
+
+	for (size_t i = 0; i < paths.num; i++) {
+		const char *path = paths.array[i];
+		if (path && *path) {
+			if (i != 0)
+				dstr_cat(&path_str, ";");
+			dstr_cat(&path_str, paths.array[i]);
+		}
+	}
+
+	if (path_str.array) {
+		os_utf8_to_wcs_ptr(path_str.array, path_str.len, &path_str_w);
+		if (path_str_w) {
+			BOOL test = sym_set_search_path_w(GetCurrentProcess(), path_str_w);
+			sym_refresh_module_list(GetCurrentProcess());
+			bfree(path_str_w);
+		}
+	}
+
+	for (size_t i = 0; i < paths.num; i++)
+		bfree(paths.array[i]);
+	dstr_free(&path_str);
+	da_free(paths);
+}
