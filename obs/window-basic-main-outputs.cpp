@@ -252,7 +252,10 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 int SimpleOutput::GetAudioBitrate() const
 {
-	return config_get_uint(main->Config(), "SimpleOutput", "ABitrate");
+	int bitrate = (int)config_get_uint(main->Config(), "SimpleOutput",
+			"ABitrate");
+
+	return FindClosestAvailableAACBitrate(bitrate);
 }
 
 void SimpleOutput::Update()
@@ -875,7 +878,8 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 		"Track1Bitrate", "Track2Bitrate",
 		"Track3Bitrate", "Track4Bitrate",
 	};
-	return config_get_uint(main->Config(), "AdvOut", names[i]);
+	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
+	return FindClosestAvailableAACBitrate(bitrate);
 }
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)

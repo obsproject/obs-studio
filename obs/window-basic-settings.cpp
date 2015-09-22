@@ -1023,6 +1023,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	const char *recEnc = config_get_string(main->Config(), "SimpleOutput",
 			"RecEncoder");
 
+	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
+
 	ui->simpleOutputPath->setText(path);
 	ui->simpleOutputVBitrate->setValue(videoBitrate);
 
@@ -1262,6 +1264,11 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 			"Track3Name");
 	const char *name4 = config_get_string(main->Config(), "AdvOut",
 			"Track4Name");
+
+	track1Bitrate = FindClosestAvailableAACBitrate(track1Bitrate);
+	track2Bitrate = FindClosestAvailableAACBitrate(track2Bitrate);
+	track3Bitrate = FindClosestAvailableAACBitrate(track3Bitrate);
+	track4Bitrate = FindClosestAvailableAACBitrate(track4Bitrate);
 
 	SetComboByName(ui->advOutTrack1Bitrate,
 			std::to_string(track1Bitrate).c_str());

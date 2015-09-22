@@ -208,3 +208,30 @@ const char *GetAACEncoderForBitrate(int bitrate)
 		return NULL;
 	return res->second;
 }
+
+#define INVALID_BITRATE 10000
+
+int FindClosestAvailableAACBitrate(int bitrate)
+{
+	auto &map_ = GetAACEncoderBitrateMap();
+	int prev = 0;
+	int next = INVALID_BITRATE;
+
+	for (auto val : map_) {
+		if (next > val.first) {
+			if (val.first == bitrate)
+				return bitrate;
+
+			if (val.first < next && val.first > bitrate)
+				next = val.first;
+			if (val.first > prev && val.first < bitrate)
+				prev = val.first;
+		}
+	}
+
+	if (next != INVALID_BITRATE)
+		return next;
+	if (prev != 0)
+		return prev;
+	return 192;
+}
