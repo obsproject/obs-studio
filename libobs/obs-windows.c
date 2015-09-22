@@ -627,3 +627,13 @@ void reset_win32_symbol_paths(void)
 	dstr_free(&path_str);
 	da_free(paths);
 }
+
+void initialize_com(void)
+{
+	CoInitializeEx(0, COINIT_MULTITHREADED);
+}
+
+void uninitialize_com(void)
+{
+	CoUninitialize();
+}

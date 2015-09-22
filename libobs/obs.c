@@ -718,6 +718,8 @@ static bool obs_init(const char *locale, const char *module_config_path,
 
 #ifdef _WIN32
 extern void initialize_crash_handler(void);
+extern void initialize_com(void);
+extern void uninitialize_com(void);
 #endif
 
 static const char *obs_startup_name = "obs_startup";
@@ -735,6 +737,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 
 #ifdef _WIN32
 	initialize_crash_handler();
+	initialize_com();
 #endif
 
 	success = obs_init(locale, module_config_path, store);
@@ -803,6 +806,10 @@ void obs_shutdown(void)
 	bfree(obs->locale);
 	bfree(obs);
 	obs = NULL;
+
+#ifdef _WIN32
+	uninitialize_com();
+#endif
 }
 
 bool obs_initialized(void)
