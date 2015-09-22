@@ -80,6 +80,8 @@ int obs_open_module(obs_module_t **module, const char *path,
 	if (!module || !path || !obs)
 		return MODULE_ERROR;
 
+	blog(LOG_INFO, "---------------------------------");
+
 	mod.module = os_dlopen(path);
 	if (!mod.module) {
 		blog(LOG_WARNING, "Module '%s' not found", path);
@@ -98,8 +100,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 	mod.next      = obs->first_module;
 
 	if (mod.file) {
-		blog(LOG_INFO, "---------------------------------\n"
-				"Loading module: %s", mod.file);
+		blog(LOG_INFO, "Loading module: %s", mod.file);
 	}
 
 	*module = bmemdup(&mod, sizeof(mod));
