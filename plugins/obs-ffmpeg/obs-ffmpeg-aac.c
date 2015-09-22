@@ -160,8 +160,8 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	/* if using FFmpeg's AAC encoder, at least set a cutoff value
 	 * (recommended by konverter) */
 	if (strcmp(enc->aac->name, "aac") == 0) {
-		int cutoff1 = 4000 + enc->context->bit_rate / 8;
-		int cutoff2 = 12000 + enc->context->bit_rate / 8;
+		int cutoff1 = 4000 + (int)enc->context->bit_rate / 8;
+		int cutoff2 = 12000 + (int)enc->context->bit_rate / 8;
 		int cutoff3 = enc->context->sample_rate / 2;
 		int cutoff;
 
