@@ -37,6 +37,7 @@ struct gl_data {
 	GLuint                         fbo;
 	bool                           using_shtex : 1;
 	bool                           using_scale : 1;
+	bool                           shmem_fallback : 1;
 
 	union {
 		/* shared texture */
@@ -520,9 +521,14 @@ static bool gl_shmem_init(HWND window)
 	return true;
 }
 
-static void gl_init(HDC hdc)
+#define INIT_SUCCESS         0
+#define INIT_FAILED         -1
+#define INIT_SHTEX_FAILED   -2
+
+static int gl_init(HDC hdc)
 {
 	HWND window = WindowFromDC(hdc);
+	int ret = INIT_FAILED;
 	bool success = false;
 	RECT rc = {0};
 
@@ -534,7 +540,8 @@ static void gl_init(HDC hdc)
 	data.format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	data.using_scale = global_hook_info->use_scale;
 	data.using_shtex = nv_capture_available &&
-		!global_hook_info->force_shmem;
+		!global_hook_info->force_shmem &&
+		!data.shmem_fallback;
 
 	if (data.using_scale) {
 		data.cx = global_hook_info->cx;
@@ -544,13 +551,20 @@ static void gl_init(HDC hdc)
 		data.cy = data.base_cy;
 	}
 
-	if (data.using_shtex)
+	if (data.using_shtex) {
 		success = gl_shtex_init(window);
-	else
+		if (!success)
+			ret = INIT_SHTEX_FAILED;
+	} else {
 		success = gl_shmem_init(window);
+	}
 
 	if (!success)
 		gl_free();
+	else
+		ret = INIT_SUCCESS;
+
+	return ret;
 }
 
 static void gl_copy_backbuffer(GLuint dst)
@@ -718,7 +732,10 @@ static void gl_capture(HDC hdc)
 		gl_free();
 	}
 	if (capture_should_init()) {
-		gl_init(hdc);
+		if (gl_init(hdc) == INIT_SHTEX_FAILED) {
+			data.shmem_fallback = true;
+			gl_init(hdc);
+		}
 	}
 	if (capture_ready() && hdc == data.hdc) {
 		uint32_t new_cx;
