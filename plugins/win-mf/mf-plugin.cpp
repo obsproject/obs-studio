@@ -9,7 +9,6 @@ extern void RegisterMFH264Encoders();
 
 extern "C" bool obs_module_load(void)
 {
-	CoInitializeEx(0, COINIT_MULTITHREADED);
 	MFStartup(MF_VERSION, MFSTARTUP_FULL);
 
 	RegisterMFAACEncoder();
@@ -21,7 +20,6 @@ extern "C" bool obs_module_load(void)
 extern "C" void obs_module_unload(void)
 {
 	MFShutdown();
-	CoUninitialize();
 }
 
 OBS_DECLARE_MODULE()
