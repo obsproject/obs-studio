@@ -2082,13 +2082,8 @@
             <string notr="true">44.1khz</string>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
-           <item>
-            <property name="text">
-             <string>22.05khz</string>
-            </property>
-           </item>
            <item>
             <property name="text">
              <string>44.1khz</string>

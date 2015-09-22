@@ -1541,9 +1541,7 @@ void OBSBasicSettings::LoadAudioSettings()
 	loading = true;
 
 	const char *str;
-	if (sampleRate == 22050)
-		str = "22.05khz";
-	else if (sampleRate == 48000)
+	if (sampleRate == 48000)
 		str = "48khz";
 	else
 		str = "44.1khz";
@@ -2175,9 +2173,7 @@ void OBSBasicSettings::SaveAudioSettings()
 	const char *channelSetup = (channelSetupIdx == 0) ? "Mono" : "Stereo";
 
 	int sampleRate = 44100;
-	if (sampleRateStr == "22.05khz")
-		sampleRate = 22050;
-	else if (sampleRateStr == "48khz")
+	if (sampleRateStr == "48khz")
 		sampleRate = 48000;
 
 	if (WidgetChanged(ui->sampleRate))
