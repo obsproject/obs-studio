@@ -146,7 +146,7 @@ static inline void rehook32(struct func_hook *hook, bool force, intptr_t offset)
  * to use a 32bit jump instead of a 64bit jump, thus preventing the chance of
  * overwriting adjacent functions, which can cause a crash.  (by R1CH)
  */
-static void setup_64bit_bounce(struct func_hook *hook)
+static void setup_64bit_bounce(struct func_hook *hook, intptr_t *offset)
 {
 	MEMORY_BASIC_INFORMATION mbi;
 	uintptr_t address;
@@ -195,7 +195,6 @@ static void setup_64bit_bounce(struct func_hook *hook)
 
 	if (newdiff <= 0x7ffffff0) {
 		uint8_t *addr = (uint8_t*)hook->bounce_addr;
-		intptr_t offset;
 
 		FillMemory(hook->bounce_addr, pagesize, 0xCC);
 
@@ -205,8 +204,8 @@ static void setup_64bit_bounce(struct func_hook *hook)
 		*((uint64_t*)(addr + 4)) = hook->hook_addr;
 
 		hook->hook_addr = (uint64_t)hook->bounce_addr;
-		offset = hook->hook_addr - hook->func_addr - JMP_32_SIZE;
-		hook->is_64bit_jump = (llabs(offset) >= 0x7ffffff0);
+		*offset = hook->hook_addr - hook->func_addr - JMP_32_SIZE;
+		hook->is_64bit_jump = false;
 	}
 }
 
@@ -236,7 +235,7 @@ void do_hook(struct func_hook *hook, bool force)
 	if (hook->is_64bit_jump) {
 		if (!hook->attempted_bounce) {
 			hook->attempted_bounce = true;
-			setup_64bit_bounce(hook);
+			setup_64bit_bounce(hook, &offset);
 		}
 
 		if (hook->is_64bit_jump) {
