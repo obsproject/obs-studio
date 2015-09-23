@@ -744,7 +744,8 @@ static void gl_capture(HDC hdc)
 		/* reset capture if resized */
 		get_window_size(hdc, &new_cx, &new_cy);
 		if (new_cx != data.base_cx || new_cy != data.base_cy) {
-			gl_free();
+			if (new_cx != 0 && new_cy != 0)
+				gl_free();
 			return;
 		}
 
