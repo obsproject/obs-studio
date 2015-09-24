@@ -1374,14 +1374,22 @@ void OBSBasic::AddScene(OBSSource source)
 
 void OBSBasic::RemoveScene(OBSSource source)
 {
-	const char *name = obs_source_get_name(source);
+	obs_scene_t *scene = obs_scene_from_source(source);
 
-	QListWidgetItem *sel = ui->scenes->currentItem();
-	QList<QListWidgetItem*> items = ui->scenes->findItems(QT_UTF8(name),
-			Qt::MatchExactly);
+	QListWidgetItem *sel = nullptr;
+	int count = ui->scenes->count();
+	for (int i = 0; i < count; i++) {
+		auto item = ui->scenes->item(i);
+		auto cur_scene = GetOBSRef<OBSScene>(item);
+		if (cur_scene != scene)
+			continue;
+
+		sel = item;
+		break;
+	}
 
 	if (sel != nullptr) {
-		if (items.contains(sel))
+		if (sel == ui->scenes->currentItem())
 			ClearListItems(ui->sources);
 		delete sel;
 	}
