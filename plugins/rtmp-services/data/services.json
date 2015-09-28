@@ -354,10 +354,6 @@
                 {
                     "name": "US: New York 2, NY",
                     "url": "rtmp://live-nyc2.vaughnsoft.net:443/live"
-                },
-                {
-                    "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-nl.vaughnsoft.net:443/live"
                 }
             ]
         },
