@@ -767,6 +767,8 @@ inline void AdvancedOutput::SetupFFmpeg()
 			"FFVEncoder");
 	int vEncoderId = config_get_int(main->Config(), "AdvOut",
 			"FFVEncoderId");
+	int keyframeSecInterval = config_get_int(main->Config(), "AdvOut",
+			"FFKeyframeSecInterval");
 	const char *vEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFVCustom");
 	int aBitrate = config_get_int(main->Config(), "AdvOut",
@@ -788,6 +790,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	obs_data_set_int(settings, "video_bitrate", vBitrate);
 	obs_data_set_string(settings, "video_encoder", vEncoder);
 	obs_data_set_int(settings, "video_encoder_id", vEncoderId);
+	obs_data_set_int(settings, "keyframe_sec_interval", keyframeSecInterval);
 	obs_data_set_string(settings, "video_settings", vEncCustom);
 	obs_data_set_int(settings, "audio_bitrate", aBitrate);
 	obs_data_set_string(settings, "audio_encoder", aEncoder);

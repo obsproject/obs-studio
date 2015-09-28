@@ -113,7 +113,7 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QFormLayout" name="formLayout_2">
@@ -169,16 +169,7 @@
        </widget>
        <widget class="QWidget" name="streamPage">
         <layout class="QVBoxLayout" name="verticalLayout_5">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>0</number>
          </property>
          <item>
@@ -190,16 +181,7 @@
             </sizepolicy>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
+            <property name="margin">
              <number>0</number>
             </property>
             <item alignment="Qt::AlignTop">
@@ -211,16 +193,7 @@
                </sizepolicy>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_7">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
+               <property name="margin">
                 <number>0</number>
                </property>
                <item>
@@ -268,16 +241,7 @@
        </widget>
        <widget class="QWidget" name="outputPage">
         <layout class="QVBoxLayout" name="verticalLayout_2">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>0</number>
          </property>
          <item alignment="Qt::AlignTop">
@@ -347,20 +311,11 @@
          <item>
           <widget class="QStackedWidget" name="outputModePages">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="easyOutputsPage">
             <layout class="QVBoxLayout" name="verticalLayout_3">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item>
@@ -672,16 +627,7 @@
              </item>
              <item>
               <layout class="QVBoxLayout" name="simpleOutInfoLayout">
-               <property name="leftMargin">
-                <number>10</number>
-               </property>
-               <property name="topMargin">
-                <number>10</number>
-               </property>
-               <property name="rightMargin">
-                <number>10</number>
-               </property>
-               <property name="bottomMargin">
+               <property name="margin">
                 <number>10</number>
                </property>
               </layout>
@@ -702,16 +648,7 @@
              <item alignment="Qt::AlignTop">
               <widget class="QWidget" name="simpleOutputContainer" native="true">
                <layout class="QVBoxLayout" name="verticalLayout_4">
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
+                <property name="margin">
                  <number>0</number>
                 </property>
                </layout>
@@ -721,22 +658,13 @@
            </widget>
            <widget class="QWidget" name="advOutputsPage">
             <layout class="QVBoxLayout" name="verticalLayout_8">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item>
               <widget class="QTabWidget" name="advOutTabs">
                <property name="currentIndex">
-                <number>0</number>
+                <number>1</number>
                </property>
                <property name="usesScrollButtons">
                 <bool>true</bool>
@@ -764,16 +692,7 @@
                     <property name="spacing">
                      <number>0</number>
                     </property>
-                    <property name="leftMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
+                    <property name="margin">
                      <number>0</number>
                     </property>
                     <item>
@@ -816,16 +735,7 @@
                           </sizepolicy>
                          </property>
                          <layout class="QHBoxLayout" name="horizontalLayout_7">
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
+                          <property name="margin">
                            <number>0</number>
                           </property>
                           <item>
@@ -921,16 +831,7 @@
                  <string>Basic.Settings.Output.Adv.Recording</string>
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_11">
-                 <property name="leftMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="bottomMargin">
+                 <property name="margin">
                   <number>9</number>
                  </property>
                  <item>
@@ -991,35 +892,17 @@
                  <item>
                   <widget class="QStackedWidget" name="stackedWidget">
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>1</number>
                    </property>
                    <widget class="QWidget" name="advOutRecStandard">
                     <layout class="QVBoxLayout" name="verticalLayout_13">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
+                     <property name="margin">
                       <number>0</number>
                      </property>
                      <item alignment="Qt::AlignTop">
                       <widget class="QWidget" name="widget_7" native="true">
                        <layout class="QVBoxLayout" name="verticalLayout_15">
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
+                        <property name="margin">
                          <number>0</number>
                         </property>
                         <item>
@@ -1135,16 +1018,7 @@
                               </sizepolicy>
                              </property>
                              <layout class="QHBoxLayout" name="horizontalLayout_9">
-                              <property name="leftMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
+                              <property name="margin">
                                <number>0</number>
                               </property>
                               <item>
@@ -1207,16 +1081,7 @@
                            <item row="4" column="1">
                             <widget class="QWidget" name="advOutRecRescaleContainer" native="true">
                              <layout class="QHBoxLayout" name="horizontalLayout_4">
-                              <property name="leftMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
+                              <property name="margin">
                                <number>0</number>
                               </property>
                               <item>
@@ -1251,6 +1116,42 @@
                      <property name="topMargin">
                       <number>0</number>
                      </property>
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="label_48">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>170</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Basic.Settings.Output.Adv.FFmpeg.Type</string>
+                       </property>
+                       <property name="alignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QComboBox" name="advOutFFType">
+                       <item>
+                        <property name="text">
+                         <string>Basic.Settings.Output.Adv.FFmpeg.Type.RecordToFile</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
+                         <string>Basic.Settings.Output.Adv.FFmpeg.Type.URL</string>
+                        </property>
+                       </item>
+                      </widget>
+                     </item>
                      <item row="1" column="0">
                       <widget class="QLabel" name="label_36">
                        <property name="sizePolicy">
@@ -1283,16 +1184,7 @@
                          <property name="spacing">
                           <number>3</number>
                          </property>
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
+                         <property name="margin">
                           <number>0</number>
                          </property>
                          <item>
@@ -1316,16 +1208,7 @@
                          <property name="spacing">
                           <number>0</number>
                          </property>
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
+                         <property name="margin">
                           <number>0</number>
                          </property>
                          <item>
@@ -1362,6 +1245,16 @@
                         <string/>
                        </property>
                       </widget>
+                     </item>
+                     <item row="4" column="0">
+                      <widget class="QLabel" name="label_1337">
+                       <property name="text">
+                        <string>Basic.Settings.Output.Adv.FFmpeg.MuxerSettings</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="4" column="1">
+                      <widget class="QLineEdit" name="advOutFFMCfg"/>
                      </item>
                      <item row="5" column="0">
                       <widget class="QLabel" name="label_40">
@@ -1419,24 +1312,24 @@
                      <item row="7" column="1">
                       <widget class="QComboBox" name="advOutFFVEncoder"/>
                      </item>
-                     <item row="9" column="0">
-                      <widget class="QLabel" name="label_38">
+                     <item row="8" column="0">
+                      <widget class="QLabel" name="label_27">
                        <property name="text">
-                        <string>Basic.Settings.Output.Adv.FFmpeg.VEncoderSettings</string>
+                        <string>Basic.Settings.Output.Adv.FFmpeg.KeyframeSecInterval</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="9" column="1">
+                     <item row="10" column="1">
                       <widget class="QLineEdit" name="advOutFFVCfg"/>
                      </item>
-                     <item row="10" column="0">
+                     <item row="11" column="0">
                       <widget class="QLabel" name="label_41">
                        <property name="text">
                         <string>Basic.Settings.Output.AudioBitrate</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="10" column="1">
+                     <item row="11" column="1">
                       <widget class="QSpinBox" name="advOutFFABitrate">
                        <property name="minimum">
                         <number>32</number>
@@ -1452,14 +1345,14 @@
                        </property>
                       </widget>
                      </item>
-                     <item row="11" column="0">
+                     <item row="12" column="0">
                       <widget class="QLabel" name="label_47">
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.AudioTrack</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="11" column="1">
+                     <item row="12" column="1">
                       <widget class="QWidget" name="widget_10" native="true">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -1468,16 +1361,7 @@
                         </sizepolicy>
                        </property>
                        <layout class="QHBoxLayout" name="horizontalLayout_10">
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
+                        <property name="margin">
                          <number>0</number>
                         </property>
                         <item>
@@ -1514,73 +1398,72 @@
                        </layout>
                       </widget>
                      </item>
-                     <item row="12" column="0">
+                     <item row="13" column="0">
                       <widget class="QLabel" name="label_39">
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.AEncoder</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="12" column="1">
+                     <item row="13" column="1">
                       <widget class="QComboBox" name="advOutFFAEncoder"/>
                      </item>
-                     <item row="13" column="0">
+                     <item row="14" column="0">
                       <widget class="QLabel" name="label_46">
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.AEncoderSettings</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="13" column="1">
+                     <item row="14" column="1">
                       <widget class="QLineEdit" name="advOutFFACfg"/>
                      </item>
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="label_48">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>170</width>
-                         <height>0</height>
-                        </size>
-                       </property>
+                     <item row="10" column="0">
+                      <widget class="QLabel" name="label_38">
                        <property name="text">
-                        <string>Basic.Settings.Output.Adv.FFmpeg.Type</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                        <string>Basic.Settings.Output.Adv.FFmpeg.VEncoderSettings</string>
                        </property>
                       </widget>
                      </item>
-                     <item row="0" column="1">
-                      <widget class="QComboBox" name="advOutFFType">
-                       <item>
-                        <property name="text">
-                         <string>Basic.Settings.Output.Adv.FFmpeg.Type.RecordToFile</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string>Basic.Settings.Output.Adv.FFmpeg.Type.URL</string>
-                        </property>
-                       </item>
-                      </widget>
-                     </item>
-                     <item row="4" column="0">
-                      <widget class="QLabel" name="label_1337">
-                       <property name="text">
-                        <string>Basic.Settings.Output.Adv.FFmpeg.MuxerSettings</string>
+                     <item row="8" column="1">
+                      <widget class="QSpinBox" name="advOutFFKeyframeSecInterval">
+                       <property name="maximum">
+                        <number>99</number>
+                       </property>
+                       <property name="value">
+                        <number>2</number>
                        </property>
                       </widget>
-                     </item>
-                     <item row="4" column="1">
-                      <widget class="QLineEdit" name="advOutFFMCfg"/>
                      </item>
                     </layout>
+                    <zorder>label_48</zorder>
+                    <zorder>advOutFFType</zorder>
+                    <zorder>label_36</zorder>
+                    <zorder>stackedWidget_2</zorder>
+                    <zorder>label_16</zorder>
+                    <zorder>advOutFFFormat</zorder>
+                    <zorder>label_44</zorder>
+                    <zorder>advOutFFFormatDesc</zorder>
+                    <zorder>label_1337</zorder>
+                    <zorder>advOutFFMCfg</zorder>
+                    <zorder>label_40</zorder>
+                    <zorder>advOutFFUseRescale</zorder>
+                    <zorder>advOutFFRescale</zorder>
+                    <zorder>label_37</zorder>
+                    <zorder>advOutFFVEncoder</zorder>
+                    <zorder>label_27</zorder>
+                    <zorder>advOutFFVCfg</zorder>
+                    <zorder>label_41</zorder>
+                    <zorder>advOutFFABitrate</zorder>
+                    <zorder>label_47</zorder>
+                    <zorder>widget_10</zorder>
+                    <zorder>label_39</zorder>
+                    <zorder>advOutFFAEncoder</zorder>
+                    <zorder>label_46</zorder>
+                    <zorder>advOutFFACfg</zorder>
+                    <zorder>label_38</zorder>
+                    <zorder>advOutFFKeyframeSecInterval</zorder>
+                    <zorder>advOutFFVBitrate</zorder>
                    </widget>
                   </widget>
                  </item>
@@ -1591,16 +1474,7 @@
                  <string>Basic.Settings.Audio</string>
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_9">
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
+                 <property name="margin">
                   <number>0</number>
                  </property>
                  <item alignment="Qt::AlignTop">
@@ -2078,7 +1952,7 @@
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="sampleRate">
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string notr="true">44.1khz</string>
            </property>
            <property name="currentIndex">
@@ -2105,7 +1979,7 @@
          </item>
          <item row="1" column="1">
           <widget class="QComboBox" name="channelSetup">
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string>Mono</string>
            </property>
            <property name="currentIndex">
@@ -2215,7 +2089,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>63</width>
+              <width>78</width>
               <height>16</height>
              </rect>
             </property>
@@ -2254,7 +2128,7 @@
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="renderer">
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string notr="true"/>
            </property>
           </widget>
@@ -2280,7 +2154,7 @@
            <property name="enabled">
             <bool>false</bool>
            </property>
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string notr="true"/>
            </property>
           </widget>
@@ -2297,7 +2171,7 @@
            <property name="editable">
             <bool>true</bool>
            </property>
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string notr="true"/>
            </property>
            <property name="duplicatesEnabled">
@@ -2320,7 +2194,7 @@
            <property name="editable">
             <bool>true</bool>
            </property>
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string notr="true"/>
            </property>
           </widget>
@@ -2347,7 +2221,7 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="currentText">
+           <property name="currentText" stdset="0">
             <string>Basic.Settings.Video.FPSCommon</string>
            </property>
            <property name="sizeAdjustPolicy">
@@ -2377,21 +2251,12 @@
            </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item alignment="Qt::AlignTop">
               <widget class="QComboBox" name="fpsCommon">
-               <property name="currentText">
+               <property name="currentText" stdset="0">
                 <string notr="true">30</string>
                </property>
                <property name="currentIndex">
@@ -2438,16 +2303,7 @@
            </widget>
            <widget class="QWidget" name="page_3">
             <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item alignment="Qt::AlignTop">
@@ -2473,16 +2329,7 @@
              <property name="labelAlignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item row="0" column="1">
@@ -2556,8 +2403,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>96</width>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -2575,16 +2422,7 @@
        </widget>
        <widget class="QWidget" name="advancedPage">
         <layout class="QHBoxLayout" name="horizontalLayout_11">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>0</number>
          </property>
          <item>
@@ -2603,8 +2441,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>735</width>
-              <height>618</height>
+              <width>640</width>
+              <height>493</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -2785,16 +2623,7 @@
                       <property name="spacing">
                        <number>5</number>
                       </property>
-                      <property name="leftMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="bottomMargin">
+                      <property name="margin">
                        <number>0</number>
                       </property>
                       <item>
@@ -2978,8 +2807,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>159</x>
-     <y>34</y>
+     <x>310</x>
+     <y>33</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
@@ -2994,12 +2823,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>38</y>
+     <x>411</x>
+     <y>19</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
-     <y>39</y>
+     <y>73</y>
     </hint>
    </hints>
   </connection>
@@ -3010,12 +2839,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>875</x>
-     <y>427</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -3026,12 +2855,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>427</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -3042,12 +2871,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>875</x>
-     <y>503</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -3058,12 +2887,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>503</y>
+     <x>250</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -3074,12 +2903,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>144</y>
+     <x>486</x>
+     <y>98</y>
     </hint>
     <hint type="destinationlabel">
-     <x>396</x>
-     <y>245</y>
+     <x>243</x>
+     <y>137</y>
     </hint>
    </hints>
   </connection>
@@ -3090,12 +2919,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>514</x>
-     <y>344</y>
+     <x>259</x>
+     <y>308</y>
     </hint>
     <hint type="destinationlabel">
-     <x>748</x>
-     <y>344</y>
+     <x>571</x>
+     <y>308</y>
     </hint>
    </hints>
   </connection>
@@ -3106,12 +2935,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>171</x>
+     <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>427</x>
-     <y>178</y>
+     <x>465</x>
+     <y>186</y>
     </hint>
    </hints>
   </connection>
@@ -3122,12 +2951,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>261</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>864</x>
-     <y>178</y>
+     <x>243</x>
+     <y>160</y>
     </hint>
    </hints>
   </connection>
@@ -3138,12 +2967,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>571</x>
+     <y>137</y>
     </hint>
     <hint type="destinationlabel">
-     <x>427</x>
-     <y>215</y>
+     <x>571</x>
+     <y>167</y>
     </hint>
    </hints>
   </connection>
@@ -3154,12 +2983,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>864</x>
-     <y>215</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3170,12 +2999,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>427</x>
-     <y>355</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>862</x>
-     <y>355</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3186,12 +3015,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>424</x>
-     <y>331</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>658</x>
-     <y>331</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3202,12 +3031,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>254</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>291</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3218,12 +3047,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>516</x>
-     <y>411</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
-     <y>92</y>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3234,12 +3063,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>533</x>
-     <y>273</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>449</x>
-     <y>301</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3250,12 +3079,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>517</x>
-     <y>267</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>777</x>
-     <y>206</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>

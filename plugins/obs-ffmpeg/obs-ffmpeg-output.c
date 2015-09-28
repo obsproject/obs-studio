@@ -41,6 +41,7 @@ struct ffmpeg_cfg {
 	int                video_encoder_id;
 	const char         *audio_encoder;
 	int                audio_encoder_id;
+	int				   keyframe_sec_interval;
 	const char         *video_settings;
 	const char         *audio_settings;
 	enum AVPixelFormat format;
@@ -233,10 +234,12 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->width          = data->config.scale_width;
 	context->height         = data->config.scale_height;
 	context->time_base      = (AVRational){ ovi.fps_den, ovi.fps_num };
-	context->gop_size       = 120;
 	context->pix_fmt        = closest_format;
 	context->colorspace     = data->config.color_space;
 	context->color_range    = data->config.color_range;
+
+	if(data->config.keyframe_sec_interval > 0)
+		context->gop_size = data->config.keyframe_sec_interval*ovi.fps_num/ovi.fps_den;
 
 	data->video->time_base = context->time_base;
 
@@ -260,7 +263,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 static bool open_audio_codec(struct ffmpeg_data *data)
 {
 	AVCodecContext *context = data->audio->codec;
-	char **opts = strlist_split(data->config.video_settings, ' ', false);
+	char **opts = strlist_split(data->config.audio_settings, ' ', false);
 	int ret;
 
 	if (opts) {
@@ -906,6 +909,7 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.audio_encoder = get_string_or_null(settings, "audio_encoder");
 	config.audio_encoder_id = (int)obs_data_get_int(settings,
 			"audio_encoder_id");
+	config.keyframe_sec_interval = obs_data_get_int(settings, "keyframe_sec_interval");
 	config.video_settings = obs_data_get_string(settings, "video_settings");
 	config.audio_settings = obs_data_get_string(settings, "audio_settings");
 	config.scale_width = (int)obs_data_get_int(settings, "scale_width");

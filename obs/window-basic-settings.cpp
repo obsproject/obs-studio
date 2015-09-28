@@ -301,6 +301,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutFFUseRescale,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFRescale,      CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFKeyframeSecInterval, SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVCfg,         EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFABitrate,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFTrack1,       CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -1210,6 +1211,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 			"FFVEncoder");
 	int vEncoderId = config_get_int(main->Config(), "AdvOut",
 			"FFVEncoderId");
+	int keyframeSecInterval = config_get_int(main->Config(), "AdvOut",
+			"FFKeyframeSecInterval");
 	const char *vEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFVCustom");
 	int audioBitrate = config_get_int(main->Config(), "AdvOut",
@@ -1233,6 +1236,7 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	ui->advOutFFRescale->setEnabled(rescale);
 	ui->advOutFFRescale->setCurrentText(rescaleRes);
 	SelectEncoder(ui->advOutFFVEncoder, vEncoder, vEncoderId);
+	ui->advOutFFKeyframeSecInterval->setValue(keyframeSecInterval);
 	ui->advOutFFVCfg->setText(vEncCustom);
 	ui->advOutFFABitrate->setValue(audioBitrate);
 	SelectEncoder(ui->advOutFFAEncoder, aEncoder, aEncoderId);
@@ -2143,6 +2147,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutFFUseRescale, "AdvOut", "FFRescale");
 	SaveCombo(ui->advOutFFRescale, "AdvOut", "FFRescaleRes");
 	SaveEncoder(ui->advOutFFVEncoder, "AdvOut", "FFVEncoder");
+	SaveSpinBox(ui->advOutFFKeyframeSecInterval, "AdvOut", "FFKeyframeSecInterval");
 	SaveEdit(ui->advOutFFVCfg, "AdvOut", "FFVCustom");
 	SaveSpinBox(ui->advOutFFABitrate, "AdvOut", "FFABitrate");
 	SaveEncoder(ui->advOutFFAEncoder, "AdvOut", "FFAEncoder");
