@@ -114,9 +114,6 @@ int obs_open_module(obs_module_t **module, const char *path,
 	if (mod.set_locale)
 		mod.set_locale(obs->locale);
 
-#ifdef _WIN32
-	reset_win32_symbol_paths();
-#endif
 	return MODULE_SUCCESS;
 }
 
@@ -233,10 +230,14 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 }
 
 static const char *obs_load_all_modules_name = "obs_load_all_modules";
+
 void obs_load_all_modules(void)
 {
 	profile_start(obs_load_all_modules_name);
 	obs_find_modules(load_all_callback, NULL);
+#ifdef _WIN32
+	reset_win32_symbol_paths();
+#endif
 	profile_end(obs_load_all_modules_name);
 }
 
