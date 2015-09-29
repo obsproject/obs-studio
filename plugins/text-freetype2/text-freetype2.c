@@ -220,6 +220,7 @@ static void ft2_video_tick(void *data, float seconds)
 			else
 				load_text_from_file(srcdata,
 					srcdata->text_file);
+			cache_glyphs(srcdata, srcdata->text);
 			set_up_vertex_buffer(srcdata);
 		}
 	}
