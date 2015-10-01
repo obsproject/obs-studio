@@ -571,8 +571,6 @@ static bool av_capture_init(av_capture *capture, obs_data_t *settings)
 
 static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-
 	unique_ptr<av_capture> capture;
 
 	try {
