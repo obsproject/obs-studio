@@ -38,8 +38,8 @@ struct serializer {
 
 	size_t   (*read)(void *, void *, size_t);
 	size_t   (*write)(void *, const void *, size_t);
-	uint64_t (*seek)(void *, int64_t, enum serialize_seek_type);
-	uint64_t (*get_pos)(void *);
+	int64_t  (*seek)(void *, int64_t, enum serialize_seek_type);
+	int64_t  (*get_pos)(void *);
 };
 
 static inline size_t s_read(struct serializer *s, void *data, size_t size)
@@ -69,19 +69,19 @@ static inline size_t serialize(struct serializer *s, void *data, size_t len)
 	return 0;
 }
 
-static inline uint64_t serializer_seek(struct serializer *s, int64_t offset,
+static inline int64_t serializer_seek(struct serializer *s, int64_t offset,
 		enum serialize_seek_type seek_type)
 {
 	if (s && s->seek)
 		return s->seek(s->data, offset, seek_type);
-	return 0;
+	return -1;
 }
 
-static inline uint64_t serializer_get_pos(struct serializer *s)
+static inline int64_t serializer_get_pos(struct serializer *s)
 {
 	if (s && s->get_pos)
 		return s->get_pos(s->data);
-	return 0;
+	return -1;
 }
 
 /* formatted this to be similar to the AVIO layout that ffmpeg uses */

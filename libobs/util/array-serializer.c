@@ -24,10 +24,10 @@ static size_t array_output_write(void *param, const void *data, size_t size)
 	return size;
 }
 
-static uint64_t array_output_get_pos(void *param)
+static int64_t array_output_get_pos(void *param)
 {
 	struct array_output_data *data = param;
-	return data->bytes.num;
+	return (int64_t)data->bytes.num;
 }
 
 void array_output_serializer_init(struct serializer *s,
