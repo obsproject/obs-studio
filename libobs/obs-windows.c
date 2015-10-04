@@ -557,7 +557,6 @@ void reset_win32_symbol_paths(void)
 				!sym_refresh_module_list)
 			return;
 
-		sym_initialize_w(GetCurrentProcess(), NULL, false);
 		initialize_success = true;
 	}
 
@@ -616,8 +615,18 @@ void reset_win32_symbol_paths(void)
 	if (path_str.array) {
 		os_utf8_to_wcs_ptr(path_str.array, path_str.len, &path_str_w);
 		if (path_str_w) {
-			BOOL test = sym_set_search_path_w(GetCurrentProcess(), path_str_w);
-			sym_refresh_module_list(GetCurrentProcess());
+			static bool sym_initialize_called = false;
+
+			if (!sym_initialize_called) {
+				sym_initialize_w(GetCurrentProcess(),
+						path_str_w, true);
+				sym_initialize_called = true;
+			} else {
+				sym_set_search_path_w(GetCurrentProcess(),
+						path_str_w);
+				sym_refresh_module_list(GetCurrentProcess());
+			}
+
 			bfree(path_str_w);
 		}
 	}
