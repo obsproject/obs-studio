@@ -486,7 +486,13 @@ static const char *GetWASAPIOutputName(void*)
 	return obs_module_text("AudioOutput");
 }
 
-static void GetWASAPIDefaults(obs_data_t *settings)
+static void GetWASAPIDefaultsInput(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
+	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, false);
+}
+
+static void GetWASAPIDefaultsOutput(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
@@ -572,7 +578,7 @@ void RegisterWASAPIInput()
 	info.create          = CreateWASAPIInput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
-	info.get_defaults    = GetWASAPIDefaults;
+	info.get_defaults    = GetWASAPIDefaultsInput;
 	info.get_properties  = GetWASAPIPropertiesInput;
 	obs_register_source(&info);
 }
@@ -587,7 +593,7 @@ void RegisterWASAPIOutput()
 	info.create          = CreateWASAPIOutput;
 	info.destroy         = DestroyWASAPISource;
 	info.update          = UpdateWASAPISource;
-	info.get_defaults    = GetWASAPIDefaults;
+	info.get_defaults    = GetWASAPIDefaultsOutput;
 	info.get_properties  = GetWASAPIPropertiesOutput;
 	obs_register_source(&info);
 }
