@@ -225,6 +225,7 @@ set(libobs_util_SOURCES
 	util/lexer.c
 	util/dstr.c
 	util/utf8.c
+	util/crc32.c
 	util/text-lookup.c
 	util/cf-parser.c
 	util/profiler.c)
@@ -232,6 +233,7 @@ set(libobs_util_HEADERS
 	util/array-serializer.h
 	util/file-serializer.h
 	util/utf8.h
+	util/crc32.h
 	util/base.h
 	util/text-lookup.h
 	util/vc/vc_inttypes.h
