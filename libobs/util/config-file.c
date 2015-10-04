@@ -70,6 +70,7 @@ config_t *config_create(const char *file)
 	fclose(f);
 
 	config = bzalloc(sizeof(struct config_data));
+	config->file = bstrdup(file);
 	return config;
 }
 
