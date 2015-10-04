@@ -216,6 +216,7 @@ set(libobs_mediaio_HEADERS
 
 set(libobs_util_SOURCES
 	util/array-serializer.c
+	util/file-serializer.c
 	util/base.c
 	util/platform.c
 	util/cf-lexer.c
@@ -229,6 +230,7 @@ set(libobs_util_SOURCES
 	util/profiler.c)
 set(libobs_util_HEADERS
 	util/array-serializer.h
+	util/file-serializer.h
 	util/utf8.h
 	util/base.h
 	util/text-lookup.h
