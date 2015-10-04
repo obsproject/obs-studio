@@ -585,25 +585,24 @@ typedef BOOL (WINAPI *ver_query_value_w_t)(
 		LPVOID *buf,
 		PUINT sizeout);
 
-static void actually_get_win_ver(struct win_version_info *ver_info)
+static get_file_version_info_size_w_t get_file_version_info_size = NULL;
+static get_file_version_info_w_t get_file_version_info = NULL;
+static ver_query_value_w_t ver_query_value = NULL;
+static bool ver_initialized = false;
+static bool ver_initialize_success = false;
+
+static bool initialize_version_functions(void)
 {
 	HMODULE ver = GetModuleHandleW(L"version");
-	VS_FIXEDFILEINFO *info = NULL;
-	UINT len = 0;
-	BOOL success;
-	LPVOID data;
-	DWORD size;
 
-	get_file_version_info_size_w_t get_file_version_info_size;
-	get_file_version_info_w_t get_file_version_info;
-	ver_query_value_w_t ver_query_value;
+	ver_initialized = true;
 
 	if (!ver) {
 		ver = LoadLibraryW(L"version");
 		if (!ver) {
-			blog(LOG_ERROR, "Failed to load windows version "
-			                "library");
-			return;
+			blog(LOG_ERROR, "Failed to load windows "
+					"version library");
+			return false;
 		}
 	}
 
@@ -617,29 +616,46 @@ static void actually_get_win_ver(struct win_version_info *ver_info)
 	if (!get_file_version_info_size ||
 	    !get_file_version_info ||
 	    !ver_query_value) {
-			blog(LOG_ERROR, "Failed to load windows version "
-			                "functions");
-		return;
+		blog(LOG_ERROR, "Failed to load windows version "
+				"functions");
+		return false;
 	}
 
-	size = get_file_version_info_size(L"kernel32", NULL);
+	ver_initialize_success = true;
+	return true;
+}
+
+bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
+{
+	VS_FIXEDFILEINFO *info = NULL;
+	UINT len = 0;
+	BOOL success;
+	LPVOID data;
+	DWORD size;
+
+	if (!ver_initialized && !initialize_version_functions())
+		return false;
+	if (!ver_initialize_success)
+		return false;
+
+	size = get_file_version_info_size(lib, NULL);
 	if (!size) {
 		blog(LOG_ERROR, "Failed to get windows version info size");
-		return;
+		return false;
 	}
 
 	data = bmalloc(size);
 	if (!get_file_version_info(L"kernel32", 0, size, data)) {
 		blog(LOG_ERROR, "Failed to get windows version info");
 		bfree(data);
-		return;
+		return false;
 	}
 
 	success = ver_query_value(data, L"\\", (LPVOID*)&info, &len);
 	if (!success || !info || !len) {
 		blog(LOG_ERROR, "Failed to get windows version info value");
 		bfree(data);
-		return;
+		return false;
 	}
 
 	ver_info->major = (int)HIWORD(info->dwFileVersionMS);
@@ -648,7 +664,7 @@ static void actually_get_win_ver(struct win_version_info *ver_info)
 	ver_info->revis = (int)LOWORD(info->dwFileVersionLS);
 
 	bfree(data);
-	return;
+	return true;
 }
 
 void get_win_ver(struct win_version_info *info)
@@ -660,7 +676,7 @@ void get_win_ver(struct win_version_info *info)
 		return;
 
 	if (!got_version) {
-		actually_get_win_ver(&ver);
+		get_dll_ver(L"kernel32", &ver);
 		got_version = true;
 	}
 
