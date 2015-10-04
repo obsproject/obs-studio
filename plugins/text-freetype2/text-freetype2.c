@@ -48,6 +48,12 @@ static struct obs_source_info freetype2_source_info = {
 
 bool obs_module_load()
 {
+	char *config_dir = obs_module_config_path(NULL);
+	if (config_dir) {
+		os_mkdirs(config_dir);
+		bfree(config_dir);
+	}
+
 	FT_Init_FreeType(&ft2_lib);
 
 	if (ft2_lib == NULL) {
@@ -55,7 +61,8 @@ bool obs_module_load()
 		return false;
 	}
 
-	load_os_font_list();
+	if (!load_cached_os_font_list())
+		load_os_font_list();
 
 	obs_register_source(&freetype2_source_info);
 

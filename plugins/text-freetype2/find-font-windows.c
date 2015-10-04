@@ -1,5 +1,6 @@
 #include <util/dstr.h>
 #include <util/darray.h>
+#include <util/crc32.h>
 #include "find-font.h"
 #include "text-freetype2.h"
 
@@ -9,6 +10,7 @@
 #include <shlobj.h>
 
 extern DARRAY(struct font_path_info) font_list;
+extern void save_font_list(void);
 
 struct mac_font_mapping {
 	unsigned short encoding_id;
@@ -191,6 +193,45 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 	return utf8_str;
 }
 
+uint32_t get_font_checksum(void)
+{
+	uint32_t         checksum = 0;
+	struct dstr      path = {0};
+	HANDLE           handle;
+	WIN32_FIND_DATAA wfd;
+
+	dstr_reserve(&path, MAX_PATH);
+
+	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL,
+			SHGFP_TYPE_CURRENT, path.array);
+	if (res != S_OK) {
+		blog(LOG_WARNING, "Error finding windows font folder");
+		return 0;
+	}
+
+	path.len = strlen(path.array);
+	dstr_cat(&path, "\\*.*");
+
+	handle = FindFirstFileA(path.array, &wfd);
+	if (handle == INVALID_HANDLE_VALUE)
+		goto free_string;
+
+	dstr_resize(&path, path.len - 4);
+
+	do {
+		checksum = calc_crc32(checksum, &wfd.ftLastWriteTime,
+				sizeof(FILETIME));
+		checksum = calc_crc32(checksum, wfd.cFileName,
+				strlen(wfd.cFileName));
+	} while (FindNextFileA(handle, &wfd));
+
+	FindClose(handle);
+
+free_string:
+	dstr_free(&path);
+	return checksum;
+}
+
 void load_os_font_list(void)
 {
 	struct dstr      path = {0};
@@ -243,6 +284,8 @@ void load_os_font_list(void)
 	} while (FindNextFileA(handle, &wfd));
 
 	FindClose(handle);
+
+	save_font_list();
 
 free_string:
 	dstr_free(&path);

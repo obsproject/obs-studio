@@ -1,8 +1,200 @@
+#include <util/file-serializer.h>
 #include <ctype.h>
-#include <obs.h>
+#include <time.h>
+#include <obs-module.h>
 #include "find-font.h"
 
 DARRAY(struct font_path_info) font_list;
+
+static inline bool read_data(struct serializer *s, void *data, size_t size)
+{
+	return s_read(s, data, size) == size;
+}
+
+static inline bool write_data(struct serializer *s, const void *data,
+		size_t size)
+{
+	return s_write(s, data, size) == size;
+}
+
+#define read_var(s, data) read_data(s, &data, sizeof(data))
+#define write_var(s, data) write_data(s, &data, sizeof(data))
+
+static bool read_str(struct serializer *s, char **p_str)
+{
+	size_t size;
+	char *str;
+
+	if (!read_var(s, size))
+		return false;
+
+	str = bmalloc(size + 1);
+	if (size && !read_data(s, str, size)) {
+		bfree(str);
+		return false;
+	}
+
+	str[size] = 0;
+	*p_str = str;
+	return true;
+}
+
+static bool write_str(struct serializer *s, const char *str)
+{
+	size_t size = str ? strlen(str) : 0;
+
+	if (!write_var(s, size))
+		return false;
+	if (size && !write_data(s, str, size))
+		return false;
+	return true;
+}
+
+static bool load_cached_font_list(struct serializer *s)
+{
+	bool success = true;
+	int count;
+
+	success = read_var(s, count);
+	if (!success) return false;
+
+	da_init(font_list);
+	da_resize(font_list, count);
+
+#define do_read(var) \
+	success = read_var(s, var); \
+	if (!success) break
+
+	for (int i = 0; i < count; i++) {
+		struct font_path_info *info = &font_list.array[i];
+
+		success = read_str(s, &info->face_and_style);
+		if (!success) break;
+
+		do_read(info->full_len);
+		do_read(info->face_len);
+		do_read(info->is_bitmap);
+		do_read(info->num_sizes);
+
+		info->sizes = bmalloc(sizeof(int) * info->num_sizes);
+		success = read_data(s, info->sizes,
+				sizeof(int) * info->num_sizes);
+		if (!success) break;
+
+		do_read(info->bold);
+
+		success = read_str(s, &info->path);
+		if (!success) break;
+
+		do_read(info->italic);
+		do_read(info->index);
+	}
+
+#undef do_read
+
+	if (!success) {
+		free_os_font_list();
+		return false;
+	}
+
+	return true;
+}
+
+extern uint32_t get_font_checksum();
+static const uint32_t font_cache_ver = 1;
+
+bool load_cached_os_font_list(void)
+{
+	char *file_name = obs_module_config_path("font_data.bin");
+	uint32_t old_checksum;
+	uint32_t new_checksum;
+	struct serializer s;
+	uint32_t ver;
+	bool success;
+
+	success = file_input_serializer_init(&s, file_name);
+	bfree(file_name);
+
+	if (!success)
+		return false;
+
+	success = read_data(&s, &ver, sizeof(ver));
+
+	if (!success || ver != font_cache_ver) {
+		success = false;
+		goto finish;
+	}
+
+	success = s_read(&s, &old_checksum, sizeof(old_checksum));
+	new_checksum = get_font_checksum();
+
+	if (!success || old_checksum != new_checksum) {
+		success = false;
+		goto finish;
+	}
+
+	success = load_cached_font_list(&s);
+
+finish:
+	file_input_serializer_free(&s);
+	return success;
+}
+
+void save_font_list(void)
+{
+	char *file_name = obs_module_config_path("font_data.bin");
+	uint32_t font_checksum = get_font_checksum();
+	int font_count = (int)font_list.num;
+	struct serializer s;
+	bool success = false;
+
+	if (font_checksum)
+		success = file_output_serializer_init_safe(&s, file_name,
+				"tmp");
+	bfree(file_name);
+
+	if (!success)
+		return;
+
+	success = write_var(&s, font_cache_ver);
+	if (!success) return;
+	success = write_var(&s, font_checksum);
+	if (!success) return;
+	success = write_var(&s, font_count);
+	if (!success) return;
+
+#define do_write(var) \
+	success = write_var(&s, var); \
+	if (!success) break
+
+	for (size_t i = 0; i < font_list.num; i++) {
+		struct font_path_info *info = &font_list.array[i];
+
+		success = write_str(&s, info->face_and_style);
+		if (!success) break;
+
+		do_write(info->full_len);
+		do_write(info->face_len);
+		do_write(info->is_bitmap);
+		do_write(info->num_sizes);
+
+		success = write_data(&s, info->sizes,
+				sizeof(int) * info->num_sizes);
+		if (!success) break;
+
+		do_write(info->bold);
+
+		success = write_str(&s, info->path);
+		if (!success) break;
+
+		do_write(info->italic);
+		do_write(info->index);
+	}
+
+#undef do_write
+
+	file_output_serializer_free(&s);
+}
 
 static void create_bitmap_sizes(struct font_path_info *info, FT_Face face)
 {
@@ -23,7 +215,7 @@ static void create_bitmap_sizes(struct font_path_info *info, FT_Face face)
 	}
 
 	info->sizes     = sizes.array;
-	info->num_sizes = face->num_fixed_sizes;
+	info->num_sizes = (uint32_t)face->num_fixed_sizes;
 }
 
 static void add_font_path(FT_Face face,
@@ -57,8 +249,8 @@ static void add_font_path(FT_Face face,
 	}
 
 	info.face_and_style = face_and_style.array;
-	info.full_len       = face_and_style.len;
-	info.face_len       = strlen(family_in);
+	info.full_len       = (uint32_t)face_and_style.len;
+	info.face_len       = (uint32_t)strlen(family_in);
 
 	info.is_bitmap      = !!(face->face_flags  & FT_FACE_FLAG_FIXED_SIZES);
 	info.bold           = !!(face->style_flags & FT_STYLE_FLAG_BOLD);
@@ -182,7 +374,7 @@ const char *get_font_path(const char *family, uint16_t size, const char *style,
 
 		if (info->is_bitmap) {
 			int best_diff = 1000;
-			for (size_t j = 0; j < info->num_sizes; j++) {
+			for (uint32_t j = 0; j < info->num_sizes; j++) {
 				int diff = abs(info->sizes[j] - size);
 				if (diff < best_diff)
 					best_diff = diff;

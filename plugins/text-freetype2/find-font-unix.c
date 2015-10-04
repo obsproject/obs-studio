@@ -26,6 +26,11 @@ void free_os_font_list(void)
 {
 }
 
+bool load_cached_os_font_list(void)
+{
+	return true;
+}
+
 void load_os_font_list(void)
 {
 }
