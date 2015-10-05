@@ -228,11 +228,11 @@ static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base,
 	}
 
 #ifdef _WIN64
-	dstr_catf(&data->module_list, "%016"PRIX64"-%016"PRIX64" %s\n",
+	dstr_catf(&data->module_list, "%016"PRIX64"-%016"PRIX64" %s\r\n",
 			module_base, module_base + module_size,
 			name_utf8);
 #else
-	dstr_catf(&data->module_list, "%08"PRIX64"-%08"PRIX64" %s\n",
+	dstr_catf(&data->module_list, "%08"PRIX64"-%08"PRIX64" %s\r\n",
 			module_base, module_base + module_size,
 			name_utf8);
 #endif
@@ -248,11 +248,11 @@ static inline void init_module_info(struct exception_handler_data *data)
 
 static inline void write_header(struct exception_handler_data *data)
 {
-	dstr_catf(&data->str, "Unhandled exception: %x\n"
-			"Fault address: %"PRIX64" (%s)\n"
-			"libobs version: "OBS_VERSION"\n"
-			"Windows version: %d.%d build %d (revision %d)\n"
-			"CPU: %s\n\n",
+	dstr_catf(&data->str, "Unhandled exception: %x\r\n"
+			"Fault address: %"PRIX64" (%s)\r\n"
+			"libobs version: "OBS_VERSION"\r\n"
+			"Windows version: %d.%d build %d (revision %d)\r\n"
+			"CPU: %s\r\n\r\n",
 			data->exception->ExceptionRecord->ExceptionCode,
 			data->main_trace.instruction_ptr,
 			data->module_name.array,
@@ -323,17 +323,17 @@ static inline bool walk_stack(struct exception_handler_data *data,
 #ifdef _WIN64
 #define SUCCESS_FORMAT \
 	"%016I64X %016I64X %016I64X %016I64X " \
-	"%016I64X %016I64X %s!%s+0x%I64x\n"
+	"%016I64X %016I64X %s!%s+0x%I64x\r\n"
 #define FAIL_FORMAT \
 	"%016I64X %016I64X %016I64X %016I64X " \
-	"%016I64X %016I64X %s!0x%I64x\n"
+	"%016I64X %016I64X %s!0x%I64x\r\n"
 #else
 #define SUCCESS_FORMAT \
 	"%08.8I64X %08.8I64X %08.8I64X %08.8I64X " \
-	"%08.8I64X %08.8I64X %s!%s+0x%I64x\n"
+	"%08.8I64X %08.8I64X %s!%s+0x%I64x\r\n"
 #define FAIL_FORMAT \
 	"%08.8I64X %08.8I64X %08.8I64X %08.8I64X " \
-	"%08.8I64X %08.8I64X %s!0x%I64x\n"
+	"%08.8I64X %08.8I64X %s!0x%I64x\r\n"
 
 	trace->frame.AddrStack.Offset &= 0xFFFFFFFFF;
 	trace->frame.AddrPC.Offset &= 0xFFFFFFFFF;
@@ -369,11 +369,11 @@ static inline bool walk_stack(struct exception_handler_data *data,
 #ifdef _WIN64
 #define TRACE_TOP \
 	"Stack            EIP              Arg0             " \
-	"Arg1             Arg2             Arg3             Address\n"
+	"Arg1             Arg2             Arg3             Address\r\n"
 #else
 #define TRACE_TOP \
 	"Stack    EIP      Arg0     " \
-	"Arg1     Arg2     Arg3     Address\n"
+	"Arg1     Arg2     Arg3     Address\r\n"
 #endif
 
 static inline void write_thread_trace(struct exception_handler_data *data,
@@ -395,7 +395,7 @@ static inline void write_thread_trace(struct exception_handler_data *data,
 	GetThreadContext(thread, &trace.context);
 	init_instruction_data(&trace);
 
-	dstr_catf(&data->str, "\nThread %lX%s\n"TRACE_TOP,
+	dstr_catf(&data->str, "\r\nThread %lX%s\r\n"TRACE_TOP,
 			entry->th32ThreadID,
 			crash_thread ? " (Crashed)" : "");
 
@@ -429,11 +429,11 @@ static inline void write_thread_traces(struct exception_handler_data *data)
 
 static inline void write_module_list(struct exception_handler_data *data)
 {
-	dstr_cat(&data->str, "\nLoaded modules:\n");
+	dstr_cat(&data->str, "\r\nLoaded modules:\r\n");
 #ifdef _WIN64
-	dstr_cat(&data->str, "Base Address                      Module\n");
+	dstr_cat(&data->str, "Base Address                      Module\r\n");
 #else
-	dstr_cat(&data->str, "Base Address      Module\n");
+	dstr_cat(&data->str, "Base Address      Module\r\n");
 #endif
 	dstr_cat_dstr(&data->str, &data->module_list);
 }
