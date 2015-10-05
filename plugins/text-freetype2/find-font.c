@@ -22,7 +22,7 @@ static inline bool write_data(struct serializer *s, const void *data,
 
 static bool read_str(struct serializer *s, char **p_str)
 {
-	size_t size;
+	uint32_t size;
 	char *str;
 
 	if (!read_var(s, size))
@@ -41,7 +41,7 @@ static bool read_str(struct serializer *s, char **p_str)
 
 static bool write_str(struct serializer *s, const char *str)
 {
-	size_t size = str ? strlen(str) : 0;
+	uint32_t size = (uint32_t)(str ? strlen(str) : 0);
 
 	if (!write_var(s, size))
 		return false;
