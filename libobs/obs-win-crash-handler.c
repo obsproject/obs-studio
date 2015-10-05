@@ -40,6 +40,7 @@ typedef BOOL (WINAPI *STACKWALK64)(DWORD machine_type, HANDLE process,
 		PFUNCTION_TABLE_ACCESS_ROUTINE64 function_table_access_routine,
 		PGET_MODULE_BASE_ROUTINE64 get_module_base_routine,
 		PTRANSLATE_ADDRESS_ROUTINE64 translate_address);
+typedef BOOL (WINAPI *SYMREFRESHMODULELIST)(HANDLE process);
 
 typedef PVOID (WINAPI *SYMFUNCTIONTABLEACCESS64)(HANDLE process,
 		DWORD64 addr_base);
@@ -78,6 +79,7 @@ struct exception_handler_data {
 	SYMGETMODULEBASE64                    sym_get_module_base64;
 	SYMFROMADDR                           sym_from_addr;
 	SYMGETMODULEINFO64                    sym_get_module_info64;
+	SYMREFRESHMODULELIST                  sym_refresh_module_list;
 	STACKWALK64                           stack_walk64;
 	ENUMERATELOADEDMODULES64              enumerate_loaded_modules64;
 	MINIDUMPWRITEDUMP                     minidump_write_dump;
@@ -134,6 +136,7 @@ static inline bool get_dbghelp_imports(struct exception_handler_data *data)
 	GET_DBGHELP_IMPORT(sym_get_module_base64, "SymGetModuleBase64");
 	GET_DBGHELP_IMPORT(sym_from_addr, "SymFromAddrW");
 	GET_DBGHELP_IMPORT(sym_get_module_info64, "SymGetModuleInfo64");
+	GET_DBGHELP_IMPORT(sym_refresh_module_list, "SymRefreshModuleList");
 	GET_DBGHELP_IMPORT(stack_walk64, "StackWalk64");
 	GET_DBGHELP_IMPORT(enumerate_loaded_modules64,
 			"EnumerateLoadedModulesW64");
@@ -163,6 +166,8 @@ static inline void init_instruction_data(struct stack_trace *trace)
 	trace->frame.AddrStack.Mode = AddrModeFlat;
 }
 
+extern bool sym_initialize_called;
+
 static inline void init_sym_info(struct exception_handler_data *data)
 {
 	data->sym_set_options(
@@ -170,7 +175,10 @@ static inline void init_sym_info(struct exception_handler_data *data)
 			SYMOPT_FAIL_CRITICAL_ERRORS |
 			SYMOPT_LOAD_ANYTHING);
 
-	data->sym_initialize(data->process, NULL, true);
+	if (!sym_initialize_called)
+		data->sym_initialize(data->process, NULL, true);
+	else
+		data->sym_refresh_module_list(data->process);
 
 	data->sym_info = LocalAlloc(LPTR, sizeof(*data->sym_info) + 256);
 	data->sym_info->SizeOfStruct = sizeof(SYMBOL_INFO);

@@ -524,11 +524,12 @@ static char *get_abs_path(const char *path)
 	return abspath;
 }
 
+bool sym_initialize_called = false;
+
 void reset_win32_symbol_paths(void)
 {
 	static BOOL (WINAPI *sym_initialize_w)(HANDLE, const wchar_t*, BOOL);
 	static BOOL (WINAPI *sym_set_search_path_w)(HANDLE, const wchar_t*);
-	static BOOL (WINAPI *sym_refresh_module_list)(HANDLE);
 	static bool funcs_initialized = false;
 	static bool initialize_success = false;
 
@@ -551,10 +552,7 @@ void reset_win32_symbol_paths(void)
 		sym_initialize_w = (void*)GetProcAddress(mod, "SymInitializeW");
 		sym_set_search_path_w = (void*)GetProcAddress(mod,
 				"SymSetSearchPathW");
-		sym_refresh_module_list = (void*)GetProcAddress(mod,
-				"SymRefreshModuleList");
-		if (!sym_initialize_w || !sym_set_search_path_w ||
-				!sym_refresh_module_list)
+		if (!sym_initialize_w || !sym_set_search_path_w)
 			return;
 
 		initialize_success = true;
@@ -615,16 +613,13 @@ void reset_win32_symbol_paths(void)
 	if (path_str.array) {
 		os_utf8_to_wcs_ptr(path_str.array, path_str.len, &path_str_w);
 		if (path_str_w) {
-			static bool sym_initialize_called = false;
-
 			if (!sym_initialize_called) {
 				sym_initialize_w(GetCurrentProcess(),
-						path_str_w, true);
+						path_str_w, false);
 				sym_initialize_called = true;
 			} else {
 				sym_set_search_path_w(GetCurrentProcess(),
 						path_str_w);
-				sym_refresh_module_list(GetCurrentProcess());
 			}
 
 			bfree(path_str_w);
