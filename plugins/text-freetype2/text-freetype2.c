@@ -344,6 +344,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		srcdata->font_name = NULL;
 		srcdata->font_style = NULL;
 		srcdata->max_h = 0;
+		vbuf_needs_update = true;
 	}
 
 	srcdata->font_name  = bstrdup(font_name);
