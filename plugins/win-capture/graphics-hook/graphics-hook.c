@@ -1,6 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
-#include <shlobj.h>
 #include <psapi.h>
 #include "graphics-hook.h"
 #include "../obfuscate.h"
@@ -139,10 +138,9 @@ static inline bool init_mutexes(void)
 
 static inline bool init_system_path(void)
 {
-	HRESULT hr = SHGetFolderPathA(NULL, CSIDL_SYSTEM, NULL,
-			SHGFP_TYPE_CURRENT, system_path);
-	if (hr != S_OK) {
-		hlog("Failed to get windows system path: %08lX", hr);
+	UINT ret = GetSystemDirectoryA(system_path, MAX_PATH);
+	if (!ret) {
+		hlog("Failed to get windows system path: %lu", GetLastError());
 		return false;
 	}
 
