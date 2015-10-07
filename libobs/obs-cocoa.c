@@ -1319,7 +1319,12 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 		IOHIDElementRef element = plat->keys[key].array[i];
 		IOHIDValueRef value     = 0;
 		IOHIDDeviceRef device   = IOHIDElementGetDevice(element);
-		IOHIDDeviceGetValue(device, element, &value);
+		
+		if (IOHIDDeviceGetValue(device, element, &value) !=
+				kIOReturnSuccess) {
+			i += 1;
+			continue;
+		}
 
 		if (!value) {
 			CFRelease(element);
