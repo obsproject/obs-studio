@@ -346,7 +346,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	uint16_t header = 0;
 	size_t bytes_read;
 
-	tmp_file = fopen(filename, "rb");
+	tmp_file = os_fopen(filename, "rb");
 	if (tmp_file == NULL) {
 		if (!srcdata->file_load_failed) {
 			blog(LOG_WARNING, "Failed to open file %s", filename);
