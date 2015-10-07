@@ -1,4 +1,6 @@
 #include <obs-module.h>
+#include <util/platform.h>
+#include <sys/stat.h>
 
 #define blog(log_level, format, ...) \
 	blog(log_level, "[image_source: '%s'] " format, \
@@ -11,16 +13,30 @@
 #define warn(format, ...) \
 	blog(LOG_WARNING, format, ##__VA_ARGS__)
 
+// File update check interval in nanoseconds
+// (1_000_000_000 nanoseconds to a second, so checking once per second)
+#define FILE_UPDATE_CHECK_IVAL 1000000000
+
 struct image_source {
 	obs_source_t *source;
 
 	char         *file;
 	bool         persistent;
+	time_t       file_timestamp;
+	uint64_t     file_last_checked;
 
 	gs_texture_t *tex;
 	uint32_t     cx;
 	uint32_t     cy;
 };
+
+
+static time_t get_modified_timestamp(const char *filename)
+{
+	struct stat stats;
+	stat(filename, &stats);
+	return stats.st_mtime;
+}
 
 static const char *image_source_get_name(void *unused)
 {
@@ -40,7 +56,8 @@ static void image_source_load(struct image_source *context)
 
 	if (file && *file) {
 		debug("loading texture '%s'", file);
-
+		context->file_timestamp = get_modified_timestamp(file);
+		context->file_last_checked = os_gettime_ns();
 		context->tex = gs_texture_create_from_file(file);
 		if (context->tex) {
 			context->cx = gs_texture_get_width(context->tex);
@@ -150,6 +167,26 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	gs_draw_sprite(context->tex, 0, context->cx, context->cy);
 }
 
+static void image_source_tick(void *data, float seconds)
+{
+	struct image_source *context = data;
+	uint64_t now = os_gettime_ns();
+	if (context == NULL) return;
+	if (!obs_source_showing(context->source)) return;
+
+	if (now - context->file_last_checked >= FILE_UPDATE_CHECK_IVAL) {
+		time_t t = get_modified_timestamp(context->file);
+		context->file_last_checked = now;
+
+		if (context->file_timestamp < t) {
+			image_source_load(context);
+		}
+	}
+
+	UNUSED_PARAMETER(seconds);
+}
+
+
 static const char *image_filter =
 	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif);;"
 	"BMP Files (*.bmp);;"
@@ -187,6 +224,7 @@ static struct obs_source_info image_source_info = {
 	.get_width      = image_source_getwidth,
 	.get_height     = image_source_getheight,
 	.video_render   = image_source_render,
+	.video_tick     = image_source_tick,
 	.get_properties = image_source_properties
 };
 
