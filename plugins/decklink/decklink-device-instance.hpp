@@ -28,6 +28,8 @@ public:
 		return mode ? mode->GetId() : 0;
 	}
 
+	inline BMDPixelFormat GetActivePixelFormat() const {return pixelFormat;}
+
 	inline DeckLinkDeviceMode *GetMode() const {return mode;}
 
 	bool StartCapture(DeckLinkDeviceMode *mode);

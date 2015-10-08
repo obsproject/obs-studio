@@ -21,6 +21,7 @@ protected:
 	obs_source_t                          *source;
 	volatile long                         activateRefs = 0;
 	std::recursive_mutex                  deviceMutex;
+	BMDPixelFormat                        pixelFormat = bmdFormat8BitYUV;
 
 	void SaveSettings();
 	static void DevicesChanged(void *param, DeckLinkDevice *device,
@@ -34,6 +35,12 @@ public:
 
 	long long GetActiveModeId(void) const;
 	obs_source_t *GetSource(void) const;
+
+	inline BMDPixelFormat GetPixelFormat() const {return pixelFormat;}
+	inline void SetPixelFormat(BMDPixelFormat format)
+	{
+		pixelFormat = format;
+	}
 
 	bool Activate(DeckLinkDevice *device, long long modeId);
 	void Deactivate();

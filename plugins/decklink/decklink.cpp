@@ -61,8 +61,13 @@ bool DeckLink::Activate(DeckLinkDevice *device, long long modeId)
 	const bool same = device == curDevice;
 	const bool isActive = instance != nullptr;
 
-	if (same && (!isActive || instance->GetActiveModeId() == modeId))
-		return false;
+	if (same) {
+		if (!isActive)
+			return false;
+		if (instance->GetActiveModeId() == modeId &&
+		    instance->GetActivePixelFormat() == pixelFormat)
+			return false;
+	}
 
 	if (isActive)
 		instance->StopCapture();
