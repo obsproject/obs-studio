@@ -36,7 +36,6 @@ static struct log_context *create_or_fetch_log_context(void *context)
 		new_log_context = cached_log_contexts.array[cnt - 1];
 		da_pop_back(cached_log_contexts);
 	}
-	pthread_mutex_unlock(&log_contexts_mutex);
 
 	if (!new_log_context)
 		new_log_context = bzalloc(sizeof(struct log_context));
@@ -46,6 +45,8 @@ static struct log_context *create_or_fetch_log_context(void *context)
 	new_log_context->print_prefix = 1;
 
 	da_push_back(active_log_contexts, &new_log_context);
+
+	pthread_mutex_unlock(&log_contexts_mutex);
 
 	return new_log_context;
 }
