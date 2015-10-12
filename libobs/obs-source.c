@@ -1532,6 +1532,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
 		                  "present on the source");
+		pthread_mutex_unlock(&source->filter_mutex);
 		return;
 	}
 
@@ -1565,8 +1566,10 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	pthread_mutex_lock(&source->filter_mutex);
 
 	idx = da_find(source->filters, &filter, 0);
-	if (idx == DARRAY_INVALID)
+	if (idx == DARRAY_INVALID) {
+		pthread_mutex_unlock(&source->filter_mutex);
 		return false;
+	}
 
 	if (idx > 0) {
 		obs_source_t *prev = source->filters.array[idx-1];
