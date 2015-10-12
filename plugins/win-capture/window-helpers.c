@@ -114,8 +114,8 @@ static void get_window_title(struct dstr *name, HWND hwnd)
 		return;
 
 	temp = malloc(sizeof(wchar_t) * (len+1));
-	GetWindowTextW(hwnd, temp, len+1);
-	dstr_from_wcs(name, temp);
+	if (GetWindowTextW(hwnd, temp, len+1))
+		dstr_from_wcs(name, temp);
 	free(temp);
 }
 
@@ -124,8 +124,8 @@ static void get_window_class(struct dstr *class, HWND hwnd)
 	wchar_t temp[256];
 
 	temp[0] = 0;
-	GetClassNameW(hwnd, temp, sizeof(temp) / sizeof(wchar_t));
-	dstr_from_wcs(class, temp);
+	if (GetClassNameW(hwnd, temp, sizeof(temp) / sizeof(wchar_t)))
+		dstr_from_wcs(class, temp);
 }
 
 static void add_window(obs_property_t *p, HWND hwnd)
