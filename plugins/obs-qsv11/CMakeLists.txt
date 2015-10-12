@@ -76,6 +76,8 @@ target_link_libraries(obs-qsv11
 	dxgi
 	)
 
+target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
+
 source_group("obs-qsv11\\Source Files" FILES ${obs-qsv11_SOURCES})
 source_group("obs-qsv11\\Header Files" FILES ${obs-qsv11_HEADERS})
 source_group("libmfx\\Source Files" FILES ${obs-qsv11_libmfx_SOURCES})
