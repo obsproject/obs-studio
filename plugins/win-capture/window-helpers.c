@@ -124,7 +124,7 @@ static void get_window_class(struct dstr *class, HWND hwnd)
 	wchar_t temp[256];
 
 	temp[0] = 0;
-	GetClassNameW(hwnd, temp, sizeof(temp));
+	GetClassNameW(hwnd, temp, sizeof(temp) / sizeof(wchar_t));
 	dstr_from_wcs(class, temp);
 }
 
