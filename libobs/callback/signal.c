@@ -253,7 +253,8 @@ void signal_handler_signal(signal_handler_t *handler, const char *signal,
 
 	for (size_t i = 0; i < sig->callbacks.num; i++) {
 		struct signal_callback *cb = sig->callbacks.array+i;
-		cb->callback(cb->data, params);
+		if (!cb->remove)
+			cb->callback(cb->data, params);
 	}
 
 	for (size_t i = sig->callbacks.num; i > 0; i--) {
