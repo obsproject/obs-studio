@@ -10,6 +10,10 @@
                     "url": "rtmp://live.twitch.tv/app"
                 },
                 {
+                    "name": "Argentina",
+                    "url": "rtmp://live-eze.twitch.tv/app"
+                },
+                {
                     "name": "Asia: Hong Kong",
                     "url": "rtmp://live-hkg.twitch.tv/app"
                 },
@@ -44,6 +48,10 @@
                 {
                     "name": "Australia: Sydney",
                     "url": "rtmp://live-syd.twitch.tv/app"
+                },
+                {
+                    "name": "Chile",
+                    "url": "rtmp://live-scl.twitch.tv/app"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
