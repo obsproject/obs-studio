@@ -392,15 +392,6 @@
             ]
         },
         {
-            "name": "iNSTAGIB.tv",
-            "servers": [
-                {
-                    "name": "US Chicago (Primary)",
-                    "url": "rtmp://live.instagib.tv:443/live"
-                }
-            ]
-        },
-        {
             "name": "CyberGame.TV",
             "servers": [
                 {
