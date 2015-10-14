@@ -167,7 +167,6 @@ static void image_source_render(void *data, gs_effect_t *effect)
 static void image_source_tick(void *data, float seconds)
 {
 	struct image_source *context = data;
-	uint64_t now = os_gettime_ns();
 
 	if (!obs_source_showing(context->source)) return;
 
