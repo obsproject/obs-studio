@@ -1876,7 +1876,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 				OBSHotkeyLabel *other, const QString &otherName)
 		{
 			label->setToolTip(tt.arg(otherName));
-			label->setText(name + " ✳");
+			label->setText(name + " *");
 			label->pairPartner = other;
 		};
 		Update(label1, name1, label2, name2);
