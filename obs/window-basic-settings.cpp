@@ -1402,6 +1402,8 @@ void OBSBasicSettings::LoadAudioDevices()
 	}
 }
 
+#define NBSP "\xC2\xA0"
+
 void OBSBasicSettings::LoadAudioSources()
 {
 	auto layout = new QFormLayout();
@@ -1436,7 +1438,7 @@ void OBSBasicSettings::LoadAudioSources()
 		form->addRow(ptmCB);
 
 		auto ptmSB = new SilentUpdateSpinBox();
-		ptmSB->setSuffix(" ms");
+		ptmSB->setSuffix(NBSP "ms");
 		ptmSB->setRange(0, INT_MAX);
 		ptmSB->setValue(obs_source_get_push_to_mute_delay(source));
 		form->addRow(ptmDelay, ptmSB);
@@ -1447,7 +1449,7 @@ void OBSBasicSettings::LoadAudioSources()
 		form->addRow(pttCB);
 
 		auto pttSB = new SilentUpdateSpinBox();
-		pttSB->setSuffix(" ms");
+		pttSB->setSuffix(NBSP "ms");
 		pttSB->setRange(0, INT_MAX);
 		pttSB->setValue(obs_source_get_push_to_talk_delay(source));
 		form->addRow(pttDelay, pttSB);
