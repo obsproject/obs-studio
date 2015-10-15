@@ -263,6 +263,37 @@ bool os_file_exists(const char *path)
 	return hFind != INVALID_HANDLE_VALUE;
 }
 
+size_t os_get_abs_path(const char *path, char *abspath, size_t size)
+{
+	wchar_t wpath[512];
+	wchar_t wabspath[512];
+	size_t out_len = 0;
+	size_t len;
+
+	if (!abspath)
+		return 0;
+
+	len = os_utf8_to_wcs(path, 0, wpath, 512);
+	if (!len)
+		return 0;
+
+	if (_wfullpath(wabspath, wpath, 512) != NULL)
+		out_len = os_wcs_to_utf8(wabspath, 0, abspath, size);
+	return out_len;
+}
+
+char *os_get_abs_path_ptr(const char *path)
+{
+	char *ptr = bmalloc(512);
+
+	if (!os_get_abs_path(path, ptr, 512)) {
+		bfree(ptr);
+		ptr = NULL;
+	}
+
+	return ptr;
+}
+
 struct os_dir {
 	HANDLE           handle;
 	WIN32_FIND_DATA  wfd;

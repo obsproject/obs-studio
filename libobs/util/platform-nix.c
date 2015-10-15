@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <glob.h>
@@ -239,6 +240,34 @@ char *os_get_config_path_ptr(const char *name)
 bool os_file_exists(const char *path)
 {
 	return access(path, F_OK) == 0;
+}
+
+size_t os_get_abs_path(const char *path, char *abspath, size_t size)
+{
+	size_t min_size = size < PATH_MAX ? size : PATH_MAX;
+	char newpath[PATH_MAX];
+	int ret;
+
+	if (!abspath)
+		return 0;
+
+	if (!realpath(path, newpath))
+		return 0;
+
+	ret = snprintf(abspath, min_size, "%s", newpath);
+	return ret >= 0 ? ret : 0;
+}
+
+char *os_get_abs_path_ptr(const char *path)
+{
+	char *ptr = bmalloc(512);
+
+	if (!os_get_abs_path(path, ptr, 512)) {
+		bfree(ptr);
+		ptr = NULL;
+	}
+
+	return ptr;
 }
 
 struct os_dir {

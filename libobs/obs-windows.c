@@ -508,22 +508,6 @@ void obs_key_combination_to_str(obs_key_combination_t combination,
 	}
 }
 
-static char *get_abs_path(const char *path)
-{
-	wchar_t wpath[512];
-	wchar_t wabspath[512];
-	char *abspath = NULL;
-	size_t len;
-
-	len = os_utf8_to_wcs(path, 0, wpath, 512);
-	if (!len)
-		return NULL;
-
-	if (_wfullpath(wabspath, wpath, 512) != NULL)
-		os_wcs_to_utf8_ptr(wabspath, 0, &abspath);
-	return abspath;
-}
-
 bool sym_initialize_called = false;
 
 void reset_win32_symbol_paths(void)
@@ -561,7 +545,7 @@ void reset_win32_symbol_paths(void)
 	if (!initialize_success)
 		return;
 
-	abspath = get_abs_path(".");
+	abspath = os_get_abs_path_ptr(".");
 	if (abspath)
 		da_push_back(paths, &abspath);
 
@@ -591,7 +575,7 @@ void reset_win32_symbol_paths(void)
 		}
 
 		if (!found) {
-			abspath = get_abs_path(path.array);
+			abspath = os_get_abs_path_ptr(path.array);
 			if (abspath)
 				da_push_back(paths, &abspath);
 		}
