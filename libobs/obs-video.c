@@ -601,6 +601,8 @@ static inline void output_frame(void)
 		video->cur_texture = 0;
 }
 
+#define NBSP "\xC2\xA0"
+
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
@@ -615,7 +617,7 @@ void *obs_video_thread(void *param)
 
 	const char *video_thread_name =
 		profile_store_name(obs_get_profiler_name_store(),
-			"obs_video_thread(%g ms)", interval / 1000000.);
+			"obs_video_thread(%g"NBSP"ms)", interval / 1000000.);
 	profile_register_root(video_thread_name, interval);
 
 	while (!video_output_stopped(obs->video.video)) {

@@ -561,6 +561,8 @@ static void gather_stats(uint64_t expected_time_between_calls,
 	*percent_within_bounds = (1. - (double)accu / calls) * 100;
 }
 
+#define G_MS "g\xC2\xA0ms"
+
 static void profile_print_entry(profiler_snapshot_entry_t *entry,
 		struct dstr *indent_buffer, struct dstr *output_buffer,
 		unsigned indent, uint64_t active, uint64_t parent_calls)
@@ -578,12 +580,12 @@ static void profile_print_entry(profiler_snapshot_entry_t *entry,
 	make_indent_string(indent_buffer, indent, active);
 
 	if (min_ == max_) {
-		dstr_printf(output_buffer, "%s%s: %g ms",
+		dstr_printf(output_buffer, "%s%s: %"G_MS,
 				indent_buffer->array, entry->name,
 				min_ / 1000.);
 	} else {
-		dstr_printf(output_buffer, "%s%s: min=%g ms, median=%g ms, "
-				"max=%g ms, 99th percentile=%g ms",
+		dstr_printf(output_buffer, "%s%s: min=%"G_MS", median=%"G_MS", "
+				"max=%"G_MS", 99th percentile=%"G_MS,
 				indent_buffer->array, entry->name,
 				min_ / 1000., median / 1000., max_ / 1000.,
 				percentile99 / 1000.);
@@ -591,7 +593,7 @@ static void profile_print_entry(profiler_snapshot_entry_t *entry,
 		if (entry->expected_time_between_calls) {
 			double expected_ms =
 				entry->expected_time_between_calls / 1000.;
-			dstr_catf(output_buffer, ", %g%% below %g ms",
+			dstr_catf(output_buffer, ", %g%% below %"G_MS,
 					percent_within_bounds, expected_ms);
 		}
 	}
@@ -707,8 +709,8 @@ static void profile_print_entry_expected(profiler_snapshot_entry_t *entry,
 
 	make_indent_string(indent_buffer, indent, active);
 
-	blog(LOG_INFO, "%s%s: min=%g ms, median=%g ms, max=%g ms, %g%% "
-			"within ±2%% of %g ms (%g%% lower, %g%% higher)",
+	blog(LOG_INFO, "%s%s: min=%"G_MS", median=%"G_MS", max=%"G_MS", %g%% "
+			"within ±2%% of %"G_MS" (%g%% lower, %g%% higher)",
 			indent_buffer->array, entry->name,
 			min_ / 1000., median / 1000., max_ / 1000., percent,
 			expected_time / 1000.,
