@@ -1200,6 +1200,8 @@ static void add_samplerates(obs_property_t *prop, ca_encoder *ca)
 	}
 }
 
+#define NBSP "\xC2\xA0"
+
 static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		Float64 samplerate)
 {
@@ -1233,7 +1235,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 	};
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
-		log_to_dstr(log, ca, "Trying %s (0x%x) at %g hz\n",
+		log_to_dstr(log, ca, "Trying %s (0x%x) at %g" NBSP "hz\n",
 				format_id_to_str(format_id),
 				static_cast<uint32_t>(format_id),
 				samplerate);
