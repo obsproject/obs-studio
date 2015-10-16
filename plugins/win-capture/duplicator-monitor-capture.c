@@ -195,7 +195,7 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 	if (!texture)
 		return;
 
-	effect = obs_get_opaque_effect();
+	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 
 	rot = capture->rot;
 
@@ -229,7 +229,7 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 	}
 
 	if (capture->capture_cursor) {
-		effect = obs_get_default_effect();
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {
 			draw_cursor(capture);

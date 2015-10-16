@@ -520,26 +520,18 @@ EXPORT obs_encoder_t *obs_get_encoder_by_name(const char *name);
 /** Gets an service by its name. */
 EXPORT obs_service_t *obs_get_service_by_name(const char *name);
 
-/** Returns the default effect for generic RGB/YUV drawing */
-EXPORT gs_effect_t *obs_get_default_effect(void);
+enum obs_base_effect {
+	OBS_EFFECT_DEFAULT,            /**< RGB/YUV */
+	OBS_EFFECT_DEFAULT_RECT,       /**< RGB/YUV (using texture_rect) */
+	OBS_EFFECT_OPAQUE,             /**< RGB/YUV (alpha set to 1.0) */
+	OBS_EFFECT_SOLID,              /**< RGB/YUV (solid color only) */
+	OBS_EFFECT_BICUBIC,            /**< Bicubic downscale */
+	OBS_EFFECT_LANCZOS,            /**< Lanczos downscale */
+	OBS_EFFECT_BILINEAR_LOWRES,    /**< Bilinear low resolution downscale */
+};
 
-/** Returns the default effect for generic RGB/YUV drawing using texture_rect */
-EXPORT gs_effect_t *obs_get_default_rect_effect(void);
-
-/** Returns the default effect for generic RGB/YUV drawing (alpha set to 1) */
-EXPORT gs_effect_t *obs_get_opaque_effect(void);
-
-/** Returns the solid effect for drawing solid colors */
-EXPORT gs_effect_t *obs_get_solid_effect(void);
-
-/** Returns the bicubic scaling effect */
-EXPORT gs_effect_t *obs_get_bicubic_effect(void);
-
-/** Returns the lanczos scaling effect */
-EXPORT gs_effect_t *obs_get_lanczos_effect(void);
-
-/** Returns the bilinear lowres scaling effect */
-EXPORT gs_effect_t *obs_get_bilinear_lowres_effect(void);
+/** Returns a commonly used base effect */
+EXPORT gs_effect_t *obs_get_base_effect(enum obs_base_effect effect);
 
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);

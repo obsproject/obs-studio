@@ -1336,46 +1336,28 @@ obs_service_t *obs_get_service_by_name(const char *name)
 			&obs->data.services_mutex, obs_service_addref_safe_);
 }
 
-gs_effect_t *obs_get_default_effect(void)
+gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 {
 	if (!obs) return NULL;
-	return obs->video.default_effect;
-}
 
-gs_effect_t *obs_get_default_rect_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.default_rect_effect;
-}
+	switch (effect) {
+	case OBS_EFFECT_DEFAULT:
+		return obs->video.default_effect;
+	case OBS_EFFECT_DEFAULT_RECT:
+		return obs->video.default_rect_effect;
+	case OBS_EFFECT_OPAQUE:
+		return obs->video.opaque_effect;
+	case OBS_EFFECT_SOLID:
+		return obs->video.solid_effect;
+	case OBS_EFFECT_BICUBIC:
+		return obs->video.bicubic_effect;
+	case OBS_EFFECT_LANCZOS:
+		return obs->video.lanczos_effect;
+	case OBS_EFFECT_BILINEAR_LOWRES:
+		return obs->video.bilinear_lowres_effect;
+	}
 
-gs_effect_t *obs_get_opaque_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.opaque_effect;
-}
-
-gs_effect_t *obs_get_solid_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.solid_effect;
-}
-
-gs_effect_t *obs_get_bicubic_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.bicubic_effect;
-}
-
-gs_effect_t *obs_get_lanczos_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.lanczos_effect;
-}
-
-gs_effect_t *obs_get_bilinear_lowres_effect(void)
-{
-	if (!obs) return NULL;
-	return obs->video.bilinear_lowres_effect;
+	return NULL;
 }
 
 signal_handler_t *obs_get_signal_handler(void)

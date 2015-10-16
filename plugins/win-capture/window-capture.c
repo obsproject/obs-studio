@@ -190,7 +190,7 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
-	dc_capture_render(&wc->capture, obs_get_opaque_effect());
+	dc_capture_render(&wc->capture, obs_get_base_effect(OBS_EFFECT_OPAQUE));
 
 	UNUSED_PARAMETER(effect);
 }

@@ -517,7 +517,7 @@ void XCompcapMain::tick(float seconds)
 void XCompcapMain::render(gs_effect_t *effect)
 {
 	PLock lock(&p->lock, true);
-	effect = obs_get_opaque_effect();
+	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 
 	if (!lock.isLocked() || !p->tex)
 		return;
@@ -530,7 +530,7 @@ void XCompcapMain::render(gs_effect_t *effect)
 	}
 
 	if (p->cursor && p->gltex && p->show_cursor && !p->cursor_outside) {
-		effect = obs_get_default_effect();
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {
 			xcursor_render(p->cursor);

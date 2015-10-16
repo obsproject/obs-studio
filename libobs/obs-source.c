@@ -1304,7 +1304,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	gs_technique_t *tech          = NULL;
 
 	if (def_draw) {
-		effect = obs_get_default_effect();
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 		tech = gs_effect_get_technique(effect, type);
 		gs_technique_begin(tech);
 		gs_technique_begin_pass(tech, 0);

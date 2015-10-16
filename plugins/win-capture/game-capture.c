@@ -1349,8 +1349,8 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 	if (!gc->texture)
 		return;
 
-	effect = gc->config.allow_transparency ?
-		obs_get_default_effect() : obs_get_opaque_effect();
+	effect = obs_get_base_effect(gc->config.allow_transparency ?
+			OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
 	while (gs_effect_loop(effect, "Draw")) {
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
@@ -1362,7 +1362,7 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 	}
 
 	if (!gc->config.allow_transparency && gc->config.cursor) {
-		effect = obs_get_default_effect();
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {
 			game_capture_render_cursor(gc);

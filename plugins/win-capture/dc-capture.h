@@ -35,5 +35,3 @@ extern void dc_capture_free(struct dc_capture *capture);
 
 extern void dc_capture_capture(struct dc_capture *capture, HWND window);
 extern void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect);
-
-extern gs_effect_t *create_opaque_effect(void);

@@ -768,7 +768,7 @@ void OBSBasicPreview::DrawSceneEditing()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
-	gs_effect_t    *solid = obs_get_solid_effect();
+	gs_effect_t    *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_technique_t *tech  = gs_effect_get_technique(solid, "Solid");
 
 	vec4 color;

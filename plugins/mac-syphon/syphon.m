@@ -418,7 +418,7 @@ static inline bool init_obs_graphics_objects(syphon_t s)
 	s->vertbuffer = create_vertbuffer();
 	obs_leave_graphics();
 
-	s->effect     = obs_get_default_rect_effect();
+	s->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
 
 	return s->sampler != NULL && s->vertbuffer != NULL && s->effect != NULL;
 }

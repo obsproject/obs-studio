@@ -210,38 +210,3 @@ void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect)
 	if (capture->textures_written[last_tex])
 		draw_texture(capture, last_tex, effect);
 }
-
-gs_effect_t *create_opaque_effect(void)
-{
-	gs_effect_t *opaque_effect;
-	char *effect_file;
-	char *error_string = NULL;
-
-	effect_file = obs_module_file("opaque.effect");
-	if (!effect_file) {
-		blog(LOG_ERROR, "[create_opaque_effect] Could not find "
-		                "opaque effect file");
-		return false;
-	}
-
-	obs_enter_graphics();
-
-	opaque_effect = gs_effect_create_from_file(effect_file, &error_string);
-
-	if (!opaque_effect) {
-		if (error_string)
-			blog(LOG_ERROR, "[create_opaque_effect] Failed to "
-			                "create opaque effect:\n%s",
-			                error_string);
-		else
-			blog(LOG_ERROR, "[create_opaque_effect] Failed to "
-			                "create opaque effect");
-	}
-
-	bfree(effect_file);
-	bfree(error_string);
-
-	obs_leave_graphics();
-
-	return opaque_effect;
-}
