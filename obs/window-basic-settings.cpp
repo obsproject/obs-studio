@@ -398,6 +398,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		auto source   = static_cast<obs_source_t*>(calldata_ptr(param,
 					"source"));
 
+		if (!source)
+			return;
+
 		if (!(obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO))
 			return;
 
@@ -1354,9 +1357,14 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 	size_t count = obs_property_list_item_count(prop);
 
 	obs_source_t *source = obs_get_output_source(index);
-	obs_data_t *settings = obs_source_get_settings(source);
+	const char *deviceId = nullptr;
+	obs_data_t *settings = nullptr;
 
-	const char *deviceId = obs_data_get_string(settings, "device_id");
+	if (source) {
+		settings = obs_source_get_settings(source);
+		if (settings)
+			deviceId = obs_data_get_string(settings, "device_id");
+	}
 
 	widget->addItem(QTStr("Disabled"), "disabled");
 
@@ -1366,12 +1374,16 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 		LoadListValue(widget, name, val);
 	}
 
-	int idx = widget->findData(QVariant(QT_UTF8(deviceId)));
-	if (idx != -1)
-		widget->setCurrentIndex(idx);
+	if (deviceId) {
+		int idx = widget->findData(QVariant(QT_UTF8(deviceId)));
+		if (idx != -1)
+			widget->setCurrentIndex(idx);
+	}
 
-	obs_source_release(source);
-	obs_data_release(settings);
+	if (settings)
+		obs_data_release(settings);
+	if (source)
+		obs_source_release(source);
 }
 
 void OBSBasicSettings::LoadAudioDevices()
