@@ -29,7 +29,7 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-static inline bool source_valid(const struct obs_source *source)
+static inline bool data_valid(const struct obs_source *source, const char *f)
 {
 	return source && source->context.data;
 }
@@ -549,7 +549,10 @@ obs_properties_t *obs_get_source_properties(enum obs_source_type type,
 
 obs_properties_t *obs_source_properties(const obs_source_t *source)
 {
-	if (source_valid(source) && source->info.get_properties) {
+	if (!data_valid(source, "obs_source_properties"))
+		return NULL;
+
+	if (source->info.get_properties) {
 		obs_properties_t *props;
 		props = source->info.get_properties(source->context.data);
 		obs_properties_apply_settings(props, source->context.settings);
@@ -1480,7 +1483,8 @@ static uint32_t get_recurse_height(obs_source_t *source)
 
 uint32_t obs_source_get_width(obs_source_t *source)
 {
-	if (!source_valid(source)) return 0;
+	if (!data_valid(source, "obs_source_get_width"))
+		return 0;
 
 	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
 		get_recurse_width(source) :
@@ -1489,7 +1493,8 @@ uint32_t obs_source_get_width(obs_source_t *source)
 
 uint32_t obs_source_get_height(obs_source_t *source)
 {
-	if (!source_valid(source)) return 0;
+	if (!data_valid(source, "obs_source_get_height"))
+		return 0;
 
 	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
 		get_recurse_height(source) :
@@ -1498,14 +1503,16 @@ uint32_t obs_source_get_height(obs_source_t *source)
 
 uint32_t obs_source_get_base_width(obs_source_t *source)
 {
-	if (!source_valid(source)) return 0;
+	if (!data_valid(source, "obs_source_get_base_width"))
+		return 0;
 
 	return get_base_width(source);
 }
 
 uint32_t obs_source_get_base_height(obs_source_t *source)
 {
-	if (!source_valid(source)) return 0;
+	if (!data_valid(source, "obs_source_get_base_height"))
+		return 0;
 
 	return get_base_height(source);
 }
@@ -2555,7 +2562,9 @@ void obs_source_enum_sources(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
-	if (!source_valid(source) || !source->info.enum_sources)
+	if (!data_valid(source, "obs_source_enum_sources"))
+		return;
+	if (!source->info.enum_sources)
 		return;
 
 	obs_source_addref(source);
@@ -2571,7 +2580,9 @@ void obs_source_enum_tree(obs_source_t *source,
 {
 	struct source_enum_data data = {enum_callback, param};
 
-	if (!source_valid(source) || !source->info.enum_sources)
+	if (!data_valid(source, "obs_source_enum_tree"))
+		return;
+	if (!source->info.enum_sources)
 		return;
 
 	obs_source_addref(source);
@@ -2627,13 +2638,21 @@ void obs_source_remove_child(obs_source_t *parent, obs_source_t *child)
 
 void obs_source_save(obs_source_t *source)
 {
-	if (!source_valid(source) || !source->info.save) return;
+	if (!data_valid(source, "obs_source_save"))
+		return;
+	if (!source->info.save)
+		return;
+
 	source->info.save(source->context.data, source->context.settings);
 }
 
 void obs_source_load(obs_source_t *source)
 {
-	if (!source_valid(source) || !source->info.load) return;
+	if (!data_valid(source, "obs_source_load"))
+		return;
+	if (!source->info.load)
+		return;
+
 	source->info.load(source->context.data, source->context.settings);
 }
 
