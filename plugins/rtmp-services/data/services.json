@@ -10,10 +10,6 @@
                     "url": "rtmp://live.twitch.tv/app"
                 },
                 {
-                    "name": "Argentina",
-                    "url": "rtmp://live-eze.twitch.tv/app"
-                },
-                {
                     "name": "Asia: Hong Kong",
                     "url": "rtmp://live-hkg.twitch.tv/app"
                 },
@@ -50,10 +46,6 @@
                     "url": "rtmp://live-syd.twitch.tv/app"
                 },
                 {
-                    "name": "Chile",
-                    "url": "rtmp://live-scl.twitch.tv/app"
-                },
-                {
                     "name": "EU: Amsterdam, NL",
                     "url": "rtmp://live-ams.twitch.tv/app"
                 },
@@ -76,6 +68,14 @@
                 {
                     "name": "EU: Stockholm, SE",
                     "url": "rtmp://live-arn.twitch.tv/app"
+                },
+                {
+                    "name": "South America: Argentina",
+                    "url": "rtmp://live-eze.twitch.tv/app"
+                },
+                {
+                    "name": "South America: Chile",
+                    "url": "rtmp://live-scl.twitch.tv/app"
                 },
                 {
                     "name": "South America: Rio de Janeiro, Brazil",
