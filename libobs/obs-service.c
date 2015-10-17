@@ -110,7 +110,8 @@ void obs_service_destroy(obs_service_t *service)
 
 const char *obs_service_get_name(const obs_service_t *service)
 {
-	return service ? service->context.name : NULL;
+	return obs_service_valid(service, "obs_service_get_name") ?
+		service->context.name : NULL;
 }
 
 static inline obs_data_t *get_defaults(const struct obs_service_info *info)
@@ -144,7 +145,10 @@ obs_properties_t *obs_get_service_properties(const char *id)
 
 obs_properties_t *obs_service_properties(const obs_service_t *service)
 {
-	if (service && service->info.get_properties) {
+	if (!obs_service_valid(service, "obs_service_properties"))
+		return NULL;
+
+	if (service->info.get_properties) {
 		obs_properties_t *props;
 		props = service->info.get_properties(service->context.data);
 		obs_properties_apply_settings(props, service->context.settings);
@@ -156,12 +160,14 @@ obs_properties_t *obs_service_properties(const obs_service_t *service)
 
 const char *obs_service_get_type(const obs_service_t *service)
 {
-	return service ? service->info.id : NULL;
+	return obs_service_valid(service, "obs_service_get_type") ?
+		service->info.id : NULL;
 }
 
 void obs_service_update(obs_service_t *service, obs_data_t *settings)
 {
-	if (!service) return;
+	if (!obs_service_valid(service, "obs_service_update"))
+		return;
 
 	obs_data_apply(service->context.settings, settings);
 
@@ -172,7 +178,7 @@ void obs_service_update(obs_service_t *service, obs_data_t *settings)
 
 obs_data_t *obs_service_get_settings(const obs_service_t *service)
 {
-	if (!service)
+	if (!obs_service_valid(service, "obs_service_get_settings"))
 		return NULL;
 
 	obs_data_addref(service->context.settings);
@@ -181,41 +187,64 @@ obs_data_t *obs_service_get_settings(const obs_service_t *service)
 
 signal_handler_t *obs_service_get_signal_handler(const obs_service_t *service)
 {
-	return service ? service->context.signals : NULL;
+	return obs_service_valid(service, "obs_service_get_signal_handler") ?
+		service->context.signals : NULL;
 }
 
 proc_handler_t *obs_service_get_proc_handler(const obs_service_t *service)
 {
-	return service ? service->context.procs : NULL;
+	return obs_service_valid(service, "obs_service_get_proc_handler") ?
+		service->context.procs : NULL;
 }
 
 const char *obs_service_get_url(const obs_service_t *service)
 {
-	if (!service || !service->info.get_url) return NULL;
+	if (!obs_service_valid(service, "obs_service_get_url"))
+		return NULL;
+
+	if (!service->info.get_url) return NULL;
 	return service->info.get_url(service->context.data);
 }
 
 const char *obs_service_get_key(const obs_service_t *service)
 {
-	if (!service || !service->info.get_key) return NULL;
+	if (!obs_service_valid(service, "obs_service_get_key"))
+		return NULL;
+
+	if (!service->info.get_key) return NULL;
 	return service->info.get_key(service->context.data);
 }
 
 const char *obs_service_get_username(const obs_service_t *service)
 {
-	if (!service || !service->info.get_username) return NULL;
+	if (!obs_service_valid(service, "obs_service_get_username"))
+		return NULL;
+
+	if (!service->info.get_username) return NULL;
 	return service->info.get_username(service->context.data);
 }
 
 const char *obs_service_get_password(const obs_service_t *service)
 {
-	if (!service || !service->info.get_password) return NULL;
+	if (!obs_service_valid(service, "obs_service_get_password"))
+		return NULL;
+
+	if (!service->info.get_password) return NULL;
 	return service->info.get_password(service->context.data);
 }
 
 void obs_service_activate(struct obs_service *service)
 {
-	if (!service || !service->output || service->active) return;
+	if (!obs_service_valid(service, "obs_service_activate"))
+		return;
+	if (!service->output) {
+		blog(LOG_WARNING, "obs_service_deactivate: service '%s' "
+				"is not assigned to an output",
+				obs_service_get_name(service));
+		return;
+	}
+	if (service->active)
+		return;
 
 	if (service->info.activate)
 		service->info.activate(service->context.data,
@@ -225,7 +254,16 @@ void obs_service_activate(struct obs_service *service)
 
 void obs_service_deactivate(struct obs_service *service, bool remove)
 {
-	if (!service || !service->output || !service->active) return;
+	if (!obs_service_valid(service, "obs_service_deactivate"))
+		return;
+	if (!service->output) {
+		blog(LOG_WARNING, "obs_service_deactivate: service '%s' "
+				"is not assigned to an output",
+				obs_service_get_name(service));
+		return;
+	}
+
+	if (!service->active) return;
 
 	if (service->info.deactivate)
 		service->info.deactivate(service->context.data);
@@ -240,7 +278,9 @@ void obs_service_deactivate(struct obs_service *service, bool remove)
 bool obs_service_initialize(struct obs_service *service,
 		struct obs_output *output)
 {
-	if (!service || !output)
+	if (!obs_service_valid(service, "obs_service_initialize"))
+		return false;
+	if (!obs_output_valid(output, "obs_service_initialize"))
 		return false;
 
 	if (service->info.initialize)
@@ -252,7 +292,9 @@ void obs_service_apply_encoder_settings(obs_service_t *service,
 		obs_data_t *video_encoder_settings,
 		obs_data_t *audio_encoder_settings)
 {
-	if (!service || !service->info.apply_encoder_settings)
+	if (!obs_service_valid(service, "obs_service_apply_encoder_settings"))
+		return;
+	if (!service->info.apply_encoder_settings)
 		return;
 
 	if (video_encoder_settings || audio_encoder_settings)

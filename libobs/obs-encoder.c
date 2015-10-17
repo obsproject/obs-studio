@@ -259,12 +259,14 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 
 const char *obs_encoder_get_name(const obs_encoder_t *encoder)
 {
-	return encoder ? encoder->context.name : NULL;
+	return obs_encoder_valid(encoder, "obs_encoder_get_name") ?
+		encoder->context.name : NULL;
 }
 
 void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
 {
-	if (!encoder) return;
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_name"))
+		return;
 
 	if (name && *name && strcmp(name, encoder->context.name) != 0)
 		obs_context_data_setname(&encoder->context, name);
@@ -301,7 +303,10 @@ obs_properties_t *obs_get_encoder_properties(const char *id)
 
 obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 {
-	if (encoder && encoder->info.get_properties) {
+	if (!obs_encoder_valid(encoder, "obs_encoder_properties"))
+		return NULL;
+
+	if (encoder->info.get_properties) {
 		obs_properties_t *props;
 		props = encoder->info.get_properties(encoder->context.data);
 		obs_properties_apply_settings(props, encoder->context.settings);
@@ -312,7 +317,8 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 
 void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 {
-	if (!encoder) return;
+	if (!obs_encoder_valid(encoder, "obs_encoder_update"))
+		return;
 
 	obs_data_apply(encoder->context.settings, settings);
 
@@ -324,7 +330,10 @@ void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 bool obs_encoder_get_extra_data(const obs_encoder_t *encoder,
 		uint8_t **extra_data, size_t *size)
 {
-	if (encoder && encoder->info.get_extra_data && encoder->context.data)
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_extra_data"))
+		return false;
+
+	if (encoder->info.get_extra_data && encoder->context.data)
 		return encoder->info.get_extra_data(encoder->context.data,
 				extra_data, size);
 
@@ -333,7 +342,8 @@ bool obs_encoder_get_extra_data(const obs_encoder_t *encoder,
 
 obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder)
 {
-	if (!encoder) return NULL;
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_settings"))
+		return NULL;
 
 	obs_data_addref(encoder->context.settings);
 	return encoder->context.settings;
@@ -417,7 +427,12 @@ void obs_encoder_start(obs_encoder_t *encoder,
 	struct encoder_callback cb = {false, new_packet, param};
 	bool first   = false;
 
-	if (!encoder || !new_packet || !encoder->context.data) return;
+	if (!obs_encoder_valid(encoder, "obs_encoder_start"))
+		return;
+	if (!obs_ptr_valid(new_packet, "obs_encoder_start"))
+		return;
+	if (!encoder->context.data)
+		return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -442,7 +457,7 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 	bool   last = false;
 	size_t idx;
 
-	if (!encoder) return;
+	if (!obs_encoder_valid(encoder, "obs_encoder_stop")) return;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -464,7 +479,8 @@ void obs_encoder_stop(obs_encoder_t *encoder,
 
 const char *obs_encoder_get_codec(const obs_encoder_t *encoder)
 {
-	return encoder ? encoder->info.codec : NULL;
+	return obs_encoder_valid(encoder, "obs_encoder_get_codec") ?
+		encoder->info.codec : NULL;
 }
 
 const char *obs_get_encoder_codec(const char *id)
@@ -475,7 +491,8 @@ const char *obs_get_encoder_codec(const char *id)
 
 enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder)
 {
-	return encoder ? encoder->info.type : OBS_ENCODER_AUDIO;
+	return obs_encoder_valid(encoder, "obs_encoder_get_type") ?
+		encoder->info.type : OBS_ENCODER_AUDIO;
 }
 
 enum obs_encoder_type obs_get_encoder_type(const char *id)
@@ -487,9 +504,14 @@ enum obs_encoder_type obs_get_encoder_type(const char *id)
 void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 		uint32_t height)
 {
-	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_scaled_size"))
 		return;
-
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING, "obs_encoder_set_scaled_size: "
+				"encoder '%s' is not a video encoder",
+				obs_encoder_get_name(encoder));
+		return;
+	}
 	if (encoder->active) {
 		blog(LOG_WARNING, "encoder '%s': Cannot set the scaled "
 		                  "resolution while the encoder is active",
@@ -503,8 +525,15 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 
 uint32_t obs_encoder_get_width(const obs_encoder_t *encoder)
 {
-	if (!encoder || !encoder->media ||
-	    encoder->info.type != OBS_ENCODER_VIDEO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_width"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING, "obs_encoder_get_width: "
+				"encoder '%s' is not a video encoder",
+				obs_encoder_get_name(encoder));
+		return 0;
+	}
+	if (!encoder->media)
 		return 0;
 
 	return encoder->scaled_width != 0 ?
@@ -514,8 +543,15 @@ uint32_t obs_encoder_get_width(const obs_encoder_t *encoder)
 
 uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 {
-	if (!encoder || !encoder->media ||
-	    encoder->info.type != OBS_ENCODER_VIDEO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_height"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING, "obs_encoder_get_height: "
+				"encoder '%s' is not a video encoder",
+				obs_encoder_get_name(encoder));
+		return 0;
+	}
+	if (!encoder->media)
 		return 0;
 
 	return encoder->scaled_width != 0 ?
@@ -525,8 +561,15 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 
 uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
 {
-	if (!encoder || !encoder->media ||
-	    encoder->info.type != OBS_ENCODER_AUDIO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_sample_rate"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING, "obs_encoder_get_sample_rate: "
+				"encoder '%s' is not an audio encoder",
+				obs_encoder_get_name(encoder));
+		return 0;
+	}
+	if (!encoder->media)
 		return 0;
 
 	return encoder->samplerate != 0 ?
@@ -538,7 +581,15 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
 	const struct video_output_info *voi;
 
-	if (!video || !encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_video"))
+		return;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING, "obs_encoder_set_video: "
+				"encoder '%s' is not a video encoder",
+				obs_encoder_get_name(encoder));
+		return;
+	}
+	if (!video)
 		return;
 
 	voi = video_output_get_info(video);
@@ -550,7 +601,15 @@ void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 
 void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 {
-	if (!audio || !encoder || encoder->info.type != OBS_ENCODER_AUDIO)
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_audio"))
+		return;
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING, "obs_encoder_set_audio: "
+				"encoder '%s' is not an audio encoder",
+				obs_encoder_get_name(encoder));
+		return;
+	}
+	if (!audio)
 		return;
 
 	encoder->media        = audio;
@@ -560,19 +619,36 @@ void obs_encoder_set_audio(obs_encoder_t *encoder, audio_t *audio)
 
 video_t *obs_encoder_video(const obs_encoder_t *encoder)
 {
-	return (encoder && encoder->info.type == OBS_ENCODER_VIDEO) ?
-		encoder->media : NULL;
+	if (!obs_encoder_valid(encoder, "obs_encoder_video"))
+		return NULL;
+	if (encoder->info.type != OBS_ENCODER_VIDEO) {
+		blog(LOG_WARNING, "obs_encoder_set_video: "
+				"encoder '%s' is not a video encoder",
+				obs_encoder_get_name(encoder));
+		return NULL;
+	}
+
+	return encoder->media;
 }
 
 audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 {
-	return (encoder && encoder->info.type == OBS_ENCODER_AUDIO) ?
-		encoder->media : NULL;
+	if (!obs_encoder_valid(encoder, "obs_encoder_audio"))
+		return NULL;
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING, "obs_encoder_set_audio: "
+				"encoder '%s' is not an audio encoder",
+				obs_encoder_get_name(encoder));
+		return NULL;
+	}
+
+	return encoder->media;
 }
 
 bool obs_encoder_active(const obs_encoder_t *encoder)
 {
-	return encoder ? encoder->active : false;
+	return obs_encoder_valid(encoder, "obs_encoder_active") ?
+		encoder->active : false;
 }
 
 static inline bool get_sei(const struct obs_encoder *encoder,
