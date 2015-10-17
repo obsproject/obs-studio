@@ -61,6 +61,7 @@ static int ctx_visual_attribs[] = {
 	GLX_BUFFER_SIZE, 32,
 	GLX_DOUBLEBUFFER, true,
 	GLX_X_RENDERABLE, true,
+	None
 };
 
 struct gl_windowinfo {
