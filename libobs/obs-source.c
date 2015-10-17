@@ -370,9 +370,12 @@ void obs_source_destroy(struct obs_source *source)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
 
 	gs_enter_context(obs->video.graphics);
-	gs_texrender_destroy(source->async_convert_texrender);
-	gs_texture_destroy(source->async_texture);
-	gs_texrender_destroy(source->filter_texrender);
+	if (source->async_convert_texrender)
+		gs_texrender_destroy(source->async_convert_texrender);
+	if (source->async_texture)
+		gs_texture_destroy(source->async_texture);
+	if (source->filter_texrender)
+		gs_texrender_destroy(source->filter_texrender);
 	gs_leave_context();
 
 	for (i = 0; i < MAX_AV_PLANES; i++)
