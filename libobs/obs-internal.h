@@ -55,7 +55,7 @@ static inline bool obs_object_valid(const void *obj, const char *f,
 		const char *t)
 {
 	if (!obj) {
-		blog(LOG_WARNING, "%s: Null '%s' parameter", f, t);
+		blog(LOG_DEBUG, "%s: Null '%s' parameter", f, t);
 		return false;
 	}
 
