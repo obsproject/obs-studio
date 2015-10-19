@@ -1014,3 +1014,9 @@ void *obs_encoder_get_type_data(obs_encoder_t *encoder)
 	return obs_encoder_valid(encoder, "obs_encoder_get_type_data")
 		? encoder->info.type_data : NULL;
 }
+
+const char *obs_encoder_get_id(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_id")
+		? encoder->info.id : NULL;
+}

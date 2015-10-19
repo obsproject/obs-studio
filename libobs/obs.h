@@ -1297,6 +1297,8 @@ EXPORT uint32_t obs_output_get_width(const obs_output_t *output);
 /** For video outputs, returns the height of the encoded image */
 EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 
+EXPORT const char *obs_output_get_id(const obs_output_t *output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
@@ -1483,6 +1485,8 @@ EXPORT bool obs_encoder_active(const obs_encoder_t *encoder);
 
 EXPORT void *obs_encoder_get_type_data(obs_encoder_t *encoder);
 
+EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
+
 /** Duplicates an encoder packet */
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src);
@@ -1561,6 +1565,8 @@ EXPORT void obs_service_apply_encoder_settings(obs_service_t *service,
 		obs_data_t *audio_encoder_settings);
 
 EXPORT void *obs_service_get_type_data(obs_service_t *service);
+
+EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
 
 /* ------------------------------------------------------------------------- */

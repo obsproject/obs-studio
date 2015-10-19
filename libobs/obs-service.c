@@ -382,3 +382,9 @@ void *obs_service_get_type_data(obs_service_t *service)
 	return obs_service_valid(service, "obs_service_get_type_data")
 		? service->info.type_data : NULL;
 }
+
+const char *obs_service_get_id(const obs_service_t *service)
+{
+	return obs_service_valid(service, "obs_service_get_id")
+		? service->info.id : NULL;
+}
