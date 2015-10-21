@@ -31,7 +31,7 @@
 
 static inline bool data_valid(const struct obs_source *source, const char *f)
 {
-	return source && source->context.data;
+	return obs_source_valid(source, f) && source->context.data;
 }
 
 const struct obs_source_info *find_source(struct darray *list, const char *id)
