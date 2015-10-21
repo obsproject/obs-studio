@@ -314,7 +314,7 @@ EXPORT void gs_shader_get_param_info(const gs_sparam_t *param,
 EXPORT void gs_shader_set_bool(gs_sparam_t *param, bool val);
 EXPORT void gs_shader_set_float(gs_sparam_t *param, float val);
 EXPORT void gs_shader_set_int(gs_sparam_t *param, int val);
-EXPORT void gs_shader_setmatrix3(gs_sparam_t *param, const struct matrix3 *val);
+EXPORT void gs_shader_set_matrix3(gs_sparam_t *param, const struct matrix3 *val);
 EXPORT void gs_shader_set_matrix4(gs_sparam_t *param, const struct matrix4 *val);
 EXPORT void gs_shader_set_vec2(gs_sparam_t *param, const struct vec2 *val);
 EXPORT void gs_shader_set_vec3(gs_sparam_t *param, const struct vec3 *val);
@@ -685,7 +685,7 @@ EXPORT enum gs_color_format gs_cubetexture_get_color_format(
 EXPORT void     gs_voltexture_destroy(gs_texture_t *voltex);
 EXPORT uint32_t gs_voltexture_get_width(const gs_texture_t *voltex);
 EXPORT uint32_t gs_voltexture_get_height(const gs_texture_t *voltex);
-EXPORT uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex);
+EXPORT uint32_t gs_voltexture_get_depth(const gs_texture_t *voltex);
 EXPORT enum gs_color_format gs_voltexture_get_color_format(
 		const gs_texture_t *voltex);
 

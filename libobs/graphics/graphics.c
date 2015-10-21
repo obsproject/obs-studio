@@ -1983,14 +1983,14 @@ void gs_shader_set_int(gs_sparam_t *param, int val)
 	graphics->exports.gs_shader_set_int(param, val);
 }
 
-void gs_shader_setmatrix3(gs_sparam_t *param, const struct matrix3 *val)
+void gs_shader_set_matrix3(gs_sparam_t *param, const struct matrix3 *val)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p2("gs_shader_setmatrix3", param, val))
+	if (!gs_valid_p2("gs_shader_set_matrix3", param, val))
 		return;
 
-	graphics->exports.gs_shader_setmatrix3(param, val);
+	graphics->exports.gs_shader_set_matrix3(param, val);
 }
 
 void gs_shader_set_matrix4(gs_sparam_t *param, const struct matrix4 *val)
@@ -2207,14 +2207,14 @@ uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
 	return graphics->exports.gs_voltexture_get_height(voltex);
 }
 
-uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex)
+uint32_t gs_voltexture_get_depth(const gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_voltexture_getdepth", voltex))
+	if (!gs_valid_p("gs_voltexture_get_depth", voltex))
 		return 0;
 
-	return graphics->exports.gs_voltexture_getdepth(voltex);
+	return graphics->exports.gs_voltexture_get_depth(voltex);
 }
 
 enum gs_color_format gs_voltexture_get_color_format(const gs_texture_t *voltex)

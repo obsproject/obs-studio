@@ -1734,7 +1734,7 @@ uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
 	return 0;
 }
 
-uint32_t gs_voltexture_getdepth(const gs_texture_t *voltex)
+uint32_t gs_voltexture_get_depth(const gs_texture_t *voltex)
 {
 	/* TODO */
 	UNUSED_PARAMETER(voltex);
