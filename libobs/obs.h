@@ -1192,7 +1192,7 @@ EXPORT obs_properties_t *obs_output_properties(const obs_output_t *output);
 EXPORT void obs_output_update(obs_output_t *output, obs_data_t *settings);
 
 /** Specifies whether the output can be paused */
-EXPORT bool obs_output_canpause(const obs_output_t *output);
+EXPORT bool obs_output_can_pause(const obs_output_t *output);
 
 /** Pauses the output (if the functionality is allowed by the output */
 EXPORT void obs_output_pause(obs_output_t *output);

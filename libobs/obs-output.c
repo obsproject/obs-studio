@@ -370,9 +370,9 @@ obs_data_t *obs_output_get_settings(const obs_output_t *output)
 	return output->context.settings;
 }
 
-bool obs_output_canpause(const obs_output_t *output)
+bool obs_output_can_pause(const obs_output_t *output)
 {
-	return obs_output_valid(output, "obs_output_canpause") ?
+	return obs_output_valid(output, "obs_output_can_pause") ?
 		(output->info.pause != NULL) : false;
 }
 
