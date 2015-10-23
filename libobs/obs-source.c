@@ -1340,7 +1340,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
 		struct obs_source_frame *in);
 
-static void obs_source_render_async_video(obs_source_t *source)
+static void obs_source_update_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
 		struct obs_source_frame *frame = obs_source_get_frame(source);
@@ -1362,7 +1362,10 @@ static void obs_source_render_async_video(obs_source_t *source)
 
 		obs_source_release_frame(source, frame);
 	}
+}
 
+static inline void obs_source_render_async_video(obs_source_t *source)
+{
 	if (source->async_texture && source->async_active)
 		obs_source_draw_async_texture(source);
 }
@@ -1417,6 +1420,11 @@ void obs_source_video_render(obs_source_t *source)
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER &&
 	    (source->info.output_flags & OBS_SOURCE_VIDEO) == 0)
 		return;
+
+	if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
+	    (source->info.output_flags & OBS_SOURCE_ASYNC) != 0 &&
+	    !source->rendering_filter)
+		obs_source_update_async_video(source);
 
 	if (!source->context.data || !source->enabled) {
 		if (source->filter_parent)
@@ -2464,7 +2472,9 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 		render_filter_bypass(target, effect, use_matrix);
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);
-		render_filter_tex(texture, effect, width, height, use_matrix);
+		if (texture)
+			render_filter_tex(texture, effect, width, height,
+					use_matrix);
 	}
 }
 
