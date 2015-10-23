@@ -1876,7 +1876,9 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_swapchain_destroy", swapchain))
+	if (!gs_valid("gs_swapchain_destroy"))
+		return;
+	if (!swapchain)
 		return;
 
 	graphics->exports.gs_swapchain_destroy(swapchain);
@@ -1886,7 +1888,9 @@ void gs_shader_destroy(gs_shader_t *shader)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_shader_destroy", shader))
+	if (!gs_valid("gs_shader_destroy"))
+		return;
+	if (!shader)
 		return;
 
 	graphics->exports.gs_shader_destroy(shader);
@@ -2067,7 +2071,9 @@ void gs_texture_destroy(gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_texture_destroy", tex))
+	if (!gs_valid("gs_texture_destroy"))
+		return;
+	if (!tex)
 		return;
 
 	graphics->exports.gs_texture_destroy(tex);
@@ -2150,7 +2156,9 @@ void gs_cubetexture_destroy(gs_texture_t *cubetex)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_cubetexture_destroy", cubetex))
+	if (!gs_valid("gs_cubetexture_destroy"))
+		return;
+	if (!cubetex)
 		return;
 
 	graphics->exports.gs_cubetexture_destroy(cubetex);
@@ -2181,7 +2189,9 @@ void gs_voltexture_destroy(gs_texture_t *voltex)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_voltexture_destroy", voltex))
+	if (!gs_valid("gs_voltexture_destroy"))
+		return;
+	if (!voltex)
 		return;
 
 	graphics->exports.gs_voltexture_destroy(voltex);
@@ -2231,7 +2241,9 @@ void gs_stagesurface_destroy(gs_stagesurf_t *stagesurf)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_stagesurface_destroy", stagesurf))
+	if (!gs_valid("gs_stagesurface_destroy"))
+		return;
+	if (!stagesurf)
 		return;
 
 	graphics->exports.gs_stagesurface_destroy(stagesurf);
@@ -2291,7 +2303,9 @@ void gs_stagesurface_unmap(gs_stagesurf_t *stagesurf)
 
 void gs_zstencil_destroy(gs_zstencil_t *zstencil)
 {
-	if (!gs_valid_p("gs_zstencil_destroy", zstencil))
+	if (!gs_valid("gs_zstencil_destroy"))
+		return;
+	if (!zstencil)
 		return;
 
 	thread_graphics->exports.gs_zstencil_destroy(zstencil);
@@ -2299,7 +2313,9 @@ void gs_zstencil_destroy(gs_zstencil_t *zstencil)
 
 void gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
 {
-	if (!gs_valid_p("gs_samplerstate_destroy", samplerstate))
+	if (!gs_valid("gs_samplerstate_destroy"))
+		return;
+	if (!samplerstate)
 		return;
 
 	thread_graphics->exports.gs_samplerstate_destroy(samplerstate);
@@ -2309,7 +2325,9 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_vertexbuffer_destroy", vertbuffer))
+	if (!gs_valid("gs_vertexbuffer_destroy"))
+		return;
+	if (!vertbuffer)
 		return;
 
 	graphics->exports.gs_vertexbuffer_destroy(vertbuffer);
@@ -2335,7 +2353,9 @@ void gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer)
 {
 	graphics_t *graphics = thread_graphics;
 
-	if (!gs_valid_p("gs_indexbuffer_destroy", indexbuffer))
+	if (!gs_valid("gs_indexbuffer_destroy"))
+		return;
+	if (!indexbuffer)
 		return;
 
 	graphics->exports.gs_indexbuffer_destroy(indexbuffer);
@@ -2446,7 +2466,9 @@ gs_duplicator_t *gs_duplicator_create(int monitor_idx)
 
 void gs_duplicator_destroy(gs_duplicator_t *duplicator)
 {
-	if (!gs_valid_p("gs_duplicator_destroy", duplicator))
+	if (!gs_valid("gs_duplicator_destroy"))
+		return;
+	if (!duplicator)
 		return;
 	if (!thread_graphics->exports.gs_duplicator_destroy)
 		return;
