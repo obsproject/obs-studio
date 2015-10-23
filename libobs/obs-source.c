@@ -2285,7 +2285,7 @@ struct obs_source_frame *obs_source_get_frame(obs_source_t *source)
 void obs_source_release_frame(obs_source_t *source,
 		struct obs_source_frame *frame)
 {
-	if (!obs_ptr_valid(frame, "obs_source_release_frame"))
+	if (!frame)
 		return;
 
 	if (!source) {
