@@ -92,12 +92,6 @@ bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 	if (!texrender || texrender->rendered)
 		return false;
 
-	if (cx == 0)
-		cx = gs_get_width();
-	if (cy == 0)
-		cy = gs_get_height();
-
-	assert(cx && cy);
 	if (!cx || !cy)
 		return false;
 
