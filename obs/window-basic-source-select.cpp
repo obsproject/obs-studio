@@ -114,7 +114,7 @@ static void AddExisting(const char *name, const bool visible)
 }
 
 bool AddNew(QWidget *parent, const char *id, const char *name,
-		const bool visible)
+		const bool visible, OBSSource &newSource)
 {
 	obs_source_t *source  = obs_get_output_source(0);
 	obs_scene_t  *scene   = obs_scene_from_source(source);
@@ -139,6 +139,8 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 			data.source = source;
 			data.visible = visible;
 			obs_scene_atomic_update(scene, AddSource, &data);
+
+			newSource = source;
 
 			success = true;
 		}
@@ -170,7 +172,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		}
 
 		if (!AddNew(this, id, QT_TO_UTF8(ui->sourceName->text()),
-					visible))
+					visible, newSource))
 			return;
 	}
 

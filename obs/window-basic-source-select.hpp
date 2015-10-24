@@ -45,4 +45,6 @@ private slots:
 
 public:
 	OBSBasicSourceSelect(OBSBasic *parent, const char *id);
+
+	OBSSource newSource;
 };
