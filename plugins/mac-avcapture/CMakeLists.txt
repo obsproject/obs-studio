@@ -15,6 +15,7 @@ include_directories(${AVFOUNDATION}
 		    ${COCOA})
 
 set(mac-avcapture_HEADERS
+	left-right.hpp
 	scope-guard.hpp
 	)
 

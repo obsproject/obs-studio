@@ -4,6 +4,7 @@
 #import <CoreVideo/CoreVideo.h>
 
 #include <obs-module.h>
+#include <obs.hpp>
 #include <media-io/video-io.h>
 
 #include <util/dstr.hpp>
@@ -15,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "left-right.hpp"
 #include "scope-guard.hpp"
 
 #define NBSP "\xC2\xA0"
@@ -49,9 +51,18 @@ struct default_delete<obs_data_item_t> {
 #define TEXT_FRAME_RATE obs_module_text("FrameRate")
 #define TEXT_MATCH_OBS  obs_module_text("MatchOBS")
 #define TEXT_INPUT_FORMAT obs_module_text("InputFormat")
+#define TEXT_COLOR_SPACE obs_module_text("ColorSpace")
+#define TEXT_VIDEO_RANGE obs_module_text("VideoRange")
+#define TEXT_RANGE_PARTIAL obs_module_text("VideoRange.Partial")
+#define TEXT_RANGE_FULL obs_module_text("VideoRange.Full")
 #define TEXT_AUTO       obs_module_text("Auto")
 
+#define TEXT_COLOR_UNKNOWN_NAME "Unknown"
+#define TEXT_RANGE_UNKNOWN_NAME "Unknown"
+
 static const FourCharCode INPUT_FORMAT_AUTO = -1;
+static const int COLOR_SPACE_AUTO = -1;
+static const int VIDEO_RANGE_AUTO = -1;
 
 #define MILLI_TIMESCALE 1000
 #define MICRO_TIMESCALE (MILLI_TIMESCALE * 1000)
@@ -104,6 +115,12 @@ struct observer_handle :
 	{}
 };
 
+struct av_video_info {
+	video_colorspace colorspace;
+	video_range_type video_range;
+	bool video_params_valid = false;
+};
+
 }
 
 struct av_capture {
@@ -112,6 +129,8 @@ struct av_capture {
 	bool has_clock;
 
 	bool device_locked;
+
+	left_right::left_right<av_video_info> video_info;
 
 	AVCaptureVideoDataOutput *out;
 	AVCaptureDevice          *device;
@@ -124,8 +143,10 @@ struct av_capture {
 
 	FourCharCode fourcc;
 	video_format video_format;
-	video_colorspace colorspace;
-	video_range_type video_range;
+
+	bool use_preset = false;
+	int requested_colorspace  = COLOR_SPACE_AUTO;
+	int requested_video_range = VIDEO_RANGE_AUTO;
 
 	obs_source_t *source;
 
@@ -250,6 +271,60 @@ struct config_helper {
 	}
 };
 
+struct av_capture_ref {
+	av_capture *capture = nullptr;
+	OBSSource source;
+
+	av_capture_ref() = default;
+
+	av_capture_ref(av_capture *capture_, obs_weak_source_t *weak_source)
+		: source(OBSGetStrongRef(weak_source))
+	{
+		if (!source)
+			return;
+
+		capture = capture_;
+	}
+
+	operator av_capture *()
+	{
+		return capture;
+	}
+
+	av_capture *operator->()
+	{
+		return capture;
+	}
+};
+
+struct properties_param {
+	av_capture *capture = nullptr;
+	OBSWeakSource weak_source;
+
+	properties_param(av_capture *capture)
+		: capture(capture)
+	{
+		if (!capture)
+			return;
+
+		weak_source = OBSGetWeakRef(capture->source);
+	}
+
+	av_capture_ref get_ref()
+	{
+		return {capture, weak_source};
+	}
+};
+
+}
+
+static av_capture_ref get_ref(obs_properties_t *props)
+{
+	void *param = obs_properties_get_param(props);
+	if (!param)
+		return {};
+
+	return static_cast<properties_param*>(param)->get_ref();
 }
 
 static inline video_format format_from_subtype(FourCharCode subtype)
@@ -383,13 +458,45 @@ static inline video_colorspace get_colorspace(CMFormatDescriptionRef desc)
 
 static inline bool update_colorspace(av_capture *capture,
 		obs_source_frame *frame, CMFormatDescriptionRef desc,
-		bool full_range)
+		bool full_range, av_video_info &vi)
 {
+	auto cs_auto = capture->use_preset ||
+		capture->requested_colorspace == COLOR_SPACE_AUTO;
+	auto vr_auto = capture->use_preset ||
+		capture->requested_video_range == VIDEO_RANGE_AUTO;
+
 	video_colorspace colorspace = get_colorspace(desc);
 	video_range_type range      = full_range ?
 		VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
-	if (colorspace == capture->colorspace && range == capture->video_range)
+
+	bool cs_matches = false;
+	if (cs_auto) {
+		cs_matches = colorspace == vi.colorspace;
+	} else {
+		colorspace = static_cast<video_colorspace>(
+				capture->requested_colorspace);
+		cs_matches = colorspace == vi.colorspace;
+	}
+
+	bool vr_matches = false;
+	if (vr_auto) {
+		vr_matches = range == vi.video_range;
+	} else {
+		range = static_cast<video_range_type>(
+				capture->requested_video_range);
+		vr_matches = range == vi.video_range;
+		full_range = range == VIDEO_RANGE_FULL;
+	}
+
+	if (cs_matches && vr_matches) {
+		if (!vi.video_params_valid)
+			capture->video_info.update([&](av_video_info &vi_)
+			{
+				vi_.video_params_valid =
+					vi.video_params_valid = true;
+			});
 		return true;
+	}
 
 	frame->full_range = full_range;
 
@@ -399,11 +506,23 @@ static inline bool update_colorspace(av_capture *capture,
 				frame->color_range_max)) {
 		AVLOG(LOG_ERROR, "Failed to get colorspace parameters for "
 				 "colorspace %u range %u", colorspace, range);
+
+		if (vi.video_params_valid)
+			capture->video_info.update([&](av_video_info &vi_)
+			{
+				vi_.video_params_valid =
+					vi.video_params_valid = false;
+			});
+
 		return false;
 	}
 
-	capture->colorspace  = colorspace;
-	capture->video_range = range;
+	capture->video_info.update([&](av_video_info &vi_)
+	{
+		vi_.colorspace  = colorspace;
+		vi_.video_range = range;
+		vi_.video_params_valid = vi.video_params_valid = true;
+	});
 
 	return true;
 }
@@ -419,6 +538,15 @@ static inline bool update_frame(av_capture *capture,
 	CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(desc);
 
 	CVImageBufferRef     img = CMSampleBufferGetImageBuffer(sample_buffer);
+
+	auto vi = capture->video_info.read();
+
+	bool video_params_were_valid = vi.video_params_valid;
+	SCOPE_EXIT
+	{
+		if (video_params_were_valid != vi.video_params_valid)
+			obs_source_update_properties(capture->source);
+	};
 
 	if (format == VIDEO_FORMAT_NONE) {
 		if (capture->fourcc == fourcc)
@@ -437,14 +565,23 @@ static inline bool update_frame(av_capture *capture,
 				AV_FOURCC_STR(capture->fourcc), capture->fourcc,
 				AV_FOURCC_STR(fourcc), fourcc);
 
+	bool was_yuv = format_is_yuv(frame->format);
+
 	capture->fourcc = fourcc;
 	frame->format   = format;
 	frame->width    = dims.width;
 	frame->height   = dims.height;
 
 	if (format_is_yuv(format) && !update_colorspace(capture, frame, desc,
-				is_fullrange_yuv(fourcc)))
+				is_fullrange_yuv(fourcc), vi)) {
 		return false;
+	} else if (was_yuv == format_is_yuv(format)) {
+		capture->video_info.update([&](av_video_info &vi_)
+		{
+			vi_.video_params_valid =
+				vi.video_params_valid = true;
+		});
+	}
 
 	CVPixelBufferLockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 
@@ -493,8 +630,10 @@ static inline bool update_frame(av_capture *capture,
 			kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
 
-	if (!update_frame(capture, frame, sampleBuffer))
+	if (!update_frame(capture, frame, sampleBuffer)) {
+		obs_source_output_video(capture->source, nullptr);
 		return;
+	}
 
 	obs_source_output_video(capture->source, frame);
 
@@ -776,6 +915,56 @@ static void find_formats(media_frames_per_second fps, AVCaptureDevice *dev,
 	}
 }
 
+static bool color_space_valid(int color_space)
+{
+	switch (color_space) {
+	case COLOR_SPACE_AUTO:
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+	case VIDEO_CS_709:
+		return true;
+	}
+
+	return false;
+}
+
+static const char *color_space_name(int color_space)
+{
+	switch (color_space) {
+	case COLOR_SPACE_AUTO: return "Auto";
+	case VIDEO_CS_DEFAULT: return "Default";
+	case VIDEO_CS_601:     return "CS 601";
+	case VIDEO_CS_709:     return "CS 709";
+	}
+
+	return "Unknown";
+}
+
+static bool video_range_valid(int video_range)
+{
+	switch (video_range) {
+	case VIDEO_RANGE_AUTO:
+	case VIDEO_RANGE_DEFAULT:
+	case VIDEO_RANGE_PARTIAL:
+	case VIDEO_RANGE_FULL:
+		return true;
+	}
+
+	return false;
+}
+
+static const char *video_range_name(int video_range)
+{
+	switch (video_range) {
+	case VIDEO_RANGE_AUTO:    return "Auto";
+	case VIDEO_RANGE_DEFAULT: return "Default";
+	case VIDEO_RANGE_PARTIAL: return "Partial";
+	case VIDEO_RANGE_FULL:    return "Full";
+	}
+
+	return "Unknown";
+}
+
 static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 		obs_data_t *settings)
 {
@@ -802,7 +991,23 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 		if (refresh)
 			obs_source_update_properties(capture->source);
 	};
-	
+
+	capture->requested_colorspace =
+		obs_data_get_int(settings, "color_space");
+	if (!color_space_valid(capture->requested_colorspace)) {
+		AVLOG(LOG_WARNING, "Unsupported color space: %d",
+				capture->requested_colorspace);
+		return false;
+	}
+
+	capture->requested_video_range =
+		obs_data_get_int(settings, "video_range");
+	if (!video_range_valid(capture->requested_video_range)) {
+		AVLOG(LOG_WARNING, "Unsupported color range: %d",
+				capture->requested_video_range);
+		return false;
+	}
+
 	CMVideoDimensions dims{};
 	if (!get_resolution(settings, dims)) {
 		AVLOG(LOG_WARNING, "Could not load resolution");
@@ -849,6 +1054,8 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 			"	FPS: %g (%" PRIu32 "/%" PRIu32 ")\n"
 			"	Frame interval: %g" NBSP "s\n"
 			"	Input format: %s%s%s (%s)%s\n"
+			"	Requested color space: %s (%d)\n"
+			"	Requested video range: %s (%d)\n"
 			"	Using format: %s",
 			dev.localizedName.UTF8String, dev.uniqueID.UTF8String,
 			dims.width, dims.height,
@@ -858,12 +1065,21 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 			if_name, IF_AUTO(" (actual: "),
 			IF_AUTO(fourcc_subtype_name(actual_format)),
 			AV_FOURCC_STR(actual_format), IF_AUTO(")"),
+			color_space_name(capture->requested_colorspace),
+			capture->requested_colorspace,
+			video_range_name(capture->requested_video_range),
+			capture->requested_video_range,
 			format.description.UTF8String);
 #undef IF_AUTO
 
 	dev.activeFormat = format;
 	dev.activeVideoMinFrameDuration = convert(fps);
 	dev.activeVideoMaxFrameDuration = convert(fps);
+
+	capture->video_info.update([&](av_video_info &vi)
+	{
+		vi.video_params_valid = false;
+	});
 
 	return true;
 }
@@ -876,7 +1092,7 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 	obs_data_set_string(settings, "device", dev.uniqueID.UTF8String);
 	AVLOG(LOG_INFO, "Selected device '%s'", name);
 
-	if (obs_data_get_bool(settings, "use_preset")) {
+	if ((capture->use_preset = obs_data_get_bool(settings, "use_preset"))) {
 		if (!init_preset(capture, dev, settings))
 			return;
 
@@ -1066,6 +1282,8 @@ static void av_capture_defaults(obs_data_t *settings)
 			AVCaptureSessionPreset1280x720.UTF8String);
 
 	obs_data_set_default_int(settings, "input_format", INPUT_FORMAT_AUTO);
+	obs_data_set_default_int(settings, "color_space", COLOR_SPACE_AUTO);
+	obs_data_set_default_int(settings, "video_range", VIDEO_RANGE_AUTO);
 }
 
 static bool update_device_list(obs_property_t *list,
@@ -1368,8 +1586,7 @@ static frame_rates_t enumerate_frame_rates(AVCaptureDevice *dev,
 				format.videoSupportedFrameRateRanges) {
 			add_unique_frame_rate_range(range);
 
-			//FIXME remove debug true
-			if (true || CMTimeCompare(range.minFrameDuration,
+			if (CMTimeCompare(range.minFrameDuration,
 						range.maxFrameDuration) != 0) {
 				blog(LOG_WARNING, "Got actual frame rate range:"
 						" %g - %g "
@@ -1543,6 +1760,115 @@ static bool update_input_format_property(obs_properties_t *props,
 	return update_enabled(!formats.empty());
 }
 
+static bool update_int_list_property(obs_property_t *p, const int *val,
+		const size_t count, const char *localization_name)
+{
+	size_t num = obs_property_list_item_count(p);
+	if (num > count) {
+		if (!val || obs_property_list_item_int(p, count) != *val) {
+			obs_property_list_item_remove(p, count);
+
+			if (!val)
+				return true;
+		} else {
+			return false;
+		}
+	}
+
+	if (!val)
+		return false;
+
+	DStr buf, label;
+	dstr_printf(buf, "%d", *val);
+	dstr_init_copy(label, obs_module_text(localization_name));
+	dstr_replace(label, "$1", buf->array);
+	size_t idx = obs_property_list_add_int(p, label->array, *val);
+	obs_property_list_item_disable(p, idx, true);
+
+	return true;
+}
+
+template <typename Func>
+static bool update_int_list_property(const char *prop_name,
+		const char *localization_name, size_t count,
+		int auto_val, bool (*valid_func)(int),
+		obs_properties_t *props, const config_helper &conf,
+		obs_property_t *p, Func get_val)
+{
+	auto ref = get_ref(props);
+	if (!p)
+		p = obs_properties_get(props, prop_name);
+
+	int val = obs_data_get_int(conf.settings, prop_name);
+
+	av_video_info vi;
+	if (ref)
+		vi = ref->video_info.read();
+
+	bool params_valid = vi.video_params_valid;
+	bool enabled = obs_property_enabled(p);
+	bool should_enable = false;
+	bool has_autoselect =
+		obs_data_has_autoselect_value(conf.settings, prop_name);
+
+	if ((params_valid && format_is_yuv(ref->frame.format)) ||
+			!valid_func(val))
+		should_enable = true;
+
+	obs_property_set_enabled(p, should_enable);
+	bool updated = enabled != should_enable;
+
+	updated = update_int_list_property(p,
+			valid_func(val) ? nullptr : &val,
+			count, localization_name) || updated;
+
+	if (!should_enable) {
+		if (has_autoselect)
+			obs_data_unset_autoselect_value(conf.settings,
+					prop_name);
+		return updated || has_autoselect;
+	}
+
+	bool use_autoselect = ref && val == auto_val;
+	if (!use_autoselect) {
+		if (has_autoselect)
+			obs_data_unset_autoselect_value(conf.settings,
+					prop_name);
+		return updated || has_autoselect;
+	}
+
+	if (params_valid && get_val(vi) !=
+			obs_data_get_autoselect_int(conf.settings, prop_name)) {
+		obs_data_set_autoselect_int(conf.settings, prop_name,
+				get_val(vi));
+		return true;
+	}
+
+	return updated;
+}
+
+static bool update_color_space_property(obs_properties_t *props,
+		const config_helper &conf, obs_property_t *p=nullptr)
+{
+	return update_int_list_property("color_space", TEXT_COLOR_UNKNOWN_NAME,
+			4, COLOR_SPACE_AUTO, color_space_valid, props, conf, p,
+			[](av_video_info vi)
+	{
+		return vi.colorspace;
+	});
+}
+
+static bool update_video_range_property(obs_properties_t *props,
+		const config_helper &conf, obs_property_t *p=nullptr)
+{
+	return update_int_list_property("video_range", TEXT_RANGE_UNKNOWN_NAME,
+			5, VIDEO_RANGE_AUTO, video_range_valid, props, conf, p,
+			[](av_video_info vi)
+	{
+		return vi.video_range;
+	});
+}
+
 static bool properties_device_changed(obs_properties_t *props, obs_property_t *p,
 		obs_data_t *settings)
 {
@@ -1594,6 +1920,8 @@ static bool properties_use_preset_changed(obs_properties_t *props,
 	UPDATE_PROPERTY("resolution",   false, update_resolution_property);
 	UPDATE_PROPERTY("frame_rate",   false, update_frame_rate_property);
 	UPDATE_PROPERTY("input_format", false, update_input_format_property);
+	UPDATE_PROPERTY("color_space",  false, update_color_space_property);
+	UPDATE_PROPERTY("video_range",  false, update_video_range_property);
 
 	return updated;
 }
@@ -1618,8 +1946,11 @@ static bool properties_resolution_changed(obs_properties_t *props,
 	bool res_updated = update_resolution_property(props, conf, p);
 	bool fps_updated = update_frame_rate_property(props, conf);
 	bool if_updated  = update_input_format_property(props, conf);
+	bool cs_updated  = update_color_space_property(props, conf);
+	bool cr_updated  = update_video_range_property(props, conf);
 
-	return res_updated || fps_updated || if_updated;
+	return res_updated || fps_updated ||
+		if_updated || cs_updated  || cr_updated;
 }
 
 static bool properties_frame_rate_changed(obs_properties_t *props,
@@ -1629,8 +1960,10 @@ static bool properties_frame_rate_changed(obs_properties_t *props,
 
 	bool fps_updated = update_frame_rate_property(props, conf, p);
 	bool if_updated  = update_input_format_property(props, conf);
+	bool cs_updated  = update_color_space_property(props, conf);
+	bool cr_updated  = update_video_range_property(props, conf);
 
-	return fps_updated || if_updated;
+	return fps_updated || if_updated || cs_updated || cr_updated;
 }
 
 static bool properties_input_format_changed(obs_properties_t *props,
@@ -1638,7 +1971,39 @@ static bool properties_input_format_changed(obs_properties_t *props,
 {
 	config_helper conf{settings};
 
-	return update_input_format_property(props, conf, p);
+	bool if_updated  = update_input_format_property(props, conf, p);
+	bool cs_updated  = update_color_space_property(props, conf);
+	bool cr_updated  = update_video_range_property(props, conf);
+
+	return if_updated || cs_updated || cr_updated;
+}
+
+static bool properties_color_space_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	config_helper conf{settings};
+
+	return update_color_space_property(props, conf, p);
+}
+
+static bool properties_video_range_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	config_helper conf{settings};
+
+	return update_video_range_property(props, conf, p);
+}
+
+static void add_properties_param(obs_properties_t *props, av_capture *capture)
+{
+	auto param = unique_ptr<properties_param>(
+			new properties_param(capture));
+
+	obs_properties_set_param(props, param.release(),
+			[](void *param)
+	{
+		delete static_cast<properties_param*>(param);
+	});
 }
 
 static void add_preset_properties(obs_properties_t *props)
@@ -1680,11 +2045,36 @@ static void add_manual_properties(obs_properties_t *props)
 	obs_property_set_enabled(input_format, false);
 	obs_property_set_modified_callback(input_format,
 			properties_input_format_changed);
+
+	obs_property_t *color_space = obs_properties_add_list(props,
+			"color_space", TEXT_COLOR_SPACE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(color_space, TEXT_AUTO, COLOR_SPACE_AUTO);
+	obs_property_list_add_int(color_space, "Rec. 601", VIDEO_CS_601);
+	obs_property_list_add_int(color_space, "Rec. 709", VIDEO_CS_709);
+	obs_property_set_enabled(color_space, false);
+	obs_property_set_modified_callback(color_space,
+			properties_color_space_changed);
+
+#define ADD_RANGE(x) \
+	obs_property_list_add_int(video_range, TEXT_ ## x, VIDEO_ ## x)
+	obs_property_t *video_range = obs_properties_add_list(props,
+			"video_range", TEXT_VIDEO_RANGE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(video_range, TEXT_AUTO, VIDEO_RANGE_AUTO);
+	ADD_RANGE(RANGE_PARTIAL);
+	ADD_RANGE(RANGE_FULL);
+	obs_property_set_enabled(video_range, false);
+	obs_property_set_modified_callback(video_range,
+			properties_video_range_changed);
+#undef ADD_RANGE
 }
 
-static obs_properties_t *av_capture_properties(void*)
+static obs_properties_t *av_capture_properties(void *capture)
 {
 	obs_properties_t *props = obs_properties_create();
+
+	add_properties_param(props, static_cast<av_capture*>(capture));
 
 	obs_property_t *dev_list = obs_properties_add_list(props, "device",
 			TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
@@ -1773,7 +2163,7 @@ static void av_capture_update(void *data, obs_data_t *settings)
 	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
 		return switch_device(capture, uid, settings);
 
-	if (obs_data_get_bool(settings, "use_preset")) {
+	if ((capture->use_preset = obs_data_get_bool(settings, "use_preset"))) {
 		update_preset(capture, settings);
 	} else {
 		update_manual(capture, settings);
