@@ -1,5 +1,16 @@
 project(obs-outputs)
 
+find_package(ssl QUIET)
+find_package(zlib QUIET)
+
+if (SSL_FOUND AND ZLIB_FOUND)
+	add_definitions(-DCRYPTO -DUSE_OPENSSL)
+	include_directories(${SSL_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+else()
+	add_definitions(-DNO_CRYPTO)
+endif()
+
+
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
 		ws2_32
@@ -57,6 +68,8 @@ add_library(obs-outputs MODULE
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
+	${SSL_LIBRARIES}
+	${ZLIB_LIBRARIES}
 	${obs-outputs_PLATFORM_DEPS})
 
 install_obs_plugin_with_data(obs-outputs data)
