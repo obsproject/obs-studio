@@ -327,6 +327,47 @@
             ]
         },
         {
+            "name": "JOICASTER",
+            "servers": [
+                {
+                    "name": "U.S. - Washington, DC",
+                    "url": "rtmp://ingest-1.wdc01.joicaster.co/live"
+                },
+                {
+                    "name": "U.S. - Dallas, TX",
+                    "url": "rtmp://ingest-1.dal09.joicaster.co/live"
+                },
+                {
+                    "name": "U.S. - Seattle, WA",
+                    "url": "rtmp://ingest-1.sea01.joicaster.co/live"
+                },
+                {
+                    "name": "C.A. - Toronto, Canada",
+                    "url": "rtmp://ingest-1.tor01.joicaster.co/live"
+                },
+                {
+                    "name": "E.U. - London, England",
+                    "url": "rtmp://ingest-1.lon02.joicaster.co/live"
+                },
+                {
+                    "name": "E.U. - Amsterdam, Netherlands",
+                    "url": "rtmp://ingest-1.ams03.joicaster.co/live"
+                },
+                {
+                    "name": "A.S. - Tokyo, Japan",
+                    "url": "rtmp://ingest-1.tok02.joicaster.co/live"
+                },
+                {
+                    "name": "A.U. - Melbourne, Australia",
+                    "url": "rtmp://ingest-1.mel01.joicaster.co/live"
+                },
+                {
+                    "name": "S.A - São Paulo, Brazil",
+                    "url": "rtmp://ingest-1.sao01.joicaster.co/live"
+                }
+            ]
+        },
+        {
             "name": "GoodGame.ru",
             "servers": [
                 {
