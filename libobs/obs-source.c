@@ -74,6 +74,8 @@ static const char *source_signals[] = {
 	"void destroy(ptr source)",
 	"void add(ptr source)",
 	"void remove(ptr source)",
+	"void save(ptr source)",
+	"void load(ptr source)",
 	"void activate(ptr source)",
 	"void deactivate(ptr source)",
 	"void show(ptr source)",
@@ -2711,20 +2713,23 @@ void obs_source_save(obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_save"))
 		return;
-	if (!source->info.save)
-		return;
 
-	source->info.save(source->context.data, source->context.settings);
+	obs_source_dosignal(source, "source_save", "save");
+
+	if (source->info.save)
+		source->info.save(source->context.data,
+				source->context.settings);
 }
 
 void obs_source_load(obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_load"))
 		return;
-	if (!source->info.load)
-		return;
+	if (source->info.load)
+		source->info.load(source->context.data,
+				source->context.settings);
 
-	source->info.load(source->context.data, source->context.settings);
+	obs_source_dosignal(source, "source_load", "load");
 }
 
 bool obs_source_active(const obs_source_t *source)
