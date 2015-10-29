@@ -72,7 +72,6 @@ static const struct obs_source_info *get_source_info(enum obs_source_type type,
 
 static const char *source_signals[] = {
 	"void destroy(ptr source)",
-	"void add(ptr source)",
 	"void remove(ptr source)",
 	"void save(ptr source)",
 	"void load(ptr source)",
@@ -480,37 +479,13 @@ bool obs_weak_source_references_source(obs_weak_source_t *weak,
 
 void obs_source_remove(obs_source_t *source)
 {
-	struct obs_core_data *data = &obs->data;
-	size_t id;
-	bool   exists;
-
 	if (!obs_source_valid(source, "obs_source_remove"))
 		return;
 
-	pthread_mutex_lock(&data->sources_mutex);
-
-	if (source->removed) {
-		pthread_mutex_unlock(&data->sources_mutex);
-		return;
-	}
-
-	source->removed = true;
-
-	obs_source_addref(source);
-
-	id = da_find(data->user_sources, &source, 0);
-	exists = (id != DARRAY_INVALID);
-	if (exists) {
-		da_erase(data->user_sources, id);
-		obs_source_release(source);
-	}
-
-	pthread_mutex_unlock(&data->sources_mutex);
-
-	if (exists)
+	if (!source->removed) {
+		source->removed = true;
 		obs_source_dosignal(source, "source_remove", "remove");
-
-	obs_source_release(source);
+	}
 }
 
 bool obs_source_removed(const obs_source_t *source)

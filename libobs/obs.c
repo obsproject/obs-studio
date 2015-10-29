@@ -492,8 +492,6 @@ static bool obs_init_data(void)
 		return false;
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->user_sources_mutex, &attr) != 0)
-		goto fail;
 	if (pthread_mutex_init(&data->sources_mutex, &attr) != 0)
 		goto fail;
 	if (pthread_mutex_init(&data->displays_mutex, &attr) != 0)
@@ -547,21 +545,12 @@ static void obs_free_data(void)
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
-	if (data->user_sources.num)
-		blog(LOG_INFO, "\t%d user source(s) were remaining",
-				(int)data->user_sources.num);
-
-	while (data->user_sources.num)
-		obs_source_remove(data->user_sources.array[0]);
-	da_free(data->user_sources);
-
 	FREE_OBS_LINKED_LIST(source);
 	FREE_OBS_LINKED_LIST(output);
 	FREE_OBS_LINKED_LIST(encoder);
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
 
-	pthread_mutex_destroy(&data->user_sources_mutex);
 	pthread_mutex_destroy(&data->sources_mutex);
 	pthread_mutex_destroy(&data->displays_mutex);
 	pthread_mutex_destroy(&data->outputs_mutex);
@@ -572,7 +561,6 @@ static void obs_free_data(void)
 static const char *obs_signals[] = {
 	"void source_create(ptr source)",
 	"void source_destroy(ptr source)",
-	"void source_add(ptr source)",
 	"void source_remove(ptr source)",
 	"void source_save(ptr source)",
 	"void source_load(ptr source)",
@@ -1123,25 +1111,6 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 	return callback ? callback->create(data, ui_data) : NULL;
 }
 
-bool obs_add_source(obs_source_t *source)
-{
-	struct calldata params = {0};
-
-	if (!obs) return false;
-	if (!source) return false;
-
-	pthread_mutex_lock(&obs->data.sources_mutex);
-	da_push_back(obs->data.user_sources, &source);
-	obs_source_addref(source);
-	pthread_mutex_unlock(&obs->data.sources_mutex);
-
-	calldata_set_ptr(&params, "source", source);
-	signal_handler_signal(obs->signals, "source_add", &params);
-	calldata_free(&params);
-
-	return true;
-}
-
 obs_source_t *obs_get_output_source(uint32_t channel)
 {
 	if (!obs) return NULL;
@@ -1187,26 +1156,25 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 
 void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*), void *param)
 {
+	obs_source_t *source;
+
 	if (!obs) return;
 
-	pthread_mutex_lock(&obs->data.user_sources_mutex);
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	source = obs->data.first_source;
 
-	for (size_t i = 0; i < obs->data.user_sources.num; i++) {
-		struct obs_source *source = obs->data.user_sources.array[i];
-		size_t prev_size = obs->data.user_sources.num;
+	while (source) {
+		obs_source_t *next_source =
+			(obs_source_t*)source->context.next;
 
-		if (!enum_proc(param, source))
+		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0 &&
+		    !enum_proc(param, source))
 			break;
 
-		/* To ensure the save data is always consistent, we always want
-		 * to traverse this list forward.  Because of that, we have to
-		 * manually check to see if the source was removed in the
-		 * enumeration proc and adjust it accordingly */
-		if (obs->data.user_sources.num < prev_size)
-			i--;
+		source = next_source;
 	}
 
-	pthread_mutex_unlock(&obs->data.user_sources_mutex);
+	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
 static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
@@ -1256,23 +1224,23 @@ void obs_enum_services(bool (*enum_proc)(void*, obs_service_t*), void *param)
 obs_source_t *obs_get_source_by_name(const char *name)
 {
 	struct obs_core_data *data = &obs->data;
-	struct obs_source *source = NULL;
-	size_t i;
+	struct obs_source *source;
 
 	if (!obs) return NULL;
 
-	pthread_mutex_lock(&data->user_sources_mutex);
+	pthread_mutex_lock(&data->sources_mutex);
+	source = data->first_source;
 
-	for (i = 0; i < data->user_sources.num; i++) {
-		struct obs_source *cur_source = data->user_sources.array[i];
-		if (strcmp(cur_source->context.name, name) == 0) {
-			source = cur_source;
+	while (source) {
+		if (strcmp(source->context.name, name) == 0) {
 			obs_source_addref(source);
 			break;
 		}
+
+		source = (struct obs_source*)source->context.next;
 	}
 
-	pthread_mutex_unlock(&data->user_sources_mutex);
+	pthread_mutex_unlock(&data->sources_mutex);
 	return source;
 }
 
@@ -1505,30 +1473,38 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 
 void obs_load_sources(obs_data_array_t *array)
 {
+	struct obs_core_data *data = &obs->data;
+	DARRAY(obs_source_t*) sources;
 	size_t count;
 	size_t i;
 
 	if (!obs) return;
 
-	count = obs_data_array_count(array);
+	da_init(sources);
 
-	pthread_mutex_lock(&obs->data.user_sources_mutex);
+	count = obs_data_array_count(array);
+	da_reserve(sources, count);
+
+	pthread_mutex_lock(&data->sources_mutex);
 
 	for (i = 0; i < count; i++) {
 		obs_data_t   *source_data = obs_data_array_item(array, i);
 		obs_source_t *source      = obs_load_source(source_data);
 
-		obs_add_source(source);
+		da_push_back(sources, &source);
 
-		obs_source_release(source);
 		obs_data_release(source_data);
 	}
 
 	/* tell sources that we want to load */
-	for (i = 0; i < obs->data.user_sources.num; i++)
-		obs_source_load(obs->data.user_sources.array[i]);
+	for (i = 0; i < sources.num; i++)
+		obs_source_load(sources.array[i]);
+	for (i = 0; i < sources.num; i++)
+		obs_source_release(sources.array[i]);
 
-	pthread_mutex_unlock(&obs->data.user_sources_mutex);
+	pthread_mutex_unlock(&data->sources_mutex);
+
+	da_free(sources);
 }
 
 obs_data_t *obs_save_source(obs_source_t *source)
@@ -1598,24 +1574,30 @@ obs_data_t *obs_save_source(obs_source_t *source)
 
 obs_data_array_t *obs_save_sources(void)
 {
+	struct obs_core_data *data = &obs->data;
 	obs_data_array_t *array;
-	size_t i;
+	obs_source_t *source;
 
 	if (!obs) return NULL;
 
 	array = obs_data_array_create();
 
-	pthread_mutex_lock(&obs->data.user_sources_mutex);
+	pthread_mutex_lock(&data->sources_mutex);
 
-	for (i = 0; i < obs->data.user_sources.num; i++) {
-		obs_source_t *source      = obs->data.user_sources.array[i];
-		obs_data_t   *source_data = obs_save_source(source);
+	source = data->first_source;
 
-		obs_data_array_push_back(array, source_data);
-		obs_data_release(source_data);
+	while (source) {
+		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0) {
+			obs_data_t *source_data = obs_save_source(source);
+
+			obs_data_array_push_back(array, source_data);
+			obs_data_release(source_data);
+		}
+
+		source = (obs_source_t*)source->context.next;
 	}
 
-	pthread_mutex_unlock(&obs->data.user_sources_mutex);
+	pthread_mutex_unlock(&data->sources_mutex);
 
 	return array;
 }

@@ -460,16 +460,6 @@ EXPORT audio_t *obs_get_audio(void);
 /** Gets the main video output handler for this OBS context */
 EXPORT video_t *obs_get_video(void);
 
-/**
- * Adds a source to the user source list and increments the reference counter
- * for that source.
- *
- *   The user source list is the list of sources that are accessible by a user.
- * Typically when a transition is active, it is not meant to be accessible by
- * users, so there's no reason for a user to see such a source.
- */
-EXPORT bool obs_add_source(obs_source_t *source);
-
 /** Sets the primary output source for a channel. */
 EXPORT void obs_set_output_source(uint32_t channel, obs_source_t *source);
 
@@ -480,7 +470,7 @@ EXPORT void obs_set_output_source(uint32_t channel, obs_source_t *source);
 EXPORT obs_source_t *obs_get_output_source(uint32_t channel);
 
 /**
- * Enumerates user sources
+ * Enumerates all input sources
  *
  *   Callback function returns true to continue enumeration, or false to end
  * enumeration.

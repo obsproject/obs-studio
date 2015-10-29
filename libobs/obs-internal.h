@@ -269,9 +269,6 @@ struct obs_core_audio {
 
 /* user sources, output channels, and displays */
 struct obs_core_data {
-	pthread_mutex_t                 user_sources_mutex;
-	DARRAY(struct obs_source*)      user_sources;
-
 	struct obs_source               *first_source;
 	struct obs_display              *first_display;
 	struct obs_output               *first_output;
