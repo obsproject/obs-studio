@@ -560,6 +560,10 @@ EXPORT void obs_load_sources(obs_data_array_t *array);
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);
 
+typedef bool (*obs_save_source_filter_cb)(void *data, obs_source_t *source);
+EXPORT obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
+		void *data);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */

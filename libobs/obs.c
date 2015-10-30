@@ -1572,7 +1572,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	return source_data;
 }
 
-obs_data_array_t *obs_save_sources(void)
+obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
+		void *data_)
 {
 	struct obs_core_data *data = &obs->data;
 	obs_data_array_t *array;
@@ -1587,7 +1588,8 @@ obs_data_array_t *obs_save_sources(void)
 	source = data->first_source;
 
 	while (source) {
-		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0) {
+		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0 &&
+				cb(data_, source)) {
 			obs_data_t *source_data = obs_save_source(source);
 
 			obs_data_array_push_back(array, source_data);
@@ -1600,6 +1602,18 @@ obs_data_array_t *obs_save_sources(void)
 	pthread_mutex_unlock(&data->sources_mutex);
 
 	return array;
+}
+
+static bool save_source_filter(void *data, obs_source_t *source)
+{
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(source);
+	return true;
+}
+
+obs_data_array_t *obs_save_sources(void)
+{
+	return obs_save_sources_filtered(save_source_filter, NULL);
 }
 
 /* ensures that names are never blank */
