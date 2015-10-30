@@ -1473,12 +1473,12 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 
 void obs_load_sources(obs_data_array_t *array)
 {
+	if (!obs) return;
+
 	struct obs_core_data *data = &obs->data;
 	DARRAY(obs_source_t*) sources;
 	size_t count;
 	size_t i;
-
-	if (!obs) return;
 
 	da_init(sources);
 
@@ -1575,11 +1575,11 @@ obs_data_t *obs_save_source(obs_source_t *source)
 obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 		void *data_)
 {
+	if (!obs) return NULL;
+
 	struct obs_core_data *data = &obs->data;
 	obs_data_array_t *array;
 	obs_source_t *source;
-
-	if (!obs) return NULL;
 
 	array = obs_data_array_create();
 
