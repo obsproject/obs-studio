@@ -53,6 +53,8 @@ struct rtmp_stream {
 	volatile bool    disconnected;
 	pthread_t        send_thread;
 
+	bool             stopping;
+	pthread_t        stop_thread;
 	int              max_shutdown_time_sec;
 
 	os_sem_t         *send_sem;
@@ -108,14 +110,28 @@ static inline void free_packets(struct rtmp_stream *stream)
 	pthread_mutex_unlock(&stream->packets_mutex);
 }
 
-static void rtmp_stream_stop(void *data);
+static void *rtmp_stream_actual_stop(void *data);
 
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stream->connecting || stream->active)
-		rtmp_stream_stop(data);
+	if (stream->stopping) {
+		pthread_join(stream->stop_thread, NULL);
+
+	} else if (stream->connecting || stream->active) {
+		os_event_signal(stream->stop_event);
+
+		if (stream->connecting)
+			pthread_join(stream->connect_thread, NULL);
+
+		if (stream->active) {
+			os_sem_post(stream->send_sem);
+			obs_output_end_data_capture(stream->output);
+		}
+
+		rtmp_stream_actual_stop(data);
+	}
 
 	if (stream) {
 		free_packets(stream);
@@ -155,9 +171,30 @@ fail:
 	return NULL;
 }
 
+static void *rtmp_stream_actual_stop(void *data)
+{
+	struct rtmp_stream *stream = data;
+	void *ret;
+
+	if (stream->active) {
+		pthread_join(stream->send_thread, &ret);
+		RTMP_Close(&stream->rtmp);
+	}
+
+	os_event_reset(stream->stop_event);
+
+	stream->sent_headers = false;
+	stream->stopping = false;
+	return NULL;
+}
+
 static void rtmp_stream_stop(void *data)
 {
 	struct rtmp_stream *stream = data;
+	int ret;
+
+	if (stream->stopping)
+		return;
 
 	os_event_signal(stream->stop_event);
 
@@ -166,14 +203,16 @@ static void rtmp_stream_stop(void *data)
 
 	if (stream->active) {
 		os_sem_post(stream->send_sem);
-		pthread_join(stream->send_thread, NULL);
 		obs_output_end_data_capture(stream->output);
-		RTMP_Close(&stream->rtmp);
 	}
 
-	os_event_reset(stream->stop_event);
-
-	stream->sent_headers = false;
+	stream->stopping = true;
+	ret = pthread_create(&stream->stop_thread, NULL,
+			rtmp_stream_actual_stop, stream);
+	if (ret != 0) {
+		warn("Could not create stop thread!  Stopping directly");
+		rtmp_stream_actual_stop(stream);
+	}
 }
 
 static inline void set_rtmp_str(AVal *val, const char *str)
@@ -472,10 +511,39 @@ static int try_connect(struct rtmp_stream *stream)
 	return init_send(stream);
 }
 
+static void init_connect(struct rtmp_stream *stream)
+{
+	obs_service_t *service = obs_output_get_service(stream->output);
+	obs_data_t *settings;
+
+	if (stream->stopping)
+		pthread_join(stream->stop_thread, NULL);
+
+	stream->disconnected = false;
+	stream->total_bytes_sent = 0;
+	stream->dropped_frames   = 0;
+	stream->min_drop_dts_usec= 0;
+	stream->min_priority     = 0;
+
+	settings = obs_output_get_settings(stream->output);
+	dstr_copy(&stream->path,     obs_service_get_url(service));
+	dstr_copy(&stream->key,      obs_service_get_key(service));
+	dstr_copy(&stream->username, obs_service_get_username(service));
+	dstr_copy(&stream->password, obs_service_get_password(service));
+	stream->drop_threshold_usec =
+		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
+	stream->max_shutdown_time_sec =
+		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
+	obs_data_release(settings);
+}
+
 static void *connect_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
-	int ret = try_connect(stream);
+	int ret;
+
+	init_connect(stream);
+	ret = try_connect(stream);
 
 	if (ret != OBS_OUTPUT_SUCCESS) {
 		obs_output_signal_stop(stream->output, ret);
@@ -492,31 +560,11 @@ static void *connect_thread(void *data)
 static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
-	obs_service_t *service = obs_output_get_service(stream->output);
-	obs_data_t *settings;
-
-	stream->disconnected = false;
 
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
-
-	stream->total_bytes_sent = 0;
-	stream->dropped_frames   = 0;
-	stream->min_drop_dts_usec= 0;
-	stream->min_priority     = 0;
-
-	settings = obs_output_get_settings(stream->output);
-	dstr_copy(&stream->path,     obs_service_get_url(service));
-	dstr_copy(&stream->key,      obs_service_get_key(service));
-	dstr_copy(&stream->username, obs_service_get_username(service));
-	dstr_copy(&stream->password, obs_service_get_password(service));
-	stream->drop_threshold_usec =
-		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
-	stream->max_shutdown_time_sec =
-		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
-	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
 			stream) == 0;
