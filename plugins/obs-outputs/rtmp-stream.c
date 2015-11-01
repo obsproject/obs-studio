@@ -89,9 +89,16 @@ static void log_rtmp(int level, const char *format, va_list args)
 	blogva(LOG_INFO, format, args);
 }
 
+static inline size_t num_buffered_packets(struct rtmp_stream *stream);
+
 static inline void free_packets(struct rtmp_stream *stream)
 {
+	size_t num_packets;
+
 	pthread_mutex_lock(&stream->packets_mutex);
+
+	num_packets = num_buffered_packets(stream);
+	info("Freeing %d remaining packets", (int)num_packets);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
