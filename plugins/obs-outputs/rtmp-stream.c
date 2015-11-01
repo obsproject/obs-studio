@@ -35,6 +35,7 @@
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
+#define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
 
 //#define TEST_FRAMEDROPS
 
@@ -51,6 +52,8 @@ struct rtmp_stream {
 	bool             active;
 	volatile bool    disconnected;
 	pthread_t        send_thread;
+
+	int              max_shutdown_time_sec;
 
 	os_sem_t         *send_sem;
 	os_event_t       *stop_event;
@@ -222,13 +225,24 @@ static inline void send_headers(struct rtmp_stream *stream);
 static bool send_remaining_packets(struct rtmp_stream *stream)
 {
 	struct encoder_packet packet;
+	uint64_t max_ns = (uint64_t)stream->max_shutdown_time_sec * 1000000000;
+	uint64_t begin_time_ns = os_gettime_ns();
 
 	if (!stream->sent_headers)
 		send_headers(stream);
 
-	while (get_next_packet(stream, &packet))
+	while (get_next_packet(stream, &packet)) {
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0)
 			return false;
+
+		/* Just disconnect if it takes too long to shut down */
+		if ((os_gettime_ns() - begin_time_ns) > max_ns) {
+			info("Took longer than %d second(s) to shut down, "
+			     "automatically stopping connection",
+			     stream->max_shutdown_time_sec);
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -494,6 +508,8 @@ static bool rtmp_stream_start(void *data)
 	dstr_copy(&stream->password, obs_service_get_password(service));
 	stream->drop_threshold_usec =
 		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
+	stream->max_shutdown_time_sec =
+		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
 	obs_data_release(settings);
 
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
@@ -627,6 +643,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 static void rtmp_stream_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
+	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 5);
 }
 
 static obs_properties_t *rtmp_stream_properties(void *unused)
