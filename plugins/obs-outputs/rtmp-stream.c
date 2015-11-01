@@ -49,6 +49,7 @@ struct rtmp_stream {
 	pthread_t        connect_thread;
 
 	bool             active;
+	volatile bool    disconnected;
 	pthread_t        send_thread;
 
 	os_sem_t         *send_sem;
@@ -235,7 +236,6 @@ static bool send_remaining_packets(struct rtmp_stream *stream)
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
-	bool disconnected = false;
 
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
@@ -249,15 +249,15 @@ static void *send_thread(void *data)
 			send_headers(stream);
 
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
-			disconnected = true;
+			stream->disconnected = true;
 			break;
 		}
 	}
 
-	if (!disconnected && !send_remaining_packets(stream))
-		disconnected = true;
+	if (!stream->disconnected && !send_remaining_packets(stream))
+		stream->disconnected = true;
 
-	if (disconnected) {
+	if (stream->disconnected) {
 		info("Disconnected from %s", stream->path.array);
 		free_packets(stream);
 	} else {
@@ -475,6 +475,8 @@ static bool rtmp_stream_start(void *data)
 	obs_service_t *service = obs_output_get_service(stream->output);
 	obs_data_t *settings;
 
+	stream->disconnected = false;
+
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
 	if (!obs_output_initialize_encoders(stream->output, 0))
@@ -599,6 +601,9 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	struct rtmp_stream    *stream = data;
 	struct encoder_packet new_packet;
 	bool                  added_packet;
+
+	if (stream->disconnected)
+		return;
 
 	if (packet->type == OBS_ENCODER_VIDEO)
 		obs_parse_avc_packet(&new_packet, packet);
