@@ -87,11 +87,14 @@ static void log_rtmp(int level, const char *format, va_list args)
 
 static inline void free_packets(struct rtmp_stream *stream)
 {
+	pthread_mutex_lock(&stream->packets_mutex);
+
 	while (stream->packets.size) {
 		struct encoder_packet packet;
 		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
 		obs_free_encoder_packet(&packet);
 	}
+	pthread_mutex_unlock(&stream->packets_mutex);
 }
 
 static void rtmp_stream_stop(void *data);
