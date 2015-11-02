@@ -158,16 +158,15 @@ fail:
 static void rtmp_stream_stop(void *data)
 {
 	struct rtmp_stream *stream = data;
-	void *ret;
 
 	os_event_signal(stream->stop_event);
 
 	if (stream->connecting)
-		pthread_join(stream->connect_thread, &ret);
+		pthread_join(stream->connect_thread, NULL);
 
 	if (stream->active) {
 		os_sem_post(stream->send_sem);
-		pthread_join(stream->send_thread, &ret);
+		pthread_join(stream->send_thread, NULL);
 		obs_output_end_data_capture(stream->output);
 		RTMP_Close(&stream->rtmp);
 	}
