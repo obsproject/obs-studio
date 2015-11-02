@@ -513,13 +513,17 @@ static int try_connect(struct rtmp_stream *stream)
 	return init_send(stream);
 }
 
-static void init_connect(struct rtmp_stream *stream)
+static bool init_connect(struct rtmp_stream *stream)
 {
-	obs_service_t *service = obs_output_get_service(stream->output);
+	obs_service_t *service;
 	obs_data_t *settings;
 
 	if (stream->stopping)
 		pthread_join(stream->stop_thread, NULL);
+
+	service = obs_output_get_service(stream->output);
+	if (!service)
+		return false;
 
 	stream->disconnected = false;
 	stream->total_bytes_sent = 0;
@@ -537,6 +541,7 @@ static void init_connect(struct rtmp_stream *stream)
 	stream->max_shutdown_time_sec =
 		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
 	obs_data_release(settings);
+	return true;
 }
 
 static void *connect_thread(void *data)
@@ -546,7 +551,11 @@ static void *connect_thread(void *data)
 
 	os_set_thread_name("rtmp-stream: connect_thread");
 
-	init_connect(stream);
+	if (!init_connect(stream)) {
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_BAD_PATH);
+		return NULL;
+	}
+
 	ret = try_connect(stream);
 
 	if (ret != OBS_OUTPUT_SUCCESS) {
