@@ -46,7 +46,7 @@ struct rtmp_stream {
 	struct circlebuf packets;
 	bool             sent_headers;
 
-	bool             connecting;
+	volatile bool    connecting;
 	pthread_t        connect_thread;
 
 	bool             active;
@@ -116,14 +116,14 @@ static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stream->stopping) {
+	if (stream->stopping && !stream->connecting) {
 		pthread_join(stream->stop_thread, NULL);
 
 	} else if (stream->connecting || stream->active) {
-		os_event_signal(stream->stop_event);
-
 		if (stream->connecting)
 			pthread_join(stream->connect_thread, NULL);
+
+		os_event_signal(stream->stop_event);
 
 		if (stream->active) {
 			os_sem_post(stream->send_sem);
@@ -196,10 +196,10 @@ static void rtmp_stream_stop(void *data)
 	if (stream->stopping)
 		return;
 
-	os_event_signal(stream->stop_event);
-
 	if (stream->connecting)
 		pthread_join(stream->connect_thread, NULL);
+
+	os_event_signal(stream->stop_event);
 
 	if (stream->active) {
 		os_sem_post(stream->send_sem);
@@ -579,6 +579,7 @@ static bool rtmp_stream_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
+	stream->connecting = true;
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
 			stream) == 0;
 }
