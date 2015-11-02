@@ -296,6 +296,8 @@ static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
 
+	os_set_thread_name("rtmp-stream: send_thread");
+
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
 
@@ -541,6 +543,8 @@ static void *connect_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
 	int ret;
+
+	os_set_thread_name("rtmp-stream: connect_thread");
 
 	init_connect(stream);
 	ret = try_connect(stream);
