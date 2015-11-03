@@ -261,6 +261,11 @@ bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
 	return __sync_bool_compare_and_swap(val, old_val, new_val);
 }
 
+bool os_atomic_set_bool(volatile bool *ptr, bool val)
+{
+	return __sync_lock_test_and_set(ptr, val);
+}
+
 void os_set_thread_name(const char *name)
 {
 #if defined(__APPLE__)

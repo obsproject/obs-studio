@@ -181,6 +181,11 @@ bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
 	return InterlockedCompareExchange(val, new_val, old_val) == old_val;
 }
 
+bool os_atomic_set_bool(volatile bool *ptr, bool val)
+{
+	return (bool)InterlockedExchange8((volatile char*)ptr, (char)val);
+}
+
 #define VC_EXCEPTION 0x406D1388
 
 #pragma pack(push,8)
