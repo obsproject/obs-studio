@@ -53,7 +53,6 @@ struct rtmp_stream {
 	volatile bool    disconnected;
 	pthread_t        send_thread;
 
-	bool             stopping;
 	pthread_t        stop_thread;
 	int              max_shutdown_time_sec;
 
@@ -110,13 +109,18 @@ static inline void free_packets(struct rtmp_stream *stream)
 	pthread_mutex_unlock(&stream->packets_mutex);
 }
 
+static inline bool stopping(struct rtmp_stream *stream)
+{
+	return os_event_try(stream->stop_event) != EAGAIN;
+}
+
 static void *rtmp_stream_actual_stop(void *data);
 
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stream->stopping && !stream->connecting) {
+	if (stopping(stream) && !stream->connecting) {
 		pthread_join(stream->stop_thread, NULL);
 
 	} else if (stream->connecting || stream->active) {
@@ -184,7 +188,6 @@ static void *rtmp_stream_actual_stop(void *data)
 	os_event_reset(stream->stop_event);
 
 	stream->sent_headers = false;
-	stream->stopping = false;
 	return NULL;
 }
 
@@ -193,7 +196,7 @@ static void rtmp_stream_stop(void *data)
 	struct rtmp_stream *stream = data;
 	int ret;
 
-	if (stream->stopping)
+	if (stopping(stream))
 		return;
 
 	if (stream->connecting)
@@ -206,7 +209,6 @@ static void rtmp_stream_stop(void *data)
 		obs_output_end_data_capture(stream->output);
 	}
 
-	stream->stopping = true;
 	ret = pthread_create(&stream->stop_thread, NULL,
 			rtmp_stream_actual_stop, stream);
 	if (ret != 0) {
@@ -301,7 +303,7 @@ static void *send_thread(void *data)
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
 
-		if (os_event_try(stream->stop_event) != EAGAIN)
+		if (stopping(stream))
 			break;
 		if (!get_next_packet(stream, &packet))
 			continue;
@@ -325,7 +327,7 @@ static void *send_thread(void *data)
 		info("User stopped the stream");
 	}
 
-	if (os_event_try(stream->stop_event) == EAGAIN) {
+	if (!stopping(stream)) {
 		pthread_detach(stream->send_thread);
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
 	}
@@ -518,7 +520,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	obs_service_t *service;
 	obs_data_t *settings;
 
-	if (stream->stopping)
+	if (stopping(stream))
 		pthread_join(stream->stop_thread, NULL);
 
 	service = obs_output_get_service(stream->output);
@@ -563,7 +565,7 @@ static void *connect_thread(void *data)
 		info("Connection to %s failed: %d", stream->path.array, ret);
 	}
 
-	if (os_event_try(stream->stop_event) == EAGAIN)
+	if (!stopping(stream))
 		pthread_detach(stream->connect_thread);
 
 	stream->connecting = false;
