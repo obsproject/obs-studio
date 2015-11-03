@@ -312,13 +312,13 @@ static void *send_thread(void *data)
 			send_headers(stream);
 
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
-			stream->disconnected = true;
+			os_atomic_set_bool(&stream->disconnected, true);
 			break;
 		}
 	}
 
 	if (!stream->disconnected && !send_remaining_packets(stream))
-		stream->disconnected = true;
+		os_atomic_set_bool(&stream->disconnected, true);
 
 	if (stream->disconnected) {
 		info("Disconnected from %s", stream->path.array);
@@ -527,7 +527,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	if (!service)
 		return false;
 
-	stream->disconnected = false;
+	os_atomic_set_bool(&stream->disconnected, false);
 	stream->total_bytes_sent = 0;
 	stream->dropped_frames   = 0;
 	stream->min_drop_dts_usec= 0;
@@ -568,7 +568,7 @@ static void *connect_thread(void *data)
 	if (!stopping(stream))
 		pthread_detach(stream->connect_thread);
 
-	stream->connecting = false;
+	os_atomic_set_bool(&stream->connecting, false);
 	return NULL;
 }
 
@@ -581,7 +581,7 @@ static bool rtmp_stream_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
-	stream->connecting = true;
+	os_atomic_set_bool(&stream->connecting, true);
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
 			stream) == 0;
 }
