@@ -734,7 +734,6 @@ void get_win_ver(struct win_version_info *info)
 }
 
 struct os_inhibit_info {
-	BOOL was_active;
 	bool active;
 };
 
@@ -752,18 +751,12 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		return false;
 
 	if (active) {
-		SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0,
-				&info->was_active, 0);
-		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, false,
-				NULL, 0);
 		SetThreadExecutionState(
 				ES_CONTINUOUS |
 				ES_SYSTEM_REQUIRED |
 				ES_AWAYMODE_REQUIRED |
 				ES_DISPLAY_REQUIRED);
 	} else {
-		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, info->was_active,
-				NULL, 0);
 		SetThreadExecutionState(ES_CONTINUOUS);
 	}
 
