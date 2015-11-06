@@ -37,6 +37,8 @@ void DeleteListItem(QListWidget *widget, QListWidgetItem *item)
 
 void ClearListItems(QListWidget *widget)
 {
+	widget->setCurrentItem(nullptr, QItemSelectionModel::Clear);
+
 	for (int i = 0; i < widget->count(); i++)
 		delete widget->itemWidget(widget->item(i));
 
