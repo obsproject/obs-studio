@@ -41,7 +41,7 @@ static bool create_pipe(HANDLE *input, HANDLE *output)
 	return true;
 }
 
-static inline bool create_proccess(const char *cmd_line, HANDLE stdin_handle,
+static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 		HANDLE stdout_handle, HANDLE *process)
 {
 	PROCESS_INFORMATION pi = {0};
@@ -98,7 +98,7 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line,
 		goto error;
 	}
 
-	success = create_proccess(cmd_line, read_pipe ? NULL : input,
+	success = create_process(cmd_line, read_pipe ? NULL : input,
 			read_pipe ? output : NULL, &process);
 	if (!success) {
 		goto error;
