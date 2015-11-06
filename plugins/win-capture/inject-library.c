@@ -50,7 +50,7 @@ int inject_library_obf(HANDLE process, const wchar_t *dll,
 	/* -------------------------------- */
 
 	size = (wcslen(dll) + 1) * sizeof(wchar_t);
-	mem = virtual_alloc_ex(process, NULL, size, MEM_COMMIT, PAGE_READWRITE);
+	mem = virtual_alloc_ex(process, NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!mem) {
 		goto fail;
 	}
