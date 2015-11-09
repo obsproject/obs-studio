@@ -522,7 +522,7 @@ static inline void darray_swap(const size_t element_size,
 	darray_move_item(sizeof(*v.array), &v.da, from, to)
 
 #define da_swap(v, idx1, idx2) \
-	darray_swap(sizeof(v.array), &v.da, idx1, idx2)
+	darray_swap(sizeof(*v.array), &v.da, idx1, idx2)
 
 #ifdef __cplusplus
 }
