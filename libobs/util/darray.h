@@ -393,7 +393,7 @@ static inline void darray_move_item(const size_t element_size,
 	if (from == to)
 		return;
 
-	temp   = bmalloc(element_size);
+	temp   = malloc(element_size);
 	p_from = darray_item(element_size, dst, from);
 	p_to   = darray_item(element_size, dst, to);
 
@@ -407,7 +407,7 @@ static inline void darray_move_item(const size_t element_size,
 				element_size*(to-from));
 
 	memcpy(p_to, temp, element_size);
-	bfree(temp);
+	free(temp);
 }
 
 static inline void darray_swap(const size_t element_size,
@@ -421,7 +421,7 @@ static inline void darray_swap(const size_t element_size,
 	if (a == b)
 		return;
 
-	temp  = bmalloc(element_size);
+	temp  = malloc(element_size);
 	a_ptr = darray_item(element_size, dst, a);
 	b_ptr = darray_item(element_size, dst, b);
 
@@ -429,7 +429,7 @@ static inline void darray_swap(const size_t element_size,
 	memcpy(a_ptr, b_ptr, element_size);
 	memcpy(b_ptr, temp,  element_size);
 
-	bfree(temp);
+	free(temp);
 }
 
 /*
