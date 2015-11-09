@@ -44,7 +44,6 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 
 static const char *scene_getname(void *unused)
 {
-	/* TODO: locale */
 	UNUSED_PARAMETER(unused);
 	return "Scene";
 }
