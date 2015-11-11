@@ -3,7 +3,8 @@ project(obs-outputs)
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
 		ws2_32
-		winmm)
+		winmm
+		Iphlpapi)
 endif()
 
 if(MSVC)

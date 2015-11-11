@@ -26,6 +26,10 @@
 #include "librtmp/log.h"
 #include "flv-mux.h"
 
+#ifdef _WIN32
+#include <Iphlpapi.h>
+#endif
+
 #define do_log(level, format, ...) \
 	blog(level, "[rtmp stream: '%s'] " format, \
 			obs_output_get_name(stream->output), ##__VA_ARGS__)
@@ -454,6 +458,63 @@ static int init_send(struct rtmp_stream *stream)
 	return OBS_OUTPUT_SUCCESS;
 }
 
+#ifdef _WIN32
+static void win32_log_interface_type(struct rtmp_stream *stream)
+{
+	RTMP *rtmp = &stream->rtmp;
+	MIB_IPFORWARDROW route;
+	uint32_t dest_addr, source_addr;
+	char hostname[256];
+	HOSTENT *h;
+
+	if (rtmp->Link.hostname.av_len >= sizeof(hostname) - 1)
+		return;
+
+	strncpy(hostname, rtmp->Link.hostname.av_val, sizeof(hostname));
+	hostname[rtmp->Link.hostname.av_len] = 0;
+
+	h = gethostbyname(hostname);
+	if (!h)
+		return;
+
+	dest_addr = *(uint32_t*)h->h_addr_list[0];
+
+	if (rtmp->m_bindIP.addrLen == 0)
+		source_addr = 0;
+	else if (rtmp->m_bindIP.addr.ss_family = AF_INET)
+		source_addr = (*(struct sockaddr_in*)&rtmp->m_bindIP)
+			.sin_addr.S_un.S_addr;
+	else
+		return;
+
+	if (!GetBestRoute(dest_addr, source_addr, &route)) {
+		MIB_IFROW row;
+		memset(&row, 0, sizeof(row));
+		row.dwIndex = route.dwForwardIfIndex;
+
+		if (!GetIfEntry(&row)) {
+			uint32_t speed =row.dwSpeed / 1000000;
+			char *type;
+			struct dstr other = {0};
+
+			if (row.dwType == IF_TYPE_ETHERNET_CSMACD) {
+				type = "ethernet";
+			} else if (row.dwType == IF_TYPE_IEEE80211) {
+				type = "802.11";
+			} else {
+				dstr_printf(&other, "type %lu", row.dwType);
+				type = other.array;
+			}
+
+			info("Interface: %s (%s, %lu mbps)", row.bDescr, type,
+					speed);
+
+			dstr_free(&other);
+		}
+	}
+}
+#endif
+
 static int try_connect(struct rtmp_stream *stream)
 {
 	if (dstr_is_empty(&stream->path)) {
@@ -504,6 +565,10 @@ static int try_connect(struct rtmp_stream *stream)
 	stream->rtmp.m_outChunkSize       = 4096;
 	stream->rtmp.m_bSendChunkSizeInfo = true;
 	stream->rtmp.m_bUseNagle          = true;
+
+#ifdef _WIN32
+	win32_log_interface_type(stream);
+#endif
 
 	if (!RTMP_Connect(&stream->rtmp, NULL))
 		return OBS_OUTPUT_CONNECT_FAILED;
@@ -725,6 +790,7 @@ static obs_properties_t *rtmp_stream_properties(void *unused)
 	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
 			obs_module_text("RTMPStream.DropThreshold"),
 			200, 10000, 100);
+
 	return props;
 }
 
