@@ -35,36 +35,22 @@
 #endif
 #endif
 
-struct os_event_data {
-	HANDLE handle;
-};
-
-struct os_sem_data {
-	HANDLE handle;
-};
-
 int os_event_init(os_event_t **event, enum os_event_type type)
 {
 	HANDLE handle;
-	struct os_event_data *data;
 
 	handle = CreateEvent(NULL, (type == OS_EVENT_TYPE_MANUAL), FALSE, NULL);
 	if (!handle)
 		return -1;
 
-	data = bmalloc(sizeof(struct os_event_data));
-	data->handle = handle;
-
-	*event = data;
+	*event = (os_event_t*)handle;
 	return 0;
 }
 
 void os_event_destroy(os_event_t *event)
 {
-	if (event) {
-		CloseHandle(event->handle);
-		bfree(event);
-	}
+	if (event)
+		CloseHandle((HANDLE)event);
 }
 
 int os_event_wait(os_event_t *event)
@@ -74,7 +60,7 @@ int os_event_wait(os_event_t *event)
 	if (!event)
 		return EINVAL;
 
-	code = WaitForSingleObject(event->handle, INFINITE);
+	code = WaitForSingleObject((HANDLE)event, INFINITE);
 	if (code != WAIT_OBJECT_0)
 		return EINVAL;
 
@@ -88,7 +74,7 @@ int os_event_timedwait(os_event_t *event, unsigned long milliseconds)
 	if (!event)
 		return EINVAL;
 
-	code = WaitForSingleObject(event->handle, milliseconds);
+	code = WaitForSingleObject((HANDLE)event, milliseconds);
 	if (code == WAIT_TIMEOUT)
 		return ETIMEDOUT;
 	else if (code != WAIT_OBJECT_0)
@@ -104,7 +90,7 @@ int os_event_try(os_event_t *event)
 	if (!event)
 		return EINVAL;
 
-	code = WaitForSingleObject(event->handle, 0);
+	code = WaitForSingleObject((HANDLE)event, 0);
 	if (code == WAIT_TIMEOUT)
 		return EAGAIN;
 	else if (code != WAIT_OBJECT_0)
@@ -118,7 +104,7 @@ int os_event_signal(os_event_t *event)
 	if (!event)
 		return EINVAL;
 
-	if (!SetEvent(event->handle))
+	if (!SetEvent((HANDLE)event))
 		return EINVAL;
 
 	return 0;
@@ -129,7 +115,7 @@ void os_event_reset(os_event_t *event)
 	if (!event)
 		return;
 
-	ResetEvent(event->handle);
+	ResetEvent((HANDLE)event);
 }
 
 int  os_sem_init(os_sem_t **sem, int value)
@@ -138,23 +124,20 @@ int  os_sem_init(os_sem_t **sem, int value)
 	if (!handle)
 		return -1;
 
-	*sem = bzalloc(sizeof(struct os_sem_data));
-	(*sem)->handle = handle;
+	*sem = (os_sem_t*)handle;
 	return 0;
 }
 
 void os_sem_destroy(os_sem_t *sem)
 {
-	if (sem) {
-		CloseHandle(sem->handle);
-		bfree(sem);
-	}
+	if (sem)
+		CloseHandle((HANDLE)sem);
 }
 
 int  os_sem_post(os_sem_t *sem)
 {
 	if (!sem) return -1;
-	return ReleaseSemaphore(sem->handle, 1, NULL) ? 0 : -1;
+	return ReleaseSemaphore((HANDLE)sem, 1, NULL) ? 0 : -1;
 }
 
 int  os_sem_wait(os_sem_t *sem)
@@ -162,7 +145,7 @@ int  os_sem_wait(os_sem_t *sem)
 	DWORD ret;
 
 	if (!sem) return -1;
-	ret = WaitForSingleObject(sem->handle, INFINITE);
+	ret = WaitForSingleObject((HANDLE)sem, INFINITE);
 	return (ret == WAIT_OBJECT_0) ? 0 : -1;
 }
 
