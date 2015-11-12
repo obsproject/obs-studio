@@ -28,6 +28,8 @@
 
 #ifdef _WIN32
 #include <Iphlpapi.h>
+#else
+#include <sys/ioctl.h>
 #endif
 
 #define do_log(level, format, ...) \
@@ -251,12 +253,39 @@ static inline bool get_next_packet(struct rtmp_stream *stream,
 	return new_packet;
 }
 
+static void discard_recv_data(RTMP *rtmp, size_t size)
+{
+	uint8_t buf[512];
+
+	do {
+		size_t bytes = size > 512 ? 512 : size;
+		size -= bytes;
+
+#ifdef _WIN32
+		recv(rtmp->m_sb.sb_socket, buf, (int)bytes, 0);
+#else
+		recv(rtmp->m_sb.sb_socket, buf, bytes, 0);
+#endif
+	} while (size > 0);
+}
+
 static int send_packet(struct rtmp_stream *stream,
 		struct encoder_packet *packet, bool is_header, size_t idx)
 {
 	uint8_t *data;
 	size_t  size;
+	int     recv_size = 0;
 	int     ret = 0;
+
+#ifdef _WIN32
+	ret = ioctlsocket(stream->rtmp.m_sb.sb_socket, FIONREAD,
+			(u_long*)&recv_size);
+#else
+	ret = ioctl(stream->rtmp.m_sb.sb_socket, FIONREAD, &recv_size);
+#endif
+
+	if (ret >= 0 && recv_size > 0)
+		discard_recv_data(&stream->rtmp, (size_t)recv_size);
 
 	flv_packet_mux(packet, &data, &size, is_header);
 #ifdef TEST_FRAMEDROPS
