@@ -1,12 +1,21 @@
 project(obs-outputs)
 
-find_package(ssl QUIET)
-find_package(zlib QUIET)
+option(USE_SSL "Enable rtmps support with OpenSSL" OFF)
+
+if (USE_SSL)
+	find_package(ssl QUIET)
+	find_package(zlib QUIET)
+endif()
 
 if (SSL_FOUND AND ZLIB_FOUND)
 	add_definitions(-DCRYPTO -DUSE_OPENSSL)
 	include_directories(${SSL_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
 else()
+	if (USE_SSL)
+		message(WARNING "SSL enabled by user, but OpenSSL was not found")
+	endif()
+	unset(SSL_LIBRARIES)
+	unset(ZLIB_LIBRARIES)
 	add_definitions(-DNO_CRYPTO)
 endif()
 
