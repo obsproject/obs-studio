@@ -1496,6 +1496,8 @@ void OBSBasic::RenameSources(QString newName, QString prevName)
 
 void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 {
+	SignalBlocker sourcesSignalBlocker(ui->sources);
+
 	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
 		return;
 
@@ -1509,10 +1511,7 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 		if (item != data.value<OBSSceneItem>())
 			continue;
 
-		if (select)
-			ui->sources->setCurrentItem(witem,
-					QItemSelectionModel::ClearAndSelect);
-
+		witem->setSelected(select);
 		break;
 	}
 }
@@ -2583,43 +2582,29 @@ void OBSBasic::MoveSceneToBottom()
 			ui->scenes->count() - 1);
 }
 
-void OBSBasic::on_sources_currentItemChanged(QListWidgetItem *current,
-		QListWidgetItem *prev)
+void OBSBasic::on_sources_itemSelectionChanged()
 {
-	auto select_one = [] (obs_scene_t *scene, obs_sceneitem_t *item,
-			void *param)
-	{
-		obs_sceneitem_t *selectedItem =
-			*reinterpret_cast<OBSSceneItem*>(param);
-		obs_sceneitem_select(item, (selectedItem == item));
+	SignalBlocker sourcesSignalBlocker(ui->sources);
 
-		UNUSED_PARAMETER(scene);
-		return true;
-	};
-
-	if (!current)
-		return;
-
-	OBSSceneItem item = GetOBSRef<OBSSceneItem>(current);
-	obs_source_t *source = obs_sceneitem_get_source(item);
-	if ((obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO) == 0)
-		return;
-
-	auto IgnoreSelfUpdate = [&](obs_scene_t *scene)
+	auto updateItemSelection = [&]()
 	{
 		ignoreSelectionUpdate = true;
-		obs_scene_enum_items(scene, select_one, &item);
+		for (int i = 0; i < ui->sources->count(); i++)
+		{
+			QListWidgetItem *wItem = ui->sources->item(i);
+			OBSSceneItem item = GetOBSRef<OBSSceneItem>(wItem);
+
+			obs_sceneitem_select(item, wItem->isSelected());
+		}
 		ignoreSelectionUpdate = false;
 	};
-	using IgnoreSelfUpdate_t = decltype(IgnoreSelfUpdate);
+	using updateItemSelection_t = decltype(updateItemSelection);
 
 	obs_scene_atomic_update(GetCurrentScene(),
-			[](void *data, obs_scene_t *scene)
+			[](void *data, obs_scene_t *)
 	{
-		(*static_cast<IgnoreSelfUpdate_t*>(data))(scene);
-	}, static_cast<void*>(&IgnoreSelfUpdate));
-
-	UNUSED_PARAMETER(prev);
+		(*static_cast<updateItemSelection_t*>(data))();
+	}, static_cast<void*>(&updateItemSelection));
 }
 
 void OBSBasic::EditSceneItemName()

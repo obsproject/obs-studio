@@ -339,8 +339,7 @@ private slots:
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
-	void on_sources_currentItemChanged(QListWidgetItem *current,
-			QListWidgetItem *prev);
+	void on_sources_itemSelectionChanged();
 	void on_sources_customContextMenuRequested(const QPoint &pos);
 	void on_sources_itemDoubleClicked(QListWidgetItem *item);
 	void on_actionAddSource_triggered();
