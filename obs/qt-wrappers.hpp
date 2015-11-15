@@ -44,3 +44,19 @@ QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
 QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);
 QDataStream &operator>>(QDataStream &in, OBSSceneItem &si);
+
+class SignalBlocker {
+	QWidget *widget;
+	bool blocked;
+
+public:
+	inline explicit SignalBlocker(QWidget *widget_) : widget(widget_)
+	{
+		blocked = widget->blockSignals(true);
+	}
+
+	inline ~SignalBlocker()
+	{
+		widget->blockSignals(blocked);
+	}
+};
