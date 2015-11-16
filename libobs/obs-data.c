@@ -2070,11 +2070,11 @@ static inline bool get_frames_per_second(obs_data_t *data,
 		goto free;
 	}
 
-	uint32_t num_uint32 = (uint32_t)obs_data_item_get_int(num);
-	uint32_t den_uint32 = (uint32_t)obs_data_item_get_int(den);
+	long long num_ll = obs_data_item_get_int(num);
+	long long den_ll = obs_data_item_get_int(den);
 
-	fps->numerator   = CLAMP(num_uint32, 0, UINT32_MAX);
-	fps->denominator = CLAMP(den_uint32, 0, UINT32_MAX);
+	fps->numerator   = (uint32_t)CLAMP(num_ll, 0, (long long)UINT32_MAX);
+	fps->denominator = (uint32_t)CLAMP(den_ll, 0, (long long)UINT32_MAX);
 
 	obs_data_item_release(&num);
 	obs_data_item_release(&den);
