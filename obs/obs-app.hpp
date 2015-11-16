@@ -24,6 +24,7 @@
 #include <util/lexer.h>
 #include <util/profiler.h>
 #include <util/util.hpp>
+#include <util/platform.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -65,6 +66,9 @@ private:
 	QPointer<OBSMainWindow>        mainWindow;
 	profiler_name_store_t          *profilerNameStore = nullptr;
 
+	os_inhibit_t                   *sleepInhibitor = nullptr;
+	int                            sleepInhibitRefs = 0;
+
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitLocale();
@@ -72,6 +76,7 @@ private:
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
+	~OBSApp();
 
 	void AppInit();
 	bool OBSInit();
@@ -109,6 +114,21 @@ public:
 	const char *OutputAudioSource() const;
 
 	const char *GetRenderModule() const;
+
+	inline void IncrementSleepInhibition()
+	{
+		if (!sleepInhibitor) return;
+		if (sleepInhibitRefs++ == 0)
+			os_inhibit_sleep_set_active(sleepInhibitor, true);
+	}
+
+	inline void DecrementSleepInhibition()
+	{
+		if (!sleepInhibitor) return;
+		if (sleepInhibitRefs == 0) return;
+		if (--sleepInhibitRefs == 0)
+			os_inhibit_sleep_set_active(sleepInhibitor, false);
+	}
 };
 
 int GetConfigPath(char *path, size_t size, const char *name);

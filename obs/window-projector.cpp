@@ -25,12 +25,15 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 	};
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+
+	App()->IncrementSleepInhibition();
 }
 
 OBSProjector::~OBSProjector()
 {
 	if (source)
 		obs_source_dec_showing(source);
+	App()->DecrementSleepInhibition();
 }
 
 void OBSProjector::Init(int monitor)

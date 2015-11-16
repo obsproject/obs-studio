@@ -524,7 +524,15 @@ bool OBSApp::InitTheme()
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
 	  profilerNameStore(store)
-{}
+{
+	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
+}
+
+OBSApp::~OBSApp()
+{
+	os_inhibit_sleep_set_active(sleepInhibitor, false);
+	os_inhibit_sleep_destroy(sleepInhibitor);
+}
 
 static void move_basic_to_profiles(void)
 {

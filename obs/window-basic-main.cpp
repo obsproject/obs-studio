@@ -924,8 +924,6 @@ void OBSBasic::OBSInit()
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
-	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
-	os_inhibit_sleep_set_active(sleepInhibitor, true);
 	show();
 }
 
@@ -1178,9 +1176,6 @@ OBSBasic::~OBSBasic()
 		}
 	}
 #endif
-
-	os_inhibit_sleep_set_active(sleepInhibitor, false);
-	os_inhibit_sleep_destroy(sleepInhibitor);
 }
 
 void OBSBasic::SaveProjectNow()
@@ -3080,8 +3075,9 @@ void OBSBasic::StopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming();
 
-	if (!outputHandler->Active()) {
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
 	}
 }
 
@@ -3092,8 +3088,9 @@ void OBSBasic::ForceStopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->ForceStopStreaming();
 
-	if (!outputHandler->Active()) {
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
 	}
 }
 
@@ -3113,6 +3110,11 @@ void OBSBasic::StreamDelayStarting(int sec)
 	ui->streamButton->setMenu(startStreamMenu);
 
 	ui->statusbar->StreamDelayStarting(sec);
+
+	if (ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(false);
+		App()->IncrementSleepInhibition();
+	}
 }
 
 void OBSBasic::StreamDelayStopping(int sec)
@@ -3138,7 +3140,12 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
-	ui->profileMenu->setEnabled(false);
+
+	if (ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(false);
+		App()->IncrementSleepInhibition();
+	}
+
 	blog(LOG_INFO, STREAMING_START);
 }
 
@@ -3175,8 +3182,10 @@ void OBSBasic::StreamingStop(int code)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
-	if (!outputHandler->Active())
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
+	}
 
 	blog(LOG_INFO, STREAMING_STOP);
 
@@ -3207,8 +3216,9 @@ void OBSBasic::StopRecording()
 	if (outputHandler->RecordingActive())
 		outputHandler->StopRecording();
 
-	if (!outputHandler->Active()) {
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
 	}
 }
 
@@ -3216,7 +3226,12 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
-	ui->profileMenu->setEnabled(false);
+
+	if (ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(false);
+		App()->IncrementSleepInhibition();
+	}
+
 	blog(LOG_INFO, RECORDING_START);
 }
 
@@ -3242,8 +3257,9 @@ void OBSBasic::RecordingStop(int code)
 				QTStr("Output.RecordError.Msg"));
 	}
 
-	if (!outputHandler->Active()) {
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
 	}
 }
 
