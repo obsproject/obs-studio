@@ -129,12 +129,12 @@ EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
 		duplicator = new gs_duplicator(device, monitor_idx);
 
 	} catch (const char *error) {
-		blog(LOG_ERROR, "device_duplicator_create: %s",
+		blog(LOG_DEBUG, "device_duplicator_create: %s",
 				error);
 		return nullptr;
 
 	} catch (HRError error) {
-		blog(LOG_ERROR, "device_duplicator_create: %s (%08lX)",
+		blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)",
 				error.str, error.hr);
 		return nullptr;
 	}
