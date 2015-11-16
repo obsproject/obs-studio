@@ -253,20 +253,41 @@ static inline bool get_next_packet(struct rtmp_stream *stream,
 	return new_packet;
 }
 
-static void discard_recv_data(RTMP *rtmp, size_t size)
+static bool discard_recv_data(struct rtmp_stream *stream, size_t size)
 {
+	RTMP *rtmp = &stream->rtmp;
 	uint8_t buf[512];
+#ifdef _WIN32
+	int ret;
+#else
+	ssize_t ret;
+#endif
 
 	do {
 		size_t bytes = size > 512 ? 512 : size;
 		size -= bytes;
 
 #ifdef _WIN32
-		recv(rtmp->m_sb.sb_socket, buf, (int)bytes, 0);
+		ret = recv(rtmp->m_sb.sb_socket, buf, (int)bytes, 0);
 #else
-		recv(rtmp->m_sb.sb_socket, buf, bytes, 0);
+		ret = recv(rtmp->m_sb.sb_socket, buf, bytes, 0);
 #endif
+
+		if (ret <= 0) {
+#ifdef _WIN32
+			int error = WSAGetLastError();
+#else
+			int error = errno;
+#endif
+			if (ret < 0) {
+				do_log(LOG_ERROR, "recv error: %d (%d bytes)",
+						error, (int)size);
+			}
+			return false;
+		}
 	} while (size > 0);
+
+	return true;
 }
 
 static int send_packet(struct rtmp_stream *stream,
@@ -284,8 +305,10 @@ static int send_packet(struct rtmp_stream *stream,
 	ret = ioctl(stream->rtmp.m_sb.sb_socket, FIONREAD, &recv_size);
 #endif
 
-	if (ret >= 0 && recv_size > 0)
-		discard_recv_data(&stream->rtmp, (size_t)recv_size);
+	if (ret >= 0 && recv_size > 0) {
+		if (!discard_recv_data(stream, (size_t)recv_size))
+			return -1;
+	}
 
 	flv_packet_mux(packet, &data, &size, is_header);
 #ifdef TEST_FRAMEDROPS
