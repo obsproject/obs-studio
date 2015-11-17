@@ -641,6 +641,8 @@ static bool init_connect(struct rtmp_stream *stream)
 	if (stopping(stream))
 		pthread_join(stream->stop_thread, NULL);
 
+	free_packets(stream);
+
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
