@@ -105,7 +105,8 @@ static inline void free_packets(struct rtmp_stream *stream)
 	pthread_mutex_lock(&stream->packets_mutex);
 
 	num_packets = num_buffered_packets(stream);
-	info("Freeing %d remaining packets", (int)num_packets);
+	if (num_packets)
+		info("Freeing %d remaining packets", (int)num_packets);
 
 	while (stream->packets.size) {
 		struct encoder_packet packet;
