@@ -169,6 +169,11 @@ bool os_atomic_set_bool(volatile bool *ptr, bool val)
 	return (bool)InterlockedExchange8((volatile char*)ptr, (char)val);
 }
 
+bool os_atomic_load_bool(const volatile bool *ptr)
+{
+	return (bool)InterlockedOr8((volatile char*)ptr, 0);
+}
+
 #define VC_EXCEPTION 0x406D1388
 
 #pragma pack(push,8)

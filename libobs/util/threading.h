@@ -77,6 +77,7 @@ EXPORT bool os_atomic_compare_swap_long(volatile long *val,
 		long old_val, long new_val);
 
 EXPORT bool os_atomic_set_bool(volatile bool *ptr, bool val);
+EXPORT bool os_atomic_load_bool(const volatile bool *ptr);
 
 EXPORT void os_set_thread_name(const char *name);
 

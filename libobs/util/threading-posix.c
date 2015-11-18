@@ -266,6 +266,11 @@ bool os_atomic_set_bool(volatile bool *ptr, bool val)
 	return __sync_lock_test_and_set(ptr, val);
 }
 
+bool os_atomic_load_bool(const volatile bool *ptr)
+{
+	return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
+}
+
 void os_set_thread_name(const char *name)
 {
 #if defined(__APPLE__)
