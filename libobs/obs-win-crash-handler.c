@@ -377,12 +377,15 @@ static inline bool walk_stack(struct exception_handler_data *data,
 #endif
 
 static inline void write_thread_trace(struct exception_handler_data *data,
-		THREADENTRY32 *entry)
+		THREADENTRY32 *entry, bool first_thread)
 {
 	bool crash_thread = entry->th32ThreadID == GetCurrentThreadId();
 	struct stack_trace trace = {0};
 	struct stack_trace *ptrace;
 	HANDLE thread;
+
+	if (first_thread != crash_thread)
+		return;
 
 	if (entry->th32OwnerProcessID != GetCurrentProcessId())
 		return;
@@ -417,10 +420,16 @@ static inline void write_thread_traces(struct exception_handler_data *data)
 		return;
 
 	entry.dwSize = sizeof(entry);
-	success = !!Thread32First(snapshot, &entry);
 
+	success = !!Thread32First(snapshot, &entry);
 	while (success) {
-		write_thread_trace(data, &entry);
+		write_thread_trace(data, &entry, true);
+		success = !!Thread32Next(snapshot, &entry);
+	}
+
+	success = !!Thread32First(snapshot, &entry);
+	while (success) {
+		write_thread_trace(data, &entry, false);
 		success = !!Thread32Next(snapshot, &entry);
 	}
 
