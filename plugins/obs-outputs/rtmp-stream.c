@@ -796,7 +796,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 {
 	struct rtmp_stream    *stream = data;
 	struct encoder_packet new_packet;
-	bool                  added_packet;
+	bool                  added_packet = false;
 
 	if (disconnected(stream))
 		return;
