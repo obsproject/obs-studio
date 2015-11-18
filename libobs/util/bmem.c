@@ -18,6 +18,7 @@
 #include <string.h>
 #include "base.h"
 #include "bmem.h"
+#include "platform.h"
 #include "threading.h"
 
 /*
@@ -97,9 +98,11 @@ void *bmalloc(size_t size)
 	void *ptr = alloc.malloc(size);
 	if (!ptr && !size)
 		ptr = alloc.malloc(1);
-	if (!ptr)
+	if (!ptr) {
+		os_breakpoint();
 		bcrash("Out of memory while trying to allocate %lu bytes",
 				(unsigned long)size);
+	}
 
 	os_atomic_inc_long(&num_allocs);
 	return ptr;
@@ -113,9 +116,11 @@ void *brealloc(void *ptr, size_t size)
 	ptr = alloc.realloc(ptr, size);
 	if (!ptr && !size)
 		ptr = alloc.realloc(ptr, 1);
-	if (!ptr)
+	if (!ptr) {
+		os_breakpoint();
 		bcrash("Out of memory while trying to allocate %lu bytes",
 				(unsigned long)size);
+	}
 
 	return ptr;
 }
