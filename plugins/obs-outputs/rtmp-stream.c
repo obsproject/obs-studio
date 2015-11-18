@@ -833,9 +833,11 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 	pthread_mutex_lock(&stream->packets_mutex);
 
-	added_packet = (packet->type == OBS_ENCODER_VIDEO) ?
-		add_video_packet(stream, &new_packet) :
-		add_packet(stream, &new_packet);
+	if (!disconnected(stream)) {
+		added_packet = (packet->type == OBS_ENCODER_VIDEO) ?
+			add_video_packet(stream, &new_packet) :
+			add_packet(stream, &new_packet);
+	}
 
 	pthread_mutex_unlock(&stream->packets_mutex);
 
