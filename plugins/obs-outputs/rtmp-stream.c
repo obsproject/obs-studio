@@ -187,10 +187,8 @@ static void *rtmp_stream_actual_stop(void *data)
 	struct rtmp_stream *stream = data;
 	void *ret;
 
-	if (stream->active) {
+	if (stream->active)
 		pthread_join(stream->send_thread, &ret);
-		RTMP_Close(&stream->rtmp);
-	}
 
 	os_event_reset(stream->stop_event);
 
@@ -383,6 +381,8 @@ static void *send_thread(void *data)
 	} else {
 		info("User stopped the stream");
 	}
+
+	RTMP_Close(&stream->rtmp);
 
 	if (!stopping(stream)) {
 		pthread_detach(stream->send_thread);
