@@ -55,7 +55,7 @@ struct rtmp_stream {
 	volatile bool    connecting;
 	pthread_t        connect_thread;
 
-	bool             active;
+	volatile bool    active;
 	volatile bool    disconnected;
 	pthread_t        send_thread;
 
@@ -389,7 +389,7 @@ static void *send_thread(void *data)
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
 	}
 
-	stream->active = false;
+	os_atomic_set_bool(&stream->active, false);
 	stream->sent_headers = false;
 	return NULL;
 }
@@ -504,7 +504,7 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_ERROR;
 	}
 
-	stream->active = true;
+	os_atomic_set_bool(&stream->active, true);
 	while (send_meta_data(stream, idx++));
 	obs_output_begin_data_capture(stream->output, 0);
 
