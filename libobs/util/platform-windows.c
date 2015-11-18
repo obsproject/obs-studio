@@ -18,6 +18,7 @@
 #include <mmsystem.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <intrin.h>
 
 #include "base.h"
 #include "platform.h"
@@ -770,4 +771,9 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 		os_inhibit_sleep_set_active(info, false);
 		bfree(info);
 	}
+}
+
+void os_breakpoint(void)
+{
+	__debugbreak();
 }

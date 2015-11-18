@@ -26,13 +26,13 @@
 #include <unistd.h>
 #include <glob.h>
 #include <time.h>
+#include <signal.h>
 
 #include "obsconfig.h"
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <spawn.h>
 #endif
 
@@ -591,3 +591,8 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 }
 
 #endif
+
+void os_breakpoint()
+{
+	raise(SIGINT);
+}
