@@ -59,7 +59,6 @@ struct rtmp_stream {
 	volatile bool    disconnected;
 	pthread_t        send_thread;
 
-	pthread_t        stop_thread;
 	int              max_shutdown_time_sec;
 
 	os_sem_t         *send_sem;
@@ -136,14 +135,12 @@ static inline bool disconnected(struct rtmp_stream *stream)
 	return os_atomic_load_bool(&stream->disconnected);
 }
 
-static void *rtmp_stream_actual_stop(void *data);
-
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
 	if (stopping(stream) && !connecting(stream)) {
-		pthread_join(stream->stop_thread, NULL);
+		pthread_join(stream->send_thread, NULL);
 
 	} else if (connecting(stream) || active(stream)) {
 		if (stream->connecting)
@@ -154,9 +151,8 @@ static void rtmp_stream_destroy(void *data)
 		if (active(stream)) {
 			os_sem_post(stream->send_sem);
 			obs_output_end_data_capture(stream->output);
+			pthread_join(stream->send_thread, NULL);
 		}
-
-		rtmp_stream_actual_stop(data);
 	}
 
 	if (stream) {
@@ -197,24 +193,9 @@ fail:
 	return NULL;
 }
 
-static void *rtmp_stream_actual_stop(void *data)
-{
-	struct rtmp_stream *stream = data;
-	void *ret;
-
-	if (active(stream))
-		pthread_join(stream->send_thread, &ret);
-
-	os_event_reset(stream->stop_event);
-
-	stream->sent_headers = false;
-	return NULL;
-}
-
 static void rtmp_stream_stop(void *data)
 {
 	struct rtmp_stream *stream = data;
-	int ret;
 
 	if (stopping(stream))
 		return;
@@ -227,13 +208,6 @@ static void rtmp_stream_stop(void *data)
 	if (active(stream)) {
 		os_sem_post(stream->send_sem);
 		obs_output_end_data_capture(stream->output);
-	}
-
-	ret = pthread_create(&stream->stop_thread, NULL,
-			rtmp_stream_actual_stop, stream);
-	if (ret != 0) {
-		warn("Could not create stop thread!  Stopping directly");
-		rtmp_stream_actual_stop(stream);
 	}
 }
 
@@ -404,6 +378,7 @@ static void *send_thread(void *data)
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
 	}
 
+	os_event_reset(stream->stop_event);
 	os_atomic_set_bool(&stream->active, false);
 	stream->sent_headers = false;
 	return NULL;
@@ -654,7 +629,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	obs_data_t *settings;
 
 	if (stopping(stream))
-		pthread_join(stream->stop_thread, NULL);
+		pthread_join(stream->send_thread, NULL);
 
 	free_packets(stream);
 
