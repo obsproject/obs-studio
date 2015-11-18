@@ -121,22 +121,37 @@ static inline bool stopping(struct rtmp_stream *stream)
 	return os_event_try(stream->stop_event) != EAGAIN;
 }
 
+static inline bool connecting(struct rtmp_stream *stream)
+{
+	return os_atomic_load_bool(&stream->connecting);
+}
+
+static inline bool active(struct rtmp_stream *stream)
+{
+	return os_atomic_load_bool(&stream->active);
+}
+
+static inline bool disconnected(struct rtmp_stream *stream)
+{
+	return os_atomic_load_bool(&stream->disconnected);
+}
+
 static void *rtmp_stream_actual_stop(void *data);
 
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stopping(stream) && !stream->connecting) {
+	if (stopping(stream) && !connecting(stream)) {
 		pthread_join(stream->stop_thread, NULL);
 
-	} else if (stream->connecting || stream->active) {
+	} else if (connecting(stream) || active(stream)) {
 		if (stream->connecting)
 			pthread_join(stream->connect_thread, NULL);
 
 		os_event_signal(stream->stop_event);
 
-		if (stream->active) {
+		if (active(stream)) {
 			os_sem_post(stream->send_sem);
 			obs_output_end_data_capture(stream->output);
 		}
@@ -187,7 +202,7 @@ static void *rtmp_stream_actual_stop(void *data)
 	struct rtmp_stream *stream = data;
 	void *ret;
 
-	if (stream->active)
+	if (active(stream))
 		pthread_join(stream->send_thread, &ret);
 
 	os_event_reset(stream->stop_event);
@@ -204,12 +219,12 @@ static void rtmp_stream_stop(void *data)
 	if (stopping(stream))
 		return;
 
-	if (stream->connecting)
+	if (connecting(stream))
 		pthread_join(stream->connect_thread, NULL);
 
 	os_event_signal(stream->stop_event);
 
-	if (stream->active) {
+	if (active(stream)) {
 		os_sem_post(stream->send_sem);
 		obs_output_end_data_capture(stream->output);
 	}
@@ -372,10 +387,10 @@ static void *send_thread(void *data)
 		}
 	}
 
-	if (!stream->disconnected && !send_remaining_packets(stream))
+	if (!disconnected(stream) && !send_remaining_packets(stream))
 		os_atomic_set_bool(&stream->disconnected, true);
 
-	if (stream->disconnected) {
+	if (disconnected(stream)) {
 		info("Disconnected from %s", stream->path.array);
 		free_packets(stream);
 	} else {
@@ -808,7 +823,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	struct encoder_packet new_packet;
 	bool                  added_packet;
 
-	if (stream->disconnected)
+	if (disconnected(stream))
 		return;
 
 	if (packet->type == OBS_ENCODER_VIDEO)
