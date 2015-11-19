@@ -44,9 +44,11 @@ static void *a_malloc(size_t size)
 	long diff;
 
 	ptr  = malloc(size + ALIGNMENT);
-	diff = ((~(long)ptr) & (ALIGNMENT - 1)) + 1;
-	ptr  = (char *)ptr + diff;
-	((char *)ptr)[-1] = (char)diff;
+	if (ptr) {
+		diff = ((~(long)ptr) & (ALIGNMENT - 1)) + 1;
+		ptr  = (char *)ptr + diff;
+		((char *)ptr)[-1] = (char)diff;
+	}
 
 	return ptr;
 #else
