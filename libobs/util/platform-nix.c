@@ -594,5 +594,5 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 
 void os_breakpoint()
 {
-	raise(SIGINT);
+	raise(SIGTRAP);
 }
