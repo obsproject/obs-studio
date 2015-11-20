@@ -185,6 +185,8 @@ static void crop_filter_tick(void *data, float seconds)
 	vec2_zero(&filter->mul_val);
 	vec2_zero(&filter->add_val);
 	calc_crop_dimensions(filter, &filter->mul_val, &filter->add_val);
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static void crop_filter_render(void *data, gs_effect_t *effect)
