@@ -289,17 +289,90 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
 	return hr;
 }
 
+typedef IDirect3D8 *(WINAPI *d3d8create_t)(UINT);
+
+static bool manually_get_d3d8_present_addr(HMODULE d3d8_module,
+		void **present_addr)
+{
+	d3d8create_t create;
+	D3DPRESENT_PARAMETERS pp;
+	HRESULT hr;
+
+	IDirect3DDevice8 *device;
+	IDirect3D8 *d3d8;
+
+	hlog("D3D8 value invalid, manually obtaining");
+
+	create = (d3d8create_t)GetProcAddress(d3d8_module, "Direct3DCreate8");
+	if (!create) {
+		hlog("Failed to load Direct3DCreate8");
+		return false;
+	}
+
+	d3d8 = create(D3D_SDK_VERSION);
+	if (!d3d8) {
+		hlog("Failed to create D3D8 context");
+		return false;
+	}
+
+	memset(&pp, 0, sizeof(pp));
+	pp.Windowed                 = true;
+	pp.SwapEffect               = D3DSWAPEFFECT_FLIP;
+	pp.BackBufferFormat         = D3DFMT_A8R8G8B8;
+	pp.BackBufferWidth          = 2;
+	pp.BackBufferHeight         = 2;
+	pp.BackBufferCount          = 1;
+	pp.hDeviceWindow            = dummy_window;
+
+	hr = d3d8->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
+			dummy_window, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp,
+			&device);
+	d3d8->Release();
+
+	if (SUCCEEDED(hr)) {
+		uintptr_t *vtable = *(uintptr_t**)device;
+		*present_addr = (void*)vtable[15];
+
+		device->Release();
+	} else {
+		hlog("Failed to create D3D8 device");
+		return false;
+	}
+
+	return true;
+}
+
 bool hook_d3d8(void)
 {
 	HMODULE d3d8_module = get_system_module("d3d8.dll");
-	void *present_addr;
+	uint32_t d3d8_size;
+	void *present_addr = nullptr;
 
 	if (!d3d8_module) {
 		return false;
 	}
 
-	present_addr = get_offset_addr(d3d8_module,
-			global_hook_info->offsets.d3d8.present);
+	d3d8_size = module_size(d3d8_module);
+
+	if (global_hook_info->offsets.d3d8.present < d3d8_size) {
+		present_addr = get_offset_addr(d3d8_module,
+				global_hook_info->offsets.d3d8.present);
+	} else {
+		if (!dummy_window) {
+			return false;
+		}
+
+		if (!manually_get_d3d8_present_addr(d3d8_module,
+					&present_addr)) {
+			hlog("Failed to get D3D8 value");
+			return true;
+		}
+	}
+
+	if (!present_addr) {
+		hlog("Invalid D3D8 value");
+		return true;
+	}
 
 	hook_init(&present, present_addr, (void*)hook_present,
 			"IDirect3DDevice8::Present");
@@ -307,6 +380,5 @@ bool hook_d3d8(void)
 	rehook(&present);
 
 	hlog("Hooked D3D8");
-
 	return true;
 }

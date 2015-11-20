@@ -7,6 +7,7 @@
 
 #include "../graphics-hook-info.h"
 #include <ipc-util/pipe.h>
+#include <psapi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,6 +92,7 @@ extern HANDLE tex_mutexes[2];
 extern char system_path[MAX_PATH];
 extern char process_name[MAX_PATH];
 extern char keepalive_name[64];
+extern HWND dummy_window;
 extern volatile bool active;
 
 static inline const char *get_process_name(void)
@@ -106,6 +108,14 @@ static inline HMODULE get_system_module(const char *module)
 	strcat(base_path, "\\");
 	strcat(base_path, module);
 	return GetModuleHandleA(base_path);
+}
+
+static inline uint32_t module_size(HMODULE module)
+{
+	MODULEINFO info;
+	bool success = !!GetModuleInformation(GetCurrentProcess(), module,
+			&info, sizeof(info));
+	return success ? info.SizeOfImage : 0;
 }
 
 static inline HMODULE load_system_library(const char *name)
