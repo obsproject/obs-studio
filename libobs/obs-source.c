@@ -2424,6 +2424,11 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 		return;
 	}
 
+	if (!cx || !cy) {
+		obs_source_skip_video_filter(filter);
+		return;
+	}
+
 	if (!filter->filter_texrender)
 		filter->filter_texrender = gs_texrender_create(format,
 				GS_ZS_NONE);
