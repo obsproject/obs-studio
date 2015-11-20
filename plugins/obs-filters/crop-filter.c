@@ -17,6 +17,9 @@ struct crop_filter_data {
 	uint32_t                       width;
 	uint32_t                       height;
 	bool                           absolute;
+
+	struct vec2                    mul_val;
+	struct vec2                    add_val;
 };
 
 static const char *crop_filter_get_name(void *unused)
@@ -175,21 +178,24 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 	}
 }
 
+static void crop_filter_tick(void *data, float seconds)
+{
+	struct crop_filter_data *filter = data;
+
+	vec2_zero(&filter->mul_val);
+	vec2_zero(&filter->add_val);
+	calc_crop_dimensions(filter, &filter->mul_val, &filter->add_val);
+}
+
 static void crop_filter_render(void *data, gs_effect_t *effect)
 {
 	struct crop_filter_data *filter = data;
-	struct vec2 mul_val;
-	struct vec2 add_val;
-
-	vec2_zero(&mul_val);
-	vec2_zero(&add_val);
-	calc_crop_dimensions(filter, &mul_val, &add_val);
 
 	obs_source_process_filter_begin(filter->context, GS_RGBA,
 			OBS_NO_DIRECT_RENDERING);
 
-	gs_effect_set_vec2(filter->param_mul, &mul_val);
-	gs_effect_set_vec2(filter->param_add, &add_val);
+	gs_effect_set_vec2(filter->param_mul, &filter->mul_val);
+	gs_effect_set_vec2(filter->param_add, &filter->add_val);
 
 	obs_source_process_filter_end(filter->context, filter->effect,
 			filter->width, filter->height);
@@ -219,6 +225,7 @@ struct obs_source_info crop_filter = {
 	.update                        = crop_filter_update,
 	.get_properties                = crop_filter_properties,
 	.get_defaults                  = crop_filter_defaults,
+	.video_tick                    = crop_filter_tick,
 	.video_render                  = crop_filter_render,
 	.get_width                     = crop_filter_width,
 	.get_height                    = crop_filter_height
