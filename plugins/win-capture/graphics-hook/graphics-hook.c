@@ -238,8 +238,7 @@ static void free_hook(void)
 
 static inline bool d3d8_hookable(void)
 {
-	return !!global_hook_info->offsets.d3d8.present &&
-		!!global_hook_info->offsets.d3d8.reset;
+	return !!global_hook_info->offsets.d3d8.present;
 }
 
 static inline bool ddraw_hookable(void)
@@ -258,9 +257,7 @@ static inline bool d3d9_hookable(void)
 {
 	return !!global_hook_info->offsets.d3d9.present &&
 		!!global_hook_info->offsets.d3d9.present_ex &&
-		!!global_hook_info->offsets.d3d9.present_swap &&
-		!!global_hook_info->offsets.d3d9.reset &&
-		!!global_hook_info->offsets.d3d9.reset_ex;
+		!!global_hook_info->offsets.d3d9.present_swap;
 }
 
 static inline bool dxgi_hookable(void)

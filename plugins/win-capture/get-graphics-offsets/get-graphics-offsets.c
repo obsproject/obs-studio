@@ -27,13 +27,10 @@ int main(int argc, char *argv[])
 
 	printf("[d3d8]\n");
 	printf("present=0x%"PRIx32"\n", d3d8.present);
-	printf("reset=0x%"PRIx32"\n", d3d8.reset);
 	printf("[d3d9]\n");
 	printf("present=0x%"PRIx32"\n", d3d9.present);
 	printf("present_ex=0x%"PRIx32"\n", d3d9.present_ex);
 	printf("present_swap=0x%"PRIx32"\n", d3d9.present_swap);
-	printf("reset=0x%"PRIx32"\n", d3d9.reset);
-	printf("reset_ex=0x%"PRIx32"\n", d3d9.reset_ex);
 	printf("[dxgi]\n");
 	printf("present=0x%"PRIx32"\n", dxgi.present);
 	printf("resize=0x%"PRIx32"\n", dxgi.resize);

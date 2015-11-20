@@ -76,7 +76,6 @@ void get_d3d8_offsets(struct d3d8_offsets *offsets)
 
 	if (success) {
 		offsets->present = vtable_offset(info.module, info.device, 15);
-		offsets->reset   = vtable_offset(info.module, info.device, 14);
 	}
 
 	d3d8_free(info);

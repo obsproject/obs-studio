@@ -648,12 +648,18 @@ static inline void present_end(IDirect3DDevice9 *device,
 	}
 }
 
+static bool hooked_reset = false;
+static void setup_reset_hooks(IDirect3DDevice9 *device);
+
 static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice9 *device,
 		CONST RECT *src_rect, CONST RECT *dst_rect,
 		HWND override_window, CONST RGNDATA *dirty_region)
 {
 	IDirect3DSurface9 *backbuffer = nullptr;
 	HRESULT hr;
+
+	if (!hooked_reset)
+		setup_reset_hooks(device);
 
 	present_begin(device, backbuffer);
 
@@ -673,6 +679,9 @@ static HRESULT STDMETHODCALLTYPE hook_present_ex(IDirect3DDevice9 *device,
 {
 	IDirect3DSurface9 *backbuffer = nullptr;
 	HRESULT hr;
+
+	if (!hooked_reset)
+		setup_reset_hooks(device);
 
 	present_begin(device, backbuffer);
 
@@ -702,8 +711,12 @@ static HRESULT STDMETHODCALLTYPE hook_present_swap(IDirect3DSwapChain9 *swap,
 		}
 	}
 
-	if (device)
+	if (device) {
+		if (!hooked_reset)
+			setup_reset_hooks(device);
+
 		present_begin(device, backbuffer);
+	}
 
 	unhook(&present_swap);
 	present_swap_t call = (present_swap_t)present_swap.call_addr;
@@ -749,14 +762,35 @@ static HRESULT STDMETHODCALLTYPE hook_reset_ex(IDirect3DDevice9 *device,
 	return hr;
 }
 
+static void setup_reset_hooks(IDirect3DDevice9 *device)
+{
+	IDirect3DDevice9Ex *d3d9ex = nullptr;
+	uintptr_t *vtable = *(uintptr_t**)device;
+	HRESULT hr;
+
+	hook_init(&reset, (void*)vtable[16], (void*)hook_reset,
+			"IDirect3DDevice9::Reset");
+	rehook(&reset);
+
+	hr = device->QueryInterface(__uuidof(IDirect3DDevice9Ex),
+			(void**)&d3d9ex);
+	if (SUCCEEDED(hr)) {
+		hook_init(&reset_ex, (void*)vtable[132], (void*)hook_reset_ex,
+				"IDirect3DDevice9Ex::ResetEx");
+		rehook(&reset_ex);
+
+		d3d9ex->Release();
+	}
+
+	hooked_reset = true;
+}
+
 bool hook_d3d9(void)
 {
 	HMODULE d3d9_module = get_system_module("d3d9.dll");
 	void *present_addr;
 	void *present_ex_addr;
 	void *present_swap_addr;
-	void *reset_addr;
-	void *reset_ex_addr;
 
 	if (!d3d9_module) {
 		return false;
@@ -768,10 +802,6 @@ bool hook_d3d9(void)
 			global_hook_info->offsets.d3d9.present_ex);
 	present_swap_addr = get_offset_addr(d3d9_module,
 			global_hook_info->offsets.d3d9.present_swap);
-	reset_addr = get_offset_addr(d3d9_module,
-			global_hook_info->offsets.d3d9.reset);
-	reset_ex_addr = get_offset_addr(d3d9_module,
-			global_hook_info->offsets.d3d9.reset_ex);
 
 	hook_init(&present, present_addr, (void*)hook_present,
 			"IDirect3DDevice9::Present");
@@ -779,13 +809,7 @@ bool hook_d3d9(void)
 			"IDirect3DDevice9Ex::PresentEx");
 	hook_init(&present_swap, present_swap_addr, (void*)hook_present_swap,
 			"IDirect3DSwapChain9::Present");
-	hook_init(&reset, reset_addr, (void*)hook_reset,
-			"IDirect3DDevice9::Reset");
-	hook_init(&reset_ex, reset_ex_addr, (void*)hook_reset_ex,
-			"IDirect3DDevice9Ex::ResetEx");
 
-	rehook(&reset_ex);
-	rehook(&reset);
 	rehook(&present_swap);
 	rehook(&present_ex);
 	rehook(&present);

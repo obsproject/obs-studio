@@ -87,11 +87,8 @@ void get_d3d9_offsets(struct d3d9_offsets *offsets)
 
 	if (success) {
 		offsets->present = vtable_offset(info.module, info.device, 17);
-		offsets->reset = vtable_offset(info.module, info.device, 16);
 		offsets->present_ex = vtable_offset(info.module, info.device,
 				121);
-		offsets->reset_ex = vtable_offset(info.module, info.device,
-				132);
 		offsets->present_swap = vtable_offset(info.module, info.swap,
 				3);
 	}

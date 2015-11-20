@@ -23,8 +23,6 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 
 	offsets->d3d8.present =
 		(uint32_t)config_get_uint(config, "d3d8", "present");
-	offsets->d3d8.reset =
-		(uint32_t)config_get_uint(config, "d3d8", "reset");
 
 	offsets->d3d9.present =
 		(uint32_t)config_get_uint(config, "d3d9", "present");
@@ -32,10 +30,6 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 		(uint32_t)config_get_uint(config, "d3d9", "present_ex");
 	offsets->d3d9.present_swap =
 		(uint32_t)config_get_uint(config, "d3d9", "present_swap");
-	offsets->d3d9.reset =
-		(uint32_t)config_get_uint(config, "d3d9", "reset");
-	offsets->d3d9.reset_ex =
-		(uint32_t)config_get_uint(config, "d3d9", "reset_ex");
 
 	offsets->dxgi.present =
 		(uint32_t)config_get_uint(config, "dxgi", "present");

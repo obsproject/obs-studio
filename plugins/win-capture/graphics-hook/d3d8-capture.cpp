@@ -252,12 +252,28 @@ static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device,
 	return hr;
 }
 
+static bool hooked_reset = false;
+
+static void setup_reset_hooks(IDirect3DDevice8 *device)
+{
+	uintptr_t *vtable = *(uintptr_t**)device;
+
+	hook_init(&reset, (void*)vtable[14], (void*)hook_reset,
+			"IDirect3DDevice8::Reset");
+	rehook(&reset);
+
+	hooked_reset = true;
+}
+
 static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
 		CONST RECT *src_rect, CONST RECT *dst_rect,
 		HWND override_window, CONST RGNDATA *dirty_region)
 {
 	IDirect3DSurface8 *backbuffer;
 	HRESULT hr;
+
+	if (!hooked_reset)
+		setup_reset_hooks(device);
 
 	backbuffer = d3d8_get_backbuffer(device);
 	if (backbuffer) {
@@ -277,7 +293,6 @@ bool hook_d3d8(void)
 {
 	HMODULE d3d8_module = get_system_module("d3d8.dll");
 	void *present_addr;
-	void *reset_addr;
 
 	if (!d3d8_module) {
 		return false;
@@ -285,16 +300,11 @@ bool hook_d3d8(void)
 
 	present_addr = get_offset_addr(d3d8_module,
 			global_hook_info->offsets.d3d8.present);
-	reset_addr = get_offset_addr(d3d8_module,
-			global_hook_info->offsets.d3d8.reset);
 
 	hook_init(&present, present_addr, (void*)hook_present,
 			"IDirect3DDevice8::Present");
-	hook_init(&reset, reset_addr, (void*)hook_reset,
-			"IDirect3DDevice8::Reset");
 
 	rehook(&present);
-	rehook(&reset);
 
 	hlog("Hooked D3D8");
 
