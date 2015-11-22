@@ -12,9 +12,9 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include<map>
 
-CComPtr<ID3D11Device>                   g_pD3D11Device;
-CComPtr<ID3D11DeviceContext>            g_pD3D11Ctx;
-CComPtr<IDXGIFactory2>                  g_pDXGIFactory;
+ID3D11Device*							g_pD3D11Device;
+ID3D11DeviceContext*					g_pD3D11Ctx;
+IDXGIFactory2*							g_pDXGIFactory;
 IDXGIAdapter*                           g_pAdapter;
 
 std::map<mfxMemId*, mfxHDL>             allocResponses;
@@ -131,6 +131,20 @@ void CleanupHWDevice()
 	{
 		g_pAdapter->Release();
 		g_pAdapter = NULL;
+	}
+	if (g_pD3D11Device)
+	{
+		g_pD3D11Device->Release();
+		g_pD3D11Device = NULL;
+	}
+	if (g_pD3D11Ctx)
+	{
+		g_pD3D11Ctx->Release();
+		g_pD3D11Ctx = NULL;
+	}
+	if (g_pDXGIFactory)
+	{
+		g_pDXGIFactory->Release();
 		g_pDXGIFactory = NULL;
 	}
 }

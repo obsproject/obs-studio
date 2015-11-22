@@ -58,12 +58,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QSV_Encoder.h"
 #include "mfxastructures.h"
 #include "mfxvideo++.h"
-#include "common_utils.h"
+
 
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version) :
 	m_pmfxENC(NULL),
 	m_nSPSBufferSize(100),
-	m_nPPSBufferSize(100)
+	m_nPPSBufferSize(100),
+	m_nTaskPool(0),
+	m_pTaskPool(NULL),
+	m_nTaskIdx(0),
+	m_nFirstSyncTask(0)
 {
 	m_impl = impl;
 	m_ver = version;
@@ -75,6 +79,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version) :
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
 {
+	ClearData();
+
 	if (m_pmfxENC != NULL)
 	{
 		delete m_pmfxENC;
@@ -92,12 +98,16 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	
 	InitParams(pParams);
 
+	sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+	MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
 	sts = AllocateSurfaces();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	sts = m_pmfxENC->Init(&m_mfxEncParams); 
+	sts = m_pmfxENC->Init(&m_mfxEncParams);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-	
+
 	sts = GetVideoParam();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -191,12 +201,13 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 
 mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 {
-
 	// Query number of required surfaces for encoder
 	mfxFrameAllocRequest EncRequest;
 	memset(&EncRequest, 0, sizeof(EncRequest));
 	mfxStatus sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+	EncRequest.NumFrameSuggested = EncRequest.NumFrameSuggested + m_mfxEncParams.AsyncDepth;
 
 	EncRequest.Type |= WILL_WRITE;
 
@@ -257,10 +268,22 @@ void QSV_Encoder_Internal::GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *p
 
 mfxStatus QSV_Encoder_Internal::InitBitstream()
 {
-	memset(&m_mfxBS, 0, sizeof(m_mfxBS));
-	m_mfxBS.MaxLength = m_parameter.mfx.BufferSizeInKB * 1000;
-	m_mfxBS.Data = new mfxU8[m_mfxBS.MaxLength];
-	MSDK_CHECK_POINTER(m_mfxBS.Data, MFX_ERR_MEMORY_ALLOC);
+	m_nTaskPool = m_parameter.AsyncDepth;
+	m_pTaskPool = new Task[m_nTaskPool];
+	memset(m_pTaskPool, 0, sizeof(Task) * m_nTaskPool);
+	for (int i = 0; i < m_nTaskPool; i++) {
+		m_pTaskPool[i].mfxBS.MaxLength = m_parameter.mfx.BufferSizeInKB * 1000;
+		m_pTaskPool[i].mfxBS.Data = new mfxU8[m_pTaskPool[i].mfxBS.MaxLength];
+		m_pTaskPool[i].mfxBS.DataOffset = 0;
+		m_pTaskPool[i].mfxBS.DataLength = 0;
+
+		MSDK_CHECK_POINTER(m_pTaskPool[i].mfxBS.Data, MFX_ERR_MEMORY_ALLOC);
+	}
+	memset(&m_outBitstream, 0, sizeof(mfxBitstream));
+	m_outBitstream.MaxLength = m_parameter.mfx.BufferSizeInKB * 1000;
+	m_outBitstream.Data = new mfxU8[m_outBitstream.MaxLength];
+	m_outBitstream.DataOffset = 0;
+	m_outBitstream.DataLength = 0;
 
 	return MFX_ERR_NONE;
 }
@@ -319,21 +342,51 @@ mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pD
 	return MFX_ERR_NONE;
 }
 
+int QSV_Encoder_Internal::GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize)
+{
+	if (pTaskPool)
+		for (int i = 0; i < nPoolSize; i++)
+			if (!pTaskPool[i].syncp)
+				return i;
+	return MFX_ERR_NOT_FOUND;
+}
+
 mfxStatus QSV_Encoder_Internal::Encode(mfxFrameSurface1 *pSurface, mfxBitstream **pBS)
 {
 	mfxStatus sts = MFX_ERR_NONE;
+	*pBS = NULL;
 
-	for (;;) {
+	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+	if (MFX_ERR_NOT_FOUND == nTaskIdx)
+	{
+		// No more free tasks, need to sync
+		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+		mfxU8 *pTemp = m_outBitstream.Data;
+		memcpy(&m_outBitstream, &m_pTaskPool[m_nFirstSyncTask].mfxBS, sizeof(mfxBitstream));
+
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.Data = pTemp;
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataLength = 0;
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataOffset = 0;
+		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
+		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
+		*pBS = &m_outBitstream;
+		nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+	}
+	
+	for (;;) 
+	{
 		// Encode a frame asychronously (returns immediately)
-		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface, &m_mfxBS, &m_syncp);
+		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface, &m_pTaskPool[nTaskIdx].mfxBS, &m_pTaskPool[nTaskIdx].syncp);
 
-		if (MFX_ERR_NONE < sts && !m_syncp) 
-		{     
+		if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp)
+		{
 			// Repeat the call if warning and no output
 			if (MFX_WRN_DEVICE_BUSY == sts)
 				MSDK_SLEEP(1);  // Wait if device is busy, then repeat the same call
 		}
-		else if (MFX_ERR_NONE < sts && m_syncp) 
+		else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp)
 		{
 			sts = MFX_ERR_NONE;     // Ignore warnings if output is available
 			break;
@@ -346,17 +399,6 @@ mfxStatus QSV_Encoder_Internal::Encode(mfxFrameSurface1 *pSurface, mfxBitstream 
 			break;
 	}
 
-	if (sts == MFX_ERR_MORE_DATA)
-	{
-		*pBS = NULL;
-	}
-	else if (sts == MFX_ERR_NONE)
-	{
-		sts = m_session.SyncOperation(m_syncp, 60000);
-		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-		*pBS = &m_mfxBS;
-	}
-
 	return sts;
 }
 
@@ -364,27 +406,58 @@ mfxStatus QSV_Encoder_Internal::Drain()
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-	for (;;) {
-		// Encode a frame asychronously (returns immediately)
-		sts = m_pmfxENC->EncodeFrameAsync(NULL, NULL, &m_mfxBS, &m_syncp);
+	//
+	// Drain the buffered encoded frames
+	//
+	while (MFX_ERR_NONE <= sts) 
+	{
+		int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+		if (MFX_ERR_NOT_FOUND == nTaskIdx) 
+		{
+			// No more free tasks, need to sync
+			sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
+			MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-		if (MFX_ERR_NONE < sts && !m_syncp)
-		{	// Repeat the call if warning and no output
-			if (MFX_WRN_DEVICE_BUSY == sts)
-				MSDK_SLEEP(1);  // Wait if device is busy, then repeat the same call
+			m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
+			m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 		}
-		else if (MFX_ERR_NONE < sts && m_syncp)
+		else 
 		{
-			sts = MFX_ERR_NONE;	// Ignore warnings if output is available
-			break;
+			for (;;) 
+			{
+				// Encode a frame asychronously (returns immediately)
+				sts = m_pmfxENC->EncodeFrameAsync(NULL, NULL, &m_pTaskPool[nTaskIdx].mfxBS, &m_pTaskPool[nTaskIdx].syncp);
+
+				if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) 
+				{   // Repeat the call if warning and no output
+					if (MFX_WRN_DEVICE_BUSY == sts)
+						MSDK_SLEEP(1);  // Wait if device is busy, then repeat the same call
+				}
+				else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) 
+				{
+					sts = MFX_ERR_NONE;     // Ignore warnings if output is available
+					break;
+				}
+				else
+					break;
+			}
 		}
-		else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
-		{
-			// Allocate more bitstream buffer memory here if needed...
-			break;
-		}
-		else
-			break;
+	}
+
+	// MFX_ERR_MORE_DATA indicates that there are no more buffered frames, exit in case of other errors
+	MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+	//
+	// Sync all remaining tasks in task pool
+	//
+	while (m_pTaskPool[m_nFirstSyncTask].syncp) 
+	{
+		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
+		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 	}
 
 	return sts;
@@ -393,13 +466,8 @@ mfxStatus QSV_Encoder_Internal::Drain()
 mfxStatus QSV_Encoder_Internal::ClearData()
 {
 	mfxStatus sts = MFX_ERR_NONE;
+	sts = Drain();
 	
-	while (MFX_ERR_NONE <= sts)
-	{
-		sts = Drain();
-		m_mfxBS.DataLength = 0; 
-	}
-
 	sts = m_pmfxENC->Close();
 	
 	m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
@@ -408,35 +476,22 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		delete m_pmfxSurfaces[i];
 	MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 
-	MSDK_SAFE_DELETE_ARRAY(m_mfxBS.Data);
-	
-	
+	for (int i = 0; i < m_nTaskPool; i++)
+		delete m_pTaskPool[i].mfxBS.Data; 
+	MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
+
+	delete m_outBitstream.Data;
 
 	return sts;
 }
 
 mfxStatus QSV_Encoder_Internal::Reset(qsv_param_t *pParams)
 {
-	(void)pParams; /* (Hugh) Currently unused */
-
-	/*
 	mfxStatus sts = ClearData();
-	
-	InitParams(pParams);
-
-	sts = AllocateSurfaces();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	sts = m_pmfxENC->Init(&m_mfxEncParams);
-	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-	sts = GetVideoParam();
-	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-	sts = InitBitstream();
+	sts = Open(pParams);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	return sts;
-	*/
-	return MFX_ERR_UNKNOWN;
 }

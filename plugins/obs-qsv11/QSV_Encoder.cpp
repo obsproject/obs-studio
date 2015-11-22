@@ -111,7 +111,6 @@ int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pDataY, uint8_t *
 int qsv_encoder_close(qsv_t *pContext)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	pEncoder->ClearData();
 	delete pEncoder;
 	
 	return 0;
