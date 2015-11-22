@@ -506,7 +506,8 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encod
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
-	mfxBitstream *pBS;
+	mfxBitstream *pBS = NULL;
+	
 	int ret;
 	
 	mfxU64 qsvPTS = frame->pts * 90000 / voi->fps_num;

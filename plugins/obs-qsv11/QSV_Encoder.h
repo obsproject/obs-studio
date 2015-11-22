@@ -99,7 +99,7 @@ extern "C" {
 	int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 	
 	qsv_t *qsv_encoder_open( qsv_param_t * );
-	int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t, uint32_t, mfxBitstream **);
+	int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t, uint32_t, mfxBitstream **pBS);
 	int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS, uint16_t *pnSPS, uint16_t *pnPPS);
 
 #ifdef __cplusplus
