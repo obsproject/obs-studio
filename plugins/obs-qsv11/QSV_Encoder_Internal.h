@@ -67,10 +67,7 @@ public:
 
 	mfxStatus	Open(qsv_param_t * pParams);
 	void		GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf);
-	mfxStatus	Lock(mfxFrameSurface1 **pFrameSurface);
-	mfxStatus	Unlock(mfxFrameSurface1 *pFrameSurface);
-	mfxStatus	LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV);
-	mfxStatus	Encode(mfxFrameSurface1 *pSurface, mfxBitstream **pBS);
+	mfxStatus	Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV, mfxBitstream **pBS);
 	mfxStatus	ClearData();
 	mfxStatus	Reset(qsv_param_t *pParams);
 
@@ -79,6 +76,7 @@ protected:
 	mfxStatus	AllocateSurfaces();
 	mfxStatus	GetVideoParam();
 	mfxStatus	InitBitstream();
+	mfxStatus	LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV);
 	mfxStatus	Drain();
 	int			GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize);
 
