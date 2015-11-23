@@ -428,6 +428,8 @@ bool SimpleOutput::StartRecording()
 			"SimpleOutput", "FilePath");
 	const char *format = config_get_string(main->Config(),
 			"SimpleOutput", "RecFormat");
+	const char *mux = config_get_string(main->Config(), "SimpleOutput",
+			"MuxerCustom");
 
 	os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -459,6 +461,7 @@ bool SimpleOutput::StartRecording()
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
 			strPath.c_str());
+	obs_data_set_string(settings, "muxer_settings", mux);
 
 	obs_output_update(fileOutput, settings);
 
@@ -711,6 +714,8 @@ inline void AdvancedOutput::SetupRecording()
 {
 	const char *path = config_get_string(main->Config(), "AdvOut",
 			"RecFilePath");
+	const char *mux = config_get_string(main->Config(), "AdvOut",
+			"RecMuxerCustom");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"RecRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
@@ -744,6 +749,7 @@ inline void AdvancedOutput::SetupRecording()
 	}
 
 	obs_data_set_string(settings, "path", path);
+	obs_data_set_string(settings, "muxer_settings", mux);
 	obs_output_update(fileOutput, settings);
 	obs_data_release(settings);
 }

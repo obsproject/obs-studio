@@ -274,6 +274,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -288,6 +289,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack1,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack2,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack3,      CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -1025,6 +1027,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"RecQuality");
 	const char *recEnc = config_get_string(main->Config(), "SimpleOutput",
 			"RecEncoder");
+	const char *muxCustom = config_get_string(main->Config(),
+			"SimpleOutput", "MuxerCustom");
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -1048,6 +1052,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	idx = ui->simpleOutRecEncoder->findData(QString(recEnc));
 	if (idx == -1) idx = 0;
 	ui->simpleOutRecEncoder->setCurrentIndex(idx);
+
+	ui->simpleOutMuxCustom->setText(muxCustom);
 }
 
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
@@ -1131,6 +1137,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RecRescaleRes");
+	const char *muxCustom = config_get_string(main->Config(), "AdvOut",
+			"RecMuxerCustom");
 	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
 
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
@@ -1138,6 +1146,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecPath->setText(path);
 	ui->advOutRecUseRescale->setChecked(rescale);
 	ui->advOutRecRescale->setCurrentText(rescaleRes);
+	ui->advOutMuxCustom->setText(muxCustom);
 
 	int idx = ui->advOutRecFormat->findText(format);
 	ui->advOutRecFormat->setCurrentIndex(idx);
@@ -2123,6 +2132,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
 	SaveComboData(ui->simpleOutRecQuality, "SimpleOutput", "RecQuality");
 	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
+	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
 
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
@@ -2140,6 +2150,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
+	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
 
 	config_set_int(main->Config(), "AdvOut", "RecTracks",
 			(ui->advOutRecTrack1->isChecked() ? (1<<0) : 0) |
