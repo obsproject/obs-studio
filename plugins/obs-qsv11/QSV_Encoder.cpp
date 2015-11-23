@@ -92,14 +92,8 @@ int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pDataY, uint8_t *
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (pDataY != NULL && pDataUV != NULL)
-	{
-		pEncoder->Lock(&pSurface);
-		pEncoder->LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
-		pSurface->Data.TimeStamp = ts;
-		pEncoder->Unlock(pSurface);
-	}
+		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
 	
-	sts = pEncoder->Encode(pSurface, pBS);
 	if (sts == MFX_ERR_NONE)
 		return 0;
 	else if (sts == MFX_ERR_MORE_DATA)

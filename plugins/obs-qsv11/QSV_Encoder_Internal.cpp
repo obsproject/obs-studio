@@ -288,25 +288,6 @@ mfxStatus QSV_Encoder_Internal::InitBitstream()
 	return MFX_ERR_NONE;
 }
 
-mfxStatus QSV_Encoder_Internal::Lock(mfxFrameSurface1 **pFrameSurface)
-{
-	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);    // Find free input frame surface
-	MSDK_CHECK_ERROR(MFX_ERR_NOT_FOUND, nSurfIdx, MFX_ERR_MEMORY_ALLOC);
-
-	*pFrameSurface = m_pmfxSurfaces[nSurfIdx];
-	mfxStatus sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, (*pFrameSurface)->Data.MemId, &((*pFrameSurface)->Data));
-	
-	return sts;
-}
-
-mfxStatus QSV_Encoder_Internal::Unlock(mfxFrameSurface1 *pSurface)
-{
-	mfxStatus sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
-	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-	return sts;
-}
-
 mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV)
 {
 	mfxU16 w, h, i, pitch;
@@ -351,15 +332,16 @@ int QSV_Encoder_Internal::GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize)
 	return MFX_ERR_NOT_FOUND;
 }
 
-mfxStatus QSV_Encoder_Internal::Encode(mfxFrameSurface1 *pSurface, mfxBitstream **pBS)
+mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV, mfxBitstream **pBS)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
-
+	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);    // Find free input frame surface
 	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
-	if (MFX_ERR_NOT_FOUND == nTaskIdx)
+
+	if (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx)
 	{
-		// No more free tasks, need to sync
+		// No more free tasks or surfaces, need to sync
 		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -372,9 +354,19 @@ mfxStatus QSV_Encoder_Internal::Encode(mfxFrameSurface1 *pSurface, mfxBitstream 
 		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
 		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 		*pBS = &m_outBitstream;
-		nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+		if (nTaskIdx == MFX_ERR_NOT_FOUND)
+			nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+		if (nSurfIdx == MFX_ERR_NOT_FOUND)
+			nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
 	}
 	
+	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
+	sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+	sts = LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
+	pSurface->Data.TimeStamp = ts;
+	sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
 	for (;;) 
 	{
 		// Encode a frame asychronously (returns immediately)
@@ -474,7 +466,9 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 
 	for (int i = 0; i < m_nSurfNum; i++)
 		delete m_pmfxSurfaces[i];
-	MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
+	free(m_pmfxSurfaces);
+	m_pmfxSurfaces = NULL;
+	// MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 
 	for (int i = 0; i < m_nTaskPool; i++)
 		delete m_pTaskPool[i].mfxBS.Data; 
