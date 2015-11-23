@@ -73,6 +73,7 @@ struct main_params {
 	int fps_num;
 	int fps_den;
 	char *acodec;
+	char *muxer_settings;
 };
 
 struct audio_params {
@@ -247,6 +248,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	}
 
 	*p_audio = audio;
+
+	get_opt_str(argc, argv, &params->muxer_settings, "muxer settings");
+
 	return true;
 }
 
@@ -461,12 +465,37 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 			sizeof(ffm->output->filename));
 	ffm->output->filename[sizeof(ffm->output->filename) - 1] = 0;
 
-	ret = avformat_write_header(ffm->output, NULL);
+	AVDictionary *dict = NULL;
+	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings,
+				"=", " ", 0))) {
+		printf("Failed to parse muxer settings: %s\n%s",
+				av_err2str(ret), ffm->params.muxer_settings);
+
+		av_dict_free(&dict);
+	}
+
+	if (av_dict_count(dict) > 0) {
+		printf("Using muxer settings:");
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+						AV_DICT_IGNORE_SUFFIX)))
+			printf("\n\t%s=%s", entry->key, entry->value);
+
+		printf("\n");
+	}
+
+	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
 		printf("Error opening '%s': %s",
 				ffm->params.file, av_err2str(ret));
+
+		av_dict_free(&dict);
+
 		return ret == -22 ? FFM_UNSUPPORTED : FFM_ERROR;
 	}
+
+	av_dict_free(&dict);
 
 	return FFM_SUCCESS;
 }
