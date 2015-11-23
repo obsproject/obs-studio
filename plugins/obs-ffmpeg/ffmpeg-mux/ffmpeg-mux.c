@@ -438,6 +438,10 @@ static inline bool ffmpeg_mux_get_extra_data(struct ffmpeg_mux *ffm)
 	return true;
 }
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)
+#endif
+
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *format = ffm->output->oformat;
@@ -452,6 +456,10 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 			return FFM_ERROR;
 		}
 	}
+
+	strncpy(ffm->output->filename, ffm->params.file,
+			sizeof(ffm->output->filename));
+	ffm->output->filename[sizeof(ffm->output->filename) - 1] = 0;
 
 	ret = avformat_write_header(ffm->output, NULL);
 	if (ret < 0) {
