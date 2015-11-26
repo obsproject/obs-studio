@@ -134,7 +134,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "target_bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile", "main");
-	
+	obs_data_set_default_int(settings, "async_depth", 4);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
 	obs_data_set_default_int(settings, "accuracy", 1000);
@@ -163,6 +163,7 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_BUF_SIZE			obs_module_text("BufferSize")
 #define TEXT_USE_CBR			obs_module_text("UseCBR")
 #define TEXT_PROFILE			obs_module_text("Profile")
+#define TEXT_ASYNC_DEPTH		obs_module_text("AsyncDepth")
 #define TEXT_RATE_CONTROL		obs_module_text("Rate Control")
 #define TEXT_ACCURACY			obs_module_text("Accuracy")
 #define TEXT_CONVERGENCE		obs_module_text("Convergence")
@@ -237,6 +238,7 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	add_strings(list, qsv_profile_names);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 0, 20, 1);
 	
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -276,6 +278,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	char *target_usage = (char *)obs_data_get_string(settings, "target_usage");
 	char *profile = (char *)obs_data_get_string(settings, "profile");
 	char *rate_control = (char *)obs_data_get_string(settings, "rate_control");
+	int async_depth = (int)obs_data_get_int(settings, "async_depth");
 	int target_bitrate = (int)obs_data_get_int(settings, "target_bitrate"); 
 	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
 	int accuracy = (int)obs_data_get_int(settings, "accuracy");
@@ -321,6 +324,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	else if (astrcmpi(rate_control, "LA") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA;
 	
+	obsqsv->params.nAsyncDepth = (mfxU16)async_depth;
 	obsqsv->params.nAccuracy = (mfxU16)accuracy;
 	obsqsv->params.nConvergence = (mfxU16)convergence;
 	obsqsv->params.nQPI = (mfxU16)qpi;

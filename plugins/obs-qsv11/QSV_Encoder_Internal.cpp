@@ -193,7 +193,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	// Height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
-	// m_mfxEncParams.AsyncDepth = 4;
+	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
 	m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	
 	return true;
@@ -398,6 +398,7 @@ mfxStatus QSV_Encoder_Internal::Drain()
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
+	/* We don't care what's in the queue. Throw them away and skip this part. 
 	//
 	// Drain the buffered encoded frames
 	//
@@ -439,6 +440,7 @@ mfxStatus QSV_Encoder_Internal::Drain()
 	// MFX_ERR_MORE_DATA indicates that there are no more buffered frames, exit in case of other errors
 	MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+	*/
 
 	//
 	// Sync all remaining tasks in task pool
