@@ -75,6 +75,7 @@ extern "C" {
 		mfxU16 nTargetUsage;	// 1 through 7, 1 being best quality and 7 being the best speed
 		mfxU16 nWidth;			// source picture width
 		mfxU16 nHeight;			// source picture height
+		mfxU16 nAsyncDepth;
 		mfxU16 nFpsNum;
 		mfxU16 nFpsDen;
 		mfxU16 nTargetBitRate;
