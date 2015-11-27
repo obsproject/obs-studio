@@ -33,7 +33,7 @@
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
-std::string GenerateTimeDateFilename(const char *extension);
+std::string GenerateTimeDateFilename(const char *extension, bool noSpace=false);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {

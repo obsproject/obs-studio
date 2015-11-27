@@ -430,6 +430,8 @@ bool SimpleOutput::StartRecording()
 			"SimpleOutput", "RecFormat");
 	const char *mux = config_get_string(main->Config(), "SimpleOutput",
 			"MuxerCustom");
+	bool noSpace = config_get_bool(main->Config(), "SimpleOutput",
+			"FileNameWithoutSpace");
 
 	os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -449,7 +451,8 @@ bool SimpleOutput::StartRecording()
 	if (lastChar != '/' && lastChar != '\\')
 		strPath += "/";
 
-	strPath += GenerateTimeDateFilename(ffmpegOutput ? "avi" : format);
+	strPath += GenerateTimeDateFilename(ffmpegOutput ? "avi" : format,
+			noSpace);
 
 	SetupOutputs();
 
@@ -931,6 +934,7 @@ bool AdvancedOutput::StartRecording()
 {
 	const char *path;
 	const char *format;
+	bool noSpace = false;
 
 	if (!useStreamEncoder) {
 		if (!ffmpegOutput) {
@@ -950,6 +954,10 @@ bool AdvancedOutput::StartRecording()
 				ffmpegRecording ? "FFFilePath" : "RecFilePath");
 		format = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFExtension" : "RecFormat");
+		noSpace = config_get_bool(main->Config(), "AdvOut",
+				ffmpegRecording ?
+				"FFFileNameWithoutSpace" :
+				"RecFileNameWithoutSpace");
 
 		os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -969,7 +977,7 @@ bool AdvancedOutput::StartRecording()
 		if (lastChar != '/' && lastChar != '\\')
 			strPath += "/";
 
-		strPath += GenerateTimeDateFilename(format);
+		strPath += GenerateTimeDateFilename(format, noSpace);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings,
