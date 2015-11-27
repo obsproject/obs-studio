@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -120,22 +120,31 @@ typedef enum
     MFX_ERR_INVALID_AUDIO_PARAM         = -20,  /* invalid audio parameters */
 
     /* warnings >0 */
-    MFX_WRN_IN_EXECUTION                = 1,    /* the previous asynchrous operation is in execution */
+    MFX_WRN_IN_EXECUTION                = 1,    /* the previous asynchronous operation is in execution */
     MFX_WRN_DEVICE_BUSY                 = 2,    /* the HW acceleration device is busy */
     MFX_WRN_VIDEO_PARAM_CHANGED         = 3,    /* the video parameters are changed during decoding */
     MFX_WRN_PARTIAL_ACCELERATION        = 4,    /* SW is used */
     MFX_WRN_INCOMPATIBLE_VIDEO_PARAM    = 5,    /* incompatible video parameters */
-    MFX_WRN_VALUE_NOT_CHANGED           = 6,      /* the value is saturated based on its valid range */
-    MFX_WRN_OUT_OF_RANGE                = 7,      /* the value is out of valid range */
-    MFX_WRN_FILTER_SKIPPED              = 10,     /* one of requested filters has been skipped */
-    MFX_WRN_INCOMPATIBLE_AUDIO_PARAM    = 11,    /* incompatible audio parameters */
+    MFX_WRN_VALUE_NOT_CHANGED           = 6,    /* the value is saturated based on its valid range */
+    MFX_WRN_OUT_OF_RANGE                = 7,    /* the value is out of valid range */
+    MFX_WRN_FILTER_SKIPPED              = 10,   /* one of requested filters has been skipped */
+    MFX_WRN_INCOMPATIBLE_AUDIO_PARAM    = 11,   /* incompatible audio parameters */
 
     /* threading statuses */
-    MFX_TASK_DONE = MFX_ERR_NONE, /* task has been completed */
-    MFX_TASK_WORKING = 8, /*  there is some more work to do */
-    MFX_TASK_BUSY = 9 /* task is waiting for resources */
+    MFX_TASK_DONE = MFX_ERR_NONE,               /* task has been completed */
+    MFX_TASK_WORKING                    = 8,    /* there is some more work to do */
+    MFX_TASK_BUSY                       = 9     /* task is waiting for resources */
 
 } mfxStatus;
+
+
+// Application 
+#if defined(MFX_DISPATCHER_EXPOSED_PREFIX)
+
+#include "mfxdispatcherprefixedfunctions.h"
+
+#endif // MFX_DISPATCHER_EXPOSED_PREFIX
+
 
 #ifdef __cplusplus
 }

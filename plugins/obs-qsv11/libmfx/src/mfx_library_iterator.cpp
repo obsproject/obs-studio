@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -66,7 +66,7 @@ wchar_t pathKeyName[] = L"Path";
 const
 wchar_t apiVersionName[] = L"APIVersion";
 
-mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
+mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
 {
     if (NULL == pImplInterface)
     {
@@ -223,7 +223,7 @@ mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implIn
     //deviceID and vendorID are not actual for SW library loading
     if (m_implType != MFX_LIB_SOFTWARE)
     {
-        mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
+        mfxStatus mfxRes = MFX::SelectImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
         if (MFX_ERR_NONE != mfxRes)
         {
             return mfxRes;
@@ -256,7 +256,7 @@ mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInte
      //deviceID and vendorID are not actual for SW library loading
      if (m_implType != MFX_LIB_SOFTWARE)
      {
-         mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
+         mfxStatus mfxRes = MFX::SelectImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
          if (MFX_ERR_NONE != mfxRes)
          {
              return mfxRes;

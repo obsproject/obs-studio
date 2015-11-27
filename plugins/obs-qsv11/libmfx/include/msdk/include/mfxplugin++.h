@@ -32,16 +32,30 @@ File Name: mfxplugin++.h
 #ifndef __MFXPLUGINPLUSPLUS_H
 #define __MFXPLUGINPLUSPLUS_H
 
-#include "mfxvideo.h"
 #include "mfxplugin.h"
 
-//c++ wrapper over only 3 exposed functions from MFXVideoUSER module
-class MFXVideoUSER {
+// base class for MFXVideoUSER/MFXAudioUSER API
+
+class MFXBaseUSER {
 public:
-    explicit MFXVideoUSER(mfxSession session)
+    explicit MFXBaseUSER(mfxSession session = NULL)
         : m_session(session){}
-    
-    virtual ~MFXVideoUSER() {};
+
+    virtual ~MFXBaseUSER() {};
+
+    virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) = 0;
+    virtual mfxStatus Unregister(mfxU32 type) = 0;
+    virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) = 0;
+
+protected:
+    mfxSession m_session;
+};
+
+//c++ wrapper over only 3 exposed functions from MFXVideoUSER module
+class MFXVideoUSER: public MFXBaseUSER {
+public:
+    explicit MFXVideoUSER(mfxSession session = NULL)
+        : MFXBaseUSER(session){}
 
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXVideoUSER_Register(m_session, type, par);
@@ -52,10 +66,25 @@ public:
     virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) {
         return MFXVideoUSER_ProcessFrameAsync(m_session, in, in_num, out, out_num, syncp);
     }
-
-protected:
-    mfxSession m_session;    
 };
+
+//c++ wrapper over only 3 exposed functions from MFXAudioUSER module
+class MFXAudioUSER: public MFXBaseUSER {
+public:
+    explicit MFXAudioUSER(mfxSession session = NULL)
+        : MFXBaseUSER(session){}
+
+    virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
+        return MFXAudioUSER_Register(m_session, type, par);
+    }
+    virtual mfxStatus Unregister(mfxU32 type) {
+        return MFXAudioUSER_Unregister(m_session, type);
+    }
+    virtual mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) {
+        return MFXAudioUSER_ProcessFrameAsync(m_session, in, in_num, out, out_num, syncp);
+    }
+};
+
 
 //initialize mfxPlugin struct
 class MFXPluginParam {
@@ -84,7 +113,6 @@ struct MFXPlugin
     virtual ~MFXPlugin() {};
     //init function always required for any transform or codec plugins, for codec plugins it maps to callback from MediaSDK
     //for generic plugin application should call it
-    virtual mfxStatus Init(mfxVideoParam *par) = 0;
     //MediaSDK mfxPlugin API mapping
     virtual mfxStatus PluginInit(mfxCoreInterface *core) = 0;
     //release CoreInterface, and destroy plugin state, not destroy plugin instance
@@ -92,7 +120,6 @@ struct MFXPlugin
     virtual mfxStatus GetPluginParam(mfxPluginParam *par) = 0;
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) = 0;
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) = 0;
-    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     //destroy plugin due to shared module distribution model plugin wont support virtual destructor
     virtual void      Release() = 0;
     //release resources associated with current instance of plugin, but do not release CoreInterface related resource set in pluginInit
@@ -104,15 +131,28 @@ struct MFXPlugin
 //common extension interface that codec plugins should expose additionally to MFXPlugin
 struct MFXCodecPlugin : MFXPlugin
 {
+    virtual mfxStatus Init(mfxVideoParam *par) = 0;
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) =0;
     virtual mfxStatus Reset(mfxVideoParam *par) = 0;
     virtual mfxStatus GetVideoParam(mfxVideoParam *par) = 0;
 };
 
+//common extension interface that audio codec plugins should expose additionally to MFXPlugin
+struct MFXAudioCodecPlugin : MFXPlugin
+{
+    virtual mfxStatus Init(mfxAudioParam *par) = 0;
+    virtual mfxStatus Query(mfxAudioParam *in, mfxAudioParam *out) =0;
+    virtual mfxStatus QueryIOSize(mfxAudioParam *par, mfxAudioAllocRequest *request) = 0;
+    virtual mfxStatus Reset(mfxAudioParam *par) = 0;
+    virtual mfxStatus GetAudioParam(mfxAudioParam *par) = 0;
+};
 
 //general purpose transform plugin interface, not a codec plugin
 struct MFXGenericPlugin : MFXPlugin
 {
+    virtual mfxStatus Init(mfxVideoParam *par) = 0;
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     virtual mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task) = 0;
 };
 
@@ -124,17 +164,39 @@ struct MFXDecoderPlugin : MFXCodecPlugin
     virtual mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task) = 0;
 };
 
+//audio decoder plugins may only support this interface 
+struct MFXAudioDecoderPlugin : MFXAudioCodecPlugin
+{
+    virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxAudioParam *par) = 0;
+//    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
+    virtual mfxStatus DecodeFrameSubmit(mfxBitstream *in, mfxAudioFrame *out, mfxThreadTask *task) = 0;
+};
+
 //encoder plugins may only support this interface 
 struct MFXEncoderPlugin : MFXCodecPlugin
 {
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task) = 0;
 };
 
+//audio encoder plugins may only support this interface 
+struct MFXAudioEncoderPlugin : MFXAudioCodecPlugin
+{
+    virtual mfxStatus EncodeFrameSubmit(mfxAudioFrame *aFrame, mfxBitstream *out, mfxThreadTask *task) = 0;
+};
+
 //vpp plugins may only support this interface 
 struct MFXVPPPlugin : MFXCodecPlugin
 {
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) = 0;
+    virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task) = 0;
 };
+
+struct MFXEncPlugin : MFXCodecPlugin
+{
+    virtual mfxStatus EncFrameSubmit(mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task) = 0;
+};
+
+
 
 
 class MFXCoreInterface
@@ -221,6 +283,12 @@ public:
         }
         return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
     }
+    mfxStatus CreateAccelerationDevice(mfxHandleType type, mfxHDL *handle) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CreateAccelerationDevice(m_core.pthis, type, handle);
+    }
     mfxFrameAllocator & FrameAllocator() {
         return m_core.FrameAllocator;
     }
@@ -237,7 +305,12 @@ namespace detail
     protected:
         mfxPlugin m_mfxAPI;
     public:
-        MFXPluginAdapterBase( T *plugin, mfxVideoCodecPlugin *pCodec)
+        MFXPluginAdapterBase( T *plugin, mfxVideoCodecPlugin *pCodec = NULL)
+        {
+            SetupCallbacks(plugin, pCodec);
+        }
+
+        MFXPluginAdapterBase( T *plugin, mfxAudioCodecPlugin *pCodec)
         {
             SetupCallbacks(plugin, pCodec);
         }
@@ -245,8 +318,7 @@ namespace detail
         operator  mfxPlugin () const {
             return m_mfxAPI;
         }
-
-        void SetupCallbacks( T *plugin, mfxVideoCodecPlugin *pCodec) {
+        void SetupCallbacks(T *plugin) {
             m_mfxAPI.pthis = plugin;
             m_mfxAPI.PluginInit = _PluginInit;
             m_mfxAPI.PluginClose = _PluginClose;
@@ -254,9 +326,17 @@ namespace detail
             m_mfxAPI.Submit = 0;
             m_mfxAPI.Execute = _Execute;
             m_mfxAPI.FreeResources = _FreeResources;
+        }
+
+        void SetupCallbacks( T *plugin, mfxVideoCodecPlugin *pCodec) {
+            SetupCallbacks(plugin);
             m_mfxAPI.Video = pCodec;
         }
 
+        void SetupCallbacks( T *plugin, mfxAudioCodecPlugin *pCodec) {
+            SetupCallbacks(plugin);
+            m_mfxAPI.Audio = pCodec;
+        }
     private:
 
         static mfxStatus _PluginInit(mfxHDL pthis, mfxCoreInterface *core) {
@@ -334,6 +414,63 @@ namespace detail
         }
     };
 
+    template<class T>
+    class MFXAudioCodecPluginAdapterBase : public MFXPluginAdapterBase<T>
+    {
+    protected:
+        //stub to feed mediasdk plugin API
+        mfxAudioCodecPlugin   m_codecPlg;
+    public:
+        MFXAudioCodecPluginAdapterBase(T * pCodecPlg)
+            : MFXPluginAdapterBase<T>(pCodecPlg, &m_codecPlg)
+            , m_codecPlg()
+        {
+            m_codecPlg.Query = _Query;
+            m_codecPlg.QueryIOSize = _QueryIOSize ;
+            m_codecPlg.Init = _Init;
+            m_codecPlg.Reset = _Reset;
+            m_codecPlg.Close = _Close;
+            m_codecPlg.GetAudioParam = _GetAudioParam;
+        }
+        MFXAudioCodecPluginAdapterBase(const MFXCodecPluginAdapterBase<T> & that) 
+            : MFXPluginAdapterBase<T>(reinterpret_cast<T*>(that.m_mfxAPI.pthis), &m_codecPlg)
+            , m_codecPlg() {
+            SetupCallbacks();
+        }
+        MFXAudioCodecPluginAdapterBase<T>& operator = (const MFXAudioCodecPluginAdapterBase<T> & that) {
+            MFXPluginAdapterBase<T> :: SetupCallbacks(reinterpret_cast<T*>(that.m_mfxAPI.pthis), &m_codecPlg);
+            SetupCallbacks();
+            return *this;
+        }
+
+    private:
+        void SetupCallbacks() {
+            m_codecPlg.Query = _Query;
+            m_codecPlg.QueryIOSize = _QueryIOSize;
+            m_codecPlg.Init = _Init;
+            m_codecPlg.Reset = _Reset;
+            m_codecPlg.Close = _Close;
+            m_codecPlg.GetAudioParam = _GetAudioParam;
+        }
+        static mfxStatus _Query(mfxHDL pthis, mfxAudioParam *in, mfxAudioParam *out) {
+            return reinterpret_cast<T*>(pthis)->Query(in, out);
+        }
+        static mfxStatus _QueryIOSize(mfxHDL pthis, mfxAudioParam *par, mfxAudioAllocRequest *request){
+            return reinterpret_cast<T*>(pthis)->QueryIOSize(par, request);
+        }
+        static mfxStatus _Init(mfxHDL pthis, mfxAudioParam *par){
+            return reinterpret_cast<T*>(pthis)->Init(par);
+        }
+        static mfxStatus _Reset(mfxHDL pthis, mfxAudioParam *par){
+            return reinterpret_cast<T*>(pthis)->Reset(par);
+        }
+        static mfxStatus _Close(mfxHDL pthis) {
+            return reinterpret_cast<T*>(pthis)->Close();
+        }
+        static mfxStatus _GetAudioParam(mfxHDL pthis, mfxAudioParam *par) {
+            return reinterpret_cast<T*>(pthis)->GetAudioParam(par);
+        }
+    };
     
     template <class T>
     struct MFXPluginAdapterInternal{};
@@ -342,7 +479,7 @@ namespace detail
     {
     public:
         MFXPluginAdapterInternal(MFXGenericPlugin *pPlugin)
-            : MFXPluginAdapterBase<MFXGenericPlugin>(pPlugin, NULL)
+            : MFXPluginAdapterBase<MFXGenericPlugin>(pPlugin)
         {
             m_mfxAPI.Submit = _Submit;
         }
@@ -400,6 +537,43 @@ namespace detail
         }
     };
 
+    template<>
+    class MFXPluginAdapterInternal<MFXAudioDecoderPlugin> : public MFXAudioCodecPluginAdapterBase<MFXAudioDecoderPlugin>
+    {
+    public:
+        MFXPluginAdapterInternal(MFXAudioDecoderPlugin *pPlugin)
+            : MFXAudioCodecPluginAdapterBase<MFXAudioDecoderPlugin>(pPlugin)
+        {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+        : MFXAudioCodecPluginAdapterBase<MFXAudioDecoderPlugin>(that) {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal<MFXAudioDecoderPlugin>& operator = (const MFXPluginAdapterInternal<MFXAudioDecoderPlugin> & that) {
+            MFXAudioCodecPluginAdapterBase<MFXAudioDecoderPlugin>::operator=(that);
+            SetupCallbacks();
+            return *this;
+        }
+
+    private:
+        void SetupCallbacks() {
+            m_codecPlg.DecodeHeader = _DecodeHeader;
+//            m_codecPlg.GetPayload = _GetPayload;
+            m_codecPlg.DecodeFrameSubmit = _DecodeFrameSubmit;
+        }
+        static mfxStatus _DecodeHeader(mfxHDL pthis, mfxBitstream *bs, mfxAudioParam *par) {
+            return reinterpret_cast<MFXAudioDecoderPlugin*>(pthis)->DecodeHeader(bs, par);
+        }
+//        static mfxStatus _GetPayload(mfxHDL pthis, mfxU64 *ts, mfxPayload *payload) {
+  //          return reinterpret_cast<MFXAudioDecoderPlugin*>(pthis)->GetPayload(ts, payload);
+    //    }
+        static mfxStatus _DecodeFrameSubmit(mfxHDL pthis, mfxBitstream *in, mfxAudioFrame *out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXAudioDecoderPlugin*>(pthis)->DecodeFrameSubmit(in, out, task);
+        }
+    };
 
     template<>
     class MFXPluginAdapterInternal<MFXEncoderPlugin> : public MFXCodecPluginAdapterBase<MFXEncoderPlugin>
@@ -427,6 +601,62 @@ namespace detail
         }
     };
 
+    template<>
+    class MFXPluginAdapterInternal<MFXAudioEncoderPlugin> : public MFXAudioCodecPluginAdapterBase<MFXAudioEncoderPlugin>
+    {
+    public:
+        MFXPluginAdapterInternal(MFXAudioEncoderPlugin *pPlugin)
+            : MFXAudioCodecPluginAdapterBase<MFXAudioEncoderPlugin>(pPlugin)
+        {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+        : MFXAudioCodecPluginAdapterBase<MFXAudioEncoderPlugin>(that) {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal<MFXAudioEncoderPlugin>& operator = (const MFXPluginAdapterInternal<MFXAudioEncoderPlugin> & that) {
+            MFXAudioCodecPluginAdapterBase<MFXAudioEncoderPlugin>::operator=(that);
+            SetupCallbacks();
+            return *this;
+        }
+
+    private:
+        void SetupCallbacks() {
+            m_codecPlg.EncodeFrameSubmit = _EncodeFrameSubmit;
+        }
+        static mfxStatus _EncodeFrameSubmit(mfxHDL pthis, mfxAudioFrame *aFrame, mfxBitstream *out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXAudioEncoderPlugin*>(pthis)->EncodeFrameSubmit(aFrame, out, task);
+        }
+    };
+
+    template<>
+    class MFXPluginAdapterInternal<MFXEncPlugin> : public MFXCodecPluginAdapterBase<MFXEncPlugin>
+    {
+    public:
+        MFXPluginAdapterInternal(MFXEncPlugin *pPlugin)
+            : MFXCodecPluginAdapterBase<MFXEncPlugin>(pPlugin)
+        {
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+        }
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+            : MFXCodecPluginAdapterBase<MFXEncPlugin>(that) {
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+        }
+
+        MFXPluginAdapterInternal<MFXEncPlugin>& operator = (const MFXPluginAdapterInternal<MFXEncPlugin> & that) {
+            MFXCodecPluginAdapterBase<MFXEncPlugin>::operator = (that);
+            m_codecPlg.ENCFrameSubmit = _ENCFrameSubmit;
+            return *this;
+        }
+
+    private:
+        static mfxStatus _ENCFrameSubmit(mfxHDL pthis,mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXEncPlugin*>(pthis)->EncFrameSubmit(in, out, task);
+        }
+    };
+
 
     template<>
     class MFXPluginAdapterInternal<MFXVPPPlugin> : public MFXCodecPluginAdapterBase<MFXVPPPlugin>
@@ -435,22 +665,29 @@ namespace detail
         MFXPluginAdapterInternal(MFXVPPPlugin *pPlugin)
             : MFXCodecPluginAdapterBase<MFXVPPPlugin>(pPlugin)
         {
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
         }
         MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
             : MFXCodecPluginAdapterBase<MFXVPPPlugin>(that) {
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
         }
 
         MFXPluginAdapterInternal<MFXVPPPlugin>& operator = (const MFXPluginAdapterInternal<MFXVPPPlugin> & that) {
             MFXCodecPluginAdapterBase<MFXVPPPlugin>::operator = (that);
-            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            SetupCallbacks();
             return *this;
         }
 
     private:
+        void SetupCallbacks() {
+            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            m_codecPlg.VPPFrameSubmitEx = _VPPFrameSubmitEx;
+        }
         static mfxStatus _VPPFrameSubmit(mfxHDL pthis, mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) {
             return reinterpret_cast<MFXVPPPlugin*>(pthis)->VPPFrameSubmit(surface_in, surface_out, aux, task);
+        }
+        static mfxStatus _VPPFrameSubmitEx(mfxHDL pthis, mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task) {
+            return reinterpret_cast<MFXVPPPlugin*>(pthis)->VPPFrameSubmitEx(surface_in, surface_work, surface_out, task);
         }
     };
 }

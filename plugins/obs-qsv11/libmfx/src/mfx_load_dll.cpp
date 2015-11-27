@@ -70,29 +70,29 @@ wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin32_hw.dll",
 
 #if defined(_WIN64)
 const
-wchar_t * const defaultDLLName[2] = {L"libmfxhw64.dll",
-                                     L"libmfxsw64.dll"};
+wchar_t * const defaultDLLName[2] = {L"libmfxhw64_d.dll",
+                                     L"libmfxsw64_d.dll"};
 const
-wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64.dll",
-                                          L"libmfxaudiosw64.dll"};
+wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64_d.dll",
+                                          L"libmfxaudiosw64_d.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin64_hw.dll",
-                                            L"mfxplugin64_sw.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin64_hw_d.dll",
+                                            L"mfxplugin64_sw_d.dll"};
 
 #elif defined(WIN32)
 const
-wchar_t * const defaultDLLName[2] = {L"libmfxhw32.dll",
-                                     L"libmfxsw32.dll"};
+wchar_t * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
+                                     L"libmfxsw32_d.dll"};
 
 
 const
-wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32.dll",
-                                          L"libmfxaudiosw32.dll"};
+wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
+                                          L"libmfxaudiosw32_d.dll"};
 
 const 
-wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin32_hw.dll",
-                                            L"mfxplugin32_sw.dll"};
+wchar_t  * const defaultPluginDLLName[2] = {L"mfxplugin32_hw_d.dll",
+                                            L"mfxplugin32_sw_d.dll"};
 
 #endif // (defined(_WIN64))
 
@@ -173,7 +173,7 @@ mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
     // load the library's module
-    hModule = LoadLibraryW(pFileName);
+    hModule = LoadLibraryExW(pFileName,NULL,0);
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
@@ -220,7 +220,7 @@ mfxModuleHandle mfx_get_dll_handle(const msdk_disp_char *pFileName)
     // set the silent error mode
     DWORD prevErrorMode = 0;
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
-    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode); 
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif

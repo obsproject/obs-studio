@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -33,6 +33,8 @@ File Name: mfxvideo++.h
 #define __MFXVIDEOPLUSPLUS_H
 
 #include "mfxvideo.h"
+#include "mfxenc.h"
+#include "mfxpak.h"
 
 class MFXVideoSession
 {
@@ -41,6 +43,7 @@ public:
     virtual ~MFXVideoSession(void) { Close(); }
 
     virtual mfxStatus Init(mfxIMPL impl, mfxVersion *ver) { return MFXInit(impl, ver, &m_session); }
+    virtual mfxStatus InitEx(mfxInitParam par) { return MFXInitEx(par, &m_session); }
     virtual mfxStatus Close(void)
     {
         mfxStatus mfxRes;
@@ -63,6 +66,8 @@ public:
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *hdl) { return MFXVideoCORE_GetHandle(m_session, type, hdl); }
 
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
+
+    virtual mfxStatus DoWork() { return MFXDoWork(m_session); }
 
     virtual operator mfxSession (void) { return m_session; }
 
@@ -139,6 +144,50 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoVPP_GetVideoParam(m_session, par); }
     virtual mfxStatus GetVPPStat(mfxVPPStat *stat) { return MFXVideoVPP_GetVPPStat(m_session, stat); }
     virtual mfxStatus RunFrameVPPAsync(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) { return MFXVideoVPP_RunFrameVPPAsync(m_session, in, out, aux, syncp); }
+    virtual mfxStatus RunFrameVPPAsyncEx(mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxFrameSurface1 **out, mfxSyncPoint *syncp) {return MFXVideoVPP_RunFrameVPPAsyncEx(m_session, in, work, out, syncp); }
+
+protected:
+
+    mfxSession m_session;                                       // (mfxSession) handle to the owning session
+};
+
+class MFXVideoENC
+{
+public:
+
+    MFXVideoENC(mfxSession session) { m_session = session; }
+    virtual ~MFXVideoENC(void) { Close(); }
+
+    virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return MFXVideoENC_Query(m_session, in, out); }
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) { return MFXVideoENC_QueryIOSurf(m_session, par, request); }
+    virtual mfxStatus Init(mfxVideoParam *par) { return MFXVideoENC_Init(m_session, par); }
+    virtual mfxStatus Reset(mfxVideoParam *par) { return MFXVideoENC_Reset(m_session, par); }
+    virtual mfxStatus Close(void) { return MFXVideoENC_Close(m_session); }
+
+    virtual mfxStatus ProcessFrameAsync(mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) { return MFXVideoENC_ProcessFrameAsync(m_session, in, out, syncp); }
+
+protected:
+
+    mfxSession m_session;                                       // (mfxSession) handle to the owning session
+};
+
+class MFXVideoPAK
+{
+public:
+
+    MFXVideoPAK(mfxSession session) { m_session = session; }
+    virtual ~MFXVideoPAK(void) { Close(); }
+
+    virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return MFXVideoPAK_Query(m_session, in, out); }
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) { return MFXVideoPAK_QueryIOSurf(m_session, par, request); }
+    virtual mfxStatus Init(mfxVideoParam *par) { return MFXVideoPAK_Init(m_session, par); }
+    virtual mfxStatus Reset(mfxVideoParam *par) { return MFXVideoPAK_Reset(m_session, par); }
+    virtual mfxStatus Close(void) { return MFXVideoPAK_Close(m_session); }
+
+    //virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoENCODE_GetVideoParam(m_session, par); }
+    //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
+
+    virtual mfxStatus ProcessFrameAsync(mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp) { return MFXVideoPAK_ProcessFrameAsync(m_session, in, out, syncp); }
 
 protected:
 

@@ -216,10 +216,16 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
     {
         case MFX_PLUGINTYPE_VIDEO_DECODE: 
             return VerifyDecoder(*plg.Video);
-        case MFX_PLUGINTYPE_VIDEO_ENCODE: 
+        case MFX_PLUGINTYPE_AUDIO_DECODE: 
+            return VerifyAudioDecoder(*plg.Audio);
+        case MFX_PLUGINTYPE_VIDEO_ENCODE:        
             return VerifyEncoder(*plg.Video);
+        case MFX_PLUGINTYPE_AUDIO_ENCODE:        
+            return VerifyAudioEncoder(*plg.Audio);
         case MFX_PLUGINTYPE_VIDEO_VPP: 
-            return VerifyVpp(*plg.Video);        
+            return VerifyVpp(*plg.Video); 
+        case MFX_PLUGINTYPE_VIDEO_ENC:
+            return VerifyEnc(*plg.Video);
         default: 
         {
             TRACE_PLUGIN_ERROR("unsupported plugin type: %d\n", pluginParams.Type);
@@ -251,6 +257,28 @@ bool MFX::MFXPluginFactory::VerifyEncoder( const mfxVideoCodecPlugin &encoder )
     return true;
 }
 
+bool MFX::MFXPluginFactory::VerifyAudioEncoder( const mfxAudioCodecPlugin &encoder )
+{
+    if (encoder.EncodeFrameSubmit == 0)
+    {
+        TRACE_PLUGIN_ERROR("plg->Audio->EncodeFrameSubmit = 0\n", 0);
+        return false;
+    }
+    
+    return true;
+}
+
+bool MFX::MFXPluginFactory::VerifyEnc( const mfxVideoCodecPlugin &videoEnc )
+{
+    if (videoEnc.ENCFrameSubmit == 0)
+    {
+        TRACE_PLUGIN_ERROR("plg->Video->EncodeFrameSubmit = 0\n", 0);
+        return false;
+    }
+
+    return true;
+}
+
 bool MFX::MFXPluginFactory::VerifyDecoder( const mfxVideoCodecPlugin &decoder )
 {
     if (decoder.DecodeHeader == 0) 
@@ -266,6 +294,27 @@ bool MFX::MFXPluginFactory::VerifyDecoder( const mfxVideoCodecPlugin &decoder )
     if (decoder.DecodeFrameSubmit == 0)
     {
         TRACE_PLUGIN_ERROR("plg->Video->DecodeFrameSubmit = 0\n", 0);
+        return false;
+    }
+
+    return true;
+}
+
+bool MFX::MFXPluginFactory::VerifyAudioDecoder( const mfxAudioCodecPlugin &decoder )
+{
+    if (decoder.DecodeHeader == 0) 
+    {
+        TRACE_PLUGIN_ERROR("plg->Audio->DecodeHeader = 0\n", 0);
+        return false;
+    }
+//    if (decoder.GetPayload == 0)
+    {
+  //      TRACE_PLUGIN_ERROR("plg->Audio->GetPayload = 0\n", 0);
+    //    return false;
+    }
+    if (decoder.DecodeFrameSubmit == 0)
+    {
+        TRACE_PLUGIN_ERROR("plg->Audio->DecodeFrameSubmit = 0\n", 0);
         return false;
     }
 
@@ -330,12 +379,26 @@ mfxStatus MFX::MFXPluginFactory::Create(const PluginDescriptionRecord & rec)
         //will do not call plugin close since it is not safe to do that until structure is corrected
         return MFX_ERR_UNKNOWN;
     }
-    
-    mfxStatus sts = MFXVideoUSER_Register(mSession, plgParams.Type, &plg);
-    if (MFX_ERR_NONE != sts) 
+
+   
+    if (rec.Type == MFX_PLUGINTYPE_AUDIO_DECODE ||
+        rec.Type == MFX_PLUGINTYPE_AUDIO_ENCODE)
     {
-        TRACE_PLUGIN_ERROR(" MFXVideoUSER_Register returned %d\n", sts);
-        return sts;
+        mfxStatus sts = MFXAudioUSER_Register(mSession, plgParams.Type, &plg);
+        if (MFX_ERR_NONE != sts) 
+        {
+            TRACE_PLUGIN_ERROR(" MFXAudioUSER_Register returned %d\n", sts);
+            return sts;
+        }
+    }
+    else
+    {
+        mfxStatus sts = MFXVideoUSER_Register(mSession, plgParams.Type, &plg);
+        if (MFX_ERR_NONE != sts) 
+        {
+            TRACE_PLUGIN_ERROR(" MFXVideoUSER_Register returned %d\n", sts);
+            return sts;
+        }
     }
     
     mPlugins.push_back(FactoryRecord(plgParams, plgModule, plg));
@@ -380,7 +443,16 @@ void MFX::MFXPluginFactory::Close()
 
 void MFX::MFXPluginFactory::DestroyPlugin( FactoryRecord & record)
 {
-    mfxStatus sts = MFXVideoUSER_Unregister(mSession, record.plgParams.Type);
-    sts;
-    TRACE_PLUGIN_INFO(" MFXVideoUSER_Unregister for Type=%d, returned %d\n", record.plgParams.Type, sts);
+    mfxStatus sts;
+    if (record.plgParams.Type == MFX_PLUGINTYPE_AUDIO_DECODE ||
+        record.plgParams.Type == MFX_PLUGINTYPE_AUDIO_ENCODE)
+    {
+        sts = MFXAudioUSER_Unregister(mSession, record.plgParams.Type);
+        TRACE_PLUGIN_INFO(" MFXAudioUSER_Unregister for Type=%d, returned %d\n", record.plgParams.Type, sts);
+    }
+    else
+    {
+        sts = MFXVideoUSER_Unregister(mSession, record.plgParams.Type);
+        TRACE_PLUGIN_INFO(" MFXVideoUSER_Unregister for Type=%d, returned %d\n", record.plgParams.Type, sts);
+    }
 }

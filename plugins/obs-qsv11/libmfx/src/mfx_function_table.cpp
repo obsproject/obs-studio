@@ -51,6 +51,8 @@ FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
     {"MFXCloneSession", {{1, 1}}},
     {"MFXSetPriority", {{1, 1}}},
     {"MFXGetPriority", {{1, 1}}},
+    
+    {"MFXInitEx", {{1, 14}}},
 
 #include "mfx_exposed_functions_list.h"
 };

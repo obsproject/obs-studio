@@ -66,3 +66,16 @@ FUNCTION(mfxStatus, MFXAudioDECODE_GetAudioParam, (mfxSession session, mfxAudioP
 FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxAudioFrame *frame_out, mfxSyncPoint *syncp), (session, bs, frame_out, syncp))
 
 #undef API_VERSION
+
+//
+// API version 1.9 functions
+//
+
+#define API_VERSION {{9, 1}}
+
+FUNCTION(mfxStatus, MFXAudioUSER_Register, (mfxSession session, mfxU32 type, const mfxPlugin *par), (session, type, par))
+FUNCTION(mfxStatus, MFXAudioUSER_Unregister, (mfxSession session, mfxU32 type), (session, type))
+FUNCTION(mfxStatus, MFXAudioUSER_ProcessFrameAsync, (mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp), (session, in, in_num, out, out_num, syncp))
+
+
+#undef API_VERSION
