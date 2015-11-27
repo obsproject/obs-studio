@@ -117,15 +117,42 @@ static bool config_parse_string(struct lexer *lex, struct strref *ref,
 	return success;
 }
 
+static void unescape(struct dstr *str)
+{
+	char *read = str->array;
+	char *write = str->array;
+
+	for (; *read; read++, write++) {
+		char cur = *read;
+		if (cur == '\\') {
+			char next = read[1];
+			if (next == '\\') {
+				read++;
+			} else if (next == 'r') {
+				cur = '\r';
+				read++;
+			} else if (next =='n') {
+				cur = '\n';
+				read++;
+			}
+		}
+
+		if (read != write)
+			*write = cur;
+	}
+
+	if (read != write)
+		*write = '\0';
+}
+
 static void config_add_item(struct darray *items, struct strref *name,
 		struct strref *value)
 {
 	struct config_item item;
 	struct dstr item_value;
 	dstr_init_copy_strref(&item_value, value);
-	dstr_replace(&item_value, "\\n", "\n");
-	dstr_replace(&item_value, "\\r", "\r");
-	dstr_replace(&item_value, "\\\\", "\\");
+
+	unescape(&item_value);
 
 	item.name  = bstrdup_n(name->array,  name->len);
 	item.value = item_value.array;
