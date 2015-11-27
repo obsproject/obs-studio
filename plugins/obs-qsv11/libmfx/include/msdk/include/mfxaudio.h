@@ -34,7 +34,7 @@ File Name: mfxaudio.h
 #include "mfxastructures.h"
 
 #define MFX_AUDIO_VERSION_MAJOR 1
-#define MFX_AUDIO_VERSION_MINOR 8
+#define MFX_AUDIO_VERSION_MINOR 15
 
 #ifdef __cplusplus
 extern "C"

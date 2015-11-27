@@ -87,7 +87,9 @@ enum
 };
 #endif
 
-mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID);
+// Try to initialize using given implementation type. Select appropriate type automatically in case of MFX_IMPL_VIA_ANY.
+// Params: adapterNum - in, pImplInterface - in/out, pVendorID - out, pDeviceID - out
+mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID);
 
 class MFXLibraryIterator
 {
@@ -137,12 +139,13 @@ protected:
     mfxU32 m_lastLibIndex;                                      // (mfxU32) index of previously returned library
     mfxU32 m_lastLibMerit;                                      // (mfxU32) merit of previously returned library
 #else
-    int m_lastLibIndex;                                      // (mfxU32) index of previously returned library
+    int                       m_lastLibIndex;                   // (mfxU32) index of previously returned library
 
-    mfxU32 m_adapters_num;
+    mfxU32                    m_adapters_num;
     struct mfx_disp_adapters* m_adapters;
-    mfxU32 m_libs_num;
-    struct mfx_libs* m_libs;
+    int                       m_selected_adapter;
+    mfxU32                    m_libs_num;
+    struct mfx_libs*          m_libs;
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
     msdk_disp_char  m_path[260];

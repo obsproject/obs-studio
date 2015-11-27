@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,11 @@ File Name: mfx_dispatcher.h
 #include <stddef.h>
 #include "mfx_dispatcher_defs.h"
 #include "mfx_load_plugin.h"
+#include "mfxenc.h"
+#include "mfxpak.h"
+
+
+mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version);
 
 enum
 {
@@ -65,6 +70,7 @@ enum eFunc
     eMFXCloneSession,
     eMFXSetPriority,
     eMFXGetPriority,
+    eMFXInitEx,
 #include "mfx_exposed_functions_list.h"
     eVideoFuncTotal
 };
@@ -114,7 +120,7 @@ struct MFX_DISP_HANDLE
     ~MFX_DISP_HANDLE(void);
 
     // Load the library's module
-    mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface);
+    mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxInitParam &par);
     // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 

@@ -111,12 +111,12 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 
     // set the silent error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
-    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode); 
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
     // load specified library
-    m_hModule = LoadLibraryW(pModuleName);
+	m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)

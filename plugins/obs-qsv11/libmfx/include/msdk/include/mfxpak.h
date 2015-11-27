@@ -1,6 +1,6 @@
-/*******************************************************************************
+/******************************************************************************* *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -24,37 +24,55 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-File Name: mfxsession.h
+File Name: mfxpak.h
 
 *******************************************************************************/
-#ifndef __MFXSESSION_H__
-#define __MFXSESSION_H__
-#include "mfxcommon.h"
+#ifndef __MFXPAK_H__
+#define __MFXPAK_H__
+#include "mfxdefs.h"
+#include "mfxvstructures.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
-/* Global Functions */
+typedef struct {
+    mfxU32  reserved[32];
+
+    mfxFrameSurface1 *InSurface;
+
+    mfxU16  NumFrameL0;
+    mfxFrameSurface1 **L0Surface;
+    mfxU16  NumFrameL1;
+    mfxFrameSurface1 **L1Surface;
+
+    mfxU16  NumExtParam;
+    mfxExtBuffer    **ExtParam;
+} mfxPAKInput;
+
+typedef struct {
+    mfxBitstream     *Bs; 
+
+    mfxFrameSurface1 *OutSurface;
+
+    mfxU16            NumExtParam;
+    mfxExtBuffer    **ExtParam;
+} mfxPAKOutput;
+
 typedef struct _mfxSession *mfxSession;
-mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
-mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session);
-mfxStatus MFX_CDECL MFXClose(mfxSession session);
+mfxStatus MFX_CDECL MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);
+mfxStatus MFX_CDECL MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
+mfxStatus MFX_CDECL MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par);
+mfxStatus MFX_CDECL MFXVideoPAK_Reset(mfxSession session, mfxVideoParam *par);
+mfxStatus MFX_CDECL MFXVideoPAK_Close(mfxSession session);
 
-mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
-mfxStatus MFX_CDECL MFXQueryVersion(mfxSession session, mfxVersion *version);
+mfxStatus MFX_CDECL MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out,  mfxSyncPoint *syncp);
 
-mfxStatus MFX_CDECL MFXJoinSession(mfxSession session, mfxSession child);
-mfxStatus MFX_CDECL MFXDisjoinSession(mfxSession session);
-mfxStatus MFX_CDECL MFXCloneSession(mfxSession session, mfxSession *clone);
-mfxStatus MFX_CDECL MFXSetPriority(mfxSession session, mfxPriority priority);
-mfxStatus MFX_CDECL MFXGetPriority(mfxSession session, mfxPriority *priority);
-mfxStatus MFX_CDECL MFXDoWork(mfxSession session);
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif /* __cplusplus */
 
-#endif
 
+#endif

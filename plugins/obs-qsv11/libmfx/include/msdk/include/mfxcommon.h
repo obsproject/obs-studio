@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,7 +31,9 @@ File Name: mfxcommon.h
 #define __MFXCOMMON_H__
 #include "mfxdefs.h"
 
+#if !defined (__GNUC__)
 #pragma warning(disable: 4201)
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -113,6 +115,41 @@ typedef struct {
 } mfxBitstream;
 
 typedef struct _mfxSyncPoint *mfxSyncPoint;
+
+/* GPUCopy */
+enum {
+    MFX_GPUCOPY_DEFAULT = 0,
+    MFX_GPUCOPY_ON      = 1,
+    MFX_GPUCOPY_OFF     = 2
+};
+
+typedef struct {
+    mfxIMPL     Implementation;
+    mfxVersion  Version;
+    mfxU16      ExternalThreads;
+    union {
+        struct {
+            mfxExtBuffer **ExtParam;
+            mfxU16  NumExtParam;
+        };
+        mfxU16  reserved2[5];
+    };
+    mfxU16      GPUCopy;
+    mfxU16      reserved[21];
+} mfxInitParam;
+
+enum {
+    MFX_EXTBUFF_THREADS_PARAM = MFX_MAKEFOURCC('T','H','D','P')
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       NumThread;
+    mfxI32       SchedulingType;
+    mfxI32       Priority;
+    mfxU16       reserved[55];
+} mfxExtThreadsParam;
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@ File Name: mfx_dispatcher_defs.h
 
 #pragma once
 #include "mfxdefs.h"
+#include <cstring>
 
 #if defined(MFX_DISPATCHER_LOG)
 #include <string>
@@ -48,7 +49,15 @@ typedef wchar_t  msdk_disp_char;
 
 #else
 typedef char msdk_disp_char;
-#define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
+//#define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
+
+inline void msdk_disp_char_cpy_s(char * to, size_t to_size, const char * from)
+{
+    size_t source_len = strlen(from);
+    size_t num_chars = (to_size - 1) < source_len ? (to_size - 1) : source_len;
+    strncpy(to, from, num_chars);
+    to[num_chars] = 0;
+}
 
 #if defined(MFX_DISPATCHER_LOG)
 #define MSDK2WIDE(x) getWideString(x).c_str()
@@ -74,10 +83,3 @@ inline std::wstring getWideString(const char * string)
 typedef void * mfxModuleHandle;
 
 typedef void (MFX_CDECL * mfxFunctionPointer)(void);
-
-
-#if !defined (MFX_DISPATCHER_EXPOSED_PREFIX)
-#define DISPATCHER_EXPOSED_PREFIX(fnc) fnc 
-#else
-#define DISPATCHER_EXPOSED_PREFIX(fnc) _##fnc 
-#endif
