@@ -21,4 +21,4 @@
 
 /* time threshold in nanoseconds to ensure audio timing is as seamless as
  * possible */
-#define TS_SMOOTHING_THRESHOLD 50000000ULL
+#define TS_SMOOTHING_THRESHOLD 70000000ULL
