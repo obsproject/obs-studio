@@ -1412,11 +1412,8 @@ static inline void obs_source_main_render(obs_source_t *source)
 
 static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
 
-void obs_source_video_render(obs_source_t *source)
+static inline void render_video(obs_source_t *source)
 {
-	if (!obs_source_valid(source, "obs_source_video_render"))
-		return;
-
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER &&
 	    (source->info.output_flags & OBS_SOURCE_VIDEO) == 0)
 		return;
@@ -1443,6 +1440,16 @@ void obs_source_video_render(obs_source_t *source)
 
 	else
 		obs_source_render_async_video(source);
+}
+
+void obs_source_video_render(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_video_render"))
+		return;
+
+	obs_source_addref(source);
+	render_video(source);
+	obs_source_release(source);
 }
 
 static uint32_t get_base_width(const obs_source_t *source)
