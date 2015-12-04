@@ -34,7 +34,8 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 	 * context when it's actually a d3d11 context.  Why this is I don't
 	 * quite know. */
 	if (_strcmpi(process_name, "iw6sp64_ship.exe") == 0 ||
-	    _strcmpi(process_name, "iw6mp64_ship.exe") == 0) {
+	    _strcmpi(process_name, "iw6mp64_ship.exe") == 0 ||
+	    _strcmpi(process_name, "justcause3.exe") == 0) {
 		ignore_d3d10 = true;
 	}
 
