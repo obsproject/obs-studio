@@ -60,11 +60,21 @@
 
 using namespace std;
 
+namespace {
+
+template <typename OBSRef>
+struct SignalContainer {
+	OBSRef ref;
+	vector<shared_ptr<OBSSignal>> handlers;
+};
+
+}
+
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
-Q_DECLARE_METATYPE(std::vector<std::shared_ptr<OBSSignal>>);
+Q_DECLARE_METATYPE(SignalContainer<OBSScene>);
 
 template <typename T>
 static T GetOBSRef(QListWidgetItem *item)
@@ -1325,7 +1335,9 @@ void OBSBasic::AddScene(OBSSource source)
 
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
 
-	std::vector<std::shared_ptr<OBSSignal>> handlers{
+	SignalContainer<OBSScene> container;
+	container.ref = scene;
+	container.handlers.assign({
 		std::make_shared<OBSSignal>(handler, "item_add",
 					OBSBasic::SceneItemAdded, this),
 		std::make_shared<OBSSignal>(handler, "item_remove",
@@ -1336,10 +1348,10 @@ void OBSBasic::AddScene(OBSSource source)
 					OBSBasic::SceneItemDeselected, this),
 		std::make_shared<OBSSignal>(handler, "reorder",
 					OBSBasic::SceneReordered, this),
-	};
+	});
 
 	item->setData(static_cast<int>(QtDataRole::OBSSignals),
-			QVariant::fromValue(handlers));
+			QVariant::fromValue(container));
 
 	/* if the scene already has items (a duplicated scene) add them */
 	auto addSceneItem = [this] (obs_sceneitem_t *item)
