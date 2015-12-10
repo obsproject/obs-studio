@@ -728,6 +728,9 @@ static void gl_capture(HDC hdc)
 		}
 	}
 
+	/* reset error flag */
+	glGetError();
+
 	if (capture_should_stop()) {
 		gl_free();
 	}
