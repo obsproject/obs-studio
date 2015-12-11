@@ -2723,7 +2723,7 @@ void obs_source_load(obs_source_t *source)
 const char* obs_start_source(obs_source_t *source)
 {
     const char *source_name = source->info.get_name(source);
-    if (!source_valid(source)){
+    if (!data_valid(source, "obs_start_source")){
         char error[256];
         sprintf(error,"source %s not valid",source_name);
         return error;
@@ -2740,7 +2740,7 @@ const char* obs_start_source(obs_source_t *source)
 
 void obs_stop_source(obs_source_t *source)
 {
-    if (!source_valid(source) || !source->info.stop) return;
+    if (!data_valid(source, "obs_stop_source") || !source->info.stop) return;
     source->info.stop(source->context.data, source->context.settings);
 }
 
