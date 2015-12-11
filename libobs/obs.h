@@ -566,6 +566,17 @@ EXPORT void obs_load_sources(obs_data_array_t *array);
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);
 
+/** Starts sources. */
+EXPORT const char* obs_start_source(obs_source_t *source);
+
+/** Stops sources. */
+EXPORT void obs_stop_source(obs_source_t *source);
+
+/** Starts sources. */
+EXPORT const char* obs_start_sources(void);
+
+/** Stops sources. */
+EXPORT void obs_stop_sources(void);
 
 /* ------------------------------------------------------------------------- */
 /* View context */
