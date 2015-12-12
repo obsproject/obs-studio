@@ -1360,6 +1360,13 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 	return NULL;
 }
 
+/* DEPRECATED */
+gs_effect_t *obs_get_default_rect_effect(void)
+{
+	if (!obs) return NULL;
+	return obs->video.default_rect_effect;
+}
+
 signal_handler_t *obs_get_signal_handler(void)
 {
 	if (!obs) return NULL;
