@@ -1543,14 +1543,6 @@ void OBSBasicSettings::LoadAudioSources()
 		return true;
 	};
 
-	for (int i = 0; i < MAX_CHANNELS; i++) {
-		obs_source_t *source = obs_get_output_source(i);
-		if (!source) continue;
-
-		AddSource(source);
-		obs_source_release(source);
-	}
-
 	using AddSource_t = decltype(AddSource);
 	obs_enum_sources([](void *data, obs_source_t *source)
 	{
