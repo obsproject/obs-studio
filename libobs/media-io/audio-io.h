@@ -19,6 +19,7 @@
 
 #include "media-io-defs.h"
 #include "../util/c99defs.h"
+#include "../util/util_uint128.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,6 +166,24 @@ static inline size_t get_audio_size(enum audio_format format,
 	return (planar ? 1 : get_audio_channels(speakers)) *
 	       get_audio_bytes_per_channel(format) *
 	       frames;
+}
+
+static inline uint64_t audio_frames_to_ns(size_t sample_rate,
+		uint64_t frames)
+{
+	util_uint128_t val;
+	val = util_mul64_64(frames, 1000000000ULL);
+	val = util_div128_32(val, (uint32_t)sample_rate);
+	return val.low;
+}
+
+static inline uint64_t ns_to_audio_frames(size_t sample_rate,
+		uint64_t frames)
+{
+	util_uint128_t val;
+	val = util_mul64_64(frames, sample_rate);
+	val = util_div128_32(val, 1000000000ULL);
+	return val.low;
 }
 
 #define AUDIO_OUTPUT_SUCCESS       0
