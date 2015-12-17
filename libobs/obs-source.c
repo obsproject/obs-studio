@@ -165,6 +165,7 @@ bool obs_source_init(struct obs_source *source,
 
 	source->control = bzalloc(sizeof(obs_weak_source_t));
 	source->control->source = source;
+	source->audio_mixers = 0xF;
 
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
@@ -2776,15 +2777,13 @@ uint32_t obs_source_get_flags(const obs_source_t *source)
 void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
 {
 	struct calldata data = {0};
-	uint32_t cur_mixers;
 
 	if (!obs_source_valid(source, "obs_source_set_audio_mixers"))
 		return;
 	if ((source->info.output_flags & OBS_SOURCE_AUDIO) == 0)
 		return;
 
-	cur_mixers = audio_line_get_mixers(source->audio_line);
-	if (cur_mixers == mixers)
+	if (source->audio_mixers == mixers)
 		return;
 
 	calldata_set_ptr(&data, "source", source);
@@ -2795,7 +2794,7 @@ void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
 	mixers = (uint32_t)calldata_int(&data, "mixers");
 	calldata_free(&data);
 
-	audio_line_set_mixers(source->audio_line, mixers);
+	source->audio_mixers = mixers;
 }
 
 uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
@@ -2805,7 +2804,7 @@ uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
 	if ((source->info.output_flags & OBS_SOURCE_AUDIO) == 0)
 		return 0;
 
-	return audio_line_get_mixers(source->audio_line);
+	return source->audio_mixers;
 }
 
 void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix,
