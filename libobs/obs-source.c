@@ -132,9 +132,18 @@ static void allocate_audio_output_buffer(struct obs_source *source)
 	}
 }
 
+static inline bool is_audio_source(const struct obs_source *source)
+{
+	return source->info.output_flags & OBS_SOURCE_AUDIO;
+}
+
+static inline bool is_composite_source(const struct obs_source *source)
+{
+	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
+}
+
 /* internal initialization */
-bool obs_source_init(struct obs_source *source,
-		const struct obs_source_info *info)
+bool obs_source_init(struct obs_source *source)
 {
 	pthread_mutexattr_t attr;
 
@@ -158,9 +167,10 @@ bool obs_source_init(struct obs_source *source,
 	if (pthread_mutex_init(&source->async_mutex, NULL) != 0)
 		return false;
 
-	if (info && info->output_flags & OBS_SOURCE_AUDIO) {
+	if (is_audio_source(source) || is_composite_source(source))
 		allocate_audio_output_buffer(source);
 
+	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
 
 		source->next_audio_source = obs->data.first_audio_source;
@@ -303,7 +313,7 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 	if (info && info->get_defaults)
 		info->get_defaults(source->context.settings);
 
-	if (!obs_source_init(source, info))
+	if (!obs_source_init(source))
 		goto fail;
 
 	obs_source_init_audio_hotkeys(source);

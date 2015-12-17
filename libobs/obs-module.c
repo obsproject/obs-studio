@@ -546,6 +546,27 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		goto error;
 	}
 
+	memcpy(&data, info, size);
+
+	/* mark audio-only filters as an async filter categorically */
+	if (data.type == OBS_SOURCE_TYPE_FILTER) {
+		if ((data.output_flags & OBS_SOURCE_VIDEO) == 0)
+			data.output_flags |= OBS_SOURCE_ASYNC;
+	}
+
+	if ((data.output_flags & OBS_SOURCE_COMPOSITE) != 0) {
+		if ((data.output_flags & OBS_SOURCE_AUDIO) != 0) {
+			blog(LOG_WARNING, "Source '%s': Composite sources "
+					"cannot be audio sources", info->id);
+			goto error;
+		}
+		if ((data.output_flags & OBS_SOURCE_ASYNC) != 0) {
+			blog(LOG_WARNING, "Source '%s': Composite sources "
+					"cannot be async sources", info->id);
+			goto error;
+		}
+	}
+
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_source_info, info, val, func)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_source);
@@ -557,6 +578,10 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	    (info->output_flags & OBS_SOURCE_ASYNC) == 0) {
 		CHECK_REQUIRED_VAL_(info, get_width,  obs_register_source);
 		CHECK_REQUIRED_VAL_(info, get_height, obs_register_source);
+	}
+
+	if ((info->output_flags & OBS_SOURCE_COMPOSITE) != 0) {
+		CHECK_REQUIRED_VAL_(info, audio_render, obs_register_source);
 	}
 #undef CHECK_REQUIRED_VAL_
 
