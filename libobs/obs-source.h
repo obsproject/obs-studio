@@ -108,6 +108,10 @@ enum obs_source_type {
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
 		obs_source_t *child, void *param);
 
+struct obs_source_audio_mix {
+	struct audio_output_data output[MAX_AUDIO_MIXES];
+};
+
 /**
  * Source definition structure
  */
