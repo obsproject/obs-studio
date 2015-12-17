@@ -492,6 +492,7 @@ struct obs_source {
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;
 	uint64_t                        next_audio_ts_min;
+	uint64_t                        next_audio_sys_ts_min;
 	uint64_t                        last_frame_ts;
 	uint64_t                        last_sys_timestamp;
 	bool                            async_rendered;
@@ -501,9 +502,12 @@ struct obs_source {
 	bool                            muted;
 	struct obs_source               *next_audio_source;
 	struct obs_source               **prev_next_audio_source;
+	uint64_t                        audio_ts;
+	struct circlebuf                audio_input_buf[MAX_AUDIO_CHANNELS];
+	float                           *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
 	struct resample_info            sample_info;
 	audio_resampler_t               *resampler;
-	audio_line_t                    *audio_line;
+	pthread_mutex_t                 audio_buf_mutex;
 	pthread_mutex_t                 audio_mutex;
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;

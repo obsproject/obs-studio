@@ -986,6 +986,10 @@ EXPORT uint32_t obs_source_get_base_width(obs_source_t *source);
 /** Gets the base height for a source (not taking in to account filtering) */
 EXPORT uint32_t obs_source_get_base_height(obs_source_t *source);
 
+EXPORT uint64_t obs_source_get_audio_timestamp(const obs_source_t *source);
+EXPORT void obs_source_get_audio_mix(const obs_source_t *source,
+		struct obs_source_audio_mix *audio);
+
 
 /* ------------------------------------------------------------------------- */
 /* Scenes */
