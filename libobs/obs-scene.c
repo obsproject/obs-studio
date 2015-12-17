@@ -482,15 +482,91 @@ static uint32_t scene_getheight(void *data)
 	return obs->video.base_height;
 }
 
+static inline void mix_audio(float *p_out, float *p_in,
+		size_t pos, size_t count)
+{
+	register float *out = p_out;
+	register float *in = p_in + pos;
+	register float *end = in + count;
+
+	while (in < end)
+		*(out++) += *(in++);
+}
+
+static bool scene_audio_render(void *data, uint64_t *ts_out,
+		struct obs_source_audio_mix *audio_output, uint32_t mixers,
+		size_t channels, size_t sample_rate)
+{
+	uint64_t timestamp = 0;
+	struct obs_source_audio_mix child_audio;
+	struct obs_scene *scene = data;
+	struct obs_scene_item *item;
+
+	audio_lock(scene);
+
+	item = scene->first_item;
+	while (item) {
+		if (!obs_source_audio_pending(item->source)) {
+			uint64_t source_ts =
+				obs_source_get_audio_timestamp(item->source);
+
+			if (!timestamp || source_ts < timestamp)
+				timestamp = source_ts;
+		}
+
+		item = item->next;
+	}
+
+	if (!timestamp) {
+		audio_unlock(scene);
+		return false;
+	}
+
+	item = scene->first_item;
+	while (item) {
+		uint64_t source_ts;
+		size_t pos, count;
+
+		if (obs_source_audio_pending(item->source)) {
+			item = item->next;
+			continue;
+		}
+
+		source_ts = obs_source_get_audio_timestamp(item->source);
+		pos = (size_t)ns_to_audio_frames(sample_rate,
+				source_ts - timestamp);
+		count = AUDIO_OUTPUT_FRAMES - pos;
+
+		obs_source_get_audio_mix(item->source, &child_audio);
+		for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+			for (size_t ch = 0; ch < channels; ch++) {
+				float *out = audio_output->output[mix].data[ch];
+				float *in = child_audio.output[mix].data[ch];
+
+				mix_audio(out, in, pos, count);
+			}
+		}
+
+		item = item->next;
+	}
+
+	*ts_out = timestamp;
+	audio_unlock(scene);
+	return true;
+}
+
 const struct obs_source_info scene_info =
 {
 	.id            = "scene",
 	.type          = OBS_SOURCE_TYPE_INPUT,
-	.output_flags  = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags  = OBS_SOURCE_VIDEO |
+	                 OBS_SOURCE_CUSTOM_DRAW |
+	                 OBS_SOURCE_COMPOSITE,
 	.get_name      = scene_getname,
 	.create        = scene_create,
 	.destroy       = scene_destroy,
 	.video_render  = scene_video_render,
+	.audio_render  = scene_audio_render,
 	.get_width     = scene_getwidth,
 	.get_height    = scene_getheight,
 	.load          = scene_load,
