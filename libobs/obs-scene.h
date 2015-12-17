@@ -59,6 +59,7 @@ struct obs_scene_item {
 struct obs_scene {
 	struct obs_source     *source;
 
-	pthread_mutex_t       mutex;
+	pthread_mutex_t       video_mutex;
+	pthread_mutex_t       audio_mutex;
 	struct obs_scene_item *first_item;
 };

@@ -62,8 +62,14 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 		goto fail;
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
 		goto fail;
-	if (pthread_mutex_init(&scene->mutex, &attr) != 0) {
-		blog(LOG_ERROR, "scene_create: Couldn't initialize mutex");
+	if (pthread_mutex_init(&scene->audio_mutex, &attr) != 0) {
+		blog(LOG_ERROR, "scene_create: Couldn't initialize audio "
+				"mutex");
+		goto fail;
+	}
+	if (pthread_mutex_init(&scene->video_mutex, &attr) != 0) {
+		blog(LOG_ERROR, "scene_create: Couldn't initialize video "
+				"mutex");
 		goto fail;
 	}
 
@@ -76,11 +82,28 @@ fail:
 	return NULL;
 }
 
+#define audio_lock(scene) pthread_mutex_lock(&scene->audio_mutex)
+#define video_lock(scene) pthread_mutex_lock(&scene->video_mutex)
+#define audio_unlock(scene) pthread_mutex_unlock(&scene->audio_mutex)
+#define video_unlock(scene) pthread_mutex_unlock(&scene->video_mutex)
+
+static inline void full_lock(struct obs_scene *scene)
+{
+	video_lock(scene);
+	audio_lock(scene);
+}
+
+static inline void full_unlock(struct obs_scene *scene)
+{
+	audio_unlock(scene);
+	video_unlock(scene);
+}
+
 static void remove_all_items(struct obs_scene *scene)
 {
 	struct obs_scene_item *item;
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	item = scene->first_item;
 
@@ -91,7 +114,7 @@ static void remove_all_items(struct obs_scene *scene)
 		obs_sceneitem_remove(del_item);
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 }
 
 static void scene_destroy(void *data)
@@ -99,7 +122,8 @@ static void scene_destroy(void *data)
 	struct obs_scene *scene = data;
 
 	remove_all_items(scene);
-	pthread_mutex_destroy(&scene->mutex);
+	pthread_mutex_destroy(&scene->video_mutex);
+	pthread_mutex_destroy(&scene->audio_mutex);
 	bfree(scene);
 }
 
@@ -109,12 +133,13 @@ static void scene_enum_sources(void *data,
 {
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
+	struct obs_scene_item *next;
 
-	pthread_mutex_lock(&scene->mutex);
-
+	full_lock(scene);
 	item = scene->first_item;
+
 	while (item) {
-		struct obs_scene_item *next = item->next;
+		next = item->next;
 
 		obs_sceneitem_addref(item);
 		if (item->visible)
@@ -124,7 +149,7 @@ static void scene_enum_sources(void *data,
 		item = next;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 }
 
 static inline void detach_sceneitem(struct obs_scene_item *item)
@@ -304,8 +329,7 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
 
-	pthread_mutex_lock(&scene->mutex);
-
+	video_lock(scene);
 	item = scene->first_item;
 
 	gs_blend_state_push();
@@ -335,7 +359,7 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
-	pthread_mutex_unlock(&scene->mutex);
+	video_unlock(scene);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -432,7 +456,7 @@ static void scene_save(void *data, obs_data_t *settings)
 	obs_data_array_t      *array  = obs_data_array_create();
 	struct obs_scene_item *item;
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	item = scene->first_item;
 	while (item) {
@@ -440,7 +464,7 @@ static void scene_save(void *data, obs_data_t *settings)
 		item = item->next;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 
 	obs_data_set_array(settings, "items", array);
 	obs_data_array_release(array);
@@ -487,7 +511,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 	struct obs_scene *new_scene = obs_scene_create(name);
 	struct obs_scene_item *item = scene->first_item;
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	while (item) {
 		struct obs_source *source = item->source;
@@ -517,7 +541,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 		item = item->next;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 
 	return new_scene;
 }
@@ -554,7 +578,7 @@ obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene, const char *name)
 	if (!scene)
 		return NULL;
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	item = scene->first_item;
 	while (item) {
@@ -564,7 +588,7 @@ obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene, const char *name)
 		item = item->next;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 
 	return item;
 }
@@ -578,7 +602,7 @@ void obs_scene_enum_items(obs_scene_t *scene,
 	if (!scene || !callback)
 		return;
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	item = scene->first_item;
 	while (item) {
@@ -596,7 +620,7 @@ void obs_scene_enum_items(obs_scene_t *scene,
 		item = next;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 }
 
 static obs_sceneitem_t *sceneitem_get_ref(obs_sceneitem_t *si)
@@ -707,7 +731,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
 	obs_source_addref(source);
 
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	last = scene->first_item;
 	if (!last) {
@@ -720,7 +744,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		item->prev = last;
 	}
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 
 	init_hotkeys(scene, item, obs_source_get_name(source));
 
@@ -768,11 +792,11 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 	scene = item->parent;
 
 	if (scene)
-		pthread_mutex_lock(&scene->mutex);
+		full_lock(scene);
 
 	if (item->removed) {
 		if (scene)
-			pthread_mutex_unlock(&scene->mutex);
+			full_unlock(scene);
 		return;
 	}
 
@@ -786,7 +810,7 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 	signal_item_remove(item);
 	detach_sceneitem(item);
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 
 	obs_sceneitem_release(item);
 }
@@ -880,7 +904,7 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 	struct obs_scene *scene = item->parent;
 
 	obs_scene_addref(scene);
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	next = item->next;
 	prev = item->prev;
@@ -910,7 +934,7 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 
 	signal_reorder(item);
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 	obs_scene_release(scene);
 }
 
@@ -923,7 +947,7 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 	struct obs_scene_item *next;
 
 	obs_scene_addref(scene);
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	detach_sceneitem(item);
 	next = scene->first_item;
@@ -942,7 +966,7 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 
 	signal_reorder(item);
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 	obs_scene_release(scene);
 }
 
@@ -1129,12 +1153,12 @@ bool obs_scene_reorder_items(obs_scene_t *scene,
 		return false;
 
 	obs_scene_addref(scene);
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 
 	bool order_matches = true;
 	if (!sceneitems_match(scene, item_order, item_order_size,
 				&order_matches) || order_matches) {
-		pthread_mutex_unlock(&scene->mutex);
+		full_unlock(scene);
 		obs_scene_release(scene);
 		return false;
 	}
@@ -1154,7 +1178,7 @@ bool obs_scene_reorder_items(obs_scene_t *scene,
 
 	signal_reorder(scene->first_item);
 
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 	obs_scene_release(scene);
 	return true;
 }
@@ -1166,8 +1190,8 @@ void obs_scene_atomic_update(obs_scene_t *scene,
 		return;
 
 	obs_scene_addref(scene);
-	pthread_mutex_lock(&scene->mutex);
+	full_lock(scene);
 	func(data, scene);
-	pthread_mutex_unlock(&scene->mutex);
+	full_unlock(scene);
 	obs_scene_release(scene);
 }
