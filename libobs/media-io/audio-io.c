@@ -46,51 +46,9 @@ static inline void audio_input_free(struct audio_input *input)
 	audio_resampler_destroy(input->resampler);
 }
 
-struct audio_line {
-	char                       *name;
-
-	struct audio_output        *audio;
-	struct circlebuf           buffers[MAX_AV_PLANES];
-	pthread_mutex_t            mutex;
-	DARRAY(uint8_t)            volume_buffers[MAX_AV_PLANES];
-	uint64_t                   base_timestamp;
-	uint64_t                   last_timestamp;
-
-	uint64_t                   next_ts_min;
-
-	/* specifies which mixes this line applies to via bits */
-	uint32_t                   mixers;
-
-	/* states whether this line is still being used.  if not, then when the
-	 * buffer is depleted, it's destroyed */
-	bool                       alive;
-
-	/* gets set when audio is getting cut off in the front of the buffer */
-	bool                       audio_getting_cut_off;
-
-	/* gets set when audio data is being inserted way outside of bounds of
-	 * the circular buffer */
-	bool                       audio_data_out_of_bounds;
-
-	struct audio_line          **prev_next;
-	struct audio_line          *next;
-};
-
-static inline void audio_line_destroy_data(struct audio_line *line)
-{
-	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-		circlebuf_free(&line->buffers[i]);
-		da_free(line->volume_buffers[i]);
-	}
-
-	pthread_mutex_destroy(&line->mutex);
-	bfree(line->name);
-	bfree(line);
-}
-
 struct audio_mix {
 	DARRAY(struct audio_input) inputs;
-	DARRAY(uint8_t)            mix_buffers[MAX_AV_PLANES];
+	float buffer[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 };
 
 struct audio_output {
@@ -104,26 +62,11 @@ struct audio_output {
 
 	bool                       initialized;
 
-	pthread_mutex_t            line_mutex;
-	struct audio_line          *first_line;
-
+	audio_input_callback_t     input_cb;
+	void                       *input_param;
 	pthread_mutex_t            input_mutex;
-
 	struct audio_mix           mixes[MAX_AUDIO_MIXES];
 };
-
-static inline void audio_output_removeline(struct audio_output *audio,
-		struct audio_line *line)
-{
-	pthread_mutex_lock(&audio->line_mutex);
-	if (line->prev_next)
-		*line->prev_next = line->next;
-	if (line->next)
-		line->next->prev_next = line->prev_next;
-	pthread_mutex_unlock(&audio->line_mutex);
-
-	audio_line_destroy_data(line);
-}
 
 /* ------------------------------------------------------------------------- */
 /* the following functions are used to calculate frame offsets based upon
@@ -155,46 +98,7 @@ static int64_t ts_diff_bytes(const audio_t *audio, uint64_t ts1, uint64_t ts2)
 	return ts_diff_frames(audio, ts1, ts2) * (int64_t)audio->block_size;
 }
 
-/* unless the value is 3+ hours worth of frames, this won't overflow */
-static inline uint64_t conv_frames_to_time(const audio_t *audio,
-		uint32_t frames)
-{
-	return (uint64_t)frames * 1000000000ULL /
-		(uint64_t)audio->info.samples_per_sec;
-}
-
 /* ------------------------------------------------------------------------- */
-
-/* this only really happens with the very initial data insertion.  can be
- * ignored safely. */
-static inline void clear_excess_audio_data(struct audio_line *line,
-		uint64_t prev_time)
-{
-	size_t size = (size_t)ts_diff_bytes(line->audio, prev_time,
-			line->base_timestamp);
-
-	/*blog(LOG_DEBUG, "Excess audio data for audio line '%s', somehow "
-	                "audio data went back in time by %"PRIu32" bytes.  "
-	                "prev_time: %"PRIu64", line->base_timestamp: %"PRIu64,
-	                line->name, (uint32_t)size,
-	                prev_time, line->base_timestamp);*/
-
-	if (!line->audio_getting_cut_off) {
-		blog(LOG_WARNING, "Audio line '%s' audio data currently "
-		                  "getting cut off.  This could be due to a "
-		                  "negative sync offset that's larger than "
-		                  "the current audio buffering time.",
-		                  line->name);
-		line->audio_getting_cut_off = true;
-	}
-
-	for (size_t i = 0; i < line->audio->planes; i++) {
-		size_t clear_size = (size < line->buffers[i].size) ?
-			size : line->buffers[i].size;
-
-		circlebuf_pop_front(&line->buffers[i], NULL, clear_size);
-	}
-}
 
 static inline uint64_t min_uint64(uint64_t a, uint64_t b)
 {
@@ -210,63 +114,6 @@ static inline size_t min_size(size_t a, size_t b)
 #define CLAMP(val, minval, maxval) \
 	((val > maxval) ? maxval : ((val < minval) ? minval : val))
 #endif
-
-#define MIX_BUFFER_SIZE 256
-
-/* TODO: optimize mixing */
-static void mix_float(struct audio_output *audio, struct audio_line *line,
-		size_t size, size_t time_offset, size_t plane)
-{
-	float *mixes[MAX_AUDIO_MIXES];
-	float vals[MIX_BUFFER_SIZE];
-
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		uint8_t *bytes = audio->mixes[mix_idx].mix_buffers[plane].array;
-		mixes[mix_idx] = (float*)&bytes[time_offset];
-	}
-
-	while (size) {
-		size_t pop_count = min_size(size, sizeof(vals));
-		size -= pop_count;
-
-		circlebuf_pop_front(&line->buffers[plane], vals, pop_count);
-		pop_count /= sizeof(float);
-
-		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-			/* only include this audio line in this mix if it's set
-			 * via the line's 'mixes' variable */
-			if ((line->mixers & (1 << mix_idx)) == 0)
-				continue;
-
-			for (size_t i = 0; i < pop_count; i++) {
-				*(mixes[mix_idx]++) += vals[i];
-			}
-		}
-	}
-}
-
-static inline bool mix_audio_line(struct audio_output *audio,
-		struct audio_line *line, size_t size, uint64_t timestamp)
-{
-	size_t time_offset = (size_t)ts_diff_bytes(audio,
-			line->base_timestamp, timestamp);
-	if (time_offset > size)
-		return false;
-
-	size -= time_offset;
-
-#ifdef DEBUG_AUDIO
-	blog(LOG_DEBUG, "shaved off %lu bytes", size);
-#endif
-
-	for (size_t i = 0; i < audio->planes; i++) {
-		size_t pop_size = min_size(size, line->buffers[i].size);
-
-		mix_float(audio, line, pop_size, time_offset, i);
-	}
-
-	return true;
-}
 
 static bool resample_audio_output(struct audio_input *input,
 		struct audio_data *data)
@@ -300,8 +147,8 @@ static inline void do_audio_output(struct audio_output *audio,
 	struct audio_mix *mix = &audio->mixes[mix_idx];
 	struct audio_data data;
 
-	for (size_t i = 0; i < MAX_AV_PLANES; i++)
-		data.data[i] = mix->mix_buffers[i].array;
+	for (size_t i = 0; i < audio->planes; i++)
+		data.data[i] = (uint8_t*)mix->buffer[i];
 
 	data.frames = frames;
 	data.timestamp = timestamp;
@@ -331,7 +178,7 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 			continue;
 
 		for (size_t plane = 0; plane < audio->planes; plane++) {
-			float *mix_data = (float*)mix->mix_buffers[plane].array;
+			float *mix_data = mix->buffer[plane];
 			float *mix_end = &mix_data[float_size];
 
 			while (mix_data < mix_end) {
@@ -344,104 +191,90 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 	}
 }
 
-static uint64_t mix_and_output(struct audio_output *audio, uint64_t audio_time,
-		uint64_t prev_time)
+static void input_and_output(struct audio_output *audio,
+		uint64_t audio_time, uint64_t prev_time)
 {
-	struct audio_line *line = audio->first_line;
-	uint32_t frames = (uint32_t)ts_diff_frames(audio, audio_time,
-	                                           prev_time);
-	size_t bytes = frames * audio->block_size;
+	size_t bytes = AUDIO_OUTPUT_FRAMES * audio->block_size;
+	struct audio_output_data data[MAX_AUDIO_MIXES];
+	uint32_t active_mixes = 0;
+	uint64_t new_ts = 0;
+	bool success;
+
+	memset(data, 0, sizeof(data));
 
 #ifdef DEBUG_AUDIO
 	blog(LOG_DEBUG, "audio_time: %llu, prev_time: %llu, bytes: %lu",
 			audio_time, prev_time, bytes);
 #endif
 
-	/* return an adjusted audio_time according to the amount
-	 * of data that was sampled to ensure seamless transmission */
-	audio_time = prev_time + conv_frames_to_time(audio, frames);
+	/* get mixers */
+	pthread_mutex_lock(&audio->input_mutex);
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if (audio->mixes[i].inputs.num)
+			active_mixes |= (1 << i);
+	}
+	pthread_mutex_unlock(&audio->input_mutex);
 
-	/* resize and clear mix buffers */
+	/* clear mix buffers */
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
-		for (size_t i = 0; i < audio->planes; i++) {
-			da_resize(mix->mix_buffers[i], bytes);
-			memset(mix->mix_buffers[i].array, 0, bytes);
-		}
+		memset(mix->buffer[0], 0, AUDIO_OUTPUT_FRAMES *
+				MAX_AUDIO_CHANNELS * sizeof(float));
+
+		for (size_t i = 0; i < audio->planes; i++)
+			data[mix_idx].data[i] = mix->buffer[i];
 	}
 
-	/* mix audio lines */
-	while (line) {
-		struct audio_line *next = line->next;
-
-		/* if line marked for removal, destroy and move to the next */
-		if (!line->buffers[0].size) {
-			if (!line->alive) {
-				audio_output_removeline(audio, line);
-				line = next;
-				continue;
-			}
-		}
-
-		pthread_mutex_lock(&line->mutex);
-
-		if (line->buffers[0].size && line->base_timestamp < prev_time) {
-			clear_excess_audio_data(line, prev_time);
-			line->base_timestamp = prev_time;
-
-		} else if (line->audio_getting_cut_off) {
-			line->audio_getting_cut_off = false;
-			blog(LOG_WARNING, "Audio line '%s' audio data no "
-			                  "longer getting cut off.",
-			                  line->name);
-		}
-
-		if (mix_audio_line(audio, line, bytes, prev_time))
-			line->base_timestamp = audio_time;
-
-		pthread_mutex_unlock(&line->mutex);
-
-		line = next;
-	}
+	/* get new audio data */
+	success = audio->input_cb(audio->input_param, prev_time, audio_time,
+			&new_ts, active_mixes, data);
+	if (!success)
+		return;
 
 	/* clamps audio data to -1.0..1.0 */
 	clamp_audio_output(audio, bytes);
 
 	/* output */
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
-		do_audio_output(audio, i, prev_time, frames);
-
-	return audio_time;
+		do_audio_output(audio, i, new_ts, AUDIO_OUTPUT_FRAMES);
 }
-
-/* sample audio 40 times a second */
-#define AUDIO_WAIT_TIME (1000/40)
 
 static void *audio_thread(void *param)
 {
 	struct audio_output *audio = param;
-	uint64_t buffer_time = audio->info.buffer_ms * 1000000;
-	uint64_t prev_time = os_gettime_ns() - buffer_time;
-	uint64_t audio_time;
+	size_t rate = audio->info.samples_per_sec;
+	uint64_t samples = 0;
+	uint64_t start_time = os_gettime_ns();
+	uint64_t prev_time = start_time;
+	uint64_t audio_time = prev_time;
+	uint32_t audio_wait_time =
+		(uint32_t)(audio_frames_to_ns(rate, AUDIO_OUTPUT_FRAMES) /
+				1000000);
 
 	os_set_thread_name("audio-io: audio thread");
 
 	const char *audio_thread_name =
 		profile_store_name(obs_get_profiler_name_store(),
 				"audio_thread(%s)", audio->info.name);
-	
+
 	while (os_event_try(audio->stop_event) == EAGAIN) {
-		os_sleep_ms(AUDIO_WAIT_TIME);
+		uint64_t cur_time;
+
+		os_sleep_ms(audio_wait_time);
 
 		profile_start(audio_thread_name);
-		pthread_mutex_lock(&audio->line_mutex);
 
-		audio_time = os_gettime_ns() - buffer_time;
-		audio_time = mix_and_output(audio, audio_time, prev_time);
-		prev_time  = audio_time;
+		cur_time = os_gettime_ns();
+		while (audio_time <= cur_time) {
+			samples += AUDIO_OUTPUT_FRAMES;
+			audio_time = start_time +
+				audio_frames_to_ns(rate, samples);
 
-		pthread_mutex_unlock(&audio->line_mutex);
+			input_and_output(audio, audio_time, prev_time);
+			prev_time = audio_time;
+		}
+
 		profile_end(audio_thread_name);
 
 		profile_reenable_thread();
@@ -578,17 +411,16 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 		goto fail;
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
-	pthread_mutex_init_value(&out->line_mutex);
 	out->channels   = get_audio_channels(info->speakers);
 	out->planes     = planar ? out->channels : 1;
+	out->input_cb   = info->input_callback;
+	out->input_param= info->input_param;
 	out->block_size = (planar ? 1 : out->channels) *
 	                  get_audio_bytes_per_channel(info->format);
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&out->line_mutex, &attr) != 0)
 		goto fail;
 	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
 		goto fail;
@@ -609,7 +441,6 @@ fail:
 void audio_output_close(audio_t *audio)
 {
 	void *thread_ret;
-	struct audio_line *line;
 
 	if (!audio)
 		return;
@@ -619,76 +450,22 @@ void audio_output_close(audio_t *audio)
 		pthread_join(audio->thread, &thread_ret);
 	}
 
-	line = audio->first_line;
-	while (line) {
-		struct audio_line *next = line->next;
-		audio_line_destroy_data(line);
-		line = next;
-	}
-
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		for (size_t i = 0; i < mix->inputs.num; i++)
 			audio_input_free(mix->inputs.array+i);
 
-		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			da_free(mix->mix_buffers[i]);
-
 		da_free(mix->inputs);
 	}
 
 	os_event_destroy(audio->stop_event);
-	pthread_mutex_destroy(&audio->line_mutex);
 	bfree(audio);
-}
-
-audio_line_t *audio_output_create_line(audio_t *audio, const char *name,
-		uint32_t mixers)
-{
-	if (!audio) return NULL;
-
-	struct audio_line *line = bzalloc(sizeof(struct audio_line));
-	line->alive = true;
-	line->audio = audio;
-	line->mixers = mixers;
-
-	if (pthread_mutex_init(&line->mutex, NULL) != 0) {
-		blog(LOG_ERROR, "audio_output_createline: Failed to create "
-		                "mutex");
-		bfree(line);
-		return NULL;
-	}
-
-	pthread_mutex_lock(&audio->line_mutex);
-
-	if (audio->first_line) {
-		audio->first_line->prev_next = &line->next;
-		line->next = audio->first_line;
-	}
-
-	line->prev_next = &audio->first_line;
-	audio->first_line = line;
-
-	pthread_mutex_unlock(&audio->line_mutex);
-
-	line->name = bstrdup(name ? name : "(unnamed audio line)");
-	return line;
 }
 
 const struct audio_output_info *audio_output_get_info(const audio_t *audio)
 {
 	return audio ? &audio->info : NULL;
-}
-
-void audio_line_destroy(struct audio_line *line)
-{
-	if (line) {
-		if (!line->buffers[0].size)
-			audio_output_removeline(line->audio, line);
-		else
-			line->alive = false;
-	}
 }
 
 bool audio_output_active(const audio_t *audio)
@@ -723,151 +500,4 @@ size_t audio_output_get_channels(const audio_t *audio)
 uint32_t audio_output_get_sample_rate(const audio_t *audio)
 {
 	return audio ? audio->info.samples_per_sec : 0;
-}
-
-/* TODO: optimize these two functions */
-static inline void mul_vol_float(float *array, float volume, size_t count)
-{
-	for (size_t i = 0; i < count; i++)
-		array[i] *= volume;
-}
-
-static void audio_line_place_data_pos(struct audio_line *line,
-		const struct audio_data *data, size_t position)
-{
-	bool   planar     = line->audio->planes > 1;
-	size_t total_num  = data->frames * (planar ? 1 : line->audio->channels);
-	size_t total_size = data->frames * line->audio->block_size;
-
-	for (size_t i = 0; i < line->audio->planes; i++) {
-		da_copy_array(line->volume_buffers[i], data->data[i],
-				total_size);
-
-		uint8_t *array = line->volume_buffers[i].array;
-
-		switch (line->audio->info.format) {
-		case AUDIO_FORMAT_FLOAT:
-		case AUDIO_FORMAT_FLOAT_PLANAR:
-			mul_vol_float((float*)array, data->volume, total_num);
-			break;
-		default:
-			blog(LOG_ERROR, "audio_line_place_data_pos: "
-			                "Unsupported or unknown format");
-			break;
-		}
-
-		circlebuf_place(&line->buffers[i], position,
-				line->volume_buffers[i].array, total_size);
-	}
-}
-
-static inline uint64_t smooth_ts(struct audio_line *line, uint64_t timestamp)
-{
-	if (!line->next_ts_min)
-		return timestamp;
-
-	bool ts_under = (timestamp < line->next_ts_min);
-	uint64_t diff = ts_under ?
-		(line->next_ts_min - timestamp) :
-		(timestamp - line->next_ts_min);
-
-#ifdef DEBUG_AUDIO
-	if (diff >= TS_SMOOTHING_THRESHOLD)
-		blog(LOG_DEBUG, "above TS smoothing threshold by %"PRIu64,
-				diff);
-#endif
-
-	return (diff < TS_SMOOTHING_THRESHOLD) ? line->next_ts_min : timestamp;
-}
-
-static bool audio_line_place_data(struct audio_line *line,
-		const struct audio_data *data)
-{
-	int64_t pos;
-	uint64_t timestamp = smooth_ts(line, data->timestamp);
-
-	pos = ts_diff_bytes(line->audio, timestamp, line->base_timestamp);
-
-	if (pos < 0) {
-		return false;
-	}
-
-	line->next_ts_min =
-		timestamp + conv_frames_to_time(line->audio, data->frames);
-
-#ifdef DEBUG_AUDIO
-	blog(LOG_DEBUG, "data->timestamp: %llu, line->base_timestamp: %llu, "
-			"pos: %lu, bytes: %lu, buf size: %lu",
-			timestamp, line->base_timestamp, pos,
-			data->frames * line->audio->block_size,
-			line->buffers[0].size);
-#endif
-
-	audio_line_place_data_pos(line, data, (size_t)pos);
-	return true;
-}
-
-#define MAX_DELAY_NS 6000000000ULL
-
-/* prevent insertation of data too far away from expected audio timing */
-static inline bool valid_timestamp_range(struct audio_line *line, uint64_t ts)
-{
-	uint64_t buffer_ns = 1000000ULL * line->audio->info.buffer_ms;
-	uint64_t max_ts    = line->base_timestamp + buffer_ns + MAX_DELAY_NS;
-
-	return ts >= line->base_timestamp && ts < max_ts;
-}
-
-void audio_line_output(audio_line_t *line, const struct audio_data *data)
-{
-	bool inserted_audio = false;
-
-	if (!line || !data) return;
-
-	pthread_mutex_lock(&line->mutex);
-
-	if (!line->buffers[0].size) {
-		line->base_timestamp = data->timestamp -
-		                       line->audio->info.buffer_ms * 1000000;
-		inserted_audio = audio_line_place_data(line, data);
-
-	} else if (valid_timestamp_range(line, data->timestamp)) {
-		inserted_audio = audio_line_place_data(line, data);
-	}
-
-	if (!inserted_audio) {
-		if (!line->audio_data_out_of_bounds) {
-			blog(LOG_WARNING, "Audio line '%s' currently "
-			                  "receiving out of bounds audio "
-			                  "data.  This can sometimes happen "
-			                  "if there's a pause in the thread.",
-			                  line->name);
-			line->audio_data_out_of_bounds = true;
-		}
-
-		/*blog(LOG_DEBUG, "Bad timestamp for audio line '%s', "
-		                "data->timestamp: %"PRIu64", "
-		                "line->base_timestamp: %"PRIu64".  This can "
-		                "sometimes happen when there's a pause in "
-		                "the threads.", line->name, data->timestamp,
-		                line->base_timestamp);*/
-
-	} else if (line->audio_data_out_of_bounds) {
-		blog(LOG_WARNING, "Audio line '%s' no longer receiving "
-		                  "out of bounds audio data.", line->name);
-		line->audio_data_out_of_bounds = false;
-	}
-
-	pthread_mutex_unlock(&line->mutex);
-}
-
-void audio_line_set_mixers(audio_line_t *line, uint32_t mixers)
-{
-	if (!!line)
-		line->mixers = mixers;
-}
-
-uint32_t audio_line_get_mixers(audio_line_t *line)
-{
-	return !!line ? line->mixers : 0;
 }
