@@ -270,6 +270,7 @@ struct obs_core_audio {
 /* user sources, output channels, and displays */
 struct obs_core_data {
 	struct obs_source               *first_source;
+	struct obs_source               *first_audio_source;
 	struct obs_display              *first_display;
 	struct obs_output               *first_output;
 	struct obs_encoder              *first_encoder;
@@ -280,6 +281,7 @@ struct obs_core_data {
 	pthread_mutex_t                 outputs_mutex;
 	pthread_mutex_t                 encoders_mutex;
 	pthread_mutex_t                 services_mutex;
+	pthread_mutex_t                 audio_sources_mutex;
 
 	struct obs_view                 main_view;
 
@@ -493,6 +495,8 @@ struct obs_source {
 	/* audio */
 	bool                            audio_failed;
 	bool                            muted;
+	struct obs_source               *next_audio_source;
+	struct obs_source               **prev_next_audio_source;
 	struct resample_info            sample_info;
 	audio_resampler_t               *resampler;
 	audio_line_t                    *audio_line;

@@ -149,6 +149,18 @@ bool obs_source_init(struct obs_source *source,
 			                "source '%s'", source->context.name);
 			return false;
 		}
+
+		pthread_mutex_lock(&obs->data.audio_sources_mutex);
+
+		source->next_audio_source = obs->data.first_audio_source;
+		source->prev_next_audio_source =
+			&obs->data.first_audio_source;
+		if (obs->data.first_audio_source)
+			obs->data.first_audio_source->prev_next_audio_source =
+				&source->next_audio_source;
+		obs->data.first_audio_source = source;
+
+		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
 	source->control = bzalloc(sizeof(obs_weak_source_t));
@@ -339,6 +351,15 @@ void obs_source_destroy(struct obs_source *source)
 
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
+
+	pthread_mutex_lock(&obs->data.audio_sources_mutex);
+	if (source->prev_next_audio_source) {
+		*source->prev_next_audio_source = source->next_audio_source;
+		if (source->next_audio_source)
+			source->next_audio_source->prev_next_audio_source =
+				source->prev_next_audio_source;
+	}
+	pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 
 	if (source->filter_parent)
 		obs_source_filter_remove_refless(source->filter_parent, source);
