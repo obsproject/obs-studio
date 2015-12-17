@@ -26,25 +26,6 @@ static inline void calculate_base_volume(struct obs_core_data *data,
 {
 	if (!target->activate_refs) {
 		target->base_volume = 0.0f;
-
-	/* only walk the tree if there are transitions active */
-	} else if (data->active_transitions) {
-		float best_vol = 0.0f;
-
-		for (size_t i = 0; i < MAX_CHANNELS; i++) {
-			struct obs_source *source = view->channels[i];
-			float vol = 0.0f;
-
-			if (!source)
-				continue;
-
-			vol = obs_source_get_target_volume(source, target);
-			if (best_vol < vol)
-				best_vol = vol;
-		}
-
-		target->base_volume = best_vol;
-
 	} else {
 		target->base_volume = 1.0f;
 	}

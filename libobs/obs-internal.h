@@ -283,8 +283,6 @@ struct obs_core_data {
 
 	struct obs_view                 main_view;
 
-	volatile long                   active_transitions;
-
 	long long                       unnamed_index;
 
 	volatile bool                   valid;

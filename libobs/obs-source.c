@@ -297,9 +297,6 @@ obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
 
 	source->flags = source->default_flags;
 	source->enabled = true;
-
-	if (info && info->type == OBS_SOURCE_TYPE_TRANSITION)
-		os_atomic_inc_long(&obs->data.active_transitions);
 	return source;
 
 fail:
@@ -342,9 +339,6 @@ void obs_source_destroy(struct obs_source *source)
 
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
-
-	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
-		os_atomic_dec_long(&obs->data.active_transitions);
 
 	if (source->filter_parent)
 		obs_source_filter_remove_refless(source->filter_parent, source);
