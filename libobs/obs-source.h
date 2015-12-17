@@ -103,6 +103,17 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_INTERACTION (1<<5)
 
+/**
+ * Source composites sub-sources
+ *
+ * When used specifies that the source composites one or more sub-sources.
+ * Sources that render sub-sources must implement the audio_render callback
+ * in order to perform custom mixing of sub-sources.
+ *
+ * This capability flag is always set for transitions.
+ */
+#define OBS_SOURCE_COMPOSITE (1<<6)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
@@ -388,6 +399,10 @@ struct obs_source_info {
 	 * If defined, called to free private data on shutdown
 	 */
 	void (*free_type_data)(void *type_data);
+
+	bool (*audio_render)(void *data, uint64_t *ts_out,
+			struct obs_source_audio_mix *audio_output,
+			uint32_t mixers, size_t channels, size_t sample_rate);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
