@@ -2289,8 +2289,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>63</width>
-              <height>16</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -2663,50 +2663,6 @@
              <item alignment="Qt::AlignTop">
               <widget class="QWidget" name="widget_11" native="true">
                <layout class="QVBoxLayout" name="verticalLayout_17">
-                <item>
-                 <widget class="QGroupBox" name="groupBox_6">
-                  <property name="title">
-                   <string>Basic.Settings.Audio</string>
-                  </property>
-                  <layout class="QFormLayout" name="formLayout_17">
-                   <property name="fieldGrowthPolicy">
-                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-                   </property>
-                   <property name="labelAlignment">
-                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label_35">
-                     <property name="minimumSize">
-                      <size>
-                       <width>0</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Audio.BufferingTime</string>
-                     </property>
-                     <property name="alignment">
-                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QSpinBox" name="audioBufferingTime">
-                     <property name="minimum">
-                      <number>100</number>
-                     </property>
-                     <property name="maximum">
-                      <number>10000</number>
-                     </property>
-                     <property name="value">
-                      <number>1000</number>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QGroupBox" name="advancedVideoContainer">
                   <property name="title">
