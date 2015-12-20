@@ -267,6 +267,14 @@ struct obs_core_audio {
 	/* TODO: sound output subsystem */
 	audio_t                         *audio;
 
+	DARRAY(struct obs_source*)      render_order;
+	DARRAY(struct obs_source*)      root_nodes;
+
+	uint64_t                        buffered_ts;
+	struct circlebuf                buffered_timestamps;
+	int                             buffering_wait_ticks;
+	int                             total_buffering_ticks;
+
 	float                           user_volume;
 };
 
@@ -361,6 +369,10 @@ extern struct obs_core *obs;
 
 extern void *obs_video_thread(void *param);
 
+extern bool audio_callback(void *param,
+		uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts,
+		uint32_t mixers, struct audio_output_data *mixes);
+
 
 /* ------------------------------------------------------------------------- */
 /* obs shared context data */
@@ -450,6 +462,22 @@ struct async_frame {
 	bool used;
 };
 
+enum audio_action_type {
+	AUDIO_ACTION_VOL,
+	AUDIO_ACTION_MUTE,
+	AUDIO_ACTION_PTT,
+	AUDIO_ACTION_PTM,
+};
+
+struct audio_action {
+	uint64_t timestamp;
+	enum audio_action_type type;
+	union {
+		float vol;
+		bool  set;
+	};
+};
+
 struct obs_weak_source {
 	struct obs_weak_ref ref;
 	struct obs_source *source;
@@ -499,20 +527,24 @@ struct obs_source {
 	/* audio */
 	bool                            audio_failed;
 	bool                            audio_pending;
+	bool                            user_muted;
 	bool                            muted;
 	struct obs_source               *next_audio_source;
 	struct obs_source               **prev_next_audio_source;
 	uint64_t                        audio_ts;
 	struct circlebuf                audio_input_buf[MAX_AUDIO_CHANNELS];
+	DARRAY(struct audio_action)     audio_actions;
 	float                           *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
 	struct resample_info            sample_info;
 	audio_resampler_t               *resampler;
+	pthread_mutex_t                 audio_actions_mutex;
 	pthread_mutex_t                 audio_buf_mutex;
 	pthread_mutex_t                 audio_mutex;
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
 	uint32_t                        audio_mixers;
 	float                           user_volume;
+	float                           volume;
 	int64_t                         sync_offset;
 
 	/* async video data */
@@ -555,8 +587,10 @@ struct obs_source {
 	obs_hotkey_id                   push_to_talk_key;
 	bool                            push_to_mute_enabled : 1;
 	bool                            push_to_mute_pressed : 1;
+	bool                            user_push_to_mute_pressed : 1;
 	bool                            push_to_talk_enabled : 1;
 	bool                            push_to_talk_pressed : 1;
+	bool                            user_push_to_talk_pressed : 1;
 	uint64_t                        push_to_mute_delay;
 	uint64_t                        push_to_mute_stop_time;
 	uint64_t                        push_to_talk_delay;
