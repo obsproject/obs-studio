@@ -148,6 +148,7 @@ bool obs_source_init(struct obs_source *source)
 	pthread_mutexattr_t attr;
 
 	source->user_volume = 1.0f;
+	source->volume = 1.0f;
 	source->sync_offset = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
@@ -161,6 +162,8 @@ bool obs_source_init(struct obs_source *source)
 	if (pthread_mutex_init(&source->filter_mutex, &attr) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_buf_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->audio_actions_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
 		return false;
@@ -225,27 +228,43 @@ static bool obs_source_hotkey_unmute(void *data,
 static void obs_source_hotkey_push_to_mute(void *data,
 		obs_hotkey_id id, obs_hotkey_t *key, bool pressed)
 {
+	struct audio_action action = {
+		.timestamp = os_gettime_ns(),
+		.type      = AUDIO_ACTION_PTM,
+		.set       = pressed
+	};
+
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(key);
 
 	struct obs_source *source = data;
 
-	pthread_mutex_lock(&source->audio_mutex);
-	source->push_to_mute_pressed = pressed;
-	pthread_mutex_unlock(&source->audio_mutex);
+	pthread_mutex_lock(&source->audio_actions_mutex);
+	da_push_back(source->audio_actions, &action);
+	pthread_mutex_unlock(&source->audio_actions_mutex);
+
+	source->user_push_to_mute_pressed = pressed;
 }
 
 static void obs_source_hotkey_push_to_talk(void *data,
 		obs_hotkey_id id, obs_hotkey_t *key, bool pressed)
 {
+	struct audio_action action = {
+		.timestamp = os_gettime_ns(),
+		.type      = AUDIO_ACTION_PTT,
+		.set       = pressed
+	};
+
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(key);
 
 	struct obs_source *source = data;
 
-	pthread_mutex_lock(&source->audio_mutex);
-	source->push_to_talk_pressed = pressed;
-	pthread_mutex_unlock(&source->audio_mutex);
+	pthread_mutex_lock(&source->audio_actions_mutex);
+	da_push_back(source->audio_actions, &action);
+	pthread_mutex_unlock(&source->audio_actions_mutex);
+
+	source->user_push_to_talk_pressed = pressed;
 }
 
 static void obs_source_init_audio_hotkeys(struct obs_source *source)
@@ -423,10 +442,12 @@ void obs_source_destroy(struct obs_source *source)
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
 
+	da_free(source->audio_actions);
 	da_free(source->async_cache);
 	da_free(source->async_frames);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
+	pthread_mutex_destroy(&source->audio_actions_mutex);
 	pthread_mutex_destroy(&source->audio_buf_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
@@ -874,8 +895,16 @@ static inline uint64_t conv_frames_to_time(const size_t sample_rate,
 	return (uint64_t)frames * 1000000000ULL / (uint64_t)sample_rate;
 }
 
+static inline size_t conv_time_to_frames(const size_t sample_rate,
+		const uint64_t duration)
+{
+	return (size_t)(duration * (uint64_t)sample_rate / 1000000000ULL);
+}
+
 /* maximum timestamp variance in nanoseconds */
 #define MAX_TS_VAR          2000000000ULL
+/* maximum buffer size */
+#define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
 
 static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp,
 		uint64_t os_time)
@@ -957,9 +986,17 @@ static void source_output_audio_place(obs_source_t *source,
 			in->timestamp);
 #endif
 
-	for (size_t i = 0; i < channels; i++)
+	/* do not allow the circular buffers to become too big */
+	if ((buf_placement + size) > MAX_BUF_SIZE)
+		return;
+
+	for (size_t i = 0; i < channels; i++) {
 		circlebuf_place(&source->audio_input_buf[i], buf_placement,
 				in->data[i], size);
+		circlebuf_pop_back(&source->audio_input_buf[i], NULL,
+				source->audio_input_buf[i].size -
+				(buf_placement + size));
+	}
 }
 
 static inline void source_output_audio_push_back(obs_source_t *source,
@@ -967,28 +1004,33 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 {
 	audio_t *audio = obs->audio.audio;
 	size_t channels = audio_output_get_channels(audio);
+	size_t size = in->frames * sizeof(float);
+
+	/* do not allow the circular buffers to become too big */
+	if ((source->audio_input_buf[0].size + size) > MAX_BUF_SIZE)
+		return;
 
 	for (size_t i = 0; i < channels; i++)
 		circlebuf_push_back(&source->audio_input_buf[i],
-				in->data[i], in->frames * sizeof(float));
+				in->data[i], size);
 }
 
 static inline bool source_muted(obs_source_t *source, uint64_t os_time)
 {
-	if (source->push_to_mute_enabled && source->push_to_mute_pressed)
+	if (source->push_to_mute_enabled && source->user_push_to_mute_pressed)
 		source->push_to_mute_stop_time = os_time +
 			source->push_to_mute_delay * 1000000;
 
-	if (source->push_to_talk_enabled && source->push_to_talk_pressed)
+	if (source->push_to_talk_enabled && source->user_push_to_talk_pressed)
 		source->push_to_talk_stop_time = os_time +
 			source->push_to_talk_delay * 1000000;
 
-	bool push_to_mute_active = source->push_to_mute_pressed ||
+	bool push_to_mute_active = source->user_push_to_mute_pressed ||
 		os_time < source->push_to_mute_stop_time;
-	bool push_to_talk_active = source->push_to_talk_pressed ||
+	bool push_to_talk_active = source->user_push_to_talk_pressed ||
 		os_time < source->push_to_talk_stop_time;
 
-	return !source->enabled || source->muted ||
+	return !source->enabled || source->user_muted ||
 			(source->push_to_mute_enabled && push_to_mute_active) ||
 			(source->push_to_talk_enabled && !push_to_talk_active);
 }
@@ -1030,8 +1072,14 @@ static void source_output_audio_data(obs_source_t *source,
 
 	in.timestamp += source->timing_adjust + source->sync_offset;
 
-	if (source->next_audio_sys_ts_min == in.timestamp)
+	if (source->next_audio_sys_ts_min == in.timestamp) {
 		push_back = true;
+	} else {
+		diff = uint64_diff(source->next_audio_sys_ts_min, in.timestamp);
+		if (diff < TS_SMOOTHING_THRESHOLD)
+			push_back = true;
+	}
+
 	source->next_audio_sys_ts_min = source->next_audio_ts_min +
 		source->timing_adjust + source->sync_offset;
 
@@ -2623,6 +2671,12 @@ proc_handler_t *obs_source_get_proc_handler(const obs_source_t *source)
 void obs_source_set_volume(obs_source_t *source, float volume)
 {
 	if (obs_source_valid(source, "obs_source_set_volume")) {
+		struct audio_action action = {
+			.timestamp = os_gettime_ns(),
+			.type      = AUDIO_ACTION_VOL,
+			.vol       = volume
+		};
+
 		struct calldata data = {0};
 		calldata_set_ptr(&data, "source", source);
 		calldata_set_float(&data, "volume", volume);
@@ -2632,6 +2686,10 @@ void obs_source_set_volume(obs_source_t *source, float volume)
 
 		volume = (float)calldata_float(&data, "volume");
 		calldata_free(&data);
+
+		pthread_mutex_lock(&source->audio_actions_mutex);
+		da_push_back(source->audio_actions, &action);
+		pthread_mutex_unlock(&source->audio_actions_mutex);
 
 		source->user_volume = volume;
 	}
@@ -3030,17 +3088,22 @@ void obs_source_set_enabled(obs_source_t *source, bool enabled)
 bool obs_source_muted(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_muted") ?
-		source->muted : false;
+		source->user_muted : false;
 }
 
 void obs_source_set_muted(obs_source_t *source, bool muted)
 {
 	struct calldata data = {0};
+	struct audio_action action = {
+		.timestamp = os_gettime_ns(),
+		.type      = AUDIO_ACTION_MUTE,
+		.set       = muted
+	};
 
 	if (!obs_source_valid(source, "obs_source_set_muted"))
 		return;
 
-	source->muted = muted;
+	source->user_muted = muted;
 
 	calldata_set_ptr(&data, "source", source);
 	calldata_set_bool(&data, "muted", muted);
@@ -3048,6 +3111,10 @@ void obs_source_set_muted(obs_source_t *source, bool muted)
 	signal_handler_signal(source->context.signals, "mute", &data);
 
 	calldata_free(&data);
+
+	pthread_mutex_lock(&source->audio_actions_mutex);
+	da_push_back(source->audio_actions, &action);
+	pthread_mutex_unlock(&source->audio_actions_mutex);
 }
 
 static void source_signal_push_to_changed(obs_source_t *source,
@@ -3194,6 +3261,262 @@ void *obs_source_get_type_data(obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_type_data")
 		? source->info.type_data : NULL;
+}
+
+static float get_source_volume(obs_source_t *source, uint64_t os_time)
+{
+	if (source->push_to_mute_enabled && source->push_to_mute_pressed)
+		source->push_to_mute_stop_time = os_time +
+			source->push_to_mute_delay * 1000000;
+
+	if (source->push_to_talk_enabled && source->push_to_talk_pressed)
+		source->push_to_talk_stop_time = os_time +
+			source->push_to_talk_delay * 1000000;
+
+	bool push_to_mute_active = source->push_to_mute_pressed ||
+		os_time < source->push_to_mute_stop_time;
+	bool push_to_talk_active = source->push_to_talk_pressed ||
+		os_time < source->push_to_talk_stop_time;
+
+	bool muted = !source->enabled || source->muted ||
+			(source->push_to_mute_enabled && push_to_mute_active) ||
+			(source->push_to_talk_enabled && !push_to_talk_active);
+
+	if (muted || close_float(source->volume, 0.0f, 0.0001f))
+		return 0.0f;
+	if (close_float(source->volume, 1.0f, 0.0001f))
+		return 1.0f;
+
+	return source->volume;
+}
+
+static inline void multiply_output_audio(obs_source_t *source, size_t mix,
+		size_t channels, float vol)
+{
+	register float *out = source->audio_output_buf[mix][0];
+	register float *end = out + AUDIO_OUTPUT_FRAMES * channels;
+
+	while (out < end)
+		*(out++) *= vol;
+}
+
+static inline void multiply_vol_data(obs_source_t *source, size_t mix,
+		size_t channels, float *vol_data)
+{
+	for (size_t ch = 0; ch < channels; ch++) {
+		register float *out = source->audio_output_buf[mix][ch];
+		register float *end = out + AUDIO_OUTPUT_FRAMES;
+		register float *vol = vol_data;
+
+		while (out < end)
+			*(out++) *= *(vol++);
+	}
+}
+
+static inline void apply_audio_action(obs_source_t *source,
+		const struct audio_action *action)
+{
+	switch (action->type) {
+	case AUDIO_ACTION_VOL:
+		source->volume = action->vol; break;
+	case AUDIO_ACTION_MUTE:
+		source->muted = action->set; break;
+	case AUDIO_ACTION_PTT:
+		source->push_to_talk_pressed = action->set; break;
+	case AUDIO_ACTION_PTM:
+		source->push_to_mute_pressed = action->set; break;
+	}
+}
+
+static void apply_audio_actions(obs_source_t *source, size_t channels,
+		size_t sample_rate)
+{
+	float *vol_data = malloc(sizeof(float) * AUDIO_OUTPUT_FRAMES);
+	float cur_vol = get_source_volume(source, source->audio_ts);
+	size_t frame_num = 0;
+
+	pthread_mutex_lock(&source->audio_actions_mutex);
+
+	for (size_t i = 0; i < source->audio_actions.num; i++) {
+		struct audio_action action = source->audio_actions.array[i];
+		uint64_t timestamp = action.timestamp;
+		size_t new_frame_num;
+
+		if (timestamp < source->audio_ts)
+			timestamp = source->audio_ts;
+
+		new_frame_num = conv_time_to_frames(sample_rate,
+				timestamp - source->audio_ts);
+
+		if (new_frame_num >= AUDIO_OUTPUT_FRAMES)
+			break;
+
+		da_erase(source->audio_actions, i--);
+
+		apply_audio_action(source, &action);
+
+		if (new_frame_num > frame_num) {
+			for (; frame_num < new_frame_num; frame_num++)
+				vol_data[frame_num] = cur_vol;
+		}
+
+		cur_vol = get_source_volume(source, timestamp);
+	}
+
+	for (; frame_num < AUDIO_OUTPUT_FRAMES; frame_num++)
+		vol_data[frame_num] = cur_vol;
+
+	pthread_mutex_unlock(&source->audio_actions_mutex);
+
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		if ((source->audio_mixers & (1 << mix)) != 0)
+			multiply_vol_data(source, mix, channels, vol_data);
+	}
+
+	free(vol_data);
+}
+
+static void apply_audio_volume(obs_source_t *source, uint32_t mixers,
+		size_t channels, size_t sample_rate)
+{
+	struct audio_action action;
+	bool actions_pending;
+	float vol;
+
+	pthread_mutex_lock(&source->audio_actions_mutex);
+
+	actions_pending = source->audio_actions.num > 0;
+	if (actions_pending)
+		action = source->audio_actions.array[0];
+
+	pthread_mutex_unlock(&source->audio_actions_mutex);
+
+	if (actions_pending) {
+		uint64_t duration = conv_frames_to_time(sample_rate,
+				AUDIO_OUTPUT_FRAMES);
+
+		if (action.timestamp < (source->audio_ts + duration)) {
+			apply_audio_actions(source, channels, sample_rate);
+			return;
+		}
+	}
+
+	vol = get_source_volume(source, source->audio_ts);
+	if (vol == 1.0f)
+		return;
+
+	if (vol == 0.0f || mixers == 0) {
+		memset(source->audio_output_buf[0][0], 0,
+				AUDIO_OUTPUT_FRAMES * sizeof(float) *
+				MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES);
+		return;
+	}
+
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		uint32_t mix_and_val = (1 << mix);
+		if ((source->audio_mixers & mix_and_val) != 0 &&
+		    (mixers & mix_and_val) != 0)
+			multiply_output_audio(source, mix, channels, vol);
+	}
+}
+
+static void custom_audio_render(obs_source_t *source, uint32_t mixers,
+		size_t channels, size_t sample_rate)
+{
+	struct obs_source_audio_mix audio_data;
+	bool success;
+	uint64_t ts;
+
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		for (size_t ch = 0; ch < channels; ch++)
+			audio_data.output[mix].data[ch] =
+				source->audio_output_buf[mix][ch];
+	}
+
+	memset(audio_data.output[0].data[0], 0, AUDIO_OUTPUT_FRAMES *
+			MAX_AUDIO_MIXES * channels * sizeof(float));
+
+	success = source->info.audio_render(source->context.data, &ts,
+			&audio_data, mixers, channels, sample_rate);
+	source->audio_ts = success ? ts : 0;
+	source->audio_pending = !success;
+
+	if (!success || !source->audio_ts || !mixers)
+		return;
+
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		if ((source->audio_mixers & (1 << mix)) == 0) {
+			memset(source->audio_output_buf[mix][0], 0,
+					sizeof(float) * AUDIO_OUTPUT_FRAMES *
+					channels);
+			continue;
+		}
+	}
+
+	apply_audio_volume(source, mixers, channels, sample_rate);
+}
+
+static inline void process_audio_source_tick(obs_source_t *source,
+		uint32_t mixers, size_t channels, size_t sample_rate,
+		size_t size)
+{
+	pthread_mutex_lock(&source->audio_buf_mutex);
+
+	for (size_t ch = 0; ch < channels; ch++)
+		circlebuf_peek_front(&source->audio_input_buf[ch],
+				source->audio_output_buf[0][ch],
+				size);
+
+	pthread_mutex_unlock(&source->audio_buf_mutex);
+
+	for (size_t mix = 1; mix < MAX_AUDIO_MIXES; mix++) {
+		uint32_t mix_and_val = (1 << mix);
+
+		if ((source->audio_mixers & mix_and_val) == 0 ||
+		    (mixers & mix_and_val) == 0) {
+			memset(source->audio_output_buf[mix][0],
+					0, size * channels);
+			continue;
+		}
+
+		for (size_t ch = 0; ch < channels; ch++)
+			memcpy(source->audio_output_buf[mix][ch],
+					source->audio_output_buf[0][ch], size);
+	}
+
+	if ((source->audio_mixers & 1) == 0 || (mixers & 1) == 0)
+		memset(source->audio_output_buf[0][0], 0,
+				size * channels);
+
+	apply_audio_volume(source, mixers, channels, sample_rate);
+	source->audio_pending = false;
+}
+
+void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
+		size_t channels, size_t sample_rate, size_t size)
+{
+	if (!source || !source->audio_output_buf[0][0]) {
+		source->audio_pending = true;
+		return;
+	}
+
+	if (source->info.audio_render) {
+		custom_audio_render(source, mixers, channels, sample_rate);
+		return;
+	}
+
+	if (!source->audio_ts || source->audio_input_buf[0].size < size) {
+		source->audio_pending = true;
+		return;
+	}
+
+	process_audio_source_tick(source, mixers, channels, sample_rate, size);
+}
+
+bool obs_source_audio_pending(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_audio_pending") ?
+		source->audio_pending : false;
 }
 
 uint64_t obs_source_get_audio_timestamp(const obs_source_t *source)

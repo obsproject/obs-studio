@@ -180,7 +180,6 @@ struct obs_video_info {
 struct obs_audio_info {
 	uint32_t            samples_per_sec;
 	enum speaker_layout speakers;
-	uint64_t            buffer_ms;
 };
 
 /**
@@ -974,6 +973,7 @@ EXPORT uint32_t obs_source_get_base_width(obs_source_t *source);
 /** Gets the base height for a source (not taking in to account filtering) */
 EXPORT uint32_t obs_source_get_base_height(obs_source_t *source);
 
+EXPORT bool obs_source_audio_pending(const obs_source_t *source);
 EXPORT uint64_t obs_source_get_audio_timestamp(const obs_source_t *source);
 EXPORT void obs_source_get_audio_mix(const obs_source_t *source,
 		struct obs_source_audio_mix *audio);

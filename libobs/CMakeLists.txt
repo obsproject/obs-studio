@@ -284,6 +284,7 @@ set(libobs_libobs_SOURCES
 	obs-display.c
 	obs-view.c
 	obs-scene.c
+	obs-audio.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
 	${libobs_PLATFORM_HEADERS}

@@ -484,6 +484,10 @@ static void obs_free_audio(void)
 	if (audio->audio)
 		audio_output_close(audio->audio);
 
+	circlebuf_free(&audio->buffered_timestamps);
+	da_free(audio->render_order);
+	da_free(audio->root_nodes);
+
 	memset(audio, 0, sizeof(struct obs_core_audio));
 }
 
@@ -780,11 +784,11 @@ void obs_shutdown(void)
 	stop_video();
 	stop_hotkeys();
 
+	obs_free_audio();
 	obs_free_data();
 	obs_free_video();
 	obs_free_hotkeys();
 	obs_free_graphics();
-	obs_free_audio();
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
 
@@ -922,16 +926,14 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	ai.samples_per_sec = oai->samples_per_sec;
 	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
 	ai.speakers = oai->speakers;
-	ai.buffer_ms = oai->buffer_ms;
+	ai.input_callback = audio_callback;
 
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "audio settings reset:\n"
 	               "\tsamples per sec: %d\n"
-	               "\tspeakers:        %d\n"
-	               "\tbuffering (ms):  %d",
+	               "\tspeakers:        %d",
 	               (int)ai.samples_per_sec,
-	               (int)ai.speakers,
-	               (int)ai.buffer_ms);
+	               (int)ai.speakers);
 
 	return obs_init_audio(&ai);
 }
@@ -976,7 +978,6 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 
 	oai->samples_per_sec = info->samples_per_sec;
 	oai->speakers = info->speakers;
-	oai->buffer_ms = info->buffer_ms;
 	return true;
 }
 
