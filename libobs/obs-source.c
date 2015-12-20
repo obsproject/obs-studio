@@ -844,13 +844,10 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
-static inline uint64_t conv_frames_to_time(size_t frames)
+static inline uint64_t conv_frames_to_time(const size_t sample_rate,
+		const size_t frames)
 {
-	const struct audio_output_info *info;
-	info = audio_output_get_info(obs->audio.audio);
-
-	return (uint64_t)frames * 1000000000ULL /
-		(uint64_t)info->samples_per_sec;
+	return (uint64_t)frames * 1000000000ULL / (uint64_t)sample_rate;
 }
 
 /* maximum timestamp variance in nanoseconds */
@@ -897,6 +894,7 @@ static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 static void source_output_audio_line(obs_source_t *source,
 		const struct audio_data *data)
 {
+	size_t sample_rate = audio_output_get_sample_rate(obs->audio.audio);
 	struct audio_data in = *data;
 	uint64_t diff;
 	uint64_t os_time = os_gettime_ns();
@@ -922,7 +920,7 @@ static void source_output_audio_line(obs_source_t *source,
 	}
 
 	source->next_audio_ts_min = in.timestamp +
-		conv_frames_to_time(in.frames);
+		conv_frames_to_time(sample_rate, in.frames);
 
 	in.timestamp += source->timing_adjust + source->sync_offset;
 	in.volume = source->base_volume * source->user_volume *
