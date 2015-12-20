@@ -152,7 +152,6 @@ static inline void do_audio_output(struct audio_output *audio,
 
 	data.frames = frames;
 	data.timestamp = timestamp;
-	data.volume = 1.0f;
 
 	pthread_mutex_lock(&audio->input_mutex);
 
