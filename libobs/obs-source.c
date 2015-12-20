@@ -1001,9 +1001,6 @@ static void source_output_audio_data(obs_source_t *source,
 		conv_frames_to_time(sample_rate, in.frames);
 
 	in.timestamp += source->timing_adjust + source->sync_offset;
-	in.volume = source->base_volume * source->user_volume *
-		source->present_volume * obs->audio.user_volume *
-		obs->audio.present_volume;
 
 	if (source->next_audio_sys_ts_min == in.timestamp)
 		push_back = true;
@@ -1026,9 +1023,6 @@ static void source_output_audio_data(obs_source_t *source,
 	bool muted = !source->enabled || source->muted ||
 			(source->push_to_mute_enabled && push_to_mute_active) ||
 			(source->push_to_talk_enabled && !push_to_talk_active);
-
-	if (muted)
-		in.volume = 0.0f;
 
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
