@@ -466,7 +466,6 @@ static bool obs_init_audio(struct audio_output_info *ai)
 	/* TODO: sound subsystem */
 
 	audio->user_volume    = 1.0f;
-	audio->present_volume = 1.0f;
 
 	errorcode = audio_output_open(&audio->audio, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
@@ -1381,20 +1380,9 @@ void obs_set_master_volume(float volume)
 	obs->audio.user_volume = volume;
 }
 
-void obs_set_present_volume(float volume)
-{
-	if (!obs) return;
-	obs->audio.present_volume = volume;
-}
-
 float obs_get_master_volume(void)
 {
 	return obs ? obs->audio.user_volume : 0.0f;
-}
-
-float obs_get_present_volume(void)
-{
-	return obs ? obs->audio.present_volume : 0.0f;
 }
 
 static obs_source_t *obs_load_source_type(obs_data_t *source_data,

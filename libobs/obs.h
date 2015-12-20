@@ -539,14 +539,8 @@ EXPORT void obs_render_main_view(void);
 /** Sets the master user volume */
 EXPORT void obs_set_master_volume(float volume);
 
-/** Sets the master presentation volume */
-EXPORT void obs_set_present_volume(float volume);
-
 /** Gets the master user volume */
 EXPORT float obs_get_master_volume(void);
-
-/** Gets the master presentation volume */
-EXPORT float obs_get_present_volume(void);
 
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
@@ -760,14 +754,8 @@ EXPORT proc_handler_t *obs_source_get_proc_handler(const obs_source_t *source);
 /** Sets the user volume for a source that has audio output */
 EXPORT void obs_source_set_volume(obs_source_t *source, float volume);
 
-/** Sets the presentation volume for a source */
-EXPORT void obs_source_set_present_volume(obs_source_t *source, float volume);
-
 /** Gets the user volume for a source that has audio output */
 EXPORT float obs_source_get_volume(const obs_source_t *source);
-
-/** Gets the presentation volume for a source */
-EXPORT float obs_source_get_present_volume(const obs_source_t *source);
 
 /** Sets the audio sync offset (in nanoseconds) for a source */
 EXPORT void obs_source_set_sync_offset(obs_source_t *source, int64_t offset);

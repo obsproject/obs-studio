@@ -139,8 +139,6 @@ bool obs_source_init(struct obs_source *source,
 	pthread_mutexattr_t attr;
 
 	source->user_volume = 1.0f;
-	source->present_volume = 1.0f;
-	source->base_volume = 0.0f;
 	source->sync_offset = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
@@ -2629,31 +2627,10 @@ void obs_source_set_volume(obs_source_t *source, float volume)
 	}
 }
 
-static void set_tree_preset_vol(obs_source_t *parent, obs_source_t *child,
-		void *param)
-{
-	float *vol = param;
-	child->present_volume = *vol;
-
-	UNUSED_PARAMETER(parent);
-}
-
-void obs_source_set_present_volume(obs_source_t *source, float volume)
-{
-	if (obs_source_valid(source, "obs_source_set_present_volume"))
-		source->present_volume = volume;
-}
-
 float obs_source_get_volume(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_volume") ?
 		source->user_volume : 0.0f;
-}
-
-float obs_source_get_present_volume(const obs_source_t *source)
-{
-	return obs_source_valid(source, "obs_source_get_present_volume") ?
-		source->present_volume : 0.0f;
 }
 
 void obs_source_set_sync_offset(obs_source_t *source, int64_t offset)
@@ -2959,77 +2936,6 @@ void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 
 	if (change_pos)
 		gs_matrix_pop();
-}
-
-static inline float get_transition_volume(obs_source_t *source,
-		obs_source_t *child)
-{
-	if (source && child && source->info.get_transition_volume)
-		return source->info.get_transition_volume(source->context.data,
-				child);
-	return 0.0f;
-}
-
-static float obs_source_get_target_volume_refs(obs_source_t *source,
-		obs_source_t *target, int refs);
-
-struct base_vol_enum_info {
-	obs_source_t *target;
-	float vol;
-};
-
-static void get_transition_child_vol(obs_source_t *parent, obs_source_t *child,
-		void *param)
-{
-	struct base_vol_enum_info *info = param;
-	float vol = obs_source_get_target_volume(child, info->target);
-
-	info->vol += vol * get_transition_volume(parent, child);
-}
-
-static void get_source_base_vol(obs_source_t *parent, obs_source_t *child,
-		void *param)
-{
-	struct base_vol_enum_info *info = param;
-	float vol = obs_source_get_target_volume(child, info->target);
-
-	if (vol > info->vol)
-		info->vol = vol;
-
-	UNUSED_PARAMETER(parent);
-}
-
-/*
- * This traverses a source tree for any references to a particular source.
- * If the source is found, it'll just return 1.0.  However, if the source
- * exists within some transition somewhere, the transition source will be able
- * to control what the volume of the source will be.  If the source is also
- * active outside the transition, then it'll just use 1.0.
- */
-float obs_source_get_target_volume(obs_source_t *source, obs_source_t *target)
-{
-	struct base_vol_enum_info info = {target, 0.0f};
-	bool transition;
-
-	if (!obs_source_valid(source, "obs_source_get_target_volume"))
-		return 0.0f;
-	if (!obs_ptr_valid(target, "obs_source_get_target_volume"))
-		return 0.0f;
-
-	transition = source->info.type == OBS_SOURCE_TYPE_TRANSITION;
-
-	if (source == target)
-		return 1.0f;
-
-	if (source->info.enum_active_sources) {
-		source->info.enum_active_sources(source->context.data,
-				transition ?
-					get_transition_child_vol :
-					get_source_base_vol,
-				&info);
-	}
-
-	return info.vol;
 }
 
 void obs_source_inc_showing(obs_source_t *source)

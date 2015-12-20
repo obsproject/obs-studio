@@ -21,20 +21,9 @@
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
 
-static inline void calculate_base_volume(struct obs_core_data *data,
-		struct obs_view *view, obs_source_t *target)
-{
-	if (!target->activate_refs) {
-		target->base_volume = 0.0f;
-	} else {
-		target->base_volume = 1.0f;
-	}
-}
-
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	struct obs_core_data *data = &obs->data;
-	struct obs_view      *view = &data->main_view;
 	struct obs_source    *source;
 	uint64_t             delta_time;
 	float                seconds;
@@ -54,17 +43,6 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 		obs_source_video_tick(source, seconds);
 		source = (struct obs_source*)source->context.next;
 	}
-
-	/* calculate source volumes */
-	pthread_mutex_lock(&view->channels_mutex);
-
-	source = data->first_source;
-	while (source) {
-		calculate_base_volume(data, view, source);
-		source = (struct obs_source*)source->context.next;
-	}
-
-	pthread_mutex_unlock(&view->channels_mutex);
 
 	pthread_mutex_unlock(&data->sources_mutex);
 
