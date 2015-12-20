@@ -268,7 +268,6 @@ struct obs_core_audio {
 	audio_t                         *audio;
 
 	float                           user_volume;
-	float                           present_volume;
 };
 
 /* user sources, output channels, and displays */
@@ -512,9 +511,7 @@ struct obs_source {
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
 	uint32_t                        audio_mixers;
-	float                           base_volume;
 	float                           user_volume;
-	float                           present_volume;
 	int64_t                         sync_offset;
 
 	/* async video data */
