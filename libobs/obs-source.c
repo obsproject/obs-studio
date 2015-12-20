@@ -965,6 +965,26 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 				in->data[i], in->frames * sizeof(float));
 }
 
+static inline bool source_muted(obs_source_t *source, uint64_t os_time)
+{
+	if (source->push_to_mute_enabled && source->push_to_mute_pressed)
+		source->push_to_mute_stop_time = os_time +
+			source->push_to_mute_delay * 1000000;
+
+	if (source->push_to_talk_enabled && source->push_to_talk_pressed)
+		source->push_to_talk_stop_time = os_time +
+			source->push_to_talk_delay * 1000000;
+
+	bool push_to_mute_active = source->push_to_mute_pressed ||
+		os_time < source->push_to_mute_stop_time;
+	bool push_to_talk_active = source->push_to_talk_pressed ||
+		os_time < source->push_to_talk_stop_time;
+
+	return !source->enabled || source->muted ||
+			(source->push_to_mute_enabled && push_to_mute_active) ||
+			(source->push_to_talk_enabled && !push_to_talk_active);
+}
+
 static void source_output_audio_data(obs_source_t *source,
 		const struct audio_data *data)
 {
@@ -1007,23 +1027,6 @@ static void source_output_audio_data(obs_source_t *source,
 	source->next_audio_sys_ts_min = source->next_audio_ts_min +
 		source->timing_adjust + source->sync_offset;
 
-	if (source->push_to_mute_enabled && source->push_to_mute_pressed)
-		source->push_to_mute_stop_time = os_time +
-			source->push_to_mute_delay * 1000000;
-
-	if (source->push_to_talk_enabled && source->push_to_talk_pressed)
-		source->push_to_talk_stop_time = os_time +
-			source->push_to_talk_delay * 1000000;
-
-	bool push_to_mute_active = source->push_to_mute_pressed ||
-		os_time < source->push_to_mute_stop_time;
-	bool push_to_talk_active = source->push_to_talk_pressed ||
-		os_time < source->push_to_talk_stop_time;
-
-	bool muted = !source->enabled || source->muted ||
-			(source->push_to_mute_enabled && push_to_mute_active) ||
-			(source->push_to_talk_enabled && !push_to_talk_active);
-
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
 	if (push_back)
@@ -1033,7 +1036,7 @@ static void source_output_audio_data(obs_source_t *source,
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
-	source_signal_audio_data(source, &in, muted);
+	source_signal_audio_data(source, &in, source_muted(source, os_time));
 }
 
 enum convert_type {
