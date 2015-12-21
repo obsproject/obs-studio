@@ -192,12 +192,11 @@ static inline void circlebuf_push_front(struct circlebuf *cb, const void *data,
 static inline void circlebuf_peek_front(struct circlebuf *cb, void *data,
 		size_t size)
 {
-	size_t start_size;
 	assert(size <= cb->size);
 
-	start_size = cb->capacity - cb->start_pos;
-
 	if (data) {
+		size_t start_size = cb->capacity - cb->start_pos;
+
 		if (start_size < size) {
 			memcpy(data, (uint8_t*)cb->data + cb->start_pos,
 					start_size);
