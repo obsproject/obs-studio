@@ -208,6 +208,29 @@ static inline void circlebuf_peek_front(struct circlebuf *cb, void *data,
 	}
 }
 
+static inline void circlebuf_peek_back(struct circlebuf *cb, void *data,
+		size_t size)
+{
+	assert(size <= cb->size);
+
+	if (data) {
+		size_t back_size = (cb->end_pos ? cb->end_pos : cb->capacity);
+
+		if (back_size < size) {
+			size_t front_size = size - back_size;
+			size_t new_end_pos = cb->capacity - front_size;
+
+			memcpy((uint8_t*)data + (size - back_size), cb->data,
+					back_size);
+			memcpy(data, (uint8_t*)cb->data + new_end_pos,
+					front_size);
+		} else {
+			memcpy(data, (uint8_t*)cb->data + cb->end_pos - size,
+					size);
+		}
+	}
+}
+
 static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 		size_t size)
 {
@@ -217,6 +240,18 @@ static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 	cb->start_pos += size;
 	if (cb->start_pos >= cb->capacity)
 		cb->start_pos -= cb->capacity;
+}
+
+static inline void circlebuf_pop_back(struct circlebuf *cb, void *data,
+		size_t size)
+{
+	circlebuf_peek_front(cb, data, size);
+
+	cb->size -= size;
+	if (cb->end_pos <= size)
+		cb->end_pos = cb->capacity - (size - cb->end_pos);
+	else
+		cb->end_pos -= size;
 }
 
 #ifdef __cplusplus
