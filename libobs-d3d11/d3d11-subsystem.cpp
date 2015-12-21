@@ -497,11 +497,65 @@ bool device_enum_adapters(
 	}
 }
 
-static bool LogAdapterCallback(void *param, const char *name, uint32_t id)
+static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
-	blog(LOG_INFO, "\tAdapter %" PRIu32 ": %s", id, name);
-	UNUSED_PARAMETER(param);
-	return true;
+	UINT i = 0;
+	ComPtr<IDXGIOutput> output;
+
+	while (adapter->EnumOutputs(i++, &output) == S_OK) {
+		DXGI_OUTPUT_DESC desc;
+		if (FAILED(output->GetDesc(&desc)))
+			continue;
+
+		RECT rect = desc.DesktopCoordinates;
+		blog(LOG_INFO, "\t  output %u: "
+				"pos={%d, %d}, "
+				"size={%d, %d}, "
+				"attached=%s",
+				i,
+				rect.left, rect.top,
+				rect.right - rect.left, rect.bottom - rect.top,
+				desc.AttachedToDesktop ? "true" : "false");
+	}
+}
+
+static inline void LogD3DAdapters()
+{
+	ComPtr<IDXGIFactory1> factory;
+	ComPtr<IDXGIAdapter1> adapter;
+	HRESULT hr;
+	UINT i = 0;
+
+	blog(LOG_INFO, "Available Video Adapters: ");
+
+	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2 :
+		__uuidof(IDXGIFactory1);
+
+	hr = CreateDXGIFactory1(factoryIID, (void**)factory.Assign());
+	if (FAILED(hr))
+		throw HRError("Failed to create DXGIFactory", hr);
+
+	while (factory->EnumAdapters1(i++, adapter.Assign()) == S_OK) {
+		DXGI_ADAPTER_DESC desc;
+		char name[512] = "";
+
+		hr = adapter->GetDesc(&desc);
+		if (FAILED(hr))
+			continue;
+
+		/* ignore microsoft's 'basic' renderer' */
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+			continue;
+
+		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
+		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
+		blog(LOG_INFO, "\t  Dedicated VRAM: %u",
+				desc.DedicatedVideoMemory);
+		blog(LOG_INFO, "\t  Shared VRAM:    %u",
+				desc.SharedSystemMemory);
+
+		LogAdapterMonitors(adapter);
+	}
 }
 
 int device_create(gs_device_t **p_device, uint32_t adapter)
@@ -512,8 +566,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	try {
 		blog(LOG_INFO, "---------------------------------");
 		blog(LOG_INFO, "Initializing D3D11..");
-		blog(LOG_INFO, "Available Video Adapters: ");
-		device_enum_adapters(LogAdapterCallback, nullptr);
+		LogD3DAdapters();
 
 		device = new gs_device(adapter);
 
