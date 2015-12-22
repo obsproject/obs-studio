@@ -1618,6 +1618,44 @@ obs_data_array_t *obs_save_sources(void)
 	return array;
 }
 
+const char* obs_start_sources(void)
+{
+    if (!obs) return "obs not available";
+
+    size_t i;
+
+    pthread_mutex_lock(&obs->data.user_sources_mutex);
+
+    const char* status = 0;
+    for (i = 0; i < obs->data.user_sources.num; i++) {
+        obs_source_t *source      = obs->data.user_sources.array[i];
+        status = obs_start_source(source);
+        if(strlen(status)>0){
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&obs->data.user_sources_mutex);
+
+    return status;
+}
+
+void obs_stop_sources(void)
+{
+    if (!obs) return;
+
+    size_t i;
+
+    pthread_mutex_lock(&obs->data.user_sources_mutex);
+
+    for (i = 0; i < obs->data.user_sources.num; i++) {
+        obs_source_t *source      = obs->data.user_sources.array[i];
+        obs_stop_source(source);
+    }
+
+    pthread_mutex_unlock(&obs->data.user_sources_mutex);
+}
+
 /* ensures that names are never blank */
 static inline char *dup_name(const char *name)
 {

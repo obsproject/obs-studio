@@ -2727,6 +2727,30 @@ void obs_source_load(obs_source_t *source)
 	source->info.load(source->context.data, source->context.settings);
 }
 
+const char* obs_start_source(obs_source_t *source)
+{
+    const char *source_name = source->info.get_name(source);
+    if (!data_valid(source, "obs_start_source")){
+        char error[256];
+        sprintf(error,"source %s not valid",source_name);
+        return error;
+    }
+    if (!source->info.start) return "";//
+    const char* error = source->info.start(source->context.data, source->context.settings);
+    if(strlen(error)>0){
+        char extended_error[1024];
+        sprintf(extended_error,"%s error:\n%s",source_name,error);
+        return extended_error;
+    }
+    return "";
+}
+
+void obs_stop_source(obs_source_t *source)
+{
+    if (!data_valid(source, "obs_stop_source") || !source->info.stop) return;
+    source->info.stop(source->context.data, source->context.settings);
+}
+
 bool obs_source_active(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_active") ?

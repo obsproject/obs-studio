@@ -304,6 +304,23 @@ struct obs_source_info {
 	void (*load)(void *data, obs_data_t *settings);
 
 	/**
+	 * Called when starting the recording.
+	 *
+	 * @param  data      Source data
+	 * @param  settings  Settings
+	 * @return           Error message (empty if success)
+	 */
+	const char *(*start)(void *data, obs_data_t *settings);
+
+	/**
+	 * Called when stoping the recording.
+	 *
+	 * @param  data      Source data
+	 * @param  settings  Settings
+	 */
+	void (*stop)(void *data, obs_data_t *settings);
+
+	/**
 	 * Called when interacting with a source and a mouse-down or mouse-up
 	 * occurs.
 	 *

@@ -3,6 +3,7 @@
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "qt-wrappers.hpp"
 
 using namespace std;
 
@@ -385,25 +386,25 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	obs_output_set_service(streamOutput, service);
 
 	bool reconnect = config_get_bool(main->Config(), "Output",
-			"Reconnect");
+					 "Reconnect");
 	int retryDelay = config_get_uint(main->Config(), "Output",
-			"RetryDelay");
+					 "RetryDelay");
 	int maxRetries = config_get_uint(main->Config(), "Output",
-			"MaxRetries");
+					 "MaxRetries");
 	bool useDelay = config_get_bool(main->Config(), "Output",
-			"DelayEnable");
+					"DelayEnable");
 	int delaySec = config_get_int(main->Config(), "Output",
-			"DelaySec");
+				      "DelaySec");
 	bool preserveDelay = config_get_bool(main->Config(), "Output",
-			"DelayPreserve");
+					     "DelayPreserve");
 	if (!reconnect)
 		maxRetries = 0;
 
 	obs_output_set_delay(streamOutput, useDelay ? delaySec : 0,
-			preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
+			     preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries,
-			retryDelay);
+					  retryDelay);
 
 	if (obs_output_start(streamOutput)) {
 		return true;
@@ -425,7 +426,7 @@ bool SimpleOutput::StartRecording()
 		SetupOutputs();
 
 	const char *path = config_get_string(main->Config(),
-			"SimpleOutput", "FilePath");
+					     "SimpleOutput", "FilePath");
 	const char *format = config_get_string(main->Config(),
 			"SimpleOutput", "RecFormat");
 	const char *mux = config_get_string(main->Config(), "SimpleOutput",
@@ -437,8 +438,8 @@ bool SimpleOutput::StartRecording()
 
 	if (!dir) {
 		QMessageBox::information(main,
-				QTStr("Output.BadPath.Title"),
-				QTStr("Output.BadPath.Text"));
+					 QTStr("Output.BadPath.Title"),
+					 QTStr("Output.BadPath.Text"));
 		return false;
 	}
 
@@ -470,11 +471,28 @@ bool SimpleOutput::StartRecording()
 
 	obs_data_release(settings);
 
-	if (obs_output_start(fileOutput)) {
-		return true;
+	const char *sources_started = 0;
+	bool output_started(false);
+	const char* errormsg = 0;
+	try {
+		sources_started = obs_start_sources();
+		errormsg = sources_started;
+		if(strlen(sources_started)==0){
+			output_started = obs_output_start(fileOutput);
+			if(!output_started){
+				errormsg = "Couldn't start the recording";
+				obs_stop_sources();
+			}
+		}
+	} catch (const char *error) {
+		errormsg = error;
 	}
 
-	return false;
+	if(strlen(errormsg)>0){
+		blog(LOG_ERROR, "%s", errormsg);
+		OBSErrorBox(nullptr, "%s", errormsg);
+	}
+	return output_started && (strlen(sources_started)==0);
 }
 
 void SimpleOutput::StopStreaming()
@@ -490,6 +508,7 @@ void SimpleOutput::ForceStopStreaming()
 void SimpleOutput::StopRecording()
 {
 	obs_output_stop(fileOutput);
+	obs_stop_sources();
 }
 
 bool SimpleOutput::StreamingActive() const
@@ -951,7 +970,7 @@ bool AdvancedOutput::StartRecording()
 
 	if (!ffmpegOutput || ffmpegRecording) {
 		path = config_get_string(main->Config(), "AdvOut",
-				ffmpegRecording ? "FFFilePath" : "RecFilePath");
+					 ffmpegRecording ? "FFFilePath" : "RecFilePath");
 		format = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFExtension" : "RecFormat");
 		noSpace = config_get_bool(main->Config(), "AdvOut",
@@ -963,8 +982,8 @@ bool AdvancedOutput::StartRecording()
 
 		if (!dir) {
 			QMessageBox::information(main,
-					QTStr("Output.BadPath.Title"),
-					QTStr("Output.BadPath.Text"));
+						 QTStr("Output.BadPath.Title"),
+						 QTStr("Output.BadPath.Text"));
 			return false;
 		}
 
@@ -981,19 +1000,36 @@ bool AdvancedOutput::StartRecording()
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings,
-				ffmpegRecording ? "url" : "path",
-				strPath.c_str());
+				    ffmpegRecording ? "url" : "path",
+				    strPath.c_str());
 
 		obs_output_update(fileOutput, settings);
 
 		obs_data_release(settings);
 	}
 
-	if (obs_output_start(fileOutput)) {
-		return true;
+	const char *sources_started = 0;
+	bool output_started(false);
+	const char* errormsg = 0;
+	try {
+		sources_started = obs_start_sources();
+		errormsg = sources_started;
+		if(strlen(sources_started)==0){
+			output_started = obs_output_start(fileOutput);
+			if(!output_started){
+				errormsg = "Couldn't start the recording";
+				obs_stop_sources();
+			}
+		}
+	} catch (const char *error) {
+		errormsg = error;
 	}
 
-	return false;
+	if(strlen(errormsg)>0){
+		blog(LOG_ERROR, "%s", errormsg);
+		OBSErrorBox(nullptr, "%s", errormsg);
+	}
+	return output_started && (strlen(sources_started)==0);
 }
 
 void AdvancedOutput::StopStreaming()
@@ -1008,7 +1044,8 @@ void AdvancedOutput::ForceStopStreaming()
 
 void AdvancedOutput::StopRecording()
 {
-	obs_output_stop(fileOutput);
+    obs_output_stop(fileOutput);
+    obs_stop_sources();
 }
 
 bool AdvancedOutput::StreamingActive() const

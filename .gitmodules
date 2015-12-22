@@ -5,3 +5,6 @@
 [submodule "plugins/mac-syphon/syphon-framework"]
 	path = plugins/mac-syphon/syphon-framework
 	url = https://github.com/palana/Syphon-Framework.git
+[submodule "plugins/input-uiohook/libuiohook"]
+	path = plugins/input-uiohook/libuiohook
+	url = git@github.com:ChristianFrisson/libuiohook.git
