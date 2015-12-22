@@ -117,7 +117,8 @@ static void scene_enum_sources(void *data,
 		struct obs_scene_item *next = item->next;
 
 		obs_sceneitem_addref(item);
-		enum_callback(scene->source, item->source, param);
+		if (item->visible)
+			enum_callback(scene->source, item->source, param);
 		obs_sceneitem_release(item);
 
 		item = next;
@@ -370,6 +371,9 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	obs_data_get_vec2(item_data, "pos",    &item->pos);
 	obs_data_get_vec2(item_data, "scale",  &item->scale);
 
+	if (!item->visible)
+		obs_source_remove_active_child(scene->source, source);
+
 	item->bounds_type =
 		(enum obs_bounds_type)obs_data_get_int(item_data,
 				"bounds_type");
@@ -493,6 +497,10 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 				obs_scene_add(new_scene, source);
 
 			new_item->visible = item->visible;
+			if (!new_item->visible)
+				obs_source_remove_active_child(
+						new_scene->source, source);
+
 			new_item->selected = item->selected;
 			new_item->pos = item->pos;
 			new_item->scale = item->scale;
@@ -772,7 +780,8 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	assert(scene != NULL);
 	assert(scene->source != NULL);
-	obs_source_remove_active_child(scene->source, item->source);
+	if (item->visible)
+		obs_source_remove_active_child(scene->source, item->source);
 
 	signal_item_remove(item);
 	detach_sceneitem(item);
@@ -1049,17 +1058,29 @@ bool obs_sceneitem_visible(const obs_sceneitem_t *item)
 	return item ? item->visible : false;
 }
 
-void obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
+bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 {
 	struct calldata cd = {0};
 
 	if (!item)
-		return;
+		return false;
 
-	item->visible = visible;
+	if (item->visible == visible)
+		return false;
 
 	if (!item->parent)
-		return;
+		return false;
+
+	if (visible) {
+		if (!obs_source_add_active_child(item->parent->source,
+					item->source))
+			return false;
+	} else {
+		obs_source_remove_active_child(item->parent->source,
+				item->source);
+	}
+
+	item->visible = visible;
 
 	calldata_set_ptr(&cd, "scene", item->parent);
 	calldata_set_ptr(&cd, "item", item);
@@ -1069,6 +1090,7 @@ void obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 			"item_visible", &cd);
 
 	calldata_free(&cd);
+	return true;
 }
 
 static bool sceneitems_match(obs_scene_t *scene, obs_sceneitem_t * const *items,
