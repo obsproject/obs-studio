@@ -271,14 +271,15 @@ struct obs_source_info {
 			struct obs_audio_data *audio);
 
 	/**
-	 * Called to enumerate all sources being used within this source.
-	 * If the source has children it must implement this callback.
+	 * Called to enumerate all active sources being used within this
+	 * source.  If the source has children that render audio/video it must
+	 * implement this callback.
 	 *
 	 * @param  data           Filter data
 	 * @param  enum_callback  Enumeration callback
 	 * @param  param          User data to pass to callback
 	 */
-	void (*enum_sources)(void *data,
+	void (*enum_active_sources)(void *data,
 			obs_source_enum_proc_t enum_callback,
 			void *param);
 

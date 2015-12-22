@@ -467,7 +467,7 @@ const struct obs_source_info scene_info =
 	.get_height    = scene_getheight,
 	.load          = scene_load,
 	.save          = scene_save,
-	.enum_sources  = scene_enum_sources
+	.enum_active_sources = scene_enum_sources
 };
 
 obs_scene_t *obs_scene_create(const char *name)
@@ -681,7 +681,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		return NULL;
 	}
 
-	if (!obs_source_add_child(scene->source, source)) {
+	if (!obs_source_add_active_child(scene->source, source)) {
 		blog(LOG_WARNING, "Failed to add source to scene due to "
 		                  "infinite source recursion");
 		return NULL;
@@ -772,7 +772,7 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	assert(scene != NULL);
 	assert(scene->source != NULL);
-	obs_source_remove_child(scene->source, item->source);
+	obs_source_remove_active_child(scene->source, item->source);
 
 	signal_item_remove(item);
 	detach_sceneitem(item);

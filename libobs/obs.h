@@ -773,13 +773,13 @@ EXPORT void obs_source_set_sync_offset(obs_source_t *source, int64_t offset);
 /** Gets the audio sync offset (in nanoseconds) for a source */
 EXPORT int64_t obs_source_get_sync_offset(const obs_source_t *source);
 
-/** Enumerates child sources used by this source */
-EXPORT void obs_source_enum_sources(obs_source_t *source,
+/** Enumerates active child sources used by this source */
+EXPORT void obs_source_enum_active_sources(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param);
 
-/** Enumerates the entire child source tree used by this source */
-EXPORT void obs_source_enum_tree(obs_source_t *source,
+/** Enumerates the entire active child source tree used by this source */
+EXPORT void obs_source_enum_active_tree(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param);
 
@@ -953,20 +953,22 @@ EXPORT void obs_source_process_filter_end(obs_source_t *filter,
 EXPORT void obs_source_skip_video_filter(obs_source_t *filter);
 
 /**
- * Adds a child source.  Must be called by parent sources on child sources
- * when the child is added.  This ensures that the source is properly activated
- * if the parent is active.
+ * Adds an active child source.  Must be called by parent sources on child
+ * sources when the child is added and active.  This ensures that the source is
+ * properly activated if the parent is active.
  *
  * @returns true if source can be added, false if it causes recursion
  */
-EXPORT bool obs_source_add_child(obs_source_t *parent, obs_source_t *child);
+EXPORT bool obs_source_add_active_child(obs_source_t *parent,
+		obs_source_t *child);
 
 /**
- * Removes a child source.  Must be called by parent sources on child sources
- * when the child is removed.  This ensures that the source is properly
- * deactivated if the parent is active.
+ * Removes an active child source.  Must be called by parent sources on child
+ * sources when the child is removed or inactive.  This ensures that the source
+ * is properly deactivated if the parent is no longer active.
  */
-EXPORT void obs_source_remove_child(obs_source_t *parent, obs_source_t *child);
+EXPORT void obs_source_remove_active_child(obs_source_t *parent,
+		obs_source_t *child);
 
 /** Sends a mouse down/up event to a source */
 EXPORT void obs_source_send_mouse_click(obs_source_t *source,

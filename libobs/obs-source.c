@@ -737,12 +737,13 @@ void obs_source_activate(obs_source_t *source, enum view_type type)
 		return;
 
 	if (os_atomic_inc_long(&source->show_refs) == 1) {
-		obs_source_enum_tree(source, show_tree, NULL);
+		obs_source_enum_active_tree(source, show_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
 		if (os_atomic_inc_long(&source->activate_refs) == 1) {
-			obs_source_enum_tree(source, activate_tree, NULL);
+			obs_source_enum_active_tree(source, activate_tree,
+					NULL);
 		}
 	}
 }
@@ -753,12 +754,13 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 		return;
 
 	if (os_atomic_dec_long(&source->show_refs) == 0) {
-		obs_source_enum_tree(source, hide_tree, NULL);
+		obs_source_enum_active_tree(source, hide_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
 		if (os_atomic_dec_long(&source->activate_refs) == 0) {
-			obs_source_enum_tree(source, deactivate_tree, NULL);
+			obs_source_enum_active_tree(source, deactivate_tree,
+					NULL);
 		}
 	}
 }
@@ -2585,9 +2587,9 @@ static void enum_source_tree_callback(obs_source_t *parent, obs_source_t *child,
 {
 	struct source_enum_data *data = param;
 
-	if (child->info.enum_sources) {
+	if (child->info.enum_active_sources) {
 		if (child->context.data) {
-			child->info.enum_sources(child->context.data,
+			child->info.enum_active_sources(child->context.data,
 					enum_source_tree_callback, data);
 		}
 	}
@@ -2595,36 +2597,37 @@ static void enum_source_tree_callback(obs_source_t *parent, obs_source_t *child,
 	data->enum_callback(parent, child, data->param);
 }
 
-void obs_source_enum_sources(obs_source_t *source,
+void obs_source_enum_active_sources(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
-	if (!data_valid(source, "obs_source_enum_sources"))
+	if (!data_valid(source, "obs_source_enum_active_sources"))
 		return;
-	if (!source->info.enum_sources)
+	if (!source->info.enum_active_sources)
 		return;
 
 	obs_source_addref(source);
 
-	source->info.enum_sources(source->context.data, enum_callback, param);
+	source->info.enum_active_sources(source->context.data, enum_callback,
+			param);
 
 	obs_source_release(source);
 }
 
-void obs_source_enum_tree(obs_source_t *source,
+void obs_source_enum_active_tree(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
 	struct source_enum_data data = {enum_callback, param};
 
-	if (!data_valid(source, "obs_source_enum_tree"))
+	if (!data_valid(source, "obs_source_enum_active_tree"))
 		return;
-	if (!source->info.enum_sources)
+	if (!source->info.enum_active_sources)
 		return;
 
 	obs_source_addref(source);
 
-	source->info.enum_sources(source->context.data,
+	source->info.enum_active_sources(source->context.data,
 			enum_source_tree_callback,
 			&data);
 
@@ -2644,20 +2647,21 @@ static void check_descendant(obs_source_t *parent, obs_source_t *child,
 		info->exists = true;
 }
 
-bool obs_source_add_child(obs_source_t *parent, obs_source_t *child)
+bool obs_source_add_active_child(obs_source_t *parent, obs_source_t *child)
 {
 	struct descendant_info info = {false, parent};
 
-	if (!obs_ptr_valid(parent, "obs_source_add_child"))
+	if (!obs_ptr_valid(parent, "obs_source_add_active_child"))
 		return false;
-	if (!obs_ptr_valid(parent, "obs_source_add_child"))
+	if (!obs_ptr_valid(child, "obs_source_add_active_child"))
 		return false;
 	if (parent == child) {
-		blog(LOG_WARNING, "obs_source_add_child: parent == child");
+		blog(LOG_WARNING, "obs_source_add_active_child: "
+				"parent == child");
 		return false;
 	}
 
-	obs_source_enum_tree(child, check_descendant, &info);
+	obs_source_enum_active_tree(child, check_descendant, &info);
 	if (info.exists)
 		return false;
 
@@ -2670,11 +2674,11 @@ bool obs_source_add_child(obs_source_t *parent, obs_source_t *child)
 	return true;
 }
 
-void obs_source_remove_child(obs_source_t *parent, obs_source_t *child)
+void obs_source_remove_active_child(obs_source_t *parent, obs_source_t *child)
 {
-	if (!obs_ptr_valid(parent, "obs_source_remove_child"))
+	if (!obs_ptr_valid(parent, "obs_source_remove_active_child"))
 		return;
-	if (!obs_ptr_valid(parent, "obs_source_remove_child"))
+	if (!obs_ptr_valid(child, "obs_source_remove_active_child"))
 		return;
 
 	for (int i = 0; i < parent->show_refs; i++) {
@@ -2918,8 +2922,8 @@ float obs_source_get_target_volume(obs_source_t *source, obs_source_t *target)
 	if (source == target)
 		return 1.0f;
 
-	if (source->info.enum_sources) {
-		source->info.enum_sources(source->context.data,
+	if (source->info.enum_active_sources) {
+		source->info.enum_active_sources(source->context.data,
 				transition ?
 					get_transition_child_vol :
 					get_source_base_vol,
