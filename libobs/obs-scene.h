@@ -23,12 +23,19 @@
 
 /* how obs scene! */
 
+struct item_action {
+	bool visible;
+	uint64_t timestamp;
+};
+
 struct obs_scene_item {
 	volatile long         ref;
 	volatile bool         removed;
 
 	struct obs_scene      *parent;
 	struct obs_source     *source;
+	volatile long         active_refs;
+	bool                  user_visible;
 	bool                  visible;
 	bool                  selected;
 
@@ -50,6 +57,9 @@ struct obs_scene_item {
 	struct vec2           bounds;
 
 	obs_hotkey_pair_id    toggle_visibility;
+
+	pthread_mutex_t       actions_mutex;
+	DARRAY(struct item_action) audio_actions;
 
 	/* would do **prev_next, but not really great for reordering */
 	struct obs_scene_item *prev;

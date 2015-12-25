@@ -142,7 +142,7 @@ static void scene_enum_sources(void *data,
 		next = item->next;
 
 		obs_sceneitem_addref(item);
-		if (item->visible)
+		if (os_atomic_load_long(&item->active_refs) > 0)
 			enum_callback(scene->source, item->source, param);
 		obs_sceneitem_release(item);
 
@@ -347,7 +347,7 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 		if (source_size_changed(item))
 			update_item_transform(item);
 
-		if (item->visible) {
+		if (item->user_visible) {
 			gs_matrix_push();
 			gs_matrix_mul(&item->draw_transform);
 			obs_source_video_render(item->source);
@@ -364,11 +364,33 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
+static inline void set_visibility(struct obs_scene_item *item, bool vis)
+{
+	pthread_mutex_lock(&item->actions_mutex);
+
+	da_resize(item->audio_actions, 0);
+
+	if (os_atomic_load_long(&item->active_refs) > 0) {
+		if (!vis)
+			obs_source_remove_active_child(item->parent->source,
+					item->source);
+	} else if (vis) {
+		obs_source_add_active_child(item->parent->source, item->source);
+	}
+
+	os_atomic_set_long(&item->active_refs, vis ? 1 : 0);
+	item->visible = vis;
+	item->user_visible = vis;
+
+	pthread_mutex_unlock(&item->actions_mutex);
+}
+
 static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char            *name = obs_data_get_string(item_data, "name");
 	obs_source_t          *source = obs_get_source_by_name(name);
 	struct obs_scene_item *item;
+	bool visible;
 
 	if (!source) {
 		blog(LOG_WARNING, "[scene_load_item] Source %s not found!",
@@ -391,12 +413,11 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	item->rot     = (float)obs_data_get_double(item_data, "rot");
 	item->align   = (uint32_t)obs_data_get_int(item_data, "align");
-	item->visible = obs_data_get_bool(item_data, "visible");
+	visible = obs_data_get_bool(item_data, "visible");
 	obs_data_get_vec2(item_data, "pos",    &item->pos);
 	obs_data_get_vec2(item_data, "scale",  &item->scale);
 
-	if (!item->visible)
-		obs_source_remove_active_child(scene->source, source);
+	set_visibility(item, visible);
 
 	item->bounds_type =
 		(enum obs_bounds_type)obs_data_get_int(item_data,
@@ -437,7 +458,7 @@ static void scene_save_item(obs_data_array_t *array,
 	const char *name     = obs_source_get_name(item->source);
 
 	obs_data_set_string(item_data, "name",         name);
-	obs_data_set_bool  (item_data, "visible",      item->visible);
+	obs_data_set_bool  (item_data, "visible",      item->user_visible);
 	obs_data_set_double(item_data, "rot",          item->rot);
 	obs_data_set_vec2 (item_data, "pos",          &item->pos);
 	obs_data_set_vec2 (item_data, "scale",        &item->scale);
@@ -482,6 +503,101 @@ static uint32_t scene_getheight(void *data)
 	return obs->video.base_height;
 }
 
+static void apply_scene_item_audio_actions(struct obs_scene_item *item,
+		float **p_buf, uint64_t ts, size_t sample_rate)
+{
+	bool cur_visible = item->visible;
+	uint64_t frame_num = 0;
+	size_t deref_count = 0;
+	float *buf;
+
+	if (!*p_buf)
+		*p_buf = malloc(AUDIO_OUTPUT_FRAMES * sizeof(float));
+	buf = *p_buf;
+
+	pthread_mutex_lock(&item->actions_mutex);
+
+	for (size_t i = 0; i < item->audio_actions.num; i++) {
+		struct item_action action = item->audio_actions.array[i];
+		uint64_t timestamp = action.timestamp;
+		uint64_t new_frame_num;
+
+		if (timestamp < ts)
+			timestamp = ts;
+
+		new_frame_num = (timestamp - ts) * (uint64_t)sample_rate /
+			1000000000ULL;
+
+		if (new_frame_num >= AUDIO_OUTPUT_FRAMES)
+			break;
+
+		da_erase(item->audio_actions, i--);
+
+		item->visible = action.visible;
+		if (!item->visible)
+			deref_count++;
+
+		if (new_frame_num > frame_num) {
+			for (; frame_num < new_frame_num; frame_num++)
+				buf[frame_num] = cur_visible ? 1.0f : 0.0f;
+		}
+
+		cur_visible = item->visible;
+	}
+
+	for (; frame_num < AUDIO_OUTPUT_FRAMES; frame_num++)
+		buf[frame_num] = cur_visible ? 1.0f : 0.0f;
+
+	pthread_mutex_unlock(&item->actions_mutex);
+
+	while (deref_count--) {
+		if (os_atomic_dec_long(&item->active_refs) == 0) {
+			obs_source_remove_active_child(item->parent->source,
+					item->source);
+		}
+	}
+}
+
+static inline bool apply_scene_item_volume(struct obs_scene_item *item,
+		float **buf, uint64_t ts, size_t sample_rate)
+{
+	bool actions_pending;
+	struct item_action action;
+
+	pthread_mutex_lock(&item->actions_mutex);
+
+	actions_pending = item->audio_actions.num > 0;
+	if (actions_pending)
+		action = item->audio_actions.array[0];
+
+	pthread_mutex_unlock(&item->actions_mutex);
+
+	if (actions_pending) {
+		uint64_t duration = (uint64_t)AUDIO_OUTPUT_FRAMES *
+			1000000000ULL / (uint64_t)sample_rate;
+
+		if (action.timestamp < (ts + duration)) {
+			apply_scene_item_audio_actions(item, buf, ts,
+					sample_rate);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void mix_audio_with_buf(float *p_out, float *p_in, float *buf_in,
+		size_t pos, size_t count)
+{
+	register float *out = p_out;
+	register float *buf = buf_in + pos;
+	register float *in = p_in + pos;
+	register float *end = in + count;
+
+	while (in < end)
+		*(out++) += *(in++) * *(buf++);
+}
+
 static inline void mix_audio(float *p_out, float *p_in,
 		size_t pos, size_t count)
 {
@@ -498,6 +614,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 		size_t channels, size_t sample_rate)
 {
 	uint64_t timestamp = 0;
+	float *buf = NULL;
 	struct obs_source_audio_mix child_audio;
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
@@ -526,6 +643,10 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	while (item) {
 		uint64_t source_ts;
 		size_t pos, count;
+		bool apply_buf;
+
+		apply_buf = apply_scene_item_volume(item, &buf, timestamp,
+				sample_rate);
 
 		if (obs_source_audio_pending(item->source)) {
 			item = item->next;
@@ -537,13 +658,25 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 				source_ts - timestamp);
 		count = AUDIO_OUTPUT_FRAMES - pos;
 
+		if (!apply_buf && !item->visible) {
+			item = item->next;
+			continue;
+		}
+
 		obs_source_get_audio_mix(item->source, &child_audio);
 		for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+			if ((mixers & (1 << mix)) == 0)
+				continue;
+
 			for (size_t ch = 0; ch < channels; ch++) {
 				float *out = audio_output->output[mix].data[ch];
 				float *in = child_audio.output[mix].data[ch];
 
-				mix_audio(out, in, pos, count);
+				if (apply_buf)
+					mix_audio_with_buf(out, in, buf, pos,
+							count);
+				else
+					mix_audio(out, in, pos, count);
 			}
 		}
 
@@ -552,6 +685,8 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 	*ts_out = timestamp;
 	audio_unlock(scene);
+
+	free(buf);
 	return true;
 }
 
@@ -596,10 +731,13 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 			struct obs_scene_item *new_item =
 				obs_scene_add(new_scene, source);
 
-			new_item->visible = item->visible;
-			if (!new_item->visible)
-				obs_source_remove_active_child(
-						new_scene->source, source);
+			if (!new_item) {
+				item = item->next;
+				continue;
+			}
+
+			if (!item->user_visible)
+				set_visibility(new_item, false);
 
 			new_item->selected = item->selected;
 			new_item->pos = item->pos;
@@ -718,7 +856,7 @@ static bool hotkey_show_sceneitem(void *data, obs_hotkey_pair_id id,
 	UNUSED_PARAMETER(hotkey);
 
 	obs_sceneitem_t *si = sceneitem_get_ref(data);
-	if (pressed && si && !si->visible) {
+	if (pressed && si && !si->user_visible) {
 		obs_sceneitem_set_visible(si, true);
 		obs_sceneitem_release(si);
 		return true;
@@ -735,7 +873,7 @@ static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
 	UNUSED_PARAMETER(hotkey);
 
 	obs_sceneitem_t *si = sceneitem_get_ref(data);
-	if (pressed && si && si->visible) {
+	if (pressed && si && si->user_visible) {
 		obs_sceneitem_set_visible(si, false);
 		obs_sceneitem_release(si);
 		return true;
@@ -775,11 +913,23 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 	dstr_free(&hide_desc);
 }
 
+static inline bool source_has_audio(obs_source_t *source)
+{
+	return (source->info.output_flags &
+		(OBS_SOURCE_AUDIO | OBS_SOURCE_COMPOSITE)) != 0;
+}
+
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
 	struct calldata params = {0};
+	pthread_mutex_t mutex;
+
+	struct item_action action = {
+		.visible = true,
+		.timestamp = os_gettime_ns()
+	};
 
 	if (!scene)
 		return NULL;
@@ -789,23 +939,38 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		return NULL;
 	}
 
+	if (pthread_mutex_init(&mutex, NULL) != 0) {
+		blog(LOG_WARNING, "Failed to create scene item mutex");
+		return NULL;
+	}
+
 	if (!obs_source_add_active_child(scene->source, source)) {
 		blog(LOG_WARNING, "Failed to add source to scene due to "
 		                  "infinite source recursion");
+		pthread_mutex_destroy(&mutex);
 		return NULL;
 	}
 
 	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source  = source;
-	item->visible = true;
 	item->parent  = scene;
 	item->ref     = 1;
 	item->align   = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
+	item->actions_mutex = mutex;
+	item->user_visible = true;
+	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
 
 	obs_source_addref(source);
+
+	if (source_has_audio(source)) {
+		item->visible = false;
+		da_push_back(item->audio_actions, &action);
+	} else {
+		item->visible = true;
+	}
 
 	full_lock(scene);
 
@@ -837,8 +1002,10 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 {
 	if (item) {
 		obs_hotkey_pair_unregister(item->toggle_visibility);
+		pthread_mutex_destroy(&item->actions_mutex);
 		if (item->source)
 			obs_source_release(item->source);
+		da_free(item->audio_actions);
 		bfree(item);
 	}
 }
@@ -880,8 +1047,8 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	assert(scene != NULL);
 	assert(scene->source != NULL);
-	if (item->visible)
-		obs_source_remove_active_child(scene->source, item->source);
+
+	set_visibility(item, false);
 
 	signal_item_remove(item);
 	detach_sceneitem(item);
@@ -1155,32 +1322,37 @@ void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 
 bool obs_sceneitem_visible(const obs_sceneitem_t *item)
 {
-	return item ? item->visible : false;
+	return item ? item->user_visible : false;
 }
 
 bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 {
 	struct calldata cd = {0};
+	struct item_action action = {
+		.visible = visible,
+		.timestamp = os_gettime_ns()
+	};
 
 	if (!item)
 		return false;
 
-	if (item->visible == visible)
+	if (item->user_visible == visible)
 		return false;
 
 	if (!item->parent)
 		return false;
 
 	if (visible) {
-		if (!obs_source_add_active_child(item->parent->source,
-					item->source))
-			return false;
-	} else {
-		obs_source_remove_active_child(item->parent->source,
-				item->source);
+		if (os_atomic_inc_long(&item->active_refs) == 1) {
+			if (!obs_source_add_active_child(item->parent->source,
+						item->source)) {
+				os_atomic_dec_long(&item->active_refs);
+				return false;
+			}
+		}
 	}
 
-	item->visible = visible;
+	item->user_visible = visible;
 
 	calldata_set_ptr(&cd, "scene", item->parent);
 	calldata_set_ptr(&cd, "item", item);
@@ -1188,8 +1360,15 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 
 	signal_handler_signal(item->parent->source->context.signals,
 			"item_visible", &cd);
-
 	calldata_free(&cd);
+
+	if (source_has_audio(item->source)) {
+		pthread_mutex_lock(&item->actions_mutex);
+		da_push_back(item->audio_actions, &action);
+		pthread_mutex_unlock(&item->actions_mutex);
+	} else {
+		set_visibility(item, visible);
+	}
 	return true;
 }
 
