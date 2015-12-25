@@ -159,6 +159,16 @@ long os_atomic_dec_long(volatile long *val)
 	return InterlockedDecrement(val);
 }
 
+long os_atomic_set_long(volatile long *ptr, long val)
+{
+	return (long)InterlockedExchange((volatile long*)ptr, (long)val);
+}
+
+long os_atomic_load_long(const volatile long *ptr)
+{
+	return (long)InterlockedOr((volatile long*)ptr, 0);
+}
+
 bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
 {
 	return InterlockedCompareExchange(val, new_val, old_val) == old_val;
