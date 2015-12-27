@@ -147,16 +147,15 @@ static inline void do_audio_output(struct audio_output *audio,
 	struct audio_mix *mix = &audio->mixes[mix_idx];
 	struct audio_data data;
 
-	for (size_t i = 0; i < audio->planes; i++)
-		data.data[i] = (uint8_t*)mix->buffer[i];
-
-	data.frames = frames;
-	data.timestamp = timestamp;
-
 	pthread_mutex_lock(&audio->input_mutex);
 
 	for (size_t i = mix->inputs.num; i > 0; i--) {
 		struct audio_input *input = mix->inputs.array+(i-1);
+
+		for (size_t i = 0; i < audio->planes; i++)
+			data.data[i] = (uint8_t*)mix->buffer[i];
+		data.frames = frames;
+		data.timestamp = timestamp;
 
 		if (resample_audio_output(input, &data))
 			input->callback(input->param, mix_idx, &data);
