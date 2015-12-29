@@ -129,8 +129,7 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 				QTStr("NameExists.Text"));
 
 	} else {
-		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				id, name, NULL, nullptr);
+		source = obs_source_create(id, name, NULL, nullptr);
 
 		if (source) {
 			AddSourceData data;
@@ -191,8 +190,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 
 	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	QString placeHolderText{QT_UTF8(obs_source_get_display_name(
-				OBS_SOURCE_TYPE_INPUT, id))};
+	QString placeHolderText{QT_UTF8(obs_source_get_display_name(id))};
 
 	QString text{placeHolderText};
 	int i = 1;

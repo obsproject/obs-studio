@@ -340,6 +340,7 @@ struct obs_core {
 	struct obs_module               *first_module;
 	DARRAY(struct obs_module_path)  module_paths;
 
+	DARRAY(struct obs_source_info)  source_types;
 	DARRAY(struct obs_source_info)  input_types;
 	DARRAY(struct obs_source_info)  filter_types;
 	DARRAY(struct obs_source_info)  transition_types;
@@ -597,8 +598,7 @@ struct obs_source {
 	uint64_t                        push_to_talk_stop_time;
 };
 
-extern const struct obs_source_info *find_source(struct darray *list,
-		const char *id);
+extern const struct obs_source_info *get_source_info(const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name,
 		obs_data_t *hotkey_data);

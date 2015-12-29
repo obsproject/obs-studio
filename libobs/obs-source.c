@@ -34,40 +34,15 @@ static inline bool data_valid(const struct obs_source *source, const char *f)
 	return obs_source_valid(source, f) && source->context.data;
 }
 
-const struct obs_source_info *find_source(struct darray *list, const char *id)
+const struct obs_source_info *get_source_info(const char *id)
 {
-	size_t i;
-	struct obs_source_info *array = list->array;
-
-	for (i = 0; i < list->num; i++) {
-		struct obs_source_info *info = array+i;
+	for (size_t i = 0; i < obs->source_types.num; i++) {
+		struct obs_source_info *info = &obs->source_types.array[i];
 		if (strcmp(info->id, id) == 0)
 			return info;
 	}
 
 	return NULL;
-}
-
-static const struct obs_source_info *get_source_info(enum obs_source_type type,
-		const char *id)
-{
-	struct darray *list = NULL;
-
-	switch (type) {
-	case OBS_SOURCE_TYPE_INPUT:
-		list = &obs->input_types.da;
-		break;
-
-	case OBS_SOURCE_TYPE_FILTER:
-		list = &obs->filter_types.da;
-		break;
-
-	case OBS_SOURCE_TYPE_TRANSITION:
-		list = &obs->transition_types.da;
-		break;
-	}
-
-	return find_source(list, id);
 }
 
 static const char *source_signals[] = {
@@ -109,10 +84,9 @@ bool obs_source_init_context(struct obs_source *source,
 			source_signals);
 }
 
-const char *obs_source_get_display_name(enum obs_source_type type,
-		const char *id)
+const char *obs_source_get_display_name(const char *id)
 {
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	return (info != NULL) ? info->get_name(info->type_data) : NULL;
 }
 
@@ -306,17 +280,16 @@ static inline void obs_source_dosignal(struct obs_source *source,
 	calldata_free(&data);
 }
 
-obs_source_t *obs_source_create(enum obs_source_type type, const char *id,
-		const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
+obs_source_t *obs_source_create(const char *id, const char *name,
+		obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	if (!info) {
 		blog(LOG_ERROR, "Source ID '%s' not found", id);
 
 		source->info.id      = bstrdup(id);
-		source->info.type    = type;
 		source->owns_info_id = true;
 	} else {
 		source->info = *info;
@@ -562,23 +535,21 @@ static inline obs_data_t *get_defaults(const struct obs_source_info *info)
 	return settings;
 }
 
-obs_data_t *obs_source_settings(enum obs_source_type type, const char *id)
+obs_data_t *obs_source_settings(const char *id)
 {
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	return (info) ? get_defaults(info) : NULL;
 }
 
-obs_data_t *obs_get_source_defaults(enum obs_source_type type,
-		const char *id)
+obs_data_t *obs_get_source_defaults(const char *id)
 {
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	return info ? get_defaults(info) : NULL;
 }
 
-obs_properties_t *obs_get_source_properties(enum obs_source_type type,
-		const char *id)
+obs_properties_t *obs_get_source_properties(const char *id)
 {
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	if (info && info->get_properties) {
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
@@ -612,9 +583,9 @@ uint32_t obs_source_get_output_flags(const obs_source_t *source)
 		source->info.output_flags : 0;
 }
 
-uint32_t obs_get_source_output_flags(enum obs_source_type type, const char *id)
+uint32_t obs_get_source_output_flags(const char *id)
 {
-	const struct obs_source_info *info = get_source_info(type, id);
+	const struct obs_source_info *info = get_source_info(id);
 	return info ? info->output_flags : 0;
 }
 

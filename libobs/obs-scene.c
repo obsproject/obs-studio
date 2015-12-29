@@ -711,9 +711,8 @@ const struct obs_source_info scene_info =
 
 obs_scene_t *obs_scene_create(const char *name)
 {
-	struct obs_source *source =
-		obs_source_create(OBS_SOURCE_TYPE_INPUT, "scene", name, NULL,
-				NULL);
+	struct obs_source *source = obs_source_create("scene", name, NULL,
+			NULL);
 	return source->context.data;
 }
 
