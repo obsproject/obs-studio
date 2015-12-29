@@ -540,7 +540,7 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		goto error;
 	}
 
-	if (find_source(array, info->id)) {
+	if (get_source_info(info->id)) {
 		blog(LOG_WARNING, "Source d '%s' already exists!  "
 		                  "Duplicate library?", info->id);
 		goto error;
@@ -601,7 +601,9 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 			data.output_flags |= OBS_SOURCE_ASYNC;
 	}
 
-	darray_push_back(sizeof(struct obs_source_info), array, &data);
+	if (array)
+		darray_push_back(sizeof(struct obs_source_info), array, &data);
+	da_push_back(obs->source_types, &data);
 	return;
 
 error:

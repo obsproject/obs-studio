@@ -79,8 +79,8 @@ static SceneContext SetupScene()
 
 	/* ------------------------------------------------------ */
 	/* create source */
-	SourceContext source{obs_source_create(OBS_SOURCE_TYPE_INPUT,
-			"random", "a test source", nullptr, nullptr)};
+	SourceContext source{obs_source_create("random", "a test source",
+			nullptr, nullptr)};
 	if (!source)
 		throw "Couldn't create random test source";
 

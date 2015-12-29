@@ -770,6 +770,7 @@ void obs_shutdown(void)
 		da_free(list); \
 	} while (false)
 
+	FREE_REGISTERED_TYPES(obs_source_info, obs->source_types);
 	FREE_REGISTERED_TYPES(obs_source_info, obs->input_types);
 	FREE_REGISTERED_TYPES(obs_source_info, obs->filter_types);
 	FREE_REGISTERED_TYPES(obs_source_info, obs->transition_types);
@@ -1386,8 +1387,7 @@ float obs_get_master_volume(void)
 	return obs ? obs->audio.user_volume : 0.0f;
 }
 
-static obs_source_t *obs_load_source_type(obs_data_t *source_data,
-		enum obs_source_type type)
+static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 {
 	obs_data_array_t *filters = obs_data_get_array(source_data, "filters");
 	obs_source_t *source;
@@ -1400,7 +1400,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 	uint32_t     flags;
 	uint32_t     mixers;
 
-	source = obs_source_create(type, id, name, settings, hotkeys);
+	source = obs_source_create(id, name, settings, hotkeys);
 
 	obs_data_release(hotkeys);
 
@@ -1450,7 +1450,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 				obs_data_array_item(filters, i);
 
 			obs_source_t *filter = obs_load_source_type(
-					filter_data, OBS_SOURCE_TYPE_FILTER);
+					filter_data);
 			if (filter) {
 				obs_source_filter_add(source, filter);
 				obs_source_release(filter);
@@ -1469,7 +1469,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data,
 
 obs_source_t *obs_load_source(obs_data_t *source_data)
 {
-	return obs_load_source_type(source_data, OBS_SOURCE_TYPE_INPUT);
+	return obs_load_source_type(source_data);
 }
 
 void obs_load_sources(obs_data_array_t *array)
@@ -1589,7 +1589,7 @@ obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 	source = data->first_source;
 
 	while (source) {
-		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0 &&
+		if ((source->info.type != OBS_SOURCE_TYPE_FILTER) != 0 &&
 				cb(data_, source)) {
 			obs_data_t *source_data = obs_save_source(source);
 

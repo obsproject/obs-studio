@@ -308,10 +308,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 	QMenu *popup = new QMenu(QTStr("Add"), this);
 	while (obs_enum_filter_types(idx++, &type)) {
-		const char *name = obs_source_get_display_name(
-				OBS_SOURCE_TYPE_FILTER, type);
-		uint32_t filterFlags = obs_get_source_output_flags(
-				OBS_SOURCE_TYPE_FILTER, type);
+		const char *name = obs_source_get_display_name(type);
+		uint32_t filterFlags = obs_get_source_output_flags(type);
 
 		if (!filter_compatible(async, sourceFlags, filterFlags))
 			continue;
@@ -337,8 +335,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 {
 	if (id && *id) {
 		obs_source_t *existing_filter;
-		string name = obs_source_get_display_name(
-				OBS_SOURCE_TYPE_FILTER, id);
+		string name = obs_source_get_display_name(id);
 
 		bool success = NameDialog::AskForName(this,
 				QTStr("Basic.Filters.AddFilter.Title"),
@@ -366,8 +363,8 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			return;
 		}
 
-		obs_source_t *filter = obs_source_create(OBS_SOURCE_TYPE_FILTER,
-				id, name.c_str(), nullptr, nullptr);
+		obs_source_t *filter = obs_source_create(id, name.c_str(),
+				nullptr, nullptr);
 		if (filter) {
 			obs_source_filter_add(source, filter);
 			obs_source_release(filter);

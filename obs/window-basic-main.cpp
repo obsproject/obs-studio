@@ -366,8 +366,7 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
-	obs_properties_t *props = obs_get_source_properties(
-			OBS_SOURCE_TYPE_INPUT, output_id);
+	obs_properties_t *props = obs_get_source_properties(output_id);
 	size_t count = 0;
 
 	if (!props)
@@ -2220,8 +2219,8 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 	if (!same && strcmp(deviceId, "disabled") != 0) {
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(OBS_SOURCE_TYPE_INPUT,
-				sourceId, deviceDesc, settings, nullptr);
+		source = obs_source_create(sourceId, deviceDesc, settings,
+				nullptr);
 		obs_data_release(settings);
 
 		obs_set_output_source(channel, source);
@@ -2717,8 +2716,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 	QMenu *popup = new QMenu(QTStr("Add"), this);
 	while (obs_enum_input_types(idx++, &type)) {
-		const char *name = obs_source_get_display_name(
-				OBS_SOURCE_TYPE_INPUT, type);
+		const char *name = obs_source_get_display_name(type);
 
 		if (strcmp(type, "scene") == 0)
 			continue;

@@ -634,8 +634,7 @@ EXPORT void obs_display_set_background_color(obs_display_t *display,
 /* Sources */
 
 /** Returns the translated display name of a source */
-EXPORT const char *obs_source_get_display_name(enum obs_source_type type,
-		const char *id);
+EXPORT const char *obs_source_get_display_name(const char *id);
 
 /**
  * Creates a source of the specified type with the specified settings.
@@ -643,9 +642,8 @@ EXPORT const char *obs_source_get_display_name(enum obs_source_type type,
  *   The "source" context is used for anything related to presenting
  * or modifying video/audio.  Use obs_source_release to release it.
  */
-EXPORT obs_source_t *obs_source_create(enum obs_source_type type,
-		const char *id, const char *name, obs_data_t *settings,
-		obs_data_t *hotkey_data);
+EXPORT obs_source_t *obs_source_create(const char *id, const char *name,
+		obs_data_t *settings, obs_data_t *hotkey_data);
 
 /**
  * Adds/releases a reference to a source.  When the last reference is
@@ -674,16 +672,13 @@ EXPORT bool obs_source_removed(const obs_source_t *source);
 EXPORT uint32_t obs_source_get_output_flags(const obs_source_t *source);
 
 /** Returns capability flags of a source type */
-EXPORT uint32_t obs_get_source_output_flags(enum obs_source_type type,
-		const char *id);
+EXPORT uint32_t obs_get_source_output_flags(const char *id);
 
 /** Gets the default settings for a source type */
-EXPORT obs_data_t *obs_get_source_defaults(enum obs_source_type type,
-		const char *id);
+EXPORT obs_data_t *obs_get_source_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t *obs_get_source_properties(enum obs_source_type type,
-		const char *id);
+EXPORT obs_properties_t *obs_get_source_properties(const char *id);
 
 /**
  * Returns the properties list for a specific existing source.  Free with
