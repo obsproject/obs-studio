@@ -693,7 +693,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 const struct obs_source_info scene_info =
 {
 	.id            = "scene",
-	.type          = OBS_SOURCE_TYPE_INPUT,
+	.type          = OBS_SOURCE_TYPE_SCENE,
 	.output_flags  = OBS_SOURCE_VIDEO |
 	                 OBS_SOURCE_CUSTOM_DRAW |
 	                 OBS_SOURCE_COMPOSITE,
