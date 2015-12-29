@@ -534,7 +534,7 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		array = &obs->filter_types.da;
 	} else if (info->type == OBS_SOURCE_TYPE_TRANSITION) {
 		array = &obs->transition_types.da;
-	} else {
+	} else if (info->type != OBS_SOURCE_TYPE_SCENE) {
 		blog(LOG_ERROR, "Tried to register unknown source type: %u",
 				info->type);
 		goto error;
