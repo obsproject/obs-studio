@@ -414,6 +414,9 @@ EXPORT char *obs_find_module_file(obs_module_t *module, const char *file);
  */
 EXPORT char *obs_module_get_config_path(obs_module_t *module, const char *file);
 
+/** Enumerates all source types (inputs, filters, transitions, etc).  */
+EXPORT bool obs_enum_source_types(size_t idx, const char **id);
+
 /**
  * Enumerates all available inputs source types.
  *

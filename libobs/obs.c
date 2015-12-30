@@ -982,6 +982,16 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 	return true;
 }
 
+bool obs_enum_source_types(size_t idx, const char **id)
+{
+	if (!obs) return false;
+
+	if (idx >= obs->source_types.num)
+		return false;
+	*id = obs->source_types.array[idx].id;
+	return true;
+}
+
 bool obs_enum_input_types(size_t idx, const char **id)
 {
 	if (!obs) return false;
