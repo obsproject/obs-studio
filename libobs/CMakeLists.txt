@@ -59,6 +59,7 @@ if(WIN32)
 		util/pipe-windows.c
 		util/platform-windows.c)
 	set(libobs_PLATFORM_HEADERS
+		util/threading-windows.h
 		util/windows/win-version.h
 		util/windows/ComPtr.hpp
 		util/windows/CoTaskMemPtr.hpp
@@ -77,6 +78,8 @@ elseif(APPLE)
 		util/pipe-posix.c
 		util/platform-nix.c
 		util/platform-cocoa.m)
+	set(libobs_PLATFORM_HEADERS
+		util/threading-posix.h)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}
 		PROPERTIES
@@ -110,6 +113,8 @@ elseif(UNIX)
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
+	set(libobs_PLATFORM_HEADERS
+		util/threading-posix.h)
 
 	if(DBUS_FOUND)
 		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}

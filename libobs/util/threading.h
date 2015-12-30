@@ -37,6 +37,12 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+#include "threading-windows.h"
+#else
+#include "threading-posix.h"
+#endif
+
 /* this may seem strange, but you can't use it unless it's an initializer */
 static inline void pthread_mutex_init_value(pthread_mutex_t *mutex)
 {
@@ -69,17 +75,6 @@ EXPORT int  os_sem_init(os_sem_t **sem, int value);
 EXPORT void os_sem_destroy(os_sem_t *sem);
 EXPORT int  os_sem_post(os_sem_t *sem);
 EXPORT int  os_sem_wait(os_sem_t *sem);
-
-EXPORT long os_atomic_inc_long(volatile long *val);
-EXPORT long os_atomic_dec_long(volatile long *val);
-EXPORT long os_atomic_set_long(volatile long *ptr, long val);
-EXPORT long os_atomic_load_long(const volatile long *ptr);
-
-EXPORT bool os_atomic_compare_swap_long(volatile long *val,
-		long old_val, long new_val);
-
-EXPORT bool os_atomic_set_bool(volatile bool *ptr, bool val);
-EXPORT bool os_atomic_load_bool(const volatile bool *ptr);
 
 EXPORT void os_set_thread_name(const char *name);
 
