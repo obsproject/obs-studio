@@ -99,9 +99,23 @@ static inline void full_unlock(struct obs_scene *scene)
 	video_unlock(scene);
 }
 
+static void set_visibility(struct obs_scene_item *item, bool vis);
+static inline void detach_sceneitem(struct obs_scene_item *item);
+
+static inline void remove_without_release(struct obs_scene_item *item)
+{
+	item->removed = true;
+	set_visibility(item, false);
+	signal_item_remove(item);
+	detach_sceneitem(item);
+}
+
 static void remove_all_items(struct obs_scene *scene)
 {
 	struct obs_scene_item *item;
+	DARRAY(struct obs_scene_item*) items;
+
+	da_init(items);
 
 	full_lock(scene);
 
@@ -111,10 +125,15 @@ static void remove_all_items(struct obs_scene *scene)
 		struct obs_scene_item *del_item = item;
 		item = item->next;
 
-		obs_sceneitem_remove(del_item);
+		remove_without_release(del_item);
+		da_push_back(items, &del_item);
 	}
 
 	full_unlock(scene);
+
+	for (size_t i = 0; i < items.num; i++)
+		obs_sceneitem_release(items.array[i]);
+	da_free(items);
 }
 
 static void scene_destroy(void *data)
@@ -122,6 +141,7 @@ static void scene_destroy(void *data)
 	struct obs_scene *scene = data;
 
 	remove_all_items(scene);
+
 	pthread_mutex_destroy(&scene->video_mutex);
 	pthread_mutex_destroy(&scene->audio_mutex);
 	bfree(scene);
@@ -326,8 +346,11 @@ static inline bool source_size_changed(struct obs_scene_item *item)
 
 static void scene_video_render(void *data, gs_effect_t *effect)
 {
+	DARRAY(struct obs_scene_item*) remove_items;
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
+
+	da_init(remove_items);
 
 	video_lock(scene);
 	item = scene->first_item;
@@ -340,7 +363,8 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 			struct obs_scene_item *del_item = item;
 			item = item->next;
 
-			obs_sceneitem_remove(del_item);
+			remove_without_release(del_item);
+			da_push_back(remove_items, &del_item);
 			continue;
 		}
 
@@ -361,10 +385,14 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	video_unlock(scene);
 
+	for (size_t i = 0; i < remove_items.num; i++)
+		obs_sceneitem_release(remove_items.array[i]);
+	da_free(remove_items);
+
 	UNUSED_PARAMETER(effect);
 }
 
-static inline void set_visibility(struct obs_scene_item *item, bool vis)
+static void set_visibility(struct obs_scene_item *item, bool vis)
 {
 	pthread_mutex_lock(&item->actions_mutex);
 
