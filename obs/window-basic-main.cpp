@@ -2687,7 +2687,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
-	CreateSourcePopupMenu(ui->sources->itemAt(pos), false);
+	if (ui->scenes->count())
+		CreateSourcePopupMenu(ui->sources->itemAt(pos), false);
 }
 
 void OBSBasic::on_sources_itemDoubleClicked(QListWidgetItem *witem)
