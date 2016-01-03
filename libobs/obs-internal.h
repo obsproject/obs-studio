@@ -613,6 +613,21 @@ enum view_type {
 	AUX_VIEW
 };
 
+static inline void obs_source_dosignal(struct obs_source *source,
+		const char *signal_obs, const char *signal_source)
+{
+	struct calldata data;
+
+	calldata_init(&data);
+	calldata_set_ptr(&data, "source", source);
+	if (signal_obs)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_source)
+		signal_handler_signal(source->context.signals, signal_source,
+				&data);
+	calldata_free(&data);
+}
+
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
 extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t *source, float seconds);
