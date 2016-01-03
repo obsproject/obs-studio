@@ -184,7 +184,7 @@ static inline void attach_sceneitem(struct obs_scene *parent,
 	}
 }
 
-static void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy)
+void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy)
 {
 	if (align & OBS_ALIGN_RIGHT)
 		v->x += (float)cx;
