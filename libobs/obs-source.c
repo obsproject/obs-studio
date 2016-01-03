@@ -265,21 +265,6 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 			obs_source_hotkey_push_to_talk, source);
 }
 
-static inline void obs_source_dosignal(struct obs_source *source,
-		const char *signal_obs, const char *signal_source)
-{
-	struct calldata data;
-
-	calldata_init(&data);
-	calldata_set_ptr(&data, "source", source);
-	if (signal_obs)
-		signal_handler_signal(obs->signals, signal_obs, &data);
-	if (signal_source)
-		signal_handler_signal(source->context.signals, signal_source,
-				&data);
-	calldata_free(&data);
-}
-
 obs_source_t *obs_source_create(const char *id, const char *name,
 		obs_data_t *settings, obs_data_t *hotkey_data)
 {
