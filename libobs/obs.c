@@ -218,6 +218,8 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
+	uint8_t transparent_tex_data[2*2*4] = {0};
+	const uint8_t *transparent_tex = transparent_tex_data;
 	bool success = true;
 	int errorcode;
 
@@ -278,6 +280,9 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
+			&transparent_tex, 0);
+
 	if (!video->default_effect)
 		success = false;
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
@@ -289,6 +294,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	if (!video->solid_effect)
 		success = false;
 	if (!video->conversion_effect)
+		success = false;
+	if (!video->transparent_texture)
 		success = false;
 
 	gs_leave_context();
@@ -431,6 +438,8 @@ static void obs_free_graphics(void)
 
 	if (video->graphics) {
 		gs_enter_context(video->graphics);
+
+		gs_texture_destroy(video->transparent_texture);
 
 		gs_effect_destroy(video->default_effect);
 		gs_effect_destroy(video->default_rect_effect);
