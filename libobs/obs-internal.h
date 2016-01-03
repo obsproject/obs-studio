@@ -637,6 +637,8 @@ extern float obs_source_get_target_volume(obs_source_t *source,
 extern void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 		size_t channels, size_t sample_rate, size_t size);
 
+extern void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy);
+
 
 /* ------------------------------------------------------------------------- */
 /* outputs  */
