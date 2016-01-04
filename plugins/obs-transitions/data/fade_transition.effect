@@ -1,0 +1,39 @@
+uniform float4x4 ViewProj;
+uniform texture2d tex_a;
+uniform texture2d tex_b;
+uniform float fade_val;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSFade(VertData v_in) : TARGET
+{
+	float4 a_val = tex_a.Sample(textureSampler, v_in.uv);
+	float4 b_val = tex_b.Sample(textureSampler, v_in.uv);
+	return lerp(a_val, b_val, fade_val);
+}
+
+technique Fade
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSFade(v_in);
+	}
+}
