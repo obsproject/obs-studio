@@ -375,15 +375,6 @@ struct obs_source_info {
 			bool key_up);
 
 	/**
-	 * Called to transition sources get the volume of a transitioning
-	 * sub-source.
-	 *
-	 * @param data         Source data
-	 * @param source       Transitioning sub-source to get the volume of
-	 */
-	float (*get_transition_volume)(void *data, obs_source_t *source);
-
-	/**
 	 * Called when the filter is removed from a source
 	 *
 	 * @param  data    Filter data
