@@ -564,6 +564,14 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	}
 
 	if (data.type == OBS_SOURCE_TYPE_TRANSITION) {
+		if (data.get_width)
+			source_warn("get_width ignored registering "
+					"transition '%s'",
+					data.id);
+		if (data.get_height)
+			source_warn("get_height ignored registering "
+					"transition '%s'",
+					data.id);
 		data.output_flags |= OBS_SOURCE_COMPOSITE | OBS_SOURCE_VIDEO |
 			OBS_SOURCE_CUSTOM_DRAW;
 	}
