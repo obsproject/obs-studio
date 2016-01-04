@@ -566,6 +566,9 @@ extern bool obs_source_init_context(struct obs_source *source,
 extern bool obs_source_init(struct obs_source *source,
 		const struct obs_source_info *info);
 
+extern void obs_source_save(obs_source_t *source);
+extern void obs_source_load(obs_source_t *source);
+
 extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {

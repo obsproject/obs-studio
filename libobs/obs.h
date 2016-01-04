@@ -791,22 +791,6 @@ EXPORT bool obs_source_active(const obs_source_t *source);
  */
 EXPORT bool obs_source_showing(const obs_source_t *source);
 
-/**
- * Sometimes sources need to be told when to save their settings so they
- * don't have to constantly update and keep track of their settings.  This will
- * call the source's 'save' callback if any, which will save its current
- * data to its settings.
- */
-EXPORT void obs_source_save(obs_source_t *source);
-
-/**
- * Sometimes sources need to be told when they are loading their settings
- * from prior saved data.  This is different from a source 'update' in that
- * it's meant to be used after the source has been created and loaded from
- * somewhere (such as a saved file).
- */
-EXPORT void obs_source_load(obs_source_t *source);
-
 /** Specifies that async video frames should be played as soon as possible */
 #define OBS_SOURCE_FLAG_UNBUFFERED             (1<<0)
 /** Specifies to force audio to mono */
