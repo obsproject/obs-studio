@@ -535,7 +535,7 @@ cleanup:
 void obs_register_source_s(const struct obs_source_info *info, size_t size)
 {
 	struct obs_source_info data = {0};
-	struct darray *array;
+	struct darray *array = NULL;
 
 	if (info->type == OBS_SOURCE_TYPE_INPUT) {
 		array = &obs->input_types.da;
@@ -563,8 +563,10 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 			data.output_flags |= OBS_SOURCE_ASYNC;
 	}
 
-	if (data.type == OBS_SOURCE_TYPE_TRANSITION)
-		data.output_flags |= OBS_SOURCE_COMPOSITE;
+	if (data.type == OBS_SOURCE_TYPE_TRANSITION) {
+		data.output_flags |= OBS_SOURCE_COMPOSITE | OBS_SOURCE_VIDEO |
+			OBS_SOURCE_CUSTOM_DRAW;
+	}
 
 	if ((data.output_flags & OBS_SOURCE_COMPOSITE) != 0) {
 		if ((data.output_flags & OBS_SOURCE_AUDIO) != 0) {
