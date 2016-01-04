@@ -587,6 +587,9 @@ static const char *obs_signals[] = {
 	"void source_volume(ptr source, in out float volume)",
 	"void source_volume_level(ptr source, float level, float magnitude, "
 		"float peak)",
+	"void source_transition_start(ptr source)",
+	"void source_transition_video_stop(ptr source)",
+	"void source_transition_stop(ptr source)",
 
 	"void channel_change(int channel, in out ptr source, ptr prev_source)",
 	"void master_volume(in out float volume)",
@@ -1508,8 +1511,17 @@ void obs_load_sources(obs_data_array_t *array)
 	}
 
 	/* tell sources that we want to load */
-	for (i = 0; i < sources.num; i++)
-		obs_source_load(sources.array[i]);
+	for (i = 0; i < sources.num; i++) {
+		obs_source_t *source = sources.array[i];
+		obs_data_t *source_data = obs_data_array_item(array, i);
+		if (source) {
+			if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+				obs_transition_load(source, source_data);
+			obs_source_load(source);
+		}
+		obs_data_release(source_data);
+	}
+
 	for (i = 0; i < sources.num; i++)
 		obs_source_release(sources.array[i]);
 
@@ -1561,6 +1573,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_bool  (source_data, "push-to-talk", push_to_talk);
 	obs_data_set_int   (source_data, "push-to-talk-delay", ptt_delay);
 	obs_data_set_obj   (source_data, "hotkeys",  hotkey_data);
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		obs_transition_save(source, source_data);
 
 	pthread_mutex_lock(&source->filter_mutex);
 
