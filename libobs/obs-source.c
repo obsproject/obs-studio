@@ -1507,7 +1507,7 @@ uint32_t obs_source_get_width(obs_source_t *source)
 	if (!data_valid(source, "obs_source_get_width"))
 		return 0;
 
-	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
+	return (source->info.type != OBS_SOURCE_TYPE_FILTER) ?
 		get_recurse_width(source) :
 	        get_base_width(source);
 }
@@ -1517,7 +1517,7 @@ uint32_t obs_source_get_height(obs_source_t *source)
 	if (!data_valid(source, "obs_source_get_height"))
 		return 0;
 
-	return (source->info.type == OBS_SOURCE_TYPE_INPUT) ?
+	return (source->info.type != OBS_SOURCE_TYPE_FILTER) ?
 		get_recurse_height(source) :
 		get_base_height(source);
 }
