@@ -595,7 +595,8 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, create,   obs_register_source);
 	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_source);
 
-	if (info->type == OBS_SOURCE_TYPE_INPUT          &&
+	if (info->type != OBS_SOURCE_TYPE_FILTER         &&
+	    info->type != OBS_SOURCE_TYPE_TRANSITION     &&
 	    (info->output_flags & OBS_SOURCE_VIDEO) != 0 &&
 	    (info->output_flags & OBS_SOURCE_ASYNC) == 0) {
 		CHECK_REQUIRED_VAL_(info, get_width,  obs_register_source);
