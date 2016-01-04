@@ -28,6 +28,7 @@
 #include "callback/proc.h"
 
 #include "graphics/graphics.h"
+#include "graphics/matrix4.h"
 
 #include "media-io/audio-resampler.h"
 #include "media-io/video-io.h"
@@ -596,6 +597,27 @@ struct obs_source {
 	uint64_t                        push_to_mute_stop_time;
 	uint64_t                        push_to_talk_delay;
 	uint64_t                        push_to_talk_stop_time;
+
+	/* transitions */
+	uint64_t                        transition_start_time;
+	uint64_t                        transition_duration;
+	pthread_mutex_t                 transition_tex_mutex;
+	gs_texrender_t                  *transition_texrender[2];
+	pthread_mutex_t                 transition_mutex;
+	obs_source_t                    *transition_sources[2];
+	bool                            transitioning_video;
+	bool                            transitioning_audio;
+	bool                            transition_source_active[2];
+	uint32_t                        transition_alignment;
+	uint32_t                        transition_actual_cx;
+	uint32_t                        transition_actual_cy;
+	uint32_t                        transition_cx;
+	uint32_t                        transition_cy;
+	uint32_t                        transition_fixed_duration;
+	bool                            transition_use_fixed_duration : 1;
+	enum obs_transition_mode        transition_mode;
+	enum obs_transition_scale_type  transition_scale_type;
+	struct matrix4                  transition_matrices[2];
 };
 
 extern const struct obs_source_info *get_source_info(const char *id);
@@ -605,6 +627,14 @@ extern bool obs_source_init_context(struct obs_source *source,
 
 extern void obs_source_save(obs_source_t *source);
 extern void obs_source_load(obs_source_t *source);
+
+extern bool obs_transition_init(obs_source_t *transition);
+extern void obs_transition_free(obs_source_t *transition);
+extern void obs_transition_tick(obs_source_t *transition);
+extern void obs_transition_enum_sources(obs_source_t *transition,
+		obs_source_enum_proc_t enum_callback, void *param);
+extern void obs_transition_save(obs_source_t *source, obs_data_t *data);
+extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
 
 extern void obs_source_destroy(struct obs_source *source);
 

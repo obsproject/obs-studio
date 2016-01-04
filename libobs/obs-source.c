@@ -70,6 +70,9 @@ static const char *source_signals[] = {
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
 	"void reorder_filters(ptr source)",
+	"void transition_start(ptr source)",
+	"void transition_video_stop(ptr source)",
+	"void transition_stop(ptr source)",
 	NULL
 };
 
@@ -159,6 +162,11 @@ bool obs_source_init(struct obs_source *source)
 		obs->data.first_audio_source = source;
 
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
+	}
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		if (!obs_transition_init(source))
+			return false;
 	}
 
 	source->control = bzalloc(sizeof(obs_weak_source_t));
@@ -351,6 +359,9 @@ void obs_source_destroy(struct obs_source *source)
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
 
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		obs_transition_clear(source);
+
 	pthread_mutex_lock(&obs->data.audio_sources_mutex);
 	if (source->prev_next_audio_source) {
 		*source->prev_next_audio_source = source->next_audio_source;
@@ -399,6 +410,9 @@ void obs_source_destroy(struct obs_source *source)
 		circlebuf_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		obs_transition_free(source);
 
 	da_free(source->audio_actions);
 	da_free(source->async_cache);
@@ -792,6 +806,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 
 	if (!obs_source_valid(source, "obs_source_video_tick"))
 		return;
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		obs_transition_tick(source);
 
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0) {
 		uint64_t sys_time = obs->video.video_time;
@@ -1548,7 +1565,10 @@ static uint32_t get_base_width(const obs_source_t *source)
 {
 	bool is_filter = (source->info.type == OBS_SOURCE_TYPE_FILTER);
 
-	if (source->info.get_width && (!is_filter || source->enabled)) {
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		return source->enabled ? source->transition_actual_cx : 0;
+
+	} else if (source->info.get_width && (!is_filter || source->enabled)) {
 		return source->info.get_width(source->context.data);
 
 	} else if (source->info.type == OBS_SOURCE_TYPE_FILTER) {
@@ -1562,7 +1582,10 @@ static uint32_t get_base_height(const obs_source_t *source)
 {
 	bool is_filter = (source->info.type == OBS_SOURCE_TYPE_FILTER);
 
-	if (source->info.get_height && (!is_filter || source->enabled)) {
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		return source->enabled ? source->transition_actual_cy : 0;
+
+	} else if (source->info.get_height && (!is_filter || source->enabled)) {
 		return source->info.get_height(source->context.data);
 
 	} else if (is_filter) {
@@ -2703,15 +2726,21 @@ void obs_source_enum_active_sources(obs_source_t *source,
 		obs_source_enum_proc_t enum_callback,
 		void *param)
 {
+	bool is_transition;
 	if (!data_valid(source, "obs_source_enum_active_sources"))
 		return;
-	if (!source->info.enum_active_sources)
+
+	is_transition = source->info.type == OBS_SOURCE_TYPE_TRANSITION;
+	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
 	obs_source_addref(source);
 
-	source->info.enum_active_sources(source->context.data, enum_callback,
-			param);
+	if (is_transition)
+		obs_transition_enum_sources(source, enum_callback, param);
+	if (source->info.enum_active_sources)
+		source->info.enum_active_sources(source->context.data,
+				enum_callback, param);
 
 	obs_source_release(source);
 }
@@ -2721,17 +2750,23 @@ void obs_source_enum_active_tree(obs_source_t *source,
 		void *param)
 {
 	struct source_enum_data data = {enum_callback, param};
+	bool is_transition;
 
 	if (!data_valid(source, "obs_source_enum_active_tree"))
 		return;
-	if (!source->info.enum_active_sources)
+
+	is_transition = source->info.type == OBS_SOURCE_TYPE_TRANSITION;
+	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
 	obs_source_addref(source);
 
-	source->info.enum_active_sources(source->context.data,
-			enum_source_tree_callback,
-			&data);
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
+		obs_transition_enum_sources(source, enum_source_tree_callback,
+				&data);
+	if (source->info.enum_active_sources)
+		source->info.enum_active_sources(source->context.data,
+				enum_source_tree_callback, &data);
 
 	obs_source_release(source);
 }
