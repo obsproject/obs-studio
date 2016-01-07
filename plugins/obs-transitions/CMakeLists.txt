@@ -3,6 +3,7 @@ project(obs-transitions)
 set(obs-transitions_SOURCES
 	obs-transitions.c
 	transition-fade.c
+	transition-cut.c
 	)
 
 add_library(obs-transitions MODULE
