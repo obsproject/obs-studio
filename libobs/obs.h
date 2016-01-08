@@ -844,6 +844,14 @@ EXPORT uint64_t obs_source_get_push_to_talk_delay(obs_source_t *source);
 EXPORT void obs_source_set_push_to_talk_delay(obs_source_t *source,
 		uint64_t delay);
 
+typedef void (*obs_source_audio_capture_t)(void *param, obs_source_t *source,
+		const struct audio_data *audio_data, bool muted);
+
+EXPORT void obs_source_add_audio_capture_callback(obs_source_t *source,
+		obs_source_audio_capture_t callback, void *param);
+EXPORT void obs_source_remove_audio_capture_callback(obs_source_t *source,
+		obs_source_audio_capture_t callback, void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 

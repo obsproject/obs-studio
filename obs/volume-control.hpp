@@ -56,8 +56,9 @@ private:
 	obs_fader_t     *obs_fader;
 	obs_volmeter_t  *obs_volmeter;
 
-	static void OBSVolumeChanged(void *param, calldata_t *calldata);
-	static void OBSVolumeLevel(void *data, calldata_t *calldata);
+	static void OBSVolumeChanged(void *param, float db);
+	static void OBSVolumeLevel(void *data, float level, float mag,
+			float peak, float muted);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
 
 	void EmitConfigClicked();

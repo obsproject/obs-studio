@@ -485,6 +485,11 @@ struct obs_weak_source {
 	struct obs_source *source;
 };
 
+struct audio_cb_info {
+	obs_source_audio_capture_t callback;
+	void *param;
+};
+
 struct obs_source {
 	struct obs_context_data         context;
 	struct obs_source_info          info;
@@ -542,6 +547,8 @@ struct obs_source {
 	pthread_mutex_t                 audio_actions_mutex;
 	pthread_mutex_t                 audio_buf_mutex;
 	pthread_mutex_t                 audio_mutex;
+	pthread_mutex_t                 audio_cb_mutex;
+	DARRAY(struct audio_cb_info)    audio_cb_list;
 	struct obs_audio_data           audio_data;
 	size_t                          audio_storage_size;
 	uint32_t                        audio_mixers;

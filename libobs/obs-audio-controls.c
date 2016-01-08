@@ -34,9 +34,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef float (*obs_fader_conversion_t)(const float val);
 
+struct fader_cb {
+	obs_fader_changed_t   callback;
+	void                  *param;
+};
+
 struct obs_fader {
 	pthread_mutex_t        mutex;
-	signal_handler_t       *signals;
 	obs_fader_conversion_t def_to_db;
 	obs_fader_conversion_t db_to_def;
 	obs_source_t           *source;
@@ -45,16 +49,26 @@ struct obs_fader {
 	float                  min_db;
 	float                  cur_db;
 	bool                   ignore_next_signal;
+
+	pthread_mutex_t        callback_mutex;
+	DARRAY(struct fader_cb)callbacks;
+};
+
+struct meter_cb {
+	obs_volmeter_updated_t callback;
+	void                   *param;
 };
 
 struct obs_volmeter {
 	pthread_mutex_t        mutex;
-	signal_handler_t       *signals;
 	obs_fader_conversion_t pos_to_db;
 	obs_fader_conversion_t db_to_pos;
 	obs_source_t           *source;
 	enum obs_fader_type    type;
 	float                  cur_db;
+
+	pthread_mutex_t        callback_mutex;
+	DARRAY(struct meter_cb)callbacks;
 
 	unsigned int           channels;
 	unsigned int           update_ms;
@@ -70,17 +84,6 @@ struct obs_volmeter {
 	float                  vol_peak;
 	float                  vol_mag;
 	float                  vol_max;
-};
-
-static const char *fader_signals[] = {
-	"void volume_changed(ptr fader, float db)",
-	NULL
-};
-
-static const char *volmeter_signals[] = {
-	"void levels_updated(ptr volmeter, float level, "
-			"float magnitude, float peak, bool muted)",
-	NULL
 };
 
 static float cubic_def_to_db(const float def)
@@ -191,39 +194,26 @@ static float log_db_to_def(const float db)
 			/ (LOG_OFFSET_VAL - LOG_RANGE_VAL);
 }
 
-static void signal_volume_changed(signal_handler_t *sh,
-		struct obs_fader *fader, const float db)
+static void signal_volume_changed(struct obs_fader *fader, const float db)
 {
-	struct calldata data;
-
-	calldata_init(&data);
-
-	calldata_set_ptr  (&data, "fader", fader);
-	calldata_set_float(&data, "db",    db);
-
-	signal_handler_signal(sh, "volume_changed", &data);
-
-	calldata_free(&data);
+	pthread_mutex_lock(&fader->callback_mutex);
+	for (size_t i = fader->callbacks.num; i > 0; i--) {
+		struct fader_cb cb = fader->callbacks.array[i - 1];
+		cb.callback(cb.param, db);
+	}
+	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
-static void signal_levels_updated(signal_handler_t *sh,
-		struct obs_volmeter *volmeter,
+static void signal_levels_updated(struct obs_volmeter *volmeter,
 		const float level, const float magnitude, const float peak,
 		bool muted)
 {
-	struct calldata data;
-
-	calldata_init(&data);
-
-	calldata_set_ptr  (&data, "volmeter",  volmeter);
-	calldata_set_float(&data, "level",     level);
-	calldata_set_float(&data, "magnitude", magnitude);
-	calldata_set_float(&data, "peak",      peak);
-	calldata_set_bool (&data, "muted",     muted);
-
-	signal_handler_signal(sh, "levels_updated", &data);
-
-	calldata_free(&data);
+	pthread_mutex_lock(&volmeter->callback_mutex);
+	for (size_t i = volmeter->callbacks.num; i > 0; i--) {
+		struct meter_cb cb = volmeter->callbacks.array[i - 1];
+		cb.callback(cb.param, level, magnitude, peak, muted);
+	}
+	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
 static void fader_source_volume_changed(void *vptr, calldata_t *calldata)
@@ -238,14 +228,13 @@ static void fader_source_volume_changed(void *vptr, calldata_t *calldata)
 		return;
 	}
 
-	signal_handler_t *sh = fader->signals;
 	const float mul      = (float)calldata_float(calldata, "volume");
 	const float db       = mul_to_db(mul);
 	fader->cur_db        = db;
 
 	pthread_mutex_unlock(&fader->mutex);
 
-	signal_volume_changed(sh, fader, db);
+	signal_volume_changed(fader, db);
 }
 
 static void volmeter_source_volume_changed(void *vptr, calldata_t *calldata)
@@ -335,7 +324,7 @@ static void volmeter_calc_ival_levels(obs_volmeter_t *volmeter)
 }
 
 static bool volmeter_process_audio_data(obs_volmeter_t *volmeter,
-		struct audio_data *data)
+		const struct audio_data *data)
 {
 	bool updated   = false;
 	size_t frames  = 0;
@@ -374,16 +363,15 @@ static bool volmeter_process_audio_data(obs_volmeter_t *volmeter,
 	return updated;
 }
 
-static void volmeter_source_data_received(void *vptr, calldata_t *calldata)
+static void volmeter_source_data_received(void *vptr, obs_source_t *source,
+		const struct audio_data *data, bool muted)
 {
 	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
 	bool updated = false;
 	float mul, level, mag, peak;
-	signal_handler_t *sh;
 
 	pthread_mutex_lock(&volmeter->mutex);
 
-	struct audio_data *data = calldata_ptr(calldata, "data");
 	updated = volmeter_process_audio_data(volmeter, data);
 
 	if (updated) {
@@ -393,14 +381,14 @@ static void volmeter_source_data_received(void *vptr, calldata_t *calldata)
 		mag   = volmeter->db_to_pos(mul_to_db(volmeter->vol_mag * mul));
 		peak  = volmeter->db_to_pos(
 				mul_to_db(volmeter->vol_peak * mul));
-		sh    = volmeter->signals;
 	}
 
 	pthread_mutex_unlock(&volmeter->mutex);
 
 	if (updated)
-		signal_levels_updated(sh, volmeter, level, mag, peak,
-				calldata_bool(calldata, "muted"));
+		signal_levels_updated(volmeter, level, mag, peak, muted);
+
+	UNUSED_PARAMETER(source);
 }
 
 static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
@@ -420,12 +408,10 @@ obs_fader_t *obs_fader_create(enum obs_fader_type type)
 		return NULL;
 
 	pthread_mutex_init_value(&fader->mutex);
+	pthread_mutex_init_value(&fader->callback_mutex);
 	if (pthread_mutex_init(&fader->mutex, NULL) != 0)
 		goto fail;
-	fader->signals = signal_handler_create();
-	if (!fader->signals)
-		goto fail;
-	if (!signal_handler_add_array(fader->signals, fader_signals))
+	if (pthread_mutex_init(&fader->callback_mutex, NULL) != 0)
 		goto fail;
 
 	switch(type) {
@@ -465,7 +451,8 @@ void obs_fader_destroy(obs_fader_t *fader)
 		return;
 
 	obs_fader_detach_source(fader);
-	signal_handler_destroy(fader->signals);
+	da_free(fader->callbacks);
+	pthread_mutex_destroy(&fader->callback_mutex);
 	pthread_mutex_destroy(&fader->mutex);
 
 	bfree(fader);
@@ -603,9 +590,30 @@ exit:
 	pthread_mutex_unlock(&fader->mutex);
 }
 
-signal_handler_t *obs_fader_get_signal_handler(obs_fader_t *fader)
+void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback,
+		void *param)
 {
-	return (fader) ? fader->signals : NULL;
+	struct fader_cb cb = {callback, param};
+
+	if (!obs_ptr_valid(fader, "obs_fader_add_callback"))
+		return;
+
+	pthread_mutex_lock(&fader->callback_mutex);
+	da_push_back(fader->callbacks, &cb);
+	pthread_mutex_unlock(&fader->callback_mutex);
+}
+
+void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback,
+		void *param)
+{
+	struct fader_cb cb = {callback, param};
+
+	if (!obs_ptr_valid(fader, "obs_fader_remove_callback"))
+		return;
+
+	pthread_mutex_lock(&fader->callback_mutex);
+	da_erase_item(fader->callbacks, &cb);
+	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
 obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
@@ -615,12 +623,10 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 		return NULL;
 
 	pthread_mutex_init_value(&volmeter->mutex);
+	pthread_mutex_init_value(&volmeter->callback_mutex);
 	if (pthread_mutex_init(&volmeter->mutex, NULL) != 0)
 		goto fail;
-	volmeter->signals = signal_handler_create();
-	if (!volmeter->signals)
-		goto fail;
-	if (!signal_handler_add_array(volmeter->signals, volmeter_signals))
+	if (pthread_mutex_init(&volmeter->callback_mutex, NULL) != 0)
 		goto fail;
 
 	/* set conversion functions */
@@ -658,7 +664,8 @@ void obs_volmeter_destroy(obs_volmeter_t *volmeter)
 		return;
 
 	obs_volmeter_detach_source(volmeter);
-	signal_handler_destroy(volmeter->signals);
+	da_free(volmeter->callbacks);
+	pthread_mutex_destroy(&volmeter->callback_mutex);
 	pthread_mutex_destroy(&volmeter->mutex);
 
 	bfree(volmeter);
@@ -678,10 +685,10 @@ bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 	sh = obs_source_get_signal_handler(source);
 	signal_handler_connect(sh, "volume",
 			volmeter_source_volume_changed, volmeter);
-	signal_handler_connect(sh, "audio_data",
-			volmeter_source_data_received, volmeter);
 	signal_handler_connect(sh, "destroy",
 			volmeter_source_destroyed, volmeter);
+	obs_source_add_audio_capture_callback(source,
+			volmeter_source_data_received, volmeter);
 
 	volmeter->source = source;
 	volmeter->cur_db = mul_to_db(obs_source_get_volume(source));
@@ -706,20 +713,15 @@ void obs_volmeter_detach_source(obs_volmeter_t *volmeter)
 	sh = obs_source_get_signal_handler(volmeter->source);
 	signal_handler_disconnect(sh, "volume",
 			volmeter_source_volume_changed, volmeter);
-	signal_handler_disconnect(sh, "audio_data",
-			volmeter_source_data_received, volmeter);
 	signal_handler_disconnect(sh, "destroy",
 			volmeter_source_destroyed, volmeter);
+	obs_source_remove_audio_capture_callback(volmeter->source,
+			volmeter_source_data_received, volmeter);
 
 	volmeter->source = NULL;
 
 exit:
 	pthread_mutex_unlock(&volmeter->mutex);
-}
-
-signal_handler_t *obs_volmeter_get_signal_handler(obs_volmeter_t *volmeter)
-{
-	return (volmeter) ? volmeter->signals : NULL;
 }
 
 void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
@@ -767,4 +769,30 @@ unsigned int obs_volmeter_get_peak_hold(obs_volmeter_t *volmeter)
 	pthread_mutex_unlock(&volmeter->mutex);
 
 	return peakhold;
+}
+
+void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
+		obs_volmeter_updated_t callback, void *param)
+{
+	struct meter_cb cb = {callback, param};
+
+	if (!obs_ptr_valid(volmeter, "obs_volmeter_add_callback"))
+		return;
+
+	pthread_mutex_lock(&volmeter->callback_mutex);
+	da_push_back(volmeter->callbacks, &cb);
+	pthread_mutex_unlock(&volmeter->callback_mutex);
+}
+
+void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
+		obs_volmeter_updated_t callback, void *param)
+{
+	struct meter_cb cb = {callback, param};
+
+	if (!obs_ptr_valid(volmeter, "obs_volmeter_remove_callback"))
+		return;
+
+	pthread_mutex_lock(&volmeter->callback_mutex);
+	da_erase_item(volmeter->callbacks, &cb);
+	pthread_mutex_unlock(&volmeter->callback_mutex);
 }

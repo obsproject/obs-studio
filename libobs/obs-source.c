@@ -65,7 +65,6 @@ static const char *source_signals[] = {
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
-	"void audio_data(ptr source, ptr data, bool muted)",
 	"void audio_mixers(ptr source, in out int mixers)",
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
@@ -131,6 +130,7 @@ bool obs_source_init(struct obs_source *source)
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
 	pthread_mutex_init_value(&source->audio_buf_mutex);
+	pthread_mutex_init_value(&source->audio_cb_mutex);
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		return false;
@@ -141,6 +141,8 @@ bool obs_source_init(struct obs_source *source)
 	if (pthread_mutex_init(&source->audio_buf_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_actions_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&source->audio_cb_mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
 		return false;
@@ -415,12 +417,14 @@ void obs_source_destroy(struct obs_source *source)
 		obs_transition_free(source);
 
 	da_free(source->audio_actions);
+	da_free(source->audio_cb_list);
 	da_free(source->async_cache);
 	da_free(source->async_frames);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
 	pthread_mutex_destroy(&source->audio_actions_mutex);
 	pthread_mutex_destroy(&source->audio_buf_mutex);
+	pthread_mutex_destroy(&source->audio_cb_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
 	obs_context_data_free(&source->context);
@@ -912,17 +916,14 @@ static void handle_ts_jump(obs_source_t *source, uint64_t expected,
 static void source_signal_audio_data(obs_source_t *source,
 		struct audio_data *in, bool muted)
 {
-	struct calldata data;
+	pthread_mutex_lock(&source->audio_cb_mutex);
 
-	calldata_init(&data);
+	for (size_t i = source->audio_cb_list.num; i > 0; i--) {
+		struct audio_cb_info info = source->audio_cb_list.array[i - 1];
+		info.callback(info.param, source, in, muted);
+	}
 
-	calldata_set_ptr(&data, "source", source);
-	calldata_set_ptr(&data, "data",   in);
-	calldata_set_bool(&data, "muted", muted);
-
-	signal_handler_signal(source->context.signals, "audio_data", &data);
-
-	calldata_free(&data);
+	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
 
 static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
@@ -3530,4 +3531,30 @@ void obs_source_get_audio_mix(const obs_source_t *source,
 				source->audio_output_buf[mix][ch];
 		}
 	}
+}
+
+void obs_source_add_audio_capture_callback(obs_source_t *source,
+		obs_source_audio_capture_t callback, void *param)
+{
+	struct audio_cb_info info = {callback, param};
+
+	if (!obs_source_valid(source, "obs_source_add_audio_capture_callback"))
+		return;
+
+	pthread_mutex_lock(&source->audio_cb_mutex);
+	da_push_back(source->audio_cb_list, &info);
+	pthread_mutex_unlock(&source->audio_cb_mutex);
+}
+
+void obs_source_remove_audio_capture_callback(obs_source_t *source,
+		obs_source_audio_capture_t callback, void *param)
+{
+	struct audio_cb_info info = {callback, param};
+
+	if (!obs_source_valid(source, "obs_source_remove_audio_capture_callback"))
+		return;
+
+	pthread_mutex_lock(&source->audio_cb_mutex);
+	da_erase_item(source->audio_cb_list, &info);
+	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
