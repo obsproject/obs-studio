@@ -154,12 +154,12 @@ EXPORT bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source);
  */
 EXPORT void obs_fader_detach_source(obs_fader_t *fader);
 
-/**
- * @brief Get signal handler for the fader
- * @param fader pointer to the fader object
- * @return signal handler
- */
-EXPORT signal_handler_t *obs_fader_get_signal_handler(obs_fader_t *fader);
+typedef void (*obs_fader_changed_t)(void *param, float db);
+
+EXPORT void obs_fader_add_callback(obs_fader_t *fader,
+		obs_fader_changed_t callback, void *param);
+EXPORT void obs_fader_remove_callback(obs_fader_t *fader,
+		obs_fader_changed_t callback, void *param);
 
 /**
  * @brief Create a volume meter
@@ -250,6 +250,14 @@ EXPORT void obs_volmeter_set_peak_hold(obs_volmeter_t *volmeter,
  * @return the peak hold time in ms
  */
 EXPORT unsigned int obs_volmeter_get_peak_hold(obs_volmeter_t *volmeter);
+
+typedef void (*obs_volmeter_updated_t)(void *param, float level,
+		float magnitude, float peak, float muted);
+
+EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
+		obs_volmeter_updated_t callback, void *param);
+EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
+		obs_volmeter_updated_t callback, void *param);
 
 #ifdef __cplusplus
 }

@@ -16,26 +16,23 @@
 
 using namespace std;
 
-void VolControl::OBSVolumeChanged(void *data, calldata_t *calldata)
+void VolControl::OBSVolumeChanged(void *data, float db)
 {
-	Q_UNUSED(calldata);
+	Q_UNUSED(db);
 	VolControl *volControl = static_cast<VolControl*>(data);
 
 	QMetaObject::invokeMethod(volControl, "VolumeChanged");
 }
 
-void VolControl::OBSVolumeLevel(void *data, calldata_t *calldata)
+void VolControl::OBSVolumeLevel(void *data, float level, float mag,
+			float peak, float muted)
 {
 	VolControl *volControl = static_cast<VolControl*>(data);
-	float peak      = calldata_float(calldata, "level");
-	float mag       = calldata_float(calldata, "magnitude");
-	float peakHold  = calldata_float(calldata, "peak");
-	bool  muted     = calldata_bool (calldata, "muted");
 
 	QMetaObject::invokeMethod(volControl, "VolumeLevel",
 		Q_ARG(float, mag),
+		Q_ARG(float, level),
 		Q_ARG(float, peak),
-		Q_ARG(float, peakHold),
 		Q_ARG(bool,  muted));
 }
 
@@ -174,11 +171,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 
 	setLayout(mainLayout);
 
-	signal_handler_connect(obs_fader_get_signal_handler(obs_fader),
-			"volume_changed", OBSVolumeChanged, this);
-
-	signal_handler_connect(obs_volmeter_get_signal_handler(obs_volmeter),
-			"levels_updated", OBSVolumeLevel, this);
+	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
+	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_connect(obs_source_get_signal_handler(source),
 			"mute", OBSVolumeMuted, this);
@@ -199,11 +193,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 
 VolControl::~VolControl()
 {
-	signal_handler_disconnect(obs_fader_get_signal_handler(obs_fader),
-			"volume_changed", OBSVolumeChanged, this);
-
-	signal_handler_disconnect(obs_volmeter_get_signal_handler(obs_volmeter),
-			"levels_updated", OBSVolumeLevel, this);
+	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
+	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source),
 			"mute", OBSVolumeMuted, this);
