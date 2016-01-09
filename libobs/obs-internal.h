@@ -660,7 +660,7 @@ static inline void obs_source_dosignal(struct obs_source *source,
 
 	calldata_init(&data);
 	calldata_set_ptr(&data, "source", source);
-	if (signal_obs)
+	if (signal_obs && !source->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
 	if (signal_source)
 		signal_handler_signal(source->context.signals, signal_source,
