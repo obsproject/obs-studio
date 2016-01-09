@@ -396,13 +396,16 @@ struct obs_context_data {
 	pthread_mutex_t                 *mutex;
 	struct obs_context_data         *next;
 	struct obs_context_data         **prev_next;
+
+	bool                            private;
 };
 
 extern bool obs_context_data_init(
 		struct obs_context_data *context,
 		obs_data_t              *settings,
 		const char              *name,
-		obs_data_t              *hotkey_data);
+		obs_data_t              *hotkey_data,
+		bool                    private);
 extern void obs_context_data_free(struct obs_context_data *context);
 
 extern void obs_context_data_insert(struct obs_context_data *context,
@@ -630,7 +633,7 @@ struct obs_source {
 extern const struct obs_source_info *get_source_info(const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name,
-		obs_data_t *hotkey_data);
+		obs_data_t *hotkey_data, bool private);
 
 extern void obs_source_save(obs_source_t *source);
 extern void obs_source_load(obs_source_t *source);
