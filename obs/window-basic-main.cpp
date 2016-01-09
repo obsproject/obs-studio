@@ -925,6 +925,25 @@ void OBSBasic::OBSInit()
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
 	show();
+
+	QList<int> defSizes;
+
+	int top = config_get_int(App()->GlobalConfig(), "BasicWindow",
+			"splitterTop");
+	int bottom = config_get_int(App()->GlobalConfig(), "BasicWindow",
+			"splitterBottom");
+
+	if (!top || !bottom) {
+		defSizes = ui->mainSplitter->sizes();
+		int total = defSizes[0] + defSizes[1];
+		defSizes[0] = total * 75 / 100;
+		defSizes[1] = total - defSizes[0];
+	} else {
+		defSizes.push_back(top);
+		defSizes.push_back(bottom);
+	}
+
+	ui->mainSplitter->setSizes(defSizes);
 }
 
 void OBSBasic::InitHotkeys()
@@ -1153,6 +1172,7 @@ OBSBasic::~OBSBasic()
 			LIBOBS_API_VER);
 
 	QRect lastGeom = normalGeometry();
+	QList<int> splitterSizes = ui->mainSplitter->sizes();
 
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "cx",
 			lastGeom.width());
@@ -1162,6 +1182,10 @@ OBSBasic::~OBSBasic()
 			lastGeom.x());
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "posy",
 			lastGeom.y());
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
+			splitterSizes[0]);
+	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
+			splitterSizes[1]);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
