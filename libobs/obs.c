@@ -1247,31 +1247,6 @@ void obs_enum_services(bool (*enum_proc)(void*, obs_service_t*), void *param)
 			enum_proc, param);
 }
 
-obs_source_t *obs_get_source_by_name(const char *name)
-{
-	struct obs_core_data *data = &obs->data;
-	struct obs_source *source;
-
-	if (!obs) return NULL;
-
-	pthread_mutex_lock(&data->sources_mutex);
-	source = data->first_source;
-
-	while (source) {
-		if (!source->context.private) {
-			if (strcmp(source->context.name, name) == 0) {
-				obs_source_addref(source);
-				break;
-			}
-		}
-
-		source = (struct obs_source*)source->context.next;
-	}
-
-	pthread_mutex_unlock(&data->sources_mutex);
-	return source;
-}
-
 static inline void *get_context_by_name(void *vfirst, const char *name,
 		pthread_mutex_t *mutex, void *(*addref)(void*))
 {
@@ -1293,6 +1268,11 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
+static inline void *obs_source_addref_safe_(void *ref)
+{
+	return obs_source_get_ref(ref);
+}
+
 static inline void *obs_output_addref_safe_(void *ref)
 {
 	return obs_output_get_ref(ref);
@@ -1311,6 +1291,13 @@ static inline void *obs_service_addref_safe_(void *ref)
 static inline void *obs_id_(void *data)
 {
 	return data;
+}
+
+obs_source_t *obs_get_source_by_name(const char *name)
+{
+	if (!obs) return NULL;
+	return get_context_by_name(&obs->data.first_source, name,
+			&obs->data.sources_mutex, obs_source_addref_safe_);
 }
 
 obs_output_t *obs_get_output_by_name(const char *name)
