@@ -633,7 +633,7 @@ struct obs_source {
 extern const struct obs_source_info *get_source_info(const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name,
-		obs_data_t *hotkey_data);
+		obs_data_t *hotkey_data, bool private);
 
 extern void obs_source_save(obs_source_t *source);
 extern void obs_source_load(obs_source_t *source);
@@ -660,7 +660,7 @@ static inline void obs_source_dosignal(struct obs_source *source,
 
 	calldata_init(&data);
 	calldata_set_ptr(&data, "source", source);
-	if (signal_obs)
+	if (signal_obs && !source->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
 	if (signal_source)
 		signal_handler_signal(source->context.signals, signal_source,

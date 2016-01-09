@@ -648,6 +648,8 @@ EXPORT const char *obs_source_get_display_name(const char *id);
 EXPORT obs_source_t *obs_source_create(const char *id, const char *name,
 		obs_data_t *settings, obs_data_t *hotkey_data);
 
+EXPORT obs_source_t *obs_source_create_private(const char *id,
+		const char *name, obs_data_t *settings);
 /**
  * Adds/releases a reference to a source.  When the last reference is
  * released, the source is destroyed.
