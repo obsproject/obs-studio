@@ -162,12 +162,15 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	connect(windowHandle(), &QWindow::screenChanged, [this]() {
+	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
 		if (obs_get_video_info(&ovi))
 			ResizePreview(ovi.base_width, ovi.base_height);
-	});
+	};
+
+	connect(windowHandle(), &QWindow::screenChanged, displayResize);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -2310,16 +2313,6 @@ void OBSBasic::changeEvent(QEvent *event)
 {
 	/* TODO */
 	UNUSED_PARAMETER(event);
-}
-
-void OBSBasic::resizeEvent(QResizeEvent *event)
-{
-	struct obs_video_info ovi;
-
-	if (obs_get_video_info(&ovi))
-		ResizePreview(ovi.base_width, ovi.base_height);
-
-	OBSMainWindow::resizeEvent(event);
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()
