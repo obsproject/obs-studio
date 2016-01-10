@@ -224,7 +224,7 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "high",
+                "profile": "main",
                 "max video bitrate": 3500,
                 "max audio bitrate": 320
             }
