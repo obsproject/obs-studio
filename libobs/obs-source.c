@@ -586,6 +586,18 @@ obs_properties_t *obs_get_source_properties(const char *id)
 	return NULL;
 }
 
+bool obs_is_source_configurable(const char *id)
+{
+	const struct obs_source_info *info = get_source_info(id);
+	return info && info->get_properties;
+}
+
+bool obs_source_configurable(const obs_source_t *source)
+{
+	return data_valid(source, "obs_source_configurable") &&
+		source->info.get_properties;
+}
+
 obs_properties_t *obs_source_properties(const obs_source_t *source)
 {
 	if (!data_valid(source, "obs_source_properties"))
