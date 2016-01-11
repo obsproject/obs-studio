@@ -685,6 +685,11 @@ EXPORT obs_data_t *obs_get_source_defaults(const char *id);
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t *obs_get_source_properties(const char *id);
 
+/** Returns whether the source has custom properties or not */
+EXPORT bool obs_is_source_configurable(const char *id);
+
+EXPORT bool obs_source_configurable(const obs_source_t *source);
+
 /**
  * Returns the properties list for a specific existing source.  Free with
  * obs_properties_destroy
