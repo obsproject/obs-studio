@@ -744,6 +744,13 @@ obs_scene_t *obs_scene_create(const char *name)
 	return source->context.data;
 }
 
+obs_scene_t *obs_scene_create_private(const char *name)
+{
+	struct obs_source *source = obs_source_create_private("scene", name,
+			NULL);
+	return source->context.data;
+}
+
 obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 {
 	struct obs_scene *new_scene = obs_scene_create(name);
@@ -1014,7 +1021,8 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
 	full_unlock(scene);
 
-	init_hotkeys(scene, item, obs_source_get_name(source));
+	if (!scene->source->context.private)
+		init_hotkeys(scene, item, obs_source_get_name(source));
 
 	calldata_set_ptr(&params, "scene", scene);
 	calldata_set_ptr(&params, "item", item);

@@ -1082,6 +1082,8 @@ EXPORT void obs_transition_swap_end(obs_source_t *tr_dest,
  */
 EXPORT obs_scene_t *obs_scene_create(const char *name);
 
+EXPORT obs_scene_t *obs_scene_create_private(const char *name);
+
 /**
  * Duplicates a scene.
  *
