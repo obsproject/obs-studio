@@ -751,22 +751,91 @@ obs_scene_t *obs_scene_create_private(const char *name)
 	return source->context.data;
 }
 
-obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
+static obs_source_t *get_child_at_idx(obs_scene_t *scene, size_t idx)
 {
-	struct obs_scene *new_scene = obs_scene_create(name);
 	struct obs_scene_item *item = scene->first_item;
+
+	while (item && idx--)
+		item = item->next;
+	return item ? item->source : NULL;
+}
+
+static inline obs_source_t *dup_child(struct darray *array, size_t idx,
+		obs_scene_t *new_scene, bool private)
+{
+	DARRAY(struct obs_scene_item*) old_items;
+	obs_source_t *source;
+
+	old_items.da = *array;
+
+	source = old_items.array[idx]->source;
+
+	/* if the old item is referenced more than once in the old scene,
+	 * make sure they're referenced similarly in the new scene to reduce
+	 * load times */
+	for (size_t i = 0; i < idx; i++) {
+		struct obs_scene_item *item = old_items.array[i];
+		if (item->source == source) {
+			source = get_child_at_idx(new_scene, i);
+			obs_source_addref(source);
+			return source;
+		}
+	}
+
+	return obs_source_duplicate(source, NULL, private);
+}
+
+static inline obs_source_t *new_ref(obs_source_t *source)
+{
+	obs_source_addref(source);
+	return source;
+}
+
+obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
+		enum obs_scene_duplicate_type type)
+{
+	bool make_unique  = ((int)type & (1<<0)) != 0;
+	bool make_private = ((int)type & (1<<1)) != 0;
+	DARRAY(struct obs_scene_item*) items;
+	struct obs_scene *new_scene;
+	struct obs_scene_item *item;
+	struct obs_source *source;
+
+	da_init(items);
+
+	if (!obs_ptr_valid(scene, "obs_scene_duplicate"))
+		return NULL;
+
+	/* --------------------------------- */
 
 	full_lock(scene);
 
+	item = scene->first_item;
 	while (item) {
-		struct obs_source *source = item->source;
+		da_push_back(items, &item);
+		obs_sceneitem_addref(item);
+		item = item->next;
+	}
+
+	full_unlock(scene);
+
+	/* --------------------------------- */
+
+	new_scene = make_private ?
+		obs_scene_create_private(name) : obs_scene_create(name);
+
+	for (size_t i = 0; i < items.num; i++) {
+		item = items.array[i];
+		source = make_unique ?
+			dup_child(&items.da, i, new_scene, make_private) :
+			new_ref(item->source);
 
 		if (source) {
 			struct obs_scene_item *new_item =
 				obs_scene_add(new_scene, source);
 
 			if (!new_item) {
-				item = item->next;
+				obs_source_release(source);
 				continue;
 			}
 
@@ -784,13 +853,15 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name)
 			new_item->bounds_type = item->bounds_type;
 			new_item->bounds_align = item->bounds_align;
 			new_item->bounds = item->bounds;
-		}
 
-		item = item->next;
+			obs_source_release(source);
+		}
 	}
 
-	full_unlock(scene);
+	for (size_t i = 0; i < items.num; i++)
+		obs_sceneitem_release(items.array[i]);
 
+	da_free(items);
 	return new_scene;
 }
 
