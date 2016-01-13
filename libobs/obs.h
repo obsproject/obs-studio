@@ -650,6 +650,11 @@ EXPORT obs_source_t *obs_source_create(const char *id, const char *name,
 
 EXPORT obs_source_t *obs_source_create_private(const char *id,
 		const char *name, obs_data_t *settings);
+
+/* if source has OBS_SOURCE_DO_NOT_DUPLICATE output flag set, only returns a
+ * reference */
+EXPORT obs_source_t *obs_source_duplicate(obs_source_t *source,
+		const char *desired_name, bool create_private);
 /**
  * Adds/releases a reference to a source.  When the last reference is
  * released, the source is destroyed.
