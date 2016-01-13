@@ -1084,13 +1084,18 @@ EXPORT obs_scene_t *obs_scene_create(const char *name);
 
 EXPORT obs_scene_t *obs_scene_create_private(const char *name);
 
+enum obs_scene_duplicate_type {
+	OBS_SCENE_DUP_REFS,         /**< Source refs only */
+	OBS_SCENE_DUP_COPY,         /**< Fully duplicate */
+	OBS_SCENE_DUP_PRIVATE_REFS, /**< Source refs only (as private) */
+	OBS_SCENE_DUP_PRIVATE_COPY  /**< Fully duplicate (as private) */
+};
+
 /**
  * Duplicates a scene.
- *
- *   Sources in a scene will not be recreated; it will contain references to
- * the same sources as the originating scene.
  */
-EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name);
+EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
+		enum obs_scene_duplicate_type type);
 
 EXPORT void        obs_scene_addref(obs_scene_t *scene);
 EXPORT void        obs_scene_release(obs_scene_t *scene);
