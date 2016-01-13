@@ -232,7 +232,8 @@ static obs_properties_t *monitor_capture_properties(void *unused)
 struct obs_source_info monitor_capture_info = {
 	.id             = "monitor_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = monitor_capture_getname,
 	.create         = monitor_capture_create,
 	.destroy        = monitor_capture_destroy,

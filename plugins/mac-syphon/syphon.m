@@ -1275,7 +1275,8 @@ static void syphon_update(void *data, obs_data_t *settings)
 struct obs_source_info syphon_info = {
 	.id             = "syphon-input",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = syphon_get_name,
 	.create         = syphon_create,
 	.destroy        = syphon_destroy,

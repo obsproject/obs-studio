@@ -166,7 +166,8 @@ bool obs_module_load(void)
 	struct obs_source_info info = {};
 	info.id             = "decklink-input";
 	info.type           = OBS_SOURCE_TYPE_INPUT;
-	info.output_flags   = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO;
+	info.output_flags   = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+	                      OBS_SOURCE_DO_NOT_DUPLICATE;
 	info.create         = decklink_create;
 	info.destroy        = decklink_destroy;
 	info.get_defaults   = decklink_get_defaults;

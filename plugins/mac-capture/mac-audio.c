@@ -783,7 +783,8 @@ static obs_properties_t *coreaudio_output_properties(void *unused)
 struct obs_source_info coreaudio_input_capture_info = {
 	.id             = "coreaudio_input_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_AUDIO,
+	.output_flags   = OBS_SOURCE_AUDIO |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = coreaudio_input_getname,
 	.create         = coreaudio_create_input_capture,
 	.destroy        = coreaudio_destroy,
@@ -795,7 +796,8 @@ struct obs_source_info coreaudio_input_capture_info = {
 struct obs_source_info coreaudio_output_capture_info = {
 	.id             = "coreaudio_output_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_AUDIO,
+	.output_flags   = OBS_SOURCE_AUDIO |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = coreaudio_output_getname,
 	.create         = coreaudio_create_output_capture,
 	.destroy        = coreaudio_destroy,
