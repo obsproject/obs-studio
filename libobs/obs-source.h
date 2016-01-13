@@ -115,6 +115,15 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_COMPOSITE (1<<6)
 
+/**
+ * Source should not be fully duplicated
+ *
+ * When this is used, specifies that the source should not be fully duplicated,
+ * and should prefer to duplicate via holding references rather than full
+ * duplication.
+ */
+#define OBS_SOURCE_DO_NOT_DUPLICATE (1<<7)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

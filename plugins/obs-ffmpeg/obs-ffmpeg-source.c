@@ -639,7 +639,8 @@ static void ffmpeg_source_deactivate(void *data)
 struct obs_source_info ffmpeg_source = {
 	.id             = "ffmpeg_source",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO,
+	.output_flags   = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = ffmpeg_source_getname,
 	.create         = ffmpeg_source_create,
 	.destroy        = ffmpeg_source_destroy,

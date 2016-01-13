@@ -475,7 +475,8 @@ struct obs_source_info xshm_input = {
 	.id             = "xshm_input",
 	.type           = OBS_SOURCE_TYPE_INPUT,
 	.output_flags   = OBS_SOURCE_VIDEO |
-	                  OBS_SOURCE_CUSTOM_DRAW,
+	                  OBS_SOURCE_CUSTOM_DRAW |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = xshm_getname,
 	.create         = xshm_create,
 	.destroy        = xshm_destroy,

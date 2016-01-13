@@ -517,7 +517,8 @@ static void *pulse_create(obs_data_t *settings, obs_source_t *source)
 struct obs_source_info pulse_input_capture = {
 	.id             = "pulse_input_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_AUDIO,
+	.output_flags   = OBS_SOURCE_AUDIO |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = pulse_input_getname,
 	.create         = pulse_create,
 	.destroy        = pulse_destroy,
@@ -529,7 +530,8 @@ struct obs_source_info pulse_input_capture = {
 struct obs_source_info pulse_output_capture = {
 	.id             = "pulse_output_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_AUDIO,
+	.output_flags   = OBS_SOURCE_AUDIO |
+	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = pulse_output_getname,
 	.create         = pulse_create,
 	.destroy        = pulse_destroy,

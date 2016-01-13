@@ -2181,7 +2181,8 @@ bool obs_module_load(void)
 	obs_source_info av_capture_info = {
 		.id             = "av_capture_input",
 		.type           = OBS_SOURCE_TYPE_INPUT,
-		.output_flags   = OBS_SOURCE_ASYNC_VIDEO,
+		.output_flags   = OBS_SOURCE_ASYNC_VIDEO |
+		                  OBS_SOURCE_DO_NOT_DUPLICATE,
 		.get_name       = av_capture_getname,
 		.create         = av_capture_create,
 		.destroy        = av_capture_destroy,
