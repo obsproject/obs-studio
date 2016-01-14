@@ -28,6 +28,7 @@
 
 class QDataStream;
 class QWidget;
+class QLayout;
 struct gs_window;
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
@@ -60,3 +61,5 @@ public:
 		widget->blockSignals(blocked);
 	}
 };
+
+void DeleteLayout(QLayout *layout);

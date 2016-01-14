@@ -18,6 +18,7 @@
 #include "qt-wrappers.hpp"
 #include <graphics/graphics.h>
 #include <QWidget>
+#include <QLayout>
 #include <QMessageBox>
 #include <QDataStream>
 
@@ -132,4 +133,26 @@ QDataStream &operator>>(QDataStream &in, OBSSceneItem &si)
 	obs_source_release(sceneSource);
 
 	return in;
+}
+
+void DeleteLayout(QLayout *layout)
+{
+	if (!layout)
+		return;
+
+	for (;;) {
+		QLayoutItem *item = layout->takeAt(0);
+		if (!item)
+			break;
+
+		QLayout *subLayout = item->layout();
+		if (subLayout) {
+			DeleteLayout(subLayout);
+		} else {
+			delete item->widget();
+			delete item;
+		}
+	}
+
+	delete layout;
 }
