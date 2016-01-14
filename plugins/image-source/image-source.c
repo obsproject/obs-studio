@@ -100,7 +100,7 @@ static void image_source_update(void *data, obs_data_t *settings)
 
 static void image_source_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, "unload", true);
+	obs_data_set_default_bool(settings, "unload", false);
 }
 
 static void image_source_show(void *data)
