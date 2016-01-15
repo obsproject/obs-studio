@@ -67,6 +67,7 @@ namespace XCompcap
 	int getRootWindowScreen(Window root);
 	std::string getWindowName(Window win);
 	int getWindowPid(Window win);
+	bool ewmhIsSupported();
 	std::list<Window> getTopLevelWindows();
 	std::list<Window> getAllWindows();
 
