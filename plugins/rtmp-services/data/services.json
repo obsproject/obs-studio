@@ -14,16 +14,8 @@
                     "url": "rtmp://live-hkg.twitch.tv/app"
                 },
                 {
-                    "name": "Asia: Hong Kong (2)",
-                    "url": "rtmp://live-hkg-2.twitch.tv/app"
-                },
-                {
                     "name": "Asia: Seoul, South Korea",
                     "url": "rtmp://live-sel.twitch.tv/app"
-                },
-                {
-                    "name": "Asia: Seoul, South Korea (2)",
-                    "url": "rtmp://live-sel-2.twitch.tv/app"
                 },
                 {
                     "name": "Asia: Singapore",
@@ -32,10 +24,6 @@
                 {
                     "name": "Asia: Taipei, Taiwan",
                     "url": "rtmp://live-tpe.twitch.tv/app"
-                },
-                {
-                    "name": "Asia: Tokyo (2), Japan",
-                    "url": "rtmp://live-tyo-2.twitch.tv/app"
                 },
                 {
                     "name": "Asia: Tokyo, Japan",
