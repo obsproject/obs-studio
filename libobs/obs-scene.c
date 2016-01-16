@@ -20,6 +20,17 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
+/* NOTE: For proper mutex lock order (preventing mutual cross-locks), never
+ * lock the graphics mutex inside either of the scene mutexes.
+ *
+ * Another thing that must be done to prevent that cross-lock (and improve
+ * performance), is to not create/release/update sources within the scene
+ * mutexes.
+ *
+ * It's okay to lock the graphics mutex before locking either of the scene
+ * mutexes, but not after.
+ */
+
 static const char *obs_scene_signals[] = {
 	"void item_add(ptr scene, ptr item)",
 	"void item_remove(ptr scene, ptr item)",
