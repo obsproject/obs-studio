@@ -1149,6 +1149,8 @@ static void source_output_audio_data(obs_source_t *source,
 			push_back = true;
 	}
 
+	in.timestamp -= source->resample_offset;
+
 	source->next_audio_sys_ts_min = source->next_audio_ts_min +
 		source->timing_adjust + source->sync_offset;
 
@@ -2219,6 +2221,7 @@ static inline void reset_resampler(obs_source_t *source,
 
 	audio_resampler_destroy(source->resampler);
 	source->resampler = NULL;
+	source->resample_offset = 0;
 
 	if (source->sample_info.samples_per_sec == obs_info->samples_per_sec &&
 	    source->sample_info.format          == obs_info->format          &&
@@ -2298,16 +2301,15 @@ static void process_audio(obs_source_t *source,
 
 	if (source->resampler) {
 		uint8_t  *output[MAX_AV_PLANES];
-		uint64_t offset;
 
 		memset(output, 0, sizeof(output));
 
 		audio_resampler_resample(source->resampler,
-				output, &frames, &offset,
+				output, &frames, &source->resample_offset,
 				audio->data, audio->frames);
 
 		copy_audio_data(source, (const uint8_t *const *)output, frames,
-				audio->timestamp - offset);
+				audio->timestamp);
 	} else {
 		copy_audio_data(source, audio->data, audio->frames,
 				audio->timestamp);
