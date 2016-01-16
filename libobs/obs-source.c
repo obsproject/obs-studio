@@ -1111,6 +1111,7 @@ static void source_output_audio_data(obs_source_t *source,
 	struct audio_data in = *data;
 	uint64_t diff;
 	uint64_t os_time = os_gettime_ns();
+	int64_t sync_offset;
 	bool using_direct_ts = false;
 	bool push_back = false;
 
@@ -1139,7 +1140,7 @@ static void source_output_audio_data(obs_source_t *source,
 	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(sample_rate, in.frames);
 
-	in.timestamp += source->timing_adjust + source->sync_offset;
+	in.timestamp += source->timing_adjust;
 
 	if (source->next_audio_sys_ts_min == in.timestamp) {
 		push_back = true;
@@ -1149,10 +1150,18 @@ static void source_output_audio_data(obs_source_t *source,
 			push_back = true;
 	}
 
+	sync_offset = source->sync_offset;
+	in.timestamp += sync_offset;
 	in.timestamp -= source->resample_offset;
 
 	source->next_audio_sys_ts_min = source->next_audio_ts_min +
-		source->timing_adjust + source->sync_offset;
+		source->timing_adjust;
+
+	if (source->last_sync_offset != sync_offset) {
+		if (source->last_sync_offset)
+			push_back = false;
+		source->last_sync_offset = sync_offset;
+	}
 
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
