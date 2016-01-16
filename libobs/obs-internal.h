@@ -540,6 +540,7 @@ struct obs_source {
 	bool                            audio_pending;
 	bool                            user_muted;
 	bool                            muted;
+	bool                            resync_audio_with_video;
 	struct obs_source               *next_audio_source;
 	struct obs_source               **prev_next_audio_source;
 	uint64_t                        audio_ts;
