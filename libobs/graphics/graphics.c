@@ -896,6 +896,23 @@ gs_shader_t *gs_pixelshader_create_from_file(const char *file,
 	return shader;
 }
 
+gs_texture_t *gs_texture_create_from_file(const char *file)
+{
+	enum gs_color_format format;
+	uint32_t cx;
+	uint32_t cy;
+	uint8_t *data = gs_create_texture_file_data(file, &format, &cx, &cy);
+	gs_texture_t *tex = NULL;
+
+	if (data) {
+		tex = gs_texture_create(cx, cy, format, 1,
+				(const uint8_t**)&data, 0);
+		bfree(data);
+	}
+
+	return tex;
+}
+
 static inline void assign_sprite_rect(float *start, float *end, float size,
 		bool flip)
 {

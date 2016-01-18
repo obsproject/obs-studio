@@ -14,9 +14,11 @@ void gs_free_image_deps()
 	MagickCoreTerminus();
 }
 
-gs_texture_t *gs_texture_create_from_file(const char *file)
+uint8_t *gs_create_texture_file_data(const char *file,
+		enum gs_color_format *format,
+		uint32_t *cx_out, uint32_t *cy_out)
 {
-	gs_texture_t  *tex = NULL;
+	uint8_t       *data = NULL;
 	ImageInfo     *info;
 	ExceptionInfo *exception;
 	Image         *image;
@@ -32,19 +34,21 @@ gs_texture_t *gs_texture_create_from_file(const char *file)
 	if (image) {
 		size_t  cx    = image->magick_columns;
 		size_t  cy    = image->magick_rows;
-		uint8_t *data = malloc(cx * cy * 4);
+		data          = bmalloc(cx * cy * 4);
 
 		ExportImagePixels(image, 0, 0, cx, cy, "BGRA", CharPixel,
 				data, exception);
-		if (exception->severity == UndefinedException)
-			tex = gs_texture_create(cx, cy, GS_BGRA, 1,
-					(const uint8_t**)&data, 0);
-		else
+		if (exception->severity != UndefinedException) {
 			blog(LOG_WARNING, "magickcore warning/error getting "
 			                  "pixels from file '%s': %s", file,
 			                  exception->reason);
+			bfree(data);
+			data = NULL;
+		}
 
-		free(data);
+		*format = GS_BGRA;
+		*cx_out = (uint32_t)cx;
+		*cy_out = (uint32_t)cy;
 		DestroyImage(image);
 
 	} else if (exception->severity != UndefinedException) {
@@ -55,5 +59,5 @@ gs_texture_t *gs_texture_create_from_file(const char *file)
 	DestroyImageInfo(info);
 	DestroyExceptionInfo(exception);
 
-	return tex;
+	return data;
 }
