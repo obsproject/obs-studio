@@ -1753,3 +1753,8 @@ profiler_name_store_t *obs_get_profiler_name_store(void)
 
 	return obs->name_store;
 }
+
+uint64_t obs_get_video_frame_time(void)
+{
+	return obs ? obs->video.video_time : 0;
+}
