@@ -167,7 +167,9 @@ set(libobs_graphics_SOURCES
 	graphics/axisang.c
 	graphics/vec4.c
 	graphics/vec2.c
+	graphics/libnsgif/libnsgif.c
 	graphics/texture-render.c
+	graphics/image-file.c
 	graphics/bounds.c
 	graphics/matrix3.c
 	graphics/matrix4.c
@@ -189,7 +191,9 @@ set(libobs_graphics_HEADERS
 	graphics/matrix4.h
 	graphics/graphics.h
 	graphics/graphics-internal.h
+	graphics/libnsgif/libnsgif.h
 	graphics/device-exports.h
+	graphics/image-file.h
 	graphics/vec2.h
 	graphics/vec4.h
 	graphics/matrix3.h
