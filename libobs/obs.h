@@ -590,6 +590,8 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view,
 /** Renders the sources of this view context */
 EXPORT void obs_view_render(obs_view_t *view);
 
+EXPORT uint64_t obs_get_video_frame_time(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
