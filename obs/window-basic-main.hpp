@@ -260,6 +260,12 @@ private:
 public:
 	OBSScene      GetCurrentScene();
 
+	inline OBSSource GetCurrentSceneSource()
+	{
+		OBSScene curScene = GetCurrentScene();
+		return OBSSource(obs_scene_get_source(curScene));
+	}
+
 	obs_service_t *GetService();
 	void          SetService(obs_service_t *service);
 
