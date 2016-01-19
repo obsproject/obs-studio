@@ -113,11 +113,13 @@ void process_delay(void *data, struct encoder_packet *packet)
 
 void obs_output_signal_delay(obs_output_t *output, const char *signal)
 {
-	struct calldata params = {0};
+	struct calldata params;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "output", output);
 	calldata_set_int(&params, "sec", output->active_delay_ns / 1000000000);
 	signal_handler_signal(output->context.signals, signal, &params);
-	calldata_free(&params);
 }
 
 bool obs_output_delay_start(obs_output_t *output)
