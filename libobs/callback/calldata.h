@@ -44,9 +44,10 @@ enum call_param_type {
 #define CALL_PARAM_OUT (1<<1)
 
 struct calldata {
+	uint8_t *stack;
 	size_t  size;     /* size of the stack, in bytes */
 	size_t  capacity; /* capacity of the stack, in bytes */
-	uint8_t *stack;
+	bool    fixed;    /* fixed size (using call stack) */
 };
 
 typedef struct calldata calldata_t;
@@ -56,9 +57,22 @@ static inline void calldata_init(struct calldata *data)
 	memset(data, 0, sizeof(struct calldata));
 }
 
+static inline void calldata_clear(struct calldata *data);
+
+static inline void calldata_init_fixed(struct calldata *data, uint8_t *stack,
+		size_t size)
+{
+	data->stack = stack;
+	data->capacity = size;
+	data->fixed = true;
+	data->size = 0;
+	calldata_clear(data);
+}
+
 static inline void calldata_free(struct calldata *data)
 {
-	bfree(data->stack);
+	if (!data->fixed)
+		bfree(data->stack);
 }
 
 EXPORT bool calldata_get_data(const calldata_t *data, const char *name,
