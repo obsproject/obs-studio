@@ -660,15 +660,15 @@ static inline void obs_source_dosignal(struct obs_source *source,
 		const char *signal_obs, const char *signal_source)
 {
 	struct calldata data;
+	uint8_t stack[128];
 
-	calldata_init(&data);
+	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "source", source);
 	if (signal_obs && !source->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
 	if (signal_source)
 		signal_handler_signal(source->context.signals, signal_source,
 				&data);
-	calldata_free(&data);
 }
 
 extern void obs_source_activate(obs_source_t *source, enum view_type type);

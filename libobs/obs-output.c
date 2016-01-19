@@ -1274,12 +1274,14 @@ static inline void signal_start(struct obs_output *output)
 
 static inline void signal_reconnect(struct obs_output *output)
 {
-	struct calldata params = {0};
+	struct calldata params;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_int(&params, "timeout_sec",
 			output->reconnect_retry_cur_sec);
 	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "reconnect", &params);
-	calldata_free(&params);
 }
 
 static inline void signal_reconnect_success(struct obs_output *output)
@@ -1289,11 +1291,13 @@ static inline void signal_reconnect_success(struct obs_output *output)
 
 static inline void signal_stop(struct obs_output *output, int code)
 {
-	struct calldata params = {0};
+	struct calldata params;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_int(&params, "code", code);
 	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "stop", &params);
-	calldata_free(&params);
 }
 
 static inline void convert_flags(const struct obs_output *output,
