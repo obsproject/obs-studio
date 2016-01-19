@@ -66,15 +66,6 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	installEventFilter(CreateShortcutFilter());
 
-	/* get global audio sources */
-	for (uint32_t i = 1; i <= 10; i++) {
-		obs_source_t *source = obs_get_output_source(i);
-		if (source) {
-			AddAudioSource(source);
-			obs_source_release(source);
-		}
-	}
-
 	/* enum user scene/sources */
 	obs_enum_sources(EnumSources, this);
 
