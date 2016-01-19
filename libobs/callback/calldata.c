@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "../util/bmem.h"
+#include "../util/base.h"
 
 #include "calldata.h"
 
@@ -137,14 +138,18 @@ static inline void cd_set_first_param(calldata_t *data, const char *name,
 	memset(pos, 0, sizeof(size_t));
 }
 
-static inline void cd_ensure_capacity(calldata_t *data, uint8_t **pos,
+static inline bool cd_ensure_capacity(calldata_t *data, uint8_t **pos,
 		size_t new_size)
 {
 	size_t offset;
 	size_t new_capacity;
 
 	if (new_size < data->capacity)
-		return;
+		return true;
+	if (data->fixed) {
+		blog(LOG_ERROR, "Tried to go above fixed calldata stack size!");
+		return false;
+	}
 
 	offset = *pos - data->stack;
 
@@ -156,6 +161,7 @@ static inline void cd_ensure_capacity(calldata_t *data, uint8_t **pos,
 	data->capacity = new_capacity;
 
 	*pos = data->stack + offset;
+	return true;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -188,7 +194,7 @@ void calldata_set_data(calldata_t *data, const char *name, const void *in,
 	if (!data || !name || !*name)
 		return;
 
-	if (!data->stack) {
+	if (!data->fixed && !data->stack) {
 		cd_set_first_param(data, name, in, size);
 		return;
 	}
@@ -201,7 +207,8 @@ void calldata_set_data(calldata_t *data, const char *name, const void *in,
 			size_t offset = size - cur_size;
 			size_t bytes = data->size;
 
-			cd_ensure_capacity(data, &pos, bytes + offset);
+			if (!cd_ensure_capacity(data, &pos, bytes + offset))
+				return;
 			memmove(pos+offset, pos, bytes - (pos - data->stack));
 			data->size += offset;
 
@@ -218,7 +225,8 @@ void calldata_set_data(calldata_t *data, const char *name, const void *in,
 	} else {
 		size_t name_len = strlen(name)+1;
 		size_t offset = name_len + size + sizeof(size_t)*2;
-		cd_ensure_capacity(data, &pos, data->size + offset);
+		if (!cd_ensure_capacity(data, &pos, data->size + offset))
+			return;
 		data->size += offset;
 
 		cd_copy_string(&pos, name, 0);
