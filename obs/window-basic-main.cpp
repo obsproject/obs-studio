@@ -3267,8 +3267,34 @@ void OBSBasic::RecordingStop(int code)
 void OBSBasic::on_streamButton_clicked()
 {
 	if (outputHandler->StreamingActive()) {
+		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+				"WarnBeforeStoppingStream");
+
+		if (confirm) {
+			QMessageBox::StandardButton button =
+				QMessageBox::question(this,
+						QTStr("ConfirmStop.Title"),
+						QTStr("ConfirmStop.Text"));
+
+			if (button == QMessageBox::No)
+				return;
+		}
+
 		StopStreaming();
 	} else {
+		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+				"WarnBeforeStartingStream");
+
+		if (confirm) {
+			QMessageBox::StandardButton button =
+				QMessageBox::question(this,
+						QTStr("ConfirmStart.Title"),
+						QTStr("ConfirmStart.Text"));
+
+			if (button == QMessageBox::No)
+				return;
+		}
+
 		StartStreaming();
 	}
 }

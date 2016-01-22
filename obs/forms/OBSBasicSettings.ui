@@ -165,6 +165,20 @@
          <item row="2" column="1">
           <widget class="QComboBox" name="theme"/>
          </item>
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="warnBeforeStreamStart">
+           <property name="text">
+            <string>Basic.Settings.General.WarnBeforeStartingStream</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QCheckBox" name="warnBeforeStreamStop">
+           <property name="text">
+            <string>Basic.Settings.General.WarnBeforeStoppingStream</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="streamPage">
@@ -2663,8 +2677,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>735</width>
-              <height>618</height>
+              <width>525</width>
+              <height>383</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
