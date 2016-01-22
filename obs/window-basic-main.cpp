@@ -928,7 +928,20 @@ void OBSBasic::OBSInit()
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
+#ifdef _WIN32
 	show();
+#endif
+
+	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+			"AlwaysOnTop");
+	if (alwaysOnTop) {
+		SetAlwaysOnTop(this, true);
+		ui->actionAlwaysOnTop->setChecked(true);
+	}
+
+#ifndef _WIN32
+	show();
+#endif
 
 	QList<int> defSizes;
 
@@ -1177,6 +1190,7 @@ OBSBasic::~OBSBasic()
 
 	QRect lastGeom = normalGeometry();
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
+	bool alwaysOnTop = IsAlwaysOnTop(this);
 
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "cx",
 			lastGeom.width());
@@ -1192,6 +1206,8 @@ OBSBasic::~OBSBasic()
 			splitterSizes[1]);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
+			alwaysOnTop);
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 #ifdef _WIN32
@@ -3324,6 +3340,28 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 	popup.exec(QCursor::pos());
 
 	UNUSED_PARAMETER(pos);
+}
+
+void OBSBasic::on_actionAlwaysOnTop_triggered()
+{
+	CloseDialogs();
+
+	/* Make sure all dialogs are safely and successfully closed before
+	 * switching the always on top mode due to the fact that windows all
+	 * have to be recreated, so queue the actual toggle to happen after
+	 * all events related to closing the dialogs have finished */
+	QMetaObject::invokeMethod(this, "ToggleAlwaysOnTop",
+			Qt::QueuedConnection);
+}
+
+void OBSBasic::ToggleAlwaysOnTop()
+{
+	bool isAlwaysOnTop = IsAlwaysOnTop(this);
+
+	ui->actionAlwaysOnTop->setChecked(!isAlwaysOnTop);
+	SetAlwaysOnTop(this, !isAlwaysOnTop);
+
+	show();
 }
 
 void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const

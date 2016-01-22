@@ -202,3 +202,16 @@ void SetAeroEnabled(bool enable)
 
 	func(enable ? DWM_EC_ENABLECOMPOSITION : DWM_EC_DISABLECOMPOSITION);
 }
+
+bool IsAlwaysOnTop(QMainWindow *window)
+{
+	DWORD exStyle = GetWindowLong((HWND)window->winId(), GWL_EXSTYLE);
+	return (exStyle & WS_EX_TOPMOST) != 0;
+}
+
+void SetAlwaysOnTop(QMainWindow *window, bool enable)
+{
+	HWND hwnd = (HWND)window->winId();
+	SetWindowPos(hwnd, enable ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+			SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}

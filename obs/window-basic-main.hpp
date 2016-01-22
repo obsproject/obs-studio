@@ -229,6 +229,8 @@ private slots:
 	void RemoveSelectedScene();
 	void RemoveSelectedSceneItem();
 
+	void ToggleAlwaysOnTop();
+
 	void ReorderSources(OBSScene scene);
 
 	void ProcessHotkey(obs_hotkey_id id, bool pressed);
@@ -376,6 +378,8 @@ private slots:
 
 	void on_actionShowSettingsFolder_triggered();
 	void on_actionShowProfileFolder_triggered();
+
+	void on_actionAlwaysOnTop_triggered();
 
 	void logUploadFinished(const QString &text, const QString &error);
 
