@@ -1,6 +1,7 @@
 #include <obs-module.h>
 #include <graphics/vec2.h>
 #include <graphics/vec4.h>
+#include <graphics/image-file.h>
 #include <util/dstr.h>
 
 #define SETTING_TYPE                   "type"
@@ -18,10 +19,13 @@
 #define TEXT_PATH_ALL_FILES            obs_module_text("BrowsePath.AllFiles")
 
 struct mask_filter_data {
+	uint64_t                       last_time;
+
 	obs_source_t                   *context;
 	gs_effect_t                    *effect;
 
 	gs_texture_t                   *target;
+	gs_image_file_t                image;
 	struct vec4                    color;
 	bool                           lock_aspect;
 };
@@ -47,9 +51,16 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	vec4_from_rgba(&filter->color, color);
 
 	obs_enter_graphics();
+	gs_image_file_free(&filter->image);
+	obs_leave_graphics();
 
-	gs_texture_destroy(filter->target);
-	filter->target = (path) ? gs_texture_create_from_file(path) : NULL;
+	gs_image_file_init(&filter->image, path);
+
+	obs_enter_graphics();
+
+	gs_image_file_init_texture(&filter->image);
+
+	filter->target = filter->image.texture;
 	filter->lock_aspect = !obs_data_get_bool(settings, SETTING_STRETCH);
 
 	effect_path = obs_module_file(effect_file);
@@ -129,10 +140,30 @@ static void mask_filter_destroy(void *data)
 
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
-	gs_texture_destroy(filter->target);
+	gs_image_file_free(&filter->image);
 	obs_leave_graphics();
 
 	bfree(filter);
+}
+
+static void mask_filter_tick(void *data, float t)
+{
+	struct mask_filter_data *filter = data;
+	UNUSED_PARAMETER(t);
+
+	if (filter->image.is_animated_gif) {
+		uint64_t cur_time = obs_get_video_frame_time();
+
+		if (!filter->last_time)
+			filter->last_time = cur_time;
+
+		gs_image_file_tick(&filter->image, cur_time - filter->last_time);
+		obs_enter_graphics();
+		gs_image_file_update_texture(&filter->image);
+		obs_leave_graphics();
+
+		filter->last_time = cur_time;
+	}
 }
 
 static void mask_filter_render(void *data, gs_effect_t *effect)
@@ -209,5 +240,6 @@ struct obs_source_info mask_filter = {
 	.update                        = mask_filter_update,
 	.get_defaults                  = mask_filter_defaults,
 	.get_properties                = mask_filter_properties,
+	.video_tick                    = mask_filter_tick,
 	.video_render                  = mask_filter_render
 };
