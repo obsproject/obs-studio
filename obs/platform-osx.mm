@@ -130,3 +130,21 @@ vector<string> GetPreferredLocales()
 
 	return result;
 }
+
+bool IsAlwaysOnTop(QMainWindow *window)
+{
+	return (window->windowFlags() & Qt::WindowStaysOnTopHint) != 0;
+}
+
+void SetAlwaysOnTop(QMainWindow *window, bool enable)
+{
+	Qt::WindowFlags flags = window->windowFlags();
+
+	if (enable)
+		flags |= Qt::WindowStaysOnTopHint;
+	else
+		flags &= ~Qt::WindowStaysOnTopHint;
+
+	window->setWindowFlags(flags);
+	window->show();
+}

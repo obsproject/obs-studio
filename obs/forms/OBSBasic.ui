@@ -542,6 +542,8 @@
     <addaction name="actionShowSettingsFolder"/>
     <addaction name="actionShowProfileFolder"/>
     <addaction name="separator"/>
+    <addaction name="actionAlwaysOnTop"/>
+    <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Help">
@@ -973,6 +975,14 @@
   <action name="actionShowProfileFolder">
    <property name="text">
     <string>Basic.MainMenu.File.ShowProfileFolder</string>
+   </property>
+  </action>
+  <action name="actionAlwaysOnTop">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.AlwaysOnTop</string>
    </property>
   </action>
  </widget>
