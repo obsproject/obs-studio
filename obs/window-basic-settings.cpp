@@ -263,6 +263,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -740,6 +742,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	LoadLanguageList();
 	LoadThemeList();
+
+	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "WarnBeforeStartingStream");
+	ui->warnBeforeStreamStart->setChecked(warnBeforeStreamStart);
+
+	bool warnBeforeStreamStop = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "WarnBeforeStoppingStream");
+	ui->warnBeforeStreamStop->setChecked(warnBeforeStreamStop);
 
 	loading = false;
 }
@@ -1954,6 +1964,13 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  theme.c_str());
 		App()->SetTheme(theme);
 	}
+
+	config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"WarnBeforeStartingStream",
+			ui->warnBeforeStreamStart->isChecked());
+	config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"WarnBeforeStoppingStream",
+			ui->warnBeforeStreamStop->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()
