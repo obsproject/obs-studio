@@ -116,7 +116,7 @@ bool obs_module_load(void)
 	da_init(active_log_contexts);
 	da_init(cached_log_contexts);
 
-	av_log_set_callback(ffmpeg_log_callback);
+	//av_log_set_callback(ffmpeg_log_callback);
 
 	obs_register_source(&ffmpeg_source);
 	obs_register_output(&ffmpeg_output);
