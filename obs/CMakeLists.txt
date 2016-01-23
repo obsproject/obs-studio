@@ -105,6 +105,7 @@ set(obs_SOURCES
 	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
 	window-basic-main-scene-collections.cpp
+	window-basic-main-transitions.cpp
 	window-basic-main-profiles.cpp
 	window-license-agreement.cpp
 	window-basic-status-bar.cpp

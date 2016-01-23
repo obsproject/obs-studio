@@ -95,12 +95,12 @@ static void AddSource(void *_data, obs_scene_t *scene)
 
 static void AddExisting(const char *name, const bool visible)
 {
-	obs_source_t *source = obs_get_output_source(0);
-	obs_scene_t  *scene  = obs_scene_from_source(source);
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	OBSScene scene = main->GetCurrentScene();
 	if (!scene)
 		return;
 
-	source = obs_get_source_by_name(name);
+	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
 		AddSourceData data;
 		data.source = source;
@@ -109,20 +109,18 @@ static void AddExisting(const char *name, const bool visible)
 
 		obs_source_release(source);
 	}
-
-	obs_scene_release(scene);
 }
 
 bool AddNew(QWidget *parent, const char *id, const char *name,
 		const bool visible, OBSSource &newSource)
 {
-	obs_source_t *source  = obs_get_output_source(0);
-	obs_scene_t  *scene   = obs_scene_from_source(source);
+	OBSBasic     *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	OBSScene     scene = main->GetCurrentScene();
 	bool         success = false;
-	if (!source)
+	if (!scene)
 		return false;
 
-	source = obs_get_source_by_name(name);
+	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
 		QMessageBox::information(parent,
 				QTStr("NameExists.Title"),
@@ -144,8 +142,6 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 	}
 
 	obs_source_release(source);
-	obs_scene_release(scene);
-
 	return success;
 }
 
