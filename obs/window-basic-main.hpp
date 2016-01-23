@@ -189,6 +189,8 @@ private:
 
 	void SaveProjectNow();
 
+	QListWidgetItem *GetTopSelectedSourceItem();
+
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
 
