@@ -47,6 +47,7 @@ struct ff_demuxer *ff_demuxer_init()
 		return NULL;
 
 	demuxer->clock.sync_type = DEFAULT_AV_SYNC_TYPE;
+	demuxer->options.frame_drop = AVDISCARD_DEFAULT;
 	demuxer->options.audio_frame_queue_size = AUDIO_FRAME_QUEUE_SIZE;
 	demuxer->options.video_frame_queue_size = VIDEO_FRAME_QUEUE_SIZE;
 	demuxer->options.audio_packet_queue_size = AUDIO_PACKET_QUEUE_SIZE;
