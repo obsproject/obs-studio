@@ -56,6 +56,7 @@ struct ffmpeg_source {
 	bool is_forcing_scale;
 	bool is_hw_decoding;
 	bool is_clear_on_media_end;
+	bool restart_on_activate;
 };
 
 static bool set_obs_frame_colorprops(struct ff_frame *frame,
@@ -328,6 +329,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "is_local_file", true);
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
+	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "force_scale", true);
 #if defined(_WIN32) || defined(__APPLE__)
 	obs_data_set_default_bool(settings, "hw_decode", true);
@@ -372,6 +374,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_free(&filter);
 
 	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
+
+	obs_properties_add_bool(props, "restart_on_activate",
+			obs_module_text("RestartWhenActivated"));
 
 	obs_properties_add_text(props, "input",
 			obs_module_text("Input"), OBS_TEXT_DEFAULT);
@@ -458,13 +463,15 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			"\tis_looping:              %s\n"
 			"\tis_forcing_scale:        %s\n"
 			"\tis_hw_decoding:          %s\n"
-			"\tis_clear_on_media_end:   %s",
+			"\tis_clear_on_media_end:   %s\n"
+			"\trestart_on_activate:     %s",
 			input ? input : "(null)",
 			input_format ? input_format : "(null)",
 			s->is_looping ? "yes" : "no",
 			s->is_forcing_scale ? "yes" : "no",
 			s->is_hw_decoding ? "yes" : "no",
-			s->is_clear_on_media_end ? "yes" : "no");
+			s->is_clear_on_media_end ? "yes" : "no",
+			s->restart_on_activate ? "yes" : "no");
 
 	if (!is_advanced)
 		return;
@@ -537,6 +544,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
 	s->is_clear_on_media_end = obs_data_get_bool(settings,
 			"clear_on_media_end");
+	s->restart_on_activate = obs_data_get_bool(settings,
+			"restart_on_activate");
 	s->is_forcing_scale = true;
 
 	if (is_advanced) {
@@ -604,6 +613,29 @@ static void ffmpeg_source_destroy(void *data)
 	bfree(s);
 }
 
+static void ffmpeg_source_activate(void *data)
+{
+	struct ffmpeg_source *s = data;
+
+	if (s->restart_on_activate)
+		ffmpeg_source_start(s);
+}
+
+static void ffmpeg_source_deactivate(void *data)
+{
+	struct ffmpeg_source *s = data;
+
+	if (s->restart_on_activate) {
+		if (s->demuxer != NULL) {
+			ff_demuxer_free(s->demuxer);
+			s->demuxer = NULL;
+
+			if (s->is_clear_on_media_end)
+				obs_source_output_video(s->source, NULL);
+		}
+	}
+}
+
 struct obs_source_info ffmpeg_source = {
 	.id             = "ffmpeg_source",
 	.type           = OBS_SOURCE_TYPE_INPUT,
@@ -613,5 +645,7 @@ struct obs_source_info ffmpeg_source = {
 	.destroy        = ffmpeg_source_destroy,
 	.get_defaults   = ffmpeg_source_defaults,
 	.get_properties = ffmpeg_source_getproperties,
+	.activate       = ffmpeg_source_activate,
+	.deactivate     = ffmpeg_source_deactivate,
 	.update         = ffmpeg_source_update
 };
