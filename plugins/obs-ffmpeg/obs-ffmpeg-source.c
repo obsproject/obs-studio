@@ -16,6 +16,7 @@
 
 #include <obs-module.h>
 #include <util/platform.h>
+#include <util/dstr.h>
 
 #include "obs-ffmpeg-compat.h"
 #include "obs-ffmpeg-formats.h"
@@ -312,8 +313,16 @@ static bool is_advanced_modified(obs_properties_t *props,
 	return true;
 }
 
+static const char *media_filter =
+	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
+static const char *video_filter =
+	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
+static const char *audio_filter =
+	" (*.mp3 *.aac *.ogg *.wav);;";
+
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
 {
+	struct dstr filter = {0};
 	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
@@ -327,9 +336,19 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
 
+	dstr_copy(&filter, obs_module_text("MediaFileFilter.AllMediaFiles"));
+	dstr_cat(&filter, media_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.VideoFiles"));
+	dstr_cat(&filter, video_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.AudioFiles"));
+	dstr_cat(&filter, audio_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.AllFiles"));
+	dstr_cat(&filter, " (*.*)");
+
 	obs_properties_add_path(props, "local_file",
-			obs_module_text("LocalFile"), OBS_PATH_FILE, "*.*",
-			NULL);
+			obs_module_text("LocalFile"), OBS_PATH_FILE,
+			filter.array, NULL);
+	dstr_free(&filter);
 
 	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
 
