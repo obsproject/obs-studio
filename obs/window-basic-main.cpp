@@ -1285,7 +1285,7 @@ OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
-	return GetSceneItem(ui->sources->currentItem());
+	return GetSceneItem(GetTopSelectedSourceItem());
 }
 
 void OBSBasic::UpdateSources(OBSScene scene)
@@ -2605,7 +2605,7 @@ void OBSBasic::on_sources_itemSelectionChanged()
 
 void OBSBasic::EditSceneItemName()
 {
-	QListWidgetItem *item = ui->sources->currentItem();
+	QListWidgetItem *item = GetTopSelectedSourceItem();
 	Qt::ItemFlags flags   = item->flags();
 	OBSSceneItem sceneItem= GetOBSRef<OBSSceneItem>(item);
 	obs_source_t *source  = obs_sceneitem_get_source(sceneItem);
@@ -3339,9 +3339,18 @@ void OBSBasic::on_actionShowProfileFolder_triggered()
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
+QListWidgetItem *OBSBasic::GetTopSelectedSourceItem()
+{
+	QList<QListWidgetItem*> selectedItems = ui->sources->selectedItems();
+	QListWidgetItem *topItem = nullptr;
+	if (selectedItems.size() != 0)
+		topItem = selectedItems[0];
+	return topItem;
+}
+
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 {
-	CreateSourcePopupMenu(ui->sources->currentItem(), true);
+	CreateSourcePopupMenu(GetTopSelectedSourceItem(), true);
 
 	UNUSED_PARAMETER(pos);
 }
