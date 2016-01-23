@@ -1406,9 +1406,17 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 	}
 
 	if (deviceId) {
-		int idx = widget->findData(QVariant(QT_UTF8(deviceId)));
-		if (idx != -1)
+		QVariant var(QT_UTF8(deviceId));
+		int idx = widget->findData(var);
+		if (idx != -1) {
 			widget->setCurrentIndex(idx);
+		} else {
+			widget->insertItem(0,
+					QTStr("Basic.Settings.Audio."
+						"UnknownAudioDevice"),
+					var);
+			widget->setCurrentIndex(0);
+		}
 	}
 
 	if (settings)
