@@ -22,6 +22,8 @@ typedef ptrdiff_t GLsizeiptrARB;
 #define GL_FRONT 0x0404
 #define GL_BACK 0x0405
 
+#define GL_INVALID_OPERATION 0x0502
+
 #define GL_UNSIGNED_BYTE 0x1401
 
 #define GL_RGB 0x1907
