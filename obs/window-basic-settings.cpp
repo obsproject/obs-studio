@@ -829,8 +829,7 @@ static const double vals[] =
 
 static const size_t numVals = sizeof(vals)/sizeof(double);
 
-void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
-		uint32_t out_cx, uint32_t out_cy)
+void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 {
 	QString advRescale;
 	QString advRecRescale;
@@ -838,11 +837,14 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 	QString oldOutputRes;
 	string bestScale;
 	int bestPixelDiff = 0x7FFFFFFF;
+	uint32_t out_cx = outputCX;
+	uint32_t out_cy = outputCY;
 
 	advRescale = ui->advOutRescale->lineEdit()->text();
 	advRecRescale = ui->advOutRecRescale->lineEdit()->text();
 	advFFRescale = ui->advOutFFRescale->lineEdit()->text();
-	oldOutputRes = ui->outputResolution->lineEdit()->text();
+
+	ui->outputResolution->blockSignals(true);
 
 	ui->outputResolution->clear();
 	ui->advOutRescale->clear();
@@ -852,6 +854,10 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 	if (!out_cx || !out_cy) {
 		out_cx = cx;
 		out_cy = cy;
+		oldOutputRes = ui->baseResolution->lineEdit()->text();
+	} else {
+		oldOutputRes = QString::number(out_cx) + "x" +
+			QString::number(out_cy);
 	}
 
 	for (size_t idx = 0; idx < numVals; idx++) {
@@ -893,6 +899,8 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 		ui->outputResolution->lineEdit()->setText(oldOutputRes);
 	else
 		ui->outputResolution->lineEdit()->setText(bestScale.c_str());
+
+	ui->outputResolution->blockSignals(false);
 
 	if (advRescale.isEmpty())
 		advRescale = res.c_str();
@@ -946,11 +954,14 @@ void OBSBasicSettings::LoadResolutionLists()
 		ui->baseResolution->addItem(res.c_str());
 	}
 
-	ResetDownscales(cx, cy, out_cx, out_cy);
+	string outputResString = ResString(out_cx, out_cy);
 
 	ui->baseResolution->lineEdit()->setText(ResString(cx, cy).c_str());
-	ui->outputResolution->lineEdit()->setText(
-			ResString(out_cx, out_cy).c_str());
+
+	RecalcOutputResPixels(outputResString.c_str());
+	ResetDownscales(cx, cy);
+
+	ui->outputResolution->lineEdit()->setText(outputResString.c_str());
 }
 
 static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
@@ -2617,18 +2628,32 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	return true;
 }
 
+void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
+{
+	uint32_t newCX;
+	uint32_t newCY;
+
+	ConvertResText(resText, newCX, newCY);
+	if (newCX && newCY) {
+		outputCX = newCX;
+		outputCY = newCY;
+	}
+}
+
+void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
+{
+	if (!loading)
+		RecalcOutputResPixels(QT_TO_UTF8(text));
+}
+
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
 	if (!loading && ValidResolutions(ui.get())) {
 		QString baseResolution = text;
-		uint32_t cx, cy, out_cx, out_cy;
+		uint32_t cx, cy;
 
 		ConvertResText(QT_TO_UTF8(baseResolution), cx, cy);
-
-		QString outRes = ui->outputResolution->lineEdit()->text();
-		ConvertResText(QT_TO_UTF8(outRes), out_cx, out_cy);
-
-		ResetDownscales(cx, cy, out_cx, out_cy);
+		ResetDownscales(cx, cy);
 	}
 }
 

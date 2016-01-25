@@ -121,6 +121,9 @@ private:
 	OBSSignal hotkeyRegistered;
 	OBSSignal hotkeyUnregistered;
 
+	uint32_t outputCX = 0;
+	uint32_t outputCY = 0;
+
 	void SaveCombo(QComboBox *widget, const char *section,
 			const char *value);
 	void SaveComboData(QComboBox *widget, const char *section,
@@ -210,8 +213,7 @@ private:
 
 	/* video */
 	void LoadRendererList();
-	void ResetDownscales(uint32_t cx, uint32_t cy,
-			uint32_t out_cx, uint32_t out_cy);
+	void ResetDownscales(uint32_t cx, uint32_t cy);
 	void LoadDownscaleFilters();
 	void LoadResolutionLists();
 	void LoadFPSData();
@@ -229,6 +231,8 @@ private:
 	void UpdateAdvOutStreamDelayEstimate();
 
 	void FillSimpleRecordingValues();
+
+	void RecalcOutputResPixels(const char *resText);
 
 private slots:
 	void on_theme_activated(int idx);
@@ -249,6 +253,7 @@ private slots:
 
 	void on_colorFormat_currentIndexChanged(const QString &text);
 
+	void on_outputResolution_editTextChanged(const QString &text);
 	void on_baseResolution_editTextChanged(const QString &text);
 
 	void GeneralChanged();
