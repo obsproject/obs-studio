@@ -176,7 +176,6 @@ static void *video_thread(void *param)
 		profile_start(video_thread_name);
 		while (!video->stop && !video_output_cur_frame(video)) {
 			video->total_frames++;
-			video->skipped_frames++;
 		}
 
 		video->total_frames++;
@@ -404,6 +403,7 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 	pthread_mutex_lock(&video->data_mutex);
 
 	if (video->available_frames == 0) {
+		video->skipped_frames += count;
 		video->cache[video->last_added].count += count;
 		locked = false;
 
