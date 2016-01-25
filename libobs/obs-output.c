@@ -190,6 +190,8 @@ bool obs_output_actual_start(obs_output_t *output)
 			video_output_get_total_frames(output->video);
 		output->starting_skipped_frame_count =
 			video_output_get_skipped_frames(output->video);
+		output->starting_drawn_count = obs->video.total_frames;
+		output->starting_lagged_count = obs->video.lagged_frames;
 	}
 
 	if (output->delay_restart_refs)
@@ -222,35 +224,52 @@ bool obs_output_start(obs_output_t *output)
 
 static void log_frame_info(struct obs_output *output)
 {
+	struct obs_core_video *video = &obs->video;
+
 	uint32_t video_frames  = video_output_get_total_frames(output->video);
 	uint32_t video_skipped = video_output_get_skipped_frames(output->video);
 
 	uint32_t total   = video_frames  - output->starting_frame_count;
 	uint32_t skipped = video_skipped - output->starting_skipped_frame_count;
 
+	uint32_t drawn  = video->total_frames - output->starting_drawn_count;
+	uint32_t lagged = video->lagged_frames - output->starting_lagged_count;
+
 	int dropped = obs_output_get_frames_dropped(output);
 
-	double percentage_skipped = (double)skipped / (double)total * 100.0;
+	double percentage_skipped = 0.0f;
+	double percentage_lagged = 0.0f;
+	double percentage_dropped = 0.0f;
+
+	if (total) {
+		percentage_skipped = (double)skipped / (double)total * 100.0;
+		percentage_dropped = (double)dropped / (double)total * 100.0;
+	}
+	if (drawn)
+		percentage_lagged = (double)lagged  / (double)drawn * 100.0;
 
 	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
-	blog(LOG_INFO, "Output '%s': Total frames: %"PRIu32,
+	blog(LOG_INFO, "Output '%s': Total encoded frames: %"PRIu32,
 			output->context.name, total);
+	blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
+			output->context.name, drawn);
 
-	if (total)
-		blog(LOG_INFO, "Output '%s': Number of skipped frames: "
-				"%"PRIu32" (%g%%)",
+	if (total && skipped)
+		blog(LOG_INFO, "Output '%s': Number of skipped frames due "
+				"to encoding lag: %"PRIu32" (%0.1f%%)",
 				output->context.name,
 				skipped, percentage_skipped);
-
-	if (dropped) {
-		double percentage_dropped;
-		percentage_dropped = (double)dropped / (double)total * 100.0;
-
-		blog(LOG_INFO, "Output '%s': Number of dropped frames: "
-				"%d (%g%%)",
+	if (drawn && lagged)
+		blog(LOG_INFO, "Output '%s': Number of lagged frames due "
+				"to rendering lag/stalls: %"PRIu32" (%0.1f%%)",
+				output->context.name,
+				lagged, percentage_lagged);
+	if (total && dropped)
+		blog(LOG_INFO, "Output '%s': Number of dropped frames due "
+				"to insufficient bandwidth/connection stalls: "
+				"%d (%0.1f%%)",
 				output->context.name,
 				dropped, percentage_dropped);
-	}
 }
 
 void obs_output_actual_stop(obs_output_t *output, bool force)

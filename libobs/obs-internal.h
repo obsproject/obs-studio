@@ -242,6 +242,8 @@ struct obs_core_video {
 	uint64_t                        video_time;
 	video_t                         *video;
 	pthread_t                       video_thread;
+	uint32_t                        total_frames;
+	uint32_t                        lagged_frames;
 	bool                            thread_initialized;
 
 	bool                            gpu_conversion;
@@ -631,6 +633,8 @@ struct obs_output {
 	os_event_t                      *reconnect_stop_event;
 	volatile bool                   reconnect_thread_active;
 
+	uint32_t                        starting_drawn_count;
+	uint32_t                        starting_lagged_count;
 	uint32_t                        starting_frame_count;
 	uint32_t                        starting_skipped_frame_count;
 
