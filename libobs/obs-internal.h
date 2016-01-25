@@ -710,6 +710,8 @@ struct obs_encoder {
 	struct obs_encoder_info         info;
 	struct obs_weak_encoder         *control;
 
+	pthread_mutex_t                 init_mutex;
+
 	uint32_t                        samplerate;
 	size_t                          planes;
 	size_t                          blocksize;
@@ -722,7 +724,8 @@ struct obs_encoder {
 	uint32_t                        scaled_height;
 	enum video_format               preferred_format;
 
-	bool                            active;
+	volatile bool                   active;
+	bool                            initialized;
 
 	/* indicates ownership of the info.id buffer */
 	bool                            owns_info_id;
