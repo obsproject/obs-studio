@@ -743,7 +743,9 @@ struct obs_encoder {
 	 * wait_for_video makes it wait until it's ready to sync up with
 	 * video */
 	bool                            wait_for_video;
+	bool                            first_received;
 	struct obs_encoder              *paired_encoder;
+	int64_t                         offset_usec;
 	uint64_t                        start_ts;
 
 	pthread_mutex_t                 outputs_mutex;
