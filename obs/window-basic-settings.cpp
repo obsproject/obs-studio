@@ -367,6 +367,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		connect(toggleAero, &QAbstractButton::toggled,
 				this, &OBSBasicSettings::ToggleDisableAero);
 	}
+#else
+	ui->rendererLabel->hide();
+	ui->renderer->hide();
+	ui->adapterLabel->hide();
+	ui->adapter->hide();
 #endif
 
 	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)),
@@ -798,6 +803,13 @@ void OBSBasicSettings::LoadRendererList()
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
 	if (idx == -1)
 		idx = 0;
+
+#ifdef _WIN32
+	if (strcmp(renderer, "OpenGL") == 0) {
+		ui->adapter->hide();
+		ui->adapterLabel->hide();
+	}
+#endif
 
 	ui->renderer->setCurrentIndex(idx);
 }
