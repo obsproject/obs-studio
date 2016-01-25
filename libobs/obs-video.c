@@ -528,6 +528,9 @@ static inline void video_sleep(struct obs_core_video *video,
 		*p_time = cur_time + interval_ns * count;
 	}
 
+	video->total_frames += count;
+	video->lagged_frames += count - 1;
+
 	vframe_info.timestamp = cur_time;
 	vframe_info.count = count;
 	circlebuf_push_back(&video->vframe_info_buffer, &vframe_info,
