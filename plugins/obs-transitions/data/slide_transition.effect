@@ -1,0 +1,69 @@
+uniform float4x4 ViewProj;
+uniform texture2d tex_a;
+uniform texture2d tex_b;
+uniform float progress;
+uniform float2 direction;
+
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSSlide(VertData v_in) : TARGET
+{
+	float2 dir = direction * progress;
+	float2 uv = v_in.uv;
+	float4 color = float4(0.0f, 0.0f, 0.0f, 0.f);
+	color = tex_a.Sample(textureSampler, uv - dir);
+	if (dir.x >= 0.0f && dir.y >= 0.0f) {
+		if (uv.x >= dir.x && uv.y >= dir.y) {
+			color = tex_a.Sample(textureSampler, uv - dir);
+		}
+		else {
+			float2 npos;
+			if (dir.x > 0.0f)
+				npos = dir - float2(1.0f, 0.0f);
+			else if (dir.y > 0.0f)
+				npos = dir - float2(0.0f, 1.0f);
+			color = tex_b.Sample(textureSampler, uv - npos);
+		}
+	}
+	else if (dir.x <= 0.0f && dir.y <= 0.0f) {
+		if (uv.x <= (dir.x + 1.0f) && uv.y <= (dir.y + 1.0f)) {
+			color = tex_a.Sample(textureSampler, uv - dir);
+		}
+		else {
+			float2 npos;
+			if(dir.x < 0.0f)
+				npos = dir + float2(1.0f, 0.0f);
+			else if (dir.y < 0.0f)
+				npos = dir + float2(0.0f, 1.0f);
+			color = tex_b.Sample(textureSampler, uv - npos);
+		}
+	}
+	return color;
+}
+
+technique Slide
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSSlide(v_in);
+	}
+}
