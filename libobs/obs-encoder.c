@@ -424,6 +424,8 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->info.destroy(encoder->context.data);
 		encoder->context.data    = NULL;
 		encoder->paired_encoder  = NULL;
+		encoder->first_received  = false;
+		encoder->offset_usec     = 0;
 		encoder->start_ts        = 0;
 	}
 	pthread_mutex_unlock(&encoder->init_mutex);
@@ -798,9 +800,15 @@ static inline void do_encode(struct obs_encoder *encoder,
 	}
 
 	if (received) {
+		if (!encoder->first_received) {
+			encoder->offset_usec = packet_dts_usec(&pkt);
+			encoder->first_received = true;
+		}
+
 		/* we use system time here to ensure sync with other encoders,
 		 * you do not want to use relative timestamps here */
-		pkt.dts_usec = encoder->start_ts / 1000 + packet_dts_usec(&pkt);
+		pkt.dts_usec = encoder->start_ts / 1000 +
+			packet_dts_usec(&pkt) - encoder->offset_usec;
 
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 
