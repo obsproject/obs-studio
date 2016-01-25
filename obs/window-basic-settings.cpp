@@ -367,6 +367,15 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		connect(toggleAero, &QAbstractButton::toggled,
 				this, &OBSBasicSettings::ToggleDisableAero);
 	}
+#else
+	delete ui->rendererLabel;
+	delete ui->renderer;
+	delete ui->adapterLabel;
+	delete ui->adapter;
+	ui->rendererLabel = nullptr;
+	ui->renderer = nullptr;
+	ui->adapterLabel = nullptr;
+	ui->adapter = nullptr;
 #endif
 
 	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)),
@@ -787,19 +796,26 @@ void OBSBasicSettings::LoadStream1Settings()
 
 void OBSBasicSettings::LoadRendererList()
 {
+#ifdef _WIN32
 	const char *renderer = config_get_string(GetGlobalConfig(), "Video",
 			"Renderer");
 
-#ifdef _WIN32
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
-#endif
 	ui->renderer->addItem(QT_UTF8("OpenGL"));
 
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
 	if (idx == -1)
 		idx = 0;
 
+	if (strcmp(renderer, "OpenGL") == 0) {
+		delete ui->adapter;
+		delete ui->adapterLabel;
+		ui->adapter = nullptr;
+		ui->adapterLabel = nullptr;
+	}
+
 	ui->renderer->setCurrentIndex(idx);
+#endif
 }
 
 Q_DECLARE_METATYPE(MonitorInfo);
@@ -2053,9 +2069,11 @@ void OBSBasicSettings::SaveVideoSettings()
 
 void OBSBasicSettings::SaveAdvancedSettings()
 {
+#ifdef _WIN32
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
 				QT_TO_UTF8(ui->renderer->currentText()));
+#endif
 	SaveSpinBox(ui->audioBufferingTime, "Audio", "BufferingTime");
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");

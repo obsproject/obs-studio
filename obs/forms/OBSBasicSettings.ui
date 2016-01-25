@@ -2791,7 +2791,7 @@
                     </widget>
                    </item>
                    <item row="0" column="0">
-                    <widget class="QLabel" name="label_9">
+                    <widget class="QLabel" name="rendererLabel">
                      <property name="text">
                       <string>Basic.Settings.Video.Renderer</string>
                      </property>
@@ -2805,7 +2805,7 @@
                     </widget>
                    </item>
                    <item row="1" column="0">
-                    <widget class="QLabel" name="label_7">
+                    <widget class="QLabel" name="adapterLabel">
                      <property name="text">
                       <string>Basic.Settings.Video.Adapter</string>
                      </property>
