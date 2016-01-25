@@ -331,8 +331,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice2,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
-	HookWidget(ui->renderer,             COMBO_CHANGED,  VIDEO_RESTART);
-	HookWidget(ui->adapter,              COMBO_CHANGED,  VIDEO_RESTART);
 	HookWidget(ui->baseResolution,       CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->outputResolution,     CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
@@ -343,6 +341,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->audioBufferingTime,   SCROLL_CHANGED, ADV_RESTART);
+	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
+	HookWidget(ui->adapter,              COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorSpace,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
@@ -1013,7 +1013,6 @@ void OBSBasicSettings::LoadVideoSettings()
 				QTStr("Basic.Settings.Video.CurrentlyActive"));
 	}
 
-	LoadRendererList();
 	LoadResolutionLists();
 	LoadFPSData();
 	LoadDownscaleFilters();
@@ -1642,6 +1641,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	loading = true;
 
+	LoadRendererList();
+
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
 	ui->reconnectMaxRetries->setValue(maxRetries);
@@ -2021,10 +2022,6 @@ void OBSBasicSettings::SaveVideoSettings()
 
 	/* ------------------- */
 
-	if (WidgetChanged(ui->renderer))
-		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
-				QT_TO_UTF8(ui->renderer->currentText()));
-
 	if (WidgetChanged(ui->baseResolution) &&
 	    ConvertResText(QT_TO_UTF8(baseResolution), cx, cy)) {
 		config_set_uint(main->Config(), "Video", "BaseCX", cx);
@@ -2056,6 +2053,9 @@ void OBSBasicSettings::SaveVideoSettings()
 
 void OBSBasicSettings::SaveAdvancedSettings()
 {
+	if (WidgetChanged(ui->renderer))
+		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
+				QT_TO_UTF8(ui->renderer->currentText()));
 	SaveSpinBox(ui->audioBufferingTime, "Audio", "BufferingTime");
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");

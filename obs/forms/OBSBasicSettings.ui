@@ -2320,21 +2320,7 @@
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <item row="0" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="text">
-            <string>Basic.Settings.Video.Renderer</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QComboBox" name="renderer">
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_7">
+          <widget class="QLabel" name="label_8">
            <property name="minimumSize">
             <size>
              <width>170</width>
@@ -2342,31 +2328,11 @@
             </size>
            </property>
            <property name="text">
-            <string>Basic.Settings.Video.Adapter</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="adapter">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
             <string>Basic.Settings.Video.BaseResolution</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="0" column="1">
           <widget class="QComboBox" name="baseResolution">
            <property name="editable">
             <bool>true</bool>
@@ -2382,14 +2348,14 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="1" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
             <string>Basic.Settings.Video.ScaledResolution</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="1" column="1">
           <widget class="QComboBox" name="outputResolution">
            <property name="editable">
             <bool>true</bool>
@@ -2399,21 +2365,21 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QComboBox" name="downscaleFilter">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
+         <item row="2" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
             <string>Basic.Settings.Video.DownscaleFilter</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="2" column="1">
+          <widget class="QComboBox" name="downscaleFilter">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
           <widget class="QComboBox" name="fpsType">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2444,10 +2410,10 @@
            </item>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="3" column="1">
           <widget class="QStackedWidget" name="fpsTypes">
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -2600,7 +2566,7 @@
            </widget>
           </widget>
          </item>
-         <item row="6" column="1">
+         <item row="4" column="1">
           <widget class="QLabel" name="videoMsg">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -2753,7 +2719,7 @@
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
-                   <item row="0" column="0">
+                   <item row="2" column="0">
                     <widget class="QLabel" name="label_30">
                      <property name="minimumSize">
                       <size>
@@ -2769,7 +2735,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
+                   <item row="2" column="1">
                     <widget class="QComboBox" name="colorFormat">
                      <item>
                       <property name="text">
@@ -2793,24 +2759,24 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="2" column="0">
+                   <item row="4" column="0">
                     <widget class="QLabel" name="label_34">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Video.ColorRange</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="4" column="1">
                     <widget class="QComboBox" name="colorRange"/>
                    </item>
-                   <item row="1" column="0">
+                   <item row="3" column="0">
                     <widget class="QLabel" name="label_33">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Video.ColorSpace</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="1">
+                   <item row="3" column="1">
                     <widget class="QComboBox" name="colorSpace">
                      <item>
                       <property name="text">
@@ -2822,6 +2788,40 @@
                        <string notr="true">601</string>
                       </property>
                      </item>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_9">
+                     <property name="text">
+                      <string>Basic.Settings.Video.Renderer</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="renderer">
+                     <property name="currentText">
+                      <string notr="true"/>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_7">
+                     <property name="text">
+                      <string>Basic.Settings.Video.Adapter</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="adapter">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="currentText">
+                      <string notr="true"/>
+                     </property>
                     </widget>
                    </item>
                   </layout>
