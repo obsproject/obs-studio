@@ -764,6 +764,13 @@ typedef GLXDrawable (APIENTRYP PFNGLXGETCURRENTREADDRAWABLESGIPROC)();
 GLAPI PFNGLXGETCURRENTREADDRAWABLESGIPROC glad_glXGetCurrentReadDrawableSGI;
 #define glXGetCurrentReadDrawableSGI glad_glXGetCurrentReadDrawableSGI
 #endif
+#ifndef GLX_MESA_swap_control
+#define GLX_MESA_swap_control 1
+GLAPI int GLAD_GLX_MESA_swap_control;
+typedef int (APIENTRYP PFNGLXSWAPINTERVALMESAPROC)(int);
+GLAPI PFNGLXSWAPINTERVALMESAPROC glad_glXSwapIntervalMESA;
+#define glXSwapIntervalMESA glad_glXSwapIntervalMESA
+#endif
 #ifndef GLX_SGI_swap_control
 #define GLX_SGI_swap_control 1
 GLAPI int GLAD_GLX_SGI_swap_control;

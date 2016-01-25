@@ -203,6 +203,7 @@ int GLAD_GLX_NV_copy_image;
 int GLAD_GLX_OML_sync_control;
 int GLAD_GLX_EXT_framebuffer_sRGB;
 int GLAD_GLX_SGI_make_current_read;
+int GLAD_GLX_MESA_swap_control;
 int GLAD_GLX_SGI_swap_control;
 int GLAD_GLX_EXT_fbconfig_packed_float;
 int GLAD_GLX_EXT_buffer_age;
@@ -280,6 +281,7 @@ PFNGLXWAITFORMSCOMLPROC glad_glXWaitForMscOML;
 PFNGLXWAITFORSBCOMLPROC glad_glXWaitForSbcOML;
 PFNGLXMAKECURRENTREADSGIPROC glad_glXMakeCurrentReadSGI;
 PFNGLXGETCURRENTREADDRAWABLESGIPROC glad_glXGetCurrentReadDrawableSGI;
+PFNGLXSWAPINTERVALMESAPROC glad_glXSwapIntervalMESA;
 PFNGLXSWAPINTERVALSGIPROC glad_glXSwapIntervalSGI;
 PFNGLXGETVIDEOSYNCSGIPROC glad_glXGetVideoSyncSGI;
 PFNGLXWAITVIDEOSYNCSGIPROC glad_glXWaitVideoSyncSGI;
@@ -444,6 +446,10 @@ static void load_GLX_SGI_make_current_read(GLADloadproc load) {
 	glad_glXMakeCurrentReadSGI = (PFNGLXMAKECURRENTREADSGIPROC)load("glXMakeCurrentReadSGI");
 	glad_glXGetCurrentReadDrawableSGI = (PFNGLXGETCURRENTREADDRAWABLESGIPROC)load("glXGetCurrentReadDrawableSGI");
 }
+static void load_GLX_MESA_swap_control(GLADloadproc load) {
+	if(!GLAD_GLX_MESA_swap_control) return;
+	glad_glXSwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)load("glXSwapIntervalMESA");
+}
 static void load_GLX_SGI_swap_control(GLADloadproc load) {
 	if(!GLAD_GLX_SGI_swap_control) return;
 	glad_glXSwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)load("glXSwapIntervalSGI");
@@ -584,6 +590,7 @@ static void find_extensionsGLX(void) {
 	GLAD_GLX_OML_sync_control = has_ext("GLX_OML_sync_control");
 	GLAD_GLX_EXT_framebuffer_sRGB = has_ext("GLX_EXT_framebuffer_sRGB");
 	GLAD_GLX_SGI_make_current_read = has_ext("GLX_SGI_make_current_read");
+	GLAD_GLX_MESA_swap_control = has_ext("GLX_MESA_swap_control");
 	GLAD_GLX_SGI_swap_control = has_ext("GLX_SGI_swap_control");
 	GLAD_GLX_EXT_fbconfig_packed_float = has_ext("GLX_EXT_fbconfig_packed_float");
 	GLAD_GLX_EXT_buffer_age = has_ext("GLX_EXT_buffer_age");
@@ -664,6 +671,7 @@ void gladLoadGLXLoader(GLADloadproc load, Display *dpy, int screen) {
 	load_GLX_NV_copy_image(load);
 	load_GLX_OML_sync_control(load);
 	load_GLX_SGI_make_current_read(load);
+	load_GLX_MESA_swap_control(load);
 	load_GLX_SGI_swap_control(load);
 	load_GLX_SGI_video_sync(load);
 	load_GLX_MESA_agp_offset(load);
