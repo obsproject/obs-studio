@@ -1237,17 +1237,25 @@ static inline bool initialize_audio_encoders(obs_output_t *output,
 
 static inline bool pair_encoders(obs_output_t *output, size_t num_mixes)
 {
-	if (num_mixes == 1 &&
-	    !output->audio_encoders[0]->active &&
-	    !output->video_encoder->active &&
-	    !output->video_encoder->paired_encoder &&
-	    !output->audio_encoders[0]->paired_encoder) {
+	if (num_mixes == 1) {
+		struct obs_encoder *audio = output->audio_encoders[0];
+		struct obs_encoder *video = output->video_encoder;
 
-		output->audio_encoders[0]->wait_for_video = true;
-		output->audio_encoders[0]->paired_encoder =
-			output->video_encoder;
-		output->video_encoder->paired_encoder =
-			output->audio_encoders[0];
+		pthread_mutex_lock(&audio->init_mutex);
+		pthread_mutex_lock(&video->init_mutex);
+
+		if (!audio->active &&
+		    !video->active &&
+		    !video->paired_encoder &&
+		    !audio->paired_encoder) {
+
+			audio->wait_for_video = true;
+			audio->paired_encoder = video;
+			video->paired_encoder = audio;
+		}
+
+		pthread_mutex_unlock(&video->init_mutex);
+		pthread_mutex_unlock(&audio->init_mutex);
 	}
 
 	return true;
