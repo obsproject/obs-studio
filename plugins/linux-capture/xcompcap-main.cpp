@@ -234,6 +234,9 @@ static Window getWindowFromString(std::string wstr)
 
 static void xcc_cleanup(XCompcapMain_private *p)
 {
+	PLock lock(&p->lock);
+	XErrorLock xlock;
+
 	if (p->gltex) {
 		gs_texture_destroy(p->gltex);
 		p->gltex = 0;

@@ -373,6 +373,8 @@ void XErrorLock::lock()
 void XErrorLock::unlock()
 {
 	if (islock) {
+		XSync(XCompcap::disp(), 0);
+
 		curErrorTarget = 0;
 		XSetErrorHandler(prevhandler);
 		prevhandler = 0;
