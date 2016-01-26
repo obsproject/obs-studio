@@ -256,6 +256,8 @@ private slots:
 	void on_outputResolution_editTextChanged(const QString &text);
 	void on_baseResolution_editTextChanged(const QString &text);
 
+	void on_disableOSXVSync_clicked();
+
 	void GeneralChanged();
 	void AudioChanged();
 	void AudioChangedRestart();

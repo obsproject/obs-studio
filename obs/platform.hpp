@@ -52,3 +52,7 @@ void SetAlwaysOnTop(QMainWindow *window, bool enable);
 uint32_t GetWindowsVersion();
 void SetAeroEnabled(bool enable);
 #endif
+
+#ifdef __APPLE__
+void EnableOSXVSync(bool enable);
+#endif

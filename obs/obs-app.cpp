@@ -333,6 +333,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 	config_set_default_bool(globalConfig, "BasicWindow", "PreviewEnabled",
 			true);
+
+#ifdef __APPLE__
+	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
+	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
+			true);
+#endif
 	return true;
 }
 
@@ -530,6 +536,15 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 
 OBSApp::~OBSApp()
 {
+#ifdef __APPLE__
+	bool vsyncDiabled = config_get_bool(globalConfig, "Video",
+			"DisableOSXVSync");
+	bool resetVSync = config_get_bool(globalConfig, "Video",
+			"ResetOSXVSyncOnExit");
+	if (vsyncDiabled && resetVSync)
+		EnableOSXVSync(true);
+#endif
+
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
 	os_inhibit_sleep_destroy(sleepInhibitor);
 }
@@ -638,6 +653,11 @@ void OBSApp::AppInit()
 			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
+
+#ifdef __APPLE__
+	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))
+		EnableOSXVSync(false);
+#endif
 
 	move_basic_to_profiles();
 	move_basic_to_scene_collections();
