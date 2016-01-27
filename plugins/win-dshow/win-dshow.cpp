@@ -440,7 +440,6 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 	frame.width      = config.cx;
 	frame.height     = config.cy;
 	frame.format     = ConvertVideoFormat(config.format);
-	frame.full_range = false;
 	frame.flip       = (config.format == VideoFormat::XRGB ||
 	                    config.format == VideoFormat::ARGB);
 
@@ -957,13 +956,16 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	if (!device.ConnectFilters())
 		return false;
 
+	enum video_colorspace cs = GetColorSpace(settings);
+
+	video_range_type range = GetColorRange(settings);
+	frame.full_range = range == VIDEO_RANGE_FULL;
+
 	if (device.Start() != Result::Success)
 		return false;
 
-	enum video_colorspace cs = GetColorSpace(settings);
-
 	bool success = video_format_get_parameters(
-			cs, GetColorRange(settings),
+			cs, range,
 			frame.color_matrix,
 			frame.color_range_min,
 			frame.color_range_max);
