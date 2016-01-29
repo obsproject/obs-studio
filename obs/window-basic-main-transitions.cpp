@@ -407,7 +407,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program, &OBSQTDisplay::DisplayResized,
+	connect(program.data(), &OBSQTDisplay::DisplayResized,
 			displayResize);
 
 	auto addDisplay = [this] (OBSQTDisplay *window)
@@ -420,7 +420,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program, &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(program.data(), &OBSQTDisplay::DisplayCreated, addDisplay);
 
 	program->setSizePolicy(QSizePolicy::Expanding,
 			QSizePolicy::Expanding);
