@@ -932,26 +932,47 @@ static size_t get_interleaved_start_idx(struct obs_output *output)
 	return video_idx < idx ? video_idx : idx;
 }
 
-static bool prune_premature_video_packet(struct obs_output *output)
+static int prune_premature_packets(struct obs_output *output)
 {
-	struct encoder_packet *packet;
-	struct encoder_packet *next;
+	size_t audio_mixes = num_audio_mixes(output);
+	struct encoder_packet *video;
+	int video_idx;
+	int max_idx;
 	int64_t duration_usec;
+	int64_t max_diff = 0;
 	int64_t diff;
 
-	if (output->interleaved_packets.num < 2)
-		return false;
+	video_idx = find_first_packet_type_idx(output, OBS_ENCODER_VIDEO, 0);
+	if (video_idx == -1) {
+		output->received_video = false;
+		return -1;
+	}
 
-	packet = &output->interleaved_packets.array[0];
+	max_idx = video_idx;
+	video = &output->interleaved_packets.array[video_idx];
+	duration_usec = video->timebase_num * 1000000LL / video->timebase_den;
 
-	if (packet->type == OBS_ENCODER_AUDIO)
-		return false;
+	for (size_t i = 0; i < audio_mixes; i++) {
+		struct encoder_packet *audio;
+		int audio_idx;
 
-	next = &output->interleaved_packets.array[1];
-	diff = next->dts_usec - packet->dts_usec;
-	duration_usec = packet->timebase_num * 1000000LL / packet->timebase_den;
+		audio_idx = find_first_packet_type_idx(output,
+				OBS_ENCODER_AUDIO, i);
+		if (audio_idx == -1) {
+			output->received_audio = false;
+			return -1;
+		}
 
-	return diff > duration_usec;
+		audio = &output->interleaved_packets.array[audio_idx];
+		if (audio_idx > max_idx)
+			max_idx = audio_idx;
+
+		diff = audio->dts_usec - video->dts_usec;
+		if (diff > max_diff)
+			max_diff = diff;
+	}
+
+	return diff > duration_usec ? max_idx + 1 : 0;
 }
 
 static void discard_to_idx(struct obs_output *output, size_t idx)
@@ -967,29 +988,35 @@ static void discard_to_idx(struct obs_output *output, size_t idx)
 
 #define DEBUG_STARTING_PACKETS 0
 
-static void prune_interleaved_packets(struct obs_output *output)
+static bool prune_interleaved_packets(struct obs_output *output)
 {
 	size_t start_idx = 0;
+	int prune_start = prune_premature_packets(output);
 
 #if DEBUG_STARTING_PACKETS == 1
 	blog(LOG_DEBUG, "--------- Pruning! ---------");
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
-		blog(LOG_DEBUG, "packet: %s, ts: %lld",
+		blog(LOG_DEBUG, "packet: %s %d, ts: %lld",
 				packet->type == OBS_ENCODER_AUDIO ?
-				"audio" : "video", packet->dts_usec);
+				"audio" : "video", (int)packet->track_idx,
+				packet->dts_usec);
 	}
 #endif
 
 	/* prunes the first video packet if it's too far away from audio */
-	if (prune_premature_video_packet(output))
-		start_idx++;
+	if (prune_start == -1)
+		return false;
+	else if (prune_start != 0)
+		start_idx = (size_t)prune_start;
 	else
 		start_idx = get_interleaved_start_idx(output);
 
 	if (start_idx)
 		discard_to_idx(output, start_idx);
+
+	return true;
 }
 
 static int find_first_packet_type_idx(struct obs_output *output,
@@ -1156,10 +1183,11 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	 * to start sending out packets (one at a time) */
 	if (output->received_audio && output->received_video) {
 		if (!was_started) {
-			prune_interleaved_packets(output);
-			if (initialize_interleaved_packets(output)) {
-				resort_interleaved_packets(output);
-				send_interleaved(output);
+			if (prune_interleaved_packets(output)) {
+				if (initialize_interleaved_packets(output)) {
+					resort_interleaved_packets(output);
+					send_interleaved(output);
+				}
 			}
 		} else {
 			send_interleaved(output);
