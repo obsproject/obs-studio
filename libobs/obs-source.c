@@ -3638,8 +3638,11 @@ void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 
 bool obs_source_audio_pending(const obs_source_t *source)
 {
-	return obs_source_valid(source, "obs_source_audio_pending") ?
-		source->audio_pending : false;
+	if (!obs_source_valid(source, "obs_source_audio_pending"))
+		return true;
+
+	return (is_composite_source(source) || is_audio_source(source)) ?
+		source->audio_pending : true;
 }
 
 uint64_t obs_source_get_audio_timestamp(const obs_source_t *source)
