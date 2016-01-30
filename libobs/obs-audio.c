@@ -93,6 +93,37 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 	}
 }
 
+static bool discard_if_stopped(obs_source_t *source, size_t channels)
+{
+	size_t last_size;
+	size_t size;
+
+	last_size = source->last_audio_input_buf_size;
+	size = source->audio_input_buf[0].size;
+
+	if (!size)
+		return false;
+
+	/* if perpetually pending data, it means the audio has stopped,
+	 * so clear the audio data */
+	if (last_size == size) {
+		for (size_t ch = 0; ch < channels; ch++)
+			circlebuf_pop_front(&source->audio_input_buf[ch], NULL,
+					source->audio_input_buf[ch].size);
+
+		source->audio_ts = 0;
+		source->last_audio_input_buf_size = 0;
+#if DEBUG_AUDIO == 1
+		blog(LOG_DEBUG, "source audio data appears to have "
+				"stopped, clearing");
+#endif
+		return true;
+	} else {
+		source->last_audio_input_buf_size = size;
+		return false;
+	}
+}
+
 static inline void discard_audio(struct obs_core_audio *audio,
 		obs_source_t *source, size_t channels, size_t sample_rate,
 		struct ts_info *ts)
@@ -120,6 +151,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	}
 
 	if (source->audio_ts < (ts->start - 1)) {
+		if (discard_if_stopped(source, channels))
+			return;
 #if DEBUG_AUDIO == 1
 		if (is_audio_source) {
 			blog(LOG_DEBUG, "can't discard, source "
@@ -152,6 +185,9 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	size = total_floats * sizeof(float);
 
 	if (source->audio_input_buf[0].size < size) {
+		if (discard_if_stopped(source, channels))
+			return;
+
 #if DEBUG_AUDIO == 1
 		if (is_audio_source)
 			blog(LOG_DEBUG, "can't discard, data still pending");
