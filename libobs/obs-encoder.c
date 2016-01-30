@@ -830,7 +830,15 @@ static void receive_video(void *param, struct video_data *frame)
 	profile_start(receive_video_name);
 
 	struct obs_encoder    *encoder  = param;
+	struct obs_encoder    *pair     = encoder->paired_encoder;
 	struct encoder_frame  enc_frame;
+
+	if (!encoder->first_received && pair) {
+		if (!pair->first_received ||
+		    pair->first_raw_ts > frame->timestamp) {
+			goto wait_for_audio;
+		}
+	}
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
@@ -849,45 +857,19 @@ static void receive_video(void *param, struct video_data *frame)
 
 	encoder->cur_pts += encoder->timebase_num;
 
+wait_for_audio:
 	profile_end(receive_video_name);
 }
 
-static const char *buffer_audio_name = "buffer_audio";
-static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
+static void clear_audio(struct obs_encoder *encoder)
 {
-	profile_start(buffer_audio_name);
+	for (size_t i = 0; i < encoder->planes; i++)
+		circlebuf_free(&encoder->audio_input_buffer[i]);
+}
 
-	size_t samplerate = encoder->samplerate;
-	size_t size = data->frames * encoder->blocksize;
-	size_t offset_size = 0;
-
-	if (!encoder->start_ts && encoder->paired_encoder) {
-		uint64_t end_ts     = data->timestamp;
-		uint64_t v_start_ts = encoder->paired_encoder->start_ts;
-
-		/* no video yet, so don't start audio */
-		if (!v_start_ts)
-			goto fail;
-
-		/* audio starting point still not synced with video starting
-		 * point, so don't start audio */
-		end_ts += (uint64_t)data->frames * 1000000000ULL / samplerate;
-		if (end_ts <= v_start_ts)
-			goto fail;
-
-		/* ready to start audio, truncate if necessary */
-		if (data->timestamp < v_start_ts) {
-			uint64_t offset = v_start_ts - data->timestamp;
-			offset = (int)(offset * samplerate / 1000000000);
-			offset_size = (size_t)offset * encoder->blocksize;
-		}
-
-		encoder->start_ts = v_start_ts;
-
-	} else if (!encoder->start_ts && !encoder->paired_encoder) {
-		encoder->start_ts = data->timestamp;
-	}
-
+static inline void push_back_audio(struct obs_encoder *encoder,
+		struct audio_data *data, size_t size, size_t offset_size)
+{
 	size -= offset_size;
 
 	/* push in to the circular buffer */
@@ -895,13 +877,92 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 		for (size_t i = 0; i < encoder->planes; i++)
 			circlebuf_push_back(&encoder->audio_input_buffer[i],
 					data->data[i] + offset_size, size);
+}
 
-	profile_end(buffer_audio_name);
-	return true;
+static inline size_t calc_offset_size(struct obs_encoder *encoder,
+		uint64_t v_start_ts, uint64_t a_start_ts)
+{
+	uint64_t offset = v_start_ts - a_start_ts;
+	offset = (uint64_t)offset * (uint64_t)encoder->samplerate /
+		1000000000ULL;
+	return (size_t)offset * encoder->blocksize;
+}
+
+static void start_from_buffer(struct obs_encoder *encoder, uint64_t v_start_ts)
+{
+	size_t size = encoder->audio_input_buffer[0].size;
+	struct audio_data audio = {0};
+	size_t offset_size = 0;
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		audio.data[i] = encoder->audio_input_buffer[i].data;
+		memset(&encoder->audio_input_buffer[i], 0,
+				sizeof(struct circlebuf));
+	}
+
+	if (encoder->first_raw_ts < v_start_ts)
+		offset_size = calc_offset_size(encoder, v_start_ts,
+				encoder->first_raw_ts);
+
+	push_back_audio(encoder, &audio, size, offset_size);
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
+		bfree(audio.data[i]);
+}
+
+static const char *buffer_audio_name = "buffer_audio";
+static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
+{
+	profile_start(buffer_audio_name);
+
+	size_t size = data->frames * encoder->blocksize;
+	size_t offset_size = 0;
+	bool success = true;
+
+	if (!encoder->start_ts && encoder->paired_encoder) {
+		uint64_t end_ts     = data->timestamp;
+		uint64_t v_start_ts = encoder->paired_encoder->start_ts;
+
+		/* no video yet, so don't start audio */
+		if (!v_start_ts) {
+			success = false;
+			goto fail;
+		}
+
+		/* audio starting point still not synced with video starting
+		 * point, so don't start audio */
+		end_ts += (uint64_t)data->frames * 1000000000ULL /
+			(uint64_t)encoder->samplerate;
+		if (end_ts <= v_start_ts) {
+			success = false;
+			goto fail;
+		}
+
+		/* ready to start audio, truncate if necessary */
+		if (data->timestamp < v_start_ts)
+			offset_size = calc_offset_size(encoder, v_start_ts,
+					data->timestamp);
+		if (data->timestamp <= v_start_ts)
+			clear_audio(encoder);
+
+		encoder->start_ts = v_start_ts;
+
+		/* use currently buffered audio instead */
+		if (v_start_ts < data->timestamp) {
+			start_from_buffer(encoder, v_start_ts);
+			goto skip_push;
+		}
+
+	} else if (!encoder->start_ts && !encoder->paired_encoder) {
+		encoder->start_ts = data->timestamp;
+	}
 
 fail:
+	push_back_audio(encoder, data, size, offset_size);
+
+skip_push:
 	profile_end(buffer_audio_name);
-	return false;
+	return success;
 }
 
 static void send_audio_data(struct obs_encoder *encoder)
@@ -933,6 +994,12 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *data)
 	profile_start(receive_audio_name);
 
 	struct obs_encoder *encoder = param;
+
+	if (!encoder->first_received) {
+		encoder->first_raw_ts = data->timestamp;
+		encoder->first_received = true;
+		clear_audio(encoder);
+	}
 
 	if (!buffer_audio(encoder, data))
 		goto end;

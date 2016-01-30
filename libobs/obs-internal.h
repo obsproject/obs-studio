@@ -847,6 +847,7 @@ struct obs_encoder {
 	bool                            first_received;
 	struct obs_encoder              *paired_encoder;
 	int64_t                         offset_usec;
+	uint64_t                        first_raw_ts;
 	uint64_t                        start_ts;
 
 	pthread_mutex_t                 outputs_mutex;
