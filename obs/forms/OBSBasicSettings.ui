@@ -2330,6 +2330,9 @@
            <property name="text">
             <string>Basic.Settings.Video.BaseResolution</string>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
           </widget>
          </item>
          <item row="0" column="1">
