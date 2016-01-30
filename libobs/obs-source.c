@@ -1134,33 +1134,28 @@ static void source_output_audio_data(obs_source_t *source,
 
 	in.timestamp += source->timing_adjust;
 
+	pthread_mutex_lock(&source->audio_buf_mutex);
+
 	if (source->next_audio_sys_ts_min == in.timestamp) {
-		if (source->resync_audio_with_video)
-			source->resync_audio_with_video = false;
-		else
-			push_back = true;
+		push_back = true;
 
 	} else if (source->next_audio_sys_ts_min) {
 		diff = uint64_diff(source->next_audio_sys_ts_min, in.timestamp);
 
 		if (diff < TS_SMOOTHING_THRESHOLD) {
-			if (source->resync_audio_with_video)
-				source->resync_audio_with_video = false;
-			else
-				push_back = true;
+			push_back = true;
 
-		/* This only happens if used with async video when audio/video
-		 * start transitioning in to a timestamp jump.  Audio will
-		 * typically have a timestamp jump, and then video will have a
-		 * timestamp jump.  It's important to not just push back the
-		 * next non-reset audio data after this happens, as that will
-		 * be the video re-syncing. */
+		/* This typically only happens if used with async video when
+		 * audio/video start transitioning in to a timestamp jump.
+		 * Audio will typically have a timestamp jump, and then video
+		 * will have a timestamp jump.  If that case is encountered,
+		 * just clear the audio data in that small window and force a
+		 * resync.  This handles all cases rather than just looping. */
 		} else if (in.timestamp < source->next_audio_sys_ts_min ||
 		           diff > MAX_TS_VAR) {
 			reset_audio_timing(source, data->timestamp,
-					source->next_audio_sys_ts_min);
-			push_back = true;
-			source->resync_audio_with_video = true;
+					os_time);
+			reset_audio_data(source, os_time);
 			in.timestamp = data->timestamp + source->timing_adjust;
 		}
 	}
@@ -1177,8 +1172,6 @@ static void source_output_audio_data(obs_source_t *source,
 			push_back = false;
 		source->last_sync_offset = sync_offset;
 	}
-
-	pthread_mutex_lock(&source->audio_buf_mutex);
 
 	if (push_back)
 		source_output_audio_push_back(source, &in);
