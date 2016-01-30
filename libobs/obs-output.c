@@ -1289,11 +1289,11 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 			               preserve_active(output) ? "on" : "off");
 		}
 
+		if (has_audio)
+			start_audio_encoders(output, encoded_callback);
 		if (has_video)
 			obs_encoder_start(output->video_encoder,
 					encoded_callback, output);
-		if (has_audio)
-			start_audio_encoders(output, encoded_callback);
 	} else {
 		if (has_video)
 			video_output_connect(output->video,
