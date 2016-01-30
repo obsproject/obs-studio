@@ -1384,12 +1384,26 @@ static inline bool initialize_audio_encoders(obs_output_t *output,
 	return true;
 }
 
-static inline bool pair_encoders(obs_output_t *output, size_t num_mixes)
+static inline obs_encoder_t *find_inactive_audio_encoder(obs_output_t *output,
+		size_t num_mixes)
 {
-	if (num_mixes == 1) {
-		struct obs_encoder *audio = output->audio_encoders[0];
-		struct obs_encoder *video = output->video_encoder;
+	for (size_t i = 0; i < num_mixes; i++) {
+		struct obs_encoder *audio = output->audio_encoders[i];
 
+		if (!audio->active && !audio->paired_encoder)
+			return audio;
+	}
+
+	return NULL;
+}
+
+static inline void pair_encoders(obs_output_t *output, size_t num_mixes)
+{
+	struct obs_encoder *video = output->video_encoder;
+	struct obs_encoder *audio = find_inactive_audio_encoder(output,
+			num_mixes);
+
+	if (video && audio) {
 		pthread_mutex_lock(&audio->init_mutex);
 		pthread_mutex_lock(&video->init_mutex);
 
@@ -1406,8 +1420,6 @@ static inline bool pair_encoders(obs_output_t *output, size_t num_mixes)
 		pthread_mutex_unlock(&video->init_mutex);
 		pthread_mutex_unlock(&audio->init_mutex);
 	}
-
-	return true;
 }
 
 bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
@@ -1432,11 +1444,8 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	if (has_audio && !initialize_audio_encoders(output, num_mixes))
 		return false;
 
-	if (has_video && has_audio) {
-		if (!pair_encoders(output, num_mixes)) {
-			return false;
-		}
-	}
+	if (has_video && has_audio)
+		pair_encoders(output, num_mixes);
 
 	return true;
 }
