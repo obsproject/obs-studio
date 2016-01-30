@@ -738,6 +738,10 @@ static void process_audio(obs_source_t *transition, obs_source_t *child,
 
 	ts = child->audio_ts;
 	obs_source_get_audio_mix(child, &child_audio);
+	pos = (size_t)ns_to_audio_frames(sample_rate, ts - min_ts);
+
+	if (pos > AUDIO_OUTPUT_FRAMES)
+		return;
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_output_data *output = &audio->output[mix_idx];
@@ -745,8 +749,6 @@ static void process_audio(obs_source_t *transition, obs_source_t *child,
 
 		if ((mixers & (1 << mix_idx)) == 0)
 			continue;
-
-		pos = (size_t)ns_to_audio_frames(sample_rate, ts - min_ts);
 
 		for (size_t ch = 0; ch < channels; ch++) {
 			float *out = output->data[ch];
