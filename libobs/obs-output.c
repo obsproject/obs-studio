@@ -896,7 +896,10 @@ static inline void set_higher_ts(struct obs_output *output,
 	}
 }
 
-static struct encoder_packet *find_first_packet_type(struct obs_output *output,
+static inline struct encoder_packet *find_first_packet_type(
+		struct obs_output *output, enum obs_encoder_type type,
+		size_t audio_idx);
+static int find_first_packet_type_idx(struct obs_output *output,
 		enum obs_encoder_type type, size_t audio_idx);
 
 /* gets the point where audio and video are closest together */
@@ -989,7 +992,7 @@ static void prune_interleaved_packets(struct obs_output *output)
 		discard_to_idx(output, start_idx);
 }
 
-static struct encoder_packet *find_first_packet_type(struct obs_output *output,
+static int find_first_packet_type_idx(struct obs_output *output,
 		enum obs_encoder_type type, size_t audio_idx)
 {
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
@@ -1002,11 +1005,19 @@ static struct encoder_packet *find_first_packet_type(struct obs_output *output,
 				continue;
 			}
 
-			return packet;
+			return (int)i;
 		}
 	}
 
-	return NULL;
+	return -1;
+}
+
+static inline struct encoder_packet *find_first_packet_type(
+		struct obs_output *output, enum obs_encoder_type type,
+		size_t audio_idx)
+{
+	int idx = find_first_packet_type_idx(output, type, audio_idx);
+	return (idx != -1) ? &output->interleaved_packets.array[idx] : NULL;
 }
 
 static bool initialize_interleaved_packets(struct obs_output *output)
