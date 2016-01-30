@@ -347,6 +347,16 @@ bool audio_callback(void *param,
 		}
 	}
 
+	pthread_mutex_lock(&data->audio_sources_mutex);
+
+	source = data->first_audio_source;
+	while (source) {
+		push_audio_tree(NULL, source, audio);
+		source = (struct obs_source*)source->next_audio_source;
+	}
+
+	pthread_mutex_unlock(&data->audio_sources_mutex);
+
 	/* ------------------------------------------------ */
 	/* render audio data */
 	for (size_t i = 0; i < audio->render_order.num; i++) {
