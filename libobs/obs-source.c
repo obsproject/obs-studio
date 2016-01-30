@@ -3578,6 +3578,12 @@ static inline void process_audio_source_tick(obs_source_t *source,
 {
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
+	if (source->audio_input_buf[0].size < size) {
+		source->audio_pending = true;
+		pthread_mutex_unlock(&source->audio_buf_mutex);
+		return;
+	}
+
 	for (size_t ch = 0; ch < channels; ch++)
 		circlebuf_peek_front(&source->audio_input_buf[ch],
 				source->audio_output_buf[0][ch],
@@ -3621,7 +3627,7 @@ void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 		return;
 	}
 
-	if (!source->audio_ts || source->audio_input_buf[0].size < size) {
+	if (!source->audio_ts) {
 		source->audio_pending = true;
 		return;
 	}
