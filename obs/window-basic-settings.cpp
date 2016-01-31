@@ -925,6 +925,8 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 		ui->outputResolution->lineEdit()->setText(bestScale.c_str());
 
 	ui->outputResolution->blockSignals(false);
+	ui->outputResolution->setProperty("changed", QVariant(true));
+	videoChanged = true;
 
 	if (advRescale.isEmpty())
 		advRescale = res.c_str();
