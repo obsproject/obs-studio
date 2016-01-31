@@ -919,14 +919,18 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 	float baseAspect   = float(cx) / float(cy);
 	float outputAspect = float(out_cx) / float(out_cy);
 
-	if (close_float(baseAspect, outputAspect, 0.01f))
+	bool closeAspect = close_float(baseAspect, outputAspect, 0.01f);
+	if (closeAspect)
 		ui->outputResolution->lineEdit()->setText(oldOutputRes);
 	else
 		ui->outputResolution->lineEdit()->setText(bestScale.c_str());
 
 	ui->outputResolution->blockSignals(false);
-	ui->outputResolution->setProperty("changed", QVariant(true));
-	videoChanged = true;
+
+	if (!closeAspect) {
+		ui->outputResolution->setProperty("changed", QVariant(true));
+		videoChanged = true;
+	}
 
 	if (advRescale.isEmpty())
 		advRescale = res.c_str();
