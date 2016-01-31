@@ -88,6 +88,7 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 			circlebuf_pop_front(&source->audio_input_buf[ch], NULL,
 					source->audio_input_buf[ch].size);
 
+		source->last_audio_input_buf_size = 0;
 		source->audio_ts += (uint64_t)num_floats * 1000000000ULL /
 			(uint64_t)sample_rate;
 	}
@@ -197,6 +198,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 
 	for (size_t ch = 0; ch < channels; ch++)
 		circlebuf_pop_front(&source->audio_input_buf[ch], NULL, size);
+
+	source->last_audio_input_buf_size = 0;
 
 #if DEBUG_AUDIO == 1
 	if (is_audio_source)
