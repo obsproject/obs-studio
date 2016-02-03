@@ -1162,7 +1162,6 @@ static void source_output_audio_data(obs_source_t *source,
 		           diff > MAX_TS_VAR) {
 			reset_audio_timing(source, data->timestamp,
 					os_time);
-			reset_audio_data(source, os_time);
 			in.timestamp = data->timestamp + source->timing_adjust;
 		}
 	}
