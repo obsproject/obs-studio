@@ -293,11 +293,6 @@ static bool audio_buffer_insuffient(struct obs_source *source,
 
 	if (source->audio_input_buf[0].size < size) {
 		source->audio_pending = true;
-		source->audio_ts = 0;
-		source->timing_adjust = 0;
-		source->timing_set = false;
-		source->next_audio_ts_min = 0;
-		source->next_audio_sys_ts_min = 0;
 		return true;
 	}
 
