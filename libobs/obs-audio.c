@@ -125,6 +125,8 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 	}
 }
 
+#define MAX_AUDIO_SIZE (AUDIO_OUTPUT_FRAMES * sizeof(float))
+
 static inline void discard_audio(struct obs_core_audio *audio,
 		obs_source_t *source, size_t channels, size_t sample_rate,
 		struct ts_info *ts)
@@ -152,8 +154,11 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	}
 
 	if (source->audio_ts < (ts->start - 1)) {
-		if (discard_if_stopped(source, channels))
+		if (source->audio_pending &&
+		    source->audio_input_buf[0].size < MAX_AUDIO_SIZE &&
+		    discard_if_stopped(source, channels))
 			return;
+
 #if DEBUG_AUDIO == 1
 		if (is_audio_source) {
 			blog(LOG_DEBUG, "can't discard, source "
