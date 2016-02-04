@@ -212,7 +212,7 @@ void gs_image_file_init_texture(gs_image_file_t *image)
 				image->cx, image->cy, image->format, 1,
 				(const uint8_t**)&image->gif.frame_image,
 				GS_DYNAMIC);
-				
+
 	} else {
 		image->texture = gs_texture_create(
 				image->cx, image->cy, image->format, 1,
