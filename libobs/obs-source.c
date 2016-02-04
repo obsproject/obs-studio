@@ -1179,7 +1179,7 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (push_back)
+	if (push_back && source->audio_ts)
 		source_output_audio_push_back(source, &in);
 	else
 		source_output_audio_place(source, &in);
