@@ -1,5 +1,25 @@
 project(obs-outputs)
 
+option(USE_SSL "Enable rtmps support with OpenSSL" OFF)
+
+if (USE_SSL)
+	find_package(ssl QUIET)
+	find_package(zlib QUIET)
+endif()
+
+if (SSL_FOUND AND ZLIB_FOUND)
+	add_definitions(-DCRYPTO -DUSE_OPENSSL)
+	include_directories(${SSL_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+else()
+	if (USE_SSL)
+		message(WARNING "SSL enabled by user, but OpenSSL was not found")
+	endif()
+	unset(SSL_LIBRARIES)
+	unset(ZLIB_LIBRARIES)
+	add_definitions(-DNO_CRYPTO)
+endif()
+
+
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
 		ws2_32
@@ -58,6 +78,8 @@ add_library(obs-outputs MODULE
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
+	${SSL_LIBRARIES}
+	${ZLIB_LIBRARIES}
 	${obs-outputs_PLATFORM_DEPS})
 
 install_obs_plugin_with_data(obs-outputs data)

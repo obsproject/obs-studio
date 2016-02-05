@@ -25,8 +25,6 @@
  *  http://www.gnu.org/copyleft/lgpl.html
  */
 
-#define NO_CRYPTO 1
-
 #if !defined(NO_CRYPTO) && !defined(CRYPTO)
 #define CRYPTO
 #else
