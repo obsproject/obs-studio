@@ -91,6 +91,8 @@ static inline void path_data_free(struct path_data *data)
 	bfree(data->default_path);
 	if (data->type == OBS_PATH_FILE)
 		bfree(data->filter);
+	else if (data->type == OBS_PATH_FILE_SAVE)
+		bfree(data->filter);
 }
 
 static inline void editable_list_data_free(struct editable_list_data *data)
@@ -447,6 +449,8 @@ obs_property_t *obs_properties_add_path(obs_properties_t *props,
 	data->default_path = bstrdup(default_path);
 
 	if (data->type == OBS_PATH_FILE)
+		data->filter = bstrdup(filter);
+	else if (data->type == OBS_PATH_FILE_SAVE)
 		data->filter = bstrdup(filter);
 
 	return p;
