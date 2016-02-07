@@ -33,6 +33,11 @@
 #include "log.h"
 
 #ifdef CRYPTO
+
+#ifdef __APPLE__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #ifdef USE_POLARSSL
 #include <polarssl/havege.h>
 #include <polarssl/md5.h>

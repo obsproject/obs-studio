@@ -25,6 +25,11 @@
 #include "http.h"
 
 #ifdef CRYPTO
+
+#ifdef __APPLE__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #ifdef USE_POLARSSL
 #include <polarssl/sha2.h>
 #ifndef SHA256_DIGEST_LENGTH
