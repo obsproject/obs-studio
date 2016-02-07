@@ -208,7 +208,7 @@ bool obs_output_start(obs_output_t *output)
 	if (!output->context.data)
 		return false;
 
-   signal_handler_signal(obs_get_signal_handler(), "output_starting", NULL);
+	signal_handler_signal(obs_get_signal_handler(), "output_starting", NULL);
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
 
@@ -305,7 +305,7 @@ void obs_output_stop(obs_output_t *output)
 	if (!output->context.data)
 		return;
 
-   signal_handler_signal(obs_get_signal_handler(), "output_stopping", NULL);
+	signal_handler_signal(obs_get_signal_handler(), "output_stopping", NULL);
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
 
