@@ -359,9 +359,6 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 	mouseOverItems = SelectedAtPos(startPos);
 	vec2_zero(&lastMoveOffset);
-
-	if (event->button() == Qt::RightButton)
-		ProcessClick(startPos);
 }
 
 static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)

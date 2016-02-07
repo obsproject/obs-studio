@@ -858,6 +858,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 			new_item->selected = item->selected;
 			new_item->pos = item->pos;
+			new_item->rot = item->rot;
 			new_item->scale = item->scale;
 			new_item->align = item->align;
 			new_item->last_width = item->last_width;

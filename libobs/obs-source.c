@@ -985,6 +985,7 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 					source->audio_input_buf[i].size);
 	}
 
+	source->last_audio_input_buf_size = 0;
 	source->audio_ts = os_time;
 }
 
@@ -1058,6 +1059,8 @@ static void source_output_audio_place(obs_source_t *source,
 				source->audio_input_buf[i].size -
 				(buf_placement + size));
 	}
+
+	source->last_audio_input_buf_size = 0;
 }
 
 static inline void source_output_audio_push_back(obs_source_t *source,
@@ -1074,6 +1077,10 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 	for (size_t i = 0; i < channels; i++)
 		circlebuf_push_back(&source->audio_input_buf[i],
 				in->data[i], size);
+
+	/* reset audio input buffer size to ensure that audio doesn't get
+	 * perpetually cut */
+	source->last_audio_input_buf_size = 0;
 }
 
 static inline bool source_muted(obs_source_t *source, uint64_t os_time)
@@ -1155,7 +1162,6 @@ static void source_output_audio_data(obs_source_t *source,
 		           diff > MAX_TS_VAR) {
 			reset_audio_timing(source, data->timestamp,
 					os_time);
-			reset_audio_data(source, os_time);
 			in.timestamp = data->timestamp + source->timing_adjust;
 		}
 	}
@@ -1173,7 +1179,7 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (push_back)
+	if (push_back && source->audio_ts)
 		source_output_audio_push_back(source, &in);
 	else
 		source_output_audio_place(source, &in);

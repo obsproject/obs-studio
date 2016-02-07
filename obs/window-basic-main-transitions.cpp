@@ -755,10 +755,16 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		OBSScene curScene = GetCurrentScene();
 
-		obs_scene_t *dup = obs_scene_duplicate(curScene, nullptr,
-				editPropertiesMode ?
-				OBS_SCENE_DUP_PRIVATE_COPY :
-				OBS_SCENE_DUP_PRIVATE_REFS);
+		obs_scene_t *dup;
+		if (sceneDuplicationMode) {
+			dup = obs_scene_duplicate(curScene, nullptr,
+					editPropertiesMode ?
+					OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_PRIVATE_REFS);
+		} else {
+			dup = curScene;
+			obs_scene_addref(dup);
+		}
 
 		obs_source_t *transition = obs_get_output_source(0);
 		obs_source_t *dup_source = obs_scene_get_source(dup);

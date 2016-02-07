@@ -578,7 +578,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	}
 
 	dump_source_info(s, input, input_format, is_advanced);
-	ffmpeg_source_start(s);
+	if (!s->restart_on_activate || obs_source_active(s->source))
+		ffmpeg_source_start(s);
 }
 
 static const char *ffmpeg_source_getname(void *unused)

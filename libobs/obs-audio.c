@@ -88,6 +88,7 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 			circlebuf_pop_front(&source->audio_input_buf[ch], NULL,
 					source->audio_input_buf[ch].size);
 
+		source->last_audio_input_buf_size = 0;
 		source->audio_ts += (uint64_t)num_floats * 1000000000ULL /
 			(uint64_t)sample_rate;
 	}
@@ -124,6 +125,8 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 	}
 }
 
+#define MAX_AUDIO_SIZE (AUDIO_OUTPUT_FRAMES * sizeof(float))
+
 static inline void discard_audio(struct obs_core_audio *audio,
 		obs_source_t *source, size_t channels, size_t sample_rate,
 		struct ts_info *ts)
@@ -151,8 +154,11 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	}
 
 	if (source->audio_ts < (ts->start - 1)) {
-		if (discard_if_stopped(source, channels))
+		if (source->audio_pending &&
+		    source->audio_input_buf[0].size < MAX_AUDIO_SIZE &&
+		    discard_if_stopped(source, channels))
 			return;
+
 #if DEBUG_AUDIO == 1
 		if (is_audio_source) {
 			blog(LOG_DEBUG, "can't discard, source "
@@ -198,6 +204,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	for (size_t ch = 0; ch < channels; ch++)
 		circlebuf_pop_front(&source->audio_input_buf[ch], NULL, size);
 
+	source->last_audio_input_buf_size = 0;
+
 #if DEBUG_AUDIO == 1
 	if (is_audio_source)
 		blog(LOG_DEBUG, "audio discarded, new ts: %"PRIu64,
@@ -213,6 +221,8 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 	struct ts_info new_ts;
 	uint64_t offset;
 	uint64_t frames;
+	size_t total_ms;
+	size_t ms;
 	int ticks;
 
 	if (audio->total_buffering_ticks == MAX_BUFFERING_TICKS)
@@ -233,8 +243,13 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 		blog(LOG_WARNING, "Max audio buffering reached!");
 	}
 
-	blog(LOG_INFO, "adding %d ticks of buffering, total buffering is "
-			"now %d", ticks, audio->total_buffering_ticks);
+	ms = ticks * AUDIO_OUTPUT_FRAMES * 1000 / sample_rate;
+	total_ms = audio->total_buffering_ticks * AUDIO_OUTPUT_FRAMES * 1000 /
+		sample_rate;
+
+	blog(LOG_INFO, "adding %d milliseconds of audio buffering, total "
+			"audio buffering is now %d milliseconds",
+			(int)ms, (int)total_ms);
 #if DEBUG_AUDIO == 1
 	blog(LOG_DEBUG, "min_ts (%"PRIu64") < start timestamp "
 			"(%"PRIu64")", min_ts, ts->start);
@@ -290,11 +305,6 @@ static bool audio_buffer_insuffient(struct obs_source *source,
 
 	if (source->audio_input_buf[0].size < size) {
 		source->audio_pending = true;
-		source->audio_ts = 0;
-		source->timing_adjust = 0;
-		source->timing_set = false;
-		source->next_audio_ts_min = 0;
-		source->next_audio_sys_ts_min = 0;
 		return true;
 	}
 

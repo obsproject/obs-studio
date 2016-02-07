@@ -2262,6 +2262,22 @@ int OBSBasic::ResetVideo()
 	ovi.gpu_conversion = true;
 	ovi.scale_type     = GetScaleType(basicConfig);
 
+	if (ovi.base_width == 0 || ovi.base_height == 0) {
+		ovi.base_width = 1920;
+		ovi.base_height = 1080;
+		config_set_uint(basicConfig, "Video", "BaseCX", 1920);
+		config_set_uint(basicConfig, "Video", "BaseCY", 1080);
+	}
+
+	if (ovi.output_width == 0 || ovi.output_height == 0) {
+		ovi.output_width = ovi.base_width;
+		ovi.output_height = ovi.base_height;
+		config_set_uint(basicConfig, "Video", "OutputCX",
+				ovi.base_width);
+		config_set_uint(basicConfig, "Video", "OutputCY",
+				ovi.base_height);
+	}
+
 	ret = AttemptToResetVideo(&ovi);
 	if (IS_WIN32 && ret != OBS_VIDEO_SUCCESS) {
 		/* Try OpenGL if DirectX fails on windows */
