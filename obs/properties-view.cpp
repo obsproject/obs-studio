@@ -1496,6 +1496,10 @@ bool WidgetInfo::PathChanged(const char *setting)
 		path = QFileDialog::getOpenFileName(view,
 				QT_UTF8(desc), QT_UTF8(default_path),
 				QT_UTF8(filter));
+	else if (type == OBS_PATH_FILE_SAVE)
+		path = QFileDialog::getSaveFileName(view,
+				QT_UTF8(desc), QT_UTF8(default_path),
+				QT_UTF8(filter));
 
 	if (path.isEmpty())
 		return false;
