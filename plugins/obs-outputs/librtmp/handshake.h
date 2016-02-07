@@ -198,6 +198,8 @@ GetDigestOffset2(uint8_t *handshake, unsigned int len)
                  __FUNCTION__, res);
         exit(1);
     }
+
+    (void)len;
     return res;
 }
 
@@ -764,7 +766,9 @@ HandShake(RTMP * r, int FP9HandShake)
     RC4_handle keyIn = 0;
     RC4_handle keyOut = 0;
 
+#ifndef _DEBUG
     int32_t *ip;
+#endif
     uint32_t uptime;
 
     uint8_t clientbuf[RTMP_SIG_SIZE + 4], *clientsig=clientbuf+4;
@@ -1139,7 +1143,10 @@ SHandShake(RTMP * r)
     RC4_handle keyOut = 0;
     int FP9HandShake = FALSE;
     int encrypted;
+
+#ifndef _DEBUG
     int32_t *ip;
+#endif
 
     uint8_t clientsig[RTMP_SIG_SIZE];
     uint8_t serverbuf[RTMP_SIG_SIZE + 4], *serversig = serverbuf+4;
