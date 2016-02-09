@@ -629,7 +629,7 @@ static obs_properties_t *display_capture_properties(void *unused)
 	float min;
 #define LOAD_CROP_VAR(var, mode) \
 	name = CROP_VAR_NAME(var, mode); \
-	p = obs_properties_add_float(props, name, \
+	p = obs_properties_add_float_slider(props, name, \
 			obs_module_text("Crop."#var), min, 4096.f, .5f); \
 	obs_property_set_visible(p, false);
 
