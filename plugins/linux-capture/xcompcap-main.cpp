@@ -86,6 +86,9 @@ obs_properties_t *XCompcapMain::properties()
 	obs_properties_add_bool(props, "include_border",
 			obs_module_text("IncludeXBorder"));
 
+	obs_properties_add_bool(props, "pixelate",
+			obs_module_text("Pixelate"));
+
 	return props;
 }
 
@@ -100,6 +103,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "lock_x", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "include_border", false);
+	obs_data_set_default_bool(settings, "pixelate", false);
 }
 
 
@@ -142,6 +146,7 @@ struct XCompcapMain_private
 	bool swapRedBlue;
 	bool lockX;
 	bool include_border;
+	bool pixelate;
 
 	uint32_t width;
 	uint32_t height;
@@ -287,6 +292,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
 		p->include_border = obs_data_get_bool(settings, "include_border");
+		p->pixelate = obs_data_get_bool(settings, "pixelate");
 	} else {
 		p->win = prevWin;
 	}
@@ -527,6 +533,11 @@ void XCompcapMain::render(gs_effect_t *effect)
 
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, p->tex);
+
+	if(p->pixelate) {
+		glBindTexture(GL_TEXTURE_2D, *(GLuint*)gs_texture_get_obj(p->tex) );
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 
 	while (gs_effect_loop(effect, "Draw")) {
 		gs_draw_sprite(p->tex, 0, 0, 0);
