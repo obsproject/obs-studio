@@ -256,7 +256,7 @@
                 {
                     "name": "Australia: Melbourne",
                     "url": "rtmp://ingest-mel.beam.pro:1935/beam"
-                }
+                },
                 {
                     "name": "Brazil: Sao Paulo",
                     "url": "rtmp://ingest-sao.beam.pro:1935/beam"
