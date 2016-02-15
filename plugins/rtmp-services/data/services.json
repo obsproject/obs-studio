@@ -223,31 +223,43 @@
             "servers": [
                 {
                     "name": "US: Dallas, TX",
-                    "url": "rtmp://ingest.dal07.beam.pro/beam"
+                    "url": "rtmp://ingest-dal.beam.pro:1935/beam"
                 },
                 {
                     "name": "US: San Jose, CA",
-                    "url": "rtmp://ingest.sjc01.beam.pro/beam"
+                    "url": "rtmp://ingest-sjc.beam.pro:1935/beam"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "url": "rtmp://ingest-sea.beam.pro:1935/beam"
                 },
                 {
                     "name": "US: Washington DC",
-                    "url": "rtmp://ingest.wdc01.beam.pro/beam"
+                    "url": "rtmp://ingest-wdc.beam.pro:1935/beam"
                 },
                 {
                     "name": "Canada: Toronto",
-                    "url": "rtmp://ingest.tor01.beam.pro/beam"
+                    "url": "rtmp://ingest-tor.beam.pro:1935/beam"
                 },
                 {
                     "name": "EU: London",
-                    "url": "rtmp://ingest.lon02.beam.pro/beam"
+                    "url": "rtmp://ingest-lon.beam.pro:1935/beam"
                 },
                 {
                     "name": "EU: Amsterdam",
-                    "url": "rtmp://ingest.ams01.beam.pro/beam"
+                    "url": "rtmp://ingest-ams.beam.pro:1935/beam"
+                },
+                {
+                    "name": "EU: Frankfurt",
+                    "url": "rtmp://ingest-fra.beam.pro:1935/beam"
                 },
                 {
                     "name": "Australia: Melbourne",
-                    "url": "rtmp://ingest.mel01.beam.pro/beam"
+                    "url": "rtmp://ingest-mel.beam.pro:1935/beam"
+                }
+                {
+                    "name": "Brazil: Sao Paulo",
+                    "url": "rtmp://ingest-sao.beam.pro:1935/beam"
                 }
             ],
             "recommended": {
