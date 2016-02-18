@@ -288,6 +288,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutApplyService,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecFilename,    EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecFormat,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -1189,6 +1190,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecFormat");
 	const char *path = config_get_string(main->Config(), "AdvOut",
 			"RecFilePath");
+	const char *filename = config_get_string(main->Config(), "AdvOut",
+			"RecFilename");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 			"RecFileNameWithoutSpace");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
@@ -1202,6 +1205,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
 	ui->advOutRecType->setCurrentIndex(typeIndex);
 	ui->advOutRecPath->setText(path);
+	ui->advOutRecFilename->setText(filename);
 	ui->advOutNoSpace->setChecked(noSpace);
 	ui->advOutRecUseRescale->setChecked(rescale);
 	ui->advOutRecRescale->setCurrentText(rescaleRes);
@@ -2237,6 +2241,7 @@ void OBSBasicSettings::SaveOutputSettings()
 			RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
 	SaveEdit(ui->advOutRecPath, "AdvOut", "RecFilePath");
+	SaveEdit(ui->advOutRecFilename, "AdvOut", "RecFilename");
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
 	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");

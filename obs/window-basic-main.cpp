@@ -712,6 +712,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecType", "Standard");
 
+	config_set_default_string(basicConfig, "AdvOut", "RecFilename",
+			"%yyyy-%mm-%dd_%hh-%mm-%ss");
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "flv");
