@@ -22,6 +22,7 @@
 #include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
+#include <QCompleter>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -1128,6 +1129,13 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
+
+	QStringList specList = QTStr("advOutRecFilename.completer").split(
+				QRegularExpression("\n"));
+	QCompleter *specCompleter = new QCompleter(specList);
+	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
+	specCompleter->setFilterMode(Qt::MatchContains);
+	ui->advOutRecFilename->setCompleter(specCompleter);
 
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
@@ -2693,6 +2701,23 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 		outputCX = newCX;
 		outputCY = newCY;
 	}
+}
+
+
+void OBSBasicSettings::on_advOutRecFilename_textEdited(const QString &text)
+{
+#ifdef __APPLE__
+	size_t invalidLocation =
+		text.toStdString().find_first_of(":/\\");
+#elif  _WIN32
+	size_t invalidLocation =
+		text.toStdString().find_first_of("<>:\"/\\|?*");
+#else
+	size_t invalidLocation = text.toStdString().find_first_of("/");
+#endif
+
+	if(invalidLocation != string::npos)
+		ui->advOutRecFilename->backspace();
 }
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
