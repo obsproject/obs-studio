@@ -142,6 +142,10 @@
                     "url": "rtmp://live.hitbox.tv/push"
                 },
                 {
+                    "name": "EU-North: Amsterdam, Netherlands",
+                    "url": "rtmp://live.ams.hitbox.tv/push"
+                },
+                {
                     "name": "EU-West: Frankfurt, Germany",
                     "url": "rtmp://live.fra.hitbox.tv/push"
                 },
@@ -150,20 +154,20 @@
                     "url": "rtmp://live.cdg.hitbox.tv/push"
                 },
                 {
-                    "name": "EU-East: Vienna, Austria",
-                    "url": "rtmp://live.vie.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-North: London, United Kingdom",
+                    "name": "EU-West: London, United Kingdom",
                     "url": "rtmp://live.lhr.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-South: Milan, Italia",
-                    "url": "rtmp://live.mxp.hitbox.tv/push"
                 },
                 {
                     "name": "EU-Central: Nurnberg, Germany",
                     "url": "rtmp://live.nbg.hitbox.tv/push"
+                },
+                {
+                    "name": "EU-East: Vienna, Austria",
+                    "url": "rtmp://live.vie.hitbox.tv/push"
+                },
+                {
+                    "name": "EU-South: Milan, Italia",
+                    "url": "rtmp://live.mxp.hitbox.tv/push"
                 },
                 {
                     "name": "Russia: Moscow",
