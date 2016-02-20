@@ -1136,6 +1136,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
 	specCompleter->setFilterMode(Qt::MatchContains);
 	ui->advOutRecFilename->setCompleter(specCompleter);
+	ui->advOutRecFilename->setToolTip(QTStr("advOutRecFilename.TT"));
 
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
