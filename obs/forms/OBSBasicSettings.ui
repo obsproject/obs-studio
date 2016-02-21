@@ -150,6 +150,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="buddy">
+            <cstring>language</cstring>
+           </property>
           </widget>
          </item>
          <item row="1" column="1">
@@ -159,6 +162,9 @@
           <widget class="QLabel" name="label_42">
            <property name="text">
             <string>Basic.Settings.General.Theme</string>
+           </property>
+           <property name="buddy">
+            <cstring>theme</cstring>
            </property>
           </widget>
          </item>
@@ -257,6 +263,9 @@
                     <property name="alignment">
                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                     </property>
+                    <property name="buddy">
+                     <cstring>streamType</cstring>
+                    </property>
                    </widget>
                   </item>
                   <item row="0" column="1">
@@ -319,6 +328,9 @@
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="buddy">
+               <cstring>outputMode</cstring>
               </property>
              </widget>
             </item>
@@ -409,6 +421,9 @@
                   <property name="alignment">
                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                   </property>
+                  <property name="buddy">
+                   <cstring>simpleOutputVBitrate</cstring>
+                  </property>
                  </widget>
                 </item>
                 <item row="0" column="1">
@@ -428,6 +443,9 @@
                  <widget class="QLabel" name="label_20">
                   <property name="text">
                    <string>Basic.Settings.Output.AudioBitrate</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutputABitrate</cstring>
                   </property>
                  </widget>
                 </item>
@@ -555,12 +573,18 @@
                   <property name="text">
                    <string>Basic.Settings.Output.EncoderPreset</string>
                   </property>
+                  <property name="buddy">
+                   <cstring>simpleOutPreset</cstring>
+                  </property>
                  </widget>
                 </item>
                 <item row="4" column="0">
                  <widget class="QLabel" name="label_23">
                   <property name="text">
                    <string>Basic.Settings.Output.CustomEncoderSettings</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutCustom</cstring>
                   </property>
                  </widget>
                 </item>
@@ -623,6 +647,9 @@
                   <property name="alignment">
                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                   </property>
+                  <property name="buddy">
+                   <cstring>simpleOutputPath</cstring>
+                  </property>
                  </widget>
                 </item>
                 <item row="1" column="1">
@@ -674,6 +701,9 @@
                   <property name="text">
                    <string>Basic.Settings.Output.Format</string>
                   </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecFormat</cstring>
+                  </property>
                  </widget>
                 </item>
                 <item row="2" column="1">
@@ -683,6 +713,9 @@
                  <widget class="QLabel" name="label_26">
                   <property name="text">
                    <string>Basic.Settings.Output.Simple.RecordingQuality</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecQuality</cstring>
                   </property>
                  </widget>
                 </item>
@@ -694,12 +727,18 @@
                   <property name="text">
                    <string>Basic.Settings.Output.Encoder</string>
                   </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecEncoder</cstring>
+                  </property>
                  </widget>
                 </item>
                 <item row="5" column="0">
                  <widget class="QLabel" name="label_420">
                   <property name="text">
                    <string>Basic.Settings.Output.CustomMuxerSettings</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutMuxCustom</cstring>
                   </property>
                  </widget>
                 </item>
@@ -906,6 +945,9 @@
                          <property name="text">
                           <string>Basic.Settings.Output.Encoder</string>
                          </property>
+                         <property name="buddy">
+                          <cstring>advOutEncoder</cstring>
+                         </property>
                         </widget>
                        </item>
                        <item row="2" column="1">
@@ -1000,6 +1042,9 @@
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                      </property>
+                      <property name="buddy">
+                       <cstring>advOutRecType</cstring>
                       </property>
                      </widget>
                     </item>
@@ -1099,6 +1144,9 @@
                              <property name="alignment">
                               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                              </property>
+                             <property name="buddy">
+                              <cstring>advOutRecPath</cstring>
+                             </property>
                             </widget>
                            </item>
                            <item row="0" column="1">
@@ -1136,6 +1184,9 @@
                             <widget class="QLabel" name="label_43">
                              <property name="text">
                               <string>Basic.Settings.Output.Format</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advOutRecFormat</cstring>
                              </property>
                             </widget>
                            </item>
@@ -1237,6 +1288,9 @@
                              <property name="text">
                               <string>Basic.Settings.Output.Encoder</string>
                              </property>
+                             <property name="buddy">
+                              <cstring>advOutRecEncoder</cstring>
+                             </property>
                             </widget>
                            </item>
                            <item row="4" column="1">
@@ -1290,6 +1344,9 @@
                             <widget class="QLabel" name="label_9001">
                              <property name="text">
                               <string>Basic.Settings.Output.CustomMuxerSettings</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advOutMuxCustom</cstring>
                              </property>
                             </widget>
                            </item>
@@ -1408,6 +1465,9 @@
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.Format</string>
                        </property>
+                       <property name="buddy">
+                        <cstring>advOutFFFormat</cstring>
+                       </property>
                       </widget>
                      </item>
                      <item row="3" column="1">
@@ -1431,6 +1491,9 @@
                       <widget class="QLabel" name="label_40">
                        <property name="text">
                         <string>Basic.Settings.Output.VideoBitrate</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>advOutFFVBitrate</cstring>
                        </property>
                       </widget>
                      </item>
@@ -1478,6 +1541,9 @@
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.VEncoder</string>
                        </property>
+                       <property name="buddy">
+                        <cstring>advOutFFVEncoder</cstring>
+                       </property>
                       </widget>
                      </item>
                      <item row="8" column="1">
@@ -1488,6 +1554,9 @@
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.VEncoderSettings</string>
                        </property>
+                       <property name="buddy">
+                        <cstring>advOutFFVCfg</cstring>
+                       </property>
                       </widget>
                      </item>
                      <item row="10" column="1">
@@ -1497,6 +1566,9 @@
                       <widget class="QLabel" name="label_41">
                        <property name="text">
                         <string>Basic.Settings.Output.AudioBitrate</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>advOutFFABitrate</cstring>
                        </property>
                       </widget>
                      </item>
@@ -1583,6 +1655,9 @@
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.AEncoder</string>
                        </property>
+                       <property name="buddy">
+                        <cstring>advOutFFAEncoder</cstring>
+                       </property>
                       </widget>
                      </item>
                      <item row="13" column="1">
@@ -1592,6 +1667,9 @@
                       <widget class="QLabel" name="label_46">
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.AEncoderSettings</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>advOutFFACfg</cstring>
                        </property>
                       </widget>
                      </item>
@@ -1618,6 +1696,9 @@
                        <property name="alignment">
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
+                       <property name="buddy">
+                        <cstring>advOutFFType</cstring>
+                       </property>
                       </widget>
                      </item>
                      <item row="0" column="1">
@@ -1638,6 +1719,9 @@
                       <widget class="QLabel" name="label_1337">
                        <property name="text">
                         <string>Basic.Settings.Output.Adv.FFmpeg.MuxerSettings</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>advOutFFMCfg</cstring>
                        </property>
                       </widget>
                      </item>
@@ -1780,12 +1864,18 @@
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                          </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack1Bitrate</cstring>
+                         </property>
                         </widget>
                        </item>
                        <item row="1" column="0">
                         <widget class="QLabel" name="label_55">
                          <property name="text">
                           <string>Name</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack1Name</cstring>
                          </property>
                         </widget>
                        </item>
@@ -1826,6 +1916,9 @@
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack2Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -1896,6 +1989,9 @@
                          <property name="text">
                           <string>Name</string>
                          </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack2Name</cstring>
+                         </property>
                         </widget>
                        </item>
                        <item row="1" column="1">
@@ -1935,6 +2031,9 @@
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack3Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2005,6 +2104,9 @@
                          <property name="text">
                           <string>Name</string>
                          </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack3Name</cstring>
+                         </property>
                         </widget>
                        </item>
                        <item row="1" column="1">
@@ -2044,6 +2146,9 @@
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2114,6 +2219,9 @@
                          <property name="text">
                           <string>Name</string>
                          </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Name</cstring>
+                         </property>
                         </widget>
                        </item>
                        <item row="1" column="1">
@@ -2148,6 +2256,9 @@
            <property name="text">
             <string>Basic.Settings.Audio.SampleRate</string>
            </property>
+           <property name="buddy">
+            <cstring>sampleRate</cstring>
+           </property>
           </widget>
          </item>
          <item row="0" column="1">
@@ -2174,6 +2285,9 @@
           <widget class="QLabel" name="label_15">
            <property name="text">
             <string>Basic.Settings.Audio.Channels</string>
+           </property>
+           <property name="buddy">
+            <cstring>channelSetup</cstring>
            </property>
           </widget>
          </item>
@@ -2211,6 +2325,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="buddy">
+            <cstring>desktopAudioDevice1</cstring>
+           </property>
           </widget>
          </item>
          <item row="2" column="1">
@@ -2228,6 +2345,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="buddy">
+            <cstring>desktopAudioDevice2</cstring>
+           </property>
           </widget>
          </item>
          <item row="3" column="1">
@@ -2241,6 +2361,9 @@
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice</string>
+           </property>
+           <property name="buddy">
+            <cstring>auxAudioDevice1</cstring>
            </property>
           </widget>
          </item>
@@ -2256,6 +2379,9 @@
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice2</string>
            </property>
+           <property name="buddy">
+            <cstring>auxAudioDevice2</cstring>
+           </property>
           </widget>
          </item>
          <item row="5" column="1">
@@ -2269,6 +2395,9 @@
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice3</string>
+           </property>
+           <property name="buddy">
+            <cstring>auxAudioDevice3</cstring>
            </property>
           </widget>
          </item>
@@ -2333,6 +2462,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="buddy">
+            <cstring>baseResolution</cstring>
+           </property>
           </widget>
          </item>
          <item row="0" column="1">
@@ -2356,6 +2488,9 @@
            <property name="text">
             <string>Basic.Settings.Video.ScaledResolution</string>
            </property>
+           <property name="buddy">
+            <cstring>outputResolution</cstring>
+           </property>
           </widget>
          </item>
          <item row="1" column="1">
@@ -2372,6 +2507,9 @@
           <widget class="QLabel" name="label_11">
            <property name="text">
             <string>Basic.Settings.Video.DownscaleFilter</string>
+           </property>
+           <property name="buddy">
+            <cstring>downscaleFilter</cstring>
            </property>
           </widget>
          </item>
@@ -2692,6 +2830,9 @@
                      <property name="alignment">
                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                      </property>
+                     <property name="buddy">
+                      <cstring>colorFormat</cstring>
+                     </property>
                     </widget>
                    </item>
                    <item row="2" column="1">
@@ -2723,6 +2864,9 @@
                      <property name="text">
                       <string>Basic.Settings.Advanced.Video.ColorRange</string>
                      </property>
+                     <property name="buddy">
+                      <cstring>colorRange</cstring>
+                     </property>
                     </widget>
                    </item>
                    <item row="4" column="1">
@@ -2732,6 +2876,9 @@
                     <widget class="QLabel" name="label_33">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Video.ColorSpace</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>colorSpace</cstring>
                      </property>
                     </widget>
                    </item>
@@ -2754,6 +2901,9 @@
                      <property name="text">
                       <string>Basic.Settings.Video.Renderer</string>
                      </property>
+                     <property name="buddy">
+                      <cstring>renderer</cstring>
+                     </property>
                     </widget>
                    </item>
                    <item row="0" column="1">
@@ -2770,6 +2920,9 @@
                      </property>
                      <property name="alignment">
                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                     <property name="buddy">
+                      <cstring>adapter</cstring>
                      </property>
                     </widget>
                    </item>
@@ -2820,6 +2973,9 @@
                     <widget class="QLabel" name="label_56">
                      <property name="text">
                       <string>Basic.Settings.Advanced.StreamDelay.Duration</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>streamDelaySec</cstring>
                      </property>
                     </widget>
                    </item>
@@ -2906,6 +3062,9 @@
                      <property name="text">
                       <string>Basic.Settings.Output.RetryDelay</string>
                      </property>
+                     <property name="buddy">
+                      <cstring>reconnectRetryDelay</cstring>
+                     </property>
                     </widget>
                    </item>
                    <item row="0" column="1">
@@ -2929,6 +3088,9 @@
                     <widget class="QLabel" name="label_22">
                      <property name="text">
                       <string>Basic.Settings.Output.MaxRetries</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>reconnectMaxRetries</cstring>
                      </property>
                     </widget>
                    </item>

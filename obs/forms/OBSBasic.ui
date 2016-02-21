@@ -642,6 +642,9 @@
               <property name="text">
                <string>Basic.TransitionDuration</string>
               </property>
+              <property name="buddy">
+               <cstring>transitionDuration</cstring>
+              </property>
              </widget>
             </item>
             <item>
