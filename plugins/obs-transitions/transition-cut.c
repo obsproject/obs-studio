@@ -10,7 +10,7 @@ static const char *cut_get_name(void *type_data)
 	return obs_module_text("CutTransition");
 }
 
-void *cut_create(obs_data_t *settings, obs_source_t *source)
+static void *cut_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct cut_info *cut;
 
@@ -22,13 +22,13 @@ void *cut_create(obs_data_t *settings, obs_source_t *source)
 	return cut;
 }
 
-void cut_destroy(void *data)
+static void cut_destroy(void *data)
 {
 	struct cut_info *cut = data;
 	bfree(cut);
 }
 
-void cut_video_render(void *data, gs_effect_t *effect)
+static void cut_video_render(void *data, gs_effect_t *effect)
 {
 	struct cut_info *cut = data;
 	obs_transition_video_render(cut->source, NULL);
@@ -47,7 +47,7 @@ static float mix_b(void *data, float t)
 	return t;
 }
 
-bool cut_audio_render(void *data, uint64_t *ts_out,
+static bool cut_audio_render(void *data, uint64_t *ts_out,
 		struct obs_source_audio_mix *audio, uint32_t mixers,
 		size_t channels, size_t sample_rate)
 {

@@ -15,7 +15,7 @@ static const char *fade_get_name(void *type_data)
 	return obs_module_text("FadeTransition");
 }
 
-void *fade_create(obs_data_t *settings, obs_source_t *source)
+static void *fade_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct fade_info *fade;
 	char *file = obs_module_file("fade_transition.effect");
@@ -42,7 +42,7 @@ void *fade_create(obs_data_t *settings, obs_source_t *source)
 	return fade;
 }
 
-void fade_destroy(void *data)
+static void fade_destroy(void *data)
 {
 	struct fade_info *fade = data;
 	bfree(fade);
@@ -61,7 +61,7 @@ static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
 		gs_draw_sprite(NULL, 0, cx, cy);
 }
 
-void fade_video_render(void *data, gs_effect_t *effect)
+static void fade_video_render(void *data, gs_effect_t *effect)
 {
 	struct fade_info *fade = data;
 	obs_transition_video_render(fade->source, fade_callback);
@@ -80,7 +80,7 @@ static float mix_b(void *data, float t)
 	return t;
 }
 
-bool fade_audio_render(void *data, uint64_t *ts_out,
+static bool fade_audio_render(void *data, uint64_t *ts_out,
 		struct obs_source_audio_mix *audio, uint32_t mixers,
 		size_t channels, size_t sample_rate)
 {
