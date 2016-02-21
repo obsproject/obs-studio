@@ -396,7 +396,8 @@ static int ep_parse_sampler_state_item(struct effect_parser *ep,
 		struct ep_sampler *eps)
 {
 	int ret;
-	char *state = NULL, *value = NULL;
+	char *state = NULL;
+	struct dstr value = {0};
 
 	ret = cf_next_name(&ep->cfp, &state, "state name", ";");
 	if (ret != PARSE_SUCCESS) goto fail;
@@ -404,19 +405,29 @@ static int ep_parse_sampler_state_item(struct effect_parser *ep,
 	ret = cf_next_token_should_be(&ep->cfp, "=", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = cf_next_name(&ep->cfp, &value, "value name", ";");
-	if (ret != PARSE_SUCCESS) goto fail;
+	for (;;) {
+		const char *cur_str;
 
-	ret = cf_next_token_should_be(&ep->cfp, ";", ";", NULL);
-	if (ret != PARSE_SUCCESS) goto fail;
+		if (!cf_next_valid_token(&ep->cfp))
+			return PARSE_EOF;
 
-	da_push_back(eps->states, &state);
-	da_push_back(eps->values, &value);
+		cur_str = ep->cfp.cur_token->str.array;
+		if (*cur_str == ';')
+			break;
+
+		dstr_ncat(&value, cur_str, ep->cfp.cur_token->str.len);
+	}
+
+	if (value.len) {
+		da_push_back(eps->states, &state);
+		da_push_back(eps->values, &value.array);
+	}
+
 	return ret;
 
 fail:
 	bfree(state);
-	bfree(value);
+	dstr_free(&value);
 	return ret;
 }
 

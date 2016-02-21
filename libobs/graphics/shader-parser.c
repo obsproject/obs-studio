@@ -112,8 +112,9 @@ void shader_sampler_convert(struct shader_sampler *ss,
 			info->address_w = get_address_mode(value);
 		else if (astrcmpi(state, "MaxAnisotropy") == 0)
 			info->max_anisotropy = (int)strtol(value, NULL, 10);
-		/*else if (astrcmpi(state, "BorderColor") == 0)
-			// TODO */
+		else if (astrcmpi(state, "BorderColor") == 0)
+			info->border_color = (*value == '#') ?
+				strtol(value + 1, NULL, 16) : 0;
 	}
 }
 
