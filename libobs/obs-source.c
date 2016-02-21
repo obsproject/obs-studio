@@ -1158,8 +1158,7 @@ static void source_output_audio_data(obs_source_t *source,
 		 * will have a timestamp jump.  If that case is encountered,
 		 * just clear the audio data in that small window and force a
 		 * resync.  This handles all cases rather than just looping. */
-		} else if (in.timestamp < source->next_audio_sys_ts_min ||
-		           diff > MAX_TS_VAR) {
+		} else if (diff > MAX_TS_VAR) {
 			reset_audio_timing(source, data->timestamp,
 					os_time);
 			in.timestamp = data->timestamp + source->timing_adjust;
