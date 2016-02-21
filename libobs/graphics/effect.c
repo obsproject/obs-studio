@@ -329,7 +329,8 @@ static inline void effect_setval_inline(gs_eparam_t *param,
 
 void gs_effect_set_bool(gs_eparam_t *param, bool val)
 {
-	effect_setval_inline(param, &val, sizeof(bool));
+	int b_val = (int)val;
+	effect_setval_inline(param, &b_val, sizeof(int));
 }
 
 void gs_effect_set_float(gs_eparam_t *param, float val)

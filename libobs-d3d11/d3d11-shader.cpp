@@ -327,7 +327,8 @@ static inline void shader_setval_inline(gs_shader_param *param,
 
 void gs_shader_set_bool(gs_sparam_t *param, bool val)
 {
-	shader_setval_inline(param, &val, sizeof(bool));
+	int b_val = (int)val;
+	shader_setval_inline(param, &b_val, sizeof(int));
 }
 
 void gs_shader_set_float(gs_sparam_t *param, float val)
