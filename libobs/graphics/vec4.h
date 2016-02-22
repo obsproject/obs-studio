@@ -207,9 +207,9 @@ static inline uint32_t vec4_to_rgba(const struct vec4 *src)
 {
 	uint32_t val;
 	val  = (uint32_t)((double)src->x * 255.0);
-	val |= (uint32_t)((double)src->y * 255.0);
-	val |= (uint32_t)((double)src->z * 255.0);
-	val |= (uint32_t)((double)src->w * 255.0);
+	val |= (uint32_t)((double)src->y * 255.0) << 8;
+	val |= (uint32_t)((double)src->z * 255.0) << 16;
+	val |= (uint32_t)((double)src->w * 255.0) << 24;
 	return val;
 }
 
@@ -217,9 +217,9 @@ static inline uint32_t vec4_to_bgra(const struct vec4 *src)
 {
 	uint32_t val;
 	val  = (uint32_t)((double)src->z * 255.0);
-	val |= (uint32_t)((double)src->y * 255.0);
-	val |= (uint32_t)((double)src->x * 255.0);
-	val |= (uint32_t)((double)src->w * 255.0);
+	val |= (uint32_t)((double)src->y * 255.0) << 8;
+	val |= (uint32_t)((double)src->x * 255.0) << 16;
+	val |= (uint32_t)((double)src->w * 255.0) << 24;
 	return val;
 }
 
