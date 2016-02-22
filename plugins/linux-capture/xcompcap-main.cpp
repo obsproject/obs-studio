@@ -354,12 +354,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 	uint8_t *texData = new uint8_t[width() * height() * 4];
 
-	for (unsigned int i = 0; i < width() * height() * 4; i += 4) {
-		texData[i + 0] = p->swapRedBlue ? 0 : 0xFF;
-		texData[i + 1] = 0;
-		texData[i + 2] = p->swapRedBlue ? 0xFF : 0;
-		texData[i + 3] = 0xFF;
-	}
+	memset(texData, 0, width() * height() * 4);
 
 	const uint8_t* texDataArr[] = { texData, 0 };
 
