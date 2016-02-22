@@ -520,6 +520,10 @@ void XCompcapMain::tick(float seconds)
 void XCompcapMain::render(gs_effect_t *effect)
 {
 	PLock lock(&p->lock, true);
+
+	if (!p->win)
+		return;
+
 	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 
 	if (!lock.isLocked() || !p->tex)
