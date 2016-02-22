@@ -354,12 +354,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 	uint8_t *texData = new uint8_t[width() * height() * 4];
 
-	for (unsigned int i = 0; i < width() * height() * 4; i += 4) {
-		texData[i + 0] = p->swapRedBlue ? 0 : 0xFF;
-		texData[i + 1] = 0;
-		texData[i + 2] = p->swapRedBlue ? 0xFF : 0;
-		texData[i + 3] = 0xFF;
-	}
+	memset(texData, 0, width() * height() * 4);
 
 	const uint8_t* texDataArr[] = { texData, 0 };
 
@@ -520,6 +515,10 @@ void XCompcapMain::tick(float seconds)
 void XCompcapMain::render(gs_effect_t *effect)
 {
 	PLock lock(&p->lock, true);
+
+	if (!p->win)
+		return;
+
 	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 
 	if (!lock.isLocked() || !p->tex)
