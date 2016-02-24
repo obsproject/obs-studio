@@ -271,6 +271,9 @@ private slots:
 	void ReloadHotkeys(obs_hotkey_id ignoreKey=OBS_INVALID_HOTKEY_ID);
 	void AdvancedChanged();
 	void AdvancedChangedRestart();
+	void SimplePathChanged();
+	void AdvancedDefaultPathChanged();
+	void AdvancedFFPathChanged();
 
 	void UpdateStreamDelayEstimate();
 
