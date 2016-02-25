@@ -307,6 +307,24 @@ float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
 	);
 }
 
+float4 PSY800_Reverse(VertInOut vert_in) : TARGET
+{
+	float x = vert_in.uv.x;
+	float y = vert_in.uv.y;
+	float x_offset   = floor(x * width  + PRECISION_OFFSET);
+	float y_offset   = floor(y * height + PRECISION_OFFSET);
+
+	float lum_offset = y_offset * width + x_offset + PRECISION_OFFSET;
+	lum_offset       = floor(lum_offset);
+
+	return float4(
+		GetOffsetColor(lum_offset),
+		GetOffsetColor(lum_offset),
+		GetOffsetColor(lum_offset),
+		1.0f
+	);
+}
+
 technique Planar420
 {
 	pass
@@ -376,5 +394,14 @@ technique NV12_Reverse
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSNV12_Reverse(vert_in);
+	}
+}
+
+technique Y800_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSY800_Reverse(vert_in);
 	}
 }

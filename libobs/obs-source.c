@@ -1191,6 +1191,7 @@ static void source_output_audio_data(obs_source_t *source,
 enum convert_type {
 	CONVERT_NONE,
 	CONVERT_NV12,
+	CONVERT_Y800,
 	CONVERT_420,
 	CONVERT_422_U,
 	CONVERT_422_Y,
@@ -1203,6 +1204,8 @@ static inline enum convert_type get_convert_type(enum video_format format)
 		return CONVERT_420;
 	case VIDEO_FORMAT_NV12:
 		return CONVERT_NV12;
+	case VIDEO_FORMAT_Y800:
+		return CONVERT_Y800;
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
@@ -1257,6 +1260,17 @@ static inline bool set_nv12_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_y800_sizes(struct obs_source *source,
+	const struct obs_source_frame *frame)
+{
+	uint32_t size = frame->width * frame->height;
+
+	source->async_convert_width  = frame->width;
+	source->async_convert_height = frame->height;
+	source->async_texture_format = GS_R8;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -1271,6 +1285,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 		case CONVERT_NV12:
 			return set_nv12_sizes(source, frame);
 			break;
+
+		case CONVERT_Y800:
+			return set_y800_sizes(source, frame);
 
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
@@ -1354,6 +1371,11 @@ static void upload_raw_frame(gs_texture_t *tex,
 					frame->width, false);
 			break;
 
+		case CONVERT_Y800:
+			gs_texture_set_image(tex, frame->data[0],
+					frame->width, false);
+			break;
+
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
 			break;
@@ -1377,6 +1399,10 @@ static const char *select_conversion_technique(enum video_format format)
 
 		case VIDEO_FORMAT_NV12:
 			return "NV12_Reverse";
+			break;
+
+		case VIDEO_FORMAT_Y800:
+			return "Y800_Reverse";
 			break;
 
 		case VIDEO_FORMAT_BGRA:
@@ -1491,6 +1517,11 @@ static bool update_async_texture(struct obs_source *source,
 
 	else if (type == CONVERT_NV12)
 		decompress_nv12((const uint8_t* const*)frame->data,
+				frame->linesize,
+				0, frame->height, ptr, linesize);
+
+	else if (type == CONVERT_Y800)
+		decompress_y800((const uint8_t* const*)frame->data,
 				frame->linesize,
 				0, frame->height, ptr, linesize);
 
@@ -2071,6 +2102,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
