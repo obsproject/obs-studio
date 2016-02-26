@@ -241,6 +241,9 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
+#define S_PATH_CHANGED  SLOT(SimplePathChanged())
+#define A_PATH_CHANGED  SLOT(AdvancedDefaultPathChanged())
+#define FF_PATH_CHANGED SLOT(AdvancedFFPathChanged())
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog          (parent),
@@ -268,6 +271,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   S_PATH_CHANGED);
 	HookWidget(ui->simpleNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecFormat,   COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -288,6 +292,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutApplyService,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   A_PATH_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecFormat,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -300,6 +305,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecTrack4,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFType,         COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   FF_PATH_CHANGED);
 	HookWidget(ui->advOutFFNoSpace,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFURL,          EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFFormat,       COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -1187,8 +1193,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecType");
 	const char *format = config_get_string(main->Config(), "AdvOut",
 			"RecFormat");
-	const char *path = config_get_string(main->Config(), "AdvOut",
-			"RecFilePath");
+	const char *path = config_get_string(main->Config(), "SimpleOutput",
+			"FilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 			"RecFileNameWithoutSpace");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
@@ -1262,8 +1268,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 {
 	bool saveFile = config_get_bool(main->Config(), "AdvOut",
 			"FFOutputToFile");
-	const char *path = config_get_string(main->Config(), "AdvOut",
-			"FFFilePath");
+	const char *path = config_get_string(main->Config(), "SimpleOutput",
+			"FilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 			"FFFileNameWithoutSpace");
 	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
@@ -2236,7 +2242,6 @@ void OBSBasicSettings::SaveOutputSettings()
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
-	SaveEdit(ui->advOutRecPath, "AdvOut", "RecFilePath");
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
 	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
@@ -2252,7 +2257,6 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	config_set_bool(main->Config(), "AdvOut", "FFOutputToFile",
 			ui->advOutFFType->currentIndex() == 0 ? true : false);
-	SaveEdit(ui->advOutFFRecPath, "AdvOut", "FFFilePath");
 	SaveCheckBox(ui->advOutFFNoSpace, "AdvOut", "FFFileNameWithoutSpace");
 	SaveEdit(ui->advOutFFURL, "AdvOut", "FFURL");
 	SaveFormat(ui->advOutFFFormat);
@@ -2551,7 +2555,7 @@ void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
 	QString dir = QFileDialog::getExistingDirectory(this,
 			QTStr("Basic.Settings.Output.SelectDirectory"),
-			ui->advOutRecPath->text(),
+			ui->advOutFFRecPath->text(),
 			QFileDialog::ShowDirsOnly |
 			QFileDialog::DontResolveSymlinks);
 	if (dir.isEmpty())
@@ -2777,6 +2781,24 @@ void OBSBasicSettings::AdvancedChangedRestart()
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
+}
+
+void OBSBasicSettings::SimplePathChanged()
+{
+	ui->advOutRecPath->setText(ui->simpleOutputPath->text());
+	ui->advOutFFRecPath->setText(ui->simpleOutputPath->text());
+}
+
+void OBSBasicSettings::AdvancedDefaultPathChanged()
+{
+	ui->simpleOutputPath->setText(ui->advOutRecPath->text());
+	ui->advOutFFRecPath->setText(ui->advOutRecPath->text());
+}
+
+void OBSBasicSettings::AdvancedFFPathChanged()
+{
+	ui->simpleOutputPath->setText(ui->advOutFFRecPath->text());
+	ui->advOutRecPath->setText(ui->advOutFFRecPath->text());
 }
 
 void OBSBasicSettings::VideoChangedResolution()
