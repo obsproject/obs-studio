@@ -313,20 +313,24 @@
             "name": "Restream.io",
             "servers": [
                 {
-                    "name": "EU Primary",
+                    "name": "EU-London",
+                    "url": "rtmp://eu-west.restream.io/live"
+                },
+                {
+                    "name": "EU-Frankfurt",
                     "url": "rtmp://eu.restream.io/live"
                 },
                 {
-                    "name": "EU Secondary",
-                    "url": "rtmp://eu-secondary.restream.io/live"
-                },
-                {
-                    "name": "US West",
+                    "name": "US-West",
                     "url": "rtmp://us-west.restream.io/live"
                 },
                 {
-                    "name": "US East",
+                    "name": "US-East",
                     "url": "rtmp://us-east.restream.io/live"
+                },
+                {
+                    "name": "AU-Sydney",
+                    "url": "rtmp://au.restream.io/live"
                 }
             ]
         },
