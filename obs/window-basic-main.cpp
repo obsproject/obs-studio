@@ -247,6 +247,7 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
 
 static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 		obs_data_array_t *quickTransitionData, int transitionDuration,
+		obs_data_array_t *transitions,
 		OBSScene &scene, OBSSource &curProgramScene)
 {
 	obs_data_t *saveData = obs_data_create();
@@ -287,6 +288,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_set_string(saveData, "name", sceneCollection);
 	obs_data_set_array(saveData, "sources", sourcesArray);
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
+	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_array_release(sourcesArray);
 
 	obs_data_set_string(saveData, "current_transition",
@@ -352,9 +354,10 @@ void OBSBasic::Save(const char *file)
 		curProgramScene = obs_scene_get_source(scene);
 
 	obs_data_array_t *sceneOrder = SaveSceneListOrder();
+	obs_data_array_t *transitions = SaveTransitions();
 	obs_data_array_t *quickTrData = SaveQuickTransitions();
 	obs_data_t *saveData  = GenerateSaveData(sceneOrder, quickTrData,
-			ui->transitionDuration->value(),
+			ui->transitionDuration->value(), transitions,
 			scene, curProgramScene);
 
 	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
@@ -363,6 +366,7 @@ void OBSBasic::Save(const char *file)
 	obs_data_release(saveData);
 	obs_data_array_release(sceneOrder);
 	obs_data_array_release(quickTrData);
+	obs_data_array_release(transitions);
 }
 
 static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
@@ -488,6 +492,7 @@ void OBSBasic::Load(const char *file)
 
 	obs_data_array_t *sceneOrder = obs_data_get_array(data, "scene_order");
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
+	obs_data_array_t *transitions= obs_data_get_array(data, "transitions");
 	const char       *sceneName = obs_data_get_string(data,
 			"current_scene");
 	const char       *programSceneName = obs_data_get_string(data,
@@ -523,8 +528,12 @@ void OBSBasic::Load(const char *file)
 
 	obs_load_sources(sources);
 
+	if (transitions)
+		LoadTransitions(transitions);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
+
+	obs_data_array_release(transitions);
 
 	curTransition = FindTransition(transitionName);
 	if (!curTransition)

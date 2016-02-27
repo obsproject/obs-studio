@@ -18,9 +18,11 @@
 #include <QSpinBox>
 #include <QWidgetAction>
 #include <QToolTip>
+#include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
 #include "display-helpers.hpp"
+#include "window-namedialog.hpp"
 #include "menu-button.hpp"
 #include "qt-wrappers.hpp"
 
@@ -301,9 +303,6 @@ void OBSBasic::SetTransition(obs_source_t *transition)
 			SetComboTransition(ui->transitions, transition);
 		obs_set_output_source(0, transition);
 		obs_transition_swap_end(transition, oldTransition);
-
-		bool showPropertiesButton = obs_source_configurable(transition);
-		ui->transitionProps->setVisible(showPropertiesButton);
 	} else {
 		obs_set_output_source(0, transition);
 	}
@@ -314,6 +313,10 @@ void OBSBasic::SetTransition(obs_source_t *transition)
 	bool fixed = transition ? obs_transition_fixed(transition) : false;
 	ui->transitionDurationLabel->setVisible(!fixed);
 	ui->transitionDuration->setVisible(!fixed);
+
+	bool configurable = obs_source_configurable(transition);
+	ui->transitionRemove->setEnabled(configurable);
+	ui->transitionProps->setEnabled(configurable);
 }
 
 OBSSource OBSBasic::GetCurrentTransition()
@@ -327,9 +330,170 @@ void OBSBasic::on_transitions_currentIndexChanged(int)
 	SetTransition(transition);
 }
 
+void OBSBasic::AddTransition()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	QString idStr = action->property("id").toString();
+
+	string name;
+	QString placeHolderText = QT_UTF8(
+			obs_source_get_display_name(QT_TO_UTF8(idStr)));
+	QString format = placeHolderText + " (%1)";
+	obs_source_t *source = nullptr;
+	int i = 1;
+
+	while ((source = FindTransition(QT_TO_UTF8(placeHolderText)))) {
+		placeHolderText = format.arg(++i);
+	}
+
+	bool accepted = NameDialog::AskForName(this,
+			QTStr("TransitionNameDlg.Title"),
+			QTStr("TransitionNameDlg.Text"),
+			name, placeHolderText);
+
+	if (accepted) {
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			AddTransition();
+			return;
+		}
+
+		source = FindTransition(name.c_str());
+		if (source) {
+			QMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+
+			AddTransition();
+			return;
+		}
+
+		source = obs_source_create_private(QT_TO_UTF8(idStr),
+						name.c_str(), NULL);
+		InitTransition(source);
+		ui->transitions->addItem(QT_UTF8(name.c_str()),
+				QVariant::fromValue(OBSSource(source)));
+		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
+		CreatePropertiesWindow(source);
+		obs_source_release(source);
+	}
+}
+
+void OBSBasic::on_transitionAdd_clicked()
+{
+	bool foundConfigurableTransitions = false;
+	QMenu menu(this);
+	size_t idx = 0;
+	const char *id;
+
+	while (obs_enum_transition_types(idx++, &id)) {
+		if (obs_is_source_configurable(id)) {
+			const char *name = obs_source_get_display_name(id);
+			QAction *action = new QAction(name, this);
+			action->setProperty("id", id);
+
+			connect(action, SIGNAL(triggered()),
+					this, SLOT(AddTransition()));
+
+			menu.addAction(action);
+			foundConfigurableTransitions = true;
+		}
+	}
+
+	if (foundConfigurableTransitions)
+		menu.exec(QCursor::pos());
+}
+
+void OBSBasic::on_transitionRemove_clicked()
+{
+	OBSSource tr = GetCurrentTransition();
+
+	if (!tr || !obs_source_configurable(tr) || !QueryRemoveSource(tr))
+		return;
+
+	int idx = ui->transitions->findData(QVariant::fromValue<OBSSource>(tr));
+	if (idx == -1)
+		return;
+
+	for (size_t i = quickTransitions.size(); i > 0; i--) {
+		QuickTransition &qt = quickTransitions[i - 1];
+		if (qt.source == tr) {
+			if (qt.button)
+				qt.button->deleteLater();
+			RemoveQuickTransitionHotkey(&qt);
+			quickTransitions.erase(quickTransitions.begin() + i - 1);
+		}
+	}
+
+	ui->transitions->removeItem(idx);
+}
+
+void OBSBasic::RenameTransition()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	QVariant variant = action->property("transition");
+	obs_source_t *transition = variant.value<OBSSource>();
+
+	string name;
+	QString placeHolderText = QT_UTF8(obs_source_get_name(transition));
+	obs_source_t *source = nullptr;
+
+	bool accepted = NameDialog::AskForName(this,
+			QTStr("TransitionNameDlg.Title"),
+			QTStr("TransitionNameDlg.Text"),
+			name, placeHolderText);
+
+	if (accepted) {
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			RenameTransition();
+			return;
+		}
+
+		source = FindTransition(name.c_str());
+		if (source) {
+			QMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+
+			RenameTransition();
+			return;
+		}
+
+		obs_source_set_name(transition, name.c_str());
+		int idx = ui->transitions->findData(variant);
+		if (idx != -1)
+			ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
+	}
+}
+
 void OBSBasic::on_transitionProps_clicked()
 {
-	// TODO
+	OBSSource source = GetCurrentTransition();
+
+	if (!obs_source_configurable(source))
+		return;
+
+	auto properties = [&] () {
+		CreatePropertiesWindow(source);
+	};
+
+	QMenu menu(this);
+
+	QAction *action = new QAction(QTStr("Rename"), this);
+	connect(action, SIGNAL(triggered()), this, SLOT(RenameTransition()));
+	action->setProperty("transition", QVariant::fromValue(source));
+	menu.addAction(action);
+
+	action = new QAction(QTStr("Properties"), this);
+	connect(action, &QAction::triggered, properties);
+	menu.addAction(action);
+
+	menu.exec(QCursor::pos());
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -874,4 +1038,52 @@ void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
 
 	programX += float(PREVIEW_EDGE_SIZE);
 	programY += float(PREVIEW_EDGE_SIZE);
+}
+
+obs_data_array_t *OBSBasic::SaveTransitions()
+{
+	obs_data_array_t *transitions = obs_data_array_create();
+
+	for (int i = 0; i < ui->transitions->count(); i++) {
+		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
+		if (!obs_source_configurable(tr))
+			continue;
+
+		obs_data_t *sourceData = obs_data_create();
+		obs_data_t *settings = obs_source_get_settings(tr);
+
+		obs_data_set_string(sourceData, "name", obs_source_get_name(tr));
+		obs_data_set_string(sourceData, "id", obs_obj_get_id(tr));
+		obs_data_set_obj(sourceData, "settings", settings);
+
+		obs_data_array_push_back(transitions, sourceData);
+
+		obs_data_release(settings);
+		obs_data_release(sourceData);
+	}
+
+	return transitions;
+}
+
+void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
+{
+	size_t count = obs_data_array_count(transitions);
+
+	for (size_t i = 0; i < count; i++) {
+		obs_data_t *item = obs_data_array_item(transitions, i);
+		const char *name = obs_data_get_string(item, "name");
+		const char *id = obs_data_get_string(item, "id");
+		obs_data_t *settings = obs_data_get_obj(item, "settings");
+
+		obs_source_t *source = obs_source_create_private(id, name,
+				settings);
+		InitTransition(source);
+		ui->transitions->addItem(QT_UTF8(name),
+				QVariant::fromValue(OBSSource(source)));
+		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
+		obs_source_release(source);
+
+		obs_data_release(settings);
+		obs_data_release(item);
+	}
 }
