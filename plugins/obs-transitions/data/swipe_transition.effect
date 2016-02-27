@@ -1,0 +1,42 @@
+uniform float4x4 ViewProj;
+uniform texture2d tex_a;
+uniform texture2d tex_b;
+uniform float2 swipe_val;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSSwipe(VertData v_in) : TARGET
+{
+	float2 swipe_uv = v_in.uv + swipe_val;
+
+	return (swipe_uv.x - saturate(swipe_uv.x) != 0.0) ||
+	       (swipe_uv.y - saturate(swipe_uv.y) != 0.0)
+		   ? tex_b.Sample(textureSampler, v_in.uv)
+		   : tex_a.Sample(textureSampler, swipe_uv);
+}
+
+technique Swipe
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSSwipe(v_in);
+	}
+}
