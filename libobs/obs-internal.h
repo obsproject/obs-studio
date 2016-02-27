@@ -385,6 +385,7 @@ struct obs_context_data {
 	obs_data_t                      *settings;
 	signal_handler_t                *signals;
 	proc_handler_t                  *procs;
+	enum obs_obj_type               type;
 
 	DARRAY(obs_hotkey_id)           hotkeys;
 	DARRAY(obs_hotkey_pair_id)      hotkey_pairs;
@@ -402,6 +403,7 @@ struct obs_context_data {
 
 extern bool obs_context_data_init(
 		struct obs_context_data *context,
+		enum obs_obj_type       type,
 		obs_data_t              *settings,
 		const char              *name,
 		obs_data_t              *hotkey_data,

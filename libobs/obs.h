@@ -560,6 +560,16 @@ typedef bool (*obs_save_source_filter_cb)(void *data, obs_source_t *source);
 EXPORT obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 		void *data);
 
+enum obs_obj_type {
+	OBS_OBJ_TYPE_INVALID,
+	OBS_OBJ_TYPE_SOURCE,
+	OBS_OBJ_TYPE_OUTPUT,
+	OBS_OBJ_TYPE_ENCODER,
+	OBS_OBJ_TYPE_SERVICE
+};
+
+EXPORT enum obs_obj_type obs_obj_get_type(void *obj);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */

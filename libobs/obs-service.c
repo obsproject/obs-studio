@@ -46,8 +46,8 @@ obs_service_t *obs_service_create(const char *id, const char *name,
 
 	service = bzalloc(sizeof(struct obs_service));
 
-	if (!obs_context_data_init(&service->context, settings, name,
-				hotkey_data, false)) {
+	if (!obs_context_data_init(&service->context, OBS_OBJ_TYPE_SERVICE,
+				settings, name, hotkey_data, false)) {
 		bfree(service);
 		return NULL;
 	}

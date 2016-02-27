@@ -79,8 +79,8 @@ bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name, obs_data_t *hotkey_data,
 		bool private)
 {
-	if (!obs_context_data_init(&source->context, settings, name,
-				hotkey_data, private))
+	if (!obs_context_data_init(&source->context, OBS_OBJ_TYPE_SOURCE,
+				settings, name, hotkey_data, private))
 		return false;
 
 	return signal_handler_add_array(source->context.signals,

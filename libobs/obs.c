@@ -1650,6 +1650,7 @@ static inline char *dup_name(const char *name, bool private)
 
 static inline bool obs_context_data_init_wrap(
 		struct obs_context_data *context,
+		enum obs_obj_type       type,
 		obs_data_t              *settings,
 		const char              *name,
 		obs_data_t              *hotkey_data,
@@ -1658,6 +1659,7 @@ static inline bool obs_context_data_init_wrap(
 	assert(context);
 	memset(context, 0, sizeof(*context));
 	context->private = private;
+	context->type = type;
 
 	pthread_mutex_init_value(&context->rename_cache_mutex);
 	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
@@ -1679,13 +1681,14 @@ static inline bool obs_context_data_init_wrap(
 
 bool obs_context_data_init(
 		struct obs_context_data *context,
+		enum obs_obj_type       type,
 		obs_data_t              *settings,
 		const char              *name,
 		obs_data_t              *hotkey_data,
 		bool                    private)
 {
-	if (obs_context_data_init_wrap(context, settings, name, hotkey_data,
-				private)) {
+	if (obs_context_data_init_wrap(context, type, settings, name,
+				hotkey_data, private)) {
 		return true;
 	} else {
 		obs_context_data_free(context);
@@ -1767,4 +1770,10 @@ profiler_name_store_t *obs_get_profiler_name_store(void)
 uint64_t obs_get_video_frame_time(void)
 {
 	return obs ? obs->video.video_time : 0;
+}
+
+enum obs_obj_type obs_obj_get_type(void *obj)
+{
+	struct obs_context_data *context = obj;
+	return context ? context->type : OBS_OBJ_TYPE_INVALID;
 }
