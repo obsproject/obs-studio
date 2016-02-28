@@ -86,6 +86,9 @@ obs_properties_t *XCompcapMain::properties()
 	obs_properties_add_bool(props, "include_border",
 			obs_module_text("IncludeXBorder"));
 
+	obs_properties_add_bool(props, "exclude_alpha",
+			obs_module_text("ExcludeAlpha"));
+
 	return props;
 }
 
@@ -100,6 +103,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "lock_x", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "include_border", false);
+	obs_data_set_default_bool(settings, "exclude_alpha", false);
 }
 
 
@@ -142,6 +146,7 @@ struct XCompcapMain_private
 	bool swapRedBlue;
 	bool lockX;
 	bool include_border;
+	bool exclude_alpha;
 
 	uint32_t width;
 	uint32_t height;
@@ -287,6 +292,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
 		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
 		p->include_border = obs_data_get_bool(settings, "include_border");
+		p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
 	} else {
 		p->win = prevWin;
 	}
@@ -322,6 +328,10 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	}
 
 	gs_color_format cf = GS_RGBA;
+
+	if (p->exclude_alpha) {
+		cf = GS_BGRX;
+	}
 
 	p->border = attr.border_width;
 
