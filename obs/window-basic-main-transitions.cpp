@@ -162,14 +162,18 @@ void OBSBasic::LoadQuickTransitions(obs_data_array_t *array)
 
 		if (id) {
 			obs_source_t *source = FindTransition(name);
-			quickTransitions.emplace_back(source, duration, id);
+			if (source) {
+				quickTransitions.emplace_back(source, duration,
+						id);
 
-			if (quickTransitionIdCounter <= id)
-				quickTransitionIdCounter = id + 1;
+				if (quickTransitionIdCounter <= id)
+					quickTransitionIdCounter = id + 1;
 
-			int idx = (int)quickTransitions.size() - 1;
-			AddQuickTransitionHotkey(&quickTransitions[idx]);
-			obs_hotkey_load(quickTransitions[idx].hotkey, hotkeys);
+				int idx = (int)quickTransitions.size() - 1;
+				AddQuickTransitionHotkey(&quickTransitions[idx]);
+				obs_hotkey_load(quickTransitions[idx].hotkey,
+						hotkeys);
+			}
 		}
 
 		obs_data_release(data);
