@@ -109,7 +109,14 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 				OBSBasicFilters::DrawPreview, this);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	enum obs_source_type type = obs_source_get_type(source);
+	uint32_t caps = obs_source_get_output_flags(source);
+	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
+		type == OBS_SOURCE_TYPE_SCENE;
+
+	if (drawable_type && (caps & OBS_SOURCE_VIDEO) != 0)
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated,
+				addDrawCallback);
 }
 
 OBSBasicFilters::~OBSBasicFilters()

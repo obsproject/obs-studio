@@ -103,7 +103,14 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 				OBSBasicProperties::DrawPreview, this);
 	};
 
-	connect(preview.data(), &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	enum obs_source_type type = obs_source_get_type(source);
+	uint32_t caps = obs_source_get_output_flags(source);
+	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
+		type == OBS_SOURCE_TYPE_SCENE;
+
+	if (drawable_type && (caps & OBS_SOURCE_VIDEO) != 0)
+		connect(preview.data(), &OBSQTDisplay::DisplayCreated,
+				addDrawCallback);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
