@@ -88,15 +88,6 @@ enum obs_source_type {
 #define OBS_SOURCE_CUSTOM_DRAW  (1<<3)
 
 /**
- * Source uses a color matrix (usually YUV sources).
- *
- * When this is used, the video_render callback will automatically assign a
- * 4x4 YUV->RGB matrix to the "color_matrix" parameter of the effect, or it can
- * be changed to a custom value.
- */
-#define OBS_SOURCE_COLOR_MATRIX (1<<4)
-
-/**
  * Source supports interaction.
  *
  * When this is used, the source will receive interaction events

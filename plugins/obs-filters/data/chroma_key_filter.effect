@@ -1,11 +1,5 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
-uniform float4x4 color_matrix = {1.0, 0.0, 0.0, 0.0,
-                                 0.0, 1.0, 0.0, 0.0,
-                                 0.0, 0.0, 1.0, 0.0,
-                                 0.0, 0.0, 0.0, 1.0};
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 
 uniform float4x4 yuv_mat = { 0.182586,  0.614231,  0.062007, 0.062745,
                             -0.100644, -0.338572,  0.439216, 0.501961,
@@ -107,26 +101,11 @@ float4 PSChromaKeyRGBA(VertData v_in) : TARGET
 	return ProcessChromaKey(rgba, v_in, false);
 }
 
-float4 PSChromaKeyMatrix(VertData v_in) : TARGET
-{
-	float4 rgba = SampleYUVToRGB(v_in.uv) * color;
-	return ProcessChromaKey(rgba, v_in, true);
-}
-
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSChromaKeyRGBA(v_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSChromaKeyMatrix(v_in);
 	}
 }

@@ -1606,11 +1606,10 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	source->rendering_filter = false;
 }
 
-static void obs_source_default_render(obs_source_t *source, bool color_matrix)
+static void obs_source_default_render(obs_source_t *source)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
-	const char     *tech_name = color_matrix ? "DrawMatrix" : "Draw";
-	gs_technique_t *tech       = gs_effect_get_technique(effect, tech_name);
+	gs_technique_t *tech       = gs_effect_get_technique(effect, "Draw");
 	size_t         passes, i;
 
 	passes = gs_technique_begin(tech);
@@ -1626,14 +1625,13 @@ static void obs_source_default_render(obs_source_t *source, bool color_matrix)
 static inline void obs_source_main_render(obs_source_t *source)
 {
 	uint32_t flags      = source->info.output_flags;
-	bool color_matrix   = (flags & OBS_SOURCE_COLOR_MATRIX) != 0;
 	bool custom_draw    = (flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	bool default_effect = !source->filter_parent &&
 	                      source->filters.num == 0 &&
 	                      !custom_draw;
 
 	if (default_effect)
-		obs_source_default_render(source, color_matrix);
+		obs_source_default_render(source);
 	else if (source->context.data)
 		source->info.video_render(source->context.data,
 				custom_draw ? NULL : gs_get_effect());
@@ -2594,10 +2592,9 @@ const char *obs_source_get_id(const obs_source_t *source)
 }
 
 static inline void render_filter_bypass(obs_source_t *target,
-		gs_effect_t *effect, bool use_matrix)
+		gs_effect_t *effect)
 {
-	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
-	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
+	gs_technique_t *tech    = gs_effect_get_technique(effect, "Draw");
 	size_t      passes, i;
 
 	passes = gs_technique_begin(tech);
@@ -2610,10 +2607,9 @@ static inline void render_filter_bypass(obs_source_t *target,
 }
 
 static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
-		uint32_t width, uint32_t height, bool use_matrix)
+		uint32_t width, uint32_t height)
 {
-	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
-	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
+	gs_technique_t *tech    = gs_effect_get_technique(effect, "Draw");
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes, i;
 
@@ -2645,7 +2641,6 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	obs_source_t *target, *parent;
 	uint32_t     target_flags, parent_flags;
 	int          cx, cy;
-	bool         use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
 		return;
@@ -2656,7 +2651,6 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	parent_flags = parent->info.output_flags;
 	cx           = get_base_width(target);
 	cy           = get_base_height(target);
-	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	filter->allow_direct = allow_direct;
 
@@ -2690,7 +2684,7 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 
 		if (target == parent && !custom_draw && !async)
-			obs_source_default_render(target, use_matrix);
+			obs_source_default_render(target);
 		else
 			obs_source_video_render(target);
 
@@ -2706,7 +2700,6 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
 	uint32_t     target_flags, parent_flags;
-	bool         use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_end"))
 		return;
@@ -2715,15 +2708,13 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 	parent       = obs_filter_get_parent(filter);
 	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
-	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
-		render_filter_bypass(target, effect, use_matrix);
+		render_filter_bypass(target, effect);
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);
 		if (texture)
-			render_filter_tex(texture, effect, width, height,
-					use_matrix);
+			render_filter_tex(texture, effect, width, height);
 	}
 }
 
@@ -2732,7 +2723,6 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 	obs_source_t *target, *parent;
 	bool custom_draw, async;
 	uint32_t parent_flags;
-	bool use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_skip_video_filter"))
 		return;
@@ -2742,11 +2732,10 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 	parent_flags = parent->info.output_flags;
 	custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
-	use_matrix = !!(parent_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	if (target == parent) {
 		if (!custom_draw && !async)
-			obs_source_default_render(target, use_matrix);
+			obs_source_default_render(target);
 		else if (target->info.video_render)
 			obs_source_main_render(target);
 		else
