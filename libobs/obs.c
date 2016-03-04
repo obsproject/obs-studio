@@ -1474,7 +1474,8 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 	return obs_load_source_type(source_data);
 }
 
-void obs_load_sources(obs_data_array_t *array)
+void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
+		void *private_data)
 {
 	if (!obs) return;
 
@@ -1507,6 +1508,7 @@ void obs_load_sources(obs_data_array_t *array)
 			if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 				obs_transition_load(source, source_data);
 			obs_source_load(source);
+			cb(private_data, source);
 		}
 		obs_data_release(source_data);
 	}

@@ -550,8 +550,11 @@ EXPORT obs_data_t *obs_save_source(obs_source_t *source);
 /** Loads a source from settings data */
 EXPORT obs_source_t *obs_load_source(obs_data_t *data);
 
+typedef void (*obs_load_source_cb)(void *private_data, obs_source_t *source);
+
 /** Loads sources from a data array */
-EXPORT void obs_load_sources(obs_data_array_t *array);
+EXPORT void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
+		void *private_data);
 
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);

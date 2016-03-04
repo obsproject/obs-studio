@@ -526,7 +526,7 @@ void OBSBasic::Load(const char *file)
 	LoadAudioDevice(AUX_AUDIO_2,     4, data);
 	LoadAudioDevice(AUX_AUDIO_3,     5, data);
 
-	obs_load_sources(sources);
+	obs_load_sources(sources, OBSBasic::SourceLoaded, this);
 
 	if (transitions)
 		LoadTransitions(transitions);
@@ -835,8 +835,6 @@ void OBSBasic::InitOBSCallbacks()
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
 	signalHandlers.reserve(signalHandlers.size() + 6);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_load",
-			OBSBasic::SourceLoaded, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
 			OBSBasic::SourceRemoved, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate",
@@ -2031,10 +2029,9 @@ void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
 			Q_ARG(bool, false));
 }
 
-void OBSBasic::SourceLoaded(void *data, calldata_t *params)
+void OBSBasic::SourceLoaded(void *data, obs_source_t *source)
 {
 	OBSBasic *window = static_cast<OBSBasic*>(data);
-	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
 		QMetaObject::invokeMethod(window,
