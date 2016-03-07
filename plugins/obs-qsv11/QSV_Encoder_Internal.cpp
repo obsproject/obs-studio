@@ -123,7 +123,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	memset(&m_mfxEncParams, 0, sizeof(m_mfxEncParams));
 	
 	m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
-	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_CLOSED;
+	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_STRICT;
 	m_mfxEncParams.mfx.NumSlice = 1;
 	m_mfxEncParams.mfx.TargetUsage = pParams->nTargetUsage;
 	m_mfxEncParams.mfx.CodecProfile = pParams->nCodecProfile;

@@ -494,7 +494,8 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
 	packet->dts = pBS->DecodeTimeStamp * fps_num / 90000;
-	packet->keyframe = ((pBS->FrameType & MFX_FRAMETYPE_IDR) || (pBS->FrameType & MFX_FRAMETYPE_REF));
+	// packet->keyframe = ((pBS->FrameType & MFX_FRAMETYPE_IDR) || (pBS->FrameType & MFX_FRAMETYPE_REF));
+	packet->keyframe = (pBS->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
 	
 	*received_packet = true;
 	pBS->DataLength = 0;
