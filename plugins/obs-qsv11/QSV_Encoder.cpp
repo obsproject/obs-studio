@@ -88,7 +88,6 @@ int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS, uint16_
 int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV, mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	mfxFrameSurface1 *pSurface = NULL;
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (pDataY != NULL && pDataUV != NULL)

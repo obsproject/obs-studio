@@ -71,31 +71,20 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version) :
 {
 	m_impl = impl;
 	m_ver = version;
-	mfxStatus sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
-	if (sts == MFX_ERR_NONE)
-		m_pmfxENC = new MFXVideoENCODE(m_session);
 }
 
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
 {
-	ClearData();
-
-	if (m_pmfxENC != NULL)
-	{
-		delete m_pmfxENC;
-		m_pmfxENC = NULL;
-	}
-
-	Release();
-	m_session.Close();
 }
 
 
 mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 {
-	mfxStatus sts = MFX_ERR_NONE;
-	
+	mfxStatus sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
+	if (sts == MFX_ERR_NONE)
+		m_pmfxENC = new MFXVideoENCODE(m_session);
+
 	InitParams(pParams);
 
 	sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
@@ -347,7 +336,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 
 		mfxU8 *pTemp = m_outBitstream.Data;
 		memcpy(&m_outBitstream, &m_pTaskPool[m_nFirstSyncTask].mfxBS, sizeof(mfxBitstream));
-
+		 
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.Data = pTemp;
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataLength = 0;
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataOffset = 0;
@@ -398,53 +387,6 @@ mfxStatus QSV_Encoder_Internal::Drain()
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-	/* We don't care what's in the queue. Throw them away and skip this part. 
-	//
-	// Drain the buffered encoded frames
-	//
-	while (MFX_ERR_NONE <= sts) 
-	{
-		int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
-		if (MFX_ERR_NOT_FOUND == nTaskIdx) 
-		{
-			// No more free tasks, need to sync
-			sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
-			MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-			m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
-			m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
-		}
-		else 
-		{
-			for (;;) 
-			{
-				// Encode a frame asychronously (returns immediately)
-				sts = m_pmfxENC->EncodeFrameAsync(NULL, NULL, &m_pTaskPool[nTaskIdx].mfxBS, &m_pTaskPool[nTaskIdx].syncp);
-
-				if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) 
-				{   // Repeat the call if warning and no output
-					if (MFX_WRN_DEVICE_BUSY == sts)
-						MSDK_SLEEP(1);  // Wait if device is busy, then repeat the same call
-				}
-				else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) 
-				{
-					sts = MFX_ERR_NONE;     // Ignore warnings if output is available
-					break;
-				}
-				else
-					break;
-			}
-		}
-	}
-
-	// MFX_ERR_MORE_DATA indicates that there are no more buffered frames, exit in case of other errors
-	MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
-	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-	*/
-
-	//
-	// Sync all remaining tasks in task pool
-	//
 	while (m_pTaskPool[m_nFirstSyncTask].syncp) 
 	{
 		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
@@ -475,6 +417,15 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
 
 	delete m_outBitstream.Data;
+
+	if (m_pmfxENC != NULL)
+	{
+		delete m_pmfxENC;
+		m_pmfxENC = NULL;
+	}
+
+	Release();
+	m_session.Close();
 
 	return sts;
 }

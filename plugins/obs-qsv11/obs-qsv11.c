@@ -65,6 +65,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "QSV_Encoder.h"
+#include <Windows.h>
 
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, \
@@ -85,15 +86,17 @@ struct obs_qsv {
 	DARRAY(uint8_t)        packet_data;
 
 	uint8_t                *extra_data;
-	// uint8_t                *sei;
+	uint8_t                *sei;
 
 	size_t                 extra_data_size;
-	// size_t                 sei_size;
+	size_t                 sei_size;
 
 	os_performance_token_t *performance_token;
 };
 
 /* ------------------------------------------------------------------------- */
+
+static CRITICAL_SECTION g_QsvCs;
 
 static const char *obs_qsv_getname(void *type_data)
 {
@@ -367,44 +370,53 @@ static bool update_settings(struct obs_qsv *obsqsv, obs_data_t *settings)
 	return true;
 }
 
-static bool obs_qsv_update(void *data, obs_data_t *settings)
-{
-	struct obs_qsv *obsqsv = data;
-	bool success = update_settings(obsqsv, settings);
-	int ret;
-
-	if (success) {
-		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
-		if (ret != 0)
-			warn("Failed to reconfigure: %d", ret);
-		return ret == 0;
-	}
-
-	return false;
-}
-
 static void load_headers(struct obs_qsv *obsqsv)
 {
 	DARRAY(uint8_t) header;
-	DARRAY(uint8_t) sei;
+	uint8_t sei = 0;
+	// DARRAY(uint8_t) sei;
 
 	da_init(header);
-	da_init(sei);
+	// da_init(sei);
 
 	uint8_t *pSPS, *pPPS;
 	uint16_t nSPS, nPPS;
 	qsv_encoder_headers(obsqsv->context, &pSPS, &pPPS, &nSPS, &nPPS);
 	da_push_back_array(header, pSPS, nSPS);
 	da_push_back_array(header, pPPS, nPPS);
-	
+
 	obsqsv->extra_data = header.array;
 	obsqsv->extra_data_size = header.num;
-	// obsqsv->sei = sei.array;
-	// obsqsv->sei_size = sei.num;
+	obsqsv->sei = &sei;
+	obsqsv->sei_size = 1;
+}
+
+static bool obs_qsv_update(void *data, obs_data_t *settings)
+{
+	struct obs_qsv *obsqsv = data;
+	bool success = update_settings(obsqsv, settings);
+	int ret;
+
+	
+	if (success) {
+		EnterCriticalSection(&g_QsvCs);
+
+		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
+		if (ret != 0) 
+			warn("Failed to reconfigure: %d", ret);
+		
+		LeaveCriticalSection(&g_QsvCs);
+
+		return ret == 0;
+	}
+
+	return false;
 }
 
 static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+	InitializeCriticalSection(&g_QsvCs);
+
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
 
@@ -454,8 +466,8 @@ static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 	UNUSED_PARAMETER(sei);
 	UNUSED_PARAMETER(size);
 
-	// *sei = obsqsv->sei;
-	// *size = obsqsv->sei_size;
+	*sei = obsqsv->sei;
+	*size = obsqsv->sei_size;
 	return true;
 }
 
@@ -508,6 +520,9 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encod
 	if (!frame || !packet || !received_packet)
 		return false;
 
+	EnterCriticalSection(&g_QsvCs);
+		
+		
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
@@ -532,11 +547,13 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encod
 	if (ret < 0)
 	{
 		warn("encode failed");
-		return false;
+		return false; 
 	}
 
 	parse_packet(obsqsv, packet, pBS, voi->fps_num, received_packet);
 	
+	LeaveCriticalSection(&g_QsvCs);
+
 	return true;
 }
 
@@ -552,7 +569,6 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_properties = obs_qsv_props,
 	.get_defaults = obs_qsv_defaults,
 	.get_extra_data = obs_qsv_extra_data,
-	// .get_sei_data = obs_qsv_sei,
-	.get_sei_data = obs_qsv_extra_data,
+	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info
 };
