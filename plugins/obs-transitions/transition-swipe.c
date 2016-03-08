@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <graphics/vec2.h>
+#include "easings.h"
 
 struct swipe_info {
 	obs_source_t *source;
@@ -15,16 +16,6 @@ struct swipe_info {
 
 #define S_DIRECTION "direction"
 #define S_SWIPE_IN  "swipe_in"
-
-static float get_easing(float t)
-{
-	if (t < 0.5f) {
-		return 4.0f * t * t * t;
-	} else {
-		float temp = (2.0f * t - 2.0f);
-		return (t - 1.0f) * temp * temp + 1.0f;
-	}
-}
 
 static const char *swipe_get_name(void *type_data)
 {
@@ -93,7 +84,7 @@ static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	if (swipe->swipe_in)
 		vec2_neg(&swipe_val, &swipe_val);
 
-	t = get_easing(t);
+	t = cubic_ease_in_out(t);
 
 	vec2_mulf(&swipe_val, &swipe_val, swipe->swipe_in ? 1.0f - t : t);
 
@@ -115,13 +106,13 @@ static void swipe_video_render(void *data, gs_effect_t *effect)
 static float mix_a(void *data, float t)
 {
 	UNUSED_PARAMETER(data);
-	return 1.0f - get_easing(t);
+	return 1.0f - cubic_ease_in_out(t);
 }
 
 static float mix_b(void *data, float t)
 {
 	UNUSED_PARAMETER(data);
-	return get_easing(t);
+	return cubic_ease_in_out(t);
 }
 
 static bool swipe_audio_render(void *data, uint64_t *ts_out,
