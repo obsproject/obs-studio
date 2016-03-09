@@ -374,6 +374,10 @@ static void load_headers(struct obs_qsv *obsqsv)
 {
 	DARRAY(uint8_t) header;
 	uint8_t sei = 0;
+
+	// Not sure if SEI is needed.  
+	// Just filling in empty meaningless SEI message. 
+	// Seems to work fine. 
 	// DARRAY(uint8_t) sei;
 
 	da_init(header);
@@ -505,9 +509,30 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->size = obsqsv->packet_data.num;
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
-	packet->dts = pBS->DecodeTimeStamp * fps_num / 90000;
-	// packet->keyframe = ((pBS->FrameType & MFX_FRAMETYPE_IDR) || (pBS->FrameType & MFX_FRAMETYPE_REF));
 	packet->keyframe = (pBS->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
+	
+	if (pBS->DecodeTimeStamp == MFX_TIMESTAMP_UNKNOWN)
+	{
+		bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+		bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+		bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+		int64_t interval = obsqsv->params.nbFrames + 1;
+		int64_t shift = (obsqsv->params.nFpsNum / obsqsv->params.nFpsDen * obsqsv->params.nKeyIntSec);
+		shift = shift - (shift / interval) * interval;
+		
+		if (packet->pts == 0)
+			packet->dts = -1;
+		else if (bFrame)
+			packet->dts = packet->pts;
+		else if (pFrame)
+			packet->dts = packet->pts - interval;
+		else if (iFrame)
+			packet->dts = packet->pts - shift;
+	}
+	else
+	{
+		packet->dts = pBS->DecodeTimeStamp * fps_num / 90000;
+	}
 	
 	*received_packet = true;
 	pBS->DataLength = 0;
