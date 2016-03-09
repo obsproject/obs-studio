@@ -196,8 +196,6 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	mfxStatus sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	EncRequest.NumFrameSuggested = EncRequest.NumFrameSuggested + m_mfxEncParams.AsyncDepth;
-
 	EncRequest.Type |= WILL_WRITE;
 
 	// Allocate required surfaces
