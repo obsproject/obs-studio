@@ -517,17 +517,19 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 		bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
 		bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
 		int64_t interval = obsqsv->params.nbFrames + 1;
-		int64_t shift = (obsqsv->params.nFpsNum / obsqsv->params.nFpsDen * obsqsv->params.nKeyIntSec);
-		shift = shift - (shift / interval) * interval;
 		
 		if (packet->pts == 0)
-			packet->dts = -1;
+			packet->dts = -obsqsv->params.nFpsDen;
 		else if (bFrame)
 			packet->dts = packet->pts;
 		else if (pFrame)
-			packet->dts = packet->pts - interval;
+			packet->dts = packet->pts - interval * obsqsv->params.nFpsDen;
 		else if (iFrame)
-			packet->dts = packet->pts - shift;
+		{
+			int64_t GopPicSize = (int64_t)(obsqsv->params.nKeyIntSec * obsqsv->params.nFpsNum / (float)obsqsv->params.nFpsDen);
+			int64_t shift = GopPicSize - (GopPicSize / interval) * interval;
+			packet->dts = packet->pts - shift * obsqsv->params.nFpsDen;
+		}
 	}
 	else
 	{
