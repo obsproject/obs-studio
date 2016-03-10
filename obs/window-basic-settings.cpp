@@ -2231,7 +2231,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
 
+
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
+	SaveEdit(ui->simpleOutputPath, "AdvOut", "RecFilePath");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
@@ -2243,6 +2245,7 @@ void OBSBasicSettings::SaveOutputSettings()
 			RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
+	SaveEdit(ui->simpleOutputPath, "AdvOut", "FFFilePath");
 	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
