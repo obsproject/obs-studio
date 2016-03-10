@@ -60,7 +60,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mfxvideo++.h"
 
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version) :
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_pmfxENC(NULL),
 	m_nSPSBufferSize(100),
 	m_nPPSBufferSize(100),
@@ -69,8 +69,19 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version) :
 	m_nTaskIdx(0),
 	m_nFirstSyncTask(0)
 {
+	mfxStatus sts = m_session.Init(impl, &version);
+	if (sts != MFX_ERR_NONE)
+	{
+		version.Major = 0;
+		return;
+	}
+
+	m_session.QueryVersion(&version);
+	m_session.Close();
+	
 	m_impl = impl;
 	m_ver = version;
+
 }
 
 

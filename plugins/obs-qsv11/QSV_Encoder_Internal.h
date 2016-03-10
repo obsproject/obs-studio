@@ -62,7 +62,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class QSV_Encoder_Internal
 {
 public:
-	QSV_Encoder_Internal(mfxIMPL impl, mfxVersion version);
+	QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version);
 	~QSV_Encoder_Internal();
 
 	mfxStatus	Open(qsv_param_t * pParams);

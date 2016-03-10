@@ -54,6 +54,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <obs-module.h>
+#include "mfxsession.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-qsv11", "en-US")
@@ -62,6 +63,17 @@ extern struct obs_encoder_info obs_qsv_encoder;
 
 bool obs_module_load(void)
 {
-	obs_register_encoder(&obs_qsv_encoder);
+	mfxIMPL		impl = MFX_IMPL_HARDWARE_ANY;
+	mfxVersion	ver = { {0 , 1} };
+	mfxSession	session;
+	mfxStatus	sts;
+
+	sts = MFXInit(impl, &ver, &session);
+	
+	if (sts == MFX_ERR_NONE) {
+		obs_register_encoder(&obs_qsv_encoder);
+		MFXClose(session);
+	}
+	
 	return true;
 }

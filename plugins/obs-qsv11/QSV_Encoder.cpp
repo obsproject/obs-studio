@@ -62,7 +62,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 QSV_Encoder_Internal *g_pEncoder = NULL;
 mfxIMPL				impl = MFX_IMPL_HARDWARE_ANY;
-mfxVersion			ver = { { 3, 1 } }; // for backward compatibility
+mfxVersion			ver = { { 0, 1 } }; // for backward compatibility
+
+void qsv_encoder_version(unsigned short *major, unsigned short *minor)
+{
+	*major = ver.Major;
+	*minor = ver.Minor;
+}
 
 qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 {

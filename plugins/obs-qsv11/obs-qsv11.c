@@ -97,6 +97,9 @@ struct obs_qsv {
 /* ------------------------------------------------------------------------- */
 
 static CRITICAL_SECTION g_QsvCs;
+static unsigned short	g_verMajor;
+static unsigned short	g_verMinor;
+static int64_t			g_pts2dtsShift;
 
 static const char *obs_qsv_getname(void *type_data)
 {
@@ -436,6 +439,20 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 		warn("bad settings specified");
 	}
 
+	qsv_encoder_version(&g_verMajor, &g_verMinor);
+
+	// MSDK 1.6 or less doesn't have automatic DTS calculation
+	// including early SandyBridge.
+	// Need to add manual DTS from PTS. 
+	if (g_verMajor <= 1 && g_verMinor < 7)
+	{
+		int64_t interval = obsqsv->params.nbFrames + 1;
+		int64_t GopPicSize = (int64_t)(obsqsv->params.nKeyIntSec * obsqsv->params.nFpsNum / (float)obsqsv->params.nFpsDen);
+		g_pts2dtsShift = GopPicSize - (GopPicSize / interval) * interval;
+	}
+	else
+		g_pts2dtsShift = -1;
+
 	if (!obsqsv->context) {
 		bfree(obsqsv);
 		return NULL;
@@ -511,7 +528,10 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
 	packet->keyframe = (pBS->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
 	
-	if (pBS->DecodeTimeStamp == MFX_TIMESTAMP_UNKNOWN)
+	// In case MSDK does't support automatic DecodeTimeStamp, do manual calculation
+	// Seems to have some artifact after dynamically changing encoder parameters, 
+	// but quickly recovers. 
+	if (g_pts2dtsShift >= 0)
 	{
 		bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
 		bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
@@ -525,11 +545,7 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 		else if (pFrame)
 			packet->dts = packet->pts - interval * obsqsv->params.nFpsDen;
 		else if (iFrame)
-		{
-			int64_t GopPicSize = (int64_t)(obsqsv->params.nKeyIntSec * obsqsv->params.nFpsNum / (float)obsqsv->params.nFpsDen);
-			int64_t shift = GopPicSize - (GopPicSize / interval) * interval;
-			packet->dts = packet->pts - shift * obsqsv->params.nFpsDen;
-		}
+			packet->dts = packet->pts - g_pts2dtsShift * obsqsv->params.nFpsDen;
 	}
 	else
 	{
