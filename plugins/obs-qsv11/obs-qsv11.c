@@ -100,6 +100,7 @@ static CRITICAL_SECTION g_QsvCs;
 static unsigned short	g_verMajor;
 static unsigned short	g_verMinor;
 static int64_t			g_pts2dtsShift;
+static bool				g_bFirst;
 
 static const char *obs_qsv_getname(void *type_data)
 {
@@ -461,6 +462,8 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	obsqsv->performance_token =
 		os_request_high_performance("qsv encoding");
 
+	g_bFirst = true;
+
 	return obsqsv;
 }
 
@@ -538,8 +541,8 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 		bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
 		int64_t interval = obsqsv->params.nbFrames + 1;
 		
-		if (packet->pts == 0)
-			packet->dts = -obsqsv->params.nFpsDen;
+		if (g_bFirst)
+			packet->dts = packet->pts - obsqsv->params.nFpsDen;
 		else if (bFrame)
 			packet->dts = packet->pts;
 		else if (pFrame)
@@ -554,6 +557,8 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	
 	*received_packet = true;
 	pBS->DataLength = 0;
+
+	g_bFirst = false;
 }
 
 static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
