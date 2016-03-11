@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QSV_Encoder.h"
 #include "mfxastructures.h"
 #include "mfxvideo++.h"
-
+#include <VersionHelpers.h>
 
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_pmfxENC(NULL),
@@ -82,6 +82,7 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_impl = impl;
 	m_ver = version;
 
+	m_bIsWindows8OrGreater = IsWindows8OrGreater();
 }
 
 
@@ -92,7 +93,15 @@ QSV_Encoder_Internal::~QSV_Encoder_Internal()
 
 mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 {
-	mfxStatus sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
+	mfxStatus sts = MFX_ERR_NONE;
+
+	if (m_bIsWindows8OrGreater)
+		// Use D3D11 implementation and surface
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
+	else
+		// Use Auto implementation and system memory
+		sts = Initialize(m_impl, m_ver, &m_session, NULL);
+
 	if (sts == MFX_ERR_NONE)
 		m_pmfxENC = new MFXVideoENCODE(m_session);
 
@@ -114,7 +123,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	sts = InitBitstream();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	return sts;
+	return sts; 
 }
  
 
@@ -194,7 +203,10 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
 	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
-	m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+	if (m_bIsWindows8OrGreater)
+		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+	else
+		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 	
 	return true;
 }
@@ -210,22 +222,44 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	EncRequest.Type |= WILL_WRITE;
 
 	// Allocate required surfaces
-	sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest, &m_mfxResponse);
-	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+	if (m_bIsWindows8OrGreater) {
+		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest, &m_mfxResponse);
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	m_nSurfNum = m_mfxResponse.NumFrameActual;
+		m_nSurfNum = m_mfxResponse.NumFrameActual;
 
-	m_pmfxSurfaces = new mfxFrameSurface1 *[m_nSurfNum];
-	MSDK_CHECK_POINTER(m_pmfxSurfaces, MFX_ERR_MEMORY_ALLOC);
+		m_pmfxSurfaces = new mfxFrameSurface1 *[m_nSurfNum];
+		MSDK_CHECK_POINTER(m_pmfxSurfaces, MFX_ERR_MEMORY_ALLOC);
 
-	for (int i = 0; i < m_nSurfNum; i++) 
-	{
-		m_pmfxSurfaces[i] = new mfxFrameSurface1;
-		memset(m_pmfxSurfaces[i], 0, sizeof(mfxFrameSurface1));
-		memcpy(&(m_pmfxSurfaces[i]->Info), &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-		m_pmfxSurfaces[i]->Data.MemId = m_mfxResponse.mids[i];
+		for (int i = 0; i < m_nSurfNum; i++)
+		{
+			m_pmfxSurfaces[i] = new mfxFrameSurface1;
+			memset(m_pmfxSurfaces[i], 0, sizeof(mfxFrameSurface1));
+			memcpy(&(m_pmfxSurfaces[i]->Info), &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
+			m_pmfxSurfaces[i]->Data.MemId = m_mfxResponse.mids[i];
+		}
 	}
+	else {
+		mfxU16 width = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Width);
+		mfxU16 height = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Height);
+		mfxU8  bitsPerPixel = 12;
+		mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
+		m_nSurfNum = EncRequest.NumFrameSuggested;
 
+		m_pmfxSurfaces = new mfxFrameSurface1 *[m_nSurfNum];
+		for (int i = 0; i < m_nSurfNum; i++)
+		{
+			m_pmfxSurfaces[i] = new mfxFrameSurface1;
+			memset(m_pmfxSurfaces[i], 0, sizeof(mfxFrameSurface1));
+			memcpy(&(m_pmfxSurfaces[i]->Info), &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
+			
+			mfxU8* pSurface = (mfxU8*) new mfxU8[surfaceSize];
+			m_pmfxSurfaces[i]->Data.Y = pSurface;
+			m_pmfxSurfaces[i]->Data.U = pSurface + width * height;
+			m_pmfxSurfaces[i]->Data.V = pSurface + width * height + 1;
+			m_pmfxSurfaces[i]->Data.Pitch = width;
+		}
+	}
 	return sts;
 }
 
@@ -359,10 +393,15 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 	}
 	
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
-	sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+	if (m_bIsWindows8OrGreater)
+		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+	
 	sts = LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
 	pSurface->Data.TimeStamp = ts;
-	sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+
+	if (m_bIsWindows8OrGreater)
+		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
+	
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	for (;;) 
@@ -415,10 +454,15 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	
 	sts = m_pmfxENC->Close();
 	
-	m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
+	if (m_bIsWindows8OrGreater)
+		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
 
-	for (int i = 0; i < m_nSurfNum; i++)
+	for (int i = 0; i < m_nSurfNum; i++) {
+		if (!m_bIsWindows8OrGreater)
+			delete m_pmfxSurfaces[i]->Data.Y;
+
 		delete m_pmfxSurfaces[i];
+	}
 	MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 
 	for (int i = 0; i < m_nTaskPool; i++)

@@ -73,7 +73,7 @@ mfxStatus CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND hWnd, bo
 {
     //Note: not using bCreateSharedHandles for DX11 -- for API consistency only
     hWnd; // Window handle not required by DX11 since we do not showcase rendering.
-    bCreateSharedHandles; // (Hugh) Parameter also unused currently
+    bCreateSharedHandles; // For rendering, not used here. Just for consistencies sake. 
 
     HRESULT hres = S_OK;
 

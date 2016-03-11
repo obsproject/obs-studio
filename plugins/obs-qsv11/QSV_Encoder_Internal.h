@@ -101,5 +101,6 @@ private:
 	int						m_nTaskIdx;
 	int						m_nFirstSyncTask;
 	mfxBitstream			m_outBitstream;
+	bool					m_bIsWindows8OrGreater;
 };
 

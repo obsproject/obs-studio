@@ -29,17 +29,16 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
 
     mfxStatus sts = MFX_ERR_NONE;
 
-#ifdef DX11_D3D
-    impl |= MFX_IMPL_VIA_D3D11;
-#endif
+    
 
-    // Initialize Intel Media SDK Session
-    sts = pSession->Init(impl, &ver);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-#if defined(DX9_D3D) || defined(DX11_D3D)
     // If mfxFrameAllocator is provided it means we need to setup DirectX device and memory allocator
     if (pmfxAllocator) {
+		impl |= MFX_IMPL_VIA_D3D11;
+
+		// Initialize Intel Media SDK Session
+		sts = pSession->Init(impl, &ver);
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
         // Create DirectX device context
         mfxHDL deviceHandle;
         sts = CreateHWDevice(*pSession, &deviceHandle, NULL, bCreateSharedHandles);
@@ -60,8 +59,14 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
         sts = pSession->SetFrameAllocator(pmfxAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-#endif
+	else
+	{
+		impl |= MFX_IMPL_VIA_ANY;
 
+		// Initialize Intel Media SDK Session
+		sts = pSession->Init(impl, &ver); 
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+	}
     return sts;
 }
 
