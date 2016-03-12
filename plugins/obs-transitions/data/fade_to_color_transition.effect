@@ -1,0 +1,37 @@
+uniform float4x4  ViewProj;
+uniform texture2d tex;
+uniform float     swp;
+uniform float4    color;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSFadeToColor(VertData v_in) : TARGET
+{
+	return lerp(tex.Sample(textureSampler, v_in.uv), color, swp);
+}
+
+technique FadeToColor
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSFadeToColor(v_in);
+	}
+}
