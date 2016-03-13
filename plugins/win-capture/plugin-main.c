@@ -50,7 +50,7 @@ bool obs_module_load(void)
 
 	obs_register_source(&window_capture_info);
 
-	if (cached_versions_match() && load_cached_graphics_offsets(IS32BIT)) {
+	if (/*cached_versions_match() &&*/ load_cached_graphics_offsets(IS32BIT)) {
 		load_cached_graphics_offsets(!IS32BIT);
 		obs_register_source(&game_capture_info);
 
