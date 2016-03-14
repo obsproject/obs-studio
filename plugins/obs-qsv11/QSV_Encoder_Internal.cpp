@@ -181,10 +181,24 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 		break;
 	}
 	
-	
-	m_mfxEncParams.mfx.GopPicSize = (mfxU16) (pParams->nKeyIntSec * pParams->nFpsNum / (float) pParams->nFpsDen);
-	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1; 
-	
+	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
+	m_mfxEncParams.mfx.GopPicSize = (mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum / (float)pParams->nFpsDen);
+
+	static mfxExtBuffer* extendedBuffers[2];
+	int iBuffers = 0;
+	if (pParams->nAsyncDepth == 1)
+	{
+		// low latency, I and P frames only
+		m_mfxEncParams.mfx.GopRefDist = 1;
+		memset(&m_co, 0, sizeof(mfxExtCodingOption));
+		m_co.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+		m_co.Header.BufferSz = sizeof(mfxExtCodingOption);
+		m_co.MaxDecFrameBuffering = 1;
+		extendedBuffers[iBuffers++] = (mfxExtBuffer*)&m_co;
+	}
+	else
+		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
+
 	if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
 		pParams->nRateControl == MFX_RATECONTROL_LA)
 	{
@@ -192,17 +206,20 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
 		m_co2.Header.BufferSz = sizeof(m_co2);
 		m_co2.LookAheadDepth = pParams->nLADEPTH;
-		static mfxExtBuffer* extendedBuffers[1];
-		extendedBuffers[0] = (mfxExtBuffer*)& m_co2;
+		extendedBuffers[iBuffers++] = (mfxExtBuffer*)& m_co2;
+	}
+
+	if (iBuffers > 0)
+	{
 		m_mfxEncParams.ExtParam = extendedBuffers;
-		m_mfxEncParams.NumExtParam = 1;
+		m_mfxEncParams.NumExtParam = iBuffers;
 	}
 
 	// Width must be a multiple of 16
 	// Height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
-	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
+	
 	if (m_bIsWindows8OrGreater)
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else

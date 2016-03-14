@@ -96,6 +96,7 @@ private:
 	mfxU16					m_nPPSBufferSize;
 	mfxVideoParam			m_parameter;
 	mfxExtCodingOption2		m_co2;
+	mfxExtCodingOption		m_co;
 	mfxU16					m_nTaskPool;
 	Task*					m_pTaskPool;
 	int						m_nTaskIdx;

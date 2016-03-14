@@ -245,8 +245,8 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	add_strings(list, qsv_profile_names);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
-	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 0, 20, 1);
-	
+	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 1, 7, 1);
+
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, qsv_ratecontrol_names);
