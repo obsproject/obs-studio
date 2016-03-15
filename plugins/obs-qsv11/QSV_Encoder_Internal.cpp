@@ -318,6 +318,8 @@ void QSV_Encoder_Internal::GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *p
 mfxStatus QSV_Encoder_Internal::InitBitstream()
 {
 	m_nTaskPool = m_parameter.AsyncDepth;
+	m_nFirstSyncTask = 0;
+
 	m_pTaskPool = new Task[m_nTaskPool];
 	memset(m_pTaskPool, 0, sizeof(Task) * m_nTaskPool);
 	for (int i = 0; i < m_nTaskPool; i++) {
@@ -385,10 +387,9 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
-	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);    // Find free input frame surface
 	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
 
-	if (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx)
+	if (MFX_ERR_NOT_FOUND == nTaskIdx) // || MFX_ERR_NOT_FOUND == nSurfIdx) 
 	{
 		// No more free tasks or surfaces, need to sync
 		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
@@ -401,14 +402,12 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataLength = 0;
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataOffset = 0;
 		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
+		nTaskIdx = m_nFirstSyncTask;
 		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 		*pBS = &m_outBitstream;
-		if (nTaskIdx == MFX_ERR_NOT_FOUND)
-			nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
-		if (nSurfIdx == MFX_ERR_NOT_FOUND)
-			nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
 	}
 	
+	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	if (m_bIsWindows8OrGreater)
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
