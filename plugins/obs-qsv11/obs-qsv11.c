@@ -152,7 +152,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "icq_quality", 23);
 	obs_data_set_default_int(settings, "la_depth", 40);
 
-	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "keyint_sec", 3);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -244,7 +244,7 @@ static obs_properties_t *obs_qsv_props(void *unused)
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, qsv_profile_names);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
 	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 1, 7, 1);
 
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
