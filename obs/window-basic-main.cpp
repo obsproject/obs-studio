@@ -2747,6 +2747,71 @@ void OBSBasic::EditSceneItemName()
 	item->setFlags(flags);
 }
 
+void OBSBasic::SetDeinterlacingMode()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	obs_deinterlace_mode mode =
+		(obs_deinterlace_mode)action->property("mode").toInt();
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
+
+	obs_source_set_deinterlace_mode(source, mode);
+}
+
+void OBSBasic::SetDeinterlacingOrder()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	obs_deinterlace_field_order order =
+		(obs_deinterlace_field_order)action->property("order").toInt();
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
+
+	obs_source_set_deinterlace_field_order(source, order);
+}
+
+QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
+{
+	QMenu *menu = new QMenu(QTStr("Deinterlacing"));
+	obs_deinterlace_mode deinterlaceMode =
+		obs_source_get_deinterlace_mode(source);
+	obs_deinterlace_field_order deinterlaceOrder =
+		obs_source_get_deinterlace_field_order(source);
+	QAction *action;
+
+#define ADD_MODE(name, mode) \
+	action = menu->addAction(QTStr("" name), this, \
+				SLOT(SetDeinterlacingMode())); \
+	action->setProperty("mode", (int)mode); \
+	action->setCheckable(true); \
+	action->setChecked(deinterlaceMode == mode);
+
+	ADD_MODE("Disable",                OBS_DEINTERLACE_MODE_DISABLE);
+	ADD_MODE("Deinterlacing.Discard",  OBS_DEINTERLACE_MODE_DISCARD);
+	ADD_MODE("Deinterlacing.Retro",    OBS_DEINTERLACE_MODE_RETRO);
+	ADD_MODE("Deinterlacing.Blend",    OBS_DEINTERLACE_MODE_BLEND);
+	ADD_MODE("Deinterlacing.Blend2x",  OBS_DEINTERLACE_MODE_BLEND_2X);
+	ADD_MODE("Deinterlacing.Linear",   OBS_DEINTERLACE_MODE_LINEAR);
+	ADD_MODE("Deinterlacing.Linear2x", OBS_DEINTERLACE_MODE_LINEAR_2X);
+	ADD_MODE("Deinterlacing.Yadif",    OBS_DEINTERLACE_MODE_YADIF);
+	ADD_MODE("Deinterlacing.Yadif2x",  OBS_DEINTERLACE_MODE_YADIF_2X);
+#undef ADD_MODE
+
+	menu->addSeparator();
+
+#define ADD_ORDER(name, order) \
+	action = menu->addAction(QTStr("Deinterlacing." name), this, \
+				SLOT(SetDeinterlacingOrder())); \
+	action->setProperty("order", (int)order); \
+	action->setCheckable(true); \
+	action->setChecked(deinterlaceOrder == order);
+
+	ADD_ORDER("TopFieldFirst",    OBS_DEINTERLACE_FIELD_ORDER_TOP);
+	ADD_ORDER("BottomFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_BOTTOM);
+#undef ADD_ORDER
+
+	return menu;
+}
+
 void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 {
 	QMenu popup(this);
@@ -2782,6 +2847,9 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 		OBSSceneItem sceneItem = GetSceneItem(item);
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
+		uint32_t flags = obs_source_get_output_flags(source);
+		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
+			OBS_SOURCE_ASYNC_VIDEO;
 		QAction *action;
 
 		popup.addAction(QTStr("Rename"), this,
@@ -2798,6 +2866,10 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				SLOT(OpenSourceProjector()));
 
 		popup.addSeparator();
+		if (isAsyncVideo) {
+			popup.addMenu(AddDeinterlacingMenu(source));
+			popup.addSeparator();
+		}
 		popup.addMenu(sourceProjector);
 		popup.addSeparator();
 
