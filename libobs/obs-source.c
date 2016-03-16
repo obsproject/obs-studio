@@ -481,8 +481,8 @@ void obs_source_destroy(struct obs_source *source)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
 
 	gs_enter_context(obs->video.graphics);
-	if (source->async_convert_texrender)
-		gs_texrender_destroy(source->async_convert_texrender);
+	if (source->async_texrender)
+		gs_texrender_destroy(source->async_texrender);
 	if (source->async_texture)
 		gs_texture_destroy(source->async_texture);
 	if (source->filter_texrender)
@@ -1291,13 +1291,13 @@ bool set_async_texture_size(struct obs_source *source,
 	source->async_format = frame->format;
 
 	gs_texture_destroy(source->async_texture);
-	gs_texrender_destroy(source->async_convert_texrender);
-	source->async_convert_texrender = NULL;
+	gs_texrender_destroy(source->async_texrender);
+	source->async_texrender = NULL;
 
 	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
 		source->async_gpu_conversion = true;
 
-		source->async_convert_texrender =
+		source->async_texrender =
 			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
 
 		source->async_texture = gs_texture_create(
@@ -1495,8 +1495,8 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	gs_texture_t *tex = source->async_texture;
 	gs_eparam_t  *param;
 
-	if (source->async_convert_texrender)
-		tex = gs_texrender_get_texture(source->async_convert_texrender);
+	if (source->async_texrender)
+		tex = gs_texrender_get_texture(source->async_texrender);
 
 	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
@@ -1565,7 +1565,7 @@ static void obs_source_update_async_video(obs_source_t *source)
 			if (set_async_texture_size(source, frame)) {
 				update_async_texture(source, frame,
 						source->async_texture,
-						source->async_convert_texrender);
+						source->async_texrender);
 			}
 
 			obs_source_release_frame(source, frame);
