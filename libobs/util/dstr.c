@@ -432,10 +432,11 @@ void dstr_insert(struct dstr *dst, const size_t idx, const char *array)
 	new_len = dst->len + len;
 
 	dstr_ensure_capacity(dst, new_len + 1);
-	dst->len   = new_len;
 
 	memmove(dst->array+idx+len, dst->array+idx, dst->len - idx + 1);
 	memcpy(dst->array+idx, array, len);
+
+	dst->len = new_len;
 }
 
 void dstr_insert_dstr(struct dstr *dst, const size_t idx,
@@ -452,10 +453,11 @@ void dstr_insert_dstr(struct dstr *dst, const size_t idx,
 	new_len = dst->len + str->len;
 
 	dstr_ensure_capacity(dst, (new_len+1));
-	dst->len = new_len;
 
 	memmove(dst->array+idx+str->len, dst->array+idx, dst->len - idx + 1);
 	memcpy(dst->array+idx, str->array, str->len);
+
+	dst->len = new_len;
 }
 
 void dstr_insert_ch(struct dstr *dst, const size_t idx, const char ch)
