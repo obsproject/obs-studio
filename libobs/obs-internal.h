@@ -262,6 +262,15 @@ struct obs_core_video {
 	enum obs_scale_type             scale_type;
 
 	gs_texture_t                    *transparent_texture;
+
+	gs_effect_t                     *deinterlace_discard_effect;
+	gs_effect_t                     *deinterlace_discard_2x_effect;
+	gs_effect_t                     *deinterlace_linear_effect;
+	gs_effect_t                     *deinterlace_linear_2x_effect;
+	gs_effect_t                     *deinterlace_blend_effect;
+	gs_effect_t                     *deinterlace_blend_2x_effect;
+	gs_effect_t                     *deinterlace_yadif_effect;
+	gs_effect_t                     *deinterlace_yadif_2x_effect;
 };
 
 struct obs_core_audio {
@@ -591,6 +600,18 @@ struct obs_source {
 	uint32_t                        async_convert_width;
 	uint32_t                        async_convert_height;
 
+	/* async video deinterlacing */
+	uint64_t                        deinterlace_offset;
+	uint64_t                        deinterlace_frame_ts;
+	gs_effect_t                     *deinterlace_effect;
+	struct obs_source_frame         *prev_async_frame;
+	gs_texture_t                    *async_prev_texture;
+	gs_texrender_t                  *async_prev_texrender;
+	uint32_t                        deinterlace_half_duration;
+	enum obs_deinterlace_mode       deinterlace_mode;
+	bool                            deinterlace_top_first;
+	bool                            deinterlace_rendered;
+
 	/* filters */
 	struct obs_source               *filter_parent;
 	struct obs_source               *filter_target;
@@ -717,6 +738,12 @@ extern bool set_async_texture_size(struct obs_source *source,
 		const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source,
 		struct obs_source_frame *frame);
+
+extern void set_deinterlace_texture_size(obs_source_t *source);
+extern void deinterlace_process_last_frame(obs_source_t *source,
+		uint64_t sys_time);
+extern void deinterlace_update_async_video(obs_source_t *source);
+extern void deinterlace_render(obs_source_t *s);
 
 
 /* ------------------------------------------------------------------------- */

@@ -34,6 +34,11 @@ static inline bool data_valid(const struct obs_source *source, const char *f)
 	return obs_source_valid(source, f) && source->context.data;
 }
 
+static inline bool deinterlacing_enabled(const struct obs_source *source)
+{
+	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
+}
+
 const struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
@@ -109,6 +114,12 @@ static void allocate_audio_output_buffer(struct obs_source *source)
 	}
 }
 
+static inline bool is_async_video_source(const struct obs_source *source)
+{
+	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
+		OBS_SOURCE_ASYNC_VIDEO;
+}
+
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -118,6 +129,8 @@ static inline bool is_composite_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
 }
+
+extern char *find_libobs_data_file(const char *file);
 
 /* internal initialization */
 bool obs_source_init(struct obs_source *source)
@@ -173,6 +186,7 @@ bool obs_source_init(struct obs_source *source)
 	}
 
 	source->control = bzalloc(sizeof(obs_weak_source_t));
+	source->deinterlace_top_first = true;
 	source->control->source = source;
 	source->audio_mixers = 0xF;
 
@@ -483,8 +497,12 @@ void obs_source_destroy(struct obs_source *source)
 	gs_enter_context(obs->video.graphics);
 	if (source->async_texrender)
 		gs_texrender_destroy(source->async_texrender);
+	if (source->async_prev_texrender)
+		gs_texrender_destroy(source->async_prev_texrender);
 	if (source->async_texture)
 		gs_texture_destroy(source->async_texture);
+	if (source->async_prev_texture)
+		gs_texture_destroy(source->async_prev_texture);
 	if (source->filter_texrender)
 		gs_texrender_destroy(source->filter_texrender);
 	gs_leave_context();
@@ -903,12 +921,20 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 		uint64_t sys_time = obs->video.video_time;
 
 		pthread_mutex_lock(&source->async_mutex);
-		if (source->cur_async_frame) {
-			remove_async_frame(source, source->cur_async_frame);
-			source->cur_async_frame = NULL;
+
+		if (deinterlacing_enabled(source)) {
+			deinterlace_process_last_frame(source, sys_time);
+		} else {
+			if (source->cur_async_frame) {
+				remove_async_frame(source,
+						source->cur_async_frame);
+				source->cur_async_frame = NULL;
+			}
+
+			source->cur_async_frame = get_closest_frame(source,
+					sys_time);
 		}
 
-		source->cur_async_frame = get_closest_frame(source, sys_time);
 		source->last_sys_timestamp = sys_time;
 		pthread_mutex_unlock(&source->async_mutex);
 	}
@@ -948,6 +974,7 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 		source->info.video_tick(source->context.data, seconds);
 
 	source->async_rendered = false;
+	source->deinterlace_rendered = false;
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
@@ -1291,8 +1318,13 @@ bool set_async_texture_size(struct obs_source *source,
 	source->async_format = frame->format;
 
 	gs_texture_destroy(source->async_texture);
+	gs_texture_destroy(source->async_prev_texture);
 	gs_texrender_destroy(source->async_texrender);
+	gs_texrender_destroy(source->async_prev_texrender);
+	source->async_texture = NULL;
+	source->async_prev_texture = NULL;
 	source->async_texrender = NULL;
+	source->async_prev_texrender = NULL;
 
 	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
 		source->async_gpu_conversion = true;
@@ -1315,6 +1347,9 @@ bool set_async_texture_size(struct obs_source *source,
 				frame->width, frame->height,
 				format, 1, NULL, GS_DYNAMIC);
 	}
+
+	if (deinterlacing_enabled(source))
+		set_deinterlace_texture_size(source);
 
 	return !!source->async_texture;
 }
@@ -1627,8 +1662,11 @@ static inline void render_video(obs_source_t *source)
 
 	if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
 	    (source->info.output_flags & OBS_SOURCE_ASYNC) != 0 &&
-	    !source->rendering_filter)
+	    !source->rendering_filter) {
+		if (deinterlacing_enabled(source))
+			deinterlace_update_async_video(source);
 		obs_source_update_async_video(source);
+	}
 
 	if (!source->context.data || !source->enabled) {
 		if (source->filter_parent)
@@ -1644,6 +1682,9 @@ static inline void render_video(obs_source_t *source)
 
 	else if (source->filter_target)
 		obs_source_video_render(source->filter_target);
+
+	else if (deinterlacing_enabled(source))
+		deinterlace_render(source);
 
 	else
 		obs_source_render_async_video(source);
@@ -2077,6 +2118,7 @@ static inline void free_async_cache(struct obs_source *source)
 	da_resize(source->async_cache, 0);
 	da_resize(source->async_frames, 0);
 	source->cur_async_frame = NULL;
+	source->prev_async_frame = NULL;
 }
 
 #define MAX_UNUSED_FRAME_DURATION 5
@@ -2355,6 +2397,9 @@ void obs_source_output_audio(obs_source_t *source,
 
 void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 {
+	if (frame)
+		frame->prev_frame = false;
+
 	for (size_t i = 0; i < source->async_cache.num; i++) {
 		struct async_frame *f = &source->async_cache.array[i];
 
@@ -2735,6 +2780,8 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 			obs_source_default_render(target);
 		else if (target->info.video_render)
 			obs_source_main_render(target);
+		else if (deinterlacing_enabled(target))
+			deinterlace_render(target);
 		else
 			obs_source_render_async_video(target);
 

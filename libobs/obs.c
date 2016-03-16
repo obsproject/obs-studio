@@ -1412,6 +1412,8 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	int64_t      sync;
 	uint32_t     flags;
 	uint32_t     mixers;
+	int          di_order;
+	int          di_mode;
 
 	source = obs_source_create(id, name, settings, hotkeys);
 
@@ -1454,6 +1456,14 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_set_default_int(source_data, "push-to-talk-delay", 0);
 	obs_source_set_push_to_talk_delay(source,
 			obs_data_get_int(source_data, "push-to-talk-delay"));
+
+	di_mode = (int)obs_data_get_int(source_data, "deinterlace_mode");
+	obs_source_set_deinterlace_mode(source,
+			(enum obs_deinterlace_mode)di_mode);
+
+	di_order = (int)obs_data_get_int(source_data, "deinterlace_field_order");
+	obs_source_set_deinterlace_field_order(source,
+			(enum obs_deinterlace_field_order)di_order);
 
 	if (filters) {
 		size_t count = obs_data_array_count(filters);
@@ -1551,6 +1561,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	uint64_t   ptm_delay   = obs_source_get_push_to_mute_delay(source);
 	bool       push_to_talk= obs_source_push_to_talk_enabled(source);
 	uint64_t   ptt_delay   = obs_source_get_push_to_talk_delay(source);
+	int        di_mode     = (int)obs_source_get_deinterlace_mode(source);
+	int        di_order    =
+		(int)obs_source_get_deinterlace_field_order(source);
 
 	obs_source_save(source);
 	hotkeys = obs_hotkeys_save_source(source);
@@ -1575,6 +1588,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_bool  (source_data, "push-to-talk", push_to_talk);
 	obs_data_set_int   (source_data, "push-to-talk-delay", ptt_delay);
 	obs_data_set_obj   (source_data, "hotkeys",  hotkey_data);
+	obs_data_set_int   (source_data, "deinterlace_mode", di_mode);
+	obs_data_set_int   (source_data, "deinterlace_field_order", di_order);
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_save(source, source_data);
