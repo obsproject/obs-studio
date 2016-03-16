@@ -888,8 +888,6 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 		uint64_t sys_time);
-static void remove_async_frame(obs_source_t *source,
-		struct obs_source_frame *frame);
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
 {
@@ -965,8 +963,6 @@ static inline size_t conv_time_to_frames(const size_t sample_rate,
 	return (size_t)(duration * (uint64_t)sample_rate / 1000000000ULL);
 }
 
-/* maximum timestamp variance in nanoseconds */
-#define MAX_TS_VAR          2000000000ULL
 /* maximum buffer size */
 #define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
 
@@ -1280,18 +1276,7 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 	return false;
 }
 
-static inline enum gs_color_format convert_video_format(
-		enum video_format format)
-{
-	if (format == VIDEO_FORMAT_RGBA)
-		return GS_RGBA;
-	else if (format == VIDEO_FORMAT_BGRA)
-		return GS_BGRA;
-
-	return GS_BGRX;
-}
-
-static inline bool set_async_texture_size(struct obs_source *source,
+bool set_async_texture_size(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
 	enum convert_type cur = get_convert_type(frame->format);
@@ -1565,9 +1550,6 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 		gs_technique_end(tech);
 	}
 }
-
-static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
-		struct obs_source_frame *in);
 
 static void obs_source_update_async_video(obs_source_t *source)
 {
@@ -1986,7 +1968,7 @@ obs_data_t *obs_source_get_settings(const obs_source_t *source)
 	return source->context.settings;
 }
 
-static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
+struct obs_source_frame *filter_async_video(obs_source_t *source,
 		struct obs_source_frame *in)
 {
 	size_t i;
@@ -2373,16 +2355,7 @@ void obs_source_output_audio(obs_source_t *source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
-static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
-{
-	if (ts < source->last_frame_ts)
-		return ((source->last_frame_ts - ts) > MAX_TS_VAR);
-	else
-		return ((ts - source->last_frame_ts) > MAX_TS_VAR);
-}
-
-static void remove_async_frame(obs_source_t *source,
-		struct obs_source_frame *frame)
+void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 {
 	for (size_t i = 0; i < source->async_cache.num; i++) {
 		struct async_frame *f = &source->async_cache.array[i];

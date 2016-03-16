@@ -675,6 +675,28 @@ static inline void obs_source_dosignal(struct obs_source *source,
 				&data);
 }
 
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR          2000000000ULL
+
+static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
+{
+	if (ts < source->last_frame_ts)
+		return ((source->last_frame_ts - ts) > MAX_TS_VAR);
+	else
+		return ((ts - source->last_frame_ts) > MAX_TS_VAR);
+}
+
+static inline enum gs_color_format convert_video_format(
+		enum video_format format)
+{
+	if (format == VIDEO_FORMAT_RGBA)
+		return GS_RGBA;
+	else if (format == VIDEO_FORMAT_BGRA)
+		return GS_BGRA;
+
+	return GS_BGRX;
+}
+
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
 extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t *source, float seconds);
@@ -685,6 +707,13 @@ extern void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 		size_t channels, size_t sample_rate, size_t size);
 
 extern void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy);
+
+extern struct obs_source_frame *filter_async_video(obs_source_t *source,
+		struct obs_source_frame *in);
+extern bool set_async_texture_size(struct obs_source *source,
+		const struct obs_source_frame *frame);
+extern void remove_async_frame(obs_source_t *source,
+		struct obs_source_frame *frame);
 
 
 /* ------------------------------------------------------------------------- */
