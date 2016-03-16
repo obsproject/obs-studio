@@ -371,6 +371,8 @@ extern struct obs_core *obs;
 
 extern void *obs_video_thread(void *param);
 
+extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
+
 extern bool audio_callback(void *param,
 		uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts,
 		uint32_t mixers, struct audio_output_data *mixes);

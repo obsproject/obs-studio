@@ -215,6 +215,17 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	return true;
 }
 
+gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
+{
+	if (!*effect) {
+		char *filename = find_libobs_data_file(file);
+		*effect = gs_effect_create_from_file(filename, NULL);
+		bfree(filename);
+	}
+
+	return *effect;
+}
+
 static int obs_init_graphics(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
