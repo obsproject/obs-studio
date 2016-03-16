@@ -1382,11 +1382,9 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 }
 
 static bool update_async_texrender(struct obs_source *source,
-		const struct obs_source_frame *frame)
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender)
 {
-	gs_texture_t   *tex       = source->async_texture;
-	gs_texrender_t *texrender = source->async_convert_texrender;
-
 	gs_texrender_reset(texrender);
 
 	upload_raw_frame(tex, frame);
@@ -1439,11 +1437,10 @@ static bool update_async_texrender(struct obs_source *source,
 	return true;
 }
 
-static bool update_async_texture(struct obs_source *source,
-		const struct obs_source_frame *frame)
+bool update_async_texture(struct obs_source *source,
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender)
 {
-	gs_texture_t      *tex       = source->async_texture;
-	gs_texrender_t    *texrender = source->async_convert_texrender;
 	enum convert_type type      = get_convert_type(frame->format);
 	uint8_t           *ptr;
 	uint32_t          linesize;
@@ -1458,7 +1455,7 @@ static bool update_async_texture(struct obs_source *source,
 			sizeof frame->color_range_max);
 
 	if (source->async_gpu_conversion && texrender)
-		return update_async_texrender(source, frame);
+		return update_async_texrender(source, frame, tex, texrender);
 
 	if (type == CONVERT_NONE) {
 		gs_texture_set_image(tex, frame->data[0], frame->linesize[0],
@@ -1565,13 +1562,14 @@ static void obs_source_update_async_video(obs_source_t *source)
 				os_gettime_ns() - frame->timestamp;
 			source->timing_set = true;
 
-			if (!set_async_texture_size(source, frame))
-				return;
-			if (!update_async_texture(source, frame))
-				return;
-		}
+			if (set_async_texture_size(source, frame)) {
+				update_async_texture(source, frame,
+						source->async_texture,
+						source->async_convert_texrender);
+			}
 
-		obs_source_release_frame(source, frame);
+			obs_source_release_frame(source, frame);
+		}
 	}
 }
 

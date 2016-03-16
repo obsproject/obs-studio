@@ -710,6 +710,9 @@ extern void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy);
 
 extern struct obs_source_frame *filter_async_video(obs_source_t *source,
 		struct obs_source_frame *in);
+extern bool update_async_texture(struct obs_source *source,
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender);
 extern bool set_async_texture_size(struct obs_source *source,
 		const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source,
