@@ -381,14 +381,22 @@ static bool check_file_integrity(struct game_capture *gc, const char *file,
 {
 	DWORD error;
 	HANDLE handle;
+	wchar_t *w_file = NULL;
 
 	if (!file || !*file) {
 		warn("Game capture %s not found." STOP_BEING_BAD, name);
 		return false;
 	}
 
-	handle = CreateFileA(file, GENERIC_READ | GENERIC_EXECUTE,
+	if (!os_utf8_to_wcs_ptr(file, 0, &w_file)) {
+		warn("Could not convert file name to wide string");
+		return false;
+	}
+
+	handle = CreateFileW(w_file, GENERIC_READ | GENERIC_EXECUTE,
 			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+
+	bfree(w_file);
 
 	if (handle != INVALID_HANDLE_VALUE) {
 		CloseHandle(handle);
