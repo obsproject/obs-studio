@@ -58,6 +58,10 @@
                     "url": "rtmp://live-arn.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Warsaw, Poland",
+                    "url": "rtmp://live-waw.twitch.tv/app"
+                },
+                {
                     "name": "South America: Argentina",
                     "url": "rtmp://live-eze.twitch.tv/app"
                 },
