@@ -23,6 +23,8 @@ extern bool load_graphics_offsets(bool is32bit);
 #define IS32BIT true
 #endif
 
+#define USE_HOOK_ADDRESS_CACHE false
+
 bool obs_module_load(void)
 {
 	struct win_version_info ver;
@@ -50,7 +52,10 @@ bool obs_module_load(void)
 
 	obs_register_source(&window_capture_info);
 
-	if (/*cached_versions_match() &&*/ load_cached_graphics_offsets(IS32BIT)) {
+	if (USE_HOOK_ADDRESS_CACHE &&
+	    cached_versions_match() &&
+	    load_cached_graphics_offsets(IS32BIT)) {
+
 		load_cached_graphics_offsets(!IS32BIT);
 		obs_register_source(&game_capture_info);
 
