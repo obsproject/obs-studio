@@ -471,7 +471,7 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 		return;
 
 	// texelFetch doesn't need a sampler
-	if (param->sampler_id == -1)
+	if (param->sampler_id != (size_t)-1)
 		sampler = device->cur_samplers[param->sampler_id];
 	else
 		sampler = NULL;
