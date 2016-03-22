@@ -151,6 +151,8 @@ static obs_properties_t *swipe_properties(void *data)
 			"down");
 
 	obs_properties_add_bool(ppts, S_SWIPE_IN, obs_module_text("SwipeIn"));
+
+	UNUSED_PARAMETER(data);
 	return ppts;
 }
 
