@@ -648,6 +648,8 @@ static bool init_connect(struct rtmp_stream *stream)
 	dstr_copy(&stream->key,      obs_service_get_key(service));
 	dstr_copy(&stream->username, obs_service_get_username(service));
 	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_depad(&stream->path);
+	dstr_depad(&stream->key);
 	stream->drop_threshold_usec =
 		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
 	stream->max_shutdown_time_sec =
