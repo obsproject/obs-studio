@@ -367,7 +367,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		bfree(srcdata->texbuf);
 		srcdata->texbuf = NULL;
 	}
-	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h * 4);
+	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h);
 
 	if (srcdata->font_face)
 		cache_standard_glyphs(srcdata);
