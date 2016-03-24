@@ -465,6 +465,21 @@
                     "url": "rtmp://de.live.cashplay.tv/live"
                 }
             ]
+        },
+        {
+            "name": "DJlive.pl",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.djlive.pl/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "max video bitrate": 1300,
+                "max audio bitrate": 320
+            }
         }
     ]
 }
