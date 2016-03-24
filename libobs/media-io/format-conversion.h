@@ -47,6 +47,11 @@ EXPORT void decompress_nv12(
 		uint32_t start_y, uint32_t end_y,
 		uint8_t *output, uint32_t out_linesize);
 
+EXPORT void decompress_y800(
+		const uint8_t *const input[], const uint32_t in_linesize[],
+		uint32_t start_y, uint32_t end_y,
+		uint8_t *output, uint32_t out_linesize);
+
 EXPORT void decompress_420(
 		const uint8_t *const input[], const uint32_t in_linesize[],
 		uint32_t start_y, uint32_t end_y,

@@ -36,6 +36,7 @@ enum video_format {
 	/* planar 420 format */
 	VIDEO_FORMAT_I420, /* three-plane */
 	VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
+	VIDEO_FORMAT_Y800, /* Greyscale, luma plane only, 8-bit per pixel */
 
 	/* packed 422 formats */
 	VIDEO_FORMAT_YVYU,
