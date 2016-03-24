@@ -374,6 +374,7 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 	case VideoFormat::I420:  return VIDEO_FORMAT_I420;
 	case VideoFormat::YV12:  return VIDEO_FORMAT_I420;
 	case VideoFormat::NV12:  return VIDEO_FORMAT_NV12;
+	case VideoFormat::Y800:  return VIDEO_FORMAT_Y800;
 	case VideoFormat::YVYU:  return VIDEO_FORMAT_YVYU;
 	case VideoFormat::YUY2:  return VIDEO_FORMAT_YUY2;
 	case VideoFormat::UYVY:  return VIDEO_FORMAT_UYVY;
@@ -479,6 +480,10 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 		frame.data[1] = frame.data[0] + (cx * cy);
 		frame.linesize[0] = cx;
 		frame.linesize[1] = cx;
+
+	} else if (videoConfig.format == VideoFormat::Y800) {
+		frame.data[0] = data;
+		frame.linesize[0] = cx;
 
 	} else {
 		/* TODO: other formats */
@@ -745,14 +750,20 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
 
 	DeviceId id;
-	if (!DecodeDeviceId(id, video_device_id.c_str()))
+	if (!DecodeDeviceId(id, video_device_id.c_str())) {
+		blog(LOG_WARNING, "%s: DecodeDeviceId failed",
+			obs_source_get_name(source));
 		return false;
+	}
 
 	PropertiesData data;
 	Device::EnumVideoDevices(data.devices);
 	VideoDevice dev;
-	if (!data.GetDevice(dev, video_device_id.c_str()))
+	if (!data.GetDevice(dev, video_device_id.c_str())) {
+		blog(LOG_WARNING, "%s: data.GetDevice failed",
+			obs_source_get_name(source));
 		return false;
+	}
 
 	int resType = (int)obs_data_get_int(settings, RES_TYPE);
 	int cx = 0, cy = 0;
@@ -762,8 +773,11 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	if (resType == ResType_Custom) {
 		bool has_autosel_val;
 		string resolution = obs_data_get_string(settings, RESOLUTION);
-		if (!ResolutionValid(resolution, cx, cy))
+		if (!ResolutionValid(resolution, cx, cy)) {
+			blog(LOG_WARNING, "%s: ResolutionValid failed",
+				obs_source_get_name(source));
 			return false;
+		}
 
 		has_autosel_val = obs_data_has_autoselect_value(settings,
 				FRAME_INTERVAL);
@@ -778,12 +792,16 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 
 		long long best_interval = numeric_limits<long long>::max();
 		bool video_format_match = false;
-		if (!CapsMatch(dev,
-			ResolutionMatcher(cx, cy),
-			VideoFormatMatcher(format, video_format_match),
-			ClosestFrameRateSelector(interval, best_interval),
-			FrameRateMatcher(interval)) && !video_format_match)
+		bool caps_match = CapsMatch(dev, ResolutionMatcher(cx, cy),
+				VideoFormatMatcher(format, video_format_match),
+				ClosestFrameRateSelector(interval, best_interval),
+				FrameRateMatcher(interval));
+
+		if (!caps_match && !video_format_match) {
+			blog(LOG_WARNING, "%s: Video format match failed",
+				obs_source_get_name(source));
 			return false;
+		}
 
 		interval = best_interval;
 	}
@@ -806,13 +824,19 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	if (videoConfig.internalFormat != VideoFormat::MJPEG)
 		videoConfig.format = videoConfig.internalFormat;
 
-	if (!device.SetVideoConfig(&videoConfig))
+	if (!device.SetVideoConfig(&videoConfig)) {
+		blog(LOG_WARNING, "%s: device.SetVideoConfig failed",
+			obs_source_get_name(source));
 		return false;
+	}
 
 	if (videoConfig.internalFormat == VideoFormat::MJPEG) {
 		videoConfig.format = VideoFormat::XRGB;
-		if (!device.SetVideoConfig(&videoConfig))
+		if (!device.SetVideoConfig(&videoConfig)) {
+			blog(LOG_WARNING, "%s: device.SetVideoConfig (XRGB) "
+					"failed", obs_source_get_name(source));
 			return false;
+		}
 	}
 
 	DStr formatName = GetVideoFormatName(videoConfig.internalFormat);
@@ -1174,6 +1198,7 @@ static const VideoFormatName videoFormatNames[] = {
 	{VideoFormat::I420,  "I420"},
 	{VideoFormat::NV12,  "NV12"},
 	{VideoFormat::YV12,  "YV12"},
+	{VideoFormat::Y800,  "Y800"},
 
 	/* packed YUV formats */
 	{VideoFormat::YVYU,  "YVYU"},
