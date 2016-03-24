@@ -814,7 +814,7 @@
              <item>
               <widget class="QTabWidget" name="advOutTabs">
                <property name="currentIndex">
-                <number>0</number>
+                <number>1</number>
                </property>
                <property name="usesScrollButtons">
                 <bool>true</bool>
@@ -1170,7 +1170,7 @@
                              </item>
                             </layout>
                            </item>
-                           <item row="1" column="1">
+                           <item row="2" column="1">
                             <widget class="QCheckBox" name="advOutNoSpace">
                              <property name="text">
                               <string>Basic.Settings.Output.NoSpaceFileName</string>
@@ -1180,7 +1180,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="2" column="0">
+                           <item row="3" column="0">
                             <widget class="QLabel" name="label_43">
                              <property name="text">
                               <string>Basic.Settings.Output.Format</string>
@@ -1190,7 +1190,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="2" column="1">
+                           <item row="3" column="1">
                             <widget class="QComboBox" name="advOutRecFormat">
                              <item>
                               <property name="text">
@@ -1224,14 +1224,14 @@
                              </item>
                             </widget>
                            </item>
-                           <item row="3" column="0">
+                           <item row="4" column="0">
                             <widget class="QLabel" name="label_29">
                              <property name="text">
                               <string>Basic.Settings.Output.Adv.AudioTrack</string>
                              </property>
                             </widget>
                            </item>
-                           <item row="3" column="1">
+                           <item row="4" column="1">
                             <widget class="QWidget" name="widget_9" native="true">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -1283,7 +1283,7 @@
                              </layout>
                             </widget>
                            </item>
-                           <item row="4" column="0">
+                           <item row="5" column="0">
                             <widget class="QLabel" name="advOutRecEncLabel">
                              <property name="text">
                               <string>Basic.Settings.Output.Encoder</string>
@@ -1293,10 +1293,10 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="4" column="1">
+                           <item row="5" column="1">
                             <widget class="QComboBox" name="advOutRecEncoder"/>
                            </item>
-                           <item row="5" column="0">
+                           <item row="6" column="0">
                             <widget class="QCheckBox" name="advOutRecUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -1312,7 +1312,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="5" column="1">
+                           <item row="6" column="1">
                             <widget class="QWidget" name="advOutRecRescaleContainer" native="true">
                              <layout class="QHBoxLayout" name="horizontalLayout_4">
                               <property name="leftMargin">
@@ -1340,7 +1340,7 @@
                              </layout>
                             </widget>
                            </item>
-                           <item row="6" column="0">
+                           <item row="7" column="0">
                             <widget class="QLabel" name="label_9001">
                              <property name="text">
                               <string>Basic.Settings.Output.CustomMuxerSettings</string>
@@ -1350,8 +1350,18 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="6" column="1">
+                           <item row="7" column="1">
                             <widget class="QLineEdit" name="advOutMuxCustom"/>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QLineEdit" name="advOutRecFilename"/>
+                           </item>
+                           <item row="1" column="0">
+                            <widget class="QLabel" name="label_7">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.Recording.Filename</string>
+                             </property>
+                            </widget>
                            </item>
                           </layout>
                          </widget>
@@ -2784,8 +2794,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>525</width>
-              <height>383</height>
+              <width>622</width>
+              <height>610</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">

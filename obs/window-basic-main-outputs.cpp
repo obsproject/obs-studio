@@ -932,7 +932,8 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 bool AdvancedOutput::StartRecording()
 {
 	const char *path;
-	const char *format;
+	const char *recFormat;
+	const char *filenameFormat;
 	bool noSpace = false;
 
 	if (!useStreamEncoder) {
@@ -951,8 +952,10 @@ bool AdvancedOutput::StartRecording()
 	if (!ffmpegOutput || ffmpegRecording) {
 		path = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFFilePath" : "RecFilePath");
-		format = config_get_string(main->Config(), "AdvOut",
+		recFormat = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFExtension" : "RecFormat");
+		filenameFormat = config_get_string(main->Config(), "AdvOut",
+							"RecFilename");
 		noSpace = config_get_bool(main->Config(), "AdvOut",
 				ffmpegRecording ?
 				"FFFileNameWithoutSpace" :
@@ -976,7 +979,8 @@ bool AdvancedOutput::StartRecording()
 		if (lastChar != '/' && lastChar != '\\')
 			strPath += "/";
 
-		strPath += GenerateTimeDateFilename(format, noSpace);
+		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
+							filenameFormat);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings,
