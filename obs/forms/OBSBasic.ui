@@ -104,11 +104,251 @@
       </widget>
       <widget class="QWidget" name="gridLayoutWidget_2">
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="1" column="4">
+        <item row="0" column="5">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Basic.SceneTransitions</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="5">
          <layout class="QVBoxLayout" name="buttonsVLayout">
           <property name="spacing">
            <number>2</number>
           </property>
+          <item>
+           <widget class="QFrame" name="frame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>2</number>
+             </property>
+             <property name="topMargin">
+              <number>2</number>
+             </property>
+             <property name="rightMargin">
+              <number>2</number>
+             </property>
+             <property name="bottomMargin">
+              <number>2</number>
+             </property>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout">
+               <property name="spacing">
+                <number>4</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="transitions">
+                 <property name="minimumSize">
+                  <size>
+                   <width>120</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>250</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <property name="spacing">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <spacer name="horizontalSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Minimum</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="transitionAdd">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.AddTransition</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.AddTransition</string>
+                   </property>
+                   <property name="text">
+                    <string notr="true"/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">addIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="transitionRemove">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.RemoveTransition</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.RemoveTransition</string>
+                   </property>
+                   <property name="text">
+                    <string notr="true"/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">removeIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="transitionProps">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>22</width>
+                     <height>22</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.TransitionProperties</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.TransitionProperties</string>
+                   </property>
+                   <property name="text">
+                    <string notr="true"/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/configuration21_16.png</normaloff>:/res/images/configuration21_16.png</iconset>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                   <property name="themeID" stdset="0">
+                    <string notr="true">configIconSmall</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <property name="spacing">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="transitionDurationLabel">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Basic.TransitionDuration</string>
+                   </property>
+                   <property name="buddy">
+                    <cstring>transitionDuration</cstring>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="transitionDuration">
+                   <property name="suffix">
+                    <string>ms</string>
+                   </property>
+                   <property name="minimum">
+                    <number>2</number>
+                   </property>
+                   <property name="maximum">
+                    <number>10000</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>50</number>
+                   </property>
+                   <property name="value">
+                    <number>300</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item>
            <widget class="QPushButton" name="streamButton">
             <property name="enabled">
@@ -119,6 +359,12 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
             </property>
             <property name="text">
              <string>Basic.Main.StartStreaming</string>
@@ -145,6 +391,12 @@
               <height>0</height>
              </size>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>Basic.Main.StartRecording</string>
             </property>
@@ -152,6 +404,12 @@
           </item>
           <item>
            <widget class="QPushButton" name="modeSwitch">
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>Basic.TogglePreviewProgramMode</string>
             </property>
@@ -168,6 +426,12 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>Settings</string>
             </property>
@@ -181,27 +445,20 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string>Exit</string>
             </property>
            </widget>
           </item>
-          <item>
-           <spacer name="expVSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
         </item>
-        <item row="1" column="2">
+        <item row="1" column="3">
          <widget class="VScrollArea" name="scrollArea">
           <property name="minimumSize">
            <size>
@@ -216,7 +473,7 @@
            <enum>QFrame::Sunken</enum>
           </property>
           <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOn</enum>
+           <enum>Qt::ScrollBarAsNeeded</enum>
           </property>
           <property name="horizontalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -229,7 +486,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>201</width>
+             <width>238</width>
              <height>16</height>
             </rect>
            </property>
@@ -280,7 +537,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>260</width>
+              <width>350</width>
               <height>16777215</height>
              </size>
             </property>
@@ -377,14 +634,7 @@
           </item>
          </layout>
         </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="sourcesLabel">
-          <property name="text">
-           <string>Basic.Main.Sources</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
+        <item row="0" column="3">
          <layout class="QHBoxLayout" name="mixadvHLayout">
           <property name="spacing">
            <number>2</number>
@@ -449,7 +699,14 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="1">
+        <item row="0" column="0">
+         <widget class="QLabel" name="scenesLabel">
+          <property name="text">
+           <string>Basic.Main.Scenes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
          <layout class="QVBoxLayout" name="sourcesVLayout">
           <property name="spacing">
            <number>0</number>
@@ -470,7 +727,7 @@
             </property>
             <property name="maximumSize">
              <size>
-              <width>260</width>
+              <width>350</width>
               <height>16777215</height>
              </size>
             </property>
@@ -568,214 +825,10 @@
           </item>
          </layout>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="scenesLabel">
+        <item row="0" column="2">
+         <widget class="QLabel" name="sourcesLabel">
           <property name="text">
-           <string>Basic.Main.Scenes</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <property name="spacing">
-           <number>4</number>
-          </property>
-          <item>
-           <widget class="QComboBox" name="transitions">
-            <property name="minimumSize">
-             <size>
-              <width>120</width>
-              <height>0</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
-            <property name="spacing">
-             <number>4</number>
-            </property>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QPushButton" name="transitionAdd">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>Basic.AddTransition</string>
-              </property>
-              <property name="accessibleName">
-               <string>Basic.AddTransition</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
-              <property name="icon">
-               <iconset resource="obs.qrc">
-                <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">addIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="transitionRemove">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>Basic.RemoveTransition</string>
-              </property>
-              <property name="accessibleName">
-               <string>Basic.RemoveTransition</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
-              <property name="icon">
-               <iconset resource="obs.qrc">
-                <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">removeIconSmall</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="transitionProps">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>22</width>
-                <height>22</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>Basic.TransitionProperties</string>
-              </property>
-              <property name="accessibleName">
-               <string>Basic.TransitionProperties</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
-              <property name="icon">
-               <iconset resource="obs.qrc">
-                <normaloff>:/res/images/configuration21_16.png</normaloff>:/res/images/configuration21_16.png</iconset>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-              <property name="themeID" stdset="0">
-               <string notr="true">configIconSmall</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <property name="spacing">
-             <number>4</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="transitionDurationLabel">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Basic.TransitionDuration</string>
-              </property>
-              <property name="buddy">
-               <cstring>transitionDuration</cstring>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="transitionDuration">
-              <property name="suffix">
-               <string>ms</string>
-              </property>
-              <property name="minimum">
-               <number>2</number>
-              </property>
-              <property name="maximum">
-               <number>10000</number>
-              </property>
-              <property name="singleStep">
-               <number>50</number>
-              </property>
-              <property name="value">
-               <number>300</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Basic.SceneTransitions</string>
+           <string>Basic.Main.Sources</string>
           </property>
          </widget>
         </item>
