@@ -1,8 +1,5 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
-uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 
 uniform texture2d target;
 uniform float4 color;
@@ -44,33 +41,11 @@ float4 PSSubtractImageRGBA(VertDataOut v_in) : TARGET
 	return rgba;
 }
 
-float4 PSSubtractImageMatrix(VertDataOut v_in) : TARGET
-{
-	float4 yuv = image.Sample(textureSampler, v_in.uv);
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-
-	float4 rgba = saturate(mul(float4(yuv.xyz, 1.0), color_matrix)) *
-		color;
-
-	float4 targetRGB = target.Sample(textureSampler, v_in.uv2);
-	rgba.rgb = saturate(rgba.rgb - targetRGB.rgb);
-	return rgba;
-}
-
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSSubtractImageRGBA(v_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSSubtractImageMatrix(v_in);
 	}
 }

@@ -3,9 +3,6 @@
 
 uniform float4x4 ViewProj;
 uniform texture2d image;
-uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 
 uniform texture2d target;
 uniform float4 color = {1.0, 1.0, 1.0, 1.0};
@@ -74,45 +71,11 @@ float4 PSDrawBare(VertOut vert_in) : TARGET
 	return colorx;
 }
 
-float4 PSDrawMatrix(VertOut vert_in) : TARGET
-{
-	float4 E  = image.Sample(def_sampler, vert_in.uv);
-
-	float4 colorx = 8*E;
-	float4 B = image.Sample(def_sampler, vert_in.t1.yw);
-	float4 D = image.Sample(def_sampler, vert_in.t2.xw);
-	float4 F = image.Sample(def_sampler, vert_in.t2.zw);
-	float4 H = image.Sample(def_sampler, vert_in.t3.yw);
-	colorx -= image.Sample(def_sampler, vert_in.t1.xw);
-	colorx -= B;
-	colorx -= image.Sample(def_sampler, vert_in.t1.zw);
-	colorx -= D;
-	colorx -= F;
-	colorx -= image.Sample(def_sampler, vert_in.t3.xw);
-	colorx -= H;
-	colorx -= image.Sample(def_sampler, vert_in.t3.zw);
-
-	colorx = ((E!=F && E!=D) || (E!=B && E!=H)) ? saturate(E + colorx*sharpness) : E;
-
-	float4 yuv = colorx;
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
-}
-
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawBare(vert_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawMatrix(vert_in);
 	}
 }

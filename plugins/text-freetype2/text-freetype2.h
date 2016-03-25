@@ -53,7 +53,7 @@ struct ft2_source {
 
 	FT_Face	font_face;
 
-	uint32_t *texbuf;
+	uint8_t *texbuf;
 	gs_vertbuffer_t *vbuf;
 
 	gs_effect_t *draw_effect;

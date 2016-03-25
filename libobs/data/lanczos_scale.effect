@@ -23,11 +23,19 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
-VertData VSDefault(VertData v_in)
+struct FragData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+	float2 scale  : TEXCOORD1;
+};
+
+FragData VSDefault(VertData v_in)
 {
-	VertData vert_out;
+	FragData vert_out;
 	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 	vert_out.uv  = v_in.uv;
+	vert_out.scale = min(0.25 + abs(0.75 / mul(float4(1.0 / base_dimension_i.xy, 1.0, 1.0), ViewProj).xy), 1.0);
+
 	return vert_out;
 }
 
@@ -48,12 +56,12 @@ float weight(float x, float radius)
 		return 0.0;
 }
 
-float3 weight3(float x)
+float3 weight3(float x, float scale)
 {
 	return float3(
-		weight(x * 2.0 + 0.0 * 2.0 - 3.0, 3.0),
-		weight(x * 2.0 + 1.0 * 2.0 - 3.0, 3.0),
-		weight(x * 2.0 + 2.0 * 2.0 - 3.0, 3.0));
+		weight((x * 2.0 + 0.0 * 2.0 - 3.0) * scale, 3.0),
+		weight((x * 2.0 + 1.0 * 2.0 - 3.0) * scale, 3.0),
+		weight((x * 2.0 + 2.0 * 2.0 - 3.0) * scale, 3.0));
 }
 
 float4 pixel(float xpos, float ypos)
@@ -73,16 +81,16 @@ float4 get_line(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
 		pixel(xpos2.b, ypos) * rowtap2.b;
 }
 
-float4 DrawLanczos(VertData v_in)
+float4 DrawLanczos(FragData v_in)
 {
 	float2 stepxy = base_dimension_i;
 	float2 pos = v_in.uv + stepxy * 0.5;
 	float2 f = frac(pos / stepxy);
 
-	float3 rowtap1 = weight3((1.0 - f.x) / 2.0);
-	float3 rowtap2 = weight3((1.0 - f.x) / 2.0 + 0.5);
-	float3 coltap1 = weight3((1.0 - f.y) / 2.0);
-	float3 coltap2 = weight3((1.0 - f.y) / 2.0 + 0.5);
+	float3 rowtap1 = weight3((1.0 - f.x) / 2.0,       v_in.scale.x);
+	float3 rowtap2 = weight3((1.0 - f.x) / 2.0 + 0.5, v_in.scale.x);
+	float3 coltap1 = weight3((1.0 - f.y) / 2.0,       v_in.scale.y);
+	float3 coltap2 = weight3((1.0 - f.y) / 2.0 + 0.5, v_in.scale.y);
 
 	/* make sure all taps added together is exactly 1.0, otherwise some
          * (very small) distortion can occur */
@@ -106,12 +114,12 @@ float4 DrawLanczos(VertData v_in)
 		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.b;
 }
 
-float4 PSDrawLanczosRGBA(VertData v_in) : TARGET
+float4 PSDrawLanczosRGBA(FragData v_in) : TARGET
 {
 	return DrawLanczos(v_in);
 }
 
-float4 PSDrawLanczosMatrix(VertData v_in) : TARGET
+float4 PSDrawLanczosMatrix(FragData v_in) : TARGET
 {
 	float4 rgba = DrawLanczos(v_in);
 	float4 yuv;

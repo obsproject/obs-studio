@@ -935,6 +935,84 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 	return string(file);
 }
 
+string GenerateSpecifiedFilename(const char *extension, bool noSpace,
+		const char *format)
+{
+	time_t now = time(0);
+	struct tm *cur_time;
+	cur_time = localtime(&now);
+
+	const size_t spec_count = 23;
+	const char *spec[][2] = {
+		{"%yyyy", "%Y"},
+		{"%yy",   "%y"},
+		{"%mm",   "%m"},
+		{"%dd",   "%d"},
+		{"%hh",   "%H"},
+		{"%mm",   "%M"},
+		{"%ss",   "%S"},
+		{"%%",    "%%"},
+
+		{"%a",    ""},
+		{"%A",    ""},
+		{"%b",    ""},
+		{"%B",    ""},
+		{"%d",    ""},
+		{"%H",    ""},
+		{"%I",    ""},
+		{"%m",    ""},
+		{"%M",    ""},
+		{"%p",    ""},
+		{"%S",    ""},
+		{"%y",    ""},
+		{"%Y",    ""},
+		{"%z",    ""},
+		{"%Z",    ""},
+	};
+
+	char convert[128] = {};
+	string sf = format;
+	string c;
+	size_t pos = 0, len;
+
+	while (pos < sf.length()) {
+		len = 0;
+		for (size_t i = 0; i < spec_count && len == 0; i++) {
+
+			if (sf.find(spec[i][0], pos) == pos) {
+				if (strlen(spec[i][1]))
+					strftime(convert, sizeof(convert),
+							spec[i][1], cur_time);
+				else
+					strftime(convert, sizeof(convert),
+							spec[i][0], cur_time);
+
+				len = strlen(spec[i][0]);
+
+				c = convert;
+				if (c.length() && c.find_first_not_of(' ') !=
+						std::string::npos)
+					sf.replace(pos, len, convert);
+			}
+		}
+
+		if (len)
+			pos += strlen(convert);
+		else if (!len && sf.at(pos) == '%')
+			sf.erase(pos,1);
+		else
+			pos++;
+	}
+
+	if (noSpace)
+		replace(sf.begin(), sf.end(), ' ', '_');
+
+	sf += '.';
+	sf += extension;
+
+	return (sf.length() < 256) ? sf : sf.substr(0, 255);
+}
+
 vector<pair<string, string>> GetLocaleNames()
 {
 	string path;

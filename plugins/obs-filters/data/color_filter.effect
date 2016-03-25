@@ -1,8 +1,5 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
-uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 
 uniform float4 color;
 uniform float contrast;
@@ -39,29 +36,11 @@ float4 PSColorFilterRGBA(VertData v_in) : TARGET
 	return CalcColor(rgba);
 }
 
-float4 PSColorFilterMatrix(VertData v_in) : TARGET
-{
-	float4 yuv = image.Sample(textureSampler, v_in.uv);
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	float4 rgba = saturate(mul(float4(yuv.xyz, 1.0), color_matrix)) * color;
-
-	return CalcColor(rgba);
-}
-
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSColorFilterRGBA(v_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSColorFilterMatrix(v_in);
 	}
 }

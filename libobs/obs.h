@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2013-2014 by Hugh Bailey <jim@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -232,6 +232,7 @@ struct obs_source_frame {
 
 	/* used internally by libobs */
 	volatile long       refs;
+	bool                prev_frame;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -878,6 +879,32 @@ EXPORT void obs_source_add_audio_capture_callback(obs_source_t *source,
 EXPORT void obs_source_remove_audio_capture_callback(obs_source_t *source,
 		obs_source_audio_capture_t callback, void *param);
 
+enum obs_deinterlace_mode {
+	OBS_DEINTERLACE_MODE_DISABLE,
+	OBS_DEINTERLACE_MODE_DISCARD,
+	OBS_DEINTERLACE_MODE_RETRO,
+	OBS_DEINTERLACE_MODE_BLEND,
+	OBS_DEINTERLACE_MODE_BLEND_2X,
+	OBS_DEINTERLACE_MODE_LINEAR,
+	OBS_DEINTERLACE_MODE_LINEAR_2X,
+	OBS_DEINTERLACE_MODE_YADIF,
+	OBS_DEINTERLACE_MODE_YADIF_2X
+};
+
+enum obs_deinterlace_field_order {
+	OBS_DEINTERLACE_FIELD_ORDER_TOP,
+	OBS_DEINTERLACE_FIELD_ORDER_BOTTOM
+};
+
+EXPORT void obs_source_set_deinterlace_mode(obs_source_t *source,
+		enum obs_deinterlace_mode mode);
+EXPORT enum obs_deinterlace_mode obs_source_get_deinterlace_mode(
+		const obs_source_t *source);
+EXPORT void obs_source_set_deinterlace_field_order(obs_source_t *source,
+		enum obs_deinterlace_field_order field_order);
+EXPORT enum obs_deinterlace_field_order obs_source_get_deinterlace_field_order(
+		const obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
@@ -953,6 +980,17 @@ EXPORT void obs_source_process_filter_begin(obs_source_t *filter,
  */
 EXPORT void obs_source_process_filter_end(obs_source_t *filter,
 		gs_effect_t *effect, uint32_t width, uint32_t height);
+
+/**
+ * Draws the filter with a specific technique.
+ *
+ * Before calling this function, first call obs_source_process_filter_begin and
+ * then set the effect parameters, and then call this function to finalize the
+ * filter.
+ */
+EXPORT void obs_source_process_filter_tech_end(obs_source_t *filter,
+		gs_effect_t *effect, uint32_t width, uint32_t height,
+		const char *tech_name);
 
 /** Skips the filter if the filter is invalid and cannot be rendered */
 EXPORT void obs_source_skip_video_filter(obs_source_t *filter);

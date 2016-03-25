@@ -273,6 +273,7 @@ set(libobs_libobs_SOURCES
 	obs-encoder.c
 	obs-service.c
 	obs-source.c
+	obs-source-deinterlace.c
 	obs-source-transition.c
 	obs-output.c
 	obs-output-delay.c

@@ -34,7 +34,8 @@ uint32_t texbuf_w = 2048, texbuf_h = 2048;
 static struct obs_source_info freetype2_source_info = {
 	.id = "text_ft2_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO |
+	                OBS_SOURCE_CUSTOM_DRAW,
 	.get_name = ft2_source_get_name,
 	.create = ft2_source_create,
 	.destroy = ft2_source_destroy,
@@ -366,7 +367,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		bfree(srcdata->texbuf);
 		srcdata->texbuf = NULL;
 	}
-	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h * 4);
+	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h);
 
 	if (srcdata->font_face)
 		cache_standard_glyphs(srcdata);

@@ -345,7 +345,9 @@ static const char *audio_filter =
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
 {
+	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
+	struct dstr path = {0};
 	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
@@ -368,10 +370,21 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_cat(&filter, obs_module_text("MediaFileFilter.AllFiles"));
 	dstr_cat(&filter, " (*.*)");
 
+	if (s && s->input && *s->input) {
+		const char *slash;
+
+		dstr_copy(&path, s->input);
+		dstr_replace(&path, "\\", "/");
+		slash = strrchr(path.array, '/');
+		if (slash)
+			dstr_resize(&path, slash - path.array + 1);
+	}
+
 	obs_properties_add_path(props, "local_file",
 			obs_module_text("LocalFile"), OBS_PATH_FILE,
-			filter.array, NULL);
+			filter.array, path.array);
 	dstr_free(&filter);
+	dstr_free(&path);
 
 	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
 

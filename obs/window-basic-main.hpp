@@ -322,6 +322,9 @@ private slots:
 	void TransitionStopped();
 	void TriggerQuickTransition(int id);
 
+	void SetDeinterlacingMode();
+	void SetDeinterlacingOrder();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -388,6 +391,7 @@ public:
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
+	QMenu *AddDeinterlacingMenu(obs_source_t *source);
 	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
 
 	void UpdateTitleBar();

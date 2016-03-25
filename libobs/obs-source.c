@@ -34,6 +34,11 @@ static inline bool data_valid(const struct obs_source *source, const char *f)
 	return obs_source_valid(source, f) && source->context.data;
 }
 
+static inline bool deinterlacing_enabled(const struct obs_source *source)
+{
+	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
+}
+
 const struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
@@ -109,6 +114,12 @@ static void allocate_audio_output_buffer(struct obs_source *source)
 	}
 }
 
+static inline bool is_async_video_source(const struct obs_source *source)
+{
+	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
+		OBS_SOURCE_ASYNC_VIDEO;
+}
+
 static inline bool is_audio_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -118,6 +129,8 @@ static inline bool is_composite_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
 }
+
+extern char *find_libobs_data_file(const char *file);
 
 /* internal initialization */
 bool obs_source_init(struct obs_source *source)
@@ -173,6 +186,7 @@ bool obs_source_init(struct obs_source *source)
 	}
 
 	source->control = bzalloc(sizeof(obs_weak_source_t));
+	source->deinterlace_top_first = true;
 	source->control->source = source;
 	source->audio_mixers = 0xF;
 
@@ -481,10 +495,14 @@ void obs_source_destroy(struct obs_source *source)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
 
 	gs_enter_context(obs->video.graphics);
-	if (source->async_convert_texrender)
-		gs_texrender_destroy(source->async_convert_texrender);
+	if (source->async_texrender)
+		gs_texrender_destroy(source->async_texrender);
+	if (source->async_prev_texrender)
+		gs_texrender_destroy(source->async_prev_texrender);
 	if (source->async_texture)
 		gs_texture_destroy(source->async_texture);
+	if (source->async_prev_texture)
+		gs_texture_destroy(source->async_prev_texture);
 	if (source->filter_texrender)
 		gs_texrender_destroy(source->filter_texrender);
 	gs_leave_context();
@@ -888,8 +906,6 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 		uint64_t sys_time);
-static void remove_async_frame(obs_source_t *source,
-		struct obs_source_frame *frame);
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
 {
@@ -905,12 +921,20 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 		uint64_t sys_time = obs->video.video_time;
 
 		pthread_mutex_lock(&source->async_mutex);
-		if (source->cur_async_frame) {
-			remove_async_frame(source, source->cur_async_frame);
-			source->cur_async_frame = NULL;
+
+		if (deinterlacing_enabled(source)) {
+			deinterlace_process_last_frame(source, sys_time);
+		} else {
+			if (source->cur_async_frame) {
+				remove_async_frame(source,
+						source->cur_async_frame);
+				source->cur_async_frame = NULL;
+			}
+
+			source->cur_async_frame = get_closest_frame(source,
+					sys_time);
 		}
 
-		source->cur_async_frame = get_closest_frame(source, sys_time);
 		source->last_sys_timestamp = sys_time;
 		pthread_mutex_unlock(&source->async_mutex);
 	}
@@ -950,6 +974,7 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 		source->info.video_tick(source->context.data, seconds);
 
 	source->async_rendered = false;
+	source->deinterlace_rendered = false;
 }
 
 /* unless the value is 3+ hours worth of frames, this won't overflow */
@@ -965,8 +990,6 @@ static inline size_t conv_time_to_frames(const size_t sample_rate,
 	return (size_t)(duration * (uint64_t)sample_rate / 1000000000ULL);
 }
 
-/* maximum timestamp variance in nanoseconds */
-#define MAX_TS_VAR          2000000000ULL
 /* maximum buffer size */
 #define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
 
@@ -1210,6 +1233,7 @@ static inline enum convert_type get_convert_type(enum video_format format)
 	case VIDEO_FORMAT_UYVY:
 		return CONVERT_422_U;
 
+	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_I444:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
@@ -1280,18 +1304,7 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 	return false;
 }
 
-static inline enum gs_color_format convert_video_format(
-		enum video_format format)
-{
-	if (format == VIDEO_FORMAT_RGBA)
-		return GS_RGBA;
-	else if (format == VIDEO_FORMAT_BGRA)
-		return GS_BGRA;
-
-	return GS_BGRX;
-}
-
-static inline bool set_async_texture_size(struct obs_source *source,
+bool set_async_texture_size(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
 	enum convert_type cur = get_convert_type(frame->format);
@@ -1306,13 +1319,18 @@ static inline bool set_async_texture_size(struct obs_source *source,
 	source->async_format = frame->format;
 
 	gs_texture_destroy(source->async_texture);
-	gs_texrender_destroy(source->async_convert_texrender);
-	source->async_convert_texrender = NULL;
+	gs_texture_destroy(source->async_prev_texture);
+	gs_texrender_destroy(source->async_texrender);
+	gs_texrender_destroy(source->async_prev_texrender);
+	source->async_texture = NULL;
+	source->async_prev_texture = NULL;
+	source->async_texrender = NULL;
+	source->async_prev_texrender = NULL;
 
 	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
 		source->async_gpu_conversion = true;
 
-		source->async_convert_texrender =
+		source->async_texrender =
 			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
 
 		source->async_texture = gs_texture_create(
@@ -1330,6 +1348,9 @@ static inline bool set_async_texture_size(struct obs_source *source,
 				frame->width, frame->height,
 				format, 1, NULL, GS_DYNAMIC);
 	}
+
+	if (deinterlacing_enabled(source))
+		set_deinterlace_texture_size(source);
 
 	return !!source->async_texture;
 }
@@ -1379,6 +1400,7 @@ static const char *select_conversion_technique(enum video_format format)
 			return "NV12_Reverse";
 			break;
 
+		case VIDEO_FORMAT_Y800:
 		case VIDEO_FORMAT_BGRA:
 		case VIDEO_FORMAT_BGRX:
 		case VIDEO_FORMAT_RGBA:
@@ -1397,11 +1419,9 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 }
 
 static bool update_async_texrender(struct obs_source *source,
-		const struct obs_source_frame *frame)
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender)
 {
-	gs_texture_t   *tex       = source->async_texture;
-	gs_texrender_t *texrender = source->async_convert_texrender;
-
 	gs_texrender_reset(texrender);
 
 	upload_raw_frame(tex, frame);
@@ -1454,11 +1474,10 @@ static bool update_async_texrender(struct obs_source *source,
 	return true;
 }
 
-static bool update_async_texture(struct obs_source *source,
-		const struct obs_source_frame *frame)
+bool update_async_texture(struct obs_source *source,
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender)
 {
-	gs_texture_t      *tex       = source->async_texture;
-	gs_texrender_t    *texrender = source->async_convert_texrender;
 	enum convert_type type      = get_convert_type(frame->format);
 	uint8_t           *ptr;
 	uint32_t          linesize;
@@ -1473,7 +1492,7 @@ static bool update_async_texture(struct obs_source *source,
 			sizeof frame->color_range_max);
 
 	if (source->async_gpu_conversion && texrender)
-		return update_async_texrender(source, frame);
+		return update_async_texrender(source, frame, tex, texrender);
 
 	if (type == CONVERT_NONE) {
 		gs_texture_set_image(tex, frame->data[0], frame->linesize[0],
@@ -1513,8 +1532,8 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	gs_texture_t *tex = source->async_texture;
 	gs_eparam_t  *param;
 
-	if (source->async_convert_texrender)
-		tex = gs_texrender_get_texture(source->async_convert_texrender);
+	if (source->async_texrender)
+		tex = gs_texrender_get_texture(source->async_texrender);
 
 	if (color_range_min) {
 		size_t const size = sizeof(float) * 3;
@@ -1566,9 +1585,6 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	}
 }
 
-static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
-		struct obs_source_frame *in);
-
 static void obs_source_update_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
@@ -1583,13 +1599,14 @@ static void obs_source_update_async_video(obs_source_t *source)
 				os_gettime_ns() - frame->timestamp;
 			source->timing_set = true;
 
-			if (!set_async_texture_size(source, frame))
-				return;
-			if (!update_async_texture(source, frame))
-				return;
-		}
+			if (set_async_texture_size(source, frame)) {
+				update_async_texture(source, frame,
+						source->async_texture,
+						source->async_texrender);
+			}
 
-		obs_source_release_frame(source, frame);
+			obs_source_release_frame(source, frame);
+		}
 	}
 }
 
@@ -1606,11 +1623,10 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	source->rendering_filter = false;
 }
 
-static void obs_source_default_render(obs_source_t *source, bool color_matrix)
+static void obs_source_default_render(obs_source_t *source)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
-	const char     *tech_name = color_matrix ? "DrawMatrix" : "Draw";
-	gs_technique_t *tech       = gs_effect_get_technique(effect, tech_name);
+	gs_technique_t *tech       = gs_effect_get_technique(effect, "Draw");
 	size_t         passes, i;
 
 	passes = gs_technique_begin(tech);
@@ -1626,14 +1642,13 @@ static void obs_source_default_render(obs_source_t *source, bool color_matrix)
 static inline void obs_source_main_render(obs_source_t *source)
 {
 	uint32_t flags      = source->info.output_flags;
-	bool color_matrix   = (flags & OBS_SOURCE_COLOR_MATRIX) != 0;
 	bool custom_draw    = (flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	bool default_effect = !source->filter_parent &&
 	                      source->filters.num == 0 &&
 	                      !custom_draw;
 
 	if (default_effect)
-		obs_source_default_render(source, color_matrix);
+		obs_source_default_render(source);
 	else if (source->context.data)
 		source->info.video_render(source->context.data,
 				custom_draw ? NULL : gs_get_effect());
@@ -1649,8 +1664,11 @@ static inline void render_video(obs_source_t *source)
 
 	if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
 	    (source->info.output_flags & OBS_SOURCE_ASYNC) != 0 &&
-	    !source->rendering_filter)
+	    !source->rendering_filter) {
+		if (deinterlacing_enabled(source))
+			deinterlace_update_async_video(source);
 		obs_source_update_async_video(source);
+	}
 
 	if (!source->context.data || !source->enabled) {
 		if (source->filter_parent)
@@ -1666,6 +1684,9 @@ static inline void render_video(obs_source_t *source)
 
 	else if (source->filter_target)
 		obs_source_video_render(source->filter_target);
+
+	else if (deinterlacing_enabled(source))
+		deinterlace_render(source);
 
 	else
 		obs_source_render_async_video(source);
@@ -1988,7 +2009,7 @@ obs_data_t *obs_source_get_settings(const obs_source_t *source)
 	return source->context.settings;
 }
 
-static inline struct obs_source_frame *filter_async_video(obs_source_t *source,
+struct obs_source_frame *filter_async_video(obs_source_t *source,
 		struct obs_source_frame *in)
 {
 	size_t i;
@@ -2071,6 +2092,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
@@ -2099,6 +2121,7 @@ static inline void free_async_cache(struct obs_source *source)
 	da_resize(source->async_cache, 0);
 	da_resize(source->async_frames, 0);
 	source->cur_async_frame = NULL;
+	source->prev_async_frame = NULL;
 }
 
 #define MAX_UNUSED_FRAME_DURATION 5
@@ -2375,17 +2398,11 @@ void obs_source_output_audio(obs_source_t *source,
 	pthread_mutex_unlock(&source->filter_mutex);
 }
 
-static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
+void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 {
-	if (ts < source->last_frame_ts)
-		return ((source->last_frame_ts - ts) > MAX_TS_VAR);
-	else
-		return ((ts - source->last_frame_ts) > MAX_TS_VAR);
-}
+	if (frame)
+		frame->prev_frame = false;
 
-static void remove_async_frame(obs_source_t *source,
-		struct obs_source_frame *frame)
-{
 	for (size_t i = 0; i < source->async_cache.num; i++) {
 		struct async_frame *f = &source->async_cache.array[i];
 
@@ -2594,9 +2611,8 @@ const char *obs_source_get_id(const obs_source_t *source)
 }
 
 static inline void render_filter_bypass(obs_source_t *target,
-		gs_effect_t *effect, bool use_matrix)
+		gs_effect_t *effect, const char *tech_name)
 {
-	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
 	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
 	size_t      passes, i;
 
@@ -2610,9 +2626,8 @@ static inline void render_filter_bypass(obs_source_t *target,
 }
 
 static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
-		uint32_t width, uint32_t height, bool use_matrix)
+		uint32_t width, uint32_t height, const char *tech_name)
 {
-	const char  *tech_name = use_matrix ? "DrawMatrix" : "Draw";
 	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes, i;
@@ -2645,7 +2660,6 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	obs_source_t *target, *parent;
 	uint32_t     target_flags, parent_flags;
 	int          cx, cy;
-	bool         use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
 		return;
@@ -2656,7 +2670,6 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	parent_flags = parent->info.output_flags;
 	cx           = get_base_width(target);
 	cy           = get_base_height(target);
-	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	filter->allow_direct = allow_direct;
 
@@ -2690,7 +2703,7 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 
 		if (target == parent && !custom_draw && !async)
-			obs_source_default_render(target, use_matrix);
+			obs_source_default_render(target);
 		else
 			obs_source_video_render(target);
 
@@ -2700,13 +2713,37 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	gs_blend_state_pop();
 }
 
+void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effect,
+		uint32_t width, uint32_t height, const char *tech_name)
+{
+	obs_source_t *target, *parent;
+	gs_texture_t *texture;
+	uint32_t     target_flags, parent_flags;
+
+	if (!filter) return;
+
+	target       = obs_filter_get_target(filter);
+	parent       = obs_filter_get_parent(filter);
+	target_flags = target->info.output_flags;
+	parent_flags = parent->info.output_flags;
+
+	const char *tech = tech_name ? tech_name : "Draw";
+
+	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
+		render_filter_bypass(target, effect, tech);
+	} else {
+		texture = gs_texrender_get_texture(filter->filter_texrender);
+		render_filter_tex(texture, effect, width, height, tech);
+	}
+}
+
+
 void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 		uint32_t width, uint32_t height)
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
 	uint32_t     target_flags, parent_flags;
-	bool         use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_end"))
 		return;
@@ -2715,15 +2752,14 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 	parent       = obs_filter_get_parent(filter);
 	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
-	use_matrix   = !!(target_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
-		render_filter_bypass(target, effect, use_matrix);
+		render_filter_bypass(target, effect, "Draw");
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);
 		if (texture)
 			render_filter_tex(texture, effect, width, height,
-					use_matrix);
+					"Draw");
 	}
 }
 
@@ -2732,7 +2768,6 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 	obs_source_t *target, *parent;
 	bool custom_draw, async;
 	uint32_t parent_flags;
-	bool use_matrix;
 
 	if (!obs_ptr_valid(filter, "obs_source_skip_video_filter"))
 		return;
@@ -2742,13 +2777,14 @@ void obs_source_skip_video_filter(obs_source_t *filter)
 	parent_flags = parent->info.output_flags;
 	custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
-	use_matrix = !!(parent_flags & OBS_SOURCE_COLOR_MATRIX);
 
 	if (target == parent) {
 		if (!custom_draw && !async)
-			obs_source_default_render(target, use_matrix);
+			obs_source_default_render(target);
 		else if (target->info.video_render)
 			obs_source_main_render(target);
+		else if (deinterlacing_enabled(target))
+			deinterlace_render(target);
 		else
 			obs_source_render_async_video(target);
 

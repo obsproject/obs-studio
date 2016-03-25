@@ -241,7 +241,6 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	slot = srcdata->font_face->glyph;
 
 	uint32_t dx = srcdata->texbuf_x, dy = srcdata->texbuf_y;
-	uint8_t alpha;
 
 	int32_t cached_glyphs = 0;
 	size_t len = wcslen(cache_glyphs);
@@ -278,11 +277,9 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		src_glyph->xadv = slot->advance.x >> 6;
 
 		for (uint32_t y = 0; y < g_h; y++) {
-			for (uint32_t x = 0; x < g_w; x++) {
-				alpha = slot->bitmap.buffer[glyph_pos];
+			for (uint32_t x = 0; x < g_w; x++)
 				srcdata->texbuf[buf_pos] =
-					0x00FFFFFF ^ ((uint32_t)alpha << 24);
-			}
+					slot->bitmap.buffer[glyph_pos];
 		}
 
 		dx += (g_w + 1);
@@ -310,7 +307,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		}
 
 		srcdata->tex = gs_texture_create(texbuf_w, texbuf_h,
-			GS_RGBA, 1, (const uint8_t **)&srcdata->texbuf, 0);
+			GS_A8, 1, (const uint8_t **)&srcdata->texbuf, 0);
 
 		obs_leave_graphics();
 	}
@@ -322,7 +319,8 @@ time_t get_modified_timestamp(char *filename)
 
 	// stat is apparently terrifying and horrible, but we only call it once
 	// every second at most.
-	stat(filename, &stats);
+	if (stat(filename, &stats) != 0)
+		return -1;
 
 	return stats.st_mtime;
 }
