@@ -75,6 +75,36 @@ static void OBSStopRecording(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static void FindBestFilename(string &strPath, bool noSpace)
+{
+	int num = 2;
+
+	if (!os_file_exists(strPath.c_str()))
+		return;
+
+	const char *ext = strrchr(strPath.c_str(), '.');
+	if (!ext)
+		return;
+
+	int extStart = int(ext - strPath.c_str());
+	for (;;) {
+		string testPath = strPath;
+		string numStr;
+
+		numStr = noSpace ? "_" : " (";
+		numStr += to_string(num++);
+		if (!noSpace)
+			numStr += ")";
+
+		testPath.insert(extStart, numStr);
+
+		if (!os_file_exists(testPath.c_str())) {
+			strPath = testPath;
+			break;
+		}
+	}
+}
+
 /* ------------------------------------------------------------------------ */
 
 static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
@@ -431,6 +461,10 @@ bool SimpleOutput::StartRecording()
 			"MuxerCustom");
 	bool noSpace = config_get_bool(main->Config(), "SimpleOutput",
 			"FileNameWithoutSpace");
+	const char *filenameFormat = config_get_string(main->Config(), "Output",
+				"FilenameFormatting");
+	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
+				"OverwriteIfExists");
 
 	os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -450,8 +484,10 @@ bool SimpleOutput::StartRecording()
 	if (lastChar != '/' && lastChar != '\\')
 		strPath += "/";
 
-	strPath += GenerateTimeDateFilename(ffmpegOutput ? "avi" : format,
-			noSpace);
+	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
+			noSpace, filenameFormat);
+	if (!overwriteIfExists)
+		FindBestFilename(strPath, noSpace);
 
 	SetupOutputs();
 
@@ -932,8 +968,10 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 bool AdvancedOutput::StartRecording()
 {
 	const char *path;
-	const char *format;
+	const char *recFormat;
+	const char *filenameFormat;
 	bool noSpace = false;
+	bool overwriteIfExists = false;
 
 	if (!useStreamEncoder) {
 		if (!ffmpegOutput) {
@@ -951,8 +989,12 @@ bool AdvancedOutput::StartRecording()
 	if (!ffmpegOutput || ffmpegRecording) {
 		path = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFFilePath" : "RecFilePath");
-		format = config_get_string(main->Config(), "AdvOut",
+		recFormat = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFExtension" : "RecFormat");
+		filenameFormat = config_get_string(main->Config(), "Output",
+				"FilenameFormatting");
+		overwriteIfExists = config_get_bool(main->Config(), "Output",
+				"OverwriteIfExists");
 		noSpace = config_get_bool(main->Config(), "AdvOut",
 				ffmpegRecording ?
 				"FFFileNameWithoutSpace" :
@@ -976,7 +1018,10 @@ bool AdvancedOutput::StartRecording()
 		if (lastChar != '/' && lastChar != '\\')
 			strPath += "/";
 
-		strPath += GenerateTimeDateFilename(format, noSpace);
+		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
+							filenameFormat);
+		if (!overwriteIfExists)
+			FindBestFilename(strPath, noSpace);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings,

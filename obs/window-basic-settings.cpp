@@ -22,6 +22,7 @@
 #include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
+#include <QCompleter>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -347,6 +348,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
+	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
@@ -1128,6 +1131,14 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
+	QStringList specList = QTStr("FilenameFormatting.completer").split(
+				QRegularExpression("\n"));
+	QCompleter *specCompleter = new QCompleter(specList);
+	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
+	specCompleter->setFilterMode(Qt::MatchContains);
+	ui->filenameFormatting->setCompleter(specCompleter);
+	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
 	case 2: ui->advOutTrack2->setChecked(true); break;
@@ -1664,10 +1675,17 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RetryDelay");
 	int maxRetries = config_get_int(main->Config(), "Output",
 			"MaxRetries");
+	const char *filename = config_get_string(main->Config(), "Output",
+			"FilenameFormatting");
+	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
+			"OverwriteIfExists");
 
 	loading = true;
 
 	LoadRendererList();
+
+	ui->filenameFormatting->setText(filename);
+	ui->overwriteIfExists->setChecked(overwriteIfExists);
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -2110,6 +2128,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
+	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
+	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
 	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
@@ -2688,6 +2708,23 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 		outputCX = newCX;
 		outputCY = newCY;
 	}
+}
+
+
+void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
+{
+#ifdef __APPLE__
+	size_t invalidLocation =
+		text.toStdString().find_first_of(":/\\");
+#elif  _WIN32
+	size_t invalidLocation =
+		text.toStdString().find_first_of("<>:\"/\\|?*");
+#else
+	size_t invalidLocation = text.toStdString().find_first_of("/");
+#endif
+
+	if (invalidLocation != string::npos)
+		ui->filenameFormatting->backspace();
 }
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
