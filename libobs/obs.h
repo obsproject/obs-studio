@@ -521,6 +521,7 @@ enum obs_base_effect {
 	OBS_EFFECT_BICUBIC,            /**< Bicubic downscale */
 	OBS_EFFECT_LANCZOS,            /**< Lanczos downscale */
 	OBS_EFFECT_BILINEAR_LOWRES,    /**< Bilinear low resolution downscale */
+	OBS_EFFECT_PREMULTIPLIED_ALPHA,/**< Premultiplied alpha */
 };
 
 /** Returns a commonly used base effect */

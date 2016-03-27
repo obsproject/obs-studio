@@ -291,6 +291,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = find_libobs_data_file("premultiplied_alpha.effect");
+	video->premultiplied_alpha_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
 			&transparent_tex, 0);
 
@@ -305,6 +310,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	if (!video->solid_effect)
 		success = false;
 	if (!video->conversion_effect)
+		success = false;
+	if (!video->premultiplied_alpha_effect)
 		success = false;
 	if (!video->transparent_texture)
 		success = false;
@@ -1351,6 +1358,8 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 		return obs->video.lanczos_effect;
 	case OBS_EFFECT_BILINEAR_LOWRES:
 		return obs->video.bilinear_lowres_effect;
+	case OBS_EFFECT_PREMULTIPLIED_ALPHA:
+		return obs->video.premultiplied_alpha_effect;
 	}
 
 	return NULL;
