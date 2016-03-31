@@ -3714,6 +3714,8 @@ void OBSBasic::on_actionResetTransform_triggered()
 		if (!obs_sceneitem_selected(item))
 			return true;
 
+		obs_sceneitem_defer_update_begin(item);
+
 		obs_transform_info info;
 		vec2_set(&info.pos, 0.0f, 0.0f);
 		vec2_set(&info.scale, 1.0f, 1.0f);
@@ -3723,6 +3725,11 @@ void OBSBasic::on_actionResetTransform_triggered()
 		info.bounds_alignment = OBS_ALIGN_CENTER;
 		vec2_set(&info.bounds, 0.0f, 0.0f);
 		obs_sceneitem_set_info(item, &info);
+
+		obs_sceneitem_crop crop = {};
+		obs_sceneitem_set_crop(item, &crop);
+
+		obs_sceneitem_defer_update_end(item);
 
 		UNUSED_PARAMETER(scene);
 		UNUSED_PARAMETER(param);
