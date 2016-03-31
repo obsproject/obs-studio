@@ -1237,6 +1237,9 @@ EXPORT void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
 
+EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
+EXPORT void obs_sceneitem_defer_update_end(obs_sceneitem_t *item);
+
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */

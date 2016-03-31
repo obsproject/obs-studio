@@ -293,6 +293,9 @@ static void update_item_transform(struct obs_scene_item *item)
 	struct calldata params;
 	uint8_t         stack[128];
 
+	if (os_atomic_load_long(&item->defer_update) > 0)
+		return;
+
 	vec2_zero(&base_origin);
 	vec2_zero(&origin);
 
@@ -1572,4 +1575,21 @@ void obs_scene_atomic_update(obs_scene_t *scene,
 	func(data, scene);
 	full_unlock(scene);
 	obs_scene_release(scene);
+}
+
+void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_defer_update_begin"))
+		return;
+
+	os_atomic_inc_long(&item->defer_update);
+}
+
+void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_defer_update_end"))
+		return;
+
+	if (os_atomic_dec_long(&item->defer_update) == 0)
+		update_item_transform(item);
 }
