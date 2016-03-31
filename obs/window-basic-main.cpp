@@ -863,6 +863,26 @@ void OBSBasic::InitPrimitives()
 	box = gs_render_save();
 
 	gs_render_start(true);
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(0.0f, 1.0f);
+	boxLeft = gs_render_save();
+
+	gs_render_start(true);
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(1.0f, 0.0f);
+	boxTop = gs_render_save();
+
+	gs_render_start(true);
+	gs_vertex2f(1.0f, 0.0f);
+	gs_vertex2f(1.0f, 1.0f);
+	boxRight = gs_render_save();
+
+	gs_render_start(true);
+	gs_vertex2f(0.0f, 1.0f);
+	gs_vertex2f(1.0f, 1.0f);
+	boxBottom = gs_render_save();
+
+	gs_render_start(true);
 	for (int i = 0; i <= 360; i += (360/20)) {
 		float pos = RAD(float(i));
 		gs_vertex2f(cosf(pos), sinf(pos));
@@ -1279,6 +1299,10 @@ OBSBasic::~OBSBasic()
 
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
+	gs_vertexbuffer_destroy(boxLeft);
+	gs_vertexbuffer_destroy(boxTop);
+	gs_vertexbuffer_destroy(boxRight);
+	gs_vertexbuffer_destroy(boxBottom);
 	gs_vertexbuffer_destroy(circle);
 	obs_leave_graphics();
 

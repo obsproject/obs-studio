@@ -113,6 +113,10 @@ private:
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 
 	gs_vertbuffer_t *box = nullptr;
+	gs_vertbuffer_t *boxLeft = nullptr;
+	gs_vertbuffer_t *boxTop = nullptr;
+	gs_vertbuffer_t *boxRight = nullptr;
+	gs_vertbuffer_t *boxBottom = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
 
 	bool          sceneChanging = false;

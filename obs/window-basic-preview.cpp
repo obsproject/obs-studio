@@ -747,12 +747,36 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	DrawCircleAtPos(0.5f, 1.0f, boxTransform, main->previewScale);
 	DrawCircleAtPos(1.0f, 0.5f, boxTransform, main->previewScale);
 
-	gs_load_vertexbuffer(main->box);
-
 	gs_matrix_push();
 	gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 	gs_matrix_mul(&boxTransform);
-	gs_draw(GS_LINESTRIP, 0, 0);
+
+	obs_sceneitem_crop crop;
+	obs_sceneitem_get_crop(item, &crop);
+
+	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
+		vec4 color;
+		gs_effect_t *eff = gs_get_effect();
+		gs_eparam_t *param = gs_effect_get_param_by_name(eff, "color");
+
+#define DRAW_SIDE(side, vb) \
+		if (crop.side > 0) \
+			vec4_set(&color, 0.0f, 1.0f, 0.0f, 1.0f); \
+		else \
+			vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f); \
+		gs_effect_set_vec4(param, &color); \
+		gs_load_vertexbuffer(main->vb); \
+		gs_draw(GS_LINESTRIP, 0, 0);
+
+		DRAW_SIDE(left,   boxLeft);
+		DRAW_SIDE(top,    boxTop);
+		DRAW_SIDE(right,  boxRight);
+		DRAW_SIDE(bottom, boxBottom);
+#undef DRAW_SIDE
+	} else {
+		gs_load_vertexbuffer(main->box);
+		gs_draw(GS_LINESTRIP, 0, 0);
+	}
 
 	gs_matrix_pop();
 
