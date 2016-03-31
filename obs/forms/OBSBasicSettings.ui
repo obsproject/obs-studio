@@ -243,14 +243,14 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="label_7">
               <property name="text">
                <string>Basic.Settings.General.SnapDistance</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="4" column="1">
              <widget class="QDoubleSpinBox" name="snapDistance">
               <property name="decimals">
                <number>1</number>
@@ -260,6 +260,16 @@
               </property>
               <property name="value">
                <double>10.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sourcesSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.SourcesSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -2499,8 +2509,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>742</width>
-              <height>77</height>
+              <width>74</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -2865,8 +2875,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>768</width>
-              <height>608</height>
+              <width>661</width>
+              <height>560</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
