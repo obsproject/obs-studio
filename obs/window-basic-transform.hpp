@@ -41,6 +41,7 @@ private slots:
 	void SetItemQt(OBSSceneItem newItem);
 	void OnBoundsType(int index);
 	void OnControlChanged();
+	void OnCropChanged();
 
 public:
 	OBSBasicTransform(OBSBasic *parent);
