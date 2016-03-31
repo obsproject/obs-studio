@@ -1237,6 +1237,18 @@ EXPORT void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
 
+struct obs_sceneitem_crop {
+	int left;
+	int top;
+	int right;
+	int bottom;
+};
+
+EXPORT void obs_sceneitem_set_crop(obs_sceneitem_t *item,
+		const struct obs_sceneitem_crop *crop);
+EXPORT void obs_sceneitem_get_crop(const obs_sceneitem_t *item,
+		struct obs_sceneitem_crop *crop);
+
 EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_update_end(obs_sceneitem_t *item);
 

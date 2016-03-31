@@ -40,6 +40,9 @@ struct obs_scene_item {
 	bool                  visible;
 	bool                  selected;
 
+	gs_texrender_t        *crop_render;
+	struct obs_sceneitem_crop crop;
+
 	struct vec2           pos;
 	struct vec2           scale;
 	float                 rot;
