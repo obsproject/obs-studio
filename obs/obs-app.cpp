@@ -1194,6 +1194,7 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	char *text = new char[MAX_CRASH_REPORT_SIZE];
 
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
+	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
 	delete_oldest_file("obs-studio/crashes");
 
@@ -1203,7 +1204,8 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
 	fstream file;
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc);
+	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+			ios_base::binary);
 	file << text;
 	file.close();
 
