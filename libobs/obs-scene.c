@@ -394,6 +394,13 @@ static inline void render_item(struct obs_scene_item *item)
 		if (cx && cy && gs_texrender_begin(item->crop_render, cx, cy)) {
 			float cx_scale = (float)width  / (float)cx;
 			float cy_scale = (float)height / (float)cy;
+			struct vec4 clear_color;
+
+			vec4_zero(&clear_color);
+			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+			gs_ortho(0.0f, (float)width, 0.0f, (float)height,
+					-100.0f, 100.0f);
+
 			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
 			gs_matrix_translate3f(
 					-(float)item->crop.left,
