@@ -212,7 +212,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	if (iBuffers > 0)
 	{
 		m_mfxEncParams.ExtParam = extendedBuffers;
-		m_mfxEncParams.NumExtParam = iBuffers;
+		m_mfxEncParams.NumExtParam = (mfxU16)iBuffers;
 	}
 
 	// Width must be a multiple of 16
