@@ -479,7 +479,7 @@ static bool obs_qsv_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
+static bool obs_qsv_sei(void *data, uint8_t **sei,size_t *size)
 {
 	struct obs_qsv *obsqsv = data;
 
@@ -495,22 +495,57 @@ static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 	return true;
 }
 
+static inline bool valid_format(struct video_scale_info *info,
+		const struct video_output_info *vid_info)
+{
+	if (vid_info->format == VIDEO_FORMAT_I420 ||
+		vid_info->format == VIDEO_FORMAT_NV12) {
+
+		info->format = vid_info->format;
+		return true;
+	}
+
+	info->format = VIDEO_FORMAT_NV12;
+	return false;
+}
+
+static inline bool valid_resolution(struct video_scale_info *info,
+		const struct video_output_info *vid_info)
+{
+	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+	bool valid = true;
+
+	info->height = vid_info->height;
+	info->width = vid_info->width;
+
+	if (qsv_platform <= QSV_CPU_PLATFORM_IVB) {
+		if (vid_info->width > 1920) {
+			info->width = 1920;
+			valid = false;
+		}
+
+		if (vid_info->height > 1200) {
+			info->height = 1200;
+			valid = false;
+		}
+	}
+
+	return valid;
+}
+
 static bool obs_qsv_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_qsv *obsqsv = data;
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *vid_info = video_output_get_info(video);
+	bool format_valid = valid_format(info, vid_info);
+	bool res_valid = valid_resolution(info, vid_info);
 
-	if (vid_info->format == VIDEO_FORMAT_I420 ||
-		vid_info->format == VIDEO_FORMAT_NV12)
+	if (format_valid && res_valid)
 		return false;
 
-	info->format = VIDEO_FORMAT_NV12;
-	info->width = vid_info->width;
-	info->height = vid_info->height;
 	info->range = vid_info->range;
 	info->colorspace = vid_info->colorspace;
-
 	return true;
 }
 
