@@ -93,6 +93,17 @@ extern "C" {
 		mfxU16 nICQQuality;
 	} qsv_param_t;
 
+	enum qsv_cpu_platform {
+		QSV_CPU_PLATFORM_UNKNOWN,
+		QSV_CPU_PLATFORM_BNL,
+		QSV_CPU_PLATFORM_SNB,
+		QSV_CPU_PLATFORM_IVB,
+		QSV_CPU_PLATFORM_SLM,
+		QSV_CPU_PLATFORM_CHT,
+		QSV_CPU_PLATFORM_HSW,
+		QSV_CPU_PLATFORM_INTEL
+	};
+
 	int qsv_encoder_close(qsv_t *);
 	int qsv_param_parse(qsv_param_t *, const char *name, const char *value);
 	int qsv_param_apply_profile(qsv_param_t *, const char *profile);
@@ -102,6 +113,7 @@ extern "C" {
 	qsv_t *qsv_encoder_open( qsv_param_t * );
 	int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t, uint32_t, mfxBitstream **pBS);
 	int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS, uint16_t *pnSPS, uint16_t *pnPPS);
+	enum qsv_cpu_platform qsv_get_cpu_platform();
 
 #ifdef __cplusplus
 }

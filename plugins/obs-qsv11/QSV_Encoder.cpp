@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "QSV_Encoder.h"
 #include "QSV_Encoder_Internal.h"
+#include <string>
 
 QSV_Encoder_Internal *g_pEncoder = NULL;
 mfxIMPL				impl = MFX_IMPL_HARDWARE_ANY;
@@ -143,5 +144,64 @@ int qsv_encoder_reconfig(qsv_t *pContext, qsv_param_t *pParams)
 		return -1;
 }
 
+enum qsv_cpu_platform qsv_get_cpu_platform()
+{
+	using std::string;
 
+	int cpuInfo[4];
+	__cpuid(cpuInfo, 0);
 
+	string vendor;
+	vendor += string((char*)&cpuInfo[1], 4);
+	vendor += string((char*)&cpuInfo[3], 4);
+	vendor += string((char*)&cpuInfo[2], 4);
+
+	if (vendor != "GenuineIntel")
+		return QSV_CPU_PLATFORM_UNKNOWN;
+
+	__cpuid(cpuInfo, 1);
+	BYTE model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
+	BYTE family = ((cpuInfo[0] >> 8) & 0xF) + ((cpuInfo[0] >> 20) & 0xFF);
+
+	// See Intel 64 and IA-32 Architectures Software Developer's Manual,
+	// Vol 3C Table 35-1
+	if (family != 6)
+		return QSV_CPU_PLATFORM_UNKNOWN;
+
+	switch (model)
+	{
+	case 0x1C:
+	case 0x26:
+	case 0x27:
+	case 0x35:
+	case 0x36:
+		return QSV_CPU_PLATFORM_BNL;
+
+	case 0x2a:
+	case 0x2d:
+		return QSV_CPU_PLATFORM_SNB;
+
+	case 0x3a:
+	case 0x3e:
+		return QSV_CPU_PLATFORM_IVB;
+
+	case 0x37:
+	case 0x4A:
+	case 0x4D:
+	case 0x5A:
+	case 0x5D:
+		return QSV_CPU_PLATFORM_SLM;
+
+	case 0x4C:
+		return QSV_CPU_PLATFORM_CHT;
+
+	case 0x3c:
+	case 0x3f:
+	case 0x45:
+	case 0x46:
+		return QSV_CPU_PLATFORM_HSW;
+	}
+
+	//assume newer revisions are at least as capable as haswell
+	return QSV_CPU_PLATFORM_INTEL;
+}
