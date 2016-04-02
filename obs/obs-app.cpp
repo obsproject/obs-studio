@@ -944,10 +944,10 @@ string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 
 	const size_t spec_count = 23;
 	const char *spec[][2] = {
-		{"%yyyy", "%Y"},
-		{"%yy",   "%y"},
-		{"%mm",   "%m"},
-		{"%dd",   "%d"},
+		{"%CCYY", "%Y"},
+		{"%YY",   "%y"},
+		{"%MM",   "%m"},
+		{"%DD",   "%d"},
 		{"%hh",   "%H"},
 		{"%mm",   "%M"},
 		{"%ss",   "%S"},
