@@ -43,6 +43,7 @@ using namespace DShow;
 #define AUDIO_DEVICE_ID   "audio_device_id"
 #define COLOR_SPACE       "color_space"
 #define COLOR_RANGE       "color_range"
+#define DEACTIVATE_WNS    "deactivate_when_not_showing"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -74,6 +75,7 @@ using namespace DShow;
 #define TEXT_COLOR_RANGE    obs_module_text("ColorRange")
 #define TEXT_RANGE_PARTIAL  obs_module_text("ColorRange.Partial")
 #define TEXT_RANGE_FULL     obs_module_text("ColorRange.Full")
+#define TEXT_DWNS           obs_module_text("DeactivateWhenNotShowing")
 
 enum ResType {
 	ResType_Preferred,
@@ -160,6 +162,7 @@ static DWORD CALLBACK DShowThread(LPVOID ptr);
 struct DShowInput {
 	obs_source_t *source;
 	Device       device;
+	bool         deactivateWhenNotShowing = false;
 	bool         deviceHasAudio = false;
 	bool         flip = false;
 	bool         active = false;
@@ -747,6 +750,7 @@ static DStr GetVideoFormatName(VideoFormat format);
 bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 {
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
+	deactivateWhenNotShowing = obs_data_get_bool(settings, DEACTIVATE_WNS);
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
 
 	DeviceId id;
@@ -1742,6 +1746,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_properties_add_button(ppts, "xbar_config", TEXT_CONFIG_XBAR,
 			CrossbarConfigClicked);
 
+	obs_properties_add_bool(ppts, DEACTIVATE_WNS, TEXT_DWNS);
+
 	/* ------------------------------------- */
 	/* video settings */
 
@@ -1838,6 +1844,22 @@ void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 	UNUSED_PARAMETER(param);
 }
 
+static void HideDShowInput(void *data)
+{
+	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+
+	if (input->deactivateWhenNotShowing && input->active)
+		input->QueueAction(Action::Deactivate);
+}
+
+static void ShowDShowInput(void *data)
+{
+	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+
+	if (input->deactivateWhenNotShowing && input->active)
+		input->QueueAction(Action::Activate);
+}
+
 void RegisterDShowSource()
 {
 	SetLogCallback(DShowModuleLogCallback, nullptr);
@@ -1849,6 +1871,8 @@ void RegisterDShowSource()
 	                       OBS_SOURCE_AUDIO |
 	                       OBS_SOURCE_ASYNC |
 	                       OBS_SOURCE_DO_NOT_DUPLICATE;
+	info.show            = ShowDShowInput;
+	info.hide            = HideDShowInput;
 	info.get_name        = GetDShowInputName;
 	info.create          = CreateDShowInput;
 	info.destroy         = DestroyDShowInput;
