@@ -343,6 +343,15 @@
             ]
         },
         {
+            "name": "mSportz",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://52.21.78.175/mSports"
+                }
+            ]
+        },
+        {
             "name": "JOICASTER",
             "servers": [
                 {
