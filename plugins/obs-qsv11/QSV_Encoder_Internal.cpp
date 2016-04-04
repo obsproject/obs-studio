@@ -83,6 +83,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_ver = version;
 
 	m_bIsWindows8OrGreater = IsWindows8OrGreater();
+	bool bUseAuto = !m_bIsWindows8OrGreater || (m_ver.Major == 1 && m_ver.Minor < 7);
+	m_bUseD3D11 = !bUseAuto;
 }
 
 
@@ -95,7 +97,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-	if (m_bIsWindows8OrGreater)
+	if (m_bUseD3D11)
 		// Use D3D11 implementation and surface
 		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
 	else
@@ -188,6 +190,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	int iBuffers = 0;
 	if (pParams->nAsyncDepth == 1)
 	{
+		m_mfxEncParams.mfx.NumRefFrame = 1;
 		// low latency, I and P frames only
 		m_mfxEncParams.mfx.GopRefDist = 1;
 		memset(&m_co, 0, sizeof(mfxExtCodingOption));

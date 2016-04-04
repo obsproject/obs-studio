@@ -103,5 +103,6 @@ private:
 	int						m_nFirstSyncTask;
 	mfxBitstream			m_outBitstream;
 	bool					m_bIsWindows8OrGreater;
+	bool					m_bUseD3D11;
 };
 
