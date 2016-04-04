@@ -1077,13 +1077,16 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 
 		obs_source_t *source = obs_source_create_private(id, name,
 				settings);
-		InitTransition(source);
-		ui->transitions->addItem(QT_UTF8(name),
-				QVariant::fromValue(OBSSource(source)));
-		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
-		obs_source_release(source);
+		if (!obs_obj_invalid(source)) {
+			InitTransition(source);
+			ui->transitions->addItem(QT_UTF8(name),
+					QVariant::fromValue(OBSSource(source)));
+			ui->transitions->setCurrentIndex(
+					ui->transitions->count() - 1);
+		}
 
 		obs_data_release(settings);
 		obs_data_release(item);
+		obs_source_release(source);
 	}
 }
