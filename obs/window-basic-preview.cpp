@@ -11,7 +11,6 @@
 
 #define HANDLE_RADIUS     4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
-#define CLAMP_DISTANCE    10.0f
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -133,7 +132,7 @@ static inline vec2 GetOBSScreenSize()
 	return size;
 }
 
-vec3 OBSBasicPreview::GetScreenSnapOffset(const vec3 &tl, const vec3 &br)
+vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	vec2 screenSize = GetOBSScreenSize();
@@ -141,19 +140,50 @@ vec3 OBSBasicPreview::GetScreenSnapOffset(const vec3 &tl, const vec3 &br)
 
 	vec3_zero(&clampOffset);
 
-	const float clampDist = CLAMP_DISTANCE / main->previewScale;
+	const bool snap = config_get_bool(GetGlobalConfig(), "General",
+			"SnappingEnabled");
+	if (snap == false)
+		return clampOffset;
 
-	if (fabsf(tl.x) < clampDist)
+	const bool screenSnap = config_get_bool(GetGlobalConfig(), "General",
+			"ScreenSnapping");
+	const bool centerSnap = config_get_bool(GetGlobalConfig(), "General",
+			"CenterSnapping");
+
+	const float clampDist = config_get_double(GetGlobalConfig(), "General",
+			"SnapDistance") / main->previewScale;
+	const float centerX = br.x - (br.x - tl.x) / 2.0f;
+	const float centerY = br.y - (br.y - tl.y) / 2.0f;
+
+	// Left screen edge.
+	if (screenSnap &&
+	    fabsf(tl.x) < clampDist)
 		clampOffset.x = -tl.x;
-	if (fabsf(clampOffset.x) < EPSILON &&
+	// Right screen edge.
+	if (screenSnap &&
+	    fabsf(clampOffset.x) < EPSILON &&
 	    fabsf(screenSize.x - br.x) < clampDist)
 		clampOffset.x = screenSize.x - br.x;
+	// Horizontal center.
+	if (centerSnap &&
+	    fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
+	    fabsf(screenSize.x / 2.0f - centerX) < clampDist)
+		clampOffset.x = screenSize.x / 2.0f - centerX;
 
-	if (fabsf(tl.y) < clampDist)
+	// Top screen edge.
+	if (screenSnap &&
+	    fabsf(tl.y) < clampDist)
 		clampOffset.y = -tl.y;
-	if (fabsf(clampOffset.y) < EPSILON &&
+	// Bottom screen edge.
+	if (screenSnap &&
+	    fabsf(clampOffset.y) < EPSILON &&
 	    fabsf(screenSize.y - br.y) < clampDist)
 		clampOffset.y = screenSize.y - br.y;
+	// Vertical center.
+	if (centerSnap &&
+	    fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
+	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
+		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	return clampOffset;
 }
@@ -485,7 +515,7 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 	data.br.x += offset.x;
 	data.br.y += offset.y;
 
-	vec3 snapOffset = GetScreenSnapOffset(data.tl, data.br);
+	vec3 snapOffset = GetSnapOffset(data.tl, data.br);
 	offset.x += snapOffset.x;
 	offset.y += snapOffset.y;
 }
@@ -606,7 +636,7 @@ void OBSBasicPreview::SnapStretchingToScreen(vec3 &tl, vec3 &br)
 	vec3_max(&boundingBR, &boundingBR, &newBL);
 	vec3_max(&boundingBR, &boundingBR, &newBR);
 
-	vec3 offset = GetScreenSnapOffset(boundingTL, boundingBR);
+	vec3 offset = GetSnapOffset(boundingTL, boundingBR);
 	vec3_add(&offset, &offset, &newTL);
 	vec3_transform(&offset, &offset, &screenToItem);
 	vec3_sub(&offset, &offset, &tl);
