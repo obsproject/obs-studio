@@ -34,6 +34,12 @@ EXPORT FILE *os_wfopen(const wchar_t *path, const char *mode);
 EXPORT FILE *os_fopen(const char *path, const char *mode);
 EXPORT int64_t os_fgetsize(FILE *file);
 
+#ifdef _WIN32
+EXPORT int os_stat(const char *file, struct stat *st);
+#else
+#define os_stat stat
+#endif
+
 EXPORT int os_fseeki64(FILE *file, int64_t offset, int origin);
 EXPORT int64_t os_ftelli64(FILE *file);
 
