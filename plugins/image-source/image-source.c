@@ -30,7 +30,7 @@ struct image_source {
 static time_t get_modified_timestamp(const char *filename)
 {
 	struct stat stats;
-	if (stat(filename, &stats) != 0)
+	if (os_stat(filename, &stats) != 0)
 		return -1;
 	return stats.st_mtime;
 }

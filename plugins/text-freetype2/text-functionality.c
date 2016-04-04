@@ -319,7 +319,7 @@ time_t get_modified_timestamp(char *filename)
 
 	// stat is apparently terrifying and horrible, but we only call it once
 	// every second at most.
-	if (stat(filename, &stats) != 0)
+	if (os_stat(filename, &stats) != 0)
 		return -1;
 
 	return stats.st_mtime;
