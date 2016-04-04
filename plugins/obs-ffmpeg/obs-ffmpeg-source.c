@@ -49,6 +49,7 @@ struct ffmpeg_source {
 	char *input;
 	char *input_format;
 	enum AVDiscard frame_drop;
+	enum video_range_type range;
 	int audio_buffer_size;
 	int video_buffer_size;
 	bool is_advanced;
@@ -80,6 +81,9 @@ static bool set_obs_frame_colorprops(struct ff_frame *frame,
 	obs_frame->format = ffmpeg_to_obs_video_format(frame->frame->format);
 	obs_frame->full_range =
 		frame->frame->color_range == AVCOL_RANGE_JPEG;
+
+	if (s->range != VIDEO_RANGE_DEFAULT)
+		obs_frame->full_range = s->range == VIDEO_RANGE_FULL;
 
 	range = obs_frame->full_range ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 
@@ -316,10 +320,12 @@ static bool is_advanced_modified(obs_properties_t *props,
 	obs_property_t *abuf = obs_properties_get(props, "audio_buffer_size");
 	obs_property_t *vbuf = obs_properties_get(props, "video_buffer_size");
 	obs_property_t *frame_drop = obs_properties_get(props, "frame_drop");
+	obs_property_t *color_range = obs_properties_get(props, "color_range");
 	obs_property_set_visible(fscale, enabled);
 	obs_property_set_visible(abuf, enabled);
 	obs_property_set_visible(vbuf, enabled);
 	obs_property_set_visible(frame_drop, enabled);
+	obs_property_set_visible(color_range, enabled);
 
 	return true;
 }
@@ -444,6 +450,18 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_property_set_visible(prop, false);
 
+	prop = obs_properties_add_list(props, "color_range",
+			obs_module_text("ColorRange"), OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Auto"),
+			VIDEO_RANGE_DEFAULT);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Partial"),
+			VIDEO_RANGE_PARTIAL);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
+			VIDEO_RANGE_FULL);
+
+	obs_property_set_visible(prop, false);
+
 	return props;
 }
 
@@ -560,6 +578,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->restart_on_activate = obs_data_get_bool(settings,
 			"restart_on_activate");
 	s->is_forcing_scale = true;
+	s->range = VIDEO_RANGE_DEFAULT;
 
 	if (is_advanced) {
 		s->audio_buffer_size = (int)obs_data_get_int(settings,
@@ -570,6 +589,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 					"frame_drop");
 		s->is_forcing_scale = obs_data_get_bool(settings,
 				"force_scale");
+		s->range = (enum video_range_type)obs_data_get_int(settings,
+				"color_range");
 
 		if (s->audio_buffer_size < 1) {
 			s->audio_buffer_size = 1;
