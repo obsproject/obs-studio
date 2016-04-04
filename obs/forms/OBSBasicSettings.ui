@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>896</width>
-    <height>667</height>
+    <width>939</width>
+    <height>674</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -183,6 +183,97 @@
            <property name="text">
             <string>Basic.Settings.General.WarnBeforeStoppingStream</string>
            </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <widget class="Line" name="line_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0" colspan="2">
+          <widget class="QGroupBox" name="groupBox_6">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Basic.Settings.General.Snapping</string>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+           <layout class="QFormLayout" name="formLayout_17">
+            <property name="labelAlignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="snappingEnabled">
+              <property name="text">
+               <string>Enable</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="screenSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.ScreenSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="centerSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.CenterSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Basic.Settings.General.SnapDistance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QDoubleSpinBox" name="snapDistance">
+              <property name="decimals">
+               <number>1</number>
+              </property>
+              <property name="singleStep">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sourcesSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.SourcesSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </item>
         </layout>
@@ -814,7 +905,7 @@
              <item>
               <widget class="QTabWidget" name="advOutTabs">
                <property name="currentIndex">
-                <number>0</number>
+                <number>2</number>
                </property>
                <property name="usesScrollButtons">
                 <bool>true</bool>
@@ -1075,7 +1166,7 @@
                  <item>
                   <widget class="QStackedWidget" name="stackedWidget">
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>1</number>
                    </property>
                    <widget class="QWidget" name="advOutRecStandard">
                     <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -2418,8 +2509,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>74</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -2784,8 +2875,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>525</width>
-              <height>383</height>
+              <width>661</width>
+              <height>560</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
