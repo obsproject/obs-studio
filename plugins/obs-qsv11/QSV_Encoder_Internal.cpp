@@ -223,7 +223,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
 	
-	if (m_bIsWindows8OrGreater)
+	if (m_bUseD3D11)
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
@@ -242,7 +242,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	EncRequest.Type |= WILL_WRITE;
 
 	// Allocate required surfaces
-	if (m_bIsWindows8OrGreater) {
+	if (m_bUseD3D11) {
 		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest, &m_mfxResponse);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -412,13 +412,13 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 	
 	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
-	if (m_bIsWindows8OrGreater)
+	if (m_bUseD3D11)
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
 	
 	sts = LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
 	pSurface->Data.TimeStamp = ts;
 
-	if (m_bIsWindows8OrGreater)
+	if (m_bUseD3D11)
 		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
 	
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -473,11 +473,11 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	
 	sts = m_pmfxENC->Close();
 	
-	if (m_bIsWindows8OrGreater)
+	if (m_bUseD3D11)
 		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
 
 	for (int i = 0; i < m_nSurfNum; i++) {
-		if (!m_bIsWindows8OrGreater)
+		if (!m_bUseD3D11)
 			delete m_pmfxSurfaces[i]->Data.Y;
 
 		delete m_pmfxSurfaces[i];
@@ -496,7 +496,9 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		m_pmfxENC = NULL;
 	}
 
-	Release();
+	if (m_bUseD3D11)
+		Release();
+
 	m_session.Close();
 
 	return sts;
