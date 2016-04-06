@@ -69,22 +69,35 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_nTaskIdx(0),
 	m_nFirstSyncTask(0)
 {
-	mfxStatus sts = m_session.Init(impl, &version);
-	if (sts != MFX_ERR_NONE)
-	{
-		version.Major = 0;
-		return;
-	}
-
-	m_session.QueryVersion(&version);
-	m_session.Close();
-	
-	m_impl = impl;
-	m_ver = version;
+	mfxIMPL tempImpl;
+	mfxStatus sts;
 
 	m_bIsWindows8OrGreater = IsWindows8OrGreater();
-	bool bUseAuto = !m_bIsWindows8OrGreater || (m_ver.Major == 1 && m_ver.Minor < 7);
-	m_bUseD3D11 = !bUseAuto;
+	m_bUseD3D11 = false;
+	if (m_bIsWindows8OrGreater) {
+		tempImpl = impl | MFX_IMPL_VIA_D3D11;
+		sts = m_session.Init(tempImpl, &version);
+		if (sts == MFX_ERR_NONE) {
+			m_session.QueryVersion(&version);
+			m_session.Close();
+			// Use D3D11 surface
+			m_bUseD3D11 = ((version.Major > 1) || (version.Major == 1 && version.Minor >= 8));
+			m_impl = tempImpl;
+			m_ver = version;
+			return;
+		}
+	}
+
+	// Either windows 7 or D3D11 failed at this point. 
+	tempImpl = impl | MFX_IMPL_VIA_D3D9;
+	sts = m_session.Init(tempImpl, &version);
+	if (sts == MFX_ERR_NONE) {
+		m_session.QueryVersion(&version);
+		m_session.Close();
+		m_impl = tempImpl;
+		m_ver = version;
+	}
+
 }
 
 
@@ -98,10 +111,10 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (m_bUseD3D11)
-		// Use D3D11 implementation and surface
+		// Use D3D11 surface
 		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator);
 	else
-		// Use Auto implementation and system memory
+		// Use system memory
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
 
 	if (sts == MFX_ERR_NONE)

@@ -29,12 +29,8 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    
-
     // If mfxFrameAllocator is provided it means we need to setup DirectX device and memory allocator
     if (pmfxAllocator) {
-		impl |= MFX_IMPL_VIA_D3D11;
-
 		// Initialize Intel Media SDK Session
 		sts = pSession->Init(impl, &ver);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -61,8 +57,6 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
     }
 	else
 	{
-		impl |= MFX_IMPL_VIA_ANY;
-
 		// Initialize Intel Media SDK Session
 		sts = pSession->Init(impl, &ver); 
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
