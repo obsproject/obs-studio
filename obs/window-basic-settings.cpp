@@ -266,6 +266,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->snapDistance,         SCROLL_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -762,6 +765,19 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	LoadLanguageList();
 	LoadThemeList();
+
+	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SnappingEnabled");
+	ui->snappingEnabled->setChecked(snappingEnabled);
+
+	bool screenSnapping = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ScreenSnapping");
+	ui->screenSnapping->setChecked(screenSnapping);
+
+	double snapDistance = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance");
+	ui->snapDistance->setValue(snapDistance);
+
 
 	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStartingStream");
@@ -2037,6 +2053,19 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  theme.c_str());
 		App()->SetTheme(theme);
 	}
+
+	if (WidgetChanged(ui->snappingEnabled))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SnappingEnabled",
+				ui->snappingEnabled->isChecked());
+	if (WidgetChanged(ui->screenSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"ScreenSnapping",
+				ui->screenSnapping->isChecked());
+	if (WidgetChanged(ui->snapDistance))
+		config_set_double(GetGlobalConfig(), "BasicWindow",
+				"SnapDistance",
+				ui->snapDistance->value());
 
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStartingStream",

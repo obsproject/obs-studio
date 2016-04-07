@@ -339,6 +339,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"SceneDuplicationMode", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"SwapScenesMode", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"SnappingEnabled", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ScreenSnapping", true);
+	config_set_default_double(globalConfig, "BasicWindow",
+			"SnapDistance", 10.0);
 
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);

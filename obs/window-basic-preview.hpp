@@ -56,7 +56,7 @@ private:
 	static void DoSelect(const vec2 &pos);
 	static void DoCtrlSelect(const vec2 &pos);
 
-	static vec3 GetScreenSnapOffset(const vec3 &tl, const vec3 &br);
+	static vec3 GetSnapOffset(const vec3 &tl, const vec3 &br);
 
 	void GetStretchHandleData(const vec2 &pos);
 
