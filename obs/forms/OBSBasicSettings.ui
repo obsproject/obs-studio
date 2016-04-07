@@ -243,6 +243,16 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sourceSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.SourceSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
             <item row="1" column="1">
              <widget class="QDoubleSpinBox" name="snapDistance">
               <property name="decimals">
@@ -3625,6 +3635,22 @@
     <hint type="sourcelabel">
      <x>476</x>
      <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>466</x>
+     <y>253</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>518</x>
+     <y>204</y>
     </hint>
     <hint type="destinationlabel">
      <x>515</x>

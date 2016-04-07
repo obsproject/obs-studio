@@ -502,6 +502,66 @@ static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+struct OffsetData {
+	float clampDist;
+	vec3 tl, br, offset;
+};
+
+static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
+		void *param)
+{
+	OffsetData *data = reinterpret_cast<OffsetData*>(param);
+
+	if (obs_sceneitem_selected(item))
+		return true;
+
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(item, &boxTransform);
+
+	vec3 t[4] = {
+		GetTransformedPos(0.0f, 0.0f, boxTransform),
+		GetTransformedPos(1.0f, 0.0f, boxTransform),
+		GetTransformedPos(0.0f, 1.0f, boxTransform),
+		GetTransformedPos(1.0f, 1.0f, boxTransform)
+	};
+
+	bool first = true;
+	vec3 tl, br;
+	vec3_zero(&tl);
+	vec3_zero(&br);
+	for (const vec3 &v : t) {
+		if (first) {
+			vec3_copy(&tl, &v);
+			vec3_copy(&br, &v);
+			first = false;
+		} else {
+			vec3_min(&tl, &tl, &v);
+			vec3_max(&br, &br, &v);
+		}
+	}
+
+	// Snap to other source edges
+#define EDGE_SNAP(l, r, x, y) \
+	do { \
+		double dist = fabsf(l.x - data->r.x); \
+		if (dist < data->clampDist && \
+		    fabsf(data->offset.x) < EPSILON && \
+		    data->tl.y < br.y && \
+		    data->br.y > tl.y && \
+		    (fabsf(data->offset.x) > dist || data->offset.x < EPSILON)) \
+			data->offset.x = l.x - data->r.x; \
+	} while (false)
+
+	EDGE_SNAP(tl, br, x, y);
+	EDGE_SNAP(tl, br, y, x);
+	EDGE_SNAP(br, tl, x, y);
+	EDGE_SNAP(br, tl, y, x);
+#undef EDGE_SNAP
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
 void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
@@ -519,11 +579,35 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 
 	const bool snap = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
+	const bool sourcesSnap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SourceSnapping");
 	if (snap == false)
 		return;
+	if (sourcesSnap == false) {
+		offset.x += snapOffset.x;
+		offset.y += snapOffset.y;
+		return;
+	}
 
-	offset.x += snapOffset.x;
-	offset.y += snapOffset.y;
+	const float clampDist = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScale;
+
+	OffsetData offsetData;
+	offsetData.clampDist = clampDist;
+	offsetData.tl = data.tl;
+	offsetData.br = data.br;
+	vec3_copy(&offsetData.offset, &snapOffset);
+
+	obs_scene_enum_items(scene, GetSourceSnapOffset, &offsetData);
+
+	if (fabsf(offsetData.offset.x) > EPSILON ||
+	    fabsf(offsetData.offset.y) > EPSILON) {
+		offset.x += offsetData.offset.x;
+		offset.y += offsetData.offset.y;
+	} else {
+		offset.x += snapOffset.x;
+		offset.y += snapOffset.y;
+	}
 }
 
 static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)

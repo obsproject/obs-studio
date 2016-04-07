@@ -269,6 +269,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         SCROLL_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
@@ -778,6 +779,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool centerSnapping = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "CenterSnapping");
 	ui->centerSnapping->setChecked(centerSnapping);
+
+	bool sourceSnapping = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SourceSnapping");
+	ui->sourceSnapping->setChecked(sourceSnapping);
 
 	double snapDistance = config_get_double(GetGlobalConfig(),
 			"BasicWindow", "SnapDistance");
@@ -2071,6 +2076,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"CenterSnapping",
 				ui->centerSnapping->isChecked());
+	if (WidgetChanged(ui->sourceSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SourceSnapping",
+				ui->sourceSnapping->isChecked());
 	if (WidgetChanged(ui->snapDistance))
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				"SnapDistance",
