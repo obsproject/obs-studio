@@ -59,6 +59,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mfxastructures.h"
 #include "mfxvideo++.h"
 #include <VersionHelpers.h>
+#include <obs-module.h>
+
+#define do_log(level, format, ...) \
+	blog(level, "[qsv encoder: '%s'] " format, \
+			"msdk_impl", ##__VA_ARGS__)
+
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_pmfxENC(NULL),
@@ -80,8 +89,18 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 		if (sts == MFX_ERR_NONE) {
 			m_session.QueryVersion(&version);
 			m_session.Close();
+
 			// Use D3D11 surface
 			m_bUseD3D11 = ((version.Major > 1) || (version.Major == 1 && version.Minor >= 8));
+			if (m_bUseD3D11)
+				info("MSDK settings:\n"
+					 "\timpl:  D3D11\n"
+					 "\tsurf:  D3D11\n");
+			else
+				info("MSDK settings:\n"
+					 "\timpl:  D3D11\n"
+					 "\tsurf: SysMem\n");
+			
 			m_impl = tempImpl;
 			m_ver = version;
 			return;
@@ -94,10 +113,15 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	if (sts == MFX_ERR_NONE) {
 		m_session.QueryVersion(&version);
 		m_session.Close();
+
+		info("MSDK settings:\n"
+			"\timpl:  D3D09\n"
+			"\tsurf: SysMem\n");
+
 		m_impl = tempImpl;
 		m_ver = version;
 	}
-
+	
 }
 
 
@@ -254,6 +278,8 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 
 	EncRequest.Type |= WILL_WRITE;
 
+	info("MSDK Surf Allocating:\n");
+		
 	// Allocate required surfaces
 	if (m_bUseD3D11) {
 		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest, &m_mfxResponse);
@@ -293,6 +319,11 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 			m_pmfxSurfaces[i]->Data.Pitch = width;
 		}
 	}
+
+	info("MSDK Surf Allocation:\n"
+		"\tm_nSurfNum: %10d\n",
+		m_nSurfNum);
+
 	return sts;
 }
 
@@ -352,6 +383,10 @@ mfxStatus QSV_Encoder_Internal::InitBitstream()
 	m_outBitstream.DataOffset = 0;
 	m_outBitstream.DataLength = 0;
 
+	info("MSDK Task Allocation:\n"
+		"\tm_nTaskPool: %10d\n",
+		m_nTaskPool);
+
 	return MFX_ERR_NONE;
 }
 
@@ -404,6 +439,10 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
 	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+	
+	info("MSDK Encode:\n"
+		"\tTaskIndex: %10d\n",
+		nTaskIdx);
 
 	if (MFX_ERR_NOT_FOUND == nTaskIdx) // || MFX_ERR_NOT_FOUND == nSurfIdx) 
 	{
@@ -421,9 +460,18 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		nTaskIdx = m_nFirstSyncTask;
 		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 		*pBS = &m_outBitstream;
+		info("MSDK Encode:\n"
+			"\tnew FirstSyncTask: %10d\n"
+			"\tTaskIndex: %10d\n",
+			m_nFirstSyncTask,
+			nTaskIdx);
 	}
 	
 	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+	info("MSDK Encode:\n"
+		"\tnSurfIdx: %10d\n",
+		nSurfIdx);
+
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	if (m_bUseD3D11)
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));

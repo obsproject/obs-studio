@@ -265,18 +265,6 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	return props;
 }
 
-static void log_qsv(void *param, int level, const char *format, va_list args)
-{
-	
-	struct obs_qsv *obsqsv = param;
-	char str[1024];
-
-	vsnprintf(str, 1024, format, args);
-	info("%s", str);
-
-	UNUSED_PARAMETER(level);
-}
-
 static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 {
 	video_t *video = obs_encoder_video(obsqsv->encoder);
@@ -441,6 +429,11 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 
 	qsv_encoder_version(&g_verMajor, &g_verMinor);
+
+	info("MSDK version:\n"
+		"\tmajor:%10d\n"
+		"\tminor:%10d\n",
+		g_verMajor, g_verMinor);
 
 	// MSDK 1.6 or less doesn't have automatic DTS calculation
 	// including early SandyBridge.
