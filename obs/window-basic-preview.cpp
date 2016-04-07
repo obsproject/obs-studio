@@ -147,9 +147,13 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 
 	const bool screenSnap = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ScreenSnapping");
+	const bool centerSnap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "CenterSnapping");
 
 	const float clampDist = config_get_double(GetGlobalConfig(),
 			"BasicWindow", "SnapDistance") / main->previewScale;
+	const float centerX = br.x - (br.x - tl.x) / 2.0f;
+	const float centerY = br.y - (br.y - tl.y) / 2.0f;
 
 	// Left screen edge.
 	if (screenSnap &&
@@ -160,6 +164,11 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	    fabsf(clampOffset.x) < EPSILON &&
 	    fabsf(screenSize.x - br.x) < clampDist)
 		clampOffset.x = screenSize.x - br.x;
+	// Horizontal center.
+	if (centerSnap &&
+	    fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
+	    fabsf(screenSize.x / 2.0f - centerX) < clampDist)
+		clampOffset.x = screenSize.x / 2.0f - centerX;
 
 	// Top screen edge.
 	if (screenSnap &&
@@ -170,6 +179,11 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	    fabsf(clampOffset.y) < EPSILON &&
 	    fabsf(screenSize.y - br.y) < clampDist)
 		clampOffset.y = screenSize.y - br.y;
+	// Vertical center.
+	if (centerSnap &&
+	    fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
+	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
+		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	return clampOffset;
 }

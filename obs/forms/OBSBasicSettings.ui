@@ -233,6 +233,16 @@
               </property>
              </widget>
             </item>
+            <item row="4" column="1">
+             <widget class="QCheckBox" name="centerSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.CenterSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
             <item row="1" column="1">
              <widget class="QDoubleSpinBox" name="snapDistance">
               <property name="decimals">
@@ -3615,6 +3625,22 @@
     <hint type="sourcelabel">
      <x>476</x>
      <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>515</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>557</x>
+     <y>207</y>
     </hint>
     <hint type="destinationlabel">
      <x>777</x>

@@ -343,6 +343,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"SnappingEnabled", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ScreenSnapping", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"CenterSnapping", false);
 	config_set_default_double(globalConfig, "BasicWindow",
 			"SnapDistance", 10.0);
 
