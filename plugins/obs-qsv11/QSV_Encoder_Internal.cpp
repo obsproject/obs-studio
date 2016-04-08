@@ -439,12 +439,16 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
 	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
-	
 	info("MSDK Encode:\n"
 		"\tTaskIndex: %10d\n",
 		nTaskIdx);
 
-	if (MFX_ERR_NOT_FOUND == nTaskIdx) // || MFX_ERR_NOT_FOUND == nSurfIdx) 
+	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+	info("MSDK Encode:\n"
+		"\tnSurfIdx: %10d\n",
+		nSurfIdx);
+
+	if (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) 
 	{
 		// No more free tasks or surfaces, need to sync
 		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
@@ -465,13 +469,13 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 			"\tTaskIndex: %10d\n",
 			m_nFirstSyncTask,
 			nTaskIdx);
+
+		nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+		info("MSDK Encode:\n"
+			"\tnSurfIdx: %10d\n",
+			nSurfIdx);
 	}
 	
-	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
-	info("MSDK Encode:\n"
-		"\tnSurfIdx: %10d\n",
-		nSurfIdx);
-
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	if (m_bUseD3D11)
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis, pSurface->Data.MemId, &(pSurface->Data));
