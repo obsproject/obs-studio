@@ -46,6 +46,7 @@ enum video_format {
 	VIDEO_FORMAT_RGBA,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,
+	VIDEO_FORMAT_Y800, /* grayscale */
 
 	/* planar 4:4:4 */
 	VIDEO_FORMAT_I444,
@@ -97,6 +98,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
+	case VIDEO_FORMAT_Y800:
 		return false;
 	}
 
@@ -115,6 +117,7 @@ static inline const char *get_video_format_name(enum video_format format)
 	case VIDEO_FORMAT_BGRA: return "BGRA";
 	case VIDEO_FORMAT_BGRX: return "BGRX";
 	case VIDEO_FORMAT_I444: return "I444";
+	case VIDEO_FORMAT_Y800: return "Y800";
 	case VIDEO_FORMAT_NONE:;
 	}
 

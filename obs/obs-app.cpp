@@ -339,6 +339,16 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"SceneDuplicationMode", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"SwapScenesMode", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"SnappingEnabled", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ScreenSnapping", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"SourceSnapping", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"CenterSnapping", false);
+	config_set_default_double(globalConfig, "BasicWindow",
+			"SnapDistance", 10.0);
 
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
@@ -935,6 +945,84 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 	return string(file);
 }
 
+string GenerateSpecifiedFilename(const char *extension, bool noSpace,
+		const char *format)
+{
+	time_t now = time(0);
+	struct tm *cur_time;
+	cur_time = localtime(&now);
+
+	const size_t spec_count = 23;
+	const char *spec[][2] = {
+		{"%CCYY", "%Y"},
+		{"%YY",   "%y"},
+		{"%MM",   "%m"},
+		{"%DD",   "%d"},
+		{"%hh",   "%H"},
+		{"%mm",   "%M"},
+		{"%ss",   "%S"},
+		{"%%",    "%%"},
+
+		{"%a",    ""},
+		{"%A",    ""},
+		{"%b",    ""},
+		{"%B",    ""},
+		{"%d",    ""},
+		{"%H",    ""},
+		{"%I",    ""},
+		{"%m",    ""},
+		{"%M",    ""},
+		{"%p",    ""},
+		{"%S",    ""},
+		{"%y",    ""},
+		{"%Y",    ""},
+		{"%z",    ""},
+		{"%Z",    ""},
+	};
+
+	char convert[128] = {};
+	string sf = format;
+	string c;
+	size_t pos = 0, len;
+
+	while (pos < sf.length()) {
+		len = 0;
+		for (size_t i = 0; i < spec_count && len == 0; i++) {
+
+			if (sf.find(spec[i][0], pos) == pos) {
+				if (strlen(spec[i][1]))
+					strftime(convert, sizeof(convert),
+							spec[i][1], cur_time);
+				else
+					strftime(convert, sizeof(convert),
+							spec[i][0], cur_time);
+
+				len = strlen(spec[i][0]);
+
+				c = convert;
+				if (c.length() && c.find_first_not_of(' ') !=
+						std::string::npos)
+					sf.replace(pos, len, convert);
+			}
+		}
+
+		if (len)
+			pos += strlen(convert);
+		else if (!len && sf.at(pos) == '%')
+			sf.erase(pos,1);
+		else
+			pos++;
+	}
+
+	if (noSpace)
+		replace(sf.begin(), sf.end(), ' ', '_');
+
+	sf += '.';
+	sf += extension;
+
+	return (sf.length() < 256) ? sf : sf.substr(0, 255);
+}
+
 vector<pair<string, string>> GetLocaleNames()
 {
 	string path;
@@ -1116,6 +1204,7 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	char *text = new char[MAX_CRASH_REPORT_SIZE];
 
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
+	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
 	delete_oldest_file("obs-studio/crashes");
 
@@ -1125,7 +1214,8 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
 	fstream file;
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc);
+	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+			ios_base::binary);
 	file << text;
 	file.close();
 

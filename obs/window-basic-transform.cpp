@@ -30,6 +30,7 @@ void OBSBasicTransform::HookWidget(QWidget *widget, const char *signal,
 }
 
 #define COMBO_CHANGED   SIGNAL(currentIndexChanged(int))
+#define ISCROLL_CHANGED SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
 
 OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
@@ -49,6 +50,10 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->boundsAlign,  COMBO_CHANGED,   SLOT(OnControlChanged()));
 	HookWidget(ui->boundsWidth,  DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->boundsHeight, DSCROLL_CHANGED, SLOT(OnControlChanged()));
+	HookWidget(ui->cropLeft,     ISCROLL_CHANGED, SLOT(OnCropChanged()));
+	HookWidget(ui->cropRight,    ISCROLL_CHANGED, SLOT(OnCropChanged()));
+	HookWidget(ui->cropTop,      ISCROLL_CHANGED, SLOT(OnCropChanged()));
+	HookWidget(ui->cropBottom,   ISCROLL_CHANGED, SLOT(OnCropChanged()));
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -183,7 +188,9 @@ void OBSBasicTransform::RefreshControls()
 		return;
 
 	obs_transform_info osi;
+	obs_sceneitem_crop crop;
 	obs_sceneitem_get_info(item, &osi);
+	obs_sceneitem_get_crop(item, &crop);
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	float width  = float(obs_source_get_width(source));
@@ -204,6 +211,11 @@ void OBSBasicTransform::RefreshControls()
 	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
 	ui->boundsWidth->setValue(osi.bounds.x);
 	ui->boundsHeight->setValue(osi.bounds.y);
+
+	ui->cropLeft->setValue(int(crop.left));
+	ui->cropRight->setValue(int(crop.right));
+	ui->cropTop->setValue(int(crop.top));
+	ui->cropBottom->setValue(int(crop.bottom));
 	ignoreItemChange = false;
 }
 
@@ -258,5 +270,21 @@ void OBSBasicTransform::OnControlChanged()
 
 	ignoreTransformSignal = true;
 	obs_sceneitem_set_info(item, &oti);
+	ignoreTransformSignal = false;
+}
+
+void OBSBasicTransform::OnCropChanged()
+{
+	if (ignoreItemChange)
+		return;
+
+	obs_sceneitem_crop crop;
+	crop.left   = uint32_t(ui->cropLeft->value());
+	crop.right  = uint32_t(ui->cropRight->value());
+	crop.top    = uint32_t(ui->cropTop->value());
+	crop.bottom = uint32_t(ui->cropBottom->value());
+
+	ignoreTransformSignal = true;
+	obs_sceneitem_set_crop(item, &crop);
 	ignoreTransformSignal = false;
 }

@@ -58,6 +58,10 @@
                     "url": "rtmp://live-arn.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Warsaw, Poland",
+                    "url": "rtmp://live-waw.twitch.tv/app"
+                },
+                {
                     "name": "South America: Argentina",
                     "url": "rtmp://live-eze.twitch.tv/app"
                 },
@@ -339,6 +343,15 @@
             ]
         },
         {
+            "name": "mSportz",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://52.21.78.175/mSports"
+                }
+            ]
+        },
+        {
             "name": "JOICASTER",
             "servers": [
                 {
@@ -461,6 +474,21 @@
                     "url": "rtmp://de.live.cashplay.tv/live"
                 }
             ]
+        },
+        {
+            "name": "DJlive.pl",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.djlive.pl/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "max video bitrate": 1300,
+                "max audio bitrate": 320
+            }
         }
     ]
 }

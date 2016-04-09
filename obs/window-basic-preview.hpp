@@ -30,6 +30,9 @@ class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
 private:
+	obs_sceneitem_crop startCrop;
+	vec2         startItemPos;
+	vec2         cropSize;
 	OBSSceneItem stretchItem;
 	ItemHandle   stretchHandle = ItemHandle::None;
 	vec2         stretchItemSize;
@@ -41,6 +44,7 @@ private:
 	bool         mouseDown      = false;
 	bool         mouseMoved     = false;
 	bool         mouseOverItems = false;
+	bool         cropping       = false;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -52,13 +56,14 @@ private:
 	static void DoSelect(const vec2 &pos);
 	static void DoCtrlSelect(const vec2 &pos);
 
-	static vec3 GetScreenSnapOffset(const vec3 &tl, const vec3 &br);
+	static vec3 GetSnapOffset(const vec3 &tl, const vec3 &br);
 
 	void GetStretchHandleData(const vec2 &pos);
 
 	void SnapStretchingToScreen(vec3 &tl, vec3 &br);
 	void ClampAspect(vec3 &tl, vec3 &br, vec2 &size, const vec2 &baseSize);
 	vec3 CalculateStretchPos(const vec3 &tl, const vec3 &br);
+	void CropItem(const vec2 &pos);
 	void StretchItem(const vec2 &pos);
 
 	static void SnapItemMovement(vec2 &offset);

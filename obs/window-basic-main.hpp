@@ -113,6 +113,10 @@ private:
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 
 	gs_vertbuffer_t *box = nullptr;
+	gs_vertbuffer_t *boxLeft = nullptr;
+	gs_vertbuffer_t *boxTop = nullptr;
+	gs_vertbuffer_t *boxRight = nullptr;
+	gs_vertbuffer_t *boxBottom = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
 
 	bool          sceneChanging = false;
@@ -322,6 +326,9 @@ private slots:
 	void TransitionStopped();
 	void TriggerQuickTransition(int id);
 
+	void SetDeinterlacingMode();
+	void SetDeinterlacingOrder();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -388,6 +395,7 @@ public:
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
+	QMenu *AddDeinterlacingMenu(obs_source_t *source);
 	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
 
 	void UpdateTitleBar();

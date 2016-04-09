@@ -85,6 +85,37 @@ int64_t os_fgetsize(FILE *file)
 	return size;
 }
 
+#ifdef _WIN32
+int os_stat(const char *file, struct stat *st)
+{
+	if (file) {
+		wchar_t w_file[512];
+		int size = os_utf8_to_wcs(file, 0, w_file, sizeof(w_file));
+		if (size > 0) {
+			struct _stat st_w32;
+			int ret = _wstat(w_file, &st_w32);
+			if (ret == 0) {
+				st->st_dev = st_w32.st_dev;
+				st->st_ino = st_w32.st_ino;
+				st->st_mode = st_w32.st_mode;
+				st->st_nlink = st_w32.st_nlink;
+				st->st_uid = st_w32.st_uid;
+				st->st_gid = st_w32.st_gid;
+				st->st_rdev = st_w32.st_rdev;
+				st->st_size = st_w32.st_size;
+				st->st_atime = st_w32.st_atime;
+				st->st_mtime = st_w32.st_mtime;
+				st->st_ctime = st_w32.st_ctime;
+			}
+
+			return ret;
+		}
+	}
+
+	return -1;
+}
+#endif
+
 int os_fseeki64(FILE *file, int64_t offset, int origin)
 {
 #ifdef _MSC_VER

@@ -35,9 +35,13 @@ struct obs_scene_item {
 	struct obs_scene      *parent;
 	struct obs_source     *source;
 	volatile long         active_refs;
+	volatile long         defer_update;
 	bool                  user_visible;
 	bool                  visible;
 	bool                  selected;
+
+	gs_texrender_t        *crop_render;
+	struct obs_sceneitem_crop crop;
 
 	struct vec2           pos;
 	struct vec2           scale;

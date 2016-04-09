@@ -602,6 +602,24 @@ static inline void cf_adderror_unexpected_eof(struct cf_preprocessor *pp,
 			NULL, NULL, NULL);
 }
 
+static inline void insert_path(struct cf_preprocessor *pp,
+		struct dstr *str_file)
+{
+	const char *file;
+	const char *slash;
+
+	if (pp && pp->lex && pp->lex->file) {
+		file = pp->lex->file;
+		slash = strrchr(file, '/');
+		if (slash) {
+			struct dstr path = {0};
+			dstr_ncopy(&path, file, slash - file + 1);
+			dstr_insert_dstr(str_file, 0, &path);
+			dstr_free(&path);
+		}
+	}
+}
+
 static void cf_include_file(struct cf_preprocessor *pp,
 		const struct cf_token *file_token)
 {
@@ -615,6 +633,7 @@ static void cf_include_file(struct cf_preprocessor *pp,
 	dstr_init(&str_file);
 	dstr_copy_strref(&str_file, &file_token->str);
 	dstr_mid(&str_file, &str_file, 1, str_file.len-2);
+	insert_path(pp, &str_file);
 
 	/* if dependency already exists, run preprocessor on it */
 	for (i = 0; i < pp->dependencies.num; i++) {

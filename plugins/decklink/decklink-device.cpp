@@ -72,8 +72,13 @@ bool DeckLinkDevice::Init()
 	if (result != S_OK)
 		return true;
 
+	/* http://forum.blackmagicdesign.com/viewtopic.php?f=12&t=33967
+	 * BMDDeckLinkTopologicalID for older devices
+	 * BMDDeckLinkPersistentID for newer ones */
+
 	int64_t value;
-	if (attributes->GetInt(BMDDeckLinkPersistentID, &value) != S_OK)
+	if (attributes->GetInt(BMDDeckLinkPersistentID,  &value) != S_OK &&
+	    attributes->GetInt(BMDDeckLinkTopologicalID, &value) != S_OK)
 		return true;
 
 	std::ostringstream os;

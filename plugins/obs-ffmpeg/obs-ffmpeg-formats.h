@@ -21,6 +21,7 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(
 	case VIDEO_FORMAT_RGBA: return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA: return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_BGRX: return AV_PIX_FMT_BGRA;
+	case VIDEO_FORMAT_Y800: return AV_PIX_FMT_GRAY8;
 	}
 
 	return AV_PIX_FMT_NONE;
@@ -37,6 +38,7 @@ static inline enum video_format ffmpeg_to_obs_video_format(
 	case AV_PIX_FMT_UYVY422: return VIDEO_FORMAT_UYVY;
 	case AV_PIX_FMT_RGBA:    return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:    return VIDEO_FORMAT_BGRA;
+	case AV_PIX_FMT_GRAY8:   return VIDEO_FORMAT_Y800;
 	case AV_PIX_FMT_NONE:
 	default:                 return VIDEO_FORMAT_NONE;
 	}

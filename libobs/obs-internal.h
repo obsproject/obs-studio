@@ -237,6 +237,7 @@ struct obs_core_video {
 	gs_effect_t                     *bicubic_effect;
 	gs_effect_t                     *lanczos_effect;
 	gs_effect_t                     *bilinear_lowres_effect;
+	gs_effect_t                     *premultiplied_alpha_effect;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 
@@ -262,6 +263,15 @@ struct obs_core_video {
 	enum obs_scale_type             scale_type;
 
 	gs_texture_t                    *transparent_texture;
+
+	gs_effect_t                     *deinterlace_discard_effect;
+	gs_effect_t                     *deinterlace_discard_2x_effect;
+	gs_effect_t                     *deinterlace_linear_effect;
+	gs_effect_t                     *deinterlace_linear_2x_effect;
+	gs_effect_t                     *deinterlace_blend_effect;
+	gs_effect_t                     *deinterlace_blend_2x_effect;
+	gs_effect_t                     *deinterlace_yadif_effect;
+	gs_effect_t                     *deinterlace_yadif_2x_effect;
 };
 
 struct obs_core_audio {
@@ -370,6 +380,8 @@ struct obs_core {
 extern struct obs_core *obs;
 
 extern void *obs_video_thread(void *param);
+
+extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 
 extern bool audio_callback(void *param,
 		uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts,
@@ -566,7 +578,7 @@ struct obs_source {
 
 	/* async video data */
 	gs_texture_t                    *async_texture;
-	gs_texrender_t                  *async_convert_texrender;
+	gs_texrender_t                  *async_texrender;
 	struct obs_source_frame         *cur_async_frame;
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
@@ -588,6 +600,18 @@ struct obs_source {
 	uint32_t                        async_cache_height;
 	uint32_t                        async_convert_width;
 	uint32_t                        async_convert_height;
+
+	/* async video deinterlacing */
+	uint64_t                        deinterlace_offset;
+	uint64_t                        deinterlace_frame_ts;
+	gs_effect_t                     *deinterlace_effect;
+	struct obs_source_frame         *prev_async_frame;
+	gs_texture_t                    *async_prev_texture;
+	gs_texrender_t                  *async_prev_texrender;
+	uint32_t                        deinterlace_half_duration;
+	enum obs_deinterlace_mode       deinterlace_mode;
+	bool                            deinterlace_top_first;
+	bool                            deinterlace_rendered;
 
 	/* filters */
 	struct obs_source               *filter_parent;
@@ -673,6 +697,30 @@ static inline void obs_source_dosignal(struct obs_source *source,
 				&data);
 }
 
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR          2000000000ULL
+
+static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
+{
+	if (ts < source->last_frame_ts)
+		return ((source->last_frame_ts - ts) > MAX_TS_VAR);
+	else
+		return ((ts - source->last_frame_ts) > MAX_TS_VAR);
+}
+
+static inline enum gs_color_format convert_video_format(
+		enum video_format format)
+{
+	if (format == VIDEO_FORMAT_RGBA)
+		return GS_RGBA;
+	else if (format == VIDEO_FORMAT_BGRA)
+		return GS_BGRA;
+	else if (format == VIDEO_FORMAT_Y800)
+		return GS_R8;
+
+	return GS_BGRX;
+}
+
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
 extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t *source, float seconds);
@@ -683,6 +731,22 @@ extern void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 		size_t channels, size_t sample_rate, size_t size);
 
 extern void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy);
+
+extern struct obs_source_frame *filter_async_video(obs_source_t *source,
+		struct obs_source_frame *in);
+extern bool update_async_texture(struct obs_source *source,
+		const struct obs_source_frame *frame,
+		gs_texture_t *tex, gs_texrender_t *texrender);
+extern bool set_async_texture_size(struct obs_source *source,
+		const struct obs_source_frame *frame);
+extern void remove_async_frame(obs_source_t *source,
+		struct obs_source_frame *frame);
+
+extern void set_deinterlace_texture_size(obs_source_t *source);
+extern void deinterlace_process_last_frame(obs_source_t *source,
+		uint64_t sys_time);
+extern void deinterlace_update_async_video(obs_source_t *source);
+extern void deinterlace_render(obs_source_t *s);
 
 
 /* ------------------------------------------------------------------------- */

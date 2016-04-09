@@ -281,17 +281,37 @@ static void calculate_bounds_data(struct obs_scene_item *item,
 			(int)-width_diff, (int)-height_diff);
 }
 
+static inline uint32_t calc_cx(const struct obs_scene_item *item,
+		uint32_t width)
+{
+	uint32_t crop_cx = item->crop.left + item->crop.right;
+	return (crop_cx > width) ? 2 : (width - crop_cx);
+}
+
+static inline uint32_t calc_cy(const struct obs_scene_item *item,
+		uint32_t height)
+{
+	uint32_t crop_cy = item->crop.top + item->crop.bottom;
+	return (crop_cy > height) ? 2 : (height - crop_cy);
+}
+
 static void update_item_transform(struct obs_scene_item *item)
 {
 	uint32_t        width         = obs_source_get_width(item->source);
 	uint32_t        height        = obs_source_get_height(item->source);
-	uint32_t        cx            = width;
-	uint32_t        cy            = height;
+	uint32_t        cx            = calc_cx(item, width);
+	uint32_t        cy            = calc_cy(item, height);
 	struct vec2     base_origin;
 	struct vec2     origin;
 	struct vec2     scale         = item->scale;
 	struct calldata params;
 	uint8_t         stack[128];
+
+	if (os_atomic_load_long(&item->defer_update) > 0)
+		return;
+
+	width = cx;
+	height = cy;
 
 	vec2_zero(&base_origin);
 	vec2_zero(&origin);
@@ -358,6 +378,70 @@ static inline bool source_size_changed(struct obs_scene_item *item)
 	return item->last_width != width || item->last_height != height;
 }
 
+static inline bool crop_enabled(const struct obs_sceneitem_crop *crop)
+{
+	return crop->left || crop->right || crop->top || crop->bottom;
+}
+
+static inline void render_item(struct obs_scene_item *item)
+{
+	if (item->crop_render) {
+		uint32_t width  = obs_source_get_width(item->source);
+		uint32_t height = obs_source_get_height(item->source);
+		uint32_t cx = calc_cx(item, width);
+		uint32_t cy = calc_cy(item, height);
+
+		if (cx && cy && gs_texrender_begin(item->crop_render, cx, cy)) {
+			float cx_scale = (float)width  / (float)cx;
+			float cy_scale = (float)height / (float)cy;
+			struct vec4 clear_color;
+
+			vec4_zero(&clear_color);
+			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+			gs_ortho(0.0f, (float)width, 0.0f, (float)height,
+					-100.0f, 100.0f);
+
+			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
+			gs_matrix_translate3f(
+					-(float)item->crop.left,
+					-(float)item->crop.top,
+					0.0f);
+
+			obs_source_video_render(item->source);
+			gs_texrender_end(item->crop_render);
+		}
+	}
+
+	gs_matrix_push();
+	gs_matrix_mul(&item->draw_transform);
+	if (item->crop_render) {
+		gs_texture_t *tex = gs_texrender_get_texture(item->crop_render);
+
+		while (gs_effect_loop(obs->video.default_effect, "Draw"))
+			obs_source_draw(tex, 0, 0, 0, 0, 0);
+	} else {
+		obs_source_video_render(item->source);
+	}
+	gs_matrix_pop();
+}
+
+static void scene_video_tick(void *data, float seconds)
+{
+	struct obs_scene *scene = data;
+	struct obs_scene_item *item;
+
+	video_lock(scene);
+	item = scene->first_item;
+	while (item) {
+		if (item->crop_render)
+			gs_texrender_reset(item->crop_render);
+		item = item->next;
+	}
+	video_unlock(scene);
+
+	UNUSED_PARAMETER(seconds);
+}
+
 static void scene_video_render(void *data, gs_effect_t *effect)
 {
 	DARRAY(struct obs_scene_item*) remove_items;
@@ -385,12 +469,8 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 		if (source_size_changed(item))
 			update_item_transform(item);
 
-		if (item->user_visible) {
-			gs_matrix_push();
-			gs_matrix_mul(&item->draw_transform);
-			obs_source_video_render(item->source);
-			gs_matrix_pop();
-		}
+		if (item->user_visible)
+			render_item(item);
 
 		item = item->next;
 	}
@@ -468,6 +548,23 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		(uint32_t)obs_data_get_int(item_data, "bounds_align");
 	obs_data_get_vec2(item_data, "bounds", &item->bounds);
 
+	item->crop.left   = (uint32_t)obs_data_get_int(item_data, "crop_left");
+	item->crop.top    = (uint32_t)obs_data_get_int(item_data, "crop_top");
+	item->crop.right  = (uint32_t)obs_data_get_int(item_data, "crop_right");
+	item->crop.bottom = (uint32_t)obs_data_get_int(item_data, "crop_bottom");
+
+	if (item->crop_render && !crop_enabled(&item->crop)) {
+		obs_enter_graphics();
+		gs_texrender_destroy(item->crop_render);
+		item->crop_render = NULL;
+		obs_leave_graphics();
+
+	} else if (!item->crop_render && crop_enabled(&item->crop)) {
+		obs_enter_graphics();
+		item->crop_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		obs_leave_graphics();
+	}
+
 	obs_source_release(source);
 
 	update_item_transform(item);
@@ -508,6 +605,10 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int   (item_data, "bounds_type",  (int)item->bounds_type);
 	obs_data_set_int   (item_data, "bounds_align", (int)item->bounds_align);
 	obs_data_set_vec2 (item_data, "bounds",       &item->bounds);
+	obs_data_set_int  (item_data, "crop_left",    (int)item->crop.left);
+	obs_data_set_int  (item_data, "crop_top",     (int)item->crop.top);
+	obs_data_set_int  (item_data, "crop_right",   (int)item->crop.right);
+	obs_data_set_int  (item_data, "crop_bottom",  (int)item->crop.bottom);
 
 	obs_data_array_push_back(array, item_data);
 	obs_data_release(item_data);
@@ -742,6 +843,7 @@ const struct obs_source_info scene_info =
 	.get_name      = scene_getname,
 	.create        = scene_create,
 	.destroy       = scene_destroy,
+	.video_tick    = scene_video_tick,
 	.video_render  = scene_video_render,
 	.audio_render  = scene_audio_render,
 	.get_width     = scene_getwidth,
@@ -868,6 +970,8 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 			new_item->bounds_type = item->bounds_type;
 			new_item->bounds_align = item->bounds_align;
 			new_item->bounds = item->bounds;
+
+			obs_sceneitem_set_crop(new_item, &item->crop);
 
 			obs_source_release(source);
 		}
@@ -1123,6 +1227,11 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 {
 	if (item) {
+		if (item->crop_render) {
+			obs_enter_graphics();
+			gs_texrender_destroy(item->crop_render);
+			obs_leave_graphics();
+		}
 		obs_hotkey_pair_unregister(item->toggle_visibility);
 		pthread_mutex_destroy(&item->actions_mutex);
 		if (item->source)
@@ -1572,4 +1681,76 @@ void obs_scene_atomic_update(obs_scene_t *scene,
 	func(data, scene);
 	full_unlock(scene);
 	obs_scene_release(scene);
+}
+
+static inline bool crop_equal(const struct obs_sceneitem_crop *crop1,
+		const struct obs_sceneitem_crop *crop2)
+{
+	return crop1->left   == crop2->left  &&
+	       crop1->right  == crop2->right &&
+	       crop1->top    == crop2->top   &&
+	       crop1->bottom == crop2->bottom;
+}
+
+void obs_sceneitem_set_crop(obs_sceneitem_t *item,
+		const struct obs_sceneitem_crop *crop)
+{
+	bool now_enabled;
+
+	if (!obs_ptr_valid(item, "obs_sceneitem_set_crop"))
+		return;
+	if (!obs_ptr_valid(crop, "obs_sceneitem_set_crop"))
+		return;
+	if (crop_equal(crop, &item->crop))
+		return;
+
+	now_enabled = crop_enabled(crop);
+
+	obs_enter_graphics();
+
+	if (!now_enabled) {
+		gs_texrender_destroy(item->crop_render);
+		item->crop_render = NULL;
+
+	} else if (!item->crop_render) {
+		item->crop_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	}
+
+	memcpy(&item->crop, crop, sizeof(*crop));
+
+	if (item->crop.left < 0) item->crop.left = 0;
+	if (item->crop.right < 0) item->crop.right = 0;
+	if (item->crop.top < 0) item->crop.top = 0;
+	if (item->crop.bottom < 0) item->crop.bottom = 0;
+	obs_leave_graphics();
+
+	update_item_transform(item);
+}
+
+void obs_sceneitem_get_crop(const obs_sceneitem_t *item,
+		struct obs_sceneitem_crop *crop)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_get_crop"))
+		return;
+	if (!obs_ptr_valid(crop, "obs_sceneitem_get_crop"))
+		return;
+
+	memcpy(crop, &item->crop, sizeof(*crop));
+}
+
+void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_defer_update_begin"))
+		return;
+
+	os_atomic_inc_long(&item->defer_update);
+}
+
+void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_defer_update_end"))
+		return;
+
+	if (os_atomic_dec_long(&item->defer_update) == 0)
+		update_item_transform(item);
 }

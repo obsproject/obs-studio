@@ -66,6 +66,13 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[1] = width;
 		break;
 
+	case VIDEO_FORMAT_Y800:
+		size = width * height;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->linesize[0] = width;
+		break;
+
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
@@ -115,6 +122,7 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
 		break;
 
+	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:

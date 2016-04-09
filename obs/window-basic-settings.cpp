@@ -22,6 +22,7 @@
 #include <graphics/math-defs.h>
 #include <initializer_list>
 #include <sstream>
+#include <QCompleter>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -241,9 +242,6 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
-#define S_PATH_CHANGED  SLOT(SimplePathChanged())
-#define A_PATH_CHANGED  SLOT(AdvancedDefaultPathChanged())
-#define FF_PATH_CHANGED SLOT(AdvancedFFPathChanged())
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog          (parent),
@@ -268,10 +266,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->snapDistance,         SCROLL_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   S_PATH_CHANGED);
 	HookWidget(ui->simpleNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecFormat,   COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -292,7 +294,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutApplyService,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   A_PATH_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecFormat,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -305,7 +306,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecTrack4,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFType,         COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->advOutFFRecPath,      EDIT_CHANGED,   FF_PATH_CHANGED);
 	HookWidget(ui->advOutFFNoSpace,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFURL,          EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFFormat,       COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -353,6 +353,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
+	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
@@ -766,6 +768,27 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
+	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SnappingEnabled");
+	ui->snappingEnabled->setChecked(snappingEnabled);
+
+	bool screenSnapping = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ScreenSnapping");
+	ui->screenSnapping->setChecked(screenSnapping);
+
+	bool centerSnapping = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "CenterSnapping");
+	ui->centerSnapping->setChecked(centerSnapping);
+
+	bool sourceSnapping = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SourceSnapping");
+	ui->sourceSnapping->setChecked(sourceSnapping);
+
+	double snapDistance = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance");
+	ui->snapDistance->setValue(snapDistance);
+
+
 	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStartingStream");
 	ui->warnBeforeStreamStart->setChecked(warnBeforeStreamStart);
@@ -1134,6 +1157,14 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
+	QStringList specList = QTStr("FilenameFormatting.completer").split(
+				QRegularExpression("\n"));
+	QCompleter *specCompleter = new QCompleter(specList);
+	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
+	specCompleter->setFilterMode(Qt::MatchContains);
+	ui->filenameFormatting->setCompleter(specCompleter);
+	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
 	case 2: ui->advOutTrack2->setChecked(true); break;
@@ -1193,8 +1224,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecType");
 	const char *format = config_get_string(main->Config(), "AdvOut",
 			"RecFormat");
-	const char *path = config_get_string(main->Config(), "SimpleOutput",
-			"FilePath");
+	const char *path = config_get_string(main->Config(), "AdvOut",
+			"RecFilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 			"RecFileNameWithoutSpace");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
@@ -1268,8 +1299,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 {
 	bool saveFile = config_get_bool(main->Config(), "AdvOut",
 			"FFOutputToFile");
-	const char *path = config_get_string(main->Config(), "SimpleOutput",
-			"FilePath");
+	const char *path = config_get_string(main->Config(), "AdvOut",
+			"FFFilePath");
 	bool noSpace = config_get_bool(main->Config(), "AdvOut",
 			"FFFileNameWithoutSpace");
 	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
@@ -1670,10 +1701,17 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RetryDelay");
 	int maxRetries = config_get_int(main->Config(), "Output",
 			"MaxRetries");
+	const char *filename = config_get_string(main->Config(), "Output",
+			"FilenameFormatting");
+	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
+			"OverwriteIfExists");
 
 	loading = true;
 
 	LoadRendererList();
+
+	ui->filenameFormatting->setText(filename);
+	ui->overwriteIfExists->setChecked(overwriteIfExists);
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -2026,6 +2064,27 @@ void OBSBasicSettings::SaveGeneralSettings()
 		App()->SetTheme(theme);
 	}
 
+	if (WidgetChanged(ui->snappingEnabled))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SnappingEnabled",
+				ui->snappingEnabled->isChecked());
+	if (WidgetChanged(ui->screenSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"ScreenSnapping",
+				ui->screenSnapping->isChecked());
+	if (WidgetChanged(ui->centerSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"CenterSnapping",
+				ui->centerSnapping->isChecked());
+	if (WidgetChanged(ui->sourceSnapping))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SourceSnapping",
+				ui->sourceSnapping->isChecked());
+	if (WidgetChanged(ui->snapDistance))
+		config_set_double(GetGlobalConfig(), "BasicWindow",
+				"SnapDistance",
+				ui->snapDistance->value());
+
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStartingStream",
 			ui->warnBeforeStreamStart->isChecked());
@@ -2116,6 +2175,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
+	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
+	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
 	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
@@ -2242,6 +2303,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
+	SaveEdit(ui->advOutRecPath, "AdvOut", "RecFilePath");
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
 	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
@@ -2257,6 +2319,7 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	config_set_bool(main->Config(), "AdvOut", "FFOutputToFile",
 			ui->advOutFFType->currentIndex() == 0 ? true : false);
+	SaveEdit(ui->advOutFFRecPath, "AdvOut", "FFFilePath");
 	SaveCheckBox(ui->advOutFFNoSpace, "AdvOut", "FFFileNameWithoutSpace");
 	SaveEdit(ui->advOutFFURL, "AdvOut", "FFURL");
 	SaveFormat(ui->advOutFFFormat);
@@ -2555,7 +2618,7 @@ void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
 	QString dir = QFileDialog::getExistingDirectory(this,
 			QTStr("Basic.Settings.Output.SelectDirectory"),
-			ui->advOutFFRecPath->text(),
+			ui->advOutRecPath->text(),
 			QFileDialog::ShowDirsOnly |
 			QFileDialog::DontResolveSymlinks);
 	if (dir.isEmpty())
@@ -2694,6 +2757,23 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 	}
 }
 
+
+void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
+{
+#ifdef __APPLE__
+	size_t invalidLocation =
+		text.toStdString().find_first_of(":/\\");
+#elif  _WIN32
+	size_t invalidLocation =
+		text.toStdString().find_first_of("<>:\"/\\|?*");
+#else
+	size_t invalidLocation = text.toStdString().find_first_of("/");
+#endif
+
+	if (invalidLocation != string::npos)
+		ui->filenameFormatting->backspace();
+}
+
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 {
 	if (!loading)
@@ -2781,24 +2861,6 @@ void OBSBasicSettings::AdvancedChangedRestart()
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
-}
-
-void OBSBasicSettings::SimplePathChanged()
-{
-	ui->advOutRecPath->setText(ui->simpleOutputPath->text());
-	ui->advOutFFRecPath->setText(ui->simpleOutputPath->text());
-}
-
-void OBSBasicSettings::AdvancedDefaultPathChanged()
-{
-	ui->simpleOutputPath->setText(ui->advOutRecPath->text());
-	ui->advOutFFRecPath->setText(ui->advOutRecPath->text());
-}
-
-void OBSBasicSettings::AdvancedFFPathChanged()
-{
-	ui->simpleOutputPath->setText(ui->advOutFFRecPath->text());
-	ui->advOutRecPath->setText(ui->advOutFFRecPath->text());
 }
 
 void OBSBasicSettings::VideoChangedResolution()

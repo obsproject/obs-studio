@@ -2,9 +2,11 @@ project(obs-transitions)
 
 set(obs-transitions_SOURCES
 	obs-transitions.c
+	transition-slide.c
 	transition-swipe.c
 	transition-fade.c
 	transition-cut.c
+	transition-fade-to-color.c
 	)
 
 add_library(obs-transitions MODULE

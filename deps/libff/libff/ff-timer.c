@@ -51,6 +51,9 @@ static void *timer_thread(void *opaque)
 						- current_time));
 			}
 
+			pthread_mutex_unlock(&timer->mutex);
+			continue;
+
 			// we can be woken up merely to set a sooner wake time
 
 		} else {
