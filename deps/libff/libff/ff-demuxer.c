@@ -23,6 +23,8 @@
 
 #include <assert.h>
 
+#include "ff-compat.h"
+
 #define DEFAULT_AV_SYNC_TYPE AV_SYNC_VIDEO_MASTER
 
 #define AUDIO_FRAME_QUEUE_SIZE 1

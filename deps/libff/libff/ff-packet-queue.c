@@ -15,6 +15,7 @@
  */
 
 #include "ff-packet-queue.h"
+#include "ff-compat.h"
 
 bool packet_queue_init(struct ff_packet_queue *q)
 {

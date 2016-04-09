@@ -27,6 +27,8 @@
 
 #include <assert.h>
 
+#include "ff-compat.h"
+
 static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		double best_effort_pts)
 {

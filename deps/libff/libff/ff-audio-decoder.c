@@ -28,6 +28,8 @@
 
 #include <assert.h>
 
+#include "ff-compat.h"
+
 static inline void shrink_packet(struct ff_packet *packet, int packet_length)
 {
 	if (packet_length <= packet->base.size) {
