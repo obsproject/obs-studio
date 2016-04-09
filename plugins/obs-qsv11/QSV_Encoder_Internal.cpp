@@ -280,7 +280,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	EncRequest.Type |= WILL_WRITE;
 	
 	// SNB hack. On some SNB, it seems to require more surfaces 
-	// EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
+	EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
 
 	info("MSDK Surf Allocating:\n");
 		
@@ -443,14 +443,19 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
 	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+
+#if 0
 	info("MSDK Encode:\n"
 		"\tTaskIndex: %10d\n",
 		nTaskIdx);
+#endif
 
 	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+#if 0
 	info("MSDK Encode:\n"
 		"\tnSurfIdx: %10d\n",
 		nSurfIdx);
+#endif
 
 	while (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) 
 	{
@@ -468,16 +473,21 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		nTaskIdx = m_nFirstSyncTask;
 		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
 		*pBS = &m_outBitstream;
+
+#if 0
 		info("MSDK Encode:\n"
 			"\tnew FirstSyncTask: %10d\n"
 			"\tTaskIndex: %10d\n",
 			m_nFirstSyncTask,
 			nTaskIdx);
+#endif
 
 		nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+#if 0 
 		info("MSDK Encode:\n"
 			"\tnSurfIdx: %10d\n",
 			nSurfIdx);
+#endif
 	}
 	
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
