@@ -278,8 +278,9 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	EncRequest.Type |= WILL_WRITE;
+	
 	// SNB hack. On some SNB, it seems to require more surfaces 
-	EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
+	// EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
 
 	info("MSDK Surf Allocating:\n");
 		
