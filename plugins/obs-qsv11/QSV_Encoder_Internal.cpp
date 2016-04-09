@@ -91,7 +91,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 			m_session.Close();
 
 			// Use D3D11 surface
-			m_bUseD3D11 = ((version.Major > 1) || (version.Major == 1 && version.Minor >= 8));
+			// m_bUseD3D11 = ((version.Major > 1) || (version.Major == 1 && version.Minor >= 8));
+			m_bUseD3D11 = true;
 			if (m_bUseD3D11)
 				info("MSDK settings:\n"
 					 "\timpl:  D3D11\n"
@@ -277,6 +278,8 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	EncRequest.Type |= WILL_WRITE;
+	// SNB hack. On some SNB, it seems to require more surfaces 
+	EncRequest.NumFrameSuggested += m_mfxEncParams.AsyncDepth;
 
 	info("MSDK Surf Allocating:\n");
 		
@@ -448,7 +451,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		"\tnSurfIdx: %10d\n",
 		nSurfIdx);
 
-	if (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) 
+	while (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) 
 	{
 		// No more free tasks or surfaces, need to sync
 		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
