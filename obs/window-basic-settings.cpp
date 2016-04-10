@@ -472,6 +472,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingQualityLosslessWarning(int)));
 	connect(ui->simpleOutRecEncoder, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleOutEnforce, SIGNAL(toggled(bool)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
 
 	LoadSettings(false);
 
@@ -3053,25 +3061,59 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
 	QString warning;
+	bool advanced = ui->simpleOutAdvanced->isChecked();
+	bool enforceBitrate = ui->simpleOutEnforce->isChecked() || !advanced;
+	obs_service_t *service = main->GetService();
 
 	delete simpleOutRecWarning;
 
-	if (qual == "Stream") {
-		return;
+	if (enforceBitrate && service) {
+		obs_data_t *videoSettings = obs_data_create();
+		obs_data_t *audioSettings = obs_data_create();
+		int oldVBitrate = ui->simpleOutputVBitrate->value();
+		int oldABitrate = ui->simpleOutputABitrate->currentText().toInt();
+		obs_data_set_int(videoSettings, "bitrate", oldVBitrate);
+		obs_data_set_int(audioSettings, "bitrate", oldABitrate);
 
-	} else if (qual == "Lossless") {
-		warning  = SIMPLE_OUTPUT_WARNING("Lossless");
+		obs_service_apply_encoder_settings(service, videoSettings,
+				audioSettings);
+
+		int newVBitrate = obs_data_get_int(videoSettings, "bitrate");
+		int newABitrate = obs_data_get_int(audioSettings, "bitrate");
+
+		if (newVBitrate < oldVBitrate)
+			warning = SIMPLE_OUTPUT_WARNING("VideoBitrate")
+				.arg(newVBitrate);
+		if (newABitrate < oldABitrate) {
+			if (!warning.isEmpty())
+				warning += "\n\n";
+			warning += SIMPLE_OUTPUT_WARNING("AudioBitrate")
+				.arg(newABitrate);
+		}
+
+		obs_data_release(videoSettings);
+		obs_data_release(audioSettings);
+	}
+
+	if (qual == "Lossless") {
+		if (!warning.isEmpty())
+			warning += "\n\n";
+		warning += SIMPLE_OUTPUT_WARNING("Lossless");
 		warning += "\n\n";
 		warning += SIMPLE_OUTPUT_WARNING("Encoder");
 
-	} else {
+	} else if (qual != "Stream") {
 		QString enc = ui->simpleOutRecEncoder->currentData().toString();
-		if (enc != SIMPLE_ENCODER_X264 &&
-		    enc != SIMPLE_ENCODER_X264_LOWCPU)
-			return;
-
-		warning = SIMPLE_OUTPUT_WARNING("Encoder");
+		if (enc == SIMPLE_ENCODER_X264 ||
+		    enc == SIMPLE_ENCODER_X264_LOWCPU) {
+			if (!warning.isEmpty())
+				warning += "\n\n";
+			warning += SIMPLE_OUTPUT_WARNING("Encoder");
+		}
 	}
+
+	if (warning.isEmpty())
+		return;
 
 	simpleOutRecWarning = new QLabel(warning, this);
 	simpleOutRecWarning->setObjectName("warningLabel");
