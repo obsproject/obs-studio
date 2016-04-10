@@ -304,6 +304,13 @@ static obs_source_t *obs_source_create_internal(const char *id,
 		source->owns_info_id = true;
 	} else {
 		source->info = *info;
+
+		/* Always mark filters as private so they aren't found by
+		 * source enum/search functions.
+		 *
+		 * XXX: Fix design flaws with filters */
+		if (info->type == OBS_SOURCE_TYPE_FILTER)
+			private = true;
 	}
 
 	source->mute_unmute_key  = OBS_INVALID_HOTKEY_PAIR_ID;
