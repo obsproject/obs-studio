@@ -94,7 +94,7 @@ void ff_demuxer_free(struct ff_demuxer *demuxer)
 		ff_decoder_free(demuxer->video_decoder);
 
 	if (demuxer->format_context)
-		avformat_free_context(demuxer->format_context);
+		avformat_close_input(&demuxer->format_context);
 
 	av_free(demuxer);
 }
