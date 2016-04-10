@@ -231,6 +231,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define CBEDIT_CHANGED  SIGNAL(editTextChanged(const QString &))
 #define CHECK_CHANGED   SIGNAL(clicked(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
+#define DSCROLL_CHANGED SIGNAL(valueChanged(double))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
 #define STREAM1_CHANGED SLOT(Stream1Changed())
@@ -270,7 +271,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->snapDistance,         SCROLL_CHANGED, GENERAL_CHANGED);
+	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
