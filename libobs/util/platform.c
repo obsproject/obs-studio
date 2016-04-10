@@ -90,7 +90,7 @@ int os_stat(const char *file, struct stat *st)
 {
 	if (file) {
 		wchar_t w_file[512];
-		int size = os_utf8_to_wcs(file, 0, w_file, sizeof(w_file));
+		size_t size = os_utf8_to_wcs(file, 0, w_file, sizeof(w_file));
 		if (size > 0) {
 			struct _stat st_w32;
 			int ret = _wstat(w_file, &st_w32);
