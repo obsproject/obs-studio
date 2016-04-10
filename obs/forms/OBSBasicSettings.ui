@@ -621,7 +621,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="QComboBox" name="simpleOutPreset">
                   <item>
                    <property name="text">
@@ -665,7 +665,7 @@
                   </item>
                  </widget>
                 </item>
-                <item row="3" column="0">
+                <item row="4" column="0">
                  <widget class="QLabel" name="label_24">
                   <property name="enabled">
                    <bool>true</bool>
@@ -678,7 +678,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_23">
                   <property name="text">
                    <string>Basic.Settings.Output.CustomEncoderSettings</string>
@@ -688,8 +688,15 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="QLineEdit" name="simpleOutCustom"/>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QCheckBox" name="simpleOutEnforce">
+                  <property name="text">
+                   <string>Basic.Settings.Output.EnforceBitrate</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3669,8 +3676,24 @@
      <y>207</y>
     </hint>
     <hint type="destinationlabel">
-     <x>777</x>
-     <y>206</y>
+     <x>866</x>
+     <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutEnforce</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>484</x>
+     <y>147</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>483</x>
+     <y>170</y>
     </hint>
    </hints>
   </connection>

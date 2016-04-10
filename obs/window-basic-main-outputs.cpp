@@ -297,6 +297,8 @@ void SimpleOutput::Update()
 	int audioBitrate = GetAudioBitrate();
 	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
 			"UseAdvanced");
+	bool enforceBitrate = config_get_bool(main->Config(), "SimpleOutput",
+			"EnforceBitrate");
 	const char *preset = config_get_string(main->Config(),
 			"SimpleOutput", "Preset");
 	const char *custom = config_get_string(main->Config(),
@@ -314,6 +316,9 @@ void SimpleOutput::Update()
 
 	obs_service_apply_encoder_settings(main->GetService(),
 			h264Settings, aacSettings);
+
+	if (advanced && !enforceBitrate)
+		obs_data_set_int(h264Settings, "bitrate", videoBitrate);
 
 	video_t *video = obs_get_video();
 	enum video_format format = video_output_get_format(video);
