@@ -2666,6 +2666,18 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
+
+	if (!target) {
+		blog(LOG_INFO, "filter '%s' being processed with no target!",
+				filter->context.name);
+		return;
+	}
+	if (!parent) {
+		blog(LOG_INFO, "filter '%s' being processed with no parent!",
+				filter->context.name);
+		return;
+	}
+
 	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 	cx           = get_base_width(target);
@@ -2724,6 +2736,10 @@ void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effec
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
+
+	if (!target || !parent)
+		return;
+
 	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 
