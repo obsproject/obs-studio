@@ -100,6 +100,7 @@ static CRITICAL_SECTION g_QsvCs;
 static unsigned short	g_verMajor;
 static unsigned short	g_verMinor;
 static int64_t			g_pts2dtsShift;
+static int64_t			g_prevDts;
 static bool				g_bFirst;
 
 static const char *obs_qsv_getname(void *type_data)
@@ -430,6 +431,7 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	qsv_encoder_version(&g_verMajor, &g_verMinor);
 
+	g_verMinor = 4;
 	info("MSDK version:\n"
 		"\tmajor:%10d\n"
 		"\tminor:%10d\n",
@@ -438,11 +440,17 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	// MSDK 1.6 or less doesn't have automatic DTS calculation
 	// including early SandyBridge.
 	// Need to add manual DTS from PTS. 
-	if (g_verMajor <= 1 && g_verMinor < 7)
+	if (g_verMajor == 1 && g_verMinor < 7)
 	{
 		int64_t interval = obsqsv->params.nbFrames + 1;
 		int64_t GopPicSize = (int64_t)(obsqsv->params.nKeyIntSec * obsqsv->params.nFpsNum / (float)obsqsv->params.nFpsDen);
 		g_pts2dtsShift = GopPicSize - (GopPicSize / interval) * interval;
+		
+		info("MSDK sequence setting:\n"
+			"\tinterval:%10d\n"
+			"\tGopPictSize:%10d\n"
+			"\tg_pts2dtsShift:%10d\n",
+			interval, GopPicSize, g_pts2dtsShift);
 	}
 	else
 		g_pts2dtsShift = -1;
@@ -559,30 +567,39 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
 	packet->keyframe = (pBS->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
 	
+	bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
+	int64_t interval = obsqsv->params.nbFrames + 1;
+
 	// In case MSDK does't support automatic DecodeTimeStamp, do manual calculation
-	// Seems to have some artifact after dynamically changing encoder parameters, 
-	// but quickly recovers. 
 	if (g_pts2dtsShift >= 0)
 	{
-		bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
-		bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
-		bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
-		int64_t interval = obsqsv->params.nbFrames + 1;
-		
 		if (g_bFirst)
-			packet->dts = packet->pts - obsqsv->params.nFpsDen;
-		else if (bFrame)
-			packet->dts = packet->pts;
-		else if (pFrame)
-			packet->dts = packet->pts - interval * obsqsv->params.nFpsDen;
-		else if (iFrame)
-			packet->dts = packet->pts - g_pts2dtsShift * obsqsv->params.nFpsDen;
+			packet->dts = packet->pts - 3 * obsqsv->params.nFpsDen;
+		else if (pFrame) {
+			packet->dts = packet->pts - 10 * obsqsv->params.nFpsDen;
+			g_prevDts = packet->dts;
+		}
+		else {
+			packet->dts = g_prevDts + obsqsv->params.nFpsDen;
+			g_prevDts = packet->dts;
+		}
 	}
 	else
 	{
 		packet->dts = pBS->DecodeTimeStamp * fps_num / 90000;
 	}
 	
+#if 0
+	info("parse packet:\n"
+		"\tFrameType:%10d\n"
+		"\tpts:%15d\n"
+		"\tdts:%15d\n",
+		iType, packet->pts, packet->dts);
+#endif
+
 	*received_packet = true;
 	pBS->DataLength = 0;
 
