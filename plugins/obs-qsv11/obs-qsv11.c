@@ -431,7 +431,6 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	qsv_encoder_version(&g_verMajor, &g_verMinor);
 
-	g_verMinor = 4;
 	info("MSDK version:\n"
 		"\tmajor:%10d\n"
 		"\tminor:%10d\n",
