@@ -137,11 +137,15 @@ static inline void SetComboByName(QComboBox *combo, const char *name)
 		combo->setCurrentIndex(idx);
 }
 
-static inline void SetComboByValue(QComboBox *combo, const char *name)
+static inline bool SetComboByValue(QComboBox *combo, const char *name)
 {
 	int idx = combo->findData(QT_UTF8(name));
-	if (idx != -1)
+	if (idx != -1) {
 		combo->setCurrentIndex(idx);
+		return true;
+	}
+
+	return false;
 }
 
 static inline QString GetComboData(QComboBox *combo)
@@ -573,8 +577,11 @@ void OBSBasicSettings::LoadEncoderTypes()
 	while (obs_enum_encoder_types(idx++, &type)) {
 		const char *name = obs_encoder_get_display_name(type);
 		const char *codec = obs_get_encoder_codec(type);
+		uint32_t caps = obs_get_encoder_caps(type);
 
 		if (strcmp(codec, "h264") != 0)
+			continue;
+		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
@@ -1217,18 +1224,27 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 
 void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 {
-	const char *encoder = config_get_string(main->Config(), "AdvOut",
+	const char *type = config_get_string(main->Config(), "AdvOut",
 			"Encoder");
 
 	delete streamEncoderProps;
-	streamEncoderProps = CreateEncoderPropertyView(encoder,
+	streamEncoderProps = CreateEncoderPropertyView(type,
 			"streamEncoder.json");
 	ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
 
 	connect(streamEncoderProps, SIGNAL(Changed()),
 			this, SLOT(UpdateStreamDelayEstimate()));
 
-	SetComboByValue(ui->advOutEncoder, encoder);
+	if (!SetComboByValue(ui->advOutEncoder, type)) {
+		uint32_t caps = obs_get_encoder_caps(type);
+		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0) {
+			const char *name = obs_encoder_get_display_name(type);
+
+			ui->advOutEncoder->insertItem(0, QT_UTF8(name),
+					QT_UTF8(type));
+			SetComboByValue(ui->advOutEncoder, type);
+		}
+	}
 
 	UpdateStreamDelayEstimate();
 }
@@ -1270,19 +1286,28 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 
 void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 {
-	const char *encoder = config_get_string(main->Config(), "AdvOut",
+	const char *type = config_get_string(main->Config(), "AdvOut",
 			"RecEncoder");
 
 	delete recordEncoderProps;
 	recordEncoderProps = nullptr;
 
-	if (astrcmpi(encoder, "none") != 0) {
-		recordEncoderProps = CreateEncoderPropertyView(encoder,
+	if (astrcmpi(type, "none") != 0) {
+		recordEncoderProps = CreateEncoderPropertyView(type,
 				"recordEncoder.json");
 		ui->advOutRecStandard->layout()->addWidget(recordEncoderProps);
 	}
 
-	SetComboByValue(ui->advOutRecEncoder, encoder);
+	if (!SetComboByValue(ui->advOutRecEncoder, type)) {
+		uint32_t caps = obs_get_encoder_caps(type);
+		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0) {
+			const char *name = obs_encoder_get_display_name(type);
+
+			ui->advOutRecEncoder->insertItem(1, QT_UTF8(name),
+					QT_UTF8(type));
+			SetComboByValue(ui->advOutRecEncoder, type);
+		}
+	}
 }
 
 static void SelectFormat(QComboBox *combo, const char *name,
