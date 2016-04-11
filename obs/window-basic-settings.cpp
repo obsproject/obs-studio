@@ -480,6 +480,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutEnforce, SIGNAL(toggled(bool)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->listWidget, SIGNAL(currentRowChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
 
 	LoadSettings(false);
 
@@ -3063,7 +3065,17 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	QString warning;
 	bool advanced = ui->simpleOutAdvanced->isChecked();
 	bool enforceBitrate = ui->simpleOutEnforce->isChecked() || !advanced;
-	obs_service_t *service = main->GetService();
+	OBSService service;
+
+	if (stream1Changed) {
+		QString streamType = GetComboData(ui->streamType);
+		service = obs_service_create_private(
+				QT_TO_UTF8(streamType), nullptr,
+				streamProperties->GetSettings());
+		obs_service_release(service);
+	} else {
+		service = main->GetService();
+	}
 
 	delete simpleOutRecWarning;
 
