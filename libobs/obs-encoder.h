@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#define OBS_ENCODER_CAP_DEPRECATED             (1<<0)
+
 /** Specifies the encoder type */
 enum obs_encoder_type {
 	OBS_ENCODER_AUDIO, /**< The encoder provides an audio codec */
@@ -227,6 +229,8 @@ struct obs_encoder_info {
 
 	void *type_data;
 	void (*free_type_data)(void *type_data);
+
+	uint32_t caps;
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
