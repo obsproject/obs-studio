@@ -317,8 +317,10 @@ void SimpleOutput::Update()
 	obs_service_apply_encoder_settings(main->GetService(),
 			h264Settings, aacSettings);
 
-	if (advanced && !enforceBitrate)
+	if (advanced && !enforceBitrate) {
 		obs_data_set_int(h264Settings, "bitrate", videoBitrate);
+		obs_data_set_int(aacSettings, "bitrate", audioBitrate);
+	}
 
 	video_t *video = obs_get_video();
 	enum video_format format = video_output_get_format(video);
