@@ -232,7 +232,7 @@ void matrix4_scale_i(struct matrix4 *dst, const struct vec3 *v,
 bool matrix4_inv(struct matrix4 *dst, const struct matrix4 *m)
 {
 	struct vec4 *dstv = (struct vec4 *)dst;
-	float det = matrix4_determinant(m);
+	float det;
 	float m3x3[9];
 	int   i, j, sign;
 
