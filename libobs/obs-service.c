@@ -53,17 +53,8 @@ static obs_service_t *obs_service_create_internal(const char *id,
 		return NULL;
 	}
 
-	if (!info) {
-		blog(LOG_ERROR, "Service ID '%s' not found", id);
-
-		service->info.id      = bstrdup(id);
-		service->owns_info_id = true;
-	} else {
-		service->info = *info;
-	}
-
-	if (info)
-		service->context.data = service->info.create(
+	service->info = *info;
+	service->context.data = service->info.create(
 				service->context.settings, service);
 	if (!service->context.data)
 		blog(LOG_ERROR, "Failed to create service '%s'!", name);
