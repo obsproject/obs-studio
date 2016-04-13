@@ -166,6 +166,16 @@ bool obs_source_init(struct obs_source *source)
 	if (is_audio_source(source) || is_composite_source(source))
 		allocate_audio_output_buffer(source);
 
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		if (!obs_transition_init(source))
+			return false;
+	}
+
+	source->control = bzalloc(sizeof(obs_weak_source_t));
+	source->deinterlace_top_first = true;
+	source->control->source = source;
+	source->audio_mixers = 0xF;
+
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
 
@@ -179,16 +189,6 @@ bool obs_source_init(struct obs_source *source)
 
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
-
-	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
-		if (!obs_transition_init(source))
-			return false;
-	}
-
-	source->control = bzalloc(sizeof(obs_weak_source_t));
-	source->deinterlace_top_first = true;
-	source->control->source = source;
-	source->audio_mixers = 0xF;
 
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
