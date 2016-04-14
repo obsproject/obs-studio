@@ -598,6 +598,18 @@ retryScene:
 	if (!opt_starting_scene.empty())
 		opt_starting_scene.clear();
 
+	if (opt_start_streaming) {
+		QMetaObject::invokeMethod(this, "StartStreaming",
+				Qt::QueuedConnection);
+		opt_start_streaming = false;
+	}
+
+	if (opt_start_recording) {
+		QMetaObject::invokeMethod(this, "StartRecording",
+				Qt::QueuedConnection);
+		opt_start_recording = false;
+	}
+
 	disableSaving--;
 }
 
