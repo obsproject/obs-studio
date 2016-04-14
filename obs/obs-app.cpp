@@ -57,6 +57,7 @@ static string currentLogFile;
 static string lastLogFile;
 
 static bool portable_mode = false;
+string opt_starting_scene;
 
 QObject *CreateShortcutFilter()
 {
@@ -1553,6 +1554,9 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
+
+		} else if (arg_is(argv[i], "--scene", nullptr)) {
+			if (++i < argc) opt_starting_scene = argv[i];
 		}
 	}
 

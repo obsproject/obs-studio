@@ -153,3 +153,5 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 			App()->GetMainWindow());
 	return window->GetProfilePath(path, size, file);
 }
+
+extern std::string opt_starting_scene;

@@ -500,6 +500,12 @@ void OBSBasic::Load(const char *file)
 	const char       *transitionName = obs_data_get_string(data,
 			"current_transition");
 
+	if (!opt_starting_scene.empty()) {
+		programSceneName = opt_starting_scene.c_str();
+		if (!IsPreviewProgramMode())
+			sceneName = opt_starting_scene.c_str();
+	}
+
 	int newDuration = obs_data_get_int(data, "transition_duration");
 	if (!newDuration)
 		newDuration = 300;
@@ -542,8 +548,22 @@ void OBSBasic::Load(const char *file)
 	ui->transitionDuration->setValue(newDuration);
 	SetTransition(curTransition);
 
+retryScene:
 	curScene = obs_get_source_by_name(sceneName);
 	curProgramScene = obs_get_source_by_name(programSceneName);
+
+	/* if the starting scene command line parameter is bad at all,
+	 * fall back to original settings */
+	if (!opt_starting_scene.empty() && (!curScene || !curProgramScene)) {
+		sceneName = obs_data_get_string(data, "current_scene");
+		programSceneName = obs_data_get_string(data,
+				"current_program_scene");
+		obs_source_release(curScene);
+		obs_source_release(curProgramScene);
+		opt_starting_scene.clear();
+		goto retryScene;
+	}
+
 	if (!curProgramScene) {
 		curProgramScene = curScene;
 		obs_source_addref(curScene);
@@ -574,6 +594,9 @@ void OBSBasic::Load(const char *file)
 	RefreshQuickTransitions();
 
 	obs_data_release(data);
+
+	if (!opt_starting_scene.empty())
+		opt_starting_scene.clear();
 
 	disableSaving--;
 }
