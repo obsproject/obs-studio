@@ -539,7 +539,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_20">
                   <property name="text">
                    <string>Basic.Settings.Output.AudioBitrate</string>
@@ -549,7 +549,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QComboBox" name="simpleOutputABitrate">
                   <property name="currentIndex">
                    <number>8</number>
@@ -611,7 +611,7 @@
                   </item>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QCheckBox" name="simpleOutAdvanced">
                   <property name="text">
                    <string>Basic.Settings.Output.Advanced</string>
@@ -621,51 +621,10 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
-                 <widget class="QComboBox" name="simpleOutPreset">
-                  <item>
-                   <property name="text">
-                    <string notr="true">ultrafast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">superfast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">veryfast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">faster</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">fast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">medium</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">slow</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">slower</string>
-                   </property>
-                  </item>
-                 </widget>
+                <item row="5" column="1">
+                 <widget class="QComboBox" name="simpleOutPreset"/>
                 </item>
-                <item row="4" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_24">
                   <property name="enabled">
                    <bool>true</bool>
@@ -678,7 +637,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_23">
                   <property name="text">
                    <string>Basic.Settings.Output.CustomEncoderSettings</string>
@@ -688,13 +647,26 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="1">
+                <item row="6" column="1">
                  <widget class="QLineEdit" name="simpleOutCustom"/>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="QCheckBox" name="simpleOutEnforce">
                   <property name="text">
                    <string>Basic.Settings.Output.EnforceBitrate</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="simpleOutStrEncoder"/>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="simpleOutRecEncoderLabel_2">
+                  <property name="text">
+                   <string>Basic.Settings.Output.Encoder</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecEncoder</cstring>
                   </property>
                  </widget>
                 </item>
@@ -2525,8 +2497,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>80</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -2891,8 +2863,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>525</width>
-              <height>383</height>
+              <width>559</width>
+              <height>563</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">

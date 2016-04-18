@@ -108,6 +108,9 @@ private:
 	QPointer<QLabel> advOutRecWarning;
 	QPointer<QLabel> simpleOutRecWarning;
 
+	QString curPreset;
+	QString curQSVPreset;
+
 	using AudioSource_t =
 		std::tuple<OBSWeakSource,
 			QPointer<QCheckBox>, QPointer<QSpinBox>,
@@ -231,6 +234,7 @@ private:
 	void UpdateAdvOutStreamDelayEstimate();
 
 	void FillSimpleRecordingValues();
+	void FillSimpleStreamingValues();
 
 	void RecalcOutputResPixels(const char *resText);
 
@@ -280,6 +284,8 @@ private slots:
 	void SimpleRecordingQualityChanged();
 	void SimpleRecordingEncoderChanged();
 	void SimpleRecordingQualityLosslessWarning(int idx);
+
+	void SimpleStreamingEncoderChanged();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);

@@ -153,6 +153,7 @@ struct SimpleOutput : BasicOutputHandler {
 	int CalcCRF(int crf);
 
 	void UpdateRecordingSettings_x264_crf(int crf);
+	void UpdateRecordingSettings_qsv11(int crf);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -160,9 +161,11 @@ struct SimpleOutput : BasicOutputHandler {
 	void SetupOutputs();
 	int GetAudioBitrate() const;
 
-	void LoadRecordingPreset_x264();
+	void LoadRecordingPreset_h264(const char *encoder);
 	void LoadRecordingPreset_Lossless();
 	void LoadRecordingPreset();
+
+	void LoadStreamingPreset_h264(const char *encoder);
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
@@ -191,17 +194,22 @@ void SimpleOutput::LoadRecordingPreset_Lossless()
 	obs_data_release(settings);
 }
 
-void SimpleOutput::LoadRecordingPreset_x264()
+void SimpleOutput::LoadRecordingPreset_h264(const char *encoderId)
 {
-	h264Recording = obs_video_encoder_create("obs_x264",
+	h264Recording = obs_video_encoder_create(encoderId,
 			"simple_h264_recording", nullptr, nullptr);
 	if (!h264Recording)
 		throw "Failed to create h264 recording encoder (simple output)";
 	obs_encoder_release(h264Recording);
+}
 
-	if (!CreateAACEncoder(aacRecording, aacRecEncID, 192,
-				"simple_aac_recording", 0))
-		throw "Failed to create aac recording encoder (simple output)";
+void SimpleOutput::LoadStreamingPreset_h264(const char *encoderId)
+{
+	h264Streaming = obs_video_encoder_create(encoderId,
+			"simple_h264_stream", nullptr, nullptr);
+	if (!h264Streaming)
+		throw "Failed to create h264 streaming encoder (simple output)";
+	obs_encoder_release(h264Streaming);
 }
 
 void SimpleOutput::LoadRecordingPreset()
@@ -228,9 +236,22 @@ void SimpleOutput::LoadRecordingPreset()
 		return;
 
 	} else {
-		lowCPUx264  = strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0;
-		LoadRecordingPreset_x264();
+		lowCPUx264 = false;
+
+		if (strcmp(encoder, SIMPLE_ENCODER_X264) == 0) {
+			LoadRecordingPreset_h264("obs_x264");
+		} else if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0) {
+			LoadRecordingPreset_h264("obs_x264");
+			lowCPUx264 = true;
+		} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
+			LoadRecordingPreset_h264("obs_qsv11");
+		}
 		usingRecordingPreset = true;
+
+		if (!CreateAACEncoder(aacRecording, aacRecEncID, 192,
+					"simple_aac_recording", 0))
+			throw "Failed to create aac recording encoder "
+			      "(simple output)";
 	}
 }
 
@@ -242,11 +263,12 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create stream output (simple output)";
 	obs_output_release(streamOutput);
 
-	h264Streaming = obs_video_encoder_create("obs_x264",
-			"simple_h264_stream", nullptr, nullptr);
-	if (!h264Streaming)
-		throw "Failed to create h264 streaming encoder (simple output)";
-	obs_encoder_release(h264Streaming);
+	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
+			"StreamEncoder");
+	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
+		LoadStreamingPreset_h264("obs_qsv11");
+	else
+		LoadStreamingPreset_h264("obs_x264");
 
 	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
 				"simple_aac", 0))
@@ -299,10 +321,19 @@ void SimpleOutput::Update()
 			"UseAdvanced");
 	bool enforceBitrate = config_get_bool(main->Config(), "SimpleOutput",
 			"EnforceBitrate");
-	const char *preset = config_get_string(main->Config(),
-			"SimpleOutput", "Preset");
 	const char *custom = config_get_string(main->Config(),
 			"SimpleOutput", "x264Settings");
+	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
+			"StreamEncoder");
+	const char *presetType;
+	const char *preset;
+
+	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
+		presetType = "QSVPreset";
+	else
+		presetType = "Preset";
+
+	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
 
 	obs_data_set_int(h264Settings, "bitrate", videoBitrate);
 
@@ -384,13 +415,56 @@ void SimpleOutput::UpdateRecordingSettings_x264_crf(int crf)
 	obs_data_release(settings);
 }
 
+static bool icq_available(obs_encoder_t *encoder)
+{
+	obs_properties_t *props = obs_encoder_properties(encoder);
+	obs_property_t *p = obs_properties_get(props, "rate_control");
+	bool icq_found = false;
+
+	size_t num = obs_property_list_item_count(p);
+	for (size_t i = 0; i < num; i++) {
+		const char *val = obs_property_list_item_string(p, i);
+		if (strcmp(val, "ICQ_LA") == 0) {
+			icq_found = true;
+			break;
+		}
+	}
+
+	obs_properties_destroy(props);
+	return icq_found;
+}
+
+void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
+{
+	bool icq = icq_available(h264Recording);
+
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "profile", "high");
+
+	if (icq) {
+		obs_data_set_string(settings, "rate_control", "LA_ICQ");
+		obs_data_set_int(settings, "icq_quality", crf);
+	} else {
+		obs_data_set_string(settings, "rate_control", "CQP");
+		obs_data_set_int(settings, "qpi", crf);
+		obs_data_set_int(settings, "qpp", crf);
+		obs_data_set_int(settings, "qpb", crf);
+	}
+
+	obs_encoder_update(h264Recording, settings);
+
+	obs_data_release(settings);
+}
+
 void SimpleOutput::UpdateRecordingSettings()
 {
+	int crf = CalcCRF((videoQuality == "HQ") ? 16 : 23);
+
 	if (astrcmp_n(videoEncoder.c_str(), "x264", 4) == 0) {
-		if (videoQuality == "Small")
-			UpdateRecordingSettings_x264_crf(CalcCRF(23));
-		else if (videoQuality == "HQ")
-			UpdateRecordingSettings_x264_crf(CalcCRF(16));
+		UpdateRecordingSettings_x264_crf(crf);
+
+	} else if (videoEncoder == SIMPLE_ENCODER_QSV) {
+		UpdateRecordingSettings_qsv11(crf);
 	}
 }
 
