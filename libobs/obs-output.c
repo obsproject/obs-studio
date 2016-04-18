@@ -1039,6 +1039,26 @@ static int find_first_packet_type_idx(struct obs_output *output,
 	return -1;
 }
 
+static int find_last_packet_type_idx(struct obs_output *output,
+		enum obs_encoder_type type, size_t audio_idx)
+{
+	for (size_t i = output->interleaved_packets.num; i > 0; i--) {
+		struct encoder_packet *packet =
+			&output->interleaved_packets.array[i - 1];
+
+		if (packet->type == type) {
+			if (type == OBS_ENCODER_AUDIO &&
+			    packet->track_idx != audio_idx) {
+				continue;
+			}
+
+			return (int)(i - 1);
+		}
+	}
+
+	return -1;
+}
+
 static inline struct encoder_packet *find_first_packet_type(
 		struct obs_output *output, enum obs_encoder_type type,
 		size_t audio_idx)
@@ -1047,10 +1067,19 @@ static inline struct encoder_packet *find_first_packet_type(
 	return (idx != -1) ? &output->interleaved_packets.array[idx] : NULL;
 }
 
+static inline struct encoder_packet *find_last_packet_type(
+		struct obs_output *output, enum obs_encoder_type type,
+		size_t audio_idx)
+{
+	int idx = find_last_packet_type_idx(output, type, audio_idx);
+	return (idx != -1) ? &output->interleaved_packets.array[idx] : NULL;
+}
+
 static bool initialize_interleaved_packets(struct obs_output *output)
 {
 	struct encoder_packet *video;
 	struct encoder_packet *audio[MAX_AUDIO_MIXES];
+	struct encoder_packet *last_audio[MAX_AUDIO_MIXES];
 	size_t audio_mixes = num_audio_mixes(output);
 
 	video = find_first_packet_type(output, OBS_ENCODER_VIDEO, 0);
@@ -1063,10 +1092,21 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 			output->received_audio = false;
 			return false;
 		}
+
+		last_audio[i] = find_last_packet_type(output, OBS_ENCODER_AUDIO,
+				i);
 	}
 
 	if (!video) {
 		return false;
+	}
+
+	/* ensure that there is audio past the first video packet */
+	for (size_t i = 0; i < audio_mixes; i++) {
+		if (last_audio[i]->dts_usec < video->dts_usec) {
+			output->received_audio = false;
+			return false;
+		}
 	}
 
 	/* get new offsets */
