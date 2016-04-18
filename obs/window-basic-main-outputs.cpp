@@ -154,6 +154,7 @@ struct SimpleOutput : BasicOutputHandler {
 
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
+	void UpdateRecordingSettings_nvenc(int bitrate);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -245,6 +246,8 @@ void SimpleOutput::LoadRecordingPreset()
 			lowCPUx264 = true;
 		} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
 			LoadRecordingPreset_h264("obs_qsv11");
+		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
+			LoadRecordingPreset_h264("ffmpeg_nvenc");
 		}
 		usingRecordingPreset = true;
 
@@ -267,6 +270,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"StreamEncoder");
 	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
 		LoadStreamingPreset_h264("obs_qsv11");
+	else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0)
+		LoadStreamingPreset_h264("ffmpeg_nvenc");
 	else
 		LoadStreamingPreset_h264("obs_x264");
 
@@ -330,6 +335,8 @@ void SimpleOutput::Update()
 
 	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
 		presetType = "QSVPreset";
+	else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0)
+		presetType = "NVENCPreset";
 	else
 		presetType = "Preset";
 
@@ -456,15 +463,31 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 	obs_data_release(settings);
 }
 
+void SimpleOutput::UpdateRecordingSettings_nvenc(int bitrate)
+{
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "profile", "high");
+	obs_data_set_string(settings, "preset", "hq");
+	obs_data_set_int(settings, "bitrate", bitrate);
+
+	obs_encoder_update(h264Recording, settings);
+
+	obs_data_release(settings);
+}
+
 void SimpleOutput::UpdateRecordingSettings()
 {
-	int crf = CalcCRF((videoQuality == "HQ") ? 16 : 23);
+	bool ultra_hq = (videoQuality == "HQ");
+	int crf = CalcCRF(ultra_hq ? 16 : 23);
 
 	if (astrcmp_n(videoEncoder.c_str(), "x264", 4) == 0) {
 		UpdateRecordingSettings_x264_crf(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_QSV) {
 		UpdateRecordingSettings_qsv11(crf);
+
+	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
+		UpdateRecordingSettings_nvenc(ultra_hq ? 90000 : 50000);
 	}
 }
 

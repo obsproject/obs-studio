@@ -1135,6 +1135,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"Preset");
 	const char *qsvPreset = config_get_string(main->Config(), "SimpleOutput",
 			"QSVPreset");
+	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
+			"NVENCPreset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 			"x264Settings");
 	const char *recQual = config_get_string(main->Config(), "SimpleOutput",
@@ -1146,6 +1148,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
+	curNVENCPreset = nvPreset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -2342,6 +2345,8 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	if (encoder == SIMPLE_ENCODER_QSV)
 		presetType = "QSVPreset";
+	else if (encoder == SIMPLE_ENCODER_NVENC)
+		presetType = "NVENCPreset";
 	else
 		presetType = "Preset";
 
@@ -3104,6 +3109,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 				ENCODER_STR("Hardware.QSV"),
 				QString(SIMPLE_ENCODER_QSV));
+	if (EncoderAvailable("ffmpeg_nvenc"))
+		ui->simpleOutRecEncoder->addItem(
+				ENCODER_STR("Hardware.NVENC"),
+				QString(SIMPLE_ENCODER_NVENC));
 #undef ADD_QUALITY
 }
 
@@ -3116,6 +3125,10 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 		ui->simpleOutStrEncoder->addItem(
 				ENCODER_STR("Hardware.QSV"),
 				QString(SIMPLE_ENCODER_QSV));
+	if (EncoderAvailable("ffmpeg_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.NVENC"),
+				QString(SIMPLE_ENCODER_NVENC));
 #undef ENCODER_STR
 }
 
@@ -3149,6 +3162,30 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "balanced";
 		preset = curQSVPreset;
+
+	} else if (encoder == SIMPLE_ENCODER_NVENC) {
+		obs_properties_t *props =
+			obs_get_encoder_properties("ffmpeg_nvenc");
+
+		obs_property_t *p = obs_properties_get(props, "preset");
+		size_t num = obs_property_list_item_count(p);
+		for (size_t i = 0; i < num; i++) {
+			const char *name = obs_property_list_item_name(p, i);
+			const char *val  = obs_property_list_item_string(p, i);
+
+			/* bluray is for ideal bluray disc recording settings,
+			 * not streaming */
+			if (strcmp(val, "bd") == 0)
+				continue;
+
+			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
+		}
+
+		obs_properties_destroy(props);
+
+		defaultPreset = "default";
+		preset = curNVENCPreset;
+
 	} else {
 		ui->simpleOutPreset->addItem("ultrafast", "ultrafast");
 		ui->simpleOutPreset->addItem("superfast", "superfast");

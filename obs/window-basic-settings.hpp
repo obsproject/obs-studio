@@ -110,6 +110,7 @@ private:
 
 	QString curPreset;
 	QString curQSVPreset;
+	QString curNVENCPreset;
 
 	using AudioSource_t =
 		std::tuple<OBSWeakSource,
