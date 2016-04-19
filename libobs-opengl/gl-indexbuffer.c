@@ -22,8 +22,8 @@ static inline bool init_ib(struct gs_index_buffer *ib)
 	GLenum usage = ib->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	bool success;
 
-	success = gl_create_buffer(GL_ARRAY_BUFFER, &ib->buffer, ib->size,
-			ib->data, usage);
+	success = gl_create_buffer(GL_ELEMENT_ARRAY_BUFFER, &ib->buffer,
+			ib->size, ib->data, usage);
 
 	if (!ib->dynamic) {
 		bfree(ib->data);
@@ -77,7 +77,8 @@ void gs_indexbuffer_flush(gs_indexbuffer_t *ib)
 		goto fail;
 	}
 
-	if (!update_buffer(GL_ARRAY_BUFFER, ib->buffer, ib->data, ib->size))
+	if (!update_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer, ib->data,
+				ib->size))
 		goto fail;
 
 	return;
