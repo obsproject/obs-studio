@@ -125,7 +125,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *level = obs_data_get_string(settings, "level");
-	const char *tier = obs_data_get_string(settings, "tier");
 	bool cbr = obs_data_get_bool(settings, "cbr");
 	bool twopass = obs_data_get_bool(settings, "2pass");
 	int gpu = (int)obs_data_get_int(settings, "gpu");
@@ -143,7 +142,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set(enc->context->priv_data, "preset", preset, 0);
 	av_opt_set(enc->context->priv_data, "profile", profile, 0);
 	av_opt_set(enc->context->priv_data, "level", level, 0);
-	av_opt_set(enc->context->priv_data, "tier", tier, 0);
 	av_opt_set_int(enc->context->priv_data, "cbr", cbr, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
@@ -172,14 +170,13 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     "\tpreset:      %s\n"
 	     "\tprofile:     %s\n"
 	     "\tlevel:       %s\n"
-	     "\ttier:        %s\n"
 	     "\twidth:       %d\n"
 	     "\theight:      %d\n"
 	     "\tcbr:         %s\n"
 	     "\t2-pass:      %s\n"
 	     "\tGPU:         %d\n",
 	     bitrate, enc->context->gop_size,
-	     preset, profile, level, tier,
+	     preset, profile, level,
 	     enc->context->width, enc->context->height,
 	     cbr ? "true" : "false",
 	     twopass ? "true" : "false",
@@ -321,7 +318,6 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "preset", "default");
 	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_string(settings, "level", "auto");
-	obs_data_set_default_string(settings, "tier", "main");
 	obs_data_set_default_bool(settings, "cbr", false);
 	obs_data_set_default_bool(settings, "2pass", true);
 	obs_data_set_default_int(settings, "gpu", 0);
@@ -364,12 +360,6 @@ static obs_properties_t *nvenc_properties(void *unused)
 	add_profile("main");
 	add_profile("baseline");
 	add_profile("high444p");
-
-	p = obs_properties_add_list(props, "tier",
-			obs_module_text("NVENC.Tier"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
-	add_profile("high");
-	add_profile("main");
 
 	p = obs_properties_add_list(props, "level",
 			obs_module_text("NVENC.Level"), OBS_COMBO_TYPE_LIST,
