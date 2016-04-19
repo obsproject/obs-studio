@@ -20,7 +20,7 @@ static uint8_t *get_bitmap_data(HBITMAP hbmp, BITMAP *bmp)
 static inline uint8_t bit_to_alpha(uint8_t *data, long pixel, bool invert)
 {
 	uint8_t pix_byte = data[pixel / 8];
-	bool alpha = (pix_byte >> (7 - pixel % 7) & 1) != 0;
+	bool alpha = (pix_byte >> (7 - pixel % 8) & 1) != 0;
 
 	if (invert) {
 		return alpha ? 0xFF : 0;
