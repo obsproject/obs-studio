@@ -126,7 +126,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
 {
-	ClearData();
+	if (m_pmfxENC)
+		ClearData();
 }
 
 mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
@@ -140,8 +141,9 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 		// Use system memory
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
 
-	if (sts == MFX_ERR_NONE)
-		m_pmfxENC = new MFXVideoENCODE(m_session);
+	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+	m_pmfxENC = new MFXVideoENCODE(m_session);
 
 	InitParams(pParams);
 
