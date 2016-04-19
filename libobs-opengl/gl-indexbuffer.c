@@ -104,11 +104,5 @@ enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *ib)
 
 void device_load_indexbuffer(gs_device_t *device, gs_indexbuffer_t *ib)
 {
-	if (ib == device->cur_index_buffer)
-		return;
-
 	device->cur_index_buffer = ib;
-
-	if (!gl_bind_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer))
-		blog(LOG_ERROR, "device_load_indexbuffer (GL) failed");
 }
