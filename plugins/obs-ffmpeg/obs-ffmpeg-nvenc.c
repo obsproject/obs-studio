@@ -192,10 +192,8 @@ static void nvenc_destroy(void *data)
 {
 	struct nvenc_encoder *enc = data;
 
-	if (enc->context)
-		avcodec_close(enc->context);
-	if (enc->vframe);
-		av_frame_free(&enc->vframe);
+	avcodec_close(enc->context);
+	av_frame_free(&enc->vframe);
 	avpicture_free(&enc->dst_picture);
 	da_free(enc->buffer);
 	bfree(enc->header);
