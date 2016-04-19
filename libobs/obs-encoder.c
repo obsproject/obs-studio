@@ -731,7 +731,7 @@ static void send_first_video_packet(struct obs_encoder *encoder,
 
 	da_init(data);
 
-	if (!get_sei(encoder, &sei, &size)) {
+	if (!get_sei(encoder, &sei, &size) || !sei || !size) {
 		cb->new_packet(cb->param, packet);
 		cb->sent_first_packet = true;
 		return;
