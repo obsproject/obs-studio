@@ -1076,15 +1076,12 @@ static inline struct encoder_packet *find_last_packet_type(
 	return (idx != -1) ? &output->interleaved_packets.array[idx] : NULL;
 }
 
-static bool initialize_interleaved_packets(struct obs_output *output)
+static bool get_audio_and_video_packets(struct obs_output *output,
+		struct encoder_packet **video,
+		struct encoder_packet **audio, size_t audio_mixes)
 {
-	struct encoder_packet *video;
-	struct encoder_packet *audio[MAX_AUDIO_MIXES];
-	struct encoder_packet *last_audio[MAX_AUDIO_MIXES];
-	size_t audio_mixes = num_audio_mixes(output);
-
-	video = find_first_packet_type(output, OBS_ENCODER_VIDEO, 0);
-	if (!video)
+	*video = find_first_packet_type(output, OBS_ENCODER_VIDEO, 0);
+	if (!*video)
 		output->received_video = false;
 
 	for (size_t i = 0; i < audio_mixes; i++) {
@@ -1093,14 +1090,29 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 			output->received_audio = false;
 			return false;
 		}
-
-		last_audio[i] = find_last_packet_type(output, OBS_ENCODER_AUDIO,
-				i);
 	}
 
-	if (!video) {
+	if (!*video) {
 		return false;
 	}
+
+	return true;
+}
+
+static bool initialize_interleaved_packets(struct obs_output *output)
+{
+	struct encoder_packet *video;
+	struct encoder_packet *audio[MAX_AUDIO_MIXES];
+	struct encoder_packet *last_audio[MAX_AUDIO_MIXES];
+	size_t audio_mixes = num_audio_mixes(output);
+	size_t start_idx;
+
+	if (!get_audio_and_video_packets(output, &video, audio, audio_mixes))
+		return false;
+
+	for (size_t i = 0; i < audio_mixes; i++)
+		last_audio[i] = find_last_packet_type(output, OBS_ENCODER_AUDIO,
+				i);
 
 	/* ensure that there is audio past the first video packet */
 	for (size_t i = 0; i < audio_mixes; i++) {
@@ -1108,6 +1120,15 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 			output->received_audio = false;
 			return false;
 		}
+	}
+
+	/* clear out excess starting audio if it hasn't been already */
+	start_idx = get_interleaved_start_idx(output);
+	if (start_idx) {
+		discard_to_idx(output, start_idx);
+		if (!get_audio_and_video_packets(output, &video, audio,
+					audio_mixes))
+			return false;
 	}
 
 	/* get new offsets */
