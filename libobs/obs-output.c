@@ -994,14 +994,15 @@ static bool prune_interleaved_packets(struct obs_output *output)
 	int prune_start = prune_premature_packets(output);
 
 #if DEBUG_STARTING_PACKETS == 1
-	blog(LOG_DEBUG, "--------- Pruning! ---------");
+	blog(LOG_DEBUG, "--------- Pruning! %d ---------", prune_start);
 	for (size_t i = 0; i < output->interleaved_packets.num; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
-		blog(LOG_DEBUG, "packet: %s %d, ts: %lld",
+		blog(LOG_DEBUG, "packet: %s %d, ts: %lld, pruned = %s",
 				packet->type == OBS_ENCODER_AUDIO ?
 				"audio" : "video", (int)packet->track_idx,
-				packet->dts_usec);
+				packet->dts_usec,
+				(int)i < prune_start ? "true" : "false");
 	}
 #endif
 
