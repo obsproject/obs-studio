@@ -203,7 +203,6 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct nvenc_encoder *enc;
 	video_t *video = obs_encoder_video(encoder);
-	const struct video_output_info *voi = video_output_get_info(video);
 
 	avcodec_register_all();
 
