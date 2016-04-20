@@ -205,6 +205,9 @@ void OBSBasicProperties::Cleanup()
 			width());
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cy",
 			height());
+
+	obs_display_remove_draw_callback(preview->GetDisplay(),
+		OBSBasicProperties::DrawPreview, this);
 }
 
 void OBSBasicProperties::reject()
