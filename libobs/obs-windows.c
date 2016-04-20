@@ -384,8 +384,8 @@ static bool vk_down(DWORD vk)
 {
 	short state = GetAsyncKeyState(vk);
 	bool down = (state & 0x8000) != 0;
-	bool was_down = (state & 0x1) != 0;
-	return down || was_down;
+
+	return down;
 }
 
 bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
