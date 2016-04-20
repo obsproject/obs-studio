@@ -59,6 +59,8 @@ static string lastLogFile;
 static bool portable_mode = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
+string opt_starting_collection;
+string opt_starting_profile;
 string opt_starting_scene;
 
 QObject *CreateShortcutFilter()
@@ -421,6 +423,97 @@ static bool MakeUserProfileDirs()
 	return true;
 }
 
+static string GetProfileDirFromName(const char *name)
+{
+	string outputPath;
+	os_glob_t *glob;
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
+		return outputPath;
+
+	strcat(path, "/*.*");
+
+	if (os_glob(path, 0, &glob) != 0)
+		return outputPath;
+
+	for (size_t i = 0; i < glob->gl_pathc; i++) {
+		struct os_globent ent = glob->gl_pathv[i];
+		if (!ent.directory)
+			continue;
+
+		strcpy(path, ent.path);
+		strcat(path, "/basic.ini");
+
+		ConfigFile config;
+		if (config.Open(path, CONFIG_OPEN_EXISTING) != 0)
+			continue;
+
+		const char *curName = config_get_string(config, "General",
+				"Name");
+		if (astrcmpi(curName, name) == 0) {
+			outputPath = ent.path;
+			break;
+		}
+	}
+
+	os_globfree(glob);
+
+	if (!outputPath.empty()) {
+		replace(outputPath.begin(), outputPath.end(), '\\', '/');
+		const char *start = strrchr(outputPath.c_str(), '/');
+		if (start)
+			outputPath.erase(0, start - outputPath.c_str() + 1);
+	}
+
+	return outputPath;
+}
+
+static string GetSceneCollectionFileFromName(const char *name)
+{
+	string outputPath;
+	os_glob_t *glob;
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes") <= 0)
+		return outputPath;
+
+	strcat(path, "/*.json");
+
+	if (os_glob(path, 0, &glob) != 0)
+		return outputPath;
+
+	for (size_t i = 0; i < glob->gl_pathc; i++) {
+		struct os_globent ent = glob->gl_pathv[i];
+		if (ent.directory)
+			continue;
+
+		obs_data_t *data =
+			obs_data_create_from_json_file_safe(ent.path, "bak");
+		const char *curName = obs_data_get_string(data, "name");
+
+		if (astrcmpi(name, curName) == 0) {
+			outputPath = ent.path;
+			obs_data_release(data);
+			break;
+		}
+
+		obs_data_release(data);
+	}
+
+	os_globfree(glob);
+
+	if (!outputPath.empty()) {
+		outputPath.resize(outputPath.size() - 5);
+		replace(outputPath.begin(), outputPath.end(), '\\', '/');
+		const char *start = strrchr(outputPath.c_str(), '/');
+		if (start)
+			outputPath.erase(0, start - outputPath.c_str() + 1);
+	}
+
+	return outputPath;
+}
+
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -435,6 +528,30 @@ bool OBSApp::InitGlobalConfig()
 	if (errorcode != CONFIG_SUCCESS) {
 		OBSErrorBox(NULL, "Failed to open global.ini: %d", errorcode);
 		return false;
+	}
+
+	if (!opt_starting_collection.empty()) {
+		string path = GetSceneCollectionFileFromName(
+				opt_starting_collection.c_str());
+		if (!path.empty()) {
+			config_set_string(globalConfig,
+					"Basic", "SceneCollection",
+					opt_starting_collection.c_str());
+			config_set_string(globalConfig,
+					"Basic", "SceneCollectionFile",
+					path.c_str());
+		}
+	}
+
+	if (!opt_starting_profile.empty()) {
+		string path = GetProfileDirFromName(
+				opt_starting_profile.c_str());
+		if (!path.empty()) {
+			config_set_string(globalConfig, "Basic", "Profile",
+					opt_starting_profile.c_str());
+			config_set_string(globalConfig, "Basic", "ProfileDir",
+					path.c_str());
+		}
 	}
 
 	return InitGlobalConfigDefaults();
@@ -1562,6 +1679,12 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--startrecording", nullptr)) {
 			opt_start_recording = true;
+
+		} else if (arg_is(argv[i], "--collection", nullptr)) {
+			if (++i < argc) opt_starting_collection = argv[i];
+
+		} else if (arg_is(argv[i], "--profile", nullptr)) {
+			if (++i < argc) opt_starting_profile = argv[i];
 
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc) opt_starting_scene = argv[i];
