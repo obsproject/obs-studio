@@ -145,7 +145,8 @@ float4 texel_at_yadif_2x(int2 texel, int field, bool mode0)
 
 float4 texel_at_discard(int2 texel, int field)
 {
-	return load_at_image(texel, 0, (texel.y + field) % 2);
+	texel.y = texel.y / 2 * 2;
+	return load_at_image(texel, 0, field);
 }
 
 float4 texel_at_discard_2x(int2 texel, int field)
