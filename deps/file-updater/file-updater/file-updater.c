@@ -139,7 +139,7 @@ static bool do_http_request(struct update_info *info, const char *url,
 		return false;
 
 	if (*response_code >= 400) {
-		warn("Remote update of URL \"%s\" failed: HTTP/%l", url,
+		warn("Remote update of URL \"%s\" failed: HTTP/%ld", url,
 			response_code);
 		return false;
 	}
