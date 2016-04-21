@@ -344,15 +344,15 @@ void ff_demuxer_reset(struct ff_demuxer *demuxer)
 	packet.clock = clock;
 
 	if (demuxer->audio_decoder != NULL) {
+		ff_clock_retain(clock);
 		packet_queue_put(&demuxer->audio_decoder->packet_queue,
 				&packet);
-		ff_clock_retain(clock);
 	}
 
 	if (demuxer->video_decoder != NULL) {
+		ff_clock_retain(clock);
 		packet_queue_put(&demuxer->video_decoder->packet_queue,
 				&packet);
-		ff_clock_retain(clock);
 	}
 }
 
