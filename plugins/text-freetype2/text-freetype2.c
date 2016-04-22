@@ -201,6 +201,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata == NULL) return;
 
 	if (srcdata->tex == NULL || srcdata->vbuf == NULL) return;
+	if (srcdata->text == NULL || *srcdata->text == 0) return;
 
 	gs_reset_blend_state();
 	if (srcdata->outline_text) draw_outlines(srcdata);
