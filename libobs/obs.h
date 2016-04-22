@@ -968,8 +968,11 @@ EXPORT void obs_source_release_frame(obs_source_t *source,
  *
  * After calling this, set your parameters for the effect, then call
  * obs_source_process_filter_end to draw the filter.
+ *
+ * Returns true if filtering should continue, false if the filter is bypassed
+ * for whatever reason.
  */
-EXPORT void obs_source_process_filter_begin(obs_source_t *filter,
+EXPORT bool obs_source_process_filter_begin(obs_source_t *filter,
 		enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct);
 

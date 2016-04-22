@@ -119,8 +119,9 @@ static void color_filter_render(void *data, gs_effect_t *effect)
 {
 	struct color_filter_data *filter = data;
 
-	obs_source_process_filter_begin(filter->context, GS_RGBA,
-			OBS_ALLOW_DIRECT_RENDERING);
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+				OBS_ALLOW_DIRECT_RENDERING))
+		return;
 
 	gs_effect_set_vec4(filter->color_param, &filter->color);
 	gs_effect_set_float(filter->contrast_param, filter->contrast);

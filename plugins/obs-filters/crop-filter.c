@@ -193,8 +193,9 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 {
 	struct crop_filter_data *filter = data;
 
-	obs_source_process_filter_begin(filter->context, GS_RGBA,
-			OBS_NO_DIRECT_RENDERING);
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+				OBS_NO_DIRECT_RENDERING))
+		return;
 
 	gs_effect_set_vec2(filter->param_mul, &filter->mul_val);
 	gs_effect_set_vec2(filter->param_add, &filter->add_val);

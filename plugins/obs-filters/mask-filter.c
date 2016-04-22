@@ -210,8 +210,9 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 		vec2_div(&add_val, &add_val, &mask_size);
 	}
 
-	obs_source_process_filter_begin(filter->context, GS_RGBA,
-			OBS_ALLOW_DIRECT_RENDERING);
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+				OBS_ALLOW_DIRECT_RENDERING))
+		return;
 
 	param = gs_effect_get_param_by_name(filter->effect, "target");
 	gs_effect_set_texture(param, filter->target);

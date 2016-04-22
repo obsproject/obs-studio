@@ -2660,7 +2660,7 @@ static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
 		((parent_flags & OBS_SOURCE_ASYNC) == 0);
 }
 
-void obs_source_process_filter_begin(obs_source_t *filter,
+bool obs_source_process_filter_begin(obs_source_t *filter,
 		enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct)
 {
@@ -2669,7 +2669,7 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	int          cx, cy;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
-		return;
+		return false;
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
@@ -2677,12 +2677,12 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	if (!target) {
 		blog(LOG_INFO, "filter '%s' being processed with no target!",
 				filter->context.name);
-		return;
+		return false;
 	}
 	if (!parent) {
 		blog(LOG_INFO, "filter '%s' being processed with no parent!",
 				filter->context.name);
-		return;
+		return false;
 	}
 
 	target_flags = target->info.output_flags;
@@ -2697,12 +2697,12 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
 	if (can_bypass(target, parent, parent_flags, allow_direct)) {
-		return;
+		return true;
 	}
 
 	if (!cx || !cy) {
 		obs_source_skip_video_filter(filter);
-		return;
+		return false;
 	}
 
 	if (!filter->filter_texrender)
@@ -2730,6 +2730,7 @@ void obs_source_process_filter_begin(obs_source_t *filter,
 	}
 
 	gs_blend_state_pop();
+	return true;
 }
 
 void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effect,

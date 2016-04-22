@@ -178,8 +178,9 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 			(float)cx / (float)base_cx,
 			(float)cy / (float)base_cy);
 
-	obs_source_process_filter_begin(filter->context, GS_RGBA,
-			OBS_NO_DIRECT_RENDERING);
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+				OBS_NO_DIRECT_RENDERING))
+		return;
 
 	gs_effect_set_vec2(filter->param_add, &filter->offset);
 	gs_effect_set_vec2(filter->param_mul, &mul_val);
