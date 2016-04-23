@@ -3271,9 +3271,10 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		QString enc = ui->simpleOutRecEncoder->currentData().toString();
 		QString streamEnc =
 			ui->simpleOutStrEncoder->currentData().toString();
+		bool x264RecEnc = (enc == SIMPLE_ENCODER_X264 ||
+		                   enc == SIMPLE_ENCODER_X264_LOWCPU);
 
-		if (enc == SIMPLE_ENCODER_X264 ||
-		    enc == SIMPLE_ENCODER_X264_LOWCPU) {
+		if (streamEnc == SIMPLE_ENCODER_X264 && x264RecEnc) {
 			if (!warning.isEmpty())
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("Encoder");
