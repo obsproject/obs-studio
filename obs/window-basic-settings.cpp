@@ -479,6 +479,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingQualityLosslessWarning(int)));
 	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleStreamingEncoderChanged()));
+	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutRecEncoder, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)),
@@ -3267,11 +3269,20 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 
 	} else if (qual != "Stream") {
 		QString enc = ui->simpleOutRecEncoder->currentData().toString();
+		QString streamEnc =
+			ui->simpleOutStrEncoder->currentData().toString();
+
 		if (enc == SIMPLE_ENCODER_X264 ||
 		    enc == SIMPLE_ENCODER_X264_LOWCPU) {
 			if (!warning.isEmpty())
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("Encoder");
+		}
+
+		if (streamEnc == enc && enc == SIMPLE_ENCODER_QSV) {
+			if (!warning.isEmpty())
+				warning += "\n\n";
+			warning += SIMPLE_OUTPUT_WARNING("MultipleQSV");
 		}
 	}
 
