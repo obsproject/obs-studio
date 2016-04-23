@@ -106,7 +106,7 @@ static bool             g_bFirst;
 static const char *obs_qsv_getname(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "qsv11";
+	return "QuickSync H.264";
 }
 
 static void obs_qsv_stop(void *data);
