@@ -61,7 +61,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QSV_Encoder_Internal.h"
 #include <string>
 
-QSV_Encoder_Internal *g_pEncoder = NULL;
 mfxIMPL              impl = MFX_IMPL_HARDWARE_ANY;
 mfxVersion           ver = {{0, 1}}; // for backward compatibility
 
