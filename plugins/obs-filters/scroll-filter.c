@@ -172,6 +172,8 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 				1.0f / (float)base_cy);
 	} else {
 		vec2_zero(&filter->size_i);
+		obs_source_skip_video_filter(filter->context);
+		return;
 	}
 
 	vec2_set(&mul_val,
