@@ -166,7 +166,7 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 	cx = filter->limit_cx ? filter->cx : base_cx;
 	cy = filter->limit_cy ? filter->cy : base_cy;
 
-	if (cx && cy) {
+	if (base_cx && base_cy) {
 		vec2_set(&filter->size_i,
 				1.0f / (float)base_cx,
 				1.0f / (float)base_cy);
