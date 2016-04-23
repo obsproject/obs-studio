@@ -99,6 +99,12 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 		srcdata->vbuf = NULL;
 		gs_vertexbuffer_destroy(tmpvbuf);
 	}
+
+	if (*srcdata->text == 0) {
+		obs_leave_graphics();
+		return;
+	}
+
 	srcdata->vbuf = create_uv_vbuffer((uint32_t)wcslen(srcdata->text) * 6,
 			true);
 
