@@ -502,7 +502,7 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 			seek_stream = demuxer->audio_decoder->stream;
 		}
 
-		if (seek_stream != NULL) {
+		if (seek_stream != NULL && demuxer->format_context->duration != AV_NOPTS_VALUE) {
 			seek_target = av_rescale_q(seek_target,
 					AV_TIME_BASE_Q,
 					seek_stream->time_base);
@@ -531,8 +531,13 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 
 static void seek_beginning(struct ff_demuxer *demuxer)
 {
-	demuxer->seek_flags = AVSEEK_FLAG_BACKWARD;
-	demuxer->seek_pos = demuxer->format_context->start_time;
+	if (demuxer->format_context->duration == AV_NOPTS_VALUE) {
+		demuxer->seek_flags = AVSEEK_FLAG_FRAME;
+		demuxer->seek_pos = 0;
+	} else {
+		demuxer->seek_flags = AVSEEK_FLAG_BACKWARD;
+		demuxer->seek_pos = demuxer->format_context->start_time;
+	}
 	demuxer->seek_request = true;
 	demuxer->seek_flush = false;
 	av_log(NULL, AV_LOG_VERBOSE, "looping media %s", demuxer->input);
