@@ -202,7 +202,6 @@ static void nvenc_destroy(void *data)
 static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct nvenc_encoder *enc;
-	video_t *video = obs_encoder_video(encoder);
 
 	avcodec_register_all();
 
