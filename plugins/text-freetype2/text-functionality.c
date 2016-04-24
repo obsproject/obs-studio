@@ -271,6 +271,11 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 			dy += srcdata->max_h + 1;
 		}
 
+		if (dy + g_h >= texbuf_h) {
+			blog(LOG_WARNING, "Out of space trying to render glyphs");
+			break;
+		}
+
 		src_glyph = bzalloc(sizeof(struct glyph_info));
 		src_glyph->u = (float)dx / (float)texbuf_w;
 		src_glyph->u2 = (float)(dx + g_w) / (float)texbuf_w;
