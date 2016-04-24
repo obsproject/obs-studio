@@ -151,7 +151,7 @@ float4 texel_at_discard(int2 texel, int field)
 
 float4 texel_at_discard_2x(int2 texel, int field)
 {
-	field = frame2 ? (1 - field) : field;
+	field = frame2 ? field : (1 - field);
 	return texel_at_discard(texel, field);
 }
 
@@ -179,7 +179,7 @@ float4 texel_at_linear(int2 texel, int field)
 
 float4 texel_at_linear_2x(int2 texel, int field)
 {
-	field = frame2 ? (1 - field) : field;
+	field = frame2 ? field : (1 - field);
 	return texel_at_linear(texel, field);
 }
 
