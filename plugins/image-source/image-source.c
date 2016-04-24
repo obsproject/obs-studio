@@ -1,6 +1,7 @@
 #include <obs-module.h>
 #include <graphics/image-file.h>
 #include <util/platform.h>
+#include <util/dstr.h>
 #include <sys/stat.h>
 
 #define blog(log_level, format, ...) \
@@ -197,17 +198,29 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif)";
 
-static obs_properties_t *image_source_properties(void *unused)
+static obs_properties_t *image_source_properties(void *data)
 {
-	UNUSED_PARAMETER(unused);
+	struct image_source *s = data;
+	struct dstr path = {0};
 
 	obs_properties_t *props = obs_properties_create();
 
+	if (s && s->file && *s->file) {
+		const char *slash;
+
+		dstr_copy(&path, s->file);
+		dstr_replace(&path, "\\", "/");
+		slash = strrchr(path.array, '/');
+		if (slash)
+			dstr_resize(&path, slash - path.array + 1);
+	}
+
 	obs_properties_add_path(props,
 			"file", obs_module_text("File"),
-			OBS_PATH_FILE, image_filter, NULL);
+			OBS_PATH_FILE, image_filter, path.array);
 	obs_properties_add_bool(props,
 			"unload", obs_module_text("UnloadWhenNotShowing"));
+	dstr_free(&path);
 
 	return props;
 }
