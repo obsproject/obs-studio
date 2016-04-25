@@ -261,7 +261,7 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	int diff = skipped - lastSkippedFrameCount;
 	double percentage = double(skipped) / double(total) * 100.0;
 
-	if (diff && percentage >= 0.1f)
+	if (diff > 10 && percentage >= 0.1f)
 		showMessage(QTStr("HighResourceUsage"), 4000);
 
 	lastSkippedFrameCount = skipped;
