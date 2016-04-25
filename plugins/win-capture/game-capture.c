@@ -831,6 +831,10 @@ static void try_hook(struct game_capture *gc)
 		gc->thread_id = GetWindowThreadProcessId(gc->next_window,
 				&gc->process_id);
 
+		// Make sure we never try to hook ourselves (projector)
+		if (gc->process_id == GetCurrentProcessId())
+			return;
+
 		if (!gc->thread_id || !gc->process_id) {
 			warn("error acquiring, failed to get window "
 					"thread/process ids: %lu",
