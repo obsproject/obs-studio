@@ -12,7 +12,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 	                                Qt::Window | Qt::FramelessWindowHint),
 	  source                       (source_),
 	  removedSignal                (obs_source_get_signal_handler(source),
-	                                "removed", OBSSourceRemoved, this)
+	                                "remove", OBSSourceRemoved, this)
 {
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
