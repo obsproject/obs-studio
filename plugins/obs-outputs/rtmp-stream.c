@@ -311,7 +311,7 @@ static int send_packet(struct rtmp_stream *stream,
 	return ret;
 }
 
-static inline void send_headers(struct rtmp_stream *stream);
+static inline bool send_headers(struct rtmp_stream *stream);
 
 static bool send_remaining_packets(struct rtmp_stream *stream)
 {
@@ -319,8 +319,10 @@ static bool send_remaining_packets(struct rtmp_stream *stream)
 	uint64_t max_ns = (uint64_t)stream->max_shutdown_time_sec * 1000000000;
 	uint64_t begin_time_ns = os_gettime_ns();
 
-	if (!stream->sent_headers)
-		send_headers(stream);
+	if (!stream->sent_headers) {
+		if (!send_headers(stream))
+			return false;
+	}
 
 	while (get_next_packet(stream, &packet)) {
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0)
@@ -352,8 +354,12 @@ static void *send_thread(void *data)
 		if (!get_next_packet(stream, &packet))
 			continue;
 
-		if (!stream->sent_headers)
-			send_headers(stream);
+		if (!stream->sent_headers) {
+			if (!send_headers(stream)) {
+				os_atomic_set_bool(&stream->disconnected, true);
+				break;
+			}
+		}
 
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
 			os_atomic_set_bool(&stream->disconnected, true);
@@ -384,23 +390,26 @@ static void *send_thread(void *data)
 	return NULL;
 }
 
-static bool send_meta_data(struct rtmp_stream *stream, size_t idx)
+static bool send_meta_data(struct rtmp_stream *stream, size_t idx, bool *next)
 {
 	uint8_t *meta_data;
 	size_t  meta_data_size;
-	bool success = flv_meta_data(stream->output, &meta_data,
+	bool    success = true;
+
+	*next = flv_meta_data(stream->output, &meta_data,
 			&meta_data_size, false, idx);
 
-	if (success) {
-		RTMP_Write(&stream->rtmp, (char*)meta_data,
-				(int)meta_data_size, (int)idx);
+	if (*next) {
+		success = RTMP_Write(&stream->rtmp, (char*)meta_data,
+				(int)meta_data_size, (int)idx) >= 0;
 		bfree(meta_data);
 	}
 
 	return success;
 }
 
-static bool send_audio_header(struct rtmp_stream *stream, size_t idx)
+static bool send_audio_header(struct rtmp_stream *stream, size_t idx,
+		bool *next)
 {
 	obs_output_t  *context  = stream->output;
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, idx);
@@ -411,16 +420,17 @@ static bool send_audio_header(struct rtmp_stream *stream, size_t idx)
 		.timebase_den = 1
 	};
 
-	if (!aencoder)
-		return false;
+	if (!aencoder) {
+		*next = false;
+		return true;
+	}
 
 	obs_encoder_get_extra_data(aencoder, &header, &packet.size);
 	packet.data = bmemdup(header, packet.size);
-	send_packet(stream, &packet, true, idx);
-	return true;
+	return send_packet(stream, &packet, true, idx) >= 0;
 }
 
-static void send_video_header(struct rtmp_stream *stream)
+static bool send_video_header(struct rtmp_stream *stream)
 {
 	obs_output_t  *context  = stream->output;
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
@@ -435,18 +445,27 @@ static void send_video_header(struct rtmp_stream *stream)
 
 	obs_encoder_get_extra_data(vencoder, &header, &size);
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
-	send_packet(stream, &packet, true, 0);
+	return send_packet(stream, &packet, true, 0) >= 0;
 }
 
-static inline void send_headers(struct rtmp_stream *stream)
+static inline bool send_headers(struct rtmp_stream *stream)
 {
 	stream->sent_headers = true;
 	size_t i = 0;
+	bool next = true;
+	bool fail = false;
 
-	send_audio_header(stream, i++);
-	send_video_header(stream);
+	if (!send_audio_header(stream, i++, &next))
+		return false;
+	if (!send_video_header(stream))
+		return false;
 
-	while (send_audio_header(stream, i++));
+	while (next) {
+		if (!send_audio_header(stream, i++, &next))
+			return false;
+	}
+
+	return true;
 }
 
 static inline bool reset_semaphore(struct rtmp_stream *stream)
@@ -480,6 +499,7 @@ static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
 	size_t idx = 0;
+	bool next = true;
 
 #if defined(_WIN32)
 	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
@@ -495,7 +515,13 @@ static int init_send(struct rtmp_stream *stream)
 	}
 
 	os_atomic_set_bool(&stream->active, true);
-	while (send_meta_data(stream, idx++));
+	while (next) {
+		if (!send_meta_data(stream, idx++, &next)) {
+			warn("Disconnected while attempting to connect to "
+			     "server.");
+			return OBS_OUTPUT_DISCONNECTED;
+		}
+	}
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
