@@ -4035,7 +4035,7 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor)
 	delete projectors[monitor];
 	projectors[monitor].clear();
 
-	OBSProjector *projector = new OBSProjector(this, source);
+	OBSProjector *projector = new OBSProjector(nullptr, source);
 	projector->Init(monitor);
 
 	projectors[monitor] = projector;
