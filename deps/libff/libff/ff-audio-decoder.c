@@ -70,8 +70,14 @@ static int decode_frame(struct ff_decoder *decoder,
 	int ret;
 
 	while (true) {
-		ret = packet_queue_get(&decoder->packet_queue, packet, 1);
-		if (ret == FF_PACKET_FAIL) {
+		if (decoder->eof)
+			ret = packet_queue_get(&decoder->packet_queue, packet, 0);
+		else
+			ret = packet_queue_get(&decoder->packet_queue, packet, 1);
+
+		if (ret == FF_PACKET_EMPTY) {
+			return 0;
+		} else if (ret == FF_PACKET_FAIL) {
 			return -1;
 		}
 
@@ -134,8 +140,10 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 			|| queue_frame->frame->sample_rate != codec->sample_rate
 			|| queue_frame->frame->format != codec->sample_fmt);
 
-	if (queue_frame->frame != NULL)
+	if (queue_frame->frame != NULL) {
+		//FIXME: this shouldn't happen any more!
 		av_frame_free(&queue_frame->frame);
+	}
 
 	queue_frame->frame = av_frame_clone(frame);
 	queue_frame->clock = ff_clock_retain(decoder->clock);
@@ -157,10 +165,13 @@ void *ff_audio_decoder_thread(void *opaque_audio_decoder)
 	struct ff_packet packet = {0};
 	bool frame_complete;
 	AVFrame *frame = av_frame_alloc();
+	int ret;
 
 	while (!decoder->abort) {
-		if (decode_frame(decoder, &packet, frame, &frame_complete)
-				< 0) {
+		ret = decode_frame(decoder, &packet, frame, &frame_complete);
+		if (ret == 0) {
+			break;
+		} else if (ret < 0) {
 			av_free_packet(&packet.base);
 			continue;
 		}
@@ -184,5 +195,8 @@ void *ff_audio_decoder_thread(void *opaque_audio_decoder)
 		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
+
+	decoder->finished = true;
+
 	return NULL;
 }

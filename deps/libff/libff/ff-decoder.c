@@ -42,6 +42,7 @@ struct ff_decoder *ff_decoder_init(AVCodecContext *codec_context,
 	decoder->codec->opaque = decoder;
 	decoder->stream = stream;
 	decoder->abort = false;
+	decoder->finished = false;
 
 	decoder->packet_queue_size = packet_queue_size;
 	if (!packet_queue_init(&decoder->packet_queue))
@@ -179,7 +180,7 @@ void ff_decoder_refresh(void *opaque)
 
 	if (decoder && decoder->stream) {
 		if (decoder->frame_queue.size == 0) {
-			if (!decoder->eof) {
+			if (!decoder->eof || !decoder->finished) {
 				// We expected a frame, but there were none
 				// available
 				
@@ -279,6 +280,8 @@ void ff_decoder_refresh(void *opaque)
 			ff_decoder_schedule_refresh(decoder,
 					(int)(delay_until_next_wake * 1000
 						+ 0.5L));
+
+			av_frame_free(&frame->frame);
 
 			ff_circular_queue_advance_read(&decoder->frame_queue);
 		}
