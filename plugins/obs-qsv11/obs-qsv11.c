@@ -533,20 +533,22 @@ static inline bool valid_format(enum video_format format)
 	return format == VIDEO_FORMAT_NV12;
 }
 
-static inline void cap_resolution(struct video_scale_info *info,
-		const struct video_output_info *vid_info)
+static inline void cap_resolution(obs_encoder_t *encoder,
+		struct video_scale_info *info)
 {
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+	uint32_t width = obs_encoder_get_width(encoder);
+	uint32_t height = obs_encoder_get_height(encoder);
 
-	info->height = vid_info->height;
-	info->width = vid_info->width;
+	info->height = height;
+	info->width = width;
 
 	if (qsv_platform <= QSV_CPU_PLATFORM_IVB) {
-		if (vid_info->width > 1920) {
+		if (width > 1920) {
 			info->width = 1920;
 		}
 
-		if (vid_info->height > 1200) {
+		if (height > 1200) {
 			info->height = 1200;
 		}
 	}
@@ -555,8 +557,6 @@ static inline void cap_resolution(struct video_scale_info *info,
 static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_qsv *obsqsv = data;
-	video_t *video = obs_encoder_video(obsqsv->encoder);
-	const struct video_output_info *vid_info = video_output_get_info(video);
 	enum video_format pref_format;
 
 	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
@@ -567,7 +567,7 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 	}
 
 	info->format = pref_format;
-	cap_resolution(info, vid_info);
+	cap_resolution(obsqsv->encoder, info);
 }
 
 static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, mfxBitstream *pBS, uint32_t fps_num, bool *received_packet)
