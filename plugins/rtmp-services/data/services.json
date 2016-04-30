@@ -498,6 +498,22 @@
                 "max video bitrate": 1300,
                 "max audio bitrate": 320
             }
+        },
+        {
+            "name": "Facebook Live",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp-api.facebook.com:80/rtmp/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 2000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
