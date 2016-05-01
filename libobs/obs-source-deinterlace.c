@@ -357,7 +357,8 @@ void deinterlace_render(obs_source_t *s)
 	gs_effect_set_bool(frame2, obs->video.video_time >= frame2_ts);
 
 	while (gs_effect_loop(effect, tech))
-		gs_draw_sprite(NULL, 0, s->async_width, s->async_height);
+		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
+				s->async_width, s->async_height);
 }
 
 static void enable_deinterlacing(obs_source_t *source,
