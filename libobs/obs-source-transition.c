@@ -824,7 +824,8 @@ bool obs_transition_audio_render(obs_source_t *transition,
 		if (min_ts)
 			copy_transition_state(transition, &state);
 
-	} else if (transition->transitioning_audio) {
+	} else if (!transition->transitioning_video &&
+	           transition->transitioning_audio) {
 		stopped = stop_audio(transition);
 	}
 
