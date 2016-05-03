@@ -742,6 +742,16 @@ void OBSBasicPreview::SnapStretchingToScreen(vec3 &tl, vec3 &br)
 		br.y += offset.y;
 }
 
+static float maxfunc(float x, float y)
+{
+	return x > y ? x : y;
+}
+
+static float minfunc(float x, float y)
+{
+	return x < y ? x : y;
+}
+
 void OBSBasicPreview::CropItem(const vec2 &pos)
 {
 	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(stretchItem);
@@ -773,31 +783,34 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 		stretchItemSize.x + crop.right * scale.x,
 		stretchItemSize.y + crop.bottom * scale.y);
 
-	vec2_max((vec2*)&pos3, (vec2*)&pos3, &max_br);
-	vec2_min((vec2*)&pos3, (vec2*)&pos3, &max_tl);
+	typedef std::function<float (float, float)> minmax_func_t;
+
+	minmax_func_t min_x = scale.x < 0.0f ? maxfunc : minfunc;
+	minmax_func_t min_y = scale.y < 0.0f ? maxfunc : minfunc;
+	minmax_func_t max_x = scale.x < 0.0f ? minfunc : maxfunc;
+	minmax_func_t max_y = scale.y < 0.0f ? minfunc : maxfunc;
+
+	pos3.x = min_x(pos3.x, max_br.x);
+	pos3.x = max_x(pos3.x, max_tl.x);
+	pos3.y = min_y(pos3.y, max_br.y);
+	pos3.y = max_y(pos3.y, max_tl.y);
 
 	if (stretchFlags & ITEM_LEFT) {
-		tl.x = pos3.x;
-
 		float maxX = stretchItemSize.x - (2.0 * scale.x);
-		if (tl.x > maxX) pos3.x = tl.x = maxX;
-	} else if (stretchFlags & ITEM_RIGHT) {
-		br.x = pos3.x;
+		pos3.x = tl.x = min_x(pos3.x, maxX);
 
+	} else if (stretchFlags & ITEM_RIGHT) {
 		float minX = (2.0 * scale.x);
-		if (br.x < minX) pos3.x = br.x = minX;
+		pos3.x = br.x = max_x(pos3.x, minX);
 	}
 
 	if (stretchFlags & ITEM_TOP) {
-		tl.y = pos3.y;
-
 		float maxY = stretchItemSize.y - (2.0 * scale.y);
-		if (tl.y > maxY) pos3.y = tl.y = maxY;
-	} else if (stretchFlags & ITEM_BOTTOM) {
-		br.y = pos3.y;
+		pos3.y = tl.y = min_y(pos3.y, maxY);
 
+	} else if (stretchFlags & ITEM_BOTTOM) {
 		float minY = (2.0 * scale.y);
-		if (br.y < minY) pos3.y = br.y = minY;
+		pos3.y = br.y = max_y(pos3.y, minY);
 	}
 
 #define ALIGN_X (ITEM_LEFT|ITEM_RIGHT)
