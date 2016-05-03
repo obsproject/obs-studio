@@ -487,7 +487,7 @@ void SimpleOutput::UpdateRecordingSettings()
 		UpdateRecordingSettings_qsv11(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
-		UpdateRecordingSettings_nvenc(ultra_hq ? 90000 : 50000);
+		UpdateRecordingSettings_nvenc(ultra_hq ? 90000 : 22000);
 	}
 }
 
