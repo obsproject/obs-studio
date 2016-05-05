@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <util/darray.h>
+#include <util/dstr.h>
 #include <util/base.h>
 #include <media-io/video-io.h>
 #include <obs-module.h>
@@ -140,13 +141,20 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	nvenc_video_info(enc, &info);
 
 	av_opt_set(enc->context->priv_data, "preset", preset, 0);
-	av_opt_set(enc->context->priv_data, "profile", profile, 0);
 	av_opt_set(enc->context->priv_data, "level", level, 0);
-	av_opt_set_int(enc->context->priv_data, "cbr", cbr, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
 
-	enc->context->bit_rate = bitrate * 1000;
+	if (astrcmp_n(preset, "lossless", 8) == 0) {
+		enc->context->bit_rate = 0;
+		bitrate = 0;
+	} else {
+		enc->context->bit_rate = bitrate * 1000;
+
+		av_opt_set(enc->context->priv_data, "profile", profile, 0);
+		av_opt_set_int(enc->context->priv_data, "cbr", cbr, 0);
+	}
+
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
@@ -321,6 +329,16 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "gpu", 0);
 }
 
+static bool preset_modified(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *settings)
+{
+	const char *preset = obs_data_get_string(settings, "preset");
+	bool lossless = preset && astrcmp_n(preset, "lossless", 8) == 0;
+	p = obs_properties_get(props, "bitrate");
+	obs_property_set_visible(p, !lossless);
+	return true;
+}
+
 static obs_properties_t *nvenc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -347,7 +365,11 @@ static obs_properties_t *nvenc_properties(void *unused)
 	add_preset("ll");
 	add_preset("llhq");
 	add_preset("llhp");
+	add_preset("lossless");
+	add_preset("losslesshp");
 #undef add_preset
+
+	obs_property_set_modified_callback(p, preset_modified);
 
 	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
