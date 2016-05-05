@@ -132,6 +132,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 		int posy = config_get_int(App()->GlobalConfig(), "BasicWindow",
 				"posy");
 
+		if (!WindowPositionValid(posx, posy))
+			posx = posy = 0;
+
 		setGeometry(posx, posy, width, height);
 	}
 

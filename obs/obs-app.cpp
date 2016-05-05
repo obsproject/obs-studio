@@ -1483,6 +1483,23 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
+bool WindowPositionValid(int x, int y)
+{
+	vector<MonitorInfo> monitors;
+	GetMonitors(monitors);
+
+	for (auto &monitor : monitors) {
+		int br_x = monitor.x + monitor.cx;
+		int br_y = monitor.y + monitor.cy;
+
+		if (x >= monitor.x && x < br_x &&
+		    y >= monitor.y && y < br_y)
+			return true;
+	}
+
+	return false;
+}
+
 static inline bool arg_is(const char *arg,
 		const char *long_form, const char *short_form)
 {
