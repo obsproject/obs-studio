@@ -3179,6 +3179,9 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 			 * not streaming */
 			if (strcmp(val, "bd") == 0)
 				continue;
+			/* lossless should of course not be used to stream */
+			if (astrcmp_n(val, "lossless", 8) == 0)
+				continue;
 
 			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
 		}
