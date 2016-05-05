@@ -329,7 +329,7 @@ static obs_properties_t *nvenc_properties(void *unused)
 	obs_property_t *p;
 
 	obs_properties_add_int(props, "bitrate",
-			obs_module_text("Bitrate"), 50, 90000, 50);
+			obs_module_text("Bitrate"), 50, 300000, 50);
 
 	obs_properties_add_int(props, "keyint_sec",
 			obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
