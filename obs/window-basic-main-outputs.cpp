@@ -154,7 +154,7 @@ struct SimpleOutput : BasicOutputHandler {
 
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
-	void UpdateRecordingSettings_nvenc(int bitrate);
+	void UpdateRecordingSettings_nvenc(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -461,12 +461,13 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 	obs_data_release(settings);
 }
 
-void SimpleOutput::UpdateRecordingSettings_nvenc(int bitrate)
+void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 {
 	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_string(settings, "profile", "high");
 	obs_data_set_string(settings, "preset", "hq");
-	obs_data_set_int(settings, "bitrate", bitrate);
+	obs_data_set_int(settings, "cqp", cqp);
 
 	obs_encoder_update(h264Recording, settings);
 
@@ -485,7 +486,7 @@ void SimpleOutput::UpdateRecordingSettings()
 		UpdateRecordingSettings_qsv11(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
-		UpdateRecordingSettings_nvenc(ultra_hq ? 90000 : 22000);
+		UpdateRecordingSettings_nvenc(crf);
 	}
 }
 
