@@ -308,9 +308,16 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	else if (astrcmpi(profile, "high") == 0)
 		obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_HIGH;
 
-	/* internal convenience parameter, overrides rate control param */
-	if (cbr_override)
+	/* internal convenience parameter, overrides rate control param
+	 * XXX: Deprecated */
+	if (cbr_override) {
+		warn("\"cbr\" setting has been deprecated for all encoders!  "
+		     "Please set \"rate_control\" to \"CBR\" instead.  "
+		     "Forcing CBR mode.  "
+		     "(Note to all: this is why you shouldn't use strings for "
+		     "common settings)");
 		rate_control = "CBR";
+	}
 
 	if (astrcmpi(rate_control, "CBR") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_CBR;
