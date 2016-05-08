@@ -349,7 +349,7 @@ void SimpleOutput::Update()
 		obs_data_set_string(h264Settings, "x264opts", custom);
 	}
 
-	obs_data_set_bool(aacSettings, "cbr", true);
+	obs_data_set_string(aacSettings, "rate_control", "CBR");
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
 	obs_service_apply_encoder_settings(main->GetService(),
@@ -378,7 +378,7 @@ void SimpleOutput::UpdateRecordingAudioSettings()
 {
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", 192);
-	obs_data_set_bool(settings, "cbr", true);
+	obs_data_set_string(settings, "rate_control", "CBR");
 
 	obs_encoder_update(aacRecording, settings);
 
@@ -408,11 +408,9 @@ int SimpleOutput::CalcCRF(int crf)
 void SimpleOutput::UpdateRecordingSettings_x264_crf(int crf)
 {
 	obs_data_t *settings = obs_data_create();
-	obs_data_set_int(settings, "bitrate", 1000);
-	obs_data_set_int(settings, "buffer_size", 0);
 	obs_data_set_int(settings, "crf", crf);
 	obs_data_set_bool(settings, "use_bufsize", true);
-	obs_data_set_bool(settings, "cbr", false);
+	obs_data_set_string(settings, "rate_control", "CRF");
 	obs_data_set_string(settings, "profile", "high");
 	obs_data_set_string(settings, "preset",
 			lowCPUx264 ? "ultrafast" : "veryfast");
