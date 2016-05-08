@@ -97,7 +97,7 @@ static void obs_x264_defaults(obs_data_t *settings)
 	obs_data_set_default_int   (settings, "keyint_sec",  0);
 	obs_data_set_default_int   (settings, "crf",         23);
 	obs_data_set_default_bool  (settings, "vfr",         false);
-	obs_data_set_default_bool  (settings, "cbr",         true);
+	obs_data_set_default_bool  (settings, "rate_control","CBR");
 
 	obs_data_set_default_string(settings, "preset",      "veryfast");
 	obs_data_set_default_string(settings, "profile",     "");
@@ -113,10 +113,10 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 	}
 }
 
+#define TEXT_RATE_CONTROL obs_module_text("RateControl")
 #define TEXT_BITRATE    obs_module_text("Bitrate")
 #define TEXT_CUSTOM_BUF obs_module_text("CustomBufsize")
 #define TEXT_BUF_SIZE   obs_module_text("BufferSize")
-#define TEXT_USE_CBR    obs_module_text("UseCBR")
 #define TEXT_VFR        obs_module_text("VFR")
 #define TEXT_CRF        obs_module_text("CRF")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
@@ -130,17 +130,30 @@ static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
+	const char *rc = obs_data_get_string(settings, "rate_control");
+	bool rc_crf = astrcmpi(rc, "CRF") == 0;
+
 	p = obs_properties_get(ppts, "buffer_size");
-	obs_property_set_visible(p, use_bufsize);
+	obs_property_set_visible(p, use_bufsize && !rc_crf);
 	return true;
 }
 
-static bool use_cbr_modified(obs_properties_t *ppts, obs_property_t *p,
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
-	bool cbr = obs_data_get_bool(settings, "cbr");
+	const char *rc = obs_data_get_string(settings, "rate_control");
+	bool abr = astrcmpi(rc, "CBR") == 0 || astrcmpi(rc, "ABR") == 0;
+	bool rc_crf = astrcmpi(rc, "CRF") == 0;
+
 	p = obs_properties_get(ppts, "crf");
-	obs_property_set_visible(p, !cbr);
+	obs_property_set_visible(p, !abr);
+
+	p = obs_properties_get(ppts, "bitrate");
+	obs_property_set_visible(p, !rc_crf);
+	p = obs_properties_get(ppts, "use_bufsize");
+	obs_property_set_visible(p, !rc_crf);
+	p = obs_properties_get(ppts, "buffse_size");
+	obs_property_set_visible(p, !rc_crf);
 	return true;
 }
 
@@ -152,6 +165,15 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_property_t *list;
 	obs_property_t *p;
 
+	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(list, "CBR", "CBR");
+	obs_property_list_add_string(list, "ABR", "ABR");
+	obs_property_list_add_string(list, "VBR", "VBR");
+	obs_property_list_add_string(list, "CRF", "CRF");
+
+	obs_property_set_modified_callback(list, rate_control_modified);
+
 	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000, 1);
 
 	p = obs_properties_add_bool(props, "use_bufsize", TEXT_CUSTOM_BUF);
@@ -159,11 +181,9 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 0,
 			10000000, 1);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
-	p = obs_properties_add_bool(props, "cbr", TEXT_USE_CBR);
 	obs_properties_add_int(props, "crf", TEXT_CRF, 0, 51, 1);
 
-	obs_property_set_modified_callback(p, use_cbr_modified);
+	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
 
 	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -353,6 +373,13 @@ static inline int get_x264_cs_val(enum video_colorspace cs,
 
 static void obs_x264_video_info(void *data, struct video_scale_info *info);
 
+enum rate_control {
+	RATE_CONTROL_CBR,
+	RATE_CONTROL_VBR,
+	RATE_CONTROL_ABR,
+	RATE_CONTROL_CRF
+};
+
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		char **params)
 {
@@ -366,6 +393,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	obs_x264_video_info(obsx264, &info);
 
+	const char *rate_control = obs_data_get_string(settings, "rate_control");
+
 	int bitrate      = (int)obs_data_get_int(settings, "bitrate");
 	int buffer_size  = (int)obs_data_get_int(settings, "buffer_size");
 	int keyint_sec   = (int)obs_data_get_int(settings, "keyint_sec");
@@ -374,7 +403,35 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	int height       = (int)obs_encoder_get_height(obsx264->encoder);
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
 	bool vfr         = obs_data_get_bool(settings, "vfr");
-	bool cbr         = obs_data_get_bool(settings, "cbr");
+	bool cbr_override= obs_data_get_bool(settings, "cbr");
+	enum rate_control rc;
+
+	/* XXX: "cbr" setting has been deprecated */
+	if (cbr_override) {
+		warn("\"cbr\" setting has been deprecated for all encoders!  "
+		     "Please set \"rate_control\" to \"CBR\" instead.  "
+		     "Forcing CBR mode.  "
+		     "(Note to all: this is why you shouldn't use strings for "
+		     "common settings)");
+		rate_control = "CBR";
+	}
+
+	if (astrcmpi(rate_control, "CBR") == 0) {
+		rc = RATE_CONTROL_CBR;
+		crf = 0;
+
+	} else if (astrcmpi(rate_control, "ABR") == 0) {
+		rc = RATE_CONTROL_ABR;
+		crf = 0;
+
+	} else if (astrcmpi(rate_control, "VBR") == 0) {
+		rc = RATE_CONTROL_VBR;
+
+	} else if (astrcmpi(rate_control, "CRF") == 0) {
+		rc = RATE_CONTROL_CRF;
+		bitrate = 0;
+		buffer_size = 0;
+	}
 
 	if (keyint_sec)
 		obsx264->params.i_keyint_max =
@@ -406,19 +463,21 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
-	if (cbr) {
-		obsx264->params.rc.f_rf_constant = 0.0f;
+	if (rc == RATE_CONTROL_CBR || rc == RATE_CONTROL_ABR) {
 		obsx264->params.rc.i_rc_method   = X264_RC_ABR;
 
+		if (rc == RATE_CONTROL_CBR) {
 #if X264_BUILD >= 139
-		obsx264->params.rc.b_filler      = true;
+			obsx264->params.rc.b_filler = true;
 #else
-		obsx264->params.i_nal_hrd        = X264_NAL_HRD_CBR;
+			obsx264->params.i_nal_hrd = X264_NAL_HRD_CBR;
 #endif
+		}
 	} else {
 		obsx264->params.rc.i_rc_method   = X264_RC_CRF;
-		obsx264->params.rc.f_rf_constant = (float)crf;
 	}
+
+	obsx264->params.rc.f_rf_constant = (float)crf;
 
 	if (info.format == VIDEO_FORMAT_NV12)
 		obsx264->params.i_csp = X264_CSP_NV12;
@@ -433,25 +492,24 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		set_param(obsx264, *(params++));
 
 	info("settings:\n"
-	     "\tbitrate:     %d\n"
-	     "\tbuffer size: %d\n"
-	     "\tcrf:         %d%s\n"
-	     "\tfps_num:     %d\n"
-	     "\tfps_den:     %d\n"
-	     "\twidth:       %d\n"
-	     "\theight:      %d\n"
-	     "\tkeyint:      %d\n"
-	     "\tvfr:         %s\n"
-	     "\tcbr:         %s",
+	     "\trate_control: %s\n"
+	     "\tbitrate:      %d\n"
+	     "\tbuffer size:  %d\n"
+	     "\tcrf:          %d\n"
+	     "\tfps_num:      %d\n"
+	     "\tfps_den:      %d\n"
+	     "\twidth:        %d\n"
+	     "\theight:       %d\n"
+	     "\tkeyint:       %d\n"
+	     "\tvfr:          %s\n",
+	     rate_control,
 	     obsx264->params.rc.i_vbv_max_bitrate,
 	     obsx264->params.rc.i_vbv_buffer_size,
 	     (int)obsx264->params.rc.f_rf_constant,
-	     cbr ? " (0 when CBR is enabled)" : "",
 	     voi->fps_num, voi->fps_den,
 	     width, height,
 	     obsx264->params.i_keyint_max,
-	     vfr ? "on" : "off",
-	     cbr ? "on" : "off");
+	     vfr ? "on" : "off");
 }
 
 static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings)
