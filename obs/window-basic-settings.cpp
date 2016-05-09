@@ -2703,6 +2703,9 @@ void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 
 void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 {
+	if (loading)
+		return;
+
 	QString encoder = GetComboData(ui->advOutEncoder);
 
 	delete streamEncoderProps;
@@ -2715,6 +2718,9 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 {
+	if (loading)
+		return;
+
 	ui->advOutRecUseRescale->setEnabled(idx > 0);
 	ui->advOutRecRescaleContainer->setEnabled(idx > 0);
 
