@@ -97,6 +97,8 @@ OBSRemux::~OBSRemux()
 	remuxer.wait();
 }
 
+#define RECORDING_PATTERN "(*.flv *.mp4 *.mov *.mkv *.ts *.m3u8)"
+
 void OBSRemux::BrowseInput()
 {
 	QString path = ui->sourceFile->text();
@@ -105,7 +107,8 @@ void OBSRemux::BrowseInput()
 
 	path = QFileDialog::getOpenFileName(this,
 			QTStr("Remux.SelectRecording"), path,
-			QTStr("Remux.RecordingPattern"));
+			QTStr("Remux.OBSRecording") + QString(" ") +
+			RECORDING_PATTERN);
 
 	inputChanged(path);
 }
@@ -132,7 +135,7 @@ void OBSRemux::BrowseOutput()
 {
 	QString path(ui->targetFile->text());
 	path = QFileDialog::getSaveFileName(this, QTStr("Remux.SelectTarget"),
-				path, "(*.mp4)");
+				path, RECORDING_PATTERN);
 
 	if (path.isEmpty())
 		return;
