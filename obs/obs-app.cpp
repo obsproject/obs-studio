@@ -1627,6 +1627,45 @@ static bool update_reconnect(ConfigFile &config)
 	return false;
 }
 
+static void convert_x264_settings(obs_data_t *data)
+{
+	bool use_bufsize = obs_data_get_bool(data, "use_bufsize");
+
+	if (use_bufsize) {
+		int buffer_size = (int)obs_data_get_int(data, "buffer_size");
+		if (buffer_size == 0)
+			obs_data_set_string(data, "rate_control", "CRF");
+	}
+}
+
+static void convert_14_2_encoder_setting(const char *encoder, const char *file)
+{
+	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	obs_data_item_t *cbr_item = obs_data_item_byname(data, "cbr");
+	obs_data_item_t *rc_item = obs_data_item_byname(data, "rate_control");
+
+	if (!rc_item) {
+		bool cbr = false;
+
+		if (cbr_item) {
+			cbr = obs_data_item_get_bool(cbr_item);
+			obs_data_item_unset_user_value(cbr_item);
+		}
+
+		if (cbr) {
+			obs_data_set_string(data, "rate_control", "CBR");
+		} else if (astrcmpi(encoder, "obs_x264") == 0) {
+			convert_x264_settings(data);
+		}
+
+		obs_data_save_json_safe(data, file, "tmp", "bak");
+	}
+
+	obs_data_item_release(&rc_item);
+	obs_data_item_release(&cbr_item);
+	obs_data_release(data);
+}
+
 static void upgrade_settings(void)
 {
 	char path[512];
@@ -1644,7 +1683,8 @@ static void upgrade_settings(void)
 	struct os_dirent *ent = os_readdir(dir);
 
 	while (ent) {
-		if (ent->directory) {
+		if (ent->directory && strcmp(ent->d_name, ".") != 0 &&
+				strcmp(ent->d_name, "..") != 0) {
 			strcat(path, "/");
 			strcat(path, ent->d_name);
 			strcat(path, "/basic.ini");
@@ -1659,6 +1699,28 @@ static void upgrade_settings(void)
 					config_save_safe(config, "tmp",
 							nullptr);
 				}
+			}
+
+
+			if (config) {
+				const char *sEnc = config_get_string(config,
+						"AdvOut", "Encoder");
+				const char *rEnc = config_get_string(config,
+						"AdvOut", "RecEncoder");
+
+				/* replace "cbr" option with "rate_control" for
+				 * each profile's encoder data */
+				path[pathlen] = 0;
+				strcat(path, "/");
+				strcat(path, ent->d_name);
+				strcat(path, "/recordEncoder.json");
+				convert_14_2_encoder_setting(rEnc, path);
+
+				path[pathlen] = 0;
+				strcat(path, "/");
+				strcat(path, ent->d_name);
+				strcat(path, "/streamEncoder.json");
+				convert_14_2_encoder_setting(sEnc, path);
 			}
 
 			path[pathlen] = 0;
