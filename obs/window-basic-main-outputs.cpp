@@ -429,7 +429,7 @@ static bool icq_available(obs_encoder_t *encoder)
 	size_t num = obs_property_list_item_count(p);
 	for (size_t i = 0; i < num; i++) {
 		const char *val = obs_property_list_item_string(p, i);
-		if (strcmp(val, "ICQ_LA") == 0) {
+		if (strcmp(val, "ICQ") == 0) {
 			icq_found = true;
 			break;
 		}
@@ -447,7 +447,7 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 	obs_data_set_string(settings, "profile", "high");
 
 	if (icq) {
-		obs_data_set_string(settings, "rate_control", "LA_ICQ");
+		obs_data_set_string(settings, "rate_control", "ICQ");
 		obs_data_set_int(settings, "icq_quality", crf);
 	} else {
 		obs_data_set_string(settings, "rate_control", "CQP");
