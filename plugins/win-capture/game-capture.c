@@ -336,6 +336,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	gc->config = cfg;
 	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
+	gc->wait_for_target_startup = false;
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
