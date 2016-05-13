@@ -15,7 +15,8 @@ enum window_search_mode {
 
 extern bool get_window_exe(struct dstr *name, HWND window);
 
-extern void fill_window_list(obs_property_t *p, enum window_search_mode mode);
+extern void fill_window_list(obs_property_t *p, enum window_search_mode mode,
+		bool allow_self);
 
 extern void build_window_strings(const char *str,
 		char **class,
