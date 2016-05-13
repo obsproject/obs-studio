@@ -84,6 +84,7 @@ struct game_capture {
 	float                         fps_reset_time;
 	float                         retry_interval;
 	bool                          wait_for_target_startup : 1;
+	bool                          showing : 1;
 	bool                          active : 1;
 	bool                          capturing : 1;
 	bool                          activate_hook : 1;
@@ -1254,6 +1255,15 @@ static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
 
+	if (!obs_source_showing(gc->source)) {
+		if (gc->showing) {
+			if (gc->active)
+				stop_capture(gc);
+			gc->showing = false;
+		}
+		return;
+	}
+
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
 		stop_capture(gc);
 	}
@@ -1294,11 +1304,6 @@ static void game_capture_tick(void *data, float seconds)
 	gc->retry_time += seconds;
 
 	if (!gc->active) {
-		if (!obs_source_showing(gc->source)) {
-			gc->retry_time = 0.0f;
-			return;
-		}
-
 		if (!gc->error_acquiring &&
 		    gc->retry_time > gc->retry_interval) {
 			if (gc->config.capture_any_fullscreen ||
@@ -1332,6 +1337,9 @@ static void game_capture_tick(void *data, float seconds)
 			}
 		}
 	}
+
+	if (!gc->showing)
+		gc->showing = true;
 }
 
 static inline void game_capture_render_cursor(struct game_capture *gc)
