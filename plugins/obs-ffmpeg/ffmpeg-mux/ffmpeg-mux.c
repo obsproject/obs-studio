@@ -650,10 +650,10 @@ int main(int argc, char *argv[])
 		size_t len = wcslen(argv_w[i]);
 		int size;
 
-		size = WideCharToMultiByte(CP_UTF8, 0, argv_w[i], len, NULL, 0,
-				NULL, NULL);
+		size = WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len,
+				NULL, 0, NULL, NULL);
 		argv[i] = malloc(size + 1);
-		WideCharToMultiByte(CP_UTF8, 0, argv_w[i], len, argv[i],
+		WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len, argv[i],
 				size + 1, NULL, NULL);
 		argv[i][size] = 0;
 	}
