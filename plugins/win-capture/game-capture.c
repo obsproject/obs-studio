@@ -1579,7 +1579,7 @@ static obs_properties_t *game_capture_properties(void *data)
 	p = obs_properties_add_list(ppts, SETTING_CAPTURE_WINDOW, TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "", "");
-	fill_window_list(p, INCLUDE_MINIMIZED, false);
+	fill_window_list(p, INCLUDE_MINIMIZED);
 
 	obs_property_set_modified_callback(p, window_changed_callback);
 

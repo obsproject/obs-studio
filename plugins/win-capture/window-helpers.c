@@ -1,7 +1,6 @@
 #define PSAPI_VERSION 1
 #include <obs.h>
 #include <util/dstr.h>
-#include <util/darray.h>
 
 #include <windows.h>
 #include <psapi.h>
@@ -68,13 +67,6 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }
 
-static inline bool is_self(HWND window)
-{
-	DWORD id;
-	GetWindowThreadProcessId(window, &id);
-	return id == GetCurrentProcessId();
-}
-
 bool get_window_exe(struct dstr *name, HWND window)
 {
 	wchar_t     wname[MAX_PATH];
@@ -85,6 +77,8 @@ bool get_window_exe(struct dstr *name, HWND window)
 	DWORD       id;
 
 	GetWindowThreadProcessId(window, &id);
+	if (id == GetCurrentProcessId())
+		return false;
 
 	process = open_process(PROCESS_QUERY_LIMITED_INFORMATION, false, id);
 	if (!process)
@@ -210,29 +204,14 @@ static inline HWND first_window(enum window_search_mode mode)
 	return window;
 }
 
-void fill_window_list(obs_property_t *p, enum window_search_mode mode,
-		bool allow_self)
+void fill_window_list(obs_property_t *p, enum window_search_mode mode)
 {
 	HWND window = first_window(mode);
-	DARRAY(HWND) process_windows;
-
-	da_init(process_windows);
 
 	while (window) {
-		if (is_self(window))
-			da_push_back(process_windows, &window);
-		else
-			add_window(p, window);
-
+		add_window(p, window);
 		window = next_window(window, mode);
 	}
-
-	if (allow_self) {
-		for (size_t i = 0; i < process_windows.num; i++)
-			add_window(p, process_windows.array[i]);
-	}
-
-	da_free(process_windows);
 }
 
 static int window_rating(HWND window,
