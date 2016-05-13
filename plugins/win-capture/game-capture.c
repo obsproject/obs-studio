@@ -751,6 +751,33 @@ static bool init_hook(struct game_capture *gc)
 	return true;
 }
 
+static void setup_window(struct game_capture *gc, HWND window)
+{
+	DWORD process_id = 0;
+	HANDLE hook_restart;
+
+	GetWindowThreadProcessId(window, &process_id);
+
+	/* do not wait if we're re-hooking a process */
+	hook_restart = open_event_id(EVENT_CAPTURE_RESTART, process_id);
+	if (hook_restart) {
+		gc->wait_for_target_startup = false;
+		CloseHandle(hook_restart);
+	}
+
+	/* otherwise if it's an unhooked process, always wait a bit for the
+	 * target process to start up before starting the hook process;
+	 * sometimes they have important modules to load first or other hooks
+	 * (such as steam) need a little bit of time to load.  ultimately this
+	 * helps prevent crashes */
+	if (gc->wait_for_target_startup) {
+		gc->retry_interval = 3.0f;
+		gc->wait_for_target_startup = false;
+	} else {
+		gc->next_window = window;
+	}
+}
+
 static void get_fullscreen_window(struct game_capture *gc)
 {
 	HWND window = GetForegroundWindow();
@@ -788,18 +815,7 @@ static void get_fullscreen_window(struct game_capture *gc)
 	    rect.right  == mi.rcMonitor.right  &&
 	    rect.bottom == mi.rcMonitor.bottom &&
 	    rect.top    == mi.rcMonitor.top) {
-
-		/* always wait a bit for the target process to start up before
-		 * starting the hook process; sometimes they have important
-		 * modules to load first or other hooks (such as steam) need a
-		 * little bit of time to load.  ultimately this helps prevent
-		 * crashes */
-		if (gc->wait_for_target_startup) {
-			gc->retry_interval = 3.0f;
-			gc->wait_for_target_startup = false;
-		} else {
-			gc->next_window = window;
-		}
+		setup_window(gc, window);
 	} else {
 		gc->wait_for_target_startup = true;
 	}
@@ -807,16 +823,24 @@ static void get_fullscreen_window(struct game_capture *gc)
 
 static void get_selected_window(struct game_capture *gc)
 {
+	HWND window;
+
 	if (strcmpi(gc->config.class, "dwm") == 0) {
 		wchar_t class_w[512];
 		os_utf8_to_wcs(gc->config.class, 0, class_w, 512);
-		gc->next_window = FindWindowW(class_w, NULL);
+		window = FindWindowW(class_w, NULL);
 	} else {
-		gc->next_window = find_window(INCLUDE_MINIMIZED,
+		window = find_window(INCLUDE_MINIMIZED,
 				gc->config.priority,
 				gc->config.class,
 				gc->config.title,
 				gc->config.executable);
+	}
+
+	if (window) {
+		setup_window(gc, window);
+	} else {
+		gc->wait_for_target_startup = true;
 	}
 }
 
@@ -1262,6 +1286,9 @@ static void game_capture_tick(void *data, float seconds)
 			gc->showing = false;
 		}
 		return;
+
+	} else if (!gc->showing) {
+		gc->retry_time = 10.0f;
 	}
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
