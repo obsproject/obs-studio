@@ -1643,23 +1643,29 @@ static void convert_14_2_encoder_setting(const char *encoder, const char *file)
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	obs_data_item_t *cbr_item = obs_data_item_byname(data, "cbr");
 	obs_data_item_t *rc_item = obs_data_item_byname(data, "rate_control");
+	bool modified = false;
+	bool cbr = true;
 
-	if (!rc_item) {
-		bool cbr = false;
+	if (cbr_item) {
+		cbr = obs_data_item_get_bool(cbr_item);
+		obs_data_item_unset_user_value(cbr_item);
 
-		if (cbr_item) {
-			cbr = obs_data_item_get_bool(cbr_item);
-			obs_data_item_unset_user_value(cbr_item);
-		}
+		obs_data_set_string(data, "rate_control", cbr ? "CBR" : "VBR");
 
-		if (cbr) {
-			obs_data_set_string(data, "rate_control", "CBR");
-		} else if (astrcmpi(encoder, "obs_x264") == 0) {
-			convert_x264_settings(data);
-		}
-
-		obs_data_save_json_safe(data, file, "tmp", "bak");
+		modified = true;
 	}
+
+	if (!rc_item && astrcmpi(encoder, "obs_x264") == 0) {
+		if (!cbr_item)
+			obs_data_set_string(data, "rate_control", "CBR");
+		else if (!cbr)
+			convert_x264_settings(data);
+
+		modified = true;
+	}
+
+	if (modified)
+		obs_data_save_json_safe(data, file, "tmp", "bak");
 
 	obs_data_item_release(&rc_item);
 	obs_data_item_release(&cbr_item);
