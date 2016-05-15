@@ -22,6 +22,7 @@ struct window_capture {
 	bool                 cursor;
 	bool                 compatibility;
 	bool                 use_wildcards; /* TODO */
+	bool                 minimized;
 
 	struct dc_capture    capture;
 
@@ -159,6 +160,7 @@ static void wc_tick(void *data, float seconds)
 		reset_capture = true;
 
 	} else if (IsIconic(wc->window)) {
+		wc->minimized = true;
 		return;
 	}
 
@@ -186,6 +188,7 @@ static void wc_tick(void *data, float seconds)
 				wc->cursor, wc->compatibility);
 	}
 
+	wc->minimized = false;
 	dc_capture_capture(&wc->capture, wc->window);
 	obs_leave_graphics();
 }
@@ -193,6 +196,9 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
+	if (wc->minimized)
+		return;
+
 	dc_capture_render(&wc->capture, obs_get_base_effect(OBS_EFFECT_OPAQUE));
 
 	UNUSED_PARAMETER(effect);
