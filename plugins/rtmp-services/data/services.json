@@ -315,43 +315,6 @@
             ]
         },
         {
-            "name": "Restream.io",
-            "servers": [
-                {
-                    "name": "EU-West (Amsterdam, NL)",
-                    "url": "rtmp://eu-ams.restream.io/live"
-                },
-                {
-                    "name": "EU-Central (Frankfurt, DE)",
-                    "url": "rtmp://eu.restream.io/live"
-                },
-                {
-                    "name": "US-West (San Jose, CA)",
-                    "url": "rtmp://us-west.restream.io/live"
-                },
-                {
-                    "name": "US-West (Los Angeles, CA)",
-                    "url": "rtmp://us-la.restream.io/live"
-                },
-                {
-                    "name": "US-East (Washington, DC)",
-                    "url": "rtmp://us-east.restream.io/live"
-                },
-                {
-                    "name": "AU (Sydney)",
-                    "url": "rtmp://au.restream.io/live"
-                },
-                {
-                    "name": "AU-Secondary (Sydney)",
-                    "url": "rtmp://au-secondary.restream.io/live"
-                },
-                {
-                    "name": "SA (Saint Paul, Brazil)",
-                    "url": "rtmp://sa.restream.io/live"
-                }
-            ]
-        },
-        {
             "name": "mSportz",
             "servers": [
                 {
@@ -514,6 +477,44 @@
                 "max video bitrate": 2000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Restream.io",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US-West (San Jose, California)",
+                    "url": "rtmp://us-west.restream.io/live"
+                },
+                {
+                    "name": "US-West (Los Angeles, California)",
+                    "url": "rtmp://us-la.restream.io/live"
+                },
+                {
+                    "name": "US-East (Washington, D.C.)",
+                    "url": "rtmp://us-east.restream.io/live"
+                },
+                {
+                    "name": "US-Central (Dallas, TX)",
+                    "url": "rtmp://us-central.restream.io/live"
+                },
+                {
+                    "name": "EU-Central (Frankfurt, Germany)",
+                    "url": "rtmp://eu.restream.io/live"
+                },
+                {
+                    "name": "EU-West (London, GB)",
+                    "url": "rtmp://eu-london.restream.io/live"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "url": "rtmp://au-secondary.restream.io/live"
+                },
+                {
+                    "name": "South America (Sao Paulo, Brazil)",
+                    "url": "rtmp://sa.restream.io/live"
+                }
+            ]
         }
     ]
 }
