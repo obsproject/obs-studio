@@ -1394,7 +1394,7 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 static void game_capture_render(void *data, gs_effect_t *effect)
 {
 	struct game_capture *gc = data;
-	if (!gc->texture)
+	if (!gc->texture || !gc->active)
 		return;
 
 	effect = obs_get_base_effect(gc->config.allow_transparency ?
