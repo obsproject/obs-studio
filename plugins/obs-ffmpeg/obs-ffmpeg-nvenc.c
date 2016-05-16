@@ -160,6 +160,8 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	nvenc_video_info(enc, &info);
 	av_opt_set_int(enc->context->priv_data, "cbr", false, 0);
 
+	av_opt_set(enc->context->priv_data, "preset", preset, 0);
+
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
 		enc->context->global_quality = cqp;
@@ -171,7 +173,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		bool hp = (astrcmpi(preset, "hp") == 0 ||
 		           astrcmpi(preset, "llhp") == 0);
 
-		av_opt_set(enc->context->priv_data, "profile",
+		av_opt_set(enc->context->priv_data, "preset",
 				hp ? "losslesshp" : "lossless", 0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
@@ -182,7 +184,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	}
 
 
-	av_opt_set(enc->context->priv_data, "preset", preset, 0);
 	av_opt_set(enc->context->priv_data, "level", level, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
