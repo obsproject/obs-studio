@@ -472,9 +472,9 @@
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 2000,
+                "max video bitrate": 2500,
                 "max audio bitrate": 160
             }
         },
