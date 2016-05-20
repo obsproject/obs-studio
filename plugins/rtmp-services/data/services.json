@@ -521,31 +521,31 @@
             "servers": [
               {
                   "name": "EU Central: Frankfurt, Germany",
-                  "url": "rtmp://broadcast-frf.nood.tv"
+                  "url": "rtmp://broadcast-frf.nood.tv/20D2AB/live"
               },
               {
                   "name": "EU North: Amsterdam, Netherlands",
-                  "url": "rtmp://broadcast-ams.nood.tv"
+                  "url": "rtmp://broadcast-ams.nood.tv/20D2AB/live"
               },
               {
                   "name": "EU West: Stockholm, Sweden",
-                  "url": "rtmp://broadcast-arn.nood.tv"
+                  "url": "rtmp://broadcast-arn.nood.tv/20D2AB/live"
               },
               {
                   "name": "US East: Washington, DC",
-                  "url": "rtmp://broadcast-dca.nood.tv"
+                  "url": "rtmp://broadcast-dca.nood.tv/20D2AB/live"
               },
               {
                   "name": "US West: Los Angeles, CA",
-                  "url": "rtmp://broadcast-oxr.nood.tv"
+                  "url": "rtmp://broadcast-oxr.nood.tv/20D2AB/live"
               },
               {
                   "name": "Australia: Sydney",
-                  "url": "rtmp://broadcast-syd.nood.tv"
+                  "url": "rtmp://broadcast-syd.nood.tv/20D2AB/live"
               },
               {
                   "name": "Asia: Hong Kong, China",
-                  "url": "rtmp://broadcast-hhp.nood.tv"
+                  "url": "rtmp://broadcast-hhp.nood.tv/20D2AB/live"
               }
             ]
         }
