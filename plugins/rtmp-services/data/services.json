@@ -515,6 +515,39 @@
                     "url": "rtmp://sa.restream.io/live"
                 }
             ]
+        },
+        {
+            "name": "Nood",
+            "servers": [
+              {
+                  "name": "EU Central: Frankfurt, Germany",
+                  "url": "rtmp://broadcast-frf.nood.tv"
+              },
+              {
+                  "name": "EU North: Amsterdam, Netherlands",
+                  "url": "rtmp://broadcast-ams.nood.tv"
+              },
+              {
+                  "name": "EU West: Stockholm, Sweden",
+                  "url": "rtmp://broadcast-arn.nood.tv"
+              },
+              {
+                  "name": "US East: Washington, DC",
+                  "url": "rtmp://broadcast-dca.nood.tv"
+              },
+              {
+                  "name": "US West: Los Angeles, CA",
+                  "url": "rtmp://broadcast-oxr.nood.tv"
+              },
+              {
+                  "name": "Australia: Sydney",
+                  "url": "rtmp://broadcast-syd.nood.tv"
+              },
+              {
+                  "name": "Asia: Hong Kong, China",
+                  "url": "rtmp://broadcast-hhp.nood.tv"
+              }
+            ]
         }
     ]
 }
