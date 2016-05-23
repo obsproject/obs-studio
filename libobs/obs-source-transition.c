@@ -99,14 +99,26 @@ void obs_transition_clear(obs_source_t *transition)
 
 void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy);
 
+static inline uint32_t get_cx(obs_source_t *tr)
+{
+	return tr->transition_cx ?
+		tr->transition_cx : tr->transition_actual_cx;
+}
+
+static inline uint32_t get_cy(obs_source_t *tr)
+{
+	return tr->transition_cy ?
+		tr->transition_cy : tr->transition_actual_cy;
+}
+
 static void recalculate_transition_matrix(obs_source_t *tr, size_t idx)
 {
 	obs_source_t *child;
 	struct matrix4 mat;
 	struct vec2 pos;
 	struct vec2 scale;
-	float tr_cx = (float)tr->transition_actual_cx;
-	float tr_cy = (float)tr->transition_actual_cy;
+	float tr_cx = (float)get_cx(tr);
+	float tr_cy = (float)get_cy(tr);
 	float source_cx;
 	float source_cy;
 	float tr_aspect = tr_cx / tr_cy;
@@ -596,8 +608,8 @@ void obs_transition_enum_sources(obs_source_t *transition,
 static inline void render_child(obs_source_t *transition,
 		obs_source_t *child, size_t idx)
 {
-	uint32_t cx = transition->transition_actual_cx;
-	uint32_t cy = transition->transition_actual_cy;
+	uint32_t cx = get_cx(transition);
+	uint32_t cy = get_cy(transition);
 	struct vec4 blank;
 	if (!child)
 		return;
@@ -680,8 +692,7 @@ void obs_transition_video_render(obs_source_t *transition,
 		}
 
 		callback(transition->context.data, tex[0], tex[1], t,
-				transition->transition_actual_cx,
-				transition->transition_actual_cy);
+				get_cx(transition), get_cy(transition));
 
 	} else if (state.transitioning_audio) {
 		if (state.s[1]) {
