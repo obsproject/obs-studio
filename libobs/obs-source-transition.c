@@ -634,6 +634,7 @@ void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback)
 {
 	struct transition_state state;
+	struct matrix4 matrices[2];
 	bool locked = false;
 	bool stopped = false;
 	bool video_stopped = false;
@@ -656,6 +657,8 @@ void obs_transition_video_render(obs_source_t *transition,
 		}
 	}
 	copy_transition_state(transition, &state);
+	matrices[0] = transition->transition_matrices[0];
+	matrices[1] = transition->transition_matrices[1];
 
 	unlock_transition(transition);
 
@@ -681,12 +684,19 @@ void obs_transition_video_render(obs_source_t *transition,
 				transition->transition_actual_cy);
 
 	} else if (state.transitioning_audio) {
-		if (state.s[1])
+		if (state.s[1]) {
+			gs_matrix_push();
+			gs_matrix_mul(&matrices[1]);
 			obs_source_video_render(state.s[1]);
-
+			gs_matrix_pop();
+		}
 	} else {
-		if (state.s[0])
+		if (state.s[0]) {
+			gs_matrix_push();
+			gs_matrix_mul(&matrices[0]);
 			obs_source_video_render(state.s[0]);
+			gs_matrix_pop();
+		}
 	}
 
 	if (locked)
