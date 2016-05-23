@@ -1632,6 +1632,8 @@ void WidgetInfo::EditableListChanged()
 
 	obs_data_set_array(view->settings, setting, array);
 	obs_data_array_release(array);
+
+	ControlChanged();
 }
 
 void WidgetInfo::ButtonClicked()
@@ -1673,7 +1675,7 @@ void WidgetInfo::ControlChanged()
 		if (!PathChanged(setting))
 			return;
 		break;
-	case OBS_PROPERTY_EDITABLE_LIST: return;
+	case OBS_PROPERTY_EDITABLE_LIST: break;
 	case OBS_PROPERTY_FRAME_RATE:
 		if (!FrameRateChanged(widget, setting, view->settings))
 			return;
