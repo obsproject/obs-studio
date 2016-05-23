@@ -605,6 +605,7 @@ static inline void render_child(obs_source_t *transition,
 	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy)) {
 		vec4_zero(&blank);
 		gs_clear(GS_CLEAR_COLOR, &blank, 0.0f, 0);
+		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 
 		gs_matrix_push();
 		gs_matrix_mul(&transition->transition_matrices[idx]);
