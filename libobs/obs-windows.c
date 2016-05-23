@@ -163,7 +163,7 @@ static void log_available_memory(void)
 #ifdef _WIN64
 	const char *note = "";
 #else
-	const char *note = " (NOTE: 4 gigs max is normal for 32bit programs)";
+	const char *note = " (NOTE: 2 or 4 gigs max is normal for 32bit programs)";
 #endif
 
 	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s",
