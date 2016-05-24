@@ -270,8 +270,11 @@ static struct obs_source_info image_source_info = {
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
 
+extern struct obs_source_info slideshow_info;
+
 bool obs_module_load(void)
 {
 	obs_register_source(&image_source_info);
+	obs_register_source(&slideshow_info);
 	return true;
 }
