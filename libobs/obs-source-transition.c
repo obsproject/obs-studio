@@ -380,6 +380,9 @@ bool obs_transition_start(obs_source_t *transition,
 	obs_source_dosignal(transition, "source_transition_start",
 			"transition_start");
 
+	recalculate_transition_size(transition);
+	recalculate_transition_matrices(transition);
+
 	/* TODO: Add mode */
 	UNUSED_PARAMETER(mode);
 	return true;
