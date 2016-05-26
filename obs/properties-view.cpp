@@ -1765,12 +1765,19 @@ public:
 
 void WidgetInfo::EditListAdd()
 {
-	bool allow_files = obs_property_editable_list_allow_files(property);
-	if (!allow_files) {
+	enum obs_editable_list_type type = obs_property_editable_list_type(
+			property);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_STRINGS) {
 		EditListAddText();
+		return;
+
+	} else if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
+		EditListAddFiles();
 		return;
 	}
 
+	/* Files and URLs */
 	QMenu popup(view->window());
 
 	QAction *action;
@@ -1843,7 +1850,8 @@ void WidgetInfo::EditListRemove()
 void WidgetInfo::EditListEdit()
 {
 	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
-	bool allow_files = obs_property_editable_list_allow_files(property);
+	enum obs_editable_list_type type = obs_property_editable_list_type(
+			property);
 	const char *desc = obs_property_description(property);
 	const char *filter = obs_property_editable_list_filter(property);
 	QList<QListWidgetItem*> selectedItems = list->selectedItems();
@@ -1852,8 +1860,21 @@ void WidgetInfo::EditListEdit()
 		return;
 
 	QListWidgetItem *item = selectedItems[0];
-	EditableItemDialog dialog(widget->window(), item->text(), allow_files,
-			filter);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
+		QString path = QFileDialog::getOpenFileName(
+				App()->GetMainWindow(), QTStr("Browse"),
+				item->text(), QT_UTF8(filter));
+		if (path.isEmpty())
+			return;
+
+		item->setText(path);
+		EditableListChanged();
+		return;
+	}
+
+	EditableItemDialog dialog(widget->window(), item->text(),
+			type != OBS_EDITABLE_LIST_TYPE_STRINGS, filter);
 	auto title = QTStr("Basic.PropertiesWindow.EditEditableListEntry").arg(
 			QT_UTF8(desc));
 	dialog.setWindowTitle(title);
