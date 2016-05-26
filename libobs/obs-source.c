@@ -2910,7 +2910,11 @@ static void enum_source_tree_callback(obs_source_t *parent, obs_source_t *child,
 		void *param)
 {
 	struct source_enum_data *data = param;
+	bool is_transition = child->info.type == OBS_SOURCE_TYPE_TRANSITION;
 
+	if (is_transition)
+		obs_transition_enum_sources(child,
+				enum_source_tree_callback, param);
 	if (child->info.enum_active_sources) {
 		if (child->context.data) {
 			child->info.enum_active_sources(child->context.data,
