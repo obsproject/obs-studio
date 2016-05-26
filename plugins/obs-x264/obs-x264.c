@@ -416,11 +416,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		rate_control = "CBR";
 	}
 
-	if (astrcmpi(rate_control, "CBR") == 0) {
-		rc = RATE_CONTROL_CBR;
-		crf = 0;
-
-	} else if (astrcmpi(rate_control, "ABR") == 0) {
+	if (astrcmpi(rate_control, "ABR") == 0) {
 		rc = RATE_CONTROL_ABR;
 		crf = 0;
 
@@ -431,6 +427,10 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		rc = RATE_CONTROL_CRF;
 		bitrate = 0;
 		buffer_size = 0;
+
+	} else { /* CBR */
+		rc = RATE_CONTROL_CBR;
+		crf = 0;
 	}
 
 	if (keyint_sec)
