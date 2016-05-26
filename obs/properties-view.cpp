@@ -470,6 +470,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		combo->setEditable(true);
 
+	combo->setMaxVisibleItems(40);
+
 	string value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
