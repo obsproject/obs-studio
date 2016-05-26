@@ -342,6 +342,7 @@ void SimpleOutput::Update()
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
 
+	obs_data_set_string(h264Settings, "rate_control", "CBR");
 	obs_data_set_int(h264Settings, "bitrate", videoBitrate);
 
 	if (advanced) {
