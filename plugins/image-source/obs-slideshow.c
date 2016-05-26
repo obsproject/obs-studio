@@ -308,10 +308,17 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->elapsed > ss->slide_time) {
 		ss->elapsed -= ss->slide_time;
 
-		if (ss->randomize)
-			ss->cur_item = random_file(ss);
-		else if (++ss->cur_item >= ss->files.num)
+		if (ss->randomize) {
+			size_t next = ss->cur_item;
+			if (ss->files.num > 1) {
+				while (next == ss->cur_item)
+					next = random_file(ss);
+			}
+			ss->cur_item = next;
+
+		} else if (++ss->cur_item >= ss->files.num) {
 			ss->cur_item = 0;
+		}
 
 		if (ss->files.num)
 			obs_transition_start(ss->transition,
