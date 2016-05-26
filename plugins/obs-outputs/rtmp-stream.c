@@ -453,7 +453,6 @@ static inline bool send_headers(struct rtmp_stream *stream)
 	stream->sent_headers = true;
 	size_t i = 0;
 	bool next = true;
-	bool fail = false;
 
 	if (!send_audio_header(stream, i++, &next))
 		return false;
