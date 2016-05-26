@@ -12,6 +12,7 @@
 #define S_TR_SPEED                     "transition_speed"
 #define S_SLIDE_TIME                   "slide_time"
 #define S_TRANSITION                   "transition"
+#define S_RANDOMIZE                    "randomize"
 #define S_FILES                        "files"
 
 #define TR_CUT                         "cut"
@@ -23,6 +24,7 @@
 #define T_TR_SPEED                     T_("TransitionSpeed")
 #define T_SLIDE_TIME                   T_("SlideTime")
 #define T_TRANSITION                   T_("Transition")
+#define T_RANDOMIZE                    T_("Randomize")
 #define T_FILES                        T_("Files")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
@@ -41,6 +43,7 @@ struct image_file_data {
 struct slideshow {
 	obs_source_t *source;
 
+	bool randomize;
 	float slide_time;
 	uint32_t tr_speed;
 	const char *tr_name;
@@ -114,6 +117,11 @@ static void free_files(struct darray *array)
 	da_free(files);
 }
 
+static inline size_t random_file(struct slideshow *ss)
+{
+	return (size_t)rand() % ss->files.num;
+}
+
 /* ------------------------------------------------------------------------- */
 
 static const char *ss_getname(void *unused)
@@ -151,6 +159,8 @@ static void ss_update(void *data, obs_data_t *settings)
 		tr_name = "slide_transition";
 	else
 		tr_name = "fade_transition";
+
+	ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 
 	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
 		new_tr = obs_source_create_private(tr_name, NULL, NULL);
@@ -233,11 +243,14 @@ static void ss_update(void *data, obs_data_t *settings)
 	obs_transition_set_scale_type(ss->transition,
 			OBS_TRANSITION_SCALE_ASPECT);
 
+	if (ss->randomize)
+		ss->cur_item = random_file(ss);
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
 	if (ss->files.num)
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
-				ss->tr_speed, ss->files.array[0].source);
+				ss->tr_speed,
+				ss->files.array[ss->cur_item].source);
 
 	obs_data_array_release(array);
 }
@@ -295,7 +308,9 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->elapsed > ss->slide_time) {
 		ss->elapsed -= ss->slide_time;
 
-		if (++ss->cur_item >= ss->files.num)
+		if (ss->randomize)
+			ss->cur_item = random_file(ss);
+		else if (++ss->cur_item >= ss->files.num)
 			ss->cur_item = 0;
 
 		if (ss->files.num)
@@ -407,6 +422,7 @@ static obs_properties_t *ss_properties(void *data)
 			50, 3600000, 50);
 	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED,
 			0, 3600000, 50);
+	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
 
 	if (ss) {
 		pthread_mutex_lock(&ss->mutex);
