@@ -115,7 +115,7 @@ static obs_properties_t *async_delay_filter_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, SETTING_DELAY_MS, TEXT_DELAY_MS,
-			0, 6000, 1);
+			0, 20000, 1);
 
 	UNUSED_PARAMETER(data);
 	return props;
