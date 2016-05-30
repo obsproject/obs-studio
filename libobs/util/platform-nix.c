@@ -68,7 +68,8 @@ void *os_dlsym(void *module, const char *func)
 
 void os_dlclose(void *module)
 {
-	dlclose(module);
+	if (module)
+		dlclose(module);
 }
 
 #if !defined(__APPLE__)
