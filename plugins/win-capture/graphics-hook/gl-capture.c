@@ -30,6 +30,7 @@ static struct func_hook wgl_delete_context;
 static bool darkest_dungeon_fix = false;
 
 struct gl_data {
+	int                            swap_recurse;
 	HDC                            hdc;
 	uint32_t                       base_cx;
 	uint32_t                       base_cy;
@@ -773,20 +774,36 @@ static void gl_capture(HDC hdc)
 	}
 }
 
+static inline void gl_swap_begin(HDC hdc)
+{
+	if (data.swap_recurse++)
+		return;
+
+	if (!global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
+static inline void gl_swap_end(HDC hdc)
+{
+	if (--data.swap_recurse)
+		return;
+
+	if (global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
 static BOOL WINAPI hook_swap_buffers(HDC hdc)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&swap_buffers);
 	BOOL (WINAPI *call)(HDC) = swap_buffers.call_addr;
 	ret = call(hdc);
 	rehook(&swap_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
@@ -795,16 +812,15 @@ static BOOL WINAPI hook_wgl_swap_buffers(HDC hdc)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&wgl_swap_buffers);
+
 	BOOL (WINAPI *call)(HDC) = wgl_swap_buffers.call_addr;
 	ret = call(hdc);
 	rehook(&wgl_swap_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
@@ -813,16 +829,15 @@ static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&wgl_swap_layer_buffers);
+
 	BOOL (WINAPI *call)(HDC, UINT) = wgl_swap_layer_buffers.call_addr;
 	ret = call(hdc, planes);
 	rehook(&wgl_swap_layer_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
