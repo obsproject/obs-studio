@@ -243,7 +243,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	obs_transition_set_scale_type(ss->transition,
 			OBS_TRANSITION_SCALE_ASPECT);
 
-	if (ss->randomize && files.num)
+	if (ss->randomize && ss->files.num)
 		ss->cur_item = random_file(ss);
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
