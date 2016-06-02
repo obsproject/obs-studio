@@ -1268,7 +1268,7 @@ static inline bool set_planar420_sizes(struct obs_source *source,
 	size += size/2;
 
 	source->async_convert_width   = frame->width;
-	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_convert_height  = size / frame->width;
 	source->async_texture_format  = GS_R8;
 	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
 	source->async_plane_offset[1] = (int)(frame->data[2] - frame->data[0]);
@@ -1282,7 +1282,7 @@ static inline bool set_nv12_sizes(struct obs_source *source,
 	size += size/2;
 
 	source->async_convert_width   = frame->width;
-	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_convert_height  = size / frame->width;
 	source->async_texture_format  = GS_R8;
 	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
 	return true;
