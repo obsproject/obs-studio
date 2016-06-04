@@ -409,6 +409,39 @@ void XErrorLock::resetError()
 	curErrorText[0] = 0;
 }
 
+XDisplayLock::XDisplayLock()
+{
+	islock = false;
+	lock();
+}
+
+XDisplayLock::~XDisplayLock()
+{
+	unlock();
+}
+
+bool XDisplayLock::isLocked()
+{
+	return islock;
+}
+
+void XDisplayLock::lock()
+{
+	if (!islock) {
+		XLockDisplay(XCompcap::disp());
+		islock = true;
+	}
+}
+
+void XDisplayLock::unlock()
+{
+	if (islock) {
+		XSync(XCompcap::disp(), 0);
+		XUnlockDisplay(XCompcap::disp());
+		islock = false;
+	}
+}
+
 
 ObsGsContextHolder::ObsGsContextHolder()
 {

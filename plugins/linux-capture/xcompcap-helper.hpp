@@ -48,6 +48,23 @@ class XErrorLock
 	void resetError();
 };
 
+class XDisplayLock
+{
+	bool islock;
+
+	public:
+	XDisplayLock(const XDisplayLock&) = delete;
+	XDisplayLock& operator=(const XDisplayLock&) = delete;
+
+	XDisplayLock();
+	~XDisplayLock();
+
+	bool isLocked();
+
+	void unlock();
+	void lock();
+};
+
 class ObsGsContextHolder
 {
 	public:
