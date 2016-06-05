@@ -7,6 +7,7 @@
 #include <pthread.h>
 
 #include <obs-module.h>
+#include <util/platform.h>
 
 #include "xcompcap-helper.hpp"
 
@@ -198,6 +199,11 @@ namespace XCompcap
 				XFreeStringList(list);
 			}
 		}
+
+		char *conv = nullptr;
+		if (os_mbs_to_utf8_ptr(res.c_str(), 0, &conv)) 
+			res = conv;
+		bfree(conv);
 
 		XFree(tp.value);
 
