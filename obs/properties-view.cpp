@@ -401,7 +401,7 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 		var = QVariant::fromValue<double>(val);
 
 	} else if (format == OBS_COMBO_FORMAT_STRING) {
-		var = obs_property_list_item_string(prop, idx);
+		var = QByteArray(obs_property_list_item_string(prop, idx));
 	}
 
 	combo->addItem(QT_UTF8(name), var);
@@ -475,10 +475,11 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	string value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
-			type == OBS_COMBO_TYPE_EDITABLE)
+			type == OBS_COMBO_TYPE_EDITABLE) {
 		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
-	else
-		idx = combo->findData(QT_UTF8(value.c_str()));
+	} else {
+		idx = combo->findData(QByteArray(value.c_str()));
+	}
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
@@ -1520,7 +1521,7 @@ void WidgetInfo::ListChanged(const char *setting)
 	QVariant         data;
 
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText();
+		data = combo->currentText().toUtf8();
 	} else {
 		int index = combo->currentIndex();
 		if (index != -1)
@@ -1542,7 +1543,7 @@ void WidgetInfo::ListChanged(const char *setting)
 		break;
 	case OBS_COMBO_FORMAT_STRING:
 		obs_data_set_string(view->settings, setting,
-				QT_TO_UTF8(data.toString()));
+				data.toByteArray().constData());
 		break;
 	}
 }
