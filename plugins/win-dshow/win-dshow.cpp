@@ -1800,8 +1800,6 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	/* audio settings */
 
 	Device::EnumAudioDevices(data->audioDevices);
-	if (!data->audioDevices.size())
-		return ppts;
 
 	p = obs_properties_add_list(ppts, AUDIO_OUTPUT_MODE, TEXT_AUDIO_MODE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -1811,6 +1809,9 @@ static obs_properties_t *GetDShowProperties(void *obj)
 			(int64_t)AudioMode::DirectSound);
 	obs_property_list_add_int(p, TEXT_MODE_WAVEOUT,
 			(int64_t)AudioMode::WaveOut);
+
+	if (!data->audioDevices.size())
+		return ppts;
 
 	p = obs_properties_add_bool(ppts, USE_CUSTOM_AUDIO, TEXT_CUSTOM_AUDIO);
 
