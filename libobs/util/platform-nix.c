@@ -49,7 +49,11 @@ void *os_dlopen(const char *path)
 		return NULL;
 
 	dstr_init_copy(&dylib_name, path);
+#ifdef __APPLE__
+	if (!dstr_find(&dylib_name, ".so") && !dstr_find(&dylib_name, ".dylib"))
+#else
 	if (!dstr_find(&dylib_name, ".so"))
+#endif
 		dstr_cat(&dylib_name, ".so");
 
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
