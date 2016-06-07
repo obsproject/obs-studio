@@ -228,7 +228,7 @@ install_obs_core(obs)
 install_obs_data(obs data obs-studio)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
-	install(FILES dist/obs.desktop DESTINATION share/applications)
+	install(FILES dist/obs.desktop DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/applications)
 	install(FILES forms/images/obs.png
-		DESTINATION share/icons/hicolor/256x256/apps)
+		DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/icons/hicolor/256x256/apps)
 endif()
