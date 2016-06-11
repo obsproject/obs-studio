@@ -56,7 +56,7 @@ static inline void process_delay_data(struct obs_output *output,
 		obs_output_actual_start(output);
 		break;
 	case DELAY_MSG_STOP:
-		obs_output_actual_stop(output, false);
+		obs_output_actual_stop(output, false, dd->ts);
 		break;
 	}
 }
@@ -151,8 +151,9 @@ bool obs_output_delay_start(obs_output_t *output)
 	circlebuf_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 
+	os_atomic_inc_long(&output->delay_restart_refs);
+
 	if (delay_active(output)) {
-		os_atomic_inc_long(&output->delay_restart_refs);
 		do_output_signal(output, "starting");
 		return true;
 	}
