@@ -603,6 +603,11 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 		d3d9_init(device);
 	}
 	if (capture_ready()) {
+		if (data.device != device) {
+			d3d9_free();
+			return;
+		}
+
 		if (data.using_shtex)
 			d3d9_shtex_capture(backbuffer);
 		else
