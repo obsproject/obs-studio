@@ -58,6 +58,9 @@ struct encoder_packet {
 	/* DTS in microseconds */
 	int64_t               dts_usec;
 
+	/* System DTS in microseconds */
+	int64_t               sys_dts_usec;
+
 	/**
 	 * Packet priority
 	 *
