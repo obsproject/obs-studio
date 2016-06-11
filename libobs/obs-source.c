@@ -2599,7 +2599,8 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 	if (!obs_source_valid(source, "obs_source_set_name"))
 		return;
 
-	if (!name || !*name || strcmp(name, source->context.name) != 0) {
+	if (!name || !*name || !source->context.name ||
+			strcmp(name, source->context.name) != 0) {
 		struct calldata data;
 		char *prev_name = bstrdup(source->context.name);
 		obs_context_data_setname(&source->context, name);
