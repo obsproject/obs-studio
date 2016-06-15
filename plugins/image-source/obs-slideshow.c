@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <util/threading.h>
+#include <util/platform.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 
@@ -130,6 +131,51 @@ static const char *ss_getname(void *unused)
 	return obs_module_text("SlideShow");
 }
 
+static void add_file(struct slideshow *ss, struct darray *array,
+		const char *path, uint32_t *cx, uint32_t *cy)
+{
+	DARRAY(struct image_file_data) new_files;
+	struct image_file_data data;
+	obs_source_t *new_source;
+
+	new_files.da = *array;
+
+	pthread_mutex_lock(&ss->mutex);
+	new_source = get_source(&ss->files.da, path);
+	pthread_mutex_unlock(&ss->mutex);
+
+	if (!new_source)
+		new_source = get_source(&new_files.da, path);
+	if (!new_source)
+		new_source = create_source_from_file(path);
+
+	if (new_source) {
+		uint32_t new_cx = obs_source_get_width(new_source);
+		uint32_t new_cy = obs_source_get_height(new_source);
+
+		data.path = bstrdup(path);
+		data.source = new_source;
+		da_push_back(new_files, &data);
+
+		if (new_cx > *cx) *cx = new_cx;
+		if (new_cy > *cy) *cy = new_cy;
+	}
+
+	*array = new_files.da;
+}
+
+static bool valid_extension(const char *ext)
+{
+	if (!ext)
+		return false;
+	return astrcmpi(ext, ".bmp") == 0 ||
+	       astrcmpi(ext, ".tga") == 0 ||
+	       astrcmpi(ext, ".png") == 0 ||
+	       astrcmpi(ext, ".jpeg") == 0 ||
+	       astrcmpi(ext, ".jpg") == 0 ||
+	       astrcmpi(ext, ".gif") == 0;
+}
+
 static void ss_update(void *data, obs_data_t *settings)
 {
 	DARRAY(struct image_file_data) new_files;
@@ -177,28 +223,36 @@ static void ss_update(void *data, obs_data_t *settings)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
-		struct image_file_data data;
-		obs_source_t *new_source;
+		os_dir_t *dir = os_opendir(path);
 
-		pthread_mutex_lock(&ss->mutex);
-		new_source = get_source(&ss->files.da, path);
-		pthread_mutex_unlock(&ss->mutex);
+		if (dir) {
+			struct dstr dir_path = {0};
+			struct os_dirent *ent;
 
-		if (!new_source)
-			new_source = get_source(&new_files.da, path);
-		if (!new_source)
-			new_source = create_source_from_file(path);
+			for (;;) {
+				const char *ext;
 
-		if (new_source) {
-			uint32_t new_cx = obs_source_get_width(new_source);
-			uint32_t new_cy = obs_source_get_height(new_source);
+				ent = os_readdir(dir);
+				if (!ent)
+					break;
+				if (ent->directory)
+					continue;
 
-			data.path = bstrdup(path);
-			data.source = new_source;
-			da_push_back(new_files, &data);
+				ext = os_get_path_extension(ent->d_name);
+				if (!valid_extension(ext))
+					continue;
 
-			if (new_cx > cx) cx = new_cx;
-			if (new_cy > cy) cy = new_cy;
+				dstr_copy(&dir_path, path);
+				dstr_cat_ch(&dir_path, '/');
+				dstr_cat(&dir_path, ent->d_name);
+				add_file(ss, &new_files.da, dir_path.array,
+						&cx, &cy);
+			}
+
+			dstr_free(&dir_path);
+			os_closedir(dir);
+		} else {
+			add_file(ss, &new_files.da, path, &cx, &cy);
 		}
 
 		obs_data_release(item);
