@@ -1772,10 +1772,6 @@ void WidgetInfo::EditListAdd()
 	if (type == OBS_EDITABLE_LIST_TYPE_STRINGS) {
 		EditListAddText();
 		return;
-
-	} else if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
-		EditListAddFiles();
-		return;
 	}
 
 	/* Files and URLs */
@@ -1788,10 +1784,18 @@ void WidgetInfo::EditListAdd()
 			this, &WidgetInfo::EditListAddFiles);
 	popup.addAction(action);
 
-	action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"), this);
+	action = new QAction(QTStr("Basic.PropertiesWindow.AddDir"), this);
 	connect(action, &QAction::triggered,
-			this, &WidgetInfo::EditListAddText);
+			this, &WidgetInfo::EditListAddDir);
 	popup.addAction(action);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS) {
+		action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"),
+				this);
+		connect(action, &QAction::triggered,
+				this, &WidgetInfo::EditListAddText);
+		popup.addAction(action);
+	}
 
 	popup.exec(QCursor::pos());
 }
@@ -1835,6 +1839,26 @@ void WidgetInfo::EditListAddFiles()
 		return;
 
 	list->addItems(files);
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListAddDir()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	const char *desc = obs_property_description(property);
+	const char *default_path =
+		obs_property_editable_list_default_path(property);
+
+	QString title = QTStr("Basic.PropertiesWindow.AddEditableListDir")
+		.arg(QT_UTF8(desc));
+
+	QString dir = QFileDialog::getExistingDirectory(
+			App()->GetMainWindow(), title, QT_UTF8(default_path));
+
+	if (dir.isEmpty())
+		return;
+
+	list->addItem(dir);
 	EditableListChanged();
 }
 
