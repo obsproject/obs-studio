@@ -113,6 +113,8 @@ EXPORT bool os_file_exists(const char *path);
 EXPORT size_t os_get_abs_path(const char *path, char *abspath, size_t size);
 EXPORT char *os_get_abs_path_ptr(const char *path);
 
+EXPORT const char *os_get_path_extension(const char *path);
+
 struct os_dir;
 typedef struct os_dir os_dir_t;
 

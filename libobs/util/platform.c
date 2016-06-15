@@ -633,3 +633,26 @@ int os_mkdirs(const char *dir)
 	dstr_free(&dir_str);
 	return ret;
 }
+
+const char *os_get_path_extension(const char *path)
+{
+	struct dstr temp;
+	size_t pos = 0;
+	char *period;
+	char *slash;
+
+	dstr_init_copy(&temp, path);
+	dstr_replace(&temp, "\\", "/");
+
+	slash = strrchr(temp.array, '/');
+	period = strrchr(temp.array, '.');
+	if (period)
+		pos = (size_t)(period - temp.array);
+
+	dstr_free(&temp);
+
+	if (!period || slash > period)
+		return NULL;
+
+	return path + pos;
+}
