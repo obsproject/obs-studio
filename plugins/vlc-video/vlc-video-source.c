@@ -1,6 +1,7 @@
 #include "vlc-video-plugin.h"
 #include <media-io/video-frame.h>
 #include <util/threading.h>
+#include <util/platform.h>
 #include <util/dstr.h>
 
 #define do_log(level, format, ...) \
@@ -374,6 +375,57 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 	return 0;
 }
 
+static void add_file(struct vlc_source *c, struct darray *array,
+		const char *path)
+{
+	DARRAY(struct media_file_data) new_files;
+	struct media_file_data data;
+	struct dstr new_path = {0};
+	libvlc_media_t *new_media;
+
+	new_files.da = *array;
+
+	dstr_copy(&new_path, path);
+#ifdef _WIN32
+	dstr_replace(&new_path, "/", "\\");
+#endif
+	path = new_path.array;
+
+	new_media = get_media(&c->files.da, path);
+
+	if (!new_media)
+		new_media = get_media(&new_files.da, path);
+	if (!new_media)
+		new_media = create_media_from_file(path);
+
+	if (new_media) {
+		data.path = new_path.array;
+		data.media = new_media;
+		da_push_back(new_files, &data);
+	} else {
+		dstr_free(&new_path);
+	}
+
+	*array = new_files.da;
+}
+
+static bool valid_extension(const char *ext)
+{
+	if (!ext)
+		return false;
+	return astrcmpi(ext, ".mp4") == 0 ||
+	       astrcmpi(ext, ".ts") == 0 ||
+	       astrcmpi(ext, ".mov") == 0 ||
+	       astrcmpi(ext, ".flv") == 0 ||
+	       astrcmpi(ext, ".mkv") == 0 ||
+	       astrcmpi(ext, ".avi") == 0 ||
+	       astrcmpi(ext, ".mp3") == 0 ||
+	       astrcmpi(ext, ".ogg") == 0 ||
+	       astrcmpi(ext, ".aac") == 0 ||
+	       astrcmpi(ext, ".wav") == 0 ||
+	       astrcmpi(ext, ".webm") == 0;
+}
+
 static void vlcs_update(void *data, obs_data_t *settings)
 {
 	DARRAY(struct media_file_data) new_files;
@@ -408,29 +460,35 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
-		struct media_file_data data;
-		struct dstr new_path = {0};
-		libvlc_media_t *new_media;
+		os_dir_t *dir = os_opendir(path);
 
-		dstr_copy(&new_path, path);
-#ifdef _WIN32
-		dstr_replace(&new_path, "/", "\\");
-#endif
-		path = new_path.array;
+		if (dir) {
+			struct dstr dir_path = {0};
+			struct os_dirent *ent;
 
-		new_media = get_media(&c->files.da, path);
+			for (;;) {
+				const char *ext;
 
-		if (!new_media)
-			new_media = get_media(&new_files.da, path);
-		if (!new_media)
-			new_media = create_media_from_file(path);
+				ent = os_readdir(dir);
+				if (!ent)
+					break;
+				if (ent->directory)
+					continue;
 
-		if (new_media) {
-			data.path = new_path.array;
-			data.media = new_media;
-			da_push_back(new_files, &data);
+				ext = os_get_path_extension(ent->d_name);
+				if (!valid_extension(ext))
+					continue;
+
+				dstr_copy(&dir_path, path);
+				dstr_cat_ch(&dir_path, '/');
+				dstr_cat(&dir_path, ent->d_name);
+				add_file(c, &new_files.da, dir_path.array);
+			}
+
+			dstr_free(&dir_path);
+			os_closedir(dir);
 		} else {
-			dstr_free(&new_path);
+			add_file(c, &new_files.da, path);
 		}
 
 		obs_data_release(item);
