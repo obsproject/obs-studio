@@ -272,6 +272,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -795,6 +797,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
+	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "RecordWhenStreaming");
+	ui->recordWhenStreaming->setChecked(recordWhenStreaming);
+
+	bool keepRecordStreamStops = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "KeepRecordingWhenStreamStops");
+	ui->keepRecordStreamStops->setChecked(keepRecordStreamStops);
+
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
 	ui->snappingEnabled->setChecked(snappingEnabled);
@@ -814,7 +824,6 @@ void OBSBasicSettings::LoadGeneralSettings()
 	double snapDistance = config_get_double(GetGlobalConfig(),
 			"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
-
 
 	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStartingStream");
@@ -2166,6 +2175,15 @@ void OBSBasicSettings::SaveGeneralSettings()
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"HideProjectorCursor",
 			ui->hideProjectorCursor->isChecked());
+
+	if (WidgetChanged(ui->recordWhenStreaming))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"RecordWhenStreaming",
+				ui->recordWhenStreaming->isChecked());
+	if (WidgetChanged(ui->keepRecordStreamStops))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"KeepRecordingWhenStreamStops",
+				ui->keepRecordStreamStops->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()

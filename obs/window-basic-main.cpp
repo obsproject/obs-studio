@@ -3339,6 +3339,11 @@ void OBSBasic::StartStreaming()
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
 	}
+
+	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "RecordWhenStreaming");
+	if (recordWhenStreaming)
+		StartRecording();
 }
 
 void OBSBasic::StopStreaming()
@@ -3352,6 +3357,13 @@ void OBSBasic::StopStreaming()
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
 	}
+
+	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "RecordWhenStreaming");
+	bool keepRecordingWhenStreamStops = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "KeepRecordingWhenStreamStops");
+	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
+		StopRecording();
 }
 
 void OBSBasic::ForceStopStreaming()
@@ -3365,6 +3377,13 @@ void OBSBasic::ForceStopStreaming()
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
 	}
+
+	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "RecordWhenStreaming");
+	bool keepRecordingWhenStreamStops = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "KeepRecordingWhenStreamStops");
+	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
+		StopRecording();
 }
 
 void OBSBasic::StreamDelayStarting(int sec)
@@ -3481,10 +3500,11 @@ void OBSBasic::StreamingStop(int code)
 
 void OBSBasic::StartRecording()
 {
-	SaveProject();
+	if (outputHandler->RecordingActive())
+		return;
 
-	if (!outputHandler->RecordingActive())
-		outputHandler->StartRecording();
+	SaveProject();
+	outputHandler->StartRecording();
 }
 
 void OBSBasic::RecordStopping()
