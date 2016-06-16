@@ -3484,7 +3484,6 @@ void OBSBasic::StreamingStop(int code)
 
 	if (record_stream)        
 		StopRecording();
-        
 }
 
 void OBSBasic::StartRecording()
