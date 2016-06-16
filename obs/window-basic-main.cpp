@@ -612,7 +612,7 @@ retryScene:
 				Qt::QueuedConnection);
 		opt_start_recording = false;
 	}
-
+        
 	disableSaving--;
 }
 
@@ -3419,6 +3419,12 @@ void OBSBasic::StreamingStart()
 		App()->IncrementSleepInhibition();
 	}
 
+	bool record_stream = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"RecordWhenStreaming");
+
+	if (record_stream)        
+		StartRecording();
+        
 	blog(LOG_INFO, STREAMING_START);
 }
 
@@ -3472,6 +3478,12 @@ void OBSBasic::StreamingStop(int code)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+
+	bool record_stream = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"RecordWhenStreaming");
+
+	if (record_stream)        
+		StopRecording();
 }
 
 void OBSBasic::StartRecording()

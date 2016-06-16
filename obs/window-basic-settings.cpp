@@ -271,6 +271,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -794,6 +795,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
+	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "RecordWhenStreaming");
+	ui->recordWhenStreaming->setChecked(recordWhenStreaming);
+
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
 	ui->snappingEnabled->setChecked(snappingEnabled);
@@ -813,7 +818,6 @@ void OBSBasicSettings::LoadGeneralSettings()
 	double snapDistance = config_get_double(GetGlobalConfig(),
 			"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
-
 
 	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStartingStream");
@@ -2129,6 +2133,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  theme.c_str());
 		App()->SetTheme(theme);
 	}
+        
+	if (WidgetChanged(ui->recordWhenStreaming))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"RecordWhenStreaming",
+				ui->recordWhenStreaming->isChecked());
 
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",

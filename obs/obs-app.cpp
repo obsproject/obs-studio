@@ -354,6 +354,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"CenterSnapping", false);
 	config_set_default_double(globalConfig, "BasicWindow",
 			"SnapDistance", 10.0);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"RecordWhenStreaming", false);
 
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
@@ -1754,7 +1756,7 @@ int main(int argc, char *argv[])
 #if defined(USE_XDG) && defined(IS_UNIX)
 	move_to_xdg();
 #endif
-
+        
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
@@ -1775,7 +1777,7 @@ int main(int argc, char *argv[])
 			if (++i < argc) opt_starting_scene = argv[i];
 		}
 	}
-
+        
 #if !OBS_UNIX_STRUCTURE
 	if (!portable_mode) {
 		portable_mode =
