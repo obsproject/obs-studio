@@ -547,7 +547,13 @@
                   "name": "Asia: Hong Kong, China",
                   "url": "rtmp://broadcast-hhp.nood.tv/20D2AB/live"
               }
-            ]
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 3500,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
