@@ -313,33 +313,6 @@ static int send_packet(struct rtmp_stream *stream,
 
 static inline bool send_headers(struct rtmp_stream *stream);
 
-static bool send_remaining_packets(struct rtmp_stream *stream)
-{
-	struct encoder_packet packet;
-	uint64_t max_ns = (uint64_t)stream->max_shutdown_time_sec * 1000000000;
-	uint64_t begin_time_ns = os_gettime_ns();
-
-	if (!stream->sent_headers) {
-		if (!send_headers(stream))
-			return false;
-	}
-
-	while (get_next_packet(stream, &packet)) {
-		if (send_packet(stream, &packet, false, packet.track_idx) < 0)
-			return false;
-
-		/* Just disconnect if it takes too long to shut down */
-		if ((os_gettime_ns() - begin_time_ns) > max_ns) {
-			info("Took longer than %d second(s) to shut down, "
-			     "automatically stopping connection",
-			     stream->max_shutdown_time_sec);
-			return false;
-		}
-	}
-
-	return true;
-}
-
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -367,12 +340,8 @@ static void *send_thread(void *data)
 		}
 	}
 
-	if (!disconnected(stream) && !send_remaining_packets(stream))
-		os_atomic_set_bool(&stream->disconnected, true);
-
 	if (disconnected(stream)) {
 		info("Disconnected from %s", stream->path.array);
-		free_packets(stream);
 	} else {
 		info("User stopped the stream");
 	}
@@ -384,6 +353,7 @@ static void *send_thread(void *data)
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
 	}
 
+	free_packets(stream);
 	os_event_reset(stream->stop_event);
 	os_atomic_set_bool(&stream->active, false);
 	stream->sent_headers = false;
