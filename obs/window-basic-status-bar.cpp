@@ -114,6 +114,8 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	uint64_t bytesSent     = obs_output_get_total_bytes(streamOutput);
 	uint64_t bytesSentTime = os_gettime_ns();
 
+	if (bytesSent < lastBytesSent)
+		bytesSent = 0;
 	if (bytesSent == 0)
 		lastBytesSent = 0;
 
