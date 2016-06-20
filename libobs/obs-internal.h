@@ -792,7 +792,7 @@ struct obs_output {
 	int                             reconnect_retry_max;
 	int                             reconnect_retries;
 	int                             reconnect_retry_cur_sec;
-	bool                            reconnecting;
+	volatile bool                   reconnecting;
 	pthread_t                       reconnect_thread;
 	os_event_t                      *reconnect_stop_event;
 	volatile bool                   reconnect_thread_active;
@@ -804,7 +804,7 @@ struct obs_output {
 
 	int                             total_frames;
 
-	bool                            active;
+	volatile bool                   active;
 	volatile bool                   stopped;
 	video_t                         *video;
 	audio_t                         *audio;
@@ -831,8 +831,8 @@ struct obs_output {
 	uint32_t                        delay_flags;
 	uint32_t                        delay_cur_flags;
 	volatile long                   delay_restart_refs;
-	bool                            delay_active;
-	bool                            delay_capturing;
+	volatile bool                   delay_active;
+	volatile bool                   delay_capturing;
 };
 
 static inline void do_output_signal(struct obs_output *output,

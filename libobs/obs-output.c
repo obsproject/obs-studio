@@ -20,6 +20,26 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+static inline bool active(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->active);
+}
+
+static inline bool reconnecting(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->reconnecting);
+}
+
+static inline bool delay_active(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->delay_active);
+}
+
+static inline bool delay_capturing(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->delay_capturing);
+}
+
 static inline void signal_stop(struct obs_output *output, int code);
 
 const struct obs_output_info *find_output(const char *id)
@@ -136,7 +156,7 @@ void obs_output_destroy(obs_output_t *output)
 
 		blog(LOG_INFO, "output '%s' destroyed", output->context.name);
 
-		if (output->valid && output->active)
+		if (output->valid && active(output))
 			obs_output_actual_stop(output, true);
 		if (output->service)
 			output->service->output = NULL;
@@ -194,7 +214,7 @@ bool obs_output_actual_start(obs_output_t *output)
 		output->starting_lagged_count = obs->video.lagged_frames;
 	}
 
-	if (output->delay_restart_refs)
+	if (os_atomic_load_long(&output->delay_restart_refs))
 		os_atomic_dec_long(&output->delay_restart_refs);
 
 	return success;
@@ -286,12 +306,13 @@ void obs_output_actual_stop(obs_output_t *output, bool force)
 	if (output->video)
 		log_frame_info(output);
 
-	if (output->delay_active && (force || !output->delay_restart_refs)) {
-		output->delay_active = false;
+	if (delay_active(output) &&
+	    (force || !os_atomic_load_long(&output->delay_restart_refs))) {
+		os_atomic_set_bool(&output->delay_active, false);
 		obs_output_end_data_capture(output);
 	}
 
-	if (force || !output->delay_active)
+	if (force || !delay_active(output))
 		signal_stop(output, OBS_OUTPUT_SUCCESS);
 }
 
@@ -321,7 +342,7 @@ void obs_output_force_stop(obs_output_t *output)
 bool obs_output_active(const obs_output_t *output)
 {
 	return (output != NULL) ?
-		(output->active || output->reconnecting) : false;
+		(active(output) || reconnecting(output)) : false;
 }
 
 static inline obs_data_t *get_defaults(const struct obs_output_info *info)
@@ -442,7 +463,7 @@ void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx)
 	if (!obs_output_valid(output, "obs_output_set_mixer"))
 		return;
 
-	if (!output->active)
+	if (!active(output))
 		output->mixer_idx = mixer_idx;
 }
 
@@ -547,7 +568,7 @@ void obs_output_set_service(obs_output_t *output, obs_service_t *service)
 {
 	if (!obs_output_valid(output, "obs_output_set_service"))
 		return;
-	if (output->active || !service || service->active)
+	if (active(output) || !service || service->active)
 		return;
 
 	if (service->output)
@@ -580,7 +601,7 @@ uint64_t obs_output_get_total_bytes(const obs_output_t *output)
 	if (!output->info.get_total_bytes)
 		return 0;
 
-	if (output->delay_active && !output->delay_capturing)
+	if (delay_active(output) && !delay_capturing(output))
 		return 0;
 
 	return output->info.get_total_bytes(output->context.data);
@@ -610,7 +631,7 @@ void obs_output_set_preferred_size(obs_output_t *output, uint32_t width,
 	if ((output->info.flags & OBS_OUTPUT_VIDEO) == 0)
 		return;
 
-	if (output->active) {
+	if (active(output)) {
 		blog(LOG_WARNING, "output '%s': Cannot set the preferred "
 		                  "resolution while the output is active",
 		                  obs_output_get_name(output));
@@ -1342,7 +1363,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 			output->delay_cur_flags = output->delay_flags;
 			output->delay_callback = encoded_callback;
 			encoded_callback = process_delay;
-			output->delay_active = true;
+			os_atomic_set_bool(&output->delay_active, true);
 
 			blog(LOG_INFO, "Output '%s': %"PRIu32" second delay "
 			               "active, preserve on disconnect is %s",
@@ -1424,8 +1445,8 @@ bool obs_output_can_begin_data_capture(const obs_output_t *output,
 	if (!obs_output_valid(output, "obs_output_can_begin_data_capture"))
 		return false;
 
-	if (output->delay_active) return true;
-	if (output->active) return false;
+	if (delay_active(output)) return true;
+	if (active(output)) return false;
 
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
 			&has_service);
@@ -1492,7 +1513,7 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	if (!obs_output_valid(output, "obs_output_initialize_encoders"))
 		return false;
 
-	if (output->active) return output->delay_active;
+	if (active(output)) return delay_active(output);
 
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
 			&has_service);
@@ -1514,17 +1535,17 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 
 static bool begin_delayed_capture(obs_output_t *output)
 {
-	if (output->delay_capturing)
+	if (delay_capturing(output))
 		return false;
 
 	pthread_mutex_lock(&output->interleaved_mutex);
 	reset_packet_data(output);
-	output->delay_capturing = true;
+	os_atomic_set_bool(&output->delay_capturing, true);
 	pthread_mutex_unlock(&output->interleaved_mutex);
 
-	if (output->reconnecting) {
+	if (reconnecting(output)) {
 		signal_reconnect_success(output);
-		output->reconnecting = false;
+		os_atomic_set_bool(&output->reconnecting, false);
 	} else {
 		signal_start(output);
 	}
@@ -1539,8 +1560,8 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
 
-	if (output->delay_active) return begin_delayed_capture(output);
-	if (output->active) return false;
+	if (delay_active(output)) return begin_delayed_capture(output);
+	if (active(output)) return false;
 
 	output->total_frames   = 0;
 
@@ -1557,13 +1578,13 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 		obs_service_activate(output->service);
 
 	do_output_signal(output, "activate");
-	output->active = true;
+	os_atomic_set_bool(&output->active, true);
 
-	if (output->reconnecting) {
+	if (reconnecting(output)) {
 		signal_reconnect_success(output);
-		output->reconnecting = false;
+		os_atomic_set_bool(&output->reconnecting, false);
 
-	} else if (output->delay_active) {
+	} else if (delay_active(output)) {
 		do_output_signal(output, "starting");
 
 	} else {
@@ -1592,12 +1613,12 @@ void obs_output_end_data_capture(obs_output_t *output)
 	if (!obs_output_valid(output, "obs_output_end_data_capture"))
 		return;
 
-	if (output->delay_active) {
-		output->delay_capturing = false;
+	if (delay_active(output)) {
+		os_atomic_set_bool(&output->delay_capturing, false);
 		return;
 	}
 
-	if (!output->active) return;
+	if (!active(output)) return;
 
 	convert_flags(output, 0, &encoded, &has_video, &has_audio,
 			&has_service);
@@ -1631,7 +1652,7 @@ void obs_output_end_data_capture(obs_output_t *output)
 		obs_output_cleanup_delay(output);
 
 	do_output_signal(output, "deactivate");
-	output->active = false;
+	os_atomic_set_bool(&output->active, false);
 }
 
 static void *reconnect_thread(void *param)
@@ -1647,7 +1668,7 @@ static void *reconnect_thread(void *param)
 	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
 		pthread_detach(output->reconnect_thread);
 	else
-		output->reconnecting = false;
+		os_atomic_set_bool(&output->reconnecting, false);
 
 	output->reconnect_thread_active = false;
 	return NULL;
@@ -1657,23 +1678,23 @@ static void output_reconnect(struct obs_output *output)
 {
 	int ret;
 
-	if (!output->reconnecting) {
+	if (!reconnecting(output)) {
 		output->reconnect_retry_cur_sec = output->reconnect_retry_sec;
 		output->reconnect_retries = 0;
 	}
 
 	if (output->reconnect_retries >= output->reconnect_retry_max) {
-		output->reconnecting = false;
-		if (output->delay_active) {
-			output->delay_active = false;
+		os_atomic_set_bool(&output->reconnecting, false);
+		if (delay_active(output)) {
+			os_atomic_set_bool(&output->delay_active, false);
 			obs_output_end_data_capture(output);
 		}
 		signal_stop(output, OBS_OUTPUT_DISCONNECTED);
 		return;
 	}
 
-	if (!output->reconnecting) {
-		output->reconnecting = true;
+	if (!reconnecting(output)) {
+		os_atomic_set_bool(&output->reconnecting, true);
 		os_event_reset(output->reconnect_stop_event);
 	}
 
@@ -1687,7 +1708,7 @@ static void output_reconnect(struct obs_output *output)
 			&reconnect_thread, output);
 	if (ret < 0) {
 		blog(LOG_WARNING, "Failed to create reconnect thread");
-		output->reconnecting = false;
+		os_atomic_set_bool(&output->reconnecting, false);
 		signal_stop(output, OBS_OUTPUT_DISCONNECTED);
 	} else {
 		blog(LOG_INFO, "Output '%s':  Reconnecting in %d seconds..",
@@ -1705,12 +1726,12 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 
 	obs_output_end_data_capture(output);
 
-	if ((output->reconnecting && code != OBS_OUTPUT_SUCCESS) ||
+	if ((reconnecting(output) && code != OBS_OUTPUT_SUCCESS) ||
 	    code == OBS_OUTPUT_DISCONNECTED) {
 		output_reconnect(output);
 	} else {
-		if (output->delay_active) {
-			output->delay_active = false;
+		if (delay_active(output)) {
+			os_atomic_set_bool(&output->delay_active, false);
 			obs_output_end_data_capture(output);
 		}
 		signal_stop(output, code);
