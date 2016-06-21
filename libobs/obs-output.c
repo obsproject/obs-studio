@@ -30,6 +30,11 @@ static inline bool reconnecting(const struct obs_output *output)
 	return os_atomic_load_bool(&output->reconnecting);
 }
 
+static inline bool stopping(const struct obs_output *output)
+{
+	return os_event_try(output->stopping_event) == EAGAIN;
+}
+
 static inline bool delay_active(const struct obs_output *output)
 {
 	return os_atomic_load_bool(&output->delay_active);
@@ -96,8 +101,12 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
 		goto fail;
+	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
+		goto fail;
 	if (!init_output_handlers(output, name, settings, hotkey_data))
 		goto fail;
+
+	os_event_signal(output->stopping_event);
 
 	if (!info) {
 		blog(LOG_ERROR, "Output ID '%s' not found", id);
@@ -179,6 +188,7 @@ void obs_output_destroy(obs_output_t *output)
 			}
 		}
 
+		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
 		os_event_destroy(output->reconnect_stop_event);
@@ -200,7 +210,7 @@ bool obs_output_actual_start(obs_output_t *output)
 {
 	bool success = false;
 
-	output->stopped = false;
+	os_event_wait(output->stopping_event);
 
 	if (output->context.data)
 		success = output->info.start(output->context.data);
@@ -294,7 +304,9 @@ static void log_frame_info(struct obs_output *output)
 
 void obs_output_actual_stop(obs_output_t *output, bool force)
 {
-	output->stopped = true;
+	if (stopping(output))
+		return;
+	os_event_reset(output->stopping_event);
 
 	os_event_signal(output->reconnect_stop_event);
 	if (output->reconnect_thread_active)
@@ -328,7 +340,7 @@ void obs_output_stop(obs_output_t *output)
 
 	if (encoded && output->active_delay_ns) {
 		obs_output_delay_stop(output);
-	} else {
+	} else if (!stopping(output)) {
 		obs_output_actual_stop(output, false);
 		do_output_signal(output, "stopping");
 	}
@@ -1615,6 +1627,7 @@ void obs_output_end_data_capture(obs_output_t *output)
 
 	if (delay_active(output)) {
 		os_atomic_set_bool(&output->delay_capturing, false);
+		os_event_signal(output->stopping_event);
 		return;
 	}
 
@@ -1653,6 +1666,7 @@ void obs_output_end_data_capture(obs_output_t *output)
 
 	do_output_signal(output, "deactivate");
 	os_atomic_set_bool(&output->active, false);
+	os_event_signal(output->stopping_event);
 }
 
 static void *reconnect_thread(void *param)
