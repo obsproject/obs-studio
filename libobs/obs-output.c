@@ -367,6 +367,10 @@ void obs_output_stop(obs_output_t *output)
 		return;
 	if (!active(output) && !reconnecting(output))
 		return;
+	if (reconnecting(output)) {
+		obs_output_force_stop(output);
+		return;
+	}
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
 
