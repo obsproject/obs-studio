@@ -69,4 +69,6 @@ public:
 	void StreamStopped();
 	void RecordingStarted(obs_output_t *output);
 	void RecordingStopped();
+
+	void ReconnectClear();
 };
