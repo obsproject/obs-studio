@@ -3422,6 +3422,11 @@ void OBSBasic::StreamingStart()
 	blog(LOG_INFO, STREAMING_START);
 }
 
+void OBSBasic::StreamStopping()
+{
+	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+}
+
 void OBSBasic::StreamingStop(int code)
 {
 	const char *errorMessage;
@@ -3480,6 +3485,11 @@ void OBSBasic::StartRecording()
 
 	if (!outputHandler->RecordingActive())
 		outputHandler->StartRecording();
+}
+
+void OBSBasic::RecordStopping()
+{
+	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
 }
 
 void OBSBasic::StopRecording()

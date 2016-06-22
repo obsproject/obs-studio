@@ -289,12 +289,14 @@ public slots:
 	void StreamDelayStopping(int sec);
 
 	void StreamingStart();
+	void StreamStopping();
 	void StreamingStop(int errorcode);
 
 	void StartRecording();
 	void StopRecording();
 
 	void RecordingStart();
+	void RecordStopping();
 	void RecordingStop(int code);
 
 	void SaveProjectDeferred();
