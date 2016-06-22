@@ -2678,7 +2678,7 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		enum obs_allow_direct_render allow_direct)
 {
 	obs_source_t *target, *parent;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 	int          cx, cy;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
@@ -2698,7 +2698,6 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		return false;
 	}
 
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 	cx           = get_base_width(target);
 	cy           = get_base_height(target);
@@ -2751,7 +2750,7 @@ void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effec
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 
 	if (!filter) return;
 
@@ -2761,7 +2760,6 @@ void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effec
 	if (!target || !parent)
 		return;
 
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 
 	const char *tech = tech_name ? tech_name : "Draw";
@@ -2780,14 +2778,13 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_end"))
 		return;
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
