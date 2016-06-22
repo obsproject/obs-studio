@@ -1016,7 +1016,7 @@ static int prune_premature_packets(struct obs_output *output)
 	int max_idx;
 	int64_t duration_usec;
 	int64_t max_diff = 0;
-	int64_t diff;
+	int64_t diff = 0;
 
 	video_idx = find_first_packet_type_idx(output, OBS_ENCODER_VIDEO, 0);
 	if (video_idx == -1) {
