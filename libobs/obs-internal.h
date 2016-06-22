@@ -781,10 +781,12 @@ struct obs_output {
 
 	bool                            received_video;
 	bool                            received_audio;
+	volatile bool                   end_data_capture_thread_active;
 	int64_t                         video_offset;
 	int64_t                         audio_offsets[MAX_AUDIO_MIXES];
 	int64_t                         highest_audio_ts;
 	int64_t                         highest_video_ts;
+	pthread_t                       end_data_capture_thread;
 	os_event_t                      *stopping_event;
 	pthread_mutex_t                 interleaved_mutex;
 	DARRAY(struct encoder_packet)   interleaved_packets;

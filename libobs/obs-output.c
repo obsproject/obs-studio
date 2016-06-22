@@ -45,6 +45,11 @@ static inline bool delay_capturing(const struct obs_output *output)
 	return os_atomic_load_bool(&output->delay_capturing);
 }
 
+static inline bool data_capture_ending(const struct obs_output *output)
+{
+	return os_atomic_load_bool(&output->end_data_capture_thread_active);
+}
+
 static inline void signal_stop(struct obs_output *output, int code);
 
 const struct obs_output_info *find_output(const char *id)
@@ -170,6 +175,8 @@ void obs_output_destroy(obs_output_t *output)
 		if (output->service)
 			output->service->output = NULL;
 
+		if (data_capture_ending(output))
+			pthread_join(output->end_data_capture_thread, NULL);
 		free_packets(output);
 
 		if (output->context.data)
@@ -1460,6 +1467,9 @@ bool obs_output_can_begin_data_capture(const obs_output_t *output,
 	if (delay_active(output)) return true;
 	if (active(output)) return false;
 
+	if (data_capture_ending(output))
+		pthread_join(output->end_data_capture_thread, NULL);
+
 	convert_flags(output, flags, &encoded, &has_video, &has_audio,
 			&has_service);
 
@@ -1617,21 +1627,11 @@ static inline void stop_audio_encoders(obs_output_t *output,
 	}
 }
 
-void obs_output_end_data_capture(obs_output_t *output)
+static void *end_data_capture_thread(void *data)
 {
 	bool encoded, has_video, has_audio, has_service;
 	encoded_callback_t encoded_callback;
-
-	if (!obs_output_valid(output, "obs_output_end_data_capture"))
-		return;
-
-	if (delay_active(output)) {
-		os_atomic_set_bool(&output->delay_capturing, false);
-		os_event_signal(output->stopping_event);
-		return;
-	}
-
-	if (!active(output)) return;
+	obs_output_t *output = data;
 
 	convert_flags(output, 0, &encoded, &has_video, &has_audio,
 			&has_service);
@@ -1667,6 +1667,37 @@ void obs_output_end_data_capture(obs_output_t *output)
 	do_output_signal(output, "deactivate");
 	os_atomic_set_bool(&output->active, false);
 	os_event_signal(output->stopping_event);
+	os_atomic_set_bool(&output->end_data_capture_thread_active, false);
+
+	return NULL;
+}
+
+void obs_output_end_data_capture(obs_output_t *output)
+{
+	int ret;
+
+	if (!obs_output_valid(output, "obs_output_end_data_capture"))
+		return;
+
+	if (delay_active(output)) {
+		os_atomic_set_bool(&output->delay_capturing, false);
+		os_event_signal(output->stopping_event);
+		return;
+	}
+
+	if (!active(output)) return;
+
+	if (data_capture_ending(output))
+		pthread_join(output->end_data_capture_thread, NULL);
+
+	os_atomic_set_bool(&output->end_data_capture_thread_active, true);
+	ret = pthread_create(&output->end_data_capture_thread, NULL,
+			end_data_capture_thread, output);
+	if (ret != 0) {
+		blog(LOG_WARNING, "Failed to create end_data_capture_thread "
+				"for output '%s'!", output->context.name);
+		end_data_capture_thread(output);
+	}
 }
 
 static void *reconnect_thread(void *param)
