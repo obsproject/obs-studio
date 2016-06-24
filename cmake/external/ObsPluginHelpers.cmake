@@ -106,13 +106,13 @@ endfunction()
 # 'target' is the destination target project being installed to
 # 'additional_target' specifies the additional binary
 function(install_external_plugin_bin_to_data target additional_target)
-	install(TARGETS ${target}
+	install(TARGETS ${additional_target}
 		LIBRARY DESTINATION "data"
 		RUNTIME DESTINATION "data")
-	add_custom_command(TARGET ${target} POST_BUILD
+	add_custom_command(TARGET ${additional_target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${target}>"
-			"${EXTERNAL_PLUGIN_OUTPUT_DIR}/$<CONFIGURATION>/${plugin_target}/data/$<TARGET_FILE_NAME:${target}>"
+			"$<TARGET_FILE:${additional_target}>"
+			"${EXTERNAL_PLUGIN_OUTPUT_DIR}/$<CONFIGURATION>/${target}/data/$<TARGET_FILE_NAME:${additional_target}>"
 		VERBATIM)
 endfunction()
 
@@ -128,12 +128,12 @@ function(install_external_plugin_bin_to_arch_data target additional_target)
 		set(_bit_suffix "/32bit")
 	endif()
 
-	install(TARGETS ${target}
+	install(TARGETS ${additional_target}
 		LIBRARY DESTINATION "data${_bit_suffix}"
 		RUNTIME DESTINATION "data${_bit_suffix}")
-	add_custom_command(TARGET ${target} POST_BUILD
+	add_custom_command(TARGET ${additional_target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
-			"$<TARGET_FILE:${target}>"
-			"${EXTERNAL_PLUGIN_OUTPUT_DIR}/$<CONFIGURATION>/${plugin_target}/data${_bit_suffix}/$<TARGET_FILE_NAME:${target}>"
+			"$<TARGET_FILE:${additional_target}>"
+			"${EXTERNAL_PLUGIN_OUTPUT_DIR}/$<CONFIGURATION>/${target}/data${_bit_suffix}/$<TARGET_FILE_NAME:${additional_target}>"
 		VERBATIM)
 endfunction()
