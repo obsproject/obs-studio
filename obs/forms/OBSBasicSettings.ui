@@ -285,6 +285,13 @@
            </layout>
           </widget>
          </item>
+         <item row="5" column="1">
+          <widget class="QCheckBox" name="hideProjectorCursor">
+           <property name="text">
+            <string>Basic.Settings.General.HideProjectorCursor</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="streamPage">

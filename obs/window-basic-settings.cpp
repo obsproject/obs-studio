@@ -271,6 +271,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -822,6 +823,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool warnBeforeStreamStop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStoppingStream");
 	ui->warnBeforeStreamStop->setChecked(warnBeforeStreamStop);
+
+	bool hideProjectorCursor = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "HideProjectorCursor");
+	ui->hideProjectorCursor->setChecked(hideProjectorCursor);
 
 	loading = false;
 }
@@ -2157,6 +2162,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStoppingStream",
 			ui->warnBeforeStreamStop->isChecked());
+
+	config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"HideProjectorCursor",
+			ui->hideProjectorCursor->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()
