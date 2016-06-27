@@ -3419,6 +3419,12 @@ void OBSBasic::StreamingStart()
 		App()->IncrementSleepInhibition();
 	}
 
+	bool record_stream = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"RecordWhenStreaming");
+
+	if (record_stream)        
+		StartRecording();
+        
 	blog(LOG_INFO, STREAMING_START);
 }
 
@@ -3477,6 +3483,12 @@ void OBSBasic::StreamingStop(int code)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+
+	bool keep_recording = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"KeepRecordingWhenStreamStops");
+
+	if (!keep_recording)        
+		StopRecording();
 }
 
 void OBSBasic::StartRecording()
