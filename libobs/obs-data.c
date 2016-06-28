@@ -1495,6 +1495,14 @@ enum obs_data_number_type obs_data_item_numtype(obs_data_item_t *item)
 	return num->type;
 }
 
+const char *obs_data_item_get_name(obs_data_item_t *item)
+{
+	if (!item)
+		return NULL;
+
+	return get_item_name(item);
+}
+
 void obs_data_item_set_string(obs_data_item_t **item, const char *val)
 {
 	obs_set_string(NULL, item, NULL, val, set_item);
