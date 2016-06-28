@@ -16,6 +16,8 @@ struct crop_filter_data {
 	uint32_t                       abs_cy;
 	uint32_t                       width;
 	uint32_t                       height;
+	uint32_t                       pad_right;
+	uint32_t                       pad_bottom;
 	bool                           absolute;
 
 	struct vec2                    mul_val;
@@ -112,9 +114,9 @@ static obs_properties_t *crop_filter_properties(void *data)
 	obs_properties_add_int(props, "top", obs_module_text("Crop.Top"),
 			0, 8192, 1);
 	obs_properties_add_int(props, "right", obs_module_text("Crop.Right"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "bottom", obs_module_text("Crop.Bottom"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "cx", obs_module_text("Crop.Width"),
 			0, 8192, 1);
 	obs_properties_add_int(props, "cy", obs_module_text("Crop.Height"),
@@ -151,8 +153,13 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 		max_abs_cx -= filter->left;
 
 		total = max_abs_cx < width ? (width - max_abs_cx) : 0;
+		filter->pad_right = width < filter->abs_cx ? filter->abs_cx - width : 0;
+	} else if (filter->right < 0) {
+		total = filter->left;
+		filter->pad_right = -filter->right;
 	} else {
 		total = filter->left + filter->right;
+		filter->pad_right = 0;
 	}
 	filter->width = total > width ? 0 : (width - total);
 
@@ -162,8 +169,13 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 		max_abs_cy -= filter->top;
 
 		total = max_abs_cy < height ? (height - max_abs_cy) : 0;
+		filter->pad_bottom = height < filter->abs_cy ? filter->abs_cy - height : 0;
+	} else if (filter->bottom < 0) {
+		total = filter->top;
+		filter->pad_bottom = -filter->bottom;
 	} else {
 		total = filter->top + filter->bottom;
+		filter->pad_bottom = 0;
 	}
 	filter->height = total > height ? 0 : (height - total);
 
@@ -209,13 +221,13 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 static uint32_t crop_filter_width(void *data)
 {
 	struct crop_filter_data *crop = data;
-	return crop->width;
+	return crop->width + crop->pad_right;
 }
 
 static uint32_t crop_filter_height(void *data)
 {
 	struct crop_filter_data *crop = data;
-	return crop->height;
+	return crop->height + crop->pad_bottom;
 }
 
 struct obs_source_info crop_filter = {
