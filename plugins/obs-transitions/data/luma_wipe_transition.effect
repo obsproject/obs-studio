@@ -1,0 +1,61 @@
+// Based rendermix wipe shader
+// https://github.com/rectalogic/rendermix-basic-effects/blob/master/assets/com/rendermix/Wipe/Wipe.frag
+
+uniform float4x4  ViewProj;
+uniform texture2d a_tex;
+uniform texture2d b_tex;
+uniform texture2d l_tex;
+uniform float progress;
+uniform bool  invert;
+uniform float softness;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSLumaWipe(VertData v_in) : TARGET
+{
+	float2 uv = v_in.uv;
+	float4 a_color = a_tex.Sample(textureSampler, uv);
+	float4 b_color = b_tex.Sample(textureSampler, uv);
+	float luma     = l_tex.Sample(textureSampler, uv).x;
+
+	if (invert)
+		luma = 1.0f - luma;
+
+	float time = lerp(0.0f, 1.0f + softness, progress);
+
+	if (luma <= time - softness)
+		return b_color;
+
+	if (luma >= time)
+		return a_color;
+
+	float alpha = (time - luma) / softness;
+
+	return lerp(a_color, b_color, alpha);
+}
+
+technique LumaWipe
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSLumaWipe(v_in);
+	}
+}
