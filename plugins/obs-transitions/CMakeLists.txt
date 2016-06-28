@@ -7,6 +7,7 @@ set(obs-transitions_SOURCES
 	transition-fade.c
 	transition-cut.c
 	transition-fade-to-color.c
+	transition-luma-wipe.c
 	)
 
 add_library(obs-transitions MODULE
