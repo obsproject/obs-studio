@@ -565,6 +565,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char            *name = obs_data_get_string(item_data, "name");
 	obs_source_t          *source = obs_get_source_by_name(name);
+	const char            *scale_filter_str;
 	struct obs_scene_item *item;
 	bool visible;
 
@@ -607,8 +608,19 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->crop.right  = (uint32_t)obs_data_get_int(item_data, "crop_right");
 	item->crop.bottom = (uint32_t)obs_data_get_int(item_data, "crop_bottom");
 
-	item->scale_filter = (enum obs_scale_type)obs_data_get_int(item_data,
-			"scale_filter");
+	scale_filter_str = obs_data_get_string(item_data, "scale_filter");
+	item->scale_filter = OBS_SCALE_DISABLE;
+
+	if (scale_filter_str) {
+		if (astrcmpi(scale_filter_str, "point") == 0)
+			item->scale_filter = OBS_SCALE_POINT;
+		else if (astrcmpi(scale_filter_str, "bilinear") == 0)
+			item->scale_filter = OBS_SCALE_BILINEAR;
+		else if (astrcmpi(scale_filter_str, "bicubic") == 0)
+			item->scale_filter = OBS_SCALE_BICUBIC;
+		else if (astrcmpi(scale_filter_str, "lanczos") == 0)
+			item->scale_filter = OBS_SCALE_LANCZOS;
+	}
 
 	if (item->item_render && !item_texture_enabled(item)) {
 		obs_enter_graphics();
@@ -652,6 +664,7 @@ static void scene_save_item(obs_data_array_t *array,
 {
 	obs_data_t *item_data = obs_data_create();
 	const char *name     = obs_source_get_name(item->source);
+	const char *scale_filter;
 
 	obs_data_set_string(item_data, "name",         name);
 	obs_data_set_bool  (item_data, "visible",      item->user_visible);
@@ -666,7 +679,19 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int  (item_data, "crop_top",     (int)item->crop.top);
 	obs_data_set_int  (item_data, "crop_right",   (int)item->crop.right);
 	obs_data_set_int  (item_data, "crop_bottom",  (int)item->crop.bottom);
-	obs_data_set_int  (item_data, "scale_filter", (int)item->scale_filter);
+
+	if (item->scale_filter == OBS_SCALE_POINT)
+		scale_filter = "point";
+	else if (item->scale_filter == OBS_SCALE_BILINEAR)
+		scale_filter = "bilinear";
+	else if (item->scale_filter == OBS_SCALE_BICUBIC)
+		scale_filter = "bicubic";
+	else if (item->scale_filter == OBS_SCALE_LANCZOS)
+		scale_filter = "lanczos";
+	else
+		scale_filter = "disable";
+
+	obs_data_set_string(item_data, "scale_filter", scale_filter);
 
 	obs_data_array_push_back(array, item_data);
 	obs_data_release(item_data);
