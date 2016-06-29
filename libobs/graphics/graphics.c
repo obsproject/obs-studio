@@ -2089,6 +2089,16 @@ void gs_shader_set_default(gs_sparam_t *param)
 	graphics->exports.gs_shader_set_default(param);
 }
 
+void gs_shader_set_next_sampler(gs_sparam_t *param, gs_samplerstate_t *sampler)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid_p("gs_shader_set_next_sampler", param))
+		return;
+
+	graphics->exports.gs_shader_set_next_sampler(param, sampler);
+}
+
 void gs_texture_destroy(gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;

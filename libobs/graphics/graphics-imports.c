@@ -167,6 +167,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_texture);
 	GRAPHICS_IMPORT(gs_shader_set_val);
 	GRAPHICS_IMPORT(gs_shader_set_default);
+	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__

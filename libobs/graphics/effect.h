@@ -57,6 +57,7 @@ struct gs_effect_param {
 	DARRAY(uint8_t) default_val;
 
 	gs_effect_t *effect;
+	gs_samplerstate_t *next_sampler;
 
 	/*char *full_name;
 	float scroller_min, scroller_max, scroller_inc, scroller_mul;*/
