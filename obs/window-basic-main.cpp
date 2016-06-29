@@ -2881,6 +2881,38 @@ QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
 	return menu;
 }
 
+void OBSBasic::SetScaleFilter()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+
+	obs_sceneitem_set_scale_filter(sceneItem, mode);
+}
+
+QMenu *OBSBasic::AddScaleFilteringMenu(obs_sceneitem_t *item)
+{
+	QMenu *menu = new QMenu(QTStr("ScaleFiltering"));
+	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
+	QAction *action;
+
+#define ADD_MODE(name, mode) \
+	action = menu->addAction(QTStr("" name), this, \
+				SLOT(SetScaleFilter())); \
+	action->setProperty("mode", (int)mode); \
+	action->setCheckable(true); \
+	action->setChecked(scaleFilter == mode);
+
+	ADD_MODE("Disable",                 OBS_SCALE_DISABLE);
+	ADD_MODE("ScaleFiltering.Point",    OBS_SCALE_POINT);
+	ADD_MODE("ScaleFiltering.Bilinear", OBS_SCALE_BILINEAR);
+	ADD_MODE("ScaleFiltering.Bicubic",  OBS_SCALE_BICUBIC);
+	ADD_MODE("ScaleFiltering.Lanczos",  OBS_SCALE_LANCZOS);
+#undef ADD_MODE
+
+	return menu;
+}
+
 void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 {
 	QMenu popup(this);
@@ -2939,6 +2971,10 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 			popup.addMenu(AddDeinterlacingMenu(source));
 			popup.addSeparator();
 		}
+
+		popup.addMenu(AddScaleFilteringMenu(sceneItem));
+		popup.addSeparator();
+
 		popup.addMenu(sourceProjector);
 		popup.addSeparator();
 
