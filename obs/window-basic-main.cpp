@@ -3420,6 +3420,7 @@ void OBSBasic::ForceStopStreaming()
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
+	ui->streamButton->setStyleSheet("");
 }
 
 void OBSBasic::StreamDelayStarting(int sec)
@@ -3468,6 +3469,7 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	ui->streamButton->setStyleSheet("background-color: red; color: white");
 
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
@@ -3532,6 +3534,7 @@ void OBSBasic::StreamingStop(int code)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+	ui->streamButton->setStyleSheet("");
 }
 
 void OBSBasic::StartRecording()
@@ -3565,6 +3568,7 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	ui->recordButton->setStyleSheet("background-color: red; color: white");
 
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
@@ -3578,6 +3582,7 @@ void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+	ui->recordButton->setStyleSheet("");
 	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED) {
