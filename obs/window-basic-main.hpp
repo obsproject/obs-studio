@@ -483,6 +483,10 @@ private slots:
 
 	void on_actionAlwaysOnTop_triggered();
 
+	void on_toggleSceneTransitions_toggled(bool visible);
+	void on_toggleListboxToolbars_toggled(bool visible);
+	void on_toggleStatusBar_toggled(bool visible);
+
 	void on_transitions_currentIndexChanged(int index);
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();

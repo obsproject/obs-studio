@@ -358,6 +358,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"RecordWhenStreaming", false);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"KeepRecordingWhenStreamStops", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowTransitions", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowListboxToolbars", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowStatusBar", true);
 
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);

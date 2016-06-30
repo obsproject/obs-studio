@@ -1022,6 +1022,21 @@ void OBSBasic::OBSInit()
 	SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
 				"BasicWindow", "PreviewProgramMode"));
 
+#define SET_VISIBILITY(name, control) \
+	do { \
+		if (config_has_user_value(App()->GlobalConfig(), \
+					"BasicWindow", name)) { \
+			bool visible = config_get_bool(App()->GlobalConfig(), \
+					"BasicWindow", name); \
+			ui->control->setChecked(visible); \
+		} \
+	} while (false)
+
+	SET_VISIBILITY("ShowTransitions", toggleSceneTransitions);
+	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
+	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
+#undef SET_VISIBILITY
+
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
@@ -4178,4 +4193,30 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 		return snprintf(path, size, "%s/%s", profiles_path, profile);
 
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
+}
+
+void OBSBasic::on_toggleSceneTransitions_toggled(bool visible)
+{
+	ui->sceneTransitionsLabel->setVisible(visible);
+	ui->transitionsContainer->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowTransitions", visible);
+}
+
+void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
+{
+	ui->sourcesToolbar->setVisible(visible);
+	ui->scenesToolbar->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowListboxToolbars", visible);
+}
+
+void OBSBasic::on_toggleStatusBar_toggled(bool visible)
+{
+	ui->statusbar->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowStatusBar", visible);
 }
