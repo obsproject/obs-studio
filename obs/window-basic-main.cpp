@@ -3050,20 +3050,23 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	size_t idx = 0;
 
 	QMenu *popup = new QMenu(QTStr("Add"), this);
-	while (obs_enum_input_types(idx++, &type)) {
-		const char *name = obs_source_get_display_name(type);
 
-		if (strcmp(type, "scene") == 0)
-			continue;
-
+	auto addSource = [this, popup] (const char *type, const char *name) {
 		QAction *popupItem = new QAction(QT_UTF8(name), this);
 		popupItem->setData(QT_UTF8(type));
 		connect(popupItem, SIGNAL(triggered(bool)),
 				this, SLOT(AddSourceFromAction()));
 		popup->addAction(popupItem);
+	};
 
+	while (obs_enum_input_types(idx++, &type)) {
+		const char *name = obs_source_get_display_name(type);
+
+		addSource(type, name);
 		foundValues = true;
 	}
+
+	addSource("scene", Str("Basic.Scene"));
 
 	if (!foundValues) {
 		delete popup;

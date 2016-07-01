@@ -177,6 +177,21 @@ void OBSBasicSourceSelect::on_buttonBox_rejected()
 	done(DialogCode::Rejected);
 }
 
+static inline const char *GetSourceDisplayName(const char *id)
+{
+	if (strcmp(id, "scene") == 0)
+		return Str("Basic.Scene");
+	return obs_source_get_display_name(id);
+}
+
+Q_DECLARE_METATYPE(OBSScene);
+
+template <typename T>
+static inline T GetOBSRef(QListWidgetItem *item)
+{
+	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
+}
+
 OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	: QDialog (parent),
 	  ui      (new Ui::OBSBasicSourceSelect),
@@ -186,7 +201,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 
 	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	QString placeHolderText{QT_UTF8(obs_source_get_display_name(id))};
+	QString placeHolderText{QT_UTF8(GetSourceDisplayName(id))};
 
 	QString text{placeHolderText};
 	int i = 1;
@@ -202,5 +217,29 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	obs_enum_sources(EnumSources, this);
+	if (strcmp(id_, "scene") == 0) {
+		OBSBasic *main = reinterpret_cast<OBSBasic*>(
+				App()->GetMainWindow());
+		OBSSource curSceneSource = main->GetCurrentSceneSource();
+
+		ui->selectExisting->setChecked(true);
+		ui->createNew->setChecked(false);
+		ui->createNew->setEnabled(false);
+		ui->sourceName->setEnabled(false);
+
+		int count = main->ui->scenes->count();
+		for (int i = 0; i < count; i++) {
+			QListWidgetItem *item = main->ui->scenes->item(i);
+			OBSScene scene = GetOBSRef<OBSScene>(item);
+			OBSSource sceneSource = obs_scene_get_source(scene);
+
+			if (curSceneSource == sceneSource)
+				continue;
+
+			const char *name = obs_source_get_name(sceneSource);
+			ui->sourceList->addItem(QT_UTF8(name));
+		}
+	} else {
+		obs_enum_sources(EnumSources, this);
+	}
 }
