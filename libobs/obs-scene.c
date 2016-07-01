@@ -390,9 +390,15 @@ static inline bool scale_filter_enabled(const struct obs_scene_item *item)
 	return item->scale_filter != OBS_SCALE_DISABLE;
 }
 
+static inline bool item_is_scene(const struct obs_scene_item *item)
+{
+	return item->source && item->source->info.type == OBS_SOURCE_TYPE_SCENE;
+}
+
 static inline bool item_texture_enabled(const struct obs_scene_item *item)
 {
-	return crop_enabled(&item->crop) || scale_filter_enabled(item);
+	return crop_enabled(&item->crop) || scale_filter_enabled(item) ||
+		item_is_scene(item);
 }
 
 static void render_item_texture(struct obs_scene_item *item)
@@ -1280,6 +1286,12 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		item->visible = true;
 	}
 
+	if (item_texture_enabled(item)) {
+		obs_enter_graphics();
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		obs_leave_graphics();
+	}
+
 	full_lock(scene);
 
 	last = scene->first_item;
@@ -1787,7 +1799,8 @@ void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 	if (crop_equal(crop, &item->crop))
 		return;
 
-	item_tex_now_enabled = crop_enabled(crop) || scale_filter_enabled(item);
+	item_tex_now_enabled = crop_enabled(crop) ||
+		scale_filter_enabled(item) || item_is_scene(item);
 
 	obs_enter_graphics();
 
