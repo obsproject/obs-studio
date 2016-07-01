@@ -405,6 +405,14 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 		return source;
 	}
 
+	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_scene_t *new_scene = obs_scene_duplicate(scene, new_name,
+				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_COPY);
+		return obs_scene_get_source(new_scene);
+	}
+
 	settings = obs_data_create();
 	obs_data_apply(settings, source->context.settings);
 
