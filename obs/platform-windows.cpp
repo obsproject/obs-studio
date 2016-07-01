@@ -215,3 +215,18 @@ void SetAlwaysOnTop(QMainWindow *window, bool enable)
 	SetWindowPos(hwnd, enable ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
 			SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
+
+void SetProcessPriority(const char *priority)
+{
+	if (!priority)
+		return;
+
+	if (strcmp(priority, "High") == 0)
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	else if (strcmp(priority, "AboveNormal") == 0)
+		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+	else if (strcmp(priority, "Normal") == 0)
+		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+	else if (strcmp(priority, "Idle") == 0)
+		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
+}

@@ -2267,11 +2267,18 @@ void OBSBasic::SetService(obs_service_t *newService)
 		service = newService;
 }
 
-bool OBSBasic::StreamingActive()
+bool OBSBasic::StreamingActive() const
 {
 	if (!outputHandler)
 		return false;
 	return outputHandler->StreamingActive();
+}
+
+bool OBSBasic::Active() const
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->Active();
 }
 
 #ifdef _WIN32
@@ -3397,6 +3404,27 @@ void OBSBasic::StartStreaming()
 		StartRecording();
 }
 
+#ifdef _WIN32
+static inline void UpdateProcessPriority()
+{
+	const char *priority = config_get_string(App()->GlobalConfig(),
+			"General", "ProcessPriority");
+	if (priority && strcmp(priority, "Normal") != 0)
+		SetProcessPriority(priority);
+}
+
+static inline void ClearProcessPriority()
+{
+	const char *priority = config_get_string(App()->GlobalConfig(),
+			"General", "ProcessPriority");
+	if (priority && strcmp(priority, "Normal") != 0)
+		SetProcessPriority("Normal");
+}
+#else
+#define UpdateProcessPriority() do {} while(false)
+#define ClearProcessPriority() do {} while(false)
+#endif
+
 void OBSBasic::StopStreaming()
 {
 	SaveProject();
@@ -3407,6 +3435,7 @@ void OBSBasic::StopStreaming()
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
 	}
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
@@ -3427,6 +3456,7 @@ void OBSBasic::ForceStopStreaming()
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
 	}
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
@@ -3457,6 +3487,7 @@ void OBSBasic::StreamDelayStarting(int sec)
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
+		UpdateProcessPriority();
 	}
 }
 
@@ -3487,6 +3518,7 @@ void OBSBasic::StreamingStart()
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
+		UpdateProcessPriority();
 	}
 
 	blog(LOG_INFO, STREAMING_START);
@@ -3533,6 +3565,7 @@ void OBSBasic::StreamingStop(int code)
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
 	}
 
 	blog(LOG_INFO, STREAMING_STOP);
@@ -3573,6 +3606,7 @@ void OBSBasic::StopRecording()
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
 	}
 }
 
@@ -3584,6 +3618,7 @@ void OBSBasic::RecordingStart()
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
+		UpdateProcessPriority();
 	}
 
 	blog(LOG_INFO, RECORDING_START);
@@ -3614,6 +3649,7 @@ void OBSBasic::RecordingStop(int code)
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
 	}
 }
 

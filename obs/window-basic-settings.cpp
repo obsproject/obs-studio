@@ -371,6 +371,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectEnable,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->reconnectRetryDelay,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
+	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -386,15 +387,39 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		connect(toggleAero, &QAbstractButton::toggled,
 				this, &OBSBasicSettings::ToggleDisableAero);
 	}
+
+#define PROCESS_PRIORITY(val) \
+	{"Basic.Settings.Advanced.General.ProcessPriority." ## val , val}
+
+	static struct ProcessPriority {
+		const char *name;
+		const char *val;
+	} processPriorities[] = {
+		PROCESS_PRIORITY("High"),
+		PROCESS_PRIORITY("AboveNormal"),
+		PROCESS_PRIORITY("Normal"),
+		PROCESS_PRIORITY("Idle")
+	};
+#undef PROCESS_PRIORITY
+
+	for (ProcessPriority pri : processPriorities)
+		ui->processPriority->addItem(QTStr(pri.name), pri.val);
+
 #else
 	delete ui->rendererLabel;
 	delete ui->renderer;
 	delete ui->adapterLabel;
 	delete ui->adapter;
+	delete ui->processPriorityLabel;
+	delete ui->processPriority;
+	delete ui->advancedGeneralGroupBox;
 	ui->rendererLabel = nullptr;
 	ui->renderer = nullptr;
 	ui->adapterLabel = nullptr;
 	ui->adapter = nullptr;
+	ui->processPriorityLabel = nullptr;
+	ui->processPriority = nullptr;
+	ui->advancedGeneralGroupBox = nullptr;
 #endif
 
 #ifndef __APPLE__
@@ -1817,6 +1842,13 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->disableOSXVSync->setChecked(disableOSXVSync);
 	ui->resetOSXVSync->setChecked(resetOSXVSync);
 	ui->resetOSXVSync->setEnabled(disableOSXVSync);
+#elif _WIN32
+	const char *processPriority = config_get_string(App()->GlobalConfig(),
+			"General", "ProcessPriority");
+	int idx = ui->processPriority->findData(processPriority);
+	if (idx == -1)
+		idx = ui->processPriority->findData("Normal");
+	ui->processPriority->setCurrentIndex(idx);
 #endif
 
 	loading = false;
@@ -2250,6 +2282,13 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
 				QT_TO_UTF8(ui->renderer->currentText()));
+
+	std::string priority =
+		QT_TO_UTF8(ui->processPriority->currentData().toString());
+	config_set_string(App()->GlobalConfig(), "General", "ProcessPriority",
+			priority.c_str());
+	if (main->Active())
+		SetProcessPriority(priority.c_str());
 #endif
 
 #ifdef __APPLE__

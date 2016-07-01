@@ -51,6 +51,7 @@ void SetAlwaysOnTop(QMainWindow *window, bool enable);
 #ifdef _WIN32
 uint32_t GetWindowsVersion();
 void SetAeroEnabled(bool enable);
+void SetProcessPriority(const char *priority);
 #endif
 
 #ifdef __APPLE__

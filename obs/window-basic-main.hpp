@@ -370,7 +370,8 @@ public:
 	obs_service_t *GetService();
 	void          SetService(obs_service_t *service);
 
-	bool StreamingActive();
+	bool StreamingActive() const;
+	bool Active() const;
 
 	int  ResetVideo();
 	bool ResetAudio();

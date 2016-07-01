@@ -2887,8 +2887,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>559</width>
-              <height>563</height>
+              <width>718</width>
+              <height>622</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -2907,6 +2907,28 @@
              <item alignment="Qt::AlignTop">
               <widget class="QWidget" name="widget_11" native="true">
                <layout class="QVBoxLayout" name="verticalLayout_17">
+                <item>
+                 <widget class="QGroupBox" name="advancedGeneralGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.General</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_22">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="processPriorityLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.General.ProcessPriority</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>processPriority</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="processPriority"/>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                 <item>
                  <widget class="QGroupBox" name="advancedVideoContainer">
                   <property name="title">
