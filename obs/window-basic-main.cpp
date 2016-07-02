@@ -3107,11 +3107,51 @@ void OBSBasic::on_actionAddSource_triggered()
 
 void OBSBasic::on_actionRemoveSource_triggered()
 {
-	OBSSceneItem item   = GetCurrentSceneItem();
-	obs_source_t *source = obs_sceneitem_get_source(item);
+	vector<OBSSceneItem> items;
 
-	if (source && QueryRemoveSource(source))
-		obs_sceneitem_remove(item);
+	auto func = [] (obs_scene_t *, obs_sceneitem_t *item, void *param)
+	{
+		vector<OBSSceneItem> &items =
+			*reinterpret_cast<vector<OBSSceneItem>*>(param);
+		if (obs_sceneitem_selected(item))
+			items.emplace_back(item);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, &items);
+
+	if (!items.size())
+		return;
+
+	auto removeMultiple = [this] (size_t count)
+	{
+		QString text = QTStr("ConfirmRemove.TextMultiple")
+			.arg(QString::number(count));
+
+		QMessageBox remove_items(this);
+		remove_items.setText(text);
+		QAbstractButton *Yes = remove_items.addButton(QTStr("Yes"),
+				QMessageBox::YesRole);
+		remove_items.addButton(QTStr("No"), QMessageBox::NoRole);
+		remove_items.setIcon(QMessageBox::Question);
+		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
+		remove_items.exec();
+
+		return Yes == remove_items.clickedButton();
+	};
+
+	if (items.size() == 1) {
+		OBSSceneItem &item = items[0];
+		obs_source_t *source = obs_sceneitem_get_source(item);
+
+		if (source && QueryRemoveSource(source))
+			obs_sceneitem_remove(item);
+	} else {
+		if (removeMultiple(items.size())) {
+			for (auto &item : items)
+				obs_sceneitem_remove(item);
+		}
+	}
 }
 
 void OBSBasic::on_actionInteract_triggered()
