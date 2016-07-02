@@ -890,15 +890,12 @@ void obs_source_activate(obs_source_t *source, enum view_type type)
 	if (!obs_source_valid(source, "obs_source_activate"))
 		return;
 
-	if (os_atomic_inc_long(&source->show_refs) == 1) {
-		obs_source_enum_active_tree(source, show_tree, NULL);
-	}
+	os_atomic_inc_long(&source->show_refs);
+	obs_source_enum_active_tree(source, show_tree, NULL);
 
 	if (type == MAIN_VIEW) {
-		if (os_atomic_inc_long(&source->activate_refs) == 1) {
-			obs_source_enum_active_tree(source, activate_tree,
-					NULL);
-		}
+		os_atomic_inc_long(&source->activate_refs);
+		obs_source_enum_active_tree(source, activate_tree, NULL);
 	}
 }
 
@@ -907,12 +904,14 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 	if (!obs_source_valid(source, "obs_source_deactivate"))
 		return;
 
-	if (os_atomic_dec_long(&source->show_refs) == 0) {
+	if (os_atomic_load_long(&source->show_refs) > 0) {
+		os_atomic_dec_long(&source->show_refs);
 		obs_source_enum_active_tree(source, hide_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
-		if (os_atomic_dec_long(&source->activate_refs) == 0) {
+		if (os_atomic_load_long(&source->activate_refs) > 0) {
+			os_atomic_dec_long(&source->activate_refs);
 			obs_source_enum_active_tree(source, deactivate_tree,
 					NULL);
 		}
