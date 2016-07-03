@@ -172,9 +172,9 @@ namespace XCompcap
 		return XScreenNumberOfScreen(attr.screen);
 	}
 
-	std::string getWindowName(Window win)
+	std::string getWindowAtom(Window win, const char *atom)
 	{
-		Atom netWmName = XInternAtom(disp(), "_NET_WM_NAME", false);
+		Atom netWmName = XInternAtom(disp(), atom, false);
 		int n;
 		char **list = 0;
 		XTextProperty tp;

@@ -57,11 +57,11 @@ obs_properties_t *XCompcapMain::properties()
 
 	for (Window win: XCompcap::getTopLevelWindows()) {
 		std::string wname = XCompcap::getWindowName(win);
-		std::string progpath = XCompcap::getWindowCommand(win);
+		std::string cls = XCompcap::getWindowClass(win);
 		std::string winid = std::to_string((long long)win);
 		std::string desc =
 			(winid + WIN_STRING_DIV + wname +
-			 WIN_STRING_DIV + progpath);
+			 WIN_STRING_DIV + cls);
 
 		obs_property_list_add_string(wins, wname.c_str(),
 				desc.c_str());
@@ -216,25 +216,28 @@ static Window getWindowFromString(std::string wstr)
 	}
 
 	size_t firstMark = wstr.find(WIN_STRING_DIV);
+	size_t markSize = strlen(WIN_STRING_DIV);
 
 	if (firstMark == std::string::npos)
 		return (Window)std::stol(wstr);
 
 	Window wid = 0;
 
-	wstr = wstr.substr(firstMark + strlen(WIN_STRING_DIV));
+	wstr = wstr.substr(firstMark + markSize);
 
 	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
 	std::string wname = wstr.substr(0, lastMark);
+	std::string wcls = wstr.substr(lastMark + markSize);
 
 	Window matchedNameWin = wid;
 	for (Window cwin: XCompcap::getTopLevelWindows()) {
 		std::string cwinname = XCompcap::getWindowName(cwin);
+		std::string ccls = XCompcap::getWindowClass(cwin);
 
-		if (cwin == wid && wname == cwinname)
+		if (cwin == wid && wname == cwinname && wcls == ccls)
 			return wid;
 
-		if (wname == cwinname)
+		if (wname == cwinname || (!matchedNameWin && wcls == ccls))
 			matchedNameWin = cwin;
 	}
 
