@@ -242,12 +242,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->pix_fmt        = closest_format;
 	context->colorspace     = data->config.color_space;
 	context->color_range    = data->config.color_range;
-
-	if (context->thread_count == 1) {
-		int caps = context->codec->capabilities;
-		context->thread_count = !!(caps & AV_CODEC_CAP_AUTO_THREADS) ?
-			0 : av_cpu_count();
-	}
+	context->thread_count   = 0;
 
 	data->video->time_base = context->time_base;
 
