@@ -237,7 +237,8 @@ static Window getWindowFromString(std::string wstr)
 		if (cwin == wid && wname == cwinname && wcls == ccls)
 			return wid;
 
-		if (wname == cwinname || (!matchedNameWin && wcls == ccls))
+		if (wname == cwinname ||
+		    (!matchedNameWin && !wcls.empty() && wcls == ccls))
 			matchedNameWin = cwin;
 	}
 
