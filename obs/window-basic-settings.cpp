@@ -2919,12 +2919,12 @@ void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 {
 #ifdef __APPLE__
 	size_t invalidLocation =
-		text.toStdString().find_first_of(":/\\");
+		text.toStdString().find_first_of(":");
 #elif  _WIN32
 	size_t invalidLocation =
-		text.toStdString().find_first_of("<>:\"/\\|?*");
+		text.toStdString().find_first_of("<>:\"|?*");
 #else
-	size_t invalidLocation = text.toStdString().find_first_of("/");
+	size_t invalidLocation = string::npos;
 #endif
 
 	if (invalidLocation != string::npos)

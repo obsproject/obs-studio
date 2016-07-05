@@ -1,4 +1,5 @@
 #include <string>
+#include <algorithm>
 #include <QMessageBox>
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
@@ -555,6 +556,18 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
+static void ensure_directory_exists(string &path)
+{
+	replace(path.begin(), path.end(), '\\', '/');
+
+	size_t last = path.rfind('/');
+	if (last == string::npos)
+		return;
+
+	string directory = path.substr(0, last);
+	os_mkdirs(directory.c_str());
+}
+
 bool SimpleOutput::StartRecording()
 {
 	if (usingRecordingPreset) {
@@ -600,6 +613,7 @@ bool SimpleOutput::StartRecording()
 
 	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
 			noSpace, filenameFormat);
+	ensure_directory_exists(strPath);
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
 
@@ -1136,6 +1150,7 @@ bool AdvancedOutput::StartRecording()
 
 		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
 							filenameFormat);
+		ensure_directory_exists(strPath);
 		if (!overwriteIfExists)
 			FindBestFilename(strPath, noSpace);
 
