@@ -23,6 +23,7 @@
 #include <QShowEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QDesktopWidget>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -132,10 +133,15 @@ OBSBasic::OBSBasic(QWidget *parent)
 		int posy = config_get_int(App()->GlobalConfig(), "BasicWindow",
 				"posy");
 
-		if (!WindowPositionValid(posx, posy))
-			posx = posy = 0;
-
-		setGeometry(posx, posy, width, height);
+		if (!WindowPositionValid(posx, posy)) {
+			QRect rect = App()->desktop()->availableGeometry();
+			setGeometry(QStyle::alignedRect(
+						Qt::LeftToRight,
+						Qt::AlignCenter,
+						size(), rect));
+		} else {
+			setGeometry(posx, posy, width, height);
+		}
 	}
 
 	char styleSheetPath[512];
