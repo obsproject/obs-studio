@@ -130,11 +130,9 @@ static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
-	const char *rc = obs_data_get_string(settings, "rate_control");
-	bool rc_crf = astrcmpi(rc, "CRF") == 0;
-
+	
+	//"buffer_size" UI is visible if "use_bufsize" is checked/enabled
 	p = obs_properties_get(ppts, "buffer_size");
-	obs_property_set_visible(p, use_bufsize && !rc_crf);
 	return true;
 }
 
@@ -148,11 +146,12 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, "crf");
 	obs_property_set_visible(p, !abr);
 
+	//hide UI elements if "rate_control" is CRF
 	p = obs_properties_get(ppts, "bitrate");
 	obs_property_set_visible(p, !rc_crf);
 	p = obs_properties_get(ppts, "use_bufsize");
 	obs_property_set_visible(p, !rc_crf);
-	p = obs_properties_get(ppts, "buffse_size");
+	p = obs_properties_get(ppts, "buffer_size");
 	obs_property_set_visible(p, !rc_crf);
 	return true;
 }
