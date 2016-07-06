@@ -247,6 +247,45 @@ char *os_get_config_path_ptr(const char *name)
 	return path.array;
 }
 
+/* returns %programdata%\[name] on windows */
+int os_get_program_data_path(char *dst, size_t size, const char *name)
+{
+	wchar_t path_utf16[MAX_PATH];
+
+	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+			path_utf16);
+
+	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
+		if (!name || !*name) {
+			return (int)strlen(dst);
+		}
+
+		if (strcat_s(dst, size, "\\") == 0) {
+			if (strcat_s(dst, size, name) == 0) {
+				return (int)strlen(dst);
+			}
+		}
+	}
+
+	return -1;
+}
+
+char *os_get_program_data_path_ptr(const char *name)
+{
+	char *ptr;
+	wchar_t path_utf16[MAX_PATH];
+	struct dstr path;
+
+	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+			path_utf16);
+
+	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
+	dstr_init_move_array(&path, ptr);
+	dstr_cat(&path, "\\");
+	dstr_cat(&path, name);
+	return path.array;
+}
+
 bool os_file_exists(const char *path)
 {
 	WIN32_FIND_DATAW wfd;

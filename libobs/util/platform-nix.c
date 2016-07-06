@@ -241,6 +241,20 @@ char *os_get_config_path_ptr(const char *name)
 #endif
 }
 
+int os_get_program_data_path(char *dst, size_t size, const char *name)
+{
+	return snprintf(dst, size, "/usr/local/share/%s", !!name ? name : "");
+}
+
+char *os_get_program_data_path_ptr(const char *name)
+{
+	int len = snprintf(NULL, size, "/usr/local/share/%s", !!name ? name : "");
+	char *str = bmalloc(len + 1);
+	snprintf(str, size, "/usr/local/share/%s", !!name ? name : "");
+	str[len] = 0;
+	return str;
+}
+
 #endif
 
 bool os_file_exists(const char *path)
