@@ -1436,6 +1436,16 @@ char *GetConfigPathPtr(const char *name)
 	}
 }
 
+int GetProgramDataPath(char *path, size_t size, const char *name)
+{
+	return os_get_program_data_path(path, size, name);
+}
+
+char *GetProgramDataPathPtr(const char *name)
+{
+	return os_get_program_data_path_ptr(name);
+}
+
 bool GetFileSafeName(const char *name, std::string &file)
 {
 	size_t base_len = strlen(name);
