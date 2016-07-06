@@ -91,8 +91,13 @@ static void SetOBSRef(QListWidgetItem *item, T &&val)
 static void AddExtraModulePaths()
 {
 	char base_module_dir[512];
+#if defined(_WIN32) || defined(__APPLE__)
+	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
+			"obs-studio/plugins/%module%");
+#else
 	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
 			"obs-studio/plugins/%module%");
+#endif
 
 	if (ret <= 0)
 		return;
