@@ -117,22 +117,22 @@ static char *os_get_path_ptr_internal(const char *name,
 
 int os_get_config_path(char *dst, size_t size, const char *name)
 {
-	return os_get_path_internal(dst, size, name, UserDomainMask);
+	return os_get_path_internal(dst, size, name, NSUserDomainMask);
 }
 
 char *os_get_config_path_ptr(const char *name)
 {
-	return os_get_path_ptr_internal(name, UserDomainMask);
+	return os_get_path_ptr_internal(name, NSUserDomainMask);
 }
 
 int os_get_program_data_path(char *dst, size_t size, const char *name)
 {
-	return os_get_path_internal(dst, size, name, LocalDomainMask);
+	return os_get_path_internal(dst, size, name, NSLocalDomainMask);
 }
 
 char *os_get_program_data_path_ptr(const char *name)
 {
-	return os_get_path_ptr_internal(name, LocalDomainMask);
+	return os_get_path_ptr_internal(name, NSLocalDomainMask);
 }
 
 struct os_cpu_usage_info {
