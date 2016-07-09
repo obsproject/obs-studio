@@ -156,10 +156,13 @@ static inline obs_data_t *get_item_autoselect_obj(struct obs_data_item *item)
 
 static inline obs_data_array_t *get_item_array(struct obs_data_item *item)
 {
+	obs_data_array_t **array;
+
 	if (!item)
 		return NULL;
 
-	return *(obs_data_array_t**)get_item_data(item);
+	array = (obs_data_array_t**)get_item_data(item);
+	return array ? *array : NULL;
 }
 
 static inline obs_data_array_t *get_item_default_array(
