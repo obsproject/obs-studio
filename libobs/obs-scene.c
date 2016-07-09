@@ -1400,7 +1400,7 @@ void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
 	uint8_t stack[128];
 	const char *command = select ? "item_select" : "item_deselect";
 
-	if (!item || item->selected == select)
+	if (!item || item->selected == select || !item->parent)
 		return;
 
 	item->selected = select;
