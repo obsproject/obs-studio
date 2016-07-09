@@ -1653,16 +1653,12 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 
 void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 {
-	obs_scene_t *scene = obs_sceneitem_get_scene(item);
+	for (int i = 0; i < ui->sources->count(); i++) {
+		QListWidgetItem *listItem = ui->sources->item(i);
 
-	if (GetCurrentScene() == scene) {
-		for (int i = 0; i < ui->sources->count(); i++) {
-			QListWidgetItem *listItem = ui->sources->item(i);
-
-			if (GetOBSRef<OBSSceneItem>(listItem) == item) {
-				DeleteListItem(ui->sources, listItem);
-				break;
-			}
+		if (GetOBSRef<OBSSceneItem>(listItem) == item) {
+			DeleteListItem(ui->sources, listItem);
+			break;
 		}
 	}
 
