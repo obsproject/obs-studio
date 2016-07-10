@@ -134,7 +134,7 @@
             "recommended": {
                 "keyint": 4,
                 "profile": "main",
-                "max video bitrate": 9000,
+                "max video bitrate": 18000,
                 "max audio bitrate": 160
             }
         },
