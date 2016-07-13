@@ -9,7 +9,8 @@
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 	: OBSQTDisplay                 (widget,
-	                                Qt::Window | Qt::FramelessWindowHint),
+	                                Qt::Window | Qt::FramelessWindowHint |
+					Qt::WindowStaysOnTopHint),
 	  source                       (source_),
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
