@@ -149,7 +149,7 @@ static bool load_libvlc_module(void)
 #define LIBVLC_FILE LIBVLC_DIR "lib/libvlc.5.dylib"
 	setenv("VLC_PLUGIN_PATH", LIBVLC_DIR "plugins", false);
 #else
-#define LIBVLC_FILE "libvlc.5.so"
+#define LIBVLC_FILE "libvlc.so.5"
 #endif
 	libvlc_module = os_dlopen(LIBVLC_FILE);
 
