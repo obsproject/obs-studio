@@ -530,30 +530,45 @@
                     "url": "rtmp://us-la.restream.io/live"
                 },
                 {
+                    "name": "US-West (Seattle, Washington)",
+                    "url": "rtmp://us-seattle.restream.io/live"
+                },
+                {
+                    "name": "US-Central (Dallas, Texas)",
+                    "url": "rtmp://us-central.restream.io/live"
+                },
+                {
                     "name": "US-East (Washington, D.C.)",
                     "url": "rtmp://us-east.restream.io/live"
                 },
                 {
-                    "name": "US-Central (Dallas, TX)",
-                    "url": "rtmp://us-central.restream.io/live"
+                    "name": "NA-East (Toronto, Canada)",
+                    "url": "rtmp://na-toronto.restream.io/live"
                 },
                 {
                     "name": "EU-Central (Frankfurt, Germany)",
                     "url": "rtmp://eu.restream.io/live"
                 },
                 {
-                    "name": "EU-West (London, GB)",
+                    "name": "EU-West (Amsterdam, Netherlands)",
+                    "url": "rtmp://eu-ams.restream.io/live"
+                },
+                {
+                    "name": "EU-West (London, Great Britain)",
                     "url": "rtmp://eu-london.restream.io/live"
                 },
                 {
                     "name": "Australia (Sydney)",
-                    "url": "rtmp://au-secondary.restream.io/live"
+                    "url": "rtmp://au.restream.io/live"
                 },
                 {
                     "name": "South America (Sao Paulo, Brazil)",
                     "url": "rtmp://sa.restream.io/live"
                 }
-            ]
+            ],
+            "recommended": {
+                "keyint": 2
+            }
         },
         {
             "name": "Nood",
