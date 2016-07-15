@@ -112,6 +112,9 @@ private:
 	QString curQSVPreset;
 	QString curNVENCPreset;
 
+	QString curAdvStreamEncoder;
+	QString curAdvRecordEncoder;
+
 	using AudioSource_t =
 		std::tuple<OBSWeakSource,
 			QPointer<QCheckBox>, QPointer<QSpinBox>,

@@ -42,7 +42,7 @@ struct obs_output_info {
 	void (*destroy)(void *data);
 
 	bool (*start)(void *data);
-	void (*stop)(void *data);
+	void (*stop)(void *data, uint64_t ts);
 
 	void (*raw_video)(void *data, struct video_data *frame);
 	void (*raw_audio)(void *data, struct audio_data *frames);

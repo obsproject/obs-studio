@@ -34,7 +34,7 @@
  *
  * Reset to zero each major version
  */
-#define LIBOBS_API_MINOR_VER  14
+#define LIBOBS_API_MINOR_VER  15
 
 /*
  * Increment if backward-compatible bug fix

@@ -208,12 +208,13 @@ uint64_t os_gettime_ns(void)
 	return (uint64_t)time_val;
 }
 
-/* returns %appdata%\[name] on windows */
-int os_get_config_path(char *dst, size_t size, const char *name)
+/* returns [folder]\[name] on windows */
+static int os_get_path_internal(char *dst, size_t size, const char *name,
+		int folder)
 {
 	wchar_t path_utf16[MAX_PATH];
 
-	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
 	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
@@ -231,13 +232,13 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 	return -1;
 }
 
-char *os_get_config_path_ptr(const char *name)
+static char *os_get_path_ptr_internal(const char *name, int folder)
 {
 	char *ptr;
 	wchar_t path_utf16[MAX_PATH];
 	struct dstr path;
 
-	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
 	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
@@ -245,6 +246,26 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "\\");
 	dstr_cat(&path, name);
 	return path.array;
+}
+
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, CSIDL_APPDATA);
+}
+
+char *os_get_config_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, CSIDL_APPDATA);
+}
+
+int os_get_program_data_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, CSIDL_COMMON_APPDATA);
+}
+
+char *os_get_program_data_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, CSIDL_COMMON_APPDATA);
 }
 
 bool os_file_exists(const char *path)

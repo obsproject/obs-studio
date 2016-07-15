@@ -401,7 +401,7 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 		var = QVariant::fromValue<double>(val);
 
 	} else if (format == OBS_COMBO_FORMAT_STRING) {
-		var = obs_property_list_item_string(prop, idx);
+		var = QByteArray(obs_property_list_item_string(prop, idx));
 	}
 
 	combo->addItem(QT_UTF8(name), var);
@@ -470,13 +470,16 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		combo->setEditable(true);
 
+	combo->setMaxVisibleItems(40);
+
 	string value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
-			type == OBS_COMBO_TYPE_EDITABLE)
+			type == OBS_COMBO_TYPE_EDITABLE) {
 		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
-	else
-		idx = combo->findData(QT_UTF8(value.c_str()));
+	} else {
+		idx = combo->findData(QByteArray(value.c_str()));
+	}
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
@@ -1518,7 +1521,7 @@ void WidgetInfo::ListChanged(const char *setting)
 	QVariant         data;
 
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText();
+		data = combo->currentText().toUtf8();
 	} else {
 		int index = combo->currentIndex();
 		if (index != -1)
@@ -1540,7 +1543,7 @@ void WidgetInfo::ListChanged(const char *setting)
 		break;
 	case OBS_COMBO_FORMAT_STRING:
 		obs_data_set_string(view->settings, setting,
-				QT_TO_UTF8(data.toString()));
+				data.toByteArray().constData());
 		break;
 	}
 }
@@ -1632,6 +1635,8 @@ void WidgetInfo::EditableListChanged()
 
 	obs_data_set_array(view->settings, setting, array);
 	obs_data_array_release(array);
+
+	ControlChanged();
 }
 
 void WidgetInfo::ButtonClicked()
@@ -1673,7 +1678,7 @@ void WidgetInfo::ControlChanged()
 		if (!PathChanged(setting))
 			return;
 		break;
-	case OBS_PROPERTY_EDITABLE_LIST: return;
+	case OBS_PROPERTY_EDITABLE_LIST: break;
 	case OBS_PROPERTY_FRAME_RATE:
 		if (!FrameRateChanged(widget, setting, view->settings))
 			return;
@@ -1761,12 +1766,15 @@ public:
 
 void WidgetInfo::EditListAdd()
 {
-	bool allow_files = obs_property_editable_list_allow_files(property);
-	if (!allow_files) {
+	enum obs_editable_list_type type = obs_property_editable_list_type(
+			property);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_STRINGS) {
 		EditListAddText();
 		return;
 	}
 
+	/* Files and URLs */
 	QMenu popup(view->window());
 
 	QAction *action;
@@ -1776,10 +1784,18 @@ void WidgetInfo::EditListAdd()
 			this, &WidgetInfo::EditListAddFiles);
 	popup.addAction(action);
 
-	action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"), this);
+	action = new QAction(QTStr("Basic.PropertiesWindow.AddDir"), this);
 	connect(action, &QAction::triggered,
-			this, &WidgetInfo::EditListAddText);
+			this, &WidgetInfo::EditListAddDir);
 	popup.addAction(action);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS) {
+		action = new QAction(QTStr("Basic.PropertiesWindow.AddURL"),
+				this);
+		connect(action, &QAction::triggered,
+				this, &WidgetInfo::EditListAddText);
+		popup.addAction(action);
+	}
 
 	popup.exec(QCursor::pos());
 }
@@ -1826,6 +1842,26 @@ void WidgetInfo::EditListAddFiles()
 	EditableListChanged();
 }
 
+void WidgetInfo::EditListAddDir()
+{
+	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
+	const char *desc = obs_property_description(property);
+	const char *default_path =
+		obs_property_editable_list_default_path(property);
+
+	QString title = QTStr("Basic.PropertiesWindow.AddEditableListDir")
+		.arg(QT_UTF8(desc));
+
+	QString dir = QFileDialog::getExistingDirectory(
+			App()->GetMainWindow(), title, QT_UTF8(default_path));
+
+	if (dir.isEmpty())
+		return;
+
+	list->addItem(dir);
+	EditableListChanged();
+}
+
 void WidgetInfo::EditListRemove()
 {
 	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
@@ -1839,7 +1875,8 @@ void WidgetInfo::EditListRemove()
 void WidgetInfo::EditListEdit()
 {
 	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
-	bool allow_files = obs_property_editable_list_allow_files(property);
+	enum obs_editable_list_type type = obs_property_editable_list_type(
+			property);
 	const char *desc = obs_property_description(property);
 	const char *filter = obs_property_editable_list_filter(property);
 	QList<QListWidgetItem*> selectedItems = list->selectedItems();
@@ -1848,8 +1885,21 @@ void WidgetInfo::EditListEdit()
 		return;
 
 	QListWidgetItem *item = selectedItems[0];
-	EditableItemDialog dialog(widget->window(), item->text(), allow_files,
-			filter);
+
+	if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
+		QString path = QFileDialog::getOpenFileName(
+				App()->GetMainWindow(), QTStr("Browse"),
+				item->text(), QT_UTF8(filter));
+		if (path.isEmpty())
+			return;
+
+		item->setText(path);
+		EditableListChanged();
+		return;
+	}
+
+	EditableItemDialog dialog(widget->window(), item->text(),
+			type != OBS_EDITABLE_LIST_TYPE_STRINGS, filter);
 	auto title = QTStr("Basic.PropertiesWindow.EditEditableListEntry").arg(
 			QT_UTF8(desc));
 	dialog.setWindowTitle(title);

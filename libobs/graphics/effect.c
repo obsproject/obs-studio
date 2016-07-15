@@ -125,6 +125,8 @@ void gs_technique_end(gs_technique_t *tech)
 
 		da_free(param->cur_val);
 		param->changed = false;
+		if (param->next_sampler)
+			param->next_sampler = NULL;
 	}
 }
 
@@ -146,6 +148,9 @@ static void upload_shader_params(struct darray *pass_params, bool changed_only)
 		struct pass_shaderparam *param = params+i;
 		struct gs_effect_param *eparam = param->eparam;
 		gs_sparam_t *sparam = param->sparam;
+
+		if (eparam->next_sampler)
+			gs_shader_set_next_sampler(sparam, eparam->next_sampler);
 
 		if (changed_only && !eparam->changed)
 			continue;
@@ -377,4 +382,15 @@ void gs_effect_set_default(gs_eparam_t *param)
 {
 	effect_setval_inline(param, param->default_val.array,
 			param->default_val.num);
+}
+
+void gs_effect_set_next_sampler(gs_eparam_t *param, gs_samplerstate_t *sampler)
+{
+	if (!param) {
+		blog(LOG_ERROR, "gs_effect_set_next_sampler: invalid param");
+		return;
+	}
+
+	if (param->type == GS_SHADER_PARAM_TEXTURE)
+		param->next_sampler = sampler;
 }

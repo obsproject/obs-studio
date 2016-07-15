@@ -395,10 +395,13 @@ static void volmeter_update_audio_settings(obs_volmeter_t *volmeter)
 {
 	audio_t *audio            = obs_get_audio();
 	const unsigned int sr     = audio_output_get_sample_rate(audio);
+	uint32_t channels         = (uint32_t)audio_output_get_channels(audio);
 
-	volmeter->channels        = (uint32_t)audio_output_get_channels(audio);
+	pthread_mutex_lock(&volmeter->mutex);
+	volmeter->channels        = channels;
 	volmeter->update_frames   = volmeter->update_ms * sr / 1000;
 	volmeter->peakhold_frames = volmeter->peakhold_ms * sr / 1000;
+	pthread_mutex_unlock(&volmeter->mutex);
 }
 
 obs_fader_t *obs_fader_create(enum obs_fader_type type)
@@ -544,22 +547,24 @@ float obs_fader_get_mul(obs_fader_t *fader)
 bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 {
 	signal_handler_t *sh;
+	float vol;
 
 	if (!fader || !source)
 		return false;
 
 	obs_fader_detach_source(fader);
 
-	pthread_mutex_lock(&fader->mutex);
-
 	sh = obs_source_get_signal_handler(source);
 	signal_handler_connect(sh, "volume",
 			fader_source_volume_changed, fader);
 	signal_handler_connect(sh, "destroy",
 			fader_source_destroyed, fader);
+	vol = obs_source_get_volume(source);
+
+	pthread_mutex_lock(&fader->mutex);
 
 	fader->source = source;
-	fader->cur_db = mul_to_db(obs_source_get_volume(source));
+	fader->cur_db = mul_to_db(vol);
 
 	pthread_mutex_unlock(&fader->mutex);
 
@@ -569,25 +574,25 @@ bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 void obs_fader_detach_source(obs_fader_t *fader)
 {
 	signal_handler_t *sh;
+	obs_source_t *source;
 
 	if (!fader)
 		return;
 
 	pthread_mutex_lock(&fader->mutex);
+	source = fader->source;
+	fader->source = NULL;
+	pthread_mutex_unlock(&fader->mutex);
 
-	if (!fader->source)
-		goto exit;
+	if (!source)
+		return;
 
-	sh = obs_source_get_signal_handler(fader->source);
+	sh = obs_source_get_signal_handler(source);
 	signal_handler_disconnect(sh, "volume",
 			fader_source_volume_changed, fader);
 	signal_handler_disconnect(sh, "destroy",
 			fader_source_destroyed, fader);
 
-	fader->source = NULL;
-
-exit:
-	pthread_mutex_unlock(&fader->mutex);
 }
 
 void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback,
@@ -674,13 +679,12 @@ void obs_volmeter_destroy(obs_volmeter_t *volmeter)
 bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 {
 	signal_handler_t *sh;
+	float vol;
 
 	if (!volmeter || !source)
 		return false;
 
 	obs_volmeter_detach_source(volmeter);
-
-	pthread_mutex_lock(&volmeter->mutex);
 
 	sh = obs_source_get_signal_handler(source);
 	signal_handler_connect(sh, "volume",
@@ -689,9 +693,12 @@ bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 			volmeter_source_destroyed, volmeter);
 	obs_source_add_audio_capture_callback(source,
 			volmeter_source_data_received, volmeter);
+	vol = obs_source_get_volume(source);
+
+	pthread_mutex_lock(&volmeter->mutex);
 
 	volmeter->source = source;
-	volmeter->cur_db = mul_to_db(obs_source_get_volume(source));
+	volmeter->cur_db = mul_to_db(vol);
 
 	pthread_mutex_unlock(&volmeter->mutex);
 
@@ -701,27 +708,26 @@ bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 void obs_volmeter_detach_source(obs_volmeter_t *volmeter)
 {
 	signal_handler_t *sh;
+	obs_source_t *source;
 
 	if (!volmeter)
 		return;
 
 	pthread_mutex_lock(&volmeter->mutex);
+	source = volmeter->source;
+	volmeter->source = NULL;
+	pthread_mutex_unlock(&volmeter->mutex);
 
-	if (!volmeter->source)
-		goto exit;
+	if (!source)
+		return;
 
-	sh = obs_source_get_signal_handler(volmeter->source);
+	sh = obs_source_get_signal_handler(source);
 	signal_handler_disconnect(sh, "volume",
 			volmeter_source_volume_changed, volmeter);
 	signal_handler_disconnect(sh, "destroy",
 			volmeter_source_destroyed, volmeter);
-	obs_source_remove_audio_capture_callback(volmeter->source,
+	obs_source_remove_audio_capture_callback(source,
 			volmeter_source_data_received, volmeter);
-
-	volmeter->source = NULL;
-
-exit:
-	pthread_mutex_unlock(&volmeter->mutex);
 }
 
 void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
@@ -732,8 +738,9 @@ void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
 
 	pthread_mutex_lock(&volmeter->mutex);
 	volmeter->update_ms = ms;
-	volmeter_update_audio_settings(volmeter);
 	pthread_mutex_unlock(&volmeter->mutex);
+
+	volmeter_update_audio_settings(volmeter);
 }
 
 unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter)
@@ -755,8 +762,9 @@ void obs_volmeter_set_peak_hold(obs_volmeter_t *volmeter, const unsigned int ms)
 
 	pthread_mutex_lock(&volmeter->mutex);
 	volmeter->peakhold_ms = ms;
-	volmeter_update_audio_settings(volmeter);
 	pthread_mutex_unlock(&volmeter->mutex);
+
+	volmeter_update_audio_settings(volmeter);
 }
 
 unsigned int obs_volmeter_get_peak_hold(obs_volmeter_t *volmeter)

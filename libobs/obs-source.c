@@ -405,6 +405,14 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 		return source;
 	}
 
+	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_scene_t *new_scene = obs_scene_duplicate(scene, new_name,
+				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_COPY);
+		return obs_scene_get_source(new_scene);
+	}
+
 	settings = obs_data_create();
 	obs_data_apply(settings, source->context.settings);
 
@@ -882,15 +890,12 @@ void obs_source_activate(obs_source_t *source, enum view_type type)
 	if (!obs_source_valid(source, "obs_source_activate"))
 		return;
 
-	if (os_atomic_inc_long(&source->show_refs) == 1) {
-		obs_source_enum_active_tree(source, show_tree, NULL);
-	}
+	os_atomic_inc_long(&source->show_refs);
+	obs_source_enum_active_tree(source, show_tree, NULL);
 
 	if (type == MAIN_VIEW) {
-		if (os_atomic_inc_long(&source->activate_refs) == 1) {
-			obs_source_enum_active_tree(source, activate_tree,
-					NULL);
-		}
+		os_atomic_inc_long(&source->activate_refs);
+		obs_source_enum_active_tree(source, activate_tree, NULL);
 	}
 }
 
@@ -899,12 +904,14 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 	if (!obs_source_valid(source, "obs_source_deactivate"))
 		return;
 
-	if (os_atomic_dec_long(&source->show_refs) == 0) {
+	if (os_atomic_load_long(&source->show_refs) > 0) {
+		os_atomic_dec_long(&source->show_refs);
 		obs_source_enum_active_tree(source, hide_tree, NULL);
 	}
 
 	if (type == MAIN_VIEW) {
-		if (os_atomic_dec_long(&source->activate_refs) == 0) {
+		if (os_atomic_load_long(&source->activate_refs) > 0) {
+			os_atomic_dec_long(&source->activate_refs);
 			obs_source_enum_active_tree(source, deactivate_tree,
 					NULL);
 		}
@@ -1268,7 +1275,7 @@ static inline bool set_planar420_sizes(struct obs_source *source,
 	size += size/2;
 
 	source->async_convert_width   = frame->width;
-	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_convert_height  = size / frame->width;
 	source->async_texture_format  = GS_R8;
 	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
 	source->async_plane_offset[1] = (int)(frame->data[2] - frame->data[0]);
@@ -1282,7 +1289,7 @@ static inline bool set_nv12_sizes(struct obs_source *source,
 	size += size/2;
 
 	source->async_convert_width   = frame->width;
-	source->async_convert_height  = (size / frame->width + 1) & 0xFFFFFFFE;
+	source->async_convert_height  = size / frame->width;
 	source->async_texture_format  = GS_R8;
 	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
 	return true;
@@ -1855,6 +1862,12 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	calldata_set_ptr(&cd, "filter", filter);
 
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
+
+	if (source && filter)
+		blog(source->context.private ? LOG_DEBUG : LOG_INFO,
+				"- filter '%s' (%s) added to source '%s'",
+				filter->context.name, filter->info.id,
+				source->context.name);
 }
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
@@ -1886,6 +1899,12 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_set_ptr(&cd, "filter", filter);
 
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
+
+	if (source && filter)
+		blog(source->context.private ? LOG_DEBUG : LOG_INFO,
+				"- filter '%s' (%s) removed from source '%s'",
+				filter->context.name, filter->info.id,
+				source->context.name);
 
 	if (filter->info.filter_remove)
 		filter->info.filter_remove(filter->context.data,
@@ -2587,7 +2606,8 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 	if (!obs_source_valid(source, "obs_source_set_name"))
 		return;
 
-	if (!name || !*name || strcmp(name, source->context.name) != 0) {
+	if (!name || !*name || !source->context.name ||
+			strcmp(name, source->context.name) != 0) {
 		struct calldata data;
 		char *prev_name = bstrdup(source->context.name);
 		obs_context_data_setname(&source->context, name);
@@ -2665,7 +2685,7 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		enum obs_allow_direct_render allow_direct)
 {
 	obs_source_t *target, *parent;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 	int          cx, cy;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
@@ -2685,7 +2705,6 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		return false;
 	}
 
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 	cx           = get_base_width(target);
 	cy           = get_base_height(target);
@@ -2738,7 +2757,7 @@ void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effec
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 
 	if (!filter) return;
 
@@ -2748,7 +2767,6 @@ void obs_source_process_filter_tech_end(obs_source_t *filter, gs_effect_t *effec
 	if (!target || !parent)
 		return;
 
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 
 	const char *tech = tech_name ? tech_name : "Draw";
@@ -2767,14 +2785,13 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t     target_flags, parent_flags;
+	uint32_t     parent_flags;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_end"))
 		return;
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
-	target_flags = target->info.output_flags;
 	parent_flags = parent->info.output_flags;
 
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
@@ -2898,7 +2915,11 @@ static void enum_source_tree_callback(obs_source_t *parent, obs_source_t *child,
 		void *param)
 {
 	struct source_enum_data *data = param;
+	bool is_transition = child->info.type == OBS_SOURCE_TYPE_TRANSITION;
 
+	if (is_transition)
+		obs_transition_enum_sources(child,
+				enum_source_tree_callback, param);
 	if (child->info.enum_active_sources) {
 		if (child->context.data) {
 			child->info.enum_active_sources(child->context.data,

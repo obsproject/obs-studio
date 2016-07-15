@@ -40,7 +40,7 @@ struct obs_scene_item {
 	bool                  visible;
 	bool                  selected;
 
-	gs_texrender_t        *crop_render;
+	gs_texrender_t        *item_render;
 	struct obs_sceneitem_crop crop;
 
 	struct vec2           pos;
@@ -52,6 +52,9 @@ struct obs_scene_item {
 	 * ths transform needs updating */
 	uint32_t              last_width;
 	uint32_t              last_height;
+
+	struct vec2           output_scale;
+	enum obs_scale_type   scale_filter;
 
 	struct matrix4        box_transform;
 	struct matrix4        draw_transform;

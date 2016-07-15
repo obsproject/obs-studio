@@ -325,6 +325,8 @@ EXPORT void gs_shader_set_vec4(gs_sparam_t *param, const struct vec4 *val);
 EXPORT void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val);
 EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
 EXPORT void gs_shader_set_default(gs_sparam_t *param);
+EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
+		gs_samplerstate_t *sampler);
 
 /* ---------------------------------------------------
  * effect functions
@@ -393,6 +395,8 @@ EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
+EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
+		gs_samplerstate_t *sampler);
 
 /* ---------------------------------------------------
  * texture render helper functions

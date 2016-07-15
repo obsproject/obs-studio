@@ -126,7 +126,8 @@ static inline gs_effect_t *get_scale_effect_internal(
 	switch (video->scale_type) {
 	case OBS_SCALE_BILINEAR: return video->default_effect;
 	case OBS_SCALE_LANCZOS:  return video->lanczos_effect;
-	case OBS_SCALE_BICUBIC:;
+	case OBS_SCALE_BICUBIC:
+	default:;
 	}
 
 	return video->bicubic_effect;

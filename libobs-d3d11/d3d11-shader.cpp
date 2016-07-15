@@ -222,10 +222,18 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 			upload = true;
 			param.changed = false;
 		}
+
 	} else if (param.curValue.size() == sizeof(gs_texture_t*)) {
 		gs_texture_t *tex;
 		memcpy(&tex, param.curValue.data(), sizeof(gs_texture_t*));
 		device_load_texture(device, tex, param.textureID);
+
+		if (param.nextSampler) {
+			ID3D11SamplerState *state = param.nextSampler->state;
+			device->context->PSSetSamplers(param.textureID, 1,
+					&state);
+			param.nextSampler = nullptr;
+		}
 	}
 }
 
@@ -383,4 +391,9 @@ void gs_shader_set_default(gs_sparam_t *param)
 	if (param->defaultValue.size())
 		shader_setval_inline(param, param->defaultValue.data(),
 				param->defaultValue.size());
+}
+
+void gs_shader_set_next_sampler(gs_sparam_t *param, gs_samplerstate_t *sampler)
+{
+	param->nextSampler = sampler;
 }

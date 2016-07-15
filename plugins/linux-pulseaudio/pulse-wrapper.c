@@ -172,6 +172,10 @@ int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void* userdata)
 
 	pa_operation *op = pa_context_get_source_info_list(
 		pulse_context, cb, userdata);
+	if (!op) {
+		pulse_unlock();
+		return -1;
+	}
 	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
 		pulse_wait();
 	pa_operation_unref(op);
@@ -191,6 +195,10 @@ int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name,
 
 	pa_operation *op = pa_context_get_source_info_by_name(
 		pulse_context, name, cb, userdata);
+	if (!op) {
+		pulse_unlock();
+		return -1;
+	}
 	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
 		pulse_wait();
 	pa_operation_unref(op);
@@ -209,6 +217,10 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void* userdata)
 
 	pa_operation *op = pa_context_get_server_info(
 		pulse_context, cb, userdata);
+	if (!op) {
+		pulse_unlock();
+		return -1;
+	}
 	while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
 		pulse_wait();
 	pa_operation_unref(op);

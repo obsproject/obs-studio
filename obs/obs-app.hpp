@@ -136,6 +136,9 @@ public:
 int GetConfigPath(char *path, size_t size, const char *name);
 char *GetConfigPathPtr(const char *name);
 
+int GetProgramDataPath(char *path, size_t size, const char *name);
+char *GetProgramDataPathPtr(const char *name);
+
 inline OBSApp *App() {return static_cast<OBSApp*>(qApp);}
 
 inline config_t *GetGlobalConfig() {return App()->GlobalConfig();}
@@ -146,6 +149,8 @@ inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
+
+bool WindowPositionValid(int x, int y);
 
 static inline int GetProfilePath(char *path, size_t size, const char *file)
 {

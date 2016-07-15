@@ -62,7 +62,7 @@ struct list_data {
 };
 
 struct editable_list_data {
-	bool                        allow_files;
+	enum obs_editable_list_type type;
 	char                        *filter;
 	char                        *default_path;
 };
@@ -503,7 +503,7 @@ obs_property_t *obs_properties_add_font(obs_properties_t *props,
 
 obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
 		const char *name, const char *desc,
-		bool allow_files, const char *filter,
+		enum obs_editable_list_type type, const char *filter,
 		const char *default_path)
 {
 	if (!props || has_prop(props, name)) return NULL;
@@ -511,7 +511,7 @@ obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
 			OBS_PROPERTY_EDITABLE_LIST);
 
 	struct editable_list_data *data = get_property_data(p);
-	data->allow_files = allow_files;
+	data->type = type;
 	data->filter = bstrdup(filter);
 	data->default_path = bstrdup(default_path);
 	return p;
@@ -863,11 +863,11 @@ double obs_property_list_item_float(obs_property_t *p, size_t idx)
 		data->items.array[idx].d : 0.0;
 }
 
-bool obs_property_editable_list_allow_files(obs_property_t *p)
+enum obs_editable_list_type obs_property_editable_list_type(obs_property_t *p)
 {
 	struct editable_list_data *data = get_type_data(p,
 			OBS_PROPERTY_EDITABLE_LIST);
-	return data ? data->allow_files : false;
+	return data ? data->type : OBS_EDITABLE_LIST_TYPE_STRINGS;
 }
 
 const char *obs_property_editable_list_filter(obs_property_t *p)

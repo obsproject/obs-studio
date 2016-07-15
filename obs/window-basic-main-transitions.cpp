@@ -484,12 +484,12 @@ void OBSBasic::on_transitionProps_clicked()
 
 	QMenu menu(this);
 
-	QAction *action = new QAction(QTStr("Rename"), this);
+	QAction *action = new QAction(QTStr("Rename"), &menu);
 	connect(action, SIGNAL(triggered()), this, SLOT(RenameTransition()));
 	action->setProperty("transition", QVariant::fromValue(source));
 	menu.addAction(action);
 
-	action = new QAction(QTStr("Properties"), this);
+	action = new QAction(QTStr("Properties"), &menu);
 	connect(action, &QAction::triggered, properties);
 	menu.addAction(action);
 

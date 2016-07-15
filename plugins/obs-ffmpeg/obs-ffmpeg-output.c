@@ -89,6 +89,11 @@ struct ffmpeg_output {
 	bool               connecting;
 	pthread_t          start_thread;
 
+	uint64_t           audio_start_ts;
+	uint64_t           video_start_ts;
+	uint64_t           stop_ts;
+	volatile bool      stopping;
+
 	bool               write_thread_active;
 	pthread_mutex_t    write_mutex;
 	pthread_t          write_thread;
@@ -237,6 +242,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->pix_fmt        = closest_format;
 	context->colorspace     = data->config.color_space;
 	context->color_range    = data->config.color_range;
+	context->thread_count   = 0;
 
 	data->video->time_base = context->time_base;
 
@@ -548,6 +554,11 @@ fail:
 
 /* ------------------------------------------------------------------------- */
 
+static inline bool stopping(struct ffmpeg_output *output)
+{
+	return os_atomic_load_bool(&output->stopping);
+}
+
 static const char *ffmpeg_output_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -588,7 +599,7 @@ fail:
 	return NULL;
 }
 
-static void ffmpeg_output_stop(void *data);
+static void ffmpeg_output_full_stop(void *data);
 static void ffmpeg_deactivate(struct ffmpeg_output *output);
 
 static void ffmpeg_output_destroy(void *data)
@@ -599,7 +610,7 @@ static void ffmpeg_output_destroy(void *data)
 		if (output->connecting)
 			pthread_join(output->start_thread, NULL);
 
-		ffmpeg_output_stop(output);
+		ffmpeg_output_full_stop(output);
 
 		pthread_mutex_destroy(&output->write_mutex);
 		os_sem_destroy(output->write_sem);
@@ -647,6 +658,8 @@ static void receive_video(void *param, struct video_data *frame)
 
 	av_init_packet(&packet);
 
+	if (!output->video_start_ts)
+		output->video_start_ts = frame->timestamp;
 	if (!data->start_timestamp)
 		data->start_timestamp = frame->timestamp;
 
@@ -768,6 +781,8 @@ static bool prepare_audio(struct ffmpeg_data *data,
 			return false;
 
 		cutoff = data->start_timestamp - frame->timestamp;
+		output->timestamp += cutoff;
+
 		cutoff = cutoff * (uint64_t)data->audio_samplerate /
 			1000000000;
 
@@ -797,6 +812,9 @@ static void receive_audio(void *param, struct audio_data *frame)
 	if (!prepare_audio(data, frame, &in))
 		return;
 
+	if (!output->audio_start_ts)
+		output->audio_start_ts = in.timestamp;
+
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
@@ -810,6 +828,26 @@ static void receive_audio(void *param, struct audio_data *frame)
 
 		encode_audio(output, context, data->audio_size);
 	}
+}
+
+static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
+		AVPacket *packet)
+{
+	struct ffmpeg_data *data = &output->ff_data;
+	uint64_t start_ts;
+
+	AVRational time_base;
+
+	if (data->video && data->video->index == packet->stream_index) {
+		time_base = data->video->time_base;
+		start_ts = output->video_start_ts;
+	} else {
+		time_base = data->audio->time_base;
+		start_ts = output->audio_start_ts;
+	}
+
+	return start_ts + (uint64_t)av_rescale_q(packet->dts,
+			time_base, (AVRational){1, 1000000000});
 }
 
 static int process_packet(struct ffmpeg_output *output)
@@ -833,6 +871,14 @@ static int process_packet(struct ffmpeg_output *output)
 			"packets queued: %lu",
 			packet.size, packet.flags,
 			packet.stream_index, output->packets.num);*/
+
+	if (stopping(output)) {
+		uint64_t sys_ts = get_packet_sys_dts(output, &packet);
+		if (sys_ts >= output->stop_ts) {
+			ffmpeg_output_full_stop(output);
+			return 0;
+		}
+	}
 
 	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
 	if (ret < 0) {
@@ -954,7 +1000,7 @@ static bool try_connect(struct ffmpeg_output *output)
 	if (ret != 0) {
 		blog(LOG_WARNING, "ffmpeg_output_start: failed to create write "
 		                  "thread.");
-		ffmpeg_output_stop(output);
+		ffmpeg_output_full_stop(output);
 		return false;
 	}
 
@@ -985,17 +1031,35 @@ static bool ffmpeg_output_start(void *data)
 	if (output->connecting)
 		return false;
 
+	os_atomic_set_bool(&output->stopping, false);
+	output->audio_start_ts = 0;
+	output->video_start_ts = 0;
+
 	ret = pthread_create(&output->start_thread, NULL, start_thread, output);
 	return (output->connecting = (ret == 0));
 }
 
-static void ffmpeg_output_stop(void *data)
+static void ffmpeg_output_full_stop(void *data)
 {
 	struct ffmpeg_output *output = data;
 
 	if (output->active) {
 		obs_output_end_data_capture(output->output);
 		ffmpeg_deactivate(output);
+	}
+}
+
+static void ffmpeg_output_stop(void *data, uint64_t ts)
+{
+	struct ffmpeg_output *output = data;
+
+	if (output->active) {
+		if (ts == 0) {
+			ffmpeg_output_full_stop(output);
+		} else {
+			os_atomic_set_bool(&output->stopping, true);
+			output->stop_ts = ts;
+		}
 	}
 }
 

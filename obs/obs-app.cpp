@@ -328,6 +328,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_string(globalConfig, "General", "Language",
 			DEFAULT_LANG);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
+	config_set_default_string(globalConfig, "General", "ProcessPriority",
+			"Normal");
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
@@ -354,6 +356,16 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"CenterSnapping", false);
 	config_set_default_double(globalConfig, "BasicWindow",
 			"SnapDistance", 10.0);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"RecordWhenStreaming", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"KeepRecordingWhenStreamStops", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowTransitions", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowListboxToolbars", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"ShowStatusBar", true);
 
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
@@ -1424,6 +1436,16 @@ char *GetConfigPathPtr(const char *name)
 	}
 }
 
+int GetProgramDataPath(char *path, size_t size, const char *name)
+{
+	return os_get_program_data_path(path, size, name);
+}
+
+char *GetProgramDataPathPtr(const char *name)
+{
+	return os_get_program_data_path_ptr(name);
+}
+
 bool GetFileSafeName(const char *name, std::string &file)
 {
 	size_t base_len = strlen(name);
@@ -1481,6 +1503,23 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	} while (os_file_exists(path.c_str()));
 
 	return true;
+}
+
+bool WindowPositionValid(int x, int y)
+{
+	vector<MonitorInfo> monitors;
+	GetMonitors(monitors);
+
+	for (auto &monitor : monitors) {
+		int br_x = monitor.x + monitor.cx;
+		int br_y = monitor.y + monitor.cy;
+
+		if (x >= monitor.x && x < br_x &&
+		    y >= monitor.y && y < br_y)
+			return true;
+	}
+
+	return false;
 }
 
 static inline bool arg_is(const char *arg,
@@ -1610,6 +1649,51 @@ static bool update_reconnect(ConfigFile &config)
 	return false;
 }
 
+static void convert_x264_settings(obs_data_t *data)
+{
+	bool use_bufsize = obs_data_get_bool(data, "use_bufsize");
+
+	if (use_bufsize) {
+		int buffer_size = (int)obs_data_get_int(data, "buffer_size");
+		if (buffer_size == 0)
+			obs_data_set_string(data, "rate_control", "CRF");
+	}
+}
+
+static void convert_14_2_encoder_setting(const char *encoder, const char *file)
+{
+	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	obs_data_item_t *cbr_item = obs_data_item_byname(data, "cbr");
+	obs_data_item_t *rc_item = obs_data_item_byname(data, "rate_control");
+	bool modified = false;
+	bool cbr = true;
+
+	if (cbr_item) {
+		cbr = obs_data_item_get_bool(cbr_item);
+		obs_data_item_unset_user_value(cbr_item);
+
+		obs_data_set_string(data, "rate_control", cbr ? "CBR" : "VBR");
+
+		modified = true;
+	}
+
+	if (!rc_item && astrcmpi(encoder, "obs_x264") == 0) {
+		if (!cbr_item)
+			obs_data_set_string(data, "rate_control", "CBR");
+		else if (!cbr)
+			convert_x264_settings(data);
+
+		modified = true;
+	}
+
+	if (modified)
+		obs_data_save_json_safe(data, file, "tmp", "bak");
+
+	obs_data_item_release(&rc_item);
+	obs_data_item_release(&cbr_item);
+	obs_data_release(data);
+}
+
 static void upgrade_settings(void)
 {
 	char path[512];
@@ -1627,7 +1711,8 @@ static void upgrade_settings(void)
 	struct os_dirent *ent = os_readdir(dir);
 
 	while (ent) {
-		if (ent->directory) {
+		if (ent->directory && strcmp(ent->d_name, ".") != 0 &&
+				strcmp(ent->d_name, "..") != 0) {
 			strcat(path, "/");
 			strcat(path, ent->d_name);
 			strcat(path, "/basic.ini");
@@ -1642,6 +1727,28 @@ static void upgrade_settings(void)
 					config_save_safe(config, "tmp",
 							nullptr);
 				}
+			}
+
+
+			if (config) {
+				const char *sEnc = config_get_string(config,
+						"AdvOut", "Encoder");
+				const char *rEnc = config_get_string(config,
+						"AdvOut", "RecEncoder");
+
+				/* replace "cbr" option with "rate_control" for
+				 * each profile's encoder data */
+				path[pathlen] = 0;
+				strcat(path, "/");
+				strcat(path, ent->d_name);
+				strcat(path, "/recordEncoder.json");
+				convert_14_2_encoder_setting(rEnc, path);
+
+				path[pathlen] = 0;
+				strcat(path, "/");
+				strcat(path, ent->d_name);
+				strcat(path, "/streamEncoder.json");
+				convert_14_2_encoder_setting(sEnc, path);
 			}
 
 			path[pathlen] = 0;
@@ -1660,8 +1767,6 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
-	CoInitializeEx(0, COINIT_MULTITHREADED);
-
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
 #endif

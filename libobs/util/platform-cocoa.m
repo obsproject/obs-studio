@@ -69,11 +69,12 @@ uint64_t os_gettime_ns(void)
 	return f();
 }
 
-/* gets the location ~/Library/Application Support/[name] */
-int os_get_config_path(char *dst, size_t size, const char *name)
+/* gets the location [domain mask]/Library/Application Support/[name] */
+static int os_get_path_internal(char *dst, size_t size, const char *name,
+		NSSearchPathDomainMask domainMask)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
-			NSApplicationSupportDirectory, NSUserDomainMask, YES);
+			NSApplicationSupportDirectory, domainMask, YES);
 
 	if([paths count] == 0)
 		bcrash("Could not get home directory (platform-cocoa)");
@@ -87,10 +88,11 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 		return snprintf(dst, size, "%s/%s", base_path, name);
 }
 
-char *os_get_config_path_ptr(const char *name)
+static char *os_get_path_ptr_internal(const char *name,
+		NSSearchPathDomainMask domainMask)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(
-			NSApplicationSupportDirectory, NSUserDomainMask, YES);
+			NSApplicationSupportDirectory, domainMask, YES);
 
 	if([paths count] == 0)
 		bcrash("Could not get home directory (platform-cocoa)");
@@ -111,6 +113,26 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "/");
 	dstr_cat(&path, name);
 	return path.array;
+}
+
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, NSUserDomainMask);
+}
+
+char *os_get_config_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, NSUserDomainMask);
+}
+
+int os_get_program_data_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, NSLocalDomainMask);
+}
+
+char *os_get_program_data_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, NSLocalDomainMask);
 }
 
 struct os_cpu_usage_info {

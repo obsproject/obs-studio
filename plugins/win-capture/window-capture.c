@@ -150,8 +150,11 @@ static void wc_tick(void *data, float seconds)
 
 		wc->window = find_window(EXCLUDE_MINIMIZED, wc->priority,
 				wc->class, wc->title, wc->executable);
-		if (!wc->window)
+		if (!wc->window) {
+			if (wc->capture.valid)
+				dc_capture_free(&wc->capture);
 			return;
+		}
 
 		reset_capture = true;
 

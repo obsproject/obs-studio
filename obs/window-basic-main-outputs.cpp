@@ -1,4 +1,5 @@
 #include <string>
+#include <algorithm>
 #include <QMessageBox>
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
@@ -27,10 +28,10 @@ static void OBSStreamStopping(void *data, calldata_t *params)
 
 	int sec = (int)obs_output_get_active_delay(obj);
 	if (sec == 0)
-		return;
-
-	QMetaObject::invokeMethod(output->main,
-			"StreamDelayStopping", Q_ARG(int, sec));
+		QMetaObject::invokeMethod(output->main, "StreamStopping");
+	else
+		QMetaObject::invokeMethod(output->main,
+				"StreamDelayStopping", Q_ARG(int, sec));
 }
 
 static void OBSStartStreaming(void *data, calldata_t *params)
@@ -71,6 +72,14 @@ static void OBSStopRecording(void *data, calldata_t *params)
 	output->recordingActive = false;
 	QMetaObject::invokeMethod(output->main,
 			"RecordingStop", Q_ARG(int, code));
+
+	UNUSED_PARAMETER(params);
+}
+
+static void OBSRecordStopping(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	QMetaObject::invokeMethod(output->main, "RecordStopping");
 
 	UNUSED_PARAMETER(params);
 }
@@ -154,7 +163,7 @@ struct SimpleOutput : BasicOutputHandler {
 
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
-	void UpdateRecordingSettings_nvenc(int bitrate);
+	void UpdateRecordingSettings_nvenc(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -281,7 +290,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
 			"starting", OBSStreamStarting, this);
-	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
 			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
@@ -304,6 +313,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
+	recordStopping.Connect(obs_output_get_signal_handler(fileOutput),
+			"stopping", OBSRecordStopping, this);
 }
 
 int SimpleOutput::GetAudioBitrate() const
@@ -342,6 +353,7 @@ void SimpleOutput::Update()
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
 
+	obs_data_set_string(h264Settings, "rate_control", "CBR");
 	obs_data_set_int(h264Settings, "bitrate", videoBitrate);
 
 	if (advanced) {
@@ -349,7 +361,7 @@ void SimpleOutput::Update()
 		obs_data_set_string(h264Settings, "x264opts", custom);
 	}
 
-	obs_data_set_bool(aacSettings, "cbr", true);
+	obs_data_set_string(aacSettings, "rate_control", "CBR");
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 
 	obs_service_apply_encoder_settings(main->GetService(),
@@ -378,7 +390,7 @@ void SimpleOutput::UpdateRecordingAudioSettings()
 {
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", 192);
-	obs_data_set_bool(settings, "cbr", true);
+	obs_data_set_string(settings, "rate_control", "CBR");
 
 	obs_encoder_update(aacRecording, settings);
 
@@ -408,11 +420,9 @@ int SimpleOutput::CalcCRF(int crf)
 void SimpleOutput::UpdateRecordingSettings_x264_crf(int crf)
 {
 	obs_data_t *settings = obs_data_create();
-	obs_data_set_int(settings, "bitrate", 1000);
-	obs_data_set_int(settings, "buffer_size", 0);
 	obs_data_set_int(settings, "crf", crf);
 	obs_data_set_bool(settings, "use_bufsize", true);
-	obs_data_set_bool(settings, "cbr", false);
+	obs_data_set_string(settings, "rate_control", "CRF");
 	obs_data_set_string(settings, "profile", "high");
 	obs_data_set_string(settings, "preset",
 			lowCPUx264 ? "ultrafast" : "veryfast");
@@ -431,7 +441,7 @@ static bool icq_available(obs_encoder_t *encoder)
 	size_t num = obs_property_list_item_count(p);
 	for (size_t i = 0; i < num; i++) {
 		const char *val = obs_property_list_item_string(p, i);
-		if (strcmp(val, "ICQ_LA") == 0) {
+		if (strcmp(val, "ICQ") == 0) {
 			icq_found = true;
 			break;
 		}
@@ -449,7 +459,7 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 	obs_data_set_string(settings, "profile", "high");
 
 	if (icq) {
-		obs_data_set_string(settings, "rate_control", "LA_ICQ");
+		obs_data_set_string(settings, "rate_control", "ICQ");
 		obs_data_set_int(settings, "icq_quality", crf);
 	} else {
 		obs_data_set_string(settings, "rate_control", "CQP");
@@ -463,12 +473,13 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 	obs_data_release(settings);
 }
 
-void SimpleOutput::UpdateRecordingSettings_nvenc(int bitrate)
+void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 {
 	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_string(settings, "profile", "high");
 	obs_data_set_string(settings, "preset", "hq");
-	obs_data_set_int(settings, "bitrate", bitrate);
+	obs_data_set_int(settings, "cqp", cqp);
 
 	obs_encoder_update(h264Recording, settings);
 
@@ -487,7 +498,7 @@ void SimpleOutput::UpdateRecordingSettings()
 		UpdateRecordingSettings_qsv11(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
-		UpdateRecordingSettings_nvenc(ultra_hq ? 90000 : 22000);
+		UpdateRecordingSettings_nvenc(crf);
 	}
 }
 
@@ -545,6 +556,18 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
+static void ensure_directory_exists(string &path)
+{
+	replace(path.begin(), path.end(), '\\', '/');
+
+	size_t last = path.rfind('/');
+	if (last == string::npos)
+		return;
+
+	string directory = path.substr(0, last);
+	os_mkdirs(directory.c_str());
+}
+
 bool SimpleOutput::StartRecording()
 {
 	if (usingRecordingPreset) {
@@ -590,6 +613,7 @@ bool SimpleOutput::StartRecording()
 
 	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
 			noSpace, filenameFormat);
+	ensure_directory_exists(strPath);
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
 
@@ -762,7 +786,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
 			"starting", OBSStreamStarting, this);
-	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
 			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
@@ -774,6 +798,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
+	recordStopping.Connect(obs_output_get_signal_handler(fileOutput),
+			"stopping", OBSRecordStopping, this);
 }
 
 void AdvancedOutput::UpdateStreamSettings()
@@ -1124,6 +1150,7 @@ bool AdvancedOutput::StartRecording()
 
 		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
 							filenameFormat);
+		ensure_directory_exists(strPath);
 		if (!overwriteIfExists)
 			FindBestFilename(strPath, noSpace);
 

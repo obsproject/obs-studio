@@ -57,11 +57,11 @@ obs_properties_t *XCompcapMain::properties()
 
 	for (Window win: XCompcap::getTopLevelWindows()) {
 		std::string wname = XCompcap::getWindowName(win);
-		std::string progpath = XCompcap::getWindowCommand(win);
+		std::string cls = XCompcap::getWindowClass(win);
 		std::string winid = std::to_string((long long)win);
 		std::string desc =
 			(winid + WIN_STRING_DIV + wname +
-			 WIN_STRING_DIV + progpath);
+			 WIN_STRING_DIV + cls);
 
 		obs_property_list_add_string(wins, wname.c_str(),
 				desc.c_str());
@@ -106,6 +106,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
 }
 
+#define FIND_WINDOW_INTERVAL 2.0
 
 struct XCompcapMain_private
 {
@@ -137,7 +138,7 @@ struct XCompcapMain_private
 	obs_source_t *source;
 
 	std::string windowName;
-	Window win;
+	Window win = 0;
 	int cut_top, cur_cut_top;
 	int cut_left, cur_cut_left;
 	int cut_right, cur_cut_right;
@@ -147,6 +148,8 @@ struct XCompcapMain_private
 	bool lockX;
 	bool include_border;
 	bool exclude_alpha;
+
+	double window_check_time = 0.0;
 
 	uint32_t width;
 	uint32_t height;
@@ -201,6 +204,8 @@ XCompcapMain::~XCompcapMain()
 
 static Window getWindowFromString(std::string wstr)
 {
+	XErrorLock xlock;
+
 	if (wstr == "") {
 		return XCompcap::getTopLevelWindows().front();
 	}
@@ -211,26 +216,29 @@ static Window getWindowFromString(std::string wstr)
 	}
 
 	size_t firstMark = wstr.find(WIN_STRING_DIV);
+	size_t markSize = strlen(WIN_STRING_DIV);
 
 	if (firstMark == std::string::npos)
 		return (Window)std::stol(wstr);
 
-	std::string widstr = wstr.substr(0, firstMark);
-	Window wid = (Window)std::stol(widstr);
+	Window wid = 0;
 
-	wstr = wstr.substr(firstMark + strlen(WIN_STRING_DIV));
+	wstr = wstr.substr(firstMark + markSize);
 
 	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
 	std::string wname = wstr.substr(0, lastMark);
+	std::string wcls = wstr.substr(lastMark + markSize);
 
 	Window matchedNameWin = wid;
 	for (Window cwin: XCompcap::getTopLevelWindows()) {
 		std::string cwinname = XCompcap::getWindowName(cwin);
+		std::string ccls = XCompcap::getWindowClass(cwin);
 
-		if (cwin == wid && wname == cwinname)
+		if (cwin == wid && wname == cwinname && wcls == ccls)
 			return wid;
 
-		if (wname == cwinname)
+		if (wname == cwinname ||
+		    (!matchedNameWin && !wcls.empty() && wcls == ccls))
 			matchedNameWin = cwin;
 	}
 
@@ -240,7 +248,7 @@ static Window getWindowFromString(std::string wstr)
 static void xcc_cleanup(XCompcapMain_private *p)
 {
 	PLock lock(&p->lock);
-	XErrorLock xlock;
+	XDisplayLock xlock;
 
 	if (p->gltex) {
 		gs_texture_destroy(p->gltex);
@@ -299,7 +307,9 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 	xlock.resetError();
 
-	XCompositeRedirectWindow(xdisp, p->win, CompositeRedirectAutomatic);
+	if (p->win)
+		XCompositeRedirectWindow(xdisp, p->win,
+				CompositeRedirectAutomatic);
 
 	if (xlock.gotError()) {
 		blog(LOG_ERROR, "XCompositeRedirectWindow failed: %s",
@@ -307,18 +317,19 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		return;
 	}
 
-	XSelectInput(xdisp, p->win, StructureNotifyMask | ExposureMask);
+	if (p->win)
+		XSelectInput(xdisp, p->win, StructureNotifyMask | ExposureMask);
 	XSync(xdisp, 0);
 
 	XWindowAttributes attr;
-	if (!XGetWindowAttributes(xdisp, p->win, &attr)) {
+	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
 		p->win = 0;
 		p->width = 0;
 		p->height = 0;
 		return;
 	}
 
-	if (p->cursor && p->show_cursor) {
+	if (p->win && p->cursor && p->show_cursor) {
 		Window child;
 		int x, y;
 
@@ -451,8 +462,6 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 void XCompcapMain::tick(float seconds)
 {
-	UNUSED_PARAMETER(seconds);
-
 	if (!obs_source_showing(p->source))
 		return;
 
@@ -463,21 +472,30 @@ void XCompcapMain::tick(float seconds)
 
 	XCompcap::processEvents();
 
-	if (XCompcap::windowWasReconfigured(p->win))
-		updateSettings(0);
+	if (p->win && XCompcap::windowWasReconfigured(p->win)) {
+		p->window_check_time = FIND_WINDOW_INTERVAL;
+		p->win = 0;
+	}
 
-	XErrorLock xlock;
-	xlock.resetError();
+	XDisplayLock xlock;
 	XWindowAttributes attr;
 
-	if (!XGetWindowAttributes(xdisp, p->win, &attr)) {
+	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
+		p->window_check_time += (double)seconds;
+
+		if (p->window_check_time < FIND_WINDOW_INTERVAL)
+			return;
+
 		Window newWin = getWindowFromString(p->windowName);
 
-		if (XGetWindowAttributes(xdisp, newWin, &attr)) {
+		p->window_check_time = 0.0;
+
+		if (newWin && XGetWindowAttributes(xdisp, newWin, &attr)) {
 			p->win = newWin;
 			updateSettings(0);
+		} else {
+			return;
 		}
-		return;
 	}
 
 	if (!p->tex || !p->gltex)
@@ -524,10 +542,10 @@ void XCompcapMain::tick(float seconds)
 
 void XCompcapMain::render(gs_effect_t *effect)
 {
-	PLock lock(&p->lock, true);
-
 	if (!p->win)
 		return;
+
+	PLock lock(&p->lock, true);
 
 	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 
@@ -552,10 +570,16 @@ void XCompcapMain::render(gs_effect_t *effect)
 
 uint32_t XCompcapMain::width()
 {
+	if (!p->win)
+		return 0;
+
 	return p->width - p->cur_cut_left - p->cur_cut_right;
 }
 
 uint32_t XCompcapMain::height()
 {
+	if (!p->win)
+		return 0;
+
 	return p->height - p->cur_cut_bot - p->cur_cut_top;
 }

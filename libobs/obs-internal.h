@@ -238,6 +238,7 @@ struct obs_core_video {
 	gs_effect_t                     *lanczos_effect;
 	gs_effect_t                     *bilinear_lowres_effect;
 	gs_effect_t                     *premultiplied_alpha_effect;
+	gs_samplerstate_t               *point_sampler;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 
@@ -781,20 +782,25 @@ struct obs_output {
 
 	bool                            received_video;
 	bool                            received_audio;
+	volatile bool                   data_active;
+	volatile bool                   end_data_capture_thread_active;
 	int64_t                         video_offset;
 	int64_t                         audio_offsets[MAX_AUDIO_MIXES];
 	int64_t                         highest_audio_ts;
 	int64_t                         highest_video_ts;
+	pthread_t                       end_data_capture_thread;
+	os_event_t                      *stopping_event;
 	pthread_mutex_t                 interleaved_mutex;
 	DARRAY(struct encoder_packet)   interleaved_packets;
+	int                             stop_code;
 
 	int                             reconnect_retry_sec;
 	int                             reconnect_retry_max;
 	int                             reconnect_retries;
 	int                             reconnect_retry_cur_sec;
-	bool                            reconnecting;
 	pthread_t                       reconnect_thread;
 	os_event_t                      *reconnect_stop_event;
+	volatile bool                   reconnecting;
 	volatile bool                   reconnect_thread_active;
 
 	uint32_t                        starting_drawn_count;
@@ -804,8 +810,7 @@ struct obs_output {
 
 	int                             total_frames;
 
-	bool                            active;
-	volatile bool                   stopped;
+	volatile bool                   active;
 	video_t                         *video;
 	audio_t                         *audio;
 	obs_encoder_t                   *video_encoder;
@@ -831,8 +836,8 @@ struct obs_output {
 	uint32_t                        delay_flags;
 	uint32_t                        delay_cur_flags;
 	volatile long                   delay_restart_refs;
-	bool                            delay_active;
-	bool                            delay_capturing;
+	volatile bool                   delay_active;
+	volatile bool                   delay_capturing;
 };
 
 static inline void do_output_signal(struct obs_output *output,
@@ -849,7 +854,8 @@ extern void obs_output_cleanup_delay(obs_output_t *output);
 extern bool obs_output_delay_start(obs_output_t *output);
 extern void obs_output_delay_stop(obs_output_t *output);
 extern bool obs_output_actual_start(obs_output_t *output);
-extern void obs_output_actual_stop(obs_output_t *output, bool force);
+extern void obs_output_actual_stop(obs_output_t *output, bool force,
+		uint64_t ts);
 
 extern const struct obs_output_info *find_output(const char *id);
 

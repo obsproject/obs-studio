@@ -48,6 +48,23 @@ class XErrorLock
 	void resetError();
 };
 
+class XDisplayLock
+{
+	bool islock;
+
+	public:
+	XDisplayLock(const XDisplayLock&) = delete;
+	XDisplayLock& operator=(const XDisplayLock&) = delete;
+
+	XDisplayLock();
+	~XDisplayLock();
+
+	bool isLocked();
+
+	void unlock();
+	void lock();
+};
+
 class ObsGsContextHolder
 {
 	public:
@@ -65,11 +82,21 @@ namespace XCompcap
 
 	std::string getWindowCommand(Window win);
 	int getRootWindowScreen(Window root);
-	std::string getWindowName(Window win);
+	std::string getWindowAtom(Window win, const char *atom);
 	int getWindowPid(Window win);
 	bool ewmhIsSupported();
 	std::list<Window> getTopLevelWindows();
 	std::list<Window> getAllWindows();
+
+	inline std::string getWindowName(Window win)
+	{
+		return getWindowAtom(win, "_NET_WM_NAME");
+	}
+
+	inline std::string getWindowClass(Window win)
+	{
+		return getWindowAtom(win, "WM_CLASS");
+	}
 
 	void processEvents();
 	bool windowWasReconfigured(Window win);

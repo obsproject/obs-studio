@@ -134,7 +134,7 @@
             "recommended": {
                 "keyint": 4,
                 "profile": "main",
-                "max video bitrate": 9000,
+                "max video bitrate": 18000,
                 "max audio bitrate": 160
             }
         },
@@ -315,43 +315,6 @@
             ]
         },
         {
-            "name": "Restream.io",
-            "servers": [
-                {
-                    "name": "EU-West (Amsterdam, NL)",
-                    "url": "rtmp://eu-ams.restream.io/live"
-                },
-                {
-                    "name": "EU-Central (Frankfurt, DE)",
-                    "url": "rtmp://eu.restream.io/live"
-                },
-                {
-                    "name": "US-West (San Jose, CA)",
-                    "url": "rtmp://us-west.restream.io/live"
-                },
-                {
-                    "name": "US-West (Los Angeles, CA)",
-                    "url": "rtmp://us-la.restream.io/live"
-                },
-                {
-                    "name": "US-East (Washington, DC)",
-                    "url": "rtmp://us-east.restream.io/live"
-                },
-                {
-                    "name": "AU (Sydney)",
-                    "url": "rtmp://au.restream.io/live"
-                },
-                {
-                    "name": "AU-Secondary (Sydney)",
-                    "url": "rtmp://au-secondary.restream.io/live"
-                },
-                {
-                    "name": "SA (Saint Paul, Brazil)",
-                    "url": "rtmp://sa.restream.io/live"
-                }
-            ]
-        },
-        {
             "name": "mSportz",
             "servers": [
                 {
@@ -459,6 +422,45 @@
             ]
         },
         {
+            "name": "Kamcord",
+            "servers": [
+                {
+                    "name": "US East (N. Virginia)",
+                    "url": "rtmp://us-east-1.stream.kamcord.com/live"
+                },
+                {
+                    "name": "Asia Pacific (Seoul)",
+                    "url": "rtmp://ap-northeast-2.stream.kamcord.com/live"
+                },
+                {
+                    "name": "Asia Pacific (Sydney)",
+                    "url": "rtmp://ap-southeast-2.stream.kamcord.com/live"
+                },
+                {
+                    "name": "Asia Pacific (Tokyo)",
+                    "url": "rtmp://ap-northeast-1.stream.kamcord.com/live"
+                },
+                {
+                    "name": "EU (Frankfurt)",
+                    "url": "rtmp://eu-central-1.stream.kamcord.com/live"
+                },
+                {
+                    "name": "South America (Sao Paulo)",
+                    "url": "rtmp://sa-east-1.stream.kamcord.com/live"
+                },
+                {
+                    "name": "US West (N. California)",
+                    "url": "rtmp://us-west-1.stream.kamcord.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 4000,
+                "max audio bitrate": 192
+            }
+        },
+        {
             "name": "CyberGame.TV",
             "servers": [
                 {
@@ -509,10 +511,87 @@
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 2000,
+                "max video bitrate": 2500,
                 "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "Restream.io",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US-West (San Jose, California)",
+                    "url": "rtmp://us-west.restream.io/live"
+                },
+                {
+                    "name": "US-West (Los Angeles, California)",
+                    "url": "rtmp://us-la.restream.io/live"
+                },
+                {
+                    "name": "US-East (Washington, D.C.)",
+                    "url": "rtmp://us-east.restream.io/live"
+                },
+                {
+                    "name": "US-Central (Dallas, TX)",
+                    "url": "rtmp://us-central.restream.io/live"
+                },
+                {
+                    "name": "EU-Central (Frankfurt, Germany)",
+                    "url": "rtmp://eu.restream.io/live"
+                },
+                {
+                    "name": "EU-West (London, GB)",
+                    "url": "rtmp://eu-london.restream.io/live"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "url": "rtmp://au-secondary.restream.io/live"
+                },
+                {
+                    "name": "South America (Sao Paulo, Brazil)",
+                    "url": "rtmp://sa.restream.io/live"
+                }
+            ]
+        },
+        {
+            "name": "Nood",
+            "servers": [
+              {
+                  "name": "EU Central: Frankfurt, Germany",
+                  "url": "rtmp://broadcast-frf.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "EU North: Amsterdam, Netherlands",
+                  "url": "rtmp://broadcast-ams.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "EU West: Stockholm, Sweden",
+                  "url": "rtmp://broadcast-arn.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "US East: Washington, DC",
+                  "url": "rtmp://broadcast-dca.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "US West: Los Angeles, CA",
+                  "url": "rtmp://broadcast-oxr.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "Australia: Sydney",
+                  "url": "rtmp://broadcast-syd.nood.tv/20D2AB/live"
+              },
+              {
+                  "name": "Asia: Hong Kong, China",
+                  "url": "rtmp://broadcast-hhp.nood.tv/20D2AB/live"
+              }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 3500,
+                "max audio bitrate": 192
             }
         }
     ]
