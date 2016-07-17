@@ -158,7 +158,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, !rc_crf);
 	p = obs_properties_get(ppts, "use_bufsize");
 	obs_property_set_visible(p, !rc_crf);
-	p = obs_properties_get(ppts, "buffse_size");
+	p = obs_properties_get(ppts, "buffer_size");
 	// && never show "buffer_size" UI if "use_bufsize" disabled
 	obs_property_set_visible(p, !rc_crf && use_bufsize);
 	return true;
