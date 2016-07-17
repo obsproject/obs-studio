@@ -133,27 +133,34 @@ static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool rc_crf = astrcmpi(rc, "CRF") == 0;
 
+	//set "buffer_size" UI to visible if "use_bufsize" is enabled
+	//When building UI at obs_properties_t, rate_control_modified called first,
+	//then called use_bufsize_modified, thus hidden element may apppear again
 	p = obs_properties_get(ppts, "buffer_size");
-	obs_property_set_visible(p, use_bufsize && !rc_crf);
+	obs_property_set_visible(p, !rc_crf && use_bufsize);
 	return true;
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 		obs_data_t *settings)
 {
+	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool abr = astrcmpi(rc, "CBR") == 0 || astrcmpi(rc, "ABR") == 0;
 	bool rc_crf = astrcmpi(rc, "CRF") == 0;
-
+	
+	//hide CRF-input-value UI if CBR or ABR mode selected
 	p = obs_properties_get(ppts, "crf");
 	obs_property_set_visible(p, !abr);
 
+	//hide UI elements if "rate_control" is CRF and unhide otherwise
 	p = obs_properties_get(ppts, "bitrate");
 	obs_property_set_visible(p, !rc_crf);
 	p = obs_properties_get(ppts, "use_bufsize");
 	obs_property_set_visible(p, !rc_crf);
-	p = obs_properties_get(ppts, "buffse_size");
-	obs_property_set_visible(p, !rc_crf);
+	p = obs_properties_get(ppts, "buffer_size");
+	// && never show "buffer_size" UI if "use_bufsize" disabled
+	obs_property_set_visible(p, !rc_crf && use_bufsize);
 	return true;
 }
 
