@@ -10,8 +10,9 @@ struct random_tex {
 	bool         initialized;
 };
 
-static const char *random_getname(void)
+static const char *random_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return "20x20 Random Pixel Texture Source (Test)";
 }
 
