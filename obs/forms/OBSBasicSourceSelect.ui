@@ -20,7 +20,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
-      <widget class="QRadioButton" name="radioButton">
+      <widget class="QRadioButton" name="createNew">
        <property name="text">
         <string>Basic.SourceSelect.CreateNew</string>
        </property>
@@ -73,7 +73,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>radioButton</sender>
+   <sender>createNew</sender>
    <signal>toggled(bool)</signal>
    <receiver>sourceName</receiver>
    <slot>setEnabled(bool)</slot>

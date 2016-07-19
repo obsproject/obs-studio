@@ -133,7 +133,7 @@ MODULE_EXTERN obs_module_t *obs_current_module(void);
 /**
  * Returns the location to a module data file associated with the current
  * module.  Free with bfree when complete.  Equivalent to:
- *    obs_find_module_file(obs_current_modile(), file);
+ *    obs_find_module_file(obs_current_module(), file);
  */
 #define obs_module_file(file) obs_find_module_file(obs_current_module(), file)
 
@@ -141,7 +141,7 @@ MODULE_EXTERN obs_module_t *obs_current_module(void);
  * Returns the location to a module config file associated with the current
  * module.  Free with bfree when complete.  Will return NULL if configuration
  * directory is not set.  Equivalent to:
- *    obs_module_get_config_path(obs_current_modile(), file);
+ *    obs_module_get_config_path(obs_current_module(), file);
  */
 #define obs_module_config_path(file) \
 	obs_module_get_config_path(obs_current_module(), file)

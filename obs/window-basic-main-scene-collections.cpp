@@ -255,6 +255,8 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	oldFile.insert(0, path);
 	oldFile += ".json";
 	os_unlink(oldFile.c_str());
+	oldFile += ".bak";
+	os_unlink(oldFile.c_str());
 
 	blog(LOG_INFO, "------------------------------------------------");
 	blog(LOG_INFO, "Renamed scene collection to '%s' (%s.json)",

@@ -145,12 +145,13 @@ float4 texel_at_yadif_2x(int2 texel, int field, bool mode0)
 
 float4 texel_at_discard(int2 texel, int field)
 {
-	return load_at_image(texel, 0, (texel.y + field) % 2);
+	texel.y = texel.y / 2 * 2;
+	return load_at_image(texel, 0, field);
 }
 
 float4 texel_at_discard_2x(int2 texel, int field)
 {
-	field = frame2 ? (1 - field) : field;
+	field = frame2 ? field : (1 - field);
 	return texel_at_discard(texel, field);
 }
 
@@ -178,7 +179,7 @@ float4 texel_at_linear(int2 texel, int field)
 
 float4 texel_at_linear_2x(int2 texel, int field)
 {
-	field = frame2 ? (1 - field) : field;
+	field = frame2 ? field : (1 - field);
 	return texel_at_linear(texel, field);
 }
 

@@ -201,6 +201,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata == NULL) return;
 
 	if (srcdata->tex == NULL || srcdata->vbuf == NULL) return;
+	if (srcdata->text == NULL || *srcdata->text == 0) return;
 
 	gs_reset_blend_state();
 	if (srcdata->outline_text) draw_outlines(srcdata);
@@ -446,8 +447,6 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
-	obs_data_set_default_string(settings, "text",
-		"The lazy snake jumps over the happy MASKEN.");
 
 	ft2_source_update(srcdata, settings);
 

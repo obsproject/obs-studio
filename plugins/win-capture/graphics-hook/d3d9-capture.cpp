@@ -36,30 +36,25 @@ struct d3d9_data {
 	bool                   using_shtex : 1;
 	bool                   using_scale : 1;
 
-	union {
-		/* shared texture */
-		struct {
-			IDirect3DSurface9      *d3d9_copytex;
-			ID3D11Device           *d3d11_device;
-			ID3D11DeviceContext    *d3d11_context;
-			ID3D11Resource         *d3d11_tex;
-			struct shtex_data      *shtex_info;
-			HANDLE                 handle;
-			int                    patch;
-		};
-		/* shared memory */
-		struct {
-			IDirect3DSurface9      *copy_surfaces[NUM_BUFFERS];
-			IDirect3DSurface9      *render_targets[NUM_BUFFERS];
-			IDirect3DQuery9        *queries[NUM_BUFFERS];
-			struct shmem_data      *shmem_info;
-			volatile bool          issued_queries[NUM_BUFFERS];
-			bool                   texture_mapped[NUM_BUFFERS];
-			uint32_t               pitch;
-			int                    cur_tex;
-			int                    copy_wait;
-		};
-	};
+	/* shared texture */
+	IDirect3DSurface9      *d3d9_copytex;
+	ID3D11Device           *d3d11_device;
+	ID3D11DeviceContext    *d3d11_context;
+	ID3D11Resource         *d3d11_tex;
+	struct shtex_data      *shtex_info;
+	HANDLE                 handle;
+	int                    patch;
+
+	/* shared memory */
+	IDirect3DSurface9      *copy_surfaces[NUM_BUFFERS];
+	IDirect3DSurface9      *render_targets[NUM_BUFFERS];
+	IDirect3DQuery9        *queries[NUM_BUFFERS];
+	struct shmem_data      *shmem_info;
+	bool                   texture_mapped[NUM_BUFFERS];
+	volatile bool          issued_queries[NUM_BUFFERS];
+	uint32_t               pitch;
+	int                    cur_tex;
+	int                    copy_wait;
 };
 
 static struct d3d9_data data = {};
@@ -602,6 +597,11 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 		d3d9_init(device);
 	}
 	if (capture_ready()) {
+		if (data.device != device) {
+			d3d9_free();
+			return;
+		}
+
 		if (data.using_shtex)
 			d3d9_shtex_capture(backbuffer);
 		else

@@ -90,7 +90,7 @@ int os_stat(const char *file, struct stat *st)
 {
 	if (file) {
 		wchar_t w_file[512];
-		int size = os_utf8_to_wcs(file, 0, w_file, sizeof(w_file));
+		size_t size = os_utf8_to_wcs(file, 0, w_file, sizeof(w_file));
 		if (size > 0) {
 			struct _stat st_w32;
 			int ret = _wstat(w_file, &st_w32);
@@ -632,4 +632,27 @@ int os_mkdirs(const char *dir)
 	ret = recursive_mkdir(dir_str.array);
 	dstr_free(&dir_str);
 	return ret;
+}
+
+const char *os_get_path_extension(const char *path)
+{
+	struct dstr temp;
+	size_t pos = 0;
+	char *period;
+	char *slash;
+
+	dstr_init_copy(&temp, path);
+	dstr_replace(&temp, "\\", "/");
+
+	slash = strrchr(temp.array, '/');
+	period = strrchr(temp.array, '.');
+	if (period)
+		pos = (size_t)(period - temp.array);
+
+	dstr_free(&temp);
+
+	if (!period || slash > period)
+		return NULL;
+
+	return path + pos;
 }

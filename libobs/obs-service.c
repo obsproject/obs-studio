@@ -33,8 +33,9 @@ const char *obs_service_get_display_name(const char *id)
 	return (info != NULL) ? info->get_name(info->type_data) : NULL;
 }
 
-obs_service_t *obs_service_create(const char *id, const char *name,
-		obs_data_t *settings, obs_data_t *hotkey_data)
+static obs_service_t *obs_service_create_internal(const char *id,
+		const char *name, obs_data_t *settings, obs_data_t *hotkey_data,
+		bool private)
 {
 	const struct obs_service_info *info = find_service(id);
 	struct obs_service *service;
@@ -47,22 +48,13 @@ obs_service_t *obs_service_create(const char *id, const char *name,
 	service = bzalloc(sizeof(struct obs_service));
 
 	if (!obs_context_data_init(&service->context, OBS_OBJ_TYPE_SERVICE,
-				settings, name, hotkey_data, false)) {
+				settings, name, hotkey_data, private)) {
 		bfree(service);
 		return NULL;
 	}
 
-	if (!info) {
-		blog(LOG_ERROR, "Service ID '%s' not found", id);
-
-		service->info.id      = bstrdup(id);
-		service->owns_info_id = true;
-	} else {
-		service->info = *info;
-	}
-
-	if (info)
-		service->context.data = service->info.create(
+	service->info = *info;
+	service->context.data = service->info.create(
 				service->context.settings, service);
 	if (!service->context.data)
 		blog(LOG_ERROR, "Failed to create service '%s'!", name);
@@ -74,8 +66,22 @@ obs_service_t *obs_service_create(const char *id, const char *name,
 			&obs->data.services_mutex,
 			&obs->data.first_service);
 
-	blog(LOG_INFO, "service '%s' (%s) created", name, id);
+	blog(private ? LOG_DEBUG : LOG_INFO, "service '%s' (%s) created",
+			name, id);
 	return service;
+}
+
+obs_service_t *obs_service_create(const char *id,
+		const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
+{
+	return obs_service_create_internal(id, name, settings, hotkey_data,
+			false);
+}
+
+obs_service_t *obs_service_create_private(const char *id,
+		const char *name, obs_data_t *settings)
+{
+	return obs_service_create_internal(id, name, settings, NULL, true);
 }
 
 static void actually_destroy_service(struct obs_service *service)
@@ -86,7 +92,8 @@ static void actually_destroy_service(struct obs_service *service)
 	if (service->output)
 		service->output->service = NULL;
 
-	blog(LOG_INFO, "service '%s' destroyed", service->context.name);
+	blog(service->context.private ? LOG_DEBUG : LOG_INFO,
+			"service '%s' destroyed", service->context.name);
 
 	obs_context_data_free(&service->context);
 	if (service->owns_info_id)

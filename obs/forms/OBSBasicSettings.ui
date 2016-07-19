@@ -185,6 +185,130 @@
            </property>
           </widget>
          </item>
+         <item row="6" column="1">
+          <widget class="QCheckBox" name="recordWhenStreaming">
+           <property name="text">
+            <string>Basic.Settings.General.RecordWhenStreaming</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0" colspan="2">
+          <widget class="Line" name="line_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0" colspan="2">
+          <widget class="QGroupBox" name="groupBox_10">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Basic.Settings.General.Snapping</string>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+           <layout class="QFormLayout" name="formLayout_21">
+            <property name="labelAlignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="snappingEnabled">
+              <property name="text">
+               <string>Enable</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QCheckBox" name="screenSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.ScreenSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QCheckBox" name="centerSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.CenterSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sourceSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.SourceSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="snapDistance">
+              <property name="decimals">
+               <number>1</number>
+              </property>
+              <property name="singleStep">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="minimumSize">
+               <size>
+                <width>170</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Basic.Settings.General.SnapDistance</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QCheckBox" name="hideProjectorCursor">
+           <property name="text">
+            <string>Basic.Settings.General.HideProjectorCursor</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QCheckBox" name="keepRecordStreamStops">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Basic.Settings.General.KeepRecordingWhenStreamStops</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="streamPage">
@@ -439,7 +563,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_20">
                   <property name="text">
                    <string>Basic.Settings.Output.AudioBitrate</string>
@@ -449,7 +573,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QComboBox" name="simpleOutputABitrate">
                   <property name="currentIndex">
                    <number>8</number>
@@ -511,7 +635,7 @@
                   </item>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QCheckBox" name="simpleOutAdvanced">
                   <property name="text">
                    <string>Basic.Settings.Output.Advanced</string>
@@ -521,51 +645,10 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QComboBox" name="simpleOutPreset">
-                  <item>
-                   <property name="text">
-                    <string notr="true">ultrafast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">superfast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">veryfast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">faster</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">fast</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">medium</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">slow</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string notr="true">slower</string>
-                   </property>
-                  </item>
-                 </widget>
+                <item row="5" column="1">
+                 <widget class="QComboBox" name="simpleOutPreset"/>
                 </item>
-                <item row="3" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_24">
                   <property name="enabled">
                    <bool>true</bool>
@@ -578,7 +661,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_23">
                   <property name="text">
                    <string>Basic.Settings.Output.CustomEncoderSettings</string>
@@ -588,8 +671,28 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="6" column="1">
                  <widget class="QLineEdit" name="simpleOutCustom"/>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QCheckBox" name="simpleOutEnforce">
+                  <property name="text">
+                   <string>Basic.Settings.Output.EnforceBitrate</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="simpleOutStrEncoder"/>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="simpleOutRecEncoderLabel_2">
+                  <property name="text">
+                   <string>Basic.Settings.Output.Encoder</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecEncoder</cstring>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -2784,8 +2887,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>525</width>
-              <height>383</height>
+              <width>718</width>
+              <height>622</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -2804,6 +2907,28 @@
              <item alignment="Qt::AlignTop">
               <widget class="QWidget" name="widget_11" native="true">
                <layout class="QVBoxLayout" name="verticalLayout_17">
+                <item>
+                 <widget class="QGroupBox" name="advancedGeneralGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.General</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_22">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="processPriorityLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.General.ProcessPriority</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>processPriority</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="processPriority"/>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                 <item>
                  <widget class="QGroupBox" name="advancedVideoContainer">
                   <property name="title">
@@ -3213,8 +3338,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>159</x>
-     <y>34</y>
+     <x>310</x>
+     <y>29</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
@@ -3229,8 +3354,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>38</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
@@ -3245,12 +3370,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>875</x>
-     <y>427</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3261,12 +3386,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>427</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3277,12 +3402,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>875</x>
-     <y>503</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3293,12 +3418,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>360</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>503</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3309,12 +3434,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>144</y>
+     <x>259</x>
+     <y>48</y>
     </hint>
     <hint type="destinationlabel">
-     <x>396</x>
-     <y>245</y>
+     <x>241</x>
+     <y>30</y>
     </hint>
    </hints>
   </connection>
@@ -3325,12 +3450,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>514</x>
-     <y>344</y>
+     <x>259</x>
+     <y>60</y>
     </hint>
     <hint type="destinationlabel">
-     <x>748</x>
-     <y>344</y>
+     <x>228</x>
+     <y>50</y>
     </hint>
    </hints>
   </connection>
@@ -3341,12 +3466,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>259</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>427</x>
-     <y>178</y>
+     <x>228</x>
+     <y>29</y>
     </hint>
    </hints>
   </connection>
@@ -3357,12 +3482,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>259</x>
+     <y>60</y>
     </hint>
     <hint type="destinationlabel">
-     <x>864</x>
-     <y>178</y>
+     <x>228</x>
+     <y>50</y>
     </hint>
    </hints>
   </connection>
@@ -3373,12 +3498,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>259</x>
+     <y>60</y>
     </hint>
     <hint type="destinationlabel">
-     <x>427</x>
-     <y>215</y>
+     <x>259</x>
+     <y>60</y>
     </hint>
    </hints>
   </connection>
@@ -3389,12 +3514,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>864</x>
-     <y>141</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>864</x>
-     <y>215</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3405,12 +3530,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>427</x>
-     <y>355</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>862</x>
-     <y>355</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3421,12 +3546,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>424</x>
-     <y>331</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>658</x>
-     <y>331</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3437,12 +3562,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>875</x>
-     <y>254</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>466</x>
-     <y>291</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3453,12 +3578,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>516</x>
-     <y>411</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
-     <y>92</y>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3469,12 +3594,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>533</x>
-     <y>273</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>449</x>
-     <y>301</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -3485,12 +3610,124 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>517</x>
-     <y>267</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>777</x>
-     <y>206</y>
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_9</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>720</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>346</x>
+     <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>snapDistance</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>761</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>778</x>
+     <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>screenSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>820</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>810</x>
+     <y>329</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>862</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>859</x>
+     <y>352</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>866</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>866</x>
+     <y>375</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutEnforce</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>recordWhenStreaming</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>keepRecordStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>404</x>
+     <y>193</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>404</x>
+     <y>219</y>
     </hint>
    </hints>
   </connection>

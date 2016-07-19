@@ -27,6 +27,8 @@
 
 #include <assert.h>
 
+#include "ff-compat.h"
+
 static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 		double best_effort_pts)
 {
@@ -49,8 +51,11 @@ static bool queue_frame(struct ff_decoder *decoder, AVFrame *frame,
 			|| queue_frame->frame->height != codec->height
 			|| queue_frame->frame->format != codec->pix_fmt);
 
-	if (queue_frame->frame != NULL)
+	if (queue_frame->frame != NULL) {
+		// This shouldn't happen any more, the frames are freed in
+		// ff_decoder_refresh.
 		av_frame_free(&queue_frame->frame);
+	}
 
 	queue_frame->frame = av_frame_clone(frame);
 	queue_frame->clock = ff_clock_retain(decoder->clock);
@@ -76,8 +81,12 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 	bool key_frame;
 
 	while (!decoder->abort) {
-		ret = packet_queue_get(&decoder->packet_queue, &packet, 1);
-		if (ret == FF_PACKET_FAIL) {
+		if (decoder->eof)
+			ret = packet_queue_get(&decoder->packet_queue, &packet, 0);
+		else
+			ret = packet_queue_get(&decoder->packet_queue, &packet, 1);
+
+		if (ret == FF_PACKET_EMPTY || ret == FF_PACKET_FAIL) {
 			// should we just use abort here?
 			break;
 		}
@@ -135,5 +144,8 @@ void *ff_video_decoder_thread(void *opaque_video_decoder)
 		ff_clock_release(&decoder->clock);
 
 	av_frame_free(&frame);
+
+	decoder->finished = true;
+
 	return NULL;
 }

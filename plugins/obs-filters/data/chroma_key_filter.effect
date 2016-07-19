@@ -48,41 +48,30 @@ float GetChromaDist(float3 rgb)
 	return distance(chroma_key, yuvx.yz);
 }
 
-float4 SampleYUVToRGB(float2 uv)
+float4 SampleTexture(float2 uv)
 {
-	float4 yuv = image.Sample(textureSampler, uv);
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	return image.Sample(textureSampler, uv);
 }
 
-float4 SampleTexture(float2 uv, bool use_matrix)
-{
-	if (use_matrix) {
-		return SampleYUVToRGB(uv);
-	} else {
-		return image.Sample(textureSampler, uv);
-	}
-}
-
-float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord, bool use_matrix)
+float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
 {
 	float distVal = GetChromaDist(rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-pixel_size, use_matrix).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, 0.0), use_matrix).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, -pixel_size.y), use_matrix).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-pixel_size).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, 0.0)).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, -pixel_size.y)).rgb);
 
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(0.0, pixel_size.y), use_matrix).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(0.0, pixel_size.y), use_matrix).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-float2(0.0, pixel_size.y)).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+float2(0.0, pixel_size.y)).rgb);
 
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, -pixel_size.y), use_matrix).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, 0.0), use_matrix).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+pixel_size, use_matrix).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, -pixel_size.y)).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, 0.0)).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+pixel_size).rgb);
 	return distVal / 9.0;
 }
 
-float4 ProcessChromaKey(float4 rgba, VertData v_in, bool use_matrix)
+float4 ProcessChromaKey(float4 rgba, VertData v_in)
 {
-	float chromaDist = GetBoxFilteredChromaDist(rgba.rgb, v_in.uv, use_matrix);
+	float chromaDist = GetBoxFilteredChromaDist(rgba.rgb, v_in.uv);
 	float baseMask = chromaDist - similarity;
 	float fullMask = pow(saturate(baseMask / smoothness), 1.5);
 	float spillVal = pow(saturate(baseMask / spill), 1.5);
@@ -98,7 +87,7 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in, bool use_matrix)
 float4 PSChromaKeyRGBA(VertData v_in) : TARGET
 {
 	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
-	return ProcessChromaKey(rgba, v_in, false);
+	return ProcessChromaKey(rgba, v_in);
 }
 
 technique Draw

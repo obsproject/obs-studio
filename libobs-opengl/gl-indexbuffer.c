@@ -22,8 +22,8 @@ static inline bool init_ib(struct gs_index_buffer *ib)
 	GLenum usage = ib->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 	bool success;
 
-	success = gl_create_buffer(GL_ARRAY_BUFFER, &ib->buffer, ib->size,
-			ib->data, usage);
+	success = gl_create_buffer(GL_ELEMENT_ARRAY_BUFFER, &ib->buffer,
+			ib->size, ib->data, usage);
 
 	if (!ib->dynamic) {
 		bfree(ib->data);
@@ -77,7 +77,8 @@ void gs_indexbuffer_flush(gs_indexbuffer_t *ib)
 		goto fail;
 	}
 
-	if (!update_buffer(GL_ARRAY_BUFFER, ib->buffer, ib->data, ib->size))
+	if (!update_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer, ib->data,
+				ib->size))
 		goto fail;
 
 	return;
@@ -103,11 +104,5 @@ enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *ib)
 
 void device_load_indexbuffer(gs_device_t *device, gs_indexbuffer_t *ib)
 {
-	if (ib == device->cur_index_buffer)
-		return;
-
 	device->cur_index_buffer = ib;
-
-	if (!gl_bind_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer))
-		blog(LOG_ERROR, "device_load_indexbuffer (GL) failed");
 }

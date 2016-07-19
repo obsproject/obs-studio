@@ -264,6 +264,15 @@ static inline int cf_next_name(struct cf_parser *p, char **dst,
 	return cf_get_name(p, dst, name, goto_token);
 }
 
+static inline int cf_next_token_copy(struct cf_parser *p, char **dst)
+{
+	if (!cf_next_valid_token(p))
+		return PARSE_EOF;
+
+	cf_copy_token(p, dst);
+	return PARSE_SUCCESS;
+}
+
 static inline int cf_get_name_ref(struct cf_parser *p, struct strref *dst,
 		const char *name, const char *goto_token)
 {

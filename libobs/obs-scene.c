@@ -337,6 +337,8 @@ static void update_item_transform(struct obs_scene_item *item)
 	matrix4_translate3f(&item->draw_transform, &item->draw_transform,
 			item->pos.x, item->pos.y, 0.0f);
 
+	item->output_scale = scale;
+
 	/* ----------------------- */
 
 	if (item->bounds_type != OBS_BOUNDS_NONE) {
@@ -383,15 +385,76 @@ static inline bool crop_enabled(const struct obs_sceneitem_crop *crop)
 	return crop->left || crop->right || crop->top || crop->bottom;
 }
 
+static inline bool scale_filter_enabled(const struct obs_scene_item *item)
+{
+	return item->scale_filter != OBS_SCALE_DISABLE;
+}
+
+static inline bool item_is_scene(const struct obs_scene_item *item)
+{
+	return item->source && item->source->info.type == OBS_SOURCE_TYPE_SCENE;
+}
+
+static inline bool item_texture_enabled(const struct obs_scene_item *item)
+{
+	return crop_enabled(&item->crop) || scale_filter_enabled(item) ||
+		item_is_scene(item);
+}
+
+static void render_item_texture(struct obs_scene_item *item)
+{
+	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
+	gs_effect_t *effect = obs->video.default_effect;
+	enum obs_scale_type type = item->scale_filter;
+	uint32_t cx = gs_texture_get_width(tex);
+	uint32_t cy = gs_texture_get_height(tex);
+
+	if (type != OBS_SCALE_DISABLE) {
+		if (type == OBS_SCALE_POINT) {
+			gs_eparam_t *image = gs_effect_get_param_by_name(
+					effect, "image");
+			gs_effect_set_next_sampler(image,
+					obs->video.point_sampler);
+
+		} else if (!close_float(item->output_scale.x, 1.0f, EPSILON) ||
+		           !close_float(item->output_scale.y, 1.0f, EPSILON)) {
+			gs_eparam_t *scale_param;
+
+			if (item->output_scale.x < 0.5f ||
+			    item->output_scale.y < 0.5f) {
+				effect = obs->video.bilinear_lowres_effect;
+			} else if (type == OBS_SCALE_BICUBIC) {
+				effect = obs->video.bicubic_effect;
+			} else if (type == OBS_SCALE_LANCZOS) {
+				effect = obs->video.lanczos_effect;
+			}
+
+			scale_param = gs_effect_get_param_by_name(effect,
+					"base_dimension_i");
+			if (scale_param) {
+				struct vec2 base_res_i = {
+					1.0f / (float)cx,
+					1.0f / (float)cy
+				};
+
+				gs_effect_set_vec2(scale_param, &base_res_i);
+			}
+		}
+	}
+
+	while (gs_effect_loop(effect, "Draw"))
+		obs_source_draw(tex, 0, 0, 0, 0, 0);
+}
+
 static inline void render_item(struct obs_scene_item *item)
 {
-	if (item->crop_render) {
+	if (item->item_render) {
 		uint32_t width  = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
 		uint32_t cx = calc_cx(item, width);
 		uint32_t cy = calc_cy(item, height);
 
-		if (cx && cy && gs_texrender_begin(item->crop_render, cx, cy)) {
+		if (cx && cy && gs_texrender_begin(item->item_render, cx, cy)) {
 			float cx_scale = (float)width  / (float)cx;
 			float cy_scale = (float)height / (float)cy;
 			struct vec4 clear_color;
@@ -408,17 +471,14 @@ static inline void render_item(struct obs_scene_item *item)
 					0.0f);
 
 			obs_source_video_render(item->source);
-			gs_texrender_end(item->crop_render);
+			gs_texrender_end(item->item_render);
 		}
 	}
 
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
-	if (item->crop_render) {
-		gs_texture_t *tex = gs_texrender_get_texture(item->crop_render);
-
-		while (gs_effect_loop(obs->video.default_effect, "Draw"))
-			obs_source_draw(tex, 0, 0, 0, 0, 0);
+	if (item->item_render) {
+		render_item_texture(item);
 	} else {
 		obs_source_video_render(item->source);
 	}
@@ -433,8 +493,8 @@ static void scene_video_tick(void *data, float seconds)
 	video_lock(scene);
 	item = scene->first_item;
 	while (item) {
-		if (item->crop_render)
-			gs_texrender_reset(item->crop_render);
+		if (item->item_render)
+			gs_texrender_reset(item->item_render);
 		item = item->next;
 	}
 	video_unlock(scene);
@@ -511,6 +571,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 {
 	const char            *name = obs_data_get_string(item_data, "name");
 	obs_source_t          *source = obs_get_source_by_name(name);
+	const char            *scale_filter_str;
 	struct obs_scene_item *item;
 	bool visible;
 
@@ -553,15 +614,29 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->crop.right  = (uint32_t)obs_data_get_int(item_data, "crop_right");
 	item->crop.bottom = (uint32_t)obs_data_get_int(item_data, "crop_bottom");
 
-	if (item->crop_render && !crop_enabled(&item->crop)) {
+	scale_filter_str = obs_data_get_string(item_data, "scale_filter");
+	item->scale_filter = OBS_SCALE_DISABLE;
+
+	if (scale_filter_str) {
+		if (astrcmpi(scale_filter_str, "point") == 0)
+			item->scale_filter = OBS_SCALE_POINT;
+		else if (astrcmpi(scale_filter_str, "bilinear") == 0)
+			item->scale_filter = OBS_SCALE_BILINEAR;
+		else if (astrcmpi(scale_filter_str, "bicubic") == 0)
+			item->scale_filter = OBS_SCALE_BICUBIC;
+		else if (astrcmpi(scale_filter_str, "lanczos") == 0)
+			item->scale_filter = OBS_SCALE_LANCZOS;
+	}
+
+	if (item->item_render && !item_texture_enabled(item)) {
 		obs_enter_graphics();
-		gs_texrender_destroy(item->crop_render);
-		item->crop_render = NULL;
+		gs_texrender_destroy(item->item_render);
+		item->item_render = NULL;
 		obs_leave_graphics();
 
-	} else if (!item->crop_render && crop_enabled(&item->crop)) {
+	} else if (!item->item_render && item_texture_enabled(item)) {
 		obs_enter_graphics();
-		item->crop_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		obs_leave_graphics();
 	}
 
@@ -595,6 +670,7 @@ static void scene_save_item(obs_data_array_t *array,
 {
 	obs_data_t *item_data = obs_data_create();
 	const char *name     = obs_source_get_name(item->source);
+	const char *scale_filter;
 
 	obs_data_set_string(item_data, "name",         name);
 	obs_data_set_bool  (item_data, "visible",      item->user_visible);
@@ -609,6 +685,19 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int  (item_data, "crop_top",     (int)item->crop.top);
 	obs_data_set_int  (item_data, "crop_right",   (int)item->crop.right);
 	obs_data_set_int  (item_data, "crop_bottom",  (int)item->crop.bottom);
+
+	if (item->scale_filter == OBS_SCALE_POINT)
+		scale_filter = "point";
+	else if (item->scale_filter == OBS_SCALE_BILINEAR)
+		scale_filter = "bilinear";
+	else if (item->scale_filter == OBS_SCALE_BICUBIC)
+		scale_filter = "bicubic";
+	else if (item->scale_filter == OBS_SCALE_LANCZOS)
+		scale_filter = "lanczos";
+	else
+		scale_filter = "disable";
+
+	obs_data_set_string(item_data, "scale_filter", scale_filter);
 
 	obs_data_array_push_back(array, item_data);
 	obs_data_release(item_data);
@@ -1197,6 +1286,12 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 		item->visible = true;
 	}
 
+	if (item_texture_enabled(item)) {
+		obs_enter_graphics();
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		obs_leave_graphics();
+	}
+
 	full_lock(scene);
 
 	last = scene->first_item;
@@ -1227,9 +1322,9 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 {
 	if (item) {
-		if (item->crop_render) {
+		if (item->item_render) {
 			obs_enter_graphics();
-			gs_texrender_destroy(item->crop_render);
+			gs_texrender_destroy(item->item_render);
 			obs_leave_graphics();
 		}
 		obs_hotkey_pair_unregister(item->toggle_visibility);
@@ -1305,7 +1400,7 @@ void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
 	uint8_t stack[128];
 	const char *command = select ? "item_select" : "item_deselect";
 
-	if (!item || item->selected == select)
+	if (!item || item->selected == select || !item->parent)
 		return;
 
 	item->selected = select;
@@ -1695,7 +1790,7 @@ static inline bool crop_equal(const struct obs_sceneitem_crop *crop1,
 void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 		const struct obs_sceneitem_crop *crop)
 {
-	bool now_enabled;
+	bool item_tex_now_enabled;
 
 	if (!obs_ptr_valid(item, "obs_sceneitem_set_crop"))
 		return;
@@ -1704,16 +1799,17 @@ void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 	if (crop_equal(crop, &item->crop))
 		return;
 
-	now_enabled = crop_enabled(crop);
+	item_tex_now_enabled = crop_enabled(crop) ||
+		scale_filter_enabled(item) || item_is_scene(item);
 
 	obs_enter_graphics();
 
-	if (!now_enabled) {
-		gs_texrender_destroy(item->crop_render);
-		item->crop_render = NULL;
+	if (!item_tex_now_enabled) {
+		gs_texrender_destroy(item->item_render);
+		item->item_render = NULL;
 
-	} else if (!item->crop_render) {
-		item->crop_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	} else if (!item->item_render) {
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 	}
 
 	memcpy(&item->crop, crop, sizeof(*crop));
@@ -1736,6 +1832,36 @@ void obs_sceneitem_get_crop(const obs_sceneitem_t *item,
 		return;
 
 	memcpy(crop, &item->crop, sizeof(*crop));
+}
+
+void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
+		enum obs_scale_type filter)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_set_scale_filter"))
+		return;
+
+	item->scale_filter = filter;
+
+	obs_enter_graphics();
+
+	if (!item_texture_enabled(item)) {
+		gs_texrender_destroy(item->item_render);
+		item->item_render = NULL;
+
+	} else if (!item->item_render) {
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	}
+
+	obs_leave_graphics();
+
+	update_item_transform(item);
+}
+
+enum obs_scale_type obs_sceneitem_get_scale_filter(
+		obs_sceneitem_t *item)
+{
+	return obs_ptr_valid(item, "obs_sceneitem_get_scale_filter") ?
+		item->scale_filter : OBS_SCALE_DISABLE;
 }
 
 void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)

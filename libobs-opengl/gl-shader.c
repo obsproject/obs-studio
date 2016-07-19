@@ -487,6 +487,12 @@ static void program_set_param_data(struct gs_program *program,
 		}
 
 	} else if (pp->param->type == GS_SHADER_PARAM_TEXTURE) {
+		if (pp->param->next_sampler) {
+			program->device->cur_samplers[pp->param->sampler_id] =
+				pp->param->next_sampler;
+			pp->param->next_sampler = NULL;
+		}
+
 		glUniform1i(pp->obj, pp->param->texture_id);
 		device_load_texture(program->device, pp->param->texture,
 				pp->param->texture_id);
@@ -719,4 +725,9 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 void gs_shader_set_default(gs_sparam_t *param)
 {
 	gs_shader_set_val(param, param->def_value.array, param->def_value.num);
+}
+
+void gs_shader_set_next_sampler(gs_sparam_t *param, gs_samplerstate_t *sampler)
+{
+	param->next_sampler = sampler;
 }

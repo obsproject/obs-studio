@@ -7,6 +7,7 @@
 #include <pthread.h>
 
 #include <obs-module.h>
+#include <util/platform.h>
 
 #include "xcompcap-helper.hpp"
 
@@ -171,9 +172,9 @@ namespace XCompcap
 		return XScreenNumberOfScreen(attr.screen);
 	}
 
-	std::string getWindowName(Window win)
+	std::string getWindowAtom(Window win, const char *atom)
 	{
-		Atom netWmName = XInternAtom(disp(), "_NET_WM_NAME", false);
+		Atom netWmName = XInternAtom(disp(), atom, false);
 		int n;
 		char **list = 0;
 		XTextProperty tp;
@@ -198,6 +199,11 @@ namespace XCompcap
 				XFreeStringList(list);
 			}
 		}
+
+		char *conv = nullptr;
+		if (os_mbs_to_utf8_ptr(res.c_str(), 0, &conv)) 
+			res = conv;
+		bfree(conv);
 
 		XFree(tp.value);
 
@@ -407,6 +413,39 @@ void XErrorLock::resetError()
 
 	goterr = false;
 	curErrorText[0] = 0;
+}
+
+XDisplayLock::XDisplayLock()
+{
+	islock = false;
+	lock();
+}
+
+XDisplayLock::~XDisplayLock()
+{
+	unlock();
+}
+
+bool XDisplayLock::isLocked()
+{
+	return islock;
+}
+
+void XDisplayLock::lock()
+{
+	if (!islock) {
+		XLockDisplay(XCompcap::disp());
+		islock = true;
+	}
+}
+
+void XDisplayLock::unlock()
+{
+	if (islock) {
+		XSync(XCompcap::disp(), 0);
+		XUnlockDisplay(XCompcap::disp());
+		islock = false;
+	}
 }
 
 

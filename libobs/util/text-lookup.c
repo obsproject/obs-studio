@@ -287,6 +287,7 @@ static char *convert_string(const char *str, size_t len)
 	dstr_replace(&out, "\\n", "\n");
 	dstr_replace(&out, "\\t", "\t");
 	dstr_replace(&out, "\\r", "\r");
+	dstr_replace(&out, "\\\"", "\"");
 
 	return out.array;
 }

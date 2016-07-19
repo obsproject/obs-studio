@@ -213,16 +213,24 @@ void do_hook(struct func_hook *hook, bool force)
 {
 	intptr_t offset;
 
-	/* chained hooks do not unhook */
 	if (!force && hook->hooked)
 		return;
 
-	/* if the hook is a forward overwrite hook, copy back the memory that
-	 * was previously encountered to preserve any new hooks on top */
-	if (hook->started && !force &&
-	    hook->type == HOOKTYPE_FORWARD_OVERWRITE) {
-		memcpy((void*)hook->func_addr, hook->rehook_data,
-				patch_size(hook));
+	/* copy back the memory that was previously encountered to preserve
+	 * the current hook and any newer hooks on top */
+	if (hook->started && !force) {
+		uintptr_t addr;
+		size_t size;
+
+		if (hook->type == HOOKTYPE_REVERSE_CHAIN) {
+			addr = hook->func_addr - JMP_32_SIZE;
+			size = JMP_32_SIZE;
+		} else {
+			addr = hook->func_addr;
+			size = patch_size(hook);
+		}
+
+		memcpy((void*)addr, hook->rehook_data, size);
 		hook->hooked = true;
 		return;
 	}
@@ -250,16 +258,25 @@ void do_hook(struct func_hook *hook, bool force)
 
 void unhook(struct func_hook *hook)
 {
+	uintptr_t addr;
 	size_t size;
 
-	/* chain hooks do not need to unhook */
-	if (!hook->hooked || hook->type != HOOKTYPE_FORWARD_OVERWRITE)
+	if (!hook->hooked)
 		return;
 
-	size = patch_size(hook);
-	fix_permissions((void*)hook->func_addr, size);
-	memcpy(hook->rehook_data, (void*)hook->func_addr, size);
-	memcpy((void*)hook->func_addr, hook->unhook_data, size);
+	if (hook->type == HOOKTYPE_REVERSE_CHAIN) {
+		size = JMP_32_SIZE;
+		addr = (hook->func_addr - JMP_32_SIZE);
+	} else {
+		size = patch_size(hook);
+		addr = hook->func_addr;
+	}
+
+	fix_permissions((void*)addr, size);
+	memcpy(hook->rehook_data, (void*)addr, size);
+
+	if (hook->type == HOOKTYPE_FORWARD_OVERWRITE)
+		memcpy((void*)hook->func_addr, hook->unhook_data, size);
 
 	hook->hooked = false;
 }

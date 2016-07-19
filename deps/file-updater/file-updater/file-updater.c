@@ -29,6 +29,9 @@ struct update_info {
 	obs_data_t *cache_package;
 	obs_data_t *remote_package;
 
+	char *etag_local;
+	char *etag_remote;
+
 	confirm_file_callback_t callback;
 	void *param;
 
@@ -76,7 +79,33 @@ static size_t http_write(uint8_t *ptr, size_t size, size_t nmemb,
 	return total;
 }
 
-static bool do_http_request(struct update_info *info, const char *url)
+static size_t http_header(char *buffer, size_t size, size_t nitems,
+		struct update_info *info)
+{
+	if (!strncmp(buffer, "ETag: ", 6))
+	{
+		char *etag = buffer + 6;
+		if (*etag) {
+			char *etag_clean, *p;
+
+			etag_clean = bstrdup(etag);
+
+			p = strchr(etag_clean, '\r');
+			if (p)
+				*p = 0;
+
+			p = strchr(etag_clean, '\n');
+			if (p)
+				*p = 0;
+
+			info->etag_remote = etag_clean;
+		}
+	}
+	return nitems * size;
+}
+
+static bool do_http_request(struct update_info *info, const char *url,
+	long *response_code)
 {
 	CURLcode code;
 	uint8_t null_terminator = 0;
@@ -89,10 +118,31 @@ static bool do_http_request(struct update_info *info, const char *url)
 	curl_easy_setopt(info->curl, CURLOPT_WRITEDATA, info);
 	curl_easy_setopt(info->curl, CURLOPT_FAILONERROR, true);
 
+	if (!info->remote_url) {
+		// We only care about headers from the main package file
+		curl_easy_setopt(info->curl, CURLOPT_HEADERFUNCTION, http_header);
+		curl_easy_setopt(info->curl, CURLOPT_HEADERDATA, info);
+	}
+
+#if LIBCURL_VERSION_NUM >= 0x072400
+	// A lot of servers don't yet support ALPN
+	curl_easy_setopt(info->curl, CURLOPT_SSL_ENABLE_ALPN, 0);
+#endif
+
 	code = curl_easy_perform(info->curl);
 	if (code != CURLE_OK) {
 		warn("Remote update of URL \"%s\" failed: %s", url,
 				info->error);
+		return false;
+	}
+
+	if (curl_easy_getinfo(info->curl, CURLINFO_RESPONSE_CODE,
+		response_code) != CURLE_OK)
+		return false;
+
+	if (*response_code >= 400) {
+		warn("Remote update of URL \"%s\" failed: HTTP/%ld", url,
+			*response_code);
 		return false;
 	}
 
@@ -134,6 +184,25 @@ static bool init_update(struct update_info *info)
 
 	info->local_package = get_package(info->local, "package.json");
 	info->cache_package = get_package(info->cache, "package.json");
+
+	obs_data_t *metadata = get_package(info->cache, "meta.json");
+	if (metadata) {
+		const char *etag = obs_data_get_string(metadata, "etag");
+		if (etag) {
+			struct dstr if_none_match = { 0 };
+			dstr_copy(&if_none_match, "If-None-Match: ");
+			dstr_cat(&if_none_match, etag);
+
+			info->etag_local = bstrdup(etag);
+
+			info->header = curl_slist_append(info->header,
+				if_none_match.array);
+
+			dstr_free(&if_none_match);
+		}
+
+		obs_data_release(metadata);
+	}
 
 	dstr_copy(&user_agent, "User-Agent: ");
 	dstr_cat(&user_agent, info->user_agent);
@@ -246,10 +315,11 @@ static int update_local_version(struct update_info *info)
 static inline bool do_relative_http_request(struct update_info *info,
 		const char *url, const char *file)
 {
+	long response_code;
 	char *full_url = get_path(url, file);
-	bool success = do_http_request(info, full_url);
+	bool success = do_http_request(info, full_url, &response_code);
 	bfree(full_url);
-	return success;
+	return success && response_code == 200;
 }
 
 static inline void write_file_data(struct update_info *info,
@@ -320,17 +390,42 @@ static bool update_remote_files(void *param, obs_data_t *remote_file)
 	return true;
 }
 
+static void update_save_metadata(struct update_info *info)
+{
+	struct dstr path = { 0 };
+
+	if (!info->etag_remote)
+		return;
+
+	dstr_copy(&path, info->cache);
+	dstr_cat(&path, "meta.json");
+
+	obs_data_t *data;
+	data = obs_data_create();
+	obs_data_set_string(data, "etag", info->etag_remote);
+	obs_data_save_json(data, path.array);
+	obs_data_release(data);
+
+	dstr_free(&path);
+}
+
 static void update_remote_version(struct update_info *info, int cur_version)
 {
 	int remote_version;
+	long response_code;
 
-	if (!do_http_request(info, info->url))
+	if (!do_http_request(info, info->url, &response_code))
+		return;
+
+	if (response_code == 304)
 		return;
 
 	if (!info->file_data.array || info->file_data.array[0] != '{') {
 		warn("Remote package does not exist or is not valid json");
 		return;
 	}
+
+	update_save_metadata(info);
 
 	info->remote_package = obs_data_create_from_json(
 			(char*)info->file_data.array);
@@ -371,6 +466,12 @@ static void *update_thread(void *data)
 	cur_version = update_local_version(info);
 	update_remote_version(info, cur_version);
 	os_rmdir(info->temp);
+
+	if (info->etag_local)
+		bfree(info->etag_local);
+	if (info->etag_remote)
+		bfree(info->etag_remote);
+
 	return NULL;
 }
 

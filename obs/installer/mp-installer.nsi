@@ -90,7 +90,7 @@ Function PreReqCheck
 	GetDLLVersion "MSVCR120.DLL" $R0 $R1
 	IfErrors vs2013Missing vs2013OK
 	vs2013Missing:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2013true IDNO vs2013false
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Please make sure to install both vcredist_x64 and vcredist_x86. Would you like to download them?" IDYES vs2013true IDNO vs2013false
 		vs2013true:
 			ExecShell "open" "http://www.microsoft.com/en-us/download/details.aspx?id=40784"
 		vs2013false:

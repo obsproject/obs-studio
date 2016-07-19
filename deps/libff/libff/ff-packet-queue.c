@@ -15,6 +15,7 @@
  */
 
 #include "ff-packet-queue.h"
+#include "ff-compat.h"
 
 bool packet_queue_init(struct ff_packet_queue *q)
 {
@@ -59,10 +60,6 @@ void packet_queue_free(struct ff_packet_queue *q)
 int packet_queue_put(struct ff_packet_queue *q, struct ff_packet *packet)
 {
 	struct ff_packet_list *new_packet;
-
-	if (packet != &q->flush_packet
-			&& av_dup_packet(&packet->base) < 0)
-		return FF_PACKET_FAIL;
 
 	new_packet = av_malloc(sizeof(struct ff_packet_list));
 

@@ -25,6 +25,7 @@ struct duplicator_capture {
 	obs_source_t                   *source;
 	int                            monitor;
 	bool                           capture_cursor;
+	bool                           showing;
 
 	long                           x;
 	long                           y;
@@ -118,12 +119,40 @@ static void reset_capture_data(struct duplicator_capture *capture)
 	capture->rot = monitor_info.rotation_degrees;
 }
 
+static void free_capture_data(struct duplicator_capture *capture)
+{
+	gs_duplicator_destroy(capture->duplicator);
+	cursor_data_free(&capture->cursor_data);
+	capture->duplicator = NULL;
+	capture->width = 0;
+	capture->height = 0;
+	capture->x = 0;
+	capture->y = 0;
+	capture->rot = 0;
+	capture->reset_timeout = 0.0f;
+}
+
 static void duplicator_capture_tick(void *data, float seconds)
 {
 	struct duplicator_capture *capture = data;
 
-	if (!obs_source_showing(capture->source))
+	/* completely shut down monitor capture if not in use, otherwise it can
+	 * sometimes generate system lag when a game is in fullscreen mode */
+	if (!obs_source_showing(capture->source)) {
+		if (capture->showing) {
+			obs_enter_graphics();
+			free_capture_data(capture);
+			obs_leave_graphics();
+
+			capture->showing = false;
+		}
 		return;
+
+	/* always try to load the capture immediately when the source is first
+	 * shown */
+	} else if (!capture->showing) {
+		capture->reset_timeout = RESET_INTERVAL_SEC;
+	}
 
 	obs_enter_graphics();
 
@@ -143,14 +172,7 @@ static void duplicator_capture_tick(void *data, float seconds)
 			cursor_capture(&capture->cursor_data);
 
 		if (!gs_duplicator_update_frame(capture->duplicator)) {
-			gs_duplicator_destroy(capture->duplicator);
-			capture->duplicator = NULL;
-			capture->width = 0;
-			capture->height = 0;
-			capture->x = 0;
-			capture->y = 0;
-			capture->rot = 0;
-			capture->reset_timeout = 0.0f;
+			free_capture_data(capture);
 
 		} else if (capture->width == 0) {
 			reset_capture_data(capture);
@@ -158,6 +180,9 @@ static void duplicator_capture_tick(void *data, float seconds)
 	}
 
 	obs_leave_graphics();
+
+	if (!capture->showing)
+		capture->showing = true;
 
 	UNUSED_PARAMETER(seconds);
 }

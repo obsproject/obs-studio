@@ -269,7 +269,7 @@ static bool audio_frame(struct ff_frame *frame, void *opaque)
 	uint64_t pts;
 
 	// Media ended
-	if (frame == NULL)
+	if (frame == NULL || frame->frame == NULL)
 		return true;
 
 	pts = (uint64_t)(frame->pts * 1000000000.0L);

@@ -99,6 +99,12 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 		srcdata->vbuf = NULL;
 		gs_vertexbuffer_destroy(tmpvbuf);
 	}
+
+	if (*srcdata->text == 0) {
+		obs_leave_graphics();
+		return;
+	}
+
 	srcdata->vbuf = create_uv_vbuffer((uint32_t)wcslen(srcdata->text) * 6,
 			true);
 
@@ -263,6 +269,11 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		if (dx + g_w >= texbuf_w) {
 			dx = 0;
 			dy += srcdata->max_h + 1;
+		}
+
+		if (dy + g_h >= texbuf_h) {
+			blog(LOG_WARNING, "Out of space trying to render glyphs");
+			break;
 		}
 
 		src_glyph = bzalloc(sizeof(struct glyph_info));

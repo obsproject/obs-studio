@@ -300,6 +300,7 @@ struct gs_shader_param {
 
 	char                 *name;
 	gs_shader_t          *shader;
+	gs_samplerstate_t    *next_sampler;
 	GLint                texture_id;
 	size_t               sampler_id;
 	int                  array_count;
@@ -377,7 +378,7 @@ struct gs_vertex_buffer {
 };
 
 extern bool load_vb_buffers(struct gs_program *program,
-		struct gs_vertex_buffer *vb);
+		struct gs_vertex_buffer *vb, struct gs_index_buffer *ib);
 
 struct gs_index_buffer {
 	GLuint               buffer;

@@ -84,6 +84,7 @@ struct game_capture {
 	float                         fps_reset_time;
 	float                         retry_interval;
 	bool                          wait_for_target_startup : 1;
+	bool                          showing : 1;
 	bool                          active : 1;
 	bool                          capturing : 1;
 	bool                          activate_hook : 1;
@@ -335,6 +336,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	gc->config = cfg;
 	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
+	gc->wait_for_target_startup = false;
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
@@ -750,6 +752,33 @@ static bool init_hook(struct game_capture *gc)
 	return true;
 }
 
+static void setup_window(struct game_capture *gc, HWND window)
+{
+	DWORD process_id = 0;
+	HANDLE hook_restart;
+
+	GetWindowThreadProcessId(window, &process_id);
+
+	/* do not wait if we're re-hooking a process */
+	hook_restart = open_event_id(EVENT_CAPTURE_RESTART, process_id);
+	if (hook_restart) {
+		gc->wait_for_target_startup = false;
+		CloseHandle(hook_restart);
+	}
+
+	/* otherwise if it's an unhooked process, always wait a bit for the
+	 * target process to start up before starting the hook process;
+	 * sometimes they have important modules to load first or other hooks
+	 * (such as steam) need a little bit of time to load.  ultimately this
+	 * helps prevent crashes */
+	if (gc->wait_for_target_startup) {
+		gc->retry_interval = 3.0f;
+		gc->wait_for_target_startup = false;
+	} else {
+		gc->next_window = window;
+	}
+}
+
 static void get_fullscreen_window(struct game_capture *gc)
 {
 	HWND window = GetForegroundWindow();
@@ -787,18 +816,7 @@ static void get_fullscreen_window(struct game_capture *gc)
 	    rect.right  == mi.rcMonitor.right  &&
 	    rect.bottom == mi.rcMonitor.bottom &&
 	    rect.top    == mi.rcMonitor.top) {
-
-		/* always wait a bit for the target process to start up before
-		 * starting the hook process; sometimes they have important
-		 * modules to load first or other hooks (such as steam) need a
-		 * little bit of time to load.  ultimately this helps prevent
-		 * crashes */
-		if (gc->wait_for_target_startup) {
-			gc->retry_interval = 3.0f;
-			gc->wait_for_target_startup = false;
-		} else {
-			gc->next_window = window;
-		}
+		setup_window(gc, window);
 	} else {
 		gc->wait_for_target_startup = true;
 	}
@@ -806,16 +824,24 @@ static void get_fullscreen_window(struct game_capture *gc)
 
 static void get_selected_window(struct game_capture *gc)
 {
+	HWND window;
+
 	if (strcmpi(gc->config.class, "dwm") == 0) {
 		wchar_t class_w[512];
 		os_utf8_to_wcs(gc->config.class, 0, class_w, 512);
-		gc->next_window = FindWindowW(class_w, NULL);
+		window = FindWindowW(class_w, NULL);
 	} else {
-		gc->next_window = find_window(INCLUDE_MINIMIZED,
+		window = find_window(INCLUDE_MINIMIZED,
 				gc->config.priority,
 				gc->config.class,
 				gc->config.title,
 				gc->config.executable);
+	}
+
+	if (window) {
+		setup_window(gc, window);
+	} else {
+		gc->wait_for_target_startup = true;
 	}
 }
 
@@ -830,6 +856,10 @@ static void try_hook(struct game_capture *gc)
 	if (gc->next_window) {
 		gc->thread_id = GetWindowThreadProcessId(gc->next_window,
 				&gc->process_id);
+
+		// Make sure we never try to hook ourselves (projector)
+		if (gc->process_id == GetCurrentProcessId())
+			return;
 
 		if (!gc->thread_id || !gc->process_id) {
 			warn("error acquiring, failed to get window "
@@ -1250,6 +1280,18 @@ static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
 
+	if (!obs_source_showing(gc->source)) {
+		if (gc->showing) {
+			if (gc->active)
+				stop_capture(gc);
+			gc->showing = false;
+		}
+		return;
+
+	} else if (!gc->showing) {
+		gc->retry_time = 10.0f;
+	}
+
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
 		stop_capture(gc);
 	}
@@ -1290,11 +1332,6 @@ static void game_capture_tick(void *data, float seconds)
 	gc->retry_time += seconds;
 
 	if (!gc->active) {
-		if (!obs_source_showing(gc->source)) {
-			gc->retry_time = 0.0f;
-			return;
-		}
-
 		if (!gc->error_acquiring &&
 		    gc->retry_time > gc->retry_interval) {
 			if (gc->config.capture_any_fullscreen ||
@@ -1328,6 +1365,9 @@ static void game_capture_tick(void *data, float seconds)
 			}
 		}
 	}
+
+	if (!gc->showing)
+		gc->showing = true;
 }
 
 static inline void game_capture_render_cursor(struct game_capture *gc)
@@ -1354,7 +1394,7 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 static void game_capture_render(void *data, gs_effect_t *effect)
 {
 	struct game_capture *gc = data;
-	if (!gc->texture)
+	if (!gc->texture || !gc->active)
 		return;
 
 	effect = obs_get_base_effect(gc->config.allow_transparency ?

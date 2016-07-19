@@ -20,3 +20,6 @@
 # define av_frame_free avcodec_free_frame
 #endif
 
+#if LIBAVCODEC_VERSION_MAJOR >= 57
+#define av_free_packet av_packet_unref
+#endif

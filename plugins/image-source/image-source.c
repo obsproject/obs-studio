@@ -1,6 +1,7 @@
 #include <obs-module.h>
 #include <graphics/image-file.h>
 #include <util/platform.h>
+#include <util/dstr.h>
 #include <sys/stat.h>
 
 #define blog(log_level, format, ...) \
@@ -22,6 +23,7 @@ struct image_source {
 	time_t       file_timestamp;
 	float        update_time_elapsed;
 	uint64_t     last_time;
+	bool         active;
 
 	gs_image_file_t image;
 };
@@ -161,6 +163,31 @@ static void image_source_tick(void *data, float seconds)
 	struct image_source *context = data;
 	uint64_t frame_time = obs_get_video_frame_time();
 
+	if (obs_source_active(context->source)) {
+		if (!context->active) {
+			if (context->image.is_animated_gif)
+				context->last_time = frame_time;
+			context->active = true;
+		}
+
+	} else {
+		if (context->active) {
+			if (context->image.is_animated_gif) {
+				context->image.cur_frame = 0;
+				context->image.cur_loop = 0;
+				context->image.cur_time = 0;
+
+				obs_enter_graphics();
+				gs_image_file_update_texture(&context->image);
+				obs_leave_graphics();
+			}
+
+			context->active = false;
+		}
+
+		return;
+	}
+
 	if (context->last_time && context->image.is_animated_gif) {
 		uint64_t elapsed = frame_time - context->last_time;
 		bool updated = gs_image_file_tick(&context->image, elapsed);
@@ -173,8 +200,6 @@ static void image_source_tick(void *data, float seconds)
 	}
 
 	context->last_time = frame_time;
-
-	if (!obs_source_showing(context->source)) return;
 
 	context->update_time_elapsed += seconds;
 
@@ -197,17 +222,29 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif)";
 
-static obs_properties_t *image_source_properties(void *unused)
+static obs_properties_t *image_source_properties(void *data)
 {
-	UNUSED_PARAMETER(unused);
+	struct image_source *s = data;
+	struct dstr path = {0};
 
 	obs_properties_t *props = obs_properties_create();
 
+	if (s && s->file && *s->file) {
+		const char *slash;
+
+		dstr_copy(&path, s->file);
+		dstr_replace(&path, "\\", "/");
+		slash = strrchr(path.array, '/');
+		if (slash)
+			dstr_resize(&path, slash - path.array + 1);
+	}
+
 	obs_properties_add_path(props,
 			"file", obs_module_text("File"),
-			OBS_PATH_FILE, image_filter, NULL);
+			OBS_PATH_FILE, image_filter, path.array);
 	obs_properties_add_bool(props,
 			"unload", obs_module_text("UnloadWhenNotShowing"));
+	dstr_free(&path);
 
 	return props;
 }
@@ -233,8 +270,11 @@ static struct obs_source_info image_source_info = {
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
 
+extern struct obs_source_info slideshow_info;
+
 bool obs_module_load(void)
 {
 	obs_register_source(&image_source_info);
+	obs_register_source(&slideshow_info);
 	return true;
 }

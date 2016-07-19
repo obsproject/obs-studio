@@ -731,7 +731,7 @@ static void send_first_video_packet(struct obs_encoder *encoder,
 
 	da_init(data);
 
-	if (!get_sei(encoder, &sei, &size)) {
+	if (!get_sei(encoder, &sei, &size) || !sei || !size) {
 		cb->new_packet(cb->param, packet);
 		cb->sent_first_packet = true;
 		return;
@@ -809,6 +809,7 @@ static inline void do_encode(struct obs_encoder *encoder,
 		 * you do not want to use relative timestamps here */
 		pkt.dts_usec = encoder->start_ts / 1000 +
 			packet_dts_usec(&pkt) - encoder->offset_usec;
+		pkt.sys_dts_usec = pkt.dts_usec;
 
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -1149,4 +1150,10 @@ const char *obs_encoder_get_id(const obs_encoder_t *encoder)
 {
 	return obs_encoder_valid(encoder, "obs_encoder_get_id")
 		? encoder->info.id : NULL;
+}
+
+uint32_t obs_get_encoder_caps(const char *encoder_id)
+{
+	struct obs_encoder_info *info = find_encoder(encoder_id);
+	return info ? info->caps : 0;
 }

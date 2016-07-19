@@ -5,6 +5,7 @@ set(obs-filters_SOURCES
 	color-filter.c
 	async-delay-filter.c
 	crop-filter.c
+	scale-filter.c
 	scroll-filter.c
 	chroma-key-filter.c
 	color-key-filter.c

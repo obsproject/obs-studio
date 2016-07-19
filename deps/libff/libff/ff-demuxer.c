@@ -23,6 +23,8 @@
 
 #include <assert.h>
 
+#include "ff-compat.h"
+
 #define DEFAULT_AV_SYNC_TYPE AV_SYNC_VIDEO_MASTER
 
 #define AUDIO_FRAME_QUEUE_SIZE 1
@@ -92,7 +94,7 @@ void ff_demuxer_free(struct ff_demuxer *demuxer)
 		ff_decoder_free(demuxer->video_decoder);
 
 	if (demuxer->format_context)
-		avformat_free_context(demuxer->format_context);
+		avformat_close_input(&demuxer->format_context);
 
 	av_free(demuxer);
 }
@@ -342,15 +344,15 @@ void ff_demuxer_reset(struct ff_demuxer *demuxer)
 	packet.clock = clock;
 
 	if (demuxer->audio_decoder != NULL) {
+		ff_clock_retain(clock);
 		packet_queue_put(&demuxer->audio_decoder->packet_queue,
 				&packet);
-		ff_clock_retain(clock);
 	}
 
 	if (demuxer->video_decoder != NULL) {
+		ff_clock_retain(clock);
 		packet_queue_put(&demuxer->video_decoder->packet_queue,
 				&packet);
-		ff_clock_retain(clock);
 	}
 }
 
@@ -500,7 +502,7 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 			seek_stream = demuxer->audio_decoder->stream;
 		}
 
-		if (seek_stream != NULL) {
+		if (seek_stream != NULL && demuxer->format_context->duration != AV_NOPTS_VALUE) {
 			seek_target = av_rescale_q(seek_target,
 					AV_TIME_BASE_Q,
 					seek_stream->time_base);
@@ -529,8 +531,13 @@ static bool handle_seek(struct ff_demuxer *demuxer)
 
 static void seek_beginning(struct ff_demuxer *demuxer)
 {
-	demuxer->seek_flags = AVSEEK_FLAG_BACKWARD;
-	demuxer->seek_pos = demuxer->format_context->start_time;
+	if (demuxer->format_context->duration == AV_NOPTS_VALUE) {
+		demuxer->seek_flags = AVSEEK_FLAG_FRAME;
+		demuxer->seek_pos = 0;
+	} else {
+		demuxer->seek_flags = AVSEEK_FLAG_BACKWARD;
+		demuxer->seek_pos = demuxer->format_context->start_time;
+	}
 	demuxer->seek_request = true;
 	demuxer->seek_flush = false;
 	av_log(NULL, AV_LOG_VERBOSE, "looping media %s", demuxer->input);

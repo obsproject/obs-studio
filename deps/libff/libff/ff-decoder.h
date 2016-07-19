@@ -56,6 +56,7 @@ struct ff_decoder {
 	bool first_frame;
 	bool eof;
 	bool abort;
+	bool finished;
 };
 
 typedef struct ff_decoder ff_decoder_t;

@@ -231,6 +231,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	struct obs_core_video *video = &obs->video;
 	uint8_t transparent_tex_data[2*2*4] = {0};
 	const uint8_t *transparent_tex = transparent_tex_data;
+	struct gs_sampler_info point_sampler = {0};
 	bool success = true;
 	int errorcode;
 
@@ -296,6 +297,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	video->point_sampler = gs_samplerstate_create(&point_sampler);
+
 	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
 			&transparent_tex, 0);
 
@@ -314,6 +317,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	if (!video->premultiplied_alpha_effect)
 		success = false;
 	if (!video->transparent_texture)
+		success = false;
+	if (!video->point_sampler)
 		success = false;
 
 	gs_leave_context();
@@ -458,6 +463,8 @@ static void obs_free_graphics(void)
 		gs_enter_context(video->graphics);
 
 		gs_texture_destroy(video->transparent_texture);
+
+		gs_samplerstate_destroy(video->point_sampler);
 
 		gs_effect_destroy(video->default_effect);
 		gs_effect_destroy(video->default_rect_effect);

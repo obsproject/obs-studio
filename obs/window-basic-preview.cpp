@@ -11,7 +11,6 @@
 
 #define HANDLE_RADIUS     4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
-#define CLAMP_DISTANCE    10.0f
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -133,7 +132,7 @@ static inline vec2 GetOBSScreenSize()
 	return size;
 }
 
-vec3 OBSBasicPreview::GetScreenSnapOffset(const vec3 &tl, const vec3 &br)
+vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	vec2 screenSize = GetOBSScreenSize();
@@ -141,19 +140,50 @@ vec3 OBSBasicPreview::GetScreenSnapOffset(const vec3 &tl, const vec3 &br)
 
 	vec3_zero(&clampOffset);
 
-	const float clampDist = CLAMP_DISTANCE / main->previewScale;
+	const bool snap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SnappingEnabled");
+	if (snap == false)
+		return clampOffset;
 
-	if (fabsf(tl.x) < clampDist)
+	const bool screenSnap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ScreenSnapping");
+	const bool centerSnap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "CenterSnapping");
+
+	const float clampDist = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScale;
+	const float centerX = br.x - (br.x - tl.x) / 2.0f;
+	const float centerY = br.y - (br.y - tl.y) / 2.0f;
+
+	// Left screen edge.
+	if (screenSnap &&
+	    fabsf(tl.x) < clampDist)
 		clampOffset.x = -tl.x;
-	if (fabsf(clampOffset.x) < EPSILON &&
+	// Right screen edge.
+	if (screenSnap &&
+	    fabsf(clampOffset.x) < EPSILON &&
 	    fabsf(screenSize.x - br.x) < clampDist)
 		clampOffset.x = screenSize.x - br.x;
+	// Horizontal center.
+	if (centerSnap &&
+	    fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
+	    fabsf(screenSize.x / 2.0f - centerX) < clampDist)
+		clampOffset.x = screenSize.x / 2.0f - centerX;
 
-	if (fabsf(tl.y) < clampDist)
+	// Top screen edge.
+	if (screenSnap &&
+	    fabsf(tl.y) < clampDist)
 		clampOffset.y = -tl.y;
-	if (fabsf(clampOffset.y) < EPSILON &&
+	// Bottom screen edge.
+	if (screenSnap &&
+	    fabsf(clampOffset.y) < EPSILON &&
 	    fabsf(screenSize.y - br.y) < clampDist)
 		clampOffset.y = screenSize.y - br.y;
+	// Vertical center.
+	if (centerSnap &&
+	    fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
+	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
+		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	return clampOffset;
 }
@@ -472,6 +502,66 @@ static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+struct OffsetData {
+	float clampDist;
+	vec3 tl, br, offset;
+};
+
+static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
+		void *param)
+{
+	OffsetData *data = reinterpret_cast<OffsetData*>(param);
+
+	if (obs_sceneitem_selected(item))
+		return true;
+
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(item, &boxTransform);
+
+	vec3 t[4] = {
+		GetTransformedPos(0.0f, 0.0f, boxTransform),
+		GetTransformedPos(1.0f, 0.0f, boxTransform),
+		GetTransformedPos(0.0f, 1.0f, boxTransform),
+		GetTransformedPos(1.0f, 1.0f, boxTransform)
+	};
+
+	bool first = true;
+	vec3 tl, br;
+	vec3_zero(&tl);
+	vec3_zero(&br);
+	for (const vec3 &v : t) {
+		if (first) {
+			vec3_copy(&tl, &v);
+			vec3_copy(&br, &v);
+			first = false;
+		} else {
+			vec3_min(&tl, &tl, &v);
+			vec3_max(&br, &br, &v);
+		}
+	}
+
+	// Snap to other source edges
+#define EDGE_SNAP(l, r, x, y) \
+	do { \
+		double dist = fabsf(l.x - data->r.x); \
+		if (dist < data->clampDist && \
+		    fabsf(data->offset.x) < EPSILON && \
+		    data->tl.y < br.y && \
+		    data->br.y > tl.y && \
+		    (fabsf(data->offset.x) > dist || data->offset.x < EPSILON)) \
+			data->offset.x = l.x - data->r.x; \
+	} while (false)
+
+	EDGE_SNAP(tl, br, x, y);
+	EDGE_SNAP(tl, br, y, x);
+	EDGE_SNAP(br, tl, x, y);
+	EDGE_SNAP(br, tl, y, x);
+#undef EDGE_SNAP
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
 void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
@@ -485,9 +575,39 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 	data.br.x += offset.x;
 	data.br.y += offset.y;
 
-	vec3 snapOffset = GetScreenSnapOffset(data.tl, data.br);
-	offset.x += snapOffset.x;
-	offset.y += snapOffset.y;
+	vec3 snapOffset = GetSnapOffset(data.tl, data.br);
+
+	const bool snap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SnappingEnabled");
+	const bool sourcesSnap = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SourceSnapping");
+	if (snap == false)
+		return;
+	if (sourcesSnap == false) {
+		offset.x += snapOffset.x;
+		offset.y += snapOffset.y;
+		return;
+	}
+
+	const float clampDist = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScale;
+
+	OffsetData offsetData;
+	offsetData.clampDist = clampDist;
+	offsetData.tl = data.tl;
+	offsetData.br = data.br;
+	vec3_copy(&offsetData.offset, &snapOffset);
+
+	obs_scene_enum_items(scene, GetSourceSnapOffset, &offsetData);
+
+	if (fabsf(offsetData.offset.x) > EPSILON ||
+	    fabsf(offsetData.offset.y) > EPSILON) {
+		offset.x += offsetData.offset.x;
+		offset.y += offsetData.offset.y;
+	} else {
+		offset.x += snapOffset.x;
+		offset.y += snapOffset.y;
+	}
 }
 
 static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
@@ -606,7 +726,7 @@ void OBSBasicPreview::SnapStretchingToScreen(vec3 &tl, vec3 &br)
 	vec3_max(&boundingBR, &boundingBR, &newBL);
 	vec3_max(&boundingBR, &boundingBR, &newBR);
 
-	vec3 offset = GetScreenSnapOffset(boundingTL, boundingBR);
+	vec3 offset = GetSnapOffset(boundingTL, boundingBR);
 	vec3_add(&offset, &offset, &newTL);
 	vec3_transform(&offset, &offset, &screenToItem);
 	vec3_sub(&offset, &offset, &tl);
@@ -620,6 +740,16 @@ void OBSBasicPreview::SnapStretchingToScreen(vec3 &tl, vec3 &br)
 		tl.y += offset.y;
 	else if (stretchFlags & ITEM_BOTTOM)
 		br.y += offset.y;
+}
+
+static float maxfunc(float x, float y)
+{
+	return x > y ? x : y;
+}
+
+static float minfunc(float x, float y)
+{
+	return x < y ? x : y;
 }
 
 void OBSBasicPreview::CropItem(const vec2 &pos)
@@ -653,31 +783,34 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 		stretchItemSize.x + crop.right * scale.x,
 		stretchItemSize.y + crop.bottom * scale.y);
 
-	vec2_max((vec2*)&pos3, (vec2*)&pos3, &max_br);
-	vec2_min((vec2*)&pos3, (vec2*)&pos3, &max_tl);
+	typedef std::function<float (float, float)> minmax_func_t;
+
+	minmax_func_t min_x = scale.x < 0.0f ? maxfunc : minfunc;
+	minmax_func_t min_y = scale.y < 0.0f ? maxfunc : minfunc;
+	minmax_func_t max_x = scale.x < 0.0f ? minfunc : maxfunc;
+	minmax_func_t max_y = scale.y < 0.0f ? minfunc : maxfunc;
+
+	pos3.x = min_x(pos3.x, max_br.x);
+	pos3.x = max_x(pos3.x, max_tl.x);
+	pos3.y = min_y(pos3.y, max_br.y);
+	pos3.y = max_y(pos3.y, max_tl.y);
 
 	if (stretchFlags & ITEM_LEFT) {
-		tl.x = pos3.x;
-
 		float maxX = stretchItemSize.x - (2.0 * scale.x);
-		if (tl.x > maxX) pos3.x = tl.x = maxX;
-	} else if (stretchFlags & ITEM_RIGHT) {
-		br.x = pos3.x;
+		pos3.x = tl.x = min_x(pos3.x, maxX);
 
+	} else if (stretchFlags & ITEM_RIGHT) {
 		float minX = (2.0 * scale.x);
-		if (br.x < minX) pos3.x = br.x = minX;
+		pos3.x = br.x = max_x(pos3.x, minX);
 	}
 
 	if (stretchFlags & ITEM_TOP) {
-		tl.y = pos3.y;
-
 		float maxY = stretchItemSize.y - (2.0 * scale.y);
-		if (tl.y > maxY) pos3.y = tl.y = maxY;
-	} else if (stretchFlags & ITEM_BOTTOM) {
-		br.y = pos3.y;
+		pos3.y = tl.y = min_y(pos3.y, maxY);
 
+	} else if (stretchFlags & ITEM_BOTTOM) {
 		float minY = (2.0 * scale.y);
-		if (br.y < minY) pos3.y = br.y = minY;
+		pos3.y = br.y = max_y(pos3.y, minY);
 	}
 
 #define ALIGN_X (ITEM_LEFT|ITEM_RIGHT)

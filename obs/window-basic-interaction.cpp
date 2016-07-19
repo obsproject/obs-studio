@@ -168,6 +168,9 @@ void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 			width());
 	config_set_int(App()->GlobalConfig(), "InteractionWindow", "cy",
 			height());
+
+	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
+		OBSBasicInteraction::DrawPreview, this);
 }
 
 static int TranslateQtKeyboardEventModifiers(QInputEvent *event, bool mouseEvent) {

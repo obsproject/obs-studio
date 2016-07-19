@@ -1,4 +1,5 @@
 #include <util/platform.h>
+#include <util/dstr.h>
 #include <obs-module.h>
 #include <jansson.h>
 
@@ -328,7 +329,7 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 		obs_data_set_int(settings, "keyint_sec", keyint);
 	}
 
-	obs_data_set_bool(settings, "cbr", true);
+	obs_data_set_string(settings, "rate_control", "CBR");
 
 	item = json_object_get(recommended, "profile");
 	if (item && json_is_string(item)) {
@@ -343,6 +344,22 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 			obs_data_set_int(settings, "bitrate", max_bitrate);
 			obs_data_set_int(settings, "buffer_size", max_bitrate);
 		}
+	}
+
+	item = json_object_get(recommended, "x264opts");
+	if (item && json_is_string(item)) {
+		const char *x264_settings = json_string_value(item);
+		const char *cur_settings =
+			obs_data_get_string(settings, "x264opts");
+		struct dstr opts;
+
+		dstr_init_copy(&opts, cur_settings);
+		if (!dstr_is_empty(&opts))
+			dstr_cat(&opts, " ");
+		dstr_cat(&opts, x264_settings);
+
+		obs_data_set_string(settings, "x264opts", opts.array);
+		dstr_free(&opts);
 	}
 }
 

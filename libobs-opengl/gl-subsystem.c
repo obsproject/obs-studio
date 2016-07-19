@@ -979,7 +979,7 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 	if (!program)
 		goto fail;
 
-	load_vb_buffers(program, device->cur_vertex_buffer);
+	load_vb_buffers(program, device->cur_vertex_buffer, ib);
 
 	if (program != device->cur_program && device->cur_program) {
 		glUseProgram(0);

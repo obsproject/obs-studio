@@ -17,6 +17,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
+#include <windows.h>
 #define inline __inline
 
 #endif
@@ -629,7 +630,11 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 
 /* ------------------------------------------------------------------------- */
 
+#ifdef _WIN32
+int wmain(int argc, wchar_t *argv_w[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	struct ffm_packet_info info = {0};
 	struct ffmpeg_mux ffm = {0};
@@ -638,6 +643,21 @@ int main(int argc, char *argv[])
 	int ret;
 
 #ifdef _WIN32
+	char **argv;
+
+	argv = malloc(argc * sizeof(char*));
+	for (int i = 0; i < argc; i++) {
+		size_t len = wcslen(argv_w[i]);
+		int size;
+
+		size = WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len,
+				NULL, 0, NULL, NULL);
+		argv[i] = malloc(size + 1);
+		WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len, argv[i],
+				size + 1, NULL, NULL);
+		argv[i][size] = 0;
+	}
+
 	_setmode(_fileno(stdin), O_BINARY);
 #endif
 	setvbuf(stderr, NULL, _IONBF, 0);
@@ -660,5 +680,11 @@ int main(int argc, char *argv[])
 
 	ffmpeg_mux_free(&ffm);
 	resize_buf_free(&rb);
+
+#ifdef _WIN32
+	for (int i = 0; i < argc; i++)
+		free(argv[i]);
+	free(argv);
+#endif
 	return 0;
 }

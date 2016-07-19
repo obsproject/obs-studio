@@ -119,8 +119,7 @@ void shader_sampler_convert(struct shader_sampler *ss,
 		else if (astrcmpi(state, "MaxAnisotropy") == 0)
 			info->max_anisotropy = (int)strtol(value, NULL, 10);
 		else if (astrcmpi(state, "BorderColor") == 0)
-			info->border_color = (*value == '#') ?
-				strtol(value + 1, NULL, 16) : 0;
+			info->border_color = strtol(value + 1, NULL, 16);
 	}
 }
 
@@ -138,7 +137,7 @@ static int sp_parse_sampler_state_item(struct shader_parser *sp,
 	ret = cf_next_token_should_be(&sp->cfp, "=", ";", NULL);
 	if (ret != PARSE_SUCCESS) goto fail;
 
-	ret = cf_next_name(&sp->cfp, &value, "value name", ";");
+	ret = cf_next_token_copy(&sp->cfp, &value);
 	if (ret != PARSE_SUCCESS) goto fail;
 
 	ret = cf_next_token_should_be(&sp->cfp, ";", ";", NULL);

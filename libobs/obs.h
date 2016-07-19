@@ -112,6 +112,8 @@ enum obs_allow_direct_render {
 };
 
 enum obs_scale_type {
+	OBS_SCALE_DISABLE,
+	OBS_SCALE_POINT,
 	OBS_SCALE_BICUBIC,
 	OBS_SCALE_BILINEAR,
 	OBS_SCALE_LANCZOS
@@ -968,8 +970,11 @@ EXPORT void obs_source_release_frame(obs_source_t *source,
  *
  * After calling this, set your parameters for the effect, then call
  * obs_source_process_filter_end to draw the filter.
+ *
+ * Returns true if filtering should continue, false if the filter is bypassed
+ * for whatever reason.
  */
-EXPORT void obs_source_process_filter_begin(obs_source_t *filter,
+EXPORT bool obs_source_process_filter_begin(obs_source_t *filter,
 		enum gs_color_format format,
 		enum obs_allow_direct_render allow_direct);
 
@@ -1249,6 +1254,11 @@ EXPORT void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 		const struct obs_sceneitem_crop *crop);
 EXPORT void obs_sceneitem_get_crop(const obs_sceneitem_t *item,
 		struct obs_sceneitem_crop *crop);
+
+EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
+		enum obs_scale_type filter);
+EXPORT enum obs_scale_type obs_sceneitem_get_scale_filter(
+		obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_update_end(obs_sceneitem_t *item);
@@ -1633,6 +1643,8 @@ EXPORT void *obs_encoder_get_type_data(obs_encoder_t *encoder);
 
 EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
 
+EXPORT uint32_t obs_get_encoder_caps(const char *encoder_id);
+
 /** Duplicates an encoder packet */
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src);
@@ -1647,6 +1659,9 @@ EXPORT const char *obs_service_get_display_name(const char *id);
 
 EXPORT obs_service_t *obs_service_create(const char *id, const char *name,
 		obs_data_t *settings, obs_data_t *hotkey_data);
+
+EXPORT obs_service_t *obs_service_create_private(const char *id,
+		const char *name, obs_data_t *settings);
 
 /**
  * Adds/releases a reference to a service.  When the last reference is
