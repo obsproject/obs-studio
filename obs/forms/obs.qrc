@@ -13,6 +13,8 @@
     <file>images/properties.png</file>
     <file>images/up.png</file>
     <file>images/obs.png</file>
+    <file>images/active.png</file>
+    <file>images/inactive.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>

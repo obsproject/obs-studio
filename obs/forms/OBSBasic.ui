@@ -120,6 +120,10 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/inactive.png</normaloff>:/res/images/inactive.png</iconset>
+            </property>
             <property name="text">
              <string>Basic.Main.StartStreaming</string>
             </property>
@@ -144,6 +148,10 @@
               <width>130</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/inactive.png</normaloff>:/res/images/inactive.png</iconset>
             </property>
             <property name="text">
              <string>Basic.Main.StartRecording</string>

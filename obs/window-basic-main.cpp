@@ -3515,6 +3515,8 @@ void OBSBasic::ForceStopStreaming()
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
+	ui->streamButton->setIcon(QIcon(QString::fromUtf8(
+		":/res/images/inactive.png")));
 }
 
 void OBSBasic::StreamDelayStarting(int sec)
@@ -3564,6 +3566,8 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	ui->streamButton->setIcon(QIcon(QString::fromUtf8(
+		":/res/images/active.png")));
 
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
@@ -3630,6 +3634,8 @@ void OBSBasic::StreamingStop(int code)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+	ui->streamButton->setIcon(QIcon(QString::fromUtf8(
+		":/res/images/inactive.png")));
 }
 
 void OBSBasic::StartRecording()
@@ -3664,6 +3670,8 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	ui->recordButton->setIcon(QIcon(QString::fromUtf8(
+		":/res/images/active.png")));
 
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
@@ -3701,6 +3709,8 @@ void OBSBasic::RecordingStop(int code)
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 	}
+	ui->recordButton->setIcon(QIcon(QString::fromUtf8(
+		":/res/images/inactive.png")));
 }
 
 void OBSBasic::on_streamButton_clicked()
