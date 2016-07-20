@@ -356,7 +356,7 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 	enum audio_format new_audio_format;
 
 	new_audio_format = convert_vlc_audio_format(format);
-	if (*channels == 7 || *channels > 8)
+	if (*channels > 2)
 		*channels = 2;
 
 	/* don't free audio data if the data is the same format */
