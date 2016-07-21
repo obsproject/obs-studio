@@ -611,7 +611,6 @@
         },
         {
             "name": "Stre.am",
-            "common": true,
             "servers": [
                 {
                     "name": "Default",
