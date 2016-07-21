@@ -608,6 +608,22 @@
                 "max video bitrate": 3500,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Stre.am",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://media.stre.am:1935/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2500,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
