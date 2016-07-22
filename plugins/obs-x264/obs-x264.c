@@ -97,7 +97,7 @@ static void obs_x264_defaults(obs_data_t *settings)
 	obs_data_set_default_int   (settings, "keyint_sec",  0);
 	obs_data_set_default_int   (settings, "crf",         23);
 	obs_data_set_default_bool  (settings, "vfr",         false);
-	obs_data_set_default_bool  (settings, "rate_control","CBR");
+	obs_data_set_default_string(settings, "rate_control","CBR");
 
 	obs_data_set_default_string(settings, "preset",      "veryfast");
 	obs_data_set_default_string(settings, "profile",     "");
