@@ -206,9 +206,7 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	if (!ng->states[0])
 		return audio;
 
-	if (!ng->last_timestamp) {
-		ng->last_timestamp = audio->timestamp;
-	} else {
+	if (ng->last_timestamp) {
 		int64_t diff = llabs((int64_t)ng->last_timestamp -
 				(int64_t)audio->timestamp);
 
