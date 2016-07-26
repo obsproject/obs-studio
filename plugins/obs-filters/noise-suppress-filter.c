@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#include <util/circlebuf.h>
 #include <obs-module.h>
 #include <speex/speex_preprocess.h>
 
@@ -32,14 +33,25 @@
 
 struct noise_suppress_data {
 	obs_source_t *context;
+	int suppress_level;
+
+	size_t frames;
+	size_t channels;
+
+	struct circlebuf info_buffer;
+	struct circlebuf input_buffers[MAX_PREPROC_CHANNELS];
+	struct circlebuf output_buffers[MAX_PREPROC_CHANNELS];
 
 	/* Speex preprocessor state */
 	SpeexPreprocessState *states[MAX_PREPROC_CHANNELS];
 
 	/* 16 bit PCM buffers */
+	float *copy_buffers[MAX_PREPROC_CHANNELS];
 	spx_int16_t *segment_buffers[MAX_PREPROC_CHANNELS];
 
-	int suppress_level;
+	/* output data */
+	struct obs_audio_data output_audio;
+	DARRAY(float) output_data;
 };
 
 /* -------------------------------------------------------- */
@@ -62,51 +74,58 @@ static void noise_suppress_destroy(void *data)
 {
 	struct noise_suppress_data *ng = data;
 
-	for (size_t i = 0; i < MAX_PREPROC_CHANNELS; i++) {
+	for (size_t i = 0; i < ng->channels; i++) {
 		speex_preprocess_state_destroy(ng->states[i]);
-		bfree(ng->segment_buffers[i]);
+		circlebuf_free(&ng->input_buffers[i]);
+		circlebuf_free(&ng->output_buffers[i]);
 	}
 
+	bfree(ng->segment_buffers[0]);
+	bfree(ng->copy_buffers[0]);
+	circlebuf_free(&ng->info_buffer);
+	da_free(ng->output_data);
 	bfree(ng);
 }
 
 static inline void alloc_channel(struct noise_suppress_data *ng,
-		uint32_t sample_rate, size_t channel, uint32_t size)
+		uint32_t sample_rate, size_t channel, size_t frames)
 {
-	if (ng->states[channel])
-		return;
+	ng->states[channel] = speex_preprocess_state_init((int)frames,
+			sample_rate);
 
-	debug("Create channel %d speex state", (int)channel);
-	ng->states[channel] = speex_preprocess_state_init(size, sample_rate);
-
-	if (!ng->segment_buffers[channel]) {
-		ng->segment_buffers[channel] =
-			bzalloc(size * sizeof(spx_int16_t));
-		debug("Create channel %d speex buffer: size = %"PRIu32,
-				(int)channel, size);
-	}
+	circlebuf_reserve(&ng->input_buffers[channel],  frames * sizeof(float));
+	circlebuf_reserve(&ng->output_buffers[channel], frames * sizeof(float));
 }
 
 static void noise_suppress_update(void *data, obs_data_t *s)
 {
 	struct noise_suppress_data *ng = data;
 
-	int suppress_level = (int)obs_data_get_int(s, S_SUPPRESS_LEVEL);
 	uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
-	uint32_t segment_size = sample_rate / 100;
 	size_t channels = audio_output_get_channels(obs_get_audio());
+	size_t frames = (size_t)sample_rate / 100;
 
-	ng->suppress_level = suppress_level;
+	ng->suppress_level = (int)obs_data_get_int(s, S_SUPPRESS_LEVEL);
 
-	debug("channels = %d", (int)channels);
-	debug("sample_rate = %"PRIu32, sample_rate);
-	debug("segment_size = %u"PRIu32, segment_size);
-	debug("block size = %d",
-			(int)audio_output_get_block_size(obs_get_audio()));
+	/* Process 10 millisecond segments to keep latency low */
+	ng->frames = frames;
+	ng->channels = channels;
+
+	/* Ignore if already allocated */
+	if (ng->states[0])
+		return;
 
 	/* One speex state for each channel (limit 2) */
+	ng->copy_buffers[0] = bmalloc(frames * channels * sizeof(float));
+	ng->segment_buffers[0] = bmalloc(frames * channels * sizeof(spx_int16_t));
+
+	if (channels == 2) {
+		ng->copy_buffers[1] = ng->copy_buffers[0] + frames;
+		ng->segment_buffers[1] = ng->segment_buffers[0] + frames;
+	}
+
 	for (size_t i = 0; i < channels; i++)
-		alloc_channel(ng, sample_rate, i, segment_size);
+		alloc_channel(ng, sample_rate, i, frames);
 }
 
 static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
@@ -119,41 +138,90 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 	return ng;
 }
 
-static inline void process_channel(struct noise_suppress_data *ng,
-		size_t channel, size_t frames, float *adata[2])
+static inline void process(struct noise_suppress_data *ng)
 {
+	/* Pop from input circlebuf */
+	for (size_t i = 0; i < ng->channels; i++)
+		circlebuf_pop_front(&ng->input_buffers[i], ng->copy_buffers[i],
+				ng->frames * sizeof(float));
+
 	/* Set args */
-	speex_preprocess_ctl(ng->states[channel],
-			SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
-			&ng->suppress_level);
+	for (size_t i = 0; i < ng->channels; i++)
+		speex_preprocess_ctl(ng->states[i],
+				SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
+				&ng->suppress_level);
 
 	/* Convert to 16bit */
-	for (size_t i = 0; i < frames; i++)
-		ng->segment_buffers[channel][i] =
-			(spx_int16_t)(adata[channel][i] * c_32_to_16);
+	for (size_t i = 0; i < ng->channels; i++)
+		for (size_t j = 0; j < ng->frames; j++)
+			ng->segment_buffers[i][j] = (spx_int16_t)
+				(ng->copy_buffers[i][j] * c_32_to_16);
 
 	/* Execute */
-	speex_preprocess_run(ng->states[channel], ng->segment_buffers[channel]);
+	for (size_t i = 0; i < ng->channels; i++)
+		speex_preprocess_run(ng->states[i], ng->segment_buffers[i]);
 
 	/* Convert back to 32bit */
-	for (size_t i = 0; i < frames; i++)
-		adata[channel][i] =
-			(float)ng->segment_buffers[channel][i] / c_16_to_32;
+	for (size_t i = 0; i < ng->channels; i++)
+		for (size_t j = 0; j < ng->frames; j++)
+			ng->copy_buffers[i][j] =
+				(float)ng->segment_buffers[i][j] / c_16_to_32;
+
+	/* Push to output circlebuf */
+	for (size_t i = 0; i < ng->channels; i++)
+		circlebuf_push_back(&ng->output_buffers[i], ng->copy_buffers[i],
+				ng->frames * sizeof(float));
 }
+
+struct ng_audio_info {
+	uint32_t frames;
+	uint64_t timestamp;
+};
 
 static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	struct obs_audio_data *audio)
 {
 	struct noise_suppress_data *ng = data;
-	float *adata[2] = {(float*)audio->data[0], (float*)audio->data[1]};
+	struct ng_audio_info info;
+	size_t segment_size = ng->frames * sizeof(float);
+	size_t out_size;
 
-	/* Execute for each available channel */
-	for (size_t i = 0; i < MAX_PREPROC_CHANNELS; i++) {
-		if (ng->states[i])
-			process_channel(ng, i, audio->frames, adata);
+	if (!ng->states[0])
+		return audio;
+
+	info.frames = audio->frames;
+	info.timestamp = audio->timestamp;
+	circlebuf_push_back(&ng->info_buffer, &info, sizeof(info));
+
+	for (size_t i = 0; i < ng->channels; i++)
+		circlebuf_push_back(&ng->input_buffers[i], audio->data[i],
+				audio->frames * sizeof(float));
+
+	while (ng->input_buffers[0].size >= segment_size)
+		process(ng);
+
+	memset(&info, 0, sizeof(info));
+	circlebuf_peek_front(&ng->info_buffer, &info, sizeof(info));
+	out_size = info.frames * sizeof(float);
+
+	if (ng->output_buffers[0].size < out_size)
+		return NULL;
+
+	circlebuf_pop_front(&ng->info_buffer, NULL, sizeof(info));
+	da_resize(ng->output_data, out_size * ng->channels);
+
+	for (size_t i = 0; i < ng->channels; i++) {
+		ng->output_audio.data[i] =
+			(uint8_t*)&ng->output_data.array[i * out_size];
+
+		circlebuf_pop_front(&ng->output_buffers[i],
+				ng->output_audio.data[i],
+				out_size);
 	}
 
-	return audio;
+	ng->output_audio.frames = info.frames;
+	ng->output_audio.timestamp = info.timestamp;
+	return &ng->output_audio;
 }
 
 static void noise_suppress_defaults(obs_data_t *s)
