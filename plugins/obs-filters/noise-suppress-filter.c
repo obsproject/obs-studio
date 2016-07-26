@@ -206,28 +206,40 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	if (!ng->states[0])
 		return audio;
 
+	/* -----------------------------------------------
+	 * if timestamp has dramatically changed, consider it a new stream of
+	 * audio data.  clear all circular buffers to prevent old audio data
+	 * from being processed as part of the new data. */
 	if (ng->last_timestamp) {
 		int64_t diff = llabs((int64_t)ng->last_timestamp -
 				(int64_t)audio->timestamp);
 
-		/* if timestamp has dramatically changed, reset audio data */
 		if (diff > 1000000000LL)
 			reset_data(ng);
 	}
 
+	ng->last_timestamp = audio->timestamp;
+
+	/* -----------------------------------------------
+	 * push audio packet info (timestamp/frame count) to info circlebuf */
 	info.frames = audio->frames;
 	info.timestamp = audio->timestamp;
 	circlebuf_push_back(&ng->info_buffer, &info, sizeof(info));
 
-	ng->last_timestamp = audio->timestamp;
-
+	/* -----------------------------------------------
+	 * push back current audio data to input circlebuf */
 	for (size_t i = 0; i < ng->channels; i++)
 		circlebuf_push_back(&ng->input_buffers[i], audio->data[i],
 				audio->frames * sizeof(float));
 
+	/* -----------------------------------------------
+	 * pop/process each 10ms segments, push back to output circlebuf */
 	while (ng->input_buffers[0].size >= segment_size)
 		process(ng);
 
+	/* -----------------------------------------------
+	 * peek front of info circlebuf, check to see if we have enough to
+	 * pop the expected packet size, if not, return null */
 	memset(&info, 0, sizeof(info));
 	circlebuf_peek_front(&ng->info_buffer, &info, sizeof(info));
 	out_size = info.frames * sizeof(float);
@@ -235,6 +247,9 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	if (ng->output_buffers[0].size < out_size)
 		return NULL;
 
+	/* -----------------------------------------------
+	 * if there's enough audio data buffered in the output circlebuf,
+	 * pop and return a packet */
 	circlebuf_pop_front(&ng->info_buffer, NULL, sizeof(info));
 	da_resize(ng->output_data, out_size * ng->channels);
 
