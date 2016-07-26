@@ -1,0 +1,3 @@
+#pragma once
+
+#define SPEEXDSP_ENABLED @LIBSPEEXDSP_FOUND@
