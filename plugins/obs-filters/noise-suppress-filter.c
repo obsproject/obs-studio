@@ -35,6 +35,8 @@ struct noise_suppress_data {
 	obs_source_t *context;
 	int suppress_level;
 
+	uint64_t last_timestamp;
+
 	size_t frames;
 	size_t channels;
 
@@ -178,6 +180,21 @@ struct ng_audio_info {
 	uint64_t timestamp;
 };
 
+static inline void clear_circlebuf(struct circlebuf *buf)
+{
+	circlebuf_pop_front(buf, NULL, buf->size);
+}
+
+static void reset_data(struct noise_suppress_data *ng)
+{
+	for (size_t i = 0; i < ng->channels; i++) {
+		clear_circlebuf(&ng->input_buffers[i]);
+		clear_circlebuf(&ng->output_buffers[i]);
+	}
+
+	clear_circlebuf(&ng->info_buffer);
+}
+
 static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	struct obs_audio_data *audio)
 {
@@ -189,9 +206,22 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	if (!ng->states[0])
 		return audio;
 
+	if (!ng->last_timestamp) {
+		ng->last_timestamp = audio->timestamp;
+	} else {
+		int64_t diff = llabs((int64_t)ng->last_timestamp -
+				(int64_t)audio->timestamp);
+
+		/* if timestamp has dramatically changed, reset audio data */
+		if (diff > 1000000000LL)
+			reset_data(ng);
+	}
+
 	info.frames = audio->frames;
 	info.timestamp = audio->timestamp;
 	circlebuf_push_back(&ng->info_buffer, &info, sizeof(info));
+
+	ng->last_timestamp = audio->timestamp;
 
 	for (size_t i = 0; i < ng->channels; i++)
 		circlebuf_push_back(&ng->input_buffers[i], audio->data[i],
