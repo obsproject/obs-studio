@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>957</width>
+    <width>1110</width>
     <height>724</height>
    </rect>
   </property>
@@ -804,7 +804,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>957</width>
+     <width>1110</width>
      <height>21</height>
     </rect>
    </property>
@@ -875,6 +875,7 @@
     </widget>
     <addaction name="transformMenu"/>
     <addaction name="orderMenu"/>
+    <addaction name="actionLockPreview"/>
     <addaction name="separator"/>
     <addaction name="actionAdvAudioProperties"/>
    </widget>
@@ -1308,6 +1309,14 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.View.StatusBar</string>
+   </property>
+  </action>
+  <action name="actionLockPreview">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.LockPreview</string>
    </property>
   </action>
  </widget>

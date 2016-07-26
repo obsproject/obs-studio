@@ -379,6 +379,11 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
+	if (locked) {
+		OBSQTDisplay::mousePressEvent(event);
+		return;
+	}
+
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatio();
 	float x = float(event->x()) - main->previewX / pixelRatio;
@@ -451,6 +456,11 @@ void OBSBasicPreview::ProcessClick(const vec2 &pos)
 
 void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 {
+	if (locked) {
+		OBSQTDisplay::mouseReleaseEvent(event);
+		return;
+	}
+
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
 
@@ -941,6 +951,9 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 {
+	if (locked)
+		return;
+
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
 
@@ -1076,6 +1089,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 void OBSBasicPreview::DrawSceneEditing()
 {
+	if (locked)
+		return;
+
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
 	gs_effect_t    *solid = obs_get_base_effect(OBS_EFFECT_SOLID);

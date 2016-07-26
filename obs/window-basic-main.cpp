@@ -374,6 +374,8 @@ void OBSBasic::Save(const char *file)
 			ui->transitionDuration->value(), transitions,
 			scene, curProgramScene);
 
+	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
+
 	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 
@@ -606,6 +608,10 @@ retryScene:
 	obs_data_array_release(quickTransitionData);
 
 	RefreshQuickTransitions();
+
+	bool previewLocked = obs_data_get_bool(data, "preview_locked");
+	ui->preview->SetLocked(previewLocked);
+	ui->actionLockPreview->setChecked(previewLocked);
 
 	obs_data_release(data);
 
@@ -2958,6 +2964,12 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		if (IsPreviewProgramMode())
 			action->setEnabled(false);
 
+		action = popup.addAction(
+				QTStr("Basic.MainMenu.Edit.LockPreview"),
+				this, SLOT(on_actionLockPreview_triggered()));
+		action->setCheckable(true);
+		action->setChecked(ui->preview->Locked());
+
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
 				SLOT(OpenPreviewProjector()));
@@ -4305,4 +4317,10 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowStatusBar", visible);
+}
+
+void OBSBasic::on_actionLockPreview_triggered()
+{
+	ui->preview->ToggleLocked();
+	ui->actionLockPreview->setChecked(ui->preview->Locked());
 }

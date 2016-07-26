@@ -460,6 +460,8 @@ private slots:
 	void on_actionMoveToTop_triggered();
 	void on_actionMoveToBottom_triggered();
 
+	void on_actionLockPreview_triggered();
+
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();
 	void on_settingsButton_clicked();

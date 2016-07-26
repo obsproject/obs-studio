@@ -45,6 +45,7 @@ private:
 	bool         mouseMoved     = false;
 	bool         mouseOverItems = false;
 	bool         cropping       = false;
+	bool         locked         = false;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -79,6 +80,10 @@ public:
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 	void DrawSceneEditing();
+
+	inline void SetLocked(bool newLockedVal) {locked = newLockedVal;}
+	inline void ToggleLocked() {locked = !locked;}
+	inline bool Locked() const {return locked;}
 
 	/* use libobs allocator for alignment because the matrices itemToScreen
 	 * and screenToItem may contain SSE data, which will cause SSE
