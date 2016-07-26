@@ -13,11 +13,6 @@
 #include "obs.hpp"
 #include "util/platform.h"
 
-struct AddSourceData {
-	obs_source_t *source;
-	bool visible;
-};
-
 // default
 int monitor_to_record = 0;
 std::string encoder_selected = "obs_x264";
@@ -88,17 +83,6 @@ void print_obs_enum_output_types() {
 	std::cout << "#############" << std::endl;
 }
 
-bool printme(void *nulldata, obs_source_t *source)
-{
-	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_id(source);
-
-	if (strcmp(id, "monitor_capture") == 0)
-		std::cout << "found it!" << std::endl;
-
-	return true;
-}
-
 void reset_video() {
 	struct obs_video_info ovi;
 
@@ -145,20 +129,6 @@ void setup_input() {
 
 		obs_data_release(source_settings);
 	}
-
-	//if (source) {
-	//	obs_scene_t* scene1 = obs_scene_create("");
-	//	AddSourceData data;
-	//	data.source = source;
-	//	data.visible = true;
-
-	//	obs_sceneitem_t* sceneitem = obs_scene_add(scene1, data.source);
-	//	obs_sceneitem_set_visible(sceneitem, data.visible);
-
-	//	obs_data_t* settings = obs_source_get_settings(source);
-
-	//	//obs_data_t *settings = obs_data_create();
-	//}
 
 	// set this source as output.
 	obs_set_output_source(0, source);
@@ -337,7 +307,8 @@ int main(int argc, char **argv) {
 	print_obs_enum_input_types();
 	print_obs_enum_encoder_types();
 	print_obs_enum_output_types();
-*/
+	*/
+
 	setup_input();
 
 	obs_output_t* fileOutput = setup_output();
