@@ -118,15 +118,14 @@ void reset_audio() {
 }
 
 void setup_input() {
-	obs_source_t *source = obs_source_create("monitor_capture", "my capture 1", nullptr, nullptr);
-
+	OBSSource source = obs_source_create("monitor_capture", "my capture 1", nullptr, nullptr);
+	obs_source_release(source);
 	{
-		obs_data_t *source_settings = obs_data_create();
+		obs_data_t * source_settings = obs_data_create();
 		obs_data_set_int(source_settings, "monitor", monitor_to_record);
 		obs_data_set_bool(source_settings, "capture_cursor", false);
 
 		obs_source_update(source, source_settings);
-
 		obs_data_release(source_settings);
 	}
 
@@ -134,52 +133,52 @@ void setup_input() {
 	obs_set_output_source(0, source);
 }
 
-obs_output_t* setup_output() {
-	obs_encoder_t* video_encoder = obs_video_encoder_create(encoder_selected.c_str(), "video_encoder", nullptr, nullptr);
+std::vector<OBSOutput> setup_output() {
+	OBSEncoder video_encoder = obs_video_encoder_create(encoder_selected.c_str(), "video_encoder", nullptr, nullptr);
+	obs_encoder_release(video_encoder);
 	obs_encoder_set_video(video_encoder, obs_get_video());
 	{
-		obs_data_t *encoder_settings = obs_data_create();
+		obs_data_t * encoder_settings = obs_data_create();
 		obs_data_set_string(encoder_settings, "rate_control", "CBR");
 		obs_data_set_int(encoder_settings, "bitrate", video_bitrate);
 
 		obs_encoder_update(video_encoder, encoder_settings);
-
 		obs_data_release(encoder_settings);
 	}
 
-	obs_encoder_t* audio_encoder = obs_audio_encoder_create("mf_aac", "audio_encoder", nullptr, 0, nullptr);
+	OBSEncoder audio_encoder = obs_audio_encoder_create("mf_aac", "audio_encoder", nullptr, 0, nullptr);
+	obs_encoder_release(audio_encoder);
 	obs_encoder_set_audio(audio_encoder, obs_get_audio());
 	{
-		obs_data_t *encoder_settings = obs_data_create();
+		obs_data_t * encoder_settings = obs_data_create();
 		obs_data_set_string(encoder_settings, "rate_control", "CBR");
 		obs_data_set_int(encoder_settings, "samplerate", 44100);
 		obs_data_set_int(encoder_settings, "bitrate", 160);
 		obs_data_set_default_bool(encoder_settings, "allow he-aac", true);
 
 		obs_encoder_update(audio_encoder, encoder_settings);
-
 		obs_data_release(encoder_settings);
 	}
 
-	obs_output_t* file_output = obs_output_create("ffmpeg_muxer", "simple_file_output", nullptr, nullptr);
+	OBSOutput file_output = obs_output_create("ffmpeg_muxer", "simple_file_output", nullptr, nullptr);
+	obs_output_release(file_output);
 	{
-		obs_data_t* output_settings = obs_data_create();
+		obs_data_t * output_settings = obs_data_create();
 		obs_data_set_string(output_settings, "path", output_filepath.c_str());
 		obs_data_set_string(output_settings, "muxer_settings", NULL);
 
 		obs_output_update(file_output, output_settings);
-
 		obs_data_release(output_settings);
 	}
 
-	obs_output_t* file_output2 = obs_output_create("ffmpeg_muxer", "simple_file_output2", nullptr, nullptr);
+	OBSOutput file_output2 = obs_output_create("ffmpeg_muxer", "simple_file_output2", nullptr, nullptr);
+	obs_output_release(file_output2);
 	{
-		obs_data_t* output_settings2 = obs_data_create();
+		obs_data_t * output_settings2 = obs_data_create();
 		obs_data_set_string(output_settings2, "path", output_filepath2.c_str());
 		obs_data_set_string(output_settings2, "muxer_settings", NULL);
 
 		obs_output_update(file_output2, output_settings2);
-
 		obs_data_release(output_settings2);
 	}
 
@@ -195,7 +194,8 @@ obs_output_t* setup_output() {
 		std::cout << "Fail!" << std::endl;
 	}
 
-	return file_output;
+	std::vector<OBSOutput> outputs = { file_output, file_output2 };
+	return outputs;
 }
 
 int parse_args(int argc, char **argv) {
@@ -311,14 +311,11 @@ int main(int argc, char **argv) {
 
 	setup_input();
 
-	obs_output_t* fileOutput = setup_output();
+	// while outputs are kept in scope, we will keep recording.
+	std::vector<OBSOutput> fileOutputs = setup_output();
 
 	std::string str;
 	std::getline(std::cin, str);
-
-	obs_output_stop(fileOutput);
-
-	std::cout << "-------" << std::endl;
 
 	return 0;
 }
