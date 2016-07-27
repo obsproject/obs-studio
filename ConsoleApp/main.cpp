@@ -6,6 +6,7 @@
 #include<iostream>
 #include<string>
 #include<memory>
+#include <Windows.h>
 
 #include<boost/program_options.hpp>
 
@@ -20,6 +21,13 @@ std::string output_filepath = "default.mp4";
 
 std::string output_filepath2 = "default2.mp4";
 int video_bitrate = 2500;
+
+struct MonitorInfo {
+	int monitor_id;
+	int32_t  x, y;
+	uint32_t cx, cy;
+};
+std::vector<MonitorInfo> all_monitors;
 
 
 void print_obs_enum_input_types() {
@@ -82,6 +90,49 @@ void print_obs_enum_output_types() {
 	}
 	std::cout << "#############" << std::endl;
 }
+
+// callback function called by EnumDisplayMonitors for each enabled monitor
+BOOL CALLBACK EnumDispProc(HMONITOR hMon, HDC dcMon, RECT* pRcMon, LPARAM lParam)
+{
+	MonitorInfo* pArg = reinterpret_cast<MonitorInfo*>(lParam);
+	pArg->monitor_id;
+	pArg->x = pRcMon->right - pRcMon->left;
+	pArg->y = pRcMon->bottom - pRcMon->top;
+	pArg->cx = pRcMon->left;
+	pArg->cy = pRcMon->top;
+
+	all_monitors.push_back(*pArg);
+	pArg->monitor_id++;
+	UNUSED_PARAMETER(hMon);
+	UNUSED_PARAMETER(dcMon);
+	return TRUE;
+}
+
+bool monitor_search()
+{
+	MonitorInfo arg = { 0 };
+	if (EnumDisplayMonitors(NULL, NULL, EnumDispProc, reinterpret_cast<LPARAM>(&arg)))
+		return true;
+	return false;
+}
+
+void print_obs_monitor_properties() {
+	
+	if (!monitor_search()){
+		std::cout << "No monitors found!" << std::endl;
+	}
+
+	for (auto monitor : all_monitors) {
+		std::cout << "Monitor: " << monitor.monitor_id << " "
+			<< "" << monitor.x << "x"
+			<< "" << monitor.y << " "
+			 << std::endl; 
+	}
+	
+	std::cout << "#############" << std::endl;
+}
+
+
 
 void reset_video() {
 	struct obs_video_info ovi;
@@ -219,9 +270,10 @@ int parse_args(int argc, char **argv) {
 
 		if (vm.count("help")) {
 			std::cout << desc << "\n";
-			//print_obs_enum_input_types();
+			print_obs_enum_input_types();
 			print_obs_enum_encoder_types();
 			//print_obs_enum_output_types();
+			print_obs_monitor_properties();
 			return 1;
 		}
 
