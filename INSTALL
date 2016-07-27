@@ -1,4 +1,4 @@
 For install instructions please visit https://github.com/jp9000/obs-studio/wiki/Install-Instructions
 
 You can use BUILD_CLI variable to choose between regular obs studio and obs-cli.
-If building obs-cli application you must install boost and set variables (BOOST_ROOT etc).
+If building obs-cli application you must install boost and set variables (like BOOST_ROOT and BOOST_LIBRARYDIR).
