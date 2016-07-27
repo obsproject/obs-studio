@@ -33,6 +33,7 @@ ipch/
 GeneratedFiles/
 .moc/
 dependencies2013/
+dependencies/
 
 /other/
 
@@ -85,4 +86,3 @@ tags
 .DS_Store
 */.DS_Store
 */**/.DS_Store
-dependencies/
