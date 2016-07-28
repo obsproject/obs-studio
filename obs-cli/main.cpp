@@ -264,12 +264,12 @@ int main(int argc, char **argv) {
 		if (ret != Ret::success)
 			return ret;
 
-		setup_input(monitor_to_record);
+		OBSSource source = setup_input(cli_options.monitor_to_record);
 
 		// While the outputs are kept in scope, we will continue recording.
-		std::vector<OBSOutput> outputs = setup_outputs(encoder_selected, video_bitrate, { output_filepath, output_filepath2 });
+		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
-		start_recording(outputs);
+		start_recording(output.outputs);
 
 		// wait for user input to stop recording.
 		std::cout << "press any key to stop recording." << std::endl;

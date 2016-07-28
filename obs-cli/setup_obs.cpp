@@ -1,6 +1,6 @@
 #include "setup_obs.hpp"
 
-void setup_input(int monitor) {
+OBSSource setup_input(int monitor) {
 	std::string name("monitor " + std::to_string(monitor) + " capture");
 	OBSSource source = obs_source_create("monitor_capture", name.c_str(), nullptr, nullptr);
 	obs_source_release(source);
@@ -15,9 +15,11 @@ void setup_input(int monitor) {
 
 	// set this source as output.
 	obs_set_output_source(0, source);
+
+	return source;
 }
 
-std::vector<OBSOutput> setup_outputs(std::string video_encoder_id, int video_bitrate, std::vector<std::string> output_paths) {
+Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vector<std::string> output_paths) {
 	OBSEncoder video_encoder = obs_video_encoder_create(video_encoder_id.c_str(), "video_encoder", nullptr, nullptr);
 	obs_encoder_release(video_encoder);
 	obs_encoder_set_video(video_encoder, obs_get_video());
@@ -65,6 +67,10 @@ std::vector<OBSOutput> setup_outputs(std::string video_encoder_id, int video_bit
 		outputs.push_back(file_output);
 	}
 
-	return outputs;
+	Outputs out;
+	out.video_encoder = video_encoder;
+	out.audio_encoder = audio_encoder;
+	out.outputs = outputs;
+	return out;
 }
 

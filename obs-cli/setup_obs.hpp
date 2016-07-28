@@ -23,10 +23,16 @@
 #include<string>
 #include<obs.hpp>
 
+struct Outputs {
+	OBSEncoder video_encoder;
+	OBSEncoder audio_encoder;
+	std::vector<OBSOutput> outputs;
+};
+
 /**
  * Setup input to capture monitor \p monitor.
  */
-void setup_input(int monitor);
+OBSSource setup_input(int monitor);
 
 /**
  * Setup output to multiple files using the specified encoder and bitrate.
@@ -37,4 +43,4 @@ void setup_input(int monitor);
  *
  * @return references to the new outputs.
  */
-std::vector<OBSOutput> setup_outputs(std::string video_encoder_id, int video_bitrate, std::vector<std::string> output_paths);
+Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vector<std::string> output_paths);
