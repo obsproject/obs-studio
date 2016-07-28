@@ -38,7 +38,7 @@ BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, // handle to display monitor
 }
 
 MonitorInfo monitor_at_index(int m) {
-	if (m > 0 && m < all_monitors.size())
+	if (m >= 0 && m < all_monitors.size())
 		return all_monitors[m];
 
 	return MonitorInfo::NotFound;
