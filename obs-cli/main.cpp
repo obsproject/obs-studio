@@ -231,7 +231,8 @@ int main(int argc, char **argv) {
 		reset_video(cli_options.monitor_to_record);
 		reset_audio();
 
-		OBSSource source = setup_input(cli_options.monitor_to_record);
+		OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		OBSSource audio_source = setup_audio_input();
 
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
