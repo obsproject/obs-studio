@@ -217,19 +217,20 @@ int main(int argc, char **argv) {
 			return Ret::error_obs;
 		}
 
-		obs_load_all_modules();
-
+		// must be called before reset_video
 		if (!detect_monitors()){
 			std::cerr << "No monitors found!" << std::endl;
 			return Ret::success;
 		}
 
+		// resets must be called before loading modules.
+		reset_video(cli_options.monitor_to_record);
+		reset_audio();
+		obs_load_all_modules();
+
 		// can only be called after loading modules and detecting monitors.
 		if (do_print_lists())
 			return Ret::success;
-
-		reset_video(cli_options.monitor_to_record);
-		reset_audio();
 
 		OBSSource source = setup_video_input(cli_options.monitor_to_record);
 		OBSSource audio_source = setup_audio_input();
