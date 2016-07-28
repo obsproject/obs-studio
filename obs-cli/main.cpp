@@ -158,7 +158,7 @@ void start_recording(std::vector<OBSOutput> outputs) {
 		std::cout << "Recording started for all outputs!" << std::endl;
 	}
 	else {
-		int outputs_failed = outputs.size() - outputs_started;
+		size_t outputs_failed = outputs.size() - outputs_started;
 		std::cerr << outputs_failed << "/" << outputs.size() << " file outputs are not recording." << std::endl;
 	}
 }
