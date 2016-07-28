@@ -52,121 +52,25 @@ namespace {
 		std::vector<std::string> outputs_paths;
 	} cli_options;
 	const std::string CliOptions::default_encoder = "obs_x264";
-
-struct MonitorInfo {
-	int monitor_id;
-	long  x, y;
-	long cx, cy;
-};
-std::vector<MonitorInfo> all_monitors;
-
 } // namespace
-
-//Used to iterate monitor because of the monitorEnumProc callback.
-int monitor_iterator = 0;
-
-// callback function called by EnumDisplayMonitors for each enabled monitor
-BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, // handle to display monitor
-	HDC hdcMonitor, // handle to monitor DC
-	LPRECT lprcMonitor, // monitor intersection rectangle
-	LPARAM dwData // data
-	)
-{
-	MONITORINFO mi;
-	mi.cbSize = sizeof(mi);
-	GetMonitorInfo(hMonitor, &mi);
-
-	MonitorInfo info;
-	info.monitor_id = monitor_iterator;
-
-	info.x = mi.rcMonitor.right - mi.rcMonitor.left;
-	info.y = mi.rcMonitor.bottom - mi.rcMonitor.top;
-	info.cx = mi.rcMonitor.left;
-	info.cy = mi.rcMonitor.top;
-
-	all_monitors.push_back(info);
-
-	UNREFERENCED_PARAMETER(dwData);
-	UNREFERENCED_PARAMETER(hdcMonitor);
-
-	UNREFERENCED_PARAMETER(dwData);
-	monitor_iterator++;
-	return TRUE;
-}
-
-/**
-* Gets monitor width
-*
-*   Searches the vector previously fill out with monitor_search()
-*/
-int get_monitor_width(int m){
-	for (auto monitor : all_monitors) {
-		if (monitor.monitor_id == m){
-			return monitor.x;
-		}
-	}
-	return 0;
-}
-
-/**
-* Gets monitor height
-*
-*   Searches the vector previously fill out with monitor_search()
-*/
-int get_monitor_height(int m){
-	for (auto monitor : all_monitors) {
-		if (monitor.monitor_id == m){
-			return monitor.y;
-		}
-	}
-	return 0;
-}
-
-/**
-*   Searches for all monitors connected
-*/
-bool monitor_search()
-{
-	all_monitors.clear();
-	monitor_iterator = 0;
-	EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, 0);
-
-	return true;
-	}
-
-/**
-*   Prints all monitor properties
-*
-*   Searches the vector previously fill out with monitor_search()
-*/
-void print_obs_monitor_properties() {
-	for (auto monitor : all_monitors) {
-		std::cout << "Monitor: " << monitor.monitor_id << " "
-			<< "" << monitor.x << "x"
-			<< "" << monitor.y << " "
-			<< std::endl;
-	}
-
-	std::cout << "#############" << std::endl;
-}
-
 
 /**
 * Resets/Initializes video settings.
 *
 *   Calls obs_reset_video internally. Assumes some video options.
 */
-void reset_video(int monitor) {
+void reset_video(int monitor_index) {
 	struct obs_video_info ovi;
 
 	ovi.fps_num = 60;
 	ovi.fps_den = 1;
 
+	MonitorInfo monitor = monitor_at_index(monitor_index);
 	ovi.graphics_module = "libobs-d3d11.dll"; // DL_D3D11
-	ovi.base_width = get_monitor_width(monitor);
-	ovi.base_height = get_monitor_height(monitor);
-	ovi.output_width = get_monitor_width(monitor);
-	ovi.output_height = get_monitor_height(monitor);
+	ovi.base_width = monitor.width;
+	ovi.base_height = monitor.height;
+	ovi.output_width = monitor.width;
+	ovi.output_height = monitor.height;
 	ovi.output_format = VIDEO_FORMAT_NV12;
 	ovi.colorspace = VIDEO_CS_601;
 	ovi.range = VIDEO_RANGE_PARTIAL;
