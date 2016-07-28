@@ -48,7 +48,7 @@ namespace {
 		// cli options
 		int monitor_to_record = 0;
 		std::string encoder;
-int video_bitrate = 2500;
+		int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
 	} cli_options;
 	const std::string CliOptions::default_encoder = "obs_x264";
@@ -79,10 +79,9 @@ BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, // handle to display monitor
 	MonitorInfo info;
 	info.monitor_id = monitor_iterator;
 
-	
 	info.x = mi.rcMonitor.right - mi.rcMonitor.left;
 	info.y = mi.rcMonitor.bottom - mi.rcMonitor.top;
-	info.cx = mi.rcMonitor.left; 
+	info.cx = mi.rcMonitor.left;
 	info.cy = mi.rcMonitor.top;
 
 	all_monitors.push_back(info);
@@ -125,8 +124,6 @@ int get_monitor_height(int m){
 
 /**
 *   Searches for all monitors connected
-*
-*   
 */
 bool monitor_search()
 {
@@ -339,8 +336,8 @@ int main(int argc, char **argv) {
 		if (ret != Ret::success)
 			return ret;
 
-		
-		reset_video(monitor_to_record);
+
+		reset_video(cli_options.monitor_to_record);
 		reset_audio();
 
 		OBSSource source = setup_input(cli_options.monitor_to_record);
