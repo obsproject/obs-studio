@@ -32,7 +32,12 @@ struct Outputs {
 /**
  * Setup input to capture monitor \p monitor.
  */
-OBSSource setup_input(int monitor);
+OBSSource setup_video_input(int monitor);
+
+/**
+* Setup input to capture audio.
+*/
+OBSSource setup_audio_input();
 
 /**
  * Setup output to multiple files using the specified encoder and bitrate.

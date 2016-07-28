@@ -205,7 +205,7 @@ void reset_audio() {
 	struct obs_audio_info ai;
 	ai.samples_per_sec = 44100;
 	ai.speakers = SPEAKERS_STEREO;
-
+	
 	bool success = obs_reset_audio(&ai);
 	if (!success)
 		std::cout << "Audio reset failed!" << std::endl;
@@ -244,10 +244,10 @@ int parse_args(int argc, char **argv) {
 		po::variables_map vm;
 		po::store(po::parse_command_line(argc, argv, desc), vm);
 		po::notify(vm);
-
+		
 		if (vm.count("help")) {
 			std::cout << desc << "\n";
-			//print_obs_enum_input_types();
+			print_obs_enum_input_types();
 			print_obs_enum_encoder_types();
 			//print_obs_enum_output_types();
 			print_obs_monitor_properties();
@@ -340,12 +340,12 @@ int main(int argc, char **argv) {
 		reset_video(cli_options.monitor_to_record);
 		reset_audio();
 
-		OBSSource source = setup_input(cli_options.monitor_to_record);
-
-
+		OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		OBSSource audio_source = setup_audio_input();
+ 
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
-
+		
 		start_recording(output.outputs);
 
 		// wait for user input to stop recording.

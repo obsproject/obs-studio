@@ -1,6 +1,6 @@
 #include "setup_obs.hpp"
 
-OBSSource setup_input(int monitor) {
+OBSSource setup_video_input(int monitor) {
 	std::string name("monitor " + std::to_string(monitor) + " capture");
 	OBSSource source = obs_source_create("monitor_capture", name.c_str(), nullptr, nullptr);
 	obs_source_release(source);
@@ -19,6 +19,25 @@ OBSSource setup_input(int monitor) {
 	return source;
 }
 
+OBSSource setup_audio_input() {
+	
+	OBSSource source = obs_source_create("wasapi_input_capture", "audio inout", nullptr, nullptr);
+	obs_source_release(source);
+	{
+		obs_data_t * source_settings = obs_data_create();
+		//obs_data_set_int(source_settings, "monitor", monitor);
+		//obs_data_set_bool(source_settings, "capture_cursor", false);
+
+		obs_source_update(source, source_settings);
+		obs_data_release(source_settings);
+	}
+
+	// set this source as output.
+	obs_set_output_source(1, source);
+
+	return source;
+}
+
 Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vector<std::string> output_paths) {
 	OBSEncoder video_encoder = obs_video_encoder_create(video_encoder_id.c_str(), "video_encoder", nullptr, nullptr);
 	obs_encoder_release(video_encoder);
@@ -29,7 +48,7 @@ Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vect
 		obs_data_set_int(encoder_settings, "bitrate", video_bitrate);
 
 		obs_encoder_update(video_encoder, encoder_settings);
-		obs_data_release(encoder_settings);
+		obs_data_release(encoder_settings); 
 	}
 
 	OBSEncoder audio_encoder = obs_audio_encoder_create("mf_aac", "audio_encoder", nullptr, 0, nullptr);
@@ -45,6 +64,7 @@ Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vect
 		obs_encoder_update(audio_encoder, encoder_settings);
 		obs_data_release(encoder_settings);
 	}
+
 
 	std::vector<OBSOutput> outputs;
 	for (int i = 0; i < output_paths.size(); i++) {
