@@ -18,6 +18,7 @@ elseif(UNIX)
 endif()
 
 set(SRC_LIST
+	${obscli_PLATFORM_SOURCES}
 	main.cpp
 	setup_obs.cpp
 	setup_obs.hpp
