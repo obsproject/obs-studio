@@ -20,7 +20,6 @@ OBSSource setup_video_input(int monitor) {
 }
 
 OBSSource setup_audio_input() {
-	
 	OBSSource source = obs_source_create("wasapi_input_capture", "audio inout", nullptr, nullptr);
 	obs_source_release(source);
 	{
@@ -48,7 +47,7 @@ Outputs setup_outputs(std::string video_encoder_id, int video_bitrate, std::vect
 		obs_data_set_int(encoder_settings, "bitrate", video_bitrate);
 
 		obs_encoder_update(video_encoder, encoder_settings);
-		obs_data_release(encoder_settings); 
+		obs_data_release(encoder_settings);
 	}
 
 	OBSEncoder audio_encoder = obs_audio_encoder_create("mf_aac", "audio_encoder", nullptr, 0, nullptr);
