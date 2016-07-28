@@ -1,24 +1,23 @@
 /******************************************************************************
-    Copyright (C) 2016 by João Portela <email@joaoportela.net>
+	Copyright (C) 2016 by João Portela <email@joaoportela.net>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	******************************************************************************/
 
 #include<iostream>
 #include<string>
 #include<memory>
-#include <Windows.h>
 
 #include<boost/program_options.hpp>
 
@@ -27,16 +26,16 @@
 #include<util/platform.h>
 
 #include"enum_types.hpp"
+#include"monitor_info.hpp"
 #include"setup_obs.hpp"
 
 namespace {
 	namespace Ret {
 		enum ENUM : int {
 			success = 0,
-			print_help = 1,
-			error_in_command_line = 2,
-			error_unhandled_exception = 3,
-			error_obs = 4
+			error_in_command_line = 1,
+			error_unhandled_exception = 2,
+			error_obs = 3
 		};
 	}
 
@@ -50,6 +49,12 @@ namespace {
 		std::string encoder;
 		int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
+
+		bool show_help = false;
+		bool list_monitors = false;
+		bool list_encoders = false;
+		bool list_inputs = false;
+		bool list_outputs = false;
 	} cli_options;
 	const std::string CliOptions::default_encoder = "obs_x264";
 } // namespace
@@ -96,7 +101,7 @@ void reset_audio() {
 
 	bool success = obs_reset_audio(&ai);
 	if (!success)
-		std::cout << "Audio reset failed!" << std::endl;
+		std::cerr << "Audio reset failed!" << std::endl;
 }
 
 void start_recording(std::vector<OBSOutput> outputs) {
@@ -115,13 +120,43 @@ void start_recording(std::vector<OBSOutput> outputs) {
 	}
 }
 
+bool should_print_lists() {
+	return cli_options.list_monitors
+		|| cli_options.list_encoders
+		|| cli_options.list_inputs
+		|| cli_options.list_outputs;
+}
+
+bool do_print_lists() {
+	if (cli_options.list_monitors) {
+		print_monitors_info();
+	}
+	if (cli_options.list_encoders) {
+		print_obs_enum_encoder_types();
+	}
+	if (cli_options.list_inputs) {
+		print_obs_enum_input_types();
+	}
+	if (cli_options.list_outputs) {
+		print_obs_enum_output_types();
+	}
+
+	return should_print_lists();
+}
+
+
 int parse_args(int argc, char **argv) {
 	namespace po = boost::program_options;
 
 	// Declare the supported options.
-	po::options_description desc("\n****************************************************************\nAllowed options");
+	po::options_description desc("obs-cli Allowed options");
 	desc.add_options()
-		("help,h", "produce help message")
+		("help,h", "Show help message")
+		("listmonitors", "List available monitors resolutions")
+		("listinputs", "List available inputs")
+		("listencoders", "List available encoders")
+		("listoutputs", "List available outputs")
+
 		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
 		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
 		("vbitrate,v", po::value<int>(&cli_options.video_bitrate)->default_value(CliOptions::default_video_bitrate), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
@@ -131,65 +166,27 @@ int parse_args(int argc, char **argv) {
 	try {
 		po::variables_map vm;
 		po::store(po::parse_command_line(argc, argv, desc), vm);
-		po::notify(vm);
 
-		if (vm.count("help")) {
+		// must be manually set instead of using po::switch because they are
+		// called before po::notify
+		cli_options.show_help = vm.count("help") > 0;
+		cli_options.list_monitors = vm.count("listmonitors") > 0;
+		cli_options.list_inputs = vm.count("listinputs") > 0;
+		cli_options.list_encoders = vm.count("listencoders") > 0;
+		cli_options.list_outputs = vm.count("listoutputs") > 0;
+
+		if (cli_options.show_help) {
 			std::cout << desc << "\n";
-			//print_obs_enum_input_types();
-			print_obs_enum_encoder_types();
-			//print_obs_enum_output_types();
-			print_obs_monitor_properties();
-			return Ret::print_help;
+			return Ret::success;
 		}
 
-		// if (vm.count("monitor")) {
-		// 	std::cout << "Monitor was set to "
-		// 		<< vm["monitor"].as<int>() << ".\n";
-		// 	monitor_to_record = vm["monitor"].as<int>();
-		// }
-		// else {
-		// 	std::cout << "Monitor not set.\n";
-		// 	return Ret::error_in_command_line;
-		// }
+		if (should_print_lists())
+			// will be properly handled later.
+			return Ret::success;
 
-		// if (vm.count("encoder")) {
-		// 	std::cout << "Encoder was set to "
-		// 		<< vm["encoder"].as<std::string>() << ".\n";
-		// 	encoder_selected = vm["encoder"].as<std::string>();
-		// }
-		// else {
-		// 	std::cout << "Encoder not set.\n";
-		// 	return Ret::error_in_command_line;
-		// }
-
-		// if (vm.count("vbitrate")) {
-		// 	std::cout << "Video bitrate was set to "
-		// 		<< vm["vbitrate"].as<int>() << ".\n";
-		// 	video_bitrate = vm["vbitrate"].as<int>();
-		// }
-		// else {
-		// 	std::cout << "Bitrate not set.\n";
-		// 	return Ret::error_in_command_line;
-		// }
-
-		// if (vm.count("output")) {
-		// 	std::cout << "Output was set to "
-		// 		<< vm["output"].as<std::string>() << ".\n";
-		// 	output_filepath = vm["output"].as<std::string>();
-		// }
-		// else {
-		// 	std::cout << "Output not set.\n";
-		// 	return Ret::error_in_command_line;
-		// }
-		// if (vm.count("secondary_output")) {
-		// 	std::cout << "Secondary output was set to "
-		// 		<< vm["secondary_output"].as<std::string>() << ".\n";
-		// 	output_filepath2 = vm["secondary_output"].as<std::string>();
-		// }
-		// else {
-		// 	std::cout << "Secondary output not set.\n";
-		// }
-
+		// only called here because it checks required fields, and when are trying to
+		// use `help` or `list*` we want to ignore required fields.
+		po::notify(vm);
 	}
 	catch (po::error& e) {
 		std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
@@ -202,6 +199,15 @@ int parse_args(int argc, char **argv) {
 
 int main(int argc, char **argv) {
 	try {
+		int ret = parse_args(argc, argv);
+		if (ret != Ret::success)
+			return ret;
+
+		if (cli_options.show_help) {
+			// We've already printed help. Exit.
+			return Ret::success;
+		}
+
 		// manages object context so that we don't have to call
 		// obs_startup and obs_shutdown.
 		OBSContext ObsScope("en-US", nullptr, nullptr);
@@ -213,23 +219,19 @@ int main(int argc, char **argv) {
 
 		obs_load_all_modules();
 
-		if (!monitor_search()){
-			std::cout << "No monitors found!" << std::endl;
-			return 0;
+		if (!detect_monitors()){
+			std::cerr << "No monitors found!" << std::endl;
+			return Ret::success;
 		}
-		//print_obs_monitor_properties();
 
-		//Only parse after Initializing OBS so that the help can print available encoders, etc.
-		int ret = parse_args(argc, argv);
-		if (ret != Ret::success)
-			return ret;
-
+		// can only be called after loading modules and detecting monitors.
+		if (do_print_lists())
+			return Ret::success;
 
 		reset_video(cli_options.monitor_to_record);
 		reset_audio();
 
 		OBSSource source = setup_input(cli_options.monitor_to_record);
-
 
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
