@@ -131,22 +131,6 @@ bool monitor_search()
 	monitor_iterator = 0;
 	EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, 0);
 
-	DISPLAY_DEVICE dd;
-	dd.cb = sizeof(dd);
-	int deviceIndex = 0;
-	while (EnumDisplayDevices(0, deviceIndex, &dd, 0))
-	{
-		std::wstring deviceName = dd.DeviceName;
-		int monitorIndex = 0;
-		while (EnumDisplayDevices(deviceName.c_str(), monitorIndex, &dd, 0))
-		{
-			std::wcout << dd.DeviceName << L", " << dd.DeviceID << L"  " << get_monitor_width(deviceIndex-1) << "x" << get_monitor_height(deviceIndex-1) << "\n";
-			++monitorIndex;
-}
-		++deviceIndex;
-
-	}
-
 	return true;
 	}
 
