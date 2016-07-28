@@ -1,19 +1,19 @@
 /******************************************************************************
-    Copyright (C) 2016 by João Portela <email@joaoportela.net>
+	Copyright (C) 2016 by João Portela <email@joaoportela.net>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	******************************************************************************/
 
 #include<iostream>
 #include<string>
@@ -40,20 +40,25 @@ namespace {
 		};
 	}
 
-// cli options with default values.
-int monitor_to_record = 0;
-std::string encoder_selected = "obs_x264";
-std::string output_filepath = "default.mp4";
+	struct CliOptions {
+		// default values
+		static const std::string default_encoder;
+		static const int default_video_bitrate = 2500;
 
-std::string output_filepath2 = "default2.mp4";
-int video_bitrate = 2500;
+		// cli options
+		int monitor_to_record = 0;
+		std::string encoder;
+		int video_bitrate = 2500;
+		std::vector<std::string> outputs_paths;
+	} cli_options;
+	const std::string CliOptions::default_encoder = "obs_x264";
 
-struct MonitorInfo {
-	int monitor_id;
-	int32_t  x, y;
-	uint32_t cx, cy;
-};
-std::vector<MonitorInfo> all_monitors;
+	struct MonitorInfo {
+		int monitor_id;
+		int32_t  x, y;
+		uint32_t cx, cy;
+	};
+	std::vector<MonitorInfo> all_monitors;
 
 } // namespace
 
@@ -165,11 +170,10 @@ int parse_args(int argc, char **argv) {
 	po::options_description desc("\n****************************************************************\nAllowed options");
 	desc.add_options()
 		("help,h", "produce help message")
-		("monitor,m", po::value<int>(), "set monitor to be recorded")
-		("encoder,e", po::value<std::string>(), "set encoder")
-		("vbitrate,v", po::value<int>(), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
-		("output,o", po::value<std::string>(), "set file destination")
-		("secondary_output,s", po::value<std::string>(), "set file destination")
+		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
+		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
+		("vbitrate,v", po::value<int>(&cli_options.video_bitrate)->default_value(CliOptions::default_video_bitrate), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
+		("output,o", po::value<std::vector<std::string>>(&cli_options.outputs_paths)->required(), "set file destination, can be set multiple times for multiple outputs")
 		;
 
 	try {
@@ -186,53 +190,53 @@ int parse_args(int argc, char **argv) {
 			return Ret::print_help;
 		}
 
-		if (vm.count("monitor")) {
-			std::cout << "Monitor was set to "
-				<< vm["monitor"].as<int>() << ".\n";
-			monitor_to_record = vm["monitor"].as<int>();
-		}
-		else {
-			std::cout << "Monitor not set.\n";
-			return Ret::error_in_command_line;
-		}
+		// if (vm.count("monitor")) {
+		// 	std::cout << "Monitor was set to "
+		// 		<< vm["monitor"].as<int>() << ".\n";
+		// 	monitor_to_record = vm["monitor"].as<int>();
+		// }
+		// else {
+		// 	std::cout << "Monitor not set.\n";
+		// 	return Ret::error_in_command_line;
+		// }
 
-		if (vm.count("encoder")) {
-			std::cout << "Encoder was set to "
-				<< vm["encoder"].as<std::string>() << ".\n";
-			encoder_selected = vm["encoder"].as<std::string>();
-		}
-		else {
-			std::cout << "Encoder not set.\n";
-			return Ret::error_in_command_line;
-		}
+		// if (vm.count("encoder")) {
+		// 	std::cout << "Encoder was set to "
+		// 		<< vm["encoder"].as<std::string>() << ".\n";
+		// 	encoder_selected = vm["encoder"].as<std::string>();
+		// }
+		// else {
+		// 	std::cout << "Encoder not set.\n";
+		// 	return Ret::error_in_command_line;
+		// }
 
-		if (vm.count("vbitrate")) {
-			std::cout << "Video bitrate was set to "
-				<< vm["vbitrate"].as<int>() << ".\n";
-			video_bitrate = vm["vbitrate"].as<int>();
-		}
-		else {
-			std::cout << "Bitrate not set.\n";
-			return Ret::error_in_command_line;
-		}
+		// if (vm.count("vbitrate")) {
+		// 	std::cout << "Video bitrate was set to "
+		// 		<< vm["vbitrate"].as<int>() << ".\n";
+		// 	video_bitrate = vm["vbitrate"].as<int>();
+		// }
+		// else {
+		// 	std::cout << "Bitrate not set.\n";
+		// 	return Ret::error_in_command_line;
+		// }
 
-		if (vm.count("output")) {
-			std::cout << "Output was set to "
-				<< vm["output"].as<std::string>() << ".\n";
-			output_filepath = vm["output"].as<std::string>();
-		}
-		else {
-			std::cout << "Output not set.\n";
-			return Ret::error_in_command_line;
-		}
-		if (vm.count("secondary_output")) {
-			std::cout << "Secondary output was set to "
-				<< vm["secondary_output"].as<std::string>() << ".\n";
-			output_filepath2 = vm["secondary_output"].as<std::string>();
-		}
-		else {
-			std::cout << "Secondary output not set.\n";
-		}
+		// if (vm.count("output")) {
+		// 	std::cout << "Output was set to "
+		// 		<< vm["output"].as<std::string>() << ".\n";
+		// 	output_filepath = vm["output"].as<std::string>();
+		// }
+		// else {
+		// 	std::cout << "Output not set.\n";
+		// 	return Ret::error_in_command_line;
+		// }
+		// if (vm.count("secondary_output")) {
+		// 	std::cout << "Secondary output was set to "
+		// 		<< vm["secondary_output"].as<std::string>() << ".\n";
+		// 	output_filepath2 = vm["secondary_output"].as<std::string>();
+		// }
+		// else {
+		// 	std::cout << "Secondary output not set.\n";
+		// }
 
 	}
 	catch (po::error& e) {
