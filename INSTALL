@@ -1,4 +1,9 @@
 For install instructions please visit https://github.com/jp9000/obs-studio/wiki/Install-Instructions
 
-You can use BUILD_CLI variable to choose between regular obs studio and obs-cli.
-If building obs-cli application you must install boost and set variables (like BOOST_ROOT and BOOST_LIBRARYDIR).
+You can use BUILD_CLI and BUILD_OBS_STUDIO variables to choose if you want
+obs-cli and obs-studio as part of the project.
+
+If building with BUILD_CLI=On boost is a dependency. As such, must install boost
+and set its variables (like BOOST_ROOT and BOOST_LIBRARYDIR).
+
+If building with BUILD_OBS_STUDIO=Off Qt5 is no longer necessary.
