@@ -1,19 +1,19 @@
 /******************************************************************************
-	Copyright (C) 2016 by João Portela <email@joaoportela.net>
+    Copyright (C) 2016 by João Portela <email@joaoportela.net>
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 2 of the License, or
-	(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-	******************************************************************************/
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
 
 #include<iostream>
 #include<string>
@@ -48,51 +48,117 @@ namespace {
 		// cli options
 		int monitor_to_record = 0;
 		std::string encoder;
-		int video_bitrate = 2500;
+int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
 	} cli_options;
 	const std::string CliOptions::default_encoder = "obs_x264";
 
-	struct MonitorInfo {
-		int monitor_id;
-		int32_t  x, y;
-		uint32_t cx, cy;
-	};
-	std::vector<MonitorInfo> all_monitors;
+struct MonitorInfo {
+	int monitor_id;
+	long  x, y;
+	long cx, cy;
+};
+std::vector<MonitorInfo> all_monitors;
 
 } // namespace
 
-// callback function called by EnumDisplayMonitors for each enabled monitor
-BOOL CALLBACK EnumDispProc(HMONITOR hMon, HDC dcMon, RECT* pRcMon, LPARAM lParam)
-{
-	MonitorInfo* pArg = reinterpret_cast<MonitorInfo*>(lParam);
-	pArg->monitor_id;
-	pArg->x = pRcMon->right - pRcMon->left;
-	pArg->y = pRcMon->bottom - pRcMon->top;
-	pArg->cx = pRcMon->left;
-	pArg->cy = pRcMon->top;
+//Used to iterate monitor because of the monitorEnumProc callback.
+int monitor_iterator = 0;
 
-	all_monitors.push_back(*pArg);
-	pArg->monitor_id++;
-	UNUSED_PARAMETER(hMon);
-	UNUSED_PARAMETER(dcMon);
+// callback function called by EnumDisplayMonitors for each enabled monitor
+BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, // handle to display monitor
+	HDC hdcMonitor, // handle to monitor DC
+	LPRECT lprcMonitor, // monitor intersection rectangle
+	LPARAM dwData // data
+	)
+{
+	MONITORINFO mi;
+	mi.cbSize = sizeof(mi);
+	GetMonitorInfo(hMonitor, &mi);
+
+	MonitorInfo info;
+	info.monitor_id = monitor_iterator;
+
+	
+	info.x = mi.rcMonitor.right - mi.rcMonitor.left;
+	info.y = mi.rcMonitor.bottom - mi.rcMonitor.top;
+	info.cx = mi.rcMonitor.left; 
+	info.cy = mi.rcMonitor.top;
+
+	all_monitors.push_back(info);
+
+	UNREFERENCED_PARAMETER(dwData);
+	UNREFERENCED_PARAMETER(hdcMonitor);
+
+	UNREFERENCED_PARAMETER(dwData);
+	monitor_iterator++;
 	return TRUE;
 }
 
-bool monitor_search()
-{
-	MonitorInfo arg = { 0 };
-	if (EnumDisplayMonitors(NULL, NULL, EnumDispProc, reinterpret_cast<LPARAM>(&arg)))
-		return true;
-	return false;
+/**
+* Gets monitor width
+*
+*   Searches the vector previously fill out with monitor_search()
+*/
+int get_monitor_width(int m){
+	for (auto monitor : all_monitors) {
+		if (monitor.monitor_id == m){
+			return monitor.x;
+		}
+	}
+	return 0;
 }
 
-void print_obs_monitor_properties() {
+/**
+* Gets monitor height
+*
+*   Searches the vector previously fill out with monitor_search()
+*/
+int get_monitor_height(int m){
+	for (auto monitor : all_monitors) {
+		if (monitor.monitor_id == m){
+			return monitor.y;
+		}
+	}
+	return 0;
+}
 
-	if (!monitor_search()){
-		std::cout << "No monitors found!" << std::endl;
+/**
+*   Searches for all monitors connected
+*
+*   
+*/
+bool monitor_search()
+{
+	all_monitors.clear();
+	monitor_iterator = 0;
+	EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, 0);
+
+	DISPLAY_DEVICE dd;
+	dd.cb = sizeof(dd);
+	int deviceIndex = 0;
+	while (EnumDisplayDevices(0, deviceIndex, &dd, 0))
+	{
+		std::wstring deviceName = dd.DeviceName;
+		int monitorIndex = 0;
+		while (EnumDisplayDevices(deviceName.c_str(), monitorIndex, &dd, 0))
+		{
+			std::wcout << dd.DeviceName << L", " << dd.DeviceID << L"  " << get_monitor_width(deviceIndex-1) << "x" << get_monitor_height(deviceIndex-1) << "\n";
+			++monitorIndex;
+}
+		++deviceIndex;
+
 	}
 
+	return true;
+	}
+
+/**
+*   Prints all monitor properties
+*
+*   Searches the vector previously fill out with monitor_search()
+*/
+void print_obs_monitor_properties() {
 	for (auto monitor : all_monitors) {
 		std::cout << "Monitor: " << monitor.monitor_id << " "
 			<< "" << monitor.x << "x"
@@ -103,22 +169,23 @@ void print_obs_monitor_properties() {
 	std::cout << "#############" << std::endl;
 }
 
+
 /**
 * Resets/Initializes video settings.
 *
 *   Calls obs_reset_video internally. Assumes some video options.
 */
-void reset_video() {
+void reset_video(int monitor) {
 	struct obs_video_info ovi;
 
 	ovi.fps_num = 60;
 	ovi.fps_den = 1;
 
 	ovi.graphics_module = "libobs-d3d11.dll"; // DL_D3D11
-	ovi.base_width = 1920;
-	ovi.base_height = 1080;
-	ovi.output_width = 1920;
-	ovi.output_height = 1080;
+	ovi.base_width = get_monitor_width(monitor);
+	ovi.base_height = get_monitor_height(monitor);
+	ovi.output_width = get_monitor_width(monitor);
+	ovi.output_height = get_monitor_height(monitor);
 	ovi.output_format = VIDEO_FORMAT_NV12;
 	ovi.colorspace = VIDEO_CS_601;
 	ovi.range = VIDEO_RANGE_PARTIAL;
@@ -259,16 +326,25 @@ int main(int argc, char **argv) {
 			return Ret::error_obs;
 		}
 
-		reset_video();
-		reset_audio();
 		obs_load_all_modules();
+
+		if (!monitor_search()){
+			std::cout << "No monitors found!" << std::endl;
+			return 0;
+		}
+		//print_obs_monitor_properties();
 
 		//Only parse after Initializing OBS so that the help can print available encoders, etc.
 		int ret = parse_args(argc, argv);
 		if (ret != Ret::success)
 			return ret;
 
+		
+		reset_video(monitor_to_record);
+		reset_audio();
+
 		OBSSource source = setup_input(cli_options.monitor_to_record);
+
 
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
