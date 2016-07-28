@@ -380,6 +380,7 @@ static bool open_input(struct ff_demuxer *demuxer,
 			input_format, NULL) != 0)
 		return false;
 
+	(*format_context)->flags |= AVFMT_FLAG_NOBUFFER;
 	return avformat_find_stream_info(*format_context, NULL) >= 0;
 }
 
@@ -549,15 +550,37 @@ static void *demux_thread(void *opaque)
 	int result;
 
 	struct ff_packet packet = {0};
+	int current_retry = 0;
+retry:
+	if (current_retry) {
+		if (demuxer->audio_decoder != NULL) demuxer->audio_decoder->eof = true;
+		if (demuxer->video_decoder != NULL) demuxer->video_decoder->eof = true;
+		ff_decoder_abort(demuxer->audio_decoder);
+		ff_decoder_abort(demuxer->video_decoder);
+		av_usleep(current_retry * 30 * 1000);
+		demuxer->audio_decoder = NULL; // avoid any more accesses
+		demuxer->video_decoder = NULL;
+	}
 
-	if (!open_input(demuxer, &demuxer->format_context))
+	if (!open_input(demuxer, &demuxer->format_context)) {
+		if (current_retry && current_retry < 10) {
+			current_retry++;
+			goto retry;
+		}
 		goto fail;
+	}
 
 	av_dump_format(demuxer->format_context, 0, demuxer->input, 0);
 
 	if (!find_and_initialize_stream_decoders(demuxer))
 		goto fail;
 
+	if (current_retry) {
+		av_log(NULL, AV_LOG_DEBUG,
+			"recovered stream with retries: %d",
+			current_retry);
+		current_retry = 0;
+	}
 	ff_demuxer_reset(demuxer);
 
 	while (!demuxer->abort) {
@@ -580,7 +603,7 @@ static void *demux_thread(void *opaque)
 				AVIOContext *io_context =
 						demuxer->format_context->pb;
 				if (io_context->error == 0) {
-					av_usleep(100 * 1000); // 100ms
+					av_usleep(20 * 1000); // 100ms
 					continue;
 				} else {
 					if (io_context->eof_reached != 0)
@@ -591,8 +614,9 @@ static void *demux_thread(void *opaque)
 			if (eof) {
 				if (demuxer->options.is_looping) {
 					seek_beginning(demuxer);
-				} else {
-					break;
+				} else {					
+					current_retry = 1;
+					goto retry;
 				}
 				continue;
 			} else {

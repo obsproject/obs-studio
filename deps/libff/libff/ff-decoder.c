@@ -308,6 +308,15 @@ bool ff_decoder_accept(struct ff_decoder *decoder, struct ff_packet *packet)
 	return false;
 }
 
+bool ff_decoder_abort(struct ff_decoder *decoder)
+{
+	if (decoder == NULL)
+		return false;
+
+	packet_queue_abort(&decoder->packet_queue);
+	return true;
+}
+
 double ff_decoder_get_best_effort_pts(struct ff_decoder *decoder,
 		AVFrame *frame)
 {
