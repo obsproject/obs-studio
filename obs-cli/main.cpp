@@ -257,9 +257,6 @@ int main(int argc, char **argv) {
 		if (do_print_lists())
 			return Ret::success;
 
-		OBSSignal output_start;
-		OBSSignal output_stop;
-
 		OBSSource source = setup_video_input(cli_options.monitor_to_record);
 		if (cli_options.audio_index >= 0){
 			OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
@@ -269,6 +266,7 @@ int main(int argc, char **argv) {
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
 		// connect signal events.
+		OBSSignal output_start, output_stop;
 		for (auto o : output.outputs) {
 			output_start.Connect(obs_output_get_signal_handler(o), "start", start_output_callback, nullptr);
 			output_stop.Connect(obs_output_get_signal_handler(o), "stop", stop_output_callback, nullptr);
