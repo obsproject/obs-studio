@@ -608,6 +608,15 @@
                 "max video bitrate": 3500,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Boomstream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.boomstream.com/live"
+                }
+            ]
         }
     ]
 }
