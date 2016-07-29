@@ -62,6 +62,7 @@ endif()
 set(obs-outputs_HEADERS
 	obs-output-ver.h
 	rtmp-helpers.h
+	net-if.h
 	flv-mux.h
 	flv-output.h
 	librtmp)
@@ -69,7 +70,8 @@ set(obs-outputs_SOURCES
 	obs-outputs.c
 	rtmp-stream.c
 	flv-output.c
-	flv-mux.c)
+	flv-mux.c
+	net-if.c)
 	
 add_library(obs-outputs MODULE
 	${obs-outputs_SOURCES}
