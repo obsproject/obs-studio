@@ -49,9 +49,11 @@ namespace {
 		std::string encoder;
 		int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
-
+		int audio_index = -1;
+		bool audio_is_output = false;
 		bool show_help = false;
 		bool list_monitors = false;
+		bool list_audios = false;
 		bool list_encoders = false;
 		bool list_inputs = false;
 		bool list_outputs = false;
@@ -122,6 +124,7 @@ void start_recording(std::vector<OBSOutput> outputs) {
 
 bool should_print_lists() {
 	return cli_options.list_monitors
+		|| cli_options.list_audios
 		|| cli_options.list_encoders
 		|| cli_options.list_inputs
 		|| cli_options.list_outputs;
@@ -130,6 +133,9 @@ bool should_print_lists() {
 bool do_print_lists() {
 	if (cli_options.list_monitors) {
 		print_monitors_info();
+	}
+	if (cli_options.list_audios) {
+		print_obs_enum_audio_types();
 	}
 	if (cli_options.list_encoders) {
 		print_obs_enum_encoder_types();
@@ -156,8 +162,10 @@ int parse_args(int argc, char **argv) {
 		("listinputs", "List available inputs")
 		("listencoders", "List available encoders")
 		("listoutputs", "List available outputs")
-
-		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
+		("listaudios", "List available audios")
+		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")		
+		("audio,a", po::value<int>(&cli_options.audio_index), "set audio to be recorded")
+		("aisoutput", po::bool_switch(&cli_options.audio_is_output), "set if audio capture is output")
 		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
 		("vbitrate,v", po::value<int>(&cli_options.video_bitrate)->default_value(CliOptions::default_video_bitrate), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
 		("output,o", po::value<std::vector<std::string>>(&cli_options.outputs_paths)->required(), "set file destination, can be set multiple times for multiple outputs")
@@ -230,10 +238,12 @@ int main(int argc, char **argv) {
 
 		reset_video(cli_options.monitor_to_record);
 		reset_audio();
-
-		OBSSource source = setup_video_input(cli_options.monitor_to_record);
-		OBSSource audio_source = setup_audio_input();
-
+		{
+			if (cli_options.audio_index >= 0){
+				OBSSource source = setup_video_input(cli_options.monitor_to_record);
+				OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
+			}
+		}
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 

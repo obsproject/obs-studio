@@ -26,3 +26,5 @@ void print_obs_enum_input_types();
 void print_obs_enum_encoder_types();
 
 void print_obs_enum_output_types();
+
+void print_obs_enum_audio_types();

@@ -1,5 +1,16 @@
 #include "setup_obs.hpp"
 
+#ifdef __APPLE__
+#define INPUT_AUDIO_SOURCE  "coreaudio_input_capture"
+#define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
+#elif _WIN32
+#define INPUT_AUDIO_SOURCE  "wasapi_input_capture"
+#define OUTPUT_AUDIO_SOURCE "wasapi_output_capture"
+#else
+#define INPUT_AUDIO_SOURCE  "pulse_input_capture"
+#define OUTPUT_AUDIO_SOURCE "pulse_output_capture"
+#endif
+
 OBSSource setup_video_input(int monitor) {
 	std::string name("monitor " + std::to_string(monitor) + " capture");
 	OBSSource source = obs_source_create("monitor_capture", name.c_str(), nullptr, nullptr);
@@ -19,13 +30,16 @@ OBSSource setup_video_input(int monitor) {
 	return source;
 }
 
-OBSSource setup_audio_input() {
-	OBSSource source = obs_source_create("wasapi_input_capture", "audio inout", nullptr, nullptr);
+OBSSource setup_audio_input(int audio, bool isOutput) {
+
+	//desktop audio vs mic audio
+	const char* sourceType = isOutput ? OUTPUT_AUDIO_SOURCE : INPUT_AUDIO_SOURCE;
+	const char* sourceName = isOutput ? "audio desktop" : "audio input";
+	OBSSource source = obs_source_create(sourceType, sourceName, nullptr, nullptr);
 	obs_source_release(source);
 	{
 		obs_data_t * source_settings = obs_data_create();
-		//obs_data_set_int(source_settings, "monitor", monitor);
-		//obs_data_set_bool(source_settings, "capture_cursor", false);
+		//obs_data_set_string(source_settings, "device_id", "default");
 
 		obs_source_update(source, source_settings);
 		obs_data_release(source_settings);
