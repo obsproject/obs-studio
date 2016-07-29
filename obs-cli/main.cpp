@@ -106,6 +106,11 @@ void reset_audio() {
 		std::cerr << "Audio reset failed!" << std::endl;
 }
 
+/**
+* Start recording to multiple outputs
+*
+*   Calls obs_output_start(output) internally.
+*/
 void start_recording(std::vector<OBSOutput> outputs) {
 	int outputs_started = 0;
 	for (auto output : outputs) {
@@ -163,7 +168,7 @@ int parse_args(int argc, char **argv) {
 		("listencoders", "List available encoders")
 		("listoutputs", "List available outputs")
 		("listaudios", "List available audios")
-		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")		
+		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
 		("audio,a", po::value<int>(&cli_options.audio_index), "set audio to be recorded")
 		("aisoutput", po::bool_switch(&cli_options.audio_is_output), "set if audio capture is output")
 		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
@@ -225,25 +230,24 @@ int main(int argc, char **argv) {
 			return Ret::error_obs;
 		}
 
-		obs_load_all_modules();
-
+		// must be called before reset_video
 		if (!detect_monitors()){
 			std::cerr << "No monitors found!" << std::endl;
 			return Ret::success;
 		}
 
+		// resets must be called before loading modules.
+		reset_video(cli_options.monitor_to_record);
+		reset_audio();
+		obs_load_all_modules();
+
 		// can only be called after loading modules and detecting monitors.
 		if (do_print_lists())
 			return Ret::success;
-
-		reset_video(cli_options.monitor_to_record);
-		reset_audio();
-		{
+			OBSSource source = setup_video_input(cli_options.monitor_to_record);
 			if (cli_options.audio_index >= 0){
-				OBSSource source = setup_video_input(cli_options.monitor_to_record);
 				OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
 			}
-		}
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
