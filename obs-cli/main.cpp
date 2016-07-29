@@ -104,6 +104,11 @@ void reset_audio() {
 		std::cerr << "Audio reset failed!" << std::endl;
 }
 
+/**
+* Start recording to multiple outputs
+*
+*   Calls obs_output_start(output) internally.
+*/
 void start_recording(std::vector<OBSOutput> outputs) {
 	int outputs_started = 0;
 	for (auto output : outputs) {
