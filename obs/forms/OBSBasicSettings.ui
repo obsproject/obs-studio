@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>896</width>
+    <width>981</width>
     <height>667</height>
    </rect>
   </property>
@@ -2886,9 +2886,9 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
-              <width>718</width>
-              <height>622</height>
+              <y>-206</y>
+              <width>803</width>
+              <height>820</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -3252,6 +3252,28 @@
                      </property>
                      <property name="maximum">
                       <number>10000</number>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_11">
+                  <property name="title">
+                   <string>Basic.Settings.Advanced.Network</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_23">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="bindToIP"/>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_27">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Network.BindToIP</string>
                      </property>
                     </widget>
                    </item>

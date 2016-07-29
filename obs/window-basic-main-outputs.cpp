@@ -540,6 +540,14 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			"DelaySec");
 	bool preserveDelay = config_get_bool(main->Config(), "Output",
 			"DelayPreserve");
+	const char *bindIP = config_get_string(main->Config(), "Output",
+			"BindIP");
+
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "bind_ip", bindIP);
+	obs_output_update(streamOutput, settings);
+	obs_data_release(settings);
+
 	if (!reconnect)
 		maxRetries = 0;
 
@@ -1079,6 +1087,14 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			"DelaySec");
 	bool preserveDelay = config_get_bool(main->Config(), "Output",
 			"DelayPreserve");
+	const char *bindIP = config_get_string(main->Config(), "Output",
+			"BindIP");
+
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_string(settings, "bind_ip", bindIP);
+	obs_output_update(streamOutput, settings);
+	obs_data_release(settings);
+
 	if (!reconnect)
 		maxRetries = 0;
 

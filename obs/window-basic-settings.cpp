@@ -372,6 +372,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectRetryDelay,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -521,6 +522,20 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->listWidget, SIGNAL(currentRowChanged(int)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
+
+	// Get Bind to IP Addresses
+	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
+	obs_property_t *p = obs_properties_get(ppts, "bind_ip");
+
+	size_t count = obs_property_list_item_count(p);
+	for (size_t i = 0; i < count; i++) {
+		const char *name = obs_property_list_item_name(p, i);
+		const char *val = obs_property_list_item_string(p, i);
+
+		ui->bindToIP->addItem(QT_UTF8(name), val);
+	}
+
+	obs_properties_destroy(ppts);
 
 	LoadSettings(false);
 
@@ -1810,6 +1825,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
 			"OverwriteIfExists");
+	const char *bindIP = config_get_string(main->Config(), "Output",
+			"BindIP");
 
 	loading = true;
 
@@ -1829,6 +1846,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	SetComboByName(ui->colorFormat, videoColorFormat);
 	SetComboByName(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
+
+	SetComboByValue(ui->bindToIP, bindIP);
 
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
@@ -2315,6 +2334,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->reconnectEnable, "Output", "Reconnect");
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
+	SaveComboData(ui->bindToIP, "Output", "BindIP");
 }
 
 static inline const char *OutputModeFromIdx(int idx)
