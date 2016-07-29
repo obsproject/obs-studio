@@ -25,6 +25,7 @@
 #include "librtmp/rtmp.h"
 #include "librtmp/log.h"
 #include "flv-mux.h"
+#include "net-if.h"
 
 #ifdef _WIN32
 #include <Iphlpapi.h>
@@ -42,6 +43,7 @@
 
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
+#define OPT_BIND_IP "bind_ip"
 
 //#define TEST_FRAMEDROPS
 
@@ -68,6 +70,7 @@ struct rtmp_stream {
 	struct dstr      path, key;
 	struct dstr      username, password;
 	struct dstr      encoder_name;
+	struct dstr      bind_ip;
 
 	/* frame drop variables */
 	int64_t          drop_threshold_usec;
@@ -164,6 +167,7 @@ static void rtmp_stream_destroy(void *data)
 		dstr_free(&stream->username);
 		dstr_free(&stream->password);
 		dstr_free(&stream->encoder_name);
+		dstr_free(&stream->bind_ip);
 		os_event_destroy(stream->stop_event);
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
@@ -600,6 +604,17 @@ static int try_connect(struct rtmp_stream *stream)
 	set_rtmp_dstr(&stream->rtmp.Link.flashVer,  &stream->encoder_name);
 	stream->rtmp.Link.swfUrl = stream->rtmp.Link.tcUrl;
 
+	if (dstr_is_empty(&stream->bind_ip) ||
+	    dstr_cmp(&stream->bind_ip, "default") == 0) {
+		memset(&stream->rtmp.m_bindIP, 0, sizeof(stream->rtmp.m_bindIP));
+	} else {
+		bool success = netif_str_to_addr(&stream->rtmp.m_bindIP.addr,
+				&stream->rtmp.m_bindIP.addrLen,
+				stream->bind_ip.array);
+		if (success)
+			info("Binding to IP");
+	}
+
 	RTMP_AddStream(&stream->rtmp, stream->key.array);
 
 	for (size_t idx = 1;; idx++) {
@@ -636,6 +651,7 @@ static bool init_connect(struct rtmp_stream *stream)
 {
 	obs_service_t *service;
 	obs_data_t *settings;
+	const char *bind_ip;
 
 	if (stopping(stream))
 		pthread_join(stream->send_thread, NULL);
@@ -663,6 +679,10 @@ static bool init_connect(struct rtmp_stream *stream)
 		(int64_t)obs_data_get_int(settings, OPT_DROP_THRESHOLD) * 1000;
 	stream->max_shutdown_time_sec =
 		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
+
+	bind_ip = obs_data_get_string(settings, OPT_BIND_IP);
+	dstr_copy(&stream->bind_ip, bind_ip);
+
 	obs_data_release(settings);
 	return true;
 }
@@ -837,6 +857,7 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 600);
 	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 5);
+	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
 }
 
 static obs_properties_t *rtmp_stream_properties(void *unused)
@@ -844,10 +865,25 @@ static obs_properties_t *rtmp_stream_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
+	struct netif_saddr_data addrs = {0};
+	obs_property_t *p;
 
 	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
 			obs_module_text("RTMPStream.DropThreshold"),
 			200, 10000, 100);
+
+	p = obs_properties_add_list(props, OPT_BIND_IP,
+			obs_module_text("RTMPStream.BindIP"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	obs_property_list_add_string(p, obs_module_text("Default"), "default");
+
+	netif_get_addrs(&addrs);
+	for (size_t i = 0; i < addrs.addrs.num; i++) {
+		struct netif_saddr_item item = addrs.addrs.array[i];
+		obs_property_list_add_string(p, item.name, item.addr);
+	}
+	netif_saddr_data_free(&addrs);
 
 	return props;
 }
