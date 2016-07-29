@@ -267,8 +267,8 @@ void ff_decoder_refresh(void *opaque)
 			// compute the amount of time until next refresh
 			delay_until_next_wake = decoder->timer_next_wake -
 					(av_gettime() / 1000000.0L);
-			if (delay_until_next_wake < 0.010L) {
-				delay_until_next_wake = 0.010L;
+			if (delay_until_next_wake < 0.001L) {
+				delay_until_next_wake = 0.001L;
 			}
 
 			if (delay_until_next_wake > pts_diff)
