@@ -210,6 +210,18 @@ int parse_args(int argc, char **argv) {
 	return Ret::success;
 }
 
+void start_output_callback(void *data, calldata_t *params) {
+	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
+	std::cout << ">>>> Output " << output << " start." << std::endl;
+}
+
+void stop_output_callback(void *data, calldata_t *params) {
+	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
+	int code = calldata_int(params, "code");
+
+	std::cout << ">>>> Output " << output << " stop. with code " << code << std::endl;
+}
+
 int main(int argc, char **argv) {
 	try {
 		int ret = parse_args(argc, argv);
@@ -244,19 +256,33 @@ int main(int argc, char **argv) {
 		// can only be called after loading modules and detecting monitors.
 		if (do_print_lists())
 			return Ret::success;
-			OBSSource source = setup_video_input(cli_options.monitor_to_record);
-			if (cli_options.audio_index >= 0){
-				OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
-			}
+
+		OBSSignal output_start;
+		OBSSignal output_stop;
+
+		OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		if (cli_options.audio_index >= 0){
+			OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
+		}
+
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
+		// connect signal events.
+		for (auto o : output.outputs) {
+			output_start.Connect(obs_output_get_signal_handler(o), "start", start_output_callback, nullptr);
+			output_stop.Connect(obs_output_get_signal_handler(o), "stop", stop_output_callback, nullptr);
+		}
+
 		start_recording(output.outputs);
 
-		// wait for user input to stop recording.
-		std::cout << "press any key to stop recording." << std::endl;
-		std::string str;
-		std::getline(std::cin, str);
+		while (true) {
+			// wait for user input to stop recording.
+			std::cout << "press q<enter> to stop recording." << std::endl;
+			int c = std::cin.get();
+			if (c == static_cast<int>('q'))
+				break;
+		}
 
 		return Ret::success;
 	}
