@@ -614,7 +614,7 @@ retry:
 				AVIOContext *io_context =
 						demuxer->format_context->pb;
 				if (io_context->error == 0) {
-					av_usleep(20 * 1000); // 100ms
+					av_usleep(100 * 1000); // 100ms
 					continue;
 				} else {
 					if (io_context->eof_reached != 0)
