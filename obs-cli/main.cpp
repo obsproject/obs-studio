@@ -185,6 +185,7 @@ int parse_args(int argc, char **argv) {
 		cli_options.show_help = vm.count("help") > 0;
 		cli_options.list_monitors = vm.count("listmonitors") > 0;
 		cli_options.list_inputs = vm.count("listinputs") > 0;
+		cli_options.list_audios = vm.count("listaudios") > 0;
 		cli_options.list_encoders = vm.count("listencoders") > 0;
 		cli_options.list_outputs = vm.count("listoutputs") > 0;
 
