@@ -37,7 +37,7 @@ OBSSource setup_video_input(int monitor);
 /**
 * Setup input to capture audio.
 */
-OBSSource setup_audio_input(int audio, bool isOutput);
+OBSSource setup_audio_input(std::string audio_device);
 
 /**
  * Setup output to multiple files using the specified encoder and bitrate.

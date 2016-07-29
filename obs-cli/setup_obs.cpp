@@ -1,5 +1,7 @@
 #include "setup_obs.hpp"
 
+#include<boost/algorithm/string/predicate.hpp>
+
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE  "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
@@ -29,17 +31,80 @@ OBSSource setup_video_input(int monitor) {
 
 	return source;
 }
+std::string search_audio_device_by_type(std::string* audio_device, std::string* device_type){
 
-OBSSource setup_audio_input(int audio, bool isOutput) {
+	std::string device_id;
+	obs_properties_t* props = obs_get_source_properties(device_type->c_str());
 
-	//desktop audio vs mic audio
-	const char* sourceType = isOutput ? OUTPUT_AUDIO_SOURCE : INPUT_AUDIO_SOURCE;
-	const char* sourceName = isOutput ? "audio desktop" : "audio input";
-	OBSSource source = obs_source_create(sourceType, sourceName, nullptr, nullptr);
+	obs_property_t *property = obs_properties_first(props);
+
+	while (property){
+		const char        *name = obs_property_name(property);
+		//only check device_id properties
+		if (strcmp(name, "device_id") != 0)
+			break;
+
+		obs_property_type type = obs_property_get_type(property);
+		obs_combo_format cformat = obs_property_list_format(property);
+		size_t           ccount = obs_property_list_item_count(property);
+
+		switch (type)
+		{
+		case OBS_PROPERTY_LIST:
+
+			for (size_t cidx = 0; cidx < ccount; cidx++){
+				const char *nameListItem = obs_property_list_item_name(property, cidx);
+
+				if (cformat == OBS_COMBO_FORMAT_STRING){
+					if (boost::iequals(nameListItem, audio_device->c_str())) {
+						device_id = obs_property_list_item_string(property, cidx);
+						return device_id;
+					}
+				}
+			}
+
+			break;
+		default:
+			break;
+		}
+		obs_property_next(&property);
+	}
+	return device_id;
+}
+
+void search_audio_device_by_name(std::string audio_device, std::string* device_id, std::string* device_type){
+	//std::string device_id;
+	std::string st = std::string(INPUT_AUDIO_SOURCE);
+	*device_type = st;
+	*device_id = search_audio_device_by_type(&audio_device, device_type);
+
+	//device has been found exit
+	if (!device_id->empty())
+		return;
+
+	*device_type = std::string(OUTPUT_AUDIO_SOURCE);
+	*device_id = search_audio_device_by_type(&audio_device, device_type);
+	return;
+}
+OBSSource setup_audio_input(std::string audio_device) {
+
+	bool  isOutput;
+	std::string device_id;
+	std::string device_type;
+
+	//TODO RP
+	//this sets audio device..it shouldn't 
+	search_audio_device_by_name(audio_device, &device_id, &device_type);
+	if (device_id.empty())
+		return nullptr;
+
+	OBSSource source = obs_source_create(device_type.c_str(), "audio capture", nullptr, nullptr);
 	obs_source_release(source);
 	{
 		obs_data_t * source_settings = obs_data_create();
-		//obs_data_set_string(source_settings, "device_id", "default");
+
+		//TODO RP
+		//obs_data_set_string(source_settings, "device_id", device_id.c_str());
 
 		obs_source_update(source, source_settings);
 		obs_data_release(source_settings);

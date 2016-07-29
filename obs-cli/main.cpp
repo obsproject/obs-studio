@@ -47,10 +47,9 @@ namespace {
 		// cli options
 		int monitor_to_record = 0;
 		std::string encoder;
+		std::string audio_device;
 		int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
-		int audio_index = -1;
-		bool audio_is_output = false;
 		bool show_help = false;
 		bool list_monitors = false;
 		bool list_audios = false;
@@ -169,8 +168,7 @@ int parse_args(int argc, char **argv) {
 		("listoutputs", "List available outputs")
 		("listaudios", "List available audios")
 		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
-		("audio,a", po::value<int>(&cli_options.audio_index), "set audio to be recorded")
-		("aisoutput", po::bool_switch(&cli_options.audio_is_output), "set if audio capture is output")
+		("audio,a", po::value<std::string>(&cli_options.audio_device), "set audio to be recorded")
 		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
 		("vbitrate,v", po::value<int>(&cli_options.video_bitrate)->default_value(CliOptions::default_video_bitrate), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
 		("output,o", po::value<std::vector<std::string>>(&cli_options.outputs_paths)->required(), "set file destination, can be set multiple times for multiple outputs")
@@ -245,10 +243,13 @@ int main(int argc, char **argv) {
 		// can only be called after loading modules and detecting monitors.
 		if (do_print_lists())
 			return Ret::success;
-			OBSSource source = setup_video_input(cli_options.monitor_to_record);
-			if (cli_options.audio_index >= 0){
-				OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
+		OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		if (!cli_options.audio_device.empty()){
+			OBSSource audio_source = setup_audio_input(cli_options.audio_device);
+			if (!audio_source){
+				std::cout << "failed to find audio device " << cli_options.audio_device << "." << std::endl;
 			}
+		}
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
