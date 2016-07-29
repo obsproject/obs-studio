@@ -553,11 +553,17 @@ static void *demux_thread(void *opaque)
 	int current_retry = 0;
 retry:
 	if (current_retry) {
-		if (demuxer->audio_decoder != NULL) demuxer->audio_decoder->eof = true;
-		if (demuxer->video_decoder != NULL) demuxer->video_decoder->eof = true;
-		ff_decoder_abort(demuxer->audio_decoder);
-		ff_decoder_abort(demuxer->video_decoder);
-		av_usleep(current_retry * 30 * 1000);
+		if (current_retry > 1) {
+			av_usleep((current_retry - 1) * 30 * 1000);
+		}
+		if (demuxer->audio_decoder != NULL) {
+			demuxer->audio_decoder->eof = true;
+			ff_decoder_free(demuxer->audio_decoder);
+		}
+		if (demuxer->video_decoder != NULL) {
+			demuxer->video_decoder->eof = true;
+			ff_decoder_free(demuxer->video_decoder);
+		}
 		demuxer->audio_decoder = NULL; // avoid any more accesses
 		demuxer->video_decoder = NULL;
 	}
@@ -572,8 +578,13 @@ retry:
 
 	av_dump_format(demuxer->format_context, 0, demuxer->input, 0);
 
-	if (!find_and_initialize_stream_decoders(demuxer))
+	if (!find_and_initialize_stream_decoders(demuxer)) {
+		if (current_retry && current_retry < 10) {
+			current_retry++;
+			goto retry;
+		}
 		goto fail;
+	}
 
 	if (current_retry) {
 		av_log(NULL, AV_LOG_DEBUG,
