@@ -104,7 +104,7 @@ fail:
 	return true;
 }
 
-static void get_window_title(struct dstr *name, HWND hwnd)
+void get_window_title(struct dstr *name, HWND hwnd)
 {
 	wchar_t *temp;
 	int len;
@@ -119,7 +119,7 @@ static void get_window_title(struct dstr *name, HWND hwnd)
 	free(temp);
 }
 
-static void get_window_class(struct dstr *class, HWND hwnd)
+void get_window_class(struct dstr *class, HWND hwnd)
 {
 	wchar_t temp[256];
 
