@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <obs-module.h>
+#include <obs-hotkey.h>
 #include <util/platform.h>
+#include <util/threading.h>
 #include <windows.h>
 #include <dxgi.h>
 #include <emmintrin.h>
@@ -19,7 +21,7 @@
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
-#define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
+#define SETTING_MODE             "capture_mode"
 #define SETTING_CAPTURE_WINDOW   "window"
 #define SETTING_ACTIVE_WINDOW    "active_window"
 #define SETTING_WINDOW_PRIORITY  "priority"
@@ -32,6 +34,17 @@
 #define SETTING_CAPTURE_OVERLAYS "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK  "anti_cheat_hook"
 
+/* deprecated */
+#define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
+
+#define SETTING_MODE_ANY         "any_fullscreen"
+#define SETTING_MODE_WINDOW      "window"
+#define SETTING_MODE_HOTKEY      "hotkey"
+
+#define HOTKEY_START             "hotkey_start"
+#define HOTKEY_STOP              "hotkey_stop"
+
+#define TEXT_MODE                obs_module_text("Mode")
 #define TEXT_GAME_CAPTURE        obs_module_text("GameCapture")
 #define TEXT_ANY_FULLSCREEN      obs_module_text("GameCapture.AnyFullscreen")
 #define TEXT_SLI_COMPATIBILITY   obs_module_text("Compatibility")
@@ -48,19 +61,32 @@
 #define TEXT_CAPTURE_OVERLAYS    obs_module_text("GameCapture.CaptureOverlays")
 #define TEXT_ANTI_CHEAT_HOOK     obs_module_text("GameCapture.AntiCheatHook")
 
+#define TEXT_MODE_ANY            TEXT_ANY_FULLSCREEN
+#define TEXT_MODE_WINDOW         obs_module_text("GameCapture.CaptureWindow")
+#define TEXT_MODE_HOTKEY         obs_module_text("GameCapture.UseHotkey")
+
+#define TEXT_HOTKEY_START        obs_module_text("GameCapture.HotkeyStart")
+#define TEXT_HOTKEY_STOP         obs_module_text("GameCapture.HotkeyStop")
+
 #define DEFAULT_RETRY_INTERVAL 2.0f
 #define ERROR_RETRY_INTERVAL 4.0f
+
+enum capture_mode {
+	CAPTURE_MODE_ANY,
+	CAPTURE_MODE_WINDOW,
+	CAPTURE_MODE_HOTKEY
+};
 
 struct game_capture_config {
 	char                          *title;
 	char                          *class;
 	char                          *executable;
 	enum window_priority          priority;
+	enum capture_mode             mode;
 	uint32_t                      scale_cx;
 	uint32_t                      scale_cy;
 	bool                          cursor : 1;
 	bool                          force_shmem : 1;
-	bool                          capture_any_fullscreen : 1;
 	bool                          force_scaling : 1;
 	bool                          allow_transparency : 1;
 	bool                          limit_framerate : 1;
@@ -83,6 +109,14 @@ struct game_capture {
 	float                         retry_time;
 	float                         fps_reset_time;
 	float                         retry_interval;
+	struct dstr                   title;
+	struct dstr                   class;
+	struct dstr                   executable;
+	enum window_priority          priority;
+	obs_hotkey_pair_id            hotkey_pair;
+	volatile long                 hotkey_window;
+	volatile bool                 deactivate_hook;
+	volatile bool                 activate_hook_now;
 	bool                          wait_for_target_startup : 1;
 	bool                          showing : 1;
 	bool                          active : 1;
@@ -222,12 +256,24 @@ static void game_capture_destroy(void *data)
 	struct game_capture *gc = data;
 	stop_capture(gc);
 
+	if (gc->hotkey_pair)
+		obs_hotkey_pair_unregister(gc->hotkey_pair);
+
 	obs_enter_graphics();
 	cursor_data_free(&gc->cursor_data);
 	obs_leave_graphics();
 
+	dstr_free(&gc->title);
+	dstr_free(&gc->class);
+	dstr_free(&gc->executable);
 	free_config(&gc->config);
 	bfree(gc);
+}
+
+static inline bool using_older_non_mode_format(obs_data_t *settings)
+{
+	return obs_data_has_user_value(settings, SETTING_ANY_FULLSCREEN) &&
+		!obs_data_has_user_value(settings, SETTING_MODE);
 }
 
 static inline void get_config(struct game_capture_config *cfg,
@@ -235,12 +281,25 @@ static inline void get_config(struct game_capture_config *cfg,
 {
 	int ret;
 	const char *scale_str;
+	const char *mode_str = NULL;
 
 	build_window_strings(window, &cfg->class, &cfg->title,
 			&cfg->executable);
 
-	cfg->capture_any_fullscreen = obs_data_get_bool(settings,
-			SETTING_ANY_FULLSCREEN);
+	if (using_older_non_mode_format(settings)) {
+		bool any = obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
+		mode_str = any ? SETTING_MODE_ANY : SETTING_MODE_WINDOW;
+	} else {
+		mode_str = obs_data_get_string(settings, SETTING_MODE);
+	}
+
+	if (mode_str && strcmp(mode_str, SETTING_MODE_WINDOW) == 0)
+		cfg->mode = CAPTURE_MODE_WINDOW;
+	else if (mode_str && strcmp(mode_str, SETTING_MODE_HOTKEY) == 0)
+		cfg->mode = CAPTURE_MODE_HOTKEY;
+	else
+		cfg->mode = CAPTURE_MODE_ANY;
+
 	cfg->priority = (enum window_priority)obs_data_get_int(settings,
 			SETTING_WINDOW_PRIORITY);
 	cfg->force_shmem = obs_data_get_bool(settings,
@@ -283,10 +342,10 @@ static inline int s_cmp(const char *str1, const char *str2)
 static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 		struct game_capture_config *cfg2)
 {
-	if (cfg1->capture_any_fullscreen != cfg2->capture_any_fullscreen) {
+	if (cfg1->mode != cfg2->mode) {
 		return true;
 
-	} else if (!cfg1->capture_any_fullscreen &&
+	} else if (cfg1->mode == CAPTURE_MODE_WINDOW &&
 			(s_cmp(cfg1->class, cfg2->class) != 0 ||
 			 s_cmp(cfg1->title, cfg2->title) != 0 ||
 			 s_cmp(cfg1->executable, cfg2->executable) != 0 ||
@@ -314,6 +373,33 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 	return false;
 }
 
+static bool hotkey_start(void *data, obs_hotkey_pair_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	if (pressed) {
+		struct game_capture *gc = data;
+		info("Activate hotkey pressed");
+		os_atomic_set_long(&gc->hotkey_window,
+				(long)GetForegroundWindow());
+		os_atomic_set_bool(&gc->deactivate_hook, true);
+		os_atomic_set_bool(&gc->activate_hook_now, true);
+	}
+
+	return true;
+}
+
+static bool hotkey_stop(void *data, obs_hotkey_pair_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	if (pressed) {
+		struct game_capture *gc = data;
+		info("Deactivate hotkey pressed");
+		os_atomic_set_bool(&gc->deactivate_hook, true);
+	}
+
+	return true;
+}
+
 static void game_capture_update(void *data, obs_data_t *settings)
 {
 	struct game_capture *gc = data;
@@ -337,6 +423,30 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
 	gc->wait_for_target_startup = false;
+
+	if (cfg.mode == CAPTURE_MODE_HOTKEY) {
+		if (!gc->hotkey_pair) {
+			gc->hotkey_pair = obs_hotkey_pair_register_source(
+					gc->source,
+					HOTKEY_START, TEXT_HOTKEY_START,
+					HOTKEY_STOP,  TEXT_HOTKEY_STOP,
+					hotkey_start, hotkey_stop, gc, gc);
+		}
+	} else if (gc->hotkey_pair) {
+		obs_hotkey_pair_unregister(gc->hotkey_pair);
+		gc->hotkey_pair = 0;
+	}
+
+	dstr_free(&gc->title);
+	dstr_free(&gc->class);
+	dstr_free(&gc->executable);
+
+	if (cfg.mode == CAPTURE_MODE_WINDOW) {
+		dstr_copy(&gc->title, gc->config.title);
+		dstr_copy(&gc->class, gc->config.class);
+		dstr_copy(&gc->executable, gc->config.executable);
+		gc->priority = gc->config.priority;
+	}
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
@@ -714,7 +824,7 @@ cleanup:
 
 static bool init_hook(struct game_capture *gc)
 {
-	if (gc->config.capture_any_fullscreen) {
+	if (gc->config.mode == CAPTURE_MODE_ANY) {
 		struct dstr name = {0};
 		if (get_window_exe(&name, gc->next_window)) {
 			info("attempting to hook fullscreen process: %s",
@@ -722,7 +832,7 @@ static bool init_hook(struct game_capture *gc)
 			dstr_free(&name);
 		}
 	} else {
-		info("attempting to hook process: %s", gc->config.executable);
+		info("attempting to hook process: %s", gc->executable.array);
 	}
 
 	if (!open_target_process(gc)) {
@@ -826,16 +936,16 @@ static void get_selected_window(struct game_capture *gc)
 {
 	HWND window;
 
-	if (strcmpi(gc->config.class, "dwm") == 0) {
+	if (dstr_cmpi(&gc->class, "dwm") == 0) {
 		wchar_t class_w[512];
-		os_utf8_to_wcs(gc->config.class, 0, class_w, 512);
+		os_utf8_to_wcs(gc->class.array, 0, class_w, 512);
 		window = FindWindowW(class_w, NULL);
 	} else {
 		window = find_window(INCLUDE_MINIMIZED,
-				gc->config.priority,
-				gc->config.class,
-				gc->config.title,
-				gc->config.executable);
+				gc->priority,
+				gc->class.array,
+				gc->title.array,
+				gc->executable.array);
 	}
 
 	if (window) {
@@ -847,7 +957,7 @@ static void get_selected_window(struct game_capture *gc)
 
 static void try_hook(struct game_capture *gc)
 {
-	if (gc->config.capture_any_fullscreen) {
+	if (gc->config.mode == CAPTURE_MODE_ANY) {
 		get_fullscreen_window(gc);
 	} else {
 		get_selected_window(gc);
@@ -1279,6 +1389,26 @@ static inline bool capture_valid(struct game_capture *gc)
 static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
+	bool deactivate = os_atomic_set_bool(&gc->deactivate_hook, false);
+	bool activate_now = os_atomic_set_bool(&gc->activate_hook_now, false);
+
+	if (activate_now) {
+		HWND hwnd = (HWND)os_atomic_load_long(&gc->hotkey_window);
+
+		if (get_window_exe(&gc->executable, hwnd)) {
+			get_window_title(&gc->title, hwnd);
+			get_window_class(&gc->class, hwnd);
+
+			gc->priority = WINDOW_PRIORITY_CLASS;
+			gc->retry_time = 10.0f;
+			gc->activate_hook = true;
+		} else {
+			deactivate = false;
+			activate_now = false;
+		}
+	} else if (deactivate) {
+		gc->activate_hook = false;
+	}
 
 	if (!obs_source_showing(gc->source)) {
 		if (gc->showing) {
@@ -1293,6 +1423,9 @@ static void game_capture_tick(void *data, float seconds)
 	}
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
+		stop_capture(gc);
+	}
+	if (gc->active && deactivate) {
 		stop_capture(gc);
 	}
 
@@ -1334,7 +1467,7 @@ static void game_capture_tick(void *data, float seconds)
 	if (!gc->active) {
 		if (!gc->error_acquiring &&
 		    gc->retry_time > gc->retry_interval) {
-			if (gc->config.capture_any_fullscreen ||
+			if (gc->config.mode == CAPTURE_MODE_ANY ||
 			    gc->activate_hook) {
 				try_hook(gc);
 				gc->retry_time = 0.0f;
@@ -1438,7 +1571,7 @@ static const char *game_capture_name(void *unused)
 
 static void game_capture_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, SETTING_ANY_FULLSCREEN, true);
+	obs_data_set_default_string(settings, SETTING_MODE, SETTING_MODE_ANY);
 	obs_data_set_default_int(settings, SETTING_WINDOW_PRIORITY,
 			(int)WINDOW_PRIORITY_EXE);
 	obs_data_set_default_bool(settings, SETTING_COMPATIBILITY, false);
@@ -1451,17 +1584,24 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
 }
 
-static bool any_fullscreen_callback(obs_properties_t *ppts,
+static bool mode_callback(obs_properties_t *ppts,
 		obs_property_t *p, obs_data_t *settings)
 {
-	bool any_fullscreen = obs_data_get_bool(settings,
-			SETTING_ANY_FULLSCREEN);
+	bool capture_window;
+
+	if (using_older_non_mode_format(settings)) {
+		capture_window = !obs_data_get_bool(settings,
+				SETTING_ANY_FULLSCREEN);
+	} else {
+		const char *mode = obs_data_get_string(settings, SETTING_MODE);
+		capture_window = strcmp(mode, SETTING_MODE_WINDOW) == 0;
+	}
 
 	p = obs_properties_get(ppts, SETTING_CAPTURE_WINDOW);
-	obs_property_set_enabled(p, !any_fullscreen);
+	obs_property_set_visible(p, capture_window);
 
 	p = obs_properties_get(ppts, SETTING_WINDOW_PRIORITY);
-	obs_property_set_enabled(p, !any_fullscreen);
+	obs_property_set_visible(p, capture_window);
 
 	return true;
 }
@@ -1568,13 +1708,32 @@ static obs_properties_t *game_capture_properties(void *data)
 		}
 	}
 
+	/* update from deprecated settings */
+	if (data) {
+		struct game_capture *gc = data;
+		obs_data_t *settings = obs_source_get_settings(gc->source);
+		if (using_older_non_mode_format(settings)) {
+			bool any = obs_data_get_bool(settings,
+					SETTING_ANY_FULLSCREEN);
+			const char *mode = any ?
+				SETTING_MODE_ANY : SETTING_MODE_WINDOW;
+
+			obs_data_set_string(settings, SETTING_MODE, mode);
+		}
+		obs_data_release(settings);
+	}
+
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_bool(ppts, SETTING_ANY_FULLSCREEN,
-			TEXT_ANY_FULLSCREEN);
+	p = obs_properties_add_list(ppts, SETTING_MODE, TEXT_MODE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	obs_property_set_modified_callback(p, any_fullscreen_callback);
+	obs_property_list_add_string(p, TEXT_MODE_ANY,    SETTING_MODE_ANY);
+	obs_property_list_add_string(p, TEXT_MODE_WINDOW, SETTING_MODE_WINDOW);
+	obs_property_list_add_string(p, TEXT_MODE_HOTKEY, SETTING_MODE_HOTKEY);
+
+	obs_property_set_modified_callback(p, mode_callback);
 
 	p = obs_properties_add_list(ppts, SETTING_CAPTURE_WINDOW, TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
