@@ -822,19 +822,63 @@ cleanup:
 	return success;
 }
 
+static const char *blacklisted_exes[] = {
+	"explorer",
+	"steam",
+	"battle.net",
+	"galaxyclient",
+	"skype",
+	"uplay",
+	"origin",
+	"devenv",
+	"taskmgr",
+	"systemsettings",
+	"lolclient",
+	"cmd",
+	NULL
+};
+
+static bool is_blacklisted_exe(const char *exe)
+{
+	char cur_exe[MAX_PATH];
+
+	if (!exe)
+		return false;
+
+	for (const char **vals = blacklisted_exes; *vals; vals++) {
+		strcpy(cur_exe, *vals);
+		strcat(cur_exe, ".exe");
+
+		if (strcmpi(cur_exe, exe) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static bool init_hook(struct game_capture *gc)
 {
+	struct dstr exe = {0};
+	bool blacklisted_process = false;
+
 	if (gc->config.mode == CAPTURE_MODE_ANY) {
-		struct dstr name = {0};
-		if (get_window_exe(&name, gc->next_window)) {
+		if (get_window_exe(&exe, gc->next_window)) {
 			info("attempting to hook fullscreen process: %s",
-					name.array);
-			dstr_free(&name);
+					exe.array);
 		}
 	} else {
 		info("attempting to hook process: %s", gc->executable.array);
+		dstr_copy_dstr(&exe, &gc->executable);
 	}
 
+	blacklisted_process = is_blacklisted_exe(exe.array);
+	if (blacklisted_process)
+		info("cannot capture %s due to being blacklisted", exe.array);
+	dstr_free(&exe);
+
+	if (blacklisted_process) {
+		return false;
+	}
 	if (!open_target_process(gc)) {
 		return false;
 	}
@@ -1688,6 +1732,15 @@ static BOOL CALLBACK EnumFirstMonitor(HMONITOR monitor, HDC hdc,
 	return false;
 }
 
+static bool window_not_blacklisted(const char *title, const char *class,
+		const char *exe)
+{
+	UNUSED_PARAMETER(title);
+	UNUSED_PARAMETER(class);
+
+	return !is_blacklisted_exe(exe);
+}
+
 static obs_properties_t *game_capture_properties(void *data)
 {
 	HMONITOR monitor;
@@ -1738,7 +1791,7 @@ static obs_properties_t *game_capture_properties(void *data)
 	p = obs_properties_add_list(ppts, SETTING_CAPTURE_WINDOW, TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "", "");
-	fill_window_list(p, INCLUDE_MINIMIZED);
+	fill_window_list(p, INCLUDE_MINIMIZED, window_not_blacklisted);
 
 	obs_property_set_modified_callback(p, window_changed_callback);
 

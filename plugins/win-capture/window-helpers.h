@@ -17,7 +17,11 @@ extern bool get_window_exe(struct dstr *name, HWND window);
 extern void get_window_title(struct dstr *name, HWND hwnd);
 extern void get_window_class(struct dstr *class, HWND hwnd);
 
-extern void fill_window_list(obs_property_t *p, enum window_search_mode mode);
+typedef bool (*add_window_cb)(const char *title, const char *class,
+		const char *exe);
+
+extern void fill_window_list(obs_property_t *p, enum window_search_mode mode,
+		add_window_cb callback);
 
 extern void build_window_strings(const char *str,
 		char **class,

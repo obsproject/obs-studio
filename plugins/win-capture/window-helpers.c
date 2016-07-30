@@ -128,7 +128,7 @@ void get_window_class(struct dstr *class, HWND hwnd)
 		dstr_from_wcs(class, temp);
 }
 
-static void add_window(obs_property_t *p, HWND hwnd)
+static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 {
 	struct dstr class   = {0};
 	struct dstr title   = {0};
@@ -140,6 +140,13 @@ static void add_window(obs_property_t *p, HWND hwnd)
 		return;
 	get_window_title(&title, hwnd);
 	get_window_class(&class, hwnd);
+
+	if (callback && !callback(title.array, class.array, exe.array)) {
+		dstr_free(&title);
+		dstr_free(&class);
+		dstr_free(&exe);
+		return;
+	}
 
 	dstr_printf(&desc, "[%s]: %s", exe.array, title.array);
 
@@ -204,12 +211,13 @@ static inline HWND first_window(enum window_search_mode mode)
 	return window;
 }
 
-void fill_window_list(obs_property_t *p, enum window_search_mode mode)
+void fill_window_list(obs_property_t *p, enum window_search_mode mode,
+		add_window_cb callback)
 {
 	HWND window = first_window(mode);
 
 	while (window) {
-		add_window(p, window);
+		add_window(p, window, callback);
 		window = next_window(window, mode);
 	}
 }
