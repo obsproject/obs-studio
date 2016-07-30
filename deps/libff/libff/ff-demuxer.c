@@ -556,16 +556,18 @@ retry:
 		if (current_retry > 1) {
 			av_usleep((current_retry - 1) * 30 * 1000);
 		}
-		if (demuxer->audio_decoder != NULL) {
-			demuxer->audio_decoder->eof = true;
+		if (demuxer->audio_decoder != NULL)
 			ff_decoder_free(demuxer->audio_decoder);
-		}
-		if (demuxer->video_decoder != NULL) {
-			demuxer->video_decoder->eof = true;
+
+		if (demuxer->video_decoder != NULL)
 			ff_decoder_free(demuxer->video_decoder);
-		}
+
+		if (demuxer->format_context != NULL)
+			avformat_close_input(&demuxer->format_context);
+
 		demuxer->audio_decoder = NULL; // avoid any more accesses
 		demuxer->video_decoder = NULL;
+		demuxer->format_context = NULL;
 	}
 
 	if (!open_input(demuxer, &demuxer->format_context)) {
