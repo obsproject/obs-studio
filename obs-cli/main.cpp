@@ -106,6 +106,17 @@ void reset_audio() {
 }
 
 /**
+* Stop recording of multiple outputs
+*
+*   Calls obs_output_stop(output) internally.
+*/
+void stop_recording(std::vector<OBSOutput> outputs){
+
+	for (auto output : outputs) {
+		obs_output_stop(output);
+	}
+}
+/**
 * Start recording to multiple outputs
 *
 *   Calls obs_output_start(output) internally.
@@ -259,7 +270,10 @@ int main(int argc, char **argv) {
 		std::cout << "press any key to stop recording." << std::endl;
 		std::string str;
 		std::getline(std::cin, str);
+		stop_recording(output.outputs);
 
+		obs_set_output_source(0, nullptr);
+		obs_set_output_source(1, nullptr);
 		return Ret::success;
 	}
 	catch (std::exception& e) {
