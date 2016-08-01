@@ -92,8 +92,7 @@ OBSSource setup_audio_input(std::string audio_device) {
 	std::string device_id;
 	std::string device_type;
 
-	//TODO RP
-	//this sets audio device..it shouldn't 
+
 	search_audio_device_by_name(audio_device, &device_id, &device_type);
 	if (device_id.empty())
 		return nullptr;
@@ -103,8 +102,7 @@ OBSSource setup_audio_input(std::string audio_device) {
 	{
 		obs_data_t * source_settings = obs_data_create();
 
-		//TODO RP
-		//obs_data_set_string(source_settings, "device_id", device_id.c_str());
+		obs_data_set_string(source_settings, "device_id", device_id.c_str());
 
 		obs_source_update(source, source_settings);
 		obs_data_release(source_settings);
