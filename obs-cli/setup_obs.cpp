@@ -16,7 +16,7 @@
 OBSSource setup_video_input(int monitor) {
 	std::string name("monitor " + std::to_string(monitor) + " capture");
 	OBSSource source = obs_source_create("monitor_capture", name.c_str(), nullptr, nullptr);
-	obs_source_release(source);
+	
 	{
 		obs_data_t * source_settings = obs_data_create();
 		obs_data_set_int(source_settings, "monitor", monitor);
@@ -28,7 +28,7 @@ OBSSource setup_video_input(int monitor) {
 
 	// set this source as output.
 	obs_set_output_source(0, source);
-
+	obs_source_release(source);
 	return source;
 }
 std::string search_audio_device_by_type(std::string* audio_device, std::string* device_type){
@@ -88,17 +88,14 @@ void search_audio_device_by_name(std::string audio_device, std::string* device_i
 }
 OBSSource setup_audio_input(std::string audio_device) {
 
-	bool  isOutput;
 	std::string device_id;
 	std::string device_type;
-
 
 	search_audio_device_by_name(audio_device, &device_id, &device_type);
 	if (device_id.empty())
 		return nullptr;
 
 	OBSSource source = obs_source_create(device_type.c_str(), "audio capture", nullptr, nullptr);
-	obs_source_release(source);
 	{
 		obs_data_t * source_settings = obs_data_create();
 
@@ -111,6 +108,7 @@ OBSSource setup_audio_input(std::string audio_device) {
 	// set this source as output.
 	obs_set_output_source(1, source);
 
+	obs_source_release(source);
 	return source;
 }
 
