@@ -579,6 +579,7 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
 	}
 
 	if ((output->info.flags & OBS_OUTPUT_MULTI_TRACK) != 0) {
+		
 		if (idx >= MAX_AUDIO_MIXES) {
 			return;
 		}
