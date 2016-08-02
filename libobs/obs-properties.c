@@ -585,7 +585,8 @@ bool obs_property_button_clicked(obs_property_t *p, void *obj)
 		struct button_data *data = get_type_data(p,
 				OBS_PROPERTY_BUTTON);
 		if (data && data->callback)
-			return data->callback(p->parent, p, context->data);
+			return data->callback(p->parent, p,
+					(context ? context->data : NULL));
 	}
 
 	return false;
