@@ -108,7 +108,7 @@ static struct obs_encoder *create_encoder(const char *id,
 			&obs->data.encoders_mutex,
 			&obs->data.first_encoder);
 
-	blog(LOG_INFO, "encoder '%s' (%s) created", name, id);
+	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
 	return encoder;
 }
 
@@ -229,7 +229,7 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
-		blog(LOG_INFO, "encoder '%s' destroyed", encoder->context.name);
+		blog(LOG_DEBUG, "encoder '%s' destroyed", encoder->context.name);
 
 		free_audio_buffers(encoder);
 

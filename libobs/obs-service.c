@@ -66,8 +66,7 @@ static obs_service_t *obs_service_create_internal(const char *id,
 			&obs->data.services_mutex,
 			&obs->data.first_service);
 
-	blog(private ? LOG_DEBUG : LOG_INFO, "service '%s' (%s) created",
-			name, id);
+	blog(LOG_DEBUG, "service '%s' (%s) created", name, id);
 	return service;
 }
 
@@ -92,8 +91,7 @@ static void actually_destroy_service(struct obs_service *service)
 	if (service->output)
 		service->output->service = NULL;
 
-	blog(service->context.private ? LOG_DEBUG : LOG_INFO,
-			"service '%s' destroyed", service->context.name);
+	blog(LOG_DEBUG, "service '%s' destroyed", service->context.name);
 
 	obs_context_data_free(&service->context);
 	if (service->owns_info_id)

@@ -189,7 +189,7 @@ static void PopulateBitrateMap()
 			   << " kbit/s: '" << EncoderName(entry.second) << "' ("
 			   << entry.second << ')';
 
-		blog(LOG_INFO, "AAC encoder bitrate mapping:%s",
+		blog(LOG_DEBUG, "AAC encoder bitrate mapping:%s",
 				ss.str().c_str());
 	});
 }

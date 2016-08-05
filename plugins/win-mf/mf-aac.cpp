@@ -158,7 +158,7 @@ extern "C" void RegisterMFAACEncoder()
 	info.get_extra_data            = MFAAC_GetExtraData;
 	info.get_audio_info            = MFAAC_GetAudioInfo;
 
-	MF_LOG(LOG_INFO, "Adding Media Foundation AAC Encoder");
+	MF_LOG(LOG_DEBUG, "Adding Media Foundation AAC Encoder");
 
 	obs_register_encoder(&info);
 

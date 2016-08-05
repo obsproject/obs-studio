@@ -146,7 +146,7 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 			&obs->data.outputs_mutex,
 			&obs->data.first_output);
 
-	blog(LOG_INFO, "output '%s' (%s) created", name, id);
+	blog(LOG_DEBUG, "output '%s' (%s) created", name, id);
 	return output;
 
 fail:
@@ -166,7 +166,7 @@ void obs_output_destroy(obs_output_t *output)
 	if (output) {
 		obs_context_data_remove(&output->context);
 
-		blog(LOG_INFO, "output '%s' destroyed", output->context.name);
+		blog(LOG_DEBUG, "output '%s' destroyed", output->context.name);
 
 		if (output->valid && active(output))
 			obs_output_actual_stop(output, true, 0);
