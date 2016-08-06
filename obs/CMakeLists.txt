@@ -232,3 +232,24 @@ if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	install(FILES forms/images/obs.png
 		DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/icons/hicolor/256x256/apps)
 endif()
+
+if(APPLE AND DEFINED ENV{FIXUP_BUNDLE})
+	foreach(plugin 
+			Qt5::QCocoaIntegrationPlugin;
+			Qt5::QMinimalIntegrationPlugin;
+			Qt5::QOffscreenIntegrationPlugin)
+		get_target_property(_qt_plugin_path ${plugin} LOCATION)
+		if(EXISTS "${_qt_plugin_path}")
+            list(APPEND _qt_plugin_paths ${_qt_plugin_path})
+			get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
+			get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
+			get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
+			set(_qt_plugin_dest "bin/${_qt_plugin_type}")
+            install(FILES "${_qt_plugin_path}" 
+					PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ 
+					DESTINATION "${_qt_plugin_dest}")
+		else()
+			message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
+		endif()
+	endforeach()
+endif()
