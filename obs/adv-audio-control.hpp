@@ -31,6 +31,7 @@ private:
 	QPointer<QCheckBox>    mixer2;
 	QPointer<QCheckBox>    mixer3;
 	QPointer<QCheckBox>    mixer4;
+	QPointer<QCheckBox>    mixer5;
 
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
@@ -62,4 +63,5 @@ public slots:
 	void mixer2Changed(bool checked);
 	void mixer3Changed(bool checked);
 	void mixer4Changed(bool checked);
+	void mixer5Changed(bool checked);
 };

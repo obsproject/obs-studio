@@ -674,7 +674,7 @@ bool SimpleOutput::RecordingActive() const
 /* ------------------------------------------------------------------------ */
 
 struct AdvancedOutput : BasicOutputHandler {
-	OBSEncoder             aacTrack[4];
+	OBSEncoder             aacTrack[5];
 	OBSEncoder             h264Streaming;
 	OBSEncoder             h264Recording;
 
@@ -682,7 +682,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	bool                   ffmpegRecording;
 	bool                   useStreamEncoder;
 
-	string                 aacEncoderID[4];
+	string                 aacEncoderID[5];
 
 	AdvancedOutput(OBSBasic *main_);
 
@@ -780,7 +780,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		      "(advanced output)";
 	obs_encoder_release(h264Streaming);
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 5; i++) {
 		char name[9];
 		sprintf(name, "adv_aac%d", i);
 
@@ -875,7 +875,7 @@ inline void AdvancedOutput::SetupStreaming()
 		for (; i < trackCount; i++)
 			obs_output_set_audio_encoder(streamOutput, aacTrack[i],
 					i);
-		for (; i < 4; i++)
+		for (; i < 5; i++)
 			obs_output_set_audio_encoder(streamOutput, nullptr, i);
 
 	} else {
@@ -1008,13 +1008,15 @@ inline void AdvancedOutput::UpdateAudioSettings()
 			"Track3Name");
 	const char *name4 = config_get_string(main->Config(), "AdvOut",
 			"Track4Name");
+	const char *name5 = config_get_string(main->Config(), "AdvOut",
+		"Track5Name");
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 			"ApplyServiceSettings");
 	int streamTrackIndex = config_get_int(main->Config(), "AdvOut",
 			"TrackIndex");
-	obs_data_t *settings[4];
+	obs_data_t *settings[5];
 
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 5; i++) {
 		settings[i] = obs_data_create();
 		obs_data_set_int(settings[i], "bitrate", GetAudioBitrate(i));
 	}
@@ -1023,8 +1025,9 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	SetEncoderName(aacTrack[1], name2, "Track2");
 	SetEncoderName(aacTrack[2], name3, "Track3");
 	SetEncoderName(aacTrack[3], name4, "Track4");
+	SetEncoderName(aacTrack[4], name5, "Track5");
 
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 5; i++) {
 		if (applyServiceSettings && (int)(i + 1) == streamTrackIndex)
 			obs_service_apply_encoder_settings(main->GetService(),
 					nullptr, settings[i]);
@@ -1043,6 +1046,7 @@ void AdvancedOutput::SetupOutputs()
 	obs_encoder_set_audio(aacTrack[1], obs_get_audio());
 	obs_encoder_set_audio(aacTrack[2], obs_get_audio());
 	obs_encoder_set_audio(aacTrack[3], obs_get_audio());
+	obs_encoder_set_audio(aacTrack[4], obs_get_audio());
 
 	SetupStreaming();
 
@@ -1057,6 +1061,7 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 	const char *names[] = {
 		"Track1Bitrate", "Track2Bitrate",
 		"Track3Bitrate", "Track4Bitrate",
+		"Track5Bitrate",
 	};
 	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
 	return FindClosestAvailableAACBitrate(bitrate);
