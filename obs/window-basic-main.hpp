@@ -204,6 +204,7 @@ private:
 	void AddSceneCollection(bool create_new);
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
+	void LogScenes();
 
 	void LoadProfile();
 	void ResetProfileData();

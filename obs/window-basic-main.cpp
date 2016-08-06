@@ -482,6 +482,51 @@ void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
 	}
 }
 
+static void LogFilter(obs_source_t*, obs_source_t *filter, void *v_val)
+{
+	const char *name = obs_source_get_name(filter);
+	const char *id = obs_source_get_id(filter);
+	int val = (int)(intptr_t)v_val;
+	string indent;
+
+	for (int i = 0; i < val; i++)
+		indent += "    ";
+
+	blog(LOG_INFO, "%s- filter: '%s' (%s)", indent.c_str(), name, id);
+}
+
+static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void*)
+{
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	const char *name = obs_source_get_name(source);
+	const char *id = obs_source_get_id(source);
+
+	blog(LOG_INFO, "    - source: '%s' (%s)", name, id);
+
+	obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)2);
+	return true;
+}
+
+void OBSBasic::LogScenes()
+{
+	blog(LOG_INFO, "------------------------------------------------");
+	blog(LOG_INFO, "Loaded scenes:");
+
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+
+		obs_source_t *source = obs_scene_get_source(scene);
+		const char *name = obs_source_get_name(source);
+
+		blog(LOG_INFO, "- scene '%s':", name);
+		obs_scene_enum_items(scene, LogSceneItem, nullptr);
+		obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)1);
+	}
+
+	blog(LOG_INFO, "------------------------------------------------");
+}
+
 void OBSBasic::Load(const char *file)
 {
 	if (!file || !os_file_exists(file)) {
@@ -629,6 +674,8 @@ retryScene:
 				Qt::QueuedConnection);
 		opt_start_recording = false;
 	}
+
+	LogScenes();
 
 	disableSaving--;
 }
