@@ -608,6 +608,18 @@
                 "max video bitrate": 3500,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Coderwall",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://live.coderwall.com/coderwall"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 1500
+            }
         }
     ]
 }
