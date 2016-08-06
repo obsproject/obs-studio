@@ -1,4 +1,4 @@
-project(linux-jack)
+project(jack-audio)
 
 if(DISABLE_JACK)
 	message(STATUS "JACK support disabled")
@@ -17,19 +17,26 @@ include_directories(
 	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
 	${JACK_INCLUDE_DIR}
 )
+add_definitions(${JACK_DEFINITIONS})
 
-set(linux-jack_SOURCES
-	linux-jack.c
+#if(MSVC)
+#	set(jack-audio_PLATFORM_DEPS
+#		w32-pthreads)
+#endif()
+
+set(jack-audio_SOURCES
+	obs-jack.c
 	jack-wrapper.c
 	jack-input.c
 )
 
-add_library(linux-jack MODULE
-	${linux-jack_SOURCES}
+add_library(jack-audio MODULE
+	${jack-audio_SOURCES}
 )
-target_link_libraries(linux-jack
+target_link_libraries(jack-audio
 	libobs
 	${JACK_LIBRARIES}
+#	${jack-audio_PLATFORM_DEPS}
 )
 
-install_obs_plugin_with_data(linux-jack data)
+install_obs_plugin_with_data(jack-audio data)
