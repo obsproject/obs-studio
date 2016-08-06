@@ -19,10 +19,10 @@ include_directories(
 )
 add_definitions(${JACK_DEFINITIONS})
 
-if(MSVC)
-	set(jack-audio_PLATFORM_DEPS
-		w32-pthreads)
-endif()
+#if(MSVC)
+#	set(jack-audio_PLATFORM_DEPS
+#		w32-pthreads)
+#endif()
 
 set(jack-audio_SOURCES
 	obs-jack.c
@@ -36,7 +36,7 @@ add_library(jack-audio MODULE
 target_link_libraries(jack-audio
 	libobs
 	${JACK_LIBRARIES}
-	${jack-audio_PLATFORM_DEPS}
+#	${jack-audio_PLATFORM_DEPS}
 )
 
 install_obs_plugin_with_data(jack-audio data)
