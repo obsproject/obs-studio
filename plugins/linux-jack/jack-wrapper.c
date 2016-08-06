@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "jack-wrapper.h"
 
-#include <pthread.h>
+#include <util/threading.h>
 #include <stdio.h>
 
 #include <util/platform.h>
