@@ -1674,6 +1674,12 @@ void OBSBasic::AddScene(OBSSource source)
 			}, &addSceneItem);
 
 	SaveProject();
+
+	if (!disableSaving) {
+		obs_source_t *source = obs_scene_get_source(scene);
+		blog(LOG_INFO, "User added scene '%s'",
+				obs_source_get_name(source));
+	}
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -1699,6 +1705,11 @@ void OBSBasic::RemoveScene(OBSSource source)
 	}
 
 	SaveProject();
+
+	if (!disableSaving) {
+		blog(LOG_INFO, "User Removed scene '%s'",
+				obs_source_get_name(source));
+	}
 }
 
 void OBSBasic::AddSceneItem(OBSSceneItem item)
@@ -1709,6 +1720,15 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 		InsertSceneItem(item);
 
 	SaveProject();
+
+	if (!disableSaving) {
+		obs_source_t *sceneSource = obs_scene_get_source(scene);
+		obs_source_t *itemSource = obs_sceneitem_get_source(item);
+		blog(LOG_INFO, "User added source '%s' (%s) to scene '%s'",
+				obs_source_get_name(itemSource),
+				obs_source_get_id(itemSource),
+				obs_source_get_name(sceneSource));
+	}
 }
 
 void OBSBasic::RemoveSceneItem(OBSSceneItem item)
@@ -1723,6 +1743,16 @@ void OBSBasic::RemoveSceneItem(OBSSceneItem item)
 	}
 
 	SaveProject();
+
+	if (!disableSaving) {
+		obs_scene_t *scene = obs_sceneitem_get_scene(item);
+		obs_source_t *sceneSource = obs_scene_get_source(scene);
+		obs_source_t *itemSource = obs_sceneitem_get_source(item);
+		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
+				obs_source_get_name(itemSource),
+				obs_source_get_id(itemSource),
+				obs_source_get_name(sceneSource));
+	}
 }
 
 void OBSBasic::UpdateSceneSelection(OBSSource source)
@@ -2231,6 +2261,8 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 			"RenameSources",
 			Q_ARG(QString, QT_UTF8(newName)),
 			Q_ARG(QString, QT_UTF8(prevName)));
+
+	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
 
 void OBSBasic::DrawBackdrop(float cx, float cy)

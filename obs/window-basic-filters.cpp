@@ -201,6 +201,16 @@ void OBSBasicFilters::RemoveFilter(OBSSource filter)
 		}
 	}
 
+	const char *filterName = obs_source_get_name(filter);
+	const char *sourceName = obs_source_get_name(source);
+	if (!sourceName || !filterName)
+		return;
+
+	const char *filterId = obs_source_get_id(filter);
+
+	blog(LOG_INFO, "User removed filter '%s' (%s) from source '%s'",
+			filterName, filterId, sourceName);
+
 	main->SaveProject();
 }
 
@@ -373,6 +383,12 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		obs_source_t *filter = obs_source_create(id, name.c_str(),
 				nullptr, nullptr);
 		if (filter) {
+			const char *sourceName = obs_source_get_name(source);
+
+			blog(LOG_INFO, "User added filter '%s' (%s) "
+					"to source '%s'",
+					name.c_str(), id, sourceName);
+
 			obs_source_filter_add(source, filter);
 			obs_source_release(filter);
 		}
@@ -670,6 +686,11 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 				QTStr("NoNameEntered.Text"));
 		}
 	} else {
+		const char *sourceName = obs_source_get_name(source);
+
+		blog(LOG_INFO, "User renamed filter '%s' on source '%s' to '%s'",
+				prevName, sourceName, name.c_str());
+
 		listItem->setText(QT_UTF8(name.c_str()));
 		obs_source_set_name(filter, name.c_str());
 	}
