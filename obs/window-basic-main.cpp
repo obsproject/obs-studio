@@ -1069,7 +1069,10 @@ void OBSBasic::OBSInit()
 	InitHotkeys();
 
 	AddExtraModulePaths();
+	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules();
+	blog(LOG_INFO, "---------------------------------");
+	obs_log_loaded_modules();
 
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
