@@ -1310,7 +1310,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			return 0;
 
 		prof.Stop();
-		PrintInitProfile();
 
 		return program.exec();
 
