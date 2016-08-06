@@ -1017,8 +1017,10 @@ void OBSBasic::ResetOutputs()
 	}
 }
 
-#define MAIN_SEPARATOR \
-	"====================================================================="
+#define STARTUP_SEPARATOR \
+	"==== Startup complete ==============================================="
+#define SHUTDOWN_SEPARATOR \
+	"==== Shutting down =================================================="
 
 void OBSBasic::OBSInit()
 {
@@ -1069,7 +1071,7 @@ void OBSBasic::OBSInit()
 	AddExtraModulePaths();
 	obs_load_all_modules();
 
-	blog(LOG_INFO, MAIN_SEPARATOR);
+	blog(LOG_INFO, STARTUP_SEPARATOR);
 
 	ResetOutputs();
 	CreateHotkeys();
@@ -2579,6 +2581,8 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
+
 	if (outputHandler && outputHandler->Active()) {
 		QMessageBox::StandardButton button = QMessageBox::question(
 				this, QTStr("ConfirmExit.Title"),
