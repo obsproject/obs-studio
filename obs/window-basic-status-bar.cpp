@@ -10,7 +10,8 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  droppedFrames (new QLabel),
 	  sessionTime   (new QLabel),
 	  cpuUsage      (new QLabel),
-	  kbps          (new QLabel)
+	  kbps          (new QLabel),
+	  framesPerSec  (new QLabel)
 {
 	sessionTime->setText(QString("00:00:00"));
 	cpuUsage->setText(QString("CPU: 0.0%"));
@@ -20,18 +21,21 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	sessionTime->setAlignment(Qt::AlignRight);
 	cpuUsage->setAlignment(Qt::AlignRight);
 	kbps->setAlignment(Qt::AlignRight);
+	framesPerSec->setAlignment(Qt::AlignRight);
 
 	delayInfo->setIndent(20);
 	droppedFrames->setIndent(20);
 	sessionTime->setIndent(20);
 	cpuUsage->setIndent(20);
-	kbps->setIndent(10);
+	kbps->setIndent(20);
+	framesPerSec->setIndent(10);
 
 	addPermanentWidget(droppedFrames);
 	addPermanentWidget(sessionTime);
 	addPermanentWidget(cpuUsage);
 	addPermanentWidget(delayInfo);
 	addPermanentWidget(kbps);
+	addPermanentWidget(framesPerSec);
 }
 
 void OBSBasicStatusBar::Activate()
@@ -46,6 +50,8 @@ void OBSBasicStatusBar::Activate()
 
 		totalSeconds = 0;
 		lastSkippedFrameCount = 0;
+		lastFramesSent = 0;
+		lastFramesSentTime = 0;
 		startSkippedFrameCount = skipped;
 		startTotalFrameCount = total;
 
@@ -66,6 +72,7 @@ void OBSBasicStatusBar::Deactivate()
 		delayInfo->setText("");
 		droppedFrames->setText("");
 		kbps->setText("");
+		framesPerSec->setText("");
 
 		delaySecTotal = 0;
 		delaySecStarting = 0;
@@ -148,6 +155,35 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%");
 	cpuUsage->setText(text);
 	cpuUsage->setMinimumWidth(cpuUsage->width());
+}
+
+void OBSBasicStatusBar::UpdateFPS()
+{
+	if (!active)
+		return;
+
+	uint64_t frames         = video_output_get_total_frames(obs_get_video());
+	uint64_t framesSentTime = os_gettime_ns();
+
+	if (frames < lastFramesSent)
+		frames = 0;
+	if (frames == 0)
+		lastFramesSent = 0;
+
+	uint64_t framesBetween   = frames - lastFramesSent;
+
+	double timePassed = double(framesSentTime - lastFramesSentTime) /
+		1000000000.0;
+
+	double fps = (double(framesBetween) / timePassed);
+
+	QString text;
+	text += QString::number(fps, 'f', 0) + QString(" fps");
+	framesPerSec->setText(text);
+	framesPerSec->setMinimumWidth(framesPerSec->width());
+
+	lastFramesSent        = frames;
+	lastFramesSentTime    = framesSentTime;
 }
 
 void OBSBasicStatusBar::UpdateSessionTime()
@@ -260,6 +296,7 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	UpdateBandwidth();
 	UpdateSessionTime();
 	UpdateDroppedFrames();
+	UpdateFPS();
 
 	int skipped = video_output_get_skipped_frames(obs_get_video());
 	int total   = video_output_get_total_frames(obs_get_video());
