@@ -927,7 +927,7 @@
      <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
    </property>
    <property name="text">
-    <string>Add</string>
+    <string>Add Scene</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">addIconSmall</string>
@@ -939,7 +939,7 @@
      <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
    </property>
    <property name="text">
-    <string>Add</string>
+    <string>Add Source</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">addIconSmall</string>
@@ -951,7 +951,7 @@
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
    </property>
    <property name="text">
-    <string>Remove</string>
+    <string>Remove Scene</string>
    </property>
    <property name="shortcut">
     <string>Del</string>
@@ -969,7 +969,7 @@
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
    </property>
    <property name="text">
-    <string>Remove</string>
+    <string>Remove Source</string>
    </property>
    <property name="shortcut">
     <string>Del</string>
