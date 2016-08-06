@@ -259,7 +259,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	PopulateAACBitrates({ui->simpleOutputABitrate,
 			ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
-			ui->advOutTrack3Bitrate, ui->advOutTrack3Bitrate});
+			ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate});
 
 	ui->listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 
