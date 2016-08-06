@@ -340,6 +340,9 @@ EXPORT int obs_open_module(obs_module_t **module, const char *path,
  */
 EXPORT bool obs_init_module(obs_module_t *module);
 
+/** Logs loaded modules */
+EXPORT void obs_log_loaded_modules(void);
+
 /** Returns the module file name */
 EXPORT const char *obs_get_module_file_name(obs_module_t *module);
 

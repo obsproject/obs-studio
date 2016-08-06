@@ -138,6 +138,14 @@ bool obs_init_module(obs_module_t *module)
 	return module->loaded;
 }
 
+void obs_log_loaded_modules(void)
+{
+	blog(LOG_INFO, "  Loaded Modules:");
+
+	for (obs_module_t *mod = obs->first_module; !!mod; mod = mod->next)
+		blog(LOG_INFO, "    %s", mod->file);
+}
+
 const char *obs_get_module_file_name(obs_module_t *module)
 {
 	return module ? module->file : NULL;
