@@ -434,20 +434,27 @@ void SimpleOutput::UpdateRecordingSettings_x264_crf(int crf)
 
 static bool icq_available(obs_encoder_t *encoder)
 {
-	obs_properties_t *props = obs_encoder_properties(encoder);
-	obs_property_t *p = obs_properties_get(props, "rate_control");
 	bool icq_found = false;
 
-	size_t num = obs_property_list_item_count(p);
-	for (size_t i = 0; i < num; i++) {
-		const char *val = obs_property_list_item_string(p, i);
-		if (strcmp(val, "ICQ") == 0) {
-			icq_found = true;
-			break;
+	obs_properties_t *props = obs_encoder_properties(encoder);
+	if (props != nullptr) {
+		obs_property_t *p = obs_properties_get(props, "rate_control");
+		
+		const char* val = nullptr;
+
+		size_t num = obs_property_list_item_count(p);
+		size_t i = 0;
+		while ((i < num) && !icq_found) {
+			val = obs_property_list_item_string(p, i);
+
+			if ((val != nullptr) && (strcmp(val, "ICQ") == 0))
+				icq_found = true;
+
+			++i;
 		}
+		obs_properties_destroy(props);
 	}
 
-	obs_properties_destroy(props);
 	return icq_found;
 }
 
