@@ -625,8 +625,6 @@ bool SimpleOutput::StartRecording()
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
 
-	SetupOutputs();
-
 	if (!ffmpegOutput) {
 		obs_output_set_video_encoder(fileOutput, h264Recording);
 		obs_output_set_audio_encoder(fileOutput, aacRecording, 0);
