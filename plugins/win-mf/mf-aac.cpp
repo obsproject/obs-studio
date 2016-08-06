@@ -140,7 +140,7 @@ extern "C" void RegisterMFAACEncoder()
 {
 	if (!IsWindows8OrGreater()) {
 		MF_LOG(LOG_WARNING, "plugin is disabled for performance "
-			"reasons on Windows versions less than 8");
+			"reasons on Windows versions prior to 8");
 		return;
 	}
 
