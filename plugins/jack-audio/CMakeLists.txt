@@ -1,4 +1,4 @@
-project(linux-jack)
+project(jack-audio)
 
 if(DISABLE_JACK)
 	message(STATUS "JACK support disabled")
@@ -18,18 +18,18 @@ include_directories(
 	${JACK_INCLUDE_DIR}
 )
 
-set(linux-jack_SOURCES
-	linux-jack.c
+set(jack-audio_SOURCES
+	obs-jack.c
 	jack-wrapper.c
 	jack-input.c
 )
 
-add_library(linux-jack MODULE
-	${linux-jack_SOURCES}
+add_library(jack-audio MODULE
+	${jack-audio_SOURCES}
 )
-target_link_libraries(linux-jack
+target_link_libraries(jack-audio
 	libobs
 	${JACK_LIBRARIES}
 )
 
-install_obs_plugin_with_data(linux-jack data)
+install_obs_plugin_with_data(jack-audio data)
