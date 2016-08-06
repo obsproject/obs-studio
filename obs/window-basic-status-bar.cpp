@@ -146,7 +146,9 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 
 	QString text;
 	text += QString("CPU: ") +
-		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%");
+		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%, ") +
+		QString::number(obs_get_active_fps(), 'f', 2) + QString(" fps");
+
 	cpuUsage->setText(text);
 	cpuUsage->setMinimumWidth(cpuUsage->width());
 }
