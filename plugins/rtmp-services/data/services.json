@@ -623,6 +623,15 @@
             ]
         },
         {
+            "name": "Interactive LifeStream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://lifestreamcdn.com/live/_definst_/doPublish=wls36"
+                }
+            ]
+        },
+        {
             "name": "Stre.am",
             "servers": [
                 {
