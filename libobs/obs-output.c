@@ -1793,6 +1793,8 @@ static void *reconnect_thread(void *param)
 	return NULL;
 }
 
+#define MAX_RETRY_SEC (15 * 60)
+
 static void output_reconnect(struct obs_output *output)
 {
 	int ret;
@@ -1818,6 +1820,8 @@ static void output_reconnect(struct obs_output *output)
 
 	if (output->reconnect_retries) {
 		output->reconnect_retry_cur_sec *= 2;
+		if (output->reconnect_retry_cur_sec > MAX_RETRY_SEC)
+			output->reconnect_retry_cur_sec = MAX_RETRY_SEC;
 	}
 
 	output->reconnect_retries++;
