@@ -324,43 +324,47 @@
             ]
         },
         {
-            "name": "JOICASTER",
+            "name": "Switchboard Live (Joicaster)",
             "servers": [
                 {
-                    "name": "U.S. - Washington, DC",
-                    "url": "rtmp://ingest-1.wdc01.joicaster.co/live"
+                    "name": "Default - Performance Global",
+                    "url": "rtmp://ingest-global-a.switchboard.zone/live"
                 },
                 {
                     "name": "U.S. - Dallas, TX",
-                    "url": "rtmp://ingest-1.dal09.joicaster.co/live"
+                    "url": "rtmp://ingest-us-dal.switchboard.zone/live"
                 },
                 {
                     "name": "U.S. - Seattle, WA",
-                    "url": "rtmp://ingest-1.sea01.joicaster.co/live"
+                    "url": "rtmp://ingest-us-sea.switchboard.zone/live"
+                },
+                {
+                    "name": "U.S. - Washington, DC",
+                    "url": "rtmp://ingest-us-wdc.switchboard.zone/live"
                 },
                 {
                     "name": "C.A. - Toronto, Canada",
-                    "url": "rtmp://ingest-1.tor01.joicaster.co/live"
+                    "url": "rtmp://ingest-cn-tor.switchboard.zone/live"
                 },
                 {
                     "name": "E.U. - London, England",
-                    "url": "rtmp://ingest-1.lon02.joicaster.co/live"
+                    "url": "rtmp://ingest-eu-lon.switchboard.zone/live"
                 },
                 {
                     "name": "E.U. - Amsterdam, Netherlands",
-                    "url": "rtmp://ingest-1.ams03.joicaster.co/live"
+                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
                 },
                 {
                     "name": "A.S. - Tokyo, Japan",
-                    "url": "rtmp://ingest-1.tok02.joicaster.co/live"
+                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
                 },
                 {
                     "name": "A.U. - Melbourne, Australia",
-                    "url": "rtmp://ingest-1.mel01.joicaster.co/live"
+                    "url": "rtmp://ingest-au-mel.switchboard.zone/live"
                 },
                 {
                     "name": "S.A - São Paulo, Brazil",
-                    "url": "rtmp://ingest-1.sao01.joicaster.co/live"
+                    "url": "rtmp://ingest-sa-sao.switchboard.zone/live"
                 }
             ]
         },
