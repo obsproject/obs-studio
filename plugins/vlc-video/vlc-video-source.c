@@ -697,7 +697,8 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_cat(&filter, ")");
 
 	obs_properties_add_editable_list(ppts, S_PLAYLIST, T_PLAYLIST,
-			OBS_EDITABLE_LIST_TYPE_FILES, filter.array, path.array);
+			OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS,
+			filter.array, path.array);
 	dstr_free(&path);
 	dstr_free(&filter);
 	dstr_free(&exts);
