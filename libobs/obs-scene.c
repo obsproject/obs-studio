@@ -1327,7 +1327,8 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 			gs_texrender_destroy(item->item_render);
 			obs_leave_graphics();
 		}
-		obs_hotkey_pair_unregister(item->toggle_visibility);
+		if (item->toggle_visibility)
+			obs_hotkey_pair_unregister(item->toggle_visibility);
 		pthread_mutex_destroy(&item->actions_mutex);
 		if (item->source)
 			obs_source_release(item->source);
