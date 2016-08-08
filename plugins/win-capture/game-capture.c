@@ -420,9 +420,15 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		gc->error_acquiring = false;
 	}
 
+	if (cfg.mode == CAPTURE_MODE_HOTKEY &&
+	    gc->config.mode != CAPTURE_MODE_HOTKEY) {
+		gc->activate_hook = false;
+	} else {
+		gc->activate_hook = !!window && !!*window;
+	}
+
 	free_config(&gc->config);
 	gc->config = cfg;
-	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
 	gc->wait_for_target_startup = false;
 
