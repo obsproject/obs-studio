@@ -25,6 +25,8 @@ set(SRC_LIST
 	enum_types.cpp
 	enum_types.hpp
 	monitor_info.hpp
+	event_loop.cpp
+	event_loop.hpp
 	)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 

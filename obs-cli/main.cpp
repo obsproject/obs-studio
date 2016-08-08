@@ -28,6 +28,7 @@
 #include"enum_types.hpp"
 #include"monitor_info.hpp"
 #include"setup_obs.hpp"
+#include"event_loop.hpp"
 
 namespace {
 	namespace Ret {
@@ -216,10 +217,12 @@ void start_output_callback(void *data, calldata_t *params) {
 }
 
 void stop_output_callback(void *data, calldata_t *params) {
+	auto loop = static_cast<EventLoop*>(data);
 	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
 	int code = calldata_int(params, "code");
 
 	std::cout << ">>>> Output " << output << " stop. with code " << code << std::endl;
+	loop->stop();
 }
 
 int main(int argc, char **argv) {
@@ -265,22 +268,18 @@ int main(int argc, char **argv) {
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
+		EventLoop loop;
+
 		// connect signal events.
 		OBSSignal output_start, output_stop;
 		for (auto o : output.outputs) {
-			output_start.Connect(obs_output_get_signal_handler(o), "start", start_output_callback, nullptr);
-			output_stop.Connect(obs_output_get_signal_handler(o), "stop", stop_output_callback, nullptr);
+			output_start.Connect(obs_output_get_signal_handler(o), "start", start_output_callback, &loop);
+			output_stop.Connect(obs_output_get_signal_handler(o), "stop", stop_output_callback, &loop);
 		}
 
 		start_recording(output.outputs);
 
-		while (true) {
-			// wait for user input to stop recording.
-			std::cout << "press q<enter> to stop recording." << std::endl;
-			int c = std::cin.get();
-			if (c == static_cast<int>('q'))
-				break;
-		}
+		loop.run();
 
 		return Ret::success;
 	}
