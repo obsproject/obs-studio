@@ -48,10 +48,9 @@ namespace {
 		// cli options
 		int monitor_to_record = 0;
 		std::string encoder;
+		std::string audio_device;
 		int video_bitrate = 2500;
 		std::vector<std::string> outputs_paths;
-		int audio_index = -1;
-		bool audio_is_output = false;
 		bool show_help = false;
 		bool list_monitors = false;
 		bool list_audios = false;
@@ -107,6 +106,17 @@ void reset_audio() {
 		std::cerr << "Audio reset failed!" << std::endl;
 }
 
+/**
+* Stop recording of multiple outputs
+*
+*   Calls obs_output_stop(output) internally.
+*/
+void stop_recording(std::vector<OBSOutput> outputs){
+
+	for (auto output : outputs) {
+		obs_output_stop(output);
+	}
+}
 /**
 * Start recording to multiple outputs
 *
@@ -170,8 +180,7 @@ int parse_args(int argc, char **argv) {
 		("listoutputs", "List available outputs")
 		("listaudios", "List available audios")
 		("monitor,m", po::value<int>(&cli_options.monitor_to_record)->required(), "set monitor to be recorded")
-		("audio,a", po::value<int>(&cli_options.audio_index), "set audio to be recorded")
-		("aisoutput", po::bool_switch(&cli_options.audio_is_output), "set if audio capture is output")
+		("audio,a", po::value<std::string>(&cli_options.audio_device)->default_value("")->implicit_value("default"), "set audio to be recorded (default to mic) -a\"device_name\" ")
 		("encoder,e", po::value<std::string>(&cli_options.encoder)->default_value(CliOptions::default_encoder), "set encoder")
 		("vbitrate,v", po::value<int>(&cli_options.video_bitrate)->default_value(CliOptions::default_video_bitrate), "set video bitrate. suggested values: 1200 for low, 2500 for medium, 5000 for high")
 		("output,o", po::value<std::vector<std::string>>(&cli_options.outputs_paths)->required(), "set file destination, can be set multiple times for multiple outputs")
@@ -186,6 +195,7 @@ int parse_args(int argc, char **argv) {
 		cli_options.show_help = vm.count("help") > 0;
 		cli_options.list_monitors = vm.count("listmonitors") > 0;
 		cli_options.list_inputs = vm.count("listinputs") > 0;
+		cli_options.list_audios = vm.count("listaudios") > 0;
 		cli_options.list_encoders = vm.count("listencoders") > 0;
 		cli_options.list_outputs = vm.count("listoutputs") > 0;
 
@@ -263,10 +273,13 @@ int main(int argc, char **argv) {
 		if (do_print_lists())
 			return Ret::success;
 
-		OBSSource source = setup_video_input(cli_options.monitor_to_record);
-		if (cli_options.audio_index >= 0) {
-			OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
-		}
+			OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		if (!cli_options.audio_device.empty()){
+			OBSSource audio_source = setup_audio_input(cli_options.audio_device);
+			if (!audio_source){
+				std::cout << "failed to find audio device " << cli_options.audio_device << "." << std::endl;
+			}
+			}
 
 		// While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
@@ -283,7 +296,10 @@ int main(int argc, char **argv) {
 		start_recording(output.outputs);
 
 		loop.run();
+		stop_recording(output.outputs);
 
+		obs_set_output_source(0, nullptr);
+		obs_set_output_source(1, nullptr);
 		return Ret::success;
 	}
 	catch (std::exception& e) {
