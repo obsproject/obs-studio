@@ -28,6 +28,7 @@
 #include"enum_types.hpp"
 #include"monitor_info.hpp"
 #include"setup_obs.hpp"
+#include"event_loop.hpp"
 
 namespace {
 	namespace Ret {
@@ -220,6 +221,23 @@ int parse_args(int argc, char **argv) {
 	return Ret::success;
 }
 
+void start_output_callback(void */*data*/, calldata_t *params) {
+	// auto loop = static_cast<EventLoop*>(data);
+	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
+	blog(LOG_INFO, "Output '%s' started.", obs_output_get_name(output));
+}
+
+void stop_output_callback(void *data, calldata_t *params) {
+	auto loop = static_cast<EventLoop*>(data);
+	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
+	int code = calldata_int(params, "code");
+
+	blog(LOG_INFO, "Output '%s' stopped with code %d.", obs_output_get_name(output), code);
+	// as soon as *any* output is stopped, we have to ensure that the
+	// program stops.
+	loop->stop();
+}
+
 int main(int argc, char **argv) {
 	try {
 		int ret = parse_args(argc, argv);
@@ -268,12 +286,18 @@ int main(int argc, char **argv) {
 		// Also declared in "main" scope. While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
+		EventLoop loop;
+
+		// connect signal events.
+		OBSSignal output_start, output_stop;
+		for (auto o : output.outputs) {
+			output_start.Connect(obs_output_get_signal_handler(o), "start", start_output_callback, &loop);
+			output_stop.Connect(obs_output_get_signal_handler(o), "stop", stop_output_callback, &loop);
+		}
+
 		start_recording(output.outputs);
 
-		// wait for user input to stop recording.
-		std::cout << "press any key to stop recording." << std::endl;
-		std::string str;
-		std::getline(std::cin, str);
+		loop.run();
 		stop_recording(output.outputs);
 
 		obs_set_output_source(0, nullptr);
