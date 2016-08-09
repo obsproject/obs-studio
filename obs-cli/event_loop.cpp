@@ -4,8 +4,8 @@
 #include<thread>
 
 EventLoop::EventLoop() {
-
 }
+
 namespace {
 	void background_io(EventLoop* el, bool* event_loop_is_valid) {
 		while (true) {
@@ -23,7 +23,7 @@ namespace {
 }
 
 void EventLoop::run() {
-	// stuff will leak but I cannot clean it up correctly.
+	// this variable will leak but we cannot clean it up correctly yet.
 	bool* event_loop_is_valid = new bool(true);
 	// launch background thread, will also leak.
 	new std::thread(&background_io, this, event_loop_is_valid);

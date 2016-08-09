@@ -211,9 +211,10 @@ int parse_args(int argc, char **argv) {
 	return Ret::success;
 }
 
-void start_output_callback(void *data, calldata_t *params) {
+void start_output_callback(void */*data*/, calldata_t *params) {
+	// auto loop = static_cast<EventLoop*>(data);
 	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
-	std::cout << ">>>> Output " << output << " start." << std::endl;
+	blog(LOG_INFO, "Output '%s' started.", obs_output_get_name(output));
 }
 
 void stop_output_callback(void *data, calldata_t *params) {
@@ -221,7 +222,9 @@ void stop_output_callback(void *data, calldata_t *params) {
 	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
 	int code = calldata_int(params, "code");
 
-	std::cout << ">>>> Output " << output << " stop. with code " << code << std::endl;
+	blog(LOG_INFO, "Output '%s' stopped with code %d.", obs_output_get_name(output), code);
+	// as soon as *any* output is stopped, we have to ensure that the
+	// program stops.
 	loop->stop();
 }
 
@@ -261,7 +264,7 @@ int main(int argc, char **argv) {
 			return Ret::success;
 
 		OBSSource source = setup_video_input(cli_options.monitor_to_record);
-		if (cli_options.audio_index >= 0){
+		if (cli_options.audio_index >= 0) {
 			OBSSource audio_source = setup_audio_input(cli_options.audio_index, cli_options.audio_is_output);
 		}
 
