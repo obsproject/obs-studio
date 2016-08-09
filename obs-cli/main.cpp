@@ -273,15 +273,17 @@ int main(int argc, char **argv) {
 		if (do_print_lists())
 			return Ret::success;
 
-			OBSSource source = setup_video_input(cli_options.monitor_to_record);
+		// declared in "main" scope, so that they are not disposed too soon.
+		OBSSource video_source, audio_source;
+
+		video_source = setup_video_input(cli_options.monitor_to_record);
 		if (!cli_options.audio_device.empty()){
-			OBSSource audio_source = setup_audio_input(cli_options.audio_device);
+			audio_source = setup_audio_input(cli_options.audio_device);
 			if (!audio_source){
 				std::cout << "failed to find audio device " << cli_options.audio_device << "." << std::endl;
 			}
-			}
-
-		// While the outputs are kept in scope, we will continue recording.
+		}
+		// Also declared in "main" scope. While the outputs are kept in scope, we will continue recording.
 		Outputs output = setup_outputs(cli_options.encoder, cli_options.video_bitrate, cli_options.outputs_paths);
 
 		EventLoop loop;
