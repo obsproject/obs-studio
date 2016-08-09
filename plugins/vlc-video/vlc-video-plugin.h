@@ -29,6 +29,9 @@ typedef int (*LIBVLC_EVENT_ATTACH)(libvlc_event_manager_t *p_event_manager,
 /* libvlc media */
 typedef libvlc_media_t *(*LIBVLC_MEDIA_NEW_PATH)(
 		libvlc_instance_t *p_instance, const char *path);
+typedef libvlc_media_t *(*LIBVLC_MEDIA_NEW_LOCATION)(
+		libvlc_instance_t *p_instance, const char *location);
+typedef void (*LIBVLC_MEDIA_ADD_OPTION)(libvlc_media_t *p_md, const char *options);
 typedef void (*LIBVLC_MEDIA_RETAIN)(libvlc_media_t *p_md);
 typedef void (*LIBVLC_MEDIA_RELEASE)(libvlc_media_t *p_md);
 
@@ -119,6 +122,8 @@ extern LIBVLC_EVENT_ATTACH libvlc_event_attach_;
 
 /* libvlc media */
 extern LIBVLC_MEDIA_NEW_PATH libvlc_media_new_path_;
+extern LIBVLC_MEDIA_NEW_LOCATION libvlc_media_new_location_;
+extern LIBVLC_MEDIA_ADD_OPTION libvlc_media_add_option_;
 extern LIBVLC_MEDIA_RELEASE libvlc_media_release_;
 extern LIBVLC_MEDIA_RETAIN libvlc_media_retain_;
 

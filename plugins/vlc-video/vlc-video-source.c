@@ -76,7 +76,9 @@ static libvlc_media_t *get_media(struct darray *array, const char *path)
 
 static inline libvlc_media_t *create_media_from_file(const char *file)
 {
-	return libvlc_media_new_path_(libvlc, file);
+	return (file && strstr(file, "://") != NULL)
+		? libvlc_media_new_location_(libvlc, file)
+		: libvlc_media_new_path_(libvlc, file);
 }
 
 static void free_files(struct darray *array)
@@ -299,11 +301,18 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
+	unsigned new_width = 0;
+	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	libvlc_video_get_size_(c->media_player, 0, width, height);
+	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
+
+	if (new_width && new_height) {
+		*width  = new_width;
+		*height = new_height;
+	}
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format ||
@@ -382,12 +391,14 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	struct media_file_data data;
 	struct dstr new_path = {0};
 	libvlc_media_t *new_media;
+	bool is_url = path && strstr(path, "://") != NULL;
 
 	new_files.da = *array;
 
 	dstr_copy(&new_path, path);
 #ifdef _WIN32
-	dstr_replace(&new_path, "/", "\\");
+	if (!is_url)
+		dstr_replace(&new_path, "/", "\\");
 #endif
 	path = new_path.array;
 
@@ -399,6 +410,10 @@ static void add_file(struct vlc_source *c, struct darray *array,
 		new_media = create_media_from_file(path);
 
 	if (new_media) {
+		if (is_url)
+			libvlc_media_add_option_(new_media,
+					":network-caching=100");
+
 		data.path = new_path.array;
 		data.media = new_media;
 		da_push_back(new_files, &data);

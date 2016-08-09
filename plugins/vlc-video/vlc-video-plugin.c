@@ -16,6 +16,8 @@ LIBVLC_EVENT_ATTACH libvlc_event_attach_;
 
 /* libvlc media */
 LIBVLC_MEDIA_NEW_PATH libvlc_media_new_path_;
+LIBVLC_MEDIA_NEW_LOCATION libvlc_media_new_location_;
+LIBVLC_MEDIA_ADD_OPTION libvlc_media_add_option_;
 LIBVLC_MEDIA_RELEASE libvlc_media_release_;
 LIBVLC_MEDIA_RELEASE libvlc_media_retain_;
 
@@ -76,6 +78,8 @@ static bool load_vlc_funcs(void)
 
 	/* libvlc media */
 	LOAD_VLC_FUNC(libvlc_media_new_path);
+	LOAD_VLC_FUNC(libvlc_media_new_location);
+	LOAD_VLC_FUNC(libvlc_media_add_option);
 	LOAD_VLC_FUNC(libvlc_media_release);
 	LOAD_VLC_FUNC(libvlc_media_retain);
 
