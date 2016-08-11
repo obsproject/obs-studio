@@ -127,25 +127,22 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 
-	int width = config_get_int(App()->GlobalConfig(), "BasicWindow", "cx");
+	const char *geometry = config_get_string(App()->GlobalConfig(),
+			"BasicWindow", "geometry");
+	if (geometry != NULL) {
+		QByteArray byteArray = QByteArray::fromBase64(
+				QByteArray(geometry));
+		restoreGeometry(byteArray);
 
-	// Check if no values are saved (new installation).
-	if (width != 0) {
-		int height = config_get_int(App()->GlobalConfig(),
-				"BasicWindow", "cy");
-		int posx = config_get_int(App()->GlobalConfig(), "BasicWindow",
-				"posx");
-		int posy = config_get_int(App()->GlobalConfig(), "BasicWindow",
-				"posy");
-
+		QRect windowGeometry = normalGeometry();
+		int posx = windowGeometry.x();
+		int posy = windowGeometry.y();
 		if (!WindowPositionValid(posx, posy)) {
 			QRect rect = App()->desktop()->availableGeometry();
 			setGeometry(QStyle::alignedRect(
 						Qt::LeftToRight,
 						Qt::AlignCenter,
 						size(), rect));
-		} else {
-			setGeometry(posx, posy, width, height);
 		}
 	}
 
@@ -1450,14 +1447,8 @@ OBSBasic::~OBSBasic()
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "cx",
-			lastGeom.width());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "cy",
-			lastGeom.height());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "posx",
-			lastGeom.x());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "posy",
-			lastGeom.y());
+	config_set_string(App()->GlobalConfig(), "BasicWindow", "geometry",
+			saveGeometry().toBase64().constData());
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
 			splitterSizes[0]);
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
