@@ -586,18 +586,7 @@ static int try_connect(struct rtmp_stream *stream)
 
 	RTMP_EnableWrite(&stream->rtmp);
 
-	dstr_copy(&stream->encoder_name, "FMLE/3.0 (compatible; obs-studio/");
-
-#ifdef HAVE_OBSCONFIG_H
-	dstr_cat(&stream->encoder_name, OBS_VERSION);
-#else
-	dstr_catf(&stream->encoder_name, "%d.%d.%d",
-			LIBOBS_API_MAJOR_VER,
-			LIBOBS_API_MINOR_VER,
-			LIBOBS_API_PATCH_VER);
-#endif
-
-	dstr_cat(&stream->encoder_name, "; FMSc/1.0)");
+	dstr_copy(&stream->encoder_name, "FMLE/3.0 (compatible; FMSc/1.0)");
 
 	set_rtmp_dstr(&stream->rtmp.Link.pubUser,   &stream->username);
 	set_rtmp_dstr(&stream->rtmp.Link.pubPasswd, &stream->password);

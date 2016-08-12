@@ -127,25 +127,22 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 
-	int width = config_get_int(App()->GlobalConfig(), "BasicWindow", "cx");
+	const char *geometry = config_get_string(App()->GlobalConfig(),
+			"BasicWindow", "geometry");
+	if (geometry != NULL) {
+		QByteArray byteArray = QByteArray::fromBase64(
+				QByteArray(geometry));
+		restoreGeometry(byteArray);
 
-	// Check if no values are saved (new installation).
-	if (width != 0) {
-		int height = config_get_int(App()->GlobalConfig(),
-				"BasicWindow", "cy");
-		int posx = config_get_int(App()->GlobalConfig(), "BasicWindow",
-				"posx");
-		int posy = config_get_int(App()->GlobalConfig(), "BasicWindow",
-				"posy");
-
+		QRect windowGeometry = normalGeometry();
+		int posx = windowGeometry.x();
+		int posy = windowGeometry.y();
 		if (!WindowPositionValid(posx, posy)) {
 			QRect rect = App()->desktop()->availableGeometry();
 			setGeometry(QStyle::alignedRect(
 						Qt::LeftToRight,
 						Qt::AlignCenter,
 						size(), rect));
-		} else {
-			setGeometry(posx, posy, width, height);
 		}
 	}
 
@@ -1184,6 +1181,8 @@ void OBSBasic::OBSInit()
 	}
 
 	ui->mainSplitter->setSizes(defSizes);
+
+	SystemTray(true);
 }
 
 void OBSBasic::InitHotkeys()
@@ -1450,14 +1449,8 @@ OBSBasic::~OBSBasic()
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "cx",
-			lastGeom.width());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "cy",
-			lastGeom.height());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "posx",
-			lastGeom.x());
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "posy",
-			lastGeom.y());
+	config_set_string(App()->GlobalConfig(), "BasicWindow", "geometry",
+			saveGeometry().toBase64().constData());
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
 			splitterSizes[0]);
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
@@ -2677,6 +2670,7 @@ void OBSBasic::on_action_Settings_triggered()
 {
 	OBSBasicSettings settings(this);
 	settings.exec();
+	SystemTray(false);
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
@@ -3541,6 +3535,10 @@ void OBSBasic::StartStreaming()
 	SaveProject();
 
 	ui->streamButton->setEnabled(false);
+
+	if (trayIcon)
+		sysTrayStream->setEnabled(false);
+
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
 
 	if (!outputHandler->StartStreaming(service)) {
@@ -3552,6 +3550,8 @@ void OBSBasic::StartStreaming()
 			"BasicWindow", "RecordWhenStreaming");
 	if (recordWhenStreaming)
 		StartRecording();
+		if (trayIcon)
+			sysTrayRecord->setText(ui->recordButton->text());
 }
 
 #ifdef _WIN32
@@ -3594,6 +3594,8 @@ void OBSBasic::StopStreaming()
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
+		if (trayIcon)
+			sysTrayRecord->setText(ui->recordButton->text());
 }
 
 void OBSBasic::ForceStopStreaming()
@@ -3615,6 +3617,8 @@ void OBSBasic::ForceStopStreaming()
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
 		StopRecording();
+	if (trayIcon)
+		sysTrayStream->setText(ui->streamButton->text());
 }
 
 void OBSBasic::StreamDelayStarting(int sec)
@@ -3665,6 +3669,11 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 
+	if (trayIcon) {
+		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setEnabled(true);
+	}
+
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
@@ -3677,6 +3686,9 @@ void OBSBasic::StreamingStart()
 void OBSBasic::StreamStopping()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+
+	if (trayIcon)
+		sysTrayStream->setText(ui->streamButton->text());
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -3730,6 +3742,9 @@ void OBSBasic::StreamingStop(int code)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+
+	if (trayIcon)
+		sysTrayStream->setText(ui->streamButton->text());
 }
 
 void OBSBasic::StartRecording()
@@ -3744,6 +3759,9 @@ void OBSBasic::StartRecording()
 void OBSBasic::RecordStopping()
 {
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+
+	if (trayIcon)
+		sysTrayRecord->setText(ui->recordButton->text());
 }
 
 void OBSBasic::StopRecording()
@@ -3801,6 +3819,9 @@ void OBSBasic::RecordingStop(int code)
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 	}
+
+	if (trayIcon)
+		sysTrayRecord->setText(ui->recordButton->text());
 }
 
 void OBSBasic::on_streamButton_clicked()
@@ -3835,6 +3856,9 @@ void OBSBasic::on_streamButton_clicked()
 		}
 
 		StartStreaming();
+
+		if (trayIcon)
+			sysTrayStream->setText(ui->streamButton->text());
 	}
 }
 
@@ -3844,6 +3868,9 @@ void OBSBasic::on_recordButton_clicked()
 		StopRecording();
 	else
 		StartRecording();
+
+	if (trayIcon)
+		sysTrayRecord->setText(ui->recordButton->text());
 }
 
 void OBSBasic::on_settingsButton_clicked()
@@ -4411,4 +4438,81 @@ void OBSBasic::on_actionLockPreview_triggered()
 {
 	ui->preview->ToggleLocked();
 	ui->actionLockPreview->setChecked(ui->preview->Locked());
+}
+
+void OBSBasic::ToggleShowHide()
+{
+	if (isVisible()) {
+		showHide->setText(QTStr("Basic.SystemTray.Show"));
+		QTimer::singleShot(250, this, SLOT(hide()));
+		EnablePreviewDisplay(false);
+	} else {
+		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		QTimer::singleShot(250, this, SLOT(show()));
+		EnablePreviewDisplay(true);
+	}
+}
+
+void OBSBasic::SystemTrayInit() {
+	trayIcon = new QSystemTrayIcon(QIcon(":/res/images/obs.png"), 
+			this);
+	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
+			trayIcon);
+	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"), 
+			trayIcon);
+	showHide = new QAction(QTStr("Basic.SystemTray.Show"), 
+			trayIcon);
+	exit = new QAction(QTStr("Exit"), 
+			trayIcon);
+
+	connect(sysTrayStream, SIGNAL(triggered()), 
+			this, SLOT(on_streamButton_clicked()));
+	connect(sysTrayRecord, SIGNAL(triggered()), 
+			this, SLOT(on_recordButton_clicked()));	
+	connect(showHide, SIGNAL(triggered()), 
+			this, SLOT(ToggleShowHide()));
+	connect(exit, SIGNAL(triggered()), 
+			this, SLOT(close()));
+
+	trayMenu = new QMenu;
+	trayMenu->addAction(sysTrayStream);
+	trayMenu->addAction(sysTrayRecord);
+	trayMenu->addAction(showHide);
+	trayMenu->addAction(exit);
+	trayIcon->setContextMenu(trayMenu);
+}
+
+void OBSBasic::SystemTray(bool firstStarted)
+{
+	bool sysTrayWhenStarted = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayWhenStarted");
+	bool sysTrayMinimized = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayWhenMinimized");
+	
+	if (firstStarted)
+		SystemTrayInit();
+
+	if (!sysTrayWhenStarted && !sysTrayMinimized)
+			trayIcon->hide();
+
+	else if (sysTrayWhenStarted && sysTrayMinimized)
+			trayIcon->show();
+
+	else if (sysTrayWhenStarted) {
+		if (firstStarted) {
+			trayIcon->show();
+			QTimer::singleShot(50, this, SLOT(hide()));
+			EnablePreviewDisplay(false);
+			setVisible(false);
+		} else {
+			trayIcon->hide();
+		}
+
+	} else
+		trayIcon->show();
+
+	if (isVisible())
+		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+	else
+		showHide->setText(QTStr("Basic.SystemTray.Show"));
 }

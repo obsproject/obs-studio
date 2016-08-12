@@ -19,6 +19,7 @@
 
 #include <QBuffer>
 #include <QAction>
+#include <QSystemTrayIcon>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -134,6 +135,13 @@ private:
 	QPointer<QWidget> projectors[10];
 
 	QPointer<QMenu> startStreamMenu;
+	
+	QSystemTrayIcon *trayIcon;
+	QMenu         *trayMenu;
+	QAction       *sysTrayStream;
+	QAction       *sysTrayRecord;
+	QAction       *showHide;
+	QAction       *exit;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -304,6 +312,8 @@ public slots:
 	void SaveProjectDeferred();
 	void SaveProject();
 
+	void ToggleShowHide();
+	
 private slots:
 	void AddSceneItem(OBSSceneItem item);
 	void RemoveSceneItem(OBSSceneItem item);
@@ -410,6 +420,9 @@ public:
 
 	void UpdateTitleBar();
 	void UpdateSceneSelection(OBSSource source);
+
+	void SystemTrayInit();
+	void SystemTray(bool firstStarted);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

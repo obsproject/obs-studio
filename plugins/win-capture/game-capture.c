@@ -376,8 +376,9 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 static bool hotkey_start(void *data, obs_hotkey_pair_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
-	if (pressed) {
-		struct game_capture *gc = data;
+	struct game_capture *gc = data;
+
+	if (pressed && gc->config.mode == CAPTURE_MODE_HOTKEY) {
 		info("Activate hotkey pressed");
 		os_atomic_set_long(&gc->hotkey_window,
 				(long)GetForegroundWindow());
@@ -391,8 +392,9 @@ static bool hotkey_start(void *data, obs_hotkey_pair_id id,
 static bool hotkey_stop(void *data, obs_hotkey_pair_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
-	if (pressed) {
-		struct game_capture *gc = data;
+	struct game_capture *gc = data;
+
+	if (pressed && gc->config.mode == CAPTURE_MODE_HOTKEY) {
 		info("Deactivate hotkey pressed");
 		os_atomic_set_bool(&gc->deactivate_hook, true);
 	}
@@ -418,24 +420,17 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		gc->error_acquiring = false;
 	}
 
+	if (cfg.mode == CAPTURE_MODE_HOTKEY &&
+	    gc->config.mode != CAPTURE_MODE_HOTKEY) {
+		gc->activate_hook = false;
+	} else {
+		gc->activate_hook = !!window && !!*window;
+	}
+
 	free_config(&gc->config);
 	gc->config = cfg;
-	gc->activate_hook = !!window && !!*window;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
 	gc->wait_for_target_startup = false;
-
-	if (cfg.mode == CAPTURE_MODE_HOTKEY) {
-		if (!gc->hotkey_pair) {
-			gc->hotkey_pair = obs_hotkey_pair_register_source(
-					gc->source,
-					HOTKEY_START, TEXT_HOTKEY_START,
-					HOTKEY_STOP,  TEXT_HOTKEY_STOP,
-					hotkey_start, hotkey_stop, gc, gc);
-		}
-	} else if (gc->hotkey_pair) {
-		obs_hotkey_pair_unregister(gc->hotkey_pair);
-		gc->hotkey_pair = 0;
-	}
 
 	dstr_free(&gc->title);
 	dstr_free(&gc->class);
@@ -463,6 +458,11 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	gc->source = source;
 	gc->initial_config = true;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
+	gc->hotkey_pair = obs_hotkey_pair_register_source(
+			gc->source,
+			HOTKEY_START, TEXT_HOTKEY_START,
+			HOTKEY_STOP,  TEXT_HOTKEY_STOP,
+			hotkey_start, hotkey_stop, gc, gc);
 
 	game_capture_update(gc, settings);
 	return gc;

@@ -411,19 +411,35 @@ static void add_file(struct vlc_source *c, struct darray *array,
 
 static bool valid_extension(const char *ext)
 {
-	if (!ext)
+	struct dstr test = {0};
+	bool valid = false;
+	const char *b;
+	const char *e;
+
+	if (!ext || !*ext)
 		return false;
-	return astrcmpi(ext, ".mp4") == 0 ||
-	       astrcmpi(ext, ".ts") == 0 ||
-	       astrcmpi(ext, ".mov") == 0 ||
-	       astrcmpi(ext, ".flv") == 0 ||
-	       astrcmpi(ext, ".mkv") == 0 ||
-	       astrcmpi(ext, ".avi") == 0 ||
-	       astrcmpi(ext, ".mp3") == 0 ||
-	       astrcmpi(ext, ".ogg") == 0 ||
-	       astrcmpi(ext, ".aac") == 0 ||
-	       astrcmpi(ext, ".wav") == 0 ||
-	       astrcmpi(ext, ".webm") == 0;
+
+	b = EXTENSIONS_MEDIA + 1;
+	e = strchr(b, ';');
+
+	for (;;) {
+		if (e) dstr_ncopy(&test, b, e - b);
+		else   dstr_copy(&test, b);
+
+		if (dstr_cmp(&test, ext) == 0) {
+			valid = true;
+			break;
+		}
+
+		if (!e)
+			break;
+
+		b = e + 2;
+		e = strchr(b, ';');
+	}
+
+	dstr_free(&test);
+	return valid;
 }
 
 static void vlcs_update(void *data, obs_data_t *settings)
@@ -624,14 +640,12 @@ static void vlcs_defaults(obs_data_t *settings)
 			S_BEHAVIOR_STOP_RESTART);
 }
 
-static const char *file_filter =
-	"Media files (*.mp4 *.ts *.mov *.flv *.mkv *.avi "
-	"*.mp3 *.ogg *.aac *.wav *.webm)";
-
 static obs_properties_t *vlcs_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 	struct vlc_source *c = data;
+	struct dstr filter = {0};
+	struct dstr exts = {0};
 	struct dstr path = {0};
 	obs_property_t *p;
 
@@ -661,9 +675,33 @@ static obs_properties_t *vlcs_properties(void *data)
 	obs_property_list_add_string(p, T_BEHAVIOR_ALWAYS_PLAY,
 			S_BEHAVIOR_ALWAYS_PLAY);
 
+	dstr_cat(&filter, "Media Files (");
+	dstr_copy(&exts, EXTENSIONS_MEDIA);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Video Files (");
+	dstr_copy(&exts, EXTENSIONS_VIDEO);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Audio Files (");
+	dstr_copy(&exts, EXTENSIONS_AUDIO);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Playlist Files (");
+	dstr_copy(&exts, EXTENSIONS_PLAYLIST);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+	dstr_cat(&filter, ")");
+
 	obs_properties_add_editable_list(ppts, S_PLAYLIST, T_PLAYLIST,
-			OBS_EDITABLE_LIST_TYPE_FILES, file_filter, path.array);
+			OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS,
+			filter.array, path.array);
 	dstr_free(&path);
+	dstr_free(&filter);
+	dstr_free(&exts);
 
 	return ppts;
 }

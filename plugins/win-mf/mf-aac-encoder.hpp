@@ -74,7 +74,7 @@ private:
 	ComPtr<IMFTransform> transform;
 	ComPtr<IMFSample> outputSample;
 	std::vector<BYTE> packetBuffer;
-	UINT8 extraData[5];
+	UINT8 extraData[3];
 };
 
 static const UINT32 FrameSize = 1024;

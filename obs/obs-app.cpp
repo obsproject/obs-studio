@@ -361,6 +361,10 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"KeepRecordingWhenStreamStops", false);
 	config_set_default_bool(globalConfig, "BasicWindow",
+			"SysTrayMinimized", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"SysTrayWhenStarted", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowTransitions", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowListboxToolbars", true);
