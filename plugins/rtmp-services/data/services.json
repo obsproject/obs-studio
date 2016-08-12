@@ -259,16 +259,40 @@
                     "url": "rtmp://ingest-ams.beam.pro:1935/beam"
                 },
                 {
+                    "name": "EU: Milan",
+                    "url": "rtmp://ingest-mil.beam.pro:1935/beam"
+                },
+                {
+                    "name": "EU: Paris",
+                    "url": "rtmp://ingest-par.beam.pro:1935/beam"
+                },
+                {
                     "name": "EU: Frankfurt",
                     "url": "rtmp://ingest-fra.beam.pro:1935/beam"
+                },
+                {
+                    "name": "Brazil: Sao Paulo",
+                    "url": "rtmp://ingest-sao.beam.pro:1935/beam"
                 },
                 {
                     "name": "Australia: Melbourne",
                     "url": "rtmp://ingest-mel.beam.pro:1935/beam"
                 },
                 {
-                    "name": "Brazil: Sao Paulo",
-                    "url": "rtmp://ingest-sao.beam.pro:1935/beam"
+                    "name": "Australia: Sydney",
+                    "url": "rtmp://ingest-syd.beam.pro:1935/beam"
+                },
+                {
+                    "name": "Mexico: Mexico City",
+                    "url": "rtmp://ingest-mex.beam.pro:1935/beam"
+                },
+                {
+                    "name": "Asia: Hong Kong",
+                    "url": "rtmp://ingest-hkg.beam.pro:1935/beam"
+                },
+                {
+                    "name": "Asia: Tokyo",
+                    "url": "rtmp://ingest-tok.beam.pro:1935/beam"
                 }
             ],
             "recommended": {
