@@ -1,4 +1,4 @@
-project(jack-audio)
+project(linux-jack)
 
 if(DISABLE_JACK)
 	message(STATUS "JACK support disabled")
@@ -19,7 +19,7 @@ include_directories(
 )
 
 set(jack-audio_SOURCES
-	jack-audio.c
+	linux-jack.c
 	jack-wrapper.c
 	jack-input.c
 )
