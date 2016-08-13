@@ -274,6 +274,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -844,6 +846,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool keepRecordStreamStops = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	ui->keepRecordStreamStops->setChecked(keepRecordStreamStops);
+
+	bool systemTrayEnabled = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayEnabled");
+	ui->systemTrayEnabled->setChecked(systemTrayEnabled);
+
+	bool systemTrayWhenStarted = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayWhenStarted");
+	ui->systemTrayWhenStarted->setChecked(systemTrayWhenStarted);
 
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
@@ -2235,6 +2245,16 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops",
 				ui->keepRecordStreamStops->isChecked());
+
+	if (WidgetChanged(ui->systemTrayEnabled))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SysTrayEnabled",
+				ui->systemTrayEnabled->isChecked());
+
+	if (WidgetChanged(ui->systemTrayWhenStarted))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SysTrayWhenStarted",
+				ui->systemTrayWhenStarted->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()

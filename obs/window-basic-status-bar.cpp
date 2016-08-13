@@ -72,6 +72,7 @@ void OBSBasicStatusBar::Deactivate()
 		delaySecStopping = 0;
 		reconnectTimeout = 0;
 		active = false;
+		overloadedNotify = true;
 	}
 }
 
@@ -165,9 +166,10 @@ void OBSBasicStatusBar::UpdateSessionTime()
 	sessionTime->setMinimumWidth(sessionTime->width());
 
 	if (reconnectTimeout > 0) {
-		QString msg = QTStr("Basic.StatusBar.Reconnecting");
-		showMessage(msg.arg(QString::number(retries),
-					QString::number(reconnectTimeout)));
+		QString msg = QTStr("Basic.StatusBar.Reconnecting")
+			.arg(QString::number(retries),
+					QString::number(reconnectTimeout));
+		showMessage(msg);
 		reconnectTimeout--;
 
 	} else if (retries > 0) {
@@ -224,12 +226,20 @@ void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *params
 
 void OBSBasicStatusBar::Reconnect(int seconds)
 {
-	retries++;
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+
+	if (!retries)
+		main->SysTrayNotify(
+				QTStr("Basic.SystemTray.Message.Reconnecting"),
+				QSystemTrayIcon::Warning);
+
 	reconnectTimeout = seconds;
 
 	if (streamOutput) {
 		delaySecTotal = obs_output_get_active_delay(streamOutput);
 		UpdateDelayMsg();
+
+		retries++;
 	}
 }
 
@@ -246,7 +256,11 @@ void OBSBasicStatusBar::ReconnectClear()
 
 void OBSBasicStatusBar::ReconnectSuccess()
 {
-	showMessage(QTStr("Basic.StatusBar.ReconnectSuccessful"), 4000);
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+
+	QString msg = QTStr("Basic.StatusBar.ReconnectSuccessful");
+	showMessage(msg, 4000);
+	main->SysTrayNotify(msg, QSystemTrayIcon::Information);
 	ReconnectClear();
 
 	if (streamOutput) {
@@ -257,6 +271,8 @@ void OBSBasicStatusBar::ReconnectSuccess()
 
 void OBSBasicStatusBar::UpdateStatusBar()
 {
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+
 	UpdateBandwidth();
 	UpdateSessionTime();
 	UpdateDroppedFrames();
@@ -270,8 +286,14 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	int diff = skipped - lastSkippedFrameCount;
 	double percentage = double(skipped) / double(total) * 100.0;
 
-	if (diff > 10 && percentage >= 0.1f)
+	if (diff > 10 && percentage >= 0.1f) {
 		showMessage(QTStr("HighResourceUsage"), 4000);
+		if (!main->isVisible() && overloadedNotify) {
+			main->SysTrayNotify(QTStr("HighResourceUsage"),
+					QSystemTrayIcon::Warning);
+			overloadedNotify = false;
+		}
+	}
 
 	lastSkippedFrameCount = skipped;
 }

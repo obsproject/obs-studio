@@ -1181,6 +1181,8 @@ void OBSBasic::OBSInit()
 	}
 
 	ui->mainSplitter->setSizes(defSizes);
+
+	SystemTray(true);
 }
 
 void OBSBasic::InitHotkeys()
@@ -1447,8 +1449,11 @@ OBSBasic::~OBSBasic()
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "geometry",
-			saveGeometry().toBase64().constData());
+	if (isVisible())
+		config_set_string(App()->GlobalConfig(),
+				"BasicWindow", "geometry",
+				saveGeometry().toBase64().constData());
+
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
 			splitterSizes[0]);
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
@@ -2610,6 +2615,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
 
 	if (outputHandler && outputHandler->Active()) {
+		SetShowing(true);
+
 		QMessageBox::StandardButton button = QMessageBox::question(
 				this, QTStr("ConfirmExit.Title"),
 				QTStr("ConfirmExit.Text"));
@@ -2668,6 +2675,7 @@ void OBSBasic::on_action_Settings_triggered()
 {
 	OBSBasicSettings settings(this);
 	settings.exec();
+	SystemTray(false);
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
@@ -3533,10 +3541,14 @@ void OBSBasic::StartStreaming()
 
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	sysTrayStream->setEnabled(false);
+	sysTrayStream->setText(ui->streamButton->text());
 
 	if (!outputHandler->StartStreaming(service)) {
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
+		sysTrayStream->setText(ui->streamButton->text());
+		sysTrayStream->setEnabled(true);
 	}
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
@@ -3572,6 +3584,8 @@ inline void OBSBasic::OnActivate()
 		ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
+
+		trayIcon->setIcon(QIcon(":/res/images/tray_active.png"));
 	}
 }
 
@@ -3581,6 +3595,8 @@ inline void OBSBasic::OnDeactivate()
 		ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
+
+		trayIcon->setIcon(QIcon(":/res/images/obs.png"));
 	}
 }
 
@@ -3622,6 +3638,8 @@ void OBSBasic::StreamDelayStarting(int sec)
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
+	sysTrayStream->setText(ui->streamButton->text());
+	sysTrayStream->setEnabled(true);
 
 	if (!startStreamMenu.isNull())
 		startStreamMenu->deleteLater();
@@ -3642,6 +3660,8 @@ void OBSBasic::StreamDelayStopping(int sec)
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
+	sysTrayStream->setText(ui->streamButton->text());
+	sysTrayStream->setEnabled(true);
 
 	if (!startStreamMenu.isNull())
 		startStreamMenu->deleteLater();
@@ -3661,6 +3681,8 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	sysTrayStream->setText(ui->streamButton->text());
+	sysTrayStream->setEnabled(true);
 
 	OnActivate();
 
@@ -3670,6 +3692,7 @@ void OBSBasic::StreamingStart()
 void OBSBasic::StreamStopping()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+	sysTrayStream->setText(ui->streamButton->text());
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -3704,15 +3727,20 @@ void OBSBasic::StreamingStop(int code)
 
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
+	sysTrayStream->setText(ui->streamButton->text());
+	sysTrayStream->setEnabled(true);
 
 	OnDeactivate();
 
 	blog(LOG_INFO, STREAMING_STOP);
 
-	if (code != OBS_OUTPUT_SUCCESS)
+	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		QMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
 				QT_UTF8(errorMessage));
+	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
+		SysTrayNotify(QT_UTF8(errorMessage), QSystemTrayIcon::Warning);
+	}
 
 	if (!startStreamMenu.isNull()) {
 		ui->streamButton->setMenu(nullptr);
@@ -3733,6 +3761,7 @@ void OBSBasic::StartRecording()
 void OBSBasic::RecordStopping()
 {
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+	sysTrayRecord->setText(ui->recordButton->text());
 }
 
 void OBSBasic::StopRecording()
@@ -3749,6 +3778,7 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	sysTrayRecord->setText(ui->recordButton->text());
 
 	OnActivate();
 
@@ -3759,22 +3789,35 @@ void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+	sysTrayRecord->setText(ui->recordButton->text());
 	blog(LOG_INFO, RECORDING_STOP);
 
-	if (code == OBS_OUTPUT_UNSUPPORTED) {
+	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
 		QMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
-	} else if (code == OBS_OUTPUT_NO_SPACE) {
+	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
 		QMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
-	} else if (code != OBS_OUTPUT_SUCCESS) {
+	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		QMessageBox::information(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
+
+	} else if (code == OBS_OUTPUT_UNSUPPORTED && !isVisible()) {
+		SysTrayNotify(QTStr("Output.RecordFail.Unsupported"),
+			QSystemTrayIcon::Warning);
+
+	} else if (code == OBS_OUTPUT_NO_SPACE && !isVisible()) {
+		SysTrayNotify(QTStr("Output.RecordNoSpace.Msg"),
+			QSystemTrayIcon::Warning);
+
+	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
+		SysTrayNotify(QTStr("Output.RecordError.Msg"),
+			QSystemTrayIcon::Warning);
 	}
 
 	OnDeactivate();
@@ -3786,7 +3829,7 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStoppingStream");
 
-		if (confirm) {
+		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				QMessageBox::question(this,
 						QTStr("ConfirmStop.Title"),
@@ -3801,7 +3844,7 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
-		if (confirm) {
+		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				QMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
@@ -3827,6 +3870,7 @@ void OBSBasic::on_settingsButton_clicked()
 {
 	OBSBasicSettings settings(this);
 	settings.exec();
+	SystemTray(false);
 }
 
 void OBSBasic::on_actionWebsite_triggered()
@@ -4388,4 +4432,116 @@ void OBSBasic::on_actionLockPreview_triggered()
 {
 	ui->preview->ToggleLocked();
 	ui->actionLockPreview->setChecked(ui->preview->Locked());
+}
+
+void OBSBasic::SetShowing(bool showing)
+{
+	if (!showing && isVisible()) {
+		config_set_string(App()->GlobalConfig(),
+			"BasicWindow", "geometry",
+			saveGeometry().toBase64().constData());
+
+		showHide->setText(QTStr("Basic.SystemTray.Show"));
+		QTimer::singleShot(250, this, SLOT(hide()));
+
+		if (previewEnabled)
+			EnablePreviewDisplay(false);
+
+		setVisible(false);
+
+	} else if (showing && !isVisible()) {
+		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		QTimer::singleShot(250, this, SLOT(show()));
+
+		if (previewEnabled)
+			EnablePreviewDisplay(true);
+
+		setVisible(true);
+	}
+}
+
+void OBSBasic::SystemTrayInit() {
+	trayIcon = new QSystemTrayIcon(QIcon(":/res/images/obs.png"),
+			this);
+	trayIcon->setToolTip("OBS Studio");
+
+	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
+			trayIcon);
+	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
+			trayIcon);
+	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"),
+			trayIcon);
+	exit = new QAction(QTStr("Exit"),
+			trayIcon);
+
+	connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+			this,
+			SLOT(IconActivated(QSystemTrayIcon::ActivationReason)));
+	connect(showHide, SIGNAL(triggered()),
+			this, SLOT(ToggleShowHide()));
+	connect(sysTrayStream, SIGNAL(triggered()),
+			this, SLOT(on_streamButton_clicked()));
+	connect(sysTrayRecord, SIGNAL(triggered()),
+			this, SLOT(on_recordButton_clicked()));
+	connect(exit, SIGNAL(triggered()),
+			this, SLOT(close()));
+
+	trayMenu = new QMenu;
+	trayMenu->addAction(showHide);
+	trayMenu->addAction(sysTrayStream);
+	trayMenu->addAction(sysTrayRecord);
+	trayMenu->addAction(exit);
+	trayIcon->setContextMenu(trayMenu);
+}
+
+void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+	if (reason == QSystemTrayIcon::Trigger)
+		ToggleShowHide();
+}
+
+void OBSBasic::SysTrayNotify(const QString &text,
+		QSystemTrayIcon::MessageIcon n)
+{
+	if (QSystemTrayIcon::supportsMessages()) {
+		QSystemTrayIcon::MessageIcon icon =
+				QSystemTrayIcon::MessageIcon(n);
+		trayIcon->showMessage("OBS Studio", text, icon, 10000);
+	}
+}
+
+void OBSBasic::SystemTray(bool firstStarted)
+{
+	if (!QSystemTrayIcon::isSystemTrayAvailable())
+		return;
+
+	bool sysTrayWhenStarted = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayWhenStarted");
+	bool sysTrayEnabled = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayEnabled");
+
+	if (firstStarted)
+		SystemTrayInit();
+
+	if (!sysTrayWhenStarted && !sysTrayEnabled) {
+		trayIcon->hide();
+	} else if (sysTrayWhenStarted && sysTrayEnabled) {
+		trayIcon->show();
+		if (firstStarted) {
+			QTimer::singleShot(50, this, SLOT(hide()));
+			EnablePreviewDisplay(false);
+			setVisible(false);
+		}
+	} else if (sysTrayEnabled) {
+		trayIcon->show();
+	} else if (!sysTrayEnabled) {
+		trayIcon->hide();
+	} else if (!sysTrayWhenStarted && sysTrayEnabled) {
+		trayIcon->hide();
+	}
+
+	if (isVisible())
+		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+	else
+		showHide->setText(QTStr("Basic.SystemTray.Show"));
 }
