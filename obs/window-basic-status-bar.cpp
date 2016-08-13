@@ -72,6 +72,7 @@ void OBSBasicStatusBar::Deactivate()
 		delaySecStopping = 0;
 		reconnectTimeout = 0;
 		active = false;
+		overloadedNotify = true;
 	}
 }
 
@@ -257,6 +258,8 @@ void OBSBasicStatusBar::ReconnectSuccess()
 
 void OBSBasicStatusBar::UpdateStatusBar()
 {
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+
 	UpdateBandwidth();
 	UpdateSessionTime();
 	UpdateDroppedFrames();
@@ -270,8 +273,14 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	int diff = skipped - lastSkippedFrameCount;
 	double percentage = double(skipped) / double(total) * 100.0;
 
-	if (diff > 10 && percentage >= 0.1f)
+	if (diff > 10 && percentage >= 0.1f) {
 		showMessage(QTStr("HighResourceUsage"), 4000);
+		if (!main->isVisible() && overloadedNotify) {
+			main->SysTrayNotify("OBS Studio",
+				QTStr("HighResourceUsage"), 2);
+			overloadedNotify = false;
+		}
+	}
 
 	lastSkippedFrameCount = skipped;
 }

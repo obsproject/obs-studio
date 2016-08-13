@@ -604,9 +604,13 @@ bool SimpleOutput::StartRecording()
 	os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
 	if (!dir) {
-		QMessageBox::information(main,
-				QTStr("Output.BadPath.Title"),
-				QTStr("Output.BadPath.Text"));
+		if (main->isVisible())
+			QMessageBox::information(main,
+					QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"));
+		else
+			main->SysTrayNotify(QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"), 2);
 		return false;
 	}
 
@@ -1147,10 +1151,14 @@ bool AdvancedOutput::StartRecording()
 		os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
 		if (!dir) {
+		if (main->isVisible())
 			QMessageBox::information(main,
 					QTStr("Output.BadPath.Title"),
 					QTStr("Output.BadPath.Text"));
-			return false;
+		else
+			main->SysTrayNotify(QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"), 2);
+		return false;
 		}
 
 		os_closedir(dir);
