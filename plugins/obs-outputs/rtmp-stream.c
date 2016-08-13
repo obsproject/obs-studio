@@ -47,6 +47,17 @@
 
 //#define TEST_FRAMEDROPS
 
+#ifdef TEST_FRAMEDROPS
+
+#define DROPTEST_MAX_KBPS 3000
+#define DROPTEST_MAX_BYTES (DROPTEST_MAX_KBPS * 1000 / 8)
+
+struct droptest_info {
+	uint64_t ts;
+	size_t size;
+};
+#endif
+
 struct rtmp_stream {
 	obs_output_t     *output;
 
@@ -81,6 +92,11 @@ struct rtmp_stream {
 
 	uint64_t         total_bytes_sent;
 	int              dropped_frames;
+
+#ifdef TEST_FRAMEDROPS
+	struct circlebuf droptest_info;
+	size_t           droptest_size;
+#endif
 
 	RTMP             rtmp;
 };
@@ -172,6 +188,9 @@ static void rtmp_stream_destroy(void *data)
 		os_sem_destroy(stream->send_sem);
 		pthread_mutex_destroy(&stream->packets_mutex);
 		circlebuf_free(&stream->packets);
+#ifdef TEST_FRAMEDROPS
+		circlebuf_free(&stream->droptest_info);
+#endif
 		bfree(stream);
 	}
 }
@@ -285,6 +304,40 @@ static bool discard_recv_data(struct rtmp_stream *stream, size_t size)
 	return true;
 }
 
+#ifdef TEST_FRAMEDROPS
+static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
+{
+	uint64_t ts = os_gettime_ns();
+	struct droptest_info info;
+
+	info.ts = ts;
+	info.size = size;
+
+	circlebuf_push_back(&stream->droptest_info, &info, sizeof(info));
+	stream->droptest_size += size;
+
+	if (stream->droptest_info.size) {
+		circlebuf_peek_front(&stream->droptest_info,
+				&info, sizeof(info));
+
+		if (stream->droptest_size > DROPTEST_MAX_BYTES) {
+			uint64_t elapsed = ts - info.ts;
+
+			if (elapsed < 1000000000ULL) {
+				elapsed = 1000000000ULL - elapsed;
+				os_sleepto_ns(ts + elapsed);
+			}
+
+			while (stream->droptest_size > DROPTEST_MAX_BYTES) {
+				circlebuf_pop_front(&stream->droptest_info,
+						&info, sizeof(info));
+				stream->droptest_size -= info.size;
+			}
+		}
+	}
+}
+#endif
+
 static int send_packet(struct rtmp_stream *stream,
 		struct encoder_packet *packet, bool is_header, size_t idx)
 {
@@ -306,9 +359,11 @@ static int send_packet(struct rtmp_stream *stream,
 	}
 
 	flv_packet_mux(packet, &data, &size, is_header);
+
 #ifdef TEST_FRAMEDROPS
-	os_sleep_ms(rand() % 40);
+	droptest_cap_data_rate(stream, size);
 #endif
+
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size, (int)idx);
 	bfree(data);
 
