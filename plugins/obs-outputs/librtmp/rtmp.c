@@ -695,16 +695,29 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
         goto finish;
     }
 
-    // they should come back in OS preferred order
+    // prefer ipv4 results, since lots of ISPs have broken ipv6 connectivity
     for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
     {
-        if (ptr->ai_family == AF_INET || ptr->ai_family == AF_INET6)
+        if (ptr->ai_family == AF_INET)
         {
             memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
             *addrlen = (socklen_t)ptr->ai_addrlen;
             break;
         }
     }
+
+	if (!*addrlen)
+	{
+		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+		{
+			if (ptr->ai_family == AF_INET6)
+			{
+				memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
+				*addrlen = (socklen_t)ptr->ai_addrlen;
+				break;
+			}
+		}
+	}
 
     freeaddrinfo(result);
 
