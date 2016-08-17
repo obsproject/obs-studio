@@ -84,9 +84,18 @@ void *os_dlopen(const char *path)
 	if (wpath_slash)
 		SetDllDirectoryW(NULL);
 
-	if (!h_library)
-		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld",
-				path, GetLastError());
+	if (!h_library) {
+		DWORD dLastError = GetLastError();
+		LPCTSTR strErrorMessage = NULL;
+
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
+			FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+			NULL, dLastError, 0, (LPCTSTR)&strErrorMessage, 0, NULL);
+
+		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld %ls",
+			path, dLastError, strErrorMessage);
+	}
+
 
 	return h_library;
 }
