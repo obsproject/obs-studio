@@ -76,7 +76,7 @@ static libvlc_media_t *get_media(struct darray *array, const char *path)
 
 static inline libvlc_media_t *create_media_from_file(const char *file)
 {
-	return libvlc_media_new_path_(libvlc, file);
+	return libvlc_media_new_location_(libvlc, file);
 }
 
 static void free_files(struct darray *array)
@@ -303,7 +303,7 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	libvlc_video_get_size_(c->media_player, 0, width, height);
+	//int res = libvlc_video_get_size_(c->media_player, 0, width, height);
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format ||
@@ -387,7 +387,7 @@ static void add_file(struct vlc_source *c, struct darray *array,
 
 	dstr_copy(&new_path, path);
 #ifdef _WIN32
-	dstr_replace(&new_path, "/", "\\");
+	//dstr_replace(&new_path, "/", "\\");
 #endif
 	path = new_path.array;
 
@@ -399,6 +399,8 @@ static void add_file(struct vlc_source *c, struct darray *array,
 		new_media = create_media_from_file(path);
 
 	if (new_media) {
+		libvlc_media_add_option_(new_media, ":network-caching=100");
+
 		data.path = new_path.array;
 		data.media = new_media;
 		da_push_back(new_files, &data);
