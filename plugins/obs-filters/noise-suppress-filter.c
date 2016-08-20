@@ -277,7 +277,7 @@ static obs_properties_t *noise_suppress_properties(void *data)
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_int_slider(ppts, S_SUPPRESS_LEVEL,
-			TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX, 0);
+			TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX, 1);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
