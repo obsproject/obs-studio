@@ -307,6 +307,13 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
+	/* This is used because VLC will by default try to use a different
+	 * scaling than what the file uses (probably for optimization reasons).
+	 * For example, if the file is 1920x1080, it will try to render it by
+	 * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
+	 * gets the actual video file's size, and thus fixes the problem.
+	 * However this doesn't work with URLs, so if it returns a 0 value, it
+	 * shouldn't be used. */
 	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
 
 	if (new_width && new_height) {
