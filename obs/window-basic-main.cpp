@@ -2612,8 +2612,6 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
-	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
-
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
@@ -2630,6 +2628,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	QWidget::closeEvent(event);
 	if (!event->isAccepted())
 		return;
+
+	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
 
 	if (updateCheckThread)
 		updateCheckThread->wait();
