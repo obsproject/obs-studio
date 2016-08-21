@@ -184,7 +184,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	installEventFilter(CreateShortcutFilter());
 
 	stringstream name;
-	name << "OBS " << App()->GetVersionString();	
+	name << "OBS " << App()->GetVersionString();
 	blog(LOG_INFO, "%s", name.str().c_str());
 	blog(LOG_INFO, "---------------------------------");
 

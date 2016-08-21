@@ -1223,7 +1223,7 @@ static auto SnapshotRelease = [](profiler_snapshot_t *snap)
 	profile_snapshot_free(snap);
 };
 
-using ProfilerSnapshot = 
+using ProfilerSnapshot =
 	std::unique_ptr<profiler_snapshot_t, decltype(SnapshotRelease)>;
 
 ProfilerSnapshot GetSnapshot()
