@@ -21,6 +21,7 @@ private:
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
+	bool overloadedNotify = true;
 
 	int retries = 0;
 	int totalSeconds = 0;

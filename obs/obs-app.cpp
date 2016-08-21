@@ -361,6 +361,10 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"KeepRecordingWhenStreamStops", false);
 	config_set_default_bool(globalConfig, "BasicWindow",
+			"SysTrayEnabled", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"SysTrayWhenStarted", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowTransitions", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowListboxToolbars", true);
@@ -1219,7 +1223,7 @@ static auto SnapshotRelease = [](profiler_snapshot_t *snap)
 	profile_snapshot_free(snap);
 };
 
-using ProfilerSnapshot = 
+using ProfilerSnapshot =
 	std::unique_ptr<profiler_snapshot_t, decltype(SnapshotRelease)>;
 
 ProfilerSnapshot GetSnapshot()
