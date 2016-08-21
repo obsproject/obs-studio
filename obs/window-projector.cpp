@@ -53,6 +53,11 @@ void OBSProjector::Init(int monitor)
 
 	setGeometry(mi.x, mi.y, mi.cx, mi.cy);
 
+	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ProjectorAlwaysOnTop");
+	if (alwaysOnTop)
+		SetAlwaysOnTop(this, true);
+
 	show();
 
 	if (source)

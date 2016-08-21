@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-class QMainWindow;
+class QWidget;
 
 struct MonitorInfo {
 	int32_t  x, y;
@@ -45,8 +45,8 @@ std::string GetDefaultVideoSavePath();
 
 std::vector<std::string> GetPreferredLocales();
 
-bool IsAlwaysOnTop(QMainWindow *window);
-void SetAlwaysOnTop(QMainWindow *window, bool enable);
+bool IsAlwaysOnTop(QWidget *window);
+void SetAlwaysOnTop(QWidget *window, bool enable);
 
 #ifdef _WIN32
 uint32_t GetWindowsVersion();
