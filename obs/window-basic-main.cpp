@@ -3566,6 +3566,24 @@ static inline void ClearProcessPriority()
 #define ClearProcessPriority() do {} while(false)
 #endif
 
+inline void OBSBasic::OnActivate()
+{
+	if (ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(false);
+		App()->IncrementSleepInhibition();
+		UpdateProcessPriority();
+	}
+}
+
+inline void OBSBasic::OnDeactivate()
+{
+	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(true);
+		App()->DecrementSleepInhibition();
+		ClearProcessPriority();
+	}
+}
+
 void OBSBasic::StopStreaming()
 {
 	SaveProject();
@@ -3573,11 +3591,7 @@ void OBSBasic::StopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming();
 
-	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
-		App()->DecrementSleepInhibition();
-		ClearProcessPriority();
-	}
+	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -3594,11 +3608,7 @@ void OBSBasic::ForceStopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->ForceStopStreaming();
 
-	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
-		App()->DecrementSleepInhibition();
-		ClearProcessPriority();
-	}
+	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -3625,11 +3635,7 @@ void OBSBasic::StreamDelayStarting(int sec)
 
 	ui->statusbar->StreamDelayStarting(sec);
 
-	if (ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(false);
-		App()->IncrementSleepInhibition();
-		UpdateProcessPriority();
-	}
+	OnActivate();
 }
 
 void OBSBasic::StreamDelayStopping(int sec)
@@ -3656,11 +3662,7 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 
-	if (ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(false);
-		App()->IncrementSleepInhibition();
-		UpdateProcessPriority();
-	}
+	OnActivate();
 
 	blog(LOG_INFO, STREAMING_START);
 }
@@ -3703,11 +3705,7 @@ void OBSBasic::StreamingStop(int code)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
-	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
-		App()->DecrementSleepInhibition();
-		ClearProcessPriority();
-	}
+	OnDeactivate();
 
 	blog(LOG_INFO, STREAMING_STOP);
 
@@ -3744,11 +3742,7 @@ void OBSBasic::StopRecording()
 	if (outputHandler->RecordingActive())
 		outputHandler->StopRecording();
 
-	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
-		App()->DecrementSleepInhibition();
-		ClearProcessPriority();
-	}
+	OnDeactivate();
 }
 
 void OBSBasic::RecordingStart()
@@ -3756,11 +3750,7 @@ void OBSBasic::RecordingStart()
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 
-	if (ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(false);
-		App()->IncrementSleepInhibition();
-		UpdateProcessPriority();
-	}
+	OnActivate();
 
 	blog(LOG_INFO, RECORDING_START);
 }
@@ -3787,11 +3777,7 @@ void OBSBasic::RecordingStop(int code)
 				QTStr("Output.RecordError.Msg"));
 	}
 
-	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
-		App()->DecrementSleepInhibition();
-		ClearProcessPriority();
-	}
+	OnDeactivate();
 }
 
 void OBSBasic::on_streamButton_clicked()

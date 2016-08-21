@@ -282,6 +282,9 @@ private:
 		return os_atomic_load_bool(&previewProgramMode);
 	}
 
+	inline void OnActivate();
+	inline void OnDeactivate();
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
