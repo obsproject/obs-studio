@@ -1,0 +1,58 @@
+matrix:
+  include:
+    - dist: jessie
+      sudo: required
+      env:
+        - UNIX_STRUCTURE=1
+        - CMAKE_INSTALL_PREFIX=/usr
+    - os: osx
+      env: CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+  exclude:
+    # prevents travis from loading up an extra worker we don't need
+    - compiler: clang
+
+language: cpp
+
+compiler:
+  - clang
+
+addons:
+  apt:
+    packages:
+      - cmake
+      - checkinstall
+      - libx11-dev
+      - libgl1-mesa-dev
+      - libpulse-dev
+      - libxcomposite-dev
+      - libxinerama-dev
+      - libv4l-dev
+      - libudev-dev
+      - libfreetype6-dev
+      - libfontconfig-dev
+      - qtbase5-dev
+      - libqt5x11extras5-dev
+      - libx264-dev
+      - libxcb-xinerama0-dev
+      - libxcb-shm0-dev
+      - libjack-jackd2-dev
+      - libcurl4-openssl-dev
+      - zlib1g-dev
+      - yasm
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ffmpeg x264 qt5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd ffmpeg; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --enable-shared --prefix=/usr; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make -j4 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo checkinstall --default --pkgname=FFmpeg --fstrans=no --backup=no --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd -; fi
+
+before_script:  
+  - mkdir build
+  - cd build
+  - cmake ..
+
+script: make -j4
