@@ -610,6 +610,8 @@ EXPORT void obs_view_render(obs_view_t *view);
 
 EXPORT uint64_t obs_get_video_frame_time(void);
 
+EXPORT double obs_get_active_fps(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */

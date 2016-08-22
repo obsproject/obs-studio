@@ -1819,6 +1819,11 @@ uint64_t obs_get_video_frame_time(void)
 	return obs ? obs->video.video_time : 0;
 }
 
+double obs_get_active_fps(void)
+{
+	return obs ? obs->video.video_fps : 0.0;
+}
+
 enum obs_obj_type obs_obj_get_type(void *obj)
 {
 	struct obs_context_data *context = obj;
