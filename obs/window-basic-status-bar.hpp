@@ -17,6 +17,7 @@ private:
 	QLabel *sessionTime;
 	QLabel *cpuUsage;
 	QLabel *kbps;
+	QLabel *framesPerSec;
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
@@ -40,6 +41,9 @@ private:
 	uint64_t lastBytesSent = 0;
 	uint64_t lastBytesSentTime = 0;
 
+	uint64_t lastFramesSent = 0;
+	uint64_t lastFramesSentTime = 0;
+
 	QPointer<QTimer> refreshTimer;
 
 	obs_output_t *GetOutput();
@@ -51,6 +55,7 @@ private:
 	void UpdateBandwidth();
 	void UpdateSessionTime();
 	void UpdateDroppedFrames();
+	void UpdateFPS();
 
 	static void OBSOutputReconnect(void *data, calldata_t *params);
 	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
