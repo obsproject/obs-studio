@@ -183,8 +183,12 @@
                     "url": "rtmp://live.vgn.hitbox.tv/push"
                 },
                 {
-                    "name": "US-East: New York",
+                    "name": "US-East: New York - 1",
                     "url": "rtmp://live.jfk.hitbox.tv/push"
+                },
+                {
+                    "name": "US-East: New York - 2",
+                    "url": "rtmp://live.nyc.hitbox.tv/push"
                 },
                 {
                     "name": "US-Central: Denver",
