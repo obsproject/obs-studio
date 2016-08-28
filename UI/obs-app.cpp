@@ -937,12 +937,22 @@ const char *OBSApp::GetCurrentLog() const
 	return currentLogFile.c_str();
 }
 
+bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
+{
+	for (obs_frontend_translate_ui_cb cb : translatorHooks) {
+		if (cb(lookupVal, out))
+			return true;
+	}
+
+	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
+}
+
 QString OBSTranslator::translate(const char *context, const char *sourceText,
 		const char *disambiguation, int n) const
 {
 	const char *out = nullptr;
-	if (!text_lookup_getstr(App()->GetTextLookup(), sourceText, &out))
-		return QString();
+	if (!App()->TranslateString(sourceText, &out))
+		return QString(sourceText);
 
 	UNUSED_PARAMETER(context);
 	UNUSED_PARAMETER(disambiguation);

@@ -229,7 +229,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>201</width>
+             <width>215</width>
              <height>16</height>
             </rect>
            </property>
@@ -913,11 +913,20 @@
     <addaction name="toggleSceneTransitions"/>
     <addaction name="toggleStatusBar"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Basic.MainMenu.Tools</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
    <addaction name="viewMenu"/>
    <addaction name="profileMenu"/>
    <addaction name="sceneCollectionMenu"/>
+   <addaction name="menuTools"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>

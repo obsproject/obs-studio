@@ -30,6 +30,8 @@
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
 
+#include <obs-frontend-internal.hpp>
+
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/util.hpp>
@@ -83,6 +85,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
+	friend struct OBSStudioAPI;
 
 	enum class MoveDir {
 		Up,
@@ -92,6 +95,8 @@ class OBSBasic : public OBSMainWindow {
 	};
 
 private:
+	obs_frontend_callbacks *api = nullptr;
+
 	std::vector<VolControl*> volumes;
 
 	std::vector<OBSSignal> signalHandlers;

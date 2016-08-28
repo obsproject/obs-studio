@@ -239,6 +239,11 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
 	return true;
 }
 
@@ -363,6 +368,11 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
 	}
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
 }
 
 void OBSBasic::on_actionRemoveProfile_triggered()
@@ -431,6 +441,11 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
 }
 
 void OBSBasic::ChangeProfile()
@@ -481,4 +496,7 @@ void OBSBasic::ChangeProfile()
 	blog(LOG_INFO, "Switched to profile '%s' (%s)",
 			newName, newDir);
 	blog(LOG_INFO, "------------------------------------------------");
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 }

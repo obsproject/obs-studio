@@ -234,6 +234,9 @@ void OBSBasic::TransitionStopped()
 			SetCurrentScene(scene);
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
+
 	swapScene = nullptr;
 }
 
@@ -281,6 +284,9 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 		obs_scene_release(scene);
 
 	obs_source_release(transition);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 }
 
 static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
@@ -317,6 +323,9 @@ void OBSBasic::SetTransition(OBSSource transition)
 	bool configurable = obs_source_configurable(transition);
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
 OBSSource OBSBasic::GetCurrentTransition()
@@ -378,6 +387,9 @@ void OBSBasic::AddTransition()
 		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
+
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 	}
 }
 
@@ -428,6 +440,9 @@ void OBSBasic::on_transitionRemove_clicked()
 	}
 
 	ui->transitions->removeItem(idx);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 }
 
 void OBSBasic::RenameTransition()

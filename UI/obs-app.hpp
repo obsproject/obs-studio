@@ -25,9 +25,11 @@
 #include <util/profiler.h>
 #include <util/util.hpp>
 #include <util/platform.h>
+#include <obs-frontend-api.h>
 #include <string>
 #include <memory>
 #include <vector>
+#include <deque>
 
 #include "window-main.hpp"
 
@@ -71,6 +73,8 @@ private:
 	os_inhibit_t                   *sleepInhibitor = nullptr;
 	int                            sleepInhibitRefs = 0;
 
+	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
+
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitLocale();
@@ -102,6 +106,8 @@ public:
 		return textLookup.GetString(lookupVal);
 	}
 
+	bool TranslateString(const char *lookupVal, const char **out) const;
+
 	profiler_name_store_t *GetProfilerNameStore() const
 	{
 		return profilerNameStore;
@@ -130,6 +136,16 @@ public:
 		if (sleepInhibitRefs == 0) return;
 		if (--sleepInhibitRefs == 0)
 			os_inhibit_sleep_set_active(sleepInhibitor, false);
+	}
+
+	inline void PushUITranslation(obs_frontend_translate_ui_cb cb)
+	{
+		translatorHooks.emplace_front(cb);
+	}
+
+	inline void PopUITranslation()
+	{
+		translatorHooks.pop_front();
 	}
 };
 

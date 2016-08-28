@@ -1,5 +1,3 @@
-project(obs)
-
 option(ENABLE_UI "Enables the OBS user interfaces" ON)
 if(DISABLE_UI)
 	message(STATUS "UI disabled")
@@ -9,6 +7,12 @@ elseif(ENABLE_UI)
 else()
 	set(FIND_MODE QUIET)
 endif()
+
+add_subdirectory(obs-frontend-api)
+
+# ----------------------------------------------------------------------------
+
+project(obs)
 
 if(DEFINED QTDIR${_lib_suffix})
 	list(APPEND CMAKE_PREFIX_PATH "${QTDIR${_lib_suffix}}")
@@ -40,6 +44,7 @@ if(NOT Qt5Widgets_FOUND)
 	endif()
 endif()
 
+include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 find_package(Libcurl REQUIRED)
@@ -97,6 +102,7 @@ endif()
 set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	obs-app.cpp
+	api-interface.cpp
 	window-basic-main.cpp
 	window-basic-filters.cpp
 	window-basic-settings.cpp
@@ -219,6 +225,7 @@ target_link_libraries(obs
 	libobs
 	libff
 	Qt5::Widgets
+	obs-frontend-api
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
