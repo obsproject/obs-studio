@@ -183,7 +183,13 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol,
 {
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
-	if (eol != 0)
+	// An error occured
+	if (eol < 0) {
+		data->format = PA_SAMPLE_INVALID;
+		goto skip;
+	}
+	// Terminating call for multi instance callbacks
+	if (eol > 0)
 		goto skip;
 
 	blog(LOG_INFO, "Audio format: %s, %"PRIu32" Hz"
@@ -240,6 +246,10 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	if (pulse_get_source_info(pulse_source_info, data->device,
 			(void *) data) < 0) {
 		blog(LOG_ERROR, "Unable to get source info !");
+		return -1;
+	}
+	if (data->format == PA_SAMPLE_INVALID) {
+		blog(LOG_ERROR, "An error occurred while getting the source info!");
 		return -1;
 	}
 
@@ -507,11 +517,7 @@ static void *pulse_create(obs_data_t *settings, obs_source_t *source)
 	pulse_init();
 	pulse_update(data, settings);
 
-	if (data->stream)
-		return data;
-
-	pulse_destroy(data);
-	return NULL;
+	return data;
 }
 
 struct obs_source_info pulse_input_capture = {
