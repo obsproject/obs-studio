@@ -697,6 +697,18 @@
             "recommended": {
                 "max video bitrate": 1500
             }
+        },
+        {
+            "name": "Meridix Live Sports Platform",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://publish.meridix.com/live"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 3500
+            }
         }
     ]
 }
