@@ -789,6 +789,22 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "CAM4",
+            "servers": [
+                {
+                    "name": "CAM4",
+                    "url": "rtmp://origin.cam4.com/cam4-origin-live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "baseline",
+                "tune": "zerolatency",
+                "max video bitrate": 3000,
+                "max audio bitrate": 128
+            }
         }
     ]
 }
