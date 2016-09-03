@@ -239,3 +239,5 @@ if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	install(FILES forms/images/obs.png
 		DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/icons/hicolor/256x256/apps)
 endif()
+
+add_subdirectory(frontend-plugins)
