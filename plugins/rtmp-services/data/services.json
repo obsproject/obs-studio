@@ -710,5 +710,89 @@
                 "max video bitrate": 3500
             }
         }
+        {
+            "name": "Afreeca.TV",
+            "common" : true,
+            "servers": [
+                {
+                    "name": "North America : US East",
+                    "url": "rtmpmanager-aws-en-east.afreeca.tv/live"
+                },
+                {
+                    "name": "North America : US West",
+                     "url": "rtmpmanager-aws-en-west.afreeca.tv/live"
+                },
+                {
+                    "name": "Asia : Singapore",
+                    "url": "rtmpmanager-aws-sg.afreeca.tv/live"
+                },
+                {
+                    "name": "Asia : South Korea",
+                    "url": "rtmpmanager-en-ko.afreeca.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 5000,
+                "max audio bitrate": 192
+            }
+        }
+        {
+            "name": "アフリカTV",
+            "common" : true,
+            "servers": [
+                {
+                "name": "Japan",
+                "url": "rtmp://rtmpmanager-aws-jp.afreeca.tv/live/"
+                },
+                {
+                "name": "South Korea",
+                "url": "rtmp://rtmpmanager-jp.afreeca.tv/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 5000,
+                "max audio bitrate": 192
+            }
+        }
+        {
+            "name": "艾菲卡TV",
+            "common" : true,
+            "servers": [
+                {
+                "name": "Taiwan",
+                "url": "rtmp://rtmpmanager-gcp-tw.afreeca.tv/live/"
+                },
+                {
+                    "name": "South Korea",
+                    "url": "rtmp://rtmpmanager-tw-ko.afreeca.tv/live/"
+                }
+            ],
+             "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 5000,
+                "max audio bitrate": 192
+            }
+        }
+        {
+            "name": "아프리카TV",
+            "common" : true,
+            "servers": [
+                {
+                "name": "Korea",
+                "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 5000,
+                "max audio bitrate": 192
+            }
+        }
     ]
 }
