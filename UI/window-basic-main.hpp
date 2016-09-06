@@ -454,7 +454,6 @@ private slots:
 	void on_actionCheckForUpdates_triggered();
 
 	void on_actionEditTransform_triggered();
-	void on_actionResetTransform_triggered();
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
 	void on_actionRotate180_triggered();
@@ -555,6 +554,9 @@ private slots:
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
 	void OpenSceneProjector();
+
+public slots:
+	void on_actionResetTransform_triggered();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);

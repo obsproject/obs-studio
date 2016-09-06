@@ -42,6 +42,7 @@ private slots:
 	void OnBoundsType(int index);
 	void OnControlChanged();
 	void OnCropChanged();
+	void on_resetButton_clicked();
 
 public:
 	OBSBasicTransform(OBSBasic *parent);
