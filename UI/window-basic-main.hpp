@@ -20,6 +20,7 @@
 #include <QBuffer>
 #include <QAction>
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -143,6 +144,9 @@ private:
 	QAction       *showHide;
 	QAction       *showPreview;
 	QAction       *exit;
+
+	QTimer        *stopStreamingTimer;
+	QTimer        *stopRecordingTimer;
 
 	void          DrawBackdrop(float cx, float cy);
 
