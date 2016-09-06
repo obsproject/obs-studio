@@ -24,7 +24,9 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
-template <typename Func> static void EnumSceneCollections(Func &&cb)
+using namespace std;
+
+void EnumSceneCollections(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
 	os_glob_t *glob;
