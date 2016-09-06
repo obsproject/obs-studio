@@ -232,10 +232,7 @@ private:
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
-	void TransitionToScene(obs_scene_t *scene, bool force = false);
-	void TransitionToScene(obs_source_t *scene, bool force = false);
 	obs_source_t *FindTransition(const char *name);
-	void SetTransition(obs_source_t *transition);
 	OBSSource GetCurrentTransition();
 	obs_data_array_t *SaveTransitions();
 	void LoadTransitions(obs_data_array_t *transitions);
@@ -265,7 +262,6 @@ private:
 	void SetPreviewProgramMode(bool enabled);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
-	void SetCurrentScene(obs_source_t *scene, bool force = false);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
 
 	std::vector<QuickTransition> quickTransitions;
@@ -315,6 +311,11 @@ public slots:
 
 	void SaveProjectDeferred();
 	void SaveProject();
+
+	void SetTransition(OBSSource transition);
+	void TransitionToScene(OBSScene scene, bool force = false);
+	void TransitionToScene(OBSSource scene, bool force = false);
+	void SetCurrentScene(OBSSource scene, bool force = false);
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);
