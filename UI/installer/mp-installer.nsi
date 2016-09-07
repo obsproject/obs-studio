@@ -156,12 +156,18 @@ Function PreReqCheck
 	ClearErrors
 
 	; Check previous instance
-	; System::Call 'kernel32::OpenMutexW(i 0x100000, b 0, w "OBSMutex") i .R0'
-	; IntCmp $R0 0 notRunning
-	; System::Call 'kernel32::CloseHandle(i $R0)'
-	; MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
-	; Quit
-notRunning:
+	FindProcDLL::FindProc "obs32.exe"
+	IntCmp $R0 1 0 notRunning1
+		MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
+		Quit
+	notRunning1:
+	${if} ${RunningX64}
+		FindProcDLL::FindProc "obs64.exe"
+		IntCmp $R0 1 0 notRunning2
+			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
+			Quit
+	${endif}
+	notRunning2:
 
 FunctionEnd
 
@@ -175,6 +181,10 @@ Section "OBS Studio" Section1
 
 	; Set Section properties
 	SetOverwrite on
+	AllowSkipFiles off
+
+	FindProcDLL::KillProc "obs-plugins\32bit\cef-bootstrap.exe"
+	FindProcDLL::KillProc "obs-plugins\64bit\cef-bootstrap.exe"
 
 	SetShellVarContext all
 
@@ -282,5 +292,14 @@ SectionEnd
 	!insertmacro MUI_DESCRIPTION_TEXT ${Section1} "Remove the OBS program files."
 	!insertmacro MUI_DESCRIPTION_TEXT ${Section2} "Removes all settings, plugins, scenes and sources, profiles, log files and other application data."
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
+
+; Version information
+VIProductVersion "0.${APPVERSION}"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "OBS Studio"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "obsproject.com"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(c) 2012-2016"
+; FileDescription is what shows in the UAC elevation prompt when signed
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "OBS Studio"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "1.0"
 
 ; eof
