@@ -179,9 +179,8 @@ struct SimpleOutput : BasicOutputHandler {
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
-	virtual void StopStreaming() override;
-	virtual void ForceStopStreaming() override;
-	virtual void StopRecording() override;
+	virtual void StopStreaming(bool force) override;
+	virtual void StopRecording(bool force) override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
 };
@@ -650,19 +649,20 @@ bool SimpleOutput::StartRecording()
 	return false;
 }
 
-void SimpleOutput::StopStreaming()
+void SimpleOutput::StopStreaming(bool force)
 {
-	obs_output_stop(streamOutput);
+	if (force)
+		obs_output_force_stop(streamOutput);
+	else
+		obs_output_stop(streamOutput);
 }
 
-void SimpleOutput::ForceStopStreaming()
+void SimpleOutput::StopRecording(bool force)
 {
-	obs_output_force_stop(streamOutput);
-}
-
-void SimpleOutput::StopRecording()
-{
-	obs_output_stop(fileOutput);
+	if (force)
+		obs_output_force_stop(fileOutput);
+	else
+		obs_output_stop(fileOutput);
 }
 
 bool SimpleOutput::StreamingActive() const
@@ -703,9 +703,8 @@ struct AdvancedOutput : BasicOutputHandler {
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
-	virtual void StopStreaming() override;
-	virtual void ForceStopStreaming() override;
-	virtual void StopRecording() override;
+	virtual void StopStreaming(bool force) override;
+	virtual void StopRecording(bool force) override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
 };
@@ -1193,19 +1192,20 @@ bool AdvancedOutput::StartRecording()
 	return false;
 }
 
-void AdvancedOutput::StopStreaming()
+void AdvancedOutput::StopStreaming(bool force)
 {
-	obs_output_stop(streamOutput);
+	if (force)
+		obs_output_force_stop(streamOutput);
+	else
+		obs_output_stop(streamOutput);
 }
 
-void AdvancedOutput::ForceStopStreaming()
+void AdvancedOutput::StopRecording(bool force)
 {
-	obs_output_force_stop(streamOutput);
-}
-
-void AdvancedOutput::StopRecording()
-{
-	obs_output_stop(fileOutput);
+	if (force)
+		obs_output_force_stop(fileOutput);
+	else
+		obs_output_stop(fileOutput);
 }
 
 bool AdvancedOutput::StreamingActive() const

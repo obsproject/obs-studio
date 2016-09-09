@@ -3642,7 +3642,7 @@ void OBSBasic::StopStreaming()
 	SaveProject();
 
 	if (outputHandler->StreamingActive())
-		outputHandler->StopStreaming();
+		outputHandler->StopStreaming(streamingStopping);
 
 	OnDeactivate();
 
@@ -3659,7 +3659,7 @@ void OBSBasic::ForceStopStreaming()
 	SaveProject();
 
 	if (outputHandler->StreamingActive())
-		outputHandler->ForceStopStreaming();
+		outputHandler->StopStreaming(true);
 
 	OnDeactivate();
 
@@ -3734,6 +3734,7 @@ void OBSBasic::StreamStopping()
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
 	sysTrayStream->setText(ui->streamButton->text());
 
+	streamingStopping = true;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPING);
 }
@@ -3773,6 +3774,7 @@ void OBSBasic::StreamingStop(int code)
 	sysTrayStream->setText(ui->streamButton->text());
 	sysTrayStream->setEnabled(true);
 
+	streamingStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPED);
 
@@ -3812,6 +3814,7 @@ void OBSBasic::RecordStopping()
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
 	sysTrayRecord->setText(ui->recordButton->text());
 
+	recordingStopping = true;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPING);
 }
@@ -3821,7 +3824,7 @@ void OBSBasic::StopRecording()
 	SaveProject();
 
 	if (outputHandler->RecordingActive())
-		outputHandler->StopRecording();
+		outputHandler->StopRecording(recordingStopping);
 
 	OnDeactivate();
 }
@@ -3832,6 +3835,7 @@ void OBSBasic::RecordingStart()
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 	sysTrayRecord->setText(ui->recordButton->text());
 
+	recordingStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
 

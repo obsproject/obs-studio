@@ -120,6 +120,8 @@ private:
 
 	OBSService service;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
+	bool streamingStopping = false;
+	bool recordingStopping = false;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *boxLeft = nullptr;
