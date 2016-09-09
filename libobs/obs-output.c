@@ -322,7 +322,7 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 	bool call_stop = true;
 	bool was_reconnecting = false;
 
-	if (stopping(output))
+	if (stopping(output) && !force)
 		return;
 	os_event_reset(output->stopping_event);
 
@@ -391,8 +391,8 @@ void obs_output_force_stop(obs_output_t *output)
 	if (!stopping(output)) {
 		output->stop_code = 0;
 		do_output_signal(output, "stopping");
-		obs_output_actual_stop(output, true, 0);
 	}
+	obs_output_actual_stop(output, true, 0);
 }
 
 bool obs_output_active(const obs_output_t *output)
