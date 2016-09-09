@@ -225,7 +225,7 @@ static void rtmp_stream_stop(void *data, uint64_t ts)
 {
 	struct rtmp_stream *stream = data;
 
-	if (stopping(stream))
+	if (stopping(stream) && ts != 0)
 		return;
 
 	if (connecting(stream))
