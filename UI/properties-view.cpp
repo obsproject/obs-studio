@@ -210,9 +210,13 @@ void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, QWidget *widget,
 		const char *signal)
 {
+	const char *long_desc = obs_property_long_description(prop);
+
 	WidgetInfo *info = new WidgetInfo(this, prop, widget);
 	connect(widget, signal, info, SLOT(ControlChanged()));
 	children.emplace_back(info);
+
+	widget->setToolTip(QT_UTF8(long_desc));
 	return widget;
 }
 
@@ -263,6 +267,8 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		label = new QLabel(QT_UTF8(obs_property_description(prop)));
 		layout->addRow(label, subLayout);
 
+		edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+
 		connect(edit, SIGNAL(textEdited(const QString &)),
 				info, SLOT(ControlChanged()));
 		return nullptr;
@@ -271,6 +277,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 	QLineEdit *edit = new QLineEdit();
 
 	edit->setText(QT_UTF8(val));
+	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
@@ -286,6 +293,7 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 
 	edit->setText(QT_UTF8(val));
 	edit->setReadOnly(true);
+	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	subLayout->addWidget(edit);
 	subLayout->addWidget(button);
@@ -316,6 +324,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	spin->setMaximum(maxVal);
 	spin->setSingleStep(stepVal);
 	spin->setValue(val);
+	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
@@ -361,6 +370,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	spin->setMaximum(maxVal);
 	spin->setSingleStep(stepVal);
 	spin->setValue(val);
+	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
@@ -471,6 +481,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		combo->setEditable(true);
 
 	combo->setMaxVisibleItems(40);
+	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	string value = from_obs_data(settings, name, format);
 
@@ -545,6 +556,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 
 	list->setSortingEnabled(false);
 	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
+	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
@@ -598,12 +610,14 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	QColor      color       = color_from_int(val);
 
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
+	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	colorLabel->setText(color.name(QColor::HexArgb));
 	colorLabel->setPalette(QPalette(color));
 	colorLabel->setAutoFillBackground(true);
 	colorLabel->setAlignment(Qt::AlignCenter);
+	colorLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
 	subLayout->setContentsMargins(0, 0, 0, 0);
@@ -655,11 +669,13 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	MakeQFont(font_obj, font);
 
 	button->setText(QTStr("Basic.PropertiesWindow.SelectFont"));
+	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	fontLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	fontLabel->setFont(font);
 	fontLabel->setText(QString("%1 %2").arg(face, style));
 	fontLabel->setAlignment(Qt::AlignCenter);
+	fontLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
 	subLayout->setContentsMargins(0, 0, 0, 0);
@@ -988,6 +1004,8 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop,
 	combo->addItem(QTStr("Basic.PropertiesView.FPS.Rational"),
 			QVariant::fromValue(frame_rate_tag::rational()));
 
+	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+
 	auto num = obs_property_frame_rate_options_count(prop);
 	if (num)
 		combo->insertSeparator(combo->count());
@@ -1188,6 +1206,8 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning,
 			fps_ranges);
 	auto info   = new WidgetInfo(this, prop, widget);
 
+	widget->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+
 	widget->name = name;
 	widget->settings = settings;
 
@@ -1208,6 +1228,9 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning,
 
 	auto stack = widget->modeDisplay;
 	auto combo = widget->modeSelect;
+
+	stack->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	auto comboIndexChanged = static_cast<void (QComboBox::*)(int)>(
 			&QComboBox::currentIndexChanged);
