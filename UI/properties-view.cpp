@@ -633,7 +633,7 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	layout->addRow(label, subLayout);
 }
 
-static void MakeQFont(obs_data_t *font_obj, QFont &font)
+static void MakeQFont(obs_data_t *font_obj, QFont &font, bool limit = false)
 {
 	const char *face  = obs_data_get_string(font_obj, "face");
 	const char *style = obs_data_get_string(font_obj, "style");
@@ -645,8 +645,14 @@ static void MakeQFont(obs_data_t *font_obj, QFont &font)
 		font.setStyleName(style);
 	}
 
-	if (size)
+	if (size) {
+		if (limit) {
+			int max_size = font.pointSize();
+			if (max_size < 28) max_size = 28;
+			if (size > max_size) size = max_size;
+		}
 		font.setPointSize(size);
+	}
 
 	if (flags & OBS_FONT_BOLD) font.setBold(true);
 	if (flags & OBS_FONT_ITALIC) font.setItalic(true);
@@ -666,7 +672,7 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	QFont       font;
 
 	font = fontLabel->font();
-	MakeQFont(font_obj, font);
+	MakeQFont(font_obj, font, true);
 
 	button->setText(QTStr("Basic.PropertiesWindow.SelectFont"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1632,7 +1638,9 @@ bool WidgetInfo::FontChanged(const char *setting)
 	obs_data_set_int(font_obj, "flags", flags);
 
 	QLabel *label = static_cast<QLabel*>(widget);
-	label->setFont(font);
+	QFont labelFont;
+	MakeQFont(font_obj, labelFont, true);
+	label->setFont(labelFont);
 	label->setText(QString("%1 %2").arg(font.family(), font.styleName()));
 
 	obs_data_set_obj(view->settings, setting, font_obj);
