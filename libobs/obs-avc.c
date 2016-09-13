@@ -94,12 +94,7 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 
 static inline int get_drop_priority(int priority)
 {
-	switch (priority) {
-	case OBS_NAL_PRIORITY_DISPOSABLE: return OBS_NAL_PRIORITY_DISPOSABLE;
-	case OBS_NAL_PRIORITY_LOW:        return OBS_NAL_PRIORITY_LOW;
-	}
-
-	return OBS_NAL_PRIORITY_HIGHEST;
+	return priority;
 }
 
 static void serialize_avc_data(struct serializer *s, const uint8_t *data,

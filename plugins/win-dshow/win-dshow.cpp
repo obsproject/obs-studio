@@ -1794,6 +1794,9 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_property_list_add_int(p, TEXT_BUFFERING_OFF,
 			(int64_t)BufferingType::Off);
 
+	obs_property_set_long_description(p,
+			obs_module_text("Buffering.ToolTip"));
+
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 
 	/* ------------------------------------- */

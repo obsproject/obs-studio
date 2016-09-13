@@ -338,7 +338,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	if (!source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
-	blog(private ? LOG_DEBUG : LOG_INFO, "%ssource '%s' (%s) created",
+	blog(LOG_DEBUG, "%ssource '%s' (%s) created",
 			private ? "private " : "", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
@@ -490,8 +490,7 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_context_data_remove(&source->context);
 
-	blog(source->context.private ? LOG_DEBUG : LOG_INFO,
-			"%ssource '%s' destroyed",
+	blog(LOG_DEBUG, "%ssource '%s' destroyed",
 			source->context.private ? "private " : "",
 			source->context.name);
 
@@ -1864,8 +1863,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
 	if (source && filter)
-		blog(source->context.private ? LOG_DEBUG : LOG_INFO,
-				"- filter '%s' (%s) added to source '%s'",
+		blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
 				filter->context.name, filter->info.id,
 				source->context.name);
 }
@@ -1901,8 +1899,7 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
 	if (source && filter)
-		blog(source->context.private ? LOG_DEBUG : LOG_INFO,
-				"- filter '%s' (%s) removed from source '%s'",
+		blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
 				filter->context.name, filter->info.id,
 				source->context.name);
 

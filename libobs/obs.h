@@ -340,6 +340,9 @@ EXPORT int obs_open_module(obs_module_t **module, const char *path,
  */
 EXPORT bool obs_init_module(obs_module_t *module);
 
+/** Logs loaded modules */
+EXPORT void obs_log_loaded_modules(void);
+
 /** Returns the module file name */
 EXPORT const char *obs_get_module_file_name(obs_module_t *module);
 
@@ -606,6 +609,8 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view,
 EXPORT void obs_view_render(obs_view_t *view);
 
 EXPORT uint64_t obs_get_video_frame_time(void);
+
+EXPORT double obs_get_active_fps(void);
 
 
 /* ------------------------------------------------------------------------- */

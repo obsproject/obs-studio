@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <jack/jack.h>
 #include <obs.h>
-#include <pthread.h>
+#include <util/threading.h>
 
 struct jack_data {
 	obs_source_t *source;

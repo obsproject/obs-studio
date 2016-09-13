@@ -237,9 +237,11 @@ static inline void dstr_copy_dstr(struct dstr *dst, const struct dstr *src)
 	if (dst->array)
 		dstr_free(dst);
 
-	dstr_ensure_capacity(dst, src->len + 1);
-	memcpy(dst->array, src->array, src->len + 1);
-	dst->len = src->len;
+	if (src->len) {
+		dstr_ensure_capacity(dst, src->len + 1);
+		memcpy(dst->array, src->array, src->len + 1);
+		dst->len = src->len;
+	}
 }
 
 static inline void dstr_reserve(struct dstr *dst, const size_t capacity)

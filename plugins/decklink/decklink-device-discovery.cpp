@@ -32,7 +32,7 @@ bool DeckLinkDeviceDiscovery::Init(void)
 
 	initialized = result == S_OK;
 	if (!initialized)
-		blog(LOG_INFO, "Failed to start search for DeckLink devices");
+		blog(LOG_DEBUG, "Failed to start search for DeckLink devices");
 
 	return initialized;
 }

@@ -30,6 +30,10 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 		(uint32_t)config_get_uint(config, "d3d9", "present_ex");
 	offsets->d3d9.present_swap =
 		(uint32_t)config_get_uint(config, "d3d9", "present_swap");
+	offsets->d3d9.d3d9_clsoff =
+		(uint32_t)config_get_uint(config, "d3d9", "d3d9_clsoff");
+	offsets->d3d9.is_d3d9ex_clsoff =
+		(uint32_t)config_get_uint(config, "d3d9", "is_d3d9ex_clsoff");
 
 	offsets->dxgi.present =
 		(uint32_t)config_get_uint(config, "dxgi", "present");

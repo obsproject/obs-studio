@@ -274,7 +274,7 @@ static void ffmpeg_mux_stop(void *data, uint64_t ts)
 {
 	struct ffmpeg_muxer *stream = data;
 
-	if (capturing(stream)) {
+	if (capturing(stream) || ts == 0) {
 		stream->stop_ts = (int64_t)ts / 1000LL;
 		os_atomic_set_bool(&stream->stopping, true);
 		os_atomic_set_bool(&stream->capturing, false);

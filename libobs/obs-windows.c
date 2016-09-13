@@ -172,13 +172,46 @@ static void log_available_memory(void)
 			note);
 }
 
+static bool is_64_bit_windows(void)
+{
+#if defined(_WIN64)
+	return true;
+#elif defined(_WIN32)
+	BOOL b64 = false;
+	return IsWow64Process(GetCurrentProcess(), &b64) && b64;
+#endif
+}
+
 static void log_windows_version(void)
 {
 	struct win_version_info ver;
 	get_win_ver(&ver);
 
-	blog(LOG_INFO, "Windows Version: %d.%d Build %d (revision: %d)",
-			ver.major, ver.minor, ver.build, ver.revis);
+	bool b64 = is_64_bit_windows();
+	const char *windows_bitness = b64 ? "64" : "32";
+
+	blog(LOG_INFO, "Windows Version: %d.%d Build %d (revision: %d; %s-bit)",
+			ver.major, ver.minor, ver.build, ver.revis,
+			windows_bitness);
+}
+
+static void log_admin_status(void)
+{
+	SID_IDENTIFIER_AUTHORITY auth = SECURITY_NT_AUTHORITY;
+	PSID admin_group;
+	BOOL success;
+
+	success = AllocateAndInitializeSid(&auth, 2,
+			SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
+			0, 0, 0, 0, 0, 0, &admin_group);
+	if (success) {
+		if (!CheckTokenMembership(NULL, admin_group, &success))
+			success = false;
+		FreeSid(admin_group);
+	}
+
+	blog(LOG_INFO, "Running as administrator: %s",
+			success ? "true" : "false");
 }
 
 typedef HRESULT (WINAPI *dwm_is_composition_enabled_t)(BOOL*);
@@ -219,6 +252,7 @@ void log_system_info(void)
 	log_processor_cores();
 	log_available_memory();
 	log_windows_version();
+	log_admin_status();
 	log_aero();
 }
 

@@ -136,14 +136,7 @@ void MFAAC::Encoder::InitializeExtraData()
 	*extraData16 |= channels << 3;
 	*extraData16 = SWAPU16(*extraData16);
 
-	// Extensions
-	extraData16++;
-	*extraData16 = 0x2b7 << 5;
-	// Profile
-	*extraData16 |= profile;
-	*extraData16 = SWAPU16(*extraData16);
-
-	extraData[4] = 0;
+	extraData[2] = 0;
 #undef SWAPU16
 }
 

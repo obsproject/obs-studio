@@ -573,6 +573,8 @@ void *obs_video_thread(void *param)
 {
 	uint64_t last_time = 0;
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
+	uint64_t fps_total_ns = 0;
+	uint32_t fps_total_frames = 0;
 
 	obs->video.video_time = os_gettime_ns();
 
@@ -603,6 +605,16 @@ void *obs_video_thread(void *param)
 		profile_reenable_thread();
 
 		video_sleep(&obs->video, &obs->video.video_time, interval);
+
+		fps_total_ns += (obs->video.video_time - last_time);
+		fps_total_frames++;
+
+		if (fps_total_ns >= 1000000000ULL) {
+			obs->video.video_fps = (double)fps_total_frames /
+				((double)fps_total_ns / 1000000000.0);
+			fps_total_ns = 0;
+			fps_total_frames = 0;
+		}
 	}
 
 	UNUSED_PARAMETER(param);

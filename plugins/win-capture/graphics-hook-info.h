@@ -33,6 +33,8 @@ struct d3d9_offsets {
 	uint32_t present;
 	uint32_t present_ex;
 	uint32_t present_swap;
+	uint32_t d3d9_clsoff;
+	uint32_t is_d3d9ex_clsoff;
 };
 
 struct dxgi_offsets {

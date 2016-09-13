@@ -76,7 +76,9 @@ static libvlc_media_t *get_media(struct darray *array, const char *path)
 
 static inline libvlc_media_t *create_media_from_file(const char *file)
 {
-	return libvlc_media_new_path_(libvlc, file);
+	return (file && strstr(file, "://") != NULL)
+		? libvlc_media_new_location_(libvlc, file)
+		: libvlc_media_new_path_(libvlc, file);
 }
 
 static void free_files(struct darray *array)
@@ -299,11 +301,25 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
+	unsigned new_width = 0;
+	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	libvlc_video_get_size_(c->media_player, 0, width, height);
+	/* This is used because VLC will by default try to use a different
+	 * scaling than what the file uses (probably for optimization reasons).
+	 * For example, if the file is 1920x1080, it will try to render it by
+	 * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
+	 * gets the actual video file's size, and thus fixes the problem.
+	 * However this doesn't work with URLs, so if it returns a 0 value, it
+	 * shouldn't be used. */
+	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
+
+	if (new_width && new_height) {
+		*width  = new_width;
+		*height = new_height;
+	}
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format ||
@@ -382,12 +398,14 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	struct media_file_data data;
 	struct dstr new_path = {0};
 	libvlc_media_t *new_media;
+	bool is_url = path && strstr(path, "://") != NULL;
 
 	new_files.da = *array;
 
 	dstr_copy(&new_path, path);
 #ifdef _WIN32
-	dstr_replace(&new_path, "/", "\\");
+	if (!is_url)
+		dstr_replace(&new_path, "/", "\\");
 #endif
 	path = new_path.array;
 
@@ -399,6 +417,10 @@ static void add_file(struct vlc_source *c, struct darray *array,
 		new_media = create_media_from_file(path);
 
 	if (new_media) {
+		if (is_url)
+			libvlc_media_add_option_(new_media,
+					":network-caching=100");
+
 		data.path = new_path.array;
 		data.media = new_media;
 		da_push_back(new_files, &data);
@@ -411,19 +433,35 @@ static void add_file(struct vlc_source *c, struct darray *array,
 
 static bool valid_extension(const char *ext)
 {
-	if (!ext)
+	struct dstr test = {0};
+	bool valid = false;
+	const char *b;
+	const char *e;
+
+	if (!ext || !*ext)
 		return false;
-	return astrcmpi(ext, ".mp4") == 0 ||
-	       astrcmpi(ext, ".ts") == 0 ||
-	       astrcmpi(ext, ".mov") == 0 ||
-	       astrcmpi(ext, ".flv") == 0 ||
-	       astrcmpi(ext, ".mkv") == 0 ||
-	       astrcmpi(ext, ".avi") == 0 ||
-	       astrcmpi(ext, ".mp3") == 0 ||
-	       astrcmpi(ext, ".ogg") == 0 ||
-	       astrcmpi(ext, ".aac") == 0 ||
-	       astrcmpi(ext, ".wav") == 0 ||
-	       astrcmpi(ext, ".webm") == 0;
+
+	b = EXTENSIONS_MEDIA + 1;
+	e = strchr(b, ';');
+
+	for (;;) {
+		if (e) dstr_ncopy(&test, b, e - b);
+		else   dstr_copy(&test, b);
+
+		if (dstr_cmp(&test, ext) == 0) {
+			valid = true;
+			break;
+		}
+
+		if (!e)
+			break;
+
+		b = e + 2;
+		e = strchr(b, ';');
+	}
+
+	dstr_free(&test);
+	return valid;
 }
 
 static void vlcs_update(void *data, obs_data_t *settings)
@@ -624,14 +662,12 @@ static void vlcs_defaults(obs_data_t *settings)
 			S_BEHAVIOR_STOP_RESTART);
 }
 
-static const char *file_filter =
-	"Media files (*.mp4 *.ts *.mov *.flv *.mkv *.avi "
-	"*.mp3 *.ogg *.aac *.wav *.webm)";
-
 static obs_properties_t *vlcs_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 	struct vlc_source *c = data;
+	struct dstr filter = {0};
+	struct dstr exts = {0};
 	struct dstr path = {0};
 	obs_property_t *p;
 
@@ -661,9 +697,33 @@ static obs_properties_t *vlcs_properties(void *data)
 	obs_property_list_add_string(p, T_BEHAVIOR_ALWAYS_PLAY,
 			S_BEHAVIOR_ALWAYS_PLAY);
 
+	dstr_cat(&filter, "Media Files (");
+	dstr_copy(&exts, EXTENSIONS_MEDIA);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Video Files (");
+	dstr_copy(&exts, EXTENSIONS_VIDEO);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Audio Files (");
+	dstr_copy(&exts, EXTENSIONS_AUDIO);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+
+	dstr_cat(&filter, ");;Playlist Files (");
+	dstr_copy(&exts, EXTENSIONS_PLAYLIST);
+	dstr_replace(&exts, ";", " ");
+	dstr_cat_dstr(&filter, &exts);
+	dstr_cat(&filter, ")");
+
 	obs_properties_add_editable_list(ppts, S_PLAYLIST, T_PLAYLIST,
-			OBS_EDITABLE_LIST_TYPE_FILES, file_filter, path.array);
+			OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS,
+			filter.array, path.array);
 	dstr_free(&path);
+	dstr_free(&filter);
+	dstr_free(&exts);
 
 	return ppts;
 }
