@@ -231,6 +231,16 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 static void nvenc_destroy(void *data)
 {
 	struct nvenc_encoder *enc = data;
+	AVPacket pkt = {0};
+	int r_pkt = 1;
+
+	while (r_pkt) {
+		if (avcodec_encode_video2(enc->context, &pkt, NULL, &r_pkt) < 0)
+			break;
+
+		if (r_pkt)
+			av_free_packet(&pkt);
+	}
 
 	avcodec_close(enc->context);
 	av_frame_free(&enc->vframe);
