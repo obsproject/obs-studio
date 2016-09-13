@@ -159,7 +159,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 
 	nvenc_video_info(enc, &info);
 	av_opt_set_int(enc->context->priv_data, "cbr", false, 0);
-
+	av_opt_set(enc->context->priv_data, "profile", profile, 0);
 	av_opt_set(enc->context->priv_data, "preset", preset, 0);
 
 	if (astrcmpi(rc, "cqp") == 0) {
