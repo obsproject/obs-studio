@@ -115,6 +115,11 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_DO_NOT_DUPLICATE (1<<7)
 
+/**
+ * Source is deprecated and should not be used
+ */
+#define OBS_SOURCE_DEPRECATED (1<<8)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
