@@ -9,7 +9,9 @@ cd "$1"
 
 function buildlist() {
 	otool -L "$@" | 
-		grep -E "(opt|Users)" |
+		grep -E '^\s+/' |
+		grep -vE '^\s+/System/' |
+		grep -vE '^\s+/usr/lib/' |
 		perl -pe 's|^\s+(/.*)\s\(.*$|$1|' |
 		grep -vE ":$" |
 		sort -u
