@@ -3212,9 +3212,12 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 	while (obs_enum_input_types(idx++, &type)) {
 		const char *name = obs_source_get_display_name(type);
+		uint32_t caps = obs_get_source_output_flags(type);
 
-		addSource(popup, type, name);
-		foundValues = true;
+		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
+			addSource(popup, type, name);
+			foundValues = true;
+		}
 	}
 
 	addSource(popup, "scene", Str("Basic.Scene"));
