@@ -46,8 +46,6 @@ public:
 	inline bool operator!()     {return ptr == NULL;}
 	inline bool operator==(T p) {return ptr == p;}
 	inline bool operator!=(T p) {return ptr != p;}
-
-	inline T operator[](size_t idx) const {return ptr[idx];}
 };
 
 class ConfigFile {
