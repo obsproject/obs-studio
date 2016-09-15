@@ -74,7 +74,7 @@ using namespace Gdiplus;
 #define T_ALIGN                         T_("Alignment")
 #define T_VALIGN                        T_("VerticalAlignment")
 #define T_OPACITY                       T_("Opacity")
-#define T_VERTICAL                      T_("Veritcal")
+#define T_VERTICAL                      T_("Vertical")
 #define T_OUTLINE                       T_("Outline")
 #define T_OUTLINE_SIZE                  T_("Outline.Size")
 #define T_OUTLINE_COLOR                 T_("Outline.Color")
