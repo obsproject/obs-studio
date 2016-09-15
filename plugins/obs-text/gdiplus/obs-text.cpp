@@ -128,7 +128,7 @@ static inline uint32_t rgb_to_bgr(uint32_t rgb)
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename T2, BOOL deleter(T2)> class GDIObj {
+template<typename T, typename T2, BOOL WINAPI deleter(T2)> class GDIObj {
 	T obj = nullptr;
 
 	inline GDIObj &Replace(T obj_)
