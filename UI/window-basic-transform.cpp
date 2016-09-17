@@ -1,3 +1,4 @@
+#include <QMessageBox>
 #include "window-basic-transform.hpp"
 #include "window-basic-main.hpp"
 
@@ -54,6 +55,11 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->cropRight,    ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropTop,      ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropBottom,   ISCROLL_CHANGED, SLOT(OnCropChanged()));
+
+	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
+		SIGNAL(clicked()), this, SLOT(on_resetButton_clicked()));
+	connect(ui->buttonBox,
+		SIGNAL(rejected()), this, SLOT(close()));
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -287,4 +293,17 @@ void OBSBasicTransform::OnCropChanged()
 	ignoreTransformSignal = true;
 	obs_sceneitem_set_crop(item, &crop);
 	ignoreTransformSignal = false;
+}
+
+void OBSBasicTransform::on_resetButton_clicked()
+{
+	QMessageBox::StandardButton button =
+		QMessageBox::question(this,
+			QTStr("ConfirmTransformReset.Title"),
+			QTStr("ConfirmTransformReset.Text"));
+
+	if (button == QMessageBox::No)
+		return;
+
+	main->on_actionResetTransform_triggered();
 }
