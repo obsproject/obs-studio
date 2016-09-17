@@ -736,7 +736,7 @@ inline void TextSource::Tick(float seconds)
 		time_t t = get_modified_timestamp(file.c_str());
 		update_time_elapsed = 0.0f;
 
-		if (file_timestamp < t) {
+		if (file_timestamp != t) {
 			LoadFileText();
 			RenderText();
 			file_timestamp = t;
