@@ -4362,6 +4362,9 @@ void OBSBasic::TogglePreview()
 
 void OBSBasic::Nudge(int dist, MoveDir dir)
 {
+	if (ui->preview->Locked())
+		return;
+
 	struct MoveInfo {
 		float dist;
 		MoveDir dir;
