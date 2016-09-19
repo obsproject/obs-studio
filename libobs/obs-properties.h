@@ -262,6 +262,11 @@ EXPORT const char *           obs_property_path_default_path(obs_property_t *p);
 EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t *p);
 EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t *p);
 
+EXPORT void obs_property_int_set_limits(obs_property_t *p,
+		int min, int max, int step);
+EXPORT void obs_property_float_set_limits(obs_property_t *p,
+		double min, double max, double step);
+
 EXPORT void obs_property_list_clear(obs_property_t *p);
 
 EXPORT size_t obs_property_list_add_string(obs_property_t *p,
