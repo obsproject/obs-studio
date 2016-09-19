@@ -962,6 +962,32 @@ static inline void build_sprite_norm(struct gs_vb_data *data, float fcx,
 	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
+static inline void build_subsprite_norm(struct gs_vb_data *data,
+		float fsub_x, float fsub_y, float fsub_cx, float fsub_cy,
+		float fcx, float fcy, uint32_t flip)
+{
+	float start_u, end_u;
+	float start_v, end_v;
+
+	if ((flip & GS_FLIP_U) == 0) {
+		start_u = fsub_x / fcx;
+		end_u   = (fsub_x + fsub_cx) / fcx;
+	} else {
+		start_u = (fsub_x + fsub_cx) / fcx;
+		end_u   = fsub_x / fcx;
+	}
+
+	if ((flip & GS_FLIP_V) == 0) {
+		start_v = fsub_y / fcy;
+		end_v   = (fsub_y + fsub_cy) / fcy;
+	} else {
+		start_v = (fsub_y + fsub_cy) / fcy;
+		end_v   = fsub_y / fcy;
+	}
+
+	build_sprite(data, fsub_cx, fsub_cy, start_u, end_u, start_v, end_v);
+}
+
 static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t *tex,
 		float fcx, float fcy, uint32_t flip)
 {
@@ -1003,6 +1029,37 @@ void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width,
 		build_sprite_rect(data, tex, fcx, fcy, flip);
 	else
 		build_sprite_norm(data, fcx, fcy, flip);
+
+	gs_vertexbuffer_flush(graphics->sprite_buffer);
+	gs_load_vertexbuffer(graphics->sprite_buffer);
+	gs_load_indexbuffer(NULL);
+
+	gs_draw(GS_TRISTRIP, 0, 0);
+}
+
+void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip,
+		uint32_t sub_x, uint32_t sub_y,
+		uint32_t sub_cx, uint32_t sub_cy)
+{
+	graphics_t *graphics = thread_graphics;
+	float fcx, fcy;
+	struct gs_vb_data *data;
+
+	if (tex) {
+		if (gs_get_texture_type(tex) != GS_TEXTURE_2D) {
+			blog(LOG_ERROR, "A sprite must be a 2D texture");
+			return;
+		}
+	}
+
+	fcx = (float)gs_texture_get_width(tex);
+	fcy = (float)gs_texture_get_height(tex);
+
+	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
+	build_subsprite_norm(data,
+			(float)sub_x, (float)sub_y,
+			(float)sub_cx, (float)sub_cy,
+			fcx, fcy, flip);
 
 	gs_vertexbuffer_flush(graphics->sprite_buffer);
 	gs_load_vertexbuffer(graphics->sprite_buffer);
