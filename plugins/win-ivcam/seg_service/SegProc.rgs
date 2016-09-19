@@ -1,0 +1,16 @@
+HKCR
+{
+	NoRemove CLSID
+	{
+		ForceRemove {66917998-CA70-42A6-B8AE-A3A5126123C7} = s 'SegProc Class'
+		{
+			ForceRemove Programmable
+			LocalServer32 = s '%MODULE%'
+			{
+				val ServerExecutable = s '%MODULE_RAW%'
+			}
+			TypeLib = s '{64BC16FD-9E3C-4904-B9BA-A360310BCFEC}'
+			Version = s '1.0'
+		}
+	}
+}
