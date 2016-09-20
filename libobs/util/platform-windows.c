@@ -754,6 +754,8 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	return true;
 }
 
+#define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+
 void get_win_ver(struct win_version_info *info)
 {
 	static struct win_version_info ver = {0};
@@ -765,6 +767,26 @@ void get_win_ver(struct win_version_info *info)
 	if (!got_version) {
 		get_dll_ver(L"kernel32", &ver);
 		got_version = true;
+
+		if (ver.major == 10 && ver.revis == 0) {
+			HKEY    key;
+			DWORD   size, win10_revision;
+			LSTATUS status;
+
+			status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
+					WINVER_REG_KEY, &key);
+			if (status != ERROR_SUCCESS)
+				return;
+
+			size = sizeof(win10_revision);
+
+			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
+					(LPBYTE)&win10_revision, &size);
+			if (status == ERROR_SUCCESS)
+				ver.revis = (int)win10_revision;
+
+			RegCloseKey(key);
+		}
 	}
 
 	*info = ver;
