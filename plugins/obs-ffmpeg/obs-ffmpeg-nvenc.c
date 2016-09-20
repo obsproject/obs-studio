@@ -402,9 +402,10 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *nvenc_properties(void *unused)
+static obs_properties_t *nvenc_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;

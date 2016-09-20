@@ -65,9 +65,10 @@ static const char *libfdk_getname(void *unused)
 	return obs_module_text("LibFDK");
 }
 
-static obs_properties_t *libfdk_properties(void *unused)
+static obs_properties_t *libfdk_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

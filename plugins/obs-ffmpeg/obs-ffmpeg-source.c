@@ -349,12 +349,13 @@ static const char *video_filter =
 static const char *audio_filter =
 	" (*.mp3 *.aac *.ogg *.wav);;";
 
-static obs_properties_t *ffmpeg_source_getproperties(void *data)
+static obs_properties_t *ffmpeg_source_getproperties(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
 	struct dstr path = {0};
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

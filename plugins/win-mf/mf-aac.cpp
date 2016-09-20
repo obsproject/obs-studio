@@ -13,8 +13,10 @@ static const char *MFAAC_GetName(void*)
 	return obs_module_text("MFAACEnc");
 }
 
-static obs_properties_t *MFAAC_GetProperties(void *)
+static obs_properties_t *MFAAC_GetProperties(void *, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",

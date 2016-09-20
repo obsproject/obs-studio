@@ -66,7 +66,7 @@ struct alsa_data {
 static const char * alsa_get_name(void *);
 static bool alsa_devices_changed(obs_properties_t *props,
 		obs_property_t *p, obs_data_t *settings);
-static obs_properties_t * alsa_get_properties(void *);
+static obs_properties_t * alsa_get_properties(void *, obs_data_t *);
 static void * alsa_create(obs_data_t *, obs_source_t *);
 static void alsa_destroy(void *);
 static void alsa_activate(void *);
@@ -248,7 +248,7 @@ static bool alsa_devices_changed(obs_properties_t *props,
 	return true;
 }
 
-obs_properties_t * alsa_get_properties(void *unused)
+obs_properties_t * alsa_get_properties(void *unused, obs_data_t *settings)
 {
 	void **hints;
 	void **hint;
@@ -261,6 +261,7 @@ obs_properties_t * alsa_get_properties(void *unused)
 	obs_property_t *rate;
 
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	props = obs_properties_create();
 

@@ -146,7 +146,7 @@ static bool fade_to_color_audio_render(void *data, uint64_t *ts_out,
 		audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static obs_properties_t *fade_to_color_properties(void *data)
+static obs_properties_t *fade_to_color_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -155,6 +155,8 @@ static obs_properties_t *fade_to_color_properties(void *data)
 		S_SWITCH_POINT_TEXT, 0, 100, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

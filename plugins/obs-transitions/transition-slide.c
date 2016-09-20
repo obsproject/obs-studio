@@ -131,7 +131,7 @@ bool slide_audio_render(void *data, uint64_t *ts_out,
 		audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static obs_properties_t *slide_properties(void *data)
+static obs_properties_t *slide_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
@@ -149,6 +149,8 @@ static obs_properties_t *slide_properties(void *data)
 			"down");
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return ppts;
 }
 

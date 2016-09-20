@@ -1691,7 +1691,7 @@ EXPORT const char *obs_service_get_name(const obs_service_t *service);
 EXPORT obs_data_t *obs_service_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
-EXPORT obs_properties_t *obs_get_service_properties(const char *id);
+EXPORT obs_properties_t *obs_get_service_properties(const char *id, obs_data_t *settings);
 
 /**
  * Returns the property list of an existing service context, if any.  Free with

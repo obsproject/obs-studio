@@ -71,7 +71,7 @@ static void gain_defaults(obs_data_t *s)
 	obs_data_set_default_double(s, S_GAIN_DB, 0.0f);
 }
 
-static obs_properties_t *gain_properties(void *data)
+static obs_properties_t *gain_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
@@ -79,6 +79,8 @@ static obs_properties_t *gain_properties(void *data)
 			-30.0, 30.0, 0.1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return ppts;
 }
 

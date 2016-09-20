@@ -980,8 +980,10 @@ static inline obs_properties_t *syphon_properties_internal(syphon_t s)
 	return props;
 }
 
-static obs_properties_t *syphon_properties(void *data)
+static obs_properties_t *syphon_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	@autoreleasepool {
 		return syphon_properties_internal(data);
 	}

@@ -110,7 +110,7 @@ static void async_delay_filter_destroy(void *data)
 	bfree(data);
 }
 
-static obs_properties_t *async_delay_filter_properties(void *data)
+static obs_properties_t *async_delay_filter_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -118,6 +118,8 @@ static obs_properties_t *async_delay_filter_properties(void *data)
 			0, 20000, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

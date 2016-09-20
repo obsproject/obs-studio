@@ -375,16 +375,18 @@ static obs_properties_t *pulse_properties(bool input)
 	return props;
 }
 
-static obs_properties_t *pulse_input_properties(void *unused)
+static obs_properties_t *pulse_input_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	return pulse_properties(true);
 }
 
-static obs_properties_t *pulse_output_properties(void *unused)
+static obs_properties_t *pulse_output_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	return pulse_properties(false);
 }

@@ -672,7 +672,7 @@ obs_properties_t *obs_get_source_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties(NULL);
+		properties = info->get_properties(NULL, defaults);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -699,7 +699,7 @@ obs_properties_t *obs_source_properties(const obs_source_t *source)
 
 	if (source->info.get_properties) {
 		obs_properties_t *props;
-		props = source->info.get_properties(source->context.data);
+		props = source->info.get_properties(source->context.data, source->context.settings);
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}

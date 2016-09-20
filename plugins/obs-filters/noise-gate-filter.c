@@ -161,7 +161,7 @@ static void noise_gate_defaults(obs_data_t *s)
 	obs_data_set_default_int   (s, S_RELEASE_TIME, 150);
 }
 
-static obs_properties_t *noise_gate_properties(void *data)
+static obs_properties_t *noise_gate_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
@@ -177,6 +177,8 @@ static obs_properties_t *noise_gate_properties(void *data)
 			0, 10000, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return ppts;
 }
 

@@ -128,7 +128,7 @@ static void fill_out_devices(obs_property_t *list)
 	deviceEnum->Unlock();
 }
 
-static obs_properties_t *decklink_get_properties(void *data)
+static obs_properties_t *decklink_get_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -154,6 +154,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 			obs_module_text("Buffering"));
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

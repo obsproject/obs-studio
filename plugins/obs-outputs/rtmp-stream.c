@@ -953,9 +953,10 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
 }
 
-static obs_properties_t *rtmp_stream_properties(void *unused)
+static obs_properties_t *rtmp_stream_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 	struct netif_saddr_data addrs = {0};

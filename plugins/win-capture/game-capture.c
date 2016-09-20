@@ -1740,8 +1740,10 @@ static bool window_not_blacklisted(const char *title, const char *class,
 	return !is_blacklisted_exe(exe);
 }
 
-static obs_properties_t *game_capture_properties(void *data)
+static obs_properties_t *game_capture_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	HMONITOR monitor;
 	uint32_t cx = 1920;
 	uint32_t cy = 1080;

@@ -320,7 +320,7 @@ static void GetDShowEncoderDefauts(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 1000);
 }
 
-static obs_properties_t *GetDShowEncoderProperties(void *data)
+static obs_properties_t *GetDShowEncoderProperties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
@@ -328,6 +328,8 @@ static obs_properties_t *GetDShowEncoderProperties(void *data)
 			1000, 60000, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return ppts;
 }
 

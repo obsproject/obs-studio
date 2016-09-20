@@ -465,8 +465,10 @@ static void ss_defaults(obs_data_t *settings)
 static const char *file_filter =
 	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif)";
 
-static obs_properties_t *ss_properties(void *data)
+static obs_properties_t *ss_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	obs_properties_t *ppts = obs_properties_create();
 	struct slideshow *ss = data;
 	struct dstr path = {0};

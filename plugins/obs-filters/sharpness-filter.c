@@ -96,7 +96,7 @@ static void sharpness_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-static obs_properties_t *sharpness_properties(void *data)
+static obs_properties_t *sharpness_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -104,6 +104,8 @@ static obs_properties_t *sharpness_properties(void *data)
 		"Sharpness", 0.0f, 1.0f, 0.01f);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

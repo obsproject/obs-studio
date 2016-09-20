@@ -98,7 +98,7 @@ static bool relative_clicked(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *crop_filter_properties(void *data)
+static obs_properties_t *crop_filter_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -121,6 +121,8 @@ static obs_properties_t *crop_filter_properties(void *data)
 			0, 8192, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

@@ -123,8 +123,10 @@ static void luma_wipe_destroy(void *data)
 	bfree(lwipe);
 }
 
-static obs_properties_t *luma_wipe_properties(void *data)
+static obs_properties_t *luma_wipe_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	obs_properties_t *props = obs_properties_create();
 	struct luma_wipe_info *lwipe = data;
 

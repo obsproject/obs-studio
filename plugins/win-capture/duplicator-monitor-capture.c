@@ -282,11 +282,12 @@ static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 	return true;
 }
 
-static obs_properties_t *duplicator_capture_properties(void *unused)
+static obs_properties_t *duplicator_capture_properties(void *unused, obs_data_t *settings)
 {
 	int monitor_idx = 0;
 
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

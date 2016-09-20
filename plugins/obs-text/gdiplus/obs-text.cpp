@@ -820,8 +820,10 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p,
 
 #undef set_vis
 
-static obs_properties_t *get_properties(void *data)
+static obs_properties_t *get_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	TextSource *s = reinterpret_cast<TextSource*>(data);
 	string path;
 

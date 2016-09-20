@@ -232,9 +232,10 @@ static inline void add_rate_controls(obs_property_t *list,
 	}
 }
 
-static obs_properties_t *obs_qsv_props(void *unused)
+static obs_properties_t *obs_qsv_props(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list;

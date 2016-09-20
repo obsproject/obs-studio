@@ -196,7 +196,7 @@ static bool key_type_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *color_key_properties(void *data)
+static obs_properties_t *color_key_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -227,6 +227,8 @@ static obs_properties_t *color_key_properties(void *data)
 			TEXT_GAMMA, -1.0, 1.0, 0.01);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

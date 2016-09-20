@@ -399,9 +399,10 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	write_packet(stream, packet);
 }
 
-static obs_properties_t *ffmpeg_mux_properties(void *unused)
+static obs_properties_t *ffmpeg_mux_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 
