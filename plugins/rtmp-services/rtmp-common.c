@@ -346,12 +346,6 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 		}
 	}
 
-	item = json_object_get(recommended, "tune");
-	if (item && json_is_string(item)) {
-		const char *tune = json_string_value(item);
-		obs_data_set_string(settings, "tune", tune);
-	}
-
 	item = json_object_get(recommended, "x264opts");
 	if (item && json_is_string(item)) {
 		const char *x264_settings = json_string_value(item);
