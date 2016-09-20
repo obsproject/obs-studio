@@ -45,6 +45,8 @@ using namespace Gdiplus;
 #define S_ALIGN                         "align"
 #define S_VALIGN                        "valign"
 #define S_OPACITY                       "opacity"
+#define S_BKCOLOR                       "bk_color"
+#define S_BKOPACITY                     "bk_opacity"
 #define S_VERTICAL                      "vertical"
 #define S_OUTLINE                       "outline"
 #define S_OUTLINE_SIZE                  "outline_size"
@@ -74,6 +76,8 @@ using namespace Gdiplus;
 #define T_ALIGN                         T_("Alignment")
 #define T_VALIGN                        T_("VerticalAlignment")
 #define T_OPACITY                       T_("Opacity")
+#define T_BKCOLOR                       T_("BkColor")
+#define T_BKOPACITY                     T_("BkOpacity")
 #define T_VERTICAL                      T_("Vertical")
 #define T_OUTLINE                       T_("Outline")
 #define T_OUTLINE_SIZE                  T_("Outline.Size")
@@ -643,6 +647,9 @@ inline void TextSource::Update(obs_data_t *s)
 	bool new_underline     = (font_flags & OBS_FONT_UNDERLINE) != 0;
 	bool new_strikeout     = (font_flags & OBS_FONT_STRIKEOUT) != 0;
 
+	uint32_t new_bk_color   = obs_data_get_uint32(s, S_BKCOLOR);
+	uint32_t new_bk_opacity = obs_data_get_uint32(s, S_BKOPACITY);
+
 	/* ----------------------------- */
 
 	wstring new_face = to_wide(font_face);
@@ -668,11 +675,14 @@ inline void TextSource::Update(obs_data_t *s)
 
 	new_color = rgb_to_bgr(new_color);
 	new_o_color = rgb_to_bgr(new_o_color);
+	new_bk_color = rgb_to_bgr(new_bk_color);
 
 	color = new_color;
 	opacity = new_opacity;
 	vertical = new_vertical;
 
+	bk_color = new_bk_color;
+	bk_opacity = new_bk_opacity;
 	use_extents = new_extents;
 	wrap = new_extents_wrap;
 	extents_cx = n_extents_cx;
@@ -847,6 +857,10 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
 
 	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
+	
+	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
+	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY,
+			0, 100, 1);
 
 	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -923,6 +937,8 @@ bool obs_module_load(void)
 		obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
 		obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
 		obs_data_set_default_int(settings, S_OPACITY, 100);
+		obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
+		obs_data_set_default_int(settings, S_BKOPACITY, 0);
 		obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
 		obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
 		obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
