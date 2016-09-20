@@ -732,7 +732,7 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	}
 
 	data = bmalloc(size);
-	if (!get_file_version_info(L"kernel32", 0, size, data)) {
+	if (!get_file_version_info(lib, 0, size, data)) {
 		blog(LOG_ERROR, "Failed to get windows version info");
 		bfree(data);
 		return false;
