@@ -801,7 +801,6 @@
             "recommended": {
                 "keyint": 1,
                 "profile": "baseline",
-                "tune": "zerolatency",
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
             }
