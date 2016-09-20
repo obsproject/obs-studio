@@ -146,8 +146,10 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
-	delete view;
-	view = nullptr;
+	if (view) {
+		view->deleteLater();
+		view = nullptr;
+	}
 
 	OBSSource filter = GetFilter(row, async);
 	if (!filter)
