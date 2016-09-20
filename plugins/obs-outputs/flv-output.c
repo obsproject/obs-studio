@@ -46,14 +46,14 @@ static const char *flv_output_getname(void *unused)
 	return obs_module_text("FLVOutput");
 }
 
-static void flv_output_stop(void *data);
+static void flv_output_stop(void *data, uint64_t ts);
 
 static void flv_output_destroy(void *data)
 {
 	struct flv_output *stream = data;
 
 	if (stream->active)
-		flv_output_stop(data);
+		flv_output_stop(data, 0);
 
 	dstr_free(&stream->path);
 	bfree(stream);
@@ -68,7 +68,7 @@ static void *flv_output_create(obs_data_t *settings, obs_output_t *output)
 	return stream;
 }
 
-static void flv_output_stop(void *data)
+static void flv_output_stop(void *data, uint64_t ts)
 {
 	struct flv_output *stream = data;
 
@@ -84,6 +84,8 @@ static void flv_output_stop(void *data)
 
 		info("FLV file output complete");
 	}
+
+	UNUSED_PARAMETER(ts);
 }
 
 static int write_packet(struct flv_output *stream,

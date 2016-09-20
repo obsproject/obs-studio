@@ -1,0 +1,28 @@
+<RCC>
+  <qresource prefix="/res">
+    <file>images/mute.png</file>
+    <file>images/unmute.png</file>
+    <file>images/configuration21_16.png</file>
+    <file>images/invisible_mask.png</file>
+    <file>images/visible_mask.png</file>
+    <file>images/list_remove.png</file>
+    <file>images/add.png</file>
+    <file>images/down.png</file>
+    <file>images/editscene.png</file>
+    <file>images/live.png</file>
+    <file>images/properties.png</file>
+    <file>images/up.png</file>
+    <file>images/obs.png</file>
+    <file>images/tray_active.png</file>
+  </qresource>
+  <qresource prefix="/settings">
+    <file>images/settings/advanced.png</file>
+    <file>images/settings/network.png</file>
+    <file>images/settings/video-display-3.png</file>
+    <file>images/settings/decibel_audio_player.png</file>
+    <file>images/settings/applications-system-2.png</file>
+    <file>images/settings/system-settings-3.png</file>
+    <file>images/settings/network-bluetooth.png</file>
+    <file>images/settings/preferences-desktop-keyboard-shortcuts.png</file>
+  </qresource>
+</RCC>

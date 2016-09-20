@@ -682,6 +682,8 @@ void obs_transition_video_render(obs_source_t *transition,
 
 	if (state.transitioning_video && locked && callback) {
 		gs_texture_t *tex[2];
+		uint32_t cx;
+		uint32_t cy;
 
 		for (size_t i = 0; i < 2; i++) {
 			if (state.s[i]) {
@@ -694,8 +696,11 @@ void obs_transition_video_render(obs_source_t *transition,
 			}
 		}
 
-		callback(transition->context.data, tex[0], tex[1], t,
-				get_cx(transition), get_cy(transition));
+		cx = get_cx(transition);
+		cy = get_cy(transition);
+		if (cx && cy)
+			callback(transition->context.data, tex[0], tex[1], t,
+					cx, cy);
 
 	} else if (state.transitioning_audio) {
 		if (state.s[1]) {

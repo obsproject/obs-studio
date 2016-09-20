@@ -413,7 +413,7 @@ static bool load_lib(void)
 
 #define LOAD_LIB(x, n) x = LoadLibrary(TEXT(n)); \
 	if (!x) \
-		CA_LOG(LOG_WARNING, "Failed loading library '" n "'");
+		CA_LOG(LOG_DEBUG, "Failed loading library '" n "'");
 
 	LOAD_LIB(audio_toolbox, "CoreAudioToolbox.dll");
 #undef LOAD_LIB

@@ -6,8 +6,9 @@ uniform float2 add_val;
 
 sampler_state textureSampler {
 	Filter    = Linear;
-	AddressU  = Wrap;
-	AddressV  = Wrap;
+	AddressU  = Border;
+	AddressV  = Border;
+	BorderColor = 00000000;
 };
 
 struct VertData {

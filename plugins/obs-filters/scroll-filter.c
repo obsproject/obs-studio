@@ -7,8 +7,10 @@ struct scroll_filter_data {
 	gs_effect_t                    *effect;
 	gs_eparam_t                    *param_add;
 	gs_eparam_t                    *param_mul;
+	gs_eparam_t                    *param_image;
 
 	struct vec2                    scroll_speed;
+	gs_samplerstate_t              *sampler;
 	bool                           limit_cx;
 	bool                           limit_cy;
 	uint32_t                       cx;
@@ -29,10 +31,17 @@ static void *scroll_filter_create(obs_data_t *settings, obs_source_t *context)
 	struct scroll_filter_data *filter = bzalloc(sizeof(*filter));
 	char *effect_path = obs_module_file("crop_filter.effect");
 
+	struct gs_sampler_info sampler_info = {
+		.filter = GS_FILTER_LINEAR,
+		.address_u = GS_ADDRESS_WRAP,
+		.address_v = GS_ADDRESS_WRAP
+	};
+
 	filter->context = context;
 
 	obs_enter_graphics();
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
+	filter->sampler = gs_samplerstate_create(&sampler_info);
 	obs_leave_graphics();
 
 	bfree(effect_path);
@@ -46,6 +55,8 @@ static void *scroll_filter_create(obs_data_t *settings, obs_source_t *context)
 			"add_val");
 	filter->param_mul = gs_effect_get_param_by_name(filter->effect,
 			"mul_val");
+	filter->param_image = gs_effect_get_param_by_name(filter->effect,
+			"image");
 
 	obs_source_update(context, settings);
 	return filter;
@@ -57,6 +68,7 @@ static void scroll_filter_destroy(void *data)
 
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
+	gs_samplerstate_destroy(filter->sampler);
 	obs_leave_graphics();
 
 	bfree(filter);
@@ -186,6 +198,8 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 
 	gs_effect_set_vec2(filter->param_add, &filter->offset);
 	gs_effect_set_vec2(filter->param_mul, &mul_val);
+
+	gs_effect_set_next_sampler(filter->param_image, filter->sampler);
 
 	obs_source_process_filter_end(filter->context, filter->effect, cx, cy);
 

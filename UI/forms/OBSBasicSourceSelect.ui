@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OBSBasicSourceSelect</class>
+ <widget class="QDialog" name="OBSBasicSourceSelect">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>352</width>
+    <height>314</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Basic.SourceSelect</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QRadioButton" name="createNew">
+       <property name="text">
+        <string>Basic.SourceSelect.CreateNew</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="sourceName"/>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="selectExisting">
+       <property name="text">
+        <string>Basic.SourceSelect.AddExisting</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QListWidget" name="sourceList">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="sourceVisible">
+       <property name="text">
+        <string>Basic.SourceSelect.AddVisible</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>createNew</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceName</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>79</x>
+     <y>29</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>108</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>selectExisting</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>51</x>
+     <y>80</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>65</x>
+     <y>128</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

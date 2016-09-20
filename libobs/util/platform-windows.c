@@ -84,9 +84,24 @@ void *os_dlopen(const char *path)
 	if (wpath_slash)
 		SetDllDirectoryW(NULL);
 
-	if (!h_library)
-		blog(LOG_INFO, "LoadLibrary failed for '%s', error: %ld",
-				path, GetLastError());
+	if (!h_library) {
+		DWORD error = GetLastError();
+		char *message = NULL;
+
+		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+		               FORMAT_MESSAGE_IGNORE_INSERTS |
+		               FORMAT_MESSAGE_ALLOCATE_BUFFER,
+		               NULL, error,
+		               MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+		               (LPSTR)&message, 0, NULL);
+
+		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)",
+				path, message, error);
+
+		if (message)
+			LocalFree(message);
+	}
+
 
 	return h_library;
 }
@@ -208,12 +223,13 @@ uint64_t os_gettime_ns(void)
 	return (uint64_t)time_val;
 }
 
-/* returns %appdata%\[name] on windows */
-int os_get_config_path(char *dst, size_t size, const char *name)
+/* returns [folder]\[name] on windows */
+static int os_get_path_internal(char *dst, size_t size, const char *name,
+		int folder)
 {
 	wchar_t path_utf16[MAX_PATH];
 
-	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
 	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
@@ -231,13 +247,13 @@ int os_get_config_path(char *dst, size_t size, const char *name)
 	return -1;
 }
 
-char *os_get_config_path_ptr(const char *name)
+static char *os_get_path_ptr_internal(const char *name, int folder)
 {
 	char *ptr;
 	wchar_t path_utf16[MAX_PATH];
 	struct dstr path;
 
-	SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT,
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
 			path_utf16);
 
 	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
@@ -245,6 +261,26 @@ char *os_get_config_path_ptr(const char *name)
 	dstr_cat(&path, "\\");
 	dstr_cat(&path, name);
 	return path.array;
+}
+
+int os_get_config_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, CSIDL_APPDATA);
+}
+
+char *os_get_config_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, CSIDL_APPDATA);
+}
+
+int os_get_program_data_path(char *dst, size_t size, const char *name)
+{
+	return os_get_path_internal(dst, size, name, CSIDL_COMMON_APPDATA);
+}
+
+char *os_get_program_data_path_ptr(const char *name)
+{
+	return os_get_path_ptr_internal(name, CSIDL_COMMON_APPDATA);
 }
 
 bool os_file_exists(const char *path)
@@ -696,7 +732,7 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	}
 
 	data = bmalloc(size);
-	if (!get_file_version_info(L"kernel32", 0, size, data)) {
+	if (!get_file_version_info(lib, 0, size, data)) {
 		blog(LOG_ERROR, "Failed to get windows version info");
 		bfree(data);
 		return false;
@@ -718,6 +754,8 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	return true;
 }
 
+#define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+
 void get_win_ver(struct win_version_info *info)
 {
 	static struct win_version_info ver = {0};
@@ -729,6 +767,26 @@ void get_win_ver(struct win_version_info *info)
 	if (!got_version) {
 		get_dll_ver(L"kernel32", &ver);
 		got_version = true;
+
+		if (ver.major == 10 && ver.revis == 0) {
+			HKEY    key;
+			DWORD   size, win10_revision;
+			LSTATUS status;
+
+			status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
+					WINVER_REG_KEY, &key);
+			if (status != ERROR_SUCCESS)
+				return;
+
+			size = sizeof(win10_revision);
+
+			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
+					(LPBYTE)&win10_revision, &size);
+			if (status == ERROR_SUCCESS)
+				ver.revis = (int)win10_revision;
+
+			RegCloseKey(key);
+		}
 	}
 
 	*info = ver;

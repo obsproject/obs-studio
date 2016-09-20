@@ -98,7 +98,7 @@ What was wrong with the original OBS?
     - The devices and audio code was poor, I had no idea what I was getting into
       when I started writing them in.  I did not realize beforehand all the
       device-specific quirks that each device/system could have.  Some devices
-      had bad timing and quirks that I never aniticipated while writing them.
+      had bad timing and quirks that I never anticipated while writing them.
       I struggled with devices, and my original design for the audio subsystem
       for example morphed over and over into an abomination that, though works,
       is basically this giant duct-taped zombie monster.

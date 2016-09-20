@@ -235,9 +235,12 @@ EXPORT void obs_property_set_enabled(obs_property_t *p, bool enabled);
 
 EXPORT void obs_property_set_description(obs_property_t *p,
 		const char *description);
+EXPORT void obs_property_set_long_description(obs_property_t *p,
+		const char *long_description);
 
 EXPORT const char *           obs_property_name(obs_property_t *p);
 EXPORT const char *           obs_property_description(obs_property_t *p);
+EXPORT const char *           obs_property_long_description(obs_property_t *p);
 EXPORT enum obs_property_type obs_property_get_type(obs_property_t *p);
 EXPORT bool                   obs_property_enabled(obs_property_t *p);
 EXPORT bool                   obs_property_visible(obs_property_t *p);
@@ -258,6 +261,11 @@ EXPORT const char *           obs_property_path_filter(obs_property_t *p);
 EXPORT const char *           obs_property_path_default_path(obs_property_t *p);
 EXPORT enum obs_combo_type    obs_property_list_type(obs_property_t *p);
 EXPORT enum obs_combo_format  obs_property_list_format(obs_property_t *p);
+
+EXPORT void obs_property_int_set_limits(obs_property_t *p,
+		int min, int max, int step);
+EXPORT void obs_property_float_set_limits(obs_property_t *p,
+		double min, double max, double step);
 
 EXPORT void obs_property_list_clear(obs_property_t *p);
 

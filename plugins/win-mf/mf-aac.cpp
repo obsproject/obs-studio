@@ -140,7 +140,7 @@ extern "C" void RegisterMFAACEncoder()
 {
 	if (!IsWindows8OrGreater()) {
 		MF_LOG(LOG_WARNING, "plugin is disabled for performance "
-			"reasons on Windows versions less than 8");
+			"reasons on Windows versions prior to 8");
 		return;
 	}
 
@@ -158,7 +158,7 @@ extern "C" void RegisterMFAACEncoder()
 	info.get_extra_data            = MFAAC_GetExtraData;
 	info.get_audio_info            = MFAAC_GetAudioInfo;
 
-	MF_LOG(LOG_INFO, "Adding Media Foundation AAC Encoder");
+	MF_LOG(LOG_DEBUG, "Adding Media Foundation AAC Encoder");
 
 	obs_register_encoder(&info);
 

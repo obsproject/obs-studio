@@ -325,6 +325,8 @@ EXPORT void gs_shader_set_vec4(gs_sparam_t *param, const struct vec4 *val);
 EXPORT void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val);
 EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
 EXPORT void gs_shader_set_default(gs_sparam_t *param);
+EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
+		gs_samplerstate_t *sampler);
 
 /* ---------------------------------------------------
  * effect functions
@@ -393,6 +395,8 @@ EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
+EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
+		gs_samplerstate_t *sampler);
 
 /* ---------------------------------------------------
  * texture render helper functions
@@ -520,6 +524,9 @@ EXPORT uint8_t *gs_create_texture_file_data(const char *file,
  */
 EXPORT void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width,
 		uint32_t height);
+
+EXPORT void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip,
+		uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
 
 EXPORT void gs_draw_cube_backdrop(gs_texture_t *cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear);

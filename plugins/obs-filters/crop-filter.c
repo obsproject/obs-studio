@@ -12,10 +12,10 @@ struct crop_filter_data {
 	int                            right;
 	int                            top;
 	int                            bottom;
-	uint32_t                       abs_cx;
-	uint32_t                       abs_cy;
-	uint32_t                       width;
-	uint32_t                       height;
+	int                            abs_cx;
+	int                            abs_cy;
+	int                            width;
+	int                            height;
 	bool                           absolute;
 
 	struct vec2                    mul_val;
@@ -108,13 +108,13 @@ static obs_properties_t *crop_filter_properties(void *data)
 	obs_property_set_modified_callback(p, relative_clicked);
 
 	obs_properties_add_int(props, "left", obs_module_text("Crop.Left"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "top", obs_module_text("Crop.Top"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "right", obs_module_text("Crop.Right"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "bottom", obs_module_text("Crop.Bottom"),
-			0, 8192, 1);
+			-8192, 8192, 1);
 	obs_properties_add_int(props, "cx", obs_module_text("Crop.Width"),
 			0, 8192, 1);
 	obs_properties_add_int(props, "cy", obs_module_text("Crop.Height"),
@@ -135,37 +135,26 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 	obs_source_t *target = obs_filter_get_target(filter->context);
 	uint32_t width;
 	uint32_t height;
-	uint32_t total;
 
 	if (!target) {
 		width = 0;
 		height = 0;
+		return;
 	} else {
 		width = obs_source_get_base_width(target);
 		height = obs_source_get_base_height(target);
 	}
 
 	if (filter->absolute) {
-		uint32_t max_abs_cx = (filter->left + filter->abs_cx);
-		if (max_abs_cx > width) max_abs_cx = width;
-		max_abs_cx -= filter->left;
-
-		total = max_abs_cx < width ? (width - max_abs_cx) : 0;
+		filter->width  = filter->abs_cx;
+		filter->height = filter->abs_cy;
 	} else {
-		total = filter->left + filter->right;
+		filter->width  = (int)width - filter->left - filter->right;
+		filter->height = (int)height - filter->top - filter->bottom;
 	}
-	filter->width = total > width ? 0 : (width - total);
 
-	if (filter->absolute) {
-		uint32_t max_abs_cy = (filter->top + filter->abs_cy);
-		if (max_abs_cy > height) max_abs_cy = height;
-		max_abs_cy -= filter->top;
-
-		total = max_abs_cy < height ? (height - max_abs_cy) : 0;
-	} else {
-		total = filter->top + filter->bottom;
-	}
-	filter->height = total > height ? 0 : (height - total);
+	if (filter->width  < 1) filter->width  = 1;
+	if (filter->height < 1) filter->height = 1;
 
 	if (width && filter->width) {
 		mul_val->x = (float)filter->width / (float)width;
@@ -209,13 +198,13 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 static uint32_t crop_filter_width(void *data)
 {
 	struct crop_filter_data *crop = data;
-	return crop->width;
+	return (uint32_t)crop->width;
 }
 
 static uint32_t crop_filter_height(void *data)
 {
 	struct crop_filter_data *crop = data;
-	return crop->height;
+	return (uint32_t)crop->height;
 }
 
 struct obs_source_info crop_filter = {

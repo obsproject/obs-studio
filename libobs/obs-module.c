@@ -84,7 +84,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 	if (!module || !path || !obs)
 		return MODULE_ERROR;
 
-	blog(LOG_INFO, "---------------------------------");
+	blog(LOG_DEBUG, "---------------------------------");
 
 	mod.module = os_dlopen(path);
 	if (!mod.module) {
@@ -104,7 +104,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 	mod.next      = obs->first_module;
 
 	if (mod.file) {
-		blog(LOG_INFO, "Loading module: %s", mod.file);
+		blog(LOG_DEBUG, "Loading module: %s", mod.file);
 	}
 
 	*module = bmemdup(&mod, sizeof(mod));
@@ -136,6 +136,14 @@ bool obs_init_module(obs_module_t *module)
 
 	profile_end(profile_name);
 	return module->loaded;
+}
+
+void obs_log_loaded_modules(void)
+{
+	blog(LOG_INFO, "  Loaded Modules:");
+
+	for (obs_module_t *mod = obs->first_module; !!mod; mod = mod->next)
+		blog(LOG_INFO, "    %s", mod->file);
 }
 
 const char *obs_get_module_file_name(obs_module_t *module)

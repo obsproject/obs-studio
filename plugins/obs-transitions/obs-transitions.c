@@ -9,6 +9,7 @@ extern struct obs_source_info fade_transition;
 extern struct obs_source_info swipe_transition;
 extern struct obs_source_info slide_transition;
 extern struct obs_source_info fade_to_color_transition;
+extern struct obs_source_info luma_wipe_transition;
 
 bool obs_module_load(void)
 {
@@ -17,5 +18,6 @@ bool obs_module_load(void)
 	obs_register_source(&swipe_transition);
 	obs_register_source(&slide_transition);
 	obs_register_source(&fade_to_color_transition);
+	obs_register_source(&luma_wipe_transition);
 	return true;
 }

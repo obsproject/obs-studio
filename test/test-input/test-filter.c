@@ -5,8 +5,9 @@ struct test_filter {
 	gs_effect_t *whatever;
 };
 
-static const char *filter_getname(void)
+static const char *filter_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return "Test";
 }
 

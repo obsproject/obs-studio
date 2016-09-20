@@ -112,6 +112,10 @@ MODULE_EXPORT void obs_module_free_locale(void);
 		text_lookup_getstr(obs_module_lookup, val, &out); \
 		return out; \
 	} \
+	bool obs_module_get_string(const char *val, const char **out) \
+	{ \
+		return text_lookup_getstr(obs_module_lookup, val, out); \
+	} \
 	void obs_module_set_locale(const char *locale) \
 	{ \
 		if (obs_module_lookup) text_lookup_destroy(obs_module_lookup); \
@@ -127,13 +131,18 @@ MODULE_EXPORT void obs_module_free_locale(void);
 /** Helper function for looking up locale if default locale handler was used */
 MODULE_EXTERN const char *obs_module_text(const char *lookup_string);
 
+/** Helper function for looking up locale if default locale handler was used,
+ * returns true if text found, otherwise false */
+MODULE_EXTERN bool obs_module_get_string(const char *lookup_string,
+		const char **translated_string);
+
 /** Helper function that returns the current module */
 MODULE_EXTERN obs_module_t *obs_current_module(void);
 
 /**
  * Returns the location to a module data file associated with the current
  * module.  Free with bfree when complete.  Equivalent to:
- *    obs_find_module_file(obs_current_modile(), file);
+ *    obs_find_module_file(obs_current_module(), file);
  */
 #define obs_module_file(file) obs_find_module_file(obs_current_module(), file)
 
@@ -141,7 +150,7 @@ MODULE_EXTERN obs_module_t *obs_current_module(void);
  * Returns the location to a module config file associated with the current
  * module.  Free with bfree when complete.  Will return NULL if configuration
  * directory is not set.  Equivalent to:
- *    obs_module_get_config_path(obs_current_modile(), file);
+ *    obs_module_get_config_path(obs_current_module(), file);
  */
 #define obs_module_config_path(file) \
 	obs_module_get_config_path(obs_current_module(), file)

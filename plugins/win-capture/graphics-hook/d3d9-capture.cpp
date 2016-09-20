@@ -36,31 +36,25 @@ struct d3d9_data {
 	bool                   using_shtex : 1;
 	bool                   using_scale : 1;
 
-	volatile bool          issued_queries[NUM_BUFFERS];
+	/* shared texture */
+	IDirect3DSurface9      *d3d9_copytex;
+	ID3D11Device           *d3d11_device;
+	ID3D11DeviceContext    *d3d11_context;
+	ID3D11Resource         *d3d11_tex;
+	struct shtex_data      *shtex_info;
+	HANDLE                 handle;
+	int                    patch;
 
-	union {
-		/* shared texture */
-		struct {
-			IDirect3DSurface9      *d3d9_copytex;
-			ID3D11Device           *d3d11_device;
-			ID3D11DeviceContext    *d3d11_context;
-			ID3D11Resource         *d3d11_tex;
-			struct shtex_data      *shtex_info;
-			HANDLE                 handle;
-			int                    patch;
-		};
-		/* shared memory */
-		struct {
-			IDirect3DSurface9      *copy_surfaces[NUM_BUFFERS];
-			IDirect3DSurface9      *render_targets[NUM_BUFFERS];
-			IDirect3DQuery9        *queries[NUM_BUFFERS];
-			struct shmem_data      *shmem_info;
-			bool                   texture_mapped[NUM_BUFFERS];
-			uint32_t               pitch;
-			int                    cur_tex;
-			int                    copy_wait;
-		};
-	};
+	/* shared memory */
+	IDirect3DSurface9      *copy_surfaces[NUM_BUFFERS];
+	IDirect3DSurface9      *render_targets[NUM_BUFFERS];
+	IDirect3DQuery9        *queries[NUM_BUFFERS];
+	struct shmem_data      *shmem_info;
+	bool                   texture_mapped[NUM_BUFFERS];
+	volatile bool          issued_queries[NUM_BUFFERS];
+	uint32_t               pitch;
+	int                    cur_tex;
+	int                    copy_wait;
 };
 
 static struct d3d9_data data = {};
@@ -229,14 +223,30 @@ static inline bool d3d9_shtex_init_shtex()
 
 static inline bool d3d9_shtex_init_copytex()
 {
-	uint8_t *patch_addr = get_d3d9_patch_addr(data.d3d9, data.patch);
+	struct d3d9_offsets offsets = global_hook_info->offsets.d3d9;
+	uint8_t *patch_addr = nullptr;
+	BOOL *p_is_d3d9 = nullptr;
 	uint8_t saved_data[MAX_PATCH_SIZE];
 	size_t patch_size = 0;
+	BOOL was_d3d9ex = false;
 	IDirect3DTexture9 *tex;
 	DWORD protect_val;
 	HRESULT hr;
 
-	if (patch_addr) {
+	if (offsets.d3d9_clsoff && offsets.is_d3d9ex_clsoff) {
+		uint8_t *device_ptr = (uint8_t*)(data.device);
+		uint8_t *d3d9_ptr =
+			*(uint8_t**)(device_ptr + offsets.d3d9_clsoff);
+		p_is_d3d9 = (BOOL*)(d3d9_ptr + offsets.is_d3d9ex_clsoff);
+	} else {
+		patch_addr = get_d3d9_patch_addr(data.d3d9, data.patch);
+	}
+
+	if (p_is_d3d9) {
+		was_d3d9ex = *p_is_d3d9;
+		*p_is_d3d9 = true;
+
+	} else if (patch_addr) {
 		patch_size = patch[data.patch].size;
 		VirtualProtect(patch_addr, patch_size, PAGE_EXECUTE_READWRITE,
 				&protect_val);
@@ -248,7 +258,10 @@ static inline bool d3d9_shtex_init_copytex()
 			D3DUSAGE_RENDERTARGET, data.d3d9_format,
 			D3DPOOL_DEFAULT, &tex, &data.handle);
 
-	if (patch_addr && patch_size) {
+	if (p_is_d3d9) {
+		*p_is_d3d9 = was_d3d9ex;
+
+	} else if (patch_addr && patch_size) {
 		memcpy(patch_addr, saved_data, patch_size);
 		VirtualProtect(patch_addr, patch_size, protect_val,
 				&protect_val);
@@ -455,6 +468,9 @@ static bool d3d9_init_format_swapchain(uint32_t &cx, uint32_t &cy, HWND &window)
 static void d3d9_init(IDirect3DDevice9 *device)
 {
 	IDirect3DDevice9Ex *d3d9ex = nullptr;
+	bool has_d3d9ex_bool_offset =
+		global_hook_info->offsets.d3d9.d3d9_clsoff &&
+		global_hook_info->offsets.d3d9.is_d3d9ex_clsoff;
 	bool success;
 	uint32_t cx = 0;
 	uint32_t cy = 0;
@@ -469,8 +485,10 @@ static void d3d9_init(IDirect3DDevice9 *device)
 	if (SUCCEEDED(hr)) {
 		d3d9ex->Release();
 		data.patch = -1;
-	} else {
+	} else if (!has_d3d9ex_bool_offset) {
 		data.patch = get_d3d9_patch(data.d3d9);
+	} else {
+		data.patch = -1;
 	}
 
 	if (!d3d9_init_format_backbuffer(cx, cy, window)) {
@@ -479,7 +497,8 @@ static void d3d9_init(IDirect3DDevice9 *device)
 		}
 	}
 
-	if (global_hook_info->force_shmem || (!d3d9ex && data.patch == -1)) {
+	if (global_hook_info->force_shmem ||
+	    (!d3d9ex && data.patch == -1 && !has_d3d9ex_bool_offset)) {
 		success = d3d9_shmem_init(cx, cy, window);
 	} else {
 		success = d3d9_shtex_init(cx, cy, window);
@@ -603,6 +622,11 @@ static void d3d9_capture(IDirect3DDevice9 *device,
 		d3d9_init(device);
 	}
 	if (capture_ready()) {
+		if (data.device != device) {
+			d3d9_free();
+			return;
+		}
+
 		if (data.using_shtex)
 			d3d9_shtex_capture(backbuffer);
 		else

@@ -58,8 +58,9 @@ static void *sinewave_thread(void *pdata)
 
 /* ------------------------------------------------------------------------- */
 
-static const char *sinewave_getname(void)
+static const char *sinewave_getname(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return "Sinewave Sound Source (Test)";
 }
 

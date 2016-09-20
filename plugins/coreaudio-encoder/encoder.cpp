@@ -1346,7 +1346,8 @@ bool obs_module_load(void)
 {
 #ifdef _WIN32
 	if (!load_core_audio()) {
-		CA_LOG(LOG_WARNING, "Couldn't load CoreAudio AAC encoder");
+		CA_LOG(LOG_WARNING, "CoreAudio AAC encoder not installed on "
+				"the system or couldn't be loaded");
 		return true;
 	}
 

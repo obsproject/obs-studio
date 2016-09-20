@@ -300,6 +300,7 @@ struct gs_shader_param {
 
 	char                 *name;
 	gs_shader_t          *shader;
+	gs_samplerstate_t    *next_sampler;
 	GLint                texture_id;
 	size_t               sampler_id;
 	int                  array_count;

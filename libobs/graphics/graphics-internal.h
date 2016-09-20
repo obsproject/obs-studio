@@ -225,6 +225,8 @@ struct gs_exports {
 	void (*gs_shader_set_val)(gs_sparam_t *param, const void *val,
 			size_t size);
 	void (*gs_shader_set_default)(gs_sparam_t *param);
+	void (*gs_shader_set_next_sampler)(gs_sparam_t *param,
+			gs_samplerstate_t *sampler);
 
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */

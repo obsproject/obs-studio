@@ -356,6 +356,7 @@ struct gs_shader_param {
 	gs_shader_param_type           type;
 
 	uint32_t                       textureID;
+	struct gs_sampler_state        *nextSampler = nullptr;
 
 	int                            arrayCount;
 
