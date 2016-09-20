@@ -578,7 +578,7 @@ bool obs_property_modified(obs_property_t *p, obs_data_t *settings)
 	return false;
 }
 
-bool obs_property_button_clicked(obs_property_t *p, void *obj)
+bool obs_property_button_clicked(obs_property_t *p, void *obj, obs_data_t *settings)
 {
 	struct obs_context_data *context = obj;
 	if (p) {
@@ -586,7 +586,7 @@ bool obs_property_button_clicked(obs_property_t *p, void *obj)
 				OBS_PROPERTY_BUTTON);
 		if (data && data->callback)
 			return data->callback(p->parent, p,
-					(context ? context->data : NULL));
+					(context ? context->data : NULL), settings);
 	}
 
 	return false;

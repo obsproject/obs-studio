@@ -903,7 +903,7 @@ static void show_syphon_license_internal(void)
 }
 
 static bool show_syphon_license(obs_properties_t *props, obs_property_t *prop,
-		void *data)
+		void *data, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(prop);

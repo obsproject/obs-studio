@@ -1305,7 +1305,7 @@ static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p,
 }
 
 static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p,
-		void *data)
+		void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
 	input->QueueAction(Action::ConfigVideo);
@@ -1327,7 +1327,7 @@ static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p,
 }*/
 
 static bool CrossbarConfigClicked(obs_properties_t *props, obs_property_t *p,
-		void *data)
+		void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
 	input->QueueAction(Action::ConfigCrossbar1);
@@ -1698,7 +1698,7 @@ static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p,
 }
 
 static bool ActivateClicked(obs_properties_t *, obs_property_t *p,
-		void *data)
+		void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
 

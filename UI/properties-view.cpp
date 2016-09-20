@@ -1672,7 +1672,7 @@ void WidgetInfo::EditableListChanged()
 
 void WidgetInfo::ButtonClicked()
 {
-	if (obs_property_button_clicked(property, view->obj)) {
+	if (obs_property_button_clicked(property, view->obj, view->settings)) {
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 				Qt::QueuedConnection);
 	}
