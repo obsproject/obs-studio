@@ -5,15 +5,30 @@ if(APPLE)
 	include_directories(${COCOA})
 endif()
 
+if(WIN32 OR APPLE)
+	set(frontend-tools_HEADERS
+		auto-scene-switcher.hpp
+		)
+	set(frontend-tools_SOURCES
+		auto-scene-switcher.cpp
+		)
+	set(frontend-tools_UI
+		forms/auto-scene-switcher.ui
+		)
+endif()
+
 set(frontend-tools_HEADERS
-	auto-scene-switcher.hpp
+	${frontend-tools_HEADERS}
+	output-timer.hpp
 	)
 set(frontend-tools_SOURCES
+	${frontend-tools_SOURCES}
 	frontend-tools.c
-	auto-scene-switcher.cpp
+	output-timer.cpp
 	)
 set(frontend-tools_UI
-	forms/auto-scene-switcher.ui
+	${frontend-tools_UI}
+	forms/output-timer.ui
 	)
 
 if(WIN32)
