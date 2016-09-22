@@ -150,6 +150,7 @@ private:
 	QAction       *showHide;
 	QAction       *showPreview;
 	QAction       *exit;
+	bool          disableHiding = false;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -362,7 +363,10 @@ private slots:
 
 	inline void ToggleShowHide()
 	{
-		SetShowing(!isVisible());
+		bool showing = isVisible();
+		if (disableHiding && showing)
+			return;
+		SetShowing(!showing);
 	}
 
 private:
