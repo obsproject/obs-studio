@@ -366,6 +366,8 @@ private slots:
 		bool showing = isVisible();
 		if (disableHiding && showing)
 			return;
+		if (showing)
+			CloseDialogs();
 		SetShowing(!showing);
 	}
 
