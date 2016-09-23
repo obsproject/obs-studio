@@ -925,14 +925,35 @@ int obs_reset_video(struct obs_video_info *ovi)
 		}
 	}
 
+	const char *scale_type_name = "";
+	switch (ovi->scale_type) {
+	case OBS_SCALE_DISABLE:
+		scale_type_name = "Disabled";
+		break;
+	case OBS_SCALE_POINT:
+		scale_type_name = "Point";
+		break;
+	case OBS_SCALE_BICUBIC:
+		scale_type_name = "Bicubic";
+		break;
+	case OBS_SCALE_BILINEAR:
+		scale_type_name = "Bilinear";
+		break;
+	case OBS_SCALE_LANCZOS:
+		scale_type_name = "Lanczos";
+		break;
+	}
+
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "video settings reset:\n"
 	               "\tbase resolution:   %dx%d\n"
 	               "\toutput resolution: %dx%d\n"
+	               "\tdownscale filter:  %s\n"
 	               "\tfps:               %d/%d\n"
 	               "\tformat:            %s",
 	               ovi->base_width, ovi->base_height,
 	               ovi->output_width, ovi->output_height,
+	               scale_type_name,
 	               ovi->fps_num, ovi->fps_den,
 		       get_video_format_name(ovi->output_format));
 
