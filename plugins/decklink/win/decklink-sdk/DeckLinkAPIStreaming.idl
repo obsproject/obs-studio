@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2014 Blackmagic Design
+** Copyright (c) 2016 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -237,8 +237,8 @@ interface IBMDStreamingH264NALParser;
     helpstring("Represents a mutable encoded video mode.")
 ] interface IBMDStreamingMutableVideoEncodingMode : IBMDStreamingVideoEncodingMode
 {
-    HRESULT SetSourceRect([in] unsigned long posX, [in] unsigned long posY, [in] unsigned long width, [in] unsigned long height);
-    HRESULT SetDestSize([in] unsigned long width, [in] unsigned long height);
+    HRESULT SetSourceRect([in] unsigned int posX, [in] unsigned int posY, [in] unsigned int width, [in] unsigned int height);
+    HRESULT SetDestSize([in] unsigned int width, [in] unsigned int height);
     HRESULT SetFlag([in] BMDStreamingEncodingModePropertyID cfgID, [in] BOOL value);
     HRESULT SetInt([in] BMDStreamingEncodingModePropertyID cfgID, [in] LONGLONG value);
     HRESULT SetFloat([in] BMDStreamingEncodingModePropertyID cfgID, [in] double value);
@@ -298,7 +298,7 @@ interface IBMDStreamingH264NALParser;
     HRESULT GetBytes([out] void** buffer);
     HRESULT GetBytesWithSizePrefix([out] void** buffer); // Contains a 32-bit unsigned big endian size prefix
     HRESULT GetDisplayTime([in] ULONGLONG requestedTimeScale, [out] ULONGLONG* displayTime);
-    HRESULT GetPacketIndex([out] unsigned long* packetIndex); // Deprecated
+    HRESULT GetPacketIndex([out] unsigned int* packetIndex); // Deprecated
 };
 
 /* Interface IBMDStreamingAudioPacket - Represents a chunk of audio data */
@@ -313,7 +313,7 @@ interface IBMDStreamingH264NALParser;
     long GetPayloadSize(void);
     HRESULT GetBytes([out] void** buffer);
     HRESULT GetPlayTime([in] ULONGLONG requestedTimeScale, [out] ULONGLONG* playTime);
-    HRESULT GetPacketIndex([out] unsigned long* packetIndex); // Deprecated
+    HRESULT GetPacketIndex([out] unsigned int* packetIndex); // Deprecated
 };
 
 /* Interface IBMDStreamingMPEG2TSPacket - Represent an MPEG2 Transport Stream packet */
@@ -338,10 +338,12 @@ interface IBMDStreamingH264NALParser;
 {
     HRESULT IsNALSequenceParameterSet([in] IBMDStreamingH264NALPacket* nal);
     HRESULT IsNALPictureParameterSet([in] IBMDStreamingH264NALPacket* nal);
-    HRESULT GetProfileAndLevelFromSPS([in] IBMDStreamingH264NALPacket* nal, [out] unsigned long* profileIdc, [out] unsigned long* profileCompatability, [out] unsigned long* levelIdc);
+    HRESULT GetProfileAndLevelFromSPS([in] IBMDStreamingH264NALPacket* nal, [out] unsigned int* profileIdc, [out] unsigned int* profileCompatability, [out] unsigned int* levelIdc);
 };
 
 /* Coclasses */
+
+importlib("stdole2.tlb");
 
 [
     uuid(0CAA31F6-8A26-40B0-86A4-BF58DCCA710C),
@@ -358,3 +360,5 @@ interface IBMDStreamingH264NALParser;
 {
     [default] interface IBMDStreamingH264NALParser;
 };
+
+
