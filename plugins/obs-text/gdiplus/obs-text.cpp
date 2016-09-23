@@ -930,7 +930,7 @@ bool obs_module_load(void)
 	{
 		obs_data_t *font_obj = obs_data_create();
 		obs_data_set_default_string(font_obj, "face", "Arial");
-		obs_data_set_default_int(font_obj, "size", 22);
+		obs_data_set_default_int(font_obj, "size", 36);
 
 		obs_data_set_default_obj(settings, S_FONT, font_obj);
 		obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
