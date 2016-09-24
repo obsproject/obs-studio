@@ -719,28 +719,31 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	BOOL success;
 	LPVOID data;
 	DWORD size;
+	char utf8_lib[512];
 
 	if (!ver_initialized && !initialize_version_functions())
 		return false;
 	if (!ver_initialize_success)
 		return false;
 
+	os_wcs_to_utf8(lib, 0, utf8_lib, sizeof(utf8_lib));
+
 	size = get_file_version_info_size(lib, NULL);
 	if (!size) {
-		blog(LOG_ERROR, "Failed to get windows version info size");
+		blog(LOG_ERROR, "Failed to get %s version info size", utf8_lib);
 		return false;
 	}
 
 	data = bmalloc(size);
 	if (!get_file_version_info(lib, 0, size, data)) {
-		blog(LOG_ERROR, "Failed to get windows version info");
+		blog(LOG_ERROR, "Failed to get %s version info", utf8_lib);
 		bfree(data);
 		return false;
 	}
 
 	success = ver_query_value(data, L"\\", (LPVOID*)&info, &len);
 	if (!success || !info || !len) {
-		blog(LOG_ERROR, "Failed to get windows version info value");
+		blog(LOG_ERROR, "Failed to get %s version info value", utf8_lib);
 		bfree(data);
 		return false;
 	}
