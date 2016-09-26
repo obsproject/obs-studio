@@ -54,6 +54,7 @@ class QNetworkReply;
 #define SIMPLE_ENCODER_X264_LOWCPU             "x264_lowcpu"
 #define SIMPLE_ENCODER_QSV                     "qsv"
 #define SIMPLE_ENCODER_NVENC                   "nvenc"
+#define SIMPLE_ENCODER_AMD                     "amd"
 
 #define PREVIEW_EDGE_SIZE 10
 

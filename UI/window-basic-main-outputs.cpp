@@ -161,9 +161,11 @@ struct SimpleOutput : BasicOutputHandler {
 
 	int CalcCRF(int crf);
 
+	void UpdateStreamingSettings_amd(obs_data_t *settings, int bitrate);
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
 	void UpdateRecordingSettings_nvenc(int cqp);
+	void UpdateRecordingSettings_amd_cqp(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -254,6 +256,8 @@ void SimpleOutput::LoadRecordingPreset()
 			lowCPUx264 = true;
 		} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
 			LoadRecordingPreset_h264("obs_qsv11");
+		} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
+			LoadRecordingPreset_h264("amd_amf_h264");
 		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
 			LoadRecordingPreset_h264("ffmpeg_nvenc");
 		}
@@ -278,6 +282,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"StreamEncoder");
 	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
 		LoadStreamingPreset_h264("obs_qsv11");
+	else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0)
+		LoadStreamingPreset_h264("amd_amf_h264");
 	else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0)
 		LoadStreamingPreset_h264("ffmpeg_nvenc");
 	else
@@ -343,12 +349,19 @@ void SimpleOutput::Update()
 	const char *presetType;
 	const char *preset;
 
-	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
+	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
 		presetType = "QSVPreset";
-	else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0)
+
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
+		presetType = "AMDPreset";
+		UpdateStreamingSettings_amd(h264Settings, videoBitrate);
+
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
 		presetType = "NVENCPreset";
-	else
+
+	} else {
 		presetType = "Preset";
+	}
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
 
@@ -485,6 +498,48 @@ void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 	obs_data_release(settings);
 }
 
+void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
+		int bitrate)
+{
+	int bits = bitrate * 1000;
+	obs_data_set_int(settings, "AMF.H264.Usage", 0);
+	obs_data_set_int(settings, "AMF.H264.QualityPreset", 2);
+	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 51);
+	obs_data_set_int(settings, "AMF.H264.FillerData", 1);
+	obs_data_set_int(settings, "AMF.H264.FrameSkipping", -1);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Pattern", 2);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Reference", 1);
+	obs_data_set_int(settings, "AMF.H264.Bitrate.Target", bits);
+	obs_data_set_int(settings, "AMF.H264.Bitrate.Peak", bits);
+	obs_data_set_int(settings, "AMF.H264Advanced.VBVBuffer.Size", bits);
+	obs_data_set_string(settings, "profile", "high");
+}
+
+void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
+{
+	obs_data_t *settings = obs_data_create();
+
+	obs_data_set_int(settings, "AMF.H264.Usage", 0);
+	obs_data_set_int(settings, "AMF.H264.QualityPreset", 2);
+	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 51);
+	obs_data_set_int(settings, "AMF.H264.FillerData", 0);
+	obs_data_set_int(settings, "AMF.H264.FrameSkipping", 0);
+	obs_data_set_int(settings, "AMF.H264.QP.Minimum", 0);
+	obs_data_set_int(settings, "AMF.H264.QP.Maximum", 51);
+	obs_data_set_int(settings, "AMF.H264.QP.IFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.QP.PFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.QP.BFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Pattern", 3);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Reference", 1);
+	obs_data_set_int(settings, "keyint_sec", 1);
+	obs_data_set_string(settings, "rate_control", "CQP");
+	obs_data_set_string(settings, "profile", "high");
+
+	obs_encoder_update(h264Recording, settings);
+
+	obs_data_release(settings);
+}
+
 void SimpleOutput::UpdateRecordingSettings()
 {
 	bool ultra_hq = (videoQuality == "HQ");
@@ -495,6 +550,9 @@ void SimpleOutput::UpdateRecordingSettings()
 
 	} else if (videoEncoder == SIMPLE_ENCODER_QSV) {
 		UpdateRecordingSettings_qsv11(crf);
+
+	} else if (videoEncoder == SIMPLE_ENCODER_AMD) {
+		UpdateRecordingSettings_amd_cqp(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
