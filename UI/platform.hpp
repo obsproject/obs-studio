@@ -52,6 +52,7 @@ void SetAlwaysOnTop(QWidget *window, bool enable);
 uint32_t GetWindowsVersion();
 void SetAeroEnabled(bool enable);
 void SetProcessPriority(const char *priority);
+void SetWin32DropStyle(QWidget *window);
 #endif
 
 #ifdef __APPLE__

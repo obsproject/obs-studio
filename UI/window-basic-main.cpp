@@ -120,6 +120,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
+	setAcceptDrops(true);
+
 	ui->setupUi(this);
 	ui->previewDisabledLabel->setVisible(false);
 
@@ -1166,6 +1168,7 @@ void OBSBasic::OBSInit()
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
 #ifdef _WIN32
+	SetWin32DropStyle(this);
 	show();
 #endif
 

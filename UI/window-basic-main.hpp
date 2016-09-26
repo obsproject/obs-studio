@@ -299,6 +299,12 @@ private:
 	inline void OnActivate();
 	inline void OnDeactivate();
 
+	void AddDropSource(const char *file, bool image);
+	void dragEnterEvent(QDragEnterEvent *event) override;
+	void dragLeaveEvent(QDragLeaveEvent *event) override;
+	void dragMoveEvent(QDragMoveEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
