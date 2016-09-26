@@ -3104,7 +3104,10 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
     {
         RTMP_Log(RTMP_LOGERROR, "rtmp server requested close");
         RTMP_Close(r);
-#if defined(CRYPTO) || defined(USE_ONLY_MD5)
+
+        // disabled this for now, if the server sends an rtmp close message librtmp
+        // will enter an infinite loop here until stack is exhausted.
+#if 0 && (defined(CRYPTO) || defined(USE_ONLY_MD5))
         if ((r->Link.protocol & RTMP_FEATURE_WRITE) &&
                 !(r->Link.pFlags & RTMP_PUB_CLEAN) &&
                 (  !(r->Link.pFlags & RTMP_PUB_NAME) ||
