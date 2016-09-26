@@ -2467,6 +2467,8 @@ void OBSBasicSettings::SaveOutputSettings()
 		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
 		presetType = "NVENCPreset";
+	else if (encoder == SIMPLE_ENCODER_AMD)
+		presetType = "AMDPreset";
 	else
 		presetType = "Preset";
 
@@ -3246,6 +3248,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 				ENCODER_STR("Hardware.NVENC"),
 				QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("amd_amf_h264"))
+		ui->simpleOutRecEncoder->addItem(
+				ENCODER_STR("Hardware.AMD"),
+				QString(SIMPLE_ENCODER_AMD));
 #undef ADD_QUALITY
 }
 
@@ -3262,6 +3268,10 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 		ui->simpleOutStrEncoder->addItem(
 				ENCODER_STR("Hardware.NVENC"),
 				QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("amd_amf_h264"))
+		ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.AMD"),
+				QString(SIMPLE_ENCODER_AMD));
 #undef ENCODER_STR
 }
 
@@ -3321,6 +3331,10 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "default";
 		preset = curNVENCPreset;
+
+	} else if (encoder == SIMPLE_ENCODER_AMD) {
+		/* none */
+		defaultPreset = "";
 
 	} else {
 		ui->simpleOutPreset->addItem("ultrafast", "ultrafast");
