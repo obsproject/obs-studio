@@ -165,8 +165,8 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
 	void UpdateRecordingSettings_nvenc(int cqp);
-	void UpdateRecordingSettings_amd_vbr_lat(int bitrate);
 	void UpdateRecordingSettings_amd_cqp(int cqp);
+	void UpdateRecordingSettings_amd_cqp_lossless(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
@@ -516,35 +516,6 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_string(settings, "profile", "high");
 }
 
-void SimpleOutput::UpdateRecordingSettings_amd_vbr_lat(int bitrate)
-{
-	obs_data_t *settings = obs_data_create();
-	int bits = bitrate * 1000;
-
-	obs_data_set_int(settings, "AMF.H264.Usage", 0);
-	obs_data_set_int(settings, "AMF.H264.QualityPreset", 2);
-	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 51);
-	obs_data_set_int(settings, "AMF.H264.FillerData", 0);
-	obs_data_set_int(settings, "AMF.H264.FrameSkipping", 0);
-	obs_data_set_int(settings, "AMF.H264.QP.Minimum", 0);
-	obs_data_set_int(settings, "AMF.H264.QP.Maximum", 51);
-	obs_data_set_int(settings, "AMF.H264.QP.IFrame", 22);
-	obs_data_set_int(settings, "AMF.H264.QP.PFrame", 22);
-	obs_data_set_int(settings, "AMF.H264.QP.BFrame", 22);
-	obs_data_set_int(settings, "AMF.H264.BPicture.Pattern", 3);
-	obs_data_set_int(settings, "AMF.H264.BPicture.Reference", 1);
-	obs_data_set_int(settings, "AMF.H264.Bitrate.Target", bits);
-	obs_data_set_int(settings, "AMF.H264.Bitrate.Peak", bits);
-	obs_data_set_int(settings, "AMF.H264Advanced.VBVBuffer.Size", bits);
-	obs_data_set_int(settings, "keyint_sec", 1);
-	obs_data_set_string(settings, "rate_control", "VBR_LAT");
-	obs_data_set_string(settings, "profile", "high");
-
-	obs_encoder_update(h264Recording, settings);
-
-	obs_data_release(settings);
-}
-
 void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 {
 	obs_data_t *settings = obs_data_create();
@@ -570,6 +541,30 @@ void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 	obs_data_release(settings);
 }
 
+void SimpleOutput::UpdateRecordingSettings_amd_cqp_lossless(int cqp) {
+	obs_data_t *settings = obs_data_create();
+
+	obs_data_set_int(settings, "AMF.H264.Usage", 0);
+	obs_data_set_int(settings, "AMF.H264.QualityPreset", 2);
+	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 51);
+	obs_data_set_int(settings, "AMF.H264.FillerData", 0);
+	obs_data_set_int(settings, "AMF.H264.FrameSkipping", 0);
+	obs_data_set_int(settings, "AMF.H264.QP.Minimum", 0);
+	obs_data_set_int(settings, "AMF.H264.QP.Maximum", 51);
+	obs_data_set_int(settings, "AMF.H264.QP.IFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.QP.PFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.QP.BFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Pattern", 3);
+	obs_data_set_int(settings, "AMF.H264.BPicture.Reference", 1);
+	obs_data_set_int(settings, "AMF.H264Advanced.IDRPeriod", 1);
+	obs_data_set_string(settings, "rate_control", "CQP");
+	obs_data_set_string(settings, "profile", "high");
+
+	obs_encoder_update(h264Recording, settings);
+
+	obs_data_release(settings);
+}
+
 void SimpleOutput::UpdateRecordingSettings()
 {
 	bool ultra_hq = (videoQuality == "HQ");
@@ -582,11 +577,11 @@ void SimpleOutput::UpdateRecordingSettings()
 		UpdateRecordingSettings_qsv11(crf);
 
 	} else if (videoEncoder == SIMPLE_ENCODER_AMD) {
-		if (ultra_hq) {
-			UpdateRecordingSettings_amd_vbr_lat(80000);
-		} else {
-			UpdateRecordingSettings_amd_cqp(crf);
-		}
+		/*if (videoQuality == "Lossless") {
+			UpdateRecordingSettings_amd_cqp_lossless(0);
+		} else {*/
+		UpdateRecordingSettings_amd_cqp(crf);
+		//}
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
