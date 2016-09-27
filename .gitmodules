@@ -8,3 +8,6 @@
 [submodule "plugins/enc-amf"]
 	path = plugins/enc-amf
 	url = https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework.git
+[submodule "plugins/obs-browser"]
+	path = plugins/obs-browser
+	url = https://github.com/kc5nra/obs-browser.git
