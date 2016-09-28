@@ -164,7 +164,6 @@ size_t os_fread_mbs(FILE *file, char **pstr)
 size_t os_fread_utf8(FILE *file, char **pstr)
 {
 	size_t size = 0;
-	size_t size_read;
 	size_t len = 0;
 
 	*pstr = NULL;
@@ -177,11 +176,13 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 		char *utf8str;
 		off_t offset;
 
+		bom[0] = 0;
+		bom[1] = 0;
+		bom[2] = 0;
+
 		/* remove the ghastly BOM if present */
 		fseek(file, 0, SEEK_SET);
-		size_read = fread(bom, 1, 3, file);
-		if (size_read != 3)
-			return 0;
+		fread(bom, 1, 3, file);
 
 		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
 
