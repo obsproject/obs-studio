@@ -53,16 +53,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>LicenseAgreement.ClickIAgreeToContinue</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="Line" name="line">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -87,14 +77,7 @@
       <item>
        <widget class="QPushButton" name="agree">
         <property name="text">
-         <string>LicenseAgreement.IAgree</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="decline">
-        <property name="text">
-         <string>LicenseAgreement.Exit</string>
+         <string>OK</string>
         </property>
        </widget>
       </item>
@@ -118,22 +101,6 @@
     <hint type="destinationlabel">
      <x>40</x>
      <y>424</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>decline</sender>
-   <signal>clicked()</signal>
-   <receiver>OBSLicenseAgreement</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>312</x>
-     <y>410</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>424</x>
-     <y>418</y>
     </hint>
    </hints>
   </connection>
