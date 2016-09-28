@@ -742,7 +742,7 @@ inline void TextSource::Tick(float seconds)
 
 	update_time_elapsed += seconds;
 
-	if (update_time_elapsed >= 2.0f) {
+	if (update_time_elapsed >= 1.0f) {
 		time_t t = get_modified_timestamp(file.c_str());
 		update_time_elapsed = 0.0f;
 
