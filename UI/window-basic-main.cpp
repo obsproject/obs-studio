@@ -1469,11 +1469,6 @@ OBSBasic::~OBSBasic()
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
-	if (isVisible())
-		config_set_string(App()->GlobalConfig(),
-				"BasicWindow", "geometry",
-				saveGeometry().toBase64().constData());
-
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
 			splitterSizes[0]);
 	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
@@ -2639,6 +2634,11 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	if (isVisible())
+		config_set_string(App()->GlobalConfig(),
+				"BasicWindow", "geometry",
+				saveGeometry().toBase64().constData());
+
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
