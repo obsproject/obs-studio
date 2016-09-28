@@ -54,6 +54,7 @@ struct nvenc_encoder {
 
 	int                            height;
 	bool                           first_packet;
+	bool                           initialized;
 };
 
 static const char *nvenc_getname(void *unused)
@@ -112,6 +113,8 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 		warn("Failed to allocate dst_picture: %s", av_err2str(ret));
 		return false;
 	}
+
+	enc->initialized = true;
 
 	*((AVPicture*)enc->vframe) = enc->dst_picture;
 	return true;
@@ -233,15 +236,19 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 static void nvenc_destroy(void *data)
 {
 	struct nvenc_encoder *enc = data;
-	AVPacket pkt = {0};
-	int r_pkt = 1;
 
-	while (r_pkt) {
-		if (avcodec_encode_video2(enc->context, &pkt, NULL, &r_pkt) < 0)
-			break;
+	if (enc->initialized) {
+		AVPacket pkt = {0};
+		int r_pkt = 1;
 
-		if (r_pkt)
-			av_free_packet(&pkt);
+		while (r_pkt) {
+			if (avcodec_encode_video2(enc->context, &pkt, NULL,
+						&r_pkt) < 0)
+				break;
+
+			if (r_pkt)
+				av_free_packet(&pkt);
+		}
 	}
 
 	avcodec_close(enc->context);
