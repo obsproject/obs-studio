@@ -137,9 +137,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		restoreGeometry(byteArray);
 
 		QRect windowGeometry = normalGeometry();
-		int posx = windowGeometry.x();
-		int posy = windowGeometry.y();
-		if (!WindowPositionValid(posx, posy)) {
+		if (!WindowPositionValid(windowGeometry)) {
 			QRect rect = App()->desktop()->availableGeometry();
 			setGeometry(QStyle::alignedRect(
 						Qt::LeftToRight,

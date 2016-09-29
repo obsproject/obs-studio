@@ -1518,17 +1518,19 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
-bool WindowPositionValid(int x, int y)
+bool WindowPositionValid(QRect rect)
 {
 	vector<MonitorInfo> monitors;
 	GetMonitors(monitors);
 
 	for (auto &monitor : monitors) {
-		int br_x = monitor.x + monitor.cx;
-		int br_y = monitor.y + monitor.cy;
+		int left   = int(monitor.x);
+		int top    = int(monitor.y);
+		int right  = left + int(monitor.cx);
+		int bottom = top  + int(monitor.cy);
 
-		if (x >= monitor.x && x < br_x &&
-		    y >= monitor.y && y < br_y)
+		if ((rect.left() - right)  < 0 && (left - rect.right())  < 0 &&
+		    (rect.top()  - bottom) < 0 && (top  - rect.bottom()) < 0)
 			return true;
 	}
 
