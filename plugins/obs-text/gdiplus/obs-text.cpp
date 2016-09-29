@@ -42,9 +42,12 @@ using namespace Gdiplus;
 #define S_FILE                          "file"
 #define S_TEXT                          "text"
 #define S_COLOR                         "color"
+#define S_GRADIENT_COLOR                "gradient_color"
+#define S_GRADIENT_DIRECTION            "gradient_direction"
 #define S_ALIGN                         "align"
 #define S_VALIGN                        "valign"
 #define S_OPACITY                       "opacity"
+#define S_GRADIENT_OPACITY              "gradient_opacity"
 #define S_BKCOLOR                       "bk_color"
 #define S_BKOPACITY                     "bk_opacity"
 #define S_VERTICAL                      "vertical"
@@ -73,9 +76,12 @@ using namespace Gdiplus;
 #define T_FILE                          T_("TextFile")
 #define T_TEXT                          T_("Text")
 #define T_COLOR                         T_("Color")
+#define T_GRADIENT_COLOR                T_("GradientColor")
+#define T_GRADIENTDIRECTION             T_("GradientDirection")
 #define T_ALIGN                         T_("Alignment")
 #define T_VALIGN                        T_("VerticalAlignment")
 #define T_OPACITY                       T_("Opacity")
+#define T_GRADIENT_OPACITY              T_("GradientOpacity")
 #define T_BKCOLOR                       T_("BkColor")
 #define T_BKOPACITY                     T_("BkOpacity")
 #define T_VERTICAL                      T_("Vertical")
@@ -195,7 +201,10 @@ struct TextSource {
 	wstring face;
 	int face_size = 0;
 	uint32_t color = 0xFFFFFF;
+	uint32_t color2 = 0xFFFFFF;
+	float_t gradient_direction = 0;
 	uint32_t opacity = 100;
+	uint32_t opacity2 = 100;
 	uint32_t bk_color = 0;
 	uint32_t bk_opacity = 0;
 	Align align = Align::Left;
@@ -513,9 +522,9 @@ void TextSource::RenderText()
 	unique_ptr<uint8_t> bits(new uint8_t[size.cx * size.cy * 4]);
 	Bitmap bitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
 			bits.get());
-
+		
 	Graphics graphics_bitmap(&bitmap);
-	SolidBrush brush(Color(get_alpha_val(opacity) | (color & 0xFFFFFF)));
+	LinearGradientBrush brush(RectF(0, 0, (float_t)size.cx, (float_t)size.cy), Color(calc_color(color, opacity)), Color(calc_color(color2, opacity2)), gradient_direction, 1);
 	DWORD full_bk_color = bk_color & 0xFFFFFF;
 
 	if (!text.empty() || use_extents)
@@ -625,6 +634,9 @@ inline void TextSource::Update(obs_data_t *s)
 	const char *valign_str = obs_data_get_string(s, S_VALIGN);
 	uint32_t new_color     = obs_data_get_uint32(s, S_COLOR);
 	uint32_t new_opacity   = obs_data_get_uint32(s, S_OPACITY);
+	uint32_t new_color2    = obs_data_get_uint32(s, S_GRADIENT_COLOR);
+	uint32_t new_opacity2  = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
+	float_t new_grad_dir   = (float_t)obs_data_get_double(s, S_GRADIENT_DIRECTION);
 	bool new_vertical      = obs_data_get_bool(s, S_VERTICAL);
 	bool new_outline       = obs_data_get_bool(s, S_OUTLINE);
 	uint32_t new_o_color   = obs_data_get_uint32(s, S_OUTLINE_COLOR);
@@ -674,11 +686,15 @@ inline void TextSource::Update(obs_data_t *s)
 	/* ----------------------------- */
 
 	new_color = rgb_to_bgr(new_color);
+	new_color2 = rgb_to_bgr(new_color2);
 	new_o_color = rgb_to_bgr(new_o_color);
 	new_bk_color = rgb_to_bgr(new_bk_color);
 
 	color = new_color;
 	opacity = new_opacity;
+	color2 = new_color2;
+	opacity2 = new_opacity2;
+	gradient_direction = new_grad_dir;
 	vertical = new_vertical;
 
 	bk_color = new_bk_color;
@@ -855,8 +871,10 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
-
 	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
+	obs_properties_add_color(props, S_GRADIENT_COLOR, T_GRADIENT_COLOR);
+	obs_properties_add_int_slider(props, S_GRADIENT_OPACITY, T_GRADIENT_OPACITY, 0, 100, 1);
+	obs_properties_add_float_slider(props, S_GRADIENT_DIRECTION, T_GRADIENTDIRECTION, 0, 360, 0.1);
 	
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
 	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY,
@@ -937,6 +955,9 @@ bool obs_module_load(void)
 		obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
 		obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
 		obs_data_set_default_int(settings, S_OPACITY, 100);
+		obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
+		obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
+		obs_data_set_default_int(settings, S_GRADIENT_DIRECTION, 90);
 		obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
 		obs_data_set_default_int(settings, S_BKOPACITY, 0);
 		obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
