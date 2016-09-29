@@ -4,6 +4,7 @@
 #include <obs-module.h>
 #include <sys/stat.h>
 #include <windows.h>
+#define GDIPVER 0x0110
 #include <gdiplus.h>
 #include <algorithm>
 #include <string>
@@ -52,10 +53,13 @@ using namespace Gdiplus;
 #define S_BKCOLOR                       "bk_color"
 #define S_BKOPACITY                     "bk_opacity"
 #define S_VERTICAL                      "vertical"
+#define S_RENDER_MODE					"render_mode"
+#define S_ANTIALIAS						"antialias"
 #define S_OUTLINE                       "outline"
 #define S_OUTLINE_SIZE                  "outline_size"
 #define S_OUTLINE_COLOR                 "outline_color"
 #define S_OUTLINE_OPACITY               "outline_opacity"
+#define S_OUTLINE_MODE                  "outline_mode"
 #define S_CHATLOG_MODE                  "chatlog"
 #define S_CHATLOG_LINES                 "chatlog_lines"
 #define S_EXTENTS                       "extents"
@@ -70,6 +74,8 @@ using namespace Gdiplus;
 #define S_VALIGN_TOP                    "top"
 #define S_VALIGN_CENTER                 S_ALIGN_CENTER
 #define S_VALIGN_BOTTOM                 "bottom"
+
+#define S_ADVANCED_OPTIONS				"show_advanced_options"
 
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
@@ -87,10 +93,19 @@ using namespace Gdiplus;
 #define T_BKCOLOR                       T_("BkColor")
 #define T_BKOPACITY                     T_("BkOpacity")
 #define T_VERTICAL                      T_("Vertical")
+#define T_RENDERMODE                    T_("RenderMode")
+#define T_RENDERMODE_ADD                T_("RenderMode.Add")
+#define T_RENDERMODE_REPLACE            T_("RenderMode.Replace")
+#define T_ANTIALIAS						T_("AntiAlias")
 #define T_OUTLINE                       T_("Outline")
 #define T_OUTLINE_SIZE                  T_("Outline.Size")
 #define T_OUTLINE_COLOR                 T_("Outline.Color")
 #define T_OUTLINE_OPACITY               T_("Outline.Opacity")
+#define T_OUTLINE_MODE                  T_("Outline.Mode")
+#define T_OUTLINE_MODE_TEXT_OVER_OL     T_("Outline.Mode.TextOverOutline")
+#define T_OUTLINE_MODE_OL_OVER_TEXT     T_("Outline.Mode.OutlineOverText")
+#define T_OUTLINE_MODE_TEXT_REPL_OL     T_("Outline.Mode.TextReplacesOutline")
+#define T_OUTLINE_MODE_OL_REPL_TEXT     T_("Outline.Mode.OutlineReplacesText")
 #define T_CHATLOG_MODE                  T_("ChatlogMode")
 #define T_CHATLOG_LINES                 T_("ChatlogMode.Lines")
 #define T_EXTENTS                       T_("UseCustomExtents")
@@ -108,6 +123,8 @@ using namespace Gdiplus;
 #define T_VALIGN_TOP                    T_("VerticalAlignment.Top")
 #define T_VALIGN_CENTER                 T_ALIGN_CENTER
 #define T_VALIGN_BOTTOM                 T_("VerticalAlignment.Bottom")
+
+#define T_ADVANCED_OPTIONS				T_("ShowAdvancedOptions")
 
 /* ------------------------------------------------------------------------- */
 
@@ -217,11 +234,14 @@ struct TextSource {
 	bool underline = false;
 	bool strikeout = false;
 	bool vertical = false;
+	uint32_t rendermode = false;
+	bool antialias = true;
 
 	bool use_outline = false;
 	float outline_size = 0.0f;
 	uint32_t outline_color = 0;
 	uint32_t outline_opacity = 100;
+	uint32_t outline_mode = 0;
 
 	bool use_extents = false;
 	bool wrap = false;
@@ -257,7 +277,7 @@ struct TextSource {
 			RectF &bounding_box, SIZE &text_size);
 	void RenderOutlineText(Graphics &graphics,
 			const GraphicsPath &path,
-			const Brush &brush);
+			const bool antialias);
 	void RenderText();
 	void LoadFileText();
 
@@ -495,8 +515,16 @@ void TextSource::CalculateTextSizes(const StringFormat &format,
 
 void TextSource::RenderOutlineText(Graphics &graphics,
 		const GraphicsPath &path,
-		const Brush &brush)
+		const bool antialias)
 {
+	if (antialias) {
+		graphics.SetSmoothingMode(SmoothingMode::SmoothingModeAntiAlias8x8);
+		graphics.SetPixelOffsetMode(PixelOffsetMode::PixelOffsetModeNone);
+	} else {
+		graphics.SetSmoothingMode(SmoothingMode::SmoothingModeNone);
+		graphics.SetPixelOffsetMode(PixelOffsetMode::PixelOffsetModeNone);
+	}
+
 	DWORD outline_rgba = calc_color(outline_color, outline_opacity);
 	Status stat;
 
@@ -507,8 +535,8 @@ void TextSource::RenderOutlineText(Graphics &graphics,
 	stat = graphics.DrawPath(&pen, &path);
 	warn_stat("graphics.DrawPath");
 
-	stat = graphics.FillPath(&brush, &path);
-	warn_stat("graphics.FillPath");
+	graphics.SetSmoothingMode(SmoothingMode::SmoothingModeNone);
+	graphics.SetPixelOffsetMode(PixelOffsetMode::PixelOffsetModeNone);
 }
 
 void TextSource::RenderText()
@@ -522,11 +550,20 @@ void TextSource::RenderText()
 	GetStringFormat(format);
 	CalculateTextSizes(format, box, size);
 
-	unique_ptr<uint8_t> bits(new uint8_t[size.cx * size.cy * 4]);
-	Bitmap bitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
-			bits.get());
+	unique_ptr<uint8_t> bgbits(new uint8_t[size.cx * size.cy * 4]);
+	unique_ptr<uint8_t> fgbits(new uint8_t[size.cx * size.cy * 4]);
+	Bitmap bgbitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
+			bgbits.get());
+	Bitmap fgbitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB, 
+			fgbits.get()); // Shouldn't need an additional buffer.
+	Graphics graphics_bgbitmap(&bgbitmap);
+	Graphics graphics_fgbitmap(&fgbitmap);
 
-	Graphics graphics_bitmap(&bitmap);
+	stat = graphics_bgbitmap.Clear(Color(0x00000000));
+	warn_stat("graphics_bgbitmap.Clear");
+	stat = graphics_fgbitmap.Clear(Color(0x00000000));
+	warn_stat("graphics_fgbitmap.Clear");
+	
 	LinearGradientBrush brush(RectF(0, 0, (float)size.cx, (float)size.cy),
 			Color(calc_color(color, opacity)),
 			Color(calc_color(color2, opacity2)),
@@ -537,21 +574,23 @@ void TextSource::RenderText()
 		full_bk_color |= get_alpha_val(bk_opacity);
 
 	if ((size.cx > box.Width || size.cy > box.Height) && !use_extents) {
-		stat = graphics_bitmap.Clear(Color(0));
-		warn_stat("graphics_bitmap.Clear");
+		stat = graphics_bgbitmap.Clear(Color(0));
+		warn_stat("graphics_bgbitmap.Clear");
 
 		SolidBrush bk_brush = Color(full_bk_color);
-		stat = graphics_bitmap.FillRectangle(&bk_brush, box);
-		warn_stat("graphics_bitmap.FillRectangle");
+		stat = graphics_bgbitmap.FillRectangle(&bk_brush, box);
+		warn_stat("graphics_bgbitmap.FillRectangle");
 	} else {
-		stat = graphics_bitmap.Clear(Color(full_bk_color));
-		warn_stat("graphics_bitmap.Clear");
+		stat = graphics_bgbitmap.Clear(Color(full_bk_color));
+		warn_stat("graphics_bgbitmap.Clear");
 	}
 
-	graphics_bitmap.SetTextRenderingHint(TextRenderingHintAntiAlias);
-	graphics_bitmap.SetCompositingMode(CompositingModeSourceOver);
-	graphics_bitmap.SetSmoothingMode(SmoothingModeAntiAlias);
-
+	graphics_fgbitmap.SetCompositingMode(CompositingModeSourceCopy);
+	if (antialias)
+		graphics_fgbitmap.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
+	else
+		graphics_fgbitmap.SetTextRenderingHint(TextRenderingHintSingleBitPerPixelGridFit);
+	
 	if (!text.empty()) {
 		if (use_outline) {
 			box.Offset(outline_size / 2, outline_size / 2);
@@ -561,17 +600,79 @@ void TextSource::RenderText()
 
 			font->GetFamily(&family);
 			stat = path.AddString(text.c_str(), (int)text.size(),
-					&family, font->GetStyle(),
-					font->GetSize(), box, &format);
+				&family, font->GetStyle(),
+				font->GetSize(), box, &format);
 			warn_stat("path.AddString");
 
-			RenderOutlineText(graphics_bitmap, path, brush);
+			switch (outline_mode) {
+				case 0: // Text Over Outline
+					RenderOutlineText(graphics_fgbitmap, path, antialias);
+
+					graphics.Flush();
+					graphics.Save();
+
+					graphics_fgbitmap.SetCompositingMode(CompositingModeSourceOver);
+					stat = graphics_fgbitmap.DrawString(text.c_str(),
+						(int)text.size(), font.get(),
+						box, &format, &brush);
+					warn_stat("graphics_fgbitmap.DrawString");
+					break;
+				case 1: // Outline Over Text
+					stat = graphics_fgbitmap.DrawString(text.c_str(),
+						(int)text.size(), font.get(),
+						box, &format, &brush);
+
+					graphics.Flush();
+					graphics.Save();
+
+					graphics_fgbitmap.SetCompositingMode(CompositingModeSourceOver);
+					RenderOutlineText(graphics_fgbitmap, path, antialias);
+					break;
+				case 2: // Text Replaces Outline
+					RenderOutlineText(graphics_fgbitmap, path, antialias);
+
+					graphics.Flush();
+					graphics.Save();
+
+					graphics_fgbitmap.SetCompositingMode(CompositingModeSourceCopy);
+					stat = graphics_fgbitmap.DrawString(text.c_str(),
+						(int)text.size(), font.get(),
+						box, &format, &brush);
+					warn_stat("graphics_fgbitmap.DrawString");
+					break;
+				case 3: // Outline Replaces Text
+					stat = graphics_fgbitmap.DrawString(text.c_str(),
+						(int)text.size(), font.get(),
+						box, &format, &brush);
+					warn_stat("graphics_fgbitmap.DrawString");
+
+					graphics.Flush();
+					graphics.Save();
+
+					graphics_fgbitmap.SetCompositingMode(CompositingModeSourceCopy);
+					RenderOutlineText(graphics_fgbitmap, path, antialias);
+					
+					break;
+			}
 		} else {
-			stat = graphics_bitmap.DrawString(text.c_str(),
-					(int)text.size(), font.get(),
-					box, &format, &brush);
-			warn_stat("graphics_bitmap.DrawString");
+			stat = graphics_fgbitmap.DrawString(text.c_str(),
+				(int)text.size(), font.get(),
+				box, &format, &brush);
+			warn_stat("graphics_fgbitmap.DrawString");
 		}
+		
+		// Render Text onto Background.
+		switch (rendermode) {
+			case 0:
+				graphics_bgbitmap.SetCompositingMode(CompositingModeSourceOver);
+				break;
+			case 1:
+				graphics_bgbitmap.SetCompositingMode(CompositingModeSourceCopy);
+				break;
+		}
+		CachedBitmap cachebitmap(&fgbitmap, &graphics_fgbitmap);
+		stat = graphics_bgbitmap.DrawCachedBitmap(&cachebitmap, 0, 0);
+		warn_stat("graphics_bgbitmap.DrawCachedBitmap");
 	}
 
 	if (!tex || (LONG)cx != size.cx || (LONG)cy != size.cy) {
@@ -579,7 +680,7 @@ void TextSource::RenderText()
 		if (tex)
 			gs_texture_destroy(tex);
 
-		const uint8_t *data = (uint8_t*)bits.get();
+		const uint8_t *data = (uint8_t*)bgbits.get();
 		tex = gs_texture_create(size.cx, size.cy, GS_BGRA, 1, &data,
 				GS_DYNAMIC);
 
@@ -590,7 +691,7 @@ void TextSource::RenderText()
 
 	} else if (tex) {
 		obs_enter_graphics();
-		gs_texture_set_image(tex, bits.get(), size.cx * 4, false);
+		gs_texture_set_image(tex, bgbits.get(), size.cx * 4, false);
 		obs_leave_graphics();
 	}
 }
@@ -645,10 +746,13 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_opacity2  = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
 	float new_grad_dir     = (float)obs_data_get_double(s, S_GRADIENT_DIR);
 	bool new_vertical      = obs_data_get_bool(s, S_VERTICAL);
+	int32_t new_rendermode = obs_data_get_uint32(s, S_RENDER_MODE);
+	bool new_antialias     = obs_data_get_bool(s, S_ANTIALIAS);
 	bool new_outline       = obs_data_get_bool(s, S_OUTLINE);
 	uint32_t new_o_color   = obs_data_get_uint32(s, S_OUTLINE_COLOR);
 	uint32_t new_o_opacity = obs_data_get_uint32(s, S_OUTLINE_OPACITY);
 	uint32_t new_o_size    = obs_data_get_uint32(s, S_OUTLINE_SIZE);
+	int32_t new_o_mode     = obs_data_get_uint32(s, S_OUTLINE_MODE);
 	bool new_use_file      = obs_data_get_bool(s, S_USE_FILE);
 	const char *new_file   = obs_data_get_string(s, S_FILE);
 	bool new_chat_mode     = obs_data_get_bool(s, S_CHATLOG_MODE);
@@ -703,6 +807,8 @@ inline void TextSource::Update(obs_data_t *s)
 	opacity2 = new_opacity2;
 	gradient_dir = new_grad_dir;
 	vertical = new_vertical;
+	rendermode = new_rendermode;
+	antialias = new_antialias;
 
 	bk_color = new_bk_color;
 	bk_opacity = new_bk_opacity;
@@ -740,6 +846,7 @@ inline void TextSource::Update(obs_data_t *s)
 	outline_color = new_o_color;
 	outline_opacity = new_o_opacity;
 	outline_size = roundf(float(new_o_size));
+	outline_mode = new_o_mode;
 
 	if (strcmp(align_str, S_ALIGN_CENTER) == 0)
 		align = Align::Center;
@@ -770,7 +877,7 @@ inline void TextSource::Tick(float seconds)
 
 	update_time_elapsed += seconds;
 
-	if (update_time_elapsed >= 1.0f) {
+	if (update_time_elapsed >= 0.2f) {
 		time_t t = get_modified_timestamp(file.c_str());
 		update_time_elapsed = 0.0f;
 
@@ -823,6 +930,7 @@ static bool outline_changed(obs_properties_t *props, obs_property_t *p,
 	set_vis(outline, S_OUTLINE_SIZE, true);
 	set_vis(outline, S_OUTLINE_COLOR, true);
 	set_vis(outline, S_OUTLINE_OPACITY, true);
+	set_vis(outline, S_OUTLINE_MODE, true);
 	return true;
 }
 
@@ -854,6 +962,15 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p,
 	set_vis(use_extents, S_EXTENTS_WRAP, true);
 	set_vis(use_extents, S_EXTENTS_CX, true);
 	set_vis(use_extents, S_EXTENTS_CY, true);
+	return true;
+}
+
+static bool advanced_options_modified(obs_properties_t *props, obs_property_t *p,
+	obs_data_t *s) {
+	bool show_advanced_options = obs_data_get_bool(s, S_ADVANCED_OPTIONS);
+
+	set_vis(show_advanced_options, S_RENDER_MODE, true);
+	set_vis(show_advanced_options, S_OUTLINE_MODE, true);
 	return true;
 }
 
@@ -921,6 +1038,13 @@ static obs_properties_t *get_properties(void *data)
 	obs_property_list_add_string(p, T_VALIGN_CENTER, S_VALIGN_CENTER);
 	obs_property_list_add_string(p, T_VALIGN_BOTTOM, S_VALIGN_BOTTOM);
 
+	p = obs_properties_add_list(props, S_RENDER_MODE, T_RENDERMODE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, T_RENDERMODE_ADD, 0);
+	obs_property_list_add_int(p, T_RENDERMODE_REPLACE, 1);
+
+	obs_properties_add_bool(props, S_ANTIALIAS, T_ANTIALIAS);
+
 	p = obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
 	obs_property_set_modified_callback(p, outline_changed);
 
@@ -928,6 +1052,12 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_color(props, S_OUTLINE_COLOR, T_OUTLINE_COLOR);
 	obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
 			T_OUTLINE_OPACITY, 0, 100, 1);
+	p = obs_properties_add_list(props, S_OUTLINE_MODE, T_OUTLINE_MODE,
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, T_OUTLINE_MODE_TEXT_OVER_OL, 0);
+	obs_property_list_add_int(p, T_OUTLINE_MODE_OL_OVER_TEXT, 1);
+	obs_property_list_add_int(p, T_OUTLINE_MODE_TEXT_REPL_OL, 2);
+	obs_property_list_add_int(p, T_OUTLINE_MODE_OL_REPL_TEXT, 3);
 
 	p = obs_properties_add_bool(props, S_CHATLOG_MODE, T_CHATLOG_MODE);
 	obs_property_set_modified_callback(p, chatlog_mode_changed);
@@ -941,6 +1071,9 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_int(props, S_EXTENTS_CX, T_EXTENTS_CX, 32, 8000, 1);
 	obs_properties_add_int(props, S_EXTENTS_CY, T_EXTENTS_CY, 32, 8000, 1);
 	obs_properties_add_bool(props, S_EXTENTS_WRAP, T_EXTENTS_WRAP);
+
+	p = obs_properties_add_bool(props, S_ADVANCED_OPTIONS, T_ADVANCED_OPTIONS);
+	obs_property_set_modified_callback(p, advanced_options_modified);
 
 	return props;
 }
@@ -989,9 +1122,12 @@ bool obs_module_load(void)
 		obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
 		obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
 		obs_data_set_default_int(settings, S_BKOPACITY, 0);
+		obs_data_set_default_int(settings, S_RENDER_MODE, 0);
+		obs_data_set_default_int(settings, S_ANTIALIAS, 1);
 		obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
 		obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
 		obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
+		obs_data_set_default_int(settings, S_OUTLINE_MODE, 0);
 		obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
 		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
 		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
