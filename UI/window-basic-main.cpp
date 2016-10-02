@@ -116,7 +116,7 @@ static void AddExtraModulePaths()
 
 static QList<QKeySequence> DeleteKeys;
 
-OBSBasic::OBSBasic(QWidget *parent)
+OBSBasic::OBSBasic(QDesktopWidget *qdw, QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
@@ -137,7 +137,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		restoreGeometry(byteArray);
 
 		QRect windowGeometry = normalGeometry();
-		if (!WindowPositionValid(windowGeometry)) {
+		if (!WindowPositionValid(windowGeometry, qdw)) {
 			QRect rect = App()->desktop()->availableGeometry();
 			setGeometry(QStyle::alignedRect(
 						Qt::LeftToRight,

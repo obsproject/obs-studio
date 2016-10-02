@@ -580,7 +580,7 @@ public slots:
 	void on_actionResetTransform_triggered();
 
 public:
-	explicit OBSBasic(QWidget *parent = 0);
+	explicit OBSBasic(QDesktopWidget *qdw, QWidget *parent = 0);
 	virtual ~OBSBasic();
 
 	virtual void OBSInit() override;
