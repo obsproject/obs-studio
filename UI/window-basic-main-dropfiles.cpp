@@ -11,6 +11,10 @@
 
 using namespace std;
 
+static const char *textExtensions[] = {
+	"txt", "log", nullptr
+};
+
 static const char *imageExtensions[] = {
 	"bmp", "tga", "png", "jpg", "jpeg", "gif", nullptr
 };
@@ -52,19 +56,31 @@ static string GenerateSourceName(const char *base)
 	}
 }
 
-void OBSBasic::AddDropSource(const char *file, bool image)
+void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source = nullptr;
 	const char *type = nullptr;
 
-	if (image) {
-		obs_data_set_string(settings, "file", file);
+	switch (image) {
+	case DropType_RawText:
+		obs_data_set_string(settings, "text", data);
+		type = "text_gdiplus";
+		break;
+	case DropType_Text:
+		obs_data_set_bool(settings, "read_from_file", true);
+		obs_data_set_string(settings, "file", data);
+		type = "text_gdiplus";
+		break;
+	case DropType_Image:
+		obs_data_set_string(settings, "file", data);
 		type = "image_source";
-	} else {
-		obs_data_set_string(settings, "local_file", file);
+		break;
+	case DropType_Media:
+		obs_data_set_string(settings, "local_file", data);
 		type = "ffmpeg_source";
+		break;
 	}
 
 	const char *name = obs_source_get_display_name(type);
@@ -113,10 +129,28 @@ void OBSBasic::dropEvent(QDropEvent *event)
 			const char *suffix = suffixArray.constData();
 			bool found = false;
 
-			const char **cmp = imageExtensions;
+			const char **cmp;
+
+			cmp = textExtensions;
 			while (*cmp) {
 				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file), true);
+					AddDropSource(QT_TO_UTF8(file),
+							DropType_Text);
+					found = true;
+					break;
+				}
+
+				cmp++;
+			}
+
+			if (found)
+				continue;
+
+			cmp = imageExtensions;
+			while (*cmp) {
+				if (strcmp(*cmp, suffix) == 0) {
+					AddDropSource(QT_TO_UTF8(file),
+							DropType_Image);
 					found = true;
 					break;
 				}
@@ -130,13 +164,16 @@ void OBSBasic::dropEvent(QDropEvent *event)
 			cmp = mediaExtensions;
 			while (*cmp) {
 				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file), false);
+					AddDropSource(QT_TO_UTF8(file),
+							DropType_Media);
 					break;
 				}
 
 				cmp++;
 			}
 		}
+	} else if (mimeData->hasText()) {
+		AddDropSource(QT_TO_UTF8(mimeData->text()), DropType_RawText);
 	}
 }
 
