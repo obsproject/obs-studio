@@ -29,6 +29,8 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QProxyStyle>
 
 #include "qt-wrappers.hpp"
@@ -837,7 +839,7 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 	return obs_startup(locale, path, store);
 }
 
-bool OBSApp::OBSInit()
+bool OBSApp::OBSInit(QDesktopWidget *qdw)
 {
 	ProfileScope("OBSApp::OBSInit");
 
@@ -855,7 +857,7 @@ bool OBSApp::OBSInit()
 		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 			return false;
 
-		mainWindow = new OBSBasic();
+		mainWindow = new OBSBasic(qdw);
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 		connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
@@ -1310,6 +1312,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	QCoreApplication::addLibraryPath(".");
 
 	OBSApp program(argc, argv, profilerNameStore.get());
+	QDesktopWidget *qdw = OBSApp::desktop();
 	try {
 		program.AppInit();
 
@@ -1320,7 +1323,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		program.installTranslator(&translator);
 
-		if (!program.OBSInit())
+		if (!program.OBSInit(qdw))
 			return 0;
 
 		prof.Stop();
@@ -1518,19 +1521,11 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
-bool WindowPositionValid(QRect rect)
+bool WindowPositionValid(QRect rect, QDesktopWidget *qdw)
 {
-	vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-
-	for (auto &monitor : monitors) {
-		int left   = int(monitor.x);
-		int top    = int(monitor.y);
-		int right  = left + int(monitor.cx);
-		int bottom = top  + int(monitor.cy);
-
-		if ((rect.left() - right)  < 0 && (left - rect.right())  < 0 &&
-		    (rect.top()  - bottom) < 0 && (top  - rect.bottom()) < 0)
+	for (int i = 0; i < qdw->screenCount(); i++){
+		QRect screenRect = qdw->availableGeometry(i);
+		if (screenRect.contains(rect, true))
 			return true;
 	}
 

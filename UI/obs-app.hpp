@@ -85,7 +85,7 @@ public:
 	~OBSApp();
 
 	void AppInit();
-	bool OBSInit();
+	bool OBSInit(QDesktopWidget *qdw);
 
 	inline QMainWindow *GetMainWindow() const {return mainWindow.data();}
 
@@ -166,7 +166,7 @@ inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
 
-bool WindowPositionValid(QRect rect);
+bool WindowPositionValid(QRect rect, QDesktopWidget *qdw);
 
 static inline int GetProfilePath(char *path, size_t size, const char *file)
 {
