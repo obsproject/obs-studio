@@ -20,6 +20,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QPointer>
+#include <QSplitter>
 #include "qt-display.hpp"
 #include <obs.hpp>
 
@@ -42,6 +43,7 @@ private:
 	OBSData    oldSettings;
 	OBSPropertiesView *view;
 	QDialogButtonBox *buttonBox;
+	QSplitter *windowSplitter;
 
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
