@@ -952,8 +952,6 @@ void OBSBasicSettings::LoadRendererList()
 #endif
 }
 
-Q_DECLARE_METATYPE(MonitorInfo);
-
 static string ResString(uint32_t cx, uint32_t cy)
 {
 	stringstream res;
