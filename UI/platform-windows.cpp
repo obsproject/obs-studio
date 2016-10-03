@@ -67,12 +67,6 @@ static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
 	return true;
 }
 
-void GetMonitors(vector<MonitorInfo> &monitors)
-{
-	monitors.clear();
-	EnumDisplayMonitors(NULL, NULL, OBSMonitorEnumProc, (LPARAM)&monitors);
-}
-
 bool InitApplicationBundle()
 {
 	return true;
