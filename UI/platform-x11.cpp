@@ -63,16 +63,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return false;
 }
 
-void GetMonitors(vector<MonitorInfo> &monitors)
-{
-	monitors.clear();
-	for (auto screen: QGuiApplication::screens()) {
-		QRect ag = screen->availableGeometry();
-		monitors.emplace_back(ag.x(), ag.y(), ag.width(), ag.height());
-		printf("%d\n", ag.width());
-	}
-}
-
 bool InitApplicationBundle()
 {
 	return true;
