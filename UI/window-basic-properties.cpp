@@ -70,21 +70,27 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	view = new OBSPropertiesView(settings, source,
 			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
+	view->setMinimumHeight(150);
 
-	preview->setMinimumSize(20, 20);
+	preview->setMinimumSize(20, 150);
 	preview->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
 				QSizePolicy::Expanding));
 
+	// Create a QSplitter to keep a unified workflow here.
+	windowSplitter = new QSplitter(Qt::Orientation::Vertical, this);
+	windowSplitter->addWidget(preview);
+	windowSplitter->addWidget(view);
+	windowSplitter->setChildrenCollapsible(false);
+	//windowSplitter->setSizes(QList<int>({ 16777216, 150 }));
+	windowSplitter->setStretchFactor(0, 3);
+	windowSplitter->setStretchFactor(1, 1);
+
 	setLayout(new QVBoxLayout(this));
-	layout()->addWidget(preview);
-	layout()->addWidget(view);
+	layout()->addWidget(windowSplitter);
 	layout()->addWidget(buttonBox);
 	layout()->setAlignment(buttonBox, Qt::AlignRight | Qt::AlignBottom);
-	layout()->setAlignment(view, Qt::AlignBottom);
-	view->setMaximumHeight(250);
-	view->setMinimumHeight(150);
-	view->show();
 
+	view->show();
 	installEventFilter(CreateShortcutFilter());
 
 	const char *name = obs_source_get_name(source);
