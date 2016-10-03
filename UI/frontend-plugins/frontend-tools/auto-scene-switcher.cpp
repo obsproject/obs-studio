@@ -3,6 +3,7 @@
 #include <obs.hpp>
 #include <util/util.hpp>
 #include <QMainWindow>
+#include <QMessageBox>
 #include <QAction>
 #include "auto-scene-switcher.hpp"
 
@@ -231,13 +232,19 @@ void SceneSwitcher::on_add_clicked()
 	int idx = FindByData(windowName);
 
 	if (idx == -1) {
-		QListWidgetItem *item = new QListWidgetItem(text,
-				ui->switches);
-		item->setData(Qt::UserRole, v);
-
-		lock_guard<mutex> lock(switcher->m);
-		switcher->switches.emplace_back(source,
-				windowName.toUtf8().constData());
+		try {
+			lock_guard<mutex> lock(switcher->m);
+			switcher->switches.emplace_back(source,
+					windowName.toUtf8().constData());
+			
+			QListWidgetItem *item = new QListWidgetItem(text,
+					ui->switches);
+			item->setData(Qt::UserRole, v);
+		} catch (const regex_error &) {
+			QMessageBox::warning(this,
+					obs_module_text("InvalidRegex.Title"),
+					obs_module_text("InvalidRegex.Text"));
+		}
 	} else {
 		QListWidgetItem *item = ui->switches->item(idx);
 		item->setText(text);
