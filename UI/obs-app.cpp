@@ -1522,7 +1522,7 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 
 bool WindowPositionValid(QRect rect)
 {
-	for (QScreen* screen: QGuiApplication::screens()) {
+	for (QScreen *screen: QGuiApplication::screens()) {
 		if (screen->availableGeometry().intersects(rect))
 			return true;
 	}
