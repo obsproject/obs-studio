@@ -1311,6 +1311,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	QCoreApplication::addLibraryPath(".");
 
+	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		program.AppInit();
