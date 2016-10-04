@@ -29,7 +29,9 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QGuiApplication>
 #include <QProxyStyle>
+#include <QScreen>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -1520,20 +1522,10 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 
 bool WindowPositionValid(QRect rect)
 {
-	vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-
-	for (auto &monitor : monitors) {
-		int left   = int(monitor.x);
-		int top    = int(monitor.y);
-		int right  = left + int(monitor.cx);
-		int bottom = top  + int(monitor.cy);
-
-		if ((rect.left() - right)  < 0 && (left - rect.right())  < 0 &&
-		    (rect.top()  - bottom) < 0 && (top  - rect.bottom()) < 0)
+	for (QScreen* screen: QGuiApplication::screens()) {
+		if (screen->availableGeometry().intersects(rect))
 			return true;
 	}
-
 	return false;
 }
 

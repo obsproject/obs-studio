@@ -51,28 +51,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
 
-static BOOL CALLBACK OBSMonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
-		LPRECT rect, LPARAM param)
-{
-	vector<MonitorInfo> &monitors = *(vector<MonitorInfo> *)param;
-
-	monitors.emplace_back(
-			rect->left,
-			rect->top,
-			rect->right - rect->left,
-			rect->bottom - rect->top);
-
-	UNUSED_PARAMETER(hMonitor);
-	UNUSED_PARAMETER(hdcMonitor);
-	return true;
-}
-
-void GetMonitors(vector<MonitorInfo> &monitors)
-{
-	monitors.clear();
-	EnumDisplayMonitors(NULL, NULL, OBSMonitorEnumProc, (LPARAM)&monitors);
-}
-
 bool InitApplicationBundle()
 {
 	return true;
