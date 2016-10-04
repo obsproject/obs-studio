@@ -1,6 +1,8 @@
 #include <QAction>
+#include <QGuiApplication>
 #include <QMouseEvent>
 #include <QMenu>
+#include <QScreen>
 #include "window-projector.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
@@ -47,11 +49,8 @@ OBSProjector::~OBSProjector()
 
 void OBSProjector::Init(int monitor)
 {
-	std::vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-	MonitorInfo &mi = monitors[monitor];
-
-	setGeometry(mi.x, mi.y, mi.cx, mi.cy);
+	QScreen *screen = QGuiApplication::screens()[monitor];
+	setGeometry(screen->availableGeometry());
 
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");

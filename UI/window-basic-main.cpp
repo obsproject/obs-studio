@@ -19,11 +19,14 @@
 
 #include <time.h>
 #include <obs.hpp>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QShowEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QDesktopWidget>
+#include <QRect>
+#include <QScreen>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -780,17 +783,18 @@ static const double scaled_vals[] =
 
 bool OBSBasic::InitBasicConfigDefaults()
 {
-	vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
+	QList<QScreen*> screens = QGuiApplication::screens();
 
-	if (!monitors.size()) {
+	if (!screens.size()) {
 		OBSErrorBox(NULL, "There appears to be no monitors.  Er, this "
 		                  "technically shouldn't be possible.");
 		return false;
 	}
 
-	uint32_t cx = monitors[0].cx;
-	uint32_t cy = monitors[0].cy;
+	QScreen *primaryScreen = QGuiApplication::primaryScreen();
+
+	uint32_t cx = primaryScreen->size().width();
+	uint32_t cy = primaryScreen->size().height();
 
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
@@ -2768,19 +2772,16 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		const char *slot)
 {
 	QAction *action;
-	std::vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-
-	for (int i = 0; (size_t)i < monitors.size(); i++) {
-		const MonitorInfo &monitor = monitors[i];
-
+	QList<QScreen*> screens = QGuiApplication::screens();
+	for (int i = 0; i < screens.size(); i++) {
+		QRect screenGeometry = screens[i]->availableGeometry();
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
 			    QString::number(i),
-			    QString::number((int)monitor.cx),
-			    QString::number((int)monitor.cy),
-			    QString::number((int)monitor.x),
-			    QString::number((int)monitor.y));
+			    QString::number((int)screenGeometry.width()),
+			    QString::number((int)screenGeometry.height()),
+			    QString::number((int)screenGeometry.x()),
+			    QString::number((int)screenGeometry.y()));
 
 		action = parent->addAction(str, target, slot);
 		action->setProperty("monitor", i);

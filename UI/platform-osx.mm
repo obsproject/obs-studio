@@ -36,17 +36,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return !access(output.c_str(), R_OK);
 }
 
-void GetMonitors(vector<MonitorInfo> &monitors)
-{
-	monitors.clear();
-	for(NSScreen *screen : [NSScreen screens])
-	{
-		NSRect frame = [screen convertRectToBacking:[screen frame]];
-		monitors.emplace_back(frame.origin.x, frame.origin.y,
-				      frame.size.width, frame.size.height);
-	}
-}
-
 bool InitApplicationBundle()
 {
 #ifdef OBS_OSX_BUNDLE

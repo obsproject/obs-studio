@@ -16,16 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-/* Here we use xinerama to fetch data about monitor geometry
- * Even if there are not multiple monitors, this should still work.
- */
-
 #include <obs-config.h>
 #include "obs-app.hpp"
 
-#include <xcb/xcb.h>
-#include <xcb/xinerama.h> 
-#include <xcb/randr.h> 
+#include <QGuiApplication>
+#include <QScreen>
+
 #include <unistd.h>
 #include <sstream>
 #include <locale.h>
@@ -61,59 +57,6 @@ bool GetDataFilePath(const char *data, string &output)
 		return true;
 
 	return false;
-}
-
-void GetMonitors(vector<MonitorInfo> &monitors)
-{
-	xcb_connection_t* xcb_conn;
-
-	monitors.clear();
-	xcb_conn = xcb_connect(NULL, NULL);
-
-	bool use_xinerama = false;
-	if (xcb_get_extension_data(xcb_conn, &xcb_xinerama_id)->present) {
-		xcb_xinerama_is_active_cookie_t xinerama_cookie;
-		xcb_xinerama_is_active_reply_t* xinerama_reply = NULL;
-
-		xinerama_cookie = xcb_xinerama_is_active(xcb_conn);
-		xinerama_reply = xcb_xinerama_is_active_reply(xcb_conn,
-						        xinerama_cookie, NULL);
-
-		if (xinerama_reply && xinerama_reply->state != 0)
-			use_xinerama = true;
-		free(xinerama_reply);
-	}
-
-	if (use_xinerama) {
-		xcb_xinerama_query_screens_cookie_t screens_cookie;
-		xcb_xinerama_query_screens_reply_t* screens_reply = NULL;
-		xcb_xinerama_screen_info_iterator_t iter;
-
-		screens_cookie = xcb_xinerama_query_screens(xcb_conn);
-		screens_reply = xcb_xinerama_query_screens_reply(xcb_conn,
-							screens_cookie, NULL);
-		iter = xcb_xinerama_query_screens_screen_info_iterator(
-								screens_reply);
-
-		for(; iter.rem; xcb_xinerama_screen_info_next(&iter)) {
-			monitors.emplace_back(iter.data->x_org,
-					      iter.data->y_org,
-					      iter.data->width,
-					      iter.data->height);
-		}
-		free(screens_reply);
-	} else {
-		// no xinerama so fall back to basic x11 calls
-		xcb_screen_iterator_t iter;
-
-		iter = xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
-		for(; iter.rem; xcb_screen_next(&iter)) {
-			monitors.emplace_back(0,0,iter.data->width_in_pixels,
-					          iter.data->height_in_pixels);
-		}
-	}
-
-	xcb_disconnect(xcb_conn);
 }
 
 bool InitApplicationBundle()
