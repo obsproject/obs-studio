@@ -33,6 +33,16 @@ struct UnsupportedHWError : HRError {
 #pragma warning (disable : 4316)
 #endif
 
+void CheckD3D11Error(HRError error, gs_device_t *device)
+{
+	if (error.hr == DXGI_ERROR_DEVICE_REMOVED) {
+		HRESULT DeviceRemovedReason =
+				device->device->GetDeviceRemovedReason();
+		blog(LOG_ERROR, "  Device Removed Reason: %08lX",
+				DeviceRemovedReason);
+	}
+}
+
 static const IID dxgiFactory2 =
 {0x50c83a1c, 0xe072, 0x4c48, {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6, 0xd0}};
 
@@ -612,6 +622,7 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_swapchain_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 
 	return swap;
@@ -641,6 +652,7 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_resize (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 }
 
@@ -688,6 +700,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_texture_create (D3D11): %s", error);
 	}
@@ -708,6 +721,7 @@ gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
 		blog(LOG_ERROR, "device_cubetexture_create (D3D11): %s "
 		                "(%08lX)",
 		                error.str, error.hr);
+		CheckD3D11Error(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_cubetexture_create (D3D11): %s",
 				error);
@@ -743,6 +757,7 @@ gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_zstencil_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 
 	return zstencil;
@@ -759,6 +774,7 @@ gs_stagesurf_t *device_stagesurface_create(gs_device_t *device, uint32_t width,
 		blog(LOG_ERROR, "device_stagesurface_create (D3D11): %s "
 		                "(%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 
 	return surf;
@@ -774,6 +790,7 @@ gs_samplerstate_t *device_samplerstate_create(gs_device_t *device,
 		blog(LOG_ERROR, "device_samplerstate_create (D3D11): %s "
 		                "(%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 
 	return ss;
@@ -791,7 +808,7 @@ gs_shader_t *device_vertexshader_create(gs_device_t *device,
 		blog(LOG_ERROR, "device_vertexshader_create (D3D11): %s "
 		                "(%08lX)",
 				error.str, error.hr);
-
+		CheckD3D11Error(error, device);
 	} catch (ShaderError error) {
 		const char *buf = (const char*)error.errors->GetBufferPointer();
 		if (error_string)
@@ -820,7 +837,7 @@ gs_shader_t *device_pixelshader_create(gs_device_t *device,
 		blog(LOG_ERROR, "device_pixelshader_create (D3D11): %s "
 		                "(%08lX)",
 				error.str, error.hr);
-
+		CheckD3D11Error(error, device);
 	} catch (ShaderError error) {
 		const char *buf = (const char*)error.errors->GetBufferPointer();
 		if (error_string)
@@ -847,6 +864,7 @@ gs_vertbuffer_t *device_vertexbuffer_create(gs_device_t *device,
 		blog(LOG_ERROR, "device_vertexbuffer_create (D3D11): %s "
 		                "(%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_vertexbuffer_create (D3D11): %s",
 				error);
@@ -865,6 +883,7 @@ gs_indexbuffer_t *device_indexbuffer_create(gs_device_t *device,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_indexbuffer_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	}
 
 	return buffer;
@@ -1308,6 +1327,7 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_draw (D3D11): %s (%08lX)", error.str,
 				error.hr);
+		CheckD3D11Error(error, device);
 		return;
 	}
 
@@ -1964,6 +1984,7 @@ extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create_gdi (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_texture_create_gdi (D3D11): %s", error);
 	}
@@ -2018,6 +2039,7 @@ extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
 	} catch (HRError error) {
 		blog(LOG_ERROR, "gs_texture_open_shared (D3D11): %s (%08lX)",
 				error.str, error.hr);
+		CheckD3D11Error(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "gs_texture_open_shared (D3D11): %s", error);
 	}
