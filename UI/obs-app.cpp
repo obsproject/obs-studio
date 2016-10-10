@@ -858,6 +858,9 @@ bool OBSApp::OBSInit()
 		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 			return false;
 
+		blog(LOG_INFO, "Portable mode: %s",
+				portable_mode ? "true" : "false");
+
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -907,6 +910,11 @@ string OBSApp::GetVersionString() const
 #endif
 
 	return ver.str();
+}
+
+bool OBSApp::IsPortableMode()
+{
+	return portable_mode;
 }
 
 #ifdef __APPLE__
