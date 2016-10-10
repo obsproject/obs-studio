@@ -326,10 +326,14 @@
                 {
                     "name": "EU",
                     "url": "rtmp://eumedia1.livecoding.tv/livecodingtv"
+                },
+                {
+                    "name": "Asia Pacific",
+                    "url": "rtmp://apmedia1.livecoding.tv/livecodingtv"
                 }
             ],
             "recommended": {
-                "max video bitrate": 1300
+                "max video bitrate": 2300
             }
         },
         {
