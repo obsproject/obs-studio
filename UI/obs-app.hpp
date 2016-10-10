@@ -117,6 +117,7 @@ public:
 	const char *GetCurrentLog() const;
 
 	std::string GetVersionString() const;
+	bool IsPortableMode();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
