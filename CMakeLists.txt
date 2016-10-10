@@ -2,6 +2,26 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(obs-studio)
 
+if(WIN32)
+	if (QTDIR OR DEFINED ENV{QTDIR})
+		# Qt path set by user or env var
+	else()
+		set(QTDIR "" CACHE PATH "Path to Qt (e.g. C:/Qt/5.7/msvc2015_64)")
+		message(SEND_ERROR "QTDIR variable is missing but required")
+		set(_deps_missing 1)
+	endif()
+	if (DepsPath OR DEFINED ENV{DepsPath})
+		# Dependencies path set by user or env var
+	else()
+		set(DepsPath "" CACHE PATH "Path to compiled dependencies (e.g. D:/obs/win64)")
+		message(SEND_ERROR "DepsPath variable is missing but required")
+		set(_deps_missing 1)
+	endif()
+	if (_deps_missing)
+		message(FATAL_ERROR "Specify the required variable(s) and rerun configuration")
+	endif()
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(ObsHelpers)
