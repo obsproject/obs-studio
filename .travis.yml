@@ -23,4 +23,4 @@ deploy:
   region: us-west-2
   acl: public_read
   on:
-    condition: "$TRAVIS_EVENT_TYPE = cron"
+    repo: jp9000/obs-studio
