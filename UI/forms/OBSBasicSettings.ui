@@ -3305,6 +3305,90 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="timerGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Advanced.Timers</string>
+                  </property>
+                  <layout class="QFormLayout" name="timerLayout">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="streamTimerEnable">
+                     <property name="text">
+                      <string>Enable</string>
+                     </property>
+                     <property name="checked">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QSpinBox" name="streamingTimer">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="minimum">
+                      <number>1</number>
+                     </property>
+                     <property name="maximum">
+                      <number>100000</number>
+                     </property>
+                     <property name="value">
+                      <number>60</number>
+                     </property>
+                     </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="streamTimerLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Timers.Streaming</string>
+                     </property>
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="recordTimerEnable">
+                     <property name="text">
+                      <string>Enable</string>
+                     </property>
+                     <property name="checked">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QSpinBox" name="recordingTimer">
+                    <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="minimum">
+                      <number>1</number>
+                     </property>
+                     <property name="maximum">
+                      <number>100000</number>
+                     </property>
+                     <property name="value">
+                      <number>60</number>
+                     </property>
+                    </widget>
+                    </item>
+                    <item row="3" column="0">
+                     <widget class="QLabel" name="recordTimerLabel">
+                      <property name="text">
+                       <string>Basic.Settings.Advanced.Timers.Recording</string>
+                      </property>
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="advancedMsg">
                   <property name="styleSheet">
                    <string notr="true">color: rgb(255, 0, 4);</string>
@@ -3790,6 +3874,70 @@
     <hint type="destinationlabel">
      <x>404</x>
      <y>271</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamTimerEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamingTimer</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>recordTimerEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>recordingTimer</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamTimerEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamTimerLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>recordTimerEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>recordTimerLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>

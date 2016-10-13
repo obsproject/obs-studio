@@ -882,6 +882,11 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "Output", "BindIP", "default");
 
+	config_set_default_uint  (basicConfig, "Output", "StreamTimer",
+			3600);
+	config_set_default_uint  (basicConfig, "Output", "RecordTimer",
+			3600);
+
 	int i = 0;
 	uint32_t scale_cx = cx;
 	uint32_t scale_cy = cy;
@@ -3680,6 +3685,11 @@ void OBSBasic::StopStreaming()
 
 void OBSBasic::ForceStopStreaming()
 {
+	bool enableStreamTimer = config_get_bool(Config(), "Output",
+		"StreamTimerEnable");
+	if (enableStreamTimer)
+		stopStreamingTimer->stop();
+
 	SaveProject();
 
 	if (outputHandler->StreamingActive())
@@ -3750,6 +3760,21 @@ void OBSBasic::StreamingStart()
 
 	OnActivate();
 
+	bool enableStreamTimer = config_get_bool(Config(), "Output",
+		"StreamTimerEnable");
+	int seconds = config_get_int(Config(), "Output",
+		"StreamTimer");
+	int millisec = seconds * 1000;
+
+	if (enableStreamTimer) {
+		stopStreamingTimer = new QTimer(this);
+		stopStreamingTimer->setInterval(millisec);
+		stopStreamingTimer->setSingleShot(true);
+		connect(stopStreamingTimer, SIGNAL(timeout()),
+			SLOT(StopStreaming()));
+		stopStreamingTimer->start();
+	}
+
 	blog(LOG_INFO, STREAMING_START);
 }
 
@@ -3766,6 +3791,11 @@ void OBSBasic::StreamStopping()
 void OBSBasic::StreamingStop(int code)
 {
 	const char *errorMessage;
+
+	bool enableStreamTimer = config_get_bool(Config(), "Output",
+		"StreamTimerEnable");
+	if (enableStreamTimer)
+		stopStreamingTimer->stop();
 
 	switch (code) {
 	case OBS_OUTPUT_BAD_PATH:
@@ -3865,6 +3895,21 @@ void OBSBasic::RecordingStart()
 
 	OnActivate();
 
+	bool enableRecordTimer = config_get_bool(Config(), "Output",
+		"RecordTimerEnable");
+	int seconds = config_get_int(Config(), "Output",
+		"RecordTimer");
+	int millisec = seconds * 1000;
+
+	if (enableRecordTimer) {
+		stopRecordingTimer = new QTimer(this);
+		stopRecordingTimer->setInterval(millisec);
+		stopRecordingTimer->setSingleShot(true);
+		connect(stopRecordingTimer, SIGNAL(timeout()),
+			SLOT(StopRecording()));
+		stopRecordingTimer->start();
+	}
+
 	blog(LOG_INFO, RECORDING_START);
 }
 
@@ -3873,6 +3918,12 @@ void OBSBasic::RecordingStop(int code)
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 	sysTrayRecord->setText(ui->recordButton->text());
+
+	bool enableRecordTimer = config_get_bool(Config(), "Output",
+		"RecordTimerEnable");
+	if (enableRecordTimer)
+		stopRecordingTimer->stop();
+
 	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {

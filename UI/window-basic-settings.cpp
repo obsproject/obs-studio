@@ -378,6 +378,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->streamTimerEnable,    CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->recordTimerEnable,    CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->streamingTimer,       SCROLL_CHANGED, ADV_CHANGED);
+	HookWidget(ui->recordingTimer,       SCROLL_CHANGED, ADV_CHANGED);
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -1840,6 +1844,14 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"OverwriteIfExists");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
+	int streamSec = config_get_int(main->Config(), "Output",
+			"StreamTimer");
+	int recordSec = config_get_int(main->Config(), "Output",
+			"RecordTimer");
+	bool enableStreamTimer = config_get_bool(main->Config(), "Output",
+			"StreamTimerEnable");
+	bool enableRecordTimer = config_get_bool(main->Config(), "Output",
+			"RecordTimerEnable");
 
 	loading = true;
 
@@ -1861,6 +1873,11 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	SetComboByValue(ui->colorRange, videoColorRange);
 
 	SetComboByValue(ui->bindToIP, bindIP);
+
+	ui->streamTimerEnable->setChecked(enableStreamTimer);
+	ui->recordTimerEnable->setChecked(enableRecordTimer);
+	ui->streamingTimer->setValue(streamSec);
+	ui->recordingTimer->setValue(recordSec);
 
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
@@ -2361,6 +2378,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
+	SaveCheckBox(ui->streamTimerEnable, "Output", "StreamTimerEnable");
+	SaveCheckBox(ui->recordTimerEnable, "Output", "RecordTimerEnable");
+	SaveSpinBox(ui->streamingTimer, "Output", "StreamTimer");
+	SaveSpinBox(ui->recordingTimer, "Output", "RecordTimer");
 }
 
 static inline const char *OutputModeFromIdx(int idx)
