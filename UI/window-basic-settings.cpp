@@ -1100,7 +1100,7 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ui->baseResolution->clear();
 
-	for (QScreen* screen: QGuiApplication::screens()) {
+	for (QScreen *screen: QGuiApplication::screens()) {
 		QSize as = screen->availableSize();
 		string res = ResString(as.width(), as.height());
 		ui->baseResolution->addItem(res.c_str());
