@@ -1,8 +1,8 @@
-#!/usr/bin/env python3.3
+#!/usr/bin/env python
  
 candidate_paths = "bin obs-plugins data".split()
  
-plist_path = "../cmake/osxbundle/info.plist"
+plist_path = "../cmake/osxbundle/Info.plist"
 icon_path = "../cmake/osxbundle/obs.icns"
 run_path = "../cmake/osxbundle/obslaunch.sh"
  
@@ -75,7 +75,7 @@ for i in candidate_paths:
 				if "is not an object file" in out:
 					continue
 			except:
-				pass
+				continue
 			rel_path = path[len(build_path)+1:]
 			print(repr(path), repr(rel_path))
 			add(rel_path)
@@ -98,13 +98,8 @@ while inspect:
 	path = target.path
 	if path[0] == "@":
 		continue
-	try:
-		out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
+	out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
 			universal_newlines=True)
-		if "is not an object file" in out:
-					continue
-	except:
-		pass
  
 	if "QtCore" in path:
 		add_plugins(path, "platforms")
@@ -116,7 +111,7 @@ while inspect:
 		new = line.strip().split(" (")[0]
 		if '@' in new and "sparkle.framework" in new.lower():
 			actual_sparkle_path = new
-			print("Using sparkle path:", repr(actual_sparkle_path))
+			print "Using sparkle path:", repr(actual_sparkle_path)
 		if not new or new[0] == "@" or new.endswith(path.split("/")[-1]):
 			continue
 		whitelisted = False
@@ -142,8 +137,8 @@ changes = " ".join(changes)
 
 info = plistlib.readPlist(plist_path)
 
-latest_tag="TACO" #= cmd('git describe --tags --abbrev=0')
-log ="BUTTS"#cmd('git log --pretty=oneline {0}...HEAD'.format(latest_tag))
+latest_tag = cmd('git describe --tags --abbrev=0')
+log = cmd('git log --pretty=oneline {0}...HEAD'.format(latest_tag))
 
 from os import path
 # set version
@@ -178,8 +173,8 @@ if args.sparkle is not None:
 prefix = "tmp/Contents/Resources/"
 sparkle_path = '@loader_path/{0}/Frameworks/Sparkle.framework/Versions/A/Sparkle'
 
-#cmd('{0}install_name_tool -change {1} {2} {3}/bin/obs'.format(
-#    args.prefix, actual_sparkle_path, sparkle_path.format('../..'), prefix))
+cmd('{0}install_name_tool -change {1} {2} {3}/bin/obs'.format(
+    args.prefix, actual_sparkle_path, sparkle_path.format('../..'), prefix))
 
 
 
