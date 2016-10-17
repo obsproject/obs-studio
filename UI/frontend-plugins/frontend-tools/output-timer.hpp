@@ -28,4 +28,10 @@ public slots:
 	void ShowHideDialog();
 	void EventStopStreaming();
 	void EventStopRecording();
+
+private:
+	QTimer *streamingTimer;
+	QTimer *recordingTimer;
+	QTimer *streamingTimerDisplay;
+	QTimer *recordingTimerDisplay;
 };
