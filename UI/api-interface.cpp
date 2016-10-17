@@ -231,7 +231,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	bool obs_frontend_recording_active(void) override
 	{
-		return main->outputHandler->StreamingActive();
+		return main->outputHandler->RecordingActive();
 	}
 
 	void *obs_frontend_add_tools_menu_qaction(const char *name) override
