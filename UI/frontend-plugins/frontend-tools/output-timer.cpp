@@ -37,24 +37,32 @@ void OutputTimer::closeEvent(QCloseEvent*)
 
 void OutputTimer::StreamingTimerButton()
 {
-	if (obs_frontend_streaming_active())
-		obs_frontend_streaming_stop();
-	else
+	if (!obs_frontend_streaming_active()) {
 		obs_frontend_streaming_start();
+	} else if (streamingAlreadyActive) {
+		StreamTimerStart();
+		streamingAlreadyActive = false;
+	} else if (obs_frontend_streaming_active()) {
+		obs_frontend_streaming_stop();
+	}
 }
 
 void OutputTimer::RecordingTimerButton()
 {
-	if (obs_frontend_recording_active())
-		obs_frontend_recording_stop();
-	else
+	if (!obs_frontend_recording_active()) {
 		obs_frontend_recording_start();
+	} else if (recordingAlreadyActive) {
+		RecordTimerStart();
+		recordingAlreadyActive = false;
+	} else if (obs_frontend_recording_active()) {
+		obs_frontend_recording_stop();
+	}
 }
 
 void OutputTimer::StreamTimerStart()
 {
 	if (!isVisible()) {
-		ui->outputTimerStream->setEnabled(false);
+		streamingAlreadyActive = true;
 		return;
 	}
 
@@ -88,7 +96,7 @@ void OutputTimer::StreamTimerStart()
 void OutputTimer::RecordTimerStart()
 {
 	if (!isVisible()) {
-		ui->outputTimerRecord->setEnabled(false);
+		recordingAlreadyActive = true;
 		return;
 	}
 
@@ -121,7 +129,7 @@ void OutputTimer::RecordTimerStart()
 
 void OutputTimer::StreamTimerStop()
 {
-	ui->outputTimerStream->setEnabled(true);
+	streamingAlreadyActive = false;
 
 	if (!isVisible() && streamingTimer->isActive() == false)
 		return;
@@ -139,7 +147,7 @@ void OutputTimer::StreamTimerStop()
 
 void OutputTimer::RecordTimerStop()
 {
-	ui->outputTimerRecord->setEnabled(true);
+	recordingAlreadyActive = false;
 
 	if (!isVisible() && recordingTimer->isActive() == false)
 		return;
