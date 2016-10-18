@@ -30,6 +30,9 @@ public slots:
 	void EventStopRecording();
 
 private:
+	bool streamingAlreadyActive = false;
+	bool recordingAlreadyActive = false;
+
 	QTimer *streamingTimer;
 	QTimer *recordingTimer;
 	QTimer *streamingTimerDisplay;
