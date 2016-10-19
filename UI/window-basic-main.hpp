@@ -155,7 +155,6 @@ private:
 	QPointer<QAction>         sysTrayStream;
 	QPointer<QAction>         sysTrayRecord;
 	QPointer<QAction>         showHide;
-	QPointer<QAction>         showPreview;
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
 	bool          disableHiding = false;
