@@ -151,13 +151,13 @@ private:
 
 	QPointer<QMenu> startStreamMenu;
 
-	QSystemTrayIcon *trayIcon;
-	QMenu         *trayMenu;
-	QAction       *sysTrayStream;
-	QAction       *sysTrayRecord;
-	QAction       *showHide;
-	QAction       *showPreview;
-	QAction       *exit;
+	QPointer<QSystemTrayIcon> trayIcon;
+	QPointer<QAction>         sysTrayStream;
+	QPointer<QAction>         sysTrayRecord;
+	QPointer<QAction>         showHide;
+	QPointer<QAction>         showPreview;
+	QPointer<QAction>         exit;
+	QPointer<QMenu>           trayMenu;
 	bool          disableHiding = false;
 
 	void          DrawBackdrop(float cx, float cy);

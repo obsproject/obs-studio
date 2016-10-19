@@ -3652,7 +3652,8 @@ inline void OBSBasic::OnActivate()
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
-		trayIcon->setIcon(QIcon(":/res/images/tray_active.png"));
+		if (trayIcon)
+			trayIcon->setIcon(QIcon(":/res/images/tray_active.png"));
 	}
 }
 
@@ -3663,7 +3664,8 @@ inline void OBSBasic::OnDeactivate()
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
-		trayIcon->setIcon(QIcon(":/res/images/obs.png"));
+		if (trayIcon)
+			trayIcon->setIcon(QIcon(":/res/images/obs.png"));
 	}
 }
 
@@ -4557,7 +4559,8 @@ void OBSBasic::SetShowing(bool showing)
 			"BasicWindow", "geometry",
 			saveGeometry().toBase64().constData());
 
-		showHide->setText(QTStr("Basic.SystemTray.Show"));
+		if (showHide)
+			showHide->setText(QTStr("Basic.SystemTray.Show"));
 		QTimer::singleShot(250, this, SLOT(hide()));
 
 		if (previewEnabled)
@@ -4566,7 +4569,8 @@ void OBSBasic::SetShowing(bool showing)
 		setVisible(false);
 
 	} else if (showing && !isVisible()) {
-		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		if (showHide)
+			showHide->setText(QTStr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(250, this, SLOT(show()));
 
 		if (previewEnabled)
