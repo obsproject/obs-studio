@@ -4580,7 +4580,8 @@ void OBSBasic::SetShowing(bool showing)
 	}
 }
 
-void OBSBasic::SystemTrayInit() {
+void OBSBasic::SystemTrayInit()
+{
 	trayIcon = new QSystemTrayIcon(QIcon(":/res/images/obs.png"),
 			this);
 	trayIcon->setToolTip("OBS Studio");
