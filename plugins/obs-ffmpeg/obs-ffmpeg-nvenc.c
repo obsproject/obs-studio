@@ -223,11 +223,13 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\t2-pass:       %s\n"
+	     "\tb-frames:     %d\n"
 	     "\tGPU:          %d\n",
 	     rc, bitrate, cqp, enc->context->gop_size,
 	     preset, profile, level,
 	     enc->context->width, enc->context->height,
 	     twopass ? "true" : "false",
+	     enc->context->max_b_frames,
 	     gpu);
 
 	return nvenc_init_codec(enc);
