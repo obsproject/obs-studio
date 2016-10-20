@@ -141,7 +141,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 		QRect windowGeometry = normalGeometry();
 		if (!WindowPositionValid(windowGeometry)) {
-			QRect rect = App()->desktop()->availableGeometry();
+			QRect rect = App()->desktop()->geometry();
 			setGeometry(QStyle::alignedRect(
 						Qt::LeftToRight,
 						Qt::AlignCenter,
@@ -2774,7 +2774,7 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	QAction *action;
 	QList<QScreen*> screens = QGuiApplication::screens();
 	for (int i = 0; i < screens.size(); i++) {
-		QRect screenGeometry = screens[i]->availableGeometry();
+		QRect screenGeometry = screens[i]->geometry();
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
 			    QString::number(i),
