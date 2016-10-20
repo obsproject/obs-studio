@@ -451,7 +451,7 @@ static string GetProfileDirFromName(const char *name)
 	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
 		return outputPath;
 
-	strcat(path, "/*.*");
+	strcat(path, "/*");
 
 	if (os_glob(path, 0, &glob) != 0)
 		return outputPath;
