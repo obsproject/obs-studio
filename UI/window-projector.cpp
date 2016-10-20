@@ -50,7 +50,7 @@ OBSProjector::~OBSProjector()
 void OBSProjector::Init(int monitor)
 {
 	QScreen *screen = QGuiApplication::screens()[monitor];
-	setGeometry(screen->availableGeometry());
+	setGeometry(screen->geometry());
 
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
