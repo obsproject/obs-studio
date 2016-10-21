@@ -132,6 +132,43 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 
+	bool MicroObs;
+	MicroObs = true;
+
+	if (MicroObs == true)
+	{
+		ui->scenesLabel->setVisible(false);
+		ui->scenesFrame->setVisible(false);
+
+		ui->sourcesLabel->setVisible(false);
+		ui->sourcesFrame->setVisible(false);
+		ui->actionSourceProperties->setVisible(false);
+
+		ui->advAudioProps->setVisible(false);
+		ui->mixerLabel->setVisible(false);
+
+		ui->transitionsContainer->setVisible(false);
+
+		ui->streamButton->setVisible(false);
+		ui->modeSwitch->setVisible(false);
+		ui->settingsButton->setVisible(false);
+		ui->exitButton->setVisible(false);
+
+		// File menu
+		ui->actionRemux->setVisible(false);
+		ui->action_Settings->setVisible(false);
+		ui->actionShowSettingsFolder->setVisible(false);
+		ui->actionShowProfileFolder->setVisible(false);
+
+		// Hide other menu options...
+		ui->menuBasic_MainMenu_Edit->setEnabled(false);
+		ui->viewMenu->setEnabled(false);
+		ui->profileMenu->setEnabled(false);
+		ui->sceneCollectionMenu->setEnabled(false);
+		ui->viewMenuToolbars->setEnabled(false);
+		ui->menuBasic_MainMenu_Help->setEnabled(false);
+	}
+
 	const char *geometry = config_get_string(App()->GlobalConfig(),
 			"BasicWindow", "geometry");
 	if (geometry != NULL) {
@@ -1879,13 +1916,20 @@ void OBSBasic::VolControlContextMenu()
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
-	VolControl *vol = new VolControl(source, true);
+	bool showConfig = false;
+	bool showVolumeControls = false;
 
-	connect(vol, &VolControl::ConfigClicked,
+	VolControl *vol = new VolControl(source, showConfig);
+
+	if (showVolumeControls == true)
+	{
+		connect(vol, &VolControl::ConfigClicked,
 			this, &OBSBasic::VolControlContextMenu);
+	}
 
 	volumes.push_back(vol);
 	ui->volumeWidgets->layout()->addWidget(vol);
+
 }
 
 void OBSBasic::DeactivateAudioSource(OBSSource source)
@@ -3648,7 +3692,7 @@ static inline void ClearProcessPriority()
 inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(false);
+		//microOBS ui->profileMenu->setEnabled(false);
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
@@ -3660,7 +3704,7 @@ inline void OBSBasic::OnActivate()
 inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
+		//microOBS ui->profileMenu->setEnabled(true);
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
