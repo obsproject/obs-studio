@@ -408,6 +408,7 @@ private:
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
 public:
+	bool CpuUsageTrigged;
 	OBSScene      GetCurrentScene();
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);

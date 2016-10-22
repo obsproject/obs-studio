@@ -137,12 +137,21 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	lastBytesSentTime    = bytesSentTime;
 	bitrateUpdateSeconds = 0;
 }
+// ABBA
 
 void OBSBasicStatusBar::UpdateCPUUsage()
 {
 	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
 	if (!main)
 		return;
+
+	if (main->CpuUsageTrigged == false)
+	{
+		// Run Startup Action
+		main->cpuUsageTimer->setInterval(1000);
+		main->on_actionResetTransform_triggered();
+		main->CpuUsageTrigged = true;
+	}
 
 	QString text;
 	text += QString("CPU: ") +

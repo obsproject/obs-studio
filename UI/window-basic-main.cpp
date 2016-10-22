@@ -131,12 +131,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 	copyActionsDynamicProperties();
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
-
+	
 	bool MicroObs;
 	MicroObs = true;
 
 	if (MicroObs == true)
 	{
+		CpuUsageTrigged = false;
 		ui->scenesLabel->setVisible(false);
 		ui->scenesFrame->setVisible(false);
 
@@ -248,7 +249,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	cpuUsageTimer = new QTimer(this);
 	connect(cpuUsageTimer, SIGNAL(timeout()),
 			ui->statusbar, SLOT(UpdateCPUUsage()));
-	cpuUsageTimer->start(3000);
+	cpuUsageTimer->start(500);
 
 	DeleteKeys =
 #ifdef __APPLE__
@@ -399,6 +400,7 @@ obs_data_array_t *OBSBasic::SaveSceneListOrder()
 
 void OBSBasic::Save(const char *file)
 {
+	//ABBA SAVE
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 	if (!curProgramScene)
