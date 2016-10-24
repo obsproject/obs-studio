@@ -796,7 +796,7 @@ static inline void do_encode(struct obs_encoder *encoder,
 		full_stop(encoder);
 		blog(LOG_ERROR, "Error encoding with encoder '%s'",
 				encoder->context.name);
-		return;
+		goto error;
 	}
 
 	if (received) {
@@ -822,6 +822,7 @@ static inline void do_encode(struct obs_encoder *encoder,
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
 	}
 
+error:
 	profile_end(do_encode_name);
 }
 
