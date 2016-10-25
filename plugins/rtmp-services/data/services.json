@@ -807,6 +807,21 @@
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "Picarto",
+            "servers": [
+                {
+                    "name": "USA/Canada",
+                    "url": "rtmp://live.us.picarto.tv/golive"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
