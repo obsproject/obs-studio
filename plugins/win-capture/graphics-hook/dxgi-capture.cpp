@@ -8,6 +8,10 @@
 #include "graphics-hook.h"
 #include "../funchook.h"
 
+#if COMPILE_D3D12_HOOK
+#include <d3d12.h>
+#endif
+
 typedef HRESULT (STDMETHODCALLTYPE *resize_buffers_t)(IDXGISwapChain*, UINT,
 		UINT, UINT, DXGI_FORMAT, UINT);
 typedef HRESULT (STDMETHODCALLTYPE *present_t)(IDXGISwapChain*, UINT, UINT);
@@ -58,6 +62,17 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 		device->Release();
 		return true;
 	}
+
+#if COMPILE_D3D12_HOOK
+	hr = swap->GetDevice(__uuidof(ID3D12Device), (void**)&device);
+	if (SUCCEEDED(hr)) {
+		data.swap = swap;
+		data.capture = d3d12_capture;
+		data.free = d3d12_free;
+		device->Release();
+		return true;
+	}
+#endif
 
 	return false;
 }
