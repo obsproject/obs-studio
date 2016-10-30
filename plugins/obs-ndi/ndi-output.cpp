@@ -1,6 +1,7 @@
 #include <obs-module.h>
 #include <mutex>
 #include <boost/scope_exit.hpp>
+#include <atomic>
 #include "ndi.hpp"
 #include "framelink.hpp"
 
@@ -41,6 +42,10 @@ struct NDIOutput {
 	pthread_t worker;
 	bool started { false };
 	frame_link link;
+
+	// Stats
+	std::atomic<uint64_t> video_drop { 0 };
+	std::atomic<uint64_t> audio_drop { 0 };
 
 	NDIOutput() {
 	}
@@ -98,7 +103,10 @@ struct NDIOutput {
 	void RawVideo(struct video_data *data) {
 		if(this->link.is_null()) return;
 		auto frame = link.pop_timed(0, std::chrono::milliseconds(100));
-		if(!frame) return;
+		if(!frame) {
+			++video_drop;
+			return;
+		}
 
 		frame->kind = frame_link::kind::FRAME_KIND_VIDEO;
 		frame->timestamp = data->timestamp;
@@ -125,7 +133,10 @@ struct NDIOutput {
 	void RawAudio(struct audio_data *data) {
 		if(this->link.is_null()) return;
 		auto frame = link.pop_timed(0, std::chrono::milliseconds(100));
-		if(!frame) return;
+		if(!frame) {
+			++audio_drop;
+			return;
+		}
 
 		frame->kind = frame_link::kind::FRAME_KIND_AUDIO;
 		frame->timestamp = data->timestamp;
@@ -134,7 +145,9 @@ struct NDIOutput {
 		payload->samples = data->frames;
 		payload->samplerate = ac.samples_per_sec;
 		payload->stride = data->frames * sizeof(float);
-		if(payload->size() < frame->max_payload_length()) {
+		if(payload->size() < frame->max_payload_length()
+				&& payload->channels != 0)
+		{
 			std::memcpy(payload->data(), data->data, payload->data_size());
 			frame->payload_length = payload->size();
 			link.push(1, frame);
@@ -193,7 +206,7 @@ private:
 		while(1) {
 			{
 				std::unique_lock<std::mutex> lg(this->mut);
-				link = frame_link(1);
+				link = frame_link(1, 8);
 			}
 			this->SpawnWorker();
 			sleep(5);
@@ -270,6 +283,11 @@ static obs_properties_t *NDIOutputProperties(void *data) {
 	return props;
 }
 
+static int NDIOutputGetDroppedFrames(void *data) {
+	NDIOutput *o = reinterpret_cast<NDIOutput*>(data);
+	return o->video_drop + o->audio_drop;
+}
+
 #ifdef QT_GUI_LIB
 
 static obs_output_t *globalOutput = nullptr;
@@ -338,6 +356,7 @@ void NDIOutputRegister() {
 	info.update             = NDIOutputUpdate;
 	info.get_defaults       = NDIOutputDefaults;
 	info.get_properties     = NDIOutputProperties;
+	info.get_dropped_frames = NDIOutputGetDroppedFrames;
 
 	obs_register_output(&info);
 	blog(LOG_ERROR, "Register output");
