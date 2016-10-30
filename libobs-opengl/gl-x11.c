@@ -587,7 +587,12 @@ extern void device_present(gs_device_t *device)
 		initialized = true;
 	}
 
-	/* TODO: Handle XCB events. */
+	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
+	xcb_generic_event_t *xcb_event;
+	while((xcb_event = xcb_poll_for_event(xcb_conn))) {
+		/* TODO: Handle XCB events. */
+		free(xcb_event);
+	}
 
 	switch (swap_type) {
 	case SWAP_TYPE_EXT:    glXSwapIntervalEXT(display, window, 0); break;
