@@ -1443,6 +1443,9 @@ static void game_capture_tick(void *data, float seconds)
 	if (activate_now) {
 		HWND hwnd = (HWND)os_atomic_load_long(&gc->hotkey_window);
 
+		if (is_uwp_window(hwnd))
+			hwnd = get_uwp_actual_window(hwnd);
+
 		if (get_window_exe(&gc->executable, hwnd)) {
 			get_window_title(&gc->title, hwnd);
 			get_window_class(&gc->class, hwnd);
