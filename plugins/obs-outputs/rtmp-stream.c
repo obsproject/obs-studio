@@ -892,7 +892,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
 
 	if (buffer_duration_usec > drop_threshold) {
-		debug("buffer_duration_usec: %lld", buffer_duration_usec);
+		debug("buffer_duration_usec: %" PRId64, buffer_duration_usec);
 		drop_frames(stream, name, priority, p_min_dts_usec);
 	}
 }
