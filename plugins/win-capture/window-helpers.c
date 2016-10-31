@@ -192,33 +192,92 @@ static bool check_window_valid(HWND window, enum window_search_mode mode)
 	return true;
 }
 
-static inline HWND next_window(HWND window, enum window_search_mode mode)
+bool is_uwp_window(HWND hwnd)
 {
+	wchar_t name[256];
+
+	name[0] = 0;
+	if (!GetClassNameW(hwnd, name, sizeof(name) / sizeof(wchar_t)))
+		return false;
+
+	return wcscmp(name, L"ApplicationFrameWindow") == 0;
+}
+
+HWND get_uwp_actual_window(HWND parent)
+{
+	DWORD parent_id = 0;
+	HWND child;
+
+	GetWindowThreadProcessId(parent, &parent_id);
+	child = GetWindow(parent, GW_CHILD);
+
+	while (child) {
+		DWORD child_id = 0;
+		GetWindowThreadProcessId(child, &child_id);
+
+		if (child_id != parent_id)
+			return child;
+
+		child = GetNextWindow(child, GW_HWNDNEXT);
+	}
+
+	return NULL;
+}
+
+static inline HWND next_window(HWND window, enum window_search_mode mode,
+		HWND *parent)
+{
+	if (*parent) {
+		window = *parent;
+		*parent = NULL;
+	}
+
 	while (true) {
 		window = GetNextWindow(window, GW_HWNDNEXT);
 		if (!window || check_window_valid(window, mode))
 			break;
 	}
 
+	if (is_uwp_window(window)) {
+		HWND child = get_uwp_actual_window(window);
+		if (child) {
+			*parent = window;
+			return child;
+		}
+	}
+
 	return window;
 }
 
-static inline HWND first_window(enum window_search_mode mode)
+static inline HWND first_window(enum window_search_mode mode, HWND *parent)
 {
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
+
+	*parent = NULL;
+
 	if (!check_window_valid(window, mode))
-		window = next_window(window, mode);
+		window = next_window(window, mode, parent);
+
+	if (is_uwp_window(window)) {
+		HWND child = get_uwp_actual_window(window);
+		if (child) {
+			*parent = window;
+			return child;
+		}
+	}
+
 	return window;
 }
 
 void fill_window_list(obs_property_t *p, enum window_search_mode mode,
 		add_window_cb callback)
 {
-	HWND window = first_window(mode);
+	HWND parent;
+	HWND window = first_window(mode, &parent);
 
 	while (window) {
 		add_window(p, window, callback);
-		window = next_window(window, mode);
+		window = next_window(window, mode, &parent);
 	}
 }
 
@@ -268,7 +327,8 @@ HWND find_window(enum window_search_mode mode,
 		const char *title,
 		const char *exe)
 {
-	HWND window      = first_window(mode);
+	HWND parent;
+	HWND window      = first_window(mode, &parent);
 	HWND best_window = NULL;
 	int  best_rating = 0;
 
@@ -279,7 +339,7 @@ HWND find_window(enum window_search_mode mode,
 			best_window = window;
 		}
 
-		window = next_window(window, mode);
+		window = next_window(window, mode, &parent);
 	}
 
 	return best_window;
