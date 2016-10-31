@@ -791,8 +791,14 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 
 		dll_inst = hinst;
 
-		HANDLE cur_thread = OpenThread(THREAD_ALL_ACCESS, false,
-				GetCurrentThreadId());
+		HANDLE cur_thread;
+		bool success = DuplicateHandle(GetCurrentProcess(),
+				GetCurrentThread(),
+				GetCurrentProcess(), &cur_thread,
+				SYNCHRONIZE, false, 0);
+
+		if (!success)
+			DbgOut("Failed to get current thread handle");
 
 		/* this prevents the library from being automatically unloaded
 		 * by the next FreeLibrary call */
