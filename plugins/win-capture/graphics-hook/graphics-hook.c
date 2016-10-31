@@ -237,15 +237,11 @@ static inline bool init_hook(HANDLE thread_handle)
 	sprintf(keepalive_name, "%s%lu", EVENT_HOOK_KEEPALIVE,
 			GetCurrentProcessId());
 
-	if (!init_pipe()) {
-		return false;
-	}
+	init_pipe();
 	if (!init_signals()) {
 		return false;
 	}
-	if (!init_mutexes()) {
-		return false;
-	}
+	init_mutexes();
 	if (!init_system_path()) {
 		return false;
 	}
